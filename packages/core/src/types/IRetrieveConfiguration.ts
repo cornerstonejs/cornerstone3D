@@ -105,6 +105,14 @@ export interface BaseRetrieveOptions {
    * Value of 0 means decode full resolution,
    * * 1 means 1/2 resolution in each dimension (eg 1/4 size)
    * * i means 1/2^i resolution in each dimension, or 1/4^i size.
+   *
+   * Setting this to 0 on a partial (range or streaming) retrieve decodes the
+   * truncated codestream at full resolution rather than picking a level from
+   * how many bytes have arrived.  That is the preferred setting for HTJ2K: the
+   * result is full size and merely lossy, which loses much less than decoding
+   * a sub-resolution image and scaling it up afterwards.  Sub-resolution plus
+   * scaling remains the right choice for renditions that are genuinely small,
+   * such as the JLS thumbnails.
    */
   decodeLevel?: number;
   /**
@@ -113,6 +121,62 @@ export interface BaseRetrieveOptions {
    * complete image is lossy, this should be set to LOSSY.
    */
   imageQualityStatus?: ImageQualityStatus;
+
+  /**
+   * Bytes that have to arrive before the first decode of a partial image.
+   * Defaults to 131,072 bytes (128kb).
+   *
+   * For a range retrieve this is the byte range fetched at `rangeIndex` 0.  For
+   * a streaming retrieve it is how much of the response has to accumulate
+   * before the partial codestream is decoded for the first time.
+   *
+   * The decoder tolerates a truncated codestream, so this size only has to be
+   * enough to put a worthwhile image on screen.  32kb decodes, and suits a
+   * volume, where the viewer waits for a first pass over many small frames.
+   * The default suits one large frame instead, where 32kb of codestream covers
+   * too many pixels to show much.  Set it per configuration when the frames
+   * being retrieved are small.  Every decode after the first uses `chunkSize`.
+   *
+   * A range retrieve reads this once, on the stage that fetches the first bytes
+   * of the frame - see `chunkSize` for why.
+   */
+  initialChunkSize?: number | ((metadata) => number);
+
+  /**
+   * Bytes to accumulate between decodes of a partial image, after the initial
+   * one.  Defaults to 131,072 (128kb).
+   *
+   * For a range retrieve this is the size of each range after the first, which
+   * uses `initialChunkSize` instead.  For a streaming retrieve it is how much
+   * new data has to arrive before the partial codestream is decoded again.
+   *
+   * A partial image is decoded once per chunk at most, so this is the main
+   * control over how much work a large frame does on its way to complete: 128kb
+   * chunks decode an 8MB frame about 60 times if nothing else intervenes, which
+   * is why `msBetweenDecode` also applies.
+   *
+   * A range retrieve reads this once, on the stage that fetches the first bytes
+   * of the frame, and keeps that value for every later stage of the same frame.
+   * The ranges of one frame have to agree on where their boundaries fall, so a
+   * `chunkSize` or `initialChunkSize` set on a later stage is ignored.  Set both
+   * on the stage that retrieves `rangeIndex` 0.
+   */
+  chunkSize?: number | ((metadata) => number);
+
+  /**
+   * Minimum milliseconds between two decodes of the same partial image.
+   * Defaults to 500.
+   *
+   * Decoding is far more expensive than receiving, so on a fast connection or
+   * a large frame the chunk size alone lets the decoder run continuously
+   * without the display gaining anything from it.  This throttles that to a
+   * readable refresh rate.  A completed image is always decoded, however
+   * recently the last partial decode ran, so this only ever delays intermediate
+   * versions and never the final one.
+   *
+   * Set to 0 to decode on every chunk.
+   */
+  msBetweenDecode?: number;
 }
 
 /**
@@ -134,12 +198,6 @@ export type RangeRetrieveOptions = BaseRetrieveOptions & {
    * Terminate range requests with a rangeIndex: -1 to fetch remaining data.
    */
   rangeIndex: number;
-
-  /**
-   * byte range value to retrieve for initial decode
-   * Defaults to 64,000 bytes.
-   */
-  chunkSize?: number | ((metadata) => number);
 };
 
 /**

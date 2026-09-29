@@ -5,6 +5,13 @@ name: OHIF Downstream Validation
 # If omitted, Viewers ref defaults to master. workflow_dispatch can set ohif_ref instead.
 on:
   pull_request:
+    # Bounded to real base branches. Unfiltered, this ran for a PR against any
+    # branch in the repo — pointless runs on a box three repos share, and it
+    # weakens the runner-side workflow check, which compares a fork PR's
+    # workflow against the copy on whatever branch the PR targets. That
+    # comparison only means something when the target is a branch that cannot
+    # be casually pushed to.
+    branches: [main, beta]
   workflow_dispatch:
     inputs:
       ohif_ref:
@@ -23,20 +30,140 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Metadata-only gate on a hosted VM: it never checks out or executes PR code.
+  # Fork PRs that modify CI-defining files are not dispatched to the shared
+  # self-hosted "nashua" box; they run once the change has been reviewed and
+  # merged. Same-repo PRs always proceed — the branch lives in this repo, so
+  # someone with write access pushed it.
+  #
+  # The protected-path list below is duplicated in the `gate` job of
+  # playwright.yml and in .github/CODEOWNERS, and must be kept in sync by hand:
+  # separate workflow files cannot share code. Editing one without the others
+  # fails silently.
+  #
+  # This job is part of the workflow it protects: a fork PR can delete it, along
+  # with the `needs:` and `if:` below, and dispatch straight to the box. What
+  # stops that is a repository setting —
+  # `actions/permissions/fork-pr-contributor-approval` set to
+  # `all_external_contributors`, so a maintainer approves every fork PR run.
+  # Relaxing it removes that barrier silently, so treat it as part of this file.
+  #
+  # This job's value is catching an approval given without full attention, not a
+  # deliberate attacker, who deletes it. Other layers exist outside this
+  # repository; this is not the last line of defence.
+  gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: read # list the PR's changed files
+    outputs:
+      proceed: ${{ steps.decide.outputs.proceed }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - id: decide
+        name: Decide whether this PR may run on the self-hosted runner
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          # Whether the PR branch lives in this repo. If it does, someone with
+          # write access pushed it — a fact, unlike anything derivable from the
+          # author's identity. Do NOT substitute
+          # `github.event.pull_request.author_association`: it does not track
+          # repo access in either direction — its MEMBER value only means
+          # "member of the owning org" (no write implied), and a repo admin can
+          # report CONTRIBUTOR. There is no reliable alternative from inside a
+          # fork PR's run either: the authoritative collaborator-permission API
+          # needs a token with push access, and fork PRs get a read-only one.
+          IS_SAME_REPO: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+        run: |
+          set -euo pipefail
+
+          if [ "$EVENT_NAME" != "pull_request" ]; then
+            echo "Not a pull request ($EVENT_NAME): proceeding."
+            echo "proceed=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          files=$(gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/files?per_page=100" --jq '.[].filename')
+          count=$(wc -l <<<"$files")
+
+          # CI-defining paths: the workflows themselves, the scripts they exec
+          # on the nashua box, and the root manifests that steer what gets
+          # installed and run there (a modified lockfile can pull a package
+          # whose install scripts execute on the box).
+          ci_touched=false
+          while IFS= read -r f; do
+            [ -n "$f" ] || continue
+            case "$f" in
+              # Workflows, and the scripts they exec on the box.
+              .github/*|scripts/ci/*|scripts/run-playwright.sh|scripts/link-ohif-cornerstone-node-modules.mjs)
+                ci_touched=true ;;
+              # The install surface. A root `pnpm install` runs the lifecycle
+              # scripts of EVERY workspace project, not only the root one:
+              # packages/docs/package.json already declares
+              # `"preinstall": "node preinstall.js"`. So the package.json
+              # pattern and the preinstall.js pattern each carry a second
+              # alternative with a leading `*/`, which matches at any depth. A
+              # `case` pattern is not a path glob — `*` matches `/` too — so
+              # `*/package.json` covers packages/<name>/package.json,
+              # addOns/local/<name>/package.json, and a project a fork adds.
+              # pnpm also executes a root pnpmfile, and .npmrc can repoint the
+              # registry. The lockfile and the workspace file steer what gets
+              # installed and can undo the release-age quarantine. Most of these
+              # files are untracked today — that is the point: a fork can ADD
+              # one, and a list of only existing files would not notice.
+              #
+              # An unrelated package.json — a test fixture, for example — also
+              # matches these patterns and defers the run. That trade is
+              # deliberate: a needless deferral costs a wait, and a missed path
+              # costs an execution on the shared box.
+              package.json|*/package.json)
+                ci_touched=true ;;
+              preinstall.js|*/preinstall.js)
+                ci_touched=true ;;
+              pnpm-lock.yaml|pnpm-workspace.yaml)
+                ci_touched=true ;;
+              .npmrc|*/.npmrc)
+                ci_touched=true ;;
+              .pnpmfile.mjs|.pnpmfile.cjs|pnpmfile.mjs|pnpmfile.cjs)
+                ci_touched=true ;;
+            esac
+          done <<<"$files"
+          # The list endpoint caps at 3000 files; past that we cannot see every
+          # path, so treat the PR as CI-touching.
+          if [ "$count" -ge 3000 ]; then ci_touched=true; fi
+
+          if [ "$ci_touched" = true ] && [ "$IS_SAME_REPO" != "true" ]; then
+            echo "::notice::OHIF downstream validation deferred: this PR changes CI-defining files and comes from a fork. It will run on the self-hosted runner once the change is reviewed and merged."
+            echo "proceed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "proceed=true" >> "$GITHUB_OUTPUT"
+
   ohif-downstream:
+    needs: gate
+    if: needs.gate.outputs.proceed == 'true'
     name: OHIF downstream tests against this PR
     runs-on: [nashua]
     timeout-minutes: 120
     env:
-      BUN_VERSION: 1.2.23
       NODE_VERSION: 24.15.0
       OHIF_REF: master
       OHIF_DIR: ohif
       # Update to force a rebuild of the OHIF integration
       BUILD_INDEX: 0
     steps:
+      # Actions are pinned to a commit SHA, not a tag: this job runs on a
+      # shared, persistent, self-hosted box, and a tag can be moved by whoever
+      # controls the upstream repo. The trailing comment records the tag the SHA
+      # corresponds to. Bumping one means resolving the new tag to its commit
+      # (`gh api repos/<owner>/<repo>/git/ref/tags/<tag>`, dereferencing the
+      # annotated tag) and updating both the SHA and the comment.
       - name: Checkout Cornerstone
-        uses: actions/checkout@v6.0.3
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
 
@@ -50,27 +177,32 @@ jobs:
           OHIF_REF_INPUT: ${{ github.event.inputs.ohif_ref }}
           DEFAULT_REF: master
 
+      # Every `run:` step reads OHIF_REF as a shell variable ($OHIF_REF), and
+      # none of them interpolates it as ${{ env.OHIF_REF }}: its value comes
+      # from the PR body (see the resolve step above), and GitHub pastes ${{ }}
+      # in as literal text before the shell exists — so punctuation in the value
+      # would become program structure and execute here on the nashua box. The
+      # shell expands $OHIF_REF only after it parses the command line, so the
+      # value can only ever be data. The github.* values below are
+      # GitHub-supplied and not PR-settable, so they stay as expressions.
+      #
+      # The one ${{ env.OHIF_REF }} in this file is the `ref:` input of the
+      # Checkout OHIF step. An action input is not a shell command, so the
+      # paste-before-parse problem does not apply there; the resolve step
+      # validates the value for the checkout itself.
       - name: Log build context (OHIF/CS3D branch and version for build diagnosis)
         run: |
-          echo "::notice::Build type: ohif-downstream | CS3D: ${{ github.repository }}@${{ github.ref }} (${{ github.sha }}) | OHIF ref: ${{ env.OHIF_REF }}"
+          echo "::notice::Build type: ohif-downstream | CS3D: ${{ github.repository }}@${{ github.ref }} (${{ github.sha }}) | OHIF ref: ${OHIF_REF}"
           CS3D_BRANCH=$(git rev-parse --abbrev-ref HEAD)
           CS3D_SHA=$(git rev-parse --short HEAD)
           echo "[build-context] ═══════════════════════════════════════════════════════════════"
           echo "[build-context] Build type: ohif-downstream (CS3D repo validating against OHIF)"
           echo "[build-context] CS3D branch: $CS3D_BRANCH | CS3D SHA: $CS3D_SHA"
-          echo "[build-context] OHIF ref: ${{ env.OHIF_REF }}"
+          echo "[build-context] OHIF ref: ${OHIF_REF}"
           echo "[build-context] ═══════════════════════════════════════════════════════════════"
 
-      # OHIF (a bun/yarn project) is installed with bun so it gets an isolated
-      # node_modules instead of being pulled into this repo's pnpm workspace,
-      # which mixes jest copies and breaks jest-runner (leakDetector error).
-      - name: Set up Bun
-        uses: oven-sh/setup-bun@v2.2.0
-        with:
-          bun-version: ${{ env.BUN_VERSION }}
-
       - name: Set up Node
-        uses: actions/setup-node@v6.4.0
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version: ${{ env.NODE_VERSION }}
           # No `cache: pnpm`: setup-node resolves the store path by running
@@ -93,7 +225,7 @@ jobs:
         run: pnpm run build:esm
 
       - name: Checkout OHIF
-        uses: actions/checkout@v6.0.3
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           repository: OHIF/Viewers
           ref: ${{ env.OHIF_REF }}
@@ -113,30 +245,42 @@ jobs:
           echo "[build-context] OHIF checkout: ${OHIF_BRANCH} (${OHIF_SHA}) | CS3D checkout: ${CS3D_BRANCH} (${CS3D_SHA})"
           echo "[build-context] ═══════════════════════════════════════════════════════════════"
 
+      # OHIF is a pnpm project (OHIF/Viewers#6031), so it is installed with the
+      # same Corepack pnpm shim as this repo. Corepack reads `packageManager`
+      # from the nearest package.json, so inside $OHIF_DIR it runs the pnpm
+      # version OHIF pins, even if that ever differs from this repo's. OHIF's own
+      # pnpm-workspace.yaml in $OHIF_DIR is what keeps its install separate from
+      # this repo's workspace: pnpm treats the nearest workspace file as the root
+      # and never looks further up. --frozen-lockfile installs exactly the
+      # versions OHIF ships, `overrides` included. It does not apply OHIF's
+      # minimumReleaseAge quarantine: pnpm applies that setting when it resolves
+      # a version range, and a frozen lockfile resolves nothing. The lockfile is
+      # the stronger guarantee anyway — it pins an exact version per package,
+      # where the quarantine only bars a version that npm published recently.
       - name: Install OHIF dependencies
         working-directory: ${{ env.OHIF_DIR }}
-        run: bun install
+        run: pnpm install --frozen-lockfile
 
       - name: Link local Cornerstone packages into OHIF node_modules
-        run: node scripts/link-ohif-cornerstone-node-modules.mjs ${{ env.OHIF_DIR }}
+        run: node scripts/link-ohif-cornerstone-node-modules.mjs "$OHIF_DIR"
 
       - name: Run OHIF unit tests
         working-directory: ${{ env.OHIF_DIR }}
-        run: bun run test:unit:ci
+        run: pnpm run test:unit:ci
 
       - name: Install Playwright browsers
         working-directory: ${{ env.OHIF_DIR }}
-        run: npx playwright install chromium
+        run: pnpm exec playwright install chromium
 
       - name: Run OHIF e2e tests
         working-directory: ${{ env.OHIF_DIR }}
         env:
           PLAYWRIGHT_HTML_OPEN: never
-        run: bash "$GITHUB_WORKSPACE/scripts/ci/with-nashua-lock.sh" bun run test:e2e:ci
+        run: bash "$GITHUB_WORKSPACE/scripts/ci/with-nashua-lock.sh" pnpm run test:e2e:ci
 
       - name: Upload OHIF Playwright artifacts
         if: always()
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: ohif-playwright-artifacts-${{ github.sha }}
           path: |

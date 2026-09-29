@@ -1,6 +1,11 @@
 import { log, utilities, normalizers, derivations } from 'dcmjs';
 import ndarray from 'ndarray';
 import getDatasetsFromImages from '../helpers/getDatasetsFromImages';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.adaptersLog.getLogger(
+  'Cornerstone.Segmentation_3X'
+);
 
 const {
   rotateDirectionCosinesInPlane,
@@ -219,7 +224,7 @@ function generateToolState(imageIds, arrayBuffer, metadataProvider) {
   );
 
   if (!imagePlaneModule) {
-    console.warn('Insufficient metadata, imagePlaneModule missing.');
+    cs3dLogger.warn('Insufficient metadata, imagePlaneModule missing.');
   }
 
   const ImageOrientationPatient = Array.isArray(imagePlaneModule.rowCosines)
@@ -275,7 +280,7 @@ function generateToolState(imageIds, arrayBuffer, metadataProvider) {
     );
 
     if (!alignedPixelDataI) {
-      console.warn(
+      cs3dLogger.warn(
         "This segmentation object is not in-plane with the source data. Bailing out of IO. It'd be better to render this with vtkjs. "
       );
       inPlane = false;

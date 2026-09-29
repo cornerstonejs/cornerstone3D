@@ -10,6 +10,11 @@ import { WorkerTypes } from '../../enums';
 import { registerComputeWorker } from '../registerComputeWorker';
 import { triggerWorkerProgress } from '../segmentation/utilsForWorker';
 import getOrCreateSegmentationVolume from '../segmentation/getOrCreateSegmentationVolume';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'utilities.contours.generateContourSetsFromLabelmap'
+);
 const { Labelmap } = SegmentationRepresentations;
 
 async function generateContourSetsFromLabelmap({ segmentations }) {
@@ -36,7 +41,7 @@ async function generateContourSetsFromLabelmap({ segmentations }) {
   // Get segmentation volume
   const vol = cornerstoneCache.getVolume(segVolumeId);
   if (!vol) {
-    console.warn(`No volume found for ${segVolumeId}`);
+    cs3dLogger.warn(`No volume found for ${segVolumeId}`);
     return;
   }
 

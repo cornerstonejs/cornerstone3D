@@ -6,10 +6,18 @@ import CentralizedWebWorkerManager from './webWorkerManager/webWorkerManager';
 import { getRenderingCapabilities } from './utilities/renderingCapabilities';
 import triggerEvent from './utilities/triggerEvent';
 import eventTarget from './eventTarget';
-import { Events, RenderBackends, RenderingEngineModeEnum } from './enums';
+import {
+  Events,
+  RenderBackends,
+  RenderingEngineModeEnum,
+  VoxelManagerEnum,
+} from './enums';
 import type { RenderBackendValue } from './enums';
 import { isRegisteredRenderBackend } from './RenderingEngine/helpers/renderBackendRegistry';
 import type { EffectiveRenderBackend } from './types/RenderBackendRegistry';
+import { coreLog } from './utilities/logger';
+
+const log = coreLog.getLogger('init');
 
 // TODO: change config into a class with methods to better control get/set
 const defaultConfig: Cornerstone3DConfig = {
@@ -21,6 +29,7 @@ const defaultConfig: Cornerstone3DConfig = {
     // Use new method by default for accurate full-width display
     useLegacyCameraFOV: false,
     strictZSpacingForVolumeViewport: true,
+    sliceStepMeasure: 'l2',
     /**
      * The rendering engine mode to use.
      * 'contextPool' is the a rendering engine that uses sequential rendering, pararllization and has enhanced support/performance for multi-monitor and high resolution displays.
@@ -51,6 +60,14 @@ const defaultConfig: Cornerstone3DConfig = {
     },
   },
 
+  segmentation: {
+    /**
+     * Labelmaps get a full frame buffer unless a host opts into RLE, which
+     * changes what its own code reads out of a labelmap (see the type docs).
+     */
+    labelmapVoxelRepresentation: VoxelManagerEnum.Volume,
+  },
+
   debug: {
     /**
      * Wether or not to show the stats overlay for debugging purposes, stats include:
@@ -72,6 +89,7 @@ const defaultConfig: Cornerstone3DConfig = {
 let config: Cornerstone3DConfig = {
   ...defaultConfig,
   rendering: { ...defaultConfig.rendering },
+  segmentation: { ...defaultConfig.segmentation },
 };
 
 let webWorkerManager: CentralizedWebWorkerManager | null = null;
@@ -123,7 +141,7 @@ function init(configuration = config): boolean {
     if (configuration.rendering?.preferSizeOverAccuracy) {
       config.rendering.preferSizeOverAccuracy = true;
     } else if (!_hasNorm16TextureSupport()) {
-      console.log(
+      log.info(
         'norm16 texture not supported, you can turn on the preferSizeOverAccuracy flag to use native data type, but be aware of the inaccuracy of the rendering in high bits'
       );
     }
@@ -131,13 +149,13 @@ function init(configuration = config): boolean {
 
   const capabilities = getRenderingCapabilities();
   if (!capabilities.webgl) {
-    console.log('CornerstoneRender: GPU not detected, using CPU rendering');
+    log.info('CornerstoneRender: GPU not detected, using CPU rendering');
     config.rendering.useCPURendering = true;
   } else {
-    console.log('CornerstoneRender: using GPU rendering');
+    log.info('CornerstoneRender: using GPU rendering');
 
     if (capabilities.softwareRasterizer) {
-      console.log(
+      log.info(
         `CornerstoneRender: software rasterizer detected (${capabilities.renderer}), GPU rendering may be slow`
       );
     }
@@ -214,7 +232,7 @@ function getEffectiveRenderBackend(
     // registered would otherwise be silently downgraded to 'auto'.
     if (!warnedUnregisteredBackends.has(backend)) {
       warnedUnregisteredBackends.add(backend);
-      console.warn(
+      log.warn(
         `[getEffectiveRenderBackend] Unregistered render backend "${backend}"; ` +
           `falling back to 'auto'. Register custom backends with registerRenderBackend().`
       );

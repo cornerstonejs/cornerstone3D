@@ -116,8 +116,14 @@ async function calculateVolumeStatistics({
     return VolumetricCalculator.getStatistics({ spacing });
   }
 
+  // Through the voxel manager, so this works whatever representation the
+  // labelmap uses (a full frame buffer or an RLE map, which expands here).
   const segmentationScalarData =
     segmentationVoxelManager.getCompleteScalarDataArray();
+
+  if (!segmentationScalarData?.length) {
+    return;
+  }
 
   const segmentationInfo = {
     scalarData: segmentationScalarData,

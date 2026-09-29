@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { eventTarget } from '@cornerstonejs/core';
+import { logging } from '@cornerstonejs/utils';
 
 import { metadataForDataset } from '../imageLoader/wadouri/metaData/metaDataProvider';
 import {
@@ -1338,7 +1339,9 @@ describe('wadouri dataSet-layer', () => {
     });
 
     it('forces samplesPerPixel to 2 for YBR_FULL_422 photometric interpretation', () => {
-      const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+      const warnSpy = jest
+        .spyOn(logging.loaderLog.getLogger('wadouri'), 'warn')
+        .mockImplementation(() => {});
       // rows=1, cols=2 -> with samplesPerPixel forced to 2: pixelsPerFrame=4 bytes/frame (8-bit)
       const dataSet = dataSetWithPixelData(0, [1, 2, 3, 4, 5, 6, 7, 8], {
         x00280100: 8,

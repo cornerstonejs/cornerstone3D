@@ -30,6 +30,11 @@ import type { RectangleROIAnnotation } from '../types/ToolSpecificAnnotationType
 import type { StyleSpecifier } from '../types/AnnotationStyle';
 
 import { windowLevel } from '../utilities/voi';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.WindowLevelRegionTool'
+);
 
 /**
  * WindowLevelRegion tool manipulates the windowLevel applied to a viewport. It
@@ -283,7 +288,7 @@ class WindowLevelRegionTool extends AnnotationTool {
 
       // If rendering engine has been destroyed while rendering
       if (!viewport.getRenderingEngine()) {
-        console.warn('Rendering Engine has been destroyed');
+        cs3dLogger.warn('Rendering Engine has been destroyed');
         return renderStatus;
       }
 

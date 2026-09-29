@@ -10,12 +10,27 @@
 // instances and annotation POJOs, so we mock the stateManagement annotation
 // module and the ToolGroupManager rather than pulling in real ones.
 
-jest.mock('@cornerstonejs/core', () => ({
-  utilities: {
-    deepClone: (value) => JSON.parse(JSON.stringify(value)),
-  },
-  getEnabledElement: jest.fn(),
-}));
+jest.mock('@cornerstonejs/core', () => {
+  const toolsLogger = {
+    debug: jest.fn(),
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+    setLevel: jest.fn(),
+  };
+
+  return {
+    utilities: {
+      logger: {
+        toolsLog: {
+          getLogger: jest.fn(() => toolsLogger),
+        },
+      },
+      deepClone: (value) => JSON.parse(JSON.stringify(value)),
+    },
+    getEnabledElement: jest.fn(),
+  };
+});
 
 jest.mock('../src/stateManagement/annotation/annotationState', () => ({
   getAnnotations: jest.fn(),
@@ -25,7 +40,7 @@ jest.mock('../src/store/ToolGroupManager', () => ({
   getToolGroupForViewport: jest.fn(),
 }));
 
-import { getEnabledElement } from '@cornerstonejs/core';
+import { getEnabledElement, utilities } from '@cornerstonejs/core';
 import { getAnnotations } from '../src/stateManagement/annotation/annotationState';
 import { getToolGroupForViewport } from '../src/store/ToolGroupManager';
 
@@ -116,7 +131,6 @@ describe('store/filterToolsWithAnnotationsForElement', () => {
     const toolA = createFakeTool('ToolA');
     const annotationsA = [createFakeAnnotation()];
     getAnnotations.mockReturnValue(annotationsA);
-    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
 
     const result = filterToolsWithAnnotationsForElement(element, [
       undefined,
@@ -124,8 +138,7 @@ describe('store/filterToolsWithAnnotationsForElement', () => {
     ]);
 
     expect(result).toEqual([{ tool: toolA, annotations: annotationsA }]);
-    expect(warnSpy).toHaveBeenCalled();
-    warnSpy.mockRestore();
+    expect(utilities.logger.toolsLog.getLogger().warn).toHaveBeenCalled();
   });
 
   it('applies filterInteractableAnnotationsForElement when a tool defines it', () => {

@@ -12,11 +12,15 @@ import {
   setTitleAndDescription,
   addButtonToToolbar,
   addCheckboxToToolbar,
+  addDropdownToToolbar,
   addInputToToolbar,
+  setCtTransferFunctionForVolumeActor,
+  setPetColorMapTransferFunctionForVolumeActor,
   setPetTransferFunctionForVolumeActor,
   getLocalUrl,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
+import perfusionColorMap from './preset';
 
 // This is for debugging purposes
 console.warn(
@@ -32,6 +36,7 @@ const {
   ZoomTool,
   StackScrollTool,
   annotation,
+  measurementTargetFilters,
 } = cornerstoneTools;
 
 const { selection } = annotation;
@@ -42,6 +47,28 @@ const { ViewportType } = Enums;
 const volumeName = 'PT_VOLUME_ID'; // Id of the volume less loader prefix
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
+
+// The CT of the same study, which the "CT + PT fusion" view adds beside the PT
+// volume.  The fusion view is not the default one, because the CT covers more
+// of the patient than the PT.  A viewport that holds both volumes therefore
+// resets its camera to the combined bounds, and a given slice index then shows
+// a different PT slice.  `tests/rectangleROIThresholdStatisticsMIM.spec.ts`
+// compares the statistics of the default view against MIM reference values at
+// fixed slice indices, and those values apply to the PT volume alone.
+const ctVolumeName = 'CT_VOLUME_ID';
+const ctVolumeId = `${volumeLoaderScheme}:${ctVolumeName}`;
+
+const PT_ONLY_VIEW = 'PT only';
+const FUSION_VIEW = 'CT + PT fusion';
+
+const viewportId1 = 'PT_AXIAL';
+const viewportId2 = 'PT_SAGITTAL';
+const viewportId3 = 'PT_CORONAL';
+const viewportIds = [viewportId1, viewportId2, viewportId3];
+
+// `run` sets these, and the view dropdown reads them.
+let renderingEngine;
+let ctVolumeLoaded;
 
 const segmentationId = 'MY_SEGMENTATION_ID';
 const toolGroupId = 'MY_TOOLGROUP_ID';
@@ -120,6 +147,95 @@ function getReliableAnnotationMaxValue(annotation, volume) {
   return maxValue;
 }
 
+/**
+ * Puts the labelmap representation of the segmentation on every viewport.
+ */
+function addSegmentationRepresentations() {
+  const representation = {
+    segmentationId,
+    type: csToolsEnums.SegmentationRepresentations.Labelmap,
+  };
+
+  segmentation.addLabelmapRepresentationToViewportMap({
+    [viewportId1]: [representation],
+    [viewportId2]: [representation],
+    [viewportId3]: [representation],
+  });
+}
+
+/**
+ * Loads the CT volume of the study, once.  The "PT only" view never calls this
+ * function, so the default view fetches the PT series alone.
+ */
+function loadCtVolume() {
+  ctVolumeLoaded ??= (async () => {
+    const ctImageIds = await createImageIdsAndCacheMetaData({
+      StudyInstanceUID: '1.2.840.113619.2.290.3.3767434740.226.1600859119.501', // Water phantom
+      SeriesInstanceUID:
+        '2.16.840.1.114362.1.12114306.25269253871.642214906.452.682', // CTAC
+      wadoRsRoot:
+        getLocalUrl() || 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
+    });
+
+    const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeId, {
+      imageIds: ctImageIds,
+    });
+
+    ctVolume.load();
+  })();
+
+  return ctVolumeLoaded;
+}
+
+/**
+ * Shows the PT volume alone, or the CT volume and the PT volume together.
+ *
+ * The fusion view puts the CT volume first, which makes the CT volume the
+ * default measurement target of the viewport.  The `targetsFilter` and the
+ * `targetPredicate` of the tool then select the PT volume instead, which is
+ * what this view demonstrates.
+ */
+async function setViewMode(mode: string) {
+  if (!renderingEngine) {
+    return;
+  }
+
+  if (mode === FUSION_VIEW) {
+    await loadCtVolume();
+
+    await setVolumesForViewports(
+      renderingEngine,
+      [
+        {
+          volumeId: ctVolumeId,
+          callback: setCtTransferFunctionForVolumeActor,
+        },
+        {
+          volumeId,
+          callback: ({ volumeActor }) =>
+            setPetColorMapTransferFunctionForVolumeActor({
+              volumeActor,
+              preset: perfusionColorMap,
+            }),
+        },
+      ],
+      viewportIds
+    );
+  } else {
+    await setVolumesForViewports(
+      renderingEngine,
+      [{ volumeId, callback: setPetTransferFunctionForVolumeActor }],
+      viewportIds
+    );
+  }
+
+  // `setVolumesForViewports` replaces the actors of the viewports, which
+  // removes the labelmap actor, so the representation has to go back on.
+  addSegmentationRepresentations();
+
+  renderingEngine.renderViewports(viewportIds);
+}
+
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Rectangle ROI Start End Threshold Tool',
@@ -169,6 +285,17 @@ instructions.innerText = `
 content.append(instructions);
 
 // ============================= //
+
+addDropdownToToolbar({
+  labelText: 'View: ',
+  options: {
+    values: [PT_ONLY_VIEW, FUSION_VIEW],
+    defaultValue: PT_ONLY_VIEW,
+  },
+  onSelectedValueChange: (value) => {
+    setViewMode(String(value));
+  },
+});
 
 addButtonToToolbar({
   title: 'Set Start Slice',
@@ -242,6 +369,12 @@ addButtonToToolbar({
   onClick: () => {
     const annotations = cornerstoneTools.annotation.state.getAllAnnotations();
     const labelmapVolume = cache.getVolume(segmentationId);
+
+    if (!annotations || annotations.length === 0) {
+      alert('Draw an annotation first.');
+      return;
+    }
+
     const volume = cache.getVolume(volumeId);
 
     const annotationUIDs = annotations.map((a) => {
@@ -260,6 +393,15 @@ addButtonToToolbar({
         annotations[0],
         volume
       );
+      // The annotation covers no voxel of the PT volume, so there is no
+      // maximum to take the threshold relative to.  Stop here, because the
+      // relative value is not an absolute threshold.
+      if (annotationMaxValue === -Infinity) {
+        alert(
+          'The annotation covers no voxel of the PT volume, so a relative threshold has no maximum. Draw the annotation over the volume, or clear "Threshold by max relative".'
+        );
+        return;
+      }
       lower = thresholdLower * annotationMaxValue;
       console.log(annotationMaxValue);
       console.log(lower);
@@ -373,6 +515,18 @@ async function run() {
     storePointData: true,
     /*Set a custom wait time */
     throttleTimeout: 100,
+    // The "CT + PT fusion" view shows a CT volume and a PT volume together,
+    // and the threshold statistics must come from the PT volume.  The
+    // viewport's default (first) volume is the CT one, so the tool needs this
+    // configuration to measure the PT volume instead.  The `firstPixelData`
+    // chooser takes the first eligible candidate, and the `forModality`
+    // predicate narrows eligibility to PT; `measurementTargetFilters.forId(
+    // volumeId)` would select the same volume by id.  This tool measures a
+    // single target, so the `allPixelData` chooser behaves the same here.
+    // The "PT only" view holds the PT volume alone, so the configuration
+    // selects the same volume that the default selection gives.
+    targetsFilter: measurementTargetFilters.firstPixelData,
+    targetPredicate: measurementTargetFilters.forModality('PT'),
   });
 
   toolGroup.setToolActive(RectangleROIStartEndThresholdTool.toolName, {
@@ -422,12 +576,7 @@ async function run() {
 
   // Instantiate a rendering engine
   const renderingEngineId = 'myRenderingEngine';
-  const renderingEngine = new RenderingEngine(renderingEngineId);
-
-  // Create the viewports
-  const viewportId1 = 'PT_AXIAL';
-  const viewportId2 = 'PT_SAGITTAL';
-  const viewportId3 = 'PT_CORONAL';
+  renderingEngine = new RenderingEngine(renderingEngineId);
 
   const viewportInputArray = [
     {
@@ -468,23 +617,9 @@ async function run() {
   // Set the volume to load
   volume.load();
 
-  // Set volumes on the viewports
-  await setVolumesForViewports(
-    renderingEngine,
-    [{ volumeId, callback: setPetTransferFunctionForVolumeActor }],
-    [viewportId1, viewportId2, viewportId3]
-  );
-
-  // Add the segmentation representation to the toolgroup
-  await segmentation.addSegmentationRepresentations(viewportId1, [
-    {
-      segmentationId,
-      type: csToolsEnums.SegmentationRepresentations.Labelmap,
-    },
-  ]);
-
-  // Render the image
-  renderingEngine.renderViewports([viewportId1, viewportId2, viewportId3]);
+  // Start on the PT only view.  `setViewMode` sets the volumes of the
+  // viewports and adds the segmentation representation to each of them.
+  await setViewMode(PT_ONLY_VIEW);
 }
 
 run();

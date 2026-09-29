@@ -41,6 +41,11 @@ import { triggerAnnotationModified } from '../../stateManagement/annotation/help
 import areSameSegment from './areSameSegment';
 import isContourSegmentationAnnotation from './isContourSegmentationAnnotation';
 import { hasToolByName } from '../../store/addTool';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'utilities.contourSegmentation.applyContourStroke'
+);
 
 const DEFAULT_CONTOUR_SEG_TOOL_NAME = 'PlanarFreehandContourSegmentationTool';
 const { DefaultHistoryMemo } = csUtils.HistoryMemo;
@@ -67,7 +72,7 @@ function applyStroke(
   op: BooleanOp
 ): void {
   if (!hasToolByName(DEFAULT_CONTOUR_SEG_TOOL_NAME)) {
-    console.warn(
+    cs3dLogger.warn(
       `${DEFAULT_CONTOUR_SEG_TOOL_NAME} is not registered. Cannot apply stroke.`
     );
     // The source stroke is meant to be consumed by the operation; discard it

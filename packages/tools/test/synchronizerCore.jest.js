@@ -13,6 +13,17 @@ jest.mock('@cornerstonejs/core', () => {
     getEnabledElement: jest.fn(),
     getEnabledElementByViewportId: jest.fn(),
     utilities: {
+      logger: {
+        toolsLog: {
+          getLogger: jest.fn(() => ({
+            debug: jest.fn(),
+            info: jest.fn(),
+            warn: jest.fn(),
+            error: jest.fn(),
+            setLevel: jest.fn(),
+          })),
+        },
+      },
       isGenericViewport: jest.fn(() => false),
     },
     viewportProjection: {

@@ -135,7 +135,12 @@ jobs:
           # "base" (packages/docs) and instead scans the repo, finds the pnpm
           # workspace, and refuses to deploy ("multiple projects detected"). Naming
           # the docs workspace package (package.json "name": "docs") disambiguates it.
-          npx -y netlify-cli deploy --no-build --filter docs --dir="$GITHUB_WORKSPACE/packages/docs/build" --prod
+          #
+          # The version is pinned. Unpinned, this step runs whatever the registry
+          # serves at that moment, with NETLIFY_AUTH_TOKEN in its environment, and
+          # a deploy of cornerstonejs.org rides on that. Bumping the pin is a
+          # deliberate change, and docusaurus-build.yml pins the same version.
+          npx -y netlify-cli@27.5.2 deploy --no-build --filter docs --dir="$GITHUB_WORKSPACE/packages/docs/build" --prod
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}

@@ -1,0 +1,323 @@
+import { vec3 } from 'gl-matrix';
+import type { Point2, Point3 } from '../../../types';
+import type { IndexSpaceSlab, VolumeGeometry } from '../indexSpaceSlab';
+import { projectPointOntoPlane } from '../slabMembership';
+import type { PlaneBasis, VoxelSlabShape } from './shapeGeometry';
+import {
+  SHAPE_BOUNDARY_EPSILON,
+  createColumnLineResolver,
+  createPlaneBasis,
+  toIntegerRun,
+} from './shapeGeometry';
+
+export interface PolylineShapeOptions {
+  /**
+   * The volume being measured. Pass an `IImageVolume`, or any object that has
+   * `direction`, `spacing`, `origin` and `dimensions`. The structural form
+   * lets a caller that holds no cached volume, such as a test, use this code.
+   */
+  volume: VolumeGeometry;
+  /**
+   * The annotation plane anchor, which defines the plane's depth. Defaults to
+   * the first point of the outline, because every point of a polyline lies in
+   * the plane already.
+   *
+   * Pass the annotation's own anchor when you have one: a drawn vertex carries
+   * rounding error that the anchor does not. Whichever you use, the shape and
+   * the iterator MUST use the same anchor, or the two describe different slabs.
+   */
+  planePoint?: Point3;
+  /** The annotation view plane normal. Unit length. */
+  viewPlaneNormal: Point3;
+  /**
+   * The outline, as world coordinates: one ring, or an array of rings. Each
+   * ring is closed, so do not repeat the first point.
+   *
+   * Do NOT flatten multiple rings into one array. That inserts an edge between
+   * them, raises no error, and quietly measures a different shape. See
+   * `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
+   */
+  polyline: Point3[] | Point3[][];
+}
+
+/**
+ * A closed polyline lying in the annotation plane.
+ *
+ * Interior is the even-odd rule, so a non-convex polyline or one with holes
+ * yields several runs. A point exactly on the outline is inside it, widened by
+ * `SHAPE_BOUNDARY_EPSILON`. The test is purely in-plane, and the shape is
+ * planar: it reports a required thickness of 0, and the caller's
+ * `referencePlaneThickness` alone decides how far the slab reaches along the
+ * normal. The ellipse and the rectangle differ, because each of those carries
+ * its own depth.
+ *
+ * See `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
+ */
+export function createPolylineShape(
+  options: PolylineShapeOptions
+): VoxelSlabShape {
+  const { volume, viewPlaneNormal: normal, polyline } = options;
+
+  if (!polyline?.length) {
+    throw new Error('A polyline shape needs an outline');
+  }
+
+  // A single ring is Point3[], so polyline[0][0] is a number; an array of rings
+  // is Point3[][], so polyline[0][0] is itself an array.
+  const inputRings: Point3[][] = Array.isArray((polyline as Point3[][])[0]?.[0])
+    ? (polyline as Point3[][])
+    : [polyline as Point3[]];
+
+  if (inputRings.some((ring) => !ring?.length || ring.length < 3)) {
+    throw new Error('Every polyline ring needs at least three points');
+  }
+
+  // Resolved after the ring checks, so an empty outline raises the outline
+  // error rather than an index error.
+  const planePoint: Point3 = options.planePoint ?? inputRings[0][0];
+
+  // Any in-plane direction will do for the basis; the outline defines its own
+  // orientation. Pick one that is not parallel to the normal.
+  const candidate: Point3 = Math.abs(normal[0]) < 0.9 ? [1, 0, 0] : [0, 1, 0];
+  const basis: PlaneBasis = createPlaneBasis(
+    normal,
+    vec3.cross(vec3.create(), normal as vec3, candidate as vec3) as Point3
+  );
+
+  // Every Point2 below is a point in the plane's 2D basis, relative to the
+  // plane anchor, and never a world coordinate or a canvas coordinate.
+  const toPlanePoint = (point: Point3): Point2 => [
+    (point[0] - planePoint[0]) * basis.u[0] +
+      (point[1] - planePoint[1]) * basis.u[1] +
+      (point[2] - planePoint[2]) * basis.u[2],
+    (point[0] - planePoint[0]) * basis.v[0] +
+      (point[1] - planePoint[1]) * basis.v[1] +
+      (point[2] - planePoint[2]) * basis.v[2],
+  ];
+
+  const toPlaneDirection = (vector: Point3): Point2 => [
+    vector[0] * basis.u[0] + vector[1] * basis.u[1] + vector[2] * basis.u[2],
+    vector[0] * basis.v[0] + vector[1] * basis.v[1] + vector[2] * basis.v[2],
+  ];
+
+  // Projecting first means a polyline whose points carry depth error still gives
+  // a well-defined outline.
+  const rings: Point2[][] = inputRings.map((ring) =>
+    ring.map((point) =>
+      toPlanePoint(projectPointOntoPlane(point, planePoint, basis.n))
+    )
+  );
+
+  // Slack scaled to the outline's own size, so it means the same thing for a
+  // 2 mm nodule outline and a 400 mm body outline.
+  let extent = 0;
+  for (const ring of rings) {
+    for (const [x, y] of ring) {
+      extent = Math.max(extent, Math.abs(x), Math.abs(y));
+    }
+  }
+  const boundarySlack = Math.max(extent, 1) * SHAPE_BOUNDARY_EPSILON;
+
+  /** Distance from a plane point to the nearest edge of any ring. */
+  function distanceToOutline(planePoint2: Point2): number {
+    let best = Infinity;
+    for (const ring of rings) {
+      const distance = distanceToRing(ring, planePoint2);
+      if (distance < best) {
+        best = distance;
+      }
+    }
+    return best;
+  }
+
+  function distanceToRing(ring: Point2[], [x, y]: Point2): number {
+    let best = Infinity;
+    const vertexCount = ring.length;
+    for (let i = 0, j = vertexCount - 1; i < vertexCount; j = i++) {
+      const [xi, yi] = ring[i];
+      const [xj, yj] = ring[j];
+      const edgeX = xj - xi;
+      const edgeY = yj - yi;
+      const lengthSquared = edgeX * edgeX + edgeY * edgeY;
+      let t = 0;
+      if (lengthSquared > 0) {
+        t = ((x - xi) * edgeX + (y - yi) * edgeY) / lengthSquared;
+        t = t < 0 ? 0 : t > 1 ? 1 : t;
+      }
+      const dx = x - (xi + t * edgeX);
+      const dy = y - (yi + t * edgeY);
+      const distance = Math.hypot(dx, dy);
+      if (distance < best) {
+        best = distance;
+      }
+    }
+    return best;
+  }
+
+  const resolveColumnLine = createColumnLineResolver(volume, basis.n);
+
+  function containsPlanePoint([x, y]: Point2): boolean {
+    // Even-odd over every edge of every ring. Parity accumulates across rings
+    // rather than resetting per ring, which is what makes a hole ring flip its
+    // interior back to outside.
+    let inside = false;
+    for (const ring of rings) {
+      const vertexCount = ring.length;
+      for (let i = 0, j = vertexCount - 1; i < vertexCount; j = i++) {
+        const [xi, yi] = ring[i];
+        const [xj, yj] = ring[j];
+
+        // Half-open in y so a vertex is counted by exactly one of its edges.
+        if (yi > y !== yj > y) {
+          const crossingX = xi + ((y - yi) / (yj - yi)) * (xj - xi);
+          if (x < crossingX) {
+            inside = !inside;
+          }
+        }
+      }
+    }
+    // On an outline counts as inside, whichever side the ray's tie rule
+    // happened to pick.
+    return inside || distanceToOutline([x, y]) <= boundarySlack;
+  }
+
+  function containsPoint(point: Point3): boolean {
+    return containsPlanePoint(
+      toPlanePoint(projectPointOntoPlane(point, planePoint, basis.n))
+    );
+  }
+
+  function* getRuns(
+    outerIndex: number,
+    rowIndex: number,
+    depthRun: Point2,
+    slab: IndexSpaceSlab
+  ): Generator<Point2, void, undefined> {
+    const line = resolveColumnLine(slab, outerIndex, rowIndex);
+    const origin2 = toPlanePoint(line.projectedBase);
+    const direction2 = toPlaneDirection(line.projectedStep);
+
+    const directionLengthSquared =
+      direction2[0] * direction2[0] + direction2[1] * direction2[1];
+
+    if (directionLengthSquared <= 0) {
+      // The whole column projects to a single point, so the outline either
+      // covers all of it or none. Only reachable if the column step is parallel
+      // to the normal.
+      if (containsPlanePoint(origin2)) {
+        yield [depthRun[0], depthRun[1]];
+      }
+      return;
+    }
+
+    const directionLength = Math.sqrt(directionLengthSquared);
+    // The slack, expressed in column-index units.
+    const slack = boundarySlack / directionLength;
+    // Perpendicular distance from the line, per unit of the side value.
+    const perpendicularScale = 1 / directionLength;
+
+    /** Column index of the point on the line nearest a plane point. */
+    const columnOf = ([x, y]: Point2) =>
+      ((x - origin2[0]) * direction2[0] + (y - origin2[1]) * direction2[1]) /
+      directionLengthSquared;
+
+    const sideOf = ([x, y]: Point2) =>
+      direction2[0] * (y - origin2[1]) - direction2[1] * (x - origin2[0]);
+
+    const intervals: [number, number][] = [];
+    const crossings: number[] = [];
+
+    for (const ring of rings) {
+      const vertexCount = ring.length;
+      let previousIndex = vertexCount - 1;
+      let previousSide = sideOf(ring[previousIndex]);
+
+      for (let i = 0; i < vertexCount; i++) {
+        const side = sideOf(ring[i]);
+
+        const previousOnLine =
+          Math.abs(previousSide) * perpendicularScale <= boundarySlack;
+        const currentOnLine =
+          Math.abs(side) * perpendicularScale <= boundarySlack;
+
+        if (previousOnLine && currentOnLine) {
+          // The edge lies along the line. The crossing test cannot see such an
+          // edge at all - both endpoints sit on the same side of a line they
+          // are on - so contribute its extent directly. Without this, a
+          // polyline with an edge running along a voxel row loses that whole
+          // row, while containsPoint keeps it as a boundary point.
+          const a = columnOf(ring[previousIndex]);
+          const b = columnOf(ring[i]);
+          intervals.push(
+            a <= b ? [a - slack, b + slack] : [b - slack, a + slack]
+          );
+        } else if (currentOnLine) {
+          // A vertex touching the line without either edge lying along it.
+          // Even odd counting may place it outside, but it is on the boundary,
+          // so it is inside by the same convention containsPoint applies.
+          const at = columnOf(ring[i]);
+          intervals.push([at - slack, at + slack]);
+        }
+
+        // Zero counts as negative, matching the half-open rule
+        // `yi > y !== yj > y` in containsPlanePoint.
+        if (previousSide > 0 !== side > 0) {
+          const t = previousSide / (previousSide - side);
+          const crossingX =
+            ring[previousIndex][0] + t * (ring[i][0] - ring[previousIndex][0]);
+          const crossingY =
+            ring[previousIndex][1] + t * (ring[i][1] - ring[previousIndex][1]);
+          crossings.push(columnOf([crossingX, crossingY]));
+        }
+
+        previousIndex = i;
+        previousSide = side;
+      }
+    }
+
+    // One sorted list across all rings: pairing consecutive crossings IS
+    // even-odd, so a hole ring's two crossings close the interval its
+    // surrounding ring opened.
+    crossings.sort((a, b) => a - b);
+    for (let pair = 0; pair + 1 < crossings.length; pair += 2) {
+      intervals.push([crossings[pair] - slack, crossings[pair + 1] + slack]);
+    }
+
+    if (!intervals.length) {
+      return;
+    }
+
+    // Merge so overlapping contributions - a crossing interval and the boundary
+    // edge bounding it, say - never emit a voxel twice.
+    intervals.sort((a, b) => a[0] - b[0]);
+    let [low, high] = intervals[0];
+
+    for (let index = 1; index < intervals.length; index++) {
+      const [nextLow, nextHigh] = intervals[index];
+      if (nextLow <= high) {
+        high = Math.max(high, nextHigh);
+        continue;
+      }
+      const run = toIntegerRun([low, high]);
+      if (run) {
+        yield run;
+      }
+      low = nextLow;
+      high = nextHigh;
+    }
+
+    const finalRun = toIntegerRun([low, high]);
+    if (finalRun) {
+      yield finalRun;
+    }
+  }
+
+  return {
+    containsPoint,
+    getRuns,
+    // Always planar. The caller's own `referencePlaneThickness` decides how far
+    // the slab reaches along the normal, so a caller that wants a prism passes
+    // that thickness to the iterator.
+    getRequiredThickness: () => 0,
+  };
+}

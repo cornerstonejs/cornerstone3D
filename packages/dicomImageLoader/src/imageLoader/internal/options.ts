@@ -1,3 +1,4 @@
+import { utilities } from '@cornerstonejs/core';
 import type { LoaderOptions } from '../../types';
 
 let options: LoaderOptions = {
@@ -22,6 +23,14 @@ let options: LoaderOptions = {
 
 export function setOptions(newOptions: LoaderOptions): void {
   options = Object.assign(options, newOptions);
+
+  // The wasm directory is not private to this loader: it is where every
+  // Cornerstone package looks for its binaries, so publish it system-wide.
+  // Options without the key leave the current value alone, matching the
+  // decode-config behaviour in `shared/wasmBasePath`.
+  if (newOptions.wasmBasePath !== undefined) {
+    utilities.setWasmBasePath(newOptions.wasmBasePath);
+  }
 }
 
 export function getOptions(): LoaderOptions {

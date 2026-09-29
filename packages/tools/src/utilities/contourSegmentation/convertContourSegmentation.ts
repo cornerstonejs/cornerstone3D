@@ -7,6 +7,11 @@ import type { ContourSegmentationAnnotation } from '../../types';
 import { removeContourSegmentationAnnotation } from './removeContourSegmentationAnnotation';
 import { addContourSegmentationAnnotation } from './addContourSegmentationAnnotation';
 import { triggerAnnotationModified } from '../../stateManagement/annotation/helpers/state';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'utilities.contourSegmentation.convertContourSegmentation'
+);
 
 // Default tool name used for converted contour segmentation annotations
 const DEFAULT_CONTOUR_SEG_TOOL_NAME = 'PlanarFreehandContourSegmentationTool';
@@ -35,7 +40,7 @@ export default function convertContourSegmentationAnnotation(
   // Validate that the polyline exists and has sufficient points
   // A valid contour requires at least 3 points to form a meaningful shape
   if (!polyline || polyline.length < 3) {
-    console.warn(
+    cs3dLogger.warn(
       'Skipping creation of new annotation due to invalid polyline:',
       polyline
     );

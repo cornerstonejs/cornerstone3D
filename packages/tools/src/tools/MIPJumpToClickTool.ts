@@ -4,6 +4,11 @@ import { type Types, utilities } from '@cornerstonejs/core';
 import { getPointInLineOfSightWithCriteria } from '../utilities/planar';
 import type { PublicToolProps, ToolProps } from '../types';
 import { getToolGroupForViewport } from '../store/ToolGroupManager';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.MIPJumpToClickTool'
+);
 
 /**
  * On a Maximum Intensity Projection (MIP) viewport, MIPJumpToClickTool allows the
@@ -95,7 +100,7 @@ class MIPJumpToClickTool extends BaseTool {
       if (viewport instanceof VolumeViewport) {
         viewport.jumpToWorld(brightestPoint);
       } else {
-        console.warn(
+        cs3dLogger.warn(
           'Cannot jump to specified world coordinates for a viewport that is not a VolumeViewport'
         );
       }

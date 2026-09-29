@@ -1,6 +1,12 @@
 import { expose } from 'comlink';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger =
+  cornerstoneUtilities.logger.labelmapInterpolationLog.getLogger(
+    'workers.interpolationWorker'
+  );
 
 /**
  * Dynamically imports ITK WASM modules needed for labelmap interpolation
@@ -18,7 +24,7 @@ async function peerImport(moduleId) {
         throw new Error(`Unknown module ID: ${moduleId}`);
     }
   } catch (error) {
-    console.warn(`Error importing ${moduleId}:`, error);
+    cs3dLogger.warn(`Error importing ${moduleId}:`, error);
     return null;
   }
 }
@@ -38,7 +44,7 @@ const computeWorker = {
       }
       ({ Image, ImageType, IntTypes, FloatTypes, PixelTypes } = itkModule);
     } catch (error) {
-      console.warn(
+      cs3dLogger.warn(
         "Warning: 'itk-wasm' module not found. Please install it separately."
       );
       return null;
@@ -101,7 +107,7 @@ const computeWorker = {
         throw new Error('Module not found');
       }
     } catch (error) {
-      console.warn(
+      cs3dLogger.warn(
         "Warning: '@itk-wasm/morphological-contour-interpolation' module not found. Please install it separately."
       );
       return { data: scalarData };
@@ -162,8 +168,8 @@ const computeWorker = {
 
       return { data: modifiedScalarData };
     } catch (error) {
-      console.error(error);
-      console.warn(
+      cs3dLogger.error(error);
+      cs3dLogger.warn(
         'Warning: Failed to perform morphological contour interpolation'
       );
       return { data: scalarData };

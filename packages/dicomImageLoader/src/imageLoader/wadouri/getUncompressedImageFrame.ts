@@ -1,5 +1,8 @@
 import type { DataSet } from 'dicom-parser';
+import { logging } from '@cornerstonejs/metadata';
 import unpackBinaryFrame from './unpackBinaryFrame';
+
+const log = logging.loaderLog.getLogger('wadouri');
 
 /**
  * Function to deal with extracting an image frame from an encapsulated data set.
@@ -39,7 +42,7 @@ function getUncompressedImageFrame(
 
   if (photometricInterpretation === 'YBR_FULL_422') {
     samplesPerPixel = 2;
-    console.warn(
+    log.warn(
       `Using SamplesPerPixel of 2 for YBR_FULL_422 photometric interpretation.
       See http://dicom.nema.org/medical/dicom/current/output/chtml/part03/sect_C.7.6.3.html for more information.`
     );

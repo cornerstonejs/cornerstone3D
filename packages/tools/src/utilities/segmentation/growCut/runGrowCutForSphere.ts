@@ -5,6 +5,11 @@ import getViewportICamera from '../../getViewportICamera';
 import { run, type GrowCutOptions } from './runGrowCut';
 import type { SphereBoundsInfo } from '../../getSphereBoundsInfo';
 import { getSphereBoundsInfo } from '../../getSphereBoundsInfo';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'utilities.segmentation.growCut.runGrowCutForSphere'
+);
 
 const { transformWorldToIndex } = csUtils;
 
@@ -101,7 +106,7 @@ function _createSubVolumeFromSphere(
   );
 
   if (obliqueView) {
-    console.warn('Oblique view is not supported!');
+    cs3dLogger.warn('Oblique view is not supported!');
     return;
   }
 

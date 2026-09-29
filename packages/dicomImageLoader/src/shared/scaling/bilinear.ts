@@ -19,7 +19,6 @@ export default function bilinear(src, dest) {
     xSrc1Off[x] = Math.floor(xSrc);
     xSrc2Off[x] = Math.min(xSrc1Off[x] + 1, srcColumns - 1);
     xFrac[x] = xSrc - xSrc1Off[x];
-    // console.log("x src info", x, xSrc, xFrac[x]);
   }
 
   for (let y = 0; y < rows; y++) {
@@ -41,10 +40,6 @@ export default function bilinear(src, dest) {
       const p01 = srcData[ySrc2Off + xSrc1Off[x]];
       const p11 = srcData[ySrc2Off + xSrc2Off[x]];
       const xFracInv = 1 - xFrac[x];
-
-      //   console.log("bilinear for", x,y, "from", ySrc1Off + xSrc1Off[x], ySrc1Off + xSrc2Off[x], ySrc2Off + xSrc1Off[x], ySrc2Off + xSrc2Off[x]);
-      //   console.log("values", p00, p10, p01, p11);
-      //   console.log("fractions", xFracInv, xFrac[x], yFracInv, yFrac);
 
       data[yOff + x] =
         (p00 * xFracInv + p10 * xFrac[x]) * yFracInv +

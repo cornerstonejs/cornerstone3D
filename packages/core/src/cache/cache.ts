@@ -18,7 +18,9 @@ import eventTarget from '../eventTarget';
 import Events from '../enums/Events';
 import { ImageQualityStatus } from '../enums';
 import fnv1aHash from '../utilities/fnv1aHash';
+import { coreLog } from '../utilities/logger';
 
+const log = coreLog.getLogger('cache');
 const ONE_GB = 1073741824;
 
 /**
@@ -391,14 +393,14 @@ class Cache {
     cachedImage: ICachedImage
   ): void {
     if (!this._imageCache.has(imageId)) {
-      console.warn(
+      log.warn(
         'The image was purged from the cache before it completed loading.'
       );
       return;
     }
 
     if (!image) {
-      console.warn('Image is undefined');
+      log.warn('Image is undefined');
       return;
     }
 
@@ -463,12 +465,12 @@ class Cache {
     imageLoadObject: IImageLoadObject
   ): Promise<void> {
     if (imageId === undefined) {
-      console.error('putImageLoadObject: imageId must not be undefined');
+      log.error('putImageLoadObject: imageId must not be undefined');
       throw new Error('putImageLoadObject: imageId must not be undefined');
     }
 
     if (imageLoadObject.promise === undefined) {
-      console.error(
+      log.error(
         'putImageLoadObject: imageLoadObject.promise must not be undefined'
       );
       throw new Error(
@@ -478,7 +480,7 @@ class Cache {
 
     const alreadyCached = this._imageCache.get(imageId);
     if (alreadyCached?.imageLoadObject) {
-      console.warn(`putImageLoadObject: imageId ${imageId} already in cache`);
+      log.warn(`putImageLoadObject: imageId ${imageId} already in cache`);
       throw new Error('putImageLoadObject: imageId already in cache');
     }
 
@@ -486,7 +488,7 @@ class Cache {
       imageLoadObject.cancelFn &&
       typeof imageLoadObject.cancelFn !== 'function'
     ) {
-      console.error(
+      log.error(
         'putImageLoadObject: imageLoadObject.cancel must be a function'
       );
       throw new Error(
@@ -514,15 +516,12 @@ class Cache {
         try {
           this._putImageCommon(imageId, image, cachedImage);
         } catch (error) {
-          console.debug(
-            `Error in _putImageCommon for image ${imageId}:`,
-            error
-          );
+          log.debug(`Error in _putImageCommon for image ${imageId}:`, error);
           throw error; // Re-throw the error to be caught in the .catch block
         }
       })
       .catch((error) => {
-        console.debug(`Error caching image ${imageId}:`, error);
+        log.debug(`Error caching image ${imageId}:`, error);
         this._imageCache.delete(imageId);
         throw error; // Re-throw the error to be caught by the caller
       });
@@ -677,7 +676,7 @@ class Cache {
     cachedVolume: ICachedVolume
   ): void {
     if (!this._volumeCache.get(volumeId)) {
-      console.warn(
+      log.warn(
         'The volume was purged from the cache before it completed loading.'
       );
       return;
@@ -794,10 +793,7 @@ class Cache {
         try {
           this._putVolumeCommon(volumeId, volume, cachedVolume);
         } catch (error) {
-          console.error(
-            `Error in _putVolumeCommon for volume ${volumeId}:`,
-            error
-          );
+          log.error(`Error in _putVolumeCommon for volume ${volumeId}:`, error);
           this._volumeCache.delete(volumeId); // Clean up the cache if an error occurs
           throw error;
         }
@@ -846,14 +842,14 @@ class Cache {
     cachedGeometry: ICachedGeometry
   ): void {
     if (!this._geometryCache.get(geometryId)) {
-      console.warn(
+      log.warn(
         'The geometry was purged from the cache before it completed loading.'
       );
       return;
     }
 
     if (!geometry) {
-      console.warn('Geometry is undefined');
+      log.warn('Geometry is undefined');
       return;
     }
 
@@ -976,7 +972,7 @@ class Cache {
         try {
           this._putGeometryCommon(geometryId, geometry, cachedGeometry);
         } catch (error) {
-          console.debug(
+          log.debug(
             `Error in _putGeometryCommon for geometry ${geometryId}:`,
             error
           );
@@ -984,7 +980,7 @@ class Cache {
         }
       })
       .catch((error) => {
-        console.debug(`Error caching geometry ${geometryId}:`, error);
+        log.debug(`Error caching geometry ${geometryId}:`, error);
         this._geometryCache.delete(geometryId);
         throw error;
       });

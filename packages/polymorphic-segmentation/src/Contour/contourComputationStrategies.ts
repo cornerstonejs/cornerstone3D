@@ -8,6 +8,11 @@ import { computeSurfaceFromLabelmapSegmentation } from '../Surface/surfaceComput
 import type { SurfaceClipResult } from '../utilities/clipAndCacheSurfacesForViewport';
 import { clipAndCacheSurfacesForViewport } from '../utilities/clipAndCacheSurfacesForViewport';
 import { createAndAddContourSegmentationsFromClippedSurfaces } from './utils/createAndAddContourSegmentationsFromClippedSurfaces';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.polySegLog.getLogger(
+  'Contour.contourComputationStrategies'
+);
 
 const { getUniqueSegmentIndices } = utilities.segmentation;
 const { getSegmentation } = segmentation.state;
@@ -55,7 +60,7 @@ export async function computeContourData(
       );
     }
   } catch (error) {
-    console.error(error);
+    cs3dLogger.error(error);
     throw error;
   }
 
@@ -107,7 +112,9 @@ async function computeContourFromLabelmapSegmentation(
   );
 
   if (!results?.length) {
-    console.error('Failed to convert labelmap to surface or labelmap is empty');
+    cs3dLogger.error(
+      'Failed to convert labelmap to surface or labelmap is empty'
+    );
     return;
   }
 

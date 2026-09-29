@@ -1,4 +1,5 @@
 import { Enums } from '@cornerstonejs/core';
+import { logging } from '@cornerstonejs/utils';
 
 import getValue from '../imageLoader/wadors/metaData/getValue';
 import getNumberValue from '../imageLoader/wadors/metaData/getNumberValue';
@@ -124,7 +125,9 @@ describe('wadors metadata primitives', () => {
     let warnSpy: jest.SpyInstance;
 
     beforeEach(() => {
-      warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+      warnSpy = jest
+        .spyOn(logging.loaderLog.getLogger('wadors'), 'warn')
+        .mockImplementation(() => undefined);
     });
 
     afterEach(() => {
@@ -232,13 +235,24 @@ describe('wadors metadata primitives', () => {
   });
 
   describe('getImageQualityStatus', () => {
-    it('returns SUBRESOLUTION when done is false, regardless of retrieveOptions', () => {
+    it('returns SUBRESOLUTION when done is false and the decode is sub-resolution', () => {
       expect(
         getImageQualityStatus(
           { imageQualityStatus: Enums.ImageQualityStatus.FULL_RESOLUTION },
           false
         )
       ).toBe(Enums.ImageQualityStatus.SUBRESOLUTION);
+      expect(getImageQualityStatus({ decodeLevel: 2 }, false)).toBe(
+        Enums.ImageQualityStatus.SUBRESOLUTION
+      );
+    });
+
+    it('returns LOSSY when done is false but the decode is at full resolution', () => {
+      // A truncated codestream decoded at decodeLevel 0 is full size, so it is
+      // lossy rather than sub-resolution - no scaling up happens afterwards.
+      expect(getImageQualityStatus({ decodeLevel: 0 }, false)).toBe(
+        Enums.ImageQualityStatus.LOSSY
+      );
     });
 
     it('returns the retrieveOptions.imageQualityStatus when done is true', () => {

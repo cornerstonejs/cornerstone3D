@@ -28,6 +28,11 @@ import type {
 import type { RectangleROIThresholdAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import RectangleROITool from '../annotation/RectangleROITool';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.segmentation.RectangleROIThresholdTool'
+);
 
 /**
  * This tool is exactly the RectangleROITool but only draws a rectangle on the image,
@@ -207,7 +212,7 @@ class RectangleROIThresholdTool extends RectangleROITool {
 
       // If rendering engine has been destroyed while rendering
       if (!viewport.getRenderingEngine()) {
-        console.warn('Rendering Engine has been destroyed');
+        cs3dLogger.warn('Rendering Engine has been destroyed');
         return renderStatus;
       }
 

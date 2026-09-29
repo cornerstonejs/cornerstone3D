@@ -1,7 +1,10 @@
 import type { IVolumeInput, IRenderingEngine } from '../../types';
+import { coreLog } from '../../utilities/logger';
 import isVolumeCompatible, {
   type ICompatibleVolumeViewport,
 } from './supportsVolumeCompatibilityApi';
+
+const log = coreLog.getLogger('RenderingEngine', 'addVolumesToViewports');
 
 /**
  * For each provided viewport it adds a volume to the viewport using the
@@ -32,7 +35,7 @@ async function addVolumesToViewports(
     }
 
     if (!isVolumeCompatible(viewport)) {
-      console.warn(
+      log.warn(
         `Viewport with Id ${viewportId} does not implement addVolumes. Cannot add volume to this viewport.`
       );
 

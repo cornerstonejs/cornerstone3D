@@ -61,6 +61,11 @@ import {
   computePlanePlaneIntersection,
   findLineBoundsIntersection,
 } from '../utilities/volumeCropping';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.VolumeCroppingControlTool'
+);
 
 type ReferenceLine = [
   viewport: {
@@ -237,7 +242,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
       }
       const volumeActors = viewport.getActors();
       if (!volumeActors || !volumeActors.length) {
-        console.warn(
+        cs3dLogger.warn(
           `VolumeCroppingControlTool: No volume actors found in viewport ${viewportId}.`
         );
         return;
@@ -261,7 +266,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
     viewportId,
   }: Types.IViewportId): void => {
     if (!renderingEngineId || !viewportId) {
-      console.warn(
+      cs3dLogger.warn(
         'VolumeCroppingControlTool: Missing renderingEngineId or viewportId'
       );
       return;
@@ -463,7 +468,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
 
   _initializeViewports = (viewportsInfo: Types.IViewportId[]): void => {
     if (!viewportsInfo?.length || !viewportsInfo[0]) {
-      console.warn(
+      cs3dLogger.warn(
         'VolumeCroppingControlTool: No valid viewportsInfo for initialization.'
       );
       return;

@@ -1,4 +1,5 @@
 jest.mock('@cornerstonejs/core', () => ({
+  Enums: { ViewportType: { PLANAR_NEXT: 'planarNext' } },
   cache: {
     getImage: jest.fn(),
     getVolume: jest.fn(),
@@ -47,10 +48,10 @@ function makeStackViewport(imageIds: string[]) {
 }
 
 /**
- * Volume viewports expose getAllVolumeIds (the discriminator) and a
- * getFrameOfReferenceUID that is undefined before `setVolumes`. The real
- * BaseVolumeViewport.getImageIds throws before any volume actor exists, so the
- * gate must never rely on it.
+ * Volume viewports expose getAllVolumeIds and a getFrameOfReferenceUID that is
+ * undefined before `setVolumes`. The real BaseVolumeViewport.getImageIds throws
+ * before any volume actor exists, so the gate must never rely on it. The type
+ * is left undefined, which is every viewport class except `PlanarViewport`.
  */
 function makeVolumeViewport(frameOfReferenceUID: string | undefined) {
   return {
@@ -59,6 +60,27 @@ function makeVolumeViewport(frameOfReferenceUID: string | undefined) {
     getImageIds: jest.fn(() => {
       throw new Error('getImageIds must not be called on volume viewports');
     }),
+  };
+}
+
+/**
+ * A `PlanarViewport` serves both a stack and a volume, and it exposes
+ * `getAllVolumeIds` for either. It reports an empty list while it shows a
+ * stack, and it reports a synthetic frame of reference that no labelmap can
+ * match.
+ */
+function makePlanarViewport({
+  imageIds,
+  volumeIds = [],
+}: {
+  imageIds: string[];
+  volumeIds?: string[];
+}) {
+  return {
+    type: 'planarNext',
+    getAllVolumeIds: jest.fn(() => volumeIds),
+    getImageIds: jest.fn(() => imageIds),
+    getFrameOfReferenceUID: jest.fn(() => 'planarNext-viewport-VP_1'),
   };
 }
 
@@ -270,6 +292,53 @@ describe('isSegmentationOverlayCompatible', () => {
           Labelmap
         )
       ).toBe(false);
+    });
+  });
+
+  describe('planar viewports (both a stack and a volume)', () => {
+    it('takes the stack rule while it shows a stack', () => {
+      setLabelmapReferencedImageIds([CT_IMAGE_IDS[1]]);
+      const viewport = makePlanarViewport({ imageIds: CT_IMAGE_IDS });
+
+      // The synthetic frame of reference matches no labelmap, so the volume
+      // rule would drop every representation on this viewport.
+      expect(
+        isSegmentationOverlayCompatible(
+          viewport as never,
+          SEGMENTATION_ID,
+          Labelmap
+        )
+      ).toBe(true);
+      expect(viewport.getFrameOfReferenceUID).not.toHaveBeenCalled();
+    });
+
+    it('still suppresses a stack that displays none of the referenced images', () => {
+      setLabelmapReferencedImageIds(CT_IMAGE_IDS);
+
+      expect(
+        isSegmentationOverlayCompatible(
+          makePlanarViewport({ imageIds: OTHER_IMAGE_IDS }) as never,
+          SEGMENTATION_ID,
+          Labelmap
+        )
+      ).toBe(false);
+    });
+
+    it('takes the volume rule once a volume is mounted', () => {
+      setLabelmapReferencedImageIds(CT_IMAGE_IDS);
+      const viewport = makePlanarViewport({
+        imageIds: CT_IMAGE_IDS,
+        volumeIds: ['volume-1'],
+      });
+
+      expect(
+        isSegmentationOverlayCompatible(
+          viewport as never,
+          SEGMENTATION_ID,
+          Labelmap
+        )
+      ).toBe(false);
+      expect(viewport.getFrameOfReferenceUID).toHaveBeenCalled();
     });
   });
 

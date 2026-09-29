@@ -9,6 +9,11 @@ import { ColorbarCanvas } from './ColorbarCanvas';
 import { ColorbarTicks } from './ColorbarTicks';
 import isRangeTextPositionValid from './common/isRangeTextPositionValid';
 import Widget from '../../../widgets/Widget';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'utilities.voi.colorbar.Colorbar'
+);
 
 const DEFAULTS = {
   MULTIPLIER: 1,
@@ -74,7 +79,7 @@ class Colorbar extends Widget {
     const colormap = this._colormaps.get(colormapName);
 
     if (!colormap) {
-      console.warn(`Invalid colormap name (${colormapName})`);
+      cs3dLogger.warn(`Invalid colormap name (${colormapName})`);
       return;
     }
 
