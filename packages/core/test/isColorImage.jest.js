@@ -1,4 +1,4 @@
-import isColorImage from '../src/utilities/isColorImage';
+import { isColorImage } from '@cornerstonejs/utils';
 import { generateVolumePropsFromImageIds } from '../src/utilities/generateVolumePropsFromImageIds';
 import * as metaData from '../src/metaData';
 

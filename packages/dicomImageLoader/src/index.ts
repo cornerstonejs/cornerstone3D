@@ -1,3 +1,5 @@
+import { isColorImage } from '@cornerstonejs/utils';
+
 import {
   convertRGBColorByPixel,
   convertRGBColorByPlane,
@@ -7,7 +9,6 @@ import {
   convertPaletteColorWithFetch,
 } from './imageLoader/colorSpaceConverters/index';
 
-import { utilities } from '@cornerstonejs/core';
 import { default as wadouri } from './imageLoader/wadouri/index';
 import { default as wadors } from './imageLoader/wadors/index';
 import { default as init } from './init';
@@ -27,8 +28,6 @@ import {
   postProcessDecodedPixels,
 } from './decodeImageFrameWorker';
 import { initializers, decoders } from './shared/decoders';
-
-const { isColorImage } = utilities;
 
 const cornerstoneDICOMImageLoader = {
   constants,

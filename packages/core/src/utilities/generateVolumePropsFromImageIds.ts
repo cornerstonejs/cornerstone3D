@@ -1,3 +1,4 @@
+import { isColorImage } from '@cornerstonejs/utils';
 import { vec3 } from 'gl-matrix';
 import makeVolumeMetadata from './makeVolumeMetadata';
 import sortImageIdsAndGetSpacing from './sortImageIdsAndGetSpacing';
@@ -11,7 +12,6 @@ import getScalingParameters from './getScalingParameters';
 import { hasFloatScalingParameters } from './hasFloatScalingParameters';
 import { canRenderFloatTextures } from '../init';
 import cache from '../cache/cache';
-import isColorImage from './isColorImage';
 
 // Map constructor names to PixelDataTypedArrayString
 const constructorToTypedArray: Record<string, PixelDataTypedArrayString> = {

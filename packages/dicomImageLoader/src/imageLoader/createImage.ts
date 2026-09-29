@@ -9,6 +9,7 @@ import {
   utilities,
 } from '@cornerstonejs/core';
 import { logging } from '@cornerstonejs/metadata';
+import { isColorImage as isColorImageFn } from '@cornerstonejs/utils';
 import convertColorSpace from './convertColorSpace';
 import isColorConversionRequired from './isColorConversionRequired';
 import decodeImageFrame from './decodeImageFrame';
@@ -121,9 +122,7 @@ async function createImage(
     taskDecodeConfig
   );
 
-  const isColorImage = utilities.isColorImage(
-    imageFrame.photometricInterpretation
-  );
+  const isColorImage = isColorImageFn(imageFrame.photometricInterpretation);
 
   return new Promise<DICOMLoaderIImage | Types.IImageFrame>(
     (resolve, reject) => {

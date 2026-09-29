@@ -1,8 +1,9 @@
 /* eslint-disable complexity */
+import { isColorImage } from '@cornerstonejs/utils';
+
 import bilinear from './shared/scaling/bilinear';
 import replicate from './shared/scaling/replicate';
 import { expose } from 'comlink';
-import { utilities } from '@cornerstonejs/core';
 
 import decodeLittleEndian from './shared/decoders/decodeLittleEndian';
 import decodeBigEndian from './shared/decoders/decodeBigEndian';
@@ -75,7 +76,7 @@ export function postProcessDecodedPixels(
   // read.  This is fine except for color data, where the wrong type gets
   // specified.  Don't use the target buffer in that case.
   let invalidType =
-    utilities.isColorImage(imageFrame.photometricInterpretation) &&
+    isColorImage(imageFrame.photometricInterpretation) &&
     options.targetBuffer?.offset === undefined;
 
   const willScale = options.preScale?.enabled;

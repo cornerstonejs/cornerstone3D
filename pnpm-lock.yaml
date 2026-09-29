@@ -521,6 +521,9 @@ importers:
       '@cornerstonejs/metadata':
         specifier: 5.11.0
         version: link:../metadata
+      '@cornerstonejs/utils':
+        specifier: 5.11.0
+        version: link:../utils
 
   packages/docs:
     dependencies:
