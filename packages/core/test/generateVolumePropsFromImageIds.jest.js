@@ -1,28 +1,5 @@
-import { isColorImage } from '@cornerstonejs/utils';
 import { generateVolumePropsFromImageIds } from '../src/utilities/generateVolumePropsFromImageIds';
 import * as metaData from '../src/metaData';
-
-const COLOR = [
-  'RGB',
-  'PALETTE COLOR',
-  'YBR_FULL',
-  'YBR_FULL_422',
-  'YBR_PARTIAL_422',
-  'YBR_PARTIAL_420',
-  'YBR_RCT',
-  'YBR_ICT',
-];
-const GRAYSCALE = ['MONOCHROME1', 'MONOCHROME2', '', 'UNKNOWN', undefined];
-
-describe('isColorImage', () => {
-  it.each(COLOR)('returns true for %s', (pmi) => {
-    expect(isColorImage(pmi)).toBe(true);
-  });
-
-  it.each(GRAYSCALE)('returns false for %s', (pmi) => {
-    expect(isColorImage(pmi)).toBe(false);
-  });
-});
 
 describe('generateVolumePropsFromImageIds numberOfComponents', () => {
   let photometricInterpretation;
@@ -57,9 +34,11 @@ describe('generateVolumePropsFromImageIds numberOfComponents', () => {
   beforeAll(() => metaData.addProvider(provider, 10000));
   afterAll(() => metaData.removeProvider(provider));
 
+  // The full list of color photometric interpretations is covered by
+  // isColorImage's tests in @cornerstonejs/utils
   it.each([
-    ...COLOR.map((pmi) => [pmi, 3]),
-    ['MONOCHROME1', 1],
+    ['YBR_FULL_422', 3],
+    ['RGB', 3],
     ['MONOCHROME2', 1],
   ])('%s -> %i components', (pmi, expected) => {
     photometricInterpretation = pmi;
