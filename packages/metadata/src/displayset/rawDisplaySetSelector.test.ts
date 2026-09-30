@@ -1183,6 +1183,7 @@ describe('splitRuleSchema - the table the compiler reads', () => {
     const fields = Object.keys(splitRuleSchema.rule.forms.rule.keys);
     expect(fields).toEqual([
       'id',
+      'groupId',
       'priority',
       'description',
       'viewportTypes',
@@ -1231,7 +1232,7 @@ describe('createDisplaySetSplitRules - strict keys', () => {
     // instance.
     expect(errorOf({ matchs: { attribute: 'Modality', equals: 'CT' } })).toBe(
       "Invalid raw display set selector: rule 'r': unknown field 'matchs'; " +
-        'allowed: id, priority, description, viewportTypes, series, matches, ' +
+        'allowed: id, groupId, priority, description, viewportTypes, series, matches, ' +
         'groupBy, runBy, compareInstances, customAttributes'
     );
   });
@@ -1591,5 +1592,59 @@ describe('createDisplaySetSplitRules - own-property reads', () => {
     expect(errorOf({ matches: { classifier: 'constructor' } })).toContain(
       'unknown classifier "constructor"'
     );
+  });
+});
+
+describe('createDisplaySetSplitRules - groupId', () => {
+  it('keeps the group id of a rule, and leaves it undefined when the rule has none', () => {
+    const rules = createDisplaySetSplitRules({
+      tomo: {
+        priority: 1,
+        groupId: 'mammo',
+        matches: { attribute: 'Modality', equals: 'MG' },
+      },
+      legacy: { priority: 2, groupId: 'mammo' },
+      plain: { priority: 3 },
+    });
+    expect(rules.tomo.groupId).toBe('mammo');
+    expect(rules.legacy.groupId).toBe('mammo');
+    // The reader defaults a missing group id to the rule id.
+    expect(rules.plain.groupId).toBeUndefined();
+  });
+
+  it('does not change how a rule splits: the split key stays per rule id', () => {
+    const rules = createDisplaySetSplitRules({
+      tomo: {
+        priority: 1,
+        groupId: 'mammo',
+        matches: { attribute: 'ImageType', contains: 'TOMO' },
+      },
+      legacy: { priority: 2, groupId: 'mammo' },
+    });
+    const groups = groupInstancesBySplitRules(
+      [
+        {
+          SeriesInstanceUID: 's',
+          SOPInstanceUID: '1',
+          ImageType: ['DERIVED', 'TOMO'],
+        },
+        {
+          SeriesInstanceUID: 's',
+          SOPInstanceUID: '2',
+          ImageType: ['ORIGINAL'],
+        },
+      ],
+      rules
+    );
+    expect(groups.map((group) => JSON.parse(group.splitKey)[0])).toEqual([
+      'tomo',
+      'legacy',
+    ]);
+  });
+
+  it('rejects a group id that is not a string', () => {
+    expect(() =>
+      createDisplaySetSplitRules({ r: { priority: 1, groupId: 7 } as never })
+    ).toThrow(/rule 'r'\.groupId/);
   });
 });

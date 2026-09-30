@@ -106,6 +106,11 @@ export type RawSplitRule = {
    */
   id?: string;
   /**
+   * The group of rules this rule belongs to (see `SplitRule.groupId`).
+   * Defaults to the rule id.
+   */
+  groupId?: string;
+  /**
    * Evaluation order: ascending, first match wins; `null` excludes the rule.
    * See `SplitRuleSetEntry.priority`.
    */

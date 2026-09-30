@@ -96,6 +96,12 @@ const ruleShape: SchemaShape = {
           description:
             'The rule id. Optional: the key of the rule in the selector is the id. When present it must equal that key.',
         },
+        groupId: {
+          kind: 'string',
+          optional: true,
+          description:
+            'The group of rules this rule belongs to, for a reader that must recognize display sets from several related rules (for example every mammography rule). Defaults to the rule id.',
+        },
         priority: {
           kind: 'priority',
           description:

@@ -471,8 +471,16 @@ in — `matches`, `groupBy`, `runBy`, `series` facts, `compareInstances`,
 | `compareInstances` | `{ attribute, number?, descending? }` or `{ expression }` — instance order within a group                       | `(a, b, context) => number`                        |
 | `customAttributes` | `{ set?, fromFirstInstance?, fromContext?, fromOptions?, preset? }`                                             | `(attributes, options) => Record<string, unknown>` |
 
-The other fields are data: `id` (optional, must equal the key), `priority`,
-`description` and `viewportTypes`.
+The other fields are data: `id` (optional, must equal the key), `groupId`,
+`priority`, `description` and `viewportTypes`.
+
+`groupId` names a group of rules that describe one kind of display set, and it
+defaults to the rule id. A study can hold breast tomosynthesis, legacy
+mammography that mixes views in one series, and mammography that the modality
+already split. Three rules split those three forms, and all three can use
+`groupId: 'mammo'`. A reader such as a hanging protocol then finds every
+mammography display set by the group id, whichever rule made it. The group id
+does not change the split: groups and split keys stay per rule id.
 
 ### The schema of a rule
 

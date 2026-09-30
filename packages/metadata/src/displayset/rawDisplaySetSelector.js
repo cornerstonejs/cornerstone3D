@@ -658,6 +658,10 @@ function compileRule(id, rule, site) {
   /** @type {SplitRule} */
   const compiled = { id };
 
+  if (rule.groupId !== undefined) {
+    compiled.groupId = field('groupId');
+  }
+
   if (rule.viewportTypes !== undefined) {
     compiled.viewportTypes = field('viewportTypes');
   }

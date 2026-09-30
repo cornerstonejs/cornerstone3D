@@ -103,6 +103,17 @@ export type SplitRule = {
    * leaves the other rules' keys untouched.
    */
   id: string;
+  /**
+   * The group of rules this rule belongs to. Defaults to {@link SplitRule.id}.
+   *
+   * Several rules can describe one kind of display set: for example one rule
+   * for breast tomosynthesis, one for legacy mammography that mixes views in
+   * one series, and one for mammography that the modality already split. A
+   * reader such as a hanging protocol then matches the group id to find every
+   * display set of that kind, whichever rule made it. It does not change how
+   * the rule splits: groups and split keys stay per rule id.
+   */
+  groupId?: string;
   /** Allowed viewport types; index 0 is the preferred viewport type. */
   viewportTypes?: readonly ViewportTypeHint[];
   /**

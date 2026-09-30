@@ -274,7 +274,7 @@ Compilation validates the whole definition up front and throws with the path of
 the fragment and the fragment inlined — the structural compiler quoting the
 JSON, the expression compiler quoting the source:
 
-```
+```text
 Invalid safe function definition: unknown classifier "sitProtocol"; known: siteProtocol: {"classifier":"sitProtocol"}
 Invalid safe function definition: unknown key 'equal'; allowed: attribute, exists, absent, equals, notEquals, in, notIn, contains, containsAny, greaterThan, lessThan, ignoreCase
 Invalid safe function definition: 'ignoreCase' applies only with contains, containsAny: {"attribute":"Modality","equals":"CT","ignoreCase":true}
