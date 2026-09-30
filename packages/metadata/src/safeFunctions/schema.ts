@@ -199,6 +199,17 @@ export function readOwn(object: unknown, key: string): unknown {
     : undefined;
 }
 
+/**
+ * Is `key` a key that a plain object cannot store? `result['__proto__'] = v`
+ * replaces the prototype of `result` instead of adding an entry, so a
+ * definition keyed by `__proto__` (a real own key after `JSON.parse`) would
+ * silently lose that entry. A compiler rejects such a key, so that the
+ * definition fails with an error rather than lose an entry.
+ */
+export function isUnsafeKey(key: string): boolean {
+  return key === '__proto__';
+}
+
 function stringify(fragment: unknown): string {
   if (typeof fragment === 'function') {
     return '<function>';
@@ -554,6 +565,13 @@ export function compileKey(
     checkForm({ keys }, value as Record<string, unknown>, site);
     const result: Record<string, unknown> = {};
     for (const [key, entry] of Object.entries(value)) {
+      if (isUnsafeKey(key)) {
+        return invalidAt(
+          at(site, key),
+          `the key "${key}" is not allowed`,
+          value
+        );
+      }
       const entrySpec = Object.prototype.hasOwnProperty.call(keys, key)
         ? keys[key]
         : keys['*'];

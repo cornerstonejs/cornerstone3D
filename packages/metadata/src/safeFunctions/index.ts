@@ -43,6 +43,7 @@ export {
   INSTANCE_EXPRESSION_SCOPE,
   invalidAt,
   isLeafKind,
+  isUnsafeKey,
   matchForm,
   readOwn,
   safeFunctionSchema,

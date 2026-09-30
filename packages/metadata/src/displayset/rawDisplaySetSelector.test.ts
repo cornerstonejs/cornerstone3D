@@ -1019,6 +1019,45 @@ describe('createDisplaySetSplitRules - validation', () => {
     );
   });
 
+  // JSON.parse makes `__proto__` a real own key. Stored in a plain object, the
+  // key replaces the prototype, so the entry is lost with no error.
+  describe('rejects a __proto__ key instead of losing the entry', () => {
+    it('as a rule id', () => {
+      const selector = JSON.parse('{"__proto__": {"priority": 1}}');
+      expect(() => createDisplaySetSplitRules(selector)).toThrow(
+        /"__proto__".*the id is not allowed/
+      );
+    });
+
+    it('in a customAttributes record', () => {
+      for (const recipe of [
+        '{"set": {"__proto__": {"label": "x"}}}',
+        '{"fromFirstInstance": {"__proto__": {"attribute": "Modality"}}}',
+      ]) {
+        const rule = { id: 'x', customAttributes: JSON.parse(recipe) };
+        expect(() => createDisplaySetSplitRules(raw(rule as never))).toThrow(
+          /the key "__proto__" is not allowed/
+        );
+      }
+    });
+
+    it('as a series fact name', () => {
+      const rule = {
+        id: 'x',
+        series: [
+          {
+            name: '__proto__',
+            scope: 'some',
+            when: { attribute: 'Modality', equals: 'MR' },
+          },
+        ],
+      };
+      expect(() => createDisplaySetSplitRules(raw(rule as never))).toThrow(
+        /the fact name "__proto__" is not allowed/
+      );
+    });
+  });
+
   it('rejects an unknown classifier at compile time, not at split time', () => {
     expect(() =>
       createDisplaySetSplitRules(

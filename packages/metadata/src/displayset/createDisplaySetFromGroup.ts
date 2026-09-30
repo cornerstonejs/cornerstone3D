@@ -3,6 +3,7 @@ import { ImageStackDisplaySet } from './ImageStackDisplaySet';
 import { isEcgInstance } from './isEcgInstance';
 import { isVideoInstance } from './isVideoInstance';
 import { isWsiInstance } from './isWsiInstance';
+import { isUnsafeKey } from '../safeFunctions/schema';
 import type { IDisplaySet } from './IDisplaySet';
 import type { InstanceGroup, ViewportTypeHint } from './types';
 import {
@@ -118,7 +119,13 @@ function applyCustomAttributes(
   }
 
   for (const [key, value] of Object.entries(attributes)) {
-    if (key === 'viewportTypes' || RESERVED_ATTRIBUTE_KEYS.has(key)) {
+    // A `__proto__` key (a real own key from `JSON.parse` or `Object.fromEntries`)
+    // would replace the prototype of the display set.
+    if (
+      key === 'viewportTypes' ||
+      RESERVED_ATTRIBUTE_KEYS.has(key) ||
+      isUnsafeKey(key)
+    ) {
       continue;
     }
     if (isAssignable(displaySet, key)) {

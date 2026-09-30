@@ -58,6 +58,7 @@ import {
   compileKey,
   createSite,
   invalidAt,
+  isUnsafeKey,
   matchForm,
   readOwn,
   safeFunctionCompilers,
@@ -373,6 +374,14 @@ function compileField(form, fragment, key, site) {
  */
 function compileSeriesFact(fact, site) {
   const [, form] = matchForm(splitRuleSchema.seriesFact, fact, site);
+  // The series hook stores each fact under its name in a plain object.
+  if (isUnsafeKey(fact.name)) {
+    invalidAt(
+      at(site, 'name'),
+      `the fact name "${fact.name}" is not allowed`,
+      fact
+    );
+  }
   return {
     name: fact.name,
     scope: fact.scope,

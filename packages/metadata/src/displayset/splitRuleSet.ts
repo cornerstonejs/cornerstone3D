@@ -1,3 +1,4 @@
+import { isUnsafeKey } from '../safeFunctions/schema';
 import type { SplitRule, SplitRuleSet } from './types';
 
 /**
@@ -19,6 +20,11 @@ export function validateSplitRuleSetEntry(
   id: string,
   entry: { id?: string; priority?: number | null } | null | undefined
 ): boolean {
+  // A rule set is a plain object keyed by id, and `rules['__proto__'] = rule`
+  // replaces the prototype of the rule set instead of adding the rule.
+  if (isUnsafeKey(id)) {
+    invalidEntry(id, 'the id is not allowed; give the rule another id');
+  }
   if (!entry || typeof entry !== 'object') {
     invalidEntry(id, 'the entry must be an object');
   }

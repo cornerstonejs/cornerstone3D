@@ -286,6 +286,34 @@ describe('displayset split utilities', () => {
     );
   });
 
+  it('does not let a __proto__ custom attribute replace the prototype', () => {
+    const group: InstanceGroup = {
+      instances: [
+        {
+          imageId: 'wadors:proto',
+          SOPClassUID: '1.2.840.10008.5.1.4.1.1.2',
+          Rows: 512,
+          SeriesInstanceUID: 'series-proto',
+          InstanceNumber: 1,
+        },
+      ],
+      matchedRule: {
+        id: 'proto',
+        viewportTypes: ['stack'],
+        // JSON.parse makes `__proto__` a real own key.
+        customAttributes: () => JSON.parse('{"__proto__": {"x": 1}, "y": 2}'),
+      },
+    };
+
+    const displaySet = createDisplaySetFromGroup(group);
+
+    expect(displaySet).toBeInstanceOf(ImageStackDisplaySet);
+    expect(
+      (displaySet as unknown as Record<string, unknown>).x
+    ).toBeUndefined();
+    expect((displaySet as unknown as Record<string, unknown>).y).toBe(2);
+  });
+
   describe('customAttributes that replace viewportTypes', () => {
     const imageInstances: NaturalizedInstance[] = [
       {
