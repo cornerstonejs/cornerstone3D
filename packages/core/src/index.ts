@@ -218,11 +218,8 @@ export {
   summarizeVolumeGpuTrace,
   dumpVolumeGpuTrace,
   printVolumeGpuTracePlaybook,
-  getVolumeGpuTracePriorHypothesis,
   setVolumeGpuExperimentOptions,
   getVolumeGpuExperimentOptions,
-  getMaxDirtySlicesPerUpload,
-  getVolumeModifiedThrottleMs,
   DEFAULT_MAX_DIRTY_SLICES_PER_UPLOAD,
   DEFAULT_VOLUME_MODIFIED_THROTTLE_MS,
 } from './utilities/volumeGpuTrace';

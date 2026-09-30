@@ -433,19 +433,19 @@ function formatSpacing(spacing: number[] | undefined): string {
     return '-';
   }
 
-  return spacing.map((value) => formatSpacingValue(value)).join('×');
-}
+  return spacing
+    .map((value) => {
+      if (!Number.isFinite(value)) {
+        return '?';
+      }
 
-function formatSpacingValue(value: number): string {
-  if (!Number.isFinite(value)) {
-    return '?';
-  }
+      if (Number.isInteger(value)) {
+        return String(value);
+      }
 
-  if (Number.isInteger(value)) {
-    return String(value);
-  }
-
-  return Number(value.toFixed(3)).toString();
+      return Number(value.toFixed(3)).toString();
+    })
+    .join('×');
 }
 
 /**

@@ -165,23 +165,6 @@ export function getVolumeGpuExperimentOptions(): Required<VolumeGpuExperimentOpt
   return { maxDirtySlices, volumeModifiedThrottleMs };
 }
 
-/** Cap used by vtkStreamingOpenGLTexture uploads. */
-export function getMaxDirtySlicesPerUpload(): number {
-  const { maxDirtySlices } = getVolumeGpuExperimentOptions();
-  return maxDirtySlices > 0
-    ? maxDirtySlices
-    : DEFAULT_MAX_DIRTY_SLICES_PER_UPLOAD;
-}
-
-/**
- * Throttle for legacy GPU volume modified paints. Does **not** read
- * `cpuVolume.volumeModifiedThrottleMs` (that stays CPU-path only).
- */
-export function getVolumeModifiedThrottleMs(): number {
-  const { volumeModifiedThrottleMs } = getVolumeGpuExperimentOptions();
-  return Math.max(0, Math.trunc(volumeModifiedThrottleMs));
-}
-
 function syncEnabledFromEnvironment(): void {
   if (enabled) {
     return;
@@ -195,13 +178,11 @@ function syncEnabledFromEnvironment(): void {
   }
 }
 
-/** Whether tracing is currently recording. */
 export function isVolumeGpuTraceEnabled(): boolean {
   syncEnabledFromEnvironment();
   return enabled;
 }
 
-/** Whether progressive nearby-frame fills should be skipped. */
 export function shouldSkipNearbyFramesForTrace(): boolean {
   syncEnabledFromEnvironment();
   return enabled && options.skipNearbyFrames;
@@ -226,17 +207,14 @@ export function enableVolumeGpuTrace(next: VolumeGpuTraceOptions = {}): void {
   );
 }
 
-/** Stops recording; keeps retained events until reset. */
 export function disableVolumeGpuTrace(): void {
   enabled = false;
 }
 
-/** Clears retained events. */
 export function resetVolumeGpuTrace(): void {
   events.length = 0;
 }
 
-/** Raw events (newest last). */
 export function getVolumeGpuTraceEvents(): readonly VolumeGpuTraceEvent[] {
   return events;
 }
@@ -264,17 +242,17 @@ export function recordVolumeGpuTrace(
 
   try {
     if (typeof performance !== 'undefined' && performance.mark) {
-      performance.mark(`cs3d:volumeGpuTrace:${event.kind}`, {
-        detail: event,
-      });
+      try {
+        performance.mark(`cs3d:volumeGpuTrace:${event.kind}`, {
+          detail: event,
+        });
+      } catch {
+        // Some browsers reject the detail option on performance.mark.
+        performance.mark(`cs3d:volumeGpuTrace:${event.kind}`);
+      }
     }
   } catch {
-    // detail unsupported in some browsers
-    try {
-      performance.mark(`cs3d:volumeGpuTrace:${event.kind}`);
-    } catch {
-      // ignore
-    }
+    // performance.mark unavailable or rejected entirely
   }
 
   if (options.logEvery > 0 && events.length % options.logEvery === 0) {
@@ -368,9 +346,9 @@ export function summarizeVolumeGpuTrace(): VolumeGpuTraceSummary {
       refreshMax = Math.max(refreshMax, ms);
     } else if (e.kind === 'setUpdatedFrame') {
       setCount++;
-      const d = e.dirtyAlready ?? 0;
-      setDirtySum += d;
-      setDirtyMax = Math.max(setDirtyMax, d);
+      const dirtyAlready = e.dirtyAlready ?? 0;
+      setDirtySum += dirtyAlready;
+      setDirtyMax = Math.max(setDirtyMax, dirtyAlready);
     } else if (e.kind === 'upload') {
       uploadCount++;
       const branch = e.branch ?? 'none';
@@ -378,13 +356,14 @@ export function summarizeVolumeGpuTrace(): VolumeGpuTraceSummary {
       const ms = e.durationMs ?? 0;
       uploadMs += ms;
       uploadMax = Math.max(uploadMax, ms);
-      const dirty = e.dirtySlicesUploaded ?? 0;
-      uploadDirtySum += dirty;
-      uploadDirtyMax = Math.max(uploadDirtyMax, dirty);
-      const w = e.texSubImageW ?? 0;
-      const h = e.texSubImageH ?? 0;
-      const depth = e.texSubImageDepth ?? 1;
-      totalTexels += w * h * depth * dirty;
+      const dirtySlicesUploaded = e.dirtySlicesUploaded ?? 0;
+      uploadDirtySum += dirtySlicesUploaded;
+      uploadDirtyMax = Math.max(uploadDirtyMax, dirtySlicesUploaded);
+      const texSubImageW = e.texSubImageW ?? 0;
+      const texSubImageH = e.texSubImageH ?? 0;
+      const texSubImageDepth = e.texSubImageDepth ?? 1;
+      totalTexels +=
+        texSubImageW * texSubImageH * texSubImageDepth * dirtySlicesUploaded;
     } else if (e.kind === 'mapperAlloc') {
       mapperCount++;
       if (e.shouldReset) {
@@ -477,7 +456,6 @@ export function summarizeVolumeGpuTrace(): VolumeGpuTraceSummary {
   };
 }
 
-/** Prints the summary and returns it. */
 export function dumpVolumeGpuTrace(): VolumeGpuTraceSummary {
   const summary = summarizeVolumeGpuTrace();
   // eslint-disable-next-line no-console
@@ -490,18 +468,7 @@ export function dumpVolumeGpuTrace(): VolumeGpuTraceSummary {
 }
 
 /**
- * Describes how to A/B profile in Chrome / Spector (Phase 3 of the plan).
- * Call once after enabling trace.
- *
- * Prior from unit tests (no browser GPU yet):
- * - >2048 depth → single `reduced-1x1xN/full-extent/average` set (not multi-slab)
- * - `markFrameDirty` maps exactly one texture slice per source frame
- * Leading runtime suspects to confirm with dumpVolumeGpuTrace():
- * 1. render-storm — requestRender per IMAGE_VOLUME_MODIFIED (× viewports)
- * 2. derived-refresh-cpu — refreshDerivedFrames cost misread as GPU
- * 3. derived-miss — upload.byBranch.fillSliceByBoxAverage dominates
- * 4. full-dirty / texture-reset — upload.maxDirtySlices ≫ 1 or resetCount > 2
- * Multi-set thrash is unlikely on the default provider (one set only).
+ * How to A/B profile in Chrome / Spector. Call once after enabling trace.
  */
 export function printVolumeGpuTracePlaybook(): void {
   // eslint-disable-next-line no-console
@@ -515,18 +482,4 @@ export function printVolumeGpuTracePlaybook(): void {
    - setActiveGpuCapabilityProfile('high-texture-4096') then reload
    - single MPR viewport vs three
 6. Compare dumpVolumeGpuTrace() summaries; hypotheses[] names the smoking gun.`);
-}
-
-/**
- * Code-analysis prior for the >2048 GPU-cost investigation.
- * Prefer dumpVolumeGpuTrace().hypotheses after a real load to confirm.
- */
-export function getVolumeGpuTracePriorHypothesis(): string[] {
-  return [
-    'confirmed: >2048 uses one reduced-1x1xN full-extent texture (not multi-slab split)',
-    'fixed: missing-slice resolves are cached (no per-voxel cache.getImage thrash)',
-    'fixed: markFrameDirty coalesces same-turn arrivals and dedupes derived box reduces',
-    'progressive: incremental box averages remain (P31.3); nearby replicates still apply',
-    'expect: refreshDerived.avgMs ≪ 5; warn flood gone; upload.avgDirtySlices near 1–2 when renders keep up',
-  ];
 }

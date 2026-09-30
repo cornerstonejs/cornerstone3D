@@ -22,7 +22,7 @@ import ViewportType from '../enums/ViewportType';
 import eventTarget from '../eventTarget';
 import { getShouldUseCPURendering } from '../init';
 import {
-  getVolumeModifiedThrottleMs,
+  getVolumeGpuExperimentOptions,
   recordVolumeGpuTrace,
 } from '../utilities/volumeGpuTrace';
 import type {
@@ -320,7 +320,11 @@ abstract class BaseVolumeViewport extends Viewport {
   }
 
   private scheduleVolumeModifiedRender(volumeId: string): void {
-    const throttleMs = getVolumeModifiedThrottleMs();
+    // GPU path only — does not read cpuVolume.volumeModifiedThrottleMs.
+    const throttleMs = Math.max(
+      0,
+      Math.trunc(getVolumeGpuExperimentOptions().volumeModifiedThrottleMs)
+    );
     const run = () => {
       this._volumeModifiedTimeoutId = undefined;
       this._lastVolumeModifiedRenderTime = performance.now();

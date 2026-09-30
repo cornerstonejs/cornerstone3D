@@ -6,7 +6,8 @@ import VoxelManager from '../../utilities/VoxelManager';
 import { voxelGridsEqual } from '../../utilities/voxelGrid';
 import {
   recordVolumeGpuTrace,
-  getMaxDirtySlicesPerUpload,
+  getVolumeGpuExperimentOptions,
+  DEFAULT_MAX_DIRTY_SLICES_PER_UPLOAD,
 } from '../../utilities/volumeGpuTrace';
 import getViewportsWithVolumeId from '../../utilities/getViewportsWithVolumeId';
 
@@ -435,9 +436,12 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     const preferred = preferredTextureSlice(model.volumeId, depth);
     const dirtySlices = orderedDirtySlices(model.updatedFrames, preferred);
     const uploadedSliceIndices = [];
+    const { maxDirtySlices } = getVolumeGpuExperimentOptions();
+    const maxDirty =
+      maxDirtySlices > 0 ? maxDirtySlices : DEFAULT_MAX_DIRTY_SLICES_PER_UPLOAD;
 
     for (const slice of dirtySlices) {
-      if (dirtySlicesUploaded >= getMaxDirtySlicesPerUpload()) {
+      if (dirtySlicesUploaded >= maxDirty) {
         break;
       }
 
@@ -598,13 +602,15 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
       model.updatedFrames.length
     );
     const dirtySlices = orderedDirtySlices(model.updatedFrames, preferred);
+    const { maxDirtySlices } = getVolumeGpuExperimentOptions();
+    const maxDirty =
+      maxDirtySlices > 0 ? maxDirtySlices : DEFAULT_MAX_DIRTY_SLICES_PER_UPLOAD;
 
     for (const i of dirtySlices) {
-      if (dirtySlicesUploaded >= getMaxDirtySlicesPerUpload()) {
+      if (dirtySlicesUploaded >= maxDirty) {
         break;
       }
 
-      // find the updated frames
       const image = cache.getImage(imageIds[i]);
       if (!image) {
         continue;
@@ -621,20 +627,15 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
         data,
       ]);
 
-      // Bind the texture
       publicAPI.bind();
 
-      // Calculate the offset within the 3D texture
-      const zOffset = i;
-
-      // Update the texture sub-image
       // Todo: need to check other systems if it can handle it
       gl.texSubImage3D(
         model.target, // target
         0, // level
         0, // xoffset
         0, // yoffset
-        zOffset, // zoffset
+        i, // zoffset
         model.width, // width
         model.height, // height
         1, // depth (1 slice)
@@ -643,9 +644,7 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
         pixData // data
       );
 
-      // Unbind the texture
       publicAPI.deactivate();
-      // Reset the updated flag
       model.updatedFrames[i] = null;
       dirtySlicesUploaded++;
     }
@@ -708,20 +707,15 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
         data,
       ]);
 
-      // Bind the texture
       publicAPI.bind();
 
-      // Calculate the offset within the 3D texture
-      let zOffset = i;
-
-      // Update the texture sub-image
       // Todo: need to check other systems if it can handle it
       gl.texSubImage3D(
         model.target, // target
         0, // level
         0, // xoffset
         0, // yoffset
-        zOffset, // zoffset
+        i, // zoffset
         model.width, // width
         model.height, // height
         1, // depth (1 slice)
@@ -730,9 +724,7 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
         pixData // data
       );
 
-      // Unbind the texture
       publicAPI.deactivate();
-      // Reset the updated flag
     }
 
     if (model.generateMipmap) {

@@ -94,14 +94,6 @@ const seriesOptions = {
   // this series comes from the code and not from the acquisition. This series
   // is the test data of commit 9, which gives a derived representation that
   // follows the load.
-  //
-  // volumeGpuTrace help (disabled for now):
-  // // To trace per-slice GPU cost while this loads, open with
-  // // ?volumeGpuTrace=1 (and optionally ?volumeGpuTraceSkipNearby=1), or:
-  // //   import { enableVolumeGpuTrace, dumpVolumeGpuTrace, printVolumeGpuTracePlaybook } from '@cornerstonejs/core';
-  // //   enableVolumeGpuTrace({ skipNearbyFrames: true });
-  // //   printVolumeGpuTracePlaybook();
-  // //   // after partial load: dumpVolumeGpuTrace();
   'CT body 2464 images of 512 x 512': {
     StudyInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.99.1071.24993177073256607564948872275593',
