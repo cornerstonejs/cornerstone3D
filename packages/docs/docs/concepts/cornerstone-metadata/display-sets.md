@@ -154,11 +154,42 @@ read never drift apart.
 ## Split rules
 
 Split rules decide how a series' instances are grouped into display sets and
-which viewport types each group supports. `defaultDisplaySetSplitRules` covers
-the common DICOM cases (video, ECG, whole-slide, single-image modalities,
-multi-frame clips, mixed-b-value DWI, volumetric series, and a fallback image
-rule). Rules are evaluated in **ascending priority, first match wins per
-instance**.
+which viewport types each group supports. Rules are evaluated in **ascending
+priority, first match wins per instance**.
+
+### The default rules
+
+`defaultDisplaySetSplitRules` is the rule set you get without writing any rules.
+It is the compiled form of `rawDisplaySetSelector`, the same rules as JSON data
+(see [Sharing rules between applications](#sharing-rules-between-applications-the-raw-selector)).
+It has nine rules, with the priorities `1` to `9`:
+
+| Priority | Id                          | Viewport types                | Claims                                                                                                      |
+| -------- | --------------------------- | ----------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| 1        | `video`                     | `video`                       | Video transfer syntaxes and SOP classes, and long multi-frame secondary captures.                           |
+| 2        | `ecg`                       | `ecg`                         | ECG and waveform SOP classes.                                                                               |
+| 3        | `wholeslide`                | `wholeslide`                  | VL Whole Slide Microscopy (modality SM); all pyramid levels form one display set.                           |
+| 4        | `singleImageModality`       | `stack`                       | CR, DX and MG, split by a coarse image-size bucket.                                                         |
+| 5        | `multiFrame`                | `stack`                       | Multi-frame instances with a slice location (cine clips); one display set per instance.                     |
+| 6        | `mixedDimensionalityBValue` | `volume`, `volume3d`, `stack` | Diffusion MR that mixes b-value frames with frames that have none; the two parts split.                     |
+| 7        | `volume3d`                  | `volume`, `volume3d`, `stack` | Multi-slice CT, MR, PT and NM that reconstruct into a volume.                                               |
+| 8        | `defaultImageRule`          | `stack`, `volume`, `volume3d` | Any other renderable image, one display set per series.                                                     |
+| 9        | `unsupported`               | `none`                        | Everything else (SEG, RTSTRUCT, SR, PDF, …); see [Objects nothing can render](#objects-nothing-can-render). |
+
+Each raw rule also has a `description` that a UI can show. The next sections
+explain how your own rules combine with these.
+
+### Viewport types are hints
+
+`viewportTypes` names the kind of view a display set supports, not a viewport
+class. `stack` means the images are shown one at a time and are not
+reconstructed into a volume. With the legacy viewports `stack` maps to
+`ViewportType.STACK`; with the next-generation viewports it maps to the planar
+viewport (`ViewportType.PLANAR_NEXT`). So the same rules work with both
+viewport families. `volume` and `volume3d` mean the display set can be
+reconstructed for MPR and 3D. See
+[Driving a viewport from a display set](#driving-a-viewport-from-a-display-set)
+for the mapping in code.
 
 ### Rule sets keyed by id
 
@@ -179,20 +210,40 @@ const ruleSet: SplitRuleSet = {
 };
 ```
 
-Rules run in ascending priority, and equal priorities run in id order, so the
-order never depends on the order of the keys. `resolveSplitRuleSet` returns the
-included rules in that order, each with its key as its `id`.
-
 A rule set is usually merged from layers — the defaults, then an application's
 overrides. A key cannot occur twice, so a layer replaces a rule, moves it (a new
 `priority`), or excludes it (`priority: null`) by its id, and never adds a
-second copy. The default rules use the priorities `1..n`, so a priority below
-`0` runs before every default rule. In the defaults, `unsupported` is a
-catch-all with the highest default priority (`9`), so a fallback rule that must
-see what the image rules leave needs a priority between `defaultImageRule` (`8`)
-and `unsupported` — `8.5`, say — or `unsupported` excluded with
-`priority: null`. Priorities above `DEFAULT_SPLIT_RULE_PRIORITY_LIMIT`
-(`10000`) are reserved for rules that run after every default rule.
+second copy.
+
+### Priority and order
+
+- Rules run in ascending `priority`. The first rule that matches an instance
+  claims it.
+- A priority is any finite number, fractions included. `null` excludes the rule.
+- Two rules with the same priority run in the order of their ids, compared as
+  strings by UTF-16 code unit (the JavaScript `<` operator, so `'Z'` sorts
+  before `'a'`). It is not the order the keys were added in, and not a locale
+  order, so the result never depends on how the rule set was built.
+- `resolveSplitRuleSet` returns the included rules in this order, each with its
+  key as its `id`.
+
+### Where your rule runs among the defaults
+
+The defaults use the priorities `1` to `9` (see
+[The default rules](#the-default-rules)). To place a rule of your own:
+
+| You want the rule to run…                    | Give it a priority                                                          |
+| -------------------------------------------- | --------------------------------------------------------------------------- |
+| before every default rule                    | below `1`, for example `-1` or `0`                                          |
+| between two default rules                    | a number between theirs, for example `7.5` to run after `volume3d`          |
+| as a fallback, on what the image rules leave | between `defaultImageRule` (`8`) and `unsupported` (`9`), for example `8.5` |
+| after every default rule                     | above `DEFAULT_SPLIT_RULE_PRIORITY_LIMIT` (`10000`)                         |
+
+`unsupported` claims every instance that reaches it, so a rule with a priority
+above `9` sees nothing unless you also exclude `unsupported`
+(`unsupported: { ...defaultDisplaySetSplitRules.unsupported, priority: null }`).
+A later release may add default rules with priorities up to `10000`, so do not
+depend on the gap between `9` and `10000` staying empty.
 
 An entry that states an `id` different from its key, or that has a priority
 that is missing, or neither `null` nor a finite number, is an error.
