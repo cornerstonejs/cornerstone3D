@@ -14,9 +14,14 @@ export function asArray<T>(item: T | T[]): T[] {
 
 /**
  * The first element of an array, or the item itself when it is not an array -
- * the value `asArray(item)[0]` gives, without creating an array. Use it to read
- * a single value from an attribute that a source can deliver as a value or as a
- * one-element array.
+ * the value `asArray(item)[0]` gives, without creating an array.
+ *
+ * Use it to read one string or number value safely from data whose format is
+ * not known: naturalized DICOM JSON, a metadata provider, or other plain data.
+ * One source can deliver a multi-valued attribute as a single value
+ * (`'SIGMOID'`) and another source as an array (`['SIGMOID']`). A check such as
+ * `value?.length && value[0]` is not safe for this, because a string also has
+ * a `length`: that check returns the first character (`'S'`) of a string.
  *
  * @param item array or single object/primitive
  * @returns `item[0]` for an array, otherwise `item`
