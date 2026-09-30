@@ -4,6 +4,129 @@ import cache from '../../cache/cache';
 import { getConstructorFromType } from '../../utilities/getBufferConfiguration';
 import VoxelManager from '../../utilities/VoxelManager';
 import { voxelGridsEqual } from '../../utilities/voxelGrid';
+import {
+  recordVolumeGpuTrace,
+  getMaxDirtySlicesPerUpload,
+} from '../../utilities/volumeGpuTrace';
+import getViewportsWithVolumeId from '../../utilities/getViewportsWithVolumeId';
+
+let followUpRenderScheduled = false;
+
+/**
+ * Drain remaining dirty slices on the next frame without multiplying uploads.
+ * Calling every viewport's render() in one rAF lets each one run
+ * update3DFromRaw and upload another `cap` slices (× viewports). One
+ * viewport is enough to advance the shared texture; IMAGE_VOLUME_MODIFIED
+ * still refreshes all viewports on its throttle.
+ */
+function scheduleFollowUpRenderIfDirty(volumeId, hasRemainingDirty) {
+  if (!hasRemainingDirty || !volumeId || followUpRenderScheduled) {
+    return;
+  }
+
+  followUpRenderScheduled = true;
+  requestAnimationFrame(() => {
+    followUpRenderScheduled = false;
+    const viewports = getViewportsWithVolumeId(volumeId);
+    const viewport = viewports[0];
+
+    if (!viewport) {
+      return;
+    }
+
+    try {
+      viewport.render?.();
+    } catch {
+      // viewport may have been destroyed
+    }
+  });
+}
+
+/**
+ * Texture K that should upload first under the dirty-slice cap. Prefers the
+ * viewport whose view plane is most aligned with the volume K axis (axial),
+ * mapped into this texture's depth; falls back to the texture middle.
+ */
+function preferredTextureSlice(volumeId, textureDepth) {
+  const center = Math.floor((textureDepth - 1) / 2);
+  const volume = cache.getVolume(volumeId);
+
+  if (!volume?.imageData || textureDepth <= 1) {
+    return center;
+  }
+
+  const volumeDepth = volume.dimensions?.[2] ?? textureDepth;
+  const direction = volume.direction ?? volume.imageData.getDirection?.();
+  const kDir = direction
+    ? [direction[6], direction[7], direction[8]]
+    : [0, 0, 1];
+  const viewports = getViewportsWithVolumeId(volumeId);
+  let bestVolumeK;
+  let bestAlign = -1;
+
+  for (const viewport of viewports) {
+    try {
+      const camera = viewport.getCamera?.();
+      const focalPoint = camera?.focalPoint;
+      const viewPlaneNormal = camera?.viewPlaneNormal;
+
+      if (!focalPoint || !viewPlaneNormal) {
+        continue;
+      }
+
+      const align = Math.abs(
+        viewPlaneNormal[0] * kDir[0] +
+          viewPlaneNormal[1] * kDir[1] +
+          viewPlaneNormal[2] * kDir[2]
+      );
+      const ijk = volume.imageData.worldToIndex(focalPoint);
+      const volumeK = Math.round(ijk[2]);
+
+      if (!Number.isFinite(volumeK) || align < bestAlign) {
+        continue;
+      }
+
+      bestAlign = align;
+      bestVolumeK = volumeK;
+    } catch {
+      // viewport may lack a camera during teardown
+    }
+  }
+
+  if (bestVolumeK == null || !Number.isFinite(bestVolumeK)) {
+    return center;
+  }
+
+  if (volumeDepth <= 1) {
+    return center;
+  }
+
+  const textureK = Math.round(
+    (bestVolumeK * (textureDepth - 1)) / (volumeDepth - 1)
+  );
+
+  return Math.max(0, Math.min(textureDepth - 1, textureK));
+}
+
+/**
+ * Dirty texture indices ordered nearest-first to `preferred`, so a capped
+ * upload fills the viewed / center plane before the volume ends.
+ */
+function orderedDirtySlices(updatedFrames, preferred) {
+  const dirty = [];
+
+  for (let i = 0; i < updatedFrames.length; i++) {
+    if (updatedFrames[i]) {
+      dirty.push(i);
+    }
+  }
+
+  dirty.sort(
+    (a, b) => Math.abs(a - preferred) - Math.abs(b - preferred) || a - b
+  );
+
+  return dirty;
+}
 
 /**
  * Converts the input data array to the specified data type
@@ -96,7 +219,14 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     publicAPI.bind();
 
     if (volume.isDynamicVolume()) {
+      const start = performance.now();
       updateDynamicVolumeTexture();
+      recordVolumeGpuTrace({
+        kind: 'upload',
+        volumeId,
+        branch: 'dynamic',
+        durationMs: performance.now() - start,
+      });
       return;
     }
 
@@ -215,7 +345,7 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
       if (!frame) {
         try {
           frame = voxelManager.getSliceData({ sliceIndex: k, slicePlane: 2 });
-        } catch (error) {
+        } catch {
           frame = null;
         }
       }
@@ -295,12 +425,24 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
       numberOfComponents: 1,
     });
 
-    for (let slice = 0; slice < depth; slice++) {
-      if (!model.updatedFrames[slice]) {
-        continue;
+    const uploadStart = performance.now();
+    let dirtySlicesUploaded = 0;
+    let branch = derived
+      ? 'derived'
+      : factors
+        ? 'fillSliceByBoxAverage'
+        : 'fillGrid';
+    const preferred = preferredTextureSlice(model.volumeId, depth);
+    const dirtySlices = orderedDirtySlices(model.updatedFrames, preferred);
+    const uploadedSliceIndices = [];
+
+    for (const slice of dirtySlices) {
+      if (dirtySlicesUploaded >= getMaxDirtySlicesPerUpload()) {
+        break;
       }
 
       let data;
+      let sliceBranch = branch;
 
       if (derived) {
         // The composite holds this slice already. A view costs nothing, and
@@ -338,6 +480,9 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
             },
             slab
           );
+          sliceBranch = 'fillGrid';
+        } else if (filled) {
+          sliceBranch = 'fillSliceByBoxAverage';
         }
 
         data = slab.getScalarData();
@@ -369,7 +514,26 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
 
       publicAPI.deactivate();
       model.updatedFrames[slice] = null;
+      dirtySlicesUploaded++;
+      uploadedSliceIndices.push(slice);
+      branch = sliceBranch;
     }
+
+    recordVolumeGpuTrace({
+      kind: 'upload',
+      volumeId: model.volumeId,
+      branch,
+      durationMs: performance.now() - uploadStart,
+      dirtySlicesUploaded,
+      sliceIndex: uploadedSliceIndices[0],
+      preferredSlice: preferred,
+      texSubImageW: width,
+      texSubImageH: height,
+      texSubImageDepth: 1,
+      dims: [width, height, depth],
+    });
+
+    scheduleFollowUpRenderIfDirty(model.volumeId, publicAPI.hasUpdatedFrames());
 
     if (model.generateMipmap) {
       model.context.generateMipmap(model.target);
@@ -386,7 +550,19 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
    */
   const superModified = publicAPI.modified;
   publicAPI.setUpdatedFrame = (frameIndex) => {
+    let dirtyAlready = 0;
+    for (let i = 0; i < model.updatedFrames.length; i++) {
+      if (model.updatedFrames[i]) {
+        dirtyAlready++;
+      }
+    }
     model.updatedFrames[frameIndex] = true;
+    recordVolumeGpuTrace({
+      kind: 'setUpdatedFrame',
+      volumeId: model.volumeId,
+      sliceIndex: frameIndex,
+      dirtyAlready,
+    });
     superModified();
   };
 
@@ -415,53 +591,78 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
   function updateTextureImagesUsingVoxelManager() {
     const volume = cache.getVolume(model.volumeId);
     const imageIds = volume.imageIds;
-    for (let i = 0; i < model.updatedFrames.length; i++) {
-      if (model.updatedFrames[i]) {
-        // find the updated frames
-        const image = cache.getImage(imageIds[i]);
-        if (!image) {
-          continue;
-        }
+    const uploadStart = performance.now();
+    let dirtySlicesUploaded = 0;
+    const preferred = preferredTextureSlice(
+      model.volumeId,
+      model.updatedFrames.length
+    );
+    const dirtySlices = orderedDirtySlices(model.updatedFrames, preferred);
 
-        let data = image.voxelManager.getScalarData();
-        const gl = model.context;
-
-        if (volume.dataType !== data.constructor.name) {
-          data = convertDataType(data, volume.dataType);
-        }
-
-        const [pixData] = publicAPI.updateArrayDataTypeForGL(volume.dataType, [
-          data,
-        ]);
-
-        // Bind the texture
-        publicAPI.bind();
-
-        // Calculate the offset within the 3D texture
-        const zOffset = i;
-
-        // Update the texture sub-image
-        // Todo: need to check other systems if it can handle it
-        gl.texSubImage3D(
-          model.target, // target
-          0, // level
-          0, // xoffset
-          0, // yoffset
-          zOffset, // zoffset
-          model.width, // width
-          model.height, // height
-          1, // depth (1 slice)
-          model.format, // format
-          model.openGLDataType, // type
-          pixData // data
-        );
-
-        // Unbind the texture
-        publicAPI.deactivate();
-        // Reset the updated flag
-        model.updatedFrames[i] = null;
+    for (const i of dirtySlices) {
+      if (dirtySlicesUploaded >= getMaxDirtySlicesPerUpload()) {
+        break;
       }
+
+      // find the updated frames
+      const image = cache.getImage(imageIds[i]);
+      if (!image) {
+        continue;
+      }
+
+      let data = image.voxelManager.getScalarData();
+      const gl = model.context;
+
+      if (volume.dataType !== data.constructor.name) {
+        data = convertDataType(data, volume.dataType);
+      }
+
+      const [pixData] = publicAPI.updateArrayDataTypeForGL(volume.dataType, [
+        data,
+      ]);
+
+      // Bind the texture
+      publicAPI.bind();
+
+      // Calculate the offset within the 3D texture
+      const zOffset = i;
+
+      // Update the texture sub-image
+      // Todo: need to check other systems if it can handle it
+      gl.texSubImage3D(
+        model.target, // target
+        0, // level
+        0, // xoffset
+        0, // yoffset
+        zOffset, // zoffset
+        model.width, // width
+        model.height, // height
+        1, // depth (1 slice)
+        model.format, // format
+        model.openGLDataType, // type
+        pixData // data
+      );
+
+      // Unbind the texture
+      publicAPI.deactivate();
+      // Reset the updated flag
+      model.updatedFrames[i] = null;
+      dirtySlicesUploaded++;
     }
+
+    recordVolumeGpuTrace({
+      kind: 'upload',
+      volumeId: model.volumeId,
+      branch: 'voxelManager',
+      durationMs: performance.now() - uploadStart,
+      dirtySlicesUploaded,
+      texSubImageW: model.width,
+      texSubImageH: model.height,
+      texSubImageDepth: 1,
+      dims: [model.width, model.height, model.depth],
+    });
+
+    scheduleFollowUpRenderIfDirty(model.volumeId, publicAPI.hasUpdatedFrames());
 
     if (model.generateMipmap) {
       model.context.generateMipmap(model.target);

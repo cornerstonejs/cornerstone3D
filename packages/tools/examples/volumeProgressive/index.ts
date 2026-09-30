@@ -11,6 +11,7 @@ import {
   imageLoadPoolManager,
   imageLoader,
   metaData,
+  getRenderingCapabilities,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -19,6 +20,7 @@ import {
   getLocalUrl,
   addDropdownToToolbar,
   addGpuCapabilityProfileDropdown,
+  addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import * as cornerstoneAdapters from '@cornerstonejs/adapters';
@@ -77,7 +79,7 @@ const viewportIds = [
  * alternate paths of the progressive configurations exist on that server only.
  */
 const seriesOptions = {
-  'CT (progressive configurations)': {
+  'CT body 174 images of 512 x 512': {
     StudyInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125113417.1',
     SeriesInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125113545.4',
     // The alternate frame paths that the JLS and the lossy configurations need
@@ -92,6 +94,14 @@ const seriesOptions = {
   // this series comes from the code and not from the acquisition. This series
   // is the test data of commit 9, which gives a derived representation that
   // follows the load.
+  //
+  // volumeGpuTrace help (disabled for now):
+  // // To trace per-slice GPU cost while this loads, open with
+  // // ?volumeGpuTrace=1 (and optionally ?volumeGpuTraceSkipNearby=1), or:
+  // //   import { enableVolumeGpuTrace, dumpVolumeGpuTrace, printVolumeGpuTracePlaybook } from '@cornerstonejs/core';
+  // //   enableVolumeGpuTrace({ skipNearbyFrames: true });
+  // //   printVolumeGpuTracePlaybook();
+  // //   // after partial load: dumpVolumeGpuTrace();
   'CT body 2464 images of 512 x 512': {
     StudyInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.99.1071.24993177073256607564948872275593',
@@ -133,6 +143,25 @@ const seriesOptions = {
     wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   },
 };
+
+/** Logs columns × rows from the first image's plane metadata (not slice count). */
+function logSeriesDimensions(imageIds: string[]) {
+  const imageId = imageIds[0];
+  if (!imageId) {
+    console.warn('diag series dimensions: no image ids');
+    return;
+  }
+
+  const plane = metaData.get('imagePlaneModule', imageId) as
+    | { columns?: number; rows?: number }
+    | undefined;
+  const columns = plane?.columns;
+  const rows = plane?.rows;
+
+  console.log(
+    `diag series dimensions: ${columns} x ${rows} (${imageIds.length} images)`
+  );
+}
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -368,10 +397,11 @@ function nearbyFramesOfDecimation(decimate) {
 /**
  * The interleaved path, with two changes for a volume of many images.
  *
- * `initialImages` fetches the middle image and the two images beside it, and
- * then the first and the last image. A viewport opens on the middle of the
- * volume, and a reduced texture takes the box average of several frames there,
- * so one middle image alone gives that view almost nothing.
+ * `initialImages` fetches the middle image and the two images beside it.
+ * A viewport opens on the middle of the volume, and a reduced texture takes
+ * the box average of several frames there, so one middle image alone gives
+ * that view almost nothing. First/last are left to later stages so they do
+ * not compete with the axial plane under the capped GPU upload.
  *
  * `coarse32` then retrieves one image in 32 and replicates each one to the 31
  * images around it, so the whole volume holds data once 1/32 of the images
@@ -390,7 +420,7 @@ function interleavedConfigurationOf(imageCount) {
     stages: [
       {
         ...initialImages,
-        positions: [middle, middle - 1, middle + 1, 0, -1],
+        positions: [middle, middle - 1, middle + 1],
       },
       {
         id: 'coarse32',
@@ -561,8 +591,9 @@ async function run() {
   // The CT series is the default, because it renders with the window that
   // this example sets. Select another series to change what the load buttons
   // fetch; the change applies at the next load.
-  let selectedSeries = seriesOptions['CT (progressive configurations)'];
+  let selectedSeries = seriesOptions['CT body 174 images of 512 x 512'];
   let imageIdsCT = await createImageIdsAndCacheMetaData(selectedSeries);
+  logSeriesDimensions(imageIdsCT);
 
   addDropdownToToolbar({
     id: 'series',
@@ -570,11 +601,12 @@ async function run() {
     container: loaders,
     options: {
       map: new Map(Object.entries(seriesOptions)),
-      defaultValue: 'CT (progressive configurations)',
+      defaultValue: 'CT body 174 images of 512 x 512',
     },
     onSelectedValueChange: async (_key, value) => {
       selectedSeries = value;
       imageIdsCT = await createImageIdsAndCacheMetaData(value);
+      logSeriesDimensions(imageIdsCT);
       getOrCreateTiming('loadingStatus').innerText =
         `Selected ${imageIdsCT.length} images. Press a load button.`;
     },
@@ -590,6 +622,53 @@ async function run() {
         `GPU class ${profile.id}. Press a load button to apply it.`;
     },
   });
+
+  // The GPU-class drop down is an application statement; this button shows what
+  // getRenderingCapabilities() actually probed (WebGL level, formats, renderer).
+  const probePanel = document.createElement('div');
+  probePanel.style.display = 'none';
+  probePanel.style.clear = 'both';
+  probePanel.style.maxWidth = '48em';
+  probePanel.style.margin = '0.5em 0';
+  probePanel.style.padding = '0.5em';
+  probePanel.style.background = '#f5f5f5';
+  probePanel.style.fontSize = '12px';
+
+  const probeInstructions = document.createElement('p');
+  probeInstructions.style.margin = '0 0 0.75em';
+  probeInstructions.style.lineHeight = '1.4';
+  probeInstructions.innerHTML =
+    'Please email these results to ' +
+    '<a href="mailto:martin.bellehumeur@radicalimaging.com">martin.bellehumeur@radicalimaging.com</a>. ' +
+    'Include the <strong>device manufacturer and model</strong> ' +
+    '(e.g. laptop / tablet / desktop make and model), and state whether ' +
+    '<strong>any loading failed to complete</strong> (series, stage, or segmentation).';
+
+  const probeOutput = document.createElement('pre');
+  probeOutput.style.margin = '0';
+  probeOutput.style.maxHeight = '20em';
+  probeOutput.style.overflow = 'auto';
+  probeOutput.style.whiteSpace = 'pre-wrap';
+
+  probePanel.appendChild(probeInstructions);
+  probePanel.appendChild(probeOutput);
+
+  addButtonToToolbar({
+    id: 'viewRenderingCapabilitiesProbe',
+    title: 'View GPU probe',
+    container: loaders,
+    onClick: () => {
+      const caps = getRenderingCapabilities();
+      const text = JSON.stringify(caps, null, 2);
+      const wasVisible = probePanel.style.display !== 'none';
+
+      probeOutput.textContent = text;
+      probePanel.style.display = wasVisible ? 'none' : 'block';
+      console.log('diag rendering capabilities:', caps);
+    },
+  });
+
+  loaders.appendChild(probePanel);
 
   // Instantiate a rendering engine
   const renderingEngine = new RenderingEngine(renderingEngineId);

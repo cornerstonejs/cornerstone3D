@@ -3,7 +3,7 @@ import ImageVolume, {
   FULL_RESOLUTION_TEXTURE_SET,
 } from '../src/cache/classes/ImageVolume';
 import volumeTextureStore from '../src/cache/volumeTextureStore';
-import { VoxelManager } from '../src/utilities';
+import VoxelManager from '../src/utilities/VoxelManager';
 
 // The named texture sets on `ImageVolume`, which is MR-API-IV-2, MR-API-IV-3
 // and MR-API-IV-6 to MR-API-IV-8 of cornerstone3D issue #2921.
@@ -124,17 +124,18 @@ describe('ImageVolume — the constructor builds no texture', () => {
 });
 
 describe('ImageVolume — the marks of a frame', () => {
-  it('builds no pool when the volume holds no texture', () => {
+  it('builds no pool when the volume holds no texture', async () => {
     const volume = makeVolume();
 
     volume.markFrameDirty(1);
+    await Promise.resolve();
     volume.invalidate();
     volume.modified();
 
     expect(volume.vtkOpenGLTexture).toBeUndefined();
   });
 
-  it('marks the frame in every texture whose grid covers it', () => {
+  it('marks the frame in every texture whose grid covers it', async () => {
     const volume = makeVolume();
 
     volume.getFullResolutionTexture();
@@ -150,6 +151,7 @@ describe('ImageVolume — the marks of a frame', () => {
     derived.dirty = [];
 
     volume.markFrameDirty(2);
+    await Promise.resolve();
 
     expect(primary.dirty).toEqual([
       [

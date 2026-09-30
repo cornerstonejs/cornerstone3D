@@ -1226,8 +1226,14 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
       if (!image?.voxelManager) {
         if (!warnedMissingImages.has(imageId)) {
           warnedMissingImages.add(imageId);
-          log.warn(`Image not found for imageId: ${imageId}`);
+          // Expected while a streaming volume is still loading; once per imageId.
+          log.debug(`Image not found for imageId: ${imageId}`);
         }
+        // Cache the miss so reduceByBoxStatistic / getAtIJK do not call
+        // cache.getImage once per voxel of an unloaded sibling slice (~W×H
+        // lookups per refresh). invalidateSlice clears this when the frame
+        // arrives.
+        sliceVoxelManagers[sliceIndex] = null;
         return null;
       }
 

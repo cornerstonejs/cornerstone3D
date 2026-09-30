@@ -16,7 +16,7 @@ import {
 import { resolveVolumeTexture } from '../src/RenderingEngine/helpers/resolveVolumeTexture';
 import ImageVolume from '../src/cache/classes/ImageVolume';
 import volumeTextureStore from '../src/cache/volumeTextureStore';
-import { VoxelManager } from '../src/utilities';
+import VoxelManager from '../src/utilities/VoxelManager';
 import {
   getGpuCapabilityProfile,
   setActiveGpuCapabilityProfile,
@@ -121,6 +121,78 @@ describe('the default provider builds the strategies', () => {
     expect(strategies[0].bindings()[0].texture.getGrid().dimensions).toEqual([
       256, 256, 8,
     ]);
+  });
+
+  it('reduces only depth for a volume exceeding the 2048 edge limit', () => {
+    // >2048 slices are NOT split into multiple GPU textures. The default
+    // strategy box-averages k into one reduced full-extent texture.
+    const depth = 4096;
+    const dims = [64, 64, depth];
+    const oversize = new ImageVolume({
+      volumeId: 'oversize-k',
+      metadata: { FrameOfReferenceUID: 'for-1' },
+      dimensions: dims,
+      spacing: [1, 1, 1],
+      origin: [0, 0, 0],
+      direction: identityDirection,
+      imageIds: Array.from({ length: depth }, (_, k) => `image:oversize:${k}`),
+      dataType: 'Uint16Array',
+      numberOfComponents: 1,
+      voxelManager: VoxelManager.createScalarVolumeVoxelManager({
+        dimensions: dims,
+        scalarData: new Uint16Array(1),
+        numberOfComponents: 1,
+      }),
+    });
+
+    const strategies = defaultVolumeStrategyProvider(context(oversize, 'high'));
+
+    expect(strategies).toHaveLength(1);
+    expect(strategies[0].name).toBe('reduced-1x1x2/full-extent/average');
+
+    const set = oversize.getTextureSet('reduced-1x1x2/full-extent/average');
+    expect(set).toBeDefined();
+    expect(set.members()).toHaveLength(1);
+    expect(set.coverage).toBe('full-extent');
+    expect(strategies[0].bindings()[0].texture.getGrid().dimensions).toEqual([
+      64, 64, 2048,
+    ]);
+
+    const derived = oversize
+      .getVoxelRepresentations()
+      .find((one) => one.derivedFrom);
+    expect(derived).toBeDefined();
+    expect(derived.grid.dimensions).toEqual([64, 64, 2048]);
+  });
+
+  it('keeps full-resolution for depth 2000 under the 2048 edge limit', () => {
+    const depth = 2000;
+    const dims = [64, 64, depth];
+    const under = new ImageVolume({
+      volumeId: 'under-k',
+      metadata: { FrameOfReferenceUID: 'for-1' },
+      dimensions: dims,
+      spacing: [1, 1, 1],
+      origin: [0, 0, 0],
+      direction: identityDirection,
+      imageIds: Array.from({ length: depth }, (_, k) => `image:under:${k}`),
+      dataType: 'Uint16Array',
+      numberOfComponents: 1,
+      voxelManager: VoxelManager.createScalarVolumeVoxelManager({
+        dimensions: dims,
+        scalarData: new Uint16Array(1),
+        numberOfComponents: 1,
+      }),
+    });
+
+    const strategies = defaultVolumeStrategyProvider(context(under, 'high'));
+
+    expect(strategies.map((s) => s.name)).toEqual([
+      'full-resolution/full-extent',
+    ]);
+    expect(
+      under.getTextureSet('full-resolution/full-extent').members()
+    ).toHaveLength(1);
   });
 
   it('gives no full-resolution strategy when the profile cannot hold it', () => {

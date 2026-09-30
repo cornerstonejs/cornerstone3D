@@ -158,6 +158,7 @@ const getScalingDescriptor = (viewport: IViewport, targetId?: string) =>
   _getScalingDescriptor(viewport, targetId, cache.getVolume);
 
 export * from './isEqual';
+// export * from './volumeGpuTrace'; // disabled: temporary GPU upload diag
 
 export {
   FrameRange,

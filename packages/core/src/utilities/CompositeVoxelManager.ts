@@ -34,6 +34,7 @@ import {
   volumeOfBounds,
   voxelGridKey,
 } from './voxelGrid';
+import { recordVolumeGpuTrace } from './volumeGpuTrace';
 
 /**
  * One sub voxel manager of a composite, with the grid and the statistic that
@@ -697,6 +698,7 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
     frameIndex,
     reduction,
     source,
+    refreshDerived = true,
   }: {
     grid: VoxelGrid;
     voxelManager?: IVoxelManager<T>;
@@ -708,6 +710,12 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
     reduction?: VoxelReduction;
     /** Where this data came from. A direct load by default. */
     source?: VoxelDataSource;
+    /**
+     * When false, records the delivery but does not refresh derived
+     * representations. Used by ImageVolume to coalesce many frame arrivals
+     * into one reduce pass. Defaults to true.
+     */
+    refreshDerived?: boolean;
   }): VoxelRepresentation<T> {
     const existing = this.getRepresentation(grid, statistic);
     const production = {
@@ -747,7 +755,10 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
     }
 
     this.setDeliveredQuality(representation, deliveredBounds, quality);
-    this.refreshDerivedFrames(deliveredBounds, grid, statistic);
+
+    if (refreshDerived) {
+      this.refreshDerivedFrames(deliveredBounds, grid, statistic);
+    }
 
     return representation;
   }
@@ -775,6 +786,10 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
     grid: VoxelGrid,
     statistic: VoxelStatistic = VoxelStatistics.Average
   ): number {
+    const start =
+      typeof performance !== 'undefined' && performance.now
+        ? performance.now()
+        : Date.now();
     const delivered = this.getRepresentation(grid, statistic);
     let refreshed = 0;
 
@@ -791,6 +806,16 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
         refreshed++;
       }
     }
+
+    const end =
+      typeof performance !== 'undefined' && performance.now
+        ? performance.now()
+        : Date.now();
+    recordVolumeGpuTrace({
+      kind: 'refreshDerived',
+      durationMs: end - start,
+      mappedSlices: refreshed,
+    });
 
     return refreshed;
   }

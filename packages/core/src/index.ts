@@ -207,6 +207,33 @@ import {
   getRenderingCapabilities,
   detectRenderingCapabilities,
 } from './utilities/renderingCapabilities';
+export {
+  enableVolumeGpuTrace,
+  disableVolumeGpuTrace,
+  resetVolumeGpuTrace,
+  isVolumeGpuTraceEnabled,
+  shouldSkipNearbyFramesForTrace,
+  recordVolumeGpuTrace,
+  getVolumeGpuTraceEvents,
+  summarizeVolumeGpuTrace,
+  dumpVolumeGpuTrace,
+  printVolumeGpuTracePlaybook,
+  getVolumeGpuTracePriorHypothesis,
+  setVolumeGpuExperimentOptions,
+  getVolumeGpuExperimentOptions,
+  getMaxDirtySlicesPerUpload,
+  getVolumeModifiedThrottleMs,
+  DEFAULT_MAX_DIRTY_SLICES_PER_UPLOAD,
+  DEFAULT_VOLUME_MODIFIED_THROTTLE_MS,
+} from './utilities/volumeGpuTrace';
+export type {
+  VolumeGpuTraceEvent,
+  VolumeGpuTraceKind,
+  VolumeGpuTraceOptions,
+  VolumeGpuTraceSummary,
+  VolumeGpuUploadBranch,
+  VolumeGpuExperimentOptions,
+} from './utilities/volumeGpuTrace';
 
 // Classes
 import Settings from './Settings';

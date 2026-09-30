@@ -27,6 +27,14 @@ export type BoxStatisticSource<T extends BoxStatisticValue = number> = {
   dimensions: Point3;
   /** Reads one source voxel. */
   getAtIJK: (i: number, j: number, k: number) => T;
+  /**
+   * Optional fast path: one XY slice as a contiguous array. Image-volume
+   * voxel managers supply this from the cached image scalar data.
+   */
+  getSliceData?: (args: {
+    sliceIndex: number;
+    slicePlane: number;
+  }) => ArrayLike<number> | undefined;
 };
 
 /**
@@ -279,6 +287,131 @@ function boxAverageAtIJK<T extends BoxStatisticValue = number>(
 }
 
 /**
+ * Fast path: average whole XY slices when only K is reduced (`[1,1,Fk]`).
+ * Image-volume sources expose `getSliceData` from cached image scalars.
+ *
+ * @returns written count, or `undefined` when this path does not apply
+ */
+function reduceAverageAlongKBySlices<T extends BoxStatisticValue = number>(
+  source: BoxStatisticSource<T>,
+  reduction: VoxelGridReduction,
+  target: BoxStatisticTarget<T>,
+  { round }: { round: boolean }
+): number | undefined {
+  if (
+    typeof (source as { _getSliceData?: unknown })._getSliceData !==
+      'function' &&
+    typeof source.getSliceData !== 'function'
+  ) {
+    return undefined;
+  }
+
+  const resolved = resolveReduction(source, reduction);
+  const [factorI, factorJ, factorK] = resolved.factors;
+
+  if (factorI !== 1 || factorJ !== 1 || factorK < 1) {
+    return undefined;
+  }
+
+  const { sourceOffset, sourceEnd, dimensions: reducedDims } = resolved;
+  const [sourceWidth] = source.dimensions;
+  const [reducedWidth, reducedHeight, reducedDepth] = reducedDims;
+  const [targetI, targetJ, targetK] = reduction.targetOffset ?? [0, 0, 0];
+  const planeLength = reducedWidth * reducedHeight;
+
+  if (
+    sourceEnd[0] - sourceOffset[0] !== reducedWidth ||
+    sourceEnd[1] - sourceOffset[1] !== reducedHeight
+  ) {
+    return undefined;
+  }
+
+  // Prefer `_getSliceData` so a missing image returns undefined instead of the
+  // public `getSliceData` fallback that composes the plane voxel by voxel.
+  const getDirectSlice = (
+    source as {
+      _getSliceData?: (args: {
+        sliceIndex: number;
+        slicePlane: number;
+      }) => ArrayLike<number> | undefined;
+    }
+  )._getSliceData?.bind(source);
+
+  let written = 0;
+
+  for (let rk = 0; rk < reducedDepth; rk++) {
+    const firstK = sourceOffset[2] + rk * factorK;
+    const lastK = Math.min(firstK + factorK, sourceEnd[2]);
+    const accumulator = new Float64Array(planeLength);
+    const counts = new Float64Array(planeLength);
+    let read = 0;
+
+    for (let k = firstK; k < lastK; k++) {
+      let frame: ArrayLike<number> | undefined;
+
+      try {
+        frame = getDirectSlice
+          ? getDirectSlice({ sliceIndex: k, slicePlane: 2 })
+          : source.getSliceData!({ sliceIndex: k, slicePlane: 2 });
+      } catch {
+        frame = undefined;
+      }
+
+      if (
+        !frame ||
+        frame.length < sourceWidth * (sourceOffset[1] + reducedHeight)
+      ) {
+        continue;
+      }
+
+      read++;
+
+      for (let j = 0; j < reducedHeight; j++) {
+        const sourceRow = (sourceOffset[1] + j) * sourceWidth + sourceOffset[0];
+        const targetRow = j * reducedWidth;
+
+        for (let i = 0; i < reducedWidth; i++) {
+          const value = frame[sourceRow + i];
+
+          if (!Number.isFinite(value)) {
+            continue;
+          }
+
+          accumulator[targetRow + i] += value;
+          counts[targetRow + i] += 1;
+        }
+      }
+    }
+
+    if (!read) {
+      continue;
+    }
+
+    for (let j = 0; j < reducedHeight; j++) {
+      for (let i = 0; i < reducedWidth; i++) {
+        const index = j * reducedWidth + i;
+        const count = counts[index];
+
+        if (!count) {
+          continue;
+        }
+
+        let value = accumulator[index] / count;
+
+        if (round) {
+          value = Math.round(value);
+        }
+
+        target.setAtIJK(targetI + i, targetJ + j, targetK + rk, value as T);
+        written++;
+      }
+    }
+  }
+
+  return written;
+}
+
+/**
  * Writes the statistic of each box of a region of the source into the target.
  *
  * The target holds the dimensions that `reducedDimensions` gives for the region
@@ -288,6 +421,9 @@ function boxAverageAtIJK<T extends BoxStatisticValue = number>(
  *
  * The function builds ONE accumulator for each component, and it resets those
  * accumulators for each box.
+ *
+ * When only the k axis is reduced and the source exposes `getSliceData`, the
+ * average path reads whole XY slices instead of calling `getAtIJK` per voxel.
  *
  * @param source - the data that the reduction reads
  * @param reduction - the box size of each axis, and the region of the source
@@ -302,6 +438,20 @@ function reduceByBoxStatistic<T extends BoxStatisticValue = number>(
   options: BoxStatisticOptions = {}
 ): number {
   const { round = true, statistic = VoxelStatistics.Average } = options;
+
+  if (statistic === VoxelStatistics.Average) {
+    const sliceWritten = reduceAverageAlongKBySlices(
+      source,
+      reduction,
+      target,
+      { round }
+    );
+
+    if (sliceWritten !== undefined) {
+      return sliceWritten;
+    }
+  }
+
   const accumulators = createAccumulators(statistic);
   const resolved = resolveReduction(source, reduction);
   const { dimensions } = resolved;

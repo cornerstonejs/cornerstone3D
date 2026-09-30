@@ -21,6 +21,10 @@ import {
 import ViewportType from '../enums/ViewportType';
 import eventTarget from '../eventTarget';
 import { getShouldUseCPURendering } from '../init';
+import {
+  getVolumeModifiedThrottleMs,
+  recordVolumeGpuTrace,
+} from '../utilities/volumeGpuTrace';
 import type {
   ActorEntry,
   ColormapPublic,
@@ -120,6 +124,9 @@ abstract class BaseVolumeViewport extends Viewport {
   protected initialViewUp: Point3;
   protected viewportProperties: VolumeViewportProperties = {};
   private volumeIds = new Set<string>();
+  private _volumeModifiedTimeoutId: ReturnType<typeof setTimeout> | undefined;
+  private _lastVolumeModifiedRenderTime = 0;
+  private _removeVolumeModifiedListener: (() => void) | undefined;
 
   constructor(props: ViewportInput) {
     super(props);
@@ -154,6 +161,7 @@ abstract class BaseVolumeViewport extends Viewport {
     }
 
     this.initializeVolumeNewImageEventDispatcher();
+    this.initializeVolumeModifiedRenderDispatcher();
   }
 
   static get useCustomRenderingPipeline(): boolean {
@@ -258,6 +266,114 @@ abstract class BaseVolumeViewport extends Viewport {
       Events.ELEMENT_DISABLED,
       volumeNewImageCleanUpBound
     );
+  }
+
+  /**
+   * Requests a throttled render when a streaming volume that this viewport
+   * holds receives new frames. Legacy VolumeViewports otherwise never hear
+   * IMAGE_VOLUME_MODIFIED (GenericViewport paths do), so dirties piled up and
+   * rare paints uploaded hundreds of texture slices at once.
+   */
+  private initializeVolumeModifiedRenderDispatcher(): void {
+    const handleVolumeModified = (evt: Event) => {
+      const detail = (evt as CustomEvent<{ volumeId?: string }>).detail;
+      const volumeId = detail?.volumeId;
+
+      if (!volumeId || !this.volumeIds.has(volumeId) || this.isDisabled) {
+        return;
+      }
+
+      this.scheduleVolumeModifiedRender(volumeId);
+    };
+
+    eventTarget.addEventListener(
+      Events.IMAGE_VOLUME_MODIFIED,
+      handleVolumeModified
+    );
+
+    const cleanUp = (evt: Event) => {
+      const { viewportId } = (evt as CustomEvent<{ viewportId?: string }>)
+        .detail;
+
+      if (viewportId !== this.id) {
+        return;
+      }
+
+      eventTarget.removeEventListener(
+        Events.IMAGE_VOLUME_MODIFIED,
+        handleVolumeModified
+      );
+      eventTarget.removeEventListener(Events.ELEMENT_DISABLED, cleanUp);
+
+      if (this._volumeModifiedTimeoutId !== undefined) {
+        clearTimeout(this._volumeModifiedTimeoutId);
+        this._volumeModifiedTimeoutId = undefined;
+      }
+
+      this._removeVolumeModifiedListener = undefined;
+    };
+
+    eventTarget.addEventListener(Events.ELEMENT_DISABLED, cleanUp);
+    this._removeVolumeModifiedListener = () => {
+      cleanUp({ detail: { viewportId: this.id } } as CustomEvent);
+    };
+  }
+
+  private scheduleVolumeModifiedRender(volumeId: string): void {
+    const throttleMs = getVolumeModifiedThrottleMs();
+    const run = () => {
+      this._volumeModifiedTimeoutId = undefined;
+      this._lastVolumeModifiedRenderTime = performance.now();
+      this.renderVolumeModified(volumeId);
+    };
+
+    if (throttleMs <= 0) {
+      run();
+      return;
+    }
+
+    if (this._volumeModifiedTimeoutId !== undefined) {
+      return;
+    }
+
+    const remainingDelay = Math.max(
+      0,
+      throttleMs - (performance.now() - this._lastVolumeModifiedRenderTime)
+    );
+
+    if (remainingDelay === 0) {
+      run();
+      return;
+    }
+
+    this._volumeModifiedTimeoutId = setTimeout(run, remainingDelay);
+  }
+
+  private renderVolumeModified(volumeId: string): void {
+    if (this.isDisabled) {
+      return;
+    }
+
+    const actors = this.getActors();
+
+    for (const entry of actors) {
+      const referencedId = entry.referencedId ?? entry.uid;
+
+      if (referencedId !== volumeId && entry.uid !== volumeId) {
+        continue;
+      }
+
+      const mapper = entry.actor?.getMapper?.();
+
+      mapper?.modified?.();
+    }
+
+    recordVolumeGpuTrace({
+      kind: 'requestRender',
+      volumeId,
+    });
+
+    this.render();
   }
 
   /**
@@ -1305,7 +1421,7 @@ abstract class BaseVolumeViewport extends Viewport {
     }
   }
 
-  public setSampleDistanceMultiplier(multiplier: number): void {}
+  public setSampleDistanceMultiplier(_multiplier: number): void {}
 
   /**
    * Retrieve the viewport default properties
@@ -2518,7 +2634,7 @@ abstract class BaseVolumeViewport extends Viewport {
    * allow using it as a parameter key.
    */
   public getViewReferenceId(specifier: ViewReferenceSpecifier = {}): string {
-    let { volumeId, sliceIndex: sliceIndex } = specifier;
+    let { volumeId, sliceIndex } = specifier;
     if (!volumeId) {
       const actorEntries = this.getActors();
       if (!actorEntries) {
