@@ -1,11 +1,15 @@
 import {
   RenderingEngine,
   Enums,
+  imageLoader,
+  metaData,
   utilities,
   type Types,
 } from '@cornerstonejs/core';
+import dicomImageLoader from '@cornerstonejs/dicom-image-loader';
 import {
   createDisplaySetSplitRules,
+  Enums as metadataEnums,
   rawDisplaySetSelector,
   type IDisplaySet,
   type NaturalizedInstance,
@@ -25,6 +29,7 @@ import {
   applyCustomizationUpdate,
   hasUpdateCommand,
 } from '../../../../utils/demo/helpers';
+import { convertMultiframeImageIds } from '../../../../utils/demo/helpers/convertMultiframeImageIds';
 
 // This is for debugging purposes
 console.warn(
@@ -62,7 +67,9 @@ setTitleAndDescription(
     'same selector can be used by a server. Untick a rule to see what the ' +
     'series splits into without it, add your own rules as JSON (keyed by rule ' +
     'id, with a priority: below 0 runs before the standard rules), or load a rule ' +
-    'set the server hosts. Every rule shown is read from the selector itself, ' +
+    'set the server hosts. Upload local DICOM files or a study folder to split ' +
+    'your own data: each series in the upload is added to the Series list. ' +
+    'Every rule shown is read from the selector itself, ' +
     'including its explanation. Each display set that comes out gets its own ' +
     'viewport: a 2x2 MPR + 3D layout when the display set is volume-capable, ' +
     'otherwise a single viewport of its requested type. Every viewport carries ' +
@@ -103,6 +110,11 @@ type SourceSeries = {
   SeriesInstanceUID: string;
   /** Overrides the example-wide root, for a series hosted somewhere else. */
   wadoRsRoot?: string;
+  /**
+   * A series the user uploaded: its `dicomfile:` imageIds, already loaded, so
+   * the metadata the split reads is in the cache. Nothing is fetched for it.
+   */
+  imageIds?: string[];
 };
 
 const SOURCE_SERIES: SourceSeries[] = [
@@ -304,6 +316,51 @@ const SAMPLE_SNIPPETS: Record<string, string> = {
           'PatientOrientation',
         ],
         customAttributes: { preset: 'mammoView' },
+      },
+    },
+    null,
+    2
+  ),
+  // The raw-selector form of OHIF's `dwiByBValue` URL customization
+  // (platform/app/public/customizations/split/dwiByBValue.jsonc), without the
+  // customization `$merge` wrapper.
+  'DWI: one display set per b-value': JSON.stringify(
+    {
+      dwiByBValue: {
+        priority: -1,
+        description:
+          'Diffusion MR: one display set for each b-value. Images without ' +
+          'DiffusionBValue (a b=0 set that carries its b-value only in a ' +
+          'private tag, or a trace / ADC set) fall through to the standard ' +
+          'rules and form a display set of their own.',
+        viewportTypes: ['stack'],
+        series: [
+          {
+            name: 'isDiffusion',
+            gate: { attribute: 'Modality', equals: 'MR' },
+            scope: 'some',
+            when: { attribute: 'DiffusionBValue', exists: true },
+          },
+        ],
+        matches: {
+          all: [
+            { seriesFact: 'isDiffusion' },
+            { classifier: 'image' },
+            { attribute: 'DiffusionBValue', exists: true },
+          ],
+        },
+        groupBy: [
+          'SeriesInstanceUID',
+          { attribute: 'DiffusionBValue', number: true },
+        ],
+        compareInstances: { attribute: 'SliceLocation', number: true },
+        customAttributes: {
+          fromFirstInstance: {
+            SeriesDescription: {
+              template: '{SeriesDescription} b={DiffusionBValue}',
+            },
+          },
+        },
       },
     },
     null,
@@ -586,20 +643,164 @@ function labelled(labelText: string, control: HTMLElement) {
   return wrapper;
 }
 
+/**
+ * Options are keyed by position in SOURCE_SERIES, not by SeriesInstanceUID:
+ * an uploaded series may share its UID with a hosted one (the same study,
+ * downloaded), and the two must stay separately selectable.
+ */
 const seriesSelect = document.createElement('select');
-for (const series of SOURCE_SERIES) {
+function addSeriesOption(series: SourceSeries) {
   const option = document.createElement('option');
-  option.value = series.SeriesInstanceUID;
+  option.value = String(SOURCE_SERIES.indexOf(series));
   option.textContent = series.label;
   seriesSelect.appendChild(option);
 }
+SOURCE_SERIES.forEach(addSeriesOption);
 seriesSelect.onchange = () => {
-  currentSeries =
-    SOURCE_SERIES.find((s) => s.SeriesInstanceUID === seriesSelect.value) ??
-    SOURCE_SERIES[0];
+  currentSeries = SOURCE_SERIES[Number(seriesSelect.value)] ?? SOURCE_SERIES[0];
   void loadSeries();
 };
 sourceRow.appendChild(labelled('Series', seriesSelect));
+
+/** True when the file carries the DICOM Part 10 marker, `DICM` at byte 128. */
+async function hasPart10Preamble(file: File): Promise<boolean> {
+  const marker = new Uint8Array(await file.slice(128, 132).arrayBuffer());
+  return String.fromCharCode(...marker) === 'DICM';
+}
+
+/**
+ * Loads each file through the `dicomfile:` loader and returns the imageIds of
+ * the files that parsed. Loading the image is what parses the file and caches
+ * its naturalized metadata — the same data the split reads for a hosted
+ * series. A file that is not DICOM (a stray JPEG, a DICOMDIR) fails to load
+ * and is counted, not fatal: a downloaded study folder often holds a few.
+ */
+async function loadLocalFiles(
+  files: File[]
+): Promise<{ imageIds: string[]; skipped: string[] }> {
+  const imageIds: string[] = [];
+  const skipped: string[] = [];
+
+  for (const [index, file] of files.entries()) {
+    setStatus(`Reading ${index + 1} / ${files.length}: ${file.name}…`);
+    // Screened before the load, not only by its failure: a failed
+    // loadAndCacheImage also rejects the image cache's own copy of the
+    // promise, which nothing handles, so every stray file would print an
+    // uncaught error even though it is skipped here.
+    if (!(await hasPart10Preamble(file))) {
+      skipped.push(file.name);
+      continue;
+    }
+    const imageId = dicomImageLoader.wadouri.fileManager.add(file);
+    try {
+      await imageLoader.loadAndCacheImage(imageId);
+      imageIds.push(imageId);
+    } catch {
+      skipped.push(file.name);
+    }
+  }
+
+  return { imageIds, skipped };
+}
+
+/**
+ * Adds uploaded DICOM files to the Series list, one entry per
+ * SeriesInstanceUID, and opens the first new series.
+ *
+ * Files are grouped by series because the split runs one series at a time,
+ * as it does for a hosted series; a whole study folder therefore becomes
+ * several entries, one per series in it.
+ */
+async function addUploadedFiles(fileList: FileList | null) {
+  const files = [...(fileList ?? [])];
+  if (!files.length) {
+    return;
+  }
+
+  const { imageIds, skipped } = await loadLocalFiles(files);
+  const bySeries = new Map<string, string[]>();
+  for (const imageId of imageIds) {
+    const instance = metaData.get(
+      metadataEnums.MetadataModules.NATURALIZED,
+      imageId
+    ) as NaturalizedInstance | undefined;
+    const seriesUid = String(instance?.SeriesInstanceUID ?? 'unknown');
+    bySeries.set(seriesUid, [...(bySeries.get(seriesUid) ?? []), imageId]);
+  }
+
+  const added: SourceSeries[] = [];
+  for (const [SeriesInstanceUID, seriesImageIds] of bySeries) {
+    const first = metaData.get(
+      metadataEnums.MetadataModules.NATURALIZED,
+      seriesImageIds[0]
+    ) as NaturalizedInstance | undefined;
+    const description =
+      String(first?.SeriesDescription ?? '').trim() || SeriesInstanceUID;
+    const series: SourceSeries = {
+      label: `Uploaded — ${first?.Modality ?? '?'} ${description} (${
+        seriesImageIds.length
+      } file(s))`,
+      StudyInstanceUID: String(first?.StudyInstanceUID ?? ''),
+      SeriesInstanceUID,
+      imageIds: convertMultiframeImageIds(seriesImageIds),
+    };
+    SOURCE_SERIES.push(series);
+    addSeriesOption(series);
+    added.push(series);
+  }
+
+  const skippedNote = skipped.length
+    ? ` Skipped ${skipped.length} file(s) that are not DICOM: ${skipped
+        .slice(0, 5)
+        .join(', ')}${skipped.length > 5 ? ', …' : ''}.`
+    : '';
+
+  if (!added.length) {
+    setStatus(`No DICOM images in the upload.${skippedNote}`, true);
+    return;
+  }
+
+  currentSeries = added[0];
+  seriesSelect.value = String(SOURCE_SERIES.indexOf(currentSeries));
+  await loadSeries();
+  setStatus(
+    `Added ${added.length} uploaded series to the Series list; showing ` +
+      `${currentSeries.label}: ${displaySets.length} display set(s).${skippedNote}`
+  );
+}
+
+/**
+ * Two pickers because a browser file input takes either files or one folder,
+ * never both. The folder picker reads every file under the folder, which is
+ * the shape a downloaded study arrives in.
+ */
+function uploadInput(directory: boolean) {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.multiple = true;
+  input.style.fontSize = '0.85em';
+  if (directory) {
+    input.setAttribute('webkitdirectory', '');
+  }
+  input.onchange = async () => {
+    await addUploadedFiles(input.files);
+    // Cleared so picking the same files again still fires.
+    input.value = '';
+  };
+  return input;
+}
+sourceRow.appendChild(labelled('Upload DICOM files', uploadInput(false)));
+sourceRow.appendChild(labelled('Upload a folder', uploadInput(true)));
+
+/**
+ * The mammography rule set that ships with this example. `new URL(...,
+ * import.meta.url)` makes the bundler emit the JSON next to the example and
+ * resolve its URL, so the same fetch works on the dev server and on a deployed
+ * build — the rule set is served, not bundled, exactly as a back end would
+ * serve one.
+ */
+const MAMMO_RULE_SET_URL = new URL('./mammoViewSplit.json', import.meta.url)
+  .href;
 
 /**
  * Where a server-hosted selector is fetched from. Free text rather than a list
@@ -616,7 +817,7 @@ serverPathInput.size = 32;
 serverPathInput.placeholder = 'path/to/displaySets.json';
 // Prefilled, not auto-loaded: these are MG rules, and the example opens on a CT
 // series. Pick the MG study, then press Load.
-serverPathInput.value = 'mg/displaySets.json';
+serverPathInput.value = MAMMO_RULE_SET_URL;
 serverPathInput.onkeydown = (event) => {
   if (event.key === 'Enter') {
     void loadServerSelector(serverPathInput.value.trim());
@@ -715,6 +916,41 @@ fileInput.onchange = async () => {
   fileInput.value = '';
 };
 sourcePickerRow.appendChild(labelled('Open a local rule file', fileInput));
+
+/**
+ * How to check the b-value split on a real series. On the page rather than only
+ * here, because the data for it is not hosted: the tester supplies it.
+ */
+const dwiTesting = document.createElement('details');
+dwiTesting.style.margin = '6px 0';
+dwiTesting.style.color = '#bdc3c7';
+dwiTesting.style.fontSize = '0.9em';
+const dwiSummary = document.createElement('summary');
+dwiSummary.textContent = 'Testing with a DWI series';
+dwiTesting.appendChild(dwiSummary);
+const dwiSteps = document.createElement('ol');
+for (const step of [
+  'Get a diffusion MR series in which only some images carry DiffusionBValue ' +
+    '(0018,9087). A GE "Ax DWI ALL b1000" series is one such case: its b=1000 ' +
+    'images carry the tag, and its b=0 images carry the b-value only in the ' +
+    'private tag (0043,1039). The series in OHIF issue #5530 has 64 images: 32 ' +
+    'with b=1000 and 32 without DiffusionBValue.',
+  'Use "Upload a folder" and pick the folder of that series. Pick the series ' +
+    'folder, not the whole study: the example reads and decodes every file ' +
+    'when you upload it.',
+  'Look at the display sets that the standard rules make.',
+  'Pick the "DWI: one display set per b-value" sample above and press "Add ' +
+    'rule". Expect one display set for each DiffusionBValue (b=1000: 32 images, ' +
+    'in SliceLocation order), and one more display set for the images without ' +
+    'DiffusionBValue.',
+  'Untick "dwiByBValue" to compare with the standard split again.',
+]) {
+  const item = document.createElement('li');
+  item.textContent = step;
+  dwiSteps.appendChild(item);
+}
+dwiTesting.appendChild(dwiSteps);
+rulesPanel.appendChild(dwiTesting);
 
 const editor = document.createElement('textarea');
 editor.style.width = '100%';
@@ -1337,6 +1573,16 @@ async function loadSeries() {
   layoutByDisplaySetId.clear();
 
   const root = currentSeries.wadoRsRoot ?? wadoRsRoot;
+
+  if (currentSeries.imageIds) {
+    // Uploaded: loaded when it was added, so there is nothing to fetch.
+    seriesImageIds = currentSeries.imageIds;
+    await resplit();
+    setStatus(
+      `${currentSeries.label}: ${displaySets.length} display set(s) from ${seriesImageIds.length} imageId(s).`
+    );
+    return;
+  }
 
   try {
     seriesImageIds = await createImageIdsAndCacheMetaData({

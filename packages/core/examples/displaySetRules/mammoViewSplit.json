@@ -1,0 +1,53 @@
+{
+  "name": "Mammography — one series into the four standard views",
+  "notes": [
+    "A screening mammogram often arrives as a single series holding all four",
+    "views. The standard `singleImageModality` rule splits MG on a coarse",
+    "image-size bucket, and the four views are usually identically sized, so",
+    "without this rule the study stays one four-image stack.",
+    "",
+    "The rule runs at priority -1, before every standard rule, so it claims MG",
+    "images before `singleImageModality` can.",
+    "",
+    "Grouping is by laterality and view. ViewPosition (0018,5101) is listed",
+    "first for the vendors that send it; PatientOrientation is the fallback",
+    "that separates CC from MLO when they do not (RCC P\\L, RMLO P\\FL,",
+    "LCC A\\R, LMLO A\\FR). Both are flat attributes, so the grouping itself",
+    "needs nothing registered on the host.",
+    "",
+    "The view *name* does need a named function: it lives in ViewCodeSequence,",
+    "and raw-selector attributes are a flat lookup that cannot reach inside a",
+    "sequence. Hence the `mammoView` preset in `requires` — it adds",
+    "mammoView (CC/MLO), imageLaterality, viewCode and descriptionName",
+    "(RCC/RMLO/LCC/LMLO) to each display set.",
+    "",
+    "This file only decides *which* display sets exist. Where each one hangs is",
+    "a hanging protocol's job — see OHIF's hpMammo for the 2x2 CC-over-MLO",
+    "arrangement built on these same view codes."
+  ],
+  "requires": {
+    "customAttributePresets": ["mammoView"]
+  },
+  "rules": {
+    "mammoViewSplit": {
+      "priority": -1,
+      "description": "Mammography: split a single MG series into one display set per laterality/view, so RCC, RMLO, LCC and LMLO are separately selectable.",
+      "viewportTypes": ["stack"],
+      "matches": {
+        "all": [
+          { "attribute": "Modality", "equals": "MG" },
+          { "attribute": "Rows", "exists": true }
+        ]
+      },
+      "groupBy": [
+        "SeriesInstanceUID",
+        "ImageLaterality",
+        "ViewPosition",
+        "PatientOrientation"
+      ],
+      "customAttributes": {
+        "preset": "mammoView"
+      }
+    }
+  }
+}
