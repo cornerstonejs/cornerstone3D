@@ -61,10 +61,14 @@ overrides:
   # patches three separate branches; each rule is scoped to its own major range
   # so they stay disjoint (an unscoped '<5.0.7' would also catch v1/v2 and force
   # them onto v5). v1 must go to 1.1.16 — 1.1.6 is itself still vulnerable.
-  'brace-expansion@<1.1.17': 1.1.18
-  'brace-expansion@>=2.0.0 <2.1.4': 2.1.4
+  # GHSA-qhr7-859c-m2p7 and GHSA-6j4f-fj2g-mc7p later raised the v1, v2 and v5
+  # floors to 1.1.20, 2.1.6 and 5.0.11.
+  'brace-expansion@<1.1.20': 1.1.20
+  'brace-expansion@>=2.0.0 <2.1.6': 2.1.6
   'brace-expansion@>=3.0.0 <3.0.6': 3.0.6
-  'brace-expansion@>=4.0.0 <5.0.9': 5.0.9
+  'brace-expansion@>=4.0.0 <5.0.11': 5.0.11
+  'joi@>=17.2.0 <17.13.7': 17.13.7
+  'engine.io@>=6.6.0 <6.6.10': 6.6.10
   'js-yaml@>=3.0.0 <3.15.2': 3.15.2
   'js-yaml@>=4.0.0 <4.3.2': 4.3.2
   'linkify-it@<=5.0.1': 5.0.2
@@ -88,6 +92,7 @@ auditConfig:
     # decompress is called only ever decompresses a hash-pinned, hardcoded
     # archive in a dev-only CLI
     - GHSA-mp2f-45pm-3cg9
+    - GHSA-hrh2-vp3x-79xf
     # extract-zip is a transitive dependency of puppeteer and is only used in dev
     - GHSA-jmr9-qjv8-65gv
     - GHSA-7pqw-9j4j-h8q3
