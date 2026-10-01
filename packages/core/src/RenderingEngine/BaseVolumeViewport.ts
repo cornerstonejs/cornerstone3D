@@ -103,9 +103,6 @@ import {
  */
 const log = coreLog.getLogger('RenderingEngine', 'BaseVolumeViewport');
 
-/** Throttle for legacy GPU volume IMAGE_VOLUME_MODIFIED paints (ms). */
-const VOLUME_MODIFIED_THROTTLE_MS = 1000;
-
 abstract class BaseVolumeViewport extends Viewport {
   useCPURendering = false;
   private _FrameOfReferenceUID: string;
@@ -123,8 +120,6 @@ abstract class BaseVolumeViewport extends Viewport {
   protected initialViewUp: Point3;
   protected viewportProperties: VolumeViewportProperties = {};
   private volumeIds = new Set<string>();
-  private _volumeModifiedTimeoutId: ReturnType<typeof setTimeout> | undefined;
-  private _lastVolumeModifiedRenderTime = 0;
   private _removeVolumeModifiedListener: (() => void) | undefined;
 
   constructor(props: ViewportInput) {
@@ -268,8 +263,8 @@ abstract class BaseVolumeViewport extends Viewport {
   }
 
   /**
-   * Requests a throttled render when a streaming volume that this viewport
-   * holds receives new frames. Legacy VolumeViewports otherwise never hear
+   * Requests a render when a streaming volume that this viewport holds
+   * receives new frames. Legacy VolumeViewports otherwise never hear
    * IMAGE_VOLUME_MODIFIED (GenericViewport paths do), so dirties piled up and
    * rare paints uploaded hundreds of texture slices at once.
    */
@@ -282,7 +277,7 @@ abstract class BaseVolumeViewport extends Viewport {
         return;
       }
 
-      this.scheduleVolumeModifiedRender(volumeId);
+      this.renderVolumeModified(volumeId);
     };
 
     eventTarget.addEventListener(
@@ -304,11 +299,6 @@ abstract class BaseVolumeViewport extends Viewport {
       );
       eventTarget.removeEventListener(Events.ELEMENT_DISABLED, cleanUp);
 
-      if (this._volumeModifiedTimeoutId !== undefined) {
-        clearTimeout(this._volumeModifiedTimeoutId);
-        this._volumeModifiedTimeoutId = undefined;
-      }
-
       this._removeVolumeModifiedListener = undefined;
     };
 
@@ -316,37 +306,6 @@ abstract class BaseVolumeViewport extends Viewport {
     this._removeVolumeModifiedListener = () => {
       cleanUp({ detail: { viewportId: this.id } } as CustomEvent);
     };
-  }
-
-  private scheduleVolumeModifiedRender(volumeId: string): void {
-    // GPU path only — does not read cpuVolume.volumeModifiedThrottleMs.
-    const throttleMs = VOLUME_MODIFIED_THROTTLE_MS;
-    const run = () => {
-      this._volumeModifiedTimeoutId = undefined;
-      this._lastVolumeModifiedRenderTime = performance.now();
-      this.renderVolumeModified(volumeId);
-    };
-
-    if (throttleMs <= 0) {
-      run();
-      return;
-    }
-
-    if (this._volumeModifiedTimeoutId !== undefined) {
-      return;
-    }
-
-    const remainingDelay = Math.max(
-      0,
-      throttleMs - (performance.now() - this._lastVolumeModifiedRenderTime)
-    );
-
-    if (remainingDelay === 0) {
-      run();
-      return;
-    }
-
-    this._volumeModifiedTimeoutId = setTimeout(run, remainingDelay);
   }
 
   private renderVolumeModified(volumeId: string): void {
