@@ -392,8 +392,8 @@ function nearbyFramesOfDecimation(decimate) {
  * `initialImages` fetches the middle image and the two images beside it.
  * A viewport opens on the middle of the volume, and a reduced texture takes
  * the box average of several frames there, so one middle image alone gives
- * that view almost nothing. First/last are left to later stages so they do
- * not compete with the axial plane under the capped GPU upload.
+ * that view almost nothing. First/last are left to later stages so the
+ * middle plane fills first.
  *
  * `coarse32` then retrieves one image in 32 and replicates each one to the 31
  * images around it, so the whole volume holds data once 1/32 of the images
