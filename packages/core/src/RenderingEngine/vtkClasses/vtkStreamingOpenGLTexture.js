@@ -4,6 +4,7 @@ import cache from '../../cache/cache';
 import { getConstructorFromType } from '../../utilities/getBufferConfiguration';
 import VoxelManager from '../../utilities/VoxelManager';
 import { voxelGridsEqual } from '../../utilities/voxelGrid';
+import VoxelStatistics from '../../enums/VoxelStatistics';
 import {
   recordVolumeGpuTrace,
   getVolumeGpuExperimentOptions,
@@ -386,19 +387,138 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
   }
 
   /**
+   * Fills one slice with the foreground majority of each source box.
+   *
+   * Background (0) does not compete: a box that holds any non-zero label keeps
+   * the majority among those labels. On a tie, keeps the first non-zero label
+   * that reached the winning count.
+   */
+  function fillSliceByBoxForegroundMajority(
+    volume,
+    grid,
+    factors,
+    slice,
+    target
+  ) {
+    const [width, height] = grid.dimensions;
+    const [sourceWidth, sourceHeight, sourceDepth] = volume.dimensions;
+    const voxelManager = volume.voxelManager;
+
+    if (!voxelManager?.getSliceData) {
+      return false;
+    }
+
+    const [factorI, factorJ, factorK] = factors;
+    const firstK = slice * factorK;
+    const lastK = Math.min(firstK + factorK, sourceDepth);
+
+    if (firstK >= sourceDepth) {
+      return false;
+    }
+
+    const tallies = Array.from({ length: width * height }, () => new Map());
+    let read = 0;
+    const imageIds = volume.imageIds;
+
+    for (let k = firstK; k < lastK; k++) {
+      let frame = imageIds?.[k]
+        ? cache.getImage(imageIds[k])?.voxelManager?.getScalarData()
+        : undefined;
+
+      if (!frame) {
+        try {
+          frame = voxelManager.getSliceData({ sliceIndex: k, slicePlane: 2 });
+        } catch {
+          frame = null;
+        }
+      }
+
+      if (!frame || frame.length < sourceWidth * sourceHeight) {
+        continue;
+      }
+
+      read++;
+
+      for (let j = 0; j < sourceHeight; j++) {
+        const targetRow = Math.min((j / factorJ) | 0, height - 1) * width;
+        const sourceRow = j * sourceWidth;
+
+        for (let i = 0; i < sourceWidth; i++) {
+          const targetIndex =
+            targetRow + Math.min((i / factorI) | 0, width - 1);
+          const label = frame[sourceRow + i];
+
+          // Background does not compete with foreground labels.
+          if (label === 0) {
+            continue;
+          }
+
+          const counts = tallies[targetIndex];
+
+          counts.set(label, (counts.get(label) ?? 0) + 1);
+        }
+      }
+    }
+
+    if (!read) {
+      return false;
+    }
+
+    const values = target.getScalarData();
+
+    for (let index = 0; index < values.length; index++) {
+      const counts = tallies[index];
+      let majority;
+      let majorityCount = 0;
+
+      for (const [label, count] of counts) {
+        if (count > majorityCount) {
+          majorityCount = count;
+          majority = label;
+        }
+      }
+
+      // Empty cells and background-only cells upload 0.
+      values[index] = majority !== undefined ? majority : 0;
+    }
+
+    return true;
+  }
+
+  /**
+   * Fills one reduced slice with the statistic the volume asks for.
+   */
+  function fillSliceByBoxStatistic(volume, grid, factors, slice, target) {
+    const statistic = volume.reductionStatistic ?? VoxelStatistics.Average;
+
+    if (statistic === VoxelStatistics.ForegroundMajority) {
+      return fillSliceByBoxForegroundMajority(
+        volume,
+        grid,
+        factors,
+        slice,
+        target
+      );
+    }
+
+    return fillSliceByBoxAverage(volume, grid, factors, slice, target);
+  }
+
+  /**
    * The voxels of the representation that the composite holds at this exact
    * grid, when the composite holds one and it keeps them in one array.
    *
    * A strategy derives that representation, and `ImageVolume.markFrameDirty`
-   * redoes its boxes as each frame arrives, so the values follow the load. The
-   * values are the box average that the render path asks for, and reading them
-   * is a copy of one slice.
+   * redoes its boxes as each frame arrives, so the values follow the load.
    *
    * @returns nothing when no such representation exists, and the caller then
    * computes the values itself
    */
-  function derivedVoxelsOf(composite, grid) {
-    const representation = composite.getRepresentation(grid);
+  function derivedVoxelsOf(composite, grid, statistic) {
+    const representation = composite.getRepresentation(
+      grid,
+      statistic ?? VoxelStatistics.Average
+    );
     const [width, height, depth] = grid.dimensions;
     const voxels = representation?.voxelManager?.getWritableScalarData?.();
 
@@ -416,7 +536,8 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     const frameLength = width * height;
     const composite = volume.compositeVoxelManager;
     const gl = model.context;
-    const derived = derivedVoxelsOf(composite, grid);
+    const statistic = volume.reductionStatistic ?? VoxelStatistics.Average;
+    const derived = derivedVoxelsOf(composite, grid, statistic);
     const factors = derived ? null : boxFactorsOf(volume, grid);
     // One slice of this grid. A fill of the whole grid would read every voxel
     // of the volume on every refill, and a delivery changes one slice of it.
@@ -431,7 +552,7 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     let branch = derived
       ? 'derived'
       : factors
-        ? 'fillSliceByBoxAverage'
+        ? 'fillSliceByBoxStatistic'
         : 'fillGrid';
     const preferred = preferredTextureSlice(model.volumeId, depth);
     const dirtySlices = orderedDirtySlices(model.updatedFrames, preferred);
@@ -464,7 +585,8 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
         // Filling every slice of a new texture from the data would stall the
         // first render: a volume of 512 x 512 x 1232 measured about 17 seconds.
         const filled =
-          factors && fillSliceByBoxAverage(volume, grid, factors, slice, slab);
+          factors &&
+          fillSliceByBoxStatistic(volume, grid, factors, slice, slab);
 
         if (!filled && !factors) {
           // The grid is not a box of the grid of the volume, such as an oblique
@@ -482,11 +604,15 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
                 grid.origin[2] + grid.direction[8] * grid.spacing[2] * slice,
               ],
             },
-            slab
+            slab,
+            statistic
           );
           sliceBranch = 'fillGrid';
         } else if (filled) {
-          sliceBranch = 'fillSliceByBoxAverage';
+          sliceBranch = 'fillSliceByBoxStatistic';
+        } else {
+          // factors were set but the frames of this slice have not arrived.
+          sliceBranch = 'empty';
         }
 
         data = slab.getScalarData();

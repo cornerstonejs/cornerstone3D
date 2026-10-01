@@ -1,4 +1,4 @@
-import { cache, imageLoader, volumeLoader } from '@cornerstonejs/core';
+import { cache, imageLoader, volumeLoader, Enums } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import type { Segmentation } from '../../../types/SegmentationStateTypes';
 import type {
@@ -10,6 +10,19 @@ import {
   forEachLabelmapImageReference,
   hasMultipleLabelmapImagesPerReferencedImageId,
 } from './labelmapImageIdMapping';
+
+const { VoxelStatistics } = Enums;
+
+/** Marks a volume so GPU reduction uses foreground majority instead of average. */
+function tagLabelmapVolume(
+  volume: Types.IImageVolume | undefined
+): Types.IImageVolume | undefined {
+  if (volume) {
+    volume.reductionStatistic = VoxelStatistics.ForegroundMajority;
+  }
+
+  return volume;
+}
 
 function getLabelmap(
   segmentation: Segmentation,
@@ -68,7 +81,7 @@ function getOrCreateLabelmapVolume(
     const cachedVolume = cache.getVolume(existingVolumeId);
 
     if (cachedVolume) {
-      return cachedVolume as Types.IImageVolume;
+      return tagLabelmapVolume(cachedVolume as Types.IImageVolume);
     }
   }
 
@@ -88,10 +101,12 @@ function getOrCreateLabelmapVolume(
   const cachedVolume = cache.getVolume(volumeId);
 
   if (cachedVolume) {
-    return cachedVolume as Types.IImageVolume;
+    return tagLabelmapVolume(cachedVolume as Types.IImageVolume);
   }
 
-  return volumeLoader.createAndCacheVolumeFromImagesSync(volumeId, imageIds);
+  return tagLabelmapVolume(
+    volumeLoader.createAndCacheVolumeFromImagesSync(volumeId, imageIds)
+  );
 }
 
 function getOrCreateMergedStackLabelmapVolume(
@@ -105,7 +120,7 @@ function getOrCreateMergedStackLabelmapVolume(
   const cachedVolume = cache.getVolume(volumeId);
 
   if (cachedVolume) {
-    return cachedVolume as Types.IImageVolume;
+    return tagLabelmapVolume(cachedVolume as Types.IImageVolume);
   }
 
   const imageIdsByReferencedImageId = new Map<string, string[]>();
@@ -170,9 +185,11 @@ function getOrCreateMergedStackLabelmapVolume(
 
   layer.geometryVolumeId = volumeId;
 
-  return volumeLoader.createAndCacheVolumeFromImagesSync(
-    volumeId,
-    mergedImages.map((image) => image.imageId)
+  return tagLabelmapVolume(
+    volumeLoader.createAndCacheVolumeFromImagesSync(
+      volumeId,
+      mergedImages.map((image) => image.imageId)
+    )
   );
 }
 

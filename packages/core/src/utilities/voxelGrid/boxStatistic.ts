@@ -492,8 +492,8 @@ function reduceByBoxStatistic<T extends BoxStatisticValue = number>(
  * result is not acceptable when a reformat is diagnostic.
  *
  * THE AVERAGE APPLIES TO A VALUE THAT A MEAN DESCRIBES. A mean of the labels of
- * a segmentation has no meaning, and a reduction of a labelmap therefore needs
- * another statistic, which an extension registers.
+ * a segmentation has no meaning. Labelmap volumes set `reductionStatistic` to
+ * `ForegroundMajority`, which core registers for that case.
  *
  * @param source - the data that the reduction reads
  * @param reduction - the box size of each axis, and the region of the source

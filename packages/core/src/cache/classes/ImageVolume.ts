@@ -26,6 +26,7 @@ import type {
   IVoxelManager,
   VoxelGrid,
   VoxelQualityRecord,
+  VoxelStatistic,
 } from '../../types';
 import ImageQualityStatus from '../../enums/ImageQualityStatus';
 import { recordVolumeGpuTrace } from '../../utilities/volumeGpuTrace';
@@ -129,6 +130,12 @@ export class ImageVolume {
   /** Property to store additional information */
   additionalDetails?: Record<string, unknown>;
   /**
+   * Statistic used when this volume must be reduced to fit a GPU texture.
+   * Intensity volumes use average. Labelmaps use foregroundMajority. Defaults
+   * to average.
+   */
+  reductionStatistic?: VoxelStatistic;
+  /**
    *  Property to store the number of dimension groups.
    * @deprecated
    */
@@ -186,6 +193,7 @@ export class ImageVolume {
       additionalDetails,
       voxelManager,
       numberOfComponents,
+      reductionStatistic,
     } = props;
 
     if (!dataType) {
@@ -205,6 +213,7 @@ export class ImageVolume {
     this.origin = origin;
     this.direction = direction;
     this.dataType = dataType;
+    this.reductionStatistic = reductionStatistic;
     this._numberOfComponents = numberOfComponents || 1;
     this.hasPixelSpacing =
       Number.isFinite(spacing[0]) &&
