@@ -29,7 +29,6 @@ import type {
   VoxelStatistic,
 } from '../../types';
 import ImageQualityStatus from '../../enums/ImageQualityStatus';
-import { recordVolumeGpuTrace } from '../../utilities/volumeGpuTrace';
 import cache from '../cache';
 import type vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture';
 
@@ -676,24 +675,13 @@ export class ImageVolume {
       markBounds.push(bounds);
     }
 
-    let mappedSlices = 0;
-
     for (const bounds of markBounds) {
       for (const set of this.textureSets) {
         set.markDirty(bounds, (slot, slice) => {
-          mappedSlices++;
           markSlice(slot, slice);
         });
       }
     }
-
-    recordVolumeGpuTrace({
-      kind: 'markFrameDirty',
-      volumeId: this.volumeId,
-      frameIndex: pending[0][0],
-      textureSets: this.textureSets.length,
-      mappedSlices,
-    });
   }
 
   /** Marks every voxel of every texture of every set for a refill. */

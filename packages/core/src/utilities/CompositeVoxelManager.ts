@@ -34,7 +34,6 @@ import {
   volumeOfBounds,
   voxelGridKey,
 } from './voxelGrid';
-import { recordVolumeGpuTrace } from './volumeGpuTrace';
 
 /**
  * One sub voxel manager of a composite, with the grid and the statistic that
@@ -786,10 +785,6 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
     grid: VoxelGrid,
     statistic: VoxelStatistic = VoxelStatistics.Average
   ): number {
-    const start =
-      typeof performance !== 'undefined' && performance.now
-        ? performance.now()
-        : Date.now();
     const delivered = this.getRepresentation(grid, statistic);
     let refreshed = 0;
 
@@ -806,16 +801,6 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
         refreshed++;
       }
     }
-
-    const end =
-      typeof performance !== 'undefined' && performance.now
-        ? performance.now()
-        : Date.now();
-    recordVolumeGpuTrace({
-      kind: 'refreshDerived',
-      durationMs: end - start,
-      mappedSlices: refreshed,
-    });
 
     return refreshed;
   }

@@ -16,7 +16,6 @@ import {
   getActiveGpuCapabilityProfile,
   gridLimitsOfProfile,
 } from '../../utilities/gpuCapabilityProfiles';
-import { recordVolumeGpuTrace } from '../../utilities/volumeGpuTrace';
 
 const log = coreLog.getLogger(
   'RenderingEngine',
@@ -452,12 +451,6 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
             // the defect that issue #2921 names. The mapper refuses that
             // allocation instead, and the render path draws what it drew
             // before. MR-API-IV-7, and acceptance criterion 15.
-            recordVolumeGpuTrace({
-              kind: 'mapperAlloc',
-              volumeId: currentTexture.getVolumeId?.(),
-              shouldReset: true,
-              dims: [dims[0], dims[1], dims[2]],
-            });
             if (
               !gridFitsProfile(dims, dataType, textureNumberOfComponents, {
                 volumeId: currentTexture.getVolumeId?.(),
@@ -500,12 +493,6 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
 
             // since we don't have scalars we don't need to set graphics resource for the scalar texture
           } else {
-            recordVolumeGpuTrace({
-              kind: 'mapperAlloc',
-              volumeId: currentTexture.getVolumeId?.(),
-              shouldReset: false,
-              dims: [dims[0], dims[1], dims[2]],
-            });
             currentTexture.deactivate();
             currentTexture.update3DFromRaw();
           }

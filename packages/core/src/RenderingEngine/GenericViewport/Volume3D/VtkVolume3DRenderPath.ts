@@ -26,7 +26,6 @@ import type {
   VolumeStrategyProvisionReason,
 } from '../../helpers/volumeRenderStrategy';
 import { getActiveGpuCapabilityProfile } from '../../../utilities/gpuCapabilityProfiles';
-import { recordVolumeGpuTrace } from '../../../utilities/volumeGpuTrace';
 import {
   canvasToWorldContextPool,
   worldToCanvasContextPool,
@@ -136,10 +135,6 @@ export class VtkVolume3DRenderPath
           this.provisionStrategies(rendering, 'loaded');
         }
 
-        recordVolumeGpuTrace({
-          kind: 'requestRender',
-          volumeId: payload.volumeId,
-        });
         ctx.display.requestRender();
       }
     );

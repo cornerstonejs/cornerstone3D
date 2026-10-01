@@ -18,7 +18,6 @@ import type {
   VolumeStrategyProvisionReason,
 } from '../../helpers/volumeRenderStrategy';
 import { getActiveGpuCapabilityProfile } from '../../../utilities/gpuCapabilityProfiles';
-import { recordVolumeGpuTrace } from '../../../utilities/volumeGpuTrace';
 import { ActorRenderMode } from '../../../types';
 import type {
   IImageData,
@@ -168,10 +167,6 @@ export class VtkVolumeSliceRenderPath
           (rendering.dataPresentation?.slabThickness ?? 0) > 0;
 
         if (!isProjectingOverlay) {
-          recordVolumeGpuTrace({
-            kind: 'requestRender',
-            volumeId: payload.volumeId,
-          });
           ctx.display.requestRender();
           return;
         }

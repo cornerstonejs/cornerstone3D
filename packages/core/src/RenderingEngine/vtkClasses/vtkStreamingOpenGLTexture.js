@@ -5,12 +5,10 @@ import { getConstructorFromType } from '../../utilities/getBufferConfiguration';
 import VoxelManager from '../../utilities/VoxelManager';
 import { voxelGridsEqual } from '../../utilities/voxelGrid';
 import VoxelStatistics from '../../enums/VoxelStatistics';
-import {
-  recordVolumeGpuTrace,
-  getVolumeGpuExperimentOptions,
-  DEFAULT_MAX_DIRTY_SLICES_PER_UPLOAD,
-} from '../../utilities/volumeGpuTrace';
 import getViewportsWithVolumeId from '../../utilities/getViewportsWithVolumeId';
+
+/** Cap of dirty texture slices uploaded per paint. */
+const MAX_DIRTY_SLICES_PER_UPLOAD = 16;
 
 let followUpRenderScheduled = false;
 
@@ -221,14 +219,7 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     publicAPI.bind();
 
     if (volume.isDynamicVolume()) {
-      const start = performance.now();
       updateDynamicVolumeTexture();
-      recordVolumeGpuTrace({
-        kind: 'upload',
-        volumeId,
-        branch: 'dynamic',
-        durationMs: performance.now() - start,
-      });
       return;
     }
 
@@ -547,27 +538,16 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
       numberOfComponents: 1,
     });
 
-    const uploadStart = performance.now();
     let dirtySlicesUploaded = 0;
-    let branch = derived
-      ? 'derived'
-      : factors
-        ? 'fillSliceByBoxStatistic'
-        : 'fillGrid';
     const preferred = preferredTextureSlice(model.volumeId, depth);
     const dirtySlices = orderedDirtySlices(model.updatedFrames, preferred);
-    const uploadedSliceIndices = [];
-    const { maxDirtySlices } = getVolumeGpuExperimentOptions();
-    const maxDirty =
-      maxDirtySlices > 0 ? maxDirtySlices : DEFAULT_MAX_DIRTY_SLICES_PER_UPLOAD;
 
     for (const slice of dirtySlices) {
-      if (dirtySlicesUploaded >= maxDirty) {
+      if (dirtySlicesUploaded >= MAX_DIRTY_SLICES_PER_UPLOAD) {
         break;
       }
 
       let data;
-      let sliceBranch = branch;
 
       if (derived) {
         // The composite holds this slice already. A view costs nothing, and
@@ -607,12 +587,6 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
             slab,
             statistic
           );
-          sliceBranch = 'fillGrid';
-        } else if (filled) {
-          sliceBranch = 'fillSliceByBoxStatistic';
-        } else {
-          // factors were set but the frames of this slice have not arrived.
-          sliceBranch = 'empty';
         }
 
         data = slab.getScalarData();
@@ -645,23 +619,7 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
       publicAPI.deactivate();
       model.updatedFrames[slice] = null;
       dirtySlicesUploaded++;
-      uploadedSliceIndices.push(slice);
-      branch = sliceBranch;
     }
-
-    recordVolumeGpuTrace({
-      kind: 'upload',
-      volumeId: model.volumeId,
-      branch,
-      durationMs: performance.now() - uploadStart,
-      dirtySlicesUploaded,
-      sliceIndex: uploadedSliceIndices[0],
-      preferredSlice: preferred,
-      texSubImageW: width,
-      texSubImageH: height,
-      texSubImageDepth: 1,
-      dims: [width, height, depth],
-    });
 
     scheduleFollowUpRenderIfDirty(model.volumeId, publicAPI.hasUpdatedFrames());
 
@@ -680,19 +638,7 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
    */
   const superModified = publicAPI.modified;
   publicAPI.setUpdatedFrame = (frameIndex) => {
-    let dirtyAlready = 0;
-    for (let i = 0; i < model.updatedFrames.length; i++) {
-      if (model.updatedFrames[i]) {
-        dirtyAlready++;
-      }
-    }
     model.updatedFrames[frameIndex] = true;
-    recordVolumeGpuTrace({
-      kind: 'setUpdatedFrame',
-      volumeId: model.volumeId,
-      sliceIndex: frameIndex,
-      dirtyAlready,
-    });
     superModified();
   };
 
@@ -721,19 +667,15 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
   function updateTextureImagesUsingVoxelManager() {
     const volume = cache.getVolume(model.volumeId);
     const imageIds = volume.imageIds;
-    const uploadStart = performance.now();
     let dirtySlicesUploaded = 0;
     const preferred = preferredTextureSlice(
       model.volumeId,
       model.updatedFrames.length
     );
     const dirtySlices = orderedDirtySlices(model.updatedFrames, preferred);
-    const { maxDirtySlices } = getVolumeGpuExperimentOptions();
-    const maxDirty =
-      maxDirtySlices > 0 ? maxDirtySlices : DEFAULT_MAX_DIRTY_SLICES_PER_UPLOAD;
 
     for (const i of dirtySlices) {
-      if (dirtySlicesUploaded >= maxDirty) {
+      if (dirtySlicesUploaded >= MAX_DIRTY_SLICES_PER_UPLOAD) {
         break;
       }
 
@@ -774,18 +716,6 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
       model.updatedFrames[i] = null;
       dirtySlicesUploaded++;
     }
-
-    recordVolumeGpuTrace({
-      kind: 'upload',
-      volumeId: model.volumeId,
-      branch: 'voxelManager',
-      durationMs: performance.now() - uploadStart,
-      dirtySlicesUploaded,
-      texSubImageW: model.width,
-      texSubImageH: model.height,
-      texSubImageDepth: 1,
-      dims: [model.width, model.height, model.depth],
-    });
 
     scheduleFollowUpRenderIfDirty(model.volumeId, publicAPI.hasUpdatedFrames());
 

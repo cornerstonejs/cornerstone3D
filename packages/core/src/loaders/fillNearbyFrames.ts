@@ -1,16 +1,11 @@
 import type { ImageLoadListener } from '../types';
 import cache from '../cache/cache';
 import { coreLog } from '../utilities/logger';
-import { shouldSkipNearbyFramesForTrace } from '../utilities/volumeGpuTrace';
 
 const log = coreLog.getLogger('loaders', 'fillNearbyFrames');
 
 /** Actually fills the nearby frames from the given frame */
 export function fillNearbyFrames(listener: ImageLoadListener, request, image) {
-  if (shouldSkipNearbyFramesForTrace()) {
-    return;
-  }
-
   if (!request?.nearbyRequests?.length) {
     // Not filling nearby images with a copy of this
     return;
