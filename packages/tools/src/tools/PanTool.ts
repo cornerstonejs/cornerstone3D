@@ -7,6 +7,7 @@ import {
 import type { Types } from '@cornerstonejs/core';
 
 import type { EventTypes, PublicToolProps, ToolProps } from '../types';
+import armVolume3DInteraction from '../utilities/armVolume3DInteraction';
 
 /**
  * Tool that pans the camera in the plane defined by the viewPlaneNormal and the viewUp.
@@ -28,6 +29,16 @@ class PanTool extends BaseTool {
   ) {
     super(toolProps, defaultToolProps);
   }
+
+  preMouseDownCallback = (evt: EventTypes.InteractionEventType) => {
+    armVolume3DInteraction(evt.detail.element);
+    return false;
+  };
+
+  preTouchStartCallback = (evt: EventTypes.InteractionEventType) => {
+    armVolume3DInteraction(evt.detail.element);
+    return false;
+  };
 
   touchDragCallback(evt: EventTypes.InteractionEventType) {
     this._dragCallback(evt);

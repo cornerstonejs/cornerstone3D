@@ -10,6 +10,26 @@ import createVolumeActor from './RenderingEngine/helpers/createVolumeActor';
 import createVolumeMapper, {
   convertMapperToNotSharedMapper,
 } from './RenderingEngine/helpers/createVolumeMapper';
+import {
+  VOLUME_3D_DEFAULT_TARGET_FPS,
+  VOLUME_3D_MIN_TARGET_FPS,
+  VOLUME_3D_MAX_TARGET_FPS,
+  VOLUME_3D_DEFAULT_INTERACTIVE_SAMPLE_DISTANCE_FACTOR,
+  setVolume3DTargetFps,
+  getVolume3DTargetFps,
+  setVolume3DTargetFpsEnabled,
+  getVolume3DTargetFpsEnabled,
+  setVolume3DInteractiveQualityPolicy,
+  getVolume3DInteractiveQualityPolicy,
+  getVolume3DTargetFpsSnapshot,
+  beginVolume3DInteraction,
+  endVolume3DInteraction,
+} from './RenderingEngine/helpers/volume3DTargetFps';
+export type {
+  Volume3DInteractiveQualityPolicy,
+  Volume3DTargetFpsPhase,
+  Volume3DTargetFpsSnapshot,
+} from './RenderingEngine/helpers/volume3DTargetFps';
 export * from './RenderingEngine/helpers/getOrCreateCanvas';
 import VolumeViewport from './RenderingEngine/VolumeViewport';
 import VolumeViewport3D from './RenderingEngine/VolumeViewport3D';
@@ -329,6 +349,20 @@ export {
   getEnabledElementByViewportId,
   createVolumeActor,
   createVolumeMapper,
+  // Volume3D Target FPS (legacy VolumeViewport3D interactive LOD)
+  VOLUME_3D_DEFAULT_TARGET_FPS,
+  VOLUME_3D_MIN_TARGET_FPS,
+  VOLUME_3D_MAX_TARGET_FPS,
+  VOLUME_3D_DEFAULT_INTERACTIVE_SAMPLE_DISTANCE_FACTOR,
+  setVolume3DTargetFps,
+  getVolume3DTargetFps,
+  setVolume3DTargetFpsEnabled,
+  getVolume3DTargetFpsEnabled,
+  setVolume3DInteractiveQualityPolicy,
+  getVolume3DInteractiveQualityPolicy,
+  getVolume3DTargetFpsSnapshot,
+  beginVolume3DInteraction,
+  endVolume3DInteraction,
   // cache
   cache,
   // event helpers
