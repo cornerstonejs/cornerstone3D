@@ -22,9 +22,13 @@ jobs:
   # someone with write access pushed it.
   #
   # The protected-path list below is duplicated in the `gate` job of
-  # ohif-downstream.yml and in .github/CODEOWNERS, and must be kept in sync by
-  # hand: separate workflow files cannot share code. Editing one without the
-  # others fails silently.
+  # ohif-downstream.yml and must be kept in sync by hand: separate workflow files
+  # cannot share code. Editing one without the other fails silently.
+  #
+  # .github/CODEOWNERS covers an overlapping set of paths but is not a mirror of
+  # this list; the two are maintained separately. They act at different moments:
+  # this gate keeps a fork PR off the box before review, CODEOWNERS puts a code
+  # owner in front of the merge.
   #
   # This job is part of the workflow it protects: a fork PR can delete it, along
   # with the `needs:` and `if:` below, and dispatch straight to the box. What
@@ -75,9 +79,8 @@ jobs:
           count=$(wc -l <<<"$files")
 
           # CI-defining paths: the workflows themselves, the scripts they exec
-          # on the nashua box, and the root manifests that steer what gets
-          # installed and run there (a modified lockfile can pull a package
-          # whose install scripts execute on the box).
+          # on the nashua box, and the install-policy files that steer what gets
+          # installed and run there.
           ci_touched=false
           while IFS= read -r f; do
             [ -n "$f" ] || continue
@@ -85,30 +88,24 @@ jobs:
               # Workflows, and the scripts they exec on the box.
               .github/*|scripts/ci/*|scripts/run-playwright.sh|scripts/link-ohif-cornerstone-node-modules.mjs)
                 ci_touched=true ;;
-              # The install surface. A root `pnpm install` runs the lifecycle
-              # scripts of EVERY workspace project, not only the root one:
-              # packages/docs/package.json already declares
-              # `"preinstall": "node preinstall.js"`. So the package.json
-              # pattern and the preinstall.js pattern each carry a second
-              # alternative with a leading `*/`, which matches at any depth. A
-              # `case` pattern is not a path glob — `*` matches `/` too — so
-              # `*/package.json` covers packages/<name>/package.json,
-              # addOns/local/<name>/package.json, and a project a fork adds.
-              # pnpm also executes a root pnpmfile, and .npmrc can repoint the
-              # registry. The lockfile and the workspace file steer what gets
-              # installed and can undo the release-age quarantine. Most of these
-              # files are untracked today — that is the point: a fork can ADD
-              # one, and a list of only existing files would not notice.
+              # The install surface. pnpm executes a root pnpmfile, .npmrc can
+              # repoint the registry, and pnpm-workspace.yaml steers what gets
+              # installed: its `allowBuilds` list decides which dependencies may
+              # run install scripts on the box, and `minimumReleaseAge` is the
+              # release-age quarantine. Most of these files are untracked today
+              # — that is the point: a fork can ADD one, and a list of only
+              # existing files would not notice.
               #
-              # An unrelated package.json — a test fixture, for example — also
-              # matches these patterns and defers the run. That trade is
-              # deliberate: a needless deferral costs a wait, and a missed path
-              # costs an execution on the shared box.
-              package.json|*/package.json)
-                ci_touched=true ;;
+              # The preinstall.js pattern carries a second alternative with a
+              # leading `*/`, which matches at any depth. A root `pnpm install`
+              # runs the lifecycle scripts of EVERY workspace project, not only
+              # the root one: packages/docs/package.json already declares
+              # `"preinstall": "node preinstall.js"`. A `case` pattern is not a
+              # path glob — `*` matches `/` too — so `*/preinstall.js` covers
+              # packages/<name>/preinstall.js and a project a fork adds.
               preinstall.js|*/preinstall.js)
                 ci_touched=true ;;
-              pnpm-lock.yaml|pnpm-workspace.yaml)
+              pnpm-workspace.yaml)
                 ci_touched=true ;;
               .npmrc|*/.npmrc)
                 ci_touched=true ;;
