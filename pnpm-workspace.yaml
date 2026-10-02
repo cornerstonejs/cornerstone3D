@@ -90,6 +90,9 @@ auditConfig:
     # extract-zip is a transitive dependency of puppeteer and is only used in dev
     - GHSA-jmr9-qjv8-65gv
     - GHSA-7pqw-9j4j-h8q3
+    # node-forge is used only by selfsigned (via webpack-dev-server) to create a
+    # local dev cert; it never checks signatures from outside
+    - GHSA-86w9-cpqp-85rv
 allowBuilds:
   '@swc/core': true
   canvas: true
