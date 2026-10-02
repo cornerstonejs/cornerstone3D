@@ -296,6 +296,43 @@ function hasSeveralComponents(source: object) {
   );
 }
 
+/** The array of a target, which the slice fast paths set directly. */
+type DirectTarget = {
+  scalars: { [index: number]: number };
+  width: number;
+  height: number;
+};
+
+/**
+ * The array that a target keeps its voxels in, when it keeps them in one.
+ *
+ * A derived representation keeps its voxels in one array, and a write per voxel
+ * through `setAtIJK` also records modified slices and bounds that nothing reads
+ * for a derived representation. A fast path therefore sets the array, at a row
+ * base that it computes once per row, and calls `setAtIJK` only when this gives
+ * nothing (an RLE map, a cached expansion, a target with no array).
+ */
+function directTargetOf(target: object): DirectTarget | undefined {
+  const scalars = (
+    target as { getWritableScalarData?: () => ArrayLike<number> | undefined }
+  ).getWritableScalarData?.() as DirectTarget['scalars'] | undefined;
+  const [width, height] = (target as { dimensions?: Point3 }).dimensions ?? [];
+
+  return scalars && width && height && !hasSeveralComponents(target)
+    ? { scalars, width, height }
+    : undefined;
+}
+
+/** The index of voxel (i, j, k) in the array of a direct target. */
+function directIndexOf(
+  { width, height }: DirectTarget,
+  i: number,
+  j: number,
+  k: number
+): number {
+  return (k * height + j) * width + i;
+}
+
 /**
  * The foreground majority of each voxel of one plane over the frames of a box
  * along k, when no in-plane axis is reduced. A box of a slice-only reduction
@@ -306,17 +343,22 @@ function hasSeveralComponents(source: object) {
  * label takes the lead only with a strictly greater count than the leader at
  * the moment it reaches that count.
  */
-function foregroundMajorityAlongK(
+function foregroundMajorityAlongK<T extends BoxStatisticValue>(
   frames: ArrayLike<number>[],
   sourceWidth: number,
   sourceOffset: Point3,
   [width, height]: Point3,
-  write: (i: number, j: number, value: number) => void
+  target: BoxStatisticTarget<T>,
+  direct: DirectTarget | undefined,
+  [targetI, targetJ, targetK]: Point3
 ): number {
   const [first, second] = frames;
 
   for (let j = 0; j < height; j++) {
     const row = (sourceOffset[1] + j) * sourceWidth + sourceOffset[0];
+    const base = direct
+      ? directIndexOf(direct, targetI, targetJ + j, targetK)
+      : 0;
 
     for (let i = 0; i < width; i++) {
       const index = row + i;
@@ -353,7 +395,11 @@ function foregroundMajorityAlongK(
         }
       }
 
-      write(i, j, majority);
+      if (direct) {
+        direct.scalars[base + i] = majority;
+      } else {
+        target.setAtIJK(targetI + i, targetJ + j, targetK, majority as T);
+      }
     }
   }
 
@@ -405,26 +451,7 @@ function reduceForegroundMajorityBySlices<T extends BoxStatisticValue = number>(
   const counts: number[] = [];
   const frames: ArrayLike<number>[] = [];
   let written = 0;
-
-  // The derived representation keeps its voxels in one array, and a write per
-  // voxel through `setAtIJK` also records modified slices and bounds that
-  // nothing reads for a derived representation.
-  const scalars = (
-    target as { getWritableScalarData?: () => ArrayLike<number> | undefined }
-  ).getWritableScalarData?.() as { [index: number]: number } | undefined;
-  const [targetWidth, targetHeight] =
-    (target as { dimensions?: Point3 }).dimensions ?? [];
-  const direct =
-    scalars && targetWidth && targetHeight && !hasSeveralComponents(target)
-      ? scalars
-      : undefined;
-  const write = (i: number, j: number, k: number, value: number) => {
-    if (direct) {
-      direct[(k * targetHeight + j) * targetWidth + i] = value;
-    } else {
-      target.setAtIJK(i, j, k, value as T);
-    }
-  };
+  const direct = directTargetOf(target);
 
   for (let k = 0; k < dimensions[2]; k++) {
     const firstK = sourceOffset[2] + k * factorK;
@@ -461,7 +488,9 @@ function reduceForegroundMajorityBySlices<T extends BoxStatisticValue = number>(
         sourceWidth,
         sourceOffset,
         dimensions,
-        (i, j, value) => write(targetI + i, targetJ + j, targetK + k, value)
+        target,
+        direct,
+        [targetI, targetJ, targetK + k]
       );
       continue;
     }
@@ -469,6 +498,9 @@ function reduceForegroundMajorityBySlices<T extends BoxStatisticValue = number>(
     for (let j = 0; j < dimensions[1]; j++) {
       const firstJ = sourceOffset[1] + j * factorJ;
       const endJ = Math.min(firstJ + factorJ, sourceEnd[1]);
+      const base = direct
+        ? directIndexOf(direct, targetI, targetJ + j, targetK + k)
+        : 0;
 
       for (let i = 0; i < dimensions[0]; i++) {
         const firstI = sourceOffset[0] + i * factorI;
@@ -508,7 +540,11 @@ function reduceForegroundMajorityBySlices<T extends BoxStatisticValue = number>(
           }
         }
 
-        write(targetI + i, targetJ + j, targetK + k, majority);
+        if (direct) {
+          direct.scalars[base + i] = majority;
+        } else {
+          target.setAtIJK(targetI + i, targetJ + j, targetK + k, majority as T);
+        }
         written++;
       }
     }
@@ -549,7 +585,6 @@ function reduceAverageAlongKBySlices<T extends BoxStatisticValue = number>(
   const [sourceWidth] = source.dimensions;
   const [reducedWidth, reducedHeight, reducedDepth] = reducedDims;
   const [targetI, targetJ, targetK] = reduction.targetOffset ?? [0, 0, 0];
-  const planeLength = reducedWidth * reducedHeight;
 
   if (
     sourceEnd[0] - sourceOffset[0] !== reducedWidth ||
@@ -570,13 +605,16 @@ function reduceAverageAlongKBySlices<T extends BoxStatisticValue = number>(
   )._getSliceData?.bind(source);
 
   let written = 0;
+  const direct = directTargetOf(target);
+  const frames: ArrayLike<number>[] = [];
 
+  // A streaming load refreshes one box per arriving frame, so this runs once
+  // per frame: it allocates nothing, and it reads each voxel of the box once.
   for (let rk = 0; rk < reducedDepth; rk++) {
     const firstK = sourceOffset[2] + rk * factorK;
     const lastK = Math.min(firstK + factorK, sourceEnd[2]);
-    const accumulator = new Float64Array(planeLength);
-    const counts = new Float64Array(planeLength);
-    let read = 0;
+
+    frames.length = 0;
 
     for (let k = firstK; k < lastK; k++) {
       let frame: ArrayLike<number> | undefined;
@@ -596,45 +634,44 @@ function reduceAverageAlongKBySlices<T extends BoxStatisticValue = number>(
         continue;
       }
 
-      read++;
-
-      for (let j = 0; j < reducedHeight; j++) {
-        const sourceRow = (sourceOffset[1] + j) * sourceWidth + sourceOffset[0];
-        const targetRow = j * reducedWidth;
-
-        for (let i = 0; i < reducedWidth; i++) {
-          const value = frame[sourceRow + i];
-
-          if (!Number.isFinite(value)) {
-            continue;
-          }
-
-          accumulator[targetRow + i] += value;
-          counts[targetRow + i] += 1;
-        }
-      }
+      frames.push(frame);
     }
 
-    if (!read) {
+    if (!frames.length) {
       continue;
     }
 
     for (let j = 0; j < reducedHeight; j++) {
+      const sourceRow = (sourceOffset[1] + j) * sourceWidth + sourceOffset[0];
+      const base = direct
+        ? directIndexOf(direct, targetI, targetJ + j, targetK + rk)
+        : 0;
+
       for (let i = 0; i < reducedWidth; i++) {
-        const index = j * reducedWidth + i;
-        const count = counts[index];
+        const index = sourceRow + i;
+        let sum = 0;
+        let count = 0;
+
+        for (let m = 0; m < frames.length; m++) {
+          const value = frames[m][index];
+
+          if (Number.isFinite(value)) {
+            sum += value;
+            count++;
+          }
+        }
 
         if (!count) {
           continue;
         }
 
-        let value = accumulator[index] / count;
+        const value = round ? Math.round(sum / count) : sum / count;
 
-        if (round) {
-          value = Math.round(value);
+        if (direct) {
+          direct.scalars[base + i] = value;
+        } else {
+          target.setAtIJK(targetI + i, targetJ + j, targetK + rk, value as T);
         }
-
-        target.setAtIJK(targetI + i, targetJ + j, targetK + rk, value as T);
         written++;
       }
     }

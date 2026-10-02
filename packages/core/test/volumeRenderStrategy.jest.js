@@ -163,7 +163,7 @@ describe('the default provider builds the strategies', () => {
       .find((one) => one.derivedFrom);
 
     expect(derived.statistic).toBe(VoxelStatistics.ForegroundMajority);
-    expect(derived.reduction).toBe('boxAverage');
+    expect(derived.reduction).toBe('boxForegroundMajority');
     expect(derived.grid.dimensions).toEqual([256, 256, 8]);
   });
 
