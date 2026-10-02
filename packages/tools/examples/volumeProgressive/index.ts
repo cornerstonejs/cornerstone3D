@@ -630,8 +630,7 @@ async function run() {
   probeInstructions.style.margin = '0 0 0.75em';
   probeInstructions.style.lineHeight = '1.4';
   probeInstructions.innerHTML =
-    'Please email these results to ' +
-    '<a href="mailto:martin.bellehumeur@radicalimaging.com">martin.bellehumeur@radicalimaging.com</a>. ' +
+    'Please open an issue with title <strong>GPU class testing</strong>. ' +
     'Include the <strong>device manufacturer and model</strong> ' +
     '(e.g. laptop / tablet / desktop make and model), and state whether ' +
     '<strong>any loading failed to complete</strong> (series, stage, or segmentation).';

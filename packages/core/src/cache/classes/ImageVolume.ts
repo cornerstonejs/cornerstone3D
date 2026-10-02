@@ -67,6 +67,8 @@ function markSlice(
 
 export interface vtkStreamingOpenGLTexture extends vtkOpenGLTexture {
   setUpdatedFrame: (frame: number) => void;
+  /** Marks every slice dirty for the next upload. Not implied by `modified()`. */
+  markAllFramesUpdated: () => void;
   setVolumeId: (volumeId: string) => void;
   releaseGraphicsResources: () => void;
   hasUpdatedFrames: () => boolean;

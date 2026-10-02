@@ -507,16 +507,19 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
    * Called when a frame is loaded so that on next render we know which data to load in.
    * @param {number} frameIndex The frame to load in.
    */
-  const superModified = publicAPI.modified;
   publicAPI.setUpdatedFrame = (frameIndex) => {
     model.updatedFrames[frameIndex] = true;
-    superModified();
+    publicAPI.modified();
   };
 
-  publicAPI.modified = () => {
-    superModified();
-
-    // this is really not efficient, but it works for now
+  /**
+   * Marks every slice of this texture for a refill on the next render.
+   *
+   * Prefer {@link setUpdatedFrame} when only some slices changed. Do not put
+   * this behaviour on `modified()`: VTK property setters (filters, extensions)
+   * call `modified()` and would then re-upload the whole volume.
+   */
+  publicAPI.markAllFramesUpdated = () => {
     const volume = cache.getVolume(model.volumeId);
 
     if (!volume) {
@@ -533,6 +536,8 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     for (let i = 0; i < slices; i++) {
       model.updatedFrames[i] = true;
     }
+
+    publicAPI.modified();
   };
 
   function updateTextureImagesUsingVoxelManager() {
