@@ -26,6 +26,7 @@ import {
   getLabelmaps,
   getOrCreateLabelmapVolume,
 } from '../../../../stateManagement/segmentation/helpers/labelmapSegmentationState';
+import { tagLabelmapVolume } from '../../../../stateManagement/segmentation/labelmapModel/labelmapLayerStore';
 import { addVolumesAsIndependentComponents } from '../addVolumesAsIndependentComponents';
 import { createLabelmapRepresentationUID } from '../labelmapRepresentationUID';
 import {
@@ -154,6 +155,12 @@ async function mountLegacyVolumeLabelmap({
       volumeId,
       imageIds: cache.getVolume(volumeId)?.imageIds,
     });
+  }
+
+  // Every labelmap reaches the GPU through here, whichever loader built its
+  // volume, so the statistic is set before the actor provisions a texture.
+  for (const layer of labelmapLayers) {
+    tagLabelmapVolume(cache.getVolume(layer.volumeId));
   }
 
   let blendMode = config?.blendMode ?? Enums.BlendModes.MAXIMUM_INTENSITY_BLEND;

@@ -31,6 +31,9 @@ import type {
 import ImageQualityStatus from '../../enums/ImageQualityStatus';
 import cache from '../cache';
 import type vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture';
+import { coreLog } from '../../utilities/logger';
+
+const log = coreLog.getLogger('cache', 'ImageVolume');
 
 /** The name of the set that holds the full-resolution data of the whole volume. */
 export const FULL_RESOLUTION_TEXTURE_SET = 'full-resolution/full-extent';
@@ -130,12 +133,7 @@ export class ImageVolume {
   hasPixelSpacing: boolean;
   /** Property to store additional information */
   additionalDetails?: Record<string, unknown>;
-  /**
-   * Statistic used when this volume must be reduced to fit a GPU texture.
-   * Intensity volumes use average. Labelmaps use foregroundMajority. Defaults
-   * to average.
-   */
-  reductionStatistic?: VoxelStatistic;
+  private _reductionStatistic?: VoxelStatistic;
   /**
    *  Property to store the number of dimension groups.
    * @deprecated
@@ -354,6 +352,40 @@ export class ImageVolume {
    */
   protected deliveredRegions(): DeliveredRegion[] | undefined {
     return undefined;
+  }
+
+  /**
+   * Statistic used when this volume must be reduced to fit a GPU texture.
+   * Intensity volumes use average. Labelmaps use foregroundMajority. Defaults
+   * to average.
+   */
+  public get reductionStatistic(): VoxelStatistic | undefined {
+    return this._reductionStatistic;
+  }
+
+  /**
+   * Set it before a render path provisions a texture. A reduction that already
+   * exists keeps its statistic, and so do the actors that draw it.
+   */
+  public set reductionStatistic(statistic: VoxelStatistic | undefined) {
+    if (statistic === this._reductionStatistic) {
+      return;
+    }
+
+    const reducedWithAnother = this._compositeVoxelManager
+      ?.getRepresentations()
+      .some(
+        (representation) =>
+          representation.derivedFrom && representation.statistic !== statistic
+      );
+
+    if (reducedWithAnother) {
+      log.warn(
+        `reductionStatistic of ${this.volumeId} changed to ${statistic} after a reduction with another statistic; existing actors keep the old one.`
+      );
+    }
+
+    this._reductionStatistic = statistic;
   }
 
   public get compositeVoxelManager(): CompositeVoxelManager<number | RGB> {

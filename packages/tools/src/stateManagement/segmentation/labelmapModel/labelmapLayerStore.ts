@@ -11,14 +11,12 @@ import {
   hasMultipleLabelmapImagesPerReferencedImageId,
 } from './labelmapImageIdMapping';
 
-const { VoxelStatistics } = Enums;
-
 /** Marks a volume so GPU reduction uses foreground majority instead of average. */
 function tagLabelmapVolume(
   volume: Types.IImageVolume | undefined
 ): Types.IImageVolume | undefined {
   if (volume) {
-    volume.reductionStatistic = VoxelStatistics.ForegroundMajority;
+    volume.reductionStatistic = Enums.VoxelStatistics.ForegroundMajority;
   }
 
   return volume;
@@ -286,4 +284,5 @@ export {
   getScalarArrayLengthFromLabelmap,
   registerLabelmap,
   removeLabelmap,
+  tagLabelmapVolume,
 };

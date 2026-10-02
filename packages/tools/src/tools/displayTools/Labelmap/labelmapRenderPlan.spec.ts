@@ -12,6 +12,10 @@ jest.mock('@cornerstonejs/core', () => ({
       ORTHOGRAPHIC: 'orthographic',
       PLANAR_NEXT: 'planarNext',
     },
+    VoxelStatistics: {
+      Average: 'average',
+      ForegroundMajority: 'foregroundMajority',
+    },
   },
   addVolumesToViewports: jest.fn(),
   cache: {
@@ -341,5 +345,59 @@ describe('labelmapRenderPlan', () => {
         visible: true,
       }
     );
+  });
+
+  it('reduces a volume labelmap by foreground majority whichever loader built it', async () => {
+    // A layer that already names its volume skips getOrCreateLabelmapVolume,
+    // so the render plan is what tags the volume before its actor exists.
+    const volumeLayer = {
+      labelmapId: 'volume-layer-id',
+      storageKind: 'volume',
+      volumeId: 'segmentation-volume-id',
+    };
+    const segmentationVolume = {
+      volumeId: 'segmentation-volume-id',
+      imageIds: ['labelmap-image-1'],
+      reductionStatistic: undefined,
+    };
+    const viewport = {
+      id: 'viewport-id',
+      type: 'orthographic',
+      getRenderingEngine: jest.fn(),
+      getVolumeId: jest.fn(() => 'source-volume-id'),
+    };
+    const segmentation = {
+      segmentationId: 'segmentation-id',
+      representationData: {
+        Labelmap: {
+          labelmaps: {
+            'volume-layer-id': volumeLayer,
+          },
+        },
+      },
+    };
+
+    getViewportLabelmapRenderModeMock.mockReturnValue('volume');
+    getLabelmapsMock.mockReturnValue([volumeLayer]);
+    getVolumeMock.mockReturnValue(segmentationVolume);
+
+    const renderPlan = resolveLabelmapRenderPlan({
+      viewport: viewport as never,
+      segmentation: segmentation as never,
+      representation: {
+        segmentationId: 'segmentation-id',
+        config: {} as never,
+      },
+    });
+
+    expect(renderPlan.kind).toBe('legacy-volume');
+
+    await renderPlan.reconcile({
+      actorEntries: [],
+      labelMapData: segmentation.representationData.Labelmap as never,
+    });
+
+    expect(getOrCreateLabelmapVolumeMock).not.toHaveBeenCalled();
+    expect(segmentationVolume.reductionStatistic).toBe('foregroundMajority');
   });
 });
