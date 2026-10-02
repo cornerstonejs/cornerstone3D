@@ -726,6 +726,9 @@ importers:
       '@cornerstonejs/metadata':
         specifier: 5.11.4
         version: link:../metadata
+      '@cornerstonejs/utils':
+        specifier: 5.11.4
+        version: link:../utils
 
   packages/docs:
     dependencies:

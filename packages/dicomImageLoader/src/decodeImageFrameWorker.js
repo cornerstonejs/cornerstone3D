@@ -1,4 +1,6 @@
 /* eslint-disable complexity */
+import { isColorImage } from '@cornerstonejs/utils';
+
 import bilinear from './shared/scaling/bilinear';
 import replicate from './shared/scaling/replicate';
 import { expose } from 'comlink';
@@ -23,7 +25,6 @@ import getMinMax from './shared/getMinMax';
 import getPixelDataTypeFromMinMax, {
   validatePixelDataType,
 } from './shared/getPixelDataTypeFromMinMax';
-import isColorImage from './shared/isColorImage';
 
 const imageUtils = {
   bilinear,
