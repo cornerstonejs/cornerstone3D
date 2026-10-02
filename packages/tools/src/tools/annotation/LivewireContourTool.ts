@@ -39,6 +39,7 @@ import ContourSegmentationBaseTool from '../base/ContourSegmentationBaseTool';
 import type { AnnotationStyle } from '../../types/AnnotationStyle';
 import type { AnnotationModifiedEventDetail } from '../../types/EventTypes';
 import { getCalibratedLengthUnitsAndScale, throttle } from '../../utilities';
+import { getCalibratedAreaFromWorld } from '../../utilities/getCalibratedUnits';
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
 
 const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
@@ -1117,36 +1118,44 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       const deltaInY = vec3.distance(originalWorldPoint, deltaYPoint);
 
       const { imageData } = image;
-      const { areaUnit } = getCalibratedLengthUnitsAndScale(image, () => {
-        const {
-          maxX: canvasMaxX,
-          maxY: canvasMaxY,
-          minX: canvasMinX,
-          minY: canvasMinY,
-        } = math.polyline.getAABB(canvasCoordinates);
+      const {
+        maxX: canvasMaxX,
+        maxY: canvasMaxY,
+        minX: canvasMinX,
+        minY: canvasMinY,
+      } = math.polyline.getAABB(canvasCoordinates);
 
-        const topLeftBBWorld = viewport.canvasToWorld([canvasMinX, canvasMinY]);
+      const topLeftBBWorld = viewport.canvasToWorld([canvasMinX, canvasMinY]);
 
-        const topLeftBBIndex = utilities.transformWorldToIndex(
-          imageData,
-          topLeftBBWorld
-        );
+      const topLeftBBIndex = utilities.transformWorldToIndex(
+        imageData,
+        topLeftBBWorld
+      );
 
-        const bottomRightBBWorld = viewport.canvasToWorld([
-          canvasMaxX,
-          canvasMaxY,
-        ]);
+      const bottomRightBBWorld = viewport.canvasToWorld([
+        canvasMaxX,
+        canvasMaxY,
+      ]);
 
-        const bottomRightBBIndex = utilities.transformWorldToIndex(
-          imageData,
-          bottomRightBBWorld
-        );
+      const bottomRightBBIndex = utilities.transformWorldToIndex(
+        imageData,
+        bottomRightBBWorld
+      );
 
-        return [topLeftBBIndex, bottomRightBBIndex];
-      });
-      // Convert from canvas_pixels ^2 to mm^2
-      const area =
-        math.polyline.getArea(canvasCoordinates) * deltaInX * deltaInY;
+      // The calibration tests the handles against the ultrasound regions, so
+      // it takes the corners of the bounding box as an array.
+      const calibrate = getCalibratedLengthUnitsAndScale(image, [
+        topLeftBBIndex,
+        bottomRightBBIndex,
+      ]);
+      const { areaUnit } = calibrate;
+      // Convert from canvas_pixels ^2 to world units ^2, then to the
+      // calibrated units (cm² on an ultrasound region, for instance)
+      const area = getCalibratedAreaFromWorld(
+        image,
+        calibrate,
+        math.polyline.getArea(canvasCoordinates) * deltaInX * deltaInY
+      );
 
       cachedStats[targetId] = {
         Modality: metadata.Modality,

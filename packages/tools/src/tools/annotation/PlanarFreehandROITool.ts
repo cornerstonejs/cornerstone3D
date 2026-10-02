@@ -8,7 +8,10 @@ import {
 import type { Types } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
 
-import { getCalibratedLengthUnitsAndScale } from '../../utilities/getCalibratedUnits';
+import {
+  getCalibratedLengthUnitsAndScale,
+  getCalibratedAreaFromWorld,
+} from '../../utilities/getCalibratedUnits';
 import * as math from '../../utilities/math';
 import { polyline } from '../../utilities/math';
 import { filterAnnotationsForDisplay } from '../../utilities/planar';
@@ -921,13 +924,20 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
 
     const indexPoints = points.map((point) => imageData.worldToIndex(point));
 
-    // Convert from canvas_pixels ^2 to mm^2
-    const area = polyline.getArea(canvasCoordinates) * deltaInX * deltaInY;
+    // Convert from canvas_pixels ^2 to world units ^2, then to the calibrated
+    // units (cm² on an ultrasound region, for instance)
+    const area = getCalibratedAreaFromWorld(
+      image,
+      calibratedScale,
+      polyline.getArea(canvasCoordinates) * deltaInX * deltaInY
+    );
 
+    // The contour is closed, so the perimeter includes the segment from the
+    // last point back to the first
     const perimeter = PlanarFreehandROITool.calculateLengthInIndex(
       calibratedScale,
       indexPoints,
-      closed
+      true
     );
 
     // Rule M of #2889: a voxel belongs to this annotation when its centre is
