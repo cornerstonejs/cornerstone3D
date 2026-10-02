@@ -124,6 +124,60 @@ describe('Contour tool area calibration', () => {
           expect(areaUnit).toBe(testCase.areaUnit);
         });
       }
+
+      it('ignores a region that only contains the canvas bounding box corners', () => {
+        // A 45 degree viewport rotation. The canvas bounding box corners of
+        // this diamond map back to (20, 10) and (80, 10), inside the region,
+        // but (50, -20) is outside it, so the region must not apply.
+        mockEnabledElement.viewport = {
+          worldToCanvas: ([x, y]) => [
+            (x - y) / Math.SQRT2,
+            (x + y) / Math.SQRT2,
+          ],
+          canvasToWorld: ([x, y]) => [
+            (x + y) / Math.SQRT2,
+            (y - x) / Math.SQRT2,
+            0,
+          ],
+        };
+        const tool = new Tool();
+        tool.configuration.calculateStats = true;
+        tool.getTargetImageData = () =>
+          createImage({
+            spacing: [1, 1, 1],
+            hasPixelSpacing: false,
+            calibration: {
+              sequenceOfUltrasoundRegions: [
+                {
+                  ...US_REGION,
+                  regionLocationMaxX1: 100,
+                  regionLocationMaxY1: 100,
+                },
+              ],
+            },
+          });
+        const annotation = {
+          invalidated: false,
+          data: {
+            contour: {
+              closed: true,
+              polyline: [
+                [20, 10, 0],
+                [50, -20, 0],
+                [80, 10, 0],
+                [50, 40, 0],
+              ],
+            },
+            cachedStats: { [targetId]: {} },
+          },
+        };
+
+        tool._calculateCachedStats(annotation, {});
+
+        const { area, areaUnit } = annotation.data.cachedStats[targetId];
+        expect(areaUnit).toBe('px\xb2');
+        expect(area).toBeCloseTo((60 * 60) / 2);
+      });
     });
   }
 

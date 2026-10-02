@@ -1378,33 +1378,14 @@ class SplineROITool extends ContourSegmentationBaseTool {
       const deltaInY = vec3.distance(originalWorldPoint, deltaYPoint);
 
       const { imageData, spacing = [1, 1, 1] } = image;
-      const {
-        maxX: canvasMaxX,
-        maxY: canvasMaxY,
-        minX: canvasMinX,
-        minY: canvasMinY,
-      } = math.polyline.getAABB(canvasCoordinates);
-
-      const topLeftBBWorld = viewport.canvasToWorld([canvasMinX, canvasMinY]);
-
-      const topLeftBBIndex = utilities.transformWorldToIndex(
-        imageData,
-        topLeftBBWorld
+      // Every point, not the canvas bounding box corners, so a contour on a
+      // rotated viewport is only calibrated by a region that contains it.
+      const indexPoints = points.map((point) =>
+        utilities.transformWorldToIndex(imageData, point)
       );
-
-      const bottomRightBBWorld = viewport.canvasToWorld([
-        canvasMaxX,
-        canvasMaxY,
-      ]);
-
-      const bottomRightBBIndex = utilities.transformWorldToIndex(
-        imageData,
-        bottomRightBBWorld
-      );
-
       const { areaUnit, scale, scaleY } = getCalibratedLengthUnitsAndScale(
         image,
-        [topLeftBBIndex, bottomRightBBIndex]
+        indexPoints
       );
       // Convert from canvas_pixels ^2 to world units ^2, then to calibrated
       // units ^2. scale and scaleY are image pixels per calibrated unit, so
