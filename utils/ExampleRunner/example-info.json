@@ -57,6 +57,14 @@
         "name": "Stack Viewport Canvas-to-World",
         "description": "Demonstrates how to obtain the coordinates in the 3D world from a coordinate on the canvas."
       },
+      "displaySets": {
+        "name": "Display Sets",
+        "description": "Splits each series into display sets with the default split rules of @cornerstonejs/metadata, and shows one viewport for each display set."
+      },
+      "displaySetRules": {
+        "name": "Display Set Rules",
+        "description": "Edits the display set split rules as data: turn a rule off, change a priority, or paste, open or fetch a JSON rule set, and see the series split again."
+      },
       "volumeBasic": {
         "name": "Basic Volume Viewport Usage",
         "description": "Displays a set of DICOM images in a Volume Viewport."

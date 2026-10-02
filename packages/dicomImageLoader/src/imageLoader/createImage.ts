@@ -416,8 +416,8 @@ async function createImage(
             ? voiLutModule.windowWidth[0]
             : undefined,
           voiLUTFunction:
-            (voiLutModule.voiLUTFunction?.length &&
-              voiLutModule.voiLUTFunction[0]) ||
+            // A string or an array; `[0]` of a string is its first character.
+            utilities.asArrayFirst(voiLutModule.voiLUTFunction) ||
             voiLutModule.voiLutFunction ||
             undefined,
           decodeTimeInMS: imageFrame.decodeTimeInMS,
