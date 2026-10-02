@@ -917,12 +917,18 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     deltaInY,
     annotation,
   }) {
-    const { areaUnit, unit } = calibratedScale;
+    const { areaUnit, unit, scale, scaleY } = calibratedScale;
+    const { spacing = [1, 1, 1] } = image;
 
     const indexPoints = points.map((point) => imageData.worldToIndex(point));
 
-    // Convert from canvas_pixels ^2 to mm^2
-    const area = polyline.getArea(canvasCoordinates) * deltaInX * deltaInY;
+    // Convert from canvas_pixels ^2 to world units ^2, then to calibrated
+    // units ^2. scale and scaleY are image pixels per calibrated unit, so the
+    // spacing takes world units back to image pixels first. Without a
+    // calibration the two cancel out and the area stays in world units.
+    const area =
+      (polyline.getArea(canvasCoordinates) * deltaInX * deltaInY) /
+      (spacing[0] * scale * spacing[1] * scaleY);
 
     const perimeter = PlanarFreehandROITool.calculateLengthInIndex(
       calibratedScale,
