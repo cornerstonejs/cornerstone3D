@@ -389,11 +389,13 @@ function nearbyFramesOfDecimation(decimate) {
 /**
  * The interleaved path, with two changes for a volume of many images.
  *
- * `initialImages` fetches the middle image and the two images beside it.
- * A viewport opens on the middle of the volume, and a reduced texture takes
- * the box average of several frames there, so one middle image alone gives
- * that view almost nothing. First/last are left to later stages so the
- * middle plane fills first.
+ * `initialImages` fetches the middle image and replicates it across a window
+ * along k. A viewport opens on the middle of the volume. The reduced texture
+ * averages several frames per reduced voxel, and VOLUME_3D raycasts the whole
+ * volume, so a band of only a few slices (the default nearby list of ±1 and +2)
+ * paints as a paper-thin mid plane. The window matches `coarse32`, so the first
+ * paint is one thirty-second of the acquisition along k — thick enough for 3D
+ * while axial still sees the middle immediately.
  *
  * `coarse32` then retrieves one image in 32 and replicates each one to the 31
  * images around it, so the whole volume holds data once 1/32 of the images
@@ -402,17 +404,20 @@ function nearbyFramesOfDecimation(decimate) {
  * that volume.
  *
  * The stage needs the number of images, because a position of the middle of
- * the volume plus one image is an index and not a fraction.
+ * the volume is an index and not a fraction.
  */
 function interleavedConfigurationOf(imageCount) {
   const middle = Math.floor(imageCount / 2);
   const [initialImages, ...laterStages] = interleavedRetrieveStages.stages;
+  // Same k-window as `coarse32`: thick enough for reduced box average and 3D.
+  const middleNearbyFrames = nearbyFramesOfDecimation(32);
 
   return {
     stages: [
       {
         ...initialImages,
-        positions: [middle, middle - 1, middle + 1],
+        positions: [middle],
+        nearbyFrames: middleNearbyFrames,
       },
       {
         id: 'coarse32',
@@ -421,7 +426,7 @@ function interleavedConfigurationOf(imageCount) {
         priority: 6,
         requestType: RequestType.Thumbnail,
         retrieveType: 'default',
-        nearbyFrames: nearbyFramesOfDecimation(32),
+        nearbyFrames: middleNearbyFrames,
       },
       // Every later stage keeps its order behind the coarse stage, which took
       // the priority that the first of them held.
