@@ -1,5 +1,6 @@
 import type { ByteArray } from 'dicom-parser';
 import type { Types } from '@cornerstonejs/core';
+import { dropNativePadding } from './nativeFrameBytes';
 
 /* eslint no-bitwise: 0 */
 function swap16(val) {
@@ -8,8 +9,9 @@ function swap16(val) {
 
 async function decodeBigEndian(
   imageFrame: Types.IImageFrame,
-  pixelData: ByteArray
+  frameData: ByteArray
 ): Promise<Types.IImageFrame> {
+  const pixelData = dropNativePadding(imageFrame, frameData);
   if (imageFrame.bitsAllocated === 16) {
     let arrayBuffer = pixelData.buffer;
 
