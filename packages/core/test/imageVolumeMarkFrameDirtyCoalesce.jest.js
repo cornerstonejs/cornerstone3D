@@ -115,6 +115,59 @@ describe('ImageVolume markFrameDirty coalesce + progressive derived', () => {
     refreshSpy.mockRestore();
   });
 
+  it('marks every coalesced frame in a full-resolution set beside a reduced one', async () => {
+    const { volume, imageIds } = makeStreamingVolume(512);
+    defaultVolumeStrategyProvider({
+      volume,
+      profile: getGpuCapabilityProfile('low-tablet'),
+      viewportId: 'vp',
+    });
+    const fullResolution = volume.getFullResolutionTexture();
+    // A new texture starts with every frame marked for its first fill.
+    fullResolution.getUpdatedFrames().fill(null);
+
+    putSlice(imageIds[0], 10);
+    putSlice(imageIds[1], 30);
+
+    const refreshSpy = jest.spyOn(
+      volume.compositeVoxelManager,
+      'refreshDerivedFrames'
+    );
+
+    volume.markFrameDirty(0);
+    volume.markFrameDirty(1);
+    await flushDirtyMicrotask();
+
+    // Frames 0 and 1 share one reduced box, so they share one refresh, but the
+    // full-resolution texture holds them as two slices.
+    expect(refreshSpy.mock.calls.length).toBe(1);
+    expect(fullResolution.getUpdatedFrames()[0]).toBe(true);
+    expect(fullResolution.getUpdatedFrames()[1]).toBe(true);
+
+    refreshSpy.mockRestore();
+  });
+
+  it('applies pending frames when a reader asks in the same turn', () => {
+    const { volume, imageIds } = makeStreamingVolume(512);
+    defaultVolumeStrategyProvider({
+      volume,
+      profile: getGpuCapabilityProfile('low-tablet'),
+      viewportId: 'vp',
+    });
+    const before = volume.getVoxelQuality().deliveries ?? 0;
+
+    putSlice(imageIds[0], 40);
+    volume.markFrameDirty(0);
+
+    // No await: the read itself flushes the pending delivery.
+    expect(volume.getVoxelQuality().deliveries).toBe(before + 1);
+
+    const derived = volume
+      .getVoxelRepresentations()
+      .find((representation) => representation.derivedFrom);
+    expect(derived.voxelManager.getAtIJK(0, 0, 0)).toBe(40);
+  });
+
   it('updates the derived box from the first frame alone (progressive)', async () => {
     const { volume, imageIds } = makeStreamingVolume(512);
     defaultVolumeStrategyProvider({

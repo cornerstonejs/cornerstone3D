@@ -45,6 +45,8 @@ class Cache {
   private readonly _geometryCache = new Map<string, ICachedGeometry>();
 
   private _imageCacheSize = 0;
+  /** Counts the images that reached the cache, so a remembered miss can expire. */
+  private _imageGeneration = 0;
   private _maxCacheSize = 3 * ONE_GB;
   private _geometryCacheSize = 0;
 
@@ -424,6 +426,7 @@ class Cache {
     cachedImage.loaded = true;
 
     cachedImage.image = image;
+    this._imageGeneration++;
     cachedImage.sizeInBytes = image.sizeInBytes;
     this.incrementImageCacheSize(cachedImage.sizeInBytes);
     const eventDetails: EventTypes.ImageCacheImageAddedEventDetail = {
@@ -1152,6 +1155,10 @@ class Cache {
     partialImage?: IImage,
     removeImageLoadObject = false
   ) {
+    if (partialImage) {
+      this._imageGeneration++;
+    }
+
     const cachedImage = this._imageCache.get(imageId);
     if (!cachedImage) {
       if (partialImage) {
@@ -1177,6 +1184,14 @@ class Cache {
       }
       cachedImage.image = partialImage || cachedImage.image;
     }
+  }
+
+  /**
+   * A number that changes whenever an image reaches the cache. A reader that
+   * remembers a missing image compares it to know the miss may be stale.
+   */
+  public getImageGeneration(): number {
+    return this._imageGeneration;
   }
 
   /** Gets the current image quality for the given image id */

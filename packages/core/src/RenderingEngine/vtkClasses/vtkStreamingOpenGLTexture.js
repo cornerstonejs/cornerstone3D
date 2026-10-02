@@ -4,6 +4,7 @@ import cache from '../../cache/cache';
 import { getConstructorFromType } from '../../utilities/getBufferConfiguration';
 import VoxelManager from '../../utilities/VoxelManager';
 import { voxelGridsEqual } from '../../utilities/voxelGrid';
+import fillPlaneByForegroundMajority from '../../utilities/voxelGrid/foregroundMajorityPlane';
 import VoxelStatistics from '../../enums/VoxelStatistics';
 
 /**
@@ -65,6 +66,23 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     });
   };
 
+  const superCreate3DFromRaw = publicAPI.create3DFromRaw;
+
+  /**
+   * The mappers allocate with `data: null`, which leaves the GPU storage empty,
+   * so every slice needs a fill. `modified()` no longer implies that, and a
+   * re-allocation after the first fill would otherwise stay black.
+   */
+  publicAPI.create3DFromRaw = (options) => {
+    const created = superCreate3DFromRaw(options);
+
+    if (created && !options.data) {
+      publicAPI.markAllFramesUpdated();
+    }
+
+    return created;
+  };
+
   const superUpdate = publicAPI.updateVolumeInfoForGL;
 
   publicAPI.updateVolumeInfoForGL = (dataType, numComps) => {
@@ -91,6 +109,9 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     if (!volume) {
       return;
     }
+
+    // Frames marked earlier in this turn wait for a microtask; upload them now.
+    volume.flushPendingDirtyFrames?.();
 
     model._openGLRenderWindow.activateTexture(publicAPI);
     publicAPI.createTexture();
@@ -256,11 +277,8 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
   }
 
   /**
-   * Fills one slice with the foreground majority of each source box.
-   *
-   * Background (0) does not compete: a box that holds any non-zero label keeps
-   * the majority among those labels. On a tie, keeps the first non-zero label
-   * that reached the winning count.
+   * Fills one slice with the foreground majority of each source box. See
+   * {@link fillPlaneByForegroundMajority} for the rule and its tie break.
    */
   function fillSliceByBoxForegroundMajority(
     volume,
@@ -285,8 +303,7 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
       return false;
     }
 
-    const tallies = Array.from({ length: width * height }, () => new Map());
-    let read = 0;
+    const frames = [];
     const imageIds = volume.imageIds;
 
     for (let k = firstK; k < lastK; k++) {
@@ -302,54 +319,22 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
         }
       }
 
-      if (!frame || frame.length < sourceWidth * sourceHeight) {
-        continue;
-      }
-
-      read++;
-
-      for (let j = 0; j < sourceHeight; j++) {
-        const targetRow = Math.min((j / factorJ) | 0, height - 1) * width;
-        const sourceRow = j * sourceWidth;
-
-        for (let i = 0; i < sourceWidth; i++) {
-          const targetIndex =
-            targetRow + Math.min((i / factorI) | 0, width - 1);
-          const label = frame[sourceRow + i];
-
-          // Background does not compete with foreground labels.
-          if (label === 0) {
-            continue;
-          }
-
-          const counts = tallies[targetIndex];
-
-          counts.set(label, (counts.get(label) ?? 0) + 1);
-        }
+      if (frame && frame.length >= sourceWidth * sourceHeight) {
+        frames.push(frame);
       }
     }
 
-    if (!read) {
+    if (!frames.length) {
       return false;
     }
 
-    const values = target.getScalarData();
-
-    for (let index = 0; index < values.length; index++) {
-      const counts = tallies[index];
-      let majority;
-      let majorityCount = 0;
-
-      for (const [label, count] of counts) {
-        if (count > majorityCount) {
-          majorityCount = count;
-          majority = label;
-        }
-      }
-
-      // Empty cells and background-only cells upload 0.
-      values[index] = majority !== undefined ? majority : 0;
-    }
+    fillPlaneByForegroundMajority(
+      frames,
+      [sourceWidth, sourceHeight],
+      [width, height],
+      [factorI, factorJ],
+      target.getScalarData()
+    );
 
     return true;
   }

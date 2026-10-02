@@ -425,6 +425,8 @@ export class ImageVolume {
   public getVoxelQuality(
     selector: VoxelRepresentationSelector = {}
   ): VoxelQualityRecord {
+    this.flushPendingDirtyFrames();
+
     return this.compositeVoxelManager.getQuality(selector);
   }
 
@@ -638,7 +640,14 @@ export class ImageVolume {
       .join('|');
   }
 
-  private flushPendingDirtyFrames(): void {
+  /**
+   * Applies the frames that `markFrameDirty` holds for its microtask now.
+   *
+   * A reader that runs in the same turn as the marks (a texture upload, a
+   * quality read) calls this so it never sees the state from before the
+   * delivery. The scheduled microtask then finds nothing pending.
+   */
+  public flushPendingDirtyFrames(): void {
     this._dirtyFlushScheduled = false;
     const pending = [...this._pendingDirtyFrames.entries()];
     this._pendingDirtyFrames.clear();
@@ -661,27 +670,22 @@ export class ImageVolume {
       });
     }
 
-    const seenKeys = new Set<string>();
-    const markBounds: BoundsIJK[] = [];
+    const refreshedKeys = new Set<string>();
 
     for (const [frameIndex] of pending) {
       const bounds = boundsOfFrame(this.voxelGrid, frameIndex);
       const key = this.derivedRefreshKey(bounds);
 
-      if (seenKeys.has(key)) {
-        continue;
+      // Only the derived refresh dedupes: two frames of one reduced box share
+      // it. Every frame is still marked, because a full-resolution set holds
+      // one slice per frame and a reduced set merges duplicate marks.
+      if (!refreshedKeys.has(key)) {
+        refreshedKeys.add(key);
+        this.compositeVoxelManager.refreshDerivedFrames(bounds, this.voxelGrid);
       }
 
-      seenKeys.add(key);
-      this.compositeVoxelManager.refreshDerivedFrames(bounds, this.voxelGrid);
-      markBounds.push(bounds);
-    }
-
-    for (const bounds of markBounds) {
       for (const set of this.textureSets) {
-        set.markDirty(bounds, (slot, slice) => {
-          markSlice(slot, slice);
-        });
+        set.markDirty(bounds, markSlice);
       }
     }
   }
