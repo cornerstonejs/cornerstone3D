@@ -57,8 +57,9 @@ const types = [
  * Extracts the calibrated length units, area units, and the scale
  * for converting from internal spacing to image spacing.
  *
- * @param handles - to detect if spacing information is different between points
  * @param image - to extract the calibration from
+ * @param handles - index points, or a function returning them, used to find
+ *   the ultrasound region that contains the measurement
  * @returns Object containing the units, area units, and scale
  */
 const getCalibratedLengthUnitsAndScale = (image, handles) => {
@@ -95,9 +96,11 @@ const getCalibratedLengthUnitsAndScale = (image, handles) => {
   }
 
   if (calibration.sequenceOfUltrasoundRegions) {
+    // Callers written against the pre-v5 API pass a function.
+    const indexHandles = typeof handles === 'function' ? handles() : handles;
     const region = calibration.sequenceOfUltrasoundRegions.find(
       (region) =>
-        handles.every(
+        indexHandles.every(
           (handle) =>
             handle[0] >= region.regionLocationMinX0 &&
             handle[0] <= region.regionLocationMaxX1 &&
