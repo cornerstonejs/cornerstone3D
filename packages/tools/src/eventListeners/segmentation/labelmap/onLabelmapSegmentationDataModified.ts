@@ -25,7 +25,7 @@ const getViewportByViewportId = (viewportId: string) => {
 const onLabelmapSegmentationDataModified = function (
   evt: SegmentationDataModifiedEventType
 ): void {
-  const { segmentationId, modifiedSlicesToUse } = evt.detail;
+  const { segmentationId, modifiedSlicesToUse, voxelsUnchanged } = evt.detail;
 
   const { representationData } = getSegmentation(segmentationId);
 
@@ -84,6 +84,7 @@ const onLabelmapSegmentationDataModified = function (
       modifiedSlicesToUse: hasBothStackAndVolume ? [] : modifiedSlicesToUse,
       representationData,
       type: SegmentationRepresentations.Labelmap,
+      voxelsUnchanged,
     });
   }
 

@@ -399,5 +399,12 @@ describe('labelmapRenderPlan', () => {
 
     expect(getOrCreateLabelmapVolumeMock).not.toHaveBeenCalled();
     expect(segmentationVolume.reductionStatistic).toBe('foregroundMajority');
+    // Adding the view changed no voxel, so the labelmap is not re-reduced.
+    expect(triggerSegmentationDataModifiedMock).toHaveBeenCalledWith(
+      'segmentation-id',
+      undefined,
+      undefined,
+      { voxelsUnchanged: true }
+    );
   });
 });

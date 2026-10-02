@@ -87,6 +87,36 @@ describe('performVolumeLabelmapUpdate', () => {
     );
   });
 
+  it('renders without re-reducing when no voxel changed', () => {
+    const volume = createVolume('unchanged-volume-id');
+
+    getVolumeMock.mockReturnValue(volume);
+
+    performVolumeLabelmapUpdate({
+      modifiedSlicesToUse: [],
+      representationData: {
+        Labelmap: {
+          volumeId: 'unchanged-volume-id',
+        },
+      },
+      type: 'Labelmap' as never,
+      voxelsUnchanged: true,
+    });
+
+    expect(volume.markFrameDirty).not.toHaveBeenCalled();
+    expect(volume.voxelManager.invalidateCache).not.toHaveBeenCalled();
+    expect(triggerEventMock).toHaveBeenCalledWith(
+      eventTarget,
+      'IMAGE_VOLUME_MODIFIED',
+      {
+        volumeId: 'unchanged-volume-id',
+        FrameOfReferenceUID: 'frame-of-reference',
+        numberOfFrames: 3,
+        framesProcessed: 3,
+      }
+    );
+  });
+
   it('falls back to the legacy top-level labelmap volume id', () => {
     const volume = createVolume('legacy-volume-id');
 

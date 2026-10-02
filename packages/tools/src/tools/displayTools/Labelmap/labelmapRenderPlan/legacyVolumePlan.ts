@@ -254,7 +254,12 @@ async function mountLegacyVolumeLabelmap({
       immediateRender,
       suppressEvents
     );
-    triggerSegmentationDataModified(segmentationId);
+    // Adding the labelmap to this viewport changed no voxel. A new texture is
+    // filled when it is provisioned, and a shared one is already current, so
+    // the labelmap must not be re-reduced once per viewport it is added to.
+    triggerSegmentationDataModified(segmentationId, undefined, undefined, {
+      voxelsUnchanged: true,
+    });
     return;
   }
 
