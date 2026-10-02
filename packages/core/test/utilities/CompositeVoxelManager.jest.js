@@ -1,9 +1,7 @@
 import { describe, it, expect, beforeEach } from '@jest/globals';
-import {
-  CompositeVoxelManager,
-  VoxelManager,
-  voxelGrid,
-} from '../../src/utilities';
+import CompositeVoxelManager from '../../src/utilities/CompositeVoxelManager';
+import VoxelManager from '../../src/utilities/VoxelManager';
+import * as voxelGrid from '../../src/utilities/voxelGrid';
 import {
   VoxelStatistics,
   ImageQualityStatus,

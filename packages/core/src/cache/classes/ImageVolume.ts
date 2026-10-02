@@ -4,7 +4,7 @@ import VoxelManager from '../../utilities/VoxelManager';
 import CompositeVoxelManager from '../../utilities/CompositeVoxelManager';
 import volumeTextureStore from '../volumeTextureStore';
 import { isMutableSlab } from './VolumeTextureSet';
-import { boundsOfFrame } from '../../utilities/voxelGrid';
+import { boundsOfFrame, voxelGridKey } from '../../utilities/voxelGrid';
 import { vtkStreamingOpenGLTexture } from '../../RenderingEngine/vtkClasses';
 import type {
   CreateVoxelRepresentationOptions,
@@ -14,6 +14,7 @@ import type {
 import type { VolumeTextureSet, VolumeTextureSlot } from './VolumeTextureSet';
 import type { ProvisionTextureSetOptions } from '../volumeTextureStore';
 import type {
+  BoundsIJK,
   DeliveredRegion,
   Metadata,
   Point3,
@@ -25,10 +26,14 @@ import type {
   IVoxelManager,
   VoxelGrid,
   VoxelQualityRecord,
+  VoxelStatistic,
 } from '../../types';
 import ImageQualityStatus from '../../enums/ImageQualityStatus';
 import cache from '../cache';
 import type vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture';
+import { coreLog } from '../../utilities/logger';
+
+const log = coreLog.getLogger('cache', 'ImageVolume');
 
 /** The name of the set that holds the full-resolution data of the whole volume. */
 export const FULL_RESOLUTION_TEXTURE_SET = 'full-resolution/full-extent';
@@ -65,6 +70,8 @@ function markSlice(
 
 export interface vtkStreamingOpenGLTexture extends vtkOpenGLTexture {
   setUpdatedFrame: (frame: number) => void;
+  /** Marks every slice dirty for the next upload. Not implied by `modified()`. */
+  markAllFramesUpdated: () => void;
   setVolumeId: (volumeId: string) => void;
   releaseGraphicsResources: () => void;
   hasUpdatedFrames: () => boolean;
@@ -126,6 +133,7 @@ export class ImageVolume {
   hasPixelSpacing: boolean;
   /** Property to store additional information */
   additionalDetails?: Record<string, unknown>;
+  private _reductionStatistic?: VoxelStatistic;
   /**
    *  Property to store the number of dimension groups.
    * @deprecated
@@ -144,6 +152,13 @@ export class ImageVolume {
    * the first request. See `compositeVoxelManager`.
    */
   private _compositeVoxelManager?: CompositeVoxelManager<number | RGB>;
+
+  /**
+   * Pending frame deliveries coalesced into one microtask flush so a burst of
+   * streaming arrivals shares derived reduces and texture marks.
+   */
+  private _pendingDirtyFrames = new Map<number, ImageQualityStatus>();
+  private _dirtyFlushScheduled = false;
 
   /** The number of components of one voxel, which gives the cost of a texture. */
   private _numberOfComponents: number;
@@ -177,6 +192,7 @@ export class ImageVolume {
       additionalDetails,
       voxelManager,
       numberOfComponents,
+      reductionStatistic,
     } = props;
 
     if (!dataType) {
@@ -196,6 +212,7 @@ export class ImageVolume {
     this.origin = origin;
     this.direction = direction;
     this.dataType = dataType;
+    this.reductionStatistic = reductionStatistic;
     this._numberOfComponents = numberOfComponents || 1;
     this.hasPixelSpacing =
       Number.isFinite(spacing[0]) &&
@@ -337,6 +354,40 @@ export class ImageVolume {
     return undefined;
   }
 
+  /**
+   * Statistic used when this volume must be reduced to fit a GPU texture.
+   * Intensity volumes use average. Labelmaps use foregroundMajority. Defaults
+   * to average.
+   */
+  public get reductionStatistic(): VoxelStatistic | undefined {
+    return this._reductionStatistic;
+  }
+
+  /**
+   * Set it before a render path provisions a texture. A reduction that already
+   * exists keeps its statistic, and so do the actors that draw it.
+   */
+  public set reductionStatistic(statistic: VoxelStatistic | undefined) {
+    if (statistic === this._reductionStatistic) {
+      return;
+    }
+
+    const reducedWithAnother = this._compositeVoxelManager
+      ?.getRepresentations()
+      .some(
+        (representation) =>
+          representation.derivedFrom && representation.statistic !== statistic
+      );
+
+    if (reducedWithAnother) {
+      log.warn(
+        `reductionStatistic of ${this.volumeId} changed to ${statistic} after a reduction with another statistic; existing actors keep the old one.`
+      );
+    }
+
+    this._reductionStatistic = statistic;
+  }
+
   public get compositeVoxelManager(): CompositeVoxelManager<number | RGB> {
     const primary = this.voxelManager as IVoxelManager<number | RGB>;
 
@@ -406,6 +457,8 @@ export class ImageVolume {
   public getVoxelQuality(
     selector: VoxelRepresentationSelector = {}
   ): VoxelQualityRecord {
+    this.flushPendingDirtyFrames();
+
     return this.compositeVoxelManager.getQuality(selector);
   }
 
@@ -563,11 +616,14 @@ export class ImageVolume {
    * at the moment of the derivation, and a streaming loader delivers its frames
    * after that moment.
    *
-   * The member then marks the frame for a refill in every texture of every set
-   * whose grid covers the frame. One frame changes several textures, because
-   * each texture that covers the frame reads the same voxels, and MR-API-IV-6
-   * states that rule. A mark uploads nothing: the refill happens at the next
-   * render of each texture.
+   * Arrivals in the same turn are coalesced on a microtask: deliveries are
+   * recorded immediately in the flush, derived boxes are reduced once per
+   * unique reduced box (incremental average over whatever source frames exist),
+   * and each covering texture slice is marked once. Progressive loading and
+   * nearby-frame replicates still update as soon as data arrives.
+   *
+   * A mark uploads nothing: the refill happens at the next render of each
+   * texture.
    *
    * @param quality - the quality of the data that arrived
    */
@@ -575,19 +631,94 @@ export class ImageVolume {
     frameIndex: number,
     quality: ImageQualityStatus = ImageQualityStatus.FULL_RESOLUTION
   ): void {
-    // The delivery can have replaced the image of this frame, and the voxel
-    // manager holds the image that it last resolved for the frame. Forget that
-    // image, so the reads below take the image that has just arrived.
-    this.voxelManager?.invalidateSlice?.(frameIndex);
+    this._pendingDirtyFrames.set(frameIndex, quality);
 
-    this.compositeVoxelManager.acceptData({
-      grid: this.voxelGrid,
-      frameIndex,
-      quality,
+    if (this._dirtyFlushScheduled) {
+      return;
+    }
+
+    this._dirtyFlushScheduled = true;
+    queueMicrotask(() => {
+      this.flushPendingDirtyFrames();
     });
+  }
 
-    for (const set of this.textureSets) {
-      set.markDirty(boundsOfFrame(this.voxelGrid, frameIndex), markSlice);
+  /**
+   * Key that groups frame deliveries that touch the same derived box(es).
+   * Full-resolution volumes (no derived reps) key by the frame's k index.
+   */
+  private derivedRefreshKey(bounds: BoundsIJK): string {
+    const derived = this.compositeVoxelManager
+      .getRepresentations()
+      .filter((representation) => representation.derivedFrom?.reduction);
+
+    if (!derived.length) {
+      return `full:${bounds[2][0]}`;
+    }
+
+    return derived
+      .map((representation) => {
+        const reduction = representation.derivedFrom.reduction;
+        const factors = reduction.factors;
+        const offset = reduction.sourceOffset ?? [0, 0, 0];
+        const boxes = [0, 1, 2].map((axis) => {
+          const first = Math.max(bounds[axis][0] - offset[axis], 0);
+
+          return Math.floor(first / factors[axis]);
+        });
+
+        return `${voxelGridKey(representation.grid, representation.statistic)}:${boxes.join(',')}`;
+      })
+      .join('|');
+  }
+
+  /**
+   * Applies the frames that `markFrameDirty` holds for its microtask now.
+   *
+   * A reader that runs in the same turn as the marks (a texture upload, a
+   * quality read) calls this so it never sees the state from before the
+   * delivery. The scheduled microtask then finds nothing pending.
+   */
+  public flushPendingDirtyFrames(): void {
+    this._dirtyFlushScheduled = false;
+    const pending = [...this._pendingDirtyFrames.entries()];
+    this._pendingDirtyFrames.clear();
+
+    if (!pending.length) {
+      return;
+    }
+
+    for (const [frameIndex, quality] of pending) {
+      // The delivery can have replaced the image of this frame, and the voxel
+      // manager holds the image that it last resolved for the frame. Forget that
+      // image, so the reads below take the image that has just arrived.
+      this.voxelManager?.invalidateSlice?.(frameIndex);
+
+      this.compositeVoxelManager.acceptData({
+        grid: this.voxelGrid,
+        frameIndex,
+        quality,
+        refreshDerived: false,
+      });
+    }
+
+    const refreshedKeys = new Set<string>();
+
+    for (const [frameIndex] of pending) {
+      const bounds = boundsOfFrame(this.voxelGrid, frameIndex);
+      const key = this.derivedRefreshKey(bounds);
+
+      // Only the derived refresh dedupes: two frames of one reduced box share
+      // it. Every frame is still marked, because a full-resolution set holds
+      // one slice per frame and a reduced set merges duplicate marks.
+      if (!refreshedKeys.has(key)) {
+        refreshedKeys.add(key);
+        this.compositeVoxelManager.refreshDerivedFrames(bounds, this.voxelGrid);
+      }
+
+      for (const set of this.textureSets) {
+        set.markDirty(bounds, markSlice);
+      }
     }
   }
 
@@ -654,7 +785,7 @@ export class ImageVolume {
     return this._imageURIsIndexMap.get(imageURI);
   }
 
-  public load(callback?: (...args: unknown[]) => void): void {
+  public load(_callback?: (...args: unknown[]) => void): void {
     // TODO: Implement
   }
 
@@ -662,6 +793,8 @@ export class ImageVolume {
    * destroy the volume and make it unusable
    */
   destroy(): void {
+    this._pendingDirtyFrames.clear();
+    this._dirtyFlushScheduled = false;
     // TODO: GPU memory associated with volume is not cleared.
     this.imageData.delete();
     this.imageData = null;

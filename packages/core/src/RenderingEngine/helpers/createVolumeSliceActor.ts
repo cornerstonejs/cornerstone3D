@@ -56,7 +56,10 @@ async function createVolumeSliceActor(
   const mapper = vtkSharedImageResliceMapper.newInstance();
 
   if (!loadStatus || loadStatus.loaded) {
-    vtkOpenGLTexture.modified();
+    // Force a full GPU refill when the CPU volume is already complete. Use the
+    // explicit API: texture.modified() only bumps MTime and must not mark every
+    // slice dirty (VTK filter setters call modified too).
+    vtkOpenGLTexture.markAllFramesUpdated?.();
   }
 
   mapper.setInputData(imageData);

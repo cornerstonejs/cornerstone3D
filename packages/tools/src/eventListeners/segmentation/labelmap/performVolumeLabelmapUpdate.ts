@@ -14,10 +14,16 @@ export function performVolumeLabelmapUpdate({
   modifiedSlicesToUse,
   representationData,
   type,
+  voxelsUnchanged = false,
 }: {
   modifiedSlicesToUse: number[];
   representationData: Record<string, unknown>;
   type: SegmentationRepresentations;
+  /**
+   * No voxel changed (a representation was added), so the volume skips the
+   * frame marks, which re-reduce its derived representations, and only renders.
+   */
+  voxelsUnchanged?: boolean;
 }): void {
   const labelmapData = representationData[
     type
@@ -26,6 +32,11 @@ export function performVolumeLabelmapUpdate({
 
   volumes.forEach((segmentationVolume) => {
     const { imageData, voxelManager } = segmentationVolume;
+
+    if (voxelsUnchanged) {
+      triggerVolumeModified(segmentationVolume);
+      return;
+    }
 
     let slicesToUpdate;
     if (modifiedSlicesToUse?.length > 0) {
@@ -45,18 +56,25 @@ export function performVolumeLabelmapUpdate({
 
     voxelManager?.invalidateCache?.();
     imageData.modified();
+    triggerVolumeModified(segmentationVolume);
+  });
+}
 
-    const numberOfFrames =
-      segmentationVolume.imageIds?.length ?? imageData.getDimensions()[2] ?? 0;
-    const FrameOfReferenceUID =
-      segmentationVolume.metadata?.FrameOfReferenceUID ?? '';
+/** Tells the viewports that hold the volume to render it. */
+function triggerVolumeModified(
+  segmentationVolume: NonNullable<ReturnType<typeof cache.getVolume>>
+): void {
+  const { imageData } = segmentationVolume;
+  const numberOfFrames =
+    segmentationVolume.imageIds?.length ?? imageData.getDimensions()[2] ?? 0;
+  const FrameOfReferenceUID =
+    segmentationVolume.metadata?.FrameOfReferenceUID ?? '';
 
-    triggerEvent(eventTarget, Enums.Events.IMAGE_VOLUME_MODIFIED, {
-      volumeId: segmentationVolume.volumeId,
-      FrameOfReferenceUID,
-      numberOfFrames,
-      framesProcessed: numberOfFrames,
-    });
+  triggerEvent(eventTarget, Enums.Events.IMAGE_VOLUME_MODIFIED, {
+    volumeId: segmentationVolume.volumeId,
+    FrameOfReferenceUID,
+    numberOfFrames,
+    framesProcessed: numberOfFrames,
   });
 }
 

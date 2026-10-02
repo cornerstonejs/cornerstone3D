@@ -12,13 +12,15 @@ export type VoxelStatisticsMap = VoxelStatisticConstants;
 
 const builtInVoxelStatistics: CoreVoxelStatisticConstants = {
   Average: 'average',
+  ForegroundMajority: 'foregroundMajority',
 };
 
 /**
  * Runtime voxel statistic constants: built-in names map to wire-type strings.
  *
- * The statistic of a representation of the voxel data. `Average` is available
- * immediately. Extension statistics are added when you call
+ * The statistic of a representation of the voxel data. `Average` and
+ * `ForegroundMajority` are available immediately. Extension statistics are
+ * added when you call
  * `registerVoxelStatistic({ name: 'MINIMUM', statistic: 'myOrg:minimum', ... })`.
  *
  * For compile-time names, augment `VoxelStatisticConstants` only —

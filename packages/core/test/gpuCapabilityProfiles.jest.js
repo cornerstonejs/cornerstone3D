@@ -41,13 +41,13 @@ describe('the capability profiles', () => {
       textureMemoryBytes: 1 * GIGABYTE,
       speed: 10,
     });
-    // Every known device holds a hard limit of 2048 for WebGL, so the three
-    // shipped profiles above `low-tablet` differ only by memory.
-    expect(getGpuCapabilityProfile('low').maxTextureEdge).toBe(2048);
+    // `low` / `low-tablet` use a 256 policy edge so weak iGPUs reduce first;
+    // `medium` and `high` keep 2048 and differ by memory.
+    expect(getGpuCapabilityProfile('low').maxTextureEdge).toBe(256);
     expect(getGpuCapabilityProfile('medium').maxTextureEdge).toBe(2048);
     expect(getGpuCapabilityProfile('high').maxTextureEdge).toBe(2048);
     expect(getGpuCapabilityProfile('low').textureMemoryBytes).toBe(
-      8 * GIGABYTE
+      2 * GIGABYTE
     );
     expect(getGpuCapabilityProfile('medium').textureMemoryBytes).toBe(
       16 * GIGABYTE

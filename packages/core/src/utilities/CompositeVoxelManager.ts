@@ -618,6 +618,10 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
     );
 
     const reducesAnAxis = factors.some((factor) => factor > 1);
+    const boxReduction =
+      statistic === VoxelStatistics.ForegroundMajority
+        ? VoxelReductions.BoxForegroundMajority
+        : VoxelReductions.BoxAverage;
     const representation = this.addRepresentation({
       grid,
       statistic,
@@ -626,9 +630,7 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
       // A BOX REDUCTION DOES NOT ALIAS: every source voxel of the box reaches
       // the result. An axis that no factor reduces holds every source voxel, so
       // that derivation is no reduction at all.
-      reduction:
-        kind ??
-        (reducesAnAxis ? VoxelReductions.BoxAverage : VoxelReductions.None),
+      reduction: kind ?? (reducesAnAxis ? boxReduction : VoxelReductions.None),
       source,
       // THE RECORD OF THE SOURCE BECOMES THE RECORD OF THE RESULT, and the copy
       // states the data that the derivation really read. A box that reads a
@@ -697,6 +699,7 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
     frameIndex,
     reduction,
     source,
+    refreshDerived = true,
   }: {
     grid: VoxelGrid;
     voxelManager?: IVoxelManager<T>;
@@ -708,6 +711,12 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
     reduction?: VoxelReduction;
     /** Where this data came from. A direct load by default. */
     source?: VoxelDataSource;
+    /**
+     * When false, records the delivery but does not refresh derived
+     * representations. Used by ImageVolume to coalesce many frame arrivals
+     * into one reduce pass. Defaults to true.
+     */
+    refreshDerived?: boolean;
   }): VoxelRepresentation<T> {
     const existing = this.getRepresentation(grid, statistic);
     const production = {
@@ -747,7 +756,10 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
     }
 
     this.setDeliveredQuality(representation, deliveredBounds, quality);
-    this.refreshDerivedFrames(deliveredBounds, grid, statistic);
+
+    if (refreshDerived) {
+      this.refreshDerivedFrames(deliveredBounds, grid, statistic);
+    }
 
     return representation;
   }

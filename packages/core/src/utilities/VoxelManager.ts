@@ -1141,6 +1141,10 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
     const sliceVoxelManagers = new Array<
       VoxelManager<number> | VoxelManager<RGB> | null | undefined
     >(depth);
+    // The image generation of the cache when a slice found no image. A miss is
+    // reused only while no image has reached the cache since, so a frame that
+    // arrives without a call to invalidateSlice still becomes visible.
+    const sliceMissGenerations = new Array<number>(depth);
     let lastSliceIndex = -1;
     let lastSliceVoxelManager: VoxelManager<number> | VoxelManager<RGB> | null =
       null;
@@ -1208,8 +1212,14 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
       }
 
       const cachedVoxelManager = sliceVoxelManagers[sliceIndex];
-      if (cachedVoxelManager !== undefined) {
+      if (cachedVoxelManager) {
         return cachedVoxelManager;
+      }
+      if (
+        cachedVoxelManager === null &&
+        sliceMissGenerations[sliceIndex] === cache.getImageGeneration()
+      ) {
+        return null;
       }
 
       const imageId = imageIds[sliceIndex];
@@ -1219,6 +1229,7 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
           log.warn(`ImageId not found for sliceIndex: ${sliceIndex}`);
         }
         sliceVoxelManagers[sliceIndex] = null;
+        sliceMissGenerations[sliceIndex] = cache.getImageGeneration();
         return null;
       }
 
@@ -1226,8 +1237,14 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
       if (!image?.voxelManager) {
         if (!warnedMissingImages.has(imageId)) {
           warnedMissingImages.add(imageId);
-          log.warn(`Image not found for imageId: ${imageId}`);
+          // Expected while a streaming volume is still loading; once per imageId.
+          log.debug(`Image not found for imageId: ${imageId}`);
         }
+        // Cache the miss so reduceByBoxStatistic / getAtIJK do not call
+        // cache.getImage once per voxel of an unloaded sibling slice (~W×H
+        // lookups per refresh). The next image that reaches the cache expires it.
+        sliceVoxelManagers[sliceIndex] = null;
+        sliceMissGenerations[sliceIndex] = cache.getImageGeneration();
         return null;
       }
 

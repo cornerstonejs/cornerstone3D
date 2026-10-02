@@ -26,6 +26,7 @@ import {
   getLabelmaps,
   getOrCreateLabelmapVolume,
 } from '../../../../stateManagement/segmentation/helpers/labelmapSegmentationState';
+import { tagLabelmapVolume } from '../../../../stateManagement/segmentation/labelmapModel/labelmapLayerStore';
 import { addVolumesAsIndependentComponents } from '../addVolumesAsIndependentComponents';
 import { createLabelmapRepresentationUID } from '../labelmapRepresentationUID';
 import {
@@ -156,6 +157,12 @@ async function mountLegacyVolumeLabelmap({
     });
   }
 
+  // Every labelmap reaches the GPU through here, whichever loader built its
+  // volume, so the statistic is set before the actor provisions a texture.
+  for (const layer of labelmapLayers) {
+    tagLabelmapVolume(cache.getVolume(layer.volumeId));
+  }
+
   let blendMode = config?.blendMode ?? Enums.BlendModes.MAXIMUM_INTENSITY_BLEND;
 
   let useIndependentComponents =
@@ -247,7 +254,12 @@ async function mountLegacyVolumeLabelmap({
       immediateRender,
       suppressEvents
     );
-    triggerSegmentationDataModified(segmentationId);
+    // Adding the labelmap to this viewport changed no voxel. A new texture is
+    // filled when it is provisioned, and a shared one is already current, so
+    // the labelmap must not be re-reduced once per viewport it is added to.
+    triggerSegmentationDataModified(segmentationId, undefined, undefined, {
+      voxelsUnchanged: true,
+    });
     return;
   }
 

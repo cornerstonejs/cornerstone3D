@@ -26,8 +26,9 @@ export type GpuCapabilityProfile = {
   /** The name of the profile. */
   id: GpuCapabilityProfileId;
   /**
-   * The largest number of voxels that one axis of one texture can hold. Every
-   * known device holds a hard limit of 2048 for WebGL.
+   * The largest number of voxels that one axis of one texture can hold.
+   * WebGL devices commonly report 2048; a profile may state a lower policy
+   * edge so weak GPUs reduce before they lose the context.
    */
   maxTextureEdge: number;
   /** The number of bytes of texture memory that the device holds. */
@@ -53,8 +54,10 @@ const GIGABYTE = 1024 * 1024 * 1024;
 /**
  * The profiles.
  *
- * `low`, `medium` and `high` differ only by memory, because every known device
- * holds a hard limit of 2048 on the edge of a texture for WebGL.
+ * `medium` and `high` share the WebGL edge of 2048 and differ by memory.
+ * `low` and `low-tablet` use a 256 policy edge so weak integrated GPUs
+ * reduce large volumes before WebGL context loss; `low` states more memory
+ * than `low-tablet`.
  *
  * `high-texture-4096` is the control of the example, and it is not a real
  * device. One volume renders with no reduction under `high-texture-4096` and
@@ -70,8 +73,8 @@ const PROFILES: Record<GpuCapabilityProfileId, GpuCapabilityProfile> = {
   },
   low: {
     id: 'low',
-    maxTextureEdge: 2048,
-    textureMemoryBytes: 8 * GIGABYTE,
+    maxTextureEdge: 256,
+    textureMemoryBytes: 2 * GIGABYTE,
     speed: 30,
   },
   medium: {

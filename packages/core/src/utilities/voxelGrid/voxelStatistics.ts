@@ -47,19 +47,72 @@ function createAverageAccumulator(): VoxelStatisticAccumulator {
   };
 }
 
+/**
+ * Builds the accumulator of the foreground majority of a box.
+ *
+ * Background (0) does not compete: a box that holds any non-zero label keeps
+ * the majority among those labels. Otherwise a 2×2×N reduction at an organ
+ * edge is mostly empty and a plain majority would erase the segment. On a tie
+ * among non-zero labels, keeps the first label that reached the winning count.
+ */
+function createForegroundMajorityAccumulator(): VoxelStatisticAccumulator {
+  const counts = new Map<number, number>();
+  let majority: number | undefined;
+  let majorityCount = 0;
+  let sawBackground = false;
+
+  return {
+    reset: () => {
+      counts.clear();
+      majority = undefined;
+      majorityCount = 0;
+      sawBackground = false;
+    },
+    add: (value: number) => {
+      if (value === 0) {
+        sawBackground = true;
+        return;
+      }
+
+      const next = (counts.get(value) ?? 0) + 1;
+
+      counts.set(value, next);
+
+      if (next > majorityCount) {
+        majorityCount = next;
+        majority = value;
+      }
+    },
+    getValue: () => {
+      if (majority !== undefined) {
+        return majority;
+      }
+
+      return sawBackground ? 0 : undefined;
+    },
+  };
+}
+
 function registerCoreVoxelStatistics(): void {
   if (hasRegisteredCoreVoxelStatistics) {
     return;
   }
   hasRegisteredCoreVoxelStatistics = true;
 
-  // The core statistic carries no constant name here: `Enums.VoxelStatistics`
-  // already holds `Average` as a built-in constant.
+  // The core statistics carry no constant name here: `Enums.VoxelStatistics`
+  // already holds `Average` and `ForegroundMajority` as built-in constants.
   registerVoxelStatistic({
     statistic: VoxelStatistics.Average,
     defaultSelection: true,
     description: 'The mean of the source voxels of one box.',
     createAccumulator: createAverageAccumulator,
+  });
+  registerVoxelStatistic({
+    statistic: VoxelStatistics.ForegroundMajority,
+    defaultSelection: false,
+    description:
+      'The majority non-zero label of one box (background ignored unless the box is empty). Used to reduce labelmaps.',
+    createAccumulator: createForegroundMajorityAccumulator,
   });
 }
 
@@ -233,7 +286,7 @@ function isDefaultSelectionStatistic(
 
 /**
  * Test-only: wipes all statistic registrations (including the lazily registered
- * core statistic) and removes the `Enums.VoxelStatistics` constants added
+ * core statistics) and removes the `Enums.VoxelStatistics` constants added
  * through `registerVoxelStatistic()`. Not part of the public API — import it
  * from this module directly in test setup/teardown.
  * @internal

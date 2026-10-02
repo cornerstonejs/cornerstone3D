@@ -1,10 +1,12 @@
+import type { VoxelQualityRecord } from '../../../types';
+import ImageQualityStatus from '../../../enums/ImageQualityStatus';
 import type { Panel } from './types';
 import { PANEL_CONFIG, PANEL_CONFIGS } from './constants';
 import { PanelType } from './enums';
 
 /**
  * Text panel that displays each viewport's GenericViewport bindings from its
- * internal debug map plus public actor metadata.
+ * internal debug map, public actor metadata, and volume {@link VoxelQualityRecord}s.
  */
 export class RenderModesPanel implements Panel {
   public dom: HTMLDivElement;
@@ -14,7 +16,7 @@ export class RenderModesPanel implements Panel {
     const config = PANEL_CONFIGS[PanelType.RENDER_MODES];
     this.dom = document.createElement('div');
     this.dom.style.cssText = `
-      width:min(720px, max(${PANEL_CONFIG.WIDE_WIDTH}px, calc(100vw - ${
+      width:min(622px, max(${PANEL_CONFIG.WIDE_WIDTH}px, calc(100vw - ${
         PANEL_CONFIG.WIDTH + 24
       }px)));
       min-width:0;
@@ -61,14 +63,7 @@ export class RenderModesPanel implements Panel {
     // Content is pushed from StatsOverlay via setContent().
   }
 
-  public setContent(
-    entries: Array<{
-      renderingEngineId: string;
-      viewportId: string;
-      viewportType: string;
-      bindings: RenderModePanelBinding[];
-    }>
-  ): void {
+  public setContent(entries: RenderModePanelEntry[]): void {
     this.list.replaceChildren();
 
     if (!entries.length) {
@@ -78,6 +73,7 @@ export class RenderModesPanel implements Panel {
 
     for (const entry of entries) {
       const bindings = orderBindings(entry.bindings);
+      const volumes = entry.volumes ?? [];
       const section = document.createElement('div');
       section.style.cssText = `
         padding:7px;
@@ -138,7 +134,9 @@ export class RenderModesPanel implements Panel {
       heading.appendChild(left);
 
       const count = document.createElement('span');
-      count.textContent = `${bindings.length} binding${bindings.length === 1 ? '' : 's'}`;
+      count.textContent = `${bindings.length} binding${
+        bindings.length === 1 ? '' : 's'
+      } · ${volumes.length} vol${volumes.length === 1 ? '' : 's'}`;
       count.style.cssText = `
         flex:0 0 auto;
         color:#c9b05a;
@@ -149,7 +147,7 @@ export class RenderModesPanel implements Panel {
 
       section.appendChild(heading);
 
-      if (!bindings.length) {
+      if (!bindings.length && !volumes.length) {
         section.appendChild(createEmptyState('(no bindings)'));
         this.list.appendChild(section);
         continue;
@@ -159,10 +157,27 @@ export class RenderModesPanel implements Panel {
         section.appendChild(createBindingRow(binding));
       }
 
+      for (const volume of volumes) {
+        section.appendChild(createVoxelQualityRow(volume));
+      }
+
       this.list.appendChild(section);
     }
   }
 }
+
+export type RenderModePanelVolumeQuality = {
+  volumeId: string;
+  record?: VoxelQualityRecord;
+};
+
+export type RenderModePanelEntry = {
+  renderingEngineId: string;
+  viewportId: string;
+  viewportType: string;
+  bindings: RenderModePanelBinding[];
+  volumes?: RenderModePanelVolumeQuality[];
+};
 
 export type RenderModePanelBinding = {
   actorUID?: string;
@@ -281,7 +296,7 @@ function createBindingRow(binding: RenderModePanelBinding): HTMLDivElement {
     binding.referencedId !== binding.dataId &&
     binding.referencedId !== binding.actorUID
   ) {
-    appendField(fields, 'ref', binding.referencedId, 76);
+    appendField(fields, 'reference', binding.referencedId, 76);
   }
 
   if (binding.scalarType) {
@@ -300,6 +315,137 @@ function createBindingRow(binding: RenderModePanelBinding): HTMLDivElement {
   row.appendChild(fields);
 
   return row;
+}
+
+function createVoxelQualityRow(
+  volume: RenderModePanelVolumeQuality
+): HTMLDivElement {
+  const row = document.createElement('div');
+  row.style.cssText = `
+    display:grid;
+    grid-template-columns:74px minmax(0, 1fr);
+    gap:8px;
+    padding:6px;
+    margin-top:4px;
+    background:rgba(153, 204, 255, 0.06);
+    border:1px solid rgba(153, 204, 255, 0.18);
+    border-radius:4px;
+  `;
+
+  const badge = document.createElement('div');
+  badge.textContent = 'QUALITY';
+  badge.style.cssText = `
+    align-self:start;
+    padding:3px 5px;
+    background:rgba(0, 104, 126, 0.28);
+    border:1px solid rgba(153, 204, 255, 0.4);
+    border-radius:3px;
+    color:#9cf;
+    font-size:${PANEL_CONFIG.FONT_SIZE}px;
+    font-weight:800;
+    letter-spacing:0.04em;
+    text-align:center;
+  `;
+  row.appendChild(badge);
+
+  const fields = document.createElement('div');
+  fields.style.cssText = `
+    display:flex;
+    flex-direction:column;
+    gap:3px;
+    min-width:0;
+  `;
+
+  const { record } = volume;
+  if (!record) {
+    fields.appendChild(createEmptyState('(no VoxelQualityRecord)'));
+    row.appendChild(fields);
+    return row;
+  }
+
+  appendField(fields, 'decimation', String(record.reduction), 40);
+  appendField(fields, 'source', String(record.source), 40);
+  appendField(
+    fields,
+    'status',
+    formatQualityRange(record.status, record.lowest, record.highest),
+    64
+  );
+  appendField(
+    fields,
+    'missing',
+    formatMissing(record.missing, record.voxels, record.exact),
+    48
+  );
+  appendField(fields, 'grid', formatSpacing(record.grid?.spacing), 48);
+  appendField(fields, 'deliveries', String(record.deliveries ?? 0), 24);
+
+  row.appendChild(fields);
+
+  return row;
+}
+
+function formatQualityRange(
+  status: ImageQualityStatus,
+  lowest?: ImageQualityStatus,
+  highest?: ImageQualityStatus
+): string {
+  const summary = formatQualityStatus(status);
+
+  if (
+    lowest === undefined ||
+    highest === undefined ||
+    (lowest === status && highest === status)
+  ) {
+    return summary;
+  }
+
+  return `${summary} [${formatQualityStatus(lowest)}..${formatQualityStatus(
+    highest
+  )}]`;
+}
+
+function formatQualityStatus(status: ImageQualityStatus | undefined): string {
+  if (status === undefined) {
+    return '-';
+  }
+
+  return ImageQualityStatus[status] ?? String(status);
+}
+
+function formatMissing(
+  missing: number,
+  voxels: number,
+  exact: boolean
+): string {
+  if (!(voxels > 0)) {
+    return '0/0';
+  }
+
+  const pct = Math.round((100 * missing) / voxels);
+  const approx = exact ? '' : '~';
+
+  return `${approx}${missing}/${voxels} (${approx}${pct}%)`;
+}
+
+function formatSpacing(spacing: number[] | undefined): string {
+  if (!spacing?.length) {
+    return '-';
+  }
+
+  return spacing
+    .map((value) => {
+      if (!Number.isFinite(value)) {
+        return '?';
+      }
+
+      if (Number.isInteger(value)) {
+        return String(value);
+      }
+
+      return Number(value.toFixed(3)).toString();
+    })
+    .join('×');
 }
 
 /**
@@ -339,7 +485,7 @@ function appendField(
   const field = document.createElement('div');
   field.style.cssText = `
     display:grid;
-    grid-template-columns:42px minmax(0, 1fr);
+    grid-template-columns:88px minmax(0, 1fr);
     gap:6px;
     min-width:0;
   `;

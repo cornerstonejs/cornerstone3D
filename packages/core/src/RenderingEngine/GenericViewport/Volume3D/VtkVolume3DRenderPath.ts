@@ -81,7 +81,7 @@ export class VtkVolume3DRenderPath
   async addData(
     ctx: Volume3DVtkVolumeAdapterContext,
     data: LoadedData,
-    options: DataAddOptions
+    _options: DataAddOptions
   ): Promise<RenderPathAttachment<Volume3DDataPresentation>> {
     const payload: Volume3DVolumePayload =
       data as unknown as LoadedData<Volume3DVolumePayload>;

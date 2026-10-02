@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from '@jest/globals';
-import { voxelGrid } from '../../src/utilities';
+import * as voxelGrid from '../../src/utilities/voxelGrid';
 import {
   ImageQualityStatus,
   VoxelDataSources,
