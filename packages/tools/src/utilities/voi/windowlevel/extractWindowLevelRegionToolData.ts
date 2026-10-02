@@ -5,6 +5,7 @@ import {
   StackViewport,
   VolumeViewport,
 } from '@cornerstonejs/core';
+import { vec3 } from 'gl-matrix';
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
 
 const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
