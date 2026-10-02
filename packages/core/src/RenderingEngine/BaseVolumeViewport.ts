@@ -120,7 +120,6 @@ abstract class BaseVolumeViewport extends Viewport {
   protected initialViewUp: Point3;
   protected viewportProperties: VolumeViewportProperties = {};
   private volumeIds = new Set<string>();
-  private _removeVolumeModifiedListener: (() => void) | undefined;
 
   constructor(props: ViewportInput) {
     super(props);
@@ -298,14 +297,9 @@ abstract class BaseVolumeViewport extends Viewport {
         handleVolumeModified
       );
       eventTarget.removeEventListener(Events.ELEMENT_DISABLED, cleanUp);
-
-      this._removeVolumeModifiedListener = undefined;
     };
 
     eventTarget.addEventListener(Events.ELEMENT_DISABLED, cleanUp);
-    this._removeVolumeModifiedListener = () => {
-      cleanUp({ detail: { viewportId: this.id } } as CustomEvent);
-    };
   }
 
   private renderVolumeModified(volumeId: string): void {

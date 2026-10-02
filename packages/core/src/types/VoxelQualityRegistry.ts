@@ -1,12 +1,14 @@
 export interface CoreVoxelReductionRegistry {
   none: 'none';
   boxAverage: 'boxAverage';
+  boxForegroundMajority: 'boxForegroundMajority';
   decimation: 'decimation';
 }
 
 export interface CoreVoxelReductionConstants {
   readonly None: 'none';
   readonly BoxAverage: 'boxAverage';
+  readonly BoxForegroundMajority: 'boxForegroundMajority';
   readonly Decimation: 'decimation';
 }
 

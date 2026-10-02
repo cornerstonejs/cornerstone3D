@@ -287,6 +287,237 @@ function boxAverageAtIJK<T extends BoxStatisticValue = number>(
 }
 
 /**
+ * A slice of a source of several components interleaves them, so the slice fast
+ * paths, which read one number per voxel, do not apply to it.
+ */
+function hasSeveralComponents(source: object) {
+  return (
+    ((source as { numberOfComponents?: number }).numberOfComponents ?? 1) > 1
+  );
+}
+
+/**
+ * The foreground majority of each voxel of one plane over the frames of a box
+ * along k, when no in-plane axis is reduced. A box of a slice-only reduction
+ * holds one voxel of each frame, so the plane takes a single pass per voxel and
+ * no counting list.
+ *
+ * The rule is the one of the accumulator: background does not compete, and a
+ * label takes the lead only with a strictly greater count than the leader at
+ * the moment it reaches that count.
+ */
+function foregroundMajorityAlongK(
+  frames: ArrayLike<number>[],
+  sourceWidth: number,
+  sourceOffset: Point3,
+  [width, height]: Point3,
+  write: (i: number, j: number, value: number) => void
+): number {
+  const [first, second] = frames;
+
+  for (let j = 0; j < height; j++) {
+    const row = (sourceOffset[1] + j) * sourceWidth + sourceOffset[0];
+
+    for (let i = 0; i < width; i++) {
+      const index = row + i;
+      let majority = 0;
+
+      if (frames.length === 1) {
+        majority = first[index];
+      } else if (frames.length === 2) {
+        // Two voxels: a non-zero first value leads, and a different second
+        // value only ties it.
+        majority = first[index] !== 0 ? first[index] : second[index];
+      } else {
+        let majorityCount = 0;
+
+        for (let m = 0; m < frames.length; m++) {
+          const label = frames[m][index];
+
+          if (label === 0) {
+            continue;
+          }
+
+          let count = 1;
+
+          for (let n = 0; n < m; n++) {
+            if (frames[n][index] === label) {
+              count++;
+            }
+          }
+
+          if (count > majorityCount) {
+            majorityCount = count;
+            majority = label;
+          }
+        }
+      }
+
+      write(i, j, majority);
+    }
+  }
+
+  return width * height;
+}
+
+/**
+ * Fast path: the foreground majority of each box, read from whole XY slices.
+ *
+ * A labelmap reduces with this statistic, and the voxel by voxel path costs one
+ * `getAtIJK` for each voxel and one accumulator reset for each box: about 90
+ * seconds of blocked main thread for a 512 x 512 x 2464 labelmap. The boxes
+ * here are visited in the order of `valueOfBox`, k then j then i, and a label
+ * takes the lead only with a strictly greater count, so the result is the one
+ * of the accumulator. A box counts its labels in a short list, since a box
+ * holds few distinct labels.
+ *
+ * @returns written count, or `undefined` when this path does not apply: no
+ * slice reader, several components, a float slice, or a slice smaller than the
+ * volume (a scaled replicate, which only `getAtIJK` reads correctly)
+ */
+function reduceForegroundMajorityBySlices<T extends BoxStatisticValue = number>(
+  source: BoxStatisticSource<T>,
+  reduction: VoxelGridReduction,
+  target: BoxStatisticTarget<T>
+): number | undefined {
+  const getDirectSlice = (
+    source as {
+      _getSliceData?: (args: {
+        sliceIndex: number;
+        slicePlane: number;
+      }) => ArrayLike<number> | undefined;
+    }
+  )._getSliceData?.bind(source);
+
+  if (!getDirectSlice || hasSeveralComponents(source)) {
+    return undefined;
+  }
+
+  const { factors, sourceOffset, sourceEnd, dimensions } = resolveReduction(
+    source,
+    reduction
+  );
+  const [factorI, factorJ, factorK] = factors;
+  const [sourceWidth] = source.dimensions;
+  const frameLength = sourceWidth * sourceEnd[1];
+  const [targetI, targetJ, targetK] = reduction.targetOffset ?? [0, 0, 0];
+  const labels: number[] = [];
+  const counts: number[] = [];
+  const frames: ArrayLike<number>[] = [];
+  let written = 0;
+
+  // The derived representation keeps its voxels in one array, and a write per
+  // voxel through `setAtIJK` also records modified slices and bounds that
+  // nothing reads for a derived representation.
+  const scalars = (
+    target as { getWritableScalarData?: () => ArrayLike<number> | undefined }
+  ).getWritableScalarData?.() as { [index: number]: number } | undefined;
+  const [targetWidth, targetHeight] =
+    (target as { dimensions?: Point3 }).dimensions ?? [];
+  const direct =
+    scalars && targetWidth && targetHeight && !hasSeveralComponents(target)
+      ? scalars
+      : undefined;
+  const write = (i: number, j: number, k: number, value: number) => {
+    if (direct) {
+      direct[(k * targetHeight + j) * targetWidth + i] = value;
+    } else {
+      target.setAtIJK(i, j, k, value as T);
+    }
+  };
+
+  for (let k = 0; k < dimensions[2]; k++) {
+    const firstK = sourceOffset[2] + k * factorK;
+    const endK = Math.min(firstK + factorK, sourceEnd[2]);
+
+    frames.length = 0;
+
+    for (let sourceK = firstK; sourceK < endK; sourceK++) {
+      const frame = getDirectSlice({ sliceIndex: sourceK, slicePlane: 2 });
+
+      if (!frame) {
+        continue;
+      }
+
+      // A float slice can hold NaN, which only the accumulator skips.
+      if (
+        frame.length < frameLength ||
+        frame instanceof Float32Array ||
+        frame instanceof Float64Array
+      ) {
+        return undefined;
+      }
+
+      frames.push(frame);
+    }
+
+    if (!frames.length) {
+      continue;
+    }
+
+    if (factorI === 1 && factorJ === 1) {
+      written += foregroundMajorityAlongK(
+        frames,
+        sourceWidth,
+        sourceOffset,
+        dimensions,
+        (i, j, value) => write(targetI + i, targetJ + j, targetK + k, value)
+      );
+      continue;
+    }
+
+    for (let j = 0; j < dimensions[1]; j++) {
+      const firstJ = sourceOffset[1] + j * factorJ;
+      const endJ = Math.min(firstJ + factorJ, sourceEnd[1]);
+
+      for (let i = 0; i < dimensions[0]; i++) {
+        const firstI = sourceOffset[0] + i * factorI;
+        const endI = Math.min(firstI + factorI, sourceEnd[0]);
+        let majority = 0;
+        let majorityCount = 0;
+
+        labels.length = 0;
+        counts.length = 0;
+
+        for (const frame of frames) {
+          for (let sourceJ = firstJ; sourceJ < endJ; sourceJ++) {
+            const row = sourceJ * sourceWidth;
+
+            for (let sourceI = firstI; sourceI < endI; sourceI++) {
+              const label = frame[row + sourceI];
+
+              if (label === 0) {
+                continue;
+              }
+
+              let slot = labels.indexOf(label);
+
+              if (slot === -1) {
+                slot = labels.length;
+                labels.push(label);
+                counts.push(0);
+              }
+
+              const count = ++counts[slot];
+
+              if (count > majorityCount) {
+                majorityCount = count;
+                majority = label;
+              }
+            }
+          }
+        }
+
+        write(targetI + i, targetJ + j, targetK + k, majority);
+        written++;
+      }
+    }
+  }
+
+  return written;
+}
+
+/**
  * Fast path: average whole XY slices when only K is reduced (`[1,1,Fk]`).
  * Image-volume sources expose `getSliceData` from cached image scalars.
  *
@@ -299,9 +530,10 @@ function reduceAverageAlongKBySlices<T extends BoxStatisticValue = number>(
   { round }: { round: boolean }
 ): number | undefined {
   if (
-    typeof (source as { _getSliceData?: unknown })._getSliceData !==
+    (typeof (source as { _getSliceData?: unknown })._getSliceData !==
       'function' &&
-    typeof source.getSliceData !== 'function'
+      typeof source.getSliceData !== 'function') ||
+    hasSeveralComponents(source)
   ) {
     return undefined;
   }
@@ -445,6 +677,18 @@ function reduceByBoxStatistic<T extends BoxStatisticValue = number>(
       reduction,
       target,
       { round }
+    );
+
+    if (sliceWritten !== undefined) {
+      return sliceWritten;
+    }
+  }
+
+  if (statistic === VoxelStatistics.ForegroundMajority) {
+    const sliceWritten = reduceForegroundMajorityBySlices(
+      source,
+      reduction,
+      target
     );
 
     if (sliceWritten !== undefined) {

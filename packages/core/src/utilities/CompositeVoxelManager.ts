@@ -618,6 +618,10 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
     );
 
     const reducesAnAxis = factors.some((factor) => factor > 1);
+    const boxReduction =
+      statistic === VoxelStatistics.ForegroundMajority
+        ? VoxelReductions.BoxForegroundMajority
+        : VoxelReductions.BoxAverage;
     const representation = this.addRepresentation({
       grid,
       statistic,
@@ -626,9 +630,7 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
       // A BOX REDUCTION DOES NOT ALIAS: every source voxel of the box reaches
       // the result. An axis that no factor reduces holds every source voxel, so
       // that derivation is no reduction at all.
-      reduction:
-        kind ??
-        (reducesAnAxis ? VoxelReductions.BoxAverage : VoxelReductions.None),
+      reduction: kind ?? (reducesAnAxis ? boxReduction : VoxelReductions.None),
       source,
       // THE RECORD OF THE SOURCE BECOMES THE RECORD OF THE RESULT, and the copy
       // states the data that the derivation really read. A box that reads a
