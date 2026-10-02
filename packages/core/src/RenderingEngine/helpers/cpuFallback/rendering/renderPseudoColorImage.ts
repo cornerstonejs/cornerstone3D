@@ -14,6 +14,9 @@ import type {
 } from '../../../../types';
 import { clamp } from '../../../../utilities/clamp';
 import { createCanvas } from '../../getOrCreateCanvas';
+import { coreLog } from '../../../../utilities/logger';
+
+const log = coreLog.getLogger('RenderingEngine', 'renderPseudoColorImage');
 
 /**
  * Returns an appropriate canvas to render the Image. If the canvas available in the cache is appropriate
@@ -44,7 +47,7 @@ function getRenderCanvas(
     enabledElement.viewport.colormap || enabledElement.options.colormap;
 
   if (enabledElement.options && enabledElement.options.colormap) {
-    console.warn(
+    log.warn(
       'enabledElement.options.colormap is deprecated. Use enabledElement.viewport.colormap instead'
     );
   }

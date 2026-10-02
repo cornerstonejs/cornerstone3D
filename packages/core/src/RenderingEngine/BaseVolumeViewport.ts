@@ -4,6 +4,7 @@ import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransf
 import { vec2, vec3 } from 'gl-matrix';
 import type { mat4 } from 'gl-matrix';
 import cache from '../cache/cache';
+import { coreLog } from '../utilities/logger';
 import {
   MPR_CAMERA_VALUES,
   RENDERING_DEFAULTS,
@@ -72,6 +73,7 @@ import Viewport from './Viewport';
 import type { vtkSlabCamera as vtkSlabCameraType } from './vtkClasses/vtkSlabCamera';
 import vtkSlabCamera from './vtkClasses/vtkSlabCamera';
 import getVolumeViewportScrollInfo from '../utilities/getVolumeViewportScrollInfo';
+import getViewSlabDepth from '../utilities/getViewSlabDepth';
 import { actorIsA, isImageActor } from '../utilities/actorCheck';
 import type { ImageActor } from '../types/IActor';
 import snapFocalPointToSlice from '../utilities/snapFocalPointToSlice';
@@ -99,6 +101,8 @@ import {
  * For setting volumes on viewports you need to use addVolumesToViewports
  * which will add volumes to the specified viewports.
  */
+const log = coreLog.getLogger('RenderingEngine', 'BaseVolumeViewport');
+
 abstract class BaseVolumeViewport extends Viewport {
   useCPURendering = false;
   private _FrameOfReferenceUID: string;
@@ -545,7 +549,7 @@ abstract class BaseVolumeViewport extends Viewport {
     }
 
     if ([voiRangeToUse.lower, voiRangeToUse.upper].some(isInvalidNumber)) {
-      console.warn(
+      log.warn(
         'VOI range contains invalid values, ignoring setVOI request',
         voiRangeToUse
       );
@@ -1175,7 +1179,7 @@ abstract class BaseVolumeViewport extends Viewport {
 
       return renderPasses.length ? renderPasses : null;
     } catch (e) {
-      console.warn('Failed to create custom render passes:', e);
+      log.warn('Failed to create custom render passes:', e);
       return null;
     }
   };
@@ -1657,7 +1661,7 @@ abstract class BaseVolumeViewport extends Viewport {
     _immediate = true,
     _suppressEvents = false
   ): void {
-    console.warn('Method "setOrientation" needs implementation');
+    log.warn('Method "setOrientation" needs implementation');
   }
 
   /**
@@ -2414,6 +2418,19 @@ abstract class BaseVolumeViewport extends Viewport {
 
     return slabThickness;
   }
+
+  /**
+   * Get the geometric thickness in mm that an annotation applies to.
+   *
+   * This method does NOT return the slab thickness. `getSlabThickness` returns
+   * a half thickness on this render path, so this method doubles that value,
+   * and it maps the rendering minimum to undefined. See
+   * `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
+   */
+  protected getReferencePlaneThickness(): number | undefined {
+    return getViewSlabDepth(this.getSlabThickness() * 2);
+  }
+
   /**
    * Given a point in world coordinates, return the intensity at that point
    * @param point - The point in world coordinates to get the intensity

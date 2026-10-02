@@ -2,6 +2,11 @@ import { MetadataModules } from '../../enums';
 import { addTypedProvider } from '../../metaData';
 import type { TypedProvider } from '../../metaData';
 import type { CompressedFrameDataMetadata } from '../../types';
+import { logging as cornerstoneLogging } from '@cornerstonejs/utils';
+
+const cs3dLogger = cornerstoneLogging.metadataLog.getLogger(
+  'utilities.metadataProvider.compressedFrameData'
+);
 
 /** Known natural keys and hex tags for pixel data (standard and float/paramap). */
 const PIXEL_DATA_KEYS = [
@@ -121,7 +126,7 @@ function getFramePixelDataFromSingleBuffer(
   if (offset + frameSize > totalLength) {
     return undefined;
   }
-  console.warn(
+  cs3dLogger.warn(
     '[compressedFrameData] Splitting single-buffer pixel data by numberOfFrames for paramap-type image; frameIndex=',
     frameIndex,
     ', numberOfFrames=',

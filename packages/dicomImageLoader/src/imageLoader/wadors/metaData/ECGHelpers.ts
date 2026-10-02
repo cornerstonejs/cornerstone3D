@@ -1,7 +1,10 @@
 import type { WADORSMetaDataElement } from '../../../types';
+import { logging } from '@cornerstonejs/metadata';
 import getValue from './getValue';
 import getNumberValue from './getNumberValue';
 import getSequenceItems from './getSequenceItems';
+
+const log = logging.loaderLog.getLogger('wadors');
 
 // DICOM tags for the Waveform module
 const TAG = {
@@ -84,7 +87,7 @@ function convertBuffer(
     return ret;
   }
 
-  console.warn(
+  log.warn(
     `[ECGHelpers] Unsupported waveform format: ${bits}-bit ${type}. Only 16-bit SS is supported.`
   );
   return [];

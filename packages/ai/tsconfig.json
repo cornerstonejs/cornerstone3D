@@ -4,5 +4,6 @@
     "outDir": "./dist/esm",
     "rootDir": "./src"
   },
-  "include": ["./src/**/*"]
+  "include": ["./src/**/*"],
+  "exclude": ["./src/**/*.spec.ts", "./src/**/*.test.ts"]
 }

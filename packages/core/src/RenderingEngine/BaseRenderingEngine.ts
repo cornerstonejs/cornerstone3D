@@ -3,6 +3,7 @@ import renderingEngineCache from './renderingEngineCache';
 import eventTarget from '../eventTarget';
 import uuidv4 from '../utilities/uuidv4';
 import triggerEvent from '../utilities/triggerEvent';
+import { coreLog } from '../utilities/logger';
 import ViewportType from '../enums/ViewportType';
 import viewportTypeUsesCustomRenderingPipeline, {
   viewportUsesCustomRenderingPipeline,
@@ -45,6 +46,8 @@ export const VIEWPORT_MIN_SIZE = 2;
  *
  * @abstract
  */
+const log = coreLog.getLogger('RenderingEngine', 'BaseRenderingEngine');
+
 abstract class BaseRenderingEngine {
   /** Unique identifier for renderingEngine */
   readonly id: string;
@@ -174,7 +177,7 @@ abstract class BaseRenderingEngine {
 
     // 2 To throw if there is no viewport stored in rendering engine
     if (!viewport) {
-      console.warn(`viewport ${viewportId} does not exist`);
+      log.warn(`viewport ${viewportId} does not exist`);
       return;
     }
 
@@ -551,7 +554,7 @@ abstract class BaseRenderingEngine {
     // 1. Get the viewport
     const viewport = this.getViewport(viewportId);
     if (!viewport) {
-      console.warn(`viewport ${viewportId} does not exist`);
+      log.warn(`viewport ${viewportId} does not exist`);
       return;
     }
 

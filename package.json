@@ -6,7 +6,7 @@
   "sideEffects": false,
   "engines": {
     "node": ">=24",
-    "pnpm": ">=11.5.2"
+    "pnpm": ">=12.8.1"
   },
   "scripts": {
     "api-check": "pnpm -r --filter=!docs run api-check",
@@ -58,6 +58,7 @@
     "test:unit:no-coverage": "jest",
     "rebuild:canvas": "npm rebuild canvas",
     "test:debug": "karma start ./karma.conf.js --browsers Chrome --no-single-run",
+    "test:decoders": "karma start ./karma.decoders.conf.js",
     "lint-staged": "lint-staged",
     "lint": "oxlint packages/**/src --quiet",
     "webpack:watch": "pnpm -r --filter=!docs run webpack:watch"
@@ -138,7 +139,6 @@
     "karma-junit-reporter": "2.0.1",
     "karma-spec-reporter": "0.0.36",
     "karma-webpack": "5.0.1",
-    "lerna": "9.0.4",
     "lint-staged": "13.3.0",
     "nyc": "17.1.0",
     "open-cli": "7.2.0",
@@ -188,5 +188,5 @@
     "not ie < 11",
     "not op_mini all"
   ],
-  "packageManager": "pnpm@11.5.2"
+  "packageManager": "pnpm@12.8.1"
 }

@@ -47,6 +47,11 @@ import type { CobbAngleAnnotation } from '../../types/ToolSpecificAnnotationType
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
 import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
 import { getStyleProperty } from '../../stateManagement/annotation/config/helpers';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.annotation.CobbAngleTool'
+);
 
 class CobbAngleTool extends AnnotationTool {
   static toolName = 'CobbAngle';
@@ -740,7 +745,7 @@ class CobbAngleTool extends AnnotationTool {
 
       // If rendering engine has been destroyed while rendering
       if (!viewport.getRenderingEngine()) {
-        console.warn('Rendering Engine has been destroyed');
+        cs3dLogger.warn('Rendering Engine has been destroyed');
         return renderStatus;
       }
 

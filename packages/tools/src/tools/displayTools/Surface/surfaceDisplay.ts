@@ -10,6 +10,19 @@ import { getColorLUT } from '../../../stateManagement/segmentation/getColorLUT';
 import { getPolySeg } from '../../../config';
 import { computeAndAddRepresentation } from '../../../utilities/segmentation/computeAndAddRepresentation';
 import { internalGetHiddenSegmentIndices } from '../../../stateManagement/segmentation/helpers/internalGetHiddenSegmentIndices';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+import type { SurfaceSegmentationData } from '../../../types/SurfaceTypes';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.displayTools.Surface.surfaceDisplay'
+);
+
+// The in-flight polySeg conversion per segmentationId, so concurrent renders
+// share one conversion instead of each starting their own.
+const polySegConversionBySegmentation = new Map<
+  string,
+  Promise<SurfaceSegmentationData>
+>();
 
 /**
  * It removes a segmentation representation from the tool group's viewports and
@@ -73,25 +86,31 @@ async function render(
     // underlying representations to Surface
     const polySeg = getPolySeg();
 
-    SurfaceData = await computeAndAddRepresentation(
-      segmentationId,
-      Representations.Surface,
-      () => polySeg.computeSurfaceData(segmentationId, { viewport })
-    );
+    let conversion = polySegConversionBySegmentation.get(segmentationId);
 
-    if (!SurfaceData) {
-      throw new Error(
-        `No Surface data found for segmentationId ${segmentationId} even we tried to compute it`
-      );
+    if (!conversion) {
+      conversion = computeAndAddRepresentation(
+        segmentationId,
+        Representations.Surface,
+        () => polySeg.computeSurfaceData(segmentationId, { viewport })
+      ).finally(() => {
+        polySegConversionBySegmentation.delete(segmentationId);
+      }) as Promise<SurfaceSegmentationData>;
+
+      polySegConversionBySegmentation.set(segmentationId, conversion);
     }
+
+    // The error reaches SegmentationRenderingEngine, which logs it and skips the
+    // default listener for a representation that holds no data.
+    SurfaceData = await conversion;
   } else if (!SurfaceData && !getPolySeg()) {
-    console.debug(
+    cs3dLogger.debug(
       `No surface data found for segmentationId ${segmentationId} and PolySeg add-on is not configured. Unable to convert from other representations to surface. Please register PolySeg using cornerstoneTools.init({ addons: { polySeg } }) to enable automatic conversion.`
     );
   }
 
   if (!SurfaceData) {
-    console.warn(
+    cs3dLogger.warn(
       `No Surface data found for segmentationId ${segmentationId}. Skipping render.`
     );
     return;
@@ -100,7 +119,7 @@ async function render(
   const { geometryIds } = SurfaceData;
 
   if (!geometryIds?.size) {
-    console.warn(
+    cs3dLogger.warn(
       `No Surfaces found for segmentationId ${segmentationId}. Skipping render.`
     );
   }
@@ -114,7 +133,7 @@ async function render(
     const geometry = cache.getGeometry(geometryId) as Types.IGeometry;
 
     if (!geometry?.data) {
-      console.warn(
+      cs3dLogger.warn(
         `No Surfaces found for geometryId ${geometryId}. Skipping render.`
       );
       return;

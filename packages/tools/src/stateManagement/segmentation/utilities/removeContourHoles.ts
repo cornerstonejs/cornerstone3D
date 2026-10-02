@@ -4,6 +4,11 @@ import { getAnnotation } from '../../annotation/annotationState';
 import { getSegmentation } from '../getSegmentation';
 import { extractSegmentPolylines } from './extractSegmentPolylines';
 import { removeCompleteContourAnnotation } from './removeCompleteContourAnnotation';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'stateManagement.segmentation.utilities.removeContourHoles'
+);
 
 /**
  * Removes contour holes from a segmentation segment by detecting and deleting hole annotations.
@@ -19,11 +24,11 @@ export default function removeContourHoles(
 ) {
   const segmentation = getSegmentation(segmentationId);
   if (!segmentation) {
-    console.warn(`Invalid segmentation given ${segmentationId}`);
+    cs3dLogger.warn(`Invalid segmentation given ${segmentationId}`);
     return;
   }
   if (!segmentation.representationData.Contour) {
-    console.warn(
+    cs3dLogger.warn(
       `No contour representation found for segmentation ${segmentationId}`
     );
     return;
@@ -34,7 +39,7 @@ export default function removeContourHoles(
     segmentIndex
   );
   if (!polylinesCanvasMap) {
-    console.warn(
+    cs3dLogger.warn(
       `Error extracting contour data from segment ${segmentIndex} in segmentation ${segmentationId}`
     );
     return;

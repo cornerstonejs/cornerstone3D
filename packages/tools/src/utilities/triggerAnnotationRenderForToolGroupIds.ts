@@ -1,6 +1,11 @@
 import { getRenderingEngine, type Types } from '@cornerstonejs/core';
 import triggerAnnotationRender from './triggerAnnotationRender';
 import { getToolGroup } from '../store/ToolGroupManager';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'utilities.triggerAnnotationRenderForToolGroupIds'
+);
 
 /**
  * Triggers annotation rendering for the specified tool group IDs.
@@ -14,7 +19,7 @@ export function triggerAnnotationRenderForToolGroupIds(
     const toolGroup = getToolGroup(toolGroupId);
 
     if (!toolGroup) {
-      console.warn(`ToolGroup not available for ${toolGroupId}`);
+      cs3dLogger.warn(`ToolGroup not available for ${toolGroupId}`);
       return;
     }
 
@@ -25,7 +30,9 @@ export function triggerAnnotationRenderForToolGroupIds(
 
       const renderingEngine = getRenderingEngine(renderingEngineId);
       if (!renderingEngine) {
-        console.warn(`RenderingEngine not available for ${renderingEngineId}`);
+        cs3dLogger.warn(
+          `RenderingEngine not available for ${renderingEngineId}`
+        );
         return;
       }
 

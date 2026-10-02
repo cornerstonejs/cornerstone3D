@@ -1,5 +1,10 @@
 import { getEnabledElementByViewportId } from '@cornerstonejs/core';
 import triggerAnnotationRender from './triggerAnnotationRender';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'utilities.triggerAnnotationRenderForViewportIds'
+);
 
 export function triggerAnnotationRenderForViewportIds(
   viewportIdsToRender: string[]
@@ -11,14 +16,14 @@ export function triggerAnnotationRenderForViewportIds(
   viewportIdsToRender.forEach((viewportId) => {
     const enabledElement = getEnabledElementByViewportId(viewportId);
     if (!enabledElement) {
-      console.warn(`Viewport not available for ${viewportId}`);
+      cs3dLogger.warn(`Viewport not available for ${viewportId}`);
       return;
     }
 
     const { viewport } = enabledElement;
 
     if (!viewport) {
-      console.warn(`Viewport not available for ${viewportId}`);
+      cs3dLogger.warn(`Viewport not available for ${viewportId}`);
       return;
     }
 

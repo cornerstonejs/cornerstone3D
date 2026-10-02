@@ -90,7 +90,9 @@ const tests = [
 describe('dicomImageLoader - WADO-URI', () => {
   beforeEach(() => {
     // Suppress "Worker type 'dicomImageLoader' is already registered" in tests
-    utilities.logger.workerLog.setLevel('error');
+    utilities.logger.coreLog
+      .getLogger('webWorkerManager', 'webWorkerManager')
+      .setLevel('error');
     // register the wadouri loader and default (NATURAL) path
     wadouri.register();
     dicomImageLoaderInit();

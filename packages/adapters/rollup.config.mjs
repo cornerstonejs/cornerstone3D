@@ -13,6 +13,7 @@ const EXTERNAL_IDS = new Set([
   'ndarray',
   '@cornerstonejs/tools',
   '@cornerstonejs/core',
+  '@cornerstonejs/metadata',
   '@kitware/vtk.js',
   'buffer',
 ]);
