@@ -1,4 +1,5 @@
 import { Enums } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 
 const { CalibrationTypes } = Enums;
 const PIXEL_UNITS = 'px';
@@ -54,15 +55,49 @@ const types = [
 ];
 
 /**
+ * The calibration inputs, satisfied by `IImageData`/`CPUIImageData`, or by a
+ * bare `{ calibration, hasPixelSpacing }` when there is no image (volumes).
+ */
+export type CalibrationSource = Partial<
+  Pick<Types.IImageData, 'calibration' | 'hasPixelSpacing'>
+> & {
+  spacing?: ArrayLike<number>;
+};
+
+/** Index (IJK) coordinates; only x and y are read. */
+export type IndexHandles = ArrayLike<number>[];
+
+export type CalibratedLengthUnitsAndScale = {
+  unit: string;
+  areaUnit: string;
+  volumeUnit: string;
+  scale: number;
+  scaleY: number;
+  scaleZ: number;
+};
+
+/**
  * Extracts the calibrated length units, area units, and the scale
  * for converting from internal spacing to image spacing.
  *
  * @param image - to extract the calibration from
- * @param handles - index points, or a function returning them, used to find
- *   the ultrasound region that contains the measurement
+ * @param handles - index points used to find the ultrasound region that
+ *   contains the measurement
  * @returns Object containing the units, area units, and scale
  */
-const getCalibratedLengthUnitsAndScale = (image, handles) => {
+function getCalibratedLengthUnitsAndScale(
+  image: CalibrationSource,
+  handles: IndexHandles
+): CalibratedLengthUnitsAndScale;
+/** @deprecated Pass the index handles directly instead of a function. */
+function getCalibratedLengthUnitsAndScale(
+  image: CalibrationSource,
+  handles: () => IndexHandles
+): CalibratedLengthUnitsAndScale;
+function getCalibratedLengthUnitsAndScale(
+  image: CalibrationSource,
+  handles: IndexHandles | (() => IndexHandles)
+): CalibratedLengthUnitsAndScale {
   const { calibration, hasPixelSpacing, spacing = [1, 1, 1] } = image;
   let unit = hasPixelSpacing ? 'mm' : PIXEL_UNITS;
   const volumeUnit = hasPixelSpacing ? 'mm\xb3' : VOXEL_UNITS;
@@ -152,7 +187,7 @@ const getCalibratedLengthUnitsAndScale = (image, handles) => {
     scaleY,
     scaleZ,
   };
-};
+}
 
 const getCalibratedProbeUnitsAndValue = (image, handles) => {
   const [imageIndex] = handles;
