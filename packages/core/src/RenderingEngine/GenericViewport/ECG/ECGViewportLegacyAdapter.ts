@@ -207,6 +207,15 @@ class ECGViewportLegacyAdapter extends ECGViewport {
       return;
     }
 
+    const z = Math.round(focalPoint[2]);
+    const matchesLayout = resolvedView.channelLayouts.some(
+      (item) => item.leadIndex === z
+    );
+
+    if (!matchesLayout) {
+      return;
+    }
+
     const targetCanvas = resolvedView.worldToCanvas(focalPoint);
     const canvasCenter: Point2 = [
       this.canvas.clientWidth / 2,

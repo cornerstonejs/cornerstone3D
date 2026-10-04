@@ -178,12 +178,15 @@ class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
     const fraction = (subCanvasPos[0] - xOffset) / (width || 1);
     const sampleIndex = startSample + fraction * (endSample - startSample);
 
+    const effectiveChannelScale =
+      layout.channelScale ?? this.metrics.channelScale;
+
     return [
       Math.max(
         0,
         Math.min(this.state.waveform.numberOfSamples - 1, sampleIndex)
       ),
-      (layout.baseline - subCanvasPos[1]) / this.metrics.channelScale,
+      (layout.baseline - subCanvasPos[1]) / effectiveChannelScale,
       leadIndex,
     ];
   }
@@ -213,9 +216,12 @@ class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
       (worldPos[0] - startSample) / (endSample - startSample || 1);
     const canvasX = xOffset + sampleFraction * width;
 
+    const effectiveChannelScale =
+      layout.channelScale ?? this.metrics.channelScale;
+
     return [
       canvasX * mapping.effectiveRatio + mapping.xOffset,
-      (layout.baseline - worldPos[1] * this.metrics.channelScale) *
+      (layout.baseline - worldPos[1] * effectiveChannelScale) *
         mapping.effectiveRatio +
         mapping.yOffset,
     ];
@@ -337,6 +343,7 @@ class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
       leadIndices: entries.map((entry) => entry.channelIndex),
       channelCount: this.state.waveform.channels.length,
       channelScale: this.metrics.channelScale,
+      sensitivityMmMv: this.state.dataPresentation?.sensitivityMmMv,
       layoutType: this.layoutType,
       numberOfSamples: this.state.waveform.numberOfSamples,
       ecgWidth: this.metrics.ecgWidth,

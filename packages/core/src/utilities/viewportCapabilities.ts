@@ -149,6 +149,31 @@ export function viewportSupportsDisplaySetPresentation(
 }
 
 /**
+ * Viewport type narrowed to the waveform (ECG) surface:
+ * `getWaveformData` + `getImageData`.
+ */
+export type WaveformViewport = IViewport & {
+  getWaveformData(): unknown;
+  getImageData(): unknown;
+};
+
+/**
+ * Returns `true` when the viewport exposes a waveform (ECG) API.
+ *
+ * Use this instead of `instanceof ECGViewport` or
+ * `instanceof ECGGenericViewport` — it works for both the legacy and the
+ * new Generic viewport family without importing concrete classes.
+ */
+export function viewportSupportsWaveform(
+  viewport: unknown
+): viewport is WaveformViewport {
+  return (
+    viewportHasMethod(viewport, 'getWaveformData') &&
+    viewportHasMethod(viewport, 'getImageData')
+  );
+}
+
+/**
  * Returns the content-true mode of the viewport's bound source data when the
  * viewport can classify it (i.e. exposes `getCurrentMode`), otherwise
  * `undefined`.

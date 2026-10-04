@@ -246,4 +246,62 @@ describe('ECGResolvedView owns the world geometry', () => {
       true
     );
   });
+
+  describe('per-channel calibrated coordinate transforms', () => {
+    it('applies distinct channel scales in worldToCanvas and canvasToWorld', () => {
+      const waveform = makeWaveform();
+      // Set different sensitivities on Channel 0 (0.001 mV/unit) and Channel 1 (0.002 mV/unit)
+      waveform.channels[0].mvPerUnit = 0.001;
+      waveform.channels[1].mvPerUnit = 0.002;
+
+      const view = new ECGResolvedView({
+        viewState: {
+          timeRange: [0, DURATION_MS],
+          valueRange: [-1000, 1000],
+          scale: 1,
+          scaleMode: 'fit',
+          rotation: 0,
+          anchorCanvas: [0.5, 0.5],
+          scrollOffset: 0,
+        },
+        canvas: makeCanvas(),
+        dataPresentation: { sensitivityMmMv: 10, layoutType: '12x1' },
+        frameOfReferenceUID: 'ecg-viewport-test',
+        waveform,
+      });
+
+      // Verify that channel layouts hold individual channelScales
+      const layout0 = view.channelLayouts[0];
+      const layout1 = view.channelLayouts[1];
+      expect(layout0.channelScale).toBeCloseTo(layout1.channelScale / 2, 6);
+
+      // Verify round-trip projection for both channels
+      const p0 = view.worldToCanvas([100, 500, layout0.leadIndex]);
+      const back0 = view.canvasToWorld(p0);
+      expect(back0[0]).toBeCloseTo(100, 3);
+      expect(back0[1]).toBeCloseTo(500, 3);
+      expect(back0[2]).toBe(layout0.leadIndex);
+
+      const p1 = view.worldToCanvas([100, 500, layout1.leadIndex]);
+      const back1 = view.canvasToWorld(p1);
+      expect(back1[0]).toBeCloseTo(100, 3);
+      expect(back1[1]).toBeCloseTo(500, 3);
+      expect(back1[2]).toBe(layout1.leadIndex);
+
+      // Deflection on screen for 500 units on ch1 vs ch2 relative to baseline
+      const mapping = view.canvasTransform;
+      const ch0CanvasDeflection =
+        layout0.baseline * mapping.effectiveRatio + mapping.yOffset - p0[1];
+      const ch1CanvasDeflection =
+        layout1.baseline * mapping.effectiveRatio + mapping.yOffset - p1[1];
+      expect(ch1CanvasDeflection).toBeCloseTo(ch0CanvasDeflection * 2, 4);
+    });
+
+    it('returns [0, 0] from worldToCanvas when leadIndex does not match any layout cell', () => {
+      const view = makeView();
+      // Lead index 999 is outside the 12 leads
+      const p = view.worldToCanvas([100, 500, 999]);
+      expect(p).toEqual([0, 0]);
+    });
+  });
 });
