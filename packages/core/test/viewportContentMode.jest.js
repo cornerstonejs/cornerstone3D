@@ -3,6 +3,7 @@ import {
   getViewportContentMode,
   viewportIsInVolumeMode,
   viewportIsInStackMode,
+  viewportSupportsWaveform,
 } from '../src/utilities/viewportCapabilities';
 
 const noop = () => undefined;
@@ -19,6 +20,12 @@ const legacyStackViewport = {
   setStack: noop,
   setProperties: noop,
   getCamera: noop,
+  getImageData: noop,
+};
+
+const waveformViewport = {
+  getWaveformData: noop,
+  getImageData: noop,
 };
 
 const stackModeViewport = { ...genericViewport, getCurrentMode: () => 'stack' };
@@ -83,6 +90,37 @@ describe('viewportCapabilities — Generic ("next") viewport guards (CS-5/CS-17)
     it('is false when content mode is unknown', () => {
       expect(viewportIsInVolumeMode(legacyStackViewport)).toBe(false);
       expect(viewportIsInStackMode(legacyStackViewport)).toBe(false);
+    });
+  });
+
+  describe('viewportSupportsWaveform', () => {
+    // Positive flows
+    it('returns true for viewports providing getWaveformData and getImageData', () => {
+      expect(viewportSupportsWaveform(waveformViewport)).toBe(true);
+      expect(
+        viewportSupportsWaveform({
+          ...genericViewport,
+          getWaveformData: noop,
+          getImageData: noop,
+        })
+      ).toBe(true);
+    });
+
+    // Negative flows
+    it('returns false for stack viewports lacking getWaveformData', () => {
+      expect(viewportSupportsWaveform(legacyStackViewport)).toBe(false);
+    });
+
+    it('returns false for viewports having getWaveformData but lacking getImageData', () => {
+      expect(viewportSupportsWaveform({ getWaveformData: noop })).toBe(false);
+    });
+
+    it('returns false for null, undefined, primitives, and empty objects', () => {
+      expect(viewportSupportsWaveform(null)).toBe(false);
+      expect(viewportSupportsWaveform(undefined)).toBe(false);
+      expect(viewportSupportsWaveform({})).toBe(false);
+      expect(viewportSupportsWaveform('viewport')).toBe(false);
+      expect(viewportSupportsWaveform(12345)).toBe(false);
     });
   });
 });
