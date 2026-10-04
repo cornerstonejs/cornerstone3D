@@ -81,6 +81,8 @@ export interface ECGChannelLayout<
   itemHeight: number;
   yOffset: number;
   baseline: number;
+  /** Scale factor (world pixels per sample unit) for this specific channel. */
+  channelScale?: number;
   xOffset?: number;
   width?: number;
   startSample?: number;
@@ -98,6 +100,8 @@ export interface ECGChannelLayout<
    */
   leadIndex?: number;
   isRhythm?: boolean;
+  /** True when this cell is a fixed partition of a multi-column layout (e.g. 6x2, 3x4). */
+  isMultiColumn?: boolean;
 }
 
 /** A visible channel together with its index in the unfiltered channel list. */
@@ -381,6 +385,7 @@ function computeECGLayoutGrid<TChannel extends ECGChannelLike>(args: {
   layoutType: ECGLayoutType;
   leadIndices?: number[];
   channelCount?: number;
+  sensitivityMmMv?: number;
 }): ECGLayoutGrid<TChannel> {
   const {
     visibleChannels,
@@ -388,6 +393,7 @@ function computeECGLayoutGrid<TChannel extends ECGChannelLike>(args: {
     layoutType,
     leadIndices,
     channelCount,
+    sensitivityMmMv,
   } = args;
   const rowsPerColumn = ECG_LAYOUT_ROWS_PER_COLUMN[layoutType];
   const visibleCount = visibleChannels.length;
@@ -440,9 +446,21 @@ function computeECGLayoutGrid<TChannel extends ECGChannelLike>(args: {
     });
   }
 
+  const getScaleForChannel = (channel: TChannel) => {
+    if (sensitivityMmMv != null && sensitivityMmMv > 0) {
+      const mvPerUnit =
+        Number.isFinite(channel.mvPerUnit) && channel.mvPerUnit > 0
+          ? channel.mvPerUnit
+          : ECG_DEFAULT_MV_PER_UNIT;
+      return sensitivityMmMv * ECG_PX_PER_MM * mvPerUnit;
+    }
+    return channelScale;
+  };
+
   const rowHeights = new Array(rowCount).fill(0);
   items.forEach(({ channel, row }) => {
-    const itemHeight = (channel.max - channel.min) * channelScale * 1.25;
+    const scale = getScaleForChannel(channel);
+    const itemHeight = (channel.max - channel.min) * scale * 1.25;
     if (itemHeight > rowHeights[row]) {
       rowHeights[row] = itemHeight;
     }
@@ -458,9 +476,12 @@ function computeECGLayoutGrid<TChannel extends ECGChannelLike>(args: {
     currentYOffset += rowHeight + ECG_CHANNEL_SPACING;
     rowYOffsets[r] = currentYOffset;
 
-    const rowItem = items.find((item) => item.row === r);
-    const minVal = rowItem ? rowItem.channel.min : 0;
-    rowBaselines[r] = currentYOffset + minVal * channelScale;
+    const rowItems = items.filter((item) => item.row === r);
+    const minScaled = rowItems.reduce((acc, item) => {
+      const scale = getScaleForChannel(item.channel);
+      return Math.min(acc, item.channel.min * scale);
+    }, 0);
+    rowBaselines[r] = currentYOffset + minScaled;
   }
 
   return {
@@ -484,7 +505,8 @@ function computeECGLayoutGrid<TChannel extends ECGChannelLike>(args: {
 export function computeECGHeight<TChannel extends ECGChannelLike>(
   visibleChannels: TChannel[],
   channelScale: number,
-  layoutType: ECGLayoutType = '12x1'
+  layoutType: ECGLayoutType = '12x1',
+  sensitivityMmMv?: number
 ): number {
   if (visibleChannels.length === 0) {
     return 1;
@@ -494,6 +516,7 @@ export function computeECGHeight<TChannel extends ECGChannelLike>(
     visibleChannels,
     channelScale,
     layoutType,
+    sensitivityMmMv,
   });
 
   return grid.totalHeight || 1;
@@ -518,6 +541,7 @@ export function computeECGChannelLayouts<
    * value as its synthetic `leadIndex`.
    */
   channelCount?: number;
+  sensitivityMmMv?: number;
 }): ECGChannelLayout<TChannel>[] {
   const {
     visibleChannels,
@@ -527,6 +551,7 @@ export function computeECGChannelLayouts<
     ecgWidth = 1000,
     leadIndices,
     channelCount,
+    sensitivityMmMv,
   } = args;
 
   const grid = computeECGLayoutGrid({
@@ -535,8 +560,20 @@ export function computeECGChannelLayouts<
     layoutType,
     leadIndices,
     channelCount,
+    sensitivityMmMv,
   });
   const layouts: ECGChannelLayout<TChannel>[] = [];
+
+  const getScaleForChannel = (channel: TChannel) => {
+    if (sensitivityMmMv != null && sensitivityMmMv > 0) {
+      const mvPerUnit =
+        Number.isFinite(channel.mvPerUnit) && channel.mvPerUnit > 0
+          ? channel.mvPerUnit
+          : ECG_DEFAULT_MV_PER_UNIT;
+      return sensitivityMmMv * ECG_PX_PER_MM * mvPerUnit;
+    }
+    return channelScale;
+  };
 
   grid.items.forEach(({ channel, row, col, leadIndex, isRhythm }) => {
     let startSample = 0;
@@ -544,9 +581,11 @@ export function computeECGChannelLayouts<
     let width = ecgWidth;
     let xOffset = 0;
 
+    const isMultiColumn = layoutType !== '12x1' && !isRhythm;
+
     // A grid cell of a multi-column layout shows one time segment of the
     // signal. The rhythm strip and the `12x1` rows show the full duration.
-    if (layoutType !== '12x1' && !isRhythm) {
+    if (isMultiColumn) {
       const segmentDuration = numberOfSamples / grid.colCount;
       startSample = Math.floor(col * segmentDuration);
       endSample = Math.floor((col + 1) * segmentDuration);
@@ -559,6 +598,7 @@ export function computeECGChannelLayouts<
       itemHeight: grid.rowHeights[row],
       yOffset: grid.rowYOffsets[row],
       baseline: grid.rowBaselines[row],
+      channelScale: getScaleForChannel(channel),
       xOffset,
       width,
       startSample,
@@ -567,6 +607,7 @@ export function computeECGChannelLayouts<
       row,
       leadIndex,
       isRhythm,
+      isMultiColumn,
     });
   });
 
@@ -636,7 +677,12 @@ export function computeECGRenderMetrics<TChannel extends ECGChannelLike>(args: {
     channelScale = heightPerChannel / (range * 1.25);
   }
 
-  const ecgHeight = computeECGHeight(visibleChannels, channelScale, layoutType);
+  const ecgHeight = computeECGHeight(
+    visibleChannels,
+    channelScale,
+    layoutType,
+    sensitivityMmMv
+  );
   const clientWidth = canvas.clientWidth || canvas.width || ecgWidth;
   const clientHeight = canvas.clientHeight || canvas.height || ecgHeight;
   const worldToCanvasRatio = Math.min(
@@ -816,11 +862,14 @@ export function drawECGTraces<TChannel extends ECGChannelLike>(args: {
     ({
       channel,
       baseline,
+      channelScale: layoutScale,
       xOffset = 0,
       width: traceWidth = ecgWidth,
       startSample,
       endSample,
+      isMultiColumn,
     }) => {
+      const effectiveChannelScale = layoutScale ?? channelScale;
       // The layout always sets `endSample` now, so the clamp against the real
       // length of the channel has to be explicit. A channel array shorter than
       // `numberOfSamples` otherwise yields `undefined` samples, and
@@ -835,17 +884,26 @@ export function drawECGTraces<TChannel extends ECGChannelLike>(args: {
       // nothing.
       const hasSamples = layoutEnd > layoutStart;
 
-      const windowStart = startIndex !== undefined ? startIndex : layoutStart;
-      const windowEnd = endIndex !== undefined ? endIndex : layoutEnd;
-
-      const resolvedStartIndex = Math.max(
-        layoutStart,
-        Math.min(windowStart, layoutEnd - 1)
-      );
-      const resolvedEndIndex = Math.min(
-        layoutEnd,
-        Math.max(windowEnd, resolvedStartIndex + 1)
-      );
+      // Multi-column grid cells represent fixed partitions of the full signal.
+      // Global time window clipping applies only to full-duration traces (12x1 and rhythm strip).
+      const resolvedStartIndex = isMultiColumn
+        ? layoutStart
+        : Math.max(
+            layoutStart,
+            Math.min(
+              startIndex !== undefined ? startIndex : layoutStart,
+              layoutEnd - 1
+            )
+          );
+      const resolvedEndIndex = isMultiColumn
+        ? layoutEnd
+        : Math.min(
+            layoutEnd,
+            Math.max(
+              endIndex !== undefined ? endIndex : layoutEnd,
+              resolvedStartIndex + 1
+            )
+          );
       const sampleCount = Math.max(1, resolvedEndIndex - resolvedStartIndex);
 
       ctx.strokeStyle = ECG_RENDERING_COLORS.baseline;
@@ -867,7 +925,8 @@ export function drawECGTraces<TChannel extends ECGChannelLike>(args: {
         const x =
           xOffset + ((index - resolvedStartIndex) * traceWidth) / sampleCount;
         const y =
-          baseline - channel.data[index] * channelScale * amplitudeScale;
+          baseline -
+          channel.data[index] * effectiveChannelScale * amplitudeScale;
 
         if (index === resolvedStartIndex) {
           ctx.moveTo(x, y);

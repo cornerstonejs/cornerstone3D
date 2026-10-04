@@ -254,4 +254,141 @@ describe('ECG render metrics', () => {
       expect(Number.isNaN(baselines[0].to[1])).toBe(false);
     });
   });
+
+  describe('per-channel calibration', () => {
+    it('draws channels with different sensitivities using their individual calibrated scales', () => {
+      const ch1 = makeChannel('Lead I', { min: -1000, max: 1000, length: 10 });
+      const ch2 = makeChannel('Lead II', { min: -1000, max: 1000, length: 10 });
+      ch1.mvPerUnit = 0.001;
+      ch2.mvPerUnit = 0.002;
+      ch1.data[0] = 500;
+      ch2.data[0] = 500;
+
+      const layouts = computeECGChannelLayouts({
+        visibleChannels: [ch1, ch2],
+        channelScale: 10 * ECG_PX_PER_MM * 0.001,
+        sensitivityMmMv: 10,
+        layoutType: '12x1',
+        numberOfSamples: 10,
+        ecgWidth: 1000,
+      });
+
+      expect(layouts[0].channelScale).toBeCloseTo(
+        10 * ECG_PX_PER_MM * 0.001,
+        6
+      );
+      expect(layouts[1].channelScale).toBeCloseTo(
+        10 * ECG_PX_PER_MM * 0.002,
+        6
+      );
+
+      const ctx = makeRecordingContext();
+      drawECGTraces({
+        ctx,
+        layouts,
+        ecgWidth: 1000,
+        channelScale: 10 * ECG_PX_PER_MM * 0.001,
+      });
+
+      const traceStarts = ctx.segments.filter(
+        (segment) =>
+          segment.style === ECG_RENDERING_COLORS.trace && segment.to === null
+      );
+      expect(traceStarts.length).toBe(2);
+
+      // Channel 2 sensitivity is 2x channel 1, so the vertical deflection from baseline is 2x
+      const ch1Deflection = layouts[0].baseline - traceStarts[0].from[1];
+      const ch2Deflection = layouts[1].baseline - traceStarts[1].from[1];
+      expect(ch2Deflection).toBeCloseTo(ch1Deflection * 2, 4);
+    });
+
+    it('uses shared channelScale across all channels in legacy auto-fit mode', () => {
+      const ch1 = makeChannel('Lead I', { min: -1000, max: 1000, length: 10 });
+      const ch2 = makeChannel('Lead II', { min: -1000, max: 1000, length: 10 });
+      ch1.mvPerUnit = 0.001;
+      ch2.mvPerUnit = 0.002;
+      ch1.data[0] = 500;
+      ch2.data[0] = 500;
+
+      const autoFitScale = 0.5;
+      const layouts = computeECGChannelLayouts({
+        visibleChannels: [ch1, ch2],
+        channelScale: autoFitScale,
+        layoutType: '12x1',
+        numberOfSamples: 10,
+        ecgWidth: 1000,
+      });
+
+      expect(layouts[0].channelScale).toBe(autoFitScale);
+      expect(layouts[1].channelScale).toBe(autoFitScale);
+
+      const ctx = makeRecordingContext();
+      drawECGTraces({
+        ctx,
+        layouts,
+        ecgWidth: 1000,
+        channelScale: autoFitScale,
+      });
+
+      const traceStarts = ctx.segments.filter(
+        (segment) =>
+          segment.style === ECG_RENDERING_COLORS.trace && segment.to === null
+      );
+      expect(traceStarts.length).toBe(2);
+      const ch1Deflection = layouts[0].baseline - traceStarts[0].from[1];
+      const ch2Deflection = layouts[1].baseline - traceStarts[1].from[1];
+      expect(ch2Deflection).toBeCloseTo(ch1Deflection, 4);
+    });
+
+    it('preserves multi-column cell sample partitions when startIndex and endIndex are passed', () => {
+      // 12 leads in 3x4 layout across 4000 samples (1000 samples per column)
+      const channels = Array.from({ length: 12 }, (_, i) => {
+        const ch = makeChannel(`Lead ${i}`, {
+          min: -100,
+          max: 100,
+          length: 4000,
+        });
+        for (let s = 0; s < 4000; s++) {
+          ch.data[s] = 50;
+        }
+        return ch;
+      });
+
+      const layouts = computeECGChannelLayouts({
+        visibleChannels: channels,
+        channelScale: 1,
+        layoutType: '3x4',
+        numberOfSamples: 4000,
+        ecgWidth: 1000,
+      });
+
+      expect(layouts[0].isMultiColumn).toBe(true);
+      expect(layouts[0].startSample).toBe(0);
+      expect(layouts[0].endSample).toBe(1000);
+
+      // Lead in column 3 (e.g. index 9, 10, 11) spans [3000, 4000]
+      const col3Layout = layouts[9];
+      expect(col3Layout.col).toBe(3);
+      expect(col3Layout.startSample).toBe(3000);
+      expect(col3Layout.endSample).toBe(4000);
+
+      const ctx = makeRecordingContext();
+      // Global window covers only [0, 1000]
+      drawECGTraces({
+        ctx,
+        layouts,
+        ecgWidth: 1000,
+        channelScale: 1,
+        startIndex: 0,
+        endIndex: 1000,
+      });
+
+      // Traces should have drawn lineTo segments for column 3 rather than collapsing to 1 flat sample
+      const traceSegments = ctx.segments.filter(
+        (s) => s.style === ECG_RENDERING_COLORS.trace && s.to !== null
+      );
+      // 12 channels * 999 line segments = 11,988 segments drawn
+      expect(traceSegments.length).toBe(12 * (1000 - 1));
+    });
+  });
 });

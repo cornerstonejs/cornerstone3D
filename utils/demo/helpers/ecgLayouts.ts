@@ -14,7 +14,20 @@ export const ecgLayouts = new Map<string, ECGLayoutOption>([
   ['3x4+1', { id: '3x4+1', name: '3x4 + 1 Rhythm' }],
 ]);
 
-const { STANDARD_12_LEADS } = utilities.ECGUtilities;
+const STANDARD_12_LEADS = [
+  'I',
+  'II',
+  'III',
+  'aVR',
+  'aVL',
+  'aVF',
+  'V1',
+  'V2',
+  'V3',
+  'V4',
+  'V5',
+  'V6',
+];
 
 /**
  * Generic layout preset generator for AABB2 percentage traceRegions.
