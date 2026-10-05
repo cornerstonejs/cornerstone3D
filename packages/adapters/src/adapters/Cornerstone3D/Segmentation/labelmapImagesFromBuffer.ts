@@ -1003,17 +1003,14 @@ export function insertPixelDataPlanar({
   } = multiframe;
 
   const sharedImageOrientationPatient =
-    SharedFunctionalGroupsSequence.PlaneOrientationSequence
-      ? SharedFunctionalGroupsSequence.PlaneOrientationSequence
-          .ImageOrientationPatient
-      : undefined;
+    SharedFunctionalGroupsSequence?.PlaneOrientationSequence
+      ?.ImageOrientationPatient;
   const sliceLength = Columns * Rows;
 
+  const perFrameLength = PerFrameFunctionalGroupsSequence?.length || 0;
   const metadataFrameCount =
-    Number(multiframe.NumberOfFrames) ||
-    PerFrameFunctionalGroupsSequence.length;
-  const groupsLenFromMetadata =
-    PerFrameFunctionalGroupsSequence.length || metadataFrameCount;
+    Number(multiframe.NumberOfFrames) || perFrameLength;
+  const groupsLenFromMetadata = perFrameLength || metadataFrameCount;
   const groupsLen =
     typeof decodedFrameCount === 'number'
       ? Math.min(groupsLenFromMetadata, decodedFrameCount)
@@ -1217,14 +1214,14 @@ export function insertPixelDataPlanar({
       // Cache properties and lengths outside loops for performance
       const pfSeq = multiframe.PerFrameFunctionalGroupsSequence;
       const sharedPlaneOrientation =
-        multiframe.SharedFunctionalGroupsSequence.PlaneOrientationSequence
+        multiframe.SharedFunctionalGroupsSequence?.PlaneOrientationSequence
           ?.ImageOrientationPatient;
       for (
         let i = firstIndex;
         i < firstIndex + imagesPerChunk && i < groupsLen;
         i++
       ) {
-        const PerFrameFunctionalGroups = pfSeq[i];
+        const PerFrameFunctionalGroups = pfSeq?.[i];
         const ImageOrientationPatientI =
           sharedPlaneOrientation ||
           PerFrameFunctionalGroups?.PlaneOrientationSequence
@@ -1508,10 +1505,8 @@ export function insertOverlappingPixelDataPlanar({
   } = multiframe;
 
   const sharedImageOrientationPatient =
-    SharedFunctionalGroupsSequence.PlaneOrientationSequence
-      ? SharedFunctionalGroupsSequence.PlaneOrientationSequence
-          .ImageOrientationPatient
-      : undefined;
+    SharedFunctionalGroupsSequence?.PlaneOrientationSequence
+      ?.ImageOrientationPatient;
   const sliceLength = Columns * Rows;
 
   const arrayOfSegmentData = getArrayOfSegmentData({
@@ -1625,7 +1620,7 @@ const getSegmentData = ({
     const referencedImageId = currentLabelMapImage.referencedImageId;
 
     const PerFrameFunctionalGroupsIndex =
-      PerFrameFunctionalGroupsSequence.findIndex(
+      PerFrameFunctionalGroupsSequence?.findIndex(
         (PerFrameFunctionalGroups, currentSequenceIndex) => {
           const {
             segmentIndex: groupsSegmentIndex,
@@ -1645,12 +1640,15 @@ const getSegmentData = ({
         }
       );
 
-    if (PerFrameFunctionalGroupsIndex === -1) {
+    if (
+      PerFrameFunctionalGroupsIndex === -1 ||
+      PerFrameFunctionalGroupsIndex === undefined
+    ) {
       continue;
     }
 
     const PerFrameFunctionalGroups =
-      PerFrameFunctionalGroupsSequence[PerFrameFunctionalGroupsIndex];
+      PerFrameFunctionalGroupsSequence?.[PerFrameFunctionalGroupsIndex];
 
     const alignedPixelDataI = getAlignedPixelData({
       sharedImageOrientationPatient,
