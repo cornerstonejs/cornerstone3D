@@ -36,6 +36,7 @@ import type {
   VoxelStatistic,
 } from '../../types';
 import ImageQualityStatus from '../../enums/ImageQualityStatus';
+import VoxelStatistics from '../../enums/VoxelStatistics';
 import cache from '../cache';
 import type vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture';
 import { coreLog } from '../../utilities/logger';
@@ -365,24 +366,33 @@ export class ImageVolume {
   }
 
   /**
-   * Set it before a render path provisions a texture. A reduction that already
-   * exists keeps its statistic, and so do the actors that draw it.
+   * Set it before a render path provisions a texture. A derived representation
+   * keeps the statistic it was built with, but a reduced texture refills each
+   * dirty slice with the statistic of the volume at that time, so a later
+   * change mixes two statistics in one texture.
    */
   public set reductionStatistic(statistic: VoxelStatistic | undefined) {
     if (statistic === this._reductionStatistic) {
       return;
     }
 
-    const reducedWithAnother = this._compositeVoxelManager
-      ?.getRepresentations()
-      .some(
-        (representation) =>
-          representation.derivedFrom && representation.statistic !== statistic
+    const effective = statistic ?? VoxelStatistics.Average;
+    const reducedWithAnother =
+      this._compositeVoxelManager
+        ?.getRepresentations()
+        .some(
+          (representation) =>
+            representation.derivedFrom && representation.statistic !== effective
+        ) ||
+      this.textureSets.some(
+        (set) =>
+          set.name !== FULL_RESOLUTION_TEXTURE_SET &&
+          set.statistic !== effective
       );
 
     if (reducedWithAnother) {
       log.warn(
-        `reductionStatistic of ${this.volumeId} changed to ${statistic} after a reduction with another statistic; existing actors keep the old one.`
+        `reductionStatistic of ${this.volumeId} changed to ${statistic} after a reduction with another statistic; existing reduced textures and representations do not match it.`
       );
     }
 
@@ -628,6 +638,8 @@ export class ImageVolume {
       },
       applyGrid: (texture, grid) => {
         texture.setGrid(grid);
+        // A new grid holds none of the old content, so every slice refills.
+        texture.markAllFramesUpdated();
       },
       markTextureSlice: markSlice,
       ...options,

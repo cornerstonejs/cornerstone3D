@@ -266,6 +266,10 @@ abstract class BaseVolumeViewport extends Viewport {
    * receives new frames. Legacy VolumeViewports otherwise never hear
    * IMAGE_VOLUME_MODIFIED (GenericViewport paths do), so dirties piled up and
    * rare paints uploaded hundreds of texture slices at once.
+   *
+   * While the volume loads, the loader renders every 2% of its frames
+   * (`autoRenderOnLoad`), and this dispatcher stays out of the way. It renders
+   * for a change after the load, such as a labelmap edit.
    */
   private initializeVolumeModifiedRenderDispatcher(): void {
     const handleVolumeModified = (evt: Event) => {
@@ -273,6 +277,12 @@ abstract class BaseVolumeViewport extends Viewport {
       const volumeId = detail?.volumeId;
 
       if (!volumeId || !this.volumeIds.has(volumeId) || this.isDisabled) {
+        return;
+      }
+
+      // A volume that is still loading renders through the throttle of its
+      // loader, so a 3D viewport does not ray cast on every frame.
+      if (cache.getVolume(volumeId)?.loadStatus?.loading) {
         return;
       }
 
