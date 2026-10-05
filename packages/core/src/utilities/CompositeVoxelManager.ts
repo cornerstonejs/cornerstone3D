@@ -30,6 +30,7 @@ import {
   mapBoundsBetweenGrids,
   mapIndexToNearestVoxel,
   reduceByBoxStatistic,
+  requireVoxelStatistic,
   volumeOfBounds,
   voxelGridKey,
   voxelGridsEqual,
@@ -586,6 +587,13 @@ function buildDeliveryIndex(delivered: DeliveredRegion[]): DeliveryIndex {
  * when the load is not complete, so this is not a new defect; what changes is
  * that a consumer can now discover the defect.
  */
+/** The reduction that a box derivation of this statistic records. */
+function boxReductionOf(statistic: VoxelStatistic): VoxelReduction {
+  return (
+    requireVoxelStatistic(statistic).boxReduction ?? VoxelReductions.BoxAverage
+  );
+}
+
 export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
   private readonly representations: VoxelRepresentation<T>[] = [];
   private readonly primaryRepresentation: VoxelRepresentation<T>;
@@ -804,6 +812,7 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
     );
 
     const reducesAnAxis = factors.some((factor) => factor > 1);
+    const boxReduction = boxReductionOf(statistic);
     const representation = this.addRepresentation({
       grid,
       statistic,
@@ -813,9 +822,7 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
       // A BOX REDUCTION DOES NOT ALIAS: every source voxel of the box reaches
       // the result. An axis that no factor reduces holds every source voxel, so
       // that derivation is no reduction at all.
-      reduction:
-        kind ??
-        (reducesAnAxis ? VoxelReductions.BoxAverage : VoxelReductions.None),
+      reduction: kind ?? (reducesAnAxis ? boxReduction : VoxelReductions.None),
       source,
       // THE RECORD OF THE SOURCE BECOMES THE RECORD OF THE RESULT, and the copy
       // states the data that the derivation really read. A box that reads a
@@ -894,7 +901,7 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
         statistic,
         voxelManager: undefined,
         reduction: reducesAnAxis
-          ? VoxelReductions.BoxAverage
+          ? boxReductionOf(statistic)
           : VoxelReductions.None,
         source: VoxelDataSources.ClientDerived,
         derivedFrom: {
@@ -1510,6 +1517,13 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
     statistic: VoxelStatistic = VoxelStatistics.Average
   ): number {
     const sources = this.coveringRepresentations(undefined, statistic);
+
+    // The primary holds the data itself, with no reduction, so it serves every
+    // statistic. It is also the finest source.
+    if (!sources.includes(this.primaryRepresentation)) {
+      sources.unshift(this.primaryRepresentation);
+    }
+
     let written = 0;
 
     for (let k = 0; k < grid.dimensions[2]; k++) {

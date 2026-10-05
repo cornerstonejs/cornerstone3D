@@ -16,12 +16,13 @@ import {
 import { resolveVolumeTexture } from '../src/RenderingEngine/helpers/resolveVolumeTexture';
 import ImageVolume from '../src/cache/classes/ImageVolume';
 import volumeTextureStore from '../src/cache/volumeTextureStore';
-import { VoxelManager } from '../src/utilities';
+import VoxelManager from '../src/utilities/VoxelManager';
 import {
   getGpuCapabilityProfile,
   setActiveGpuCapabilityProfile,
   resetActiveGpuCapabilityProfile,
 } from '../src/utilities/gpuCapabilityProfiles';
+import { VoxelStatistics } from '../src/enums';
 
 // A STRATEGY IS THE UNIT: it states how a render gets its voxels, and the names
 // of the texture sets derive from it. The provider builds the strategies when
@@ -143,6 +144,28 @@ describe('the default provider builds the strategies', () => {
     provisionReducedResolutionStrategy(context(volume, 'low-tablet'));
 
     expect(volume.getVoxelRepresentations().length).toBe(1);
+  });
+
+  it('reduces a labelmap by foreground majority under a low profile', () => {
+    // The texture fills each slice by foreground majority from the frames, so
+    // a segment index stays a real label. No representation is derived.
+    const volume = makeVolume({ volumeId: 'labelmap-volume' });
+
+    volume.reductionStatistic = VoxelStatistics.ForegroundMajority;
+
+    const strategy = provisionReducedResolutionStrategy(
+      context(volume, 'low-tablet')
+    );
+    const { grid, statistic } = strategy.bindings()[0];
+
+    expect(strategy.name).toBe('reduced-2x2x1/full-extent/foregroundMajority');
+    expect(statistic).toBe(VoxelStatistics.ForegroundMajority);
+    expect(volume.getVoxelRepresentations().length).toBe(1);
+
+    const record = volume.getGridQuality(grid, statistic);
+
+    expect(record.grid.dimensions).toEqual([256, 256, 8]);
+    expect(record.reduction).toBe('boxForegroundMajority');
   });
 
   it('gives the record of the reduced grid from the source deliveries', () => {

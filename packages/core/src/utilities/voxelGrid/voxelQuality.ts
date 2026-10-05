@@ -50,6 +50,13 @@ function registerCoreVoxelReductions(): void {
     description: 'The mean of the source voxels of one box.',
   });
   registerVoxelReduction({
+    reduction: VoxelReductions.BoxForegroundMajority,
+    // Every source voxel of the box takes part in the vote, as in the mean.
+    aliases: false,
+    description:
+      'The majority non-zero label of the source voxels of one box. It reduces labelmaps.',
+  });
+  registerVoxelReduction({
     reduction: VoxelReductions.Decimation,
     aliases: true,
     description:

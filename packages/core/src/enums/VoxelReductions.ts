@@ -13,6 +13,7 @@ export type VoxelReductionsMap = VoxelReductionConstants;
 const builtInVoxelReductions: CoreVoxelReductionConstants = {
   None: 'none',
   BoxAverage: 'boxAverage',
+  BoxForegroundMajority: 'boxForegroundMajority',
   Decimation: 'decimation',
 };
 

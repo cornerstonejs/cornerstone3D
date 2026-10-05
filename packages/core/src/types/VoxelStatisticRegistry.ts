@@ -1,9 +1,11 @@
 export interface CoreVoxelStatisticRegistry {
   average: 'average';
+  foregroundMajority: 'foregroundMajority';
 }
 
 export interface CoreVoxelStatisticConstants {
   readonly Average: 'average';
+  readonly ForegroundMajority: 'foregroundMajority';
 }
 
 /**
@@ -29,10 +31,13 @@ export interface VoxelStatisticConstants extends CoreVoxelStatisticConstants {}
  * grid alone. Two representations can share one grid and hold a different
  * statistic of the same source voxels.
  *
- * The core package holds `'average'` only. The reduction of the resolution uses
- * that statistic, because a decimation aliases: a decimation keeps the high
- * spatial frequencies and folds them into the signal, and a reformat then shows
- * vertical blur with stair steps on an oblique structure.
+ * The core package holds `'average'` and `'foregroundMajority'`. Intensity
+ * volumes reduce with average. Labelmaps reduce with foreground majority
+ * (majority among non-zero labels; background only if the box is empty),
+ * because a mean of segment indices invents a label that nothing drew. A
+ * decimation aliases: it keeps the high spatial frequencies and folds them into
+ * the signal, and a reformat then shows vertical blur with stair steps on an
+ * oblique structure.
  *
  * A minimum and a maximum, for a short circuit of a ray cast over a very low
  * resolution copy of the whole volume, are an example of what an extension

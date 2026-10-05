@@ -1,6 +1,6 @@
 import { describe, it, expect } from '@jest/globals';
 import ImageVolume from '../src/cache/classes/ImageVolume';
-import { VoxelManager } from '../src/utilities';
+import VoxelManager from '../src/utilities/VoxelManager';
 import { VoxelStatistics, VoxelReductions } from '../src/enums';
 
 // The composite on `ImageVolume`, which is MR-API-IV-1 and MR-API-IV-4 of

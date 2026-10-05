@@ -33,10 +33,15 @@ import type {
   IVoxelManager,
   VoxelGrid,
   VoxelQualityRecord,
+  VoxelStatistic,
 } from '../../types';
 import ImageQualityStatus from '../../enums/ImageQualityStatus';
+import VoxelStatistics from '../../enums/VoxelStatistics';
 import cache from '../cache';
 import type vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture';
+import { coreLog } from '../../utilities/logger';
+
+const log = coreLog.getLogger('cache', 'ImageVolume');
 
 /** The name of the set that holds the full-resolution data of the whole volume. */
 export const FULL_RESOLUTION_TEXTURE_SET = 'full-resolution/full-extent';
@@ -73,6 +78,8 @@ function markSlice(
 
 export interface vtkStreamingOpenGLTexture extends vtkOpenGLTexture {
   setUpdatedFrame: (frame: number) => void;
+  /** Marks every slice dirty for the next upload. Not implied by `modified()`. */
+  markAllFramesUpdated: () => void;
   setVolumeId: (volumeId: string) => void;
   releaseGraphicsResources: () => void;
   hasUpdatedFrames: () => boolean;
@@ -134,6 +141,7 @@ export class ImageVolume {
   hasPixelSpacing: boolean;
   /** Property to store additional information */
   additionalDetails?: Record<string, unknown>;
+  private _reductionStatistic?: VoxelStatistic;
   /**
    *  Property to store the number of dimension groups.
    * @deprecated
@@ -185,6 +193,7 @@ export class ImageVolume {
       additionalDetails,
       voxelManager,
       numberOfComponents,
+      reductionStatistic,
     } = props;
 
     if (!dataType) {
@@ -204,6 +213,7 @@ export class ImageVolume {
     this.origin = origin;
     this.direction = direction;
     this.dataType = dataType;
+    this.reductionStatistic = reductionStatistic;
     this._numberOfComponents = numberOfComponents || 1;
     this.hasPixelSpacing =
       Number.isFinite(spacing[0]) &&
@@ -344,6 +354,49 @@ export class ImageVolume {
    */
   protected deliveredRegions(): DeliveredRegion[] | undefined {
     return undefined;
+  }
+
+  /**
+   * Statistic used when this volume must be reduced to fit a GPU texture.
+   * Intensity volumes use average. Labelmaps use foregroundMajority. Defaults
+   * to average.
+   */
+  public get reductionStatistic(): VoxelStatistic | undefined {
+    return this._reductionStatistic;
+  }
+
+  /**
+   * Set it before a render path provisions a texture. A derived representation
+   * keeps the statistic it was built with, but a reduced texture refills each
+   * dirty slice with the statistic of the volume at that time, so a later
+   * change mixes two statistics in one texture.
+   */
+  public set reductionStatistic(statistic: VoxelStatistic | undefined) {
+    if (statistic === this._reductionStatistic) {
+      return;
+    }
+
+    const effective = statistic ?? VoxelStatistics.Average;
+    const reducedWithAnother =
+      this._compositeVoxelManager
+        ?.getRepresentations()
+        .some(
+          (representation) =>
+            representation.derivedFrom && representation.statistic !== effective
+        ) ||
+      this.textureSets.some(
+        (set) =>
+          set.name !== FULL_RESOLUTION_TEXTURE_SET &&
+          set.statistic !== effective
+      );
+
+    if (reducedWithAnother) {
+      log.warn(
+        `reductionStatistic of ${this.volumeId} changed to ${statistic} after a reduction with another statistic; existing reduced textures and representations do not match it.`
+      );
+    }
+
+    this._reductionStatistic = statistic;
   }
 
   /**
@@ -585,6 +638,8 @@ export class ImageVolume {
       },
       applyGrid: (texture, grid) => {
         texture.setGrid(grid);
+        // A new grid holds none of the old content, so every slice refills.
+        texture.markAllFramesUpdated();
       },
       markTextureSlice: markSlice,
       ...options,

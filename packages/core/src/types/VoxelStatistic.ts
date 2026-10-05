@@ -1,3 +1,6 @@
+import type Point3 from './Point3';
+import type { VoxelGridReduction } from './VoxelGrid';
+import type { VoxelReduction } from './VoxelQualityRegistry';
 import type { VoxelStatistic } from './VoxelStatisticRegistry';
 
 /**
@@ -25,6 +28,35 @@ export interface VoxelStatisticAccumulator {
    */
   getValue: () => number;
 }
+
+/**
+ * A fast path of `reduceByBoxStatistic` that reads whole slices of a source.
+ *
+ * @returns the number of reduced voxels written, or `undefined` when the path
+ * does not apply to this source, and the reduction then takes the accumulator
+ */
+export type VoxelStatisticSliceReducer = <T extends number | number[] = number>(
+  source: {
+    dimensions: Point3;
+    getAtIJK: (i: number, j: number, k: number) => T;
+  },
+  reduction: VoxelGridReduction,
+  target: { setAtIJK: (i: number, j: number, k: number, value: T) => unknown },
+  options: { round: boolean }
+) => number | undefined;
+
+/**
+ * Fills one reduced plane of a texture from the source planes of its box
+ * along k. The last column and row of the plane also take the source voxels
+ * beyond the last whole box.
+ */
+export type VoxelStatisticPlaneFill = (
+  frames: ArrayLike<number>[],
+  sourceSize: [number, number],
+  targetSize: [number, number],
+  factors: [number, number],
+  values: { [index: number]: number }
+) => void;
 
 /**
  * The definition of one statistic.
@@ -58,4 +90,13 @@ export interface VoxelStatisticDefinition {
   description?: string;
   /** Builds an accumulator over one box of source voxels. */
   createAccumulator: () => VoxelStatisticAccumulator;
+  /** Optional fast path of a reduction, which must agree with the accumulator. */
+  reduceBySlices?: VoxelStatisticSliceReducer;
+  /**
+   * Fills a reduced GPU texture slice. Without it, the texture reads a derived
+   * representation of this statistic, or the composite fills the slice.
+   */
+  fillPlane?: VoxelStatisticPlaneFill;
+  /** The reduction that a box derivation records. The default is `boxAverage`. */
+  boxReduction?: VoxelReduction;
 }

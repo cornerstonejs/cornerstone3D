@@ -5,7 +5,7 @@ import type {
   VoxelStatisticAccumulator,
   VoxelStatisticDefinition,
 } from '../../types';
-import { normalizedFactors, reducedDimensions } from './reducedDimensions';
+import resolveReduction, { type ResolvedReduction } from './resolveReduction';
 import VoxelStatistics from '../../enums/VoxelStatistics';
 import { requireVoxelStatistic } from './voxelStatistics';
 
@@ -27,6 +27,14 @@ export type BoxStatisticSource<T extends BoxStatisticValue = number> = {
   dimensions: Point3;
   /** Reads one source voxel. */
   getAtIJK: (i: number, j: number, k: number) => T;
+  /**
+   * Optional fast path: one XY slice as a contiguous array. Image-volume
+   * voxel managers supply this from the cached image scalar data.
+   */
+  getSliceData?: (args: {
+    sliceIndex: number;
+    slicePlane: number;
+  }) => ArrayLike<number> | undefined;
 };
 
 /**
@@ -54,14 +62,6 @@ export type BoxStatisticOptions = {
   round?: boolean;
 };
 
-/** The region and the box sizes, each one resolved to a usable value. */
-type ResolvedReduction = {
-  factors: Point3;
-  sourceOffset: Point3;
-  sourceEnd: Point3;
-  dimensions: Point3;
-};
-
 /**
  * The accumulators of one reduction. The reduction reuses them for every box,
  * and it adds one accumulator when a voxel holds more components than the
@@ -71,27 +71,6 @@ type BoxAccumulators = {
   definition: VoxelStatisticDefinition;
   perComponent: VoxelStatisticAccumulator[];
 };
-
-function resolveReduction(
-  source: BoxStatisticSource<BoxStatisticValue>,
-  reduction: VoxelGridReduction
-): ResolvedReduction {
-  const factors = normalizedFactors(reduction.factors);
-  const sourceOffset = (reduction.sourceOffset ?? [0, 0, 0]) as Point3;
-  const sourceDimensions = (reduction.sourceDimensions ??
-    source.dimensions) as Point3;
-
-  return {
-    factors,
-    sourceOffset,
-    sourceEnd: [
-      sourceOffset[0] + sourceDimensions[0],
-      sourceOffset[1] + sourceDimensions[1],
-      sourceOffset[2] + sourceDimensions[2],
-    ],
-    dimensions: reducedDimensions(sourceDimensions, factors),
-  };
-}
 
 function createAccumulators(statistic: VoxelStatistic): BoxAccumulators {
   return { definition: requireVoxelStatistic(statistic), perComponent: [] };
@@ -289,6 +268,9 @@ function boxAverageAtIJK<T extends BoxStatisticValue = number>(
  * The function builds ONE accumulator for each component, and it resets those
  * accumulators for each box.
  *
+ * A statistic that registers `reduceBySlices` tries that fast path first. The
+ * function throws for a statistic that nothing registered.
+ *
  * @param source - the data that the reduction reads
  * @param reduction - the box size of each axis, and the region of the source
  * @param target - the data that the reduction writes
@@ -302,7 +284,17 @@ function reduceByBoxStatistic<T extends BoxStatisticValue = number>(
   options: BoxStatisticOptions = {}
 ): number {
   const { round = true, statistic = VoxelStatistics.Average } = options;
-  const accumulators = createAccumulators(statistic);
+
+  const definition = requireVoxelStatistic(statistic);
+  const sliceWritten = definition.reduceBySlices?.(source, reduction, target, {
+    round,
+  });
+
+  if (sliceWritten !== undefined) {
+    return sliceWritten;
+  }
+
+  const accumulators: BoxAccumulators = { definition, perComponent: [] };
   const resolved = resolveReduction(source, reduction);
   const { dimensions } = resolved;
   const [targetI, targetJ, targetK] = reduction.targetOffset ?? [0, 0, 0];
@@ -342,8 +334,8 @@ function reduceByBoxStatistic<T extends BoxStatisticValue = number>(
  * result is not acceptable when a reformat is diagnostic.
  *
  * THE AVERAGE APPLIES TO A VALUE THAT A MEAN DESCRIBES. A mean of the labels of
- * a segmentation has no meaning, and a reduction of a labelmap therefore needs
- * another statistic, which an extension registers.
+ * a segmentation has no meaning. Labelmap volumes set `reductionStatistic` to
+ * `ForegroundMajority`, which core registers for that case.
  *
  * @param source - the data that the reduction reads
  * @param reduction - the box size of each axis, and the region of the source

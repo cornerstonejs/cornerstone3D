@@ -316,7 +316,8 @@ export function provisionFullResolutionStrategy({
  * that one axis and leaves the other two. A uniform reduction by 2 on three
  * axes would take 8 times fewer voxels for an excess of one voxel.
  *
- * The strategy asks for the box average only, and never for a decimation.
+ * Intensity volumes reduce with the box average. Labelmaps set
+ * `reductionStatistic` to foregroundMajority so segment indices stay real labels.
  */
 export function provisionReducedResolutionStrategy({
   volume,
@@ -333,27 +334,30 @@ export function provisionReducedResolutionStrategy({
     return undefined;
   }
 
+  const statistic = volume.reductionStatistic ?? VoxelStatistics.Average;
   const grid = deriveBoxAverageGrid(fullResolutionGrid, { factors });
-  const name = reducedStrategyName(factors);
+  const name = reducedStrategyName(factors, statistic);
 
   // No derived representation is built here. The texture of this grid fills
-  // each slice by box average straight from the frames of the volume, which
-  // gives the box average that P31.2 asks for at no cost in CPU memory, and
-  // `ImageVolume.getGridQuality` gives the record of that texture from the
-  // deliveries of the volume. A derivation of a volume that holds all of its
-  // data would otherwise reduce every voxel during this provision. A CPU reader
-  // that needs the reduced voxels calls `createRepresentation` itself.
+  // each slice by the statistic of the volume straight from its frames: the
+  // box average that P31.2 asks for, or the foreground majority of a labelmap,
+  // at no cost in CPU memory. `ImageVolume.getGridQuality` gives the record of
+  // that texture from the deliveries of the volume. A derivation of a volume
+  // that holds all of its data would otherwise reduce every voxel during this
+  // provision. A CPU reader that needs the reduced voxels calls
+  // `createRepresentation` itself.
   const set = volume.provisionTextureSet({
     name,
     grids: [grid],
     coverage: 'full-extent',
+    statistic,
   });
 
   if (!set) {
     return undefined;
   }
 
-  return new FullExtentTextureStrategy({ name, volume, grid });
+  return new FullExtentTextureStrategy({ name, volume, grid, statistic });
 }
 
 /**

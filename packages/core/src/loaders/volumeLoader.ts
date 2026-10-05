@@ -29,6 +29,7 @@ import {
 import { generateVolumePropsFromImageIds } from '../utilities/generateVolumePropsFromImageIds';
 import type { StreamingDynamicImageVolume } from '../cache';
 import { cornerstoneStreamingImageVolumeLoader } from './cornerstoneStreamingImageVolumeLoader';
+import VoxelStatistics from '../enums/VoxelStatistics';
 
 interface VolumeLoaderOptions {
   imageIds: string[];
@@ -516,13 +517,17 @@ export function createAndCacheDerivedLabelmapVolume(
   referencedVolumeId: string,
   options = {} as DerivedVolumeOptions
 ): IImageVolume {
-  return createAndCacheDerivedVolume(referencedVolumeId, {
+  const volume = createAndCacheDerivedVolume(referencedVolumeId, {
     ...options,
     targetBuffer: {
       type: 'Uint8Array',
       ...options?.targetBuffer,
     },
   });
+
+  volume.reductionStatistic = VoxelStatistics.ForegroundMajority;
+
+  return volume;
 }
 
 /**
@@ -544,5 +549,9 @@ export function createLocalLabelmapVolume(
     );
   }
 
-  return createLocalVolume(volumeId, { ...options, preventCache });
+  const volume = createLocalVolume(volumeId, { ...options, preventCache });
+
+  volume.reductionStatistic = VoxelStatistics.ForegroundMajority;
+
+  return volume;
 }

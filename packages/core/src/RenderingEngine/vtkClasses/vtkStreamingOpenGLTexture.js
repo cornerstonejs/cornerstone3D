@@ -4,6 +4,8 @@ import cache from '../../cache/cache';
 import { getConstructorFromType } from '../../utilities/getBufferConfiguration';
 import VoxelManager from '../../utilities/VoxelManager';
 import { voxelGridsEqual } from '../../utilities/voxelGrid';
+import { requireVoxelStatistic } from '../../utilities/voxelGrid/voxelStatistics';
+import VoxelStatistics from '../../enums/VoxelStatistics';
 
 /**
  * Converts the input data array to the specified data type
@@ -62,6 +64,23 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
       data,
       preferSizeOverAccuracy,
     });
+  };
+
+  const superCreate3DFromRaw = publicAPI.create3DFromRaw;
+
+  /**
+   * The mappers allocate with `data: null`, which leaves the GPU storage empty,
+   * so every slice needs a fill. `modified()` no longer implies that, and a
+   * re-allocation after the first fill would otherwise stay black.
+   */
+  publicAPI.create3DFromRaw = (options) => {
+    const created = superCreate3DFromRaw(options);
+
+    if (created && !options.data) {
+      publicAPI.markAllFramesUpdated();
+    }
+
+    return created;
   };
 
   const superUpdate = publicAPI.updateVolumeInfoForGL;
@@ -169,89 +188,83 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
   }
 
   /**
-   * Fills one slice of this texture with the box average of the voxels of the
-   * volume that the slice covers.
+   * Reads the frames of the volume that one reduced slice covers, in k order.
    *
-   * The arithmetic is direct. A fill through the composite maps every voxel
-   * through world coordinates, which measured 9 ms for a slice of 256 x 256 and
-   * about 44 seconds for a volume of 512 x 512 x 1232. This reads the voxels of
-   * the volume by index instead, and it gives the box average that the render
-   * path asks for rather than the value of the nearest voxel.
+   * The scalar data of the cached image is the frame itself, and reading it
+   * costs nothing. `getSliceData` of a volume voxel manager composes the slice
+   * one voxel at a time, which a profile showed as the cost of a fill, so it
+   * serves only as the fallback. A frame that has not arrived is left out.
    *
-   * @returns false when this slice holds no data yet, so a caller can fall back
+   * @returns the frames, or null when the volume has no slice reader or the
+   * slice lies past the end of the volume
    */
-  function fillSliceByBoxAverage(volume, grid, factors, slice, target) {
-    const [width, height] = grid.dimensions;
+  function framesOfSlice(volume, factorK, slice) {
     const [sourceWidth, sourceHeight, sourceDepth] = volume.dimensions;
     const voxelManager = volume.voxelManager;
-
-    if (!voxelManager?.getSliceData) {
-      return false;
-    }
-
-    const [factorI, factorJ, factorK] = factors;
     const firstK = slice * factorK;
-    const lastK = Math.min(firstK + factorK, sourceDepth);
 
-    if (firstK >= sourceDepth) {
-      return false;
+    if (!voxelManager?.getSliceData || firstK >= sourceDepth) {
+      return null;
     }
 
-    const accumulator = new Float64Array(width * height);
-    const counts = new Float64Array(width * height);
-    let read = 0;
-
+    const lastK = Math.min(firstK + factorK, sourceDepth);
+    const frameLength = sourceWidth * sourceHeight;
     const imageIds = volume.imageIds;
+    const frames = [];
 
     for (let k = firstK; k < lastK; k++) {
-      // The scalar data of the cached image is the frame itself, and reading it
-      // costs nothing. `getSliceData` of a volume voxel manager composes the
-      // slice one voxel at a time, which a profile showed as the cost of this
-      // fill, so it serves only as the fallback.
       let frame = imageIds?.[k]
         ? cache.getImage(imageIds[k])?.voxelManager?.getScalarData()
         : undefined;
 
       // A reduced image of a progressive load holds fewer voxels than the
       // frame. `getSliceData` scales it to the frame, so it can still count.
-      if (!frame || frame.length < sourceWidth * sourceHeight) {
+      if (!frame || frame.length < frameLength) {
         try {
           frame = voxelManager.getSliceData({ sliceIndex: k, slicePlane: 2 });
-        } catch (error) {
+        } catch {
           frame = null;
         }
       }
 
-      if (!frame || frame.length < sourceWidth * sourceHeight) {
-        // The data of this frame has not arrived, so it contributes nothing.
-        continue;
-      }
-
-      read++;
-
-      for (let j = 0; j < sourceHeight; j++) {
-        const targetRow = Math.min((j / factorJ) | 0, height - 1) * width;
-        const sourceRow = j * sourceWidth;
-
-        for (let i = 0; i < sourceWidth; i++) {
-          const targetIndex =
-            targetRow + Math.min((i / factorI) | 0, width - 1);
-
-          accumulator[targetIndex] += frame[sourceRow + i];
-          counts[targetIndex] += 1;
-        }
+      if (frame && frame.length >= frameLength) {
+        frames.push(frame);
       }
     }
 
-    if (!read) {
+    return frames;
+  }
+
+  /**
+   * Fills one reduced slice with the `fillPlane` of the statistic of the
+   * volume, read straight from the frames that the slice covers.
+   *
+   * @returns false when the statistic has no `fillPlane` or this slice holds no
+   * data yet, so a caller can fall back
+   * @throws when nothing registered the statistic of the volume
+   */
+  function fillSliceByBoxStatistic(volume, grid, factors, slice, target) {
+    const statistic = volume.reductionStatistic ?? VoxelStatistics.Average;
+    const { fillPlane } = requireVoxelStatistic(statistic);
+
+    if (!fillPlane) {
       return false;
     }
 
-    const values = target.getScalarData();
+    const [factorI, factorJ, factorK] = factors;
+    const frames = framesOfSlice(volume, factorK, slice);
 
-    for (let index = 0; index < values.length; index++) {
-      values[index] = counts[index] ? accumulator[index] / counts[index] : 0;
+    if (!frames?.length) {
+      return false;
     }
+
+    fillPlane(
+      frames,
+      [volume.dimensions[0], volume.dimensions[1]],
+      [grid.dimensions[0], grid.dimensions[1]],
+      [factorI, factorJ],
+      target.getScalarData()
+    );
 
     return true;
   }
@@ -262,8 +275,8 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
    *
    * A CPU reader derives that representation, and
    * `ImageVolume.recordFrameDelivery` redoes its boxes as each frame arrives, so
-   * the values follow the load. The
-   * values are the box average that the render path asks for.
+   * the values follow the load. The values hold the statistic that the render
+   * path asks for.
    *
    * THE IMAGE CACHE HOLDS THOSE VOXELS. One image holds one slice of the
    * reduced grid, exactly as one image holds one frame of the volume, so this
@@ -275,8 +288,11 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
    * composite holds no such representation, and the caller then computes the
    * values itself
    */
-  function derivedSliceReaderOf(composite, grid) {
-    const representation = composite.getRepresentation(grid);
+  function derivedSliceReaderOf(composite, grid, statistic) {
+    const representation = composite.getRepresentation(
+      grid,
+      statistic ?? VoxelStatistics.Average
+    );
     const [width, height, depth] = grid.dimensions;
     const frameLength = width * height;
 
@@ -314,7 +330,8 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     const frameLength = width * height;
     const composite = volume.compositeVoxelManager;
     const gl = model.context;
-    const derivedSliceOf = derivedSliceReaderOf(composite, grid);
+    const statistic = volume.reductionStatistic ?? VoxelStatistics.Average;
+    const derivedSliceOf = derivedSliceReaderOf(composite, grid, statistic);
     // The factors serve the slices that the composite cannot give, so they are
     // computed even when a derived representation exists: the image cache can
     // evict one reduced slice, and the fill of that one slice falls back.
@@ -346,7 +363,8 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
         // Filling every slice of a new texture from the data would stall the
         // first render: a volume of 512 x 512 x 1232 measured about 17 seconds.
         const filled =
-          factors && fillSliceByBoxAverage(volume, grid, factors, slice, slab);
+          factors &&
+          fillSliceByBoxStatistic(volume, grid, factors, slice, slab);
 
         if (!filled && !factors) {
           // The grid is not a box of the grid of the volume, such as an oblique
@@ -364,7 +382,8 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
                 grid.origin[2] + grid.direction[8] * grid.spacing[2] * slice,
               ],
             },
-            slab
+            slab,
+            statistic
           );
         }
 
@@ -412,16 +431,19 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
    * Called when a frame is loaded so that on next render we know which data to load in.
    * @param {number} frameIndex The frame to load in.
    */
-  const superModified = publicAPI.modified;
   publicAPI.setUpdatedFrame = (frameIndex) => {
     model.updatedFrames[frameIndex] = true;
-    superModified();
+    publicAPI.modified();
   };
 
-  publicAPI.modified = () => {
-    superModified();
-
-    // this is really not efficient, but it works for now
+  /**
+   * Marks every slice of this texture for a refill on the next render.
+   *
+   * Prefer {@link setUpdatedFrame} when only some slices changed. Do not put
+   * this behaviour on `modified()`: VTK property setters (filters, extensions)
+   * call `modified()` and would then re-upload the whole volume.
+   */
+  publicAPI.markAllFramesUpdated = () => {
     const volume = cache.getVolume(model.volumeId);
 
     if (!volume) {
@@ -438,6 +460,8 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     for (let i = 0; i < slices; i++) {
       model.updatedFrames[i] = true;
     }
+
+    publicAPI.modified();
   };
 
   function updateTextureImagesUsingVoxelManager() {
@@ -466,7 +490,7 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
               sliceIndex: i,
               slicePlane: 2,
             });
-          } catch (error) {
+          } catch {
             data = null;
           }
 

@@ -131,6 +131,11 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
     sliceIndex: number;
     slicePlane: number;
   }) => PixelDataTypedArray | undefined;
+  /**
+   * The values of one k slice as the voxel manager already holds them, with no
+   * copy, or nothing when it does not hold them together. Read only.
+   */
+  _getSliceView?: (sliceIndex: number) => PixelDataTypedArray | undefined;
 
   /**
    * Gets the ID of the voxel manager
@@ -1148,6 +1153,10 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
     const sliceVoxelManagers = new Array<
       VoxelManager<number> | VoxelManager<RGB> | null | undefined
     >(depth);
+    // The image generation of the cache when a slice found no image. A miss is
+    // reused only while no image has reached the cache since, so a frame that
+    // arrives without a call to invalidateSlice still becomes visible.
+    const sliceMissGenerations = new Array<number>(depth);
     let lastSliceIndex = -1;
     let lastSliceVoxelManager: VoxelManager<number> | VoxelManager<RGB> | null =
       null;
@@ -1215,8 +1224,14 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
       }
 
       const cachedVoxelManager = sliceVoxelManagers[sliceIndex];
-      if (cachedVoxelManager !== undefined) {
+      if (cachedVoxelManager) {
         return cachedVoxelManager;
+      }
+      if (
+        cachedVoxelManager === null &&
+        sliceMissGenerations[sliceIndex] === cache.getImageGeneration()
+      ) {
+        return null;
       }
 
       const imageId = imageIds[sliceIndex];
@@ -1226,6 +1241,7 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
           log.warn(`ImageId not found for sliceIndex: ${sliceIndex}`);
         }
         sliceVoxelManagers[sliceIndex] = null;
+        sliceMissGenerations[sliceIndex] = cache.getImageGeneration();
         return null;
       }
 
@@ -1248,8 +1264,10 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
         // 262144 reads of one slice of 512 x 512 asks the cache for the same
         // image again. `invalidateSlice` clears the entry, and
         // `ImageVolume.markFrameTexturesDirty` calls it when the image of the
-        // frame arrives, so the next read takes the image.
+        // frame arrives. The next image that reaches the cache also expires the
+        // entry, so a frame that arrives with no such call still shows.
         sliceVoxelManagers[sliceIndex] = null;
+        sliceMissGenerations[sliceIndex] = cache.getImageGeneration();
 
         return null;
       }
@@ -1290,13 +1308,13 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
       }
       let imageVoxelManager: VoxelManager<number> | VoxelManager<RGB> | null;
 
-      if (sliceIndex === lastSliceIndex) {
+      if (sliceIndex === lastSliceIndex && lastSliceVoxelManager) {
         imageVoxelManager = lastSliceVoxelManager;
       } else {
+        // A slice that holds no image resolves again, which is cheap:
+        // `resolveSliceVoxelManager` remembers the miss until an image reaches
+        // the cache, and the next image may be the image of this slice.
         imageVoxelManager = resolveSliceVoxelManager(sliceIndex);
-        // THE MEMO HOLDS A SLICE THAT HAS NOT ARRIVED AS WELL. A reduction
-        // reads a whole slice in order, so a slice that holds no image would
-        // otherwise resolve again for each of its voxels.
         lastSliceIndex = sliceIndex;
         lastSliceVoxelManager = imageVoxelManager;
       }
@@ -1320,7 +1338,7 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
       }
       let imageVoxelManager: VoxelManager<number> | VoxelManager<RGB> | null;
 
-      if (sliceIndex === lastSliceIndex) {
+      if (sliceIndex === lastSliceIndex && lastSliceVoxelManager) {
         imageVoxelManager = lastSliceVoxelManager;
       } else {
         imageVoxelManager = resolveSliceVoxelManager(sliceIndex);
@@ -1420,21 +1438,31 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
       }
 
       const imageVoxelManager = resolveSliceVoxelManager(sliceIndex);
-      // The field, and not `getScalarData`, because an image that holds its
-      // values another way, such as a run length map, must take the path
-      // below. `getScalarData` would expand that map on every call.
-      const scalarData = imageVoxelManager?.scalarData;
 
-      if (!scalarData || numberOfComponents !== 1) {
+      if (!imageVoxelManager || numberOfComponents !== 1) {
         // The image has not arrived, or one voxel of it holds more than one
         // value. The caller composes the slice itself.
+        return undefined;
+      }
+
+      // An image that keeps its values in a run length map (an RLE labelmap)
+      // has no array. One expansion of the map is a new array already, and it
+      // costs far less than a read per voxel.
+      const stored = imageVoxelManager.scalarData;
+      const scalarData =
+        stored ??
+        (imageVoxelManager._getScalarData
+          ? imageVoxelManager.getScalarData()
+          : undefined);
+
+      if (!scalarData) {
         return undefined;
       }
 
       const scaling = sliceScalings[sliceIndex];
 
       if (!scaling) {
-        return scalarData.slice() as PixelDataTypedArray;
+        return (stored ? stored.slice() : scalarData) as PixelDataTypedArray;
       }
 
       // The image holds a different number of voxels from the slice of this
@@ -1453,6 +1481,21 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
       }
 
       return slice;
+    };
+
+    // The scalar data of the cached image of one k slice, with no copy. A
+    // caller must not write to it. It gives nothing when the image has not
+    // arrived, when the image needs scaling to the slice, or when a voxel holds
+    // more than one value, and the caller then takes `_getSliceData`.
+    voxelManager._getSliceView = (sliceIndex: number) => {
+      if (numberOfComponents !== 1) {
+        return undefined;
+      }
+
+      const scalarData = resolveSliceVoxelManager(sliceIndex)?.scalarData;
+
+      // The resolution states the scaling of the slice, so read it after.
+      return sliceScalings[sliceIndex] ? undefined : scalarData;
     };
 
     voxelManager.getMiddleSliceData = () => {

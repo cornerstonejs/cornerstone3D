@@ -19,16 +19,27 @@ interface configGpuCapabilityProfileDropdown {
   labelText?: string;
 }
 
+const BYTES_IN_A_MEGABYTE = 1024 * 1024;
 const BYTES_IN_A_GIGABYTE = 1024 * 1024 * 1024;
+
+/** Memory label for the drop-down (GB when at least 1 GB, otherwise MB). */
+function formatMemory(bytes: number): string {
+  if (bytes >= BYTES_IN_A_GIGABYTE) {
+    const gigabytes = bytes / BYTES_IN_A_GIGABYTE;
+    const rounded =
+      Number.isInteger(gigabytes) ? String(gigabytes) : gigabytes.toFixed(1);
+
+    return `${rounded} GB`;
+  }
+
+  return `${Math.round(bytes / BYTES_IN_A_MEGABYTE)} MB`;
+}
 
 /** Describes one profile in a form that a reader can compare at a glance. */
 function describe(profile: GpuCapabilityProfile): string {
-  const gigabytes = Math.round(
-    profile.textureMemoryBytes / BYTES_IN_A_GIGABYTE
-  );
   const internal = profile.internal ? ', internal' : '';
 
-  return `${profile.id} (edge ${profile.maxTextureEdge}, ${gigabytes} GB, speed ${profile.speed}${internal})`;
+  return `${profile.id} (edge ${profile.maxTextureEdge}, ${formatMemory(profile.textureMemoryBytes)}, speed ${profile.speed}${internal})`;
 }
 
 /**

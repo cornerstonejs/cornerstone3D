@@ -3,7 +3,7 @@ import ImageVolume, {
   FULL_RESOLUTION_TEXTURE_SET,
 } from '../src/cache/classes/ImageVolume';
 import volumeTextureStore from '../src/cache/volumeTextureStore';
-import { VoxelManager } from '../src/utilities';
+import VoxelManager from '../src/utilities/VoxelManager';
 
 // The named texture sets on `ImageVolume`, which is MR-API-IV-2, MR-API-IV-3
 // and MR-API-IV-6 to MR-API-IV-8 of cornerstone3D issue #2921.
@@ -134,7 +134,7 @@ describe('ImageVolume — the marks of a frame', () => {
     expect(volume.vtkOpenGLTexture).toBeUndefined();
   });
 
-  it('marks the frame in every texture whose grid covers it', () => {
+  it('marks the frame in every texture whose grid covers it', async () => {
     const volume = makeVolume();
 
     volume.getFullResolutionTexture();

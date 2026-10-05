@@ -1,5 +1,6 @@
 import { describe, it, expect, afterAll, beforeAll } from '@jest/globals';
-import { VoxelManager, voxelGrid } from '../../src/utilities';
+import VoxelManager from '../../src/utilities/VoxelManager';
+import * as voxelGrid from '../../src/utilities/voxelGrid';
 import { VoxelStatistics } from '../../src/enums';
 import { __resetVoxelStatisticRegistry } from '../../src/utilities/voxelGrid/voxelStatistics';
 
@@ -455,8 +456,56 @@ describe('voxelGrid statistics registry', () => {
     expect(target.written.get('1,0,0')).toBe(4);
   });
 
+  it('takes the reduceBySlices of a statistic, and the accumulator when it gives nothing', () => {
+    let applies = true;
+
+    registerVoxelStatistic({
+      statistic: 'myOrg:sliced',
+      createAccumulator: () => {
+        let first;
+        return {
+          reset: () => {
+            first = undefined;
+          },
+          add: (value) => {
+            first ??= value;
+          },
+          getValue: () => first,
+        };
+      },
+      reduceBySlices: (_source, _reduction, target) => {
+        if (!applies) {
+          return undefined;
+        }
+        target.setAtIJK(0, 0, 0, 42);
+        return 1;
+      },
+    });
+
+    const source = makeSource([2, 1, 1], [7, 8]);
+    const sliced = makeTarget();
+
+    expect(
+      reduceByBoxStatistic(source, { factors: [2, 1, 1] }, sliced, {
+        statistic: 'myOrg:sliced',
+      })
+    ).toBe(1);
+    expect(sliced.written.get('0,0,0')).toBe(42);
+
+    applies = false;
+    const accumulated = makeTarget();
+
+    reduceByBoxStatistic(source, { factors: [2, 1, 1] }, accumulated, {
+      statistic: 'myOrg:sliced',
+    });
+    expect(accumulated.written.get('0,0,0')).toBe(7);
+  });
+
   it('keeps the average as the statistic of a default selection', () => {
     expect(isDefaultSelectionStatistic(VoxelStatistics.Average)).toBe(true);
+    expect(
+      isDefaultSelectionStatistic(VoxelStatistics.ForegroundMajority)
+    ).toBe(false);
     expect(isDefaultSelectionStatistic(MAXIMUM)).toBe(false);
     expect(isDefaultSelectionStatistic('nothing registered this')).toBe(false);
   });
@@ -466,8 +515,70 @@ describe('voxelGrid statistics registry', () => {
       'average'
     );
     expect(
+      getVoxelStatistic(VoxelStatistics.ForegroundMajority).statistic
+    ).toBe('foregroundMajority');
+    expect(
       getVoxelStatistics().map((definition) => definition.statistic)
-    ).toEqual(expect.arrayContaining([VoxelStatistics.Average, MAXIMUM]));
+    ).toEqual(
+      expect.arrayContaining([
+        VoxelStatistics.Average,
+        VoxelStatistics.ForegroundMajority,
+        MAXIMUM,
+      ])
+    );
+  });
+
+  it('reduces a label box with foreground majority, not average', () => {
+    // Three voxels of label 1 and one of label 2 → majority is 1, average is 1.25.
+    const source = makeSource([4, 1, 1], [1, 1, 1, 2]);
+    const target = makeTarget();
+
+    reduceByBoxStatistic(source, { factors: [4, 1, 1] }, target, {
+      statistic: VoxelStatistics.ForegroundMajority,
+      round: false,
+    });
+
+    expect(target.written.get('0,0,0')).toBe(1);
+  });
+
+  it('ignores background when any non-zero label is in the box', () => {
+    // Three background voxels and one label 5 → plain majority would be 0.
+    const source = makeSource([4, 1, 1], [0, 0, 0, 5]);
+    const target = makeTarget();
+
+    reduceByBoxStatistic(source, { factors: [4, 1, 1] }, target, {
+      statistic: VoxelStatistics.ForegroundMajority,
+      round: false,
+    });
+
+    expect(target.written.get('0,0,0')).toBe(5);
+  });
+
+  it('keeps the first non-zero label that reaches the winning count on a tie', () => {
+    // Two of label 3, then two of label 7. Label 3 reaches count 2 first.
+    const source = makeSource([4, 1, 1], [3, 3, 7, 7]);
+    const target = makeTarget();
+
+    reduceByBoxStatistic(source, { factors: [4, 1, 1] }, target, {
+      statistic: VoxelStatistics.ForegroundMajority,
+      round: false,
+    });
+
+    expect(target.written.get('0,0,0')).toBe(3);
+  });
+
+  it('leaves an empty foreground-majority box unwritten', () => {
+    const source = {
+      dimensions: [2, 1, 1],
+      getAtIJK: () => undefined,
+    };
+    const target = makeTarget();
+
+    reduceByBoxStatistic(source, { factors: [2, 1, 1] }, target, {
+      statistic: VoxelStatistics.ForegroundMajority,
+    });
+
+    expect(target.written.size).toBe(0);
   });
 
   it('refuses a reduction with a statistic that nothing registered', () => {
