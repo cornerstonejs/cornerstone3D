@@ -103,8 +103,10 @@ The default provider reads the capability profile and answers in one of two ways
 The reduction is per axis and it is not uniform. An edge of 2049 voxels exceeds a limit of 2048 on
 one axis and by one voxel, so one axis reduces and the other two do not.
 
-**The provider derives no representation.** A reduced texture fills each slice by box average
-straight from the frames of the volume, so it needs no reduced copy of the voxels in CPU memory. A
+**The provider derives no representation.** A reduced texture fills each slice with the
+`fillPlane` of the statistic of the volume (`ImageVolume.reductionStatistic`) straight from the
+frames of the volume: a box average for an intensity volume, or a foreground majority for a
+labelmap. The fill needs no reduced copy of the voxels in CPU memory. A
 derivation of a volume that holds all of its data would otherwise reduce every voxel during the
 provision, which takes many seconds on the main thread for 512 × 512 × 2464 voxels.
 `ImageVolume.getGridQuality` gives the record of such a texture from the deliveries of the volume.
@@ -322,8 +324,8 @@ texture.
 
 **VRS-I-8.** The volume slice render path reads the `base` binding alone.
 
-**VRS-I-9.** The default provider derives no representation. A reduced texture fills by box
-average from the frames of the volume, and its record comes from the deliveries of the volume.
+**VRS-I-9.** The default provider derives no representation. A reduced texture fills by the
+statistic of the volume from the frames of the volume, and its record comes from the deliveries of the volume.
 
 **VRS-I-10.** A derivation reduces 16 slices of the derived grid in one batch. The first batch runs
 at once, and each later batch runs in an idle callback.

@@ -54,8 +54,19 @@ of bricks is exactly that. What is single is one representation for one region, 
 at one statistic.
 
 A representation is identified by the pair **(grid, statistic)**, and not by the grid alone.
-`Enums.VoxelStatistics.Average` is the statistic of the core package. The
-[statistics](#adding-a-statistic) section below shows how an extension adds another one.
+The core package registers two statistics:
+
+- `Enums.VoxelStatistics.Average` — the mean of the source voxels of a box. Intensity volumes use it.
+- `Enums.VoxelStatistics.ForegroundMajority` — the most frequent non-zero label of a box. The
+  background (0) wins only when the box holds no label. On a tie, the first label that reaches the
+  count wins. Labelmap volumes use it, because a mean of two segment indices names a third segment.
+
+`ImageVolume.reductionStatistic` states the statistic that a volume uses when it must be reduced to
+fit a GPU texture. The default is `average`. The labelmap volume loaders and the labelmap render
+paths of the tools package set it to `foregroundMajority`. Set it before a render path provisions
+a texture: a reduced texture refills each slice with the statistic of the volume at that time.
+
+The [statistics](#adding-a-statistic) section below shows how an extension adds another one.
 
 ### The composite holds the representations
 
@@ -366,7 +377,8 @@ reduction is not visible must not warn the user.
 
 The record carries the two separately, because they answer different questions:
 
-- **`reduction`** — `Enums.VoxelReductions.None`, `.BoxAverage` or `.Decimation`. A box average and
+- **`reduction`** — `Enums.VoxelReductions.None`, `.BoxAverage`, `.BoxForegroundMajority` or
+  `.Decimation`. A box reduction of either statistic does not alias. A box average and
   a decimation at one spacing have a **different loss**: a decimation folds the high spatial
   frequencies into the signal, so no magnification removes that error and a view of it is never
   lossless. A box average is lossless at a display resolution that its spacing can carry.
@@ -495,6 +507,17 @@ adds the arithmetic and, when the caller gives a `name`, the constant.
 number, and a voxel of an RGB volume is an array of numbers. The reduction builds one accumulator
 for each component, and the components are independent, so a definition states the arithmetic once
 and it serves both cases.
+
+**A statistic can also register fast paths.** The three fields are optional:
+
+| Field            | What it does                                                                                                             | Without it                           |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------ |
+| `reduceBySlices` | a fast path of `reduceByBoxStatistic` that reads whole slices. It returns `undefined` when it does not apply to a source | the reduction uses the accumulator   |
+| `fillPlane`      | fills one reduced slice of a GPU texture from the source frames of its box                                               | the texture falls back to `fillGrid` |
+| `boxReduction`   | the kind of reduction that a box derivation of this statistic records                                                    | the derivation records `boxAverage`  |
+
+A fast path must give the same values as the accumulator. A reduction, a texture fill and a box
+derivation throw for a statistic that nothing registered.
 
 **A default selection considers the `average` statistic only.** `defaultSelection` is `false` for
 every other statistic, and the field must stay `false` for a minimum and for a maximum: a minimum
