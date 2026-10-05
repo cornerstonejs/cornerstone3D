@@ -1438,21 +1438,31 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
       }
 
       const imageVoxelManager = resolveSliceVoxelManager(sliceIndex);
-      // The field, and not `getScalarData`, because an image that holds its
-      // values another way, such as a run length map, must take the path
-      // below. `getScalarData` would expand that map on every call.
-      const scalarData = imageVoxelManager?.scalarData;
 
-      if (!scalarData || numberOfComponents !== 1) {
+      if (!imageVoxelManager || numberOfComponents !== 1) {
         // The image has not arrived, or one voxel of it holds more than one
         // value. The caller composes the slice itself.
+        return undefined;
+      }
+
+      // An image that keeps its values in a run length map (an RLE labelmap)
+      // has no array. One expansion of the map is a new array already, and it
+      // costs far less than a read per voxel.
+      const stored = imageVoxelManager.scalarData;
+      const scalarData =
+        stored ??
+        (imageVoxelManager._getScalarData
+          ? imageVoxelManager.getScalarData()
+          : undefined);
+
+      if (!scalarData) {
         return undefined;
       }
 
       const scaling = sliceScalings[sliceIndex];
 
       if (!scaling) {
-        return scalarData.slice() as PixelDataTypedArray;
+        return (stored ? stored.slice() : scalarData) as PixelDataTypedArray;
       }
 
       // The image holds a different number of voxels from the slice of this
