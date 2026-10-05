@@ -50,7 +50,7 @@ describe('the capability profiles', () => {
       2 * GIGABYTE
     );
     expect(getGpuCapabilityProfile('medium').textureMemoryBytes).toBe(
-      16 * GIGABYTE
+      8 * GIGABYTE
     );
     expect(getGpuCapabilityProfile('high').textureMemoryBytes).toBe(
       32 * GIGABYTE

@@ -80,7 +80,7 @@ const PROFILES: Record<GpuCapabilityProfileId, GpuCapabilityProfile> = {
   medium: {
     id: 'medium',
     maxTextureEdge: 2048,
-    textureMemoryBytes: 16 * GIGABYTE,
+    textureMemoryBytes: 8 * GIGABYTE,
     speed: 60,
   },
   high: {
