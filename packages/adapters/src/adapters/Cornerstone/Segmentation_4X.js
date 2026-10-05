@@ -1158,9 +1158,11 @@ export function insertOverlappingPixelDataPlanar(
       }
 
       const sourceImageMetadata = metadataProvider.get('instance', imageId);
+      // Compare the aligned frame: a frame rotated by 90 degrees in-plane has
+      // its Rows and Columns swapped relative to the source image.
       if (
-        Rows !== sourceImageMetadata.Rows ||
-        Columns !== sourceImageMetadata.Columns
+        alignedPixelDataI.shape[0] !== sourceImageMetadata.Rows ||
+        alignedPixelDataI.shape[1] !== sourceImageMetadata.Columns
       ) {
         throw new Error(
           'Individual SEG frames have different geometry dimensions (Rows and Columns) ' +
@@ -1374,8 +1376,8 @@ export function insertPixelDataPlanar(
 
         const sourceImageMetadata = imageIdMaps.metadata[imageId];
         if (
-          Rows !== sourceImageMetadata.Rows ||
-          Columns !== sourceImageMetadata.Columns
+          alignedPixelDataI.shape[0] !== sourceImageMetadata.Rows ||
+          alignedPixelDataI.shape[1] !== sourceImageMetadata.Columns
         ) {
           throw new Error(
             'Individual SEG frames have different geometry dimensions (Rows and Columns) ' +

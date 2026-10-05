@@ -47,9 +47,11 @@ function imageIdForSlice(sliceIndex) {
  * pass `zDirection: -1` for the self-consistent case. (The LABELMAP path
  * rebuilds plane sequences from each image's own imagePlaneModule, so it is
  * order-independent.)
+ *
+ * `rows` and `columns` set the image size (default ROWS x COLUMNS).
  */
 function makeReferencedStack(sliceCount, options = {}) {
-  const { zDirection = 1 } = options;
+  const { zDirection = 1, rows = ROWS, columns = COLUMNS } = options;
   const imageIds = [];
   const images = [];
 
@@ -59,7 +61,7 @@ function makeReferencedStack(sliceCount, options = {}) {
     images.push({
       imageId,
       voxelManager: {
-        getScalarData: () => new Uint16Array(PIXELS_PER_SLICE),
+        getScalarData: () => new Uint16Array(rows * columns),
       },
     });
   }
@@ -72,8 +74,8 @@ function makeReferencedStack(sliceCount, options = {}) {
     InstanceNumber: String(sliceIndex + 1),
     FrameOfReferenceUID: FRAME_OF_REFERENCE_UID,
     Modality: 'CT',
-    Rows: ROWS,
-    Columns: COLUMNS,
+    Rows: rows,
+    Columns: columns,
     ImagePositionPatient: [0, 0, zForSlice(sliceIndex)],
     ImageOrientationPatient: [1, 0, 0, 0, 1, 0],
     PixelSpacing: [1, 1],
@@ -128,8 +130,8 @@ function makeReferencedStack(sliceCount, options = {}) {
             rowPixelSpacing: 1,
             columnPixelSpacing: 1,
             sliceThickness: 1,
-            rows: ROWS,
-            columns: COLUMNS,
+            rows,
+            columns,
             frameOfReferenceUID: FRAME_OF_REFERENCE_UID,
           };
         case 'generalSeriesModule':
