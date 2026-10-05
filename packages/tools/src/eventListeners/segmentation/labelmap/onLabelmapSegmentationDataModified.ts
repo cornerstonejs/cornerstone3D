@@ -19,6 +19,13 @@ const getViewportByViewportId = (viewportId: string) => {
   return enabledElement?.viewport ?? undefined;
 };
 
+/**
+ * Segmentations that an edit changed while no volume viewport showed them. The
+ * edit then never reached their labelmap volume, so the volume and its
+ * reduced textures are stale, and the next mount must refresh them in full.
+ */
+const segmentationsWithStaleVolume = new Set<string>();
+
 /** A callback function that is called when the segmentation data is modified which
  *  often is as a result of tool interactions e.g., scissors, eraser, etc.
  */
@@ -75,7 +82,16 @@ const onLabelmapSegmentationDataModified = function (
 
   const hasBothStackAndVolume = hasVolumeViewport && hasStackViewport;
 
+  if (!hasVolumeViewport && !voxelsUnchanged) {
+    segmentationsWithStaleVolume.add(segmentationId);
+  }
+
   if (hasVolumeViewport) {
+    const volumeIsCurrent =
+      voxelsUnchanged && !segmentationsWithStaleVolume.has(segmentationId);
+
+    segmentationsWithStaleVolume.delete(segmentationId);
+
     // For combined stack and volume scenarios in the rendering engine, updating only affected
     // slices is not ideal. Stack indices (e.g., 0 for just one image) don't
     // correspond to image indices in the volume. In this case, we update all slices.
@@ -84,7 +100,7 @@ const onLabelmapSegmentationDataModified = function (
       modifiedSlicesToUse: hasBothStackAndVolume ? [] : modifiedSlicesToUse,
       representationData,
       type: SegmentationRepresentations.Labelmap,
-      voxelsUnchanged,
+      voxelsUnchanged: volumeIsCurrent,
     });
   }
 
