@@ -396,6 +396,22 @@ describe('the strategies are rebuilt when something changes', () => {
     provision(path, rendering, 'high', 'memory');
 
     expect(strategy.isReady()).toBe(true);
+
+    // The claim went with the evicted set. The next render claims the rebuilt
+    // set, so a later eviction cannot take it while the viewport draws it.
+    render(path, rendering);
+
+    const rebuilt = volumeTextureStore.getSet(
+      volume.volumeId,
+      'full-resolution/full-extent'
+    );
+
+    expect(rebuilt.references).toBe(1);
+
+    // A second render keeps the one claim, and does not add another.
+    render(path, rendering);
+
+    expect(rebuilt.references).toBe(1);
   });
 });
 

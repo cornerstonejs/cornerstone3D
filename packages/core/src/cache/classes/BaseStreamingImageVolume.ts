@@ -364,8 +364,6 @@ export class BaseStreamingImageVolume
       return; // Already loading, will get callbacks from main load.
     }
 
-    this.listenForCachedImages();
-
     const { loaded } = this.loadStatus;
     const totalNumFrames = imageIds.length;
 
@@ -382,11 +380,20 @@ export class BaseStreamingImageVolume
       return;
     }
 
+    // A loaded volume receives no more images, so only a load listens. The
+    // listener otherwise keeps the volume alive after the cache removes it.
+    this.listenForCachedImages();
+
     if (callback) {
       this.loadStatus.callbacks.push(callback);
     }
 
     this._prefetchImageIds();
+  }
+
+  destroy(): void {
+    this.stopListeningForCachedImages();
+    super.destroy();
   }
 
   /**

@@ -443,11 +443,17 @@ function releaseTexturesOf(
   if (slot.mutability === 'owned') {
     const slab = slot as IMutableVolumeTextureSlab<unknown>;
 
-    // A slab holds two textures, and the exchange may have swapped them, so the
-    // release takes both through the members that name them.
-    destroyTexture(slab.beginRender());
+    // A slab holds two textures. `endRender` exchanges them when a fill is
+    // pending, so the release takes both before it ends the render.
+    const front = slab.beginRender();
+    const back = slab.writeTarget();
+
     slab.endRender();
-    destroyTexture(slab.writeTarget());
+    destroyTexture(front);
+
+    if (back !== front) {
+      destroyTexture(back);
+    }
 
     return;
   }

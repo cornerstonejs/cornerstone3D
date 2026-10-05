@@ -1501,13 +1501,13 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
       return [minValue, maxValue];
     };
 
-    voxelManager._getScalarDataLength = () => {
-      const imageVoxelManager = resolveSliceVoxelManager(0);
-      if (!imageVoxelManager) {
-        return 0;
-      }
-      return imageVoxelManager.getScalarDataLength() * dimensions[2];
-    };
+    // The length comes from the grid of the volume, and not from the image of
+    // slice 0, because that image can hold fewer voxels than a slice: a
+    // progressive loader delivers a reduced image first.
+    voxelManager._getScalarDataLength = () =>
+      resolveSliceVoxelManager(0)
+        ? dimensions[0] * dimensions[1] * dimensions[2] * numberOfComponents
+        : 0;
 
     /**
      * Retrieves the scalar data in a memory-inefficient manner.

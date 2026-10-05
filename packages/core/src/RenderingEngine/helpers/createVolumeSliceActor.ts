@@ -45,7 +45,12 @@ async function createVolumeSliceActor(
     viewportId,
   });
 
-  if (!vtkOpenGLTexture) {
+  // A render path applies its strategies after the mount, and it binds the
+  // base texture then, so only a legacy caller needs a texture here.
+  const usesRenderPath =
+    props.provideStrategies !== undefined || props.selectStrategy !== undefined;
+
+  if (!vtkOpenGLTexture && !usesRenderPath) {
     throw new Error(
       `no render strategy gives a texture for the volume ${volumeId}`
     );
@@ -55,14 +60,17 @@ async function createVolumeSliceActor(
   const slicePlane = vtkPlane.newInstance();
   const mapper = vtkSharedImageResliceMapper.newInstance();
 
-  if (!loadStatus || loadStatus.loaded) {
+  if (vtkOpenGLTexture && (!loadStatus || loadStatus.loaded)) {
     vtkOpenGLTexture.modified();
   }
 
   mapper.setInputData(imageData);
   mapper.setSlicePlane(slicePlane);
   mapper.setSlabThickness(0);
-  mapper.setScalarTexture?.(vtkOpenGLTexture);
+
+  if (vtkOpenGLTexture) {
+    mapper.setScalarTexture?.(vtkOpenGLTexture);
+  }
   mapper.modified();
 
   const actor = vtkImageSlice.newInstance();

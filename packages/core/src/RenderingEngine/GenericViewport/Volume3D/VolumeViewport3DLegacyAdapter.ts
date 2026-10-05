@@ -282,6 +282,10 @@ class VolumeViewport3DLegacyAdapter extends VolumeViewport3D {
         }))
       );
 
+      // The mount is done. A callback or a listener of the event below that
+      // removes one of these data sets must really remove it.
+      dataIds.forEach((dataId) => this.remountingDataIds.delete(dataId));
+
       volumeInputArray.forEach((volumeInput, index) => {
         const dataId = dataIds[index];
 

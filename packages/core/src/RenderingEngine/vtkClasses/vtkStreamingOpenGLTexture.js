@@ -212,7 +212,9 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
         ? cache.getImage(imageIds[k])?.voxelManager?.getScalarData()
         : undefined;
 
-      if (!frame) {
+      // A reduced image of a progressive load holds fewer voxels than the
+      // frame. `getSliceData` scales it to the frame, so it can still count.
+      if (!frame || frame.length < sourceWidth * sourceHeight) {
         try {
           frame = voxelManager.getSliceData({ sliceIndex: k, slicePlane: 2 });
         } catch (error) {
@@ -450,6 +452,27 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
 
         let data = image.voxelManager.getScalarData();
         const gl = model.context;
+
+        // A progressive loader can cache a reduced image, which holds fewer
+        // voxels than a slice of the texture. The voxel manager of the volume
+        // scales that image to the slice.
+        if (
+          data.length !==
+          model.width * model.height * (model.components || 1)
+        ) {
+          try {
+            data = volume.voxelManager.getSliceData({
+              sliceIndex: i,
+              slicePlane: 2,
+            });
+          } catch (error) {
+            data = null;
+          }
+
+          if (!data) {
+            continue;
+          }
+        }
 
         if (volume.dataType !== data.constructor.name) {
           data = convertDataType(data, volume.dataType);

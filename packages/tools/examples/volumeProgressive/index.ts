@@ -619,8 +619,11 @@ async function run() {
       defaultValue: 'CT (progressive configurations)',
     },
     onSelectedValueChange: async (_key, value) => {
+      // The series and its image ids change together, so a load never pairs
+      // the new series with the image ids of the old one.
+      const imageIds = await createImageIdsAndCacheMetaData(value);
       selectedSeries = value;
-      imageIdsCT = await createImageIdsAndCacheMetaData(value);
+      imageIdsCT = imageIds;
       getOrCreateTiming('loadingStatus').innerText =
         `Selected ${imageIdsCT.length} images. Press a load button.`;
     },
@@ -949,7 +952,7 @@ async function run() {
   loadButton(
     'JLS Non Interleaved',
     volumeId,
-    imageIdsCT,
+    () => imageIdsCT,
     configJLSNonInterleaved
   );
   loadButton('JLS Thumb', volumeId, () => imageIdsCT, configJLSThumbnail);

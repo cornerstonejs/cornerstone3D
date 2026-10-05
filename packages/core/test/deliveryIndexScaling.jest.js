@@ -68,4 +68,36 @@ describe('the record of the deliveries scales linearly', () => {
 
     expect(growth).toBeLessThan(20);
   });
+
+  it('counts a fully loaded volume of 3720 frames exactly', () => {
+    // One delivery for each frame. The work of the count is one layer of cells
+    // for each delivery, so a long volume stays inside the exact count.
+    const depth = 3720;
+    const grid = gridOf(depth);
+    const primary = VoxelManager.createScalarVolumeVoxelManager({
+      dimensions: grid.dimensions,
+      scalarData: new Uint8Array(4 * 4 * depth),
+    });
+    const composite = new CompositeVoxelManager({
+      primary,
+      grid,
+      delivered: [],
+      id: `coverage-${depth}`,
+    });
+    const representation = composite.getRepresentations()[0];
+
+    for (let frame = 0; frame < depth; frame++) {
+      composite.setDeliveredQuality(
+        representation,
+        boundsOfFrame(grid, frame),
+        ImageQualityStatus.FULL_RESOLUTION
+      );
+    }
+
+    const record = composite.getRegionQuality(representation);
+
+    expect(record.exact).toBe(true);
+    expect(record.missing).toBe(0);
+    expect(record.status).toBe(ImageQualityStatus.FULL_RESOLUTION);
+  });
 });

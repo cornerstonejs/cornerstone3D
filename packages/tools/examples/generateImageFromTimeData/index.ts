@@ -174,12 +174,13 @@ async function createVolumeFromTimeData(dataInTime) {
     computedVoxelManager.setAtIndex(i, dataInTime[i]);
   }
 
-  const { imageData, vtkOpenGLTexture } = computedVolume;
+  // The volume marks every texture set that it holds. The volume may hold no
+  // texture yet, so the example does not reach for one.
+  const { imageData } = computedVolume;
   const numSlices = imageData.getDimensions()[2];
-  const slicesToUpdate = [...Array(numSlices).keys()];
-  slicesToUpdate.forEach((i) => {
-    vtkOpenGLTexture.setUpdatedFrame(i);
-  });
+  for (let i = 0; i < numSlices; i++) {
+    computedVolume.markFrameDirty(i);
+  }
   imageData.modified();
 
   // Set computed volume to second viewport

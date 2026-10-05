@@ -173,6 +173,8 @@ class FullExtentTextureStrategy implements IVolumeRenderStrategy {
   private readonly grid: VoxelGrid;
   private readonly statistic: VoxelStatistic;
   private active = false;
+  /** The set that the claim of this strategy holds. */
+  private claimedSet: unknown;
 
   constructor({
     name,
@@ -213,11 +215,16 @@ class FullExtentTextureStrategy implements IVolumeRenderStrategy {
   }
 
   public activate(): void {
-    if (this.active) {
+    const set = this.volume.getTextureSet(this.name);
+
+    // The store can evict the set and a provision can rebuild it. The claim
+    // went with the old set, so an active strategy claims the new one.
+    if (this.active && this.claimedSet === set) {
       return;
     }
 
-    this.volume.claimTextureSet(this.name);
+    this.claimedSet =
+      set && this.volume.claimTextureSet(this.name) ? set : undefined;
     this.active = true;
   }
 
@@ -226,13 +233,23 @@ class FullExtentTextureStrategy implements IVolumeRenderStrategy {
       return;
     }
 
-    this.volume.releaseTextureSet(this.name);
+    if (
+      this.claimedSet &&
+      this.claimedSet === this.volume.getTextureSet(this.name)
+    ) {
+      this.volume.releaseTextureSet(this.name);
+    }
+
+    this.claimedSet = undefined;
     this.active = false;
   }
 
   public update(): void {
-    // Nothing of this strategy moves. The volume marks the slices that new data
-    // changed, and the texture refills them at the next render.
+    // The volume marks the slices that new data changed, and the texture
+    // refills them at the next render. Only the claim can need renewal.
+    if (this.active) {
+      this.activate();
+    }
   }
 }
 

@@ -333,10 +333,24 @@ function coverageOfRegion(
   );
   const cellCount = counts[0] * counts[1] * counts[2];
 
-  if (
-    cellCount > MAX_COVERAGE_CELLS ||
-    cellCount * clipped.length > MAX_COVERAGE_WORK
-  ) {
+  // The marking visits the cells that each delivery spans. One frame of a
+  // volume spans one layer of cells, so the work grows with the number of
+  // frames, and not with the square of that number.
+  const spans = clipped.map((delivery) => ({
+    from: [0, 1, 2].map((axis) =>
+      indexOfEdge[axis].get(delivery.bounds[axis][0])
+    ),
+    to: [0, 1, 2].map((axis) =>
+      indexOfEdge[axis].get(delivery.bounds[axis][1] + 1)
+    ),
+  }));
+  const work = spans.reduce(
+    (total, { from, to }) =>
+      total + (to[0] - from[0]) * (to[1] - from[1]) * (to[2] - from[2]),
+    0
+  );
+
+  if (cellCount > MAX_COVERAGE_CELLS || work > MAX_COVERAGE_WORK) {
     // The edges of these deliveries are too many to cut exactly. THE ESTIMATE
     // TAKES THE LARGEST DELIVERY ALONE, which never counts more than the
     // deliveries really cover, so the record never states less than what is
@@ -362,13 +376,9 @@ function coverageOfRegion(
 
   const cells = new Array<number>(cellCount).fill(0);
 
-  for (const delivery of clipped) {
-    const from = [0, 1, 2].map((axis) =>
-      indexOfEdge[axis].get(delivery.bounds[axis][0])
-    );
-    const to = [0, 1, 2].map((axis) =>
-      indexOfEdge[axis].get(delivery.bounds[axis][1] + 1)
-    );
+  for (let index = 0; index < clipped.length; index++) {
+    const delivery = clipped[index];
+    const { from, to } = spans[index];
 
     for (let k = from[2]; k < to[2]; k++) {
       for (let j = from[1]; j < to[1]; j++) {

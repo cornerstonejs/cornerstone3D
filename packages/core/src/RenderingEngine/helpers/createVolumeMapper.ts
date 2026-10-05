@@ -17,7 +17,7 @@ import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
  */
 export default function createVolumeMapper(
   imageData: vtkImageData,
-  vtkOpenGLTexture: vtkOpenGLTexture
+  vtkOpenGLTexture?: vtkOpenGLTexture
 ): vtkVolumeMapper {
   const volumeMapper = vtkSharedVolumeMapper.newInstance();
 
@@ -36,7 +36,10 @@ export default function createVolumeMapper(
   // Todo: why we are setting this to 4000? Is this a good number? it should be configurable
   volumeMapper.setMaximumSamplesPerRay(4000);
   volumeMapper.setSampleDistance(sampleDistance);
-  volumeMapper.setScalarTexture(vtkOpenGLTexture);
+  // A render path can create the mapper before it binds a base texture.
+  if (vtkOpenGLTexture) {
+    volumeMapper.setScalarTexture(vtkOpenGLTexture);
+  }
 
   return volumeMapper;
 }

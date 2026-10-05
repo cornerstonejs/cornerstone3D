@@ -63,7 +63,12 @@ async function createVolumeActor(
     viewportId,
   });
 
-  if (!vtkOpenGLTexture) {
+  // A render path applies its strategies after the mount, and it binds the
+  // base texture then, so only a legacy caller needs a texture here.
+  const usesRenderPath =
+    props.provideStrategies !== undefined || props.selectStrategy !== undefined;
+
+  if (!vtkOpenGLTexture && !usesRenderPath) {
     throw new Error(
       `no render strategy gives a texture for the volume ${volumeId}`
     );
