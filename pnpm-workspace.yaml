@@ -93,6 +93,13 @@ auditConfig:
     # node-forge is used only by selfsigned (via webpack-dev-server) to create a
     # local dev cert; it never checks signatures from outside
     - GHSA-86w9-cpqp-85rv
+    # http-cache-semantics is used only by got (via the Docusaurus update-notifier)
+    # to cache npm registry lookups in the docs dev tooling
+    - GHSA-ch52-4w7c-c8xp
+    # braces has no patched release. It only expands glob patterns that build and
+    # dev tools (chokidar, micromatch, and the shelljs CLI that vtk.js lists) write
+    # themselves; no shipped code passes it an untrusted pattern
+    - GHSA-vfj7-8cjw-p6xm
 allowBuilds:
   '@swc/core': true
   canvas: true
