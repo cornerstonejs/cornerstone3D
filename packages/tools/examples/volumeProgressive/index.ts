@@ -798,6 +798,8 @@ async function run() {
       imageRetrieveMetadataProvider.add('volume', config);
     }
     resetTimingInfo();
+    // The segmentation starts with the CT, so both loads show side by side.
+    const segmentationReady = prepareSegmentation(selectedSeries, imageIds);
     // Define a volume in memory
     getOrCreateTiming('loadingStatus').innerText = 'Loading...';
     const start = Date.now();
@@ -829,7 +831,7 @@ async function run() {
     // Render the image
     renderingEngine.renderViewports(viewportIds);
 
-    await loadSegmentation(selectedSeries, imageIds);
+    await showSegmentation(await segmentationReady);
   }
 
   /**
@@ -884,27 +886,29 @@ async function run() {
   }
 
   /**
-   * Loads the segmentation of the selected series, when that series has one.
+   * Fetches and reads the segmentation of the selected series, when that
+   * series has one, and adds it to the segmentation state.
    *
    * The segmentation loads as one complete DICOM instance, and not in stages.
-   * A segment index is a name and not a measurement, so a box average of two
-   * segment indices names a third segment, and a coarse version of a labelmap
-   * states something that the reader never drew. One request of the whole
-   * instance also costs far less than the 2464 requests of one frame each that
-   * a per frame path needs on this series.
+   * A segment index is a name and not a measurement, so a coarse version of a
+   * labelmap states something that the reader never drew. One request of the
+   * whole instance also costs far less than one request for each of the 2464
+   * frames of this series.
    *
    * The segmentation references the images of the CT, and not the voxels of
-   * the CT, so this runs as soon as the image ids exist. The CT itself keeps
-   * loading in stages while the segmentation arrives.
+   * the CT, so this starts together with the CT load and needs no viewport.
+   *
+   * @returns the start time and the number of frames, or null for a series
+   * with no segmentation
    */
-  async function loadSegmentation(series, referenceImageIds) {
+  async function prepareSegmentation(series, referenceImageIds) {
     const { StudyInstanceUID, segSeriesInstanceUID, wadoRsRoot } = series;
 
     csToolsSegmentation.removeAllSegmentationRepresentations();
     csToolsSegmentation.state.removeSegmentation(segmentationId);
 
     if (!segSeriesInstanceUID) {
-      return;
+      return null;
     }
 
     const start = Date.now();
@@ -965,8 +969,18 @@ async function run() {
       },
     ]);
 
-    // Each planar viewport draws the labelmap. The 3D viewport shows a
-    // projection of the CT, and it takes no labelmap here.
+    return { start, frameCount };
+  }
+
+  /**
+   * Draws a prepared segmentation on each planar viewport. The 3D viewport
+   * shows a projection of the CT, and it takes no labelmap here.
+   */
+  async function showSegmentation(prepared) {
+    if (!prepared) {
+      return;
+    }
+
     for (const viewportId of viewportIds.filter((id) => id !== viewportId3D)) {
       await csToolsSegmentation.addSegmentationRepresentations(viewportId, [
         {
@@ -979,7 +993,9 @@ async function run() {
     renderingEngine.renderViewports(viewportIds);
 
     getOrCreateTiming('segStatus').innerText =
-      `Segmentation of ${frameCount} frames took ${Date.now() - start} ms`;
+      `Segmentation of ${prepared.frameCount} frames took ${
+        Date.now() - prepared.start
+      } ms`;
   }
 
   const imageLoadStage = (evt) => {
