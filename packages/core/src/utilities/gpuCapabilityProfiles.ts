@@ -102,9 +102,12 @@ const PROFILES: Record<GpuCapabilityProfileId, GpuCapabilityProfile> = {
 /**
  * The profile that applies when an application states none.
  *
- * `high` states the limit of 2048 that every known WebGL device holds, and it
- * states the largest memory of the shipped profiles, so a viewport behaves as
- * it behaved before this module existed.
+ * `high` states an edge of 2048 and the largest memory of the shipped
+ * profiles. The reported `MAX_3D_TEXTURE_SIZE` is not a reliable limit, so no
+ * profile reads it: some Android devices report 2048 or more but render only
+ * 256 per axis, and need `low` or `low-tablet`. Some Linux devices report more
+ * than 2048, but no such device is tested to render beyond 2048, so
+ * `high-texture-4096` stays internal.
  */
 const DEFAULT_PROFILE_ID: GpuCapabilityProfileId = 'high';
 
