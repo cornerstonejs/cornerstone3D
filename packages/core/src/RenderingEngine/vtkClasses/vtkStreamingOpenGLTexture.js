@@ -4,7 +4,7 @@ import cache from '../../cache/cache';
 import { getConstructorFromType } from '../../utilities/getBufferConfiguration';
 import VoxelManager from '../../utilities/VoxelManager';
 import { voxelGridsEqual } from '../../utilities/voxelGrid';
-import fillPlaneByForegroundMajority from '../../utilities/voxelGrid/foregroundMajorityPlane';
+import { requireVoxelStatistic } from '../../utilities/voxelGrid/voxelStatistics';
 import VoxelStatistics from '../../enums/VoxelStatistics';
 
 /**
@@ -236,20 +236,21 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
   }
 
   /**
-   * Fills one slice of this texture with the box average of the voxels of the
-   * volume that the slice covers.
+   * Fills one reduced slice with the `fillPlane` of the statistic of the
+   * volume, read straight from the frames that the slice covers.
    *
-   * The arithmetic is direct. A fill through the composite maps every voxel
-   * through world coordinates, which measured 9 ms for a slice of 256 x 256 and
-   * about 44 seconds for a volume of 512 x 512 x 1232. This reads the voxels of
-   * the volume by index instead, and it gives the box average that the render
-   * path asks for rather than the value of the nearest voxel.
-   *
-   * @returns false when this slice holds no data yet, so a caller can fall back
+   * @returns false when the statistic has no `fillPlane` or this slice holds no
+   * data yet, so a caller can fall back
+   * @throws when nothing registered the statistic of the volume
    */
-  function fillSliceByBoxAverage(volume, grid, factors, slice, target) {
-    const [width, height] = grid.dimensions;
-    const [sourceWidth, sourceHeight] = volume.dimensions;
+  function fillSliceByBoxStatistic(volume, grid, factors, slice, target) {
+    const statistic = volume.reductionStatistic ?? VoxelStatistics.Average;
+    const { fillPlane } = requireVoxelStatistic(statistic);
+
+    if (!fillPlane) {
+      return false;
+    }
+
     const [factorI, factorJ, factorK] = factors;
     const frames = framesOfSlice(volume, factorK, slice);
 
@@ -257,81 +258,15 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
       return false;
     }
 
-    const accumulator = new Float64Array(width * height);
-    const counts = new Float64Array(width * height);
-
-    for (const frame of frames) {
-      for (let j = 0; j < sourceHeight; j++) {
-        const targetRow = Math.min((j / factorJ) | 0, height - 1) * width;
-        const sourceRow = j * sourceWidth;
-
-        for (let i = 0; i < sourceWidth; i++) {
-          const targetIndex =
-            targetRow + Math.min((i / factorI) | 0, width - 1);
-
-          accumulator[targetIndex] += frame[sourceRow + i];
-          counts[targetIndex] += 1;
-        }
-      }
-    }
-
-    const values = target.getScalarData();
-
-    for (let index = 0; index < values.length; index++) {
-      values[index] = counts[index] ? accumulator[index] / counts[index] : 0;
-    }
-
-    return true;
-  }
-
-  /**
-   * Fills one slice with the foreground majority of each source box. See
-   * {@link fillPlaneByForegroundMajority} for the rule and its tie break.
-   */
-  function fillSliceByBoxForegroundMajority(
-    volume,
-    grid,
-    factors,
-    slice,
-    target
-  ) {
-    const [width, height] = grid.dimensions;
-    const [sourceWidth, sourceHeight] = volume.dimensions;
-    const [factorI, factorJ, factorK] = factors;
-    const frames = framesOfSlice(volume, factorK, slice);
-
-    if (!frames?.length) {
-      return false;
-    }
-
-    fillPlaneByForegroundMajority(
+    fillPlane(
       frames,
-      [sourceWidth, sourceHeight],
-      [width, height],
+      [volume.dimensions[0], volume.dimensions[1]],
+      [grid.dimensions[0], grid.dimensions[1]],
       [factorI, factorJ],
       target.getScalarData()
     );
 
     return true;
-  }
-
-  /**
-   * Fills one reduced slice with the statistic the volume asks for.
-   */
-  function fillSliceByBoxStatistic(volume, grid, factors, slice, target) {
-    const statistic = volume.reductionStatistic ?? VoxelStatistics.Average;
-
-    if (statistic === VoxelStatistics.ForegroundMajority) {
-      return fillSliceByBoxForegroundMajority(
-        volume,
-        grid,
-        factors,
-        slice,
-        target
-      );
-    }
-
-    return fillSliceByBoxAverage(volume, grid, factors, slice, target);
   }
 
   /**

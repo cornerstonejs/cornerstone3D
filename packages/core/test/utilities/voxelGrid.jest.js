@@ -456,6 +456,51 @@ describe('voxelGrid statistics registry', () => {
     expect(target.written.get('1,0,0')).toBe(4);
   });
 
+  it('takes the reduceBySlices of a statistic, and the accumulator when it gives nothing', () => {
+    let applies = true;
+
+    registerVoxelStatistic({
+      statistic: 'myOrg:sliced',
+      createAccumulator: () => {
+        let first;
+        return {
+          reset: () => {
+            first = undefined;
+          },
+          add: (value) => {
+            first ??= value;
+          },
+          getValue: () => first,
+        };
+      },
+      reduceBySlices: (_source, _reduction, target) => {
+        if (!applies) {
+          return undefined;
+        }
+        target.setAtIJK(0, 0, 0, 42);
+        return 1;
+      },
+    });
+
+    const source = makeSource([2, 1, 1], [7, 8]);
+    const sliced = makeTarget();
+
+    expect(
+      reduceByBoxStatistic(source, { factors: [2, 1, 1] }, sliced, {
+        statistic: 'myOrg:sliced',
+      })
+    ).toBe(1);
+    expect(sliced.written.get('0,0,0')).toBe(42);
+
+    applies = false;
+    const accumulated = makeTarget();
+
+    reduceByBoxStatistic(source, { factors: [2, 1, 1] }, accumulated, {
+      statistic: 'myOrg:sliced',
+    });
+    expect(accumulated.written.get('0,0,0')).toBe(7);
+  });
+
   it('keeps the average as the statistic of a default selection', () => {
     expect(isDefaultSelectionStatistic(VoxelStatistics.Average)).toBe(true);
     expect(

@@ -7,6 +7,13 @@ import type {
   VoxelStatisticConstants,
   VoxelStatisticDefinition,
 } from '../../types';
+import VoxelReductions from '../../enums/VoxelReductions';
+import {
+  reduceAverageAlongKBySlices,
+  reduceForegroundMajorityBySlices,
+} from './sliceReductions';
+import fillPlaneByAverage from './averagePlane';
+import fillPlaneByForegroundMajority from './foregroundMajorityPlane';
 
 type RegisterVoxelStatisticNamedOptions<
   Name extends keyof VoxelStatisticConstants,
@@ -106,6 +113,9 @@ function registerCoreVoxelStatistics(): void {
     defaultSelection: true,
     description: 'The mean of the source voxels of one box.',
     createAccumulator: createAverageAccumulator,
+    reduceBySlices: reduceAverageAlongKBySlices,
+    fillPlane: fillPlaneByAverage,
+    boxReduction: VoxelReductions.BoxAverage,
   });
   registerVoxelStatistic({
     statistic: VoxelStatistics.ForegroundMajority,
@@ -113,6 +123,9 @@ function registerCoreVoxelStatistics(): void {
     description:
       'The majority non-zero label of one box (background ignored unless the box is empty). Used to reduce labelmaps.',
     createAccumulator: createForegroundMajorityAccumulator,
+    reduceBySlices: reduceForegroundMajorityBySlices,
+    fillPlane: fillPlaneByForegroundMajority,
+    boxReduction: VoxelReductions.BoxForegroundMajority,
   });
 }
 
@@ -124,6 +137,10 @@ function registerCoreVoxelStatistics(): void {
  * ONE COMPONENT of one voxel, because the code that reduces a grid builds one
  * accumulator for each component of a voxel. A definition therefore serves a
  * volume of one component and an RGB volume, and it states the arithmetic once.
+ *
+ * `reduceBySlices`, `fillPlane` and `boxReduction` are optional. Without
+ * them, a reduction takes the accumulator, a reduced texture slice falls back
+ * to the composite, and a box derivation records `boxAverage`.
  *
  * `defaultSelection` states whether a default selection can return a
  * representation of this statistic. A minimum and a maximum leave the field
@@ -181,6 +198,9 @@ function registerVoxelStatistic({
   defaultSelection = false,
   description,
   createAccumulator,
+  reduceBySlices,
+  fillPlane,
+  boxReduction,
 }: RegisterVoxelStatisticOptions): void {
   if (!statistic) {
     throw new Error('registerVoxelStatistic: the definition needs a statistic');
@@ -196,6 +216,14 @@ function registerVoxelStatistic({
     );
   }
 
+  for (const [field, hook] of Object.entries({ reduceBySlices, fillPlane })) {
+    if (hook !== undefined && typeof hook !== 'function') {
+      throw new Error(
+        `Voxel statistic "${statistic}" declares ${field}, which is not a function`
+      );
+    }
+  }
+
   if (name && Object.prototype.hasOwnProperty.call(VoxelStatistics, name)) {
     throw new Error(
       `Voxel statistic constant "${String(name)}" already exists`
@@ -207,6 +235,9 @@ function registerVoxelStatistic({
     defaultSelection,
     description,
     createAccumulator,
+    reduceBySlices,
+    fillPlane,
+    boxReduction,
   });
 
   if (name) {

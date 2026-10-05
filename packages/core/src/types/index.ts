@@ -164,6 +164,8 @@ import type {
 import type {
   VoxelStatisticAccumulator,
   VoxelStatisticDefinition,
+  VoxelStatisticSliceReducer,
+  VoxelStatisticPlaneFill,
 } from './VoxelStatistic';
 import type { IRLEVoxelMap, RLERun } from './IRLEVoxelMap';
 import type ImageLoadRequests from './ImageLoadRequests';
@@ -369,6 +371,8 @@ export type {
   VoxelStatistic,
   VoxelStatisticAccumulator,
   VoxelStatisticDefinition,
+  VoxelStatisticSliceReducer,
+  VoxelStatisticPlaneFill,
   IRLEVoxelMap,
   RLERun,
   ViewportInput,
