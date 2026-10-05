@@ -260,8 +260,9 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
    * Reads one slice of the representation that the composite holds at this
    * exact grid.
    *
-   * A strategy derives that representation, and `ImageVolume.markFrameDirty`
-   * redoes its boxes as each frame arrives, so the values follow the load. The
+   * A CPU reader derives that representation, and
+   * `ImageVolume.recordFrameDelivery` redoes its boxes as each frame arrives, so
+   * the values follow the load. The
    * values are the box average that the render path asks for.
    *
    * THE IMAGE CACHE HOLDS THOSE VOXELS. One image holds one slice of the

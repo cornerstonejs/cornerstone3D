@@ -134,29 +134,29 @@ describe('the default provider builds the strategies', () => {
     ).toBeUndefined();
   });
 
-  it('derives a representation at the grid of the strategy', () => {
+  it('derives no representation, because the texture fills from the source', () => {
+    // A derivation of a volume that holds all of its data would reduce every
+    // voxel during the provision. The texture fills each slice by box average
+    // from the frames of the volume instead.
     const volume = makeVolume();
 
     provisionReducedResolutionStrategy(context(volume, 'low-tablet'));
 
-    const representations = volume.getVoxelRepresentations();
-    const derived = representations.find((one) => one.derivedFrom);
-
-    // Most of the images of the volume have not arrived at this moment, so the
-    // derivation reduces almost no data. `ImageVolume.markFrameDirty` redoes
-    // the boxes of the representation as each frame arrives.
-    expect(representations.length).toBe(2);
-    expect(derived.grid.dimensions).toEqual([256, 256, 8]);
-    expect(derived.reduction).toBe('boxAverage');
+    expect(volume.getVoxelRepresentations().length).toBe(1);
   });
 
-  it('derives one representation when two viewports ask for one grid', () => {
+  it('gives the record of the reduced grid from the source deliveries', () => {
     const volume = makeVolume();
+    const [strategy] = defaultVolumeStrategyProvider(
+      context(volume, 'low-tablet')
+    );
+    const { grid } = strategy.bindings()[0];
 
-    provisionReducedResolutionStrategy(context(volume, 'low-tablet'));
-    provisionReducedResolutionStrategy(context(volume, 'low-tablet'));
+    const record = volume.getGridQuality(grid);
 
-    expect(volume.getVoxelRepresentations().length).toBe(2);
+    expect(record.grid.dimensions).toEqual([256, 256, 8]);
+    expect(record.reduction).toBe('boxAverage');
+    expect(record.voxels).toBe(256 * 256 * 8);
   });
 
   it('gives one texture set to two viewports that choose one strategy', () => {
@@ -508,6 +508,30 @@ describe('the actor helpers choose a strategy for either architecture', () => {
 
     expect(volume.getTextureSet('full-resolution/full-extent').references).toBe(
       0
+    );
+  });
+
+  it('pins the set that a legacy viewport draws', () => {
+    // A legacy viewport holds no claim, so a budget could otherwise evict the
+    // texture that it draws.
+    const volume = makeVolume();
+
+    resolveVolumeTexture(volume);
+
+    expect(volume.getTextureSet('full-resolution/full-extent').pinned).toBe(
+      true
+    );
+  });
+
+  it('pins nothing for a render path, which claims instead', () => {
+    const volume = makeVolume();
+
+    resolveVolumeTexture(volume, {
+      provideStrategies: defaultVolumeStrategyProvider,
+    });
+
+    expect(volume.getTextureSet('full-resolution/full-extent').pinned).toBe(
+      false
     );
   });
 });

@@ -179,7 +179,7 @@ async function createVolumeFromTimeData(dataInTime) {
   const { imageData } = computedVolume;
   const numSlices = imageData.getDimensions()[2];
   for (let i = 0; i < numSlices; i++) {
-    computedVolume.markFrameDirty(i);
+    computedVolume.markFrameModified(i);
   }
   imageData.modified();
 

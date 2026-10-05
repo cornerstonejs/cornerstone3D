@@ -528,11 +528,12 @@ export class VtkVolumeSliceRenderPath
   ): VoxelQualityRecord | undefined {
     const base = bindings.find((binding) => binding.role === 'base');
 
-    return rendering.imageVolume.getVoxelQuality(
-      base
-        ? { ceiling: base.grid.spacing, statistic: base.statistic }
-        : undefined
-    );
+    // The record of the grid that the render really bound. A reduced texture
+    // fills by box average from the source, so that grid needs no
+    // representation of its own.
+    return base
+      ? rendering.imageVolume.getGridQuality(base.grid, base.statistic)
+      : rendering.imageVolume.getVoxelQuality();
   }
 
   private resize(

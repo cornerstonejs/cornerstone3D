@@ -335,23 +335,14 @@ export function provisionReducedResolutionStrategy({
 
   const grid = deriveBoxAverageGrid(fullResolutionGrid, { factors });
   const name = reducedStrategyName(factors);
-  const composite = volume.compositeVoxelManager;
 
-  // The derivation runs here, although most of the images of the volume have
-  // not arrived yet, and it therefore reduces almost no data. `markFrameDirty`
-  // redoes the boxes of this representation as each frame arrives, so the
-  // representation follows the load.
-  //
-  // The derivation gives the box average that P31.2 asks for. Without it the
-  // texture fills through `fillGrid`, which samples the finest source of the
-  // composite and gives a nearest neighbour value instead.
-  if (!composite.getRepresentation(grid)) {
-    composite.createRepresentation({
-      factors,
-      sourceGrid: fullResolutionGrid,
-    });
-  }
-
+  // No derived representation is built here. The texture of this grid fills
+  // each slice by box average straight from the frames of the volume, which
+  // gives the box average that P31.2 asks for at no cost in CPU memory, and
+  // `ImageVolume.getGridQuality` gives the record of that texture from the
+  // deliveries of the volume. A derivation of a volume that holds all of its
+  // data would otherwise reduce every voxel during this provision. A CPU reader
+  // that needs the reduced voxels calls `createRepresentation` itself.
   const set = volume.provisionTextureSet({
     name,
     grids: [grid],

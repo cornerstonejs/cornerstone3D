@@ -332,6 +332,23 @@ class VolumeTextureStore {
     return true;
   }
 
+  /**
+   * Keeps a set until its volume leaves the cache. A budget never evicts a
+   * pinned set. A second pin changes nothing.
+   */
+  public pin(volumeId: string, name: string): boolean {
+    const stored = this.sets.get(keyOf(volumeId, name));
+
+    if (!stored) {
+      return false;
+    }
+
+    stored.set.pinned = true;
+    stored.set.lastUsed = ++this.clock;
+
+    return true;
+  }
+
   /** Gives one holder of a set back. */
   public release(volumeId: string, name: string): boolean {
     const stored = this.sets.get(keyOf(volumeId, name));
@@ -385,8 +402,9 @@ class VolumeTextureStore {
    * Releases memory until the store can hold `bytes` more.
    *
    * The store first removes the set that no consumer holds and that is the
-   * least recently used, and it never removes a set that a viewport draws. A
-   * backstop set leaves last, because a fill that finds no source leaves a
+   * least recently used. It never removes a set that a viewport draws: a render
+   * path claims the set that it draws, and a legacy viewport draws a pinned set.
+   * A backstop set leaves last, because a fill that finds no source leaves a
    * blank region and MR-U-6 forbids that.
    *
    * @returns true when the store can now hold the new set
@@ -397,7 +415,7 @@ class VolumeTextureStore {
     }
 
     const evictable = [...this.sets.values()]
-      .filter((stored) => stored.set.references === 0)
+      .filter((stored) => stored.set.references === 0 && !stored.set.pinned)
       .sort((a, b) => {
         if (a.set.backstop !== b.set.backstop) {
           return a.set.backstop ? 1 : -1;

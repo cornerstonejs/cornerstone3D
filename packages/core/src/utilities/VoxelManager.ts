@@ -1247,8 +1247,8 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
         // reduction reads every voxel of a slice, so without this each of the
         // 262144 reads of one slice of 512 x 512 asks the cache for the same
         // image again. `invalidateSlice` clears the entry, and
-        // `ImageVolume.markFrameDirty` calls it when the image of the frame
-        // arrives, so the next read takes the image.
+        // `ImageVolume.markFrameTexturesDirty` calls it when the image of the
+        // frame arrives, so the next read takes the image.
         sliceVoxelManagers[sliceIndex] = null;
 
         return null;

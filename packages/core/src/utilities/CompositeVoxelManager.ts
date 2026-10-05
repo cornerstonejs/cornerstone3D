@@ -32,6 +32,7 @@ import {
   reduceByBoxStatistic,
   volumeOfBounds,
   voxelGridKey,
+  voxelGridsEqual,
 } from './voxelGrid';
 
 /**
@@ -137,7 +138,19 @@ export type VoxelRepresentation<T> = {
     reduction?: VoxelGridReduction;
     /** Whether the derivation rounds each value. */
     round?: boolean;
+    /**
+     * While a derivation runs in batches, the first source k slice that it has
+     * not reduced yet. The record above then covers the slices before it and no
+     * others. `undefined` once the derivation is complete.
+     */
+    reducedUntil?: number;
   };
+  /**
+   * Resolves when the derivation of this representation is complete. A large
+   * derivation reduces its slices in batches, in idle time, so the voxels and
+   * the record of the quality fill over several tasks.
+   */
+  derivation?: Promise<void>;
 };
 
 export type { DeliveredRegion, VoxelQualityRecord };
@@ -215,6 +228,13 @@ export type CompositeVoxelManagerOptions<T> = {
     /** The representation that the derivation reads. */
     source: VoxelRepresentation<T>;
   }) => RepresentationStorage<T> | undefined;
+  /**
+   * Hears that a derivation wrote new voxels outside a delivery, which a
+   * derivation in batches does. The region is in the index space of the
+   * composite. `ImageVolume` marks its textures there, because a texture that
+   * reads the derived representation must read the new voxels.
+   */
+  onDerivedRegionChanged?: (region: BoundsIJK) => void;
 };
 
 /** Where the voxels of one derived representation live. */
@@ -269,6 +289,28 @@ type Coverage = {
  */
 const MAX_COVERAGE_CELLS = 1 << 20;
 const MAX_COVERAGE_WORK = 1 << 23;
+
+/**
+ * The number of slices of the derived grid that one batch of a derivation
+ * reduces. A derivation of 16 slices of 256 x 256 from 32 source slices of
+ * 512 x 512 reads about 8 million voxels, which keeps one batch short.
+ */
+const DERIVATION_BATCH_SLICES = 16;
+
+/** Runs a callback in idle time, or in the next task where no idle callback exists. */
+function scheduleIdle(callback: () => void): void {
+  const requestIdle = (
+    globalThis as {
+      requestIdleCallback?: (callback: () => void) => number;
+    }
+  ).requestIdleCallback;
+
+  if (requestIdle) {
+    requestIdle(callback);
+  } else {
+    setTimeout(callback, 0);
+  }
+}
 
 /** Gives the index of each distinct edge of the boxes, on one axis. */
 function edgesOfAxis(
@@ -570,6 +612,12 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
   /** Builds the store of a derived representation. See the options. */
   private readonly createStorage?: CompositeVoxelManagerOptions<T>['createStorage'];
 
+  /** Hears the regions that a derivation in batches wrote. See the options. */
+  private readonly onDerivedRegionChanged?: CompositeVoxelManagerOptions<T>['onDerivedRegionChanged'];
+
+  /** Set by `dispose`, which stops every derivation that still runs. */
+  private disposed = false;
+
   constructor({
     primary,
     grid,
@@ -578,9 +626,11 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
     delivered,
     id,
     createStorage,
+    onDerivedRegionChanged,
   }: CompositeVoxelManagerOptions<T>) {
     this.primary = primary;
     this.createStorage = createStorage;
+    this.onDerivedRegionChanged = onDerivedRegionChanged;
     this.compositeId = id || `composite-${primary.id}`;
     this.primaryRepresentation = {
       grid,
@@ -783,29 +833,207 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
       },
     });
 
-    const { delivered } = sourceRepresentation;
+    // The source states which regions hold data, so reduce those regions and
+    // no others. A streaming volume of 512 x 512 x 1232 voxels holds 323
+    // million of them, and a pass over all of them takes tens of seconds and
+    // gives nothing for a region that no delivery covers. A source that states
+    // no region holds data everywhere.
+    const regions = sourceRepresentation.delivered
+      ? sourceRepresentation.delivered.map((delivery) => delivery.bounds)
+      : [boundsOfGrid(sourceRepresentation.grid)];
 
-    if (delivered) {
-      // The source states which regions hold data, so reduce those regions and
-      // no others. A streaming volume of 512 x 512 x 1232 voxels holds 323
-      // million of them, and a pass over all of them takes tens of seconds and
-      // gives nothing for a region that no delivery covers.
-      for (const delivery of delivered) {
-        this.reduceRegionInto(representation, sourceRepresentation, {
-          bounds: delivery.bounds,
-        });
-      }
-    } else {
-      // The source states no region, so it holds data everywhere.
-      reduceByBoxStatistic(
-        sourceRepresentation.voxelManager as never,
-        reduction,
-        voxelManager as never,
-        { statistic, round }
-      );
-    }
+    this.deriveInBatches(representation, sourceRepresentation, regions);
 
     return representation;
+  }
+
+  /**
+   * Stops every derivation that still runs. A volume that discards its
+   * composite calls this member, because a batch would otherwise write into a
+   * representation that nothing reads.
+   */
+  public dispose(): void {
+    this.disposed = true;
+  }
+
+  /**
+   * The record of the data that a grid holds when it reads the best source of
+   * the composite.
+   *
+   * A representation of that grid answers for itself. A grid that no
+   * representation holds is the grid of a texture that fills by box average
+   * straight from the source, and the record of the source deliveries, mapped
+   * into that grid, is then the record of the texture.
+   */
+  public getGridQuality(
+    grid: VoxelGrid,
+    {
+      statistic = VoxelStatistics.Average,
+      region,
+    }: { statistic?: VoxelStatistic; region?: BoundsIJK } = {}
+  ): VoxelQualityRecord {
+    const existing = this.getRepresentation(grid, statistic);
+
+    if (existing) {
+      return this.getRegionQuality(existing, region);
+    }
+
+    const source = this.sourceOfDerivation(this.grid, { statistic });
+
+    if (!source) {
+      return undefined;
+    }
+
+    // A representation that holds no voxels and states the live record of its
+    // source: the texture reads the source as the source is now.
+    const reducesAnAxis = !voxelGridsEqual(grid, source.grid);
+
+    return this.getRegionQuality(
+      {
+        grid,
+        statistic,
+        voxelManager: undefined,
+        reduction: reducesAnAxis
+          ? VoxelReductions.BoxAverage
+          : VoxelReductions.None,
+        source: VoxelDataSources.ClientDerived,
+        derivedFrom: {
+          grid: source.grid,
+          delivered: source.delivered,
+          quality: source.quality,
+        },
+      },
+      region
+    );
+  }
+
+  /**
+   * Reduces the regions of a source into a derived representation, in batches
+   * of `DERIVATION_BATCH_SLICES` slices of the derived grid.
+   *
+   * The first batch runs at once. Each later batch runs in idle time, because a
+   * volume that holds all of its data would otherwise reduce every voxel in one
+   * call: 512 x 512 x 2464 voxels take many seconds on the main thread. While
+   * the batches run, the record of the representation covers the slices that
+   * the batches reduced and no others.
+   */
+  private deriveInBatches(
+    representation: VoxelRepresentation<T>,
+    source: VoxelRepresentation<T>,
+    regions: BoundsIJK[]
+  ): void {
+    const { derivedFrom } = representation;
+    const factorK = derivedFrom.reduction.factors[2];
+    const offsetK = derivedFrom.reduction.sourceOffset?.[2] ?? 0;
+    const depth = representation.grid.dimensions[2];
+    const batches = Math.ceil(depth / DERIVATION_BATCH_SLICES);
+
+    const reduceBatch = (batch: number): BoundsIJK => {
+      const firstK = offsetK + batch * DERIVATION_BATCH_SLICES * factorK;
+      const lastK =
+        offsetK +
+        Math.min((batch + 1) * DERIVATION_BATCH_SLICES, depth) * factorK -
+        1;
+      const sourceBounds = boundsOfGrid(source.grid);
+      const slab: BoundsIJK = [
+        sourceBounds[0],
+        sourceBounds[1],
+        [firstK, Math.min(lastK, sourceBounds[2][1])],
+      ];
+
+      for (const region of regions) {
+        const part = intersectBounds(region, slab);
+
+        if (volumeOfBounds(part) > 0) {
+          this.reduceRegionInto(representation, source, { bounds: part });
+        }
+      }
+
+      derivedFrom.reducedUntil =
+        batch + 1 < batches ? slab[2][1] + 1 : undefined;
+      this.syncDerivedRecord(representation, source);
+
+      return slab;
+    };
+
+    reduceBatch(0);
+
+    if (batches <= 1) {
+      representation.derivation = Promise.resolve();
+
+      return;
+    }
+
+    representation.derivation = new Promise<void>((resolve) => {
+      const runBatch = (batch: number) => {
+        if (
+          this.disposed ||
+          !this.representations.includes(representation) ||
+          batch >= batches
+        ) {
+          resolve();
+
+          return;
+        }
+
+        const slab = reduceBatch(batch);
+
+        this.onDerivedRegionChanged?.(
+          intersectBounds(
+            mapBoundsBetweenGrids(source.grid, this.grid, slab),
+            boundsOfGrid(this.grid)
+          )
+        );
+        scheduleIdle(() => runBatch(batch + 1));
+      };
+
+      scheduleIdle(() => runBatch(1));
+    });
+  }
+
+  /**
+   * Copies the record of a source into the record of a derived representation.
+   *
+   * A derivation that still runs covers the source slices before
+   * `reducedUntil` and no others, so the copy keeps the deliveries of those
+   * slices only, and it states no quality for the rest. The record therefore
+   * never states a voxel that the derivation has not written.
+   */
+  private syncDerivedRecord(
+    representation: VoxelRepresentation<T>,
+    source: VoxelRepresentation<T>
+  ): void {
+    const { derivedFrom } = representation;
+    const { reducedUntil } = derivedFrom;
+
+    if (reducedUntil === undefined) {
+      derivedFrom.delivered = source.delivered
+        ? [...source.delivered]
+        : undefined;
+      derivedFrom.quality = source.quality;
+
+      return;
+    }
+
+    const sourceBounds = boundsOfGrid(source.grid);
+    const reduced: BoundsIJK = [
+      sourceBounds[0],
+      sourceBounds[1],
+      [sourceBounds[2][0], reducedUntil - 1],
+    ];
+    const deliveries =
+      source.delivered ??
+      (source.quality === undefined
+        ? []
+        : [{ bounds: sourceBounds, quality: source.quality }]);
+
+    derivedFrom.delivered = deliveries
+      .map((delivery) => ({
+        bounds: intersectBounds(delivery.bounds, reduced),
+        quality: delivery.quality,
+      }))
+      .filter((delivery) => volumeOfBounds(delivery.bounds) > 0);
+    derivedFrom.quality = undefined;
   }
 
   /**
@@ -924,19 +1152,6 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
   }
 
   /**
-   * Forgets which regions a refresh already reduced.
-   *
-   * A caller that replaces the voxels of the whole source calls this member, so
-   * that the next delivery of each region reduces the new data.
-   * `BaseStreamingImageVolume.invalidateVolume` is the one caller: a dynamic
-   * volume changes its dimension group, and every frame then holds other data
-   * at the same quality.
-   */
-  public clearDerivedRefreshRecord(): void {
-    this.refreshedQuality.clear();
-  }
-
-  /**
    * Redoes the part of every derived representation that a delivery changed.
    *
    * A derived voxel is a box of source voxels, and `createRepresentation`
@@ -1022,11 +1237,9 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
     }
 
     // The record of the source becomes the record of the result again, because
-    // the boxes now hold the data that the source holds now.
-    derivedFrom.delivered = source.delivered
-      ? [...source.delivered]
-      : undefined;
-    derivedFrom.quality = source.quality;
+    // the boxes now hold the data that the source holds now. A derivation that
+    // still runs in batches keeps to the slices that it has reduced.
+    this.syncDerivedRecord(representation, source);
 
     return true;
   }
