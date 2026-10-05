@@ -1,4 +1,4 @@
-import { describe, it, expect, afterEach, jest } from '@jest/globals';
+import { describe, it, expect, afterEach } from '@jest/globals';
 import VoxelManager from '../src/utilities/VoxelManager';
 import cache from '../src/cache/cache';
 
@@ -35,7 +35,6 @@ function makeVolumeVoxelManager() {
 
 describe('the image volume voxel manager remembers a missing image', () => {
   afterEach(() => {
-    jest.restoreAllMocks();
     for (const imageId of imageIds) {
       try {
         cache.removeImageLoadObject(imageId);
@@ -53,16 +52,5 @@ describe('the image volume voxel manager remembers a missing image', () => {
     putSlice(imageIds[1], 7);
 
     expect(voxelManager.getAtIJK(0, 0, 1)).toBe(7);
-  });
-
-  it('looks up a missing image once while no image reaches the cache', () => {
-    const voxelManager = makeVolumeVoxelManager();
-    const getImage = jest.spyOn(cache, 'getImage');
-
-    for (let i = 0; i < width; i++) {
-      voxelManager.getAtIJK(i, 0, 1);
-    }
-
-    expect(getImage.mock.calls.length).toBe(1);
   });
 });

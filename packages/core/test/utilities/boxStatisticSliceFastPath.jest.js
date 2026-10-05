@@ -128,6 +128,28 @@ describe('the slice fast path of the average', () => {
   });
 });
 
+describe('the slice fast paths and a voxel of several components', () => {
+  it('leave the voxel to the generic path', () => {
+    const source = {
+      dimensions: [2, 2, 4],
+      numberOfComponents: 3,
+      getAtIJK: (_i, _j, k) => [k, k, k],
+      _getSliceData: () => undefined,
+    };
+    const written = new Map();
+
+    reduceByBoxStatistic(
+      source,
+      { factors: [1, 1, 2] },
+      { setAtIJK: (i, j, k, value) => written.set(`${i},${j},${k}`, value) },
+      { round: false }
+    );
+
+    expect(written.size).toBe(2 * 2 * 2);
+    expect(written.get('0,0,0')).toEqual([0.5, 0.5, 0.5]);
+  });
+});
+
 describe('the slice fast path of the foreground majority', () => {
   const cases = [
     ['slice axis only, two frames per box', { factors: [1, 1, 2] }],

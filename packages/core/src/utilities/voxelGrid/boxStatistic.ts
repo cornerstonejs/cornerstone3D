@@ -8,6 +8,7 @@ import type {
 import { normalizedFactors, reducedDimensions } from './reducedDimensions';
 import VoxelStatistics from '../../enums/VoxelStatistics';
 import { requireVoxelStatistic } from './voxelStatistics';
+import { foregroundMajorityOfBox } from './foregroundMajorityPlane';
 
 /**
  * The value of one voxel. A voxel of one component is a number, and a voxel of
@@ -384,88 +385,13 @@ function directIndexOf(
 }
 
 /**
- * The foreground majority of each voxel of one plane over the frames of a box
- * along k, when no in-plane axis is reduced. A box of a slice-only reduction
- * holds one voxel of each frame, so the plane takes a single pass per voxel and
- * no counting list.
- *
- * The rule is the one of the accumulator: background does not compete, and a
- * label takes the lead only with a strictly greater count than the leader at
- * the moment it reaches that count.
- */
-function foregroundMajorityAlongK<T extends BoxStatisticValue>(
-  frames: ArrayLike<number>[],
-  sourceWidth: number,
-  sourceOffset: Point3,
-  [width, height]: Point3,
-  target: BoxStatisticTarget<T>,
-  direct: DirectTarget | undefined,
-  [targetI, targetJ, targetK]: Point3
-): number {
-  const [first, second] = frames;
-
-  for (let j = 0; j < height; j++) {
-    const row = (sourceOffset[1] + j) * sourceWidth + sourceOffset[0];
-    const base = direct
-      ? directIndexOf(direct, targetI, targetJ + j, targetK)
-      : 0;
-
-    for (let i = 0; i < width; i++) {
-      const index = row + i;
-      let majority = 0;
-
-      if (frames.length === 1) {
-        majority = first[index];
-      } else if (frames.length === 2) {
-        // Two voxels: a non-zero first value leads, and a different second
-        // value only ties it.
-        majority = first[index] !== 0 ? first[index] : second[index];
-      } else {
-        let majorityCount = 0;
-
-        for (let m = 0; m < frames.length; m++) {
-          const label = frames[m][index];
-
-          if (label === 0) {
-            continue;
-          }
-
-          let count = 1;
-
-          for (let n = 0; n < m; n++) {
-            if (frames[n][index] === label) {
-              count++;
-            }
-          }
-
-          if (count > majorityCount) {
-            majorityCount = count;
-            majority = label;
-          }
-        }
-      }
-
-      if (direct) {
-        direct.scalars[base + i] = majority;
-      } else {
-        target.setAtIJK(targetI + i, targetJ + j, targetK, majority as T);
-      }
-    }
-  }
-
-  return width * height;
-}
-
-/**
  * Fast path: the foreground majority of each box, read from whole XY slices.
  *
  * A labelmap reduces with this statistic, and the voxel by voxel path costs one
  * `getAtIJK` for each voxel and one accumulator reset for each box: about 90
- * seconds of blocked main thread for a 512 x 512 x 2464 labelmap. The boxes
- * here are visited in the order of `valueOfBox`, k then j then i, and a label
- * takes the lead only with a strictly greater count, so the result is the one
- * of the accumulator. A box counts its labels in a short list, since a box
- * holds few distinct labels.
+ * seconds of blocked main thread for a 512 x 512 x 2464 labelmap. Each box
+ * takes {@link foregroundMajorityOfBox}, which gives the result of the
+ * accumulator.
  *
  * @returns written count, or `undefined` when this path does not apply: no
  * slice reader, several components, a float slice, or a slice smaller than the
@@ -525,19 +451,6 @@ function reduceForegroundMajorityBySlices<T extends BoxStatisticValue = number>(
       continue;
     }
 
-    if (factorI === 1 && factorJ === 1) {
-      written += foregroundMajorityAlongK(
-        frames,
-        sourceWidth,
-        sourceOffset,
-        dimensions,
-        target,
-        direct,
-        [targetI, targetJ, targetK + k]
-      );
-      continue;
-    }
-
     for (let j = 0; j < dimensions[1]; j++) {
       const firstJ = sourceOffset[1] + j * factorJ;
       const endJ = Math.min(firstJ + factorJ, sourceEnd[1]);
@@ -547,41 +460,16 @@ function reduceForegroundMajorityBySlices<T extends BoxStatisticValue = number>(
 
       for (let i = 0; i < dimensions[0]; i++) {
         const firstI = sourceOffset[0] + i * factorI;
-        const endI = Math.min(firstI + factorI, sourceEnd[0]);
-        let majority = 0;
-        let majorityCount = 0;
-
-        labels.length = 0;
-        counts.length = 0;
-
-        for (const frame of frames) {
-          for (let sourceJ = firstJ; sourceJ < endJ; sourceJ++) {
-            const row = sourceJ * sourceWidth;
-
-            for (let sourceI = firstI; sourceI < endI; sourceI++) {
-              const label = frame[row + sourceI];
-
-              if (label === 0) {
-                continue;
-              }
-
-              let slot = labels.indexOf(label);
-
-              if (slot === -1) {
-                slot = labels.length;
-                labels.push(label);
-                counts.push(0);
-              }
-
-              const count = ++counts[slot];
-
-              if (count > majorityCount) {
-                majorityCount = count;
-                majority = label;
-              }
-            }
-          }
-        }
+        const majority = foregroundMajorityOfBox(
+          frames,
+          sourceWidth,
+          firstI,
+          Math.min(firstI + factorI, sourceEnd[0]),
+          firstJ,
+          endJ,
+          labels,
+          counts
+        );
 
         if (direct) {
           direct.scalars[base + i] = majority;

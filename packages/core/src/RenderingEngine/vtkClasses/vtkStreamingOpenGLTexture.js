@@ -188,6 +188,54 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
   }
 
   /**
+   * Reads the frames of the volume that one reduced slice covers, in k order.
+   *
+   * The scalar data of the cached image is the frame itself, and reading it
+   * costs nothing. `getSliceData` of a volume voxel manager composes the slice
+   * one voxel at a time, which a profile showed as the cost of a fill, so it
+   * serves only as the fallback. A frame that has not arrived is left out.
+   *
+   * @returns the frames, or null when the volume has no slice reader or the
+   * slice lies past the end of the volume
+   */
+  function framesOfSlice(volume, factorK, slice) {
+    const [sourceWidth, sourceHeight, sourceDepth] = volume.dimensions;
+    const voxelManager = volume.voxelManager;
+    const firstK = slice * factorK;
+
+    if (!voxelManager?.getSliceData || firstK >= sourceDepth) {
+      return null;
+    }
+
+    const lastK = Math.min(firstK + factorK, sourceDepth);
+    const frameLength = sourceWidth * sourceHeight;
+    const imageIds = volume.imageIds;
+    const frames = [];
+
+    for (let k = firstK; k < lastK; k++) {
+      let frame = imageIds?.[k]
+        ? cache.getImage(imageIds[k])?.voxelManager?.getScalarData()
+        : undefined;
+
+      // A reduced image of a progressive load holds fewer voxels than the
+      // frame. `getSliceData` scales it to the frame, so it can still count.
+      if (!frame || frame.length < frameLength) {
+        try {
+          frame = voxelManager.getSliceData({ sliceIndex: k, slicePlane: 2 });
+        } catch {
+          frame = null;
+        }
+      }
+
+      if (frame && frame.length >= frameLength) {
+        frames.push(frame);
+      }
+    }
+
+    return frames;
+  }
+
+  /**
    * Fills one slice of this texture with the box average of the voxels of the
    * volume that the slice covers.
    *
@@ -201,53 +249,18 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
    */
   function fillSliceByBoxAverage(volume, grid, factors, slice, target) {
     const [width, height] = grid.dimensions;
-    const [sourceWidth, sourceHeight, sourceDepth] = volume.dimensions;
-    const voxelManager = volume.voxelManager;
-
-    if (!voxelManager?.getSliceData) {
-      return false;
-    }
-
+    const [sourceWidth, sourceHeight] = volume.dimensions;
     const [factorI, factorJ, factorK] = factors;
-    const firstK = slice * factorK;
-    const lastK = Math.min(firstK + factorK, sourceDepth);
+    const frames = framesOfSlice(volume, factorK, slice);
 
-    if (firstK >= sourceDepth) {
+    if (!frames?.length) {
       return false;
     }
 
     const accumulator = new Float64Array(width * height);
     const counts = new Float64Array(width * height);
-    let read = 0;
 
-    const imageIds = volume.imageIds;
-
-    for (let k = firstK; k < lastK; k++) {
-      // The scalar data of the cached image is the frame itself, and reading it
-      // costs nothing. `getSliceData` of a volume voxel manager composes the
-      // slice one voxel at a time, which a profile showed as the cost of this
-      // fill, so it serves only as the fallback.
-      let frame = imageIds?.[k]
-        ? cache.getImage(imageIds[k])?.voxelManager?.getScalarData()
-        : undefined;
-
-      // A reduced image of a progressive load holds fewer voxels than the
-      // frame. `getSliceData` scales it to the frame, so it can still count.
-      if (!frame || frame.length < sourceWidth * sourceHeight) {
-        try {
-          frame = voxelManager.getSliceData({ sliceIndex: k, slicePlane: 2 });
-        } catch {
-          frame = null;
-        }
-      }
-
-      if (!frame || frame.length < sourceWidth * sourceHeight) {
-        // The data of this frame has not arrived, so it contributes nothing.
-        continue;
-      }
-
-      read++;
-
+    for (const frame of frames) {
       for (let j = 0; j < sourceHeight; j++) {
         const targetRow = Math.min((j / factorJ) | 0, height - 1) * width;
         const sourceRow = j * sourceWidth;
@@ -260,10 +273,6 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
           counts[targetIndex] += 1;
         }
       }
-    }
-
-    if (!read) {
-      return false;
     }
 
     const values = target.getScalarData();
@@ -287,45 +296,11 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     target
   ) {
     const [width, height] = grid.dimensions;
-    const [sourceWidth, sourceHeight, sourceDepth] = volume.dimensions;
-    const voxelManager = volume.voxelManager;
-
-    if (!voxelManager?.getSliceData) {
-      return false;
-    }
-
+    const [sourceWidth, sourceHeight] = volume.dimensions;
     const [factorI, factorJ, factorK] = factors;
-    const firstK = slice * factorK;
-    const lastK = Math.min(firstK + factorK, sourceDepth);
+    const frames = framesOfSlice(volume, factorK, slice);
 
-    if (firstK >= sourceDepth) {
-      return false;
-    }
-
-    const frames = [];
-    const imageIds = volume.imageIds;
-
-    for (let k = firstK; k < lastK; k++) {
-      let frame = imageIds?.[k]
-        ? cache.getImage(imageIds[k])?.voxelManager?.getScalarData()
-        : undefined;
-
-      // A reduced image of a progressive load holds fewer voxels than the
-      // frame. `getSliceData` scales it to the frame, so it can still count.
-      if (!frame || frame.length < sourceWidth * sourceHeight) {
-        try {
-          frame = voxelManager.getSliceData({ sliceIndex: k, slicePlane: 2 });
-        } catch {
-          frame = null;
-        }
-      }
-
-      if (frame && frame.length >= sourceWidth * sourceHeight) {
-        frames.push(frame);
-      }
-    }
-
-    if (!frames.length) {
+    if (!frames?.length) {
       return false;
     }
 
