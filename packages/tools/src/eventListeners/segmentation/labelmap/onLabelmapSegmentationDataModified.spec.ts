@@ -87,4 +87,20 @@ describe('onLabelmapSegmentationDataModified', () => {
       expect.objectContaining({ voxelsUnchanged: true })
     );
   });
+
+  it('refreshes every slice when the first event after a stack edit is an edit', () => {
+    getViewportIdsMock.mockReturnValue(['stack-viewport']);
+    fire({ segmentationId: 'edited-segmentation', modifiedSlicesToUse: [10] });
+
+    // A mount that sends no event, then an edit of another slice.
+    getViewportIdsMock.mockReturnValue(['volume-viewport']);
+    fire({ segmentationId: 'edited-segmentation', modifiedSlicesToUse: [50] });
+
+    expect(performVolumeUpdateMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        modifiedSlicesToUse: [],
+        voxelsUnchanged: false,
+      })
+    );
+  });
 });

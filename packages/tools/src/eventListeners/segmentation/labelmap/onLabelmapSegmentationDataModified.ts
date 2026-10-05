@@ -87,20 +87,19 @@ const onLabelmapSegmentationDataModified = function (
   }
 
   if (hasVolumeViewport) {
-    const volumeIsCurrent =
-      voxelsUnchanged && !segmentationsWithStaleVolume.has(segmentationId);
-
-    segmentationsWithStaleVolume.delete(segmentationId);
+    // A stale volume missed edits on unknown slices, so it refreshes in full.
+    const volumeIsStale = segmentationsWithStaleVolume.delete(segmentationId);
 
     // For combined stack and volume scenarios in the rendering engine, updating only affected
     // slices is not ideal. Stack indices (e.g., 0 for just one image) don't
     // correspond to image indices in the volume. In this case, we update all slices.
     // However, for volume-only scenarios, we update only affected slices.
     performVolumeLabelmapUpdate({
-      modifiedSlicesToUse: hasBothStackAndVolume ? [] : modifiedSlicesToUse,
+      modifiedSlicesToUse:
+        hasBothStackAndVolume || volumeIsStale ? [] : modifiedSlicesToUse,
       representationData,
       type: SegmentationRepresentations.Labelmap,
-      voxelsUnchanged: volumeIsCurrent,
+      voxelsUnchanged: Boolean(voxelsUnchanged) && !volumeIsStale,
     });
   }
 
