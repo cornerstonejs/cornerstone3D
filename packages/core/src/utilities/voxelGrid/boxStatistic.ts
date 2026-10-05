@@ -296,6 +296,56 @@ function hasSeveralComponents(source: object) {
   );
 }
 
+/** Reads one k slice of a source, or gives nothing. */
+type SliceReader = (sliceIndex: number) => ArrayLike<number> | undefined;
+
+/**
+ * The slice reader of a fast path, or nothing when the source has none.
+ *
+ * `_getSliceView` gives the scalar data of the cached image itself, so a read
+ * copies nothing. It gives nothing for an image that needs scaling, and
+ * `_getSliceData` then scales a copy. `_getSliceData` comes before the public
+ * `getSliceData`, because a missing image then gives nothing instead of a
+ * plane that `getSliceData` composes voxel by voxel.
+ */
+function sliceReaderOf(
+  source: object,
+  { allowPublic }: { allowPublic: boolean }
+): SliceReader | undefined {
+  const view = (
+    source as {
+      _getSliceView?: (sliceIndex: number) => ArrayLike<number> | undefined;
+    }
+  )._getSliceView?.bind(source);
+  const direct = (
+    source as {
+      _getSliceData?: (args: {
+        sliceIndex: number;
+        slicePlane: number;
+      }) => ArrayLike<number> | undefined;
+    }
+  )._getSliceData?.bind(source);
+  const fallback =
+    direct ??
+    (allowPublic
+      ? (
+          source as {
+            getSliceData?: (args: {
+              sliceIndex: number;
+              slicePlane: number;
+            }) => ArrayLike<number> | undefined;
+          }
+        ).getSliceData?.bind(source)
+      : undefined);
+
+  if (!fallback) {
+    return undefined;
+  }
+
+  return (sliceIndex) =>
+    view?.(sliceIndex) ?? fallback({ sliceIndex, slicePlane: 2 });
+}
+
 /** The array of a target, which the slice fast paths set directly. */
 type DirectTarget = {
   scalars: { [index: number]: number };
@@ -426,16 +476,9 @@ function reduceForegroundMajorityBySlices<T extends BoxStatisticValue = number>(
   reduction: VoxelGridReduction,
   target: BoxStatisticTarget<T>
 ): number | undefined {
-  const getDirectSlice = (
-    source as {
-      _getSliceData?: (args: {
-        sliceIndex: number;
-        slicePlane: number;
-      }) => ArrayLike<number> | undefined;
-    }
-  )._getSliceData?.bind(source);
+  const readSlice = sliceReaderOf(source, { allowPublic: false });
 
-  if (!getDirectSlice || hasSeveralComponents(source)) {
+  if (!readSlice || hasSeveralComponents(source)) {
     return undefined;
   }
 
@@ -460,7 +503,7 @@ function reduceForegroundMajorityBySlices<T extends BoxStatisticValue = number>(
     frames.length = 0;
 
     for (let sourceK = firstK; sourceK < endK; sourceK++) {
-      const frame = getDirectSlice({ sliceIndex: sourceK, slicePlane: 2 });
+      const frame = readSlice(sourceK);
 
       if (!frame) {
         continue;
@@ -577,7 +620,9 @@ function reduceAverageAlongKBySlices<T extends BoxStatisticValue = number>(
   const resolved = resolveReduction(source, reduction);
   const [factorI, factorJ, factorK] = resolved.factors;
 
-  if (factorI !== 1 || factorJ !== 1 || factorK < 1) {
+  // A factor of 1 on the k axis reduces nothing, and the generic path copies
+  // the voxels.
+  if (factorI !== 1 || factorJ !== 1 || factorK <= 1) {
     return undefined;
   }
 
@@ -593,16 +638,7 @@ function reduceAverageAlongKBySlices<T extends BoxStatisticValue = number>(
     return undefined;
   }
 
-  // Prefer `_getSliceData` so a missing image returns undefined instead of the
-  // public `getSliceData` fallback that composes the plane voxel by voxel.
-  const getDirectSlice = (
-    source as {
-      _getSliceData?: (args: {
-        sliceIndex: number;
-        slicePlane: number;
-      }) => ArrayLike<number> | undefined;
-    }
-  )._getSliceData?.bind(source);
+  const readSlice = sliceReaderOf(source, { allowPublic: true });
 
   let written = 0;
   const direct = directTargetOf(target);
@@ -620,9 +656,7 @@ function reduceAverageAlongKBySlices<T extends BoxStatisticValue = number>(
       let frame: ArrayLike<number> | undefined;
 
       try {
-        frame = getDirectSlice
-          ? getDirectSlice({ sliceIndex: k, slicePlane: 2 })
-          : source.getSliceData!({ sliceIndex: k, slicePlane: 2 });
+        frame = readSlice(k);
       } catch {
         frame = undefined;
       }

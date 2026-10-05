@@ -131,6 +131,11 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
     sliceIndex: number;
     slicePlane: number;
   }) => PixelDataTypedArray | undefined;
+  /**
+   * The values of one k slice as the voxel manager already holds them, with no
+   * copy, or nothing when it does not hold them together. Read only.
+   */
+  _getSliceView?: (sliceIndex: number) => PixelDataTypedArray | undefined;
 
   /**
    * Gets the ID of the voxel manager
@@ -1466,6 +1471,21 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
       }
 
       return slice;
+    };
+
+    // The scalar data of the cached image of one k slice, with no copy. A
+    // caller must not write to it. It gives nothing when the image has not
+    // arrived, when the image needs scaling to the slice, or when a voxel holds
+    // more than one value, and the caller then takes `_getSliceData`.
+    voxelManager._getSliceView = (sliceIndex: number) => {
+      if (numberOfComponents !== 1) {
+        return undefined;
+      }
+
+      const scalarData = resolveSliceVoxelManager(sliceIndex)?.scalarData;
+
+      // The resolution states the scaling of the slice, so read it after.
+      return sliceScalings[sliceIndex] ? undefined : scalarData;
     };
 
     voxelManager.getMiddleSliceData = () => {
