@@ -46,12 +46,13 @@ export function performVolumeLabelmapUpdate({
       slicesToUpdate = [...Array(numSlices).keys()];
     }
 
-    // The volume holds a pool of textures, so one slice is dirty in every
-    // texture whose grid covers that slice, and `markFrameDirty` fans the mark
-    // out to each of them.
-    segmentationVolume.markFrameDirty &&
+    // An edit changes the voxels of a slice and not their quality. The volume
+    // holds a pool of textures, so one slice is dirty in every texture whose
+    // grid covers that slice, and `markFrameModified` fans the mark out to
+    // each of them and redoes the derived boxes of the slice.
+    segmentationVolume.markFrameModified &&
       slicesToUpdate.forEach((i) => {
-        segmentationVolume.markFrameDirty(i);
+        segmentationVolume.markFrameModified(i);
       });
 
     voxelManager?.invalidateCache?.();

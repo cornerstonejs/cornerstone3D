@@ -206,6 +206,21 @@ volume that has loaded nothing costs nothing, and a derivation over a volume tha
 of its frames reduces that half. A source that states no list holds every voxel, and the derivation
 then reads the whole grid.
 
+**A large derivation runs in batches.** The call reduces the first 16 slices of the derived grid at
+once, and each later batch of 16 slices in idle time. Until the last batch is done, the record of
+the result covers the reduced slices and no others. `representation.derivation` resolves when the
+derivation is complete, and `dispose` stops the batches that still run:
+
+```js
+const reduced = composite.createRepresentation({ factors: [1, 1, 2] });
+
+await reduced.derivation;
+```
+
+**A grid needs no representation to have a record.** `getGridQuality(grid)` answers for a grid that
+no representation holds with the live record of the source, mapped into that grid. A texture that
+fills by box average straight from the source reads its record this way.
+
 **The origin carries the sample offset.** A decimation reports the corner voxel of a box, and a box
 average reports the centre. The two lie apart by `(factor - 1) / 2` source voxels on each axis, and
 `deriveBoxAverageGrid` puts that distance in the origin of the new grid. Every consumer that

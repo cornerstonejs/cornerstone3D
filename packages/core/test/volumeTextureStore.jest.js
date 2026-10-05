@@ -162,6 +162,28 @@ describe('the store counts one global budget', () => {
     expect(store.getSet('volume-1', 'b')).toBeDefined();
   });
 
+  it('never evicts a pinned set under a budget, but its volume takes it', () => {
+    const { store, options } = makeStore();
+    const oneSet = 64 * 64 * 16 * 4;
+
+    store.setBudget(2 * oneSet);
+    store.provision(options({ name: 'a' }));
+    store.provision(options({ name: 'b' }));
+    // A legacy viewport draws `a` and holds no claim, so `a` is pinned. A
+    // second pin changes nothing.
+    store.pin('volume-1', 'a');
+    store.pin('volume-1', 'a');
+
+    expect(store.provision(options({ name: 'c' }))).toBeDefined();
+    expect(store.getSet('volume-1', 'a')).toBeDefined();
+    expect(store.getSet('volume-1', 'b')).toBeUndefined();
+    expect(store.getSet('volume-1', 'a').references).toBe(0);
+
+    store.evictVolume('volume-1');
+
+    expect(store.getSet('volume-1', 'a')).toBeUndefined();
+  });
+
   it('evicts a backstop set last, so a fill always finds a source', () => {
     const { store, options } = makeStore();
     const oneSet = 64 * 64 * 16 * 4;

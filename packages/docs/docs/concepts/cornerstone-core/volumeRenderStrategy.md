@@ -91,48 +91,66 @@ already exists.
 ## How the viewport builds the strategies
 
 **The provider runs when the render path adds its actor, and it never runs on the frame path.** It
-does the two expensive things: it derives the voxels that a strategy needs, and it allocates the
-textures.
+does the expensive thing: it allocates the textures.
 
 The default provider reads the capability profile and answers in one of two ways:
 
 - The device can hold the full-resolution grid, so the provider builds the **full-resolution
   strategy** and provisions the set `full-resolution/full-extent`.
 - The device cannot, so the provider computes the **size of the box on each axis** and provisions a
-  reduced set whose name carries those factors. It also derives the representation of that grid,
-  which holds the box average that the texture reads.
+  reduced set whose name carries those factors.
 
 The reduction is per axis and it is not uniform. An edge of 2049 voxels exceeds a limit of 2048 on
 one axis and by one voxel, so one axis reduces and the other two do not.
 
-**The textures hold no data at this point, and neither does the derived representation.** Almost
-none of the images of the volume have arrived when a viewport adds its actor, so the derivation
-reduces almost nothing. The next section states how it catches up.
+**The provider derives no representation.** A reduced texture fills each slice by box average
+straight from the frames of the volume, so it needs no reduced copy of the voxels in CPU memory. A
+derivation of a volume that holds all of its data would otherwise reduce every voxel during the
+provision, which takes many seconds on the main thread for 512 × 512 × 2464 voxels.
+`ImageVolume.getGridQuality` gives the record of such a texture from the deliveries of the volume.
 
-The loader fills the voxel managers as the data arrives, `ImageVolume` marks every texture whose
-grid covers the new region, and each render refills the marked slices. That is the path that the
-code already used, and a strategy does not change it.
+**The textures hold no data at this point.** Almost none of the images of the volume have arrived
+when a viewport adds its actor. The loader fills the voxel managers as the data arrives,
+`ImageVolume` marks every texture whose grid covers the new region, and each render refills the
+marked slices. That is the path that the code already used, and a strategy does not change it.
+
+## How the volume takes a delivery
+
+`ImageVolume` states three separate things, and each caller states only what it knows:
+
+| Member                   | What it does                                                                                                                    | Who calls it                                                      |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| `markFrameTexturesDirty` | Forgets the image that the voxel manager last resolved for the frame, and marks the frame in every texture whose grid covers it | every caller that changes the image of a frame                    |
+| `recordFrameDelivery`    | Records the quality of the frame, and redoes the boxes of every derived representation that the frame touches                   | a loader, which knows the quality of the data that it delivered   |
+| `markFrameModified`      | Redoes the derived boxes of the frame whatever the record states, and marks the textures. It records no quality                 | an edit of the voxels at an unchanged quality, such as a labelmap |
+
+**Only a caller that knows the quality records it.** A lower record never replaces a higher one, so a
+record of `FULL_RESOLUTION` for a thumbnail would stay for ever. The cache adds an image before the
+loader calls `successCallback`, so a listener of the cache only marks the textures of an image whose
+quality is not known yet, and `successCallback` records the delivery right after it.
+
+`BaseStreamingImageVolume.invalidateVolume` records nothing. Every voxel then holds other data, such
+as the next dimension group of a dynamic volume, so the volume discards its composite and builds it
+again from the deliveries of the data that the grid now shows, and it marks every texture.
 
 ## How a derived representation follows the load
 
 **A derivation is not a single event.** `createRepresentation` reduces the data that the composite
-holds at the moment of the call, and a streaming loader delivers its frames after that moment. A
-derivation that ran once would hold the empty result for ever.
+holds at the moment of the call, and a streaming loader delivers its frames after that moment.
+`recordFrameDelivery` therefore redoes the boxes of every derived representation that a frame
+touches. It redoes **those boxes only**: a volume of 2464 frames re-derives far too slowly to run in
+full on each frame.
 
-`ImageVolume.markFrameDirty` therefore does three things when a frame arrives, and a loader calls
-it for every delivery:
+A source that states which regions it has delivered is reduced over those regions and no others, so
+a derivation over a volume that has loaded nothing costs nothing, and a derivation over a volume
+that has loaded half of its frames reduces that half.
 
-1. It tells the voxel manager to forget the image that it last resolved for the frame. A
-   progressive loader puts a replicate of a nearby frame in the cache under the image id of this
-   frame, and the image of the frame itself arrives later.
-2. It hands the delivery to the composite, which records the quality of the frame and redoes the
-   boxes of every derived representation that the frame touches. It redoes **those boxes only**: a
-   volume of 2464 frames re-derives far too slowly to run in full on each frame.
-3. It marks the frame in every texture of every set whose grid covers it.
-
-`createRepresentation` reads the same record. A source that states which regions it has delivered
-is reduced over those regions and no others, so a derivation over a volume that has loaded nothing
-costs nothing, and a derivation over a volume that has loaded half of its frames reduces that half.
+**A large derivation runs in batches.** `createRepresentation` reduces the first 16 slices of the
+derived grid at once, and each later batch of 16 slices in idle time. While the batches run, the
+record of the representation covers the slices that they reduced and no others, so the record never
+states a voxel that the derivation has not written. Each batch tells the volume which region it
+wrote, and the volume marks its textures there. `representation.derivation` resolves when the last
+batch is done.
 
 P31.3 states the rule for the values. Before the full-resolution data of a box arrives, the box
 average is an approximation over the frames that have arrived, and the code **replaces** that value
@@ -268,8 +286,10 @@ anything mutable that it holds.
 **VRS-C-7.** The name of a texture set derives from the strategy. Two viewports that choose one
 strategy share one set, and they do not allocate two.
 
-**VRS-C-8.** The set is the unit of eviction. A set that a render path holds is never evicted, and a
-backstop set is evicted last, so a fill always finds a source.
+**VRS-C-8.** The set is the unit of eviction. A budget never evicts a set that a viewport draws: a
+render path claims the set that it draws, and a legacy viewport, which has no point at which it
+could release a claim, draws a pinned set that leaves with its volume. A backstop set is evicted
+last, so a fill always finds a source.
 
 **VRS-C-9.** The identity of a texture is stable and is not its grid. The grid is state of that
 texture, which is what lets a basis point move.
@@ -301,6 +321,15 @@ one member answers directly.
 texture.
 
 **VRS-I-8.** The volume slice render path reads the `base` binding alone.
+
+**VRS-I-9.** The default provider derives no representation. A reduced texture fills by box
+average from the frames of the volume, and its record comes from the deliveries of the volume.
+
+**VRS-I-10.** A derivation reduces 16 slices of the derived grid in one batch. The first batch runs
+at once, and each later batch runs in an idle callback.
+
+**VRS-I-11.** A legacy viewport pins its set instead of claiming it. A claim needs a release at every
+removal of an actor, and a legacy viewport has many such paths.
 
 ## What a new render type defines
 

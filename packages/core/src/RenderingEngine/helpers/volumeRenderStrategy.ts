@@ -173,6 +173,8 @@ class FullExtentTextureStrategy implements IVolumeRenderStrategy {
   private readonly grid: VoxelGrid;
   private readonly statistic: VoxelStatistic;
   private active = false;
+  /** The set that the claim of this strategy holds. */
+  private claimedSet: unknown;
 
   constructor({
     name,
@@ -213,11 +215,16 @@ class FullExtentTextureStrategy implements IVolumeRenderStrategy {
   }
 
   public activate(): void {
-    if (this.active) {
+    const set = this.volume.getTextureSet(this.name);
+
+    // The store can evict the set and a provision can rebuild it. The claim
+    // went with the old set, so an active strategy claims the new one.
+    if (this.active && this.claimedSet === set) {
       return;
     }
 
-    this.volume.claimTextureSet(this.name);
+    this.claimedSet =
+      set && this.volume.claimTextureSet(this.name) ? set : undefined;
     this.active = true;
   }
 
@@ -226,13 +233,23 @@ class FullExtentTextureStrategy implements IVolumeRenderStrategy {
       return;
     }
 
-    this.volume.releaseTextureSet(this.name);
+    if (
+      this.claimedSet &&
+      this.claimedSet === this.volume.getTextureSet(this.name)
+    ) {
+      this.volume.releaseTextureSet(this.name);
+    }
+
+    this.claimedSet = undefined;
     this.active = false;
   }
 
   public update(): void {
-    // Nothing of this strategy moves. The volume marks the slices that new data
-    // changed, and the texture refills them at the next render.
+    // The volume marks the slices that new data changed, and the texture
+    // refills them at the next render. Only the claim can need renewal.
+    if (this.active) {
+      this.activate();
+    }
   }
 }
 
@@ -320,24 +337,15 @@ export function provisionReducedResolutionStrategy({
   const statistic = volume.reductionStatistic ?? VoxelStatistics.Average;
   const grid = deriveBoxAverageGrid(fullResolutionGrid, { factors });
   const name = reducedStrategyName(factors, statistic);
-  const composite = volume.compositeVoxelManager;
 
-  // The derivation runs here, although most of the images of the volume have
-  // not arrived yet, and it therefore reduces almost no data. `markFrameDirty`
-  // redoes the boxes of this representation as each frame arrives, so the
-  // representation follows the load.
-  //
-  // Without a derived representation the texture fills through `fillGrid` /
-  // `fillSliceByBoxAverage`, which is wrong for labelmaps (average invents
-  // labels) and slower for intensity (nearest neighbour of the composite).
-  if (!composite.getRepresentation(grid, statistic)) {
-    composite.createRepresentation({
-      factors,
-      sourceGrid: fullResolutionGrid,
-      statistic,
-    });
-  }
-
+  // No derived representation is built here. The texture of this grid fills
+  // each slice by the statistic of the volume straight from its frames: the
+  // box average that P31.2 asks for, or the foreground majority of a labelmap,
+  // at no cost in CPU memory. `ImageVolume.getGridQuality` gives the record of
+  // that texture from the deliveries of the volume. A derivation of a volume
+  // that holds all of its data would otherwise reduce every voxel during this
+  // provision. A CPU reader that needs the reduced voxels calls
+  // `createRepresentation` itself.
   const set = volume.provisionTextureSet({
     name,
     grids: [grid],

@@ -176,7 +176,7 @@ import type GeometryLoaderFn from './GeometryLoaderFn';
 import type { RenderingEngineModeType } from './RenderingEngineMode';
 import type { VtkOffscreenMultiRenderWindow } from './VtkOffscreenMultiRenderWindow';
 import type { ViewportDataReference } from '../RenderingEngine/GenericViewport';
-import type { ResetCameraOptions } from './ICamera';
+import type { ResetCameraOptions, SetAspectRatioOptions } from './ICamera';
 import type {
   ViewportType,
   ViewportTypeConstants,
@@ -219,6 +219,7 @@ export type {
   IBaseStreamingImageVolume,
   ICamera,
   ResetCameraOptions,
+  SetAspectRatioOptions,
   IStackViewport,
   IVideoViewport,
   IECGViewport,

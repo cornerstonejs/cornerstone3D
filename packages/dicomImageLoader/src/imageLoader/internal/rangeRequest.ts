@@ -5,7 +5,11 @@ import type {
   LoaderXhrRequestError,
   LoaderXhrRequestPromise,
 } from '../../types';
-import metaDataManager from '../wadors/metaDataManager';
+import getRetrieveValue from './getRetrieveValue';
+import {
+  DEFAULT_CHUNK_SIZE,
+  DEFAULT_INITIAL_CHUNK_SIZE,
+} from './retrieveDefaults';
 import extractMultipart from '../wadors/extractMultipart';
 import { getImageQualityStatus } from '../wadors/getImageQualityStatus';
 import type { CornerstoneWadoRsLoaderOptions } from '../wadors/loadImage';
@@ -48,8 +52,12 @@ export default function rangeRequest(
     options;
   const chunkSize =
     streamingData.chunkSize ||
-    getValue(imageId, retrieveOptions, 'chunkSize') ||
-    65536;
+    getRetrieveValue<number>(imageId, retrieveOptions, 'chunkSize') ||
+    DEFAULT_CHUNK_SIZE;
+  const initialChunkSize =
+    streamingData.initialChunkSize ||
+    getRetrieveValue<number>(imageId, retrieveOptions, 'initialChunkSize') ||
+    DEFAULT_INITIAL_CHUNK_SIZE;
 
   const errorInterceptor = (err) => {
     if (typeof globalOptions.errorInterceptor === 'function') {
@@ -83,6 +91,7 @@ export default function rangeRequest(
     try {
       if (!streamingData.encodedData) {
         streamingData.chunkSize = chunkSize;
+        streamingData.initialChunkSize = initialChunkSize;
         streamingData.rangesFetched = 0;
       }
       const byteRange = getByteRange(streamingData, retrieveOptions);
@@ -181,20 +190,33 @@ async function fetchRangeAndAppend(
   return streamingData;
 }
 
-function getValue(imageId: string, src, attr: string) {
-  const value = src[attr];
-  if (typeof value !== 'function') {
-    return value;
-  }
-  const metaData = metaDataManager.get(imageId);
-  return value(metaData, imageId);
+/**
+ * End offset, exclusive, of the range identified by rangeIndex.
+ *
+ * Range 0 covers the initial chunk and every range after it adds a full
+ * chunkSize, so the boundaries are 128k, 256k, 384k ... on the defaults. The
+ * two sizes are separate options because the first range is buying time to
+ * first image and the rest are buying refinement, even where, as now, the
+ * defaults give them the same value.
+ */
+function rangeEndOffset(
+  rangeIndex: number,
+  initialChunkSize: number,
+  chunkSize: number
+) {
+  return initialChunkSize + rangeIndex * chunkSize;
 }
 
 function getByteRange(
   streamingData,
   retrieveOptions: RangeRetrieveOptions
 ): [number, number | ''] {
-  const { totalBytes, encodedData, chunkSize = 65536 } = streamingData;
+  const {
+    totalBytes,
+    encodedData,
+    chunkSize = DEFAULT_CHUNK_SIZE,
+    initialChunkSize = DEFAULT_INITIAL_CHUNK_SIZE,
+  } = streamingData;
   const { rangeIndex = 0 } = retrieveOptions;
   if (rangeIndex === -1 && (!totalBytes || !encodedData)) {
     return [0, ''];
@@ -204,5 +226,8 @@ function getByteRange(
   }
   // Note the byte range is inclusive at both ends and zero based,
   // so the byteLength is the next index to fetch.
-  return [encodedData?.byteLength || 0, chunkSize * (rangeIndex + 1) - 1];
+  return [
+    encodedData?.byteLength || 0,
+    rangeEndOffset(rangeIndex, initialChunkSize, chunkSize) - 1,
+  ];
 }

@@ -1322,3 +1322,86 @@ describe('a derivation follows the load', () => {
     expect(derived.voxelManager.getAtIJK(0, 0, 0)).toBe(0);
   });
 });
+
+describe('CompositeVoxelManager derives a large grid in batches', () => {
+  function makeFullComposite(depth, onDerivedRegionChanged) {
+    const grid = makeGrid([4, 4, depth]);
+
+    return new CompositeVoxelManager({
+      primary: makeFilled(grid.dimensions, 5),
+      grid,
+      quality: ImageQualityStatus.FULL_RESOLUTION,
+      onDerivedRegionChanged,
+    });
+  }
+
+  it('reduces the first batch at once and the rest in idle time', async () => {
+    const changed = [];
+    // 64 source slices reduce by 2 to 32 derived slices, which is two batches
+    // of 16.
+    const composite = makeFullComposite(64, (region) => changed.push(region));
+    const derived = composite.createRepresentation({ factors: [1, 1, 2] });
+
+    expect(derived.voxelManager.getAtIJK(0, 0, 15)).toBe(5);
+    expect(derived.voxelManager.getAtIJK(0, 0, 16)).toBe(0);
+
+    // The record covers the reduced slices and no others.
+    const partial = composite.getRegionQuality(derived);
+
+    expect(partial.missing).toBe(4 * 4 * 16);
+
+    await derived.derivation;
+
+    expect(derived.voxelManager.getAtIJK(0, 0, 31)).toBe(5);
+    expect(composite.getRegionQuality(derived).missing).toBe(0);
+    // The second batch states the source slices that it wrote.
+    expect(changed).toEqual([
+      [
+        [0, 3],
+        [0, 3],
+        [32, 63],
+      ],
+    ]);
+  });
+
+  it('stops when the composite is disposed', async () => {
+    const composite = makeFullComposite(64);
+    const derived = composite.createRepresentation({ factors: [1, 1, 2] });
+
+    composite.dispose();
+    await derived.derivation;
+
+    expect(derived.voxelManager.getAtIJK(0, 0, 16)).toBe(0);
+  });
+
+  it('gives the record of a grid that no representation holds from the live deliveries', () => {
+    const grid = makeGrid([4, 4, 8]);
+    const composite = new CompositeVoxelManager({
+      primary: makeFilled(grid.dimensions, 5),
+      grid,
+      delivered: [],
+    });
+    const reduced = deriveBoxAverageGrid(grid, { factors: [2, 2, 2] });
+
+    expect(composite.getGridQuality(reduced).missing).toBe(2 * 2 * 4);
+
+    // Frames 0 and 1 fill the first box along k, which is a quarter of the
+    // reduced grid.
+    composite.acceptData({
+      grid,
+      frameIndex: 0,
+      quality: ImageQualityStatus.FULL_RESOLUTION,
+    });
+    composite.acceptData({
+      grid,
+      frameIndex: 1,
+      quality: ImageQualityStatus.FULL_RESOLUTION,
+    });
+
+    const record = composite.getGridQuality(reduced);
+
+    expect(record.reduction).toBe(VoxelReductions.BoxAverage);
+    expect(record.missing).toBe(2 * 2 * 3);
+    expect(composite.getRepresentations().length).toBe(1);
+  });
+});

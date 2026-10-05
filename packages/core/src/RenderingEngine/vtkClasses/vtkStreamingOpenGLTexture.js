@@ -110,9 +110,6 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
       return;
     }
 
-    // Frames marked earlier in this turn wait for a microtask; upload them now.
-    volume.flushPendingDirtyFrames?.();
-
     model._openGLRenderWindow.activateTexture(publicAPI);
     publicAPI.createTexture();
     publicAPI.bind();
@@ -234,7 +231,9 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
         ? cache.getImage(imageIds[k])?.voxelManager?.getScalarData()
         : undefined;
 
-      if (!frame) {
+      // A reduced image of a progressive load holds fewer voxels than the
+      // frame. `getSliceData` scales it to the frame, so it can still count.
+      if (!frame || frame.length < sourceWidth * sourceHeight) {
         try {
           frame = voxelManager.getSliceData({ sliceIndex: k, slicePlane: 2 });
         } catch {
@@ -311,7 +310,9 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
         ? cache.getImage(imageIds[k])?.voxelManager?.getScalarData()
         : undefined;
 
-      if (!frame) {
+      // A reduced image of a progressive load holds fewer voxels than the
+      // frame. `getSliceData` scales it to the frame, so it can still count.
+      if (!frame || frame.length < sourceWidth * sourceHeight) {
         try {
           frame = voxelManager.getSliceData({ sliceIndex: k, slicePlane: 2 });
         } catch {
@@ -359,24 +360,53 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
   }
 
   /**
-   * The voxels of the representation that the composite holds at this exact
-   * grid, when the composite holds one and it keeps them in one array.
+   * Reads one slice of the representation that the composite holds at this
+   * exact grid.
    *
-   * A strategy derives that representation, and `ImageVolume.markFrameDirty`
-   * redoes its boxes as each frame arrives, so the values follow the load.
+   * A CPU reader derives that representation, and
+   * `ImageVolume.recordFrameDelivery` redoes its boxes as each frame arrives, so
+   * the values follow the load. The values hold the statistic that the render
+   * path asks for.
    *
-   * @returns nothing when no such representation exists, and the caller then
-   * computes the values itself
+   * THE IMAGE CACHE HOLDS THOSE VOXELS. One image holds one slice of the
+   * reduced grid, exactly as one image holds one frame of the volume, so this
+   * reads the same way that the full-resolution path reads a frame and it
+   * copies nothing. A representation that keeps an array of its own, which a
+   * composite without the cache builds, gives a view of that array instead.
+   *
+   * @returns a function that gives the voxels of one slice, or nothing when the
+   * composite holds no such representation, and the caller then computes the
+   * values itself
    */
-  function derivedVoxelsOf(composite, grid, statistic) {
+  function derivedSliceReaderOf(composite, grid, statistic) {
     const representation = composite.getRepresentation(
       grid,
       statistic ?? VoxelStatistics.Average
     );
     const [width, height, depth] = grid.dimensions;
-    const voxels = representation?.voxelManager?.getWritableScalarData?.();
+    const frameLength = width * height;
 
-    return voxels?.length === width * height * depth ? voxels : null;
+    if (!representation) {
+      return null;
+    }
+
+    const { imageIds } = representation;
+
+    if (imageIds?.length === depth) {
+      // A slice that the cache has evicted gives nothing, and the caller then
+      // computes that one slice. The other slices still read the cache.
+      return (slice) =>
+        cache.getImage(imageIds[slice])?.voxelManager?.getScalarData();
+    }
+
+    const voxels = representation.voxelManager?.getWritableScalarData?.();
+
+    if (voxels?.length !== frameLength * depth) {
+      return null;
+    }
+
+    return (slice) =>
+      voxels.subarray(slice * frameLength, (slice + 1) * frameLength);
   }
 
   function updateTextureFromComposite(volume) {
@@ -391,8 +421,11 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     const composite = volume.compositeVoxelManager;
     const gl = model.context;
     const statistic = volume.reductionStatistic ?? VoxelStatistics.Average;
-    const derived = derivedVoxelsOf(composite, grid, statistic);
-    const factors = derived ? null : boxFactorsOf(volume, grid);
+    const derivedSliceOf = derivedSliceReaderOf(composite, grid, statistic);
+    // The factors serve the slices that the composite cannot give, so they are
+    // computed even when a derived representation exists: the image cache can
+    // evict one reduced slice, and the fill of that one slice falls back.
+    const factors = boxFactorsOf(volume, grid);
     // One slice of this grid. A fill of the whole grid would read every voxel
     // of the volume on every refill, and a delivery changes one slice of it.
     const slab = VoxelManager.createScalarVolumeVoxelManager({
@@ -406,13 +439,9 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
         continue;
       }
 
-      let data;
+      let data = derivedSliceOf?.(slice);
 
-      if (derived) {
-        // The composite holds this slice already. A view costs nothing, and
-        // the upload below reads it.
-        data = derived.subarray(slice * frameLength, (slice + 1) * frameLength);
-      } else {
+      if (!data) {
         // `fillGrid` leaves a voxel untouched where the composite holds no
         // value, and this slab serves every slice, so a voxel that one slice
         // does not fill would keep the value that an earlier slice wrote.
@@ -528,47 +557,73 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
   function updateTextureImagesUsingVoxelManager() {
     const volume = cache.getVolume(model.volumeId);
     const imageIds = volume.imageIds;
-
     for (let i = 0; i < model.updatedFrames.length; i++) {
-      if (!model.updatedFrames[i]) {
-        continue;
+      if (model.updatedFrames[i]) {
+        // find the updated frames
+        const image = cache.getImage(imageIds[i]);
+        if (!image) {
+          continue;
+        }
+
+        let data = image.voxelManager.getScalarData();
+        const gl = model.context;
+
+        // A progressive loader can cache a reduced image, which holds fewer
+        // voxels than a slice of the texture. The voxel manager of the volume
+        // scales that image to the slice.
+        if (
+          data.length !==
+          model.width * model.height * (model.components || 1)
+        ) {
+          try {
+            data = volume.voxelManager.getSliceData({
+              sliceIndex: i,
+              slicePlane: 2,
+            });
+          } catch {
+            data = null;
+          }
+
+          if (!data) {
+            continue;
+          }
+        }
+
+        if (volume.dataType !== data.constructor.name) {
+          data = convertDataType(data, volume.dataType);
+        }
+
+        const [pixData] = publicAPI.updateArrayDataTypeForGL(volume.dataType, [
+          data,
+        ]);
+
+        // Bind the texture
+        publicAPI.bind();
+
+        // Calculate the offset within the 3D texture
+        const zOffset = i;
+
+        // Update the texture sub-image
+        // Todo: need to check other systems if it can handle it
+        gl.texSubImage3D(
+          model.target, // target
+          0, // level
+          0, // xoffset
+          0, // yoffset
+          zOffset, // zoffset
+          model.width, // width
+          model.height, // height
+          1, // depth (1 slice)
+          model.format, // format
+          model.openGLDataType, // type
+          pixData // data
+        );
+
+        // Unbind the texture
+        publicAPI.deactivate();
+        // Reset the updated flag
+        model.updatedFrames[i] = null;
       }
-
-      const image = cache.getImage(imageIds[i]);
-      if (!image) {
-        continue;
-      }
-
-      let data = image.voxelManager.getScalarData();
-      const gl = model.context;
-
-      if (volume.dataType !== data.constructor.name) {
-        data = convertDataType(data, volume.dataType);
-      }
-
-      const [pixData] = publicAPI.updateArrayDataTypeForGL(volume.dataType, [
-        data,
-      ]);
-
-      publicAPI.bind();
-
-      // Todo: need to check other systems if it can handle it
-      gl.texSubImage3D(
-        model.target, // target
-        0, // level
-        0, // xoffset
-        0, // yoffset
-        i, // zoffset
-        model.width, // width
-        model.height, // height
-        1, // depth (1 slice)
-        model.format, // format
-        model.openGLDataType, // type
-        pixData // data
-      );
-
-      publicAPI.deactivate();
-      model.updatedFrames[i] = null;
     }
 
     if (model.generateMipmap) {
@@ -615,15 +670,20 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
         data,
       ]);
 
+      // Bind the texture
       publicAPI.bind();
 
+      // Calculate the offset within the 3D texture
+      let zOffset = i;
+
+      // Update the texture sub-image
       // Todo: need to check other systems if it can handle it
       gl.texSubImage3D(
         model.target, // target
         0, // level
         0, // xoffset
         0, // yoffset
-        i, // zoffset
+        zOffset, // zoffset
         model.width, // width
         model.height, // height
         1, // depth (1 slice)
@@ -632,7 +692,9 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
         pixData // data
       );
 
+      // Unbind the texture
       publicAPI.deactivate();
+      // Reset the updated flag
     }
 
     if (model.generateMipmap) {

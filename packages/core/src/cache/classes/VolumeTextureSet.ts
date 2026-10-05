@@ -275,6 +275,12 @@ export class VolumeTextureSet<TextureType = unknown> {
   public readonly backstop: boolean;
   /** The number of consumers that hold this set. A set that nobody holds can be evicted. */
   public references = 0;
+  /**
+   * A pinned set leaves the store only with its volume, or by an explicit
+   * eviction. A budget never evicts it. A legacy viewport draws a set that it
+   * holds no claim on, so the set it draws is pinned.
+   */
+  public pinned = false;
   /** The order of the last use, which gives the least recently used set. */
   public lastUsed = 0;
 

@@ -67,12 +67,28 @@ export class BaseStreamingImageVolume
     this.loadStatus = streamingProperties.loadStatus;
   }
 
+  /**
+   * Whether an image belongs to the dimension group that the grid shows. A
+   * volume of one group holds every image in that group.
+   */
+  protected isInCurrentDimensionGroup(_imageIdIndex: number): boolean {
+    return true;
+  }
+
   protected invalidateVolume(immediate: boolean): void {
     const { numFrames } = this;
 
+    // Every frame now holds other data, such as the next dimension group of a
+    // dynamic volume. The record of the deliveries and every derived
+    // representation describe the old data, so the composite starts again from
+    // the deliveries of the data that the grid now shows. Each texture refills.
+    this.resetCompositeVoxelManager();
+
     for (let i = 0; i < numFrames; i++) {
-      this.markFrameDirty(i);
+      this.voxelManager?.invalidateSlice?.(i);
     }
+
+    this.markAllTexturesDirty();
 
     this.modified();
 
@@ -160,13 +176,15 @@ export class BaseStreamingImageVolume
     const frameIndex = this.imageIdIndexToFrameIndex(imageIdIndex);
     const { cachedFrames, numFrames, totalNumFrames } = this;
     const { FrameOfReferenceUID } = this.metadata;
-    const currentStatus = cachedFrames[frameIndex];
+    // `cachedFrames` holds one entry for each image id, and not for each frame:
+    // the frames of the dimension groups of a dynamic volume share one index.
+    const currentStatus = cachedFrames[imageIdIndex];
     if (currentStatus > imageQualityStatus) {
       // This is common for initial versus decimated images.
       return;
     }
 
-    if (cachedFrames[frameIndex] === ImageQualityStatus.FULL_RESOLUTION) {
+    if (cachedFrames[imageIdIndex] === ImageQualityStatus.FULL_RESOLUTION) {
       // Sometimes the frame can be delivered multiple times, so just return
       // here if that happens
       return;
@@ -206,7 +224,13 @@ export class BaseStreamingImageVolume
       imageQualityStatus,
     });
 
-    this.markFrameDirty(frameIndex, imageQualityStatus);
+    this.markFrameTexturesDirty(frameIndex);
+
+    // The grid of a dynamic volume holds one dimension group, so the image of
+    // another group delivers nothing to it.
+    if (this.isInCurrentDimensionGroup(imageIdIndex)) {
+      this.recordFrameDelivery(frameIndex, imageQualityStatus);
+    }
 
     if (this.loadStatus.loaded) {
       this.loadStatus.callbacks = [];
@@ -237,11 +261,25 @@ export class BaseStreamingImageVolume
       const { imageId } = event.detail?.image ?? {};
       const imageIdIndex = imageId ? this.getImageIdIndex(imageId) : -1;
 
-      if (imageIdIndex >= 0) {
-        this.markFrameDirty(
-          this.imageIdIndexToFrameIndex(imageIdIndex),
-          this.cachedFrames[imageIdIndex] ?? ImageQualityStatus.FULL_RESOLUTION
-        );
+      if (imageIdIndex < 0) {
+        return;
+      }
+
+      const frameIndex = this.imageIdIndexToFrameIndex(imageIdIndex);
+      const quality = this.cachedFrames[imageIdIndex];
+
+      this.markFrameTexturesDirty(frameIndex);
+
+      // The cache adds an image before the loader calls `successCallback`, so
+      // a first image arrives here with no quality yet. `successCallback`
+      // records it with its real quality. A quality that is known here belongs
+      // to a delivery whose reduction ran before its image arrived and wrote
+      // nothing, so the record runs again with the image in the cache.
+      if (
+        quality !== undefined &&
+        this.isInCurrentDimensionGroup(imageIdIndex)
+      ) {
+        this.recordFrameDelivery(frameIndex, quality);
       }
     };
 
@@ -359,8 +397,6 @@ export class BaseStreamingImageVolume
       return; // Already loading, will get callbacks from main load.
     }
 
-    this.listenForCachedImages();
-
     const { loaded } = this.loadStatus;
     const totalNumFrames = imageIds.length;
 
@@ -377,11 +413,20 @@ export class BaseStreamingImageVolume
       return;
     }
 
+    // A loaded volume receives no more images, so only a load listens. The
+    // listener otherwise keeps the volume alive after the cache removes it.
+    this.listenForCachedImages();
+
     if (callback) {
       this.loadStatus.callbacks.push(callback);
     }
 
     this._prefetchImageIds();
+  }
+
+  destroy(): void {
+    this.stopListeningForCachedImages();
+    super.destroy();
   }
 
   /**
@@ -395,16 +440,21 @@ export class BaseStreamingImageVolume
   protected deliveredRegions(): DeliveredRegion[] {
     const regions: DeliveredRegion[] = [];
 
+    // `cachedFrames` holds one entry for each image id. A dynamic volume holds
+    // the images of every dimension group, and the grid shows one group.
     for (
-      let frameIndex = 0;
-      frameIndex < this.cachedFrames.length;
-      frameIndex++
+      let imageIdIndex = 0;
+      imageIdIndex < this.cachedFrames.length;
+      imageIdIndex++
     ) {
-      const quality = this.cachedFrames[frameIndex];
+      const quality = this.cachedFrames[imageIdIndex];
 
-      if (quality) {
+      if (quality && this.isInCurrentDimensionGroup(imageIdIndex)) {
         regions.push({
-          bounds: boundsOfFrame(this.voxelGrid, frameIndex),
+          bounds: boundsOfFrame(
+            this.voxelGrid,
+            this.imageIdIndexToFrameIndex(imageIdIndex)
+          ),
           quality,
         });
       }

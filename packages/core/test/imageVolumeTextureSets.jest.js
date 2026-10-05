@@ -127,7 +127,7 @@ describe('ImageVolume — the marks of a frame', () => {
   it('builds no pool when the volume holds no texture', () => {
     const volume = makeVolume();
 
-    volume.markFrameDirty(1);
+    volume.markFrameTexturesDirty(1);
     volume.invalidate();
     volume.modified();
 
@@ -149,9 +149,7 @@ describe('ImageVolume — the marks of a frame', () => {
     primary.dirty = [];
     derived.dirty = [];
 
-    volume.markFrameDirty(2);
-    // The marks of a turn apply together on a microtask.
-    await Promise.resolve();
+    volume.markFrameTexturesDirty(2);
 
     expect(primary.dirty).toEqual([
       [

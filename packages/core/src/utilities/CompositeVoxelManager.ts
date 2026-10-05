@@ -30,9 +30,9 @@ import {
   mapBoundsBetweenGrids,
   mapIndexToNearestVoxel,
   reduceByBoxStatistic,
-  sameBounds,
   volumeOfBounds,
   voxelGridKey,
+  voxelGridsEqual,
 } from './voxelGrid';
 
 /**
@@ -51,6 +51,15 @@ export type VoxelRepresentation<T> = {
   statistic: VoxelStatistic;
   /** The voxels of this representation. */
   voxelManager: IVoxelManager<T>;
+  /**
+   * THE IMAGES OF THE IMAGE CACHE THAT HOLD THE VOXELS, when the voxels live
+   * there. One image holds one slice of the grid, in the order of the grid, and
+   * the voxel manager above reads them. A consumer that wants the voxels of one
+   * slice without a copy reads `cache.getImage(imageIds[slice])`.
+   *
+   * A representation that keeps an array of its own states nothing here.
+   */
+  imageIds?: string[];
   /**
    * WHAT A LOADER HAS DELIVERED, and at which quality.
    *
@@ -129,7 +138,19 @@ export type VoxelRepresentation<T> = {
     reduction?: VoxelGridReduction;
     /** Whether the derivation rounds each value. */
     round?: boolean;
+    /**
+     * While a derivation runs in batches, the first source k slice that it has
+     * not reduced yet. The record above then covers the slices before it and no
+     * others. `undefined` once the derivation is complete.
+     */
+    reducedUntil?: number;
   };
+  /**
+   * Resolves when the derivation of this representation is complete. A large
+   * derivation reduces its slices in batches, in idle time, so the voxels and
+   * the record of the quality fill over several tasks.
+   */
+  derivation?: Promise<void>;
 };
 
 export type { DeliveredRegion, VoxelQualityRecord };
@@ -183,6 +204,45 @@ export type CompositeVoxelManagerOptions<T> = {
   delivered?: DeliveredRegion[];
   /** The identifier of the composite. */
   id?: string;
+  /**
+   * BUILDS THE STORE OF A DERIVED REPRESENTATION.
+   *
+   * The composite computes the voxels of a derivation, and it does not decide
+   * where those voxels live. `ImageVolume` supplies a function that puts them in
+   * the IMAGE CACHE, one image for each slice of the derived grid, so the one
+   * cache that holds the full-resolution frames counts and evicts the reduced
+   * voxels as well.
+   *
+   * A composite that states no function, which a test does, keeps an array of
+   * its own.
+   *
+   * @returns the store, or `undefined` to keep an array
+   */
+  createStorage?: (request: {
+    /** The grid of the new representation. */
+    grid: VoxelGrid;
+    /** The statistic of the new representation. */
+    statistic: VoxelStatistic;
+    /** The box size of each axis, and the region of the source. */
+    reduction: VoxelGridReduction;
+    /** The representation that the derivation reads. */
+    source: VoxelRepresentation<T>;
+  }) => RepresentationStorage<T> | undefined;
+  /**
+   * Hears that a derivation wrote new voxels outside a delivery, which a
+   * derivation in batches does. The region is in the index space of the
+   * composite. `ImageVolume` marks its textures there, because a texture that
+   * reads the derived representation must read the new voxels.
+   */
+  onDerivedRegionChanged?: (region: BoundsIJK) => void;
+};
+
+/** Where the voxels of one derived representation live. */
+export type RepresentationStorage<T> = {
+  /** The voxel manager over those voxels. */
+  voxelManager: IVoxelManager<T>;
+  /** The images of the image cache that hold them, one for each slice. */
+  imageIds?: string[];
 };
 
 /** The options of a derivation of a new representation. */
@@ -229,6 +289,28 @@ type Coverage = {
  */
 const MAX_COVERAGE_CELLS = 1 << 20;
 const MAX_COVERAGE_WORK = 1 << 23;
+
+/**
+ * The number of slices of the derived grid that one batch of a derivation
+ * reduces. A derivation of 16 slices of 256 x 256 from 32 source slices of
+ * 512 x 512 reads about 8 million voxels, which keeps one batch short.
+ */
+const DERIVATION_BATCH_SLICES = 16;
+
+/** Runs a callback in idle time, or in the next task where no idle callback exists. */
+function scheduleIdle(callback: () => void): void {
+  const requestIdle = (
+    globalThis as {
+      requestIdleCallback?: (callback: () => void) => number;
+    }
+  ).requestIdleCallback;
+
+  if (requestIdle) {
+    requestIdle(callback);
+  } else {
+    setTimeout(callback, 0);
+  }
+}
 
 /** Gives the index of each distinct edge of the boxes, on one axis. */
 function edgesOfAxis(
@@ -293,10 +375,24 @@ function coverageOfRegion(
   );
   const cellCount = counts[0] * counts[1] * counts[2];
 
-  if (
-    cellCount > MAX_COVERAGE_CELLS ||
-    cellCount * clipped.length > MAX_COVERAGE_WORK
-  ) {
+  // The marking visits the cells that each delivery spans. One frame of a
+  // volume spans one layer of cells, so the work grows with the number of
+  // frames, and not with the square of that number.
+  const spans = clipped.map((delivery) => ({
+    from: [0, 1, 2].map((axis) =>
+      indexOfEdge[axis].get(delivery.bounds[axis][0])
+    ),
+    to: [0, 1, 2].map((axis) =>
+      indexOfEdge[axis].get(delivery.bounds[axis][1] + 1)
+    ),
+  }));
+  const work = spans.reduce(
+    (total, { from, to }) =>
+      total + (to[0] - from[0]) * (to[1] - from[1]) * (to[2] - from[2]),
+    0
+  );
+
+  if (cellCount > MAX_COVERAGE_CELLS || work > MAX_COVERAGE_WORK) {
     // The edges of these deliveries are too many to cut exactly. THE ESTIMATE
     // TAKES THE LARGEST DELIVERY ALONE, which never counts more than the
     // deliveries really cover, so the record never states less than what is
@@ -322,13 +418,9 @@ function coverageOfRegion(
 
   const cells = new Array<number>(cellCount).fill(0);
 
-  for (const delivery of clipped) {
-    const from = [0, 1, 2].map((axis) =>
-      indexOfEdge[axis].get(delivery.bounds[axis][0])
-    );
-    const to = [0, 1, 2].map((axis) =>
-      indexOfEdge[axis].get(delivery.bounds[axis][1] + 1)
-    );
+  for (let index = 0; index < clipped.length; index++) {
+    const delivery = clipped[index];
+    const { from, to } = spans[index];
 
     for (let k = from[2]; k < to[2]; k++) {
       for (let j = from[1]; j < to[1]; j++) {
@@ -398,6 +490,70 @@ function withinCeiling(grid: VoxelGrid, ceiling: Point3): boolean {
 }
 
 /**
+ * THE INDEX OF ONE RECORD OF DELIVERIES, so that one delivery costs a constant
+ * number of comparisons and not one for each delivery that arrived before it.
+ *
+ * A streaming volume of 3720 frames records 3720 deliveries, and each frame is
+ * one k slice that no other frame contains, so the record never collapses. A
+ * scan of the record for each delivery is therefore quadratic over a load.
+ *
+ * `byBounds` answers "did this exact region arrive before". `bySlice` holds the
+ * deliveries that touch one k slice, and CONTAINMENT NEEDS AN OVERLAP IN K, so
+ * a delivery compares itself against the deliveries of its own k slices alone.
+ */
+type DeliveryIndex = {
+  byBounds: Map<string, DeliveredRegion>;
+  bySlice: Map<number, Set<DeliveredRegion>>;
+};
+
+/** The key of one region. `sameBounds` compares the same six whole numbers. */
+function boundsKey(bounds: BoundsIJK): string {
+  return `${bounds[0][0]},${bounds[0][1]},${bounds[1][0]},${bounds[1][1]},${bounds[2][0]},${bounds[2][1]}`;
+}
+
+function addToDeliveryIndex(
+  index: DeliveryIndex,
+  delivery: DeliveredRegion
+): void {
+  index.byBounds.set(boundsKey(delivery.bounds), delivery);
+
+  for (let k = delivery.bounds[2][0]; k <= delivery.bounds[2][1]; k++) {
+    let bucket = index.bySlice.get(k);
+
+    if (!bucket) {
+      bucket = new Set<DeliveredRegion>();
+      index.bySlice.set(k, bucket);
+    }
+
+    bucket.add(delivery);
+  }
+}
+
+function removeFromDeliveryIndex(
+  index: DeliveryIndex,
+  delivery: DeliveredRegion
+): void {
+  index.byBounds.delete(boundsKey(delivery.bounds));
+
+  for (let k = delivery.bounds[2][0]; k <= delivery.bounds[2][1]; k++) {
+    index.bySlice.get(k)?.delete(delivery);
+  }
+}
+
+function buildDeliveryIndex(delivered: DeliveredRegion[]): DeliveryIndex {
+  const index: DeliveryIndex = {
+    byBounds: new Map(),
+    bySlice: new Map(),
+  };
+
+  for (const delivery of delivered) {
+    addToDeliveryIndex(index, delivery);
+  }
+
+  return index;
+}
+
+/**
  * A voxel manager that holds MORE THAN ONE REPRESENTATION OF THE SAME DATA AT
  * THE SAME TIME.
  *
@@ -434,9 +590,33 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
   private readonly representations: VoxelRepresentation<T>[] = [];
   private readonly primaryRepresentation: VoxelRepresentation<T>;
   private readonly compositeId: string;
+  /**
+   * The quality at which a refresh of the derived representations last WROTE
+   * voxels for one region of one source. See `acceptData`.
+   */
+  private readonly refreshedQuality = new Map<string, ImageQualityStatus>();
+  /**
+   * The index of each record of deliveries, by the array that holds that
+   * record. `setDeliveredQuality` is the one member that changes such an array,
+   * so an index stays true while the array lives. A representation that takes a
+   * new array gets a new index, because the key is the array itself.
+   */
+  private readonly deliveryIndexes = new WeakMap<
+    DeliveredRegion[],
+    DeliveryIndex
+  >();
 
   /** The representation that defines the index space of the composite. */
   public readonly primary: IVoxelManager<T>;
+
+  /** Builds the store of a derived representation. See the options. */
+  private readonly createStorage?: CompositeVoxelManagerOptions<T>['createStorage'];
+
+  /** Hears the regions that a derivation in batches wrote. See the options. */
+  private readonly onDerivedRegionChanged?: CompositeVoxelManagerOptions<T>['onDerivedRegionChanged'];
+
+  /** Set by `dispose`, which stops every derivation that still runs. */
+  private disposed = false;
 
   constructor({
     primary,
@@ -445,8 +625,12 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
     quality,
     delivered,
     id,
+    createStorage,
+    onDerivedRegionChanged,
   }: CompositeVoxelManagerOptions<T>) {
     this.primary = primary;
+    this.createStorage = createStorage;
+    this.onDerivedRegionChanged = onDerivedRegionChanged;
     this.compositeId = id || `composite-${primary.id}`;
     this.primaryRepresentation = {
       grid,
@@ -612,9 +796,11 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
     // construction holds that rule: a box size is a whole number of at least 1,
     // so the result is never finer than the source that it reads.
     const grid = deriveBoxAverageGrid(sourceRepresentation.grid, reduction);
-    const voxelManager = this.createVoxelManagerForGrid(
+    const { voxelManager, imageIds } = this.createStorageForGrid(
       grid,
-      sourceRepresentation
+      sourceRepresentation,
+      reduction,
+      statistic
     );
 
     const reducesAnAxis = factors.some((factor) => factor > 1);
@@ -626,6 +812,7 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
       grid,
       statistic,
       voxelManager,
+      imageIds,
       quality: sourceRepresentation.quality,
       // A BOX REDUCTION DOES NOT ALIAS: every source voxel of the box reaches
       // the result. An axis that no factor reduces holds every source voxel, so
@@ -648,29 +835,209 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
       },
     });
 
-    const { delivered } = sourceRepresentation;
+    // The source states which regions hold data, so reduce those regions and
+    // no others. A streaming volume of 512 x 512 x 1232 voxels holds 323
+    // million of them, and a pass over all of them takes tens of seconds and
+    // gives nothing for a region that no delivery covers. A source that states
+    // no region holds data everywhere.
+    const regions = sourceRepresentation.delivered
+      ? sourceRepresentation.delivered.map((delivery) => delivery.bounds)
+      : [boundsOfGrid(sourceRepresentation.grid)];
 
-    if (delivered) {
-      // The source states which regions hold data, so reduce those regions and
-      // no others. A streaming volume of 512 x 512 x 1232 voxels holds 323
-      // million of them, and a pass over all of them takes tens of seconds and
-      // gives nothing for a region that no delivery covers.
-      for (const delivery of delivered) {
-        this.reduceRegionInto(representation, sourceRepresentation, {
-          bounds: delivery.bounds,
-        });
-      }
-    } else {
-      // The source states no region, so it holds data everywhere.
-      reduceByBoxStatistic(
-        sourceRepresentation.voxelManager as never,
-        reduction,
-        voxelManager as never,
-        { statistic, round }
-      );
-    }
+    this.deriveInBatches(representation, sourceRepresentation, regions);
 
     return representation;
+  }
+
+  /**
+   * Stops every derivation that still runs. A volume that discards its
+   * composite calls this member, because a batch would otherwise write into a
+   * representation that nothing reads.
+   */
+  public dispose(): void {
+    this.disposed = true;
+  }
+
+  /**
+   * The record of the data that a grid holds when it reads the best source of
+   * the composite.
+   *
+   * A representation of that grid answers for itself. A grid that no
+   * representation holds is the grid of a texture that fills by box average
+   * straight from the source, and the record of the source deliveries, mapped
+   * into that grid, is then the record of the texture.
+   */
+  public getGridQuality(
+    grid: VoxelGrid,
+    {
+      statistic = VoxelStatistics.Average,
+      region,
+    }: { statistic?: VoxelStatistic; region?: BoundsIJK } = {}
+  ): VoxelQualityRecord {
+    const existing = this.getRepresentation(grid, statistic);
+
+    if (existing) {
+      return this.getRegionQuality(existing, region);
+    }
+
+    const source = this.sourceOfDerivation(this.grid, { statistic });
+
+    if (!source) {
+      return undefined;
+    }
+
+    // A representation that holds no voxels and states the live record of its
+    // source: the texture reads the source as the source is now.
+    const reducesAnAxis = !voxelGridsEqual(grid, source.grid);
+
+    return this.getRegionQuality(
+      {
+        grid,
+        statistic,
+        voxelManager: undefined,
+        reduction: !reducesAnAxis
+          ? VoxelReductions.None
+          : statistic === VoxelStatistics.ForegroundMajority
+            ? VoxelReductions.BoxForegroundMajority
+            : VoxelReductions.BoxAverage,
+        source: VoxelDataSources.ClientDerived,
+        derivedFrom: {
+          grid: source.grid,
+          delivered: source.delivered,
+          quality: source.quality,
+        },
+      },
+      region
+    );
+  }
+
+  /**
+   * Reduces the regions of a source into a derived representation, in batches
+   * of `DERIVATION_BATCH_SLICES` slices of the derived grid.
+   *
+   * The first batch runs at once. Each later batch runs in idle time, because a
+   * volume that holds all of its data would otherwise reduce every voxel in one
+   * call: 512 x 512 x 2464 voxels take many seconds on the main thread. While
+   * the batches run, the record of the representation covers the slices that
+   * the batches reduced and no others.
+   */
+  private deriveInBatches(
+    representation: VoxelRepresentation<T>,
+    source: VoxelRepresentation<T>,
+    regions: BoundsIJK[]
+  ): void {
+    const { derivedFrom } = representation;
+    const factorK = derivedFrom.reduction.factors[2];
+    const offsetK = derivedFrom.reduction.sourceOffset?.[2] ?? 0;
+    const depth = representation.grid.dimensions[2];
+    const batches = Math.ceil(depth / DERIVATION_BATCH_SLICES);
+
+    const reduceBatch = (batch: number): BoundsIJK => {
+      const firstK = offsetK + batch * DERIVATION_BATCH_SLICES * factorK;
+      const lastK =
+        offsetK +
+        Math.min((batch + 1) * DERIVATION_BATCH_SLICES, depth) * factorK -
+        1;
+      const sourceBounds = boundsOfGrid(source.grid);
+      const slab: BoundsIJK = [
+        sourceBounds[0],
+        sourceBounds[1],
+        [firstK, Math.min(lastK, sourceBounds[2][1])],
+      ];
+
+      for (const region of regions) {
+        const part = intersectBounds(region, slab);
+
+        if (volumeOfBounds(part) > 0) {
+          this.reduceRegionInto(representation, source, { bounds: part });
+        }
+      }
+
+      derivedFrom.reducedUntil =
+        batch + 1 < batches ? slab[2][1] + 1 : undefined;
+      this.syncDerivedRecord(representation, source);
+
+      return slab;
+    };
+
+    reduceBatch(0);
+
+    if (batches <= 1) {
+      representation.derivation = Promise.resolve();
+
+      return;
+    }
+
+    representation.derivation = new Promise<void>((resolve) => {
+      const runBatch = (batch: number) => {
+        if (
+          this.disposed ||
+          !this.representations.includes(representation) ||
+          batch >= batches
+        ) {
+          resolve();
+
+          return;
+        }
+
+        const slab = reduceBatch(batch);
+
+        this.onDerivedRegionChanged?.(
+          intersectBounds(
+            mapBoundsBetweenGrids(source.grid, this.grid, slab),
+            boundsOfGrid(this.grid)
+          )
+        );
+        scheduleIdle(() => runBatch(batch + 1));
+      };
+
+      scheduleIdle(() => runBatch(1));
+    });
+  }
+
+  /**
+   * Copies the record of a source into the record of a derived representation.
+   *
+   * A derivation that still runs covers the source slices before
+   * `reducedUntil` and no others, so the copy keeps the deliveries of those
+   * slices only, and it states no quality for the rest. The record therefore
+   * never states a voxel that the derivation has not written.
+   */
+  private syncDerivedRecord(
+    representation: VoxelRepresentation<T>,
+    source: VoxelRepresentation<T>
+  ): void {
+    const { derivedFrom } = representation;
+    const { reducedUntil } = derivedFrom;
+
+    if (reducedUntil === undefined) {
+      derivedFrom.delivered = source.delivered
+        ? [...source.delivered]
+        : undefined;
+      derivedFrom.quality = source.quality;
+
+      return;
+    }
+
+    const sourceBounds = boundsOfGrid(source.grid);
+    const reduced: BoundsIJK = [
+      sourceBounds[0],
+      sourceBounds[1],
+      [sourceBounds[2][0], reducedUntil - 1],
+    ];
+    const deliveries =
+      source.delivered ??
+      (source.quality === undefined
+        ? []
+        : [{ bounds: sourceBounds, quality: source.quality }]);
+
+    derivedFrom.delivered = deliveries
+      .map((delivery) => ({
+        bounds: intersectBounds(delivery.bounds, reduced),
+        quality: delivery.quality,
+      }))
+      .filter((delivery) => volumeOfBounds(delivery.bounds) > 0);
+    derivedFrom.quality = undefined;
   }
 
   /**
@@ -693,16 +1060,23 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
   public acceptData({
     grid,
     voxelManager,
+    imageIds,
     statistic = VoxelStatistics.Average,
     quality = ImageQualityStatus.FULL_RESOLUTION,
     bounds,
     frameIndex,
     reduction,
     source,
-    refreshDerived = true,
   }: {
     grid: VoxelGrid;
     voxelManager?: IVoxelManager<T>;
+    /**
+     * The images of the image cache that hold the voxels of this
+     * representation, one for each slice of its grid. A loader that delivers a
+     * reduced level of a server store, or a brick, states them, and the voxels
+     * then live in the image cache with the full-resolution frames.
+     */
+    imageIds?: string[];
     statistic?: VoxelStatistic;
     quality?: ImageQualityStatus;
     bounds?: BoundsIJK;
@@ -711,12 +1085,6 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
     reduction?: VoxelReduction;
     /** Where this data came from. A direct load by default. */
     source?: VoxelDataSource;
-    /**
-     * When false, records the delivery but does not refresh derived
-     * representations. Used by ImageVolume to coalesce many frame arrivals
-     * into one reduce pass. Defaults to true.
-     */
-    refreshDerived?: boolean;
   }): VoxelRepresentation<T> {
     const existing = this.getRepresentation(grid, statistic);
     const production = {
@@ -732,6 +1100,7 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
         grid,
         statistic,
         voxelManager: voxelManager ?? existing?.voxelManager,
+        imageIds: imageIds ?? existing?.imageIds,
         quality,
         delivered: existing?.delivered,
         ...production,
@@ -744,6 +1113,7 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
         grid,
         statistic,
         voxelManager,
+        imageIds,
         delivered: [],
         ...production,
       });
@@ -755,10 +1125,31 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
       representation.voxelManager = voxelManager;
     }
 
+    if (imageIds) {
+      representation.imageIds = imageIds;
+    }
+
     this.setDeliveredQuality(representation, deliveredBounds, quality);
 
-    if (refreshDerived) {
-      this.refreshDerivedFrames(deliveredBounds, grid, statistic);
+    // ONE DELIVERY CAN ARRIVE TWICE. `BaseStreamingImageVolume` marks a frame
+    // from the delivery itself, and again from the event that the cache sends
+    // when the image of that frame arrives. The two marks carry the same data,
+    // and a second reduction of that data reads every source voxel of every box
+    // again and writes the same values.
+    //
+    // The record holds the quality at which a refresh last WROTE voxels for
+    // this region. A mark that runs before the image arrives writes nothing and
+    // therefore leaves no record, so it never blocks the mark that follows the
+    // image. That ordering is what `listenForCachedImages` exists to repair.
+    const refreshKey = `${voxelGridKey(grid, statistic)}#${deliveredBounds.join(
+      ','
+    )}`;
+    const refreshed = this.refreshedQuality.get(refreshKey);
+
+    if (refreshed === undefined || refreshed < quality) {
+      if (this.refreshDerivedFrames(deliveredBounds, grid, statistic) > 0) {
+        this.refreshedQuality.set(refreshKey, quality);
+      }
     }
 
     return representation;
@@ -843,16 +1234,16 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
       return false;
     }
 
-    if (!this.reduceRegionInto(representation, source, { bounds })) {
+    // A refresh that wrote no voxel changed nothing, so the record of the
+    // result must not claim the deliveries that the source now holds.
+    if (this.reduceRegionInto(representation, source, { bounds }) === 0) {
       return false;
     }
 
     // The record of the source becomes the record of the result again, because
-    // the boxes now hold the data that the source holds now.
-    derivedFrom.delivered = source.delivered
-      ? [...source.delivered]
-      : undefined;
-    derivedFrom.quality = source.quality;
+    // the boxes now hold the data that the source holds now. A derivation that
+    // still runs in batches keeps to the slices that it has reduced.
+    this.syncDerivedRecord(representation, source);
 
     return true;
   }
@@ -865,17 +1256,19 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
    * member grows the region to whole boxes: a delivery of one voxel makes the
    * whole box of that voxel out of date.
    *
-   * @returns true when the member reduced at least one box
+   * @returns the number of reduced voxels that the member wrote. A box whose
+   *     source voxels have not arrived holds no value, so a region of a source
+   *     that holds nothing yet gives 0.
    */
   private reduceRegionInto(
     representation: VoxelRepresentation<T>,
     source: VoxelRepresentation<T>,
     { bounds }: { bounds: BoundsIJK }
-  ): boolean {
+  ): number {
     const { reduction, round = true } = representation.derivedFrom ?? {};
 
     if (!reduction || !source.voxelManager || !representation.voxelManager) {
-      return false;
+      return 0;
     }
 
     const { factors } = reduction;
@@ -893,7 +1286,7 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
       const last = Math.min(bounds[axis][1] - offset[axis], extent[axis] - 1);
 
       if (first > last) {
-        return false;
+        return 0;
       }
 
       const firstBox = Math.floor(first / factors[axis]);
@@ -907,14 +1300,12 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
       targetOffset[axis] = firstBox;
     }
 
-    reduceByBoxStatistic(
+    return reduceByBoxStatistic(
       source.voxelManager as never,
       { factors, sourceOffset, sourceDimensions, targetOffset },
       representation.voxelManager as never,
       { statistic: representation.statistic, round }
     );
-
-    return true;
   }
 
   /**
@@ -938,13 +1329,13 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
     }
 
     const { delivered } = representation;
-    const existing = delivered.find((delivery) =>
-      sameBounds(delivery.bounds, bounds)
-    );
+    const index = this.deliveryIndexOf(delivered);
+    const existing = index.byBounds.get(boundsKey(bounds));
 
     if (existing) {
       // The same region arrived again. A LOWER QUALITY NEVER REPLACES A HIGHER
-      // ONE, which is the rule of `cachedFrames`.
+      // ONE, which is the rule of `cachedFrames`. The key is the region alone,
+      // so a change of the quality leaves the index true.
       if (existing.quality >= quality) {
         return false;
       }
@@ -955,33 +1346,82 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
     }
 
     // A delivery that a better delivery already holds changes nothing, so the
-    // record does not grow.
-    if (
-      delivered.some(
-        (delivery) =>
-          delivery.quality >= quality && containsBounds(delivery.bounds, bounds)
-      )
-    ) {
-      return false;
+    // record does not grow. A delivery that holds this region covers every k
+    // slice of it, so it lies in the bucket of the first of those slices.
+    const containers = index.bySlice.get(bounds[2][0]);
+
+    if (containers) {
+      for (const delivery of containers) {
+        if (
+          delivery.quality >= quality &&
+          containsBounds(delivery.bounds, bounds)
+        ) {
+          return false;
+        }
+      }
     }
 
     // A delivery that holds an earlier delivery of no better quality replaces
     // that earlier delivery, so an overlap does not make the record grow
-    // without a limit.
-    for (let index = delivered.length - 1; index >= 0; index--) {
-      const delivery = delivered[index];
+    // without a limit. Such an earlier delivery lies inside the k slices of
+    // this one, so the buckets of those slices hold every candidate.
+    const contained = new Set<DeliveredRegion>();
 
-      if (
-        delivery.quality <= quality &&
-        containsBounds(bounds, delivery.bounds)
-      ) {
-        delivered.splice(index, 1);
+    for (let k = bounds[2][0]; k <= bounds[2][1]; k++) {
+      const bucket = index.bySlice.get(k);
+
+      if (!bucket) {
+        continue;
+      }
+
+      for (const delivery of bucket) {
+        if (
+          delivery.quality <= quality &&
+          containsBounds(bounds, delivery.bounds)
+        ) {
+          contained.add(delivery);
+        }
       }
     }
 
-    delivered.push({ bounds, quality });
+    if (contained.size) {
+      for (const delivery of contained) {
+        removeFromDeliveryIndex(index, delivery);
+      }
+
+      // One pass over the record, and not one `splice` for each removal.
+      let write = 0;
+
+      for (let read = 0; read < delivered.length; read++) {
+        if (!contained.has(delivered[read])) {
+          delivered[write++] = delivered[read];
+        }
+      }
+
+      delivered.length = write;
+    }
+
+    const delivery = { bounds, quality };
+
+    delivered.push(delivery);
+    addToDeliveryIndex(index, delivery);
 
     return true;
+  }
+
+  /**
+   * The index of one record of deliveries, which the member builds once for
+   * each array that it sees. See `DeliveryIndex`.
+   */
+  private deliveryIndexOf(delivered: DeliveredRegion[]): DeliveryIndex {
+    let index = this.deliveryIndexes.get(delivered);
+
+    if (!index) {
+      index = buildDeliveryIndex(delivered);
+      this.deliveryIndexes.set(delivered, index);
+    }
+
+    return index;
   }
 
   /**
@@ -1246,10 +1686,31 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
     return (candidateQuality.lowest ?? 0) > (bestQuality.lowest ?? 0);
   }
 
-  private createVoxelManagerForGrid(
+  /**
+   * Builds the store of a derived representation.
+   *
+   * THE IMAGE CACHE HOLDS THE VOXELS WHERE IT CAN. `createStorage` puts one
+   * image of the cache at each slice of the derived grid, so the reduced voxels
+   * are counted, evicted and shared by the one cache that already holds the
+   * full-resolution frames, and a second viewport that asks for the same
+   * reduction finds the same voxels.
+   *
+   * The array below is the fallback. A composite that states no `createStorage`
+   * keeps it, and so does a derivation that the cache cannot hold, such as one
+   * of an element type that no image uses.
+   */
+  private createStorageForGrid(
     grid: VoxelGrid,
-    source: VoxelRepresentation<T>
-  ): IVoxelManager<T> {
+    source: VoxelRepresentation<T>,
+    reduction: VoxelGridReduction,
+    statistic: VoxelStatistic
+  ): RepresentationStorage<T> {
+    const stored = this.createStorage?.({ grid, statistic, reduction, source });
+
+    if (stored?.voxelManager) {
+      return stored;
+    }
+
     const { numberOfComponents } = source.voxelManager;
     const Constructor = source.voxelManager.getConstructor();
     const length =
@@ -1258,15 +1719,17 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
       grid.dimensions[2] *
       (numberOfComponents || 1);
 
-    return VoxelManager.createScalarVolumeVoxelManager({
-      dimensions: grid.dimensions,
-      scalarData: new Constructor(length) as PixelDataTypedArray,
-      numberOfComponents,
-      id: `${this.compositeId}-${voxelGridKey(grid, source.statistic)}`,
-      // The factory gives a voxel manager over a number or over an RGB value,
-      // according to the number of the components, and the composite holds
-      // whichever of the two its primary representation holds.
-    }) as unknown as IVoxelManager<T>;
+    return {
+      voxelManager: VoxelManager.createScalarVolumeVoxelManager({
+        dimensions: grid.dimensions,
+        scalarData: new Constructor(length) as PixelDataTypedArray,
+        numberOfComponents,
+        id: `${this.compositeId}-${voxelGridKey(grid, statistic)}`,
+        // The factory gives a voxel manager over a number or over an RGB value,
+        // according to the number of the components, and the composite holds
+        // whichever of the two its primary representation holds.
+      }) as unknown as IVoxelManager<T>,
+    };
   }
 
   /** Reads one voxel of the target grid from the first source that holds it. */

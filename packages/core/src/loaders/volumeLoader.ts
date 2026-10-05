@@ -453,6 +453,7 @@ export function createLocalVolume(
     dimensions,
     numberOfComponents: 1,
     id: volumeId,
+    dataType,
   });
   imageVolume.voxelManager = voxelManager;
 
