@@ -209,7 +209,7 @@ overrides:
   '@babel/helper-compilation-targets': 7.29.7
   caniuse-lite: 1.0.30001767
   browserslist@<4.28.7: 4.28.7
-  axios: 1.18.1
+  axios: 1.20.0
   buffer: 6.0.3
   node-forge: 1.4.0
   canvas: 3.2.0
@@ -620,13 +620,13 @@ importers:
         version: 1.0.19
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.11.2
+        specifier: 5.11.4
         version: link:../core
       '@cornerstonejs/metadata':
-        specifier: 5.11.2
+        specifier: 5.11.4
         version: link:../metadata
       '@cornerstonejs/tools':
-        specifier: 5.11.2
+        specifier: 5.11.4
         version: link:../tools
 
   packages/ai:
@@ -657,10 +657,10 @@ importers:
         version: 1.17.1
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.11.2
+        specifier: 5.11.4
         version: link:../core
       '@cornerstonejs/tools':
-        specifier: 5.11.2
+        specifier: 5.11.4
         version: link:../tools
 
   packages/codemods: {}
@@ -668,7 +668,7 @@ importers:
   packages/core:
     dependencies:
       '@cornerstonejs/utils':
-        specifier: 5.11.2
+        specifier: 5.11.4
         version: link:../utils
       '@kitware/vtk.js':
         specifier: 36.4.1
@@ -684,7 +684,7 @@ importers:
         version: 1.9.2
     devDependencies:
       '@cornerstonejs/metadata':
-        specifier: 5.11.2
+        specifier: 5.11.4
         version: link:../metadata
 
   packages/dicomImageLoader:
@@ -721,10 +721,10 @@ importers:
         version: 9.0.1
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.11.2
+        specifier: 5.11.4
         version: link:../core
       '@cornerstonejs/metadata':
-        specifier: 5.11.2
+        specifier: 5.11.4
         version: link:../metadata
 
   packages/docs:
@@ -822,10 +822,10 @@ importers:
         version: 1.0.0-b.165(debug@4.4.3(supports-color@8.1.1))(supports-color@8.1.1)
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.11.2
+        specifier: 5.11.4
         version: link:../core
       '@cornerstonejs/tools':
-        specifier: 5.11.2
+        specifier: 5.11.4
         version: link:../tools
 
   packages/metadata:
@@ -834,7 +834,7 @@ importers:
         specifier: 1.0.3
         version: 1.0.3
       '@cornerstonejs/utils':
-        specifier: 5.11.2
+        specifier: 5.11.4
         version: link:../utils
       dcmjs:
         specifier: 0.52.0
@@ -850,7 +850,7 @@ importers:
         version: 0.6.9
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.11.2
+        specifier: 5.11.4
         version: link:../core
 
   packages/polymorphic-segmentation:
@@ -863,10 +863,10 @@ importers:
         version: 36.4.1(autoprefixer@10.4.21(postcss@8.5.26))(wslink@2.5.0)
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.11.2
+        specifier: 5.11.4
         version: link:../core
       '@cornerstonejs/tools':
-        specifier: 5.11.2
+        specifier: 5.11.4
         version: link:../tools
 
   packages/tools:
@@ -903,7 +903,7 @@ importers:
         version: 4.4.2
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.11.2
+        specifier: 5.11.4
         version: link:../core
       canvas:
         specifier: 3.2.0
@@ -6704,10 +6704,10 @@ packages:
       }
     engines: { node: '>= 0.4' }
 
-  axios@1.18.1:
+  axios@1.20.0:
     resolution:
       {
-        integrity: sha512-3nTvFlvpn9Zu/RkHUqtc7/+al4UpRW5az71ap5zccp6e8RAYEzhMTecX8Dz1wWDYrPpUoB1HAQEGEAEvUr7S9g==,
+        integrity: sha512-r8aOh8j9cGKpgQAqpzrUHnSIc6a59Y3Xf/cv8sy1DrHCkZHzQGEuoq1tARk6qSyDdtQGSDgpb9kFlruzPvrgwg==,
       }
 
   babel-jest@30.2.0:
@@ -21402,7 +21402,7 @@ snapshots:
 
   '@itk-wasm/dam@1.1.1(debug@4.4.3(supports-color@8.1.1))(supports-color@8.1.1)':
     dependencies:
-      axios: 1.18.1(debug@4.4.3(supports-color@8.1.1))(supports-color@8.1.1)
+      axios: 1.20.0(debug@4.4.3(supports-color@8.1.1))(supports-color@8.1.1)
       commander: 10.0.1
       decompress: 4.2.1
       files-from-path: 1.1.4
@@ -23423,7 +23423,7 @@ snapshots:
     dependencies:
       possible-typed-array-names: 1.1.0
 
-  axios@1.18.1(debug@4.4.3(supports-color@8.1.1))(supports-color@8.1.1):
+  axios@1.20.0(debug@4.4.3(supports-color@8.1.1))(supports-color@8.1.1):
     dependencies:
       follow-redirects: 1.16.0(debug@4.4.3(supports-color@8.1.1))
       form-data: 4.0.6
@@ -26367,7 +26367,7 @@ snapshots:
       '@itk-wasm/dam': 1.1.1(debug@4.4.3(supports-color@8.1.1))(supports-color@8.1.1)
       '@thewtex/zstddec': 0.2.1
       '@types/emscripten': 1.40.0
-      axios: 1.18.1(debug@4.4.3(supports-color@8.1.1))(supports-color@8.1.1)
+      axios: 1.20.0(debug@4.4.3(supports-color@8.1.1))(supports-color@8.1.1)
       comlink: 4.4.2
       commander: 11.1.0
       fs-extra: 11.3.5
@@ -26384,7 +26384,7 @@ snapshots:
       '@itk-wasm/dam': 1.1.1(debug@4.4.3(supports-color@8.1.1))(supports-color@8.1.1)
       '@thewtex/zstddec': 0.2.1
       '@types/emscripten': 1.40.0
-      axios: 1.18.1(debug@4.4.3(supports-color@8.1.1))(supports-color@8.1.1)
+      axios: 1.20.0(debug@4.4.3(supports-color@8.1.1))(supports-color@8.1.1)
       chalk: 5.6.2
       comlink: 4.4.2
       commander: 11.1.0
