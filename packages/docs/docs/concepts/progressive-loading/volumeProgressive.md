@@ -115,6 +115,34 @@ The configuration looks like:
 
 - Replaces the low resolution data from #2 with full data
 
+## Coarse interleaved stages for a volume of many images
+
+`ProgressiveRetrieveImages.coarseInterleavedRetrieveStages` adds three coarse
+stages before the stock interleaved stages:
+
+- The middle image, which fills the 63 frames around it.
+- Decimate 64/0, where each image fills the 63 frames around it. The whole
+  volume holds data once 1/64 of the images have arrived.
+- Decimate 64/21 and 64/42. Each image replaces the frames that have no nearer
+  source, so after the three stages no frame is more than 11 frames from its
+  source.
+
+The quality of a replicate falls with its distance from the source:
+`ADJACENT_REPLICATE` beside it, and `FAR_REPLICATE + 1 / distance` farther away.
+A nearby fill replaces a frame only with a strictly higher quality, so each frame
+holds its nearest source in whatever order the images arrive.
+
+The stock stages fill only the frames at -1, +1 and +2 of every 4th image. A
+frame stays empty until a neighbour arrives, and an empty CT frame displays as a
+gray line in a reformat.
+
+```js
+imageRetrieveMetadataProvider.add(
+  'volume',
+  ProgressiveRetrieveImages.coarseInterleavedRetrieveStages
+);
+```
+
 ## HTJ2K Byte Range
 
 The volume progressive loading extends the basic stack loading with the ability

@@ -266,7 +266,8 @@ instructions.innerHTML = `
 </ul>
 Stages are:
 <ul>
-<li>initialImages - final version of image 0, 50%, 100%</li>
+<li>initialImages - final version of image 0, 50%, 100% (Progressive: the middle image only)</li>
+<li>Progressive only: coarse64, coarse64At21, coarse64At42 - every 64th image at offsets 0, 21 and 42; each image fills the frames that have no nearer source</li>
 <li>quarterThumb - lossy configuration for every 4th image, offset 1</li>
 <li>halfThumb - lossy configuration for every 4th image, offset 3</li>
 <li>Remaing *Full - final configuration for every 4th image, offset 0, 2, 1, 3</li>
@@ -337,95 +338,6 @@ const configJLSMixed = {
     },
   },
 };
-
-/**
- * The frames that one retrieved frame replicates to, for a decimation of
- * `decimate`.
- *
- * The default configuration fills every frame because its list matches its
- * decimation. It decimates by 4 and it replicates to the offsets -1, +1 and
- * +2, which with the retrieved frame itself covers 4 frames in a row. A larger
- * decimation with that same list of three offsets leaves the frames between
- * two retrieved frames empty.
- *
- * This builds the list that covers a whole decimation window, so one retrieved
- * frame in `decimate` fills the whole volume.
- *
- * The quality follows the distance. A frame beside the retrieved frame holds
- * data of the neighbour of its own slice, and a frame 16 slices away holds
- * data of a different part of the body. The two are not equally good, and the
- * record must not state that they are.
- */
-function nearbyFramesOfDecimation(decimate) {
-  const frames = [];
-  const first = -Math.floor((decimate - 1) / 2);
-
-  for (let offset = first; offset < first + decimate; offset++) {
-    if (offset !== 0) {
-      frames.push({
-        offset,
-        imageQualityStatus:
-          Math.abs(offset) <= 1
-            ? ImageQualityStatus.ADJACENT_REPLICATE
-            : ImageQualityStatus.FAR_REPLICATE,
-      });
-    }
-  }
-
-  return frames;
-}
-
-/**
- * The interleaved path, with two changes for a volume of many images.
- *
- * `initialImages` fetches the middle image and replicates it across a window
- * along k. A viewport opens on the middle of the volume. The reduced texture
- * averages several frames per reduced voxel, and VOLUME_3D raycasts the whole
- * volume, so a band of only a few slices (the default nearby list of ±1 and +2)
- * paints as a paper-thin mid plane. The window matches `coarse32`, so the first
- * paint is one thirty-second of the acquisition along k — thick enough for 3D
- * while axial still sees the middle immediately.
- *
- * `coarse32` then retrieves one image in 32 and replicates each one to the 31
- * images around it, so the whole volume holds data once 1/32 of the images
- * have arrived. The data is at the resolution of the acquisition in the plane,
- * and at one thirty second of it along the k axis. Every later stage refines
- * that volume.
- *
- * The stage needs the number of images, because a position of the middle of
- * the volume is an index and not a fraction.
- */
-function interleavedConfigurationOf(imageCount) {
-  const middle = Math.floor(imageCount / 2);
-  const [initialImages, ...laterStages] = interleavedRetrieveStages.stages;
-  // Same k-window as `coarse32`: thick enough for reduced box average and 3D.
-  const middleNearbyFrames = nearbyFramesOfDecimation(32);
-
-  return {
-    stages: [
-      {
-        ...initialImages,
-        positions: [middle],
-        nearbyFrames: middleNearbyFrames,
-      },
-      {
-        id: 'coarse32',
-        decimate: 32,
-        offset: 16,
-        priority: 6,
-        requestType: RequestType.Thumbnail,
-        retrieveType: 'default',
-        nearbyFrames: middleNearbyFrames,
-      },
-      // Every later stage keeps its order behind the coarse stage, which took
-      // the priority that the first of them held.
-      ...laterStages.map((stage) => ({
-        ...stage,
-        priority: stage.priority === undefined ? undefined : stage.priority + 1,
-      })),
-    ],
-  };
-}
 
 /**
  * The bytes of the one DICOM instance that a WADO-RS instance response holds.
@@ -1124,15 +1036,13 @@ async function run() {
   // `Linear` asks for the frames from the first to the last, and `Progressive`
   // interleaves them, so a coarse version of the whole volume arrives first.
   loadButton('Linear', volumeId, () => imageIdsCT, null);
-  // The configuration needs the number of images, so it is built when the
-  // button is pressed and not when the button is created.
-  createButton('Progressive', () =>
-    loadVolume(
-      volumeId,
-      imageIdsCT,
-      interleavedConfigurationOf(imageIdsCT.length),
-      'Progressive'
-    )
+  // Every 64th image at the offsets 0, 21 and 42 first, then the stock
+  // interleaved stages. See `coarseInterleavedRetrieveStages` in core.
+  loadButton(
+    'Progressive',
+    volumeId,
+    () => imageIdsCT,
+    ProgressiveRetrieveImages.coarseInterleavedRetrieveStages
   );
   loadButton('JLS', volumeId, () => imageIdsCT, configJLS);
   loadButton(
