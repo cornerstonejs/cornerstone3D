@@ -26,12 +26,7 @@ const cs3dLogger = cornerstoneUtilities.logger.adaptersLog.getLogger(
   'Cornerstone.Segmentation_4X'
 );
 
-const {
-  rotateDirectionCosinesInPlane,
-  flipImageOrientationPatient: flipIOP,
-  flipMatrix2D,
-  rotateMatrix902D,
-} = utilities.orientation;
+const { flipMatrix2D, rotateMatrix902D } = utilities.orientation;
 
 const { BitArray, DicomMessage, DicomMetaDictionary } = dcmjsData;
 
@@ -1702,30 +1697,32 @@ export function getImageIdOfReferencedFrame(
 /**
  * getValidOrientations - returns an array of valid orientations.
  *
+ * The 8 in-plane orientations are built directly from the row (r) and column
+ * (c) cosines rather than with dcmjs rotateDirectionCosinesInPlane, which
+ * negates its result and so never yields the 180 degree orientation (-r, -c).
+ * See https://github.com/cornerstonejs/cornerstone3D/issues/2959
+ *
  * @param  {Number[6]} iop The row (0..2) an column (3..5) direction cosines.
  * @return {Number[8][6]} An array of valid orientations.
  */
 export function getValidOrientations(iop) {
-  const orientations = [];
+  const r = [iop[0], iop[1], iop[2]];
+  const c = [iop[3], iop[4], iop[5]];
+  const negate = (v) => v.map((x) => -x);
 
   // [0,  1,  2]: 0,   0hf,   0vf
   // [3,  4,  5]: 90,  90hf,  90vf
   // [6, 7]:      180, 270
-
-  orientations[0] = iop;
-  orientations[1] = flipIOP.h(iop);
-  orientations[2] = flipIOP.v(iop);
-
-  const iop90 = rotateDirectionCosinesInPlane(iop, Math.PI / 2);
-
-  orientations[3] = iop90;
-  orientations[4] = flipIOP.h(iop90);
-  orientations[5] = flipIOP.v(iop90);
-
-  orientations[6] = rotateDirectionCosinesInPlane(iop, Math.PI);
-  orientations[7] = rotateDirectionCosinesInPlane(iop, 1.5 * Math.PI);
-
-  return orientations;
+  return [
+    [...r, ...c],
+    [...r, ...negate(c)],
+    [...negate(r), ...c],
+    [...c, ...negate(r)],
+    [...c, ...r],
+    [...negate(c), ...negate(r)],
+    [...negate(r), ...negate(c)],
+    [...negate(c), ...r],
+  ];
 }
 
 /**
@@ -1761,15 +1758,15 @@ export function alignPixelDataWithSourceData(
     // Rotate back
     return rotateMatrix902D(pixelData2D);
   } else if (csUtilities.isEqual(iop, orientations[4], tolerance)) {
-    //Rotated 90 degrees and fliped horizontally.
+    //Rotated 90 degrees and fliped horizontally (transposed).
 
     // Undo flip and rotate back.
-    return rotateMatrix902D(flipMatrix2D.h(pixelData2D));
+    return rotateMatrix902D(flipMatrix2D.v(pixelData2D));
   } else if (csUtilities.isEqual(iop, orientations[5], tolerance)) {
-    // Rotated 90 degrees and fliped vertically
+    // Rotated 90 degrees and fliped vertically (anti-transposed).
 
     // Unfo flip and rotate back.
-    return rotateMatrix902D(flipMatrix2D.v(pixelData2D));
+    return rotateMatrix902D(flipMatrix2D.h(pixelData2D));
   } else if (csUtilities.isEqual(iop, orientations[6], tolerance)) {
     // Rotated 180 degrees. // TODO -> Do this more effeciently, there is a 1:1 mapping like 90 degree rotation.
 

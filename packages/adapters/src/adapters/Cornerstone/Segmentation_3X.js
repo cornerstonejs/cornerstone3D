@@ -7,12 +7,7 @@ const cs3dLogger = cornerstoneUtilities.logger.adaptersLog.getLogger(
   'Cornerstone.Segmentation_3X'
 );
 
-const {
-  rotateDirectionCosinesInPlane,
-  flipImageOrientationPatient: flipIOP,
-  flipMatrix2D,
-  rotateMatrix902D,
-} = utilities.orientation;
+const { flipMatrix2D, rotateMatrix902D } = utilities.orientation;
 
 const { datasetToBlob, BitArray, DicomMessage, DicomMetaDictionary } =
   utilities;
@@ -495,30 +490,32 @@ function getImageIdOfReferencedFrame(
 /**
  * getValidOrientations - returns an array of valid orientations.
  *
+ * The 8 in-plane orientations are built directly from the row (r) and column
+ * (c) cosines rather than with dcmjs rotateDirectionCosinesInPlane, which
+ * negates its result and so never yields the 180 degree orientation (-r, -c).
+ * See https://github.com/cornerstonejs/cornerstone3D/issues/2959
+ *
  * @param  iop - The row (0..2) an column (3..5) direction cosines.
  * @return  An array of valid orientations.
  */
 function getValidOrientations(iop) {
-  const orientations = [];
+  const r = [iop[0], iop[1], iop[2]];
+  const c = [iop[3], iop[4], iop[5]];
+  const negate = (v) => v.map((x) => -x);
 
   // [0,  1,  2]: 0,   0hf,   0vf
   // [3,  4,  5]: 90,  90hf,  90vf
   // [6, 7]:      180, 270
-
-  orientations[0] = iop;
-  orientations[1] = flipIOP.h(iop);
-  orientations[2] = flipIOP.v(iop);
-
-  const iop90 = rotateDirectionCosinesInPlane(iop, Math.PI / 2);
-
-  orientations[3] = iop90;
-  orientations[4] = flipIOP.h(iop90);
-  orientations[5] = flipIOP.v(iop90);
-
-  orientations[6] = rotateDirectionCosinesInPlane(iop, Math.PI);
-  orientations[7] = rotateDirectionCosinesInPlane(iop, 1.5 * Math.PI);
-
-  return orientations;
+  return [
+    [...r, ...c],
+    [...r, ...negate(c)],
+    [...negate(r), ...c],
+    [...c, ...negate(r)],
+    [...c, ...r],
+    [...negate(c), ...negate(r)],
+    [...negate(r), ...negate(c)],
+    [...negate(c), ...r],
+  ];
 }
 
 /**
