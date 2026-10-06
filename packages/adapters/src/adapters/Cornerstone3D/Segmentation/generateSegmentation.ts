@@ -1,4 +1,4 @@
-import { normalizers, derivations } from 'dcmjs';
+import { normalizers, derivations, data as dcmjsData } from 'dcmjs';
 import { Enums } from '@cornerstonejs/core';
 import { fillSegmentation as fillBitmapSegmentation } from '../../Cornerstone/Segmentation_4X';
 import {
@@ -22,6 +22,10 @@ const { SEGImageNormalizer } = normalizers;
 const { Segmentation: SegmentationDerivation } = derivations;
 const LABELMAP_SEG_SOP_CLASS_UID = '1.2.840.10008.5.1.4.1.1.66.7';
 const BITMAP_SEG_SOP_CLASS_UID = '1.2.840.10008.5.1.4.1.1.66.4';
+const IMAGE_POSITION_PATIENT_TAG = 0x00200032;
+const PLANE_POSITION_SEQUENCE_TAG = 0x00209113;
+// Positions closer than this along the slice normal (mm) are the same slice.
+const SAME_SLICE_TOLERANCE_MM = 1e-3;
 
 interface IOptions {
   predecessorImageId?: string;
@@ -229,6 +233,87 @@ function getPlaneSequencesForImage(
   return result;
 }
 
+const firstItem = (sequence) =>
+  Array.isArray(sequence) ? sequence[0] : sequence;
+
+/**
+ * 1-based rank of each frame's ImagePositionPatient along the slice normal —
+ * the Dimension Index Values of a LABELMAP SEG indexed by position alone.
+ * Frames on the same plane share a rank. Without usable geometry there is
+ * nothing to rank by, so frame order stands in.
+ */
+function getPositionDimensionIndexValues(
+  frames: Array<{
+    planePositionSequence?: { ImagePositionPatient?: number[] };
+    planeOrientationSequence?: { ImageOrientationPatient?: number[] };
+  }>,
+  sharedFunctionalGroups
+): number[] {
+  const toFiniteNumbers = (values, length: number) => {
+    const numbers = Array.isArray(values) ? values.map(Number) : [];
+    return numbers.length === length && numbers.every(Number.isFinite)
+      ? numbers
+      : undefined;
+  };
+  const orientation = toFiniteNumbers(
+    firstItem(
+      frames.find((frame) => frame.planeOrientationSequence)
+        ?.planeOrientationSequence ??
+        sharedFunctionalGroups?.PlaneOrientationSequence
+    )?.ImageOrientationPatient,
+    6
+  );
+  const positions = frames.map((frame) =>
+    toFiniteNumbers(
+      firstItem(frame.planePositionSequence)?.ImagePositionPatient,
+      3
+    )
+  );
+  if (!orientation || positions.some((position) => !position)) {
+    return frames.map((_, index) => index + 1);
+  }
+
+  const [rx, ry, rz, cx, cy, cz] = orientation;
+  const normal = [ry * cz - rz * cy, rz * cx - rx * cz, rx * cy - ry * cx];
+  const distances = positions.map(
+    ([x, y, z]) => x * normal[0] + y * normal[1] + z * normal[2]
+  );
+
+  const slices: number[] = [];
+  [...distances]
+    .sort((a, b) => a - b)
+    .forEach((distance) => {
+      if (
+        !slices.length ||
+        distance - slices[slices.length - 1] > SAME_SLICE_TOLERANCE_MM
+      ) {
+        slices.push(distance);
+      }
+    });
+  return distances.map(
+    (distance) =>
+      slices.findIndex(
+        (slice) => Math.abs(distance - slice) <= SAME_SLICE_TOLERANCE_MM
+      ) + 1
+  );
+}
+
+/**
+ * The source series' Slice Thickness. The normalizer derives the SEG's from
+ * the gap between its first two frames, which for a LABELMAP export (built
+ * from the painted frames only) is 0 for a single frame and the gap between
+ * segmented slices when they are not adjacent.
+ */
+function getSourceSliceThickness(image, metadata): number | undefined {
+  const sliceThickness = Number(
+    metadata?.get?.(MetadataModules.IMAGE_PLANE, image?.imageId)
+      ?.sliceThickness ??
+      metadata?.get?.(MetadataModules.IMAGE_DATA, image?.imageId)
+        ?.SliceThickness
+  );
+  return sliceThickness > 0 ? sliceThickness : undefined;
+}
+
 function fillLabelmapSegmentation(
   segmentation,
   inputLabelmaps3D,
@@ -379,7 +464,45 @@ function fillLabelmapSegmentation(
     };
   });
 
-  applyPerFrameFunctionalGroups(dataset, perFrameInputs);
+  // derive() organizes the dimensions for BINARY (Referenced Segment Number,
+  // then position), but LABELMAP frames carry many segments and have no
+  // Segment Identification Sequence, so position is the only dimension.
+  const dimensionOrganizationUID =
+    firstItem(dataset.DimensionOrganizationSequence)
+      ?.DimensionOrganizationUID ?? dcmjsData.DicomMetaDictionary.uid();
+  dataset.DimensionOrganizationSequence = {
+    DimensionOrganizationUID: dimensionOrganizationUID,
+  };
+  dataset.DimensionIndexSequence = [
+    {
+      DimensionOrganizationUID: dimensionOrganizationUID,
+      DimensionIndexPointer: IMAGE_POSITION_PATIENT_TAG,
+      FunctionalGroupPointer: PLANE_POSITION_SEQUENCE_TAG,
+      DimensionDescriptionLabel: 'ImagePositionPatient',
+    },
+  ];
+  const dimensionIndexValues = getPositionDimensionIndexValues(
+    perFrameInputs,
+    dataset.SharedFunctionalGroupsSequence
+  );
+
+  applyPerFrameFunctionalGroups(
+    dataset,
+    perFrameInputs.map((frame, index) => ({
+      ...frame,
+      dimensionIndexValues: [dimensionIndexValues[index]],
+    }))
+  );
+
+  const sliceThickness = getSourceSliceThickness(images[0], metadata);
+  if (sliceThickness) {
+    dataset.SharedFunctionalGroupsSequence.PixelMeasuresSequence = {
+      ...firstItem(
+        dataset.SharedFunctionalGroupsSequence.PixelMeasuresSequence
+      ),
+      SliceThickness: sliceThickness,
+    };
+  }
 
   const sopInstanceUIDs = new Set(
     images
