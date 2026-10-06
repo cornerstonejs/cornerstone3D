@@ -771,6 +771,19 @@ export class ImageVolume {
     }
   }
 
+  /**
+   * The quality of the data that the image of one image id index holds. A
+   * volume that does not stream holds every image at full resolution, and a
+   * streaming volume states the quality that each delivery recorded.
+   *
+   * @returns the quality, or undefined when no data of the image has arrived
+   */
+  public getImageQuality(
+    _imageIdIndex: number
+  ): ImageQualityStatus | undefined {
+    return ImageQualityStatus.FULL_RESOLUTION;
+  }
+
   /** return the image ids for the volume if it is made of separated images */
   public get imageIds(): string[] {
     return this._imageIds;

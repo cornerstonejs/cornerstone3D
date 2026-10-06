@@ -429,6 +429,10 @@ export class BaseStreamingImageVolume
     super.destroy();
   }
 
+  public getImageQuality(imageIdIndex: number): ImageQualityStatus | undefined {
+    return this.cachedFrames[imageIdIndex] || undefined;
+  }
+
   /**
    * The frames of this volume that the loader has already delivered.
    *

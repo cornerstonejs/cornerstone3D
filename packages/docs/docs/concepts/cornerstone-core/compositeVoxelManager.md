@@ -202,10 +202,20 @@ const reduced = composite.createRepresentation({
 | `statistic`                        | the statistic of the result. `average` by default                                          |
 | `round`                            | rounds each value. `true` by default, for a store of whole numbers                         |
 
-**The reduction is a box average, and it is never a decimation.** A decimation of 2 takes every
+**A derivation is a box average, and it is not a decimation.** A decimation of 2 takes every
 second voxel, which keeps the high spatial frequencies and folds them into the signal as an alias.
-A reformat then shows vertical blur with stair steps on an oblique structure, and that result is
-not acceptable when a reformat is diagnostic.
+A reformat then shows vertical blur with stair steps on an oblique structure.
+
+The rule for a display is less strict:
+
+- An interactive display or a lossy display of high-resolution data can use a decimation, because
+  the next full-quality render replaces it.
+- A display of lower-resolution data uses the box average. The texture fill of a reduced grid uses
+  the fast box average of `fillPlane`.
+- The box average can come from a direct fetch, such as a server or a decoder that gives the data
+  at the reduced resolution.
+- A fill can average only the source voxels that the display needs, such as the voxels of one
+  oblique plane.
 
 **A derivation always goes from a higher resolution to a lower one.** A box size is a whole number
 of at least 1, so the result is never finer than its source. Data that no derivation can give
@@ -513,7 +523,7 @@ and it serves both cases.
 | Field            | What it does                                                                                                             | Without it                           |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------ |
 | `reduceBySlices` | a fast path of `reduceByBoxStatistic` that reads whole slices. It returns `undefined` when it does not apply to a source | the reduction uses the accumulator   |
-| `fillPlane`      | fills one reduced slice of a GPU texture from the source frames of its box                                               | the texture falls back to `fillGrid` |
+| `fillPlane`      | fills one reduced slice of a GPU texture from the source frames of its box that have arrived                             | the texture falls back to `fillGrid` |
 | `boxReduction`   | the kind of reduction that a box derivation of this statistic records                                                    | the derivation records `boxAverage`  |
 
 A fast path must give the same values as the accumulator. A reduction, a texture fill and a box

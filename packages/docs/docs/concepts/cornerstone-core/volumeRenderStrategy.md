@@ -116,6 +116,17 @@ when a viewport adds its actor. The loader fills the voxel managers as the data 
 `ImageVolume` marks every texture whose grid covers the new region, and each render refills the
 marked slices. That is the path that the code already used, and a strategy does not change it.
 
+**One render fills a limited number of reduced slices.** The fill of a reduced texture runs on the
+main thread inside the render, so a render stops after `rendering.reducedTextureFill.maxSlicesPerRender`
+slices that hold data (16 by default). It also stops when
+`rendering.reducedTextureFill.maxMillisecondsPerRender` (8 ms by default) has passed, but only after
+it filled at least one slice. The texture then requests another render for the slices that remain,
+and the next fill starts where the last one stopped.
+
+**A reduced slice reads only the frames that have arrived.** A frame that has not arrived would pull
+the average towards 0. A replicate is a copy of another frame, so a slice reads a replicate only when
+no frame of its box has arrived.
+
 ## How the volume takes a delivery
 
 `ImageVolume` states three separate things, and each caller states only what it knows:
