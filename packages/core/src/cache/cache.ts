@@ -624,14 +624,12 @@ class Cache {
     for (const volumeId of volumeIds) {
       const cachedVolume = this._volumeCache.get(volumeId);
 
-      if (!cachedVolume) {
-        return;
-      }
+      const volume = cachedVolume?.volume;
 
-      const { volume } = cachedVolume;
-
-      if (!volume.imageIds.length) {
-        return;
+      // A volume that holds no image ids, such as one built from a scalar
+      // array, cannot contain the image, and the search goes on.
+      if (!volume?.imageIds?.length) {
+        continue;
       }
 
       const imageIdIndex = volume.getImageURIIndex(imageIdToUse);

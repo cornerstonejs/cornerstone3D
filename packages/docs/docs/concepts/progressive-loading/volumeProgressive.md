@@ -143,6 +143,20 @@ imageRetrieveMetadataProvider.add(
 );
 ```
 
+## A stack prefetch stays out of a progressive volume load
+
+A progressive volume load orders its own requests. A stack prefetch of the same
+series loads the images from the top down, and it can use more request slots
+than the stages of the volume. Two rules keep the two loads apart:
+
+- When a volume starts a progressive load, it removes the queued `prefetch`
+  requests of other loaders for its images. A stack viewport that showed the
+  series before a switch to MPR queued such requests.
+- `stackPrefetch` and `stackContextPrefetch` queue nothing for a stack whose
+  images a volume loads progressively.
+
+`volume.isLoadingProgressively()` states whether a volume loads in this way.
+
 ## HTJ2K Byte Range
 
 The volume progressive loading extends the basic stack loading with the ability

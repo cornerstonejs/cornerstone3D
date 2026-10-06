@@ -422,6 +422,36 @@ export class BaseStreamingImageVolume
     }
 
     this._prefetchImageIds();
+
+    if (this.isLoadingProgressively()) {
+      this.removeOtherPrefetchRequests();
+    }
+  }
+
+  /**
+   * Whether this volume loads now through a retrieve configuration, such as
+   * the interleaved stages. Such a load orders its own requests, so a stack
+   * prefetch of the same images competes with it and must stay out.
+   */
+  public isLoadingProgressively(): boolean {
+    return !!this.loadStatus.loading && this.imagesLoader !== this;
+  }
+
+  /**
+   * Removes the queued prefetch requests of another loader for the images of
+   * this volume. A stack prefetch queued before a switch to a volume layout
+   * otherwise loads the whole series from the top down, and it takes more
+   * request slots than the stages of this volume.
+   */
+  protected removeOtherPrefetchRequests(): void {
+    const imageIds = new Set(this.imageIds);
+
+    imageLoadPoolManager.filterRequests(
+      ({ type, additionalDetails }) =>
+        type !== RequestType.Prefetch ||
+        additionalDetails?.volumeId === this.volumeId ||
+        !imageIds.has(additionalDetails?.imageId as string)
+    );
   }
 
   destroy(): void {
