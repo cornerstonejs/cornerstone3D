@@ -263,7 +263,7 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
       // for this table. Errors in low values of opacity accumulate to
       // visible artifacts. High values of opacity quickly terminate without
       // artifacts.
-      if (canUseFloatOpacityTexture(model._openGLRenderWindow, model.context)) {
+      if (canUseFloatOpacityTexture(model.context)) {
         newOpacityTexture.create2DFromRaw({
           width: oWidth,
           height: 2 * numIComps,
