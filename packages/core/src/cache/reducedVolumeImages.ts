@@ -31,7 +31,8 @@ export const REDUCED_IMAGE_SCHEME = 'reduced';
  * A size starts with a digit, which no scheme does, so the strip does not
  * happen and a reduced slice keeps a URI of its own.
  */
-const REDUCED_IMAGE_ID = /^reduced:(\d+)x(\d+)(?:x(\d+))?:([^:]+):(.+)$/;
+const REDUCED_IMAGE_ID =
+  /^reduced:(\d+)x(\d+)(?:x(\d+))?(?:@(\d+),(\d+))?:([^:]+):(.+)$/;
 
 /** The element types that `createAndCacheLocalImage` accepts. */
 const STORABLE_TYPES = new Set([
@@ -51,6 +52,11 @@ export type ReducedImageIdOptions = {
   rows: number;
   /** The number of source frames that the reduced slice covers. One by default. */
   frames?: number;
+  /**
+   * The first source column and row that the reduced slice covers, for one
+   * brick of the plane. `[0, 0]` by default.
+   */
+  inPlaneOffset?: [number, number];
   /** The statistic that the reduced slice holds. `average` by default. */
   statistic?: VoxelStatistic;
 };
@@ -103,16 +109,22 @@ export type ReducedImages = {
  * The id then names the FIRST of those frames and states how many frames the
  * slice covers, which identifies the set, because the frames of a volume are
  * ordered.
+ *
+ * A brick that starts away from the first column or row also names that start,
+ * so two bricks of one plane never share a reduced slice.
  */
 export function reducedImageId({
   sourceImageId,
   columns,
   rows,
   frames = 1,
+  inPlaneOffset = [0, 0],
   statistic = VoxelStatistics.Average,
 }: ReducedImageIdOptions): string {
+  const [offsetI, offsetJ] = inPlaneOffset;
   const size =
-    frames > 1 ? `${columns}x${rows}x${frames}` : `${columns}x${rows}`;
+    (frames > 1 ? `${columns}x${rows}x${frames}` : `${columns}x${rows}`) +
+    (offsetI || offsetJ ? `@${offsetI},${offsetJ}` : '');
 
   return `${REDUCED_IMAGE_SCHEME}:${size}:${statistic}:${sourceImageId}`;
 }
@@ -141,8 +153,9 @@ export function parseReducedImageId(
     columns: Number(match[1]),
     rows: Number(match[2]),
     frames: match[3] ? Number(match[3]) : 1,
-    statistic: match[4] as VoxelStatistic,
-    sourceImageId: match[5],
+    inPlaneOffset: [Number(match[4] ?? 0), Number(match[5] ?? 0)],
+    statistic: match[6] as VoxelStatistic,
+    sourceImageId: match[7],
   };
 }
 
@@ -208,6 +221,7 @@ export function provideReducedImages({
       columns,
       rows,
       frames,
+      inPlaneOffset: [sourceOffset[0], sourceOffset[1]],
       statistic,
     });
 
@@ -226,6 +240,8 @@ export function provideReducedImages({
       if (!image) {
         return undefined;
       }
+    } else if (sharedCacheKey) {
+      cache.setImageSharedCacheKey(imageId, sharedCacheKey);
     }
 
     imageIds.push(imageId);

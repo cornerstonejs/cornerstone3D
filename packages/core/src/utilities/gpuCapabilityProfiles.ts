@@ -122,7 +122,9 @@ function getGpuCapabilityProfiles(): GpuCapabilityProfile[] {
 function getGpuCapabilityProfile(
   id: GpuCapabilityProfileId
 ): GpuCapabilityProfile {
-  const profile = PROFILES[id];
+  const profile = Object.prototype.hasOwnProperty.call(PROFILES, id)
+    ? PROFILES[id]
+    : undefined;
 
   if (!profile) {
     throw new Error(`gpuCapabilityProfiles: there is no profile named ${id}`);

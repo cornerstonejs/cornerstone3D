@@ -418,10 +418,16 @@ export class ImageVolume {
       this._compositeVoxelManager.primary !== primary
     ) {
       this._compositeVoxelManager?.dispose();
+      const delivered = this.deliveredRegions();
       this._compositeVoxelManager = new CompositeVoxelManager<number | RGB>({
         primary,
         grid: this.voxelGrid,
-        delivered: this.deliveredRegions(),
+        delivered,
+        // A volume that states no deliveries holds every voxel.
+        quality:
+          delivered === undefined
+            ? ImageQualityStatus.FULL_RESOLUTION
+            : undefined,
         id: `composite-${this.volumeId}`,
         createStorage: (request) => this.createRepresentationStorage(request),
         // A derivation in batches writes voxels that a texture of the derived

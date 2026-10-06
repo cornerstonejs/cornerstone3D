@@ -177,7 +177,7 @@ reads it, so the primary grid answers over its whole extent.
 ## When the strategies are rebuilt
 
 **The provider runs again whenever something changes that could change its answer.** A render path
-is long lived, and two things move under it:
+is long-lived, and two things move under it:
 
 | Reason   | What changed                                                                                                                                              |
 | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
