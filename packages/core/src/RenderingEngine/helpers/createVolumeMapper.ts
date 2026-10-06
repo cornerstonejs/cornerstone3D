@@ -4,6 +4,43 @@ import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture';
 import vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
+import vtkBoundingBox from '@kitware/vtk.js/Common/DataModel/BoundingBox';
+
+/** The largest number of samples along one ray of a volume mapper. */
+export const MAXIMUM_SAMPLES_PER_RAY = 4000;
+
+/**
+ * The sample distance of a volume mapper: half the mean side of one voxel of
+ * the grid that the texture holds, times the multiplier. This is where the
+ * divide by 6 comes from:
+ * https://github.com/Kitware/VTK/blob/6b559c65bb90614fb02eb6d1b9e3f0fca3fe4b0b/Rendering/VolumeOpenGL2/vtkSmartVolumeMapper.cxx#L344
+ *
+ * A reduced texture holds a grid of a larger spacing, and a sample finer than
+ * half of its voxel adds no detail. The distance also never falls below the
+ * diagonal of the volume divided by `MAXIMUM_SAMPLES_PER_RAY`, so a long
+ * series needs no more samples than that on one ray. vtk.js does not enforce
+ * the maximum: it warns on every render and samples the whole ray.
+ *
+ * @param imageData - the image data of the volume
+ * @param texture - the texture that the mapper reads, which can state a grid
+ * @param multiplier - the multiplier of the default distance. The default is
+ * `rendering.volumeRendering.sampleDistanceMultiplier` of the configuration.
+ */
+export function sampleDistanceOf(
+  imageData: vtkImageData,
+  texture?: unknown,
+  multiplier = getConfiguration().rendering?.volumeRendering
+    ?.sampleDistanceMultiplier || 1
+): number {
+  const grid = (
+    texture as { getGrid?: () => { spacing: number[] } | null } | undefined
+  )?.getGrid?.();
+  const spacing = grid?.spacing ?? imageData.getSpacing();
+  const distance = (multiplier * (spacing[0] + spacing[1] + spacing[2])) / 6;
+  const diagonal = vtkBoundingBox.getDiagonalLength(imageData.getBounds());
+
+  return Math.max(distance, diagonal / (MAXIMUM_SAMPLES_PER_RAY - 1));
+}
 
 /**
  * Given an imageData and a vtkOpenGLTexture, it creates a "shared" vtk volume mapper
@@ -23,19 +60,8 @@ export default function createVolumeMapper(
 
   volumeMapper.setInputData(imageData);
 
-  const spacing = imageData.getSpacing();
-  // Set the sample distance to half the mean length of one side. This is where the divide by 6 comes from.
-  // https://github.com/Kitware/VTK/blob/6b559c65bb90614fb02eb6d1b9e3f0fca3fe4b0b/Rendering/VolumeOpenGL2/vtkSmartVolumeMapper.cxx#L344
-  const sampleDistanceMultiplier =
-    getConfiguration().rendering?.volumeRendering?.sampleDistanceMultiplier ||
-    1;
-  const sampleDistance =
-    (sampleDistanceMultiplier * (spacing[0] + spacing[1] + spacing[2])) / 6;
-
-  // This is to allow for good pixel level image quality.
-  // Todo: why we are setting this to 4000? Is this a good number? it should be configurable
-  volumeMapper.setMaximumSamplesPerRay(4000);
-  volumeMapper.setSampleDistance(sampleDistance);
+  volumeMapper.setMaximumSamplesPerRay(MAXIMUM_SAMPLES_PER_RAY);
+  volumeMapper.setSampleDistance(sampleDistanceOf(imageData, vtkOpenGLTexture));
   // A render path can create the mapper before it binds a base texture.
   if (vtkOpenGLTexture) {
     volumeMapper.setScalarTexture(vtkOpenGLTexture);

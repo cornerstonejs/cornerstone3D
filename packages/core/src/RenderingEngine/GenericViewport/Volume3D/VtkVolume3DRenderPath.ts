@@ -14,6 +14,7 @@ import invertRgbTransferFunction from '../../../utilities/invertRgbTransferFunct
 import { updateOpacity as updateVolumeOpacity } from '../../../utilities/colormap';
 import uuidv4 from '../../../utilities/uuidv4';
 import createVolumeActor from '../../helpers/createVolumeActor';
+import { sampleDistanceOf } from '../../helpers/createVolumeMapper';
 import {
   defaultVolumeStrategyProvider,
   selectFirstReadyStrategy,
@@ -326,6 +327,18 @@ export class VtkVolume3DRenderPath
           setScalarTexture?: (texture: unknown) => void;
         }
       ).setScalarTexture?.(base.texture);
+      // The grid of the new texture sets the sample distance.
+      const imageData = rendering.mapper.getInputData?.();
+
+      if (imageData) {
+        rendering.mapper.setSampleDistance(
+          sampleDistanceOf(
+            imageData,
+            base.texture,
+            sampleDistanceMultipliers.get(rendering.mapper)
+          )
+        );
+      }
       rendering.mapper.modified();
       rendering.boundTexture = base.texture;
     }
@@ -497,6 +510,9 @@ function applyCamera(
   }
 }
 
+/** The last multiplier of each mapper, for a later change of its texture. */
+const sampleDistanceMultipliers = new WeakMap<vtkVolumeMapper, number>();
+
 function applySampleDistanceMultiplier(
   mapper: vtkVolumeMapper,
   multiplier: number
@@ -507,13 +523,18 @@ function applySampleDistanceMultiplier(
     return;
   }
 
-  const spacing = imageData.getSpacing();
-  const defaultSampleDistance = (spacing[0] + spacing[1] + spacing[2]) / 6;
+  sampleDistanceMultipliers.set(mapper, multiplier);
+
   const safeMultiplier = Number.isFinite(multiplier)
     ? Math.max(multiplier, 0.001)
     : 1;
+  const texture = (
+    mapper as unknown as { getScalarTexture?: () => unknown }
+  ).getScalarTexture?.();
 
-  mapper.setSampleDistance(defaultSampleDistance * safeMultiplier);
+  mapper.setSampleDistance(
+    sampleDistanceOf(imageData, texture, safeMultiplier)
+  );
 }
 
 function setCameraClippingRange(ctx: Volume3DVtkVolumeAdapterContext): void {
