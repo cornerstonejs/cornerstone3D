@@ -24,8 +24,8 @@ const LABELMAP_SEG_SOP_CLASS_UID = '1.2.840.10008.5.1.4.1.1.66.7';
 const BITMAP_SEG_SOP_CLASS_UID = '1.2.840.10008.5.1.4.1.1.66.4';
 const IMAGE_POSITION_PATIENT_TAG = 0x00200032;
 const PLANE_POSITION_SEQUENCE_TAG = 0x00209113;
-// Positions closer than this along the slice normal (mm) are the same slice.
-const SAME_SLICE_TOLERANCE_MM = 1e-3;
+// Positions closer than this (mm) are the same position.
+const SAME_POSITION_TOLERANCE_MM = 1e-3;
 
 interface IOptions {
   predecessorImageId?: string;
@@ -237,10 +237,11 @@ const firstItem = (sequence) =>
   Array.isArray(sequence) ? sequence[0] : sequence;
 
 /**
- * 1-based rank of each frame's ImagePositionPatient along the slice normal —
- * the Dimension Index Values of a LABELMAP SEG indexed by position alone.
- * Frames on the same plane share a rank. Without usable geometry there is
- * nothing to rank by, so frame order stands in.
+ * The Dimension Index Values of a LABELMAP SEG indexed by ImagePositionPatient
+ * alone (PS3.3 C.7.6.17.1): frames at the same position share a value and
+ * distinct positions get distinct values, ranked along the slice normal (frame
+ * order without an orientation). Frames with no position share one value after
+ * all the others, as the standard requires for an absent indexed attribute.
  */
 function getPositionDimensionIndexValues(
   frames: Array<{
@@ -269,32 +270,44 @@ function getPositionDimensionIndexValues(
       3
     )
   );
-  if (!orientation || positions.some((position) => !position)) {
-    return frames.map((_, index) => index + 1);
-  }
+  const [rx, ry, rz, cx, cy, cz] = orientation ?? [];
+  const normal = orientation && [
+    ry * cz - rz * cy,
+    rz * cx - rx * cz,
+    rx * cy - ry * cx,
+  ];
 
-  const [rx, ry, rz, cx, cy, cz] = orientation;
-  const normal = [ry * cz - rz * cy, rz * cx - rx * cz, rx * cy - ry * cx];
-  const distances = positions.map(
-    ([x, y, z]) => x * normal[0] + y * normal[1] + z * normal[2]
-  );
+  const groups: Array<{ position: number[]; order: number }> = [];
+  const groupOfFrame = positions.map((position, frameIndex) => {
+    if (!position) {
+      return -1;
+    }
+    const existing = groups.findIndex(
+      (group) =>
+        Math.hypot(
+          ...group.position.map((value, axis) => value - position[axis])
+        ) <= SAME_POSITION_TOLERANCE_MM
+    );
+    if (existing !== -1) {
+      return existing;
+    }
+    const order = normal
+      ? position[0] * normal[0] +
+        position[1] * normal[1] +
+        position[2] * normal[2]
+      : frameIndex;
+    return groups.push({ position, order }) - 1;
+  });
 
-  const slices: number[] = [];
-  [...distances]
-    .sort((a, b) => a - b)
-    .forEach((distance) => {
-      if (
-        !slices.length ||
-        distance - slices[slices.length - 1] > SAME_SLICE_TOLERANCE_MM
-      ) {
-        slices.push(distance);
-      }
+  const rankOfGroup: number[] = [];
+  groups
+    .map((_, group) => group)
+    .sort((a, b) => groups[a].order - groups[b].order || a - b)
+    .forEach((group, rank) => {
+      rankOfGroup[group] = rank + 1;
     });
-  return distances.map(
-    (distance) =>
-      slices.findIndex(
-        (slice) => Math.abs(distance - slice) <= SAME_SLICE_TOLERANCE_MM
-      ) + 1
+  return groupOfFrame.map((group) =>
+    group === -1 ? groups.length + 1 : rankOfGroup[group]
   );
 }
 

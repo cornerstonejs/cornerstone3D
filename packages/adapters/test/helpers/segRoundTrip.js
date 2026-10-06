@@ -50,6 +50,13 @@ function imageIdForSlice(sliceIndex) {
  */
 function makeReferencedStack(sliceCount, options = {}) {
   const { zDirection = 1 } = options;
+  const positionForSlice =
+    options.positionForSlice ??
+    ((sliceIndex) => [0, 0, zDirection * sliceIndex]);
+  // The image plane module's position, when it should disagree with the
+  // instance's (undefined drops it).
+  const planePositionForSlice =
+    options.planePositionForSlice ?? positionForSlice;
   const imageIds = [];
   const images = [];
 
@@ -64,8 +71,6 @@ function makeReferencedStack(sliceCount, options = {}) {
     });
   }
 
-  const zForSlice = (sliceIndex) => zDirection * sliceIndex;
-
   const instanceForSlice = (sliceIndex) => ({
     SOPClassUID: CT_SOP_CLASS_UID,
     SOPInstanceUID: sopInstanceUidForSlice(sliceIndex),
@@ -74,7 +79,7 @@ function makeReferencedStack(sliceCount, options = {}) {
     Modality: 'CT',
     Rows: ROWS,
     Columns: COLUMNS,
-    ImagePositionPatient: [0, 0, zForSlice(sliceIndex)],
+    ImagePositionPatient: positionForSlice(sliceIndex),
     ImageOrientationPatient: [1, 0, 0, 0, 1, 0],
     PixelSpacing: [1, 1],
     SliceThickness: 1,
@@ -121,7 +126,7 @@ function makeReferencedStack(sliceCount, options = {}) {
           return instanceForSlice(sliceIndex);
         case 'imagePlaneModule':
           return {
-            imagePositionPatient: [0, 0, zForSlice(sliceIndex)],
+            imagePositionPatient: planePositionForSlice(sliceIndex),
             imageOrientationPatient: [1, 0, 0, 0, 1, 0],
             rowCosines: [1, 0, 0],
             columnCosines: [0, 1, 0],

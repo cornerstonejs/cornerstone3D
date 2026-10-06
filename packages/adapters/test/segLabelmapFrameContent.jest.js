@@ -117,6 +117,46 @@ describe('LABELMAP SEG export Frame Content', () => {
     expect(dimensionIndexValues(dataset)).toEqual([[2], [1]]);
   });
 
+  it('gives frames at the same position the same index', () => {
+    const dataset = writeAndRead(
+      exportLabelmap(
+        { 2: SHAPE_A, 3: SHAPE_A, 5: MULTI_LABEL },
+        { positionForSlice: (slice) => [0, 0, slice === 5 ? 3 : slice] }
+      )
+    );
+
+    expect(dimensionIndexValues(dataset)).toEqual([[1], [2], [2]]);
+  });
+
+  it('gives distinct positions on the same plane distinct indexes', () => {
+    // Slices 3 and 4 both project to z = 3 but have different origins.
+    const dataset = writeAndRead(
+      exportLabelmap(
+        { 3: SHAPE_A, 4: SHAPE_A, 6: MULTI_LABEL },
+        {
+          positionForSlice: (slice) =>
+            slice === 4 ? [10, 0, 3] : [0, 0, slice === 6 ? 1 : slice],
+        }
+      )
+    );
+
+    expect(dimensionIndexValues(dataset)).toEqual([[2], [3], [1]]);
+  });
+
+  it('gives every frame without a position one shared index after the others', () => {
+    const dataset = writeAndRead(
+      exportLabelmap(
+        { 1: SHAPE_A, 3: SHAPE_A, 6: MULTI_LABEL, 8: SHAPE_A },
+        {
+          planePositionForSlice: (slice) =>
+            slice === 1 || slice === 6 ? undefined : [0, 0, slice],
+        }
+      )
+    );
+
+    expect(dimensionIndexValues(dataset)).toEqual([[3], [1], [3], [2]]);
+  });
+
   it("takes the source's Slice Thickness for non-adjacent frames", () => {
     // The first two frames are 7 mm apart; the source slices are 1 mm thick.
     const dataset = writeAndRead(
