@@ -1036,8 +1036,8 @@ async function run() {
   // `Linear` asks for the frames from the first to the last, and `Progressive`
   // interleaves them, so a coarse version of the whole volume arrives first.
   loadButton('Linear', volumeId, () => imageIdsCT, null);
-  // Every 64th image at the offsets 0, 21 and 42 first, then the stock
-  // interleaved stages. See `coarseInterleavedRetrieveStages` in core.
+  // 64 stages of every 64th image, at bit-reversed offsets, so each level
+  // halves the gap. See `coarseInterleavedRetrieveStages` in core.
   loadButton(
     'Progressive',
     volumeId,

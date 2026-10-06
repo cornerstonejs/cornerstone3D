@@ -117,15 +117,21 @@ The configuration looks like:
 
 ## Coarse interleaved stages for a volume of many images
 
-`ProgressiveRetrieveImages.coarseInterleavedRetrieveStages` adds three coarse
-stages before the stock interleaved stages:
+`ProgressiveRetrieveImages.coarseInterleavedRetrieveStages` loads a volume in
+64 stages:
 
-- The middle image, which fills the 63 frames around it.
-- Decimate 64/0, where each image fills the 63 frames around it. The whole
-  volume holds data once 1/64 of the images have arrived.
-- Decimate 64/21 and 64/42. Each image replaces the frames that have no nearer
-  source, so after the three stages no frame is more than 11 frames from its
-  source.
+- `initialImages` retrieves the middle image and the last image. Each one fills
+  the 63 frames around it.
+- 64 stages each retrieve every 64th image at one offset. The offsets follow the
+  bit-reversed order 0, 32, 16, 48, 8, 40, 24, 56, and so on. Each level of
+  stages halves the gap between the retrieved images over the whole volume: 64
+  after the first stage, 32 after the second, 16 after the fourth, and 1 after
+  the last.
+- Each image fills the frames up to half the gap of its level. The whole volume
+  holds data once 1/64 of the images have arrived.
+
+Each image is retrieved once, at full resolution. No stage sweeps the volume
+from one end to the other, so the whole volume sharpens at the same rate.
 
 The quality of a replicate falls with its distance from the source:
 `ADJACENT_REPLICATE` beside it, and `FAR_REPLICATE + 1 / distance` farther away.
@@ -135,6 +141,13 @@ holds its nearest source in whatever order the images arrive.
 The stock stages fill only the frames at -1, +1 and +2 of every 4th image. A
 frame stays empty until a neighbour arrives, and an empty CT frame displays as a
 gray line in a reformat.
+
+**A volume takes in the images that the cache already holds.** A stack viewport
+can load images of the series before a switch to MPR. When the load starts, the
+volume delivers those images to itself in batches of at most 8 ms, so a volume
+whose images are all cached does not stall. A delivery only marks the texture
+slices, and each render fills them under the budget of
+`rendering.reducedTextureFill`.
 
 ```js
 imageRetrieveMetadataProvider.add(

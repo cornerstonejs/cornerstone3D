@@ -1,9 +1,9 @@
 import type { RetrieveStage, NearbyFrames } from '../../types';
 import { RequestType, ImageQualityStatus } from '../../enums';
-import interleavedRetrieveStages from './interleavedRetrieve';
 
-/** The decimation of the coarse stages. */
-const COARSE_DECIMATE = 64;
+/** The decimation of every stage, and so the number of stages. */
+const DECIMATE = 64;
+const OFFSET_BITS = Math.log2(DECIMATE);
 
 /**
  * The quality of a replicate that is `offset` frames from its source.
@@ -35,63 +35,79 @@ function nearbyFramesOfDecimation(decimate: number): NearbyFrames[] {
   return frames;
 }
 
-const coarseNearbyFrames = nearbyFramesOfDecimation(COARSE_DECIMATE);
+/** Reverses the low `bits` bits of `value`: 1 -> 32, 2 -> 16, 3 -> 48. */
+function reverseBits(value: number, bits: number): number {
+  let reversed = 0;
 
-const coarseStage = (
-  id: string,
-  offset: number,
-  priority: number
-): RetrieveStage => ({
-  id,
-  decimate: COARSE_DECIMATE,
-  offset,
-  priority,
-  requestType: RequestType.Thumbnail,
-  retrieveType: 'default',
-  nearbyFrames: coarseNearbyFrames,
-});
+  for (let bit = 0; bit < bits; bit++) {
+    reversed = (reversed << 1) | ((value >> bit) & 1);
+  }
 
-const [initialImages, ...laterStages] = interleavedRetrieveStages;
+  return reversed;
+}
 
 /**
- * The interleaved configuration, with three coarse stages first, for a volume
- * of many images.
+ * The gap between the retrieved images once stage `index` and all stages of
+ * its level are done: 64 after stage 0, 32 after stage 1, 16 after stages 2
+ * and 3, and 1 after the last 32 stages.
+ */
+function gapAfterStage(index: number): number {
+  const level = index === 0 ? 0 : Math.floor(Math.log2(index)) + 1;
+  return DECIMATE >> level;
+}
+
+const decimateStages: RetrieveStage[] = Array.from(
+  { length: DECIMATE },
+  (_, index) => {
+    const offset = reverseBits(index, OFFSET_BITS);
+    const gap = gapAfterStage(index);
+
+    return {
+      id: `decimate${DECIMATE}At${offset}`,
+      decimate: DECIMATE,
+      offset,
+      priority: 6 + index,
+      requestType: RequestType.Thumbnail,
+      retrieveType: 'default',
+      nearbyFrames: gap > 1 ? nearbyFramesOfDecimation(gap) : undefined,
+    };
+  }
+);
+
+/**
+ * A progressive configuration for a volume of many images, in 64 stages.
  *
- * 1. `initialImages` retrieves the middle image and fills a window of 64
- *    frames around it, so the viewport opens on data.
- * 2. `coarse64` retrieves every 64th image. Each one fills the 63 frames around
- *    it, so the whole volume holds data once 1/64 of the images have arrived.
- * 3. `coarse64At21` and `coarse64At42` retrieve every 64th image at the offsets
- *    21 and 42. Each one replaces the frames that have no nearer source, so
- *    after the three stages no frame is more than 11 frames from its source.
- * 4. The stages of `interleavedRetrieveStages` follow in their order. Their
- *    replicates also take the quality of their distance, so a nearer replicate
- *    replaces a coarse one.
+ * 1. `initialImages` retrieves the middle image and the last image, and fills
+ *    a window of 64 frames around each, so the viewport opens on data.
+ * 2. Each later stage retrieves every 64th image at one offset. The offsets
+ *    follow the bit-reversed order 0, 32, 16, 48, 8, 40, 24, 56, ..., so each
+ *    level of stages halves the gap between the retrieved images over the
+ *    whole volume, and no part of the volume waits for another part.
+ * 3. Each image fills the frames up to half the gap of its level, with the
+ *    quality of the distance. After stage 0 every frame holds data, and every
+ *    frame holds its nearest retrieved image after each stage.
  *
- * The stock configuration fills only the frames at -1, +1 and +2 of every
- * fourth image. A frame stays empty until its neighbour arrives, and an empty
- * frame of a CT displays as a gray line in a reformat.
- *
- * No image is retrieved twice: a later stage of an image runs only when the
- * earlier stage of that image did not reach full resolution.
+ * Each image is retrieved once, at full resolution. The middle and the last
+ * images are also part of a decimate stage, and that stage skips them when the
+ * first retrieve reached full resolution.
  */
 const coarseInterleavedRetrieveStages: RetrieveStage[] = [
   {
-    ...initialImages,
-    positions: [0.5],
-    nearbyFrames: coarseNearbyFrames,
+    id: 'initialImages',
+    // The last image closes the tail of a volume whose length is not a
+    // multiple of 64, which no stage of offset 0 reaches.
+    positions: [0.5, -1],
+    retrieveType: 'default',
+    requestType: RequestType.Thumbnail,
+    priority: 5,
+    nearbyFrames: nearbyFramesOfDecimation(DECIMATE),
   },
-  coarseStage('coarse64', 0, 6),
-  coarseStage('coarse64At21', 21, 7),
-  coarseStage('coarse64At42', 42, 8),
-  ...laterStages.map((stage) => ({
-    ...stage,
-    priority: stage.priority === undefined ? undefined : stage.priority + 3,
-    nearbyFrames: stage.nearbyFrames?.map(({ offset }) => ({
-      offset,
-      imageQualityStatus: replicateQualityOf(offset),
-    })),
-  })),
+  ...decimateStages,
+  {
+    // Goes back to a basic retrieve when a server returns errors for the
+    // requests above.
+    id: 'errorRetrieve',
+  },
 ];
 
 export default coarseInterleavedRetrieveStages;
