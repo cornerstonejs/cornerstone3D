@@ -1107,9 +1107,10 @@ export function insertOverlappingPixelDataPlanar(
 
       const segmentIndex = getSegmentIndex(multiframe, i);
       if (segmentIndex === undefined) {
-        throw new Error(
-          'Could not retrieve the segment index. Aborting segmentation loading.'
+        cs3dLogger.warn(
+          `Could not retrieve the segment index for frame ${i}, skipping this frame.`
         );
+        continue;
       }
 
       if (segmentIndex !== segmentIndexToProcess) {
@@ -1352,9 +1353,10 @@ export function insertPixelDataPlanar(
         const segmentIndex = getSegmentIndex(multiframe, i);
 
         if (segmentIndex === undefined) {
-          throw new Error(
-            'Could not retrieve the segment index. Aborting segmentation loading.'
+          cs3dLogger.warn(
+            `Could not retrieve the segment index for frame ${i}, skipping this frame.`
           );
+          continue;
         }
 
         if (!segmentsPixelIndices.has(segmentIndex)) {
