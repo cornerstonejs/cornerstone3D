@@ -36,6 +36,12 @@ export type Logger = {
   warn: (...args: unknown[]) => void;
   error: (...args: unknown[]) => void;
   setLevel: (level: string | number) => void;
+  /**
+   * The current level, as the loglevel numbers: 0 trace, 1 debug, 2 info,
+   * 3 warn, 4 error, 5 silent. Use it to skip the work that builds an
+   * expensive message, and not to decide whether to log.
+   */
+  getLevel?: () => number;
 };
 
 /**

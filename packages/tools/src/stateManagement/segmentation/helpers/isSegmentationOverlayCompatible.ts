@@ -1,4 +1,4 @@
-import { cache, metaData, type Types } from '@cornerstonejs/core';
+import { Enums, cache, metaData, type Types } from '@cornerstonejs/core';
 import { SegmentationRepresentations } from '../../../enums';
 import { getSegmentation } from '../getSegmentation';
 import { getLabelmaps } from '../labelmapModel';
@@ -141,6 +141,21 @@ function stackViewportReferencesImages(
 }
 
 /**
+ * Whether a `PlanarViewport` currently shows a volume. That class serves both a
+ * stack and a volume, and it reports an empty list when it shows a stack.
+ * Reading it is safe on that class, unlike `getImageIds` on a volume viewport.
+ */
+function mountsAVolume(viewport: {
+  getAllVolumeIds?: () => string[];
+}): boolean {
+  try {
+    return (viewport.getAllVolumeIds?.() ?? []).length > 0;
+  } catch (error) {
+    return false;
+  }
+}
+
+/**
  * The single place that decides whether a segmentation overlay
  * (representation) is compatible with a viewport, i.e. whether the viewport is
  * a suitable destination for it. Any future compatibility rule - new
@@ -155,11 +170,13 @@ function stackViewportReferencesImages(
  *   labelmap's source images (see `stackViewportReferencesImages`); a stack
  *   showing an unrelated series cannot mount the labelmap and would only be
  *   disturbed by it.
- * - Labelmap on a volume viewport (including fusion): volume viewports
- *   resample labelmaps by geometry, so any labelmap sharing the viewport's
+ * - Labelmap on a volume viewport (including fusion): volume viewports resample
+ *   labelmaps by geometry, so any labelmap sharing the viewport's
  *   FrameOfReferenceUID is compatible - even one derived from a series the
  *   viewport does not display (data-overlay and cross-series painting
  *   workflows rely on this). Only a differing frame of reference suppresses.
+ *   A viewport counts as a volume viewport when it has a volume mounted, and
+ *   not when it only exposes `getAllVolumeIds`.
  *
  * Returns `true` whenever compatibility cannot be determined (unknown
  * segmentation, no source images or frame of reference derivable yet, viewport
@@ -187,11 +204,25 @@ export function isSegmentationOverlayCompatible(
 
   const layers = getLabelmaps(segmentation);
 
-  // Only BaseVolumeViewport exposes getAllVolumeIds, so its presence
-  // discriminates volume from stack (and other image-based) viewports.
-  const isVolumeViewport =
+  // `BaseVolumeViewport` is not the only class that exposes `getAllVolumeIds`
+  // any more, so the method alone no longer discriminates. A `PlanarViewport`
+  // exposes it whether the viewport shows a stack or a volume, and it returns
+  // an empty list for a stack. A stack-backed `PlanarViewport` therefore took
+  // the volume rule, where the viewport reports a synthetic frame of reference
+  // (`planarNext-viewport-<id>`) that no labelmap can match, and every
+  // representation was dropped.
+  //
+  // A `PlanarViewport` is asked which of the two it currently shows. Every
+  // other class keeps the old test, because a `BaseVolumeViewport` is a volume
+  // viewport even before `setVolumes`, and `getImageIds` throws on one until an
+  // actor exists.
+  const exposesVolumeApi =
     typeof (viewport as { getAllVolumeIds?: () => string[] })
       .getAllVolumeIds === 'function';
+  const isVolumeViewport =
+    exposesVolumeApi &&
+    (viewport.type !== Enums.ViewportType.PLANAR_NEXT ||
+      mountsAVolume(viewport as { getAllVolumeIds?: () => string[] }));
 
   return isVolumeViewport
     ? volumeViewportSharesFrameOfReference(viewport, layers)

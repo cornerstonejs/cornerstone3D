@@ -136,13 +136,20 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
   /**
    * @abstract addNewAnnotation Creates a new annotation based on the clicked mouse position
    *
+   * A tool returns `null` when it creates no annotation, because it has
+   * nothing to measure on this viewport - for example when a configured
+   * `targetsFilter` selects no target there.  `null` is the only permitted
+   * empty result: a tool must not return `undefined`, so that the caller can
+   * tell a deliberate "nothing was created" from a missing return value.
+   *
    * @param evt - The normalized mouse event
    * @param interactionType -  The interaction type used to add the annotation.
+   * @returns The new annotation, or `null` when the tool creates none.
    */
   abstract addNewAnnotation(
     evt: EventTypes.InteractionEventType,
     interactionType: InteractionTypes
-  ): Annotation;
+  ): Annotation | null;
 
   /**
    * @abstract cancel Used to cancel the ongoing tool drawing and manipulation
@@ -608,6 +615,39 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
   }
 
   isSuvScaled = AnnotationTool.isSuvScaled;
+
+  /**
+   * Resolves the volume this tool measures on the given viewport, together
+   * with the targetId its statistics are cached under.
+   *
+   * The target comes from the inherited {@link BaseTool.getTargetId}, so it
+   * honours the `targetsFilter`/`targetPredicate` tool configuration (see
+   * `measurementTargetFilters`): on a fusion viewport, configuring
+   * `firstPixelData` with `forModality('PT')` measures the PT volume rather
+   * than the viewport's default (first) one.  Without a configured filter the
+   * viewport's default view reference is used.
+   *
+   * The annotation data is deliberately not passed to `getTargetId`. A tool
+   * whose `cachedStats` is a flat `VolumeStats` (`pointsInVolume`,
+   * `statistics`) rather than a map keyed by targetId holds no `volumeId:`
+   * key that the target selection can reuse. The viewport alone decides the
+   * target.
+   *
+   * @param viewport - the viewport to resolve the target on
+   * @returns the targetId and its cached volume, or `null` when a configured
+   *   filter selects no target on this viewport (eg a PT only filter on a CT
+   *   viewport) or the volume is no longer cached
+   */
+  protected getTargetVolume(
+    viewport: Types.IViewport
+  ): { targetId: string; imageVolume: Types.IImageVolume } | null {
+    const targetId = this.getTargetId(viewport);
+    const imageVolume = targetId
+      ? cache.getVolume(csUtils.getVolumeId(targetId))
+      : undefined;
+
+    return imageVolume ? { targetId, imageVolume } : null;
+  }
 
   /**
    * Get the style that will be applied to all annotations such as length, cobb

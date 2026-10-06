@@ -26,7 +26,7 @@ overrides:
   '@babel/helper-compilation-targets': 7.29.7
   caniuse-lite: 1.0.30001767
   'browserslist@<4.28.7': 4.28.7
-  axios: 1.18.1
+  axios: 1.20.0
   buffer: 6.0.3
   node-forge: 1.4.0
   canvas: 3.2.0
@@ -44,7 +44,7 @@ overrides:
   socket.io-parser: 4.2.7
   path-to-regexp: 0.1.13
   protobufjs: 7.6.1
-  'fast-uri@>=3.0.0 <3.1.6': 3.1.6
+  'fast-uri@>=3.0.0 <3.1.8': 3.1.8
   tmp: 0.2.7
   webpack: 5.105.0
   mdast-util-to-hast: 13.2.1
@@ -56,33 +56,50 @@ overrides:
   'form-data': 4.0.6
   'vite': 8.0.16
   websocket-driver: 0.7.5
-  adm-zip: 0.6.0
-  # brace-expansion ReDoS (GHSA-3jxr-9vmj-r5cp / CVE-2026-13149). The advisory
-  # patches three separate branches; each rule is scoped to its own major range
-  # so they stay disjoint (an unscoped '<5.0.7' would also catch v1/v2 and force
-  # them onto v5). v1 must go to 1.1.16 — 1.1.6 is itself still vulnerable.
-  'brace-expansion@<1.1.17': 1.1.18
-  'brace-expansion@>=2.0.0 <2.1.4': 2.1.4
+  'adm-zip@<0.6.1': 0.6.1
+  'brace-expansion@<1.1.20': 1.1.20
+  'brace-expansion@>=2.0.0 <2.1.6': 2.1.6
   'brace-expansion@>=3.0.0 <3.0.6': 3.0.6
-  'brace-expansion@>=4.0.0 <5.0.9': 5.0.9
+  'brace-expansion@>=4.0.0 <5.0.11': 5.0.11
+  'joi@>=17.2.0 <17.13.7': 17.13.7
+  'engine.io@>=6.6.0 <6.6.10': 6.6.10
   'js-yaml@>=3.0.0 <3.15.2': 3.15.2
   'js-yaml@>=4.0.0 <4.3.2': 4.3.2
   'linkify-it@<=5.0.1': 5.0.2
   'postcss@<8.5.26': 8.5.26
+  'image-size@>=0.6.3 <2.0.4': 2.0.4
+  'webpack-dev-middleware@>=8.0.0 <8.3.0': 8.3.0
+  'webpack-dev-middleware@<7.4.5': 7.4.6
+  # Hold every package on the codec versions packages/dicomImageLoader pins.
+  # dicom-microscopy-viewer asks for older ones, and the resolver hoists those to the
+  # root, where a bundler that searches the root before a package's own node_modules
+  # picks them up instead. codec-openjph 2.4.7 throws "_setThrew is not defined" on a
+  # truncated codestream, which stops a streaming HTJ2K retrieve from showing anything
+  # until most of the frame has arrived. One version of each codec removes the choice.
+  '@cornerstonejs/codec-charls': 1.2.7
+  '@cornerstonejs/codec-libjpeg-turbo-8bit': 1.2.7
+  '@cornerstonejs/codec-openjpeg': 1.3.6
+  '@cornerstonejs/codec-openjph': 2.4.11
 
 auditConfig:
   ignoreGhsas:
     # decompress is called only ever decompresses a hash-pinned, hardcoded
     # archive in a dev-only CLI
     - GHSA-mp2f-45pm-3cg9
-    # image-size infinite-loop DoS (ICNS / JXL+HEIF parsers). No patched version
-    # exists (<=2.0.2 all affected). Only reached via @docusaurus/mdx-loader at
-    # docs build time on repo-committed images — never on untrusted input.
-    - GHSA-w3rx-r6r6-pgpr
-    - GHSA-5p2g-fcmc-qvqq
+    - GHSA-hrh2-vp3x-79xf
     # extract-zip is a transitive dependency of puppeteer and is only used in dev
     - GHSA-jmr9-qjv8-65gv
     - GHSA-7pqw-9j4j-h8q3
+    # node-forge is used only by selfsigned (via webpack-dev-server) to create a
+    # local dev cert; it never checks signatures from outside
+    - GHSA-86w9-cpqp-85rv
+    # http-cache-semantics is used only by got (via the Docusaurus update-notifier)
+    # to cache npm registry lookups in the docs dev tooling
+    - GHSA-ch52-4w7c-c8xp
+    # braces has no patched release. It only expands glob patterns that build and
+    # dev tools (chokidar, micromatch, and the shelljs CLI that vtk.js lists) write
+    # themselves; no shipped code passes it an untrusted pattern
+    - GHSA-vfj7-8cjw-p6xm
 allowBuilds:
   '@swc/core': true
   canvas: true
@@ -93,8 +110,7 @@ allowBuilds:
   puppeteer: true
   unrs-resolver: false
 
+# Exempt the cornerstone3D packages from the release-age check: they are pinned
+# to an exact version (5.0.0) that may be newer than the cutoff.
 minimumReleaseAgeExclude:
-  - '@cornerstonejs/codec-charls@1.2.5'
-  - '@cornerstonejs/codec-libjpeg-turbo-8bit@1.2.4'
-  - '@cornerstonejs/codec-openjpeg@1.3.2'
-  - '@cornerstonejs/codec-openjph@2.4.9'
+  - '@cornerstonejs/*'

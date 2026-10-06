@@ -199,7 +199,7 @@ export default function sampleAreaAnnotationVoxels({
     planePoint,
     viewPlaneNormal,
     referencePlaneThickness: slabThickness,
-    bounds: getAnnotationIndexBounds(
+    bounds: getShapeIndexBounds(
       points,
       volume,
       imageData,
@@ -257,17 +257,20 @@ function resolveAnnotationNormal(
 }
 
 /**
- * The index-space bounding box of the voxels the annotation can reach, clamped
- * to the volume.
+ * The index-space bounding box of the voxels a plane-anchored shape can reach,
+ * clamped to the volume.
  *
  * The slab narrows iteration along the normal on its own, and the shape runs
  * bound the column axis exactly, but the outer and row loops would otherwise
- * walk the full volume extent. This confines them to the rows the annotation
- * can actually reach.
+ * walk the full volume extent. This confines them to the rows the shape can
+ * actually reach.
+ *
+ * Shared with the brush fill strategies, which bound a brush the same way. See
+ * `strategies/utils/brushVoxelSlab.ts`.
  *
  * The box of `points` is not the box of the shape, and a qualifying voxel
- * centre does not lie on the annotation's plane. Two dilations therefore keep
- * the box a superset:
+ * centre does not lie on the shape's plane. Two dilations therefore keep the
+ * box a superset:
  *
  * - `margin`, how far the shape reaches past `points`. The direction matrix is
  *   orthonormal, so a world distance of `margin` moves the index by at most
@@ -277,14 +280,17 @@ function resolveAnnotationNormal(
  *   fixed one voxel silently drops the outer layers of a thick annotation.
  *
  * The extra voxel on top absorbs the rounding of a fractional index.
+ *
+ * A labelmap fill uses this as well, so the box that a fill walks and the box
+ * that a statistic walks stay the same box.
  */
-function getAnnotationIndexBounds(
+export function getShapeIndexBounds(
   points: Types.Point3[],
   volume: Pick<AreaAnnotationVolume, 'dimensions' | 'direction' | 'spacing'>,
   imageData,
   viewPlaneNormal: Types.Point3,
   halfWidth: number,
-  margin: number
+  margin = 0
 ): Types.BoundsIJK {
   const { dimensions, direction, spacing } = volume;
 

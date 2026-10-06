@@ -2,9 +2,11 @@ import type { mat3 } from 'gl-matrix';
 import { vec3 } from 'gl-matrix';
 import type { BoundsIJK, IImageVolume, Point2, Point3 } from '../../types';
 import getVoxelThicknessAlongNormal from './getVoxelThicknessAlongNormal';
+import type { SlabDepthCoverage } from './slabMembership';
 import {
-  getMembershipHalfWidth,
   getSlabEpsilon,
+  getSlabHalfWidth,
+  isSlabDepthLowInclusive,
   resolveReferencePlaneThickness,
 } from './slabMembership';
 
@@ -37,10 +39,27 @@ export interface IndexSpaceSlab {
   /** The resolved reference plane thickness. */
   referencePlaneThickness: number;
   /**
-   * The strict half width the depth must fall inside, already tightened by the
-   * epsilon. Test `Math.abs(depth) < halfWidth`.
+   * A bound on `Math.abs(depth)` for any qualifying voxel. For the open
+   * interval this is the strict half width, already tightened by the epsilon,
+   * so `Math.abs(depth) < halfWidth` is the test. For the half-open interval
+   * this is only a bound, and {@link IndexSpaceSlab.depthLow} and
+   * {@link IndexSpaceSlab.depthHigh} give the exact interval.
    */
   halfWidth: number;
+  /** The low end of the depth interval. Inclusive when `halfOpen` is set. */
+  depthLow: number;
+  /** The high end of the depth interval. Always exclusive. */
+  depthHigh: number;
+  /**
+   * Whether `depthLow` is inclusive, which makes the interval half-open.
+   *
+   * An open interval drops both of its endpoints, so a voxel centre that lands
+   * exactly on a boundary belongs to neither of two consecutive slabs. A
+   * half-open interval gives that voxel to exactly one of the two, which is
+   * what makes consecutive slabs tile. Follows from the slab's
+   * {@link SlabDepthCoverage}.
+   */
+  halfOpen: boolean;
   /** `argmax |g|`. Swept outermost. */
   outerAxis: 0 | 1 | 2;
   /** Swept in the middle loop. */
@@ -95,13 +114,21 @@ export function pickOuterAxis(g: Point3): 0 | 1 | 2 {
  *   runs. Defaults to the lower-numbered of the two, so an
  *   acquisition-orientation volume emits runs along i for each j, matching
  *   row-major memory order.
+ * @param options.depthCoverage - Which voxels along the normal the slab
+ *   selects: `'overlapping'`, the default, takes every voxel whose box the
+ *   slab reaches, and `'centerInside'` takes only the voxels whose centre the
+ *   slab contains. The half width and the depth interval both follow from it.
+ *   See {@link SlabDepthCoverage}.
  */
 export function buildIndexSpaceSlab(
   volume: VolumeGeometry,
   planePoint: Point3,
   normal: Point3,
   referencePlaneThickness?: number | null,
-  options: { columnAxis?: 0 | 1 | 2 } = {}
+  options: {
+    columnAxis?: 0 | 1 | 2;
+    depthCoverage?: SlabDepthCoverage;
+  } = {}
 ): IndexSpaceSlab {
   const { origin } = volume;
   const g = getIndexSpaceNormal(volume, normal);
@@ -117,9 +144,21 @@ export function buildIndexSpaceSlab(
     (origin[1] - planePoint[1]) * normal[1] +
     (origin[2] - planePoint[2]) * normal[2];
 
-  const halfWidth =
-    getMembershipHalfWidth(thickness, voxelThickness) -
-    getSlabEpsilon(voxelThickness);
+  const rawHalfWidth = getSlabHalfWidth(
+    thickness,
+    voxelThickness,
+    options.depthCoverage
+  );
+  const epsilon = getSlabEpsilon(voxelThickness);
+  const halfOpen = isSlabDepthLowInclusive(options.depthCoverage);
+
+  // The epsilon shifts the half-open interval rather than narrowing it, so the
+  // interval keeps a width of exactly `2 * rawHalfWidth` and consecutive slabs
+  // still tile. Narrowing both ends, as the open interval does, would drop the
+  // low boundary that the half-open interval must include.
+  const depthLow = halfOpen ? -rawHalfWidth - epsilon : -rawHalfWidth + epsilon;
+  const depthHigh = rawHalfWidth - epsilon;
+  const halfWidth = halfOpen ? rawHalfWidth + epsilon : rawHalfWidth - epsilon;
 
   const outerAxis = pickOuterAxis(g);
   const remaining = [0, 1, 2].filter((axis) => axis !== outerAxis) as [
@@ -145,6 +184,9 @@ export function buildIndexSpaceSlab(
     voxelThickness,
     referencePlaneThickness: thickness,
     halfWidth,
+    depthLow,
+    depthHigh,
+    halfOpen,
     outerAxis,
     rowAxis,
     columnAxis,
@@ -193,6 +235,43 @@ function integersWithProductInOpenInterval(
   return min > max ? null : [min, max];
 }
 
+/**
+ * The integers `x` satisfying `lo <= x * coeff < hi`, as an inclusive range.
+ *
+ * The low end is closed and the high end is open, so two intervals that share a
+ * boundary hold every integer exactly one time between them. This is what makes
+ * consecutive fills tile the volume. {@link integersWithProductInOpenInterval}
+ * drops both boundaries instead, which leaves an integer on a boundary out of
+ * both intervals.
+ *
+ * Returns null when no integer qualifies, and `[-Infinity, Infinity]` when
+ * every integer does.
+ */
+function integersWithProductInHalfOpenInterval(
+  coeff: number,
+  lo: number,
+  hi: number
+): Point2 | null {
+  if (lo >= hi) {
+    return null;
+  }
+
+  if (coeff === 0) {
+    // The product is always 0, so either every integer qualifies or none does.
+    return lo <= 0 && 0 < hi ? [-Infinity, Infinity] : null;
+  }
+
+  const a = lo / coeff;
+  const b = hi / coeff;
+
+  // A negative coefficient reverses the two ends, and it also moves the closed
+  // end from the low side to the high side.
+  const min = coeff > 0 ? Math.ceil(a) : Math.floor(b) + 1;
+  const max = coeff > 0 ? Math.ceil(b) - 1 : Math.floor(a);
+
+  return min > max ? null : [min, max];
+}
+
 /** Intersects an inclusive range with an optional inclusive clamp. */
 function clampRange(range: Point2 | null, clampTo?: Point2): Point2 | null {
   if (!range) {
@@ -222,20 +301,29 @@ export function getDepthRun(
   rowIndex: number,
   clampTo?: Point2
 ): Point2 | null {
-  const { g, c0, halfWidth, outerAxis, rowAxis, columnAxis } = slab;
+  const {
+    g,
+    c0,
+    halfWidth,
+    depthLow,
+    depthHigh,
+    halfOpen,
+    outerAxis,
+    rowAxis,
+    columnAxis,
+  } = slab;
 
   if (!(halfWidth > 0)) {
     return null;
   }
 
   const base = outerIndex * g[outerAxis] + rowIndex * g[rowAxis] + c0;
+  const solve = halfOpen
+    ? integersWithProductInHalfOpenInterval
+    : integersWithProductInOpenInterval;
 
   return clampRange(
-    integersWithProductInOpenInterval(
-      g[columnAxis],
-      -halfWidth - base,
-      halfWidth - base
-    ),
+    solve(g[columnAxis], depthLow - base, depthHigh - base),
     clampTo
   );
 }

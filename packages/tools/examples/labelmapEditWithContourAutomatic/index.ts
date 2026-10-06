@@ -11,9 +11,12 @@ import {
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
   addDropdownToToolbar,
+  addSliderToToolbar,
+  createObliqueAngleController,
   getLocalUrl,
   addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
+import type { ObliqueAngleController } from '../../../../utils/demo/helpers/camera/createObliqueAngleController';
 import * as cornerstone from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import { fillVolumeLabelmapWithMockData } from '../../../../utils/test/fillVolumeLabelmapWithMockData';
@@ -38,13 +41,19 @@ const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 const segmentationId = 'MY_SEGMENTATION_ID';
 const toolGroupId = 'MY_TOOLGROUP_ID';
+const renderingEngineId = 'myRenderingEngine';
+const viewportId1 = 'CT_AXIAL';
+const viewportId2 = 'CT_SAGITTAL';
+const viewportId3 = 'CT_CORONAL';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Labelmap Edit With Contour',
   'Here we demonstrate editing of a labelmap with contour tools.  Start inside the ' +
-    'labelmap area to extend it, and have the contour extend outside.  Then hit e to edit ' +
-    'the labelmap data'
+    'labelmap area to extend it, and have the contour extend outside.  The tool then ' +
+    'converts the contour to labelmap data.  The "Axial Oblique Angle" slider tilts the ' +
+    'axial plane of the first viewport by an exact angle, so that you can test the ' +
+    'conversion on an oblique plane.'
 );
 
 const size = '32vw';
@@ -70,12 +79,11 @@ content.appendChild(viewportGrid);
 
 const instructions = document.createElement('p');
 instructions.innerText = `
-  Hover - show preview of segmentation tool
-  Left drag to extend preview
-  Left Click (or enter) to accept preview
-  Reject preview by button (or esc)
-  Hover outside of region to reset to hovered over segment index
-  Shift Left - zoom, Ctrl Left - Pan, Alt Left - Stack Scroll
+  Left drag to draw a closed contour. The tool converts the contour to labelmap
+  data as soon as you close the contour.
+  Press Escape to cancel the contour that you draw.
+  Set "Axial Oblique Angle" above 0 to tilt the first viewport, then draw a
+  contour on that oblique plane.
   `;
 
 content.append(instructions);
@@ -99,6 +107,20 @@ addButtonToToolbar({
     const activeName = toolGroup.getActivePrimaryMouseButtonTool();
     const brush = toolGroup.getToolInstance(activeName);
     brush.rejectPreview?.(element1);
+  },
+});
+
+// Tilts the axial viewport. The example creates the controller once the
+// viewport renders the volume, so the slider does nothing before that.
+let axialOblique: ObliqueAngleController;
+
+addSliderToToolbar({
+  title: 'Axial Oblique Angle',
+  range: [0, 60],
+  step: 1,
+  defaultValue: 0,
+  onSelectedValueChange: (value) => {
+    axialOblique?.setAngle(Number(value));
   },
 });
 
@@ -172,13 +194,7 @@ async function run() {
   ]);
 
   // Instantiate a rendering engine
-  const renderingEngineId = 'myRenderingEngine';
   const renderingEngine = new RenderingEngine(renderingEngineId);
-
-  // Create the viewports
-  const viewportId1 = 'CT_AXIAL';
-  const viewportId2 = 'CT_SAGITTAL';
-  const viewportId3 = 'CT_CORONAL';
 
   const viewportInputArray = [
     {
@@ -250,6 +266,12 @@ async function run() {
 
   // Render the image
   renderingEngine.render();
+
+  // The controller captures this camera, so create it after the volume sets
+  // the camera.
+  axialOblique = createObliqueAngleController(
+    renderingEngine.getViewport(viewportId1) as Types.IVolumeViewport
+  );
 
   elements.forEach((element) =>
     element.addEventListener(csToolsEnums.Events.KEY_DOWN, (evt) => {

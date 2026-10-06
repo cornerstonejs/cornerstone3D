@@ -5,6 +5,7 @@ import {
   getDepthRun,
   getSlabAxisBound,
 } from './indexSpaceSlab';
+import type { SlabDepthCoverage } from './slabMembership';
 import { signedDistanceToPlane } from './slabMembership';
 
 /**
@@ -58,6 +59,16 @@ export interface VoxelsInShapeOptions {
    */
   referencePlaneThickness?: number | null;
   /**
+   * Which voxels along the normal the slab selects.
+   *
+   * `'overlapping'`, the default, takes every voxel whose box the slab reaches,
+   * so the slab is widened by half a voxel each side and a plane halfway
+   * between two layers selects both. `'centerInside'` takes only the voxels
+   * whose centre the slab contains, and consecutive slabs then tile: each
+   * voxel belongs to exactly one of them.
+   */
+  depthCoverage?: SlabDepthCoverage;
+  /**
    * Inclusive index bounds to confine iteration to. Defaults to the whole
    * volume. Supply the annotation's own index-space bounding box when you have
    * one; the slab bound tightening below only narrows along the normal.
@@ -94,6 +105,7 @@ export function* iterateVoxelsInShape(
     planePoint,
     viewPlaneNormal: normal,
     referencePlaneThickness,
+    depthCoverage,
     getShapeRuns,
     isInShape,
     columnAxis: forcedColumnAxis,
@@ -106,7 +118,7 @@ export function* iterateVoxelsInShape(
     planePoint,
     normal,
     referencePlaneThickness,
-    { columnAxis: forcedColumnAxis }
+    { columnAxis: forcedColumnAxis, depthCoverage }
   );
   const { outerAxis, rowAxis, columnAxis } = slab;
 
