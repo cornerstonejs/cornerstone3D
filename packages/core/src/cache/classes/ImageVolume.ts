@@ -418,10 +418,16 @@ export class ImageVolume {
       this._compositeVoxelManager.primary !== primary
     ) {
       this._compositeVoxelManager?.dispose();
+      const delivered = this.deliveredRegions();
       this._compositeVoxelManager = new CompositeVoxelManager<number | RGB>({
         primary,
         grid: this.voxelGrid,
-        delivered: this.deliveredRegions(),
+        delivered,
+        // A volume that states no deliveries holds every voxel.
+        quality:
+          delivered === undefined
+            ? ImageQualityStatus.FULL_RESOLUTION
+            : undefined,
         id: `composite-${this.volumeId}`,
         createStorage: (request) => this.createRepresentationStorage(request),
         // A derivation in batches writes voxels that a texture of the derived
@@ -769,6 +775,19 @@ export class ImageVolume {
     for (const set of this.textureSets) {
       set.markAllDirty(markSlice);
     }
+  }
+
+  /**
+   * The quality of the data that the image of one image id index holds. A
+   * volume that does not stream holds every image at full resolution, and a
+   * streaming volume states the quality that each delivery recorded.
+   *
+   * @returns the quality, or undefined when no data of the image has arrived
+   */
+  public getImageQuality(
+    _imageIdIndex: number
+  ): ImageQualityStatus | undefined {
+    return ImageQualityStatus.FULL_RESOLUTION;
   }
 
   /** return the image ids for the volume if it is made of separated images */

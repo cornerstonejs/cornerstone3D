@@ -249,7 +249,18 @@ function reduceAverageAlongKBySlices<T extends BoxStatisticValue = number>(
     return undefined;
   }
 
-  const readSlice = sliceReaderOf(source, { allowPublic: true });
+  // The public `getSliceData` composes a missing voxel as 0, so it is safe
+  // only over a source that holds every voxel in one array.
+  const readSlice = sliceReaderOf(source, {
+    allowPublic:
+      (
+        source as { getWritableScalarData?: () => unknown }
+      ).getWritableScalarData?.() !== undefined,
+  });
+
+  if (!readSlice) {
+    return undefined;
+  }
 
   let written = 0;
   const direct = directTargetOf(target);

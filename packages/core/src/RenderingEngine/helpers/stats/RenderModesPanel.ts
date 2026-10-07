@@ -363,7 +363,7 @@ function createVoxelQualityRow(
     return row;
   }
 
-  appendField(fields, 'decimation', String(record.reduction), 40);
+  appendField(fields, 'reduction', String(record.reduction), 40);
   appendField(fields, 'source', String(record.source), 40);
   appendField(
     fields,

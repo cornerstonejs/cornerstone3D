@@ -256,7 +256,12 @@ class ProgressiveRetrieveImagesInstance {
     };
     const priority = stage.priority ?? -5;
     const requestType = stage.requestType || RequestType.Interaction;
-    const additionalDetails = { imageId };
+    // The volume id lets the volume cancel its queued requests, and keeps them
+    // apart from a stack prefetch of the same images.
+    const additionalDetails = {
+      imageId,
+      volumeId: (this.listener as { volumeId?: string }).volumeId,
+    };
 
     imageLoadPoolManager.addRequest(
       this.sendRequest.bind(this, request, options),

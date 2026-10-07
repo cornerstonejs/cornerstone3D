@@ -6,6 +6,27 @@ import VoxelManager from '../../utilities/VoxelManager';
 import { voxelGridsEqual } from '../../utilities/voxelGrid';
 import { requireVoxelStatistic } from '../../utilities/voxelGrid/voxelStatistics';
 import VoxelStatistics from '../../enums/VoxelStatistics';
+import ImageQualityStatus from '../../enums/ImageQualityStatus';
+import autoLoad from '../../utilities/autoLoad';
+import { getConfiguration } from '../../init';
+
+const DEFAULT_MAX_SLICES_PER_RENDER = 16;
+const DEFAULT_MAX_MILLISECONDS_PER_RENDER = 8;
+
+/**
+ * The work that one render does to fill a reduced texture. See
+ * `rendering.reducedTextureFill` in `Cornerstone3DConfig`.
+ */
+function reducedTextureFillBudget() {
+  const budget = getConfiguration()?.rendering?.reducedTextureFill;
+
+  return {
+    maxSlicesPerRender:
+      budget?.maxSlicesPerRender ?? DEFAULT_MAX_SLICES_PER_RENDER,
+    maxMillisecondsPerRender:
+      budget?.maxMillisecondsPerRender ?? DEFAULT_MAX_MILLISECONDS_PER_RENDER,
+  };
+}
 
 /**
  * Converts the input data array to the specified data type
@@ -34,6 +55,9 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
 
   model.updatedFrames = [];
   model.volumeId = null;
+  // The slice where the next fill of a reduced texture starts.
+  model.fillCursor = 0;
+  model.remainingFillScheduled = false;
   // The grid that this texture holds. The texture store of `ImageVolume` states
   // it when it builds the texture. A texture whose grid is the grid of the
   // volume reads the cached images frame by frame, which is the path of the
@@ -193,7 +217,12 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
    * The scalar data of the cached image is the frame itself, and reading it
    * costs nothing. `getSliceData` of a volume voxel manager composes the slice
    * one voxel at a time, which a profile showed as the cost of a fill, so it
-   * serves only as the fallback. A frame that has not arrived is left out.
+   * serves only as the fallback.
+   *
+   * A frame that has not arrived is left out, because it holds no data and
+   * would pull the value towards 0. A replicate is a copy of another frame,
+   * so the slice reads replicates only when no frame of the box has arrived,
+   * and then only the one nearest to the centre.
    *
    * @returns the frames, or null when the volume has no slice reader or the
    * slice lies past the end of the volume
@@ -208,31 +237,73 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     }
 
     const lastK = Math.min(firstK + factorK, sourceDepth);
-    const frameLength = sourceWidth * sourceHeight;
-    const imageIds = volume.imageIds;
-    const frames = [];
+    const centre = (firstK + lastK - 1) / 2;
+    const loaded = [];
+    const replicates = [];
 
     for (let k = firstK; k < lastK; k++) {
-      let frame = imageIds?.[k]
-        ? cache.getImage(imageIds[k])?.voxelManager?.getScalarData()
-        : undefined;
+      const quality = volume.getImageQuality
+        ? volume.getImageQuality(k)
+        : ImageQualityStatus.FULL_RESOLUTION;
 
-      // A reduced image of a progressive load holds fewer voxels than the
-      // frame. `getSliceData` scales it to the frame, so it can still count.
-      if (!frame || frame.length < frameLength) {
-        try {
-          frame = voxelManager.getSliceData({ sliceIndex: k, slicePlane: 2 });
-        } catch {
-          frame = null;
-        }
+      if (quality >= ImageQualityStatus.SUBRESOLUTION) {
+        loaded.push(k);
+      } else if (quality) {
+        replicates.push(k);
       }
+    }
 
-      if (frame && frame.length >= frameLength) {
+    const indices = loaded.length ? loaded : nearestTo(centre, replicates);
+    const frameLength = sourceWidth * sourceHeight;
+    const frames = [];
+
+    for (const k of indices) {
+      const frame = readFrame(volume, k, frameLength);
+
+      if (frame) {
         frames.push(frame);
       }
     }
 
     return frames;
+  }
+
+  /** The indices at the smallest distance from `centre`: one, or two on a tie. */
+  function nearestTo(centre, indices) {
+    let best = Infinity;
+
+    for (const index of indices) {
+      best = Math.min(best, Math.abs(index - centre));
+    }
+
+    return indices.filter((index) => Math.abs(index - centre) === best);
+  }
+
+  /** One frame of the volume, or null when its image is not in the cache. */
+  function readFrame(volume, k, frameLength) {
+    const imageId = volume.imageIds?.[k];
+    const image = imageId ? cache.getImage(imageId) : undefined;
+
+    if (imageId && !image) {
+      return null;
+    }
+
+    let frame = image?.voxelManager?.getScalarData();
+
+    // A reduced image of a progressive load holds fewer voxels than the
+    // frame. `getSliceData` scales it to the frame, so it can still count.
+    if (!frame || frame.length < frameLength) {
+      try {
+        frame = volume.voxelManager.getSliceData({
+          sliceIndex: k,
+          slicePlane: 2,
+        });
+      } catch {
+        frame = null;
+      }
+    }
+
+    return frame && frame.length >= frameLength ? frame : null;
   }
 
   /**
@@ -319,6 +390,31 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
       voxels.subarray(slice * frameLength, (slice + 1) * frameLength);
   }
 
+  /**
+   * Requests one more render of the viewports of this volume after the
+   * current render, so the slices that the budget left dirty get their fill.
+   * The request runs outside the render, because the mapper rebuilds only when
+   * the texture changed after its last build.
+   */
+  function scheduleRemainingFill() {
+    if (model.remainingFillScheduled) {
+      return;
+    }
+
+    model.remainingFillScheduled = true;
+
+    setTimeout(() => {
+      model.remainingFillScheduled = false;
+
+      if (!model.volumeId || !publicAPI.hasUpdatedFrames()) {
+        return;
+      }
+
+      publicAPI.modified();
+      autoLoad(model.volumeId);
+    }, 0);
+  }
+
   function updateTextureFromComposite(volume) {
     const { grid } = model;
     const [width, height, depth] = grid.dimensions;
@@ -344,12 +440,34 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
       numberOfComponents: 1,
     });
 
-    for (let slice = 0; slice < depth; slice++) {
+    const { maxSlicesPerRender, maxMillisecondsPerRender } =
+      reducedTextureFillBudget();
+    const startTime = performance.now();
+    let slicesHandled = 0;
+    let slicesWithData = 0;
+    let stoppedEarly = false;
+
+    // The fill starts where the last render stopped, so every dirty slice
+    // gets its turn while new frames keep arriving.
+    for (let step = 0; step < depth; step++) {
+      const slice = (model.fillCursor + step) % depth;
+
       if (!model.updatedFrames[slice]) {
         continue;
       }
 
+      if (
+        slicesWithData >= maxSlicesPerRender ||
+        (slicesHandled &&
+          performance.now() - startTime >= maxMillisecondsPerRender)
+      ) {
+        model.fillCursor = slice;
+        stoppedEarly = true;
+        break;
+      }
+
       let data = derivedSliceOf?.(slice);
+      let hasData = !!data;
 
       if (!data) {
         // `fillGrid` leaves a voxel untouched where the composite holds no
@@ -365,6 +483,8 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
         const filled =
           factors &&
           fillSliceByBoxStatistic(volume, grid, factors, slice, slab);
+
+        hasData = !!filled || !factors;
 
         if (!filled && !factors) {
           // The grid is not a box of the grid of the volume, such as an oblique
@@ -416,6 +536,17 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
 
       publicAPI.deactivate();
       model.updatedFrames[slice] = null;
+      slicesHandled++;
+
+      // A slice with no data uploads zeros, which costs almost nothing, so
+      // only a slice with data counts against the number of slices.
+      if (hasData) {
+        slicesWithData++;
+      }
+    }
+
+    if (stoppedEarly) {
+      scheduleRemainingFill();
     }
 
     if (model.generateMipmap) {

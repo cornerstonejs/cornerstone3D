@@ -222,14 +222,12 @@ class Cache {
       volumeLoadObject.cancelFn();
     }
 
-    // Remove shared cache keys for the volume's images
-    if (volume.imageIds) {
-      volume.imageIds.forEach((imageId) => {
-        const cachedImage = this._imageCache.get(imageId);
-        if (cachedImage && cachedImage.sharedCacheKey === volumeId) {
-          cachedImage.sharedCacheKey = undefined;
-        }
-      });
+    // Remove shared cache keys for the volume's images, the reduced slices that
+    // are not in volume.imageIds included
+    for (const cachedImage of this._imageCache.values()) {
+      if (cachedImage.sharedCacheKey === volumeId) {
+        cachedImage.sharedCacheKey = undefined;
+      }
     }
 
     this._volumeCache.delete(volumeId);
@@ -624,14 +622,12 @@ class Cache {
     for (const volumeId of volumeIds) {
       const cachedVolume = this._volumeCache.get(volumeId);
 
-      if (!cachedVolume) {
-        return;
-      }
+      const volume = cachedVolume?.volume;
 
-      const { volume } = cachedVolume;
-
-      if (!volume.imageIds.length) {
-        return;
+      // A volume that holds no image ids, such as one built from a scalar
+      // array, cannot contain the image, and the search goes on.
+      if (!volume?.imageIds?.length) {
+        continue;
       }
 
       const imageIdIndex = volume.getImageURIIndex(imageIdToUse);
@@ -664,6 +660,22 @@ class Cache {
     }
 
     return this._imageCache.get(foundImageId);
+  }
+
+  /**
+   * Gives a cached image to the volume that now uses it, so the image stays out
+   * of the eviction until that volume leaves the cache. The newest volume takes
+   * over the key, as `_putVolumeCommon` does for the frames of a volume.
+   *
+   * @param imageId - the image id of the cached image
+   * @param sharedCacheKey - the id of the volume that uses the image
+   */
+  public setImageSharedCacheKey(imageId: string, sharedCacheKey: string): void {
+    const cachedImage = this._imageCache.get(imageId);
+
+    if (cachedImage) {
+      cachedImage.sharedCacheKey = sharedCacheKey;
+    }
   }
 
   /**

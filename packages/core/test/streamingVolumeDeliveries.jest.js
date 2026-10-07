@@ -1,4 +1,12 @@
-import { describe, it, expect, beforeEach } from '@jest/globals';
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  afterEach,
+  jest,
+} from '@jest/globals';
+import cache from '../src/cache/cache';
 import StreamingImageVolume from '../src/cache/classes/StreamingImageVolume';
 import volumeTextureStore from '../src/cache/volumeTextureStore';
 import { VoxelManager } from '../src/utilities';
@@ -110,5 +118,59 @@ describe('StreamingImageVolume — the record of the deliveries', () => {
     expect(record.deliveries).toBe(1);
     expect(record.highest).toBe(ImageQualityStatus.SUBRESOLUTION);
     expect(record.missing).toBe(4 * 4 * 3);
+  });
+});
+
+describe('StreamingImageVolume — the images that the cache already holds', () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+    jest.useRealTimers();
+  });
+
+  /** The cache holds full images for the indices in `cached`. */
+  function mockCache(imageIds, cached) {
+    const held = new Set(cached.map((index) => imageIds[index]));
+
+    jest.spyOn(cache, 'isLoaded').mockImplementation((id) => held.has(id));
+    jest
+      .spyOn(cache, 'getImage')
+      .mockImplementation((id) => (held.has(id) ? { imageId: id } : undefined));
+  }
+
+  it('delivers the cached images in batches, so a large take-in does not stall', () => {
+    jest.useFakeTimers();
+    const { volume, imageIds } = makeVolume();
+    let now = 0;
+
+    mockCache(imageIds, [0, 2, 3]);
+    // Each read of the clock passes the batch time, so a batch takes one image.
+    jest.spyOn(performance, 'now').mockImplementation(() => (now += 10));
+
+    volume.takeInCachedImages();
+
+    expect(volume.getImageQuality(0)).toBe(ImageQualityStatus.FULL_RESOLUTION);
+    expect(volume.getImageQuality(2)).toBeUndefined();
+
+    jest.runAllTimers();
+
+    expect(volume.getImageQuality(1)).toBeUndefined();
+    expect(volume.getImageQuality(2)).toBe(ImageQualityStatus.FULL_RESOLUTION);
+    expect(volume.getImageQuality(3)).toBe(ImageQualityStatus.FULL_RESOLUTION);
+  });
+
+  it('stops the take-in when the load is cancelled', () => {
+    jest.useFakeTimers();
+    const { volume, imageIds } = makeVolume();
+    let now = 0;
+
+    mockCache(imageIds, [0, 1, 2, 3]);
+    jest.spyOn(performance, 'now').mockImplementation(() => (now += 10));
+
+    volume.takeInCachedImages();
+    volume.loadStatus.cancelled = true;
+    jest.runAllTimers();
+
+    expect(volume.getImageQuality(0)).toBe(ImageQualityStatus.FULL_RESOLUTION);
+    expect(volume.getImageQuality(1)).toBeUndefined();
   });
 });

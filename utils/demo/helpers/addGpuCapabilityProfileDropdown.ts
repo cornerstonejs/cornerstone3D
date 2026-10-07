@@ -65,10 +65,15 @@ export default function addGpuCapabilityProfileDropdown({
   const map = new Map<string, GpuCapabilityProfile>(
     profiles.map((profile) => [describe(profile), profile])
   );
-  const active = getActiveGpuCapabilityProfile();
   const selected = defaultValue
     ? profiles.find((profile) => profile.id === defaultValue)
-    : active;
+    : undefined;
+
+  // The drop-down shows the profile that applies, so a page that loads before
+  // any change uses the profile that it shows.
+  if (selected) {
+    setActiveGpuCapabilityProfile(selected.id);
+  }
 
   addDropdownToToolbar({
     id,
@@ -76,7 +81,7 @@ export default function addGpuCapabilityProfileDropdown({
     container,
     options: {
       map,
-      defaultValue: describe(selected ?? active),
+      defaultValue: describe(getActiveGpuCapabilityProfile()),
     },
     onSelectedValueChange: (_key, value) => {
       const profile = value as GpuCapabilityProfile;

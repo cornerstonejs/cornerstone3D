@@ -102,8 +102,27 @@ describe('the image id of a reduced slice', () => {
       columns: 64,
       rows: 32,
       frames: 4,
+      inPlaneOffset: [0, 0],
       statistic: 'minimum',
     });
+  });
+
+  it('names the in-plane start of a brick, so two bricks of one plane differ', () => {
+    const left = reducedImageId({
+      sourceImageId: source,
+      columns: 64,
+      rows: 64,
+    });
+    const right = reducedImageId({
+      sourceImageId: source,
+      columns: 64,
+      rows: 64,
+      inPlaneOffset: [128, 0],
+    });
+
+    expect(right).not.toBe(left);
+    expect(parseReducedImageId(right).inPlaneOffset).toEqual([128, 0]);
+    expect(imageIdToURI(right)).toBe(right);
   });
 
   it('holds no parts for an id that names no reduced slice', () => {
@@ -199,6 +218,23 @@ describe('the images of a reduced representation', () => {
 
     expect(second.imageIds).toEqual(first.imageIds);
     expect(second.voxelManager.getAtIJK(0, 0, 0)).toBe(99);
+  });
+
+  it('gives a reused image to the newest volume', () => {
+    const imageIds = cacheFrames('volume-6', [10, 20, 30, 40]);
+    const options = {
+      grid,
+      sourceImageIds: imageIds,
+      factors: [2, 2, 2],
+      dataType: 'Uint16Array',
+    };
+    const first = provideReducedImages({ ...options, sharedCacheKey: 'a' });
+
+    provideReducedImages({ ...options, sharedCacheKey: 'b' });
+
+    expect(
+      cache.getCachedImageBasedOnImageURI(first.imageIds[0]).sharedCacheKey
+    ).toBe('b');
   });
 
   it('keeps an array of its own for an element type that no image holds', () => {
