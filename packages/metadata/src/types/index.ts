@@ -3,7 +3,7 @@ export type {
   MetadataType,
   MetadataValueType,
 } from './DicomStreamTypes';
-export type { IImageCalibration } from './IImageCalibration';
+export type { IImageCalibration, UltrasoundRegion } from './IImageCalibration';
 export type {
   DicomDateObject,
   DicomTimeObject,

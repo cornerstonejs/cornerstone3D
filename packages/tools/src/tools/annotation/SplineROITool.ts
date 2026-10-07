@@ -1377,37 +1377,23 @@ class SplineROITool extends ContourSegmentationBaseTool {
       const deltaInX = vec3.distance(originalWorldPoint, deltaXPoint);
       const deltaInY = vec3.distance(originalWorldPoint, deltaYPoint);
 
-      const { imageData } = image;
-      const { areaUnit } = getCalibratedLengthUnitsAndScale(image, () => {
-        const {
-          maxX: canvasMaxX,
-          maxY: canvasMaxY,
-          minX: canvasMinX,
-          minY: canvasMinY,
-        } = math.polyline.getAABB(canvasCoordinates);
-
-        const topLeftBBWorld = viewport.canvasToWorld([canvasMinX, canvasMinY]);
-
-        const topLeftBBIndex = utilities.transformWorldToIndex(
-          imageData,
-          topLeftBBWorld
-        );
-
-        const bottomRightBBWorld = viewport.canvasToWorld([
-          canvasMaxX,
-          canvasMaxY,
-        ]);
-
-        const bottomRightBBIndex = utilities.transformWorldToIndex(
-          imageData,
-          bottomRightBBWorld
-        );
-
-        return [topLeftBBIndex, bottomRightBBIndex];
-      });
-      // Convert from canvas_pixels ^2 to mm^2
+      const { imageData, spacing = [1, 1, 1] } = image;
+      // Every point, not the canvas bounding box corners, so a contour on a
+      // rotated viewport is only calibrated by a region that contains it.
+      const indexPoints = points.map((point) =>
+        utilities.transformWorldToIndex(imageData, point)
+      );
+      const { areaUnit, scale, scaleY } = getCalibratedLengthUnitsAndScale(
+        image,
+        indexPoints
+      );
+      // Convert from canvas_pixels ^2 to world units ^2, then to calibrated
+      // units ^2. scale and scaleY are image pixels per calibrated unit, so
+      // the spacing takes world units back to image pixels first. Without a
+      // calibration the two cancel out and the area stays in world units.
       const area =
-        math.polyline.getArea(canvasCoordinates) * deltaInX * deltaInY;
+        (math.polyline.getArea(canvasCoordinates) * deltaInX * deltaInY) /
+        (spacing[0] * scale * spacing[1] * scaleY);
 
       cachedStats[targetId] = {
         Modality: metadata.Modality,
