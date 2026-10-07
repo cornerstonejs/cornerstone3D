@@ -21,6 +21,7 @@ import {
   addDropdownToToolbar,
   addGpuCapabilityProfileDropdown,
   addButtonToToolbar,
+  addViewportFidelityIndicator,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import * as cornerstoneAdapters from '@cornerstonejs/adapters';
@@ -143,7 +144,11 @@ const seriesOptions = {
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Progressive Load for Volume Viewport',
-  'Here we demonstrate progressive loading of volumes.'
+  'Here we demonstrate progressive loading of volumes. The badge in the corner ' +
+    'of each viewport states what that viewport really shows: green LOSSLESS, ' +
+    'amber while data is still loading, blue REDUCED when one voxel covers ' +
+    'several display pixels, red LOSSY when the reduction aliases. Hover it ' +
+    'for the details.'
 );
 
 const size = '512px';
@@ -652,6 +657,13 @@ async function run() {
   ];
 
   renderingEngine.setViewports(viewportInputArray);
+
+  // The badges read the actors of each viewport on every update, so they
+  // follow every load and a change of the GPU class. They state the fidelity
+  // of the image data, so the viewport of the segmentation alone takes none.
+  viewportIds.forEach((viewportId) =>
+    addViewportFidelityIndicator({ renderingEngineId, viewportId })
+  );
 
   // Set the tool group on the MPR viewports. The 3D viewport scrolls no
   // slices, so it takes the trackball of its own group.
