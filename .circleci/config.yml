@@ -23,7 +23,9 @@ jobs:
     <<: *defaults
     steps:
       - checkout
-      - run: echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/repo/.npmrc
+      # No npm token here: this pipeline only installs and builds PRs.
+      # Packages are published from GitHub Actions (publish.yml) with trusted
+      # publishing.
       - install_pnpm
       # The dependency audit is the GitHub "Dependency Audit" workflow
       # (.github/workflows/dependency-audit.yml).
