@@ -13,8 +13,8 @@ reporter reads it, and a maintainer uses it as the starting point for a fix.
 Do the whole investigation in one pass. Nobody answers questions during the
 run: at every fork (ambiguous report, competing causes, unclear framing) pick
 what the evidence best supports, keep going, and record the choice under
-**Assumptions**. Keep **Questions for the reporter** for information only the
-reporter has.
+**Assumptions**. Use **Open questions** for missing reporter information and
+decisions that require a maintainer.
 
 ## Ground rules
 
@@ -26,7 +26,12 @@ reporter has.
   examples, browse the web, or change anything. Pipes into other programs are
   not available; use command flags (`--limit`, `--jq`, `-n`, `--format`)
   instead.
-- The checkout is `main` with full history and tags (`vX.Y.Z`).
+- The checkout uses the triggering ref with full history and tags (`vX.Y.Z`).
+- Use one direct `gh` or `git` command per Bash call. Use literal arguments.
+  Do not use shell variables, command substitution, pipes, or redirection.
+  A command check rejects file writes, external programs, and tag changes.
+  Use Read, Grep, and Glob to search files. If a command is rejected, use the
+  permitted options stated in the response and continue the investigation.
 - Trace, don't guess. Every claim about a cause should point at code or history
   you read. Say plainly what you could not confirm.
 - Be critical of the report and of your own findings. "Expected behavior, and
@@ -150,7 +155,7 @@ cannot run it, so mark it as not run.
   more than one explanation is still plausible, rank them, say why, and say
   what would tell them apart.
 - **Workaround**, when there is one.
-- **Severity, confidence and effort**, each judged on its own.
+- **Severity, confidence, effort and impact**, each judged on its own.
 
 Severity:
 
@@ -175,9 +180,16 @@ Effort:
   regression coverage needed
 - **high**: architectural or cross-package work, or compatibility risk
 
+Impact:
+
+- **high**: affects many users, a core workflow, or imaging correctness
+- **medium**: blocks a specific workflow or package feature
+- **low**: affects a narrow use case or has a practical workaround
+
 ## Output
 
-Return structured output with three fields.
+Return structured output with the fields below. The publisher derives labels
+from these values. Use the same values in the comment table.
 
 `classification` is one of: `bug`, `feature request`, `question/support`,
 `docs`, `duplicate`, `already fixed`, `needs info`, `maintenance`,
@@ -185,27 +197,46 @@ Return structured output with three fields.
 or task notes from maintainers. For `spam`, keep the comment to one line; it is
 not posted.
 
-`labels` holds zero or more of:
+`areas` lists the affected packages. Use one or more of: `core`, `tools`,
+`dicom-image-loader`, `adapters`, `nifti-volume-loader`, `metadata`,
+`labelmap-interpolation`, `polymorphic-segmentation`, `ai`, `docs`, `other`.
 
-- `Awaiting Response`: only when you ask the reporter for something you
-  genuinely need (version, sample data, a reproduction)
-- `duplicate`: only when you are confident, and the comment names the original
+`severity`, `confidence`, `effort`, and `impact` use the guides above.
+
+`route` is one of:
+
+- `ready-to-fix`: the cause and correction are clear
+- `needs-reproduction`: a reproduction or sample data is required
+- `ask-reporter`: information from the reporter is required
+- `needs-approval`: a maintainer must decide the scope or API shape
+- `duplicate`: the comment identifies the original issue
+- `already-fixed`: the comment identifies the fix and release
+- `answered`: the comment explains the behavior or gives a supported solution
+
+Feature requests normally use `needs-approval`. Do not imply that a maintainer
+has approved the request. Use `duplicate` only when the evidence confirms it.
+
+The workflow adds one `type:` label and one `status:` label. For example, it
+can add `type:bug` and `status:needs-reproduction`. Area, severity, confidence,
+effort, and impact stay in the comment table. Reruns replace earlier managed
+type and status labels. Other repository labels stay in place.
 
 `comment` is the markdown comment, in this shape:
 
 ```markdown
 <!-- cs3d-triage -->
 
-|                |                                                                                                                                        |
-| -------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| **Type**       | <classification> — <one sentence>                                                                                                      |
-| **Area**       | <package(s)> · <component, tool or viewport> · <render path, when relevant>                                                            |
-| **Regression** | <yes — since #<PR> or <short sha>, first released in vX.Y.Z / no / unknown>                                                            |
-| **Route**      | <Ready to fix / Needs reproduction / Ask reporter / Maintainer decision / Likely duplicate of #N / Already fixed in vX.Y.Z / Answered> |
-| **Severity**   | <critical / high / medium / low> — <short reason>                                                                                      |
-| **Confidence** | <high / medium / low> — <short reason>                                                                                                 |
-| **Effort**     | <low / medium / high> — <short reason>                                                                                                 |
-| **Next step**  | <one concrete action for a maintainer>                                                                                                 |
+|                |                                                                                                                                   |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| **Type**       | <classification> — <one sentence>                                                                                                 |
+| **Area**       | <package(s)> · <component, tool or viewport> · <render path, when relevant>                                                       |
+| **Regression** | <yes — since #<PR> or <short sha>, first released in vX.Y.Z / no / unknown>                                                       |
+| **Route**      | <Ready to fix / Needs reproduction / Ask reporter / Await approval / Likely duplicate of #N / Already fixed in vX.Y.Z / Answered> |
+| **Severity**   | <critical / high / medium / low> — <short reason>                                                                                 |
+| **Confidence** | <high / medium / low> — <short reason>                                                                                            |
+| **Effort**     | <low / medium / high> — <short reason>                                                                                            |
+| **Impact**     | <high / medium / low> — <short reason>                                                                                            |
+| **Next step**  | <one concrete action for a maintainer>                                                                                            |
 
 ### Understanding
 
@@ -220,7 +251,7 @@ code, the affected surface.>
 
 ### Assumptions
 
-### Questions for the reporter
+### Open questions
 
 ### Reproduction
 
