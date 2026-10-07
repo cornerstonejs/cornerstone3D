@@ -376,13 +376,11 @@ class TiledRenderingEngine extends BaseRenderingEngine {
     for (let i = 0; i < viewports.length; i++) {
       const viewport = viewports[i];
       if (this._needsRender.has(viewport.id)) {
-        const eventDetail =
-          this.renderViewportUsingCustomOrVtkPipeline(viewport);
+        // Also removes the viewport from the set
+        const eventDetail = this._renderFlaggedViewport(viewport, (vp) =>
+          this.renderViewportUsingCustomOrVtkPipeline(vp)
+        );
         eventDetailArray.push(eventDetail);
-        viewport.setRendered();
-
-        // This viewport has been rendered, we can remove it from the set
-        this._needsRender.delete(viewport.id);
 
         // If there is nothing left that is flagged for rendering, stop the loop
         if (this._needsRender.size === 0) {
@@ -394,6 +392,7 @@ class TiledRenderingEngine extends BaseRenderingEngine {
     // allow RAF to be called again
     this._animationFrameSet = false;
     this._animationFrameHandle = null;
+    this._warnIfRequestsLeftAfterFrame();
 
     eventDetailArray.forEach((eventDetail) => {
       // Very small viewports won't have an element

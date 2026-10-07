@@ -772,6 +772,54 @@ abstract class BaseRenderingEngine {
   }
 
   /**
+   * Renders one flagged viewport and removes it from the render queue.
+   *
+   * An error from one viewport must not stop the render loop. Before this guard,
+   * a throw left `_animationFrameSet` true, so no later request scheduled a frame
+   * and every viewport stayed at `NEEDS_RENDER` with no error visible. Now the
+   * error is logged and the viewport status becomes `RENDER_ERROR`, so
+   * applications and tests can detect the failure. The next successful render
+   * sets the status back to `RENDERED`.
+   *
+   * @returns The image rendered event detail, or undefined when the render failed.
+   */
+  protected _renderFlaggedViewport(
+    viewport: IViewport,
+    render: (viewport: IViewport) => EventTypes.ImageRenderedEventDetail
+  ): EventTypes.ImageRenderedEventDetail | undefined {
+    try {
+      const eventDetail = render(viewport);
+      viewport.setRendered();
+      return eventDetail;
+    } catch (error) {
+      log.error(`Render of viewport ${viewport.id} failed`, error);
+      viewport.viewportStatus = ViewportStatus.RENDER_ERROR;
+      return undefined;
+    } finally {
+      this._needsRender.delete(viewport.id);
+    }
+  }
+
+  /**
+   * Reports render requests that are left in the queue after a frame.
+   *
+   * A request that arrives while `_renderFlaggedViewports` runs finds
+   * `_animationFrameSet` true, so it schedules no frame. If the frame does not
+   * render that viewport, the request stays in `_needsRender` and the viewport
+   * stays at `NEEDS_RENDER` until an unrelated request schedules a frame.
+   * Call this after the frame resets `_animationFrameSet`.
+   */
+  protected _warnIfRequestsLeftAfterFrame(): void {
+    if (!this._needsRender.size || this._animationFrameSet) {
+      return;
+    }
+    log.warn(
+      'Render requests arrived during the frame and no frame is scheduled',
+      Array.from(this._needsRender)
+    );
+  }
+
+  /**
    * Resizes viewports that use VTK.js for rendering.
    * This method must be implemented by subclasses to define their specific
    * resizing strategy.
