@@ -40,7 +40,7 @@ export default function touchStartActivate(
       // A tool returns null when it creates no annotation, because it has
       // nothing to measure on this viewport - for example when a configured
       // targetsFilter selects no target. That is not an error.
-      if (annotation) {
+      if (annotation?.annotationUID) {
         setAnnotationSelected(annotation.annotationUID);
       }
     } catch (error) {

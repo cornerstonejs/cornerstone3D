@@ -91,7 +91,7 @@ jobs:
 
       - name: Setup pnpm
         if: steps.tip.outputs.proceed == 'true'
-        uses: pnpm/action-setup@v6.0.8
+        uses: pnpm/action-setup@v6.1.0
 
       - name: Setup Node.js
         if: steps.tip.outputs.proceed == 'true'
