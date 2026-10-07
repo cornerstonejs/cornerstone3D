@@ -12,6 +12,7 @@ import addSegmentIndexDropdown from './addSegmentIndexDropdown';
 import addSliderToToolbar from './addSliderToToolbar';
 import addToggleButtonToToolbar from './addToggleButtonToToolbar';
 import addVideoTime from './addVideoTime';
+import addViewportFidelityIndicator from './addViewportFidelityIndicator';
 import annotationTools from './annotationTools';
 import camera, { createObliqueAngleController } from './camera';
 import contourSegmentationToolBindings from './contourSegmentationToolBindings';
@@ -68,6 +69,7 @@ export {
   addSliderToToolbar,
   addToggleButtonToToolbar,
   addVideoTime,
+  addViewportFidelityIndicator,
   annotationTools,
   camera,
   createObliqueAngleController,
