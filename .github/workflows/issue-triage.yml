@@ -1,0 +1,168 @@
+name: Issue Triage
+
+# First-pass triage of new community issues with Claude Code. The prompt lives
+# in .agents/skills/issue-triage.md.
+#
+# The work is split in two jobs. `analyze` runs Claude with a read-only token
+# and returns the comment as structured output. `publish` holds the only
+# `issues: write` token, never runs the model, and only posts that comment and
+# adds labels from a fixed list.
+#
+# Repository settings:
+#   secrets.CLAUDE_CODE_OAUTH_TOKEN  output of `claude setup-token`
+#   vars.ISSUE_TRIAGE_MODE           unset or `off`: no automatic runs
+#                                    `dry-run`: analyze new issues, result goes
+#                                    to the job summary only
+#                                    `live`: analyze and post the comment
+#   vars.ISSUE_TRIAGE_MODEL          optional, defaults to `opus`
+#
+# Any issue can be triaged by hand from the Actions tab (Run workflow), which
+# is also how maintainer-filed issues get triaged.
+
+on:
+  issues:
+    types: [opened]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: 'Issue number to triage'
+        required: true
+        type: number
+      post_comment:
+        description: 'Post the comment on the issue (otherwise job summary only)'
+        required: false
+        type: boolean
+        default: false
+
+permissions: {}
+
+jobs:
+  analyze:
+    # Automatic runs cover reporters without a repository role; members and
+    # collaborators use the manual trigger.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (
+        (vars.ISSUE_TRIAGE_MODE == 'dry-run' || vars.ISSUE_TRIAGE_MODE == 'live') &&
+        github.event.issue.user.type != 'Bot' &&
+        contains(fromJSON('["NONE", "CONTRIBUTOR", "FIRST_TIME_CONTRIBUTOR", "FIRST_TIMER"]'), github.event.issue.author_association)
+      )
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    concurrency:
+      group: issue-triage-${{ github.event.issue.number || inputs.issue_number }}
+      cancel-in-progress: true
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: read
+    env:
+      ISSUE_NUMBER: ${{ github.event.issue.number || inputs.issue_number }}
+    outputs:
+      # The runner drops an output that contains a registered secret, so a
+      # result that echoes a token never reaches the publish job.
+      result: ${{ steps.triage.outputs.structured_output }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6.0.3
+        with:
+          # Full history and tags, for git log/blame and release lookups.
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Run triage
+        id: triage
+        timeout-minutes: 25
+        uses: anthropics/claude-code-action/base-action@58985842b834ed26087302ba27d07bc24ca8697a # v1.0.244
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            Triage issue #${{ env.ISSUE_NUMBER }} in ${{ github.repository }}.
+            Read .agents/skills/issue-triage.md and follow it exactly.
+          # Reads inside the checkout need no permission. Anything not listed
+          # in --allowedTools is denied in a non-interactive run.
+          claude_args: |
+            --model ${{ vars.ISSUE_TRIAGE_MODEL || 'opus' }}
+            --max-turns 80
+            --allowedTools "Bash(gh issue view:*),Bash(gh issue list:*),Bash(gh search issues:*),Bash(gh search prs:*),Bash(gh pr view:*),Bash(gh pr list:*),Bash(gh pr diff:*),Bash(gh release list:*),Bash(gh release view:*),Bash(git log:*),Bash(git blame:*),Bash(git show:*),Bash(git diff:*),Bash(git tag:*),Bash(git describe:*)"
+            --disallowedTools "Write,Edit,MultiEdit,NotebookEdit,WebFetch,WebSearch"
+            --json-schema '{"type":"object","properties":{"classification":{"type":"string","enum":["bug","feature request","question/support","docs","duplicate","already fixed","needs info","maintenance","out of scope","spam","other"]},"labels":{"type":"array","items":{"type":"string","enum":["Awaiting Response","duplicate"]}},"comment":{"type":"string"}},"required":["classification","labels","comment"],"additionalProperties":false}'
+
+      - name: Write the result to the job summary
+        if: steps.triage.outputs.structured_output != ''
+        env:
+          RESULT: ${{ steps.triage.outputs.structured_output }}
+        run: |
+          {
+            echo "## Triage of #$ISSUE_NUMBER: $(jq -r '.classification' <<<"$RESULT")"
+            echo
+            echo "Labels: $(jq -r '.labels | join(", ")' <<<"$RESULT")"
+            echo
+            jq -r '.comment' <<<"$RESULT"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  publish:
+    needs: analyze
+    if: >-
+      needs.analyze.outputs.result != '' &&
+      (
+        (github.event_name == 'workflow_dispatch' && inputs.post_comment) ||
+        (github.event_name == 'issues' && vars.ISSUE_TRIAGE_MODE == 'live')
+      )
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      ISSUE_NUMBER: ${{ github.event.issue.number || inputs.issue_number }}
+      RESULT: ${{ needs.analyze.outputs.result }}
+      MARKER: '<!-- cs3d-triage -->'
+
+    steps:
+      - name: Post the triage comment and labels
+        run: |
+          set -euo pipefail
+
+          if [ "$(jq -r '.classification' <<<"$RESULT")" = "spam" ]; then
+            echo "Classified as spam, not commenting."
+            exit 0
+          fi
+
+          # Start with the marker so reruns edit the same comment, and stay
+          # under GitHub's 65536-character limit.
+          jq --arg marker "$MARKER" '{
+            body: (
+              .comment
+              | if startswith($marker) then . else $marker + "\n\n" + . end
+              | if length > 60000 then .[:60000] + "\n\n_Truncated._" else . end
+            )
+          }' <<<"$RESULT" > payload.json
+
+          ids=$(gh api --paginate "repos/$GH_REPO/issues/$ISSUE_NUMBER/comments" \
+            --jq '.[] | select(.user.login == "github-actions[bot]" and (.body | startswith(env.MARKER))) | .id')
+          comment_id=${ids%%$'\n'*}
+
+          if [ -n "$comment_id" ]; then
+            gh api -X PATCH "repos/$GH_REPO/issues/comments/$comment_id" --input payload.json > /dev/null
+            echo "Updated comment $comment_id on #$ISSUE_NUMBER"
+          else
+            gh api -X POST "repos/$GH_REPO/issues/$ISSUE_NUMBER/comments" --input payload.json > /dev/null
+            echo "Posted a comment on #$ISSUE_NUMBER"
+          fi
+
+          gh label create 'triage: auto' --color 'C5DEF5' \
+            --description 'Has an automated first-pass triage comment' 2>/dev/null || true
+
+          # Only labels from this list are applied, whatever the result asks for.
+          labels=$(jq -r '
+            ["triage: auto"]
+            + [.labels[]? | select(. == "Awaiting Response" or . == "duplicate")]
+            | unique | join(",")' <<<"$RESULT")
+          gh issue edit "$ISSUE_NUMBER" --add-label "$labels"
+          echo "Labels added to #$ISSUE_NUMBER: $labels"
