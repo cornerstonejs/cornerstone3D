@@ -431,6 +431,9 @@ export default class ONNXSegmentationController {
       this.disconnectViewport(this.viewport);
     }
     this.currentImage = null;
+    // These are world points on the previous viewport's segmentation; decoding
+    // them against this viewport would preview into a segmentation it lacks.
+    this.randomPoints = [];
     this.viewport = viewport;
 
     const brushInstance = new LabelmapBaseTool(
@@ -705,6 +708,12 @@ export default class ONNXSegmentationController {
         cornerstoneTools.segmentation.activeSegmentation.getActiveSegmentation(
           viewport.id
         );
+
+      // The controller follows whichever viewport the tool was pointed at, and
+      // that one need not have a segmentation yet - nothing to propagate there.
+      if (!segmentation) {
+        return;
+      }
 
       const segmentIndex =
         cornerstoneTools.segmentation.segmentIndex.getActiveSegmentIndex(
