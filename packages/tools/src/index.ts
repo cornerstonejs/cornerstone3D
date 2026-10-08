@@ -91,6 +91,7 @@ import {
   LabelmapBaseTool,
   SegmentLabelTool,
   LabelMapEditWithContourTool,
+  CrossSectionSplineTool,
 } from './tools';
 
 import VideoRedactionTool from './tools/annotation/VideoRedactionTool';
@@ -139,6 +140,7 @@ export {
   CircleROITool,
   ETDRSGridTool,
   SplineROITool,
+  CrossSectionSplineTool,
   SplineContourSegmentationTool,
   BidirectionalTool,
   PlanarFreehandROITool,
