@@ -2,6 +2,7 @@ import {
   Enums,
   cache,
   eventTarget,
+  getConfiguration,
   getRenderingEngine,
   utilities,
 } from '@cornerstonejs/core';
@@ -59,6 +60,10 @@ const MAXIMUM_SAMPLES_PER_RAY = 4000;
  * changes the badge. Raising the volume mapper sample distance (Trackball
  * rotate) does, via IMAGE_RENDERED.
  *
+ * When `init({ dangerouslyDisableLossyIndicator: true })` is set, this
+ * function is a no-op (no badge, no listeners). That hides reduced/decimated/LOD
+ * feedback on purpose.
+ *
  * - green FULL: drawn grid matches the full volume, data complete, idle sample distance
  * - amber "n% loaded": data has not arrived yet
  * - blue "REDUCED a×b×c": non-aliasing per-axis factors vs full volume
@@ -74,6 +79,10 @@ export default function addViewportFidelityIndicator({
   renderingEngineId,
   viewportId,
 }: configViewportFidelityIndicator): () => void {
+  if (getConfiguration().dangerouslyDisableLossyIndicator) {
+    return () => {};
+  }
+
   const viewport = getRenderingEngine(renderingEngineId)?.getViewport(
     viewportId
   ) as Types.IVolumeViewport | undefined;

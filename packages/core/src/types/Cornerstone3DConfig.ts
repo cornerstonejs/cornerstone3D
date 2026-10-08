@@ -7,6 +7,13 @@ interface Cornerstone3DConfig {
    */
   isMobile?: boolean;
 
+  /**
+   * When true, helpers that add a viewport fidelity / lossy badge do nothing.
+   * Dangerous because it hides reduced/decimated/LOD feedback during load
+   * and interaction.
+   */
+  dangerouslyDisableLossyIndicator?: boolean;
+
   rendering?: {
     // vtk.js supports 8bit integer textures and 32bit float textures.
     // However, if the client has norm16 textures (it can be seen by visiting
