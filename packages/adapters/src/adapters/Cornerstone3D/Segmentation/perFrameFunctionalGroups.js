@@ -82,6 +82,7 @@ export function normalizeSharedFunctionalGroupsSequence(dataset) {
  *   sourceImageSequenceItem: { ReferencedSOPInstanceUID: string, ReferencedFrameNumber?: number },
  *   planeOrientationSequence?: object,
  *   planePositionSequence?: object,
+ *   dimensionIndexValues?: number[],
  * }>} frames
  *
  * `referencedSegmentNumber` drives the per-frame `SegmentIdentificationSequence`
@@ -89,6 +90,10 @@ export function normalizeSharedFunctionalGroupsSequence(dataset) {
  * single frame carries many segment labels as pixel values, so the standard
  * forbids the macro and a fixed `ReferencedSegmentNumber` would be wrong for any
  * label other than the one hard-coded.
+ *
+ * `dimensionIndexValues` replaces the frame's `FrameContentSequence`. Callers
+ * that build the per-frame groups from scratch (LABELMAP SEGs) must pass it,
+ * since the Frame Content macro is mandatory for every Segmentation frame.
  */
 export function applyPerFrameFunctionalGroups(dataset, frames) {
   normalizeSharedFunctionalGroupsSequence(dataset);
@@ -130,6 +135,11 @@ export function applyPerFrameFunctionalGroups(dataset, frames) {
     }
     if (frame.planePositionSequence) {
       group.PlanePositionSequence = frame.planePositionSequence;
+    }
+    if (frame.dimensionIndexValues) {
+      group.FrameContentSequence = {
+        DimensionIndexValues: frame.dimensionIndexValues,
+      };
     }
 
     return group;
