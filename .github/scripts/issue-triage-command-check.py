@@ -54,7 +54,7 @@ GH_FLAGS = {
     ("release", "view"): "",
 }
 GH_VALUES = """
-    --repo -R --json --jq --template -t --limit -L --state -s --author -A
+    --repo -R --json --jq --limit -L --state -s --author -A
     --assignee -a --label -l --search -S --base -B --head -H --sort --order
     --created --updated --closed --merged-at --owner --match --mentions
     --involves --commenter --milestone --visibility --archived --language
@@ -64,6 +64,8 @@ GH_VALUES = """
 
 def literal_arguments(command):
     """Reject shell execution syntax before parsing quoted arguments."""
+    if not isinstance(command, str):
+        raise ValueError("Use a command string.")
     quote = None
     escaped = False
     for character in command:
@@ -179,7 +181,7 @@ def main():
             "hookEventName": "PreToolUse",
             "updatedInput": {**tool_input, "command": command},
         }
-    except (ValueError, KeyError, TypeError) as error:
+    except Exception as error:
         response = {
             "hookEventName": "PreToolUse",
             "permissionDecision": "deny",

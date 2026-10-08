@@ -43,6 +43,9 @@ decisions that require a maintainer.
 
 ## Repository map
 
+Use this map as a starting guide. Check `packages/`, package manifests, and
+viewport source files for the current names before drawing a conclusion.
+
 | Path                                | npm package                               | Typical topics                                                                                           |
 | ----------------------------------- | ----------------------------------------- | -------------------------------------------------------------------------------------------------------- |
 | `packages/core`                     | `@cornerstonejs/core`                     | RenderingEngine, viewports, cameras, cache, image and volume loading, metadata access, events            |
@@ -63,8 +66,11 @@ Viewports live in `packages/core/src/RenderingEngine/`: `StackViewport`,
 path: GPU through vtk.js (`vtkClasses/`) or CPU (`CanvasActor/`,
 `useCPURendering`). Find out which one the reporter uses.
 
-Tests: Karma tests in `packages/*/test`, unit tests as `*.spec.ts` next to the
-sources, Playwright end-to-end tests in `tests/`. Runnable examples live in
+Tests: Karma tests and Jest `*.jest.js` tests in `packages/*/test`, unit tests
+as `*.spec.ts` both next to sources and in `__tests__` folders, Vitest browser
+tests as `tests/vitest-browser/**/*.browser.test.ts`, and Playwright end-to-end
+tests in `tests/`. Check the test configurations and matching files before
+stating that a code path has no coverage. Runnable examples live in
 `packages/*/examples/<name>`.
 
 Many reporters use cornerstone3D through the OHIF Viewer. When the problem is
@@ -189,17 +195,24 @@ Impact:
 ## Output
 
 Return structured output with the fields below. The publisher derives labels
-from these values. Use the same values in the comment table.
+from these values. Use the same assessment in the comment table. Use the route
+display mapping below for the Route row.
 
 `classification` is one of: `bug`, `feature request`, `question/support`,
-`docs`, `duplicate`, `already fixed`, `needs info`, `maintenance`,
+`docs`, `duplicate`, `already fixed`, `maintenance`,
 `out of scope`, `spam`, `other`. Use `maintenance` for issues that are design
 or task notes from maintainers. For `spam`, keep the comment to one line; it is
 not posted.
 
+Missing information does not change the issue type. Keep the supported type
+and use `ask-reporter` or `needs-reproduction` for the route. If the type cannot
+be determined, use `other` and explain the uncertainty.
+
 `areas` lists the affected packages. Use one or more of: `core`, `tools`,
 `dicom-image-loader`, `adapters`, `nifti-volume-loader`, `metadata`,
 `labelmap-interpolation`, `polymorphic-segmentation`, `ai`, `docs`, `other`.
+For a package outside this list, use `other` and state its current name in the
+comment.
 
 `severity`, `confidence`, `effort`, and `impact` use the guides above.
 
@@ -212,6 +225,19 @@ not posted.
 - `duplicate`: the comment identifies the original issue
 - `already-fixed`: the comment identifies the fix and release
 - `answered`: the comment explains the behavior or gives a supported solution
+
+Use this display mapping in the comment table. Add an issue number, release,
+or short explanation after the display name when relevant.
+
+| Structured route     | Comment display name |
+| -------------------- | -------------------- |
+| `ready-to-fix`       | Ready to fix         |
+| `needs-reproduction` | Needs reproduction   |
+| `ask-reporter`       | Ask reporter         |
+| `needs-approval`     | Needs approval       |
+| `duplicate`          | Duplicate            |
+| `already-fixed`      | Already fixed        |
+| `answered`           | Answered             |
 
 Feature requests normally use `needs-approval`. Do not imply that a maintainer
 has approved the request. Use `duplicate` only when the evidence confirms it.
@@ -226,17 +252,17 @@ type and status labels. Other repository labels stay in place.
 ```markdown
 <!-- cs3d-triage -->
 
-|                |                                                                                                                                   |
-| -------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| **Type**       | <classification> — <one sentence>                                                                                                 |
-| **Area**       | <package(s)> · <component, tool or viewport> · <render path, when relevant>                                                       |
-| **Regression** | <yes — since #<PR> or <short sha>, first released in vX.Y.Z / no / unknown>                                                       |
-| **Route**      | <Ready to fix / Needs reproduction / Ask reporter / Await approval / Likely duplicate of #N / Already fixed in vX.Y.Z / Answered> |
-| **Severity**   | <critical / high / medium / low> — <short reason>                                                                                 |
-| **Confidence** | <high / medium / low> — <short reason>                                                                                            |
-| **Effort**     | <low / medium / high> — <short reason>                                                                                            |
-| **Impact**     | <high / medium / low> — <short reason>                                                                                            |
-| **Next step**  | <one concrete action for a maintainer>                                                                                            |
+|                |                                                                                               |
+| -------------- | --------------------------------------------------------------------------------------------- |
+| **Type**       | <classification> — <one sentence>                                                             |
+| **Area**       | <package(s)> · <component, tool or viewport> · <render path, when relevant>                   |
+| **Regression** | <yes — since #<PR> or <short sha>, first released in vX.Y.Z / no / unknown>                   |
+| **Route**      | <display name from the route mapping> — <issue, release, or short explanation, when relevant> |
+| **Severity**   | <critical / high / medium / low> — <short reason>                                             |
+| **Confidence** | <high / medium / low> — <short reason>                                                        |
+| **Effort**     | <low / medium / high> — <short reason>                                                        |
+| **Impact**     | <high / medium / low> — <short reason>                                                        |
+| **Next step**  | <one concrete action for a maintainer>                                                        |
 
 ### Understanding
 
