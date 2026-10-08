@@ -7,45 +7,66 @@ import {
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
-const { Events, ImageQualityStatus, ViewportType, VoxelStatistics } = Enums;
-const { compareVoxelQuality } = utilities.voxelGrid;
+const { Events, ImageQualityStatus, VoxelStatistics } = Enums;
+const { isAliasingReduction, voxelGridsEqual } = utilities.voxelGrid;
 
 interface configViewportFidelityIndicator {
   renderingEngineId: string;
   viewportId: string;
 }
 
-/** One volume that the viewport draws, and what that viewport gets from it. */
+/**
+ * One volume that the viewport draws: the quality record of the texture grid,
+ * how that grid compares with the full volume, and whether ray sample distance
+ * is raised (e.g. TrackballRotateTool during drag).
+ */
 type FidelityLine = {
   label: string;
-  verdict?: Types.VoxelQualityVerdict;
+  record?: Types.VoxelQualityRecord;
+  /**
+   * Per-axis ratio of drawn spacing / full-volume spacing (e.g. `[2, 2, 10]`).
+   * Each value is 1 when that axis matches the full volume.
+   */
+  reductionFactors: Types.Point3;
+  /** True when the drawn grid matches the full volume grid. */
+  fullResolution: boolean;
+  /**
+   * Current mapper sample distance / idle baseline. 1 when idle; ~2 during
+   * TrackballRotateTool drag (rotateSampleDistanceFactor).
+   */
+  sampleDistanceLod: number;
 };
 
 const COLORS = {
-  lossless: '#2e9d4a',
+  full: '#2e9d4a',
   loading: '#c98a00',
   reduced: '#2f6fc0',
-  lossy: '#c0392b',
+  decimated: '#c0392b',
   none: '#666',
 };
 
+/** Matches `MAXIMUM_SAMPLES_PER_RAY` in createVolumeMapper (baseline distance). */
+const MAXIMUM_SAMPLES_PER_RAY = 4000;
+
 /**
- * Adds a fidelity badge to one viewport: what the viewport really shows of its
- * data, compared with what the full resolution would show.
+ * Adds a fidelity badge to one viewport: what data the viewport draws, relative
+ * to the full volume — not whether a texture reduction is visible at the current
+ * zoom — plus interactive ray LOD when sample distance is raised.
  *
  * The badge reads the grid of the texture that the viewport draws, so a
  * reduced texture reports on itself and not on the full volume. The record of
- * that grid (`getGridQuality`) is a fact about the data, and the verdict
- * (`compareVoxelQuality`) belongs to this viewport, because it takes the size
- * of one display pixel: zooming in can turn a lossless view into a reduced
- * one, and two viewports over one volume can disagree at the same moment.
+ * that grid (`getGridQuality`) is a fact about the data. Camera zoom never
+ * changes the badge. Raising the volume mapper sample distance (Trackball
+ * rotate) does, via IMAGE_RENDERED.
  *
- * - green LOSSLESS: everything the full resolution would show
+ * - green FULL: drawn grid matches the full volume, data complete, idle sample distance
  * - amber "n% loaded": data has not arrived yet
- * - blue "REDUCED n×": one voxel covers n display pixels
- * - red LOSSY: the reduction aliases, which no zoom undoes
+ * - blue "REDUCED a×b×c": non-aliasing per-axis factors vs full volume
+ * - blue "LOD n×": sample distance above idle (interaction)
+ * - blue "REDUCED a×b×c · LOD n×": both at once
+ * - red DECIMATED: the reduction aliases (e.g. Decimation)
  *
- * Hovering the badge shows the record and the causes of the verdict.
+ * Hovering the badge shows the record, grid reduction, and sample-distance LOD.
  *
  * @returns a function that removes the badge and its listeners
  */
@@ -89,7 +110,6 @@ export default function addViewportFidelityIndicator({
 
   const cleanUp = () => {
     element.removeEventListener(Events.IMAGE_RENDERED, schedule);
-    element.removeEventListener(Events.CAMERA_MODIFIED, schedule);
     eventTarget.removeEventListener(Events.IMAGE_VOLUME_MODIFIED, onVolumeModified);
     eventTarget.removeEventListener(Events.ELEMENT_DISABLED, onDisabled);
     badge.root.remove();
@@ -103,9 +123,9 @@ export default function addViewportFidelityIndicator({
     }
   };
 
-  // A render follows a new actor, a camera change and a progressive stage.
+  // A render follows a new actor and a progressive stage. Zoom does not change
+  // the badge, so CAMERA_MODIFIED is not listened to.
   element.addEventListener(Events.IMAGE_RENDERED, schedule);
-  element.addEventListener(Events.CAMERA_MODIFIED, schedule);
   eventTarget.addEventListener(Events.IMAGE_VOLUME_MODIFIED, onVolumeModified);
   eventTarget.addEventListener(Events.ELEMENT_DISABLED, onDisabled);
   schedule();
@@ -152,86 +172,131 @@ function readLines(viewport: Types.IVolumeViewport): FidelityLine[] {
     // The grid of the texture that this actor draws. A texture with no grid
     // holds the grid of its volume, which is the full resolution.
     const mapper = (
-      entry.actor as { getMapper?: () => unknown }
-    ).getMapper?.() as
-      | { getScalarTexture?: () => { getGrid?: () => Types.VoxelGrid } }
-      | undefined;
-    const grid =
-      mapper?.getScalarTexture?.()?.getGrid?.() ?? volume.voxelGrid;
+      entry.actor as { getMapper?: () => VolumeMapperLike }
+    ).getMapper?.() as VolumeMapperLike | undefined;
+    const texture = mapper?.getScalarTexture?.();
+    const grid = texture?.getGrid?.() ?? volume.voxelGrid;
+    const fullGrid = volume.voxelGrid;
     const record = volume.getGridQuality(grid, volume.reductionStatistic);
+    const fullResolution = voxelGridsEqual(grid, fullGrid);
 
     lines.push({
       label: 'Image',
-      verdict: record
-        ? compareVoxelQuality(record, {
-            displaySpacing: displaySpacingOf(viewport, grid),
-          })
-        : undefined,
+      record: record ?? undefined,
+      reductionFactors: reductionFactorsOf(grid, fullGrid),
+      fullResolution,
+      sampleDistanceLod: sampleDistanceLodOf(mapper),
     });
   }
 
   return lines;
 }
 
+type VolumeMapperLike = {
+  getScalarTexture?: () => { getGrid?: () => Types.VoxelGrid };
+  getSampleDistance?: () => number;
+  getInputData?: () => {
+    getSpacing: () => number[];
+    getBounds: () => number[];
+  };
+};
+
 /**
- * The world size of one display pixel on each axis of the grid, or nothing
- * when the view does not state one.
- *
- * A planar view shows the two grid axes in its plane. The axis along the view
- * normal is not displayed, so it gets 0, which the comparison skips. A 3D view
- * is a perspective projection with no single pixel size, so the comparison
- * then judges missing data and aliasing only.
+ * Idle sample distance for a volume mapper, matching `sampleDistanceOf` in
+ * createVolumeMapper (multiplier 1). Used to detect Trackball's temporary raise.
  */
-function displaySpacingOf(
-  viewport: Types.IVolumeViewport,
-  grid: Types.VoxelGrid
-): Types.Point3 | undefined {
-  if (viewport.type === ViewportType.VOLUME_3D) {
+function baselineSampleDistanceOf(mapper: VolumeMapperLike): number | undefined {
+  const imageData = mapper.getInputData?.();
+
+  if (!imageData) {
     return undefined;
   }
 
-  const { parallelScale, viewPlaneNormal } = viewport.getCamera();
-  const height = viewport.canvas?.clientHeight;
+  const texture = mapper.getScalarTexture?.();
+  const spacing = texture?.getGrid?.()?.spacing ?? imageData.getSpacing();
+  const distance = (spacing[0] + spacing[1] + spacing[2]) / 6;
+  const bounds = imageData.getBounds();
+  const dx = bounds[1] - bounds[0];
+  const dy = bounds[3] - bounds[2];
+  const dz = bounds[5] - bounds[4];
+  const diagonal = Math.sqrt(dx * dx + dy * dy + dz * dz);
 
-  if (!(parallelScale > 0) || !(height > 0) || !viewPlaneNormal) {
-    return undefined;
-  }
-
-  const worldPerPixel = (2 * parallelScale) / height;
-  const spacing = [0, 0, 0] as Types.Point3;
-
-  for (let axis = 0; axis < 3; axis++) {
-    const along = Math.abs(
-      grid.direction[axis * 3] * viewPlaneNormal[0] +
-        grid.direction[axis * 3 + 1] * viewPlaneNormal[1] +
-        grid.direction[axis * 3 + 2] * viewPlaneNormal[2]
-    );
-
-    spacing[axis] = along > 0.5 ? 0 : worldPerPixel;
-  }
-
-  return spacing;
+  return Math.max(distance, diagonal / (MAXIMUM_SAMPLES_PER_RAY - 1));
 }
 
-/** The short state of one verdict, for the badge. */
-function summaryOf(verdict: Types.VoxelQualityVerdict | undefined): {
+/**
+ * How much coarser the ray sample distance is than idle. 1 when idle or when
+ * the mapper has no sample distance (MPR).
+ */
+function sampleDistanceLodOf(mapper: VolumeMapperLike | undefined): number {
+  if (!mapper?.getSampleDistance) {
+    return 1;
+  }
+
+  const current = mapper.getSampleDistance();
+  const baseline = baselineSampleDistanceOf(mapper);
+
+  if (!(current > 0) || !(baseline > 0)) {
+    return 1;
+  }
+
+  return current / baseline;
+}
+
+/**
+ * How much coarser the drawn grid is than the full volume, on each axis.
+ * A value of 1 means that axis matches the full volume spacing.
+ */
+function reductionFactorsOf(
+  drawn: Types.VoxelGrid,
+  full: Types.VoxelGrid
+): Types.Point3 {
+  const factors = [1, 1, 1] as Types.Point3;
+
+  for (let axis = 0; axis < 3; axis++) {
+    const fullSpacing = full.spacing[axis];
+
+    if (!(fullSpacing > 0)) {
+      continue;
+    }
+
+    factors[axis] = drawn.spacing[axis] / fullSpacing;
+  }
+
+  return factors;
+}
+
+function isReduced(factors: Types.Point3): boolean {
+  return factors.some((factor) => factor > 1 + 1e-6);
+}
+
+/** Formats per-axis factors as `2×2×10`. */
+function formatFactors(factors: Types.Point3): string {
+  return factors.map(formatFactor).join('×');
+}
+
+function isInteractiveLod(sampleDistanceLod: number): boolean {
+  return sampleDistanceLod > 1 + 1e-2;
+}
+
+/** The short state of one line, for the badge. */
+function summaryOf(line: FidelityLine): {
   text: string;
   color: string;
 } {
-  if (!verdict) {
+  const { record, reductionFactors, fullResolution, sampleDistanceLod } = line;
+
+  if (!record) {
     return { text: 'NO DATA', color: COLORS.none };
   }
 
-  const { causes, magnitude, record } = verdict;
-
-  if (causes.includes('aliasing')) {
-    return { text: 'LOSSY', color: COLORS.lossy };
-  }
-
-  if (causes.includes('missingData')) {
+  if (record.missing > 0) {
     const loaded =
       record.voxels > 0
-        ? Math.min(99, Math.floor((100 * (record.voxels - record.missing)) / record.voxels))
+        ? Math.min(
+            99,
+            Math.floor((100 * (record.voxels - record.missing)) / record.voxels)
+          )
         : 0;
 
     return {
@@ -240,27 +305,36 @@ function summaryOf(verdict: Types.VoxelQualityVerdict | undefined): {
     };
   }
 
-  if (causes.includes('resolution')) {
-    return { text: `REDUCED ${formatFactor(magnitude)}×`, color: COLORS.reduced };
+  if (isAliasingReduction(record.reduction)) {
+    return { text: 'DECIMATED', color: COLORS.decimated };
   }
 
-  if (causes.includes('quality')) {
-    return {
-      text: ImageQualityStatus[record.status] ?? 'LOW QUALITY',
-      color: COLORS.loading,
-    };
+  const parts: string[] = [];
+
+  if (!fullResolution || isReduced(reductionFactors)) {
+    parts.push(`REDUCED ${formatFactors(reductionFactors)}`);
   }
 
-  return { text: 'LOSSLESS', color: COLORS.lossless };
+  if (isInteractiveLod(sampleDistanceLod)) {
+    parts.push(`LOD ${formatFactor(sampleDistanceLod)}×`);
+  }
+
+  if (parts.length) {
+    return { text: parts.join(' · '), color: COLORS.reduced };
+  }
+
+  return { text: 'FULL', color: COLORS.full };
 }
 
-/** The record and the verdict of one line, for the hover panel. */
-function detailsOf({ label, verdict }: FidelityLine): string {
-  if (!verdict) {
+/** The record and the reduction of one line, for the hover panel. */
+function detailsOf(line: FidelityLine): string {
+  const { label, record, reductionFactors, fullResolution, sampleDistanceLod } =
+    line;
+
+  if (!record) {
     return `${label}: no quality record`;
   }
 
-  const { record, causes, magnitude } = verdict;
   const { grid } = record;
   const status = ImageQualityStatus[record.status] ?? String(record.status);
   const range =
@@ -269,6 +343,14 @@ function detailsOf({ label, verdict }: FidelityLine): string {
       : ` [${ImageQualityStatus[record.lowest]}..${ImageQualityStatus[record.highest]}]`;
   const missingPercent =
     record.voxels > 0 ? Math.round((100 * record.missing) / record.voxels) : 0;
+  const dataState = isAliasingReduction(record.reduction)
+    ? 'decimated'
+    : !fullResolution || isReduced(reductionFactors)
+      ? `reduced ${formatFactors(reductionFactors)} vs full volume`
+      : 'full resolution';
+  const lodState = isInteractiveLod(sampleDistanceLod)
+    ? `sample distance ×${formatFactor(sampleDistanceLod)} (interactive)`
+    : 'sample distance idle';
 
   return [
     `${label}`,
@@ -278,14 +360,19 @@ function detailsOf({ label, verdict }: FidelityLine): string {
       .join('×')} mm`,
     `  missing   ${record.exact ? '' : '~'}${missingPercent}% of ${record.voxels} voxels`,
     `  source    ${record.source} · ${record.reduction} · ${record.deliveries} deliveries`,
-    `  verdict   ${causes.length ? causes.join(', ') : 'lossless'}${
-      magnitude > 0 ? ` · voxel/pixel ${formatFactor(magnitude)}` : ''
-    }`,
+    `  data      ${dataState}`,
+    `  lod       ${lodState}`,
   ].join('\n');
 }
 
 function formatFactor(value: number): string {
-  return Number.isInteger(value) ? String(value) : value.toFixed(1);
+  const rounded = Math.round(value);
+
+  if (Math.abs(value - rounded) < 1e-6) {
+    return String(rounded);
+  }
+
+  return value.toFixed(1);
 }
 
 type Badge = {
@@ -346,11 +433,20 @@ function createBadge(element: HTMLDivElement): Badge {
 }
 
 function renderBadge({ pills, details }: Badge, lines: FidelityLine[]): void {
-  const shown = lines.length ? lines : [{ label: 'Image' }];
+  const shown = lines.length
+    ? lines
+    : [
+        {
+          label: 'Image',
+          reductionFactors: [1, 1, 1] as Types.Point3,
+          fullResolution: true,
+          sampleDistanceLod: 1,
+        },
+      ];
 
   pills.replaceChildren(
     ...shown.map((line) => {
-      const { text, color } = summaryOf(line.verdict);
+      const { text, color } = summaryOf(line);
       const pill = document.createElement('div');
 
       Object.assign(pill.style, {
