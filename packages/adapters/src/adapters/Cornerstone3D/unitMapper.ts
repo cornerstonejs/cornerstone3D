@@ -12,7 +12,14 @@ const UNIT_MAP_FROM_UCUM: Record<string, string> = {
 };
 
 /**
+ * dcmjs writes a unit it has no UCUM code for (SUV, raw, cm US Region...) as
+ * the arbitrary unit "[arb'U]{<unit>}".
+ */
+const ARBITRARY_UNIT = /^\[arb'U\]\{(.*)\}$/;
+
+/**
  * Converts a UCUM code to display format.
+ * An arbitrary unit written by dcmjs gives back the unit it wraps.
  * If no mapping exists, returns the original unit.
  *
  * @param unit - The UCUM code (e.g., "[hnsf'U]")
@@ -21,6 +28,10 @@ const UNIT_MAP_FROM_UCUM: Record<string, string> = {
 export function mapUnitFromUCUM(unit: string | undefined): string | undefined {
   if (!unit) {
     return unit;
+  }
+  const arbitrary = ARBITRARY_UNIT.exec(unit);
+  if (arbitrary) {
+    return arbitrary[1];
   }
   return UNIT_MAP_FROM_UCUM[unit] || unit;
 }
