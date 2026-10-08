@@ -18,7 +18,6 @@ import {
   drawHandles as drawHandlesSvg,
 } from '../../drawingSvg';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
-import getWorldWidthAndHeightFromTwoPoints from '../../utilities/planar/getWorldWidthAndHeightFromTwoPoints';
 import throttle from '../../utilities/throttle';
 import debounce from '../../utilities/debounce';
 import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
@@ -48,10 +47,7 @@ import {
   getCanvasCircleCorners,
   getCanvasCircleRadius,
 } from '../../utilities/math/circle';
-import {
-  getCalibratedLengthUnitsAndScale,
-  getCalibratedAspect,
-} from '../../utilities/getCalibratedUnits';
+import { getCalibratedLengthUnitsAndScale } from '../../utilities/getCalibratedUnits';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 import { pointInEllipse } from '../../utilities/math/ellipse';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
@@ -629,7 +625,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     enabledElement
   ) {
     const { data, metadata } = annotation;
-    const { viewPlaneNormal, viewUp } = metadata;
+    const { viewPlaneNormal } = metadata;
     const { viewport } = enabledElement;
     const projectionPoints = data.cachedStats.projectionPoints;
 
@@ -637,28 +633,6 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
 
     const image = this.getTargetImageData(targetId);
 
-    const canvasCoordinates = data.handles.points.map((p) =>
-      viewport.worldToCanvas(p)
-    );
-
-    const baseTopLeftCanvas = getCanvasCircleCorners([
-      canvasCoordinates[0],
-      canvasCoordinates[1],
-    ])[0];
-    const baseBottomRightCanvas = getCanvasCircleCorners([
-      canvasCoordinates[0],
-      canvasCoordinates[1],
-    ])[1];
-
-    const basePos1 = viewport.canvasToWorld(baseTopLeftCanvas);
-    const basePos2 = viewport.canvasToWorld(baseBottomRightCanvas);
-
-    const { worldWidth, worldHeight } = getWorldWidthAndHeightFromTwoPoints(
-      viewPlaneNormal,
-      viewUp,
-      basePos1,
-      basePos2
-    );
     // The calibration compares the handles against the pixel bounds of the
     // ultrasound regions of the image, so it reads index coordinates, as the
     // other ROI tools pass.
@@ -669,12 +643,15 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       image,
       indexCoordinates
     );
-    const aspect = getCalibratedAspect(image);
-    const area = Math.abs(
-      Math.PI *
-        (worldWidth / measureInfo.scale / 2) *
-        (worldHeight / aspect / measureInfo.scale / 2)
+    // The scale converts index distances, so the radius, from the centre to
+    // the point on the circle, is measured in index space, as CircleROITool
+    // does. The per-axis scales already account for non-square pixels, so no
+    // aspect correction applies.
+    const radius = CircleROIStartEndThresholdTool.calculateLengthInIndex(
+      measureInfo,
+      indexCoordinates.slice(0, 2)
     );
+    const area = Math.PI * radius * radius;
 
     const modalityUnitOptions = {
       isPreScaled: isViewportPreScaled(viewport, targetId),
