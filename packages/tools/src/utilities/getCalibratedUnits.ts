@@ -137,9 +137,9 @@ const getCalibratedLengthUnitsAndScale = (image, handles) => {
       areaUnit =
         (UNIT_MAPPING[region.physicalUnitsYDirection] || 'px') + SQUARE;
     }
-  } else if (calibration.scale) {
-    scale = calibration.scale;
   }
+  // Any other calibration.scale is already applied above, through baseScale,
+  // to scale, scaleY and scaleZ alike.
 
   return {
     unit: unit + (calibrationType ? ` ${calibrationType}` : ''),
