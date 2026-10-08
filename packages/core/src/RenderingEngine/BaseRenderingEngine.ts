@@ -35,6 +35,7 @@ import { OrientationAxis } from '../enums';
 import type { VtkOffscreenMultiRenderWindow } from '../types';
 import { StatsOverlay } from './helpers/stats';
 import { convertColorArrayToRgbString } from '../utilities/convertColorArrayToRgbString';
+import { unregisterVolume3DTargetFps } from './helpers/volume3DTargetFps';
 
 // Rendering engines seem to not like rendering things less than 2 pixels per side
 export const VIEWPORT_MIN_SIZE = 2;
@@ -180,6 +181,10 @@ abstract class BaseRenderingEngine {
       log.warn(`viewport ${viewportId} does not exist`);
       return;
     }
+
+    // Drop Adaptive Target FPS state before destroying the viewport so a later
+    // enable with the same viewportId does not reuse stale budgets/mappers.
+    unregisterVolume3DTargetFps(viewportId);
 
     // 3. Reset the viewport to remove attributes, and reset the canvas
     this._resetViewport(viewport);
