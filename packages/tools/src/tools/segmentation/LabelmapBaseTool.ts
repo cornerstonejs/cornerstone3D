@@ -13,6 +13,7 @@ import SegmentationRepresentations from '../../enums/SegmentationRepresentations
 import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import { getActiveSegmentation } from '../../stateManagement/segmentation/getActiveSegmentation';
 import { getLockedSegmentIndices } from '../../stateManagement/segmentation/segmentLocking';
+
 import { getSegmentation } from '../../stateManagement/segmentation/getSegmentation';
 import { getCurrentLabelmapImageIdForViewport } from '../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
 import { getSegmentIndexColor } from '../../stateManagement/segmentation/config/segmentationColor';
@@ -34,6 +35,10 @@ import {
   resolveLabelmapForSegment,
 } from '../../stateManagement/segmentation/helpers/labelmapSegmentationState';
 import getViewportICamera from '../../utilities/getViewportICamera';
+import type { Annotations } from '../../types';
+import type { ContourSegmentationAnnotation } from '../../types/ContourSegmentationAnnotation';
+import { getHiddenSegmentIndices } from '../../stateManagement/segmentation/config/segmentationVisibility';
+import { removeContourSegmentationAnnotation } from '../../utilities/contourSegmentation/removeContourSegmentationAnnotation';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 import { resetElementCursor } from '../../cursors/elementCursor';
 
@@ -671,21 +676,38 @@ export default class LabelmapBaseTool extends BaseTool {
   /**
    * This function converts contours on this view into labelmap data, using the
    * handle[0] state
+   *
+   * @param viewport - The viewport containing the contours to be converted.
+   * @param options - Optional configuration settings.
+   * @param options.removeContours - Whether to remove the original contours from the view after conversion. Defaults to `true`.
+   * @param options.annotationFilter - A callback function to filter the annotations that should be converted.
+   * @returns void
+
    */
   public static viewportContoursToLabelmap(
     viewport: Types.IViewport,
-    options?: { removeContours: boolean }
+    options?: {
+      removeContours?: boolean;
+      annotationFilter?: (annotations: Annotations) => Annotations;
+      strokeStartPoint?: Types.Point3;
+    }
   ) {
     const removeContours = options?.removeContours ?? true;
     const annotations = getAllAnnotations();
-    const viewAnnotations = filterAnnotationsForDisplay(viewport, annotations);
-    if (!viewAnnotations?.length) {
-      return;
-    }
-    const contourAnnotations = viewAnnotations.filter(
+    const polylineAnnotations = annotations.filter(
       (annotation) => annotation.data.contour?.polyline?.length
     );
+    const contourAnnotations = options?.annotationFilter
+      ? options.annotationFilter(polylineAnnotations)
+      : polylineAnnotations;
     if (!contourAnnotations.length) {
+      return;
+    }
+    const viewAnnotations = filterAnnotationsForDisplay(
+      viewport,
+      contourAnnotations
+    );
+    if (!viewAnnotations?.length) {
       return;
     }
 
@@ -727,7 +749,12 @@ export default class LabelmapBaseTool extends BaseTool {
       origin: imageData.getOrigin(),
     };
 
-    for (const annotation of contourAnnotations) {
+    const isSegmentEditable = createSegmentEditableLookup(
+      viewport.id,
+      segmentationId
+    );
+
+    for (const annotation of viewAnnotations) {
       const { polyline } = annotation.data.contour;
       const camera = viewport.getCamera();
       const viewPlaneNormal = asUnitNormal(
@@ -735,7 +762,16 @@ export default class LabelmapBaseTool extends BaseTool {
       );
 
       const activeIndex = getActiveSegmentIndex(segmentationId);
-      const startPoint = annotation.data.handles?.[0] || polyline[0];
+      // The point that the caller gives comes first. `polyline[0]` is not the
+      // point where the user starts the stroke, because a boolean operation
+      // rebuilds the contour and chooses its own first point, and
+      // `updateContourPolyline` can reverse the order of the points. The
+      // start point decides between the add and the remove below, so a caller
+      // that knows the point of the user must give that point.
+      const startPoint =
+        options?.strokeStartPoint ||
+        annotation.data.handles?.[0] ||
+        polyline[0];
       const startIndex = imageData.worldToIndex(startPoint).map(Math.round);
       const startValue = segmentationVoxels.getAtIJKPoint(startIndex) || 0;
       let hasZeroIndex = false;
@@ -750,11 +786,23 @@ export default class LabelmapBaseTool extends BaseTool {
         }
       }
       const hasBoth = hasZeroIndex && hasPositiveIndex;
-      const segmentIndex = hasBoth
+      let segmentIndex = hasBoth
         ? startValue
         : startValue === 0
           ? activeIndex
           : 0;
+
+      // Fall back to the active segment, then drop the annotation.
+      if (!isSegmentEditable(segmentIndex)) {
+        segmentIndex = activeIndex;
+      }
+
+      if (!isSegmentEditable(segmentIndex)) {
+        if (removeContours) {
+          removeContourAnnotation(annotation);
+        }
+        continue;
+      }
 
       // Fill the outline the way a brush of the same shape fills it. See
       // `iterateContourFillVoxels` for the shape and the depth rule.
@@ -764,16 +812,87 @@ export default class LabelmapBaseTool extends BaseTool {
         viewPlaneNormal,
         imageData,
       })) {
+        const currentSegmentIndex = segmentationVoxels.getAtIJK(
+          ijk[0],
+          ijk[1],
+          ijk[2]
+        );
+        if (!isSegmentEditable(currentSegmentIndex)) {
+          continue;
+        }
         previewVoxels.setAtIJK(ijk[0], ijk[1], ijk[2], segmentIndex);
       }
 
       if (removeContours) {
-        removeAnnotation(annotation.annotationUID);
+        removeContourAnnotation(annotation);
       }
     }
 
     const slices = previewVoxels.getArrayOfModifiedSlices();
     triggerSegmentationDataModified(segmentationId, slices);
+    brushInstance.doneEditMemo();
+  }
+}
+
+const SEGMENT_UNKNOWN = 0;
+const SEGMENT_EDITABLE = 1;
+const SEGMENT_BLOCKED = 2;
+
+/**
+ * Returns a lookup that tells the fill loop if it can write over a segment
+ * index. A locked segment and a hidden segment both reject the write.
+ *
+ * The state is read once per segment index and cached in one Uint8Array that
+ * the iteration fills and grows.
+ */
+function createSegmentEditableLookup(
+  viewportId: string,
+  segmentationId: string
+): (segmentIndex: number) => boolean {
+  const segments = getSegmentation(segmentationId)?.segments;
+  const hiddenSegmentIndices = getHiddenSegmentIndices(viewportId, {
+    segmentationId,
+    type: SegmentationRepresentations.Labelmap,
+  });
+
+  let cache = new Uint8Array(64);
+
+  return function isSegmentEditable(segmentIndex: number): boolean {
+    if (!(segmentIndex > 0)) {
+      return true;
+    }
+
+    if (segmentIndex >= cache.length) {
+      const grown = new Uint8Array(
+        Math.max(segmentIndex + 1, cache.length * 2)
+      );
+      grown.set(cache);
+      cache = grown;
+    }
+
+    const cached = cache[segmentIndex];
+    if (cached !== SEGMENT_UNKNOWN) {
+      return cached === SEGMENT_EDITABLE;
+    }
+
+    // An undeclared labelmap value has no entry, and so no lock.
+    const isEditable =
+      segments?.[segmentIndex]?.locked !== true &&
+      !hiddenSegmentIndices.has(segmentIndex);
+
+    cache[segmentIndex] = isEditable ? SEGMENT_EDITABLE : SEGMENT_BLOCKED;
+    return isEditable;
+  };
+}
+
+/** Removes a consumed contour from the annotation state and from annotationUIDsMap. */
+function removeContourAnnotation(annotation): void {
+  removeAnnotation(annotation.annotationUID);
+
+  if ((annotation as ContourSegmentationAnnotation).data?.segmentation) {
+    removeContourSegmentationAnnotation(
+      annotation as ContourSegmentationAnnotation
+    );
   }
 }
 

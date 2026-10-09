@@ -670,12 +670,10 @@ export async function generateToolState(
 //         imageIds[imageIds.length - 1]
 //     );
 
-
 //     const corners = [
 //         ...getCorners(firstImagePlaneModule),
 //         ...getCorners(lastImagePlaneModule)
 //     ];
-
 
 //     const indexToWorld = mat4.create();
 

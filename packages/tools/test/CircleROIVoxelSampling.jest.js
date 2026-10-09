@@ -1,4 +1,5 @@
 import CircleROITool from '../src/tools/annotation/CircleROITool';
+import { MINIMUM_AREA_ANNOTATION_DIMENSION } from '../src/utilities/areaAnnotationShapeUtils';
 
 /**
  * Circle ROI selects its voxels through the shared area annotation sampler, so
@@ -127,10 +128,14 @@ describe('Circle ROI voxel sampling', () => {
     expect(indicesOf(fromTwoHandles)).toEqual(indicesOf(fromAllHandles));
   });
 
-  it('reports no voxels for a circle of no radius', () => {
-    // The shape factory rejects a zero radius, and an exception inside the
-    // render loop would stop the whole viewport. A new annotation holds two
-    // identical handles until the first drag moves one of them.
+  it.each([
+    ['zero', 0],
+    ['below the minimum', MINIMUM_AREA_ANNOTATION_DIMENSION / 2],
+    ['at the minimum', MINIMUM_AREA_ANNOTATION_DIMENSION],
+  ])('reports no voxels for a circle radius %s', (_description, radius) => {
+    // A new annotation holds two coincident or nearly coincident handles until
+    // the first meaningful drag. Sampling it must not pass unstable geometry
+    // to the shape factory or stop the render loop.
     const statsCallback = jest.fn();
     const tool = createTool(statsCallback);
 
@@ -138,7 +143,7 @@ describe('Circle ROI voxel sampling', () => {
       tool._calculateCachedStats(
         createAnnotation([
           [20, 20, 0],
-          [20, 20, 0],
+          [20 + radius, 20, 0],
         ]),
         createViewport(),
         {},
@@ -147,6 +152,27 @@ describe('Circle ROI voxel sampling', () => {
     ).not.toThrow();
 
     expect(statsCallback).not.toHaveBeenCalled();
+  });
+
+  it('samples a small circle whose radius is above the minimum', () => {
+    const statsCallback = jest.fn();
+    // The cutoff itself is covered by AreaAnnotationShapeUtils.jest.js. Keep
+    // this end-to-end fixture large enough for the shape solver's world-space
+    // arithmetic to resolve the centre voxel reliably.
+    const radius = 1e-3;
+
+    createTool(statsCallback)._calculateCachedStats(
+      createAnnotation([
+        [20, 20, 0],
+        [20 + radius, 20, 0],
+      ]),
+      createViewport(),
+      {},
+      {}
+    );
+
+    expect(statsCallback).toHaveBeenCalledTimes(1);
+    expect(statsCallback.mock.calls[0][0].pointIJK).toEqual([20, 20, 0]);
   });
 
   it('selects the same voxels whatever the canvas scale', () => {
