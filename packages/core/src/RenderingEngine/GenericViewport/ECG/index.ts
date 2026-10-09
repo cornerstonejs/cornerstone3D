@@ -34,4 +34,5 @@ export type {
   ECGProperties,
   ECGViewportInput,
   ECGGenericViewportInput,
+  TraceRegion,
 } from './ECGViewportTypes';

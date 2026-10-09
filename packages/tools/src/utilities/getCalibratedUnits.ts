@@ -18,6 +18,7 @@ const SUPPORTED_PROBE_VARIANT = [
   '4,3', // x: seconds & y : cm
   '4,7', // x: seconds & y : cm/sec
   '4,-1', // x: seconds & y : mV (ECG)
+  '-2,-1', // x: ms & y : mV (ECG)
 ];
 
 /**
@@ -38,9 +39,10 @@ const UNIT_MAPPING = {
   0xc: 'degrees',
   /** Extension for ECG amplitude (not in DICOM table). */
   [-1]: 'mV',
+  /** Extension for ECG time in milliseconds (not in DICOM table). */
+  [-2]: 'ms',
 };
 
-const EPS = 1e-3;
 const SQUARE = '\xb2';
 
 // everything except REGION/Uncalibrated
@@ -124,16 +126,25 @@ const getCalibratedLengthUnitsAndScale = (image, handles) => {
       unit = UNIT_MAPPING[region.physicalUnitsXDirection] || 'unknown';
       areaUnit = unit + SQUARE;
     } else if (region && region.physicalUnitsYDirection === -1) {
-      const physicalDeltaX = Math.abs(region.physicalDeltaX);
+      const isSeconds = region.physicalUnitsXDirection === 4;
+      const physicalDeltaX = isSeconds
+        ? Math.abs(region.physicalDeltaX) * 1000
+        : Math.abs(region.physicalDeltaX);
       const physicalDeltaY = Math.abs(region.physicalDeltaY);
       scale = 1 / physicalDeltaX;
       scaleY = 1 / physicalDeltaY;
 
       calibrationType = 'ECG Region';
-      unit =
-        UNIT_MAPPING[region.physicalUnitsXDirection] ||
-        UNIT_MAPPING[region.physicalUnitsYDirection] ||
-        'unknown';
+      const isHorizontal =
+        handles?.length >= 2
+          ? Math.abs(handles[1][0] - handles[0][0]) >=
+            Math.abs(handles[1][1] - handles[0][1])
+          : true;
+      unit = isHorizontal
+        ? isSeconds
+          ? 'ms'
+          : UNIT_MAPPING[region.physicalUnitsXDirection] || 'ms'
+        : UNIT_MAPPING[region.physicalUnitsYDirection] || 'mV';
       areaUnit =
         (UNIT_MAPPING[region.physicalUnitsYDirection] || 'px') + SQUARE;
     }
@@ -200,19 +211,23 @@ const getCalibratedProbeUnitsAndValue = (image, handles) => {
     const { referencePixelX0 = 0, referencePixelY0 = 0 } = region;
     const { physicalDeltaX, physicalDeltaY } = region;
 
+    const isEcg = region.physicalUnitsYDirection === -1;
+    const isSeconds = isEcg && region.physicalUnitsXDirection === 4;
+
     const yValue =
       (imageIndex[1] - region.regionLocationMinY0 - referencePixelY0) *
       physicalDeltaY;
 
     const xValue =
       (imageIndex[0] - region.regionLocationMinX0 - referencePixelX0) *
-      physicalDeltaX;
+      (isSeconds ? physicalDeltaX * 1000 : physicalDeltaX);
 
-    calibrationType =
-      region.physicalUnitsYDirection === -1 ? 'ECG Region' : 'US Region';
+    calibrationType = isEcg ? 'ECG Region' : 'US Region';
     values = [xValue, yValue];
     units = [
-      UNIT_MAPPING[region.physicalUnitsXDirection] ?? 'unknown',
+      isSeconds
+        ? 'ms'
+        : (UNIT_MAPPING[region.physicalUnitsXDirection] ?? 'unknown'),
       UNIT_MAPPING[region.physicalUnitsYDirection] ?? 'unknown',
     ];
   }
