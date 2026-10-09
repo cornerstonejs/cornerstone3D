@@ -21,7 +21,6 @@ import {
   addDropdownToToolbar,
   addGpuCapabilityProfileDropdown,
   addButtonToToolbar,
-  addViewportFidelityIndicator,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import * as cornerstoneAdapters from '@cornerstonejs/adapters';
@@ -674,10 +673,6 @@ async function run() {
   ];
 
   renderingEngine.setViewports(viewportInputArray);
-
-  viewportIds.forEach((viewportId) =>
-    addViewportFidelityIndicator({ renderingEngineId, viewportId })
-  );
 
   // Set the tool group on the MPR viewports. The 3D viewport scrolls no
   // slices, so it takes the trackball of its own group.

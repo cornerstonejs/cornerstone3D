@@ -1,5 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 15 15">
-  <!-- As good as it gets: amber disc at 30% + 2 px amber dash -->
-  <circle cx="7.5" cy="7.5" r="7.5" fill="#f0a030" fill-opacity="0.3"/>
-  <path d="M5 7.5 H10" fill="none" stroke="#f0a030" stroke-width="2" stroke-linecap="round"/>
-</svg>

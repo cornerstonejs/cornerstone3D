@@ -59,13 +59,13 @@ export default async function initDemo(config: any = {}) {
           debug: {
             ...(demoConfig.core.debug || {}),
             statsOverlay: debugEnabled,
-            fidelityIndicator: debugEnabled,
+            fidelityIndicatorDebug: debugEnabled,
           },
         }
       : {
           debug: {
             statsOverlay: debugEnabled,
-            fidelityIndicator: debugEnabled,
+            fidelityIndicatorDebug: debugEnabled,
           },
         }),
   });

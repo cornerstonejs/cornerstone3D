@@ -34,6 +34,10 @@ import type {
 import { OrientationAxis } from '../enums';
 import type { VtkOffscreenMultiRenderWindow } from '../types';
 import { StatsOverlay } from './helpers/stats';
+import {
+  detachFidelityIndicator,
+  maybeAttachFidelityIndicator,
+} from './helpers/fidelityIndicator';
 import { convertColorArrayToRgbString } from '../utilities/convertColorArrayToRgbString';
 
 // Rendering engines seem to not like rendering things less than 2 pixels per side
@@ -154,6 +158,12 @@ abstract class BaseRenderingEngine {
     const canvas = getOrCreateCanvas(element);
     const { background } = viewportInput.defaultOptions;
     this.fillCanvasWithBackgroundColor(canvas, background);
+
+    // 6. Product fidelity indicator for volume viewports (unless disabled)
+    const enabledViewport = this.getViewport(viewportId);
+    if (enabledViewport) {
+      maybeAttachFidelityIndicator(enabledViewport);
+    }
   }
 
   /**
@@ -285,6 +295,10 @@ abstract class BaseRenderingEngine {
       const canvas = getOrCreateCanvas(vp.element);
       const { background } = vp.defaultOptions;
       this.fillCanvasWithBackgroundColor(canvas, background);
+    });
+
+    this._getViewportsAsArray().forEach((viewport) => {
+      maybeAttachFidelityIndicator(viewport);
     });
   }
 
@@ -715,6 +729,7 @@ abstract class BaseRenderingEngine {
       renderingEngineId,
     };
 
+    detachFidelityIndicator(viewport);
     viewport.removeWidgets();
 
     // Trigger first before removing the data attributes, as we need the enabled

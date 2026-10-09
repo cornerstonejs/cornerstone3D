@@ -1,5 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 15 15">
-  <!-- Done: blue disc at 40% + 1.5 px blue check -->
-  <circle cx="7.5" cy="7.5" r="7.5" fill="#358cfd" fill-opacity="0.4"/>
-  <path d="M4.7 7.8 L6.7 9.7 L10.3 5.7" fill="none" stroke="#358cfd" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-</svg>

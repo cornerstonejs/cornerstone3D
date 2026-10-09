@@ -22,7 +22,7 @@ const log = coreLog.getLogger('init');
 // TODO: change config into a class with methods to better control get/set
 const defaultConfig: Cornerstone3DConfig = {
   isMobile: false, // is mobile device
-  dangerouslyDisableLossyIndicator: false,
+  dangerouslyDisableFidelityIndicator: false,
   rendering: {
     useCPURendering: false,
     // GPU rendering options

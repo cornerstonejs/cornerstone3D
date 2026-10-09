@@ -8,11 +8,11 @@ interface Cornerstone3DConfig {
   isMobile?: boolean;
 
   /**
-   * When true, helpers that add a viewport fidelity / lossy badge do nothing.
+   * When true, volume viewports do not show the fidelity indicator.
    * Dangerous because it hides reduced/decimated/LOD feedback during load
    * and interaction.
    */
-  dangerouslyDisableLossyIndicator?: boolean;
+  dangerouslyDisableFidelityIndicator?: boolean;
 
   rendering?: {
     // vtk.js supports 8bit integer textures and 32bit float textures.
@@ -184,7 +184,7 @@ interface Cornerstone3DConfig {
      */
     statsOverlay?: boolean;
     /**
-     * When true, the viewport fidelity helper also shows the verbose text badge
+     * When true, the fidelity indicator also shows the verbose text badge
      * (top-left) beside the minimal SVG indicator (top-right).
      * When false/unset (default), only the SVG indicator is shown.
      */
