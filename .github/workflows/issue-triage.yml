@@ -1,0 +1,253 @@
+name: Issue Triage
+
+# First-pass triage of new community issues with Claude Code. The prompt lives
+# in .agents/skills/issue-triage.md.
+#
+# The work is split in two jobs. `analyze` runs Claude with a read-only token
+# and returns the comment as structured output. `publish` holds the only
+# `issues: write` token, never runs the model, and only posts that comment and
+# updates type and status labels from a fixed list.
+#
+# Repository settings:
+#   environment: issue-triage       only `main`, with no required reviewers
+#   secrets.CLAUDE_CODE_OAUTH_TOKEN  environment secret: `claude setup-token`
+#                                    remove the repository secret copy
+#   vars.ISSUE_TRIAGE_MODE           unset or `live`: analyze and publish
+#                                    `off`: no automatic runs
+#                                    `dry-run`: analyze new issues, result goes
+#                                    to the job summary only
+#   vars.ISSUE_TRIAGE_MODEL          optional, defaults to `opus`
+#
+# Users with repository write access can triage any issue through a manual
+# run on `main`. Publication does not require maintainer approval.
+
+on:
+  issues:
+    types: [opened]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: 'Issue number to triage'
+        required: true
+        type: number
+      post_comment:
+        description: 'Post the comment and labels (otherwise job summary only)'
+        required: false
+        type: boolean
+        default: true
+
+permissions: {}
+
+jobs:
+  analyze:
+    # Automatic runs cover reporters without a repository role; members and
+    # collaborators use the manual trigger.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (
+        ((vars.ISSUE_TRIAGE_MODE || 'live') == 'dry-run' || (vars.ISSUE_TRIAGE_MODE || 'live') == 'live') &&
+        github.event.issue.user.type != 'Bot' &&
+        contains(fromJSON('["NONE", "CONTRIBUTOR", "FIRST_TIME_CONTRIBUTOR", "FIRST_TIMER"]'), github.event.issue.author_association)
+      )
+    runs-on: ubuntu-latest
+    environment: issue-triage
+    timeout-minutes: 30
+    concurrency:
+      group: issue-triage-${{ github.event.issue.number || inputs.issue_number }}
+      cancel-in-progress: true
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: read
+    env:
+      ISSUE_NUMBER: ${{ github.event.issue.number || inputs.issue_number }}
+    outputs:
+      # The runner drops an output that contains a registered secret, so a
+      # result that echoes a token never reaches the publish job.
+      result: ${{ steps.triage.outputs.structured_output }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6.0.3
+        with:
+          # Full history and tags, for git log/blame and release lookups.
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Check command validation runtime
+        run: |
+          command -v python3 > /dev/null
+          command -v timeout > /dev/null
+          python3 -I -c 'import ast, pathlib; ast.parse(pathlib.Path(".github/scripts/issue-triage-command-check.py").read_text())'
+
+      - name: Run triage
+        id: triage
+        timeout-minutes: 25
+        uses: anthropics/claude-code-action/base-action@58985842b834ed26087302ba27d07bc24ca8697a # v1.0.244
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            Triage issue #${{ env.ISSUE_NUMBER }} in ${{ github.repository }}.
+            Read .agents/skills/issue-triage.md and follow it exactly.
+          # Block validator failures before Claude's hook timeout expires.
+          settings: |
+            {"hooks":{"PreToolUse":[{"matcher":"Bash","hooks":[{"type":"command","command":"timeout --kill-after=1s 5s python3 -I \"$GITHUB_WORKSPACE/.github/scripts/issue-triage-command-check.py\" || exit 2","timeout":15}]}]}}
+          claude_args: |
+            --model ${{ vars.ISSUE_TRIAGE_MODEL || 'opus' }}
+            --max-turns 80
+            --permission-mode dontAsk
+            --tools "Bash,Read,Grep,Glob"
+            --allowedTools "Bash(gh issue view:*),Bash(gh issue list:*),Bash(gh search issues:*),Bash(gh search prs:*),Bash(gh pr view:*),Bash(gh pr list:*),Bash(gh pr diff:*),Bash(gh release list:*),Bash(gh release view:*),Bash(git log:*),Bash(git blame:*),Bash(git show:*),Bash(git diff:*),Bash(git tag:*),Bash(git describe:*)"
+            --disallowedTools "Write,Edit,MultiEdit,NotebookEdit,WebFetch,WebSearch,mcp__*"
+            --json-schema '{
+              "type":"object",
+              "properties":{
+                "classification":{"type":"string","enum":["bug","feature request","question/support","docs","duplicate","already fixed","maintenance","out of scope","spam","other"]},
+                "areas":{"type":"array","items":{"type":"string","enum":["core","tools","dicom-image-loader","adapters","nifti-volume-loader","metadata","labelmap-interpolation","polymorphic-segmentation","ai","docs","other"]},"minItems":1,"uniqueItems":true},
+                "severity":{"type":"string","enum":["critical","high","medium","low"]},
+                "confidence":{"type":"string","enum":["high","medium","low"]},
+                "effort":{"type":"string","enum":["high","medium","low"]},
+                "impact":{"type":"string","enum":["high","medium","low"]},
+                "route":{"type":"string","enum":["ready-to-fix","needs-reproduction","ask-reporter","needs-approval","duplicate","already-fixed","answered"]},
+                "comment":{"type":"string","minLength":1}
+              },
+              "required":["classification","areas","severity","confidence","effort","impact","route","comment"],
+              "additionalProperties":false
+            }'
+
+      - name: Write numeric usage to the job summary
+        if: always() && steps.triage.outputs.execution_file != ''
+        env:
+          EXECUTION_FILE: ${{ steps.triage.outputs.execution_file }}
+        run: |
+          # Report numeric usage fields without publishing the execution log.
+          if [ ! -f "$EXECUTION_FILE" ]; then exit 0; fi
+          jq -r '
+            [.[] | select(.type == "result")] | last | select(. != null)
+            | [
+                ["Turns", .num_turns],
+                ["Duration (ms)", .duration_ms],
+                ["Input tokens", .usage.input_tokens],
+                ["Output tokens", .usage.output_tokens],
+                ["Cache read tokens", .usage.cache_read_input_tokens],
+                ["Cache write tokens", .usage.cache_creation_input_tokens],
+                ["SDK estimated cost (USD)", .total_cost_usd]
+              ] as $metrics
+            | "## Claude usage", "", "| Metric | Value |", "| --- | --- |",
+              ($metrics[] | select(.[1] | type == "number") | "| \(.[0]) | \(.[1]) |"),
+              "", "The SDK cost estimate does not measure the OAuth plan quota."
+          ' "$EXECUTION_FILE" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Write the result to the job summary
+        if: steps.triage.outputs.structured_output != ''
+        env:
+          RESULT: ${{ steps.triage.outputs.structured_output }}
+        run: |
+          {
+            echo "## Triage of #$ISSUE_NUMBER: $(jq -r '.classification' <<<"$RESULT")"
+            echo
+            jq -r '"Area: \(.areas | join(", ")) · Severity: \(.severity) · Confidence: \(.confidence) · Effort: \(.effort) · Impact: \(.impact) · Route: \(.route)"' <<<"$RESULT"
+            echo
+            jq -r '.comment' <<<"$RESULT"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  publish:
+    needs: analyze
+    if: >-
+      needs.analyze.outputs.result != '' &&
+      (
+        (github.event_name == 'workflow_dispatch' && inputs.post_comment) ||
+        (github.event_name == 'issues' && (vars.ISSUE_TRIAGE_MODE || 'live') == 'live')
+      )
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    concurrency:
+      group: issue-triage-publish-${{ github.event.issue.number || inputs.issue_number }}
+      cancel-in-progress: false
+    permissions:
+      issues: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      ISSUE_NUMBER: ${{ github.event.issue.number || inputs.issue_number }}
+      RESULT: ${{ needs.analyze.outputs.result }}
+      MARKER: '<!-- cs3d-triage -->'
+
+    steps:
+      - name: Post the triage comment and labels
+        run: |
+          set -euo pipefail
+
+          if [ "$(jq -r '.classification' <<<"$RESULT")" = "spam" ]; then
+            echo "Classified as spam, not commenting."
+            exit 0
+          fi
+
+          # Derive labels from fixed values. Preserve labels outside this list.
+          current=$(gh api "repos/$GH_REPO/issues/$ISSUE_NUMBER" --jq '[.labels[].name]')
+          jq -n --argjson result "$RESULT" --argjson current "$current" '
+            {
+              "bug":"bug", "feature request":"feature-request",
+              "question/support":"support", "docs":"docs",
+              "duplicate":"duplicate", "already fixed":"already-fixed",
+              "maintenance":"maintenance",
+              "out of scope":"out-of-scope", "other":"other"
+            } as $types
+            | ["ready-to-fix","needs-reproduction","ask-reporter","needs-approval","duplicate","already-fixed","answered"] as $statuses
+            | ([$types[] | "type:" + .]
+                + [$statuses[] | "status:" + .]) as $managed
+            | (["type:" + ($types[$result.classification] // "other")]
+                + [$result.route | select(. as $status | $statuses | index($status)) | "status:" + .]
+                | unique) as $desired
+            | {desired:$desired, add:($desired - $current), remove:(($current - $desired) - ($current - $managed))}
+          ' > labels.json
+
+          # Create missing label definitions before updating the issue.
+          definitions=$(gh api --paginate --slurp "repos/$GH_REPO/labels?per_page=100" | jq '[.[][] | .name]')
+          while IFS= read -r label; do
+            if ! jq -e --arg label "$label" 'index($label) != null' <<<"$definitions" > /dev/null; then
+              if ! gh label create "$label" --color 'C5DEF5' \
+                --description 'Automated issue review result; managed by the workflow'; then
+                # Another issue can create the same label at the same time.
+                encoded=$(jq -rn --arg label "$label" '$label | @uri')
+                gh api "repos/$GH_REPO/labels/$encoded" > /dev/null
+              fi
+            fi
+          done < <(jq -r '.desired[]' labels.json)
+
+          # Update only bot-managed labels. Reruns replace earlier results.
+          label_args=()
+          added=$(jq -r '.add | join(",")' labels.json)
+          removed=$(jq -r '.remove | join(",")' labels.json)
+          if [ -n "$added" ]; then label_args+=(--add-label "$added"); fi
+          if [ -n "$removed" ]; then label_args+=(--remove-label "$removed"); fi
+          if [ "${#label_args[@]}" -gt 0 ]; then
+            gh issue edit "$ISSUE_NUMBER" "${label_args[@]}"
+          fi
+
+          # Start with the marker so reruns edit the same comment, and stay
+          # under GitHub's 65536-character limit.
+          jq --arg marker "$MARKER" '{
+            body: (
+              .comment
+              | if startswith($marker) then . else $marker + "\n\n" + . end
+              | if length > 60000 then .[:60000] + "\n\n_Truncated._" else . end
+            )
+          }' <<<"$RESULT" > payload.json
+
+          ids=$(gh api --paginate "repos/$GH_REPO/issues/$ISSUE_NUMBER/comments" \
+            --jq '.[] | select(.user.login == "github-actions[bot]" and (.body | startswith(env.MARKER))) | .id')
+          comment_id=${ids%%$'\n'*}
+
+          if [ -n "$comment_id" ]; then
+            gh api -X PATCH "repos/$GH_REPO/issues/comments/$comment_id" --input payload.json > /dev/null
+            echo "Updated comment $comment_id on #$ISSUE_NUMBER"
+          else
+            gh api -X POST "repos/$GH_REPO/issues/$ISSUE_NUMBER/comments" --input payload.json > /dev/null
+            echo "Posted a comment on #$ISSUE_NUMBER"
+          fi
+
+          echo "Labels on #$ISSUE_NUMBER: $(jq -r '.desired | join(", ")' labels.json)"
