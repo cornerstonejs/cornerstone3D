@@ -1,13 +1,15 @@
 import { log, utilities, normalizers, derivations } from 'dcmjs';
 import ndarray from 'ndarray';
 import getDatasetsFromImages from '../helpers/getDatasetsFromImages';
+import {
+  alignPixelDataWithSourceData,
+  getValidOrientations,
+} from './Segmentation_4X';
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
 
 const cs3dLogger = cornerstoneUtilities.logger.adaptersLog.getLogger(
   'Cornerstone.Segmentation_3X'
 );
-
-const { flipMatrix2D, rotateMatrix902D } = utilities.orientation;
 
 const { datasetToBlob, BitArray, DicomMessage, DicomMetaDictionary } =
   utilities;
@@ -485,94 +487,6 @@ function getImageIdOfReferencedFrame(
   });
 
   return imageId;
-}
-
-/**
- * getValidOrientations - returns an array of valid orientations.
- *
- * The 8 in-plane orientations are built directly from the row (r) and column
- * (c) cosines rather than with dcmjs rotateDirectionCosinesInPlane, which
- * negates its result and so never yields the 180 degree orientation (-r, -c).
- * See https://github.com/cornerstonejs/cornerstone3D/issues/2959
- *
- * @param  iop - The row (0..2) an column (3..5) direction cosines.
- * @return  An array of valid orientations.
- */
-function getValidOrientations(iop) {
-  const r = [iop[0], iop[1], iop[2]];
-  const c = [iop[3], iop[4], iop[5]];
-  const negate = (v) => v.map((x) => -x);
-
-  // [0,  1,  2]: 0,   0hf,   0vf
-  // [3,  4,  5]: 90,  90hf,  90vf
-  // [6, 7]:      180, 270
-  return [
-    [...r, ...c],
-    [...r, ...negate(c)],
-    [...negate(r), ...c],
-    [...c, ...negate(r)],
-    [...c, ...r],
-    [...negate(c), ...negate(r)],
-    [...negate(r), ...negate(c)],
-    [...negate(c), ...r],
-  ];
-}
-
-/**
- * alignPixelDataWithSourceData -
- *
- * @param pixelData2D - The data to align.
- * @param iop - The orientation of the image slice.
- * @param orientations - An array of valid imageOrientationPatient values.
- * @return The aligned pixelData.
- */
-function alignPixelDataWithSourceData(pixelData2D, iop, orientations) {
-  if (compareIOP(iop, orientations[0])) {
-    //Same orientation.
-    return pixelData2D;
-  } else if (compareIOP(iop, orientations[1])) {
-    //Flipped vertically.
-    return flipMatrix2D.v(pixelData2D);
-  } else if (compareIOP(iop, orientations[2])) {
-    //Flipped horizontally.
-    return flipMatrix2D.h(pixelData2D);
-  } else if (compareIOP(iop, orientations[3])) {
-    //Rotated 90 degrees.
-    return rotateMatrix902D(pixelData2D);
-  } else if (compareIOP(iop, orientations[4])) {
-    //Rotated 90 degrees and fliped horizontally.
-    return flipMatrix2D.h(rotateMatrix902D(pixelData2D));
-  } else if (compareIOP(iop, orientations[5])) {
-    //Rotated 90 degrees and fliped vertically.
-    return flipMatrix2D.v(rotateMatrix902D(pixelData2D));
-  } else if (compareIOP(iop, orientations[6])) {
-    //Rotated 180 degrees. // TODO -> Do this more effeciently, there is a 1:1 mapping like 90 degree rotation.
-    return rotateMatrix902D(rotateMatrix902D(pixelData2D));
-  } else if (compareIOP(iop, orientations[7])) {
-    //Rotated 270 degrees.  // TODO -> Do this more effeciently, there is a 1:1 mapping like 90 degree rotation.
-    return rotateMatrix902D(rotateMatrix902D(rotateMatrix902D(pixelData2D)));
-  }
-}
-
-const dx = 1e-5;
-
-/**
- * compareIOP - Returns true if iop1 and iop2 are equal
- * within a tollerance, dx.
- *
- * @param  iop1 - An ImageOrientationPatient array.
- * @param  iop2 - An ImageOrientationPatient array.
- * @return True if iop1 and iop2 are equal.
- */
-function compareIOP(iop1, iop2) {
-  return (
-    Math.abs(iop1[0] - iop2[0]) < dx &&
-    Math.abs(iop1[1] - iop2[1]) < dx &&
-    Math.abs(iop1[2] - iop2[2]) < dx &&
-    Math.abs(iop1[3] - iop2[3]) < dx &&
-    Math.abs(iop1[4] - iop2[4]) < dx &&
-    Math.abs(iop1[5] - iop2[5]) < dx
-  );
 }
 
 function getSegmentMetadata(multiframe) {

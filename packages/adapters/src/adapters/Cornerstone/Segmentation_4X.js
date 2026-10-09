@@ -6,9 +6,11 @@ import {
   derivations,
 } from 'dcmjs';
 import ndarray from 'ndarray';
+import { vec3 } from 'gl-matrix';
 import getDatasetsFromImages from '../helpers/getDatasetsFromImages';
 import checkOrientation from '../helpers/checkOrientation';
 import { utilities as csUtilities } from '@cornerstonejs/core';
+import { utilities as metadataUtilities } from '@cornerstonejs/metadata';
 import {
   applyPerFrameFunctionalGroups,
   getReferencedSourceImageSequenceItem,
@@ -25,8 +27,6 @@ import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
 const cs3dLogger = cornerstoneUtilities.logger.adaptersLog.getLogger(
   'Cornerstone.Segmentation_4X'
 );
-
-const { flipMatrix2D, rotateMatrix902D } = utilities.orientation;
 
 const { BitArray, DicomMessage, DicomMetaDictionary } = dcmjsData;
 
@@ -1594,6 +1594,12 @@ function isMultiframeImage(imageMetadata) {
 /**
  * getImageIdOfSourceImagebyGeometry - Returns the Cornerstone imageId of the source image.
  *
+ * The lookup first matches the SEG frame position exactly with the source
+ * image position. If no image matches, the lookup selects the source image
+ * whose plane holds the SEG frame position. A SEG frame that is flipped or
+ * rotated in-plane has its origin at a different corner of the source slice,
+ * so only the plane match finds that frame.
+ *
  * @param  {String}    ReferencedSeriesInstanceUID    Referenced series of the source image.
  * @param  {String}    FrameOfReferenceUID            Frame of reference.
  * @param  {Object}    PerFrameFunctionalGroup        Sequence describing segmentation reference attributes per frame.
@@ -1618,8 +1624,10 @@ export function getImageIdOfSourceImagebyGeometry(
     return undefined;
   }
 
-  const segFramePosition =
-    PerFrameFunctionalGroup.PlanePositionSequence[0].ImagePositionPatient;
+  const segFramePosition = metadataUtilities.toNumber(
+    PerFrameFunctionalGroup.PlanePositionSequence[0].ImagePositionPatient
+  );
+  const candidates = [];
 
   for (let imageId of imageIds) {
     const sourceImageMetadata = metadataProvider.get('instance', imageId);
@@ -1627,8 +1635,6 @@ export function getImageIdOfSourceImagebyGeometry(
     if (!sourceImageMetadata) {
       continue;
     }
-
-    const isMultiframe = isMultiframeImage(sourceImageMetadata);
 
     if (
       !sourceImageMetadata.ImagePositionPatient ||
@@ -1638,26 +1644,37 @@ export function getImageIdOfSourceImagebyGeometry(
       continue;
     }
 
+    const imagePlane = metadataProvider.get('imagePlaneModule', imageId);
     // For multiframe images, check each frame's position
-    if (isMultiframe) {
-      const framePosition = metadataProvider.get(
-        'imagePlaneModule',
-        imageId
-      )?.imagePositionPatient;
+    const position = metadataUtilities.toNumber(
+      isMultiframeImage(sourceImageMetadata)
+        ? imagePlane?.imagePositionPatient
+        : sourceImageMetadata.ImagePositionPatient
+    );
 
-      if (
-        framePosition &&
-        csUtilities.isEqual(segFramePosition, framePosition, tolerance)
-      ) {
-        return imageId;
-      }
-    } else if (
-      csUtilities.isEqual(
-        segFramePosition,
-        sourceImageMetadata.ImagePositionPatient,
-        tolerance
-      )
-    ) {
+    if (!position) {
+      continue;
+    }
+    if (csUtilities.isEqual(segFramePosition, position, tolerance)) {
+      return imageId;
+    }
+    candidates.push({ imageId, position, imagePlane });
+  }
+
+  for (const { imageId, position, imagePlane } of candidates) {
+    const rowCosines = metadataUtilities.toNumber(imagePlane?.rowCosines);
+    const columnCosines = metadataUtilities.toNumber(imagePlane?.columnCosines);
+    if (!rowCosines || !columnCosines) {
+      continue;
+    }
+
+    const normal = vec3.cross([0, 0, 0], rowCosines, columnCosines);
+    const distance = csUtilities.voxelSlab.signedDistanceToPlane(
+      segFramePosition,
+      position,
+      normal
+    );
+    if (Math.abs(distance) < tolerance) {
       return imageId;
     }
   }
@@ -1697,44 +1714,81 @@ export function getImageIdOfReferencedFrame(
 }
 
 /**
- * getValidOrientations - returns an array of valid orientations.
+ * getValidOrientations - returns the 8 in-plane orientations of a source
+ * image, as the row (r) and column (c) cosines of a SEG frame in that plane.
  *
- * The 8 in-plane orientations are built directly from the row (r) and column
- * (c) cosines rather than with dcmjs rotateDirectionCosinesInPlane, which
- * negates its result and so never yields the 180 degree orientation (-r, -c).
- * See https://github.com/cornerstonejs/cornerstone3D/issues/2959
+ * | Index | SEG IOP    | SEG frame relative to the source |
+ * | ----- | ---------- | -------------------------------- |
+ * | 0     | (r, c)     | identity                         |
+ * | 1     | (r, -c)    | flipped vertically               |
+ * | 2     | (-r, c)    | flipped horizontally             |
+ * | 3     | (c, -r)    | rotated 90 degrees               |
+ * | 4     | (c, r)     | transposed                       |
+ * | 5     | (-c, -r)   | anti-transposed                  |
+ * | 6     | (-r, -c)   | rotated 180 degrees              |
+ * | 7     | (-c, r)    | rotated 270 degrees              |
  *
- * @param  {Number[6]} iop The row (0..2) an column (3..5) direction cosines.
- * @return {Number[8][6]} An array of valid orientations.
+ * The list is built from the cosines directly: dcmjs
+ * rotateDirectionCosinesInPlane negates its result, so it never yields the
+ * 180 degree orientation. See
+ * https://github.com/cornerstonejs/cornerstone3D/issues/2959
+ *
+ * @param  {Number[6]|String[6]} iop The row (0..2) and column (3..5) direction
+ *   cosines. DS strings are converted to numbers.
+ * @return {Number[8][6]} The valid orientations, in the order of the table.
  */
 export function getValidOrientations(iop) {
-  const r = [iop[0], iop[1], iop[2]];
-  const c = [iop[3], iop[4], iop[5]];
-  const negate = (v) => v.map((x) => -x);
+  const numericIop = metadataUtilities.toNumber(iop);
+  const r = numericIop.slice(0, 3);
+  const c = numericIop.slice(3, 6);
+  const negR = vec3.negate([0, 0, 0], r);
+  const negC = vec3.negate([0, 0, 0], c);
 
-  // [0,  1,  2]: 0,   0hf,   0vf
-  // [3,  4,  5]: 90,  90hf,  90vf
-  // [6, 7]:      180, 270
   return [
     [...r, ...c],
-    [...r, ...negate(c)],
-    [...negate(r), ...c],
-    [...c, ...negate(r)],
+    [...r, ...negC],
+    [...negR, ...c],
+    [...c, ...negR],
     [...c, ...r],
-    [...negate(c), ...negate(r)],
-    [...negate(r), ...negate(c)],
-    [...negate(c), ...r],
+    [...negC, ...negR],
+    [...negR, ...negC],
+    [...negC, ...r],
   ];
 }
 
 /**
- * alignPixelDataWithSourceData -
+ * The pixel operation that aligns a SEG frame with its source image, per entry
+ * of getValidOrientations. The aligned pixel (a, b) reads the SEG pixel (i, j),
+ * where (i, j) is (a, b), or (b, a) when `transpose` is set, and then
+ * `flipRows` and `flipColumns` mirror i and j.
+ */
+const ORIENTATION_ALIGNMENTS = [
+  { transpose: false, flipRows: false, flipColumns: false },
+  { transpose: false, flipRows: true, flipColumns: false },
+  { transpose: false, flipRows: false, flipColumns: true },
+  { transpose: true, flipRows: true, flipColumns: false },
+  { transpose: true, flipRows: false, flipColumns: false },
+  { transpose: true, flipRows: true, flipColumns: true },
+  { transpose: false, flipRows: true, flipColumns: true },
+  { transpose: true, flipRows: false, flipColumns: true },
+];
+
+/**
+ * alignPixelDataWithSourceData - finds the orientation of a SEG frame in the
+ * list from getValidOrientations, and returns the frame in the pixel order of
+ * the source image.
  *
- * @param {Ndarray} pixelData2D - The data to align.
- * @param {Number[6]} iop - The orientation of the image slice.
- * @param {Number[8][6]} orientations - An array of valid imageOrientationPatient values.
- * @param {Number} tolerance.
- * @return {Ndarray} The aligned pixelData.
+ * The result keeps the typed array type of the input, so 16-bit LABELMAP
+ * values are not truncated. A frame that is not aligned already is copied in
+ * one pass.
+ *
+ * @param {Ndarray} pixelData2D - The SEG frame, with shape [Rows, Columns].
+ * @param {Number[6]|String[6]} iop - The orientation of the SEG frame. DS
+ *   strings are converted to numbers.
+ * @param {Number[8][6]} orientations - The result of getValidOrientations.
+ * @param {Number} tolerance - The tolerance of the IOP comparison.
+ * @return {Ndarray|undefined} The aligned frame, with shape
+ *   [source Rows, source Columns], or undefined when the frame is not in-plane.
  */
 export function alignPixelDataWithSourceData(
   pixelData2D,
@@ -1742,43 +1796,43 @@ export function alignPixelDataWithSourceData(
   orientations,
   tolerance
 ) {
-  if (csUtilities.isEqual(iop, orientations[0], tolerance)) {
-    return pixelData2D;
-  } else if (csUtilities.isEqual(iop, orientations[1], tolerance)) {
-    // Flipped vertically.
+  const numericIop = metadataUtilities.toNumber(iop);
+  const index = orientations.findIndex((orientation) =>
+    csUtilities.isEqual(numericIop, orientation, tolerance)
+  );
 
-    // Undo Flip
-    return flipMatrix2D.v(pixelData2D);
-  } else if (csUtilities.isEqual(iop, orientations[2], tolerance)) {
-    // Flipped horizontally.
-
-    // Unfo flip
-    return flipMatrix2D.h(pixelData2D);
-  } else if (csUtilities.isEqual(iop, orientations[3], tolerance)) {
-    //Rotated 90 degrees
-
-    // Rotate back
-    return rotateMatrix902D(pixelData2D);
-  } else if (csUtilities.isEqual(iop, orientations[4], tolerance)) {
-    //Rotated 90 degrees and fliped horizontally (transposed).
-
-    // Undo flip and rotate back.
-    return rotateMatrix902D(flipMatrix2D.v(pixelData2D));
-  } else if (csUtilities.isEqual(iop, orientations[5], tolerance)) {
-    // Rotated 90 degrees and fliped vertically (anti-transposed).
-
-    // Unfo flip and rotate back.
-    return rotateMatrix902D(flipMatrix2D.h(pixelData2D));
-  } else if (csUtilities.isEqual(iop, orientations[6], tolerance)) {
-    // Rotated 180 degrees. // TODO -> Do this more effeciently, there is a 1:1 mapping like 90 degree rotation.
-
-    return rotateMatrix902D(rotateMatrix902D(pixelData2D));
-  } else if (csUtilities.isEqual(iop, orientations[7], tolerance)) {
-    // Rotated 270 degrees
-
-    // Rotate back.
-    return rotateMatrix902D(rotateMatrix902D(rotateMatrix902D(pixelData2D)));
+  if (index === -1) {
+    return undefined;
   }
+  if (index === 0) {
+    return pixelData2D;
+  }
+
+  const { transpose, flipRows, flipColumns } = ORIENTATION_ALIGNMENTS[index];
+  const [rows, columns] = pixelData2D.shape;
+  const alignedRows = transpose ? columns : rows;
+  const alignedColumns = transpose ? rows : columns;
+  const TypedArrayConstructor = pixelData2D.data.constructor;
+  const aligned = ndarray(new TypedArrayConstructor(rows * columns), [
+    alignedRows,
+    alignedColumns,
+  ]);
+
+  for (let a = 0; a < alignedRows; a++) {
+    for (let b = 0; b < alignedColumns; b++) {
+      let i = transpose ? b : a;
+      let j = transpose ? a : b;
+      if (flipRows) {
+        i = rows - 1 - i;
+      }
+      if (flipColumns) {
+        j = columns - 1 - j;
+      }
+      aligned.set(a, b, pixelData2D.get(i, j));
+    }
+  }
+
+  return aligned;
 }
 
 export function getSegmentMetadata(multiframe, seriesInstanceUid) {

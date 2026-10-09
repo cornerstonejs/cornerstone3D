@@ -34,6 +34,10 @@ const {
   LABELMAP_SEG_SOP_CLASS_UID,
   BINARY_SEG_SOP_CLASS_UID,
   CT_SOP_CLASS_UID,
+  SERIES_INSTANCE_UID,
+  FRAME_OF_REFERENCE_UID,
+  IN_PLANE_ORIENTATIONS,
+  sampleSegFrame,
   sopInstanceUidForSlice,
   makeReferencedStack,
 } = require('./helpers/segRoundTrip');
@@ -53,65 +57,49 @@ const EXPECTED_LABELS = [
   0, 0, 3,
 ];
 
-const r = [1, 0, 0];
-const c = [0, 1, 0];
-const negate = (v) => v.map((x) => -x);
-const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-
-const inPlaneOrientations = [
-  ['identity', r, c],
-  ['flipped rows', r, negate(c)],
-  ['flipped columns', negate(r), c],
-  ['rotated 90 degrees', c, negate(r)],
-  ['transposed', c, r],
-  ['anti-transposed', negate(c), negate(r)],
-  ['rotated 180 degrees', negate(r), negate(c)],
-  ['rotated 270 degrees', negate(c), r],
-];
-
 /**
- * Samples EXPECTED_LABELS onto a SEG frame with the given row and column
- * cosines, as an encoder writing that orientation would. Source pixel
- * (row i, column j) of the target slice is at world (j, i, TARGET_SLICE).
+ * Samples EXPECTED_LABELS onto a SEG frame on the target slice, with the given
+ * row and column cosines.
  */
 function makeSegFrame(segRow, segColumn) {
-  const extent = [COLUMNS - 1, ROWS - 1, 0];
-  const corners = [
-    [0, 0, 0],
-    [extent[0], 0, 0],
-    [0, extent[1], 0],
-    [extent[0], extent[1], 0],
-  ];
-  const columns = Math.abs(dot(segRow, extent)) + 1;
-  const rows = Math.abs(dot(segColumn, extent)) + 1;
-  const rowStart = Math.min(...corners.map((p) => dot(p, segRow)));
-  const columnStart = Math.min(...corners.map((p) => dot(p, segColumn)));
-
-  const labels = new Uint8Array(rows * columns);
-  for (let i = 0; i < rows; i++) {
-    for (let j = 0; j < columns; j++) {
-      const world = [0, 1, 2].map(
-        (k) => (rowStart + j) * segRow[k] + (columnStart + i) * segColumn[k]
-      );
-      labels[i * columns + j] = EXPECTED_LABELS[world[1] * COLUMNS + world[0]];
-    }
-  }
-
-  const imagePositionPatient = [0, 1, 2].map(
-    (k) => rowStart * segRow[k] + columnStart * segColumn[k]
+  const { rows, columns, values, origin } = sampleSegFrame(
+    ROWS,
+    COLUMNS,
+    (i, j) => EXPECTED_LABELS[i * COLUMNS + j],
+    segRow,
+    segColumn
   );
-  imagePositionPatient[2] = TARGET_SLICE;
+  origin[2] = TARGET_SLICE;
 
-  return { rows, columns, labels, imagePositionPatient };
+  return {
+    rows,
+    columns,
+    labels: Uint8Array.from(values),
+    imagePositionPatient: origin,
+  };
 }
 
 /**
  * A naturalized SEG instance with the frame in the given orientation: one
  * frame for a LABELMAP SEG, or one frame per segment for a BINARY SEG.
+ *
+ * `referenceBy` is 'sop' for a frame with a SourceImageSequence, or
+ * 'geometry' for a frame that only has its ImagePositionPatient.
  */
-function buildSeg(segmentationType, segRow, segColumn) {
+function buildSeg(segmentationType, segRow, segColumn, referenceBy) {
   const frame = makeSegFrame(segRow, segColumn);
   const isLabelmap = segmentationType === 'LABELMAP';
+  const sourceReference =
+    referenceBy === 'sop'
+      ? {
+          DerivationImageSequence: {
+            SourceImageSequence: {
+              ReferencedSOPClassUID: CT_SOP_CLASS_UID,
+              ReferencedSOPInstanceUID: sopInstanceUidForSlice(TARGET_SLICE),
+            },
+          },
+        }
+      : {};
   const framePixels = isLabelmap
     ? [frame.labels]
     : [1, 2, 3].map((segmentNumber) =>
@@ -131,6 +119,8 @@ function buildSeg(segmentationType, segRow, segColumn) {
     BitsAllocated: isLabelmap ? 8 : 1,
     BitsStored: isLabelmap ? 8 : 1,
     HighBit: isLabelmap ? 7 : 0,
+    FrameOfReferenceUID: FRAME_OF_REFERENCE_UID,
+    ReferencedSeriesSequence: { SeriesInstanceUID: SERIES_INSTANCE_UID },
     SharedFunctionalGroupsSequence: {
       PlaneOrientationSequence: {
         ImageOrientationPatient: [...segRow, ...segColumn],
@@ -138,15 +128,10 @@ function buildSeg(segmentationType, segRow, segColumn) {
       PixelMeasuresSequence: { PixelSpacing: [1, 1], SliceThickness: 1 },
     },
     PerFrameFunctionalGroupsSequence: framePixels.map((_, frameIndex) => ({
-      PlanePositionSequence: {
-        ImagePositionPatient: frame.imagePositionPatient,
-      },
-      DerivationImageSequence: {
-        SourceImageSequence: {
-          ReferencedSOPClassUID: CT_SOP_CLASS_UID,
-          ReferencedSOPInstanceUID: sopInstanceUidForSlice(TARGET_SLICE),
-        },
-      },
+      PlanePositionSequence: [
+        { ImagePositionPatient: frame.imagePositionPatient },
+      ],
+      ...sourceReference,
       ...(isLabelmap
         ? {}
         : {
@@ -167,7 +152,7 @@ function buildSeg(segmentationType, segRow, segColumn) {
 
 let schemeCount = 0;
 
-async function importSeg(segmentationType, segRow, segColumn) {
+async function importSeg(segmentationType, segRow, segColumn, referenceBy) {
   const stack = makeReferencedStack(SLICE_COUNT, {
     rows: ROWS,
     columns: COLUMNS,
@@ -175,7 +160,8 @@ async function importSeg(segmentationType, segRow, segColumn) {
   const { multiframe, framePixels } = buildSeg(
     segmentationType,
     segRow,
-    segColumn
+    segColumn,
+    referenceBy
   );
 
   // A fresh scheme per import keeps frame imageIds out of each other's cache.
@@ -215,16 +201,21 @@ async function importSeg(segmentationType, segRow, segColumn) {
     );
 }
 
-describe.each(['LABELMAP', 'BINARY'])(
-  'importing a %s SEG on a non-square source',
-  (segmentationType) => {
-    it.each(inPlaneOrientations)(
+describe.each([
+  ['LABELMAP', 'sop'],
+  ['BINARY', 'sop'],
+  ['LABELMAP', 'geometry'],
+])(
+  'importing a %s SEG referenced by %s on a non-square source',
+  (segmentationType, referenceBy) => {
+    it.each(IN_PLANE_ORIENTATIONS)(
       '%s SEG is placed on the source grid',
       async (_, segRow, segColumn) => {
         const pixelsForSlice = await importSeg(
           segmentationType,
           segRow,
-          segColumn
+          segColumn,
+          referenceBy
         );
 
         expect(pixelsForSlice(TARGET_SLICE)).toEqual(EXPECTED_LABELS);
