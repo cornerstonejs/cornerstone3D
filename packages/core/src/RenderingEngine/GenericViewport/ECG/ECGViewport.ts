@@ -3,7 +3,7 @@ import type { LoadedData } from '../ViewportArchitectureTypes';
 import GenericViewport from '../GenericViewport';
 import { ViewportType } from '../../../enums';
 import { getDefaultECGValueRange } from '../../../utilities/ECGUtilities';
-import genericViewportDisplaySetMetadataProvider from '../../../utilities/genericViewportDisplaySetMetadataProvider';
+import { getGenericViewportSourceDataId } from '../genericViewportDisplaySetAccess';
 import imageIdToURI from '../../../utilities/imageIdToURI';
 import type {
   CPUIImageData,
@@ -198,7 +198,7 @@ class ECGViewport extends GenericViewport<
         dataId: binding.data.id,
         dataIds: [binding.data.id],
         frameOfReferenceUID: this.getFrameOfReferenceUID(),
-        imageIds: [binding.data.id],
+        imageIds: this.getImageIds(),
         currentImageIdIndex: 0,
       },
     ];
@@ -427,12 +427,22 @@ class ECGViewport extends GenericViewport<
   }
 
   /**
-   * Returns the current ECG image id, if one has been loaded.
+   * Returns the display set id bound to this viewport, if one has been loaded.
+   * Use `getCurrentImageId` for the SOP image id of the waveform instance.
+   */
+  getSourceDataId(): string | undefined {
+    return this.getFirstBinding()?.data.id;
+  }
+
+  /**
+   * Returns the image id of the mounted ECG instance, if one has been loaded.
+   * This is the source imageId registered for the display set, not the
+   * display set id.
    */
   getCurrentImageId(): string | undefined {
-    const binding = this.getFirstBinding();
+    const dataId = this.getSourceDataId();
 
-    return binding?.data.id;
+    return dataId ? getGenericViewportSourceDataId(dataId) : undefined;
   }
 
   /**
@@ -446,39 +456,28 @@ class ECGViewport extends GenericViewport<
    * Returns the image ids for the active ECG dataset.
    */
   getImageIds(): string[] {
-    const binding = this.getFirstBinding();
+    const imageId = this.getCurrentImageId();
 
-    return binding ? [binding.data.id] : [];
+    return imageId ? [imageId] : [];
+  }
+
+  /**
+   * Returns whether the viewport is rendering the specified imageId.
+   */
+  hasImageId(imageId: string): boolean {
+    return this.getImageIds().includes(imageId);
   }
 
   /**
    * Returns whether the viewport is rendering the specified imageURI.
+   * Whole identifiers are compared, so a UID prefix does not match.
    */
   hasImageURI(imageURI: string): boolean {
-    const binding = this.getFirstBinding();
-    if (!binding) {
-      return false;
-    }
+    const imageId = this.getCurrentImageId();
 
-    const dataId = binding.data.id;
-    // Compare whole identifiers. A test with `includes` matched a UID that is
-    // a prefix of the bound UID, and it matched a fragment in the middle of the
-    // identifier, so the viewport claimed images of other instances.
-    if (dataId === imageURI || imageIdToURI(dataId) === imageURI) {
-      return true;
-    }
-
-    const metadata = genericViewportDisplaySetMetadataProvider.get(
-      genericViewportDisplaySetMetadataProvider.VIEWPORT_V2_DISPLAY_SET,
-      dataId
-    ) as { sourceDataId?: string } | undefined;
-    if (metadata?.sourceDataId) {
-      if (imageIdToURI(metadata.sourceDataId) === imageURI) {
-        return true;
-      }
-    }
-
-    return false;
+    return (
+      !!imageId && (imageId === imageURI || imageIdToURI(imageId) === imageURI)
+    );
   }
 
   /**
