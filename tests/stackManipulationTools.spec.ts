@@ -4,6 +4,7 @@ import {
   checkForCanvasSnapshot,
   screenShotPaths,
   simulateDrag,
+  viewportVoiChanged,
   waitForImageRendered,
 } from './utils/index';
 
@@ -37,8 +38,13 @@ test.describe('Basic Stack Manipulation', async () => {
     await selectToolAndSettle(page, 'WindowLevel');
     const locator = page.locator('.cornerstone-canvas');
     // Stepped motion so the window-level drag registers reliably on the
-    // self-hosted runner.
-    await simulateDrag(page, locator, { steps: 10 });
+    // self-hosted runner. The verifier reads the VOI of the viewport, because
+    // this tool draws no annotation, and a dropped mousemove otherwise leaves
+    // the window level untouched and the failure looks like a render change.
+    await simulateDrag(page, locator, {
+      steps: 10,
+      verify: viewportVoiChanged(),
+    });
     await checkForCanvasSnapshot(
       page,
       '.cornerstone-canvas',
