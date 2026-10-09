@@ -45,6 +45,10 @@ interface ChannelLayout {
 /**
  * ECGViewport renders DICOM ECG waveform data on an HTML canvas.
  * Based on the VideoViewport custom rendering pipeline pattern.
+ *
+ * @deprecated Use `ViewportType.ECG_NEXT` with the `ECGViewportLegacyAdapter`
+ * (or the canonical `GenericViewport/ECG/ECGViewport`) instead.
+ * This legacy class will be removed in a future major release.
  */
 class ECGViewport extends Viewport {
   readonly uid: string;
@@ -507,16 +511,21 @@ class ECGViewport extends Viewport {
       return;
     }
 
-    let worldToCanvasRatio = this.canvas.offsetWidth / this.ecgWidth;
-    if (this.ecgHeight * worldToCanvasRatio > this.canvas.offsetHeight) {
-      worldToCanvasRatio = this.canvas.offsetHeight / this.ecgHeight;
+    const canvasWidth =
+      this.canvas.offsetWidth || this.canvas.width || this.ecgWidth;
+    const canvasHeight =
+      this.canvas.offsetHeight || this.canvas.height || this.ecgHeight;
+
+    let worldToCanvasRatio = canvasWidth / this.ecgWidth;
+    if (this.ecgHeight * worldToCanvasRatio > canvasHeight) {
+      worldToCanvasRatio = canvasHeight / this.ecgHeight;
     }
 
     const drawWidth = Math.floor(this.ecgWidth * worldToCanvasRatio);
     const drawHeight = Math.floor(this.ecgHeight * worldToCanvasRatio);
 
-    const xOffsetCanvas = (this.canvas.offsetWidth - drawWidth) / 2;
-    const yOffsetCanvas = (this.canvas.offsetHeight - drawHeight) / 2;
+    const xOffsetCanvas = (canvasWidth - drawWidth) / 2;
+    const yOffsetCanvas = (canvasHeight - drawHeight) / 2;
 
     const xOffsetWorld = xOffsetCanvas / worldToCanvasRatio;
     const yOffsetWorld = yOffsetCanvas / worldToCanvasRatio;
