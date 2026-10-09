@@ -139,6 +139,119 @@ test.describe('Stack Position display area', () => {
   );
 });
 
+type StackPositionViewport = {
+  sWidth: number;
+  sHeight: number;
+  setDisplayArea: (displayArea: unknown) => void;
+  render: () => void;
+  getCamera: () => { focalPoint: number[] };
+  getImageData: () => {
+    imageData: {
+      getDimensions: () => number[];
+      indexToWorld: (index: number[]) => number[];
+    };
+  };
+  worldToCanvas: (world: number[]) => number[];
+};
+
+type StackPositionWindow = {
+  cornerstone: {
+    getRenderingEngine: (id: string) => {
+      resize: (immediate: boolean, keepCamera: boolean) => void;
+      getViewport: (id: string) => StackPositionViewport;
+    };
+  };
+};
+
+test.describe('Stack Position stored display area', () => {
+  // A display area stored as the initial camera used to become the baseline
+  // the next setDisplayArea measured its zoom and pan against, so applying
+  // the same area again moved the image point off the canvas point.
+  test('keeps the image point on the canvas point when applied repeatedly', async ({
+    page,
+  }) => {
+    for (let i = 0; i < 3; i++) {
+      const { imagePointOnCanvas, canvasCentre } = await page.evaluate(
+        async () => {
+          const viewport = (
+            window as unknown as StackPositionWindow
+          ).cornerstone
+            .getRenderingEngine('myRenderingEngine')
+            .getViewport('CT_STACK');
+          viewport.setDisplayArea({
+            imageArea: [2, 2],
+            imageCanvasPoint: {
+              imagePoint: [0.5, 0.35],
+              canvasPoint: [0.5, 0.5],
+            },
+            storeAsInitialCamera: true,
+          });
+          viewport.render();
+
+          const { imageData } = viewport.getImageData();
+          const [columns, rows] = imageData.getDimensions();
+          const devicePixelRatio = window.devicePixelRatio || 1;
+          return {
+            imagePointOnCanvas: viewport.worldToCanvas(
+              imageData.indexToWorld([columns * 0.5, rows * 0.35, 0])
+            ),
+            canvasCentre: [
+              viewport.sWidth / devicePixelRatio / 2,
+              viewport.sHeight / devicePixelRatio / 2,
+            ],
+          };
+        }
+      );
+
+      expect(imagePointOnCanvas[0]).toBeCloseTo(canvasCentre[0], 0);
+      expect(imagePointOnCanvas[1]).toBeCloseTo(canvasCentre[1], 0);
+    }
+  });
+
+  // The context pool engine resizes the on-screen canvas only when it renders
+  // the next frame, but resets the camera (and so applies the display area)
+  // as soon as the viewport is resized. Conversions made in between must use
+  // the new size, not the canvas that still holds the old one.
+  test('converts coordinates at the new size before the next render', async ({
+    page,
+  }) => {
+    const { focalPointOnCanvas, canvasCentre } = await page.evaluate(
+      async () => {
+        const renderingEngine = (
+          window as unknown as StackPositionWindow
+        ).cornerstone.getRenderingEngine('myRenderingEngine');
+        const viewport = renderingEngine.getViewport('CT_STACK');
+
+        // Let any scheduled frame run, or resize() defers to it.
+        await new Promise((resolve) =>
+          requestAnimationFrame(() => requestAnimationFrame(resolve))
+        );
+
+        const element = document.querySelector(
+          '#cornerstone-element'
+        ) as HTMLElement;
+        element.style.width = '600px';
+        element.style.height = '700px';
+        renderingEngine.resize(false, true);
+
+        const devicePixelRatio = window.devicePixelRatio || 1;
+        return {
+          focalPointOnCanvas: viewport.worldToCanvas(
+            viewport.getCamera().focalPoint
+          ),
+          canvasCentre: [
+            viewport.sWidth / devicePixelRatio / 2,
+            viewport.sHeight / devicePixelRatio / 2,
+          ],
+        };
+      }
+    );
+
+    expect(focalPointOnCanvas[0]).toBeCloseTo(canvasCentre[0], 0);
+    expect(focalPointOnCanvas[1]).toBeCloseTo(canvasCentre[1], 0);
+  });
+});
+
 async function selectDisplayAreaPreset(page: Page, presetName: string) {
   await page.evaluate(
     ({ selector, presetName }) => {
