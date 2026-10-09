@@ -7,6 +7,7 @@
  * Not a test file — jest only collects test/**\/*.jest.js.
  */
 const { data: dcmjsData } = require('dcmjs');
+const { vec3 } = require('gl-matrix');
 
 const { DicomMetaDictionary, DicomDict } = dcmjsData;
 
@@ -47,9 +48,11 @@ function imageIdForSlice(sliceIndex) {
  * pass `zDirection: -1` for the self-consistent case. (The LABELMAP path
  * rebuilds plane sequences from each image's own imagePlaneModule, so it is
  * order-independent.)
+ *
+ * `rows` and `columns` set the image size (default ROWS x COLUMNS).
  */
 function makeReferencedStack(sliceCount, options = {}) {
-  const { zDirection = 1 } = options;
+  const { zDirection = 1, rows = ROWS, columns = COLUMNS } = options;
   const imageIds = [];
   const images = [];
 
@@ -59,7 +62,7 @@ function makeReferencedStack(sliceCount, options = {}) {
     images.push({
       imageId,
       voxelManager: {
-        getScalarData: () => new Uint16Array(PIXELS_PER_SLICE),
+        getScalarData: () => new Uint16Array(rows * columns),
       },
     });
   }
@@ -69,11 +72,12 @@ function makeReferencedStack(sliceCount, options = {}) {
   const instanceForSlice = (sliceIndex) => ({
     SOPClassUID: CT_SOP_CLASS_UID,
     SOPInstanceUID: sopInstanceUidForSlice(sliceIndex),
+    SeriesInstanceUID: SERIES_INSTANCE_UID,
     InstanceNumber: String(sliceIndex + 1),
     FrameOfReferenceUID: FRAME_OF_REFERENCE_UID,
     Modality: 'CT',
-    Rows: ROWS,
-    Columns: COLUMNS,
+    Rows: rows,
+    Columns: columns,
     ImagePositionPatient: [0, 0, zForSlice(sliceIndex)],
     ImageOrientationPatient: [1, 0, 0, 0, 1, 0],
     PixelSpacing: [1, 1],
@@ -128,8 +132,8 @@ function makeReferencedStack(sliceCount, options = {}) {
             rowPixelSpacing: 1,
             columnPixelSpacing: 1,
             sliceThickness: 1,
-            rows: ROWS,
-            columns: COLUMNS,
+            rows,
+            columns,
             frameOfReferenceUID: FRAME_OF_REFERENCE_UID,
           };
         case 'generalSeriesModule':
@@ -220,6 +224,65 @@ function datasetToPart10Buffer(dataset) {
   return dicomDict.write();
 }
 
+const ROW_COSINES = [1, 0, 0];
+const COLUMN_COSINES = [0, 1, 0];
+const negate = (v) => vec3.negate([0, 0, 0], v);
+
+/**
+ * Every way a SEG frame can share the plane and pixel grid of an axial source
+ * with IOP (ROW_COSINES, COLUMN_COSINES), as [name, segRow, segColumn].
+ * See https://github.com/cornerstonejs/cornerstone3D/issues/2959
+ */
+const IN_PLANE_ORIENTATIONS = [
+  ['identity', ROW_COSINES, COLUMN_COSINES],
+  ['flipped rows', ROW_COSINES, negate(COLUMN_COSINES)],
+  ['flipped columns', negate(ROW_COSINES), COLUMN_COSINES],
+  ['rotated 90 degrees', COLUMN_COSINES, negate(ROW_COSINES)],
+  ['transposed', COLUMN_COSINES, ROW_COSINES],
+  ['anti-transposed', negate(COLUMN_COSINES), negate(ROW_COSINES)],
+  ['rotated 180 degrees', negate(ROW_COSINES), negate(COLUMN_COSINES)],
+  ['rotated 270 degrees', negate(COLUMN_COSINES), ROW_COSINES],
+];
+
+/**
+ * Samples a source slice onto a SEG frame with the given row and column
+ * cosines, as an encoder that writes that orientation would. Source pixel
+ * (row i, column j) is at world (j, i, 0), with unit spacing.
+ *
+ * @returns `{ rows, columns, values, origin }`: the SEG frame size, its pixel
+ *   values in row-major order, and its in-plane ImagePositionPatient.
+ */
+function sampleSegFrame(
+  sourceRows,
+  sourceColumns,
+  sourceValue,
+  segRow,
+  segColumn
+) {
+  const extent = [sourceColumns - 1, sourceRows - 1, 0];
+  const corners = [[0, 0, 0], [extent[0], 0, 0], [0, extent[1], 0], extent];
+  const columns = Math.abs(vec3.dot(segRow, extent)) + 1;
+  const rows = Math.abs(vec3.dot(segColumn, extent)) + 1;
+  // The SEG origin is the corner that comes first along both SEG axes.
+  const rowStart = Math.min(...corners.map((p) => vec3.dot(p, segRow)));
+  const columnStart = Math.min(...corners.map((p) => vec3.dot(p, segColumn)));
+
+  const values = [];
+  const world = [0, 0, 0];
+  for (let i = 0; i < rows; i++) {
+    for (let j = 0; j < columns; j++) {
+      vec3.scale(world, segRow, rowStart + j);
+      vec3.scaleAndAdd(world, world, segColumn, columnStart + i);
+      values.push(sourceValue(world[1], world[0]));
+    }
+  }
+
+  const origin = vec3.scale([0, 0, 0], segRow, rowStart);
+  vec3.scaleAndAdd(origin, origin, segColumn, columnStart);
+
+  return { rows, columns, values, origin };
+}
+
 /** First item whether the attribute is a single item or an item array. */
 function firstItem(sequence) {
   return Array.isArray(sequence) ? sequence[0] : sequence;
@@ -239,6 +302,10 @@ module.exports = {
   LABELMAP_SEG_SOP_CLASS_UID,
   BINARY_SEG_SOP_CLASS_UID,
   RLE_LOSSLESS_TRANSFER_SYNTAX_UID,
+  SERIES_INSTANCE_UID,
+  FRAME_OF_REFERENCE_UID,
+  IN_PLANE_ORIENTATIONS,
+  sampleSegFrame,
   sopInstanceUidForSlice,
   imageIdForSlice,
   makeReferencedStack,
