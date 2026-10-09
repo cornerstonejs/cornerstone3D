@@ -144,11 +144,7 @@ const seriesOptions = {
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Progressive Load for Volume Viewport',
-  'Here we demonstrate progressive loading of volumes. The badge in the corner ' +
-    'of each viewport states what that viewport really shows: green LOSSLESS, ' +
-    'amber while data is still loading, blue REDUCED when one voxel covers ' +
-    'several display pixels, red LOSSY when the reduction aliases. Hover it ' +
-    'for the details.'
+  'Here we demonstrate progressive loading of volumes.'
 );
 
 const size = '512px';
@@ -165,30 +161,51 @@ loadButtons.style.padding = '0.5em 0';
 loadButtons.innerHTML = '<div><b>Load with:</b></div>';
 content.appendChild(loadButtons);
 
-const timingInfo = document.createElement('div');
-timingInfo.style.width = '35em';
-timingInfo.style.height = '10em';
-timingInfo.style.float = 'left';
+const SUMMARY_IDS = ['loadingStatus', 'segStatus'] as const;
+
+const timingInfo = document.createElement('textarea');
+timingInfo.readOnly = true;
+timingInfo.rows = 8;
+Object.assign(timingInfo.style, {
+  width: 'calc(35em + 10ch)',
+  height: '10em',
+  float: 'left',
+  resize: 'vertical',
+  fontFamily: 'monospace',
+  fontSize: '12px',
+  boxSizing: 'border-box',
+});
 content.appendChild(timingInfo);
-const timingIds = [];
-const getOrCreateTiming = (id) => {
-  const element = document.getElementById(id);
-  if (element) {
-    return element;
-  }
-  timingIds.push(id);
-  timingInfo.innerHTML += `<p id="${id}">${id}</p>`;
-  const p = document.getElementById(id);
-  p.style.lineHeight = 1;
-  p.style.marginTop = 0;
-  p.style.marginBottom = 0;
-  return p;
+
+const timingLines = new Map<string, string>();
+
+const renderTiming = () => {
+  const summary = SUMMARY_IDS.filter((id) => timingLines.has(id)).map(
+    (id) => timingLines.get(id)!
+  );
+  const rest = [...timingLines.entries()]
+    .filter(([id]) => !SUMMARY_IDS.includes(id as (typeof SUMMARY_IDS)[number]))
+    .map(([, text]) => text);
+
+  timingInfo.value = [...summary, ...rest].join('\n');
+  // Keep the top visible so totals stay in view when they update.
+  timingInfo.scrollTop = 0;
 };
+
+const getOrCreateTiming = (id: string) => ({
+  set innerText(text: string) {
+    timingLines.set(id, text);
+    renderTiming();
+  },
+});
+
 function resetTimingInfo() {
-  for (const id of timingIds) {
-    getOrCreateTiming(id).innerText = `Waiting ${id}`;
+  for (const id of timingLines.keys()) {
+    timingLines.set(id, `Waiting ${id}`);
   }
+  renderTiming();
 }
+
 getOrCreateTiming('loadingStatus').innerText = 'Timing Information';
 
 const buttonInfo = document.createElement('div');
