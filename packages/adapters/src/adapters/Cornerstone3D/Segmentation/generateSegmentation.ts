@@ -563,6 +563,9 @@ function _createMultiframeSegmentationFromReferencedImages(
       ...studyData,
       ...seriesData,
       ...imageData,
+      // Each virtual dataset is a single frame, so declare it as 1 frame even
+      // when the source is a multiframe instance
+      NumberOfFrames: 1,
       PixelData: image.voxelManager.getScalarData(),
       // Declaring it as 16 bits allows the normalizer to work on 8 bit data
       BitsAllocated: 16,
