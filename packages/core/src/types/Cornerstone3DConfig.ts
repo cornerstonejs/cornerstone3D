@@ -183,6 +183,12 @@ interface Cornerstone3DConfig {
      * - MB MBytes of allocated memory. (Run Chrome with --enable-precise-memory-info)
      */
     statsOverlay?: boolean;
+    /**
+     * When true, the viewport fidelity helper also shows the verbose text badge
+     * (top-left) beside the minimal SVG indicator (top-right).
+     * When false/unset (default), only the SVG indicator is shown.
+     */
+    fidelityIndicator?: boolean;
   };
 
   /**

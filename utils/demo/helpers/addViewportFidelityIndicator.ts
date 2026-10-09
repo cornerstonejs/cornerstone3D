@@ -8,6 +8,8 @@ import {
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
+import { ensureFidelityIndicatorStyles } from './fidelityIndicator/fidelityIndicatorStyles';
+
 const { Events, ImageQualityStatus, VoxelStatistics } = Enums;
 const { isAliasingReduction, voxelGridsEqual } = utilities.voxelGrid;
 
@@ -38,6 +40,8 @@ type FidelityLine = {
   sampleDistanceLod: number;
 };
 
+type SvgFidelityState = 'loading' | 'done' | 'lossy' | 'lod';
+
 const COLORS = {
   full: '#2e9d4a',
   loading: '#c98a00',
@@ -49,31 +53,36 @@ const COLORS = {
 /** Matches `MAXIMUM_SAMPLES_PER_RAY` in createVolumeMapper (baseline distance). */
 const MAXIMUM_SAMPLES_PER_RAY = 4000;
 
+/** How long Done stays visible before it fades (SVG mode). */
+const DONE_HOLD_MS = 1000;
+
+/** Viewport edge band that re-reveals a faded Done indicator. */
+const REVEAL_BAND_PX = 50;
+
+const SVG_GLYPH =
+  '<g class="fi-glyph">' +
+  '<circle class="fi-disc" cx="7.5" cy="7.5" r="7.5"/>' +
+  '<g class="fi-dot-wrap"><circle class="fi-dot" cx="7.5" cy="7.5" r="4.5"/></g>' +
+  '<path class="fi-check" d="M4.7 7.8 L6.7 9.7 L10.3 5.7"/>' +
+  '<path class="fi-dash" d="M5 7.5 H10"/>' +
+  '</g>';
+
 /**
- * Adds a fidelity badge to one viewport: what data the viewport draws, relative
- * to the full volume — not whether a texture reduction is visible at the current
- * zoom — plus interactive ray LOD when sample distance is raised.
+ * Adds a fidelity indicator to one viewport: what data the viewport draws,
+ * relative to the full volume — plus interactive ray LOD when sample distance
+ * is raised.
  *
- * The badge reads the grid of the texture that the viewport draws, so a
- * reduced texture reports on itself and not on the full volume. The record of
- * that grid (`getGridQuality`) is a fact about the data. Camera zoom never
- * changes the badge. Raising the volume mapper sample distance (Trackball
- * rotate) does, via IMAGE_RENDERED.
+ * Default UI is the fidelity indicator in the top-right (`loading` / `done` /
+ * `lossy` / `lod`). Loading and LOD use an HTML disc (compositor-friendly);
+ * done and lossy use the SVG glyph. Hovering the icon shows the product
+ * fidelity tooltip (`fidelityHoverTextOf`). When `init({ debug: {
+ * fidelityIndicator: true } })` is set, the verbose debug badge is also shown
+ * in the top-left (separate dump via `detailsOf`).
  *
  * When `init({ dangerouslyDisableLossyIndicator: true })` is set, this
- * function is a no-op (no badge, no listeners). That hides reduced/decimated/LOD
- * feedback on purpose.
+ * function is a no-op (no badge, no listeners).
  *
- * - green FULL: drawn grid matches the full volume, data complete, idle sample distance
- * - amber "n% loaded": data has not arrived yet
- * - blue "REDUCED a×b×c": non-aliasing per-axis factors vs full volume
- * - blue "LOD n×": sample distance above idle (interaction)
- * - blue "REDUCED a×b×c · LOD n×": both at once
- * - red DECIMATED: the reduction aliases (e.g. Decimation)
- *
- * Hovering the badge shows the record, grid reduction, and sample-distance LOD.
- *
- * @returns a function that removes the badge and its listeners
+ * @returns a function that removes the indicator and its listeners
  */
 export default function addViewportFidelityIndicator({
   renderingEngineId,
@@ -92,16 +101,37 @@ export default function addViewportFidelityIndicator({
   }
 
   const { element } = viewport;
-  const badge = createBadge(element);
+  const verbose = getConfiguration().debug?.fidelityIndicator === true;
+
+  ensureFidelityIndicatorStyles();
+
+  const removeSvg = attachSvgIndicator(element, viewport, viewportId);
+
+  if (!verbose) {
+    return removeSvg;
+  }
+
+  const removeText = attachTextBadge(element, viewport, viewportId);
+
+  return () => {
+    removeSvg();
+    removeText();
+  };
+}
+
+function attachTextBadge(
+  element: HTMLDivElement,
+  viewport: Types.IVolumeViewport,
+  viewportId: string
+): () => void {
+  const badge = createTextBadge(element);
   let scheduled = false;
 
   const update = () => {
     scheduled = false;
-    renderBadge(badge, readLines(viewport));
+    renderTextBadge(badge, readLines(viewport));
   };
 
-  // A load fires one event per frame, so the badge updates at most once per
-  // animation frame.
   const schedule = () => {
     if (!scheduled) {
       scheduled = true;
@@ -132,14 +162,294 @@ export default function addViewportFidelityIndicator({
     }
   };
 
-  // A render follows a new actor and a progressive stage. Zoom does not change
-  // the badge, so CAMERA_MODIFIED is not listened to.
   element.addEventListener(Events.IMAGE_RENDERED, schedule);
   eventTarget.addEventListener(Events.IMAGE_VOLUME_MODIFIED, onVolumeModified);
   eventTarget.addEventListener(Events.ELEMENT_DISABLED, onDisabled);
   schedule();
 
   return cleanUp;
+}
+
+function attachSvgIndicator(
+  element: HTMLDivElement,
+  viewport: Types.IVolumeViewport,
+  viewportId: string
+): () => void {
+  ensureRelative(element);
+
+  // DOM overlay on the viewport element. Loading / LOD use an HTML disc so the
+  // pulse stays on the compositor; done / lossy keep the SVG glyph. Hover shows
+  // the product fidelity tooltip (separate from the debug badge dump).
+  const root = document.createElement('div');
+  root.className = 'fi-root';
+  Object.assign(root.style, {
+    position: 'absolute',
+    top: '14px',
+    right: '14px',
+    zIndex: '1000',
+    transform: 'translateZ(0)',
+  });
+  root.dataset.shown = 'false';
+
+  const htmlLayer = document.createElement('div');
+  htmlLayer.className = 'fi-html';
+  htmlLayer.innerHTML =
+    '<div class="fi-html-ring"></div><div class="fi-html-dot"></div>';
+
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('class', 'fidelity-indicator');
+  svg.setAttribute('width', '15');
+  svg.setAttribute('height', '15');
+  svg.setAttribute('viewBox', '0 0 15 15');
+  svg.setAttribute('role', 'img');
+
+  const details = document.createElement('pre');
+  details.className = 'fi-details';
+
+  root.append(htmlLayer, svg, details);
+  element.appendChild(root);
+
+  for (const type of ['mousedown', 'pointerdown', 'wheel']) {
+    root.addEventListener(type, (event) => event.stopPropagation());
+  }
+
+  root.addEventListener('mouseenter', () => {
+    root.dataset.hover = 'true';
+  });
+  root.addEventListener('mouseleave', () => {
+    delete root.dataset.hover;
+  });
+
+  let scheduled = false;
+  let currentState: SvgFidelityState | 'hidden' = 'hidden';
+  let doneFadeTimer = 0;
+  let doneHoldElapsed = false;
+  let pointerInRevealBand = false;
+
+  const scheduleDoneFade = () => {
+    clearTimeout(doneFadeTimer);
+    doneHoldElapsed = false;
+    doneFadeTimer = window.setTimeout(() => {
+      doneFadeTimer = 0;
+      doneHoldElapsed = true;
+      if (!pointerInRevealBand && currentState === 'done') {
+        root.dataset.shown = 'false';
+      }
+    }, DONE_HOLD_MS);
+  };
+
+  const ensureSvgGlyph = () => {
+    if (!svg.querySelector('.fi-glyph')) {
+      svg.innerHTML = SVG_GLYPH;
+    }
+  };
+
+  const setSvgState = (next: SvgFidelityState | 'hidden') => {
+    if (next === 'hidden') {
+      if (currentState === 'hidden') {
+        return;
+      }
+
+      clearTimeout(doneFadeTimer);
+      doneFadeTimer = 0;
+      doneHoldElapsed = false;
+      currentState = 'hidden';
+      delete root.dataset.state;
+      delete root.dataset.from;
+      root.dataset.shown = 'false';
+      svg.innerHTML = '';
+      return;
+    }
+
+    // Same state: leave the DOM alone so loading CSS animations continue.
+    // Once Done has faded, do not revive it on every IMAGE_RENDERED.
+    if (next === currentState) {
+      if (next === 'done' && !doneHoldElapsed) {
+        scheduleDoneFade();
+      }
+      return;
+    }
+
+    const from = currentState;
+
+    // Interactive LOD is temporary — leaving it must not re-celebrate Done.
+    if (next === 'done' && from === 'lod') {
+      root.dataset.from = 'lod';
+      root.dataset.state = 'done';
+      root.dataset.shown = 'false';
+      ensureSvgGlyph();
+      clearTimeout(doneFadeTimer);
+      doneFadeTimer = 0;
+      doneHoldElapsed = true;
+      currentState = 'done';
+      return;
+    }
+
+    root.dataset.from = from === 'hidden' ? 'hidden' : from;
+    root.dataset.state = next;
+    root.dataset.shown = 'true';
+
+    // done / lossy need the SVG glyph; loading / lod use the HTML disc only.
+    if (next === 'done' || next === 'lossy') {
+      ensureSvgGlyph();
+    }
+
+    clearTimeout(doneFadeTimer);
+    doneFadeTimer = 0;
+    // Preserve whether Done already faded across a temporary lod excursion.
+    if (!(next === 'lod' && from === 'done')) {
+      doneHoldElapsed = false;
+    }
+    currentState = next;
+
+    if (next === 'done') {
+      scheduleDoneFade();
+    }
+  };
+
+  const update = () => {
+    scheduled = false;
+    const lines = readLines(viewport);
+    setSvgState(svgStateOf(lines));
+    details.textContent = fidelityHoverTextOf(lines);
+  };
+
+  const schedule = () => {
+    if (!scheduled) {
+      scheduled = true;
+      requestAnimationFrame(update);
+    }
+  };
+
+  const onVolumeModified = (evt: Event) => {
+    const { volumeId } = (evt as CustomEvent<{ volumeId?: string }>).detail;
+
+    if (volumeId && volumeIdsOf(viewport).has(volumeId)) {
+      schedule();
+    }
+  };
+
+  const onPointerMove = (evt: PointerEvent) => {
+    const rect = element.getBoundingClientRect();
+    const y = evt.clientY - rect.top;
+    const inBand = y <= REVEAL_BAND_PX || y >= rect.height - REVEAL_BAND_PX;
+
+    pointerInRevealBand = inBand;
+
+    if (currentState !== 'done') {
+      return;
+    }
+
+    if (inBand) {
+      root.dataset.shown = 'true';
+    } else if (doneHoldElapsed) {
+      root.dataset.shown = 'false';
+    }
+  };
+
+  const onPointerLeave = () => {
+    pointerInRevealBand = false;
+  };
+
+  const cleanUp = () => {
+    clearTimeout(doneFadeTimer);
+    element.removeEventListener(Events.IMAGE_RENDERED, schedule);
+    element.removeEventListener('pointermove', onPointerMove);
+    element.removeEventListener('pointerleave', onPointerLeave);
+    eventTarget.removeEventListener(Events.IMAGE_VOLUME_MODIFIED, onVolumeModified);
+    eventTarget.removeEventListener(Events.ELEMENT_DISABLED, onDisabled);
+    root.remove();
+  };
+
+  const onDisabled = (evt: Event) => {
+    const detail = (evt as CustomEvent<{ viewportId?: string }>).detail;
+
+    if (detail?.viewportId === viewportId) {
+      cleanUp();
+    }
+  };
+
+  element.addEventListener(Events.IMAGE_RENDERED, schedule);
+  element.addEventListener('pointermove', onPointerMove);
+  element.addEventListener('pointerleave', onPointerLeave);
+  eventTarget.addEventListener(Events.IMAGE_VOLUME_MODIFIED, onVolumeModified);
+  eventTarget.addEventListener(Events.ELEMENT_DISABLED, onDisabled);
+  schedule();
+
+  return cleanUp;
+}
+
+/**
+ * Worst-case SVG state across lines: loading > lod > lossy > done.
+ * No volume / no quality record yet stays hidden (blank), so the page does not
+ * flash the loading glyph before the user starts a load.
+ */
+function svgStateOf(lines: FidelityLine[]): SvgFidelityState | 'hidden' {
+  if (!lines.length) {
+    return 'hidden';
+  }
+
+  let anyLoading = false;
+  let anyLod = false;
+  let anyLossy = false;
+  let anyWithRecord = false;
+
+  for (const line of lines) {
+    if (!line.record) {
+      continue;
+    }
+
+    anyWithRecord = true;
+    const kind = lineKind(line);
+
+    if (kind === 'loading') {
+      anyLoading = true;
+    } else if (kind === 'lod') {
+      anyLod = true;
+    } else if (kind === 'lossy') {
+      anyLossy = true;
+    }
+  }
+
+  if (!anyWithRecord) {
+    return 'hidden';
+  }
+
+  if (anyLoading) {
+    return 'loading';
+  }
+
+  if (anyLod) {
+    return 'lod';
+  }
+
+  if (anyLossy) {
+    return 'lossy';
+  }
+
+  return 'done';
+}
+
+function lineKind(line: FidelityLine): SvgFidelityState {
+  const { record, reductionFactors, fullResolution, sampleDistanceLod } = line;
+
+  if (!record || record.missing > 0) {
+    return 'loading';
+  }
+
+  if (isInteractiveLod(sampleDistanceLod)) {
+    return 'lod';
+  }
+
+  if (
+    isAliasingReduction(record.reduction) ||
+    !fullResolution ||
+    isReduced(reductionFactors)
+  ) {
+    return 'lossy';
+  }
+
+  return 'done';
 }
 
 /** The ids of the cached volumes that the actors of the viewport draw. */
@@ -288,7 +598,7 @@ function isInteractiveLod(sampleDistanceLod: number): boolean {
   return sampleDistanceLod > 1 + 1e-2;
 }
 
-/** The short state of one line, for the badge. */
+/** The short state of one line, for the text badge. */
 function summaryOf(line: FidelityLine): {
   text: string;
   color: string;
@@ -335,7 +645,19 @@ function summaryOf(line: FidelityLine): {
   return { text: 'FULL', color: COLORS.full };
 }
 
-/** The record and the reduction of one line, for the hover panel. */
+/**
+ * Product copy for the icon tooltip. Temporary: same shape as the debug dump;
+ * change this function later without touching `detailsOf`.
+ */
+function fidelityHoverTextOf(lines: FidelityLine[]): string {
+  if (!lines.length) {
+    return 'No volume in this viewport yet';
+  }
+
+  return lines.map(detailsOf).join('\n\n');
+}
+
+/** Debug-only dump for the left badge hover panel. */
 function detailsOf(line: FidelityLine): string {
   const { label, record, reductionFactors, fullResolution, sampleDistanceLod } =
     line;
@@ -384,28 +706,32 @@ function formatFactor(value: number): string {
   return value.toFixed(1);
 }
 
-type Badge = {
+type TextBadge = {
   root: HTMLDivElement;
   pills: HTMLDivElement;
   details: HTMLPreElement;
 };
 
-/** The badge in the top right corner of the viewport, with its hover panel. */
-function createBadge(element: HTMLDivElement): Badge {
+function ensureRelative(element: HTMLDivElement): void {
   if (getComputedStyle(element).position === 'static') {
     element.style.position = 'relative';
   }
+}
+
+/** The verbose text badge in the top-left corner of the viewport. */
+function createTextBadge(element: HTMLDivElement): TextBadge {
+  ensureRelative(element);
 
   const root = document.createElement('div');
 
   Object.assign(root.style, {
     position: 'absolute',
     top: '4px',
-    right: '4px',
-    zIndex: '10',
+    left: '4px',
+    zIndex: '1000',
     font: '11px/1.3 monospace',
     color: '#fff',
-    textAlign: 'right',
+    textAlign: 'left',
     userSelect: 'none',
   });
 
@@ -424,7 +750,6 @@ function createBadge(element: HTMLDivElement): Badge {
 
   root.append(pills, details);
 
-  // The badge sits on the viewport, so a press on it must not start a tool.
   for (const type of ['mousedown', 'pointerdown', 'wheel']) {
     root.addEventListener(type, (event) => event.stopPropagation());
   }
@@ -441,7 +766,7 @@ function createBadge(element: HTMLDivElement): Badge {
   return { root, pills, details };
 }
 
-function renderBadge({ pills, details }: Badge, lines: FidelityLine[]): void {
+function renderTextBadge({ pills, details }: TextBadge, lines: FidelityLine[]): void {
   const shown = lines.length
     ? lines
     : [
@@ -460,7 +785,7 @@ function renderBadge({ pills, details }: Badge, lines: FidelityLine[]): void {
 
       Object.assign(pill.style, {
         display: 'inline-block',
-        marginLeft: '4px',
+        marginRight: '4px',
         padding: '1px 6px',
         borderRadius: '8px',
         background: color,

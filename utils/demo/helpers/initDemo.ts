@@ -57,12 +57,15 @@ export default async function initDemo(config: any = {}) {
       ? {
           ...demoConfig.core,
           debug: {
+            ...(demoConfig.core.debug || {}),
             statsOverlay: debugEnabled,
+            fidelityIndicator: debugEnabled,
           },
         }
       : {
           debug: {
             statsOverlay: debugEnabled,
+            fidelityIndicator: debugEnabled,
           },
         }),
   });
