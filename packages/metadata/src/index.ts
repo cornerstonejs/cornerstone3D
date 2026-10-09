@@ -4,7 +4,34 @@ export * as Enums from './enums';
 export { version } from './version';
 export * as metaData from './metaData';
 export * as utilities from './utilities';
+export * as safeFunctions from './safeFunctions';
 export * as displaySet from './displayset';
+export {
+  collectIdentifiers,
+  compileCondition,
+  compileExpression,
+  compileTemplate,
+  compileValue,
+  ExpressionSyntaxError,
+} from './safeFunctions';
+export type {
+  Classifier,
+  ClassifierRegistry,
+  CompiledExpression,
+  CompileExpressionOptions,
+  CompiledPredicate,
+  CompiledValue,
+  ExpressionScope,
+  InlinePredicate,
+  InlineValue,
+  Schema,
+  SchemaForm,
+  SchemaKey,
+  SchemaShape,
+  NamedFacts,
+  SafeFunctionContext,
+  SafeFunctionSubject,
+} from './safeFunctions';
 export type {
   IDisplaySet,
   BaseDisplaySetOptions,
@@ -16,6 +43,9 @@ export type {
   SeriesInfo,
   SeriesFacts,
   SeriesContext,
+  SeriesFunction,
+  PlaneGeometry,
+  TimeClusters,
   RuleContext,
   SplitRule,
   SplitContext,
@@ -23,6 +53,26 @@ export type {
   SplitRuleCustomAttributesContext,
   InstanceGroup,
   ViewportTypeHint,
+  InstanceOrderContext,
+  SortInstances,
+  GroupInstancesOptions,
+  SplitRuleSet,
+  SplitRuleSetEntry,
+  OrderInstancesOptions,
+  ClassifierName,
+  InstanceClassifier,
+  RawComparator,
+  RawCondition,
+  RawValue,
+  RawSeriesFact,
+  RawBooleanSeriesFact,
+  RawExpressionSeriesFact,
+  RawFunctionSeriesFact,
+  RawCustomAttributes,
+  RawSplitRule,
+  RawDisplaySetSelector,
+  CreateDisplaySetSplitRulesOptions,
+  CompiledValueReader,
 } from './displayset';
 export {
   BaseDisplaySet,
@@ -34,6 +84,16 @@ export {
   registerDisplaySetMetadata,
   registerDisplaySetProviders,
   defaultDisplaySetSplitRules,
+  orderInstancesForRule,
+  computeSeriesFacts,
+  BUILT_IN_SERIES_FUNCTIONS,
+  planeGeometry,
+  timeClusters,
+  resolveSplitRuleSet,
+  validateSplitRuleSetEntry,
+  rawDisplaySetSelector,
+  createDisplaySetSplitRules,
+  splitRuleSchema,
   createDisplaySetFromGroup,
   isImageInstance,
   isVideoInstance,
@@ -42,6 +102,9 @@ export {
   getViewportTypesForRule,
   getPreferredViewportType,
   getViewportTypesForGroup,
+  isDisplayableViewportTypes,
+  NO_VIEWPORT_TYPE,
+  DEFAULT_SPLIT_RULE_PRIORITY_LIMIT,
 } from './displayset';
 export type { CreateDisplaySetFromGroupOptions } from './displayset';
 export * as logging from './utilities/logging';
