@@ -941,13 +941,21 @@ class Viewport {
       this.initialCamera = this.fitToCanvasCamera;
     }
 
-    if (areaType === 'SCALE') {
-      this.setDisplayAreaScale(displayArea);
-    } else {
-      this.setInterpolationType(
-        this.getProperties()?.interpolationType ?? InterpolationType.LINEAR
-      );
-      this.setDisplayAreaFit(displayArea);
+    try {
+      if (areaType === 'SCALE') {
+        this.setDisplayAreaScale(displayArea);
+      } else {
+        this.setInterpolationType(
+          this.getProperties()?.interpolationType ?? InterpolationType.LINEAR
+        );
+        this.setDisplayAreaFit(displayArea);
+      }
+    } catch (error) {
+      // Don't leave the fit camera behind as the baseline for later zoom,
+      // pan and reset calls
+      this.initialCamera = previousInitialCamera;
+      this._suppressCameraModifiedEvents = _suppressCameraModifiedEvents;
+      throw error;
     }
 
     // Set the initial camera if appropriate
