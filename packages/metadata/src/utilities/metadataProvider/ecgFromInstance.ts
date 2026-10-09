@@ -9,6 +9,8 @@ import { addTypedProvider } from '../../metaData';
 import { MetadataModules } from '../../enums';
 import type { TypedProvider } from '../../metaData';
 import { logging as cornerstoneLogging } from '@cornerstonejs/utils';
+import { getSingleBufferFromArray } from '../bulkDataFromArray';
+import { decodeMultipartRelated } from '../decodeMultipartRelated';
 
 const cs3dLogger = cornerstoneLogging.metadataLog.getLogger(
   'utilities.metadataProvider.ecgFromInstance'
@@ -104,13 +106,15 @@ function base64ToUint8Array(base64: string): Uint8Array {
 }
 
 function convertBuffer(
-  dataSrc: ArrayBuffer | Uint8Array,
+  dataSrc: ArrayBuffer | ArrayBufferView,
   numberOfChannels: number,
   numberOfSamples: number,
   bits: number,
   type: string
 ): Int16Array[] {
-  const data = new Uint8Array(dataSrc);
+  const data = ArrayBuffer.isView(dataSrc)
+    ? new Uint8Array(dataSrc.buffer, dataSrc.byteOffset, dataSrc.byteLength)
+    : new Uint8Array(dataSrc);
   if (bits === 16 && type === 'SS') {
     const ret: Int16Array[] = [];
     const bytesPerSample = 2;
@@ -138,52 +142,23 @@ function convertBuffer(
   return [];
 }
 
-function multipartDecode(response: ArrayBuffer): ArrayBuffer[] {
-  const message = new Uint8Array(response);
-  const separator = new TextEncoder().encode('\r\n\r\n');
-  let offset = 0;
-  const maxHeader = 1000;
-  let headerEnd = -1;
-  for (
-    let i = 0;
-    i < Math.min(message.length - separator.length, offset + maxHeader);
-    i++
-  ) {
-    let found = true;
-    for (let j = 0; j < separator.length; j++) {
-      if (message[i + j] !== separator[j]) {
-        found = false;
-        break;
-      }
-    }
-    if (found) {
-      headerEnd = i;
-      break;
-    }
-  }
-  if (headerEnd === -1) return [response];
-  const headerStr = new TextDecoder().decode(message.slice(0, headerEnd));
-  const boundaryMatch = headerStr.match(/boundary=([^\s;]+)/i);
-  const boundary = boundaryMatch
-    ? new TextEncoder().encode(`--${boundaryMatch[1].replace(/"/g, '').trim()}`)
-    : null;
-  if (!boundary) return [response];
-  const dataStart = headerEnd + separator.length;
-  const components: ArrayBuffer[] = [];
-  let idx = message.indexOf(boundary[0], dataStart);
-  while (idx !== -1) {
-    const nextSep = message.indexOf(separator[0], idx);
-    if (nextSep === -1) break;
-    const partStart = nextSep + separator.length;
-    const nextBound = message.indexOf(boundary[0], partStart);
-    const partEnd = nextBound === -1 ? message.length : nextBound - 2;
-    if (partEnd > partStart) {
-      components.push(response.slice(partStart, partEnd));
-    }
-    if (nextBound === -1) break;
-    idx = message.indexOf(boundary[0], nextBound + boundary.length);
-  }
-  return components.length > 0 ? components : [response];
+/**
+ * Returns true when `value` already holds one decoded `Int16Array` for each
+ * channel, which is the form that `retrieveBulkData` returns.
+ */
+function isDecodedChannels(
+  value: unknown,
+  numberOfChannels: number,
+  numberOfSamples: number
+): value is Int16Array[] {
+  return (
+    Array.isArray(value) &&
+    value.length === numberOfChannels &&
+    value.every(
+      (channel) =>
+        channel instanceof Int16Array && channel.length === numberOfSamples
+    )
+  );
 }
 
 /**
@@ -214,12 +189,22 @@ function toArray<T>(seq: T[] | ArrayLike<T> | undefined): T[] {
   return [seq as T];
 }
 
+export interface BuildEcgModuleOptions {
+  /** Extra request headers for a `BulkDataURI` fetch, for example auth headers. */
+  getHeaders?: () => Record<string, string> | undefined;
+}
+
 /**
  * Build full EcgModule from a naturalized instance (UpperCamelCase convention).
+ *
+ * `WaveformData` may hold the bytes (ArrayBuffer, typed array, `Value` or
+ * `InlineBinary`), a `retrieveBulkData` method, or a `BulkDataURI`. A
+ * `BulkDataURI` fetch accepts `multipart/related` or a single part.
  */
 export function buildEcgModuleFromInstance(
   instance: Record<string, unknown>,
-  imageId?: string
+  imageId?: string,
+  options: BuildEcgModuleOptions = {}
 ): EcgModuleFull | null {
   const raw = instance.WaveformSequence as
     | ArrayLike<Record<string, unknown>>
@@ -253,42 +238,38 @@ export function buildEcgModuleFromInstance(
     };
   });
 
-  let waveformDataRaw = (group.WaveformData ?? group.waveformData) as
-    | Record<string, unknown>
-    | ArrayLike<Record<string, unknown>>
-    | undefined;
-  if (
-    waveformDataRaw &&
-    typeof (waveformDataRaw as ArrayLike<unknown>).length === 'number' &&
-    (waveformDataRaw as ArrayLike<Record<string, unknown>>).length > 0
-  ) {
-    waveformDataRaw = (
-      waveformDataRaw as ArrayLike<Record<string, unknown>>
-    )[0];
+  let waveformDataRaw = group.WaveformData ?? group.waveformData;
+  // A naturalized value can be a one-item array. A typed array is the data.
+  if (Array.isArray(waveformDataRaw) && waveformDataRaw.length > 0) {
+    waveformDataRaw = waveformDataRaw[0];
   }
   const waveformData = (waveformDataRaw as Record<string, unknown>) ?? {};
   const { wadoRsRoot = undefined, studyUID = undefined } = imageId
     ? parseWadoRsImageId(imageId)
     : {};
 
+  const toChannels = (value: unknown): Int16Array[] | undefined => {
+    if (isDecodedChannels(value, numberOfChannels, numberOfSamples)) {
+      return value;
+    }
+    const bytes = getSingleBufferFromArray(value);
+    return bytes
+      ? convertBuffer(
+          bytes,
+          numberOfChannels,
+          numberOfSamples,
+          bitsAllocated,
+          sampleInterpretation
+        )
+      : undefined;
+  };
+
   const retrieveBulkData = async (): Promise<Int16Array[]> => {
     // Binary file upload: AsyncDicomReader stores raw bytes as ArrayBuffer / TypedArray
-    const wd = waveformData as unknown;
-    if (
-      wd instanceof ArrayBuffer ||
-      (typeof ArrayBuffer !== 'undefined' &&
-        ArrayBuffer.isView &&
-        ArrayBuffer.isView(wd))
-    ) {
-      return convertBuffer(
-        wd as ArrayBuffer | Uint8Array,
-        numberOfChannels,
-        numberOfSamples,
-        bitsAllocated,
-        sampleInterpretation
-      );
+    const channels = toChannels(waveformData) ?? toChannels(waveformData.Value);
+    if (channels) {
+      return channels;
     }
-    if (waveformData.Value) return waveformData.Value as Int16Array[];
     if (waveformData.InlineBinary) {
       const raw = base64ToUint8Array(waveformData.InlineBinary as string);
       return convertBuffer(
@@ -299,14 +280,13 @@ export function buildEcgModuleFromInstance(
         sampleInterpretation
       );
     }
-    if (
-      typeof (
-        waveformData as { retrieveBulkData?: () => Promise<Int16Array[]> }
-      ).retrieveBulkData === 'function'
-    ) {
-      return (
-        waveformData as { retrieveBulkData: () => Promise<Int16Array[]> }
-      ).retrieveBulkData();
+    if (typeof waveformData.retrieveBulkData === 'function') {
+      const retrieved = toChannels(
+        await (waveformData.retrieveBulkData as () => Promise<unknown>)()
+      );
+      if (retrieved) {
+        return retrieved;
+      }
     }
     if (waveformData.BulkDataURI) {
       let url = waveformData.BulkDataURI as string;
@@ -315,14 +295,23 @@ export function buildEcgModuleFromInstance(
           ? `${wadoRsRoot}/studies/${studyUID}/${url}`
           : `${wadoRsRoot}/${url}`;
       }
-      const response = await fetch(url);
-      const buffer = await response.arrayBuffer();
-      const contentType = response.headers.get('content-type') || '';
-      const decoded = contentType.includes('multipart')
-        ? multipartDecode(buffer)[0]
-        : buffer;
+      const response = await fetch(url, {
+        headers: {
+          Accept: 'multipart/related; type="application/octet-stream"',
+          ...options.getHeaders?.(),
+        },
+      });
+      if (!response.ok) {
+        throw new Error(
+          `[ecgFromInstance] Waveform bulkdata fetch failed: ${response.status}`
+        );
+      }
+      const [part] = decodeMultipartRelated(
+        await response.arrayBuffer(),
+        response.headers.get('content-type') ?? undefined
+      );
       return convertBuffer(
-        decoded,
+        part,
         numberOfChannels,
         numberOfSamples,
         bitsAllocated,
