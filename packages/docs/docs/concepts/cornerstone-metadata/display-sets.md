@@ -252,13 +252,13 @@ that is missing, or neither `null` nor a finite number, is an error.
 
 A `SplitRule` has up to five parts:
 
-| Field              | Purpose                                                                                                                       |
-| ------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
-| `matches`          | Returns true if an instance belongs to this rule. Omit to match everything.                                                   |
-| `groupBy`          | Keys (tag names or functions) that partition matched instances into separate display sets.                                    |
-| `series`           | Optional. Runs once per rule per split and **returns** that rule's derived facts; `matches`/`groupBy` read them via `series`. |
-| `viewportTypes`    | Allowed viewport types for the produced display sets; index `0` is preferred.                                                 |
-| `customAttributes` | Returns extra attributes spread flat onto the display set (e.g. `isClip`, `numImageFrames`).                                  |
+| Field              | Purpose                                                                                                                                                            |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `matches`          | Returns true if an instance belongs to this rule. Omit to match everything.                                                                                        |
+| `groupBy`          | Keys (tag names or functions) that partition matched instances into separate display sets.                                                                         |
+| `series`           | Optional. Runs once per split and **returns** facts that extend the series context every rule reads as `context.series`. The first rule that computes a name wins. |
+| `viewportTypes`    | Allowed viewport types for the produced display sets; index `0` is preferred.                                                                                      |
+| `customAttributes` | Returns extra attributes spread flat onto the display set (e.g. `isClip`, `numImageFrames`).                                                                       |
 
 A rule's `id` is its key in the rule set, so an entry does not repeat it. Most
 rules only need `matches` and `groupBy`, plus the entry's `priority`:
@@ -274,9 +274,16 @@ rules only need `matches` and `groupBy`, plus the entry's `priority`:
 ```
 
 Reach for `series` only when a rule needs a value computed from the **whole
-series** and reused by `matches` or `groupBy`. It is optional, runs **once per
-rule per split operation**, and returns derived facts for that rule — it should
-**not** mutate shared state. The DWI fix is the worked example: `series` decides
+series** and reused by `matches`, `groupBy` or `compareInstances`. It is
+optional, runs **once per split operation**, and returns facts — it should
+**not** mutate `context.series`. A fact can be any value: a boolean, a number,
+or a summary such as a map from `SOPInstanceUID` to a slice index.
+
+The facts of all rules form one **series context**. The engine runs the hooks
+in priority order; each hook gets the facts so far as `context.series`, and a
+name that an earlier rule already computed keeps the earlier value. So two
+rules that both need the slice geometry can each declare it, and it is computed
+once. The DWI fix is the worked example: `series` decides
 whether the series mixes b-value and non-b-value frames, and `groupBy` then
 separates them into two display sets:
 
@@ -294,7 +301,7 @@ const mixedDimensionalityBValue: SplitRuleSetEntry = {
       instances.some((i) => i.DiffusionBValue !== undefined) &&
       instances.some((i) => i.DiffusionBValue === undefined),
   }),
-  // Reads this rule's own derived facts.
+  // Reads the series context.
   matches: (_instance, { series }) => series.mixedBValue,
   // Two display sets: undefined-b-value frames split off from the rest.
   groupBy: [
@@ -353,8 +360,8 @@ A few engine guarantees worth knowing when writing rules:
   then by a stable, rule-namespaced bucket key, then by run position, so a
   series' display sets — and any id derived from their position — are stable
   regardless of the order the image ids were passed in.
-- **Each group carries its rule's series facts.** `InstanceGroup.series` holds
-  the facts the matched rule's `series` hook computed over _all_ the instances
+- **Each group carries the series context.** `InstanceGroup.series` holds
+  the facts the `series` hooks computed over _all_ the instances
   passed to the split, not only the group's. Those can differ: a "mixed b-value"
   fact is true for the series and false for each half. See
   [Who decides instance order](#who-decides-instance-order) for why that
@@ -363,9 +370,12 @@ A few engine guarantees worth knowing when writing rules:
   volumetric), so those rules assume a homogeneous series. A heterogeneous series
   needs a dedicated rule (as `mixedDimensionalityBValue` does for DWI) to
   separate it.
-- **`series` is scoped to its own rule.** A rule only ever sees the facts its own
-  `series` hook returned; it cannot read another rule's facts, and it must not
-  mutate shared state.
+- **`series` is shared, and the first name wins.** Every rule reads one series
+  context. A rule should still declare each fact it reads: when the rule that
+  computed the fact first is turned off, the declaration computes it, and
+  `orderInstancesForRule` without `options.series` computes only the rule's own
+  facts. Two declarations of one name must mean the same value, because the
+  later one is not computed.
 - **Nothing is dropped by the defaults.** The `unsupported` rule, at the
   highest default priority, claims whatever the image rules did not — see
   [Objects nothing can render](#objects-nothing-can-render). A _custom_ rule set
@@ -513,17 +523,60 @@ in — `matches`, `groupBy`, `runBy`, `series` facts, `compareInstances`,
 `customAttributes` — plus the built-in instance classifiers (`image`, `video`,
 `ecg`, `wsi`) and the default selector.
 
-| Rule field         | Built from                                                                                                      | Compiled to                                        |
-| ------------------ | --------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| `matches`          | one condition — which instances this rule claims                                                                | `(instance, context) => boolean`                   |
-| `groupBy`          | a list of values — the bucket key each instance contributes                                                     | each entry: `(instance, context) => value`         |
-| `runBy`            | one value — a change starts a new run within a bucket                                                           | `(instance, context) => value`                     |
-| `series`           | a list of `{ name, scope, when, gate?, minInstances? }` — facts over the whole series, read as `{ seriesFact }` | `({ instances }) => facts`                         |
-| `compareInstances` | `{ attribute, number?, descending? }` or `{ expression }` — instance order within a group                       | `(a, b, context) => number`                        |
-| `customAttributes` | `{ set?, fromFirstInstance?, fromContext?, fromOptions?, preset? }`                                             | `(attributes, options) => Record<string, unknown>` |
+| Rule field         | Built from                                                                                                                                                                                                                              | Compiled to                                        |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| `matches`          | one condition — which instances this rule claims                                                                                                                                                                                        | `(instance, context) => boolean`                   |
+| `groupBy`          | a list of values — the bucket key each instance contributes                                                                                                                                                                             | each entry: `(instance, context) => value`         |
+| `runBy`            | one value — a change starts a new run within a bucket                                                                                                                                                                                   | `(instance, context) => value`                     |
+| `series`           | a list of facts over the whole series: `{ name, scope, when, gate?, minInstances? }` (a boolean), `{ name, expression }` (a value; the expression gets `(instances, series)`), or `{ name, function, args? }` (a named series function) | `({ instances, series }) => facts`                 |
+| `compareInstances` | `{ attribute, number?, descending? }` or `{ expression }` — instance order within a group                                                                                                                                               | `(a, b, context) => number`                        |
+| `customAttributes` | `{ set?, fromFirstInstance?, fromContext?, fromOptions?, preset? }`                                                                                                                                                                     | `(attributes, options) => Record<string, unknown>` |
 
 The other fields are data: `id` (optional, must equal the key), `groupId`,
 `priority`, `description` and `viewportTypes`.
+
+A series function computes a summary that an expression cannot: a sort, a
+mode, a projection. Its result is plain data, and the per-instance parts of a
+rule read it with an index, for example
+`context.series.geometry.index[SOPInstanceUID]`. The built-in ones are:
+
+- `planeGeometry` — the dominant image plane, the slice spacing, and the
+  instances on a regular slice lattice: `{ normal, origin, spacing,
+regularCount, irregularCount, positions, complete, duplicates, distance,
+index }`, with `distance` and `index` keyed by `SOPInstanceUID`.
+  `args.tolerance` (default `0.1`) is the fraction of the spacing a slice may
+  be off the lattice.
+- `timeClusters` — clusters of contiguous acquisition time: `{ time, start,
+first, clusters, untimedCount }`, with `time` and `start` keyed by
+  `SOPInstanceUID`. A gap of more than `args.maxGap` seconds (default `30`)
+  starts a new cluster.
+
+`createDisplaySetSplitRules(selector, { seriesFunctions })` adds or replaces
+named functions. An unknown name is a compile error. A `customAttributes`
+recipe reads the series context as `context.series` in `fromFirstInstance`
+when the host passes it as `options.series`.
+
+```js
+{
+  regularVolume: {
+    priority: -1,
+    series: [
+      { name: 'geometry', function: 'planeGeometry' },
+      { name: 'mixesIrregular', expression: 'series.geometry.irregularCount > 0' },
+    ],
+    matches: {
+      all: [
+        { seriesFact: 'mixesIrregular' },
+        { expression: 'defined(context.series.geometry.index[SOPInstanceUID])' },
+      ],
+    },
+    compareInstances: {
+      expression:
+        'context.series.geometry.distance[a.SOPInstanceUID] - context.series.geometry.distance[b.SOPInstanceUID]',
+    },
+  },
+}
+```
 
 `groupId` names a group of rules that describe one kind of display set, and it
 defaults to the rule id. A study can hold breast tomosynthesis, legacy

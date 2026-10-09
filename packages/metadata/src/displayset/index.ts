@@ -6,8 +6,19 @@ export type { ImageStackDisplaySetOptions } from './ImageStackDisplaySet';
 export { resolveInstances } from './resolveInstances';
 export type { ResolveInstancesOptions } from './resolveInstances';
 export { buildSeriesInfo } from './buildSeriesInfo';
-export { orderInstancesForRule } from './groupInstancesBySplitRules';
-export { groupInstancesBySplitRules } from './groupInstancesBySplitRules';
+export {
+  computeSeriesFacts,
+  groupInstancesBySplitRules,
+  orderInstancesForRule,
+} from './groupInstancesBySplitRules';
+export {
+  BUILT_IN_SERIES_FUNCTIONS,
+  dicomDateTimeToSeconds,
+  instanceKey,
+  planeGeometry,
+  timeClusters,
+} from './seriesFunctions';
+export type { PlaneGeometry, TimeClusters } from './seriesFunctions';
 export { resolveSplitRuleSet, validateSplitRuleSetEntry } from './splitRuleSet';
 export { splitImageIdsBySplitRules } from './splitImageIdsBySplitRules';
 export type { SplitImageIdsBySplitRulesOptions } from './splitImageIdsBySplitRules';
@@ -24,6 +35,7 @@ export {
 export {
   splitRuleSchema,
   COMPARATOR_EXPRESSION_SCOPE,
+  SERIES_EXPRESSION_SCOPE,
   SERIES_FACT_SCOPES,
   CUSTOM_ATTRIBUTE_CONTEXT_NAMES,
   CUSTOM_ATTRIBUTE_OPTION_NAMES,
@@ -35,6 +47,9 @@ export type {
   RawCondition,
   RawValue,
   RawSeriesFact,
+  RawBooleanSeriesFact,
+  RawExpressionSeriesFact,
+  RawFunctionSeriesFact,
   RawCustomAttributes,
   RawSplitRule,
   RawDisplaySetSelector,
@@ -59,6 +74,7 @@ export type {
   SeriesInfo,
   SeriesFacts,
   SeriesContext,
+  SeriesFunction,
   RuleContext,
   SplitRule,
   SplitContext,

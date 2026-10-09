@@ -59,23 +59,57 @@ export type SeriesInfo = {
 };
 
 /**
- * Derived series-level facts a rule's `series` hook returns, keyed by name and
- * read back by that same rule's `matches`/`groupBy` via {@link RuleContext}.
+ * The series context of one split: named values computed once from the whole
+ * series, and read back by every rule through {@link RuleContext}.
+ *
+ * A fact can be any value - a boolean, a number, or a summary object such as
+ * a map from `SOPInstanceUID` to a slice index. One context is shared by every
+ * rule of the split, and each rule's `series` hook extends it (see
+ * {@link SplitRule.series}). **The first rule, in priority order, that
+ * computes a name wins**: a later rule that declares the same name reads the
+ * earlier value and does not compute it again.
  */
 export type SeriesFacts = Record<string, unknown>;
 
 /**
- * Argument to a rule's `series` hook: the whole resolved series.
+ * Argument to a rule's `series` hook: the whole resolved series, and the facts
+ * that the earlier rules computed.
  */
 export type SeriesContext = {
   instances: NaturalizedInstance[];
+  /**
+   * The facts computed so far, by the rules before this one in priority order.
+   * Read only. A hook can read a fact from here, and can skip a fact that is
+   * already here, because the engine keeps the earlier value of a name. The
+   * engine always passes it; optional so that a direct call with
+   * `{ instances }` alone stays valid.
+   */
+  series?: Readonly<SeriesFacts>;
 };
 
 /**
- * Argument to a rule's `matches` predicate and to its `groupBy` extractor
- * functions: the facts this rule's `series` hook derived (an empty object when
- * the rule has no `series` hook). Scoped per rule - a rule never sees another
- * rule's derived facts.
+ * A named function that computes one series fact from the whole series, for a
+ * raw series fact `{ name, function, args? }`. Registered through
+ * `CreateDisplaySetSplitRulesOptions.seriesFunctions`; the built-in ones are
+ * in `seriesFunctions.ts`.
+ *
+ * Must be pure, and must not depend on the order of `instances`: the split
+ * result must not depend on the order the instances arrived in.
+ */
+export type SeriesFunction = (
+  instances: NaturalizedInstance[],
+  context: {
+    /** The facts computed so far (see {@link SeriesContext.series}). */
+    series: Readonly<SeriesFacts>;
+    /** The `args` of the raw fact, as is. An empty object when it has none. */
+    args: Readonly<Record<string, unknown>>;
+  }
+) => unknown;
+
+/**
+ * Argument to a rule's `matches` predicate, `groupBy` extractors, `runBy` and
+ * `compareInstances`: the series context of the split (an empty object when no
+ * rule has a `series` hook). Shared by every rule - see {@link SeriesFacts}.
  */
 export type RuleContext = {
   series: SeriesFacts;
@@ -93,6 +127,8 @@ export type SplitRuleOptions = {
   instances: NaturalizedInstance[];
   splitNumber?: number;
   descriptionName?: string;
+  /** The series context of the split (see {@link InstanceGroup.series}). */
+  series?: SeriesFacts;
 };
 
 export type SplitRule = {
@@ -117,11 +153,15 @@ export type SplitRule = {
   /** Allowed viewport types; index 0 is the preferred viewport type. */
   viewportTypes?: readonly ViewportTypeHint[];
   /**
-   * Optional. Runs once per rule per split operation, before matching, and
-   * returns derived facts for THIS rule - read back by `matches`/`groupBy`
-   * through `context.series`. Use it only when a rule needs a value computed
-   * from the whole series (e.g. "does this series mix b-value and non-b-value
-   * frames?"). Must be pure: return facts, do not mutate shared state.
+   * Optional. Runs once per split operation, before matching, in priority
+   * order, and returns facts that extend the shared series context - read back
+   * by every rule's `matches`, `groupBy`, `runBy` and `compareInstances`
+   * through `context.series`. A name that an earlier rule already computed
+   * keeps the earlier value (see {@link SeriesFacts}).
+   *
+   * Use it when a rule needs a value computed from the whole series (e.g. "does
+   * this series mix b-value and non-b-value frames?", or the slice spacing).
+   * Must be pure: return facts, do not mutate `context.series`.
    */
   series?: (context: SeriesContext) => SeriesFacts;
   /**
@@ -278,7 +318,7 @@ export const DEFAULT_SPLIT_RULE_PRIORITY_LIMIT = 10000;
 export type InstanceOrderContext = {
   /** The rule that claimed these instances. */
   matchedRule: SplitRule;
-  /** That rule's derived series facts. */
+  /** The series context of the split. */
   series: SeriesFacts;
 };
 
@@ -330,10 +370,11 @@ export type SplitContext = {
 /** Options for `orderInstancesForRule`. */
 export type OrderInstancesOptions = GroupInstancesOptions & {
   /**
-   * The rule's series facts to order with - normally the
+   * The series context to order with - normally the
    * {@link InstanceGroup.series} of the group the instances came from. Omitted,
-   * the facts are computed from the instances being ordered, which can differ
-   * from the facts the split used (see {@link InstanceGroup.series}).
+   * the facts are computed from the instances being ordered, by this rule's
+   * `series` hook alone, which can differ from the facts the split used (see
+   * {@link InstanceGroup.series}).
    */
   series?: SeriesFacts;
 };
@@ -347,7 +388,7 @@ export type InstanceGroup = {
   instances: NaturalizedInstance[];
   matchedRule: SplitRule;
   /**
-   * The matched rule's series facts for this split: its `series` hook applied
+   * The series context of this split: the `series` hooks of every rule applied
    * to every instance passed to the split, not only this group's. A host that
    * orders the group again later (see `orderInstancesForRule`) passes these
    * back, so that a comparator reading `context.series` sees the value it saw

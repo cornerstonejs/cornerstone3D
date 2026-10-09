@@ -49,6 +49,7 @@ import { isEcgInstance } from './isEcgInstance';
 import { isImageInstance } from './isImageInstance';
 import { isVideoInstance } from './isVideoInstance';
 import { isWsiInstance } from './isWsiInstance';
+import { BUILT_IN_SERIES_FUNCTIONS } from './seriesFunctions';
 import { NO_VIEWPORT_TYPE } from './types';
 import { validateSplitRuleSetEntry } from './splitRuleSet';
 import { splitRuleSchema } from './splitRuleSchema';
@@ -366,14 +367,18 @@ function compileField(form, fragment, key, site) {
 }
 
 /**
- * Compiles one {@link RawSeriesFact}. The whole list becomes the rule's
- * `series` hook in {@link compileSeriesHook}.
+ * Compiles one {@link RawSeriesFact} into `{ name, evaluate }`, where
+ * `evaluate(instances, facts)` computes the value from the whole series and
+ * the facts so far. The whole list becomes the rule's `series` hook in
+ * {@link compileSeriesHook}.
  *
  * @param {unknown} fact
  * @param {import('../safeFunctions').SchemaSite} site
+ * @param {Record<string, import('./types').SeriesFunction>} seriesFunctions
+ * @returns {{ name: string, evaluate: (instances: NaturalizedInstance[], facts: SeriesFacts) => unknown }}
  */
-function compileSeriesFact(fact, site) {
-  const [, form] = matchForm(splitRuleSchema.seriesFact, fact, site);
+function compileSeriesFact(fact, site, seriesFunctions) {
+  const [formName, form] = matchForm(splitRuleSchema.seriesFact, fact, site);
   // The series hook stores each fact under its name in a plain object.
   if (isUnsafeKey(fact.name)) {
     invalidAt(
@@ -382,8 +387,37 @@ function compileSeriesFact(fact, site) {
       fact
     );
   }
-  return {
-    name: fact.name,
+
+  if (formName === 'expression') {
+    const read = compileExpressionAt(
+      fact.expression,
+      at(site, 'expression'),
+      form.expression
+    );
+    return {
+      name: fact.name,
+      evaluate: (instances, facts) => read(instances, facts),
+    };
+  }
+
+  if (formName === 'function') {
+    const seriesFunction = readOwn(seriesFunctions, fact.function);
+    if (typeof seriesFunction !== 'function') {
+      invalidAt(
+        at(site, 'function'),
+        `unknown series function "${fact.function}"; known: ${Object.keys(seriesFunctions).join(', ') || '(none)'}`,
+        fact
+      );
+    }
+    const args = Object.freeze({ ...(fact.args ?? {}) });
+    return {
+      name: fact.name,
+      evaluate: (instances, facts) =>
+        seriesFunction(instances, { series: facts, args }),
+    };
+  }
+
+  const condition = {
     scope: fact.scope,
     minInstances: fact.minInstances,
     gate:
@@ -392,33 +426,66 @@ function compileSeriesFact(fact, site) {
         : compileField(form, fact, 'gate', site),
     when: compileField(form, fact, 'when', site),
   };
+  return {
+    name: fact.name,
+    evaluate: (instances, facts) =>
+      evaluateSeriesFact(condition, instances, { series: facts }),
+  };
 }
 
 /**
  * Turns the compiled series facts of a rule into its `series` hook: one
- * function returning every named fact for that rule.
+ * function returning the facts this rule adds to the series context.
+ *
+ * The facts run in list order. Each fact reads the facts so far - the earlier
+ * rules' and the earlier entries of this list - and a name that is already
+ * present is skipped, not computed again: the first rule that computes a name
+ * wins (see `computeSeriesFacts`).
  *
  * Facts are evaluated against the whole series but read back per instance, so
  * this runs once per rule per split rather than per instance.
  *
  * @param {ReturnType<typeof compileSeriesFact>[]} compiled
- * @returns {(context: { instances: NaturalizedInstance[] }) => SeriesFacts}
+ * @returns {(context: { instances: NaturalizedInstance[], series?: SeriesFacts }) => SeriesFacts}
  */
 function compileSeriesHook(compiled) {
-  // Facts never read other facts, so an empty series context is the right
-  // argument for the nested condition evaluation.
-  const emptyContext = { series: {} };
-
-  return ({ instances }) => {
+  return ({ instances, series = {} }) => {
+    /** @type {SeriesFacts} */
+    const facts = { ...series };
     /** @type {SeriesFacts} */
     const result = {};
 
-    for (const fact of compiled) {
-      result[fact.name] = evaluateSeriesFact(fact, instances, emptyContext);
+    for (const { name, evaluate } of compiled) {
+      if (Object.prototype.hasOwnProperty.call(facts, name)) {
+        continue;
+      }
+      const value = evaluate(instances, facts);
+      facts[name] = value;
+      result[name] = value;
     }
 
     return result;
   };
+}
+
+/**
+ * Throws when one `series` list names a fact twice: the second entry would
+ * never run, because the first entry of a name wins.
+ *
+ * @param {ReturnType<typeof compileSeriesFact>[]} compiled
+ * @param {import('../safeFunctions').SchemaSite} site
+ */
+function assertUniqueFactNames(compiled, site) {
+  const seen = new Set();
+  compiled.forEach(({ name }, index) => {
+    if (seen.has(name)) {
+      invalidAt(
+        at(at(site, 'series'), index),
+        `the fact name "${name}" is already in this list; the first entry of a name wins, so this entry never runs`
+      );
+    }
+    seen.add(name);
+  });
 }
 
 /**
@@ -508,9 +575,9 @@ function compileComparator(comparator, site) {
  * `customAttributes` callback.
  *
  * `fromContext` reads the bag the split engine passes as the first argument
- * (`isMultiFrame`, `sopClassUids`, `viewportTypes`). A rule's own `series` facts
- * are deliberately *not* reachable here - the engine does not forward them - so
- * conditions inside a recipe evaluate against an empty series context.
+ * (`isMultiFrame`, `sopClassUids`, `viewportTypes`). A `fromFirstInstance`
+ * value reads the series context as `context.series`, when the host passes it
+ * as `options.series`; else it reads an empty series context.
  *
  * @param {unknown} recipe
  * @param {import('../safeFunctions').SchemaSite} site
@@ -528,7 +595,6 @@ function compileCustomAttributes(recipe, site, presets) {
   const fromFirstInstance = Object.entries(field('fromFirstInstance') ?? {});
   const contextNames = recipe.fromContext ?? [];
   const optionNames = recipe.fromOptions ?? [];
-  const emptyContext = { series: {} };
 
   let preset;
   if (recipe.preset !== undefined) {
@@ -545,12 +611,13 @@ function compileCustomAttributes(recipe, site, presets) {
   return (attributes, options) => {
     const instances = options.instances ?? [];
     const first = instances[0];
+    const context = { series: options.series ?? {} };
 
     /** @type {Record<string, unknown>} */
     const result = { ...literals };
 
     for (const [key, read] of fromFirstInstance) {
-      result[key] = first === undefined ? undefined : read(first, emptyContext);
+      result[key] = first === undefined ? undefined : read(first, context);
     }
 
     for (const name of contextNames) {
@@ -627,10 +694,14 @@ export function createDisplaySetSplitRules(
   }
 
   const classifiers = { ...BUILT_IN_CLASSIFIERS, ...options.classifiers };
+  const seriesFunctions = {
+    ...BUILT_IN_SERIES_FUNCTIONS,
+    ...options.seriesFunctions,
+  };
   const presets = options.customAttributePresets ?? {};
   const compilers = {
     ...safeFunctionCompilers,
-    seriesFact: compileSeriesFact,
+    seriesFact: (fact, site) => compileSeriesFact(fact, site, seriesFunctions),
     comparator: compileComparator,
     customAttributes: (recipe, site) =>
       compileCustomAttributes(recipe, site, presets),
@@ -680,6 +751,7 @@ function compileRule(id, rule, site) {
     if (typeof series === 'function') {
       compiled.series = series;
     } else if (series.length) {
+      assertUniqueFactNames(series, site);
       compiled.series = compileSeriesHook(series);
     }
   }

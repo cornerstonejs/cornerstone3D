@@ -1,4 +1,9 @@
-import type { NaturalizedInstance, RuleContext, SplitRule } from './types';
+import type {
+  NaturalizedInstance,
+  RuleContext,
+  SeriesFunction,
+  SplitRule,
+} from './types';
 import type {
   Classifier,
   ClassifierName,
@@ -36,13 +41,51 @@ export type { ClassifierName, RawCondition, RawValue };
 export type InstanceClassifier = Classifier<NaturalizedInstance>;
 
 /**
- * A fact derived once per rule from the whole series, read back by that rule's
- * `matches` / `groupBy` through `{ seriesFact: <name> }`.
+ * A fact derived once from the whole series, and added to the series context
+ * that every rule reads: as `{ seriesFact: <name> }` in a condition, or as
+ * `context.series.<name>` in an expression.
  *
  * Reach for one only when a rule needs something no single instance can answer
- * ("does this series mix b-value and non-b-value frames?").
+ * ("does this series mix b-value and non-b-value frames?", "what is the slice
+ * spacing?").
+ *
+ * The first rule, in priority order, that computes a name wins. A later rule
+ * that declares the same name reads the earlier value, and does not compute
+ * it. So a rule declares every fact it reads, and the fact is computed once.
+ * Within one rule, the facts run in list order, and a fact reads the earlier
+ * ones.
  */
-export type RawSeriesFact = {
+export type RawSeriesFact =
+  | RawBooleanSeriesFact
+  | RawExpressionSeriesFact
+  | RawFunctionSeriesFact;
+
+/**
+ * A value computed by an expression, called `(instances, series)` once per
+ * split. `instances` is the whole series and `series` holds the facts so far.
+ * There is no implicit scope: a bare name reads an attribute only inside an
+ * aggregate, e.g. `{ name: 'firstNumber', expression: 'minOf(instances, InstanceNumber)' }`.
+ */
+export type RawExpressionSeriesFact = {
+  name: string;
+  expression: string;
+};
+
+/**
+ * A value from a named series function: a built-in one (`planeGeometry`,
+ * `timeClusters`), or one from
+ * {@link CreateDisplaySetSplitRulesOptions.seriesFunctions}. An unknown name
+ * is a compile error.
+ */
+export type RawFunctionSeriesFact = {
+  name: string;
+  function: string;
+  /** Arguments for the function, copied as is. */
+  args?: Record<string, unknown>;
+};
+
+/** A boolean: a condition applied across the series as `scope` says. */
+export type RawBooleanSeriesFact = {
   /** Name this fact is read back under. */
   name: string;
   /**
@@ -72,16 +115,15 @@ export type RawSeriesFact = {
 export type RawCustomAttributes = {
   /** Literal values, copied as-is. */
   set?: Record<string, string | number | boolean | null>;
-  /** Attribute name -> value read from `instances[0]`. */
+  /**
+   * Attribute name -> value read from `instances[0]`. An expression reads the
+   * series context as `context.series`, when the host passes it as
+   * `options.series`.
+   */
   fromFirstInstance?: Record<string, RawValue>;
   /**
    * Names to copy from the context the split engine passes to
    * `customAttributes`: `isMultiFrame`, `sopClassUids`, `viewportTypes`.
-   *
-   * Note this is the *engine's* context, not the rule's `series` facts - those
-   * are scoped to `matches` / `groupBy` and are not available here. Anything a
-   * display set needs from the whole series should be re-derived through
-   * `fromFirstInstance` instead.
    */
   fromContext?: ('isMultiFrame' | 'sopClassUids' | 'viewportTypes')[];
   /**
@@ -124,8 +166,9 @@ export type RawSplitRule = {
   /** Allowed viewport types; index 0 is preferred. */
   viewportTypes?: string[];
   /**
-   * Facts derived from the whole series and read back via `{ seriesFact }`. An
-   * actual function replaces the whole list: it is the rule's `series` hook.
+   * Facts derived from the whole series, added to the shared series context
+   * (see {@link RawSeriesFact}). An actual function replaces the whole list: it
+   * is the rule's `series` hook.
    */
   series?: RawSeriesFact[] | NonNullable<SplitRule['series']>;
   /**
@@ -190,6 +233,13 @@ export type CreateDisplaySetSplitRulesOptions = {
    * without the selector itself stopping being data.
    */
   classifiers?: Record<ClassifierName, InstanceClassifier>;
+  /**
+   * Extra (or replacement) named series functions, merged over the built-in
+   * `planeGeometry` / `timeClusters` entries, for a series fact
+   * `{ name, function, args? }`. The seam an application uses to teach the
+   * selector a summary of the series that it cannot express as data.
+   */
+  seriesFunctions?: Record<string, SeriesFunction>;
   /**
    * Named `customAttributes` recipes referenced by
    * {@link RawCustomAttributes.preset}.

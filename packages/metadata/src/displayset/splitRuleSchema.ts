@@ -50,6 +50,18 @@ export const COMPARATOR_EXPRESSION_SCOPE: ExpressionScope = Object.freeze({
   implicitScope: false as const,
 });
 
+/**
+ * The expression variables of a series fact `{ name, expression }`: called
+ * `(instances, series)` once per split, and no implicit scope. `instances` is
+ * the whole series, and `series` holds the facts computed so far. A bare name
+ * reads an attribute only inside an aggregate, e.g.
+ * `minOf(instances, InstanceNumber)`.
+ */
+export const SERIES_EXPRESSION_SCOPE: ExpressionScope = Object.freeze({
+  params: Object.freeze(['instances', 'series']),
+  implicitScope: false as const,
+});
+
 /** How a series fact's `when` is applied across the series. */
 export const SERIES_FACT_SCOPES = Object.freeze([
   'first',
@@ -123,9 +135,9 @@ const ruleShape: SchemaShape = {
           list: true,
           optional: true,
           function: true,
-          call: '({ instances }) => facts',
+          call: '({ instances, series }) => facts',
           description:
-            'Facts derived once from the whole series, read back through { seriesFact }. A function replaces the whole list.',
+            'Facts derived once from the whole series, shared by every rule as context.series; the first rule that computes a name wins. A function replaces the whole list.',
         },
         matches: {
           ...PER_INSTANCE_CONDITION,
@@ -164,16 +176,52 @@ const ruleShape: SchemaShape = {
   },
 };
 
+/** The `name` of every series fact form. */
+const SERIES_FACT_NAME: SchemaKey = {
+  kind: 'string',
+  description:
+    'The name the fact is read back under, as context.series.<name>. An earlier fact of the same name wins.',
+};
+
 /** One entry of a rule's `series` list. */
 const seriesFactShape: SchemaShape = {
   name: 'series fact',
   forms: {
-    seriesFact: {
+    expression: {
+      selectBy: 'expression',
       keys: {
-        name: {
+        name: SERIES_FACT_NAME,
+        expression: { kind: 'expression' },
+      },
+      expression: SERIES_EXPRESSION_SCOPE,
+      description:
+        'A value computed once from the whole series, e.g. minOf(instances, InstanceNumber). Reads the earlier facts as series.<name>.',
+    },
+    function: {
+      selectBy: 'function',
+      keys: {
+        name: SERIES_FACT_NAME,
+        function: {
           kind: 'string',
-          description: 'The name the fact is read back under.',
+          description:
+            'A named series function: built in (planeGeometry, timeClusters), or from options.seriesFunctions.',
         },
+        args: {
+          kind: 'record',
+          optional: true,
+          keys: { '*': { kind: 'literal' } },
+          description: 'Arguments for the series function, copied as is.',
+        },
+      },
+      description:
+        'A value from a named series function, for a summary the expression language cannot compute.',
+    },
+    seriesFact: {
+      selectBy: 'scope',
+      description:
+        'A boolean: a condition applied across the series as scope says.',
+      keys: {
+        name: SERIES_FACT_NAME,
         scope: {
           kind: 'string',
           oneOf: SERIES_FACT_SCOPES,
@@ -183,7 +231,7 @@ const seriesFactShape: SchemaShape = {
         when: {
           ...PER_INSTANCE_CONDITION,
           description:
-            'Evaluated for each instance of the series, as scope says.',
+            'Evaluated for each instance of the series, as scope says. context.series holds the facts computed so far.',
         },
         gate: {
           ...PER_INSTANCE_CONDITION,

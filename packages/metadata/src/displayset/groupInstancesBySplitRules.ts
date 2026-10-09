@@ -5,11 +5,47 @@ import type {
   NaturalizedInstance,
   OrderInstancesOptions,
   RuleContext,
+  SeriesFacts,
   SplitRule,
   SplitRuleSet,
 } from './types';
 import { resolveSplitRuleSet } from './splitRuleSet';
-import { toFinite } from '../safeFunctions';
+import { isUnsafeKey, toFinite } from '../safeFunctions';
+
+/**
+ * Builds the series context of one split: runs the `series` hook of each rule,
+ * in the order given (priority order), and merges what it returns.
+ *
+ * The first rule that computes a name wins. A later hook gets the facts so far
+ * as `context.series`, and a name it returns that is already present is
+ * ignored, so two rules can each declare the fact they read and the fact is
+ * computed once. A rule that is turned off (`priority: null`) is not in
+ * `rules`, so it computes nothing.
+ *
+ * Exported so that a host which re-sorts a display set outside a split
+ * computes the context the same way (see {@link orderInstancesForRule}).
+ */
+export function computeSeriesFacts(
+  instances: NaturalizedInstance[],
+  rules: readonly SplitRule[]
+): SeriesFacts {
+  const facts: SeriesFacts = {};
+  for (const rule of rules) {
+    if (!rule.series) {
+      continue;
+    }
+    const computed = rule.series({ instances, series: facts }) ?? {};
+    for (const [name, value] of Object.entries(computed)) {
+      if (
+        !isUnsafeKey(name) &&
+        !Object.prototype.hasOwnProperty.call(facts, name)
+      ) {
+        facts[name] = value;
+      }
+    }
+  }
+  return facts;
+}
 
 /**
  * Canonical acquisition order, and the default a rule gets when it declares no
@@ -127,7 +163,8 @@ function buildInstanceOrderer(
  *
  * Pass the group's {@link InstanceGroup.series} as `options.series`, so the
  * comparators see the facts the split computed from the whole series. Without
- * it, the facts are computed from `instances` alone.
+ * it, the facts are computed from `instances` alone, by this rule's own
+ * `series` hook only, so a fact that an earlier rule computed is missing.
  */
 export function orderInstancesForRule(
   instances: NaturalizedInstance[],
@@ -135,7 +172,7 @@ export function orderInstancesForRule(
   options: OrderInstancesOptions = {}
 ): NaturalizedInstance[] {
   const context: RuleContext = {
-    series: options.series ?? splitRule.series?.({ instances }) ?? {},
+    series: options.series ?? computeSeriesFacts(instances, [splitRule]),
   };
   return buildInstanceOrderer(splitRule, context, options)(instances);
 }
@@ -453,10 +490,10 @@ function buildSplitKey(
  * Groups instances into instance groups using the first matching split rule per
  * instance (rules are evaluated in order; first match wins).
  *
- * Each rule's optional `series` hook runs **once** here (per rule, per call) to
- * derive that rule's series-level facts; those facts are passed to the rule's
- * `matches`, `groupBy` and `runBy` via the {@link RuleContext}. A rule only ever
- * sees its own derived facts.
+ * Each rule's optional `series` hook runs **once** here (per rule, per call),
+ * in priority order, and extends one series context that every rule reads
+ * through the {@link RuleContext} - see {@link computeSeriesFacts}. The first
+ * rule that computes a name wins.
  *
  * A rule declaring {@link SplitRule.runBy} additionally has each of its buckets
  * walked in order to number the runs its instances form, so interleaved kinds (an
@@ -501,11 +538,12 @@ export function groupInstancesBySplitRules(
     return [];
   }
 
-  // Derive each rule's series-level facts once for this split operation, so the
+  // Derive the series context once for this split operation, so the
   // per-instance `matches`/`groupBy`/`runBy` only read an already-computed value.
-  const ruleContexts: RuleContext[] = splitRules.map((rule) => ({
-    series: rule.series?.({ instances }) ?? {},
-  }));
+  const sharedContext: RuleContext = {
+    series: computeSeriesFacts(instances, splitRules),
+  };
+  const ruleContexts: RuleContext[] = splitRules.map(() => sharedContext);
 
   // Claim instances first, so a rule's runs are computed over the instances it
   // actually owns - an instance claimed by an earlier rule neither joins nor
