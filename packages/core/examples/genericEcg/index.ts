@@ -10,6 +10,7 @@ import {
   createImageIdsAndCacheMetaData,
   getLocalUrl,
   annotationTools,
+  ecgLayouts,
 } from '../../../../utils/demo/helpers';
 
 // This is for debugging purposes
@@ -154,6 +155,21 @@ async function run() {
   if (firstToolName) {
     activateAnnotationTool(firstToolName);
   }
+
+  addDropdownToToolbar({
+    options: {
+      values: Array.from(ecgLayouts.keys()),
+      labels: Array.from(ecgLayouts.values()).map((layout) => layout.name),
+      defaultValue: '12x1',
+    },
+    labelText: 'Layout: ',
+    onSelectedValueChange: (newLayout) => {
+      viewport.setDisplaySetPresentation(ecgDataId, {
+        layoutType: newLayout as any,
+      });
+      viewport.render();
+    },
+  });
 
   addButtonToToolbar({
     title: 'Reset View',
