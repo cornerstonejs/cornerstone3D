@@ -318,11 +318,11 @@ export function buildEcgModuleFromInstance(
         sampleInterpretation
       );
     }
+    const dataKeys = Object.keys(waveformData);
     cs3dLogger.warn(
-      '[ecgFromInstance] No waveform data source found. group keys:',
-      Object.keys(group),
-      'waveformData keys:',
-      Object.keys(waveformData)
+      '[ecgFromInstance] No waveform data source found. waveformData keys:',
+      dataKeys.slice(0, 10),
+      `(${dataKeys.length} total)`
     );
     throw new Error('[ecgFromInstance] No waveform data source found');
   };
