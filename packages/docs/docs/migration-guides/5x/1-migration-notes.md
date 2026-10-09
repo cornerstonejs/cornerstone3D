@@ -469,3 +469,37 @@ image of any encapsulated syntax takes the direct fragment path.
   other.
 - If you special-cased `1.2.840.10008.1.2.4.140` as JPEG XL anywhere in your own
   code, change it to the `.110`/`.111`/`.112` block.
+
+## Volume textures: the default edge limit is 2048
+
+### What Changed
+
+A volume texture now comes from a GPU capability profile. When an application
+states no profile, the `high` profile applies, and it limits each edge of a 3D
+texture to 2048 voxels. A volume with a longer axis draws from a box-average
+reduction of that axis. Before this release, the mapper allocated the texture at
+the full dimensions of the volume.
+
+For example, a CT of 512 × 512 × 2464 now draws with a factor of 2 along k, also
+on a device that supports a 4096 texture edge.
+
+### Why This Matters
+
+The reported `MAX_3D_TEXTURE_SIZE` is not a reliable limit, so no profile reads
+it. Some Android devices report 2048 or more, but render only 256 per axis. No
+tested device renders beyond 2048.
+
+A volume with an axis longer than 2048 shows less detail along that axis than in
+4.x. The voxel quality record of the viewport states the reduction
+(`reduction: boxAverage`), so a fidelity readout can show it to the user.
+
+### Migration Guidance
+
+- **No action is needed** for a volume with no axis longer than 2048.
+- **Choose the profile of the device.** Call `setActiveGpuCapabilityProfile`
+  before a viewport adds its actors. Use `low` or `low-tablet` for devices that
+  render only 256 per axis.
+- **For a full-resolution long axis,** the only profile with a larger edge is
+  `high-texture-4096`. That profile is internal: it is a control for comparison,
+  and no device is tested at that edge. Use it only on hardware that you have
+  tested.

@@ -10,6 +10,7 @@ import uuidv4 from '../utilities/uuidv4';
 import VoxelManager, { DEFAULT_RLE_SIZE } from '../utilities/VoxelManager';
 import type {
   IImage,
+  IVoxelManager,
   ImageLoaderFn,
   IImageLoadObject,
   EventTypes,
@@ -542,7 +543,10 @@ export function createAndCacheLocalImage(
   const id = imageId;
 
   const isRle = voxelRepresentation === VoxelManagerEnum.RLE;
-  const voxelManager =
+  // The annotation states the interface and not the class, because `IImage`
+  // declares the interface and the `as IImage` assertion below needs the two
+  // types to agree.
+  const voxelManager: IVoxelManager<number> =
     (isRle &&
       VoxelManager.createRLEImageVoxelManager<number>({
         dimensions,
@@ -560,7 +564,7 @@ export function createAndCacheLocalImage(
       numberOfComponents,
       scalarData: scalarDataToUse,
       id,
-    }) as VoxelManager<number>);
+    }) as IVoxelManager<number>);
 
   // The RLE map above is created empty, so any voxels the caller actually
   // supplied would be dropped: `getPixelData()` expands the map, not

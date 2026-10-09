@@ -1,4 +1,9 @@
-import { getEnabledElement, Enums, utilities } from '@cornerstonejs/core';
+import {
+  getEnabledElement,
+  Enums,
+  utilities,
+  cache,
+} from '@cornerstonejs/core';
 import { getToolState } from './state';
 import { viewportSupportsImageSlices } from '../viewportCapabilities';
 
@@ -116,6 +121,19 @@ export function getPromiseRemovedHandler(element) {
 
     stackPrefetchData.indicesToRequest.push(imageIdIndex);
   };
+}
+
+/**
+ * Whether a volume of the cache loads the images of this stack through a
+ * progressive retrieve configuration. That load orders its own requests, so a
+ * prefetch of the same images in another order competes with it.
+ */
+export function isLoadedByProgressiveVolume(imageIds: string[]): boolean {
+  const volume = cache.getVolumeContainingImageId(imageIds[0])?.volume as {
+    isLoadingProgressively?: () => boolean;
+  };
+
+  return !!volume?.isLoadingProgressively?.();
 }
 
 export const clearFromImageIds = (stack) => {

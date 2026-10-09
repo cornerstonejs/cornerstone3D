@@ -10,6 +10,7 @@ import type {
 import singleRetrieveStages from './configuration/singleRetrieve';
 import sequentialRetrieveStages from './configuration/sequentialRetrieve';
 import interleavedRetrieveStages from './configuration/interleavedRetrieve';
+import coarseInterleavedRetrieveStages from './configuration/coarseInterleavedRetrieve';
 import { loadAndCacheImage } from './imageLoader';
 import triggerEvent from '../utilities/triggerEvent';
 import ProgressiveIterator from '../utilities/ProgressiveIterator';
@@ -26,6 +27,7 @@ const log = coreLog.getLogger('loaders', 'ProgressiveRetrieveImages');
 export {
   sequentialRetrieveStages,
   interleavedRetrieveStages,
+  coarseInterleavedRetrieveStages,
   singleRetrieveStages,
 };
 
@@ -104,6 +106,11 @@ export class ProgressiveRetrieveImages
 
   public static interleavedRetrieveStages = {
     stages: interleavedRetrieveStages,
+  };
+
+  /** Interleaved, with coarse stages that fill the whole volume first. */
+  public static coarseInterleavedRetrieveStages = {
+    stages: coarseInterleavedRetrieveStages,
   };
 
   public static singleRetrieveStages = {
@@ -249,7 +256,12 @@ class ProgressiveRetrieveImagesInstance {
     };
     const priority = stage.priority ?? -5;
     const requestType = stage.requestType || RequestType.Interaction;
-    const additionalDetails = { imageId };
+    // The volume id lets the volume cancel its queued requests, and keeps them
+    // apart from a stack prefetch of the same images.
+    const additionalDetails = {
+      imageId,
+      volumeId: (this.listener as { volumeId?: string }).volumeId,
+    };
 
     imageLoadPoolManager.addRequest(
       this.sendRequest.bind(this, request, options),
