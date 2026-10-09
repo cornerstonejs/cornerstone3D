@@ -152,7 +152,12 @@ export function detachFidelityIndicator(viewport: IViewport): void {
   cleanup();
 }
 
-function isVolumeFidelityViewport(viewport: IViewport): boolean {
+/**
+ * Whether this viewport should get the product fidelity indicator.
+ * Stack (and stack remapped to PLANAR_NEXT) is excluded; orthographic and
+ * volume-3D (legacy and Next) are included.
+ */
+export function isVolumeFidelityViewport(viewport: IViewport): boolean {
   const requested = viewport.requestedType ?? viewport.type;
 
   return (
@@ -168,15 +173,11 @@ function hasGetActors(viewport: IViewport): viewport is VolumeViewportLike {
   return typeof (viewport as VolumeViewportLike).getActors === 'function';
 }
 
+/**
+ * Host for the indicator/tooltip. Prefer the outer viewport element, not
+ * `.viewport-element` (that div uses `overflow: hidden` and clips hover panels).
+ */
 function overlayHostOf(element: HTMLDivElement): HTMLElement {
-  const viewportElement = element.querySelector(
-    '.viewport-element'
-  ) as HTMLElement | null;
-
-  if (viewportElement) {
-    return viewportElement;
-  }
-
   if (typeof getComputedStyle !== 'undefined') {
     if (getComputedStyle(element).position === 'static') {
       element.style.position = 'relative';

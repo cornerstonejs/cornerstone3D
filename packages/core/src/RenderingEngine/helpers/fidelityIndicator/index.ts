@@ -2,6 +2,7 @@ export {
   attachFidelityIndicator,
   maybeAttachFidelityIndicator,
   detachFidelityIndicator,
+  isVolumeFidelityViewport,
 } from './attachFidelityIndicator';
 export {
   type FidelityLine,
