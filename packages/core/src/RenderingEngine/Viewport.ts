@@ -930,19 +930,38 @@ class Viewport {
     // TODO - fix so that the store works for existing transforms
     this.setCamera(this.fitToCanvasCamera);
 
-    if (areaType === 'SCALE') {
-      this.setDisplayAreaScale(displayArea);
-    } else {
-      this.setInterpolationType(
-        this.getProperties()?.interpolationType ?? InterpolationType.LINEAR
-      );
-      this.setDisplayAreaFit(displayArea);
+    // The zoom and pan below are measured against the initial camera, while
+    // the image extent they scale is measured at the fit camera, so the two
+    // must be the same camera. A previous storeAsInitialCamera display area
+    // leaves its own result as the initial camera; computing against that
+    // instead of the fit applies the area on top of itself, and the same
+    // display area lands somewhere else on every call.
+    const previousInitialCamera = this.initialCamera;
+    if (this.fitToCanvasCamera) {
+      this.initialCamera = this.fitToCanvasCamera;
+    }
+
+    try {
+      if (areaType === 'SCALE') {
+        this.setDisplayAreaScale(displayArea);
+      } else {
+        this.setInterpolationType(
+          this.getProperties()?.interpolationType ?? InterpolationType.LINEAR
+        );
+        this.setDisplayAreaFit(displayArea);
+      }
+    } catch (error) {
+      // Don't leave the fit camera behind as the baseline for later zoom,
+      // pan and reset calls
+      this.initialCamera = previousInitialCamera;
+      this._suppressCameraModifiedEvents = _suppressCameraModifiedEvents;
+      throw error;
     }
 
     // Set the initial camera if appropriate
-    if (storeAsInitialCamera) {
-      this.initialCamera = this.getCamera();
-    }
+    this.initialCamera = storeAsInitialCamera
+      ? this.getCamera()
+      : previousInitialCamera;
 
     // Restore event firing
     this._suppressCameraModifiedEvents = _suppressCameraModifiedEvents;
@@ -1122,6 +1141,23 @@ class Viewport {
       // don't store as initial camera here - that breaks rotation and other changes.
       this.setPan(deltaPoint2, false);
     }
+  }
+
+  /**
+   * The size, in device pixels, the viewport renders at.
+   *
+   * The context pool engine resizes the on-screen canvas only when it copies
+   * the next frame onto it, so between a resize and that render
+   * `canvas.width`/`canvas.height` still hold the old size while `sWidth`,
+   * `sHeight` and the renderer viewport already hold the new one. Coordinate
+   * conversions made in that window (the camera reset that follows a resize
+   * applies the display area through them) must use the rendered size.
+   */
+  protected getRenderedCanvasSize(): { width: number; height: number } {
+    return {
+      width: this.sWidth || this.canvas.width,
+      height: this.sHeight || this.canvas.height,
+    };
   }
 
   public getDisplayArea(): DisplayArea | undefined {
