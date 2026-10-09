@@ -9,6 +9,7 @@ import ECGViewport from '../src/RenderingEngine/GenericViewport/ECG/ECGViewport'
 import ECGResolvedView from '../src/RenderingEngine/GenericViewport/ECG/ECGResolvedView';
 import WSIViewport from '../src/RenderingEngine/GenericViewport/WSI/WSIViewport';
 import VolumeViewport3D from '../src/RenderingEngine/GenericViewport/Volume3D/viewport3D';
+import genericViewportDisplaySetMetadataProvider from '../src/utilities/genericViewportDisplaySetMetadataProvider';
 
 function createAdapter(id, viewportTypes = ['testViewport']) {
   return {
@@ -234,6 +235,31 @@ describe('ViewportProjectionService', () => {
     expect(viewState.scale).toBe(1);
     expect(nextViewState.scale).toBe(2);
     expect(nextViewState.anchorWorld).toHaveLength(2);
+  });
+
+  it('references the ECG source imageId, not the display set id', () => {
+    genericViewportDisplaySetMetadataProvider.add('ecg-display-set', {
+      kind: 'ecg',
+      sourceDataId: 'wadors:/studies/1/series/2/instances/3/frames/1',
+    });
+    const viewport = Object.create(ECGViewport.prototype);
+    viewport.getFirstBinding = () => ({ data: { id: 'ecg-display-set' } });
+    viewport.getFrameOfReferenceUID = () => 'ecg-frame';
+
+    try {
+      const viewRef = viewport.getViewReference();
+
+      expect(viewRef.dataId).toBe('ecg-display-set');
+      expect(viewRef.referencedImageId).toBe(
+        'wadors:/studies/1/series/2/instances/3/frames/1'
+      );
+      expect(viewport.getSourceDataId()).toBe('ecg-display-set');
+      expect(viewport.getImageIds()).toEqual([viewRef.referencedImageId]);
+      expect(viewport.hasImageId(viewRef.referencedImageId)).toBe(true);
+      expect(viewport.hasImageId('ecg-display-set')).toBe(false);
+    } finally {
+      genericViewportDisplaySetMetadataProvider.remove('ecg-display-set');
+    }
   });
 
   it('exposes ECG projections in signal space', () => {
