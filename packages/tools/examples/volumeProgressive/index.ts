@@ -675,9 +675,6 @@ async function run() {
 
   renderingEngine.setViewports(viewportInputArray);
 
-  // The badges read the actors of each viewport on every update, so they
-  // follow every load and a change of the GPU class. They state the fidelity
-  // of the image data, so the viewport of the segmentation alone takes none.
   viewportIds.forEach((viewportId) =>
     addViewportFidelityIndicator({ renderingEngineId, viewportId })
   );

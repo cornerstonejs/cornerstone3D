@@ -188,7 +188,7 @@ interface Cornerstone3DConfig {
      * (top-left) beside the minimal SVG indicator (top-right).
      * When false/unset (default), only the SVG indicator is shown.
      */
-    fidelityIndicator?: boolean;
+    fidelityIndicatorDebug?: boolean;
   };
 
   /**

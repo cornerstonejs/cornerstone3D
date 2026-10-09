@@ -76,7 +76,7 @@ const SVG_GLYPH =
  * `lossy` / `lod`). Loading and LOD use an HTML disc (compositor-friendly);
  * done and lossy use the SVG glyph. Hovering the icon shows the product
  * fidelity tooltip (`fidelityHoverTextOf`). When `init({ debug: {
- * fidelityIndicator: true } })` is set, the verbose debug badge is also shown
+ * fidelityIndicatorDebug: true } })` is set, the verbose debug badge is also shown
  * in the top-left (separate dump via `detailsOf`).
  *
  * When `init({ dangerouslyDisableLossyIndicator: true })` is set, this
@@ -101,7 +101,7 @@ export default function addViewportFidelityIndicator({
   }
 
   const { element } = viewport;
-  const verbose = getConfiguration().debug?.fidelityIndicator === true;
+  const verbose = getConfiguration().debug?.fidelityIndicatorDebug === true;
 
   ensureFidelityIndicatorStyles();
 

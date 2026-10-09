@@ -77,7 +77,7 @@ const defaultConfig: Cornerstone3DConfig = {
      * - MB MBytes of allocated memory. (Run Chrome with --enable-precise-memory-info)
      */
     statsOverlay: false,
-    fidelityIndicator: false,
+    fidelityIndicatorDebug: false,
   },
 
   /**
