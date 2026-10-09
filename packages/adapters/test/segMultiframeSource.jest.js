@@ -221,6 +221,7 @@ describe('generateSegmentation on a multiframe (enhanced) source', () => {
     expect(sourceItem?.ReferencedSOPInstanceUID).toBe(
       MULTIFRAME_SOP_INSTANCE_UID
     );
+    expect(Number(sourceItem?.ReferencedFrameNumber)).toBe(3);
   });
 
   it('leaves single-frame-source LABELMAP export unchanged', () => {
