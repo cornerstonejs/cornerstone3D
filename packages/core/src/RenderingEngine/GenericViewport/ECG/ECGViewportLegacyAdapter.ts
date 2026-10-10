@@ -7,7 +7,10 @@ import type {
   ViewPresentationSelector,
 } from '../../../types';
 import { viewportProjection } from '../viewportProjection';
-import type { ECGViewState } from './ECGViewportTypes';
+import type {
+  ECGViewState,
+  ECGResetViewStateOptions,
+} from './ECGViewportTypes';
 import ECGViewport from './ECGViewport';
 
 /**
@@ -55,8 +58,14 @@ class ECGViewportLegacyAdapter extends ECGViewport {
   /**
    * Sets presentation properties on the active ECG viewport.
    * @param props - Object containing presentation properties.
+   * @param _volumeIdOrSuppressEvents - Optional volume ID or suppressEvents flag.
+   * @param _suppressEvents - Optional flag to suppress events.
    */
-  setProperties(props: ECGViewportProperties): void {
+  setProperties(
+    props: ECGViewportProperties = {},
+    _volumeIdOrSuppressEvents?: string | boolean,
+    _suppressEvents = false
+  ): void {
     const dataId = this.getFirstBinding()?.data.id;
 
     if (!dataId) {
@@ -150,8 +159,8 @@ class ECGViewportLegacyAdapter extends ECGViewport {
    * Compatibility wrapper for legacy callers. Next viewports should use
    * `resetViewState`.
    */
-  resetCamera(_options?: unknown): boolean {
-    return this.resetViewState();
+  resetCamera(options?: ECGResetViewStateOptions): boolean {
+    return this.resetViewState(options);
   }
 
   /**
@@ -161,15 +170,30 @@ class ECGViewportLegacyAdapter extends ECGViewport {
    * `getZoom` and `getPan` instead, so this method and `setCamera` live on the
    * adapter, as they do in the Video, WSI and Planar families.
    */
-  getCamera(): ICamera {
-    return this.getCameraForEvent();
+  getCamera(): ECGViewState & ICamera {
+    return {
+      ...this.getViewState(),
+      ...this.getCameraForEvent(),
+    } as ECGViewState & ICamera;
   }
 
   /**
    * Applies legacy camera parameters. The method translates a `parallelScale`
    * or a `scale` into a zoom, and a `focalPoint` into a pan.
+   * Also supports applying timeRange or valueRange viewState updates.
    */
-  setCamera(cameraPatch: Partial<ICamera>): void {
+  setCamera(cameraPatch: Partial<ECGViewState & ICamera>): void {
+    if (cameraPatch.timeRange || cameraPatch.valueRange) {
+      const nextViewState: Partial<ECGViewState> = {};
+      if (cameraPatch.timeRange) {
+        nextViewState.timeRange = cameraPatch.timeRange;
+      }
+      if (cameraPatch.valueRange) {
+        nextViewState.valueRange = cameraPatch.valueRange;
+      }
+      this.setViewState(nextViewState);
+    }
+
     if (
       cameraPatch.parallelScale !== undefined &&
       cameraPatch.parallelScale > 0

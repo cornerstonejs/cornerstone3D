@@ -300,8 +300,107 @@ describe('ECGResolvedView owns the world geometry', () => {
     it('returns [0, 0] from worldToCanvas when leadIndex does not match any layout cell', () => {
       const view = makeView();
       // Lead index 999 is outside the 12 leads
-      const p = view.worldToCanvas([100, 500, 999]);
-      expect(p).toEqual([0, 0]);
+      expect(view.worldToCanvas([100, 500, 999])).toEqual([0, 0]);
+      // Negative lead index is outside the 12 leads
+      expect(view.worldToCanvas([100, 500, -1])).toEqual([0, 0]);
+    });
+  });
+
+  describe('ECGViewState geometry options precedence over DataPresentation (Step 10)', () => {
+    it('uses sweepSpeed from viewState over dataPresentation', () => {
+      const view = new ECGResolvedView({
+        viewState: {
+          timeRange: [0, DURATION_MS],
+          valueRange: [-1000, 1000],
+          sweepSpeed: 50,
+        },
+        canvas: makeCanvas(),
+        dataPresentation: { sweepSpeed: 25 },
+        frameOfReferenceUID: 'ecg-viewport-test',
+        waveform: makeWaveform(),
+      });
+
+      expect(view.metrics.sweepSpeed).toBe(50);
+    });
+
+    it('falls back to sweepSpeed from dataPresentation when omitted in viewState', () => {
+      const view = new ECGResolvedView({
+        viewState: {
+          timeRange: [0, DURATION_MS],
+          valueRange: [-1000, 1000],
+        },
+        canvas: makeCanvas(),
+        dataPresentation: { sweepSpeed: 50 },
+        frameOfReferenceUID: 'ecg-viewport-test',
+        waveform: makeWaveform(),
+      });
+
+      expect(view.metrics.sweepSpeed).toBe(50);
+    });
+
+    it('uses sensitivityMmMv from viewState over dataPresentation', () => {
+      const view = new ECGResolvedView({
+        viewState: {
+          timeRange: [0, DURATION_MS],
+          valueRange: [-1000, 1000],
+          sensitivityMmMv: 20,
+        },
+        canvas: makeCanvas(),
+        dataPresentation: { sensitivityMmMv: 10 },
+        frameOfReferenceUID: 'ecg-viewport-test',
+        waveform: makeWaveform(),
+      });
+
+      // 20 mm/mV scale vs 10 mm/mV scale
+      const viewFallback = new ECGResolvedView({
+        viewState: {
+          timeRange: [0, DURATION_MS],
+          valueRange: [-1000, 1000],
+        },
+        canvas: makeCanvas(),
+        dataPresentation: { sensitivityMmMv: 10 },
+        frameOfReferenceUID: 'ecg-viewport-test',
+        waveform: makeWaveform(),
+      });
+
+      expect(view.metrics.channelScale).toBeCloseTo(
+        viewFallback.metrics.channelScale * 2,
+        4
+      );
+    });
+
+    it('uses layoutType from viewState over dataPresentation', () => {
+      const view = new ECGResolvedView({
+        viewState: {
+          timeRange: [0, DURATION_MS],
+          valueRange: [-1000, 1000],
+          layoutType: '6x2',
+        },
+        canvas: makeCanvas(),
+        dataPresentation: { layoutType: '12x1' },
+        frameOfReferenceUID: 'ecg-viewport-test',
+        waveform: makeWaveform(),
+      });
+
+      expect(view.layoutType).toBe('6x2');
+    });
+
+    it('uses visibleChannels from viewState over dataPresentation', () => {
+      const view = new ECGResolvedView({
+        viewState: {
+          timeRange: [0, DURATION_MS],
+          valueRange: [-1000, 1000],
+          visibleChannels: [0, 1], // only Lead I and Lead II
+        },
+        canvas: makeCanvas(),
+        dataPresentation: { visibleChannels: [0, 1, 2, 3] },
+        frameOfReferenceUID: 'ecg-viewport-test',
+        waveform: makeWaveform(),
+      });
+
+      expect(view.channelLayouts).toHaveLength(2);
+      expect(view.channelLayouts[0].channel.name).toBe('Lead I');
+      expect(view.channelLayouts[1].channel.name).toBe('Lead II');
     });
   });
 });
