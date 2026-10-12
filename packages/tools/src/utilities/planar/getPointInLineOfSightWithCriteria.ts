@@ -3,22 +3,6 @@ import type { Types } from '@cornerstonejs/core';
 import getViewportICamera from '../getViewportICamera';
 
 /**
- * Native ("next") viewports have no getCamera/getBounds/getIntensityFromWorld,
- * so the line of sight is resolved from the view reference and the cached
- * target volume instead.
- */
-type LineOfSightViewport = Types.IVolumeViewport | Types.IViewport;
-
-function isLegacyVolumeViewport(
-  viewport: LineOfSightViewport
-): viewport is Types.IVolumeViewport {
-  return (
-    !csUtils.isGenericViewport(viewport) &&
-    typeof (viewport as Types.IVolumeViewport).getIntensityFromWorld ===
-      'function'
-  );
-}
-/**
  * Returns a point based on some criteria (e.g., minimum or maximum intensity) in
  * the line of sight (on the line between the passed worldPosition and camera position).
  * It iterated over the points with a step size on the line.
@@ -35,29 +19,31 @@ function isLegacyVolumeViewport(
  * @returns the World pos of the point that passes the criteriaFunction
  */
 export function getPointInLineOfSightWithCriteria(
-  viewport: LineOfSightViewport,
+  viewport: Types.IViewport,
   worldPos: Types.Point3,
   targetVolumeId: string,
   criteriaFunction: (intensity: number, point: Types.Point3) => Types.Point3,
   stepSize = 0.25
 ): Types.Point3 {
+  const volume = _getTargetVolume(viewport, targetVolumeId);
+
+  if (!volume?.voxelManager) {
+    return;
+  }
+
   const points = getPointsInLineOfSight(viewport, worldPos, {
     targetVolumeId,
     stepSize,
   });
 
-  const getIntensity = isLegacyVolumeViewport(viewport)
-    ? (point: Types.Point3) => viewport.getIntensityFromWorld(point)
-    : _getVolumeIntensityGetter(_getTargetVolume(viewport, targetVolumeId));
-
-  if (!getIntensity) {
-    return;
-  }
-
   let pickedPoint;
 
   for (const point of points) {
-    const intensity = getIntensity(point);
+    const intensity = csUtils.VoxelManager.sampleAtWorld(
+      volume,
+      point,
+      Enums.InterpolationType.NEAREST
+    );
     const pointToPick = criteriaFunction(intensity, point);
     if (pointToPick) {
       pickedPoint = pointToPick;
@@ -76,20 +62,28 @@ export function getPointInLineOfSightWithCriteria(
  * @returns An array of points in the line of sight.
  */
 export function getPointsInLineOfSight(
-  viewport: LineOfSightViewport,
+  viewport: Types.IViewport,
   worldPos: Types.Point3,
   { targetVolumeId, stepSize }: { targetVolumeId: string; stepSize: number }
 ): Types.Point3[] {
-  const lineOfSight = isLegacyVolumeViewport(viewport)
-    ? _getLegacyLineOfSight(viewport, targetVolumeId)
-    : _getNativeLineOfSight(viewport, targetVolumeId);
+  const camera = getViewportICamera(viewport);
+  const { viewPlaneNormal: normalDirection } = camera;
 
-  if (!lineOfSight) {
+  const volume = _getTargetVolume(viewport, targetVolumeId);
+
+  if (!normalDirection || !volume?.imageData) {
     return [];
   }
 
-  const { normalDirection, spacingInNormalDirection, bounds } = lineOfSight;
+  const { spacingInNormalDirection } =
+    csUtils.getTargetVolumeAndSpacingInNormalDir(
+      viewport,
+      camera,
+      targetVolumeId
+    );
+
   const step = spacingInNormalDirection * stepSize || 1;
+  const bounds = volume.imageData.getBounds();
 
   const points: Types.Point3[] = [];
 
@@ -114,79 +108,14 @@ export function getPointsInLineOfSight(
   return points;
 }
 
-type LineOfSight = {
-  normalDirection: Types.Point3;
-  spacingInNormalDirection: number;
-  bounds: number[];
-};
-
-function _getLegacyLineOfSight(
-  viewport: Types.IVolumeViewport,
-  targetVolumeId: string
-): LineOfSight {
-  const camera = viewport.getCamera();
-  const { spacingInNormalDirection } =
-    csUtils.getTargetVolumeAndSpacingInNormalDir(
-      viewport,
-      camera,
-      targetVolumeId
-    );
-
-  return {
-    normalDirection: camera.viewPlaneNormal,
-    spacingInNormalDirection,
-    bounds: viewport.getBounds(),
-  };
-}
-
-function _getNativeLineOfSight(
-  viewport: Types.IViewport,
-  targetVolumeId: string
-): LineOfSight | undefined {
-  const { viewPlaneNormal } = getViewportICamera(viewport);
-  const volume = _getTargetVolume(viewport, targetVolumeId);
-
-  if (!viewPlaneNormal || !volume?.imageData) {
-    return;
-  }
-
-  return {
-    normalDirection: viewPlaneNormal,
-    spacingInNormalDirection: csUtils.getSpacingInNormalDirection(
-      volume,
-      viewPlaneNormal
-    ),
-    bounds: volume.imageData.getBounds(),
-  };
-}
-
 function _getTargetVolume(
   viewport: Types.IViewport,
   targetVolumeId: string
 ): Types.IImageVolume | undefined {
-  const volumeId =
+  const targetId =
     targetVolumeId ||
     (viewport as { getVolumeId?: () => string }).getVolumeId?.();
-  return volumeId ? cache.getVolume(volumeId) : undefined;
-}
-
-/**
- * Nearest-voxel lookup on the cached volume, matching the legacy
- * getIntensityFromWorld semantics.
- */
-function _getVolumeIntensityGetter(
-  volume: Types.IImageVolume | undefined
-): ((point: Types.Point3) => number) | undefined {
-  if (!volume?.voxelManager) {
-    return;
-  }
-
-  return (point) =>
-    csUtils.VoxelManager.sampleAtWorld(
-      volume,
-      point,
-      Enums.InterpolationType.NEAREST
-    );
+  return targetId ? cache.getVolume(csUtils.getVolumeId(targetId)) : undefined;
 }
 
 /**
