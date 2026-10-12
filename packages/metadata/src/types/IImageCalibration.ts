@@ -1,6 +1,30 @@
 import type CalibrationTypes from '../enums/CalibrationTypes';
 
 /**
+ * A DICOM ultrasound region (0018,6011), with the tag keywords in lower camel
+ * case.  Any tag may be absent from the source data.
+ * https://dicom.nema.org/medical/dicom/current/output/chtml/part03/sect_C.8.5.5.html
+ */
+export interface UltrasoundRegion {
+  regionLocationMinX0?: number;
+  regionLocationMaxX1?: number;
+  regionLocationMinY0?: number;
+  regionLocationMaxY1?: number;
+  regionSpatialFormat?: number;
+  regionDataType?: number;
+  regionFlags?: number;
+  physicalUnitsXDirection?: number;
+  physicalUnitsYDirection?: number;
+  physicalDeltaX?: number;
+  physicalDeltaY?: number;
+  referencePixelX0?: number;
+  referencePixelY0?: number;
+  referencePhysicalPixelValueX?: number;
+  referencePhysicalPixelValueY?: number;
+  transducerFrequency?: number;
+}
+
+/**
  * IImageCalibration is an object that stores information about the type
  * of image calibration.
  */
@@ -35,7 +59,7 @@ export interface IImageCalibration {
   /** A tooltip which can be used to explain the calibration information */
   tooltip?: string;
   /** The DICOM defined ultrasound regions.  Used for non-distance spacing units. */
-  sequenceOfUltrasoundRegions?: Record<string, unknown>[];
+  sequenceOfUltrasoundRegions?: UltrasoundRegion[];
 }
 
 export type { IImageCalibration as default };
