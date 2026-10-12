@@ -75,12 +75,10 @@ export function getPointsInLineOfSight(
     return [];
   }
 
-  const { spacingInNormalDirection } =
-    csUtils.getTargetVolumeAndSpacingInNormalDir(
-      viewport,
-      camera,
-      targetVolumeId
-    );
+  const spacingInNormalDirection = csUtils.getSpacingInNormalDirection(
+    volume,
+    normalDirection
+  );
 
   const step = spacingInNormalDirection * stepSize || 1;
   const bounds = volume.imageData.getBounds();
