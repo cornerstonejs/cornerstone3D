@@ -277,8 +277,8 @@ function attachSvgIndicator(
 
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   svg.setAttribute('class', 'fidelity-indicator');
-  svg.setAttribute('width', '15');
-  svg.setAttribute('height', '15');
+  svg.setAttribute('width', '10');
+  svg.setAttribute('height', '10');
   svg.setAttribute('viewBox', '0 0 15 15');
   svg.setAttribute('role', 'img');
   svg.setAttribute('aria-label', 'Image fidelity');
