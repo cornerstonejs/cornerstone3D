@@ -1,4 +1,4 @@
-import type { Types } from '@cornerstonejs/core';
+import type { Types, VolumeViewport } from '@cornerstonejs/core';
 import { Enums, RenderingEngine, volumeLoader } from '@cornerstonejs/core';
 import {
   addButtonToToolbar,
@@ -7,6 +7,7 @@ import {
   createImageIdsAndCacheMetaData,
   initDemo,
   setCtTransferFunctionForVolumeActor,
+  setPetColorMapTransferFunctionForVolumeActor,
   setTitleAndDescription,
 } from '../../../../utils/demo/helpers';
 import vtkColorMaps from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
@@ -48,8 +49,8 @@ content.appendChild(element);
 
 let fused = false;
 let opacity = 0;
-let renderingEngine;
-let viewport;
+let renderingEngine: RenderingEngine;
+let viewport: VolumeViewport;
 addButtonToToolbar({
   title: 'toggle PET',
   onClick: async () => {
@@ -181,7 +182,7 @@ async function run() {
 
   renderingEngine.enableElement(viewportInput);
 
-  viewport = <Types.IVolumeViewport>renderingEngine.getViewport(viewportId);
+  viewport = renderingEngine.getViewport<VolumeViewport>(viewportId);
 
   // Define a volume in memory
   const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeId, {
@@ -190,15 +191,6 @@ async function run() {
 
   // Set the volume to load
   ctVolume.load();
-
-  // Set the volume on the viewport
-  viewport.setVolumes([
-    { volumeId: ctVolumeId, callback: setCtTransferFunctionForVolumeActor },
-  ]);
-
-  // Render the image
-  renderingEngine.render();
-
   // Load the PT in the background as we know we'll need it
 
   // Define a volume in memory
@@ -209,7 +201,17 @@ async function run() {
   // Set the volume to load
   ptVolume.load();
 
-  // Set the volume to load
-  ctVolume.load();
+  // Set the volume on the viewport
+  await viewport.setVolumes([
+    { volumeId: ctVolumeId, callback: setCtTransferFunctionForVolumeActor },
+    {
+      volumeId: ptVolumeId,
+      callback: setPetColorMapTransferFunctionForVolumeActor,
+    },
+  ]);
+  fused = true;
+
+  // Render the image
+  renderingEngine.render();
 }
 run();
