@@ -42,9 +42,6 @@ const COLORS = {
 /** How long Done stays visible before it fades (SVG mode). */
 const DONE_HOLD_MS = 1000;
 
-/** Viewport edge band that re-reveals a faded Done indicator. */
-const REVEAL_BAND_PX = 50;
-
 const SVG_GLYPH =
   '<g class="fi-glyph">' +
   '<circle class="fi-disc" cx="7.5" cy="7.5" r="7.5"/>' +
@@ -304,16 +301,15 @@ function attachSvgIndicator(
   let disposed = false;
   let currentState: SvgFidelityState | 'hidden' = 'hidden';
   let doneFadeTimer = 0;
+  /** Once Done has faded (or entered silently after dismissal), stays true for this attachment. */
   let doneHoldElapsed = false;
-  let pointerInRevealBand = false;
 
   const scheduleDoneFade = () => {
     clearTimeout(doneFadeTimer);
-    doneHoldElapsed = false;
     doneFadeTimer = window.setTimeout(() => {
       doneFadeTimer = 0;
       doneHoldElapsed = true;
-      if (!pointerInRevealBand && currentState === 'done') {
+      if (currentState === 'done') {
         root.dataset.shown = 'false';
       }
     }, DONE_HOLD_MS);
@@ -325,6 +321,18 @@ function attachSvgIndicator(
     }
   };
 
+  const enterDoneSilently = (from: SvgFidelityState | 'hidden') => {
+    root.dataset.from = from === 'hidden' ? 'hidden' : from;
+    root.dataset.state = 'done';
+    root.dataset.shown = 'false';
+    ensureSvgGlyph();
+    clearTimeout(doneFadeTimer);
+    doneFadeTimer = 0;
+    doneHoldElapsed = true;
+    currentState = 'done';
+    svg.setAttribute('aria-label', ARIA_LABELS.done);
+  };
+
   const setSvgState = (next: SvgFidelityState | 'hidden') => {
     if (next === 'hidden') {
       if (currentState === 'hidden') {
@@ -333,7 +341,6 @@ function attachSvgIndicator(
 
       clearTimeout(doneFadeTimer);
       doneFadeTimer = 0;
-      doneHoldElapsed = false;
       currentState = 'hidden';
       delete root.dataset.state;
       delete root.dataset.from;
@@ -352,16 +359,8 @@ function attachSvgIndicator(
 
     const from = currentState;
 
-    if (next === 'done' && from === 'lod') {
-      root.dataset.from = 'lod';
-      root.dataset.state = 'done';
-      root.dataset.shown = 'false';
-      ensureSvgGlyph();
-      clearTimeout(doneFadeTimer);
-      doneFadeTimer = 0;
-      doneHoldElapsed = true;
-      currentState = 'done';
-      svg.setAttribute('aria-label', ARIA_LABELS.done);
+    if (next === 'done' && doneHoldElapsed) {
+      enterDoneSilently(from);
       return;
     }
 
@@ -376,9 +375,6 @@ function attachSvgIndicator(
 
     clearTimeout(doneFadeTimer);
     doneFadeTimer = 0;
-    if (!(next === 'lod' && from === 'done')) {
-      doneHoldElapsed = false;
-    }
     currentState = next;
 
     if (next === 'done') {
@@ -410,28 +406,6 @@ function attachSvgIndicator(
     }
   };
 
-  const onPointerMove = (evt: PointerEvent) => {
-    const rect = element.getBoundingClientRect();
-    const y = evt.clientY - rect.top;
-    const inBand = y <= REVEAL_BAND_PX || y >= rect.height - REVEAL_BAND_PX;
-
-    pointerInRevealBand = inBand;
-
-    if (currentState !== 'done') {
-      return;
-    }
-
-    if (inBand) {
-      root.dataset.shown = 'true';
-    } else if (doneHoldElapsed) {
-      root.dataset.shown = 'false';
-    }
-  };
-
-  const onPointerLeave = () => {
-    pointerInRevealBand = false;
-  };
-
   const cleanUp = () => {
     if (disposed) {
       return;
@@ -443,8 +417,6 @@ function attachSvgIndicator(
       rafId = 0;
     }
     element.removeEventListener(Events.IMAGE_RENDERED, schedule);
-    element.removeEventListener('pointermove', onPointerMove);
-    element.removeEventListener('pointerleave', onPointerLeave);
     eventTarget.removeEventListener(
       Events.IMAGE_VOLUME_MODIFIED,
       onVolumeModified
@@ -462,8 +434,6 @@ function attachSvgIndicator(
   };
 
   element.addEventListener(Events.IMAGE_RENDERED, schedule);
-  element.addEventListener('pointermove', onPointerMove);
-  element.addEventListener('pointerleave', onPointerLeave);
   eventTarget.addEventListener(Events.IMAGE_VOLUME_MODIFIED, onVolumeModified);
   eventTarget.addEventListener(Events.ELEMENT_DISABLED, onDisabled);
   schedule();
