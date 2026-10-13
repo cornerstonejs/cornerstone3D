@@ -175,6 +175,19 @@ import * as imageLoader from './loaders/imageLoader';
 import * as geometryLoader from './loaders/geometryLoader';
 import ProgressiveRetrieveImages from './loaders/ProgressiveRetrieveImages';
 import { decimatedVolumeLoader } from './loaders/decimatedVolumeLoader';
+import {
+  brickVolumeLoader,
+  registerBrickVolumeLoader,
+} from './loaders/brickVolumeLoader';
+import {
+  toBrickVolumeId,
+  parseBrickVolumeId,
+  resolveBrickVolumeId,
+  getBrickVolumeController,
+  setBrickVolumeDisplayedPlanes,
+  BRICK_LOADER_SCHEME,
+} from './loaders/brick';
+import * as brickLoader from './loaders/brick';
 // eslint-disable-next-line import/no-duplicates
 import type * as Types from './types';
 import type {
@@ -401,6 +414,16 @@ export {
   cornerstoneMeshLoader,
   ProgressiveRetrieveImages,
   decimatedVolumeLoader,
+  // Brick Volume Loader
+  brickVolumeLoader,
+  registerBrickVolumeLoader,
+  toBrickVolumeId,
+  parseBrickVolumeId,
+  resolveBrickVolumeId,
+  getBrickVolumeController,
+  setBrickVolumeDisplayedPlanes,
+  BRICK_LOADER_SCHEME,
+  brickLoader,
   ActorRenderMode,
   cornerstoneStreamingImageVolumeLoader,
   cornerstoneStreamingDynamicImageVolumeLoader,
