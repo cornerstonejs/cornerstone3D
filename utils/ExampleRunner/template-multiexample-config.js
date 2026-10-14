@@ -53,9 +53,11 @@ module.exports = function buildConfig(names, exampleBasePaths, destPath, root) {
 const path = require('path');
 const fs = require('fs');
 const rules = require('./rules-examples.js');
-// The repo root's node_modules first, then the normal upward walk so nested
-// (pnpm-style) package node_modules still resolve.
-const modules = ['${rootPath}/node_modules', 'node_modules'];
+// The normal upward walk first, so a package's own (pnpm-style) node_modules wins, then the
+// repo root's. The root holds a hoisted copy of several codecs for other packages, and with
+// the root searched first those copies are bundled in place of the versions
+// packages/dicomImageLoader pins.
+const modules = ['node_modules', '${rootPath}/node_modules'];
 const rspack = require('@rspack/core');
 
 const dir = "${destPath.replace(/\\/g, '/')}";

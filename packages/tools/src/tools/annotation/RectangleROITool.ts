@@ -54,6 +54,7 @@ import { BasicStatsCalculator } from '../../utilities/math/basic';
 import { getStyleProperty } from '../../stateManagement/annotation/config/helpers';
 import { defaultAreaGetTextLines } from '../../utilities/defaultGetTextLines';
 import sampleAreaAnnotationVoxels from '../../utilities/sampleAreaAnnotationVoxels';
+import { hasValidAreaAnnotationDimensions } from '../../utilities/areaAnnotationShapeUtils';
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
 
 const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
@@ -939,10 +940,12 @@ class RectangleROITool extends AnnotationTool {
               vec3.distance(worldHandles[0], worldHandles[1]) / 2;
             const minorHalfLength =
               vec3.distance(worldHandles[0], worldHandles[2]) / 2;
-
-            // A rectangle of no width or no height covers no voxel, and the
-            // factory rejects it.
-            if (!(majorHalfLength > 0) || !(minorHalfLength > 0)) {
+            if (
+              !hasValidAreaAnnotationDimensions(
+                majorHalfLength,
+                minorHalfLength
+              )
+            ) {
               return null;
             }
 

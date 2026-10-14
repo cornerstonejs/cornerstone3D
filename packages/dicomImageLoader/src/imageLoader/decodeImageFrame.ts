@@ -83,7 +83,25 @@ function decodeImageFrame(
         decodeConfig
       );
     case '1.2.840.10008.1.2.1.99':
-      // Deflate transfer syntax (deflated by dicomParser)
+      // Deflated Explicit VR Little Endian (inflated by dicomParser)
+      return processDecodeTask(
+        imageFrame,
+        transferSyntax,
+        pixelData,
+        options,
+        decodeConfig
+      );
+    case '1.2.840.10008.1.2.1.98':
+      // Encapsulated Uncompressed Explicit VR Little Endian
+      return processDecodeTask(
+        imageFrame,
+        transferSyntax,
+        pixelData,
+        options,
+        decodeConfig
+      );
+    case '1.2.840.10008.1.2.8.1':
+      // Deflated Image Frame Compression
       return processDecodeTask(
         imageFrame,
         transferSyntax,
@@ -120,7 +138,11 @@ function decodeImageFrame(
         decodeConfig
       );
     case '1.2.840.10008.1.2.4.51':
-      // JPEG Baseline lossy process 2 & 4 (12 bit)
+    // JPEG Baseline lossy process 2 & 4 (12 bit)
+    case '1.2.840.10008.1.2.4.53':
+    // JPEG Spectral Selection, Non-Hierarchical, processes 6 & 8 (retired)
+    case '1.2.840.10008.1.2.4.55':
+      // JPEG Full Progression, Non-Hierarchical, processes 10 & 12 (retired)
       return processDecodeTask(
         imageFrame,
         transferSyntax,
@@ -188,6 +210,17 @@ function decodeImageFrame(
     case '1.2.840.10008.1.2.4.202':
     case '1.2.840.10008.1.2.4.203':
       // HTJ2K
+      return processDecodeTask(
+        imageFrame,
+        transferSyntax,
+        pixelData,
+        options,
+        decodeConfig
+      );
+    case '1.2.840.10008.1.2.4.110':
+    case '1.2.840.10008.1.2.4.111':
+    case '1.2.840.10008.1.2.4.112':
+      // JPEG XL: lossless, JPEG recompression and general
       return processDecodeTask(
         imageFrame,
         transferSyntax,
