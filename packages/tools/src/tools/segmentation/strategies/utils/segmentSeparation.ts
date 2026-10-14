@@ -17,6 +17,7 @@ function separateSegmentIfNeeded(
   const transaction = beginLabelmapEditTransaction(segmentation, {
     segmentIndex: operationData.segmentIndex,
     overwriteSegmentIndices: operationData.overwriteSegmentIndices,
+    segmentsLocked: operationData.segmentsLocked,
     segmentationVoxelManager: operationData.segmentationVoxelManager,
     segmentationImageData: operationData.segmentationImageData,
     isInObject: operationData.isInObject,

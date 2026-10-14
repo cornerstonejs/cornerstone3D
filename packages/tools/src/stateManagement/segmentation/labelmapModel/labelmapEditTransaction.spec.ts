@@ -21,6 +21,11 @@ jest.mock('@cornerstonejs/core', () => ({
   },
 }));
 
+jest.mock('../getSegmentation', () => ({ getSegmentation: jest.fn() }));
+
+import setValueComposition from '../../../tools/segmentation/strategies/compositions/setValue';
+import StrategyCallbacks from '../../../enums/StrategyCallbacks';
+import { getSegmentation } from '../getSegmentation';
 import {
   beginLabelmapEditTransaction,
   eraseLabelmapEditTransactionOverwrites,
@@ -161,6 +166,51 @@ describe('labelmap edit transactions', () => {
     expect(transaction.labelmapId).toBe('privateLayer');
     expect(transaction.labelValue).toBe(1);
     expect(transaction.protectedSegmentIndices).toEqual([2]);
+  });
+
+  it('does not paint the voxels of a locked segment, and does not create a layer', () => {
+    const segmentation = createSegmentation();
+    (getSegmentation as jest.Mock).mockReturnValue(segmentation);
+    const segmentationVoxelManager = createVoxelManager([0, 2, 0]);
+    const moveSegmentToPrivateLabelmap = jest.fn();
+    const segmentsLocked = [2];
+
+    const transaction = beginLabelmapEditTransaction(segmentation, {
+      segmentIndex: 1,
+      // Segment 2 is locked, so it is not a segment that the brush can overwrite.
+      overwriteSegmentIndices: [3],
+      segmentsLocked,
+      segmentationVoxelManager,
+      segmentationImageData: imageData,
+      isInObject: () => true,
+      moveSegmentToPrivateLabelmap,
+    });
+
+    expect(moveSegmentToPrivateLabelmap).not.toHaveBeenCalled();
+    expect(transaction.movedSegment).toBe(false);
+    expect(transaction.labelmapId).toBe('layerA');
+    expect(
+      Object.keys(segmentation.representationData.Labelmap.labelmaps)
+    ).toEqual(['layerA', 'layerB']);
+
+    // The stroke covers all three voxels.
+    const operationData = {
+      segmentationId: segmentation.segmentationId,
+      segmentIndex: 1,
+      labelValue: transaction.labelValue,
+      labelmapId: transaction.labelmapId,
+      segmentsLocked,
+      segmentationVoxelManager,
+      memo: { voxelManager: segmentationVoxelManager },
+    };
+    segmentationVoxelManager.values.forEach((value, index) =>
+      setValueComposition[StrategyCallbacks.INTERNAL_setValue](
+        operationData as never,
+        { value, index }
+      )
+    );
+
+    expect(segmentationVoxelManager.values).toEqual([1, 2, 1]);
   });
 
   it('keeps the segment on its shared layer when the overlap is allowed', () => {

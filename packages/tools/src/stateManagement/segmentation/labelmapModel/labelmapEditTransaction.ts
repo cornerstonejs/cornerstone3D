@@ -32,6 +32,9 @@ type MoveSegmentToPrivateLabelmap = (
 type BeginLabelmapEditTransactionOptions = {
   segmentIndex: number;
   overwriteSegmentIndices?: number[];
+  /** Locked segments. The edit skips their voxels, so they never cause a
+   *  move of the edited segment to a private layer. */
+  segmentsLocked?: number[];
   segmentationVoxelManager?: Types.IVoxelManager<number>;
   segmentationImageData?: vtkImageData;
   isInObject?: (point: Types.Point3) => boolean;
@@ -202,10 +205,16 @@ function beginLabelmapEditTransaction(
     overwriteSegmentIndices
   );
 
+  // A locked segment means "do not paint here": the fill strategies skip its
+  // voxels, so it is not an overlap and must not move the segment to a
+  // private layer.
+  const segmentsLocked = options.segmentsLocked ?? [];
   const shouldMoveSegment = hasProtectedSegmentOverwrite(
     segmentation,
     labelmapId,
-    protectedSegmentIndices,
+    protectedSegmentIndices.filter(
+      (protectedSegmentIndex) => !segmentsLocked.includes(protectedSegmentIndex)
+    ),
     options.segmentationVoxelManager,
     {
       segmentationImageData: options.segmentationImageData,

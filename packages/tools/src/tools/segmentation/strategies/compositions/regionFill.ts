@@ -18,7 +18,6 @@ import { forEachBrushFillVoxel } from '../utils/brushVoxelSlab';
 export default {
   [StrategyCallbacks.Fill]: (operationData: InitializedOperationData) => {
     const {
-      segmentsLocked,
       segmentationImageData,
       segmentationVoxelManager,
       brushStrategy,
@@ -31,8 +30,10 @@ export default {
 
     const callback = isWithinThreshold
       ? (data) => {
-          const { value, index } = data;
-          if (segmentsLocked.includes(value) || !isWithinThreshold(index)) {
+          // setValue skips the voxels of a locked segment. It compares the
+          // segment index, because a layer can store a segment under another
+          // label value.
+          if (!isWithinThreshold(data.index)) {
             return;
           }
           setValue(operationData, data);
