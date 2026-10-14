@@ -128,8 +128,14 @@ export function fillSegmentation(
     ? inputLabelmaps3D
     : [inputLabelmaps3D];
 
-  const referencedFramesPerLabelmap = [];
   const frameDescriptors = [];
+
+  // One entry for each segment of each labelmap3D. A labelmap3D can store a
+  // segment under another label value (`labelToSegmentIndex`, for example a
+  // private overlap layer stores its segment as 1). The voxels are compared
+  // with the label value, and the metadata comes from the segment index, so
+  // the export needs no copy of the voxels.
+  const segmentEntries = [];
 
   for (
     let labelmapIndex = 0;
@@ -138,14 +144,7 @@ export function fillSegmentation(
   ) {
     const labelmap3D = labelmaps3D[labelmapIndex];
     const { labelmaps2D, metadata: segmentMetadata } = labelmap3D;
-
-    const referencedFramesPerSegment = [];
-
-    for (let i = 1; i < segmentMetadata.length; i++) {
-      if (segmentMetadata[i]) {
-        referencedFramesPerSegment[i] = [];
-      }
-    }
+    const entriesByLabelValue = new Map();
 
     for (let i = 0; i < labelmaps2D.length; i++) {
       const labelmap2D = labelmaps2D[i];
@@ -154,62 +153,44 @@ export function fillSegmentation(
         continue;
       }
 
-      const { segmentsOnLabelmap } = labelmap2D;
-      const presentSegments = segmentsPresentInFrame(labelmap2D.pixelData);
+      const { segmentsOnLabelmap = [] } = labelmap2D;
 
-      segmentsOnLabelmap.forEach((segmentIndex) => {
+      segmentsPresentInFrame(labelmap2D.pixelData).forEach((labelValue) => {
+        const segmentIndex =
+          labelmap3D.labelToSegmentIndex?.[labelValue] ?? labelValue;
+
         if (
-          segmentIndex !== 0 &&
-          segmentMetadata[segmentIndex] &&
-          referencedFramesPerSegment[segmentIndex] &&
-          presentSegments.has(segmentIndex)
+          !segmentMetadata[segmentIndex] ||
+          !(
+            segmentsOnLabelmap.includes(labelValue) ||
+            segmentsOnLabelmap.includes(segmentIndex)
+          )
         ) {
-          referencedFramesPerSegment[segmentIndex].push(i);
+          return;
         }
+
+        if (!entriesByLabelValue.has(labelValue)) {
+          entriesByLabelValue.set(labelValue, {
+            labelmap3D,
+            labelValue,
+            segmentIndex,
+            referencedFrameIndicies: [],
+          });
+        }
+        entriesByLabelValue.get(labelValue).referencedFrameIndicies.push(i);
       });
     }
 
-    referencedFramesPerLabelmap[labelmapIndex] = referencedFramesPerSegment;
+    segmentEntries.push(...entriesByLabelValue.values());
   }
 
-  let numberOfFrames = 0;
+  // dcmjs numbers the segments in the order they are added.
+  segmentEntries.sort((a, b) => a.segmentIndex - b.segmentIndex);
 
-  for (
-    let labelmapIndex = 0;
-    labelmapIndex < labelmaps3D.length;
-    labelmapIndex++
-  ) {
-    const referencedFramesPerSegment =
-      referencedFramesPerLabelmap[labelmapIndex];
-    const labelmap3D = labelmaps3D[labelmapIndex];
-    const { metadata: segmentMetadata } = labelmap3D;
-
-    for (
-      let segmentIndex = 1;
-      segmentIndex < referencedFramesPerSegment.length;
-      segmentIndex++
-    ) {
-      const referencedFrameIndicies = referencedFramesPerSegment[segmentIndex];
-
-      if (!referencedFrameIndicies?.length || !segmentMetadata[segmentIndex]) {
-        continue;
-      }
-
-      const labelmaps = _getLabelmapsFromReferencedFrameIndicies(
-        labelmap3D,
-        referencedFrameIndicies
-      );
-
-      if (
-        !labelmaps.length ||
-        !labelmaps.some((frame) => frame?.length && frame.some((v) => v !== 0))
-      ) {
-        continue;
-      }
-
-      numberOfFrames += referencedFrameIndicies.length;
-    }
-  }
+  const numberOfFrames = segmentEntries.reduce(
+    (total, entry) => total + entry.referencedFrameIndicies.length,
+    0
+  );
 
   if (numberOfFrames === 0) {
     throw new Error('No non-empty segmentation frames found for SEG export');
@@ -217,60 +198,42 @@ export function fillSegmentation(
 
   segmentation.setNumberOfFrames(numberOfFrames);
 
-  for (
-    let labelmapIndex = 0;
-    labelmapIndex < labelmaps3D.length;
-    labelmapIndex++
-  ) {
-    const referencedFramesPerSegment =
-      referencedFramesPerLabelmap[labelmapIndex];
+  // dcmjs gives each added segment the next SegmentNumber.
+  const firstSegmentNumber =
+    (segmentation.dataset.SegmentSequence?.length ?? 0) + 1;
 
-    const labelmap3D = labelmaps3D[labelmapIndex];
-    const { metadata: segmentMetadata } = labelmap3D;
-
-    for (
-      let segmentIndex = 1;
-      segmentIndex < referencedFramesPerSegment.length;
-      segmentIndex++
-    ) {
-      const referencedFrameIndicies = referencedFramesPerSegment[segmentIndex];
-
-      if (!referencedFrameIndicies?.length || !segmentMetadata[segmentIndex]) {
-        continue;
-      }
-
+  segmentEntries.forEach(
+    (
+      { labelmap3D, labelValue, segmentIndex, referencedFrameIndicies },
+      entryIndex
+    ) => {
       const labelmaps = _getLabelmapsFromReferencedFrameIndicies(
         labelmap3D,
         referencedFrameIndicies
       );
-
-      if (
-        !labelmaps.length ||
-        !labelmaps.some((frame) => frame?.length && frame.some((v) => v !== 0))
-      ) {
-        continue;
-      }
 
       // Frame numbers start from 1.
       const referencedFrameNumbers = referencedFrameIndicies.map(
         (element) => element + 1
       );
 
+      segmentation.addSegmentFromLabelmap(
+        labelmap3D.metadata[segmentIndex],
+        labelmaps,
+        labelValue,
+        referencedFrameNumbers
+      );
+
+      const referencedSegmentNumber = firstSegmentNumber + entryIndex;
+
       referencedFrameNumbers.forEach((frameNumber) => {
         frameDescriptors.push({
-          referencedSegmentNumber: segmentIndex,
+          referencedSegmentNumber,
           sourceFrameIndex: frameNumber - 1,
         });
       });
-
-      segmentation.addSegmentFromLabelmap(
-        segmentMetadata[segmentIndex],
-        labelmaps,
-        segmentIndex,
-        referencedFrameNumbers
-      );
     }
-  }
+  );
 
   if (frameDescriptors.length && images?.length && metadata) {
     // Every SEG frame must reference a resolvable source SOP Instance UID.

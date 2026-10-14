@@ -71,6 +71,16 @@ function hasAnySegment(pixelData: ArrayLike<number>) {
   return false;
 }
 
+/**
+ * The segment index of a voxel value of one labelmap3D. A labelmap layer can
+ * store a segment under another label value (for example a private overlap
+ * layer stores its segment as 1); `labelmap3D.labelToSegmentIndex` gives the
+ * map. A value without an entry is the segment index itself.
+ */
+function getSegmentIndexForLabel(labelmap3D, labelValue: number): number {
+  return labelmap3D?.labelToSegmentIndex?.[labelValue] ?? labelValue;
+}
+
 /** Normalizes the labelmaps input to an array of labelmap3D objects. */
 function toLabelmap3DArray(inputLabelmaps3D) {
   if (Array.isArray(inputLabelmaps3D)) {
@@ -137,8 +147,11 @@ function maxSegmentValue(labelmap3DArray, frameIndices: number[]): number {
         return;
       }
       for (let i = 0; i < pixelData.length; i++) {
-        if (pixelData[i] > max) {
-          max = pixelData[i];
+        const segmentIndex = pixelData[i]
+          ? getSegmentIndexForLabel(labelmap3D, pixelData[i])
+          : 0;
+        if (segmentIndex > max) {
+          max = segmentIndex;
         }
       }
     });
@@ -271,10 +284,10 @@ function fillLabelmapSegmentation(
       }
       const len = Math.min(source.length, frameLength);
       for (let i = 0; i < len; i++) {
-        const value = source[i];
-        if (value === 0) {
+        if (source[i] === 0) {
           continue;
         }
+        const value = getSegmentIndexForLabel(labelmap3D, source[i]);
         if (frame[i] !== 0 && frame[i] !== value && !overlapWarned) {
           cs3dLogger.warn(
             'generateSegmentation: overlapping labelmap segments detected on the ' +
@@ -417,6 +430,9 @@ function fillLabelmapSegmentation(
  *
  * @param images - An array of the cornerstone image objects, which includes imageId and metadata
  * @param labelmaps - An array of the 3D Volumes that contain the segmentation data.
+ *   Each labelmap3D can have `labelToSegmentIndex`, the map from a voxel value
+ *   to the segment index, for a layer that stores a segment under another label
+ *   value. The export applies the map and does not copy the voxels.
  * @param options.sopClassUID - Output SEG SOP Class UID. Defaults to BINARY
  *   Segmentation (`1.2.840.10008.5.1.4.1.1.66.4`) for broad PACS/viewer
  *   compatibility. Pass the Label Map Segmentation UID
@@ -620,4 +636,5 @@ export {
   resolveReferencedImagesForExport,
   maxSegmentValue,
   collectSegmentSequence,
+  getSegmentIndexForLabel,
 };

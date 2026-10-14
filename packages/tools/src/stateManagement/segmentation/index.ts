@@ -32,6 +32,7 @@ import { computeVolumeLabelmapFromStack } from './helpers/computeVolumeLabelmapF
 import { clearSegmentValue } from './helpers/clearSegmentValue';
 import { convertVolumeToStackLabelmap } from './helpers/computeStackLabelmapFromVolume';
 import {
+  getLabelToSegmentIndex,
   getLabelValueForSegment,
   getSegmentIndexForLabelValue,
 } from './labelmapModel';
@@ -61,6 +62,7 @@ const helpers = {
   convertStackToVolumeLabelmap,
   computeVolumeLabelmapFromStack,
   convertVolumeToStackLabelmap,
+  getLabelToSegmentIndex,
   getLabelValueForSegment,
   getSegmentIndexForLabelValue,
 };

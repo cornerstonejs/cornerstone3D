@@ -31,7 +31,10 @@ import {
   eraseLabelmapEditTransactionOverwrites,
 } from './labelmapEditTransaction';
 import { registerLabelmap } from './labelmapLayerStore';
-import { setSegmentBinding } from './labelmapSegmentBindings';
+import {
+  getLabelToSegmentIndex,
+  setSegmentBinding,
+} from './labelmapSegmentBindings';
 
 const { cache: mockCache } = jest.requireMock('@cornerstonejs/core');
 
@@ -211,6 +214,16 @@ describe('labelmap edit transactions', () => {
     );
 
     expect(segmentationVoxelManager.values).toEqual([1, 2, 1]);
+  });
+
+  it('gives the label map of one layer as a copy', () => {
+    const segmentation = createSegmentation();
+
+    const labelToSegmentIndex = getLabelToSegmentIndex(segmentation, 'layerB');
+    expect(labelToSegmentIndex).toEqual({ 1: 3 });
+
+    labelToSegmentIndex[1] = 5;
+    expect(getLabelToSegmentIndex(segmentation, 'layerB')).toEqual({ 1: 3 });
   });
 
   it('keeps the segment on its shared layer when the overlap is allowed', () => {

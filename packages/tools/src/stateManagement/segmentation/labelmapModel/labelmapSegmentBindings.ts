@@ -72,6 +72,21 @@ function getSegmentIndexForLabelValue(
   return layer.labelToSegmentIndex?.[labelValue] ?? labelValue;
 }
 
+/**
+ * The full map from label value to segment index of one labelmap layer. Use
+ * it to read many voxels, for example in an export, instead of one
+ * getSegmentIndexForLabelValue call for each voxel. A label value that is not
+ * in the map is the segment index itself. The result is a copy.
+ */
+function getLabelToSegmentIndex(
+  segmentation: Segmentation,
+  labelmapId: string
+): Record<number, number> {
+  return {
+    ...(getLabelmap(segmentation, labelmapId)?.labelToSegmentIndex ?? {}),
+  };
+}
+
 function getLabelValueForSegment(
   segmentation: Segmentation,
   segmentIndex: number
@@ -129,6 +144,7 @@ function removeSegmentBinding(
 
 export {
   getLabelmapForSegment,
+  getLabelToSegmentIndex,
   getLabelValueForSegment,
   getSegmentBinding,
   getSegmentIndexForLabelValue,

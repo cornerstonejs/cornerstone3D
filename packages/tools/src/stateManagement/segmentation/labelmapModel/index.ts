@@ -24,6 +24,7 @@ export {
 } from './labelmapLegacyAdapter';
 export {
   getLabelmapForSegment,
+  getLabelToSegmentIndex,
   getLabelValueForSegment,
   getSegmentBinding,
   getSegmentIndexForLabelValue,
