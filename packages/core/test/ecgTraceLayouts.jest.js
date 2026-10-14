@@ -77,6 +77,35 @@ describe('ECG trace layouts', () => {
     expect(rhythm.leadIndex).toBe(CHANNELS.length);
   });
 
+  it('matches a channel with no code value by its code meaning', () => {
+    const channels = [
+      {
+        name: 'Lead I',
+        data: new Int16Array(NUMBER_OF_SAMPLES),
+        min: 0,
+        max: 1,
+      },
+      {
+        name: 'Lead II',
+        data: new Int16Array(NUMBER_OF_SAMPLES),
+        min: 0,
+        max: 1,
+      },
+    ];
+    const cells = resolveECGTraceCells({
+      definition: {
+        regions: [
+          { lead: 'Lead II', bounds: { minX: 0, maxX: 1, minY: 0, maxY: 1 } },
+        ],
+      },
+      channels,
+      numberOfSamples: NUMBER_OF_SAMPLES,
+      viewSampleWindow: [0, NUMBER_OF_SAMPLES],
+    });
+
+    expect(cells.map((cell) => cell.channelIndex)).toEqual([1]);
+  });
+
   it('uses 12x1 for an unknown name', () => {
     const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
 

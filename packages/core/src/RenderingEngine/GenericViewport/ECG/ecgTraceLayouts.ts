@@ -138,7 +138,7 @@ export function resolveECGTraceCells<TChannel extends ECGChannelLike>(args: {
     const channelIndex =
       typeof region.lead === 'number'
         ? region.lead
-        : channels.findIndex((channel) => channel.code === region.lead);
+        : findLeadByCode(channels, region.lead);
     const channel = channels[channelIndex];
 
     if (!channel) {
@@ -176,6 +176,21 @@ export function resolveECGTraceCells<TChannel extends ECGChannelLike>(args: {
   });
 
   return cells;
+}
+
+/**
+ * Index of the channel whose lead code value is `lead`. A channel with no code
+ * value matches by its code meaning, the channel name, in place of the code.
+ */
+function findLeadByCode(
+  channels: { name: string; code?: string }[],
+  lead: string
+): number {
+  const byCode = channels.findIndex((channel) => channel.code === lead);
+
+  return byCode >= 0
+    ? byCode
+    : channels.findIndex((channel) => !channel.code && channel.name === lead);
 }
 
 function clamp01(value: number): number {

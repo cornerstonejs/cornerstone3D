@@ -57,7 +57,8 @@ export interface ECGTraceRegion {
   bounds: AABB2;
   /**
    * The lead: a channel index, or the lead code value of the channel, for
-   * example `5.6.3-9-2` (SCPECG) or `2:2` (MDC) for lead II.
+   * example `5.6.3-9-2` (SCPECG) or `2:2` (MDC) for lead II. A channel with
+   * no code value matches by its code meaning.
    */
   lead: number | string;
   /**
