@@ -86,8 +86,10 @@ display set id
   -> renderer command      the drawn frame
 ```
 
-Four records hold the state, and each record has one owner and one purpose. The
-contract in
+Five records describe the view, and each record has one owner and one purpose.
+`ResolvedView` holds no state of its own. The family viewport class derives
+`ResolvedView` from the other records for one frame, and no code persists it.
+The contract in
 [ViewportArchitectureTypes.ts:10-22](https://github.com/cornerstonejs/cornerstone3D/blob/main/packages/core/src/RenderingEngine/GenericViewport/ViewportArchitectureTypes.ts#L10-L22)
 states the contract, and this specification repeats it:
 
@@ -374,7 +376,9 @@ For example `ECG/ECGViewportLegacyAdapter.ts`.
 ## Known deviations
 
 The rules above describe the intended design. The code on `main` deviates in the
-places below. Each item names the requirement that the deviation breaks.
+places below. Each item names the requirement that the deviation breaks. An
+item that breaks no requirement yet says so, and names the requirement that a
+future change must obey.
 
 A review uses this section in two ways. A deviation that this section already
 holds is not a new finding. A change that makes one of these deviations worse is
@@ -383,9 +387,9 @@ a finding, and the report names the deviation.
 ### The resolved view of the ECG family reads render-path output
 
 `CanvasECGRenderPath.addData` creates a `metrics` object on the mounted
-rendering, and `drawFrame` overwrites that object on each draw.
-`ECGViewport.getResolvedView` passes the same object into `ECGResolvedView`, and
-the resolved view divides by `metrics.ecgWidth` and `metrics.channelScale` in
+rendering. On each draw, `drawFrame` computes new metrics and replaces that
+object. `ECGViewport.getResolvedView` passes the current `metrics` object into a
+new `ECGResolvedView`, and the resolved view divides by `metrics.ecgWidth` and `metrics.channelScale` in
 `canvasToWorld`.
 
 The world/canvas transform is therefore one frame old after any change of the
@@ -416,6 +420,9 @@ Breaks GENVIEW-STATE-1 and GENVIEW-API-5. `amplitudeScale` belongs in
 
 The option is dead. When a change makes it live, the option goes into
 `ECGViewState` and not into `ECGDataPresentation`, for the reason above.
+
+Breaks no requirement today. A change that reads `sweepSpeed` must obey
+GENVIEW-STATE-1 and GENVIEW-API-5.
 
 ### `utilities/ECGUtilities.ts` serves two viewport classes
 
