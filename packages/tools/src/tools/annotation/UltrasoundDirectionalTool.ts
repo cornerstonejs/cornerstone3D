@@ -784,7 +784,10 @@ class UltrasoundDirectionalTool extends AnnotationTool {
 
       let xValues, yValues, units, isHorizontal;
       let isUnitless = false;
+      // Handles on different index Z, for example two ECG leads, are in
+      // different regions.
       if (
+        Math.round(imageIndex1[2]) !== Math.round(imageIndex2[2]) ||
         units1[0] !== units2[0] ||
         units1[1] !== units2[1] ||
         (units1[0] === 'raw' && units2[0] === 'raw')

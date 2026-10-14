@@ -233,6 +233,53 @@ describe('Ultrasound Directional measurements', () => {
   });
 
   // Negative flows
+  it('falls back to unitless pixels when endpoints are on two ECG leads', () => {
+    const tool = new UltrasoundDirectionalTool();
+    const targetId = 'imageId:twoLeads';
+    const image = {
+      calibration: {
+        sequenceOfUltrasoundRegions: [
+          {
+            regionLocationMinX0: 0,
+            regionLocationMaxX1: 1000,
+            regionLocationMinY0: 0,
+            regionLocationMaxY1: 4000,
+            physicalUnitsXDirection: -2,
+            physicalUnitsYDirection: -1,
+            physicalDeltaX: 1,
+            physicalDeltaY: 0.001,
+          },
+        ],
+      },
+      imageData: {
+        worldToIndex: ([x, y, z]) => [x, y, z],
+      },
+    };
+    const annotation = {
+      data: {
+        cachedStats: { [targetId]: {} },
+        handles: {
+          points: [
+            [100, 2000, 3],
+            [300, 2000, 4],
+          ],
+        },
+      },
+      invalidated: false,
+    };
+    const viewport = {
+      element: document.createElement('div'),
+      worldToCanvas: ([x, y]) => [x, y],
+    };
+
+    tool.getTargetImageData = () => image;
+    tool._calculateCachedStats(annotation, {}, { viewport });
+
+    const stats = annotation.data.cachedStats[targetId];
+    expect(stats.isUnitless).toBe(true);
+    expect(stats.units).toEqual(['px']);
+  });
+
   it('falls back to unitless pixels when endpoints have mismatched units', () => {
     const tool = new UltrasoundDirectionalTool();
     const targetId = 'imageId:mismatchTest';
