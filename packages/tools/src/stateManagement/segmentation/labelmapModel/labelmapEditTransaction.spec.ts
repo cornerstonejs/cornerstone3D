@@ -33,6 +33,7 @@ import {
 import { registerLabelmap } from './labelmapLayerStore';
 import {
   getLabelToSegmentIndex,
+  removeSegmentBinding,
   setSegmentBinding,
 } from './labelmapSegmentBindings';
 
@@ -224,6 +225,31 @@ describe('labelmap edit transactions', () => {
 
     labelToSegmentIndex[1] = 5;
     expect(getLabelToSegmentIndex(segmentation, 'layerB')).toEqual({ 1: 3 });
+  });
+
+  it('clears the old label value from the old layer when a binding moves or goes away', () => {
+    const segmentation = createSegmentation();
+    const layerAVoxelManager = createVoxelManager([1, 2, 0, 2]);
+    const layerBVoxelManager = createVoxelManager([1, 0, 1, 0]);
+    mockCache.getImage.mockImplementation((imageId: string) => {
+      const voxelManager = {
+        'layerA-image': layerAVoxelManager,
+        'layerB-image': layerBVoxelManager,
+      }[imageId];
+      return voxelManager ? { imageId, voxelManager } : undefined;
+    });
+
+    // Segment 2 moves from label value 2 of layer A to label value 2 of layer B.
+    setSegmentBinding(segmentation, 2, { labelmapId: 'layerB', labelValue: 2 });
+
+    expect(layerAVoxelManager.values).toEqual([1, 0, 0, 0]);
+    expect(getLabelToSegmentIndex(segmentation, 'layerA')).toEqual({ 1: 1 });
+
+    // Segment 3 goes away.
+    removeSegmentBinding(segmentation, 3);
+
+    expect(layerBVoxelManager.values).toEqual([0, 0, 0, 0]);
+    expect(getLabelToSegmentIndex(segmentation, 'layerB')).toEqual({ 2: 2 });
   });
 
   it('keeps the segment on its shared layer when the overlap is allowed', () => {
