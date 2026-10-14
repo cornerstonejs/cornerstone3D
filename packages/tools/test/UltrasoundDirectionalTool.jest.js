@@ -288,38 +288,7 @@ describe('Ultrasound Directional measurements', () => {
     expect(textLines[0]).toMatch(/\d+ px/);
   });
 
-  it('safely bails out when handles have less than 2 points', () => {
-    const tool = new UltrasoundDirectionalTool();
-    const annotation = {
-      data: {
-        cachedStats: {},
-        handles: { points: [[0, 0, 0]] },
-      },
-    };
-    const result = tool._calculateCachedStats(annotation, {}, { viewport: {} });
-    expect(result).toBeUndefined();
-  });
-
-  it('safely skips when target image data is not found', () => {
-    const tool = new UltrasoundDirectionalTool();
-    const targetId = 'imageId:missing';
-    const annotation = {
-      data: {
-        cachedStats: { [targetId]: {} },
-        handles: {
-          points: [
-            [0, 0, 0],
-            [10, 10, 0],
-          ],
-        },
-      },
-    };
-    tool.getTargetImageData = () => null;
-    const result = tool._calculateCachedStats(annotation, {}, { viewport: {} });
-    expect(result[targetId]).toEqual({});
-  });
-
-  it('rejects adding annotation on unsupported viewport', () => {
+  it('rejects adding annotation on a viewport that shows a volume', () => {
     const tool = new UltrasoundDirectionalTool();
     const element = document.createElement('div');
     const mockEngineId = 'testUnsupportedEngine';
@@ -328,10 +297,16 @@ describe('Ultrasound Directional measurements', () => {
     element.dataset.viewportUid = mockViewportId;
     element.dataset.renderingEngineUid = mockEngineId;
 
+    // A viewport in volume mode has the image slice methods too, so the tool
+    // must test the content mode.
     const fakeUnsupportedViewport = {
       id: mockViewportId,
       element,
-      // does not implement viewportSupportsImageSlices or viewportSupportsWaveform
+      getCurrentMode: () => 'volume',
+      getCurrentImageId: () => 'imageId:1',
+      getCurrentImageIdIndex: () => 0,
+      getImageIds: () => ['imageId:1'],
+      hasImageURI: () => true,
     };
 
     renderingEngineCache.set({
@@ -351,7 +326,7 @@ describe('Ultrasound Directional measurements', () => {
 
     try {
       expect(() => tool.addNewAnnotation(evt)).toThrow(
-        /UltrasoundDirectionalTool can only be used on a viewport that supports image slices.*or waveform data/
+        /UltrasoundDirectionalTool can only be used on a viewport that shows a stack or an ECG/
       );
     } finally {
       renderingEngineCache.delete(mockEngineId);

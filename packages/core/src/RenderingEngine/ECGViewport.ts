@@ -47,8 +47,8 @@ interface ChannelLayout {
  * ECGViewport renders DICOM ECG waveform data on an HTML canvas.
  * Based on the VideoViewport custom rendering pipeline pattern.
  *
- * @deprecated Use `ViewportType.ECG` with the `ECGViewportLegacyAdapter`
- * (or `ViewportType.ECG_NEXT` with the canonical `GenericViewport/ECG/ECGViewport`) instead.
+ * @deprecated `ViewportType.ECG` and `ViewportType.ECG_NEXT` now give the
+ * Generic Viewport ECG family. Use `ViewportType.ECG_LEGACY` for this class.
  * This legacy class will be removed in a future major release.
  */
 class ECGViewport extends Viewport {

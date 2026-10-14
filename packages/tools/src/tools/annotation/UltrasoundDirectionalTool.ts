@@ -1,5 +1,9 @@
 import { ChangeTypes, Events } from '../../enums';
-import { getEnabledElement, utilities as csUtils } from '@cornerstonejs/core';
+import {
+  getEnabledElement,
+  utilities as csUtils,
+  StackViewport,
+} from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import { AnnotationTool } from '../base';
@@ -117,12 +121,15 @@ class UltrasoundDirectionalTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
 
+    const contentMode = csUtils.getViewportContentMode(viewport);
+
     if (
-      !csUtils.viewportSupportsImageSlices(viewport) &&
-      !csUtils.viewportSupportsWaveform(viewport)
+      !(viewport instanceof StackViewport) &&
+      contentMode !== 'stack' &&
+      contentMode !== 'ecg'
     ) {
       throw new Error(
-        'UltrasoundDirectionalTool can only be used on a viewport that supports image slices (StackViewport) or waveform data (ECGViewport)'
+        'UltrasoundDirectionalTool can only be used on a viewport that shows a stack or an ECG'
       );
     }
 

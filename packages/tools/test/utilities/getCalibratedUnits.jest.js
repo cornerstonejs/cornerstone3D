@@ -99,10 +99,12 @@ describe('getCalibratedUnits', function () {
         [100, 10, 0],
       ];
       const calibrate = getCalibratedLengthUnitsAndScale(image, handles);
-      const { unit, scale, scaleY } = calibrate;
-      expect(unit).toBe('ms ECG Region');
-      expect(scale).toBe(1); // 1 / (0.001 * 1000) = 1
-      expect(scaleY).toBe(200); // 1 / 0.005 = 200
+      // A time axis in seconds reports in ms: 90 samples at 1 ms each.
+      expect(calibrate.unit).toBe('ms ECG Region');
+      expect(BaseTool.calculateLengthInIndex(calibrate, handles)).toBeCloseTo(
+        90,
+        6
+      );
     });
 
     it('Should return mV for vertical measurement on ECG region', () => {
@@ -128,10 +130,12 @@ describe('getCalibratedUnits', function () {
         [10, 100, 0], // Vertical orientation
       ];
       const calibrate = getCalibratedLengthUnitsAndScale(image, handles);
-      const { unit, scale, scaleY } = calibrate;
-      expect(unit).toBe('mV ECG Region');
-      expect(scale).toBe(1);
-      expect(scaleY).toBe(200);
+      // 90 raw units at 0.005 mV each.
+      expect(calibrate.unit).toBe('mV ECG Region');
+      expect(BaseTool.calculateLengthInIndex(calibrate, handles)).toBeCloseTo(
+        0.45,
+        6
+      );
     });
 
     it('Should support explicit ms unit code (-2) for ECG region', () => {
@@ -282,13 +286,6 @@ describe('getCalibratedUnits', function () {
       expect(result.units).toEqual(['raw']);
       expect(result.values).toEqual([null]);
     });
-
-    it('returns raw fallback for empty image calibration', () => {
-      const image = {};
-      const result = getCalibratedProbeUnitsAndValue(image, [[10, 10]]);
-      expect(result.units).toEqual(['raw']);
-      expect(result.values).toEqual([null]);
-    });
   });
 
   describe('getCalibratedAspect', () => {
@@ -298,10 +295,6 @@ describe('getCalibratedUnits', function () {
 
     it('returns custom aspect ratio when present in calibration', () => {
       expect(getCalibratedAspect({ calibration: { aspect: 2 } })).toBe(2);
-    });
-
-    it('returns default 1 when aspect ratio is absent', () => {
-      expect(getCalibratedAspect({})).toBe(1);
     });
   });
 

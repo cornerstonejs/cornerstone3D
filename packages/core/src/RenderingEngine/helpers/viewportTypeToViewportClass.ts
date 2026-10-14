@@ -101,8 +101,14 @@ function registerCoreViewportTypes() {
     type: ViewportType.WHOLE_SLIDE,
     ViewportClass: WSIViewport,
   });
+  // ECG is the first legacy type whose default is the Generic Viewport
+  // family. ECG_LEGACY keeps the deprecated class.
   registerViewportType({
     type: ViewportType.ECG,
+    ViewportClass: ECGViewportLegacyAdapter as unknown as ViewportConstructor,
+  });
+  registerViewportType({
+    type: ViewportType.ECG_LEGACY,
     ViewportClass: LegacyECGViewport,
   });
   registerViewportType({
@@ -140,11 +146,7 @@ function registerCoreViewportTypes() {
   });
   registerViewportType({
     type: ViewportType.ECG_NEXT,
-    ViewportClass: ECGViewport,
-    resolveClass: ({ type, requestedType }) =>
-      type === ViewportType.ECG_NEXT && requestedType === ViewportType.ECG
-        ? (ECGViewportLegacyAdapter as unknown as ViewportConstructor)
-        : undefined,
+    ViewportClass: ECGViewportLegacyAdapter as unknown as ViewportConstructor,
   });
   registerViewportType({
     type: ViewportType.WHOLE_SLIDE_NEXT,

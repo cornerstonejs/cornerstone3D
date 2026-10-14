@@ -20,16 +20,19 @@ by default:
 
 - With the flag on, the rendering engine remaps each legacy viewport type to the
   Generic Viewport family through a legacy adapter. `STACK` and `ORTHOGRAPHIC`
-  go to `PLANAR_NEXT`. `VIDEO`, `WHOLE_SLIDE`, `ECG` and `VOLUME_3D` go to the
-  `_NEXT` type of the same name. See `NEXT_TYPE_REMAP` in
-  `BaseRenderingEngine.ts`.
+  go to `PLANAR_NEXT`. `VIDEO`, `WHOLE_SLIDE` and `VOLUME_3D` go to the `_NEXT`
+  type of the same name. See `NEXT_TYPE_REMAP` in `BaseRenderingEngine.ts`.
 - With the flag off, a legacy viewport type uses the old viewport class, for
   example `StackViewport` or `VolumeViewport`.
 - A `_NEXT` viewport type, for example `ViewportType.PLANAR_NEXT`, always uses
   the Generic Viewport family, with or without the flag.
+- `ECG` is the first family whose default is the Generic Viewport. `ECG` and
+  `ECG_NEXT` both give `ECGViewportLegacyAdapter` over the ECG family, with or
+  without the flag. `ECG_LEGACY` gives the old ECG class.
 
 The plan is to move all applications from the old viewport classes to the
 Generic Viewport families, and then to remove the old viewport classes. The
+other families change their default in the same way as each one is ready. The
 rules on this page apply to the Generic Viewport code only. The old viewport
 classes do not follow these rules.
 
@@ -155,10 +158,13 @@ states the contract, and this specification repeats it:
 - **GENVIEW-API-7** An application that used a legacy viewport type keeps its
   API. `ViewportType.ECG`, `STACK`, `ORTHOGRAPHIC`, `VIDEO`, `WHOLE_SLIDE` and
   `VOLUME_3D` each resolve to a legacy adapter that carries the old methods.
+  When a family makes the Generic Viewport its default, a `<FAMILY>_LEGACY`
+  type, for example `ViewportType.ECG_LEGACY`, keeps the old class.
 - **GENVIEW-API-8** A direct generic viewport type, for example
-  `ViewportType.ECG_NEXT`, carries the clean API only. The developer reads the
-  list of clean methods, and the developer knows which methods survive the
-  removal of the legacy adapters.
+  `ViewportType.PLANAR_NEXT`, carries the clean API only. The developer reads
+  the list of clean methods, and the developer knows which methods survive the
+  removal of the legacy adapters. Exception: `ECG_NEXT` gives the same legacy
+  adapter as `ECG`, because `ECG` already defaults to the ECG family.
 
 ### The extension points of the architecture (GENVIEW-EXT)
 
@@ -355,7 +361,8 @@ For example `Planar/PlanarViewportLegacyAdapter.ts`.
   space goes through the resolved view of the family.
 - **GENVIEW-LEGACY-4** `viewportTypeToViewportClass.ts` maps the legacy viewport
   type to the adapter through `resolveClass`, and it maps the `_NEXT` type to
-  the family class.
+  the family class. A family whose default is the Generic Viewport maps the
+  legacy type straight to the adapter, and the `_LEGACY` type to the old class.
 - **GENVIEW-LEGACY-5** The legacy adapter is temporary. A new feature goes on the
   family class, and the adapter translates to it.
 
@@ -441,15 +448,11 @@ Breaks GENVIEW-STATE-5. The local declaration goes when the ECG code moves into
 family, the WSI family and the Volume3D family do not, so each one answers
 `'unknown'` whenever data is mounted.
 
-`UltrasoundDirectionalTool` shows the cost. Its guard reads:
-
-```ts
-if (!(viewport instanceof StackViewport) && !(viewport instanceof ECGViewport)) {
-```
-
-An `instanceof` test names one class. It does not extend to a viewport type that
-an application registers, and it cannot tell a planar viewport that shows a
-stack from one that shows a volume.
+`UltrasoundDirectionalTool` shows the cost. Its guard tests
+`getCurrentMode()` for `'stack'` or `'ecg'`, and it still needs
+`viewport instanceof StackViewport` for the legacy stack class. An `instanceof`
+test names one class. It does not extend to a viewport type that an
+application registers.
 
 Breaks GENVIEW-FAMILY-5 and GENVIEW-API-6.
 
