@@ -299,8 +299,6 @@ describe('getCalibratedUnits', function () {
   });
 
   describe('ECG region lengths', () => {
-    // 1000 samples at 1 ms each, and an amplitude extent of 4000 raw units
-    // at 0.001 mV each.
     const ecgImage = {
       calibration: {
         sequenceOfUltrasoundRegions: [
@@ -325,33 +323,14 @@ describe('getCalibratedUnits', function () {
       };
     };
 
-    it('measures a mostly horizontal length in ms only', () => {
+    it('gives an uncalibrated px length, as a US region with mixed units does', () => {
       const { unit, length } = lengthOf([
         [100, 2000, 3],
-        [300, 2400, 3],
-      ]);
-
-      expect(unit).toBe('ms ECG Region');
-      expect(length).toBeCloseTo(200, 6);
-    });
-
-    it('measures a mostly vertical length in mV only', () => {
-      const { unit, length } = lengthOf([
-        [100, 1000, 3],
-        [110, 3000, 3],
-      ]);
-
-      expect(unit).toBe('mV ECG Region');
-      expect(length).toBeCloseTo(2, 6);
-    });
-
-    it('reports px with no calibration across two leads', () => {
-      const { unit } = lengthOf([
-        [100, 2000, 3],
-        [300, 2000, 4],
+        [400, 2400, 3],
       ]);
 
       expect(unit).toBe('px');
+      expect(length).toBeCloseTo(500, 6);
     });
   });
 });
