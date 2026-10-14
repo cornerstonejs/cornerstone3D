@@ -47,7 +47,7 @@ function makeView({
   timeRange = [0, DURATION_MS],
   valueRange = [-1000, 1000],
   scale = 1,
-  dataPresentation = undefined,
+  options = {},
   canvas = makeCanvas(),
 } = {}) {
   return new ECGResolvedView({
@@ -59,9 +59,9 @@ function makeView({
       rotation: 0,
       anchorCanvas: [0.5, 0.5],
       scrollOffset: 0,
+      ...options,
     },
     canvas,
-    dataPresentation,
     frameOfReferenceUID: 'ecg-viewport-test',
     waveform: makeWaveform(),
   });
@@ -122,7 +122,7 @@ describe('ECGResolvedView owns the world geometry', () => {
     it('changes the amplitude scale when the sensitivity changes', () => {
       const autoFit = makeView();
       const calibrated = makeView({
-        dataPresentation: { sensitivityMmMv: 10 },
+        options: { sensitivityMmMv: 10 },
       });
 
       expect(calibrated.metrics.channelScale).not.toBeCloseTo(
@@ -132,8 +132,8 @@ describe('ECGResolvedView owns the world geometry', () => {
     });
 
     it('changes the layout when the arrangement changes', () => {
-      const rows = makeView({ dataPresentation: { layoutType: '12x1' } });
-      const grid = makeView({ dataPresentation: { layoutType: '3x4+1' } });
+      const rows = makeView({ options: { layoutType: '12x1' } });
+      const grid = makeView({ options: { layoutType: '3x4+1' } });
 
       // The 3x4+1 layout adds the rhythm strip, so it holds one more cell.
       expect(grid.channelLayouts).toHaveLength(rows.channelLayouts.length + 1);
@@ -160,8 +160,8 @@ describe('ECGResolvedView owns the world geometry', () => {
     });
 
     it('changes the world width when the sweep speed changes', () => {
-      const slow = makeView({ dataPresentation: { sweepSpeed: 25 } });
-      const fast = makeView({ dataPresentation: { sweepSpeed: 50 } });
+      const slow = makeView({ options: { sweepSpeed: 25 } });
+      const fast = makeView({ options: { sweepSpeed: 50 } });
 
       expect(fast.metrics.ecgWidth).toBeCloseTo(slow.metrics.ecgWidth * 2, 0);
     });
@@ -169,7 +169,7 @@ describe('ECGResolvedView owns the world geometry', () => {
 
   describe('the transforms use the same geometry that the render path draws', () => {
     it('round trips a point of every layout cell', () => {
-      const view = makeView({ dataPresentation: { layoutType: '3x4+1' } });
+      const view = makeView({ options: { layoutType: '3x4+1' } });
 
       view.channelLayouts.forEach((layout) => {
         const sampleIndex = (layout.startSample + layout.endSample) / 2;
@@ -263,9 +263,10 @@ describe('ECGResolvedView owns the world geometry', () => {
           rotation: 0,
           anchorCanvas: [0.5, 0.5],
           scrollOffset: 0,
+          sensitivityMmMv: 10,
+          layoutType: '12x1',
         },
         canvas: makeCanvas(),
-        dataPresentation: { sensitivityMmMv: 10, layoutType: '12x1' },
         frameOfReferenceUID: 'ecg-viewport-test',
         waveform,
       });
@@ -306,101 +307,64 @@ describe('ECGResolvedView owns the world geometry', () => {
     });
   });
 
-  describe('ECGViewState geometry options precedence over DataPresentation (Step 10)', () => {
-    it('uses sweepSpeed from viewState over dataPresentation', () => {
-      const view = new ECGResolvedView({
-        viewState: {
-          timeRange: [0, DURATION_MS],
-          valueRange: [-1000, 1000],
-          sweepSpeed: 50,
-        },
-        canvas: makeCanvas(),
-        dataPresentation: { sweepSpeed: 25 },
-        frameOfReferenceUID: 'ecg-viewport-test',
-        waveform: makeWaveform(),
-      });
+  describe('the user sees the trace where the transforms put it', () => {
+    it('maps the left edge of a 12x1 row to the start of the time window', () => {
+      const view = makeView({ timeRange: [2000, 4000] });
+      const layout = view.channelLayouts[0];
+      const mapping = view.canvasTransform;
+      const leftEdge = [
+        layout.xOffset * mapping.effectiveRatio + mapping.xOffset,
+        layout.baseline * mapping.effectiveRatio + mapping.yOffset,
+      ];
 
-      expect(view.metrics.sweepSpeed).toBe(50);
+      // 2000 ms at 500 Hz is sample 1000.
+      expect(layout.startSample).toBe(1000);
+      expect(view.canvasToWorld(leftEdge)[0]).toBeCloseTo(1000, 3);
+      const back = view.canvasToWorld(view.worldToCanvas([1500, 0, 0]));
+      expect(back[0]).toBeCloseTo(1500, 3);
     });
 
-    it('falls back to sweepSpeed from dataPresentation when omitted in viewState', () => {
-      const view = new ECGResolvedView({
-        viewState: {
-          timeRange: [0, DURATION_MS],
-          valueRange: [-1000, 1000],
-        },
-        canvas: makeCanvas(),
-        dataPresentation: { sweepSpeed: 50 },
-        frameOfReferenceUID: 'ecg-viewport-test',
-        waveform: makeWaveform(),
+    it('shows the full record in a multi-column layout whatever the time range', () => {
+      const view = makeView({
+        timeRange: [2000, 4000],
+        options: { layoutType: '3x4' },
       });
 
-      expect(view.metrics.sweepSpeed).toBe(50);
+      expect(view.timeWindow.endMs - view.timeWindow.startMs).toBe(DURATION_MS);
+      expect(view.channelLayouts[0].startSample).toBe(0);
     });
 
-    it('uses sensitivityMmMv from viewState over dataPresentation', () => {
-      const view = new ECGResolvedView({
-        viewState: {
-          timeRange: [0, DURATION_MS],
-          valueRange: [-1000, 1000],
-          sensitivityMmMv: 20,
-        },
-        canvas: makeCanvas(),
-        dataPresentation: { sensitivityMmMv: 10 },
-        frameOfReferenceUID: 'ecg-viewport-test',
-        waveform: makeWaveform(),
-      });
+    it('applies the amplitude scale to the transform', () => {
+      const plain = makeView();
+      const doubled = makeView({ options: { amplitudeScale: 2 } });
+      const layout = plain.channelLayouts[0];
+      const baselineY =
+        layout.baseline * plain.canvasTransform.effectiveRatio +
+        plain.canvasTransform.yOffset;
+      const deflection = (view) =>
+        baselineY - view.worldToCanvas([100, 500, layout.leadIndex])[1];
 
-      // 20 mm/mV scale vs 10 mm/mV scale
-      const viewFallback = new ECGResolvedView({
-        viewState: {
-          timeRange: [0, DURATION_MS],
-          valueRange: [-1000, 1000],
-        },
-        canvas: makeCanvas(),
-        dataPresentation: { sensitivityMmMv: 10 },
-        frameOfReferenceUID: 'ecg-viewport-test',
-        waveform: makeWaveform(),
-      });
-
-      expect(view.metrics.channelScale).toBeCloseTo(
-        viewFallback.metrics.channelScale * 2,
-        4
+      expect(deflection(doubled)).toBeCloseTo(deflection(plain) * 2, 4);
+      const back = doubled.canvasToWorld(
+        doubled.worldToCanvas([100, 500, layout.leadIndex])
       );
+      expect(back[1]).toBeCloseTo(500, 3);
     });
 
-    it('uses layoutType from viewState over dataPresentation', () => {
-      const view = new ECGResolvedView({
-        viewState: {
-          timeRange: [0, DURATION_MS],
-          valueRange: [-1000, 1000],
-          layoutType: '6x2',
+    it('keeps the grid cell of a lead when another lead is hidden', () => {
+      const all = makeView({ options: { layoutType: '3x4' } });
+      // Hide lead I (index 0). aVR (index 3) keeps column 1.
+      const hidden = makeView({
+        options: {
+          layoutType: '3x4',
+          visibleChannels: LEAD_NAMES.map((_name, i) => i).slice(1),
         },
-        canvas: makeCanvas(),
-        dataPresentation: { layoutType: '12x1' },
-        frameOfReferenceUID: 'ecg-viewport-test',
-        waveform: makeWaveform(),
       });
+      const cellOf = (view) =>
+        view.channelLayouts.find((layout) => layout.leadIndex === 3);
 
-      expect(view.layoutType).toBe('6x2');
-    });
-
-    it('uses visibleChannels from viewState over dataPresentation', () => {
-      const view = new ECGResolvedView({
-        viewState: {
-          timeRange: [0, DURATION_MS],
-          valueRange: [-1000, 1000],
-          visibleChannels: [0, 1], // only Lead I and Lead II
-        },
-        canvas: makeCanvas(),
-        dataPresentation: { visibleChannels: [0, 1, 2, 3] },
-        frameOfReferenceUID: 'ecg-viewport-test',
-        waveform: makeWaveform(),
-      });
-
-      expect(view.channelLayouts).toHaveLength(2);
-      expect(view.channelLayouts[0].channel.name).toBe('Lead I');
-      expect(view.channelLayouts[1].channel.name).toBe('Lead II');
+      expect(cellOf(hidden).col).toBe(cellOf(all).col);
+      expect(cellOf(hidden).startSample).toBe(cellOf(all).startSample);
     });
   });
 });

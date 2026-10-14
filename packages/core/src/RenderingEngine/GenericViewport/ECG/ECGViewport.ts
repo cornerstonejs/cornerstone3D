@@ -24,7 +24,6 @@ import type {
   ECGViewportInput,
   ECGWaveformPayload,
   ECGResetViewStateOptions,
-  ECGSetDataOptions,
 } from './ECGViewportTypes';
 import {
   createDefaultECGViewState,
@@ -95,10 +94,13 @@ class ECGViewport extends GenericViewport<
    * Replaces all mounted waveform display sets with the provided ones using
    * the canvas ECG render path.
    *
+   * The view state resets to the full record with every channel visible. The
+   * layout type, the sweep speed, the sensitivity and the amplitude scale stay.
+   *
    * @param entries - Waveform display sets to mount.
    */
   async setDisplaySets(
-    ...entries: Array<{ displaySetId: string; options?: ECGSetDataOptions }>
+    ...entries: Array<{ displaySetId: string }>
   ): Promise<void> {
     this.removeAllData();
 
@@ -106,18 +108,22 @@ class ECGViewport extends GenericViewport<
       const waveform = await this.loadWaveformData(displaySetId);
       const durationMs =
         (waveform.numberOfSamples / waveform.samplingFrequency) * 1000;
+      const { layoutType, sweepSpeed, sensitivityMmMv, amplitudeScale } =
+        this.viewState;
 
       this.setDefaultDataPresentation(displaySetId, {
         visible: true,
         opacity: 1,
-        visibleChannels: waveform.channels.map((_channel, index) => index),
         lineWidth: 1,
-        amplitudeScale: 1,
         showGrid: true,
       });
       this.viewState = createDefaultECGViewState({
         timeRange: [0, durationMs],
         valueRange: getDefaultECGValueRange(waveform),
+        layoutType,
+        sweepSpeed,
+        sensitivityMmMv,
+        amplitudeScale,
       });
 
       await this.addLoadedData(displaySetId, waveform, {
@@ -270,9 +276,8 @@ class ECGViewport extends GenericViewport<
       return [];
     }
 
-    const dataId = waveform.id;
     const visibleChannels = new Set(
-      this.getDisplaySetPresentation(dataId)?.visibleChannels ||
+      this.viewState.visibleChannels ||
         waveform.channels.map((_channel, index) => index)
     );
 
@@ -333,25 +338,36 @@ class ECGViewport extends GenericViewport<
   }
 
   /**
-   * Resets pan, zoom, and scroll to defaults while preserving the loaded
-   * time/value range, then re-renders. Called by `resetCamera()` and the
-   * toolbar "Reset View" button.
+   * Resets the pan and the zoom, and optionally the time window. The layout
+   * options of the view state stay. Called by `resetCamera()` and the toolbar
+   * "Reset View" button.
    *
-   * @param options - Optional reset options (resetPan, resetZoom, resetTimeRange).
+   * @param options - Flags controlling which view-state fields are reset.
+   * @returns Always `true` for compatibility with legacy viewport contracts.
    */
   resetViewState(options?: ECGResetViewStateOptions): boolean {
-    const previousCamera = this.getCameraForEvent();
+    const {
+      resetPan = true,
+      resetZoom = true,
+      resetTimeRange = false,
+    } = options || {};
+    const nextViewState: Partial<ECGViewState> = { scrollOffset: 0 };
 
-    const durationMs = this.getDurationMs();
-    const timeRange = options?.resetTimeRange
-      ? ([0, durationMs] as [number, number])
-      : this.viewState.timeRange;
+    if (resetPan) {
+      nextViewState.anchorWorld = undefined;
+      nextViewState.anchorCanvas = [0.5, 0.5];
+    }
 
-    this.viewState = createDefaultECGViewState({
-      timeRange,
-      valueRange: this.viewState.valueRange,
-    });
-    this.modified(previousCamera);
+    if (resetZoom) {
+      nextViewState.scale = 1;
+      nextViewState.scaleMode = 'fit';
+    }
+
+    if (resetTimeRange) {
+      nextViewState.timeRange = [0, this.getDurationMs()];
+    }
+
+    this.setViewState(nextViewState);
     this.triggerCameraResetEvent();
 
     return true;
@@ -365,72 +381,53 @@ class ECGViewport extends GenericViewport<
   }
 
   /**
-   * Scrolls the ECG viewport horizontally by `delta` viewport-widths.
-   * Matches the Planar family scroll signature.
+   * Scrolls the time window by `delta` window widths. Matches the Planar
+   * family scroll signature.
    *
-   * When the full signal is in view (windowMs >= durationMs), safely no-ops at t=0.
-   * When zoomed in (windowMs < durationMs), shifts and clamps smoothly, preserving windowMs.
+   * The scroll does nothing when the window shows the full record, which is
+   * always true for a multi-column layout.
    *
-   * @param delta - Number of viewport-widths to shift (default 1).
+   * @param delta - Number of window widths to shift (default 1).
    * @returns Promise resolving to the current source imageId.
    */
   async scroll(delta = 1): Promise<string> {
-    const waveform = this.getWaveformData();
+    const timeWindow = this.getResolvedView()?.timeWindow;
 
-    if (!waveform) {
-      return this.getCurrentImageId();
+    if (timeWindow) {
+      const windowMs = Math.max(1, timeWindow.endMs - timeWindow.startMs);
+      this.scrollToTime(timeWindow.startMs + windowMs * delta);
     }
-
-    const durationMs = this.getDurationMs();
-    const [startMs, endMs] = this.viewState.timeRange;
-    const windowMs = Math.max(1, endMs - startMs);
-
-    // Clean no-op when full signal is in view
-    if (windowMs >= durationMs) {
-      return this.getCurrentImageId();
-    }
-
-    const shiftMs = windowMs * delta;
-    const nextStart = Math.max(
-      0,
-      Math.min(startMs + shiftMs, durationMs - windowMs)
-    );
-    const nextEnd = nextStart + windowMs;
-
-    const previousCamera = this.getCameraForEvent();
-    this.viewState = {
-      ...this.viewState,
-      timeRange: [nextStart, nextEnd],
-    };
-    this.modified(previousCamera);
 
     return this.getCurrentImageId();
   }
 
   /**
-   * Scrolls the visible window so that `timeMs` is at the left edge.
+   * Scrolls the time window so that `timeMs` is at the left edge. The window
+   * keeps its width and stays inside the record.
    *
    * @param timeMs - Target start time in milliseconds.
    */
   scrollToTime(timeMs: number): void {
-    const waveform = this.getWaveformData();
+    const timeWindow = this.getResolvedView()?.timeWindow;
+    const durationMs = this.getDurationMs();
 
-    if (!waveform) {
+    if (!timeWindow) {
       return;
     }
 
-    const durationMs = this.getDurationMs();
-    const [startMs, endMs] = this.viewState.timeRange;
-    const windowMs = Math.max(1, endMs - startMs);
-    const nextStart = Math.max(0, Math.min(timeMs, durationMs - windowMs));
-    const nextEnd = Math.min(durationMs, nextStart + windowMs);
+    const windowMs = Math.max(1, timeWindow.endMs - timeWindow.startMs);
 
-    const previousCamera = this.getCameraForEvent();
-    this.viewState = {
-      ...this.viewState,
-      timeRange: [nextStart, nextEnd],
-    };
-    this.modified(previousCamera);
+    if (windowMs >= durationMs) {
+      return;
+    }
+
+    const nextStart = Math.max(0, Math.min(timeMs, durationMs - windowMs));
+
+    if (nextStart === timeWindow.startMs) {
+      return;
+    }
+
+    this.setViewState({ timeRange: [nextStart, nextStart + windowMs] });
   }
 
   /**
@@ -598,14 +595,10 @@ class ECGViewport extends GenericViewport<
   }
 
   /**
-   * Builds the resolved view of the current frame.
-   *
-   * The snapshot comes from the mounted waveform, the canvas geometry, the view
-   * state and the data presentation. It does not read the mounted rendering,
-   * so a transform is correct before the first draw and after every view-state
-   * change. The previous version read the metrics that the last draw had left
-   * on the render path, which made a transform one frame stale, and made it
-   * report a placeholder geometry until the first frame.
+   * Builds the resolved view of the current frame from the mounted waveform,
+   * the canvas geometry, the view state and the data presentation. It does not
+   * read the mounted rendering, so a transform is correct before the first
+   * draw (GENVIEW-VIEW-2).
    */
   getResolvedView(): ECGResolvedView | undefined {
     const waveform = this.getWaveformBindingData();

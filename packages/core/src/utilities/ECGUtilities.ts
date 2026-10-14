@@ -314,9 +314,9 @@ const ECG_LAYOUT_NOMINAL_ROWS: Record<ECGLayoutType, number> = {
 };
 
 /**
- * Returns the number of rows that a layout uses for a given count of visible
- * leads. The grid grows above the nominal size when the waveform holds more
- * leads than the nominal layout holds.
+ * Returns the number of rows that a layout uses for a given count of leads.
+ * The grid grows above the nominal size when the waveform holds more leads
+ * than the nominal layout holds.
  */
 export function getECGLayoutRowCount(
   layoutType: ECGLayoutType,
@@ -335,6 +335,53 @@ export function getECGLayoutRowCount(
     ECG_LAYOUT_NOMINAL_ROWS[layoutType],
     layoutType === '3x4+1' ? gridRows + 1 : gridRows
   );
+}
+
+interface ECGLayoutSlots {
+  rowCount: number;
+  colCount: number;
+  /** Row and column of each visible lead, in the order of `visibleChannels`. */
+  positions: { row: number; col: number }[];
+  /** Number of grid rows that hold at least one visible lead. */
+  occupiedRowCount: number;
+}
+
+/**
+ * Places each visible lead in a grid cell.
+ *
+ * With `leadIndices` and `channelCount`, a lead takes the cell of its index in
+ * the unfiltered channel list, so a hidden lead does not move the other leads.
+ * Without them, the leads fill the grid in order.
+ */
+function getECGLayoutSlots(args: {
+  layoutType: ECGLayoutType;
+  visibleCount: number;
+  leadIndices?: number[];
+  channelCount?: number;
+}): ECGLayoutSlots {
+  const { layoutType, visibleCount, leadIndices, channelCount } = args;
+  const useLeadSlots = !!leadIndices && channelCount !== undefined;
+  const slotCount = useLeadSlots ? channelCount : visibleCount;
+  const rowsPerColumn = ECG_LAYOUT_ROWS_PER_COLUMN[layoutType];
+  const usedColumns = Number.isFinite(rowsPerColumn)
+    ? Math.ceil(slotCount / rowsPerColumn)
+    : 1;
+  const positions = Array.from({ length: visibleCount }, (_value, index) => {
+    const slot = useLeadSlots ? leadIndices[index] : index;
+
+    return Number.isFinite(rowsPerColumn)
+      ? { row: slot % rowsPerColumn, col: Math.floor(slot / rowsPerColumn) }
+      : { row: slot, col: 0 };
+  });
+  const occupiedRows = new Set(positions.map(({ row }) => row));
+
+  return {
+    rowCount: getECGLayoutRowCount(layoutType, slotCount),
+    colCount: Math.max(ECG_LAYOUT_NOMINAL_COLUMNS[layoutType], usedColumns),
+    positions,
+    occupiedRowCount:
+      occupiedRows.size + (layoutType === '3x4+1' && visibleCount > 0 ? 1 : 0),
+  };
 }
 
 interface ECGLayoutItem<TChannel extends ECGChannelLike> {
@@ -382,8 +429,8 @@ function getECGRhythmPosition<TChannel extends ECGChannelLike>(
  * items, the row heights, the row offsets and the total height.
  *
  * The grid grows when the waveform holds more leads than the nominal layout, so
- * a 15-lead ECG keeps every lead. The nominal layout stays the minimum size, so
- * a 12-lead ECG in the `12x1` layout still reserves 12 rows.
+ * a 15-lead ECG keeps every lead. A row that holds no visible lead gets zero
+ * height, so a hidden lead keeps its cell and the other rows use the space.
  */
 function computeECGLayoutGrid<TChannel extends ECGChannelLike>(args: {
   visibleChannels: TChannel[];
@@ -401,16 +448,13 @@ function computeECGLayoutGrid<TChannel extends ECGChannelLike>(args: {
     channelCount,
     sensitivityMmMv,
   } = args;
-  const rowsPerColumn = ECG_LAYOUT_ROWS_PER_COLUMN[layoutType];
   const visibleCount = visibleChannels.length;
-  const usedColumns = Number.isFinite(rowsPerColumn)
-    ? Math.ceil(visibleCount / rowsPerColumn)
-    : 1;
-  const colCount = Math.max(
-    ECG_LAYOUT_NOMINAL_COLUMNS[layoutType],
-    usedColumns
-  );
-  const rowCount = getECGLayoutRowCount(layoutType, visibleCount);
+  const { rowCount, colCount, positions } = getECGLayoutSlots({
+    layoutType,
+    visibleCount,
+    leadIndices,
+    channelCount,
+  });
 
   // A grid cell keeps the index of its channel in the unfiltered channel list,
   // so the identifier survives a change of the visible leads or of the layout.
@@ -419,15 +463,10 @@ function computeECGLayoutGrid<TChannel extends ECGChannelLike>(args: {
   const items: ECGLayoutItem<TChannel>[] = [];
 
   visibleChannels.forEach((channel, index) => {
-    const row = Number.isFinite(rowsPerColumn) ? index % rowsPerColumn : index;
-    const col = Number.isFinite(rowsPerColumn)
-      ? Math.floor(index / rowsPerColumn)
-      : 0;
-
     items.push({
       channel,
-      row,
-      col,
+      row: positions[index].row,
+      col: positions[index].col,
       leadIndex: resolvedLeadIndices[index] ?? index,
       isRhythm: false,
     });
@@ -474,15 +513,18 @@ function computeECGLayoutGrid<TChannel extends ECGChannelLike>(args: {
 
   const rowYOffsets = new Array(rowCount).fill(0);
   const rowBaselines = new Array(rowCount).fill(0);
-  const defaultEmptyRowHeight = 100 * channelScale * 1.25;
+  const flatRowHeight = 100 * channelScale * 1.25;
   let currentYOffset = 0;
 
   for (let r = 0; r < rowCount; r++) {
-    const rowHeight = rowHeights[r] || defaultEmptyRowHeight;
-    currentYOffset += rowHeight + ECG_CHANNEL_SPACING;
+    const rowItems = items.filter((item) => item.row === r);
+
+    if (rowItems.length) {
+      rowHeights[r] ||= flatRowHeight;
+      currentYOffset += rowHeights[r] + ECG_CHANNEL_SPACING;
+    }
     rowYOffsets[r] = currentYOffset;
 
-    const rowItems = items.filter((item) => item.row === r);
     const minScaled = rowItems.reduce((acc, item) => {
       const scale = getScaleForChannel(item.channel);
       return Math.min(acc, item.channel.min * scale);
@@ -512,7 +554,8 @@ export function computeECGHeight<TChannel extends ECGChannelLike>(
   visibleChannels: TChannel[],
   channelScale: number,
   layoutType: ECGLayoutType = '12x1',
-  sensitivityMmMv?: number
+  sensitivityMmMv?: number,
+  leadSlots?: { leadIndices?: number[]; channelCount?: number }
 ): number {
   if (visibleChannels.length === 0) {
     return 1;
@@ -523,6 +566,8 @@ export function computeECGHeight<TChannel extends ECGChannelLike>(
     channelScale,
     layoutType,
     sensitivityMmMv,
+    leadIndices: leadSlots?.leadIndices,
+    channelCount: leadSlots?.channelCount,
   });
 
   return grid.totalHeight || 1;
@@ -548,6 +593,11 @@ export function computeECGChannelLayouts<
    */
   channelCount?: number;
   sensitivityMmMv?: number;
+  /**
+   * Sample range `[start, end)` that the full-width cells show: the `12x1`
+   * rows and the rhythm strip. Defaults to the full record.
+   */
+  sampleWindow?: [number, number];
 }): ECGChannelLayout<TChannel>[] {
   const {
     visibleChannels,
@@ -558,6 +608,7 @@ export function computeECGChannelLayouts<
     leadIndices,
     channelCount,
     sensitivityMmMv,
+    sampleWindow = [0, numberOfSamples],
   } = args;
 
   const grid = computeECGLayoutGrid({
@@ -582,8 +633,7 @@ export function computeECGChannelLayouts<
   };
 
   grid.items.forEach(({ channel, row, col, leadIndex, isRhythm }) => {
-    let startSample = 0;
-    let endSample = numberOfSamples;
+    let [startSample, endSample] = sampleWindow;
     let width = ecgWidth;
     let xOffset = 0;
 
@@ -636,6 +686,10 @@ export function computeECGRenderMetrics<TChannel extends ECGChannelLike>(args: {
    */
   sensitivityMmMv?: number;
   layoutType?: ECGLayoutType;
+  /** See {@link computeECGChannelLayouts}. */
+  leadIndices?: number[];
+  /** See {@link computeECGChannelLayouts}. */
+  channelCount?: number;
 }): ECGRenderMetrics {
   const {
     canvas,
@@ -645,6 +699,8 @@ export function computeECGRenderMetrics<TChannel extends ECGChannelLike>(args: {
     sweepSpeed,
     sensitivityMmMv,
     layoutType = '12x1',
+    leadIndices,
+    channelCount,
   } = args;
   const resolvedSweepSpeed = sweepSpeed ?? ECG_DEFAULT_SWEEP_SPEED_MM_S;
   // Pixels per second at 1:1 (sweep speed in mm/s × px/mm)
@@ -673,10 +729,14 @@ export function computeECGRenderMetrics<TChannel extends ECGChannelLike>(args: {
         ? canvas.clientHeight / canvas.clientWidth
         : 2 / 3;
     const targetTotalHeight = ecgWidth * canvasAspect;
-    // Use the same row count that the layout uses, so the auto-fit scale still
-    // fills the canvas when the waveform holds more leads than the nominal
-    // layout holds.
-    const rowCount = getECGLayoutRowCount(layoutType, visibleChannels.length);
+    // Count the rows that the layout draws, so the auto-fit scale fills the
+    // canvas with the visible leads only.
+    const rowCount = getECGLayoutSlots({
+      layoutType,
+      visibleCount: visibleChannels.length,
+      leadIndices,
+      channelCount,
+    }).occupiedRowCount;
     const totalSpacing = ECG_CHANNEL_SPACING * Math.max(1, rowCount);
     const heightPerChannel =
       (targetTotalHeight - totalSpacing) / Math.max(1, rowCount);
@@ -687,7 +747,8 @@ export function computeECGRenderMetrics<TChannel extends ECGChannelLike>(args: {
     visibleChannels,
     channelScale,
     layoutType,
-    sensitivityMmMv
+    sensitivityMmMv,
+    { leadIndices, channelCount }
   );
   const clientWidth = canvas.clientWidth || canvas.width || ecgWidth;
   const clientHeight = canvas.clientHeight || canvas.height || ecgHeight;
@@ -759,12 +820,7 @@ export function drawECGGrid<TChannel extends ECGChannelLike = ECGChannelLike>(
     majorH = minorH * 5;
   }
 
-  // The vertical lines mark paper millimetres on the time axis, and one
-  // millimetre of paper is 1/sweepSpeed seconds. The world width already
-  // encodes the sweep speed through `pxPerSecond`, so the same formula serves
-  // the calibrated path and the auto-fit path. The previous code used
-  // `ECG_SECONDS_WIDTH` here while the width came from the sweep speed, so a
-  // major block covered 0.317 s in place of 0.2 s.
+  // One paper millimetre is 1/sweepSpeed seconds, for both amplitude modes.
   const resolvedSweepSpeed =
     sweepSpeed != null && sweepSpeed > 0
       ? sweepSpeed
@@ -848,8 +904,6 @@ export function drawECGTraces<TChannel extends ECGChannelLike>(args: {
   layouts: ECGChannelLayout<TChannel>[];
   ecgWidth: number;
   channelScale: number;
-  startIndex?: number;
-  endIndex?: number;
   lineWidth?: number;
   amplitudeScale?: number;
 }): void {
@@ -858,8 +912,6 @@ export function drawECGTraces<TChannel extends ECGChannelLike>(args: {
     layouts,
     ecgWidth,
     channelScale,
-    startIndex = 0,
-    endIndex,
     lineWidth = 1,
     amplitudeScale = 1,
   } = args;
@@ -873,7 +925,6 @@ export function drawECGTraces<TChannel extends ECGChannelLike>(args: {
       width: traceWidth = ecgWidth,
       startSample,
       endSample,
-      isMultiColumn,
     }) => {
       const effectiveChannelScale = layoutScale ?? channelScale;
       // The layout always sets `endSample` now, so the clamp against the real
@@ -889,28 +940,11 @@ export function drawECGTraces<TChannel extends ECGChannelLike>(args: {
       // still gets its baseline, so the reader sees an empty cell in place of
       // nothing.
       const hasSamples = layoutEnd > layoutStart;
-
-      // Multi-column grid cells represent fixed partitions of the full signal.
-      // Global time window clipping applies only to full-duration traces (12x1 and rhythm strip).
-      const resolvedStartIndex = isMultiColumn
-        ? layoutStart
-        : Math.max(
-            layoutStart,
-            Math.min(
-              startIndex !== undefined ? startIndex : layoutStart,
-              layoutEnd - 1
-            )
-          );
-      const resolvedEndIndex = isMultiColumn
-        ? layoutEnd
-        : Math.min(
-            layoutEnd,
-            Math.max(
-              endIndex !== undefined ? endIndex : layoutEnd,
-              resolvedStartIndex + 1
-            )
-          );
-      const sampleCount = Math.max(1, resolvedEndIndex - resolvedStartIndex);
+      // The x scale uses the range of the cell and not the clamped range, so
+      // the trace matches the world/canvas transform of the cell.
+      const sampleCount = Math.max(1, (endSample ?? layoutEnd) - layoutStart);
+      const resolvedStartIndex = layoutStart;
+      const resolvedEndIndex = layoutEnd;
 
       ctx.strokeStyle = ECG_RENDERING_COLORS.baseline;
       ctx.lineWidth = 2;

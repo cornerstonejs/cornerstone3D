@@ -1,5 +1,5 @@
 import scroll from '../src/utilities/scroll';
-import { Events, ViewportType } from '../src/enums';
+import { Events } from '../src/enums';
 import eventTarget from '../src/eventTarget';
 import * as getEnabledElementModule from '../src/getEnabledElement';
 
@@ -57,59 +57,6 @@ describe('scroll utility — ECG viewport handling and bounds checks', () => {
     expect(scrollMock).toHaveBeenCalledWith(1);
     // Crucial check: STACK_SCROLL_OUT_OF_BOUNDS must NOT be triggered
     expect(triggerSpy).not.toHaveBeenCalled();
-  });
-
-  it('delegates to viewport.scroll(delta) when viewport.type is ViewportType.ECG_NEXT', () => {
-    jest
-      .spyOn(getEnabledElementModule, 'default')
-      .mockReturnValue({ viewport: {} });
-
-    const scrollMock = jest.fn();
-    const ecgViewport = {
-      element: dummyElement,
-      type: ViewportType.ECG_NEXT,
-      getCurrentImageIdIndex: () => 0,
-      getImageIds: () => ['ecg-instance-1'],
-      scroll: scrollMock,
-    };
-
-    scroll(ecgViewport, { delta: -1 });
-
-    expect(scrollMock).toHaveBeenCalledWith(-1);
-    expect(triggerSpy).not.toHaveBeenCalled();
-  });
-
-  it('delegates to viewport.scroll(delta) when viewport.type is ViewportType.ECG', () => {
-    jest
-      .spyOn(getEnabledElementModule, 'default')
-      .mockReturnValue({ viewport: {} });
-
-    const scrollMock = jest.fn();
-    const ecgViewport = {
-      element: dummyElement,
-      type: ViewportType.ECG,
-      scroll: scrollMock,
-    };
-
-    scroll(ecgViewport, { delta: 2 });
-
-    expect(scrollMock).toHaveBeenCalledWith(2);
-    expect(triggerSpy).not.toHaveBeenCalled();
-  });
-
-  it('safely no-ops if an ECG viewport does not have a scroll method', () => {
-    jest
-      .spyOn(getEnabledElementModule, 'default')
-      .mockReturnValue({ viewport: {} });
-
-    const ecgViewportWithoutScroll = {
-      element: dummyElement,
-      getCurrentMode: () => 'ecg',
-    };
-
-    expect(() => {
-      scroll(ecgViewportWithoutScroll, { delta: 1 });
-    }).not.toThrow();
   });
 
   it('fires STACK_SCROLL_OUT_OF_BOUNDS for standard non-ECG stack viewports when out of bounds', () => {

@@ -14,11 +14,9 @@ import type {
   RenderPath,
 } from '../ViewportArchitectureTypes';
 import type {
-  ECGViewState,
   ECGCanvasRenderContext,
   ECGCanvasRendering,
   ECGDataPresentation,
-  ECGWaveformPayload,
 } from './ECGViewportTypes';
 import type ECGResolvedView from './ECGResolvedView';
 
@@ -38,17 +36,15 @@ export class CanvasECGRenderPath implements RenderPath<ECGCanvasRenderContext> {
   /**
    * Adds an ECG dataset payload to the render path attachment list.
    * @param ctx - Canvas rendering context.
-   * @param data - ECG waveform dataset payload.
+   * @param _data - ECG waveform dataset payload. The resolved view reads it.
    * @param _options - Additional attachment options.
    * @returns Promise resolving to the render path attachment descriptor.
    */
   async addData(
     ctx: ECGCanvasRenderContext,
-    data: LoadedData,
+    _data: LoadedData,
     _options: DataAddOptions
   ): Promise<RenderPathAttachment<ECGDataPresentation>> {
-    const waveform = data as unknown as LoadedData<ECGWaveformPayload>;
-
     const rendering: ECGCanvasRendering = {
       renderMode: 'signal2d',
       canvas: ctx.canvas,
@@ -69,7 +65,7 @@ export class CanvasECGRenderPath implements RenderPath<ECGCanvasRenderContext> {
         return this.getFrameOfReferenceUID(ctx);
       },
       render: () => {
-        drawFrame(ctx, waveform);
+        drawFrame(ctx);
       },
       removeData: () => {
         this.removeData();
@@ -104,50 +100,7 @@ export class CanvasECGPath
   }
 }
 
-/**
- * Returns the sample range that the view state selects, clamped to the signal.
- */
-function computeTimeWindow(
-  waveform: ECGWaveformPayload,
-  camera: ECGViewState
-): {
-  startMs: number;
-  endMs: number;
-  startIndex: number;
-  endIndex: number;
-} {
-  const durationMs =
-    (waveform.numberOfSamples / waveform.samplingFrequency) * 1000;
-  const startMs = Math.max(0, Math.min(camera.timeRange[0], durationMs));
-  const requestedEnd = Math.max(startMs + 1, camera.timeRange[1]);
-  const endMs = Math.max(startMs + 1, Math.min(requestedEnd, durationMs));
-  const startIndex = Math.max(
-    0,
-    Math.min(
-      waveform.numberOfSamples - 1,
-      Math.floor((startMs / 1000) * waveform.samplingFrequency)
-    )
-  );
-  const endIndex = Math.max(
-    startIndex + 1,
-    Math.min(
-      waveform.numberOfSamples,
-      Math.ceil((endMs / 1000) * waveform.samplingFrequency)
-    )
-  );
-
-  return {
-    startMs,
-    endMs,
-    startIndex,
-    endIndex,
-  };
-}
-
-function drawFrame(
-  ecgCtx: ECGCanvasRenderContext,
-  waveform: ECGWaveformPayload
-): void {
+function drawFrame(ecgCtx: ECGCanvasRenderContext): void {
   const { canvas, canvasContext } = ecgCtx;
 
   ensureECGCanvasSize(canvas);
@@ -166,7 +119,6 @@ function drawFrame(
   const metrics = resolvedView.metrics;
   const layouts = resolvedView.channelLayouts;
   const { effectiveRatio, xOffset, yOffset } = resolvedView.canvasTransform;
-  const timeWindow = computeTimeWindow(waveform, viewState);
   const dpr = window.devicePixelRatio || 1;
 
   canvasContext.resetTransform();
@@ -193,7 +145,7 @@ function drawFrame(
       // `metrics` already carries `pxPerSecond` and the resolved `sweepSpeed`
       // that produced it, so the grid and the trace width stay in agreement.
       ...metrics,
-      sensitivityMmMv: dataPresentation?.sensitivityMmMv,
+      sensitivityMmMv: viewState.sensitivityMmMv,
       showAmplitudeLabels: dataPresentation?.showAmplitudeLabels,
     },
     {
@@ -206,10 +158,8 @@ function drawFrame(
     layouts,
     ecgWidth: metrics.ecgWidth,
     channelScale: metrics.channelScale,
-    startIndex: timeWindow.startIndex,
-    endIndex: timeWindow.endIndex,
     lineWidth: dataPresentation?.lineWidth,
-    amplitudeScale: dataPresentation?.amplitudeScale,
+    amplitudeScale: resolvedView.amplitudeScale,
   });
   drawECGLabels(canvasContext, layouts, metrics.worldToCanvasRatio);
 

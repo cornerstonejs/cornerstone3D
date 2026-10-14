@@ -1,4 +1,8 @@
-import type { Types, ECGGenericViewport } from '@cornerstonejs/core';
+import type {
+  Types,
+  ECGGenericViewport,
+  ECGViewState,
+} from '@cornerstonejs/core';
 import { RenderingEngine, Enums, utilities } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
@@ -164,10 +168,9 @@ async function run() {
     },
     labelText: 'Layout: ',
     onSelectedValueChange: (newLayout) => {
-      viewport.setDisplaySetPresentation(ecgDataId, {
-        layoutType: newLayout as any,
+      viewport.setViewState({
+        layoutType: newLayout as ECGViewState['layoutType'],
       });
-      viewport.render();
     },
   });
 
@@ -190,9 +193,8 @@ async function run() {
           return;
         }
 
-        const current = viewport.getDisplaySetPresentation(ecgDataId) || {};
         const nextVisibleChannels = new Set(
-          current.visibleChannels ||
+          viewport.getViewState().visibleChannels ||
             waveform.channels.map((_channel, channelIndex) => channelIndex)
         );
 
@@ -202,7 +204,7 @@ async function run() {
           nextVisibleChannels.delete(index);
         }
 
-        viewport.setDisplaySetPresentation(ecgDataId, {
+        viewport.setViewState({
           visibleChannels: Array.from(nextVisibleChannels).sort(
             (a, b) => a - b
           ),
