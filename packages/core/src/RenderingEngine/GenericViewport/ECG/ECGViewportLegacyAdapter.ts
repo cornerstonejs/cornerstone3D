@@ -13,6 +13,14 @@ import type {
 } from './ECGViewportTypes';
 import ECGViewport from './ECGViewport';
 
+/** Legacy properties that move the trace, and so belong to the view state. */
+const LEGACY_VIEW_STATE_PROPERTIES = [
+  'visibleChannels',
+  'sweepSpeed',
+  'sensitivityMmMv',
+  'layoutType',
+] as const;
+
 /**
  * Legacy adapter layer wrapping GenericViewport/ECG to provide backward compatibility
  * with original ECGViewport API calls.
@@ -33,15 +41,14 @@ class ECGViewportLegacyAdapter extends ECGViewport {
    */
   setChannelVisibility(index: number, visible: boolean): void {
     const waveform = this.getWaveformData();
-    const dataId = this.getFirstBinding()?.data.id;
 
-    if (!waveform || !dataId) {
+    if (!waveform) {
       return;
     }
 
-    const current = this.getDisplaySetPresentation(dataId) || {};
     const nextVisibleChannels = new Set(
-      current.visibleChannels || waveform.channels.map((_channel, i) => i)
+      this.getViewState().visibleChannels ||
+        waveform.channels.map((_channel, i) => i)
     );
 
     if (visible) {
@@ -50,46 +57,39 @@ class ECGViewportLegacyAdapter extends ECGViewport {
       nextVisibleChannels.delete(index);
     }
 
-    this.setDisplaySetPresentation(dataId, {
+    this.setViewState({
       visibleChannels: Array.from(nextVisibleChannels).sort((a, b) => a - b),
     });
   }
 
   /**
-   * Sets presentation properties on the active ECG viewport.
+   * Sets the legacy ECG properties. The layout options go to the view state,
+   * and `showAmplitudeLabels` goes to the data presentation.
    * @param props - Object containing presentation properties.
-   * @param _volumeIdOrSuppressEvents - Optional volume ID or suppressEvents flag.
-   * @param _suppressEvents - Optional flag to suppress events.
    */
-  setProperties(
-    props: ECGViewportProperties = {},
-    _volumeIdOrSuppressEvents?: string | boolean,
-    _suppressEvents = false
-  ): void {
+  setProperties(props: ECGViewportProperties = {}): void {
     const dataId = this.getFirstBinding()?.data.id;
 
     if (!dataId) {
       return;
     }
 
-    const updatedProps: Partial<ECGViewportProperties> = {};
-    if (props.visibleChannels !== undefined) {
-      updatedProps.visibleChannels = props.visibleChannels;
-    }
-    if (props.sweepSpeed !== undefined) {
-      updatedProps.sweepSpeed = props.sweepSpeed;
-    }
-    if (props.sensitivityMmMv !== undefined) {
-      updatedProps.sensitivityMmMv = props.sensitivityMmMv;
-    }
-    if (props.showAmplitudeLabels !== undefined) {
-      updatedProps.showAmplitudeLabels = props.showAmplitudeLabels;
-    }
-    if (props.layoutType !== undefined) {
-      updatedProps.layoutType = props.layoutType;
+    const viewStatePatch: Partial<ECGViewState> = {};
+    LEGACY_VIEW_STATE_PROPERTIES.forEach((key) => {
+      if (props[key] !== undefined) {
+        (viewStatePatch as Record<string, unknown>)[key] = props[key];
+      }
+    });
+
+    if (Object.keys(viewStatePatch).length) {
+      this.setViewState(viewStatePatch);
     }
 
-    this.setDisplaySetPresentation(dataId, updatedProps);
+    if (props.showAmplitudeLabels !== undefined) {
+      this.setDisplaySetPresentation(dataId, {
+        showAmplitudeLabels: props.showAmplitudeLabels,
+      });
+    }
   }
 
   getProperties(): ECGViewportProperties {
@@ -97,30 +97,32 @@ class ECGViewportLegacyAdapter extends ECGViewport {
     const presentation = dataId
       ? this.getDisplaySetPresentation(dataId)
       : undefined;
+    const viewState = this.getViewState();
 
     return {
-      visibleChannels: presentation?.visibleChannels,
-      sweepSpeed: presentation?.sweepSpeed,
-      sensitivityMmMv: presentation?.sensitivityMmMv,
+      visibleChannels: viewState.visibleChannels,
+      sweepSpeed: viewState.sweepSpeed,
+      sensitivityMmMv: viewState.sensitivityMmMv,
       showAmplitudeLabels: presentation?.showAmplitudeLabels,
-      layoutType: presentation?.layoutType,
+      layoutType: viewState.layoutType,
     };
   }
 
   resetProperties(): void {
-    const waveform = this.getWaveformData();
     const dataId = this.getFirstBinding()?.data.id;
 
-    if (!waveform || !dataId) {
+    if (!dataId) {
       return;
     }
 
-    this.setDisplaySetPresentation(dataId, {
-      visibleChannels: waveform.channels.map((_channel, index) => index),
+    this.setViewState({
+      visibleChannels: undefined,
       sweepSpeed: undefined,
       sensitivityMmMv: undefined,
-      showAmplitudeLabels: undefined,
       layoutType: undefined,
+    });
+    this.setDisplaySetPresentation(dataId, {
+      showAmplitudeLabels: undefined,
     });
   }
 
@@ -219,10 +221,8 @@ class ECGViewportLegacyAdapter extends ECGViewport {
    *
    * The pan is in canvas pixels, and a world point holds a sample index and a
    * raw amplitude. The two spaces have different units, and the vertical
-   * directions are opposite, so the conversion goes through `worldToCanvas`.
-   * The previous code added a world-space difference straight to the pan, which
-   * moved the viewport by the wrong distance and in the wrong vertical
-   * direction. `WSIViewportLegacyAdapter.setCamera` uses the same round trip.
+   * directions are opposite, so the conversion goes through `worldToCanvas`,
+   * as in `WSIViewportLegacyAdapter.setCamera`.
    */
   private setFocalPoint(focalPoint: Point3): void {
     const resolvedView = this.getResolvedView();
