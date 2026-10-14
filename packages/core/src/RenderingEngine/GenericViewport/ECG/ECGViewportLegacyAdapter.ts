@@ -18,7 +18,7 @@ const LEGACY_VIEW_STATE_PROPERTIES = [
   'visibleChannels',
   'sweepSpeed',
   'sensitivityMmMv',
-  'layoutType',
+  'traceLayout',
 ] as const;
 
 /**
@@ -64,7 +64,8 @@ class ECGViewportLegacyAdapter extends ECGViewport {
 
   /**
    * Sets the legacy ECG properties. The layout options go to the view state,
-   * and `showAmplitudeLabels` goes to the data presentation.
+   * and `showAmplitudeLabels` goes to the data presentation. The deprecated
+   * `layoutType` sets `traceLayout`.
    * @param props - Object containing presentation properties.
    */
   setProperties(props: ECGViewportProperties = {}): void {
@@ -80,6 +81,10 @@ class ECGViewportLegacyAdapter extends ECGViewport {
         (viewStatePatch as Record<string, unknown>)[key] = props[key];
       }
     });
+
+    if (props.traceLayout === undefined && props.layoutType !== undefined) {
+      viewStatePatch.traceLayout = props.layoutType;
+    }
 
     if (Object.keys(viewStatePatch).length) {
       this.setViewState(viewStatePatch);
@@ -104,7 +109,7 @@ class ECGViewportLegacyAdapter extends ECGViewport {
       sweepSpeed: viewState.sweepSpeed,
       sensitivityMmMv: viewState.sensitivityMmMv,
       showAmplitudeLabels: presentation?.showAmplitudeLabels,
-      layoutType: viewState.layoutType,
+      traceLayout: viewState.traceLayout,
     };
   }
 
@@ -119,7 +124,7 @@ class ECGViewportLegacyAdapter extends ECGViewport {
       visibleChannels: undefined,
       sweepSpeed: undefined,
       sensitivityMmMv: undefined,
-      layoutType: undefined,
+      traceLayout: undefined,
     });
     this.setDisplaySetPresentation(dataId, {
       showAmplitudeLabels: undefined,

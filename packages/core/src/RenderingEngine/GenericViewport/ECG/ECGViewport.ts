@@ -2,7 +2,7 @@ import getOrCreateCanvas from '../../helpers/getOrCreateCanvas';
 import type { LoadedData } from '../ViewportArchitectureTypes';
 import GenericViewport from '../GenericViewport';
 import { ViewportType } from '../../../enums';
-import { getDefaultECGValueRange } from '../../../utilities/ECGUtilities';
+import { getDefaultECGValueRange } from './ecgWaveform';
 import { getGenericViewportSourceDataId } from '../genericViewportDisplaySetAccess';
 import imageIdToURI from '../../../utilities/imageIdToURI';
 import type {
@@ -32,11 +32,6 @@ import {
 import ECGResolvedView from './ECGResolvedView';
 
 const ECG_AMPLITUDE_INDEX_SIZE = 65536;
-/**
- * Layout cells that repeat a lead, and therefore need a synthetic lead index
- * above the last channel index. The `3x4+1` layout adds one rhythm strip.
- */
-const ECG_EXTRA_LAYOUT_CELLS = 1;
 
 class ECGViewport extends GenericViewport<
   ECGViewState,
@@ -80,6 +75,7 @@ class ECGViewport extends GenericViewport<
     this.viewState = createDefaultECGViewState({
       timeRange: [0, 1],
       valueRange: [-1, 1],
+      traceLayout: args.defaultOptions?.traceLayout,
     });
 
     this.element.setAttribute('data-viewport-uid', this.id);
@@ -95,7 +91,7 @@ class ECGViewport extends GenericViewport<
    * the canvas ECG render path.
    *
    * The view state resets to the full record with every channel visible. The
-   * layout type, the sweep speed, the sensitivity and the amplitude scale stay.
+   * trace layout, the sweep speed, the sensitivity and the amplitude scale stay.
    *
    * @param entries - Waveform display sets to mount.
    */
@@ -108,7 +104,7 @@ class ECGViewport extends GenericViewport<
       const waveform = await this.loadWaveformData(displaySetId);
       const durationMs =
         (waveform.numberOfSamples / waveform.samplingFrequency) * 1000;
-      const { layoutType, sweepSpeed, sensitivityMmMv, amplitudeScale } =
+      const { traceLayout, sweepSpeed, sensitivityMmMv, amplitudeScale } =
         this.viewState;
 
       this.setDefaultDataPresentation(displaySetId, {
@@ -120,7 +116,7 @@ class ECGViewport extends GenericViewport<
       this.viewState = createDefaultECGViewState({
         timeRange: [0, durationMs],
         valueRange: getDefaultECGValueRange(waveform),
-        layoutType,
+        traceLayout,
         sweepSpeed,
         sensitivityMmMv,
         amplitudeScale,
@@ -510,17 +506,13 @@ class ECGViewport extends GenericViewport<
     }
 
     const nSamples = waveform.numberOfSamples;
-    const nChannels = waveform.channels.length;
-    // The Z index of an ECG world point identifies a layout cell, not a
-    // channel. The `3x4+1` rhythm strip repeats a lead that a grid cell already
-    // shows, so it takes a synthetic index above the last channel index. The Z
-    // dimension reserves that index, because the annotation tools reject a
-    // handle whose index falls outside `dimensions` through
-    // `indexWithinDimensions`.
+    // The Z of a world point identifies a trace region. A region that repeats
+    // a lead takes a Z above the last channel index, and the annotation tools
+    // reject a handle whose index is outside `dimensions`.
     const dimensions: Point3 = [
       nSamples,
       ECG_AMPLITUDE_INDEX_SIZE,
-      nChannels + ECG_EXTRA_LAYOUT_CELLS,
+      this.getResolvedView()?.leadIndexCount ?? waveform.channels.length,
     ];
     const spacing: Point3 = [1, 1, 1];
     const origin: Point3 = [0, 0, 0];

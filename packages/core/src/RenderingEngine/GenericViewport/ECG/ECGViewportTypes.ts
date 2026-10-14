@@ -1,4 +1,4 @@
-import type { AABB2 } from '../../../types';
+import type { AABB2, ViewportInputOptions } from '../../../types';
 import type {
   BaseViewportRenderContext,
   BasePresentationProps,
@@ -7,23 +7,87 @@ import type {
   RenderPathResolver,
 } from '../ViewportArchitectureTypes';
 import type { ViewportCameraBase } from '../ViewportCameraTypes';
-import type { ECGRenderMetrics } from '../../../utilities/ECGUtilities';
 import type ECGResolvedView from './ECGResolvedView';
 
 export interface ECGChannelData {
   name: string;
+  /** Lead code value, from `ChannelSourceSequence`. */
+  code?: string;
   data: Int16Array;
   min: number;
   max: number;
 }
 
-/** Normalized 2D bounding region for multi-lead or segmented ECG layouts */
-export interface TraceRegion {
-  id?: string;
-  bounds: AABB2;
-  leadIndices: number[];
-  timeWindow?: [number, number];
+/**
+ * Names of the registered trace layouts. An application adds a name with an
+ * augmentation, and registers the layout with `registerECGTraceLayout`:
+ *
+ * ```ts
+ * declare module '@cornerstonejs/core' {
+ *   interface ECGTraceLayoutRegistry {
+ *     'myOrg:6x2+1': true;
+ *   }
+ * }
+ * registerECGTraceLayout('myOrg:6x2+1', (context) => ({ regions: [...] }));
+ * ```
+ */
+export interface ECGTraceLayoutRegistry {
+  /** One row for each lead. Each row shows the time window of the view. */
+  '12x1': true;
+  /** 6 rows and 2 columns. Each column shows half of the record. */
+  '6x2': true;
+  /** 3 rows and 4 columns. Each column shows a quarter of the record. */
+  '3x4': true;
+  /** The `3x4` grid, and a rhythm strip of lead II with the full record. */
+  '3x4+1': true;
 }
+
+/**
+ * A registered layout name. A name that is not in `ECGTraceLayoutRegistry` is
+ * accepted too, because a hanging protocol in JSON can give any name.
+ */
+export type ECGTraceLayoutName = keyof ECGTraceLayoutRegistry | (string & {});
+
+/** One trace of a trace layout. */
+export interface ECGTraceRegion {
+  id?: string;
+  /** Label that the viewport draws. Defaults to the channel name. */
+  label?: string;
+  /** Bounds as fractions, 0 to 1, of the layout area. */
+  bounds: AABB2;
+  /**
+   * The lead: a channel index, or the lead code value of the channel, for
+   * example `5.6.3-9-2` (SCPECG) or `2:2` (MDC) for lead II.
+   */
+  lead: number | string;
+  /**
+   * The part of the record that the region shows. `'view'` follows the time
+   * window of the view state. A pair gives a fixed part, as fractions of the
+   * record. Defaults to `'view'`.
+   */
+  time?: 'view' | [number, number];
+}
+
+/** A full trace layout. */
+export interface ECGTraceLayoutDefinition {
+  regions: ECGTraceRegion[];
+}
+
+/**
+ * The trace layout of an ECG viewport: a registered name, or a full
+ * definition. A hanging protocol gives either form in the one attribute
+ * `traceLayout`.
+ */
+export type ECGTraceLayout = ECGTraceLayoutName | ECGTraceLayoutDefinition;
+
+/** What a layout factory receives to build a definition for one waveform. */
+export interface ECGTraceLayoutContext {
+  channels: { name: string; code?: string }[];
+}
+
+export type ECGTraceLayoutFactory = (
+  context: ECGTraceLayoutContext
+) => ECGTraceLayoutDefinition;
 
 /** @internal */
 export interface ECGWaveformPayload {
@@ -47,8 +111,8 @@ export type ECGPresentationProps = BasePresentationProps;
  */
 export interface ECGViewState extends ViewportCameraBase<[number, number]> {
   /**
-   * Time window in ms that the `12x1` rows show. A multi-column layout always
-   * shows the full record and ignores this value.
+   * Time window in ms that the regions with `time: 'view'` show. A layout with
+   * no such region shows the full record and ignores this value.
    */
   timeRange: [number, number];
   valueRange: [number, number];
@@ -66,20 +130,16 @@ export interface ECGViewState extends ViewportCameraBase<[number, number]> {
   sensitivityMmMv?: number;
   /** Multiplier on the drawn amplitude. Defaults to 1. */
   amplitudeScale?: number;
-  traceRegions?: TraceRegion[];
   /**
-   * Indices of the visible channels. A hidden lead keeps its grid cell, and a
-   * row with no visible lead gets zero height. Undefined shows every channel.
+   * Indices of the visible channels. A hidden lead keeps its region, and a
+   * band with no visible lead gets zero height. Undefined shows every channel.
    */
   visibleChannels?: number[];
   /**
-   * Lead arrangement:
-   * - '12x1': one row for each lead, with the `timeRange` window. (Default)
-   * - '6x2': 6 rows, 2 columns. Each column shows half of the record.
-   * - '3x4': 3 rows, 4 columns. Each column shows a quarter of the record.
-   * - '3x4+1': the `3x4` grid plus a rhythm strip of the full record.
+   * The trace layout: a registered name, or a full definition. The view
+   * state keeps the value as the caller gave it. Defaults to `'12x1'`.
    */
-  layoutType?: '12x1' | '6x2' | '3x4' | '3x4+1';
+  traceLayout?: ECGTraceLayout;
 }
 
 /** Appearance options that do not move the trace. */
@@ -101,20 +161,11 @@ export interface ECGViewportInput {
   renderingEngineId: string;
   dataProvider?: DataProvider;
   renderPathResolver?: RenderPathResolver;
+  /** `traceLayout` gives the trace layout before the first data load. */
+  defaultOptions?: Pick<ViewportInputOptions, 'traceLayout'>;
 }
 
 export type ECGGenericViewportInput = ECGViewportInput;
-
-/**
- * World geometry of one ECG frame.
- *
- * The type is an alias of `ECGRenderMetrics`, which `computeECGRenderMetrics`
- * returns. The two used to be separate declarations with the same shape, and
- * `CanvasECGRenderPath` cast between them, which hid any future drift.
- *
- * @internal
- */
-export type RenderWindowMetrics = ECGRenderMetrics;
 
 /** @internal */
 export interface ECGCanvasRenderContext extends BaseViewportRenderContext {
