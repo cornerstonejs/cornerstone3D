@@ -68,7 +68,7 @@ export type PlanarViewReferenceHost = {
 };
 
 class PlanarViewReferenceController {
-  constructor(private readonly host: PlanarViewReferenceHost) {}
+  constructor(private readonly host: PlanarViewReferenceHost) { }
 
   getVolumeId(
     viewRefSpecifier: ViewReferenceSpecifier = {}
@@ -162,6 +162,9 @@ class PlanarViewReferenceController {
 
     return (
       binding?.getFrameOfReferenceUID() ??
+      (binding
+        ? `${this.host.viewportType}-data-${binding.data.id}`
+        : undefined) ??
       `${this.host.viewportType}-viewport-${this.host.viewportId}`
     );
   }
@@ -240,7 +243,7 @@ class PlanarViewReferenceController {
       data: binding.data as LoadedData<PlanarPayload>,
       frameOfReferenceUID:
         binding.getFrameOfReferenceUID() ??
-        `${this.host.viewportType}-viewport-${this.host.viewportId}`,
+        `${this.host.viewportType}-data-${binding.data.id}`,
       rendering: binding.rendering as PlanarRendering,
     };
   }
@@ -357,7 +360,7 @@ class PlanarViewReferenceController {
     if (
       viewRef.FrameOfReferenceUID &&
       currentReferenceContext?.frameOfReferenceUID !==
-        viewRef.FrameOfReferenceUID
+      viewRef.FrameOfReferenceUID
     ) {
       return;
     }
@@ -465,8 +468,8 @@ class PlanarViewReferenceController {
         viewPlaneNormal: [...refViewPlaneNormal] as Point3,
         ...(normalizedViewRef.viewUp
           ? {
-              viewUp: [...normalizedViewRef.viewUp] as Point3,
-            }
+            viewUp: [...normalizedViewRef.viewUp] as Point3,
+          }
           : {}),
       };
     }
@@ -768,8 +771,8 @@ class PlanarViewReferenceController {
   ): boolean {
     return Boolean(
       currentViewPlaneNormal &&
-        targetViewPlaneNormal &&
-        isEqual(currentViewPlaneNormal, targetViewPlaneNormal)
+      targetViewPlaneNormal &&
+      isEqual(currentViewPlaneNormal, targetViewPlaneNormal)
     );
   }
 
