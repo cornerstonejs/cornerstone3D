@@ -1,13 +1,12 @@
+import { computeECGTraceGeometry } from '../src/RenderingEngine/GenericViewport/ECG/ecgGeometry';
 import {
-  computeECGChannelLayouts,
-  computeECGHeight,
-  getVisibleECGChannelEntries,
-  getECGLayoutRowCount,
-} from '../src/utilities/ECGUtilities';
+  resolveECGTraceCells,
+  resolveECGTraceLayout,
+} from '../src/RenderingEngine/GenericViewport/ECG/ecgTraceLayouts';
 
-const CHANNEL_SCALE = 2;
 const NUMBER_OF_SAMPLES = 5000;
 const ECG_WIDTH = 1000;
+const TARGET_HEIGHT = 600;
 
 function makeChannel(name, { min = -100, max = 100, length = 512 } = {}) {
   return {
@@ -37,47 +36,30 @@ function makeChannels(names) {
   return names.map((name) => makeChannel(name));
 }
 
-function layoutsFor(channels, layoutType, visibleChannels) {
-  const entries = getVisibleECGChannelEntries(channels, visibleChannels);
-
-  return computeECGChannelLayouts({
-    visibleChannels: entries.map((entry) => entry.channel),
-    leadIndices: entries.map((entry) => entry.channelIndex),
-    channelCount: channels.length,
-    channelScale: CHANNEL_SCALE,
-    layoutType,
+function geometryFor(channels, traceLayout, visibleChannels) {
+  const cells = resolveECGTraceCells({
+    definition: resolveECGTraceLayout(traceLayout, { channels }),
+    channels,
     numberOfSamples: NUMBER_OF_SAMPLES,
+    viewSampleWindow: [0, NUMBER_OF_SAMPLES],
+    visibleChannels,
+  });
+
+  return computeECGTraceGeometry({
+    cells,
     ecgWidth: ECG_WIDTH,
+    targetHeight: TARGET_HEIGHT,
   });
 }
 
-describe('ECG channel layouts', () => {
-  describe('getVisibleECGChannelEntries', () => {
-    it('keeps the index of each channel in the unfiltered list', () => {
-      const channels = makeChannels(TWELVE_LEAD_NAMES);
-      const entries = getVisibleECGChannelEntries(channels, [0, 5, 11]);
+function layoutsFor(channels, traceLayout, visibleChannels) {
+  return geometryFor(channels, traceLayout, visibleChannels).layouts;
+}
 
-      expect(entries.map((entry) => entry.channelIndex)).toEqual([0, 5, 11]);
-      expect(entries.map((entry) => entry.channel.name)).toEqual([
-        'Lead I',
-        'aVF',
-        'V6',
-      ]);
-    });
+const isRhythm = (channels) => (layout) => layout.leadIndex >= channels.length;
 
-    it('drops a channel that holds no samples', () => {
-      const channels = makeChannels(TWELVE_LEAD_NAMES);
-      channels[3].data = new Int16Array(0);
-
-      const entries = getVisibleECGChannelEntries(channels);
-
-      expect(entries.map((entry) => entry.channelIndex)).toEqual([
-        0, 1, 2, 4, 5, 6, 7, 8, 9, 10, 11,
-      ]);
-    });
-  });
-
-  describe('leadIndex identifies one layout cell', () => {
+describe('ECG trace layouts in world space', () => {
+  describe('leadIndex identifies one region', () => {
     it('uses the unfiltered channel index when a lead is hidden', () => {
       const channels = makeChannels(TWELVE_LEAD_NAMES);
       const layouts = layoutsFor(channels, '12x1', [0, 5, 11]);
@@ -85,50 +67,43 @@ describe('ECG channel layouts', () => {
       expect(layouts.map((layout) => layout.leadIndex)).toEqual([0, 5, 11]);
     });
 
-    it('gives every cell of a layout a different leadIndex', () => {
+    it('gives every region of a layout a different leadIndex', () => {
       const channels = makeChannels(TWELVE_LEAD_NAMES);
 
-      ['12x1', '6x2', '3x4', '3x4+1'].forEach((layoutType) => {
-        const layouts = layoutsFor(channels, layoutType);
+      ['12x1', '6x2', '3x4', '3x4+1'].forEach((traceLayout) => {
+        const layouts = layoutsFor(channels, traceLayout);
         const leadIndices = layouts.map((layout) => layout.leadIndex);
 
         expect(new Set(leadIndices).size).toBe(layouts.length);
       });
     });
 
-    it('gives the 3x4+1 rhythm strip a synthetic index above the channels', () => {
+    it('gives the 3x4+1 rhythm strip an index above the channels', () => {
       const channels = makeChannels(TWELVE_LEAD_NAMES);
       const layouts = layoutsFor(channels, '3x4+1');
-      const rhythm = layouts.filter((layout) => layout.isRhythm);
+      const rhythm = layouts.filter(isRhythm(channels));
 
       expect(rhythm).toHaveLength(1);
       expect(rhythm[0].channel.name).toBe('Lead II');
       expect(rhythm[0].leadIndex).toBe(channels.length);
 
-      // The grid cell of lead II keeps its own index, so the two cells are
-      // distinguishable. This is the defect that the rhythm strip had before.
-      const gridLeadTwo = layouts.find(
-        (layout) => !layout.isRhythm && layout.channel.name === 'Lead II'
-      );
-      expect(gridLeadTwo.leadIndex).toBe(1);
-      expect(gridLeadTwo.leadIndex).not.toBe(rhythm[0].leadIndex);
+      // The grid region of lead II keeps its own index.
+      const gridLeadTwo = layouts.find((layout) => layout.leadIndex === 1);
+      expect(gridLeadTwo.channel.name).toBe('Lead II');
     });
 
     it('does not select lead III as the rhythm lead', () => {
       const channels = makeChannels(['Lead III', 'Lead aVR', 'Lead II']);
-      const layouts = layoutsFor(channels, '3x4+1');
-      const rhythm = layouts.find((layout) => layout.isRhythm);
+      const rhythm = layoutsFor(channels, '3x4+1').find(isRhythm(channels));
 
       expect(rhythm.channel.name).toBe('Lead II');
     });
 
-    it('gives the rhythm strip the full duration and the grid cell a segment', () => {
+    it('gives the rhythm strip the full record and a grid region a quarter', () => {
       const channels = makeChannels(TWELVE_LEAD_NAMES);
       const layouts = layoutsFor(channels, '3x4+1');
-      const rhythm = layouts.find((layout) => layout.isRhythm);
-      const gridLeadTwo = layouts.find(
-        (layout) => !layout.isRhythm && layout.channel.name === 'Lead II'
-      );
+      const rhythm = layouts.find(isRhythm(channels));
+      const gridLeadTwo = layouts.find((layout) => layout.leadIndex === 1);
 
       expect(rhythm.startSample).toBe(0);
       expect(rhythm.endSample).toBe(NUMBER_OF_SAMPLES);
@@ -140,12 +115,11 @@ describe('ECG channel layouts', () => {
     });
   });
 
-  describe('the grid keeps every lead', () => {
+  describe('the layout keeps every lead', () => {
     it('gives a 15-lead waveform 15 rows in the 12x1 layout', () => {
       const channels = makeChannels([...TWELVE_LEAD_NAMES, 'V7', 'V8', 'V9']);
       const layouts = layoutsFor(channels, '12x1');
 
-      expect(layouts).toHaveLength(15);
       expect(layouts.map((layout) => layout.leadIndex)).toEqual([
         0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14,
       ]);
@@ -156,8 +130,6 @@ describe('ECG channel layouts', () => {
       const layouts = layoutsFor(channels, '3x4');
 
       expect(layouts).toHaveLength(15);
-      expect(Math.max(...layouts.map((layout) => layout.col))).toBe(4);
-
       // Each of the 5 columns covers one fifth of the signal.
       layouts.forEach((layout) => {
         expect(layout.width).toBeCloseTo(ECG_WIDTH / 5);
@@ -167,53 +139,46 @@ describe('ECG channel layouts', () => {
       });
     });
 
-    it('gives 12x1 one row for each visible lead', () => {
-      expect(getECGLayoutRowCount('12x1', 8)).toBe(8);
-      expect(getECGLayoutRowCount('12x1', 15)).toBe(15);
-      expect(getECGLayoutRowCount('3x4', 12)).toBe(3);
-      expect(getECGLayoutRowCount('3x4+1', 12)).toBe(4);
-      expect(getECGLayoutRowCount('6x2', 12)).toBe(6);
+    it('leaves no empty band for hidden leads in 12x1', () => {
+      const channels = makeChannels(TWELVE_LEAD_NAMES);
+      const { layouts, ecgHeight } = geometryFor(
+        channels,
+        '12x1',
+        [0, 1, 2, 3, 4, 5, 6, 7]
+      );
+
+      expect(layouts).toHaveLength(8);
+      // The 8 bands share the full height.
+      expect(Math.max(...layouts.map((layout) => layout.yOffset))).toBeCloseTo(
+        ecgHeight,
+        6
+      );
+      expect(layouts[0].yOffset).toBeCloseTo(ecgHeight / 8, 6);
+    });
+
+    it('marks a channel that holds no samples as hidden', () => {
+      const channels = makeChannels(TWELVE_LEAD_NAMES);
+      channels[3].data = new Int16Array(0);
+
+      const leadIndices = layoutsFor(channels, '12x1').map(
+        (layout) => layout.leadIndex
+      );
+
+      expect(leadIndices).not.toContain(3);
+      expect(leadIndices).toHaveLength(11);
     });
   });
 
-  describe('computeECGHeight agrees with computeECGChannelLayouts', () => {
-    it.each(['12x1', '6x2', '3x4', '3x4+1'])(
-      'reserves the height that the %s layout occupies',
-      (layoutType) => {
-        const channels = makeChannels(TWELVE_LEAD_NAMES);
-        const layouts = layoutsFor(channels, layoutType);
-        const height = computeECGHeight(channels, CHANNEL_SCALE, layoutType);
-        const lowestOffset = Math.max(
-          ...layouts.map((layout) => layout.yOffset)
-        );
+  it.each(['12x1', '6x2', '3x4', '3x4+1'])(
+    'keeps every region of %s inside the world height',
+    (traceLayout) => {
+      const channels = makeChannels(TWELVE_LEAD_NAMES);
+      const { layouts, ecgHeight } = geometryFor(channels, traceLayout);
 
-        // Every cell fits inside the reserved height, and the last row ends at
-        // the reserved height.
-        expect(lowestOffset).toBeLessThanOrEqual(height);
-        expect(height).toBeGreaterThan(0);
-      }
-    );
-
-    it('picks the same rhythm lead as the layout for an unusual lead order', () => {
-      // Lead II has the largest amplitude, so the reserved height changes when
-      // the two functions disagree on which lead the rhythm strip repeats.
-      const channels = [
-        makeChannel('Lead III', { min: -10, max: 10 }),
-        makeChannel('Lead aVR', { min: -10, max: 10 }),
-        makeChannel('Lead II', { min: -1000, max: 1000 }),
-      ];
-      const layouts = layoutsFor(channels, '3x4+1');
-      const rhythm = layouts.find((layout) => layout.isRhythm);
-      const height = computeECGHeight(channels, CHANNEL_SCALE, '3x4+1');
-
-      expect(rhythm.channel.name).toBe('Lead II');
-      expect(rhythm.yOffset).toBeLessThanOrEqual(height);
-      // The rhythm row is as tall as lead II needs.
-      expect(rhythm.itemHeight).toBeCloseTo(2000 * CHANNEL_SCALE * 1.25);
-    });
-
-    it('returns 1 for an empty channel list', () => {
-      expect(computeECGHeight([], CHANNEL_SCALE, '12x1')).toBe(1);
-    });
-  });
+      layouts.forEach((layout) => {
+        expect(layout.yOffset).toBeLessThanOrEqual(ecgHeight + 1e-6);
+        expect(layout.yOffset - layout.itemHeight).toBeGreaterThanOrEqual(0);
+      });
+    }
+  );
 });
