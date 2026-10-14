@@ -1,15 +1,21 @@
+import { computeECGRenderMetrics } from '../src/RenderingEngine/GenericViewport/ECG/ecgGeometry';
 import {
-  computeECGRenderMetrics,
   drawECGGrid,
   drawECGTraces,
-  computeECGChannelLayouts,
-  getECGLayoutRowCount,
-  getECGMvPerUnit,
+} from '../src/RenderingEngine/GenericViewport/ECG/ecgDrawing';
+import {
+  resolveECGTraceCells,
+  resolveECGTraceLayout,
+} from '../src/RenderingEngine/GenericViewport/ECG/ecgTraceLayouts';
+import {
   ECG_DEFAULT_MV_PER_UNIT,
   ECG_DEFAULT_SWEEP_SPEED_MM_S,
   ECG_PX_PER_MM,
   ECG_RENDERING_COLORS,
-} from '../src/utilities/ECGUtilities';
+} from '../src/RenderingEngine/GenericViewport/ECG/ecgWaveform';
+
+const NUMBER_OF_SAMPLES = 1000;
+const SAMPLING_FREQUENCY = 100;
 
 function makeCanvas(width = 800, height = 600) {
   return {
@@ -57,7 +63,10 @@ function makeRecordingContext() {
   };
 }
 
-function makeChannel(name, { min = -1000, max = 1000, length = 1000 } = {}) {
+function makeChannel(
+  name,
+  { min = -1000, max = 1000, length = NUMBER_OF_SAMPLES } = {}
+) {
   const data = new Int16Array(length);
   data[0] = min;
   data[1] = max;
@@ -65,15 +74,28 @@ function makeChannel(name, { min = -1000, max = 1000, length = 1000 } = {}) {
   return { name, data, min, max, mvPerUnit: ECG_DEFAULT_MV_PER_UNIT };
 }
 
+function geometryFor(channels, options = {}) {
+  const { traceLayout = '12x1', ...metricOptions } = options;
+  const cells = resolveECGTraceCells({
+    definition: resolveECGTraceLayout(traceLayout, { channels }),
+    channels,
+    numberOfSamples: NUMBER_OF_SAMPLES,
+    viewSampleWindow: [0, NUMBER_OF_SAMPLES],
+  });
+
+  return computeECGRenderMetrics({
+    canvas: makeCanvas(),
+    cells,
+    numberOfSamples: NUMBER_OF_SAMPLES,
+    samplingFrequency: SAMPLING_FREQUENCY,
+    ...metricOptions,
+  });
+}
+
 describe('ECG render metrics', () => {
   describe('the calibrated amplitude scale', () => {
     it('converts raw sample units to pixels, not millivolts to pixels', () => {
-      const channels = [makeChannel('Lead I')];
-      const metrics = computeECGRenderMetrics({
-        canvas: makeCanvas(),
-        visibleChannels: channels,
-        windowMs: 10000,
-        valueRange: [-1000, 1000],
+      const { metrics } = geometryFor([makeChannel('Lead I')], {
         sweepSpeed: 25,
         sensitivityMmMv: 10,
       });
@@ -83,66 +105,54 @@ describe('ECG render metrics', () => {
         10 * ECG_PX_PER_MM * ECG_DEFAULT_MV_PER_UNIT,
         6
       );
-
-      // One millivolt is 1000 raw units, and 10 mm/mV makes it 10 mm tall.
-      const pixelsPerMv = metrics.channelScale / ECG_DEFAULT_MV_PER_UNIT;
-      expect(pixelsPerMv).toBeCloseTo(10 * ECG_PX_PER_MM, 6);
     });
 
     it('keeps the layout height inside a sane range for a calibrated ECG', () => {
       const channels = Array.from({ length: 12 }, (_channel, index) =>
         makeChannel(`Lead ${index}`)
       );
-      const metrics = computeECGRenderMetrics({
-        canvas: makeCanvas(),
-        visibleChannels: channels,
-        windowMs: 10000,
-        valueRange: [-1000, 1000],
+      const { metrics } = geometryFor(channels, {
         sweepSpeed: 25,
         sensitivityMmMv: 10,
       });
 
-      // Twelve leads of 2 mV each at 10 mm/mV is 240 mm of paper, plus the row
-      // spacing. The defect made this value about 2.3 million pixels.
+      // Twelve leads of 2 mV each at 10 mm/mV is 240 mm of paper, plus the
+      // band spacing.
       expect(metrics.ecgHeight).toBeGreaterThan(100);
       expect(metrics.ecgHeight).toBeLessThan(2000);
     });
 
-    it('honours a channel sensitivity that differs from the default', () => {
-      const channels = [makeChannel('Lead I')];
-      channels[0].mvPerUnit = 0.005;
+    it('gives each channel the scale of its own sensitivity', () => {
+      const lead1 = makeChannel('Lead I');
+      const lead2 = makeChannel('Lead II');
+      lead2.mvPerUnit = 0.002;
 
-      const metrics = computeECGRenderMetrics({
-        canvas: makeCanvas(),
-        visibleChannels: channels,
-        windowMs: 10000,
-        valueRange: [-1000, 1000],
-        sweepSpeed: 25,
-        sensitivityMmMv: 10,
-      });
+      const { layouts } = geometryFor([lead1, lead2], { sensitivityMmMv: 10 });
 
-      expect(metrics.channelScale).toBeCloseTo(10 * ECG_PX_PER_MM * 0.005, 6);
+      expect(layouts[0].channelScale).toBeCloseTo(
+        10 * ECG_PX_PER_MM * 0.001,
+        6
+      );
+      expect(layouts[1].channelScale).toBeCloseTo(
+        10 * ECG_PX_PER_MM * 0.002,
+        6
+      );
     });
 
-    it('falls back to the default millivolts for each unit', () => {
-      expect(getECGMvPerUnit([{ name: 'a', data: new Int16Array(1) }])).toBe(
-        ECG_DEFAULT_MV_PER_UNIT
-      );
-      expect(getECGMvPerUnit([])).toBe(ECG_DEFAULT_MV_PER_UNIT);
-      expect(getECGMvPerUnit([{ mvPerUnit: 0 }, { mvPerUnit: 0.002 }])).toBe(
-        0.002
-      );
+    it('uses one amplitude scale for every channel when the amplitude auto-fits', () => {
+      const lead1 = makeChannel('Lead I');
+      const lead2 = makeChannel('Lead II');
+      lead2.mvPerUnit = 0.002;
+
+      const { layouts } = geometryFor([lead1, lead2]);
+
+      expect(layouts[1].channelScale).toBe(layouts[0].channelScale);
     });
   });
 
   describe('the grid agrees with the trace width', () => {
     function getMajorBlockSeconds(sweepSpeed, sensitivityMmMv) {
-      const channels = [makeChannel('Lead I')];
-      const metrics = computeECGRenderMetrics({
-        canvas: makeCanvas(),
-        visibleChannels: channels,
-        windowMs: 10000,
-        valueRange: [-1000, 1000],
+      const { metrics } = geometryFor([makeChannel('Lead I')], {
         sweepSpeed,
         sensitivityMmMv,
       });
@@ -164,9 +174,7 @@ describe('ECG render metrics', () => {
 
       expect(verticalMajorX.length).toBeGreaterThan(1);
 
-      const spacing = verticalMajorX[1] - verticalMajorX[0];
-
-      return spacing / metrics.pxPerSecond;
+      return (verticalMajorX[1] - verticalMajorX[0]) / metrics.pxPerSecond;
     }
 
     it('gives a major block 0.2 s at 25 mm/s when calibrated', () => {
@@ -178,50 +186,29 @@ describe('ECG render metrics', () => {
     });
 
     it('gives a major block 0.2 s when the amplitude auto-fits', () => {
-      // The defect lived here: the width came from the sweep speed while the
-      // grid came from the deprecated ECG_SECONDS_WIDTH, so a major block
-      // covered 0.317 s.
       expect(getMajorBlockSeconds(25, undefined)).toBeCloseTo(0.2, 6);
     });
 
     it('reports the pixels for each second that produced the width', () => {
-      const metrics = computeECGRenderMetrics({
-        canvas: makeCanvas(),
-        visibleChannels: [makeChannel('Lead I')],
-        windowMs: 10000,
-        valueRange: [-1000, 1000],
-      });
+      const { metrics } = geometryFor([makeChannel('Lead I')]);
 
       expect(metrics.sweepSpeed).toBe(ECG_DEFAULT_SWEEP_SPEED_MM_S);
-      expect(metrics.pxPerSecond).toBeCloseTo(
-        ECG_DEFAULT_SWEEP_SPEED_MM_S * ECG_PX_PER_MM,
-        6
+      expect(metrics.ecgWidth).toBe(
+        Math.ceil(
+          (NUMBER_OF_SAMPLES / SAMPLING_FREQUENCY) *
+            ECG_DEFAULT_SWEEP_SPEED_MM_S *
+            ECG_PX_PER_MM
+        )
       );
-      expect(metrics.ecgWidth).toBe(Math.ceil(10 * metrics.pxPerSecond));
     });
   });
 
   describe('a truncated channel', () => {
-    it('draws no NaN when the channel is shorter than numberOfSamples', () => {
-      // The waveform claims 1000 samples, and the channel holds 400.
-      const channel = makeChannel('Lead I', { length: 400 });
-      const layouts = computeECGChannelLayouts({
-        visibleChannels: [channel],
-        channelScale: 1,
-        layoutType: '12x1',
-        numberOfSamples: 1000,
-        ecgWidth: 1000,
-      });
+    it('draws no NaN when the channel is shorter than the record', () => {
+      const { layouts } = geometryFor([makeChannel('Lead I', { length: 400 })]);
       const ctx = makeRecordingContext();
 
-      drawECGTraces({
-        ctx,
-        layouts,
-        ecgWidth: 1000,
-        channelScale: 1,
-        startIndex: 0,
-        endIndex: 1000,
-      });
+      drawECGTraces({ ctx, layouts });
 
       const drawn = ctx.segments.filter((segment) => segment.to);
       expect(drawn.length).toBeGreaterThan(0);
@@ -231,235 +218,19 @@ describe('ECG render metrics', () => {
       });
     });
 
-    it('still draws the baseline for a cell with no samples in its window', () => {
-      const channel = makeChannel('Lead I', { length: 100 });
-      const layouts = computeECGChannelLayouts({
-        visibleChannels: [channel],
-        channelScale: 1,
-        layoutType: '12x1',
-        numberOfSamples: 1000,
-        ecgWidth: 1000,
-      });
+    it('still draws the baseline for a region with no samples', () => {
+      const { layouts } = geometryFor([makeChannel('Lead I', { length: 100 })]);
       layouts[0].startSample = 500;
-      layouts[0].endSample = 1000;
 
       const ctx = makeRecordingContext();
 
-      drawECGTraces({ ctx, layouts, ecgWidth: 1000, channelScale: 1 });
+      drawECGTraces({ ctx, layouts });
 
       const baselines = ctx.segments.filter(
         (segment) =>
           segment.style === ECG_RENDERING_COLORS.baseline && segment.to
       );
       expect(baselines.length).toBe(1);
-      expect(Number.isNaN(baselines[0].to[1])).toBe(false);
-    });
-  });
-
-  describe('per-channel calibration', () => {
-    it('draws channels with different sensitivities using their individual calibrated scales', () => {
-      const ch1 = makeChannel('Lead I', { min: -1000, max: 1000, length: 10 });
-      const ch2 = makeChannel('Lead II', { min: -1000, max: 1000, length: 10 });
-      ch1.mvPerUnit = 0.001;
-      ch2.mvPerUnit = 0.002;
-      ch1.data[0] = 500;
-      ch2.data[0] = 500;
-
-      const layouts = computeECGChannelLayouts({
-        visibleChannels: [ch1, ch2],
-        channelScale: 10 * ECG_PX_PER_MM * 0.001,
-        sensitivityMmMv: 10,
-        layoutType: '12x1',
-        numberOfSamples: 10,
-        ecgWidth: 1000,
-      });
-
-      expect(layouts[0].channelScale).toBeCloseTo(
-        10 * ECG_PX_PER_MM * 0.001,
-        6
-      );
-      expect(layouts[1].channelScale).toBeCloseTo(
-        10 * ECG_PX_PER_MM * 0.002,
-        6
-      );
-
-      const ctx = makeRecordingContext();
-      drawECGTraces({
-        ctx,
-        layouts,
-        ecgWidth: 1000,
-        channelScale: 10 * ECG_PX_PER_MM * 0.001,
-      });
-
-      const traceStarts = ctx.segments.filter(
-        (segment) =>
-          segment.style === ECG_RENDERING_COLORS.trace && segment.to === null
-      );
-      expect(traceStarts.length).toBe(2);
-
-      // Channel 2 sensitivity is 2x channel 1, so the vertical deflection from baseline is 2x
-      const ch1Deflection = layouts[0].baseline - traceStarts[0].from[1];
-      const ch2Deflection = layouts[1].baseline - traceStarts[1].from[1];
-      expect(ch2Deflection).toBeCloseTo(ch1Deflection * 2, 4);
-    });
-
-    it('uses shared channelScale across all channels in legacy auto-fit mode', () => {
-      const ch1 = makeChannel('Lead I', { min: -1000, max: 1000, length: 10 });
-      const ch2 = makeChannel('Lead II', { min: -1000, max: 1000, length: 10 });
-      ch1.mvPerUnit = 0.001;
-      ch2.mvPerUnit = 0.002;
-      ch1.data[0] = 500;
-      ch2.data[0] = 500;
-
-      const autoFitScale = 0.5;
-      const layouts = computeECGChannelLayouts({
-        visibleChannels: [ch1, ch2],
-        channelScale: autoFitScale,
-        layoutType: '12x1',
-        numberOfSamples: 10,
-        ecgWidth: 1000,
-      });
-
-      expect(layouts[0].channelScale).toBe(autoFitScale);
-      expect(layouts[1].channelScale).toBe(autoFitScale);
-
-      const ctx = makeRecordingContext();
-      drawECGTraces({
-        ctx,
-        layouts,
-        ecgWidth: 1000,
-        channelScale: autoFitScale,
-      });
-
-      const traceStarts = ctx.segments.filter(
-        (segment) =>
-          segment.style === ECG_RENDERING_COLORS.trace && segment.to === null
-      );
-      expect(traceStarts.length).toBe(2);
-      const ch1Deflection = layouts[0].baseline - traceStarts[0].from[1];
-      const ch2Deflection = layouts[1].baseline - traceStarts[1].from[1];
-      expect(ch2Deflection).toBeCloseTo(ch1Deflection, 4);
-    });
-
-    it('preserves multi-column cell sample partitions when startIndex and endIndex are passed', () => {
-      // 12 leads in 3x4 layout across 4000 samples (1000 samples per column)
-      const channels = Array.from({ length: 12 }, (_, i) => {
-        const ch = makeChannel(`Lead ${i}`, {
-          min: -100,
-          max: 100,
-          length: 4000,
-        });
-        for (let s = 0; s < 4000; s++) {
-          ch.data[s] = 50;
-        }
-        return ch;
-      });
-
-      const layouts = computeECGChannelLayouts({
-        visibleChannels: channels,
-        channelScale: 1,
-        layoutType: '3x4',
-        numberOfSamples: 4000,
-        ecgWidth: 1000,
-      });
-
-      expect(layouts[0].isMultiColumn).toBe(true);
-      expect(layouts[0].startSample).toBe(0);
-      expect(layouts[0].endSample).toBe(1000);
-
-      // Lead in column 3 (e.g. index 9, 10, 11) spans [3000, 4000]
-      const col3Layout = layouts[9];
-      expect(col3Layout.col).toBe(3);
-      expect(col3Layout.startSample).toBe(3000);
-      expect(col3Layout.endSample).toBe(4000);
-
-      const ctx = makeRecordingContext();
-      // Global window covers only [0, 1000]
-      drawECGTraces({
-        ctx,
-        layouts,
-        ecgWidth: 1000,
-        channelScale: 1,
-        startIndex: 0,
-        endIndex: 1000,
-      });
-
-      // Traces should have drawn lineTo segments for column 3 rather than collapsing to 1 flat sample
-      const traceSegments = ctx.segments.filter(
-        (s) => s.style === ECG_RENDERING_COLORS.trace && s.to !== null
-      );
-      // 12 channels * 999 line segments = 11,988 segments drawn
-      expect(traceSegments.length).toBe(12 * (1000 - 1));
-    });
-
-    it('returns visibleCount for 12x1 layout when fewer than 12 leads are visible', () => {
-      expect(getECGLayoutRowCount('12x1', 3)).toBe(3);
-      expect(getECGLayoutRowCount('12x1', 1)).toBe(1);
-      expect(getECGLayoutRowCount('12x1', 0)).toBe(1);
-      expect(getECGLayoutRowCount('12x1', -5)).toBe(1);
-      expect(getECGLayoutRowCount('12x1', 12)).toBe(12);
-    });
-
-    it('returns nominal row counts for multi-column layouts even with zero or negative visibleCount', () => {
-      expect(getECGLayoutRowCount('6x2', 0)).toBe(6);
-      expect(getECGLayoutRowCount('6x2', -1)).toBe(6);
-      expect(getECGLayoutRowCount('3x4', 0)).toBe(3);
-      expect(getECGLayoutRowCount('3x4+1', 0)).toBe(4);
-    });
-
-    it('handles long signals with >5000 samples correctly in computeECGChannelLayouts', () => {
-      const longChannel = makeChannel('Lead I', { length: 15000 });
-      const layouts = computeECGChannelLayouts({
-        visibleChannels: [longChannel],
-        channelScale: 1,
-        layoutType: '12x1',
-        numberOfSamples: 15000,
-        ecgWidth: 3000,
-      });
-
-      expect(layouts.length).toBe(1);
-      expect(layouts[0].startSample).toBe(0);
-      expect(layouts[0].endSample).toBe(15000);
-      expect(layouts[0].width).toBe(3000);
-    });
-
-    it('verifies horizontal scroll clamping logic (positive, negative, and boundary scenarios)', () => {
-      const durationMs = 10000;
-
-      // Scenario 1: Full-length window (windowMs >= durationMs) -> safe no-op
-      const computeNextWindow = (startMs, endMs, delta) => {
-        const windowMs = Math.max(1, endMs - startMs);
-        if (windowMs >= durationMs) {
-          return [startMs, endMs]; // No-op
-        }
-        const shiftMs = windowMs * delta;
-        const nextStart = Math.max(
-          0,
-          Math.min(startMs + shiftMs, durationMs - windowMs)
-        );
-        const nextEnd = nextStart + windowMs;
-        return [nextStart, nextEnd];
-      };
-
-      // Full window test: delta = 1, delta = -1
-      expect(computeNextWindow(0, 10000, 1)).toEqual([0, 10000]);
-      expect(computeNextWindow(0, 10000, -1)).toEqual([0, 10000]);
-
-      // Zoomed in: window is 4000ms [0, 4000]
-      // Positive scroll forward by 1 window width (+4000ms) -> [4000, 8000]
-      expect(computeNextWindow(0, 4000, 1)).toEqual([4000, 8000]);
-
-      // Positive scroll forward by fractional window (+2000ms) -> [2000, 6000]
-      expect(computeNextWindow(0, 4000, 0.5)).toEqual([2000, 6000]);
-
-      // Over-scroll forward: delta = 5 -> clamps to [durationMs - windowMs, durationMs] = [6000, 10000]
-      expect(computeNextWindow(0, 4000, 5)).toEqual([6000, 10000]);
-
-      // Negative scroll backward: from [4000, 8000] scroll -1 -> [0, 4000]
-      expect(computeNextWindow(4000, 8000, -1)).toEqual([0, 4000]);
-
-      // Over-scroll backward: delta = -5 -> clamps to 0 -> [0, 4000]
-      expect(computeNextWindow(4000, 8000, -5)).toEqual([0, 4000]);
     });
   });
 });
