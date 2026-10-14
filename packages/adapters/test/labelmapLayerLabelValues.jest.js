@@ -70,6 +70,31 @@ describe('labelmap layers that store a segment under another label value', () =>
     expect(referencedSegmentNumbers).toEqual([1, 2]);
   });
 
+  it('writes one SEG segment when two label values have the same segment index', () => {
+    const stack = makeReferencedStack(SLICE_COUNT);
+    // Label value 1 is bound to segment 2, and label value 2 has no binding,
+    // so it is also segment 2.
+    const overlapLayer = withSegments(
+      buildLabelmap3D(SLICE_COUNT, {
+        1: COLUMN_STROKE,
+        2: COLUMN_STROKE.map((value) => value * 2),
+      })
+    );
+    overlapLayer.labelToSegmentIndex = { 1: 2 };
+
+    const { dataset } = generateSegmentation(
+      stack.images,
+      overlapLayer,
+      stack.metadataProvider
+    );
+
+    const segments = [].concat(dataset.SegmentSequence);
+    expect(segments.map((segment) => segment.SegmentLabel)).toEqual([
+      'Segment 2',
+    ]);
+    expect(dataset.PerFrameFunctionalGroupsSequence).toHaveLength(2);
+  });
+
   it('writes the segment index, not the label value, in a LABELMAP SEG', () => {
     const stack = makeReferencedStack(SLICE_COUNT);
     // The only layer is a private layer: segment 2 is stored as label value 1.

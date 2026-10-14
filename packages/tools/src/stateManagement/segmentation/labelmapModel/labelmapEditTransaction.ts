@@ -9,11 +9,8 @@ import type {
 import { getLabelmap, getOrCreateLabelmapVolume } from './labelmapLayerStore';
 import {
   getSegmentBinding,
-  getSegmentIndexForLabelValue,
   getSegmentsOnLabelmap,
 } from './labelmapSegmentBindings';
-import { moveSegmentToPrivateLabelmap as defaultMoveSegmentToPrivateLabelmap } from './privateLabelmap';
-import type { LabelmapRestoreStep } from '../../../utilities/segmentation/createLabelmapMemo';
 
 /** A batch of cross-layer erases performed by one strategy fill call, with
  *  everything needed to reverse/replay it on undo/redo. */
@@ -23,23 +20,9 @@ type CrossLayerEraseRecord = {
   indices: number[];
 };
 
-type MoveSegmentToPrivateLabelmap = (
-  segmentation: Segmentation,
-  segmentIndex: number,
-  options?: { moveStepCallback?: (step: LabelmapRestoreStep) => void }
-) => LabelmapLayer | undefined;
-
 type BeginLabelmapEditTransactionOptions = {
   segmentIndex: number;
   overwriteSegmentIndices?: number[];
-  /** Locked segments. The edit skips their voxels, so they never cause a
-   *  move of the edited segment to a private layer. */
-  segmentsLocked?: number[];
-  segmentationVoxelManager?: Types.IVoxelManager<number>;
-  segmentationImageData?: vtkImageData;
-  isInObject?: (point: Types.Point3) => boolean;
-  isInObjectBoundsIJK?: Types.BoundsIJK;
-  moveSegmentToPrivateLabelmap?: MoveSegmentToPrivateLabelmap;
 };
 
 type LabelmapEditTransaction = {
@@ -47,15 +30,9 @@ type LabelmapEditTransaction = {
   labelmapId?: string;
   labelValue: number;
   sourceLayer?: LabelmapLayer;
-  activeLayer?: LabelmapLayer;
   overwriteSegmentIndices: number[];
   protectedSegmentIndices: number[];
   crossLayerEraseBindings: SegmentLabelmapBindingState[];
-  movedSegment: boolean;
-  /** Undo/redo step for a segment move performed by this transaction
-   *  (layer registration + bulk voxel move + binding change), for recording
-   *  on the stroke's memo. */
-  moveStep?: LabelmapRestoreStep;
 };
 
 type ResolveLabelmapLayerEditTargetOptions = {
@@ -97,49 +74,6 @@ function getProtectedSegmentIndicesForLayer(
   );
 }
 
-function hasProtectedSegmentOverwrite(
-  segmentation: Segmentation,
-  labelmapId: string,
-  protectedSegmentIndices: number[],
-  voxelManager?: Types.IVoxelManager<number>,
-  options: Pick<
-    BeginLabelmapEditTransactionOptions,
-    'segmentationImageData' | 'isInObject' | 'isInObjectBoundsIJK'
-  > = {}
-): boolean {
-  if (!voxelManager || !protectedSegmentIndices.length) {
-    return false;
-  }
-
-  const protectedSet = new Set(protectedSegmentIndices);
-  let hasConflict = false;
-
-  voxelManager.forEach(
-    ({ value }) => {
-      if (!value || hasConflict) {
-        return;
-      }
-
-      const candidateSegmentIndex = getSegmentIndexForLabelValue(
-        segmentation,
-        labelmapId,
-        Number(value)
-      );
-
-      if (candidateSegmentIndex && protectedSet.has(candidateSegmentIndex)) {
-        hasConflict = true;
-      }
-    },
-    {
-      imageData: options.segmentationImageData,
-      isInObject: options.isInObject,
-      boundsIJK: options.isInObjectBoundsIJK,
-    }
-  );
-
-  return hasConflict;
-}
-
 function collectCrossLayerEraseBindings(
   segmentation: Segmentation,
   labelmapId: string | undefined,
@@ -173,7 +107,6 @@ function beginLabelmapEditTransaction(
       overwriteSegmentIndices,
       protectedSegmentIndices: [],
       crossLayerEraseBindings: [],
-      movedSegment: false,
     };
   }
 
@@ -189,81 +122,28 @@ function beginLabelmapEditTransaction(
       overwriteSegmentIndices,
       protectedSegmentIndices: [],
       crossLayerEraseBindings: [],
-      movedSegment: false,
     };
   }
 
-  let activeLayer = sourceLayer;
-  let labelmapId = binding.labelmapId;
-  let labelValue = binding.labelValue;
-  let movedSegment = false;
-
-  const protectedSegmentIndices = getProtectedSegmentIndicesForLayer(
-    segmentation,
-    labelmapId,
-    segmentIndex,
-    overwriteSegmentIndices
-  );
-
-  // A locked segment means "do not paint here": the fill strategies skip its
-  // voxels, so it is not an overlap and must not move the segment to a
-  // private layer.
-  const segmentsLocked = options.segmentsLocked ?? [];
-  const shouldMoveSegment = hasProtectedSegmentOverwrite(
-    segmentation,
-    labelmapId,
-    protectedSegmentIndices.filter(
-      (protectedSegmentIndex) => !segmentsLocked.includes(protectedSegmentIndex)
-    ),
-    options.segmentationVoxelManager,
-    {
-      segmentationImageData: options.segmentationImageData,
-      isInObject: options.isInObject,
-      isInObjectBoundsIJK: options.isInObjectBoundsIJK,
-    }
-  );
-
-  let moveStep: LabelmapRestoreStep | undefined;
-
-  if (shouldMoveSegment) {
-    const moveSegmentToPrivateLabelmap =
-      options.moveSegmentToPrivateLabelmap ??
-      defaultMoveSegmentToPrivateLabelmap;
-    const privateLayer = moveSegmentToPrivateLabelmap(
-      segmentation,
-      segmentIndex,
-      { moveStepCallback: (step) => (moveStep = step) }
-    );
-    const privateBinding = getSegmentBinding(segmentation, segmentIndex);
-
-    if (privateLayer && privateBinding) {
-      activeLayer = privateLayer;
-      labelmapId = privateBinding.labelmapId;
-      labelValue = privateBinding.labelValue;
-      movedSegment = privateLayer.labelmapId !== sourceLayer.labelmapId;
-    } else if (privateLayer) {
-      activeLayer = privateLayer;
-      labelmapId = privateLayer.labelmapId;
-      labelValue = 1;
-      movedSegment = privateLayer.labelmapId !== sourceLayer.labelmapId;
-    }
-  }
+  const { labelmapId, labelValue } = binding;
 
   return {
     segmentIndex,
     labelmapId,
     labelValue,
     sourceLayer,
-    activeLayer,
     overwriteSegmentIndices,
-    protectedSegmentIndices,
+    protectedSegmentIndices: getProtectedSegmentIndicesForLayer(
+      segmentation,
+      labelmapId,
+      segmentIndex,
+      overwriteSegmentIndices
+    ),
     crossLayerEraseBindings: collectCrossLayerEraseBindings(
       segmentation,
       labelmapId,
       overwriteSegmentIndices
     ),
-    movedSegment,
-    moveStep,
   };
 }
 
@@ -485,7 +365,6 @@ export {
   eraseLabelmapEditTransactionOverwrites,
   getLabelmapLayerImageId,
   getProtectedSegmentIndicesForLayer,
-  hasProtectedSegmentOverwrite,
   resolveLabelmapLayerEditTarget,
 };
 export type {

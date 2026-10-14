@@ -30,9 +30,7 @@ export default {
 
     const callback = isWithinThreshold
       ? (data) => {
-          // setValue skips the voxels of a locked segment. It compares the
-          // segment index, because a layer can store a segment under another
-          // label value.
+          // setValue skips locked segments by segment index, not label value.
           if (!isWithinThreshold(data.index)) {
             return;
           }

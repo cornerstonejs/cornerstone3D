@@ -43,7 +43,6 @@ export {
   eraseLabelmapEditTransactionOverwrites,
   getLabelmapLayerImageId,
   getProtectedSegmentIndicesForLayer,
-  hasProtectedSegmentOverwrite,
   resolveLabelmapLayerEditTarget,
 } from './labelmapEditTransaction';
 export type {

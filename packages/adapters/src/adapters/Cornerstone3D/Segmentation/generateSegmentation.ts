@@ -1,6 +1,9 @@
 import { normalizers, derivations } from 'dcmjs';
 import { Enums } from '@cornerstonejs/core';
-import { fillSegmentation as fillBitmapSegmentation } from '../../Cornerstone/Segmentation_4X';
+import {
+  fillSegmentation as fillBitmapSegmentation,
+  getSegmentIndexForLabel,
+} from '../../Cornerstone/Segmentation_4X';
 import {
   encodeFramesToTransferSyntax,
   EXPLICIT_VR_LITTLE_ENDIAN_TRANSFER_SYNTAX_UID,
@@ -69,16 +72,6 @@ function hasAnySegment(pixelData: ArrayLike<number>) {
   }
 
   return false;
-}
-
-/**
- * The segment index of a voxel value of one labelmap3D. A labelmap layer can
- * store a segment under another label value (for example a private overlap
- * layer stores its segment as 1); `labelmap3D.labelToSegmentIndex` gives the
- * map. A value without an entry is the segment index itself.
- */
-function getSegmentIndexForLabel(labelmap3D, labelValue: number): number {
-  return labelmap3D?.labelToSegmentIndex?.[labelValue] ?? labelValue;
 }
 
 /** Normalizes the labelmaps input to an array of labelmap3D objects. */
@@ -636,5 +629,4 @@ export {
   resolveReferencedImagesForExport,
   maxSegmentValue,
   collectSegmentSequence,
-  getSegmentIndexForLabel,
 };

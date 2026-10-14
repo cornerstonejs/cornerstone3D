@@ -26,6 +26,7 @@ export default {
       labelValue,
       labelmapId,
       segmentationId,
+      labelmapEditTransaction,
     } = operationData;
 
     const existingValue = segmentationVoxelManager.getAtIndex(index);
@@ -36,7 +37,13 @@ export default {
         : existingValue;
     const writeValue = previewSegmentIndex ?? labelValue ?? segmentIndex;
 
-    if (segmentsLocked.includes(existingSegmentIndex)) {
+    // A protected segment is one that the overwrite mode keeps.
+    if (
+      segmentsLocked.includes(existingSegmentIndex) ||
+      labelmapEditTransaction?.protectedSegmentIndices.includes(
+        existingSegmentIndex
+      )
+    ) {
       return;
     }
 

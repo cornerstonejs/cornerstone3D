@@ -1,4 +1,3 @@
-import { cache } from '@cornerstonejs/core';
 import type { Segmentation } from '../../../types/SegmentationStateTypes';
 import type {
   LabelmapLayer,
@@ -11,46 +10,6 @@ import {
   removeLabelmap,
 } from './labelmapLayerStore';
 import { syncLegacyLabelmapData } from './labelmapLegacyAdapter';
-
-/**
- * Sets to 0 each voxel of a layer that holds the label value. A binding that
- * moves or goes away must not leave voxels behind: the renderer and the SEG
- * export read a label value without a binding as the segment with that number,
- * which can be a different segment in a different layer.
- */
-function clearLabelValueInLayer(
-  layer: LabelmapLayer,
-  labelValue: number
-): void {
-  const items = layer.volumeId
-    ? [cache.getVolume(layer.volumeId)]
-    : (layer.imageIds ?? []).map((imageId) => cache.getImage(imageId));
-
-  items.forEach((item) => {
-    item?.voxelManager?.forEach(({ value, index }) => {
-      if (value === labelValue) {
-        item.voxelManager.setAtIndex(index, 0);
-      }
-    });
-  });
-}
-
-/**
- * Removes the label value of a binding from its layer: the map entry and the
- * voxels. Only when the label value still belongs to the segment.
- */
-function releaseBinding(
-  layer: LabelmapLayer | undefined,
-  binding: SegmentLabelmapBindingState,
-  segmentIndex: number
-): void {
-  if (layer?.labelToSegmentIndex?.[binding.labelValue] !== segmentIndex) {
-    return;
-  }
-
-  delete layer.labelToSegmentIndex[binding.labelValue];
-  clearLabelValueInLayer(layer, binding.labelValue);
-}
 
 function getSegmentBinding(
   segmentation: Segmentation,
@@ -70,16 +29,11 @@ function setSegmentBinding(
   }
 
   const previousBinding = labelmapState.segmentBindings[segmentIndex];
-  if (
-    previousBinding &&
-    (previousBinding.labelmapId !== binding.labelmapId ||
-      previousBinding.labelValue !== binding.labelValue)
-  ) {
-    releaseBinding(
-      labelmapState.labelmaps[previousBinding.labelmapId],
-      previousBinding,
-      segmentIndex
-    );
+  if (previousBinding) {
+    const previousLayer = labelmapState.labelmaps[previousBinding.labelmapId];
+    if (previousLayer?.labelToSegmentIndex) {
+      delete previousLayer.labelToSegmentIndex[previousBinding.labelValue];
+    }
   }
 
   labelmapState.segmentBindings[segmentIndex] = binding;
@@ -119,10 +73,9 @@ function getSegmentIndexForLabelValue(
 }
 
 /**
- * The full map from label value to segment index of one labelmap layer. Use
- * it to read many voxels, for example in an export, instead of one
- * getSegmentIndexForLabelValue call for each voxel. A label value that is not
- * in the map is the segment index itself. The result is a copy.
+ * A copy of the label value to segment index map of one layer, to map many
+ * voxels at a time. A label value that is not in the map is its own segment
+ * index.
  */
 function getLabelToSegmentIndex(
   segmentation: Segmentation,
@@ -174,11 +127,10 @@ function removeSegmentBinding(
     return;
   }
 
-  releaseBinding(
-    labelmapState.labelmaps[binding.labelmapId],
-    binding,
-    segmentIndex
-  );
+  const layer = labelmapState.labelmaps[binding.labelmapId];
+  if (layer?.labelToSegmentIndex) {
+    delete layer.labelToSegmentIndex[binding.labelValue];
+  }
 
   delete labelmapState.segmentBindings[segmentIndex];
 
