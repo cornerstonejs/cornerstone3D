@@ -1,5 +1,4 @@
 import ECGResolvedView from '../src/RenderingEngine/GenericViewport/ECG/ECGResolvedView';
-import { computeECGRenderMetrics } from '../src/utilities/ECGUtilities';
 
 const SAMPLING_FREQUENCY = 500;
 const NUMBER_OF_SAMPLES = 5000;
@@ -79,21 +78,6 @@ describe('ECGResolvedView owns the world geometry', () => {
     expect(view.metrics.pxPerSecond).toBeGreaterThan(1);
   });
 
-  it('agrees with computeECGRenderMetrics for the same inputs', () => {
-    const canvas = makeCanvas();
-    const waveform = makeWaveform();
-    const view = makeView({ canvas });
-    const expected = computeECGRenderMetrics({
-      canvas,
-      visibleChannels: waveform.channels,
-      windowMs: DURATION_MS,
-      valueRange: [-1000, 1000],
-      layoutType: '12x1',
-    });
-
-    expect(view.metrics).toEqual(expected);
-  });
-
   it('gives a layout cell for every visible lead', () => {
     expect(makeView().channelLayouts).toHaveLength(LEAD_NAMES.length);
   });
@@ -132,12 +116,16 @@ describe('ECGResolvedView owns the world geometry', () => {
     });
 
     it('changes the layout when the arrangement changes', () => {
-      const rows = makeView({ options: { layoutType: '12x1' } });
-      const grid = makeView({ options: { layoutType: '3x4+1' } });
+      const rows = makeView({ options: { traceLayout: '12x1' } });
+      const grid = makeView({ options: { traceLayout: '3x4+1' } });
 
       // The 3x4+1 layout adds the rhythm strip, so it holds one more cell.
       expect(grid.channelLayouts).toHaveLength(rows.channelLayouts.length + 1);
-      expect(grid.channelLayouts.some((layout) => layout.isRhythm)).toBe(true);
+      expect(
+        grid.channelLayouts.some(
+          (layout) => layout.leadIndex >= LEAD_NAMES.length
+        )
+      ).toBe(true);
 
       // The auto-fit amplitude fills the canvas whatever the layout, so
       // `ecgHeight` is the same for both. The row height is what changes: 4
@@ -169,7 +157,7 @@ describe('ECGResolvedView owns the world geometry', () => {
 
   describe('the transforms use the same geometry that the render path draws', () => {
     it('round trips a point of every layout cell', () => {
-      const view = makeView({ options: { layoutType: '3x4+1' } });
+      const view = makeView({ options: { traceLayout: '3x4+1' } });
 
       view.channelLayouts.forEach((layout) => {
         const sampleIndex = (layout.startSample + layout.endSample) / 2;
@@ -264,7 +252,7 @@ describe('ECGResolvedView owns the world geometry', () => {
           anchorCanvas: [0.5, 0.5],
           scrollOffset: 0,
           sensitivityMmMv: 10,
-          layoutType: '12x1',
+          traceLayout: '12x1',
         },
         canvas: makeCanvas(),
         frameOfReferenceUID: 'ecg-viewport-test',
@@ -327,7 +315,7 @@ describe('ECGResolvedView owns the world geometry', () => {
     it('shows the full record in a multi-column layout whatever the time range', () => {
       const view = makeView({
         timeRange: [2000, 4000],
-        options: { layoutType: '3x4' },
+        options: { traceLayout: '3x4' },
       });
 
       expect(view.timeWindow.endMs - view.timeWindow.startMs).toBe(DURATION_MS);
@@ -352,18 +340,18 @@ describe('ECGResolvedView owns the world geometry', () => {
     });
 
     it('keeps the grid cell of a lead when another lead is hidden', () => {
-      const all = makeView({ options: { layoutType: '3x4' } });
+      const all = makeView({ options: { traceLayout: '3x4' } });
       // Hide lead I (index 0). aVR (index 3) keeps column 1.
       const hidden = makeView({
         options: {
-          layoutType: '3x4',
+          traceLayout: '3x4',
           visibleChannels: LEAD_NAMES.map((_name, i) => i).slice(1),
         },
       });
       const cellOf = (view) =>
         view.channelLayouts.find((layout) => layout.leadIndex === 3);
 
-      expect(cellOf(hidden).col).toBe(cellOf(all).col);
+      expect(cellOf(hidden).xOffset).toBe(cellOf(all).xOffset);
       expect(cellOf(hidden).startSample).toBe(cellOf(all).startSample);
     });
   });

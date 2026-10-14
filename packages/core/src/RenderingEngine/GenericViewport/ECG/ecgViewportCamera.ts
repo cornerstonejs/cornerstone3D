@@ -1,6 +1,7 @@
 import type { Point2 } from '../../../types';
 import type { ViewAnchor } from '../ViewportCameraTypes';
-import type { ECGViewState, RenderWindowMetrics } from './ECGViewportTypes';
+import type { ECGViewState } from './ECGViewportTypes';
+import type { ECGRenderMetrics } from './ecgGeometry';
 
 export interface ECGCanvasMapping {
   anchorWorld: [number, number];
@@ -20,18 +21,16 @@ export type ECGLayoutOptions = Pick<
   | 'sweepSpeed'
   | 'sensitivityMmMv'
   | 'amplitudeScale'
-  | 'traceRegions'
   | 'visibleChannels'
-  | 'layoutType'
+  | 'traceLayout'
 >;
 
 const ECG_LAYOUT_OPTION_KEYS: (keyof ECGLayoutOptions)[] = [
   'sweepSpeed',
   'sensitivityMmMv',
   'amplitudeScale',
-  'traceRegions',
   'visibleChannels',
-  'layoutType',
+  'traceLayout',
 ];
 
 /** Returns the layout options that `viewState` defines. */
@@ -86,7 +85,7 @@ export function normalizeECGViewState(camera: ECGViewState): ECGViewState {
 }
 
 export function resolveECGCanvasMapping(args: {
-  metrics: RenderWindowMetrics;
+  metrics: ECGRenderMetrics;
   camera?: ECGViewState;
   canvas: HTMLCanvasElement;
 }): ECGCanvasMapping {

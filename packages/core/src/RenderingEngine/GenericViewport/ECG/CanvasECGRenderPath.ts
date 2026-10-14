@@ -5,7 +5,7 @@ import {
   drawECGLabels,
   drawECGTraces,
   ensureECGCanvasSize,
-} from '../../../utilities/ECGUtilities';
+} from './ecgDrawing';
 import type {
   DataAddOptions,
   LoadedData,
@@ -156,8 +156,6 @@ function drawFrame(ecgCtx: ECGCanvasRenderContext): void {
   drawECGTraces({
     ctx: canvasContext,
     layouts,
-    ecgWidth: metrics.ecgWidth,
-    channelScale: metrics.channelScale,
     lineWidth: dataPresentation?.lineWidth,
     amplitudeScale: resolvedView.amplitudeScale,
   });

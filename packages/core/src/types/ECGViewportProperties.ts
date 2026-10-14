@@ -1,4 +1,5 @@
 import type { ViewportProperties } from './ViewportProperties';
+import type { ECGTraceLayout } from '../RenderingEngine/GenericViewport/ECG/ECGViewportTypes';
 
 type ECGViewportProperties = ViewportProperties & {
   visibleChannels?: number[];
@@ -9,7 +10,10 @@ type ECGViewportProperties = ViewportProperties & {
    */
   sensitivityMmMv?: number;
   showAmplitudeLabels?: boolean;
-  layoutType?: '12x1' | '6x2' | '3x4' | '3x4+1';
+  /** The trace layout: a registered name, or a full definition. */
+  traceLayout?: ECGTraceLayout;
+  /** @deprecated Use `traceLayout`, which accepts the same names. */
+  layoutType?: string;
 };
 
 export type { ECGViewportProperties as default };

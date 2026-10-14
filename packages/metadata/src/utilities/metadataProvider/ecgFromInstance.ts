@@ -24,7 +24,15 @@ export interface EcgModuleFull {
   waveformSampleInterpretation: string;
   multiplexGroupLabel: string;
   channelDefinitionSequence: Array<{
-    channelSourceSequence?: { codeMeaning?: string };
+    /**
+     * The lead of the channel. `codeValue` identifies the lead in every
+     * language, for example `5.6.3-9-2` (SCPECG) or `2:2` (MDC) for lead II.
+     */
+    channelSourceSequence?: {
+      codeMeaning?: string;
+      codeValue?: string;
+      codingSchemeDesignator?: string;
+    };
     /**
      * Millivolts that one raw sample unit represents, from
      * `ChannelSensitivity` x `ChannelSensitivityCorrectionFactor`, converted
@@ -232,8 +240,12 @@ export function buildEcgModuleFromInstance(
     );
     const srcSeq = srcSeqArr[0];
     const codeMeaning = (srcSeq?.CodeMeaning as string) ?? '';
+    const codeValue = srcSeq?.CodeValue as string | undefined;
+    const codingSchemeDesignator = srcSeq?.CodingSchemeDesignator as
+      | string
+      | undefined;
     return {
-      channelSourceSequence: { codeMeaning },
+      channelSourceSequence: { codeMeaning, codeValue, codingSchemeDesignator },
       mvPerUnit: getChannelMvPerUnit(ch),
     };
   });
