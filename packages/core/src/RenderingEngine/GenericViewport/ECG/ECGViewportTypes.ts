@@ -46,6 +46,12 @@ export interface ECGViewState extends ViewportCameraBase<[number, number]> {
   timeRange: [number, number];
   valueRange: [number, number];
   scrollOffset?: number;
+  sweepSpeed?: number;
+  sensitivityMmMv?: number;
+  amplitudeScale?: number;
+  traceRegions?: TraceRegion[];
+  visibleChannels?: number[];
+  layoutType?: '12x1' | '6x2' | '3x4' | '3x4+1';
 }
 
 export interface ECGProperties {
@@ -56,8 +62,10 @@ export interface ECGProperties {
    */
   sweepSpeed?: number;
   /**
-   * Amplitude sensitivity in mm/mV. Standard ECG amplitude calibration.
-   * Defaults to 10 mm/mV (1 mV = 10 mm tall on paper).
+   * Amplitude sensitivity in mm/mV (e.g. 10 mm/mV means 1 mV = 10 mm tall on paper).
+   * When undefined, the viewport operates in auto-fit mode, dynamically scaling
+   * trace amplitudes to fit available viewport height without millivolt labels.
+   * When set (e.g. 5, 10, 20), enables calibrated amplitude rendering.
    */
   sensitivityMmMv?: number;
   amplitudeScale?: number;
@@ -128,3 +136,13 @@ export type ECGCanvasRendering = MountedRendering<{
   canvas: HTMLCanvasElement;
   canvasContext: CanvasRenderingContext2D;
 }>;
+
+export interface ECGResetViewStateOptions {
+  resetPan?: boolean;
+  resetZoom?: boolean;
+  resetTimeRange?: boolean;
+}
+
+export interface ECGSetDataOptions {
+  options?: unknown;
+}

@@ -21,10 +21,6 @@ export function decodeMultipartRelated(
   response: ArrayBuffer,
   contentType?: string
 ): ArrayBuffer[] {
-  if (contentType && !/multipart/i.test(contentType)) {
-    return [response];
-  }
-
   const message = new Uint8Array(response);
   const boundary =
     getBoundaryFromContentType(contentType) ?? getBoundaryFromBody(message);

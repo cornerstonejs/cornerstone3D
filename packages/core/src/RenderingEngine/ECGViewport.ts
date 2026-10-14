@@ -10,6 +10,7 @@ import type {
   ECGWaveformData,
   ECGViewportProperties,
   ViewReferenceSpecifier,
+  ViewportContentMode,
 } from '../types';
 import { Transform } from './helpers/cpuFallback/rendering/transform';
 import triggerEvent from '../utilities/triggerEvent';
@@ -46,8 +47,8 @@ interface ChannelLayout {
  * ECGViewport renders DICOM ECG waveform data on an HTML canvas.
  * Based on the VideoViewport custom rendering pipeline pattern.
  *
- * @deprecated Use `ViewportType.ECG_NEXT` with the `ECGViewportLegacyAdapter`
- * (or the canonical `GenericViewport/ECG/ECGViewport`) instead.
+ * @deprecated Use `ViewportType.ECG` with the `ECGViewportLegacyAdapter`
+ * (or `ViewportType.ECG_NEXT` with the canonical `GenericViewport/ECG/ECGViewport`) instead.
  * This legacy class will be removed in a future major release.
  */
 class ECGViewport extends Viewport {
@@ -248,6 +249,8 @@ class ECGViewport extends Viewport {
     return computeECGChannelLayouts({
       visibleChannels: getVisibleECGChannelsByFlag(this.channels),
       channelScale: this.channelScale,
+      numberOfSamples: this.waveformData?.numberOfSamples ?? 0,
+      ecgWidth: this.ecgWidth,
     }) as ChannelLayout[];
   }
 
@@ -492,6 +495,10 @@ class ECGViewport extends Viewport {
 
   public getImageIds = (): string[] => {
     return this.imageId ? [this.imageId] : [];
+  };
+
+  public getCurrentMode = (): ViewportContentMode => {
+    return this.waveformData ? 'ecg' : 'empty';
   };
 
   public scroll = (): void => {

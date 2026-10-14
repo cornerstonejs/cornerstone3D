@@ -11,12 +11,15 @@ export const ECG_PX_PER_MM = 3.779;
 /** @deprecated Use ECG_DEFAULT_SWEEP_SPEED_MM_S and ECG_PX_PER_MM to compute dynamically. */
 export const ECG_SECONDS_WIDTH = 150;
 export const ECG_CHANNEL_SPACING = 5;
+import { utilities as metadataUtilities } from '@cornerstonejs/metadata';
+
 /**
  * Millivolts that one raw sample unit represents when the instance carries no
  * channel sensitivity. A 16-bit diagnostic ECG normally samples at 1 microvolt
- * for each unit.
+ * for each unit. Re-exported from @cornerstonejs/metadata.
  */
-export const ECG_DEFAULT_MV_PER_UNIT = 0.001;
+export const ECG_DEFAULT_MV_PER_UNIT =
+  metadataUtilities.ECG_DEFAULT_MV_PER_UNIT;
 
 export const ECG_RENDERING_COLORS = {
   gridMajor: '#7f0000',
@@ -164,7 +167,6 @@ export async function loadECGWaveform(dataId: string): Promise<{
     const channelDefinition = channelDefinitions[index] || {};
     const name =
       channelDefinition.channelSourceSequence?.codeMeaning ||
-      channelDefinition.ChannelSourceSequence?.CodeMeaning ||
       `Channel ${index + 1}`;
     const data = channelArrays[index] || new Int16Array(0);
     const { min, max } = computeECGMinMax(data);
@@ -320,6 +322,10 @@ export function getECGLayoutRowCount(
   layoutType: ECGLayoutType,
   visibleCount: number
 ): number {
+  if (layoutType === '12x1') {
+    return Math.max(1, visibleCount);
+  }
+
   const rowsPerColumn = ECG_LAYOUT_ROWS_PER_COLUMN[layoutType];
   const gridRows = Number.isFinite(rowsPerColumn)
     ? rowsPerColumn
@@ -527,9 +533,9 @@ export function computeECGChannelLayouts<
 >(args: {
   visibleChannels: TChannel[];
   channelScale: number;
+  numberOfSamples: number;
+  ecgWidth: number;
   layoutType?: ECGLayoutType;
-  numberOfSamples?: number;
-  ecgWidth?: number;
   /**
    * Index of each visible channel in the unfiltered channel list. The layout
    * writes these indices to `leadIndex`. When the caller omits the argument,
@@ -547,8 +553,8 @@ export function computeECGChannelLayouts<
     visibleChannels,
     channelScale,
     layoutType = '12x1',
-    numberOfSamples = 5000,
-    ecgWidth = 1000,
+    numberOfSamples,
+    ecgWidth,
     leadIndices,
     channelCount,
     sensitivityMmMv,

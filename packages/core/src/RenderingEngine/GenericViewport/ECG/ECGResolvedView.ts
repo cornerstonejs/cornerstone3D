@@ -83,8 +83,12 @@ class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
         this.state.viewState.timeRange[1] - this.state.viewState.timeRange[0]
       ),
       valueRange: this.state.viewState.valueRange,
-      sweepSpeed: this.state.dataPresentation?.sweepSpeed,
-      sensitivityMmMv: this.state.dataPresentation?.sensitivityMmMv,
+      sweepSpeed:
+        this.state.viewState?.sweepSpeed ??
+        this.state.dataPresentation?.sweepSpeed,
+      sensitivityMmMv:
+        this.state.viewState?.sensitivityMmMv ??
+        this.state.dataPresentation?.sensitivityMmMv,
       layoutType: this.layoutType,
     });
 
@@ -103,7 +107,11 @@ class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
 
   /** Lead arrangement that this frame draws. */
   get layoutType() {
-    return this.state.dataPresentation?.layoutType ?? '12x1';
+    return (
+      this.state.viewState?.layoutType ??
+      this.state.dataPresentation?.layoutType ??
+      '12x1'
+    );
   }
 
   /**
@@ -325,7 +333,8 @@ class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
   private getVisibleEntries() {
     this.cachedVisibleEntries ||= getVisibleECGChannelEntries(
       this.state.waveform.channels,
-      this.state.dataPresentation?.visibleChannels
+      this.state.viewState?.visibleChannels ??
+        this.state.dataPresentation?.visibleChannels
     );
 
     return this.cachedVisibleEntries;
@@ -343,7 +352,9 @@ class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
       leadIndices: entries.map((entry) => entry.channelIndex),
       channelCount: this.state.waveform.channels.length,
       channelScale: this.metrics.channelScale,
-      sensitivityMmMv: this.state.dataPresentation?.sensitivityMmMv,
+      sensitivityMmMv:
+        this.state.viewState?.sensitivityMmMv ??
+        this.state.dataPresentation?.sensitivityMmMv,
       layoutType: this.layoutType,
       numberOfSamples: this.state.waveform.numberOfSamples,
       ecgWidth: this.metrics.ecgWidth,

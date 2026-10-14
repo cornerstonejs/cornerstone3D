@@ -167,8 +167,8 @@ describe('ECG channel layouts', () => {
       });
     });
 
-    it('keeps the nominal 12 rows for a waveform with fewer leads', () => {
-      expect(getECGLayoutRowCount('12x1', 8)).toBe(12);
+    it('gives 12x1 one row for each visible lead', () => {
+      expect(getECGLayoutRowCount('12x1', 8)).toBe(8);
       expect(getECGLayoutRowCount('12x1', 15)).toBe(15);
       expect(getECGLayoutRowCount('3x4', 12)).toBe(3);
       expect(getECGLayoutRowCount('3x4+1', 12)).toBe(4);
