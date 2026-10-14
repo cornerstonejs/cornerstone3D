@@ -53,7 +53,7 @@ The viewport therefore reports its fidelity in one of four states:
 | State     | Meaning to the user                                              | Expected to improve |
 | --------- | ---------------------------------------------------------------- | ------------------- |
 | `loading` | Some of the data has not arrived.                                | Yes                 |
-| `lod`     | The interaction uses a reduced quality to keep the frame rate.   | Yes, when it stops  |
+| `lod`     | The render samples the data more coarsely than at full quality.  | When it stops       |
 | `lossy`   | The data is reduced or decimated, and this is the final quality. | No                  |
 | `done`    | The viewport shows the full data.                                | Not applicable      |
 
@@ -96,7 +96,7 @@ A viewport with no data has no state, and it shows no indicator.
   reduction, a decimation, or an interactive reduction.
 - **FIDELITY-DISCOVER-2** The details state the amount of the degradation as a
   number. Examples: a reduction factor for each axis (`2×2×4`), a percentage of
-  the data that has arrived, a factor of the interactive sample distance.
+  the data that has arrived, a factor of the sample distance.
 - **FIDELITY-DISCOVER-3** The details state whether a wait is expected to
   improve the image.
 - **FIDELITY-DISCOVER-4** The details use words that a clinician understands
@@ -146,10 +146,14 @@ A viewport with no data has no state, and it shows no indicator.
   `ImageQualityStatus`. A reader gets it with `cache.getImageQuality(imageId)`,
   or from `IImage.imageQualityStatus`. The enum and its consumers stay as they
   are.
-- **FIDELITY-RECORD-6** An interactive reduction of a 3D render is the ratio of
-  the current sample distance of the mapper to the idle sample distance. A
-  ratio above 1 is the `lod` state. `TrackballRotateTool` and
-  `VolumeCroppingTool` set the ratio through `rotateSampleDistanceFactor`.
+- **FIDELITY-RECORD-6** A reduced sampling of a render is the ratio of the
+  current sample distance of the mapper to the sample distance at a multiplier
+  of 1. A ratio above 1 is the `lod` state. Every source of the ratio counts:
+  `rotateSampleDistanceFactor` of `TrackballRotateTool` and
+  `VolumeCroppingTool` during an interaction, and a `sampleDistanceMultiplier`
+  above 1 from the configuration, a preset or a viewport property. A
+  multiplier above 1 that stays after the interaction is a standing reduction,
+  and the indicator stays in the `lod` state.
 
 ### The events and the queries (FIDELITY-EVENT)
 

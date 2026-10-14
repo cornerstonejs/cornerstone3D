@@ -1,5 +1,16 @@
-import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  afterEach,
+  jest,
+} from '@jest/globals';
 import { getConfiguration, setConfiguration } from '../src/init';
+import cache from '../src/cache/cache';
+import Events from '../src/enums/Events';
+import ImageQualityStatus from '../src/enums/ImageQualityStatus';
+import VoxelReductions from '../src/enums/VoxelReductions';
 import ViewportType from '../src/enums/ViewportType';
 import {
   detachFidelityIndicator,
@@ -111,6 +122,72 @@ describe('fidelityIndicator attach gates', () => {
 
       detachFidelityIndicator(viewport);
       expect(viewport.element.querySelector('.fi-root')).toBeNull();
+    });
+  });
+
+  describe('recovery', () => {
+    const voxelGrid = {
+      dimensions: [8, 8, 8],
+      spacing: [1, 1, 1],
+      origin: [0, 0, 0],
+      direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
+    };
+    let missing;
+
+    beforeEach(() => {
+      jest.useFakeTimers();
+      setConfiguration({
+        ...original,
+        dangerouslyDisableFidelityIndicator: false,
+      });
+      missing = 0;
+      jest.spyOn(cache, 'getVolume').mockReturnValue({
+        voxelGrid,
+        getGridQuality: () => ({
+          grid: voxelGrid,
+          status: ImageQualityStatus.FULL_RESOLUTION,
+          lowest: ImageQualityStatus.FULL_RESOLUTION,
+          highest: ImageQualityStatus.FULL_RESOLUTION,
+          missing,
+          voxels: 512,
+          exact: true,
+          source: 'directLoad',
+          reduction: VoxelReductions.None,
+          deliveries: 1,
+        }),
+      });
+    });
+
+    afterEach(() => {
+      jest.restoreAllMocks();
+      jest.useRealTimers();
+    });
+
+    it('announces done again after a later degradation', () => {
+      const viewport = viewportStub({ type: ViewportType.ORTHOGRAPHIC });
+      viewport.getActors = () => [{ uid: 'vol', actor: {} }];
+      maybeAttachFidelityIndicator(viewport);
+      const root = viewport.element.querySelector('.fi-root');
+      const renderAs = (missingVoxels) => {
+        missing = missingVoxels;
+        viewport.element.dispatchEvent(new CustomEvent(Events.IMAGE_RENDERED));
+        jest.advanceTimersByTime(20);
+      };
+
+      renderAs(10);
+      renderAs(0);
+      expect(root.dataset.state).toBe('done');
+      expect(root.dataset.shown).toBe('true');
+      jest.advanceTimersByTime(1100);
+      expect(root.dataset.shown).toBe('false');
+
+      renderAs(10);
+      expect(root.dataset.state).toBe('loading');
+      renderAs(0);
+      expect(root.dataset.state).toBe('done');
+      expect(root.dataset.shown).toBe('true');
+
+      detachFidelityIndicator(viewport);
     });
   });
 });

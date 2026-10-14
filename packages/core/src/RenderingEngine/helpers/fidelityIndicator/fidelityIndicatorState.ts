@@ -28,7 +28,8 @@ export type SvgFidelityState = 'loading' | 'done' | 'lossy' | 'lod';
 /**
  * Worst-case SVG state across lines: loading > lod > lossy > done.
  * No volume / no quality record yet stays hidden (blank), so the page does not
- * flash the loading glyph before the user starts a load.
+ * flash the loading glyph before the user starts a load. Once one line has a
+ * record, a line without one is loading, and not full resolution.
  */
 export function svgStateOf(lines: FidelityLine[]): SvgFidelityState | 'hidden' {
   if (!lines.length) {
@@ -41,11 +42,7 @@ export function svgStateOf(lines: FidelityLine[]): SvgFidelityState | 'hidden' {
   let anyWithRecord = false;
 
   for (const line of lines) {
-    if (!line.record) {
-      continue;
-    }
-
-    anyWithRecord = true;
+    anyWithRecord ||= !!line.record;
     const kind = lineKind(line);
 
     if (kind === 'loading') {

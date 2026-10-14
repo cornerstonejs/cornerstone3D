@@ -90,6 +90,10 @@ describe('fidelityIndicatorState', () => {
       ).toBe('lossy');
     });
 
+    it('reports loading when one volume has no record yet', () => {
+      expect(svgStateOf([line(), line({ record: undefined })])).toBe('loading');
+    });
+
     it('reports done when every recorded line is full resolution', () => {
       expect(svgStateOf([line(), line()])).toBe('done');
     });

@@ -301,14 +301,11 @@ function attachSvgIndicator(
   let disposed = false;
   let currentState: SvgFidelityState | 'hidden' = 'hidden';
   let doneFadeTimer = 0;
-  /** Once Done has faded (or entered silently after dismissal), stays true for this attachment. */
-  let doneHoldElapsed = false;
 
   const scheduleDoneFade = () => {
     clearTimeout(doneFadeTimer);
     doneFadeTimer = window.setTimeout(() => {
       doneFadeTimer = 0;
-      doneHoldElapsed = true;
       if (currentState === 'done') {
         root.dataset.shown = 'false';
       }
@@ -319,18 +316,6 @@ function attachSvgIndicator(
     if (!svg.querySelector('.fi-glyph')) {
       svg.innerHTML = SVG_GLYPH;
     }
-  };
-
-  const enterDoneSilently = (from: SvgFidelityState | 'hidden') => {
-    root.dataset.from = from === 'hidden' ? 'hidden' : from;
-    root.dataset.state = 'done';
-    root.dataset.shown = 'false';
-    ensureSvgGlyph();
-    clearTimeout(doneFadeTimer);
-    doneFadeTimer = 0;
-    doneHoldElapsed = true;
-    currentState = 'done';
-    svg.setAttribute('aria-label', ARIA_LABELS.done);
   };
 
   const setSvgState = (next: SvgFidelityState | 'hidden') => {
@@ -350,19 +335,13 @@ function attachSvgIndicator(
       return;
     }
 
+    // A render in the same state keeps the running fade, so Done still fades
+    // while the viewport renders every frame.
     if (next === currentState) {
-      if (next === 'done' && !doneHoldElapsed) {
-        scheduleDoneFade();
-      }
       return;
     }
 
     const from = currentState;
-
-    if (next === 'done' && doneHoldElapsed) {
-      enterDoneSilently(from);
-      return;
-    }
 
     root.dataset.from = from === 'hidden' ? 'hidden' : from;
     root.dataset.state = next;
