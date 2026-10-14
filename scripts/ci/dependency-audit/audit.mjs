@@ -19,8 +19,10 @@
  * "base" is the PR's branch point on its target branch, "head" the PR. Any file
  * may be missing; a missing base lockfile (target branch without a pnpm
  * lockfile) makes every package in the head lockfile count as added.
- * The number of ignores the PR adds goes to $GITHUB_OUTPUT as `new_ignores`
- * when set. Writes a Markdown report
+ * When $GITHUB_OUTPUT is set, it gets counts for the status lines the workflow
+ * adds to the PR's checks list: `new_ignores` (ignores the PR adds) and
+ * `changes_updated`, `changes_new`, `changes_removed`, `changes_total` (rows of
+ * the "Packages changed" table). Writes a Markdown report
  * to $GITHUB_STEP_SUMMARY when set. Exits 1 when the PR adds a blocking
  * advisory, deletes the lockfile, or adds many entries it cannot audit; 2 on
  * errors.
@@ -299,14 +301,19 @@ function lockfileCell(text) {
   return clean ? `\`${clean}\`` : '';
 }
 
+/** How many changes are updates, new packages and removals. */
+export function countChanges(changes) {
+  const added = changes.filter((c) => !c.before.length).length;
+  const removed = changes.filter((c) => !c.after.length).length;
+  return { updated: changes.length - added - removed, added, removed };
+}
+
 /** Collapsed "Packages changed" table, so reviewers see what the lockfile change does. */
 function changesSection(changes) {
   const versions = (list) =>
     list.length ? list.map(lockfileCell).join(', ') : '–';
   const shown = changes.slice(0, MAX_CHANGE_ROWS);
-  const added = changes.filter((c) => !c.before.length).length;
-  const removed = changes.filter((c) => !c.after.length).length;
-  const updated = changes.length - added - removed;
+  const { updated, added, removed } = countChanges(changes);
   const lines = [
     `<details><summary>Packages changed (${changes.length}): ${updated} updated, ` +
       `${added} new, ${removed} removed</summary>`,
@@ -435,6 +442,7 @@ async function main() {
   const lines = ['## Dependency audit', ''];
   let findings = [];
   let blocking = [];
+  let changes = [];
   // Set when the check cannot do its job; it then fails rather than pass.
   let cannotAudit = null;
   const headText = readText(values.head);
@@ -467,13 +475,14 @@ async function main() {
         'update scripts/ci/dependency-audit/audit.mjs.';
       lines.push(`### ❌ ${cannotAudit}`, '');
     }
+    changes = packageChanges(basePackages, headPackages);
     findings = await lookUpAdvisories(auditable);
     const serious = findings.filter((f) => BLOCKING_SEVERITIES.has(f.severity));
     blocking = serious.filter((f) => !ignoreGhsas.has(f.ghsa));
     lines.push(
       ...lockfileSection({
         added: added.length,
-        changes: packageChanges(basePackages, headPackages),
+        changes,
         notAudited,
         blocking,
         allowed: serious.filter((f) => ignoreGhsas.has(f.ghsa)),
@@ -488,10 +497,14 @@ async function main() {
   if (newIgnores.length) {
     lines.splice(2, 0, ...newIgnoresSection(newIgnores, findings));
   }
+  // Counts only, never text from the PR: the workflow puts them in statuses.
   if (process.env.GITHUB_OUTPUT) {
+    const { updated, added, removed } = countChanges(changes);
     fs.appendFileSync(
       process.env.GITHUB_OUTPUT,
-      `new_ignores=${newIgnores.length}\n`
+      `new_ignores=${newIgnores.length}\n` +
+        `changes_updated=${updated}\nchanges_new=${added}\n` +
+        `changes_removed=${removed}\nchanges_total=${changes.length}\n`
     );
   }
 
