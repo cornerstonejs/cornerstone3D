@@ -14,14 +14,34 @@ the base class `GenericViewport`, the family viewport class, the resolved view,
 the render path, the render path resolver, the data provider, the projection
 adapter, and the legacy adapter.
 
+Today the Generic Viewport architecture is behind a flag. The flag is
+`rendering.useGenericViewport` in the configuration of `init()`, and it is off
+by default:
+
+- With the flag on, the rendering engine remaps each legacy viewport type to the
+  Generic Viewport family through a legacy adapter. `STACK` and `ORTHOGRAPHIC`
+  go to `PLANAR_NEXT`. `VIDEO`, `WHOLE_SLIDE`, `ECG` and `VOLUME_3D` go to the
+  `_NEXT` type of the same name. See `NEXT_TYPE_REMAP` in
+  `BaseRenderingEngine.ts`.
+- With the flag off, a legacy viewport type uses the old viewport class, for
+  example `StackViewport` or `VolumeViewport`.
+- A `_NEXT` viewport type, for example `ViewportType.PLANAR_NEXT`, always uses
+  the Generic Viewport family, with or without the flag.
+
+The plan is to move all applications from the old viewport classes to the
+Generic Viewport families, and then to remove the old viewport classes. The
+rules on this page apply to the Generic Viewport code only. The old viewport
+classes do not follow these rules.
+
 This specification does not describe what a clinician sees. It does not replace
 the concept pages in
 [`concepts/cornerstone-core/generic-viewport`](../../concepts/cornerstone-core/generic-viewport/index.md),
 which explain why the architecture exists. This page states the rules that a
 contributor must follow, and a reviewer must check.
 
-The "user" of this specification is the developer who writes application code
-against the Generic Viewport API, or who adds a new viewport family. The
+The "user" of this specification is a developer or a coding agent. That user
+writes application code against the Generic Viewport API, or adds a new
+viewport family. The
 § User requirements section states what that developer can rely on. The
 § Implementation requirements section states how the code delivers it.
 
@@ -72,6 +92,10 @@ The three questions that find the most defects, in order:
 A generic viewport family is a set of files in one directory under
 `packages/core/src/RenderingEngine/GenericViewport/`. Today the repository holds
 five families: `Planar`, `Video`, `ECG`, `WSI` and `Volume3D`.
+
+The `Planar` family draws the 2D slices of CT, MR and other cross-sectional
+images, as a stack or as a volume. Most applications use the `Planar` family,
+so the examples on this page use it.
 
 Each family divides one viewport into seven parts. The parts form a chain from a
 logical identifier to a drawn frame:
@@ -176,7 +200,7 @@ states the contract, and this specification repeats it:
 
 ### The family viewport class (GENVIEW-FAMILY)
 
-For example `ECG/ECGViewport.ts`, `Planar/PlanarViewport.ts`.
+For example `Planar/PlanarViewport.ts`.
 
 - **GENVIEW-FAMILY-1** The family class stays thin. It supplies the render
   context, the data provider, the render path resolver, the default view state,
@@ -205,7 +229,7 @@ For example `ECG/ECGViewport.ts`, `Planar/PlanarViewport.ts`.
 
 ### The view state, and the data presentation (GENVIEW-STATE)
 
-For example `ECG/ECGViewportTypes.ts`.
+For example `Planar/PlanarViewportTypes.ts`.
 
 - **GENVIEW-STATE-1** An option that changes the world geometry, or that changes
   the world/canvas transform of any point, belongs to the view state. A slice
@@ -220,14 +244,14 @@ For example `ECG/ECGViewportTypes.ts`.
   `CAMERA_MODIFIED`, and the presentation path does not.
 - **GENVIEW-STATE-4** The view state extends `ViewportCameraBase`. The family
   adds only the fields that the family needs.
-- **GENVIEW-STATE-5** The family declares the four records in one file,
+- **GENVIEW-STATE-5** The family declares four types in one file,
   `<Family>ViewportTypes.ts`: the view state, the data presentation, the render
   context and the mounted rendering. A second declaration of the same shape in
   another file is a defect. A shared shape becomes a type alias, and not a copy.
 
 ### The resolved view (GENVIEW-VIEW)
 
-For example `ECG/ECGResolvedView.ts`. Each one extends `ResolvedViewportView`.
+For example `Planar/PlanarResolvedView.ts`. Each one extends `ResolvedViewportView`.
 
 - **GENVIEW-VIEW-1** The resolved view owns the world geometry of one frame and
   the transforms between world space and canvas space.
@@ -248,7 +272,8 @@ For example `ECG/ECGResolvedView.ts`. Each one extends `ResolvedViewportView`.
 
 ### The render path (GENVIEW-PATH)
 
-For example `ECG/CanvasECGRenderPath.ts`, `Planar/VtkImageMapperRenderPath.ts`.
+For example `Planar/VtkImageMapperRenderPath.ts`,
+`Planar/CpuImageSliceRenderPath.ts`.
 
 - **GENVIEW-PATH-1** A render path owns the drawing and the runtime resources of
   one data shape in one render mode. It owns the mount, the draw, the resize and
@@ -269,7 +294,7 @@ For example `ECG/CanvasECGRenderPath.ts`, `Planar/VtkImageMapperRenderPath.ts`.
 
 ### The render path resolver (GENVIEW-RESOLVER)
 
-For example `ECG/ECGRenderPathResolver.ts`.
+For example `Planar/PlanarRenderPathResolver.ts`.
 
 - **GENVIEW-RESOLVER-1** Each family exports two functions:
   `createDefault<Family>RenderPaths()`, which returns the catalogue, and
@@ -284,7 +309,7 @@ For example `ECG/ECGRenderPathResolver.ts`.
 
 ### The data provider (GENVIEW-DATA)
 
-For example `ECG/DefaultECGDataProvider.ts`.
+For example `Planar/DefaultPlanarDataProvider.ts`.
 
 - **GENVIEW-DATA-1** The data provider turns a display set identifier into a
   `LoadedData` payload. It performs the input and the output, and the decode.
@@ -317,7 +342,7 @@ Each family holds four files:
 
 ### The legacy adapter (GENVIEW-LEGACY)
 
-For example `ECG/ECGViewportLegacyAdapter.ts`.
+For example `Planar/PlanarViewportLegacyAdapter.ts`.
 
 - **GENVIEW-LEGACY-1** The legacy adapter extends the family viewport class, and
   it adds the methods of the viewport class that the family replaces.
@@ -380,6 +405,10 @@ places below. Each item names the requirement that the deviation breaks. An
 item that breaks no requirement yet says so, and names the requirement that a
 future change must obey.
 
+Most items below are in the `ECG` family. The rules apply in the same way to
+the `Planar` family and to the other families. A deviation in another family
+goes into this list when a review finds it.
+
 A review uses this section in two ways. A deviation that this section already
 holds is not a new finding. A change that makes one of these deviations worse is
 a finding, and the report names the deviation.
@@ -389,7 +418,8 @@ a finding, and the report names the deviation.
 `CanvasECGRenderPath.addData` creates a `metrics` object on the mounted
 rendering. On each draw, `drawFrame` computes new metrics and replaces that
 object. `ECGViewport.getResolvedView` passes the current `metrics` object into a
-new `ECGResolvedView`, and the resolved view divides by `metrics.ecgWidth` and `metrics.channelScale` in
+new `ECGResolvedView`, and the resolved view divides by `metrics.ecgWidth` and
+`metrics.channelScale` in
 `canvasToWorld`.
 
 The world/canvas transform is therefore one frame old after any change of the
