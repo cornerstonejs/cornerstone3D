@@ -73,26 +73,39 @@ export function svgStateOf(lines: FidelityLine[]): SvgFidelityState | 'hidden' {
   return 'done';
 }
 
-export function lineKind(line: FidelityLine): SvgFidelityState {
-  const { record, reductionFactors, fullResolution, sampleDistanceLod } = line;
+/** What the data of one line holds, apart from the sample distance. */
+export type FidelityDataKind = 'loading' | 'decimated' | 'reduced' | 'full';
+
+export function dataKindOf(line: FidelityLine): FidelityDataKind {
+  const { record, reductionFactors, fullResolution } = line;
 
   if (!record || record.missing > 0) {
     return 'loading';
   }
 
-  if (isInteractiveLod(sampleDistanceLod)) {
+  if (isAliasingReduction(record.reduction)) {
+    return 'decimated';
+  }
+
+  if (!fullResolution || isReduced(reductionFactors)) {
+    return 'reduced';
+  }
+
+  return 'full';
+}
+
+export function lineKind(line: FidelityLine): SvgFidelityState {
+  const dataKind = dataKindOf(line);
+
+  if (dataKind === 'loading') {
+    return 'loading';
+  }
+
+  if (isInteractiveLod(line.sampleDistanceLod)) {
     return 'lod';
   }
 
-  if (
-    isAliasingReduction(record.reduction) ||
-    !fullResolution ||
-    isReduced(reductionFactors)
-  ) {
-    return 'lossy';
-  }
-
-  return 'done';
+  return dataKind === 'full' ? 'done' : 'lossy';
 }
 
 /**

@@ -8,6 +8,7 @@ import {
 } from '@jest/globals';
 import { getConfiguration, setConfiguration } from '../src/init';
 import cache from '../src/cache/cache';
+import eventTarget from '../src/eventTarget';
 import Events from '../src/enums/Events';
 import ImageQualityStatus from '../src/enums/ImageQualityStatus';
 import VoxelReductions from '../src/enums/VoxelReductions';
@@ -133,6 +134,7 @@ describe('fidelityIndicator attach gates', () => {
       direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
     };
     let missing;
+    let getGridQuality;
 
     beforeEach(() => {
       jest.useFakeTimers();
@@ -141,21 +143,21 @@ describe('fidelityIndicator attach gates', () => {
         dangerouslyDisableFidelityIndicator: false,
       });
       missing = 0;
-      jest.spyOn(cache, 'getVolume').mockReturnValue({
-        voxelGrid,
-        getGridQuality: () => ({
-          grid: voxelGrid,
-          status: ImageQualityStatus.FULL_RESOLUTION,
-          lowest: ImageQualityStatus.FULL_RESOLUTION,
-          highest: ImageQualityStatus.FULL_RESOLUTION,
-          missing,
-          voxels: 512,
-          exact: true,
-          source: 'directLoad',
-          reduction: VoxelReductions.None,
-          deliveries: 1,
-        }),
-      });
+      getGridQuality = jest.fn(() => ({
+        grid: voxelGrid,
+        status: ImageQualityStatus.FULL_RESOLUTION,
+        lowest: ImageQualityStatus.FULL_RESOLUTION,
+        highest: ImageQualityStatus.FULL_RESOLUTION,
+        missing,
+        voxels: 512,
+        exact: true,
+        source: 'directLoad',
+        reduction: VoxelReductions.None,
+        deliveries: 1,
+      }));
+      jest
+        .spyOn(cache, 'getVolume')
+        .mockReturnValue({ voxelGrid, getGridQuality });
     });
 
     afterEach(() => {
@@ -163,15 +165,30 @@ describe('fidelityIndicator attach gates', () => {
       jest.useRealTimers();
     });
 
-    it('announces done again after a later degradation', () => {
+    function attach() {
       const viewport = viewportStub({ type: ViewportType.ORTHOGRAPHIC });
       viewport.getActors = () => [{ uid: 'vol', actor: {} }];
       maybeAttachFidelityIndicator(viewport);
+      jest.advanceTimersByTime(20);
+      return viewport;
+    }
+
+    function render(viewport) {
+      viewport.element.dispatchEvent(new CustomEvent(Events.IMAGE_RENDERED));
+      jest.advanceTimersByTime(20);
+    }
+
+    it('announces done again after a later degradation', () => {
+      const viewport = attach();
       const root = viewport.element.querySelector('.fi-root');
       const renderAs = (missingVoxels) => {
         missing = missingVoxels;
-        viewport.element.dispatchEvent(new CustomEvent(Events.IMAGE_RENDERED));
-        jest.advanceTimersByTime(20);
+        eventTarget.dispatchEvent(
+          new CustomEvent(Events.IMAGE_VOLUME_MODIFIED, {
+            detail: { volumeId: 'vol' },
+          })
+        );
+        render(viewport);
       };
 
       renderAs(10);
@@ -186,6 +203,23 @@ describe('fidelityIndicator attach gates', () => {
       renderAs(0);
       expect(root.dataset.state).toBe('done');
       expect(root.dataset.shown).toBe('true');
+
+      detachFidelityIndicator(viewport);
+    });
+
+    it('reads the quality record again only when the volume data changes', () => {
+      const viewport = attach();
+      render(viewport);
+      render(viewport);
+      expect(getGridQuality).toHaveBeenCalledTimes(1);
+
+      eventTarget.dispatchEvent(
+        new CustomEvent(Events.IMAGE_VOLUME_MODIFIED, {
+          detail: { volumeId: 'vol' },
+        })
+      );
+      render(viewport);
+      expect(getGridQuality).toHaveBeenCalledTimes(2);
 
       detachFidelityIndicator(viewport);
     });

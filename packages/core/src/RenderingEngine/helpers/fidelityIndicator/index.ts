@@ -7,8 +7,10 @@ export {
 export {
   type FidelityLine,
   type SvgFidelityState,
+  type FidelityDataKind,
   svgStateOf,
   lineKind,
+  dataKindOf,
   reductionFactorsOf,
   isReduced,
   isInteractiveLod,
