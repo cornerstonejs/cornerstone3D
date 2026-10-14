@@ -36,18 +36,22 @@ type ECGCanvasTransform = {
   yOffset: number;
 };
 
+/** Time window of one frame, in ms and in samples `[startSample, endSample)`. */
+type ECGTimeWindow = {
+  startMs: number;
+  endMs: number;
+  startSample: number;
+  endSample: number;
+};
+
 /**
  * Owns the world geometry of one ECG frame, and the transforms between world
  * space and canvas space.
  *
- * The snapshot derives everything from the data, the canvas geometry and the
- * view state, which is what the view ownership contract asks of a resolved view
- * (see ViewportArchitectureTypes). The render metrics and the channel layouts
- * are part of that geometry, so this class computes them, and
- * `CanvasECGRenderPath` reads them back. The render path previously computed
- * the metrics itself and wrote them onto the mounted rendering, so a transform
- * answered with the geometry of the previous frame, and answered with a
- * placeholder before the first frame.
+ * The geometry comes from the data, the canvas geometry and the view state
+ * only (GENVIEW-VIEW-2). That geometry includes the time window, the render
+ * metrics and the channel layouts. `CanvasECGRenderPath` reads all three from
+ * here, so the drawn frame and the transforms always agree.
  *
  * Every derived value is cached, because one instance describes one frame and
  * the state is frozen.
@@ -56,6 +60,7 @@ class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
   private cachedCanvasMapping?: ECGCanvasMapping;
   private cachedChannelLayouts?: ECGChannelLayout<ECGChannelData>[];
   private cachedMetrics?: ECGRenderMetrics;
+  private cachedTimeWindow?: ECGTimeWindow;
   private cachedVisibleEntries?: ReturnType<
     typeof getVisibleECGChannelEntries<ECGChannelData>
   >;
@@ -75,24 +80,71 @@ class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
    * pixels for each second. The render path draws with these values.
    */
   get metrics(): ECGRenderMetrics {
+    const entries = this.getVisibleEntries();
+    const { startMs, endMs } = this.timeWindow;
+
     this.cachedMetrics ||= computeECGRenderMetrics({
       canvas: this.state.canvas,
-      visibleChannels: this.getVisibleChannels(),
-      windowMs: Math.max(
-        1,
-        this.state.viewState.timeRange[1] - this.state.viewState.timeRange[0]
-      ),
+      visibleChannels: entries.map((entry) => entry.channel),
+      leadIndices: entries.map((entry) => entry.channelIndex),
+      channelCount: this.state.waveform.channels.length,
+      windowMs: Math.max(1, endMs - startMs),
       valueRange: this.state.viewState.valueRange,
-      sweepSpeed:
-        this.state.viewState?.sweepSpeed ??
-        this.state.dataPresentation?.sweepSpeed,
-      sensitivityMmMv:
-        this.state.viewState?.sensitivityMmMv ??
-        this.state.dataPresentation?.sensitivityMmMv,
+      sweepSpeed: this.state.viewState.sweepSpeed,
+      sensitivityMmMv: this.state.viewState.sensitivityMmMv,
       layoutType: this.layoutType,
     });
 
     return this.cachedMetrics;
+  }
+
+  /**
+   * Time window that this frame shows. The `12x1` layout uses the
+   * `timeRange` of the view state, clamped to the record. A multi-column layout
+   * always shows the full record.
+   */
+  get timeWindow(): ECGTimeWindow {
+    if (this.cachedTimeWindow) {
+      return this.cachedTimeWindow;
+    }
+
+    const { numberOfSamples, samplingFrequency } = this.state.waveform;
+    const durationMs = (numberOfSamples / samplingFrequency) * 1000;
+
+    if (this.layoutType !== '12x1') {
+      this.cachedTimeWindow = {
+        startMs: 0,
+        endMs: durationMs,
+        startSample: 0,
+        endSample: numberOfSamples,
+      };
+      return this.cachedTimeWindow;
+    }
+
+    const [requestedStart, requestedEnd] = this.state.viewState.timeRange;
+    const startMs = Math.max(0, Math.min(requestedStart, durationMs));
+    const endMs = Math.max(startMs + 1, Math.min(requestedEnd, durationMs));
+    const startSample = Math.max(
+      0,
+      Math.min(
+        numberOfSamples - 1,
+        Math.floor((startMs / 1000) * samplingFrequency)
+      )
+    );
+    const endSample = Math.max(
+      startSample + 1,
+      Math.min(numberOfSamples, Math.ceil((endMs / 1000) * samplingFrequency))
+    );
+
+    this.cachedTimeWindow = { startMs, endMs, startSample, endSample };
+    return this.cachedTimeWindow;
+  }
+
+  /** Multiplier on the drawn amplitude. The transforms apply it too. */
+  get amplitudeScale(): number {
+    const scale = this.state.viewState.amplitudeScale;
+
+    return scale > 0 ? scale : 1;
   }
 
   /** Layout cell of each visible lead, in the order that the grid fills. */
@@ -107,11 +159,7 @@ class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
 
   /** Lead arrangement that this frame draws. */
   get layoutType() {
-    return (
-      this.state.viewState?.layoutType ??
-      this.state.dataPresentation?.layoutType ??
-      '12x1'
-    );
+    return this.state.viewState.layoutType ?? '12x1';
   }
 
   /**
@@ -186,8 +234,7 @@ class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
     const fraction = (subCanvasPos[0] - xOffset) / (width || 1);
     const sampleIndex = startSample + fraction * (endSample - startSample);
 
-    const effectiveChannelScale =
-      layout.channelScale ?? this.metrics.channelScale;
+    const effectiveChannelScale = this.getDrawnScale(layout);
 
     return [
       Math.max(
@@ -224,8 +271,7 @@ class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
       (worldPos[0] - startSample) / (endSample - startSample || 1);
     const canvasX = xOffset + sampleFraction * width;
 
-    const effectiveChannelScale =
-      layout.channelScale ?? this.metrics.channelScale;
+    const effectiveChannelScale = this.getDrawnScale(layout);
 
     return [
       canvasX * mapping.effectiveRatio + mapping.xOffset,
@@ -325,6 +371,13 @@ class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
     return dx * dx + dy * dy;
   }
 
+  /** World units for each raw amplitude unit, as the trace is drawn. */
+  private getDrawnScale(layout: ECGChannelLayout<ECGChannelData>): number {
+    return (
+      (layout.channelScale ?? this.metrics.channelScale) * this.amplitudeScale
+    );
+  }
+
   /**
    * Returns the visible channels together with their index in the unfiltered
    * channel list. The metrics and the layout both need the same selection, so
@@ -333,31 +386,26 @@ class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
   private getVisibleEntries() {
     this.cachedVisibleEntries ||= getVisibleECGChannelEntries(
       this.state.waveform.channels,
-      this.state.viewState?.visibleChannels ??
-        this.state.dataPresentation?.visibleChannels
+      this.state.viewState.visibleChannels
     );
 
     return this.cachedVisibleEntries;
   }
 
-  private getVisibleChannels(): ECGChannelData[] {
-    return this.getVisibleEntries().map((entry) => entry.channel);
-  }
-
   private computeChannelLayouts(): ECGChannelLayout<ECGChannelData>[] {
     const entries = this.getVisibleEntries();
+    const { startSample, endSample } = this.timeWindow;
 
     return computeECGChannelLayouts({
       visibleChannels: entries.map((entry) => entry.channel),
       leadIndices: entries.map((entry) => entry.channelIndex),
       channelCount: this.state.waveform.channels.length,
       channelScale: this.metrics.channelScale,
-      sensitivityMmMv:
-        this.state.viewState?.sensitivityMmMv ??
-        this.state.dataPresentation?.sensitivityMmMv,
+      sensitivityMmMv: this.state.viewState.sensitivityMmMv,
       layoutType: this.layoutType,
       numberOfSamples: this.state.waveform.numberOfSamples,
       ecgWidth: this.metrics.ecgWidth,
+      sampleWindow: [startSample, endSample],
     });
   }
 

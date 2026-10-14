@@ -37,52 +37,60 @@ export interface ECGWaveformPayload {
   calibration?: unknown;
 }
 
-export interface ECGPresentationProps extends BasePresentationProps {
-  visibleChannels?: number[];
-  traceRegions?: TraceRegion[];
-}
+export type ECGPresentationProps = BasePresentationProps;
 
+/**
+ * Navigation and layout of the ECG viewport.
+ *
+ * Every option here moves a world point on the canvas, so a change fires
+ * `CAMERA_MODIFIED` (GENVIEW-STATE-1).
+ */
 export interface ECGViewState extends ViewportCameraBase<[number, number]> {
+  /**
+   * Time window in ms that the `12x1` rows show. A multi-column layout always
+   * shows the full record and ignores this value.
+   */
   timeRange: [number, number];
   valueRange: [number, number];
   scrollOffset?: number;
+  /**
+   * Horizontal sweep speed in mm/s. Defaults to 25 mm/s. Use 50 mm/s for
+   * high-speed recordings.
+   */
   sweepSpeed?: number;
+  /**
+   * Amplitude sensitivity in mm/mV, for example 10 mm/mV draws 1 mV as 10 mm.
+   * When undefined, the trace amplitudes fit the viewport height, and the grid
+   * shows no millivolt labels.
+   */
   sensitivityMmMv?: number;
+  /** Multiplier on the drawn amplitude. Defaults to 1. */
   amplitudeScale?: number;
   traceRegions?: TraceRegion[];
+  /**
+   * Indices of the visible channels. A hidden lead keeps its grid cell, and a
+   * row with no visible lead gets zero height. Undefined shows every channel.
+   */
   visibleChannels?: number[];
+  /**
+   * Lead arrangement:
+   * - '12x1': one row for each lead, with the `timeRange` window. (Default)
+   * - '6x2': 6 rows, 2 columns. Each column shows half of the record.
+   * - '3x4': 3 rows, 4 columns. Each column shows a quarter of the record.
+   * - '3x4+1': the `3x4` grid plus a rhythm strip of the full record.
+   */
   layoutType?: '12x1' | '6x2' | '3x4' | '3x4+1';
 }
 
+/** Appearance options that do not move the trace. */
 export interface ECGProperties {
   lineWidth?: number;
-  /**
-   * Horizontal sweep speed in mm/s. Standard ECG paper speed.
-   * Defaults to 25 mm/s. Use 50 mm/s for high-speed recordings.
-   */
-  sweepSpeed?: number;
-  /**
-   * Amplitude sensitivity in mm/mV (e.g. 10 mm/mV means 1 mV = 10 mm tall on paper).
-   * When undefined, the viewport operates in auto-fit mode, dynamically scaling
-   * trace amplitudes to fit available viewport height without millivolt labels.
-   * When set (e.g. 5, 10, 20), enables calibrated amplitude rendering.
-   */
-  sensitivityMmMv?: number;
-  amplitudeScale?: number;
   showGrid?: boolean;
   /**
-   * Whether to render millivolt labels on the Y-axis grid lines.
-   * Defaults to true when sensitivityMmMv is set.
+   * Whether to render millivolt labels on the grid. Applies only when
+   * `ECGViewState.sensitivityMmMv` is set. Defaults to true.
    */
   showAmplitudeLabels?: boolean;
-  /**
-   * ECG lead layout arrangement:
-   * - '12x1': 12 rows, 1 column. Full duration (10s) per lead. (Default)
-   * - '6x2': 6 rows, 2 columns. 5s duration per lead.
-   * - '3x4': 3 rows, 4 columns. 2.5s duration per lead.
-   * - '3x4+1': 3 rows of 4 columns (2.5s duration) plus 1 continuous rhythm lead (full 10s) at the bottom.
-   */
-  layoutType?: '12x1' | '6x2' | '3x4' | '3x4+1';
 }
 
 export type ECGDataPresentation = ECGPresentationProps & ECGProperties;
@@ -137,12 +145,12 @@ export type ECGCanvasRendering = MountedRendering<{
   canvasContext: CanvasRenderingContext2D;
 }>;
 
+/**
+ * Options of `ECGViewport.resetViewState`. Each option defaults to true except
+ * `resetTimeRange`. The layout options of the view state are never reset.
+ */
 export interface ECGResetViewStateOptions {
   resetPan?: boolean;
   resetZoom?: boolean;
   resetTimeRange?: boolean;
-}
-
-export interface ECGSetDataOptions {
-  options?: unknown;
 }

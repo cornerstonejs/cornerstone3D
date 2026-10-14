@@ -8,14 +8,13 @@ const DASH_DASH = [45, 45];
  * DICOMweb returns bulkdata as `multipart/related` by default, and a server may
  * return a single part instead. The boundary comes from the `boundary`
  * parameter of `contentType`. When that parameter is missing, the first line of
- * the body gives the boundary, because some servers send
- * `Content-Type: multipart/related` with no parameters.
+ * the body gives the boundary, because some servers send a multipart body with
+ * `Content-Type: application/octet-stream` or with no parameters.
  *
  * @param response - The response body.
- * @param contentType - The `Content-Type` header of the response. When it is
- *   given and it is not multipart, the body is returned as the only part.
- * @returns The body of each part, without the part headers. A single-part
- *   response returns `[response]`.
+ * @param contentType - The `Content-Type` header of the response.
+ * @returns The body of each part, without the part headers. A body with no
+ *   boundary returns `[response]`.
  */
 export function decodeMultipartRelated(
   response: ArrayBuffer,

@@ -190,9 +190,8 @@ async function run() {
           return;
         }
 
-        const current = viewport.getDisplaySetPresentation(ecgDataId) || {};
         const nextVisibleChannels = new Set(
-          current.visibleChannels ||
+          viewport.getViewState().visibleChannels ||
             waveform.channels.map((_channel, channelIndex) => channelIndex)
         );
 
@@ -202,7 +201,7 @@ async function run() {
           nextVisibleChannels.delete(index);
         }
 
-        viewport.setDisplaySetPresentation(ecgDataId, {
+        viewport.setViewState({
           visibleChannels: Array.from(nextVisibleChannels).sort(
             (a, b) => a - b
           ),
