@@ -167,7 +167,7 @@ export function pixelDataUpdate(next, query, data, options) {
       result.pixelPaddingValue = pixelPaddingValue & 0xffff;
     }
     if (pixelPaddingRangeLimit < 0) {
-      result.pixelPaddingValue = pixelPaddingRangeLimit & 0xffff;
+      result.pixelPaddingRangeLimit = pixelPaddingRangeLimit & 0xffff;
     }
     const { smallestPixelValue, largestPixelValue } = result;
     if (smallestPixelValue < 0) {
