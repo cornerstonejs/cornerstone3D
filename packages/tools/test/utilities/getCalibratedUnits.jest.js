@@ -1,5 +1,6 @@
 import { Enums } from '@cornerstonejs/core';
 import { getCalibratedLengthUnitsAndScale } from '../../src/utilities/getCalibratedUnits';
+import BaseTool from '../../src/tools/base/BaseTool';
 
 const { CalibrationTypes } = Enums;
 
@@ -75,6 +76,63 @@ describe('getCalibratedUnits', function () {
       const { unit, scale, scaleY } = calibrate;
       expect(unit).toBe('mm');
       expect(scale).toBe(0.5);
+    });
+  });
+
+  describe('ECG region lengths', () => {
+    // 1000 samples at 1 ms each, and an amplitude extent of 4000 raw units
+    // at 0.001 mV each.
+    const ecgImage = {
+      calibration: {
+        sequenceOfUltrasoundRegions: [
+          {
+            regionLocationMinX0: 0,
+            regionLocationMaxX1: 1000,
+            regionLocationMinY0: 0,
+            regionLocationMaxY1: 4000,
+            physicalDeltaX: 1,
+            physicalDeltaY: 0.001,
+            physicalUnitsXDirection: -2,
+            physicalUnitsYDirection: -1,
+          },
+        ],
+      },
+    };
+    const lengthOf = (handles) => {
+      const calibrate = getCalibratedLengthUnitsAndScale(ecgImage, handles);
+      return {
+        unit: calibrate.unit,
+        length: BaseTool.calculateLengthInIndex(calibrate, handles),
+      };
+    };
+
+    it('measures a mostly horizontal length in ms only', () => {
+      const { unit, length } = lengthOf([
+        [100, 2000, 3],
+        [300, 2400, 3],
+      ]);
+
+      expect(unit).toBe('ms ECG Region');
+      expect(length).toBeCloseTo(200, 6);
+    });
+
+    it('measures a mostly vertical length in mV only', () => {
+      const { unit, length } = lengthOf([
+        [100, 1000, 3],
+        [110, 3000, 3],
+      ]);
+
+      expect(unit).toBe('mV ECG Region');
+      expect(length).toBeCloseTo(2, 6);
+    });
+
+    it('reports px with no calibration across two leads', () => {
+      const { unit } = lengthOf([
+        [100, 2000, 3],
+        [300, 2000, 4],
+      ]);
+
+      expect(unit).toBe('px');
     });
   });
 });

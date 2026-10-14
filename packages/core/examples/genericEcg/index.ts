@@ -1,4 +1,8 @@
-import type { Types, ECGGenericViewport } from '@cornerstonejs/core';
+import type {
+  Types,
+  ECGGenericViewport,
+  ECGViewState,
+} from '@cornerstonejs/core';
 import { RenderingEngine, Enums, utilities } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
@@ -164,10 +168,9 @@ async function run() {
     },
     labelText: 'Layout: ',
     onSelectedValueChange: (newLayout) => {
-      viewport.setDisplaySetPresentation(ecgDataId, {
-        layoutType: newLayout as any,
+      viewport.setViewState({
+        layoutType: newLayout as ECGViewState['layoutType'],
       });
-      viewport.render();
     },
   });
 
