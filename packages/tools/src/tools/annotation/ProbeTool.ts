@@ -683,6 +683,10 @@ class ProbeTool extends AnnotationTool {
       if (csUtils.indexWithinDimensions(ijk, dimensions)) {
         this.isHandleOutsideImage = false;
 
+        // Read voxel values with the image-space index: a stack's voxelManager
+        // holds a single image, so the overwritten ijk[2] below is out of range.
+        const voxelIJK: Types.Point3 = [ijk[0], ijk[1], ijk[2]];
+
         // Index[2] for stackViewport is always 0, but for visualization
         // we reset it to be imageId index (skip for ECG; channel is already in ijk[2])
         if (targetId.startsWith('imageId:') && modality !== 'ECG') {
@@ -705,7 +709,7 @@ class ProbeTool extends AnnotationTool {
           value = calibratedResults.values;
           modalityUnit = calibratedResults.units;
         } else if (modality === 'US') {
-          value = voxelManager?.getAtIJKPoint(ijk);
+          value = voxelManager?.getAtIJKPoint(voxelIJK);
           const calibratedResults = getCalibratedProbeUnitsAndValue(image, [
             ijk,
           ]);
@@ -719,7 +723,7 @@ class ProbeTool extends AnnotationTool {
             ? calibratedResults.units
             : 'raw';
         } else {
-          value = voxelManager?.getAtIJKPoint(ijk);
+          value = voxelManager?.getAtIJKPoint(voxelIJK);
           modalityUnit = getPixelValueUnits(
             modality,
             annotation.metadata.referencedImageId,
