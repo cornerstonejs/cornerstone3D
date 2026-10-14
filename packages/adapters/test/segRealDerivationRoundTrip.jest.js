@@ -180,9 +180,13 @@ describe('real-derivation SEG round trip (plan 6a)', () => {
         [0, 0, 10],
       ]);
 
+      // One orientation is shared; a per-frame value would override it.
+      const shared = firstItem(dataset.SharedFunctionalGroupsSequence);
       const orientations = perFrame.map(
         (group) =>
-          firstItem(group.PlaneOrientationSequence)?.ImageOrientationPatient
+          firstItem(
+            group.PlaneOrientationSequence ?? shared.PlaneOrientationSequence
+          )?.ImageOrientationPatient
       );
       orientations.forEach((orientation) => {
         expect(orientation?.map(Number)).toEqual([1, 0, 0, 0, 1, 0]);

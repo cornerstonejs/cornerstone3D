@@ -50,9 +50,13 @@ function imageIdForSlice(sliceIndex) {
  * order-independent.)
  *
  * `rows` and `columns` set the image size (default ROWS x COLUMNS).
+ * `orientationForSlice` and `sliceThicknessForSlice` vary those per slice.
  */
 function makeReferencedStack(sliceCount, options = {}) {
   const { zDirection = 1, rows = ROWS, columns = COLUMNS } = options;
+  const orientationForSlice =
+    options.orientationForSlice ?? (() => [1, 0, 0, 0, 1, 0]);
+  const sliceThicknessForSlice = options.sliceThicknessForSlice ?? (() => 1);
   const positionForSlice =
     options.positionForSlice ??
     ((sliceIndex) => [0, 0, zDirection * sliceIndex]);
@@ -84,9 +88,9 @@ function makeReferencedStack(sliceCount, options = {}) {
     Rows: rows,
     Columns: columns,
     ImagePositionPatient: positionForSlice(sliceIndex),
-    ImageOrientationPatient: [1, 0, 0, 0, 1, 0],
+    ImageOrientationPatient: orientationForSlice(sliceIndex),
     PixelSpacing: [1, 1],
-    SliceThickness: 1,
+    SliceThickness: sliceThicknessForSlice(sliceIndex),
     SamplesPerPixel: 1,
     PhotometricInterpretation: 'MONOCHROME2',
     BitsAllocated: 16,
@@ -128,19 +132,21 @@ function makeReferencedStack(sliceCount, options = {}) {
         case 'ImageData':
         case 'instance':
           return instanceForSlice(sliceIndex);
-        case 'imagePlaneModule':
+        case 'imagePlaneModule': {
+          const orientation = orientationForSlice(sliceIndex);
           return {
             imagePositionPatient: planePositionForSlice(sliceIndex),
-            imageOrientationPatient: [1, 0, 0, 0, 1, 0],
-            rowCosines: [1, 0, 0],
-            columnCosines: [0, 1, 0],
+            imageOrientationPatient: orientation,
+            rowCosines: orientation?.slice(0, 3),
+            columnCosines: orientation?.slice(3, 6),
             rowPixelSpacing: 1,
             columnPixelSpacing: 1,
-            sliceThickness: 1,
+            sliceThickness: sliceThicknessForSlice(sliceIndex),
             rows,
             columns,
             frameOfReferenceUID: FRAME_OF_REFERENCE_UID,
           };
+        }
         case 'generalSeriesModule':
           return {
             seriesInstanceUID: SERIES_INSTANCE_UID,
