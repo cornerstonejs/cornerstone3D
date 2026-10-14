@@ -193,8 +193,9 @@ states the contract, and this specification repeats it:
 - **GENVIEW-ECG-3** The view state keeps `traceLayout` as the caller gave it,
   so a saved presentation keeps a name as a name.
 - **GENVIEW-ECG-4** A trace region names its lead by a channel index, or by the
-  lead code value from `ChannelSourceSequence`. The code meaning is not used,
-  because it depends on the language of the device.
+  lead code value from `ChannelSourceSequence`. The code meaning depends on the
+  language of the device, so a lead matches by its code meaning only when the
+  channel has no code value.
 - **GENVIEW-ECG-5** A hidden lead does not move another lead in time or in
   position. A band of regions in which every lead is hidden gets zero height.
 
