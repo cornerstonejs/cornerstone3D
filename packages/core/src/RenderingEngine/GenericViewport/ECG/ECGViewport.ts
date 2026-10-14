@@ -12,6 +12,7 @@ import type {
   Point3,
   ViewReference,
   ViewReferenceSpecifier,
+  ViewportContentMode,
 } from '../../../types';
 import { DefaultECGDataProvider } from './DefaultECGDataProvider';
 import { createECGRenderPathResolver } from './ECGRenderPathResolver';
@@ -22,6 +23,8 @@ import type {
   ECGDataPresentation,
   ECGViewportInput,
   ECGWaveformPayload,
+  ECGResetViewStateOptions,
+  ECGSetDataOptions,
 } from './ECGViewportTypes';
 import {
   createDefaultECGViewState,
@@ -95,7 +98,7 @@ class ECGViewport extends GenericViewport<
    * @param entries - Waveform display sets to mount.
    */
   async setDisplaySets(
-    ...entries: Array<{ displaySetId: string }>
+    ...entries: Array<{ displaySetId: string; options?: ECGSetDataOptions }>
   ): Promise<void> {
     this.removeAllData();
 
@@ -129,6 +132,14 @@ class ECGViewport extends GenericViewport<
    */
   getWaveformData(): ECGWaveformPayload | null {
     return this.getWaveformBindingData() ?? null;
+  }
+
+  /**
+   * Reports the content-true classification of the viewport's bound data.
+   * Returns 'ecg' when a waveform is mounted, 'empty' otherwise.
+   */
+  getCurrentMode(): ViewportContentMode {
+    return this.getWaveformData() ? 'ecg' : 'empty';
   }
 
   /**
@@ -325,12 +336,19 @@ class ECGViewport extends GenericViewport<
    * Resets pan, zoom, and scroll to defaults while preserving the loaded
    * time/value range, then re-renders. Called by `resetCamera()` and the
    * toolbar "Reset View" button.
+   *
+   * @param options - Optional reset options (resetPan, resetZoom, resetTimeRange).
    */
-  resetViewState(): boolean {
+  resetViewState(options?: ECGResetViewStateOptions): boolean {
     const previousCamera = this.getCameraForEvent();
 
+    const durationMs = this.getDurationMs();
+    const timeRange = options?.resetTimeRange
+      ? ([0, durationMs] as [number, number])
+      : this.viewState.timeRange;
+
     this.viewState = createDefaultECGViewState({
-      timeRange: this.viewState.timeRange,
+      timeRange,
       valueRange: this.viewState.valueRange,
     });
     this.modified(previousCamera);
@@ -348,36 +366,36 @@ class ECGViewport extends GenericViewport<
 
   /**
    * Scrolls the ECG viewport horizontally by `delta` viewport-widths.
+   * Matches the Planar family scroll signature.
    *
-   * Matches the Cornerstone viewport scroll convention so OHIF's scroll utility
-   * (which calls `viewport.scroll(delta, debounce, loop)` positionally) works
-   * correctly. Positive delta scrolls forward in time; negative scrolls back.
-   * The time window is clamped so it cannot scroll past the start or end of the signal.
+   * When the full signal is in view (windowMs >= durationMs), safely no-ops at t=0.
+   * When zoomed in (windowMs < durationMs), shifts and clamps smoothly, preserving windowMs.
    *
    * @param delta - Number of viewport-widths to shift (default 1).
-   *   Use `1` for one full screen forward, `-1` for one full screen back.
-   *   Fractional values (e.g. `0.25`) scroll a quarter screen.
-   * @param _debounceLoading - Ignored; kept for signature compatibility.
-   * @param _loop - Ignored; ECG viewports clamp rather than loop.
+   * @returns Promise resolving to the current source imageId.
    */
-  scroll(delta = 1, _debounceLoading = true, _loop = false): void {
+  async scroll(delta = 1): Promise<string> {
     const waveform = this.getWaveformData();
 
     if (!waveform) {
-      return;
+      return this.getCurrentImageId();
     }
 
     const durationMs = this.getDurationMs();
     const [startMs, endMs] = this.viewState.timeRange;
     const windowMs = Math.max(1, endMs - startMs);
-    const shiftMs = windowMs * delta;
 
-    // Clamp so the window stays within [0, durationMs]
+    // Clean no-op when full signal is in view
+    if (windowMs >= durationMs) {
+      return this.getCurrentImageId();
+    }
+
+    const shiftMs = windowMs * delta;
     const nextStart = Math.max(
       0,
       Math.min(startMs + shiftMs, durationMs - windowMs)
     );
-    const nextEnd = Math.min(durationMs, nextStart + windowMs);
+    const nextEnd = nextStart + windowMs;
 
     const previousCamera = this.getCameraForEvent();
     this.viewState = {
@@ -385,6 +403,8 @@ class ECGViewport extends GenericViewport<
       timeRange: [nextStart, nextEnd],
     };
     this.modified(previousCamera);
+
+    return this.getCurrentImageId();
   }
 
   /**
@@ -485,11 +505,11 @@ class ECGViewport extends GenericViewport<
    * Amplitude is mapped to [0, ECG_AMPLITUDE_INDEX_SIZE) so annotation
    * index bounds checks work correctly across channels.
    */
-  getImageData(): CPUIImageData | null {
+  getImageData(): CPUIImageData | undefined {
     const waveform = this.getWaveformBindingData();
 
     if (!waveform) {
-      return null;
+      return undefined;
     }
 
     const nSamples = waveform.numberOfSamples;

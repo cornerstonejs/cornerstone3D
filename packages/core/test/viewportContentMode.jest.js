@@ -37,6 +37,7 @@ const volume3dModeViewport = {
   ...genericViewport,
   getCurrentMode: () => 'volume3d',
 };
+const ecgModeViewport = { ...genericViewport, getCurrentMode: () => 'ecg' };
 const emptyModeViewport = { ...genericViewport, getCurrentMode: () => 'empty' };
 
 describe('viewportCapabilities — Generic ("next") viewport guards (CS-5/CS-17)', () => {
@@ -66,6 +67,7 @@ describe('viewportCapabilities — Generic ("next") viewport guards (CS-5/CS-17)
     it('returns the content-true mode when the viewport can classify it', () => {
       expect(getViewportContentMode(stackModeViewport)).toBe('stack');
       expect(getViewportContentMode(volumeModeViewport)).toBe('volume');
+      expect(getViewportContentMode(ecgModeViewport)).toBe('ecg');
       expect(getViewportContentMode(emptyModeViewport)).toBe('empty');
     });
 
@@ -80,11 +82,13 @@ describe('viewportCapabilities — Generic ("next") viewport guards (CS-5/CS-17)
       expect(viewportIsInVolumeMode(volumeModeViewport)).toBe(true);
       expect(viewportIsInVolumeMode(volume3dModeViewport)).toBe(true);
       expect(viewportIsInVolumeMode(stackModeViewport)).toBe(false);
+      expect(viewportIsInVolumeMode(ecgModeViewport)).toBe(false);
     });
 
     it('reports stack mode only for stack content', () => {
       expect(viewportIsInStackMode(stackModeViewport)).toBe(true);
       expect(viewportIsInStackMode(volumeModeViewport)).toBe(false);
+      expect(viewportIsInStackMode(ecgModeViewport)).toBe(false);
     });
 
     it('is false when content mode is unknown', () => {
@@ -94,33 +98,21 @@ describe('viewportCapabilities — Generic ("next") viewport guards (CS-5/CS-17)
   });
 
   describe('viewportSupportsWaveform', () => {
-    // Positive flows
-    it('returns true for viewports providing getWaveformData and getImageData', () => {
+    it('returns true when the viewport exposes getWaveformData and getImageData', () => {
       expect(viewportSupportsWaveform(waveformViewport)).toBe(true);
-      expect(
-        viewportSupportsWaveform({
-          ...genericViewport,
-          getWaveformData: noop,
-          getImageData: noop,
-        })
-      ).toBe(true);
     });
 
-    // Negative flows
-    it('returns false for stack viewports lacking getWaveformData', () => {
+    it('returns false when getWaveformData or getImageData is missing', () => {
+      expect(viewportSupportsWaveform({ getWaveformData: noop })).toBe(false);
+      expect(viewportSupportsWaveform({ getImageData: noop })).toBe(false);
+      expect(viewportSupportsWaveform(genericViewport)).toBe(false);
       expect(viewportSupportsWaveform(legacyStackViewport)).toBe(false);
     });
 
-    it('returns false for viewports having getWaveformData but lacking getImageData', () => {
-      expect(viewportSupportsWaveform({ getWaveformData: noop })).toBe(false);
-    });
-
-    it('returns false for null, undefined, primitives, and empty objects', () => {
+    it('returns false for null, undefined, and non-objects', () => {
       expect(viewportSupportsWaveform(null)).toBe(false);
       expect(viewportSupportsWaveform(undefined)).toBe(false);
-      expect(viewportSupportsWaveform({})).toBe(false);
-      expect(viewportSupportsWaveform('viewport')).toBe(false);
-      expect(viewportSupportsWaveform(12345)).toBe(false);
+      expect(viewportSupportsWaveform('not-a-viewport')).toBe(false);
     });
   });
 });

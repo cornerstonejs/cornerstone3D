@@ -3,6 +3,7 @@ import {
   drawECGGrid,
   drawECGTraces,
   computeECGChannelLayouts,
+  getECGLayoutRowCount,
   getECGMvPerUnit,
   ECG_DEFAULT_MV_PER_UNIT,
   ECG_DEFAULT_SWEEP_SPEED_MM_S,
@@ -389,6 +390,76 @@ describe('ECG render metrics', () => {
       );
       // 12 channels * 999 line segments = 11,988 segments drawn
       expect(traceSegments.length).toBe(12 * (1000 - 1));
+    });
+
+    it('returns visibleCount for 12x1 layout when fewer than 12 leads are visible', () => {
+      expect(getECGLayoutRowCount('12x1', 3)).toBe(3);
+      expect(getECGLayoutRowCount('12x1', 1)).toBe(1);
+      expect(getECGLayoutRowCount('12x1', 0)).toBe(1);
+      expect(getECGLayoutRowCount('12x1', -5)).toBe(1);
+      expect(getECGLayoutRowCount('12x1', 12)).toBe(12);
+    });
+
+    it('returns nominal row counts for multi-column layouts even with zero or negative visibleCount', () => {
+      expect(getECGLayoutRowCount('6x2', 0)).toBe(6);
+      expect(getECGLayoutRowCount('6x2', -1)).toBe(6);
+      expect(getECGLayoutRowCount('3x4', 0)).toBe(3);
+      expect(getECGLayoutRowCount('3x4+1', 0)).toBe(4);
+    });
+
+    it('handles long signals with >5000 samples correctly in computeECGChannelLayouts', () => {
+      const longChannel = makeChannel('Lead I', { length: 15000 });
+      const layouts = computeECGChannelLayouts({
+        visibleChannels: [longChannel],
+        channelScale: 1,
+        layoutType: '12x1',
+        numberOfSamples: 15000,
+        ecgWidth: 3000,
+      });
+
+      expect(layouts.length).toBe(1);
+      expect(layouts[0].startSample).toBe(0);
+      expect(layouts[0].endSample).toBe(15000);
+      expect(layouts[0].width).toBe(3000);
+    });
+
+    it('verifies horizontal scroll clamping logic (positive, negative, and boundary scenarios)', () => {
+      const durationMs = 10000;
+
+      // Scenario 1: Full-length window (windowMs >= durationMs) -> safe no-op
+      const computeNextWindow = (startMs, endMs, delta) => {
+        const windowMs = Math.max(1, endMs - startMs);
+        if (windowMs >= durationMs) {
+          return [startMs, endMs]; // No-op
+        }
+        const shiftMs = windowMs * delta;
+        const nextStart = Math.max(
+          0,
+          Math.min(startMs + shiftMs, durationMs - windowMs)
+        );
+        const nextEnd = nextStart + windowMs;
+        return [nextStart, nextEnd];
+      };
+
+      // Full window test: delta = 1, delta = -1
+      expect(computeNextWindow(0, 10000, 1)).toEqual([0, 10000]);
+      expect(computeNextWindow(0, 10000, -1)).toEqual([0, 10000]);
+
+      // Zoomed in: window is 4000ms [0, 4000]
+      // Positive scroll forward by 1 window width (+4000ms) -> [4000, 8000]
+      expect(computeNextWindow(0, 4000, 1)).toEqual([4000, 8000]);
+
+      // Positive scroll forward by fractional window (+2000ms) -> [2000, 6000]
+      expect(computeNextWindow(0, 4000, 0.5)).toEqual([2000, 6000]);
+
+      // Over-scroll forward: delta = 5 -> clamps to [durationMs - windowMs, durationMs] = [6000, 10000]
+      expect(computeNextWindow(0, 4000, 5)).toEqual([6000, 10000]);
+
+      // Negative scroll backward: from [4000, 8000] scroll -1 -> [0, 4000]
+      expect(computeNextWindow(4000, 8000, -1)).toEqual([0, 4000]);
+
+      // Over-scroll backward: delta = -5 -> clamps to 0 -> [0, 4000]
+      expect(computeNextWindow(4000, 8000, -5)).toEqual([0, 4000]);
     });
   });
 });

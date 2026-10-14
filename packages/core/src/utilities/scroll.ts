@@ -1,4 +1,4 @@
-import { Events } from '../enums';
+import { Events, ViewportType } from '../enums';
 import StackViewport from '../RenderingEngine/StackViewport';
 import VolumeViewport from '../RenderingEngine/VolumeViewport';
 import type {
@@ -46,6 +46,22 @@ export default function scroll(
   if (viewport instanceof VolumeViewport) {
     scrollVolume(viewport, volumeId, delta, scrollSlabs);
   } else {
+    // ECG viewports scroll along time or no-op; bypass stack slice bounds checks.
+    const scrollableViewport = viewport as unknown as {
+      getCurrentMode?: () => string;
+      scroll?: (delta: number) => unknown;
+    };
+    if (
+      scrollableViewport.getCurrentMode?.() === 'ecg' ||
+      viewport.type === ViewportType.ECG ||
+      viewport.type === ViewportType.ECG_NEXT
+    ) {
+      if (typeof scrollableViewport.scroll === 'function') {
+        scrollableViewport.scroll(delta);
+      }
+      return;
+    }
+
     if (
       typeof (viewport as IStackViewport).getCurrentImageIdIndex !==
         'function' ||

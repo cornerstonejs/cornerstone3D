@@ -68,6 +68,15 @@ describe('decodeMultipartRelated', () => {
       body,
     ]);
   });
+
+  it('decodes multipart body even when Content-Type is application/octet-stream', () => {
+    const [part] = decodeMultipartRelated(
+      multipart('BOUNDARY_6e2d', samplesBuffer()),
+      'application/octet-stream'
+    );
+
+    expect(Array.from(new Int16Array(part))).toEqual(Array.from(SAMPLES));
+  });
 });
 
 describe('buildEcgModuleFromInstance bulkdata', () => {
