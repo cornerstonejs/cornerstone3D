@@ -56,47 +56,13 @@ const types = [
   CalibrationTypes.UNKNOWN,
 ];
 
-/** True when every handle sits on the same ECG lead (index Z). */
-const isOnOneECGLead = (handles) =>
-  !handles?.length ||
-  handles.every(
-    (handle) => Math.round(handle[2] ?? 0) === Math.round(handles[0][2] ?? 0)
-  );
-
-/**
- * True when the handles span a larger fraction of the region width than of
- * the region height. The fractions compare the two axes without their units.
- */
-const isMostlyHorizontalInRegion = (handles, region) => {
-  if (!handles || handles.length < 2) {
-    return true;
-  }
-
-  const width = Math.max(
-    1,
-    region.regionLocationMaxX1 - region.regionLocationMinX0
-  );
-  const height = Math.max(
-    1,
-    region.regionLocationMaxY1 - region.regionLocationMinY0
-  );
-  const xs = handles.map((handle) => handle[0]);
-  const ys = handles.map((handle) => handle[1]);
-
-  return (
-    (Math.max(...xs) - Math.min(...xs)) / width >=
-    (Math.max(...ys) - Math.min(...ys)) / height
-  );
-};
-
 /**
  * Extracts the calibrated length units, area units, and the scale
  * for converting from internal spacing to image spacing.
  *
- * An ECG region (`physicalUnitsYDirection === -1`) measures a length on one
- * axis only: the time axis or the amplitude axis, whichever the handles span
- * the larger fraction of. Handles on different leads get pixel units and no
- * calibration.
+ * A region whose two axes have different units, for example an ECG region in
+ * ms and mV, gives no length calibration, so the length is in pixels.
+ * `UltrasoundDirectionalTool` measures along one axis of such a region.
  *
  * @param handles - to detect if spacing information is different between points
  * @param image - to extract the calibration from
@@ -164,35 +130,6 @@ const getCalibratedLengthUnitsAndScale = (image, handles) => {
       calibrationType = 'US Region';
       unit = UNIT_MAPPING[region.physicalUnitsXDirection] || 'unknown';
       areaUnit = unit + SQUARE;
-    } else if (region && region.physicalUnitsYDirection === -1) {
-      if (!isOnOneECGLead(handles)) {
-        return {
-          unit: PIXEL_UNITS,
-          areaUnit: PIXEL_UNITS + SQUARE,
-          scale,
-          scaleY,
-          scaleZ,
-          volumeUnit: VOXEL_UNITS,
-        };
-      }
-
-      calibrationType = 'ECG Region';
-      const isHorizontal = isMostlyHorizontalInRegion(handles, region);
-      // The time and the amplitude have different units, so a length is
-      // measured on one axis only. An infinite scale removes the other axes
-      // from `calculateLengthInIndex`.
-      scale = isHorizontal
-        ? 1 / Math.abs(region.physicalDeltaX)
-        : Number.POSITIVE_INFINITY;
-      scaleY = isHorizontal
-        ? Number.POSITIVE_INFINITY
-        : 1 / Math.abs(region.physicalDeltaY);
-      scaleZ = Number.POSITIVE_INFINITY;
-      unit = isHorizontal
-        ? UNIT_MAPPING[region.physicalUnitsXDirection] || 'ms'
-        : UNIT_MAPPING[region.physicalUnitsYDirection] || 'mV';
-      areaUnit =
-        (UNIT_MAPPING[region.physicalUnitsYDirection] || 'px') + SQUARE;
     }
   } else if (calibration.scale) {
     scale = calibration.scale;
