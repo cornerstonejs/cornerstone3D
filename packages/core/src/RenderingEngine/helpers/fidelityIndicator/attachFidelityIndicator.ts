@@ -589,31 +589,34 @@ function detailsOf(line: FidelityLine): string {
   }
 
   const { grid } = record;
-  const status = ImageQualityStatus[record.status] ?? String(record.status);
+  const delivery = ImageQualityStatus[record.status] ?? String(record.status);
   const range =
     record.lowest === record.highest
       ? ''
       : ` [${ImageQualityStatus[record.lowest]}..${ImageQualityStatus[record.highest]}]`;
   const missingPercent =
     record.voxels > 0 ? Math.round((100 * record.missing) / record.voxels) : 0;
-  const dataState = isAliasingReduction(record.reduction)
-    ? 'decimated'
-    : !fullResolution || isReduced(reductionFactors)
-      ? `reduced ${formatFactors(reductionFactors)} vs full volume`
-      : 'full resolution';
+  const status =
+    record.missing > 0
+      ? 'loading'
+      : isAliasingReduction(record.reduction)
+        ? 'decimated'
+        : !fullResolution || isReduced(reductionFactors)
+          ? `reduced ${formatFactors(reductionFactors)}`
+          : 'full resolution';
   const lodState = isInteractiveLod(sampleDistanceLod)
     ? `sample distance ×${formatFactor(sampleDistanceLod)} (interactive)`
     : 'sample distance idle';
 
   return [
     `${label}`,
-    `  status    ${status}${range}`,
+    `  status    ${status}`,
+    `  delivery  ${delivery}${range}`,
     `  grid      ${grid.dimensions.join('×')} @ ${grid.spacing
       .map((value) => formatFactor(value))
       .join('×')} mm`,
     `  missing   ${record.exact ? '' : '~'}${missingPercent}% of ${record.voxels} voxels`,
     `  source    ${record.source} · ${record.reduction} · ${record.deliveries} deliveries`,
-    `  data      ${dataState}`,
     `  lod       ${lodState}`,
   ].join('\n');
 }
