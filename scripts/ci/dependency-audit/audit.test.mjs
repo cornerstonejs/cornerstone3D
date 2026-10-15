@@ -207,8 +207,10 @@ test('tableCell keeps advisory titles inside their Markdown table cell', () => {
 });
 
 test('showLockfileText shows what could break a row or disguise lockfile text', () => {
-  // A zero-width space must not make a key look like the real left-pad.
+  // A zero-width or trailing space must not make a key look like the real
+  // left-pad.
   assert.equal(showLockfileText('left-pad\u200b'), 'left-pad[U+200B]');
+  assert.equal(showLockfileText('left-pad '), 'left-pad[U+0020]');
   // Pipe, backtick, backslash, newline, right-to-left override, C1 control
   // (NEL), line separator and a Cyrillic look-alike of "a".
   assert.equal(

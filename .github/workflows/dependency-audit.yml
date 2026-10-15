@@ -118,7 +118,7 @@ jobs:
         run: |
           set -euo pipefail
           if [ "$TOTAL" = 0 ]; then
-            earlier=$(gh api "repos/$REPO/commits/$HEAD_SHA/status" \
+            earlier=$(gh api "repos/$REPO/commits/$HEAD_SHA/status?per_page=100" \
               --jq '[.statuses[] | select(.context == "Dependency changes")] | length')
             [ "$earlier" = 0 ] && exit 0
             description='No package changes against the target branch'

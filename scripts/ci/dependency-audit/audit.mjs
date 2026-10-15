@@ -298,16 +298,17 @@ function newIgnoresSection(newIgnores, findings) {
 
 /**
  * Text from the PR's lockfile (unvalidated), safe to show in the report.
- * Every character outside printable ASCII, and every backtick, pipe and
- * backslash, shows as `[U+XXXX]`. So a hidden character (a bidi override, a
- * zero-width space, a look-alike letter) stays visible instead of making the
- * text look like a real package, and the text stays on one line, inside a code
- * span and inside a table cell. Real npm names and versions are printable
- * ASCII without these three characters, so they show unchanged.
+ * Every character outside printable ASCII, and every space, backtick, pipe
+ * and backslash, shows as `[U+XXXX]`. So a hidden character (a bidi override,
+ * a zero-width space, a trailing space, a non-ASCII look-alike letter) is
+ * shown instead of making the text look like a real package, and the text
+ * stays on one line, inside a code span and inside a table cell. Real npm
+ * names and versions are printable ASCII without these four characters, so
+ * they show unchanged. ASCII look-alikes (`rn` for `m`) are not caught.
  */
 export function showLockfileText(text) {
   return String(text).replace(
-    /[^\x20-\x7e]|[`|\\]/gu,
+    /[^\x21-\x7e]|[`|\\]/gu,
     (c) => `[U+${c.codePointAt(0).toString(16).toUpperCase().padStart(4, '0')}]`
   );
 }
