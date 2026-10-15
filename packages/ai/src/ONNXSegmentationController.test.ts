@@ -14,41 +14,50 @@ jest.mock('onnxruntime-web/webgpu', () => ({
 describe('ONNXSegmentationController auto segment mode', () => {
   const viewportWithoutSegmentation = {
     id: 'viewport-without-segmentation',
+    element: document.createElement('div'),
     getCurrentImageId: () => 'imageId:2',
     getViewReferenceId: () => undefined,
     getCurrentImageIdIndex: () => 1,
     getImageIds: () => ['imageId:1', 'imageId:2', 'imageId:3'],
   };
 
-  it('renders a viewport with no active segmentation without throwing', () => {
-    const controller = new ONNXSegmentationController({
-      autoSegmentMode: true,
-    });
+  let controller: ONNXSegmentationController;
+  let internals: {
+    viewport: typeof viewportWithoutSegmentation;
+    randomPoints: unknown[];
+    viewportRenderedListener: (event?: unknown) => void;
+  };
+
+  beforeEach(() => {
+    controller = new ONNXSegmentationController({ autoSegmentMode: true });
     controller.enabled = true;
-    const internals = controller as unknown as {
-      viewport: typeof viewportWithoutSegmentation;
-      viewportRenderedListener: (event?: unknown) => void;
-    };
+    internals = controller as unknown as typeof internals;
+    // No model is loaded here, so there is nothing for it to encode.
+    jest.spyOn(controller, 'tryLoad').mockImplementation(() => undefined);
+  });
+
+  afterEach(() => {
+    if (internals.viewport) {
+      controller.disconnectViewport(internals.viewport);
+    }
+    jest.restoreAllMocks();
+  });
+
+  it('stays idle on a viewport with no active segmentation', () => {
     internals.viewport = viewportWithoutSegmentation;
+    internals.randomPoints = [[10, 20, 30]];
 
     expect(() => internals.viewportRenderedListener()).not.toThrow();
+    expect(controller.tryLoad).not.toHaveBeenCalled();
+    expect(internals.randomPoints).toEqual([]);
   });
 
   it('does not carry propagation points over to the next viewport', () => {
-    const controller = new ONNXSegmentationController({
-      autoSegmentMode: true,
-    });
-    const internals = controller as unknown as { randomPoints: unknown[] };
     // Left over from painting on the previous viewport; decoding them against
     // the next one previews into a segmentation that viewport may not have.
     internals.randomPoints = [[10, 20, 30]];
-    // No model is loaded here, so there is nothing for it to encode.
-    jest.spyOn(controller, 'tryLoad').mockImplementation(() => undefined);
 
-    controller.initViewport({
-      ...viewportWithoutSegmentation,
-      element: document.createElement('div'),
-    });
+    controller.initViewport(viewportWithoutSegmentation);
 
     expect(internals.randomPoints).toEqual([]);
   });

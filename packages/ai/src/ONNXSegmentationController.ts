@@ -417,8 +417,9 @@ export default class ONNXSegmentationController {
    * load data about the active viewport.  This method will disconnect a previous
    * viewport automatically.
    *
-   * The viewport must have a labelmap segmentation registered, as well as a
-   * tool which extends LabelmapBaseTool to use for setting the preview view
+   * The viewport needs an active labelmap segmentation to preview into; until
+   * it has one, the controller stays idle (see getActiveSegmentation).  A
+   * tool which extends LabelmapBaseTool is used for setting the preview view
    * once the decode is completed.  This is provided as toolForPreview
    *
    * @param viewport - a viewport to listen for annotations and rendered events
@@ -662,6 +663,23 @@ export default class ONNXSegmentationController {
   };
 
   /**
+   * Gets the active segmentation of the connected viewport.
+   *
+   * The controller follows whichever viewport the tool was pointed at, and that
+   * viewport need not have a segmentation.  Without one there is nothing to
+   * preview into, so the controller stays idle: no encode, no decode and no
+   * propagation.  It resumes on the next render once a segmentation is added.
+   */
+  protected getActiveSegmentation(viewport = this.viewport) {
+    if (!viewport) {
+      return;
+    }
+    return cornerstoneTools.segmentation.activeSegmentation.getActiveSegmentation(
+      viewport.id
+    );
+  }
+
+  /**
    * A listener for viewport being rendered that tried loading/encoding the
    * new image if it is different from the previous image.  Will return before
    * the image is encoded.  Can be called without binding as it is already
@@ -693,6 +711,12 @@ export default class ONNXSegmentationController {
       return;
     }
 
+    const segmentation = this.getActiveSegmentation();
+    if (!segmentation) {
+      this.randomPoints = [];
+      return;
+    }
+
     if (this._enabled && this._autoSegmentMode) {
       if (
         'isInAcquisitionPlane' in viewport &&
@@ -701,17 +725,6 @@ export default class ONNXSegmentationController {
         cs3dLogger.warn(
           'Non acquisition plane viewports and auto segment mode is not yet supported'
         );
-        return;
-      }
-
-      const segmentation =
-        cornerstoneTools.segmentation.activeSegmentation.getActiveSegmentation(
-          viewport.id
-        );
-
-      // The controller follows whichever viewport the tool was pointed at, and
-      // that one need not have a segmentation yet - nothing to propagate there.
-      if (!segmentation) {
         return;
       }
 
@@ -845,6 +858,10 @@ export default class ONNXSegmentationController {
       this.viewportRenderedListener
     );
     const boundListener = this.annotationModifiedListener;
+    eventTarget.removeEventListener(
+      toolsEvents.ANNOTATION_ADDED,
+      boundListener
+    );
     eventTarget.removeEventListener(
       toolsEvents.ANNOTATION_MODIFIED,
       boundListener
@@ -1109,6 +1126,9 @@ export default class ONNXSegmentationController {
    */
   public tryLoad(options = { resetImage: false }) {
     const { viewport, desiredImage } = this;
+    if (!this.getActiveSegmentation()) {
+      return;
+    }
     if (!desiredImage.imageId || options.resetImage) {
       desiredImage.imageId =
         viewport.getCurrentImageId() || viewport.getViewReferenceId();
@@ -1305,6 +1325,9 @@ export default class ONNXSegmentationController {
   createLabelmap(mask, canvasPosition, _points, _labels) {
     const { canvas, viewport } = this;
     const preview = this.tool.addPreview(viewport.element);
+    if (!preview) {
+      return;
+    }
     const {
       previewSegmentIndex,
       memo,
@@ -1385,8 +1408,14 @@ export default class ONNXSegmentationController {
    * Runs the GPU decoder operation itself.
    */
   async decode(points, labels, useSession = this.currentImage) {
-    const { canvas, canvasMask, imageImageData, desiredImage, boxRadius } =
-      this;
+    const {
+      canvas,
+      canvasMask,
+      imageImageData,
+      desiredImage,
+      boxRadius,
+      viewport,
+    } = this;
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     canvas.width = imageImageData.width;
@@ -1419,6 +1448,10 @@ export default class ONNXSegmentationController {
 
       const feed = feedForSam(emb, points, labels);
       const res = await session.run(feed);
+      // initViewport may have switched viewports while the decoder ran.
+      if (viewport !== this.viewport) {
+        return;
+      }
 
       for (let i = 0; i < points.length; i += 2) {
         const label = labels[i / 2];
