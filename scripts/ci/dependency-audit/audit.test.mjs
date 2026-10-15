@@ -289,6 +289,19 @@ test('fails when many added entries cannot be audited', () => {
   );
 });
 
+test('a very long lockfile key cannot push the report over the summary limit', () => {
+  // 150,000 zero-width spaces are 1.2 MB once shown as [U+200B]. An explicit
+  // YAML key, because an implicit key has at most 1024 characters.
+  const key = JSON.stringify(`big@1.0.0${'​'.repeat(150_000)}`);
+  const { stdout } = runAudit({
+    baseLock: lockfile([]),
+    headLock: `${lockfile([])}  ? ${key}\n  : resolution: {integrity: sha512-x}\n`,
+  });
+  assert.match(stdout, /Packages changed \(1\)/);
+  assert.ok(stdout.includes('[U+200B]…`'));
+  assert.ok(stdout.length < 10_000);
+});
+
 test('the changes table keeps lockfile text in its cell and stops at 300 rows', () => {
   const gitEntries = Array.from(
     { length: 301 },
