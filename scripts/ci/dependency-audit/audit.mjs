@@ -9,6 +9,7 @@
  * fails the check unless its GHSA is in `auditConfig.ignoreGhsas` of the PR's
  * pnpm-workspace.yaml. Advisories already present on the target branch never
  * fail a PR. Ignores the PR adds to that list are called out for reviewers.
+ * The report also lists every package the PR updates, adds or removes.
  *
  * Every input is data from the pull request; nothing in it is executed.
  *
@@ -18,7 +19,9 @@
  *
  * "base" is the PR's branch point on its target branch, "head" the PR. Any file
  * may be missing; a missing base lockfile (target branch without a pnpm
- * lockfile) makes every package in the head lockfile count as added.
+ * lockfile) makes every package in the head lockfile count as added, and a
+ * missing head lockfile makes every package in the base lockfile count as
+ * removed.
  * When $GITHUB_OUTPUT is set, it gets counts for the status lines the workflow
  * adds to the PR's checks list: `new_ignores` (ignores the PR adds) and
  * `changes_updated`, `changes_new`, `changes_removed`, `changes_total` (rows of
@@ -95,10 +98,14 @@ export function addedPackages(base, head) {
   );
 }
 
+const CHANGE_KINDS = ['updated', 'new', 'removed'];
+
 /**
  * The packages whose versions differ between `base` and `head`, one entry per
  * name: `before` holds the versions only `base` has, `after` the versions only
- * `head` has. A new package has no `before`, a removed one no `after`.
+ * `head` has. `kind` comes from whether the name is in each lockfile, not from
+ * the versions: a package that gains or drops one of several versions is
+ * `updated`, so one of `before` and `after` can be empty for it.
  * Updated packages come first, then new ones, then removed ones (the table is
  * capped, so removals drop off first); by name within each group.
  */
@@ -106,7 +113,12 @@ export function packageChanges(base, head) {
   const changes = new Map();
   const change = (name) => {
     if (!changes.has(name)) {
-      changes.set(name, { name, before: [], after: [] });
+      const kind = !base.has(name)
+        ? 'new'
+        : !head.has(name)
+          ? 'removed'
+          : 'updated';
+      changes.set(name, { name, kind, before: [], after: [] });
     }
     return changes.get(name);
   };
@@ -116,7 +128,7 @@ export function packageChanges(base, head) {
   for (const { name, version } of addedPackages(base, head)) {
     change(name).after.push(version);
   }
-  const group = (c) => (!c.before.length ? 1 : !c.after.length ? 2 : 0);
+  const group = (c) => CHANGE_KINDS.indexOf(c.kind);
   return [...changes.values()].sort(
     (a, b) => group(a) - group(b) || a.name.localeCompare(b.name)
   );
@@ -201,7 +213,7 @@ export function escapeCommand(text) {
  * Advisory text (from npm) safe inside a Markdown table cell: escaped, not
  * stripped, so it still reads correctly. Backslashes first, so a trailing `\`
  * cannot combine with the cell's closing `|`; then pipes. Text from the PR's
- * lockfile goes through stripLockfileText() instead.
+ * lockfile goes through showLockfileText() instead.
  */
 export function tableCell(text) {
   return String(text ?? '')
@@ -286,26 +298,34 @@ function newIgnoresSection(newIgnores, findings) {
 
 /**
  * Text from the PR's lockfile (unvalidated), safe to show in the report.
- * Removes control, format (e.g. bidi overrides, zero-width) and line or
- * paragraph separator characters, so it stays on one line and displays as its
- * bytes; and backticks, pipes and backslashes, so it stays inside a code span
- * and a table cell. Real npm names and versions never contain any of these.
+ * Every character outside printable ASCII, and every backtick, pipe and
+ * backslash, shows as `[U+XXXX]`. So a hidden character (a bidi override, a
+ * zero-width space, a look-alike letter) stays visible instead of making the
+ * text look like a real package, and the text stays on one line, inside a code
+ * span and inside a table cell. Real npm names and versions are printable
+ * ASCII without these three characters, so they show unchanged.
  */
-export function stripLockfileText(text) {
-  return String(text).replace(/[\p{Cc}\p{Cf}\p{Zl}\p{Zp}`|\\]/gu, '');
+export function showLockfileText(text) {
+  return String(text).replace(
+    /[^\x20-\x7e]|[`|\\]/gu,
+    (c) => `[U+${c.codePointAt(0).toString(16).toUpperCase().padStart(4, '0')}]`
+  );
 }
 
-/** Lockfile text as a code span in a table cell; empty when nothing is left. */
+/** Lockfile text as a code span in a table cell; empty when there is none. */
 function lockfileCell(text) {
-  const clean = stripLockfileText(text);
-  return clean ? `\`${clean}\`` : '';
+  const shown = showLockfileText(text);
+  return shown ? `\`${shown}\`` : '';
 }
 
 /** How many changes are updates, new packages and removals. */
-export function countChanges(changes) {
-  const added = changes.filter((c) => !c.before.length).length;
-  const removed = changes.filter((c) => !c.after.length).length;
-  return { updated: changes.length - added - removed, added, removed };
+function countChanges(changes) {
+  const count = (kind) => changes.filter((c) => c.kind === kind).length;
+  return {
+    updated: count('updated'),
+    added: count('new'),
+    removed: count('removed'),
+  };
 }
 
 /** Collapsed "Packages changed" table, so reviewers see what the lockfile change does. */
@@ -397,7 +417,7 @@ function lockfileSection({
       `<details><summary>${notAudited.length} added entry(ies) not from the npm registry, not audited</summary>`,
       '',
       ...notAudited.map(
-        (p) => `- \`${stripLockfileText(`${p.name}@${p.version}`)}\``
+        (p) => `- \`${showLockfileText(`${p.name}@${p.version}`)}\``
       ),
       '',
       '</details>',
@@ -451,6 +471,9 @@ async function main() {
     cannotAudit =
       'This PR deletes pnpm-lock.yaml, so its dependencies cannot be audited.';
     lines.push(`### ❌ ${cannotAudit}`, '');
+    // Every package is removed: list them like any other lockfile change.
+    changes = packageChanges(lockfilePackages(baseText), new Map());
+    lines.push(...changesSection(changes));
   } else if (headText === null) {
     lines.push(
       'Neither the PR nor its target branch has a `pnpm-lock.yaml`; nothing to audit.',
