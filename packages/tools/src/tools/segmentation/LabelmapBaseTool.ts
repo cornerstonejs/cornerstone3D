@@ -41,6 +41,7 @@ import { getHiddenSegmentIndices } from '../../stateManagement/segmentation/conf
 import { removeContourSegmentationAnnotation } from '../../utilities/contourSegmentation/removeContourSegmentationAnnotation';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 import { resetElementCursor } from '../../cursors/elementCursor';
+import { isLabelmapStackOnViewport } from '../../stateManagement/segmentation/helpers/labelmapStack';
 
 const { asUnitNormal } = csUtils.voxelSlab;
 
@@ -339,6 +340,12 @@ export default class LabelmapBaseTool extends BaseTool {
     const segmentsLocked = getLockedSegmentIndices(segmentationId);
 
     const { representationData } = getSegmentation(segmentationId);
+
+    // A labelmap of one stack, such as one time point of a 4D volume, cannot
+    // be edited while the viewport shows another stack.
+    if (!isLabelmapStackOnViewport(viewport, representationData.Labelmap)) {
+      return null;
+    }
 
     const editData = this.getEditData({
       viewport,

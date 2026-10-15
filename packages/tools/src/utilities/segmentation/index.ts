@@ -38,6 +38,10 @@ import { computeStackLabelmapFromVolume } from '../../stateManagement/segmentati
 import { computeVolumeLabelmapFromStack } from '../../stateManagement/segmentation/helpers/computeVolumeLabelmapFromStack';
 import { getReferenceVolumeForSegmentationVolume } from './getReferenceVolumeForSegmentationVolume';
 import { getReferenceVolumeForSegmentation } from './getReferenceVolumeForSegmentation';
+import {
+  getViewportStackId,
+  isLabelmapStackOnViewport,
+} from '../../stateManagement/segmentation/helpers/labelmapStack';
 import { getSegmentLargestBidirectional } from './getSegmentLargestBidirectional';
 import { computeMetabolicStats } from './computeMetabolicStats';
 
@@ -76,6 +80,8 @@ export {
   computeVolumeLabelmapFromStack,
   getReferenceVolumeForSegmentationVolume,
   getReferenceVolumeForSegmentation,
+  getViewportStackId,
+  isLabelmapStackOnViewport,
   getSegmentLargestBidirectional,
   computeMetabolicStats,
 };

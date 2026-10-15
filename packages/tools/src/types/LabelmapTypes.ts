@@ -60,6 +60,13 @@ export type SegmentLabelmapBindingState = {
 
 export type LabelmapSegmentationDataShared = {
   referencedImageIds?: string[];
+  /**
+   * The stack of source images that the labelmap maps to, for example the
+   * dimension group number of one time point of a 4D volume. When set, the
+   * labelmap shows and can be edited only on a viewport that shows this
+   * stack; see getViewportStackId.
+   */
+  stackId?: string;
   labelmaps?: {
     [labelmapId: string]: LabelmapLayer;
   };

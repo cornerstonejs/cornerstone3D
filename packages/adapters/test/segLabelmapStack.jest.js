@@ -139,6 +139,16 @@ describe('LABELMAP SEG export as a stack', () => {
     expect(pixelMeasures?.PixelSpacing).toBeUndefined();
   });
 
+  it('writes the stack id of the segmentation as the StackID', () => {
+    const { dataset } = exportStack({}, { stackId: '7' });
+    const stackIds = asList(dataset.PerFrameFunctionalGroupsSequence).map(
+      (group) => firstItem(group.FrameContentSequence).StackID
+    );
+
+    expect(dataset.FrameOfReferenceUID).toBeUndefined();
+    expect(stackIds).toEqual(['7', '7']);
+  });
+
   it('reads a stack back onto the referenced slices', async () => {
     const { stack, dataset } = exportStack({}, { isVolumetric: false });
     const result = await createFromDICOMSegBuffer(
