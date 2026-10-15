@@ -43,10 +43,10 @@ interface SourceFrame {
  * the calibrated provider also sets `isDefaultValueSetForRowCosine` and
  * `isDefaultValueSetForColumnCosine`; when present, these flags decide.
  *
- * dcmjs derive() empties PerFrameFunctionalGroupsSequence, so the LABELMAP
- * export rebuilds the frame geometry from the referenced source images. The
- * instance is read only when the plane module is incomplete or when the pixel
- * measures are necessary.
+ * The LABELMAP export and the BINARY export use this function to give each
+ * SEG frame the geometry of its own source image. The instance is read only
+ * when the plane module is incomplete or when the pixel measures are
+ * necessary.
  */
 function getSourceFrame(
   image: { imageId?: string } | undefined,
@@ -121,14 +121,5 @@ function toOrientation(values): number[] | undefined {
     : undefined;
 }
 
-export {
-  DEFAULT_ORIENTATION,
-  DEFAULT_PIXEL_SPACING,
-  DEFAULT_POSITION,
-  GEOMETRY_TOLERANCE,
-  getSourceFrame,
-  sliceNormal,
-  toFiniteVector,
-  toOrientation,
-};
+export { GEOMETRY_TOLERANCE, getSourceFrame, sliceNormal, toFiniteVector };
 export type { SourceFrame };

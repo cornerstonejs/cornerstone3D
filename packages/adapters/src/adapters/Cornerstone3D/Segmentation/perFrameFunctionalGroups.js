@@ -6,6 +6,8 @@
  */
 
 import { Enums, utilities } from '@cornerstonejs/core';
+import { utilities as metadataUtilities } from '@cornerstonejs/metadata';
+import { GEOMETRY_TOLERANCE } from './sourceFrame';
 
 const { MetadataModules } = Enums;
 
@@ -149,4 +151,51 @@ export function applyPerFrameFunctionalGroups(dataset, frames) {
 
   dataset.PerFrameFunctionalGroupsSequence = nextSequence;
   dataset.NumberOfFrames = nextSequence.length;
+}
+
+/**
+ * Writes the PlaneOrientationSequence of each frame in the shared group or in
+ * the per-frame groups, never in both (PS3.3 C.7.6.16). When all frames have
+ * one orientation, within GEOMETRY_TOLERANCE, it goes in the shared group
+ * only. Otherwise each frame gets its own orientation in its per-frame group,
+ * and a frame without one keeps its current per-frame orientation, or else the
+ * current shared orientation. When no frame has a known orientation, the
+ * dataset does not change.
+ *
+ * Call it after the per-frame groups are built.
+ *
+ * @param {object} dataset - SEG dataset
+ * @param {Array<number[]|undefined>} frameOrientations - the
+ *   ImageOrientationPatient of each frame, or undefined when it is not known
+ */
+export function setPlaneOrientations(dataset, frameOrientations) {
+  normalizeSharedFunctionalGroupsSequence(dataset);
+  const shared = dataset.SharedFunctionalGroupsSequence;
+  const perFrame = dataset.PerFrameFunctionalGroupsSequence ?? [];
+  const [first] = frameOrientations;
+
+  if (!frameOrientations.some(Boolean)) {
+    return;
+  }
+  if (
+    first &&
+    frameOrientations.every((orientation) =>
+      metadataUtilities.isEqual(orientation, first, GEOMETRY_TOLERANCE)
+    )
+  ) {
+    shared.PlaneOrientationSequence = { ImageOrientationPatient: first };
+    perFrame.forEach((group) => delete group.PlaneOrientationSequence);
+    return;
+  }
+
+  const sharedOrientation = shared.PlaneOrientationSequence;
+  delete shared.PlaneOrientationSequence;
+  perFrame.forEach((group, index) => {
+    const orientation = frameOrientations[index];
+    if (orientation) {
+      group.PlaneOrientationSequence = { ImageOrientationPatient: orientation };
+    } else if (!group.PlaneOrientationSequence && sharedOrientation) {
+      group.PlaneOrientationSequence = sharedOrientation;
+    }
+  });
 }

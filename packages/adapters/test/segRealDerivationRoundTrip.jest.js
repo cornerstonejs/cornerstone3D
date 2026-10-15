@@ -154,7 +154,8 @@ describe('real-derivation SEG round trip (plan 6a)', () => {
     );
 
     it('gives each frame the orientation of its own source image', () => {
-      // Two orientations, ascending z: dcmjs keeps the orientation per frame.
+      // Two orientations, ascending z. dcmjs writes one shared orientation,
+      // so the adapter must move the orientations to the per-frame groups.
       const tilted = [1, 0, 0, 0, 0.8, 0.6];
       const orientationForSlice = (sliceIndex) =>
         sliceIndex % 2 ? tilted : [1, 0, 0, 0, 1, 0];
@@ -186,8 +187,8 @@ describe('real-derivation SEG round trip (plan 6a)', () => {
     });
 
     it('shares one orientation when all exported frames have the same', () => {
-      // dcmjs takes the shared orientation from the last slice, which is tilted
-      // and not exported.
+      // dcmjs takes the shared orientation from the slice that is farthest
+      // along the normal: here the last slice, which is tilted and not exported.
       const tilted = [1, 0, 0, 0, 0.8, 0.6];
       const orientationForSlice = (sliceIndex) =>
         sliceIndex === SLICE_COUNT - 1 ? tilted : [1, 0, 0, 0, 1, 0];

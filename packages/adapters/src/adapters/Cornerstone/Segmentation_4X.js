@@ -14,12 +14,9 @@ import { utilities as metadataUtilities } from '@cornerstonejs/metadata';
 import {
   applyPerFrameFunctionalGroups,
   getReferencedSourceImageSequenceItem,
-  normalizeSharedFunctionalGroupsSequence,
+  setPlaneOrientations,
 } from '../Cornerstone3D/Segmentation/perFrameFunctionalGroups';
-import {
-  GEOMETRY_TOLERANCE,
-  getSourceFrame,
-} from '../Cornerstone3D/Segmentation/sourceFrame';
+import { getSourceFrame } from '../Cornerstone3D/Segmentation/sourceFrame';
 import {
   encodeFramesToTransferSyntax,
   getBitmapFramesFromDataset,
@@ -75,6 +72,35 @@ export function generateSegmentation(
 }
 
 /**
+ * Logs one warning for the SEG frames whose source image has no position or
+ * no orientation. Such a frame keeps the plane value that dcmjs gave it.
+ */
+function warnMissingPlanes(frameDescriptors, getSource) {
+  const missing = { position: [], orientation: [] };
+  frameDescriptors.forEach((desc, frameIndex) => {
+    const source = getSource(desc.sourceFrameIndex);
+    Object.keys(missing).forEach((key) => {
+      if (!source[key]) {
+        missing[key].push(frameIndex + 1);
+      }
+    });
+  });
+
+  const details = [
+    ['ImagePositionPatient', missing.position],
+    ['ImageOrientationPatient', missing.orientation],
+  ]
+    .filter(([, frames]) => frames.length)
+    .map(([name, frames]) => `no ${name} for SEG frames ${frames.join(', ')}`);
+  if (details.length) {
+    cs3dLogger.warn(
+      `The source images have ${details.join('; ')}. These frames keep the ` +
+        `values that dcmjs gave them, which can be those of other source images.`
+    );
+  }
+}
+
+/**
  * The set of non-zero segment values actually present in a frame's pixel data,
  * collected in a single pass. `segmentsOnLabelmap` can be stale, so presence is
  * verified against the pixels — but once per frame, not with one full-frame
@@ -112,6 +138,18 @@ function segmentsPresentInFrame(pixelData) {
  *     valid RLE-encoded SEG), so it has been dropped rather than fixed. RLE
  *     output is now selected via `transferSyntaxUid` (RLE Lossless is the
  *     default), and encoding is handled by `encodeFramesToTransferSyntax`.
+ * @param images - The source images, in the order of the derived frames.
+ * @param metadata - A metadata provider for the `imageId` of each image.
+ *
+ * With `images` and `metadata`, each SEG frame gets the source reference, the
+ * position and the orientation of its own source image. dcmjs gives a frame
+ * the position of the referenced multiframe frame with the same index, but it
+ * sorts that multiframe by position, so for a stack in the other scan
+ * direction the frame gets the position of the mirrored slice. dcmjs also
+ * writes one shared orientation, from one source image. A frame without a
+ * source SOP Instance UID throws, so that the per-frame groups always match
+ * the PixelData frames. Without `images` or `metadata`, as from the legacy
+ * `generateSegmentation`, the frames keep the planes of dcmjs.
  *
  * @returns {object} The filled segmentation object.
  */
@@ -278,45 +316,28 @@ export function fillSegmentation(
   }
 
   if (frameDescriptors.length && images?.length && metadata) {
-    // Every SEG frame must reference a resolvable source SOP Instance UID.
-    // Reject rather than silently dropping frames: a dropped frame would make
-    // the per-frame functional groups disagree with the encoded PixelData and
-    // produce a SEG whose source-image references are unreliable.
-    // dcmjs gives each frame the position of the referenced multiframe frame
-    // with the same index, but it sorts that multiframe by position: for a
-    // stack in the other scan direction, that is the position of the mirrored
-    // slice. It also writes one shared orientation, from one source image.
-    // Each frame gets the plane of its own source image instead: one shared
-    // orientation when all frames have the same, else one per frame.
-    const frameImages = frameDescriptors.map(
-      (desc) => images[desc.sourceFrameIndex]
-    );
-    const planes = frameImages.map((image) => getSourceFrame(image, metadata));
-    const orientations = planes.map(({ orientation }) => orientation);
-    const sharedOrientation =
-      orientations.every(Boolean) &&
-      orientations.every((orientation) =>
-        csUtilities.isEqual(orientation, orientations[0], GEOMETRY_TOLERANCE)
-      )
-        ? orientations[0]
-        : undefined;
-    normalizeSharedFunctionalGroupsSequence(segmentation.dataset);
-    const sharedGroup = segmentation.dataset.SharedFunctionalGroupsSequence;
-    if (sharedOrientation) {
-      sharedGroup.PlaneOrientationSequence = {
-        ImageOrientationPatient: sharedOrientation,
-      };
-    } else if (orientations.every(Boolean)) {
-      delete sharedGroup.PlaneOrientationSequence;
-    }
-    const perFrameOrientation = !sharedGroup.PlaneOrientationSequence;
+    // Read each source image one time, also when it holds many segments.
+    const sources = new Map();
+    const getSource = (sourceFrameIndex) => {
+      if (!sources.has(sourceFrameIndex)) {
+        const image = images[sourceFrameIndex];
+        sources.set(sourceFrameIndex, {
+          ...getSourceFrame(image, metadata),
+          sourceImageSequenceItem: getReferencedSourceImageSequenceItem(
+            image,
+            metadata
+          ),
+        });
+      }
+      return sources.get(sourceFrameIndex);
+    };
 
-    const perFrameInputs = frameDescriptors.map((desc, frameIndex) => {
-      const sourceImageSequenceItem = getReferencedSourceImageSequenceItem(
-        frameImages[frameIndex],
-        metadata
+    const perFrameInputs = frameDescriptors.map((desc) => {
+      const { position, sourceImageSequenceItem } = getSource(
+        desc.sourceFrameIndex
       );
 
+      // Throw, so that the per-frame groups always match the PixelData frames.
       if (!sourceImageSequenceItem?.ReferencedSOPInstanceUID) {
         throw new Error(
           `Cannot resolve a source ReferencedSOPInstanceUID for SEG frame ` +
@@ -326,30 +347,23 @@ export function fillSegmentation(
         );
       }
 
-      const { position, orientation } = planes[frameIndex];
-      if (!position || !orientation) {
-        cs3dLogger.warn(
-          `The source image of SEG frame ${frameIndex + 1} has no ` +
-            `ImagePositionPatient or ImageOrientationPatient. The frame ` +
-            `keeps the plane that dcmjs gave it, which can be the plane of ` +
-            `another source image.`
-        );
-      }
-
       return {
         referencedSegmentNumber: desc.referencedSegmentNumber,
         sourceImageSequenceItem,
         planePositionSequence: position
           ? { ImagePositionPatient: position }
           : undefined,
-        planeOrientationSequence:
-          perFrameOrientation && orientation
-            ? { ImageOrientationPatient: orientation }
-            : undefined,
       };
     });
 
     applyPerFrameFunctionalGroups(segmentation.dataset, perFrameInputs);
+    setPlaneOrientations(
+      segmentation.dataset,
+      frameDescriptors.map(
+        (desc) => getSource(desc.sourceFrameIndex).orientation
+      )
+    );
+    warnMissingPlanes(frameDescriptors, getSource);
   }
   const transferSyntaxUid =
     options.transferSyntaxUid ??

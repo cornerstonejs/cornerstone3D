@@ -10,6 +10,7 @@ import {
   applyPerFrameFunctionalGroups,
   getReferencedSourceImageSequenceItem,
   normalizeSharedFunctionalGroupsSequence,
+  setPlaneOrientations,
 } from './perFrameFunctionalGroups.js';
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
 import { utilities as metadataUtilities } from '@cornerstonejs/metadata';
@@ -617,18 +618,8 @@ function fillLabelmapSegmentation(
     ...dimension,
   }));
 
-  // A macro is in the shared or the per-frame groups, never both (PS3.3
-  // C.7.6.16): one orientation is shared, several are per frame.
   normalizeSharedFunctionalGroupsSequence(dataset);
-  const shared = dataset.SharedFunctionalGroupsSequence;
-  delete shared.PlanePositionSequence;
-  if (orientations.length === 1) {
-    shared.PlaneOrientationSequence = {
-      ImageOrientationPatient: orientations[0],
-    };
-  } else {
-    delete shared.PlaneOrientationSequence;
-  }
+  delete dataset.SharedFunctionalGroupsSequence.PlanePositionSequence;
   // Only Spacing Between Slices and a missing Slice Thickness use the spacing.
   const includeSliceSpacing = Boolean(options.includeSliceSpacing);
   const sliceSpacings =
@@ -650,16 +641,16 @@ function fillLabelmapSegmentation(
   dataset.PerFrameFunctionalGroupsSequence = [];
   applyPerFrameFunctionalGroups(
     dataset,
-    frames.map(({ position, orientation, sourceImageSequenceItem }, index) => ({
+    frames.map(({ position, sourceImageSequenceItem }, index) => ({
       sourceImageSequenceItem,
       planePositionSequence: { ImagePositionPatient: position },
-      planeOrientationSequence:
-        orientations.length > 1
-          ? { ImageOrientationPatient: orientation }
-          : undefined,
       pixelMeasuresSequence: perFramePixelMeasures?.[index],
       frameContent: frameContents[index],
     }))
+  );
+  setPlaneOrientations(
+    dataset,
+    frames.map(({ orientation }) => orientation)
   );
 
   const sopInstanceUIDs = new Set(
