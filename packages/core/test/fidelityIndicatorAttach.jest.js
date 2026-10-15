@@ -174,6 +174,17 @@ describe('fidelityIndicator attach gates', () => {
       detachFidelityIndicator(viewport);
       expect(viewport.element.querySelector('.fi-root')).toBeNull();
     });
+
+    it('restores inline position after detach', () => {
+      const viewport = viewportStub({ type: ViewportType.ORTHOGRAPHIC });
+      expect(viewport.element.style.position).toBe('');
+
+      maybeAttachFidelityIndicator(viewport);
+      expect(viewport.element.style.position).toBe('relative');
+
+      detachFidelityIndicator(viewport);
+      expect(viewport.element.style.position).toBe('');
+    });
   });
 
   describe('attach replaces existing', () => {

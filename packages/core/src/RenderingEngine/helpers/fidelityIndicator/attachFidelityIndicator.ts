@@ -106,13 +106,14 @@ export function attachFidelityIndicator(viewport: IViewport): () => void {
 
   ensureFidelityIndicatorStyles();
 
-  const views = [createSvgIndicator(viewport.element)];
+  const { host, restore: restoreHost } = overlayHostOf(viewport.element);
+  const views = [createSvgIndicator(host)];
 
   if (verbose) {
-    views.push(createTextBadge(viewport.element));
+    views.push(createTextBadge(host));
   }
 
-  const cleanup = subscribeToFidelity(viewport, views);
+  const cleanup = subscribeToFidelity(viewport, views, restoreHost);
   const registered = () => {
     if (cleanups.get(viewport) === registered) {
       cleanups.delete(viewport);
@@ -194,7 +195,8 @@ function hasGetActors(viewport: IViewport): viewport is VolumeViewportLike {
  */
 function subscribeToFidelity(
   viewport: VolumeViewportLike,
-  views: FidelityView[]
+  views: FidelityView[],
+  restoreHost: () => void
 ): () => void {
   const { element } = viewport;
   const records = new Map<string, CachedRecord>();
@@ -242,6 +244,7 @@ function subscribeToFidelity(
     for (const view of views) {
       view.remove();
     }
+    restoreHost();
   };
 
   element.addEventListener(Events.IMAGE_RENDERED, schedule);
@@ -262,20 +265,35 @@ const VOLUME_DATA_EVENTS = [
 /**
  * Host for the indicator/tooltip. Prefer the outer viewport element, not
  * `.viewport-element` (that div uses `overflow: hidden` and clips hover panels).
+ * When this sets an inline `position`, `restore` clears it on detach.
  */
-function overlayHostOf(element: HTMLDivElement): HTMLElement {
+function overlayHostOf(element: HTMLDivElement): {
+  host: HTMLElement;
+  restore: () => void;
+} {
+  let previousInline: string | undefined;
+
   if (typeof getComputedStyle !== 'undefined') {
-    if (getComputedStyle(element).position === 'static') {
+    const computed = getComputedStyle(element).position;
+    // Browsers report `static`; jsdom may report `''` for the default.
+    if (computed === 'static' || computed === '') {
+      previousInline = element.style.position;
       element.style.position = 'relative';
     }
   }
 
-  return element;
+  return {
+    host: element,
+    restore: () => {
+      if (previousInline === undefined) {
+        return;
+      }
+      element.style.position = previousInline;
+    },
+  };
 }
 
-function createSvgIndicator(element: HTMLDivElement): FidelityView {
-  const host = overlayHostOf(element);
-
+function createSvgIndicator(host: HTMLElement): FidelityView {
   const root = document.createElement('div');
   root.className = 'fi-root';
   Object.assign(root.style, {
@@ -577,9 +595,7 @@ function detailsOf(line: FidelityLine): string {
   ].join('\n');
 }
 
-function createTextBadge(element: HTMLDivElement): FidelityView {
-  const host = overlayHostOf(element);
-
+function createTextBadge(host: HTMLElement): FidelityView {
   const root = document.createElement('div');
 
   Object.assign(root.style, {
