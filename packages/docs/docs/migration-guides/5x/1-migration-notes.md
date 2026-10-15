@@ -469,3 +469,38 @@ image of any encapsulated syntax takes the direct fragment path.
   other.
 - If you special-cased `1.2.840.10008.1.2.4.140` as JPEG XL anywhere in your own
   code, change it to the `.110`/`.111`/`.112` block.
+
+## Locked and protected segments stop the brush; overlap only on request
+
+### What Changed
+
+Earlier 5.x releases moved the painted segment to a new private labelmap layer
+when a stroke touched a segment that the brush could not overwrite. The two
+segments then overlapped. This occurred for a locked segment, and for a segment
+that `overwriteMode` (`'none'` or `'visible'`) protects.
+
+Now the brush, the threshold brush and the scissors skip the voxels of a locked
+or protected segment, and a stroke never creates a labelmap layer. This is the
+4.x behavior for locked segments.
+
+An application that wants an overlap calls
+`segmentation.helpers.moveSegmentToPrivateLabelmap(segmentationId, segmentIndex, { recordHistory })`
+before the stroke. See
+[Segment Locking](../../concepts/cornerstone-tools/segmentation/locking.md#overlapping-segments).
+
+The SEG adapter now reads `labelmap3D.labelToSegmentIndex`, so a private layer
+that stores a segment under a different label value exports under the correct
+segment number. `segmentation.helpers.getLabelToSegmentIndex(segmentation, labelmapId)`
+gives that map for one layer.
+
+### Migration Guidance
+
+- If your application relied on `overwriteMode: 'none'` to create overlapping
+  segments, call `segmentation.helpers.moveSegmentToPrivateLabelmap` for the
+  segment first. Then paint with `overwriteMode: 'none'`.
+- `beginLabelmapEditTransaction` no longer accepts `moveSegmentToPrivateLabelmap`,
+  `segmentationVoxelManager`, `segmentationImageData`, `isInObject` or
+  `isInObjectBoundsIJK`. The result no longer has `movedSegment`, `moveStep` or
+  `activeLayer`. `hasProtectedSegmentOverwrite` is removed.
+- If you export SEG from a multi-layer labelmap, set `labelToSegmentIndex` on
+  each `labelmap3D` instead of a remap of the voxel values in your own code.
