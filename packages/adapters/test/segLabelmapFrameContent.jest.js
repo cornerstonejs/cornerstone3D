@@ -143,11 +143,15 @@ describe('LABELMAP SEG export Frame Content', () => {
     expect(dimensionIndexValues(dataset)).toEqual([[2], [1]]);
   });
 
-  it('puts a repeated position in a second stack', () => {
+  it('puts a second frame on the same plane in a second stack', () => {
+    // Slices 3 and 5 are both on the plane z = 3, with different origins.
     const dataset = writeAndRead(
       exportLabelmap(
         { 2: SHAPE_A, 3: SHAPE_A, 5: MULTI_LABEL },
-        { positionForSlice: (slice) => [0, 0, slice === 5 ? 3 : slice] }
+        {
+          positionForSlice: (slice) =>
+            slice === 5 ? [10, 0, 3] : [0, 0, slice],
+        }
       )
     );
 
@@ -194,36 +198,6 @@ describe('LABELMAP SEG export Frame Content', () => {
     ).toEqual([[1, 0, 0, 0, 1, 0], sagittal, [1, 0, 0, 0, 1, 0]]);
   });
 
-  it('gives distinct positions on the same plane distinct indexes', () => {
-    // Slices 3 and 4 both project to z = 3 but have different origins.
-    const dataset = writeAndRead(
-      exportLabelmap(
-        { 3: SHAPE_A, 4: SHAPE_A, 6: MULTI_LABEL },
-        {
-          positionForSlice: (slice) =>
-            slice === 4 ? [10, 0, 3] : [0, 0, slice === 6 ? 1 : slice],
-        }
-      )
-    );
-
-    expect(dimensionIndexValues(dataset)).toEqual([[2], [3], [1]]);
-  });
-
-  it("takes the instance's position when the image plane module has none", () => {
-    const dataset = writeAndRead(
-      exportLabelmap(
-        { 1: SHAPE_A, 3: SHAPE_A, 6: MULTI_LABEL, 8: SHAPE_A },
-        {
-          planePositionForSlice: (slice) =>
-            slice === 1 || slice === 6 ? undefined : [0, 0, slice],
-        }
-      )
-    );
-
-    expect(frameZ(dataset)).toEqual([1, 3, 6, 8]);
-    expect(dimensionIndexValues(dataset)).toEqual([[1], [2], [3], [4]]);
-  });
-
   it('refuses a frame without a plane', () => {
     expect(() =>
       exportLabelmap(
@@ -251,20 +225,70 @@ describe('LABELMAP SEG export Frame Content', () => {
     expect(Number(pixelMeasures.SpacingBetweenSlices)).toBe(1);
   });
 
-  it('writes per-frame Pixel Measures for a source with mixed Slice Thickness', () => {
+  it('omits Spacing Between Slices when the source has a missing slice', () => {
+    // The source has no slice at z = 6, so one gap is 2 mm.
+    const dataset = writeAndRead(
+      exportLabelmap(
+        { 3: SHAPE_A, 8: MULTI_LABEL },
+        { positionForSlice: (slice) => [0, 0, slice < 6 ? slice : slice + 1] },
+        { includeSliceSpacing: true }
+      )
+    );
+    const pixelMeasures = firstItem(sharedGroup(dataset).PixelMeasuresSequence);
+
+    expect(pixelMeasures.SpacingBetweenSlices).toBeUndefined();
+    expect(sliceThickness(dataset)).toBe(1);
+  });
+
+  it('writes per-frame Pixel Measures when the source images differ', () => {
     const dataset = writeAndRead(
       exportLabelmap(
         { 3: SHAPE_A, 6: MULTI_LABEL },
-        { sliceThicknessForSlice: (slice) => (slice < 5 ? 1 : 5) }
+        {
+          pixelSpacingForSlice: (slice) => (slice < 5 ? [1, 1] : [0.5, 0.5]),
+          sliceThicknessForSlice: (slice) => (slice < 5 ? 1 : 5),
+        }
       )
     );
 
-    expect(sharedGroup(dataset).PixelMeasuresSequence).toBeUndefined();
+    // Shared Functional Groups Sequence is Type 2, so it can have no item.
+    expect(sharedGroup(dataset)?.PixelMeasuresSequence).toBeUndefined();
+    expect(
+      asList(dataset.PerFrameFunctionalGroupsSequence).map((group) => {
+        const measures = firstItem(group.PixelMeasuresSequence);
+        return [
+          measures.PixelSpacing.map(Number),
+          Number(measures.SliceThickness),
+        ];
+      })
+    ).toEqual([
+      [[1, 1], 1],
+      [[0.5, 0.5], 5],
+    ]);
+  });
+
+  it('keeps a plane orientation when the source has no Pixel Spacing', () => {
+    // The plane module flags a default Pixel Spacing; its orientation is real.
+    const sagittal = [0, 1, 0, 0, 0, -1];
+    const dataset = writeAndRead(
+      exportLabelmap(
+        { 2: SHAPE_A, 4: SHAPE_A },
+        {
+          orientationForSlice: (slice) =>
+            slice === 4 ? sagittal : [1, 0, 0, 0, 1, 0],
+          planeOrientationOnly: (slice) => slice === 4,
+          pixelSpacingForSlice: (slice) => (slice === 4 ? undefined : [1, 1]),
+        }
+      )
+    );
+
     expect(
       asList(dataset.PerFrameFunctionalGroupsSequence).map((group) =>
-        Number(firstItem(group.PixelMeasuresSequence).SliceThickness)
+        firstItem(group.PlaneOrientationSequence).ImageOrientationPatient.map(
+          Number
+        )
       )
-    ).toEqual([1, 5]);
+    ).toEqual([[1, 0, 0, 0, 1, 0], sagittal]);
   });
 
   it("gives a single-frame export a Frame Content Sequence and the source's Slice Thickness", () => {

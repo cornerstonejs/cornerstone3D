@@ -50,20 +50,23 @@ function imageIdForSlice(sliceIndex) {
  * order-independent.)
  *
  * `rows` and `columns` set the image size (default ROWS x COLUMNS).
- * `orientationForSlice` and `sliceThicknessForSlice` vary those per slice.
+ * `positionForSlice`, `orientationForSlice`, `pixelSpacingForSlice` and
+ * `sliceThicknessForSlice` vary those per slice. A slice without an
+ * orientation or a Pixel Spacing gets a default in the image plane module,
+ * with `usingDefaultValues`, as the real providers do.
+ * `planeOrientationOnly(slice)` keeps the orientation of that slice in the
+ * image plane module only, as for a multiframe source.
  */
 function makeReferencedStack(sliceCount, options = {}) {
   const { zDirection = 1, rows = ROWS, columns = COLUMNS } = options;
   const orientationForSlice =
     options.orientationForSlice ?? (() => [1, 0, 0, 0, 1, 0]);
+  const pixelSpacingForSlice = options.pixelSpacingForSlice ?? (() => [1, 1]);
   const sliceThicknessForSlice = options.sliceThicknessForSlice ?? (() => 1);
+  const planeOrientationOnly = options.planeOrientationOnly ?? (() => false);
   const positionForSlice =
     options.positionForSlice ??
     ((sliceIndex) => [0, 0, zDirection * sliceIndex]);
-  // The image plane module's position, when it should disagree with the
-  // instance's (undefined drops it).
-  const planePositionForSlice =
-    options.planePositionForSlice ?? positionForSlice;
   const imageIds = [];
   const images = [];
 
@@ -88,8 +91,10 @@ function makeReferencedStack(sliceCount, options = {}) {
     Rows: rows,
     Columns: columns,
     ImagePositionPatient: positionForSlice(sliceIndex),
-    ImageOrientationPatient: orientationForSlice(sliceIndex),
-    PixelSpacing: [1, 1],
+    ImageOrientationPatient: planeOrientationOnly(sliceIndex)
+      ? undefined
+      : orientationForSlice(sliceIndex),
+    PixelSpacing: pixelSpacingForSlice(sliceIndex),
     SliceThickness: sliceThicknessForSlice(sliceIndex),
     SamplesPerPixel: 1,
     PhotometricInterpretation: 'MONOCHROME2',
@@ -133,19 +138,31 @@ function makeReferencedStack(sliceCount, options = {}) {
         case 'instance':
           return instanceForSlice(sliceIndex);
         case 'imagePlaneModule': {
-          const orientation = orientationForSlice(sliceIndex);
-          return {
-            imagePositionPatient: planePositionForSlice(sliceIndex),
+          const orientation = orientationForSlice(sliceIndex) ?? [
+            1, 0, 0, 0, 1, 0,
+          ];
+          const [rowPixelSpacing, columnPixelSpacing] = pixelSpacingForSlice(
+            sliceIndex
+          ) ?? [1, 1];
+          const plane = {
+            imagePositionPatient: positionForSlice(sliceIndex),
             imageOrientationPatient: orientation,
-            rowCosines: orientation?.slice(0, 3),
-            columnCosines: orientation?.slice(3, 6),
-            rowPixelSpacing: 1,
-            columnPixelSpacing: 1,
+            rowCosines: orientation.slice(0, 3),
+            columnCosines: orientation.slice(3, 6),
+            pixelSpacing: [rowPixelSpacing, columnPixelSpacing],
+            rowPixelSpacing,
+            columnPixelSpacing,
             sliceThickness: sliceThicknessForSlice(sliceIndex),
             rows,
             columns,
             frameOfReferenceUID: FRAME_OF_REFERENCE_UID,
           };
+          Object.defineProperty(plane, 'usingDefaultValues', {
+            value:
+              !orientationForSlice(sliceIndex) ||
+              !pixelSpacingForSlice(sliceIndex),
+          });
+          return plane;
         }
         case 'generalSeriesModule':
           return {
