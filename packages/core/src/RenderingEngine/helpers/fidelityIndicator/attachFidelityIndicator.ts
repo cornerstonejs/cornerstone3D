@@ -180,7 +180,7 @@ function subscribeToFidelity(
   viewport: VolumeViewportLike,
   views: FidelityView[]
 ): () => void {
-  const { element, id: viewportId } = viewport;
+  const { element } = viewport;
   const records = new Map<string, CachedRecord>();
   let rafId = 0;
   let disposed = false;
@@ -223,17 +223,8 @@ function subscribeToFidelity(
     for (const type of VOLUME_DATA_EVENTS) {
       eventTarget.removeEventListener(type, onVolumeModified);
     }
-    eventTarget.removeEventListener(Events.ELEMENT_DISABLED, onDisabled);
     for (const view of views) {
       view.remove();
-    }
-  };
-
-  const onDisabled = (evt: Event) => {
-    const detail = (evt as CustomEvent<{ viewportId?: string }>).detail;
-
-    if (detail?.viewportId === viewportId) {
-      cleanUp();
     }
   };
 
@@ -241,7 +232,6 @@ function subscribeToFidelity(
   for (const type of VOLUME_DATA_EVENTS) {
     eventTarget.addEventListener(type, onVolumeModified);
   }
-  eventTarget.addEventListener(Events.ELEMENT_DISABLED, onDisabled);
   schedule();
 
   return cleanUp;
