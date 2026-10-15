@@ -9,8 +9,11 @@ import type {
 import { getLabelmap, getOrCreateLabelmapVolume } from './labelmapLayerStore';
 import {
   getSegmentBinding,
+  getSegmentIndexForLabelValue,
   getSegmentsOnLabelmap,
 } from './labelmapSegmentBindings';
+import { moveSegmentToPrivateLabelmap as defaultMoveSegmentToPrivateLabelmap } from './privateLabelmap';
+import type { LabelmapRestoreStep } from '../../../utilities/segmentation/createLabelmapMemo';
 
 /** A batch of cross-layer erases performed by one strategy fill call, with
  *  everything needed to reverse/replay it on undo/redo. */
@@ -20,9 +23,23 @@ type CrossLayerEraseRecord = {
   indices: number[];
 };
 
+type MoveSegmentToPrivateLabelmap = (
+  segmentation: Segmentation,
+  segmentIndex: number,
+  options?: { moveStepCallback?: (step: LabelmapRestoreStep) => void }
+) => LabelmapLayer | undefined;
+
 type BeginLabelmapEditTransactionOptions = {
   segmentIndex: number;
   overwriteSegmentIndices?: number[];
+  /** Locked segments. The edit skips their voxels, so they never cause a
+   *  move of the edited segment to a private layer. */
+  segmentsLocked?: number[];
+  segmentationVoxelManager?: Types.IVoxelManager<number>;
+  segmentationImageData?: vtkImageData;
+  isInObject?: (point: Types.Point3) => boolean;
+  isInObjectBoundsIJK?: Types.BoundsIJK;
+  moveSegmentToPrivateLabelmap?: MoveSegmentToPrivateLabelmap;
 };
 
 type LabelmapEditTransaction = {
@@ -30,9 +47,24 @@ type LabelmapEditTransaction = {
   labelmapId?: string;
   labelValue: number;
   sourceLayer?: LabelmapLayer;
+  activeLayer?: LabelmapLayer;
   overwriteSegmentIndices: number[];
   protectedSegmentIndices: number[];
   crossLayerEraseBindings: SegmentLabelmapBindingState[];
+  movedSegment: boolean;
+  /** Undo/redo step for a segment move performed by this transaction
+   *  (layer registration + bulk voxel move + binding change), for recording
+   *  on the stroke's memo. */
+  moveStep?: LabelmapRestoreStep;
+  /** The locked segments on layers other than the edited layer. The edit
+   *  skips a voxel that one of these layers holds. */
+  lockedVoxelsOnOtherLayers?: LockedLabelmapVoxels[];
+};
+
+/** The voxels of the locked segments on one layer. */
+type LockedLabelmapVoxels = {
+  voxelManager: Types.IVoxelManager<number>;
+  labelValues: Set<number>;
 };
 
 type ResolveLabelmapLayerEditTargetOptions = {
@@ -74,6 +106,49 @@ function getProtectedSegmentIndicesForLayer(
   );
 }
 
+function hasProtectedSegmentOverwrite(
+  segmentation: Segmentation,
+  labelmapId: string,
+  protectedSegmentIndices: number[],
+  voxelManager?: Types.IVoxelManager<number>,
+  options: Pick<
+    BeginLabelmapEditTransactionOptions,
+    'segmentationImageData' | 'isInObject' | 'isInObjectBoundsIJK'
+  > = {}
+): boolean {
+  if (!voxelManager || !protectedSegmentIndices.length) {
+    return false;
+  }
+
+  const protectedSet = new Set(protectedSegmentIndices);
+  let hasConflict = false;
+
+  voxelManager.forEach(
+    ({ value }) => {
+      if (!value || hasConflict) {
+        return;
+      }
+
+      const candidateSegmentIndex = getSegmentIndexForLabelValue(
+        segmentation,
+        labelmapId,
+        Number(value)
+      );
+
+      if (candidateSegmentIndex && protectedSet.has(candidateSegmentIndex)) {
+        hasConflict = true;
+      }
+    },
+    {
+      imageData: options.segmentationImageData,
+      isInObject: options.isInObject,
+      boundsIJK: options.isInObjectBoundsIJK,
+    }
+  );
+
+  return hasConflict;
+}
+
 function collectCrossLayerEraseBindings(
   segmentation: Segmentation,
   labelmapId: string | undefined,
@@ -107,6 +182,7 @@ function beginLabelmapEditTransaction(
       overwriteSegmentIndices,
       protectedSegmentIndices: [],
       crossLayerEraseBindings: [],
+      movedSegment: false,
     };
   }
 
@@ -122,29 +198,121 @@ function beginLabelmapEditTransaction(
       overwriteSegmentIndices,
       protectedSegmentIndices: [],
       crossLayerEraseBindings: [],
+      movedSegment: false,
     };
   }
 
-  const { labelmapId, labelValue } = binding;
+  let activeLayer = sourceLayer;
+  let labelmapId = binding.labelmapId;
+  let labelValue = binding.labelValue;
+  let movedSegment = false;
+
+  const protectedSegmentIndices = getProtectedSegmentIndicesForLayer(
+    segmentation,
+    labelmapId,
+    segmentIndex,
+    overwriteSegmentIndices
+  );
+
+  // A locked segment means "do not paint here": setValue skips its voxels,
+  // so it is not an overlap and does not move the segment to a private layer.
+  const segmentsLocked = options.segmentsLocked ?? [];
+  const shouldMoveSegment = hasProtectedSegmentOverwrite(
+    segmentation,
+    labelmapId,
+    protectedSegmentIndices.filter(
+      (protectedSegmentIndex) => !segmentsLocked.includes(protectedSegmentIndex)
+    ),
+    options.segmentationVoxelManager,
+    {
+      segmentationImageData: options.segmentationImageData,
+      isInObject: options.isInObject,
+      isInObjectBoundsIJK: options.isInObjectBoundsIJK,
+    }
+  );
+
+  let moveStep: LabelmapRestoreStep | undefined;
+
+  if (shouldMoveSegment) {
+    const moveSegmentToPrivateLabelmap =
+      options.moveSegmentToPrivateLabelmap ??
+      defaultMoveSegmentToPrivateLabelmap;
+    const privateLayer = moveSegmentToPrivateLabelmap(
+      segmentation,
+      segmentIndex,
+      { moveStepCallback: (step) => (moveStep = step) }
+    );
+    const privateBinding = getSegmentBinding(segmentation, segmentIndex);
+
+    if (privateLayer && privateBinding) {
+      activeLayer = privateLayer;
+      labelmapId = privateBinding.labelmapId;
+      labelValue = privateBinding.labelValue;
+      movedSegment = privateLayer.labelmapId !== sourceLayer.labelmapId;
+    } else if (privateLayer) {
+      activeLayer = privateLayer;
+      labelmapId = privateLayer.labelmapId;
+      labelValue = 1;
+      movedSegment = privateLayer.labelmapId !== sourceLayer.labelmapId;
+    }
+  }
 
   return {
     segmentIndex,
     labelmapId,
     labelValue,
     sourceLayer,
+    activeLayer,
     overwriteSegmentIndices,
-    protectedSegmentIndices: getProtectedSegmentIndicesForLayer(
-      segmentation,
-      labelmapId,
-      segmentIndex,
-      overwriteSegmentIndices
-    ),
+    protectedSegmentIndices,
     crossLayerEraseBindings: collectCrossLayerEraseBindings(
       segmentation,
       labelmapId,
       overwriteSegmentIndices
     ),
+    movedSegment,
+    moveStep,
   };
+}
+
+/**
+ * Finds the locked segments that are on a layer other than `labelmapId`. An
+ * edit of `labelmapId` reads the voxels of these layers, so that it does not
+ * paint over a locked segment after a move to a private layer.
+ */
+function getLockedVoxelsOnOtherLayers(
+  segmentation: Segmentation,
+  labelmapId: string | undefined,
+  segmentsLocked: number[] = [],
+  targetOptions: ResolveLabelmapLayerEditTargetOptions = {}
+): LockedLabelmapVoxels[] {
+  const labelValuesByLayer = new Map<string, Set<number>>();
+
+  for (const lockedSegmentIndex of segmentsLocked) {
+    const binding = getSegmentBinding(segmentation, lockedSegmentIndex);
+    if (!binding || binding.labelmapId === labelmapId) {
+      continue;
+    }
+
+    if (!labelValuesByLayer.has(binding.labelmapId)) {
+      labelValuesByLayer.set(binding.labelmapId, new Set());
+    }
+    labelValuesByLayer.get(binding.labelmapId).add(binding.labelValue);
+  }
+
+  const lockedVoxels: LockedLabelmapVoxels[] = [];
+  labelValuesByLayer.forEach((labelValues, lockedLabelmapId) => {
+    const layer = getLabelmap(segmentation, lockedLabelmapId);
+    const voxelManager = layer
+      ? resolveLabelmapLayerEditTarget(layer, targetOptions).voxelManager
+      : undefined;
+
+    if (voxelManager) {
+      lockedVoxels.push({ voxelManager, labelValues });
+    }
+  });
+
+  return lockedVoxels;
 }
 
 function getViewportImageIds(viewport?: Types.IViewport): string[] {
@@ -364,7 +532,9 @@ export {
   collectCrossLayerEraseBindings,
   eraseLabelmapEditTransactionOverwrites,
   getLabelmapLayerImageId,
+  getLockedVoxelsOnOtherLayers,
   getProtectedSegmentIndicesForLayer,
+  hasProtectedSegmentOverwrite,
   resolveLabelmapLayerEditTarget,
 };
 export type {
@@ -373,5 +543,6 @@ export type {
   EraseLabelmapEditTransactionOptions,
   LabelmapEditTransaction,
   LabelmapLayerEditTarget,
+  LockedLabelmapVoxels,
   ResolveLabelmapLayerEditTargetOptions,
 };

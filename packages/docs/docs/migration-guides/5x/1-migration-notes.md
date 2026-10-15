@@ -470,22 +470,26 @@ image of any encapsulated syntax takes the direct fragment path.
 - If you special-cased `1.2.840.10008.1.2.4.140` as JPEG XL anywhere in your own
   code, change it to the `.110`/`.111`/`.112` block.
 
-## Locked and protected segments stop the brush; overlap only on request
+## Locked segments stop the brush, and do not cause an overlap
 
 ### What Changed
 
 Earlier 5.x releases moved the painted segment to a new private labelmap layer
-when a stroke touched a segment that the brush could not overwrite. The two
-segments then overlapped. This occurred for a locked segment, and for a segment
-that `overwriteMode` (`'none'` or `'visible'`) protects.
+when a stroke touched a segment that the brush could not overwrite. This
+occurred for a locked segment, and for a segment that `overwriteMode` (`'none'`
+or `'visible'`) protects. The painted segment then overlapped the locked
+segment.
 
 Now the brush, the threshold brush and the scissors skip the voxels of a locked
-or protected segment, and a stroke never creates a labelmap layer. This is the
-4.x behavior for locked segments.
+segment on any layer of the segmentation, and a locked segment never causes a
+new layer. This is the 4.x behavior for locked segments.
 
-An application that wants an overlap calls
-`segmentation.helpers.moveSegmentToPrivateLabelmap(segmentationId, segmentIndex, { recordHistory })`
-before the stroke. See
+A protected segment that is not locked still causes the move to a new layer, as
+before. The move and the stroke are one undo step.
+
+An application can also move a segment before a stroke with
+`segmentation.helpers.moveSegmentToPrivateLabelmap(segmentationId, segmentIndex, { recordHistory })`.
+See
 [Segment Locking](../../concepts/cornerstone-tools/segmentation/locking.md#overlapping-segments).
 
 The SEG adapter now reads `labelmap3D.labelToSegmentIndex`, so a private layer
@@ -495,12 +499,10 @@ gives that map for one layer.
 
 ### Migration Guidance
 
-- If your application relied on `overwriteMode: 'none'` to create overlapping
-  segments, call `segmentation.helpers.moveSegmentToPrivateLabelmap` for the
-  segment first. Then paint with `overwriteMode: 'none'`.
-- `beginLabelmapEditTransaction` no longer accepts `moveSegmentToPrivateLabelmap`,
-  `segmentationVoxelManager`, `segmentationImageData`, `isInObject` or
-  `isInObjectBoundsIJK`. The result no longer has `movedSegment`, `moveStep` or
-  `activeLayer`. `hasProtectedSegmentOverwrite` is removed.
+- If your application relied on a locked segment to create an overlap, unlock
+  the segment, or call `segmentation.helpers.moveSegmentToPrivateLabelmap` for
+  the painted segment first.
+- `beginLabelmapEditTransaction` accepts `segmentsLocked`. A locked segment in
+  that list does not cause a move.
 - If you export SEG from a multi-layer labelmap, set `labelToSegmentIndex` on
   each `labelmap3D` instead of a remap of the voxel values in your own code.

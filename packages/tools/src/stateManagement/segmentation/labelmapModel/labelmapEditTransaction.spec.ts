@@ -1,6 +1,7 @@
 import type { Types } from '@cornerstonejs/core';
 import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type { Segmentation } from '../../../types/SegmentationStateTypes';
+import type { LabelmapLayer } from '../../../types/LabelmapTypes';
 jest.mock('@cornerstonejs/core', () => ({
   BaseVolumeViewport: class BaseVolumeViewport {},
   cache: {
@@ -28,7 +29,10 @@ import { getSegmentation } from '../getSegmentation';
 import {
   beginLabelmapEditTransaction,
   eraseLabelmapEditTransactionOverwrites,
+  getLockedVoxelsOnOtherLayers,
 } from './labelmapEditTransaction';
+import { registerLabelmap } from './labelmapLayerStore';
+import { setSegmentBinding } from './labelmapSegmentBindings';
 
 const { cache: mockCache } = jest.requireMock('@cornerstonejs/core');
 
@@ -119,75 +123,214 @@ const imageData = {
   indexToWorld: (point: Types.Point3) => point,
 } as vtkImageData;
 
+function createPrivateLayerMover(privateLayer: LabelmapLayer) {
+  return jest.fn((targetSegmentation: Segmentation, segmentIndex: number) => {
+    registerLabelmap(targetSegmentation, privateLayer);
+    setSegmentBinding(targetSegmentation, segmentIndex, {
+      labelmapId: privateLayer.labelmapId,
+      labelValue: 1,
+    });
+
+    return privateLayer;
+  });
+}
+
+/** Applies the brush setValue to every voxel, as a stroke that covers them. */
+function paintAllVoxels(
+  segmentation: Segmentation,
+  transaction: ReturnType<typeof beginLabelmapEditTransaction>,
+  segmentsLocked: number[],
+  segmentationVoxelManager: ReturnType<typeof createVoxelManager>
+) {
+  const operationData = {
+    segmentationId: segmentation.segmentationId,
+    segmentIndex: transaction.segmentIndex,
+    labelValue: transaction.labelValue,
+    labelmapId: transaction.labelmapId,
+    labelmapEditTransaction: transaction,
+    segmentsLocked,
+    segmentationVoxelManager,
+    memo: { voxelManager: segmentationVoxelManager },
+  };
+
+  segmentationVoxelManager.values.forEach((value, index) =>
+    setValueComposition[StrategyCallbacks.INTERNAL_setValue](
+      operationData as never,
+      { value, index }
+    )
+  );
+}
+
 describe('labelmap edit transactions', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockCache.getImage.mockReset();
   });
 
-  it.each([
-    ['locked', { overwriteSegmentIndices: [2, 3], segmentsLocked: [2] }],
-    ['protected', { overwriteSegmentIndices: [], segmentsLocked: [] }],
-  ])(
-    'does not paint the voxels of a %s segment, and does not create a layer',
-    (_, { overwriteSegmentIndices, segmentsLocked }) => {
-      const segmentation = createSegmentation();
-      (getSegmentation as jest.Mock).mockReturnValue(segmentation);
-      const segmentationVoxelManager = createVoxelManager([0, 2, 0]);
+  it('moves a segment to a private layer before editing over a protected sibling', () => {
+    const segmentation = createSegmentation();
+    const segmentationVoxelManager = createVoxelManager([0, 2, 0]);
+    const privateLayer: LabelmapLayer = {
+      labelmapId: 'privateLayer',
+      storageKind: 'stack',
+      imageIds: ['private-image'],
+      labelToSegmentIndex: {
+        1: 1,
+      },
+    };
+    const moveSegmentToPrivateLabelmap = jest.fn(
+      (targetSegmentation: Segmentation) => {
+        registerLabelmap(targetSegmentation, privateLayer);
+        setSegmentBinding(targetSegmentation, 1, {
+          labelmapId: privateLayer.labelmapId,
+          labelValue: 1,
+        });
 
-      const transaction = beginLabelmapEditTransaction(segmentation, {
-        segmentIndex: 1,
-        overwriteSegmentIndices,
-      });
+        return privateLayer;
+      }
+    );
 
-      expect(transaction.labelmapId).toBe('layerA');
-      expect(
-        Object.keys(segmentation.representationData.Labelmap.labelmaps)
-      ).toEqual(['layerA', 'layerB']);
+    const transaction = beginLabelmapEditTransaction(segmentation, {
+      segmentIndex: 1,
+      overwriteSegmentIndices: [],
+      segmentationVoxelManager,
+      segmentationImageData: imageData,
+      isInObject: () => true,
+      moveSegmentToPrivateLabelmap,
+    });
 
-      // The stroke covers all three voxels.
-      const operationData = {
-        segmentationId: segmentation.segmentationId,
-        segmentIndex: 1,
-        labelValue: transaction.labelValue,
-        labelmapId: transaction.labelmapId,
-        labelmapEditTransaction: transaction,
-        segmentsLocked,
-        segmentationVoxelManager,
-        memo: { voxelManager: segmentationVoxelManager },
-      };
-      segmentationVoxelManager.values.forEach((value, index) =>
-        setValueComposition[StrategyCallbacks.INTERNAL_setValue](
-          operationData as never,
-          { value, index }
-        )
-      );
-
-      expect(segmentationVoxelManager.values).toEqual([1, 2, 1]);
-    }
-  );
+    expect(moveSegmentToPrivateLabelmap).toHaveBeenCalledTimes(1);
+    expect(transaction.movedSegment).toBe(true);
+    expect(transaction.sourceLayer?.labelmapId).toBe('layerA');
+    expect(transaction.activeLayer?.labelmapId).toBe('privateLayer');
+    expect(transaction.labelmapId).toBe('privateLayer');
+    expect(transaction.labelValue).toBe(1);
+    expect(transaction.protectedSegmentIndices).toEqual([2]);
+  });
 
   it('keeps the segment on its shared layer when the overlap is allowed', () => {
     const segmentation = createSegmentation();
+    const segmentationVoxelManager = createVoxelManager([2]);
+    const moveSegmentToPrivateLabelmap = jest.fn();
 
     const transaction = beginLabelmapEditTransaction(segmentation, {
       segmentIndex: 1,
       overwriteSegmentIndices: [2],
+      segmentationVoxelManager,
+      segmentationImageData: imageData,
+      isInObject: () => true,
+      moveSegmentToPrivateLabelmap,
     });
 
+    expect(moveSegmentToPrivateLabelmap).not.toHaveBeenCalled();
+    expect(transaction.movedSegment).toBe(false);
+    expect(transaction.activeLayer?.labelmapId).toBe('layerA');
     expect(transaction.labelmapId).toBe('layerA');
     expect(transaction.crossLayerEraseBindings).toEqual([]);
     expect(transaction.protectedSegmentIndices).toEqual([]);
   });
 
-  it('collects the cross-layer erase bindings of the overwritten segments', () => {
+  it('does not move the segment for a locked segment, and does not paint its voxels', () => {
     const segmentation = createSegmentation();
+    (getSegmentation as jest.Mock).mockReturnValue(segmentation);
+    const segmentationVoxelManager = createVoxelManager([0, 2, 0]);
+    const moveSegmentToPrivateLabelmap = createPrivateLayerMover({
+      labelmapId: 'privateLayer',
+      storageKind: 'stack',
+      imageIds: ['private-image'],
+    });
+
+    const transaction = beginLabelmapEditTransaction(segmentation, {
+      segmentIndex: 1,
+      overwriteSegmentIndices: [],
+      segmentsLocked: [2],
+      segmentationVoxelManager,
+      segmentationImageData: imageData,
+      isInObject: () => true,
+      moveSegmentToPrivateLabelmap,
+    });
+    paintAllVoxels(segmentation, transaction, [2], segmentationVoxelManager);
+
+    expect(moveSegmentToPrivateLabelmap).not.toHaveBeenCalled();
+    expect(transaction.labelmapId).toBe('layerA');
+    expect(
+      Object.keys(segmentation.representationData.Labelmap.labelmaps)
+    ).toEqual(['layerA', 'layerB']);
+    expect(segmentationVoxelManager.values).toEqual([1, 2, 1]);
+  });
+
+  it('moves the segment for an unlocked protected segment, and keeps the voxels of a locked segment on the other layer', () => {
+    const segmentation = createSegmentation();
+    (getSegmentation as jest.Mock).mockReturnValue(segmentation);
+    const { Labelmap } = segmentation.representationData;
+    Labelmap.labelmaps.layerA.labelToSegmentIndex[4] = 4;
+    Labelmap.segmentBindings[4] = { labelmapId: 'layerA', labelValue: 4 };
+    // Segment 2 is locked, segment 4 is protected but not locked.
+    const layerAVoxels = createVoxelManager([2, 4, 0]);
+    const privateVoxels = createVoxelManager([0, 0, 0]);
+    mockCache.getImage.mockImplementation((imageId: string) =>
+      imageId === 'layerA-image' ? { voxelManager: layerAVoxels } : undefined
+    );
+    const privateLayer: LabelmapLayer = {
+      labelmapId: 'privateLayer',
+      storageKind: 'stack',
+      imageIds: ['private-image'],
+    };
+    const moveSegmentToPrivateLabelmap = createPrivateLayerMover(privateLayer);
+
+    const transaction = beginLabelmapEditTransaction(segmentation, {
+      segmentIndex: 1,
+      overwriteSegmentIndices: [],
+      segmentsLocked: [2],
+      segmentationVoxelManager: layerAVoxels,
+      segmentationImageData: imageData,
+      isInObject: () => true,
+      moveSegmentToPrivateLabelmap,
+    });
+    transaction.lockedVoxelsOnOtherLayers = getLockedVoxelsOnOtherLayers(
+      segmentation,
+      transaction.labelmapId,
+      [2],
+      { imageId: 'private-image', sourceLayer: transaction.activeLayer }
+    );
+    paintAllVoxels(segmentation, transaction, [2], privateVoxels);
+
+    expect(moveSegmentToPrivateLabelmap).toHaveBeenCalledTimes(1);
+    expect(transaction.labelmapId).toBe('privateLayer');
+    expect(privateVoxels.values).toEqual([0, 1, 1]);
+    expect(layerAVoxels.values).toEqual([2, 4, 0]);
+  });
+
+  it('collects cross-layer erase bindings after a protected overwrite move', () => {
+    const segmentation = createSegmentation();
+    const segmentationVoxelManager = createVoxelManager([2]);
+    const privateLayer: LabelmapLayer = {
+      labelmapId: 'privateLayer',
+      storageKind: 'stack',
+      imageIds: ['private-image'],
+      labelToSegmentIndex: {
+        1: 1,
+      },
+    };
 
     const transaction = beginLabelmapEditTransaction(segmentation, {
       segmentIndex: 1,
       overwriteSegmentIndices: [3],
+      segmentationVoxelManager,
+      segmentationImageData: imageData,
+      isInObject: () => true,
+      moveSegmentToPrivateLabelmap: (targetSegmentation) => {
+        registerLabelmap(targetSegmentation, privateLayer);
+        setSegmentBinding(targetSegmentation, 1, {
+          labelmapId: privateLayer.labelmapId,
+          labelValue: 1,
+        });
+
+        return privateLayer;
+      },
     });
 
+    expect(transaction.movedSegment).toBe(true);
     expect(transaction.crossLayerEraseBindings).toEqual([
       {
         labelmapId: 'layerB',
@@ -221,6 +364,7 @@ describe('labelmap edit transactions', () => {
         labelmapId: 'layerA',
         labelValue: 1,
         sourceLayer: segmentation.representationData.Labelmap.labelmaps.layerA,
+        activeLayer: segmentation.representationData.Labelmap.labelmaps.layerA,
         overwriteSegmentIndices: [3],
         protectedSegmentIndices: [],
         crossLayerEraseBindings: [
@@ -229,6 +373,7 @@ describe('labelmap edit transactions', () => {
             labelValue: 1,
           },
         ],
+        movedSegment: false,
       },
       {
         viewport,

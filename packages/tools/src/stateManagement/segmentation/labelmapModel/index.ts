@@ -42,6 +42,7 @@ export {
   collectCrossLayerEraseBindings,
   eraseLabelmapEditTransactionOverwrites,
   getLabelmapLayerImageId,
+  getLockedVoxelsOnOtherLayers,
   getProtectedSegmentIndicesForLayer,
   resolveLabelmapLayerEditTarget,
 } from './labelmapEditTransaction';
@@ -50,6 +51,7 @@ export type {
   EraseLabelmapEditTransactionOptions,
   LabelmapEditTransaction,
   LabelmapLayerEditTarget,
+  LockedLabelmapVoxels,
   ResolveLabelmapLayerEditTargetOptions,
 } from './labelmapEditTransaction';
 export { default as LabelmapImageReferenceResolver } from './labelmapImageReferenceResolver';

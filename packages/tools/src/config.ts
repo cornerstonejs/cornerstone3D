@@ -102,11 +102,11 @@ type SegmentationConfig = {
    * Controls how labelmap editing interacts with other segments.
    * - all: erase all other unlocked segments under the edit footprint
    * - visible: erase only visible unlocked segments
-   * - none: do not erase other segments; the brush skips their voxels
+   * - none: do not erase other segments, allowing overlap
    *
-   * A segment that is not overwritten keeps its voxels, and the edit never
-   * creates a new labelmap layer. To let a segment overlap the others, call
-   * `segmentation.helpers.moveSegmentToPrivateLabelmap` first.
+   * A segment that is not overwritten keeps its voxels: when a stroke would
+   * overwrite it, the edited segment moves to a new labelmap layer. A locked
+   * segment never causes that move; the brush skips its voxels.
    */
   overwriteMode?: 'all' | 'visible' | 'none';
 };

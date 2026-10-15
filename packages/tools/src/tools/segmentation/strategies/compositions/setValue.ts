@@ -37,11 +37,17 @@ export default {
         : existingValue;
     const writeValue = previewSegmentIndex ?? labelValue ?? segmentIndex;
 
-    // A protected segment is one that the overwrite mode keeps.
+    if (segmentsLocked.includes(existingSegmentIndex)) {
+      return;
+    }
+
+    // A locked segment on another layer of the segmentation also stops the
+    // brush, for example after a move of the edited segment to a private layer.
     if (
-      segmentsLocked.includes(existingSegmentIndex) ||
-      labelmapEditTransaction?.protectedSegmentIndices.includes(
-        existingSegmentIndex
+      writeValue &&
+      labelmapEditTransaction?.lockedVoxelsOnOtherLayers?.some(
+        ({ voxelManager, labelValues }) =>
+          labelValues.has(voxelManager.getAtIndex(index))
       )
     ) {
       return;

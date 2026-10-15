@@ -82,19 +82,23 @@ segmentation.locking.setSegmentIndexLocked('segmentation1', 1, false);
 
 Note that the locking state applies to the segmentation as a whole, not to specific representations or viewports. If a segment is locked, it will be locked across all viewports and representations.
 
-## Locked and protected segments stop the brush
+## Locked segments stop the brush
 
 The brush, the threshold brush and the scissors do not change the voxels of a
-locked segment. The painted segment stops at the edge of the locked segment.
+locked segment, on any layer of the segmentation. The painted segment stops at
+the edge of the locked segment, and a locked segment never causes a new
+labelmap layer.
 
-The `overwriteMode` setting of the segmentation configuration also protects
-segments:
+## Protected segments and overlap
 
-| `overwriteMode`   | Segments that the brush overwrites | Segments that the brush skips       |
-| ----------------- | ---------------------------------- | ----------------------------------- |
-| `'all'` (default) | all unlocked segments              | locked segments                     |
-| `'visible'`       | visible unlocked segments          | locked segments and hidden segments |
-| `'none'`          | none                               | all other segments                  |
+The `overwriteMode` setting of the segmentation configuration protects the
+segments that the brush does not overwrite:
+
+| `overwriteMode`   | Segments that the brush overwrites | Protected segments          |
+| ----------------- | ---------------------------------- | --------------------------- |
+| `'all'` (default) | all unlocked segments              | none                        |
+| `'visible'`       | visible unlocked segments          | hidden segments             |
+| `'none'`          | none                               | all other unlocked segments |
 
 ```js
 import { init } from '@cornerstonejs/tools';
@@ -104,13 +108,15 @@ init({
 });
 ```
 
-A stroke never creates a new labelmap layer. A protected segment keeps its
-voxels, in the same way as a locked segment.
+When a stroke would overwrite a protected segment that is not locked, the brush
+moves the painted segment to a new labelmap layer, and the two segments overlap.
+The protected segment keeps its voxels. The move and the stroke are one undo
+step.
 
 ## Overlapping segments
 
 Two segments can overlap only when they are on different labelmap layers. To put
-a segment on a layer of its own, call
+a segment on a layer of its own before a stroke, call
 `segmentation.helpers.moveSegmentToPrivateLabelmap`:
 
 ```js
@@ -133,4 +139,5 @@ const labelmapId = segmentation.helpers.moveSegmentToPrivateLabelmap(
 
 After the move, a stroke of that segment can paint over the other segments,
 unless they are locked. Use `overwriteMode: 'none'` to keep the voxels of the
-other segments under the overlap.
+other segments under the overlap. The brush uses the same move when a stroke
+would overwrite a protected segment.

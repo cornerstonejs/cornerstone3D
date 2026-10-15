@@ -237,6 +237,54 @@ describe('overlap undo/redo bookkeeping', () => {
     });
   });
 
+  describe('beginLabelmapEditTransaction', () => {
+    it('surfaces the move step when the default mover relocates the segment', () => {
+      const segmentation = createSegmentation();
+      const layerAVoxels = createVoxelManager([1, 2, 0]);
+      wireImages({ 'layerA-image': layerAVoxels });
+
+      const transaction = beginLabelmapEditTransaction(segmentation, {
+        segmentIndex: 2,
+        overwriteSegmentIndices: [],
+        segmentationVoxelManager: layerAVoxels,
+        segmentationImageData: imageData,
+        isInObject: () => true,
+      });
+
+      expect(transaction.movedSegment).toBe(true);
+      expect(transaction.moveStep).toBeDefined();
+
+      // and the step round-trips
+      transaction.moveStep.undo();
+      expect(layerAVoxels.values).toEqual([1, 2, 0]);
+      expect(getSegmentBinding(segmentation, 2)).toEqual({
+        labelmapId: 'layerA',
+        labelValue: 2,
+      });
+
+      transaction.moveStep.redo();
+      expect(layerAVoxels.values).toEqual([1, 0, 0]);
+    });
+
+    it('does not surface a move step when overlap is allowed (no move)', () => {
+      const segmentation = createSegmentation();
+      const layerAVoxels = createVoxelManager([1, 2, 0]);
+      wireImages({ 'layerA-image': layerAVoxels });
+
+      const transaction = beginLabelmapEditTransaction(segmentation, {
+        segmentIndex: 2,
+        // overwrite of the sibling is allowed, so no protection, no move
+        overwriteSegmentIndices: [1],
+        segmentationVoxelManager: layerAVoxels,
+        segmentationImageData: imageData,
+        isInObject: () => true,
+      });
+
+      expect(transaction.movedSegment).toBe(false);
+      expect(transaction.moveStep).toBeUndefined();
+    });
+  });
+
   describe('segmentation.helpers.moveSegmentToPrivateLabelmap', () => {
     it('moves a segment to a new layer on request, and undo puts it back', () => {
       const segmentation = createSegmentation();
@@ -291,6 +339,7 @@ describe('overlap undo/redo bookkeeping', () => {
           overwriteSegmentIndices: [3],
           protectedSegmentIndices: [],
           crossLayerEraseBindings: [{ labelmapId: 'layerB', labelValue: 1 }],
+          movedSegment: false,
         },
         {
           viewport,
@@ -315,7 +364,7 @@ describe('overlap undo/redo bookkeeping', () => {
   });
 
   describe('full overlap stroke timeline', () => {
-    it('round-trips a move on request and two strokes, where the second erases another layer', () => {
+    it('round-trips two strokes where the second moves the segment and erases another layer', () => {
       const segmentation = createSegmentation();
       const layerAVoxels = createVoxelManager([1, 0, 0, 0]);
       const layerBVoxels = createVoxelManager([0, 0, 1, 1]);
@@ -339,20 +388,18 @@ describe('overlap undo/redo bookkeeping', () => {
       const afterStrokeA = [1, 2, 0, 0];
       expect(layerAVoxels.values).toEqual(afterStrokeA);
 
-      // --- stroke 2: the application moves segment 2 to a new layer, then
-      // segment 2 paints over segment 1 with cross-layer overwrite of
-      // segment 3 - segment move + private write + erase ---
-      let moveStep: LabelmapRestoreStep;
-      const privateLayer = moveSegmentToPrivateLabelmap(segmentation, 2, {
-        moveStepCallback: (step) => (moveStep = step),
-      });
+      // --- stroke 2: segment 2 paints over segment 1 with cross-layer
+      // overwrite of segment 3 - segment move + private write + erase ---
       const transaction = beginLabelmapEditTransaction(segmentation, {
         segmentIndex: 2,
         overwriteSegmentIndices: [3],
+        segmentationVoxelManager: layerAVoxels,
+        segmentationImageData: imageData,
+        isInObject: () => true,
       });
+      expect(transaction.movedSegment).toBe(true);
 
-      const privateLayerId = privateLayer.labelmapId;
-      expect(transaction.labelmapId).toBe(privateLayerId);
+      const privateLayerId = transaction.activeLayer.labelmapId;
       const privateVM = mockCache.getImage('private-image')
         .voxelManager as ReturnType<typeof createVoxelManager>;
       // the segment move carried segment 2's stroke-1 voxel to the private layer
@@ -363,7 +410,7 @@ describe('overlap undo/redo bookkeeping', () => {
         'segmentation',
         privateVM
       ) as unknown as LabelmapMemo;
-      (memoB.priorSteps ||= []).push(moveStep);
+      (memoB.priorSteps ||= []).push(transaction.moveStep);
 
       // the stroke's own writes land on the private layer
       memoB.voxelManager.setAtIndex(0, 1);
@@ -412,7 +459,9 @@ describe('overlap undo/redo bookkeeping', () => {
       expect(layerAVoxels.values).toEqual(afterStrokeA);
 
       memoB.restoreMemo(false);
-      expect(getLabelmap(segmentation, privateLayerId)).toBe(privateLayer);
+      expect(getLabelmap(segmentation, privateLayerId)).toBe(
+        transaction.activeLayer
+      );
       expect(getSegmentBinding(segmentation, 2)).toEqual({
         labelmapId: privateLayerId,
         labelValue: 1,
