@@ -20,6 +20,7 @@ import {
   formatFactor,
   formatFactors,
   isInteractiveLod,
+  isReduced,
   reductionFactorsOf,
   svgStateOf,
 } from './fidelityIndicatorState';
@@ -434,11 +435,14 @@ function readLines(
       records.set(id, cached);
     }
 
+    const reductionFactors = reductionFactorsOf(grid, fullGrid);
+
     lines.push({
       label: 'Image',
       record: cached.record ?? undefined,
-      reductionFactors: reductionFactorsOf(grid, fullGrid),
-      fullResolution: voxelGridsEqual(grid, fullGrid),
+      reductionFactors,
+      // Spacing only — dims/origin differences must not sticky-flag lossy.
+      fullResolution: !isReduced(reductionFactors),
       sampleDistanceLod: sampleDistanceLodOf(mapper),
     });
   }

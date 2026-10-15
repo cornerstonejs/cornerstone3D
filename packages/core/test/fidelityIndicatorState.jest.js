@@ -152,5 +152,19 @@ describe('fidelityIndicatorState', () => {
       expect(isInteractiveLod(1)).toBe(false);
       expect(isInteractiveLod(1.02)).toBe(true);
     });
+
+    it('does not treat equal spacing with different origin or dims as reduced', () => {
+      const drawn = {
+        ...grid([66, 66, 66], [1, 1, 1]),
+        origin: [1, 0, 0],
+      };
+      const full = grid([64, 64, 64], [1, 1, 1]);
+      const factors = reductionFactorsOf(drawn, full);
+
+      expect(factors).toEqual([1, 1, 1]);
+      expect(isReduced(factors)).toBe(false);
+      // fullResolution in readLines is !isReduced(factors)
+      expect(!isReduced(factors)).toBe(true);
+    });
   });
 });

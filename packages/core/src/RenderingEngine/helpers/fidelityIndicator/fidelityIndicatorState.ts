@@ -14,7 +14,7 @@ export type FidelityLine = {
    * Each value is 1 when that axis matches the full volume.
    */
   reductionFactors: Point3;
-  /** True when the drawn grid matches the full volume grid. */
+  /** True when drawn spacing matches the full volume (dims/origin ignored). */
   fullResolution: boolean;
   /**
    * Current mapper sample distance / idle baseline. 1 when idle; ~2 during
@@ -87,6 +87,7 @@ export function dataKindOf(line: FidelityLine): FidelityDataKind {
     return 'decimated';
   }
 
+  // Spacing only — dims/origin differences must not sticky-flag lossy.
   if (!fullResolution || isReduced(reductionFactors)) {
     return 'reduced';
   }
