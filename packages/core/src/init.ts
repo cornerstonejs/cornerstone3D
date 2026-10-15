@@ -113,11 +113,11 @@ function isIOS() {
 
 /**
  * Initialize the cornerstone-core. This function runs the GPU capability
- * detection (WebGL availability, texture-format probes -- cached across page
+ * detection (WebGL2 availability, texture-format probes -- cached across page
  * loads, see `getRenderingCapabilities`) which the 'auto' render backend and
  * texture-format decisions resolve against.
  *
- * If no WebGL context is available, rendering falls back to the CPU for
+ * If no WebGL2 context is available, rendering falls back to the CPU for
  * supported operations.
  *
  * @param configuration - A configuration object
@@ -324,14 +324,13 @@ function setPreferSizeOverAccuracy(status: boolean): void {
  * Whether float (32-bit) textures can be linearly sampled, based on the
  * probed capability profile (OES_texture_float_linear draw + readback).
  * Historically this was a user-agent iOS check; environments where the probe
- * cannot run (no WebGL context, e.g. unit tests, or WebGL1-only browsers --
- * the texture probes require WebGL2) keep the legacy user-agent behavior so
- * data-preparation code paths stay deterministic there.
+ * cannot run (no WebGL2 context, e.g. unit tests) keep the legacy user-agent
+ * behavior so data-preparation code paths stay deterministic there.
  */
 function canRenderFloatTextures(): boolean {
   const capabilities = getRenderingCapabilities();
 
-  if (capabilities.webgl2) {
+  if (capabilities.webgl) {
     return capabilities.floatLinear;
   }
 

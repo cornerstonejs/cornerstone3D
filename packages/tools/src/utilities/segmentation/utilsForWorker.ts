@@ -9,6 +9,7 @@ import {
 import { getActiveSegmentIndex } from '../../stateManagement/segmentation/getActiveSegmentIndex';
 import { getSegmentation } from '../../stateManagement/segmentation/getSegmentation';
 import { getStrategyData } from '../../tools/segmentation/strategies/utils/getStrategyData';
+import type { StrategyData } from '../../tools/segmentation/strategies/utils/getStrategyData';
 import ensureSegmentationVolume from '../../tools/segmentation/strategies/compositions/ensureSegmentationVolume';
 import ensureImageVolume from '../../tools/segmentation/strategies/compositions/ensureImageVolume';
 import type {
@@ -103,7 +104,9 @@ export const getSegmentationDataForWorker = (
  * @param operationData - The operation data
  * @returns The strategy data
  */
-export const prepareVolumeStrategyDataForWorker = (operationData) => {
+export const prepareVolumeStrategyDataForWorker = (
+  operationData
+): StrategyData | null => {
   return getStrategyData({
     operationData,
     strategy: {

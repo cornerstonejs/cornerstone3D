@@ -118,6 +118,17 @@ interface Cornerstone3DConfig {
       sampleDistanceMultiplier?: number;
     };
     /**
+     * The work that one render does to fill the dirty slices of a reduced
+     * volume texture. The render stops after `maxSlicesPerRender` slices that
+     * hold data, or when `maxMillisecondsPerRender` has passed after at least
+     * one slice. It then requests another render for the slices that remain.
+     * The defaults are 16 slices and 8 ms.
+     */
+    reducedTextureFill?: {
+      maxSlicesPerRender?: number;
+      maxMillisecondsPerRender?: number;
+    };
+    /**
      * When true, legacy viewport types (STACK, ORTHOGRAPHIC, VIDEO, ECG,
      * WHOLE_SLIDE) are internally backed by GenericViewport implementations
      * through legacy compatibility adapters at viewport creation time.

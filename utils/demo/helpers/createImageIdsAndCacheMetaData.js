@@ -81,7 +81,12 @@ export default async function createImageIdsAndCacheMetaData({
       instanceMetaData
     );
 
-    if (!useLegacyWadoRs) {
+    // NATURALIZED is keyed by base image id; skip when already cached so a
+    // second select of the same series does not spam "Metadata add skipped".
+    if (
+      !useLegacyWadoRs &&
+      metaData.get(MetadataModules.NATURALIZED, imageId) === undefined
+    ) {
       addDicomWebInstance(imageId, instanceMetaData);
     }
 

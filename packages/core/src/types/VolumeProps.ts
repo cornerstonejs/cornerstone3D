@@ -9,6 +9,7 @@ import type {
 } from './PixelDataTypedArray';
 import type RGB from './RGB';
 import type { IVoxelManager } from './IVoxelManager';
+import type { VoxelStatistic } from './VoxelStatisticRegistry';
 
 /**
  * Properties required to instantiate a Volume object.
@@ -18,6 +19,13 @@ import type { IVoxelManager } from './IVoxelManager';
 interface VolumeProps {
   /** Unique identifier for the volume */
   volumeId: string;
+
+  /**
+   * Statistic used when this volume must be reduced to fit a GPU texture.
+   * Intensity volumes use average. Labelmaps use foregroundMajority so segment
+   * indices stay real labels. Defaults to average when unset.
+   */
+  reductionStatistic?: VoxelStatistic;
 
   /** Metadata describing the volume */
   metadata: Metadata;

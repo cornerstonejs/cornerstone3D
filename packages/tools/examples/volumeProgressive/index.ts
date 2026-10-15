@@ -9,14 +9,22 @@ import {
   utilities,
   ProgressiveRetrieveImages,
   imageLoadPoolManager,
+  imageLoader,
+  metaData,
+  getRenderingCapabilities,
 } from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
   getLocalUrl,
+  addDropdownToToolbar,
+  addGpuCapabilityProfileDropdown,
+  addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
+import * as cornerstoneAdapters from '@cornerstonejs/adapters';
+import { wadouri } from '@cornerstonejs/dicom-image-loader';
 
 // This is for debugging purposes
 console.warn(
@@ -31,6 +39,7 @@ const {
   ZoomTool,
   ToolGroupManager,
   StackScrollTool,
+  TrackballRotateTool,
   Enums: csToolsEnums,
 } = cornerstoneTools;
 
@@ -39,6 +48,13 @@ const { ImageQualityStatus, ViewportType, Events } = Enums;
 const { MouseBindings } = csToolsEnums;
 
 const { interleavedRetrieveStages } = ProgressiveRetrieveImages;
+const { Cornerstone3D } = cornerstoneAdapters.adaptersSEG;
+const { segmentation: csToolsSegmentation } = cornerstoneTools;
+
+const segmentationId = 'SEGMENTATION_ID';
+
+/** The largest edge in pixels that a viewport takes, however large the data. */
+const maximumViewportEdge = 1500;
 
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
@@ -46,11 +62,83 @@ const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 
 const renderingEngineId = 'myRenderingEngine';
+const viewportId3D = 'CT_VOLUME_3D';
+// The segmentation alone, in 3D. It is not in `viewportIds`, so the CT never
+// reaches it.
+const viewportId3DSeg = 'SEG_VOLUME_3D';
+const segVolumeId = 'SEG_LABELMAP_VOLUME_3D';
 const viewportIds = [
   'CT_SAGITTAL_STACK_1',
   'CT_SAGITTAL_STACK_2',
   'CT_SAGITTAL_STACK_3',
+  viewportId3D,
 ];
+
+/**
+ * The series that this example can load.
+ *
+ * The DTI series holds 3720 images of 128 x 128, which is a volume that no
+ * profile with a small edge can hold in one texture, so the reduction is
+ * visible. The CT series is the one that this example loaded before, and the
+ * alternate paths of the progressive configurations exist on that server only.
+ */
+const seriesOptions = {
+  'CT body 174 images of 512 x 512': {
+    StudyInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125113417.1',
+    SeriesInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125113545.4',
+    // The alternate frame paths that the JLS and the lossy configurations need
+    // exist on a local static DICOMweb server only. The public host serves the
+    // plain frames path, so those buttons fall back to it.
+    wadoRsRoot:
+      getLocalUrl() || 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
+  },
+  // A real 3D volume of 2464 images, each of 512 x 512, with one image at each
+  // position. The k axis exceeds the limit of 2048 of every known device, so a
+  // reduction of that one axis applies, and nothing is interleaved: a streak in
+  // this series comes from the code and not from the acquisition. This series
+  // is the test data of commit 9, which gives a derived representation that
+  // follows the load.
+  'CT body 2464 images of 512 x 512': {
+    StudyInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.99.1071.24993177073256607564948872275593',
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.99.1071.13277129293167305892649949655853',
+    wadoRsRoot:
+      getLocalUrl() || 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
+  },
+  // The same CT of 2464 images, with the segmentation that one reader made of
+  // it. The CT loads in stages, and the segmentation loads as one complete
+  // DICOM instance: a labelmap has no use for a coarse version of itself,
+  // because a segment index is a name and not a measurement, and an average of
+  // two segment indices names a third segment.
+  'CT body 2464 images with a SEG': {
+    StudyInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.99.1071.24993177073256607564948872275593',
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.99.1071.13277129293167305892649949655853',
+    segSeriesInstanceUID:
+      '1.2.826.0.1.3680043.10.511.3.87031968437079874720771706917838569',
+    wadoRsRoot:
+      getLocalUrl() || 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
+  },
+  // 3720 images at 40 positions: 93 acquisitions of each slice. A reduction of
+  // the k axis mixes acquisitions, so a sagittal or a coronal view of it bands
+  // whatever the code does.
+  'DTI 3720 images of 128 x 128 (4D, 40 positions)': {
+    StudyInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.191696062987463500085282581898315738844',
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.286489448812938804331972885532764010716',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
+  },
+  'PERFUSION 900 images': {
+    StudyInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.191696062987463500085282581898315738844',
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.9480659329591605716620606691103764508',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
+  },
+};
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -61,8 +149,16 @@ setTitleAndDescription(
 const size = '512px';
 const content = document.getElementById('content');
 
+// The drop downs choose what to load. They apply at the next load.
 const loaders = document.createElement('div');
 content.appendChild(loaders);
+
+// The load buttons take a line of their own, so it is obvious what to press.
+const loadButtons = document.createElement('div');
+loadButtons.style.clear = 'both';
+loadButtons.style.padding = '0.5em 0';
+loadButtons.innerHTML = '<div><b>Load with:</b></div>';
+content.appendChild(loadButtons);
 
 const timingInfo = document.createElement('div');
 timingInfo.style.width = '35em';
@@ -120,29 +216,42 @@ stageInfo.innerHTML = `
 content.appendChild(stageInfo);
 
 const viewportGrid = document.createElement('div');
-viewportGrid.style.display = 'flex';
-viewportGrid.style.flexDirection = 'row';
 viewportGrid.style.clear = 'both';
-const element1 = document.createElement('div');
-const element2 = document.createElement('div');
-const element3 = document.createElement('div');
-element1.style.width = size;
-element1.style.height = size;
-element2.style.width = size;
-element2.style.height = size;
-element3.style.width = size;
-element3.style.height = size;
 
-// Disable right click context menu so we can have right click tools
-element1.oncontextmenu = (e) => e.preventDefault();
-// Disable right click context menu so we can have right click tools
-element2.oncontextmenu = (e) => e.preventDefault();
-// Disable right click context menu so we can have right click tools
-element3.oncontextmenu = (e) => e.preventDefault();
+const elements = [0, 1, 2, 3, 4].map(() => {
+  const element = document.createElement('div');
 
-viewportGrid.appendChild(element1);
-viewportGrid.appendChild(element2);
-viewportGrid.appendChild(element3);
+  element.style.width = size;
+  element.style.height = size;
+  // Disable right click context menu so we can have right click tools
+  element.oncontextmenu = (e) => e.preventDefault();
+
+  return element;
+});
+const [element1, element2, element3, element4, element5] = elements;
+
+/**
+ * The viewports sit in two rows, and each row holds the two viewports of the
+ * same height.
+ *
+ * `sizeViewportsToVolume` gives a viewport one pixel for each voxel, so the
+ * axial view and the 3D view are as tall as one image, and the sagittal view
+ * and the coronal view are as tall as the number of slices. A single row of
+ * all four would leave a large empty space beside the two short ones.
+ */
+const viewportRow = (...rowElements) => {
+  const row = document.createElement('div');
+
+  row.style.display = 'flex';
+  row.style.flexDirection = 'row';
+  row.style.alignItems = 'flex-start';
+
+  rowElements.forEach((element) => row.appendChild(element));
+  viewportGrid.appendChild(row);
+};
+
+viewportRow(element3, element4, element5);
+viewportRow(element1, element2);
 
 content.appendChild(viewportGrid);
 
@@ -157,7 +266,8 @@ instructions.innerHTML = `
 </ul>
 Stages are:
 <ul>
-<li>initialImages - final version of image 0, 50%, 100%</li>
+<li>initialImages - final version of image 0, 50%, 100% (Progressive: the middle image only)</li>
+<li>Progressive only: coarse64, coarse64At21, coarse64At42 - every 64th image at offsets 0, 21 and 42; each image fills the frames that have no nearer source</li>
 <li>quarterThumb - lossy configuration for every 4th image, offset 1</li>
 <li>halfThumb - lossy configuration for every 4th image, offset 3</li>
 <li>Remaing *Full - final configuration for every 4th image, offset 0, 2, 1, 3</li>
@@ -228,6 +338,47 @@ const configJLSMixed = {
     },
   },
 };
+
+/**
+ * The bytes of the one DICOM instance that a WADO-RS instance response holds.
+ *
+ * That endpoint answers with a `multipart/related` body of one part. The
+ * server names no boundary in the Content-Type header, so the boundary comes
+ * from the first line of the body, and the headers of the part end at the
+ * first empty line. The CRLF before the closing boundary belongs to the
+ * envelope, and not to the instance.
+ */
+function part10BytesOf(contentType: string, buffer: ArrayBuffer): ArrayBuffer {
+  if (!contentType || contentType.indexOf('multipart') === -1) {
+    return buffer;
+  }
+
+  const bytes = new Uint8Array(buffer);
+  const latin1Of = (part: Uint8Array) => String.fromCharCode(...part);
+  const head = latin1Of(bytes.subarray(0, 2048));
+  const boundary = head.slice(0, head.indexOf('\r\n'));
+  const headerEnd = head.indexOf('\r\n\r\n');
+
+  if (boundary.slice(0, 2) !== '--' || headerEnd === -1) {
+    throw new Error('The response holds no multipart header');
+  }
+
+  // The closing boundary is at the end of the body, so read that end only.
+  const tailStart = Math.max(0, bytes.length - boundary.length - 8);
+  const closeIndex = latin1Of(bytes.subarray(tailStart)).lastIndexOf(
+    `\r\n${boundary}`
+  );
+
+  return buffer.slice(
+    headerEnd + 4,
+    closeIndex === -1 ? bytes.length : tailStart + closeIndex
+  );
+}
+
+/** Adds the frame qualifier that a WADO-URI image id takes. Frames count from 1. */
+function withFrame(imageId: string, frame: number): string {
+  return `${imageId}${imageId.indexOf('?') === -1 ? '?' : '&'}frame=${frame}`;
+}
 
 /**
  * Bytes of a frame to retrieve, or to accumulate, before the first decode of
@@ -317,6 +468,10 @@ const configHtj2kMixed = {
  */
 async function run() {
   // Init Cornerstone and related libraries
+  // The reduction that the GPU class forces is visible on a legacy viewport and
+  // on a generic viewport, because the choice of a strategy lives in the actor
+  // helpers that both of them use. Add `?type=next` to the address to draw
+  // through the generic viewports and their render paths.
   await initDemo();
 
   const toolGroupId = 'TOOL_GROUP_ID';
@@ -325,6 +480,7 @@ async function run() {
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(WindowLevelTool);
   cornerstoneTools.addTool(StackScrollTool);
+  cornerstoneTools.addTool(TrackballRotateTool);
   cornerstoneTools.addTool(ZoomTool);
 
   // Define a tool group, which defines how mouse events map to tool commands for
@@ -370,12 +526,78 @@ async function run() {
     ],
   });
 
-  const imageIdsCT = await createImageIdsAndCacheMetaData({
-    StudyInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125113417.1',
-    SeriesInstanceUID: '1.3.6.1.4.1.25403.345050719074.3824.20170125113545.4',
-    wadoRsRoot:
-      getLocalUrl() || 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
+  // The image ids of the series that the drop down selects. A load reads this,
+  // so a change of the series applies at the next load.
+  // The CT series is the default, because it renders with the window that
+  // this example sets. Select another series to change what the load buttons
+  // fetch; the change applies at the next load.
+  let selectedSeries = seriesOptions['CT body 174 images of 512 x 512'];
+  let imageIdsCT = await createImageIdsAndCacheMetaData(selectedSeries);
+
+  addDropdownToToolbar({
+    id: 'series',
+    labelText: 'Series',
+    container: loaders,
+    options: {
+      map: new Map(Object.entries(seriesOptions)),
+      defaultValue: 'CT body 174 images of 512 x 512',
+    },
+    onSelectedValueChange: async (_key, value) => {
+      // The series and its image ids change together, so a load never pairs
+      // the new series with the image ids of the old one.
+      const imageIds = await createImageIdsAndCacheMetaData(value);
+      selectedSeries = value;
+      imageIdsCT = imageIds;
+      getOrCreateTiming('loadingStatus').innerText =
+        `Selected ${imageIdsCT.length} images. Press a load button.`;
+    },
   });
+
+  // An application states the GPU class, and nothing probes the device. The
+  // strategies of a viewport are built when that viewport adds its actor, so a
+  // change applies at the next load, which rebuilds every viewport.
+  addGpuCapabilityProfileDropdown({
+    container: loaders,
+    onSelectedValueChange: (profile) => {
+      getOrCreateTiming('loadingStatus').innerText =
+        `GPU class ${profile.id}. Press a load button to apply it.`;
+    },
+  });
+
+  // The GPU-class drop down is an application statement; this button shows what
+  // getRenderingCapabilities() actually probed (WebGL level, formats, renderer).
+  const probePanel = document.createElement('div');
+  probePanel.style.display = 'none';
+  probePanel.style.clear = 'both';
+  probePanel.style.maxWidth = '48em';
+  probePanel.style.margin = '0.5em 0';
+  probePanel.style.padding = '0.5em';
+  probePanel.style.background = '#f5f5f5';
+  probePanel.style.fontSize = '12px';
+
+  const probeOutput = document.createElement('pre');
+  probeOutput.style.margin = '0';
+  probeOutput.style.maxHeight = '20em';
+  probeOutput.style.overflow = 'auto';
+  probeOutput.style.whiteSpace = 'pre-wrap';
+
+  probePanel.appendChild(probeOutput);
+
+  addButtonToToolbar({
+    id: 'viewRenderingCapabilitiesProbe',
+    title: 'View GPU probe',
+    container: loaders,
+    onClick: () => {
+      const caps = getRenderingCapabilities();
+      const text = JSON.stringify(caps, null, 2);
+      const wasVisible = probePanel.style.display !== 'none';
+
+      probeOutput.textContent = text;
+      probePanel.style.display = wasVisible ? 'none' : 'block';
+    },
+  });
+
+  loaders.appendChild(probePanel);
 
   // Instantiate a rendering engine
   const renderingEngine = new RenderingEngine(renderingEngineId);
@@ -409,14 +631,48 @@ async function run() {
         background: <Types.Point3>[0.2, 0, 0.2],
       },
     },
+    {
+      viewportId: viewportId3D,
+      type: ViewportType.VOLUME_3D,
+      element: element4,
+      defaultOptions: {
+        orientation: Enums.OrientationAxis.CORONAL,
+        background: <Types.Point3>[0.2, 0, 0.2],
+      },
+    },
+    {
+      viewportId: viewportId3DSeg,
+      type: ViewportType.VOLUME_3D,
+      element: element5,
+      defaultOptions: {
+        orientation: Enums.OrientationAxis.CORONAL,
+        background: <Types.Point3>[0.2, 0, 0.2],
+      },
+    },
   ];
 
   renderingEngine.setViewports(viewportInputArray);
 
-  // Set the tool group on the viewports
-  viewportIds.forEach((viewportId) =>
-    toolGroup.addViewport(viewportId, renderingEngineId)
-  );
+  // Set the tool group on the MPR viewports. The 3D viewport scrolls no
+  // slices, so it takes the trackball of its own group.
+  viewportIds
+    .filter((viewportId) => viewportId !== viewportId3D)
+    .forEach((viewportId) =>
+      toolGroup.addViewport(viewportId, renderingEngineId)
+    );
+
+  const toolGroup3D = ToolGroupManager.createToolGroup(`${toolGroupId}_3d`);
+
+  toolGroup3D.addTool(TrackballRotateTool.toolName);
+  toolGroup3D.addTool(ZoomTool.toolName);
+  toolGroup3D.setToolActive(TrackballRotateTool.toolName, {
+    bindings: [{ mouseButton: MouseBindings.Primary }],
+  });
+  toolGroup3D.setToolActive(ZoomTool.toolName, {
+    bindings: [{ mouseButton: MouseBindings.Secondary }],
+  });
+  toolGroup3D.addViewport(viewportId3D, renderingEngineId);
+  toolGroup3D.addViewport(viewportId3DSeg, renderingEngineId);
   renderingEngine.renderViewports(viewportIds);
 
   const progressiveRendering = true;
@@ -425,6 +681,10 @@ async function run() {
   imageLoadPoolManager.setMaxSimultaneousRequests(RequestType.Prefetch, 12);
   imageLoadPoolManager.setMaxSimultaneousRequests(RequestType.Thumbnail, 16);
 
+  // The Part 10 bytes of each segmentation that this page fetched, keyed by
+  // the series. A second press of a load button then reads no 19 MB again.
+  const segBuffers = new Map<string, ArrayBuffer>();
+
   async function loadVolume(volumeId, imageIds, config, text) {
     cache.purgeCache();
     imageRetrieveMetadataProvider.clear();
@@ -432,6 +692,12 @@ async function run() {
       imageRetrieveMetadataProvider.add('volume', config);
     }
     resetTimingInfo();
+    // The segmentation starts with the CT, so both loads show side by side.
+    const segmentation = prepareSegmentation(selectedSeries, imageIds);
+
+    // The SEG request goes out before the CT requests, or it waits behind
+    // hundreds of them for one of the connections of the browser.
+    await segmentation.requested;
     // Define a volume in memory
     getOrCreateTiming('loadingStatus').innerText = 'Loading...';
     const start = Date.now();
@@ -448,10 +714,295 @@ async function run() {
       } ms for ${text} with ${imageIds.length} items`;
     });
 
-    setVolumesForViewports(renderingEngine, [{ volumeId }], viewportIds);
+    await setVolumesForViewports(renderingEngine, [{ volumeId }], viewportIds);
+
+    // After the viewports hold their actors, and not before: the resize below
+    // fits each camera to the data, and a viewport with no actor has no bounds
+    // to fit, which fails inside `getSpatialExtent`.
+    sizeViewportsToVolume(volume.dimensions, volume.spacing);
+
+    // The 3D viewport shows nothing without a transfer function.
+    const viewport3D = renderingEngine.getViewport(viewportId3D);
+
+    viewport3D?.setProperties?.({ preset: 'CT-Bone' });
 
     // Render the image
     renderingEngine.renderViewports(viewportIds);
+
+    await showSegmentation(await segmentation.ready);
+  }
+
+  /**
+   * Gives each planar viewport the shape of the data that it shows, at one
+   * pixel or more for each voxel.
+   *
+   * A viewport that is smaller than its data samples that data, and a sample
+   * hides the change that one stage of a progressive load makes.
+   *
+   * The shape comes from the world extent and not from the number of voxels,
+   * because the camera fits the world extent. A volume whose spacing differs
+   * between two axes has a number of voxels of one shape and a world extent of
+   * another, and a viewport of the first shape shows the background around the
+   * data. The scale is the finest spacing of the two axes, so the finer axis
+   * gets one pixel for each voxel and the coarser axis gets more than one.
+   *
+   * The 3D viewport shows a projection and not a plane of voxels, so it takes
+   * the size of the axial viewport, which keeps the row of the two tidy.
+   *
+   * No side goes beyond `maximumViewportEdge`. A series whose spacing differs
+   * strongly between two axes asks for an edge of several thousand pixels, and
+   * a page of that size is hard to use. The clip scales BOTH sides by the same
+   * factor, so the shape stays the shape of the data and the background does
+   * not come back.
+   */
+  function sizeViewportsToVolume(dimensions, spacing) {
+    // The two axes of the plane of each orientation, in the order of
+    // `viewportInputArray`: sagittal, then coronal, then axial.
+    const planes = [
+      [1, 2],
+      [0, 2],
+      [0, 1],
+    ];
+
+    const sizes = planes.map(([first, second]) => {
+      const scale = Math.min(spacing[first], spacing[second]);
+      const width = (dimensions[first] * spacing[first]) / scale;
+      const height = (dimensions[second] * spacing[second]) / scale;
+      const clip = Math.min(1, maximumViewportEdge / Math.max(width, height));
+
+      return [Math.round(width * clip), Math.round(height * clip)];
+    });
+
+    // The two 3D viewports take the size of the axial viewport, which is the
+    // last of the planes above.
+    [...sizes, sizes[2], sizes[2]].forEach(([width, height], index) => {
+      elements[index].style.width = `${width}px`;
+      elements[index].style.height = `${height}px`;
+    });
+
+    renderingEngine.resize(true, false);
+  }
+
+  /**
+   * Fetches and reads the segmentation of the selected series, when that
+   * series has one, and adds it to the segmentation state.
+   *
+   * The segmentation loads as one complete DICOM instance, and not in stages.
+   * A segment index is a name and not a measurement, so a coarse version of a
+   * labelmap states something that the reader never drew. One request of the
+   * whole instance also costs far less than one request for each of the 2464
+   * frames of this series.
+   *
+   * The segmentation references the images of the CT, and not the voxels of
+   * the CT, so this starts together with the CT load and needs no viewport.
+   *
+   * @returns `requested`, which resolves when the SEG request is out, and
+   * `ready`, which gives the start time, the number of frames and the labelmap
+   * image ids, or null for a series with no segmentation
+   */
+  function prepareSegmentation(series, referenceImageIds) {
+    csToolsSegmentation.removeAllSegmentationRepresentations();
+    csToolsSegmentation.state.removeSegmentation(segmentationId);
+
+    if (!series.segSeriesInstanceUID) {
+      return { requested: Promise.resolve(), ready: Promise.resolve(null) };
+    }
+
+    let markRequested: () => void;
+    const requested = new Promise<void>((resolve) => {
+      markRequested = resolve;
+    });
+    const ready = readSegmentation(series, referenceImageIds, () =>
+      markRequested()
+    );
+
+    // A failed request must not hold the CT load.
+    ready.catch(() => undefined).finally(() => markRequested());
+
+    return { requested, ready };
+  }
+
+  /**
+   * Fetches and reads the SEG. `onRequested` runs as soon as the request of
+   * the whole instance is out.
+   */
+  async function readSegmentation(series, referenceImageIds, onRequested) {
+    const { StudyInstanceUID, segSeriesInstanceUID, wadoRsRoot } = series;
+
+    const start = Date.now();
+    const seriesPath = `${wadoRsRoot}/studies/${StudyInstanceUID}/series/${segSeriesInstanceUID}`;
+
+    getOrCreateTiming('segStatus').innerText = 'Fetching the segmentation...';
+
+    let part10 = segBuffers.get(segSeriesInstanceUID);
+
+    if (!part10) {
+      // The series holds one instance, and a query of the series names that
+      // instance, so this example needs no SOP instance uid of its own.
+      const instances = await (await fetch(`${seriesPath}/instances`)).json();
+      const sopInstanceUID = instances[0]['00080018'].Value[0];
+      const request = fetch(`${seriesPath}/instances/${sopInstanceUID}`);
+
+      onRequested();
+
+      const response = await request;
+
+      part10 = part10BytesOf(
+        response.headers.get('content-type'),
+        await response.arrayBuffer()
+      );
+      segBuffers.set(segSeriesInstanceUID, part10);
+    }
+
+    onRequested();
+
+    // The file manager holds the bytes, and the WADO-URI loader then reads
+    // every frame of the instance out of those bytes, with no further request.
+    const segImageId = wadouri.fileManager.add(new Blob([part10]));
+
+    await imageLoader.loadAndCacheImage(segImageId);
+
+    const instance = metaData.get('instance', segImageId) || {};
+    const frameCount = Number(instance.NumberOfFrames) || 1;
+    const frameImageIds =
+      frameCount > 1
+        ? Array.from({ length: frameCount }, (_, index) =>
+            withFrame(segImageId, index + 1)
+          )
+        : [segImageId];
+
+    getOrCreateTiming('segStatus').innerText =
+      `Reading a segmentation of ${frameCount} frames...`;
+
+    const { labelMapImages, segMetadata } =
+      await Cornerstone3D.Segmentation.createFromDicomSegImageId(
+        referenceImageIds,
+        segImageId,
+        { metadataProvider: metaData, frameImageIds }
+      );
+
+    // The SEG names its segments. Without them the segmentation holds one
+    // segment, and a colour map of the 3D view has one colour.
+    const segments = Object.fromEntries(
+      (segMetadata?.data ?? []).filter(Boolean).map((segment) => [
+        segment.SegmentNumber,
+        {
+          segmentIndex: segment.SegmentNumber,
+          label: segment.SegmentLabel ?? `Segment ${segment.SegmentNumber}`,
+          locked: false,
+          cachedStats: {},
+          active: false,
+        },
+      ])
+    );
+
+    csToolsSegmentation.addSegmentations([
+      {
+        segmentationId,
+        config: { segments },
+        representation: {
+          type: csToolsEnums.SegmentationRepresentations.Labelmap,
+          data: {
+            imageIds: labelMapImages.flat().map((image) => image.imageId),
+          },
+        },
+      },
+    ]);
+
+    return {
+      start,
+      frameCount,
+      labelmapImageIds: labelMapImages.flat().map((image) => image.imageId),
+    };
+  }
+
+  /**
+   * Draws a prepared segmentation on each planar viewport, and alone in the
+   * second 3D viewport. The first 3D viewport shows the CT only.
+   */
+  async function showSegmentation(prepared) {
+    if (!prepared) {
+      return;
+    }
+
+    for (const viewportId of viewportIds.filter((id) => id !== viewportId3D)) {
+      await csToolsSegmentation.addSegmentationRepresentations(viewportId, [
+        {
+          segmentationId,
+          type: csToolsEnums.SegmentationRepresentations.Labelmap,
+        },
+      ]);
+    }
+
+    renderingEngine.renderViewports(viewportIds);
+    await showSegmentation3D(prepared.labelmapImageIds);
+
+    getOrCreateTiming('segStatus').innerText =
+      `Segmentation of ${prepared.frameCount} frames took ${
+        Date.now() - prepared.start
+      } ms`;
+  }
+
+  /**
+   * Shows the labelmap as a volume in the second 3D viewport, one colour for
+   * each segment, and background transparent.
+   *
+   * The volume reads the labelmap images of the cache and copies nothing. It
+   * reduces by foreground majority, so a reduced texture keeps real labels.
+   */
+  async function showSegmentation3D(labelmapImageIds: string[]) {
+    const segVolume = volumeLoader.createAndCacheVolumeFromImagesSync(
+      segVolumeId,
+      labelmapImageIds
+    );
+
+    segVolume.reductionStatistic = Enums.VoxelStatistics.ForegroundMajority;
+
+    const segmentIndices = Object.keys(
+      csToolsSegmentation.state.getSegmentation(segmentationId)?.segments ?? {}
+    )
+      .map(Number)
+      .filter((index) => index > 0);
+
+    await setVolumesForViewports(
+      renderingEngine,
+      [
+        {
+          volumeId: segVolumeId,
+          callback: ({ volumeActor }) => {
+            const property = volumeActor.getProperty();
+            const colors = property.getRGBTransferFunction(0);
+            const opacity = property.getScalarOpacity(0);
+
+            // A label is a name, so a sample must not blend two labels.
+            property.setInterpolationTypeToNearest();
+            property.setShade(false);
+            colors.removeAllPoints();
+            opacity.removeAllPoints();
+            colors.addRGBPoint(0, 0, 0, 0);
+            opacity.addPoint(0, 0);
+
+            for (const segmentIndex of segmentIndices) {
+              const [r, g, b] =
+                csToolsSegmentation.config.color.getSegmentIndexColor(
+                  viewportIds[2],
+                  segmentationId,
+                  segmentIndex
+                );
+
+              colors.addRGBPoint(segmentIndex, r / 255, g / 255, b / 255);
+              opacity.addPoint(segmentIndex, 1);
+            }
+          },
+        },
+      ],
+      [viewportId3DSeg]
+    );
+
+    const viewport = renderingEngine.getViewport(viewportId3DSeg);
+
+    viewport.resetCamera();
+    viewport.render();
   }
 
   const imageLoadStage = (evt) => {
@@ -470,27 +1021,42 @@ async function run() {
     button.innerText = text;
     button.id = text;
     button.onclick = action;
-    loaders.appendChild(button);
+    loadButtons.appendChild(button);
     return button;
   };
 
-  const loadButton = (text, volId, imageIds, config) =>
-    createButton(text, loadVolume.bind(null, volId, imageIds, config, text));
+  // The button reads the image ids when it is pressed. A bound argument would
+  // hold the series that was selected when the button was created, so a change
+  // of the series would never reach the load.
+  const loadButton = (text, volId, getImageIds, config) =>
+    createButton(text, () => loadVolume(volId, getImageIds(), config, text));
 
-  loadButton('JLS', volumeId, imageIdsCT, configJLS);
+  // The two loads that every DICOMweb server serves, because neither one asks
+  // for an alternate frames path. They differ in the ORDER of the requests:
+  // `Linear` asks for the frames from the first to the last, and `Progressive`
+  // interleaves them, so a coarse version of the whole volume arrives first.
+  loadButton('Linear', volumeId, () => imageIdsCT, null);
+  // 64 stages of every 64th image, at bit-reversed offsets, so each level
+  // halves the gap. See `coarseInterleavedRetrieveStages` in core.
+  loadButton(
+    'Progressive',
+    volumeId,
+    () => imageIdsCT,
+    ProgressiveRetrieveImages.coarseInterleavedRetrieveStages
+  );
+  loadButton('JLS', volumeId, () => imageIdsCT, configJLS);
   loadButton(
     'JLS Non Interleaved',
     volumeId,
-    imageIdsCT,
+    () => imageIdsCT,
     configJLSNonInterleaved
   );
-  loadButton('JLS Thumb', volumeId, imageIdsCT, configJLSThumbnail);
-  loadButton('JLS Mixed', volumeId, imageIdsCT, configJLSMixed);
-  loadButton('J2K', volumeId, imageIdsCT, configHtj2k);
-  loadButton('J2K Non Progressive', volumeId, imageIdsCT, null);
-  loadButton('J2K Bytes', volumeId, imageIdsCT, configHtj2kByteRange);
-  loadButton('J2K Lossy', volumeId, imageIdsCT, configHtj2kLossy);
-  loadButton('J2K Mixed', volumeId, imageIdsCT, configHtj2kMixed);
+  loadButton('JLS Thumb', volumeId, () => imageIdsCT, configJLSThumbnail);
+  loadButton('JLS Mixed', volumeId, () => imageIdsCT, configJLSMixed);
+  loadButton('J2K', volumeId, () => imageIdsCT, configHtj2k);
+  loadButton('J2K Bytes', volumeId, () => imageIdsCT, configHtj2kByteRange);
+  loadButton('J2K Lossy', volumeId, () => imageIdsCT, configHtj2kLossy);
+  loadButton('J2K Mixed', volumeId, () => imageIdsCT, configHtj2kMixed);
 }
 
 run();
