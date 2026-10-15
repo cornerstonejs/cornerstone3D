@@ -225,6 +225,8 @@ export default class ONNXSegmentationController {
   private loadingAI: Promise<unknown>;
 
   protected viewport;
+  /** Counts the initViewport calls, so a decode can tell that it is stale. */
+  private viewportGeneration = 0;
   protected excludeTool = ONNXSegmentationController.MarkerExclude;
   protected currentImage;
   private listeners: LogListener[] = [
@@ -418,7 +420,8 @@ export default class ONNXSegmentationController {
    * viewport automatically.
    *
    * The viewport needs an active labelmap segmentation to preview into; until
-   * it has one, the controller stays idle (see getActiveSegmentation).  A
+   * it has one, the controller encodes images but does not decode them (see
+   * getActiveSegmentation).  A
    * tool which extends LabelmapBaseTool is used for setting the preview view
    * once the decode is completed.  This is provided as toolForPreview
    *
@@ -427,6 +430,7 @@ export default class ONNXSegmentationController {
    *     create a new preview instance.
    */
   public initViewport(viewport) {
+    this.viewportGeneration++;
     const { desiredImage } = this;
     if (this.viewport) {
       this.disconnectViewport(this.viewport);
@@ -667,8 +671,9 @@ export default class ONNXSegmentationController {
    *
    * The controller follows whichever viewport the tool was pointed at, and that
    * viewport need not have a segmentation.  Without one there is nothing to
-   * preview into, so the controller stays idle: no encode, no decode and no
-   * propagation.  It resumes on the next render once a segmentation is added.
+   * preview into, so the controller does not decode: no preview and no
+   * propagation.  It still encodes the image, so the first marker after a
+   * segmentation is added does not wait for an encode.
    */
   protected getActiveSegmentation(viewport = this.viewport) {
     if (!viewport) {
@@ -707,17 +712,16 @@ export default class ONNXSegmentationController {
     } else {
       desiredImage.sampleImageId = desiredImage.imageId;
     }
+    // Without a segmentation there is nothing to propagate into.
+    const segmentation = this.getActiveSegmentation();
+    if (!segmentation) {
+      this.randomPoints = [];
+    }
     if (desiredImage.imageId === currentImage?.imageId) {
       return;
     }
 
-    const segmentation = this.getActiveSegmentation();
-    if (!segmentation) {
-      this.randomPoints = [];
-      return;
-    }
-
-    if (this._enabled && this._autoSegmentMode) {
+    if (segmentation && this._enabled && this._autoSegmentMode) {
       if (
         'isInAcquisitionPlane' in viewport &&
         !viewport.isInAcquisitionPlane()
@@ -1102,7 +1106,12 @@ export default class ONNXSegmentationController {
    */
   protected async runDecode() {
     const { canvas } = this;
-    if (this.isGpuInUse || !this.currentImage?.imageEmbeddings) {
+    if (
+      this.isGpuInUse ||
+      !this.currentImage?.imageEmbeddings ||
+      // No segmentation to preview into: keep the encode, skip the decode.
+      !this.getActiveSegmentation()
+    ) {
       return;
     }
     this.isGpuInUse = true;
@@ -1126,9 +1135,6 @@ export default class ONNXSegmentationController {
    */
   public tryLoad(options = { resetImage: false }) {
     const { viewport, desiredImage } = this;
-    if (!this.getActiveSegmentation()) {
-      return;
-    }
     if (!desiredImage.imageId || options.resetImage) {
       desiredImage.imageId =
         viewport.getCurrentImageId() || viewport.getViewReferenceId();
@@ -1415,6 +1421,7 @@ export default class ONNXSegmentationController {
       desiredImage,
       boxRadius,
       viewport,
+      viewportGeneration,
     } = this;
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -1448,8 +1455,12 @@ export default class ONNXSegmentationController {
 
       const feed = feedForSam(emb, points, labels);
       const res = await session.run(feed);
-      // initViewport may have switched viewports while the decoder ran.
-      if (viewport !== this.viewport) {
+      // initViewport may have switched viewports while the decoder ran, also
+      // away and back to the same viewport.
+      if (
+        viewport !== this.viewport ||
+        viewportGeneration !== this.viewportGeneration
+      ) {
         return;
       }
 
