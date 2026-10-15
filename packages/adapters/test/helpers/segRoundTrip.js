@@ -157,10 +157,13 @@ function makeReferencedStack(sliceCount, options = {}) {
             columns,
             frameOfReferenceUID: FRAME_OF_REFERENCE_UID,
           };
-          Object.defineProperty(plane, 'usingDefaultValues', {
-            value:
-              !orientationForSlice(sliceIndex) ||
-              !pixelSpacingForSlice(sliceIndex),
+          const defaultOrientation = !orientationForSlice(sliceIndex);
+          Object.defineProperties(plane, {
+            usingDefaultValues: {
+              value: defaultOrientation || !pixelSpacingForSlice(sliceIndex),
+            },
+            isDefaultValueSetForRowCosine: { value: defaultOrientation },
+            isDefaultValueSetForColumnCosine: { value: defaultOrientation },
           });
           return plane;
         }

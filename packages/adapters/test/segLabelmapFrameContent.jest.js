@@ -268,27 +268,24 @@ describe('LABELMAP SEG export Frame Content', () => {
   });
 
   it('keeps a plane orientation when the source has no Pixel Spacing', () => {
-    // The plane module flags a default Pixel Spacing; its orientation is real.
-    const sagittal = [0, 1, 0, 0, 0, -1];
+    // The plane module flags a default Pixel Spacing, but its axial
+    // orientation is real, and the instance has none.
     const dataset = writeAndRead(
       exportLabelmap(
         { 2: SHAPE_A, 4: SHAPE_A },
         {
-          orientationForSlice: (slice) =>
-            slice === 4 ? sagittal : [1, 0, 0, 0, 1, 0],
           planeOrientationOnly: (slice) => slice === 4,
           pixelSpacingForSlice: (slice) => (slice === 4 ? undefined : [1, 1]),
         }
       )
     );
 
+    expectPositionOnlyDimensions(dataset);
     expect(
-      asList(dataset.PerFrameFunctionalGroupsSequence).map((group) =>
-        firstItem(group.PlaneOrientationSequence).ImageOrientationPatient.map(
-          Number
-        )
-      )
-    ).toEqual([[1, 0, 0, 0, 1, 0], sagittal]);
+      firstItem(
+        sharedGroup(dataset).PlaneOrientationSequence
+      ).ImageOrientationPatient.map(Number)
+    ).toEqual([1, 0, 0, 0, 1, 0]);
   });
 
   it("gives a single-frame export a Frame Content Sequence and the source's Slice Thickness", () => {

@@ -204,10 +204,12 @@ interface SourceFrame {
  * Spacing of the instance, or else of the plane module.
  *
  * The plane providers write a default position, orientation or Pixel Spacing
- * when the instance has none, and set `usingDefaultValues`. The flag does not
+ * when the instance has none, and set `usingDefaultValues`. That flag does not
  * tell which value is a default. With the flag, a plane value equal to its
  * default is not used, so the instance value, or no value, applies. A missing
- * value then stays missing and is never a made-up value.
+ * value then stays missing and is never a made-up value. For the orientation,
+ * the calibrated provider also sets `isDefaultValueSetForRowCosine` and
+ * `isDefaultValueSetForColumnCosine`; when present, these flags decide.
  *
  * dcmjs derive() empties PerFrameFunctionalGroupsSequence, so the LABELMAP
  * export rebuilds the frame geometry from the referenced source images. The
@@ -224,24 +226,31 @@ function getSourceFrame(
   const { rowCosines, columnCosines, usingDefaultValues } = plane;
   const notDefault = (value: number[] | undefined, defaultValue: number[]) =>
     usingDefaultValues && isEqual(value, defaultValue) ? undefined : value;
+  const cosineFlags = [
+    plane.isDefaultValueSetForRowCosine,
+    plane.isDefaultValueSetForColumnCosine,
+  ];
+  const planeOrientation =
+    toOrientation(plane.imageOrientationPatient) ??
+    (rowCosines && columnCosines
+      ? toOrientation([...rowCosines, ...columnCosines])
+      : undefined);
   let position = notDefault(
     toFiniteVector(plane.imagePositionPatient, 3),
     DEFAULT_POSITION
   );
-  let orientation = notDefault(
-    toFiniteVector(plane.imageOrientationPatient, 6) ??
-      (rowCosines && columnCosines
-        ? toFiniteVector([...rowCosines, ...columnCosines], 6)
-        : undefined),
-    DEFAULT_ORIENTATION
-  );
+  let orientation = cosineFlags.some((flag) => flag !== undefined)
+    ? cosineFlags.some(Boolean)
+      ? undefined
+      : planeOrientation
+    : notDefault(planeOrientation, DEFAULT_ORIENTATION);
   if (position && orientation && !withPixelMeasures) {
     return { position, orientation };
   }
 
   const instance = metadata?.get?.(MetadataModules.IMAGE_DATA, imageId) ?? {};
   position ??= toFiniteVector(instance.ImagePositionPatient, 3);
-  orientation ??= toFiniteVector(instance.ImageOrientationPatient, 6);
+  orientation ??= toOrientation(instance.ImageOrientationPatient);
   if (!withPixelMeasures) {
     return { position, orientation };
   }
@@ -267,6 +276,18 @@ const sliceNormal = (orientation: number[]) => {
   );
   return vec3.normalize(normal, normal) as number[];
 };
+
+/**
+ * `values` as an ImageOrientationPatient, or undefined when the values are
+ * not 6 finite numbers or the cosines are collinear, so that no normal exists.
+ */
+function toOrientation(values): number[] | undefined {
+  const orientation = toFiniteVector(values, 6);
+  return orientation &&
+    vec3.length(sliceNormal(orientation) as vec3) > GEOMETRY_TOLERANCE
+    ? orientation
+    : undefined;
+}
 
 /**
  * Index of `orientation` in `orientations`, within GEOMETRY_TOLERANCE. With
@@ -544,6 +565,19 @@ function applyLabelmapPixelMeasures(
   return pixelMeasures;
 }
 
+/**
+ * Fills a derived SEG dataset as a LABELMAP SEG with the non-empty frames of
+ * the labelmaps.
+ *
+ * Every frame must reference a resolvable source SOP Instance UID, and must
+ * have a plane. The function throws otherwise and drops no frame, because a
+ * dropped frame makes the per-frame functional groups disagree with the
+ * encoded PixelData. These checks run before the pixel data is encoded.
+ * Error messages give 1-based frame numbers.
+ *
+ * @param sourceImages - The full source series, for the slice spacing. Empty
+ *   when not all source images are loaded.
+ */
 function fillLabelmapSegmentation(
   segmentation,
   inputLabelmaps3D,
@@ -605,11 +639,7 @@ function fillLabelmapSegmentation(
     return frame;
   };
 
-  // Every SEG frame must reference a resolvable source SOP Instance UID.
-  // Reject rather than silently dropping frames, otherwise the per-frame
-  // functional groups would disagree with the encoded PixelData and produce a
-  // SEG with unreliable source image references. The geometry checks also run
-  // here, before the pixel data is encoded.
+  // Reference and geometry checks run before the encode; see the doc comment.
   const frames = images.map((image, outputIndex) => {
     const sourceImageSequenceItem = getReferencedSourceImageSequenceItem(
       image,
@@ -619,7 +649,7 @@ function fillLabelmapSegmentation(
     if (!sourceImageSequenceItem?.ReferencedSOPInstanceUID) {
       throw new Error(
         `Cannot resolve a source ReferencedSOPInstanceUID for labelmap SEG ` +
-          `frame ${outputIndex}. Refusing to write a SEG with unreliable ` +
+          `frame ${outputIndex + 1}. Refusing to write a SEG with unreliable ` +
           `source image references.`
       );
     }
