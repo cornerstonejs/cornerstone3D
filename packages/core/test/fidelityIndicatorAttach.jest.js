@@ -14,6 +14,7 @@ import ImageQualityStatus from '../src/enums/ImageQualityStatus';
 import VoxelReductions from '../src/enums/VoxelReductions';
 import ViewportType from '../src/enums/ViewportType';
 import {
+  attachFidelityIndicator,
   detachFidelityIndicator,
   isLabelmapActorEntry,
   isVolumeFidelityViewport,
@@ -171,6 +172,27 @@ describe('fidelityIndicator attach gates', () => {
       ).toBeNull();
 
       detachFidelityIndicator(viewport);
+      expect(viewport.element.querySelector('.fi-root')).toBeNull();
+    });
+  });
+
+  describe('attach replaces existing', () => {
+    beforeEach(() => {
+      setConfiguration({
+        ...original,
+        dangerouslyDisableFidelityIndicator: false,
+      });
+    });
+
+    it('leaves a single .fi-root when attach follows the engine default', () => {
+      const viewport = viewportStub({ type: ViewportType.ORTHOGRAPHIC });
+
+      maybeAttachFidelityIndicator(viewport);
+      const cleanup = attachFidelityIndicator(viewport);
+
+      expect(viewport.element.querySelectorAll('.fi-root')).toHaveLength(1);
+
+      cleanup();
       expect(viewport.element.querySelector('.fi-root')).toBeNull();
     });
   });

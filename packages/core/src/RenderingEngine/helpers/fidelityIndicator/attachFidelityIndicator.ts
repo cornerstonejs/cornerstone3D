@@ -84,12 +84,15 @@ const cleanups = new WeakMap<object, () => void>();
  * `lossy` / `lod`). When `init({ debug: { fidelityIndicatorDebug: true } })`
  * is set, the verbose debug badge is also shown in the top-left.
  *
- * When `init({ dangerouslyDisableFidelityIndicator: true })` is set, this
- * is a no-op.
+ * Replaces any existing attachment for this viewport (including the engine
+ * default). When `init({ dangerouslyDisableFidelityIndicator: true })` is set,
+ * this detaches any existing indicator and is otherwise a no-op.
  *
  * @returns a function that removes the indicator and its listeners
  */
 export function attachFidelityIndicator(viewport: IViewport): () => void {
+  detachFidelityIndicator(viewport);
+
   if (getConfiguration().dangerouslyDisableFidelityIndicator) {
     return () => {};
   }
@@ -108,13 +111,22 @@ export function attachFidelityIndicator(viewport: IViewport): () => void {
     views.push(createTextBadge(viewport.element));
   }
 
-  return subscribeToFidelity(viewport, views);
+  const cleanup = subscribeToFidelity(viewport, views);
+  const registered = () => {
+    if (cleanups.get(viewport) === registered) {
+      cleanups.delete(viewport);
+    }
+    cleanup();
+  };
+
+  cleanups.set(viewport, registered);
+  return registered;
 }
 
 /**
  * Attaches the fidelity indicator when the viewport is a volume type and the
- * product indicator is not disabled. Stores cleanup in a WeakMap for
- * {@link detachFidelityIndicator}.
+ * product indicator is not disabled. Uses {@link attachFidelityIndicator}, which
+ * stores cleanup for {@link detachFidelityIndicator}.
  */
 export function maybeAttachFidelityIndicator(viewport: IViewport): void {
   if (getConfiguration().dangerouslyDisableFidelityIndicator) {
@@ -125,8 +137,7 @@ export function maybeAttachFidelityIndicator(viewport: IViewport): void {
     return;
   }
 
-  detachFidelityIndicator(viewport);
-  cleanups.set(viewport, attachFidelityIndicator(viewport));
+  attachFidelityIndicator(viewport);
 }
 
 /** Removes a previously attached fidelity indicator, if any. */
