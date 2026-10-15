@@ -26,7 +26,7 @@ overrides:
   '@babel/helper-compilation-targets': 7.29.7
   caniuse-lite: 1.0.30001767
   'browserslist@<4.28.7': 4.28.7
-  axios: 1.18.1
+  axios: 1.20.0
   buffer: 6.0.3
   node-forge: 1.4.0
   canvas: 3.2.0
@@ -90,6 +90,16 @@ auditConfig:
     # extract-zip is a transitive dependency of puppeteer and is only used in dev
     - GHSA-jmr9-qjv8-65gv
     - GHSA-7pqw-9j4j-h8q3
+    # node-forge is used only by selfsigned (via webpack-dev-server) to create a
+    # local dev cert; it never checks signatures from outside
+    - GHSA-86w9-cpqp-85rv
+    # http-cache-semantics is used only by got (via the Docusaurus update-notifier)
+    # to cache npm registry lookups in the docs dev tooling
+    - GHSA-ch52-4w7c-c8xp
+    # braces has no patched release. It only expands glob patterns that build and
+    # dev tools (chokidar, micromatch, and the shelljs CLI that vtk.js lists) write
+    # themselves; no shipped code passes it an untrusted pattern
+    - GHSA-vfj7-8cjw-p6xm
 allowBuilds:
   '@swc/core': true
   canvas: true

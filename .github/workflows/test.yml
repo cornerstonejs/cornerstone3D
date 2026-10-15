@@ -24,6 +24,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # The PR's copy of the dependency-audit script. The Dependency Audit
+      # workflow always runs main's copy, so changes are tested here.
+      - name: Dependency audit script tests
+        working-directory: scripts/ci/dependency-audit
+        run: npm ci --ignore-scripts --no-audit --no-fund && npm test
+
       - name: Run unit tests (Jest)
         run: pnpm run test:unit
         env:
