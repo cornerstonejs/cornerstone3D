@@ -1037,7 +1037,9 @@ export function insertPixelDataPlanar({
         const ImageOrientationPatientI =
           sharedImageOrientationPatient ||
           PerFrameFunctionalGroups?.PlaneOrientationSequence
-            ?.ImageOrientationPatient;
+            ?.ImageOrientationPatient ||
+          // Without a Frame of Reference, the frame is on the source grid.
+          (multiframe.FrameOfReferenceUID ? undefined : validOrientations[0]);
 
         if (!ImageOrientationPatientI) {
           throw new Error(
