@@ -359,6 +359,39 @@ For example `Planar/PlanarViewportLegacyAdapter.ts`.
 - **GENVIEW-LEGACY-5** The legacy adapter is temporary. A new feature goes on the
   family class, and the adapter translates to it.
 
+### The fidelity of the view (GENVIEW-FIDELITY)
+
+The user requirements are in [Viewport fidelity](./viewport-fidelity.md). This
+group says which part of a generic viewport owns each piece of the fidelity.
+
+- **GENVIEW-FIDELITY-1** The render path composes the quality record of each
+  frame, because only the render path knows which texture it bound and at which
+  sample distance it drew. The record stays on the mounted rendering, as
+  `voxelQuality` does today in `VtkVolumeSliceRenderPath` and
+  `VtkVolume3DRenderPath`.
+- **GENVIEW-FIDELITY-2** The binding exposes the record of its rendering to the
+  viewport. The viewport and a consumer do not reach into an actor, a mapper or
+  a texture to read the record.
+- **GENVIEW-FIDELITY-3** The resolved view supplies the display spacing of the
+  verdict, because the display spacing is a world size of one canvas pixel. A
+  render path does not compute the display spacing. See GENVIEW-VIEW-6.
+- **GENVIEW-FIDELITY-4** The base class derives the verdict from the record of
+  the source binding and the display spacing, with `compareVoxelQuality()`. The
+  base class fires the fidelity event and answers the fidelity query, because
+  every family needs both. See GENVIEW-BASE-1 and GENVIEW-BASE-4.
+- **GENVIEW-FIDELITY-5** A binding that cannot show degraded data supplies no
+  record, and the viewport then reports no degradation. A video, an ECG and a
+  stack of images at full quality are examples.
+- **GENVIEW-FIDELITY-6** The fidelity configuration is global configuration.
+  It is not view state and not data presentation. See GENVIEW-STATE-1 and
+  GENVIEW-STATE-2.
+- **GENVIEW-FIDELITY-7** A user interface that shows the fidelity is a consumer
+  of the event. It is not part of the family class, the render path or the
+  base class.
+- **GENVIEW-FIDELITY-8** The code decides that a viewport can report fidelity
+  from the presence of a record, or from `getCurrentMode()`. It does not use a
+  list of viewport types. See GENVIEW-API-6.
+
 ### The file layout of a family (GENVIEW-FILE)
 
 - **GENVIEW-FILE-1** Every file of one family lives in one directory,
@@ -395,6 +428,7 @@ For example `Planar/PlanarViewportLegacyAdapter.ts`.
 | Does the code change what the user navigates to?                                     | The view state, on the family class                      |
 | Does the code change how a mounted data set looks?                                   | The data presentation, on the binding                    |
 | Does the code persist or restore the look of the view?                               | The projection adapter                                   |
+| Does the code record or report the fidelity of the frame?                            | See GENVIEW-FIDELITY                                     |
 | Does the code exist for an application that has not migrated?                        | The legacy adapter                                       |
 | Do two or more families need the same code?                                          | The base class, or a shared module in `GenericViewport/` |
 
@@ -496,6 +530,30 @@ an application registers, and it cannot tell a planar viewport that shows a
 stack from one that shows a volume.
 
 Breaks GENVIEW-FAMILY-5 and GENVIEW-API-6.
+
+### The fidelity indicator reads actors and mappers
+
+`attachFidelityIndicator` reads `viewport.getActors()`, then
+`actor.getMapper().getScalarTexture().getGrid()` and
+`mapper.getSampleDistance()`. The generic render paths already hold the record
+in `voxelQuality`, and no binding exposes that record.
+
+Breaks GENVIEW-FIDELITY-2. The fix exposes the record through the binding.
+
+### The fidelity indicator selects viewports by a list of types
+
+`isVolumeFidelityViewport` accepts `ORTHOGRAPHIC`, `VOLUME_3D` and
+`VOLUME_3D_NEXT`. A `PLANAR_NEXT` viewport that shows a volume gets no
+indicator, and a stack gets none either.
+
+Breaks GENVIEW-FIDELITY-8 and GENVIEW-API-6.
+
+### No fidelity event and no fidelity query
+
+The base class fires no fidelity event, and it has no fidelity query.
+
+Breaks GENVIEW-FIDELITY-4. The work is in
+[cornerstone3D#2902](https://github.com/cornerstonejs/cornerstone3D/issues/2902).
 
 ## Past defects
 

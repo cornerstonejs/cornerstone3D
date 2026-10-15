@@ -11,6 +11,11 @@ import createVolumeMapper, {
   convertMapperToNotSharedMapper,
 } from './RenderingEngine/helpers/createVolumeMapper';
 export * from './RenderingEngine/helpers/getOrCreateCanvas';
+export {
+  attachFidelityIndicator,
+  maybeAttachFidelityIndicator,
+  detachFidelityIndicator,
+} from './RenderingEngine/helpers/fidelityIndicator';
 import VolumeViewport from './RenderingEngine/VolumeViewport';
 import VolumeViewport3D from './RenderingEngine/VolumeViewport3D';
 import BaseVolumeViewport from './RenderingEngine/BaseVolumeViewport';

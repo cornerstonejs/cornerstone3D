@@ -22,6 +22,7 @@ const log = coreLog.getLogger('init');
 // TODO: change config into a class with methods to better control get/set
 const defaultConfig: Cornerstone3DConfig = {
   isMobile: false, // is mobile device
+  dangerouslyDisableFidelityIndicator: false,
   rendering: {
     useCPURendering: false,
     // GPU rendering options
@@ -76,6 +77,7 @@ const defaultConfig: Cornerstone3DConfig = {
      * - MB MBytes of allocated memory. (Run Chrome with --enable-precise-memory-info)
      */
     statsOverlay: false,
+    fidelityIndicatorDebug: false,
   },
 
   /**
