@@ -14,7 +14,12 @@ import { utilities as metadataUtilities } from '@cornerstonejs/metadata';
 import {
   applyPerFrameFunctionalGroups,
   getReferencedSourceImageSequenceItem,
+  normalizeSharedFunctionalGroupsSequence,
 } from '../Cornerstone3D/Segmentation/perFrameFunctionalGroups';
+import {
+  GEOMETRY_TOLERANCE,
+  getSourceFrame,
+} from '../Cornerstone3D/Segmentation/sourceFrame';
 import {
   encodeFramesToTransferSyntax,
   getBitmapFramesFromDataset,
@@ -277,9 +282,38 @@ export function fillSegmentation(
     // Reject rather than silently dropping frames: a dropped frame would make
     // the per-frame functional groups disagree with the encoded PixelData and
     // produce a SEG whose source-image references are unreliable.
-    const perFrameInputs = frameDescriptors.map((desc) => {
+    // dcmjs gives each frame the position of the referenced multiframe frame
+    // with the same index, but it sorts that multiframe by position: for a
+    // stack in the other scan direction, that is the position of the mirrored
+    // slice. It also writes one shared orientation, from one source image.
+    // Each frame gets the plane of its own source image instead: one shared
+    // orientation when all frames have the same, else one per frame.
+    const frameImages = frameDescriptors.map(
+      (desc) => images[desc.sourceFrameIndex]
+    );
+    const planes = frameImages.map((image) => getSourceFrame(image, metadata));
+    const orientations = planes.map(({ orientation }) => orientation);
+    const sharedOrientation =
+      orientations.every(Boolean) &&
+      orientations.every((orientation) =>
+        csUtilities.isEqual(orientation, orientations[0], GEOMETRY_TOLERANCE)
+      )
+        ? orientations[0]
+        : undefined;
+    normalizeSharedFunctionalGroupsSequence(segmentation.dataset);
+    const sharedGroup = segmentation.dataset.SharedFunctionalGroupsSequence;
+    if (sharedOrientation) {
+      sharedGroup.PlaneOrientationSequence = {
+        ImageOrientationPatient: sharedOrientation,
+      };
+    } else if (orientations.every(Boolean)) {
+      delete sharedGroup.PlaneOrientationSequence;
+    }
+    const perFrameOrientation = !sharedGroup.PlaneOrientationSequence;
+
+    const perFrameInputs = frameDescriptors.map((desc, frameIndex) => {
       const sourceImageSequenceItem = getReferencedSourceImageSequenceItem(
-        images[desc.sourceFrameIndex],
+        frameImages[frameIndex],
         metadata
       );
 
@@ -292,9 +326,26 @@ export function fillSegmentation(
         );
       }
 
+      const { position, orientation } = planes[frameIndex];
+      if (!position || !orientation) {
+        cs3dLogger.warn(
+          `The source image of SEG frame ${frameIndex + 1} has no ` +
+            `ImagePositionPatient or ImageOrientationPatient. The frame ` +
+            `keeps the plane that dcmjs gave it, which can be the plane of ` +
+            `another source image.`
+        );
+      }
+
       return {
         referencedSegmentNumber: desc.referencedSegmentNumber,
         sourceImageSequenceItem,
+        planePositionSequence: position
+          ? { ImagePositionPatient: position }
+          : undefined,
+        planeOrientationSequence:
+          perFrameOrientation && orientation
+            ? { ImageOrientationPatient: orientation }
+            : undefined,
       };
     });
 

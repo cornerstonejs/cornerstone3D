@@ -15,8 +15,15 @@ import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
 import { utilities as metadataUtilities } from '@cornerstonejs/metadata';
 import { vec3 } from 'gl-matrix';
 import { toArray } from '../../helpers/toArray';
+import {
+  GEOMETRY_TOLERANCE,
+  getSourceFrame,
+  sliceNormal,
+  toFiniteVector,
+} from './sourceFrame';
+import type { SourceFrame } from './sourceFrame';
 
-const { isEqual, toFiniteNumber } = metadataUtilities;
+const { isEqual } = metadataUtilities;
 const cs3dLogger = cornerstoneUtilities.logger.adaptersLog.getLogger(
   'Cornerstone3D.Segmentation.generateSegmentation'
 );
@@ -31,12 +38,6 @@ const PLANE_POSITION_SEQUENCE_TAG = 0x00209113;
 const STACK_ID_TAG = 0x00209056;
 const IN_STACK_POSITION_NUMBER_TAG = 0x00209057;
 const FRAME_CONTENT_SEQUENCE_TAG = 0x00209111;
-// Per-component tolerance (mm, or cosine) for the same position or orientation.
-const GEOMETRY_TOLERANCE = 1e-3;
-// The values that the image plane providers write when the instance has none.
-const DEFAULT_POSITION = [0, 0, 0];
-const DEFAULT_ORIENTATION = [1, 0, 0, 0, 1, 0];
-const DEFAULT_PIXEL_SPACING = [1, 1];
 
 interface IOptions {
   predecessorImageId?: string;
@@ -178,149 +179,6 @@ function collectSegmentSequence(labelmap3DArray) {
   return Array.from(bySegmentNumber.entries())
     .sort((a, b) => a[0] - b[0])
     .map(([, segment]) => segment);
-}
-
-/** `values` as `length` finite numbers, or undefined. */
-function toFiniteVector(values, length: number): number[] | undefined {
-  const numbers = toFiniteNumber(values as ArrayLike<number>);
-  return Array.isArray(numbers) &&
-    numbers.length === length &&
-    numbers.every(Number.isFinite)
-    ? numbers
-    : undefined;
-}
-
-interface SourceFrame {
-  position?: number[];
-  orientation?: number[];
-  sliceThickness?: number;
-  pixelSpacing?: number[];
-}
-
-/**
- * The geometry of a source image: position and orientation from the
- * imagePlaneModule, or from the instance when the module has no value. With
- * `withPixelMeasures`, also the first positive Slice Thickness, and the Pixel
- * Spacing of the instance, or else of the plane module.
- *
- * The plane providers write a default position, orientation or Pixel Spacing
- * when the instance has none, and set `usingDefaultValues`. That flag does not
- * tell which value is a default. With the flag, a plane value equal to its
- * default is not used, so the instance value, or no value, applies. A missing
- * value then stays missing and is never a made-up value. For the orientation,
- * the calibrated provider also sets `isDefaultValueSetForRowCosine` and
- * `isDefaultValueSetForColumnCosine`; when present, these flags decide.
- *
- * dcmjs derive() empties PerFrameFunctionalGroupsSequence, so the LABELMAP
- * export rebuilds the frame geometry from the referenced source images. The
- * instance is read only when the plane module is incomplete or when the pixel
- * measures are necessary.
- */
-function getSourceFrame(
-  image: { imageId?: string } | undefined,
-  metadata,
-  withPixelMeasures = false
-): SourceFrame {
-  const imageId = image?.imageId;
-  const plane = metadata?.get?.(MetadataModules.IMAGE_PLANE, imageId) ?? {};
-  const { rowCosines, columnCosines, usingDefaultValues } = plane;
-  const notDefault = (value: number[] | undefined, defaultValue: number[]) =>
-    usingDefaultValues && isEqual(value, defaultValue) ? undefined : value;
-  const cosineFlags = [
-    plane.isDefaultValueSetForRowCosine,
-    plane.isDefaultValueSetForColumnCosine,
-  ];
-  const planeOrientation =
-    toOrientation(plane.imageOrientationPatient) ??
-    (rowCosines && columnCosines
-      ? toOrientation([...rowCosines, ...columnCosines])
-      : undefined);
-  let position = notDefault(
-    toFiniteVector(plane.imagePositionPatient, 3),
-    DEFAULT_POSITION
-  );
-  let orientation = cosineFlags.some((flag) => flag !== undefined)
-    ? cosineFlags.some(Boolean)
-      ? undefined
-      : planeOrientation
-    : notDefault(planeOrientation, DEFAULT_ORIENTATION);
-  if (position && orientation && !withPixelMeasures) {
-    return { position, orientation };
-  }
-
-  const instance = metadata?.get?.(MetadataModules.IMAGE_DATA, imageId) ?? {};
-  position ??= toFiniteVector(instance.ImagePositionPatient, 3);
-  orientation ??= toOrientation(instance.ImageOrientationPatient);
-  if (!withPixelMeasures) {
-    return { position, orientation };
-  }
-
-  return {
-    position,
-    orientation,
-    sliceThickness: [plane.sliceThickness, instance.SliceThickness]
-      .map(Number)
-      .find((thickness) => thickness > 0),
-    pixelSpacing:
-      toFiniteVector(instance.PixelSpacing, 2) ??
-      notDefault(toFiniteVector(plane.pixelSpacing, 2), DEFAULT_PIXEL_SPACING),
-  };
-}
-
-const sourceReferenceKey = (item) =>
-  item.ReferencedSOPInstanceUID + ':' + (item.ReferencedFrameNumber ?? '');
-
-/**
- * Sets the plane position of each BINARY SEG frame from its own source image.
- * dcmjs copies the position of the referenced multiframe frame with the same
- * index, but it sorts that multiframe by position, so for a stack in the other
- * scan direction each frame got the position of the mirrored slice and
- * reloaded on the wrong image. The source reference of the frame finds the
- * image.
- */
-function applyBitmapFramePositions(dataset, images, metadata) {
-  const imagesBySource = new Map();
-  images.forEach((image) => {
-    if (!image?.imageId) {
-      return;
-    }
-    const item = getReferencedSourceImageSequenceItem(image, metadata);
-    if (item?.ReferencedSOPInstanceUID) {
-      imagesBySource.set(sourceReferenceKey(item), image);
-    }
-  });
-
-  toArray(dataset.PerFrameFunctionalGroupsSequence).forEach((group) => {
-    const derivation = toArray(group.DerivationImageSequence)[0];
-    const source = toArray(derivation?.SourceImageSequence)[0];
-    const image = source && imagesBySource.get(sourceReferenceKey(source));
-    const position = image && getSourceFrame(image, metadata).position;
-    if (position) {
-      group.PlanePositionSequence = { ImagePositionPatient: position };
-    }
-  });
-}
-
-/** The unit normal of the plane with the given ImageOrientationPatient. */
-const sliceNormal = (orientation: number[]) => {
-  const normal = vec3.cross(
-    [0, 0, 0],
-    orientation.slice(0, 3) as vec3,
-    orientation.slice(3, 6) as vec3
-  );
-  return vec3.normalize(normal, normal) as number[];
-};
-
-/**
- * `values` as an ImageOrientationPatient, or undefined when the values are
- * not 6 finite numbers or the cosines are collinear, so that no normal exists.
- */
-function toOrientation(values): number[] | undefined {
-  const orientation = toFiniteVector(values, 6);
-  return orientation &&
-    vec3.length(sliceNormal(orientation) as vec3) > GEOMETRY_TOLERANCE
-    ? orientation
-    : undefined;
 }
 
 /**
@@ -880,7 +738,6 @@ function generateSegmentation(
       images,
       metadata
     );
-    applyBitmapFramePositions(segmentationResult.dataset, images, metadata);
     const { frames, bitsAllocated } = getBitmapFramesFromDataset(
       segmentationResult.dataset
     );

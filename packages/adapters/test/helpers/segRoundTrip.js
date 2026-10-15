@@ -42,7 +42,8 @@ function imageIdForSlice(sliceIndex) {
  * `zDirection` sets slice position to `[0, 0, zDirection * sliceIndex]`.
  * dcmjs' ImageNormalizer sorts the virtual multiframe's frames by DESCENDING
  * distance along the scan axis. Both export paths set each frame's plane
- * position from its own source image, so either direction works.
+ * position and orientation from its own source image, so either direction
+ * works.
  *
  * `rows` and `columns` set the image size (default ROWS x COLUMNS).
  * `positionForSlice`, `orientationForSlice`, `pixelSpacingForSlice` and
