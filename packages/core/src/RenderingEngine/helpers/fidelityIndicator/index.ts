@@ -3,6 +3,7 @@ export {
   maybeAttachFidelityIndicator,
   detachFidelityIndicator,
   isVolumeFidelityViewport,
+  isLabelmapActorEntry,
 } from './attachFidelityIndicator';
 export {
   type FidelityLine,

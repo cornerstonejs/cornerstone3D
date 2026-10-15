@@ -1,10 +1,5 @@
 import cache from '../../../cache/cache';
-import {
-  Events,
-  ImageQualityStatus,
-  ViewportType,
-  VoxelStatistics,
-} from '../../../enums';
+import { Events, ImageQualityStatus, ViewportType } from '../../../enums';
 import eventTarget from '../../../eventTarget';
 import { getConfiguration } from '../../../init';
 import type {
@@ -161,6 +156,15 @@ export function isVolumeFidelityViewport(viewport: IViewport): boolean {
     viewport.type === ViewportType.VOLUME_3D ||
     viewport.type === ViewportType.VOLUME_3D_NEXT
   );
+}
+
+/**
+ * Whether an actor is a labelmap overlay (FIDELITY-SCOPE-3). Tools set
+ * `representationUID` to `${segmentationId}-Labelmap-...`.
+ */
+export function isLabelmapActorEntry(entry: ActorEntry): boolean {
+  const id = entry.representationUID ?? entry.uid;
+  return typeof id === 'string' && /(?:^|-)Labelmap(?:-|$)/.test(id);
 }
 
 function hasGetActors(viewport: IViewport): viewport is VolumeViewportLike {
@@ -395,11 +399,7 @@ function readLines(
     const id = entry.referencedId ?? entry.uid;
     const volume = id ? cache.getVolume(id) : undefined;
 
-    if (
-      !volume ||
-      seen.has(id) ||
-      volume.reductionStatistic === VoxelStatistics.ForegroundMajority
-    ) {
+    if (!volume || seen.has(id) || isLabelmapActorEntry(entry)) {
       continue;
     }
 

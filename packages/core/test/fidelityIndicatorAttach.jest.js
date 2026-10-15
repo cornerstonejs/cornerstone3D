@@ -15,6 +15,7 @@ import VoxelReductions from '../src/enums/VoxelReductions';
 import ViewportType from '../src/enums/ViewportType';
 import {
   detachFidelityIndicator,
+  isLabelmapActorEntry,
   isVolumeFidelityViewport,
   maybeAttachFidelityIndicator,
 } from '../src/RenderingEngine/helpers/fidelityIndicator';
@@ -78,6 +79,54 @@ describe('fidelityIndicator attach gates', () => {
             requestedType: ViewportType.STACK,
           })
         )
+      ).toBe(false);
+    });
+  });
+
+  describe('isLabelmapActorEntry', () => {
+    it('accepts representationUID or uid with a Labelmap segment', () => {
+      expect(
+        isLabelmapActorEntry({
+          uid: 'actor-1',
+          representationUID: 'seg-Labelmap-layer',
+          actor: {},
+        })
+      ).toBe(true);
+      expect(
+        isLabelmapActorEntry({
+          uid: 'seg-Labelmap-layer',
+          actor: {},
+        })
+      ).toBe(true);
+      expect(
+        isLabelmapActorEntry({
+          uid: 'actor-1',
+          representationUID: 'Labelmap',
+          actor: {},
+        })
+      ).toBe(true);
+    });
+
+    it('rejects normal volume actors', () => {
+      expect(
+        isLabelmapActorEntry({
+          uid: 'ct-volume',
+          actor: {},
+        })
+      ).toBe(false);
+      expect(
+        isLabelmapActorEntry({
+          uid: 'ct-volume',
+          representationUID: 'fusion-ct',
+          actor: {},
+        })
+      ).toBe(false);
+      expect(
+        isLabelmapActorEntry({
+          uid: 'ct-volume',
+          representationUID: 'MyLabelmapExtra',
+          actor: {},
+        })
       ).toBe(false);
     });
   });
