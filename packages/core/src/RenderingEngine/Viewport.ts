@@ -1083,6 +1083,9 @@ class Viewport {
     const [imgWidth, imgHeight] = canvasImage;
 
     const baseZoom = this.getZoom(baseCamera);
+    if (!Number.isFinite(baseZoom) || baseZoom <= 0) {
+      return;
+    }
     let zoom = baseZoom / this.insetImageMultiplier;
     if (imageArea) {
       const [areaX, areaY] = imageArea;
