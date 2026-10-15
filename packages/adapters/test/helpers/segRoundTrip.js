@@ -41,13 +41,8 @@ function imageIdForSlice(sliceIndex) {
  *
  * `zDirection` sets slice position to `[0, 0, zDirection * sliceIndex]`.
  * dcmjs' ImageNormalizer sorts the virtual multiframe's frames by DESCENDING
- * distance along the scan axis, and the BINARY export path assumes
- * `images[i]` corresponds to normalized frame `i` when it copies each frame's
- * PlanePositionSequence out of the referenced multiframe. That assumption only
- * holds when the input stack is already ordered descending along the normal —
- * pass `zDirection: -1` for the self-consistent case. (The LABELMAP path
- * rebuilds plane sequences from each image's own imagePlaneModule, so it is
- * order-independent.)
+ * distance along the scan axis. Both export paths set each frame's plane
+ * position from its own source image, so either direction works.
  *
  * `rows` and `columns` set the image size (default ROWS x COLUMNS).
  * `positionForSlice`, `orientationForSlice`, `pixelSpacingForSlice` and
