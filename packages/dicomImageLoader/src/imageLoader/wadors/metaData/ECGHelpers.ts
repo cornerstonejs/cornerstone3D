@@ -1,5 +1,13 @@
 import type { WADORSMetaDataElement } from '../../../types';
-import { logging } from '@cornerstonejs/metadata';
+import {
+  logging,
+  utilities as metadataUtilities,
+} from '@cornerstonejs/metadata';
+import type {
+  EcgAnnotations,
+  EcgPatientInfo,
+  EcgStudyInfo,
+} from '@cornerstonejs/metadata';
 import getValue from './getValue';
 import getNumberValue from './getNumberValue';
 import getSequenceItems from './getSequenceItems';
@@ -19,6 +27,25 @@ const TAG = {
   WaveformBitsAllocated: '54001004',
   WaveformSampleInterpretation: '54001006',
   WaveformData: '54001010',
+  WaveformAnnotationSequence: '0040B020',
+  ConceptNameCodeSequence: '0040A043',
+  NumericValue: '0040A30A',
+  MeasurementUnitsCodeSequence: '004008EA',
+  UnformattedTextValue: '0040A160',
+  TextValue: '00700006',
+  CodeValue: '00080100',
+  PatientName: '00100010',
+  PatientID: '00100020',
+  PatientSex: '00100040',
+  PatientAge: '00101010',
+  PatientBirthDate: '00100030',
+  StudyDate: '00080020',
+  StudyTime: '00080030',
+  StudyDescription: '00081030',
+  SeriesDescription: '0008103E',
+  Modality: '00080060',
+  Manufacturer: '00080070',
+  InstitutionName: '00080080',
 } as const;
 
 export interface EcgModule {
@@ -34,6 +61,9 @@ export interface EcgModule {
   waveformData: {
     retrieveBulkData: () => Promise<Int16Array[]>;
   };
+  annotations?: EcgAnnotations;
+  patientInfo?: EcgPatientInfo;
+  studyInfo?: EcgStudyInfo;
 }
 
 /**
@@ -244,6 +274,196 @@ function makeRetrieveBulkData(
   };
 }
 
+function parseRawAnnotations(
+  metadata: Record<string, unknown>
+): EcgAnnotations | undefined {
+  const annotationSeqItems = getSequenceItems(
+    metadata[TAG.WaveformAnnotationSequence]
+  );
+  if (!annotationSeqItems || annotationSeqItems.length === 0) {
+    return undefined;
+  }
+
+  const annotations: EcgAnnotations = {
+    interpretations: [],
+    all: [],
+  };
+
+  for (const item of annotationSeqItems) {
+    const itemRecord = item as unknown as Record<string, unknown>;
+    const conceptItems = getSequenceItems(
+      itemRecord[TAG.ConceptNameCodeSequence]
+    );
+    const concept =
+      (conceptItems?.[0] as unknown as Record<string, unknown>) || {};
+    const codeMeaning =
+      (
+        getValue(concept[TAG.CodeMeaning] as WADORSMetaDataElement) as string
+      )?.trim() ?? '';
+    const codeValue =
+      (
+        getValue(concept[TAG.CodeValue] as WADORSMetaDataElement) as string
+      )?.trim() ?? '';
+
+    const rawNum = getNumberValue(
+      itemRecord[TAG.NumericValue] as WADORSMetaDataElement
+    );
+    const numericVal =
+      rawNum !== undefined && Number.isFinite(rawNum)
+        ? (rawNum as number)
+        : undefined;
+
+    const unitsSeqItems = getSequenceItems(
+      itemRecord[TAG.MeasurementUnitsCodeSequence]
+    );
+    const unitsSeq =
+      (unitsSeqItems?.[0] as unknown as Record<string, unknown>) || {};
+    const unit =
+      (
+        getValue(unitsSeq[TAG.CodeMeaning] as WADORSMetaDataElement) as string
+      )?.trim() ??
+      (
+        getValue(unitsSeq[TAG.CodeValue] as WADORSMetaDataElement) as string
+      )?.trim() ??
+      undefined;
+
+    const rawText =
+      (getValue(
+        itemRecord[TAG.UnformattedTextValue] as WADORSMetaDataElement
+      ) as string) ??
+      (getValue(itemRecord[TAG.TextValue] as WADORSMetaDataElement) as string);
+    const textVal = rawText?.trim();
+    const metric =
+      numericVal !== undefined
+        ? metadataUtilities.matchEcgMetric(codeValue, codeMeaning)
+        : undefined;
+
+    // A finding can be free text (TextValue) or a coded diagnostic concept (CodeMeaning with no numeric value)
+    const findingText =
+      textVal ||
+      (numericVal === undefined && !metric && codeMeaning
+        ? codeMeaning
+        : undefined);
+
+    if (
+      codeMeaning ||
+      codeValue ||
+      numericVal !== undefined ||
+      textVal ||
+      unit
+    ) {
+      annotations.all?.push({
+        concept:
+          codeMeaning || codeValue
+            ? {
+                codeMeaning,
+                codeValue,
+                codingSchemeDesignator: '',
+              }
+            : undefined,
+        numericValue: numericVal,
+        unit,
+        textValue: textVal,
+      });
+    }
+
+    if (findingText && !annotations.interpretations?.includes(findingText)) {
+      annotations.interpretations?.push(findingText);
+    }
+
+    if (numericVal !== undefined && metric) {
+      annotations[metric] = numericVal;
+    }
+  }
+
+  if (
+    annotations.ventricularHeartRate === undefined &&
+    annotations.rrInterval !== undefined &&
+    annotations.rrInterval > 0
+  ) {
+    const rrMs =
+      annotations.rrInterval < 5
+        ? annotations.rrInterval * 1000
+        : annotations.rrInterval;
+    if (rrMs > 0) {
+      annotations.ventricularHeartRate = Math.round(60000 / rrMs);
+    }
+  }
+
+  return annotations;
+}
+
+function parsePatientInfo(metadata: Record<string, unknown>): EcgPatientInfo {
+  const patientNameElem = metadata[TAG.PatientName] as
+    | WADORSMetaDataElement
+    | undefined;
+  let patientName = '';
+  if (patientNameElem?.Value) {
+    const raw = patientNameElem.Value;
+    if (Array.isArray(raw) && raw.length > 0) {
+      const first = raw[0];
+      if (typeof first === 'string') {
+        patientName = first;
+      } else if (first && typeof first === 'object') {
+        const obj = first as { Alphabetic?: string };
+        patientName = typeof obj.Alphabetic === 'string' ? obj.Alphabetic : '';
+      }
+    } else if (typeof raw === 'string') {
+      patientName = raw;
+    } else if (raw && typeof raw === 'object') {
+      const obj = raw as { Alphabetic?: string };
+      patientName = typeof obj.Alphabetic === 'string' ? obj.Alphabetic : '';
+    }
+  }
+
+  return {
+    patientName: patientName || undefined,
+    patientId:
+      (getValue(metadata[TAG.PatientID] as WADORSMetaDataElement) as string) ||
+      undefined,
+    patientSex:
+      (getValue(metadata[TAG.PatientSex] as WADORSMetaDataElement) as string) ||
+      undefined,
+    patientAge:
+      (getValue(metadata[TAG.PatientAge] as WADORSMetaDataElement) as string) ||
+      undefined,
+    patientBirthDate:
+      (getValue(
+        metadata[TAG.PatientBirthDate] as WADORSMetaDataElement
+      ) as string) || undefined,
+  };
+}
+
+function parseStudyInfo(metadata: Record<string, unknown>): EcgStudyInfo {
+  return {
+    studyDate:
+      (getValue(metadata[TAG.StudyDate] as WADORSMetaDataElement) as string) ||
+      undefined,
+    studyTime:
+      (getValue(metadata[TAG.StudyTime] as WADORSMetaDataElement) as string) ||
+      undefined,
+    studyDescription:
+      (getValue(
+        metadata[TAG.StudyDescription] as WADORSMetaDataElement
+      ) as string) || undefined,
+    seriesDescription:
+      (getValue(
+        metadata[TAG.SeriesDescription] as WADORSMetaDataElement
+      ) as string) || undefined,
+    modality:
+      (getValue(metadata[TAG.Modality] as WADORSMetaDataElement) as string) ||
+      'ECG',
+    manufacturer:
+      (getValue(
+        metadata[TAG.Manufacturer] as WADORSMetaDataElement
+      ) as string) || undefined,
+    institutionName:
+      (getValue(
+        metadata[TAG.InstitutionName] as WADORSMetaDataElement
+      ) as string) || undefined,
+  };
+}
+
 /**
  * Parses the DICOM WaveformSequence and returns an EcgModule object.
  *
@@ -325,5 +545,8 @@ export function getECGModule(
         studyUID
       ),
     },
+    annotations: parseRawAnnotations(metadata),
+    patientInfo: parsePatientInfo(metadata),
+    studyInfo: parseStudyInfo(metadata),
   };
 }

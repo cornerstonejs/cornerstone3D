@@ -24,6 +24,9 @@ import type {
   ECGViewportInput,
   ECGWaveformPayload,
   ECGResetViewStateOptions,
+  EcgAnnotations,
+  EcgPatientInfo,
+  EcgStudyInfo,
 } from './ECGViewportTypes';
 import {
   createDefaultECGViewState,
@@ -134,6 +137,32 @@ class ECGViewport extends GenericViewport<
    */
   getWaveformData(): ECGWaveformPayload | null {
     return this.getWaveformBindingData() ?? null;
+  }
+
+  /**
+   * Returns the ECG waveform annotations / summary measurements (such as
+   * heart rate, PR interval, QRS duration, QT/QTc, electrical axes, and
+   * machine interpretations) from the mounted DICOM waveform instance, or
+   * undefined if no annotations are present.
+   */
+  getAnnotations(): EcgAnnotations | undefined {
+    return this.getWaveformData()?.annotations;
+  }
+
+  /**
+   * Returns patient metadata (name, ID, sex, age, birth date) parsed from the
+   * mounted DICOM instance, or undefined.
+   */
+  getPatientInfo(): EcgPatientInfo | undefined {
+    return this.getWaveformData()?.patientInfo;
+  }
+
+  /**
+   * Returns study metadata (date, time, modality, manufacturer, descriptions)
+   * parsed from the mounted DICOM instance, or undefined.
+   */
+  getStudyInfo(): EcgStudyInfo | undefined {
+    return this.getWaveformData()?.studyInfo;
   }
 
   /**

@@ -16,6 +16,134 @@ const cs3dLogger = cornerstoneLogging.metadataLog.getLogger(
   'utilities.metadataProvider.ecgFromInstance'
 );
 
+export interface DicomCodeSequenceItem {
+  CodeValue?: string;
+  CodingSchemeDesignator?: string;
+  CodeMeaning?: string;
+}
+
+export interface DicomChannelDefinitionItem {
+  ChannelSourceSequence?:
+    | DicomCodeSequenceItem[]
+    | ArrayLike<DicomCodeSequenceItem>;
+  ChannelSensitivity?: number | string;
+  ChannelSensitivityUnitsSequence?:
+    | DicomCodeSequenceItem[]
+    | ArrayLike<DicomCodeSequenceItem>;
+  ChannelSensitivityCorrectionFactor?: number | string;
+  ChannelBaseline?: number | string;
+  ChannelSampleSkew?: number | string;
+  WaveformBitsStored?: number | string;
+}
+
+export interface DicomWaveformAnnotationItem {
+  ConceptNameCodeSequence?:
+    | DicomCodeSequenceItem[]
+    | ArrayLike<DicomCodeSequenceItem>;
+  NumericValue?: number | number[] | string | string[];
+  MeasurementUnitsCodeSequence?:
+    | DicomCodeSequenceItem[]
+    | ArrayLike<DicomCodeSequenceItem>;
+  UnformattedTextValue?: string | string[];
+  TextValue?: string | string[];
+  ReferencedSamplePositions?: number | number[];
+}
+
+export interface DicomWaveformData {
+  retrieveBulkData?: () => Promise<unknown>;
+  BulkDataURI?: string;
+  InlineBinary?: string;
+  Value?: ArrayBuffer | Uint8Array | Int16Array[] | string;
+}
+
+export interface DicomWaveformGroupItem {
+  NumberOfWaveformChannels?: number;
+  NumberOfWaveformSamples?: number;
+  SamplingFrequency?: number;
+  WaveformBitsAllocated?: number;
+  WaveformSampleInterpretation?: string;
+  MultiplexGroupLabel?: string;
+  ChannelDefinitionSequence?:
+    | DicomChannelDefinitionItem[]
+    | ArrayLike<DicomChannelDefinitionItem>;
+  WaveformData?: DicomWaveformData;
+  waveformData?: DicomWaveformData;
+}
+
+export interface DicomPatientNameObject {
+  Alphabetic?: string;
+  Ideographic?: string;
+  Phonetic?: string;
+}
+
+export interface DicomEcgInstance {
+  [key: string]: unknown;
+  PatientName?:
+    | string
+    | DicomPatientNameObject
+    | Array<string | DicomPatientNameObject>;
+  PatientID?: string;
+  PatientSex?: string;
+  PatientAge?: string;
+  PatientBirthDate?: string;
+  StudyDate?: string;
+  StudyTime?: string;
+  StudyDescription?: string;
+  SeriesDescription?: string;
+  Modality?: string;
+  Manufacturer?: string;
+  InstitutionName?: string;
+  WaveformSequence?:
+    | DicomWaveformGroupItem[]
+    | ArrayLike<DicomWaveformGroupItem>;
+  WaveformAnnotationSequence?:
+    | DicomWaveformAnnotationItem[]
+    | ArrayLike<DicomWaveformAnnotationItem>;
+}
+
+export interface EcgWaveformAnnotation {
+  concept?: {
+    codeMeaning?: string;
+    codeValue?: string;
+    codingSchemeDesignator?: string;
+  };
+  numericValue?: number;
+  unit?: string;
+  textValue?: string;
+}
+
+export interface EcgAnnotations {
+  ventricularHeartRate?: number;
+  prInterval?: number;
+  qrsDuration?: number;
+  qtInterval?: number;
+  qtcInterval?: number;
+  rrInterval?: number;
+  pAxis?: number;
+  qrsAxis?: number;
+  tAxis?: number;
+  interpretations?: string[];
+  all?: EcgWaveformAnnotation[];
+}
+
+export interface EcgPatientInfo {
+  patientName?: string;
+  patientId?: string;
+  patientSex?: string;
+  patientAge?: string;
+  patientBirthDate?: string;
+}
+
+export interface EcgStudyInfo {
+  studyDate?: string;
+  studyTime?: string;
+  studyDescription?: string;
+  seriesDescription?: string;
+  modality?: string;
+  manufacturer?: string;
+  institutionName?: string;
+}
+
 export interface EcgModuleFull {
   numberOfWaveformChannels: number;
   numberOfWaveformSamples: number;
@@ -44,6 +172,9 @@ export interface EcgModuleFull {
   waveformData: {
     retrieveBulkData: () => Promise<Int16Array[]>;
   };
+  annotations?: EcgAnnotations;
+  patientInfo?: EcgPatientInfo;
+  studyInfo?: EcgStudyInfo;
 }
 
 /**
@@ -70,7 +201,9 @@ const MV_PER_SENSITIVITY_UNIT: Record<string, number> = {
  * corrects that value. The function returns the default when the instance omits
  * the sensitivity, or when the unit code is not a voltage.
  */
-function getChannelMvPerUnit(channel: Record<string, unknown>): number {
+function getChannelMvPerUnit(
+  channel: Record<string, unknown> | DicomChannelDefinitionItem
+): number {
   const sensitivity = Number(channel.ChannelSensitivity);
 
   if (!Number.isFinite(sensitivity) || sensitivity === 0) {
@@ -197,6 +330,269 @@ function toArray<T>(seq: T[] | ArrayLike<T> | undefined): T[] {
   return [seq as T];
 }
 
+export type EcgNumericMetricKey =
+  | 'ventricularHeartRate'
+  | 'prInterval'
+  | 'qrsDuration'
+  | 'qtInterval'
+  | 'qtcInterval'
+  | 'rrInterval'
+  | 'pAxis'
+  | 'qrsAxis'
+  | 'tAxis';
+
+/**
+ * Fast O(1) lookup table mapping standardized LOINC (LN) and IEEE 11073 (MDC)
+ * codes to EcgAnnotations property keys.
+ * LOINC codes are immutable international medical standards defined in DICOM Part 16.
+ */
+export const ECG_CODE_MAP = new Map<string, EcgNumericMetricKey>([
+  ['8867-4', 'ventricularHeartRate'], // LOINC: Ventricular Heart Rate
+  ['2:1', 'ventricularHeartRate'], // MDC: Ventricular Heart Rate
+  ['8625-6', 'prInterval'], // LOINC: P-R Interval
+  ['8633-0', 'qrsDuration'], // LOINC: QRS Duration
+  ['8634-8', 'qtInterval'], // LOINC: Q-T Interval
+  ['8636-3', 'qtcInterval'], // LOINC: Q-Tc Interval
+  ['8637-1', 'rrInterval'], // LOINC: R-R Interval
+  ['8626-4', 'pAxis'], // LOINC: P Axis
+  ['8632-2', 'qrsAxis'], // LOINC: QRS Axis
+  ['8638-9', 'tAxis'], // LOINC: T Axis
+]);
+
+/**
+ * Fallback pattern matchers for real-world ECG carts (GE Marquette, Philips, Mortara,
+ * Schiller, Nihon Kohden) that omit CodeValue and only provide descriptive CodeMeaning text.
+ * Note: QTc is listed before QT so "QTc" never falsely matches "QT".
+ */
+export const ECG_MEANING_PATTERNS: Array<[RegExp, EcgNumericMetricKey]> = [
+  // Ventricular Heart Rate: "Ventricular Heart Rate", "Ventricular Rate", "Heart Rate", "HR"
+  [
+    /(^|\b)(ventricular\s+)?heart\s+rate\b|(^|\b)ventricular\s+rate\b|^hr$/i,
+    'ventricularHeartRate',
+  ],
+  // PR Interval: "PR Interval", "P-R Interval", "PR Int", or exact "PR"
+  [/(^|\b)p[- ]?r\s*(interval|int)\b|^p[- ]?r$/i, 'prInterval'],
+  // QRS Duration: "QRS Duration", "QRS Width", "QRS Interval", or exact "QRS"
+  [/(^|\b)qrs\s*(duration|width|interval)\b|^qrs$/i, 'qrsDuration'],
+  // QTc Interval MUST be checked before QT Interval so "QTc" never falsely matches "QT"
+  [/(^|\b)qtc(\s*(interval|calc|int))?\b|^qtc$/i, 'qtcInterval'],
+  // QT Interval: "QT Interval", "Mean QT", or exact "QT"
+  [/(^|\b)qt\s*(interval|int)\b|^qt$/i, 'qtInterval'],
+  // RR Interval: "RR Interval", "R-R Interval", or exact "RR"
+  [/(^|\b)r[- ]?r\s*(interval|int)\b|^r[- ]?r$/i, 'rrInterval'],
+  // P Axis: "P Axis", "P wave axis", "Axis P"
+  [/(^|\b)p(\s+wave)?\s+axis\b|axis\s+p\b/i, 'pAxis'],
+  // QRS Axis: "QRS Axis", "Axis QRS"
+  [/(^|\b)qrs\s+axis\b|axis\s+qrs\b/i, 'qrsAxis'],
+  // T Axis: "T Axis", "T wave axis", "Axis T"
+  [/(^|\b)t(\s+wave)?\s+axis\b|axis\s+t\b/i, 'tAxis'],
+];
+
+/**
+ * Resolves an ECG metric key from its DICOM concept code or meaning.
+ * First performs an O(1) lookup on standard LOINC/MDC code, falling back
+ * to pre-compiled regex matching on the concept meaning.
+ */
+export function matchEcgMetric(
+  codeValue: string,
+  codeMeaning: string
+): EcgNumericMetricKey | undefined {
+  const trimmedValue = codeValue?.trim();
+  if (trimmedValue && ECG_CODE_MAP.has(trimmedValue)) {
+    return ECG_CODE_MAP.get(trimmedValue);
+  }
+  const trimmedMeaning = codeMeaning?.trim();
+  if (trimmedMeaning) {
+    const match = ECG_MEANING_PATTERNS.find(([pattern]) =>
+      pattern.test(trimmedMeaning)
+    );
+    return match?.[1];
+  }
+  return undefined;
+}
+
+/**
+ * Safely parses a DICOM numeric value which may be a number, a numeric string,
+ * or a single-element array of either. Returns undefined for empty or non-finite inputs.
+ */
+export function parseDicomNumeric(
+  raw: number | number[] | string | string[] | undefined | null
+): number | undefined {
+  if (raw === undefined || raw === null || typeof raw === 'boolean') {
+    return undefined;
+  }
+  const val = Array.isArray(raw) ? raw[0] : raw;
+  if (
+    val === '' ||
+    val === null ||
+    val === undefined ||
+    typeof val === 'boolean'
+  ) {
+    return undefined;
+  }
+  const parsed = Number(val);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+/**
+ * Safely parses a DICOM text value (or single-element array of strings) and trims whitespace.
+ * Returns undefined for empty or whitespace-only strings.
+ */
+export function parseDicomText(
+  raw: string | string[] | undefined | null
+): string | undefined {
+  if (raw === undefined || raw === null || typeof raw === 'boolean') {
+    return undefined;
+  }
+  const val = Array.isArray(raw) ? raw[0] : raw;
+  const str = String(val ?? '').trim();
+  return str.length > 0 ? str : undefined;
+}
+
+/**
+ * Extracts measurement units from a DICOM waveform annotation item,
+ * preferring CodeMeaning with a fallback to CodeValue.
+ */
+export function parseDicomUnit(
+  item: DicomWaveformAnnotationItem
+): string | undefined {
+  const unitsSeq = toArray(item.MeasurementUnitsCodeSequence);
+  return (
+    unitsSeq[0]?.CodeMeaning?.trim() ??
+    unitsSeq[0]?.CodeValue?.trim() ??
+    undefined
+  );
+}
+
+export function parseEcgAnnotations(
+  instance: Record<string, unknown> | DicomEcgInstance
+): EcgAnnotations | undefined {
+  const raw = instance.WaveformAnnotationSequence as
+    | DicomWaveformAnnotationItem[]
+    | ArrayLike<DicomWaveformAnnotationItem>
+    | undefined;
+  const seq = toArray(raw);
+  if (!seq || seq.length === 0) {
+    return undefined;
+  }
+
+  const annotations: EcgAnnotations = {
+    interpretations: [],
+    all: [],
+  };
+
+  for (const item of seq) {
+    if (!item) {
+      continue;
+    }
+    const concepts = toArray(item.ConceptNameCodeSequence);
+    const concept = concepts[0];
+    const codeMeaning = concept?.CodeMeaning?.trim() ?? '';
+    const codeValue = concept?.CodeValue?.trim() ?? '';
+    const codingScheme = concept?.CodingSchemeDesignator?.trim() ?? '';
+
+    const numericVal = parseDicomNumeric(item.NumericValue);
+    const unit = parseDicomUnit(item);
+    const textVal = parseDicomText(item.UnformattedTextValue ?? item.TextValue);
+    const metric =
+      numericVal !== undefined
+        ? matchEcgMetric(codeValue, codeMeaning)
+        : undefined;
+
+    // A finding can be free text (TextValue) or a coded diagnostic concept (CodeMeaning with no numeric value)
+    const findingText =
+      textVal ||
+      (numericVal === undefined && !metric && codeMeaning
+        ? codeMeaning
+        : undefined);
+
+    if (
+      codeMeaning ||
+      codeValue ||
+      numericVal !== undefined ||
+      textVal ||
+      unit
+    ) {
+      annotations.all?.push({
+        concept:
+          codeMeaning || codeValue
+            ? {
+                codeMeaning,
+                codeValue,
+                codingSchemeDesignator: codingScheme,
+              }
+            : undefined,
+        numericValue: numericVal,
+        unit,
+        textValue: textVal,
+      });
+    }
+
+    if (findingText && !annotations.interpretations?.includes(findingText)) {
+      annotations.interpretations?.push(findingText);
+    }
+
+    if (numericVal !== undefined && metric) {
+      annotations[metric] = numericVal;
+    }
+  }
+
+  // Derive ventricular heart rate from RR interval if heart rate was not explicitly coded
+  if (
+    annotations.ventricularHeartRate === undefined &&
+    annotations.rrInterval !== undefined &&
+    annotations.rrInterval > 0
+  ) {
+    // If RR interval is given in seconds (< 5s, e.g. 0.85s instead of 850ms), normalize to ms
+    const rrMs =
+      annotations.rrInterval < 5
+        ? annotations.rrInterval * 1000
+        : annotations.rrInterval;
+    if (rrMs > 0) {
+      annotations.ventricularHeartRate = Math.round(60000 / rrMs);
+    }
+  }
+
+  return annotations;
+}
+
+export function parsePatientInfo(
+  instance: Record<string, unknown> | DicomEcgInstance
+): EcgPatientInfo {
+  const patientNameRaw = instance.PatientName;
+  let patientName = '';
+  if (typeof patientNameRaw === 'string') {
+    patientName = patientNameRaw;
+  } else if (Array.isArray(patientNameRaw) && patientNameRaw.length > 0) {
+    const first = patientNameRaw[0];
+    patientName = typeof first === 'string' ? first : first?.Alphabetic || '';
+  } else if (patientNameRaw && typeof patientNameRaw === 'object') {
+    patientName = (patientNameRaw as DicomPatientNameObject).Alphabetic || '';
+  }
+
+  return {
+    patientName: patientName || undefined,
+    patientId: (instance.PatientID as string) || undefined,
+    patientSex: (instance.PatientSex as string) || undefined,
+    patientAge: (instance.PatientAge as string) || undefined,
+    patientBirthDate: (instance.PatientBirthDate as string) || undefined,
+  };
+}
+
+export function parseStudyInfo(
+  instance: Record<string, unknown> | DicomEcgInstance
+): EcgStudyInfo {
+  return {
+    studyDate: (instance.StudyDate as string) || undefined,
+    studyTime: (instance.StudyTime as string) || undefined,
+    studyDescription: (instance.StudyDescription as string) || undefined,
+    seriesDescription: (instance.SeriesDescription as string) || undefined,
+    modality: (instance.Modality as string) || 'ECG',
+    manufacturer: (instance.Manufacturer as string) || undefined,
+    institutionName: (instance.InstitutionName as string) || undefined,
+  };
+}
+
 export interface BuildEcgModuleOptions {
   /** Extra request headers for a `BulkDataURI` fetch, for example auth headers. */
   getHeaders?: () => Record<string, string> | undefined;
@@ -255,7 +651,7 @@ export function buildEcgModuleFromInstance(
   if (Array.isArray(waveformDataRaw) && waveformDataRaw.length > 0) {
     waveformDataRaw = waveformDataRaw[0];
   }
-  const waveformData = (waveformDataRaw as Record<string, unknown>) ?? {};
+  const waveformData: DicomWaveformData = waveformDataRaw ?? {};
   const { wadoRsRoot = undefined, studyUID = undefined } = imageId
     ? parseWadoRsImageId(imageId)
     : {};
@@ -283,7 +679,7 @@ export function buildEcgModuleFromInstance(
       return channels;
     }
     if (waveformData.InlineBinary) {
-      const raw = base64ToUint8Array(waveformData.InlineBinary as string);
+      const raw = base64ToUint8Array(waveformData.InlineBinary);
       return convertBuffer(
         raw,
         numberOfChannels,
@@ -339,6 +735,10 @@ export function buildEcgModuleFromInstance(
     throw new Error('[ecgFromInstance] No waveform data source found');
   };
 
+  const annotations = parseEcgAnnotations(instance);
+  const patientInfo = parsePatientInfo(instance);
+  const studyInfo = parseStudyInfo(instance);
+
   return {
     numberOfWaveformChannels: numberOfChannels,
     numberOfWaveformSamples: numberOfSamples,
@@ -348,6 +748,9 @@ export function buildEcgModuleFromInstance(
     multiplexGroupLabel,
     channelDefinitionSequence,
     waveformData: { retrieveBulkData },
+    annotations,
+    patientInfo,
+    studyInfo,
   };
 }
 
