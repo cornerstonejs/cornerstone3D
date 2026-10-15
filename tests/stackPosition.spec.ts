@@ -234,21 +234,72 @@ test.describe('Stack Position stored display area', () => {
         element.style.height = '700px';
         renderingEngine.resize(false, true);
 
-        const devicePixelRatio = window.devicePixelRatio || 1;
         return {
           focalPointOnCanvas: viewport.worldToCanvas(
             viewport.getCamera().focalPoint
           ),
-          canvasCentre: [
-            viewport.sWidth / devicePixelRatio / 2,
-            viewport.sHeight / devicePixelRatio / 2,
-          ],
+          canvasCentre: [element.clientWidth / 2, element.clientHeight / 2],
         };
       }
     );
 
     expect(focalPointOnCanvas[0]).toBeCloseTo(canvasCentre[0], 0);
     expect(focalPointOnCanvas[1]).toBeCloseTo(canvasCentre[1], 0);
+  });
+
+  // A SCALE display area measures the image extent after it applies the
+  // scale, so the pan must not apply the zoom from the fit camera again.
+  test('places the image point of a SCALE display area on the canvas point', async ({
+    page,
+  }) => {
+    for (const imagePoint of [
+      [0, 0],
+      [1, 1],
+    ]) {
+      const { imagePointOnCanvas, canvasPoint } = await page.evaluate(
+        (imagePoint) => {
+          const viewport = (
+            window as unknown as StackPositionWindow
+          ).cornerstone
+            .getRenderingEngine('myRenderingEngine')
+            .getViewport('CT_STACK');
+          viewport.setDisplayArea({
+            type: 'SCALE',
+            scale: 1,
+            imageCanvasPoint: { imagePoint, canvasPoint: imagePoint },
+          });
+          viewport.render();
+
+          const { imageData } = viewport.getImageData();
+          const [columns, rows] = imageData.getDimensions();
+          const element = document.querySelector(
+            '#cornerstone-element'
+          ) as HTMLElement;
+          return {
+            imagePointOnCanvas: viewport.worldToCanvas(
+              imageData.indexToWorld([
+                columns * imagePoint[0],
+                rows * imagePoint[1],
+                0,
+              ])
+            ),
+            canvasPoint: [
+              element.clientWidth * imagePoint[0],
+              element.clientHeight * imagePoint[1],
+            ],
+          };
+        },
+        imagePoint
+      );
+
+      // Within one image pixel: the half pixel shift against moire is expected
+      expect(
+        Math.abs(imagePointOnCanvas[0] - canvasPoint[0])
+      ).toBeLessThanOrEqual(1);
+      expect(
+        Math.abs(imagePointOnCanvas[1] - canvasPoint[1])
+      ).toBeLessThanOrEqual(1);
+    }
   });
 });
 
