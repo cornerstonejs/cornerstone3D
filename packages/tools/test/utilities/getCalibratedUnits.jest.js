@@ -1,5 +1,6 @@
 import { Enums } from '@cornerstonejs/core';
 import { getCalibratedLengthUnitsAndScale } from '../../src/utilities/getCalibratedUnits';
+import BaseTool from '../../src/tools/base/BaseTool';
 
 const { CalibrationTypes } = Enums;
 
@@ -75,6 +76,42 @@ describe('getCalibratedUnits', function () {
       const { unit, scale, scaleY } = calibrate;
       expect(unit).toBe('mm');
       expect(scale).toBe(0.5);
+    });
+  });
+
+  describe('ECG region lengths', () => {
+    const ecgImage = {
+      calibration: {
+        sequenceOfUltrasoundRegions: [
+          {
+            regionLocationMinX0: 0,
+            regionLocationMaxX1: 1000,
+            regionLocationMinY0: 0,
+            regionLocationMaxY1: 4000,
+            physicalDeltaX: 1,
+            physicalDeltaY: 0.001,
+            physicalUnitsXDirection: -2,
+            physicalUnitsYDirection: -1,
+          },
+        ],
+      },
+    };
+    const lengthOf = (handles) => {
+      const calibrate = getCalibratedLengthUnitsAndScale(ecgImage, handles);
+      return {
+        unit: calibrate.unit,
+        length: BaseTool.calculateLengthInIndex(calibrate, handles),
+      };
+    };
+
+    it('gives an uncalibrated px length, as a US region with mixed units does', () => {
+      const { unit, length } = lengthOf([
+        [100, 2000, 3],
+        [400, 2400, 3],
+      ]);
+
+      expect(unit).toBe('px');
+      expect(length).toBeCloseTo(500, 6);
     });
   });
 });
