@@ -267,6 +267,40 @@ function getSourceFrame(
   };
 }
 
+const sourceReferenceKey = (item) =>
+  item.ReferencedSOPInstanceUID + ':' + (item.ReferencedFrameNumber ?? '');
+
+/**
+ * Sets the plane position of each BINARY SEG frame from its own source image.
+ * dcmjs copies the position of the referenced multiframe frame with the same
+ * index, but it sorts that multiframe by position, so for a stack in the other
+ * scan direction each frame got the position of the mirrored slice and
+ * reloaded on the wrong image. The source reference of the frame finds the
+ * image.
+ */
+function applyBitmapFramePositions(dataset, images, metadata) {
+  const imagesBySource = new Map();
+  images.forEach((image) => {
+    if (!image?.imageId) {
+      return;
+    }
+    const item = getReferencedSourceImageSequenceItem(image, metadata);
+    if (item?.ReferencedSOPInstanceUID) {
+      imagesBySource.set(sourceReferenceKey(item), image);
+    }
+  });
+
+  toArray(dataset.PerFrameFunctionalGroupsSequence).forEach((group) => {
+    const derivation = toArray(group.DerivationImageSequence)[0];
+    const source = toArray(derivation?.SourceImageSequence)[0];
+    const image = source && imagesBySource.get(sourceReferenceKey(source));
+    const position = image && getSourceFrame(image, metadata).position;
+    if (position) {
+      group.PlanePositionSequence = { ImagePositionPatient: position };
+    }
+  });
+}
+
 /** The unit normal of the plane with the given ImageOrientationPatient. */
 const sliceNormal = (orientation: number[]) => {
   const normal = vec3.cross(
@@ -846,6 +880,7 @@ function generateSegmentation(
       images,
       metadata
     );
+    applyBitmapFramePositions(segmentationResult.dataset, images, metadata);
     const { frames, bitsAllocated } = getBitmapFramesFromDataset(
       segmentationResult.dataset
     );

@@ -88,11 +88,7 @@ async function readBack(stack, dataset) {
 describe('real-derivation SEG round trip (plan 6a)', () => {
   describe('BINARY export of a lesion that starts at slice 10 (1e)', () => {
     it('derives, references the correct source slices, and reads back onto them', async () => {
-      // Descending-z: the BINARY path inherits per-frame plane positions
-      // from the dcmjs-normalized multiframe, whose frames are sorted by
-      // DESCENDING distance along the scan axis. Only a stack already in
-      // that order keeps positions aligned with the (input-order) pixels
-      // and source refs — see the helper's makeReferencedStack docs.
+      // Descending z. segBinaryFramePosition.jest.js covers both directions.
       const stack = makeReferencedStack(SLICE_COUNT, { zDirection: -1 });
       const labelmap3D = buildLabelmap3D(SLICE_COUNT, {
         10: SHAPE_A,
