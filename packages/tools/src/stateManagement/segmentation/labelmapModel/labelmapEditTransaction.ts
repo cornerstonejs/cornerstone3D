@@ -8,6 +8,10 @@ import type {
 } from '../../../types/LabelmapTypes';
 import { getLabelmap, getOrCreateLabelmapVolume } from './labelmapLayerStore';
 import {
+  getLabelmapImageIdsForReferencedImageId,
+  getReferencedImageIdForImageIndex,
+} from './labelmapImageIdMapping';
+import {
   getSegmentBinding,
   getSegmentIndexForLabelValue,
   getSegmentsOnLabelmap,
@@ -300,13 +304,51 @@ function getLockedVoxelsOnOtherLayers(
     labelValuesByLayer.get(binding.labelmapId).add(binding.labelValue);
   }
 
+  // A stack layer can list the referenced images in another order than the
+  // edited layer, so its image is found by the referenced image, not by index.
+  const { sourceLayer: editedLayer, imageId: editedImageId } = targetOptions;
+  const editedImageIndex = editedLayer?.imageIds?.indexOf(editedImageId) ?? -1;
+  const referencedImageId =
+    editedLayer?.referencedImageIds && editedImageIndex >= 0
+      ? getReferencedImageIdForImageIndex(editedLayer, editedImageIndex)
+      : undefined;
+  const isVolumeEdit =
+    targetOptions.preferVolume ||
+    targetOptions.viewport instanceof BaseVolumeViewport;
+
   const lockedVoxels: LockedLabelmapVoxels[] = [];
   labelValuesByLayer.forEach((labelValues, lockedLabelmapId) => {
     const layer = getLabelmap(segmentation, lockedLabelmapId);
-    const voxelManager = layer
-      ? resolveLabelmapLayerEditTarget(layer, targetOptions).voxelManager
-      : undefined;
+    if (!layer) {
+      return;
+    }
 
+    let layerTargetOptions = targetOptions;
+    if (
+      !isVolumeEdit &&
+      !layer.volumeId &&
+      referencedImageId &&
+      layer.referencedImageIds
+    ) {
+      const [lockedImageId] = getLabelmapImageIdsForReferencedImageId(
+        layer,
+        referencedImageId
+      );
+      if (!lockedImageId) {
+        // The layer has no image for this slice, so nothing is locked here.
+        return;
+      }
+      layerTargetOptions = {
+        ...targetOptions,
+        imageId: lockedImageId,
+        sourceLayer: layer,
+      };
+    }
+
+    const { voxelManager } = resolveLabelmapLayerEditTarget(
+      layer,
+      layerTargetOptions
+    );
     if (voxelManager) {
       lockedVoxels.push({ voxelManager, labelValues });
     }

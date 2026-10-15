@@ -301,6 +301,40 @@ describe('labelmap edit transactions', () => {
     expect(layerAVoxels.values).toEqual([2, 4, 0]);
   });
 
+  it('reads the locked layer image of the same referenced image, when the stack layers list them in another order', () => {
+    const segmentation = createSegmentation();
+    const privateLayer: LabelmapLayer = {
+      labelmapId: 'privateLayer',
+      storageKind: 'stack',
+      imageIds: ['private-0', 'private-1'],
+      referencedImageIds: ['ref-0', 'ref-1'],
+    };
+    registerLabelmap(segmentation, privateLayer);
+    const { layerA } = segmentation.representationData.Labelmap.labelmaps;
+    layerA.imageIds = ['layerA-1', 'layerA-0'];
+    layerA.referencedImageIds = ['ref-1', 'ref-0'];
+    const layerAImages = {
+      'layerA-0': createVoxelManager([2, 0]),
+      'layerA-1': createVoxelManager([0, 0]),
+    };
+    mockCache.getImage.mockImplementation((imageId: string) =>
+      layerAImages[imageId]
+        ? { voxelManager: layerAImages[imageId] }
+        : undefined
+    );
+
+    const lockedVoxels = getLockedVoxelsOnOtherLayers(
+      segmentation,
+      'privateLayer',
+      [2],
+      { imageId: 'private-0', sourceLayer: privateLayer }
+    );
+
+    expect(lockedVoxels).toHaveLength(1);
+    expect(lockedVoxels[0].voxelManager).toBe(layerAImages['layerA-0']);
+    expect([...lockedVoxels[0].labelValues]).toEqual([2]);
+  });
+
   it('collects cross-layer erase bindings after a protected overwrite move', () => {
     const segmentation = createSegmentation();
     const segmentationVoxelManager = createVoxelManager([2]);
