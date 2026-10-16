@@ -1,387 +1,295 @@
 ---
 id: safe-functions
 title: Safe Functions
-summary: A serializable vocabulary of conditions and values, compiled into predicates without eval — shared by display-set split rules and any other feature that would otherwise hand-write matching code
+summary: A serializable vocabulary of conditions, tests and values, compiled into predicates without eval, with the DICOM meaning of a missing value — shared by display-set split rules and any other feature that would otherwise hand-write matching code
 ---
 
 # Safe Functions
 
-A **safe function** is a predicate or value reader compiled from data rather than
-written in JavaScript. There is no `eval`, no `new Function`, and no other path
-from definition to executed code — the expression form is tokenized, parsed and
-compiled to a closure tree, and the structural form is assembled from a closed
-set of operators. Both are CSP-compatible.
+A **safe function** is a predicate or a value reader that the compiler builds
+from data. It is not JavaScript. There is no `eval`, no `new Function`, and no
+other path from a definition to executed code. The compiler tokenizes and parses
+an expression, and compiles it to a closure tree. The compiler builds a
+condition map from a closed set of operators. Both forms are compatible with a
+Content Security Policy.
 
-That property is what makes a definition _transportable_. Rules expressed this
-way can be read from a config file, served over HTTP, stored in an application's
-customization layer, or shared between a back end and a browser, without either
-side trusting the other to run code.
+Because of this property, a definition can move between systems. A host can read
+the rules from a configuration file, an HTTP response or the customization layer
+of an application. A back end and a browser can share the rules, and neither
+side must trust the other to run code.
 
 ```js
-import { compileCondition, compileExpression } from '@cornerstonejs/metadata';
+import { compileCondition } from '@cornerstonejs/metadata';
 
-const isLargeCT = compileCondition("Modality === 'CT' && Rows > 512");
+const isLargeCT = compileCondition({
+  Modality: 'CT',
+  Rows: { greaterThan: 512 },
+});
 
 isLargeCT({ Modality: 'CT', Rows: 1024 }); // true
 ```
 
-There are two ways to write the same thing, and they compile to the same kind of
-closure:
+The vocabulary knows nothing about display sets, hanging protocols or the DICOM
+dictionary. It describes tests and values over _a subject object_. The consumer
+gives the subject, and the consumer gives the reader of each name. The display
+set split rules are the first consumer. They read a DICOM keyword from the
+instance, and a context name from the
+[display set context](./cornerstone-metadata/display-sets.md#the-display-set-context),
+and they reject every other name.
 
-|                | Written as                                                                                    | Best at                                                                                           |
-| -------------- | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| **Expression** | `"Modality === 'CT' && Rows > 512"`                                                           | authoring and reading — the condition is one line                                                 |
-| **Structural** | `{ all: [{ attribute: 'Modality', equals: 'CT' }, { attribute: 'Rows', greaterThan: 512 }] }` | being _inspected and edited as data_ — a UI can list it, a customization can `$merge` one operand |
+## Missing values have the DICOM meaning
 
-Prefer the expression form when a human writes and reads the rule. Reach for the
-structural form when something other than a human has to take it apart: the
-Display Set Rules example describes each rule's `groupBy` parts in its UI, and an
-OHIF customization edits a rule field by field — neither can see inside a string.
+DICOM makes a distinction between an absent attribute and an empty attribute.
+The safe functions use the DICOM meaning, and not the JavaScript meaning:
 
-The vocabulary knows nothing about display sets, hanging protocols or DICOM. It
-describes tests and values over _a subject object_ — whatever the consumer hands
-it. Display-set split rules are the first consumer and the worked example below;
-hanging protocols are the intended next one.
+| Value                       | Kind   |
+| --------------------------- | ------ |
+| `undefined`, or no property | absent |
+| `null`, `""` or `[]`        | empty  |
+
+"No value" means absent or empty. `safeFunctions/values.ts` exports the helpers
+`isAbsent`, `isEmpty`, `hasNoValue`, `toFinite` and `looseEquals`.
+
+- `X == null` and the test `"X": null` hold when `X` has no value.
+  `{ "notNull": true }` is their exact opposite.
+- `X == undefined` holds only when `X` is absent. Use this test to make a
+  distinction between DICOM Type 2 (present and empty) and DICOM Type 3
+  (absent).
+- `<`, `<=`, `>`, `>=`, `greaterThan`, `lessThan` and `range` give `false` when
+  the value has no value, or is not a finite number. A numeric string is a
+  number, so `"2" > 1` is `true`. A missing value never compares as `0`.
+- `==` is the only equality, and `"1" == 1` is `true`. `===` and `!==` are
+  compile errors.
+
+## Conditions
+
+A condition is a map of name to test. Every entry must hold, so `{}` is `true`.
+There is no `all`, `any` or `not`. A consumer gives an "or" a name of its own,
+and `false` on a named boolean is its negation.
+
+| Test                    | The entry holds when                           |
+| ----------------------- | ---------------------------------------------- |
+| a scalar                | the value is equal to the scalar, with `==`    |
+| an array of scalars     | the value is equal to one element of the array |
+| `null`                  | the value has no value                         |
+| an object, one operator | the operator holds                             |
+| a function              | `test(value, subject, context)` is true        |
+
+A multi-valued attribute compares on its first value, so `['MR']` equals
+`'MR'`.
+
+### Operators
+
+The operators have the names of the OHIF hanging protocol constraints. The
+operand is the bare value: `{ "greaterThan": 1 }`.
+
+| Operator                            | Operand                       | The entry holds when                                                          |
+| ----------------------------------- | ----------------------------- | ----------------------------------------------------------------------------- |
+| `equals`                            | scalar or `null`              | the same test as a scalar                                                     |
+| `doesNotEqual`                      | scalar or `null`              | `equals` does not hold; a value with no value passes                          |
+| `notNull`                           | boolean                       | `true`: the value has a value; `false`: the value has no value                |
+| `includes`                          | scalar or array of scalars    | the value has the element, or one of the elements; a single value is an array |
+| `doesNotInclude`                    | scalar or array of scalars    | `includes` does not hold                                                      |
+| `greaterThan`, `lessThan`           | finite number                 | the value is a finite number, and `>` or `<` the operand                      |
+| `range`                             | two finite numbers, any order | the value is a finite number in `[min, max]`                                  |
+| `contains`, `containsI`             | string or array of strings    | one element of the value holds one of the strings (`I`: without case)         |
+| `doesNotContain`, `doesNotContainI` | string or array of strings    | the `contains` form does not hold                                             |
+| `containsAll`                       | scalar or array of scalars    | the value has every element                                                   |
+| `startsWith`, `endsWith`            | string or array of strings    | one element of the value starts or ends with one of the strings               |
+
+A text test on no value fails, and its `doesNot...` form holds.
+
+:::note Five operators differ from `validator.js`
+OHIF `validator.js` reads `greaterThan` as `>=` and `lessThan` as `<=`, and it
+rejects a string value. It accepts only an array operand for `includes`. It uses
+`===` for `equals`, and its `notNull` accepts `""`. The safe functions give
+these five operators the meanings in the table above. A later OHIF pull
+request moves the hanging protocols to these meanings.
+:::
+
+## Values
+
+A value is used where a definition needs a value and not a boolean.
+
+| Form                                         | Gives                                             |
+| -------------------------------------------- | ------------------------------------------------- |
+| `'SeriesInstanceUID'`                        | the value of the name                             |
+| `{ template: 'US series {InstanceNumber}' }` | a string; each `{name}` gives the value of a name |
+| `{ expression: 'Rows * Columns' }`           | the result of the expression, not converted       |
+| a function                                   | passes through as is                              |
+
+A template substitutes and does nothing else. It has no arithmetic and no
+expression syntax, so a template can never become a route to evaluated code.
+`\{` escapes a literal brace. A placeholder with no value gives an empty
+string. A placeholder can be a path with one field: `{timeClusters.first}`.
+
+:::note A template can read every attribute
+A template, and a template literal in an expression, can read any attribute
+of the subject. That is the purpose of a template. Thus a definition decides
+which text a host shows. When the subject is a naturalized DICOM instance, the
+patient identifiers are on the subject next to the acquisition tags. A host
+that gives these definitions to its UI must review them as content, like any
+other configuration that decides the text of a screen.
+:::
 
 ## The expression language
 
-A small, safe subset of JavaScript expressions, parsed by a hand-written
-tokenizer and recursive-descent parser (`safeFunctions/expression`).
+A small, safe subset of JavaScript expressions. A hand-written tokenizer and a
+recursive-descent parser read it (`safeFunctions/expression`).
 
 ```js
-"Modality === 'CT' && Rows > 512";
 "Modality in ['CR', 'DX', 'MG']";
-'DiffusionBValue != undefined';
-'context.series.mixedBValue';
+'DiffusionBValue == null';
+"lower(BodyPartExamined) == 'breast'";
 "Rows > 2000 ? 'large' : 'small'";
-'`${PatientName} (${Modality})`';
+'`${SeriesDescription} (${Modality})`';
 ```
 
-- **Literals** — numbers (including `1e3` / `2.5E-3`), quoted strings, template
-  literals with `${}` interpolation, arrays, `true` / `false` / `null` /
-  `undefined`.
-- **Operators** — `+ - * / %`, `< <= > >=`, `=== !== == !=`, `&& || !`,
-  ternaries, and `in` for membership. Loose equality is deliberately restricted
-  to the useful cases: `null` and `undefined` are equivalent, and number/string
-  pairs coerce; the rest of the JS `==` table does not apply.
-- **Identifiers** — resolved against the named parameters first, then against
-  the fields of the _implicit scope_, which is the first argument unless the
-  place says otherwise. So `Modality` reads `subject.Modality`, and an unknown
-  identifier is `undefined` rather than an error, which is what makes sparse
-  DICOM tags usable (`DiffusionBValue != undefined`). A place with no implicit
-  scope (see below) refuses a bare identifier that is not a parameter.
-- **Member access** — guarded: `__proto__`, `prototype` and `constructor` are
-  rejected at parse time, so an expression cannot walk out to the prototype
-  chain.
-- **Helpers** — `defined`, `includes`, `startsWith`, `endsWith`, `abs`, `min`,
-  `max`, `round`, `floor`, `ceil`, `Number`, `String`, plus the aggregates
-  `some(list, expr)`, `every(list, expr)`, `count(list, expr)`,
-  `minOf(list, expr)`, `maxOf(list, expr)` and `sumOf(list, expr)`. Nothing else
-  is callable — `alert(1)` and `a.toString()` are syntax errors.
+- **Literals**: numbers (also `1e3` and `2.5E-3`), quoted strings, template
+  literals with `${}`, arrays, `true`, `false`, `null` and `undefined`.
+- **Operators**: `+ - * / %`, `< <= > >=`, `== !=`, `&& || !`, ternaries, and
+  `in` for membership. The comparisons and the equality use the rules of
+  [Missing values have the DICOM meaning](#missing-values-have-the-dicom-meaning).
+- **Identifiers**: the compiler resolves a name against the parameters first,
+  and then against the fields of the _implicit scope_. The implicit scope is
+  the first argument unless the place gives a different one.
+- **Member access**: the parser rejects `__proto__`, `prototype` and
+  `constructor`, so an expression cannot get to the prototype chain.
+- **Helpers**: `defined`, `includes`, `startsWith`, `endsWith`, `lower`, `abs`,
+  `min`, `max`, `round`, `floor`, `ceil`, `Number` and `String`. Nothing else
+  can be called: `alert(1)` and `a.toString()` are syntax errors. The number
+  helpers give `undefined` for a value that is not a finite number, and never
+  `NaN`.
+- **Aggregates**: where the place gives a list of subjects (the `over` option),
+  `min(x)`, `max(x)`, `sum(x)`, `count(x)` and `count()` run over the list. A
+  subject whose argument has no value does not count, and `count(x)` also skips
+  `false`. `sum` of no subject is `0`. `min` and `max` of no subject are
+  `undefined`. Without a list, `count` and `sum` are compile errors.
 
 A malformed expression throws an `ExpressionSyntaxError` **at compile time**,
-quoting the source. Runtime errors warn once and yield `undefined` rather than
-taking the surrounding operation down.
+with the source in the message. A runtime error gives one warning, and the
+expression gives `undefined`.
 
-Positional arguments bind to `options.params`, default `['instance', 'context']`
-— which is why `context.series.mixedBValue` reaches a derived fact.
+`options.implicitScope` tells where a bare identifier that is not a parameter
+is read:
 
-`options.implicitScope` says where a bare identifier that is not a parameter is
-read:
+| `implicitScope`        | A bare identifier such as `SliceLocation` reads                                     |
+| ---------------------- | ----------------------------------------------------------------------------------- |
+| omitted, or `true`     | the field of the first argument                                                     |
+| a parameter name (`b`) | the field of that argument                                                          |
+| `false`                | nothing; it is a compile-time `ExpressionSyntaxError` unless it is a parameter name |
 
-| `implicitScope`        | A bare identifier such as `SliceLocation` reads                                      |
-| ---------------------- | ------------------------------------------------------------------------------------ |
-| omitted, or `true`     | the field of the first argument                                                      |
-| a parameter name (`b`) | the field of that argument                                                           |
-| `false`                | nothing — it is a compile-time `ExpressionSyntaxError` unless it is a parameter name |
-
-Use `false` where no single argument is "the subject". A comparator is called
-`(a, b, context)`, so `SliceLocation - b.SliceLocation` is almost certainly a
-mistake; with an implicit scope it would silently mean `a.SliceLocation`, and
-with `implicitScope: false` it fails to compile. Inside the element expression of
-an aggregate (`count(context.items, Rows > 1)`), bare identifiers always read the
-element.
+In the argument of an aggregate, a bare identifier always reads the element.
 
 ```js
-const compare = compileExpression('a.SliceLocation - b.SliceLocation', {
-  params: ['a', 'b', 'context'],
+const countLarge = compileExpression('count(Rows > 512)', {
+  params: ['instances'],
   implicitScope: false,
+  over: 'instances',
 });
 ```
 
-## The structural vocabulary
-
-### Conditions (`RawCondition`)
-
-Exactly one form per object. An attribute condition has exactly one operator;
-`ignoreCase` is a modifier of `contains` / `containsAny` only.
-
-| Form                                                                     | Meaning                                                                                              |
-| ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
-| `"Rows > 512"` or `{ expression: 'Rows > 512' }`                         | an expression (above). A bare string is unambiguous here because no other condition form is a string |
-| `{ classifier: 'video' }`                                                | a named classifier the caller registered                                                             |
-| `{ seriesFact: 'mixedBValue' }`                                          | a named fact the caller derived and put on the context                                               |
-| `{ attribute: 'Rows', exists: true }` / `{ absent: true }`               | presence test (`undefined`, `null` and `''` all count as absent)                                     |
-| `{ attribute: 'Modality', equals: 'CT' }` / `notEquals`                  | loose equality — compared as strings, so `'30'` matches `30`                                         |
-| `{ attribute: 'Modality', in: ['CT', 'MR'] }` / `notIn`                  | membership                                                                                           |
-| `{ attribute: 'SeriesDescription', contains: 'flow', ignoreCase: true }` | substring; `containsAny` takes a list                                                                |
-| `{ attribute: 'NumberOfFrames', greaterThan: 1 }` / `lessThan`           | numeric comparison; false when the value is not finite                                               |
-| `{ all: [...] }` / `{ any: [...] }` / `{ not: {...} }`                   | composition — `all: []` is true, `any: []` is false                                                  |
-
-Multi-valued attributes compare on their first value, which is what a
-single-valued attribute degrades to when a source delivers it as a one-element
-array.
-
-### Values (`RawValue`)
-
-Used wherever a definition needs a value rather than a boolean. A bare string is
-shorthand for `{ attribute: <string> }`.
-
-| Form                                             | Yields                                                           |
-| ------------------------------------------------ | ---------------------------------------------------------------- |
-| `'SeriesInstanceUID'`                            | the attribute, as-is — **not** an expression; see the note below |
-| `{ expression: 'Rows * Columns' }`               | whatever the expression evaluates to, uncoerced                  |
-| `{ attribute: 'InstanceNumber', number: true }`  | the value coerced to a finite number, else `undefined`           |
-| `{ attribute: 'DiffusionBValue', absent: true }` | `true`/`false` for absent/present                                |
-| `{ attribute: 'Rows', bucket: 64 }`              | `Math.round(Rows / 64)` — a deliberately fuzzy bucket            |
-| `{ condition: {...} }`                           | the boolean result of a condition                                |
-| `{ template: 'US series {InstanceNumber}' }`     | a string with `{Attribute}` placeholders substituted             |
-| `{ join: '&', parts: [...] }`                    | several values as one string (`rows=8&cols=8`)                   |
-
-A template substitutes and nothing else — no arithmetic, no expression syntax —
-so it can never become a route to evaluated code. `\{` escapes a literal brace,
-and an absent attribute substitutes an empty string. For anything more, use an
-expression with a template literal: ``{ expression: '`${Modality} ${Rows}`' }``.
-
-:::note Text composition reaches every attribute, by design
-A template — and a template literal in an expression — can interpolate any
-attribute the subject carries. That is the point: composing a label out of
-attributes is a main reason to write a definition rather than hard-code one.
-
-It also means a definition, not just a display template, decides what text a
-host ends up showing. Where the subject is a naturalized DICOM instance, the
-patient identifiers sit on it next to the acquisition tags, so a definition can
-put them in a label. Nothing here can prevent that without also preventing the
-intended use, so it is a property of the vocabulary rather than a defect in it:
-a host handing these definitions to its UI should treat them as content under
-the same review as any other configuration that decides what a screen says.
-:::
-
-**The one asymmetry to remember**: in condition position a bare string is an
-expression; in value position a bare string is an attribute name. Value position
-had that meaning first and thousands of `groupBy: ['SeriesInstanceUID']` entries
-depend on it, so an expression in value position must use `{ expression }`.
-
-Attributes, facts and classifiers are read as **own properties only**. A name
-such as `constructor` or `toString` reads the subject's own value — usually
-`undefined` — and never a member of `Object.prototype`: so
-`{ attribute: 'toString', exists: true }` is false for an empty subject, and
-`{ seriesFact: 'constructor' }` is false.
-
-### Inline functions
-
-An actual function is accepted wherever a condition or a value is expected — as
-a whole definition, or nested (`{ all: [{ classifier: 'image' }, fn] }`,
-`{ join: '&', parts: ['Rows', fn] }`). It passes through as is. That is the
-route by which an application that turns its own markers into functions (OHIF's
-`$function`) hands them in. A definition that holds a function is no longer
-JSON, so it cannot cross the wire; prefer a [named extension](#named-extensions)
-when the definition must be shared.
-
 ## The schema: one table, strict keys
 
-The forms above are not only documentation. They are one table, the **schema**
-(`safeFunctions/schema.ts`), and the compiler reads it: it selects the form of a
-fragment from it, checks the keys against it, and builds its error messages
-from it. `conditionShape` and `valueShape` are exported, and a consumer that
-wraps conditions and values in a shape of its own adds its shapes to the same
-kind of table — display-set split rules do, see
+The forms above are one table, the **schema** (`safeFunctions/schema.ts`). The
+compiler reads it. The compiler selects the form of a fragment from it, checks
+the keys against it, and builds its error messages from it. The schema exports
+`conditionShape`, `matchTestShape` and `valueShape`. A consumer that wraps
+conditions and values in a shape of its own adds its shapes to the same kind of
+table. The display set split rules do this: see
 [`splitRuleSchema`](./cornerstone-metadata/display-sets.md#the-schema-of-a-rule).
 
-Each entry of the table describes one form: the key that selects it, every key
-it allows, which keys are required, which are operators (exactly one) and which
-are modifiers (only with their operators), and what kind of data each key holds:
+The compiler is **strict**, because a key that the compiler ignores changes
+the meaning of a definition with no trace:
 
-```js
-// conditionShape.forms.attribute, abridged
-{
-  selectBy: 'attribute',
-  keys: {
-    attribute: { kind: 'string' },
-    equals: { kind: 'scalar', role: 'operator' },
-    in: { kind: 'scalar', list: true, role: 'operator' },
-    contains: { kind: 'string', role: 'operator' },
-    ignoreCase: { kind: 'boolean', role: 'modifier', with: ['contains', 'containsAny'] },
-    // ...
-  },
-}
-```
+- **An unknown key or operator is a compile error**, anywhere. The message lists
+  the allowed keys.
+- **A form that the place does not accept is a compile error**. The message
+  lists the accepted forms and the call signature of the place.
+- **An operand of the wrong kind is a compile error**: `greaterThan` must be a
+  finite number, `range` must be two finite numbers.
+- **A second operator in one test is a compile error.**
 
-The compiler is **strict**, because a key that is silently ignored changes what
-a definition means with no trace:
-
-- **An unknown key is a compile error**, anywhere. `{ attribute: 'Modality',
-equal: 'CT' }` and `{ attribute: 'Rows', bukket: 64 }` both fail, and the
-  message lists the allowed keys.
-- **A form the place does not accept is a compile error**, and the message lists
-  the accepted forms and the call signature of the place.
-- **A key of the wrong kind is a compile error**: `in` must be an array,
-  `greaterThan` a finite number, `exists` must be `true`.
-- A key named `'*'` in a table allows any key. Its entry says what each value is:
-  `literal` keeps the value as is, a shape name compiles each value as that shape.
-
-A place also declares its **expression variables** — an `ExpressionScope` of
-`params` and `implicitScope` — so an expression at that place is compiled with
-known arguments. `compileCondition` and `compileValue` take the scope, the path
-and the name of the definition for messages as a third argument:
+`compileCondition` and `compileValue` take the path, the name of the definition
+for the messages, the expression scope and the reader of a name:
 
 ```js
 compileCondition(
-  'a.Rows > b.Rows',
-  {},
+  { Rows: { greaterThan: 512 } },
   {
     path: 'protocol.match',
     definition: 'hanging protocol',
-    expression: { params: ['a', 'b'], implicitScope: false },
+    readName: (name) => (subject) => subject.instance?.[name],
   }
 );
 ```
 
-## Named extensions
+## Names belong to the consumer
 
-When a test genuinely cannot be expressed as data — a geometric check, a
-free-form heuristic — register it **by name** rather than putting a function in
-the definition. (A function in the definition is accepted, but the definition
-then stops being JSON.) The definition stays serializable; only the name
-crosses the wire.
+The expression compiler does not check names against a dictionary. It is
+generic, and it does not know the subject. A consumer that knows its names
+checks each name. `collectReads` gives each identifier that an expression
+reads, with the field of a path and whether the read is in an aggregate:
 
 ```js
-const matches = compileCondition(
-  { classifier: 'siteProtocol' },
-  {
-    siteProtocol: (instance) => instance.ProtocolName?.startsWith('SITE-'),
-  }
+import { collectReads, parseExpressionSource } from '@cornerstonejs/metadata';
+
+collectReads(
+  parseExpressionSource('round(sweepStart - timeClusters.first) + max(Rows)'),
+  { aggregates: true }
 );
+// [
+//   { name: 'sweepStart', inAggregate: false },
+//   { name: 'timeClusters', field: 'first', inAggregate: false },
+//   { name: 'Rows', inAggregate: true },
+// ]
 ```
 
-The names then become part of the contract: whatever compiles the definition —
-client or server — must register the same names, or compilation throws. Keep
-them few. A definition that is pure data has no such coupling.
+The display set split rules use `collectReads` and `resolveHexFromKeyword`.
+A name that is not a DICOM keyword and not a context name is a compile error
+there. A private tag, a vendor attribute and a synthetic attribute need a
+declaration in the context. An earlier version of the compiler did not check
+names, because of these attributes; the declaration now handles them.
+
+The default reader of a name reads an **own property** of the subject. A name
+such as `constructor` or `toString` reads the own value of the subject, usually
+`undefined`, and never a member of `Object.prototype`.
+
+## Code in a definition
+
+An actual function is accepted wherever a condition, a test or a value is
+expected. The function passes through as is. That is how an application that
+turns its own markers into functions (OHIF `$function`) gives them to the
+compiler. A definition that holds a function is no longer JSON, so it cannot
+move between systems. When a definition must be shared, prefer a named entry of
+the consumer, for example a code entry of the display set context.
 
 ## Failure is eager, and names itself
 
-Compilation validates the whole definition up front and throws with the path of
-the fragment and the fragment inlined — the structural compiler quoting the
-JSON, the expression compiler quoting the source:
+The compiler checks the whole definition first, and throws with the path of the
+fragment:
 
 ```text
-Invalid safe function definition: unknown classifier "sitProtocol"; known: siteProtocol: {"classifier":"sitProtocol"}
-Invalid safe function definition: unknown key 'equal'; allowed: attribute, exists, absent, equals, notEquals, in, notIn, contains, containsAny, greaterThan, lessThan, ignoreCase
-Invalid safe function definition: 'ignoreCase' applies only with contains, containsAny: {"attribute":"Modality","equals":"CT","ignoreCase":true}
-Unexpected end of input in expression: Modality ===
+Invalid safe function definition: Modality: unknown operator 'equal'; allowed: equals, doesNotEqual, notNull, ...
+Invalid safe function definition: Rows: the operand of greaterThan must be a finite number: {"greaterThan":"x"}
+'===' is not allowed; use '==', the one equality of the rule language in expression: Modality === 'CT'
 ```
 
-A consumer passes the path and its own name, so a message from inside a
-display-set rule reads
-`Invalid raw display set selector: rule 'r'.matches.all[1]: unknown key 'equal'; ...`.
+A consumer gives the path and its own name. So a message from a display set
+rule is
+`Invalid raw display set selector: rule 'r'.matches.BodyPartExamind: unknown name 'BodyPartExamind': ...`.
 
-Compile once, at setup, so a bad definition fails at startup rather than midway
-through the work it was supposed to describe.
+Compile one time, at setup. Then a bad definition fails at startup, and not
+during the work that it describes.
 
-## The subject is part of the contract too
+## Where this goes next
 
-A compiled predicate can only test attributes the caller actually puts on the
-subject. This is worth stating because the failure is silent: a definition that
-references an attribute the subject does not carry compiles cleanly, matches
-nothing (or groups everything together), and reports no error anywhere.
+Hanging protocols are the next consumer. OHIF protocol matching has its own
+vocabulary of comparators and validators. So a deployment that needs "CT with
+more than 512 rows" writes the test twice, in two syntaxes, with two sets of
+edge cases. One vocabulary and one compiler remove that duplication.
 
-If two hosts feed the same rules differently shaped subjects — one a full
-naturalized DICOM instance, another a trimmed-down projection of it — they will
-disagree about the result while both appearing to work. Whatever a definition is
-allowed to reference should be documented alongside it.
-
-### Seeing what an expression reads
-
-`collectIdentifiers` returns the identifiers an expression resolves against its
-scope, which is what a host needs to decide what to fetch — or to notice an
-expression referencing something it does not supply:
-
-```js
-import {
-  collectIdentifiers,
-  parseExpressionSource,
-} from '@cornerstonejs/metadata';
-
-collectIdentifiers(parseExpressionSource("Modality === 'CT' && Rows > 512"));
-// ['Modality', 'Rows']
-```
-
-Only the root of a member chain is a scope lookup, so
-`instance.ViewCodeSequence[0].CodeValue` reports just `instance`.
-
-**`compileExpression` does not take a list of permitted attribute names, and
-does not reject an unknown attribute.** (It does reject every bare identifier
-that is not a parameter when `implicitScope` is `false`: then the set of names
-is closed, the parameters. The attributes of a subject are not.) That is
-deliberate, for two reasons:
-
-- **The subject is open-ended at runtime.** A naturalized DICOM instance
-  carries private tags, vendor additions and per-frame data folded in by the
-  naturalizer. No dictionary enumerates it, so validating against one rejects
-  expressions that would have worked — a false rejection breaks a deployment,
-  where a silent no-match only puzzles one.
-- **The compiler is called from where the list is not.** `compileCondition` and
-  `compileValue` compile a selector's expressions, and an application's own
-  marker (OHIF's `$function`) compiles at customization-read time. None of
-  those sites knows the shape of the subject a rule will later run against.
-
-A host that genuinely has a closed subject can build the check it wants from
-`collectIdentifiers` in a couple of lines, and choose whether an unknown
-identifier is a warning or an error. That decision belongs to whoever knows
-what is on the subject.
-
-## Worked example: display-set split rules
-
-`@cornerstonejs/metadata`'s display-set splitting is built on this vocabulary. It
-supplies the subject (a naturalized instance), the built-in classifiers
-(`image`, `video`, `ecg`, `wsi`), and a rule shape that wraps conditions and
-values in `matches` / `groupBy` / `runBy` / `series` / `customAttributes`. A
-selector keys each rule by its id and gives it a `priority`:
-
-```js
-{
-  singleImageModality: {
-    priority: 4,
-    viewportTypes: ['stack'],
-    matches: "Modality in ['CR', 'DX', 'MG'] && Rows != undefined",
-    groupBy: [
-      'SeriesInstanceUID',
-      { join: '&', parts: [{ label: 'rows', attribute: 'Rows', bucket: 64 }] },
-    ],
-  },
-}
-```
-
-The default rules ship in structural form — the example UI reads their `groupBy`
-parts back to describe each rule, which it could not do through a string — but a
-deployment's own rules can be written either way, or mixed as above.
-
-Everything inside `matches` and `groupBy` is safe-function vocabulary; everything
-around it is the display-set module's own. See
-[Display Sets](./cornerstone-metadata/display-sets.md) for the rule shape, the
-default rules, and how a selector is shared between a server and a viewer.
-
-## Where this is headed
-
-Any feature that today ships hand-written matching code is a candidate. Hanging
-protocols are the clearest: OHIF's protocol matching has its own parallel
-vocabulary of comparators and validators, which means a deployment expressing
-"CT with more than 512 rows" writes it twice, in two syntaxes, with two sets of
-edge cases. One vocabulary compiled by one compiler removes that duplication and
-makes protocol rules as transportable as split rules already are.
-
-OHIF reaches the same compiler through its `$function` customization marker,
-which resolves `{ $function: '<expression>' }` (or
-`{ $function: { expr, params } }`) at read time into a compiled closure — the
-route by which a JSONC customization file, which can hold no functions, declares
-behaviour.
+OHIF also gets to the same compiler through its `$function` customization
+marker. The marker resolves `{ $function: '<expression>' }` at read time into a
+compiled closure. Thus a JSONC customization file, which can hold no function,
+can declare behaviour.

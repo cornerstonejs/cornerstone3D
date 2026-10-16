@@ -273,8 +273,10 @@ rules only need `matches` and `groupBy`, plus the entry's `priority`:
 }
 ```
 
-Reach for `series` only when a rule needs a value computed from the **whole
-series** and reused by `matches`, `groupBy` or `compareInstances`. It is
+In code, use `series` only when a rule needs a value computed from the
+**whole series** and reused by `matches`, `groupBy` or `compareInstances`. A
+raw rule reads such a value as a series entry of the
+[display set context](#the-display-set-context). It is
 optional, runs **once per split operation**, and returns facts — it should
 **not** mutate `context.series`. A fact can be any value: a boolean, a number,
 or a summary such as a map from `SOPInstanceUID` to a slice index.
@@ -366,16 +368,16 @@ A few engine guarantees worth knowing when writing rules:
   fact is true for the series and false for each half. See
   [Who decides instance order](#who-decides-instance-order) for why that
   matters when a group is ordered again later.
-- **`series` samples `instances[0]`** for some facts (e.g. multi-frame,
-  volumetric), so those rules assume a homogeneous series. A heterogeneous series
-  needs a dedicated rule (as `mixedDimensionalityBValue` does for DWI) to
-  separate it.
+- **The default rules test each instance.** `multiFrame` and `volume3d` read
+  `NumberOfFrames` and `Modality` of each instance, and not of the first
+  instance of the series. A series value, such as `seriesInstanceCount` or the
+  b-value mix of `mixedDimensionalityBValue`, is computed over all the
+  instances of the series.
 - **`series` is shared, and the first name wins.** Every rule reads one series
-  context. A rule should still declare each fact it reads: when the rule that
-  computed the fact first is turned off, the declaration computes it, and
-  `orderInstancesForRule` without `options.series` computes only the rule's own
-  facts. Two declarations of one name must mean the same value, because the
-  later one is not computed.
+  context. The compiled raw rules keep the values of the display set context
+  there, under the fact `displaySetContext`. A rule in code that adds its own
+  fact must give a name that no other rule gives with a different meaning,
+  because the later rule does not compute it.
 - **Nothing is dropped by the defaults.** The `unsupported` rule, at the
   highest default priority, claims whatever the image rules did not — see
   [Objects nothing can render](#objects-nothing-can-render). A _custom_ rule set
@@ -450,7 +452,7 @@ const splitRules = createDisplaySetSplitRules({
     // Below 0: runs before every default rule.
     priority: -1,
     viewportTypes: ['stack', 'volume'],
-    matches: { attribute: 'Modality', equals: 'SEG' },
+    matches: { Modality: 'SEG' },
     groupBy: ['SeriesInstanceUID', 'SOPInstanceUID'],
   },
 });
@@ -471,16 +473,16 @@ that study contains, and it has to agree with the viewer that later loads it. If
 each side implements the rules itself, they drift, and the display sets the server
 advertises stop being the ones the client builds.
 
-So the rules are authored **as data** and compiled into functions by one shared
-compiler. `rawDisplaySetSelector.js` holds both:
+So the rules are data, and one shared compiler turns them into functions:
 
 - `rawDisplaySetSelector` — the default rules as pure JSON, keyed by rule id:
   `video` (priority `1`), `ecg` (`2`), `wholeslide` (`3`),
   `singleImageModality` (`4`), `multiFrame` (`5`), `mixedDimensionalityBValue`
   (`6`), `volume3d` (`7`), `defaultImageRule` (`8`) and `unsupported` (`9`). No
   functions, no imports of application state.
-- `createDisplaySetSplitRules(selector, options)` — turns that JSON into the
-  `SplitRuleSet` the split engine executes, with the same keys and priorities.
+- `createDisplaySetSplitRules(selector, options)` — turns that JSON, and the
+  display set context of `options.displaySetContext`, into the `SplitRuleSet`
+  the split engine executes, with the same keys and priorities.
   An excluded entry (`priority: null`) is compiled and kept, so a later layer
   can include it again by giving it a priority.
 
@@ -508,73 +510,119 @@ const groups = splitImageIdsBySplitRules(imageIds, {
 
 ### What a rule is built from
 
-The conditions and values inside a rule — `{ attribute: 'Modality', in: [...] }`,
-`{ classifier: 'video' }`, `{ attribute: 'Rows', bucket: 64 }`,
-`{ template: '...' }` — are not defined by this module. They are the general
-[safe function](../safe-functions.md) vocabulary: a closed set of JSON forms
-compiled into predicates without `eval`, deliberately independent of display
-sets so hanging protocols and anything else that would otherwise hand-write
-matching code can share it. **See [Safe Functions](../safe-functions.md) for the
-full condition and value reference**, the named-classifier extension point, and
-why a malformed definition throws eagerly with the offending fragment inlined.
+Each name in a rule is one of two kinds:
 
-What this module contributes is the _rule shape_ those conditions and values sit
-in — `matches`, `groupBy`, `runBy`, `series` facts, `compareInstances`,
-`customAttributes` — plus the built-in instance classifiers (`image`, `video`,
-`ecg`, `wsi`) and the default selector.
+- A **tag keyword** is a keyword of the DICOM dictionary of dcmjs, for example
+  `Modality`. The value comes from the instance.
+- A **context name** starts with a lowercase letter, and an entry of the
+  [display set context](#the-display-set-context) defines it, for example
+  `isImage` or `seriesInstanceCount`.
 
-| Rule field         | Built from                                                                                                                                                                                                                              | Compiled to                                        |
-| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| `matches`          | one condition — which instances this rule claims                                                                                                                                                                                        | `(instance, context) => boolean`                   |
-| `groupBy`          | a list of values — the bucket key each instance contributes                                                                                                                                                                             | each entry: `(instance, context) => value`         |
-| `runBy`            | one value — a change starts a new run within a bucket                                                                                                                                                                                   | `(instance, context) => value`                     |
-| `series`           | a list of facts over the whole series: `{ name, scope, when, gate?, minInstances? }` (a boolean), `{ name, expression }` (a value; the expression gets `(instances, series)`), or `{ name, function, args? }` (a named series function) | `({ instances, series }) => facts`                 |
-| `compareInstances` | `{ attribute, number?, descending? }` or `{ expression }` — instance order within a group                                                                                                                                               | `(a, b, context) => number`                        |
-| `customAttributes` | `{ set?, fromFirstInstance?, fromContext?, fromOptions?, preset? }`                                                                                                                                                                     | `(attributes, options) => Record<string, unknown>` |
+The compile checks each name: the keys of `matches`, the entries of `groupBy`
+and `sortBy`, the strings of `attributes`, the placeholders of a template, and
+each name in an expression. An unknown name is a compile error that gives the
+rule, the place and the name. So `BodyPartExamind` and `sweepStrat` fail when
+the rules load.
+
+The tests and the values inside a rule are the general
+[safe function](../safe-functions.md) vocabulary. **See
+[Safe Functions](../safe-functions.md) for the full reference of the tests,
+the operators and the expression language**, and for the DICOM meaning of an
+absent value and an empty value.
+
+| Rule field   | Holds                                                                                      | Compiled to                                        |
+| ------------ | ------------------------------------------------------------------------------------------ | -------------------------------------------------- |
+| `context`    | context entries for this rule only (see [The `context` of a rule](#the-context-of-a-rule)) | (compile only)                                     |
+| `matches`    | a map of name to test; every entry must hold                                               | `(instance, context) => boolean`                   |
+| `groupBy`    | names; instances whose values are all equal form one group                                 | each entry: `(instance, context) => value`         |
+| `runBy`      | a name; a change of its value starts a new run within a bucket                             | `(instance, context) => value`                     |
+| `sortBy`     | names (ascending), and `{ "sortFunction": "name" }`                                        | `compareInstances: (a, b, context) => number`      |
+| `attributes` | the attributes of the display set, keyed by attribute name                                 | `customAttributes: (attributes, options) => {...}` |
 
 The other fields are data: `id` (optional, must equal the key), `groupId`,
 `priority`, `description` and `viewportTypes`.
 
-A series function computes a summary that an expression cannot: a sort, a
-mode, a projection. Its result is plain data, and the per-instance parts of a
-rule read it with an index, for example
-`context.series.geometry.index[SOPInstanceUID]`. The built-in ones are:
-
-- `planeGeometry` — the dominant image plane, the slice spacing, and the
-  instances on a regular slice lattice: `{ normal, origin, spacing,
-regularCount, irregularCount, positions, complete, duplicates, distance,
-index }`, with `distance` and `index` keyed by `SOPInstanceUID`.
-  `args.tolerance` (default `0.1`) is the fraction of the spacing a slice may
-  be off the lattice.
-- `timeClusters` — clusters of contiguous acquisition time: `{ time, start,
-first, clusters, untimedCount }`, with `time` and `start` keyed by
-  `SOPInstanceUID`. A gap of more than `args.maxGap` seconds (default `30`)
-  starts a new cluster.
-
-`createDisplaySetSplitRules(selector, { seriesFunctions })` adds or replaces
-named functions. An unknown name is a compile error. A `customAttributes`
-recipe reads the series context as `context.series` in `fromFirstInstance`
-when the host passes it as `options.series`.
-
-```js
-{
-  regularVolume: {
-    priority: -1,
-    series: [
-      { name: 'geometry', function: 'planeGeometry' },
-      { name: 'mixesIrregular', expression: 'series.geometry.irregularCount > 0' },
-    ],
-    matches: {
-      all: [
-        { seriesFact: 'mixesIrregular' },
-        { expression: 'defined(context.series.geometry.index[SOPInstanceUID])' },
-      ],
-    },
-    compareInstances: {
-      expression:
-        'context.series.geometry.distance[a.SOPInstanceUID] - context.series.geometry.distance[b.SOPInstanceUID]',
-    },
+```jsonc
+"dwiByBValue": {
+  "priority": -1,
+  "viewportTypes": ["stack"],
+  "context": {
+    "isDiffusion": "count(DiffusionBValue) > 0",
+    "bValue": "Number(DiffusionBValue)"
   },
+  "matches": {
+    "Modality": "MR",
+    "isDiffusion": true,
+    "isImage": true,
+    "DiffusionBValue": { "notNull": true }
+  },
+  "groupBy": ["SeriesInstanceUID", "bValue"],
+  "sortBy": ["SliceLocation"],
+  "attributes": {
+    "SeriesDescription": { "template": "{SeriesDescription} b={DiffusionBValue}" }
+  }
+}
+```
+
+#### `matches`
+
+`matches` is one map. Every entry must hold. The map has no `all`, `any` or
+`not`:
+
+- `false` on a named boolean gives "not": `"isMultiFrame": false` holds when
+  `NumberOfFrames` is absent, because `NumberOfFrames > 1` gives `false`.
+- An "or" goes in a context entry, and the rule reads the name of the entry.
+
+```jsonc
+"displaySetContext": {
+  "isBreastImage": "Modality == 'MG' || (Modality == 'CT' && lower(BodyPartExamined) == 'breast')",
+  "pixelCount": "Rows * Columns"
+},
+"matches": {
+  "isStackImage": true,
+  "isBreastImage": true,
+  "isMultiFrame": false,
+  "pixelCount": { "greaterThan": 4000000 }
+}
+```
+
+A site changes one entry of a shared rule by its name, and does not copy
+expression text into a `$merge`: `"isBreastImage": { "$set": "..." }` replaces
+the breast test, and `"pixelCount": { "greaterThan": { "$set": 2000000 } }`
+changes the threshold.
+
+#### `sortBy`
+
+- A string is a tag keyword or a context name. The order is ascending: numeric
+  when both values are finite numbers, else by text. A value with no value
+  gives `0`, which is "no opinion" (see
+  [Who decides instance order](#who-decides-instance-order)).
+- `{ "sortFunction": "name" }` is a named comparator of
+  `options.sortFunctions`. An unknown name is a compile error.
+- A function passes through as is.
+
+#### `attributes`
+
+| Value                             | Gives                                                                     |
+| --------------------------------- | ------------------------------------------------------------------------- |
+| a name                            | a tag keyword reads the first instance of the sorted display set          |
+| `"splitNumber"`, `"sopClassUids"` | the values of the display set; only `attributes` can read them            |
+| a number, a boolean, `null`       | the fixed value                                                           |
+| `{ "template": "..." }`           | text; `{ "template": "SCOUT" }` is fixed text                             |
+| `{ "expression": "..." }`         | `min`, `max`, `sum` and `count` run over the instances of the display set |
+| a function `(instances, values)`  | in code only                                                              |
+
+`"label": "SCOUT"` is a compile error, because `SCOUT` is not a name. The
+message names the template form. A context value with the series scope, for
+example `sliceSpacing`, is the value of the whole series, so each display set of
+the series shows the same value.
+
+```jsonc
+"attributes": {
+  "isClip": true,
+  "numImageFrames": { "expression": "Number(NumberOfFrames)" },
+  "maxFrames": { "expression": "max(NumberOfFrames)" },
+  "label": { "template": "{SeriesDescription} #{splitNumber}" }
 }
 ```
 
@@ -586,143 +634,214 @@ already split. Three rules split those three forms, and all three can use
 mammography display set by the group id, whichever rule made it. The group id
 does not change the split: groups and split keys stay per rule id.
 
+### The display set context
+
+`createDisplaySetSplitRules(selector, { displaySetContext })` takes one map of
+named entries, over the entries of `defaultDisplaySetContext`. OHIF reads the
+map from the `displaySetContext` customization of `useMetadataDisplaySet`, next
+to `splitRules`. Each entry has one of five forms:
+
+| Form                                                     | Meaning                                                                                               |
+| -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| a number, a boolean, `null` or an array                  | a fixed value; a site changes it with `$set`                                                          |
+| a string                                                 | an expression; a name or a path (`"timeClusters.start"`) is the simplest expression                   |
+| `{ "attribute": "00191010", "vr"?, "vm"? }`              | a declaration: reads one attribute of the instance that the dictionary does not hold                  |
+| `{ "template": "{SeriesDescription} +{sweepOffset} s" }` | text; each `{name}` gives the value of a name or a path                                               |
+| `{ "function": "timeClusters", "args": {...} }`          | a group: one call of a series function; each argument is a fixed value or an expression of the series |
+
+The rules:
+
+- A context name starts with a lowercase letter. A context name cannot be a
+  tag keyword, so a context never hides a value of the instance.
+- An attribute that the dictionary does not hold is available only through a
+  declaration: a private tag (8-digit hex, for now), a vendor attribute, or a
+  synthetic attribute such as `imageId`. A rule cannot read a hex tag directly.
+  `vr` and `vm` are recorded for a later JSON Schema.
+- A rule reads a field of a group by path. Each series function declares its
+  result fields, so `timeClusters.cluster` is a compile error. An alias makes a
+  field into a top-level name: `"sweepStart": "timeClusters.start"`.
+- Entries can read other entries in any order. A loop of entries is a compile
+  error.
+- The compile infers the scope of each entry. A declaration, a code entry, and
+  an entry that reads an instance value outside of `min`, `max`, `sum` or
+  `count` have the instance scope. Every other entry has the series scope:
+  there, `max(NumberOfFrames)` is the maximum over the instances of the series,
+  and `count()` is the number of instances.
+- The engine computes an entry at the first read, one time for each series, and
+  keeps the value in a cache. When the series gets new instances, the next
+  split computes the value again.
+
+#### The default context
+
+```jsonc
+{
+  "timeClustersMaxGap": 30,
+  "timeClusters": {
+    "function": "timeClusters",
+    "args": { "maxGap": "timeClustersMaxGap" },
+  },
+  "longTimeClusters": { "function": "timeClusters", "args": { "maxGap": 60 } },
+  "sweepCount": "timeClusters.clusters",
+  "sweepStart": "timeClusters.start",
+  "acquisitionSeconds": "timeClusters.time",
+  "sweepOffset": "round(sweepStart - timeClusters.first)",
+
+  "planeGeometryTolerance": 0.1,
+  "planeGeometry": {
+    "function": "planeGeometry",
+    "args": { "tolerance": "planeGeometryTolerance" },
+  },
+  "sliceSpacing": "planeGeometry.spacing",
+  "sliceIndex": "planeGeometry.index",
+  "sliceDistance": "planeGeometry.distance",
+
+  "seriesInstanceCount": "count()",
+  "isMultiFrame": "NumberOfFrames > 1",
+
+  "imageId": { "attribute": "imageId" },
+}
+```
+
+The default context also holds the code entries `isImage`, `isVideo`, `isEcg`,
+`isWsi` and `isStackImage` (an image that is not a video, a waveform or a whole
+slide). See [Instance classifiers](#instance-classifiers).
+
+The series functions:
+
+- `planeGeometry` gives the dominant image plane, the slice spacing, and the
+  instances on a regular slice lattice. Series fields: `normal`, `origin`,
+  `spacing`, `regularCount`, `irregularCount`, `positions`, `complete`,
+  `duplicates`. Instance fields: `distance` (in mm along the normal, from one
+  origin for the full series) and `index` (the lattice index of a regular
+  instance). `args.tolerance` (default `0.1`) is the fraction of the spacing
+  that a slice can be off the lattice.
+- `timeClusters` gives clusters of contiguous acquisition time. Series fields:
+  `first`, `clusters`, `untimedCount`. Instance fields: `time` and `start`. A
+  gap of more than `args.maxGap` seconds (default `30`) starts a new cluster.
+
+An instance field is a map keyed by the `SOPInstanceUID` (else the `imageId`),
+and a read of the path gives the value of the instance at hand.
+`options.seriesFunctions` adds or replaces a series function: a definition
+`{ compute, fields }` declares the result fields, and a bare function has fields
+that the compile does not check.
+
+#### The `context` of a rule
+
+- A rule `context` has the same forms as `displaySetContext`.
+- An entry in the rule `context` replaces the global entry with the same name,
+  for this rule only. A rule `context` can also define a new name, and only
+  that rule can read it.
+- The replacement also applies inside the global entries that the rule reads.
+  So the rule can change one argument, or select a different group, and every
+  alias follows the change.
+- An entry that reads its own name gets the global value:
+  `"timeClustersMaxGap": "timeClustersMaxGap * 2"`.
+- A group is a value. `"timeClusters": "longTimeClusters"` gives the result of
+  `longTimeClusters` to every entry that reads `timeClusters`.
+  `"timeClusters": 5` is a compile error, because the aliases read
+  `timeClusters.start`.
+- The cache key of an entry holds only the replaced names that the entry reads.
+  Rules that replace nothing share one computation.
+- The logger `cs3d.metadata.displayset.displaySetContext` records each
+  replacement at the debug level.
+
+```jsonc
+"usTimeClusters": {
+  "priority": -1,
+  "viewportTypes": ["stack"],
+  "context": { "timeClustersMaxGap": 20 },
+  "matches": {
+    "isStackImage": true,
+    "Modality": "US",
+    "isMultiFrame": false,
+    "sweepCount": { "greaterThan": 1 },
+    "sweepStart": { "notNull": true }
+  },
+  "groupBy": ["SeriesInstanceUID", "sweepStart"],
+  "sortBy": ["acquisitionSeconds"],
+  "attributes": { "SeriesDescription": { "template": "{SeriesDescription} +{sweepOffset} s" } }
+}
+```
+
+The gap of 20 seconds applies to this rule only. Other rules keep the default
+gap of 30 seconds. `{ "greaterThan": 1 }` is a strict `>`, so a series with one
+sweep does not match.
+
+#### Code entries
+
+In code, an entry can be a function `(instance, values) => value`, with the
+instance scope. `values` reads every name. The `function` of a group can be a
+function `(instances, { args }) => result`, or a definition
+`{ compute, fields }`. A split that needs complex logic is a new series
+function in code, and the context then gives names to its result fields. A
+selector that reads a code entry is still JSON, but the host that compiles it
+must register the same entry.
+
+```js
+const splitRules = createDisplaySetSplitRules(mySelector, {
+  displaySetContext: {
+    // Read from data as "isSiteProtocol": true
+    isSiteProtocol: (instance) => instance.ProtocolName?.startsWith('SITE-'),
+  },
+  sortFunctions: {
+    // Read from data as { "sortFunction": "byInstanceNumberDescending" }
+    byInstanceNumberDescending: (a, b) => b.InstanceNumber - a.InstanceNumber,
+  },
+});
+```
+
 ### The schema of a rule
 
 Every place in a rule, and the forms each place accepts, are one table:
 `splitRuleSchema`, exported from `@cornerstonejs/metadata`.
-`createDisplaySetSplitRules` reads it — to select the form of each fragment, to
-check its keys, to take the expression variables of each place, and to build
-its error messages — so the table cannot drift from what compiles. It is keyed
-by shape: `rule` (the rule itself), `seriesFact`, `comparator`,
-`customAttributes`, and the generic `condition` and `value` shapes from
+`createDisplaySetSplitRules` reads it to check the keys, to select the form of
+each fragment, and to build its error messages. It is keyed by shape: `rule`
+(the rule itself), `contextEntry`, `sortKey`, `attributeValue`, `name`, and the
+generic `condition` and `matchTest` shapes from
 [Safe Functions](../safe-functions.md#the-schema-one-table-strict-keys).
 
-Each rule field says what it holds and, for a place that becomes a function, how
-the function is called:
+The compiler is **strict**. A wrong rule fails at compile time, and the
+compiler never ignores it:
 
-```js
-// splitRuleSchema.rule.forms.rule.keys, abridged
-{
-  matches: {
-    kind: 'condition',
-    call: '(instance, context) => boolean',
-    expression: { params: ['instance', 'context'], implicitScope: 'instance' },
-    optional: true,
-  },
-  compareInstances: {
-    kind: 'comparator',
-    call: '(a, b, context) => number',
-    optional: true,
-  },
-  customAttributes: {
-    kind: 'customAttributes',
-    function: true, // a whole callback is accepted
-    call: '(attributes, options) => Record<string, unknown>',
-    optional: true,
-  },
-}
-
-// splitRuleSchema.customAttributes.forms.recipe.keys, abridged
-{
-  set: { kind: 'record', keys: { '*': { kind: 'literal' } } },
-  fromFirstInstance: {
-    kind: 'record',
-    keys: { '*': { kind: 'value', call: '(firstInstance, context) => value' } },
-  },
-  fromContext: { kind: 'string', list: true, oneOf: ['isMultiFrame', 'sopClassUids', 'viewportTypes'] },
-  fromOptions: { kind: 'string', list: true, oneOf: ['splitNumber', 'descriptionName'] },
-  preset: { kind: 'string' },
-}
+```text
+Invalid raw display set selector: rule 'r': unknown field 'matchs'; allowed: id, groupId, priority, description, viewportTypes, context, matches, groupBy, runBy, sortBy, attributes
+Invalid raw display set selector: rule 'r'.matches.BodyPartExamind: unknown name 'BodyPartExamind': it is not a keyword of the DICOM dictionary; a private, vendor or synthetic attribute needs a declaration, e.g. "myValue": { "attribute": "BodyPartExamind" }
+Invalid raw display set selector: rule 'r'.attributes.label: unknown name 'SCOUT': ...; fixed text is { "template": "SCOUT" }
+Invalid raw display set selector: displaySetContext.first: the context entries form a loop: first -> second -> first
 ```
 
-The compiler is **strict**. A wrong rule fails at compile time; it is never
-silently ignored:
-
-- **An unknown key is an error, anywhere in a rule.** A typo such as `matchs`
-  would otherwise leave the rule with no `matches`, so it would claim every
-  instance. The message names the rule, the path and the allowed keys:
-
-  ```
-  Invalid raw display set selector: rule 'r': unknown field 'matchs'; allowed: id, priority, description, viewportTypes, series, matches, groupBy, runBy, compareInstances, customAttributes
-  Invalid raw display set selector: rule 'r'.customAttributes: unknown key 'fromFirstInstnce'; allowed: set, fromFirstInstance, fromContext, fromOptions, preset
-  Invalid raw display set selector: rule 'r'.customAttributes.fromContext[0]: unknown fromContext "isMultiFrme"; allowed: isMultiFrame, sopClassUids, viewportTypes
-  Invalid raw display set selector: rule 'r'.matches: 'ignoreCase' applies only with contains, containsAny: {...}
-  ```
-
-- **A form the place does not accept is an error**, and the message lists the
-  accepted forms and the call signature:
-
-  ```
-  Invalid raw display set selector: rule 'r'.compareInstances: unrecognized comparator; expected { attribute, number?, descending? }, { expression } called with (a, b, context), or a function (a, b, context) => number: {"atribute":"SliceLocation"}
-  ```
-
-- **Wildcard keys.** `'*'` in the table allows any key. `customAttributes.set.*`
-  keeps each value as a literal; `customAttributes.fromFirstInstance.*` compiles
-  each value as a value read from the first instance of the group.
-- **An actual function passes through as is** at every function place — a whole
-  `matches`, a `groupBy` entry, `runBy`, `compareInstances`, a whole `series`
-  hook, a whole `customAttributes` — and wherever a nested condition or value is
-  expected, e.g. inside `all: [...]` or as a `fromFirstInstance` value. The
-  strictness applies to data only. A selector with a function in it is no longer
-  JSON, so it cannot be shared with a server.
-
-### Comparators as data
-
-`compareInstances` takes one of three forms, each compiled to
-`(a, b, context) => number`:
-
-```js
-// Ascending by a numeric attribute; `descending: true` reverses it.
-compareInstances: { attribute: 'SliceLocation', number: true },
-
-// An expression over a, b and context.
-compareInstances: { expression: 'a.SliceLocation - b.SliceLocation' },
-
-// An actual function, as is.
-compareInstances: (a, b) => a.SliceLocation - b.SliceLocation,
-```
-
-A comparator expression has **no implicit scope**: the only names it can read
-are `a`, `b` and `context`. So `'SliceLocation - b.SliceLocation'` is a compile
-error, rather than silently reading `a.SliceLocation`. The result is coerced to a
-number; a result of `0` or `NaN` (a missing tag on one side) is "no opinion",
-and the next comparator decides — see [Who decides instance order](#who-decides-instance-order).
+An actual function passes through as is at every function place: a whole
+`matches`, the test of one entry of `matches`, a `groupBy` entry, `runBy`, a
+`sortBy` entry, a whole `attributes` (the `customAttributes` hook), and one
+attribute value. The strictness applies to data only. A selector with a
+function in it is no longer JSON, so it cannot be shared with a server.
 
 ### Who decides instance order
 
-Instance order is layered, each layer deferring to the one below:
+Instance order has layers, and each layer defers to the layer below:
 
-1. **Acquisition order** (`InstanceNumber`, then `SOPInstanceUID`), always applied
-   first — never the order the imageIds arrived in, so nothing about the result
-   depends on that.
-2. **The host's base sort**, `GroupInstancesOptions.sortInstances`, passed to
-   `groupInstancesBySplitRules` / `splitImageIdsBySplitRules`. A **whole-list**
-   sort, not a comparator, because a real base order is not always pairwise:
-   ordering slices along the scan axis means picking a reference instance and
-   projecting the rest onto its normal, which no `(a, b)` function can express.
-3. **Comparators** — the rule's own `compareInstances` first, then the host's
-   `GroupInstancesOptions.compareInstances`.
+1. **Acquisition order** (`InstanceNumber`, then `SOPInstanceUID`) always
+   applies first. It is never the order in which the image ids arrived, so the
+   result does not depend on that order.
+2. **The base sort of the host**, `GroupInstancesOptions.sortInstances`, given
+   to `groupInstancesBySplitRules` / `splitImageIdsBySplitRules`. It is a sort
+   of the **whole list**, and not a comparator, because a real base order is
+   not always pairwise: an order of slices along the scan axis selects a
+   reference instance and projects the other instances onto its normal.
+3. **Comparators**: the `sortBy` of the rule first, then the
+   `GroupInstancesOptions.compareInstances` of the host.
 
-A comparator **returning 0 declines to have an opinion** rather than asserting the
-two instances are interchangeable: the next comparator is consulted, and if none
-has one, the base order stands. So a rule can say "order by this one thing, leave
-the rest alone" without restating the default. A `NaN` — which arithmetic on a tag
-one instance is missing produces — counts as no opinion too.
+A comparator that **gives 0 has no opinion**. It does not say that the two
+instances are interchangeable: the next comparator decides, and if no
+comparator has an opinion, the base order applies. A `NaN` is also "no
+opinion".
 
-The base sort is host-supplied rather than only rule-declared for the same reason
-the rules themselves are data: the _default_ order has to be settable once, the
-same way, by whatever is doing the splitting. If only rules could set it, two
-consumers of one selector could order the same display set differently while both
-appearing correct — a viewer sorting by position and a server by instance number,
-say. `orderInstancesForRule` exposes the whole composition so a host that has to
-re-order outside a split (after new instances arrive, for instance) reproduces the
-same order rather than applying its own sort a second time and discarding the
-rule's.
-
-Pass the group's series facts when you do. A comparator can read
-`context.series`, and those facts came from the whole split, not from the
-group — so `orderInstancesForRule` recomputing them from the group's instances
-alone can give a comparator different facts and a different order:
+The host gives the base sort, so that the _default_ order is the same for each
+system that splits the series. `orderInstancesForRule` gives the whole
+composition, so that a host that orders a display set again (after new
+instances arrive) gets the same order. Give the series facts of the group when
+you do this. A `sortBy` name such as `sliceDistance` reads a value of the whole
+split, and a value computed from the group alone can be different:
 
 ```ts
 const [group] = groupInstancesBySplitRules(instances, splitRules);
@@ -734,42 +853,33 @@ const reordered = orderInstancesForRule(
 );
 ```
 
-A later revision is expected to let a selector carry its sort as data; it will
-compile to these same hooks, so ordering does not change owner again.
-
-A rule also carries a `description`: the explanation lives in the rule data, not in
-a code comment, so a UI that lets a user inspect or toggle rules reads it from the
-selector rather than keeping its own copy. The **Display Set Rules** example
-(`packages/core/examples/displaySetRules`) does exactly that — it lists every
-standard rule with a checkbox, its priority and its description, lets you paste
-rules as JSON keyed by id, and re-splits the loaded series live.
+A rule also has a `description`. The explanation is in the rule data, and not
+in a code comment, so a UI that lets a user inspect or toggle rules reads it
+from the selector. The **Display Set Rules** example
+(`packages/core/examples/displaySetRules`) does this. It lists every standard
+rule with a checkbox, its priority and its description, it accepts rules as JSON
+keyed by id, and it splits the loaded series again at once.
 
 Two rules from the defaults, in raw form:
 
 ```js
 {
-  // "Which instances are a multi-frame clip?" — a fact over the series, read
-  // back per instance.
+  // A cine clip: a multi-frame instance with a slice location.
   multiFrame: {
     priority: 5,
     viewportTypes: ['stack'],
-    series: [{
-      name: 'isMultiFrame',
-      scope: 'first',
-      when: { all: [
-        { attribute: 'NumberOfFrames', greaterThan: 1 },
-        { attribute: 'SliceLocation', exists: true },
-      ] },
-    }],
-    matches: { all: [{ seriesFact: 'isMultiFrame' }, { classifier: 'image' }] },
+    matches: {
+      isImage: true,
+      Rows: { notNull: true },
+      isMultiFrame: true,
+      SliceLocation: { notNull: true },
+    },
     groupBy: ['SeriesInstanceUID', 'InstanceNumber'],
-    customAttributes: {
-      set: { isClip: true },
-      fromFirstInstance: {
-        numImageFrames: { attribute: 'NumberOfFrames', number: true },
-      },
-      fromOptions: ['splitNumber'],
-      fromContext: ['isMultiFrame'],
+    attributes: {
+      isClip: true,
+      numImageFrames: { expression: 'Number(NumberOfFrames)' },
+      splitNumber: 'splitNumber',
+      isMultiFrame: 'isMultiFrame',
     },
   },
 
@@ -777,76 +887,64 @@ Two rules from the defaults, in raw form:
   mixedDimensionalityBValue: {
     priority: 6,
     viewportTypes: ['volume', 'volume3d', 'stack'],
-    series: [{
-      name: 'mixedBValue',
-      gate: { attribute: 'Modality', equals: 'MR' },
-      scope: 'mixed',
-      when: { attribute: 'DiffusionBValue', exists: true },
-    }],
-    matches: { all: [{ seriesFact: 'mixedBValue' }, { classifier: 'image' }] },
-    groupBy: ['SeriesInstanceUID', { attribute: 'DiffusionBValue', absent: true }],
+    context: {
+      isMixedBValue: 'count(DiffusionBValue) > 0 && count(DiffusionBValue) < count()',
+      hasNoBValue: 'DiffusionBValue == null',
+    },
+    matches: { Modality: 'MR', isMixedBValue: true, isImage: true, Rows: { notNull: true } },
+    groupBy: ['SeriesInstanceUID', 'hasNoBValue'],
   },
 }
 ```
 
 ### Extending a selector
 
-Derive from the defaults and compile the result. Rules are evaluated in
-ascending priority, so give a rule a priority below `0` to claim instances
-before any default rule sees them:
+Derive from the defaults and compile the result. Rules run in ascending
+priority, so give a rule a priority below `0` to claim instances before any
+default rule sees them:
 
 ```js
-const splitRules = createDisplaySetSplitRules({
-  ...rawDisplaySetSelector,
-  usInterleaved: {
-    priority: -1,
-    matches: { attribute: 'Modality', equals: 'US' },
-    // Interleaved singles and clips become one display set per run.
-    runBy: { condition: { attribute: 'NumberOfFrames', greaterThan: 1 } },
+const splitRules = createDisplaySetSplitRules(
+  {
+    ...rawDisplaySetSelector,
+    dxCrSingleImages: {
+      priority: -1,
+      viewportTypes: ['stack'],
+      matches: {
+        Modality: ['DX', 'CR'],
+        isStackImage: true,
+        isSmallSeries: true,
+      },
+      groupBy: ['SeriesInstanceUID', 'SOPInstanceUID'],
+    },
   },
-});
+  {
+    displaySetContext: {
+      dxCrMaxImages: 9,
+      isSmallSeries: 'seriesInstanceCount <= dxCrMaxImages',
+    },
+  }
+);
 ```
 
-The key is the rule's id, so ids are unique by construction. An id namespaces
-the bucket keys its rule produces, so keying rules is what lets a selector be
-edited — a rule moved, or a rule inserted — without changing the other rules'
-display set identities.
+A site changes the limit for all rules with `"dxCrMaxImages": { "$set": 20 }`.
+One rule changes the limit for itself with `"context": { "dxCrMaxImages": 20 }`.
 
-When a classification genuinely cannot be expressed as data, register it by name
-rather than reaching for a function in the selector — the
-[named extension](../safe-functions.md#named-extensions) point. A function in the
-selector compiles (see [the schema of a rule](#the-schema-of-a-rule)), but a
-named extension keeps the selector itself serializable. `createDisplaySetSplitRules` takes two registries:
-`classifiers`, which is the safe-function one, and `customAttributePresets`,
-which is specific to display sets because a preset returns display set
-attributes:
+The key is the id of the rule, so ids are unique by construction. An id
+namespaces the bucket keys that its rule makes. Thus a site can edit a selector
+(move a rule, or insert a rule), and the display set identities of the other
+rules do not change.
 
-```js
-const splitRules = createDisplaySetSplitRules(mySelector, {
-  classifiers: {
-    // Referenced from data as { classifier: 'siteProtocol' }
-    siteProtocol: (instance) => instance.ProtocolName?.startsWith('SITE-'),
-  },
-  // Referenced from data as customAttributes: { preset: 'siteLabel' }
-  customAttributePresets: {
-    siteLabel: (instances) => ({ siteLabel: instances[0]?.ProtocolName }),
-  },
-});
-```
-
-A selector that uses named extensions is still shareable, but the _names_ become
-part of the contract: whatever compiles it must register the same names, or
-compilation throws. So does the _shape of the instance_ the host feeds the
-splitter — a rule can only key on attributes that are actually there, and one
-that references a missing attribute compiles cleanly and silently groups
-everything together. See
-[the subject is part of the contract](../safe-functions.md#the-subject-is-part-of-the-contract-too).
+A selector can only read the attributes that the host puts on the instance. A
+rule that reads an attribute that the host does not supply compiles, and then
+groups every instance together. See
+[the subject is part of the contract](../safe-functions.md#names-belong-to-the-consumer).
 
 ### How an application's customization layer fits
 
-Cornerstone deliberately knows nothing about OHIF's `customizationService` — or any
-other application's configuration mechanism — and must not. The dependency runs
-one way: the application resolves its own overrides and hands
+Cornerstone knows nothing about OHIF `customizationService`, or about the
+configuration of any other application, and must not. The dependency goes one
+way: the application resolves its own overrides and gives
 `createDisplaySetSplitRules` plain data.
 
 ```js
@@ -856,28 +954,29 @@ const selector =
   rawDisplaySetSelector;
 
 const splitRules = createDisplaySetSplitRules(selector, {
-  classifiers: customizationService.getCustomization('displaySetClassifiers'),
+  displaySetContext: customizationService.getCustomization('displaySetContext'),
 });
 ```
 
-Because the customization value is JSON, the same value can be served to a
-back end that has no customization service at all — it reads the selector from
-config and compiles it with the same call. That is the property that lets one
-deployment's display set rules hold on both sides of the wire. OHIF's side of this
-is documented under
+The customization value is JSON. So a back end with no customization service can
+get the same value: it reads the selector and the context from its
+configuration, and compiles them with the same call. Thus the display set rules
+of one deployment are the same on both sides of the wire. The OHIF side is in
 [Customization Service → Display Set Split Rules](https://docs.ohif.org/platform/services/customization-service/displaySetSplitRules).
 
 ### Instance classifiers
 
-The default rules rely on small SOP-class/modality heuristics that are also
-exported for reuse, so you can detect a series' kind without re-hardcoding UID
-lists:
+The default rules use small SOP-class and modality heuristics. The context has
+them as the code entries `isImage`, `isVideo`, `isEcg`, `isWsi` and
+`isStackImage`, and the package also exports them, so you can find the kind of
+a series without a second copy of the UID lists:
 
-- `isImageInstance(instance)` — the SOP class carries renderable pixel data.
-- `isVideoInstance(instance)` — video transfer syntax (reusing the shared
+- `isImageInstance(instance)`: the SOP class carries renderable pixel data.
+- `isVideoInstance(instance)`: a video transfer syntax (from the shared
   `videoUIDs` list), a video SOP class, or a long multi-frame secondary capture.
-- `isEcgInstance(instance)` — an ECG / waveform SOP class.
-- `isWsiInstance(instance)` — VL Whole Slide Microscopy storage, or modality `SM`.
+- `isEcgInstance(instance)`: an ECG or waveform SOP class.
+- `isWsiInstance(instance)`: VL Whole Slide Microscopy storage, or modality
+  `SM`.
 
 ## Display set attributes (`IDisplaySet`)
 
