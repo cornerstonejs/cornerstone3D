@@ -155,6 +155,14 @@ export const defaultDisplaySetContext: DisplaySetContext = Object.freeze({
 });
 
 const CONTEXT_NAME = /^[a-z][A-Za-z0-9_]*$/;
+/** The literals of the expression language: no context entry can have these names. */
+const RESERVED_LITERALS = new Set([
+  'true',
+  'false',
+  'null',
+  'undefined',
+  'defined',
+]);
 const HEX_TAG = /^[0-9A-Fa-f]{8}$/;
 
 /** True when the name is a keyword of the DICOM dictionary of dcmjs. */
@@ -268,6 +276,8 @@ function unknownName(name: string, place: string): string {
   let hint: string;
   if (HEX_TAG.test(name)) {
     hint = `a hex tag needs a declaration in the context, e.g. "myValue": { "attribute": "${name}" }`;
+  } else if (RESERVED_LITERALS.has(name)) {
+    hint = `'${name}' is a literal; write X == ${name} in a context entry`;
   } else if (/^[a-z]/.test(name)) {
     hint = 'no context entry has this name';
   } else {
@@ -284,6 +294,12 @@ function unknownName(name: string, place: string): string {
 function checkContextName(name: string, site: SchemaSite): void {
   if (isUnsafeKey(name) || FORBIDDEN_PROPERTIES.has(name)) {
     invalidAt(site, `the context name "${name}" is not allowed`);
+  }
+  if (RESERVED_LITERALS.has(name)) {
+    invalidAt(
+      site,
+      `'${name}' is a literal of the expression language, and cannot be a context name`
+    );
   }
   if (isTagKeyword(name)) {
     invalidAt(

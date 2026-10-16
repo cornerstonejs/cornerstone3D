@@ -45,20 +45,40 @@ describe('compileExpression', () => {
       expect(compileExpression("'2' == 2")()).toBe(true);
     });
 
-    it('reads == null as "no value", and == undefined as "absent" only', () => {
-      const noValue = compileExpression('X == null');
-      const absent = compileExpression('X == undefined');
-      for (const [X, isNoValue, isAbsent] of [
-        [undefined, true, true],
-        [null, true, false],
-        ['', true, false],
-        [[], true, false],
-        [0, false, false],
-        ['A', false, false],
-      ]) {
-        expect([noValue({ X }), absent({ X })]).toEqual([isNoValue, isAbsent]);
-      }
-      expect(compileExpression('X != null')({ X: '' })).toBe(false);
+    it('gives the literal tests the DICOM kinds of a value', () => {
+      const tests = [
+        'X == undefined',
+        'X == null',
+        'X == defined',
+        'X != undefined',
+      ].map((source) => compileExpression(source));
+      const row = (X: unknown) => tests.map((test) => test({ X }));
+      expect(row(undefined)).toEqual([true, true, false, false]);
+      expect(row(null)).toEqual([false, true, false, true]);
+      expect(row('')).toEqual([false, true, false, true]);
+      expect(row([])).toEqual([false, true, false, true]);
+      expect(row([''])).toEqual([false, true, false, true]);
+      expect(row([null])).toEqual([false, true, false, true]);
+      expect(row('CT')).toEqual([false, false, true, true]);
+      expect(compileExpression('X != defined')({ X: '' })).toBe(true);
+    });
+
+    it('compares two values with no value by kind: null is not undefined', () => {
+      const equal = compileExpression('Y == Z');
+      expect(equal({ Y: null })).toBe(false);
+      expect(equal({ Z: null })).toBe(false);
+      expect(equal({ Y: null, Z: '' })).toBe(false);
+      expect(equal({ Y: null, Z: null })).toBe(true);
+      expect(equal({})).toBe(true);
+    });
+
+    it('accepts defined only as an operand of == and !=', () => {
+      expect(() => compileExpression('defined')).toThrow(
+        /'defined' is a literal/
+      );
+      expect(() => compileExpression('defined(X)')).toThrow(
+        ExpressionSyntaxError
+      );
     });
 
     it('gives false for an ordering comparison with no value, and reads a numeric string as a number', () => {
@@ -191,7 +211,7 @@ describe('compileExpression', () => {
       expect(run("endsWith(ImageType, 'ARY')", ['ORIGINAL', 'PRIMARY'])).toBe(
         true
       );
-      expect(run('defined(ImageType)', [''])).toBe(false);
+      expect(run('ImageType == defined', [''])).toBe(false);
     });
 
     it('reads no value as undefined in arithmetic, and a numeric string as a number', () => {

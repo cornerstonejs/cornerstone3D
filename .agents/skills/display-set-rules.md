@@ -28,8 +28,10 @@ is in `packages/metadata/src/displayset/` (`displaySetContext.ts`,
   `contains(X, 'text')` tests text.
 - Missing values have the DICOM meaning: absent is `undefined`; empty is
   `null`, `""`, `[]`; "no value" is either. `X == null` and `"X": null` are "no
-  value"; `X == undefined` is "absent" only; `notNull` is the exact opposite of
-  `null`. Comparisons give `false` on no value. `==` is the only equality, and
+  value"; `X == undefined` is "absent" only; `X == defined` and `notNull` are
+  "has a value"; `X != undefined` is "present". Two values compared with `==`
+  are equal with no value only when of the same kind (`null == undefined` is
+  false). Comparisons give `false` on no value. `==` is the only equality, and
   `===` is a compile error.
 
 ## Rule fields

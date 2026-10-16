@@ -202,11 +202,31 @@ compile.
   JavaScript meaning. `undefined` is absent. `null`, `""` and `[]` are empty.
   An array whose elements all have no value (`[""]`, `[null]`) is also empty.
   "No value" is absent or empty.
-- **RL-VALUE-2** `X == null` and `"X": null` hold when `X` has no value.
-  `X != null` and `{ "notNull": true }` are their exact opposites.
-- **RL-VALUE-3** `X == undefined` holds only when `X` is absent. So an author
-  can make a distinction between DICOM Type 2 (present and empty) and DICOM
-  Type 3 (absent).
+- **RL-VALUE-2** An expression tests the kind of a value with a literal
+  test. `undefined`, `null` and `defined` are the literals. `!=` is the
+  opposite of `==`.
+
+  | `X`                               | `X == undefined` | `X == null` | `X == defined` | `X != undefined` |
+  | --------------------------------- | ---------------- | ----------- | -------------- | ---------------- |
+  | absent (`undefined`, no property) | `true`           | `true`      | `false`        | `false`          |
+  | `null`                            | `false`          | `true`      | `false`        | `true`           |
+  | `""`                              | `false`          | `true`      | `false`        | `true`           |
+  | `[]` (also `[""]` and `[null]`)   | `false`          | `true`      | `false`        | `true`           |
+  | `"CT"` (a value)                  | `false`          | `false`     | `true`         | `true`           |
+  - `X == undefined` tests "absent". `X != undefined` tests "present" (the
+    value can be empty). So an author can make a distinction between DICOM
+    Type 2 (present and empty) and DICOM Type 3 (absent).
+  - `X == null` tests "no value". `X == defined` tests "has a value": present
+    and not empty.
+  - In `matches`, `"X": null` is the same test as `X == null`, and
+    `{ "notNull": true }` is the same test as `X == defined`.
+  - `defined` is a literal for `==` and `!=` only. In every other position,
+    and as a context name, `defined` is a compile error.
+
+- **RL-VALUE-3** When `==` compares two values, two values with no value are
+  equal only when they are of the same kind. So `Y == Z` is `false` when `Y`
+  is `null` and `Z` is absent, and `null == ""` is `false`. Only the literal
+  tests of `RL-VALUE-2` treat the kinds as one.
 - **RL-VALUE-4** A comparison (`<`, `<=`, `>`, `>=`, `greaterThan`,
   `lessThan`, `range`) gives `false` when the value has no value, or is not a
   finite number. A numeric string is a number, so `"2" > 1` is `true`. A text
@@ -508,11 +528,14 @@ packages/metadata/src/
 - **RL-VAL-2** A template placeholder is a name or a path. A placeholder with
   no value gives `""`. `\{` and `\}` escape a brace.
 - **RL-VAL-3** `looseEquals` (the `==` of expressions, and the scalar test):
-  two values with no value are equal; a value with no value is not equal to a
-  value with one; a multi-valued attribute compares on its first value; a
-  number and a numeric string compare by value; other scalars compare as text.
-  The expression compiler gives `X == null` and `X == undefined` (a literal
-  operand) the tests of `RL-VALUE-2` and `RL-VALUE-3`.
+  two values with no value are equal only when they are of the same kind
+  (absent, `null`, `""`, or an empty array); a value with no value is not
+  equal to a value with one; a multi-valued attribute compares on its first
+  value; a number and a numeric string compare by value; other scalars compare
+  as text. The expression compiler gives `X == undefined`, `X == null` and
+  `X == defined` (a literal operand) the tests of `RL-VALUE-2`. The parser
+  reads `defined` as a literal, and the compiler rejects it in every other
+  position.
 
 ### Sort orders (RL-SORT)
 

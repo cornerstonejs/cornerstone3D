@@ -1,4 +1,8 @@
-import { FORBIDDEN_PROPERTIES, parseExpressionSource } from './parser';
+import {
+  DEFINED_LITERAL,
+  FORBIDDEN_PROPERTIES,
+  parseExpressionSource,
+} from './parser';
 import type { ExpressionNode } from './parser';
 import { ExpressionSyntaxError } from './tokenizer';
 import { asArrayFirst } from '@cornerstonejs/utils';
@@ -106,7 +110,6 @@ function finiteValues(values: unknown[]): number[] {
 
 /** Whitelisted helper functions callable by bare name. */
 const HELPERS: Record<string, (...args: unknown[]) => unknown> = {
-  defined: (value) => !hasNoValue(value),
   // The meanings of the operators of the same names (see `matchTests.ts`).
   includes: MATCH_HELPERS.includes,
   contains: MATCH_HELPERS.contains,
@@ -333,13 +336,17 @@ const ARITHMETIC: Record<string, (left: unknown, right: unknown) => unknown> = {
 };
 
 /**
- * The test of `X == <literal>` when the literal is a missing value:
- * `undefined` tests "absent", and `null`, `''` or `[]` test "no value".
+ * The test of `X == <literal>` when the literal names a kind of value:
+ * `undefined` tests "absent", `null` (or `''`, `[]`) tests "no value", and
+ * `defined` tests "has a value".
  */
 function missingValueTest(
   node: ExpressionNode
 ): ((value: unknown) => boolean) | undefined {
   if (node.type === 'literal') {
+    if (node.value === DEFINED_LITERAL) {
+      return (value) => !hasNoValue(value);
+    }
     if (isAbsent(node.value)) {
       return isAbsent;
     }
@@ -418,6 +425,12 @@ function compileNode(
   switch (node.type) {
     case 'literal': {
       const { value } = node;
+      if (value === DEFINED_LITERAL) {
+        throw new ExpressionSyntaxError(
+          "'defined' is a literal for '== defined' and '!= defined' only",
+          expression
+        );
+      }
       return () => value;
     }
     case 'identifier': {
@@ -558,9 +571,12 @@ function compileNode(
  *
  * - `==` is the only equality, and `===` / `!==` are compile errors. `'1' == 1`
  *   is true.
- * - `X == null` holds when `X` has no value (absent, or `null`, `''`, `[]`).
- *   `X == undefined` holds only when `X` is absent (DICOM Type 3 against
- *   Type 2). `!=` is the opposite of each.
+ * - The literal tests: `X == undefined` holds when `X` is absent; `X == null`
+ *   holds when `X` has no value (absent, or `null`, `''`, `[]`); `X == defined`
+ *   holds when `X` has a value. `!=` is the opposite of each. Two values
+ *   compared with `==` are equal only when both have a value and are equal, or
+ *   both have no value of the same kind: `null == undefined` is false when
+ *   both sides are values.
  * - `<`, `<=`, `>` and `>=` give `false` unless both sides are finite numbers
  *   after `toFinite`, so a numeric string is a number and a missing value never
  *   compares as 0.

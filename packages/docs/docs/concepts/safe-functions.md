@@ -53,11 +53,25 @@ DICOM JSON can give an empty value in that form.
 "No value" means absent or empty. `safeFunctions/values.ts` exports the helpers
 `isAbsent`, `isEmpty`, `hasNoValue`, `toFinite` and `looseEquals`.
 
-- `X == null` and the test `"X": null` hold when `X` has no value.
-  `{ "notNull": true }` is their exact opposite.
-- `X == undefined` holds only when `X` is absent. Use this test to make a
-  distinction between DICOM Type 2 (present and empty) and DICOM Type 3
-  (absent).
+- An expression tests the kind of a value with the literals `undefined`,
+  `null` and `defined`. `!=` is the opposite of `==`:
+
+  | `X`                               | `X == undefined` | `X == null` | `X == defined` | `X != undefined` |
+  | --------------------------------- | ---------------- | ----------- | -------------- | ---------------- |
+  | absent (`undefined`, no property) | `true`           | `true`      | `false`        | `false`          |
+  | `null`                            | `false`          | `true`      | `false`        | `true`           |
+  | `""`                              | `false`          | `true`      | `false`        | `true`           |
+  | `[]` (also `[""]` and `[null]`)   | `false`          | `true`      | `false`        | `true`           |
+  | `"CT"` (a value)                  | `false`          | `false`     | `true`         | `true`           |
+
+  Use `X == undefined` and `X != undefined` to make a distinction between DICOM
+  Type 2 (present and empty) and DICOM Type 3 (absent). In a condition map,
+  `"X": null` is the same test as `X == null`, and `{ "notNull": true }` is the
+  same test as `X == defined`. `defined` is a literal for `==` and `!=` only.
+
+- When `==` compares two values, two values with no value are equal only when
+  they are of the same kind. So `Y == Z` is `false` when `Y` is `null` and `Z`
+  is absent. Only the literal tests treat the kinds as one.
 - `<`, `<=`, `>`, `>=`, `greaterThan`, `lessThan` and `range` give `false` when
   the value has no value, or is not a finite number. A numeric string is a
   number, so `"2" > 1` is `true`. A value with no value never compares as `0`.

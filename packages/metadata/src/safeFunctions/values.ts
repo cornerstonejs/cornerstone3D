@@ -66,8 +66,11 @@ export function toFinite(value: unknown): number | undefined {
 /**
  * The `==` of the rule language, and the scalar test of `matches`.
  *
- * - Two values with no value are equal. A value with no value is not equal to
- *   a value that has one.
+ * - Two values with no value are equal only when they are of the same kind:
+ *   absent and absent, `null` and `null`, `''` and `''`, or two empty arrays.
+ *   So `null == undefined` is false. A value with no value is not equal to a
+ *   value that has one. Only the literal tests of the expression compiler
+ *   (`X == null`) treat the kinds as one.
  * - A multi-valued attribute compares on its first value, so `['MR']` equals
  *   `'MR'`.
  * - A number and a numeric string are equal by value: `'1' == 1`.
@@ -78,7 +81,7 @@ export function toFinite(value: unknown): number | undefined {
  */
 export function looseEquals(left: unknown, right: unknown): boolean {
   if (hasNoValue(left) || hasNoValue(right)) {
-    return hasNoValue(left) && hasNoValue(right);
+    return emptyKind(left) === emptyKind(right);
   }
   const a = asArrayFirst(left);
   const b = asArrayFirst(right);
@@ -99,6 +102,20 @@ export function looseEquals(left: unknown, right: unknown): boolean {
     }
   }
   return String(a) === String(b);
+}
+
+/** The kind of a value with no value, or `undefined` for a value. */
+function emptyKind(value: unknown): string | undefined {
+  if (isAbsent(value)) {
+    return 'absent';
+  }
+  if (value === null) {
+    return 'null';
+  }
+  if (value === '') {
+    return 'text';
+  }
+  return isEmpty(value) ? 'array' : undefined;
 }
 
 /**

@@ -48,11 +48,18 @@ export const FORBIDDEN_PROPERTIES = new Set([
   'constructor',
 ]);
 
+/**
+ * The literal `defined`: an operand of `==` and `!=` only. `X == defined` holds
+ * when `X` has a value (present and not empty).
+ */
+export const DEFINED_LITERAL: unique symbol = Symbol('defined');
+
 const KEYWORD_LITERALS = new Map<string, unknown>([
   ['true', true],
   ['false', false],
   ['null', null],
   ['undefined', undefined],
+  ['defined', DEFINED_LITERAL],
 ]);
 
 /** Binary operator precedence (higher binds tighter). */
