@@ -150,19 +150,7 @@ const SOURCE_SERIES: SourceSeries[] = [
   },
 ];
 
-// ======== Named safe functions ======== //
-
-/**
- * The safe functions a selector may reference **by name**. A selector stays pure
- * JSON; anything it cannot express as data — geometry, free-form heuristics — is
- * named here and resolved at compile time. This is the only way a function enters
- * the pipeline, which is what makes a pasted or fetched selector safe to compile.
- */
-const DEMO_CLASSIFIERS = {
-  /** A localizer / scout / survey series, by description. */
-  localizer: (instance: NaturalizedInstance) =>
-    /localizer|scout|survey/i.test(String(instance.SeriesDescription ?? '')),
-};
+// ======== The display set context of this example ======== //
 
 /** Mammography view codes seen in the sample data, by SNOMED code value. */
 const MAMMO_VIEW_BY_CODE: Record<string, string> = {
@@ -178,49 +166,52 @@ function firstItem(sequence: unknown): Record<string, unknown> | undefined {
     : undefined;
 }
 
-const DEMO_CUSTOM_ATTRIBUTE_PRESETS = {
-  /**
-   * Mammography view identity — `RCC` / `RMLO` / `LCC` / `LMLO`, plus the parts
-   * it is built from, so a hanging protocol can match on either.
-   *
-   * A preset rather than data because the view lives in `ViewCodeSequence`: raw
-   * selector attributes are a flat lookup on the instance, so no `{ attribute }`
-   * reaches inside a sequence. `ViewPosition` would be readable as data, but the
-   * sample study (like plenty of real MG) does not send it.
-   */
-  mammoView: (instances: NaturalizedInstance[]) => {
-    const instance = instances[0];
-    const viewCode = firstItem(instance?.ViewCodeSequence);
-    const codeValue = viewCode?.CodeValue;
-    const view =
-      MAMMO_VIEW_BY_CODE[String(codeValue)] ??
-      (viewCode?.CodeMeaning as string) ??
-      String(instance?.ViewPosition ?? 'unknown');
-    const laterality = String(instance?.ImageLaterality ?? '');
+/**
+ * The context entries this example adds to the default display set context.
+ * A rule reads each one by its name, in the same way as a DICOM keyword.
+ *
+ * Most entries are data, so a pasted or fetched selector can also define its
+ * own. The code entries are for the values that data cannot state: the view of
+ * a mammogram lives in `ViewCodeSequence`, and the cardiac order needs the sign
+ * convention of `PatientPosition`. A selector that reads a code entry works
+ * only where the host registers the same entry.
+ */
+const DEMO_CONTEXT = {
+  /** A localizer / scout / survey series, by description. */
+  isLocalizer:
+    "includes(lower(SeriesDescription), 'localizer') || " +
+    "includes(lower(SeriesDescription), 'scout') || " +
+    "includes(lower(SeriesDescription), 'survey')",
 
-    return {
-      imageLaterality: laterality,
-      mammoView: view,
-      viewCode: codeValue
-        ? `${String(viewCode.CodingSchemeDesignator)}:${String(codeValue)}`
-        : undefined,
-      descriptionName: `${laterality}${view}`,
-    };
+  /** The mammography view, `CC` or `MLO`, from ViewCodeSequence. */
+  mammoView: (instance: NaturalizedInstance) => {
+    const viewCode = firstItem(instance.ViewCodeSequence);
+    return (
+      MAMMO_VIEW_BY_CODE[String(viewCode?.CodeValue)] ??
+      (viewCode?.CodeMeaning as string) ??
+      String(instance.ViewPosition ?? 'unknown')
+    );
+  },
+
+  /** The view code as `scheme:value`, for a hanging protocol to match. */
+  viewCode: (instance: NaturalizedInstance) => {
+    const viewCode = firstItem(instance.ViewCodeSequence);
+    return viewCode?.CodeValue
+      ? `${String(viewCode.CodingSchemeDesignator)}:${String(viewCode.CodeValue)}`
+      : undefined;
   },
 
   /**
    * Cardiac base-to-apex ordering — the UCalgary `sortVector`. Needs the
-   * ImagePositionPatient z coordinate and the PatientPosition sign convention, so
-   * it cannot be expressed as data: exactly the case named presets exist for.
+   * ImagePositionPatient z coordinate and the PatientPosition sign convention.
    */
-  ucalgaryCardiacSort: (instances: NaturalizedInstance[]) => {
-    const instance = instances[0];
-    const z = (instance?.ImagePositionPatient as number[] | undefined)?.[2];
-    const headFirst = !String(instance?.PatientPosition ?? 'HFS').startsWith(
+  cardiacSortVector: (instance: NaturalizedInstance) => {
+    const z = (instance.ImagePositionPatient as number[] | undefined)?.[2];
+    const headFirst = !String(instance.PatientPosition ?? 'HFS').startsWith(
       'FF'
     );
     const baseToApex = z === undefined ? 0 : headFirst ? -Number(z) : Number(z);
-    return { sortVector: [1, baseToApex] };
+    return [1, baseToApex];
   },
 };
 
@@ -233,7 +224,7 @@ const SAMPLE_SNIPPETS: Record<string, string> = {
           'Split scout / localizer images off into their own stack so they do ' +
           'not join the volume.',
         viewportTypes: ['stack'],
-        matches: { classifier: 'localizer' },
+        matches: { isLocalizer: true },
         groupBy: ['SeriesInstanceUID'],
       },
     },
@@ -248,8 +239,37 @@ const SAMPLE_SNIPPETS: Record<string, string> = {
           'One display set per run of same-kind instances, so img img clip img ' +
           'becomes three display sets instead of two.',
         viewportTypes: ['stack'],
-        matches: { attribute: 'Modality', equals: 'US' },
-        runBy: { condition: { attribute: 'NumberOfFrames', greaterThan: 1 } },
+        matches: { Modality: 'US' },
+        runBy: 'isMultiFrame',
+      },
+    },
+    null,
+    2
+  ),
+  'US: one display set for each sweep': JSON.stringify(
+    {
+      usTimeClusters: {
+        priority: -1,
+        description:
+          'Ultrasound: a gap of more than 20 seconds between frames starts a ' +
+          'new sweep, and each sweep becomes a display set. The gap applies to ' +
+          'this rule only.',
+        viewportTypes: ['stack'],
+        context: { timeClustersMaxGap: 20 },
+        matches: {
+          isStackImage: true,
+          Modality: 'US',
+          isMultiFrame: false,
+          sweepCount: { greaterThan: 1 },
+          sweepStart: { notNull: true },
+        },
+        groupBy: ['SeriesInstanceUID', 'sweepStart'],
+        sortBy: ['acquisitionSeconds'],
+        attributes: {
+          SeriesDescription: {
+            template: '{SeriesDescription} +{sweepOffset} s',
+          },
+        },
       },
     },
     null,
@@ -266,56 +286,50 @@ const SAMPLE_SNIPPETS: Record<string, string> = {
           'only splits MG on a coarse image-size bucket, which is identical ' +
           'across the four.',
         viewportTypes: ['stack'],
-        matches: {
-          all: [
-            { attribute: 'Modality', equals: 'MG' },
-            { attribute: 'Rows', exists: true },
-          ],
-        },
+        matches: { Modality: 'MG', Rows: { notNull: true } },
         // ViewPosition first for the vendors that send it; PatientOrientation is
         // the fallback that distinguishes CC from MLO when they do not
-        // (RCC P\L, RMLO P\FL, LCC A\R, LMLO A\FR). Both are flat attributes, so
-        // this rule needs nothing registered to run.
+        // (RCC P\L, RMLO P\FL, LCC A\R, LMLO A\FR). Both are DICOM keywords,
+        // so this rule needs no context entry of the host.
         groupBy: [
           'SeriesInstanceUID',
           'ImageLaterality',
           'ViewPosition',
           'PatientOrientation',
         ],
-        customAttributes: {
-          fromFirstInstance: {
-            imageLaterality: 'ImageLaterality',
-            patientOrientation: 'PatientOrientation',
-          },
+        attributes: {
+          imageLaterality: 'ImageLaterality',
+          patientOrientation: 'PatientOrientation',
         },
       },
     },
     null,
     2
   ),
-  'Mammo: the same split, views named (preset)': JSON.stringify(
+  'Mammo: the same split, views named (code entries)': JSON.stringify(
     {
       mammoViewSplit: {
         priority: -1,
         description:
           'As above, but each display set is also labelled with its view — ' +
           'mammoView "CC"/"MLO", descriptionName "RCC"/"RMLO"/"LCC"/"LMLO" — ' +
-          'read out of ViewCodeSequence by the named preset. A hanging protocol ' +
-          'can then select a viewport by view rather than by position.',
+          'read out of ViewCodeSequence by the mammoView code entry of the ' +
+          'context. A hanging protocol can then select a viewport by view ' +
+          'rather than by position.',
         viewportTypes: ['stack'],
-        matches: {
-          all: [
-            { attribute: 'Modality', equals: 'MG' },
-            { attribute: 'Rows', exists: true },
-          ],
-        },
+        matches: { Modality: 'MG', Rows: { notNull: true } },
         groupBy: [
           'SeriesInstanceUID',
           'ImageLaterality',
           'ViewPosition',
           'PatientOrientation',
         ],
-        customAttributes: { preset: 'mammoView' },
+        attributes: {
+          imageLaterality: 'ImageLaterality',
+          mammoView: 'mammoView',
+          viewCode: 'viewCode',
+          descriptionName: { template: '{ImageLaterality}{mammoView}' },
+        },
       },
     },
     null,
@@ -334,31 +348,22 @@ const SAMPLE_SNIPPETS: Record<string, string> = {
           'private tag, or a trace / ADC set) fall through to the standard ' +
           'rules and form a display set of their own.',
         viewportTypes: ['stack'],
-        series: [
-          {
-            name: 'isDiffusion',
-            gate: { attribute: 'Modality', equals: 'MR' },
-            scope: 'some',
-            when: { attribute: 'DiffusionBValue', exists: true },
-          },
-        ],
-        matches: {
-          all: [
-            { seriesFact: 'isDiffusion' },
-            { classifier: 'image' },
-            { attribute: 'DiffusionBValue', exists: true },
-          ],
+        context: {
+          // A series value: one instance of the series has a b-value.
+          isDiffusion: 'count(DiffusionBValue) > 0',
+          bValue: 'Number(DiffusionBValue)',
         },
-        groupBy: [
-          'SeriesInstanceUID',
-          { attribute: 'DiffusionBValue', number: true },
-        ],
-        compareInstances: { attribute: 'SliceLocation', number: true },
-        customAttributes: {
-          fromFirstInstance: {
-            SeriesDescription: {
-              template: '{SeriesDescription} b={DiffusionBValue}',
-            },
+        matches: {
+          Modality: 'MR',
+          isDiffusion: true,
+          isImage: true,
+          DiffusionBValue: { notNull: true },
+        },
+        groupBy: ['SeriesInstanceUID', 'bValue'],
+        sortBy: ['SliceLocation'],
+        attributes: {
+          SeriesDescription: {
+            template: '{SeriesDescription} b={DiffusionBValue}',
           },
         },
       },
@@ -512,8 +517,7 @@ function toKeyedRules(parsed: unknown): RawDisplaySetSelector {
 
 function compileSelector(): SplitRuleSet {
   return createDisplaySetSplitRules(buildSelector(), {
-    classifiers: DEMO_CLASSIFIERS,
-    customAttributePresets: DEMO_CUSTOM_ATTRIBUTE_PRESETS,
+    displaySetContext: DEMO_CONTEXT,
   });
 }
 
@@ -525,20 +529,7 @@ function describeGroupBy(rule: RawSplitRule): string {
     return 'SeriesInstanceUID (default)';
   }
   return rule.groupBy
-    .map((part) => {
-      if (typeof part === 'string') {
-        return part;
-      }
-      if ('join' in part) {
-        return part.parts
-          .map((sub) => ('attribute' in sub ? sub.attribute : 'value'))
-          .join('+');
-      }
-      if ('attribute' in part) {
-        return part.absent ? `${part.attribute}?` : part.attribute;
-      }
-      return 'value';
-    })
+    .map((part) => (typeof part === 'string' ? part : 'function'))
     .join(' / ');
 }
 
@@ -590,8 +581,8 @@ function ruleRow(
     meta.push(`viewports: ${rule.viewportTypes.join(', ')}`);
   }
   meta.push(`groupBy: ${describeGroupBy(rule)}`);
-  if (Array.isArray(rule.series) && rule.series.length) {
-    meta.push(`series facts: ${rule.series.map((f) => f.name).join(', ')}`);
+  if (rule.context && Object.keys(rule.context).length) {
+    meta.push(`context: ${Object.keys(rule.context).join(', ')}`);
   }
   if (origin !== 'standard') {
     meta.push(origin === 'added' ? 'added' : 'replaces the standard rule');
@@ -856,12 +847,11 @@ editorHint.innerText =
   'Paste rules keyed by rule id, each with a priority (below 0 runs before ' +
   'the standard rules; null excludes a rule), one rule with an "id" (it gets ' +
   'priority -1), or a customization merge command keyed by rule id ' +
-  '($set / $merge / $unset). Named safe functions available here: ' +
-  `classifiers ${Object.keys(DEMO_CLASSIFIERS)
+  '($set / $merge / $unset). A rule reads DICOM keywords and the names of ' +
+  'the display set context; this example adds ' +
+  `${Object.keys(DEMO_CONTEXT)
     .map((name) => `"${name}"`)
-    .join(', ')}; presets ${Object.keys(DEMO_CUSTOM_ATTRIBUTE_PRESETS)
-    .map((name) => `"${name}"`)
-    .join(', ')}.`;
+    .join(', ')} to the default context.`;
 rulesPanel.appendChild(editorHint);
 
 const sourcePickerRow = document.createElement('div');
@@ -1087,7 +1077,7 @@ async function loadServerSelector(path: string) {
   const doc = (document_ ?? {}) as {
     name?: string;
     rules?: unknown;
-    requires?: { customAttributePresets?: string[] };
+    requires?: { displaySetContext?: string[] };
   };
   const isDocument =
     !Array.isArray(document_) &&
@@ -1103,14 +1093,14 @@ async function loadServerSelector(path: string) {
     return;
   }
 
-  // A selector may name safe functions; if the host has not registered them,
-  // say so by name rather than letting compilation fail obscurely.
-  const missing = (doc.requires?.customAttributePresets ?? []).filter(
-    (name) => !(name in DEMO_CUSTOM_ATTRIBUTE_PRESETS)
+  // A selector may read code entries of the context; if the host has not
+  // registered them, say so by name before the compile reports the first one.
+  const missing = (doc.requires?.displaySetContext ?? []).filter(
+    (name) => !(name in DEMO_CONTEXT)
   );
   if (missing.length) {
     setStatus(
-      `${url} requires customAttributePresets not registered here: ${missing.join(
+      `${url} requires context entries not registered here: ${missing.join(
         ', '
       )}.`,
       true
