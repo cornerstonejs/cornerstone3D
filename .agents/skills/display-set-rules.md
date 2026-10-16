@@ -22,6 +22,10 @@ is in `packages/metadata/src/displayset/` (`displaySetContext.ts`,
 - An "or" is a context entry; the rule reads its name. `false` on a named
   boolean is "not". There is no `all`, `any`, `not`, `classifier`,
   `seriesFact`, rule `series` list or `compareInstances` data form.
+- Arithmetic reads a numeric string as a number, and gives no value when one
+  side has no value. `!`, `&&`, `||` read no value as `false`, and `&&`/`||`
+  give a boolean. `includes(X, v)` tests whole elements, like the operator;
+  `contains(X, 'text')` tests text.
 - Missing values have the DICOM meaning: absent is `undefined`; empty is
   `null`, `""`, `[]`; "no value" is either. `X == null` and `"X": null` are "no
   value"; `X == undefined` is "absent" only; `notNull` is the exact opposite of
@@ -128,8 +132,12 @@ URL customization modules), and the `context` of each rule.
 
 - A context entry can be a function `(instance, values) => value` (instance
   scope; `values.Name` reads any name).
-- The `function` of a group can be a function `(instances, { args })` or a
-  definition `{ compute, fields: { name: 'series' | 'instance' } }`.
+- A series code entry is `{ "function": fn }`, called `fn(instances, { args })`
+  with nothing else; give it a context value through an argument expression.
+  The `function` can also be a definition
+  `{ compute, fields: { name: 'series' | 'instance' } }`.
+- A loop through a code entry throws a `RuleCompileError` at the first read.
+- `deniedNames` (option) lists names that no rule can read.
 - A function passes through at every function place: `matches`, a test of a
   `matches` entry `(value, instance, context)`, a `groupBy` entry, `runBy`, a
   `sortBy` entry, a whole `attributes`, and one attribute value

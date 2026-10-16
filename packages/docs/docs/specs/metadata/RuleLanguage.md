@@ -68,9 +68,41 @@ The review of 14 October changed these user requirements: `RL-READ-3`,
 `RL-SCOPE-8`. The review added the groups `RL-VALUE` and `RL-CTX`.
 `RL-SCOPE-9` (the deny list) did not change.
 
+The review of the implementation changed the meaning of three more user
+requirements:
+
+- `RL-EXT-3`: a named attribute no longer computes a value over a whole
+  display set. An `{ "expression" }` value in `attributes` does.
+- `RL-SCOPE-7`: the compile checks a name against the DICOM dictionary and the
+  context, and not against an allow list.
+- `RL-ERR-3`: a loop through a code entry gives an error at the first read.
+
+Other user requirements changed their words only, because the scopes went
+away: `RL-READ-1`, `RL-READ-2`, `RL-SHARE-1`, `RL-SHARE-3`, `RL-SHARE-4`,
+`RL-EXT-2`, `RL-SCOPE-2` to `RL-SCOPE-5`, `RL-CODE-5`, `RL-SAFE-2` and
+`RL-ERR-2`. `RL-READ-7`, `RL-CODE-6` and `RL-ERR-4` are new.
+
 The implementation groups `RL-REG` (registry) and `RL-ENV` (scopes and
 access) of the earlier draft are removed. The context of `RL-CTX` and
 `RL-CTXI` replaces them.
+
+The earlier revisions of the pull request had these forms. They are removed,
+and no release had them:
+
+- The condition forms `all`, `any`, `not`, `classifier`, `seriesFact`, the
+  attribute form `{ attribute, equals }`, and the expression keys and the
+  comparison keys of `matches` (`"NumberOfFrames >": 1`).
+- The rule `series` list, and the `context.series.*` paths.
+- The option `classifiers`. A code entry of the context replaces a classifier.
+- The option `customAttributePresets` and the `customAttributes` recipe
+  (`set`, `fromFirstInstance`, `fromContext`, `fromOptions`, `preset`).
+  `attributes` and the code entries of the context replace them.
+- The value forms `{ join, parts }`, `{ attribute, bucket }`,
+  `{ attribute, number }`, `{ attribute, absent }` and `{ condition }`.
+- The `compareInstances` data forms, also `{ attribute, descending: true }`.
+  A descending order is a `{ "sortFunction" }` or a function.
+- The aggregates `some`, `every`, `minOf`, `maxOf`, `sumOf` and
+  `count(list, expr)` (`RL-EXPR-1`).
 
 ## Definitions
 
@@ -166,9 +198,10 @@ compile.
 
 ### Absent and empty values (RL-VALUE)
 
-- **RL-VALUE-1** The rules use the DICOM meaning of a missing value, and not
-  the JavaScript meaning. `undefined` is absent. `null`, `""` and `[]` are
-  empty. "No value" is absent or empty.
+- **RL-VALUE-1** The rules use the DICOM meaning of no value, and not the
+  JavaScript meaning. `undefined` is absent. `null`, `""` and `[]` are empty.
+  An array whose elements all have no value (`[""]`, `[null]`) is also empty.
+  "No value" is absent or empty.
 - **RL-VALUE-2** `X == null` and `"X": null` hold when `X` has no value.
   `X != null` and `{ "notNull": true }` are their exact opposites.
 - **RL-VALUE-3** `X == undefined` holds only when `X` is absent. So an author
@@ -184,6 +217,13 @@ compile.
   `!==` are compile errors.
 - **RL-VALUE-6** An expression can compare text without case: `lower(text)`
   gives the text in lowercase.
+- **RL-VALUE-7** Arithmetic (`+`, `-`, `*`, `/`, `%`) reads a numeric string
+  as a number, so `"2" + 1` is `3`. When one side has no value or is not a
+  finite number, the result has no value. So `null * 512` has no value, and a
+  test such as `{ "lessThan": 100 }` on it fails.
+- **RL-VALUE-8** `!`, `&&`, `||` and `?:` read no value as `false`. `&&` and
+  `||` give `true` or `false`. So `"isTall": "Rows && Rows > 1000"` is `false`
+  when `Rows` is absent, and `"isTall": false` holds.
 
 ### The context (RL-CTX)
 
@@ -206,7 +246,12 @@ compile.
   does not hold: a private tag, a vendor attribute, or a synthetic attribute
   such as `imageId`. A declaration can record `vr` and `vm`.
 - **RL-CTX-7** No entry declares a scope. The author can know the scope from
-  the entry (`RL-CTXI-4`).
+  the entry:
+  - A fixed value and a group have one value for the series.
+  - A declaration and a code entry have one value for each instance.
+  - An expression or a template that reads an instance value outside of
+    `min`, `max`, `sum` or `count` has one value for each instance.
+  - Every other entry has one value for the series.
 - **RL-CTX-8** A site changes one entry by its name (`"dxCrMaxImages":
 { "$set": 20 }`). The site does not copy the expression text of a rule into
   a `$merge`.
@@ -232,8 +277,7 @@ compile.
 - **RL-EXT-2** A rule uses a named attribute at every place that accepts a
   name: a condition key, a grouping entry, a sort entry, a display set
   attribute, a template and an expression.
-- **RL-EXT-3** A named attribute can read the subject and the other names. A
-  group can compute a value over a whole series.
+- **RL-EXT-3** A named attribute can read the subject and the other names of the context. A group can compute a value over a whole series. A value over the instances of a display set is an `{ "expression" }` value in `attributes`.
 - **RL-EXT-4** The author cannot see a difference between a named attribute of
   the host and a built-in named attribute. The syntax is the same.
 - **RL-EXT-5** Each consumer supplies its own subjects. A host that shares one
@@ -245,7 +289,8 @@ compile.
 - **RL-SCOPE-1** The reader of a rule sees from the first letter of a name
   where the value comes from. A name with an uppercase first letter is a tag
   keyword, and reads the instance. A name with a lowercase first letter is a
-  context name. A context name cannot be a tag keyword, so a context never
+  context name. The one exception is the lowercase DICOM keyword `dBdt`, which
+  is a tag keyword. A context name cannot be a tag keyword, so a context never
   hides a value of the instance.
 - **RL-SCOPE-2** The consumer, and not the rule language, names the built-in
   values of its rules. The host can add context entries.
@@ -261,10 +306,7 @@ compile.
 - **RL-SCOPE-6** A rule reads a value of the display set (`splitNumber`,
   `sopClassUids`) only in `attributes`. A read of such a value at another
   place is a compile error that names the place.
-- **RL-SCOPE-7** An unknown name is a compile error that names the rule, the
-  place and the name. So a misspelt name (`BodyPartExamind`, `sweepStrat`)
-  fails at compile time. A field of a group that the group does not declare is
-  a compile error.
+- **RL-SCOPE-7** A name in a rule is a DICOM keyword, a context name or a declared attribute. Any other name is a compile error that names the rule, the place and the name. So a misspelt name (`BodyPartExamind`, `sweepStrat`) fails at compile time. A field that a group does not declare is a compile error. A context name that is a DICOM keyword is a compile error.
 - **RL-SCOPE-8** A rule reads an attribute that the dictionary does not hold
   only through a declaration (`RL-CTX-6`). A rule cannot read a hex tag
   directly. There is no optional access with `?`.
@@ -280,9 +322,9 @@ compile.
   other places of the same rule.
 - **RL-CODE-3** An extension can write a whole rule as code, with the hooks of
   the consumer, and put that rule in the same rule set as data rules.
-- **RL-CODE-4** An expression is permitted in two places only: a context
-  entry, and the `{ "expression": "..." }` form of `attributes`. The second
-  place is for a value over the instances of a display set.
+- **RL-CODE-4** The compile permits an expression in two places only: a
+  context entry, and the `{ "expression": "..." }` form of `attributes`. The
+  second place is for a value over the instances of a display set.
 - **RL-CODE-5** An expression can read a named attribute by its name.
 - **RL-CODE-6** A split that needs complex logic is a new series function in
   code. The context then gives names to its result fields.
@@ -302,8 +344,7 @@ compile.
   path.
 - **RL-ERR-2** An unknown name gives an error that names the name, and says
   how to declare an attribute that the dictionary does not hold.
-- **RL-ERR-3** The compile finds every error of the rule data before the
-  consumer uses the rule. A loop of context entries is a compile error.
+- **RL-ERR-3** The compile finds every error of the rule data before the consumer uses the rule. A loop of data entries is a compile error. A loop that goes through a code entry gives an error at the first read, and the error names each entry of the loop. The other check at run time is the deny list check (`RL-SCOPE-9`).
 - **RL-ERR-4** A string in `attributes` that is not a name (`"SCOUT"`) is a
   compile error. The error names the template form of fixed text.
 
@@ -359,6 +400,10 @@ packages/metadata/src/
   compileExpression(source, options?: CompileExpressionOptions): CompiledExpression;
   collectIdentifiers(node): string[];
   collectReads(node, { aggregates? }): ExpressionRead[];
+  class RuleCompileError extends Error {
+    readonly definition: string; // e.g. 'raw display set selector'
+    readonly path: string;       // e.g. "rule 'r'.matches.Modality"
+  }
 
   // split consumer
   createDisplaySetSplitRules(selector?, options?: CreateDisplaySetSplitRulesOptions): SplitRuleSet;
@@ -379,6 +424,8 @@ packages/metadata/src/
     displaySetContext?: Record<string, ContextEntry>;
     /** Series functions, over planeGeometry and timeClusters. */
     seriesFunctions?: Record<string, SeriesFunction | SeriesFunctionDefinition>;
+    /** Names that no rule can read (RL-SCOPE-9, RL-NAME-7). */
+    deniedNames?: readonly string[];
     /** Comparators for a sortBy entry { sortFunction: name }. */
     sortFunctions?: Record<string, Comparator>;
   };
@@ -407,6 +454,17 @@ packages/metadata/src/
 - **RL-NAME-5** The error message of an unknown name says how to declare the
   attribute. For a hex tag, the message names the declaration form. In
   `attributes`, the message also names `{ "template": "..." }`.
+- **RL-NAME-6** A keyword or a declaration has no field: `{Modality.foo}` and
+  `Modality.foo` are compile errors. An item of a sequence is read with an
+  index (`ViewCodeSequence[0].CodeValue`). An index on a group
+  (`timeClusters['start']`) is a compile error; a rule reads a group field by
+  path.
+- **RL-NAME-7** The deny list (`RL-SCOPE-9`) is the option `deniedNames` of
+  `createDisplaySetSplitRules`. A rule or a context entry that names a denied
+  name is a compile error. The `values` of a code entry give `undefined` for a
+  denied name, and the logger gives a warning. A code entry also gets the
+  instance itself, so the host must not register a code entry that reads a
+  denied attribute from the instance.
 
 ### Conditions (RL-COND)
 
@@ -462,19 +520,23 @@ packages/metadata/src/
   an entry gives `0` or `NaN`.
 - **RL-SORT-2** An entry is one of these forms:
 
-  | Form                      | Order                                                                                                             |
-  | ------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-  | `"Name"` or `"name"`      | ascending by the value of the name: numeric when both values are finite numbers, else by text; no value gives `0` |
-  | `{ "sortFunction": "x" }` | the named sort function `x` of `options.sortFunctions`; an unknown name is a compile error                        |
-  | a function                | passes through (`RL-FN-1`)                                                                                        |
+  | Form                      | Order                                                                                                                                                          |
+  | ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+  | `"Name"` or `"name"`      | ascending by the value of the name: numeric when both values are finite numbers, else by text; an instance with no value goes after the instances with a value |
+  | `{ "sortFunction": "x" }` | the named sort function `x` of `options.sortFunctions`; an unknown name is a compile error                                                                     |
+  | a function                | passes through (`RL-FN-1`)                                                                                                                                     |
 
 ### Expressions (RL-EXPR)
 
 - **RL-EXPR-1** The grammar of the expression language stays as it is, with
-  these changes: `===` and `!==` are compile errors; `<`, `<=`, `>` and `>=`
-  use `toFinite`; the new helper `lower`; and the aggregates of `RL-EXPR-2`.
-  The aggregates `some`, `every`, `minOf`, `maxOf`, `sumOf` and
-  `count(list, expr)` are removed.
+  these changes: `===` and `!==` are compile errors; `<`, `<=`, `>`, `>=` and
+  the arithmetic operators use `toFinite` (`RL-VALUE-7`); `!`, `&&`, `||` and
+  `?:` read no value as `false` (`RL-VALUE-8`); the new helpers `lower` and
+  `contains`; and the aggregates of `RL-EXPR-2`. The helpers `includes`,
+  `contains`, `startsWith` and `endsWith`, and the operator `in`, use the code
+  of the operators of the same names, so they give the same results. The
+  aggregates `some`, `every`, `minOf`, `maxOf`, `sumOf` and
+  `count(list, expr)` do not exist any more.
 - **RL-EXPR-2** Where the place gives a list of instances (the `over` option),
   `min(x)`, `max(x)`, `sum(x)`, `count(x)` and `count()` run over the list.
   The argument is evaluated one time for each instance. An instance whose
@@ -486,8 +548,15 @@ packages/metadata/src/
   `Number`, and `min` and `max` with two or more arguments) give `undefined`
   for a value that is not a finite number, and never `NaN`.
 - **RL-EXPR-4** `collectReads` gives each read of an identifier, with the field
-  of a direct member access (`timeClusters.start`) and whether the read is in
-  the argument of an aggregate.
+  of a direct member access (`timeClusters.start`), an index access
+  (`indexed`), and whether the read is in the argument of an aggregate.
+- **RL-EXPR-5** An aggregate in an entry with the instance scope
+  (`"NumberOfFrames == max(NumberOfFrames)"`) runs over the series one time for
+  each instance: the cost grows with the square of the number of instances. Put
+  the aggregate in its own series entry, and read that name.
+- **RL-EXPR-6** A compiled expression gives one warning and `undefined` for an
+  error at run time, except for a `RuleCompileError`, which goes to the
+  caller.
 
 ### The context (RL-CTXI)
 
@@ -572,9 +641,23 @@ packages/metadata/src/
   of its rule is in its key.
 - **RL-CTXI-8** Each compiled rule has a `series` hook. The first hook of a
   split adds the fact `displaySetContext`: the instances of the series and a
-  cache for each compiled rule set. A series value is computed at the first
-  read, one time for each split. When the series gets new instances, the next
-  split computes the value again.
+  cache for each compiled rule set. The runtime computes a series value at the
+  first read, one time for each split. When the series gets new instances, the
+  next split computes the value again. `orderInstancesForRule` with
+  `options.series` also computes the values again, over the instances of the
+  split and the new instances.
+- **RL-CTXI-10** A hook that a host calls directly, with no split context,
+  computes the values over the instances of the call only: one instance for
+  `matches`, the pair for a comparator, the group for `customAttributes`. So
+  `seriesInstanceCount` is `1` in a direct call of `matches`. The logger
+  records the first such call at the debug level.
+- **RL-CTXI-11** The runtime records the entries that are in progress. A read
+  of an entry that is in progress, for the same instance and at the same level
+  (the global entry, or the replacement of a rule), is a loop. The runtime then
+  throws a `RuleCompileError` that names each entry of the loop, in order:
+  `first -> second -> third -> first`. A read of its own name by a rule entry
+  resolves to the global level, so it is not a loop. Each call of a code entry
+  gets a new `values` wrapper.
 - **RL-CTXI-9** The logger `cs3d.metadata.displayset.displaySetContext` records
   each replacement and each new name of a rule context at the debug level.
 
@@ -588,9 +671,11 @@ packages/metadata/src/
   code entries of the context and the functions of the rule language
   (`RL-SAFE-1`). Only host code puts a function into a rule or a context.
 - **RL-FN-3** A context entry in code is a function `(instance, values)`, with
-  the instance scope. `values` reads every name. The `function` of a group can
-  be a function `(instances, { args })`, or a definition
-  `{ compute, fields }`.
+  the instance scope. `values` reads every name. A series entry in code is a
+  group `{ "function": fn }`. The runtime calls `fn(instances, { args })`: the
+  instances of the series and the evaluated `args`, and nothing else. A series
+  code entry reads another context value only through an argument expression.
+  The `function` of a group can also be a definition `{ compute, fields }`.
 - **RL-FN-4** An attribute value in code is a function `(instances, values)`.
   `instances` are the instances of the display set, in their sorted order.
 - **RL-FN-5** One compile path handles the JSON form and the code form.
@@ -869,7 +954,11 @@ priority, and keeps the function of `groupBy`.
 
 1. **Hanging protocol migration.** The later OHIF pull request must state the
    change of `greaterThan` from `>=` to `>`, and of `lessThan` from `<=` to
-   `<`, as a change of user-facing behaviour, with a migration note.
+   `<`, as a change of the behaviour that the user sees, with a migration
+   note. Two more operator changes go in that note: `containsAll` accepts a
+   scalar and a single value and compares with `==`, where `validator.js`
+   needs two arrays; and the operand wrappers of `validator.js`
+   (`{ "value": x }`, `[x]` for `greaterThan`) are compile errors.
 2. **JSON Schema.** The schema can list the tag keywords, the pattern of a
    context name, and the `vr` and `vm` of each declaration. The schema can
    then check an operator against the VR (for example `greaterThan` on a text

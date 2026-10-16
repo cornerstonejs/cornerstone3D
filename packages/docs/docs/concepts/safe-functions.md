@@ -47,6 +47,9 @@ The safe functions use the DICOM meaning, and not the JavaScript meaning:
 | `undefined`, or no property | absent |
 | `null`, `""` or `[]`        | empty  |
 
+An array whose elements all have no value (`[""]`, `[null]`) is also empty, as
+DICOM JSON can give an empty value in that form.
+
 "No value" means absent or empty. `safeFunctions/values.ts` exports the helpers
 `isAbsent`, `isEmpty`, `hasNoValue`, `toFinite` and `looseEquals`.
 
@@ -57,7 +60,13 @@ The safe functions use the DICOM meaning, and not the JavaScript meaning:
   (absent).
 - `<`, `<=`, `>`, `>=`, `greaterThan`, `lessThan` and `range` give `false` when
   the value has no value, or is not a finite number. A numeric string is a
-  number, so `"2" > 1` is `true`. A missing value never compares as `0`.
+  number, so `"2" > 1` is `true`. A value with no value never compares as `0`.
+- `+`, `-`, `*`, `/` and `%` read a numeric string as a number, so `"2" + 1` is
+  `3`. When one side has no value or is not a finite number, the result has no
+  value: `null * 512` is `undefined`, and not `0`. Use a template literal to
+  join text.
+- `!`, `&&`, `||` and `?:` read no value as `false`. `&&` and `||` give `true` or
+  `false`, so `Rows && Rows > 1000` is `false` when `Rows` is absent.
 - `==` is the only equality, and `"1" == 1` is `true`. `===` and `!==` are
   compile errors.
 
@@ -155,9 +164,13 @@ recursive-descent parser read it (`safeFunctions/expression`).
   the first argument unless the place gives a different one.
 - **Member access**: the parser rejects `__proto__`, `prototype` and
   `constructor`, so an expression cannot get to the prototype chain.
-- **Helpers**: `defined`, `includes`, `startsWith`, `endsWith`, `lower`, `abs`,
-  `min`, `max`, `round`, `floor`, `ceil`, `Number` and `String`. Nothing else
-  can be called: `alert(1)` and `a.toString()` are syntax errors. The number
+- **Helpers**: `defined`, `includes`, `contains`, `startsWith`, `endsWith`,
+  `lower`, `abs`, `min`, `max`, `round`, `floor`, `ceil`, `Number` and
+  `String`. Nothing else can be called: `alert(1)` and `a.toString()` are
+  syntax errors. `includes`, `contains`, `startsWith`, `endsWith` and the
+  operator `in` give the same results as the operators of the same names:
+  `includes(ImageType, 'LOCALIZER')` tests whole elements, and
+  `contains(SeriesDescription, 'T1')` tests text. The number
   helpers give `undefined` for a value that is not a finite number, and never
   `NaN`.
 - **Aggregates**: where the place gives a list of subjects (the `over` option),

@@ -594,9 +594,8 @@ changes the threshold.
 #### `sortBy`
 
 - A string is a tag keyword or a context name. The order is ascending: numeric
-  when both values are finite numbers, else by text. A value with no value
-  gives `0`, which is "no opinion" (see
-  [Who decides instance order](#who-decides-instance-order)).
+  when both values are finite numbers, else by text. An instance with no value
+  goes after the instances with a value.
 - `{ "sortFunction": "name" }` is a named comparator of
   `options.sortFunctions`. An unknown name is a compile error.
 - A function passes through as is.
@@ -770,9 +769,24 @@ sweep does not match.
 #### Code entries
 
 In code, an entry can be a function `(instance, values) => value`, with the
-instance scope. `values` reads every name. The `function` of a group can be a
-function `(instances, { args }) => result`, or a definition
-`{ compute, fields }`. A split that needs complex logic is a new series
+instance scope. `values` reads every name; each call gets a new `values`. A
+series entry in code is a group `{ "function": fn }`: the runtime calls
+`fn(instances, { args })` with the instances of the series and the evaluated
+arguments, and nothing else. A series code entry reads another context value
+only through an argument expression. The `function` of a group can also be a
+definition `{ compute, fields }`.
+
+The compile cannot see the names that a code entry reads. So a loop through a
+code entry (`first` reads `second`, which reads `first`) gives a
+`RuleCompileError` at the first read, and the error names each entry of the
+loop. A rule entry in code that reads its own name gets the global entry, as a
+data entry does.
+
+`deniedNames` is the deny list of the host, for example
+`['PatientName', 'PatientID']`. A rule or a context entry that names a denied
+name is a compile error, and the `values` of a code entry give `undefined` for
+it. A code entry also gets the instance itself, so do not register a code
+entry that reads a denied attribute from the instance. A split that needs complex logic is a new series
 function in code, and the context then gives names to its result fields. A
 selector that reads a code entry is still JSON, but the host that compiles it
 must register the same entry.
@@ -841,7 +855,10 @@ system that splits the series. `orderInstancesForRule` gives the whole
 composition, so that a host that orders a display set again (after new
 instances arrive) gets the same order. Give the series facts of the group when
 you do this. A `sortBy` name such as `sliceDistance` reads a value of the whole
-split, and a value computed from the group alone can be different:
+split, and a value computed from the group alone can be different. When the
+list holds new instances, `orderInstancesForRule` computes the context values
+again over the instances of the split and the new instances, so the new
+instances take their correct places:
 
 ```ts
 const [group] = groupInstancesBySplitRules(instances, splitRules);
