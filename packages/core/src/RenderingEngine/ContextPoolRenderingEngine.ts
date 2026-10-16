@@ -351,15 +351,15 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
     }
 
     // Render all viewports synchronously
-    const eventDetails = viewportsToRender.map((viewport) => {
-      const eventDetail = this.renderViewportUsingCustomOrVtkPipeline(viewport);
-      viewport.setRendered();
-      this._needsRender.delete(viewport.id);
-      return eventDetail;
-    });
+    const eventDetails = viewportsToRender.map((viewport) =>
+      this._renderFlaggedViewport(viewport, (vp) =>
+        this.renderViewportUsingCustomOrVtkPipeline(vp)
+      )
+    );
 
     this._animationFrameSet = false;
     this._animationFrameHandle = null;
+    this._warnIfRequestsLeftAfterFrame();
 
     // Trigger all events after rendering is complete
     eventDetails.forEach((eventDetail) => {
