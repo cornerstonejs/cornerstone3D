@@ -6,6 +6,8 @@ import {
   ImageVolume,
 } from '@cornerstonejs/core';
 import { getSegmentation } from '../../stateManagement/segmentation/getSegmentation';
+import { getLabelmaps } from '../../stateManagement/segmentation/labelmapModel';
+import { getOrCreateDimensionGroupLabelmapVolume } from '../../stateManagement/segmentation/labelmapModel/dimensionGroupLabelmapVolume';
 import type {
   LabelmapSegmentationDataStack,
   LabelmapSegmentationDataVolume,
@@ -28,6 +30,15 @@ function getOrCreateSegmentationVolume(
 
     if (segVolume) {
       return segVolume;
+    }
+  }
+
+  // A labelmap of a 4D source has one labelmap image for each source frame;
+  // its volume is the one of the time point that the source shows now.
+  for (const layer of getLabelmaps(getSegmentation(segmentationId))) {
+    const dimensionGroupVolume = getOrCreateDimensionGroupLabelmapVolume(layer);
+    if (dimensionGroupVolume) {
+      return dimensionGroupVolume;
     }
   }
 

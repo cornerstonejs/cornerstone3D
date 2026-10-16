@@ -89,6 +89,8 @@ function generateToolState(
  *   defaults to the cornerstone image loader.
  * @param [options.concurrency] - Optional max number of SEG frames fetched/decoded
  *   concurrently. Defaults to the loader's own default (16) when omitted.
+ * @param [options.voxelRepresentation] - Optional voxel representation of the
+ *   labelmap images, for example RLE for the many frames of a 4D series.
  */
 function createFromDicomSegImageId(
   referencedImageIds,
@@ -101,6 +103,7 @@ function createFromDicomSegImageId(
     getFrameImageId = undefined,
     decodeImageData = undefined,
     concurrency = undefined,
+    voxelRepresentation = undefined,
   }
 ) {
   return createLabelmapsFromSegImageIds(
@@ -113,6 +116,7 @@ function createFromDicomSegImageId(
       frameImageIds,
       getFrameImageId,
       decodeImageData,
+      voxelRepresentation,
       concurrency,
     }
   );

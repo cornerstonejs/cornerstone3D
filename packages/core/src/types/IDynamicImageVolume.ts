@@ -21,6 +21,11 @@ interface IDynamicImageVolume extends IImageVolume {
   get numDimensionGroups(): number;
 
   /**
+   * The imageIds of the active dimension group
+   */
+  getCurrentDimensionGroupImageIds(): string[];
+
+  /**
    * Scroll through dimension groups, handling wrapping at start/end
    * @param delta - The number of dimension groups to scroll by (positive or negative)
    */

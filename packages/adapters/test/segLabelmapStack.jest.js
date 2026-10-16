@@ -38,6 +38,7 @@ const {
   datasetToPart10Buffer,
   firstItem,
 } = require('./helpers/segRoundTrip');
+const { metaData } = require('@cornerstonejs/metadata');
 
 const SLICE_COUNT = 8;
 const STACK_ID_TAG = 0x00209056;
@@ -72,8 +73,43 @@ function exportStack(stackOptions, exportOptions) {
   return { stack, dataset };
 }
 
+/**
+ * Exports a time series of SLICE_COUNT images in two time points, with the
+ * position of each slice from `positionForSlice`. The 4D split reads the
+ * TemporalPositionIdentifier from the global metadata provider.
+ */
+function exportTimeSeries(positionForSlice) {
+  const temporalPosition = (type, imageId) =>
+    type === 'TemporalPositionIdentifier'
+      ? Math.floor(Number(imageId.split('-').pop()) / 4) + 1
+      : undefined;
+  metaData.addProvider(temporalPosition, 10000);
+  const stackOptions = {
+    positionForSlice,
+    instanceAttributes: { NumberOfTemporalPositions: 2 },
+  };
+  const stack = makeReferencedStack(SLICE_COUNT, stackOptions);
+  const planeProvider = (type, imageId) =>
+    type === 'imagePlaneModule'
+      ? stack.metadataProvider.get(type, imageId)
+      : undefined;
+  metaData.addProvider(planeProvider, 10000);
+  try {
+    return exportStack(stackOptions);
+  } finally {
+    metaData.removeProvider(temporalPosition);
+    metaData.removeProvider(planeProvider);
+  }
+}
+
 /** The stack rules of a LABELMAP SEG, for frames on slices 2 and 5. */
-function expectStack(dataset) {
+function expectStack(
+  dataset,
+  frameContents = [
+    ['1', 1, [1, 1]],
+    ['1', 2, [1, 2]],
+  ]
+) {
   const perFrame = asList(dataset.PerFrameFunctionalGroupsSequence);
   const groups = [
     firstItem(dataset.SharedFunctionalGroupsSequence),
@@ -96,10 +132,7 @@ function expectStack(dataset) {
         firstItem(group.FrameContentSequence);
       return [StackID, InStackPositionNumber, DimensionIndexValues];
     })
-  ).toEqual([
-    ['1', 1, [1, 1]],
-    ['1', 2, [1, 2]],
-  ]);
+  ).toEqual(frameContents);
   expect(
     perFrame.map(
       (group) =>
@@ -114,15 +147,19 @@ describe('LABELMAP SEG export as a stack', () => {
     expectStack(exportStack({}, { isVolumetric: false }).dataset);
   });
 
-  it('writes a stack for one time point of a 4D series', () => {
-    // The positions repeat in the other time points, so only the source
-    // references identify the time point.
-    const { dataset } = exportStack({
-      instanceAttributes: {
-        NumberOfTimeSlices: 40,
-        SeriesType: ['DYNAMIC', 'IMAGE'],
-      },
-    });
+  it('writes one stack for each time point of a 4D series', () => {
+    // Two time points of four positions; slice 2 is on time point 1, slice 5
+    // on time point 2. The positions repeat, so only the source references
+    // identify the time point.
+    const { dataset } = exportTimeSeries((slice) => [0, 0, slice % 4]);
+    expectStack(dataset, [
+      ['1', 1, [1, 1]],
+      ['2', 1, [2, 1]],
+    ]);
+  });
+
+  it('writes one stack for a time series of one position', () => {
+    const { dataset } = exportTimeSeries(() => [0, 0, 0]);
     expectStack(dataset);
   });
 

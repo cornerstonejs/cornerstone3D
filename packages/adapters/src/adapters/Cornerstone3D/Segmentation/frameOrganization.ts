@@ -1,4 +1,5 @@
 import { Enums } from '@cornerstonejs/core';
+import { utilities as metadataUtilities } from '@cornerstonejs/metadata';
 import { getSourceFrame } from './sourceFrame';
 
 const { MetadataModules } = Enums;
@@ -63,4 +64,37 @@ export function getFrameOrganization(
     return !position || !orientation;
   });
   return isStack ? 'stack' : 'volume';
+}
+
+/**
+ * The StackID of each frame image of a stack LABELMAP SEG: the 1-based time
+ * point of its source image, when the source images of the segmentation are a
+ * 4D series (a volume at each time point), else `1`. A SEG of a 4D series thus
+ * has one stack for each time point that has segment data, and a reader places
+ * each frame on its own time point. A time series of one image position, for
+ * example an ultrasound cine, is one stack.
+ *
+ * @param sourceImages - All source images of the segmentation, for example
+ *   all time points of a 4D series; splitImageIdsBy4DTags splits them.
+ * @param frameImages - The source image of each SEG frame.
+ */
+export function getFrameStackIds(
+  sourceImages: Array<{ imageId?: string }>,
+  frameImages: Array<{ imageId?: string }>
+): string[] {
+  const { imageIdGroups: timePoints } = metadataUtilities.splitImageIdsBy4DTags(
+    sourceImages.map(({ imageId }) => imageId)
+  );
+  const timePointByImageId = new Map<string, number>();
+  if (
+    timePoints.length > 1 &&
+    timePoints.every((imageIds) => imageIds.length > 1)
+  ) {
+    timePoints.forEach((imageIds, index) =>
+      imageIds.forEach((imageId) => timePointByImageId.set(imageId, index + 1))
+    );
+  }
+  return frameImages.map(({ imageId }) =>
+    String(timePointByImageId.get(imageId) ?? 1)
+  );
 }

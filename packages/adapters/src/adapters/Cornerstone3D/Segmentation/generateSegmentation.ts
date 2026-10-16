@@ -26,7 +26,7 @@ import {
   toFiniteVector,
 } from './sourceFrame';
 import type { SourceFrame } from './sourceFrame';
-import { getFrameOrganization } from './frameOrganization';
+import { getFrameOrganization, getFrameStackIds } from './frameOrganization';
 import type { FrameOrganization } from './frameOrganization';
 import {
   IN_STACK_POSITION_DIMENSION,
@@ -470,11 +470,13 @@ function applyLabelmapPixelMeasures(
  * groups disagree with the encoded PixelData. These checks run before the
  * pixel data is encoded. Error messages give 1-based frame numbers.
  *
- * The `stack` organization (see FrameOrganization) writes one stack in source
+ * The `stack` organization (see FrameOrganization) writes stacks in source
  * order, with no Frame of Reference, no plane macros and no slice spacing.
  *
  * @param sourceImages - The full source series, for the slice spacing. Empty
  *   when not all source images are loaded.
+ * @param stackIds - The StackID of each frame for the `stack` organization,
+ *   for example the time point of a 4D source (see getFrameStackIds).
  */
 function fillLabelmapSegmentation(
   segmentation,
@@ -483,7 +485,8 @@ function fillLabelmapSegmentation(
   images,
   options: Options = {},
   sourceImages = images,
-  organization: FrameOrganization = 'volume'
+  organization: FrameOrganization = 'volume',
+  stackIds: string[] = images.map(() => '1')
 ) {
   const isStack = organization === 'stack';
   const labelmap3DArray = toLabelmap3DArray(inputLabelmaps3D);
@@ -570,7 +573,7 @@ function fillLabelmapSegmentation(
   } = isStack
     ? {
         dimensions: [STACK_ID_DIMENSION, IN_STACK_POSITION_DIMENSION],
-        frameContents: getStackFrameContents(frames.length),
+        frameContents: getStackFrameContents(stackIds),
         orientations: [],
         normals: [],
         frameOrientations: frames.map(() => 0),
@@ -826,7 +829,13 @@ function generateSegmentation(
     // An image that is not loaded looks like a gap, so the slice spacing
     // needs the full source series.
     images.every((image) => image?.imageId) ? images : [],
-    organization
+    organization,
+    organization === 'stack'
+      ? getFrameStackIds(
+          images.filter((image) => image?.imageId),
+          filteredImages
+        )
+      : undefined
   );
 
   const predecessorImageId = options?.predecessorImageId;
