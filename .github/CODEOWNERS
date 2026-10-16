@@ -22,6 +22,9 @@
 
 /.github/                                        @jbocce @sedghi @wayfarer3130
 
+# This prompt controls the comments and labels that the workflow publishes.
+/.agents/skills/issue-triage.md                   @jbocce @sedghi @wayfarer3130
+
 # ── Self-hosted runner ────────────────────────────────────────────────────────
 # Code and configuration that decide what executes on the shared self-hosted
 # "nashua" box. The `gate` job of .github/workflows/playwright.yml and
