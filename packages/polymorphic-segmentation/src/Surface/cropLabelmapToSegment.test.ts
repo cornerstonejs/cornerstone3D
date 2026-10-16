@@ -108,4 +108,20 @@ describe('cropLabelmapToSegment', () => {
     expect(cropped.scalarData).toBeInstanceOf(Uint16Array);
     expect(cropped.dimensions).toEqual([3, 3, 3]);
   });
+
+  it('keeps segment indices above 255 from a plain array', () => {
+    const data = new Array(27).fill(0);
+    data[13] = 300;
+
+    const cropped = cropLabelmapToSegment(
+      data,
+      [3, 3, 3],
+      [1, 1, 1],
+      [0, 0, 0],
+      IDENTITY,
+      300
+    );
+
+    expect(cropped.scalarData[13]).toBe(300);
+  });
 });

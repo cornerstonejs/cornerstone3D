@@ -70,9 +70,10 @@ export function cropLabelmapToSegment(
   ) as Types.Point3;
   const [croppedWidth, croppedHeight, croppedDepth] = croppedDimensions;
 
-  // Keep the labelmap's voxel type, so segment indices above 255 survive.
+  // Keep the labelmap's voxel type, so segment indices above 255 survive. A
+  // plain array has no voxel type; the worker reads voxels as 32-bit integers.
   const ArrayType = (
-    ArrayBuffer.isView(scalarData) ? scalarData.constructor : Uint8Array
+    ArrayBuffer.isView(scalarData) ? scalarData.constructor : Int32Array
   ) as new (length: number) => Types.PixelDataTypedArray;
   const croppedScalarData = new ArrayType(
     croppedWidth * croppedHeight * croppedDepth
