@@ -21,7 +21,13 @@ export default function checkOrientation(
 
   const iopRaw =
     sharedImageOrientationPatient ||
-    PerFrameFunctionalGroups.PlaneOrientationSequence.ImageOrientationPatient;
+    PerFrameFunctionalGroups?.PlaneOrientationSequence?.ImageOrientationPatient;
+
+  // A SEG without a Frame of Reference has no plane orientation: each frame
+  // is on the pixel grid of the source image that it references.
+  if (!iopRaw && !multiframe.FrameOfReferenceUID) {
+    return 'Planar';
+  }
 
   // ImageOrientationPatient can arrive as DICOM DS strings (e.g. from DICOMweb
   // JSON metadata) while validOrientations are numeric source cosines. isEqual

@@ -35,6 +35,7 @@ import {
   LabelmapImageReferenceResolver,
   syncLegacyLabelmapData,
 } from './labelmapModel';
+import { isDimensionGroupLabelmap } from './labelmapModel/dimensionGroupLabelmapVolume';
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
 
 const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
@@ -1036,6 +1037,12 @@ async function internalConvertStackToVolumeLabelmap({
 
   const data = segmentation.representationData
     .Labelmap as LabelmapSegmentationDataStack;
+
+  // A labelmap of a 4D source stays image based: each time point gets its own
+  // volume (see getOrCreateDimensionGroupLabelmapVolume).
+  if (isDimensionGroupLabelmap(data)) {
+    return;
+  }
 
   const { volumeId } = await internalComputeVolumeLabelmapFromStack({
     imageIds: data.imageIds,

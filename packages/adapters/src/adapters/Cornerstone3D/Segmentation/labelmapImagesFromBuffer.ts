@@ -767,6 +767,9 @@ async function createLabelmapsFromSegImageIds(
     // providers (notably OHIF's) short-circuit `get('instance', ...)` before
     // consulting custom metadata, so a synthetic SEG imageId is not retrievable.
     multiframe: providedMultiframe = undefined,
+    // The voxel representation of the labelmap images, for example RLE for
+    // the many images of a 4D series. The default is the configured one.
+    voxelRepresentation = undefined,
   } = options ?? {};
 
   let multiframe = providedMultiframe;
@@ -919,8 +922,10 @@ async function createLabelmapsFromSegImageIds(
       'instance',
       referenceImageId
     );
-    const labelMapImage =
-      imageLoader.createAndCacheDerivedLabelmapImage(referenceImageId);
+    const labelMapImage = imageLoader.createAndCacheDerivedLabelmapImage(
+      referenceImageId,
+      voxelRepresentation ? { voxelRepresentation } : undefined
+    );
     labelMapImages.push(labelMapImage);
   }
 
@@ -1037,7 +1042,9 @@ export function insertPixelDataPlanar({
         const ImageOrientationPatientI =
           sharedImageOrientationPatient ||
           PerFrameFunctionalGroups?.PlaneOrientationSequence
-            ?.ImageOrientationPatient;
+            ?.ImageOrientationPatient ||
+          // Without a Frame of Reference, the frame is on the source grid.
+          (multiframe.FrameOfReferenceUID ? undefined : validOrientations[0]);
 
         if (!ImageOrientationPatientI) {
           throw new Error(
