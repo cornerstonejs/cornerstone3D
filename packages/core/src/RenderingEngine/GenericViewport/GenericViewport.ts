@@ -30,6 +30,20 @@ import {
   isGenericViewportReferenceViewable,
   type GenericViewportReferenceContext,
 } from './genericViewportReferenceCompatibility';
+import {
+  type FidelityLine,
+  type ViewportFidelityState,
+  svgStateOf,
+} from '../helpers/fidelityIndicator/fidelityIndicatorState';
+import {
+  fidelityLineFromStackImage,
+  fidelityLinesFromBindings,
+  sampleDistanceLodOf,
+} from '../helpers/fidelityIndicator/collectFidelityLines';
+import { isLabelmapActorEntry } from '../helpers/fidelityIndicator/isLabelmapActorEntry';
+import type { VoxelQualityRecord } from '../../types';
+import type IImage from '../../types/IImage';
+import cache from '../../cache/cache';
 
 /**
  * Generic GenericViewport controller.
@@ -67,6 +81,13 @@ abstract class GenericViewport<
   abstract readonly type: ViewportType;
   abstract readonly renderingEngineId: string;
   public viewportStatus: ViewportStatus = ViewportStatus.NO_DATA;
+  /**
+   * Last derived fidelity state published on VIEWPORT_FIDELITY_CHANGED
+   * (FIDELITY-EVENT-4).
+   */
+  private _lastPublishedFidelityState:
+    | ViewportFidelityState['state']
+    | undefined;
 
   // ── Protected fields ─────────────────────────────────────────────────
 
@@ -226,6 +247,127 @@ abstract class GenericViewport<
    */
   getCurrentMode(): ViewportContentMode {
     return this.getSourceBinding() ? 'unknown' : 'empty';
+  }
+
+  /**
+   * Whether this viewport can report fidelity (GENVIEW-FIDELITY-8). Decided
+   * from content mode, not from a list of viewport types.
+   */
+  canReportFidelity(): boolean {
+    const mode = this.getCurrentMode();
+
+    return mode === 'stack' || mode === 'volume' || mode === 'volume3d';
+  }
+
+  /**
+   * On-demand fidelity query (FIDELITY-EVENT-5 / GENVIEW-FIDELITY-4).
+   */
+  getFidelityState(): ViewportFidelityState {
+    const lines = this.collectFidelityLines();
+
+    return {
+      state: svgStateOf(lines),
+      lines,
+    };
+  }
+
+  /**
+   * Recomputes fidelity and fires `VIEWPORT_FIDELITY_CHANGED` when the derived
+   * state changes (FIDELITY-EVENT-2..4).
+   */
+  notifyFidelityStateChanged(): void {
+    const next = this.getFidelityState();
+
+    if (next.state === this._lastPublishedFidelityState) {
+      return;
+    }
+
+    this._lastPublishedFidelityState = next.state;
+
+    const eventDetail: EventTypes.ViewportFidelityChangedEventDetail = {
+      viewportId: this.id,
+      renderingEngineId: this.renderingEngineId,
+      state: next.state,
+    };
+
+    triggerEvent(this.element, Events.VIEWPORT_FIDELITY_CHANGED, eventDetail);
+  }
+
+  /**
+   * Builds fidelity lines from binding-exposed quality records
+   * (GENVIEW-FIDELITY-2), or from the current stack image when the mode is
+   * stack (FIDELITY-SCOPE-2).
+   */
+  protected collectFidelityLines(): FidelityLine[] {
+    const mode = this.getCurrentMode();
+
+    if (mode === 'stack') {
+      return this.collectStackFidelityLines();
+    }
+
+    return this.collectBindingFidelityLines();
+  }
+
+  private collectStackFidelityLines(): FidelityLine[] {
+    const binding = this.getSourceBinding();
+    const rendering = binding?.rendering as
+      | { currentImage?: IImage; currentImageId?: string }
+      | undefined;
+    const image =
+      rendering?.currentImage ??
+      (typeof rendering?.currentImageId === 'string'
+        ? cache.getImage(rendering.currentImageId)
+        : undefined);
+
+    return fidelityLineFromStackImage(image);
+  }
+
+  private collectBindingFidelityLines(): FidelityLine[] {
+    const sources: Array<{
+      record?: VoxelQualityRecord;
+      fullGrid?: VoxelQualityRecord['grid'];
+      sampleDistanceLod?: number;
+      skip?: boolean;
+    }> = [];
+
+    this.forEachBinding((binding) => {
+      const rendering = binding.rendering as {
+        voxelQuality?: VoxelQualityRecord;
+        sampleDistanceLod?: number;
+        mapper?: {
+          getSampleDistance?: () => number;
+          getScalarTexture?: () => { getGrid?: () => unknown };
+          getInputData?: () => {
+            getSpacing: () => number[];
+            getBounds: () => number[];
+          };
+        };
+        imageVolume?: { voxelGrid?: VoxelQualityRecord['grid'] };
+      };
+      const actorEntry = binding.getActorEntry?.(binding.data);
+      const skip =
+        !!actorEntry &&
+        isLabelmapActorEntry(actorEntry) &&
+        binding.role !== 'source';
+
+      sources.push({
+        record: rendering.voxelQuality,
+        fullGrid: rendering.imageVolume?.voxelGrid,
+        sampleDistanceLod:
+          rendering.sampleDistanceLod ?? sampleDistanceLodOf(rendering.mapper),
+        skip,
+      });
+    });
+
+    return fidelityLinesFromBindings(
+      {
+        getActors: () => [],
+        canvas: (this as { canvas?: HTMLCanvasElement }).canvas,
+        sHeight: (this as { sHeight?: number }).sHeight,
+        getCamera: () => this.getCameraForEvent(),
+      },
+      sources
+    );
   }
 
   /**

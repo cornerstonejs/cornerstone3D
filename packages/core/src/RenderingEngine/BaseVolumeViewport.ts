@@ -92,6 +92,11 @@ import {
   createSharpeningRenderPass,
   createSmoothingRenderPass,
 } from './renderPasses';
+import type { FidelityLine } from './helpers/fidelityIndicator/fidelityIndicatorState';
+import {
+  type CachedRecord,
+  fidelityLinesFromVolumeActors,
+} from './helpers/fidelityIndicator/collectFidelityLines';
 /**
  * Abstract base class for volume viewports. VolumeViewports are used to render
  * 3D volumes from which various orientations can be viewed. Since VolumeViewports
@@ -120,6 +125,40 @@ abstract class BaseVolumeViewport extends Viewport {
   protected initialViewUp: Point3;
   protected viewportProperties: VolumeViewportProperties = {};
   private volumeIds = new Set<string>();
+  /** Quality-record cache for fidelity lines; cleared on volume data events. */
+  private _fidelityRecords = new Map<string, CachedRecord>();
+  private _fidelityRecordListenersAttached = false;
+
+  public canReportFidelity(): boolean {
+    return true;
+  }
+
+  protected collectFidelityLines(): FidelityLine[] {
+    this.ensureFidelityRecordInvalidation();
+    return fidelityLinesFromVolumeActors(this, this._fidelityRecords);
+  }
+
+  private ensureFidelityRecordInvalidation(): void {
+    if (this._fidelityRecordListenersAttached) {
+      return;
+    }
+    this._fidelityRecordListenersAttached = true;
+
+    const invalidate = (evt: Event) => {
+      const { volumeId } = (evt as CustomEvent<{ volumeId?: string }>).detail;
+      if (volumeId) {
+        this._fidelityRecords.delete(volumeId);
+      } else {
+        this._fidelityRecords.clear();
+      }
+    };
+
+    eventTarget.addEventListener(Events.IMAGE_VOLUME_MODIFIED, invalidate);
+    eventTarget.addEventListener(
+      Events.IMAGE_VOLUME_LOADING_COMPLETED,
+      invalidate
+    );
+  }
 
   constructor(props: ViewportInput) {
     super(props);

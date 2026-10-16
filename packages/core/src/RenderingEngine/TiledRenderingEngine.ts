@@ -372,6 +372,7 @@ class TiledRenderingEngine extends BaseRenderingEngine {
 
     const viewports = this._getViewportsAsArray();
     const eventDetailArray = [];
+    const renderedViewports = [];
 
     for (let i = 0; i < viewports.length; i++) {
       const viewport = viewports[i];
@@ -379,6 +380,7 @@ class TiledRenderingEngine extends BaseRenderingEngine {
         const eventDetail =
           this.renderViewportUsingCustomOrVtkPipeline(viewport);
         eventDetailArray.push(eventDetail);
+        renderedViewports.push(viewport);
         viewport.setRendered();
 
         // This viewport has been rendered, we can remove it from the set
@@ -401,6 +403,14 @@ class TiledRenderingEngine extends BaseRenderingEngine {
         return;
       }
       triggerEvent(eventDetail.element, Events.IMAGE_RENDERED, eventDetail);
+    });
+
+    // Fidelity event after IMAGE_RENDERED so consumers can query the frame
+    // that was just drawn (FIDELITY-EVENT-2..4).
+    renderedViewports.forEach((viewport) => {
+      (
+        viewport as { notifyFidelityStateChanged?: () => void }
+      ).notifyFidelityStateChanged?.();
     });
   };
 

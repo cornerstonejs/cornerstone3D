@@ -7,6 +7,13 @@ interface Cornerstone3DConfig {
    */
   isMobile?: boolean;
 
+  /**
+   * When true, volume viewports do not show the fidelity indicator.
+   * Dangerous because it hides reduced/decimated/LOD feedback during load
+   * and interaction.
+   */
+  dangerouslyDisableFidelityIndicator?: boolean;
+
   rendering?: {
     // vtk.js supports 8bit integer textures and 32bit float textures.
     // However, if the client has norm16 textures (it can be seen by visiting
@@ -176,6 +183,12 @@ interface Cornerstone3DConfig {
      * - MB MBytes of allocated memory. (Run Chrome with --enable-precise-memory-info)
      */
     statsOverlay?: boolean;
+    /**
+     * When true, the fidelity indicator also shows the verbose text badge
+     * (top-left) beside the minimal SVG indicator (top-right).
+     * When false/unset (default), only the SVG indicator is shown.
+     */
+    fidelityIndicatorDebug?: boolean;
   };
 
   /**
