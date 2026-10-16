@@ -10,7 +10,7 @@ async function decodeBigEndian(
   imageFrame: Types.IImageFrame,
   pixelData: ByteArray
 ): Promise<Types.IImageFrame> {
-  if (imageFrame.bitsAllocated === 16) {
+  if (imageFrame.bitsAllocated === 16 || imageFrame.bitsAllocated === 12) {
     let arrayBuffer = pixelData.buffer;
 
     let offset = pixelData.byteOffset;
