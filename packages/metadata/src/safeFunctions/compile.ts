@@ -56,7 +56,15 @@ import type {
 } from './types';
 import { hasNoValue } from './values';
 
-export { hasNoValue, isAbsent, isEmpty, looseEquals, toFinite } from './values';
+export {
+  compareFinite,
+  hasNoValue,
+  isAbsent,
+  isEmpty,
+  isTrue,
+  looseEquals,
+  toFinite,
+} from './values';
 
 /**
  * Where a condition or a value is compiled. Every field is optional; the

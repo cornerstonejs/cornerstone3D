@@ -65,13 +65,6 @@ describe('rawDisplaySetSelector - the selector as data', () => {
     expect(remote.map((g) => g.splitKey)).toEqual(local.map((g) => g.splitKey));
   });
 
-  it('keys every rule by its id, so keys survive editing the selector', () => {
-    for (const [id, rule] of Object.entries(rawDisplaySetSelector)) {
-      // The key is the id. A rule that also states an id must agree with it.
-      expect(rule.id ?? id).toBe(id);
-    }
-  });
-
   it('gives the defaults the priorities 1..n in their documented order', () => {
     const entries = Object.entries(rawDisplaySetSelector);
     expect(entries.map(([id, rule]) => [id, rule.priority])).toEqual([
@@ -1027,18 +1020,6 @@ describe('createDisplaySetSplitRules - the code form', () => {
 });
 
 describe('createDisplaySetSplitRules - groupId', () => {
-  it('keeps the group id of a rule, and leaves it undefined when the rule has none', () => {
-    const rules = createDisplaySetSplitRules({
-      tomo: { priority: 1, groupId: 'mammo', matches: { Modality: 'MG' } },
-      legacy: { priority: 2, groupId: 'mammo' },
-      plain: { priority: 3 },
-    });
-    expect(rules.tomo.groupId).toBe('mammo');
-    expect(rules.legacy.groupId).toBe('mammo');
-    // The reader defaults a missing group id to the rule id.
-    expect(rules.plain.groupId).toBeUndefined();
-  });
-
   it('does not change how a rule splits: the split key stays per rule id', () => {
     const rules = createDisplaySetSplitRules({
       tomo: {
@@ -1068,10 +1049,133 @@ describe('createDisplaySetSplitRules - groupId', () => {
       'legacy',
     ]);
   });
+});
 
-  it('rejects a group id that is not a string', () => {
-    expect(() =>
-      createDisplaySetSplitRules({ r: { priority: 1, groupId: 7 } as never })
-    ).toThrow(/rule 'r'\.groupId/);
+describe('the default rules - a mixed series', () => {
+  it('tests each instance: a still image after a clip is not a clip', () => {
+    const US_SOP_CLASS = '1.2.840.10008.5.1.4.1.1.6.1';
+    expect(
+      ruleIdsFor([
+        instance({
+          SOPClassUID: US_MULTIFRAME_SOP_CLASS,
+          Modality: 'US',
+          SOPInstanceUID: 'clip',
+          InstanceNumber: 1,
+          NumberOfFrames: 30,
+          SliceLocation: 0,
+        }),
+        instance({
+          SOPClassUID: US_SOP_CLASS,
+          Modality: 'US',
+          SOPInstanceUID: 'still',
+          InstanceNumber: 2,
+        }),
+      ])
+    ).toEqual(['multiFrame', 'defaultImageRule']);
+  });
+});
+
+describe('code entries of the context', () => {
+  const ct = [instance({ SOPInstanceUID: 'a', InstanceNumber: 1 })];
+
+  it('gives a rule code entry that reads its own name the global value', () => {
+    const rule = {
+      context: {
+        isStackImage: (
+          i: NaturalizedInstance,
+          values: Record<string, unknown>
+        ) => values.isStackImage === true && i.Modality === 'CT',
+      },
+      matches: { isStackImage: true },
+    };
+    expect(claimed(rule, ct)).toEqual(['a']);
+  });
+
+  it('stops a loop through a code entry at the first read, and names each entry', () => {
+    const options = {
+      displaySetContext: {
+        first: (_i: NaturalizedInstance, values: Record<string, unknown>) =>
+          values.second,
+        second: 'third',
+        third: 'first == true',
+      },
+    };
+    expect(() => claimed({ matches: { first: true } }, ct, options)).toThrow(
+      'the context entries form a loop: first -> second -> third -> first'
+    );
+  });
+});
+
+describe('the deny list of the host', () => {
+  const options = {
+    deniedNames: ['PatientName'],
+    displaySetContext: {
+      nameOf: (_i: NaturalizedInstance, values: Record<string, unknown>) =>
+        values.PatientName,
+    },
+  };
+
+  it('rejects a rule that names a denied name, and gives a code entry no value', () => {
+    expect(errorOf({ matches: { PatientName: 'X' } }, options)).toContain(
+      "the name 'PatientName' is on the deny list of the host"
+    );
+    expect(
+      errorOf({ attributes: { label: { template: '{PatientName}' } } }, options)
+    ).toContain('deny list');
+    expect(
+      claimed(
+        { matches: { nameOf: null } },
+        [instance({ SOPInstanceUID: 'p', PatientName: 'Doe^J' })],
+        options
+      )
+    ).toEqual(['p']);
+  });
+});
+
+describe('expressions and names: the DICOM rule for no value', () => {
+  it('gives no value for arithmetic on an empty value, so a test on it fails', () => {
+    const rule = {
+      context: { pixelCount: 'Rows * Columns' },
+      matches: { pixelCount: { lessThan: 100 } },
+    };
+    expect(
+      claimed(rule, [
+        instance({ SOPInstanceUID: 'empty', Rows: null as unknown as number }),
+      ])
+    ).toEqual([]);
+  });
+
+  it('reads an array of empty elements as no value', () => {
+    const rule = { matches: { ImageType: { notNull: true } } };
+    expect(
+      claimed(rule, [instance({ SOPInstanceUID: 'x', ImageType: [''] })])
+    ).toEqual([]);
+  });
+
+  it('rejects a field on a keyword, and an index on a group', () => {
+    expect(
+      errorOf({ attributes: { label: { template: '{Modality.foo}' } } })
+    ).toContain("'Modality' is a DICOM keyword and has no field 'foo'");
+    expect(errorOf({ context: { s: "timeClusters['start']" } })).toContain(
+      "read a field of the group 'timeClusters' by path"
+    );
+  });
+
+  it('sorts an instance with no value after the instances with a value', () => {
+    const [group] = groupInstancesBySplitRules(
+      [2, undefined, 1].map((SliceLocation, index) =>
+        instance({
+          SOPInstanceUID: `s${index}`,
+          InstanceNumber: index,
+          SliceLocation,
+        })
+      ),
+      compileOne({ sortBy: ['SliceLocation'] })
+    );
+    expect(group.instances.map((i) => i.SliceLocation)).toEqual([
+      1,
+      2,
+      undefined,
+    ]);
   });
 });

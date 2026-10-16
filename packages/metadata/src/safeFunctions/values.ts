@@ -22,12 +22,15 @@ export function isAbsent(value: unknown): boolean {
   return value === undefined;
 }
 
-/** True when the value is empty: `null`, `''` or `[]` (an element with no value). */
+/**
+ * True when the value is empty: `null`, `''`, `[]`, or an array whose elements
+ * all have no value (`['']`, `[null]`, as DICOM JSON can give an empty value).
+ */
 export function isEmpty(value: unknown): boolean {
   return (
     value === null ||
     value === '' ||
-    (Array.isArray(value) && value.length === 0)
+    (Array.isArray(value) && value.every((item) => hasNoValue(item)))
   );
 }
 
@@ -96,4 +99,26 @@ export function looseEquals(left: unknown, right: unknown): boolean {
     }
   }
   return String(a) === String(b);
+}
+
+/**
+ * A comparison of two finite numbers: `false` unless both values are finite
+ * numbers after {@link toFinite}.
+ */
+export function compareFinite(
+  test: (a: number, b: number) => boolean
+): (left: unknown, right: unknown) => boolean {
+  return (left, right) => {
+    const a = toFinite(left);
+    const b = toFinite(right);
+    return a !== undefined && b !== undefined && test(a, b);
+  };
+}
+
+/**
+ * The truth of a value in the rule language: a value with no value is false,
+ * and any other value has its JavaScript truth (`0` and `false` are false).
+ */
+export function isTrue(value: unknown): boolean {
+  return !hasNoValue(value) && Boolean(value);
 }

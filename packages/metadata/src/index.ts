@@ -15,6 +15,7 @@ export {
   compileValue,
   ExpressionSyntaxError,
   parseExpressionSource,
+  RuleCompileError,
 } from './safeFunctions';
 export type {
   CompiledExpression,

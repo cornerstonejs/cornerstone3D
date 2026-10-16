@@ -10,6 +10,7 @@ import type {
   SplitRuleSet,
 } from './types';
 import { resolveSplitRuleSet } from './splitRuleSet';
+import { withInstances } from './displaySetContext';
 import { isUnsafeKey, toFinite } from '../safeFunctions';
 
 /**
@@ -45,6 +46,28 @@ export function computeSeriesFacts(
     }
   }
   return facts;
+}
+
+type Comparator = NonNullable<SplitRule['compareInstances']>;
+
+/**
+ * Chains comparators: the first one that gives a finite non-zero value
+ * decides. A result of 0 or `NaN` is "no opinion", and the next comparator
+ * decides.
+ */
+export function chainComparators(comparators: Comparator[]): Comparator {
+  if (comparators.length === 1) {
+    return comparators[0];
+  }
+  return (a, b, context) => {
+    for (const comparator of comparators) {
+      const order = comparator(a, b, context);
+      if (Number.isFinite(order) && order !== 0) {
+        return order;
+      }
+    }
+    return 0;
+  };
 }
 
 /**
@@ -138,15 +161,8 @@ function buildInstanceOrderer(
     }
 
     if (comparators.length) {
-      ordered.sort((a, b) => {
-        for (const comparator of comparators) {
-          const order = comparator(a, b, context);
-          if (Number.isFinite(order) && order !== 0) {
-            return order;
-          }
-        }
-        return 0;
-      });
+      const compare = chainComparators(comparators);
+      ordered.sort((a, b) => compare(a, b, context));
     }
 
     return ordered;
@@ -165,6 +181,11 @@ function buildInstanceOrderer(
  * comparators see the facts the split computed from the whole series. Without
  * it, the facts are computed from `instances` alone, by this rule's own
  * `series` hook only, so a fact that an earlier rule computed is missing.
+ *
+ * When `instances` holds an instance that the split did not see (the series
+ * got new instances), the values of the display set context are computed
+ * again over the instances of the split and the new instances, so a
+ * `sortBy` name such as `sliceDistance` is correct for the new instances too.
  */
 export function orderInstancesForRule(
   instances: NaturalizedInstance[],
@@ -172,7 +193,9 @@ export function orderInstancesForRule(
   options: OrderInstancesOptions = {}
 ): NaturalizedInstance[] {
   const context: RuleContext = {
-    series: options.series ?? computeSeriesFacts(instances, [splitRule]),
+    series: options.series
+      ? withInstances(options.series, instances)
+      : computeSeriesFacts(instances, [splitRule]),
   };
   return buildInstanceOrderer(splitRule, context, options)(instances);
 }

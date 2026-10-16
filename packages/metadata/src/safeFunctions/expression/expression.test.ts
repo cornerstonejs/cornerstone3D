@@ -174,19 +174,41 @@ describe('compileExpression', () => {
   });
 
   describe('helpers and aggregates', () => {
-    it('supports defined/includes/startsWith', () => {
-      expect(compileExpression('defined(Rows)')({ Rows: 512 })).toBe(true);
-      expect(compileExpression('defined(Rows)')({})).toBe(false);
+    it('gives includes, contains, startsWith and endsWith the meaning of the operators', () => {
+      const run = (source: string, ImageType: unknown) =>
+        compileExpression(source)({ ImageType });
+      // includes tests whole elements; contains tests text.
+      expect(run("includes(ImageType, 'M')", 'MR')).toBe(false);
       expect(
-        compileExpression("includes(SeriesDescription, 'T1')")({
-          SeriesDescription: 'AX T1',
-        })
+        run("includes(ImageType, 'LOCALIZER')", ['ORIGINAL', 'LOCALIZER'])
       ).toBe(true);
       expect(
-        compileExpression("startsWith(SeriesDescription, 'AX')")({
-          SeriesDescription: 'AX T1',
-        })
+        run("contains(ImageType, 'LOCAL')", ['ORIGINAL', 'LOCALIZER'])
       ).toBe(true);
+      expect(
+        run("startsWith(ImageType, 'ORIG')", ['ORIGINAL', 'PRIMARY'])
+      ).toBe(true);
+      expect(run("endsWith(ImageType, 'ARY')", ['ORIGINAL', 'PRIMARY'])).toBe(
+        true
+      );
+      expect(run('defined(ImageType)', [''])).toBe(false);
+    });
+
+    it('reads no value as undefined in arithmetic, and a numeric string as a number', () => {
+      const run = (source: string, A: unknown) =>
+        compileExpression(source)({ A });
+      expect(run('A + 1', '2')).toBe(3);
+      expect(run('A * 512', null)).toBeUndefined();
+      expect(run('A - 1', '')).toBeUndefined();
+      expect(run('-A', undefined)).toBeUndefined();
+    });
+
+    it('reads no value as false in !, && and ||, and gives a boolean', () => {
+      const run = (source: string, A: unknown) =>
+        compileExpression(source)({ A });
+      expect(run('!A', [])).toBe(true);
+      expect(run('A && A > 1000', undefined)).toBe(false);
+      expect(run("A || 'x'", 'y')).toBe(true);
     });
 
     it('returns undefined for min/max with no number, and skips a missing value', () => {

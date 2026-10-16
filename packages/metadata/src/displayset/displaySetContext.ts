@@ -38,12 +38,14 @@ import {
   compileExpressionAt,
   FORBIDDEN_PROPERTIES,
   hasNoValue,
+  hasOwn,
   invalidAt,
   isUnsafeKey,
   matchForm,
   parseExpressionSource,
   parseTemplate,
   readOwn,
+  RuleCompileError,
 } from '../safeFunctions';
 import type {
   CompiledExpression,
@@ -188,6 +190,9 @@ type Definition = {
   reads: ExpressionRead[];
   value?: unknown;
   attribute?: string;
+  /** The VR and the VM of a declaration, recorded for a later JSON Schema. */
+  vr?: string;
+  vm?: string;
   evaluate?: CompiledExpression;
   /** An expression that is one bare name: a candidate alias of a group. */
   aliasOf?: string;
@@ -221,8 +226,12 @@ type Bound = {
   deps: Map<string, Dependency>;
   /** The names that the rule replaces and that this entry reads. */
   closure: ReadonlySet<string>;
+  /** The rule of a rule entry; undefined for a global entry. */
+  ruleId?: string;
   /** For a code entry: the layer that resolves the names it reads at run time. */
   layer?: ContextLayer;
+  /** For a code entry: its definition, so that a read of its own name gets the global entry. */
+  definition?: Definition;
   compute: (
     runtime: ContextRuntime,
     instance: NaturalizedInstance | undefined
@@ -252,10 +261,6 @@ function identityOf(raw: unknown): string {
     }
     return id;
   });
-}
-
-function hasOwn(object: object | undefined, key: string): boolean {
-  return !!object && Object.prototype.hasOwnProperty.call(object, key);
 }
 
 /** The message for a name that is not a tag keyword and not a context name. */
@@ -314,13 +319,54 @@ function parseExpression(
   };
 }
 
-function isFixedValue(raw: unknown): boolean {
+/**
+ * True for a fixed value: `null`, a boolean, a finite number, or (where
+ * `arrays` is true) an array.
+ */
+export function isFixedValue(raw: unknown, arrays = true): boolean {
   return (
     raw === null ||
     typeof raw === 'boolean' ||
     (typeof raw === 'number' && Number.isFinite(raw)) ||
-    Array.isArray(raw)
+    (arrays && Array.isArray(raw))
   );
+}
+
+/** The text of a loop of entries, e.g. `a -> b -> a`. */
+function loopText(entries: { name: string; ruleId?: string }[]): string {
+  return entries
+    .map(({ name, ruleId }) =>
+      ruleId === undefined ? name : `${name} (rule '${ruleId}')`
+    )
+    .join(' -> ');
+}
+
+/**
+ * The series facts for a new order of `instances`. When an instance is not in
+ * the instances of the display set context of the facts (the series got new
+ * instances after the split), the values are computed again over the old and
+ * the new instances. Otherwise the facts are returned as they are.
+ */
+export function withInstances(
+  series: SeriesFacts,
+  instances: readonly NaturalizedInstance[]
+): SeriesFacts {
+  const values = readOwn(series, DISPLAY_SET_CONTEXT_FACT);
+  if (!(values instanceof DisplaySetContextValues)) {
+    return series;
+  }
+  const known = new Set(values.instances);
+  const added = instances.filter((instance) => !known.has(instance));
+  if (!added.length) {
+    return series;
+  }
+  return {
+    ...series,
+    [DISPLAY_SET_CONTEXT_FACT]: new DisplaySetContextValues([
+      ...values.instances,
+      ...added,
+    ]),
+  };
 }
 
 /**
@@ -362,6 +408,11 @@ export class ContextRuntime {
     Map<NaturalizedInstance | undefined, object>
   >();
   private readonly instanceEnvs = new Map<string, object[]>();
+  /** The entries that are in progress, in the order of the reads. */
+  private readonly inProgress: {
+    bound: Bound;
+    instance: NaturalizedInstance | undefined;
+  }[] = [];
 
   constructor(readonly instances: readonly NaturalizedInstance[]) {}
 
@@ -369,7 +420,7 @@ export class ContextRuntime {
   value(bound: Bound, instance: NaturalizedInstance | undefined): unknown {
     if (bound.scope === 'series') {
       if (!this.seriesValues.has(bound.key)) {
-        this.seriesValues.set(bound.key, bound.compute(this, undefined));
+        this.seriesValues.set(bound.key, this.compute(bound, undefined));
       }
       return this.seriesValues.get(bound.key);
     }
@@ -382,9 +433,42 @@ export class ContextRuntime {
       this.instanceValues.set(instance, values);
     }
     if (!values.has(bound.key)) {
-      values.set(bound.key, bound.compute(this, instance));
+      values.set(bound.key, this.compute(bound, instance));
     }
     return values.get(bound.key);
+  }
+
+  /**
+   * Computes one entry, and records it as in progress. A read of an entry
+   * that is already in progress, for the same instance and at the same level
+   * (the bound entry: global, or the replacement of a rule), is a loop. Only a
+   * loop through a code entry gets here; the compile rejects a loop of data
+   * entries.
+   */
+  private compute(
+    bound: Bound,
+    instance: NaturalizedInstance | undefined
+  ): unknown {
+    const start = this.inProgress.findIndex(
+      (entry) => entry.bound === bound && entry.instance === instance
+    );
+    if (start !== -1) {
+      const loop = [
+        ...this.inProgress.slice(start).map((entry) => entry.bound),
+        bound,
+      ];
+      throw new RuleCompileError(
+        'raw display set selector',
+        bound.name,
+        `Invalid raw display set selector: the context entries form a loop: ${loopText(loop)}`
+      );
+    }
+    this.inProgress.push({ bound, instance });
+    try {
+      return bound.compute(this, instance);
+    } finally {
+      this.inProgress.pop();
+    }
   }
 
   /**
@@ -446,11 +530,12 @@ export class ContextRuntime {
    * for the series, or for one instance.
    */
   env(
-    bound: Pick<Bound, 'key' | 'deps' | 'layer'>,
+    bound: Pick<Bound, 'key' | 'deps' | 'layer' | 'definition'>,
     instance: NaturalizedInstance | undefined,
-    extras?: Extras
+    extras?: Extras,
+    fresh = false
   ): object {
-    const cacheable = !extras;
+    const cacheable = !extras && !fresh;
     let byInstance = cacheable ? this.envs.get(bound.key) : undefined;
     const cached = byInstance?.get(instance);
     if (cached) {
@@ -463,7 +548,8 @@ export class ContextRuntime {
           return undefined;
         }
         const dependency =
-          bound.deps.get(name) ?? bound.layer?.dynamicDependency(name);
+          bound.deps.get(name) ??
+          bound.layer?.dynamicDependency(name, bound.definition);
         return this.read(name, dependency, instance, extras);
       },
     });
@@ -479,7 +565,7 @@ export class ContextRuntime {
 
   /** The instance environments of an entry, for the aggregates. */
   envsOf(
-    bound: Pick<Bound, 'key' | 'deps' | 'layer'>,
+    bound: Pick<Bound, 'key' | 'deps' | 'layer' | 'definition'>,
     instances: readonly NaturalizedInstance[] = this.instances,
     extras?: Extras
   ): object[] {
@@ -501,7 +587,10 @@ export class ContextRuntime {
  */
 export class ContextLayer {
   readonly memo = new Map<Definition, Bound>();
-  private readonly dynamic = new Map<string, Dependency | undefined>();
+  private readonly dynamic = new Map<
+    Definition | undefined,
+    Map<string, Dependency | undefined>
+  >();
 
   constructor(
     readonly program: ContextProgram,
@@ -520,14 +609,27 @@ export class ContextLayer {
     return this.local.get(name) ?? this.program.global.get(name);
   }
 
-  /** A dependency of a code entry, resolved at the first read. */
-  dynamicDependency(name: string): Dependency | undefined {
-    if (!this.dynamic.has(name)) {
+  /**
+   * A dependency of a code entry, resolved at the first read. `from` is the
+   * code entry, so that a rule entry that reads its own name gets the global
+   * entry. A name on the deny list of the host reads nothing.
+   */
+  dynamicDependency(name: string, from?: Definition): Dependency | undefined {
+    let byName = this.dynamic.get(from);
+    if (!byName) {
+      byName = new Map();
+      this.dynamic.set(from, byName);
+    }
+    if (!byName.has(name)) {
       let dependency: Dependency | undefined;
-      if (isTagKeyword(name)) {
+      if (this.program.isDenied(name)) {
+        log.warn(
+          `a code entry of the context read '${name}', which is on the deny list of the host; the read gives undefined`
+        );
+      } else if (isTagKeyword(name)) {
         dependency = { kind: 'keyword' };
       } else {
-        const definition = this.resolve(name);
+        const definition = this.resolve(name, from);
         if (definition) {
           dependency = {
             kind: 'entry',
@@ -537,9 +639,9 @@ export class ContextLayer {
           dependency = { kind: 'attribute' };
         }
       }
-      this.dynamic.set(name, dependency);
+      byName.set(name, dependency);
     }
-    return this.dynamic.get(name);
+    return byName.get(name);
   }
 }
 
@@ -550,6 +652,8 @@ export type ContextProgramOptions = {
   >;
   /** The site of the global context, for the messages. */
   site: SchemaSite;
+  /** Names that no rule and no code entry can read (`RL-SCOPE-9`). */
+  deniedNames?: readonly string[];
 };
 
 /**
@@ -561,9 +665,12 @@ export class ContextProgram {
   private readonly bounds = new Map<string, Bound>();
   private readonly seriesFunctions: ContextProgramOptions['seriesFunctions'];
   private readonly empty: ContextLayer;
+  private readonly denied: ReadonlySet<string>;
+  private fallbackLogged = false;
 
   constructor(context: unknown, options: ContextProgramOptions) {
     this.seriesFunctions = options.seriesFunctions;
+    this.denied = new Set(options.deniedNames ?? []);
     for (const definition of this.parseLayer(
       context,
       options.site,
@@ -587,7 +694,18 @@ export class ContextProgram {
       ? {}
       : { [DISPLAY_SET_CONTEXT_FACT]: new DisplaySetContextValues(instances) };
 
-  /** The runtime of a call, from the series facts of its context. */
+  /** True when the host denies the name. */
+  isDenied(name: string): boolean {
+    return this.denied.has(name);
+  }
+
+  /**
+   * The runtime of a call, from the series facts of its context. A direct
+   * call of a hook with no split context computes the values over the
+   * instances of the call alone (one instance, or the pair of a comparator):
+   * so a series value such as `seriesInstanceCount` is for those instances
+   * only.
+   */
   runtimeFrom(
     context: unknown,
     fallback: NaturalizedInstance | readonly NaturalizedInstance[]
@@ -596,13 +714,18 @@ export class ContextProgram {
       readOwn(context, 'series'),
       DISPLAY_SET_CONTEXT_FACT
     );
-    const split =
-      values instanceof DisplaySetContextValues
-        ? values
-        : new DisplaySetContextValues(
-            fallback ? (asArray(fallback) as NaturalizedInstance[]) : []
-          );
-    return split.runtime(this);
+    if (values instanceof DisplaySetContextValues) {
+      return values.runtime(this);
+    }
+    if (!this.fallbackLogged) {
+      this.fallbackLogged = true;
+      log.debug(
+        'a split rule hook was called with no split context; its context values cover only the instances of the call'
+      );
+    }
+    return new DisplaySetContextValues(
+      fallback ? (asArray(fallback) as NaturalizedInstance[]) : []
+    ).runtime(this);
   }
 
   /** The context of one rule, with its `context` block. */
@@ -758,11 +881,13 @@ export class ContextProgram {
       }
 
       const replaced = [...closure].sort();
+      // `@` keeps a rule entry apart from the global entry of the same name.
+      const level = definition.ruleId === undefined ? '' : '@';
       const key = replaced.length
-        ? `${definition.name}{${replaced
+        ? `${level}${definition.name}{${replaced
             .map((name) => `${name}=${layer.local.get(name)?.identity}`)
             .join(',')}}`
-        : definition.name;
+        : `${level}${definition.name}`;
 
       let bound = this.bounds.get(key);
       if (!bound) {
@@ -785,7 +910,19 @@ export class ContextProgram {
     place: string
   ): Dependency {
     const { name, field } = read;
+    if (this.denied.has(name)) {
+      return invalidAt(
+        site,
+        `the name '${name}' is on the deny list of the host, so no rule can read it`
+      );
+    }
     if (isTagKeyword(name)) {
+      if (field !== undefined) {
+        return invalidAt(
+          site,
+          `'${name}' is a DICOM keyword and has no field '${field}'; read an item of a sequence with an index, e.g. ${name}[0].${field}`
+        );
+      }
       return { kind: 'keyword' };
     }
     const definition = layer.resolve(name, from);
@@ -808,6 +945,12 @@ export class ContextProgram {
       return invalidAt(site, unknownName(name, place));
     }
     const bound = this.bind(definition, layer, stack);
+    if (read.indexed && bound.group) {
+      return invalidAt(
+        site,
+        `read a field of the group '${name}' by path, e.g. ${name}.${Object.keys(bound.group.fields ?? {})[0] ?? 'field'}`
+      );
+    }
     if (field !== undefined) {
       if (!bound.group) {
         return invalidAt(
@@ -840,6 +983,7 @@ export class ContextProgram {
       scope,
       deps,
       closure,
+      ruleId: definition.ruleId,
       compute: () => undefined,
     };
 
@@ -857,9 +1001,14 @@ export class ContextProgram {
       case 'code': {
         const { fn } = definition;
         bound.layer = layer;
+        bound.definition = definition;
+        // A new values wrapper for each call.
         bound.compute = (runtime, instance) =>
           instance
-            ? fn(instance, runtime.env(bound, instance) as ContextValues)
+            ? fn(
+                instance,
+                runtime.env(bound, instance, undefined, true) as ContextValues
+              )
             : undefined;
         break;
       }
@@ -944,6 +1093,12 @@ export class ContextProgram {
     return Object.entries(context).map(([name, raw]) => {
       const entrySite = at(site, name);
       checkContextName(name, entrySite);
+      if (this.denied.has(name)) {
+        invalidAt(
+          entrySite,
+          `the context name '${name}' is on the deny list of the host`
+        );
+      }
       return this.parseEntry(name, raw, entrySite, ruleId);
     });
   }
@@ -991,6 +1146,8 @@ export class ContextProgram {
         kind: 'declaration',
         reads: [],
         attribute: fields.attribute as string,
+        vr: fields.vr as string | undefined,
+        vm: fields.vm as string | undefined,
       };
     }
 

@@ -1,5 +1,8 @@
 import { createDisplaySetFromGroup } from './createDisplaySetFromGroup';
-import { groupInstancesBySplitRules } from './groupInstancesBySplitRules';
+import {
+  groupInstancesBySplitRules,
+  orderInstancesForRule,
+} from './groupInstancesBySplitRules';
 import { createDisplaySetSplitRules } from './rawDisplaySetSelector';
 import type { RawDisplaySetSelector } from './rawDisplaySetSelectorTypes';
 import { planeGeometry, timeClusters } from './seriesFunctions';
@@ -94,6 +97,28 @@ describe('the display set context over a split', () => {
       ['regularVolume', ['r0', 'r1', 'r2', 'r3', 'r4'], 'AX (2.5 mm)'],
       ['irregularImages', ['low', 'mid'], 'AX (other images)'],
     ]);
+  });
+});
+
+describe('a sort after the series gets new instances', () => {
+  it('computes the context values again, so the new instance takes its place', () => {
+    const rules = createDisplaySetSplitRules({
+      bySlice: { priority: 1, sortBy: ['sliceDistance'] },
+    });
+    const [group] = groupInstancesBySplitRules(
+      [slice('z4', 4), slice('z0', 0), slice('z2', 2)],
+      rules
+    );
+    const reordered = orderInstancesForRule(
+      [...group.instances, slice('z1', 1)],
+      group.matchedRule,
+      { series: group.series }
+    );
+    expect(
+      reordered.map(
+        (instance) => (instance.ImagePositionPatient as number[])[2]
+      )
+    ).toEqual([0, 1, 2, 4]);
   });
 });
 

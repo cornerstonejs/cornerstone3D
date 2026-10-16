@@ -204,18 +204,22 @@ export const INSTANCE_EXPRESSION_SCOPE: ExpressionScope = Object.freeze({
 });
 
 /**
- * Reads an own property only. A definition names attributes and facts; a
- * name like `constructor` or `toString` must read the subject's own value (so
- * usually `undefined`), never a member of `Object.prototype`.
+ * True when the object has the key as an own property. A definition names
+ * attributes; a name like `constructor` or `toString` must read the own value
+ * of the subject (so usually `undefined`), never a member of
+ * `Object.prototype`.
  */
+export function hasOwn(object: unknown, key: string): boolean {
+  return (
+    object != null &&
+    (typeof object === 'object' || typeof object === 'function') &&
+    Object.prototype.hasOwnProperty.call(object, key)
+  );
+}
+
+/** Reads an own property only. See {@link hasOwn}. */
 export function readOwn(object: unknown, key: string): unknown {
-  if (
-    object == null ||
-    (typeof object !== 'object' && typeof object !== 'function')
-  ) {
-    return undefined;
-  }
-  return Object.prototype.hasOwnProperty.call(object, key)
+  return hasOwn(object, key)
     ? (object as Record<string, unknown>)[key]
     : undefined;
 }
@@ -246,6 +250,22 @@ function stringify(fragment: unknown): string {
  * Throws a compile error at a site: `Invalid <definition>: <path>: <message>`,
  * with the fragment appended when one is given.
  */
+/**
+ * An error of the rule data: a compile error, or a loop of context entries
+ * that a code entry makes at run time. It names the definition and the path.
+ * A compiled expression does not catch it, so it reaches the caller.
+ */
+export class RuleCompileError extends Error {
+  constructor(
+    readonly definition: string,
+    readonly path: string,
+    message: string
+  ) {
+    super(message);
+    this.name = 'RuleCompileError';
+  }
+}
+
 export function invalidAt(
   site: Pick<SchemaSite, 'path' | 'definition'>,
   message: string,
@@ -253,7 +273,11 @@ export function invalidAt(
 ): never {
   const where = site.path ? `${site.path}: ` : '';
   const what = fragment.length ? `: ${stringify(fragment[0])}` : '';
-  throw new Error(`Invalid ${site.definition}: ${where}${message}${what}`);
+  throw new RuleCompileError(
+    site.definition,
+    site.path,
+    `Invalid ${site.definition}: ${where}${message}${what}`
+  );
 }
 
 /** The site of a nested key or list entry. Drops the place-only extras. */

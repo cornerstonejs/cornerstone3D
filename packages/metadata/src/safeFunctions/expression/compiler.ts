@@ -1,10 +1,15 @@
 import { FORBIDDEN_PROPERTIES, parseExpressionSource } from './parser';
 import type { ExpressionNode } from './parser';
 import { ExpressionSyntaxError } from './tokenizer';
+import { asArrayFirst } from '@cornerstonejs/utils';
+import { MATCH_HELPERS } from '../matchTests';
+import { RuleCompileError } from '../schema';
 import {
+  compareFinite,
   hasNoValue,
   isAbsent,
   isEmpty,
+  isTrue,
   looseEquals,
   toFinite,
 } from '../values';
@@ -78,16 +83,6 @@ function safeGet(object: unknown, key: unknown): unknown {
   return object[key];
 }
 
-function contains(needle: unknown, haystack: unknown): boolean {
-  if (Array.isArray(haystack)) {
-    return haystack.some((item) => looseEquals(item, needle));
-  }
-  if (typeof haystack === 'string') {
-    return haystack.includes(String(needle));
-  }
-  return false;
-}
-
 /** A number helper: `undefined` in, or a result that is not finite, gives `undefined`. */
 function numeric(
   operation: (value: number) => number
@@ -112,13 +107,13 @@ function finiteValues(values: unknown[]): number[] {
 /** Whitelisted helper functions callable by bare name. */
 const HELPERS: Record<string, (...args: unknown[]) => unknown> = {
   defined: (value) => !hasNoValue(value),
-  includes: (haystack, needle) => contains(needle, haystack),
-  startsWith: (value, prefix) =>
-    typeof value === 'string' && value.startsWith(String(prefix)),
-  endsWith: (value, suffix) =>
-    typeof value === 'string' && value.endsWith(String(suffix)),
+  // The meanings of the operators of the same names (see `matchTests.ts`).
+  includes: MATCH_HELPERS.includes,
+  contains: MATCH_HELPERS.contains,
+  startsWith: MATCH_HELPERS.startsWith,
+  endsWith: MATCH_HELPERS.endsWith,
   lower: (value) =>
-    hasNoValue(value) ? undefined : String(asFirst(value)).toLowerCase(),
+    hasNoValue(value) ? undefined : String(asArrayFirst(value)).toLowerCase(),
   abs: numeric(Math.abs),
   // An argument-less min/max has no value to report, so it reads as "no
   // value" like a missing tag does, and not as ∓Infinity.
@@ -136,10 +131,6 @@ const HELPERS: Record<string, (...args: unknown[]) => unknown> = {
   Number: (value) => toFinite(value),
   String: (value) => (hasNoValue(value) ? '' : String(value)),
 };
-
-function asFirst(value: unknown): unknown {
-  return Array.isArray(value) ? value[0] : value;
-}
 
 /** The aggregate functions, available where the place gives a list (`over`). */
 const AGGREGATES = new Set(['min', 'max', 'sum', 'count']);
@@ -183,6 +174,8 @@ export type ExpressionRead = {
   field?: string;
   /** True when the read is inside the argument of an aggregate. */
   inAggregate: boolean;
+  /** True when the read is an index access, `name[...]`. */
+  indexed?: boolean;
 };
 
 /**
@@ -217,7 +210,15 @@ export function collectReads(
         walk(current.object, inAggregate);
         return;
       case 'index':
-        walk(current.object, inAggregate);
+        if (current.object.type === 'identifier') {
+          reads.push({
+            name: current.object.name,
+            indexed: true,
+            inAggregate,
+          });
+        } else {
+          walk(current.object, inAggregate);
+        }
         walk(current.index, inAggregate);
         return;
       case 'call': {
@@ -296,23 +297,40 @@ function resolveIdentifier(name: string, scope: EvaluationScope): unknown {
 }
 
 /** `<`, `<=`, `>`, `>=`: `false` unless both sides are finite numbers. */
-function compareNumbers(
-  test: (a: number, b: number) => boolean
-): (left: unknown, right: unknown) => boolean {
+const COMPARISONS: Record<string, (left: unknown, right: unknown) => boolean> =
+  {
+    '<': compareFinite((a, b) => a < b),
+    '<=': compareFinite((a, b) => a <= b),
+    '>': compareFinite((a, b) => a > b),
+    '>=': compareFinite((a, b) => a >= b),
+  };
+
+/**
+ * `+ - * / %`: both sides are numbers after `toFinite`, so `'2' + 1` is 3. No
+ * value, a value that is not a number, or a result that is not finite gives
+ * `undefined`, and never 0 or `NaN`.
+ */
+function arithmetic(
+  operation: (a: number, b: number) => number
+): (left: unknown, right: unknown) => number | undefined {
   return (left, right) => {
     const a = toFinite(left);
     const b = toFinite(right);
-    return a !== undefined && b !== undefined && test(a, b);
+    if (a === undefined || b === undefined) {
+      return undefined;
+    }
+    const result = operation(a, b);
+    return Number.isFinite(result) ? result : undefined;
   };
 }
 
-const COMPARISONS: Record<string, (left: unknown, right: unknown) => boolean> =
-  {
-    '<': compareNumbers((a, b) => a < b),
-    '<=': compareNumbers((a, b) => a <= b),
-    '>': compareNumbers((a, b) => a > b),
-    '>=': compareNumbers((a, b) => a >= b),
-  };
+const ARITHMETIC: Record<string, (left: unknown, right: unknown) => unknown> = {
+  '+': arithmetic((a, b) => a + b),
+  '-': arithmetic((a, b) => a - b),
+  '*': arithmetic((a, b) => a * b),
+  '/': arithmetic((a, b) => a / b),
+  '%': arithmetic((a, b) => a % b),
+};
 
 /**
  * The test of `X == <literal>` when the literal is a missing value:
@@ -438,20 +456,24 @@ function compileNode(
       const argument = compileNode(node.argument, context);
       switch (node.operator) {
         case '!':
-          return (scope) => !argument(scope);
-        case '-':
-          return (scope) => -Number(argument(scope));
+          return (scope) => !isTrue(argument(scope));
+        case '-': {
+          const negate = numeric((value) => -value);
+          return (scope) => negate(argument(scope));
+        }
         case '+':
-          return (scope) => +Number(argument(scope));
+          return (scope) => toFinite(argument(scope));
       }
       break;
     }
     case 'logical': {
       const left = compileNode(node.left, context);
       const right = compileNode(node.right, context);
+      // A boolean, and no value is false: `Rows && Rows > 1000` is `false`
+      // when Rows is absent.
       return node.operator === '&&'
-        ? (scope) => left(scope) && right(scope)
-        : (scope) => left(scope) || right(scope);
+        ? (scope) => isTrue(left(scope)) && isTrue(right(scope))
+        : (scope) => isTrue(left(scope)) || isTrue(right(scope));
     }
     case 'binary': {
       if (node.operator === '==' || node.operator === '!=') {
@@ -469,31 +491,25 @@ function compileNode(
       if (comparison) {
         return (scope) => comparison(left(scope), right(scope));
       }
-      switch (node.operator) {
-        case '+':
-          return (scope) => (left(scope) as number) + (right(scope) as number);
-        case '-':
-          return (scope) => (left(scope) as number) - (right(scope) as number);
-        case '*':
-          return (scope) => (left(scope) as number) * (right(scope) as number);
-        case '/':
-          return (scope) => (left(scope) as number) / (right(scope) as number);
-        case '%':
-          return (scope) => (left(scope) as number) % (right(scope) as number);
-        case 'in':
-          return (scope) => contains(left(scope), right(scope));
-        default:
-          throw new ExpressionSyntaxError(
-            `Unknown operator '${node.operator}'`,
-            expression
-          );
+      const operation = ARITHMETIC[node.operator];
+      if (operation) {
+        return (scope) => operation(left(scope), right(scope));
       }
+      if (node.operator === 'in') {
+        // `X in list` has the meaning of `includes(list, X)`.
+        return (scope) => MATCH_HELPERS.includes(right(scope), left(scope));
+      }
+      throw new ExpressionSyntaxError(
+        `Unknown operator '${node.operator}'`,
+        expression
+      );
     }
     case 'conditional': {
       const test = compileNode(node.test, context);
       const consequent = compileNode(node.consequent, context);
       const alternate = compileNode(node.alternate, context);
-      return (scope) => (test(scope) ? consequent(scope) : alternate(scope));
+      return (scope) =>
+        isTrue(test(scope)) ? consequent(scope) : alternate(scope);
     }
     case 'call': {
       const { callee } = node;
@@ -532,7 +548,8 @@ function compileNode(
  * true/false/null/undefined), identifiers with guarded member/index access
  * (`__proto__`/`prototype`/`constructor` are rejected), comparison, logical
  * and arithmetic operators, `in` (membership), ternaries, whitelisted helper
- * functions (`defined`, `includes`, `startsWith`, `endsWith`, `lower`, `abs`,
+ * functions (`defined`, `includes`, `contains`, `startsWith`, `endsWith`,
+ * `lower`, `abs`,
  * `min`, `max`, `round`, `floor`, `ceil`, `Number`, `String`) and, where the
  * place gives a list (`options.over`), the aggregates `min(x)`, `max(x)`,
  * `sum(x)`, `count(x)` and `count()`.
@@ -547,6 +564,13 @@ function compileNode(
  * - `<`, `<=`, `>` and `>=` give `false` unless both sides are finite numbers
  *   after `toFinite`, so a numeric string is a number and a missing value never
  *   compares as 0.
+ * - `+`, `-`, `*`, `/` and `%` read both sides with `toFinite`, so `'2' + 1`
+ *   is 3. No value, or a value that is not a number, gives `undefined`. Use a
+ *   template literal to join text.
+ * - `!`, `&&`, `||` and `?:` read no value as false; `&&` and `||` give a
+ *   boolean.
+ * - `includes`, `contains`, `startsWith`, `endsWith` and `in` have the meaning
+ *   of the operators of the same names: `includes` tests whole elements.
  * - The number helpers give `undefined` for a value that is not a number.
  * - An aggregate skips an element whose argument has no value (`count(x)` also
  *   skips `false`). `sum` of no element is 0; `min` and `max` of no element
@@ -611,6 +635,9 @@ export function compileExpression(
     try {
       return evaluator(scope);
     } catch (error) {
+      if (error instanceof RuleCompileError) {
+        throw error;
+      }
       if (!warned) {
         warned = true;
         console.warn(

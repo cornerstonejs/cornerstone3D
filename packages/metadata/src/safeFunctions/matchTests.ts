@@ -20,7 +20,7 @@
  */
 
 import { asArray } from '@cornerstonejs/utils';
-import { hasNoValue, looseEquals, toFinite } from './values';
+import { compareFinite, hasNoValue, looseEquals, toFinite } from './values';
 import { invalidAt, matchForm, matchTestShape } from './schema';
 import type { SchemaSite } from './schema';
 
@@ -108,14 +108,26 @@ const not =
 function numberTest(
   test: (value: number, operand: number) => boolean
 ): (operand: unknown) => ValueTest {
-  return (operand) => (value) => {
-    const number = toFinite(value);
-    return number !== undefined && test(number, operand as number);
-  };
+  const compare = compareFinite(test);
+  return (operand) => (value) => compare(value, operand);
 }
 
 const contains = textTest(false, (text, needle) => text.includes(needle));
 const containsI = textTest(true, (text, needle) => text.includes(needle));
+const startsWith = textTest(false, (text, needle) => text.startsWith(needle));
+const endsWith = textTest(false, (text, needle) => text.endsWith(needle));
+
+/**
+ * The operator meanings as functions of a value and an operand, for the
+ * expression helpers of the same names. So `includes(ImageType, 'LOCALIZER')`
+ * and `{ "includes": "LOCALIZER" }` give the same result.
+ */
+export const MATCH_HELPERS = Object.freeze({
+  includes: (value: unknown, operand: unknown) => includesTest(operand)(value),
+  contains: (value: unknown, operand: unknown) => contains(operand)(value),
+  startsWith: (value: unknown, operand: unknown) => startsWith(operand)(value),
+  endsWith: (value: unknown, operand: unknown) => endsWith(operand)(value),
+});
 
 /**
  * The operators of a test, by name: the operand each one accepts, and its
@@ -216,12 +228,12 @@ export const MATCH_OPERATORS: Readonly<Record<string, Operator>> =
     startsWith: {
       operand: 'a string, or a non-empty array of strings',
       accepts: isTextOrTexts,
-      compile: textTest(false, (text, needle) => text.startsWith(needle)),
+      compile: startsWith,
     },
     endsWith: {
       operand: 'a string, or a non-empty array of strings',
       accepts: isTextOrTexts,
-      compile: textTest(false, (text, needle) => text.endsWith(needle)),
+      compile: endsWith,
     },
   });
 

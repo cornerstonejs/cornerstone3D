@@ -157,6 +157,12 @@ export type CreateDisplaySetSplitRulesOptions = {
    * result fields; a bare function has fields that are not checked.
    */
   seriesFunctions?: Record<string, SeriesFunction | SeriesFunctionDefinition>;
+  /**
+   * Names that no rule can read (`RL-SCOPE-9`), for example `PatientName`. A
+   * rule that names one is a compile error, and a code entry of the context
+   * that reads one through its `values` gets `undefined`.
+   */
+  deniedNames?: readonly string[];
   /** Named comparators for a `sortBy` entry `{ sortFunction: name }`. */
   sortFunctions?: Record<string, NonNullable<SplitRule['compareInstances']>>;
 };

@@ -27,7 +27,12 @@ import {
   unrecognized,
 } from '../safeFunctions';
 import type { NameReaderFunction, SchemaSite } from '../safeFunctions';
-import { ContextProgram, defaultDisplaySetContext } from './displaySetContext';
+import {
+  ContextProgram,
+  defaultDisplaySetContext,
+  isFixedValue,
+} from './displaySetContext';
+import { chainComparators } from './groupInstancesBySplitRules';
 import type {
   ContextLayer,
   ContextReader,
@@ -96,7 +101,9 @@ function compileName(
 
 /**
  * The order of two values of a `sortBy` name: numeric when both are finite
- * numbers, else by text. A missing value is "no opinion" (0).
+ * numbers, else by text. An instance with no value sorts after every instance
+ * with a value, so the order is transitive; two instances with no value are
+ * "no opinion" (0).
  */
 function compareSortValues(a: unknown, b: unknown): number {
   const x = toFinite(a);
@@ -105,7 +112,7 @@ function compareSortValues(a: unknown, b: unknown): number {
     return x - y;
   }
   if (hasNoValue(a) || hasNoValue(b)) {
-    return 0;
+    return Number(hasNoValue(a)) - Number(hasNoValue(b));
   }
   const aText = String(asArrayFirst(a));
   const bText = String(asArrayFirst(b));
@@ -144,22 +151,6 @@ function compileSortKey(
   return sortFunction as Comparator;
 }
 
-/** Chains comparators: the first one with an opinion decides. */
-function chainComparators(comparators: Comparator[]): Comparator {
-  if (comparators.length === 1) {
-    return comparators[0];
-  }
-  return (a, b, context) => {
-    for (const comparator of comparators) {
-      const order = comparator(a, b, context);
-      if (Number.isFinite(order) && order !== 0) {
-        return order;
-      }
-    }
-    return 0;
-  };
-}
-
 /** The reader of one attribute value, over the instances of a display set. */
 type AttributeReader = (
   runtime: ContextRuntime,
@@ -181,11 +172,7 @@ function compileAttributeValue(
         runtime.env(scope, instances[0], extras) as ContextValues
       );
   }
-  if (
-    value === null ||
-    typeof value === 'boolean' ||
-    (typeof value === 'number' && Number.isFinite(value))
-  ) {
+  if (isFixedValue(value, false)) {
     return () => value;
   }
   if (typeof value === 'string') {
@@ -378,6 +365,7 @@ export function compileDisplaySetSplitRules(
         ...BUILT_IN_SERIES_FUNCTIONS,
         ...options.seriesFunctions,
       },
+      deniedNames: options.deniedNames,
       site: createSite(
         { definition: DEFINITION, path: 'displaySetContext' },
         splitRuleSchema,

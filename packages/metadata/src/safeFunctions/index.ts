@@ -31,6 +31,8 @@ export {
   invalid,
   isAbsent,
   isEmpty,
+  isTrue,
+  compareFinite,
   looseEquals,
   parseTemplate,
   readNameAt,
@@ -43,6 +45,7 @@ export {
 
 export {
   compileMatchTest,
+  MATCH_HELPERS,
   MATCH_OPERATORS,
   type ValueTest,
 } from './matchTests';
@@ -61,7 +64,9 @@ export {
   MATCH_OPERATOR_NAMES,
   matchForm,
   matchTestShape,
+  hasOwn,
   readOwn,
+  RuleCompileError,
   safeFunctionSchema,
   selectForm,
   unrecognized,
