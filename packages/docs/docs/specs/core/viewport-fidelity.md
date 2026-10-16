@@ -157,8 +157,9 @@ A viewport with no data has no state, and it shows no indicator.
 
 ### The events and the queries (FIDELITY-EVENT)
 
-- **FIDELITY-EVENT-1** No single fidelity event exists today. A consumer builds
-  the state from the events and the queries below.
+- **FIDELITY-EVENT-1** Before `VIEWPORT_FIDELITY_CHANGED` landed, a consumer
+  built the state from the events and the queries below. Those sources remain
+  valid inputs for the viewport that derives the state.
 
 | Event or query                                | Target        | What it tells a fidelity consumer                                                                                     |
 | --------------------------------------------- | ------------- | --------------------------------------------------------------------------------------------------------------------- |
@@ -173,8 +174,8 @@ A viewport with no data has no state, and it shows no indicator.
 | `utilities.voxelGrid.compareVoxelQuality()`   | query         | The verdict of one viewport for one record.                                                                           |
 | `cache.getImageQuality(imageId)`              | query         | The per-image summary of a stack image.                                                                               |
 
-- **FIDELITY-EVENT-2** The planned event `Events.VIEWPORT_FIDELITY_CHANGED`
-  replaces the composition of FIDELITY-EVENT-1 for a consumer. The work is in
+- **FIDELITY-EVENT-2** The event `Events.VIEWPORT_FIDELITY_CHANGED` replaces
+  the composition of FIDELITY-EVENT-1 for a consumer. See
   [cornerstone3D#2902](https://github.com/cornerstonejs/cornerstone3D/issues/2902).
 - **FIDELITY-EVENT-3** The viewport fires `VIEWPORT_FIDELITY_CHANGED` on its
   element, as it fires `CAMERA_MODIFIED`, because the fidelity belongs to one
@@ -214,7 +215,14 @@ A viewport with no data has no state, and it shows no indicator.
 - **FIDELITY-UI-5** A hover over the indicator shows the details
   (FIDELITY-DISCOVER-1 and FIDELITY-DISCOVER-2): the status, the delivery
   quality, the grid, the missing percentage, the source, the reduction and the
-  sample distance.
+  sample distance. That text is a developer view of the record. An application
+  indicator that needs clinician words (FIDELITY-DISCOVER-4) builds them from
+  `getFidelityState()` or `VIEWPORT_FIDELITY_CHANGED`, and does not reuse the
+  built-in hover string.
+- **FIDELITY-UI-6** A consumer reads the derived state with
+  `viewport.getFidelityState()` (FIDELITY-EVENT-5), and observes changes with
+  `Events.VIEWPORT_FIDELITY_CHANGED` on the viewport element (FIDELITY-EVENT-2
+  to FIDELITY-EVENT-4).
 
 ### The configuration (FIDELITY-CONF)
 
@@ -232,42 +240,22 @@ A viewport with no data has no state, and it shows no indicator.
 
 ## Known deviations
 
-The code on the `feat/fidelity-indicator` branch deviates from the requirements
-above in these places.
+### The built-in hover text uses developer words
 
-### No viewport fidelity event
+The built-in indicator hover text states `grid`, `delivery`, `source` and
+`sample distance`, and it is not translated. The text is a developer view of
+the record. The documentation of the indicator states that an application
+indicator supplies clinician-facing words from `getFidelityState()` /
+`VIEWPORT_FIDELITY_CHANGED` (FIDELITY-DISCOVER-4).
 
-`VIEWPORT_FIDELITY_CHANGED` does not exist. The built-in indicator composes the
-state from `IMAGE_RENDERED` and `IMAGE_VOLUME_MODIFIED`, and an application must
-do the same.
-
-Breaks FIDELITY-EVENT-2 to FIDELITY-EVENT-5.
-
-### The stack viewport has no indicator
-
-`isVolumeFidelityViewport()` accepts `ORTHOGRAPHIC`, `VOLUME_3D` and
-`VOLUME_3D_NEXT`. It excludes `STACK`, and a `STACK` viewport that the flag
-remaps to `PLANAR_NEXT`. A direct `PLANAR_NEXT` viewport that shows a volume is
-also excluded, because the test reads the requested type and not the content.
-
-Breaks FIDELITY-SCOPE-1 and FIDELITY-SCOPE-2.
-
-### The verdict ignores the magnification
-
-`lineKind()` reports `lossy` for any reduction factor above 1. It does not call
-`compareVoxelQuality()` with the display spacing of the viewport. A box average
-at a low magnification therefore shows a warning that is not necessary.
-
-Breaks FIDELITY-NOTIFY-7 and FIDELITY-RECORD-2.
-
-### The details use renderer words
-
-The hover text states `grid`, `delivery`, `source` and `sample distance`, and it
-is not translated. The text is correct for a developer.
-
-Breaks FIDELITY-DISCOVER-4. An application indicator can meet the requirement
-from the record.
+This is intentional for the built-in UI. An application indicator meets
+FIDELITY-DISCOVER-4 from the same state.
 
 ## Past defects
 
-No entry yet.
+| Defect                                                 | Fixed in                   | Requirement                          |
+| ------------------------------------------------------ | -------------------------- | ------------------------------------ |
+| No `VIEWPORT_FIDELITY_CHANGED` / no `getFidelityState` | follow-up to #2978 / #2902 | FIDELITY-EVENT-2..5                  |
+| Stack viewport had no indicator                        | follow-up to #2978         | FIDELITY-SCOPE-1/2                   |
+| Verdict ignored magnification                          | follow-up to #2978         | FIDELITY-NOTIFY-7, FIDELITY-RECORD-2 |
+| Indicator read actors/mappers                          | follow-up to #2978         | GENVIEW-FIDELITY-2                   |

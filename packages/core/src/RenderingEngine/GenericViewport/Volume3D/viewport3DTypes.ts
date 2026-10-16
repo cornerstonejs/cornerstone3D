@@ -143,6 +143,11 @@ export type Volume3DVolumeRendering = MountedRendering<{
    * this data.
    */
   voxelQuality?: VoxelQualityRecord;
+  /**
+   * Current sample distance / idle baseline for this render (FIDELITY-RECORD-6).
+   * 1 when idle; above 1 during interactive LOD.
+   */
+  sampleDistanceLod?: number;
 }>;
 
 /** @internal */

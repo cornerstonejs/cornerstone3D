@@ -344,6 +344,28 @@ export class VtkVolume3DRenderPath
     }
 
     rendering.voxelQuality = this.readQuality(rendering, bindings);
+    rendering.sampleDistanceLod = this.readSampleDistanceLod(rendering);
+  }
+
+  /**
+   * Current sample distance relative to the idle baseline (FIDELITY-RECORD-6).
+   */
+  private readSampleDistanceLod(rendering: Volume3DVolumeRendering): number {
+    const { mapper } = rendering;
+    const current = mapper.getSampleDistance?.();
+    const imageData = mapper.getInputData?.();
+
+    if (!imageData || !(current > 0)) {
+      return 1;
+    }
+
+    const baseline = sampleDistanceOf(imageData, rendering.boundTexture, 1);
+
+    if (!(baseline > 0)) {
+      return 1;
+    }
+
+    return current / baseline;
   }
 
   /**

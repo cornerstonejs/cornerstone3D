@@ -116,6 +116,24 @@ interface ElementEnabledEventDetail {
 }
 
 /**
+ * VIEWPORT_FIDELITY_CHANGED Event's data (FIDELITY-EVENT-3)
+ */
+interface ViewportFidelityChangedEventDetail {
+  /** Viewport Unique ID in the renderingEngine */
+  viewportId: string;
+  /** Unique ID for the renderingEngine */
+  renderingEngineId: string;
+  /** Derived fidelity state of the viewport */
+  state: 'loading' | 'done' | 'lossy' | 'lod' | 'hidden';
+}
+
+/**
+ * VIEWPORT_FIDELITY_CHANGED Event type
+ */
+type ViewportFidelityChangedEvent =
+  CustomEventType<ViewportFidelityChangedEventDetail>;
+
+/**
  * IMAGE_RENDERED Event's data
  */
 interface ImageRenderedEventDetail {
@@ -479,6 +497,8 @@ export type {
   VolumeScrollOutOfBoundsEvent,
   ActorsChangedEventDetail,
   ActorsChangedEvent,
+  ViewportFidelityChangedEventDetail,
+  ViewportFidelityChangedEvent,
   CameraModifiedEventDetail,
   CameraModifiedEvent,
   VoiModifiedEvent,

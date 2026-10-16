@@ -57,6 +57,11 @@ import { getCubeSizeInView } from '../utilities/getPlaneCubeIntersectionDimensio
 import { getNormalizedAspectRatio } from '../utilities/getNormalizedAspectRatio';
 import { getConfiguration } from '../init';
 import type { extendedVtkCamera } from './vtkClasses/extendedVtkCamera';
+import {
+  type FidelityLine,
+  type ViewportFidelityState,
+  svgStateOf,
+} from './helpers/fidelityIndicator/fidelityIndicatorState';
 
 /**
  * An object representing a single viewport, which is a camera
@@ -156,6 +161,14 @@ class Viewport {
   _suppressCameraModifiedEvents = false;
   /** A flag representing if viewport methods should fire events or not */
   readonly suppressEvents: boolean;
+  /**
+   * Last derived fidelity state that was published on
+   * `VIEWPORT_FIDELITY_CHANGED`. Used so the event fires only on change
+   * (FIDELITY-EVENT-4).
+   */
+  private _lastPublishedFidelityState:
+    | ViewportFidelityState['state']
+    | undefined;
   protected hasPixelSpacing = true;
   protected calibration: IImageCalibration;
   /** The camera that is initially defined on the reset for
@@ -375,6 +388,64 @@ class Viewport {
     const renderingEngine = this.getRenderingEngine();
 
     renderingEngine.renderViewport(this.id);
+  }
+
+  /**
+   * Whether this viewport can report fidelity (GENVIEW-FIDELITY-8). Subclasses
+   * that show degraded data override this. The built-in indicator attaches
+   * only when this returns true.
+   */
+  public canReportFidelity(): boolean {
+    return false;
+  }
+
+  /**
+   * On-demand fidelity query (FIDELITY-EVENT-5 / GENVIEW-FIDELITY-4). Pure
+   * with respect to events: it does not fire `VIEWPORT_FIDELITY_CHANGED`.
+   */
+  public getFidelityState(): ViewportFidelityState {
+    const lines = this.collectFidelityLines();
+
+    return {
+      state: svgStateOf(lines),
+      lines,
+    };
+  }
+
+  /**
+   * Recomputes fidelity and fires `VIEWPORT_FIDELITY_CHANGED` when the derived
+   * state changes (FIDELITY-EVENT-2..4). Called after each successful render.
+   */
+  public notifyFidelityStateChanged(): void {
+    const next = this.getFidelityState();
+
+    if (next.state === this._lastPublishedFidelityState) {
+      return;
+    }
+
+    this._lastPublishedFidelityState = next.state;
+
+    if (this.suppressEvents) {
+      return;
+    }
+
+    const eventDetail: EventTypes.ViewportFidelityChangedEventDetail = {
+      viewportId: this.id,
+      renderingEngineId: this.renderingEngineId,
+      state: next.state,
+    };
+
+    triggerEvent(this.element, Events.VIEWPORT_FIDELITY_CHANGED, eventDetail);
+  }
+
+  /**
+   * Builds the fidelity lines for this viewport. Subclasses that can show
+   * degraded data override this. The indicator and `getFidelityState` read
+   * only this method — they do not inspect actors or mappers
+   * (GENVIEW-FIDELITY-2).
+   */
+  protected collectFidelityLines(): FidelityLine[] {
+    return [];
   }
 
   /**

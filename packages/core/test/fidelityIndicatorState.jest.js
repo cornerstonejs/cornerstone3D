@@ -131,8 +131,77 @@ describe('fidelityIndicatorState', () => {
       ).toBe('lossy');
     });
 
+    it('is done when a reduction is not visible at the display spacing', () => {
+      // FIDELITY-NOTIFY-7: box average under low magnification is not a warning.
+      expect(
+        lineKind(
+          line({
+            fullResolution: false,
+            reductionFactors: [2, 2, 2],
+            record: record({
+              grid: grid([32, 32, 32], [2, 2, 2]),
+              reduction: VoxelReductions.BoxAverage,
+            }),
+            verdict: {
+              lossless: true,
+              causes: [],
+              magnitude: 0.5,
+              record: record({
+                grid: grid([32, 32, 32], [2, 2, 2]),
+                reduction: VoxelReductions.BoxAverage,
+              }),
+            },
+          })
+        )
+      ).toBe('done');
+    });
+
+    it('is lossy for decimation even when the verdict magnitude is low', () => {
+      expect(
+        lineKind(
+          line({
+            fullResolution: false,
+            reductionFactors: [2, 2, 2],
+            record: record({
+              grid: grid([32, 32, 32], [2, 2, 2]),
+              reduction: VoxelReductions.Decimation,
+            }),
+            verdict: {
+              lossless: false,
+              causes: ['aliasing'],
+              magnitude: 0.1,
+              record: record({
+                grid: grid([32, 32, 32], [2, 2, 2]),
+                reduction: VoxelReductions.Decimation,
+              }),
+            },
+          })
+        )
+      ).toBe('lossy');
+    });
+
     it('is done at full resolution with idle sample distance', () => {
       expect(lineKind(line())).toBe('done');
+    });
+
+    it('reports stack image quality without a volume record', () => {
+      expect(
+        lineKind(
+          line({
+            record: undefined,
+            imageQualityStatus: ImageQualityStatus.LOSSY,
+            fullResolution: false,
+          })
+        )
+      ).toBe('lossy');
+      expect(
+        lineKind(
+          line({
+            record: undefined,
+            imageQualityStatus: ImageQualityStatus.FULL_RESOLUTION,
+          })
+        )
+      ).toBe('done');
     });
   });
 

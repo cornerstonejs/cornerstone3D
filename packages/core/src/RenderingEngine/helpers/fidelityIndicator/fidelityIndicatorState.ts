@@ -1,14 +1,30 @@
-import type { Point3, VoxelQualityRecord, VoxelGrid } from '../../../types';
+import ImageQualityStatus from '../../../enums/ImageQualityStatus';
+import type {
+  Point3,
+  VoxelGrid,
+  VoxelQualityRecord,
+  VoxelQualityVerdict,
+} from '../../../types';
 import { isAliasingReduction } from '../../../utilities/voxelGrid';
 
 /**
- * One volume that the viewport draws: the quality record of the texture grid,
- * how that grid compares with the full volume, and whether ray sample distance
- * is raised (e.g. TrackballRotateTool during drag).
+ * One source that the viewport draws: a volume quality record and/or a stack
+ * image summary, how that data compares with full fidelity, and whether ray
+ * sample distance is raised (e.g. TrackballRotateTool during drag).
  */
 export type FidelityLine = {
   label: string;
   record?: VoxelQualityRecord;
+  /**
+   * Stack / progressive image summary when no volume record exists
+   * (FIDELITY-RECORD-5, FIDELITY-SCOPE-2).
+   */
+  imageQualityStatus?: ImageQualityStatus;
+  /**
+   * Magnification-aware verdict from `compareVoxelQuality` when a volume
+   * record and display spacing are available (FIDELITY-NOTIFY-7).
+   */
+  verdict?: VoxelQualityVerdict;
   /**
    * Per-axis ratio of drawn spacing / full-volume spacing (e.g. `[2, 2, 10]`).
    * Each value is 1 when that axis matches the full volume.
@@ -25,11 +41,18 @@ export type FidelityLine = {
 
 export type SvgFidelityState = 'loading' | 'done' | 'lossy' | 'lod';
 
+/** Derived fidelity state of one viewport (FIDELITY-EVENT-3 / EVENT-5). */
+export type ViewportFidelityState = {
+  state: SvgFidelityState | 'hidden';
+  lines: FidelityLine[];
+};
+
 /**
  * Worst-case SVG state across lines: loading > lod > lossy > done.
  * No volume / no quality record yet stays hidden (blank), so the page does not
  * flash the loading glyph before the user starts a load. Once one line has a
- * record, a line without one is loading, and not full resolution.
+ * record or stack image status, a line without one is loading, and not full
+ * resolution.
  */
 export function svgStateOf(lines: FidelityLine[]): SvgFidelityState | 'hidden' {
   if (!lines.length) {
@@ -42,7 +65,7 @@ export function svgStateOf(lines: FidelityLine[]): SvgFidelityState | 'hidden' {
   let anyWithRecord = false;
 
   for (const line of lines) {
-    anyWithRecord ||= !!line.record;
+    anyWithRecord ||= !!line.record || line.imageQualityStatus !== undefined;
     const kind = lineKind(line);
 
     if (kind === 'loading') {
@@ -77,7 +100,17 @@ export function svgStateOf(lines: FidelityLine[]): SvgFidelityState | 'hidden' {
 export type FidelityDataKind = 'loading' | 'decimated' | 'reduced' | 'full';
 
 export function dataKindOf(line: FidelityLine): FidelityDataKind {
-  const { record, reductionFactors, fullResolution } = line;
+  const {
+    record,
+    reductionFactors,
+    fullResolution,
+    verdict,
+    imageQualityStatus,
+  } = line;
+
+  if (!record && imageQualityStatus !== undefined) {
+    return dataKindOfImageQuality(imageQualityStatus);
+  }
 
   if (!record || record.missing > 0) {
     return 'loading';
@@ -87,12 +120,49 @@ export function dataKindOf(line: FidelityLine): FidelityDataKind {
     return 'decimated';
   }
 
+  // Magnification-aware path (FIDELITY-NOTIFY-7 / FIDELITY-RECORD-2).
+  if (verdict) {
+    if (verdict.lossless) {
+      return 'full';
+    }
+
+    if (verdict.causes.includes('aliasing')) {
+      return 'decimated';
+    }
+
+    if (
+      verdict.causes.includes('resolution') ||
+      verdict.causes.includes('quality')
+    ) {
+      return 'reduced';
+    }
+
+    return 'reduced';
+  }
+
   // Spacing only — dims/origin differences must not sticky-flag lossy.
   if (!fullResolution || isReduced(reductionFactors)) {
     return 'reduced';
   }
 
   return 'full';
+}
+
+/** Maps a stack ImageQualityStatus to a data kind (FIDELITY-SCOPE-2). */
+export function dataKindOfImageQuality(
+  status: ImageQualityStatus
+): FidelityDataKind {
+  if (status >= ImageQualityStatus.FULL_RESOLUTION) {
+    return 'full';
+  }
+
+  // SUBRESOLUTION and LOSSY are standing reduced qualities.
+  if (status >= ImageQualityStatus.SUBRESOLUTION) {
+    return 'reduced';
+  }
+
+  // Replicates are placeholders that improve as neighbours arrive.
+  return 'loading';
 }
 
 export function lineKind(line: FidelityLine): SvgFidelityState {

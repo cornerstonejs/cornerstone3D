@@ -367,6 +367,14 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
         triggerEvent(eventDetail.element, Events.IMAGE_RENDERED, eventDetail);
       }
     });
+
+    // Fidelity event after IMAGE_RENDERED so consumers can query the frame
+    // that was just drawn (FIDELITY-EVENT-2..4).
+    viewportsToRender.forEach((viewport) => {
+      (
+        viewport as { notifyFidelityStateChanged?: () => void }
+      ).notifyFidelityStateChanged?.();
+    });
   };
 
   private renderViewportUsingCustomOrVtkPipeline(

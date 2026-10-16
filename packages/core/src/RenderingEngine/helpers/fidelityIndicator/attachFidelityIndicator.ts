@@ -1,17 +1,9 @@
-import cache from '../../../cache/cache';
-import { Events, ImageQualityStatus, ViewportType } from '../../../enums';
+import { Events, ImageQualityStatus } from '../../../enums';
 import eventTarget from '../../../eventTarget';
 import { getConfiguration } from '../../../init';
-import type {
-  ActorEntry,
-  IViewport,
-  Point3,
-  VoxelGrid,
-  VoxelQualityRecord,
-} from '../../../types';
-import { voxelGridsEqual } from '../../../utilities/voxelGrid';
-import { sampleDistanceOf } from '../createVolumeMapper';
+import type { IViewport, Point3 } from '../../../types';
 import { ensureFidelityIndicatorStyles } from './fidelityIndicatorStyles';
+import { isLabelmapActorEntry } from './isLabelmapActorEntry';
 import {
   type FidelityDataKind,
   type FidelityLine,
@@ -20,10 +12,10 @@ import {
   formatFactor,
   formatFactors,
   isInteractiveLod,
-  isReduced,
-  reductionFactorsOf,
   svgStateOf,
 } from './fidelityIndicatorState';
+
+export { isLabelmapActorEntry };
 
 const COLORS = {
   full: '#2e9d4a',
@@ -51,43 +43,41 @@ const ARIA_LABELS: Record<SvgFidelityState, string> = {
   lod: 'Image fidelity: interactive LOD',
 };
 
-type VolumeViewportLike = IViewport & {
-  getActors: () => ActorEntry[];
-};
-
-type VolumeMapperLike = {
-  getScalarTexture?: () => { getGrid?: () => VoxelGrid };
-  getSampleDistance?: () => number;
-  getInputData?: () => {
-    getSpacing: () => number[];
-    getBounds: () => number[];
-  };
-};
-
 /** One view of the fidelity lines: the product icon, or the debug badge. */
 type FidelityView = {
   update: (lines: FidelityLine[]) => void;
   remove: () => void;
 };
 
-/** The quality record of one volume, for the grid that it was read for. */
-type CachedRecord = {
-  grid: VoxelGrid;
-  record: VoxelQualityRecord | undefined;
+type FidelityViewport = IViewport & {
+  canReportFidelity?: () => boolean;
+  getFidelityState?: () => {
+    state: SvgFidelityState | 'hidden';
+    lines: FidelityLine[];
+  };
+  notifyFidelityStateChanged?: () => void;
 };
 
 const cleanups = new WeakMap<object, () => void>();
 
 /**
- * Attaches the fidelity indicator to a volume viewport.
+ * Attaches the fidelity indicator to a viewport that can report fidelity.
  *
  * Default UI is the fidelity indicator in the top-right (`loading` / `done` /
  * `lossy` / `lod`). When `init({ debug: { fidelityIndicatorDebug: true } })`
  * is set, the verbose debug badge is also shown in the top-left.
  *
+ * The indicator is a consumer of `viewport.getFidelityState()` and
+ * `VIEWPORT_FIDELITY_CHANGED` (GENVIEW-FIDELITY-7). It does not read actors or
+ * mappers.
+ *
  * Replaces any existing attachment for this viewport (including the engine
  * default). When `init({ dangerouslyDisableFidelityIndicator: true })` is set,
  * this detaches any existing indicator and is otherwise a no-op.
+ *
+ * The built-in hover text is a developer view of the record (grid, delivery,
+ * source, sample distance). Clinician-facing copy belongs on an application
+ * indicator that reads the same state (FIDELITY-DISCOVER-4).
  *
  * @returns a function that removes the indicator and its listeners
  */
@@ -98,7 +88,7 @@ export function attachFidelityIndicator(viewport: IViewport): () => void {
     return () => {};
   }
 
-  if (!hasGetActors(viewport)) {
+  if (!hasFidelityApi(viewport)) {
     return () => {};
   }
 
@@ -126,16 +116,16 @@ export function attachFidelityIndicator(viewport: IViewport): () => void {
 }
 
 /**
- * Attaches the fidelity indicator when the viewport is a volume type and the
- * product indicator is not disabled. Uses {@link attachFidelityIndicator}, which
- * stores cleanup for {@link detachFidelityIndicator}.
+ * Attaches the fidelity indicator when the viewport can report fidelity and
+ * the product indicator is not disabled. Uses {@link attachFidelityIndicator},
+ * which stores cleanup for {@link detachFidelityIndicator}.
  */
 export function maybeAttachFidelityIndicator(viewport: IViewport): void {
   if (getConfiguration().dangerouslyDisableFidelityIndicator) {
     return;
   }
 
-  if (!isVolumeFidelityViewport(viewport) || !hasGetActors(viewport)) {
+  if (!canReportFidelity(viewport)) {
     return;
   }
 
@@ -155,51 +145,46 @@ export function detachFidelityIndicator(viewport: IViewport): void {
 }
 
 /**
- * Whether this viewport should get the product fidelity indicator.
- * Stack (and stack remapped to PLANAR_NEXT) is excluded; orthographic and
- * volume-3D (legacy and Next) are included.
+ * Whether this viewport should get the product fidelity indicator
+ * (GENVIEW-FIDELITY-8). Decided from `viewport.canReportFidelity()` when
+ * present, otherwise from content that can degrade (stack / volume).
+ *
+ * @deprecated Prefer {@link canReportFidelity}; kept as an alias for callers
+ * that still import the volume-era name.
  */
 export function isVolumeFidelityViewport(viewport: IViewport): boolean {
-  const requested = viewport.requestedType ?? viewport.type;
-
-  return (
-    requested === ViewportType.ORTHOGRAPHIC ||
-    requested === ViewportType.VOLUME_3D ||
-    requested === ViewportType.VOLUME_3D_NEXT ||
-    viewport.type === ViewportType.VOLUME_3D ||
-    viewport.type === ViewportType.VOLUME_3D_NEXT
-  );
+  return canReportFidelity(viewport);
 }
 
 /**
- * Whether an actor is a labelmap overlay (FIDELITY-SCOPE-3). Tools set
- * `representationUID` to `${segmentationId}-Labelmap-...`.
+ * Whether a viewport can report fidelity (GENVIEW-FIDELITY-8). Uses the
+ * viewport capability when available; does not use a hard list of types.
  */
-export function isLabelmapActorEntry(entry: ActorEntry): boolean {
-  const id = entry.representationUID ?? entry.uid;
-  return typeof id === 'string' && /(?:^|-)Labelmap(?:-|$)/.test(id);
+export function canReportFidelity(viewport: IViewport): boolean {
+  const vp = viewport as FidelityViewport;
+
+  if (typeof vp.canReportFidelity === 'function') {
+    return vp.canReportFidelity();
+  }
+
+  return false;
 }
 
-function hasGetActors(viewport: IViewport): viewport is VolumeViewportLike {
-  return typeof (viewport as VolumeViewportLike).getActors === 'function';
+function hasFidelityApi(viewport: IViewport): viewport is FidelityViewport {
+  return typeof (viewport as FidelityViewport).getFidelityState === 'function';
 }
 
 /**
- * Reads the fidelity lines at most once per animation frame, and passes them to
- * every view.
- *
- * The quality record of a volume is cached, because `getGridQuality` walks the
- * deliveries of the volume. A render that only moves the camera or changes the
- * sample distance reuses the record. The cache entry of a volume goes when the
- * data of that volume changes, or when the viewport binds a different grid.
+ * Reads fidelity lines from the viewport API and passes them to every view.
+ * Also keeps the viewport fidelity event in sync when volume data changes
+ * without a render.
  */
 function subscribeToFidelity(
-  viewport: VolumeViewportLike,
+  viewport: FidelityViewport,
   views: FidelityView[],
   restoreHost: () => void
 ): () => void {
   const { element } = viewport;
-  const records = new Map<string, CachedRecord>();
   let rafId = 0;
   let disposed = false;
 
@@ -208,7 +193,12 @@ function subscribeToFidelity(
     if (disposed) {
       return;
     }
-    const lines = readLines(viewport, records);
+
+    viewport.notifyFidelityStateChanged?.();
+    const { lines } = viewport.getFidelityState?.() ?? {
+      lines: [] as FidelityLine[],
+    };
+
     for (const view of views) {
       view.update(lines);
     }
@@ -220,11 +210,19 @@ function subscribeToFidelity(
     }
   };
 
-  const onVolumeModified = (evt: Event) => {
-    const { volumeId } = (evt as CustomEvent<{ volumeId?: string }>).detail;
+  const onVolumeModified = () => {
+    schedule();
+  };
 
-    if (volumeId && records.delete(volumeId)) {
-      schedule();
+  const onFidelityChanged = () => {
+    if (disposed) {
+      return;
+    }
+    const { lines } = viewport.getFidelityState?.() ?? {
+      lines: [] as FidelityLine[],
+    };
+    for (const view of views) {
+      view.update(lines);
     }
   };
 
@@ -238,6 +236,10 @@ function subscribeToFidelity(
       rafId = 0;
     }
     element.removeEventListener(Events.IMAGE_RENDERED, schedule);
+    element.removeEventListener(
+      Events.VIEWPORT_FIDELITY_CHANGED,
+      onFidelityChanged
+    );
     for (const type of VOLUME_DATA_EVENTS) {
       eventTarget.removeEventListener(type, onVolumeModified);
     }
@@ -248,6 +250,7 @@ function subscribeToFidelity(
   };
 
   element.addEventListener(Events.IMAGE_RENDERED, schedule);
+  element.addEventListener(Events.VIEWPORT_FIDELITY_CHANGED, onFidelityChanged);
   for (const type of VOLUME_DATA_EVENTS) {
     eventTarget.addEventListener(type, onVolumeModified);
   }
@@ -418,111 +421,38 @@ function createSvgIndicator(host: HTMLElement): FidelityView {
   };
 }
 
-function readLines(
-  viewport: VolumeViewportLike,
-  records: Map<string, CachedRecord>
-): FidelityLine[] {
-  const lines: FidelityLine[] = [];
-  const seen = new Set<string>();
-
-  for (const entry of viewport.getActors()) {
-    const id = entry.referencedId ?? entry.uid;
-    const volume = id ? cache.getVolume(id) : undefined;
-
-    if (!volume || seen.has(id) || isLabelmapActorEntry(entry)) {
-      continue;
-    }
-
-    seen.add(id);
-
-    const mapper = (
-      entry.actor as { getMapper?: () => VolumeMapperLike }
-    ).getMapper?.() as VolumeMapperLike | undefined;
-    const texture = mapper?.getScalarTexture?.();
-    const grid = texture?.getGrid?.() ?? volume.voxelGrid;
-    const fullGrid = volume.voxelGrid;
-    let cached = records.get(id);
-
-    if (!cached || !voxelGridsEqual(cached.grid, grid)) {
-      cached = {
-        grid,
-        record: volume.getGridQuality(grid, volume.reductionStatistic) as
-          | VoxelQualityRecord
-          | undefined,
-      };
-      records.set(id, cached);
-    }
-
-    const reductionFactors = reductionFactorsOf(grid, fullGrid);
-
-    lines.push({
-      label: 'Image',
-      record: cached.record ?? undefined,
-      reductionFactors,
-      // Spacing only — dims/origin differences must not sticky-flag lossy.
-      fullResolution: !isReduced(reductionFactors),
-      sampleDistanceLod: sampleDistanceLodOf(mapper),
-    });
-  }
-
-  return lines;
-}
-
-/**
- * How much coarser the ray sample distance is than idle. 1 when idle or when
- * the mapper has no sample distance (MPR).
- */
-function sampleDistanceLodOf(mapper: VolumeMapperLike | undefined): number {
-  if (!mapper?.getSampleDistance) {
-    return 1;
-  }
-
-  const current = mapper.getSampleDistance();
-  const imageData = mapper.getInputData?.();
-
-  if (!imageData || !(current > 0)) {
-    return 1;
-  }
-
-  const texture = mapper.getScalarTexture?.();
-  const baseline = sampleDistanceOf(
-    imageData as Parameters<typeof sampleDistanceOf>[0],
-    texture,
-    1
-  );
-
-  if (!(baseline > 0)) {
-    return 1;
-  }
-
-  return current / baseline;
-}
-
 function summaryOf(line: FidelityLine): {
   text: string;
   color: string;
 } {
-  const { record, reductionFactors, sampleDistanceLod } = line;
+  const { record, reductionFactors, sampleDistanceLod, imageQualityStatus } =
+    line;
 
-  if (!record) {
+  if (!record && imageQualityStatus === undefined) {
     return { text: 'NO DATA', color: COLORS.none };
   }
 
   const dataKind = dataKindOf(line);
 
   if (dataKind === 'loading') {
-    const loaded =
-      record.voxels > 0
-        ? Math.min(
-            99,
-            Math.floor((100 * (record.voxels - record.missing)) / record.voxels)
-          )
-        : 0;
+    if (record) {
+      const loaded =
+        record.voxels > 0
+          ? Math.min(
+              99,
+              Math.floor(
+                (100 * (record.voxels - record.missing)) / record.voxels
+              )
+            )
+          : 0;
 
-    return {
-      text: `${record.exact ? '' : '~'}${loaded}% loaded`,
-      color: COLORS.loading,
-    };
+      return {
+        text: `${record.exact ? '' : '~'}${loaded}% loaded`,
+        color: COLORS.loading,
+      };
+    }
+
+    return { text: 'LOADING', color: COLORS.loading };
   }
 
   if (dataKind === 'decimated') {
@@ -532,7 +462,13 @@ function summaryOf(line: FidelityLine): {
   const parts: string[] = [];
 
   if (dataKind === 'reduced') {
-    parts.push(`REDUCED ${formatFactors(reductionFactors)}`);
+    if (record) {
+      parts.push(`REDUCED ${formatFactors(reductionFactors)}`);
+    } else if (imageQualityStatus !== undefined) {
+      parts.push(
+        ImageQualityStatus[imageQualityStatus] ?? String(imageQualityStatus)
+      );
+    }
   }
 
   if (isInteractiveLod(sampleDistanceLod)) {
@@ -546,9 +482,14 @@ function summaryOf(line: FidelityLine): {
   return { text: 'FULL', color: COLORS.full };
 }
 
+/**
+ * Developer-facing hover text for the built-in indicator. This is not
+ * clinician copy (FIDELITY-DISCOVER-4); applications should render clinician
+ * words from `getFidelityState()` / `VIEWPORT_FIDELITY_CHANGED`.
+ */
 function fidelityHoverTextOf(lines: FidelityLine[]): string {
   if (!lines.length) {
-    return 'No volume in this viewport yet';
+    return 'No image data in this viewport yet';
   }
 
   return lines.map(detailsOf).join('\n\n');
@@ -558,14 +499,29 @@ const DETAIL_STATUS: Record<FidelityDataKind, (line: FidelityLine) => string> =
   {
     loading: () => 'loading',
     decimated: () => 'decimated',
-    reduced: (line) => `reduced ${formatFactors(line.reductionFactors)}`,
+    reduced: (line) =>
+      line.record
+        ? `reduced ${formatFactors(line.reductionFactors)}`
+        : 'reduced',
     full: () => 'full resolution',
   };
 
 function detailsOf(line: FidelityLine): string {
-  const { label, record, sampleDistanceLod } = line;
+  const { label, record, sampleDistanceLod, imageQualityStatus } = line;
 
   if (!record) {
+    if (imageQualityStatus !== undefined) {
+      const status =
+        ImageQualityStatus[imageQualityStatus] ?? String(imageQualityStatus);
+
+      return [
+        `${label}`,
+        `  status    ${DETAIL_STATUS[dataKindOf(line)](line)}`,
+        `  delivery  ${status}`,
+        `  note      developer view — app indicators supply clinician text`,
+      ].join('\n');
+    }
+
     return `${label}: no quality record`;
   }
 
@@ -592,6 +548,7 @@ function detailsOf(line: FidelityLine): string {
     `  missing   ${record.exact ? '' : '~'}${missingPercent}% of ${record.voxels} voxels`,
     `  source    ${record.source} · ${record.reduction} · ${record.deliveries} deliveries`,
     `  lod       ${lodState}`,
+    `  note      developer view — app indicators supply clinician text`,
   ].join('\n');
 }
 

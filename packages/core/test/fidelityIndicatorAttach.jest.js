@@ -15,13 +15,22 @@ import VoxelReductions from '../src/enums/VoxelReductions';
 import ViewportType from '../src/enums/ViewportType';
 import {
   attachFidelityIndicator,
+  canReportFidelity,
   detachFidelityIndicator,
   isLabelmapActorEntry,
   isVolumeFidelityViewport,
   maybeAttachFidelityIndicator,
 } from '../src/RenderingEngine/helpers/fidelityIndicator';
+import { svgStateOf } from '../src/RenderingEngine/helpers/fidelityIndicator/fidelityIndicatorState';
+import { fidelityLinesFromVolumeActors } from '../src/RenderingEngine/helpers/fidelityIndicator/collectFidelityLines';
 
-function viewportStub({ type, requestedType, getActors = true } = {}) {
+function viewportStub({
+  type,
+  requestedType,
+  getActors = true,
+  canReport = true,
+  lines = [],
+} = {}) {
   const element = document.createElement('div');
   const inner = document.createElement('div');
   inner.className = 'viewport-element';
@@ -34,6 +43,12 @@ function viewportStub({ type, requestedType, getActors = true } = {}) {
     requestedType,
     element,
     getActors: getActors ? () => [] : undefined,
+    canReportFidelity: () => canReport,
+    getFidelityState: () => ({
+      state: svgStateOf(lines),
+      lines,
+    }),
+    notifyFidelityStateChanged: () => {},
   };
 }
 
@@ -44,41 +59,38 @@ describe('fidelityIndicator attach gates', () => {
     setConfiguration(original);
   });
 
-  describe('isVolumeFidelityViewport', () => {
-    it('accepts orthographic and volume3d (legacy and Next)', () => {
+  describe('canReportFidelity / isVolumeFidelityViewport', () => {
+    it('accepts viewports that declare canReportFidelity (volume and stack)', () => {
       expect(
-        isVolumeFidelityViewport(
-          viewportStub({ type: ViewportType.ORTHOGRAPHIC })
+        canReportFidelity(
+          viewportStub({ type: ViewportType.ORTHOGRAPHIC, canReport: true })
         )
       ).toBe(true);
       expect(
-        isVolumeFidelityViewport(viewportStub({ type: ViewportType.VOLUME_3D }))
-      ).toBe(true);
-      expect(
-        isVolumeFidelityViewport(
-          viewportStub({ type: ViewportType.VOLUME_3D_NEXT })
+        canReportFidelity(
+          viewportStub({ type: ViewportType.STACK, canReport: true })
         )
       ).toBe(true);
-      expect(
-        isVolumeFidelityViewport(
-          viewportStub({
-            type: ViewportType.PLANAR_NEXT,
-            requestedType: ViewportType.ORTHOGRAPHIC,
-          })
-        )
-      ).toBe(true);
-    });
-
-    it('rejects stack (including stack remapped to PLANAR_NEXT)', () => {
-      expect(
-        isVolumeFidelityViewport(viewportStub({ type: ViewportType.STACK }))
-      ).toBe(false);
       expect(
         isVolumeFidelityViewport(
           viewportStub({
             type: ViewportType.PLANAR_NEXT,
             requestedType: ViewportType.STACK,
+            canReport: true,
           })
+        )
+      ).toBe(true);
+    });
+
+    it('rejects viewports that cannot report fidelity', () => {
+      expect(
+        canReportFidelity(
+          viewportStub({ type: ViewportType.STACK, canReport: false })
+        )
+      ).toBe(false);
+      expect(
+        isVolumeFidelityViewport(
+          viewportStub({ type: ViewportType.VIDEO, canReport: false })
         )
       ).toBe(false);
     });
@@ -249,7 +261,13 @@ describe('fidelityIndicator attach gates', () => {
 
     function attach() {
       const viewport = viewportStub({ type: ViewportType.ORTHOGRAPHIC });
+      const records = new Map();
       viewport.getActors = () => [{ uid: 'vol', actor: {} }];
+      viewport.getFidelityState = () => {
+        const lines = fidelityLinesFromVolumeActors(viewport, records);
+        return { state: svgStateOf(lines), lines };
+      };
+      viewport._fidelityRecords = records;
       maybeAttachFidelityIndicator(viewport);
       jest.advanceTimersByTime(20);
       return viewport;
@@ -260,16 +278,21 @@ describe('fidelityIndicator attach gates', () => {
       jest.advanceTimersByTime(20);
     }
 
+    function invalidate(viewport) {
+      viewport._fidelityRecords.delete('vol');
+      eventTarget.dispatchEvent(
+        new CustomEvent(Events.IMAGE_VOLUME_MODIFIED, {
+          detail: { volumeId: 'vol' },
+        })
+      );
+    }
+
     it('announces done again after a later degradation', () => {
       const viewport = attach();
       const root = viewport.element.querySelector('.fi-root');
       const renderAs = (missingVoxels) => {
         missing = missingVoxels;
-        eventTarget.dispatchEvent(
-          new CustomEvent(Events.IMAGE_VOLUME_MODIFIED, {
-            detail: { volumeId: 'vol' },
-          })
-        );
+        invalidate(viewport);
         render(viewport);
       };
 
@@ -295,11 +318,7 @@ describe('fidelityIndicator attach gates', () => {
       render(viewport);
       expect(getGridQuality).toHaveBeenCalledTimes(1);
 
-      eventTarget.dispatchEvent(
-        new CustomEvent(Events.IMAGE_VOLUME_MODIFIED, {
-          detail: { volumeId: 'vol' },
-        })
-      );
+      invalidate(viewport);
       render(viewport);
       expect(getGridQuality).toHaveBeenCalledTimes(2);
 

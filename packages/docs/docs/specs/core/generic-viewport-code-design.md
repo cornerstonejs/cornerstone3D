@@ -531,34 +531,14 @@ stack from one that shows a volume.
 
 Breaks GENVIEW-FAMILY-5 and GENVIEW-API-6.
 
-### The fidelity indicator reads actors and mappers
-
-`attachFidelityIndicator` reads `viewport.getActors()`, then
-`actor.getMapper().getScalarTexture().getGrid()` and
-`mapper.getSampleDistance()`. The generic render paths already hold the record
-in `voxelQuality`, and no binding exposes that record.
-
-Breaks GENVIEW-FIDELITY-2. The fix exposes the record through the binding.
-
-### The fidelity indicator selects viewports by a list of types
-
-`isVolumeFidelityViewport` accepts `ORTHOGRAPHIC`, `VOLUME_3D` and
-`VOLUME_3D_NEXT`. A `PLANAR_NEXT` viewport that shows a volume gets no
-indicator, and a stack gets none either.
-
-Breaks GENVIEW-FIDELITY-8 and GENVIEW-API-6.
-
-### No fidelity event and no fidelity query
-
-The base class fires no fidelity event, and it has no fidelity query.
-
-Breaks GENVIEW-FIDELITY-4. The work is in
-[cornerstone3D#2902](https://github.com/cornerstonejs/cornerstone3D/issues/2902).
-
 ## Past defects
 
 This section records the defects that the requirements above prevent. A new
 defect of the same kind gets a new line here, with the pull request that fixed
 it and the requirement that covers it.
 
-No entry yet. The § Known deviations section holds what is open.
+| Defect                                                            | Fixed in                   | Requirement                       |
+| ----------------------------------------------------------------- | -------------------------- | --------------------------------- |
+| Fidelity indicator read actors/mappers instead of binding records | follow-up to #2978         | GENVIEW-FIDELITY-2                |
+| Fidelity indicator selected viewports by a type list              | follow-up to #2978         | GENVIEW-FIDELITY-8, GENVIEW-API-6 |
+| No fidelity event and no fidelity query                           | follow-up to #2978 / #2902 | GENVIEW-FIDELITY-4                |
