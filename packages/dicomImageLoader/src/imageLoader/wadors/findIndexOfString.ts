@@ -29,7 +29,7 @@ function findIndexOfString(
   str: string,
   offset?: number
 ): number {
-  offset = offset || 0;
+  offset = Math.max(offset || 0, 0);
 
   const token = stringToUint8Array(str);
 
