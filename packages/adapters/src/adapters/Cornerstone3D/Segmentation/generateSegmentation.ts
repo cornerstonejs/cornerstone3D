@@ -56,8 +56,6 @@ interface IOptions {
   predecessorImageId?: string;
   /** False for a source that is not a volume; see getFrameOrganization. */
   isVolumetric?: boolean;
-  /** The StackID of a stack, for example the time point of a 4D source. */
-  stackId?: string;
 }
 
 type Options = IOptions & {
@@ -572,10 +570,7 @@ function fillLabelmapSegmentation(
   } = isStack
     ? {
         dimensions: [STACK_ID_DIMENSION, IN_STACK_POSITION_DIMENSION],
-        frameContents: getStackFrameContents(
-          frames.length,
-          options.stackId === undefined ? undefined : String(options.stackId)
-        ),
+        frameContents: getStackFrameContents(frames.length),
         orientations: [],
         normals: [],
         frameOrientations: frames.map(() => 0),

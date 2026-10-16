@@ -20,7 +20,6 @@ import { setConfig } from './config';
 import type { Config } from './config';
 import segmentationRemovedListener from './eventListeners/segmentation/segmentationRemovedEventListener';
 import renderingPipelineChangedListener from './eventListeners/segmentation/renderingPipelineChangedListener';
-import dynamicVolumeDimensionGroupChangedListener from './eventListeners/segmentation/dynamicVolumeDimensionGroupChangedListener';
 import { registerBuiltInSegmentationRepresentationDisplays } from './tools/displayTools/registerBuiltInSegmentationRepresentationDisplays';
 
 let csToolsInitialized = false;
@@ -90,10 +89,6 @@ function _addCornerstoneEventListeners(): void {
     Enums.Events.RENDERING_PIPELINE_CHANGED,
     renderingPipelineChangedListener
   );
-  eventTarget.addEventListener(
-    Enums.Events.DYNAMIC_VOLUME_DIMENSION_GROUP_CHANGED,
-    dynamicVolumeDimensionGroupChangedListener
-  );
   annotationInterpolationEventDispatcher.enable();
 }
 
@@ -111,10 +106,6 @@ function _removeCornerstoneEventListeners(): void {
   eventTarget.removeEventListener(
     Enums.Events.RENDERING_PIPELINE_CHANGED,
     renderingPipelineChangedListener
-  );
-  eventTarget.removeEventListener(
-    Enums.Events.DYNAMIC_VOLUME_DIMENSION_GROUP_CHANGED,
-    dynamicVolumeDimensionGroupChangedListener
   );
   annotationInterpolationEventDispatcher.disable();
 }

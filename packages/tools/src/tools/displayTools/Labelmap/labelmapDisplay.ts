@@ -14,7 +14,6 @@ import { getPolySeg } from '../../../config';
 import { computeAndAddRepresentation } from '../../../utilities/segmentation/computeAndAddRepresentation';
 import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents';
 import { defaultSegmentationStateManager } from '../../../stateManagement/segmentation/SegmentationStateManager';
-import { isLabelmapStackOnViewport } from '../../../stateManagement/segmentation/helpers/labelmapStack';
 import {
   removeLabelmapRepresentationFromViewport,
   resolveLabelmapRenderPlan,
@@ -148,15 +147,6 @@ async function render(
   }
 
   if (!labelmapData) {
-    return;
-  }
-
-  // A labelmap of one stack, such as one time point of a 4D volume, is hidden
-  // while the viewport shows another stack.
-  if (!isLabelmapStackOnViewport(viewport, labelmapData)) {
-    if (labelmapActorEntries?.length) {
-      removeLabelmapRepresentationFromViewport(viewport, segmentationId);
-    }
     return;
   }
 

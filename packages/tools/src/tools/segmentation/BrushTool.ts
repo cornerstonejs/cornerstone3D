@@ -267,10 +267,6 @@ class BrushTool extends LabelmapBaseTool {
 
     // @ts-expect-error
     this._editData = this.createEditData(element);
-    if (!this._editData) {
-      // For example, the labelmap belongs to another time point.
-      return false;
-    }
 
     // This might be a mouse down
     this._previewData.isDrag = false;

@@ -36,8 +36,7 @@ export function isTemporalInstance(instance): boolean {
 /**
  * The frame organization of a LABELMAP SEG of `images`. It is `stack` when:
  * - the caller sets `isVolumetric: false`, for example for a display set
- *   that is not a volume, or gives a `stackId`, for example the time point
- *   of a 4D segmentation;
+ *   that is not a volume;
  * - a source image is part of a 4D series (see isTemporalInstance), so that
  *   the segmentation stays on its time point;
  * - a source image has no Frame of Reference, position or orientation.
@@ -47,9 +46,9 @@ export function isTemporalInstance(instance): boolean {
 export function getFrameOrganization(
   images: Array<{ imageId?: string }>,
   metadata,
-  options: { isVolumetric?: unknown; stackId?: unknown } = {}
+  options: { isVolumetric?: unknown } = {}
 ): FrameOrganization {
-  if (options.isVolumetric === false || options.stackId !== undefined) {
+  if (options.isVolumetric === false) {
     return 'stack';
   }
   const isStack = images.some((image) => {
