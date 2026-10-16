@@ -120,7 +120,17 @@ export function dataKindOf(line: FidelityLine): FidelityDataKind {
     return 'decimated';
   }
 
-  // Magnification-aware path (FIDELITY-NOTIFY-7 / FIDELITY-RECORD-2).
+  // Unreduced grids are full fidelity regardless of display spacing.
+  // compareVoxelQuality may still push `resolution` when voxels exceed a
+  // display pixel (small study fitted large); that must not invent a warning
+  // (FIDELITY-NOTIFY-7 only clears warnings for reduced data).
+  const spatiallyReduced = !fullResolution || isReduced(reductionFactors);
+
+  if (!spatiallyReduced) {
+    return 'full';
+  }
+
+  // Magnification-aware path for actually reduced data (FIDELITY-NOTIFY-7).
   if (verdict) {
     if (verdict.lossless) {
       return 'full';
@@ -130,22 +140,10 @@ export function dataKindOf(line: FidelityLine): FidelityDataKind {
       return 'decimated';
     }
 
-    if (
-      verdict.causes.includes('resolution') ||
-      verdict.causes.includes('quality')
-    ) {
-      return 'reduced';
-    }
-
     return 'reduced';
   }
 
-  // Spacing only — dims/origin differences must not sticky-flag lossy.
-  if (!fullResolution || isReduced(reductionFactors)) {
-    return 'reduced';
-  }
-
-  return 'full';
+  return 'reduced';
 }
 
 /** Maps a stack ImageQualityStatus to a data kind (FIDELITY-SCOPE-2). */

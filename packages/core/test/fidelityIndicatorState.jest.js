@@ -133,13 +133,14 @@ describe('fidelityIndicatorState', () => {
 
     it('is done when a reduction is not visible at the display spacing', () => {
       // FIDELITY-NOTIFY-7: box average under low magnification is not a warning.
+      // Large-study axial: shared 1×1×2 texture, verdict lossless → done.
       expect(
         lineKind(
           line({
             fullResolution: false,
-            reductionFactors: [2, 2, 2],
+            reductionFactors: [1, 1, 2],
             record: record({
-              grid: grid([32, 32, 32], [2, 2, 2]),
+              grid: grid([512, 512, 1232], [1, 1, 2]),
               reduction: VoxelReductions.BoxAverage,
             }),
             verdict: {
@@ -147,8 +148,59 @@ describe('fidelityIndicatorState', () => {
               causes: [],
               magnitude: 0.5,
               record: record({
-                grid: grid([32, 32, 32], [2, 2, 2]),
+                grid: grid([512, 512, 1232], [1, 1, 2]),
                 reduction: VoxelReductions.BoxAverage,
+              }),
+            },
+          })
+        )
+      ).toBe('done');
+    });
+
+    it('is lossy when a spatial reduction is visible at the display spacing', () => {
+      // Large-study sag/cor: same 1×1×2 texture, resolution cause → lossy.
+      expect(
+        lineKind(
+          line({
+            fullResolution: false,
+            reductionFactors: [1, 1, 2],
+            record: record({
+              grid: grid([512, 512, 1232], [1, 1, 2]),
+              reduction: VoxelReductions.BoxAverage,
+            }),
+            verdict: {
+              lossless: false,
+              causes: ['resolution'],
+              magnitude: 2,
+              record: record({
+                grid: grid([512, 512, 1232], [1, 1, 2]),
+                reduction: VoxelReductions.BoxAverage,
+              }),
+            },
+          })
+        )
+      ).toBe('lossy');
+    });
+
+    it('is done for full-res data even when the verdict flags resolution', () => {
+      // Small study: factors 1×1×1, voxels larger than display pixels must not
+      // invent a reduced warning.
+      expect(
+        lineKind(
+          line({
+            fullResolution: true,
+            reductionFactors: [1, 1, 1],
+            record: record({
+              grid: grid([64, 64, 64], [1, 1, 1]),
+              reduction: VoxelReductions.None,
+            }),
+            verdict: {
+              lossless: false,
+              causes: ['resolution'],
+              magnitude: 4,
+              record: record({
+                grid: grid([64, 64, 64], [1, 1, 1]),
+                reduction: VoxelReductions.None,
               }),
             },
           })

@@ -12,6 +12,7 @@ import {
   formatFactor,
   formatFactors,
   isInteractiveLod,
+  isReduced,
   svgStateOf,
 } from './fidelityIndicatorState';
 
@@ -462,7 +463,7 @@ function summaryOf(line: FidelityLine): {
   const parts: string[] = [];
 
   if (dataKind === 'reduced') {
-    if (record) {
+    if (record && isReduced(reductionFactors)) {
       parts.push(`REDUCED ${formatFactors(reductionFactors)}`);
     } else if (imageQualityStatus !== undefined) {
       parts.push(
