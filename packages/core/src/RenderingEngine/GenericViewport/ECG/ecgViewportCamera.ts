@@ -1,6 +1,7 @@
 import type { Point2 } from '../../../types';
 import type { ViewAnchor } from '../ViewportCameraTypes';
-import type { ECGViewState, RenderWindowMetrics } from './ECGViewportTypes';
+import type { ECGViewState } from './ECGViewportTypes';
+import type { ECGRenderMetrics } from './ecgGeometry';
 
 export interface ECGCanvasMapping {
   anchorWorld: [number, number];
@@ -14,11 +15,45 @@ export interface ECGCanvasMapping {
   yOffset: number;
 }
 
-export function createDefaultECGViewState(args: {
-  timeRange: [number, number];
-  valueRange: [number, number];
-}): ECGViewState {
+/** View state fields that select the layout, and not the navigation. */
+export type ECGLayoutOptions = Pick<
+  ECGViewState,
+  | 'sweepSpeed'
+  | 'sensitivityMmMv'
+  | 'amplitudeScale'
+  | 'visibleChannels'
+  | 'traceLayout'
+>;
+
+const ECG_LAYOUT_OPTION_KEYS: (keyof ECGLayoutOptions)[] = [
+  'sweepSpeed',
+  'sensitivityMmMv',
+  'amplitudeScale',
+  'visibleChannels',
+  'traceLayout',
+];
+
+/** Returns the layout options that `viewState` defines. */
+export function getECGLayoutOptions(viewState: ECGViewState): ECGLayoutOptions {
+  const options: ECGLayoutOptions = {};
+
+  ECG_LAYOUT_OPTION_KEYS.forEach((key) => {
+    if (viewState[key] !== undefined) {
+      (options as Record<string, unknown>)[key] = viewState[key];
+    }
+  });
+
+  return options;
+}
+
+export function createDefaultECGViewState(
+  args: {
+    timeRange: [number, number];
+    valueRange: [number, number];
+  } & ECGLayoutOptions
+): ECGViewState {
   return {
+    ...getECGLayoutOptions(args as ECGViewState),
     timeRange: [...args.timeRange] as [number, number],
     valueRange: [...args.valueRange] as [number, number],
     scrollOffset: 0,
@@ -31,6 +66,7 @@ export function createDefaultECGViewState(args: {
 
 export function normalizeECGViewState(camera: ECGViewState): ECGViewState {
   return {
+    ...getECGLayoutOptions(camera),
     timeRange: [...camera.timeRange] as [number, number],
     valueRange: [...camera.valueRange] as [number, number],
     ...(camera.scrollOffset !== undefined
@@ -49,7 +85,7 @@ export function normalizeECGViewState(camera: ECGViewState): ECGViewState {
 }
 
 export function resolveECGCanvasMapping(args: {
-  metrics: RenderWindowMetrics;
+  metrics: ECGRenderMetrics;
   camera?: ECGViewState;
   canvas: HTMLCanvasElement;
 }): ECGCanvasMapping {
