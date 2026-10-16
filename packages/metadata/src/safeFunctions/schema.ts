@@ -20,9 +20,9 @@
  * - An actual function passes through as is wherever the table says that a
  *   function is accepted. Strictness applies to data only.
  *
- * This module is generic: it knows conditions and values (see
- * {@link conditionShape} and {@link valueShape}), and nothing about display
- * sets. A consumer adds its own shapes (the display-set rule, a comparator, ...)
+ * This module is generic: it knows conditions, tests and values (see
+ * {@link conditionShape}, {@link matchTestShape} and {@link valueShape}), and
+ * nothing about display sets. A consumer adds its own shapes (the display-set rule, a comparator, ...)
  * and compilers for them, and reuses {@link compileKey} to walk its table.
  *
  * @module safeFunctions/schema
@@ -74,6 +74,8 @@ export type SchemaKey = {
   readonly kind: string;
   /** The key holds an array of `kind`. */
   readonly list?: boolean;
+  /** The key holds an object of `kind` values, keyed by any name. */
+  readonly record?: boolean;
   /** The key may be left out. */
   readonly optional?: boolean;
   /** The allowed values of a `string` kind. */
@@ -86,7 +88,7 @@ export type SchemaKey = {
   readonly keys?: Readonly<Record<string, SchemaKey>>;
   /**
    * Keys that an object form of the shape accepts at this place in addition to
-   * its own keys, e.g. the `label` of a `join` part.
+   * its own keys.
    */
   readonly extraKeys?: Readonly<Record<string, SchemaKey>>;
   /**
@@ -98,7 +100,7 @@ export type SchemaKey = {
   readonly with?: readonly string[];
   /**
    * The whole value of this key may be an actual function, which passes
-   * through as is (the `series` hook, a whole `customAttributes`).
+   * through as is (a whole `matches`, a whole `attributes`).
    */
   readonly function?: boolean;
   /**
@@ -148,6 +150,22 @@ export type SchemaShape = {
 /** A table of shapes, keyed by the shape name a {@link SchemaKey.kind} uses. */
 export type Schema = Readonly<Record<string, SchemaShape>>;
 
+/** A reader of one name, compiled for a place. */
+export type NameReaderFunction = (
+  subject: unknown,
+  context?: unknown
+) => unknown;
+
+/**
+ * Gives the reader of a name at a site. `field` is the property of a path
+ * (`timeClusters.start`). Throws a compile error for an unknown name.
+ */
+export type NameReader = (
+  name: string,
+  site: SchemaSite,
+  field?: string
+) => NameReaderFunction;
+
 /** Compiles one fragment of a shape at a site. */
 export type ShapeCompiler = (fragment: unknown, site: SchemaSite) => unknown;
 
@@ -156,14 +174,17 @@ export type ShapeCompiler = (fragment: unknown, site: SchemaSite) => unknown;
  * the context the place gives it (the expression scope, the call signature).
  */
 export type SchemaSite = {
-  /** Path of the fragment, for messages, e.g. `rule 'r'.matches.all[1]`. */
+  /** Path of the fragment, for messages, e.g. `rule 'r'.matches.Modality`. */
   readonly path: string;
   /** What is being compiled, for messages. */
   readonly definition: string;
   readonly schema: Schema;
   readonly compilers: Readonly<Record<string, ShapeCompiler>>;
-  /** Named classifiers a condition may reference. */
-  readonly classifiers: Readonly<Record<string, unknown>>;
+  /**
+   * Gives the reader of a name, or throws a compile error for a name that the
+   * place does not know. Defaults to an own-property read of the subject.
+   */
+  readonly readName?: NameReader;
   /** The expression variables of the place. */
   readonly expression?: ExpressionScope;
   /** The call signature of the place. */
@@ -358,7 +379,7 @@ export function describeShape(shape: SchemaShape, site?: SchemaSite): string {
         : 'an expression string'
     );
   } else if (shape.string === 'attribute') {
-    parts.push('an attribute name');
+    parts.push('a name (a DICOM keyword or a context name)');
   }
   for (const form of Object.values(shape.forms)) {
     parts.push(describeForm(form, scope));
@@ -606,123 +627,92 @@ export function matchForm(
 }
 
 /**
- * The conditions: tests over one subject that compile to
- * `(subject, context) => boolean`. The expression scope and the call signature
- * come from the place that holds the condition.
+ * The operators of a test in a condition map, with the names of the OHIF
+ * hanging protocol constraints. Each operator has one meaning in the rule
+ * language; see `matchTests.ts` for the meaning and the operand of each.
+ */
+export const MATCH_OPERATOR_NAMES = Object.freeze([
+  'equals',
+  'doesNotEqual',
+  'notNull',
+  'includes',
+  'doesNotInclude',
+  'greaterThan',
+  'lessThan',
+  'range',
+  'contains',
+  'containsI',
+  'doesNotContain',
+  'doesNotContainI',
+  'containsAll',
+  'startsWith',
+  'endsWith',
+] as const);
+
+/**
+ * The object form of a test in a condition map: exactly one operator, e.g.
+ * `{ "greaterThan": 1 }`. A scalar, an array and `null` are the other forms of
+ * a test; the compiler handles them before it reads this shape.
+ */
+export const matchTestShape: SchemaShape = {
+  name: 'test',
+  function: true,
+  keyNoun: 'operator',
+  forms: {
+    operator: {
+      keys: Object.fromEntries(
+        MATCH_OPERATOR_NAMES.map((name) => [
+          name,
+          { kind: 'literal', role: 'operator' },
+        ])
+      ),
+      description: 'One operator and its operand.',
+    },
+  },
+};
+
+/**
+ * The conditions: a map of name to test, where every entry must hold. The map
+ * compiles to `(subject, context) => boolean`. An actual function passes
+ * through as is.
  */
 export const conditionShape: SchemaShape = {
   name: 'condition',
-  string: 'expression',
   function: true,
   forms: {
-    expression: {
-      selectBy: 'expression',
-      keys: { expression: { kind: 'expression' } },
-      description: 'An expression; the result is coerced to a boolean.',
-    },
-    all: {
-      selectBy: 'all',
-      keys: { all: { kind: 'condition', list: true } },
-      description: 'True when every nested condition holds. `all: []` is true.',
-    },
-    any: {
-      selectBy: 'any',
-      keys: { any: { kind: 'condition', list: true } },
-      description: 'True when one nested condition holds. `any: []` is false.',
-    },
-    not: {
-      selectBy: 'not',
-      keys: { not: { kind: 'condition' } },
-      description: 'Negation of the nested condition.',
-    },
-    classifier: {
-      selectBy: 'classifier',
-      keys: { classifier: { kind: 'string' } },
-      description: 'True when the named classifier accepts the subject.',
-    },
-    seriesFact: {
-      selectBy: 'seriesFact',
-      keys: { seriesFact: { kind: 'string' } },
-      description: 'True when the named fact in `context.series` is truthy.',
-    },
-    attribute: {
-      selectBy: 'attribute',
-      keys: {
-        attribute: { kind: 'string' },
-        exists: { kind: 'true', role: 'operator' },
-        absent: { kind: 'true', role: 'operator' },
-        equals: { kind: 'scalar', role: 'operator' },
-        notEquals: { kind: 'scalar', role: 'operator' },
-        in: { kind: 'scalar', list: true, role: 'operator' },
-        notIn: { kind: 'scalar', list: true, role: 'operator' },
-        contains: { kind: 'string', role: 'operator' },
-        containsAny: { kind: 'string', list: true, role: 'operator' },
-        greaterThan: { kind: 'number', role: 'operator' },
-        lessThan: { kind: 'number', role: 'operator' },
-        ignoreCase: {
-          kind: 'boolean',
-          role: 'modifier',
-          with: ['contains', 'containsAny'],
-        },
-      },
+    map: {
+      keys: { '*': { kind: 'matchTest' } },
       description:
-        'A test of one attribute of the subject, with exactly one operator.',
+        'A map of name to test. Every entry must hold. `{}` is true.',
     },
   },
 };
 
 /**
  * The values: readers over one subject that compile to
- * `(subject, context) => value`. A bare string is an attribute name.
+ * `(subject, context) => value`. A bare string is a name.
  */
 export const valueShape: SchemaShape = {
   name: 'value',
   string: 'attribute',
   function: true,
   forms: {
+    template: {
+      selectBy: 'template',
+      keys: { template: { kind: 'string' } },
+      description: 'A string with `{name}` placeholders.',
+    },
     expression: {
       selectBy: 'expression',
       keys: { expression: { kind: 'expression' } },
       description: 'An expression; the result is the value, not coerced.',
     },
-    condition: {
-      selectBy: 'condition',
-      keys: { condition: { kind: 'condition' } },
-      description: 'The boolean result of a condition.',
-    },
-    template: {
-      selectBy: 'template',
-      keys: { template: { kind: 'string' } },
-      description: 'A string with `{Attribute}` placeholders.',
-    },
-    join: {
-      selectBy: 'join',
-      keys: {
-        join: { kind: 'string' },
-        parts: {
-          kind: 'value',
-          list: true,
-          extraKeys: { label: { kind: 'string', optional: true } },
-        },
-      },
-      description: 'One string built from several values, joined by `join`.',
-    },
-    attribute: {
-      selectBy: 'attribute',
-      keys: {
-        attribute: { kind: 'string' },
-        number: { kind: 'boolean', optional: true },
-        absent: { kind: 'boolean', optional: true },
-        bucket: { kind: 'number', optional: true },
-      },
-      description:
-        'An attribute value: as is, as a number, as absent/present, or bucketed.',
-    },
   },
 };
 
-/** The generic safe function schema: conditions and values. */
+/** The generic safe function schema: conditions, tests and values. */
 export const safeFunctionSchema: Schema = {
   condition: conditionShape,
+  matchTest: matchTestShape,
   value: valueShape,
 };

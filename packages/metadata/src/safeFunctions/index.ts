@@ -2,19 +2,21 @@
  * **Safe functions** — a serializable vocabulary of conditions and values, and
  * the compiler that turns it into executable predicates without `eval`.
  *
- * The vocabulary knows nothing about display sets, hanging protocols or DICOM.
- * It describes tests and values over a subject object, so any feature that
- * currently ships hand-written matching code can be expressed as data instead
- * and shared across the wire.
+ * The vocabulary knows nothing about display sets, hanging protocols or DICOM
+ * keywords. It describes tests and values over a subject object, so any
+ * feature that currently ships hand-written matching code can be expressed as
+ * data instead and shared across the wire. The value helpers (`values.ts`) use
+ * the DICOM meaning of a missing value: absent is `undefined`, and empty is
+ * `null`, `''` or `[]`.
  *
  * The allowed forms and keys are one table, the schema in `schema.ts`, which
  * the compiler reads. A consumer that wraps conditions and values in a shape of
- * its own extends that table and reuses `compileKey` to walk it.
+ * its own extends that table, and gives the reader of a name (`readName`).
  *
  * Display-set split rules are the worked example: see
- * `displayset/rawDisplaySetSelector.js`, which wraps these conditions and
- * values in a rule shape of its own (`matches`, `groupBy`, `runBy`, ...), and
- * `displayset/splitRuleSchema.ts`, which describes that rule shape.
+ * `displayset/compileSplitRules.ts`, which wraps these conditions and values
+ * in a rule shape of its own (`matches`, `groupBy`, `sortBy`, `attributes`,
+ * ...), and `displayset/displaySetContext.ts`, which gives the names.
  */
 
 export {
@@ -25,13 +27,25 @@ export {
   compileValue,
   compileValueAt,
   createSite,
+  hasNoValue,
   invalid,
   isAbsent,
+  isEmpty,
   looseEquals,
+  parseTemplate,
+  readNameAt,
+  readOwnName,
   safeFunctionCompilers,
   toFinite,
   type CompileOptions,
+  type TemplateSegment,
 } from './compile';
+
+export {
+  compileMatchTest,
+  MATCH_OPERATORS,
+  type ValueTest,
+} from './matchTests';
 
 export {
   at,
@@ -44,13 +58,17 @@ export {
   invalidAt,
   isLeafKind,
   isUnsafeKey,
+  MATCH_OPERATOR_NAMES,
   matchForm,
+  matchTestShape,
   readOwn,
   safeFunctionSchema,
   selectForm,
   unrecognized,
   valueShape,
   type ExpressionScope,
+  type NameReader,
+  type NameReaderFunction,
   type Schema,
   type SchemaForm,
   type SchemaKey,
@@ -62,6 +80,7 @@ export {
 
 export {
   collectIdentifiers,
+  collectReads,
   compileExpression,
   ExpressionSyntaxError,
   parseExpressionSource,
@@ -70,19 +89,17 @@ export {
   type CompiledExpression,
   type CompileExpressionOptions,
   type ExpressionNode,
+  type ExpressionRead,
 } from './expression';
 
 export type {
-  Classifier,
-  ClassifierName,
-  ClassifierRegistry,
   CompiledPredicate,
   CompiledValue,
   InlinePredicate,
   InlineValue,
-  NamedFacts,
   RawCondition,
+  RawMatchTest,
+  RawScalar,
   RawValue,
-  SafeFunctionContext,
   SafeFunctionSubject,
 } from './types';

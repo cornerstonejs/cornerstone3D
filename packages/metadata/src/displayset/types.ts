@@ -59,15 +59,15 @@ export type SeriesInfo = {
 };
 
 /**
- * The series context of one split: named values computed once from the whole
+ * The series context of one split: values computed once from the whole
  * series, and read back by every rule through {@link RuleContext}.
  *
- * A fact can be any value - a boolean, a number, or a summary object such as
- * a map from `SOPInstanceUID` to a slice index. One context is shared by every
- * rule of the split, and each rule's `series` hook extends it (see
- * {@link SplitRule.series}). **The first rule, in priority order, that
- * computes a name wins**: a later rule that declares the same name reads the
- * earlier value and does not compute it again.
+ * A compiled raw rule keeps one entry here, `displaySetContext`: the values of
+ * the display set context for the series, computed at the first read and kept
+ * in a cache (see `displaySetContext.ts`). A rule in code can add its own
+ * entries with its `series` hook. **The first rule, in priority order, that
+ * computes a name wins**: a later rule that gives the same name reads the
+ * earlier value.
  */
 export type SeriesFacts = Record<string, unknown>;
 
@@ -79,19 +79,18 @@ export type SeriesContext = {
   instances: NaturalizedInstance[];
   /**
    * The facts computed so far, by the rules before this one in priority order.
-   * Read only. A hook can read a fact from here, and can skip a fact that is
-   * already here, because the engine keeps the earlier value of a name. The
-   * engine always passes it; optional so that a direct call with
-   * `{ instances }` alone stays valid.
+   * Read only. The engine always passes it; optional so that a direct call
+   * with `{ instances }` alone stays valid.
    */
   series?: Readonly<SeriesFacts>;
 };
 
+/** The scope of a result field of a series function. */
+export type SeriesFieldScope = 'series' | 'instance';
+
 /**
- * A named function that computes one series fact from the whole series, for a
- * raw series fact `{ name, function, args? }`. Registered through
- * `CreateDisplaySetSplitRulesOptions.seriesFunctions`; the built-in ones are
- * in `seriesFunctions.ts`.
+ * A function that computes one summary of the whole series, for a group entry
+ * of the display set context (`{ "function": name, "args": { ... } }`).
  *
  * Must be pure, and must not depend on the order of `instances`: the split
  * result must not depend on the order the instances arrived in.
@@ -99,17 +98,28 @@ export type SeriesContext = {
 export type SeriesFunction = (
   instances: NaturalizedInstance[],
   context: {
-    /** The facts computed so far (see {@link SeriesContext.series}). */
-    series: Readonly<SeriesFacts>;
-    /** The `args` of the raw fact, as is. An empty object when it has none. */
+    /** The evaluated `args` of the group entry. An empty object when it has none. */
     args: Readonly<Record<string, unknown>>;
   }
 ) => unknown;
 
 /**
+ * A series function and its result fields. A rule reads a field by path
+ * (`timeClusters.start`), and the compile rejects a field that is not here.
+ * An `instance` field holds a map keyed by `instanceKey` (the
+ * `SOPInstanceUID`, else the `imageId`), and a read gives the value of one
+ * instance.
+ */
+export type SeriesFunctionDefinition = {
+  compute: SeriesFunction;
+  /** The result fields. Omitted: the fields are not checked, and have the series scope. */
+  fields?: Readonly<Record<string, SeriesFieldScope>>;
+};
+
+/**
  * Argument to a rule's `matches` predicate, `groupBy` extractors, `runBy` and
- * `compareInstances`: the series context of the split (an empty object when no
- * rule has a `series` hook). Shared by every rule - see {@link SeriesFacts}.
+ * `compareInstances`: the series context of the split. Shared by every rule -
+ * see {@link SeriesFacts}.
  */
 export type RuleContext = {
   series: SeriesFacts;
@@ -127,7 +137,10 @@ export type SplitRuleOptions = {
   instances: NaturalizedInstance[];
   splitNumber?: number;
   descriptionName?: string;
-  /** The series context of the split (see {@link InstanceGroup.series}). */
+  /**
+   * The series context of the split (see {@link InstanceGroup.series}), so
+   * that a display set attribute reads the values of the whole series.
+   */
   series?: SeriesFacts;
 };
 

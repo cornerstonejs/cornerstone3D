@@ -142,8 +142,11 @@ export function addTag(name: string, value: TagEntry) {
  * nameMap entries have tag in "(GGGG,EEEE)" format; we unpunctuate to "GGGGEEEE".
  */
 export function resolveHexFromKeyword(keyword: string): string | undefined {
-  const entry = nameMap[keyword];
-  if (!entry) {
+  // Own keys only: `constructor` or `toString` is not a keyword.
+  const entry = Object.prototype.hasOwnProperty.call(nameMap, keyword)
+    ? nameMap[keyword]
+    : undefined;
+  if (!entry?.tag) {
     return undefined;
   }
   return entry.tag.substring(1, 5) + entry.tag.substring(6, 10);

@@ -32,29 +32,31 @@ export {
   rawDisplaySetSelector,
   createDisplaySetSplitRules,
 } from './rawDisplaySetSelector';
+export { compileDisplaySetSplitRules } from './compileSplitRules';
+export { splitRuleSchema, ATTRIBUTE_ONLY_NAMES } from './splitRuleSchema';
 export {
-  splitRuleSchema,
-  COMPARATOR_EXPRESSION_SCOPE,
-  SERIES_EXPRESSION_SCOPE,
-  SERIES_FACT_SCOPES,
-  CUSTOM_ATTRIBUTE_CONTEXT_NAMES,
-  CUSTOM_ATTRIBUTE_OPTION_NAMES,
-} from './splitRuleSchema';
+  defaultDisplaySetContext,
+  DISPLAY_SET_CONTEXT_FACT,
+  DisplaySetContextValues,
+  isTagKeyword,
+} from './displaySetContext';
 export type {
-  ClassifierName,
-  InstanceClassifier,
-  RawComparator,
+  ContextEntry,
+  ContextGroupEntry,
+  ContextValues,
+  DisplaySetContext,
+  InstanceContextFunction,
+} from './displaySetContext';
+export type {
+  InstanceHook,
+  RawAttributeValue,
   RawCondition,
-  RawValue,
-  RawSeriesFact,
-  RawBooleanSeriesFact,
-  RawExpressionSeriesFact,
-  RawFunctionSeriesFact,
-  RawCustomAttributes,
+  RawMatchTest,
+  RawName,
+  RawSortKey,
   RawSplitRule,
   RawDisplaySetSelector,
   CreateDisplaySetSplitRulesOptions,
-  CompiledValueReader,
 } from './rawDisplaySetSelectorTypes';
 export { createDisplaySetFromGroup } from './createDisplaySetFromGroup';
 export type { CreateDisplaySetFromGroupOptions } from './createDisplaySetFromGroup';
@@ -75,6 +77,8 @@ export type {
   SeriesFacts,
   SeriesContext,
   SeriesFunction,
+  SeriesFunctionDefinition,
+  SeriesFieldScope,
   RuleContext,
   SplitRule,
   SplitContext,

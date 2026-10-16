@@ -1,3 +1,4 @@
+import { createDisplaySetFromGroup } from './createDisplaySetFromGroup';
 import { groupInstancesBySplitRules } from './groupInstancesBySplitRules';
 import { createDisplaySetSplitRules } from './rawDisplaySetSelector';
 import type { RawDisplaySetSelector } from './rawDisplaySetSelectorTypes';
@@ -20,129 +21,79 @@ const slice = (
   ...overrides,
 });
 
-const split = (
-  instances: NaturalizedInstance[],
-  selector: RawDisplaySetSelector
-) =>
-  groupInstancesBySplitRules(instances, createDisplaySetSplitRules(selector));
+const CT_SOP_CLASS = '1.2.840.10008.5.1.4.1.1.2';
 
-describe('the shared series context', () => {
-  it('lets the first rule that computes a name win, and every rule read it', () => {
-    let evaluations = 0;
-    const counted = (value: string) => () => {
-      evaluations++;
-      return value;
-    };
-    // The early rule claims nothing; it only computes the fact.
-    const rules = createDisplaySetSplitRules(
-      {
-        early: {
-          priority: 1,
-          series: [{ name: 'shared', function: 'early' }],
-          matches: { expression: 'false' },
-        },
-        late: {
-          priority: 2,
-          series: [{ name: 'shared', function: 'late' }],
-          groupBy: [{ expression: 'context.series.shared' }],
+describe('the display set context over a split', () => {
+  // The regularVolume module: one series value in the global context, read by
+  // two rules.
+  const options = {
+    displaySetContext: {
+      mixesIrregular:
+        'planeGeometry.regularCount >= 3 && planeGeometry.irregularCount > 0 && planeGeometry.complete',
+    },
+  };
+  const selector: RawDisplaySetSelector = {
+    regularVolume: {
+      priority: -2,
+      matches: {
+        isStackImage: true,
+        Modality: ['CT', 'MR', 'PT', 'NM'],
+        mixesIrregular: true,
+        sliceIndex: { notNull: true },
+      },
+      groupBy: ['SeriesInstanceUID'],
+      sortBy: ['sliceDistance'],
+      attributes: {
+        SeriesDescription: {
+          template: '{SeriesDescription} ({sliceSpacing} mm)',
         },
       },
-      { seriesFunctions: { early: counted('early'), late: counted('late') } }
-    );
-    const [group] = groupInstancesBySplitRules([slice('a', 0)], rules);
-
-    expect(group.matchedRule.id).toBe('late');
-    expect(group.series).toEqual({ shared: 'early' });
-    expect(group.splitKey).toBe(JSON.stringify(['late', 'early']));
-    // The late rule's declaration of the same name is not computed.
-    expect(evaluations).toBe(1);
-  });
-
-  it('computes a fact in a later rule when the earlier rule is turned off', () => {
-    const [group] = groupInstancesBySplitRules(
-      [slice('a', 0)],
-      createDisplaySetSplitRules(
-        {
-          early: {
-            priority: null,
-            series: [{ name: 'shared', expression: "'early'" }],
-          },
-          late: {
-            priority: 2,
-            series: [{ name: 'shared', expression: "'late'" }],
-          },
-        },
-        {}
-      )
-    );
-
-    expect(group.series).toEqual({ shared: 'late' });
-  });
-
-  it('computes an expression fact over the series, after the earlier facts', () => {
-    const [group] = split([slice('a', 0), slice('b', 5), slice('c', 10)], {
-      rule: {
-        priority: 1,
-        series: [
-          { name: 'count', expression: 'count(instances, true)' },
-          { name: 'twice', expression: 'series.count * 2' },
-          {
-            name: 'hasTop',
-            scope: 'some',
-            when: { expression: 'ImagePositionPatient[2] >= 10' },
-          },
-        ],
+    },
+    irregularImages: {
+      priority: -1,
+      matches: {
+        isStackImage: true,
+        Modality: ['CT', 'MR', 'PT', 'NM'],
+        mixesIrregular: true,
+        sliceIndex: null,
       },
-    });
+      groupBy: ['SeriesInstanceUID'],
+      attributes: {
+        SeriesDescription: { template: '{SeriesDescription} (other images)' },
+      },
+    },
+  };
+  const series = [
+    slice('r3', 7.5),
+    slice('r0', 0),
+    slice('low', -1.3),
+    slice('r1', 2.5),
+    slice('r4', 10),
+    slice('r2', 5),
+    slice('mid', 3.7),
+  ].map((instance) => ({
+    ...instance,
+    SOPClassUID: CT_SOP_CLASS,
+    Rows: 512,
+    SeriesDescription: 'AX',
+  }));
 
-    expect(group.series).toEqual({ count: 3, twice: 6, hasTop: true });
-  });
-
-  it('rejects an unknown series function and a name twice in one list', () => {
-    expect(() =>
-      createDisplaySetSplitRules({
-        rule: { priority: 1, series: [{ name: 'x', function: 'nope' }] },
-      })
-    ).toThrow(
-      /rule 'rule'\.series\[0\]\.function: unknown series function "nope"/
+  it('splits the lattice from the other images, and labels each display set from the whole series', () => {
+    const groups = groupInstancesBySplitRules(
+      series,
+      createDisplaySetSplitRules(selector, options)
     );
-    expect(() =>
-      createDisplaySetSplitRules({
-        rule: {
-          priority: 1,
-          series: [
-            { name: 'x', expression: '1' },
-            { name: 'x', expression: '2' },
-          ],
-        },
-      })
-    ).toThrow(
-      /rule 'rule'\.series\[1\]: the fact name "x" is already in this list/
-    );
-  });
-
-  it('gives customAttributes the series context that the host passes', () => {
-    const [rule] = Object.values(
-      createDisplaySetSplitRules({
-        rule: {
-          priority: 1,
-          customAttributes: {
-            fromFirstInstance: {
-              label: {
-                expression: '`${Modality} ${context.series.spacing} mm`',
-              },
-            },
-          },
-        },
-      })
-    );
-
     expect(
-      rule.customAttributes?.(
-        { instance: slice('a', 0) },
-        { instances: [slice('a', 0)], series: { spacing: 2.5 } }
-      )
-    ).toEqual({ label: 'CT 2.5 mm' });
+      groups.map((group) => [
+        group.matchedRule.id,
+        group.instances.map((i) => i.SOPInstanceUID),
+        (createDisplaySetFromGroup(group) as unknown as Record<string, unknown>)
+          .SeriesDescription,
+      ])
+    ).toEqual([
+      ['regularVolume', ['r0', 'r1', 'r2', 'r3', 'r4'], 'AX (2.5 mm)'],
+      ['irregularImages', ['low', 'mid'], 'AX (other images)'],
+    ]);
   });
 });
 
@@ -160,7 +111,7 @@ describe('planeGeometry', () => {
     slice('sag', 0, { ImageOrientationPatient: [0, 1, 0, 0, 0, 1] }),
   ];
   const geometry = (instances: NaturalizedInstance[]) =>
-    planeGeometry(instances, { series: {}, args: {} }) as PlaneGeometry;
+    planeGeometry(instances, { args: {} }) as PlaneGeometry;
 
   it('finds the regular lattice, and leaves the other instances off it', () => {
     const result = geometry(series);
@@ -200,7 +151,7 @@ describe('timeClusters', () => {
         us('d', '100103.5'),
         { SOPInstanceUID: 'untimed' },
       ],
-      { series: {}, args: { maxGap: 10 } }
+      { args: { maxGap: 10 } }
     ) as TimeClusters;
     const startOf = (id: string) => result.start[id] - (result.first as number);
 

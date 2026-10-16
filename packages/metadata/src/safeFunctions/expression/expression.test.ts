@@ -1,5 +1,6 @@
 import {
   collectIdentifiers,
+  collectReads,
   compileExpression,
   ExpressionSyntaxError,
   parseExpressionSource,
@@ -29,15 +30,50 @@ describe('compileExpression', () => {
 
     it('evaluates comparisons and logic', () => {
       expect(compileExpression('1 < 2 && 3 >= 3')()).toBe(true);
-      expect(compileExpression('1 === 1 || false')()).toBe(true);
+      expect(compileExpression('1 == 1 || false')()).toBe(true);
       expect(compileExpression('!true')()).toBe(false);
-      expect(compileExpression("'a' !== 'b'")()).toBe(true);
+      expect(compileExpression("'a' != 'b'")()).toBe(true);
     });
 
-    it('treats null and undefined as loosely equal', () => {
-      expect(compileExpression('undefined == null')()).toBe(true);
-      expect(compileExpression('0 == undefined')()).toBe(false);
+    it('has one equality: === and !== are compile errors', () => {
+      expect(() => compileExpression('1 === 1')).toThrow(
+        /'===' is not allowed; use '=='/
+      );
+      expect(() => compileExpression('1 !== 1')).toThrow(
+        /'!==' is not allowed/
+      );
       expect(compileExpression("'2' == 2")()).toBe(true);
+    });
+
+    it('reads == null as "no value", and == undefined as "absent" only', () => {
+      const noValue = compileExpression('X == null');
+      const absent = compileExpression('X == undefined');
+      for (const [X, isNoValue, isAbsent] of [
+        [undefined, true, true],
+        [null, true, false],
+        ['', true, false],
+        [[], true, false],
+        [0, false, false],
+        ['A', false, false],
+      ]) {
+        expect([noValue({ X }), absent({ X })]).toEqual([isNoValue, isAbsent]);
+      }
+      expect(compileExpression('X != null')({ X: '' })).toBe(false);
+    });
+
+    it('gives false for an ordering comparison with no value, and reads a numeric string as a number', () => {
+      const greater = compileExpression('X > 1');
+      expect([undefined, null, '', [], 'a'].map((X) => greater({ X }))).toEqual(
+        [false, false, false, false, false]
+      );
+      expect(greater({ X: '2' })).toBe(true);
+      expect(compileExpression('X <= 0')({ X: null })).toBe(false);
+    });
+
+    it('compares text without case with lower()', () => {
+      const fn = compileExpression("lower(BodyPartExamined) == 'breast'");
+      expect(fn({ BodyPartExamined: 'BREAST' })).toBe(true);
+      expect(fn({})).toBe(false);
     });
 
     it('evaluates ternaries', () => {
@@ -53,7 +89,7 @@ describe('compileExpression', () => {
 
   describe('scope resolution', () => {
     it('resolves bare identifiers against the first argument', () => {
-      const fn = compileExpression("Modality === 'CT' && Rows > 0");
+      const fn = compileExpression("Modality == 'CT' && Rows > 0");
       expect(fn({ Modality: 'CT', Rows: 512 })).toBe(true);
       expect(fn({ Modality: 'MR', Rows: 512 })).toBe(false);
     });
@@ -99,21 +135,21 @@ describe('compileExpression', () => {
       expect(() => compileExpression('`${Name}`', options)).toThrow(/'Name'/);
     });
 
-    it('lets an aggregate element expression read the element with no implicit scope', () => {
-      const fn = compileExpression('count(context.items, Rows > 1)', {
-        params: ['a', 'b', 'context'],
+    it('lets an aggregate argument read the element with no implicit scope', () => {
+      const fn = compileExpression('count(Rows > 1)', {
+        params: ['items'],
         implicitScope: false,
+        over: 'items',
       });
-      expect(
-        fn(undefined, undefined, { items: [{ Rows: 2 }, { Rows: 0 }] })
-      ).toBe(1);
-      // The list argument is still checked.
+      expect(fn([{ Rows: 2 }, { Rows: 0 }])).toBe(1);
+      // Outside an aggregate, a bare name is still checked.
       expect(() =>
-        compileExpression('count(items, Rows > 1)', {
-          params: ['context'],
+        compileExpression('Rows + count()', {
+          params: ['items'],
           implicitScope: false,
+          over: 'items',
         })
-      ).toThrow(/'items' is not a parameter/);
+      ).toThrow(/'Rows' is not a parameter/);
     });
 
     it('returns undefined for unknown identifiers (sparse tags)', () => {
@@ -153,61 +189,34 @@ describe('compileExpression', () => {
       ).toBe(true);
     });
 
-    it('returns undefined for min/max with no arguments', () => {
+    it('returns undefined for min/max with no number, and skips a missing value', () => {
       // Math.min()/Math.max() would answer ∓Infinity and poison a comparison.
       expect(compileExpression('min()')()).toBeUndefined();
-      expect(compileExpression('max()')()).toBeUndefined();
+      expect(compileExpression('max(undefined)')()).toBeUndefined();
       expect(compileExpression('min(3, 1, 2)')()).toBe(1);
-      expect(compileExpression('max(3, 1, 2)')()).toBe(3);
+      expect(compileExpression('max(3, null, 2)')()).toBe(3);
+      expect(compileExpression('round(x)')({})).toBeUndefined();
     });
 
-    it('evaluates aggregates with per-element scope', () => {
-      const context = {
-        instances: [
-          {
-            DiffusionBValue: 800,
-            InstanceNumber: 2,
-            NumberOfFrames: undefined,
-          },
-          { InstanceNumber: 1 },
-          { DiffusionBValue: 0, InstanceNumber: 3, NumberOfFrames: 4 },
-        ],
-      };
-      expect(
-        compileExpression('some(instances, DiffusionBValue != undefined)')(
-          context
-        )
-      ).toBe(true);
-      expect(
-        compileExpression('every(instances, DiffusionBValue != undefined)')(
-          context
-        )
-      ).toBe(false);
-      expect(
-        compileExpression('count(instances, DiffusionBValue != undefined)')(
-          context
-        )
-      ).toBe(2);
-      expect(
-        compileExpression('minOf(instances, InstanceNumber)')(context)
-      ).toBe(1);
-      expect(
-        compileExpression('maxOf(instances, InstanceNumber)')(context)
-      ).toBe(3);
-      expect(
-        compileExpression(
-          'sumOf(instances, defined(NumberOfFrames) ? NumberOfFrames : 1)'
-        )(context)
-      ).toBe(6);
-    });
-
-    it('restores the outer scope after aggregates', () => {
-      const fn = compileExpression(
-        'some(instances, InstanceNumber > 1) && InstanceNumber === 0'
+    it('runs min, max, sum and count over the list of the place', () => {
+      const over = { params: ['list'], over: 'list' };
+      const list = [
+        { DiffusionBValue: 800, NumberOfFrames: '2' },
+        { DiffusionBValue: null },
+        { DiffusionBValue: 0, NumberOfFrames: 4 },
+      ];
+      const run = (source: string) => compileExpression(source, over)(list);
+      expect(run('count()')).toBe(3);
+      expect(run('count(DiffusionBValue)')).toBe(2);
+      expect(run('count(DiffusionBValue > 100)')).toBe(1);
+      expect(run('sum(NumberOfFrames)')).toBe(6);
+      expect(run('min(DiffusionBValue)')).toBe(0);
+      expect(run('max(NumberOfFrames)')).toBe(4);
+      expect(compileExpression('sum(x)', over)([])).toBe(0);
+      expect(compileExpression('max(x)', over)([])).toBeUndefined();
+      expect(() => compileExpression('count()')).toThrow(
+        /count\(\) is not available here/
       );
-      expect(
-        fn({ instances: [{ InstanceNumber: 5 }], InstanceNumber: 0 })
-      ).toBe(true);
     });
   });
 
@@ -268,7 +277,7 @@ describe('compileExpression', () => {
       collectIdentifiers(parseExpressionSource(source)).sort();
 
     it('collects the identifiers an expression resolves against its scope', () => {
-      expect(identifiersOf("Modality === 'CT' && Rows > 512")).toEqual([
+      expect(identifiersOf("Modality == 'CT' && Rows > 512")).toEqual([
         'Modality',
         'Rows',
       ]);
@@ -289,10 +298,7 @@ describe('compileExpression', () => {
 
     it('does not collect helper or aggregate callees', () => {
       expect(identifiersOf('round(Rows / 64)')).toEqual(['Rows']);
-      expect(identifiersOf('minOf(instances, InstanceNumber)')).toEqual([
-        'InstanceNumber',
-        'instances',
-      ]);
+      expect(identifiersOf('max(InstanceNumber)')).toEqual(['InstanceNumber']);
     });
 
     it('reaches into templates, ternaries and arrays', () => {
@@ -311,6 +317,21 @@ describe('compileExpression', () => {
       ]);
     });
 
+    it('reports the field of a path and the reads inside an aggregate', () => {
+      expect(
+        collectReads(
+          parseExpressionSource(
+            'round(sweepStart - timeClusters.first) + max(Rows)'
+          ),
+          { aggregates: true }
+        )
+      ).toEqual([
+        { name: 'sweepStart', inAggregate: false },
+        { name: 'timeClusters', field: 'first', inAggregate: false },
+        { name: 'Rows', inAggregate: true },
+      ]);
+    });
+
     it('de-duplicates', () => {
       expect(identifiersOf('Rows > 0 && Rows < 1024')).toEqual(['Rows']);
     });
@@ -321,7 +342,7 @@ describe('compileExpression', () => {
       // not know the subject's shape, and a naturalized instance's attributes
       // are not enumerable up front anyway.
       const supplied = new Set(['Modality', 'Rows', 'instance', 'context']);
-      const unknown = identifiersOf("Modallity === 'CT' && Rows > 0").filter(
+      const unknown = identifiersOf("Modallity == 'CT' && Rows > 0").filter(
         (name) => !supplied.has(name)
       );
       expect(unknown).toEqual(['Modallity']);

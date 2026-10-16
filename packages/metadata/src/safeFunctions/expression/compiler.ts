@@ -1,6 +1,13 @@
 import { FORBIDDEN_PROPERTIES, parseExpressionSource } from './parser';
 import type { ExpressionNode } from './parser';
 import { ExpressionSyntaxError } from './tokenizer';
+import {
+  hasNoValue,
+  isAbsent,
+  isEmpty,
+  looseEquals,
+  toFinite,
+} from '../values';
 
 /**
  * The runtime scope of a compiled expression: the named parameters (bound to
@@ -13,6 +20,13 @@ type EvaluationScope = {
 };
 
 type NodeEvaluator = (scope: EvaluationScope) => unknown;
+
+/** What the node compiler needs to know about the place. */
+type NodeContext = {
+  expression: string;
+  /** The parameter that holds the list of the aggregates, if any. */
+  over?: string;
+};
 
 export type CompiledExpression = ((...args: unknown[]) => unknown) & {
   /** The source the expression was compiled from. */
@@ -34,16 +48,20 @@ export type CompileExpressionOptions = {
    * - a parameter name: the fields of that argument.
    * - `false`: nowhere. The expression reads only its parameters, and a bare
    *   identifier that is not a parameter name is a compile-time
-   *   {@link ExpressionSyntaxError}. Use it where no single argument is "the
-   *   subject" - a comparator called `(a, b, context)` - so that
-   *   `SliceLocation - b.SliceLocation` fails instead of silently reading
-   *   `a.SliceLocation`.
+   *   {@link ExpressionSyntaxError}.
    *
-   * Inside the second argument of an aggregate (`some(list, expr)`, ...) bare
-   * identifiers always read the fields of the element, whatever this option
-   * says.
+   * Inside the argument of an aggregate (see `over`) bare identifiers always
+   * read the fields of the element, whatever this option says.
    */
   implicitScope?: boolean | string;
+  /**
+   * The parameter that holds the list of subjects that the aggregates
+   * `min(x)`, `max(x)`, `sum(x)`, `count(x)` and `count()` run over. The
+   * argument of an aggregate is evaluated once for each element, with the
+   * element as the innermost implicit scope. Without this option, `count` and
+   * `sum` are compile errors, and `min` and `max` compare their arguments.
+   */
+  over?: string;
 };
 
 /** Reads a property while refusing prototype-chain escape hatches. */
@@ -60,27 +78,6 @@ function safeGet(object: unknown, key: unknown): unknown {
   return object[key];
 }
 
-/**
- * Loose equality restricted to the useful cases: strict equality, plus
- * `null`/`undefined` equivalence and number/string coercion — without the
- * rest of the JS `==` coercion table.
- */
-function looseEquals(left: unknown, right: unknown): boolean {
-  if (left === right) {
-    return true;
-  }
-  if (left == null && right == null) {
-    return true;
-  }
-  if (
-    (typeof left === 'number' && typeof right === 'string') ||
-    (typeof left === 'string' && typeof right === 'number')
-  ) {
-    return Number(left) === Number(right);
-  }
-  return false;
-}
-
 function contains(needle: unknown, haystack: unknown): boolean {
   if (Array.isArray(haystack)) {
     return haystack.some((item) => looseEquals(item, needle));
@@ -91,46 +88,74 @@ function contains(needle: unknown, haystack: unknown): boolean {
   return false;
 }
 
+/** A number helper: `undefined` in, or a result that is not finite, gives `undefined`. */
+function numeric(
+  operation: (value: number) => number
+): (value: unknown) => number | undefined {
+  return (value) => {
+    const number = toFinite(value);
+    if (number === undefined) {
+      return undefined;
+    }
+    const result = operation(number);
+    return Number.isFinite(result) ? result : undefined;
+  };
+}
+
+/** The finite numbers among the values. */
+function finiteValues(values: unknown[]): number[] {
+  return values
+    .map((value) => toFinite(value))
+    .filter((value): value is number => value !== undefined);
+}
+
 /** Whitelisted helper functions callable by bare name. */
 const HELPERS: Record<string, (...args: unknown[]) => unknown> = {
-  defined: (value) => value !== undefined && value !== null,
+  defined: (value) => !hasNoValue(value),
   includes: (haystack, needle) => contains(needle, haystack),
   startsWith: (value, prefix) =>
     typeof value === 'string' && value.startsWith(String(prefix)),
   endsWith: (value, suffix) =>
     typeof value === 'string' && value.endsWith(String(suffix)),
-  abs: (value) => Math.abs(Number(value)),
-  // `Math.min()`/`Math.max()` answer ∓Infinity with no arguments, which would
-  // silently poison a comparison; an argument-less min/max has no value to
-  // report, so it reads as "unknown" like a missing tag does.
-  min: (...values) =>
-    values.length ? Math.min(...values.map(Number)) : undefined,
-  max: (...values) =>
-    values.length ? Math.max(...values.map(Number)) : undefined,
-  round: (value) => Math.round(Number(value)),
-  floor: (value) => Math.floor(Number(value)),
-  ceil: (value) => Math.ceil(Number(value)),
-  Number: (value) => Number(value),
-  String: (value) => (value == null ? '' : String(value)),
+  lower: (value) =>
+    hasNoValue(value) ? undefined : String(asFirst(value)).toLowerCase(),
+  abs: numeric(Math.abs),
+  // An argument-less min/max has no value to report, so it reads as "no
+  // value" like a missing tag does, and not as ∓Infinity.
+  min: (...values) => {
+    const numbers = finiteValues(values);
+    return numbers.length ? Math.min(...numbers) : undefined;
+  },
+  max: (...values) => {
+    const numbers = finiteValues(values);
+    return numbers.length ? Math.max(...numbers) : undefined;
+  },
+  round: numeric(Math.round),
+  floor: numeric(Math.floor),
+  ceil: numeric(Math.ceil),
+  Number: (value) => toFinite(value),
+  String: (value) => (hasNoValue(value) ? '' : String(value)),
 };
 
-/**
- * Aggregate special forms: `some(list, expr)`, `every(list, expr)`,
- * `count(list, expr)`, `minOf(list, expr)`, `maxOf(list, expr)` and
- * `sumOf(list, expr)`.  The second argument is evaluated once per element
- * with the element pushed as the innermost implicit scope, so
- * `some(instances, DiffusionBValue != undefined)` reads each instance's tag
- * and `minOf(instances, InstanceNumber)` returns the smallest instance
- * number of a series.
- */
-const AGGREGATES = new Set([
-  'some',
-  'every',
-  'count',
-  'minOf',
-  'maxOf',
-  'sumOf',
-]);
+function asFirst(value: unknown): unknown {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+/** The aggregate functions, available where the place gives a list (`over`). */
+const AGGREGATES = new Set(['min', 'max', 'sum', 'count']);
+
+/** True when a call node is an aggregate over the list of the place. */
+function isAggregateCall(
+  node: Extract<ExpressionNode, { type: 'call' }>,
+  over: string | undefined
+): boolean {
+  if (!over || !AGGREGATES.has(node.callee)) {
+    return false;
+  }
+  return node.callee === 'count'
+    ? node.args.length <= 1
+    : node.args.length === 1;
+}
 
 /**
  * Every identifier an expression resolves against its scope, de-duplicated.
@@ -140,146 +165,116 @@ const AGGREGATES = new Set([
  * field off whatever that is), and a call's callee is resolved against the
  * helper whitelist rather than the scope — so neither appears here.
  *
- * This answers "which attributes does this expression read?", which is what a
- * host needs to decide what to fetch, or to report an expression referencing
- * something it does not supply.
- *
- * Reporting is left to the host on purpose, and `compileExpression` takes no
- * list of permitted attribute names. (It can refuse every bare identifier that
- * is not a parameter - `implicitScope: false` - because then the set of names
- * is closed. A subject's attributes are not.) Two reasons, both learned the
- * hard way:
- *
- *  - The subject is open-ended at runtime. A naturalized DICOM instance
- *    carries private tags, vendor additions and per-frame data folded in by
- *    the naturalizer; no dictionary enumerates it, so checking against one
- *    rejects expressions that would have worked.
- *  - The compiler is called from where the list is not. `compileCondition` and
- *    `compileValue` compile a selector's expressions, and an application's own
- *    marker (OHIF's `$function`) compiles at customization-read time — none of
- *    those sites knows the shape of the subject a rule will later run against.
- *
- * A host that genuinely has a closed subject can build the check it wants from
- * this function in a couple of lines, and decide for itself whether the result
- * is a warning or an error.
+ * The expression compiler does not check names against a dictionary: it is
+ * generic, and it does not know the subject. A consumer that knows its names
+ * does the check with this function, or with {@link collectReads}. The display
+ * set split rules do so: an identifier that is not a DICOM keyword of the
+ * dictionary and not a context name is a compile error there.
  */
 export function collectIdentifiers(node: ExpressionNode): string[] {
-  const found = new Set<string>();
+  return [...new Set(collectReads(node).map((read) => read.name))];
+}
 
-  const walk = (current: ExpressionNode): void => {
+/** One read of a name in an expression. See {@link collectReads}. */
+export type ExpressionRead = {
+  /** The identifier. */
+  name: string;
+  /** The property of `name.property`, when the read is a member access. */
+  field?: string;
+  /** True when the read is inside the argument of an aggregate. */
+  inAggregate: boolean;
+};
+
+/**
+ * Every read of an identifier in an expression, in source order, with the
+ * field of a direct member access (`timeClusters.start` gives `start`) and
+ * whether the read is inside the argument of an aggregate (`max(Rows)`). Pass
+ * `aggregates: true` for a place that compiles with the `over` option.
+ */
+export function collectReads(
+  node: ExpressionNode,
+  options: { aggregates?: boolean } = {}
+): ExpressionRead[] {
+  const reads: ExpressionRead[] = [];
+  const over = options.aggregates ? '#' : undefined;
+
+  const walk = (current: ExpressionNode, inAggregate: boolean): void => {
     switch (current.type) {
       case 'literal':
         return;
       case 'identifier':
-        found.add(current.name);
+        reads.push({ name: current.name, inAggregate });
         return;
       case 'member':
-        walk(current.object);
+        if (current.object.type === 'identifier') {
+          reads.push({
+            name: current.object.name,
+            field: current.property,
+            inAggregate,
+          });
+          return;
+        }
+        walk(current.object, inAggregate);
         return;
       case 'index':
-        walk(current.object);
-        walk(current.index);
+        walk(current.object, inAggregate);
+        walk(current.index, inAggregate);
         return;
-      case 'call':
-        current.args.forEach(walk);
+      case 'call': {
+        const aggregate = inAggregate || isAggregateCall(current, over);
+        current.args.forEach((argument) => walk(argument, aggregate));
         return;
+      }
       case 'unary':
-        walk(current.argument);
+        walk(current.argument, inAggregate);
         return;
       case 'binary':
       case 'logical':
-        walk(current.left);
-        walk(current.right);
+        walk(current.left, inAggregate);
+        walk(current.right, inAggregate);
         return;
       case 'conditional':
-        walk(current.test);
-        walk(current.consequent);
-        walk(current.alternate);
+        walk(current.test, inAggregate);
+        walk(current.consequent, inAggregate);
+        walk(current.alternate, inAggregate);
         return;
       case 'array':
-        current.elements.forEach(walk);
+        current.elements.forEach((element) => walk(element, inAggregate));
         return;
       case 'template':
         current.parts.forEach((part) => {
           if (part.kind === 'expr') {
-            walk(part.node);
+            walk(part.node, inAggregate);
           }
         });
         return;
     }
   };
 
-  walk(node);
-  return [...found];
+  walk(node, false);
+  return reads;
 }
 
 /**
  * Throws for the first bare identifier that is not a parameter name, outside
- * the element expression of an aggregate (where bare identifiers read the
- * element's fields). Used for an expression compiled with no implicit scope.
+ * the argument of an aggregate (where bare identifiers read the element's
+ * fields). Used for an expression compiled with no implicit scope.
  */
 function assertOnlyParams(
   node: ExpressionNode,
   paramNames: readonly string[],
-  expression: string
+  context: NodeContext
 ): void {
   const allowed = new Set(paramNames);
-  const walk = (current: ExpressionNode): void => {
-    switch (current.type) {
-      case 'literal':
-        return;
-      case 'identifier':
-        if (!allowed.has(current.name)) {
-          throw new ExpressionSyntaxError(
-            `'${current.name}' is not a parameter, and this expression has no ` +
-              `implicit scope; it can read only (${paramNames.join(', ')})`,
-            expression
-          );
-        }
-        return;
-      case 'member':
-        walk(current.object);
-        return;
-      case 'index':
-        walk(current.object);
-        walk(current.index);
-        return;
-      case 'call':
-        if (AGGREGATES.has(current.callee)) {
-          // The element expression reads the element: not checked here.
-          if (current.args[0]) {
-            walk(current.args[0]);
-          }
-          return;
-        }
-        current.args.forEach(walk);
-        return;
-      case 'unary':
-        walk(current.argument);
-        return;
-      case 'binary':
-      case 'logical':
-        walk(current.left);
-        walk(current.right);
-        return;
-      case 'conditional':
-        walk(current.test);
-        walk(current.consequent);
-        walk(current.alternate);
-        return;
-      case 'array':
-        current.elements.forEach(walk);
-        return;
-      case 'template':
-        current.parts.forEach((part) => {
-          if (part.kind === 'expr') {
-            walk(part.node);
-          }
-        });
-        return;
+  for (const read of collectReads(node, { aggregates: !!context.over })) {
+    if (!read.inAggregate && !allowed.has(read.name)) {
+      throw new ExpressionSyntaxError(
+        `'${read.name}' is not a parameter, and this expression has no ` +
+          `implicit scope; it can read only (${paramNames.join(', ')})`,
+        context.expression
+      );
     }
-  };
-  walk(node);
+  }
 }
 
 function resolveIdentifier(name: string, scope: EvaluationScope): unknown {
@@ -300,7 +295,108 @@ function resolveIdentifier(name: string, scope: EvaluationScope): unknown {
   return undefined;
 }
 
-function compileNode(node: ExpressionNode, expression: string): NodeEvaluator {
+/** `<`, `<=`, `>`, `>=`: `false` unless both sides are finite numbers. */
+function compareNumbers(
+  test: (a: number, b: number) => boolean
+): (left: unknown, right: unknown) => boolean {
+  return (left, right) => {
+    const a = toFinite(left);
+    const b = toFinite(right);
+    return a !== undefined && b !== undefined && test(a, b);
+  };
+}
+
+const COMPARISONS: Record<string, (left: unknown, right: unknown) => boolean> =
+  {
+    '<': compareNumbers((a, b) => a < b),
+    '<=': compareNumbers((a, b) => a <= b),
+    '>': compareNumbers((a, b) => a > b),
+    '>=': compareNumbers((a, b) => a >= b),
+  };
+
+/**
+ * The test of `X == <literal>` when the literal is a missing value:
+ * `undefined` tests "absent", and `null`, `''` or `[]` test "no value".
+ */
+function missingValueTest(
+  node: ExpressionNode
+): ((value: unknown) => boolean) | undefined {
+  if (node.type === 'literal') {
+    if (isAbsent(node.value)) {
+      return isAbsent;
+    }
+    if (isEmpty(node.value)) {
+      return hasNoValue;
+    }
+  }
+  if (node.type === 'array' && !node.elements.length) {
+    return hasNoValue;
+  }
+  return undefined;
+}
+
+function compileEquality(
+  node: Extract<ExpressionNode, { type: 'binary' }>,
+  context: NodeContext
+): NodeEvaluator {
+  const negate = node.operator === '!=';
+  const rightTest = missingValueTest(node.right);
+  const leftTest = missingValueTest(node.left);
+  if (rightTest || leftTest) {
+    const test = rightTest ?? leftTest;
+    const operand = compileNode(rightTest ? node.left : node.right, context);
+    return negate
+      ? (scope) => !test(operand(scope))
+      : (scope) => test(operand(scope));
+  }
+  const left = compileNode(node.left, context);
+  const right = compileNode(node.right, context);
+  return negate
+    ? (scope) => !looseEquals(left(scope), right(scope))
+    : (scope) => looseEquals(left(scope), right(scope));
+}
+
+function compileAggregate(
+  node: Extract<ExpressionNode, { type: 'call' }>,
+  context: NodeContext
+): NodeEvaluator {
+  const { callee } = node;
+  const over = context.over as string;
+  const element = node.args[0] ? compileNode(node.args[0], context) : undefined;
+  return (scope) => {
+    const list = scope.params[over];
+    const items = Array.isArray(list) ? list : [];
+    if (!element) {
+      return items.length;
+    }
+    const values = items.map((item) => {
+      scope.implicit.push(item);
+      try {
+        return element(scope);
+      } finally {
+        scope.implicit.pop();
+      }
+    });
+    if (callee === 'count') {
+      return values.filter((value) => !hasNoValue(value) && value !== false)
+        .length;
+    }
+    const numbers = finiteValues(values);
+    if (callee === 'sum') {
+      return numbers.reduce((total, value) => total + value, 0);
+    }
+    if (!numbers.length) {
+      return undefined;
+    }
+    return callee === 'min' ? Math.min(...numbers) : Math.max(...numbers);
+  };
+}
+
+function compileNode(
+  node: ExpressionNode,
+  context: NodeContext
+): NodeEvaluator {
+  const { expression } = context;
   switch (node.type) {
     case 'literal': {
       const { value } = node;
@@ -311,37 +407,35 @@ function compileNode(node: ExpressionNode, expression: string): NodeEvaluator {
       return (scope) => resolveIdentifier(name, scope);
     }
     case 'member': {
-      const object = compileNode(node.object, expression);
+      const object = compileNode(node.object, context);
       const { property } = node;
       return (scope) => safeGet(object(scope), property);
     }
     case 'index': {
-      const object = compileNode(node.object, expression);
-      const index = compileNode(node.index, expression);
+      const object = compileNode(node.object, context);
+      const index = compileNode(node.index, context);
       return (scope) => safeGet(object(scope), index(scope));
     }
     case 'array': {
       const elements = node.elements.map((element) =>
-        compileNode(element, expression)
+        compileNode(element, context)
       );
       return (scope) => elements.map((element) => element(scope));
     }
     case 'template': {
       const parts: NodeEvaluator[] = node.parts.map((part) =>
-        part.kind === 'text'
-          ? () => part.text
-          : compileNode(part.node, expression)
+        part.kind === 'text' ? () => part.text : compileNode(part.node, context)
       );
       return (scope) =>
         parts
           .map((part) => {
             const value = part(scope);
-            return value == null ? '' : String(value);
+            return hasNoValue(value) ? '' : String(value);
           })
           .join('');
     }
     case 'unary': {
-      const argument = compileNode(node.argument, expression);
+      const argument = compileNode(node.argument, context);
       switch (node.operator) {
         case '!':
           return (scope) => !argument(scope);
@@ -353,32 +447,29 @@ function compileNode(node: ExpressionNode, expression: string): NodeEvaluator {
       break;
     }
     case 'logical': {
-      const left = compileNode(node.left, expression);
-      const right = compileNode(node.right, expression);
+      const left = compileNode(node.left, context);
+      const right = compileNode(node.right, context);
       return node.operator === '&&'
         ? (scope) => left(scope) && right(scope)
         : (scope) => left(scope) || right(scope);
     }
     case 'binary': {
-      const left = compileNode(node.left, expression);
-      const right = compileNode(node.right, expression);
+      if (node.operator === '==' || node.operator === '!=') {
+        return compileEquality(node, context);
+      }
+      if (node.operator === '===' || node.operator === '!==') {
+        throw new ExpressionSyntaxError(
+          `'${node.operator}' is not allowed; use '${node.operator === '===' ? '==' : '!='}', the one equality of the rule language`,
+          expression
+        );
+      }
+      const left = compileNode(node.left, context);
+      const right = compileNode(node.right, context);
+      const comparison = COMPARISONS[node.operator];
+      if (comparison) {
+        return (scope) => comparison(left(scope), right(scope));
+      }
       switch (node.operator) {
-        case '==':
-          return (scope) => looseEquals(left(scope), right(scope));
-        case '!=':
-          return (scope) => !looseEquals(left(scope), right(scope));
-        case '===':
-          return (scope) => left(scope) === right(scope);
-        case '!==':
-          return (scope) => left(scope) !== right(scope);
-        case '<':
-          return (scope) => (left(scope) as number) < (right(scope) as number);
-        case '<=':
-          return (scope) => (left(scope) as number) <= (right(scope) as number);
-        case '>':
-          return (scope) => (left(scope) as number) > (right(scope) as number);
-        case '>=':
-          return (scope) => (left(scope) as number) >= (right(scope) as number);
         case '+':
           return (scope) => (left(scope) as number) + (right(scope) as number);
         case '-':
@@ -399,67 +490,23 @@ function compileNode(node: ExpressionNode, expression: string): NodeEvaluator {
       }
     }
     case 'conditional': {
-      const test = compileNode(node.test, expression);
-      const consequent = compileNode(node.consequent, expression);
-      const alternate = compileNode(node.alternate, expression);
+      const test = compileNode(node.test, context);
+      const consequent = compileNode(node.consequent, context);
+      const alternate = compileNode(node.alternate, context);
       return (scope) => (test(scope) ? consequent(scope) : alternate(scope));
     }
     case 'call': {
       const { callee } = node;
-      if (AGGREGATES.has(callee)) {
-        if (node.args.length !== 2) {
-          throw new ExpressionSyntaxError(
-            `${callee}() expects (list, expression) arguments`,
-            expression
-          );
-        }
-        const list = compileNode(node.args[0], expression);
-        const element = compileNode(node.args[1], expression);
-        return (scope) => {
-          const values = list(scope);
-          if (!Array.isArray(values)) {
-            if (callee === 'some' || callee === 'every') {
-              return false;
-            }
-            return callee === 'minOf' || callee === 'maxOf' ? undefined : 0;
-          }
-          const evaluate = (item: unknown) => {
-            scope.implicit.push(item);
-            try {
-              return element(scope);
-            } finally {
-              scope.implicit.pop();
-            }
-          };
-          switch (callee) {
-            case 'some':
-              return values.some((item) => !!evaluate(item));
-            case 'every':
-              return values.every((item) => !!evaluate(item));
-            case 'count':
-              return values.reduce(
-                (total: number, item) => total + (evaluate(item) ? 1 : 0),
-                0
-              );
-            case 'sumOf':
-              return values.reduce((total: number, item) => {
-                const value = Number(evaluate(item));
-                return total + (Number.isNaN(value) ? 0 : value);
-              }, 0);
-            case 'minOf':
-            case 'maxOf': {
-              const numbers = values
-                .map((item) => Number(evaluate(item)))
-                .filter((value) => !Number.isNaN(value));
-              if (!numbers.length) {
-                return undefined;
-              }
-              return callee === 'minOf'
-                ? Math.min(...numbers)
-                : Math.max(...numbers);
-            }
-          }
-        };
+      if (isAggregateCall(node, context.over)) {
+        return compileAggregate(node, context);
+      }
+      if (callee === 'count' || callee === 'sum') {
+        throw new ExpressionSyntaxError(
+          context.over
+            ? `${callee}() takes ${callee === 'count' ? 'zero or one argument' : 'one argument'}`
+            : `${callee}() is not available here: this place has no list of instances`,
+          expression
+        );
       }
       const helper = Object.prototype.hasOwnProperty.call(HELPERS, callee)
         ? HELPERS[callee]
@@ -470,9 +517,7 @@ function compileNode(node: ExpressionNode, expression: string): NodeEvaluator {
           expression
         );
       }
-      const args = node.args.map((argument) =>
-        compileNode(argument, expression)
-      );
+      const args = node.args.map((argument) => compileNode(argument, context));
       return (scope) => helper(...args.map((argument) => argument(scope)));
     }
   }
@@ -487,10 +532,25 @@ function compileNode(node: ExpressionNode, expression: string): NodeEvaluator {
  * true/false/null/undefined), identifiers with guarded member/index access
  * (`__proto__`/`prototype`/`constructor` are rejected), comparison, logical
  * and arithmetic operators, `in` (membership), ternaries, whitelisted helper
- * functions (`defined`, `includes`, `startsWith`, `endsWith`, `abs`, `min`,
- * `max`, `round`, `floor`, `ceil`, `Number`, `String`) and the aggregate
- * forms `some(list, expr)`, `every(list, expr)`, `count(list, expr)`,
- * `minOf(list, expr)`, `maxOf(list, expr)` and `sumOf(list, expr)`.
+ * functions (`defined`, `includes`, `startsWith`, `endsWith`, `lower`, `abs`,
+ * `min`, `max`, `round`, `floor`, `ceil`, `Number`, `String`) and, where the
+ * place gives a list (`options.over`), the aggregates `min(x)`, `max(x)`,
+ * `sum(x)`, `count(x)` and `count()`.
+ *
+ * The operators use the DICOM meaning of a missing value (see `../values`):
+ *
+ * - `==` is the only equality, and `===` / `!==` are compile errors. `'1' == 1`
+ *   is true.
+ * - `X == null` holds when `X` has no value (absent, or `null`, `''`, `[]`).
+ *   `X == undefined` holds only when `X` is absent (DICOM Type 3 against
+ *   Type 2). `!=` is the opposite of each.
+ * - `<`, `<=`, `>` and `>=` give `false` unless both sides are finite numbers
+ *   after `toFinite`, so a numeric string is a number and a missing value never
+ *   compares as 0.
+ * - The number helpers give `undefined` for a value that is not a number.
+ * - An aggregate skips an element whose argument has no value (`count(x)` also
+ *   skips `false`). `sum` of no element is 0; `min` and `max` of no element
+ *   are `undefined`; `count()` is the number of elements.
  *
  * Compilation happens once (CSP-safe — no eval / new Function); evaluation is
  * a closure-tree walk.  Parse errors throw an {@link ExpressionSyntaxError}
@@ -502,16 +562,23 @@ function compileNode(node: ExpressionNode, expression: string): NodeEvaluator {
  * first argument unless `options.implicitScope` says otherwise.
  *
  * With an implicit scope, an identifier the subject does not carry resolves to
- * `undefined` (the subject is open-ended; see {@link collectIdentifiers} for
- * reporting that). With `implicitScope: false` the set of names is closed - the
- * parameters - so an unknown bare identifier is a compile-time error.
+ * `undefined`. The compiler does not check names: a consumer that knows its
+ * names checks them with {@link collectReads}. With `implicitScope: false` the
+ * set of names is closed - the parameters - so an unknown bare identifier is a
+ * compile-time error.
  */
 export function compileExpression(
   source: string,
   options: CompileExpressionOptions = {}
 ): CompiledExpression {
   const paramNames = options.params ?? ['instance', 'context'];
-  const { implicitScope = true } = options;
+  const { implicitScope = true, over } = options;
+  if (over !== undefined && !paramNames.includes(over)) {
+    throw new ExpressionSyntaxError(
+      `over '${over}' is not one of the parameters (${paramNames.join(', ')})`,
+      source
+    );
+  }
   let implicitIndex = -1;
   if (implicitScope === true) {
     implicitIndex = 0;
@@ -524,11 +591,12 @@ export function compileExpression(
       );
     }
   }
+  const context: NodeContext = { expression: source, over };
   const ast = parseExpressionSource(source);
   if (implicitIndex === -1) {
-    assertOnlyParams(ast, paramNames, source);
+    assertOnlyParams(ast, paramNames, context);
   }
-  const evaluator = compileNode(ast, source);
+  const evaluator = compileNode(ast, context);
   let warned = false;
 
   const compiled = ((...args: unknown[]) => {

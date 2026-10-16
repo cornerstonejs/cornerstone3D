@@ -5,28 +5,9 @@ import {
   createDisplaySetSplitRules,
   rawDisplaySetSelector,
 } from './rawDisplaySetSelector';
-import type {
-  RawDisplaySetSelector,
-  RawSplitRule,
-} from './rawDisplaySetSelectorTypes';
+import type { RawDisplaySetSelector } from './rawDisplaySetSelectorTypes';
 import { resolveSplitRuleSet } from './splitRuleSet';
-import { splitRuleSchema } from './splitRuleSchema';
-import type { NaturalizedInstance } from './types';
-
-/**
- * A keyed raw selector from rules listed in evaluation order: each rule's id is
- * its key, and its position gives its priority. For tests whose point is not
- * the shape of the selector.
- */
-const raw = (
-  ...rules: (Omit<RawSplitRule, 'priority'> & { id: string })[]
-): RawDisplaySetSelector =>
-  Object.fromEntries(
-    rules.map(({ id, ...rule }, index) => [
-      id,
-      { ...rule, priority: index + 1 },
-    ])
-  );
+import type { NaturalizedInstance, SplitRule } from './types';
 
 const CT_SOP_CLASS = '1.2.840.10008.5.1.4.1.1.2';
 const MR_SOP_CLASS = '1.2.840.10008.5.1.4.1.1.4';
@@ -437,7 +418,7 @@ describe('default rules - the unsupported catch-all', () => {
       seg: {
         priority: -1,
         viewportTypes: ['stack'],
-        matches: { attribute: 'Modality', equals: 'SEG' },
+        matches: { Modality: 'SEG' },
       },
     });
 
@@ -475,7 +456,7 @@ describe('default rules - the unsupported catch-all', () => {
       ...rawDisplaySetSelector,
       segFallback: {
         priority: 8.5,
-        matches: { attribute: 'Modality', equals: 'SEG' },
+        matches: { Modality: 'SEG' },
       },
     });
 
@@ -519,479 +500,417 @@ describe('default rules - the unsupported catch-all', () => {
   });
 });
 
-describe('createDisplaySetSplitRules - the condition vocabulary', () => {
-  const rules = (matches: unknown) =>
-    createDisplaySetSplitRules(
-      raw({ id: 'probe', matches } as never, { id: 'rest' })
-    );
+const compileOne = (rule: Record<string, unknown>, options = {}) =>
+  createDisplaySetSplitRules(
+    { r: { priority: 1, ...rule } } as unknown as RawDisplaySetSelector,
+    options
+  );
 
-  const claimed = (matches: unknown, overrides = {}) =>
-    groupInstancesBySplitRules([instance(overrides)], rules(matches))[0]
-      .matchedRule.id;
+const errorOf = (rule: Record<string, unknown>, options = {}): string => {
+  try {
+    compileOne(rule, options);
+  } catch (error) {
+    return (error as Error).message;
+  }
+  throw new Error('expected the rule to fail to compile');
+};
 
-  it('supports exists / absent', () => {
-    expect(claimed({ attribute: 'SliceLocation', exists: true })).toBe('rest');
-    expect(claimed({ attribute: 'SliceLocation', absent: true })).toBe('probe');
-    expect(
-      claimed(
-        { attribute: 'SliceLocation', exists: true },
-        { SliceLocation: 3 }
-      )
-    ).toBe('probe');
-  });
+/** The SOPInstanceUIDs of the instances that the rule `r` claims. */
+const claimed = (
+  rule: Record<string, unknown>,
+  instances: NaturalizedInstance[],
+  options = {}
+) =>
+  groupInstancesBySplitRules(instances, compileOne(rule, options)).flatMap(
+    (group) => group.instances.map((i) => i.SOPInstanceUID)
+  );
 
-  it('supports equals / notEquals across string and number forms', () => {
-    expect(claimed({ attribute: 'Rows', equals: 512 })).toBe('probe');
-    expect(claimed({ attribute: 'Rows', equals: '512' })).toBe('probe');
-    expect(claimed({ attribute: 'Rows', notEquals: 512 })).toBe('rest');
-  });
-
-  it('supports in / notIn', () => {
-    expect(claimed({ attribute: 'Modality', in: ['CT', 'MR'] })).toBe('probe');
-    expect(claimed({ attribute: 'Modality', notIn: ['CT', 'MR'] })).toBe(
-      'rest'
-    );
-  });
-
-  it('supports greaterThan / lessThan, and never matches an absent attribute', () => {
-    expect(claimed({ attribute: 'Rows', greaterThan: 100 })).toBe('probe');
-    expect(claimed({ attribute: 'Rows', lessThan: 100 })).toBe('rest');
-    expect(claimed({ attribute: 'NumberOfFrames', greaterThan: -1 })).toBe(
-      'rest'
-    );
-  });
-
-  it('supports all / any / not, with all: [] true and any: [] false', () => {
-    expect(claimed({ all: [] })).toBe('probe');
-    expect(claimed({ any: [] })).toBe('rest');
-    expect(claimed({ not: { attribute: 'Rows', equals: 512 } })).toBe('rest');
-    expect(
-      claimed({
-        any: [
-          { attribute: 'Modality', equals: 'XX' },
-          { attribute: 'Modality', equals: 'CT' },
-        ],
-      })
-    ).toBe('probe');
-  });
-
-  it('supports named classifiers', () => {
-    expect(claimed({ classifier: 'image' })).toBe('probe');
-    expect(claimed({ classifier: 'video' })).toBe('rest');
-  });
-
-  it('supports contains, case sensitive by default', () => {
-    const description = { SeriesDescription: '4D Flow SAX' };
-    expect(
-      claimed({ attribute: 'SeriesDescription', contains: 'Flow' }, description)
-    ).toBe('probe');
-    // Case matters unless asked otherwise - a case-insensitive 'de' would sweep
-    // in far more than delayed-enhancement series.
-    expect(
-      claimed({ attribute: 'SeriesDescription', contains: 'flow' }, description)
-    ).toBe('rest');
-    expect(
-      claimed(
-        {
-          attribute: 'SeriesDescription',
-          contains: 'flow',
-          ignoreCase: true,
-        },
-        description
-      )
-    ).toBe('probe');
-  });
-
-  it('supports containsAny', () => {
-    const description = { SeriesDescription: 'PSIR LGE stack' };
-    expect(
-      claimed(
-        { attribute: 'SeriesDescription', containsAny: ['LGE', 'MAG'] },
-        description
-      )
-    ).toBe('probe');
-    expect(
-      claimed(
-        { attribute: 'SeriesDescription', containsAny: ['T2', 'CINE'] },
-        description
-      )
-    ).toBe('rest');
-  });
-
-  it('never matches contains on an absent attribute', () => {
-    expect(claimed({ attribute: 'SeriesDescription', contains: 'flow' })).toBe(
-      'rest'
-    );
-  });
-});
-
-describe('createDisplaySetSplitRules - templates', () => {
-  const readTemplate = (template: string, overrides = {}) => {
-    const rules = createDisplaySetSplitRules(
-      raw({
-        id: 'templated',
-        customAttributes: { fromFirstInstance: { label: { template } } },
-      } as never)
-    );
-    const inst = instance(overrides);
-    return rules.templated.customAttributes?.(
-      { instance: inst },
-      { instances: [inst] }
-    ).label;
-  };
-
-  it('substitutes attribute placeholders', () => {
-    expect(
-      readTemplate('US series {InstanceNumber}', { InstanceNumber: 7 })
-    ).toBe('US series 7');
-  });
-
-  it('substitutes several placeholders and keeps the literals', () => {
-    expect(
-      readTemplate('{Modality}/{SeriesDescription} end', {
-        SeriesDescription: 'SAX',
-      })
-    ).toBe('CT/SAX end');
-  });
-
-  it('substitutes an absent attribute as an empty string', () => {
-    expect(readTemplate('[{ImageComments}]')).toBe('[]');
-  });
-
-  it('honours escaped braces', () => {
-    expect(readTemplate('\\{literal\\} {Modality}')).toBe('{literal} CT');
-  });
-
-  it('rejects an unclosed or empty placeholder at compile time', () => {
-    expect(() => readTemplate('{Modality')).toThrow(/unclosed/);
-    expect(() => readTemplate('{}')).toThrow(/empty/);
-  });
-});
-
-describe('rawDisplaySetSelector - rule metadata', () => {
-  it('gives every standard rule a description a UI can display', () => {
-    // A rules UI reads the explanation from the rule itself rather than keeping
-    // its own copy, so a rule without one shows up as blank.
-    const undocumented = Object.entries(rawDisplaySetSelector).filter(
-      ([, rule]) => !rule.description
-    );
-    expect(undocumented.map(([id]) => id)).toEqual([]);
-  });
-
-  it('keeps descriptions out of the compiled rules', () => {
-    // The split engine has no use for prose; it should not end up in the
-    // compiled predicate objects.
-    const compiled = createDisplaySetSplitRules(rawDisplaySetSelector);
-    expect(
-      Object.values(compiled).some((rule) => 'description' in (rule as object))
-    ).toBe(false);
-  });
-});
-
-describe('createDisplaySetSplitRules - the keyed result', () => {
-  const selector: RawDisplaySetSelector = {
-    catchAll: { priority: 2 },
-    ctRule: { priority: 1, matches: { attribute: 'Modality', equals: 'CT' } },
-    off: { priority: null, matches: { attribute: 'Modality', equals: 'MR' } },
-  };
-
-  it('keeps the keys and the priorities of the selector', () => {
-    const compiled = createDisplaySetSplitRules(selector);
-
-    expect(Object.keys(compiled).sort()).toEqual(['catchAll', 'ctRule', 'off']);
-    expect(compiled.catchAll.priority).toBe(2);
-    expect(compiled.ctRule.priority).toBe(1);
-    expect(compiled.ctRule.matches?.(instance(), { series: {} })).toBe(true);
-    expect(
-      compiled.ctRule.matches?.(instance({ Modality: 'MR' }), { series: {} })
-    ).toBe(false);
-  });
-
-  it('compiles and keeps an excluded entry, so a later layer can include it', () => {
-    const compiled = createDisplaySetSplitRules(selector);
-
-    expect(compiled.off.priority).toBeNull();
-    expect(
-      compiled.off.matches?.(instance({ Modality: 'MR' }), { series: {} })
-    ).toBe(true);
-    expect(resolveSplitRuleSet(compiled).map((rule) => rule.id)).toEqual([
-      'ctRule',
-      'catchAll',
-    ]);
-
-    const included = resolveSplitRuleSet({
-      ...compiled,
-      off: { ...compiled.off, priority: 0 },
-    });
-    expect(included.map((rule) => rule.id)).toEqual([
-      'off',
-      'ctRule',
-      'catchAll',
-    ]);
-  });
-
-  it('gives the compiled defaults the same keys and priorities as the selector', () => {
-    expect(
-      Object.entries(defaultDisplaySetSplitRules).map(([id, rule]) => [
-        id,
-        rule.priority,
-      ])
-    ).toEqual(
-      Object.entries(rawDisplaySetSelector).map(([id, rule]) => [
-        id,
-        rule.priority,
-      ])
-    );
-  });
-});
-
-describe('createDisplaySetSplitRules - series facts', () => {
-  const factRules = (fact: unknown) =>
-    createDisplaySetSplitRules(
-      raw(
-        {
-          id: 'probe',
-          series: [fact],
-          matches: { seriesFact: 'flag' },
-        } as never,
-        { id: 'rest' }
-      )
-    );
-
-  const matchedIds = (fact: unknown, instances: NaturalizedInstance[]) =>
-    new Set(
-      groupInstancesBySplitRules(instances, factRules(fact)).map(
-        (g) => g.matchedRule.id
-      )
-    );
-
-  const two = [
-    instance({ SOPInstanceUID: 'a', InstanceNumber: 1, Modality: 'CT' }),
-    instance({ SOPInstanceUID: 'b', InstanceNumber: 2, Modality: 'MR' }),
-  ];
-
-  it('scope first samples instances[0] only', () => {
-    expect(
-      matchedIds(
-        {
-          name: 'flag',
-          scope: 'first',
-          when: { attribute: 'Modality', equals: 'CT' },
-        },
-        two
-      )
-    ).toEqual(new Set(['probe']));
-  });
-
-  it('scope every requires all instances', () => {
-    expect(
-      matchedIds(
-        {
-          name: 'flag',
-          scope: 'every',
-          when: { attribute: 'Modality', equals: 'CT' },
-        },
-        two
-      )
-    ).toEqual(new Set(['rest']));
-  });
-
-  it('scope some requires at least one', () => {
-    expect(
-      matchedIds(
-        {
-          name: 'flag',
-          scope: 'some',
-          when: { attribute: 'Modality', equals: 'MR' },
-        },
-        two
-      )
-    ).toEqual(new Set(['probe']));
-  });
-
-  it('scope mixed requires both kinds present', () => {
-    expect(
-      matchedIds(
-        {
-          name: 'flag',
-          scope: 'mixed',
-          when: { attribute: 'Modality', equals: 'CT' },
-        },
-        two
-      )
-    ).toEqual(new Set(['probe']));
-    expect(
-      matchedIds(
-        {
-          name: 'flag',
-          scope: 'mixed',
-          when: { attribute: 'Modality', exists: true },
-        },
-        two
-      )
-    ).toEqual(new Set(['rest']));
-  });
-
-  it('honours gate and minInstances', () => {
-    expect(
-      matchedIds(
-        {
-          name: 'flag',
-          gate: { attribute: 'Modality', equals: 'MR' },
-          scope: 'first',
-          when: { attribute: 'Rows', exists: true },
-        },
-        two
-      )
-    ).toEqual(new Set(['rest']));
-
-    expect(
-      matchedIds(
-        {
-          name: 'flag',
-          scope: 'first',
-          when: { attribute: 'Rows', exists: true },
-          minInstances: 3,
-        },
-        two
-      )
-    ).toEqual(new Set(['rest']));
-  });
-});
-
-describe('createDisplaySetSplitRules - runBy and compareInstances as data', () => {
-  const interleaved = [
-    instance({ SOPInstanceUID: 'i1', InstanceNumber: 1, Modality: 'US' }),
-    instance({ SOPInstanceUID: 'i2', InstanceNumber: 2, Modality: 'US' }),
+describe('matches - absent and empty values (DICOM meaning)', () => {
+  // undefined is absent; null, '' and [] are empty; "no value" is either.
+  const subjects = [
+    ['absent', undefined],
+    ['null', null],
+    ['text', ''],
+    ['array', []],
+    ['zero', 0],
+  ].map(([id, BodyPartThickness], index) =>
     instance({
-      SOPInstanceUID: 'c3',
-      InstanceNumber: 3,
-      Modality: 'US',
-      NumberOfFrames: 30,
-    }),
-    instance({ SOPInstanceUID: 'i4', InstanceNumber: 4, Modality: 'US' }),
-  ];
+      SOPInstanceUID: id as string,
+      InstanceNumber: index + 1,
+      BodyPartThickness,
+    })
+  );
+  const holds = (matches: unknown, options = {}) =>
+    claimed({ matches }, subjects, options);
+  const NO_VALUE = ['absent', 'null', 'text', 'array'];
 
-  it('splits runs from a declarative runBy condition', () => {
-    const rules = createDisplaySetSplitRules(
-      raw({
-        id: 'usRuns',
-        matches: { attribute: 'Modality', equals: 'US' },
-        runBy: { condition: { attribute: 'NumberOfFrames', greaterThan: 1 } },
-      })
-    );
-
-    // singles, clip, singles -> three display sets rather than two.
-    expect(groupInstancesBySplitRules(interleaved, rules).length).toBe(3);
+  it('reads "X": null as "no value", and { notNull: true } as its exact opposite', () => {
+    expect(holds({ BodyPartThickness: null })).toEqual(NO_VALUE);
+    expect(holds({ BodyPartThickness: { notNull: true } })).toEqual(['zero']);
   });
 
-  it('orders a group from a declarative compareInstances', () => {
-    const rules = createDisplaySetSplitRules(
-      raw({
-        id: 'byLocation',
-        matches: { attribute: 'Modality', equals: 'CT' },
-        compareInstances: { attribute: 'SliceLocation', number: true },
-      })
-    );
-
-    const groups = groupInstancesBySplitRules(
-      [
-        instance({ SOPInstanceUID: 'a', InstanceNumber: 1, SliceLocation: 20 }),
-        instance({ SOPInstanceUID: 'b', InstanceNumber: 2, SliceLocation: 10 }),
-      ],
-      rules
-    );
-
-    expect(groups[0].instances.map((i) => i.SOPInstanceUID)).toEqual([
-      'b',
-      'a',
-    ]);
+  it('reads X == null as "no value", and X == undefined as "absent" only', () => {
+    const options = {
+      displaySetContext: {
+        hasNoThickness: 'BodyPartThickness == null',
+        isAbsent: 'BodyPartThickness == undefined',
+      },
+    };
+    expect(holds({ hasNoThickness: true }, options)).toEqual(NO_VALUE);
+    expect(holds({ isAbsent: true }, options)).toEqual(['absent']);
   });
 
-  it('reverses that order with descending', () => {
-    const rules = createDisplaySetSplitRules(
-      raw({
-        id: 'byLocationDesc',
-        matches: { attribute: 'Modality', equals: 'CT' },
-        compareInstances: {
-          attribute: 'SliceLocation',
-          number: true,
-          descending: true,
-        },
-      })
-    );
+  it('gives false for an ordering comparison on no value, and never reads it as 0', () => {
+    const options = { displaySetContext: { isThin: 'BodyPartThickness < 1' } };
+    expect(holds({ isThin: true }, options)).toEqual(['zero']);
+    expect(holds({ BodyPartThickness: { lessThan: 1 } })).toEqual(['zero']);
+    expect(holds({ BodyPartThickness: { range: [-1, 1] } })).toEqual(['zero']);
+  });
 
-    const groups = groupInstancesBySplitRules(
-      [
-        instance({ SOPInstanceUID: 'a', InstanceNumber: 1, SliceLocation: 20 }),
-        instance({ SOPInstanceUID: 'b', InstanceNumber: 2, SliceLocation: 10 }),
-      ],
-      rules
+  it('fails a test on no value, and holds its doesNot form', () => {
+    expect(holds({ BodyPartThickness: { contains: '0' } })).toEqual(['zero']);
+    expect(holds({ BodyPartThickness: { doesNotContain: '0' } })).toEqual(
+      NO_VALUE
     );
-
-    expect(groups[0].instances.map((i) => i.SOPInstanceUID)).toEqual([
-      'a',
-      'b',
-    ]);
+    expect(holds({ BodyPartThickness: { doesNotEqual: 0 } })).toEqual(NO_VALUE);
   });
 });
 
-describe('createDisplaySetSplitRules - extension points', () => {
-  it('accepts application-supplied classifiers', () => {
+describe('matches - the operator meanings', () => {
+  const holds = (value: unknown, test: unknown) =>
+    claimed({ matches: { ImageType: test } }, [
+      instance({ SOPInstanceUID: 'x', ImageType: value }),
+    ]).length === 1;
+
+  it('reads greaterThan and lessThan as strict, and a numeric string as a number', () => {
+    expect(holds(2, { greaterThan: 1 })).toBe(true);
+    expect(holds(1, { greaterThan: 1 })).toBe(false);
+    expect(holds('2', { greaterThan: 1 })).toBe(true);
+    expect(holds(1, { lessThan: 1 })).toBe(false);
+  });
+
+  it('gives equals the meaning of a scalar test, with ==', () => {
+    expect(holds('1', 1)).toBe(true);
+    expect(holds('1', { equals: 1 })).toBe(true);
+    expect(holds(['MR'], { equals: 'MR' })).toBe(true);
+    expect(holds('CT', ['MR', 'CT'])).toBe(true);
+  });
+
+  it('reads includes with a scalar operand as "has the element"', () => {
+    expect(holds(['ORIGINAL', 'LOCALIZER'], { includes: 'LOCALIZER' })).toBe(
+      true
+    );
+    expect(holds('LOCALIZER', { includes: 'LOCALIZER' })).toBe(true);
+    expect(holds(['ORIGINAL'], { includes: ['AXIAL', 'ORIGINAL'] })).toBe(true);
+    expect(holds(['ORIGINAL'], { doesNotInclude: 'LOCALIZER' })).toBe(true);
+  });
+
+  it('fails notNull for an empty string', () => {
+    expect(holds('', { notNull: true })).toBe(false);
+  });
+
+  it('reads false on a named boolean as its negation', () => {
+    expect(
+      claimed({ matches: { isMultiFrame: false } }, [
+        instance({ SOPInstanceUID: 'single', InstanceNumber: 1 }),
+        instance({
+          SOPInstanceUID: 'clip',
+          InstanceNumber: 2,
+          NumberOfFrames: 4,
+        }),
+      ])
+    ).toEqual(['single']);
+  });
+
+  it('rejects an operand of the wrong kind, a second operator and an unknown operator', () => {
+    expect(errorOf({ matches: { Rows: { greaterThan: '1' } } })).toContain(
+      "rule 'r'.matches.Rows: the operand of greaterThan must be a finite number"
+    );
+    expect(
+      errorOf({ matches: { Rows: { greaterThan: 1, lessThan: 9 } } })
+    ).toContain('more than one operator');
+    expect(errorOf({ matches: { Rows: { greater: 1 } } })).toContain(
+      "unknown operator 'greater'"
+    );
+  });
+
+  it('rejects the removed forms: all, not, a comparison key and an expression', () => {
+    expect(errorOf({ matches: { all: [{ Modality: 'CT' }] } })).toContain(
+      "unknown name 'all'"
+    );
+    expect(errorOf({ matches: { not: { Modality: 'CT' } } })).toContain(
+      "unknown name 'not'"
+    );
+    expect(errorOf({ matches: { 'NumberOfFrames >': 1 } })).toContain(
+      "unknown name 'NumberOfFrames >'"
+    );
+    expect(errorOf({ matches: "Modality == 'CT'" })).toContain(
+      'unrecognized condition'
+    );
+  });
+});
+
+describe('names - the compile checks every name', () => {
+  it('rejects a misspelt keyword, with the rule, the place and the name', () => {
+    expect(errorOf({ matches: { BodyPartExamind: 'CHEST' } })).toBe(
+      "Invalid raw display set selector: rule 'r'.matches.BodyPartExamind: " +
+        "unknown name 'BodyPartExamind': it is not a keyword of the DICOM " +
+        'dictionary; a private, vendor or synthetic attribute needs a ' +
+        'declaration, e.g. "myValue": { "attribute": "BodyPartExamind" }'
+    );
+  });
+
+  it('checks groupBy, sortBy, attributes, templates and context expressions', () => {
+    expect(errorOf({ groupBy: ['SeriesInstanceUId'] })).toContain(
+      "rule 'r'.groupBy[0]: unknown name 'SeriesInstanceUId'"
+    );
+    expect(errorOf({ sortBy: ['sweepStrat'] })).toContain(
+      "rule 'r'.sortBy[0]: unknown name 'sweepStrat'"
+    );
+    expect(
+      errorOf({ attributes: { label: { template: '{SeriesDescriptio}' } } })
+    ).toContain(
+      "rule 'r'.attributes.label.template: unknown name 'SeriesDescriptio'"
+    );
+    expect(
+      errorOf({ context: { isChest: "BodyPartExamind == 'CHEST'" } })
+    ).toContain("rule 'r'.context.isChest: unknown name 'BodyPartExamind'");
+    expect(
+      errorOf({}, { displaySetContext: { isLarge: 'pixelCont > 1' } })
+    ).toContain("displaySetContext.isLarge: unknown name 'pixelCont'");
+  });
+
+  it('reads a hex tag only through a declaration', () => {
+    expect(errorOf({ matches: { '00191010': 1 } })).toContain(
+      'a hex tag needs a declaration'
+    );
+    const rule = {
+      context: { vendorBValue: { attribute: '00191010', vr: 'FD', vm: '1' } },
+      matches: { vendorBValue: { greaterThan: 0 } },
+    };
+    expect(
+      claimed(rule, [
+        instance({ SOPInstanceUID: 'b', '00191010': 800 }),
+        instance({ SOPInstanceUID: 'none' }),
+      ])
+    ).toEqual(['b']);
+  });
+
+  it('rejects a context name that is a keyword, or that does not start in lowercase', () => {
+    expect(errorOf({ context: { Modality: "'CT'" } })).toContain(
+      "the context name 'Modality' is a DICOM keyword"
+    );
+    expect(errorOf({ context: { IsChest: 'true' } })).toContain(
+      'must start with a lowercase letter'
+    );
+  });
+
+  it('rejects === and !==, so that == is the only equality', () => {
+    expect(errorOf({ context: { isCt: "Modality === 'CT'" } })).toContain(
+      "'===' is not allowed; use '=='"
+    );
+  });
+});
+
+describe('the display set context', () => {
+  /** Two sweeps 55 s apart, each with two frames 5 s apart. */
+  const sweeps = () =>
+    ['090000', '090005', '090100', '090105'].map((AcquisitionTime, index) =>
+      instance({
+        SOPInstanceUID: `us-${index}`,
+        Modality: 'US',
+        AcquisitionTime,
+        InstanceNumber: index + 1,
+      })
+    );
+  const sweepRule = {
+    matches: { sweepCount: { greaterThan: 1 } },
+    groupBy: ['SeriesInstanceUID', 'sweepStart'],
+  };
+
+  it('reads a series field and an instance field of a group by their aliases', () => {
+    const groups = groupInstancesBySplitRules(sweeps(), compileOne(sweepRule));
+    expect(groups.map((g) => g.instances.length)).toEqual([2, 2]);
+  });
+
+  it('lets a rule context replace an argument for that rule only, also inside the global entries', () => {
+    const rules = createDisplaySetSplitRules({
+      wideGap: {
+        priority: 1,
+        ...sweepRule,
+        context: { timeClustersMaxGap: 60 },
+      },
+      defaultGap: { priority: 2, ...sweepRule },
+    });
+    // With a gap of 60 s the series is one sweep, so `wideGap` does not match.
+    expect(
+      groupInstancesBySplitRules(sweeps(), rules).map((g) => g.matchedRule.id)
+    ).toEqual(['defaultGap', 'defaultGap']);
+  });
+
+  it('lets a rule select a different group, and every alias follows', () => {
+    const rule = {
+      ...sweepRule,
+      context: { timeClusters: 'longTimeClusters' },
+    };
+    expect(claimed(rule, sweeps())).toEqual([]);
+  });
+
+  it('computes an entry one time for each series for all rules that do not replace it', () => {
+    const compute = jest.fn(() => ({ count: 2 }));
     const rules = createDisplaySetSplitRules(
-      raw(
-        { id: 'special', matches: { classifier: 'siteSpecific' } },
-        { id: 'rest' }
-      ),
       {
-        classifiers: {
-          siteSpecific: (i) => i.SeriesDescription === 'SITE',
+        a: { priority: 1, matches: { counted: 3 } },
+        b: { priority: 2, matches: { counted: 2 } },
+        c: {
+          priority: 3,
+          context: { counted: 'summary.count + 1' },
+          matches: { counted: 3 },
+        },
+      },
+      {
+        displaySetContext: {
+          summary: { function: 'summarize' },
+          counted: 'summary.count',
+        },
+        seriesFunctions: {
+          summarize: { compute, fields: { count: 'series' } },
         },
       }
     );
-
-    expect(
-      groupInstancesBySplitRules(
-        [instance({ SeriesDescription: 'SITE' })],
-        rules
-      )[0].matchedRule.id
-    ).toBe('special');
+    const groups = groupInstancesBySplitRules(sweeps(), rules);
+    expect([...new Set(groups.map((g) => g.matchedRule.id))]).toEqual(['b']);
+    expect(compute).toHaveBeenCalledTimes(1);
   });
 
-  it('lets a supplied classifier override a built-in one', () => {
-    const rules = createDisplaySetSplitRules(
-      raw({ id: 'img', matches: { classifier: 'image' } }, { id: 'rest' }),
-      { classifiers: { image: () => false } }
-    );
-
-    expect(
-      groupInstancesBySplitRules([instance()], rules)[0].matchedRule.id
-    ).toBe('rest');
+  it('gives a rule entry that reads its own name the global value', () => {
+    const rule = {
+      context: { seriesInstanceCount: 'seriesInstanceCount * 2' },
+      matches: { seriesInstanceCount: 8 },
+    };
+    expect(claimed(rule, sweeps()).length).toBe(4);
   });
 
-  it('applies a named customAttributes preset over the declarative fields', () => {
-    const rules = createDisplaySetSplitRules(
-      raw({
-        id: 'preset',
-        customAttributes: { set: { label: 'declarative' }, preset: 'site' },
-      }),
-      {
-        customAttributePresets: {
-          site: (instances, { splitNumber }) => ({
-            label: 'preset',
-            count: instances.length,
-            splitNumber,
-          }),
-        },
-      }
-    );
-
+  it('rejects a loop of entries, an unknown group field, and a group replaced by a value', () => {
     expect(
-      rules.preset.customAttributes?.(
-        { instance: instance() },
-        { instances: [instance()], splitNumber: 1 }
+      errorOf(
+        {},
+        { displaySetContext: { first: 'second + 1', second: 'first' } }
       )
-    ).toEqual({ label: 'preset', count: 1, splitNumber: 1 });
+    ).toContain('the context entries form a loop: first -> second -> first');
+    expect(
+      errorOf({}, { displaySetContext: { sweeps: 'timeClusters.cluster' } })
+    ).toContain("the group 'timeClusters' has no field 'cluster'");
+    expect(
+      errorOf({ context: { timeClusters: 5 }, groupBy: ['sweepStart'] })
+    ).toContain("'timeClusters' is not a group");
+  });
+
+  it('runs min, max, sum and count over the series in a series entry', () => {
+    const rule = {
+      context: {
+        mostFrames: 'max(NumberOfFrames)',
+        withFrames: 'count(NumberOfFrames)',
+      },
+      matches: { mostFrames: 9, withFrames: 2 },
+    };
+    expect(
+      claimed(rule, [
+        instance({ SOPInstanceUID: 'a', InstanceNumber: 1, NumberOfFrames: 9 }),
+        instance({
+          SOPInstanceUID: 'b',
+          InstanceNumber: 2,
+          NumberOfFrames: '3' as unknown as number,
+        }),
+        instance({ SOPInstanceUID: 'c', InstanceNumber: 3 }),
+      ])
+    ).toEqual(['a', 'b', 'c']);
+  });
+});
+
+describe('sortBy and attributes', () => {
+  const series = () =>
+    [3, 1, 2].map((SliceLocation) =>
+      instance({
+        SOPInstanceUID: `s${SliceLocation}`,
+        SliceLocation,
+        InstanceNumber: 4 - SliceLocation,
+        NumberOfFrames: SliceLocation,
+        SeriesDescription: 'AX',
+      })
+    );
+  const firstGroup = (rule: Record<string, unknown>, options = {}) =>
+    groupInstancesBySplitRules(series(), compileOne(rule, options))[0];
+
+  it('sorts by a name in ascending order, and by a named sort function', () => {
+    expect(
+      firstGroup({ sortBy: ['SliceLocation'] }).instances.map(
+        (i) => i.SliceLocation
+      )
+    ).toEqual([1, 2, 3]);
+    const descending: SplitRule['compareInstances'] = (a, b) =>
+      (b.SliceLocation as number) - (a.SliceLocation as number);
+    expect(
+      firstGroup(
+        { sortBy: [{ sortFunction: 'descending' }] },
+        { sortFunctions: { descending } }
+      ).instances.map((i) => i.SliceLocation)
+    ).toEqual([3, 2, 1]);
+    expect(errorOf({ sortBy: [{ sortFunction: 'missing' }] })).toContain(
+      'unknown sort function "missing"; known: (none)'
+    );
+  });
+
+  it('reads a keyword in attributes from the first instance of the sorted display set', () => {
+    const group = firstGroup({
+      sortBy: ['SliceLocation'],
+      attributes: {
+        firstSlice: 'SliceLocation',
+        label: { template: '{SeriesDescription} #{splitNumber}' },
+        fixed: { template: 'SCOUT' },
+        flag: true,
+      },
+    });
+    const { firstSlice, label, fixed, flag } = createDisplaySetFromGroup(
+      group,
+      {
+        splitNumber: 1,
+      }
+    ) as unknown as Record<string, unknown>;
+    expect({ firstSlice, label, fixed, flag }).toEqual({
+      firstSlice: 1,
+      label: 'AX #1',
+      fixed: 'SCOUT',
+      flag: true,
+    });
+  });
+
+  it('rejects a bare string that is not a name, and names the template form', () => {
+    expect(errorOf({ attributes: { label: 'SCOUT' } })).toBe(
+      "Invalid raw display set selector: rule 'r'.attributes.label: unknown " +
+        "name 'SCOUT': it is not a keyword of the DICOM dictionary; a private, " +
+        'vendor or synthetic attribute needs a declaration, e.g. "myValue": ' +
+        '{ "attribute": "SCOUT" }; fixed text is { "template": "SCOUT" }'
+    );
+  });
+
+  it('runs an attributes expression over the instances of the display set', () => {
+    const group = firstGroup({
+      attributes: {
+        maxFrames: { expression: 'max(NumberOfFrames)' },
+        frameTotal: { expression: 'sum(NumberOfFrames)' },
+      },
+    });
+    const { maxFrames, frameTotal } = createDisplaySetFromGroup(
+      group
+    ) as unknown as Record<string, unknown>;
+    expect({ maxFrames, frameTotal }).toEqual({ maxFrames: 3, frameTotal: 6 });
+  });
+
+  it('reads splitNumber and sopClassUids in attributes only', () => {
+    expect(errorOf({ matches: { splitNumber: 1 } })).toContain(
+      "'splitNumber' is a value of the display set, and only attributes can read it"
+    );
   });
 });
 
@@ -1001,7 +920,6 @@ describe('createDisplaySetSplitRules - validation', () => {
     expect(() => createDisplaySetSplitRules('rules' as never)).toThrow(
       /Invalid raw display set selector: selector must be an object keyed by rule id/
     );
-    // The array form is gone.
     expect(() =>
       createDisplaySetSplitRules([{ id: 'x', priority: 1 }] as never)
     ).toThrow(/selector must be an object keyed by rule id/);
@@ -1021,615 +939,89 @@ describe('createDisplaySetSplitRules - validation', () => {
 
   // JSON.parse makes `__proto__` a real own key. Stored in a plain object, the
   // key replaces the prototype, so the entry is lost with no error.
-  describe('rejects a __proto__ key instead of losing the entry', () => {
-    it('as a rule id', () => {
-      const selector = JSON.parse('{"__proto__": {"priority": 1}}');
-      expect(() => createDisplaySetSplitRules(selector)).toThrow(
-        /"__proto__".*the id is not allowed/
-      );
-    });
-
-    it('in a customAttributes record', () => {
-      for (const recipe of [
-        '{"set": {"__proto__": {"label": "x"}}}',
-        '{"fromFirstInstance": {"__proto__": {"attribute": "Modality"}}}',
-      ]) {
-        const rule = { id: 'x', customAttributes: JSON.parse(recipe) };
-        expect(() => createDisplaySetSplitRules(raw(rule as never))).toThrow(
-          /the key "__proto__" is not allowed/
-        );
-      }
-    });
-
-    it('as a series fact name', () => {
-      const rule = {
-        id: 'x',
-        series: [
-          {
-            name: '__proto__',
-            scope: 'some',
-            when: { attribute: 'Modality', equals: 'MR' },
-          },
-        ],
-      };
-      expect(() => createDisplaySetSplitRules(raw(rule as never))).toThrow(
-        /the fact name "__proto__" is not allowed/
-      );
-    });
-  });
-
-  it('rejects an unknown classifier at compile time, not at split time', () => {
+  it('rejects a __proto__ key instead of losing the entry', () => {
     expect(() =>
-      createDisplaySetSplitRules(
-        raw({ id: 'x', matches: { classifier: 'nope' } } as never)
-      )
-    ).toThrow(/unknown classifier "nope"/);
-  });
-
-  it('rejects an attribute condition with no operator', () => {
-    expect(() =>
-      createDisplaySetSplitRules(
-        raw({ id: 'x', matches: { attribute: 'Rows' } } as never)
-      )
-    ).toThrow(/no operator for attribute "Rows"/);
-  });
-
-  it('rejects an unrecognized condition', () => {
-    expect(() =>
-      createDisplaySetSplitRules(
-        raw({ id: 'x', matches: { nonsense: true } } as never)
-      )
-    ).toThrow(/unrecognized condition/);
-  });
-
-  it('rejects an unknown series fact scope', () => {
-    expect(() =>
-      createDisplaySetSplitRules(
-        raw({
-          id: 'x',
-          series: [{ name: 'f', scope: 'most', when: { all: [] } }],
-        } as never)
-      )
-    ).toThrow(/unknown scope/);
-  });
-
-  it('rejects a zero bucket', () => {
-    expect(() =>
-      createDisplaySetSplitRules(
-        raw({ id: 'x', groupBy: [{ attribute: 'Rows', bucket: 0 }] } as never)
-      )
-    ).toThrow(/bucket must be a non-zero finite number/);
-  });
-
-  it('rejects an unknown customAttributes preset', () => {
-    expect(() =>
-      createDisplaySetSplitRules(
-        raw({ id: 'x', customAttributes: { preset: 'missing' } } as never)
-      )
-    ).toThrow(/unknown customAttributes preset "missing"/);
-  });
-
-  it('names the offending fragment in the error', () => {
-    expect(() =>
-      createDisplaySetSplitRules(
-        raw({ id: 'x', matches: { classifier: 'nope' } } as never)
-      )
-    ).toThrow(/\{"classifier":"nope"\}/);
-  });
-});
-
-describe('rawDisplaySetSelector - rules written as expressions', () => {
-  it('accepts a string expression as a rule matcher', () => {
-    // The whole point of the expression language: the condition reads as one
-    // line instead of a nested object tree, and still crosses the wire as JSON.
-    const rules = createDisplaySetSplitRules({
-      ...rawDisplaySetSelector,
-      bigCt: {
-        priority: -1,
-        viewportTypes: ['stack'],
-        matches: "Modality === 'CT' && Rows > 256",
-      },
-    });
-
+      createDisplaySetSplitRules(JSON.parse('{"__proto__": {"priority": 1}}'))
+    ).toThrow(/"__proto__".*the id is not allowed/);
     expect(
-      ruleIdsFor([instance({ Rows: 512 }), instance({ Rows: 128 })], rules)
-    ).toEqual(['bigCt', 'volume3d']);
-  });
-
-  it('accepts the { expression } object form for the same condition', () => {
-    const rules = createDisplaySetSplitRules({
-      ...rawDisplaySetSelector,
-      mg: {
-        priority: -1,
-        viewportTypes: ['stack'],
-        matches: { expression: "Modality in ['CR', 'DX', 'MG']" },
-      },
-    });
-
-    expect(
-      ruleIdsFor([instance({ Modality: 'MG', Rows: 2294 })], rules)
-    ).toEqual(['mg']);
-  });
-
-  it('groups by a computed expression value', () => {
-    // In value position an expression yields its own result rather than a
-    // boolean, so it can produce a bucket key no attribute carries directly.
-    const rules = createDisplaySetSplitRules({
-      ...rawDisplaySetSelector,
-      byLaterality: {
-        priority: -1,
-        viewportTypes: ['stack'],
-        matches: "Modality === 'MG'",
-        groupBy: [
-          'SeriesInstanceUID',
-          {
-            expression:
-              "ImageLaterality + '-' + (Rows > 2000 ? 'big' : 'small')",
-          },
-        ],
-      },
-    });
-
-    const groups = groupInstancesBySplitRules(
-      [
-        instance({ Modality: 'MG', Rows: 2294, ImageLaterality: 'L' }),
-        instance({ Modality: 'MG', Rows: 2294, ImageLaterality: 'R' }),
-        instance({ Modality: 'MG', Rows: 1024, ImageLaterality: 'R' }),
-      ],
-      rules
+      errorOf({ attributes: JSON.parse('{"__proto__": {"template": "x"}}') })
+    ).toContain('the key "__proto__" is not allowed');
+    expect(errorOf({ context: JSON.parse('{"__proto__": 1}') })).toContain(
+      'the context name "__proto__" is not allowed'
     );
-
-    expect(groups.length).toBe(3);
-    expect(
-      groups.every((group) => group.matchedRule.id === 'byLaterality')
-    ).toBe(true);
   });
 
-  it('reports an expression syntax error at compile time', () => {
-    expect(() =>
-      createDisplaySetSplitRules(
-        raw({ id: 'bad', matches: 'Modality ===' } as never)
-      )
-    ).toThrow(/Modality ===/);
-  });
-
-  it('refuses prototype-chain access from an expression', () => {
-    expect(() =>
-      createDisplaySetSplitRules(
-        raw({ id: 'evil', matches: 'instance.constructor' } as never)
-      )
-    ).toThrow(/constructor/);
-  });
-});
-
-/** Compiles one rule, keyed 'r', with priority 1. */
-const compileOne = (rule: Record<string, unknown>) =>
-  createDisplaySetSplitRules({
-    r: { priority: 1, ...rule },
-  } as unknown as RawDisplaySetSelector);
-
-const errorOf = (rule: Record<string, unknown>): string => {
-  try {
-    compileOne(rule);
-  } catch (error) {
-    return (error as Error).message;
-  }
-  throw new Error('expected the rule to fail to compile');
-};
-
-describe('splitRuleSchema - the table the compiler reads', () => {
-  it('lists every rule field, and the compiler allows exactly those', () => {
-    const fields = Object.keys(splitRuleSchema.rule.forms.rule.keys);
-    expect(fields).toEqual([
-      'id',
-      'groupId',
-      'priority',
-      'description',
-      'viewportTypes',
-      'series',
-      'matches',
-      'groupBy',
-      'runBy',
-      'compareInstances',
-      'customAttributes',
-    ]);
-    expect(errorOf({ extra: 1 })).toContain(`allowed: ${fields.join(', ')}`);
-  });
-
-  it('declares the call signature and expression variables of each function place', () => {
-    const { keys } = splitRuleSchema.rule.forms.rule;
-    expect(keys.matches.call).toBe('(instance, context) => boolean');
-    expect(keys.matches.expression).toEqual({
-      params: ['instance', 'context'],
-      implicitScope: 'instance',
-    });
-    expect(keys.compareInstances.call).toBe('(a, b, context) => number');
-    expect(splitRuleSchema.comparator.forms.expression.expression).toEqual({
-      params: ['a', 'b', 'context'],
-      implicitScope: false,
-    });
-    expect(
-      splitRuleSchema.customAttributes.forms.recipe.keys.fromContext.oneOf
-    ).toEqual(['isMultiFrame', 'sopClassUids', 'viewportTypes']);
-  });
-
-  it('is frozen, so no caller can change what compiles', () => {
-    expect(Object.isFrozen(splitRuleSchema)).toBe(true);
-    expect(Object.isFrozen(splitRuleSchema.rule.forms.rule.keys)).toBe(true);
-  });
-
-  it('compiles the default selector under the strict rules', () => {
-    expect(() =>
-      createDisplaySetSplitRules(rawDisplaySetSelector)
-    ).not.toThrow();
-  });
-});
-
-describe('createDisplaySetSplitRules - strict keys', () => {
   it('rejects an unknown rule field, with the rule id and the allowed fields', () => {
-    // Before: accepted, and the rule then had no `matches` and claimed every
-    // instance.
-    expect(errorOf({ matchs: { attribute: 'Modality', equals: 'CT' } })).toBe(
+    expect(errorOf({ matchs: { Modality: 'CT' } })).toBe(
       "Invalid raw display set selector: rule 'r': unknown field 'matchs'; " +
-        'allowed: id, groupId, priority, description, viewportTypes, series, matches, ' +
-        'groupBy, runBy, compareInstances, customAttributes'
-    );
-  });
-
-  it('rejects an unknown key in a condition, with its path', () => {
-    expect(
-      errorOf({
-        matches: {
-          all: [
-            { classifier: 'image' },
-            { attribute: 'Modality', equals: 'CT', caseless: true },
-          ],
-        },
-      })
-    ).toMatch(
-      /^Invalid raw display set selector: rule 'r'\.matches\.all\[1\]: unknown key 'caseless'; allowed: attribute, exists, absent, equals,/
-    );
-  });
-
-  it('rejects a modifier with an operator it does not apply to', () => {
-    // Before: accepted, and ignoreCase was ignored.
-    expect(
-      errorOf({
-        matches: { attribute: 'Modality', equals: 'CT', ignoreCase: true },
-      })
-    ).toContain(
-      "rule 'r'.matches: 'ignoreCase' applies only with contains, containsAny"
-    );
-  });
-
-  it('rejects two operators in one attribute condition', () => {
-    expect(
-      errorOf({
-        matches: { attribute: 'Modality', equals: 'CT', in: ['CT'] },
-      })
-    ).toContain('more than one operator for attribute "Modality" (equals, in)');
-  });
-
-  it('rejects an operator typo', () => {
-    expect(
-      errorOf({ matches: { attribute: 'Modality', equal: 'CT' } })
-    ).toContain("rule 'r'.matches: unknown key 'equal'");
-  });
-
-  it('rejects an operand of the wrong kind', () => {
-    expect(errorOf({ matches: { attribute: 'Modality', in: 'CT' } })).toContain(
-      "rule 'r'.matches.in: expected an array"
-    );
-    expect(
-      errorOf({ matches: { attribute: 'Rows', greaterThan: '5' } })
-    ).toContain("rule 'r'.matches.greaterThan: expected a finite number");
-  });
-
-  it('rejects an unknown key in a value and in a join part', () => {
-    expect(errorOf({ groupBy: [{ attribute: 'Rows', bukket: 64 }] })).toContain(
-      "rule 'r'.groupBy[0]: unknown key 'bukket'"
-    );
-    expect(
-      errorOf({
-        groupBy: [
-          {
-            join: '&',
-            parts: [{ label: 'rows', attribute: 'Rows', lable: 'x' }],
-          },
-        ],
-      })
-    ).toContain("rule 'r'.groupBy[0].parts[0]: unknown key 'lable'");
-  });
-
-  it('allows a label on a join part only', () => {
-    expect(
-      errorOf({ groupBy: [{ attribute: 'Rows', label: 'rows' }] })
-    ).toContain("rule 'r'.groupBy[0]: unknown key 'label'");
-  });
-
-  it('rejects an unknown or missing key in a series fact', () => {
-    expect(
-      errorOf({
-        series: [
-          {
-            name: 'f',
-            scope: 'first',
-            wen: { attribute: 'Rows', exists: true },
-          },
-        ],
-      })
-    ).toContain("rule 'r'.series[0]: unknown key 'wen'");
-    expect(errorOf({ series: [{ name: 'f', scope: 'first' }] })).toContain(
-      "rule 'r'.series[0]: missing key 'when'"
-    );
-  });
-
-  it('rejects an unknown customAttributes key', () => {
-    // Before: accepted, and nothing was set.
-    expect(
-      errorOf({
-        customAttributes: { fromFirstInstnce: { label: 'Modality' } },
-      })
-    ).toContain(
-      "rule 'r'.customAttributes: unknown key 'fromFirstInstnce'; allowed: set, fromFirstInstance, fromContext, fromOptions, preset"
-    );
-  });
-
-  it('rejects an unknown fromContext or fromOptions name', () => {
-    // Before: accepted, and nothing was set.
-    expect(
-      errorOf({ customAttributes: { fromContext: ['isMultiFrme'] } })
-    ).toBe(
-      "Invalid raw display set selector: rule 'r'.customAttributes.fromContext[0]: " +
-        'unknown fromContext "isMultiFrme"; allowed: isMultiFrame, sopClassUids, viewportTypes'
-    );
-    expect(errorOf({ customAttributes: { fromOptions: ['split'] } })).toContain(
-      'unknown fromOptions "split"; allowed: splitNumber, descriptionName'
-    );
-  });
-});
-
-describe('createDisplaySetSplitRules - wildcard keys', () => {
-  const recipeResult = (customAttributes: unknown) => {
-    const inst = instance({ SeriesDescription: 'SAX' });
-    return compileOne({ customAttributes }).r.customAttributes?.(
-      { instance: inst },
-      { instances: [inst] }
-    );
-  };
-
-  it('keeps any key of customAttributes.set as a literal', () => {
-    expect(
-      recipeResult({ set: { anything: { nested: [1, 2] }, flag: true } })
-    ).toEqual({ anything: { nested: [1, 2] }, flag: true });
-  });
-
-  it('compiles each value of customAttributes.fromFirstInstance', () => {
-    expect(
-      recipeResult({
-        fromFirstInstance: {
-          modality: 'Modality',
-          big: { expression: 'Rows > 256' },
-          label: { template: '{Modality}/{SeriesDescription}' },
-        },
-      })
-    ).toEqual({ modality: 'CT', big: true, label: 'CT/SAX' });
-  });
-
-  it('reports a bad fromFirstInstance value at the path of its key', () => {
-    expect(
-      errorOf({
-        customAttributes: { fromFirstInstance: { label: { atribute: 'X' } } },
-      })
-    ).toContain(
-      "rule 'r'.customAttributes.fromFirstInstance.label: unrecognized value; expected an attribute name,"
-    );
-  });
-});
-
-describe('createDisplaySetSplitRules - forms a place does not accept', () => {
-  it('rejects a comparator it cannot read, and lists the accepted forms', () => {
-    // Before: each was accepted, and the comparator always returned 0.
-    const expected =
-      "rule 'r'.compareInstances: unrecognized comparator; expected " +
-      '{ attribute, number?, descending? }, { expression } called with (a, b, context), ' +
-      'or a function (a, b, context) => number';
-    expect(
-      errorOf({ compareInstances: { atribute: 'SliceLocation' } })
-    ).toContain(expected);
-    expect(errorOf({ compareInstances: 'SliceLocation' })).toContain(expected);
-  });
-
-  it('rejects a number in groupBy, and lists the value forms', () => {
-    expect(errorOf({ groupBy: [5] })).toContain(
-      "rule 'r'.groupBy[0]: unrecognized value; expected an attribute name, { expression } called with (instance, context),"
-    );
-  });
-
-  it('rejects a groupBy that is not an array', () => {
-    expect(errorOf({ groupBy: 'SeriesInstanceUID' })).toContain(
-      "rule 'r'.groupBy: expected an array of ("
-    );
-  });
-
-  it('rejects an unknown condition form, with the call signature of the place', () => {
-    expect(errorOf({ matches: 42 })).toContain(
-      "rule 'r'.matches: unrecognized condition; expected an expression string called with (instance, context),"
-    );
-    expect(errorOf({ matches: 42 })).toContain(
-      'or a function (instance, context) => boolean'
+        'allowed: id, groupId, priority, description, viewportTypes, context, ' +
+        'matches, groupBy, runBy, sortBy, attributes'
     );
   });
 
   it('rejects a null matches instead of treating it as a catch-all', () => {
-    expect(errorOf({ matches: null })).toContain(
-      "rule 'r'.matches: unrecognized condition"
-    );
+    expect(errorOf({ matches: null })).toContain('unrecognized condition');
   });
 });
 
-describe('createDisplaySetSplitRules - compareInstances forms', () => {
-  const slices = [
-    instance({ SOPInstanceUID: 'a', InstanceNumber: 1, SliceLocation: 20 }),
-    instance({ SOPInstanceUID: 'b', InstanceNumber: 2, SliceLocation: 10 }),
-    instance({ SOPInstanceUID: 'c', InstanceNumber: 3, SliceLocation: 30 }),
-  ];
-  const orderWith = (compareInstances: unknown, instances = slices) =>
-    groupInstancesBySplitRules(
-      instances,
-      compileOne({ compareInstances })
-    )[0].instances.map((i) => i.SOPInstanceUID);
-
-  it('orders by an expression over a, b and context', () => {
-    expect(
-      orderWith({ expression: 'a.SliceLocation - b.SliceLocation' })
-    ).toEqual(['b', 'a', 'c']);
-    expect(
-      orderWith({ expression: 'b.SliceLocation - a.SliceLocation' })
-    ).toEqual(['c', 'a', 'b']);
-  });
-
-  it('refuses a bare attribute name in a comparator expression', () => {
-    // With an implicit scope this would silently read a.SliceLocation.
-    expect(
-      errorOf({
-        compareInstances: { expression: 'SliceLocation - b.SliceLocation' },
-      })
-    ).toContain(
-      "rule 'r'.compareInstances.expression: 'SliceLocation' is not a parameter"
-    );
-  });
-
-  it('reads a NaN result as no opinion, so acquisition order stands', () => {
-    const missing = [
-      instance({ SOPInstanceUID: 'a', InstanceNumber: 1 }),
-      instance({ SOPInstanceUID: 'b', InstanceNumber: 2 }),
-    ];
-    expect(
-      orderWith({ expression: 'a.SliceLocation - b.SliceLocation' }, missing)
-    ).toEqual(['a', 'b']);
-  });
-
-  it('passes an actual comparator through as is', () => {
-    const comparator = (a: NaturalizedInstance, b: NaturalizedInstance) =>
-      Number(b.SliceLocation) - Number(a.SliceLocation);
-    expect(
-      compileOne({ compareInstances: comparator }).r.compareInstances
-    ).toBe(comparator);
-    expect(orderWith(comparator)).toEqual(['c', 'a', 'b']);
-  });
-});
-
-describe('createDisplaySetSplitRules - inline functions', () => {
+describe('createDisplaySetSplitRules - the code form', () => {
   it('passes a function through at every function place', () => {
     const matches = (i: NaturalizedInstance) => i.Modality === 'CT';
     const groupByPart = (i: NaturalizedInstance) => i.Rows;
     const runBy = () => 1;
-    const series = () => ({ flag: true });
+    const comparator = () => 0;
     const customAttributes = () => ({ label: 'fn' });
 
     const compiled = compileOne({
       matches,
       groupBy: ['SeriesInstanceUID', groupByPart],
       runBy,
-      series,
-      customAttributes,
+      sortBy: [comparator],
+      attributes: customAttributes,
     }).r;
 
     expect(compiled.matches).toBe(matches);
     expect(compiled.groupBy?.[1]).toBe(groupByPart);
     expect(compiled.runBy).toBe(runBy);
-    expect(compiled.series).toBe(series);
+    expect(compiled.compareInstances).toBe(comparator);
     expect(compiled.customAttributes).toBe(customAttributes);
   });
 
-  it('accepts a function wherever a nested condition or value is expected', () => {
-    const compiled = compileOne({
-      matches: {
-        all: [
-          { classifier: 'image' },
-          (i: NaturalizedInstance) => i.Rows > 256,
-        ],
-      },
-      groupBy: [
-        { join: '&', parts: [{ label: 'rows', attribute: 'Rows' }, () => 'x'] },
-      ],
-      series: [
-        {
-          name: 'flag',
-          scope: 'first',
-          when: (i: NaturalizedInstance) => i.Modality === 'CT',
+  it('accepts a code context entry, a function test and a function attribute', () => {
+    const compiled = compileOne(
+      {
+        matches: {
+          isWide: true,
+          Rows: (value: unknown) => Number(value) > 256,
         },
-      ],
-      customAttributes: {
-        fromFirstInstance: { twice: (i: NaturalizedInstance) => i.Rows * 2 },
+        attributes: {
+          twice: (instances: NaturalizedInstance[]) =>
+            (instances[0].Rows as number) * 2,
+        },
       },
-    }).r;
-
+      {
+        displaySetContext: {
+          isWide: (_i: NaturalizedInstance, values: Record<string, unknown>) =>
+            (values.Columns as number) >= 512,
+        },
+      }
+    ).r;
     const big = instance({ Rows: 512 });
     expect(compiled.matches?.(big, { series: {} })).toBe(true);
     expect(compiled.matches?.(instance({ Rows: 128 }), { series: {} })).toBe(
       false
     );
-    expect(compiled.groupBy?.[0]).toBeInstanceOf(Function);
-    expect(
-      (compiled.groupBy?.[0] as (i: NaturalizedInstance) => unknown)(big)
-    ).toBe('rows=512&x');
-    expect(compiled.series?.({ instances: [big] })).toEqual({ flag: true });
     expect(
       compiled.customAttributes?.({ instance: big }, { instances: [big] })
     ).toEqual({ twice: 1024 });
   });
-});
 
-describe('createDisplaySetSplitRules - own-property reads', () => {
-  const probe = (matches: unknown, overrides = {}) =>
-    compileOne({ matches }).r.matches?.(instance(overrides), { series: {} });
-
-  it('reads a series fact as an own property only', () => {
-    // Before: `constructor` read Object.prototype.constructor, so it was true.
-    const rules = compileOne({
-      series: [
-        {
-          name: 'real',
-          scope: 'first',
-          when: { attribute: 'Rows', exists: true },
-        },
-      ],
-      matches: { seriesFact: 'constructor' },
-    });
-    const facts = rules.r.series?.({ instances: [instance()] }) ?? {};
-    expect(rules.r.matches?.(instance(), { series: facts })).toBe(false);
-  });
-
-  it('reads an attribute as an own property only', () => {
-    // Before: `toString` read Object.prototype.toString, so it existed.
-    expect(probe({ attribute: 'toString', exists: true })).toBe(false);
-    expect(probe({ attribute: 'toString', absent: true })).toBe(true);
-    expect(probe({ attribute: 'constructor', equals: 'x' })).toBe(false);
-  });
-
-  it('reads values and templates as own properties only', () => {
-    const inst = instance();
-    const recipe = compileOne({
-      customAttributes: {
-        fromFirstInstance: {
-          plain: 'toString',
-          numeric: { attribute: 'valueOf', number: true },
-          text: { template: '[{constructor}]' },
-        },
-      },
-    }).r.customAttributes?.({ instance: inst }, { instances: [inst] });
-    expect(recipe).toEqual({
-      plain: undefined,
-      numeric: undefined,
-      text: '[]',
-    });
-  });
-
-  it('does not find a classifier on the prototype chain', () => {
-    expect(errorOf({ matches: { classifier: 'constructor' } })).toContain(
-      'unknown classifier "constructor"'
+  it('reads no name from the prototype chain', () => {
+    expect(errorOf({ matches: { toString: 1 } })).toContain(
+      "unknown name 'toString'"
+    );
+    expect(errorOf({ matches: { constructor: 1 } })).toContain(
+      "unknown name 'constructor'"
     );
   });
 });
@@ -1637,11 +1029,7 @@ describe('createDisplaySetSplitRules - own-property reads', () => {
 describe('createDisplaySetSplitRules - groupId', () => {
   it('keeps the group id of a rule, and leaves it undefined when the rule has none', () => {
     const rules = createDisplaySetSplitRules({
-      tomo: {
-        priority: 1,
-        groupId: 'mammo',
-        matches: { attribute: 'Modality', equals: 'MG' },
-      },
+      tomo: { priority: 1, groupId: 'mammo', matches: { Modality: 'MG' } },
       legacy: { priority: 2, groupId: 'mammo' },
       plain: { priority: 3 },
     });
@@ -1656,7 +1044,7 @@ describe('createDisplaySetSplitRules - groupId', () => {
       tomo: {
         priority: 1,
         groupId: 'mammo',
-        matches: { attribute: 'ImageType', contains: 'TOMO' },
+        matches: { ImageType: { includes: 'TOMO' } },
       },
       legacy: { priority: 2, groupId: 'mammo' },
     });

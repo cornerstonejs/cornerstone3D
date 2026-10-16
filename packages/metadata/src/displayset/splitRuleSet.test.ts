@@ -190,8 +190,8 @@ describe('createDisplaySetSplitRules with a raw rule set', () => {
   it('compiles to a keyed rule set that resolves in priority order', () => {
     const rules = createDisplaySetSplitRules({
       catchAll: { priority: 2 },
-      ctRule: { priority: 1, matches: { attribute: 'Modality', equals: 'CT' } },
-      off: { priority: null, matches: { attribute: 'Modality', equals: 'MR' } },
+      ctRule: { priority: 1, matches: { Modality: 'CT' } },
+      off: { priority: null, matches: { Modality: 'MR' } },
     });
 
     expect(resolveSplitRuleSet(rules).map((rule) => rule.id)).toEqual([

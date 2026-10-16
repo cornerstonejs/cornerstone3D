@@ -2,14 +2,15 @@ import type {
   NaturalizedInstance,
   RuleContext,
   SeriesFunction,
+  SeriesFunctionDefinition,
   SplitRule,
 } from './types';
+import type { RawCondition, RawMatchTest } from '../safeFunctions';
 import type {
-  Classifier,
-  ClassifierName,
-  RawCondition,
-  RawValue,
-} from '../safeFunctions';
+  ContextEntry,
+  ContextValues,
+  DisplaySetContext,
+} from './displaySetContext';
 
 /**
  * Types for the **raw display set selector** - the serializable, data-shaped
@@ -21,122 +22,65 @@ import type {
  * client (e.g. OHIF, splitting a loaded series) can read the identical JSON and
  * get identical splits, instead of each re-implementing the rules.
  *
- * The conditions and values a rule is built from are **not** defined here: they
- * are the general {@link RawCondition} / {@link RawValue} safe-function
- * vocabulary from `../safeFunctions`, which knows nothing about display sets.
- * What this module adds is the rule shape that vocabulary is wrapped in -
- * `matches`, `groupBy`, `runBy`, `series` facts, `customAttributes`.
+ * Every name in a rule is a DICOM keyword of the dcmjs dictionary, or a
+ * context name of the display set context (see `displaySetContext.ts`). The
+ * compile rejects every other name.
  *
  * These types follow `splitRuleSchema` (`splitRuleSchema.ts`), the table the
  * compiler reads. A key that is not in that table is a compile error, and an
  * actual function is accepted at every function place.
  *
- * @see ../safeFunctions for the condition/value vocabulary and its compiler.
- * @see rawDisplaySetSelector.js for the default selector and the rule compiler.
+ * @see displaySetContext.ts for the context and its default entries.
+ * @see rawDisplaySetSelector.js for the default selector.
  */
 
-export type { ClassifierName, RawCondition, RawValue };
+export type {
+  ContextEntry,
+  ContextValues,
+  DisplaySetContext,
+  RawCondition,
+  RawMatchTest,
+};
 
-/** Classifies a single instance. Registered under a {@link ClassifierName}. */
-export type InstanceClassifier = Classifier<NaturalizedInstance>;
+/** A name: a DICOM keyword, or a context name. */
+export type RawName = string;
+
+/** A per-instance hook in code, called `(instance, context)`. */
+export type InstanceHook = (
+  instance: NaturalizedInstance,
+  context: RuleContext
+) => unknown;
 
 /**
- * A fact derived once from the whole series, and added to the series context
- * that every rule reads: as `{ seriesFact: <name> }` in a condition, or as
- * `context.series.<name>` in an expression.
+ * One entry of `sortBy`: a name, in ascending order (numeric when both values
+ * are finite numbers, else by text, and a missing value is "no opinion"); a
+ * named sort function of `options.sortFunctions`; or an actual comparator.
+ */
+export type RawSortKey =
+  | RawName
+  | { sortFunction: string }
+  | NonNullable<SplitRule['compareInstances']>;
+
+/**
+ * One value of `attributes`:
  *
- * Reach for one only when a rule needs something no single instance can answer
- * ("does this series mix b-value and non-b-value frames?", "what is the slice
- * spacing?").
- *
- * The first rule, in priority order, that computes a name wins. A later rule
- * that declares the same name reads the earlier value, and does not compute
- * it. So a rule declares every fact it reads, and the fact is computed once.
- * Within one rule, the facts run in list order, and a fact reads the earlier
- * ones.
+ * - a name. A DICOM keyword reads the first instance of the sorted display
+ *   set. `splitNumber` and `sopClassUids` are values of the display set.
+ * - a fixed number, boolean or `null`.
+ * - `{ template }`: text; `{ "template": "SCOUT" }` is fixed text.
+ * - `{ expression }`: an expression over the display set. `min`, `max`, `sum`
+ *   and `count` run over its instances, and a DICOM keyword reads its first
+ *   instance.
+ * - in code, a function `(instances, values) => value`.
  */
-export type RawSeriesFact =
-  | RawBooleanSeriesFact
-  | RawExpressionSeriesFact
-  | RawFunctionSeriesFact;
-
-/**
- * A value computed by an expression, called `(instances, series)` once per
- * split. `instances` is the whole series and `series` holds the facts so far.
- * There is no implicit scope: a bare name reads an attribute only inside an
- * aggregate, e.g. `{ name: 'firstNumber', expression: 'minOf(instances, InstanceNumber)' }`.
- */
-export type RawExpressionSeriesFact = {
-  name: string;
-  expression: string;
-};
-
-/**
- * A value from a named series function: a built-in one (`planeGeometry`,
- * `timeClusters`), or one from
- * {@link CreateDisplaySetSplitRulesOptions.seriesFunctions}. An unknown name
- * is a compile error.
- */
-export type RawFunctionSeriesFact = {
-  name: string;
-  function: string;
-  /** Arguments for the function, copied as is. */
-  args?: Record<string, unknown>;
-};
-
-/** A boolean: a condition applied across the series as `scope` says. */
-export type RawBooleanSeriesFact = {
-  /** Name this fact is read back under. */
-  name: string;
-  /**
-   * Optional precondition evaluated against `instances[0]`. When it fails the
-   * fact is `false` and `when` is not evaluated - e.g. gate a DWI fact on
-   * `Modality === 'MR'`.
-   */
-  gate?: RawCondition;
-  /**
-   * How `when` is applied across the series:
-   * - `first` - evaluated against `instances[0]` only (assumes a homogeneous series).
-   * - `every` / `some` - true when it holds for all / at least one instance.
-   * - `mixed` - true when it holds for at least one instance **and** fails for
-   *   at least one, i.e. the series mixes both kinds.
-   */
-  scope: 'first' | 'every' | 'some' | 'mixed';
-  /** The condition itself. */
-  when: RawCondition;
-  /** Minimum instance count; below it the fact is `false`. */
-  minInstances?: number;
-};
-
-/**
- * Declarative recipe for a rule's `customAttributes` - the extra attributes
- * spread onto the produced display set.
- */
-export type RawCustomAttributes = {
-  /** Literal values, copied as-is. */
-  set?: Record<string, string | number | boolean | null>;
-  /**
-   * Attribute name -> value read from `instances[0]`. An expression reads the
-   * series context as `context.series`, when the host passes it as
-   * `options.series`.
-   */
-  fromFirstInstance?: Record<string, RawValue>;
-  /**
-   * Names to copy from the context the split engine passes to
-   * `customAttributes`: `isMultiFrame`, `sopClassUids`, `viewportTypes`.
-   */
-  fromContext?: ('isMultiFrame' | 'sopClassUids' | 'viewportTypes')[];
-  /**
-   * Split-option names to copy onto the display set under the same name.
-   * Currently `splitNumber` and `descriptionName`.
-   */
-  fromOptions?: ('splitNumber' | 'descriptionName')[];
-  /**
-   * Escape hatch: a named recipe from `options.customAttributePresets`. Applied
-   * after the declarative fields above, so it can override them.
-   */
-  preset?: string;
-};
+export type RawAttributeValue =
+  | RawName
+  | number
+  | boolean
+  | null
+  | { template: string }
+  | { expression: string }
+  | ((instances: NaturalizedInstance[], values: ContextValues) => unknown);
 
 /** One rule in a raw selector. Mirrors {@link SplitRuleSetEntry}, in data form. */
 export type RawSplitRule = {
@@ -166,57 +110,31 @@ export type RawSplitRule = {
   /** Allowed viewport types; index 0 is preferred. */
   viewportTypes?: string[];
   /**
-   * Facts derived from the whole series, added to the shared series context
-   * (see {@link RawSeriesFact}). An actual function replaces the whole list: it
-   * is the rule's `series` hook.
+   * Context entries for this rule only. An entry replaces the global entry of
+   * the same name, also inside the global entries that the rule reads, or it
+   * defines a new name that only this rule reads.
    */
-  series?: RawSeriesFact[] | NonNullable<SplitRule['series']>;
+  context?: DisplaySetContext;
   /**
-   * Which instances this rule claims, compiled to
-   * `(instance, context) => boolean`. Omit for a catch-all rule.
+   * Which instances this rule claims: a map of name to test, and every entry
+   * must hold. Omit for a catch-all rule. In code, a function
+   * `(instance, context) => boolean`.
    */
   matches?: RawCondition;
+  /** Names whose values form the group key; defaults to `['SeriesInstanceUID']`. */
+  groupBy?: (RawName | InstanceHook)[];
+  /** A name whose changes start a new run (see {@link SplitRule.runBy}). */
+  runBy?: RawName | InstanceHook;
+  /** The instance order of the display sets. See {@link RawSortKey}. */
+  sortBy?: RawSortKey[];
   /**
-   * Bucket recipe; defaults to `['SeriesInstanceUID']`. Each entry compiles to
-   * `(instance, context) => value`.
+   * Attributes of the produced display sets, keyed by attribute name, or in
+   * code a whole `customAttributes` hook.
    */
-  groupBy?: RawValue[];
-  /**
-   * Value whose changes start a new run (see {@link SplitRule.runBy}), compiled
-   * to `(instance, context) => value`.
-   */
-  runBy?: RawValue;
-  /** Instance ordering for this rule. See {@link RawComparator}. */
-  compareInstances?: RawComparator;
-  /**
-   * Extra attributes for the produced display sets: a recipe, or an actual
-   * `customAttributes` callback.
-   */
-  customAttributes?:
-    | RawCustomAttributes
+  attributes?:
+    | Record<string, RawAttributeValue>
     | NonNullable<SplitRule['customAttributes']>;
 };
-
-/**
- * A rule's `compareInstances`, compiled to `(a, b, context) => number`. A
- * result of 0 or `NaN` is "no opinion": the next comparator decides.
- */
-export type RawComparator =
-  /**
-   * Ascending by the numeric value of the attribute; `descending` reverses. A
-   * missing value on either side is "no opinion". (`number` is accepted for
-   * symmetry with values; the comparison is always numeric.)
-   */
-  | { attribute: string; number?: boolean; descending?: boolean }
-  /**
-   * An expression called with `(a, b, context)`, e.g.
-   * `'a.SliceLocation - b.SliceLocation'`. There is no implicit scope: a bare
-   * identifier that is not `a`, `b` or `context` is a compile error. The result
-   * is coerced to a number.
-   */
-  | { expression: string }
-  /** An actual comparator, which passes through as is. */
-  | NonNullable<SplitRule['compareInstances']>;
 
 /**
  * A whole raw selector: rules keyed by rule id, the data form of a
@@ -227,42 +145,18 @@ export type RawDisplaySetSelector = Record<string, RawSplitRule>;
 /** Options for {@link createDisplaySetSplitRules}. */
 export type CreateDisplaySetSplitRulesOptions = {
   /**
-   * Extra (or replacement) named instance classifiers, merged over the built-in
-   * `image` / `video` / `ecg` / `wsi` entries. This is the seam an application
-   * uses to teach the selector a classification it cannot express as data,
-   * without the selector itself stopping being data.
+   * Global context entries, over the entries of `defaultDisplaySetContext`.
+   * An entry replaces the default entry of the same name. OHIF reads it from
+   * the `displaySetContext` customization of `useMetadataDisplaySet`.
    */
-  classifiers?: Record<ClassifierName, InstanceClassifier>;
+  displaySetContext?: Record<string, ContextEntry>;
   /**
-   * Extra (or replacement) named series functions, merged over the built-in
-   * `planeGeometry` / `timeClusters` entries, for a series fact
-   * `{ name, function, args? }`. The seam an application uses to teach the
-   * selector a summary of the series that it cannot express as data.
+   * Extra (or replacement) series functions, over the built-in
+   * `planeGeometry` / `timeClusters`, for a group entry
+   * `{ function, args? }`. A definition `{ compute, fields }` declares the
+   * result fields; a bare function has fields that are not checked.
    */
-  seriesFunctions?: Record<string, SeriesFunction>;
-  /**
-   * Named `customAttributes` recipes referenced by
-   * {@link RawCustomAttributes.preset}.
-   */
-  customAttributePresets?: Record<
-    string,
-    (
-      instances: NaturalizedInstance[],
-      context: {
-        /** The engine-supplied context (`isMultiFrame`, `sopClassUids`, ...). */
-        attributes: Record<string, unknown>;
-        splitNumber?: number;
-        descriptionName?: string;
-      }
-    ) => Record<string, unknown>
-  >;
+  seriesFunctions?: Record<string, SeriesFunction | SeriesFunctionDefinition>;
+  /** Named comparators for a `sortBy` entry `{ sortFunction: name }`. */
+  sortFunctions?: Record<string, NonNullable<SplitRule['compareInstances']>>;
 };
-
-/**
- * Reads a value off an instance for a compiled rule. Exported for tests and for
- * applications building rules that mix raw values with hand-written functions.
- */
-export type CompiledValueReader = (
-  instance: NaturalizedInstance,
-  context: RuleContext
-) => unknown;

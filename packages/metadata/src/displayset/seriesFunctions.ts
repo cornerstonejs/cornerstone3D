@@ -1,13 +1,14 @@
 /**
- * The built-in **series functions**: named functions that compute one series
- * fact from the whole series, for a raw series fact
- * `{ name, function, args? }`.
+ * The built-in **series functions**: named functions that compute one summary
+ * of the whole series, for a group entry of the display set context
+ * `{ "function": "timeClusters", "args": { ... } }`.
  *
  * A series function does the part of a summary that the expression language
- * cannot: a sort, a mode, a geometric projection. It returns plain data -
- * numbers, and maps keyed by `SOPInstanceUID` - so that the per-instance parts
- * of a rule (`matches`, `groupBy`, `compareInstances`) stay data, and read the
- * result with an index, e.g. `context.series.geometry.index[SOPInstanceUID]`.
+ * cannot: a sort, a mode, a geometric projection. It returns plain data, and
+ * declares its result fields: a `series` field has one value for the series,
+ * and an `instance` field is a map keyed by {@link instanceKey} with one value
+ * for each instance. A rule reads a field by path (`timeClusters.start`), and
+ * an `instance` field gives the value of the instance at hand.
  *
  * Every function here is pure, and its result does not depend on the order of
  * the instances it gets, so a split stays independent of the arrival order.
@@ -18,7 +19,11 @@
 import { vec3 } from 'gl-matrix';
 import { toFiniteNumber } from '@cornerstonejs/utils';
 import { readOwn, toFinite } from '../safeFunctions';
-import type { NaturalizedInstance, SeriesFunction } from './types';
+import type {
+  NaturalizedInstance,
+  SeriesFunction,
+  SeriesFunctionDefinition,
+} from './types';
 
 /** The key of an instance in the maps a series function returns. */
 export function instanceKey(instance: NaturalizedInstance): string | undefined {
@@ -341,9 +346,36 @@ export const timeClusters: SeriesFunction = (instances, { args }) => {
 };
 
 /**
- * The built-in series functions, by name. An application adds its own, or
- * replaces one, through `CreateDisplaySetSplitRulesOptions.seriesFunctions`.
+ * The built-in series functions, by name, with their result fields. An
+ * application adds its own, or replaces one, through
+ * `CreateDisplaySetSplitRulesOptions.seriesFunctions`.
  */
 export const BUILT_IN_SERIES_FUNCTIONS: Readonly<
-  Record<string, SeriesFunction>
-> = Object.freeze({ planeGeometry, timeClusters });
+  Record<string, SeriesFunctionDefinition>
+> = Object.freeze({
+  planeGeometry: Object.freeze({
+    compute: planeGeometry,
+    fields: Object.freeze({
+      normal: 'series',
+      origin: 'series',
+      spacing: 'series',
+      regularCount: 'series',
+      irregularCount: 'series',
+      positions: 'series',
+      complete: 'series',
+      duplicates: 'series',
+      distance: 'instance',
+      index: 'instance',
+    } as const),
+  }),
+  timeClusters: Object.freeze({
+    compute: timeClusters,
+    fields: Object.freeze({
+      time: 'instance',
+      start: 'instance',
+      first: 'series',
+      clusters: 'series',
+      untimedCount: 'series',
+    } as const),
+  }),
+});

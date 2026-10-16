@@ -1,28 +1,20 @@
 import { compileCondition, compileValue } from './compile';
-import { conditionShape, describeShape, readOwn } from './schema';
+import { conditionShape, describeShape } from './schema';
 
 describe('compileCondition / compileValue - strict and stand-alone', () => {
   it('names a stand-alone definition and its path in a message', () => {
     expect(() =>
-      compileCondition({
-        attribute: 'Modality',
-        equals: 'CT',
-        extra: 1,
-      } as never)
+      compileCondition({ Modality: { equal: 'CT' } } as never)
     ).toThrow(
-      /^Invalid safe function definition: unknown key 'extra'; allowed: attribute,/
+      /^Invalid safe function definition: Modality: unknown operator 'equal'; allowed: equals,/
     );
     expect(() =>
-      compileCondition(
-        { attribute: 'Modality', equal: 'CT' } as never,
-        {},
-        {
-          path: 'protocol.match',
-          definition: 'hanging protocol',
-        }
-      )
+      compileCondition({ Rows: { greaterThan: 'x' } } as never, {
+        path: 'protocol.match',
+        definition: 'hanging protocol',
+      })
     ).toThrow(
-      /^Invalid hanging protocol: protocol\.match: unknown key 'equal'/
+      /^Invalid hanging protocol: protocol\.match\.Rows: the operand of greaterThan must be a finite number/
     );
   });
 
@@ -31,39 +23,25 @@ describe('compileCondition / compileValue - strict and stand-alone', () => {
     const reader = () => 42;
     expect(compileCondition(predicate)).toBe(predicate);
     expect(compileValue(reader)).toBe(reader);
-    expect(compileCondition({ not: predicate })({})).toBe(false);
-  });
-
-  it('uses the expression variables of the place', () => {
-    const options = {
-      expression: { params: ['a', 'b'], implicitScope: false as const },
-    };
     expect(
-      compileValue(
-        { expression: 'a.x + b.x' },
-        {},
-        options
-      )({ x: 1 }, {
-        x: 2,
-      } as never)
-    ).toBe(3);
-    expect(() => compileCondition('x > 1', {}, options)).toThrow(
-      /'x' is not a parameter/
-    );
+      compileCondition({ Rows: (value) => value === 2 })({ Rows: 2 })
+    ).toBe(true);
   });
 
-  it('reads own properties only', () => {
-    expect(readOwn({}, 'toString')).toBeUndefined();
-    expect(readOwn({ toString: 1 }, 'toString')).toBe(1);
-    expect(readOwn(null, 'a')).toBeUndefined();
+  it('reads a name through the reader of the place', () => {
+    const readName = (name: string) => () => `${name}!`;
+    expect(compileValue('anything', { readName })({})).toBe('anything!');
+    expect(
+      compileValue({ template: '<{a}>' }, { readName })({}, undefined)
+    ).toBe('<a!>');
+  });
+
+  it('reads own properties only by default', () => {
     expect(compileValue('constructor')({})).toBeUndefined();
-    expect(
-      compileCondition({ seriesFact: 'hasOwnProperty' })({}, { series: {} })
-    ).toBe(false);
+    expect(compileCondition({ toString: null })({})).toBe(true);
   });
 
   it('describes the accepted forms from the schema', () => {
-    expect(describeShape(conditionShape)).toContain('{ all }');
-    expect(describeShape(conditionShape)).toMatch(/, or a function$/);
+    expect(describeShape(conditionShape)).toBe('{ <any key> }, or a function');
   });
 });

@@ -82,6 +82,9 @@ function runCustomAttributes(
         instances,
         splitNumber: options.splitNumber,
         descriptionName: options.descriptionName,
+        // The values of the whole series, so that an attribute such as a
+        // slice spacing is the same for each display set of the series.
+        series: group.series,
       }
     ) ?? undefined
   );
