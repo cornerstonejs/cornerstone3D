@@ -6,21 +6,28 @@ import { spawnSync } from 'node:child_process';
 
 const {
   generateSegmentation,
-} = require('../src/adapters/Cornerstone3D/Segmentation/generateSegmentation');
+} = require('../../src/adapters/Cornerstone3D/Segmentation/generateSegmentation');
 const {
   LABELMAP_SEG_SOP_CLASS_UID,
   makeReferencedStack,
   buildLabelmap3D,
   datasetToPart10Buffer,
-} = require('./helpers/segRoundTrip');
+} = require('../helpers/segRoundTrip');
 
 /**
- * Runs dciodvfy (dicom3tools) on exported LABELMAP SEGs. Set DCIODVFY to the
- * path of the dciodvfy executable to run these tests; they are skipped
- * otherwise.
+ * A manual test: runs dciodvfy (dicom3tools) on exported LABELMAP SEGs.
+ * `pnpm test:dciodvfy` runs it; the default test run does not. It uses the
+ * dciodvfy at DCIODVFY, else the dciodvfy on the PATH, and skips the cases
+ * when neither is available.
  */
-const DCIODVFY = process.env.DCIODVFY;
-const describeWithDciodvfy = DCIODVFY ? describe : describe.skip;
+const DCIODVFY = process.env.DCIODVFY || 'dciodvfy';
+const isAvailable = !spawnSync(DCIODVFY, ['-describe']).error;
+if (!isAvailable) {
+  console.warn(
+    `dciodvfy is not available (${DCIODVFY}); the SEG conformance cases are skipped.`
+  );
+}
+const describeWithDciodvfy = isAvailable ? describe : describe.skip;
 
 const SLICE_COUNT = 6;
 // prettier-ignore
