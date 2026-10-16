@@ -172,16 +172,15 @@ function firstItem(sequence: unknown): Record<string, unknown> | undefined {
  *
  * Most entries are data, so a pasted or fetched selector can also define its
  * own. The code entries are for the values that data cannot state: the view of
- * a mammogram lives in `ViewCodeSequence`, and the cardiac order needs the sign
- * convention of `PatientPosition`. A selector that reads a code entry works
- * only where the host registers the same entry.
+ * a mammogram lives in `ViewCodeSequence`. A selector that reads a code entry
+ * works only where the host registers the same entry.
  */
 const DEMO_CONTEXT = {
   /** A localizer / scout / survey series, by description. */
   isLocalizer:
-    "includes(lower(SeriesDescription), 'localizer') || " +
-    "includes(lower(SeriesDescription), 'scout') || " +
-    "includes(lower(SeriesDescription), 'survey')",
+    "contains(lower(SeriesDescription), 'localizer') || " +
+    "contains(lower(SeriesDescription), 'scout') || " +
+    "contains(lower(SeriesDescription), 'survey')",
 
   /** The mammography view, `CC` or `MLO`, from ViewCodeSequence. */
   mammoView: (instance: NaturalizedInstance) => {
@@ -199,19 +198,6 @@ const DEMO_CONTEXT = {
     return viewCode?.CodeValue
       ? `${String(viewCode.CodingSchemeDesignator)}:${String(viewCode.CodeValue)}`
       : undefined;
-  },
-
-  /**
-   * Cardiac base-to-apex ordering — the UCalgary `sortVector`. Needs the
-   * ImagePositionPatient z coordinate and the PatientPosition sign convention.
-   */
-  cardiacSortVector: (instance: NaturalizedInstance) => {
-    const z = (instance.ImagePositionPatient as number[] | undefined)?.[2];
-    const headFirst = !String(instance.PatientPosition ?? 'HFS').startsWith(
-      'FF'
-    );
-    const baseToApex = z === undefined ? 0 : headFirst ? -Number(z) : Number(z);
-    return [1, baseToApex];
   },
 };
 
