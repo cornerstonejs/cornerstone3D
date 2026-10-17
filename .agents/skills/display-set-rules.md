@@ -16,6 +16,9 @@ is in `packages/metadata/src/displayset/` (`displaySetContext.ts`,
 - Each name in a rule is a **tag keyword** (a keyword of the dcmjs DICOM
   dictionary, for example `Modality`) or a **context name** (a lowercase first
   letter, for example `sweepStart`). Every other name is a compile error.
+- Names and operators are case sensitive: `modality` fails with "did you mean
+  'Modality'?". Value comparisons are case sensitive too; use `containsI` or
+  `lower()` to compare text without case.
 - A key of `matches` is only a name. A key is never an expression.
 - An expression is permitted in two places only: a context entry, and
   `{ "expression": "..." }` in `attributes`.

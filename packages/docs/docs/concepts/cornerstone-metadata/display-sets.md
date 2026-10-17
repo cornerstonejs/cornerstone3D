@@ -520,9 +520,12 @@ Each name in a rule is one of two kinds:
 
 The compile checks each name: the keys of `matches`, the entries of `groupBy`
 and `sortBy`, the strings of `attributes`, the placeholders of a template, and
-each name in an expression. An unknown name is a compile error that gives the
+each name in an expression. A name must match a keyword or a declared context
+name with the same case. An unknown name is a compile error that gives the
 rule, the place and the name. So `BodyPartExamind` and `sweepStrat` fail when
-the rules load.
+the rules load. When a known name differs only in case, the error names it:
+`unknown name 'modality'; did you mean 'Modality'?`. Operators are also case
+sensitive.
 
 The tests and the values inside a rule are the general
 [safe function](../safe-functions.md) vocabulary. **See

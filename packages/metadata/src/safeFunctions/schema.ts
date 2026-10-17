@@ -280,6 +280,24 @@ export function invalidAt(
   );
 }
 
+/**
+ * `; did you mean 'notNull'?` when a candidate equals the name with case
+ * ignored, else an empty string. Names are case sensitive, so the message
+ * names the correct one.
+ */
+export function didYouMean(
+  name: string,
+  candidates: Iterable<string | undefined>
+): string {
+  const lower = name.toLowerCase();
+  for (const candidate of candidates) {
+    if (candidate && candidate !== name && candidate.toLowerCase() === lower) {
+      return `; did you mean '${candidate}'?`;
+    }
+  }
+  return '';
+}
+
 /** The site of a nested key or list entry. Drops the place-only extras. */
 export function at(
   site: SchemaSite,
@@ -479,7 +497,7 @@ export function checkForm(
     if (!Object.prototype.hasOwnProperty.call(allowed, key) && !wildcard) {
       invalidAt(
         site,
-        `unknown ${keyNoun} '${key}'; allowed: ${Object.keys(allowed).join(', ')}`
+        `unknown ${keyNoun} '${key}'${didYouMean(key, Object.keys(allowed))}; allowed: ${Object.keys(allowed).join(', ')}`
       );
     }
   }

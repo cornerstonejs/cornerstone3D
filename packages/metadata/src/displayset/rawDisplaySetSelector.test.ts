@@ -653,6 +653,17 @@ describe('names - the compile checks every name', () => {
     );
   });
 
+  it('matches names and operators with the same case, and names the correct one', () => {
+    expect(errorOf({ matches: { modality: 'CT' } })).toContain(
+      "unknown name 'modality'; did you mean 'Modality'?"
+    );
+    expect(errorOf({ matches: { Rows: { notnull: true } } })).toContain(
+      "unknown operator 'notnull'; did you mean 'notNull'?"
+    );
+    // imageId is a declared context name, also with the keyword ImageID.
+    expect(() => compileOne({ attributes: { id: 'imageId' } })).not.toThrow();
+  });
+
   it('checks groupBy, sortBy, attributes, templates and context expressions', () => {
     expect(errorOf({ groupBy: ['SeriesInstanceUId'] })).toContain(
       "rule 'r'.groupBy[0]: unknown name 'SeriesInstanceUId'"

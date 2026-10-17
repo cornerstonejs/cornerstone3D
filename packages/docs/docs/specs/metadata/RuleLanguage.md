@@ -326,13 +326,23 @@ compile.
 - **RL-SCOPE-6** A rule reads a value of the display set (`splitNumber`,
   `sopClassUids`) only in `attributes`. A read of such a value at another
   place is a compile error that names the place.
-- **RL-SCOPE-7** A name in a rule is a DICOM keyword, a context name or a declared attribute. Any other name is a compile error that names the rule, the place and the name. So a misspelt name (`BodyPartExamind`, `sweepStrat`) fails at compile time. A field that a group does not declare is a compile error. A context name that is a DICOM keyword is a compile error.
+- **RL-SCOPE-7** A name in a rule is a DICOM keyword, a context name or a declared attribute, with the same case. Any other name is a compile error that names the rule, the place and the name. So a misspelt name (`BodyPartExamind`, `sweepStrat`) fails at compile time. A field that a group does not declare is a compile error. A context name that is a DICOM keyword is a compile error.
 - **RL-SCOPE-8** A rule reads an attribute that the dictionary does not hold
   only through a declaration (`RL-CTX-6`). A rule cannot read a hex tag
   directly. There is no optional access with `?`.
 - **RL-SCOPE-9** No access reads a name on the deny list, strict or optional.
   The deny list lets a host keep a value (for example a patient identifier) out
   of every rule.
+- **RL-SCOPE-10** Names are case sensitive, as DICOM keywords are. A name in a
+  rule is valid only when it matches a keyword of the DICOM dictionary of
+  dcmjs, or a declared context name, with the same case. Any other name is a
+  compile error. When a known name differs only in case, the error names the
+  known name: `unknown name 'modality'; did you mean 'Modality'?`. Operators
+  are also case sensitive (`notnull` gives `did you mean 'notNull'?`). A
+  declared context name is valid also when a keyword differs from it only in
+  case (`imageId` and the keyword `ImageID`). A value comparison is case
+  sensitive: `"CT"` does not match `"ct"`. `containsI`, `doesNotContainI` and
+  `lower()` compare text without case.
 
 ### Code for the complex cases (RL-CODE)
 

@@ -57,6 +57,7 @@ export {
   conditionShape,
   describeForm,
   describeShape,
+  didYouMean,
   INSTANCE_EXPRESSION_SCOPE,
   invalidAt,
   isLeafKind,

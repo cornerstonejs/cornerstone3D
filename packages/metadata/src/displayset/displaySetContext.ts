@@ -35,6 +35,7 @@ import { asArray, logging } from '@cornerstonejs/utils';
 import {
   at,
   collectReads,
+  didYouMean,
   compileExpressionAt,
   FORBIDDEN_PROPERTIES,
   hasNoValue,
@@ -53,7 +54,7 @@ import type {
   SchemaSite,
   TemplateSegment,
 } from '../safeFunctions';
-import { resolveHexFromKeyword } from '../utilities/Tags';
+import { keywordIgnoringCase, resolveHexFromKeyword } from '../utilities/Tags';
 import { isEcgInstance } from './isEcgInstance';
 import { isImageInstance } from './isImageInstance';
 import { isVideoInstance } from './isVideoInstance';
@@ -272,7 +273,18 @@ function identityOf(raw: unknown): string {
 }
 
 /** The message for a name that is not a tag keyword and not a context name. */
-function unknownName(name: string, place: string): string {
+function unknownName(
+  name: string,
+  place: string,
+  candidates: Iterable<string>
+): string {
+  const suggestion = didYouMean(name, [
+    keywordIgnoringCase(name),
+    ...candidates,
+  ]);
+  if (suggestion) {
+    return `unknown name '${name}'${suggestion}`;
+  }
   let hint: string;
   if (HEX_TAG.test(name)) {
     hint = `a hex tag needs a declaration in the context, e.g. "myValue": { "attribute": "${name}" }`;
@@ -307,6 +319,7 @@ function checkContextName(name: string, site: SchemaSite): void {
       `the context name '${name}' is a DICOM keyword; a context cannot hide a value of the instance`
     );
   }
+
   if (!CONTEXT_NAME.test(name)) {
     invalidAt(
       site,
@@ -958,7 +971,14 @@ export class ContextProgram {
           `the rule entry '${name}' reads its own name, but the global context has no entry '${name}'`
         );
       }
-      return invalidAt(site, unknownName(name, place));
+      return invalidAt(
+        site,
+        unknownName(name, place, [
+          ...layer.local.keys(),
+          ...this.global.keys(),
+          ...ATTRIBUTE_ONLY_NAMES,
+        ])
+      );
     }
     const bound = this.bind(definition, layer, stack);
     if (read.indexed && bound.group) {
@@ -978,7 +998,7 @@ export class ContextProgram {
       if (fields && !hasOwn(fields, field)) {
         return invalidAt(
           site,
-          `the group '${name}' has no field '${field}'; fields: ${Object.keys(fields).join(', ')}`
+          `the group '${name}' has no field '${field}'${didYouMean(field, Object.keys(fields))}; fields: ${Object.keys(fields).join(', ')}`
         );
       }
     }
@@ -1157,6 +1177,7 @@ export class ContextProgram {
       if (!fields.attribute) {
         return invalidAt(at(site, 'attribute'), 'expected a non-empty string');
       }
+
       return {
         ...base,
         kind: 'declaration',
