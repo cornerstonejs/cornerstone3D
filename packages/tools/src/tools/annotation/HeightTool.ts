@@ -43,13 +43,14 @@ import type {
 import type { LengthAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
 import { getStyleProperty } from '../../stateManagement/annotation/config/helpers';
+import getViewportICamera from '../../utilities/getViewportICamera';
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
 
 const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
   'tools.annotation.HeightTool'
 );
 
-const { transformWorldToIndex } = csUtils;
+const { transformWorldToIndex, transformWorldToIndexContinuous } = csUtils;
 
 /**
  * HeightTool let you draw annotations that measures the height of two drawing
@@ -700,43 +701,57 @@ class HeightTool extends AnnotationTool {
     return renderStatus;
   };
 
-  _calculateHeight(pos1, pos2) {
-    const dx = pos2[0] - pos1[0];
-    const dy = pos2[1] - pos1[1];
-    const dz = pos2[2] - pos1[2];
-    //SAGITAL X alway 0
-    //CORONAL Y alway 0
-    //AXIAL Z alway 0
+  /**
+   * Returns the world axis the height is measured along, from the normal of
+   * the slice: z on sagittal and coronal slices, y on axial ones. Undefined
+   * on an oblique slice. The handles cannot tell the slice apart: a height
+   * drawn straight up keeps two of its three coordinates.
+   */
+  _getHeightAxis(viewPlaneNormal: Types.Point3): number | undefined {
+    const normalAxis = [0, 1, 2].find((axis) =>
+      csUtils.isEqual(Math.abs(viewPlaneNormal[axis]), 1)
+    );
+    if (normalAxis === undefined) {
+      return;
+    }
+    return normalAxis === 2 ? 1 : 2;
+  }
 
-    //SAGITAL:
-    if (dx == 0) {
-      //SAGITAL when it reaches 0 takes the measurement of Y, to correct it we return 0.
-      if (dy != 0) {
-        //SAGITAL use Z:
-        return Math.abs(dz);
-      } else {
-        return 0;
-      }
+  /**
+   * Returns the calibrated height from pos1 to pos2, or undefined on an
+   * oblique slice. The calibration scale converts index distances, so the
+   * height is measured in index space: from pos1 to pos1 moved along the
+   * height axis as far as pos2.
+   */
+  _calculateHeight(
+    image,
+    pos1,
+    pos2,
+    calibrate,
+    viewPlaneNormal: Types.Point3
+  ): number | undefined {
+    const axis = this._getHeightAxis(viewPlaneNormal);
+    if (axis === undefined) {
+      return;
     }
-    //SAGITAL AND CORONAL use Z:
-    //CORONAL:
-    else if (dy == 0) {
-      //CORONAL use Z:
-      return Math.abs(dz);
-    }
-    //AXIAL
-    else if (dz == 0) {
-      //AXIAL use Y:
-      return Math.abs(dy);
-    }
+    const end = [...pos1] as Types.Point3;
+    end[axis] = pos2[axis];
+    return HeightTool.calculateLengthInIndex(calibrate, [
+      transformWorldToIndexContinuous(image.imageData, pos1),
+      transformWorldToIndexContinuous(image.imageData, end),
+    ]);
   }
 
   _calculateCachedStats(annotation, renderingEngine, enabledElement) {
     const data = annotation.data;
-    const { element } = enabledElement.viewport;
+    const { viewport } = enabledElement;
+    const { element } = viewport;
 
     const worldPos1 = data.handles.points[0];
     const worldPos2 = data.handles.points[1];
+    const viewPlaneNormal =
+      annotation.metadata.viewPlaneNormal ??
+      getViewportICamera(viewport).viewPlaneNormal;
     const { cachedStats } = data;
     const targetIds = Object.keys(cachedStats);
 
@@ -759,9 +774,16 @@ class HeightTool extends AnnotationTool {
       const index1 = transformWorldToIndex(imageData, worldPos1);
       const index2 = transformWorldToIndex(imageData, worldPos2);
       const handles = [index1, index2];
-      const { scale, unit } = getCalibratedLengthUnitsAndScale(image, handles);
+      const calibrate = getCalibratedLengthUnitsAndScale(image, handles);
+      const { unit } = calibrate;
 
-      const height = this._calculateHeight(worldPos1, worldPos2) / scale;
+      const height = this._calculateHeight(
+        image,
+        worldPos1,
+        worldPos2,
+        calibrate,
+        viewPlaneNormal
+      );
 
       const outside = this._isInsideVolume(index1, index2, dimensions);
       this.isHandleOutsideImage = outside;
