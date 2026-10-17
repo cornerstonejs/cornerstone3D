@@ -1,21 +1,24 @@
 import { groupInstancesBySplitRules } from './groupInstancesBySplitRules';
 import { resolveInstances } from './resolveInstances';
 import type {
+  GroupInstancesOptions,
   InstanceGroup,
   NaturalizedInstance,
   SplitContext,
-  SplitRule,
+  SplitRuleSet,
 } from './types';
 
-export type SplitImageIdsBySplitRulesOptions = SplitContext & {
-  splitRules: SplitRule[];
-  onMissingImageId?: (imageId: string) => void;
-  /**
-   * Called for each resolved instance that matches no split rule (and so
-   * produces no display set), e.g. a non-image SOP. Surfaces silent drops.
-   */
-  onUnmatchedInstance?: (instance: NaturalizedInstance) => void;
-};
+export type SplitImageIdsBySplitRulesOptions = SplitContext &
+  GroupInstancesOptions & {
+    /** The rules, keyed by rule id and tried in ascending priority. */
+    splitRules: SplitRuleSet;
+    onMissingImageId?: (imageId: string) => void;
+    /**
+     * Called for each resolved instance that matches no split rule (and so
+     * produces no display set), e.g. a non-image SOP. Surfaces silent drops.
+     */
+    onUnmatchedInstance?: (instance: NaturalizedInstance) => void;
+  };
 
 /**
  * Primary entrypoint: splits a series represented by metadata imageIds into instance groups.
@@ -29,6 +32,8 @@ export function splitImageIdsBySplitRules(
     splitRules,
     onMissingImageId,
     onUnmatchedInstance,
+    sortInstances,
+    compareInstances,
   } = options;
 
   const instances = resolveInstances(imageIds, getNaturalizedInstance, {
@@ -39,5 +44,13 @@ export function splitImageIdsBySplitRules(
     return [];
   }
 
-  return groupInstancesBySplitRules(instances, splitRules, onUnmatchedInstance);
+  return groupInstancesBySplitRules(
+    instances,
+    splitRules,
+    onUnmatchedInstance,
+    {
+      sortInstances,
+      compareInstances,
+    }
+  );
 }

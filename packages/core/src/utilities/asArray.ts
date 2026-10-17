@@ -10,3 +10,6 @@ export function asArray<T>(item: T | T[]): T[] {
   }
   return [item];
 }
+
+/** Re-exported for packages that reach utilities through core. */
+export { asArrayFirst } from '@cornerstonejs/utils';
