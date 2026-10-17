@@ -10,7 +10,13 @@ export type ExpressionNode =
   | { type: 'identifier'; name: string }
   | { type: 'member'; object: ExpressionNode; property: string }
   | { type: 'index'; object: ExpressionNode; index: ExpressionNode }
-  | { type: 'call'; callee: string; args: ExpressionNode[] }
+  | {
+      type: 'call';
+      callee: string;
+      args: ExpressionNode[];
+      /** The receiver of an aggregate: `series` in `series.instances.max(x)`. */
+      receiver?: string;
+    }
   | { type: 'unary'; operator: '!' | '-' | '+'; argument: ExpressionNode }
   | {
       type: 'binary';
@@ -81,6 +87,34 @@ const BINARY_PRECEDENCE: Record<string, number> = {
   '/': 6,
   '%': 6,
 };
+
+/** The aggregates that a receiver can call: `series.instances.max(x)`. */
+export const AGGREGATE_NAMES = new Set(['min', 'max', 'sum', 'count']);
+
+/** The receivers of an aggregate. */
+export const AGGREGATE_RECEIVERS = new Set([
+  'series',
+  'displaySet',
+  'displaySets',
+]);
+
+/**
+ * The receiver of `<receiver>.instances.<aggregate>`, or `undefined`. Only
+ * these four names on these receivers can be called as a method.
+ */
+function aggregateReceiver(node: ExpressionNode): string | undefined {
+  if (
+    node.type === 'member' &&
+    AGGREGATE_NAMES.has(node.property) &&
+    node.object.type === 'member' &&
+    node.object.property === 'instances' &&
+    node.object.object.type === 'identifier' &&
+    AGGREGATE_RECEIVERS.has(node.object.object.name)
+  ) {
+    return node.object.object.name;
+  }
+  return undefined;
+}
 
 class Parser {
   private tokens: Token[];
@@ -213,9 +247,14 @@ class Parser {
         continue;
       }
       if (this.isPunct('(')) {
-        if (node.type !== 'identifier') {
+        const receiver = aggregateReceiver(node);
+        if (node.type !== 'identifier' && !receiver) {
           this.fail('Only whitelisted helper functions may be called');
         }
+        const callee =
+          node.type === 'identifier'
+            ? node.name
+            : (node as { property: string }).property;
         this.next();
         const args: ExpressionNode[] = [];
         if (!this.isPunct(')')) {
@@ -229,7 +268,9 @@ class Parser {
           }
         }
         this.expectPunct(')');
-        node = { type: 'call', callee: node.name, args };
+        node = receiver
+          ? { type: 'call', callee, args, receiver }
+          : { type: 'call', callee, args };
         continue;
       }
       return node;

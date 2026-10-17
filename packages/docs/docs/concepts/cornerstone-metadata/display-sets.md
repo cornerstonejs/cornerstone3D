@@ -550,7 +550,7 @@ The other fields are data: `id` (optional, must equal the key), `groupId`,
   "priority": -1,
   "viewportTypes": ["stack"],
   "context": {
-    "isDiffusion": "count(DiffusionBValue) > 0",
+    "isDiffusion": "series.instances.count(DiffusionBValue) > 0",
     "bValue": "Number(DiffusionBValue)"
   },
   "matches": {
@@ -605,14 +605,14 @@ changes the threshold.
 
 #### `attributes`
 
-| Value                             | Gives                                                                     |
-| --------------------------------- | ------------------------------------------------------------------------- |
-| a name                            | a tag keyword reads the first instance of the sorted display set          |
-| `"splitNumber"`, `"sopClassUids"` | the values of the display set; only `attributes` can read them            |
-| a number, a boolean, `null`       | the fixed value                                                           |
-| `{ "template": "..." }`           | text; `{ "template": "SCOUT" }` is fixed text                             |
-| `{ "expression": "..." }`         | `min`, `max`, `sum` and `count` run over the instances of the display set |
-| a function `(instances, values)`  | in code only                                                              |
+| Value                             | Gives                                                                                              |
+| --------------------------------- | -------------------------------------------------------------------------------------------------- |
+| a name                            | a tag keyword reads the first instance of the sorted display set                                   |
+| `"splitNumber"`, `"sopClassUids"` | the values of the display set; only `attributes` can read them                                     |
+| a number, a boolean, `null`       | the fixed value                                                                                    |
+| `{ "template": "..." }`           | text; `{ "template": "SCOUT" }` is fixed text                                                      |
+| `{ "expression": "..." }`         | `displaySet.instances.max(x)` runs over the display set; `series.instances.max(x)` over the series |
+| a function `(instances, values)`  | in code only                                                                                       |
 
 `"label": "SCOUT"` is a compile error, because `SCOUT` is not a name. The
 message names the template form. A context value with the series scope, for
@@ -623,7 +623,7 @@ the series shows the same value.
 "attributes": {
   "isClip": true,
   "numImageFrames": { "expression": "Number(NumberOfFrames)" },
-  "maxFrames": { "expression": "max(NumberOfFrames)" },
+  "maxFrames": { "expression": "displaySet.instances.max(NumberOfFrames)" },
   "label": { "template": "{SeriesDescription} #{splitNumber}" }
 }
 ```
@@ -665,10 +665,15 @@ The rules:
 - Entries can read other entries in any order. A loop of entries is a compile
   error.
 - The compile infers the scope of each entry. A declaration, a code entry, and
-  an entry that reads an instance value outside of `min`, `max`, `sum` or
-  `count` have the instance scope. Every other entry has the series scope:
-  there, `max(NumberOfFrames)` is the maximum over the instances of the series,
-  and `count()` is the number of instances.
+  an entry that reads an instance value outside of a `series.instances.*(...)`
+  aggregate have the instance scope. Every other entry has the series scope.
+- An aggregate names its receiver. `series.instances.max(NumberOfFrames)` is
+  the maximum over the instances of the series, and `series.instances.count()`
+  is the number of instances. `displaySet.instances.max(x)` runs over the
+  instances of one display set, and only the `{ "expression" }` form of
+  `attributes` can use it. A bare `max(x)` is a compile error. `displaySets`
+  is reserved for a later change
+  ([issue 3000](https://github.com/cornerstonejs/cornerstone3D/issues/3000)).
 - The engine computes an entry at the first read, one time for each series, and
   keeps the value in a cache. When the series gets new instances, the next
   split computes the value again.
@@ -697,7 +702,7 @@ The rules:
   "sliceIndex": "planeGeometry.index",
   "sliceDistance": "planeGeometry.distance",
 
-  "seriesInstanceCount": "count()",
+  "seriesInstanceCount": "series.instances.count()",
   "isMultiFrame": "NumberOfFrames > 1",
 
   "imageId": { "attribute": "imageId" },
@@ -908,7 +913,9 @@ Two rules from the defaults, in raw form:
     priority: 6,
     viewportTypes: ['volume', 'volume3d', 'stack'],
     context: {
-      isMixedBValue: 'count(DiffusionBValue) > 0 && count(DiffusionBValue) < count()',
+      isMixedBValue:
+        'series.instances.count(DiffusionBValue) > 0 && ' +
+        'series.instances.count(DiffusionBValue) < series.instances.count()',
       hasNoBValue: 'DiffusionBValue == null',
     },
     matches: { Modality: 'MR', isMixedBValue: true, isImage: true, Rows: { notNull: true } },

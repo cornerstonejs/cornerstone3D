@@ -159,7 +159,8 @@ export const rawDisplaySetSelector = {
       // A series value: some instances of the series have a b-value, and
       // some have none.
       isMixedBValue:
-        'count(DiffusionBValue) > 0 && count(DiffusionBValue) < count()',
+        'series.instances.count(DiffusionBValue) > 0 && ' +
+        'series.instances.count(DiffusionBValue) < series.instances.count()',
       hasNoBValue: 'DiffusionBValue == null',
     },
     matches: { Modality: 'MR', isMixedBValue: true, ...RENDERABLE_IMAGE },

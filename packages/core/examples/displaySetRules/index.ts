@@ -336,7 +336,7 @@ const SAMPLE_SNIPPETS: Record<string, string> = {
         viewportTypes: ['stack'],
         context: {
           // A series value: one instance of the series has a b-value.
-          isDiffusion: 'count(DiffusionBValue) > 0',
+          isDiffusion: 'series.instances.count(DiffusionBValue) > 0',
           bValue: 'Number(DiffusionBValue)',
         },
         matches: {

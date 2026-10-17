@@ -813,8 +813,8 @@ describe('the display set context', () => {
   it('runs min, max, sum and count over the series in a series entry', () => {
     const rule = {
       context: {
-        mostFrames: 'max(NumberOfFrames)',
-        withFrames: 'count(NumberOfFrames)',
+        mostFrames: 'series.instances.max(NumberOfFrames)',
+        withFrames: 'series.instances.count(NumberOfFrames)',
       },
       matches: { mostFrames: 9, withFrames: 2 },
     };
@@ -898,17 +898,57 @@ describe('sortBy and attributes', () => {
     );
   });
 
-  it('runs an attributes expression over the instances of the display set', () => {
-    const group = firstGroup({
-      attributes: {
-        maxFrames: { expression: 'max(NumberOfFrames)' },
-        frameTotal: { expression: 'sum(NumberOfFrames)' },
-      },
-    });
-    const { maxFrames, frameTotal } = createDisplaySetFromGroup(
-      group
-    ) as unknown as Record<string, unknown>;
-    expect({ maxFrames, frameTotal }).toEqual({ maxFrames: 3, frameTotal: 6 });
+  it('aggregates over the series or over the display set, as the receiver names', () => {
+    const groups = groupInstancesBySplitRules(
+      series(),
+      compileOne({
+        context: {
+          isThick: 'SliceLocation > 1',
+          seriesMaxFrames: 'series.instances.max(NumberOfFrames)',
+        },
+        groupBy: ['SeriesInstanceUID', 'isThick'],
+        attributes: {
+          seriesMax: 'seriesMaxFrames',
+          displaySetMax: {
+            expression: 'displaySet.instances.max(NumberOfFrames)',
+          },
+          displaySetTotal: {
+            expression: 'displaySet.instances.sum(NumberOfFrames)',
+          },
+        },
+      })
+    );
+    expect(
+      groups.map((group) => {
+        const { seriesMax, displaySetMax, displaySetTotal } =
+          createDisplaySetFromGroup(group) as unknown as Record<
+            string,
+            unknown
+          >;
+        return [seriesMax, displaySetMax, displaySetTotal];
+      })
+    ).toEqual([
+      [3, 1, 1],
+      [3, 3, 5],
+    ]);
+  });
+
+  it('rejects a bare aggregate, displaySet.instances outside attributes, and displaySets', () => {
+    expect(errorOf({ context: { most: 'max(Rows)' } })).toContain(
+      'max(...) needs a receiver; use series.instances.max(...)'
+    );
+    expect(
+      errorOf({ context: { most: 'displaySet.instances.max(Rows)' } })
+    ).toContain(
+      'rule \'r\'.context.most: displaySet.instances aggregates are available only in the { "expression" } form of attributes'
+    );
+    expect(
+      errorOf({
+        attributes: { all: { expression: 'displaySets.instances.count()' } },
+      })
+    ).toContain(
+      'displaySets aggregates are not available yet; see https://github.com/cornerstonejs/cornerstone3D/issues/3000'
+    );
   });
 
   it('reads splitNumber and sopClassUids in attributes only', () => {

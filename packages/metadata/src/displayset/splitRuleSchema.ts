@@ -190,7 +190,7 @@ const attributeValueShape: SchemaShape = {
     expression: {
       ...valueShape.forms.expression,
       description:
-        'An expression over the display set: min, max, sum and count run over its instances, and a DICOM keyword reads its first instance.',
+        'An expression over the display set: displaySet.instances.max(x) (and min, sum, count) runs over its instances, series.instances.max(x) over the series, and a DICOM keyword reads its first instance.',
     },
   },
 };

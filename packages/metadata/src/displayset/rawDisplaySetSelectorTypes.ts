@@ -68,9 +68,10 @@ export type RawSortKey =
  *   set. `splitNumber` and `sopClassUids` are values of the display set.
  * - a fixed number, boolean or `null`.
  * - `{ template }`: text; `{ "template": "SCOUT" }` is fixed text.
- * - `{ expression }`: an expression over the display set. `min`, `max`, `sum`
- *   and `count` run over its instances, and a DICOM keyword reads its first
- *   instance.
+ * - `{ expression }`: an expression over the display set.
+ *   `displaySet.instances.max(x)` (and `min`, `sum`, `count`) runs over its
+ *   instances, `series.instances.max(x)` over the series, and a DICOM keyword
+ *   reads its first instance.
  * - in code, a function `(instances, values) => value`.
  */
 export type RawAttributeValue =

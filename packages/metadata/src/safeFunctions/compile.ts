@@ -151,14 +151,17 @@ export function readNameAt(
 export function compileExpressionAt(
   source: string,
   site: SchemaSite,
-  scope: ExpressionScope & { over?: string } = site.expression ??
-    INSTANCE_EXPRESSION_SCOPE
+  scope: ExpressionScope & {
+    receivers?: Readonly<Record<string, string>>;
+    unavailableReceivers?: Readonly<Record<string, string>>;
+  } = site.expression ?? INSTANCE_EXPRESSION_SCOPE
 ) {
   try {
     return compileExpression(source, {
       params: scope.params,
       implicitScope: scope.implicitScope,
-      over: scope.over,
+      receivers: scope.receivers,
+      unavailableReceivers: scope.unavailableReceivers,
     });
   } catch (error) {
     return invalidAt(site, (error as Error).message);

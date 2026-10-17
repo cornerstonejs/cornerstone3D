@@ -187,11 +187,14 @@ recursive-descent parser read it (`safeFunctions/expression`).
   `contains(SeriesDescription, 'T1')` tests text. The number
   helpers give `undefined` for a value that is not a finite number, and never
   `NaN`.
-- **Aggregates**: where the place gives a list of subjects (the `over` option),
-  `min(x)`, `max(x)`, `sum(x)`, `count(x)` and `count()` run over the list. A
-  subject whose argument has no value does not count, and `count(x)` also skips
-  `false`. `sum` of no subject is `0`. `min` and `max` of no subject are
-  `undefined`. Without a list, `count` and `sum` are compile errors.
+- **Aggregates**: an aggregate names its receiver, for example
+  `series.instances.max(x)`. The place gives the receivers that it accepts
+  (the `receivers` option), and the list of each one. `min(x)`, `max(x)`,
+  `sum(x)`, `count(x)` and `count()` run over that list. A subject whose
+  argument has no value does not count, and `count(x)` also skips `false`.
+  `sum` of no subject is `0`. `min` and `max` of no subject are `undefined`. A
+  bare one-argument `max(x)`, or a receiver that the place does not accept, is
+  a compile error. The parser accepts no other method call.
 
 A malformed expression throws an `ExpressionSyntaxError` **at compile time**,
 with the source in the message. A runtime error gives one warning, and the
@@ -209,10 +212,10 @@ is read:
 In the argument of an aggregate, a bare identifier always reads the element.
 
 ```js
-const countLarge = compileExpression('count(Rows > 512)', {
+const countLarge = compileExpression('series.instances.count(Rows > 512)', {
   params: ['instances'],
   implicitScope: false,
-  over: 'instances',
+  receivers: { series: 'instances' },
 });
 ```
 
@@ -262,7 +265,9 @@ reads, with the field of a path and whether the read is in an aggregate:
 import { collectReads, parseExpressionSource } from '@cornerstonejs/metadata';
 
 collectReads(
-  parseExpressionSource('round(sweepStart - timeClusters.first) + max(Rows)'),
+  parseExpressionSource(
+    'round(sweepStart - timeClusters.first) + series.instances.max(Rows)'
+  ),
   { aggregates: true }
 );
 // [

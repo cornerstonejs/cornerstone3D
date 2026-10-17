@@ -270,7 +270,8 @@ compile.
   - A fixed value and a group have one value for the series.
   - A declaration and a code entry have one value for each instance.
   - An expression or a template that reads an instance value outside of
-    `min`, `max`, `sum` or `count` has one value for each instance.
+    `series.instances.min(...)`, `.max(...)`, `.sum(...)` or `.count(...)`
+    has one value for each instance.
   - Every other entry has one value for the series.
 - **RL-CTX-8** A site changes one entry by its name (`"dxCrMaxImages":
 { "$set": 20 }`). The site does not copy the expression text of a rule into
@@ -570,13 +571,32 @@ packages/metadata/src/
   of the operators of the same names, so they give the same results. The
   aggregates `some`, `every`, `minOf`, `maxOf`, `sumOf` and
   `count(list, expr)` do not exist any more.
-- **RL-EXPR-2** Where the place gives a list of instances (the `over` option),
-  `min(x)`, `max(x)`, `sum(x)`, `count(x)` and `count()` run over the list.
-  The argument is evaluated one time for each instance. An instance whose
-  argument has no value does not count; `count(x)` also skips `false`.
+- **RL-EXPR-2** An aggregate names its receiver:
+  - `series.instances.min(x)`, `.max(x)`, `.sum(x)`, `.count(x)` and
+    `.count()` run over the instances of the series. A context entry and the
+    `{ "expression" }` form of `attributes` can use them.
+  - `displaySet.instances.min(x)` (and `max`, `sum`, `count`) run over the
+    instances of this display set. Only the `{ "expression" }` form of
+    `attributes` can use them. At another place, the compile gives an error
+    that names the place.
+  - `displaySets` is reserved for a later change. Each use is a compile error
+    that refers to
+    [issue 3000](https://github.com/cornerstonejs/cornerstone3D/issues/3000).
+  - A bare `min(x)`, `max(x)`, `sum(x)`, `count(x)` or `count()` is a compile
+    error, and the error gives the receiver forms that the place accepts.
+    `min(a, b, ...)` and `max(a, b, ...)` with two or more arguments compare
+    their arguments.
+  - `series`, `displaySet` and `displaySets` cannot be context names.
+  - The parser accepts a method call only in the form
+    `<receiver>.instances.<aggregate>(...)`, with these receivers and these
+    four aggregates.
+
+  The compiler evaluates the argument one time for each instance. An instance
+  whose argument has no value does not count; `count(x)` also skips `false`.
   `sum` of no instance is `0`. `min` and `max` of no instance are `undefined`.
   `count()` is the number of instances. The result does not change with the
   order of the instances.
+
 - **RL-EXPR-3** The number helpers (`abs`, `round`, `floor`, `ceil`,
   `Number`, and `min` and `max` with two or more arguments) give `undefined`
   for a value that is not a finite number, and never `NaN`.
@@ -584,7 +604,8 @@ packages/metadata/src/
   of a direct member access (`timeClusters.start`), an index access
   (`indexed`), and whether the read is in the argument of an aggregate.
 - **RL-EXPR-5** An aggregate in an entry with the instance scope
-  (`"NumberOfFrames == max(NumberOfFrames)"`) runs over the series one time for
+  (`"NumberOfFrames == series.instances.max(NumberOfFrames)"`) runs over the
+  series one time for
   each instance: the cost grows with the square of the number of instances. Put
   the aggregate in its own series entry, and read that name.
 - **RL-EXPR-6** A compiled expression gives one warning and `undefined` for an
@@ -623,7 +644,7 @@ packages/metadata/src/
     "sliceIndex": "planeGeometry.index",
     "sliceDistance": "planeGeometry.distance",
 
-    "seriesInstanceCount": "count()",
+    "seriesInstanceCount": "series.instances.count()",
     "isMultiFrame": "NumberOfFrames > 1",
 
     "imageId": { "attribute": "imageId" },
@@ -652,8 +673,9 @@ packages/metadata/src/
 - **RL-CTXI-4** The compile infers the scope of each entry:
   - A fixed value and a group have the series scope.
   - A declaration and a code entry have the instance scope.
-  - An expression or a template that reads, outside of an aggregate, a tag
-    keyword, an instance value or an instance field has the instance scope.
+  - An expression or a template that reads, outside of a
+    `series.instances.*(...)` aggregate, a tag keyword, an instance value or an
+    instance field has the instance scope.
   - Every other entry has the series scope.
   - Each argument of a group must have the series scope. An argument with the
     instance scope is a compile error.
@@ -736,8 +758,10 @@ packages/metadata/src/
     is the value of the whole series.
   - a fixed number, boolean or `null`.
   - `{ "template": "..." }`. `{ "template": "SCOUT" }` is fixed text.
-  - `{ "expression": "..." }`. The aggregates run over the instances of the
-    display set, and a tag keyword reads its first instance.
+  - `{ "expression": "..." }`. `displaySet.instances.*(...)` runs over the
+    instances of the display set, `series.instances.*(...)` over the instances
+    of the series, and a tag keyword reads the first instance of the display
+    set.
   - in code, a function (`RL-FN-4`).
 - **RL-CONS-3** `createDisplaySetFromGroup` passes `group.series` to the
   `customAttributes` hook, so an attribute reads the values of the whole series
@@ -911,15 +935,17 @@ the value:
 
 ```jsonc
 "attributes": {
-  "maxFrames": { "expression": "max(NumberOfFrames)" },
-  "frameTotal": { "expression": "sum(NumberOfFrames)" },
+  "maxFrames": { "expression": "displaySet.instances.max(NumberOfFrames)" },
+  "frameTotal": { "expression": "displaySet.instances.sum(NumberOfFrames)" },
+  "seriesFrames": { "expression": "series.instances.sum(NumberOfFrames)" },
   "label": { "template": "{SeriesDescription} #{splitNumber}" },
   "isClip": true
 }
 ```
 
-- In `attributes`, `min`, `max`, `sum` and `count` run over the instances of
-  the display set, and not over the series.
+- In `attributes`, `displaySet.instances.*(...)` runs over the instances of
+  the display set, and `series.instances.*(...)` over the instances of the
+  series.
 - A tag keyword in `attributes` reads the value of the first instance of the
   sorted group.
 - `"label": "SCOUT"` is a compile error. Fixed text is

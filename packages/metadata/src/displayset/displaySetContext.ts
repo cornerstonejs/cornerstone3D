@@ -138,7 +138,7 @@ export const defaultDisplaySetContext: DisplaySetContext = Object.freeze({
   sliceIndex: 'planeGeometry.index',
   sliceDistance: 'planeGeometry.distance',
 
-  seriesInstanceCount: 'count()',
+  seriesInstanceCount: 'series.instances.count()',
   isMultiFrame: 'NumberOfFrames > 1',
 
   imageId: { attribute: 'imageId' },
@@ -173,11 +173,34 @@ export function isTagKeyword(name: string): boolean {
 
 type Scope = SeriesFieldScope;
 
+const DISPLAY_SETS_RESERVED =
+  'displaySets aggregates are not available yet; see https://github.com/cornerstonejs/cornerstone3D/issues/3000';
+
+/** The expression of a context entry: `series.instances.*(...)` only. */
 const EXPRESSION_SCOPE = Object.freeze({
   params: Object.freeze(['#values', '#instances']),
   implicitScope: '#values',
-  over: '#instances',
+  receivers: Object.freeze({ series: '#instances' }),
+  unavailableReceivers: Object.freeze({
+    displaySet:
+      'displaySet.instances aggregates are available only in the { "expression" } form of attributes',
+    displaySets: DISPLAY_SETS_RESERVED,
+  }),
 });
+
+/** The expression of `attributes`: also `displaySet.instances.*(...)`. */
+const ATTRIBUTE_EXPRESSION_SCOPE = Object.freeze({
+  params: Object.freeze(['#values', '#instances', '#displaySetInstances']),
+  implicitScope: '#values',
+  receivers: Object.freeze({
+    series: '#instances',
+    displaySet: '#displaySetInstances',
+  }),
+  unavailableReceivers: Object.freeze({ displaySets: DISPLAY_SETS_RESERVED }),
+});
+
+/** The receivers of the aggregates: no context entry can have these names. */
+const RESERVED_RECEIVERS = new Set(['series', 'displaySet', 'displaySets']);
 
 /** One argument of a group: a fixed value, or an expression. */
 type GroupArgument = {
@@ -307,10 +330,10 @@ function checkContextName(name: string, site: SchemaSite): void {
   if (isUnsafeKey(name) || FORBIDDEN_PROPERTIES.has(name)) {
     invalidAt(site, `the context name "${name}" is not allowed`);
   }
-  if (RESERVED_LITERALS.has(name)) {
+  if (RESERVED_LITERALS.has(name) || RESERVED_RECEIVERS.has(name)) {
     invalidAt(
       site,
-      `'${name}' is a literal of the expression language, and cannot be a context name`
+      `'${name}' is reserved by the expression language, and cannot be a context name`
     );
   }
   if (isTagKeyword(name)) {
@@ -337,9 +360,12 @@ function checkContextName(name: string, site: SchemaSite): void {
 /** Parses one expression at a site: the compiled function and its reads. */
 function parseExpression(
   source: string,
-  site: SchemaSite
+  site: SchemaSite,
+  scope:
+    | typeof EXPRESSION_SCOPE
+    | typeof ATTRIBUTE_EXPRESSION_SCOPE = EXPRESSION_SCOPE
 ): { evaluate: CompiledExpression; reads: ExpressionRead[]; single?: string } {
-  const evaluate = compileExpressionAt(source, site, EXPRESSION_SCOPE);
+  const evaluate = compileExpressionAt(source, site, scope);
   const ast = parseExpressionSource(source);
   return {
     evaluate,
@@ -807,8 +833,9 @@ export class ContextProgram {
 
   /**
    * An expression of `attributes`, read over the instances of a display set.
-   * A tag keyword reads the first instance, and the aggregates run over the
-   * instances of the display set.
+   * A tag keyword reads the first instance. `series.instances.*(...)` runs
+   * over the instances of the series, and `displaySet.instances.*(...)` over
+   * the instances of the display set.
    */
   attributeExpression(
     layer: ContextLayer,
@@ -819,7 +846,11 @@ export class ContextProgram {
     instances: readonly NaturalizedInstance[],
     extras: Extras
   ) => unknown {
-    const { evaluate, reads } = parseExpression(source, site);
+    const { evaluate, reads } = parseExpression(
+      source,
+      site,
+      ATTRIBUTE_EXPRESSION_SCOPE
+    );
     const deps = new Map<string, Dependency>();
     for (const read of reads) {
       deps.set(
@@ -831,6 +862,7 @@ export class ContextProgram {
     return (runtime, instances, extras) =>
       evaluate(
         runtime.env(scope, instances[0], extras),
+        runtime.envsOf(scope, runtime.instances, extras),
         runtime.envsOf(scope, instances, extras)
       );
   }

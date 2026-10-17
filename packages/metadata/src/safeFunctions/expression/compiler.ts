@@ -33,8 +33,10 @@ type NodeEvaluator = (scope: EvaluationScope) => unknown;
 /** What the node compiler needs to know about the place. */
 type NodeContext = {
   expression: string;
-  /** The parameter that holds the list of the aggregates, if any. */
-  over?: string;
+  /** The receivers of the aggregates at the place, and their parameters. */
+  receivers?: Readonly<Record<string, string>>;
+  /** The message of a receiver that the place does not give. */
+  unavailable?: Readonly<Record<string, string>>;
 };
 
 export type CompiledExpression = ((...args: unknown[]) => unknown) & {
@@ -59,18 +61,21 @@ export type CompileExpressionOptions = {
    *   identifier that is not a parameter name is a compile-time
    *   {@link ExpressionSyntaxError}.
    *
-   * Inside the argument of an aggregate (see `over`) bare identifiers always
-   * read the fields of the element, whatever this option says.
+   * Inside the argument of an aggregate (see `receivers`) bare identifiers
+   * always read the fields of the element, whatever this option says.
    */
   implicitScope?: boolean | string;
   /**
-   * The parameter that holds the list of subjects that the aggregates
-   * `min(x)`, `max(x)`, `sum(x)`, `count(x)` and `count()` run over. The
-   * argument of an aggregate is evaluated once for each element, with the
-   * element as the innermost implicit scope. Without this option, `count` and
-   * `sum` are compile errors, and `min` and `max` compare their arguments.
+   * The receivers of the aggregates at the place, and the parameter that holds
+   * the list of each one: `{ series: 'instances' }` makes
+   * `series.instances.max(x)`, `.min(x)`, `.sum(x)`, `.count(x)` and
+   * `.count()` run over the list of the parameter `instances`. The argument
+   * is evaluated one time for each element, with the element as the innermost
+   * implicit scope. A receiver that is not here is a compile error.
    */
-  over?: string;
+  receivers?: Readonly<Record<string, string>>;
+  /** The error message for a receiver that the place does not give. */
+  unavailableReceivers?: Readonly<Record<string, string>>;
 };
 
 /** Reads a property while refusing prototype-chain escape hatches. */
@@ -135,20 +140,26 @@ const HELPERS: Record<string, (...args: unknown[]) => unknown> = {
   String: (value) => (hasNoValue(value) ? '' : String(value)),
 };
 
-/** The aggregate functions, available where the place gives a list (`over`). */
+/** The aggregate functions: `series.instances.max(x)`. */
 const AGGREGATES = new Set(['min', 'max', 'sum', 'count']);
 
-/** True when a call node is an aggregate over the list of the place. */
+/** True when a call node is an aggregate: it has a receiver. */
 function isAggregateCall(
-  node: Extract<ExpressionNode, { type: 'call' }>,
-  over: string | undefined
+  node: Extract<ExpressionNode, { type: 'call' }>
 ): boolean {
-  if (!over || !AGGREGATES.has(node.callee)) {
+  return node.receiver !== undefined;
+}
+
+/** True for a bare aggregate: `max(x)` with one argument, `count()`, `sum(x)`. */
+function isBareAggregate(
+  node: Extract<ExpressionNode, { type: 'call' }>
+): boolean {
+  if (node.receiver !== undefined || !AGGREGATES.has(node.callee)) {
     return false;
   }
-  return node.callee === 'count'
-    ? node.args.length <= 1
-    : node.args.length === 1;
+  return node.callee === 'min' || node.callee === 'max'
+    ? node.args.length === 1
+    : true;
 }
 
 /**
@@ -185,14 +196,13 @@ export type ExpressionRead = {
  * Every read of an identifier in an expression, in source order, with the
  * field of a direct member access (`timeClusters.start` gives `start`) and
  * whether the read is inside the argument of an aggregate (`max(Rows)`). Pass
- * `aggregates: true` for a place that compiles with the `over` option.
+ * `aggregates: true` for a place that compiles with `receivers`.
  */
 export function collectReads(
   node: ExpressionNode,
   options: { aggregates?: boolean } = {}
 ): ExpressionRead[] {
   const reads: ExpressionRead[] = [];
-  const over = options.aggregates ? '#' : undefined;
 
   const walk = (current: ExpressionNode, inAggregate: boolean): void => {
     switch (current.type) {
@@ -225,7 +235,8 @@ export function collectReads(
         walk(current.index, inAggregate);
         return;
       case 'call': {
-        const aggregate = inAggregate || isAggregateCall(current, over);
+        const aggregate =
+          inAggregate || (!!options.aggregates && isAggregateCall(current));
         current.args.forEach((argument) => walk(argument, aggregate));
         return;
       }
@@ -270,7 +281,9 @@ function assertOnlyParams(
   context: NodeContext
 ): void {
   const allowed = new Set(paramNames);
-  for (const read of collectReads(node, { aggregates: !!context.over })) {
+  for (const read of collectReads(node, {
+    aggregates: !!context.receivers,
+  })) {
     if (!read.inAggregate && !allowed.has(read.name)) {
       throw new ExpressionSyntaxError(
         `'${read.name}' is not a parameter, and this expression has no ` +
@@ -386,7 +399,7 @@ function compileAggregate(
   context: NodeContext
 ): NodeEvaluator {
   const { callee } = node;
-  const over = context.over as string;
+  const over = context.receivers[node.receiver];
   const element = node.args[0] ? compileNode(node.args[0], context) : undefined;
   return (scope) => {
     const list = scope.params[over];
@@ -526,14 +539,37 @@ function compileNode(
     }
     case 'call': {
       const { callee } = node;
-      if (isAggregateCall(node, context.over)) {
+      if (isAggregateCall(node)) {
+        const { receiver } = node;
+        if (
+          !Object.prototype.hasOwnProperty.call(
+            context.receivers ?? {},
+            receiver
+          )
+        ) {
+          throw new ExpressionSyntaxError(
+            context.unavailable?.[receiver] ??
+              `${receiver}.instances.${callee}() is not available here`,
+            expression
+          );
+        }
+        const arity = node.args.length;
+        if (callee === 'count' ? arity > 1 : arity !== 1) {
+          throw new ExpressionSyntaxError(
+            `${receiver}.instances.${callee}() takes ${callee === 'count' ? 'zero or one argument' : 'one argument'}`,
+            expression
+          );
+        }
         return compileAggregate(node, context);
       }
-      if (callee === 'count' || callee === 'sum') {
+      if (isBareAggregate(node)) {
+        const places = Object.keys(context.receivers ?? {}).map(
+          (receiver) => `${receiver}.instances.${callee}(...)`
+        );
         throw new ExpressionSyntaxError(
-          context.over
-            ? `${callee}() takes ${callee === 'count' ? 'zero or one argument' : 'one argument'}`
-            : `${callee}() is not available here: this place has no list of instances`,
+          places.length
+            ? `${callee}(...) needs a receiver; use ${places.join(' or ')}`
+            : `${callee}(...) is not available here: this place has no list of instances`,
           expression
         );
       }
@@ -564,8 +600,10 @@ function compileNode(
  * functions (`defined`, `includes`, `contains`, `startsWith`, `endsWith`,
  * `lower`, `abs`,
  * `min`, `max`, `round`, `floor`, `ceil`, `Number`, `String`) and, where the
- * place gives a list (`options.over`), the aggregates `min(x)`, `max(x)`,
- * `sum(x)`, `count(x)` and `count()`.
+ * place gives a receiver (`options.receivers`), the aggregates
+ * `series.instances.min(x)`, `.max(x)`, `.sum(x)`, `.count(x)` and `.count()`.
+ * A bare one-argument `min(x)`, `max(x)`, `sum(x)`, `count(x)` or `count()` is
+ * a compile error; `min(a, b)` and `max(a, b)` compare their arguments.
  *
  * The operators use the DICOM meaning of a missing value (see `../values`):
  *
@@ -612,12 +650,14 @@ export function compileExpression(
   options: CompileExpressionOptions = {}
 ): CompiledExpression {
   const paramNames = options.params ?? ['instance', 'context'];
-  const { implicitScope = true, over } = options;
-  if (over !== undefined && !paramNames.includes(over)) {
-    throw new ExpressionSyntaxError(
-      `over '${over}' is not one of the parameters (${paramNames.join(', ')})`,
-      source
-    );
+  const { implicitScope = true, receivers, unavailableReceivers } = options;
+  for (const [receiver, param] of Object.entries(receivers ?? {})) {
+    if (!paramNames.includes(param)) {
+      throw new ExpressionSyntaxError(
+        `the list '${param}' of the receiver '${receiver}' is not one of the parameters (${paramNames.join(', ')})`,
+        source
+      );
+    }
   }
   let implicitIndex = -1;
   if (implicitScope === true) {
@@ -631,7 +671,11 @@ export function compileExpression(
       );
     }
   }
-  const context: NodeContext = { expression: source, over };
+  const context: NodeContext = {
+    expression: source,
+    receivers,
+    unavailable: unavailableReceivers,
+  };
   const ast = parseExpressionSource(source);
   if (implicitIndex === -1) {
     assertOnlyParams(ast, paramNames, context);

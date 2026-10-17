@@ -156,18 +156,18 @@ describe('compileExpression', () => {
     });
 
     it('lets an aggregate argument read the element with no implicit scope', () => {
-      const fn = compileExpression('count(Rows > 1)', {
+      const fn = compileExpression('series.instances.count(Rows > 1)', {
         params: ['items'],
         implicitScope: false,
-        over: 'items',
+        receivers: { series: 'items' },
       });
       expect(fn([{ Rows: 2 }, { Rows: 0 }])).toBe(1);
       // Outside an aggregate, a bare name is still checked.
       expect(() =>
-        compileExpression('Rows + count()', {
+        compileExpression('Rows + series.instances.count()', {
           params: ['items'],
           implicitScope: false,
-          over: 'items',
+          receivers: { series: 'items' },
         })
       ).toThrow(/'Rows' is not a parameter/);
     });
@@ -234,31 +234,31 @@ describe('compileExpression', () => {
     it('returns undefined for min/max with no number, and skips a missing value', () => {
       // Math.min()/Math.max() would answer ∓Infinity and poison a comparison.
       expect(compileExpression('min()')()).toBeUndefined();
-      expect(compileExpression('max(undefined)')()).toBeUndefined();
+      expect(compileExpression('max(undefined, null)')()).toBeUndefined();
       expect(compileExpression('min(3, 1, 2)')()).toBe(1);
       expect(compileExpression('max(3, null, 2)')()).toBe(3);
       expect(compileExpression('round(x)')({})).toBeUndefined();
     });
 
-    it('runs min, max, sum and count over the list of the place', () => {
-      const over = { params: ['list'], over: 'list' };
+    it('runs min, max, sum and count over the list of the receiver', () => {
+      const over = { params: ['list'], receivers: { series: 'list' } };
       const list = [
         { DiffusionBValue: 800, NumberOfFrames: '2' },
         { DiffusionBValue: null },
         { DiffusionBValue: 0, NumberOfFrames: 4 },
       ];
-      const run = (source: string) => compileExpression(source, over)(list);
+      const run = (source: string) =>
+        compileExpression(`series.instances.${source}`, over)(list);
       expect(run('count()')).toBe(3);
       expect(run('count(DiffusionBValue)')).toBe(2);
       expect(run('count(DiffusionBValue > 100)')).toBe(1);
       expect(run('sum(NumberOfFrames)')).toBe(6);
       expect(run('min(DiffusionBValue)')).toBe(0);
       expect(run('max(NumberOfFrames)')).toBe(4);
-      expect(compileExpression('sum(x)', over)([])).toBe(0);
-      expect(compileExpression('max(x)', over)([])).toBeUndefined();
-      expect(() => compileExpression('count()')).toThrow(
-        /count\(\) is not available here/
-      );
+      expect(compileExpression('series.instances.sum(x)', over)([])).toBe(0);
+      expect(
+        compileExpression('series.instances.max(x)', over)([])
+      ).toBeUndefined();
     });
   });
 
@@ -363,7 +363,7 @@ describe('compileExpression', () => {
       expect(
         collectReads(
           parseExpressionSource(
-            'round(sweepStart - timeClusters.first) + max(Rows)'
+            'round(sweepStart - timeClusters.first) + series.instances.max(Rows)'
           ),
           { aggregates: true }
         )

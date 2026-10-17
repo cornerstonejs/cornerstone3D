@@ -50,7 +50,7 @@ is in `packages/metadata/src/displayset/` (`displaySetContext.ts`,
   "sortBy": ["acquisitionSeconds", { "sortFunction": "name" }],
   "attributes": {
     "SeriesDescription": { "template": "{SeriesDescription} +{sweepOffset} s" },
-    "maxFrames": { "expression": "max(NumberOfFrames)" },
+    "maxFrames": { "expression": "displaySet.instances.max(NumberOfFrames)" },
     "isClip": true
   }
 }
@@ -80,10 +80,15 @@ customization). A rule `context` has the same forms.
 | group                        | `"timeClusters": { "function": "timeClusters", "args": { "maxGap": "timeClustersMaxGap" } }` |
 
 - The scope is inferred: a declaration, a code entry, or an expression that
-  reads an instance value outside `min`/`max`/`sum`/`count` has the instance
-  scope; all others have the series scope (computed one time per series).
-- In a series entry, `count()` is the number of instances, and `max(X)` is the
-  maximum over the instances of the series.
+  reads an instance value outside a `series.instances.*(...)` aggregate has
+  the instance scope; all others have the series scope (computed one time per
+  series).
+- Aggregates name the receiver: `series.instances.count()` is the number of
+  instances of the series, and `series.instances.max(X)` the maximum over the
+  series. `displaySet.instances.max(X)` runs over one display set, in the
+  `{ "expression" }` form of `attributes` only. A bare `max(X)` is a compile
+  error. `displaySets` is reserved (issue 3000). `series`, `displaySet` and
+  `displaySets` cannot be context names.
 - A rule entry replaces the global entry for that rule only, also inside the
   global entries that the rule reads. An entry that reads its own name gets
   the global value. `"timeClusters": "longTimeClusters"` selects another group.
@@ -112,7 +117,7 @@ customization). A rule `context` has the same forms.
   "sliceSpacing": "planeGeometry.spacing",
   "sliceIndex": "planeGeometry.index",
   "sliceDistance": "planeGeometry.distance",
-  "seriesInstanceCount": "count()",
+  "seriesInstanceCount": "series.instances.count()",
   "isMultiFrame": "NumberOfFrames > 1",
   "imageId": { "attribute": "imageId" },
 }
