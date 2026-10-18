@@ -3,7 +3,6 @@ import {
   getEnabledElement,
   utilities as csUtils,
   StackViewport,
-  ECGViewport,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
@@ -122,12 +121,15 @@ class UltrasoundDirectionalTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
 
+    const contentMode = csUtils.getViewportContentMode(viewport);
+
     if (
       !(viewport instanceof StackViewport) &&
-      !(viewport instanceof ECGViewport)
+      contentMode !== 'stack' &&
+      contentMode !== 'ecg'
     ) {
       throw new Error(
-        'UltrasoundDirectionalTool can only be used on a StackViewport or ECGViewport'
+        'UltrasoundDirectionalTool can only be used on a viewport that shows a stack or an ECG'
       );
     }
 
@@ -782,7 +784,10 @@ class UltrasoundDirectionalTool extends AnnotationTool {
 
       let xValues, yValues, units, isHorizontal;
       let isUnitless = false;
+      // Handles on different index Z, for example two ECG leads, are in
+      // different regions.
       if (
+        Math.round(imageIndex1[2]) !== Math.round(imageIndex2[2]) ||
         units1[0] !== units2[0] ||
         units1[1] !== units2[1] ||
         (units1[0] === 'raw' && units2[0] === 'raw')

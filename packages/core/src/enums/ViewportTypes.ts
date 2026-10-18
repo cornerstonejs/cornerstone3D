@@ -23,6 +23,7 @@ const builtInViewportTypes: CoreViewportTypeConstants = {
   WHOLE_SLIDE_NEXT: ViewportType.WHOLE_SLIDE_NEXT,
   ECG: ViewportType.ECG,
   ECG_NEXT: ViewportType.ECG_NEXT,
+  ECG_LEGACY: ViewportType.ECG_LEGACY,
 };
 
 /**

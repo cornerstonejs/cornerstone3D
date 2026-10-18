@@ -3,6 +3,7 @@ import type OrientationVectors from './OrientationVectors';
 import type DisplayArea from './displayArea';
 import type RGB from './RGB';
 import type Point2 from './Point2';
+import type { ECGTraceLayout } from '../RenderingEngine/GenericViewport/ECG/ECGViewportTypes';
 
 /**
  * This type defines the shape of viewport input options, so we can throw when it is incorrect.
@@ -23,6 +24,11 @@ interface ViewportInputOptions {
   parallelProjection?: boolean;
   /** aspect ratio as [width, height] */
   aspectRatio?: Point2;
+  /**
+   * Trace layout of an ECG viewport: a registered name such as `'3x4+1'`, or
+   * a full definition. A hanging protocol gives either form here.
+   */
+  traceLayout?: ECGTraceLayout;
 }
 
 export type { ViewportInputOptions as default };
