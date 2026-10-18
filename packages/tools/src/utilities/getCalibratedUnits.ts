@@ -18,6 +18,7 @@ const SUPPORTED_PROBE_VARIANT = [
   '4,3', // x: seconds & y : cm
   '4,7', // x: seconds & y : cm/sec
   '4,-1', // x: seconds & y : mV (ECG)
+  '-2,-1', // x: ms & y : mV (ECG)
 ];
 
 /**
@@ -38,6 +39,8 @@ const UNIT_MAPPING = {
   0xc: 'degrees',
   /** Extension for ECG amplitude (not in DICOM table). */
   [-1]: 'mV',
+  /** Extension for ECG time in milliseconds (not in DICOM table). */
+  [-2]: 'ms',
 };
 
 const EPS = 1e-3;
@@ -56,6 +59,10 @@ const types = [
 /**
  * Extracts the calibrated length units, area units, and the scale
  * for converting from internal spacing to image spacing.
+ *
+ * A region whose two axes have different units, for example an ECG region in
+ * ms and mV, gives no length calibration, so the length is in pixels.
+ * `UltrasoundDirectionalTool` measures along one axis of such a region.
  *
  * @param handles - to detect if spacing information is different between points
  * @param image - to extract the calibration from
@@ -123,19 +130,6 @@ const getCalibratedLengthUnitsAndScale = (image, handles) => {
       calibrationType = 'US Region';
       unit = UNIT_MAPPING[region.physicalUnitsXDirection] || 'unknown';
       areaUnit = unit + SQUARE;
-    } else if (region && region.physicalUnitsYDirection === -1) {
-      const physicalDeltaX = Math.abs(region.physicalDeltaX);
-      const physicalDeltaY = Math.abs(region.physicalDeltaY);
-      scale = 1 / physicalDeltaX;
-      scaleY = 1 / physicalDeltaY;
-
-      calibrationType = 'ECG Region';
-      unit =
-        UNIT_MAPPING[region.physicalUnitsXDirection] ||
-        UNIT_MAPPING[region.physicalUnitsYDirection] ||
-        'unknown';
-      areaUnit =
-        (UNIT_MAPPING[region.physicalUnitsYDirection] || 'px') + SQUARE;
     }
   } else if (calibration.scale) {
     scale = calibration.scale;
