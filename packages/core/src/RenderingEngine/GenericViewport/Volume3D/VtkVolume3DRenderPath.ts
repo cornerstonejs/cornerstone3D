@@ -344,6 +344,7 @@ export class VtkVolume3DRenderPath
     }
 
     rendering.voxelQuality = this.readQuality(rendering, bindings);
+    rendering.fullGrid = rendering.imageVolume?.voxelGrid;
     rendering.sampleDistanceLod = this.readSampleDistanceLod(rendering);
   }
 

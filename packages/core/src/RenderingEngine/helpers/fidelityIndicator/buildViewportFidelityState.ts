@@ -9,20 +9,24 @@ import {
   type FidelityLine,
   isInteractiveLod,
   isReduced,
+  lineHasData,
+  lineKind,
   svgStateOf,
 } from './fidelityIndicatorState';
 
 /**
  * Builds the absolute {@link ViewportFidelityState} (FIDELITY-EVENT-5) from
- * fidelity lines. The display spacing comes from the primary line, else from
- * `displaySpacing`. `shownState` and `lossy` come from every line, with the
- * same decision as the built-in indicator (`svgStateOf`).
+ * fidelity lines. `shownState` and `lossy` come from every line, with the
+ * same decision as the built-in indicator (`svgStateOf`). Every other field
+ * describes the worst line, the line that decides `shownState`, so that
+ * `cause` agrees with `lossy` for several volumes. The display spacing comes
+ * from that line, else from `displaySpacing`.
  */
 export function buildViewportFidelityState(
   lines: FidelityLine[],
   displaySpacing?: Point3
 ): ViewportFidelityState {
-  const line = primaryLineOf(lines);
+  const line = worstLineOf(lines);
 
   if (!line) {
     return emptyState(displaySpacing);
@@ -42,7 +46,8 @@ export function buildViewportFidelityState(
         ImageQualityStatus.FULL_RESOLUTION
     : imageQualityStatus !== undefined &&
       imageQualityStatus < ImageQualityStatus.SUBRESOLUTION;
-  const lod = isInteractiveLod(sampleDistanceLod);
+  const lod =
+    isInteractiveLod(sampleDistanceLod) || !!line.interactiveReduction;
 
   const state: ViewportFidelityState = {
     dataResolution: record
@@ -98,13 +103,34 @@ function isLossyShownState(
   );
 }
 
-/** Prefer a line with a volume record; else the first line. */
-function primaryLineOf(lines: FidelityLine[]): FidelityLine | undefined {
-  if (!lines.length) {
-    return undefined;
+const KIND_RANK = { loading: 4, lod: 3, lossy: 2, done: 1 };
+
+/**
+ * The line that decides the shown state: the highest of loading > lod >
+ * lossy > done among the lines with data. A tie keeps a line with a volume
+ * record, else the first line.
+ */
+function worstLineOf(lines: FidelityLine[]): FidelityLine | undefined {
+  let worst: FidelityLine | undefined;
+  let worstRank = 0;
+
+  for (const line of lines) {
+    if (!lineHasData(line)) {
+      continue;
+    }
+
+    const rank = KIND_RANK[lineKind(line)];
+
+    if (
+      rank > worstRank ||
+      (rank === worstRank && !worst.record && line.record)
+    ) {
+      worst = line;
+      worstRank = rank;
+    }
   }
 
-  return lines.find((line) => line.record) ?? lines[0];
+  return worst ?? lines.find((line) => line.record) ?? lines[0];
 }
 
 function progressiveOf(

@@ -276,6 +276,43 @@ describe('CpuVolumeSliceRenderPath', () => {
     jest.useRealTimers();
   });
 
+  it('records the volume quality and reports a deferred resample as interactive reduction', () => {
+    jest.useFakeTimers();
+
+    const sampledSliceState = {
+      ...createSampledSliceState(),
+      samplingMode: 'viewport',
+    };
+    const rendering = createRendering(sampledSliceState);
+    const record = { grid: {}, missing: 0 };
+    rendering.imageVolume.getVoxelQuality = jest.fn(() => record);
+    rendering.imageVolume.voxelGrid = { spacing: [1, 1, 1] };
+    const path = new CpuVolumeSliceRenderPath();
+    const ctx = createContext();
+    let decision = 'defer';
+
+    path.sampler = {
+      getResampleDecision: jest.fn(() => decision),
+      sampleSliceImage: jest.fn(() => sampledSliceState),
+      createOrUpdateEnabledElement: jest.fn(() => rendering.enabledElement),
+      updateCPUFallbackViewport: jest.fn(),
+      getResolvedVOIRange: jest.fn(() => ({ lower: 0, upper: 255 })),
+    };
+
+    path.render(ctx, rendering);
+
+    expect(rendering.voxelQuality).toBe(record);
+    expect(rendering.fullGrid).toBe(rendering.imageVolume.voxelGrid);
+    expect(rendering.interactiveReduction).toBe(true);
+
+    decision = 'resample';
+    path.render(ctx, rendering);
+
+    expect(rendering.interactiveReduction).toBe(false);
+
+    jest.useRealTimers();
+  });
+
   it('clears cached CPU volume scalar data again on the deferred loading-completed render', async () => {
     let animationFrameCallback;
     const requestAnimationFrame = jest

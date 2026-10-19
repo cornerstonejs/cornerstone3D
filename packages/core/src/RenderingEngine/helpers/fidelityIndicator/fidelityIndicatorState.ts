@@ -42,14 +42,32 @@ export type FidelityLine = {
    * TrackballRotateTool drag (rotateSampleDistanceFactor).
    */
   sampleDistanceLod: number;
+  /**
+   * True while the render path shows an older or coarser sample during an
+   * interaction (a deferred CPU resample). It gives `lod`, as a raised
+   * sample distance does.
+   */
+  interactiveReduction?: boolean;
 };
+
+/**
+ * Whether a line carries data that the fidelity can judge: a volume record,
+ * a stack image status, or a drawn grid coarser than the full volume.
+ */
+export function lineHasData(line: FidelityLine): boolean {
+  return (
+    !!line.record ||
+    line.imageQualityStatus !== undefined ||
+    !line.fullResolution
+  );
+}
 
 export type SvgFidelityState = 'loading' | 'done' | 'lossy' | 'lod';
 
 /**
  * Worst-case SVG state across lines: loading > lod > lossy > done.
- * A line with no volume record and no stack image status adds nothing, so
- * no lines or only such lines give `hidden`. `done` means lossless; the
+ * A line with no data (see {@link lineHasData}) adds nothing, so no lines or
+ * only such lines give `hidden`. `done` means lossless; the
  * indicator shows it only as a recovery from a lossy state.
  */
 export function svgStateOf(lines: FidelityLine[]): SvgFidelityState | 'hidden' {
@@ -59,7 +77,7 @@ export function svgStateOf(lines: FidelityLine[]): SvgFidelityState | 'hidden' {
   let anyWithData = false;
 
   for (const line of lines) {
-    if (!line.record && line.imageQualityStatus === undefined) {
+    if (!lineHasData(line)) {
       continue;
     }
 
@@ -120,8 +138,9 @@ export function dataKindOf(line: FidelityLine): FidelityDataKind {
     return dataKindOfImageQuality(imageQualityStatus);
   }
 
+  // A reduced texture with no record is lossy, not hidden.
   if (!record) {
-    return 'loading';
+    return fullResolution ? 'loading' : 'reduced';
   }
 
   // Missing data alone is not lossy: an ordinary load delivers only full
@@ -187,7 +206,7 @@ export function lineKind(line: FidelityLine): SvgFidelityState {
     return 'loading';
   }
 
-  if (isInteractiveLod(line.sampleDistanceLod)) {
+  if (isInteractiveLod(line.sampleDistanceLod) || line.interactiveReduction) {
     return 'lod';
   }
 

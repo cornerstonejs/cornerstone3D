@@ -10,6 +10,8 @@ summary: How the user learns that a viewport shows a lossy image - replicated, s
 
 The indicator exists so that the user does not read a lossy image as a
 lossless image. Only a viewport that shows a lossy image shows the indicator.
+There is one exception: after a lossy state ends, the indicator shows the
+recovered state `done` for a short time (FIDELITY-UI-4).
 
 The user requirements apply to every viewport type. Today the code implements
 them for the stack viewports and the volume viewports only. A different
@@ -88,10 +90,10 @@ and it does not make the displayed image lossy.
 | `done`    | The viewport shows a lossless image.                                                                                        | Not applicable      |
 
 - **FIDELITY-STATE-2** A viewport that shows no data shows no indicator. A
-  viewport that shows a lossless image shows no indicator. A load that delivers
-  only full-quality frames shows no indicator while the load continues.
-  Data that has not arrived is not `loading` by itself. This serves
-  FIDELITY-USER-2.
+  viewport that shows a lossless image shows no indicator, except the short
+  recovery mark of FIDELITY-UI-4. A load that delivers only full-quality frames
+  shows no indicator while the load continues. Data that has not arrived is not
+  `loading` by itself. This serves FIDELITY-USER-2.
 - **FIDELITY-STATE-3** The user can tell a load that continues from a load that
   completed at a lossy quality. The change from `loading` to `lossy` is
   visible. This serves FIDELITY-USER-1.
@@ -102,15 +104,17 @@ and it does not make the displayed image lossy.
 - **FIDELITY-STATE-5** Each viewport reports its own fidelity. Two viewports
   that show one volume can report a different state at one time.
 - **FIDELITY-STATE-6** A box average is lossless when the data spacing on each
-  axis is no coarser than the display spacing of FIDELITY-RECORD-2. In the view
-  plane, one data voxel then covers no more than one display pixel. In a slice
-  view, a box average on the axis normal to the view plane is lossy at every
-  zoom, because that axis compares with the source slice spacing. Example: the
-  code loads the data at 1/2 in-plane resolution by a box average. The viewport
-  displays the data at 1/2 resolution. The view then shows no indicator. When
-  the user zooms in, the view becomes `lossy`. A decimation of the same data,
-  at the same display, still shows `lossy`, because a decimation aliases at
-  every magnification. This serves FIDELITY-USER-1 and FIDELITY-USER-2.
+  axis is no coarser than the display spacing of FIDELITY-RECORD-2. This serves
+  FIDELITY-USER-1 and FIDELITY-USER-2.
+  - In the view plane, one data voxel then covers no more than one display
+    pixel.
+  - In a slice view, a box average on the axis normal to the view plane is
+    lossy at every zoom. That axis compares with the source slice spacing.
+  - Example: the code loads the data at 1/2 in-plane resolution by a box
+    average. The viewport displays the data at 1/2 resolution. The view then
+    shows no indicator. When the user zooms in, the view becomes `lossy`.
+  - A decimation of the same data, at the same display, still shows `lossy`. A
+    decimation aliases at every magnification.
 - **FIDELITY-STATE-7** WHERE more than one cause applies, the viewport shows
   one indicator. The indicator shows the most urgent state, in this order:
   `loading`, `lod`, `lossy`, `done`.
@@ -119,6 +123,8 @@ and it does not make the displayed image lossy.
 - **FIDELITY-STATE-9** A viewport reports the fidelity of its source data. The
   fidelity of an overlay, for example a reduced segmentation labelmap, is out
   of scope.
+- **FIDELITY-STATE-10** A drawn grid that is coarser than the full volume, and
+  that has no record, gives `lossy`. The indicator does not hide it.
 
 ### The record and the verdict (FIDELITY-RECORD)
 
@@ -140,8 +146,15 @@ and it does not make the displayed image lossy.
   - In a slice view, the axis normal to the view plane gets the slice spacing
     of the source volume.
   - In a 3D view, every axis gets the size of one display pixel.
-  - An oblique axis gets a blend of the two values, from its angle to the view
-    plane normal.
+  - An oblique axis gets the finer of the two samplings along it:
+    `min(p / sqrt(1 - c²), S / c)`, with `c` the cosine to the view plane
+    normal.
+  - No axis gets a value finer than the source spacing on that axis, because a
+    view is lossy only against the full stored data.
+  - The pixel size is the world size of one device pixel. A legacy viewport
+    reads it from `parallelScale` and the canvas height in device pixels. A
+    generic viewport reads it from the resolved view with `canvasToWorld()`,
+    and divides by `devicePixelRatio`.
 - **FIDELITY-RECORD-3** The render that drew the frame composes the record,
   because only the render knows which texture it bound. A reader gets the
   record of the bound grid with `imageVolume.getGridQuality(grid, statistic)`,
@@ -199,10 +212,21 @@ and it does not make the displayed image lossy.
   `viewport.getFidelityState()`. It needs no event and no user interface. A test
   and a measurement harness read the state this way. The state holds
   `displayResolution`.
+- **FIDELITY-EVENT-6** IF the state holds a reduction kind or a source that the
+  consumer does not know, THEN the consumer shows a generic lossy state. The
+  consumer does not hide the state, and the consumer does not throw. The kinds
+  of reduction and the sources are extensible through
+  `VoxelReductionRegistry` and `VoxelDataSourceRegistry`.
+- **FIDELITY-EVENT-7** The rendering engines fire the event. They call
+  `notifyFidelityStateChanged()` after `IMAGE_RENDERED`. A generic viewport
+  that renders outside the engine loop (`renderNow`) calls it after that
+  render. The `Viewport` class and the `GenericViewport` class use one shared
+  helper, `helpers/fidelityIndicator/notifyFidelityStateChanged.ts`. The helper
+  obeys `suppressEvents`.
 - **FIDELITY-EVENT-8** The state gives the result directly, so that an
   application indicator can obey FIDELITY-USER-1 and FIDELITY-USER-2:
-  - `shownState` is the state of FIDELITY-STATE-1, or `hidden` when there is no
-    data. The built-in indicator uses the same decision.
+  - `shownState` is the state of FIDELITY-STATE-1, or `hidden` when there is
+    no data. The built-in indicator uses the same decision.
   - `lossy` is true when `shownState` is `loading`, `lod` or `lossy`.
   - `progressive.lowest` is the lowest delivered quality (FIDELITY-RECORD-7).
     `progressive.status` falls to a replicate value while voxels have not
@@ -212,16 +236,11 @@ and it does not make the displayed image lossy.
     replicated, sub-resolution or lossy data shows in place of data that has
     not arrived. An ordinary load gives no cause. `progressive.missing` and
     `progressive.loadedFraction` still show its progress.
-- **FIDELITY-EVENT-6** IF the state holds a reduction kind or a source that the
-  consumer does not know, THEN the consumer shows a generic lossy state. The
-  consumer does not hide the state, and the consumer does not throw. The kinds
-  of reduction and the sources are extensible through
-  `VoxelReductionRegistry` and `VoxelDataSourceRegistry`.
-- **FIDELITY-EVENT-7** Only the rendering engines fire the event. They call
-  `notifyFidelityStateChanged()` after `IMAGE_RENDERED`. The `Viewport` class
-  and the `GenericViewport` class use one shared helper,
-  `helpers/fidelityIndicator/notifyFidelityStateChanged.ts`. The helper obeys
-  `suppressEvents`.
+  - `shownState` and `lossy` come from every volume of the viewport. The other
+    fields describe the worst volume, the volume that decides `shownState`.
+    Thus `cause` agrees with `lossy` when the viewport shows several volumes.
+  - `done` is the state of every lossless view. An application shows `done`
+    only as the recovery mark of FIDELITY-UI-4.
 
 ### The built-in indicator (FIDELITY-UI)
 
@@ -231,7 +250,9 @@ and it does not make the displayed image lossy.
   viewport, with `maybeAttachFidelityIndicator()`, and it removes the indicator
   with `detachFidelityIndicator()`. An application can call
   `attachFidelityIndicator(viewport)` itself, and that call returns the cleanup
-  function.
+  function. A generic viewport mounts its data after the engine enables it.
+  Thus it gets the indicator at enable, and the indicator stays `hidden` until
+  the viewport draws data that has a record or an image quality.
 - **FIDELITY-UI-2** The indicator is a DOM element in the top-right corner of the
   viewport element. The user does not need to hover over the viewport, and the
   viewport does not need to be the active viewport. The indicator has the same
@@ -293,16 +314,29 @@ and it does not make the displayed image lossy.
 
 ### Core finds a labelmap by its name
 
-`isLabelmapActorEntry()` finds a labelmap with a regular expression on a name
-that the tools package makes. If the tools package changes the name, a labelmap
-counts in the fidelity state, against FIDELITY-STATE-9. No test shows that
-change.
+A legacy volume viewport uses `isLabelmapActorEntry()`. It finds a labelmap
+with a regular expression on a name that the tools package makes. If the tools
+package changes the name, a labelmap counts in the fidelity state, against
+FIDELITY-STATE-9. No test shows that change. A generic viewport does not use
+the name. Its render path sets `excludeFromFidelity` from the binding role and
+the segmentation reference.
 
-### A display spacing on an oblique axis is an approximation
+### A display spacing on an oblique axis is an estimate
 
-`displaySpacingOfViewport()` blends the display pixel size and the slice
-spacing for an axis that is oblique to the view plane (FIDELITY-RECORD-2). The
-blend is exact for an axis in the plane and for an axis normal to the plane.
+`displaySpacingForGrid()` gives an axis that is oblique to the view plane the
+finer of two samplings: `p / sqrt(1 - c²)` and `S / c` (FIDELITY-RECORD-2).
+The value is exact for an axis in the plane and for an axis normal to the
+plane. Between the two, the value can ask for more than the display shows. The
+error can show an indicator that is not necessary. The error never hides a
+lossy view.
+
+### A generic stack image does not show a progressive upgrade
+
+The generic image render paths draw the image that `loadAndCacheImage()`
+returns. They do not redraw when a later retrieval stage replaces that image.
+The viewport reports the quality of the image that it draws
+(FIDELITY-STATE-8), so the report is correct. The view itself stays at the
+first quality until the next image change.
 
 ## Past defects
 

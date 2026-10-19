@@ -13,7 +13,11 @@ import {
   voxelGridsEqual,
 } from '../../../utilities/voxelGrid';
 import { sampleDistanceOf } from '../createVolumeMapper';
-import { displaySpacingOfViewport } from './displaySpacingOfViewport';
+import {
+  type FidelityDisplay,
+  displaySpacingForGrid,
+  fidelityDisplayOfCamera,
+} from './displaySpacingOfViewport';
 import { isLabelmapActorEntry } from './isLabelmapActorEntry';
 import {
   type FidelityLine,
@@ -38,8 +42,6 @@ type VolumeViewportLike = {
   getCamera?: () =>
     | { parallelScale?: number; viewPlaneNormal?: Point3 }
     | undefined;
-  /** True for a 3D view; legacy viewports derive it from `type`. */
-  volume3D?: boolean;
 };
 
 /** The quality record of one volume, for the grid that it was read for. */
@@ -48,28 +50,41 @@ export type CachedRecord = {
   record: VoxelQualityRecord | undefined;
 };
 
-type BindingFidelitySource = {
+/** The typed fidelity fields of one binding (GENVIEW-FIDELITY-2). */
+export type BindingFidelitySource = {
   record?: VoxelQualityRecord;
   fullGrid?: VoxelGrid;
   sampleDistanceLod?: number;
+  interactiveReduction?: boolean;
+  imageQualityStatus?: ImageQualityStatus;
   label?: string;
   skip?: boolean;
 };
 
 /**
- * Builds fidelity lines from viewport bindings that already hold
- * `rendering.voxelQuality` (GENVIEW-FIDELITY-2). Does not read actors or
- * mappers.
+ * Builds fidelity lines from the fidelity fields that render paths set on
+ * their renderings (GENVIEW-FIDELITY-2): a volume line for a record, a stack
+ * line for an image quality. Does not read actors or mappers.
  */
 export function fidelityLinesFromBindings(
-  viewport: VolumeViewportLike,
+  display: FidelityDisplay | undefined,
   sources: BindingFidelitySource[]
 ): FidelityLine[] {
-  const volume3D = isVolume3D(viewport);
   const lines: FidelityLine[] = [];
 
   for (const source of sources) {
-    if (source.skip || !source.record) {
+    if (source.skip) {
+      continue;
+    }
+
+    if (!source.record) {
+      if (source.imageQualityStatus !== undefined) {
+        lines.push({
+          ...fidelityLineFromImageQuality(source.imageQualityStatus),
+          label: source.label ?? 'Image',
+          interactiveReduction: source.interactiveReduction,
+        });
+      }
       continue;
     }
 
@@ -77,11 +92,9 @@ export function fidelityLinesFromBindings(
     const fullGrid = source.fullGrid ?? record.grid;
     const reductionFactors = reductionFactorsOf(record.grid, fullGrid);
     const fullResolution = !isReduced(reductionFactors);
-    const displaySpacing = displaySpacingOfViewport(viewport, {
-      grid: record.grid,
-      sourceGrid: fullGrid,
-      volume3D,
-    });
+    const displaySpacing = display
+      ? displaySpacingForGrid(display, record.grid, fullGrid)
+      : undefined;
     // Only apply magnification when display spacing is known; otherwise keep
     // the reduction-factor path (FIDELITY-STATE-6).
     const verdict = displaySpacing
@@ -96,6 +109,7 @@ export function fidelityLinesFromBindings(
       reductionFactors,
       fullResolution,
       sampleDistanceLod: source.sampleDistanceLod ?? 1,
+      interactiveReduction: source.interactiveReduction,
     });
   }
 
@@ -110,11 +124,17 @@ export function fidelityLinesFromVolumeActors(
   viewport: VolumeViewportLike,
   records: Map<string, CachedRecord> = new Map()
 ): FidelityLine[] {
-  const volume3D = isVolume3D(viewport);
+  const actors = viewport.getActors();
+
+  if (!actors.length) {
+    return [];
+  }
+
+  const display = fidelityDisplayOfCamera(viewport, isVolume3D(viewport));
   const lines: FidelityLine[] = [];
   const seen = new Set<string>();
 
-  for (const entry of viewport.getActors()) {
+  for (const entry of actors) {
     const id = entry.referencedId ?? entry.uid;
     const volume = id ? cache.getVolume(id) : undefined;
 
@@ -146,11 +166,9 @@ export function fidelityLinesFromVolumeActors(
 
     const reductionFactors = reductionFactorsOf(grid, fullGrid);
     const record = cached.record;
-    const displaySpacing = displaySpacingOfViewport(viewport, {
-      grid,
-      sourceGrid: fullGrid,
-      volume3D,
-    });
+    const displaySpacing = display
+      ? displaySpacingForGrid(display, grid, fullGrid)
+      : undefined;
     const verdict =
       record && displaySpacing
         ? compareVoxelQuality(record, { displaySpacing })
@@ -173,10 +191,22 @@ export function fidelityLinesFromVolumeActors(
 
 function isVolume3D(viewport: VolumeViewportLike): boolean {
   return (
-    viewport.volume3D ??
-    (viewport.type === ViewportType.VOLUME_3D ||
-      viewport.type === ViewportType.PERSPECTIVE)
+    viewport.type === ViewportType.VOLUME_3D ||
+    viewport.type === ViewportType.PERSPECTIVE
   );
+}
+
+/** One fidelity line for a stack image of the given quality. */
+function fidelityLineFromImageQuality(
+  imageQualityStatus: ImageQualityStatus
+): FidelityLine {
+  return {
+    label: 'Image',
+    imageQualityStatus,
+    reductionFactors: [1, 1, 1] as Point3,
+    fullResolution: imageQualityStatus === ImageQualityStatus.FULL_RESOLUTION,
+    sampleDistanceLod: 1,
+  };
 }
 
 /**
@@ -190,17 +220,10 @@ export function fidelityLineFromStackImage(
     return [];
   }
 
-  const imageQualityStatus =
-    image.imageQualityStatus ?? ImageQualityStatus.FULL_RESOLUTION;
-
   return [
-    {
-      label: 'Image',
-      imageQualityStatus,
-      reductionFactors: [1, 1, 1] as Point3,
-      fullResolution: imageQualityStatus === ImageQualityStatus.FULL_RESOLUTION,
-      sampleDistanceLod: 1,
-    },
+    fidelityLineFromImageQuality(
+      image.imageQualityStatus ?? ImageQualityStatus.FULL_RESOLUTION
+    ),
   ];
 }
 

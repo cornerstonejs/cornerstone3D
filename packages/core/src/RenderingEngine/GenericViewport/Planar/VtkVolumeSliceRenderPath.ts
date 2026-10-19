@@ -55,6 +55,7 @@ import {
   resolvePlanarRenderPathProjection,
 } from './planarRenderPathProjection';
 import { applyPlanarVolumePresentation } from './planarVolumePresentation';
+import { isSegmentationOverlayData } from './planarRenderingFidelity';
 
 const SLICE_OVERLAY_DEPTH_EPSILON = 1e-4;
 // Trailing delay before repainting a slab-projecting segmentation overlay
@@ -96,8 +97,7 @@ export class VtkVolumeSliceRenderPath
   ): Promise<RenderPathAttachment<PlanarDataPresentation>> {
     const payload: PlanarPayload = data as unknown as LoadedData<PlanarPayload>;
     const imageVolume = payload.imageVolume;
-    const isSegmentationOverlay =
-      options.role === 'overlay' && payload.reference?.kind === 'segmentation';
+    const isSegmentationOverlay = isSegmentationOverlayData(payload, options);
 
     if (!imageVolume) {
       throw new Error(
@@ -140,6 +140,10 @@ export class VtkVolumeSliceRenderPath
       dataPresentation: undefined,
       isSegmentationOverlay,
       viewportId: ctx.viewportId,
+      excludeFromFidelity: isSegmentationOverlay,
+      fullGrid: imageVolume.voxelGrid,
+      // A slice samples no ray, so it has no interactive sample reduction.
+      sampleDistanceLod: 1,
     };
 
     this.provisionStrategies(rendering, 'initial');
@@ -507,6 +511,7 @@ export class VtkVolumeSliceRenderPath
     }
 
     rendering.voxelQuality = this.readQuality(rendering, bindings);
+    rendering.fullGrid = rendering.imageVolume.voxelGrid;
   }
 
   /**

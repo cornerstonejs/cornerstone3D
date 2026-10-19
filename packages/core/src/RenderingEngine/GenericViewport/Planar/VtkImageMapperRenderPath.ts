@@ -49,6 +49,10 @@ import {
   resolvePlanarRenderPathCurrentImageIdIndex,
   resolvePlanarRenderPathProjection,
 } from './planarRenderPathProjection';
+import {
+  imageQualityStatusOf,
+  isSegmentationOverlayData,
+} from './planarRenderingFidelity';
 
 /** @internal */
 export class VtkImageMapperRenderPath
@@ -93,6 +97,8 @@ export class VtkImageMapperRenderPath
       actorEntryUID: uuidv4(),
       actor,
       currentImage: payload.image,
+      imageQualityStatus: imageQualityStatusOf(payload.image),
+      excludeFromFidelity: isSegmentationOverlayData(payload, options),
       mapper,
       imageData,
       useWorldCoordinateImageData: payload.useWorldCoordinateImageData,
@@ -406,6 +412,7 @@ async function updateRenderedImage(args: {
   }
 
   rendering.currentImage = image;
+  rendering.imageQualityStatus = imageQualityStatusOf(image);
   rendering.imageData = imageData;
   rendering.currentImageIdIndex = imageIdIndex;
   rendering.defaultVOIRange = getDefaultImageVOIRange(image);

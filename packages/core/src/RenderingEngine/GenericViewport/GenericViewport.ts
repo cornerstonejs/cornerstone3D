@@ -33,17 +33,16 @@ import {
 import type { FidelityLine } from '../helpers/fidelityIndicator/fidelityIndicatorState';
 import type { ViewportFidelityState } from '../../types/ViewportFidelity';
 import { buildViewportFidelityState } from '../helpers/fidelityIndicator/buildViewportFidelityState';
-import { displaySpacingOfViewport } from '../helpers/fidelityIndicator/displaySpacingOfViewport';
+import {
+  type FidelityDisplay,
+  displaySpacingOfDisplay,
+  pixelSpacingOfCanvasToWorld,
+} from '../helpers/fidelityIndicator/displaySpacingOfViewport';
 import { notifyFidelityStateChanged } from '../helpers/fidelityIndicator/notifyFidelityStateChanged';
 import {
-  fidelityLineFromStackImage,
+  type BindingFidelitySource,
   fidelityLinesFromBindings,
-  sampleDistanceLodOf,
 } from '../helpers/fidelityIndicator/collectFidelityLines';
-import { isLabelmapActorEntry } from '../helpers/fidelityIndicator/isLabelmapActorEntry';
-import type { VoxelGrid, VoxelQualityRecord } from '../../types';
-import type IImage from '../../types/IImage';
-import cache from '../../cache/cache';
 
 /**
  * Generic GenericViewport controller.
@@ -256,9 +255,11 @@ abstract class GenericViewport<
    * Absolute per-viewport fidelity record (FIDELITY-EVENT-5).
    */
   getFidelityState(): ViewportFidelityState {
+    const display = this.getFidelityDisplay();
+
     return buildViewportFidelityState(
-      this.collectFidelityLines(),
-      displaySpacingOfViewport(this.fidelityViewportLike())
+      this.collectFidelityLines(display),
+      displaySpacingOfDisplay(display)
     );
   }
 
@@ -266,7 +267,7 @@ abstract class GenericViewport<
    * Fidelity lines for the built-in indicator UI.
    */
   getFidelityLines(): FidelityLine[] {
-    return this.collectFidelityLines();
+    return this.collectFidelityLines(this.getFidelityDisplay());
   }
 
   /**
@@ -276,92 +277,72 @@ abstract class GenericViewport<
    * @internal
    */
   notifyFidelityStateChanged(): void {
+    const display = this.getFidelityDisplay();
+
     // Subclasses such as PlanarViewport define `suppressEvents`.
     notifyFidelityStateChanged(
       this,
-      this.collectFidelityLines(),
-      displaySpacingOfViewport(this.fidelityViewportLike())
+      this.collectFidelityLines(display),
+      displaySpacingOfDisplay(display)
     );
   }
 
-  /** The canvas, camera and view kind that the fidelity helpers read. */
-  private fidelityViewportLike() {
+  /**
+   * Whether the view is 3D for the display spacing (FIDELITY-RECORD-2). The
+   * Volume3D family overrides this; a slice family keeps `false`.
+   */
+  protected isFidelityView3D(): boolean {
+    return false;
+  }
+
+  /**
+   * The display of this viewport from the resolved view (GENVIEW-FIDELITY-3):
+   * the world size of one device pixel and the view plane normal.
+   */
+  private getFidelityDisplay(): FidelityDisplay | undefined {
+    const view = this.getResolvedView();
+
+    if (!view) {
+      return undefined;
+    }
+
+    const pixelSpacing = pixelSpacingOfCanvasToWorld((canvasPos) =>
+      view.canvasToWorld(canvasPos)
+    );
+
+    if (!pixelSpacing) {
+      return undefined;
+    }
+
     return {
-      getActors: () => [],
-      canvas: (this as { canvas?: HTMLCanvasElement }).canvas,
-      sHeight: (this as { sHeight?: number }).sHeight,
-      getCamera: () => this.getCameraForEvent(),
-      volume3D: this.getCurrentMode() === 'volume3d',
+      pixelSpacing,
+      viewPlaneNormal: view.toICamera()?.viewPlaneNormal,
+      volume3D: this.isFidelityView3D(),
     };
   }
 
   /**
-   * Builds fidelity lines from binding-exposed quality records
-   * (GENVIEW-FIDELITY-2), or from the current stack image when the mode is
-   * stack (FIDELITY-STATE-8).
+   * Builds fidelity lines from the typed fidelity fields that each render
+   * path sets on its rendering (GENVIEW-FIDELITY-2): a record for volume
+   * data, an image quality for a stack image (FIDELITY-STATE-8).
    */
-  protected collectFidelityLines(): FidelityLine[] {
-    const mode = this.getCurrentMode();
-
-    if (mode === 'stack') {
-      return this.collectStackFidelityLines();
-    }
-
-    return this.collectBindingFidelityLines();
-  }
-
-  private collectStackFidelityLines(): FidelityLine[] {
-    const binding = this.getSourceBinding();
-    const rendering = binding?.rendering as
-      | { currentImage?: IImage; currentImageId?: string }
-      | undefined;
-    const image =
-      rendering?.currentImage ??
-      (typeof rendering?.currentImageId === 'string'
-        ? cache.getImage(rendering.currentImageId)
-        : undefined);
-
-    return fidelityLineFromStackImage(image);
-  }
-
-  private collectBindingFidelityLines(): FidelityLine[] {
-    const sources: Array<{
-      record?: VoxelQualityRecord;
-      fullGrid?: VoxelQualityRecord['grid'];
-      sampleDistanceLod?: number;
-      skip?: boolean;
-    }> = [];
+  protected collectFidelityLines(display?: FidelityDisplay): FidelityLine[] {
+    const sources: BindingFidelitySource[] = [];
 
     this.forEachBinding((binding) => {
-      const rendering = binding.rendering as {
-        voxelQuality?: VoxelQualityRecord;
-        sampleDistanceLod?: number;
-        mapper?: {
-          getSampleDistance?: () => number;
-          getScalarTexture?: () => { getGrid?: () => VoxelGrid };
-          getInputData?: () => {
-            getSpacing: () => number[];
-            getBounds: () => number[];
-          };
-        };
-        imageVolume?: { voxelGrid?: VoxelQualityRecord['grid'] };
-      };
-      const actorEntry = binding.getActorEntry?.(binding.data);
-      const skip =
-        !!actorEntry &&
-        isLabelmapActorEntry(actorEntry) &&
-        binding.role !== 'source';
+      const { rendering } = binding;
 
       sources.push({
         record: rendering.voxelQuality,
-        fullGrid: rendering.imageVolume?.voxelGrid,
-        sampleDistanceLod:
-          rendering.sampleDistanceLod ?? sampleDistanceLodOf(rendering.mapper),
-        skip,
+        fullGrid: rendering.fullGrid,
+        sampleDistanceLod: rendering.sampleDistanceLod,
+        interactiveReduction: rendering.interactiveReduction,
+        imageQualityStatus: rendering.imageQualityStatus,
+        skip: rendering.excludeFromFidelity,
       });
     });
 
-    return fidelityLinesFromBindings(this.fidelityViewportLike(), sources);
+    return fidelityLinesFromBindings(display, sources);
   }
 
   /**

@@ -195,6 +195,31 @@ describe('buildViewportFidelityState (FIDELITY-EVENT-5)', () => {
     expect(detail.state.transient).toBe(false);
   });
 
+  it('takes cause and progress from the worst volume when volumes differ', () => {
+    // A PET that loads with replicated data over a complete CT.
+    const ct = line();
+    const pet = line({
+      record: record({
+        missing: 10,
+        voxels: 100,
+        lowest: ImageQualityStatus.ADJACENT_REPLICATE,
+      }),
+    });
+
+    for (const lines of [
+      [ct, pet],
+      [pet, ct],
+    ]) {
+      const state = buildViewportFidelityState(lines);
+
+      expect(state.lossy).toBe(true);
+      expect(state.shownState).toBe('loading');
+      expect(state.cause).toBe('incompleteLoad');
+      expect(state.transient).toBe(true);
+      expect(state.progressive.missing).toBe(10);
+    }
+  });
+
   it('gives a decimation the cause of a spatial reduction, not lossyDecode', () => {
     const state = buildViewportFidelityState([
       line({

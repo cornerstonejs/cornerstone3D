@@ -13,6 +13,7 @@ import {
   formatFactors,
   isInteractiveLod,
   isReduced,
+  lineHasData,
   svgStateOf,
 } from './fidelityIndicatorState';
 
@@ -117,13 +118,17 @@ export function attachFidelityIndicator(viewport: IViewport): () => void {
  * Attaches the fidelity indicator when the viewport can report fidelity and
  * the product indicator is not disabled. Uses {@link attachFidelityIndicator},
  * which stores cleanup for {@link detachFidelityIndicator}.
+ *
+ * A generic viewport mounts its data after the engine enables it, so it
+ * cannot report fidelity yet. It gets the indicator now; the indicator stays
+ * `hidden` until the viewport draws data with a record or an image quality.
  */
 export function maybeAttachFidelityIndicator(viewport: IViewport): void {
   if (getConfiguration().dangerouslyDisableFidelityIndicator) {
     return;
   }
 
-  if (!canReportFidelity(viewport)) {
+  if (!canReportFidelity(viewport) && !mountsDataLater(viewport)) {
     return;
   }
 
@@ -154,6 +159,15 @@ export function canReportFidelity(viewport: IViewport): boolean {
   }
 
   return false;
+}
+
+/** A generic viewport: it has the fidelity API and a content mode. */
+function mountsDataLater(viewport: IViewport): boolean {
+  return (
+    hasFidelityApi(viewport) &&
+    typeof (viewport as { getCurrentMode?: unknown }).getCurrentMode ===
+      'function'
+  );
 }
 
 function hasFidelityApi(viewport: IViewport): viewport is FidelityViewport {
@@ -419,7 +433,7 @@ function summaryOf(line: FidelityLine): {
   const { record, reductionFactors, sampleDistanceLod, imageQualityStatus } =
     line;
 
-  if (!record && imageQualityStatus === undefined) {
+  if (!lineHasData(line)) {
     return { text: 'NO DATA', color: COLORS.none };
   }
 
@@ -464,6 +478,8 @@ function summaryOf(line: FidelityLine): {
 
   if (isInteractiveLod(sampleDistanceLod)) {
     parts.push(`LOD ${formatFactor(sampleDistanceLod)}×`);
+  } else if (line.interactiveReduction) {
+    parts.push('LOD');
   }
 
   if (parts.length) {
@@ -513,7 +529,9 @@ function detailsOf(line: FidelityLine): string {
       ].join('\n');
     }
 
-    return `${label}: no quality record`;
+    return line.fullResolution
+      ? `${label}: no quality record`
+      : `${label}: no quality record, reduced ${formatFactors(line.reductionFactors)}`;
   }
 
   const { grid } = record;
@@ -527,7 +545,9 @@ function detailsOf(line: FidelityLine): string {
   const status = DETAIL_STATUS[dataKindOf(line)](line);
   const lodState = isInteractiveLod(sampleDistanceLod)
     ? `sample distance ×${formatFactor(sampleDistanceLod)} (interactive)`
-    : 'sample distance idle';
+    : line.interactiveReduction
+      ? 'deferred resample (interactive)'
+      : 'sample distance idle';
 
   return [
     `${label}`,

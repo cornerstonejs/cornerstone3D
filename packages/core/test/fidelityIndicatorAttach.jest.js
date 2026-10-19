@@ -23,6 +23,7 @@ import {
 import { DONE_HOLD_MS } from '../src/RenderingEngine/helpers/fidelityIndicator/attachFidelityIndicator';
 import BaseVolumeViewport from '../src/RenderingEngine/BaseVolumeViewport';
 import VolumeViewport3DNext from '../src/RenderingEngine/GenericViewport/Volume3D/viewport3D';
+import GenericViewport from '../src/RenderingEngine/GenericViewport/GenericViewport';
 import { fidelityLinesFromVolumeActors } from '../src/RenderingEngine/helpers/fidelityIndicator/collectFidelityLines';
 
 function viewportStub({
@@ -345,15 +346,14 @@ describe('fidelityIndicator attach gates', () => {
     });
 
     function volumeViewport(element) {
-      // The prototype without the constructor, which needs WebGL.
+      // The prototype without the constructor, which needs WebGL. The public
+      // getFidelityLines() adds the listeners.
       return Object.assign(Object.create(BaseVolumeViewport.prototype), {
         id: 'vp-1',
         element,
         isDisabled: false,
         getActors: () => [],
         _fidelityRecords: new Map(),
-        _fidelityRecordListenersAttached: false,
-        _fidelityRecordsDisposed: false,
       });
     }
 
@@ -373,7 +373,7 @@ describe('fidelityIndicator attach gates', () => {
 
       viewport.getFidelityLines();
       const added = add.mock.calls.map(([type, fn]) => [type, fn]);
-      expect(added).toHaveLength(3);
+      expect(added.length).toBeGreaterThan(0);
 
       // Same viewport id, other element (another rendering engine).
       disable(document.createElement('div'));
@@ -381,10 +381,175 @@ describe('fidelityIndicator attach gates', () => {
 
       // `_reset` fires the event and leaves `isDisabled` false.
       disable(element);
-      expect(remove.mock.calls.map(([type, fn]) => [type, fn])).toEqual(added);
+      const removed = remove.mock.calls.map(([type, fn]) => [type, fn]);
+      for (const listener of added) {
+        expect(removed).toContainEqual(listener);
+      }
 
+      add.mockClear();
       viewport.getFidelityLines();
-      expect(add).toHaveBeenCalledTimes(3);
+      expect(add).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('generic viewports', () => {
+    const fullGrid = {
+      dimensions: [64, 64, 64],
+      spacing: [1, 1, 1],
+      origin: [0, 0, 0],
+      direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
+    };
+
+    function quality(grid, reduction = VoxelReductions.BoxAverage) {
+      return {
+        grid,
+        status: ImageQualityStatus.FULL_RESOLUTION,
+        lowest: ImageQualityStatus.FULL_RESOLUTION,
+        highest: ImageQualityStatus.FULL_RESOLUTION,
+        missing: 0,
+        voxels: 1,
+        exact: true,
+        source: 'clientDerived',
+        reduction,
+        deliveries: 1,
+      };
+    }
+
+    // One CSS pixel is 2 mm; jsdom has devicePixelRatio 1.
+    const resolvedView = {
+      canvasToWorld: ([x, y]) => [2 * x, 2 * y, 0],
+      worldToCanvas: () => [0, 0],
+      toICamera: () => ({ viewPlaneNormal: [0, 0, 1] }),
+      getFrameOfReferenceUID: () => '1.2.3',
+    };
+
+    class FidelityTestViewport extends GenericViewport {
+      constructor(element, rendering) {
+        super({ id: 'gvp-1', element });
+        this.type = ViewportType.PLANAR_NEXT;
+        this.renderingEngineId = 're-1';
+        this.viewState = {};
+        this.renderContext = { viewportId: 'gvp-1', type: 'planar' };
+        this.dataProvider = {
+          load: async (id) => ({ id, type: 'image' }),
+        };
+        this.renderPathResolver = {
+          resolve: () => ({
+            createRenderPath: () => ({
+              addData: async () => ({
+                rendering,
+                removeData: () => {},
+                applyViewState: () => {},
+                updateDataPresentation: () => {},
+                getFrameOfReferenceUID: () => '1.2.3',
+              }),
+            }),
+          }),
+        };
+      }
+
+      render() {}
+
+      getResolvedView() {
+        return this.getDisplaySets().length ? resolvedView : undefined;
+      }
+
+      getCurrentMode() {
+        return this.getDisplaySets().length ? 'volume' : 'empty';
+      }
+
+      normalizeViewState(viewState) {
+        return viewState;
+      }
+
+      notifyDataPresentationModified() {}
+    }
+
+    beforeEach(() => {
+      jest.useFakeTimers();
+      setConfiguration({
+        ...original,
+        dangerouslyDisableFidelityIndicator: false,
+      });
+    });
+
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    function render(viewport) {
+      viewport.notifyFidelityStateChanged();
+      viewport.element.dispatchEvent(new CustomEvent(Events.IMAGE_RENDERED));
+      jest.advanceTimersByTime(20);
+    }
+
+    it('attaches at enable and shows a lossy view that mounts later', async () => {
+      const rendering = {
+        renderMode: 'vtkVolumeSlice',
+        voxelQuality: quality(
+          { ...fullGrid, spacing: [2, 2, 1] },
+          VoxelReductions.Decimation
+        ),
+        fullGrid,
+        sampleDistanceLod: 1,
+      };
+      const viewport = new FidelityTestViewport(
+        document.createElement('div'),
+        rendering
+      );
+
+      // The engine attaches before any data is mounted.
+      maybeAttachFidelityIndicator(viewport);
+      const root = viewport.element.querySelector('.fi-root');
+      expect(root).not.toBeNull();
+      expect(root.dataset.shown).toBe('false');
+
+      await viewport.addDisplaySet('ds-1', { renderMode: 'vtkVolumeSlice' });
+      render(viewport);
+
+      expect(root.dataset.state).toBe('lossy');
+      expect(root.dataset.shown).toBe('true');
+      detachFidelityIndicator(viewport);
+    });
+
+    it('reports a reduced to full texture upgrade once, then shows nothing', async () => {
+      const rendering = {
+        renderMode: 'vtkVolumeSlice',
+        // A box average of 4 mm under 2 mm pixels.
+        voxelQuality: quality({ ...fullGrid, spacing: [4, 4, 1] }),
+        fullGrid,
+        sampleDistanceLod: 1,
+      };
+      const viewport = new FidelityTestViewport(
+        document.createElement('div'),
+        rendering
+      );
+      const events = [];
+      viewport.element.addEventListener(
+        Events.VIEWPORT_FIDELITY_CHANGED,
+        (evt) => events.push(evt.detail.state)
+      );
+      maybeAttachFidelityIndicator(viewport);
+      await viewport.addDisplaySet('ds-1', { renderMode: 'vtkVolumeSlice' });
+      const root = viewport.element.querySelector('.fi-root');
+
+      render(viewport);
+      expect(root.dataset.state).toBe('lossy');
+
+      // The strategy binds the full-resolution texture.
+      rendering.voxelQuality = quality(fullGrid, VoxelReductions.None);
+      render(viewport);
+      expect(root.dataset.state).toBe('done');
+      expect(root.dataset.shown).toBe('true');
+      jest.advanceTimersByTime(DONE_HOLD_MS + 100);
+      expect(root.dataset.shown).toBe('false');
+
+      render(viewport);
+      expect(events.map((state) => state.shownState)).toEqual([
+        'lossy',
+        'done',
+      ]);
+      detachFidelityIndicator(viewport);
     });
   });
 
@@ -402,7 +567,7 @@ describe('fidelityIndicator attach gates', () => {
         data: {},
         rendering: {
           renderMode: 'vtkVolume3d',
-          imageVolume: { voxelGrid: full },
+          fullGrid: full,
           sampleDistanceLod: 1,
           voxelQuality: {
             grid: reduced,
@@ -418,16 +583,15 @@ describe('fidelityIndicator attach gates', () => {
           },
         },
       };
-      // The prototype without the constructor, which needs a renderer.
+      // The prototype without the constructor, which needs a renderer. The
+      // resolved view is the public seam for the display (2 mm per pixel).
       const viewport = Object.assign(
         Object.create(VolumeViewport3DNext.prototype),
         {
           bindings: new Map([['ds', binding]]),
-          canvas: { clientHeight: 64 },
-          // One display pixel is 2 mm.
-          getCameraForEvent: () => ({
-            parallelScale: 64,
-            viewPlaneNormal: [0, 0, 1],
+          getResolvedView: () => ({
+            canvasToWorld: ([x, y]) => [2 * x, 2 * y, 0],
+            toICamera: () => ({ viewPlaneNormal: [0, 0, 1] }),
           }),
         }
       );

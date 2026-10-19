@@ -364,22 +364,31 @@ For example `Planar/PlanarViewportLegacyAdapter.ts`.
 The user requirements are in [Viewport fidelity](./viewport-fidelity.md). This
 group says which part of a generic viewport owns each piece of the fidelity.
 
-- **GENVIEW-FIDELITY-1** The render path composes the quality record of each
-  frame, because only the render path knows which texture it bound and at which
-  sample distance it drew. The record stays on the mounted rendering, as
-  `voxelQuality` does today in `VtkVolumeSliceRenderPath` and
-  `VtkVolume3DRenderPath`.
-- **GENVIEW-FIDELITY-2** The binding exposes the record of its rendering to the
-  viewport. The viewport and a consumer do not reach into an actor, a mapper or
-  a texture to read the record.
+- **GENVIEW-FIDELITY-1** The render path composes the fidelity of each frame,
+  because only the render path knows which texture it bound and at which
+  sample distance it drew. The fidelity stays on the mounted rendering:
+  - `VtkVolumeSliceRenderPath` and `VtkVolume3DRenderPath` set `voxelQuality`
+    from the grid that they bound, on each render.
+  - `CpuVolumeSliceRenderPath` sets `voxelQuality` from the full volume,
+    because its sampler reads the full volume. It sets
+    `interactiveReduction` while it shows a deferred resample.
+  - `VtkImageMapperRenderPath` and `CpuImageSliceRenderPath` set
+    `imageQualityStatus` from the image that they draw.
+  - Each volume path sets `fullGrid` and `sampleDistanceLod` (1 for a slice).
+- **GENVIEW-FIDELITY-2** The binding exposes the fidelity of its rendering
+  through the typed fields of `RenderingFidelity` on `MountedRendering`. The
+  viewport and a consumer do not reach into an actor, a mapper, a volume or an
+  image to read it. A render path sets `excludeFromFidelity` on an overlay that
+  the fidelity ignores, for example a segmentation labelmap.
 - **GENVIEW-FIDELITY-3** The resolved view supplies the display spacing of the
-  verdict, because the display spacing is a world size of one canvas pixel. A
-  render path does not compute the display spacing. See GENVIEW-VIEW-6 and
-  FIDELITY-RECORD-2.
+  verdict, because the display spacing is a world size of one device pixel. The
+  base class reads it with `canvasToWorld()` of the resolved view. A render path
+  does not compute the display spacing. The family decides whether the view is
+  3D with `isFidelityView3D()`. See GENVIEW-VIEW-6 and FIDELITY-RECORD-2.
 - **GENVIEW-FIDELITY-4** The base class derives the verdict from the record of
-  the source binding and the display spacing, with `compareVoxelQuality()`. The
-  base class fires the fidelity event and answers the fidelity query, because
-  every family needs both. The event goes through the helper that the legacy
+  each binding and the display spacing, with `compareVoxelQuality()`. The base
+  class fires the fidelity event and answers the fidelity query, because every
+  family needs both. The event goes through the helper that the legacy
   `Viewport` also uses (FIDELITY-EVENT-7). See GENVIEW-BASE-1 and
   GENVIEW-BASE-4.
 - **GENVIEW-FIDELITY-5** A binding that cannot show degraded data supplies no
@@ -535,6 +544,25 @@ an application registers, and it cannot tell a planar viewport that shows a
 stack from one that shows a volume.
 
 Breaks GENVIEW-FAMILY-5 and GENVIEW-API-6.
+
+### The fidelity display spacing reads `devicePixelRatio`
+
+The resolved view gives `canvasToWorld()` in CSS pixels, and it holds no device
+pixel size. The helper `pixelSpacingOfCanvasToWorld()` therefore divides by
+`window.devicePixelRatio`. The base class calls that helper, so a DOM value
+reaches the base class.
+
+Breaks GENVIEW-BASE-1 and GENVIEW-FIDELITY-3. The fix gives the resolved view
+the size of one device pixel.
+
+### The indicator finds a generic viewport by a method
+
+`maybeAttachFidelityIndicator()` attaches to a viewport that has
+`getFidelityLines()` and `getCurrentMode()`, because a generic viewport mounts
+its data after the engine enables it. That is a test of the method list.
+
+Breaks GENVIEW-API-6. The fix lets the engine attach the indicator when the
+viewport mounts data.
 
 ## Past defects
 

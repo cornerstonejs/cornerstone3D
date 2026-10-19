@@ -26,8 +26,9 @@ export type ViewportFidelityShownState =
  *
  * States what data exists, at which spacing, with which loss, and how much is
  * missing. `shownState` and `lossy` are the verdict of this viewport at its
- * display spacing. A verdict for another reader comes from
- * {@link compareVoxelQuality}.
+ * display spacing, over every volume. The other fields describe the worst
+ * volume, the one that decides `shownState`. A verdict for another reader
+ * comes from {@link compareVoxelQuality}.
  *
  * Producers may leave a field undefined when they cannot supply it.
  */
@@ -78,7 +79,9 @@ export type ViewportFidelityState = {
   /**
    * The derived state of the view, with the same decision as the built-in
    * indicator: `hidden` (no data), `done` (lossless), `loading`, `lod` or
-   * `lossy`. An application indicator can show this value directly.
+   * `lossy`. `done` is the state of every lossless view: an application
+   * shows it only as a short recovery mark after a lossy state
+   * (FIDELITY-UI-4), and otherwise shows nothing for `done`.
    */
   shownState?: ViewportFidelityShownState;
   /**

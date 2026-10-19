@@ -314,6 +314,9 @@ class PlanarViewport extends GenericViewport<
         },
         renderNow: () => {
           this.render();
+          // This render runs outside the engine loop, which otherwise
+          // reports the fidelity after IMAGE_RENDERED (FIDELITY-EVENT-7).
+          this.notifyFidelityStateChanged();
         },
         setNeedsRender: () => {
           this.setNeedsRender();

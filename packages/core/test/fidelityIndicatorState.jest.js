@@ -282,18 +282,18 @@ describe('fidelityIndicatorState', () => {
   describe('magnification (FIDELITY-STATE-6)', () => {
     const full = grid([64, 64, 64], [1, 1, 1]);
     // parallelScale 64 on a 64 px canvas: one display pixel is 2 mm.
+    // One display pixel is 2 mm.
     const viewport = (viewPlaneNormal = [0, 0, 1], volume3D = false) => ({
-      getActors: () => [],
-      canvas: { clientHeight: 64 },
-      getCamera: () => ({ parallelScale: 64, viewPlaneNormal }),
+      pixelSpacing: 2,
+      viewPlaneNormal,
       volume3D,
     });
-    const stateOf = (vp, reduction, spacing) =>
+    const stateOf = (display, reduction, spacing, fullGrid = full) =>
       svgStateOf(
-        fidelityLinesFromBindings(vp, [
+        fidelityLinesFromBindings(display, [
           {
             record: record({ grid: grid([32, 32, 64], spacing), reduction }),
-            fullGrid: full,
+            fullGrid,
           },
         ])
       );
@@ -323,6 +323,38 @@ describe('fidelityIndicatorState', () => {
           [1, 1, 2]
         )
       ).toBe('done');
+    });
+
+    it('shows lossy for an in-plane box average in a double-oblique view', () => {
+      // 0.5 × 0.5 × 5 mm CT, box average 2×2×1, one pixel is 0.5 mm. The
+      // view plane normal makes c = 0.5 with the i and j axes.
+      const ct = grid([512, 512, 40], [0.5, 0.5, 5]);
+      const display = {
+        pixelSpacing: 0.5,
+        viewPlaneNormal: [0.5, 0.5, Math.SQRT1_2],
+      };
+
+      expect(stateOf(display, VoxelReductions.BoxAverage, [1, 1, 5], ct)).toBe(
+        'lossy'
+      );
+    });
+  });
+
+  describe('lines without a record', () => {
+    it('shows lossy for a reduced texture that has no record', () => {
+      expect(
+        svgStateOf([
+          line({
+            record: undefined,
+            fullResolution: false,
+            reductionFactors: [2, 2, 1],
+          }),
+        ])
+      ).toBe('lossy');
+    });
+
+    it('shows lod while a render path shows a deferred resample', () => {
+      expect(lineKind(line({ interactiveReduction: true }))).toBe('lod');
     });
   });
 
