@@ -27,7 +27,7 @@ const COLORS = {
 };
 
 /** How long Done stays visible before it fades (SVG mode). */
-const DONE_HOLD_MS = 1000;
+const DONE_HOLD_MS = 3000;
 
 const SVG_GLYPH =
   '<g class="fi-glyph">' +
