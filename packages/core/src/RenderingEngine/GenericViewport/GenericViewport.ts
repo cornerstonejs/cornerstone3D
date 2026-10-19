@@ -43,7 +43,7 @@ import {
   sampleDistanceLodOf,
 } from '../helpers/fidelityIndicator/collectFidelityLines';
 import { isLabelmapActorEntry } from '../helpers/fidelityIndicator/isLabelmapActorEntry';
-import type { VoxelQualityRecord } from '../../types';
+import type { VoxelGrid, VoxelQualityRecord } from '../../types';
 import type IImage from '../../types/IImage';
 import cache from '../../cache/cache';
 
@@ -351,7 +351,7 @@ abstract class GenericViewport<
         sampleDistanceLod?: number;
         mapper?: {
           getSampleDistance?: () => number;
-          getScalarTexture?: () => { getGrid?: () => unknown };
+          getScalarTexture?: () => { getGrid?: () => VoxelGrid };
           getInputData?: () => {
             getSpacing: () => number[];
             getBounds: () => number[];
