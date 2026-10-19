@@ -154,17 +154,7 @@ export class VtkVolumeSliceRenderPath
     const removeVolumeSubscriptions = subscribeToVolumeEvents(
       payload.volumeId,
       (eventType) => {
-        if (eventType === Events.IMAGE_VOLUME_MODIFIED) {
-          // Volume writers (streaming loader, labelmap updates) mark the
-          // modified slices on the shared streaming texture themselves, so
-          // the next render only re-uploads those slices; the mapper just
-          // needs to know its buffers are stale.
-          mapper.modified();
-        }
-
-        if (eventType === Events.IMAGE_VOLUME_LOADING_COMPLETED) {
-          this.provisionStrategies(rendering, 'loaded');
-        }
+        this.onVolumeData(rendering, eventType);
 
         const isProjectingOverlay =
           rendering.isSegmentationOverlay &&
@@ -376,6 +366,33 @@ export class VtkVolumeSliceRenderPath
     rendering: PlanarVolumeSliceRendering
   ): string | undefined {
     return rendering.imageVolume.metadata?.FrameOfReferenceUID;
+  }
+
+  /**
+   * Keeps the mapper, the bound strategy and the fidelity record current when
+   * the volume data changes without a camera change (GENVIEW-FIDELITY-1).
+   * Only a completed load runs the provider, which allocates.
+   */
+  private onVolumeData(
+    rendering: PlanarVolumeSliceRendering,
+    eventType: string
+  ): void {
+    if (eventType === Events.IMAGE_VOLUME_MODIFIED) {
+      // Volume writers (streaming loader, labelmap updates) mark the
+      // modified slices on the shared streaming texture themselves, so
+      // the next render only re-uploads those slices; the mapper just
+      // needs to know its buffers are stale.
+      rendering.mapper.modified();
+    }
+
+    if (eventType === Events.IMAGE_VOLUME_LOADING_COMPLETED) {
+      this.provisionStrategies(rendering, 'loaded');
+    }
+
+    // A labelmap overlay has no fidelity, and a brush fires many events.
+    if (!rendering.excludeFromFidelity) {
+      this.applyStrategy(rendering);
+    }
   }
 
   private getImageData(

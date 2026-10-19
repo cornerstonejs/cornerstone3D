@@ -11,7 +11,6 @@ import type {
   VOIRange,
   Point3,
 } from '../../../types';
-import type { VoxelQualityRecord } from '../../../types';
 import type { IVolumeRenderStrategy } from '../../helpers/volumeRenderStrategy';
 import type { vtkStreamingOpenGLTexture } from '../../../cache/classes/ImageVolume';
 import type { ViewportInput } from '../../../types/IViewport';
@@ -138,16 +137,7 @@ export type Volume3DVolumeRendering = MountedRendering<{
   strategy?: IVolumeRenderStrategy;
   /** The texture that the mapper holds. */
   boundTexture?: vtkStreamingOpenGLTexture;
-  /**
-   * The record of the quality for the most recent render of this viewport from
-   * this data.
-   */
-  voxelQuality?: VoxelQualityRecord;
-  /**
-   * Current sample distance / idle baseline for this render (FIDELITY-RECORD-6).
-   * 1 when idle; above 1 during interactive LOD.
-   */
-  sampleDistanceLod?: number;
+  // The fidelity fields come from `RenderingFidelity` on `MountedRendering`.
 }>;
 
 /** @internal */

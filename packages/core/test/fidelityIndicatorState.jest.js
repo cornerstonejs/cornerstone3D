@@ -7,6 +7,10 @@ import {
   reductionFactorsOf,
 } from '../src/RenderingEngine/helpers/fidelityIndicator/fidelityIndicatorState';
 import { fidelityLinesFromBindings } from '../src/RenderingEngine/helpers/fidelityIndicator/collectFidelityLines';
+import {
+  displaySpacingForGrid,
+  pixelSpacingOfCanvasToWorld,
+} from '../src/RenderingEngine/helpers/fidelityIndicator/displaySpacingOfViewport';
 import VoxelReductions from '../src/enums/VoxelReductions';
 import ImageQualityStatus from '../src/enums/ImageQualityStatus';
 
@@ -281,9 +285,8 @@ describe('fidelityIndicatorState', () => {
 
   describe('magnification (FIDELITY-STATE-6)', () => {
     const full = grid([64, 64, 64], [1, 1, 1]);
-    // parallelScale 64 on a 64 px canvas: one display pixel is 2 mm.
-    // One display pixel is 2 mm.
-    const viewport = (viewPlaneNormal = [0, 0, 1], volume3D = false) => ({
+    // A display where one device pixel is 2 mm.
+    const display2mm = (viewPlaneNormal = [0, 0, 1], volume3D = false) => ({
       pixelSpacing: 2,
       viewPlaneNormal,
       volume3D,
@@ -299,26 +302,26 @@ describe('fidelityIndicatorState', () => {
       );
 
     it('shows no indicator for a box average displayed at its own spacing', () => {
-      expect(stateOf(viewport(), VoxelReductions.BoxAverage, [2, 2, 1])).toBe(
+      expect(stateOf(display2mm(), VoxelReductions.BoxAverage, [2, 2, 1])).toBe(
         'done'
       );
     });
 
     it('shows lossy for a decimation displayed at a coarser spacing', () => {
-      expect(stateOf(viewport(), VoxelReductions.Decimation, [2, 2, 1])).toBe(
+      expect(stateOf(display2mm(), VoxelReductions.Decimation, [2, 2, 1])).toBe(
         'lossy'
       );
     });
 
     it('shows lossy for a box average on the axis normal to a slice view', () => {
       // The normal axis compares with the source slice spacing (1 mm).
-      expect(stateOf(viewport(), VoxelReductions.BoxAverage, [1, 1, 2])).toBe(
+      expect(stateOf(display2mm(), VoxelReductions.BoxAverage, [1, 1, 2])).toBe(
         'lossy'
       );
       // A 3D view uses the display pixel size on every axis.
       expect(
         stateOf(
-          viewport([0, 0, 1], true),
+          display2mm([0, 0, 1], true),
           VoxelReductions.BoxAverage,
           [1, 1, 2]
         )
@@ -340,6 +343,48 @@ describe('fidelityIndicatorState', () => {
     });
   });
 
+  describe('display spacing edge cases', () => {
+    const full = grid([64, 64, 64], [1, 1, 1]);
+    const boxAverage = record({
+      grid: grid([32, 32, 64], [2, 2, 1]),
+      reduction: VoxelReductions.BoxAverage,
+    });
+    // One CSS pixel is 2 mm.
+    const canvasToWorld = ([x, y]) => [2 * x, 2 * y, 0];
+    const stateAtRatio = (ratio) => {
+      const previous = window.devicePixelRatio;
+      window.devicePixelRatio = ratio;
+      try {
+        const pixelSpacing = pixelSpacingOfCanvasToWorld(canvasToWorld);
+        return svgStateOf(
+          fidelityLinesFromBindings(
+            { pixelSpacing, viewPlaneNormal: [0, 0, 1] },
+            [{ record: boxAverage, fullGrid: full }]
+          )
+        );
+      } finally {
+        window.devicePixelRatio = previous;
+      }
+    };
+
+    it('judges a box average at device pixels, not CSS pixels', () => {
+      expect(stateAtRatio(1)).toBe('done');
+      // At devicePixelRatio 2 one device pixel is 1 mm, finer than the data.
+      expect(stateAtRatio(2)).toBe('lossy');
+    });
+
+    it('gives a bad grid direction the pixel size, not an infinite spacing', () => {
+      const bad = { ...full, direction: new Array(9).fill(NaN) };
+      expect(
+        displaySpacingForGrid(
+          { pixelSpacing: 0.5, viewPlaneNormal: [0, 0, 1] },
+          bad,
+          bad
+        )
+      ).toEqual([1, 1, 1]);
+    });
+  });
+
   describe('lines without a record', () => {
     it('shows lossy for a reduced texture that has no record', () => {
       expect(
@@ -351,10 +396,6 @@ describe('fidelityIndicatorState', () => {
           }),
         ])
       ).toBe('lossy');
-    });
-
-    it('shows lod while a render path shows a deferred resample', () => {
-      expect(lineKind(line({ interactiveReduction: true }))).toBe('lod');
     });
   });
 

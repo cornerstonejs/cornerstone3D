@@ -102,7 +102,11 @@ export function displaySpacingForGrid(
         c < 1 - 1e-9 ? pixel / Math.sqrt(1 - c * c) : Number.POSITIVE_INFINITY;
       const alongNormal = c > 1e-9 ? slice / c : Number.POSITIVE_INFINITY;
 
-      spacing[axis] = Math.min(inPlane, alongNormal);
+      const blended = Math.min(inPlane, alongNormal);
+
+      // A bad direction must not give an infinite spacing, which reads as
+      // lossless; the pixel size is the safe, finer value.
+      spacing[axis] = Number.isFinite(blended) ? blended : pixel;
     }
 
     spacing[axis] = Math.max(spacing[axis], sourceGrid.spacing[axis] || 0);

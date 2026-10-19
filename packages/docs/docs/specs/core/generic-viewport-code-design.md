@@ -368,9 +368,11 @@ group says which part of a generic viewport owns each piece of the fidelity.
   because only the render path knows which texture it bound and at which
   sample distance it drew. The fidelity stays on the mounted rendering:
   - `VtkVolumeSliceRenderPath` and `VtkVolume3DRenderPath` set `voxelQuality`
-    from the grid that they bound, on each render.
-  - `CpuVolumeSliceRenderPath` sets `voxelQuality` from the full volume,
-    because its sampler reads the full volume. It sets
+    from the grid that they bound. They do this on each render request and on
+    each volume data event. Thus the record of a volume that streams updates
+    with no camera change.
+  - `CpuVolumeSliceRenderPath` sets `voxelQuality` from the full volume on
+    each draw, because its sampler reads the full volume. It sets
     `interactiveReduction` while it shows a deferred resample.
   - `VtkImageMapperRenderPath` and `CpuImageSliceRenderPath` set
     `imageQualityStatus` from the image that they draw.
@@ -400,9 +402,11 @@ group says which part of a generic viewport owns each piece of the fidelity.
 - **GENVIEW-FIDELITY-7** A user interface that shows the fidelity is a consumer
   of the event. It is not part of the family class, the render path or the
   base class. It does not fire the event (FIDELITY-UI-8).
-- **GENVIEW-FIDELITY-8** The code decides that a viewport can report fidelity
-  from the presence of a record, or from `getCurrentMode()`. It does not use a
-  list of viewport types. See GENVIEW-API-6.
+- **GENVIEW-FIDELITY-8** The family class decides that a viewport can report
+  fidelity, with `canReportFidelity()`. The base answer is `false`. The Planar
+  family and the Volume3D family return `true`, also before they mount data.
+  The ECG, Video and WSI families keep `false`, so they get no indicator. The
+  code does not use a list of viewport types. See GENVIEW-API-6.
 
 ### The file layout of a family (GENVIEW-FILE)
 
@@ -554,15 +558,6 @@ reaches the base class.
 
 Breaks GENVIEW-BASE-1 and GENVIEW-FIDELITY-3. The fix gives the resolved view
 the size of one device pixel.
-
-### The indicator finds a generic viewport by a method
-
-`maybeAttachFidelityIndicator()` attaches to a viewport that has
-`getFidelityLines()` and `getCurrentMode()`, because a generic viewport mounts
-its data after the engine enables it. That is a test of the method list.
-
-Breaks GENVIEW-API-6. The fix lets the engine attach the indicator when the
-viewport mounts data.
 
 ## Past defects
 

@@ -1,6 +1,6 @@
-import ImageQualityStatus from '../../../enums/ImageQualityStatus';
-import type { IImage } from '../../../types';
 import type { DataAddOptions } from '../ViewportArchitectureTypes';
+
+export { imageQualityStatusOf } from '../../helpers/fidelityIndicator/collectFidelityLines';
 
 /**
  * Whether a planar binding is a segmentation overlay, which the fidelity
@@ -13,15 +13,4 @@ export function isSegmentationOverlayData(
   return (
     options?.role === 'overlay' && payload.reference?.kind === 'segmentation'
   );
-}
-
-/** The quality of a stack image; an image with no status is full resolution. */
-export function imageQualityStatusOf(
-  image: IImage | undefined
-): ImageQualityStatus | undefined {
-  if (!image) {
-    return undefined;
-  }
-
-  return image.imageQualityStatus ?? ImageQualityStatus.FULL_RESOLUTION;
 }

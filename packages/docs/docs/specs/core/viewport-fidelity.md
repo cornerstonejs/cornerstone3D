@@ -124,7 +124,9 @@ and it does not make the displayed image lossy.
   fidelity of an overlay, for example a reduced segmentation labelmap, is out
   of scope.
 - **FIDELITY-STATE-10** A drawn grid that is coarser than the full volume, and
-  that has no record, gives `lossy`. The indicator does not hide it.
+  that has no record, gives `lossy`. The indicator does not hide it. Only a
+  legacy volume viewport makes such a line. A generic render path always sets
+  a record with its grid.
 
 ### The record and the verdict (FIDELITY-RECORD)
 
@@ -141,7 +143,8 @@ and it does not make the displayed image lossy.
   `utilities.voxelGrid.compareVoxelQuality(record, requirement)`. The
   requirement of a viewport holds `displaySpacing` on each index axis of the
   record grid. FIDELITY-STATE-5 and FIDELITY-STATE-6 depend on that function.
-  `displaySpacingOfViewport()` supplies the display spacing:
+  `displaySpacingForGrid()` supplies the display spacing. A legacy viewport
+  calls it through `displaySpacingOfViewport()`:
   - An axis in the view plane gets the world size of one display pixel.
   - In a slice view, the axis normal to the view plane gets the slice spacing
     of the source volume.
@@ -217,12 +220,14 @@ and it does not make the displayed image lossy.
   consumer does not hide the state, and the consumer does not throw. The kinds
   of reduction and the sources are extensible through
   `VoxelReductionRegistry` and `VoxelDataSourceRegistry`.
-- **FIDELITY-EVENT-7** The rendering engines fire the event. They call
-  `notifyFidelityStateChanged()` after `IMAGE_RENDERED`. A generic viewport
-  that renders outside the engine loop (`renderNow`) calls it after that
-  render. The `Viewport` class and the `GenericViewport` class use one shared
-  helper, `helpers/fidelityIndicator/notifyFidelityStateChanged.ts`. The helper
-  obeys `suppressEvents`.
+- **FIDELITY-EVENT-7** The code calls `notifyFidelityStateChanged()` once
+  after each draw, after `IMAGE_RENDERED`:
+  - The rendering engines call it after a draw in the engine loop.
+  - `PlanarViewport.render()` calls it when a render path drew the frame
+    itself and marked it with `markRendered()`. The CPU paths do that.
+  - The `Viewport` class and the `GenericViewport` class use one shared
+    helper, `helpers/fidelityIndicator/notifyFidelityStateChanged.ts`. The
+    helper obeys `suppressEvents`.
 - **FIDELITY-EVENT-8** The state gives the result directly, so that an
   application indicator can obey FIDELITY-USER-1 and FIDELITY-USER-2:
   - `shownState` is the state of FIDELITY-STATE-1, or `hidden` when there is
@@ -250,9 +255,9 @@ and it does not make the displayed image lossy.
   viewport, with `maybeAttachFidelityIndicator()`, and it removes the indicator
   with `detachFidelityIndicator()`. An application can call
   `attachFidelityIndicator(viewport)` itself, and that call returns the cleanup
-  function. A generic viewport mounts its data after the engine enables it.
-  Thus it gets the indicator at enable, and the indicator stays `hidden` until
-  the viewport draws data that has a record or an image quality.
+  function. The indicator attaches only when `canReportFidelity()` is true. A
+  generic family that can show lossy data returns true before it mounts data.
+  The indicator then stays `hidden` until the viewport draws such data.
 - **FIDELITY-UI-2** The indicator is a DOM element in the top-right corner of the
   viewport element. The user does not need to hover over the viewport, and the
   viewport does not need to be the active viewport. The indicator has the same

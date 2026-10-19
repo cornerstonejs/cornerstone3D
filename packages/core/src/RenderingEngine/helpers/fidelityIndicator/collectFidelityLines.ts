@@ -220,11 +220,20 @@ export function fidelityLineFromStackImage(
     return [];
   }
 
-  return [
-    fidelityLineFromImageQuality(
-      image.imageQualityStatus ?? ImageQualityStatus.FULL_RESOLUTION
-    ),
-  ];
+  return [fidelityLineFromImageQuality(imageQualityStatusOf(image))];
+}
+
+/** The quality of a stack image; an image with no status is full resolution. */
+export function imageQualityStatusOf(image: IImage): ImageQualityStatus;
+export function imageQualityStatusOf(
+  image: IImage | undefined
+): ImageQualityStatus | undefined;
+export function imageQualityStatusOf(
+  image: IImage | undefined
+): ImageQualityStatus | undefined {
+  return image
+    ? (image.imageQualityStatus ?? ImageQualityStatus.FULL_RESOLUTION)
+    : undefined;
 }
 
 /**

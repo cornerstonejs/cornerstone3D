@@ -137,14 +137,20 @@ class VolumeViewport3D extends GenericViewport<
     );
   }
 
-  /**
-   * Content mode of the 3D family (GENVIEW-FAMILY-5): `volume3d` for a mounted
-   * volume, `unknown` for a geometry-only source, `empty` with no source.
-   */
+  /** The 3D family can show reduced volume data (GENVIEW-FIDELITY-8). */
+  override canReportFidelity(): boolean {
+    return true;
+  }
+
   /** A 3D view: a rotation can bring any axis into the view plane. */
   protected override isFidelityView3D(): boolean {
     return true;
   }
+
+  /**
+   * Content mode of the 3D family (GENVIEW-FAMILY-5): `volume3d` for a mounted
+   * volume, `unknown` for a geometry-only source, `empty` with no source.
+   */
 
   getCurrentMode(): ViewportContentMode {
     const binding = this.getSourceBinding();

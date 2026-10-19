@@ -119,16 +119,15 @@ export function attachFidelityIndicator(viewport: IViewport): () => void {
  * the product indicator is not disabled. Uses {@link attachFidelityIndicator},
  * which stores cleanup for {@link detachFidelityIndicator}.
  *
- * A generic viewport mounts its data after the engine enables it, so it
- * cannot report fidelity yet. It gets the indicator now; the indicator stays
- * `hidden` until the viewport draws data with a record or an image quality.
+ * A generic family that can show degradable data reports fidelity before it
+ * mounts data; the indicator stays `hidden` until it draws such data.
  */
 export function maybeAttachFidelityIndicator(viewport: IViewport): void {
   if (getConfiguration().dangerouslyDisableFidelityIndicator) {
     return;
   }
 
-  if (!canReportFidelity(viewport) && !mountsDataLater(viewport)) {
+  if (!canReportFidelity(viewport)) {
     return;
   }
 
@@ -161,15 +160,6 @@ export function canReportFidelity(viewport: IViewport): boolean {
   return false;
 }
 
-/** A generic viewport: it has the fidelity API and a content mode. */
-function mountsDataLater(viewport: IViewport): boolean {
-  return (
-    hasFidelityApi(viewport) &&
-    typeof (viewport as { getCurrentMode?: unknown }).getCurrentMode ===
-      'function'
-  );
-}
-
 function hasFidelityApi(viewport: IViewport): viewport is FidelityViewport {
   return typeof (viewport as FidelityViewport).getFidelityLines === 'function';
 }
@@ -181,7 +171,8 @@ function linesOf(viewport: FidelityViewport): FidelityLine[] {
 /**
  * Reads fidelity lines from the viewport API and passes them to every view:
  * on attach, after a render, on `VIEWPORT_FIDELITY_CHANGED`, and when volume
- * data changes without a render. Only the rendering engines fire the event.
+ * data changes without a render. The indicator never fires the event
+ * (FIDELITY-UI-8).
  */
 function subscribeToFidelity(
   viewport: FidelityViewport,
@@ -467,12 +458,12 @@ function summaryOf(line: FidelityLine): {
   const parts: string[] = [];
 
   if (dataKind === 'reduced') {
-    if (record && isReduced(reductionFactors)) {
+    // Every reduced line names its reduction, so the badge never reads FULL.
+    if (isReduced(reductionFactors)) {
       parts.push(`REDUCED ${formatFactors(reductionFactors)}`);
-    } else if (imageQualityStatus !== undefined) {
-      parts.push(
-        ImageQualityStatus[imageQualityStatus] ?? String(imageQualityStatus)
-      );
+    } else {
+      const status = imageQualityStatus ?? record?.lowest;
+      parts.push(ImageQualityStatus[status] ?? 'REDUCED');
     }
   }
 

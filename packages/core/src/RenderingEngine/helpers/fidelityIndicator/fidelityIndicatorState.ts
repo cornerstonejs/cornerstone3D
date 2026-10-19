@@ -64,52 +64,44 @@ export function lineHasData(line: FidelityLine): boolean {
 
 export type SvgFidelityState = 'loading' | 'done' | 'lossy' | 'lod';
 
+/** The states from the most urgent to the least (FIDELITY-STATE-7). */
+export const FIDELITY_STATE_ORDER: readonly SvgFidelityState[] = [
+  'loading',
+  'lod',
+  'lossy',
+  'done',
+];
+
+/** A rank that grows with urgency: `loading` is the highest. */
+export function fidelityStateRank(state: SvgFidelityState): number {
+  return FIDELITY_STATE_ORDER.length - FIDELITY_STATE_ORDER.indexOf(state);
+}
+
 /**
- * Worst-case SVG state across lines: loading > lod > lossy > done.
+ * The most urgent state across lines (see {@link FIDELITY_STATE_ORDER}).
  * A line with no data (see {@link lineHasData}) adds nothing, so no lines or
- * only such lines give `hidden`. `done` means lossless; the
- * indicator shows it only as a recovery from a lossy state.
+ * only such lines give `hidden`. `done` means lossless; the indicator shows it
+ * only as a recovery from a lossy state.
  */
 export function svgStateOf(lines: FidelityLine[]): SvgFidelityState | 'hidden' {
-  let anyLoading = false;
-  let anyLod = false;
-  let anyLossy = false;
-  let anyWithData = false;
+  let worst: SvgFidelityState | 'hidden' = 'hidden';
+  let worstRank = 0;
 
   for (const line of lines) {
     if (!lineHasData(line)) {
       continue;
     }
 
-    anyWithData = true;
     const kind = lineKind(line);
+    const rank = fidelityStateRank(kind);
 
-    if (kind === 'loading') {
-      anyLoading = true;
-    } else if (kind === 'lod') {
-      anyLod = true;
-    } else if (kind === 'lossy') {
-      anyLossy = true;
+    if (rank > worstRank) {
+      worst = kind;
+      worstRank = rank;
     }
   }
 
-  if (!anyWithData) {
-    return 'hidden';
-  }
-
-  if (anyLoading) {
-    return 'loading';
-  }
-
-  if (anyLod) {
-    return 'lod';
-  }
-
-  if (anyLossy) {
-    return 'lossy';
-  }
-
-  return 'done';
+  return worst;
 }
 
 /** What the data of one line holds, apart from the sample distance. */

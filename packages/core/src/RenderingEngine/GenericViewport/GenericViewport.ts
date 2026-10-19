@@ -242,13 +242,13 @@ abstract class GenericViewport<
   }
 
   /**
-   * Whether this viewport can report fidelity (GENVIEW-FIDELITY-8). Decided
-   * from content mode, not from a list of viewport types.
+   * Whether this viewport can report fidelity (GENVIEW-FIDELITY-8). The family
+   * decides: a family that can show degradable data returns true, also before
+   * it mounts data, because the indicator stays hidden with no lines. The base
+   * answer is false, for a family such as ECG, Video or WSI.
    */
   canReportFidelity(): boolean {
-    const mode = this.getCurrentMode();
-
-    return mode === 'stack' || mode === 'volume' || mode === 'volume3d';
+    return false;
   }
 
   /**
@@ -272,7 +272,7 @@ abstract class GenericViewport<
 
   /**
    * Fires `VIEWPORT_FIDELITY_CHANGED` when the derived fidelity state changes
-   * (FIDELITY-EVENT-2..4). The rendering engines call this after each render.
+   * (FIDELITY-EVENT-2..4). Called after each draw (FIDELITY-EVENT-7).
    *
    * @internal
    */

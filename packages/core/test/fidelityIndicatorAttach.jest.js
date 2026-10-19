@@ -373,7 +373,8 @@ describe('fidelityIndicator attach gates', () => {
 
       viewport.getFidelityLines();
       const added = add.mock.calls.map(([type, fn]) => [type, fn]);
-      expect(added.length).toBeGreaterThan(0);
+      // IMAGE_VOLUME_MODIFIED, IMAGE_VOLUME_LOADING_COMPLETED, ELEMENT_DISABLED.
+      expect(added).toHaveLength(3);
 
       // Same viewport id, other element (another rendering engine).
       disable(document.createElement('div'));
@@ -381,10 +382,7 @@ describe('fidelityIndicator attach gates', () => {
 
       // `_reset` fires the event and leaves `isDisabled` false.
       disable(element);
-      const removed = remove.mock.calls.map(([type, fn]) => [type, fn]);
-      for (const listener of added) {
-        expect(removed).toContainEqual(listener);
-      }
+      expect(remove.mock.calls.map(([type, fn]) => [type, fn])).toEqual(added);
 
       add.mockClear();
       viewport.getFidelityLines();
@@ -424,7 +422,7 @@ describe('fidelityIndicator attach gates', () => {
     };
 
     class FidelityTestViewport extends GenericViewport {
-      constructor(element, rendering) {
+      constructor(element, ...renderings) {
         super({ id: 'gvp-1', element });
         this.type = ViewportType.PLANAR_NEXT;
         this.renderingEngineId = 're-1';
@@ -437,7 +435,7 @@ describe('fidelityIndicator attach gates', () => {
           resolve: () => ({
             createRenderPath: () => ({
               addData: async () => ({
-                rendering,
+                rendering: renderings.shift(),
                 removeData: () => {},
                 applyViewState: () => {},
                 updateDataPresentation: () => {},
@@ -449,6 +447,11 @@ describe('fidelityIndicator attach gates', () => {
       }
 
       render() {}
+
+      // A family that can show degradable data, as PlanarViewport.
+      canReportFidelity() {
+        return true;
+      }
 
       getResolvedView() {
         return this.getDisplaySets().length ? resolvedView : undefined;
@@ -510,6 +513,41 @@ describe('fidelityIndicator attach gates', () => {
       expect(root.dataset.state).toBe('lossy');
       expect(root.dataset.shown).toBe('true');
       detachFidelityIndicator(viewport);
+    });
+
+    it('ignores a segmentation overlay that the render path excludes', async () => {
+      const source = {
+        renderMode: 'vtkVolumeSlice',
+        voxelQuality: quality(fullGrid, VoxelReductions.None),
+        fullGrid,
+        sampleDistanceLod: 1,
+      };
+      // A decimated labelmap: lossy if it counted.
+      const labelmap = {
+        renderMode: 'vtkVolumeSlice',
+        voxelQuality: quality(
+          { ...fullGrid, spacing: [2, 2, 2] },
+          VoxelReductions.Decimation
+        ),
+        fullGrid,
+        sampleDistanceLod: 1,
+        excludeFromFidelity: true,
+      };
+      const viewport = new FidelityTestViewport(
+        document.createElement('div'),
+        source,
+        labelmap
+      );
+
+      await viewport.addDisplaySet('ds-1', { renderMode: 'vtkVolumeSlice' });
+      await viewport.addDisplaySet('seg-1', {
+        renderMode: 'vtkVolumeSlice',
+        role: 'overlay',
+      });
+
+      expect(viewport.getFidelityState().lossy).toBe(false);
+      labelmap.excludeFromFidelity = false;
+      expect(viewport.getFidelityState().lossy).toBe(true);
     });
 
     it('reports a reduced to full texture upgrade once, then shows nothing', async () => {

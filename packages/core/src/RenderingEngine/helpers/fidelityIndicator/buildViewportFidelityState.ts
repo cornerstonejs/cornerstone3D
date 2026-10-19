@@ -7,6 +7,7 @@ import type {
 import { isAliasingReduction } from '../../../utilities/voxelGrid';
 import {
   type FidelityLine,
+  fidelityStateRank,
   isInteractiveLod,
   isReduced,
   lineHasData,
@@ -103,11 +104,9 @@ function isLossyShownState(
   );
 }
 
-const KIND_RANK = { loading: 4, lod: 3, lossy: 2, done: 1 };
-
 /**
- * The line that decides the shown state: the highest of loading > lod >
- * lossy > done among the lines with data. A tie keeps a line with a volume
+ * The line that decides the shown state: the most urgent state among the
+ * lines with data (`fidelityStateRank`). A tie keeps a line with a volume
  * record, else the first line.
  */
 function worstLineOf(lines: FidelityLine[]): FidelityLine | undefined {
@@ -119,7 +118,7 @@ function worstLineOf(lines: FidelityLine[]): FidelityLine | undefined {
       continue;
     }
 
-    const rank = KIND_RANK[lineKind(line)];
+    const rank = fidelityStateRank(lineKind(line));
 
     if (
       rank > worstRank ||

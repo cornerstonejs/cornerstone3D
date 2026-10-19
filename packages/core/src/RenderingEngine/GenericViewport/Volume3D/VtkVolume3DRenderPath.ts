@@ -132,10 +132,7 @@ export class VtkVolume3DRenderPath
     rendering.removeStreamingSubscriptions = subscribeToVolumeEvents(
       payload.volumeId,
       (eventType) => {
-        if (eventType === Events.IMAGE_VOLUME_LOADING_COMPLETED) {
-          this.provisionStrategies(rendering, 'loaded');
-        }
-
+        this.onVolumeData(rendering, eventType);
         ctx.display.requestRender();
       }
     );
@@ -215,6 +212,22 @@ export class VtkVolume3DRenderPath
     rendering: Volume3DVolumeRendering
   ): IImageData | undefined {
     return buildVolumeImageData(rendering.imageVolume);
+  }
+
+  /**
+   * Keeps the bound strategy and the fidelity record current when the volume
+   * data changes without a camera change (GENVIEW-FIDELITY-1). Only a
+   * completed load runs the provider, which allocates.
+   */
+  private onVolumeData(
+    rendering: Volume3DVolumeRendering,
+    eventType: string
+  ): void {
+    if (eventType === Events.IMAGE_VOLUME_LOADING_COMPLETED) {
+      this.provisionStrategies(rendering, 'loaded');
+    }
+
+    this.applyStrategy(rendering);
   }
 
   private render(

@@ -34,7 +34,6 @@ import type {
 import type { MountedRendering } from '../ViewportArchitectureTypes';
 import type { IVolumeRenderStrategy } from '../../helpers/volumeRenderStrategy';
 import type { vtkStreamingOpenGLTexture } from '../../../cache/classes/ImageVolume';
-import type { VoxelQualityRecord } from '../../../types';
 import type {
   PlanarViewState,
   PlanarDataPresentation,
@@ -162,11 +161,7 @@ export type PlanarVolumeSliceRendering = MountedRendering<{
   strategy?: IVolumeRenderStrategy;
   /** The texture that the mapper holds. */
   boundTexture?: vtkStreamingOpenGLTexture;
-  /**
-   * The record of the quality for the most recent render of this viewport from
-   * this data.
-   */
-  voxelQuality?: VoxelQualityRecord;
+  // The fidelity fields come from `RenderingFidelity` on `MountedRendering`.
 }>;
 
 /**
