@@ -151,7 +151,6 @@ class VolumeViewport3D extends GenericViewport<
    * Content mode of the 3D family (GENVIEW-FAMILY-5): `volume3d` for a mounted
    * volume, `unknown` for a geometry-only source, `empty` with no source.
    */
-
   getCurrentMode(): ViewportContentMode {
     const binding = this.getSourceBinding();
 

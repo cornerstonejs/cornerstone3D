@@ -790,6 +790,30 @@ describe('PlanarViewport fidelity events', () => {
     expect(states).toEqual(['lossy', 'done']);
   });
 
+  it('fires VIEWPORT_FIDELITY_CHANGED after IMAGE_RENDERED of the same draw', () => {
+    context = createViewport();
+    const { viewport, element } = context;
+    const image = createPlanarImage('cpu:order');
+    addPlanarImageMetadata([image.imageId]);
+    const { binding, rendering } = mountStackBinding(viewport, [image]);
+    binding.render = () => {
+      rendering.imageQualityStatus = ImageQualityStatus.LOSSY;
+      viewport.renderContext.display.markRendered();
+      element.dispatchEvent(new CustomEvent(Events.IMAGE_RENDERED));
+    };
+    const order = [];
+    element.addEventListener(Events.IMAGE_RENDERED, () =>
+      order.push('rendered')
+    );
+    element.addEventListener(Events.VIEWPORT_FIDELITY_CHANGED, () =>
+      order.push('fidelity')
+    );
+
+    viewport.render();
+
+    expect(order).toEqual(['rendered', 'fidelity']);
+  });
+
   it('leaves the event to the engine for a render path that the engine draws', () => {
     context = createViewport();
     const { viewport, element } = context;

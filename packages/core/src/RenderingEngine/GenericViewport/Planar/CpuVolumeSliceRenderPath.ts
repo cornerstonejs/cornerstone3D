@@ -35,7 +35,7 @@ import {
   resolvePlanarRenderPathProjection,
   worldToCanvasPlanarRenderPathProjection,
 } from './planarRenderPathProjection';
-import { isSegmentationOverlayData } from './planarRenderingFidelity';
+import { isSegmentationOverlayData } from '../renderingFidelity';
 
 const DEFERRED_VIEWPORT_RESAMPLE_DELAY_MS = 80;
 

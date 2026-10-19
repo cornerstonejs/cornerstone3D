@@ -246,7 +246,8 @@ export const FIDELITY_INDICATOR_CSS = `/*
   opacity: 1;
 }
 
-/* Held for 1 s, then fades out over 0.2 s. Does not reappear. */
+/* Held for DONE_HOLD_MS (attachFidelityIndicator.ts), then fades out over
+ * 0.2 s. Does not reappear. */
 .fi-root[data-state='done'] {
   transition: opacity 0.2s linear;
 }

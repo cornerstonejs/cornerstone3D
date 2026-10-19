@@ -71,9 +71,9 @@ export type LoadedData<TData extends object = object> = {
 } & TData;
 
 /**
- * The fidelity fields that a render path sets on its rendering after each
- * render (GENVIEW-FIDELITY-1, GENVIEW-FIDELITY-2). The base class reads only
- * these fields; it does not reach into a mapper, a volume or an image.
+ * The fidelity fields that a render path sets on its rendering
+ * (GENVIEW-FIDELITY-1, GENVIEW-FIDELITY-2). The base class reads only these
+ * fields; it does not reach into a mapper, a volume or an image.
  */
 export type RenderingFidelity = {
   /** The quality record of the grid that the render drew. */
@@ -88,6 +88,12 @@ export type RenderingFidelity = {
   imageQualityStatus?: ImageQualityStatus;
   /** True for an overlay that the fidelity ignores, e.g. a labelmap. */
   excludeFromFidelity?: boolean;
+  /**
+   * Recomputes the fields that a volume data event made stale. The base class
+   * calls it before it reads the fields, so a stream of events costs one
+   * record for each read, and not one for each event.
+   */
+  refreshFidelity?: () => void;
 };
 
 // Mounted rendering state is render-path-specific; logical dataset identity

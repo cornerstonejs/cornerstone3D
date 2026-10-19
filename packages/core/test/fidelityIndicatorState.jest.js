@@ -374,14 +374,15 @@ describe('fidelityIndicatorState', () => {
     });
 
     it('gives a bad grid direction the pixel size, not an infinite spacing', () => {
+      // A valid source grid, so only the guard on the record grid can help.
       const bad = { ...full, direction: new Array(9).fill(NaN) };
       expect(
         displaySpacingForGrid(
-          { pixelSpacing: 0.5, viewPlaneNormal: [0, 0, 1] },
+          { pixelSpacing: 2, viewPlaneNormal: [0, 0, 1] },
           bad,
-          bad
+          full
         )
-      ).toEqual([1, 1, 1]);
+      ).toEqual([2, 2, 2]);
     });
   });
 

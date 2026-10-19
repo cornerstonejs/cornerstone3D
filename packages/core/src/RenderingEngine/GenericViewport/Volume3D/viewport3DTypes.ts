@@ -1,4 +1,5 @@
 import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
+import type { BoundGrid } from '../renderingFidelity';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 import type vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
 import type { GeometryOptions } from '../../../loaders/geometryLoader';
@@ -137,6 +138,10 @@ export type Volume3DVolumeRendering = MountedRendering<{
   strategy?: IVolumeRenderStrategy;
   /** The texture that the mapper holds. */
   boundTexture?: vtkStreamingOpenGLTexture;
+  /** True when a volume data event came after the last record. */
+  fidelityStale?: boolean;
+  /** The grid of the base texture that the mapper holds. */
+  boundGrid?: BoundGrid;
   // The fidelity fields come from `RenderingFidelity` on `MountedRendering`.
 }>;
 

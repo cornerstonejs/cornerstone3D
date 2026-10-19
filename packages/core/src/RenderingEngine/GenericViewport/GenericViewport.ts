@@ -332,6 +332,7 @@ abstract class GenericViewport<
     this.forEachBinding((binding) => {
       const { rendering } = binding;
 
+      rendering.refreshFidelity?.();
       sources.push({
         record: rendering.voxelQuality,
         fullGrid: rendering.fullGrid,

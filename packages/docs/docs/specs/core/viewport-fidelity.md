@@ -343,6 +343,16 @@ The viewport reports the quality of the image that it draws
 (FIDELITY-STATE-8), so the report is correct. The view itself stays at the
 first quality until the next image change.
 
+### Replicated data in every slot shows `lossy`, not `loading`
+
+An interleaved load can fill every slot with replicated data before the
+better data arrives. The record then has no missing voxels, and its lowest
+delivered quality is below `FULL_RESOLUTION`. The indicator shows `lossy`, and
+not `loading`, while the better data still comes. The user still sees a lossy
+indication, so FIDELITY-USER-1 holds. The state name is wrong, against
+FIDELITY-STATE-3: the user cannot tell this load from a load that completed at
+a lossy quality.
+
 ## Past defects
 
 No entry yet.

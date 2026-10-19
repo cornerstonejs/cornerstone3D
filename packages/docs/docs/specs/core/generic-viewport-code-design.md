@@ -368,9 +368,11 @@ group says which part of a generic viewport owns each piece of the fidelity.
   because only the render path knows which texture it bound and at which
   sample distance it drew. The fidelity stays on the mounted rendering:
   - `VtkVolumeSliceRenderPath` and `VtkVolume3DRenderPath` set `voxelQuality`
-    from the grid that they bound. They do this on each render request and on
-    each volume data event. Thus the record of a volume that streams updates
-    with no camera change.
+    from the grid that they bound, on each render request. A volume data event
+    only marks the record stale. The render path recomputes the record once,
+    in `refreshFidelity()`, when the viewport next reads the fidelity. Thus
+    the record stays current while the volume streams, also with no camera
+    change.
   - `CpuVolumeSliceRenderPath` sets `voxelQuality` from the full volume on
     each draw, because its sampler reads the full volume. It sets
     `interactiveReduction` while it shows a deferred resample.
@@ -381,7 +383,9 @@ group says which part of a generic viewport owns each piece of the fidelity.
   through the typed fields of `RenderingFidelity` on `MountedRendering`. The
   viewport and a consumer do not reach into an actor, a mapper, a volume or an
   image to read it. A render path sets `excludeFromFidelity` on an overlay that
-  the fidelity ignores, for example a segmentation labelmap.
+  the fidelity ignores, for example a segmentation labelmap. The rendering
+  also carries a `refreshFidelity()` callback, which the base class calls
+  before it reads the fields.
 - **GENVIEW-FIDELITY-3** The resolved view supplies the display spacing of the
   verdict, because the display spacing is a world size of one device pixel. The
   base class reads it with `canvasToWorld()` of the resolved view. A render path

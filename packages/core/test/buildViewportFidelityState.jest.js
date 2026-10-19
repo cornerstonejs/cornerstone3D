@@ -172,29 +172,6 @@ describe('buildViewportFidelityState (FIDELITY-EVENT-5)', () => {
     expect(done.transient).toBe(false);
   });
 
-  it('shapes event detail fields magnitude / cause / transient', () => {
-    const state = buildViewportFidelityState([
-      line({
-        reductionFactors: [2, 2, 4],
-        fullResolution: false,
-        record: record({
-          reduction: VoxelReductions.BoxAverage,
-          source: VoxelDataSources.ClientDerived,
-        }),
-      }),
-    ]);
-
-    const detail = {
-      viewportId: 'vp-1',
-      renderingEngineId: 're-1',
-      state,
-    };
-
-    expect(detail.state.magnitude).toEqual([2, 2, 4]);
-    expect(detail.state.cause).toBe('deviceTextureLimit');
-    expect(detail.state.transient).toBe(false);
-  });
-
   it('takes cause and progress from the worst volume when volumes differ', () => {
     // A PET that loads with replicated data over a complete CT.
     const ct = line();

@@ -515,6 +515,31 @@ describe('fidelityIndicator attach gates', () => {
       detachFidelityIndicator(viewport);
     });
 
+    it('refreshes a stale record before it reads the fidelity', async () => {
+      const rendering = {
+        renderMode: 'vtkVolumeSlice',
+        voxelQuality: quality(fullGrid, VoxelReductions.None),
+        fullGrid,
+        sampleDistanceLod: 1,
+        // A volume event came; the next read must see the new record.
+        fidelityStale: true,
+        refreshFidelity: () => {
+          rendering.fidelityStale = false;
+          rendering.voxelQuality = quality(
+            { ...fullGrid, spacing: [2, 2, 1] },
+            VoxelReductions.Decimation
+          );
+        },
+      };
+      const viewport = new FidelityTestViewport(
+        document.createElement('div'),
+        rendering
+      );
+      await viewport.addDisplaySet('ds-1', { renderMode: 'vtkVolumeSlice' });
+
+      expect(viewport.getFidelityState().lossy).toBe(true);
+    });
+
     it('ignores a segmentation overlay that the render path excludes', async () => {
       const source = {
         renderMode: 'vtkVolumeSlice',

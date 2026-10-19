@@ -52,7 +52,6 @@ type FidelityView = {
 };
 
 type FidelityViewport = IViewport & {
-  canReportFidelity?: () => boolean;
   getFidelityLines?: () => FidelityLine[];
 };
 
@@ -147,17 +146,13 @@ export function detachFidelityIndicator(viewport: IViewport): void {
 }
 
 /**
- * Whether a viewport can report fidelity (GENVIEW-FIDELITY-8). Uses the
- * viewport capability when available; does not use a hard list of types.
+ * Whether a viewport can report fidelity (GENVIEW-FIDELITY-8). `IViewport`
+ * declares `canReportFidelity()`, and `Viewport` and `GenericViewport` both
+ * implement it. The optional call covers an application viewport class,
+ * registered by type, that extends neither.
  */
 export function canReportFidelity(viewport: IViewport): boolean {
-  const vp = viewport as FidelityViewport;
-
-  if (typeof vp.canReportFidelity === 'function') {
-    return vp.canReportFidelity();
-  }
-
-  return false;
+  return viewport.canReportFidelity?.() === true;
 }
 
 function hasFidelityApi(viewport: IViewport): viewport is FidelityViewport {

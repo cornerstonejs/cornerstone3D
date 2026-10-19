@@ -22,9 +22,7 @@ import {
   setActiveGpuCapabilityProfile,
   resetActiveGpuCapabilityProfile,
 } from '../src/utilities/gpuCapabilityProfiles';
-import { Events, ImageQualityStatus, VoxelStatistics } from '../src/enums';
-import { svgStateOf } from '../src/RenderingEngine/helpers/fidelityIndicator/fidelityIndicatorState';
-import { fidelityLinesFromBindings } from '../src/RenderingEngine/helpers/fidelityIndicator/collectFidelityLines';
+import { VoxelStatistics } from '../src/enums';
 
 // A STRATEGY IS THE UNIT: it states how a render gets its voxels, and the names
 // of the texture sets derive from it. The provider builds the strategies when
@@ -558,77 +556,5 @@ describe('the actor helpers choose a strategy for either architecture', () => {
     expect(volume.getTextureSet('full-resolution/full-extent').pinned).toBe(
       false
     );
-  });
-});
-
-describe('a volume data event refreshes the fidelity record', () => {
-  it('moves the state from no indicator to loading to lossy with no camera change', () => {
-    const fullGrid = {
-      origin: [0, 0, 0],
-      direction: identityDirection,
-      spacing: [1, 1, 1],
-      dimensions: [64, 64, 8],
-    };
-    const reducedGrid = {
-      ...fullGrid,
-      spacing: [2, 2, 1],
-      dimensions: [32, 32, 8],
-    };
-    let delivered = {
-      lowest: undefined,
-      missing: 32 * 32 * 8,
-    };
-    const volume = {
-      voxelGrid: fullGrid,
-      getGridQuality: jest.fn((grid) => ({
-        grid,
-        status: ImageQualityStatus.FAR_REPLICATE,
-        highest: delivered.lowest,
-        voxels: 32 * 32 * 8,
-        exact: true,
-        source: 'clientDerived',
-        reduction: 'boxAverage',
-        deliveries: 0,
-        ...delivered,
-      })),
-    };
-    const texture = {};
-    const strategy = {
-      name: 'reduced',
-      volume,
-      isReady: () => true,
-      bindings: () => [
-        { role: 'base', grid: reducedGrid, statistic: 'average', texture },
-      ],
-      activate: () => undefined,
-      deactivate: () => undefined,
-      update: () => undefined,
-    };
-    const path = new VtkVolumeSliceRenderPath(() => [strategy]);
-    const rendering = { ...makeRendering(volume), fullGrid };
-    // One display pixel is 4 mm, so the 2 mm box average is lossless.
-    const display = { pixelSpacing: 4, viewPlaneNormal: [0, 0, 1] };
-    const stateOf = () =>
-      svgStateOf(
-        fidelityLinesFromBindings(display, [
-          { record: rendering.voxelQuality, fullGrid },
-        ])
-      );
-
-    provision(path, rendering);
-    render(path, rendering);
-    expect(stateOf()).toBe('done');
-
-    delivered = {
-      lowest: ImageQualityStatus.ADJACENT_REPLICATE,
-      missing: 100,
-    };
-    path.onVolumeData(rendering, Events.IMAGE_VOLUME_MODIFIED);
-    expect(rendering.mapper.modified).toHaveBeenCalled();
-    expect(stateOf()).toBe('loading');
-
-    delivered = { lowest: ImageQualityStatus.LOSSY, missing: 0 };
-    path.onVolumeData(rendering, Events.IMAGE_VOLUME_LOADING_COMPLETED);
-    expect(stateOf()).toBe('lossy');
   });
 });

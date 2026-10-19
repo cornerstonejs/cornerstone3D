@@ -59,10 +59,8 @@ import {
   resolvePlanarRenderPathProjection,
   worldToCanvasPlanarRenderPathProjection,
 } from './planarRenderPathProjection';
-import {
-  imageQualityStatusOf,
-  isSegmentationOverlayData,
-} from './planarRenderingFidelity';
+import { imageQualityStatusOf } from '../../helpers/fidelityIndicator/collectFidelityLines';
+import { isSegmentationOverlayData } from '../renderingFidelity';
 
 /** @internal */
 export class CpuImageSliceRenderPath
