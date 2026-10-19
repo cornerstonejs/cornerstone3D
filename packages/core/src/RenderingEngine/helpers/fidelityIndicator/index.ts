@@ -10,7 +10,6 @@ export {
   type FidelityLine,
   type SvgFidelityState,
   type FidelityDataKind,
-  type ViewportFidelityState,
   svgStateOf,
   lineKind,
   dataKindOf,
@@ -28,3 +27,7 @@ export {
   fidelityLinesFromVolumeActors,
   fidelityLineFromStackImage,
 } from './collectFidelityLines';
+export {
+  buildViewportFidelityState,
+  viewportFidelityStateKey,
+} from './buildViewportFidelityState';

@@ -52,10 +52,7 @@ type FidelityView = {
 
 type FidelityViewport = IViewport & {
   canReportFidelity?: () => boolean;
-  getFidelityState?: () => {
-    state: SvgFidelityState | 'hidden';
-    lines: FidelityLine[];
-  };
+  getFidelityLines?: () => FidelityLine[];
   notifyFidelityStateChanged?: () => void;
 };
 
@@ -68,8 +65,9 @@ const cleanups = new WeakMap<object, () => void>();
  * `lossy` / `lod`). When `init({ debug: { fidelityIndicatorDebug: true } })`
  * is set, the verbose debug badge is also shown in the top-left.
  *
- * The indicator is a consumer of `viewport.getFidelityState()` and
- * `VIEWPORT_FIDELITY_CHANGED` (GENVIEW-FIDELITY-7). It does not read actors or
+ * The indicator is a consumer of `viewport.getFidelityLines()` and
+ * `VIEWPORT_FIDELITY_CHANGED` (GENVIEW-FIDELITY-7). Apps that need the absolute
+ * VFS-API-3 record use `getFidelityState()`. It does not read actors or
  * mappers.
  *
  * Replaces any existing attachment for this viewport (including the engine
@@ -172,7 +170,11 @@ export function canReportFidelity(viewport: IViewport): boolean {
 }
 
 function hasFidelityApi(viewport: IViewport): viewport is FidelityViewport {
-  return typeof (viewport as FidelityViewport).getFidelityState === 'function';
+  return typeof (viewport as FidelityViewport).getFidelityLines === 'function';
+}
+
+function linesOf(viewport: FidelityViewport): FidelityLine[] {
+  return viewport.getFidelityLines?.() ?? [];
 }
 
 /**
@@ -196,9 +198,7 @@ function subscribeToFidelity(
     }
 
     viewport.notifyFidelityStateChanged?.();
-    const { lines } = viewport.getFidelityState?.() ?? {
-      lines: [] as FidelityLine[],
-    };
+    const lines = linesOf(viewport);
 
     for (const view of views) {
       view.update(lines);
@@ -219,9 +219,7 @@ function subscribeToFidelity(
     if (disposed) {
       return;
     }
-    const { lines } = viewport.getFidelityState?.() ?? {
-      lines: [] as FidelityLine[],
-    };
+    const lines = linesOf(viewport);
     for (const view of views) {
       view.update(lines);
     }
@@ -486,7 +484,7 @@ function summaryOf(line: FidelityLine): {
 /**
  * Developer-facing hover text for the built-in indicator. This is not
  * clinician copy (FIDELITY-DISCOVER-4); applications should render clinician
- * words from `getFidelityState()` / `VIEWPORT_FIDELITY_CHANGED`.
+ * words from the absolute `getFidelityState()` / `VIEWPORT_FIDELITY_CHANGED`.
  */
 function fidelityHoverTextOf(lines: FidelityLine[]): string {
   if (!lines.length) {

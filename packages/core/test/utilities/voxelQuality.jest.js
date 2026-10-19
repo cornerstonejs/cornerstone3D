@@ -51,8 +51,8 @@ function makeRecord({
 
 describe('voxelQuality.compareVoxelQuality', () => {
   it('gives two verdicts from one record, for two readers', () => {
-    // Acceptance criterion 7 of issue #2921. One volume, one record, and two
-    // viewports that report their quality independently.
+    // Acceptance criterion 7 of issue #2921 / VFS-API-20. One volume, one
+    // record, and two displaySpacing values → two different verdicts.
     const record = makeRecord({
       spacing: [2, 2, 2],
       reduction: VoxelReductions.BoxAverage,

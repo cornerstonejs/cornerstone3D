@@ -41,12 +41,6 @@ export type FidelityLine = {
 
 export type SvgFidelityState = 'loading' | 'done' | 'lossy' | 'lod';
 
-/** Derived fidelity state of one viewport (FIDELITY-EVENT-3 / EVENT-5). */
-export type ViewportFidelityState = {
-  state: SvgFidelityState | 'hidden';
-  lines: FidelityLine[];
-};
-
 /**
  * Worst-case SVG state across lines: loading > lod > lossy > done.
  * No volume / no quality record yet stays hidden (blank), so the page does not

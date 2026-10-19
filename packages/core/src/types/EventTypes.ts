@@ -14,6 +14,7 @@ import type IImageCalibration from './IImageCalibration';
 import type { ColormapPublic } from './Colormap';
 import type IVolumeViewport from './IVolumeViewport';
 import type { ActorEntry } from './IActor';
+import type { ViewportFidelityState } from './ViewportFidelity';
 
 /**
  * CAMERA_MODIFIED Event's data
@@ -116,15 +117,17 @@ interface ElementEnabledEventDetail {
 }
 
 /**
- * VIEWPORT_FIDELITY_CHANGED Event's data (FIDELITY-EVENT-3)
+ * VIEWPORT_FIDELITY_CHANGED Event's data (FIDELITY-EVENT-3 / VFS-API-12)
  */
 interface ViewportFidelityChangedEventDetail {
   /** Viewport Unique ID in the renderingEngine */
   viewportId: string;
   /** Unique ID for the renderingEngine */
   renderingEngineId: string;
-  /** Derived fidelity state of the viewport */
-  state: 'loading' | 'done' | 'lossy' | 'lod' | 'hidden';
+  /**
+   * Absolute per-viewport fidelity record (VFS-API-3). Not a UI summary enum.
+   */
+  state: ViewportFidelityState;
 }
 
 /**

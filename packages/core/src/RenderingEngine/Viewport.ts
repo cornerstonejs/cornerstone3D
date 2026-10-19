@@ -57,11 +57,13 @@ import { getCubeSizeInView } from '../utilities/getPlaneCubeIntersectionDimensio
 import { getNormalizedAspectRatio } from '../utilities/getNormalizedAspectRatio';
 import { getConfiguration } from '../init';
 import type { extendedVtkCamera } from './vtkClasses/extendedVtkCamera';
+import type { FidelityLine } from './helpers/fidelityIndicator/fidelityIndicatorState';
+import type { ViewportFidelityState } from '../types/ViewportFidelity';
 import {
-  type FidelityLine,
-  type ViewportFidelityState,
-  svgStateOf,
-} from './helpers/fidelityIndicator/fidelityIndicatorState';
+  buildViewportFidelityState,
+  viewportFidelityStateKey,
+} from './helpers/fidelityIndicator/buildViewportFidelityState';
+import { displaySpacingOfViewport } from './helpers/fidelityIndicator/displaySpacingOfViewport';
 
 /**
  * An object representing a single viewport, which is a camera
@@ -162,13 +164,10 @@ class Viewport {
   /** A flag representing if viewport methods should fire events or not */
   readonly suppressEvents: boolean;
   /**
-   * Last derived fidelity state that was published on
-   * `VIEWPORT_FIDELITY_CHANGED`. Used so the event fires only on change
-   * (FIDELITY-EVENT-4).
+   * Key of the last absolute fidelity state published on
+   * `VIEWPORT_FIDELITY_CHANGED` (FIDELITY-EVENT-4 / VF-INFO-5a).
    */
-  private _lastPublishedFidelityState:
-    | ViewportFidelityState['state']
-    | undefined;
+  private _lastPublishedFidelityKey: string | undefined;
   protected hasPixelSpacing = true;
   protected calibration: IImageCalibration;
   /** The camera that is initially defined on the reset for
@@ -400,30 +399,39 @@ class Viewport {
   }
 
   /**
-   * On-demand fidelity query (FIDELITY-EVENT-5 / GENVIEW-FIDELITY-4). Pure
-   * with respect to events: it does not fire `VIEWPORT_FIDELITY_CHANGED`.
+   * Absolute per-viewport fidelity record (VFS-API-1 / FIDELITY-EVENT-5).
+   * Does not fire `VIEWPORT_FIDELITY_CHANGED`. Does not include a reader
+   * verdict — use {@link compareVoxelQuality} for that (VFS-API-6/7).
    */
   public getFidelityState(): ViewportFidelityState {
-    const lines = this.collectFidelityLines();
-
-    return {
-      state: svgStateOf(lines),
-      lines,
-    };
+    return buildViewportFidelityState(
+      this.collectFidelityLines(),
+      displaySpacingOfViewport(this)
+    );
   }
 
   /**
-   * Recomputes fidelity and fires `VIEWPORT_FIDELITY_CHANGED` when the derived
-   * state changes (FIDELITY-EVENT-2..4). Called after each successful render.
+   * Fidelity lines for the built-in indicator UI. Apps that need OHIF-style
+   * structured fields should use {@link getFidelityState} instead.
+   */
+  public getFidelityLines(): FidelityLine[] {
+    return this.collectFidelityLines();
+  }
+
+  /**
+   * Recomputes absolute fidelity and fires `VIEWPORT_FIDELITY_CHANGED` when
+   * any VFS-API-3 field changes (FIDELITY-EVENT-2..4). Called after each
+   * successful render.
    */
   public notifyFidelityStateChanged(): void {
     const next = this.getFidelityState();
+    const key = viewportFidelityStateKey(next);
 
-    if (next.state === this._lastPublishedFidelityState) {
+    if (key === this._lastPublishedFidelityKey) {
       return;
     }
 
-    this._lastPublishedFidelityState = next.state;
+    this._lastPublishedFidelityKey = key;
 
     if (this.suppressEvents) {
       return;
@@ -432,7 +440,7 @@ class Viewport {
     const eventDetail: EventTypes.ViewportFidelityChangedEventDetail = {
       viewportId: this.id,
       renderingEngineId: this.renderingEngineId,
-      state: next.state,
+      state: next,
     };
 
     triggerEvent(this.element, Events.VIEWPORT_FIDELITY_CHANGED, eventDetail);
@@ -440,7 +448,7 @@ class Viewport {
 
   /**
    * Builds the fidelity lines for this viewport. Subclasses that can show
-   * degraded data override this. The indicator and `getFidelityState` read
+   * degraded data override this. The indicator and fidelity builders read
    * only this method — they do not inspect actors or mappers
    * (GENVIEW-FIDELITY-2).
    */

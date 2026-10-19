@@ -21,7 +21,6 @@ import {
   isVolumeFidelityViewport,
   maybeAttachFidelityIndicator,
 } from '../src/RenderingEngine/helpers/fidelityIndicator';
-import { svgStateOf } from '../src/RenderingEngine/helpers/fidelityIndicator/fidelityIndicatorState';
 import { fidelityLinesFromVolumeActors } from '../src/RenderingEngine/helpers/fidelityIndicator/collectFidelityLines';
 
 function viewportStub({
@@ -44,10 +43,7 @@ function viewportStub({
     element,
     getActors: getActors ? () => [] : undefined,
     canReportFidelity: () => canReport,
-    getFidelityState: () => ({
-      state: svgStateOf(lines),
-      lines,
-    }),
+    getFidelityLines: () => lines,
     notifyFidelityStateChanged: () => {},
   };
 }
@@ -263,10 +259,8 @@ describe('fidelityIndicator attach gates', () => {
       const viewport = viewportStub({ type: ViewportType.ORTHOGRAPHIC });
       const records = new Map();
       viewport.getActors = () => [{ uid: 'vol', actor: {} }];
-      viewport.getFidelityState = () => {
-        const lines = fidelityLinesFromVolumeActors(viewport, records);
-        return { state: svgStateOf(lines), lines };
-      };
+      viewport.getFidelityLines = () =>
+        fidelityLinesFromVolumeActors(viewport, records);
       viewport._fidelityRecords = records;
       maybeAttachFidelityIndicator(viewport);
       jest.advanceTimersByTime(20);
