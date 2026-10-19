@@ -213,6 +213,7 @@ import type {
 import type {
   ViewportFidelityCause,
   ViewportFidelityState,
+  ViewportFidelityShownState,
 } from './ViewportFidelity';
 
 export type * from './MetadataModuleTypes';
@@ -414,6 +415,7 @@ export type {
   VoxelQualityCause,
   ViewportFidelityCause,
   ViewportFidelityState,
+  ViewportFidelityShownState,
 };
 
 export { ActorRenderMode };

@@ -2,7 +2,6 @@ export {
   attachFidelityIndicator,
   maybeAttachFidelityIndicator,
   detachFidelityIndicator,
-  isVolumeFidelityViewport,
   canReportFidelity,
   isLabelmapActorEntry,
 } from './attachFidelityIndicator';
@@ -31,3 +30,4 @@ export {
   buildViewportFidelityState,
   viewportFidelityStateKey,
 } from './buildViewportFidelityState';
+export { notifyFidelityStateChanged } from './notifyFidelityStateChanged';

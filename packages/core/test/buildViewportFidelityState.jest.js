@@ -3,6 +3,8 @@ import {
   buildViewportFidelityState,
   viewportFidelityStateKey,
 } from '../src/RenderingEngine/helpers/fidelityIndicator/buildViewportFidelityState';
+import { notifyFidelityStateChanged } from '../src/RenderingEngine/helpers/fidelityIndicator/notifyFidelityStateChanged';
+import Events from '../src/enums/Events';
 import ImageQualityStatus from '../src/enums/ImageQualityStatus';
 import VoxelReductions from '../src/enums/VoxelReductions';
 import VoxelDataSources from '../src/enums/VoxelDataSources';
@@ -46,8 +48,8 @@ function line(overrides = {}) {
   };
 }
 
-describe('buildViewportFidelityState (VFS-API-3)', () => {
-  it('represents every VFS-API-3 field on the type (VFS-API-18)', () => {
+describe('buildViewportFidelityState (FIDELITY-EVENT-5)', () => {
+  it('represents every field of the state', () => {
     const state = buildViewportFidelityState(
       [
         line({
@@ -80,22 +82,48 @@ describe('buildViewportFidelityState (VFS-API-3)', () => {
           missing: 0,
           voxels: 512 * 512 * 1232,
         }),
-        substitutedDefaults: undefined,
-        renderPathId: undefined,
       })
     );
   });
 
-  it('marks incomplete load as transient incompleteLoad (VFS-API-19)', () => {
+  it('reports an ordinary load as not lossy, with no load cause', () => {
+    // Every delivery is full resolution; only the facts show the load.
     const state = buildViewportFidelityState([
       line({
-        record: record({ missing: 100, voxels: 1000 }),
+        record: record({
+          missing: 100,
+          voxels: 1000,
+          status: ImageQualityStatus.ADJACENT_REPLICATE,
+        }),
       }),
     ]);
 
+    expect(state.lossy).toBe(false);
+    expect(state.shownState).toBe('done');
+    expect(state.cause).toBeUndefined();
+    expect(state.transient).toBe(false);
+    expect(state.progressive.lowest).toBe(ImageQualityStatus.FULL_RESOLUTION);
+    expect(state.progressive.loadedFraction).toBeCloseTo(0.9);
+  });
+
+  it('reports a load that shows replicated or lossy data as a lossy incompleteLoad', () => {
+    const state = buildViewportFidelityState([
+      line({
+        record: record({
+          missing: 100,
+          voxels: 1000,
+          lowest: ImageQualityStatus.ADJACENT_REPLICATE,
+        }),
+      }),
+    ]);
+
+    expect(state.lossy).toBe(true);
+    expect(state.shownState).toBe('loading');
     expect(state.cause).toBe('incompleteLoad');
     expect(state.transient).toBe(true);
-    expect(state.progressive.loadedFraction).toBeCloseTo(0.9);
+    expect(state.progressive.lowest).toBe(
+      ImageQualityStatus.ADJACENT_REPLICATE
+    );
   });
 
   it('marks interactive LOD as performanceTarget and transient', () => {
@@ -105,7 +133,7 @@ describe('buildViewportFidelityState (VFS-API-3)', () => {
     expect(state.transient).toBe(true);
   });
 
-  it('maps stack LOSSY ImageQualityStatus without replacing the enum (VF-CS3D-8)', () => {
+  it('maps stack LOSSY ImageQualityStatus without replacing the enum', () => {
     expect(ImageQualityStatus.LOSSY).toBe(7);
     expect(ImageQualityStatus.FULL_RESOLUTION).toBe(8);
 
@@ -124,7 +152,13 @@ describe('buildViewportFidelityState (VFS-API-3)', () => {
 
   it('changes viewportFidelityStateKey when progressive load advances', () => {
     const loading = buildViewportFidelityState([
-      line({ record: record({ missing: 50, voxels: 100 }) }),
+      line({
+        record: record({
+          missing: 50,
+          voxels: 100,
+          lowest: ImageQualityStatus.LOSSY,
+        }),
+      }),
     ]);
     const done = buildViewportFidelityState([
       line({ record: record({ missing: 0, voxels: 100 }) }),
@@ -138,7 +172,7 @@ describe('buildViewportFidelityState (VFS-API-3)', () => {
     expect(done.transient).toBe(false);
   });
 
-  it('shapes event detail fields magnitude / cause / transient (VFS-API-12)', () => {
+  it('shapes event detail fields magnitude / cause / transient', () => {
     const state = buildViewportFidelityState([
       line({
         reductionFactors: [2, 2, 4],
@@ -159,5 +193,75 @@ describe('buildViewportFidelityState (VFS-API-3)', () => {
     expect(detail.state.magnitude).toEqual([2, 2, 4]);
     expect(detail.state.cause).toBe('deviceTextureLimit');
     expect(detail.state.transient).toBe(false);
+  });
+
+  it('gives a decimation the cause of a spatial reduction, not lossyDecode', () => {
+    const state = buildViewportFidelityState([
+      line({
+        reductionFactors: [2, 2, 2],
+        fullResolution: false,
+        record: record({ reduction: VoxelReductions.Decimation }),
+      }),
+    ]);
+
+    expect(state.cause).toBe('deviceTextureLimit');
+  });
+});
+
+describe('notifyFidelityStateChanged (FIDELITY-EVENT-4)', () => {
+  function source() {
+    const element = document.createElement('div');
+    const events = [];
+    element.addEventListener(Events.VIEWPORT_FIDELITY_CHANGED, (evt) =>
+      events.push(evt.detail)
+    );
+    return { id: 'vp-1', renderingEngineId: 're-1', element, events };
+  }
+
+  function boxAverageAt(displaySpacing) {
+    const data = grid([32, 32, 64], [2, 2, 1]);
+    return line({
+      reductionFactors: [2, 2, 1],
+      fullResolution: false,
+      record: record({ grid: data, reduction: VoxelReductions.BoxAverage }),
+      displaySpacing,
+      verdict: {
+        lossless: displaySpacing[0] >= 2,
+        causes: displaySpacing[0] >= 2 ? [] : ['resolution'],
+        magnitude: 2 / displaySpacing[0],
+      },
+    });
+  }
+
+  it('does not fire on a zoom that keeps the verdict', () => {
+    const viewport = source();
+
+    for (const spacing of [4, 3, 2.5, 2]) {
+      notifyFidelityStateChanged(viewport, [
+        boxAverageAt([spacing, spacing, 1]),
+      ]);
+    }
+
+    expect(viewport.events).toHaveLength(1);
+  });
+
+  it('fires on a zoom that changes a box-average verdict', () => {
+    const viewport = source();
+
+    notifyFidelityStateChanged(viewport, [boxAverageAt([2, 2, 1])]);
+    notifyFidelityStateChanged(viewport, [boxAverageAt([1, 1, 1])]);
+
+    expect(viewport.events).toHaveLength(2);
+    expect(viewport.events[1].state.displayResolution.spacing).toEqual([
+      1, 1, 1,
+    ]);
+  });
+
+  it('fires nothing for a viewport with suppressEvents', () => {
+    const viewport = { ...source(), suppressEvents: true };
+
+    notifyFidelityStateChanged(viewport, [line()]);
+
+    expect(viewport.events).toHaveLength(0);
   });
 });

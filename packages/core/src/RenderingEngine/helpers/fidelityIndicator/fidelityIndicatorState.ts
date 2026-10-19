@@ -17,14 +17,19 @@ export type FidelityLine = {
   record?: VoxelQualityRecord;
   /**
    * Stack / progressive image summary when no volume record exists
-   * (FIDELITY-RECORD-5, FIDELITY-SCOPE-2).
+   * (FIDELITY-RECORD-5, FIDELITY-STATE-8).
    */
   imageQualityStatus?: ImageQualityStatus;
   /**
    * Magnification-aware verdict from `compareVoxelQuality` when a volume
-   * record and display spacing are available (FIDELITY-NOTIFY-7).
+   * record and display spacing are available (FIDELITY-STATE-6).
    */
   verdict?: VoxelQualityVerdict;
+  /**
+   * Display spacing on each index axis of `record.grid`, as given to
+   * `compareVoxelQuality` (see `displaySpacingOfViewport`).
+   */
+  displaySpacing?: Point3;
   /**
    * Per-axis ratio of drawn spacing / full-volume spacing (e.g. `[2, 2, 10]`).
    * Each value is 1 when that axis matches the full volume.
@@ -43,23 +48,22 @@ export type SvgFidelityState = 'loading' | 'done' | 'lossy' | 'lod';
 
 /**
  * Worst-case SVG state across lines: loading > lod > lossy > done.
- * No volume / no quality record yet stays hidden (blank), so the page does not
- * flash the loading glyph before the user starts a load. Once one line has a
- * record or stack image status, a line without one is loading, and not full
- * resolution.
+ * A line with no volume record and no stack image status adds nothing, so
+ * no lines or only such lines give `hidden`. `done` means lossless; the
+ * indicator shows it only as a recovery from a lossy state.
  */
 export function svgStateOf(lines: FidelityLine[]): SvgFidelityState | 'hidden' {
-  if (!lines.length) {
-    return 'hidden';
-  }
-
   let anyLoading = false;
   let anyLod = false;
   let anyLossy = false;
-  let anyWithRecord = false;
+  let anyWithData = false;
 
   for (const line of lines) {
-    anyWithRecord ||= !!line.record || line.imageQualityStatus !== undefined;
+    if (!line.record && line.imageQualityStatus === undefined) {
+      continue;
+    }
+
+    anyWithData = true;
     const kind = lineKind(line);
 
     if (kind === 'loading') {
@@ -71,7 +75,7 @@ export function svgStateOf(lines: FidelityLine[]): SvgFidelityState | 'hidden' {
     }
   }
 
-  if (!anyWithRecord) {
+  if (!anyWithData) {
     return 'hidden';
   }
 
@@ -93,6 +97,16 @@ export function svgStateOf(lines: FidelityLine[]): SvgFidelityState | 'hidden' {
 /** What the data of one line holds, apart from the sample distance. */
 export type FidelityDataKind = 'loading' | 'decimated' | 'reduced' | 'full';
 
+/**
+ * Classifies the data of one line (FIDELITY-STATE-2, FIDELITY-STATE-6):
+ *
+ * - `loading`: replicated, sub-resolution or lossy data stands in for data
+ *   that has not arrived. Missing data with only full-resolution deliveries is
+ *   not `loading`.
+ * - `decimated`: an aliasing reduction, lossy at every magnification.
+ * - `reduced`: lossy deliveries, or a box average coarser than the display.
+ * - `full`: lossless at the current display spacing.
+ */
 export function dataKindOf(line: FidelityLine): FidelityDataKind {
   const {
     record,
@@ -106,7 +120,16 @@ export function dataKindOf(line: FidelityLine): FidelityDataKind {
     return dataKindOfImageQuality(imageQualityStatus);
   }
 
-  if (!record || record.missing > 0) {
+  if (!record) {
+    return 'loading';
+  }
+
+  // Missing data alone is not lossy: an ordinary load delivers only full
+  // resolution frames. Replicated, sub-resolution or lossy data is lossy.
+  const lowest = record.lowest ?? ImageQualityStatus.FULL_RESOLUTION;
+  const lossyDelivery = lowest < ImageQualityStatus.FULL_RESOLUTION;
+
+  if (lossyDelivery && record.missing > 0) {
     return 'loading';
   }
 
@@ -114,33 +137,33 @@ export function dataKindOf(line: FidelityLine): FidelityDataKind {
     return 'decimated';
   }
 
-  // Unreduced grids are full fidelity regardless of display spacing.
-  // compareVoxelQuality may still push `resolution` when voxels exceed a
-  // display pixel (small study fitted large); that must not invent a warning
-  // (FIDELITY-NOTIFY-7 only clears warnings for reduced data).
+  if (lossyDelivery) {
+    return 'reduced';
+  }
+
+  // An unreduced grid is lossless at every display spacing; a `resolution`
+  // cause on it (small study fitted large) must not invent a warning.
   const spatiallyReduced = !fullResolution || isReduced(reductionFactors);
 
   if (!spatiallyReduced) {
     return 'full';
   }
 
-  // Magnification-aware path for actually reduced data (FIDELITY-NOTIFY-7).
+  // Magnification-aware path for actually reduced data (FIDELITY-STATE-6).
+  // Only the spatial causes count here: `missingData` of an ordinary load
+  // is not lossy.
   if (verdict) {
-    if (verdict.lossless) {
-      return 'full';
-    }
-
     if (verdict.causes.includes('aliasing')) {
       return 'decimated';
     }
 
-    return 'reduced';
+    return verdict.causes.includes('resolution') ? 'reduced' : 'full';
   }
 
   return 'reduced';
 }
 
-/** Maps a stack ImageQualityStatus to a data kind (FIDELITY-SCOPE-2). */
+/** Maps a stack ImageQualityStatus to a data kind (FIDELITY-STATE-8). */
 export function dataKindOfImageQuality(
   status: ImageQualityStatus
 ): FidelityDataKind {

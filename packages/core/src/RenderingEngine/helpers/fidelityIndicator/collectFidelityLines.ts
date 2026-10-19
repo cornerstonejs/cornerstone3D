@@ -1,5 +1,6 @@
 import cache from '../../../cache/cache';
 import ImageQualityStatus from '../../../enums/ImageQualityStatus';
+import ViewportType from '../../../enums/ViewportType';
 import type {
   ActorEntry,
   IImage,
@@ -31,9 +32,14 @@ type VolumeMapperLike = {
 
 type VolumeViewportLike = {
   getActors: () => ActorEntry[];
+  type?: string;
   canvas?: { clientHeight?: number; height?: number };
   sHeight?: number;
-  getCamera?: () => { parallelScale?: number } | undefined;
+  getCamera?: () =>
+    | { parallelScale?: number; viewPlaneNormal?: Point3 }
+    | undefined;
+  /** True for a 3D view; legacy viewports derive it from `type`. */
+  volume3D?: boolean;
 };
 
 /** The quality record of one volume, for the grid that it was read for. */
@@ -59,7 +65,7 @@ export function fidelityLinesFromBindings(
   viewport: VolumeViewportLike,
   sources: BindingFidelitySource[]
 ): FidelityLine[] {
-  const displaySpacing = displaySpacingOfViewport(viewport);
+  const volume3D = isVolume3D(viewport);
   const lines: FidelityLine[] = [];
 
   for (const source of sources) {
@@ -71,8 +77,13 @@ export function fidelityLinesFromBindings(
     const fullGrid = source.fullGrid ?? record.grid;
     const reductionFactors = reductionFactorsOf(record.grid, fullGrid);
     const fullResolution = !isReduced(reductionFactors);
+    const displaySpacing = displaySpacingOfViewport(viewport, {
+      grid: record.grid,
+      sourceGrid: fullGrid,
+      volume3D,
+    });
     // Only apply magnification when display spacing is known; otherwise keep
-    // the reduction-factor path (FIDELITY-NOTIFY-7).
+    // the reduction-factor path (FIDELITY-STATE-6).
     const verdict = displaySpacing
       ? compareVoxelQuality(record, { displaySpacing })
       : undefined;
@@ -81,6 +92,7 @@ export function fidelityLinesFromBindings(
       label: source.label ?? 'Image',
       record,
       verdict,
+      displaySpacing,
       reductionFactors,
       fullResolution,
       sampleDistanceLod: source.sampleDistanceLod ?? 1,
@@ -98,7 +110,7 @@ export function fidelityLinesFromVolumeActors(
   viewport: VolumeViewportLike,
   records: Map<string, CachedRecord> = new Map()
 ): FidelityLine[] {
-  const displaySpacing = displaySpacingOfViewport(viewport);
+  const volume3D = isVolume3D(viewport);
   const lines: FidelityLine[] = [];
   const seen = new Set<string>();
 
@@ -121,6 +133,8 @@ export function fidelityLinesFromVolumeActors(
     let cached = records.get(id);
 
     if (!cached || !voxelGridsEqual(cached.grid, grid)) {
+      // The legacy reduced texture fills with `volume.reductionStatistic`
+      // (default average), the same statistic `getGridQuality` defaults to.
       cached = {
         grid,
         record: volume.getGridQuality(grid, volume.reductionStatistic) as
@@ -132,6 +146,11 @@ export function fidelityLinesFromVolumeActors(
 
     const reductionFactors = reductionFactorsOf(grid, fullGrid);
     const record = cached.record;
+    const displaySpacing = displaySpacingOfViewport(viewport, {
+      grid,
+      sourceGrid: fullGrid,
+      volume3D,
+    });
     const verdict =
       record && displaySpacing
         ? compareVoxelQuality(record, { displaySpacing })
@@ -141,6 +160,7 @@ export function fidelityLinesFromVolumeActors(
       label: 'Image',
       record: record ?? undefined,
       verdict,
+      displaySpacing,
       reductionFactors,
       // Spacing only — dims/origin differences must not sticky-flag lossy.
       fullResolution: !isReduced(reductionFactors),
@@ -151,9 +171,17 @@ export function fidelityLinesFromVolumeActors(
   return lines;
 }
 
+function isVolume3D(viewport: VolumeViewportLike): boolean {
+  return (
+    viewport.volume3D ??
+    (viewport.type === ViewportType.VOLUME_3D ||
+      viewport.type === ViewportType.PERSPECTIVE)
+  );
+}
+
 /**
  * One fidelity line for the image a stack viewport shows now
- * (FIDELITY-SCOPE-2).
+ * (FIDELITY-STATE-8).
  */
 export function fidelityLineFromStackImage(
   image: IImage | undefined

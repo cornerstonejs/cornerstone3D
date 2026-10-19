@@ -8,9 +8,10 @@ interface Cornerstone3DConfig {
   isMobile?: boolean;
 
   /**
-   * When true, volume viewports do not show the fidelity indicator.
-   * Dangerous because it hides reduced/decimated/LOD feedback during load
-   * and interaction.
+   * When true, viewports do not show the built-in fidelity indicator. For an
+   * application that shows its own indicator, for example OHIF. Dangerous:
+   * without such an indicator the user sees lossy pixels with no disclosure
+   * (FIDELITY-CONF-4).
    */
   dangerouslyDisableFidelityIndicator?: boolean;
 

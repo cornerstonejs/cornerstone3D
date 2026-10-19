@@ -59,11 +59,9 @@ import { getConfiguration } from '../init';
 import type { extendedVtkCamera } from './vtkClasses/extendedVtkCamera';
 import type { FidelityLine } from './helpers/fidelityIndicator/fidelityIndicatorState';
 import type { ViewportFidelityState } from '../types/ViewportFidelity';
-import {
-  buildViewportFidelityState,
-  viewportFidelityStateKey,
-} from './helpers/fidelityIndicator/buildViewportFidelityState';
+import { buildViewportFidelityState } from './helpers/fidelityIndicator/buildViewportFidelityState';
 import { displaySpacingOfViewport } from './helpers/fidelityIndicator/displaySpacingOfViewport';
+import { notifyFidelityStateChanged } from './helpers/fidelityIndicator/notifyFidelityStateChanged';
 
 /**
  * An object representing a single viewport, which is a camera
@@ -163,11 +161,6 @@ class Viewport {
   _suppressCameraModifiedEvents = false;
   /** A flag representing if viewport methods should fire events or not */
   readonly suppressEvents: boolean;
-  /**
-   * Key of the last absolute fidelity state published on
-   * `VIEWPORT_FIDELITY_CHANGED` (FIDELITY-EVENT-4 / VF-INFO-5a).
-   */
-  private _lastPublishedFidelityKey: string | undefined;
   protected hasPixelSpacing = true;
   protected calibration: IImageCalibration;
   /** The camera that is initially defined on the reset for
@@ -399,9 +392,9 @@ class Viewport {
   }
 
   /**
-   * Absolute per-viewport fidelity record (VFS-API-1 / FIDELITY-EVENT-5).
+   * Absolute per-viewport fidelity record (FIDELITY-EVENT-5).
    * Does not fire `VIEWPORT_FIDELITY_CHANGED`. Does not include a reader
-   * verdict — use {@link compareVoxelQuality} for that (VFS-API-6/7).
+   * verdict — use {@link compareVoxelQuality} for that.
    */
   public getFidelityState(): ViewportFidelityState {
     return buildViewportFidelityState(
@@ -411,39 +404,25 @@ class Viewport {
   }
 
   /**
-   * Fidelity lines for the built-in indicator UI. Apps that need OHIF-style
-   * structured fields should use {@link getFidelityState} instead.
+   * Fidelity lines for the built-in indicator UI. Applications should use
+   * {@link getFidelityState} instead.
    */
   public getFidelityLines(): FidelityLine[] {
     return this.collectFidelityLines();
   }
 
   /**
-   * Recomputes absolute fidelity and fires `VIEWPORT_FIDELITY_CHANGED` when
-   * any VFS-API-3 field changes (FIDELITY-EVENT-2..4). Called after each
-   * successful render.
+   * Fires `VIEWPORT_FIDELITY_CHANGED` when the derived fidelity state changes
+   * (FIDELITY-EVENT-2..4). The rendering engines call this after each render.
+   *
+   * @internal
    */
   public notifyFidelityStateChanged(): void {
-    const next = this.getFidelityState();
-    const key = viewportFidelityStateKey(next);
-
-    if (key === this._lastPublishedFidelityKey) {
-      return;
-    }
-
-    this._lastPublishedFidelityKey = key;
-
-    if (this.suppressEvents) {
-      return;
-    }
-
-    const eventDetail: EventTypes.ViewportFidelityChangedEventDetail = {
-      viewportId: this.id,
-      renderingEngineId: this.renderingEngineId,
-      state: next,
-    };
-
-    triggerEvent(this.element, Events.VIEWPORT_FIDELITY_CHANGED, eventDetail);
+    notifyFidelityStateChanged(
+      this,
+      this.collectFidelityLines(),
+      displaySpacingOfViewport(this)
+    );
   }
 
   /**

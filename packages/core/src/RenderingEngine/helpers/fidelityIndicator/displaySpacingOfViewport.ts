@@ -1,21 +1,43 @@
-import type { Point3 } from '../../../types';
+import type { Point3, VoxelGrid } from '../../../types';
+import getSpacingInNormalDirection from '../../../utilities/getSpacingInNormalDirection';
 
 type ViewportSpacingLike = {
   canvas?: { clientHeight?: number; height?: number };
   sHeight?: number;
-  getCamera?: () => { parallelScale?: number } | undefined;
+  getCamera?: () =>
+    | { parallelScale?: number; viewPlaneNormal?: Point3 }
+    | undefined;
+};
+
+export type DisplaySpacingOptions = {
+  /** The grid that the render path draws; the result follows its index axes. */
+  grid?: VoxelGrid;
+  /** The full-resolution grid of the source volume. Defaults to `grid`. */
+  sourceGrid?: VoxelGrid;
+  /** True for a 3D view, where a rotation can bring any axis into the plane. */
+  volume3D?: boolean;
 };
 
 /**
- * World size of one canvas pixel on each axis (FIDELITY-RECORD-2 /
- * GENVIEW-FIDELITY-3). For parallel projection, that is
- * `2 * parallelScale / canvasHeight` on the in-plane axes.
+ * Display spacing on each index axis of `grid`, as `compareVoxelQuality`
+ * reads it (FIDELITY-STATE-6, GENVIEW-FIDELITY-3):
  *
- * Returns undefined when the camera or canvas is not ready; callers then fall
- * back to reduction-factor comparison without magnification.
+ * - an axis in the view plane gets the world size of one display pixel,
+ *   `2 * parallelScale / canvasHeight`;
+ * - in a slice view, the axis normal to the view plane gets the slice spacing
+ *   of the source volume, so a reduction on that axis stays visible;
+ * - in a 3D view, every axis gets the display pixel size.
+ *
+ * An oblique axis blends the two values by its angle to the view plane
+ * normal: `sqrt(p² (1 - c²) + s² c²)`, with `c = |axis · normal|`.
+ *
+ * Without a grid, or without a view plane normal, every axis gets the display
+ * pixel size. Returns undefined when the camera or the canvas is not ready;
+ * callers then compare reduction factors without magnification.
  */
 export function displaySpacingOfViewport(
-  viewport: ViewportSpacingLike
+  viewport: ViewportSpacingLike,
+  options: DisplaySpacingOptions = {}
 ): Point3 | undefined {
   const camera = viewport.getCamera?.();
   const parallelScale = camera?.parallelScale;
@@ -28,7 +50,36 @@ export function displaySpacingOfViewport(
     return undefined;
   }
 
-  const spacing = (2 * parallelScale) / height;
+  const pixel = (2 * parallelScale) / height;
+  const { grid, volume3D } = options;
+  const normal = camera.viewPlaneNormal;
 
-  return [spacing, spacing, spacing];
+  if (!grid || volume3D || !normal) {
+    return [pixel, pixel, pixel];
+  }
+
+  const sourceGrid = options.sourceGrid ?? grid;
+  const slice = getSpacingInNormalDirection(sourceGrid, normal);
+
+  if (!(slice > 0)) {
+    return [pixel, pixel, pixel];
+  }
+
+  const spacing = [pixel, pixel, pixel] as Point3;
+
+  for (let axis = 0; axis < 3; axis++) {
+    const offset = axis * 3;
+    const c = Math.abs(
+      grid.direction[offset] * normal[0] +
+        grid.direction[offset + 1] * normal[1] +
+        grid.direction[offset + 2] * normal[2]
+    );
+    const normalPart = Math.min(1, c * c);
+
+    spacing[axis] = Math.sqrt(
+      pixel * pixel * (1 - normalPart) + slice * slice * normalPart
+    );
+  }
+
+  return spacing;
 }

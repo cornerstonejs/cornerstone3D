@@ -7,6 +7,7 @@ import type {
   Point3,
   ViewReference,
   ViewReferenceSpecifier,
+  ViewportContentMode,
 } from '../../../types';
 import type ViewportInputOptions from '../../../types/ViewportInputOptions';
 import renderingEngineCache from '../../renderingEngineCache';
@@ -134,6 +135,22 @@ class VolumeViewport3D extends GenericViewport<
       'data-rendering-engine-uid',
       this.renderingEngineId
     );
+  }
+
+  /**
+   * Content mode of the 3D family (GENVIEW-FAMILY-5): `volume3d` for a mounted
+   * volume, `unknown` for a geometry-only source, `empty` with no source.
+   */
+  getCurrentMode(): ViewportContentMode {
+    const binding = this.getSourceBinding();
+
+    if (!binding) {
+      return 'empty';
+    }
+
+    return binding.rendering.renderMode === 'vtkGeometry3d'
+      ? 'unknown'
+      : 'volume3d';
   }
 
   /**

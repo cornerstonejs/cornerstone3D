@@ -16,7 +16,6 @@ export {
   maybeAttachFidelityIndicator,
   detachFidelityIndicator,
   canReportFidelity,
-  isVolumeFidelityViewport,
 } from './RenderingEngine/helpers/fidelityIndicator';
 import VolumeViewport from './RenderingEngine/VolumeViewport';
 import VolumeViewport3D from './RenderingEngine/VolumeViewport3D';

@@ -1,6 +1,288 @@
 /** CSS for the viewport fidelity indicator (.fi-* / .fidelity-indicator). */
-export const FIDELITY_INDICATOR_CSS =
-  "/*\n * Drawn in a 10 × 10 box. The whole indicator scales with its rendered size, strokes\n * included. The state comes from attributes on the .fi-root wrapper:\n *   data-state  loading | done | lossy | lod\n *   data-from   the previous state (lossy only animates its change when it comes from loading)\n *   data-shown  false while Done has faded out\n *\n * Loading / LOD use an HTML disc (compositor-friendly transform). Done / lossy use SVG.\n *\n */\n\n.fi-root {\n  --fi-amber: #f0a030;\n  --fi-blue: #358cfd;\n  width: 10px;\n  height: 10px;\n  overflow: visible;\n  line-height: 0;\n  pointer-events: auto;\n}\n\n/* No state / faded Done: not hoverable (avoids a floating tooltip). */\n.fi-root:not([data-state]),\n.fi-root[data-state='done'][data-shown='false'] {\n  pointer-events: none;\n}\n\n.fidelity-indicator {\n  display: block;\n  overflow: visible;\n}\n\n/* Product fidelity tooltip (icon hover). Separate from the debug badge dump. */\n.fi-details {\n  display: none;\n  position: absolute;\n  top: 100%;\n  right: 0;\n  margin: 4px 0 0;\n  padding: 6px 8px;\n  background: rgba(0, 0, 0, 0.85);\n  border-radius: 4px;\n  color: #fff;\n  font: 11px/1.3 monospace;\n  text-align: left;\n  white-space: pre;\n  pointer-events: none;\n  z-index: 1;\n}\n\n.fi-root[data-hover='true'] .fi-details {\n  display: block;\n}\n\n/* ---------- HTML layer: loading pulse + solid LOD (compositor-friendly) ---------- */\n\n.fi-html {\n  display: none;\n  position: relative;\n  width: 10px;\n  height: 10px;\n  transform-origin: center;\n}\n\n.fi-root[data-state='loading'] .fi-html,\n.fi-root[data-state='lod'] .fi-html {\n  display: block;\n}\n\n.fi-root[data-state='loading'] .fidelity-indicator,\n.fi-root[data-state='lod'] .fidelity-indicator {\n  display: none;\n}\n\n.fi-root[data-state='loading'] .fi-html {\n  animation:\n    fi-pop-scale 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both,\n    fi-pop-fade 0.3s linear both;\n}\n\n.fi-html-ring {\n  position: absolute;\n  inset: 0;\n  border-radius: 50%;\n  background: var(--fi-amber);\n  opacity: 0.3;\n}\n\n.fi-html-dot {\n  position: absolute;\n  left: 2px;\n  top: 2px;\n  width: 6px;\n  height: 6px;\n  border-radius: 50%;\n  background: var(--fi-amber);\n  transform: translateZ(0);\n  will-change: transform;\n  /* Starts once the pop-in has finished; 6 px until then */\n  animation: fi-loading 1.8s linear 0.3s infinite;\n}\n\n.fi-root[data-state='lod'] .fi-html-ring {\n  opacity: 1;\n}\n\n.fi-root[data-state='lod'] .fi-html-dot {\n  display: none;\n  animation: none;\n}\n\n@keyframes fi-pop-scale {\n  from {\n    transform: scale(0);\n  }\n  to {\n    transform: scale(1);\n  }\n}\n\n/* Fully opaque by ~0.06 s, while the scale is still growing */\n@keyframes fi-pop-fade {\n  0% {\n    opacity: 0;\n  }\n  21% {\n    opacity: 1;\n  }\n  100% {\n    opacity: 1;\n  }\n}\n\n/* Loading animation, one 1.8 s cycle: shrinks 6 → ~0.67 px over 0.9 s (ease-in t^2.2), then springs back to 6 px\n   over 0.9 s, overshooting to ~6.9 px. Sampled from the spring maths in the full spec. */\n@keyframes fi-loading {\n  0% { transform: translateZ(0) scale(1); animation-timing-function: cubic-bezier(0.2, 0, 0.57, 0.05); }\n  50% { transform: translateZ(0) scale(0.1111); animation-timing-function: linear; }\n  51.25% { transform: translateZ(0) scale(0.2561); }\n  52.5% { transform: translateZ(0) scale(0.4133); }\n  53.75% { transform: translateZ(0) scale(0.569); }\n  55% { transform: translateZ(0) scale(0.7133); }\n  56.25% { transform: translateZ(0) scale(0.8394); }\n  57.5% { transform: translateZ(0) scale(0.9435); }\n  58.75% { transform: translateZ(0) scale(1.0244); }\n  60% { transform: translateZ(0) scale(1.0826); }\n  61.25% { transform: translateZ(0) scale(1.1201); }\n  62.5% { transform: translateZ(0) scale(1.1397); }\n  63.75% { transform: translateZ(0) scale(1.1447); }\n  65% { transform: translateZ(0) scale(1.1386); }\n  66.25% { transform: translateZ(0) scale(1.1247); }\n  67.5% { transform: translateZ(0) scale(1.1059); }\n  68.75% { transform: translateZ(0) scale(1.0848); }\n  70% { transform: translateZ(0) scale(1.0636); }\n  71.25% { transform: translateZ(0) scale(1.0436); }\n  72.5% { transform: translateZ(0) scale(1.026); }\n  73.75% { transform: translateZ(0) scale(1.0114); }\n  75% { transform: translateZ(0) scale(1); }\n  76.25% { transform: translateZ(0) scale(0.9918); }\n  77.5% { transform: translateZ(0) scale(0.9865); }\n  78.75% { transform: translateZ(0) scale(0.9837); }\n  80% { transform: translateZ(0) scale(0.9829); }\n  81.25% { transform: translateZ(0) scale(0.9836); }\n  82.5% { transform: translateZ(0) scale(0.9854); }\n  83.75% { transform: translateZ(0) scale(0.9878); }\n  85% { transform: translateZ(0) scale(0.9904); }\n  86.25% { transform: translateZ(0) scale(0.9929); }\n  87.5% { transform: translateZ(0) scale(0.9952); }\n  88.75% { transform: translateZ(0) scale(0.9972); }\n  90% { transform: translateZ(0) scale(0.9987); }\n  91.25% { transform: translateZ(0) scale(0.9997); }\n  92.5% { transform: translateZ(0) scale(1.0004); }\n  93.75% { transform: translateZ(0) scale(1.0007); }\n  95% { transform: translateZ(0) scale(1.0008); }\n  96.25% { transform: translateZ(0) scale(1.0007); }\n  97.5% { transform: translateZ(0) scale(1.0005); }\n  98.75% { transform: translateZ(0) scale(1.0002); }\n  100% { transform: translateZ(0) scale(1); }\n}\n\n/* ---------- SVG parts (done / lossy) ---------- */\n\n/* Appear when SVG glyph is injected for done/lossy */\n.fi-glyph {\n  transform-box: fill-box;\n  transform-origin: center;\n  animation:\n    fi-pop-scale 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both,\n    fi-pop-fade 0.3s linear both;\n}\n\n.fi-disc {\n  fill: var(--fi-amber);\n  fill-opacity: 0.3;\n}\n\n.fi-dot-wrap,\n.fi-dot {\n  transform-box: fill-box;\n  transform-origin: center;\n}\n\n.fi-dot {\n  fill: var(--fi-amber);\n  animation: none;\n}\n\n.fi-check,\n.fi-dash {\n  fill: none;\n  stroke-linecap: round;\n  stroke-linejoin: round;\n  opacity: 0;\n}\n\n.fi-check {\n  stroke: var(--fi-blue);\n  stroke-width: 1.5;\n}\n\n.fi-dash {\n  stroke: var(--fi-amber);\n  stroke-width: 2;\n  transform-box: fill-box;\n  transform-origin: center;\n  transform: scale(0.6);\n}\n\n/* ---------- Done: single-frame swap to a blue disc (40%) + blue check ---------- */\n\n.fi-root[data-state='done'] .fi-html {\n  display: none;\n}\n\n.fi-root[data-state='done'] .fi-dot-wrap {\n  display: none;\n}\n\n.fi-root[data-state='done'] .fi-disc {\n  fill: var(--fi-blue);\n  fill-opacity: 0.4;\n}\n\n.fi-root[data-state='done'] .fi-check {\n  opacity: 1;\n}\n\n/* Held for 1 s, then fades out over 0.2 s. Does not reappear. */\n.fi-root[data-state='done'] {\n  transition: opacity 0.2s linear;\n}\n\n.fi-root[data-state='done'][data-shown='false'] {\n  opacity: 0;\n}\n\n/* ---------- As good as it gets (lossy): amber disc (30%) + amber dash. Stays. ---------- */\n\n.fi-root[data-state='lossy'] .fi-html {\n  display: none;\n}\n\n.fi-root[data-state='lossy'] .fi-dot-wrap {\n  transform: scale(0);\n}\n\n.fi-root[data-state='lossy'] .fi-dash {\n  opacity: 1;\n  transform: scale(1);\n}\n\n/* From loading, the change takes 0.4 s: the inner fill collapses to the centre (ease-in t^2.2)\n   while the disc stays at 30%; the dash fades in over 0.18–0.34 s and grows 60% → 100% over\n   0.18–0.4 s, with a slight overshoot. From any other state it simply pops in, already settled. */\n.fi-root[data-state='lossy'][data-from='loading'] .fi-dot-wrap {\n  transition: transform 0.4s cubic-bezier(0.2, 0, 0.57, 0.05);\n}\n\n.fi-root[data-state='lossy'][data-from='loading'] .fi-dash {\n  transition:\n    opacity 0.16s linear 0.18s,\n    transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) 0.18s;\n}\n";
+export const FIDELITY_INDICATOR_CSS = `/*
+ * Drawn in a 10 × 10 box. The whole indicator scales with its rendered size, strokes
+ * included. The state comes from attributes on the .fi-root wrapper:
+ *   data-state  loading | done | lossy | lod
+ *   data-from   the previous state (lossy only animates its change when it comes from loading)
+ *   data-shown  false while Done has faded out
+ *
+ * Loading / LOD use an HTML disc (compositor-friendly transform). Done / lossy use SVG.
+ *
+ */
+
+.fi-root {
+  --fi-amber: #f0a030;
+  --fi-blue: #358cfd;
+  width: 10px;
+  height: 10px;
+  overflow: visible;
+  line-height: 0;
+  pointer-events: auto;
+}
+
+/* No state / faded Done: not hoverable (avoids a floating tooltip). */
+.fi-root:not([data-state]),
+.fi-root[data-state='done'][data-shown='false'] {
+  pointer-events: none;
+}
+
+.fidelity-indicator {
+  display: block;
+  overflow: visible;
+}
+
+/* Product fidelity tooltip (icon hover). Separate from the debug badge dump. */
+.fi-details {
+  display: none;
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin: 4px 0 0;
+  padding: 6px 8px;
+  background: rgba(0, 0, 0, 0.85);
+  border-radius: 4px;
+  color: #fff;
+  font: 11px/1.3 monospace;
+  text-align: left;
+  white-space: pre;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.fi-root[data-hover='true'] .fi-details {
+  display: block;
+}
+
+/* ---------- HTML layer: loading pulse + solid LOD (compositor-friendly) ---------- */
+
+.fi-html {
+  display: none;
+  position: relative;
+  width: 10px;
+  height: 10px;
+  transform-origin: center;
+}
+
+.fi-root[data-state='loading'] .fi-html,
+.fi-root[data-state='lod'] .fi-html {
+  display: block;
+}
+
+.fi-root[data-state='loading'] .fidelity-indicator,
+.fi-root[data-state='lod'] .fidelity-indicator {
+  display: none;
+}
+
+.fi-root[data-state='loading'] .fi-html {
+  animation:
+    fi-pop-scale 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both,
+    fi-pop-fade 0.3s linear both;
+}
+
+.fi-html-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--fi-amber);
+  opacity: 0.3;
+}
+
+.fi-html-dot {
+  position: absolute;
+  left: 2px;
+  top: 2px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--fi-amber);
+  transform: translateZ(0);
+  will-change: transform;
+  /* Starts once the pop-in has finished; 6 px until then */
+  animation: fi-loading 1.8s linear 0.3s infinite;
+}
+
+.fi-root[data-state='lod'] .fi-html-ring {
+  opacity: 1;
+}
+
+.fi-root[data-state='lod'] .fi-html-dot {
+  display: none;
+  animation: none;
+}
+
+@keyframes fi-pop-scale {
+  from {
+    transform: scale(0);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+/* Fully opaque by ~0.06 s, while the scale is still growing */
+@keyframes fi-pop-fade {
+  0% {
+    opacity: 0;
+  }
+  21% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* Loading animation, one 1.8 s cycle: shrinks 6 → ~0.67 px over 0.9 s (ease-in t^2.2), then springs back to 6 px
+   over 0.9 s, overshooting to ~6.9 px. Sampled from the spring maths in the full spec. */
+@keyframes fi-loading {
+  0% { transform: translateZ(0) scale(1); animation-timing-function: cubic-bezier(0.2, 0, 0.57, 0.05); }
+  50% { transform: translateZ(0) scale(0.1111); animation-timing-function: linear; }
+  51.25% { transform: translateZ(0) scale(0.2561); }
+  52.5% { transform: translateZ(0) scale(0.4133); }
+  53.75% { transform: translateZ(0) scale(0.569); }
+  55% { transform: translateZ(0) scale(0.7133); }
+  56.25% { transform: translateZ(0) scale(0.8394); }
+  57.5% { transform: translateZ(0) scale(0.9435); }
+  58.75% { transform: translateZ(0) scale(1.0244); }
+  60% { transform: translateZ(0) scale(1.0826); }
+  61.25% { transform: translateZ(0) scale(1.1201); }
+  62.5% { transform: translateZ(0) scale(1.1397); }
+  63.75% { transform: translateZ(0) scale(1.1447); }
+  65% { transform: translateZ(0) scale(1.1386); }
+  66.25% { transform: translateZ(0) scale(1.1247); }
+  67.5% { transform: translateZ(0) scale(1.1059); }
+  68.75% { transform: translateZ(0) scale(1.0848); }
+  70% { transform: translateZ(0) scale(1.0636); }
+  71.25% { transform: translateZ(0) scale(1.0436); }
+  72.5% { transform: translateZ(0) scale(1.026); }
+  73.75% { transform: translateZ(0) scale(1.0114); }
+  75% { transform: translateZ(0) scale(1); }
+  76.25% { transform: translateZ(0) scale(0.9918); }
+  77.5% { transform: translateZ(0) scale(0.9865); }
+  78.75% { transform: translateZ(0) scale(0.9837); }
+  80% { transform: translateZ(0) scale(0.9829); }
+  81.25% { transform: translateZ(0) scale(0.9836); }
+  82.5% { transform: translateZ(0) scale(0.9854); }
+  83.75% { transform: translateZ(0) scale(0.9878); }
+  85% { transform: translateZ(0) scale(0.9904); }
+  86.25% { transform: translateZ(0) scale(0.9929); }
+  87.5% { transform: translateZ(0) scale(0.9952); }
+  88.75% { transform: translateZ(0) scale(0.9972); }
+  90% { transform: translateZ(0) scale(0.9987); }
+  91.25% { transform: translateZ(0) scale(0.9997); }
+  92.5% { transform: translateZ(0) scale(1.0004); }
+  93.75% { transform: translateZ(0) scale(1.0007); }
+  95% { transform: translateZ(0) scale(1.0008); }
+  96.25% { transform: translateZ(0) scale(1.0007); }
+  97.5% { transform: translateZ(0) scale(1.0005); }
+  98.75% { transform: translateZ(0) scale(1.0002); }
+  100% { transform: translateZ(0) scale(1); }
+}
+
+/* ---------- SVG parts (done / lossy) ---------- */
+
+/* Appear when SVG glyph is injected for done/lossy */
+.fi-glyph {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation:
+    fi-pop-scale 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both,
+    fi-pop-fade 0.3s linear both;
+}
+
+.fi-disc {
+  fill: var(--fi-amber);
+  fill-opacity: 0.3;
+}
+
+.fi-dot-wrap,
+.fi-dot {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.fi-dot {
+  fill: var(--fi-amber);
+  animation: none;
+}
+
+.fi-check,
+.fi-dash {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0;
+}
+
+.fi-check {
+  stroke: var(--fi-blue);
+  stroke-width: 1.5;
+}
+
+.fi-dash {
+  stroke: var(--fi-amber);
+  stroke-width: 2;
+  transform-box: fill-box;
+  transform-origin: center;
+  transform: scale(0.6);
+}
+
+/* ---------- Done: single-frame swap to a blue disc (40%) + blue check ---------- */
+
+.fi-root[data-state='done'] .fi-html {
+  display: none;
+}
+
+.fi-root[data-state='done'] .fi-dot-wrap {
+  display: none;
+}
+
+.fi-root[data-state='done'] .fi-disc {
+  fill: var(--fi-blue);
+  fill-opacity: 0.4;
+}
+
+.fi-root[data-state='done'] .fi-check {
+  opacity: 1;
+}
+
+/* Held for 1 s, then fades out over 0.2 s. Does not reappear. */
+.fi-root[data-state='done'] {
+  transition: opacity 0.2s linear;
+}
+
+.fi-root[data-state='done'][data-shown='false'] {
+  opacity: 0;
+}
+
+/* ---------- As good as it gets (lossy): amber disc (30%) + amber dash. Stays. ---------- */
+
+.fi-root[data-state='lossy'] .fi-html {
+  display: none;
+}
+
+.fi-root[data-state='lossy'] .fi-dot-wrap {
+  transform: scale(0);
+}
+
+.fi-root[data-state='lossy'] .fi-dash {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* From loading, the change takes 0.4 s: the inner fill collapses to the centre (ease-in t^2.2)
+   while the disc stays at 30%; the dash fades in over 0.18–0.34 s and grows 60% → 100% over
+   0.18–0.4 s, with a slight overshoot. From any other state it simply pops in, already settled. */
+.fi-root[data-state='lossy'][data-from='loading'] .fi-dot-wrap {
+  transition: transform 0.4s cubic-bezier(0.2, 0, 0.57, 0.05);
+}
+
+.fi-root[data-state='lossy'][data-from='loading'] .fi-dash {
+  transition:
+    opacity 0.16s linear 0.18s,
+    transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) 0.18s;
+}
+`;
 
 let injected = false;
 

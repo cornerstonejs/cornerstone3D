@@ -1,21 +1,21 @@
 ---
 id: viewport-fidelity
 title: Viewport fidelity
-summary: How the user learns that a viewport shows degraded data - a load that is not complete, a reduced or decimated texture, or a reduced interactive quality - and the events and queries that report it
+summary: How the user learns that a viewport shows a lossy image - replicated, sub-resolution or lossy data, a decimation, a box average under magnification, or a sample distance larger than at full quality - and the events and queries that report it
 ---
 
 # Viewport fidelity
 
 ## Scope
 
-This specification describes how a viewport tells the user that the image is
-not a faithful rendering of the stored pixel data. The causes include a load
-that is not complete, a texture that the code reduced to fit the device, a
-decimation, and a reduced quality during an interaction.
+The indicator exists so that the user does not read a lossy image as a
+lossless image. Only a viewport that shows a lossy image shows the indicator.
 
 The user requirements apply to every viewport type. Today the code implements
 them for the stack viewports and the volume viewports only. A different
-viewport type obeys the user requirements when it can show degraded data.
+viewport type obeys the user requirements when it can show a lossy image. The
+stack implementation reads the per-image summary `ImageQualityStatus`. It does
+not use `compareVoxelQuality()`.
 
 The "user" of the user requirements is the clinician who reads the image. The
 implementation requirements are for the developer who builds an application on
@@ -31,9 +31,6 @@ Change rule:
 
 Related documents:
 
-- The OHIF specification of the fidelity indicator (prefix `VF`) states the
-  full requirements for the application. This page holds the part that
-  Cornerstone3D owns. See [OHIF#6256](https://github.com/OHIF/Viewers/issues/6256).
 - The fidelity state component: [cornerstone3D#2902](https://github.com/cornerstonejs/cornerstone3D/issues/2902).
 - The quality record and the comparison function:
   [Composite voxel manager](../../concepts/cornerstone-core/compositeVoxelManager.md).
@@ -43,121 +40,132 @@ Related documents:
 
 ## Description
 
-A viewport can show data that is worse than the stored data, and the image
-itself gives the user no clue. A progressive load that stops at a lossy stage
-looks the same as a load that continues. A volume that the code decimated to
-fit a texture limit looks the same as a small lesion.
+A viewport can show an image that is worse than the stored data, and the image
+itself gives the user no clue. A volume that the code decimated to fit a
+texture limit can look the same as a small lesion.
 
-The viewport therefore reports its fidelity in one of four states:
+**Lossy image.** The displayed image is lossy when it differs from a display of
+the full stored data at the current display resolution. These causes make the
+displayed image lossy:
 
-| State     | Meaning to the user                                              | Expected to improve |
-| --------- | ---------------------------------------------------------------- | ------------------- |
-| `loading` | Some of the data has not arrived.                                | Yes                 |
-| `lod`     | The render samples the data more coarsely than at full quality.  | When it stops       |
-| `lossy`   | The data is reduced or decimated, and this is the final quality. | No                  |
-| `done`    | The viewport shows the full data.                                | Not applicable      |
+- The viewport shows replicated, sub-resolution or lossy data that the loader
+  delivered.
+- The data is a decimation. A decimation aliases, so it is lossy at every
+  magnification.
+- The data is a box average, and one data voxel covers more than one display
+  pixel.
+- The render samples the data more coarsely than at full quality. The sample
+  distance is larger than at full quality, during an interaction or after it.
 
-A viewport with no data has no state, and it shows no indicator.
+Data that has not arrived does not make the image lossy when the viewport shows
+no other data in its place. An ordinary load delivers only full-quality frames,
+and it does not make the displayed image lossy.
 
 ## User requirements
 
-### Notification (FIDELITY-NOTIFY)
+### The user knows when the image is lossy (FIDELITY-USER)
 
-- **FIDELITY-NOTIFY-1** WHILE a viewport shows degraded data, the viewport shows
-  a fidelity indicator. The user does not need to hover over the viewport, and
-  the viewport does not need to be the active viewport.
-- **FIDELITY-NOTIFY-2** A viewport that shows no data shows no indicator. A
-  viewport that loads directly to the full data shows no indicator that stays.
-- **FIDELITY-NOTIFY-3** WHEN the viewport stops showing degraded data, the
-  indicator shows the recovered state for a short time, and then the indicator
-  goes away. The indicator does not stay over the image after the recovery,
-  because a mark on the image can hide a finding.
-- **FIDELITY-NOTIFY-4** The user can tell a load that continues from a load that
-  completed at a lossy quality. The change from `loading` to `lossy` is visible.
-- **FIDELITY-NOTIFY-5** A reduced quality during an interaction shows on the
-  indicator while the interaction continues, with no delay. When the
-  interaction stops and the full quality returns, the indicator shows the
-  recovery.
-- **FIDELITY-NOTIFY-6** Each viewport reports its own fidelity. Two viewports
-  that show one volume can report a different state at one time.
-- **FIDELITY-NOTIFY-7** A viewport that shows reduced data at a magnification
-  where the reduction is not visible reports the view as full fidelity. The
-  user does not get a warning that is not necessary. A decimation is the
-  exception: a decimation aliases, so the viewport reports it at every
-  magnification.
-- **FIDELITY-NOTIFY-8** WHERE more than one cause of degradation applies, the
-  viewport shows one indicator. The indicator shows the state that is most
-  urgent, in this order: `loading`, `lod`, `lossy`, `done`.
-
-### Discovery (FIDELITY-DISCOVER)
-
-- **FIDELITY-DISCOVER-1** The user can open the details of the indicator. The
-  details state why the image is degraded: a load that is not complete, a
-  reduction, a decimation, or an interactive reduction.
-- **FIDELITY-DISCOVER-2** The details state the amount of the degradation as a
-  number. Examples: a reduction factor for each axis (`2×2×4`), a percentage of
-  the data that has arrived, a factor of the sample distance.
-- **FIDELITY-DISCOVER-3** The details state whether a wait is expected to
-  improve the image.
-- **FIDELITY-DISCOVER-4** The details use words that a clinician understands
-  without knowledge of textures, GPUs or retrieval stages.
-- **FIDELITY-DISCOVER-5** The indicator and its details are read-only. The user
-  does not select the resolution, and the user does not configure the
-  fidelity. The software selects the resolution.
-
-### Coverage (FIDELITY-SCOPE)
-
-- **FIDELITY-SCOPE-1** The user gets the same indicator, in the same place and
-  in the same form, in every viewport type that can show degraded data.
-- **FIDELITY-SCOPE-2** A stack viewport reports the fidelity of the image that
-  it shows now, and not the worst image of the stack.
-- **FIDELITY-SCOPE-3** A viewport reports the fidelity of its source data. The
-  fidelity of an overlay, for example a reduced segmentation labelmap, is out
-  of scope.
-
-### Removal (FIDELITY-REMOVE)
-
-- **FIDELITY-REMOVE-1** A deployment can remove the built-in indicator by
-  configuration, for example to show the indicator of the application.
-- **FIDELITY-REMOVE-2** The documentation of that configuration states the
-  consequence: the user then sees degraded pixels with no disclosure, unless
-  the application shows its own indicator.
+- **FIDELITY-USER-1** The user can determine when the displayed image is lossy,
+  as the Description defines it. This holds while the user interacts with the
+  viewport, and in the steady state.
+- **FIDELITY-USER-2** The user can rely on the absence of a lossy indication. A
+  viewport that shows a lossless image does not show a lossy indication.
 
 ## Implementation requirements
+
+### The decision of the state (FIDELITY-STATE)
+
+`svgStateOf()`, `lineKind()` and `dataKindOf()` hold this decision.
+
+- **FIDELITY-STATE-1** The viewport reports its fidelity in one of four states.
+  This serves FIDELITY-USER-1.
+
+| State     | What it means                                                                                                               | Expected to improve |
+| --------- | --------------------------------------------------------------------------------------------------------------------------- | ------------------- |
+| `loading` | The viewport shows replicated, sub-resolution or lossy data in place of data that has not arrived. Better data comes later. | Yes                 |
+| `lod`     | The render samples the data more coarsely than at full quality.                                                             | When it stops       |
+| `lossy`   | The data is reduced, decimated or lossy, and this is the final quality.                                                     | No                  |
+| `done`    | The viewport shows a lossless image.                                                                                        | Not applicable      |
+
+- **FIDELITY-STATE-2** A viewport that shows no data shows no indicator. A
+  viewport that shows a lossless image shows no indicator. A load that delivers
+  only full-quality frames shows no indicator while the load continues.
+  Data that has not arrived is not `loading` by itself. This serves
+  FIDELITY-USER-2.
+- **FIDELITY-STATE-3** The user can tell a load that continues from a load that
+  completed at a lossy quality. The change from `loading` to `lossy` is
+  visible. This serves FIDELITY-USER-1.
+- **FIDELITY-STATE-4** A reduced quality during an interaction shows as `lod`
+  while the interaction continues, with no delay. A sample distance multiplier
+  above 1 that stays after the interaction also stays `lod`. This serves
+  FIDELITY-USER-1.
+- **FIDELITY-STATE-5** Each viewport reports its own fidelity. Two viewports
+  that show one volume can report a different state at one time.
+- **FIDELITY-STATE-6** A box average is lossless when the data spacing on each
+  axis is no coarser than the display spacing of FIDELITY-RECORD-2. In the view
+  plane, one data voxel then covers no more than one display pixel. In a slice
+  view, a box average on the axis normal to the view plane is lossy at every
+  zoom, because that axis compares with the source slice spacing. Example: the
+  code loads the data at 1/2 in-plane resolution by a box average. The viewport
+  displays the data at 1/2 resolution. The view then shows no indicator. When
+  the user zooms in, the view becomes `lossy`. A decimation of the same data,
+  at the same display, still shows `lossy`, because a decimation aliases at
+  every magnification. This serves FIDELITY-USER-1 and FIDELITY-USER-2.
+- **FIDELITY-STATE-7** WHERE more than one cause applies, the viewport shows
+  one indicator. The indicator shows the most urgent state, in this order:
+  `loading`, `lod`, `lossy`, `done`.
+- **FIDELITY-STATE-8** A stack viewport reports the fidelity of the image that
+  it shows now, and not the worst image of the stack.
+- **FIDELITY-STATE-9** A viewport reports the fidelity of its source data. The
+  fidelity of an overlay, for example a reduced segmentation labelmap, is out
+  of scope.
 
 ### The record and the verdict (FIDELITY-RECORD)
 
 - **FIDELITY-RECORD-1** The fidelity of a volume region is an absolute record,
-  `VoxelQualityRecord`. The record states the grid, the kind of the reduction,
-  the source, the missing voxels and the comparable summary. The record states
-  no verdict.
+  `VoxelQualityRecord`. The record states no verdict. The record states these
+  items:
+  - the grid;
+  - the kind of the reduction;
+  - the source;
+  - the number of voxels that have not arrived (`missing`);
+  - the lowest delivered quality (`lowest`);
+  - the comparable summary (`status`).
 - **FIDELITY-RECORD-2** A verdict comes from the pure function
   `utilities.voxelGrid.compareVoxelQuality(record, requirement)`. The
-  requirement of a viewport holds `displaySpacing`, the world distance that one
-  display pixel covers on each axis. FIDELITY-NOTIFY-6 and FIDELITY-NOTIFY-7
-  depend on that function.
+  requirement of a viewport holds `displaySpacing` on each index axis of the
+  record grid. FIDELITY-STATE-5 and FIDELITY-STATE-6 depend on that function.
+  `displaySpacingOfViewport()` supplies the display spacing:
+  - An axis in the view plane gets the world size of one display pixel.
+  - In a slice view, the axis normal to the view plane gets the slice spacing
+    of the source volume.
+  - In a 3D view, every axis gets the size of one display pixel.
+  - An oblique axis gets a blend of the two values, from its angle to the view
+    plane normal.
 - **FIDELITY-RECORD-3** The render that drew the frame composes the record,
   because only the render knows which texture it bound. A reader gets the
   record of the bound grid with `imageVolume.getGridQuality(grid, statistic)`,
   and the record of the full volume with `imageVolume.getVoxelQuality()`.
 - **FIDELITY-RECORD-4** `utilities.voxelGrid.isAliasingReduction(reduction)`
-  decides whether a reduction is a decimation for FIDELITY-NOTIFY-7.
+  decides whether a reduction is a decimation for FIDELITY-STATE-6.
 - **FIDELITY-RECORD-5** A stack image keeps its per-image summary,
   `ImageQualityStatus`. A reader gets it with `cache.getImageQuality(imageId)`,
   or from `IImage.imageQualityStatus`. The enum and its consumers stay as they
   are.
-- **FIDELITY-RECORD-6** A reduced sampling of a render is the ratio of the
+- **FIDELITY-RECORD-6** The sample reduction of a render is the ratio of the
   current sample distance of the mapper to the sample distance at a multiplier
   of 1. A ratio above 1 is the `lod` state. Every source of the ratio counts:
   `rotateSampleDistanceFactor` of `TrackballRotateTool` and
   `VolumeCroppingTool` during an interaction, and a `sampleDistanceMultiplier`
-  above 1 from the configuration, a preset or a viewport property. A
-  multiplier above 1 that stays after the interaction is a standing reduction,
-  and the indicator stays in the `lod` state.
+  above 1 from the configuration, a preset or a viewport property.
+- **FIDELITY-RECORD-7** `record.lowest` decides whether delivered data is lossy.
+  A value below `ImageQualityStatus.FULL_RESOLUTION` is replicated,
+  sub-resolution or lossy data. When some voxels have not arrived, that data
+  gives `loading`. When all voxels have arrived, that data gives `lossy`.
 
 ### The events and the queries (FIDELITY-EVENT)
 
-- **FIDELITY-EVENT-1** Before `VIEWPORT_FIDELITY_CHANGED` landed, a consumer
+- **FIDELITY-EVENT-1** Before `VIEWPORT_FIDELITY_CHANGED` existed, a consumer
   built the state from the events and the queries below. Those sources remain
   valid inputs for the viewport that derives the state.
 
@@ -165,10 +173,10 @@ A viewport with no data has no state, and it shows no indicator.
 | --------------------------------------------- | ------------- | --------------------------------------------------------------------------------------------------------------------- |
 | `Events.IMAGE_RENDERED`                       | element       | A frame was drawn. Read the state again. Covers a change of the bound texture and of the interactive sample distance. |
 | `Events.IMAGE_VOLUME_MODIFIED`                | `eventTarget` | A frame arrived in the volume `detail.volumeId`. The `missing` count of the record changed.                           |
-| `Events.IMAGE_VOLUME_LOADING_COMPLETED`       | `eventTarget` | The load of a volume completed. A `loading` state becomes `done` or `lossy`, which FIDELITY-NOTIFY-4 needs.           |
+| `Events.IMAGE_VOLUME_LOADING_COMPLETED`       | `eventTarget` | The load of a volume completed. A `loading` state becomes `done` or `lossy`, which FIDELITY-STATE-3 needs.            |
 | `Events.IMAGE_LOADED`                         | `eventTarget` | One image arrived. The event can fire more than once for one image during a progressive load.                         |
 | `Events.IMAGE_RETRIEVAL_STAGE`                | `eventTarget` | A progressive retrieval stage completed. The detail holds no fidelity field.                                          |
-| `Events.STACK_NEW_IMAGE`                      | element       | A stack viewport shows a different image. Read the per-image summary for FIDELITY-SCOPE-2.                            |
+| `Events.STACK_NEW_IMAGE`                      | element       | A stack viewport shows a different image. Read the per-image summary for FIDELITY-STATE-8.                            |
 | `Events.ELEMENT_DISABLED`                     | `eventTarget` | The viewport is gone. Remove the listeners of the consumer.                                                           |
 | `imageVolume.getGridQuality(grid, statistic)` | query         | The record of the grid that the render bound.                                                                         |
 | `utilities.voxelGrid.compareVoxelQuality()`   | query         | The verdict of one viewport for one record.                                                                           |
@@ -181,17 +189,39 @@ A viewport with no data has no state, and it shows no indicator.
   element, as it fires `CAMERA_MODIFIED`, because the fidelity belongs to one
   viewport. The detail holds `viewportId` and the new state.
 - **FIDELITY-EVENT-4** The viewport fires the event when the derived state
-  changes, and not on each render. The event has no debounce, so an
-  interactive reduction reaches the consumer on the first frame
-  (FIDELITY-NOTIFY-5).
-- **FIDELITY-EVENT-5** A consumer can also read the state on demand, without the
-  event and without a user interface. A test and a measurement harness read the
-  state this way.
+  changes, and not on each render. The change key holds `shownState`, `lossy`
+  and the fields of the record. The key does not hold the display
+  spacing. Thus a zoom, a pan or a resize that keeps the verdict fires no
+  event. A zoom that changes a box-average verdict fires the event. The event
+  has no debounce, so an interactive reduction reaches the consumer on the
+  first frame (FIDELITY-STATE-4).
+- **FIDELITY-EVENT-5** A consumer can also read the state when it asks, with
+  `viewport.getFidelityState()`. It needs no event and no user interface. A test
+  and a measurement harness read the state this way. The state holds
+  `displayResolution`.
+- **FIDELITY-EVENT-8** The state gives the result directly, so that an
+  application indicator can obey FIDELITY-USER-1 and FIDELITY-USER-2:
+  - `shownState` is the state of FIDELITY-STATE-1, or `hidden` when there is no
+    data. The built-in indicator uses the same decision.
+  - `lossy` is true when `shownState` is `loading`, `lod` or `lossy`.
+  - `progressive.lowest` is the lowest delivered quality (FIDELITY-RECORD-7).
+    `progressive.status` falls to a replicate value while voxels have not
+    arrived, also in an ordinary load. Thus `status` alone does not tell an
+    ordinary load from a lossy load.
+  - `cause` is `incompleteLoad`, and `transient` is true, only while
+    replicated, sub-resolution or lossy data shows in place of data that has
+    not arrived. An ordinary load gives no cause. `progressive.missing` and
+    `progressive.loadedFraction` still show its progress.
 - **FIDELITY-EVENT-6** IF the state holds a reduction kind or a source that the
-  consumer does not know, THEN the consumer shows a generic degraded state. The
+  consumer does not know, THEN the consumer shows a generic lossy state. The
   consumer does not hide the state, and the consumer does not throw. The kinds
   of reduction and the sources are extensible through
   `VoxelReductionRegistry` and `VoxelDataSourceRegistry`.
+- **FIDELITY-EVENT-7** Only the rendering engines fire the event. They call
+  `notifyFidelityStateChanged()` after `IMAGE_RENDERED`. The `Viewport` class
+  and the `GenericViewport` class use one shared helper,
+  `helpers/fidelityIndicator/notifyFidelityStateChanged.ts`. The helper obeys
+  `suppressEvents`.
 
 ### The built-in indicator (FIDELITY-UI)
 
@@ -203,59 +233,77 @@ A viewport with no data has no state, and it shows no indicator.
   `attachFidelityIndicator(viewport)` itself, and that call returns the cleanup
   function.
 - **FIDELITY-UI-2** The indicator is a DOM element in the top-right corner of the
-  viewport element. The state is on the `data-state`, `data-from` and
-  `data-shown` attributes of `.fi-root`. The styles go into `document.head`
-  once.
+  viewport element. The user does not need to hover over the viewport, and the
+  viewport does not need to be the active viewport. The indicator has the same
+  form in every viewport type. The state is on the `data-state`, `data-from`
+  and `data-shown` attributes of `.fi-root`. The styles go into
+  `document.head` once. This serves FIDELITY-USER-1.
 - **FIDELITY-UI-3** `svgStateOf()` and `lineKind()` hold the decision of the
   state, and the decision has no DOM. A unit test checks the decision without a
   user interface.
-- **FIDELITY-UI-4** The `done` state shows for 1 second and then fades
-  (FIDELITY-NOTIFY-3). A hover over the corner does not show the `done` state
-  again after the fade.
-- **FIDELITY-UI-5** A hover over the indicator shows the details
-  (FIDELITY-DISCOVER-1 and FIDELITY-DISCOVER-2): the status, the delivery
-  quality, the grid, the missing percentage, the source, the reduction and the
-  sample distance. That text is a developer view of the record. An application
-  indicator that needs clinician words (FIDELITY-DISCOVER-4) builds them from
-  `getFidelityState()` or `VIEWPORT_FIDELITY_CHANGED`, and does not reuse the
-  built-in hover string.
+- **FIDELITY-UI-4** The `done` state shows only as a recovery from `loading`,
+  `lod` or `lossy`. A change from no indicator to `done` shows nothing. The
+  `done` state shows for `DONE_HOLD_MS` (3 seconds) and then fades. The
+  indicator does not stay over the image after the recovery, because a mark on
+  the image can hide a finding. A hover over the corner does not show the
+  `done` state again after the fade. This serves FIDELITY-USER-2.
+- **FIDELITY-UI-5** A hover over the indicator shows the details. The details
+  hold these items:
+  - the status;
+  - the delivery quality;
+  - the grid;
+  - the percentage of voxels that have not arrived;
+  - the source and the reduction;
+  - the sample distance.
+
+  The details give the amount as a number, for example `2×2×4`. The details
+  use developer words, and the text is not translated. An application
+  indicator that needs clinician words builds them from `getFidelityState()`
+  or `VIEWPORT_FIDELITY_CHANGED`.
+
 - **FIDELITY-UI-6** A consumer reads the derived state with
   `viewport.getFidelityState()` (FIDELITY-EVENT-5), and observes changes with
   `Events.VIEWPORT_FIDELITY_CHANGED` on the viewport element (FIDELITY-EVENT-2
   to FIDELITY-EVENT-4).
+- **FIDELITY-UI-7** The indicator and its details are read-only. The user does
+  not select the resolution, and the user does not configure the fidelity.
+- **FIDELITY-UI-8** The indicator does not fire `VIEWPORT_FIDELITY_CHANGED`.
+  It reads the fidelity lines when it attaches, after each render, on the
+  event, and when the volume data changes without a render.
 
 ### The configuration (FIDELITY-CONF)
 
 - **FIDELITY-CONF-1** `init({ dangerouslyDisableFidelityIndicator: true })`
-  removes the built-in indicator (FIDELITY-REMOVE-1). The name starts with
-  `dangerously` because of FIDELITY-REMOVE-2. The configuration does not stop
-  the record, the events or the queries, so an application indicator still
-  works.
+  removes the built-in indicator. The expected user is an application that
+  shows its own indicator, for example OHIF. The configuration does not stop
+  the record, the events or the queries, so the indicator of the application
+  still works.
 - **FIDELITY-CONF-2** `init({ debug: { fidelityIndicatorDebug: true } })` adds a
   text badge in the top-left corner, for a developer. The badge is not for a
   clinician.
 - **FIDELITY-CONF-3** The configuration of the fidelity is global
   configuration. It is not view state, and it is not data presentation,
   because it moves no world point and it changes the look of no data.
+- **FIDELITY-CONF-4** The documentation of `dangerouslyDisableFidelityIndicator`
+  states the consequence. The user then sees lossy pixels with no disclosure,
+  unless the application shows its own indicator. The name starts with
+  `dangerously` for this reason. This serves FIDELITY-USER-1.
 
 ## Known deviations
 
-### The built-in hover text uses developer words
+### Core finds a labelmap by its name
 
-The built-in indicator hover text states `grid`, `delivery`, `source` and
-`sample distance`, and it is not translated. The text is a developer view of
-the record. The documentation of the indicator states that an application
-indicator supplies clinician-facing words from `getFidelityState()` /
-`VIEWPORT_FIDELITY_CHANGED` (FIDELITY-DISCOVER-4).
+`isLabelmapActorEntry()` finds a labelmap with a regular expression on a name
+that the tools package makes. If the tools package changes the name, a labelmap
+counts in the fidelity state, against FIDELITY-STATE-9. No test shows that
+change.
 
-This is intentional for the built-in UI. An application indicator meets
-FIDELITY-DISCOVER-4 from the same state.
+### A display spacing on an oblique axis is an approximation
+
+`displaySpacingOfViewport()` blends the display pixel size and the slice
+spacing for an axis that is oblique to the view plane (FIDELITY-RECORD-2). The
+blend is exact for an axis in the plane and for an axis normal to the plane.
 
 ## Past defects
 
-| Defect                                                 | Fixed in                   | Requirement                          |
-| ------------------------------------------------------ | -------------------------- | ------------------------------------ |
-| No `VIEWPORT_FIDELITY_CHANGED` / no `getFidelityState` | follow-up to #2978 / #2902 | FIDELITY-EVENT-2..5                  |
-| Stack viewport had no indicator                        | follow-up to #2978         | FIDELITY-SCOPE-1/2                   |
-| Verdict ignored magnification                          | follow-up to #2978         | FIDELITY-NOTIFY-7, FIDELITY-RECORD-2 |
-| Indicator read actors/mappers                          | follow-up to #2978         | GENVIEW-FIDELITY-2                   |
+No entry yet.

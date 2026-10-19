@@ -27,7 +27,7 @@ const COLORS = {
 };
 
 /** How long Done stays visible before it fades (SVG mode). */
-const DONE_HOLD_MS = 3000;
+export const DONE_HOLD_MS = 3000;
 
 const SVG_GLYPH =
   '<g class="fi-glyph">' +
@@ -53,7 +53,6 @@ type FidelityView = {
 type FidelityViewport = IViewport & {
   canReportFidelity?: () => boolean;
   getFidelityLines?: () => FidelityLine[];
-  notifyFidelityStateChanged?: () => void;
 };
 
 const cleanups = new WeakMap<object, () => void>();
@@ -66,9 +65,9 @@ const cleanups = new WeakMap<object, () => void>();
  * is set, the verbose debug badge is also shown in the top-left.
  *
  * The indicator is a consumer of `viewport.getFidelityLines()` and
- * `VIEWPORT_FIDELITY_CHANGED` (GENVIEW-FIDELITY-7). Apps that need the absolute
- * VFS-API-3 record use `getFidelityState()`. It does not read actors or
- * mappers.
+ * `VIEWPORT_FIDELITY_CHANGED` (GENVIEW-FIDELITY-7). It never fires that event.
+ * Apps that need the absolute record use `getFidelityState()`. It does not
+ * read actors or mappers.
  *
  * Replaces any existing attachment for this viewport (including the engine
  * default). When `init({ dangerouslyDisableFidelityIndicator: true })` is set,
@@ -76,7 +75,7 @@ const cleanups = new WeakMap<object, () => void>();
  *
  * The built-in hover text is a developer view of the record (grid, delivery,
  * source, sample distance). Clinician-facing copy belongs on an application
- * indicator that reads the same state (FIDELITY-DISCOVER-4).
+ * indicator that reads the same state (FIDELITY-UI-5).
  *
  * @returns a function that removes the indicator and its listeners
  */
@@ -144,18 +143,6 @@ export function detachFidelityIndicator(viewport: IViewport): void {
 }
 
 /**
- * Whether this viewport should get the product fidelity indicator
- * (GENVIEW-FIDELITY-8). Decided from `viewport.canReportFidelity()` when
- * present, otherwise from content that can degrade (stack / volume).
- *
- * @deprecated Prefer {@link canReportFidelity}; kept as an alias for callers
- * that still import the volume-era name.
- */
-export function isVolumeFidelityViewport(viewport: IViewport): boolean {
-  return canReportFidelity(viewport);
-}
-
-/**
  * Whether a viewport can report fidelity (GENVIEW-FIDELITY-8). Uses the
  * viewport capability when available; does not use a hard list of types.
  */
@@ -178,9 +165,9 @@ function linesOf(viewport: FidelityViewport): FidelityLine[] {
 }
 
 /**
- * Reads fidelity lines from the viewport API and passes them to every view.
- * Also keeps the viewport fidelity event in sync when volume data changes
- * without a render.
+ * Reads fidelity lines from the viewport API and passes them to every view:
+ * on attach, after a render, on `VIEWPORT_FIDELITY_CHANGED`, and when volume
+ * data changes without a render. Only the rendering engines fire the event.
  */
 function subscribeToFidelity(
   viewport: FidelityViewport,
@@ -197,7 +184,6 @@ function subscribeToFidelity(
       return;
     }
 
-    viewport.notifyFidelityStateChanged?.();
     const lines = linesOf(viewport);
 
     for (const view of views) {
@@ -385,6 +371,12 @@ function createSvgIndicator(host: HTMLElement): FidelityView {
       return;
     }
 
+    // Done is a recovery from a lossy state (FIDELITY-UI-4). A lossless view
+    // that was never lossy shows nothing.
+    if (next === 'done' && currentState === 'hidden') {
+      return;
+    }
+
     const from = currentState;
 
     root.dataset.from = from === 'hidden' ? 'hidden' : from;
@@ -483,7 +475,7 @@ function summaryOf(line: FidelityLine): {
 
 /**
  * Developer-facing hover text for the built-in indicator. This is not
- * clinician copy (FIDELITY-DISCOVER-4); applications should render clinician
+ * clinician copy (FIDELITY-UI-5); applications should render clinician
  * words from the absolute `getFidelityState()` / `VIEWPORT_FIDELITY_CHANGED`.
  */
 function fidelityHoverTextOf(lines: FidelityLine[]): string {

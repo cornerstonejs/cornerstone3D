@@ -6,6 +6,7 @@ import {
   isReduced,
   reductionFactorsOf,
 } from '../src/RenderingEngine/helpers/fidelityIndicator/fidelityIndicatorState';
+import { fidelityLinesFromBindings } from '../src/RenderingEngine/helpers/fidelityIndicator/collectFidelityLines';
 import VoxelReductions from '../src/enums/VoxelReductions';
 import ImageQualityStatus from '../src/enums/ImageQualityStatus';
 
@@ -56,7 +57,12 @@ describe('fidelityIndicatorState', () => {
     it('prioritises loading over lod, lossy, and done', () => {
       expect(
         svgStateOf([
-          line({ record: record({ missing: 10 }) }),
+          line({
+            record: record({
+              missing: 10,
+              lowest: ImageQualityStatus.ADJACENT_REPLICATE,
+            }),
+          }),
           line({
             sampleDistanceLod: 2,
             fullResolution: false,
@@ -90,8 +96,8 @@ describe('fidelityIndicatorState', () => {
       ).toBe('lossy');
     });
 
-    it('reports loading when one volume has no record yet', () => {
-      expect(svgStateOf([line(), line({ record: undefined })])).toBe('loading');
+    it('ignores a volume with no record yet', () => {
+      expect(svgStateOf([line(), line({ record: undefined })])).toBe('done');
     });
 
     it('reports done when every recorded line is full resolution', () => {
@@ -100,10 +106,27 @@ describe('fidelityIndicatorState', () => {
   });
 
   describe('lineKind', () => {
-    it('is loading when voxels are missing', () => {
-      expect(lineKind(line({ record: record({ missing: 1 }) }))).toBe(
-        'loading'
-      );
+    it('is done for an ordinary load: voxels missing, all deliveries full resolution', () => {
+      expect(lineKind(line({ record: record({ missing: 1 }) }))).toBe('done');
+    });
+
+    it('is loading while replicated, sub-resolution or lossy data stands in for missing voxels', () => {
+      for (const lowest of [
+        ImageQualityStatus.FAR_REPLICATE,
+        ImageQualityStatus.ADJACENT_REPLICATE,
+        ImageQualityStatus.SUBRESOLUTION,
+        ImageQualityStatus.LOSSY,
+      ]) {
+        expect(lineKind(line({ record: record({ missing: 1, lowest }) }))).toBe(
+          'loading'
+        );
+      }
+    });
+
+    it('is lossy when the complete data was delivered lossy', () => {
+      expect(
+        lineKind(line({ record: record({ lowest: ImageQualityStatus.LOSSY }) }))
+      ).toBe('lossy');
     });
 
     it('is lod when sample distance is raised', () => {
@@ -132,8 +155,7 @@ describe('fidelityIndicatorState', () => {
     });
 
     it('is done when a reduction is not visible at the display spacing', () => {
-      // FIDELITY-NOTIFY-7: box average under low magnification is not a warning.
-      // Large-study axial: shared 1×1×2 texture, verdict lossless → done.
+      // FIDELITY-STATE-6: box average under low magnification is not a warning.
       expect(
         lineKind(
           line({
@@ -158,7 +180,7 @@ describe('fidelityIndicatorState', () => {
     });
 
     it('is lossy when a spatial reduction is visible at the display spacing', () => {
-      // Large-study sag/cor: same 1×1×2 texture, resolution cause → lossy.
+      // Same 1×1×2 texture with a resolution cause → lossy.
       expect(
         lineKind(
           line({
@@ -252,6 +274,53 @@ describe('fidelityIndicatorState', () => {
             record: undefined,
             imageQualityStatus: ImageQualityStatus.FULL_RESOLUTION,
           })
+        )
+      ).toBe('done');
+    });
+  });
+
+  describe('magnification (FIDELITY-STATE-6)', () => {
+    const full = grid([64, 64, 64], [1, 1, 1]);
+    // parallelScale 64 on a 64 px canvas: one display pixel is 2 mm.
+    const viewport = (viewPlaneNormal = [0, 0, 1], volume3D = false) => ({
+      getActors: () => [],
+      canvas: { clientHeight: 64 },
+      getCamera: () => ({ parallelScale: 64, viewPlaneNormal }),
+      volume3D,
+    });
+    const stateOf = (vp, reduction, spacing) =>
+      svgStateOf(
+        fidelityLinesFromBindings(vp, [
+          {
+            record: record({ grid: grid([32, 32, 64], spacing), reduction }),
+            fullGrid: full,
+          },
+        ])
+      );
+
+    it('shows no indicator for a box average displayed at its own spacing', () => {
+      expect(stateOf(viewport(), VoxelReductions.BoxAverage, [2, 2, 1])).toBe(
+        'done'
+      );
+    });
+
+    it('shows lossy for a decimation displayed at a coarser spacing', () => {
+      expect(stateOf(viewport(), VoxelReductions.Decimation, [2, 2, 1])).toBe(
+        'lossy'
+      );
+    });
+
+    it('shows lossy for a box average on the axis normal to a slice view', () => {
+      // The normal axis compares with the source slice spacing (1 mm).
+      expect(stateOf(viewport(), VoxelReductions.BoxAverage, [1, 1, 2])).toBe(
+        'lossy'
+      );
+      // A 3D view uses the display pixel size on every axis.
+      expect(
+        stateOf(
+          viewport([0, 0, 1], true),
+          VoxelReductions.BoxAverage,
+          [1, 1, 2]
         )
       ).toBe('done');
     });

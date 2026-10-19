@@ -18,9 +18,11 @@ import {
   canReportFidelity,
   detachFidelityIndicator,
   isLabelmapActorEntry,
-  isVolumeFidelityViewport,
   maybeAttachFidelityIndicator,
 } from '../src/RenderingEngine/helpers/fidelityIndicator';
+import { DONE_HOLD_MS } from '../src/RenderingEngine/helpers/fidelityIndicator/attachFidelityIndicator';
+import BaseVolumeViewport from '../src/RenderingEngine/BaseVolumeViewport';
+import VolumeViewport3DNext from '../src/RenderingEngine/GenericViewport/Volume3D/viewport3D';
 import { fidelityLinesFromVolumeActors } from '../src/RenderingEngine/helpers/fidelityIndicator/collectFidelityLines';
 
 function viewportStub({
@@ -44,7 +46,6 @@ function viewportStub({
     getActors: getActors ? () => [] : undefined,
     canReportFidelity: () => canReport,
     getFidelityLines: () => lines,
-    notifyFidelityStateChanged: () => {},
   };
 }
 
@@ -55,7 +56,7 @@ describe('fidelityIndicator attach gates', () => {
     setConfiguration(original);
   });
 
-  describe('canReportFidelity / isVolumeFidelityViewport', () => {
+  describe('canReportFidelity', () => {
     it('accepts viewports that declare canReportFidelity (volume and stack)', () => {
       expect(
         canReportFidelity(
@@ -68,7 +69,7 @@ describe('fidelityIndicator attach gates', () => {
         )
       ).toBe(true);
       expect(
-        isVolumeFidelityViewport(
+        canReportFidelity(
           viewportStub({
             type: ViewportType.PLANAR_NEXT,
             requestedType: ViewportType.STACK,
@@ -85,7 +86,7 @@ describe('fidelityIndicator attach gates', () => {
         )
       ).toBe(false);
       expect(
-        isVolumeFidelityViewport(
+        canReportFidelity(
           viewportStub({ type: ViewportType.VIDEO, canReport: false })
         )
       ).toBe(false);
@@ -224,6 +225,7 @@ describe('fidelityIndicator attach gates', () => {
       direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
     };
     let missing;
+    let lowest;
     let getGridQuality;
 
     beforeEach(() => {
@@ -233,10 +235,11 @@ describe('fidelityIndicator attach gates', () => {
         dangerouslyDisableFidelityIndicator: false,
       });
       missing = 0;
+      lowest = ImageQualityStatus.FULL_RESOLUTION;
       getGridQuality = jest.fn(() => ({
         grid: voxelGrid,
-        status: ImageQualityStatus.FULL_RESOLUTION,
-        lowest: ImageQualityStatus.FULL_RESOLUTION,
+        status: lowest,
+        lowest,
         highest: ImageQualityStatus.FULL_RESOLUTION,
         missing,
         voxels: 512,
@@ -281,25 +284,41 @@ describe('fidelityIndicator attach gates', () => {
       );
     }
 
+    function renderAs(viewport, missingVoxels, quality) {
+      missing = missingVoxels;
+      lowest = quality;
+      invalidate(viewport);
+      render(viewport);
+    }
+
+    it('shows no indicator for an ordinary load and its completion', () => {
+      const viewport = attach();
+      const root = viewport.element.querySelector('.fi-root');
+
+      renderAs(viewport, 10, ImageQualityStatus.FULL_RESOLUTION);
+      expect(root.dataset.shown).toBe('false');
+      renderAs(viewport, 0, ImageQualityStatus.FULL_RESOLUTION);
+      expect(root.dataset.state).toBeUndefined();
+      expect(root.dataset.shown).toBe('false');
+
+      detachFidelityIndicator(viewport);
+    });
+
     it('announces done again after a later degradation', () => {
       const viewport = attach();
       const root = viewport.element.querySelector('.fi-root');
-      const renderAs = (missingVoxels) => {
-        missing = missingVoxels;
-        invalidate(viewport);
-        render(viewport);
-      };
 
-      renderAs(10);
-      renderAs(0);
+      renderAs(viewport, 10, ImageQualityStatus.LOSSY);
+      expect(root.dataset.state).toBe('loading');
+      renderAs(viewport, 0, ImageQualityStatus.FULL_RESOLUTION);
       expect(root.dataset.state).toBe('done');
       expect(root.dataset.shown).toBe('true');
-      jest.advanceTimersByTime(1100);
+      jest.advanceTimersByTime(DONE_HOLD_MS + 100);
       expect(root.dataset.shown).toBe('false');
 
-      renderAs(10);
+      renderAs(viewport, 10, ImageQualityStatus.ADJACENT_REPLICATE);
       expect(root.dataset.state).toBe('loading');
-      renderAs(0);
+      renderAs(viewport, 0, ImageQualityStatus.FULL_RESOLUTION);
       expect(root.dataset.state).toBe('done');
       expect(root.dataset.shown).toBe('true');
 
@@ -317,6 +336,108 @@ describe('fidelityIndicator attach gates', () => {
       expect(getGridQuality).toHaveBeenCalledTimes(2);
 
       detachFidelityIndicator(viewport);
+    });
+  });
+
+  describe('BaseVolumeViewport record listeners', () => {
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    function volumeViewport(element) {
+      // The prototype without the constructor, which needs WebGL.
+      return Object.assign(Object.create(BaseVolumeViewport.prototype), {
+        id: 'vp-1',
+        element,
+        isDisabled: false,
+        getActors: () => [],
+        _fidelityRecords: new Map(),
+        _fidelityRecordListenersAttached: false,
+        _fidelityRecordsDisposed: false,
+      });
+    }
+
+    function disable(element) {
+      eventTarget.dispatchEvent(
+        new CustomEvent(Events.ELEMENT_DISABLED, {
+          detail: { element, viewportId: 'vp-1' },
+        })
+      );
+    }
+
+    it('removes its global listeners on ELEMENT_DISABLED and never adds them again', () => {
+      const add = jest.spyOn(eventTarget, 'addEventListener');
+      const remove = jest.spyOn(eventTarget, 'removeEventListener');
+      const element = document.createElement('div');
+      const viewport = volumeViewport(element);
+
+      viewport.getFidelityLines();
+      const added = add.mock.calls.map(([type, fn]) => [type, fn]);
+      expect(added).toHaveLength(3);
+
+      // Same viewport id, other element (another rendering engine).
+      disable(document.createElement('div'));
+      expect(remove).not.toHaveBeenCalled();
+
+      // `_reset` fires the event and leaves `isDisabled` false.
+      disable(element);
+      expect(remove.mock.calls.map(([type, fn]) => [type, fn])).toEqual(added);
+
+      viewport.getFidelityLines();
+      expect(add).toHaveBeenCalledTimes(3);
+    });
+  });
+
+  describe('VOLUME_3D_NEXT viewport', () => {
+    it('reports fidelity and uses the 3D display spacing on every axis', () => {
+      const full = {
+        dimensions: [64, 64, 64],
+        spacing: [1, 1, 1],
+        origin: [0, 0, 0],
+        direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
+      };
+      const reduced = { ...full, dimensions: [64, 64, 32], spacing: [1, 1, 2] };
+      const binding = {
+        role: 'source',
+        data: {},
+        rendering: {
+          renderMode: 'vtkVolume3d',
+          imageVolume: { voxelGrid: full },
+          sampleDistanceLod: 1,
+          voxelQuality: {
+            grid: reduced,
+            status: ImageQualityStatus.FULL_RESOLUTION,
+            lowest: ImageQualityStatus.FULL_RESOLUTION,
+            highest: ImageQualityStatus.FULL_RESOLUTION,
+            missing: 0,
+            voxels: 64 * 64 * 32,
+            exact: true,
+            source: 'clientDerived',
+            reduction: VoxelReductions.BoxAverage,
+            deliveries: 1,
+          },
+        },
+      };
+      // The prototype without the constructor, which needs a renderer.
+      const viewport = Object.assign(
+        Object.create(VolumeViewport3DNext.prototype),
+        {
+          bindings: new Map([['ds', binding]]),
+          canvas: { clientHeight: 64 },
+          // One display pixel is 2 mm.
+          getCameraForEvent: () => ({
+            parallelScale: 64,
+            viewPlaneNormal: [0, 0, 1],
+          }),
+        }
+      );
+
+      expect(viewport.getCurrentMode()).toBe('volume3d');
+      expect(canReportFidelity(viewport)).toBe(true);
+
+      const state = viewport.getFidelityState();
+      expect(state.displayResolution.spacing).toEqual([2, 2, 2]);
+      expect(state.lossy).toBe(false);
     });
   });
 });

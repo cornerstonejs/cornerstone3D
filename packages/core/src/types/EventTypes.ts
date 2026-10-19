@@ -117,7 +117,7 @@ interface ElementEnabledEventDetail {
 }
 
 /**
- * VIEWPORT_FIDELITY_CHANGED Event's data (FIDELITY-EVENT-3 / VFS-API-12)
+ * VIEWPORT_FIDELITY_CHANGED Event's data (FIDELITY-EVENT-3)
  */
 interface ViewportFidelityChangedEventDetail {
   /** Viewport Unique ID in the renderingEngine */
@@ -125,7 +125,7 @@ interface ViewportFidelityChangedEventDetail {
   /** Unique ID for the renderingEngine */
   renderingEngineId: string;
   /**
-   * Absolute per-viewport fidelity record (VFS-API-3). Not a UI summary enum.
+   * Absolute per-viewport fidelity record (FIDELITY-EVENT-5). Not a UI summary enum.
    */
   state: ViewportFidelityState;
 }

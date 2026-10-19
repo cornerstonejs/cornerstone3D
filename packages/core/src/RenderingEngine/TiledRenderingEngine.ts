@@ -372,7 +372,7 @@ class TiledRenderingEngine extends BaseRenderingEngine {
 
     const viewports = this._getViewportsAsArray();
     const eventDetailArray = [];
-    const renderedViewports = [];
+    const renderedViewports: IViewport[] = [];
 
     for (let i = 0; i < viewports.length; i++) {
       const viewport = viewports[i];
@@ -406,11 +406,10 @@ class TiledRenderingEngine extends BaseRenderingEngine {
     });
 
     // Fidelity event after IMAGE_RENDERED so consumers can query the frame
-    // that was just drawn (FIDELITY-EVENT-2..4).
+    // that was just drawn (FIDELITY-EVENT-2..4). Optional: a viewport that
+    // is not a Viewport subclass may not have it.
     renderedViewports.forEach((viewport) => {
-      (
-        viewport as { notifyFidelityStateChanged?: () => void }
-      ).notifyFidelityStateChanged?.();
+      viewport.notifyFidelityStateChanged?.();
     });
   };
 

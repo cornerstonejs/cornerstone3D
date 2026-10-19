@@ -1,5 +1,4 @@
 import ImageQualityStatus from '../../../enums/ImageQualityStatus';
-import VoxelDataSources from '../../../enums/VoxelDataSources';
 import type {
   Point3,
   ViewportFidelityCause,
@@ -10,12 +9,14 @@ import {
   type FidelityLine,
   isInteractiveLod,
   isReduced,
+  svgStateOf,
 } from './fidelityIndicatorState';
 
 /**
- * Builds the absolute {@link ViewportFidelityState} (VFS-API-3) from fidelity
- * lines and optional display spacing. Does not compute a reader verdict
- * (VFS-API-6 / VFS-API-7).
+ * Builds the absolute {@link ViewportFidelityState} (FIDELITY-EVENT-5) from
+ * fidelity lines. The display spacing comes from the primary line, else from
+ * `displaySpacing`. `shownState` and `lossy` come from every line, with the
+ * same decision as the built-in indicator (`svgStateOf`).
  */
 export function buildViewportFidelityState(
   lines: FidelityLine[],
@@ -27,13 +28,20 @@ export function buildViewportFidelityState(
     return emptyState(displaySpacing);
   }
 
+  const shownState = svgStateOf(lines);
+
   const { record, reductionFactors, sampleDistanceLod, imageQualityStatus } =
     line;
+  const shownSpacing = line.displaySpacing ?? displaySpacing;
   const spatiallyReduced = isReduced(reductionFactors);
-  const loading =
-    (record && record.missing > 0) ||
-    (imageQualityStatus !== undefined &&
-      imageQualityStatus < ImageQualityStatus.SUBRESOLUTION);
+  // A load counts only while replicated, sub-resolution or lossy data shows
+  // in place of data that has not arrived (FIDELITY-STATE-2).
+  const loading = record
+    ? record.missing > 0 &&
+      (record.lowest ?? ImageQualityStatus.FULL_RESOLUTION) <
+        ImageQualityStatus.FULL_RESOLUTION
+    : imageQualityStatus !== undefined &&
+      imageQualityStatus < ImageQualityStatus.SUBRESOLUTION;
   const lod = isInteractiveLod(sampleDistanceLod);
 
   const state: ViewportFidelityState = {
@@ -43,8 +51,8 @@ export function buildViewportFidelityState(
           dimensions: [...record.grid.dimensions] as Point3,
         }
       : undefined,
-    displayResolution: displaySpacing
-      ? { spacing: [...displaySpacing] as Point3 }
+    displayResolution: shownSpacing
+      ? { spacing: [...shownSpacing] as Point3 }
       : undefined,
     reductionKind: record?.reduction,
     reductionSource: record?.source,
@@ -58,8 +66,8 @@ export function buildViewportFidelityState(
     }),
     transient: loading || lod,
     progressive: progressiveOf(line),
-    substitutedDefaults: undefined,
-    renderPathId: undefined,
+    shownState,
+    lossy: isLossyShownState(shownState),
   };
 
   return state;
@@ -77,9 +85,17 @@ function emptyState(displaySpacing?: Point3): ViewportFidelityState {
     cause: undefined,
     transient: undefined,
     progressive: undefined,
-    substitutedDefaults: undefined,
-    renderPathId: undefined,
+    shownState: 'hidden',
+    lossy: false,
   };
+}
+
+function isLossyShownState(
+  shownState: ViewportFidelityState['shownState']
+): boolean {
+  return (
+    shownState === 'loading' || shownState === 'lod' || shownState === 'lossy'
+  );
 }
 
 /** Prefer a line with a volume record; else the first line. */
@@ -104,6 +120,7 @@ function progressiveOf(
 
     return {
       status: record.status,
+      lowest: record.lowest,
       missing: record.missing,
       voxels: record.voxels,
       loadedFraction,
@@ -136,46 +153,41 @@ function causeOf(args: {
     return 'performanceTarget';
   }
 
-  if (
-    record &&
-    spatiallyReduced &&
-    record.source === VoxelDataSources.ClientDerived
-  ) {
+  // A decimation is a spatial reduction, not a lossy decode.
+  if (spatiallyReduced || (record && isAliasingReduction(record.reduction))) {
     return 'deviceTextureLimit';
   }
 
+  const delivered = record ? record.lowest : imageQualityStatus;
+
   if (
-    (record && isAliasingReduction(record.reduction)) ||
-    imageQualityStatus === ImageQualityStatus.LOSSY ||
-    (imageQualityStatus !== undefined &&
-      imageQualityStatus < ImageQualityStatus.FULL_RESOLUTION &&
-      imageQualityStatus >= ImageQualityStatus.SUBRESOLUTION)
+    delivered !== undefined &&
+    delivered < ImageQualityStatus.FULL_RESOLUTION &&
+    delivered >= ImageQualityStatus.SUBRESOLUTION
   ) {
     return 'lossyDecode';
-  }
-
-  if (spatiallyReduced) {
-    return 'deviceTextureLimit';
   }
 
   return undefined;
 }
 
 /**
- * Stable key for change detection on absolute fidelity fields
- * (FIDELITY-EVENT-4 / VF-INFO-5a).
+ * Stable key for change detection (FIDELITY-EVENT-4).
+ *
+ * The key leaves out `displayResolution`, because it changes on each zoom,
+ * pan and resize. It holds `shownState` and `lossy`, so a zoom that changes a
+ * box-average verdict still changes the key.
  */
 export function viewportFidelityStateKey(state: ViewportFidelityState): string {
   return JSON.stringify({
+    shownState: state.shownState,
+    lossy: state.lossy,
     dataResolution: state.dataResolution,
-    displayResolution: state.displayResolution,
     reductionKind: state.reductionKind,
     reductionSource: state.reductionSource,
     magnitude: state.magnitude,
     cause: state.cause,
     transient: state.transient,
     progressive: state.progressive,
-    substitutedDefaults: state.substitutedDefaults,
-    renderPathId: state.renderPathId,
   });
 }

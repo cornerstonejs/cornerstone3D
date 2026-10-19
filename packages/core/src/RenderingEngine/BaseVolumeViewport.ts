@@ -128,6 +128,8 @@ abstract class BaseVolumeViewport extends Viewport {
   /** Quality-record cache for fidelity lines; cleared on volume data events. */
   private _fidelityRecords = new Map<string, CachedRecord>();
   private _fidelityRecordListenersAttached = false;
+  /** Set on ELEMENT_DISABLED of this element; the listeners never return. */
+  private _fidelityRecordsDisposed = false;
 
   public canReportFidelity(): boolean {
     return true;
@@ -138,8 +140,18 @@ abstract class BaseVolumeViewport extends Viewport {
     return fidelityLinesFromVolumeActors(this, this._fidelityRecords);
   }
 
+  /**
+   * Adds the global listeners that clear the record cache on volume data
+   * events. The listeners are removed on ELEMENT_DISABLED of this element, so
+   * a disabled viewport does not stay in memory. `_reset` fires that event
+   * without `isDisabled`, so a disposed flag stops a later attach.
+   */
   private ensureFidelityRecordInvalidation(): void {
-    if (this._fidelityRecordListenersAttached) {
+    if (
+      this._fidelityRecordListenersAttached ||
+      this._fidelityRecordsDisposed ||
+      this.isDisabled
+    ) {
       return;
     }
     this._fidelityRecordListenersAttached = true;
@@ -153,11 +165,31 @@ abstract class BaseVolumeViewport extends Viewport {
       }
     };
 
+    const cleanUp = (evt: Event) => {
+      // Match the element: a viewport of another engine can share the id.
+      if (
+        (evt as EventTypes.ElementDisabledEvent).detail?.element !==
+        this.element
+      ) {
+        return;
+      }
+
+      eventTarget.removeEventListener(Events.IMAGE_VOLUME_MODIFIED, invalidate);
+      eventTarget.removeEventListener(
+        Events.IMAGE_VOLUME_LOADING_COMPLETED,
+        invalidate
+      );
+      eventTarget.removeEventListener(Events.ELEMENT_DISABLED, cleanUp);
+      this._fidelityRecords.clear();
+      this._fidelityRecordsDisposed = true;
+    };
+
     eventTarget.addEventListener(Events.IMAGE_VOLUME_MODIFIED, invalidate);
     eventTarget.addEventListener(
       Events.IMAGE_VOLUME_LOADING_COMPLETED,
       invalidate
     );
+    eventTarget.addEventListener(Events.ELEMENT_DISABLED, cleanUp);
   }
 
   constructor(props: ViewportInput) {
@@ -334,10 +366,11 @@ abstract class BaseVolumeViewport extends Viewport {
     );
 
     const cleanUp = (evt: Event) => {
-      const { viewportId } = (evt as CustomEvent<{ viewportId?: string }>)
-        .detail;
-
-      if (viewportId !== this.id) {
+      // Match the element: a viewport of another engine can share the id.
+      if (
+        (evt as EventTypes.ElementDisabledEvent).detail?.element !==
+        this.element
+      ) {
         return;
       }
 

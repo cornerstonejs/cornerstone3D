@@ -374,11 +374,14 @@ group says which part of a generic viewport owns each piece of the fidelity.
   a texture to read the record.
 - **GENVIEW-FIDELITY-3** The resolved view supplies the display spacing of the
   verdict, because the display spacing is a world size of one canvas pixel. A
-  render path does not compute the display spacing. See GENVIEW-VIEW-6.
+  render path does not compute the display spacing. See GENVIEW-VIEW-6 and
+  FIDELITY-RECORD-2.
 - **GENVIEW-FIDELITY-4** The base class derives the verdict from the record of
   the source binding and the display spacing, with `compareVoxelQuality()`. The
   base class fires the fidelity event and answers the fidelity query, because
-  every family needs both. See GENVIEW-BASE-1 and GENVIEW-BASE-4.
+  every family needs both. The event goes through the helper that the legacy
+  `Viewport` also uses (FIDELITY-EVENT-7). See GENVIEW-BASE-1 and
+  GENVIEW-BASE-4.
 - **GENVIEW-FIDELITY-5** A binding that cannot show degraded data supplies no
   record, and the viewport then reports no degradation. A video, an ECG and a
   stack of images at full quality are examples.
@@ -387,7 +390,7 @@ group says which part of a generic viewport owns each piece of the fidelity.
   GENVIEW-STATE-2.
 - **GENVIEW-FIDELITY-7** A user interface that shows the fidelity is a consumer
   of the event. It is not part of the family class, the render path or the
-  base class.
+  base class. It does not fire the event (FIDELITY-UI-8).
 - **GENVIEW-FIDELITY-8** The code decides that a viewport can report fidelity
   from the presence of a record, or from `getCurrentMode()`. It does not use a
   list of viewport types. See GENVIEW-API-6.
@@ -513,11 +516,13 @@ Breaks GENVIEW-FILE-1 and GENVIEW-FILE-5. The fix moves the code into
 Breaks GENVIEW-STATE-5. The dead declaration goes, and the duplicate becomes a
 type alias, so a future change to one shape cannot silently pass the cast.
 
-### Only the Planar family answers `getCurrentMode()`
+### Only the Planar and Volume3D families answer `getCurrentMode()`
 
-`PlanarViewport` overrides `getCurrentMode()`. The ECG family, the Video family,
-the WSI family and the Volume3D family do not, so each one answers `'unknown'`
-whenever data is mounted.
+`PlanarViewport` and the Volume3D family override `getCurrentMode()`. The
+Volume3D family answers `'volume3d'` for a volume and `'unknown'` for a
+geometry-only source. The ECG family, the Video family and the WSI family do not
+override `getCurrentMode()`, so each one answers `'unknown'` when data is
+mounted.
 
 `UltrasoundDirectionalTool` shows the cost. Its guard reads:
 
@@ -537,8 +542,4 @@ This section records the defects that the requirements above prevent. A new
 defect of the same kind gets a new line here, with the pull request that fixed
 it and the requirement that covers it.
 
-| Defect                                                            | Fixed in                   | Requirement                       |
-| ----------------------------------------------------------------- | -------------------------- | --------------------------------- |
-| Fidelity indicator read actors/mappers instead of binding records | follow-up to #2978         | GENVIEW-FIDELITY-2                |
-| Fidelity indicator selected viewports by a type list              | follow-up to #2978         | GENVIEW-FIDELITY-8, GENVIEW-API-6 |
-| No fidelity event and no fidelity query                           | follow-up to #2978 / #2902 | GENVIEW-FIDELITY-4                |
+No entry yet. The § Known deviations section holds what is open.

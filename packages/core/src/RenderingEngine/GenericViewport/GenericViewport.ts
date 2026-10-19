@@ -32,11 +32,9 @@ import {
 } from './genericViewportReferenceCompatibility';
 import type { FidelityLine } from '../helpers/fidelityIndicator/fidelityIndicatorState';
 import type { ViewportFidelityState } from '../../types/ViewportFidelity';
-import {
-  buildViewportFidelityState,
-  viewportFidelityStateKey,
-} from '../helpers/fidelityIndicator/buildViewportFidelityState';
+import { buildViewportFidelityState } from '../helpers/fidelityIndicator/buildViewportFidelityState';
 import { displaySpacingOfViewport } from '../helpers/fidelityIndicator/displaySpacingOfViewport';
+import { notifyFidelityStateChanged } from '../helpers/fidelityIndicator/notifyFidelityStateChanged';
 import {
   fidelityLineFromStackImage,
   fidelityLinesFromBindings,
@@ -83,11 +81,6 @@ abstract class GenericViewport<
   abstract readonly type: ViewportType;
   abstract readonly renderingEngineId: string;
   public viewportStatus: ViewportStatus = ViewportStatus.NO_DATA;
-  /**
-   * Key of the last absolute fidelity state published on
-   * VIEWPORT_FIDELITY_CHANGED (FIDELITY-EVENT-4 / VF-INFO-5a).
-   */
-  private _lastPublishedFidelityKey: string | undefined;
 
   // ── Protected fields ─────────────────────────────────────────────────
 
@@ -260,21 +253,12 @@ abstract class GenericViewport<
   }
 
   /**
-   * Absolute per-viewport fidelity record (VFS-API-1 / FIDELITY-EVENT-5).
+   * Absolute per-viewport fidelity record (FIDELITY-EVENT-5).
    */
   getFidelityState(): ViewportFidelityState {
-    const host = this as {
-      canvas?: { clientHeight?: number; height?: number };
-      sHeight?: number;
-    };
-
     return buildViewportFidelityState(
       this.collectFidelityLines(),
-      displaySpacingOfViewport({
-        canvas: host.canvas,
-        sHeight: host.sHeight,
-        getCamera: () => this.getCameraForEvent(),
-      })
+      displaySpacingOfViewport(this.fidelityViewportLike())
     );
   }
 
@@ -286,32 +270,35 @@ abstract class GenericViewport<
   }
 
   /**
-   * Recomputes absolute fidelity and fires `VIEWPORT_FIDELITY_CHANGED` when
-   * any VFS-API-3 field changes (FIDELITY-EVENT-2..4).
+   * Fires `VIEWPORT_FIDELITY_CHANGED` when the derived fidelity state changes
+   * (FIDELITY-EVENT-2..4). The rendering engines call this after each render.
+   *
+   * @internal
    */
   notifyFidelityStateChanged(): void {
-    const next = this.getFidelityState();
-    const key = viewportFidelityStateKey(next);
+    // Subclasses such as PlanarViewport define `suppressEvents`.
+    notifyFidelityStateChanged(
+      this,
+      this.collectFidelityLines(),
+      displaySpacingOfViewport(this.fidelityViewportLike())
+    );
+  }
 
-    if (key === this._lastPublishedFidelityKey) {
-      return;
-    }
-
-    this._lastPublishedFidelityKey = key;
-
-    const eventDetail: EventTypes.ViewportFidelityChangedEventDetail = {
-      viewportId: this.id,
-      renderingEngineId: this.renderingEngineId,
-      state: next,
+  /** The canvas, camera and view kind that the fidelity helpers read. */
+  private fidelityViewportLike() {
+    return {
+      getActors: () => [],
+      canvas: (this as { canvas?: HTMLCanvasElement }).canvas,
+      sHeight: (this as { sHeight?: number }).sHeight,
+      getCamera: () => this.getCameraForEvent(),
+      volume3D: this.getCurrentMode() === 'volume3d',
     };
-
-    triggerEvent(this.element, Events.VIEWPORT_FIDELITY_CHANGED, eventDetail);
   }
 
   /**
    * Builds fidelity lines from binding-exposed quality records
    * (GENVIEW-FIDELITY-2), or from the current stack image when the mode is
-   * stack (FIDELITY-SCOPE-2).
+   * stack (FIDELITY-STATE-8).
    */
   protected collectFidelityLines(): FidelityLine[] {
     const mode = this.getCurrentMode();
@@ -374,15 +361,7 @@ abstract class GenericViewport<
       });
     });
 
-    return fidelityLinesFromBindings(
-      {
-        getActors: () => [],
-        canvas: (this as { canvas?: HTMLCanvasElement }).canvas,
-        sHeight: (this as { sHeight?: number }).sHeight,
-        getCamera: () => this.getCameraForEvent(),
-      },
-      sources
-    );
+    return fidelityLinesFromBindings(this.fidelityViewportLike(), sources);
   }
 
   /**
