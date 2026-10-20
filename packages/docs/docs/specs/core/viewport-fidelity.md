@@ -161,7 +161,10 @@ and it does not make the displayed image lossy.
 - **FIDELITY-RECORD-3** The render that drew the frame composes the record,
   because only the render knows which texture it bound. A reader gets the
   record of the bound grid with `imageVolume.getGridQuality(grid, statistic)`,
-  and the record of the full volume with `imageVolume.getVoxelQuality()`.
+  and the record of the full volume with `imageVolume.getVoxelQuality()`. A
+  generic path takes `statistic` from the binding it drew. A legacy path takes
+  it from the bound streaming texture when present, otherwise from
+  `volume.reductionStatistic`.
 - **FIDELITY-RECORD-4** `utilities.voxelGrid.isAliasingReduction(reduction)`
   decides whether a reduction is a decimation for FIDELITY-STATE-6.
 - **FIDELITY-RECORD-5** A stack image keeps its per-image summary,

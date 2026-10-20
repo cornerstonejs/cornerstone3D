@@ -64,6 +64,10 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
   // full-resolution data. A texture of any other grid reads the composite,
   // because no cached image holds a reduced voxel.
   model.grid = null;
+  // The statistic that this texture holds (set at provision with the grid).
+  // Fidelity reads it so the record matches the voxels in the texture
+  // (FIDELITY-RECORD-3), not a later `volume.reductionStatistic`.
+  model.statistic = null;
 
   const superCreate3DFilterableFromRaw = publicAPI.create3DFilterableFromRaw;
 
@@ -771,6 +775,20 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
    * of its volume.
    */
   publicAPI.getGrid = () => model.grid;
+
+  /**
+   * States the statistic that this texture holds. The texture pool of
+   * `ImageVolume` calls this when it builds the texture.
+   */
+  publicAPI.setStatistic = (statistic) => {
+    model.statistic = statistic;
+  };
+
+  /**
+   * The statistic that this texture holds. A texture that states none falls
+   * back to `volume.reductionStatistic` for fidelity.
+   */
+  publicAPI.getStatistic = () => model.statistic;
 
   publicAPI.setTextureParameters = ({
     width,

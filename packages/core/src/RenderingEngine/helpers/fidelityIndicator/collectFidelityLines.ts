@@ -7,6 +7,7 @@ import type {
   Point3,
   VoxelGrid,
   VoxelQualityRecord,
+  VoxelStatistic,
 } from '../../../types';
 import {
   compareVoxelQuality,
@@ -25,8 +26,14 @@ import {
   reductionFactorsOf,
 } from './fidelityIndicatorState';
 
+type VolumeScalarTextureLike = {
+  getGrid?: () => VoxelGrid;
+  /** Statistic the texture was provisioned with (FIDELITY-RECORD-3). */
+  getStatistic?: () => VoxelStatistic | null | undefined;
+};
+
 type VolumeMapperLike = {
-  getScalarTexture?: () => { getGrid?: () => VoxelGrid };
+  getScalarTexture?: () => VolumeScalarTextureLike;
   getSampleDistance?: () => number;
   getInputData?: () => {
     getSpacing: () => number[];
@@ -153,11 +160,13 @@ export function fidelityLinesFromVolumeActors(
     let cached = records.get(id);
 
     if (!cached || !voxelGridsEqual(cached.grid, grid)) {
-      // The legacy reduced texture fills with `volume.reductionStatistic`
-      // (default average), the same statistic `getGridQuality` defaults to.
+      // FIDELITY-RECORD-3: the bound texture states the statistic it holds.
+      // Fall back to volume.reductionStatistic when the texture has none
+      // (non-streaming or unset).
+      const statistic = texture?.getStatistic?.() ?? volume.reductionStatistic;
       cached = {
         grid,
-        record: volume.getGridQuality(grid, volume.reductionStatistic) as
+        record: volume.getGridQuality(grid, statistic) as
           | VoxelQualityRecord
           | undefined,
       };

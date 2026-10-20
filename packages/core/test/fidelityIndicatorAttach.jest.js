@@ -12,6 +12,7 @@ import eventTarget from '../src/eventTarget';
 import Events from '../src/enums/Events';
 import ImageQualityStatus from '../src/enums/ImageQualityStatus';
 import VoxelReductions from '../src/enums/VoxelReductions';
+import VoxelStatistics from '../src/enums/VoxelStatistics';
 import ViewportType from '../src/enums/ViewportType';
 import {
   attachFidelityIndicator,
@@ -140,6 +141,110 @@ describe('fidelityIndicator attach gates', () => {
           actor: {},
         })
       ).toBe(false);
+    });
+  });
+
+  describe('fidelityLinesFromVolumeActors statistic', () => {
+    const voxelGrid = {
+      dimensions: [4, 4, 4],
+      spacing: [1, 1, 1],
+      origin: [0, 0, 0],
+      direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
+    };
+
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('uses the bound texture statistic over volume.reductionStatistic', () => {
+      const getGridQuality = jest.fn(() => ({
+        grid: voxelGrid,
+        status: ImageQualityStatus.FULL_RESOLUTION,
+        lowest: ImageQualityStatus.FULL_RESOLUTION,
+        highest: ImageQualityStatus.FULL_RESOLUTION,
+        missing: 0,
+        voxels: 64,
+        exact: true,
+        source: 'directLoad',
+        reduction: VoxelReductions.None,
+        deliveries: 1,
+      }));
+
+      jest.spyOn(cache, 'getVolume').mockReturnValue({
+        voxelGrid,
+        reductionStatistic: VoxelStatistics.Average,
+        getGridQuality,
+      });
+
+      const viewport = {
+        type: ViewportType.ORTHOGRAPHIC,
+        getActors: () => [
+          {
+            uid: 'vol',
+            referencedId: 'vol',
+            actor: {
+              getMapper: () => ({
+                getScalarTexture: () => ({
+                  getGrid: () => voxelGrid,
+                  getStatistic: () => VoxelStatistics.ForegroundMajority,
+                }),
+              }),
+            },
+          },
+        ],
+      };
+
+      fidelityLinesFromVolumeActors(viewport);
+
+      expect(getGridQuality).toHaveBeenCalledWith(
+        voxelGrid,
+        VoxelStatistics.ForegroundMajority
+      );
+    });
+
+    it('falls back to volume.reductionStatistic when the texture has no statistic', () => {
+      const getGridQuality = jest.fn(() => ({
+        grid: voxelGrid,
+        status: ImageQualityStatus.FULL_RESOLUTION,
+        lowest: ImageQualityStatus.FULL_RESOLUTION,
+        highest: ImageQualityStatus.FULL_RESOLUTION,
+        missing: 0,
+        voxels: 64,
+        exact: true,
+        source: 'directLoad',
+        reduction: VoxelReductions.None,
+        deliveries: 1,
+      }));
+
+      jest.spyOn(cache, 'getVolume').mockReturnValue({
+        voxelGrid,
+        reductionStatistic: VoxelStatistics.Average,
+        getGridQuality,
+      });
+
+      const viewport = {
+        type: ViewportType.ORTHOGRAPHIC,
+        getActors: () => [
+          {
+            uid: 'vol',
+            referencedId: 'vol',
+            actor: {
+              getMapper: () => ({
+                getScalarTexture: () => ({
+                  getGrid: () => voxelGrid,
+                }),
+              }),
+            },
+          },
+        ],
+      };
+
+      fidelityLinesFromVolumeActors(viewport);
+
+      expect(getGridQuality).toHaveBeenCalledWith(
+        voxelGrid,
+        VoxelStatistics.Average
+      );
     });
   });
 
