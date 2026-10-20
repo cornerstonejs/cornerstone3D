@@ -1,6 +1,5 @@
 import type { ByteArray } from 'dicom-parser';
 import openJphFactory, {
-  type HTJ2KDecoder,
   type HTJ2KModule,
 } from '@cornerstonejs/codec-openjph/wasmjs';
 // @ts-ignore
@@ -16,11 +15,9 @@ import { resolveWasmUrl, setWasmBasePathFromConfig } from '../wasmBasePath';
 
 const local: {
   codec: HTJ2KModule | undefined;
-  decoder: HTJ2KDecoder | undefined;
   decodeConfig: LoaderDecodeOptions;
 } = {
   codec: undefined,
-  decoder: undefined,
   decodeConfig: {},
 };
 
@@ -57,16 +54,14 @@ export function initialize(decodeConfig?: LoaderDecodeOptions): Promise<void> {
   });
 
   return openJphModule.then((instance) => {
-    const decoder = new instance.HTJ2KDecoder();
     local.codec = instance;
-    local.decoder = decoder;
   });
 }
 
 // https://github.com/chafey/openjpegjs/blob/master/test/browser/index.html
 async function decodeAsync(compressedImageFrame: ByteArray, imageInfo) {
   await initialize();
-  // const decoder = local.decoder; // This is much slower for some reason
+  // A new decoder per frame: reusing one decoder was much slower.
   const decoder = new local.codec.HTJ2KDecoder();
   // The decoder owns its encoded and decoded buffers in the WASM heap, so it
   // must be deleted after every decode or the worker's heap grows until it aborts.
