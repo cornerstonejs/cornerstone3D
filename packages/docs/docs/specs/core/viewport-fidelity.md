@@ -317,15 +317,6 @@ and it does not make the displayed image lossy.
 
 ## Known deviations
 
-### Core finds a labelmap by its name
-
-A legacy volume viewport uses `isLabelmapActorEntry()`. It finds a labelmap
-with a regular expression on a name that the tools package makes. If the tools
-package changes the name, a labelmap counts in the fidelity state, against
-FIDELITY-STATE-9. No test shows that change. A generic viewport does not use
-the name. Its render path sets `excludeFromFidelity` from the binding role and
-the segmentation reference.
-
 ### A display spacing on an oblique axis is an estimate
 
 `displaySpacingForGrid()` gives an axis that is oblique to the view plane the

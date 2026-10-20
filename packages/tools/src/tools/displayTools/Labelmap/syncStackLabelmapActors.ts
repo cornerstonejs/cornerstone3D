@@ -145,6 +145,8 @@ export function syncStackLabelmapActors(
               labelmapId: derivedImage.imageId,
             },
             representationUID,
+            // FIDELITY-STATE-9: labelmap overlay actors are out of fidelity scope.
+            excludeFromFidelity: true,
           },
         ]);
       } else {
@@ -180,6 +182,8 @@ export function syncStackLabelmapActors(
               labelmapId: derivedImage.imageId,
             },
             representationUID,
+            // FIDELITY-STATE-9: labelmap overlay actors are out of fidelity scope.
+            excludeFromFidelity: true,
             callback: ({ imageActor }) => {
               imageActor.getMapper().setInputData(imageData);
               applyInheritedLabelmapStyle(

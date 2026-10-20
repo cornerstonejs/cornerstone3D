@@ -95,30 +95,25 @@ describe('fidelityIndicator attach gates', () => {
   });
 
   describe('isLabelmapActorEntry', () => {
-    it('accepts representationUID or uid with a Labelmap segment', () => {
+    it('accepts actors with excludeFromFidelity', () => {
+      expect(
+        isLabelmapActorEntry({
+          uid: 'actor-1',
+          excludeFromFidelity: true,
+          actor: {},
+        })
+      ).toBe(true);
       expect(
         isLabelmapActorEntry({
           uid: 'actor-1',
           representationUID: 'seg-Labelmap-layer',
-          actor: {},
-        })
-      ).toBe(true);
-      expect(
-        isLabelmapActorEntry({
-          uid: 'seg-Labelmap-layer',
-          actor: {},
-        })
-      ).toBe(true);
-      expect(
-        isLabelmapActorEntry({
-          uid: 'actor-1',
-          representationUID: 'Labelmap',
+          excludeFromFidelity: true,
           actor: {},
         })
       ).toBe(true);
     });
 
-    it('rejects normal volume actors', () => {
+    it('rejects actors without excludeFromFidelity, including Labelmap-shaped UIDs', () => {
       expect(
         isLabelmapActorEntry({
           uid: 'ct-volume',
@@ -134,8 +129,14 @@ describe('fidelityIndicator attach gates', () => {
       ).toBe(false);
       expect(
         isLabelmapActorEntry({
-          uid: 'ct-volume',
-          representationUID: 'MyLabelmapExtra',
+          uid: 'actor-1',
+          representationUID: 'seg-Labelmap-layer',
+          actor: {},
+        })
+      ).toBe(false);
+      expect(
+        isLabelmapActorEntry({
+          uid: 'seg-Labelmap-layer',
           actor: {},
         })
       ).toBe(false);

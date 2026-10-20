@@ -1,10 +1,11 @@
 import type { ActorEntry } from '../../../types';
 
 /**
- * Whether an actor is a labelmap overlay (FIDELITY-STATE-9). Tools set
- * `representationUID` to `${segmentationId}-Labelmap-...`.
+ * Whether an actor is excluded from viewport fidelity (FIDELITY-STATE-9).
+ *
+ * Tools set `excludeFromFidelity` on labelmap / segmentation overlay actors.
+ * Generic viewports use the same flag on the rendering from the binding role.
  */
 export function isLabelmapActorEntry(entry: ActorEntry): boolean {
-  const id = entry.representationUID ?? entry.uid;
-  return typeof id === 'string' && /(?:^|-)Labelmap(?:-|$)/.test(id);
+  return entry.excludeFromFidelity === true;
 }
