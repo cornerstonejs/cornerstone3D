@@ -90,3 +90,27 @@ export type ViewportFidelityState = {
    */
   lossy?: boolean;
 };
+
+/**
+ * Fidelity reporting surface of a viewport (FIDELITY-EVENT, GENVIEW-FIDELITY-8).
+ *
+ * `IViewport` is the legacy {@link Viewport} class, which implements this
+ * surface. {@link GenericViewport} implements it as well. Rendering engines
+ * call {@link notifyFidelityStateChanged} after each draw without a cast.
+ */
+export interface IViewportFidelity {
+  /** Whether this viewport can report fidelity (GENVIEW-FIDELITY-8). */
+  canReportFidelity(): boolean;
+  /**
+   * Absolute per-viewport fidelity record (FIDELITY-EVENT-5).
+   * Does not fire `VIEWPORT_FIDELITY_CHANGED`.
+   */
+  getFidelityState(): ViewportFidelityState;
+  /**
+   * Fires `VIEWPORT_FIDELITY_CHANGED` when the derived fidelity state changes
+   * (FIDELITY-EVENT-2..4).
+   *
+   * @internal
+   */
+  notifyFidelityStateChanged(): void;
+}

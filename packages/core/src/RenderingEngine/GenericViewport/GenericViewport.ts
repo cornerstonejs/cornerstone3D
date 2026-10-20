@@ -31,7 +31,10 @@ import {
   type GenericViewportReferenceContext,
 } from './genericViewportReferenceCompatibility';
 import type { FidelityLine } from '../helpers/fidelityIndicator/fidelityIndicatorState';
-import type { ViewportFidelityState } from '../../types/ViewportFidelity';
+import type {
+  IViewportFidelity,
+  ViewportFidelityState,
+} from '../../types/ViewportFidelity';
 import { buildViewportFidelityState } from '../helpers/fidelityIndicator/buildViewportFidelityState';
 import {
   type FidelityDisplay,
@@ -68,10 +71,13 @@ import {
  * centralizing render-mode-specific behavior in the controller.
  */
 abstract class GenericViewport<
-  TViewState extends object,
-  TDataPresentation = unknown,
-  TContext extends BaseViewportRenderContext = BaseViewportRenderContext,
-> implements ViewportController<TViewState, TDataPresentation>
+    TViewState extends object,
+    TDataPresentation = unknown,
+    TContext extends BaseViewportRenderContext = BaseViewportRenderContext,
+  >
+  implements
+    ViewportController<TViewState, TDataPresentation>,
+    IViewportFidelity
 {
   // ── Abstract fields ──────────────────────────────────────────────────
 

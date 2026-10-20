@@ -146,13 +146,11 @@ export function detachFidelityIndicator(viewport: IViewport): void {
 }
 
 /**
- * Whether a viewport can report fidelity (GENVIEW-FIDELITY-8). `IViewport`
- * declares `canReportFidelity()`, and `Viewport` and `GenericViewport` both
- * implement it. The optional call covers an application viewport class,
- * registered by type, that extends neither.
+ * Whether a viewport can report fidelity (GENVIEW-FIDELITY-8). Declared on
+ * `IViewportFidelity`; `Viewport` and `GenericViewport` both implement it.
  */
 export function canReportFidelity(viewport: IViewport): boolean {
-  return viewport.canReportFidelity?.() === true;
+  return viewport.canReportFidelity() === true;
 }
 
 function hasFidelityApi(viewport: IViewport): viewport is FidelityViewport {

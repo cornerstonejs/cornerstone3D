@@ -459,6 +459,15 @@ export type DataSetOptions = {
   viewReference?: ViewReferenceSpecifier;
 };
 
+/**
+ * Enabled viewport handle used by the rendering engine.
+ *
+ * This is the legacy {@link Viewport} class. Fidelity reporting
+ * (`canReportFidelity`, `getFidelityState`, `notifyFidelityStateChanged`) is
+ * declared on `IViewportFidelity` and implemented by Viewport. Generic
+ * ("next") viewports implement the same surface and are stored in the engine
+ * map through a cast to this type.
+ */
 type IViewport = Viewport;
 
 interface RenderingEngineResizeOptions {

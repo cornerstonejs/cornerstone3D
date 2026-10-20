@@ -58,7 +58,10 @@ import { getNormalizedAspectRatio } from '../utilities/getNormalizedAspectRatio'
 import { getConfiguration } from '../init';
 import type { extendedVtkCamera } from './vtkClasses/extendedVtkCamera';
 import type { FidelityLine } from './helpers/fidelityIndicator/fidelityIndicatorState';
-import type { ViewportFidelityState } from '../types/ViewportFidelity';
+import type {
+  IViewportFidelity,
+  ViewportFidelityState,
+} from '../types/ViewportFidelity';
 import { buildViewportFidelityState } from './helpers/fidelityIndicator/buildViewportFidelityState';
 import { displaySpacingOfViewport } from './helpers/fidelityIndicator/displaySpacingOfViewport';
 import { notifyFidelityStateChanged } from './helpers/fidelityIndicator/notifyFidelityStateChanged';
@@ -74,7 +77,7 @@ import { notifyFidelityStateChanged } from './helpers/fidelityIndicator/notifyFi
  */
 const log = coreLog.getLogger('RenderingEngine', 'Viewport');
 
-class Viewport {
+class Viewport implements IViewportFidelity {
   /**
    * CameraViewPresentation is a view presentation selector that has all the
    * camera related presentation selections, and would typically be used for

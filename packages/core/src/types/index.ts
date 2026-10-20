@@ -211,6 +211,7 @@ import type {
   VoxelReductionDefinition,
 } from './VoxelQuality';
 import type {
+  IViewportFidelity,
   ViewportFidelityCause,
   ViewportFidelityState,
   ViewportFidelityShownState,
@@ -413,6 +414,7 @@ export type {
   VoxelQualityRequirement,
   VoxelQualityVerdict,
   VoxelQualityCause,
+  IViewportFidelity,
   ViewportFidelityCause,
   ViewportFidelityState,
   ViewportFidelityShownState,
