@@ -40,6 +40,7 @@ type PlanarSliceRenderingViewport = SliceRenderingViewport & {
       imageData?: vtkImageData;
       reference?: SegmentationReference;
       useWorldCoordinateImageData?: boolean;
+      excludeFromFidelity?: boolean;
       callback?: (args: { imageActor: vtkImageSlice }) => void;
     }>
   ) => void | Promise<void>;
