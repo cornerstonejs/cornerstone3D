@@ -3,7 +3,7 @@ import decodeHTJ2K from '../shared/decoders/decodeHTJ2K';
 // Stand-in for the embind decoder: records each instance so the test can
 // check that the decode deleted it, and can fail a decode on request.
 const mockDecoders: { delete: jest.Mock }[] = [];
-const mockState = { failDecode: false };
+const mockState = { failDecode: false, failConstruct: false };
 
 jest.mock(
   '@cornerstonejs/codec-openjph/wasmjs',
@@ -12,6 +12,9 @@ jest.mock(
       HTJ2KDecoder: class {
         delete = jest.fn();
         constructor() {
+          if (mockState.failConstruct) {
+            throw new Error('construct failed');
+          }
           mockDecoders.push(this);
         }
         decodeSubResolution() {
@@ -65,6 +68,17 @@ jest.mock(
 describe('decodeHTJ2K', () => {
   beforeEach(() => {
     mockState.failDecode = false;
+    mockState.failConstruct = false;
+  });
+
+  it('rejects initialize when the decoder cannot be constructed', async () => {
+    mockState.failConstruct = true;
+
+    // A fresh module, so initialize() loads the codec instead of reusing it.
+    await jest.isolateModulesAsync(async () => {
+      const { initialize } = await import('../shared/decoders/decodeHTJ2K');
+      await expect(initialize()).rejects.toThrow('construct failed');
+    });
   });
 
   it('deletes the decoder it creates for each frame', async () => {

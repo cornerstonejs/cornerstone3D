@@ -56,12 +56,10 @@ export function initialize(decodeConfig?: LoaderDecodeOptions): Promise<void> {
     },
   });
 
-  return new Promise<void>((resolve, reject) => {
-    openJphModule.then((instance) => {
-      local.codec = instance;
-      local.decoder = new instance.HTJ2KDecoder();
-      resolve();
-    }, reject);
+  return openJphModule.then((instance) => {
+    const decoder = new instance.HTJ2KDecoder();
+    local.codec = instance;
+    local.decoder = decoder;
   });
 }
 
