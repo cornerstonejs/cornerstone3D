@@ -276,9 +276,9 @@ compile.
     `series.instances.min(...)`, `.max(...)`, `.sum(...)` or `.count(...)`
     has one value for each instance.
   - Every other entry has one value for the series.
-- **RL-CTX-8** A site changes one entry by its name (`"dxCrMaxImages":
-{ "$set": 20 }`). The site does not copy the expression text of a rule into
-  a `$merge`.
+- **RL-CTX-8** A site changes one entry by its name, for example
+  `"dxCrMaxImages": { "$set": 20 }`. The site does not copy the expression text
+  of a rule into a `$merge`.
 - **RL-CTX-9** A value of the series is the same for each display set of the
   series, also in `attributes`.
 
