@@ -138,39 +138,64 @@ describe('SegmentationRenderingEngine', () => {
     expect(viewport.render).toHaveBeenCalledTimes(1);
   });
 
-  it('renders each viewport once for many requests that arrive during a scheduled frame', () => {
-    const frames: FrameRequestCallback[] = [];
-    const rafSpy = jest
-      .spyOn(window, 'requestAnimationFrame')
-      .mockImplementation((callback) => {
-        frames.push(callback);
-        return frames.length;
-      });
-    const triggerRenderSpy = jest
-      .spyOn(segmentationRenderingEngine, '_triggerRender')
-      .mockImplementation(() => undefined);
+  describe('frame scheduling', () => {
+    let frames: FrameRequestCallback[];
+    let rafSpy: jest.SpyInstance;
+    let triggerRenderSpy: jest.SpyInstance;
     const runNextFrame = () => frames.shift()(0);
 
-    try {
-      segmentationRenderingEngine.renderSegmentationsForViewport('viewport-a');
+    beforeEach(() => {
+      frames = [];
+      rafSpy = jest
+        .spyOn(window, 'requestAnimationFrame')
+        .mockImplementation((callback) => {
+          frames.push(callback);
+          return frames.length;
+        });
+      triggerRenderSpy = jest
+        .spyOn(segmentationRenderingEngine, '_triggerRender')
+        .mockImplementation(() => undefined);
+    });
+
+    afterEach(() => {
+      rafSpy.mockRestore();
+      triggerRenderSpy.mockRestore();
+    });
+
+    it('renders each viewport once for many requests before a frame', () => {
       for (let index = 0; index < 1000; index++) {
         segmentationRenderingEngine.renderSegmentationsForViewport(
           index % 2 ? 'viewport-a' : 'viewport-b'
         );
       }
 
+      expect(frames).toHaveLength(1);
       runNextFrame();
-      expect(triggerRenderSpy.mock.calls).toEqual([['viewport-a']]);
 
-      runNextFrame();
-      expect(triggerRenderSpy.mock.calls.slice(1)).toEqual([
+      expect(triggerRenderSpy.mock.calls).toEqual([
         ['viewport-b'],
         ['viewport-a'],
       ]);
       expect(frames).toHaveLength(0);
-    } finally {
-      rafSpy.mockRestore();
-      triggerRenderSpy.mockRestore();
-    }
+    });
+
+    it('renders a request made during a frame in the next frame', () => {
+      triggerRenderSpy.mockImplementationOnce(() => {
+        segmentationRenderingEngine.renderSegmentationsForViewport(
+          'viewport-a'
+        );
+      });
+
+      segmentationRenderingEngine.renderSegmentationsForViewport('viewport-a');
+      runNextFrame();
+
+      expect(triggerRenderSpy).toHaveBeenCalledTimes(1);
+      expect(frames).toHaveLength(1);
+
+      runNextFrame();
+
+      expect(triggerRenderSpy).toHaveBeenCalledTimes(2);
+      expect(frames).toHaveLength(0);
+    });
   });
 });

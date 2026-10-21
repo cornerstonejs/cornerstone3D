@@ -38,7 +38,6 @@ const planarContourToolName = PlanarFreehandContourSegmentationTool.toolName;
  */
 class SegmentationRenderingEngine {
   private _needsRender: Set<string> = new Set();
-  private _pendingViewportIds: Set<string> = new Set();
   private _animationFrameSet = false;
   private _animationFrameHandle: number | null = null;
   public hasBeenDestroyed: boolean;
@@ -115,18 +114,13 @@ class SegmentationRenderingEngine {
   }
 
   /**
-   * Flags the viewports for the next animation frame. A request that arrives
-   * while a frame is already scheduled goes into one pending set for the frame
-   * after it, so many requests for the same viewport cause one render of that
-   * viewport, and not one frame for each request.
+   * Flags the viewports for the next animation frame. The flags are a set, so
+   * many requests for one viewport before a frame cause one render of that
+   * viewport. A request made while a frame renders goes into the set for the
+   * frame after it, because `_renderFlaggedSegmentations` takes and clears the
+   * set before it renders.
    */
   private _setViewportsToBeRenderedNextFrame(viewportIds: string[]) {
-    if (this._animationFrameSet) {
-      viewportIds.forEach((viewportId) => {
-        this._pendingViewportIds.add(viewportId);
-      });
-      return;
-    }
     // Add the viewports to the set of flagged viewports
     viewportIds.forEach((viewportId) => {
       this._needsRender.add(viewportId);
@@ -154,25 +148,18 @@ class SegmentationRenderingEngine {
   private _renderFlaggedSegmentations = () => {
     this._throwIfDestroyed();
 
+    // Take and clear the flags before the render, so that a request made
+    // during the render is kept for the next frame
     const viewportIds = Array.from(this._needsRender);
-
-    viewportIds.forEach((viewportId) => {
-      this._triggerRender(viewportId);
-    });
-
-    // Clear the set of flagged segmentations
     this._needsRender.clear();
 
     // Allow RAF to be called again
     this._animationFrameSet = false;
     this._animationFrameHandle = null;
 
-    // Schedule the viewports that were requested during this frame
-    if (this._pendingViewportIds.size > 0) {
-      const nextViewportIds = Array.from(this._pendingViewportIds);
-      this._pendingViewportIds.clear();
-      this._setViewportsToBeRenderedNextFrame(nextViewportIds);
-    }
+    viewportIds.forEach((viewportId) => {
+      this._triggerRender(viewportId);
+    });
   };
 
   _triggerRender(viewportId?: string) {
