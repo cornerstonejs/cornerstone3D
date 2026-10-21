@@ -87,8 +87,13 @@ def literal_arguments(command):
                 quote = None
         elif character in "'\"":
             quote = character
-        elif character in ";&|<>(){}*?[]~\n\r#":
+        elif character in ";&|<>()\n\r":
             raise ValueError("Use one direct command without shell operators.")
+        elif character in "{}*?[]~#":
+            raise ValueError(
+                "Quote arguments that contain ~ # { } [ ] * or ?, "
+                "for example git show 'HEAD~1'."
+            )
     return shlex.split(command)
 
 

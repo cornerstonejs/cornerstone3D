@@ -32,6 +32,10 @@ decisions that require a maintainer.
   A command check rejects file writes, external programs, and tag changes.
   Use Read, Grep, and Glob to search files. If a command is rejected, use the
   permitted options stated in the response and continue the investigation.
+- Quote arguments that contain `~`, `#`, `{}`, `[]`, `*` or `?`, for example
+  `git show 'HEAD~1'`. Put search terms that start with `-` after `--`:
+  `gh search issues --repo cornerstonejs/cornerstone3D -- crash -label:bug`.
+  A `--search` value cannot start with `-`. Put another term first.
 - Trace, don't guess. Every claim about a cause should point at code or history
   you read. Say plainly what you could not confirm.
 - Be critical of the report and of your own findings. "Expected behavior, and
@@ -163,6 +167,24 @@ cannot run it, so mark it as not run.
 - **Workaround**, when there is one.
 - **Severity, confidence, effort and impact**, each judged on its own.
 
+For a bug or a request to change behavior, name the kind of problem and show
+it in the Type row:
+
+- **code bug**: a specification exists and the code disagrees with it. The
+  specification can be the documentation, the public API, the DICOM standard,
+  or well-known math such as the distance between two points. Name it in
+  **Understanding**.
+- **inconsistency**: parts of the code do the same thing in different ways,
+  for example two viewport types or render paths. This often comes with a
+  missing specification.
+- **missing specification**: nothing specifies the behavior, and the reporter
+  asks for a different one. This is usually a `feature request`.
+- **specification change**: the report says that specified behavior is wrong.
+  A fix would change documented or public behavior, so use `needs-approval`.
+- **crash or hang**
+- **appearance**: something looks wrong or confusing
+- **usability**: a workflow is harder than it needs to be
+
 Severity:
 
 - **critical**: users are shown wrong geometry or values (orientation, spacing,
@@ -254,7 +276,7 @@ type and status labels. Other repository labels stay in place.
 
 |                |                                                                                               |
 | -------------- | --------------------------------------------------------------------------------------------- |
-| **Type**       | <classification> — <one sentence>                                                             |
+| **Type**       | <classification> · <kind of problem, when relevant> — <one sentence>                          |
 | **Area**       | <package(s)> · <component, tool or viewport> · <render path, when relevant>                   |
 | **Regression** | <yes — since #<PR> or <short sha>, first released in vX.Y.Z / no / unknown>                   |
 | **Route**      | <display name from the route mapping> — <issue, release, or short explanation, when relevant> |

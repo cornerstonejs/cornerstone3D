@@ -67,6 +67,18 @@ jobs:
       result: ${{ steps.triage.outputs.structured_output }}
 
     steps:
+      - name: Check that the manual run targets an issue
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          is_pull_request=$(gh api "repos/$GH_REPO/issues/$ISSUE_NUMBER" --jq '.pull_request != null')
+          if [ "$is_pull_request" = "true" ]; then
+            echo "::error::#$ISSUE_NUMBER is a pull request. Enter an issue number."
+            exit 1
+          fi
+
       - name: Checkout code
         uses: actions/checkout@v6.0.3
         with:
@@ -120,6 +132,7 @@ jobs:
 
       - name: Write numeric usage to the job summary
         if: always() && steps.triage.outputs.execution_file != ''
+        continue-on-error: true
         env:
           EXECUTION_FILE: ${{ steps.triage.outputs.execution_file }}
         run: |
@@ -181,11 +194,6 @@ jobs:
         run: |
           set -euo pipefail
 
-          if [ "$(jq -r '.classification' <<<"$RESULT")" = "spam" ]; then
-            echo "Classified as spam, not commenting."
-            exit 0
-          fi
-
           # Derive labels from fixed values. Preserve labels outside this list.
           current=$(gh api "repos/$GH_REPO/issues/$ISSUE_NUMBER" --jq '[.labels[].name]')
           jq -n --argjson result "$RESULT" --argjson current "$current" '
@@ -199,9 +207,10 @@ jobs:
             | ["ready-to-fix","needs-reproduction","ask-reporter","needs-approval","duplicate","already-fixed","answered"] as $statuses
             | ([$types[] | "type:" + .]
                 + [$statuses[] | "status:" + .]) as $managed
-            | (["type:" + ($types[$result.classification] // "other")]
+            | (if $result.classification == "spam" then [] else
+                ["type:" + ($types[$result.classification] // "other")]
                 + [$result.route | select(. as $status | $statuses | index($status)) | "status:" + .]
-                | unique) as $desired
+                | unique end) as $desired
             | {desired:$desired, add:($desired - $current), remove:(($current - $desired) - ($current - $managed))}
           ' > labels.json
 
@@ -241,6 +250,15 @@ jobs:
           ids=$(gh api --paginate "repos/$GH_REPO/issues/$ISSUE_NUMBER/comments" \
             --jq '.[] | select(.user.login == "github-actions[bot]" and (.body | startswith(env.MARKER))) | .id')
           comment_id=${ids%%$'\n'*}
+
+          if [ "$(jq -r '.classification' <<<"$RESULT")" = "spam" ]; then
+            if [ -n "$comment_id" ]; then
+              gh api -X DELETE "repos/$GH_REPO/issues/comments/$comment_id" > /dev/null
+              echo "Deleted comment $comment_id on #$ISSUE_NUMBER"
+            fi
+            echo "Classified as spam, not commenting."
+            exit 0
+          fi
 
           if [ -n "$comment_id" ]; then
             gh api -X PATCH "repos/$GH_REPO/issues/comments/$comment_id" --input payload.json > /dev/null
