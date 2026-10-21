@@ -41,18 +41,28 @@ function imageIdForSlice(sliceIndex) {
  *
  * `zDirection` sets slice position to `[0, 0, zDirection * sliceIndex]`.
  * dcmjs' ImageNormalizer sorts the virtual multiframe's frames by DESCENDING
- * distance along the scan axis, and the BINARY export path assumes
- * `images[i]` corresponds to normalized frame `i` when it copies each frame's
- * PlanePositionSequence out of the referenced multiframe. That assumption only
- * holds when the input stack is already ordered descending along the normal —
- * pass `zDirection: -1` for the self-consistent case. (The LABELMAP path
- * rebuilds plane sequences from each image's own imagePlaneModule, so it is
- * order-independent.)
+ * distance along the scan axis. Both export paths set each frame's plane
+ * position and orientation from its own source image, so either direction
+ * works.
  *
  * `rows` and `columns` set the image size (default ROWS x COLUMNS).
+ * `positionForSlice`, `orientationForSlice`, `pixelSpacingForSlice` and
+ * `sliceThicknessForSlice` vary those per slice. A slice without an
+ * orientation or a Pixel Spacing gets a default in the image plane module,
+ * with `usingDefaultValues`, as the real providers do.
+ * `planeOrientationOnly(slice)` keeps the orientation of that slice in the
+ * image plane module only, as for a multiframe source.
  */
 function makeReferencedStack(sliceCount, options = {}) {
   const { zDirection = 1, rows = ROWS, columns = COLUMNS } = options;
+  const orientationForSlice =
+    options.orientationForSlice ?? (() => [1, 0, 0, 0, 1, 0]);
+  const pixelSpacingForSlice = options.pixelSpacingForSlice ?? (() => [1, 1]);
+  const sliceThicknessForSlice = options.sliceThicknessForSlice ?? (() => 1);
+  const planeOrientationOnly = options.planeOrientationOnly ?? (() => false);
+  const positionForSlice =
+    options.positionForSlice ??
+    ((sliceIndex) => [0, 0, zDirection * sliceIndex]);
   const imageIds = [];
   const images = [];
 
@@ -67,8 +77,6 @@ function makeReferencedStack(sliceCount, options = {}) {
     });
   }
 
-  const zForSlice = (sliceIndex) => zDirection * sliceIndex;
-
   const instanceForSlice = (sliceIndex) => ({
     SOPClassUID: CT_SOP_CLASS_UID,
     SOPInstanceUID: sopInstanceUidForSlice(sliceIndex),
@@ -78,10 +86,12 @@ function makeReferencedStack(sliceCount, options = {}) {
     Modality: 'CT',
     Rows: rows,
     Columns: columns,
-    ImagePositionPatient: [0, 0, zForSlice(sliceIndex)],
-    ImageOrientationPatient: [1, 0, 0, 0, 1, 0],
-    PixelSpacing: [1, 1],
-    SliceThickness: 1,
+    ImagePositionPatient: positionForSlice(sliceIndex),
+    ImageOrientationPatient: planeOrientationOnly(sliceIndex)
+      ? undefined
+      : orientationForSlice(sliceIndex),
+    PixelSpacing: pixelSpacingForSlice(sliceIndex),
+    SliceThickness: sliceThicknessForSlice(sliceIndex),
     SamplesPerPixel: 1,
     PhotometricInterpretation: 'MONOCHROME2',
     BitsAllocated: 16,
@@ -123,19 +133,36 @@ function makeReferencedStack(sliceCount, options = {}) {
         case 'ImageData':
         case 'instance':
           return instanceForSlice(sliceIndex);
-        case 'imagePlaneModule':
-          return {
-            imagePositionPatient: [0, 0, zForSlice(sliceIndex)],
-            imageOrientationPatient: [1, 0, 0, 0, 1, 0],
-            rowCosines: [1, 0, 0],
-            columnCosines: [0, 1, 0],
-            rowPixelSpacing: 1,
-            columnPixelSpacing: 1,
-            sliceThickness: 1,
+        case 'imagePlaneModule': {
+          const orientation = orientationForSlice(sliceIndex) ?? [
+            1, 0, 0, 0, 1, 0,
+          ];
+          const [rowPixelSpacing, columnPixelSpacing] = pixelSpacingForSlice(
+            sliceIndex
+          ) ?? [1, 1];
+          const plane = {
+            imagePositionPatient: positionForSlice(sliceIndex),
+            imageOrientationPatient: orientation,
+            rowCosines: orientation.slice(0, 3),
+            columnCosines: orientation.slice(3, 6),
+            pixelSpacing: [rowPixelSpacing, columnPixelSpacing],
+            rowPixelSpacing,
+            columnPixelSpacing,
+            sliceThickness: sliceThicknessForSlice(sliceIndex),
             rows,
             columns,
             frameOfReferenceUID: FRAME_OF_REFERENCE_UID,
           };
+          const defaultOrientation = !orientationForSlice(sliceIndex);
+          Object.defineProperties(plane, {
+            usingDefaultValues: {
+              value: defaultOrientation || !pixelSpacingForSlice(sliceIndex),
+            },
+            isDefaultValueSetForRowCosine: { value: defaultOrientation },
+            isDefaultValueSetForColumnCosine: { value: defaultOrientation },
+          });
+          return plane;
+        }
         case 'generalSeriesModule':
           return {
             seriesInstanceUID: SERIES_INSTANCE_UID,
