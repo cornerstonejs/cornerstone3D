@@ -33,8 +33,26 @@ import type { NaturalizedInstance, ViewportTypeHint } from './types';
  *   ```
  */
 export interface IDisplaySet {
-  /** Unique identifier for this display set. */
+  /**
+   * Identifier of this display set within one split. It holds the position of
+   * the group (`splitNumber`), so it can change when a series gets a new group.
+   * Use {@link IDisplaySet.splitKey} as a stable identity.
+   */
   displaySetId: string;
+  /**
+   * The split key of the group that made this display set: the rule id and the
+   * `groupBy` values, as JSON. It holds no position, so it is the stable
+   * identity of the display set, for a server index or a saved layout. A
+   * consumer that needs a short value can hash it.
+   */
+  splitKey?: string;
+  /** The id of the split rule that made this display set. */
+  splitRuleId?: string;
+  /**
+   * The group of related rules that made this display set: the `groupId` of
+   * the rule, else the rule id. A hanging protocol can match it.
+   */
+  splitGroupId?: string;
   /**
    * Allowed viewport types for this display set.
    * `viewportTypes[0]` is the preferred viewport type.

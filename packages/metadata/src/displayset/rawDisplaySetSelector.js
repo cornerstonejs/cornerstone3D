@@ -56,12 +56,12 @@ const RENDERABLE_IMAGE = { isImage: true, Rows: { notNull: true } };
  * The key is the rule id. Rules are evaluated in ascending `priority` and the
  * first match wins per instance, so the priorities are part of the contract.
  *
- * The defaults use the priorities `1..n`. A rule with a priority below `0` runs
- * before all of them. `unsupported` is a catch-all, so a rule that must see
- * the instances no other default claims needs a priority between
- * `defaultImageRule` and `unsupported` (for example `8.5`); a rule above
- * `unsupported` only sees instances when `unsupported` is excluded
- * (`priority: null`).
+ * The defaults use the priorities `1..n`, and the catch-all `unsupported` runs
+ * last, at `Number.MAX_SAFE_INTEGER`. A rule with a priority below `0` runs
+ * before all of them. A rule with a priority above
+ * `DEFAULT_SPLIT_RULE_PRIORITY_LIMIT` (10000) runs after every other default
+ * rule, and still before `unsupported`, so it sees the instances that no other
+ * default claims.
  *
  * @type {RawDisplaySetSelector}
  */
@@ -203,20 +203,23 @@ export const rawDisplaySetSelector = {
    * it. An application that supports one of these formats adds its own rule
    * *before* this one, with real viewport types.
    *
-   * Grouped per instance, not per series: each of these objects is a document in
-   * its own right (one SEG, one SR), so merging a series' worth of them into a
-   * single display set would conflate unrelated content.
+   * Grouped per series: one display set lists the objects of the series that
+   * nothing can render, with their distinct `sopClassUids`. A series of 300
+   * presentation states is one entry, not 300.
+   *
+   * The priority is `Number.MAX_SAFE_INTEGER`, so a fallback rule of an
+   * application (any priority above the other defaults) still runs before it.
    */
   unsupported: {
-    priority: 9,
+    priority: Number.MAX_SAFE_INTEGER,
     description:
       'Catch-all for objects nothing can render (SEG, RTSTRUCT, RTDOSE, SR, ' +
       'PDF, presentation states, or an image whose Rows have not loaded). ' +
-      'Produces a display set marked isDisplayable: false so the object is ' +
-      'surfaced rather than silently dropped. Must keep the highest priority.',
+      'Produces one display set for each series, marked isDisplayable: false, ' +
+      'so the objects are surfaced rather than silently dropped. Runs last.',
     viewportTypes: [NO_VIEWPORT_TYPE],
     // No `matches`: claims whatever is left.
-    groupBy: ['SeriesInstanceUID', 'SOPInstanceUID'],
+    groupBy: ['SeriesInstanceUID'],
     attributes: { sopClassUids: 'sopClassUids' },
   },
 };

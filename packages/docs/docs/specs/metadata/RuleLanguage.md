@@ -408,7 +408,7 @@ Layout:
 ```text
 packages/metadata/src/
   safeFunctions/              generic, knows no consumer and no dictionary
-    values.ts                 isAbsent, isEmpty, hasNoValue, toFinite, looseEquals
+    values.ts                 isAbsent, isEmpty, hasNoValue, looseEquals
     matchTests.ts             the tests and the operators of a condition map
     compile.ts                compileCondition, compileValue, templates
     schema.ts                 the table machinery and the generic shapes
@@ -536,9 +536,10 @@ packages/metadata/src/
 ### Values (RL-VAL)
 
 - **RL-VAL-1** The value helpers are in `safeFunctions/values.ts`:
-  `isAbsent`, `isEmpty`, `hasNoValue`, `toFinite` and `looseEquals`.
-  `toFinite` gives `undefined` for no value and for a value that is not a
-  finite number, and reads the first value of a multi-valued attribute.
+  `isAbsent`, `isEmpty`, `hasNoValue` and `looseEquals`. A number is read with
+  `toFiniteFirst` of `@cornerstonejs/utils`: it gives `undefined` for no
+  value, for a blank string, and for a value that is not a finite number, and
+  reads the first value of a multi-valued attribute.
 - **RL-VAL-2** A template placeholder is a name or a path. A placeholder with
   no value gives `""`. `\{` and `\}` escape a brace.
 - **RL-VAL-3** `looseEquals` (the `==` of expressions, and the scalar test):
@@ -567,7 +568,7 @@ packages/metadata/src/
 
 - **RL-EXPR-1** The grammar of the expression language stays as it is, with
   these changes: `===` and `!==` are compile errors; `<`, `<=`, `>`, `>=` and
-  the arithmetic operators use `toFinite` (`RL-VALUE-7`); `!`, `&&`, `||` and
+  the arithmetic operators use `toFiniteFirst` (`RL-VALUE-7`); `!`, `&&`, `||` and
   `?:` read no value as `false` (`RL-VALUE-8`); the new helpers `lower` and
   `contains`; and the aggregates of `RL-EXPR-2`. The helpers `includes`,
   `contains`, `startsWith` and `endsWith`, and the operator `in`, use the code

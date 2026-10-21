@@ -15,7 +15,7 @@
  * @module safeFunctions/values
  */
 
-import { asArrayFirst } from '@cornerstonejs/utils';
+import { asArrayFirst, toFiniteFirst } from '@cornerstonejs/utils';
 
 /** True when the value is absent: `undefined` (no element). */
 export function isAbsent(value: unknown): boolean {
@@ -37,30 +37,6 @@ export function isEmpty(value: unknown): boolean {
 /** True when the value is absent or empty. */
 export function hasNoValue(value: unknown): boolean {
   return isAbsent(value) || isEmpty(value);
-}
-
-/**
- * Finite numeric value of an attribute, or `undefined`.
- *
- * Deliberately not a bare `Number(...)`: that maps `null`, `''` and whitespace
- * to `0`, which would make a missing attribute compare as a real zero. A
- * numeric string is a number, and a multi-valued attribute gives its first
- * value.
- */
-export function toFinite(value: unknown): number | undefined {
-  if (hasNoValue(value)) {
-    return undefined;
-  }
-  const numeric = asArrayFirst(value);
-  if (
-    typeof numeric === 'boolean' ||
-    numeric === null ||
-    (typeof numeric === 'string' && numeric.trim() === '')
-  ) {
-    return undefined;
-  }
-  const parsed = Number(numeric);
-  return Number.isFinite(parsed) ? parsed : undefined;
 }
 
 /**
@@ -95,8 +71,8 @@ export function looseEquals(left: unknown, right: unknown): boolean {
     return false;
   }
   if (typeof a === 'number' || typeof b === 'number') {
-    const x = toFinite(a);
-    const y = toFinite(b);
+    const x = toFiniteFirst(a);
+    const y = toFiniteFirst(b);
     if (x !== undefined && y !== undefined) {
       return x === y;
     }
@@ -120,14 +96,14 @@ function emptyKind(value: unknown): string | undefined {
 
 /**
  * A comparison of two finite numbers: `false` unless both values are finite
- * numbers after {@link toFinite}.
+ * numbers after {@link toFiniteFirst}.
  */
 export function compareFinite(
   test: (a: number, b: number) => boolean
 ): (left: unknown, right: unknown) => boolean {
   return (left, right) => {
-    const a = toFinite(left);
-    const b = toFinite(right);
+    const a = toFiniteFirst(left);
+    const b = toFiniteFirst(right);
     return a !== undefined && b !== undefined && test(a, b);
   };
 }

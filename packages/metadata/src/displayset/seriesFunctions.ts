@@ -17,8 +17,8 @@
  */
 
 import { vec3 } from 'gl-matrix';
-import { toFiniteNumber } from '@cornerstonejs/utils';
-import { readOwn, toFinite } from '../safeFunctions';
+import { toFiniteFirst, toFiniteNumber } from '@cornerstonejs/utils';
+import { readOwn } from '../safeFunctions';
 import type {
   NaturalizedInstance,
   SeriesFunction,
@@ -44,7 +44,7 @@ function numberArg(
   name: string,
   fallback: number
 ): number {
-  return toFinite(readOwn(args, name)) ?? fallback;
+  return toFiniteFirst(readOwn(args, name)) ?? fallback;
 }
 
 /** `length` finite numbers read from a multi-valued attribute, else undefined. */

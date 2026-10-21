@@ -11,7 +11,8 @@ import type {
 } from './types';
 import { resolveSplitRuleSet } from './splitRuleSet';
 import { withInstances } from './displaySetContext';
-import { isUnsafeKey, toFinite } from '../safeFunctions';
+import { toFiniteFirst } from '@cornerstonejs/utils';
+import { isUnsafeKey } from '../safeFunctions';
 
 /**
  * Builds the series context of one split: runs the `series` hook of each rule,
@@ -84,9 +85,9 @@ function compareByAcquisition(
   a: NaturalizedInstance,
   b: NaturalizedInstance
 ): number {
-  // `toFinite`, not `Number`: an absent InstanceNumber must not alias to 0.
-  const aNumber = toFinite(a.InstanceNumber);
-  const bNumber = toFinite(b.InstanceNumber);
+  // `toFiniteFirst`, not `Number`: an absent InstanceNumber must not alias to 0.
+  const aNumber = toFiniteFirst(a.InstanceNumber);
+  const bNumber = toFiniteFirst(b.InstanceNumber);
   const aHas = aNumber !== undefined;
   const bHas = bNumber !== undefined;
 
@@ -285,7 +286,7 @@ function compareSplitKeys(a: string, b: string): number {
 /**
  * Key parts an instance contributes through its rule's `groupBy`.
  */
-function buildBaseKeyParts(
+function buildGroupByParts(
   instance: NaturalizedInstance,
   context: RuleContext,
   splitRule: SplitRule
@@ -366,10 +367,9 @@ export function groupInstancesBySplitRules(
 
   // Derive the series context once for this split operation, so the
   // per-instance `matches`/`groupBy` only read an already-computed value.
-  const sharedContext: RuleContext = {
+  const context: RuleContext = {
     series: computeSeriesFacts(instances, splitRules),
   };
-  const ruleContexts: RuleContext[] = splitRules.map(() => sharedContext);
 
   // Claim instances first, then group the instances of each rule.
   const claimedByRule: NaturalizedInstance[][] = splitRules.map(() => []);
@@ -379,7 +379,6 @@ export function groupInstancesBySplitRules(
 
     for (let ruleIndex = 0; ruleIndex < splitRules.length; ruleIndex++) {
       const splitRule = splitRules[ruleIndex];
-      const context = ruleContexts[ruleIndex];
       if (splitRule.matches && !splitRule.matches(instance, context)) {
         continue;
       }
@@ -393,21 +392,8 @@ export function groupInstancesBySplitRules(
     }
   }
 
-  const baseKeyParts = splitRules.map((splitRule, ruleIndex) => {
-    const context = ruleContexts[ruleIndex];
-    const parts = new Map<NaturalizedInstance, unknown[]>();
-
-    for (const instance of claimedByRule[ruleIndex]) {
-      if (!parts.has(instance)) {
-        parts.set(instance, buildBaseKeyParts(instance, context, splitRule));
-      }
-    }
-
-    return parts;
-  });
-
-  const ruleOrderers = splitRules.map((rule, ruleIndex) =>
-    buildInstanceOrderer(rule, ruleContexts[ruleIndex], options)
+  const ruleOrderers = splitRules.map((rule) =>
+    buildInstanceOrderer(rule, context, options)
   );
 
   const instancesMap = new Map<string, InstanceGroup>();
@@ -419,8 +405,10 @@ export function groupInstancesBySplitRules(
     const splitRule = splitRules[ruleIndex];
 
     for (const instance of claimedByRule[ruleIndex]) {
-      const parts = baseKeyParts[ruleIndex].get(instance);
-      const key = buildSplitKey(splitRule.id, parts);
+      const key = buildSplitKey(
+        splitRule.id,
+        buildGroupByParts(instance, context, splitRule)
+      );
 
       let group = instancesMap.get(key);
       if (!group) {
@@ -429,7 +417,7 @@ export function groupInstancesBySplitRules(
           matchedRule: splitRule,
           // The facts of the whole split, not of this group - see
           // `InstanceGroup.series`.
-          series: ruleContexts[ruleIndex].series,
+          series: context.series,
           splitKey: key,
         };
         instancesMap.set(key, group);

@@ -19,8 +19,8 @@
  * @module safeFunctions/matchTests
  */
 
-import { asArray } from '@cornerstonejs/utils';
-import { compareFinite, hasNoValue, looseEquals, toFinite } from './values';
+import { asArray, toFiniteFirst } from '@cornerstonejs/utils';
+import { compareFinite, hasNoValue, looseEquals } from './values';
 import { invalidAt, matchForm, matchTestShape } from './schema';
 import type { SchemaSite } from './schema';
 
@@ -184,7 +184,7 @@ export const MATCH_OPERATORS: Readonly<Record<string, Operator>> =
         const low = Math.min(a, b);
         const high = Math.max(a, b);
         return (value) => {
-          const number = toFinite(value);
+          const number = toFiniteFirst(value);
           return number !== undefined && number >= low && number <= high;
         };
       },

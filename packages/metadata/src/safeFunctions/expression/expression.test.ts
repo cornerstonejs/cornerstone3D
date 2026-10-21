@@ -45,6 +45,38 @@ describe('compileExpression', () => {
       expect(compileExpression("'2' == 2")()).toBe(true);
     });
 
+    it('gives + the type of its left operand: text joins, a number adds', () => {
+      const run = (source: string, scope = {}) =>
+        compileExpression(source)(scope);
+      expect(run("'2' + 3")).toBe('23');
+      expect(run("3 + '2'")).toBe(5);
+      expect(run("0 + '2' + 3")).toBe(5);
+      // '' is text on the left, and no value on the right joins as ''.
+      expect(
+        run("'' + Rows + 'x' + Columns", { Rows: 512, Columns: 256 })
+      ).toBe('512x256');
+      expect(run("'b=' + B")).toBe('b=');
+      // A missing left operand stays no value, so arithmetic on it does too.
+      expect(run('B + 5')).toBeUndefined();
+      expect(run("'' + B + 5")).toBe('5');
+      expect(run('5 + B')).toBeUndefined();
+    });
+
+    it('warns for a number plus text, and rejects text in - * / %', () => {
+      const warn = jest
+        .spyOn(console, 'warn')
+        .mockImplementation(() => undefined);
+      expect(compileExpression("Rows + 'x'")({ Rows: 512 })).toBeUndefined();
+      expect(warn).toHaveBeenCalledTimes(1);
+      warn.mockRestore();
+      expect(() => compileExpression("Rows - 'x'")).toThrow(
+        /'-' works on numbers only, and 'x' is not a number/
+      );
+      expect(() => compileExpression('Rows * `x`')).toThrow(
+        /a template literal is not a number/
+      );
+    });
+
     it('gives the literal tests the DICOM kinds of a value', () => {
       const tests = [
         'X == undefined',
@@ -217,7 +249,8 @@ describe('compileExpression', () => {
     it('reads no value as undefined in arithmetic, and a numeric string as a number', () => {
       const run = (source: string, A: unknown) =>
         compileExpression(source)({ A });
-      expect(run('A + 1', '2')).toBe(3);
+      expect(run('A - 1', '3')).toBe(2);
+      expect(run('Number(A) + 1', '2')).toBe(3);
       expect(run('A * 512', null)).toBeUndefined();
       expect(run('A - 1', '')).toBeUndefined();
       expect(run('-A', undefined)).toBeUndefined();
@@ -279,8 +312,9 @@ describe('compileExpression', () => {
     });
 
     it('blocks computed prototype access at runtime', () => {
-      const fn = compileExpression("a['const' + 'ructor']");
-      expect(fn({ a: {} })).toBeUndefined();
+      // The key comes from the data, so only the runtime can see it.
+      const fn = compileExpression('a[key]');
+      expect(fn({ a: {}, key: 'constructor' })).toBeUndefined();
     });
 
     it('rejects non-whitelisted calls at compile time', () => {

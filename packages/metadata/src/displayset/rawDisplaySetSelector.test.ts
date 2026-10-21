@@ -65,7 +65,7 @@ describe('rawDisplaySetSelector - the selector as data', () => {
     expect(remote.map((g) => g.splitKey)).toEqual(local.map((g) => g.splitKey));
   });
 
-  it('gives the defaults the priorities 1..n in their documented order', () => {
+  it('gives the defaults the priorities 1..n, and runs the catch-all last', () => {
     const entries = Object.entries(rawDisplaySetSelector);
     expect(entries.map(([id, rule]) => [id, rule.priority])).toEqual([
       ['video', 1],
@@ -76,7 +76,7 @@ describe('rawDisplaySetSelector - the selector as data', () => {
       ['mixedDimensionalityBValue', 6],
       ['volume3d', 7],
       ['defaultImageRule', 8],
-      ['unsupported', 9],
+      ['unsupported', Number.MAX_SAFE_INTEGER],
     ]);
     expect(
       resolveSplitRuleSet(defaultDisplaySetSplitRules).map((rule) => rule.id)
@@ -373,8 +373,8 @@ describe('default rules - the unsupported catch-all', () => {
     expect(displaySet.underlyingImageIds).toEqual(['wadors:/obj-1']);
   });
 
-  it('produces one display set per object, not one per series', () => {
-    // Two SEGs of one series are two documents, and must not be conflated.
+  it('produces one display set for each series, with the SOP classes it holds', () => {
+    // A series of many presentation states must be one entry, not one per object.
     const groups = groupInstancesBySplitRules(
       [
         instance({
@@ -382,18 +382,40 @@ describe('default rules - the unsupported catch-all', () => {
           Modality: 'SEG',
           SOPInstanceUID: 'seg-1',
           InstanceNumber: 1,
+          Rows: undefined,
         }),
         instance({
-          SOPClassUID: '1.2.840.10008.5.1.4.1.1.66.4',
-          Modality: 'SEG',
-          SOPInstanceUID: 'seg-2',
+          SOPClassUID: '1.2.840.10008.5.1.4.1.1.11.1',
+          Modality: 'PR',
+          SOPInstanceUID: 'pr-1',
           InstanceNumber: 2,
+          Rows: undefined,
         }),
       ],
       defaultDisplaySetSplitRules
     );
 
-    expect(groups.length).toBe(2);
+    expect(groups.map((group) => group.matchedRule.id)).toEqual([
+      'unsupported',
+    ]);
+    expect(createDisplaySetFromGroup(groups[0]).sopClassUids).toEqual([
+      '1.2.840.10008.5.1.4.1.1.66.4',
+      '1.2.840.10008.5.1.4.1.1.11.1',
+    ]);
+  });
+
+  it('lets a fallback rule above the priority limit run before the catch-all', () => {
+    const rules = createDisplaySetSplitRules({
+      ...rawDisplaySetSelector,
+      srFallback: { priority: 20000, matches: { Modality: 'SR' } },
+    });
+    const sr = instance({
+      SOPClassUID: '1.2.840.10008.5.1.4.1.1.88.11',
+      Modality: 'SR',
+      Rows: undefined,
+    });
+
+    expect(ruleIdsFor([sr], rules)).toEqual(['srFallback']);
   });
 
   it('surfaces an image whose Rows have not loaded yet', () => {

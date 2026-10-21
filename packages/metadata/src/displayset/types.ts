@@ -254,10 +254,11 @@ export type SplitRuleSetEntry = Omit<SplitRule, 'id'> & {
    * `null` excludes the rule. That is how a customization turns a default rule
    * off without having to remove its key.
    *
-   * The default rules use the priorities `1..n`, in their documented order. A
+   * The default rules use the priorities `1..n`, in their documented order, and
+   * the catch-all `unsupported` runs last, at `Number.MAX_SAFE_INTEGER`. A
    * priority below `0` therefore runs before every default rule, and a priority
-   * above {@link DEFAULT_SPLIT_RULE_PRIORITY_LIMIT} runs after every default
-   * rule.
+   * above {@link DEFAULT_SPLIT_RULE_PRIORITY_LIMIT} runs after every other
+   * default rule and before `unsupported`.
    */
   priority: number | null;
 };
@@ -274,8 +275,10 @@ export type SplitRuleSetEntry = Omit<SplitRule, 'id'> & {
 export type SplitRuleSet = Record<string, SplitRuleSetEntry>;
 
 /**
- * The highest priority the default rules may use. A rule with a priority above
- * this value runs after every default rule.
+ * The highest priority the default rules may use, except the catch-all
+ * `unsupported`, which runs last at `Number.MAX_SAFE_INTEGER`. A rule with a
+ * priority above this value runs after every other default rule, and before
+ * `unsupported`, so it sees the instances that no other default claims.
  */
 export const DEFAULT_SPLIT_RULE_PRIORITY_LIMIT = 10000;
 

@@ -51,7 +51,10 @@ An array whose elements all have no value (`[""]`, `[null]`) is also empty, as
 DICOM JSON can give an empty value in that form.
 
 "No value" means absent or empty. `safeFunctions/values.ts` exports the helpers
-`isAbsent`, `isEmpty`, `hasNoValue`, `toFinite` and `looseEquals`.
+`isAbsent`, `isEmpty`, `hasNoValue` and `looseEquals`. A number is read with
+`toFiniteFirst` from `@cornerstonejs/utils`: the finite number of the first
+value, and `undefined` for no value, a blank string, or a value that is not a
+number.
 
 - An expression tests the kind of a value with the literals `undefined`,
   `null` and `defined`. `!=` is the opposite of `==`:
@@ -173,6 +176,20 @@ recursive-descent parser read it (`safeFunctions/expression`).
 - **Operators**: `+ - * / %`, `< <= > >=`, `== !=`, `&& || !`, ternaries, and
   `in` for membership. The comparisons and the equality use the rules of
   [Missing values have the DICOM meaning](#missing-values-have-the-dicom-meaning).
+  `- * / %` work on numbers only: `'6' - 1` is `5`, a value that is not a number
+  gives `undefined`, and a text literal operand (`Rows - 'x'`) is a compile
+  error. `+` follows the type of its left operand:
+  - Text on the left joins, `''` included: `'2' + 3` is `'23'`, and
+    `'' + Rows` is `'512'`. No value on the right joins as `''`.
+  - No value on the left gives `undefined`, so arithmetic on a missing
+    attribute stays "no value". Write `'' + B + 5` to join.
+  - Any other left operand adds as a number: `3 + '2'` is `5`, and
+    `0 + '2' + 3` is `5`. No value on the right gives `undefined`, and a number
+    plus text that is not a number (`Rows + 'x'`) warns once and gives
+    `undefined`.
+
+  A template literal or `{ "template": "{Rows}x{Columns}" }` also builds text.
+
 - **Identifiers**: the compiler resolves a name against the parameters first,
   and then against the fields of the _implicit scope_. The implicit scope is
   the first argument unless the place gives a different one.
@@ -290,9 +307,9 @@ such as `constructor` or `toString` reads the own value of the subject, usually
 ## Code in a definition
 
 An actual function is accepted wherever a condition, a test or a value is
-expected. The function passes through as is. That is how an application that
-turns its own markers into functions (OHIF `$function`) gives them to the
-compiler. A definition that holds a function is no longer JSON, so it cannot
+expected. The function passes through as is. That is how an application in
+code gives the compiler a test that data cannot state. A definition that holds
+a function is no longer JSON, so it cannot
 move between systems. When a definition must be shared, prefer a named entry of
 the consumer, for example a code entry of the display set context.
 
@@ -321,7 +338,6 @@ vocabulary of comparators and validators. So a deployment that needs "CT with
 more than 512 rows" writes the test twice, in two syntaxes, with two sets of
 edge cases. One vocabulary and one compiler remove that duplication.
 
-OHIF also gets to the same compiler through its `$function` customization
-marker. The marker resolves `{ $function: '<expression>' }` at read time into a
-compiled closure. Thus a JSONC customization file, which can hold no function,
-can declare behaviour.
+OHIF uses the same compiler for its split rules. A JSONC customization file,
+which can hold no function, declares the rules as data, and code supplies only
+the named code entries of the context.

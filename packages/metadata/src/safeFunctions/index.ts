@@ -38,7 +38,6 @@ export {
   readNameAt,
   readOwnName,
   safeFunctionCompilers,
-  toFinite,
   type CompileOptions,
   type TemplateSegment,
 } from './compile';

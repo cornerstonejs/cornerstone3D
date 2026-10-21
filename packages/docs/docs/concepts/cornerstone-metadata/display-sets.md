@@ -162,7 +162,8 @@ priority, first match wins per instance**.
 `defaultDisplaySetSplitRules` is the rule set you get without writing any rules.
 It is the compiled form of `rawDisplaySetSelector`, the same rules as JSON data
 (see [Sharing rules between applications](#sharing-rules-between-applications-the-raw-selector)).
-It has nine rules, with the priorities `1` to `9`:
+It has nine rules. Eight have the priorities `1` to `8`, and the catch-all
+`unsupported` runs last, at `Number.MAX_SAFE_INTEGER`:
 
 | Priority | Id                          | Viewport types                | Claims                                                                                                      |
 | -------- | --------------------------- | ----------------------------- | ----------------------------------------------------------------------------------------------------------- |
@@ -174,7 +175,7 @@ It has nine rules, with the priorities `1` to `9`:
 | 6        | `mixedDimensionalityBValue` | `volume`, `volume3d`, `stack` | Diffusion MR that mixes b-value frames with frames that have none; the two parts split.                     |
 | 7        | `volume3d`                  | `volume`, `volume3d`, `stack` | Multi-slice CT, MR, PT and NM that reconstruct into a volume.                                               |
 | 8        | `defaultImageRule`          | `stack`, `volume`, `volume3d` | Any other renderable image, one display set per series.                                                     |
-| 9        | `unsupported`               | `none`                        | Everything else (SEG, RTSTRUCT, SR, PDF, …); see [Objects nothing can render](#objects-nothing-can-render). |
+| max      | `unsupported`               | `none`                        | Everything else (SEG, RTSTRUCT, SR, PDF, …); see [Objects nothing can render](#objects-nothing-can-render). |
 
 Each raw rule also has a `description` that a UI can show. The next sections
 explain how your own rules combine with these.
@@ -229,21 +230,21 @@ second copy.
 
 ### Where your rule runs among the defaults
 
-The defaults use the priorities `1` to `9` (see
+The defaults use the priorities `1` to `8`, and the catch-all `unsupported`
+runs last, at `Number.MAX_SAFE_INTEGER` (see
 [The default rules](#the-default-rules)). To place a rule of your own:
 
-| You want the rule to run…                    | Give it a priority                                                          |
-| -------------------------------------------- | --------------------------------------------------------------------------- |
-| before every default rule                    | below `1`, for example `-1` or `0`                                          |
-| between two default rules                    | a number between theirs, for example `7.5` to run after `volume3d`          |
-| as a fallback, on what the image rules leave | between `defaultImageRule` (`8`) and `unsupported` (`9`), for example `8.5` |
-| after every default rule                     | above `DEFAULT_SPLIT_RULE_PRIORITY_LIMIT` (`10000`)                         |
+| You want the rule to run…                            | Give it a priority                                                       |
+| ---------------------------------------------------- | ------------------------------------------------------------------------ |
+| before every default rule                            | below `1`, for example `-1` or `0`                                       |
+| between two default rules                            | a number between theirs, for example `7.5` to run after `volume3d`       |
+| as a fallback, on what the other default rules leave | above `DEFAULT_SPLIT_RULE_PRIORITY_LIMIT` (`10000`), for example `20000` |
 
-`unsupported` claims every instance that reaches it, so a rule with a priority
-above `9` sees nothing unless you also exclude `unsupported`
-(`unsupported: { ...defaultDisplaySetSplitRules.unsupported, priority: null }`).
-A later release may add default rules with priorities up to `10000`, so do not
-depend on the gap between `9` and `10000` staying empty.
+A fallback rule runs after every other default rule and before `unsupported`,
+so it sees the instances that no other default claims. A later release may add
+default rules with priorities up to `10000`, so do not depend on the gap
+between `8` and `10000` staying empty. To replace the catch-all, exclude it
+with `unsupported: { ...defaultDisplaySetSplitRules.unsupported, priority: null }`.
 
 An entry that states an `id` different from its key, or that has a priority
 that is missing, or neither `null` nor a finite number, is an error.
@@ -339,7 +340,8 @@ Prefer authoring them as data — see
 the resolved data fields a display set is built from — `imageIds`,
 `underlyingImageIds`, `instances`, and `displaySetId` — are reserved and cannot
 be overwritten, so the underlying-vs-frame image id invariant the viewports rely
-on always holds.
+on always holds. The split identity — `splitKey`, `splitRuleId` and
+`splitGroupId` — is reserved too, so a rule cannot rename the display set.
 
 A `viewportTypes` key in the returned attributes replaces the rule's viewport
 types, and it does so **before** the display set is built:
@@ -359,8 +361,8 @@ A few engine guarantees worth knowing when writing rules:
   adding one with a lower priority, leaves the other rules' `splitKey`s
   unchanged.
 - **Group order is deterministic.** Groups come back sorted by rule priority,
-  then by a stable, rule-namespaced bucket key, then by run position, so a
-  series' display sets — and any id derived from their position — are stable
+  then by a stable, rule-namespaced split key, so a series' display sets —
+  and any id derived from their position — are stable
   regardless of the order the image ids were passed in.
 - **Each group carries the series context.** `InstanceGroup.series` holds
   the facts the `series` hooks computed over _all_ the instances
@@ -378,8 +380,8 @@ A few engine guarantees worth knowing when writing rules:
   there, under the fact `displaySetContext`. A rule in code that adds its own
   fact must give a name that no other rule gives with a different meaning,
   because the later rule does not compute it.
-- **Nothing is dropped by the defaults.** The `unsupported` rule, at the
-  highest default priority, claims whatever the image rules did not — see
+- **Nothing is dropped by the defaults.** The `unsupported` rule, which runs
+  last, claims whatever the other rules did not — see
   [Objects nothing can render](#objects-nothing-can-render). A _custom_ rule set
   without a catch-all does drop unmatched instances; pass `onUnmatchedInstance`
   to `splitImageIdsBySplitRules` to observe them.
@@ -397,9 +399,9 @@ which leaves **no trace that the object was in the study at all** — the
 application cannot list it, cannot explain it, and cannot tell "we don't support
 this" apart from "this isn't here".
 
-So the default selector's `unsupported` rule, at the highest default priority,
-is a catch-all that claims everything left and marks the result **not
-displayable**:
+So the default selector's `unsupported` rule, which runs last at
+`Number.MAX_SAFE_INTEGER`, is a catch-all that claims everything left and marks
+the result **not displayable**:
 
 ```ts
 const displaySet = createDisplaySetFromGroup(group);
@@ -432,9 +434,10 @@ Points worth knowing:
 - **`'none'` is a sentinel, not an empty list.** An absent or empty
   `viewportTypes` falls back to `['stack']`, so "empty" cannot mean "not
   renderable" — that fallback would quietly turn a structured report into a stack.
-- **One display set per object**, not per series: each of these is a document in
-  its own right (one SEG, one SR), so a series' worth of them does not collapse
-  into one display set.
+- **One display set per series**, not per object. A series of 300 presentation
+  states is one entry, and `sopClassUids` lists the distinct SOP classes in it.
+  An application that supports a format adds its own rule (see below), and can
+  group by `SOPInstanceUID` there.
 - **`imageIds` is empty** for these. Code that ignores `isDisplayable` renders
   nothing rather than treating a document as a one-frame image stack.
 
@@ -458,11 +461,11 @@ const splitRules = createDisplaySetSplitRules({
 });
 ```
 
-Priority matters: the catch-all has no `matches`, so it claims everything, and
-a rule with a higher priority than `unsupported` (`9`) never sees an instance.
-A rule meant only for what the image rules leave goes between
-`defaultImageRule` (`8`) and `unsupported`, for example at `8.5`. To replace the
-catch-all instead, exclude it with
+Priority matters: the catch-all has no `matches`, so it claims everything that
+reaches it. It runs at `Number.MAX_SAFE_INTEGER`, so every other rule runs
+before it. A rule meant only for what the other default rules leave takes a
+priority above `DEFAULT_SPLIT_RULE_PRIORITY_LIMIT`, for example `20000`. To
+replace the catch-all instead, exclude it with
 `unsupported: { ...rawDisplaySetSelector.unsupported, priority: null }`.
 
 ## Sharing rules between applications (the raw selector)
@@ -478,7 +481,8 @@ So the rules are data, and one shared compiler turns them into functions:
 - `rawDisplaySetSelector` — the default rules as pure JSON, keyed by rule id:
   `video` (priority `1`), `ecg` (`2`), `wholeslide` (`3`),
   `singleImageModality` (`4`), `multiFrame` (`5`), `mixedDimensionalityBValue`
-  (`6`), `volume3d` (`7`), `defaultImageRule` (`8`) and `unsupported` (`9`). No
+  (`6`), `volume3d` (`7`), `defaultImageRule` (`8`) and `unsupported`
+  (`Number.MAX_SAFE_INTEGER`). No
   functions, no imports of application state.
 - `createDisplaySetSplitRules(selector, options)` — turns that JSON, and the
   display set context of `options.displaySetContext`, into the `SplitRuleSet`
@@ -1013,7 +1017,10 @@ like the OHIF display set object:
 ```ts
 const displaySet = createDisplaySetFromGroup(group);
 
-displaySet.displaySetId;
+displaySet.displaySetId; // positional within one split; not a stable identity
+displaySet.splitKey; // the rule id and the groupBy values: the stable identity
+displaySet.splitRuleId; // the rule that made the display set
+displaySet.splitGroupId; // the rule's groupId, else the rule id
 displaySet.viewportTypes; // readonly ViewportTypeHint[]
 displaySet.preferredViewportType; // viewportTypes[0]
 displaySet.isDisplayable; // false for objects nothing can render — check before mounting

@@ -286,6 +286,37 @@ describe('displayset split utilities', () => {
     );
   });
 
+  it('records the split identity, and attributes cannot rename it', () => {
+    const group: InstanceGroup = {
+      instances: [
+        {
+          imageId: 'wadors:identity',
+          SOPClassUID: '1.2.840.10008.5.1.4.1.1.2',
+          Rows: 512,
+          SeriesInstanceUID: 'series-identity',
+          InstanceNumber: 1,
+        },
+      ],
+      matchedRule: {
+        id: 'mgLegacy',
+        groupId: 'mammo',
+        viewportTypes: ['stack'],
+        customAttributes: () => ({
+          splitKey: 'other',
+          splitRuleId: 'other',
+          splitGroupId: 'other',
+        }),
+      },
+      splitKey: '["mgLegacy","series-identity"]',
+    };
+
+    const displaySet = createDisplaySetFromGroup(group);
+
+    expect(displaySet.splitKey).toBe('["mgLegacy","series-identity"]');
+    expect(displaySet.splitRuleId).toBe('mgLegacy');
+    expect(displaySet.splitGroupId).toBe('mammo');
+  });
+
   it('does not let a __proto__ custom attribute replace the prototype', () => {
     const group: InstanceGroup = {
       instances: [

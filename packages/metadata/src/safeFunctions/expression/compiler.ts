@@ -5,7 +5,7 @@ import {
 } from './parser';
 import type { ExpressionNode } from './parser';
 import { ExpressionSyntaxError } from './tokenizer';
-import { asArrayFirst } from '@cornerstonejs/utils';
+import { asArrayFirst, toFiniteFirst } from '@cornerstonejs/utils';
 import { MATCH_HELPERS } from '../matchTests';
 import { RuleCompileError } from '../schema';
 import {
@@ -15,7 +15,6 @@ import {
   isEmpty,
   isTrue,
   looseEquals,
-  toFinite,
 } from '../values';
 
 /**
@@ -97,7 +96,7 @@ function numeric(
   operation: (value: number) => number
 ): (value: unknown) => number | undefined {
   return (value) => {
-    const number = toFinite(value);
+    const number = toFiniteFirst(value);
     if (number === undefined) {
       return undefined;
     }
@@ -109,7 +108,7 @@ function numeric(
 /** The finite numbers among the values. */
 function finiteValues(values: unknown[]): number[] {
   return values
-    .map((value) => toFinite(value))
+    .map((value) => toFiniteFirst(value))
     .filter((value): value is number => value !== undefined);
 }
 
@@ -136,7 +135,7 @@ const HELPERS: Record<string, (...args: unknown[]) => unknown> = {
   round: numeric(Math.round),
   floor: numeric(Math.floor),
   ceil: numeric(Math.ceil),
-  Number: (value) => toFinite(value),
+  Number: (value) => toFiniteFirst(value),
   String: (value) => (hasNoValue(value) ? '' : String(value)),
 };
 
@@ -322,16 +321,17 @@ const COMPARISONS: Record<string, (left: unknown, right: unknown) => boolean> =
   };
 
 /**
- * `+ - * / %`: both sides are numbers after `toFinite`, so `'2' + 1` is 3. No
+ * `- * / %`: both sides are numbers after `toFiniteFirst`, so `'6' - 1` is 5. No
  * value, a value that is not a number, or a result that is not finite gives
- * `undefined`, and never 0 or `NaN`.
+ * `undefined`, and never 0 or `NaN`. A text literal operand is a compile error
+ * (see {@link isTextOperand}). `+` is {@link plus}.
  */
 function arithmetic(
   operation: (a: number, b: number) => number
 ): (left: unknown, right: unknown) => number | undefined {
   return (left, right) => {
-    const a = toFinite(left);
-    const b = toFinite(right);
+    const a = toFiniteFirst(left);
+    const b = toFiniteFirst(right);
     if (a === undefined || b === undefined) {
       return undefined;
     }
@@ -340,8 +340,58 @@ function arithmetic(
   };
 }
 
+/**
+ * `+` follows the type of its left operand.
+ *
+ * - Text on the left joins, `''` included: `'2' + 3` is `'23'`, and
+ *   `'' + Rows` is `'512'`. No value on the right joins as `''`, so
+ *   `'b=' + B` is `'b='` when `B` is absent.
+ * - No value on the left (absent or `null`) gives `undefined`, so arithmetic
+ *   on a missing attribute stays "no value". Write `'' + B + 5` to join.
+ * - Any other left operand adds as a number: `3 + '2'` is 5, and
+ *   `0 + '2' + 3` is 5. No value on the right gives `undefined`. A number plus
+ *   text that is not a number (`Rows + 'x'`) throws, so the expression warns
+ *   once and gives `undefined`.
+ */
+function plus(left: unknown, right: unknown): unknown {
+  const first = asArrayFirst(left);
+  if (typeof first === 'string') {
+    return first + (hasNoValue(right) ? '' : String(asArrayFirst(right)));
+  }
+  if (hasNoValue(left) || hasNoValue(right)) {
+    return undefined;
+  }
+  const a = toFiniteFirst(left);
+  const b = toFiniteFirst(right);
+  if (a === undefined || b === undefined) {
+    throw new TypeError(
+      `'+' adds numbers when the left side is not text, and ${JSON.stringify(
+        a === undefined ? left : right
+      )} is not a number; put the text first, or use a template`
+    );
+  }
+  const result = a + b;
+  return Number.isFinite(result) ? result : undefined;
+}
+
+/**
+ * True for an operand that is always text: a template literal, or a string
+ * literal that is not a number. `- * / %` give `undefined` for it, so the
+ * compiler rejects it.
+ */
+function isTextOperand(node: ExpressionNode): boolean {
+  if (node.type === 'template') {
+    return true;
+  }
+  return (
+    node.type === 'literal' &&
+    typeof node.value === 'string' &&
+    toFiniteFirst(node.value) === undefined
+  );
+}
+
 const ARITHMETIC: Record<string, (left: unknown, right: unknown) => unknown> = {
-  '+': arithmetic((a, b) => a + b),
+  '+': plus,
   '-': arithmetic((a, b) => a - b),
   '*': arithmetic((a, b) => a * b),
   '/': arithmetic((a, b) => a / b),
@@ -488,7 +538,7 @@ function compileNode(
           return (scope) => negate(argument(scope));
         }
         case '+':
-          return (scope) => toFinite(argument(scope));
+          return (scope) => toFiniteFirst(argument(scope));
       }
       break;
     }
@@ -510,6 +560,15 @@ function compileNode(
           `'${node.operator}' is not allowed; use '${node.operator === '===' ? '==' : '!='}', the one equality of the rule language`,
           expression
         );
+      }
+      if (ARITHMETIC[node.operator] && node.operator !== '+') {
+        const text = [node.left, node.right].find(isTextOperand);
+        if (text) {
+          throw new ExpressionSyntaxError(
+            `'${node.operator}' works on numbers only, and ${text.type === 'template' ? 'a template literal' : `'${String((text as { value: unknown }).value)}'`} is not a number`,
+            expression
+          );
+        }
       }
       const left = compileNode(node.left, context);
       const right = compileNode(node.right, context);
@@ -616,9 +675,9 @@ function compileNode(
  *   both have no value of the same kind: `null == undefined` is false when
  *   both sides are values.
  * - `<`, `<=`, `>` and `>=` give `false` unless both sides are finite numbers
- *   after `toFinite`, so a numeric string is a number and a missing value never
+ *   after `toFiniteFirst`, so a numeric string is a number and a missing value never
  *   compares as 0.
- * - `+`, `-`, `*`, `/` and `%` read both sides with `toFinite`, so `'2' + 1`
+ * - `+`, `-`, `*`, `/` and `%` read both sides with `toFiniteFirst`, so `'2' + 1`
  *   is 3. No value, or a value that is not a number, gives `undefined`. Use a
  *   template literal to join text.
  * - `!`, `&&`, `||` and `?:` read no value as false; `&&` and `||` give a

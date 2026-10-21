@@ -63,7 +63,6 @@ export {
   isEmpty,
   isTrue,
   looseEquals,
-  toFinite,
 } from './values';
 
 /**

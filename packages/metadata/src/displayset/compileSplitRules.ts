@@ -11,7 +11,7 @@
  * @module displayset/compileSplitRules
  */
 
-import { asArrayFirst } from '@cornerstonejs/utils';
+import { asArrayFirst, toFiniteFirst } from '@cornerstonejs/utils';
 import {
   at,
   compileConditionAt,
@@ -23,7 +23,6 @@ import {
   parseTemplate,
   readOwn,
   safeFunctionCompilers,
-  toFinite,
   unrecognized,
 } from '../safeFunctions';
 import type { NameReaderFunction, SchemaSite } from '../safeFunctions';
@@ -106,8 +105,8 @@ function compileName(
  * "no opinion" (0).
  */
 function compareSortValues(a: unknown, b: unknown): number {
-  const x = toFinite(a);
-  const y = toFinite(b);
+  const x = toFiniteFirst(a);
+  const y = toFiniteFirst(b);
   if (x !== undefined && y !== undefined) {
     return x - y;
   }

@@ -32,6 +32,10 @@ const RESERVED_ATTRIBUTE_KEYS = new Set<string>([
   'underlyingImageIds',
   'instances',
   'displaySetId',
+  // The identity of the split: a rule must not rename it.
+  'splitKey',
+  'splitRuleId',
+  'splitGroupId',
 ]);
 
 /**
@@ -217,6 +221,9 @@ export function createDisplaySetFromGroup(
     });
   }
 
+  displaySet.splitKey = group.splitKey;
+  displaySet.splitRuleId = group.matchedRule.id;
+  displaySet.splitGroupId = group.matchedRule.groupId ?? group.matchedRule.id;
   applyCustomAttributes(displaySet, attributes);
 
   return displaySet;

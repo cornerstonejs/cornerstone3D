@@ -546,7 +546,13 @@ function ruleRow(
 
   // Everything below is read off the rule data itself.
   const meta: string[] = [
-    `priority: ${rule.priority === null ? 'null (excluded)' : rule.priority}`,
+    `priority: ${
+      rule.priority === null
+        ? 'null (excluded)'
+        : rule.priority === Number.MAX_SAFE_INTEGER
+          ? 'last (Number.MAX_SAFE_INTEGER)'
+          : rule.priority
+    }`,
   ];
   if (rule.viewportTypes?.length) {
     meta.push(`viewports: ${rule.viewportTypes.join(', ')}`);

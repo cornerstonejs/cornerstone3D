@@ -6,6 +6,7 @@ export { asArray, asArrayFirst } from './utilities/object';
 export {
   toNumber,
   toFiniteNumber,
+  toFiniteFirst,
   isEqual,
   isEqualNegative,
   isEqualAbs,

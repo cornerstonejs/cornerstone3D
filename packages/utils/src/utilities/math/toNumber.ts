@@ -1,3 +1,5 @@
+import { asArrayFirst } from '../object/asArray';
+
 type NumberLike = string | String | number | Number;
 
 function isNumberLike(value: unknown): value is NumberLike {
@@ -72,6 +74,37 @@ export function toFiniteNumber<T extends NumberLike>(
     const converted = Number(entry);
     return Number.isFinite(converted) ? converted : defaultValue;
   }) as number[];
+}
+
+/**
+ * The finite number of the first value: `toFiniteNumber` of element 0 of an
+ * array, or of the value itself when it is not an array.
+ *
+ * Use it to read one number from a DICOM attribute that a source can deliver
+ * as a single value (`'5'`) or as a multi-valued array (`['5']`). A value with
+ * no number gives `defaultValue`: absent, `null`, a boolean, an object, and a
+ * blank string. A blank string is the DICOM empty value, so it must not read as
+ * `0`, which a bare `Number('')` gives.
+ *
+ * @param value - an array, or a single value
+ * @param defaultValue - the number to return when there is no finite number.
+ *   Defaults to `undefined`.
+ * @returns the finite number of the first value, or `defaultValue`
+ */
+export function toFiniteFirst(
+  value: unknown,
+  defaultValue?: undefined
+): number | undefined;
+export function toFiniteFirst(value: unknown, defaultValue: number): number;
+export function toFiniteFirst(
+  value: unknown,
+  defaultValue?: number
+): number | undefined {
+  const first = asArrayFirst(value);
+  if (!isNumberLike(first) || String(first).trim() === '') {
+    return defaultValue;
+  }
+  return toFiniteNumber(first, defaultValue);
 }
 
 /**
