@@ -2147,7 +2147,7 @@ abstract class BaseVolumeViewport extends Viewport {
 
     const renderer = this.getRenderer();
     const devicePixelRatio = window.devicePixelRatio || 1;
-    const { width, height } = this.canvas;
+    const { width, height } = this.getRenderedCanvasSize();
     const aspectRatio = width / height;
 
     // Get the actual renderer viewport bounds
@@ -2228,7 +2228,7 @@ abstract class BaseVolumeViewport extends Viewport {
     ];
 
     const renderer = this.getRenderer();
-    const { width, height } = this.canvas;
+    const { width, height } = this.getRenderedCanvasSize();
 
     // Get the actual renderer viewport bounds
     const [xMin, yMin, xMax, yMax] =
@@ -2340,7 +2340,7 @@ abstract class BaseVolumeViewport extends Viewport {
     vtkCamera.setIsPerformingCoordinateTransformation?.(true);
 
     const renderer = this.getRenderer();
-    const { width, height } = this.canvas;
+    const { width, height } = this.getRenderedCanvasSize();
     const aspectRatio = width / height;
 
     // Get the actual renderer viewport bounds
