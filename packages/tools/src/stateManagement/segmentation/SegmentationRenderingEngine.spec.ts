@@ -137,4 +137,40 @@ describe('SegmentationRenderingEngine', () => {
 
     expect(viewport.render).toHaveBeenCalledTimes(1);
   });
+
+  it('renders each viewport once for many requests that arrive during a scheduled frame', () => {
+    const frames: FrameRequestCallback[] = [];
+    const rafSpy = jest
+      .spyOn(window, 'requestAnimationFrame')
+      .mockImplementation((callback) => {
+        frames.push(callback);
+        return frames.length;
+      });
+    const triggerRenderSpy = jest
+      .spyOn(segmentationRenderingEngine, '_triggerRender')
+      .mockImplementation(() => undefined);
+    const runNextFrame = () => frames.shift()(0);
+
+    try {
+      segmentationRenderingEngine.renderSegmentationsForViewport('viewport-a');
+      for (let index = 0; index < 1000; index++) {
+        segmentationRenderingEngine.renderSegmentationsForViewport(
+          index % 2 ? 'viewport-a' : 'viewport-b'
+        );
+      }
+
+      runNextFrame();
+      expect(triggerRenderSpy.mock.calls).toEqual([['viewport-a']]);
+
+      runNextFrame();
+      expect(triggerRenderSpy.mock.calls.slice(1)).toEqual([
+        ['viewport-b'],
+        ['viewport-a'],
+      ]);
+      expect(frames).toHaveLength(0);
+    } finally {
+      rafSpy.mockRestore();
+      triggerRenderSpy.mockRestore();
+    }
+  });
 });

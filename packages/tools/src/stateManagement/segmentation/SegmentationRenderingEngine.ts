@@ -38,7 +38,7 @@ const planarContourToolName = PlanarFreehandContourSegmentationTool.toolName;
  */
 class SegmentationRenderingEngine {
   private _needsRender: Set<string> = new Set();
-  private _pendingRenderQueue: string[][] = [];
+  private _pendingViewportIds: Set<string> = new Set();
   private _animationFrameSet = false;
   private _animationFrameHandle: number | null = null;
   public hasBeenDestroyed: boolean;
@@ -114,10 +114,17 @@ class SegmentationRenderingEngine {
     }
   }
 
+  /**
+   * Flags the viewports for the next animation frame. A request that arrives
+   * while a frame is already scheduled goes into one pending set for the frame
+   * after it, so many requests for the same viewport cause one render of that
+   * viewport, and not one frame for each request.
+   */
   private _setViewportsToBeRenderedNextFrame(viewportIds: string[]) {
     if (this._animationFrameSet) {
-      // If a render is already scheduled, queue this set for after the current one
-      this._pendingRenderQueue.push(viewportIds);
+      viewportIds.forEach((viewportId) => {
+        this._pendingViewportIds.add(viewportId);
+      });
       return;
     }
     // Add the viewports to the set of flagged viewports
@@ -160,12 +167,11 @@ class SegmentationRenderingEngine {
     this._animationFrameSet = false;
     this._animationFrameHandle = null;
 
-    // If there are pending viewportId sets, schedule the next one
-    if (this._pendingRenderQueue.length > 0) {
-      const nextViewportIds = this._pendingRenderQueue.shift();
-      if (nextViewportIds && nextViewportIds.length > 0) {
-        this._setViewportsToBeRenderedNextFrame(nextViewportIds);
-      }
+    // Schedule the viewports that were requested during this frame
+    if (this._pendingViewportIds.size > 0) {
+      const nextViewportIds = Array.from(this._pendingViewportIds);
+      this._pendingViewportIds.clear();
+      this._setViewportsToBeRenderedNextFrame(nextViewportIds);
     }
   };
 
