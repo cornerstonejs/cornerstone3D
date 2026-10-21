@@ -326,9 +326,7 @@ function buildSplitKey(
  * rule that computes a name wins.
  *
  * The split key of a group is `[ruleId, ...groupBy values]`, and nothing else
- * groups instances. A run of consecutive instances (an ultrasound series that
- * alternates single images and clips) is a `groupBy` value too: the `runs`
- * series function gives each instance the identity of its run.
+ * groups instances.
  *
  * Groups are returned in a **deterministic order** - by the position of the rule
  * that produced them, then by split key - so a series' display sets are stable
