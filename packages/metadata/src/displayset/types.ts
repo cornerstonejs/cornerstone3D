@@ -117,7 +117,7 @@ export type SeriesFunctionDefinition = {
 };
 
 /**
- * Argument to a rule's `matches` predicate, `groupBy` extractors, `runBy` and
+ * Argument to a rule's `matches` predicate, `groupBy` extractors and
  * `compareInstances`: the series context of the split. Shared by every rule -
  * see {@link SeriesFacts}.
  */
@@ -168,7 +168,7 @@ export type SplitRule = {
   /**
    * Optional. Runs once per split operation, before matching, in priority
    * order, and returns facts that extend the shared series context - read back
-   * by every rule's `matches`, `groupBy`, `runBy` and `compareInstances`
+   * by every rule's `matches`, `groupBy` and `compareInstances`
    * through `context.series`. A name that an earlier rule already computed
    * keeps the earlier value (see {@link SeriesFacts}).
    *
@@ -197,9 +197,8 @@ export type SplitRule = {
     | ((instance: NaturalizedInstance, context: RuleContext) => unknown)
   )[];
   /**
-   * Optional. Orders the instances this rule claims - both the order each group's
-   * {@link InstanceGroup.instances} are returned in and the order runs are walked
-   * in to number them (see `runBy`). Returns a negative number if `a` comes
+   * Optional. Orders the instances this rule claims: the order each group's
+   * {@link InstanceGroup.instances} are returned in. Returns a negative number if `a` comes
    * before `b`, a positive number if `b` comes before `a`, and 0 if they are
    * interchangeable. The third argument carries this rule's derived `series`
    * facts.
@@ -231,51 +230,6 @@ export type SplitRule = {
     b: NaturalizedInstance,
     context: RuleContext
   ) => number;
-  /**
-   * Optional. Declares that this rule's instances form *runs*: walking the
-   * instances this rule claimed in acquisition order, consecutive instances
-   * whose value here is equal belong to the same run, and a change in value
-   * starts a new one. The run's key (see below) is folded into the bucket key, so
-   * **interleaved kinds separate instead of merging**.
-   *
-   * The motivating case is an ultrasound series mixing single images and
-   * multi-frame clips - `img1 img2 img3 clip4 img5 clip6` should become four
-   * display sets, not two. `groupBy` alone cannot express that, because its
-   * extractors see one instance at a time and so cannot tell `img3` from
-   * `img5`; grouping on a per-instance discriminator merges them, and grouping
-   * on `InstanceNumber` over-splits `img1..img3` into three. A run needs a
-   * pass over the ordered series, which is what this field buys:
-   *
-   * ```ts
-   * {
-   *   id: 'usInterleaved',
-   *   matches: (instance) => instance.Modality === 'US',
-   *   runBy: (instance) => Number(instance.NumberOfFrames ?? 1) > 1,
-   * }
-   * ```
-   *
-   * Runs are computed over the instances **this rule claimed**, in the rule's own
-   * order (`compareInstances`, defaulting to acquisition order) rather than the
-   * order the caller supplied - so, like every other key part, the result does
-   * not depend on input order. Instances claimed by other rules do not
-   * interrupt a run.
-   *
-   * Runs are also scoped to a single `groupBy` bucket: instances whose `groupBy`
-   * parts differ are bound for different display sets anyway, so one never
-   * interrupts another's run. Without that scoping, two single frames of one
-   * series would be torn apart by another series' clip merely for sitting
-   * between them in acquisition order.
-   *
-   * A run is keyed by its **first instance** in the rule's order (its
-   * `SOPInstanceUID`, else its `imageId`), not by its ordinal. An ordinal shifts
-   * for every later run when a new run appears earlier in the series, so a key
-   * built from it would name a different run after new instances arrive. The
-   * first instance changes only when an instance is added ahead of the run. A
-   * new instance that splits a run leaves the key with the part that holds the
-   * first instance, and the other parts get new keys - so a host reconciling
-   * against earlier keys must still expect a run to lose members.
-   */
-  runBy?: (instance: NaturalizedInstance, context: RuleContext) => unknown;
   customAttributes?: (
     attributes: SplitRuleCustomAttributesContext,
     options: SplitRuleOptions

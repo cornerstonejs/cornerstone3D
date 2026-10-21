@@ -91,13 +91,6 @@ const ruleShape: SchemaShape = {
           description:
             'Names (or functions) whose values must all be equal for two instances to form one group. Defaults to SeriesInstanceUID.',
         },
-        runBy: {
-          kind: 'name',
-          optional: true,
-          call: '(instance, context) => value',
-          description:
-            'A name (or a function): a change of its value starts a new run.',
-        },
         sortBy: {
           kind: 'sortKey',
           list: true,

@@ -195,6 +195,9 @@ compile.
 - **RL-READ-7** `false` on a named boolean is its negation. An "or" is a
   context entry, and the rule reads its name. The rule language has no `all`,
   `any` or `not`.
+- **RL-READ-8** Only the `groupBy` values of a rule group instances. The split
+  key of a display set is the rule id and the `groupBy` values, and nothing
+  else.
 
 ### Absent and empty values (RL-VALUE)
 
@@ -720,7 +723,7 @@ packages/metadata/src/
 
 - **RL-FN-1** At every function place, an actual function passes through the
   compile as it is. A function place is: a whole condition, a test of a map
-  entry, a `groupBy` entry, `runBy`, a `sortBy` entry, a whole `attributes`
+  entry, a `groupBy` entry, a `sortBy` entry, a whole `attributes`
   (the `customAttributes` hook), and one attribute value.
 - **RL-FN-2** JSON cannot hold a function. So a rule from JSON can run only the
   code entries of the context and the functions of the rule language
@@ -746,7 +749,6 @@ packages/metadata/src/
   | `context`                                       | the rule context (`RL-CTX-3`)                  | (compile only)     |
   | `matches`                                       | a condition                                    | `matches`          |
   | `groupBy`                                       | names                                          | `groupBy`          |
-  | `runBy`                                         | a name                                         | `runBy`            |
   | `sortBy`                                        | sort entries (`RL-SORT-2`)                     | `compareInstances` |
   | `attributes`                                    | a map of attribute values (`RL-CONS-2`)        | `customAttributes` |
 

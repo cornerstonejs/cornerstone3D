@@ -81,7 +81,7 @@ function instanceReader(
     read(program.runtimeFrom(context, instance), instance);
 }
 
-/** A `groupBy` entry or `runBy`: a name, or a function. */
+/** A `groupBy` entry: a name, or a function. */
 function compileName(
   value: unknown,
   site: SchemaSite,
@@ -305,10 +305,6 @@ function compileRule(
     if (groupBy.length) {
       compiled.groupBy = groupBy;
     }
-  }
-
-  if (rule.runBy !== undefined) {
-    compiled.runBy = compileName(rule.runBy, at(site, 'runBy'), compile);
   }
 
   if (rule.sortBy !== undefined) {

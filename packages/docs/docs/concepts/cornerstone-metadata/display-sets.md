@@ -538,7 +538,6 @@ absent value and an empty value.
 | `context`    | context entries for this rule only (see [The `context` of a rule](#the-context-of-a-rule)) | (compile only)                                     |
 | `matches`    | a map of name to test; every entry must hold                                               | `(instance, context) => boolean`                   |
 | `groupBy`    | names; instances whose values are all equal form one group                                 | each entry: `(instance, context) => value`         |
-| `runBy`      | a name; a change of its value starts a new run within a bucket                             | `(instance, context) => value`                     |
 | `sortBy`     | names (ascending), and `{ "sortFunction": "name" }`                                        | `compareInstances: (a, b, context) => number`      |
 | `attributes` | the attributes of the display set, keyed by attribute name                                 | `customAttributes: (attributes, options) => {...}` |
 
@@ -826,14 +825,14 @@ The compiler is **strict**. A wrong rule fails at compile time, and the
 compiler never ignores it:
 
 ```text
-Invalid raw display set selector: rule 'r': unknown field 'matchs'; allowed: id, groupId, priority, description, viewportTypes, context, matches, groupBy, runBy, sortBy, attributes
+Invalid raw display set selector: rule 'r': unknown field 'matchs'; allowed: id, groupId, priority, description, viewportTypes, context, matches, groupBy, sortBy, attributes
 Invalid raw display set selector: rule 'r'.matches.BodyPartExamind: unknown name 'BodyPartExamind': it is not a keyword of the DICOM dictionary; a private, vendor or synthetic attribute needs a declaration, e.g. "myValue": { "attribute": "BodyPartExamind" }
 Invalid raw display set selector: rule 'r'.attributes.label: unknown name 'SCOUT': ...; fixed text is { "template": "SCOUT" }
 Invalid raw display set selector: displaySetContext.first: the context entries form a loop: first -> second -> first
 ```
 
 An actual function passes through as is at every function place: a whole
-`matches`, the test of one entry of `matches`, a `groupBy` entry, `runBy`, a
+`matches`, the test of one entry of `matches`, a `groupBy` entry, a
 `sortBy` entry, a whole `attributes` (the `customAttributes` hook), and one
 attribute value. The strictness applies to data only. A selector with a
 function in it is no longer JSON, so it cannot be shared with a server.

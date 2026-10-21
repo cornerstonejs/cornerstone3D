@@ -217,21 +217,6 @@ const SAMPLE_SNIPPETS: Record<string, string> = {
     null,
     2
   ),
-  'Runs: interleaved US singles and clips': JSON.stringify(
-    {
-      usInterleaved: {
-        priority: -1,
-        description:
-          'One display set per run of same-kind instances, so img img clip img ' +
-          'becomes three display sets instead of two.',
-        viewportTypes: ['stack'],
-        matches: { Modality: 'US' },
-        runBy: 'isMultiFrame',
-      },
-    },
-    null,
-    2
-  ),
   'US: one display set for each sweep': JSON.stringify(
     {
       usTimeClusters: {

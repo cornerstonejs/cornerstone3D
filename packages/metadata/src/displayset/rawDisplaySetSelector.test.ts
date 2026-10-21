@@ -999,7 +999,7 @@ describe('createDisplaySetSplitRules - validation', () => {
     expect(errorOf({ matchs: { Modality: 'CT' } })).toBe(
       "Invalid raw display set selector: rule 'r': unknown field 'matchs'; " +
         'allowed: id, groupId, priority, description, viewportTypes, context, ' +
-        'matches, groupBy, runBy, sortBy, attributes'
+        'matches, groupBy, sortBy, attributes'
     );
   });
 
@@ -1012,21 +1012,18 @@ describe('createDisplaySetSplitRules - the code form', () => {
   it('passes a function through at every function place', () => {
     const matches = (i: NaturalizedInstance) => i.Modality === 'CT';
     const groupByPart = (i: NaturalizedInstance) => i.Rows;
-    const runBy = () => 1;
     const comparator = () => 0;
     const customAttributes = () => ({ label: 'fn' });
 
     const compiled = compileOne({
       matches,
       groupBy: ['SeriesInstanceUID', groupByPart],
-      runBy,
       sortBy: [comparator],
       attributes: customAttributes,
     }).r;
 
     expect(compiled.matches).toBe(matches);
     expect(compiled.groupBy?.[1]).toBe(groupByPart);
-    expect(compiled.runBy).toBe(runBy);
     expect(compiled.compareInstances).toBe(comparator);
     expect(compiled.customAttributes).toBe(customAttributes);
   });

@@ -46,7 +46,6 @@ is in `packages/metadata/src/displayset/` (`displaySetContext.ts`,
   "context": { "timeClustersMaxGap": 20 },   // this rule only
   "matches": { "Modality": "US", "sweepCount": { "greaterThan": 1 } },
   "groupBy": ["SeriesInstanceUID", "sweepStart"],
-  "runBy": "isMultiFrame",
   "sortBy": ["acquisitionSeconds", { "sortFunction": "name" }],
   "attributes": {
     "SeriesDescription": { "template": "{SeriesDescription} +{sweepOffset} s" },
@@ -94,6 +93,8 @@ customization). A rule `context` has the same forms.
   the global value. `"timeClusters": "longTimeClusters"` selects another group.
 - A loop of entries is a compile error. A private, vendor or synthetic
   attribute needs a declaration; a hex tag cannot be read directly.
+- Only `groupBy` groups: the split key is `[ruleId, ...groupBy values]`.
+  `groupBy` takes names, not paths; read a group field through an alias.
 
 ## The default context
 
@@ -149,7 +150,7 @@ URL customization modules), and the `context` of each rule.
 - A loop through a code entry throws a `RuleCompileError` at the first read.
 - `deniedNames` (option) lists names that no rule can read.
 - A function passes through at every function place: `matches`, a test of a
-  `matches` entry `(value, instance, context)`, a `groupBy` entry, `runBy`, a
+  `matches` entry `(value, instance, context)`, a `groupBy` entry, a
   `sortBy` entry, a whole `attributes`, and one attribute value
   `(instances, values)`.
 - Complex split logic is a new series function in code; the context then gives

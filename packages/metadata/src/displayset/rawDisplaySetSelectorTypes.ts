@@ -124,8 +124,6 @@ export type RawSplitRule = {
   matches?: RawCondition;
   /** Names whose values form the group key; defaults to `['SeriesInstanceUID']`. */
   groupBy?: (RawName | InstanceHook)[];
-  /** A name whose changes start a new run (see {@link SplitRule.runBy}). */
-  runBy?: RawName | InstanceHook;
   /** The instance order of the display sets. See {@link RawSortKey}. */
   sortBy?: RawSortKey[];
   /**
