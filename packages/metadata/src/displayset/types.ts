@@ -1,3 +1,5 @@
+import type { DisplaySetContextValues } from './displaySetContext';
+
 /**
  * Naturalized DICOM instance used by display-set split rules and metadata.
  * OHIF naturalized instances satisfy this type; additional tags are allowed.
@@ -114,7 +116,19 @@ export type SeriesFunctionDefinition = {
   compute: SeriesFunction;
   /** The result fields. Omitted: the fields are not checked, and have the series scope. */
   fields?: Readonly<Record<string, SeriesFieldScope>>;
+  /**
+   * The instances the function runs over in `sortBy` and `attributes`:
+   * `'displaySet'` (the instances of the display set, for a measure of the
+   * display set such as `planeGeometry`), or `'series'` (all the instances of
+   * the series, for a property of the series such as `timeClusters`). Default
+   * `'series'`. In `context`, `matches` and `groupBy` a function always runs
+   * over the series. A group entry can override it with `over`.
+   */
+  over?: SeriesFunctionScope;
 };
+
+/** Where a series function runs in `sortBy` and `attributes`. */
+export type SeriesFunctionScope = 'series' | 'displaySet';
 
 /**
  * Argument to a rule's `matches` predicate, `groupBy` extractors and
@@ -123,6 +137,12 @@ export type SeriesFunctionDefinition = {
  */
 export type RuleContext = {
   series: SeriesFacts;
+  /**
+   * The context values of one display set, in a sort of its instances. A
+   * series function such as `planeGeometry` then runs over the instances of
+   * the display set. Absent in `matches` and `groupBy`, which read the series.
+   */
+  displaySet?: DisplaySetContextValues;
 };
 
 export type SplitRuleCustomAttributesContext = {

@@ -78,10 +78,10 @@ number.
 - `<`, `<=`, `>`, `>=`, `greaterThan`, `lessThan` and `range` give `false` when
   the value has no value, or is not a finite number. A numeric string is a
   number, so `"2" > 1` is `true`. A value with no value never compares as `0`.
-- `+`, `-`, `*`, `/` and `%` read a numeric string as a number, so `"2" + 1` is
-  `3`. When one side has no value or is not a finite number, the result has no
-  value: `null * 512` is `undefined`, and not `0`. Use a template literal to
-  join text.
+- `-`, `*`, `/` and `%` read a numeric string as a number, so `"6" - 1` is `5`.
+  When one side has no value or is not a finite number, the result has no
+  value: `null * 512` is `undefined`, and not `0`. `+` follows the type of its
+  left operand; see [The expression language](#the-expression-language).
 - `!`, `&&`, `||` and `?:` read no value as `false`. `&&` and `||` give `true` or
   `false`, so `Rows && Rows > 1000` is `false` when `Rows` is absent.
 - `==` is the only equality, and `"1" == 1` is `true`. `===` and `!==` are

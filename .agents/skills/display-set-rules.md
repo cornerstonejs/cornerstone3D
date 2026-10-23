@@ -93,7 +93,12 @@ customization). A rule `context` has the same forms.
   the global value. `"timeClusters": "longTimeClusters"` selects another group.
 - A loop of entries is a compile error. A private, vendor or synthetic
   attribute needs a declaration; a hex tag cannot be read directly.
-- Only `groupBy` groups: the split key is `[ruleId, ...groupBy values]`.
+- In `context`, `matches` and `groupBy`, a series function runs over the
+  series. In `sortBy` and `attributes`, `planeGeometry` (`over: 'displaySet'`)
+  runs over the display set, and `timeClusters` (`over: 'series'`) over the
+  series. A group entry can set `"over"` to read both.
+- Only `groupBy` groups: the split key is `[ruleId, ...groupBy values]`. A key
+  part is normalized: no value is `null`, `[5]` and `'5'` are `5`.
   `groupBy` takes names, not paths; read a group field through an alias.
 
 ## The default context

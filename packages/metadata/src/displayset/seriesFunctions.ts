@@ -177,10 +177,15 @@ export const planeGeometry: SeriesFunction = (instances, { args }) => {
     ...candidate,
     d: vec3.dot(normal, candidate.position as vec3),
   }));
-  // Distinct positions, to 1e-3 mm, in ascending order.
-  const distinct = [...new Set(projected.map(({ d }) => round(d, 1e-3)))].sort(
-    (a, b) => a - b
-  );
+  // Distinct positions in ascending order. A position within 0.01 mm of the
+  // previous one is the same position (for example the second echo of a
+  // slice), so no gap rounds to 0 and becomes the spacing.
+  const distinct: number[] = [];
+  for (const d of projected.map((p) => p.d).sort((a, b) => a - b)) {
+    if (!distinct.length || d - distinct[distinct.length - 1] >= 0.01) {
+      distinct.push(round(d, 1e-3));
+    }
+  }
 
   const gapCounts = new Map<number, number>();
   for (let i = 1; i < distinct.length; i++) {
@@ -355,6 +360,9 @@ export const BUILT_IN_SERIES_FUNCTIONS: Readonly<
 > = Object.freeze({
   planeGeometry: Object.freeze({
     compute: planeGeometry,
+    // A measure of the display set: sliceSpacing and sliceDistance describe
+    // the display set in sortBy and attributes.
+    over: 'displaySet',
     fields: Object.freeze({
       normal: 'series',
       origin: 'series',

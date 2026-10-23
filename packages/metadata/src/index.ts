@@ -46,6 +46,7 @@ export type {
   SeriesContext,
   SeriesFunction,
   SeriesFunctionDefinition,
+  SeriesFunctionScope,
   SeriesFieldScope,
   PlaneGeometry,
   TimeClusters,

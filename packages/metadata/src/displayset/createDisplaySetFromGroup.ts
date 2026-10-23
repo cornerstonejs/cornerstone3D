@@ -96,14 +96,15 @@ function runCustomAttributes(
 
 /**
  * The viewport types the display set gets: a `viewportTypes` array in the
- * custom attributes wins over the rule's own.
+ * custom attributes wins over the rule's own. An empty array is no override,
+ * so the rule's types and their `['stack']` fallback apply.
  */
 function resolveViewportTypes(
   ruleViewportTypes: readonly ViewportTypeHint[],
   attributes: Record<string, unknown> | undefined
 ): readonly ViewportTypeHint[] {
   const override = attributes?.viewportTypes;
-  return Array.isArray(override)
+  return Array.isArray(override) && override.length
     ? (override as ViewportTypeHint[])
     : ruleViewportTypes;
 }

@@ -360,6 +360,9 @@ A few engine guarantees worth knowing when writing rules:
 - **Keys come from the rule id, not the rule's position.** Moving a rule, or
   adding one with a lower priority, leaves the other rules' `splitKey`s
   unchanged.
+- **Keys do not depend on how a host naturalizes a value.** No value (absent,
+  `null`, `''`, `[]`) gives one key part, `5`, `'5'` and `[5]` give one key
+  part, and `'05'` stays text. So a server and a viewer get the same keys.
 - **Group order is deterministic.** Groups come back sorted by rule priority,
   then by a stable, rule-namespaced split key, so a series' display sets —
   and any id derived from their position — are stable
@@ -618,9 +621,36 @@ changes the threshold.
 | a function `(instances, values)`  | in code only                                                                                       |
 
 `"label": "SCOUT"` is a compile error, because `SCOUT` is not a name. The
-message names the template form. A context value with the series scope, for
-example `sliceSpacing`, is the value of the whole series, so each display set of
-the series shows the same value.
+message names the template form.
+
+**A rule tests the full series, and describes each display set.** In
+`context`, `matches` and `groupBy`, every series function runs over all the
+instances of the series. In `sortBy` and `attributes`, a series function that
+measures the display set runs over the instances of the display set:
+
+| Series function | In `sortBy` and `attributes`           | So                                                          |
+| --------------- | -------------------------------------- | ----------------------------------------------------------- |
+| `planeGeometry` | the display set (`over: 'displaySet'`) | `sliceSpacing` and `sliceDistance` describe the display set |
+| `timeClusters`  | the series (`over: 'series'`)          | `sweepOffset` stays the offset from the start of the series |
+
+A group entry can choose with `over`. To test the series lattice and also
+measure the display set, read two groups:
+
+```jsonc
+"context": {
+  "seriesGeometry": { "function": "planeGeometry", "over": "series" }
+},
+"attributes": {
+  "spacing": "sliceSpacing",                                  // the display set
+  "seriesSpacing": { "expression": "seriesGeometry.spacing" } // the series
+}
+```
+
+`series.instances.*(...)` runs over the series in every place, so
+`seriesInstanceCount` is the count of the series also in `attributes`. A
+function of `options.seriesFunctions` sets the default with `over` in its
+definition `{ compute, fields, over }`; with no setting it runs over the
+series.
 
 ```jsonc
 "attributes": {
@@ -652,7 +682,7 @@ to `splitRules`. Each entry has one of five forms:
 | a string                                                 | an expression; a name or a path (`"timeClusters.start"`) is the simplest expression                   |
 | `{ "attribute": "00191010", "vr"?, "vm"? }`              | a declaration: reads one attribute of the instance that the dictionary does not hold                  |
 | `{ "template": "{SeriesDescription} +{sweepOffset} s" }` | text; each `{name}` gives the value of a name or a path                                               |
-| `{ "function": "timeClusters", "args": {...} }`          | a group: one call of a series function; each argument is a fixed value or an expression of the series |
+| `{ "function": "timeClusters", "args": {...}, "over"? }` | a group: one call of a series function; each argument is a fixed value or an expression of the series |
 
 The rules:
 

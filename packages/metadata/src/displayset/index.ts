@@ -78,6 +78,7 @@ export type {
   SeriesContext,
   SeriesFunction,
   SeriesFunctionDefinition,
+  SeriesFunctionScope,
   SeriesFieldScope,
   RuleContext,
   SplitRule,

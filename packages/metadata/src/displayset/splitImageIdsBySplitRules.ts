@@ -40,10 +40,8 @@ export function splitImageIdsBySplitRules(
     onMissing: onMissingImageId,
   });
 
-  if (!instances.length) {
-    return [];
-  }
-
+  // No shortcut for an empty list: groupInstancesBySplitRules checks the rule
+  // set first, also before the metadata loads.
   return groupInstancesBySplitRules(
     instances,
     splitRules,

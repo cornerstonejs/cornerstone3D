@@ -677,9 +677,10 @@ function compileNode(
  * - `<`, `<=`, `>` and `>=` give `false` unless both sides are finite numbers
  *   after `toFiniteFirst`, so a numeric string is a number and a missing value never
  *   compares as 0.
- * - `+`, `-`, `*`, `/` and `%` read both sides with `toFiniteFirst`, so `'2' + 1`
- *   is 3. No value, or a value that is not a number, gives `undefined`. Use a
- *   template literal to join text.
+ * - `-`, `*`, `/` and `%` read both sides with `toFiniteFirst`, so `'6' - 1`
+ *   is 5. No value, or a value that is not a number, gives `undefined`. `+`
+ *   follows the type of its left operand (see {@link plus}): `'2' + 3` is
+ *   `'23'`, and `3 + '2'` is 5.
  * - `!`, `&&`, `||` and `?:` read no value as false; `&&` and `||` give a
  *   boolean.
  * - `includes`, `contains`, `startsWith`, `endsWith` and `in` have the meaning

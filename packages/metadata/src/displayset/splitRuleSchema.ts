@@ -148,6 +148,12 @@ const contextEntryShape: SchemaShape = {
           description:
             'The arguments of the series function. Each value is a fixed value, or an expression with one value for the series.',
         },
+        over: {
+          kind: 'literal',
+          optional: true,
+          description:
+            "Where the function runs in sortBy and attributes: 'displaySet' or 'series'. Default: the setting of the series function (planeGeometry: 'displaySet', timeClusters: 'series').",
+        },
       },
       description:
         'One call of a series function. A rule reads a result field by path, e.g. timeClusters.start.',

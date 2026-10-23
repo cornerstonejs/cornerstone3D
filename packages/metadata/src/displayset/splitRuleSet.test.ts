@@ -122,6 +122,19 @@ describe('validateSplitRuleSetEntry', () => {
 });
 
 describe('groupInstancesBySplitRules with a rule set', () => {
+  it('gives one key for every naturalized form of a value', () => {
+    // A server and a viewer can naturalize the same attribute differently.
+    const keyOf = (EchoNumbers: unknown) =>
+      groupInstancesBySplitRules([{ ...ct('a', 1), EchoNumbers } as never], {
+        byEcho: { priority: 1, groupBy: ['SeriesInstanceUID', 'EchoNumbers'] },
+      })[0].splitKey;
+
+    expect(new Set([5, '5', [5], ['5']].map(keyOf)).size).toBe(1);
+    expect(new Set([undefined, null, '', []].map(keyOf)).size).toBe(1);
+    // Text that is not the canonical form of a number stays text.
+    expect(keyOf('05')).not.toBe(keyOf(5));
+  });
+
   it('evaluates the rules in priority order, first match wins', () => {
     const ruleSet: SplitRuleSet = {
       everything: { priority: 1, groupBy: ['SeriesInstanceUID'] },

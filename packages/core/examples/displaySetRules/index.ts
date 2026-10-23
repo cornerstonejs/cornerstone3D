@@ -372,8 +372,21 @@ let seriesImageIds: string[] = [];
 let displaySets: IDisplaySet[] = [];
 /** Every viewport this example has enabled, so they can be torn down on re-split. */
 let activeViewportIds: string[] = [];
-/** Chosen layout per displaySetId; absent means the automatic default. */
-const layoutByDisplaySetId = new Map<string, string>();
+/**
+ * Chosen layout per display set, keyed by {@link displaySetIdentity}; absent
+ * means the automatic default.
+ */
+const layoutBySplitKey = new Map<string, string>();
+
+/**
+ * The stable identity of a display set: its split key (the rule id and the
+ * `groupBy` values), else its `displaySetId`. The `displaySetId` holds the
+ * position of the group, so after a re-split it can name a different display
+ * set; a stored layout must not follow it there.
+ */
+function displaySetIdentity(displaySet: IDisplaySet): string {
+  return displaySet.splitKey ?? displaySet.displaySetId;
+}
 
 // ======== Layout ======== //
 
@@ -996,7 +1009,7 @@ addButton('Reset', () => {
   addedRules = {};
   mergeCommands.length = 0;
   disabledRuleIds.clear();
-  layoutByDisplaySetId.clear();
+  layoutBySplitKey.clear();
   renderRules();
   setStatus('Back to the standard rules.');
   void resplit();
@@ -1132,10 +1145,16 @@ function registerDisplaySetData(displaySet: IDisplaySet, layout: string) {
     layout === 'volume' ||
     layout === 'volume3d'
   ) {
-    // One volume shared by every MPR/3D viewport of this display set.
+    // One volume shared by every MPR/3D viewport of this display set. The
+    // cache returns an existing volume for an existing volumeId, so the id
+    // names the display set and its images: a re-split that reuses the
+    // positional displaySetId, or that gives the same split key more images,
+    // gets a new volume.
     provider.add(displaySetId, {
       imageIds,
-      volumeId: `cornerstoneStreamingImageVolume:${displaySetId}`,
+      volumeId: `cornerstoneStreamingImageVolume:${utilities.fnv1aHash(
+        [displaySetIdentity(displaySet), ...imageIds].join('|')
+      )}`,
     });
     return;
   }
@@ -1382,12 +1401,12 @@ async function buildCell(displaySet: IDisplaySet, index: number) {
     return;
   }
 
-  // A stored layout is keyed by displaySetId, which is positional: after a
-  // re-split the same id can name a different display set. Use the stored
-  // layout only when this display set still offers it - a stored `volume`
+  // A stored layout is keyed by the split key, so it follows this display set
+  // and no other. Use it only when this display set still offers it: the same
+  // split key can have fewer images after a rule change, and a stored `volume`
   // layout on a one-image stack would mount an orthographic viewport that fails.
   const options = layoutOptionsFor(displaySet);
-  const stored = layoutByDisplaySetId.get(displaySet.displaySetId);
+  const stored = layoutBySplitKey.get(displaySetIdentity(displaySet));
   const layout =
     stored && options.includes(stored) ? stored : defaultLayoutFor(displaySet);
   if (options.length > 1) {
@@ -1400,7 +1419,7 @@ async function buildCell(displaySet: IDisplaySet, index: number) {
       layoutSelect.appendChild(element);
     }
     layoutSelect.onchange = () => {
-      layoutByDisplaySetId.set(displaySet.displaySetId, layoutSelect.value);
+      layoutBySplitKey.set(displaySetIdentity(displaySet), layoutSelect.value);
       void renderGrid();
     };
     header.appendChild(layoutSelect);
@@ -1537,7 +1556,7 @@ async function resplit() {
 
 async function loadSeries() {
   setStatus(`Loading ${currentSeries.label}…`);
-  layoutByDisplaySetId.clear();
+  layoutBySplitKey.clear();
 
   const root = currentSeries.wadoRsRoot ?? wadoRsRoot;
 

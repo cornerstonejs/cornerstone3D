@@ -240,10 +240,14 @@ compile.
   `!==` are compile errors.
 - **RL-VALUE-6** An expression can compare text without case: `lower(text)`
   gives the text in lowercase.
-- **RL-VALUE-7** Arithmetic (`+`, `-`, `*`, `/`, `%`) reads a numeric string
-  as a number, so `"2" + 1` is `3`. When one side has no value or is not a
-  finite number, the result has no value. So `null * 512` has no value, and a
-  test such as `{ "lessThan": 100 }` on it fails.
+- **RL-VALUE-7** `-`, `*`, `/` and `%` read a numeric string as a number, so
+  `"6" - 1` is `5`. When one side has no value or is not a finite number, the
+  result has no value. So `null * 512` has no value, and a test such as
+  `{ "lessThan": 100 }` on it fails. `+` follows the type of its left operand:
+  text on the left (also `''`) joins, so `"2" + 3` is `"23"`, and no value on
+  the right joins as `''`; no value on the left gives no value; a number on the
+  left adds, so `3 + "2"` is `5`. _Changed: before, `+` read both sides as
+  numbers, and `"2" + 1` was `3`._
 - **RL-VALUE-8** `!`, `&&`, `||` and `?:` read no value as `false`. `&&` and
   `||` give `true` or `false`. So `"isTall": "Rows && Rows > 1000"` is `false`
   when `Rows` is absent, and `"isTall": false` holds.
@@ -279,8 +283,17 @@ compile.
 - **RL-CTX-8** A site changes one entry by its name, for example
   `"dxCrMaxImages": { "$set": 20 }`. The site does not copy the expression text
   of a rule into a `$merge`.
-- **RL-CTX-9** A value of the series is the same for each display set of the
-  series, also in `attributes`.
+- **RL-CTX-9** A rule tests the full series, and describes each display set.
+  In `context`, `matches` and `groupBy`, every series function runs over all
+  the instances of the series. In `sortBy` and `attributes`, a series function
+  that measures the display set (`planeGeometry`) runs over the instances of
+  the display set, so `sliceSpacing` and `sliceDistance` describe the display
+  set. A series function that describes the series (`timeClusters`) runs over
+  the series in every place, so `sweepOffset` stays the offset from the start
+  of the series. A group entry can choose with `over` (`RL-CTXI-12`).
+  `series.instances.*(...)` runs over the series in every place. _Changed:
+  before, every value of the series was the same for each display set, also in
+  `attributes`._
 
 ### One language for each consumer (RL-SHARE)
 
@@ -704,7 +717,22 @@ packages/metadata/src/
   first read, one time for each split. When the series gets new instances, the
   next split computes the value again. `orderInstancesForRule` with
   `options.series` also computes the values again, over the instances of the
-  split and the new instances.
+  split and the new instances. It finds the new instances by `instanceKey`, so
+  an instance that the host naturalizes again is not counted twice.
+- **RL-CTXI-12** A sort of a display set and the attributes of a display set
+  read a second runtime (`displaySetContextFor`). In it, a group with
+  `over: 'displaySet'` runs over the instances of the display set; a group with
+  `over: 'series'`, and `series.instances.*(...)`, run over the instances of
+  the split (`RL-CTX-9`). A series function definition gives the default
+  (`planeGeometry`: `'displaySet'`, `timeClusters` and a function with no
+  setting: `'series'`), and a group entry `{ "function", "args"?, "over"? }`
+  overrides it. So a rule can test the lattice of the series and also measure
+  the display set: `"seriesGeometry": { "function": "planeGeometry", "over":
+"series" }`.
+- **RL-CTXI-13** A split key part is normalized, so that two hosts that
+  naturalize differently build the same key: no value (absent, `null`, `''`,
+  `[]`) is `null`, a one-element array is its element, and a string that is the
+  canonical text of a finite number is that number. `'05'` stays text.
 - **RL-CTXI-10** A hook that a host calls directly, with no split context,
   computes the values over the instances of the call only: one instance for
   `matches`, the pair for a comparator, the group for `customAttributes`. So
@@ -767,8 +795,9 @@ packages/metadata/src/
     set.
   - in code, a function (`RL-FN-4`).
 - **RL-CONS-3** `createDisplaySetFromGroup` passes `group.series` to the
-  `customAttributes` hook, so an attribute reads the values of the whole series
-  (`RL-CTX-9`).
+  `customAttributes` hook. An attribute reads a series function with
+  `over: 'displaySet'` over the instances of the display set, and every other
+  series value over the series (`RL-CTX-9`).
 - **RL-CONS-4** The hanging protocol consumer gives its own subject and its
   own reader of a name. A later OHIF pull request moves the hanging protocol
   constraints to the operator meanings of `RL-COND-3`.

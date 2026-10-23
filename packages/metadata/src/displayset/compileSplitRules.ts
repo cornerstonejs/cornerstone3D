@@ -29,6 +29,7 @@ import type { NameReaderFunction, SchemaSite } from '../safeFunctions';
 import {
   ContextProgram,
   defaultDisplaySetContext,
+  displaySetContextFor,
   isFixedValue,
 } from './displaySetContext';
 import { chainComparators } from './groupInstancesBySplitRules';
@@ -241,7 +242,15 @@ function compileAttributes(
   const { program } = compile;
   return (engine, options) => {
     const instances = options.instances ?? [];
-    const runtime = program.runtimeFrom({ series: options.series }, instances);
+    // The attributes describe one display set: a series function such as
+    // planeGeometry runs over its instances.
+    const runtime = program.runtimeFrom(
+      {
+        series: options.series,
+        displaySet: displaySetContextFor(options.series, instances),
+      },
+      instances
+    );
     const extras = {
       splitNumber: options.splitNumber,
       sopClassUids: engine?.sopClassUids,

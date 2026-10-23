@@ -10,9 +10,9 @@ import type {
   SplitRuleSet,
 } from './types';
 import { resolveSplitRuleSet } from './splitRuleSet';
-import { withInstances } from './displaySetContext';
+import { displaySetContextFor, withInstances } from './displaySetContext';
 import { toFiniteFirst } from '@cornerstonejs/utils';
-import { isUnsafeKey } from '../safeFunctions';
+import { hasNoValue, isUnsafeKey } from '../safeFunctions';
 
 /**
  * Builds the series context of one split: runs the `series` hook of each rule,
@@ -162,7 +162,13 @@ function buildInstanceOrderer(
 
     if (comparators.length) {
       const compare = chainComparators(comparators);
-      ordered.sort((a, b) => compare(a, b, context));
+      // The order is the order of one display set: a series function such as
+      // planeGeometry runs over these instances, and not over the series.
+      const sortContext: RuleContext = {
+        ...context,
+        displaySet: displaySetContextFor(context.series, ordered),
+      };
+      ordered.sort((a, b) => compare(a, b, sortContext));
     }
 
     return ordered;
@@ -284,7 +290,33 @@ function compareSplitKeys(a: string, b: string): number {
 }
 
 /**
- * Key parts an instance contributes through its rule's `groupBy`.
+ * One `groupBy` value in the form that every host gives, so that a server and
+ * a viewer that naturalize differently build the same split key:
+ *
+ * - no value (absent, `null`, `''`, `[]`) is `null`;
+ * - a one-element array is its element (`[5]` is `5`);
+ * - a string that is the canonical text of a finite number is that number
+ *   (`'5'` is `5`). `'05'` and `'1.50'` stay text, so two identifiers that
+ *   differ only in zeros do not merge.
+ */
+export function normalizeSplitKeyPart(value: unknown): unknown {
+  if (hasNoValue(value)) {
+    return null;
+  }
+  if (Array.isArray(value)) {
+    const parts = value.map(normalizeSplitKeyPart);
+    return parts.length === 1 ? parts[0] : parts;
+  }
+  if (typeof value === 'string') {
+    const number = Number(value);
+    return Number.isFinite(number) && String(number) === value ? number : value;
+  }
+  return value;
+}
+
+/**
+ * Key parts an instance contributes through its rule's `groupBy`, normalized
+ * by {@link normalizeSplitKeyPart}.
  */
 function buildGroupByParts(
   instance: NaturalizedInstance,
@@ -293,7 +325,9 @@ function buildGroupByParts(
 ): unknown[] {
   const groupBy = splitRule.groupBy ?? ['SeriesInstanceUID'];
   return groupBy.map((key) =>
-    typeof key === 'function' ? key(instance, context) : instance[key]
+    normalizeSplitKeyPart(
+      typeof key === 'function' ? key(instance, context) : instance[key]
+    )
   );
 }
 
@@ -303,8 +337,8 @@ function buildGroupByParts(
  * The key is **namespaced by the rule** (via `ruleDiscriminator`) so two
  * different rules can never share a bucket even if their split values coincide,
  * and it is **JSON-encoded** so the parts can't collide through a separator -
- * e.g. an `&` inside a tag value, or `undefined` vs `''` vs a missing tag, which
- * a plain string join would alias together.
+ * e.g. an `&` inside a tag value. The parts are already normalized, so every
+ * kind of "no value" gives `null`, and `5`, `'5'` and `[5]` give `5`.
  *
  * The discriminator is the rule's `id`, NOT its position in the rule set:
  * position would make every key below an inserted rule change, silently

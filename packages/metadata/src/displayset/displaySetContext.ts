@@ -68,6 +68,7 @@ import type {
   SeriesFieldScope,
   SeriesFunction,
   SeriesFunctionDefinition,
+  SeriesFunctionScope,
 } from './types';
 
 const log = logging.metadataLog.getLogger('displayset', 'displaySetContext');
@@ -85,6 +86,11 @@ export type InstanceContextFunction = (
 export type ContextGroupEntry = {
   function: string | SeriesFunction | SeriesFunctionDefinition;
   args?: Record<string, unknown>;
+  /**
+   * Where the function runs in `sortBy` and `attributes`: over the display set,
+   * or over the series. Default: the `over` of the function definition.
+   */
+  over?: SeriesFunctionScope;
 };
 
 /** One entry of a display set context. See the module documentation. */
@@ -232,6 +238,8 @@ type Definition = {
   compute?: SeriesFunction;
   fields?: Readonly<Record<string, Scope>>;
   args?: GroupArgument[];
+  /** For a group: the instances it runs over in `sortBy` and `attributes`. */
+  over?: SeriesFunctionScope;
   fn?: InstanceContextFunction;
 };
 
@@ -410,8 +418,11 @@ export function withInstances(
   if (!(values instanceof DisplaySetContextValues)) {
     return series;
   }
-  const known = new Set(values.instances);
-  const added = instances.filter((instance) => !known.has(instance));
+  // By key, not by object: a host can naturalize the instances again.
+  const keyOf = (instance: NaturalizedInstance) =>
+    instanceKey(instance) ?? instance;
+  const known = new Set(values.instances.map(keyOf));
+  const added = instances.filter((instance) => !known.has(keyOf(instance)));
   if (!added.length) {
     return series;
   }
@@ -425,25 +436,57 @@ export function withInstances(
 }
 
 /**
- * The values of the display set context for one split: the instances of the
- * series, and one cache for each compiled rule set. A split keeps it as the
- * series fact {@link DISPLAY_SET_CONTEXT_FACT}, so every rule of the split, and
- * a later sort of a display set, reads the same values.
+ * The values of the display set context for one list of instances, and one
+ * cache for each compiled rule set.
+ *
+ * A split keeps the values of the series as the series fact
+ * {@link DISPLAY_SET_CONTEXT_FACT}, so every rule of the split reads the same
+ * values in `context`, `matches` and `groupBy`. `sortBy` and `attributes` read
+ * the values of one display set ({@link displaySetContextFor}): a series
+ * function such as `planeGeometry` runs over the instances of the display set,
+ * and `series.instances.*(...)` still runs over the series.
  */
 export class DisplaySetContextValues {
   private readonly runtimes = new WeakMap<ContextProgram, ContextRuntime>();
 
-  constructor(readonly instances: readonly NaturalizedInstance[]) {}
+  /**
+   * @param instances - the instances that a series function runs over: the
+   *   series, or one display set.
+   * @param seriesInstances - the instances of `series.instances.*(...)`.
+   *   Defaults to `instances`.
+   */
+  constructor(
+    readonly instances: readonly NaturalizedInstance[],
+    readonly seriesInstances: readonly NaturalizedInstance[] = instances
+  ) {}
 
   /** The cache of one compiled rule set. */
   runtime(program: ContextProgram): ContextRuntime {
     let runtime = this.runtimes.get(program);
     if (!runtime) {
-      runtime = new ContextRuntime(this.instances);
+      runtime = new ContextRuntime(this.instances, this.seriesInstances);
       this.runtimes.set(program, runtime);
     }
     return runtime;
   }
+}
+
+/**
+ * The context values of one display set: a series function runs over
+ * `instances`, and `series.instances.*(...)` over the instances of the split
+ * that `series` holds.
+ */
+export function displaySetContextFor(
+  series: SeriesFacts | undefined,
+  instances: readonly NaturalizedInstance[]
+): DisplaySetContextValues {
+  const values = readOwn(series, DISPLAY_SET_CONTEXT_FACT);
+  return new DisplaySetContextValues(
+    instances,
+    values instanceof DisplaySetContextValues
+      ? values.seriesInstances
+      : instances
+  );
 }
 
 /**
@@ -469,7 +512,14 @@ export class ContextRuntime {
     instance: NaturalizedInstance | undefined;
   }[] = [];
 
-  constructor(readonly instances: readonly NaturalizedInstance[]) {}
+  /**
+   * @param instances - the instances that a series function runs over.
+   * @param seriesInstances - the instances of `series.instances.*(...)`.
+   */
+  constructor(
+    readonly instances: readonly NaturalizedInstance[],
+    readonly seriesInstances: readonly NaturalizedInstance[] = instances
+  ) {}
 
   /** The value of a bound entry: for the series, or for one instance. */
   value(bound: Bound, instance: NaturalizedInstance | undefined): unknown {
@@ -621,10 +671,10 @@ export class ContextRuntime {
   /** The instance environments of an entry, for the aggregates. */
   envsOf(
     bound: Pick<Bound, 'key' | 'deps' | 'layer' | 'definition'>,
-    instances: readonly NaturalizedInstance[] = this.instances,
+    instances: readonly NaturalizedInstance[] = this.seriesInstances,
     extras?: Extras
   ): object[] {
-    if (extras || instances !== this.instances) {
+    if (extras || instances !== this.seriesInstances) {
       return instances.map((instance) => this.env(bound, instance, extras));
     }
     let envs = this.instanceEnvs.get(bound.key);
@@ -755,7 +805,9 @@ export class ContextProgram {
   }
 
   /**
-   * The runtime of a call, from the series facts of its context. A direct
+   * The runtime of a call, from its context. A context with `displaySet` (a
+   * sort or the attributes of one display set) gives the runtime of that
+   * display set. Else the series facts give the runtime of the split. A direct
    * call of a hook with no split context computes the values over the
    * instances of the call alone (one instance, or the pair of a comparator):
    * so a series value such as `seriesInstanceCount` is for those instances
@@ -765,6 +817,10 @@ export class ContextProgram {
     context: unknown,
     fallback: NaturalizedInstance | readonly NaturalizedInstance[]
   ): ContextRuntime {
+    const displaySet = readOwn(context, 'displaySet');
+    if (displaySet instanceof DisplaySetContextValues) {
+      return displaySet.runtime(this);
+    }
     const values = readOwn(
       readOwn(context, 'series'),
       DISPLAY_SET_CONTEXT_FACT
@@ -862,7 +918,7 @@ export class ContextProgram {
     return (runtime, instances, extras) =>
       evaluate(
         runtime.env(scope, instances[0], extras),
-        runtime.envsOf(scope, runtime.instances, extras),
+        runtime.envsOf(scope, runtime.seriesInstances, extras),
         runtime.envsOf(scope, instances, extras)
       );
   }
@@ -1135,7 +1191,13 @@ export class ContextProgram {
                 )
               : argument.fixed;
           }
-          return compute(runtime.instances as NaturalizedInstance[], {
+          // In the runtime of a display set, `instances` are the display set,
+          // and a group that describes the series runs over the series.
+          const instances =
+            definition.over === 'displaySet'
+              ? runtime.instances
+              : runtime.seriesInstances;
+          return compute(instances as NaturalizedInstance[], {
             args: Object.freeze(values),
           });
         };
@@ -1233,18 +1295,27 @@ export class ContextProgram {
       return { ...base, kind: 'template', reads, segments };
     }
 
-    const { compute, fields: resultFields } = this.seriesFunctionOf(
+    const definition = this.seriesFunctionOf(
       fields.function,
       at(site, 'function')
     );
     const args = this.parseArguments(fields.args, at(site, 'args'));
+    const over = fields.over ?? definition.over ?? 'series';
+    if (over !== 'series' && over !== 'displaySet') {
+      return invalidAt(
+        at(site, 'over'),
+        "expected 'series' or 'displaySet'",
+        fields.over
+      );
+    }
     return {
       ...base,
       kind: 'group',
       reads: args.flatMap((argument) => argument.reads),
-      compute,
-      fields: resultFields,
+      compute: definition.compute,
+      fields: definition.fields,
       args,
+      over,
     };
   }
 

@@ -3,6 +3,7 @@ import {
   groupInstancesBySplitRules,
   orderInstancesForRule,
 } from './groupInstancesBySplitRules';
+import { withInstances } from './displaySetContext';
 import { createDisplaySetSplitRules } from './rawDisplaySetSelector';
 import type { RawDisplaySetSelector } from './rawDisplaySetSelectorTypes';
 import { planeGeometry, timeClusters } from './seriesFunctions';
@@ -81,7 +82,7 @@ describe('the display set context over a split', () => {
     SeriesDescription: 'AX',
   }));
 
-  it('splits the lattice from the other images, and labels each display set from the whole series', () => {
+  it('splits the lattice from the other images, and labels each display set from its own instances', () => {
     const groups = groupInstancesBySplitRules(
       series,
       createDisplaySetSplitRules(selector, options)
@@ -100,7 +101,113 @@ describe('the display set context over a split', () => {
   });
 });
 
+describe('series functions in the series and in one display set', () => {
+  // Two echoes on interleaved positions: the series has a lattice of 1 mm,
+  // and each echo has a lattice of 2 mm.
+  const series = [0, 1, 2, 3, 4, 5, 6, 7].map((z) =>
+    slice(`z${z}`, z, { EchoNumbers: z % 2 ? 2 : 1 })
+  );
+  const rules = createDisplaySetSplitRules({
+    echoes: {
+      priority: 1,
+      context: {
+        // The same function over the series also in attributes.
+        seriesGeometry: { function: 'planeGeometry', over: 'series' },
+      },
+      // matches reads the series: the lattice of all the instances.
+      matches: { sliceSpacing: 1 },
+      groupBy: ['SeriesInstanceUID', 'EchoNumbers'],
+      // sortBy and attributes read the display set.
+      sortBy: ['sliceDistance'],
+      attributes: {
+        spacing: 'sliceSpacing',
+        firstDistance: {
+          expression: 'displaySet.instances.min(sliceDistance)',
+        },
+        seriesCount: 'seriesInstanceCount',
+        seriesSpacing: { expression: 'seriesGeometry.spacing' },
+      },
+    },
+  });
+
+  it('tests the lattice of the series in matches, and measures each display set in sortBy and attributes', () => {
+    const groups = groupInstancesBySplitRules([...series].reverse(), rules);
+    expect(
+      groups.map((group) => {
+        const displaySet = createDisplaySetFromGroup(
+          group
+        ) as unknown as Record<string, unknown>;
+        return [
+          group.instances.map((i) => i.SOPInstanceUID),
+          displaySet.spacing,
+          displaySet.firstDistance,
+          displaySet.seriesCount,
+          displaySet.seriesSpacing,
+        ];
+      })
+    ).toEqual([
+      [['z0', 'z2', 'z4', 'z6'], 2, 0, 8, 1],
+      [['z1', 'z3', 'z5', 'z7'], 2, 0, 8, 1],
+    ]);
+  });
+});
+
+describe('timeClusters in attributes', () => {
+  it('keeps the offset of each sweep from the start of the series', () => {
+    const us = (id: string, AcquisitionTime: string) => ({
+      SOPInstanceUID: id,
+      SeriesInstanceUID: 'us-1',
+      AcquisitionDate: '20260101',
+      AcquisitionTime,
+    });
+    const rules = createDisplaySetSplitRules({
+      sweeps: {
+        priority: 1,
+        groupBy: ['SeriesInstanceUID', 'sweepStart'],
+        attributes: { offset: 'sweepOffset' },
+      },
+    });
+    const groups = groupInstancesBySplitRules(
+      [us('a', '100000'), us('b', '100010'), us('c', '100200')],
+      rules
+    );
+    expect(
+      groups.map(
+        (group) =>
+          (
+            createDisplaySetFromGroup(group) as unknown as Record<
+              string,
+              unknown
+            >
+          ).offset
+      )
+      // 10:02:00 is 120 s after 10:00:00.
+    ).toEqual([0, 120]);
+  });
+
+  it('rejects a group with an unknown over', () => {
+    expect(() =>
+      createDisplaySetSplitRules({
+        r: {
+          priority: 1,
+          context: { g: { function: 'planeGeometry', over: 'study' as never } },
+        },
+      })
+    ).toThrow(/expected 'series' or 'displaySet'/);
+  });
+});
+
 describe('a sort after the series gets new instances', () => {
+  it('does not count an instance twice when the host naturalizes it again', () => {
+    const rules = createDisplaySetSplitRules({ all: { priority: 1 } });
+    const [group] = groupInstancesBySplitRules(
+      [slice('z0', 0), slice('z2', 2)],
+      rules
+    );
+    const copies = group.instances.map((instance) => ({ ...instance }));
+    expect(withInstances(group.series, copies)).toBe(group.series);
+  });
+
   it('computes the context values again, so the new instance takes its place', () => {
     const rules = createDisplaySetSplitRules({
       bySlice: { priority: 1, sortBy: ['sliceDistance'] },
@@ -157,6 +264,21 @@ describe('planeGeometry', () => {
 
   it('gives the same result for any order of the instances', () => {
     expect(geometry([...series].reverse())).toEqual(geometry(series));
+  });
+
+  it('reads two echoes of one slice as one position, and not as a gap of 0', () => {
+    const echoes = [0, 2, 4].flatMap((z) => [
+      slice(`a${z}`, z),
+      slice(`b${z}`, z + 0.002),
+    ]);
+    const result = geometry(echoes);
+
+    expect(result.spacing).toBe(2);
+    expect([result.regularCount, result.positions, result.duplicates]).toEqual([
+      6,
+      3,
+      true,
+    ]);
   });
 });
 

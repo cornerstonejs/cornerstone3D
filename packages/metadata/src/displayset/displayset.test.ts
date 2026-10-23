@@ -64,6 +64,15 @@ describe('displayset split utilities', () => {
     expect(resolved.map((i) => i.imageId)).toEqual(['wadors:2', 'wadors:1']);
   });
 
+  it('rejects an invalid rule set also when no image id resolves', () => {
+    expect(() =>
+      splitImageIdsBySplitRules(['wadors:missing'], {
+        getNaturalizedInstance,
+        splitRules: { bad: { priority: 'high' } } as never,
+      })
+    ).toThrow();
+  });
+
   it('default rules group multi-slice CT as volume (MPR) preferred', () => {
     const groups = splitImageIdsBySplitRules(
       instances.map((i) => i.imageId!),
@@ -284,6 +293,29 @@ describe('displayset split utilities', () => {
     expect((displaySet as unknown as Record<string, unknown>).customFlag).toBe(
       true
     );
+  });
+
+  it('reads an empty viewportTypes from the attributes as no override', () => {
+    const group: InstanceGroup = {
+      instances: [
+        {
+          imageId: 'wadors:empty-types',
+          SOPClassUID: '1.2.840.10008.5.1.4.1.1.2',
+          Rows: 512,
+          SeriesInstanceUID: 'series-empty-types',
+          InstanceNumber: 1,
+        },
+      ],
+      matchedRule: {
+        id: 'emptyTypes',
+        customAttributes: () => ({ viewportTypes: [] }),
+      },
+    };
+
+    const displaySet = createDisplaySetFromGroup(group);
+
+    expect(displaySet.viewportTypes).toEqual(['stack']);
+    expect(displaySet.isDisplayable).toBe(true);
   });
 
   it('records the split identity, and attributes cannot rename it', () => {
