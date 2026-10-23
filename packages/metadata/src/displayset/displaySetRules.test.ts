@@ -149,6 +149,23 @@ describe('createDisplaySetSplitRules - compiled default behaviour', () => {
         instance({ SOPInstanceUID: 'enhanced-ct', NumberOfFrames: 200 }),
       ])
     ).not.toContain('multiFrame');
+    // An Enhanced US Volume and a multi-frame secondary capture are not clips.
+    expect(
+      ruleIdsFor([
+        instance({
+          SOPClassUID: '1.2.840.10008.5.1.4.1.1.6.2',
+          Modality: 'US',
+          SOPInstanceUID: 'us-volume',
+          NumberOfFrames: 100,
+        }),
+        instance({
+          SOPClassUID: '1.2.840.10008.5.1.4.1.1.7.4',
+          Modality: 'OT',
+          SOPInstanceUID: 'sc',
+          NumberOfFrames: 10,
+        }),
+      ])
+    ).not.toContain('multiFrame');
   });
 
   it('splits a mixed-b-value DWI series in two', () => {
@@ -588,6 +605,18 @@ describe('matches - the operator meanings', () => {
     expect(holds('LOCALIZER', { includes: 'LOCALIZER' })).toBe(true);
     expect(holds(['ORIGINAL'], { includes: ['AXIAL', 'ORIGINAL'] })).toBe(true);
     expect(holds(['ORIGINAL'], { doesNotInclude: 'LOCALIZER' })).toBe(true);
+  });
+
+  it('gives a scalar test and an array test the meaning of ==', () => {
+    const test = ['ORIGINAL', 'PRIMARY'];
+    // A single value is one of the elements.
+    expect(holds('ORIGINAL', test)).toBe(true);
+    // A multi-valued value equals the array in order; it does not "overlap".
+    expect(holds(['ORIGINAL', 'PRIMARY'], test)).toBe(true);
+    expect(holds(['ORIGINAL', 'SECONDARY'], test)).toBe(false);
+    expect(holds(['PRIMARY', 'ORIGINAL'], test)).toBe(false);
+    // A scalar test on a multi-valued value is "in".
+    expect(holds(['ORIGINAL', 'LOCALIZER'], 'LOCALIZER')).toBe(true);
   });
 
   it('fails notNull for an empty string', () => {

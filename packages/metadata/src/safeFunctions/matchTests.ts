@@ -259,7 +259,9 @@ export function compileMatchTest(test: unknown, site: SchemaSite): ValueTest {
         test
       );
     }
-    return (value) => test.some((element) => looseEquals(value, element));
+    // The same test as `==` with the array: a single value is one of the
+    // elements, and a multi-valued value equals the array in order.
+    return (value) => looseEquals(value, test);
   }
   if (!test || typeof test !== 'object') {
     return invalidAt(
