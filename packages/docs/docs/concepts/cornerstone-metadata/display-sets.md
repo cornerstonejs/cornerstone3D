@@ -38,7 +38,7 @@ it is just:
 import {
   splitImageIdsBySplitRules,
   createDisplaySetFromGroup,
-  defaultDisplaySetSplitRules,
+  compiledDisplaySetRules,
   metaData,
   type IDisplaySet,
   type NaturalizedInstance,
@@ -55,7 +55,7 @@ function getNaturalizedInstance(
 
 const groups = splitImageIdsBySplitRules(seriesImageIds, {
   getNaturalizedInstance,
-  splitRules: defaultDisplaySetSplitRules,
+  splitRules: compiledDisplaySetRules,
 });
 
 const displaySets: IDisplaySet[] = groups.map((group) =>
@@ -154,42 +154,177 @@ read never drift apart.
 ## Split rules
 
 Split rules decide how a series' instances are grouped into display sets and
-which viewport types each group supports. `defaultDisplaySetSplitRules` covers
-the common DICOM cases (video, ECG, whole-slide, single-image modalities,
-multi-frame clips, mixed-b-value DWI, volumetric series, and a fallback image
-rule). Rules are evaluated **in order, first match wins per instance**.
+which viewport types each group supports. Rules are evaluated in **ascending
+priority, first match wins per instance**.
+
+### The default rules
+
+`compiledDisplaySetRules` is the rule set you get without writing any rules.
+It is the compiled form of `displaySetRules`, the same rules as JSON data
+(see [Sharing rules between applications](#sharing-rules-between-applications-the-display-set-rules)).
+It has nine rules. Eight have the priorities `1` to `8`, and the catch-all
+`unsupported` runs last, at `Number.MAX_SAFE_INTEGER`:
+
+| Priority | Id                          | Viewport types                | Claims                                                                                                                                                                                                                                  |
+| -------- | --------------------------- | ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1        | `video`                     | `video`                       | Video transfer syntaxes and SOP classes, and long multi-frame secondary captures.                                                                                                                                                       |
+| 2        | `ecg`                       | `ecg`                         | ECG and waveform SOP classes.                                                                                                                                                                                                           |
+| 3        | `wholeslide`                | `wholeslide`                  | VL Whole Slide Microscopy (modality SM); all pyramid levels form one display set.                                                                                                                                                       |
+| 4        | `singleImageModality`       | `stack`                       | CR, DX and MG, split by a coarse image-size bucket.                                                                                                                                                                                     |
+| 5        | `multiFrame`                | `stack`                       | Multi-frame cine clips: one with a slice location, or a US, XA, RF, ES or XC multi-frame that is not a volume. One display set per `InstanceNumber`: in DICOM, the instances of a series with the same `InstanceNumber` are one object. |
+| 6        | `mixedDimensionalityBValue` | `volume`, `volume3d`, `stack` | Diffusion MR that mixes b-value frames with frames that have none; the two parts split.                                                                                                                                                 |
+| 7        | `volume3d`                  | `volume`, `volume3d`, `stack` | Multi-slice CT, MR, PT and NM that reconstruct into a volume.                                                                                                                                                                           |
+| 8        | `defaultImageRule`          | `stack`, `volume`, `volume3d` | Any other renderable image, one display set per series.                                                                                                                                                                                 |
+| max      | `unsupported`               | `none`                        | Everything else (SEG, RTSTRUCT, SR, PDF, …); see [Objects nothing can render](#objects-nothing-can-render).                                                                                                                             |
+
+Each rule in data form also has a `description` that a UI can show. The next sections
+explain how your own rules combine with these.
+
+### Changes from the earlier default rules
+
+The default rules of this release give different display sets for some
+series. A short UID such as `6.1` is the suffix after `1.2.840.10008.5.1.4.1.1.`.
+
+| Rule                                             | Change                                                                                                                                                                                                                                                                                  | Effect                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| all image rules (`isImage`)                      | `isImageInstance` adds MG For Presentation and For Processing (`1.2`, `1.2.1`), Intra-Oral, US (`3.1`, `6.1`, `6.2`), NM (`20`), IVOCT, ophthalmic photography and tomography, Enhanced PET (`130`) and RT Image. It removes MR Spectroscopy (`4.2`), `13.1.6`, and `128.2` to `128.5`. | US and NM series get a display set. MR spectroscopy goes to `unsupported`.                                                                                                                                                                                                                                                                                                                                                                             |
+| all image rules (`Rows`)                         | `!!Rows` is now `Rows: { notNull: true }`.                                                                                                                                                                                                                                              | An instance with `Rows: 0` is now a renderable image. Before, it was not.                                                                                                                                                                                                                                                                                                                                                                              |
+| `singleImageModality`                            | No change in the rule.                                                                                                                                                                                                                                                                  | Before, MG was not `isImage`, so the rule never matched MG. Now MG splits by image size.                                                                                                                                                                                                                                                                                                                                                               |
+| `multiFrame`                                     | The test was on `instances[0]` for the whole series. Now each instance is tested. A US, XA, RF, ES or XC multi-frame needs no `SliceLocation`, unless it is a volume (Enhanced US Volume, 3D XA).                                                                                       | A mixed series no longer sends its single frames to `multiFrame`. A US, XA or other cine clip with no `SliceLocation` is now its own display set; before, all such clips of a series merged into one display set. An enhanced CT, MR, PT or NM, an Enhanced US Volume, a 3D XA and a multi-frame secondary capture still go to the volume rules or to `defaultImageRule`. Clips with the same `InstanceNumber` stay one display set, as DICOM defines. |
+| `mixedDimensionalityBValue`                      | The MR test was on `instances[0]`; now each instance. `!== undefined` is now a test for no value.                                                                                                                                                                                       | `null` and `''` b-values count as no value. A DWI series with `DiffusionBValue: ''` on the b0 frames splits into two. A b-value of `0` is a value.                                                                                                                                                                                                                                                                                                     |
+| `volume3d`                                       | The modality test was on `instances[0]`; now each instance.                                                                                                                                                                                                                             | A series with mixed modalities splits by modality.                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `unsupported`                                    | New rule, at `Number.MAX_SAFE_INTEGER`.                                                                                                                                                                                                                                                 | Objects that no rule matched were dropped. Now each series of them gives one non-displayable display set, and `onUnmatchedInstance` does not fire with the defaults.                                                                                                                                                                                                                                                                                   |
+| `video`, `ecg`, `wholeslide`, `defaultImageRule` | No change in the rule.                                                                                                                                                                                                                                                                  | `defaultImageRule` follows the `isImage` change.                                                                                                                                                                                                                                                                                                                                                                                                       |
+
+**Migration from the array form.** `groupInstancesBySplitRules`,
+`splitImageIdsBySplitRules` and `compiledDisplaySetRules` take and give a
+`SplitRuleSet` keyed by rule id, and not an ordered array of rules. To migrate a
+call:
+
+1. Make each rule of the array an entry of an object, with its `id` as the key.
+2. Give each entry a `priority`. The earlier position in the array becomes the
+   priority: the first rule gets the lowest number.
+3. Merge your rules over `compiledDisplaySetRules` by key, and not with
+   `concat`. See [Where your rule runs among the defaults](#where-your-rule-runs-among-the-defaults).
+
+### Viewport types are hints
+
+`viewportTypes` names the kind of view a display set supports, not a viewport
+class. `stack` means the images are shown one at a time and are not
+reconstructed into a volume. `volume` and `volume3d` mean the display set can
+be reconstructed for MPR and 3D.
+
+The consumer of the display set maps each hint to a viewport class, and this
+package does not. The mapping in
+[Driving a viewport from a display set](#driving-a-viewport-from-a-display-set)
+is for the legacy viewports, so `stack` becomes `ViewportType.STACK`. A
+consumer of the next-generation viewports maps `stack` to the planar viewport
+(`ViewportType.PLANAR_NEXT`) instead. The rules do not change, so the same rules
+work with both viewport families.
+
+### Rule sets keyed by id
+
+Every function that takes split rules (`groupInstancesBySplitRules`,
+`splitImageIdsBySplitRules`) takes a `SplitRuleSet`: the rules keyed by id, each
+with a `priority`. `createDisplaySetSplitRules` takes the same shape in data form
+and returns one. There is no array form.
+
+```ts
+import type { SplitRuleSet } from '@cornerstonejs/metadata';
+
+const ruleSet: SplitRuleSet = {
+  // The key is the rule id.
+  ctScout: { priority: -1, matches: (i) => i.InstanceNumber === 1 },
+  volume3d: { priority: 1, groupBy: ['SeriesInstanceUID'] },
+  // `null` excludes the rule.
+  unwanted: { priority: null },
+};
+```
+
+A rule set is usually merged from layers — the defaults, then an application's
+overrides. A key cannot occur twice, so a layer replaces a rule, moves it (a new
+`priority`), or excludes it (`priority: null`) by its id, and never adds a
+second copy.
+
+### Priority and order
+
+- Rules run in ascending `priority`. The first rule that matches an instance
+  claims it.
+- A priority is any finite number, fractions included. `null` excludes the rule.
+- Two rules with the same priority run in the order of their ids, compared as
+  strings by UTF-16 code unit (the JavaScript `<` operator, so `'Z'` sorts
+  before `'a'`). It is not the order the keys were added in, and not a locale
+  order, so the result never depends on how the rule set was built.
+- `resolveSplitRuleSet` returns the included rules in this order, each with its
+  key as its `id`.
+
+### Where your rule runs among the defaults
+
+The defaults use the priorities `1` to `8`, and the catch-all `unsupported`
+runs last, at `Number.MAX_SAFE_INTEGER` (see
+[The default rules](#the-default-rules)). To place a rule of your own:
+
+| You want the rule to run…                            | Give it a priority                                                       |
+| ---------------------------------------------------- | ------------------------------------------------------------------------ |
+| before every default rule                            | below `1`, for example `-1` or `0`                                       |
+| between two default rules                            | a number between theirs, for example `7.5` to run after `volume3d`       |
+| as a fallback, on what the other default rules leave | above `DEFAULT_SPLIT_RULE_PRIORITY_LIMIT` (`10000`), for example `20000` |
+
+A fallback rule runs after every other default rule and before `unsupported`,
+so it sees the instances that no other default claims. A later release may add
+default rules with priorities up to `10000`, so do not depend on the gap
+between `8` and `10000` staying empty. To replace the catch-all, exclude it
+with `unsupported: { ...compiledDisplaySetRules.unsupported, priority: null }`.
+
+An entry that states an `id` different from its key, or that has a priority
+that is missing, or neither `null` nor a finite number, is an error.
+`createDisplaySetSplitRules` and `resolveSplitRuleSet` run that check.
 
 A `SplitRule` has up to five parts:
 
-| Field              | Purpose                                                                                                                       |
-| ------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
-| `matches`          | Returns true if an instance belongs to this rule. Omit to match everything.                                                   |
-| `groupBy`          | Keys (tag names or functions) that partition matched instances into separate display sets.                                    |
-| `series`           | Optional. Runs once per rule per split and **returns** that rule's derived facts; `matches`/`groupBy` read them via `series`. |
-| `viewportTypes`    | Allowed viewport types for the produced display sets; index `0` is preferred.                                                 |
-| `customAttributes` | Returns extra attributes spread flat onto the display set (e.g. `isClip`, `numImageFrames`).                                  |
+| Field              | Purpose                                                                                                                                                                                                                                                                                                                               |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `matches`          | Returns true if an instance belongs to this rule. Omit to match everything.                                                                                                                                                                                                                                                           |
+| `groupBy`          | Keys (tag names or functions) that partition matched instances into separate display sets.                                                                                                                                                                                                                                            |
+| `series`           | Optional, code form only. Runs once per split and **returns** facts that extend the series context every code rule reads as `context.series`. The first rule that computes a name wins. A rule in data form does not use this hook: it reads the [display set context](#the-display-set-context), where each name has one definition. |
+| `viewportTypes`    | Allowed viewport types for the produced display sets; index `0` is preferred.                                                                                                                                                                                                                                                         |
+| `customAttributes` | Returns extra attributes spread flat onto the display set (e.g. `isClip`, `numImageFrames`).                                                                                                                                                                                                                                          |
 
-Most rules only need `matches` and `groupBy`:
+A rule's `id` is its key in the rule set, so an entry does not repeat it. Most
+rules only need `matches` and `groupBy`, plus the entry's `priority`:
 
 ```ts
 {
-  matches: (instance) => isVideoInstance(instance),
-  groupBy: ['SOPInstanceUID'],
+  video: {
+    priority: 1,
+    matches: (instance) => isVideoInstance(instance),
+    groupBy: ['SOPInstanceUID'],
+  },
 }
 ```
 
-Reach for `series` only when a rule needs a value computed from the **whole
-series** and reused by `matches` or `groupBy`. It is optional, runs **once per
-rule per split operation**, and returns derived facts for that rule — it should
-**not** mutate shared state. The DWI fix is the worked example: `series` decides
+In code, use `series` only when a rule needs a value computed from the
+**whole series** and reused by `matches`, `groupBy` or `compareInstances`. A
+rule in data form reads such a value as a series entry of the
+[display set context](#the-display-set-context). It is
+optional, runs **once per split operation**, and returns facts — it should
+**not** mutate `context.series`. A fact can be any value: a boolean, a number,
+or a summary such as a map from `SOPInstanceUID` to a slice index.
+
+The facts of all rules form one **series context**. The engine runs the hooks
+in priority order; each hook gets the facts so far as `context.series`, and a
+name that an earlier rule already computed keeps the earlier value. So two
+rules that both need the slice geometry can each declare it, and it is computed
+once. The DWI fix is the worked example: `series` decides
 whether the series mixes b-value and non-b-value frames, and `groupBy` then
 separates them into two display sets:
 
 ```ts
-import type { SplitRule } from '@cornerstonejs/metadata';
+import type { SplitRuleSetEntry } from '@cornerstonejs/metadata';
 
-const mixedDimensionalityBValue: SplitRule = {
-  id: 'mixedDimensionalityBValue',
+// Keyed as `mixedDimensionalityBValue` in the rule set.
+const mixedDimensionalityBValue: SplitRuleSetEntry = {
+  priority: 6,
   viewportTypes: ['volume', 'volume3d', 'stack'],
   // Computed once over the whole series; returned, not mutated onto shared state.
   series: ({ instances }) => ({
@@ -198,7 +333,7 @@ const mixedDimensionalityBValue: SplitRule = {
       instances.some((i) => i.DiffusionBValue !== undefined) &&
       instances.some((i) => i.DiffusionBValue === undefined),
   }),
-  // Reads this rule's own derived facts.
+  // Reads the series context.
   matches: (_instance, { series }) => series.mixedBValue,
   // Two display sets: undefined-b-value frames split off from the rest.
   groupBy: [
@@ -208,44 +343,761 @@ const mixedDimensionalityBValue: SplitRule = {
 };
 ```
 
-To customize splitting, prepend your own rules to (or replace) the defaults and
-pass the result as `splitRules`. `customAttributes` may set any attribute, but
+To customize splitting, merge your own rules over the defaults by key — a new id
+adds a rule, an existing id replaces one — and pass the result as `splitRules`:
+
+```ts
+const splitRules: SplitRuleSet = {
+  ...compiledDisplaySetRules,
+  // Runs before every default rule.
+  ctScout: {
+    priority: -1,
+    matches: (i) => /localizer|scout/i.test(String(i.SeriesDescription ?? '')),
+  },
+  // Turns a default rule off without removing its key.
+  singleImageModality: {
+    ...compiledDisplaySetRules.singleImageModality,
+    priority: null,
+  },
+};
+```
+
+Prefer authoring them as data — see
+[Sharing rules between applications](#sharing-rules-between-applications-the-display-set-rules)
+— so the same rules can also be used outside the viewer.
+`customAttributes` may set any attribute, but
 the resolved data fields a display set is built from — `imageIds`,
 `underlyingImageIds`, `instances`, and `displaySetId` — are reserved and cannot
 be overwritten, so the underlying-vs-frame image id invariant the viewports rely
-on always holds.
+on always holds. The split identity — `splitKey`, `splitRuleId` and
+`splitGroupId` — is reserved too, so a rule cannot rename the display set.
+
+A `viewportTypes` key in the returned attributes replaces the rule's viewport
+types, and it does so **before** the display set is built:
+`createDisplaySetFromGroup` runs `customAttributes` first, resolves the
+effective viewport types, chooses the display set class from them (an image
+stack, a base display set, or the non-displayable shape with empty `imageIds`),
+and then applies the other attributes. So custom attributes that turn a
+displayable group into `['none']` get the non-displayable shape, and the
+reverse. `isDisplayable` and `preferredViewportType` are always derived from
+the effective viewport types; custom attributes cannot set them to disagree.
 
 A few engine guarantees worth knowing when writing rules:
 
 - **Buckets are namespaced by rule.** Two different rules can never merge into
   one display set even if their `groupBy` values coincide.
-- **Group order is deterministic.** Groups come back sorted by a stable,
-  rule-namespaced key, so a series' display sets — and any id derived from their
-  position — are stable regardless of the order the image ids were passed in.
-- **`series` samples `instances[0]`** for some facts (e.g. multi-frame,
-  volumetric), so those rules assume a homogeneous series. A heterogeneous series
-  needs a dedicated rule (as `mixedDimensionalityBValue` does for DWI) to
-  separate it.
-- **`series` is scoped to its own rule.** A rule only ever sees the facts its own
-  `series` hook returned; it cannot read another rule's facts, and it must not
-  mutate shared state.
-- **Unmatched instances are dropped.** An instance that matches no rule (e.g. a
-  non-image SOP) produces no display set; pass `onUnmatchedInstance` to
-  `splitImageIdsBySplitRules` to observe them.
+- **Keys come from the rule id, not the rule's position.** Moving a rule, or
+  adding one with a lower priority, leaves the other rules' `splitKey`s
+  unchanged.
+- **Keys do not depend on how a host naturalizes a value.** No value (absent,
+  `null`, `''`, `[]`) gives one key part, `5`, `'5'` and `[5]` give one key
+  part, and `'05'` stays text. So a server and a viewer get the same keys.
+- **Group order is deterministic.** Groups come back sorted by rule priority,
+  then by a stable, rule-namespaced split key, so a series' display sets —
+  and any id derived from their position — are stable
+  regardless of the order the image ids were passed in.
+- **A key follows the series values that the rule reads.** For one set of
+  instances, the keys do not depend on the arrival order. When the series
+  grows, the key of a display set stays the same, unless the rule reads a
+  series value in `matches` or `groupBy`, and the new instances change that
+  value. This is the intended behaviour: the display sets describe the series
+  as it is now. Which values a rule reads depends on the rule:
+  - A series value in `matches` decides which rule claims an instance. With one
+    CT instance, `seriesInstanceCount > 1` is false, so `defaultImageRule`
+    claims it; with two, `volume3d` claims both. `mixedDimensionalityBValue`
+    starts to match when the first instance with no b-value arrives.
+  - A series value in `groupBy` is part of the key. `sweepStart` is the start
+    time of a time cluster, so an instance with an earlier time moves the
+    start, and an instance in the gap between two clusters joins them.
+  - A rule that reads only instance values (for example
+    `groupBy: ['SeriesInstanceUID', 'SOPInstanceUID']`) keeps every key.
+
+  A host that keeps the display sets of a growing series splits the series
+  again, and matches the old and the new display sets by `splitKey`. A display
+  set whose key is gone is now part of another display set.
+
+- **Each group carries the series context.** `InstanceGroup.series` holds
+  the facts the `series` hooks computed over _all_ the instances
+  passed to the split, not only the group's. Those can differ: a "mixed b-value"
+  fact is true for the series and false for each half. See
+  [Who decides instance order](#who-decides-instance-order) for why that
+  matters when a group is ordered again later.
+- **The default rules test each instance.** `multiFrame` and `volume3d` read
+  `NumberOfFrames` and `Modality` of each instance, and not of the first
+  instance of the series. A series value, such as `seriesInstanceCount` or the
+  b-value mix of `mixedDimensionalityBValue`, is computed over all the
+  instances of the series.
+- **`series` is shared, and the first name wins.** Every rule reads one series
+  context. The compiled data-form rules keep the values of the display set context
+  there, under the fact `displaySetContext`. A rule in code that adds its own
+  fact must give a name that no other rule gives with a different meaning,
+  because the later rule does not compute it.
+- **Nothing is dropped by the defaults.** The `unsupported` rule, which runs
+  last, claims whatever the other rules did not — see
+  [Objects nothing can render](#objects-nothing-can-render). A _custom_ rule set
+  without a catch-all does drop unmatched instances; pass `onUnmatchedInstance`
+  to `splitImageIdsBySplitRules` to observe them.
 - **`buildSeriesInfo` is safe on an empty instance list** — it returns zeroed
   counts. It aggregates series statistics only and is independent of split rules.
 
+## Objects nothing can render
+
+Every image rule requires a renderable image, so a series can contain objects no
+rule claims: a SEG, RTSTRUCT, RTDOSE, RTPLAN, SR, encapsulated PDF, presentation
+state — or an image whose `Rows` have not loaded yet.
+
+Dropping those is the wrong answer. A dropped instance produces no display set,
+which leaves **no trace that the object was in the study at all** — the
+application cannot list it, cannot explain it, and cannot tell "we don't support
+this" apart from "this isn't here".
+
+So the `unsupported` rule of the default rules, which runs last at
+`Number.MAX_SAFE_INTEGER`, is a catch-all that claims everything left and marks
+the result **not displayable**:
+
+```ts
+const displaySet = createDisplaySetFromGroup(group);
+
+displaySet.isDisplayable; // false
+displaySet.viewportTypes; // ['none']  — the "no viewport" value
+displaySet.preferredViewportType; // 'none', not a misleading 'stack'
+displaySet.imageIds; // [] — there is nothing to render
+displaySet.underlyingImageIds; // ['wadors:/…'] — still resolvable by imageId
+displaySet.sopClassUids; // ['1.2.840.10008.5.1.4.1.1.66.4'] — *what* it is
+displaySet.instances; // the full instances, e.g. for Modality / description
+```
+
+Points worth knowing:
+
+- **`isDisplayable` is required and derived**, not optional. It is computed from
+  `viewportTypes` (false exactly when they contain `'none'`) and stored
+  as a plain field, so it spreads and serializes like every other attribute and
+  can never disagree with the viewport types. Check it before mounting a display
+  set:
+
+  ```ts
+  if (!displaySet.isDisplayable) {
+    // list it in the study browser, don't hand it to a viewport
+    return;
+  }
+  await viewport.setDisplaySets({ displaySetId: displaySet.displaySetId });
+  ```
+
+- **`'none'` is a sentinel, not an empty list.** An absent or empty
+  `viewportTypes` falls back to `['stack']`, so "empty" cannot mean "not
+  renderable" — that fallback would quietly turn a structured report into a stack.
+- **One display set per series**, not per object. A series of 300 presentation
+  states is one entry, and `sopClassUids` lists the distinct SOP classes in it.
+  An application that supports a format adds its own rule (see below), and can
+  group by `SOPInstanceUID` there.
+- **`imageIds` is empty** for these. Code that ignores `isDisplayable` renders
+  nothing rather than treating a document as a one-frame image stack.
+
+### Supporting one of these formats
+
+Add your own rule with a priority _below_ the catch-all's, with real viewport
+types. This is the other half of the user's choice: either take the
+non-displayable display set and present it, or teach the rules how to render
+the format.
+
+```ts
+const splitRules = createDisplaySetSplitRules({
+  ...displaySetRules,
+  seg: {
+    // Below 0: runs before every default rule.
+    priority: -1,
+    viewportTypes: ['stack', 'volume'],
+    matches: { Modality: 'SEG' },
+    groupBy: ['SeriesInstanceUID', 'SOPInstanceUID'],
+  },
+});
+```
+
+Priority matters: the catch-all has no `matches`, so it claims everything that
+reaches it. It runs at `Number.MAX_SAFE_INTEGER`, so every other rule runs
+before it. A rule meant only for what the other default rules leave takes a
+priority above `DEFAULT_SPLIT_RULE_PRIORITY_LIMIT`, for example `20000`. To
+replace the catch-all instead, exclude it with
+`unsupported: { ...displaySetRules.unsupported, priority: null }`.
+
+## Sharing rules between applications (the display set rules)
+
+A display set is not only a client-side idea. A server that indexes a study —
+static-dicomweb building its metadata tree, say — wants to know what display sets
+that study contains, and it has to agree with the viewer that later loads it. If
+each side implements the rules itself, they drift, and the display sets the server
+advertises stop being the ones the client builds.
+
+So the rules are data, and one shared compiler turns them into functions:
+
+- `displaySetRules` — the default rules as pure JSON, keyed by rule id:
+  `video` (priority `1`), `ecg` (`2`), `wholeslide` (`3`),
+  `singleImageModality` (`4`), `multiFrame` (`5`), `mixedDimensionalityBValue`
+  (`6`), `volume3d` (`7`), `defaultImageRule` (`8`) and `unsupported`
+  (`Number.MAX_SAFE_INTEGER`). No
+  functions, no imports of application state.
+- `createDisplaySetSplitRules(rules, options)` — turns that JSON, and the
+  display set context of `options.displaySetContext`, into the `SplitRuleSet`
+  the split engine executes, with the same keys and priorities.
+  An excluded entry (`priority: null`) is compiled and kept, so a later layer
+  can include it again by giving it a priority.
+
+`compiledDisplaySetRules` is literally `createDisplaySetSplitRules(displaySetRules)`,
+so the data form is never a second-class path: if it could not express a default
+rule, the package would not build.
+
+```js
+import {
+  createDisplaySetSplitRules,
+  displaySetRules,
+  splitImageIdsBySplitRules,
+} from '@cornerstonejs/metadata';
+
+// A server can ship its rules to the client verbatim...
+const rulesJson = JSON.stringify(displaySetRules);
+
+// ...and the client compiles the identical rules from it.
+const splitRules = createDisplaySetSplitRules(JSON.parse(rulesJson));
+const groups = splitImageIdsBySplitRules(imageIds, {
+  getNaturalizedInstance,
+  splitRules,
+});
+```
+
+### What a rule is built from
+
+Each name in a rule is one of two kinds:
+
+- A **tag keyword** is a keyword of the DICOM dictionary of dcmjs, for example
+  `Modality`. The value comes from the instance.
+- A **context name** starts with a lowercase letter, and an entry of the
+  [display set context](#the-display-set-context) defines it, for example
+  `isImage` or `seriesInstanceCount`.
+
+The compile checks each name: the keys of `matches`, the entries of `groupBy`
+and `sortBy`, the strings of `attributes`, the placeholders of a template, and
+each name in an expression. A name must match a keyword or a declared context
+name with the same case. An unknown name is a compile error that gives the
+rule, the place and the name. So `BodyPartExamind` and `sweepStrat` fail when
+the rules load. When a known name differs only in case, the error names it:
+`unknown name 'modality'; did you mean 'Modality'?`. Operators are also case
+sensitive.
+
+The tests and the values inside a rule are the general
+[safe function](../safe-functions.md) vocabulary. **See
+[Safe Functions](../safe-functions.md) for the full reference of the tests,
+the operators and the expression language**, and for the DICOM meaning of an
+absent value and an empty value.
+
+| Rule field   | Holds                                                                                      | Compiled to                                        |
+| ------------ | ------------------------------------------------------------------------------------------ | -------------------------------------------------- |
+| `context`    | context entries for this rule only (see [The `context` of a rule](#the-context-of-a-rule)) | (compile only)                                     |
+| `matches`    | a map of name to test; every entry must hold                                               | `(instance, context) => boolean`                   |
+| `groupBy`    | names; instances whose values are all equal form one group                                 | each entry: `(instance, context) => value`         |
+| `sortBy`     | names (ascending), and `{ "sortFunction": "name" }`                                        | `compareInstances: (a, b, context) => number`      |
+| `attributes` | the attributes of the display set, keyed by attribute name                                 | `customAttributes: (attributes, options) => {...}` |
+
+The other fields are data: `id` (optional, must equal the key), `groupId`,
+`priority`, `description` and `viewportTypes`.
+
+```jsonc
+"dwiByBValue": {
+  "priority": -1,
+  "viewportTypes": ["stack"],
+  "context": {
+    "bValue": "Number(DiffusionBValue)",
+    "isDiffusion": "series.instances.max(bValue) > 0"
+  },
+  "matches": {
+    "Modality": "MR",
+    "isDiffusion": true,
+    "isImage": true,
+    "DiffusionBValue": { "notNull": true }
+  },
+  "groupBy": ["SeriesInstanceUID", "bValue"],
+  "sortBy": ["SliceLocation"],
+  "attributes": {
+    "SeriesDescription": { "template": "{SeriesDescription} b={DiffusionBValue}" }
+  }
+}
+```
+
+`isDiffusion` needs a b-value above 0 in the series. Some scanners write
+`DiffusionBValue` = 0 into every MR series, also into T2 and STIR series. With
+`series.instances.count(DiffusionBValue) > 0`, the rule would claim those
+series too, because `count(x)` counts a value of `0`. `max` skips an instance
+with no b-value, so a series with no b-value gives no value, and the test is
+`false`.
+
+#### `matches`
+
+`matches` is one map. Every entry must hold. The map has no `all`, `any` or
+`not`:
+
+- `false` on a named boolean gives "not": `"isMultiFrame": false` holds when
+  `NumberOfFrames` is absent, because `NumberOfFrames > 1` gives `false`.
+- An "or" goes in a context entry, and the rule reads the name of the entry.
+
+```jsonc
+"displaySetContext": {
+  "isBreastImage": "Modality == 'MG' || (Modality == 'CT' && lower(BodyPartExamined) == 'breast')",
+  "pixelCount": "Rows * Columns"
+},
+"matches": {
+  "isStackImage": true,
+  "isBreastImage": true,
+  "isMultiFrame": false,
+  "pixelCount": { "greaterThan": 4000000 }
+}
+```
+
+A site changes one entry of a shared rule by its name, and does not copy
+expression text into a `$merge`: `"isBreastImage": { "$set": "..." }` replaces
+the breast test, and `"pixelCount": { "greaterThan": { "$set": 2000000 } }`
+changes the threshold.
+
+#### `sortBy`
+
+- A string is a tag keyword or a context name. The order is ascending: numeric
+  when both values are finite numbers, else by text. An instance with no value
+  goes after the instances with a value.
+- `{ "sortFunction": "name" }` is a named comparator of
+  `options.sortFunctions`. An unknown name is a compile error.
+- A function passes through as is.
+
+#### `attributes`
+
+| Value                             | Gives                                                                                              |
+| --------------------------------- | -------------------------------------------------------------------------------------------------- |
+| a name                            | a tag keyword reads the first instance of the sorted display set                                   |
+| `"splitNumber"`, `"sopClassUids"` | the values of the display set; only `attributes` can read them                                     |
+| a number, a boolean, `null`       | the fixed value                                                                                    |
+| `{ "template": "..." }`           | text; `{ "template": "SCOUT" }` is fixed text                                                      |
+| `{ "expression": "..." }`         | `displaySet.instances.max(x)` runs over the display set; `series.instances.max(x)` over the series |
+| a function `(instances, values)`  | in code only                                                                                       |
+
+`"label": "SCOUT"` is a compile error, because `SCOUT` is not a name. The
+message names the template form.
+
+**A rule tests the full series, and describes each display set.** In
+`context`, `matches` and `groupBy`, every series function runs over all the
+instances of the series. In `sortBy` and `attributes`, a series function that
+measures the display set runs over the instances of the display set:
+
+| Series function | In `sortBy` and `attributes`           | So                                                          |
+| --------------- | -------------------------------------- | ----------------------------------------------------------- |
+| `planeGeometry` | the display set (`over: 'displaySet'`) | `sliceSpacing` and `sliceDistance` describe the display set |
+| `timeClusters`  | the series (`over: 'series'`)          | `sweepOffset` stays the offset from the start of the series |
+
+A group entry can choose with `over`. To test the series lattice and also
+measure the display set, read two groups:
+
+```jsonc
+"context": {
+  "seriesGeometry": { "function": "planeGeometry", "over": "series" }
+},
+"attributes": {
+  "spacing": "sliceSpacing",                                  // the display set
+  "seriesSpacing": { "expression": "seriesGeometry.spacing" } // the series
+}
+```
+
+`series.instances.*(...)` runs over the series in every place, so
+`seriesInstanceCount` is the count of the series also in `attributes`. A
+function of `options.seriesFunctions` sets the default with `over` in its
+definition `{ compute, fields, over }`; with no setting it runs over the
+series.
+
+```jsonc
+"attributes": {
+  "isClip": true,
+  "numImageFrames": { "expression": "Number(NumberOfFrames)" },
+  "maxFrames": { "expression": "displaySet.instances.max(NumberOfFrames)" },
+  "label": { "template": "{SeriesDescription} #{splitNumber}" }
+}
+```
+
+`groupId` names a group of rules that describe one kind of display set, and it
+defaults to the rule id. A study can hold breast tomosynthesis, legacy
+mammography that mixes views in one series, and mammography that the modality
+already split. Three rules split those three forms, and all three can use
+`groupId: 'mammo'`. A reader such as a hanging protocol then finds every
+mammography display set by the group id, whichever rule made it. The group id
+does not change the split: groups and split keys stay per rule id.
+
+### The display set context
+
+`createDisplaySetSplitRules(rules, { displaySetContext })` takes one map of
+named entries, over the entries of `defaultDisplaySetContext`. OHIF reads the
+map from the `displaySetContext` customization of `useMetadataDisplaySet`, next
+to `splitRules`. Each entry has one of five forms:
+
+| Form                                                     | Meaning                                                                                               |
+| -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| a number, a boolean, `null` or an array                  | a fixed value; a site changes it with `$set`                                                          |
+| a string                                                 | an expression; a name or a path (`"timeClusters.start"`) is the simplest expression                   |
+| `{ "attribute": "00191010", "vr"?, "vm"? }`              | a declaration: reads one attribute of the instance that the dictionary does not hold                  |
+| `{ "template": "{SeriesDescription} +{sweepOffset} s" }` | text; each `{name}` gives the value of a name or a path                                               |
+| `{ "function": "timeClusters", "args": {...}, "over"? }` | a group: one call of a series function; each argument is a fixed value or an expression of the series |
+
+The rules:
+
+- A context name starts with a lowercase letter. A context name cannot be a
+  tag keyword, so a context never hides a value of the instance.
+- An attribute that the dictionary does not hold is available only through a
+  declaration: a private tag (8-digit hex, for now), a vendor attribute, or a
+  synthetic attribute such as `imageId`. A rule cannot read a hex tag directly.
+  `vr` and `vm` are recorded for a later JSON Schema.
+- A rule reads a field of a group by path. Each series function declares its
+  result fields, so `timeClusters.cluster` is a compile error. An alias makes a
+  field into a top-level name: `"sweepStart": "timeClusters.start"`.
+- Entries can read other entries in any order. A loop of entries is a compile
+  error.
+- The compile infers the scope of each entry. A declaration, a code entry, and
+  an entry that reads an instance value outside of a `series.instances.*(...)`
+  aggregate have the instance scope. Every other entry has the series scope.
+- An aggregate names its receiver. `series.instances.max(NumberOfFrames)` is
+  the maximum over the instances of the series, and `series.instances.count()`
+  is the number of instances. `displaySet.instances.max(x)` runs over the
+  instances of one display set, and only the `{ "expression" }` form of
+  `attributes` can use it. A bare `max(x)` is a compile error. `displaySets`
+  is reserved for a later change
+  ([issue 3000](https://github.com/cornerstonejs/cornerstone3D/issues/3000)).
+- The engine computes an entry at the first read, one time for each series, and
+  keeps the value in a cache. When the series gets new instances, the next
+  split computes the value again.
+
+#### The default context
+
+```jsonc
+{
+  "timeClustersMaxGap": 30,
+  "timeClusters": {
+    "function": "timeClusters",
+    "args": { "maxGap": "timeClustersMaxGap" },
+  },
+  "longTimeClusters": { "function": "timeClusters", "args": { "maxGap": 60 } },
+  "sweepCount": "timeClusters.clusters",
+  "sweepStart": "timeClusters.start",
+  "acquisitionSeconds": "timeClusters.time",
+  "sweepOffset": "round(sweepStart - timeClusters.first)",
+
+  "planeGeometryTolerance": 0.1,
+  "planeGeometry": {
+    "function": "planeGeometry",
+    "args": { "tolerance": "planeGeometryTolerance" },
+  },
+  "sliceSpacing": "planeGeometry.spacing",
+  "sliceIndex": "planeGeometry.index",
+  "sliceDistance": "planeGeometry.distance",
+
+  "seriesInstanceCount": "series.instances.count()",
+  "isMultiFrame": "NumberOfFrames > 1",
+
+  "imageId": { "attribute": "imageId" },
+}
+```
+
+The default context also holds the code entries `isImage`, `isVideo`, `isEcg`,
+`isWsi` and `isStackImage` (an image that is not a video, a waveform or a whole
+slide). See [Instance classifiers](#instance-classifiers).
+
+The series functions:
+
+- `planeGeometry` gives the dominant image plane, the slice spacing, and the
+  instances on a regular slice lattice. Series fields: `normal`, `origin`,
+  `spacing`, `regularCount`, `irregularCount`, `positions`, `complete`,
+  `duplicates`. Instance fields: `distance` (in mm along the normal, from one
+  origin for the full series) and `index` (the lattice index of a regular
+  instance). `args.tolerance` (default `0.1`) is the fraction of the spacing
+  that a slice can be off the lattice.
+- `timeClusters` gives clusters of contiguous acquisition time. Series fields:
+  `first`, `clusters`, `untimedCount`. Instance fields: `time` and `start`. A
+  gap of more than `args.maxGap` seconds (default `30`) starts a new cluster.
+
+An instance field is a map keyed by the `SOPInstanceUID` (else the `imageId`),
+and a read of the path gives the value of the instance at hand.
+`options.seriesFunctions` adds or replaces a series function: a definition
+`{ compute, fields }` declares the result fields, and a bare function has fields
+that the compile does not check.
+
+#### The `context` of a rule
+
+- A rule `context` has the same forms as `displaySetContext`.
+- An entry in the rule `context` replaces the global entry with the same name,
+  for this rule only. A rule `context` can also define a new name, and only
+  that rule can read it.
+- The replacement also applies inside the global entries that the rule reads.
+  So the rule can change one argument, or select a different group, and every
+  alias follows the change.
+- An entry that reads its own name gets the global value:
+  `"timeClustersMaxGap": "timeClustersMaxGap * 2"`.
+- A group is a value. `"timeClusters": "longTimeClusters"` gives the result of
+  `longTimeClusters` to every entry that reads `timeClusters`.
+  `"timeClusters": 5` is a compile error, because the aliases read
+  `timeClusters.start`.
+- The cache key of an entry holds only the replaced names that the entry reads.
+  Rules that replace nothing share one computation.
+- The logger `cs3d.metadata.displayset.displaySetContext` records each
+  replacement at the debug level.
+
+```jsonc
+"usTimeClusters": {
+  "priority": -1,
+  "viewportTypes": ["stack"],
+  "context": { "timeClustersMaxGap": 20 },
+  "matches": {
+    "isStackImage": true,
+    "Modality": "US",
+    "isMultiFrame": false,
+    "sweepCount": { "greaterThan": 1 },
+    "sweepStart": { "notNull": true }
+  },
+  "groupBy": ["SeriesInstanceUID", "sweepStart"],
+  "sortBy": ["acquisitionSeconds"],
+  "attributes": { "SeriesDescription": { "template": "{SeriesDescription} +{sweepOffset} s" } }
+}
+```
+
+The gap of 20 seconds applies to this rule only. Other rules keep the default
+gap of 30 seconds. `{ "greaterThan": 1 }` is a strict `>`, so a series with one
+sweep does not match.
+
+#### Code entries
+
+A split that needs complex logic is best written as a new series function in
+code. The context then gives a name to each field of its result, and the rules
+stay data.
+
+In code, an entry can be a function `(instance, values) => value`, with the
+instance scope. `values` reads every name; each call gets a new `values`. A
+series entry in code is a group `{ "function": fn }`: the runtime calls
+`fn(instances, { args })` with the instances of the series and the evaluated
+arguments, and nothing else. A series code entry reads another context value
+only through an argument expression. The `function` of a group can also be a
+definition `{ compute, fields }`.
+
+The compile cannot see the names that a code entry reads. So a loop through a
+code entry (`first` reads `second`, which reads `first`) gives a
+`RuleCompileError` at the first read, and the error names each entry of the
+loop. A rule entry in code that reads its own name gets the global entry, as a
+data entry does.
+
+`deniedNames` is the deny list of the host, for example
+`['PatientName', 'PatientID', 'OtherPatientIDsSequence']`. A rule or a context
+entry that names a denied name is a compile error, and the `values` of a code
+entry give `undefined` for it. A rule can read a whole sequence as a value, so
+deny each sequence that holds a denied attribute too: `OtherPatientIDsSequence`
+holds `PatientID`. A code entry also gets the instance itself, so do not register a code
+entry that reads a denied attribute from the instance. A split that needs complex logic is a new series
+function in code, and the context then gives names to its result fields. A
+rule set that reads a code entry is still JSON, but the host that compiles it
+must register the same entry.
+
+```js
+const splitRules = createDisplaySetSplitRules(myRules, {
+  displaySetContext: {
+    // Read from data as "isSiteProtocol": true
+    isSiteProtocol: (instance) => instance.ProtocolName?.startsWith('SITE-'),
+  },
+  sortFunctions: {
+    // Read from data as { "sortFunction": "byInstanceNumberDescending" }
+    byInstanceNumberDescending: (a, b) => b.InstanceNumber - a.InstanceNumber,
+  },
+});
+```
+
+### The schema of a rule
+
+Every place in a rule, and the forms each place accepts, are one internal
+table. `createDisplaySetSplitRules` reads it to check the keys, to select the
+form of each fragment, and to build its error messages. The table is not
+exported; the field table above and the errors below describe it.
+
+The compiler is **strict**. A wrong rule fails at compile time, and the
+compiler never ignores it:
+
+```text
+Invalid display set rules: rule 'r': unknown field 'matchs'; allowed: id, groupId, priority, description, viewportTypes, context, matches, groupBy, sortBy, attributes
+Invalid display set rules: rule 'r'.matches.BodyPartExamind: unknown name 'BodyPartExamind': it is not a keyword of the DICOM dictionary; a private, vendor or synthetic attribute needs a declaration, e.g. "myValue": { "attribute": "BodyPartExamind" }
+Invalid display set rules: rule 'r'.attributes.label: unknown name 'SCOUT': ...; fixed text is { "template": "SCOUT" }
+Invalid display set rules: displaySetContext.first: the context entries form a loop: first -> second -> first
+```
+
+An actual function passes through as is at every function place: a whole
+`matches`, the test of one entry of `matches`, a `groupBy` entry, a
+`sortBy` entry, a whole `attributes` (the `customAttributes` hook), and one
+attribute value. The strictness applies to data only. A rule set with a
+function in it is no longer JSON, so it cannot be shared with a server.
+
+### Who decides instance order
+
+Instance order has layers, and each layer defers to the layer below:
+
+1. **Acquisition order** (`InstanceNumber`, then `SOPInstanceUID`) always
+   applies first. It is never the order in which the image ids arrived, so the
+   result does not depend on that order.
+2. **The base sort of the host**, `GroupInstancesOptions.sortInstances`, given
+   to `groupInstancesBySplitRules` / `splitImageIdsBySplitRules`. It is a sort
+   of the **whole list**, and not a comparator, because a real base order is
+   not always pairwise: an order of slices along the scan axis selects a
+   reference instance and projects the other instances onto its normal.
+3. **Comparators**: the `sortBy` of the rule first, then the
+   `GroupInstancesOptions.compareInstances` of the host.
+
+A comparator that **gives 0 has no opinion**. It does not say that the two
+instances are interchangeable: the next comparator decides, and if no
+comparator has an opinion, the base order applies. A `NaN` is also "no
+opinion".
+
+The host gives the base sort, so that the _default_ order is the same for each
+system that splits the series. `orderInstancesForRule` gives the whole
+composition, so that a host that orders a display set again (after new
+instances arrive) gets the same order. Give the series facts of the group when
+you do this. A `sortBy` name such as `sliceDistance` reads a value of the whole
+split, and a value computed from the group alone can be different. When the
+list holds new instances, `orderInstancesForRule` computes the context values
+again over the instances of the split and the new instances, so the new
+instances take their correct places:
+
+```ts
+const [group] = groupInstancesBySplitRules(instances, splitRules);
+
+const reordered = orderInstancesForRule(
+  [...group.instances, ...newInstances],
+  group.matchedRule,
+  { series: group.series, sortInstances }
+);
+```
+
+A rule also has a `description`. The explanation is in the rule data, and not
+in a code comment, so a UI that lets a user inspect or toggle rules reads it
+from the rules. The **Display Set Rules** example
+(`packages/core/examples/displaySetRules`) does this. It lists every standard
+rule with a checkbox, its priority and its description, it accepts rules as JSON
+keyed by id, and it splits the loaded series again at once.
+
+Two rules from the defaults, in raw form:
+
+```js
+{
+  // A cine clip: a multi-frame instance with a slice location.
+  multiFrame: {
+    priority: 5,
+    viewportTypes: ['stack'],
+    matches: {
+      isImage: true,
+      Rows: { notNull: true },
+      isMultiFrame: true,
+      SliceLocation: { notNull: true },
+    },
+    groupBy: ['SeriesInstanceUID', 'InstanceNumber'],
+    attributes: {
+      isClip: true,
+      numImageFrames: { expression: 'Number(NumberOfFrames)' },
+      splitNumber: 'splitNumber',
+      isMultiFrame: 'isMultiFrame',
+    },
+  },
+
+  // The DWI fix: split the undefined-b-value frames off the 4D set.
+  mixedDimensionalityBValue: {
+    priority: 6,
+    viewportTypes: ['volume', 'volume3d', 'stack'],
+    context: {
+      isMixedBValue:
+        'series.instances.count(DiffusionBValue) > 0 && ' +
+        'series.instances.count(DiffusionBValue) < series.instances.count()',
+      hasNoBValue: 'DiffusionBValue == null',
+    },
+    matches: { Modality: 'MR', isMixedBValue: true, isImage: true, Rows: { notNull: true } },
+    groupBy: ['SeriesInstanceUID', 'hasNoBValue'],
+  },
+}
+```
+
+### Extending the display set rules
+
+Derive from the defaults and compile the result. Rules run in ascending
+priority, so give a rule a priority below `0` to claim instances before any
+default rule sees them:
+
+```js
+const splitRules = createDisplaySetSplitRules(
+  {
+    ...displaySetRules,
+    dxCrSingleImages: {
+      priority: -1,
+      viewportTypes: ['stack'],
+      matches: {
+        Modality: ['DX', 'CR'],
+        isStackImage: true,
+        isSmallSeries: true,
+      },
+      groupBy: ['SeriesInstanceUID', 'SOPInstanceUID'],
+    },
+  },
+  {
+    displaySetContext: {
+      dxCrMaxImages: 9,
+      isSmallSeries: 'seriesInstanceCount <= dxCrMaxImages',
+    },
+  }
+);
+```
+
+A site changes the limit for all rules with `"dxCrMaxImages": { "$set": 20 }`.
+One rule changes the limit for itself with `"context": { "dxCrMaxImages": 20 }`.
+
+The key is the id of the rule, so ids are unique by construction. An id
+namespaces the bucket keys that its rule makes. Thus a site can edit a rule set
+(move a rule, or insert a rule), and the display set identities of the other
+rules do not change.
+
+A rule set can only read the attributes that the host puts on the instance. A
+rule that reads an attribute that the host does not supply compiles, and then
+groups every instance together. See
+[the subject is part of the contract](../safe-functions.md#names-belong-to-the-consumer).
+
+### How an application's customization layer fits
+
+Cornerstone knows nothing about OHIF `customizationService`, or about the
+configuration of any other application, and must not. The dependency goes one
+way: the application resolves its own overrides and gives
+`createDisplaySetSplitRules` plain data. OHIF reads the rules from
+`splitRules` of the `useMetadataDisplaySet` customization, and the context
+from `displaySetContext` next to it.
+
+```js
+// In the application, not in cornerstone.
+const { splitRules: customRules, displaySetContext } =
+  customizationService.getCustomization('useMetadataDisplaySet') ?? {};
+
+const splitRules = createDisplaySetSplitRules(
+  { ...displaySetRules, ...customRules },
+  { displaySetContext }
+);
+```
+
+The customization value is JSON. So a back end with no customization service can
+get the same value: it reads the rules and the context from its
+configuration, and compiles them with the same call. Thus the display set rules
+of one deployment are the same on both sides of the wire. The OHIF side is in
+[Customization Service → Display Set Split Rules](https://docs.ohif.org/platform/services/customization-service/displaySetSplitRules).
+
 ### Instance classifiers
 
-The default rules rely on small SOP-class/modality heuristics that are also
-exported for reuse, so you can detect a series' kind without re-hardcoding UID
-lists:
+The default rules use small SOP-class and modality heuristics. The context has
+them as the code entries `isImage`, `isVideo`, `isEcg`, `isWsi` and
+`isStackImage`, and the package also exports them, so you can find the kind of
+a series without a second copy of the UID lists:
 
-- `isImageInstance(instance)` — the SOP class carries renderable pixel data.
-- `isVideoInstance(instance)` — video transfer syntax (reusing the shared
+- `isImageInstance(instance)`: the SOP class carries renderable pixel data.
+- `isVideoInstance(instance)`: a video transfer syntax (from the shared
   `videoUIDs` list), a video SOP class, or a long multi-frame secondary capture.
-- `isEcgInstance(instance)` — an ECG / waveform SOP class.
-- `isWsiInstance(instance)` — VL Whole Slide Microscopy storage, or modality `SM`.
+- `isEcgInstance(instance)`: an ECG or waveform SOP class.
+- `isWsiInstance(instance)`: VL Whole Slide Microscopy storage, or modality
+  `SM`.
 
 ## Display set attributes (`IDisplaySet`)
 
@@ -256,9 +1108,13 @@ like the OHIF display set object:
 ```ts
 const displaySet = createDisplaySetFromGroup(group);
 
-displaySet.displaySetId;
+displaySet.displaySetId; // positional within one split; not a stable identity
+displaySet.splitKey; // the rule id and the groupBy values: the stable identity
+displaySet.splitRuleId; // the rule that made the display set
+displaySet.splitGroupId; // the rule's groupId, else the rule id
 displaySet.viewportTypes; // readonly ViewportTypeHint[]
 displaySet.preferredViewportType; // viewportTypes[0]
+displaySet.isDisplayable; // false for objects nothing can render — check before mounting
 displaySet.instances; // readonly NaturalizedInstance[]
 displaySet.imageIds; // frame-level, renderable image ids
 displaySet.underlyingImageIds; // SOP-level image ids (one per instance)

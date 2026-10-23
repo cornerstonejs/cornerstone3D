@@ -2,10 +2,12 @@ export { version } from './version';
 export * as utilities from './utilities';
 export * as logging from './utilities/logging';
 
-export { asArray } from './utilities/object';
+export { asArray, asArrayFirst } from './utilities/object';
 export {
   toNumber,
   toFiniteNumber,
+  toFiniteFirst,
+  toFiniteVector,
   isEqual,
   isEqualNegative,
   isEqualAbs,
