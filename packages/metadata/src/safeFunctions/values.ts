@@ -54,6 +54,8 @@ export function hasNoValue(value: unknown): boolean {
  *
  * The literal tests `X == null` (no value) and `X == undefined` (absent only)
  * are not this function: the expression compiler gives them their own test.
+ * An array literal next to `==` (`X == ['MR', 'CT']`) is a set of accepted
+ * values: the compiler calls this function for each element.
  */
 export function looseEquals(left: unknown, right: unknown): boolean {
   if (hasNoValue(left) || hasNoValue(right)) {

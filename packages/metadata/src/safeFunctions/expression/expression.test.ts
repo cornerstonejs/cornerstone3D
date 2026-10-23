@@ -137,6 +137,30 @@ describe('compileExpression', () => {
       expect(fn({ Modality: 'MG' })).toBe(true);
       expect(fn({ Modality: 'CT' })).toBe(false);
     });
+
+    it('reads an array literal next to == as the set of accepted values', () => {
+      const tests = [
+        "X == ['MR', 'CT']",
+        "['MR', 'CT'] == X",
+        "X != ['MR', 'CT']",
+        "X in ['MR', 'CT']",
+      ].map((source) => compileExpression(source));
+      const row = (X: unknown) => tests.map((test) => test({ X }));
+      expect(row('MR')).toEqual([true, true, false, true]);
+      expect(row('CT')).toEqual([true, true, false, true]);
+      expect(row('PT')).toEqual([false, false, true, false]);
+      expect(row(undefined)).toEqual([false, false, true, false]);
+      // A multi-valued value compares on its first value.
+      expect(row(['MR', 'PT'])).toEqual([true, true, false, true]);
+      expect(compileExpression("X == ['MR']")({ X: ['CT', 'MR'] })).toBe(false);
+    });
+
+    it('refuses an empty array literal, or array literals on both sides, next to ==', () => {
+      expect(() => compileExpression("['MR'] == ['MR', 'CT']")).toThrow(
+        /'in' or includes/
+      );
+      expect(() => compileExpression('X != []')).toThrow(/accepts no value/);
+    });
   });
 
   describe('scope resolution', () => {
@@ -292,6 +316,16 @@ describe('compileExpression', () => {
       expect(
         compileExpression('series.instances.max(x)', over)([])
       ).toBeUndefined();
+    });
+
+    it('refuses an aggregate inside the argument of an aggregate', () => {
+      const over = { params: ['list'], receivers: { series: 'list' } };
+      expect(() =>
+        compileExpression(
+          'series.instances.max(Rows - series.instances.min(Rows))',
+          over
+        )
+      ).toThrow(/own context entry/);
     });
   });
 

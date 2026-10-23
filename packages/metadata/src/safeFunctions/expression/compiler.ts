@@ -36,6 +36,8 @@ type NodeContext = {
   receivers?: Readonly<Record<string, string>>;
   /** The message of a receiver that the place does not give. */
   unavailable?: Readonly<Record<string, string>>;
+  /** True inside the argument of an aggregate, where an aggregate is refused. */
+  inAggregate?: boolean;
 };
 
 export type CompiledExpression = ((...args: unknown[]) => unknown) & {
@@ -400,7 +402,7 @@ const ARITHMETIC: Record<string, (left: unknown, right: unknown) => unknown> = {
 
 /**
  * The test of `X == <literal>` when the literal names a kind of value:
- * `undefined` tests "absent", `null` (or `''`, `[]`) tests "no value", and
+ * `undefined` tests "absent", `null` (or `''`) tests "no value", and
  * `defined` tests "has a value".
  */
 function missingValueTest(
@@ -417,10 +419,50 @@ function missingValueTest(
       return hasNoValue;
     }
   }
-  if (node.type === 'array' && !node.elements.length) {
-    return hasNoValue;
-  }
   return undefined;
+}
+
+/**
+ * `X == [a, b]` (or `[a, b] == X`): an array literal is the set of accepted
+ * values, so the test holds when `looseEquals(X, element)` holds for one
+ * element, as an array test of a condition map does. `X` compares on its
+ * first value, as everywhere else.
+ */
+function compileOneOf(
+  node: Extract<ExpressionNode, { type: 'binary' }>,
+  context: NodeContext
+): NodeEvaluator | undefined {
+  const leftArray = node.left.type === 'array';
+  const rightArray = node.right.type === 'array';
+  if (!leftArray && !rightArray) {
+    return undefined;
+  }
+  const { expression } = context;
+  if (leftArray && rightArray) {
+    throw new ExpressionSyntaxError(
+      `'${node.operator}' takes one array literal, the accepted values; to test the elements of a list, use 'in' or includes(list, value)`,
+      expression
+    );
+  }
+  const list = (rightArray ? node.right : node.left) as Extract<
+    ExpressionNode,
+    { type: 'array' }
+  >;
+  if (!list.elements.length) {
+    throw new ExpressionSyntaxError(
+      `'${node.operator} []' accepts no value; give one or more values, or use '${node.operator} null' to test for no value`,
+      expression
+    );
+  }
+  const elements = list.elements.map((element) =>
+    compileNode(element, context)
+  );
+  const operand = compileNode(rightArray ? node.left : node.right, context);
+  const oneOf = (scope: EvaluationScope) => {
+    const value = operand(scope);
+    return elements.some((element) => looseEquals(value, element(scope)));
+  };
+  return node.operator === '!=' ? (scope) => !oneOf(scope) : oneOf;
 }
 
 function compileEquality(
@@ -428,6 +470,10 @@ function compileEquality(
   context: NodeContext
 ): NodeEvaluator {
   const negate = node.operator === '!=';
+  const oneOf = compileOneOf(node, context);
+  if (oneOf) {
+    return oneOf;
+  }
   const rightTest = missingValueTest(node.right);
   const leftTest = missingValueTest(node.left);
   if (rightTest || leftTest) {
@@ -450,7 +496,9 @@ function compileAggregate(
 ): NodeEvaluator {
   const { callee } = node;
   const over = context.receivers[node.receiver];
-  const element = node.args[0] ? compileNode(node.args[0], context) : undefined;
+  const element = node.args[0]
+    ? compileNode(node.args[0], { ...context, inAggregate: true })
+    : undefined;
   return (scope) => {
     const list = scope.params[over];
     const items = Array.isArray(list) ? list : [];
@@ -612,6 +660,13 @@ function compileNode(
             expression
           );
         }
+        if (context.inAggregate) {
+          // Each level multiplies the work by the number of instances.
+          throw new ExpressionSyntaxError(
+            `${receiver}.instances.${callee}() is not allowed inside the argument of another aggregate; put the inner aggregate in its own context entry, and read that name`,
+            expression
+          );
+        }
         const arity = node.args.length;
         if (callee === 'count' ? arity > 1 : arity !== 1) {
           throw new ExpressionSyntaxError(
@@ -668,6 +723,10 @@ function compileNode(
  *
  * - `==` is the only equality, and `===` / `!==` are compile errors. `'1' == 1`
  *   is true.
+ * - An array literal next to `==` is the set of accepted values:
+ *   `X == ['MR', 'CT']` (or `['MR', 'CT'] == X`) holds when `X` equals one
+ *   element, and `X` compares on its first value. `!=` is the negation. An
+ *   empty array literal, or an array literal on both sides, is a compile error.
  * - The literal tests: `X == undefined` holds when `X` is absent; `X == null`
  *   holds when `X` has no value (absent, or `null`, `''`, `[]`); `X == defined`
  *   holds when `X` has a value. `!=` is the opposite of each. Two values
@@ -687,7 +746,8 @@ function compileNode(
  *   of the operators of the same names: `includes` tests whole elements.
  * - The number helpers give `undefined` for a value that is not a number.
  * - An aggregate skips an element whose argument has no value (`count(x)` also
- *   skips `false`). `sum` of no element is 0; `min` and `max` of no element
+ *   skips `false`). An aggregate inside the argument of another aggregate is a
+ *   compile error. `sum` of no element is 0; `min` and `max` of no element
  *   are `undefined`; `count()` is the number of elements.
  *
  * Compilation happens once (CSP-safe — no eval / new Function); evaluation is
