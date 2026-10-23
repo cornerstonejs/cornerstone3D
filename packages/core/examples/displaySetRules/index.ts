@@ -320,9 +320,10 @@ const SAMPLE_SNIPPETS: Record<string, string> = {
           'rules and form a display set of their own.',
         viewportTypes: ['stack'],
         context: {
-          // A series value: one instance of the series has a b-value.
-          isDiffusion: 'series.instances.count(DiffusionBValue) > 0',
           bValue: 'Number(DiffusionBValue)',
+          // A series value: one instance has a b-value above 0. Some scanners
+          // write DiffusionBValue = 0 into every MR series.
+          isDiffusion: 'series.instances.max(bValue) > 0',
         },
         matches: {
           Modality: 'MR',
