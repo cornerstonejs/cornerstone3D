@@ -1,6 +1,9 @@
-import { normalizers, derivations } from 'dcmjs';
+import { normalizers, derivations, data as dcmjsData } from 'dcmjs';
 import { Enums } from '@cornerstonejs/core';
-import { fillSegmentation as fillBitmapSegmentation } from '../../Cornerstone/Segmentation_4X';
+import {
+  fillSegmentation as fillBitmapSegmentation,
+  getSegmentIndexForLabel,
+} from '../../Cornerstone/Segmentation_4X';
 import {
   encodeFramesToTransferSyntax,
   EXPLICIT_VR_LITTLE_ENDIAN_TRANSFER_SYNTAX_UID,
@@ -10,9 +13,21 @@ import {
   applyPerFrameFunctionalGroups,
   getReferencedSourceImageSequenceItem,
   normalizeSharedFunctionalGroupsSequence,
+  setPlaneOrientations,
 } from './perFrameFunctionalGroups.js';
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+import { utilities as metadataUtilities } from '@cornerstonejs/metadata';
+import { vec3 } from 'gl-matrix';
+import { toArray } from '../../helpers/toArray';
+import {
+  GEOMETRY_TOLERANCE,
+  getSourceFrame,
+  sliceNormal,
+  toFiniteVector,
+} from './sourceFrame';
+import type { SourceFrame } from './sourceFrame';
 
+const { isEqual } = metadataUtilities;
 const cs3dLogger = cornerstoneUtilities.logger.adaptersLog.getLogger(
   'Cornerstone3D.Segmentation.generateSegmentation'
 );
@@ -22,6 +37,11 @@ const { SEGImageNormalizer } = normalizers;
 const { Segmentation: SegmentationDerivation } = derivations;
 const LABELMAP_SEG_SOP_CLASS_UID = '1.2.840.10008.5.1.4.1.1.66.7';
 const BITMAP_SEG_SOP_CLASS_UID = '1.2.840.10008.5.1.4.1.1.66.4';
+const IMAGE_POSITION_PATIENT_TAG = 0x00200032;
+const PLANE_POSITION_SEQUENCE_TAG = 0x00209113;
+const STACK_ID_TAG = 0x00209056;
+const IN_STACK_POSITION_NUMBER_TAG = 0x00209057;
+const FRAME_CONTENT_SEQUENCE_TAG = 0x00209111;
 
 interface IOptions {
   predecessorImageId?: string;
@@ -137,8 +157,11 @@ function maxSegmentValue(labelmap3DArray, frameIndices: number[]): number {
         return;
       }
       for (let i = 0; i < pixelData.length; i++) {
-        if (pixelData[i] > max) {
-          max = pixelData[i];
+        const segmentIndex = pixelData[i]
+          ? getSegmentIndexForLabel(labelmap3D, pixelData[i])
+          : 0;
+        if (segmentIndex > max) {
+          max = segmentIndex;
         }
       }
     });
@@ -166,75 +189,301 @@ function collectSegmentSequence(labelmap3DArray) {
 }
 
 /**
- * Builds the per-frame PlanePositionSequence / PlaneOrientationSequence for a
- * LABELMAP SEG frame from its source image's imagePlaneModule.
- *
- * dcmjs' derive() resets PerFrameFunctionalGroupsSequence to [], so the seeded
- * plane groups on the input multiframe are gone by the time we fill the output.
- * Without these, exported LABELMAP frames carry no spatial position and are not
- * localizable (Slicer / highdicom / dcmqi reject or misplace them). Rebuild them
- * here from the referenced source image, which is the authoritative geometry.
+ * Index of `orientation` in `orientations`, within GEOMETRY_TOLERANCE. With
+ * `add`, a new orientation is appended; else a new orientation gives -1.
  */
-function getPlaneSequencesForImage(
-  image: { imageId?: string } | undefined,
-  metadata
-): {
-  planePositionSequence?: { ImagePositionPatient: number[] };
-  planeOrientationSequence?: { ImageOrientationPatient: number[] };
-} {
-  const imagePlane = metadata?.get?.(
-    MetadataModules.IMAGE_PLANE,
-    image?.imageId
+function getOrientationIndex(
+  orientations: number[][],
+  orientation: number[],
+  add = true
+): number {
+  const index = orientations.findIndex((other) =>
+    isEqual(other, orientation, GEOMETRY_TOLERANCE)
   );
-
-  if (!imagePlane) {
-    return {};
-  }
-
-  const result: {
-    planePositionSequence?: { ImagePositionPatient: number[] };
-    planeOrientationSequence?: { ImageOrientationPatient: number[] };
-  } = {};
-
-  const {
-    imagePositionPatient,
-    imageOrientationPatient,
-    rowCosines,
-    columnCosines,
-  } = imagePlane;
-
-  if (
-    Array.isArray(imagePositionPatient) &&
-    imagePositionPatient.length === 3
-  ) {
-    result.planePositionSequence = {
-      ImagePositionPatient: [...imagePositionPatient],
-    };
-  }
-
-  let orientation = imageOrientationPatient;
-  if (
-    (!Array.isArray(orientation) || orientation.length !== 6) &&
-    Array.isArray(rowCosines) &&
-    Array.isArray(columnCosines)
-  ) {
-    orientation = [...rowCosines, ...columnCosines];
-  }
-  if (Array.isArray(orientation) && orientation.length === 6) {
-    result.planeOrientationSequence = {
-      ImageOrientationPatient: [...orientation],
-    };
-  }
-
-  return result;
+  return index === -1 && add ? orientations.push(orientation) - 1 : index;
 }
 
+interface FrameContent {
+  DimensionIndexValues: number[];
+  StackID?: string;
+  InStackPositionNumber?: number;
+}
+
+const POSITION_DIMENSION = {
+  DimensionIndexPointer: IMAGE_POSITION_PATIENT_TAG,
+  FunctionalGroupPointer: PLANE_POSITION_SEQUENCE_TAG,
+  DimensionDescriptionLabel: 'ImagePositionPatient',
+};
+const STACK_ID_DIMENSION = {
+  DimensionIndexPointer: STACK_ID_TAG,
+  FunctionalGroupPointer: FRAME_CONTENT_SEQUENCE_TAG,
+  DimensionDescriptionLabel: 'StackID',
+};
+const IN_STACK_POSITION_DIMENSION = {
+  DimensionIndexPointer: IN_STACK_POSITION_NUMBER_TAG,
+  FunctionalGroupPointer: FRAME_CONTENT_SEQUENCE_TAG,
+  DimensionDescriptionLabel: 'InStackPositionNumber',
+};
+
+/**
+ * The dimensions and the per-frame Frame Content of a LABELMAP SEG (PS3.3
+ * C.7.6.16.2.2, C.7.6.17). LABELMAP frames carry many segments, so the
+ * dimensions are spatial only:
+ *
+ * - One orientation and one frame per plane: ImagePositionPatient alone,
+ *   ranked along the slice normal.
+ * - More than one frame on a plane, or several orientations: one stack per
+ *   orientation and per repeat of a plane, indexed by StackID, then
+ *   InStackPositionNumber (the rank along the slice normal in the stack).
+ *
+ * Orientations equal within GEOMETRY_TOLERANCE are the same, as on the import
+ * side. In one orientation, the frames sorted along the unit normal start a
+ * new plane at a distance of more than GEOMETRY_TOLERANCE from the first frame
+ * of the current plane. Frames on one plane can have different in-plane
+ * origins. Throws when a frame has no plane, because the frames then have no
+ * spatial dimension.
+ */
+function getLabelmapDimensions(frames: SourceFrame[]): {
+  dimensions: Array<typeof POSITION_DIMENSION>;
+  frameContents: FrameContent[];
+  orientations: number[][];
+  normals: number[][];
+  frameOrientations: number[];
+} {
+  const missing = frames.findIndex(
+    ({ position, orientation }) => !position || !orientation
+  );
+  if (missing !== -1) {
+    throw new Error(
+      `Cannot write a LABELMAP SEG: the source image of frame ${missing + 1} ` +
+        `has no ImagePositionPatient or ImageOrientationPatient.`
+    );
+  }
+
+  const orientations: number[][] = [];
+  const frameOrientations = frames.map(({ orientation }) =>
+    getOrientationIndex(orientations, orientation)
+  );
+  const normals = orientations.map(sliceNormal);
+  const distances = frames.map(({ position }, index) =>
+    vec3.dot(normals[frameOrientations[index]] as vec3, position as vec3)
+  );
+
+  // Plane numbers increase along the normal in each orientation.
+  const planes: number[] = [];
+  let planeStart = 0;
+  frames
+    .map((_, index) => index)
+    .sort(
+      (a, b) =>
+        frameOrientations[a] - frameOrientations[b] ||
+        distances[a] - distances[b]
+    )
+    .forEach((index, i, sorted) => {
+      const previous = sorted[i - 1];
+      const samePlane =
+        i > 0 &&
+        frameOrientations[index] === frameOrientations[previous] &&
+        distances[index] - planeStart <= GEOMETRY_TOLERANCE;
+      if (!samePlane) {
+        planeStart = distances[index];
+      }
+      planes[index] = samePlane
+        ? planes[previous]
+        : (planes[previous] ?? -1) + 1;
+    });
+
+  // The n-th frame on a plane goes in the n-th stack of its orientation.
+  const planeCounts: number[] = [];
+  const orientationStacks: number[][] = orientations.map(() => []);
+  const stacks: number[][] = [];
+  frames.forEach((_, index) => {
+    const repeat = planeCounts[planes[index]] ?? 0;
+    planeCounts[planes[index]] = repeat + 1;
+    const stackIndexes = orientationStacks[frameOrientations[index]];
+    stackIndexes[repeat] ??= stacks.push([]) - 1;
+    stacks[stackIndexes[repeat]].push(index);
+  });
+
+  const frameContents: FrameContent[] = [];
+  stacks.forEach((stack, stackIndex) => {
+    [...stack]
+      .sort((a, b) => planes[a] - planes[b])
+      .forEach((frameIndex, rank) => {
+        frameContents[frameIndex] =
+          stacks.length === 1
+            ? { DimensionIndexValues: [rank + 1] }
+            : {
+                StackID: String(stackIndex + 1),
+                InStackPositionNumber: rank + 1,
+                DimensionIndexValues: [stackIndex + 1, rank + 1],
+              };
+      });
+  });
+
+  return {
+    dimensions:
+      stacks.length === 1
+        ? [POSITION_DIMENSION]
+        : [STACK_ID_DIMENSION, IN_STACK_POSITION_DIMENSION],
+    frameContents,
+    orientations,
+    normals,
+    frameOrientations,
+  };
+}
+
+/**
+ * The gap between adjacent planes of the source series, for each orientation
+ * and its unit normal: the mean gap when all gaps agree within 1%. The gap is
+ * undefined when the series has fewer than two planes in that orientation, or
+ * when the gaps differ by more than 1%, for example at a missing slice.
+ */
+function getSourceSliceSpacings(
+  sourceImages,
+  metadata,
+  orientations: number[][],
+  normals: number[][]
+): Array<number | undefined> {
+  const distances: number[][] = orientations.map(() => []);
+  sourceImages.forEach((image) => {
+    const { position, orientation } = getSourceFrame(image, metadata);
+    const index =
+      position && orientation
+        ? getOrientationIndex(orientations, orientation, false)
+        : -1;
+    if (index !== -1) {
+      distances[index].push(vec3.dot(normals[index] as vec3, position as vec3));
+    }
+  });
+
+  return distances.map((planes) => {
+    planes.sort((a, b) => a - b);
+    const gaps = planes
+      .slice(1)
+      .map((distance, index) => distance - planes[index])
+      .filter((gap) => gap > GEOMETRY_TOLERANCE);
+    if (!gaps.length) {
+      return undefined;
+    }
+    const mean = gaps.reduce((sum, gap) => sum + gap, 0) / gaps.length;
+    return gaps.every((gap) => Math.abs(gap - mean) <= mean * 0.01)
+      ? mean
+      : undefined;
+  });
+}
+
+const PIXEL_MEASURE_KEYS = [
+  'PixelSpacing',
+  'SliceThickness',
+  'SpacingBetweenSlices',
+];
+
+const isSameMeasure = (a, b) => a === b || isEqual(a, b, GEOMETRY_TOLERANCE);
+
+/**
+ * Sets the Pixel Measures of a LABELMAP SEG from the source images. The
+ * normalizer takes Pixel Spacing from the first source image only, and takes
+ * Slice Thickness and Spacing Between Slices from the gap between the first
+ * two exported frames. That gap is 0 for one frame, and too large when the
+ * segmented slices are not adjacent.
+ *
+ * For each frame:
+ * - Pixel Spacing comes from its source image, else from the normalizer.
+ * - Slice Thickness comes from its source image, else it is the source slice
+ *   spacing of that orientation, else it is absent.
+ * - With `includeSliceSpacing`, Spacing Between Slices (Type 3) is the source
+ *   slice spacing of that orientation (see getSourceSliceSpacings). When that
+ *   spacing is undefined, the export logs a warning and omits the attribute,
+ *   because a wrong spacing misplaces the frames in a reader.
+ *
+ * When all frames have the same Pixel Measures, the shared group holds them.
+ * Otherwise the per-frame groups hold them, because a macro is never in both
+ * groups (PS3.3 C.7.6.16).
+ *
+ * @returns The per-frame Pixel Measures, or undefined when the shared group
+ *   holds them.
+ */
+function applyLabelmapPixelMeasures(
+  dataset,
+  frames: SourceFrame[],
+  frameOrientations: number[],
+  sliceSpacings: Array<number | undefined>,
+  includeSliceSpacing: boolean
+): Array<Record<string, unknown>> | undefined {
+  const shared = dataset.SharedFunctionalGroupsSequence;
+  const {
+    SliceThickness: _thickness,
+    SpacingBetweenSlices: _spacing,
+    ...derived
+  } = toArray(shared.PixelMeasuresSequence)[0] ?? {};
+
+  // The normalizer can hold strings; numbers make the frames comparable.
+  const derivedPixelSpacing = toFiniteVector(derived.PixelSpacing, 2);
+  let spacingMissing = false;
+  const pixelMeasures = frames.map((frame, index) => {
+    const sliceSpacing = sliceSpacings[frameOrientations[index]];
+    const measures: Record<string, unknown> = { ...derived };
+    const pixelSpacing = frame.pixelSpacing ?? derivedPixelSpacing;
+    if (pixelSpacing) {
+      measures.PixelSpacing = pixelSpacing;
+    }
+    const sliceThickness = frame.sliceThickness ?? sliceSpacing;
+    if (sliceThickness !== undefined) {
+      measures.SliceThickness = sliceThickness;
+    }
+    if (includeSliceSpacing) {
+      if (sliceSpacing === undefined) {
+        spacingMissing = true;
+      } else {
+        measures.SpacingBetweenSlices = sliceSpacing;
+      }
+    }
+    return measures;
+  });
+
+  if (spacingMissing) {
+    cs3dLogger.warn(
+      'generateSegmentation: includeSliceSpacing is set, but the source ' +
+        'slices are not evenly spaced, there is only one slice, or not all ' +
+        'source images are loaded; the LABELMAP SEG omits Spacing Between ' +
+        'Slices.'
+    );
+  }
+
+  const [first] = pixelMeasures;
+  const same = pixelMeasures.every((measures) =>
+    PIXEL_MEASURE_KEYS.every((key) => isSameMeasure(measures[key], first[key]))
+  );
+  if (same) {
+    shared.PixelMeasuresSequence = first;
+    return undefined;
+  }
+
+  delete shared.PixelMeasuresSequence;
+  return pixelMeasures;
+}
+
+/**
+ * Fills a derived SEG dataset as a LABELMAP SEG with the non-empty frames of
+ * the labelmaps.
+ *
+ * Every frame must reference a resolvable source SOP Instance UID, and must
+ * have a plane. The function throws otherwise and drops no frame, because a
+ * dropped frame makes the per-frame functional groups disagree with the
+ * encoded PixelData. These checks run before the pixel data is encoded.
+ * Error messages give 1-based frame numbers.
+ *
+ * @param sourceImages - The full source series, for the slice spacing. Empty
+ *   when not all source images are loaded.
+ */
 function fillLabelmapSegmentation(
   segmentation,
   inputLabelmaps3D,
   metadata,
   images,
-  options: Options = {}
+  options: Options = {},
+  sourceImages = images
 ) {
   const labelmap3DArray = toLabelmap3DArray(inputLabelmaps3D);
   const segmentSequence = collectSegmentSequence(labelmap3DArray);
@@ -271,10 +520,10 @@ function fillLabelmapSegmentation(
       }
       const len = Math.min(source.length, frameLength);
       for (let i = 0; i < len; i++) {
-        const value = source[i];
-        if (value === 0) {
+        if (source[i] === 0) {
           continue;
         }
+        const value = getSegmentIndexForLabel(labelmap3D, source[i]);
         if (frame[i] !== 0 && frame[i] !== value && !overlapWarned) {
           cs3dLogger.warn(
             'generateSegmentation: overlapping labelmap segments detected on the ' +
@@ -288,6 +537,36 @@ function fillLabelmapSegmentation(
 
     return frame;
   };
+
+  // Reference and geometry checks run before the encode; see the doc comment.
+  const frames = images.map((image, outputIndex) => {
+    const sourceImageSequenceItem = getReferencedSourceImageSequenceItem(
+      image,
+      metadata
+    );
+
+    if (!sourceImageSequenceItem?.ReferencedSOPInstanceUID) {
+      throw new Error(
+        `Cannot resolve a source ReferencedSOPInstanceUID for labelmap SEG ` +
+          `frame ${outputIndex + 1}. Refusing to write a SEG with unreliable ` +
+          `source image references.`
+      );
+    }
+
+    return {
+      ...getSourceFrame(image, metadata, true),
+      sourceImageSequenceItem,
+    };
+  });
+  // derive() organizes the dimensions for BINARY (Referenced Segment Number,
+  // then position), which does not apply to LABELMAP frames.
+  const {
+    dimensions,
+    frameContents,
+    orientations,
+    normals,
+    frameOrientations,
+  } = getLabelmapDimensions(frames);
 
   const { dataset } = segmentation;
   dataset.NumberOfFrames = numberOfFrames;
@@ -330,65 +609,61 @@ function fillLabelmapSegmentation(
     vr: 'UI',
   };
 
-  const sourceImageSequence = images
-    .map((image) => getReferencedSourceImageSequenceItem(image, metadata))
-    .filter((item) => item.ReferencedSOPInstanceUID);
+  dataset.SourceImageSequence = frames.map(
+    ({ sourceImageSequenceItem }) => sourceImageSequenceItem
+  );
 
-  if (sourceImageSequence.length) {
-    dataset.SourceImageSequence = sourceImageSequence;
-  }
+  const dimensionOrganizationUID =
+    toArray(dataset.DimensionOrganizationSequence)[0]
+      ?.DimensionOrganizationUID ?? dcmjsData.DicomMetaDictionary.uid();
+  dataset.DimensionOrganizationSequence = {
+    DimensionOrganizationUID: dimensionOrganizationUID,
+  };
+  dataset.DimensionIndexSequence = dimensions.map((dimension) => ({
+    DimensionOrganizationUID: dimensionOrganizationUID,
+    ...dimension,
+  }));
 
-  // Every SEG frame must reference a resolvable source SOP Instance UID.
-  // Reject rather than silently dropping frames, otherwise the per-frame
-  // functional groups would disagree with the encoded PixelData and produce a
-  // SEG with unreliable source image references.
-  const perFrameInputs = validFrameIndices.map((_, outputIndex) => {
-    const image = images[outputIndex];
-    const sourceImageSequenceItem = getReferencedSourceImageSequenceItem(
-      image,
-      metadata
-    );
+  normalizeSharedFunctionalGroupsSequence(dataset);
+  delete dataset.SharedFunctionalGroupsSequence.PlanePositionSequence;
+  // Only Spacing Between Slices and a missing Slice Thickness use the spacing.
+  const includeSliceSpacing = Boolean(options.includeSliceSpacing);
+  const sliceSpacings =
+    includeSliceSpacing ||
+    frames.some(({ sliceThickness }) => sliceThickness === undefined)
+      ? getSourceSliceSpacings(sourceImages, metadata, orientations, normals)
+      : [];
+  const perFramePixelMeasures = applyLabelmapPixelMeasures(
+    dataset,
+    frames,
+    frameOrientations,
+    sliceSpacings,
+    includeSliceSpacing
+  );
 
-    if (!sourceImageSequenceItem?.ReferencedSOPInstanceUID) {
-      throw new Error(
-        `Cannot resolve a source ReferencedSOPInstanceUID for labelmap SEG ` +
-          `frame ${outputIndex}. Refusing to write a SEG with unreliable ` +
-          `source image references.`
-      );
-    }
-
-    // The source image's imagePlaneModule is the authoritative geometry. dcmjs
-    // wipes PerFrameFunctionalGroupsSequence in derive(), so the prior group is
-    // normally empty; only fall back to it when the source image lacks a plane.
-    const priorGroup =
-      dataset.PerFrameFunctionalGroupsSequence?.[outputIndex] ?? {};
-    const planeSequences = getPlaneSequencesForImage(image, metadata);
-
-    return {
-      // LABELMAP frames carry multiple segment labels as pixel values, so the
-      // SegmentIdentificationSequence macro must be absent (a fixed
-      // ReferencedSegmentNumber would be wrong for labels >= 2). Omitting
-      // referencedSegmentNumber keeps applyPerFrameFunctionalGroups from emitting it.
+  // derive() leaves the per-frame groups empty; build each one from scratch.
+  // A LABELMAP frame holds many segments, so it has no
+  // SegmentIdentificationSequence (no referencedSegmentNumber).
+  dataset.PerFrameFunctionalGroupsSequence = [];
+  applyPerFrameFunctionalGroups(
+    dataset,
+    frames.map(({ position, sourceImageSequenceItem }, index) => ({
       sourceImageSequenceItem,
-      planeOrientationSequence:
-        planeSequences.planeOrientationSequence ??
-        priorGroup?.PlaneOrientationSequence,
-      planePositionSequence:
-        planeSequences.planePositionSequence ??
-        priorGroup?.PlanePositionSequence,
-    };
-  });
-
-  applyPerFrameFunctionalGroups(dataset, perFrameInputs);
+      planePositionSequence: { ImagePositionPatient: position },
+      pixelMeasuresSequence: perFramePixelMeasures?.[index],
+      frameContent: frameContents[index],
+    }))
+  );
+  setPlaneOrientations(
+    dataset,
+    frames.map(({ orientation }) => orientation)
+  );
 
   const sopInstanceUIDs = new Set(
-    images
-      .map(
-        (image) =>
-          metadata.get(MetadataModules.IMAGE_DATA, image?.imageId)
-            ?.SOPInstanceUID
-      )
-      .filter(Boolean)
+    frames.map(
+      ({ sourceImageSequenceItem }) =>
+        sourceImageSequenceItem.ReferencedSOPInstanceUID
+    )
   );
   const referencedSeriesSequence = dataset.ReferencedSeriesSequence;
   const referencedSeries = Array.isArray(referencedSeriesSequence)
@@ -417,6 +692,9 @@ function fillLabelmapSegmentation(
  *
  * @param images - An array of the cornerstone image objects, which includes imageId and metadata
  * @param labelmaps - An array of the 3D Volumes that contain the segmentation data.
+ *   Each labelmap3D can have `labelToSegmentIndex`, the map from a voxel value
+ *   to the segment index, for a layer that stores a segment under another label
+ *   value. The export applies the map and does not copy the voxels.
  * @param options.sopClassUID - Output SEG SOP Class UID. Defaults to BINARY
  *   Segmentation (`1.2.840.10008.5.1.4.1.1.66.4`) for broad PACS/viewer
  *   compatibility. Pass the Label Map Segmentation UID
@@ -517,7 +795,10 @@ function generateSegmentation(
     labelmaps,
     metadata,
     filteredImages,
-    options
+    options,
+    // An image that is not loaded looks like a gap, so the slice spacing
+    // needs the full source series.
+    images.every((image) => image?.imageId) ? images : []
   );
 
   const predecessorImageId = options?.predecessorImageId;
@@ -563,6 +844,9 @@ function _createMultiframeSegmentationFromReferencedImages(
       ...studyData,
       ...seriesData,
       ...imageData,
+      // Each virtual dataset is a single frame, so declare it as 1 frame even
+      // when the source is a multiframe instance
+      NumberOfFrames: 1,
       PixelData: image.voxelManager.getScalarData(),
       // Declaring it as 16 bits allows the normalizer to work on 8 bit data
       BitsAllocated: 16,
