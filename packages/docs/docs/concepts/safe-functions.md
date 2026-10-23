@@ -101,17 +101,20 @@ A condition is a map of name to test. Every entry must hold, so `{}` is `true`.
 There is no `all`, `any` or `not`. A consumer gives an "or" a name of its own,
 and `false` on a named boolean is its negation.
 
-| Test                    | The entry holds when                           |
-| ----------------------- | ---------------------------------------------- |
-| a scalar                | the value is equal to the scalar, with `==`    |
-| an array of scalars     | the value is equal to one element of the array |
-| `null`                  | the value has no value                         |
-| an object, one operator | the operator holds                             |
-| a function              | `test(value, subject, context)` is true        |
+| Test                    | The entry holds when                        |
+| ----------------------- | ------------------------------------------- |
+| a scalar                | the value is equal to the scalar, with `==` |
+| an array of scalars     | the value is equal to the array, with `==`  |
+| `null`                  | the value has no value                      |
+| an object, one operator | the operator holds                          |
+| a function              | `test(value, subject, context)` is true     |
 
-The equality is the `==` of expressions. A multi-valued attribute against a
-scalar test is "in", so `"ImageType": "LOCALIZER"` holds for
-`['ORIGINAL', 'LOCALIZER']`, and `['MR']` equals `'MR'`.
+The equality is the `==` of expressions. A single value against an array test
+is "in", so `"Modality": ["MR", "CT"]` holds for `'MR'`. A multi-valued
+attribute against a scalar test is also "in", so `"ImageType": "LOCALIZER"`
+holds for `['ORIGINAL', 'LOCALIZER']`. A multi-valued attribute against an
+array test must have the same values in the same order; to test that it has
+one of several values, use `{ "includes": [...] }`.
 
 ### Operators
 

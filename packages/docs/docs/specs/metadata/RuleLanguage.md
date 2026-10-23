@@ -11,7 +11,9 @@ summary: One declarative language for conditions, values and sort orders over DI
 requirements are the recommended approach, and they can change.
 **Source:** the review discussion on
 [cornerstonejs/cornerstone3D#2861](https://github.com/cornerstonejs/cornerstone3D/pull/2861),
-and the revised proposal of 16 October that the reviewer accepted.
+and the revised proposal of 16 October, which follows the shape that the
+reviewer proposed on 14 October. The reviewer agreed to the answers of that
+proposal on 16 October.
 **Affects:** `@cornerstonejs/metadata`. Consumers: the display set split rules
 in `@cornerstonejs/metadata`, and later the hanging protocols of OHIF.
 
@@ -86,6 +88,17 @@ Each change has a reason that the change rule permits:
 
 ### Changes of 23 October
 
+- `RL-VALUE-5` and `RL-READ-2` change their meaning. Before, a multi-valued
+  value compared on its first value, and an array test meant "one of". Now
+  `==`, the scalar test and the array test share one equality: a single value
+  against an array is "in", and two arrays are equal when they have the same
+  elements in the same order. Reason: the intended behaviour changed. A test
+  that read only the first value of `ImageType` missed `LOCALIZER` in a later
+  position, and "one of" between two arrays meant "overlaps", which is the
+  job of `includes`. So `ImageType != 'LOCALIZER'` and
+  `{ "doesNotEqual": "LOCALIZER" }` now hold only when no value is
+  `LOCALIZER`. Open question 5 lists the places that still read the first
+  value.
 - `RL-SCOPE-3` and `RL-SCOPE-4` (values that the host supplies at the start of
   a split) are withdrawn. Reason: the intended behaviour changed. The review of
   6 October found that a value such as `rightOnLeft` is a hanging protocol
@@ -229,7 +242,11 @@ compile.
   names, and sibling keys must all hold. The author does not need `all`,
   `attribute` or `equals` for the common case.
 - **RL-READ-2** The author writes the common tests without an operator: a
-  scalar means "equals", an array means "one of", and `null` means "no value".
+  scalar means "equals", an array means "equals the array", and `null` means
+  "no value". Both use the equality of `RL-VALUE-5`: a single value is one of
+  the elements of an array, and a multi-valued value equals an array when it
+  has the same elements in the same order. To test that a multi-valued value
+  has one of several elements, use `includes`.
 - **RL-READ-3** A string in a context entry is an expression. A name or a path
   is the simplest expression. A key of a condition map is never an expression.
   A string at every other place of a rule is a name.
@@ -237,8 +254,10 @@ compile.
   constraints (`equals`, `includes`, `contains`, `containsI`, `greaterThan`,
   `range`, `notNull`, and the others). These meanings are different from
   `validator.js`:
-  - `equals` is the scalar test. An array operand is a compile error.
-    `validator.js` compares an array operand element by element.
+  - `equals` is the scalar test, so on a multi-valued value it means "in".
+    `validator.js` compares a scalar operand with the first element only. An
+    array operand is a compile error here; `validator.js` compares an array
+    operand element by element.
   - `notNull` is the exact opposite of `null`.
   - `includes` accepts a scalar operand.
   - `greaterThan` and `lessThan` are strict (`>` and `<`), and read a numeric
@@ -411,7 +430,9 @@ compile.
     a field with a computed name.
 
   The deny list lets a host keep a value (for example a patient identifier) out
-  of every rule.
+  of every rule. A rule can read a whole sequence as a value, so a host that
+  denies an attribute also denies each sequence that holds it: to keep
+  `PatientID` out, deny `PatientID` and `OtherPatientIDsSequence`.
 
 - **RL-SCOPE-10** Names and operators are case sensitive, as DICOM keywords
   are. A name is in scope only with the same case. When a name in scope differs
@@ -579,7 +600,7 @@ packages/metadata/src/
   | Test                     | The entry holds when                                     |
   | ------------------------ | -------------------------------------------------------- |
   | scalar                   | the value is equal to the scalar, with `==` (`RL-VAL-3`) |
-  | array of scalars         | the value is equal to one element of the array           |
+  | array of scalars         | the value is equal to the array, with `==` (`RL-VAL-3`)  |
   | `null`                   | the value has no value                                   |
   | object with one operator | the operator holds (`RL-COND-3`)                         |
   | function                 | `test(value, subject, context)` is true                  |
@@ -1139,3 +1160,40 @@ priority, and keeps the function of `groupBy`.
 4. **Multiframe instances.** A per-frame subject (frames of one instance) is
    future work in the split engine. The rule language needs no change for it:
    the consumer gives a different subject.
+5. **Multi-valued values outside of equality.** `==`, the scalar test, the
+   array test, `equals` and `doesNotEqual` read every value (`RL-VALUE-5`).
+   These places still read a multi-valued value in another way. With
+   `EchoNumbers = [1, 2]` and `ImageType = ['ORIGINAL', 'PRIMARY', 'AXIAL']`:
+
+   | Place                                                    | Result today                       | Reads                          |
+   | -------------------------------------------------------- | ---------------------------------- | ------------------------------ |
+   | `<`, `<=`, `>`, `>=`, `greaterThan`, `lessThan`, `range` | `EchoNumbers >= 2` is `false`      | the first value                |
+   | `-`, `*`, `/`, `%`, `+`                                  | `EchoNumbers + 0` is `1`           | the first value                |
+   | `lower()`, `round()` and the other helpers               | `lower(ImageType)` is `'original'` | the first value                |
+   | `sortBy`                                                 | orders by `1`                      | the first value                |
+   | `contains`, `startsWith`, `endsWith`, `includes`, `in`   | `true` for `'AXIAL'`               | any value                      |
+   | a template `{ImageType}`                                 | `'ORIGINAL,PRIMARY,AXIAL'`         | every value, with commas       |
+   | `{ "equals": [...] }`                                    | a compile error                    | (a bare array test is allowed) |
+
+   Suggested fixes, one for each row:
+   - **Comparisons.** No fix is clearly right. "Any value" (`EchoNumbers >= 2`
+     is `true`) matches the "in" of `==`, but then
+     `X > 1 && X < 3` holds for `[0, 5]`, which reads wrong. "Every value"
+     makes `EchoNumbers >= 1` hold and `EchoNumbers >= 2` fail, which also
+     surprises. The suggested fix: keep the first value, document it, and give
+     the author an explicit form: the helpers `minOf(X)` and `maxOf(X)` over
+     the values of one attribute, so a rule says `maxOf(EchoNumbers) >= 2`.
+   - **Arithmetic.** Keep the first value, as for comparisons. A multi-valued
+     operand is rare in arithmetic, and `minOf` and `maxOf` cover the rest.
+   - **Text helpers.** Make `lower()` give an array for an array, element by
+     element, so `lower(ImageType) == 'axial'` is "in", as `==` is. Keep the
+     number helpers on the first value.
+   - **`sortBy`.** Keep the first value, and document it. An order needs one
+     key for each instance.
+   - **Membership tests.** No change. `includes`, `in` and the text tests are
+     the "any value" forms on purpose; `==` is equality.
+   - **Templates.** Join the values with `\`, the DICOM value separator, so
+     the text reads as DICOM text.
+   - **`equals` with an array.** Allow an array operand, with the same meaning
+     as the array test (equal in order). This also removes one difference from
+     `validator.js`.

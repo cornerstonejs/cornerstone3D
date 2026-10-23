@@ -55,7 +55,9 @@ is in `packages/metadata/src/displayset/` (`displaySetContext.ts`,
 }
 ```
 
-- Tests in `matches`: scalar (`==`), array (one of), `null` (no value), or one
+- Tests in `matches`: scalar (`==`), array (`==` with the array: a single value
+  is one of the elements, a multi-valued value equals it in order; use
+  `includes` for "has one of"), `null` (no value), or one
   operator: `equals`, `doesNotEqual`, `notNull`, `includes`, `doesNotInclude`,
   `greaterThan` (strict), `lessThan` (strict), `range` (`[a, b]`), `contains`,
   `containsI`, `doesNotContain`, `doesNotContainI`, `containsAll`,
