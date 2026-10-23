@@ -19,6 +19,18 @@ interface ICachedImage {
   sharedCacheKey?: string;
   timeStamp: number;
   sizeInBytes: number;
+  /**
+   * Compressed blob storage for memory optimization.
+   * When a compression provider is configured, images will be stored
+   * as compressed blobs to reduce memory usage.
+   */
+  compressedBlob?: Blob;
+  /**
+   * Flag indicating if this image is stored in compressed format.
+   * When true, the image will be decompressed on-demand using the
+   * configured compression provider.
+   */
+  isCompressed?: boolean;
 }
 
 export type { ICachedImage as default };
