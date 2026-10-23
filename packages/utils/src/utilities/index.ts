@@ -7,6 +7,7 @@ export {
   toNumber,
   toFiniteNumber,
   toFiniteFirst,
+  toFiniteVector,
   isEqual,
   isEqualNegative,
   isEqualAbs,

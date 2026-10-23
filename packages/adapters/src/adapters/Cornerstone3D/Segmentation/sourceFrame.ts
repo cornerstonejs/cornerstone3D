@@ -2,7 +2,7 @@ import { Enums } from '@cornerstonejs/core';
 import { utilities as metadataUtilities } from '@cornerstonejs/metadata';
 import { vec3 } from 'gl-matrix';
 
-const { isEqual, toFiniteNumber } = metadataUtilities;
+const { isEqual, toFiniteVector } = metadataUtilities;
 const { MetadataModules } = Enums;
 
 // Per-component tolerance (mm, or cosine) for the same position or orientation.
@@ -11,16 +11,6 @@ const GEOMETRY_TOLERANCE = 1e-3;
 const DEFAULT_POSITION = [0, 0, 0];
 const DEFAULT_ORIENTATION = [1, 0, 0, 0, 1, 0];
 const DEFAULT_PIXEL_SPACING = [1, 1];
-
-/** `values` as `length` finite numbers, or undefined. */
-function toFiniteVector(values, length: number): number[] | undefined {
-  const numbers = toFiniteNumber(values as ArrayLike<number>);
-  return Array.isArray(numbers) &&
-    numbers.length === length &&
-    numbers.every(Number.isFinite)
-    ? numbers
-    : undefined;
-}
 
 interface SourceFrame {
   position?: number[];

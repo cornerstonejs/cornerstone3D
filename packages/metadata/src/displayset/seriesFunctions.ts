@@ -17,7 +17,7 @@
  */
 
 import { vec3 } from 'gl-matrix';
-import { toFiniteFirst, toFiniteNumber } from '@cornerstonejs/utils';
+import { toFiniteFirst, toFiniteVector } from '@cornerstonejs/utils';
 import { readOwn } from '../safeFunctions';
 import type {
   NaturalizedInstance,
@@ -53,14 +53,7 @@ function readVector(
   attribute: string,
   length: number
 ): number[] | undefined {
-  const values = toFiniteNumber(readOwn(instance, attribute) as never);
-  if (!Array.isArray(values) || values.length < length) {
-    return undefined;
-  }
-  const vector = values.slice(0, length);
-  return vector.every((value) => value !== undefined)
-    ? (vector as number[])
-    : undefined;
+  return toFiniteVector(readOwn(instance, attribute), length);
 }
 
 const round = (value: number, step: number) => Math.round(value / step) * step;
