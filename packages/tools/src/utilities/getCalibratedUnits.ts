@@ -232,8 +232,28 @@ const getCalibratedProbeUnitsAndValue = (image, handles) => {
  */
 const getCalibratedAspect = (image) => image.calibration?.aspect || 1;
 
+/**
+ * Converts an area in world units squared, such as a canvas area times the
+ * world size of a canvas pixel, to the calibrated area units.
+ * The scales from getCalibratedLengthUnitsAndScale convert index distances,
+ * so the area goes to index units first, through the image spacing. Without a
+ * calibration the two steps cancel out and the world area is returned as is.
+ *
+ * @param image - the image the area was measured on
+ * @param calibrate - the result of getCalibratedLengthUnitsAndScale
+ * @param worldArea - the area in world units squared
+ * @returns the area in calibrate.areaUnit
+ */
+const getCalibratedAreaFromWorld = (image, calibrate, worldArea: number) => {
+  const [spacingX = 1, spacingY = 1] = image.spacing || [];
+  const scaleX = calibrate.scale || 1;
+  const scaleY = calibrate.scaleY || scaleX;
+  return worldArea / (spacingX * scaleX) / (spacingY * scaleY);
+};
+
 export {
   getCalibratedLengthUnitsAndScale,
   getCalibratedAspect,
   getCalibratedProbeUnitsAndValue,
+  getCalibratedAreaFromWorld,
 };
