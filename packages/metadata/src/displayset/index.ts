@@ -10,13 +10,8 @@ export {
   groupInstancesBySplitRules,
   orderInstancesForRule,
 } from './groupInstancesBySplitRules';
-export {
-  BUILT_IN_SERIES_FUNCTIONS,
-  planeGeometry,
-  timeClusters,
-} from './seriesFunctions';
 export type { PlaneGeometry, TimeClusters } from './seriesFunctions';
-export { resolveSplitRuleSet, validateSplitRuleSetEntry } from './splitRuleSet';
+export { resolveSplitRuleSet } from './splitRuleSet';
 export { splitImageIdsBySplitRules } from './splitImageIdsBySplitRules';
 export type { SplitImageIdsBySplitRulesOptions } from './splitImageIdsBySplitRules';
 export {
@@ -29,7 +24,6 @@ export {
   defaultDisplaySetSplitRules,
 } from './compiledDisplaySetRules';
 export { displaySetRules, createDisplaySetSplitRules } from './displaySetRules';
-export { compileDisplaySetSplitRules } from './compileSplitRules';
 export { defaultDisplaySetContext } from './displaySetContext';
 export type {
   ContextEntry,
@@ -59,9 +53,8 @@ export {
   getViewportTypesForRule,
   getPreferredViewportType,
   getViewportTypesForGroup,
-  isDisplayableViewportTypes,
 } from './viewportTypes';
-export { NO_VIEWPORT_TYPE, DEFAULT_SPLIT_RULE_PRIORITY_LIMIT } from './types';
+export { DEFAULT_SPLIT_RULE_PRIORITY_LIMIT } from './types';
 export type {
   NaturalizedInstance,
   SeriesInfo,

@@ -278,8 +278,7 @@ with `unsupported: { ...compiledDisplaySetRules.unsupported, priority: null }`.
 
 An entry that states an `id` different from its key, or that has a priority
 that is missing, or neither `null` nor a finite number, is an error.
-`validateSplitRuleSetEntry(id, entry)` runs that check on one entry, and returns
-`false` for an excluded one.
+`createDisplaySetSplitRules` and `resolveSplitRuleSet` run that check.
 
 A `SplitRule` has up to five parts:
 
@@ -460,7 +459,7 @@ the result **not displayable**:
 const displaySet = createDisplaySetFromGroup(group);
 
 displaySet.isDisplayable; // false
-displaySet.viewportTypes; // ['none']  — the NO_VIEWPORT_TYPE sentinel
+displaySet.viewportTypes; // ['none']  — the "no viewport" value
 displaySet.preferredViewportType; // 'none', not a misleading 'stack'
 displaySet.imageIds; // [] — there is nothing to render
 displaySet.underlyingImageIds; // ['wadors:/…'] — still resolvable by imageId
@@ -471,7 +470,7 @@ displaySet.instances; // the full instances, e.g. for Modality / description
 Points worth knowing:
 
 - **`isDisplayable` is required and derived**, not optional. It is computed from
-  `viewportTypes` (false exactly when they contain `NO_VIEWPORT_TYPE`) and stored
+  `viewportTypes` (false exactly when they contain `'none'`) and stored
   as a plain field, so it spreads and serializes like every other attribute and
   can never disagree with the viewport types. Check it before mounting a display
   set:

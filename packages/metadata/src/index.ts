@@ -98,14 +98,9 @@ export {
   compiledDisplaySetRules,
   defaultDisplaySetSplitRules,
   orderInstancesForRule,
-  BUILT_IN_SERIES_FUNCTIONS,
-  planeGeometry,
-  timeClusters,
   resolveSplitRuleSet,
-  validateSplitRuleSetEntry,
   displaySetRules,
   createDisplaySetSplitRules,
-  compileDisplaySetSplitRules,
   defaultDisplaySetContext,
   createDisplaySetFromGroup,
   isImageInstance,
@@ -115,8 +110,6 @@ export {
   getViewportTypesForRule,
   getPreferredViewportType,
   getViewportTypesForGroup,
-  isDisplayableViewportTypes,
-  NO_VIEWPORT_TYPE,
   DEFAULT_SPLIT_RULE_PRIORITY_LIMIT,
 } from './displayset';
 export type { CreateDisplaySetFromGroupOptions } from './displayset';
