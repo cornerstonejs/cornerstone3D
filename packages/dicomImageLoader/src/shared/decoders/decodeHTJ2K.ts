@@ -1,6 +1,5 @@
 import type { ByteArray } from 'dicom-parser';
 import openJphFactory, {
-  type HTJ2KDecoder,
   type HTJ2KModule,
 } from '@cornerstonejs/codec-openjph/wasmjs';
 // @ts-ignore
@@ -16,11 +15,9 @@ import { resolveWasmUrl, setWasmBasePathFromConfig } from '../wasmBasePath';
 
 const local: {
   codec: HTJ2KModule | undefined;
-  decoder: HTJ2KDecoder | undefined;
   decodeConfig: LoaderDecodeOptions;
 } = {
   codec: undefined,
-  decoder: undefined,
   decodeConfig: {},
 };
 
@@ -56,124 +53,125 @@ export function initialize(decodeConfig?: LoaderDecodeOptions): Promise<void> {
     },
   });
 
-  return new Promise<void>((resolve, reject) => {
-    openJphModule.then((instance) => {
-      local.codec = instance;
-      local.decoder = new instance.HTJ2KDecoder();
-      resolve();
-    }, reject);
+  return openJphModule.then((instance) => {
+    local.codec = instance;
   });
 }
 
 // https://github.com/chafey/openjpegjs/blob/master/test/browser/index.html
 async function decodeAsync(compressedImageFrame: ByteArray, imageInfo) {
   await initialize();
-  // const decoder = local.decoder; // This is much slower for some reason
+  // A new decoder per frame: reusing one decoder was much slower.
   const decoder = new local.codec.HTJ2KDecoder();
-
-  // get pointer to the source/encoded bit stream buffer in WASM memory
-  // that can hold the encoded bitstream
-  const encodedBufferInWASM = decoder.getEncodedBuffer(
-    compressedImageFrame.length
-  );
-
-  // copy the encoded bitstream into WASM memory buffer
-  encodedBufferInWASM.set(compressedImageFrame);
-
-  // decode it
-  // decoder.decode();
-  const decodeLevel = imageInfo.decodeLevel || 0;
-  decoder.decodeSubResolution(decodeLevel);
-  // decoder.decodeSubResolution(decodeLevel, decodeLayer);
-  // const resolutionAtLevel = decoder.calculateSizeAtDecompositionLevel(decodeLevel);
-
-  // get information about the decoded image
-  const frameInfo = decoder.getFrameInfo();
-  // Overwrite width/height if subresolution
-  if (imageInfo.decodeLevel > 0) {
-    const { width, height } = calculateSizeAtDecompositionLevel(
-      imageInfo.decodeLevel,
-      frameInfo.width,
-      frameInfo.height
+  // The decoder owns its encoded and decoded buffers in the WASM heap, so it
+  // must be deleted after every decode or the worker's heap grows until it aborts.
+  try {
+    // get pointer to the source/encoded bit stream buffer in WASM memory
+    // that can hold the encoded bitstream
+    const encodedBufferInWASM = decoder.getEncodedBuffer(
+      compressedImageFrame.length
     );
-    frameInfo.width = width;
-    frameInfo.height = height;
+
+    // copy the encoded bitstream into WASM memory buffer
+    encodedBufferInWASM.set(compressedImageFrame);
+
+    // decode it
+    // decoder.decode();
+    const decodeLevel = imageInfo.decodeLevel || 0;
+    decoder.decodeSubResolution(decodeLevel);
+    // decoder.decodeSubResolution(decodeLevel, decodeLayer);
+    // const resolutionAtLevel = decoder.calculateSizeAtDecompositionLevel(decodeLevel);
+
+    // get information about the decoded image
+    const frameInfo = decoder.getFrameInfo();
+    // Overwrite width/height if subresolution
+    if (imageInfo.decodeLevel > 0) {
+      const { width, height } = calculateSizeAtDecompositionLevel(
+        imageInfo.decodeLevel,
+        frameInfo.width,
+        frameInfo.height
+      );
+      frameInfo.width = width;
+      frameInfo.height = height;
+    }
+    // get the decoded pixels
+    const decodedBufferInWASM = decoder.getDecodedBuffer();
+    const imageFrame = new Uint8Array(decodedBufferInWASM.length);
+
+    imageFrame.set(decodedBufferInWASM);
+
+    const imageOffset = `x: ${decoder.getImageOffset().x}, y: ${
+      decoder.getImageOffset().y
+    }`;
+    const numDecompositions = decoder.getNumDecompositions();
+    const numLayers = decoder.getNumLayers();
+    const progessionOrder = ['unknown', 'LRCP', 'RLCP', 'RPCL', 'PCRL', 'CPRL'][
+      decoder.getProgressionOrder() + 1
+    ];
+    const reversible = decoder.getIsReversible();
+    const blockDimensions = `${decoder.getBlockDimensions().width} x ${
+      decoder.getBlockDimensions().height
+    }`;
+    const tileSize = `${decoder.getTileSize().width} x ${
+      decoder.getTileSize().height
+    }`;
+    const tileOffset = `${decoder.getTileOffset().x}, ${
+      decoder.getTileOffset().y
+    }`;
+    // const colorTransform = decoder.getColorSpace();
+
+    const decodedSize = `${decodedBufferInWASM.length.toLocaleString()} bytes`;
+    const compressionRatio = `${(
+      decodedBufferInWASM.length / encodedBufferInWASM.length
+    ).toFixed(2)}:1`;
+
+    const encodedImageInfo = {
+      columns: frameInfo.width,
+      rows: frameInfo.height,
+      bitsPerPixel: frameInfo.bitsPerSample,
+      signed: frameInfo.isSigned,
+      bytesPerPixel: imageInfo.bytesPerPixel,
+      componentsPerPixel: frameInfo.componentCount,
+    };
+    // const pixelData = getPixelData(frameInfo, decodedBufferInWASM);
+
+    /**
+     * Have to truncate the arraybuffer here to the length of the typed array. Not
+     * sure why the arraybuffer is so huge, maybe this is allocated by the WASM
+     * module? In any case, I think it's too big to postMessage in it's entirety.
+     */
+    let pixelData = getPixelData(frameInfo, decodedBufferInWASM);
+    const { buffer: b, byteOffset, byteLength } = pixelData;
+    const pixelDataArrayBuffer = b.slice(byteOffset, byteOffset + byteLength);
+
+    // @ts-ignore
+    pixelData = new pixelData.constructor(pixelDataArrayBuffer);
+
+    const encodeOptions = {
+      imageOffset,
+      numDecompositions,
+      numLayers,
+      progessionOrder,
+      reversible,
+      blockDimensions,
+      tileSize,
+      tileOffset,
+      // colorTransform,
+      decodedSize,
+      compressionRatio,
+    };
+
+    return {
+      ...imageInfo,
+      pixelData,
+      imageInfo: encodedImageInfo,
+      encodeOptions,
+      ...encodeOptions,
+      ...encodedImageInfo,
+    };
+  } finally {
+    decoder.delete();
   }
-  // get the decoded pixels
-  const decodedBufferInWASM = decoder.getDecodedBuffer();
-  const imageFrame = new Uint8Array(decodedBufferInWASM.length);
-
-  imageFrame.set(decodedBufferInWASM);
-
-  const imageOffset = `x: ${decoder.getImageOffset().x}, y: ${
-    decoder.getImageOffset().y
-  }`;
-  const numDecompositions = decoder.getNumDecompositions();
-  const numLayers = decoder.getNumLayers();
-  const progessionOrder = ['unknown', 'LRCP', 'RLCP', 'RPCL', 'PCRL', 'CPRL'][
-    decoder.getProgressionOrder() + 1
-  ];
-  const reversible = decoder.getIsReversible();
-  const blockDimensions = `${decoder.getBlockDimensions().width} x ${
-    decoder.getBlockDimensions().height
-  }`;
-  const tileSize = `${decoder.getTileSize().width} x ${
-    decoder.getTileSize().height
-  }`;
-  const tileOffset = `${decoder.getTileOffset().x}, ${
-    decoder.getTileOffset().y
-  }`;
-  // const colorTransform = decoder.getColorSpace();
-
-  const decodedSize = `${decodedBufferInWASM.length.toLocaleString()} bytes`;
-  const compressionRatio = `${(
-    decodedBufferInWASM.length / encodedBufferInWASM.length
-  ).toFixed(2)}:1`;
-
-  const encodedImageInfo = {
-    columns: frameInfo.width,
-    rows: frameInfo.height,
-    bitsPerPixel: frameInfo.bitsPerSample,
-    signed: frameInfo.isSigned,
-    bytesPerPixel: imageInfo.bytesPerPixel,
-    componentsPerPixel: frameInfo.componentCount,
-  };
-  // const pixelData = getPixelData(frameInfo, decodedBufferInWASM);
-
-  /**
-   * Have to truncate the arraybuffer here to the length of the typed array. Not
-   * sure why the arraybuffer is so huge, maybe this is allocated by the WASM
-   * module? In any case, I think it's too big to postMessage in it's entirety.
-   */
-  let pixelData = getPixelData(frameInfo, decodedBufferInWASM);
-  const { buffer: b, byteOffset, byteLength } = pixelData;
-  const pixelDataArrayBuffer = b.slice(byteOffset, byteOffset + byteLength);
-
-  // @ts-ignore
-  pixelData = new pixelData.constructor(pixelDataArrayBuffer);
-
-  const encodeOptions = {
-    imageOffset,
-    numDecompositions,
-    numLayers,
-    progessionOrder,
-    reversible,
-    blockDimensions,
-    tileSize,
-    tileOffset,
-    // colorTransform,
-    decodedSize,
-    compressionRatio,
-  };
-
-  return {
-    ...imageInfo,
-    pixelData,
-    imageInfo: encodedImageInfo,
-    encodeOptions,
-    ...encodeOptions,
-    ...encodedImageInfo,
-  };
 }
 
 export default decodeAsync;
