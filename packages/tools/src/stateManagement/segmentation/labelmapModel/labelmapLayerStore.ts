@@ -6,6 +6,7 @@ import type {
   LabelmapLayer,
 } from '../../../types/LabelmapTypes';
 import { ensureLabelmapState } from './normalizeLabelmapSegmentationData';
+import { getOrCreateDimensionGroupLabelmapVolume } from './dimensionGroupLabelmapVolume';
 import {
   forEachLabelmapImageReference,
   hasMultipleLabelmapImagesPerReferencedImageId,
@@ -56,6 +57,12 @@ function removeLabelmap(segmentation: Segmentation, labelmapId: string): void {
 function getOrCreateLabelmapVolume(
   layer: LabelmapLayer
 ): Types.IImageVolume | undefined {
+  const dimensionGroupVolume = getOrCreateDimensionGroupLabelmapVolume(layer);
+
+  if (dimensionGroupVolume) {
+    return dimensionGroupVolume;
+  }
+
   const mergedVolume = getOrCreateMergedStackLabelmapVolume(layer);
 
   if (mergedVolume) {

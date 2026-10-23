@@ -52,6 +52,9 @@ function imageIdForSlice(sliceIndex) {
  * with `usingDefaultValues`, as the real providers do.
  * `planeOrientationOnly(slice)` keeps the orientation of that slice in the
  * image plane module only, as for a multiframe source.
+ * `frameOfReference: false` gives a source without a FrameOfReferenceUID.
+ * `instanceAttributes` adds attributes to each instance, for example the
+ * NumberOfTimeSlices of a 4D series.
  */
 function makeReferencedStack(sliceCount, options = {}) {
   const { zDirection = 1, rows = ROWS, columns = COLUMNS } = options;
@@ -60,6 +63,9 @@ function makeReferencedStack(sliceCount, options = {}) {
   const pixelSpacingForSlice = options.pixelSpacingForSlice ?? (() => [1, 1]);
   const sliceThicknessForSlice = options.sliceThicknessForSlice ?? (() => 1);
   const planeOrientationOnly = options.planeOrientationOnly ?? (() => false);
+  const frameOfReferenceUID =
+    options.frameOfReference === false ? undefined : FRAME_OF_REFERENCE_UID;
+  const instanceAttributes = options.instanceAttributes ?? {};
   const positionForSlice =
     options.positionForSlice ??
     ((sliceIndex) => [0, 0, zDirection * sliceIndex]);
@@ -82,7 +88,7 @@ function makeReferencedStack(sliceCount, options = {}) {
     SOPInstanceUID: sopInstanceUidForSlice(sliceIndex),
     SeriesInstanceUID: SERIES_INSTANCE_UID,
     InstanceNumber: String(sliceIndex + 1),
-    FrameOfReferenceUID: FRAME_OF_REFERENCE_UID,
+    FrameOfReferenceUID: frameOfReferenceUID,
     Modality: 'CT',
     Rows: rows,
     Columns: columns,
@@ -98,6 +104,7 @@ function makeReferencedStack(sliceCount, options = {}) {
     BitsStored: 16,
     HighBit: 15,
     PixelRepresentation: 0,
+    ...instanceAttributes,
   });
 
   const metadataProvider = {
@@ -151,7 +158,7 @@ function makeReferencedStack(sliceCount, options = {}) {
             sliceThickness: sliceThicknessForSlice(sliceIndex),
             rows,
             columns,
-            frameOfReferenceUID: FRAME_OF_REFERENCE_UID,
+            frameOfReferenceUID,
           };
           const defaultOrientation = !orientationForSlice(sliceIndex);
           Object.defineProperties(plane, {
@@ -238,6 +245,7 @@ function buildLabelmap3D(sliceCount, pixelValuesBySlice, options = {}) {
  */
 function datasetToPart10Buffer(dataset) {
   const meta = {
+    FileMetaInformationVersion: new Uint8Array([0, 1]).buffer,
     MediaStorageSOPClassUID: dataset.SOPClassUID,
     MediaStorageSOPInstanceUID: dataset.SOPInstanceUID,
     TransferSyntaxUID: dataset._meta.TransferSyntaxUID.Value[0],

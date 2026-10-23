@@ -43,6 +43,11 @@ interface SourceFrame {
  * the calibrated provider also sets `isDefaultValueSetForRowCosine` and
  * `isDefaultValueSetForColumnCosine`; when present, these flags decide.
  *
+ * An image without a FrameOfReferenceUID, in the plane module or the instance,
+ * has no position and no orientation: a position without a Frame of Reference
+ * has no meaning, and the providers write made-up values for such images, for
+ * example `[0, 0, frameNumber]` for a multiframe.
+ *
  * The LABELMAP export and the BINARY export use this function to give each
  * SEG frame the geometry of its own source image. The instance is read only
  * when the plane module is incomplete or when the pixel measures are
@@ -76,13 +81,22 @@ function getSourceFrame(
       ? undefined
       : planeOrientation
     : notDefault(planeOrientation, DEFAULT_ORIENTATION);
-  if (position && orientation && !withPixelMeasures) {
+  if (
+    position &&
+    orientation &&
+    plane.frameOfReferenceUID &&
+    !withPixelMeasures
+  ) {
     return { position, orientation };
   }
 
   const instance = metadata?.get?.(MetadataModules.IMAGE_DATA, imageId) ?? {};
-  position ??= toFiniteVector(instance.ImagePositionPatient, 3);
-  orientation ??= toOrientation(instance.ImageOrientationPatient);
+  if (plane.frameOfReferenceUID || instance.FrameOfReferenceUID) {
+    position ??= toFiniteVector(instance.ImagePositionPatient, 3);
+    orientation ??= toOrientation(instance.ImageOrientationPatient);
+  } else {
+    position = orientation = undefined;
+  }
   if (!withPixelMeasures) {
     return { position, orientation };
   }

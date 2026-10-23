@@ -26,6 +26,20 @@ import {
   toFiniteVector,
 } from './sourceFrame';
 import type { SourceFrame } from './sourceFrame';
+import { getFrameOrganization, getFrameStackIds } from './frameOrganization';
+import type { FrameOrganization } from './frameOrganization';
+import {
+  IN_STACK_POSITION_DIMENSION,
+  POSITION_DIMENSION,
+  STACK_ID_DIMENSION,
+  ensurePatientOrientation,
+  getStackFrameContents,
+  removeDuplicateReferencedInstances,
+  removeFrameOfReference,
+  removePlaneMacros,
+  toConformantSegment,
+} from '../../dcmjsSegmentation';
+import type { Dimension, FrameContent } from '../../dcmjsSegmentation';
 
 const { isEqual } = metadataUtilities;
 const cs3dLogger = cornerstoneUtilities.logger.adaptersLog.getLogger(
@@ -37,14 +51,11 @@ const { SEGImageNormalizer } = normalizers;
 const { Segmentation: SegmentationDerivation } = derivations;
 const LABELMAP_SEG_SOP_CLASS_UID = '1.2.840.10008.5.1.4.1.1.66.7';
 const BITMAP_SEG_SOP_CLASS_UID = '1.2.840.10008.5.1.4.1.1.66.4';
-const IMAGE_POSITION_PATIENT_TAG = 0x00200032;
-const PLANE_POSITION_SEQUENCE_TAG = 0x00209113;
-const STACK_ID_TAG = 0x00209056;
-const IN_STACK_POSITION_NUMBER_TAG = 0x00209057;
-const FRAME_CONTENT_SEQUENCE_TAG = 0x00209111;
 
 interface IOptions {
   predecessorImageId?: string;
+  /** False for a source that is not a volume; see getFrameOrganization. */
+  isVolumetric?: boolean;
 }
 
 type Options = IOptions & {
@@ -179,7 +190,7 @@ function collectSegmentSequence(labelmap3DArray) {
       }
       const key = Number(segment.SegmentNumber ?? index);
       if (!bySegmentNumber.has(key)) {
-        bySegmentNumber.set(key, { ...segment });
+        bySegmentNumber.set(key, toConformantSegment(segment));
       }
     });
   });
@@ -203,28 +214,6 @@ function getOrientationIndex(
   return index === -1 && add ? orientations.push(orientation) - 1 : index;
 }
 
-interface FrameContent {
-  DimensionIndexValues: number[];
-  StackID?: string;
-  InStackPositionNumber?: number;
-}
-
-const POSITION_DIMENSION = {
-  DimensionIndexPointer: IMAGE_POSITION_PATIENT_TAG,
-  FunctionalGroupPointer: PLANE_POSITION_SEQUENCE_TAG,
-  DimensionDescriptionLabel: 'ImagePositionPatient',
-};
-const STACK_ID_DIMENSION = {
-  DimensionIndexPointer: STACK_ID_TAG,
-  FunctionalGroupPointer: FRAME_CONTENT_SEQUENCE_TAG,
-  DimensionDescriptionLabel: 'StackID',
-};
-const IN_STACK_POSITION_DIMENSION = {
-  DimensionIndexPointer: IN_STACK_POSITION_NUMBER_TAG,
-  FunctionalGroupPointer: FRAME_CONTENT_SEQUENCE_TAG,
-  DimensionDescriptionLabel: 'InStackPositionNumber',
-};
-
 /**
  * The dimensions and the per-frame Frame Content of a LABELMAP SEG (PS3.3
  * C.7.6.16.2.2, C.7.6.17). LABELMAP frames carry many segments, so the
@@ -244,7 +233,7 @@ const IN_STACK_POSITION_DIMENSION = {
  * spatial dimension.
  */
 function getLabelmapDimensions(frames: SourceFrame[]): {
-  dimensions: Array<typeof POSITION_DIMENSION>;
+  dimensions: Dimension[];
   frameContents: FrameContent[];
   orientations: number[][];
   normals: number[][];
@@ -389,7 +378,8 @@ const isSameMeasure = (a, b) => a === b || isEqual(a, b, GEOMETRY_TOLERANCE);
  * segmented slices are not adjacent.
  *
  * For each frame:
- * - Pixel Spacing comes from its source image, else from the normalizer.
+ * - Pixel Spacing comes from its source image, else from the normalizer, and
+ *   is absent when neither is a pair of numbers.
  * - Slice Thickness comes from its source image, else it is the source slice
  *   spacing of that orientation, else it is absent.
  * - With `includeSliceSpacing`, Spacing Between Slices (Type 3) is the source
@@ -415,11 +405,13 @@ function applyLabelmapPixelMeasures(
   const {
     SliceThickness: _thickness,
     SpacingBetweenSlices: _spacing,
+    PixelSpacing: normalizerPixelSpacing,
     ...derived
   } = toArray(shared.PixelMeasuresSequence)[0] ?? {};
 
-  // The normalizer can hold strings; numbers make the frames comparable.
-  const derivedPixelSpacing = toFiniteVector(derived.PixelSpacing, 2);
+  // The normalizer can hold strings or a single value; only a pair of finite
+  // numbers is a Pixel Spacing.
+  const derivedPixelSpacing = toFiniteVector(normalizerPixelSpacing, 2);
   let spacingMissing = false;
   const pixelMeasures = frames.map((frame, index) => {
     const sliceSpacing = sliceSpacings[frameOrientations[index]];
@@ -456,7 +448,11 @@ function applyLabelmapPixelMeasures(
     PIXEL_MEASURE_KEYS.every((key) => isSameMeasure(measures[key], first[key]))
   );
   if (same) {
-    shared.PixelMeasuresSequence = first;
+    if (Object.keys(first).length) {
+      shared.PixelMeasuresSequence = first;
+    } else {
+      delete shared.PixelMeasuresSequence;
+    }
     return undefined;
   }
 
@@ -468,14 +464,19 @@ function applyLabelmapPixelMeasures(
  * Fills a derived SEG dataset as a LABELMAP SEG with the non-empty frames of
  * the labelmaps.
  *
- * Every frame must reference a resolvable source SOP Instance UID, and must
- * have a plane. The function throws otherwise and drops no frame, because a
- * dropped frame makes the per-frame functional groups disagree with the
- * encoded PixelData. These checks run before the pixel data is encoded.
- * Error messages give 1-based frame numbers.
+ * Every frame must reference a resolvable source SOP Instance UID, and in the
+ * `volume` organization must have a plane. The function throws otherwise and
+ * drops no frame, because a dropped frame makes the per-frame functional
+ * groups disagree with the encoded PixelData. These checks run before the
+ * pixel data is encoded. Error messages give 1-based frame numbers.
+ *
+ * The `stack` organization (see FrameOrganization) writes stacks in source
+ * order, with no Frame of Reference, no plane macros and no slice spacing.
  *
  * @param sourceImages - The full source series, for the slice spacing. Empty
  *   when not all source images are loaded.
+ * @param stackIds - The StackID of each frame for the `stack` organization,
+ *   for example the time point of a 4D source (see getFrameStackIds).
  */
 function fillLabelmapSegmentation(
   segmentation,
@@ -483,8 +484,11 @@ function fillLabelmapSegmentation(
   metadata,
   images,
   options: Options = {},
-  sourceImages = images
+  sourceImages = images,
+  organization: FrameOrganization = 'volume',
+  stackIds: string[] = images.map(() => '1')
 ) {
+  const isStack = organization === 'stack';
   const labelmap3DArray = toLabelmap3DArray(inputLabelmaps3D);
   const segmentSequence = collectSegmentSequence(labelmap3DArray);
   const validFrameIndices = collectNonEmptyFrameIndices(labelmap3DArray);
@@ -566,7 +570,15 @@ function fillLabelmapSegmentation(
     orientations,
     normals,
     frameOrientations,
-  } = getLabelmapDimensions(frames);
+  } = isStack
+    ? {
+        dimensions: [STACK_ID_DIMENSION, IN_STACK_POSITION_DIMENSION],
+        frameContents: getStackFrameContents(stackIds),
+        orientations: [],
+        normals: [],
+        frameOrientations: frames.map(() => 0),
+      }
+    : getLabelmapDimensions(frames);
 
   const { dataset } = segmentation;
   dataset.NumberOfFrames = numberOfFrames;
@@ -627,10 +639,12 @@ function fillLabelmapSegmentation(
   normalizeSharedFunctionalGroupsSequence(dataset);
   delete dataset.SharedFunctionalGroupsSequence.PlanePositionSequence;
   // Only Spacing Between Slices and a missing Slice Thickness use the spacing.
-  const includeSliceSpacing = Boolean(options.includeSliceSpacing);
+  // A stack has no slice spacing.
+  const includeSliceSpacing = !isStack && Boolean(options.includeSliceSpacing);
   const sliceSpacings =
-    includeSliceSpacing ||
-    frames.some(({ sliceThickness }) => sliceThickness === undefined)
+    !isStack &&
+    (includeSliceSpacing ||
+      frames.some(({ sliceThickness }) => sliceThickness === undefined))
       ? getSourceSliceSpacings(sourceImages, metadata, orientations, normals)
       : [];
   const perFramePixelMeasures = applyLabelmapPixelMeasures(
@@ -649,15 +663,22 @@ function fillLabelmapSegmentation(
     dataset,
     frames.map(({ position, sourceImageSequenceItem }, index) => ({
       sourceImageSequenceItem,
-      planePositionSequence: { ImagePositionPatient: position },
+      planePositionSequence: isStack
+        ? undefined
+        : { ImagePositionPatient: position },
       pixelMeasuresSequence: perFramePixelMeasures?.[index],
       frameContent: frameContents[index],
     }))
   );
-  setPlaneOrientations(
-    dataset,
-    frames.map(({ orientation }) => orientation)
-  );
+  if (isStack) {
+    removePlaneMacros(dataset);
+    removeFrameOfReference(dataset);
+  } else {
+    setPlaneOrientations(
+      dataset,
+      frames.map(({ orientation }) => orientation)
+    );
+  }
 
   const sopInstanceUIDs = new Set(
     frames.map(
@@ -683,6 +704,8 @@ function fillLabelmapSegmentation(
         sopInstanceUIDs.has(instance.ReferencedSOPInstanceUID)
     );
   }
+  removeDuplicateReferencedInstances(dataset);
+  ensurePatientOrientation(dataset);
 
   return segmentation;
 }
@@ -701,6 +724,10 @@ function fillLabelmapSegmentation(
  *   (`1.2.840.10008.5.1.4.1.1.66.7`, added to DICOM in 2024) to opt into that
  *   newer class — note many receivers still reject it. (OHIF selects this via the
  *   `segmentation.store.defaultMode` datasource customization.)
+ * @param options.isVolumetric - Set false for a source that is not a volume.
+ *   A LABELMAP SEG of such a source, of a 4D source, or of a source without a
+ *   Frame of Reference is one stack without patient geometry; see
+ *   getFrameOrganization.
  */
 function generateSegmentation(
   images,
@@ -755,6 +782,7 @@ function generateSegmentation(
       pixelDataVR
     );
     segmentationResult.dataset.SOPClassUID = BITMAP_SEG_SOP_CLASS_UID;
+    ensurePatientOrientation(segmentationResult.dataset);
     segmentationResult.dataset._meta ||= {};
     segmentationResult.dataset._meta.MediaStorageSOPClassUID = {
       Value: [BITMAP_SEG_SOP_CLASS_UID],
@@ -784,11 +812,13 @@ function generateSegmentation(
     images,
     nonEmptyFrameIndices
   );
+  const organization = getFrameOrganization(filteredImages, metadata, options);
 
   const segmentation = _createMultiframeSegmentationFromReferencedImages(
     filteredImages,
     metadata,
-    options
+    options,
+    organization === 'stack'
   );
   const segmentationResult = fillLabelmapSegmentation(
     segmentation,
@@ -798,7 +828,14 @@ function generateSegmentation(
     options,
     // An image that is not loaded looks like a gap, so the slice spacing
     // needs the full source series.
-    images.every((image) => image?.imageId) ? images : []
+    images.every((image) => image?.imageId) ? images : [],
+    organization,
+    organization === 'stack'
+      ? getFrameStackIds(
+          images.filter((image) => image?.imageId),
+          filteredImages
+        )
+      : undefined
   );
 
   const predecessorImageId = options?.predecessorImageId;
@@ -821,12 +858,17 @@ function generateSegmentation(
  * volume.getCornerstoneImages() to get this array.
  *
  * @param options - the options object for the SegmentationDerivation.
+ * @param placeholderGeometry - Gives each image a placeholder position along
+ *   one axis, in image order, and the default orientation. The dcmjs
+ *   normalizer needs a position and an orientation for every image, and sorts
+ *   by position. A stack export removes the geometry afterwards.
  * @returns The Seg derived dataSet.
  */
 function _createMultiframeSegmentationFromReferencedImages(
   images,
   metadata,
-  options
+  options,
+  placeholderGeometry = false
 ) {
   if (!images?.length || !images[0]?.imageId) {
     throw new Error(
@@ -836,7 +878,7 @@ function _createMultiframeSegmentationFromReferencedImages(
 
   const studyImageId = options?.predecessorImageId || images[0].imageId;
   const studyData = metadata.get(MetadataModules.STUDY_DATA, studyImageId);
-  const datasets = images.map((image) => {
+  const datasets = images.map((image, index) => {
     const { imageId } = image;
     const seriesData = metadata.get(MetadataModules.SERIES_DATA, imageId);
     const imageData = metadata.get(MetadataModules.IMAGE_DATA, imageId);
@@ -844,6 +886,10 @@ function _createMultiframeSegmentationFromReferencedImages(
       ...studyData,
       ...seriesData,
       ...imageData,
+      ...(placeholderGeometry && {
+        ImagePositionPatient: [0, 0, index],
+        ImageOrientationPatient: [1, 0, 0, 0, 1, 0],
+      }),
       // Each virtual dataset is a single frame, so declare it as 1 frame even
       // when the source is a multiframe instance
       NumberOfFrames: 1,
