@@ -3,6 +3,7 @@ import { compiledDisplaySetRules } from './compiledDisplaySetRules';
 import { groupInstancesBySplitRules } from './groupInstancesBySplitRules';
 import { createDisplaySetSplitRules, displaySetRules } from './displaySetRules';
 import type { DisplaySetRules } from './displaySetRulesTypes';
+import { RuleCompileError } from '../safeFunctions';
 import { resolveSplitRuleSet } from './splitRuleSet';
 import type { NaturalizedInstance, SplitRule } from './types';
 
@@ -132,36 +133,6 @@ describe('createDisplaySetSplitRules - compiled default behaviour', () => {
     );
   });
 
-  it('treats a multi-frame instance with a slice location as a clip', () => {
-    const groups = groupInstancesBySplitRules(
-      [
-        instance({
-          SOPClassUID: US_MULTIFRAME_SOP_CLASS,
-          Modality: 'US',
-          SOPInstanceUID: 'clip',
-          NumberOfFrames: 30,
-          SliceLocation: 12,
-          InstanceNumber: 1,
-        }),
-      ],
-      compiledDisplaySetRules
-    );
-
-    expect(groups[0].matchedRule.id).toBe('multiFrame');
-    // NumberOfFrames arrives as a string as readily as a number.
-    expect(
-      groups[0].matchedRule.customAttributes?.(
-        { instance: groups[0].instances[0], isMultiFrame: true },
-        { instances: groups[0].instances, splitNumber: 2 }
-      )
-    ).toEqual({
-      isClip: true,
-      numImageFrames: 30,
-      isMultiFrame: true,
-      splitNumber: 2,
-    });
-  });
-
   it('does not treat a multi-frame instance without a slice location as a clip', () => {
     expect(
       ruleIdsFor([
@@ -233,35 +204,6 @@ describe('createDisplaySetSplitRules - compiled default behaviour', () => {
     expect(
       groupInstancesBySplitRules(instances, compiledDisplaySetRules).length
     ).toBe(2);
-  });
-
-  it('matches an attribute value delivered as a numeric string', () => {
-    // NumberOfFrames as '30' must still be > 1.
-    expect(
-      ruleIdsFor([
-        instance({
-          SOPClassUID: US_MULTIFRAME_SOP_CLASS,
-          Modality: 'US',
-          SOPInstanceUID: 'string-frames',
-          NumberOfFrames: '30' as unknown as number,
-          SliceLocation: 4,
-        }),
-      ])
-    ).toEqual(['multiFrame']);
-  });
-
-  it('surfaces a non-image instance through the catch-all', () => {
-    expect(
-      ruleIdsFor([
-        instance({
-          // Comprehensive SR - no pixel data, so no image rule claims it. The
-          // catch-all still surfaces it rather than dropping it.
-          SOPClassUID: '1.2.840.10008.5.1.4.1.1.88.33',
-          Modality: 'SR',
-          Rows: undefined,
-        }),
-      ])
-    ).toEqual(['unsupported']);
   });
 });
 
@@ -415,11 +357,19 @@ describe('default rules - the unsupported catch-all', () => {
     expect(ruleIdsFor([sr], rules)).toEqual(['srFallback']);
   });
 
-  it('surfaces an image whose Rows have not loaded yet', () => {
+  it('surfaces an image whose Rows have not loaded yet, or are null', () => {
     // Every image rule requires Rows, so an incompletely loaded instance would
     // otherwise vanish without explanation.
     expect(
       ruleIdsFor([instance({ SOPInstanceUID: 'ct-no-rows', Rows: undefined })])
+    ).toEqual(['unsupported']);
+    expect(
+      ruleIdsFor([
+        instance({
+          SOPInstanceUID: 'null-rows',
+          Rows: null as unknown as number,
+        }),
+      ])
     ).toEqual(['unsupported']);
   });
 
@@ -516,13 +466,33 @@ const compileOne = (rule: Record<string, unknown>, options = {}) =>
     options
   );
 
-const errorOf = (rule: Record<string, unknown>, options = {}): string => {
+/** The compile error of the rule `r`. */
+const errorOf = (
+  rule: Record<string, unknown>,
+  options = {}
+): RuleCompileError => {
   try {
     compileOne(rule, options);
   } catch (error) {
-    return (error as Error).message;
+    expect(error).toBeInstanceOf(RuleCompileError);
+    return error as RuleCompileError;
   }
   throw new Error('expected the rule to fail to compile');
+};
+
+/**
+ * Checks a compile error as RL-TEST-6 asks: the path names the rule and the
+ * place, and the message names the offending name. The prose is not checked.
+ */
+const expectRejected = (
+  rule: Record<string, unknown>,
+  path: string,
+  name: string,
+  options = {}
+) => {
+  const error = errorOf(rule, options);
+  expect(error.path).toBe(path);
+  expect(error.message).toContain(name);
 };
 
 /** The SOPInstanceUIDs of the instances that the rule `r` claims. */
@@ -633,77 +603,87 @@ describe('matches - the operator meanings', () => {
   });
 
   it('rejects an operand of the wrong kind, a second operator and an unknown operator', () => {
-    expect(errorOf({ matches: { Rows: { greaterThan: '1' } } })).toContain(
-      "rule 'r'.matches.Rows: the operand of greaterThan must be a finite number"
+    const at = "rule 'r'.matches.Rows";
+    expectRejected(
+      { matches: { Rows: { greaterThan: '1' } } },
+      at,
+      'greaterThan'
     );
-    expect(
-      errorOf({ matches: { Rows: { greaterThan: 1, lessThan: 9 } } })
-    ).toContain('more than one operator');
-    expect(errorOf({ matches: { Rows: { greater: 1 } } })).toContain(
-      "unknown operator 'greater'"
+    expectRejected(
+      { matches: { Rows: { greaterThan: 1, lessThan: 9 } } },
+      at,
+      'lessThan'
     );
+    expectRejected({ matches: { Rows: { greater: 1 } } }, at, "'greater'");
   });
 
-  it('rejects the removed forms: all, not, a comparison key and an expression', () => {
-    expect(errorOf({ matches: { all: [{ Modality: 'CT' }] } })).toContain(
-      "unknown name 'all'"
+  it('rejects the removed forms: all, not, a comparison key, an expression and null', () => {
+    for (const name of ['all', 'not', 'NumberOfFrames >']) {
+      expectRejected(
+        { matches: { [name]: { Modality: 'CT' } } },
+        `rule 'r'.matches.${name}`,
+        `'${name}'`
+      );
+    }
+    expectRejected(
+      { matches: "Modality == 'CT'" },
+      "rule 'r'.matches",
+      "Modality == 'CT'"
     );
-    expect(errorOf({ matches: { not: { Modality: 'CT' } } })).toContain(
-      "unknown name 'not'"
-    );
-    expect(errorOf({ matches: { 'NumberOfFrames >': 1 } })).toContain(
-      "unknown name 'NumberOfFrames >'"
-    );
-    expect(errorOf({ matches: "Modality == 'CT'" })).toContain(
-      'unrecognized condition'
-    );
+    // A null matches is an error, and not a catch-all.
+    expectRejected({ matches: null }, "rule 'r'.matches", 'null');
   });
 });
 
 describe('names - the compile checks every name', () => {
-  it('rejects a misspelt keyword, with the rule, the place and the name', () => {
-    expect(errorOf({ matches: { BodyPartExamind: 'CHEST' } })).toBe(
-      "Invalid display set rules: rule 'r'.matches.BodyPartExamind: " +
-        "unknown name 'BodyPartExamind': it is not a keyword of the DICOM " +
-        'dictionary; a private, vendor or synthetic attribute needs a ' +
-        'declaration, e.g. "myValue": { "attribute": "BodyPartExamind" }'
+  it('rejects a misspelt keyword in every place, with the rule, the place and the name', () => {
+    expectRejected(
+      { matches: { BodyPartExamind: 'CHEST' } },
+      "rule 'r'.matches.BodyPartExamind",
+      "'BodyPartExamind'"
     );
+    expectRejected(
+      { groupBy: ['SeriesInstanceUId'] },
+      "rule 'r'.groupBy[0]",
+      "'SeriesInstanceUId'"
+    );
+    expectRejected(
+      { sortBy: ['sweepStrat'] },
+      "rule 'r'.sortBy[0]",
+      "'sweepStrat'"
+    );
+    expectRejected(
+      { attributes: { label: { template: '{SeriesDescriptio}' } } },
+      "rule 'r'.attributes.label.template",
+      "'SeriesDescriptio'"
+    );
+    expectRejected(
+      { context: { isChest: "BodyPartExamind == 'CHEST'" } },
+      "rule 'r'.context.isChest",
+      "'BodyPartExamind'"
+    );
+    expectRejected({}, 'displaySetContext.isLarge', "'pixelCont'", {
+      displaySetContext: { isLarge: 'pixelCont > 1' },
+    });
   });
 
   it('matches names and operators with the same case, and names the correct one', () => {
-    expect(errorOf({ matches: { modality: 'CT' } })).toContain(
+    // The suggestion is user experience, so this test checks the text.
+    expect(errorOf({ matches: { modality: 'CT' } }).message).toContain(
       "unknown name 'modality'; did you mean 'Modality'?"
     );
-    expect(errorOf({ matches: { Rows: { notnull: true } } })).toContain(
+    expect(errorOf({ matches: { Rows: { notnull: true } } }).message).toContain(
       "unknown operator 'notnull'; did you mean 'notNull'?"
     );
     // imageId is a declared context name, also with the keyword ImageID.
     expect(() => compileOne({ attributes: { id: 'imageId' } })).not.toThrow();
   });
 
-  it('checks groupBy, sortBy, attributes, templates and context expressions', () => {
-    expect(errorOf({ groupBy: ['SeriesInstanceUId'] })).toContain(
-      "rule 'r'.groupBy[0]: unknown name 'SeriesInstanceUId'"
-    );
-    expect(errorOf({ sortBy: ['sweepStrat'] })).toContain(
-      "rule 'r'.sortBy[0]: unknown name 'sweepStrat'"
-    );
-    expect(
-      errorOf({ attributes: { label: { template: '{SeriesDescriptio}' } } })
-    ).toContain(
-      "rule 'r'.attributes.label.template: unknown name 'SeriesDescriptio'"
-    );
-    expect(
-      errorOf({ context: { isChest: "BodyPartExamind == 'CHEST'" } })
-    ).toContain("rule 'r'.context.isChest: unknown name 'BodyPartExamind'");
-    expect(
-      errorOf({}, { displaySetContext: { isLarge: 'pixelCont > 1' } })
-    ).toContain("displaySetContext.isLarge: unknown name 'pixelCont'");
-  });
-
   it('reads a hex tag only through a declaration', () => {
-    expect(errorOf({ matches: { '00191010': 1 } })).toContain(
-      'a hex tag needs a declaration'
+    expectRejected(
+      { matches: { '00191010': 1 } },
+      "rule 'r'.matches.00191010",
+      "'00191010'"
     );
     const rule = {
       context: { vendorBValue: { attribute: '00191010', vr: 'FD', vm: '1' } },
@@ -718,17 +698,15 @@ describe('names - the compile checks every name', () => {
   });
 
   it('rejects a context name that is a keyword, or that does not start in lowercase', () => {
-    expect(errorOf({ context: { Modality: "'CT'" } })).toContain(
-      "the context name 'Modality' is a DICOM keyword"
+    expectRejected(
+      { context: { Modality: "'CT'" } },
+      "rule 'r'.context.Modality",
+      "'Modality'"
     );
-    expect(errorOf({ context: { IsChest: 'true' } })).toContain(
-      'must start with a lowercase letter'
-    );
-  });
-
-  it('rejects === and !==, so that == is the only equality', () => {
-    expect(errorOf({ context: { isCt: "Modality === 'CT'" } })).toContain(
-      "'===' is not allowed; use '=='"
+    expectRejected(
+      { context: { IsChest: 'true' } },
+      "rule 'r'.context.IsChest",
+      "'IsChest'"
     );
   });
 });
@@ -813,18 +791,17 @@ describe('the display set context', () => {
   });
 
   it('rejects a loop of entries, an unknown group field, and a group replaced by a value', () => {
-    expect(
-      errorOf(
-        {},
-        { displaySetContext: { first: 'second + 1', second: 'first' } }
-      )
-    ).toContain('the context entries form a loop: first -> second -> first');
-    expect(
-      errorOf({}, { displaySetContext: { sweeps: 'timeClusters.cluster' } })
-    ).toContain("the group 'timeClusters' has no field 'cluster'");
-    expect(
-      errorOf({ context: { timeClusters: 5 }, groupBy: ['sweepStart'] })
-    ).toContain("'timeClusters' is not a group");
+    expectRejected({}, 'displaySetContext.first', 'first -> second -> first', {
+      displaySetContext: { first: 'second + 1', second: 'first' },
+    });
+    expectRejected({}, 'displaySetContext.sweeps', "'cluster'", {
+      displaySetContext: { sweeps: 'timeClusters.cluster' },
+    });
+    expectRejected(
+      { context: { timeClusters: 5 }, groupBy: ['sweepStart'] },
+      'displaySetContext.sweepStart',
+      "'timeClusters'"
+    );
   });
 
   it('runs min, max, sum and count over the series in a series entry', () => {
@@ -877,8 +854,10 @@ describe('sortBy and attributes', () => {
         { sortFunctions: { descending } }
       ).instances.map((i) => i.SliceLocation)
     ).toEqual([3, 2, 1]);
-    expect(errorOf({ sortBy: [{ sortFunction: 'missing' }] })).toContain(
-      'unknown sort function "missing"; known: (none)'
+    expectRejected(
+      { sortBy: [{ sortFunction: 'missing' }] },
+      "rule 'r'.sortBy[0].sortFunction",
+      '"missing"'
     );
   });
 
@@ -907,12 +886,12 @@ describe('sortBy and attributes', () => {
   });
 
   it('rejects a bare string that is not a name, and names the template form', () => {
-    expect(errorOf({ attributes: { label: 'SCOUT' } })).toBe(
-      "Invalid display set rules: rule 'r'.attributes.label: unknown " +
-        "name 'SCOUT': it is not a keyword of the DICOM dictionary; a private, " +
-        'vendor or synthetic attribute needs a declaration, e.g. "myValue": ' +
-        '{ "attribute": "SCOUT" }; fixed text is { "template": "SCOUT" }'
-    );
+    // The two hints are user experience, so this test checks their text.
+    const error = errorOf({ attributes: { label: 'SCOUT' } });
+    expect(error.path).toBe("rule 'r'.attributes.label");
+    expect(error.message).toMatch(/^Invalid display set rules: rule 'r'/);
+    expect(error.message).toContain('"myValue": { "attribute": "SCOUT" }');
+    expect(error.message).toContain('fixed text is { "template": "SCOUT" }');
   });
 
   it('aggregates over the series or over the display set, as the receiver names', () => {
@@ -951,26 +930,28 @@ describe('sortBy and attributes', () => {
   });
 
   it('rejects a bare aggregate, displaySet.instances outside attributes, and displaySets', () => {
-    expect(errorOf({ context: { most: 'max(Rows)' } })).toContain(
-      'max(...) needs a receiver; use series.instances.max(...)'
+    expectRejected(
+      { context: { most: 'max(Rows)' } },
+      "rule 'r'.context.most",
+      'max('
     );
-    expect(
-      errorOf({ context: { most: 'displaySet.instances.max(Rows)' } })
-    ).toContain(
-      'rule \'r\'.context.most: displaySet.instances aggregates are available only in the { "expression" } form of attributes'
+    expectRejected(
+      { context: { most: 'displaySet.instances.max(Rows)' } },
+      "rule 'r'.context.most",
+      'displaySet.instances'
     );
-    expect(
-      errorOf({
-        attributes: { all: { expression: 'displaySets.instances.count()' } },
-      })
-    ).toContain(
-      'displaySets aggregates are not available yet; see https://github.com/cornerstonejs/cornerstone3D/issues/3000'
+    expectRejected(
+      { attributes: { all: { expression: 'displaySets.instances.count()' } } },
+      "rule 'r'.attributes.all.expression",
+      'displaySets'
     );
   });
 
   it('reads splitNumber and sopClassUids in attributes only', () => {
-    expect(errorOf({ matches: { splitNumber: 1 } })).toContain(
-      "'splitNumber' is a value of the display set, and only attributes can read it"
+    expectRejected(
+      { matches: { splitNumber: 1 } },
+      "rule 'r'.matches.splitNumber",
+      "'splitNumber'"
     );
   });
 });
@@ -986,42 +967,26 @@ describe('createDisplaySetSplitRules - validation', () => {
     ).toThrow(/selector must be an object keyed by rule id/);
   });
 
-  it('rejects an entry whose id differs from its key', () => {
-    expect(() =>
-      createDisplaySetSplitRules({ key: { id: 'other', priority: 1 } })
-    ).toThrow(/"key".*states id "other"/);
-  });
-
-  it('rejects an entry with no priority', () => {
-    expect(() => createDisplaySetSplitRules({ x: {} as never })).toThrow(
-      /"x".*priority must be a finite number/
-    );
-  });
-
   // JSON.parse makes `__proto__` a real own key. Stored in a plain object, the
   // key replaces the prototype, so the entry is lost with no error.
   it('rejects a __proto__ key instead of losing the entry', () => {
     expect(() =>
       createDisplaySetSplitRules(JSON.parse('{"__proto__": {"priority": 1}}'))
-    ).toThrow(/"__proto__".*the id is not allowed/);
-    expect(
-      errorOf({ attributes: JSON.parse('{"__proto__": {"template": "x"}}') })
-    ).toContain('the key "__proto__" is not allowed');
-    expect(errorOf({ context: JSON.parse('{"__proto__": 1}') })).toContain(
-      'the context name "__proto__" is not allowed'
+    ).toThrow(/"__proto__"/);
+    expectRejected(
+      { attributes: JSON.parse('{"__proto__": {"template": "x"}}') },
+      "rule 'r'.attributes.__proto__",
+      '__proto__'
+    );
+    expectRejected(
+      { context: JSON.parse('{"__proto__": 1}') },
+      "rule 'r'.context.__proto__",
+      '__proto__'
     );
   });
 
-  it('rejects an unknown rule field, with the rule id and the allowed fields', () => {
-    expect(errorOf({ matchs: { Modality: 'CT' } })).toBe(
-      "Invalid display set rules: rule 'r': unknown field 'matchs'; " +
-        'allowed: id, groupId, priority, description, viewportTypes, context, ' +
-        'matches, groupBy, sortBy, attributes'
-    );
-  });
-
-  it('rejects a null matches instead of treating it as a catch-all', () => {
-    expect(errorOf({ matches: null })).toContain('unrecognized condition');
+  it('rejects an unknown rule field, with the rule id and the field', () => {
+    expectRejected({ matchs: { Modality: 'CT' } }, "rule 'r'", "'matchs'");
   });
 });
 
@@ -1075,12 +1040,13 @@ describe('createDisplaySetSplitRules - the code form', () => {
   });
 
   it('reads no name from the prototype chain', () => {
-    expect(errorOf({ matches: { toString: 1 } })).toContain(
-      "unknown name 'toString'"
-    );
-    expect(errorOf({ matches: { constructor: 1 } })).toContain(
-      "unknown name 'constructor'"
-    );
+    for (const name of ['toString', 'constructor']) {
+      expectRejected(
+        { matches: { [name]: 1 } },
+        `rule 'r'.matches.${name}`,
+        `'${name}'`
+      );
+    }
   });
 });
 
@@ -1181,12 +1147,18 @@ describe('the deny list of the host', () => {
   };
 
   it('rejects a rule that names a denied name, and gives a code entry no value', () => {
-    expect(errorOf({ matches: { PatientName: 'X' } }, options)).toContain(
-      "the name 'PatientName' is on the deny list of the host"
+    expectRejected(
+      { matches: { PatientName: 'X' } },
+      "rule 'r'.matches.PatientName",
+      "'PatientName'",
+      options
     );
-    expect(
-      errorOf({ attributes: { label: { template: '{PatientName}' } } }, options)
-    ).toContain('deny list');
+    expectRejected(
+      { attributes: { label: { template: '{PatientName}' } } },
+      "rule 'r'.attributes.label.template",
+      "'PatientName'",
+      options
+    );
     expect(
       claimed(
         { matches: { nameOf: null } },
@@ -1198,15 +1170,15 @@ describe('the deny list of the host', () => {
 
   it('rejects a declaration of a denied attribute, by keyword or by hex tag', () => {
     for (const attribute of ['PatientName', '00100010', 'x00100010']) {
-      expect(
-        errorOf(
-          {
-            context: { pn: { attribute } },
-            attributes: { SeriesDescription: { template: 'leak {pn}' } },
-          },
-          options
-        )
-      ).toContain('deny list');
+      expectRejected(
+        {
+          context: { pn: { attribute } },
+          attributes: { SeriesDescription: { template: 'leak {pn}' } },
+        },
+        "rule 'r'.context.pn.attribute",
+        'deny list',
+        options
+      );
     }
   });
 
@@ -1217,31 +1189,17 @@ describe('the deny list of the host', () => {
       "'x' + OtherPatientIDsSequence[0]['PatientID']",
       "'x' + OtherPatientIDsSequence[0]['Patient' + 'ID']",
     ]) {
-      expect(
-        errorOf({ attributes: { label: { expression } } }, denyId)
-      ).toContain('deny list');
+      expectRejected(
+        { attributes: { label: { expression } } },
+        "rule 'r'.attributes.label.expression",
+        'deny list',
+        denyId
+      );
     }
     // A literal index and a field that is not denied still compile.
     expect(() =>
       compileOne({ context: { view: 'ViewCodeSequence[0].CodeValue' } }, denyId)
     ).not.toThrow();
-  });
-});
-
-describe('the default rules and Rows', () => {
-  it('does not give a display set to an image with Rows: null', () => {
-    const groups = groupInstancesBySplitRules(
-      [
-        instance({
-          SOPInstanceUID: 'no-rows',
-          Rows: null as unknown as number,
-        }),
-      ],
-      compiledDisplaySetRules
-    );
-    expect(groups.map((group) => group.matchedRule.id)).toEqual([
-      'unsupported',
-    ]);
   });
 });
 
@@ -1266,11 +1224,15 @@ describe('expressions and names: the DICOM rule for no value', () => {
   });
 
   it('rejects a field on a keyword, and an index on a group', () => {
-    expect(
-      errorOf({ attributes: { label: { template: '{Modality.foo}' } } })
-    ).toContain("'Modality' is a DICOM keyword and has no field 'foo'");
-    expect(errorOf({ context: { s: "timeClusters['start']" } })).toContain(
-      "read a field of the group 'timeClusters' by path"
+    expectRejected(
+      { attributes: { label: { template: '{Modality.foo}' } } },
+      "rule 'r'.attributes.label.template",
+      "'foo'"
+    );
+    expectRejected(
+      { context: { s: "timeClusters['start']" } },
+      "rule 'r'.context.s",
+      "'timeClusters'"
     );
   });
 

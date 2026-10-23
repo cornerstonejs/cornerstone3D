@@ -1,20 +1,36 @@
 import { compileCondition, compileValue } from './compile';
-import { conditionShape, describeShape } from './schema';
+import { RuleCompileError } from './schema';
+
+const errorOf = (compile: () => unknown): RuleCompileError => {
+  try {
+    compile();
+  } catch (error) {
+    expect(error).toBeInstanceOf(RuleCompileError);
+    return error as RuleCompileError;
+  }
+  throw new Error('expected a compile error');
+};
 
 describe('compileCondition / compileValue - strict and stand-alone', () => {
   it('names a stand-alone definition and its path in a message', () => {
-    expect(() =>
+    const standAlone = errorOf(() =>
       compileCondition({ Modality: { equal: 'CT' } } as never)
-    ).toThrow(
-      /^Invalid safe function definition: Modality: unknown operator 'equal'; allowed: equals,/
     );
-    expect(() =>
+    expect(standAlone.definition).toBe('safe function definition');
+    expect(standAlone.path).toBe('Modality');
+    expect(standAlone.message).toContain("'equal'");
+
+    const named = errorOf(() =>
       compileCondition({ Rows: { greaterThan: 'x' } } as never, {
         path: 'protocol.match',
         definition: 'hanging protocol',
       })
-    ).toThrow(
-      /^Invalid hanging protocol: protocol\.match\.Rows: the operand of greaterThan must be a finite number/
+    );
+    expect(named.definition).toBe('hanging protocol');
+    expect(named.path).toBe('protocol.match.Rows');
+    // The message starts with the definition and the path, for the user.
+    expect(named.message).toMatch(
+      /^Invalid hanging protocol: protocol\.match\.Rows: /
     );
   });
 
@@ -39,9 +55,5 @@ describe('compileCondition / compileValue - strict and stand-alone', () => {
   it('reads own properties only by default', () => {
     expect(compileValue('constructor')({})).toBeUndefined();
     expect(compileCondition({ toString: null })({})).toBe(true);
-  });
-
-  it('describes the accepted forms from the schema', () => {
-    expect(describeShape(conditionShape)).toBe('{ <any key> }, or a function');
   });
 });

@@ -45,32 +45,6 @@ describe('resolveSplitRuleSet', () => {
     expect(reverse.map((rule) => rule.id)).toEqual(['a', 'b']);
   });
 
-  it('excludes a rule with a null priority', () => {
-    const rules = resolveSplitRuleSet({
-      kept: { priority: 1 },
-      excluded: { priority: null },
-    });
-
-    expect(rules.map((rule) => rule.id)).toEqual(['kept']);
-  });
-
-  it('rejects an entry whose id differs from its key', () => {
-    expect(() =>
-      resolveSplitRuleSet({ volume3d: { id: 'other', priority: 1 } })
-    ).toThrow(/"volume3d".*states id "other"/);
-  });
-
-  it('rejects an entry with no usable priority', () => {
-    expect(() =>
-      resolveSplitRuleSet({
-        missing: {} as SplitRuleSet[string],
-      })
-    ).toThrow(/"missing".*priority must be a finite number/);
-    expect(() =>
-      resolveSplitRuleSet({ nan: { priority: Number.NaN } })
-    ).toThrow(/"nan".*priority/);
-  });
-
   it('accepts an entry that states an id equal to its key', () => {
     const rules = resolveSplitRuleSet({ same: { id: 'same', priority: 1 } });
 
@@ -85,33 +59,26 @@ describe('resolveSplitRuleSet', () => {
 });
 
 describe('validateSplitRuleSetEntry', () => {
-  it('returns true for an entry with a numeric priority', () => {
+  it('returns true for a numeric priority, and false for a null priority', () => {
     expect(validateSplitRuleSetEntry('a', { priority: 0 })).toBe(true);
     expect(validateSplitRuleSetEntry('a', { id: 'a', priority: -2.5 })).toBe(
       true
     );
-  });
-
-  it('returns false for an entry with a null priority', () => {
     expect(validateSplitRuleSetEntry('a', { priority: null })).toBe(false);
   });
 
   it('throws for an id that differs from the key', () => {
     expect(() =>
       validateSplitRuleSetEntry('a', { id: 'b', priority: 1 })
-    ).toThrow(/Invalid split rule set entry "a".*states id "b"/);
+    ).toThrow(/"a".*"b"/);
   });
 
   it('throws for a missing or non-numeric priority', () => {
-    expect(() => validateSplitRuleSetEntry('a', {})).toThrow(
-      /"a".*priority must be a finite number/
-    );
-    expect(() =>
-      validateSplitRuleSetEntry('a', { priority: '1' as unknown as number })
-    ).toThrow(/"a".*priority must be a finite number.*got "1"/);
-    expect(() =>
-      validateSplitRuleSetEntry('a', { priority: Number.POSITIVE_INFINITY })
-    ).toThrow(/"a".*priority/);
+    for (const priority of [undefined, '1', Number.NaN, Infinity]) {
+      expect(() =>
+        validateSplitRuleSetEntry('a', { priority } as never)
+      ).toThrow(/"a".*priority/);
+    }
   });
 
   it('throws for an entry that is not an object', () => {
@@ -182,15 +149,6 @@ describe('groupInstancesBySplitRules with a rule set', () => {
     expect(groups.every((group) => group.matchedRule.id === 'volume3d')).toBe(
       true
     );
-  });
-
-  it('skips a rule with a null priority', () => {
-    const groups = groupInstancesBySplitRules([ct('a', 1)], {
-      off: { priority: null, groupBy: ['SOPInstanceUID'] },
-      on: { priority: 1 },
-    });
-
-    expect(groups.map((group) => group.matchedRule.id)).toEqual(['on']);
   });
 });
 

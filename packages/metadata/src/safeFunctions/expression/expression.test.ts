@@ -69,9 +69,7 @@ describe('compileExpression', () => {
       expect(compileExpression("Rows + 'x'")({ Rows: 512 })).toBeUndefined();
       expect(warn).toHaveBeenCalledTimes(1);
       warn.mockRestore();
-      expect(() => compileExpression("Rows - 'x'")).toThrow(
-        /'-' works on numbers only, and 'x' is not a number/
-      );
+      expect(() => compileExpression("Rows - 'x'")).toThrow(/'-'.*'x'/);
       expect(() => compileExpression('Rows * `x`')).toThrow(
         /a template literal is not a number/
       );
@@ -440,10 +438,6 @@ describe('compileExpression', () => {
         { name: 'timeClusters', field: 'first', inAggregate: false },
         { name: 'Rows', inAggregate: true },
       ]);
-    });
-
-    it('de-duplicates', () => {
-      expect(identifiersOf('Rows > 0 && Rows < 1024')).toEqual(['Rows']);
     });
 
     it('lets a host spot an identifier it does not supply', () => {

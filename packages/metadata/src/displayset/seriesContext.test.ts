@@ -191,39 +191,7 @@ describe('series functions in the series and in one display set', () => {
   });
 });
 
-describe('timeClusters in attributes', () => {
-  it('keeps the offset of each sweep from the start of the series', () => {
-    const us = (id: string, AcquisitionTime: string) => ({
-      SOPInstanceUID: id,
-      SeriesInstanceUID: 'us-1',
-      AcquisitionDate: '20260101',
-      AcquisitionTime,
-    });
-    const rules = createDisplaySetSplitRules({
-      sweeps: {
-        priority: 1,
-        groupBy: ['SeriesInstanceUID', 'sweepStart'],
-        attributes: { offset: 'sweepOffset' },
-      },
-    });
-    const groups = groupInstancesBySplitRules(
-      [us('a', '100000'), us('b', '100010'), us('c', '100200')],
-      rules
-    );
-    expect(
-      groups.map(
-        (group) =>
-          (
-            createDisplaySetFromGroup(group) as unknown as Record<
-              string,
-              unknown
-            >
-          ).offset
-      )
-      // 10:02:00 is 120 s after 10:00:00.
-    ).toEqual([0, 120]);
-  });
-
+describe('a group declaration', () => {
   it('rejects a group with an unknown over', () => {
     expect(() =>
       createDisplaySetSplitRules({

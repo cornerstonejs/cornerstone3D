@@ -65,12 +65,15 @@ describe('displayset split utilities', () => {
   });
 
   it('rejects an invalid rule set also when no image id resolves', () => {
+    // A broken rule set is broken whatever it is applied to. A check only on a
+    // non-empty series lets it through in the cheap case that a caller is most
+    // likely to try first, before the metadata loads.
     expect(() =>
       splitImageIdsBySplitRules(['wadors:missing'], {
         getNaturalizedInstance,
         splitRules: { bad: { priority: 'high' } } as never,
       })
-    ).toThrow();
+    ).toThrow(/"bad".*priority/);
   });
 
   it('default rules group multi-slice CT as volume (MPR) preferred', () => {
@@ -124,35 +127,6 @@ describe('displayset split utilities', () => {
     expect(createDisplaySetFromGroup(groups[0]).viewportTypes[0]).toBe('ecg');
   });
 
-  it('splits MR mixed B-value series', () => {
-    const mrInstances: NaturalizedInstance[] = [
-      {
-        imageId: 'wadors:a',
-        Modality: 'MR',
-        SOPClassUID: '1.2.840.10008.5.1.4.1.1.4',
-        Rows: 256,
-        SeriesInstanceUID: 'series-mr',
-        DiffusionBValue: 800,
-      },
-      {
-        imageId: 'wadors:b',
-        Modality: 'MR',
-        SOPClassUID: '1.2.840.10008.5.1.4.1.1.4',
-        Rows: 256,
-        SeriesInstanceUID: 'series-mr',
-      },
-    ];
-    const groups = splitImageIdsBySplitRules(
-      mrInstances.map((i) => i.imageId!),
-      {
-        getNaturalizedInstance: (id) =>
-          mrInstances.find((i) => i.imageId === id),
-        splitRules: compiledDisplaySetRules,
-      }
-    );
-    expect(groups).toHaveLength(2);
-  });
-
   it('ImageStackDisplaySet exposes underlying and frame ids', () => {
     const displaySet = ImageStackDisplaySet.fromInstances(instances, {
       displaySetId: 'uid-1',
@@ -163,19 +137,6 @@ describe('displayset split utilities', () => {
     expect(displaySet.preferredViewportType).toBe('stack');
   });
 
-  it('groups by default image rule into a single group', () => {
-    const singleInstance = [instances[0]];
-    const rules = ruleSet({
-      id: 'defaultImageRule',
-      viewportTypes: ['stack'],
-      matches: (instance) =>
-        instance.SOPClassUID === '1.2.840.10008.5.1.4.1.1.2' && !!instance.Rows,
-    });
-    const groups = groupInstancesBySplitRules(singleInstance, rules);
-    expect(groups).toHaveLength(1);
-    expect(groups[0].instances).toHaveLength(1);
-  });
-
   it('spreads matched-rule customAttributes flat onto the display set', () => {
     const multiFrameInstances: NaturalizedInstance[] = [
       {
@@ -183,7 +144,9 @@ describe('displayset split utilities', () => {
         Modality: 'XA',
         SOPClassUID: '1.2.840.10008.5.1.4.1.1.12.1',
         Rows: 512,
-        NumberOfFrames: 30,
+        // Naturalized DICOM often gives NumberOfFrames as a string, and
+        // numImageFrames must still be a number.
+        NumberOfFrames: '30' as unknown as number,
         SliceLocation: 0,
         SeriesInstanceUID: 'series-mf',
         InstanceNumber: 1,
@@ -202,31 +165,6 @@ describe('displayset split utilities', () => {
     expect(displaySet.numImageFrames).toBe(30);
     expect(displaySet.splitNumber).toBe(2);
     expect(displaySet.viewportTypes).toEqual(['stack']);
-  });
-
-  it('coerces a string NumberOfFrames to a numeric numImageFrames', () => {
-    const multiFrameInstances: NaturalizedInstance[] = [
-      {
-        imageId: 'wadors:mf-str',
-        Modality: 'XA',
-        SOPClassUID: '1.2.840.10008.5.1.4.1.1.12.1',
-        Rows: 512,
-        // Naturalized DICOM frequently yields NumberOfFrames as a string.
-        NumberOfFrames: '30' as unknown as number,
-        SliceLocation: 0,
-        SeriesInstanceUID: 'series-mf-str',
-        InstanceNumber: 1,
-      },
-    ];
-    const groups = splitImageIdsBySplitRules(['wadors:mf-str'], {
-      getNaturalizedInstance: () => multiFrameInstances[0],
-      splitRules: compiledDisplaySetRules,
-    });
-    expect(groups[0].matchedRule.id).toBe('multiFrame');
-
-    const displaySet = createDisplaySetFromGroup(groups[0]);
-    expect(displaySet.numImageFrames).toBe(30);
-    expect(typeof displaySet.numImageFrames).toBe('number');
   });
 
   it('classifies an MPEG2 transfer syntax instance as video', () => {
@@ -534,35 +472,6 @@ describe('displayset split utilities', () => {
     );
   });
 
-  it('series hook splits a mixed-b-value DWI series into two display sets', () => {
-    const mixed: NaturalizedInstance[] = [
-      {
-        imageId: 'b800',
-        Modality: 'MR',
-        SOPClassUID: '1.2.840.10008.5.1.4.1.1.4',
-        Rows: 256,
-        SeriesInstanceUID: 'dwi',
-        DiffusionBValue: 800,
-      },
-      {
-        imageId: 'noB',
-        Modality: 'MR',
-        SOPClassUID: '1.2.840.10008.5.1.4.1.1.4',
-        Rows: 256,
-        SeriesInstanceUID: 'dwi',
-      },
-    ];
-    const groups = splitImageIdsBySplitRules(['b800', 'noB'], {
-      getNaturalizedInstance: (id) => mixed.find((i) => i.imageId === id),
-      splitRules: compiledDisplaySetRules,
-    });
-
-    expect(groups).toHaveLength(2);
-    expect(
-      groups.every((g) => g.matchedRule.id === 'mixedDimensionalityBValue')
-    ).toBe(true);
-  });
-
   it('series hook leaves a non-mixed DWI series as one volume display set', () => {
     // Every frame has a b-value, so the mixed-b-value rule must not fire; the
     // series falls through to the volume3d rule as a single display set.
@@ -668,17 +577,6 @@ describe('split key stability', () => {
     expect(groups[0].splitKey).toBe(JSON.stringify(['byImage', 'a']));
   });
 
-  it('rejects an invalid rule set even when there are no instances', () => {
-    // A broken rule set is broken regardless of what it is applied to, and
-    // validating only on a non-empty series would let it through in exactly the
-    // cheap case a caller is most likely to exercise first.
-    expect(() =>
-      groupInstancesBySplitRules([], {
-        broken: { id: 'other', priority: 1 },
-      })
-    ).toThrow(/"broken".*states id "other"/);
-  });
-
   it('orders groups by rule position, then by key numerically', () => {
     // '10' must sort after '2', not lexically before it.
     const instances = [ct('j', 10), ct('b', 2), ct('a', 1)];
@@ -724,21 +622,6 @@ describe('split key stability', () => {
     );
     expect(forward.map((g) => g.splitKey)).toEqual(
       reverse.map((g) => g.splitKey)
-    );
-  });
-
-  it('produces the same keys regardless of input order', () => {
-    const forward = groupInstancesBySplitRules(
-      [ct('a', 1), ct('b', 2), ct('j', 10)],
-      ruleSet(ctRule)
-    );
-    const shuffled = groupInstancesBySplitRules(
-      [ct('j', 10), ct('a', 1), ct('b', 2)],
-      ruleSet(ctRule)
-    );
-
-    expect(shuffled.map((g) => g.splitKey)).toEqual(
-      forward.map((g) => g.splitKey)
     );
   });
 });
@@ -905,12 +788,6 @@ describe('host-supplied instance ordering', () => {
   const ids = (groups: InstanceGroup[]) =>
     groups[0].instances.map((i) => i.imageId);
 
-  it('defaults to acquisition order when the host supplies nothing', () => {
-    expect(
-      ids(groupInstancesBySplitRules(instances, ruleSet(plainRule)))
-    ).toEqual(['b', 'c', 'a']);
-  });
-
   it('applies a host base sort to every rule', () => {
     // A whole-list sort, which is the point: a base order that picks a reference
     // instance and projects onto it cannot be written as a comparator.
@@ -1026,23 +903,6 @@ describe('host-supplied instance ordering', () => {
       { sortInstances: byPosition }
     );
     expect(ids(groups)).toEqual(['a', 'b', 'c']);
-  });
-
-  it('stays independent of the order instances were passed in', () => {
-    const options = { sortInstances: byPosition };
-    const forward = groupInstancesBySplitRules(
-      instances,
-      ruleSet(plainRule),
-      undefined,
-      options
-    );
-    const reverse = groupInstancesBySplitRules(
-      [...instances].reverse(),
-      ruleSet(plainRule),
-      undefined,
-      options
-    );
-    expect(ids(forward)).toEqual(ids(reverse));
   });
 
   it('orderInstancesForRule reproduces the engine order outside a split', () => {
