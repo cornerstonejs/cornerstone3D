@@ -218,6 +218,8 @@ async function mountLegacyVolumeLabelmap({
       segmentationId,
       referencedId: layer.labelmapId,
     }),
+    // FIDELITY-STATE-9: legacy fidelity skips overlays via this flag, not the UID name.
+    excludeFromFidelity: true,
     useIndependentComponents,
     blendMode,
   }));

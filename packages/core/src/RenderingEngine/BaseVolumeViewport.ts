@@ -92,6 +92,11 @@ import {
   createSharpeningRenderPass,
   createSmoothingRenderPass,
 } from './renderPasses';
+import type { FidelityLine } from './helpers/fidelityIndicator/fidelityIndicatorState';
+import {
+  type CachedRecord,
+  fidelityLinesFromVolumeActors,
+} from './helpers/fidelityIndicator/collectFidelityLines';
 /**
  * Abstract base class for volume viewports. VolumeViewports are used to render
  * 3D volumes from which various orientations can be viewed. Since VolumeViewports
@@ -120,6 +125,72 @@ abstract class BaseVolumeViewport extends Viewport {
   protected initialViewUp: Point3;
   protected viewportProperties: VolumeViewportProperties = {};
   private volumeIds = new Set<string>();
+  /** Quality-record cache for fidelity lines; cleared on volume data events. */
+  private _fidelityRecords = new Map<string, CachedRecord>();
+  private _fidelityRecordListenersAttached = false;
+  /** Set on ELEMENT_DISABLED of this element; the listeners never return. */
+  private _fidelityRecordsDisposed = false;
+
+  public canReportFidelity(): boolean {
+    return true;
+  }
+
+  protected collectFidelityLines(): FidelityLine[] {
+    this.ensureFidelityRecordInvalidation();
+    return fidelityLinesFromVolumeActors(this, this._fidelityRecords);
+  }
+
+  /**
+   * Adds the global listeners that clear the record cache on volume data
+   * events. The listeners are removed on ELEMENT_DISABLED of this element, so
+   * a disabled viewport does not stay in memory. `_reset` fires that event
+   * without `isDisabled`, so a disposed flag stops a later attach.
+   */
+  private ensureFidelityRecordInvalidation(): void {
+    if (
+      this._fidelityRecordListenersAttached ||
+      this._fidelityRecordsDisposed ||
+      this.isDisabled
+    ) {
+      return;
+    }
+    this._fidelityRecordListenersAttached = true;
+
+    const invalidate = (evt: Event) => {
+      const { volumeId } = (evt as CustomEvent<{ volumeId?: string }>).detail;
+      if (volumeId) {
+        this._fidelityRecords.delete(volumeId);
+      } else {
+        this._fidelityRecords.clear();
+      }
+    };
+
+    const cleanUp = (evt: Event) => {
+      // Match the element: a viewport of another engine can share the id.
+      if (
+        (evt as EventTypes.ElementDisabledEvent).detail?.element !==
+        this.element
+      ) {
+        return;
+      }
+
+      eventTarget.removeEventListener(Events.IMAGE_VOLUME_MODIFIED, invalidate);
+      eventTarget.removeEventListener(
+        Events.IMAGE_VOLUME_LOADING_COMPLETED,
+        invalidate
+      );
+      eventTarget.removeEventListener(Events.ELEMENT_DISABLED, cleanUp);
+      this._fidelityRecords.clear();
+      this._fidelityRecordsDisposed = true;
+    };
+
+    eventTarget.addEventListener(Events.IMAGE_VOLUME_MODIFIED, invalidate);
+    eventTarget.addEventListener(
+      Events.IMAGE_VOLUME_LOADING_COMPLETED,
+      invalidate
+    );
+    eventTarget.addEventListener(Events.ELEMENT_DISABLED, cleanUp);
+  }
 
   constructor(props: ViewportInput) {
     super(props);
@@ -295,10 +366,11 @@ abstract class BaseVolumeViewport extends Viewport {
     );
 
     const cleanUp = (evt: Event) => {
-      const { viewportId } = (evt as CustomEvent<{ viewportId?: string }>)
-        .detail;
-
-      if (viewportId !== this.id) {
+      // Match the element: a viewport of another engine can share the id.
+      if (
+        (evt as EventTypes.ElementDisabledEvent).detail?.element !==
+        this.element
+      ) {
         return;
       }
 

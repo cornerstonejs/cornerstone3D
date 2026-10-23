@@ -13,7 +13,6 @@ import {
 import type {
   IVolumeRenderStrategy,
   SelectVolumeStrategy,
-  StrategyBinding,
   VolumeStrategyProvider,
   VolumeStrategyProvisionReason,
 } from '../../helpers/volumeRenderStrategy';
@@ -55,6 +54,10 @@ import {
   resolvePlanarRenderPathProjection,
 } from './planarRenderPathProjection';
 import { applyPlanarVolumePresentation } from './planarVolumePresentation';
+import {
+  isSegmentationOverlayData,
+  readBoundQuality,
+} from '../renderingFidelity';
 
 const SLICE_OVERLAY_DEPTH_EPSILON = 1e-4;
 // Trailing delay before repainting a slab-projecting segmentation overlay
@@ -96,8 +99,7 @@ export class VtkVolumeSliceRenderPath
   ): Promise<RenderPathAttachment<PlanarDataPresentation>> {
     const payload: PlanarPayload = data as unknown as LoadedData<PlanarPayload>;
     const imageVolume = payload.imageVolume;
-    const isSegmentationOverlay =
-      options.role === 'overlay' && payload.reference?.kind === 'segmentation';
+    const isSegmentationOverlay = isSegmentationOverlayData(payload, options);
 
     if (!imageVolume) {
       throw new Error(
@@ -140,7 +142,12 @@ export class VtkVolumeSliceRenderPath
       dataPresentation: undefined,
       isSegmentationOverlay,
       viewportId: ctx.viewportId,
+      excludeFromFidelity: isSegmentationOverlay,
+      fullGrid: imageVolume.voxelGrid,
+      // A slice samples no ray, so it has no interactive sample reduction.
+      sampleDistanceLod: 1,
     };
+    rendering.refreshFidelity = () => this.refreshFidelity(rendering);
 
     this.provisionStrategies(rendering, 'initial');
     this.applyStrategy(rendering);
@@ -150,17 +157,7 @@ export class VtkVolumeSliceRenderPath
     const removeVolumeSubscriptions = subscribeToVolumeEvents(
       payload.volumeId,
       (eventType) => {
-        if (eventType === Events.IMAGE_VOLUME_MODIFIED) {
-          // Volume writers (streaming loader, labelmap updates) mark the
-          // modified slices on the shared streaming texture themselves, so
-          // the next render only re-uploads those slices; the mapper just
-          // needs to know its buffers are stale.
-          mapper.modified();
-        }
-
-        if (eventType === Events.IMAGE_VOLUME_LOADING_COMPLETED) {
-          this.provisionStrategies(rendering, 'loaded');
-        }
+        this.onVolumeData(rendering, eventType);
 
         const isProjectingOverlay =
           rendering.isSegmentationOverlay &&
@@ -374,6 +371,47 @@ export class VtkVolumeSliceRenderPath
     return rendering.imageVolume.metadata?.FrameOfReferenceUID;
   }
 
+  /**
+   * Handles a volume data event without a camera change (GENVIEW-FIDELITY-1).
+   * A completed load runs the provider and binds again at once. Any other
+   * event only marks the record stale; `refreshFidelity` recomputes it once,
+   * when the viewport next reads the fidelity, so a stream of volume events
+   * reads the quality at most once for each read of the fidelity.
+   */
+  private onVolumeData(
+    rendering: PlanarVolumeSliceRendering,
+    eventType: string
+  ): void {
+    if (eventType === Events.IMAGE_VOLUME_MODIFIED) {
+      // Volume writers (streaming loader, labelmap updates) mark the
+      // modified slices on the shared streaming texture themselves, so
+      // the next render only re-uploads those slices; the mapper just
+      // needs to know its buffers are stale.
+      rendering.mapper.modified();
+    }
+
+    if (eventType === Events.IMAGE_VOLUME_LOADING_COMPLETED) {
+      this.provisionStrategies(rendering, 'loaded');
+      this.applyStrategy(rendering);
+      return;
+    }
+
+    // A labelmap overlay has no fidelity, and a brush fires many events.
+    if (!rendering.excludeFromFidelity) {
+      rendering.fidelityStale = true;
+    }
+  }
+
+  /** Recomputes a stale record of the bound grid (see `onVolumeData`). */
+  private refreshFidelity(rendering: PlanarVolumeSliceRendering): void {
+    if (!rendering.fidelityStale) {
+      return;
+    }
+
+    rendering.fidelityStale = false;
+    rendering.voxelQuality = this.readQuality(rendering);
+  }
+
   private getImageData(
     rendering: PlanarVolumeSliceRendering
   ): IImageData | undefined {
@@ -506,11 +544,18 @@ export class VtkVolumeSliceRenderPath
       rendering.boundTexture = base.texture;
     }
 
-    rendering.voxelQuality = this.readQuality(rendering, bindings);
+    if (base) {
+      rendering.boundGrid = { grid: base.grid, statistic: base.statistic };
+    }
+
+    rendering.voxelQuality = this.readQuality(rendering);
+    rendering.fidelityStale = false;
+    rendering.fullGrid = rendering.imageVolume.voxelGrid;
   }
 
   /**
-   * The record of the quality for the render that just happened.
+   * The record of the quality of the grid that the render binds. It is read
+   * when the render binds, and again after a volume data event.
    *
    * The render composes this record, because the render is the only party that
    * knows which textures it used and how it used them. A render that reads a
@@ -518,22 +563,15 @@ export class VtkVolumeSliceRenderPath
    * the quality of that coarse texture.
    *
    * This render path samples one plane from one texture, so the record follows
-   * the grid of the `base` binding. A strategy that offers no binding states
-   * that the render reads the composite at its full resolution, so the record
-   * passes no ceiling.
+   * the grid that the mapper holds: the last `base` binding. A strategy that
+   * offers no binding leaves that texture bound, so the record keeps its grid.
+   * Only a render that never bound a texture reads the composite at its full
+   * resolution, with no ceiling.
    */
   private readQuality(
-    rendering: PlanarVolumeSliceRendering,
-    bindings: StrategyBinding[]
+    rendering: PlanarVolumeSliceRendering
   ): VoxelQualityRecord | undefined {
-    const base = bindings.find((binding) => binding.role === 'base');
-
-    // The record of the grid that the render really bound. A reduced texture
-    // fills by box average from the source, so that grid needs no
-    // representation of its own.
-    return base
-      ? rendering.imageVolume.getGridQuality(base.grid, base.statistic)
-      : rendering.imageVolume.getVoxelQuality();
+    return readBoundQuality(rendering.imageVolume, rendering.boundGrid);
   }
 
   private resize(

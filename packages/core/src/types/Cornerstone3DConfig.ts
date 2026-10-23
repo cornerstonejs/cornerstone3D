@@ -7,6 +7,14 @@ interface Cornerstone3DConfig {
    */
   isMobile?: boolean;
 
+  /**
+   * When true, viewports do not show the built-in fidelity indicator. For an
+   * application that shows its own indicator, for example OHIF. Dangerous:
+   * without such an indicator the user sees lossy pixels with no disclosure
+   * (FIDELITY-CONF-4).
+   */
+  dangerouslyDisableFidelityIndicator?: boolean;
+
   rendering?: {
     // vtk.js supports 8bit integer textures and 32bit float textures.
     // However, if the client has norm16 textures (it can be seen by visiting
@@ -176,6 +184,12 @@ interface Cornerstone3DConfig {
      * - MB MBytes of allocated memory. (Run Chrome with --enable-precise-memory-info)
      */
     statsOverlay?: boolean;
+    /**
+     * When true, the fidelity indicator also shows the verbose text badge
+     * (top-left) beside the minimal SVG indicator (top-right).
+     * When false/unset (default), only the SVG indicator is shown.
+     */
+    fidelityIndicatorDebug?: boolean;
   };
 
   /**

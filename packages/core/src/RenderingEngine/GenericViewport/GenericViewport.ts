@@ -30,6 +30,22 @@ import {
   isGenericViewportReferenceViewable,
   type GenericViewportReferenceContext,
 } from './genericViewportReferenceCompatibility';
+import type { FidelityLine } from '../helpers/fidelityIndicator/fidelityIndicatorState';
+import type {
+  IViewportFidelity,
+  ViewportFidelityState,
+} from '../../types/ViewportFidelity';
+import { buildViewportFidelityState } from '../helpers/fidelityIndicator/buildViewportFidelityState';
+import {
+  type FidelityDisplay,
+  displaySpacingOfDisplay,
+  pixelSpacingOfCanvasToWorld,
+} from '../helpers/fidelityIndicator/displaySpacingOfViewport';
+import { notifyFidelityStateChanged } from '../helpers/fidelityIndicator/notifyFidelityStateChanged';
+import {
+  type BindingFidelitySource,
+  fidelityLinesFromBindings,
+} from '../helpers/fidelityIndicator/collectFidelityLines';
 
 /**
  * Generic GenericViewport controller.
@@ -55,10 +71,13 @@ import {
  * centralizing render-mode-specific behavior in the controller.
  */
 abstract class GenericViewport<
-  TViewState extends object,
-  TDataPresentation = unknown,
-  TContext extends BaseViewportRenderContext = BaseViewportRenderContext,
-> implements ViewportController<TViewState, TDataPresentation>
+    TViewState extends object,
+    TDataPresentation = unknown,
+    TContext extends BaseViewportRenderContext = BaseViewportRenderContext,
+  >
+  implements
+    ViewportController<TViewState, TDataPresentation>,
+    IViewportFidelity
 {
   // ── Abstract fields ──────────────────────────────────────────────────
 
@@ -226,6 +245,111 @@ abstract class GenericViewport<
    */
   getCurrentMode(): ViewportContentMode {
     return this.getSourceBinding() ? 'unknown' : 'empty';
+  }
+
+  /**
+   * Whether this viewport can report fidelity (GENVIEW-FIDELITY-8). The family
+   * decides: a family that can show degradable data returns true, also before
+   * it mounts data, because the indicator stays hidden with no lines. The base
+   * answer is false, for a family such as ECG, Video or WSI.
+   */
+  canReportFidelity(): boolean {
+    return false;
+  }
+
+  /**
+   * Absolute per-viewport fidelity record (FIDELITY-EVENT-5).
+   */
+  getFidelityState(): ViewportFidelityState {
+    const display = this.getFidelityDisplay();
+
+    return buildViewportFidelityState(
+      this.collectFidelityLines(display),
+      displaySpacingOfDisplay(display)
+    );
+  }
+
+  /**
+   * Fidelity lines for the built-in indicator UI.
+   */
+  getFidelityLines(): FidelityLine[] {
+    return this.collectFidelityLines(this.getFidelityDisplay());
+  }
+
+  /**
+   * Fires `VIEWPORT_FIDELITY_CHANGED` when the derived fidelity state changes
+   * (FIDELITY-EVENT-2..4). Called after each draw (FIDELITY-EVENT-7).
+   *
+   * @internal
+   */
+  notifyFidelityStateChanged(): void {
+    const display = this.getFidelityDisplay();
+
+    // Subclasses such as PlanarViewport define `suppressEvents`.
+    notifyFidelityStateChanged(
+      this,
+      this.collectFidelityLines(display),
+      displaySpacingOfDisplay(display)
+    );
+  }
+
+  /**
+   * Whether the view is 3D for the display spacing (FIDELITY-RECORD-2). The
+   * Volume3D family overrides this; a slice family keeps `false`.
+   */
+  protected isFidelityView3D(): boolean {
+    return false;
+  }
+
+  /**
+   * The display of this viewport from the resolved view (GENVIEW-FIDELITY-3):
+   * the world size of one device pixel and the view plane normal.
+   */
+  private getFidelityDisplay(): FidelityDisplay | undefined {
+    const view = this.getResolvedView();
+
+    if (!view) {
+      return undefined;
+    }
+
+    const pixelSpacing = pixelSpacingOfCanvasToWorld((canvasPos) =>
+      view.canvasToWorld(canvasPos)
+    );
+
+    if (!pixelSpacing) {
+      return undefined;
+    }
+
+    return {
+      pixelSpacing,
+      viewPlaneNormal: view.toICamera()?.viewPlaneNormal,
+      volume3D: this.isFidelityView3D(),
+    };
+  }
+
+  /**
+   * Builds fidelity lines from the typed fidelity fields that each render
+   * path sets on its rendering (GENVIEW-FIDELITY-2): a record for volume
+   * data, an image quality for a stack image (FIDELITY-STATE-8).
+   */
+  protected collectFidelityLines(display?: FidelityDisplay): FidelityLine[] {
+    const sources: BindingFidelitySource[] = [];
+
+    this.forEachBinding((binding) => {
+      const { rendering } = binding;
+
+      rendering.refreshFidelity?.();
+      sources.push({
+        record: rendering.voxelQuality,
+        fullGrid: rendering.fullGrid,
+        sampleDistanceLod: rendering.sampleDistanceLod,
+        interactiveReduction: rendering.interactiveReduction,
+        imageQualityStatus: rendering.imageQualityStatus,
+        skip: rendering.excludeFromFidelity,
+      });
+    });
+
+    return fidelityLinesFromBindings(display, sources);
   }
 
   /**

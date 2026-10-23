@@ -210,6 +210,12 @@ import type {
   VoxelQualityVerdict,
   VoxelReductionDefinition,
 } from './VoxelQuality';
+import type {
+  IViewportFidelity,
+  ViewportFidelityCause,
+  ViewportFidelityState,
+  ViewportFidelityShownState,
+} from './ViewportFidelity';
 
 export type * from './MetadataModuleTypes';
 export type * from './InstanceTypes';
@@ -408,6 +414,10 @@ export type {
   VoxelQualityRequirement,
   VoxelQualityVerdict,
   VoxelQualityCause,
+  IViewportFidelity,
+  ViewportFidelityCause,
+  ViewportFidelityState,
+  ViewportFidelityShownState,
 };
 
 export { ActorRenderMode };

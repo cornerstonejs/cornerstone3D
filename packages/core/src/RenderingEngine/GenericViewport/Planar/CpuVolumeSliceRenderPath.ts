@@ -35,6 +35,7 @@ import {
   resolvePlanarRenderPathProjection,
   worldToCanvasPlanarRenderPathProjection,
 } from './planarRenderPathProjection';
+import { isSegmentationOverlayData } from '../renderingFidelity';
 
 const DEFERRED_VIEWPORT_RESAMPLE_DELAY_MS = 80;
 
@@ -47,7 +48,7 @@ export class CpuVolumeSliceRenderPath
   async addData(
     ctx: PlanarCpuVolumeAdapterContext,
     data: LoadedData,
-    _options: DataAddOptions
+    options: DataAddOptions
   ): Promise<RenderPathAttachment<PlanarDataPresentation>> {
     const payload: PlanarPayload = data as unknown as LoadedData<PlanarPayload>;
 
@@ -75,6 +76,9 @@ export class CpuVolumeSliceRenderPath
     rendering = {
       renderMode: ActorRenderMode.CPU_VOLUME,
       actorEntryUID: uuidv4(),
+      excludeFromFidelity: isSegmentationOverlayData(payload, options),
+      fullGrid: payload.imageVolume.voxelGrid,
+      sampleDistanceLod: 1,
       compatibilityActor,
       imageVolume: payload.imageVolume,
       imageIds: payload.imageIds,
@@ -414,6 +418,14 @@ export class CpuVolumeSliceRenderPath
     } else {
       cancelDeferredViewportResample(runtime);
     }
+
+    // The sampler reads the full volume, so the record is the record of the
+    // full grid. A deferred resample shows the older sample, transformed to
+    // the new camera, until the high-quality resample (GENVIEW-FIDELITY-1).
+    runtime.voxelQuality = runtime.imageVolume.getVoxelQuality?.();
+    runtime.fullGrid = runtime.imageVolume.voxelGrid;
+    runtime.interactiveReduction =
+      resampleDecision === 'defer' && !!runtime.sampledSliceState;
 
     let sampledSliceState = runtime.sampledSliceState;
 

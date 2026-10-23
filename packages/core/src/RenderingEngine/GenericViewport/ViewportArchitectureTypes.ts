@@ -1,4 +1,12 @@
-import type { ActorEntry, ICamera, Point2, Point3 } from '../../types';
+import type {
+  ActorEntry,
+  ICamera,
+  Point2,
+  Point3,
+  VoxelGrid,
+  VoxelQualityRecord,
+} from '../../types';
+import type ImageQualityStatus from '../../enums/ImageQualityStatus';
 import type {
   ReferenceCompatibleOptions,
   ViewReference,
@@ -62,12 +70,38 @@ export type LoadedData<TData extends object = object> = {
   type: LogicalDataType;
 } & TData;
 
+/**
+ * The fidelity fields that a render path sets on its rendering
+ * (GENVIEW-FIDELITY-1, GENVIEW-FIDELITY-2). The base class reads only these
+ * fields; it does not reach into a mapper, a volume or an image.
+ */
+export type RenderingFidelity = {
+  /** The quality record of the grid that the render drew. */
+  voxelQuality?: VoxelQualityRecord;
+  /** The full-resolution grid of the source volume. */
+  fullGrid?: VoxelGrid;
+  /** Sample distance / idle baseline. 1 for a path with no ray sampling. */
+  sampleDistanceLod?: number;
+  /** True while the path shows an older or coarser sample during interaction. */
+  interactiveReduction?: boolean;
+  /** The quality of the stack image that the render drew. */
+  imageQualityStatus?: ImageQualityStatus;
+  /** True for an overlay that the fidelity ignores, e.g. a labelmap. */
+  excludeFromFidelity?: boolean;
+  /**
+   * Recomputes the fields that a volume data event made stale. The base class
+   * calls it before it reads the fields, so a stream of events costs one
+   * record for each read, and not one for each event.
+   */
+  refreshFidelity?: () => void;
+};
+
 // Mounted rendering state is render-path-specific; logical dataset identity
 // lives on the binding key and the loaded dataset. The controller
 // treats this object as opaque even though adapter fields are stored flat.
 export type MountedRendering<
   TRendering extends { renderMode: string } = { renderMode: string },
-> = Omit<TRendering, 'id'>;
+> = Omit<TRendering, 'id'> & RenderingFidelity;
 
 export interface RenderPathAttachment<TPresentation = unknown> {
   rendering: MountedRendering;

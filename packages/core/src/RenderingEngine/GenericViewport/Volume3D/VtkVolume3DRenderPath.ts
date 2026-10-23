@@ -22,7 +22,6 @@ import {
 import type {
   IVolumeRenderStrategy,
   SelectVolumeStrategy,
-  StrategyBinding,
   VolumeStrategyProvider,
   VolumeStrategyProvisionReason,
 } from '../../helpers/volumeRenderStrategy';
@@ -48,6 +47,10 @@ import type {
 } from './viewport3DTypes';
 import applyVolume3DCamera from './applyVolume3DCamera';
 import { getInitialVolume3DCamera } from './vtkVolume3DInitialCamera';
+import {
+  isSegmentationOverlayData,
+  readBoundQuality,
+} from '../renderingFidelity';
 import setVtkCameraClippingRange from '../setVtkCameraClippingRange';
 
 /** @internal */
@@ -82,7 +85,7 @@ export class VtkVolume3DRenderPath
   async addData(
     ctx: Volume3DVtkVolumeAdapterContext,
     data: LoadedData,
-    _options: DataAddOptions
+    options: DataAddOptions
   ): Promise<RenderPathAttachment<Volume3DDataPresentation>> {
     const payload: Volume3DVolumePayload =
       data as unknown as LoadedData<Volume3DVolumePayload>;
@@ -124,7 +127,12 @@ export class VtkVolume3DRenderPath
       imageVolume: payload.imageVolume,
       mapper,
       viewportId: ctx.viewportId,
+      excludeFromFidelity: isSegmentationOverlayData(
+        payload as { reference?: { kind?: string } },
+        options
+      ),
     };
+    rendering.refreshFidelity = () => this.refreshFidelity(rendering);
 
     this.provisionStrategies(rendering, 'initial');
     this.applyStrategy(rendering);
@@ -132,10 +140,7 @@ export class VtkVolume3DRenderPath
     rendering.removeStreamingSubscriptions = subscribeToVolumeEvents(
       payload.volumeId,
       (eventType) => {
-        if (eventType === Events.IMAGE_VOLUME_LOADING_COMPLETED) {
-          this.provisionStrategies(rendering, 'loaded');
-        }
-
+        this.onVolumeData(rendering, eventType);
         ctx.display.requestRender();
       }
     );
@@ -215,6 +220,37 @@ export class VtkVolume3DRenderPath
     rendering: Volume3DVolumeRendering
   ): IImageData | undefined {
     return buildVolumeImageData(rendering.imageVolume);
+  }
+
+  /**
+   * Handles a volume data event without a camera change (GENVIEW-FIDELITY-1).
+   * A completed load runs the provider and binds again at once. Any other
+   * event only marks the record stale; `refreshFidelity` recomputes it once,
+   * when the viewport next reads the fidelity.
+   */
+  private onVolumeData(
+    rendering: Volume3DVolumeRendering,
+    eventType: string
+  ): void {
+    if (eventType === Events.IMAGE_VOLUME_LOADING_COMPLETED) {
+      this.provisionStrategies(rendering, 'loaded');
+      this.applyStrategy(rendering);
+      return;
+    }
+
+    if (!rendering.excludeFromFidelity) {
+      rendering.fidelityStale = true;
+    }
+  }
+
+  /** Recomputes a stale record of the bound grid (see `onVolumeData`). */
+  private refreshFidelity(rendering: Volume3DVolumeRendering): void {
+    if (!rendering.fidelityStale) {
+      return;
+    }
+
+    rendering.fidelityStale = false;
+    rendering.voxelQuality = this.readQuality(rendering);
   }
 
   private render(
@@ -343,11 +379,40 @@ export class VtkVolume3DRenderPath
       rendering.boundTexture = base.texture;
     }
 
-    rendering.voxelQuality = this.readQuality(rendering, bindings);
+    if (base) {
+      rendering.boundGrid = { grid: base.grid, statistic: base.statistic };
+    }
+
+    rendering.voxelQuality = this.readQuality(rendering);
+    rendering.fidelityStale = false;
+    rendering.fullGrid = rendering.imageVolume?.voxelGrid;
+    rendering.sampleDistanceLod = this.readSampleDistanceLod(rendering);
   }
 
   /**
-   * The record of the quality for the render that just happened.
+   * Current sample distance relative to the idle baseline (FIDELITY-RECORD-6).
+   */
+  private readSampleDistanceLod(rendering: Volume3DVolumeRendering): number {
+    const { mapper } = rendering;
+    const current = mapper.getSampleDistance?.();
+    const imageData = mapper.getInputData?.();
+
+    if (!imageData || !(current > 0)) {
+      return 1;
+    }
+
+    const baseline = sampleDistanceOf(imageData, rendering.boundTexture, 1);
+
+    if (!(baseline > 0)) {
+      return 1;
+    }
+
+    return current / baseline;
+  }
+
+  /**
+   * The record of the quality of the grid that the render binds. It is read
+   * when the render binds, and again after a volume data event.
    *
    * The render composes this record, because the render is the only party that
    * knows which textures it used and how it used them.
@@ -355,20 +420,13 @@ export class VtkVolume3DRenderPath
    * A 3D render samples the whole texture, where a slice render samples one
    * plane of it. The two therefore ask a different question of the data, and a
    * 3D viewport and a slice viewport over one volume can report a different
-   * quality at the same moment.
+   * quality at the same moment. The record follows the grid that the mapper
+   * holds (see `readBoundQuality`).
    */
   private readQuality(
-    rendering: Volume3DVolumeRendering,
-    bindings: StrategyBinding[]
+    rendering: Volume3DVolumeRendering
   ): VoxelQualityRecord | undefined {
-    const base = bindings.find((binding) => binding.role === 'base');
-
-    // The record of the grid that the render really bound. A reduced texture
-    // fills by box average from the source, so that grid needs no
-    // representation of its own.
-    return base
-      ? rendering.imageVolume.getGridQuality(base.grid, base.statistic)
-      : rendering.imageVolume.getVoxelQuality();
+    return readBoundQuality(rendering.imageVolume, rendering.boundGrid);
   }
 
   private resize(ctx: Volume3DVtkVolumeAdapterContext): void {
