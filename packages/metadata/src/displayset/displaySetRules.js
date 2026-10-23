@@ -23,6 +23,19 @@ import { NO_VIEWPORT_TYPE } from './types';
 /** Modalities whose multi-slice series are reconstructable into a volume. */
 const VOLUME_MODALITIES = ['CT', 'MR', 'PT', 'NM'];
 
+/** Modalities whose multi-frame instances are cine clips. */
+const CINE_MODALITIES = ['US', 'XA', 'RF', 'ES', 'XC'];
+
+/** Multi-frame SOP classes of cine modalities that hold a volume, not a clip. */
+const VOLUME_MULTIFRAME_SOP_CLASSES = [
+  '1.2.840.10008.5.1.4.1.1.6.2', // Enhanced US Volume
+  '1.2.840.10008.5.1.4.1.1.13.1.1', // X-Ray 3D Angiographic
+  '1.2.840.10008.5.1.4.1.1.13.1.2', // X-Ray 3D Craniofacial
+];
+
+/** A list as the source text of an expression array literal. */
+const quotedList = (values) => `[${values.map((v) => `'${v}'`).join(', ')}]`;
+
 /** Modalities that acquire one image per instance rather than a stack. */
 const SINGLE_IMAGE_MODALITIES = ['CR', 'DX', 'MG'];
 
@@ -101,28 +114,29 @@ export const displaySetRules = {
   multiFrame: {
     priority: 5,
     description:
-      'Multi-frame cine clips: one display set per instance, flagged isClip ' +
-      'with its frame count. A CT, MR, PT or NM multi-frame instance with no ' +
-      'slice location is an enhanced volume, and goes to volume3d.',
+      'Multi-frame cine clips: a multi-frame instance with a slice location, ' +
+      'or a US, XA, RF, ES or XC multi-frame that is not a volume. One display ' +
+      'set per InstanceNumber, flagged isClip with its frame count. Other ' +
+      'multi-frame instances, such as an enhanced CT, go to the volume rules.',
     viewportTypes: ['stack'],
     context: {
       // US, XA and other cine clips have no SliceLocation.
-      isCineClip: `SliceLocation != null || !(Modality in [${VOLUME_MODALITIES.map(
-        (modality) => `'${modality}'`
-      ).join(', ')}])`,
+      isCineClip:
+        `SliceLocation != null || (Modality in ${quotedList(CINE_MODALITIES)}` +
+        ` && !(SOPClassUID in ${quotedList(VOLUME_MULTIFRAME_SOP_CLASSES)}))`,
     },
     matches: {
       ...RENDERABLE_IMAGE,
       isMultiFrame: true,
       isCineClip: true,
     },
+    // DICOM: the instances of one series with the same InstanceNumber are one
+    // object, so they are one display set.
     groupBy: ['SeriesInstanceUID', 'InstanceNumber'],
     attributes: {
       isClip: true,
       // NumberOfFrames is frequently naturalized as a string (e.g. '30').
       numImageFrames: { expression: 'Number(NumberOfFrames)' },
-      splitNumber: 'splitNumber',
-      isMultiFrame: 'isMultiFrame',
     },
   },
 
@@ -186,7 +200,6 @@ export const displaySetRules = {
     viewportTypes: [NO_VIEWPORT_TYPE],
     // No `matches`: claims whatever is left.
     groupBy: ['SeriesInstanceUID'],
-    attributes: { sopClassUids: 'sopClassUids' },
   },
 };
 

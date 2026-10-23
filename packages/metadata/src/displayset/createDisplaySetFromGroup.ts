@@ -222,6 +222,14 @@ export function createDisplaySetFromGroup(
   displaySet.splitKey = group.splitKey;
   displaySet.splitRuleId = group.matchedRule.id;
   displaySet.splitGroupId = group.matchedRule.groupId ?? group.matchedRule.id;
+  // Every display set carries these, so a rule does not ask for them.
+  displaySet.sopClassUids = [
+    ...new Set(instances.map((i) => i.SOPClassUID).filter(Boolean)),
+  ] as string[];
+  if (options.splitNumber !== undefined) {
+    displaySet.splitNumber = options.splitNumber;
+  }
+  displaySet.isMultiFrame ??= Number(first?.NumberOfFrames) > 1;
   applyCustomAttributes(displaySet, attributes);
 
   return displaySet;

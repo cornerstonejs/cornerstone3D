@@ -163,7 +163,11 @@ describe('displayset split utilities', () => {
     // set; the keys are type-declared via the IDisplaySet extension.
     expect(displaySet.isClip).toBe(true);
     expect(displaySet.numImageFrames).toBe(30);
+    // The factory stamps splitNumber and sopClassUids; the rule does not ask.
     expect(displaySet.splitNumber).toBe(2);
+    expect(displaySet.sopClassUids).toEqual([
+      multiFrameInstances[0].SOPClassUID,
+    ]);
     expect(displaySet.viewportTypes).toEqual(['stack']);
   });
 
