@@ -16,7 +16,8 @@ const log = coreLog.getLogger('utilities', 'getVolumeSliceRangeInfo');
  * @param volumeId - Id of one of the volumes loaded on the given viewport
  * @param useSlabThickness - If true, the slice range will be calculated
  * based on the slab thickness instead of the spacing in the normal direction
- * @returns slice range information
+ * @returns slice range information, or null when the viewport holds no volume
+ * that this function can measure
  */
 function getVolumeSliceRangeInfo(
   viewport: IVolumeViewport,
@@ -38,9 +39,15 @@ function getVolumeSliceRangeInfo(
     );
 
   if (!actorUID) {
-    throw new Error(
-      `Could not find image volume with id ${volumeId} in the viewport`
-    );
+    // A viewport holds no volume until a caller sets one, and a viewport of a
+    // volume that no actor draws, such as a 3D viewport of an empty scene, has
+    // no slice range either. A scroll of such a viewport moves nothing, so
+    // report that this function cannot measure the viewport and let the caller
+    // return. This is the same answer as the missing actor below, and a throw
+    // here reached the user as an exception whenever a scroll arrived before a
+    // volume.
+    log.warn('No volume found in the viewport for the volumeId of', volumeId);
+    return null;
   }
 
   const actorEntry = viewport.getActor(actorUID);

@@ -76,7 +76,6 @@ describe('renderingCapabilities', () => {
     const capabilities = detectRenderingCapabilities();
 
     expect(capabilities.webgl).toBe(false);
-    expect(capabilities.webgl2).toBe(false);
     expect(capabilities.norm16).toBe(false);
     expect(capabilities.maxTextureSize).toBe(0);
     expect(getSupportedTextureFormats).not.toHaveBeenCalled();
@@ -90,7 +89,6 @@ describe('renderingCapabilities', () => {
     expect(getSupportedTextureFormats).toHaveBeenCalledTimes(1);
     expect(capabilities).toMatchObject({
       webgl: true,
-      webgl2: true,
       maxTextureSize: 16384,
       renderer: 'NVIDIA GeForce RTX 3080',
       softwareRasterizer: false,
@@ -121,20 +119,16 @@ describe('renderingCapabilities', () => {
     expect(getSupportedTextureFormats).toHaveBeenCalledTimes(2);
   });
 
-  it('re-probes when WebGL2 availability changes for the same renderer', () => {
-    const gl = createFakeGL('Shared Renderer');
+  it('reports no WebGL when only a WebGL1 context is available', () => {
+    const gl = createFakeGL('WebGL1 Renderer');
     getContextSpy = jest
       .spyOn(HTMLCanvasElement.prototype, 'getContext')
       .mockImplementation((type) => (type === 'webgl' ? gl : null));
 
-    detectRenderingCapabilities();
-    expect(getSupportedTextureFormats).toHaveBeenCalledTimes(1);
-    getContextSpy.mockRestore();
+    const capabilities = detectRenderingCapabilities();
 
-    mockWebGL('Shared Renderer');
-    detectRenderingCapabilities();
-
-    expect(getSupportedTextureFormats).toHaveBeenCalledTimes(2);
+    expect(capabilities.webgl).toBe(false);
+    expect(getSupportedTextureFormats).not.toHaveBeenCalled();
   });
 
   it('re-probes when the cached probe version is stale', () => {

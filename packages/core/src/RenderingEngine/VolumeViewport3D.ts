@@ -9,6 +9,7 @@ import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 import type { ViewportInput } from '../types/IViewport';
 import type { ResetCameraOptions } from '../types/ICamera';
 import BaseVolumeViewport from './BaseVolumeViewport';
+import { sampleDistanceOf } from './helpers/createVolumeMapper';
 import type { Types } from '@cornerstonejs/core';
 /**
  * An object representing a 3-dimensional volume viewport. VolumeViewport3Ds are used to render
@@ -44,22 +45,14 @@ class VolumeViewport3D extends BaseVolumeViewport {
         if (mapper && mapper.getInputData) {
           const imageData = mapper.getInputData();
 
-          if (imageData) {
-            const spacing = imageData.getSpacing();
+          if (imageData && mapper.setSampleDistance) {
+            const texture = (
+              mapper as unknown as { getScalarTexture?: () => unknown }
+            ).getScalarTexture?.();
 
-            //Calculate sample distance
-            const defaultSampleDistance =
-              (spacing[0] + spacing[1] + spacing[2]) / 6;
-
-            const sampleDistanceMultiplier = multiplier || 1;
-            let sampleDistance =
-              defaultSampleDistance * sampleDistanceMultiplier;
-
-            // Apply sample distance if specified
-            if (sampleDistance !== undefined && mapper.setSampleDistance) {
-              const currentSampleDistance = mapper.getSampleDistance();
-              mapper.setSampleDistance(sampleDistance);
-            }
+            mapper.setSampleDistance(
+              sampleDistanceOf(imageData, texture, multiplier || 1)
+            );
           }
         }
       }

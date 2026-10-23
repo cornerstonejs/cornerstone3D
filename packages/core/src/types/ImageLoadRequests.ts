@@ -12,8 +12,13 @@ export default interface ImageLoadRequests {
   options: {
     targetBuffer: {
       type: string;
-      rows: number;
-      columns: number;
+      /**
+       * The size that the decoded image must hold. A request that states no
+       * size keeps the size that the decoder really produced, and the reader
+       * of the image scales it.
+       */
+      rows?: number;
+      columns?: number;
     };
     preScale: {
       enabled: boolean;
