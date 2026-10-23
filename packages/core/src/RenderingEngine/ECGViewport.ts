@@ -10,6 +10,7 @@ import type {
   ECGWaveformData,
   ECGViewportProperties,
   ViewReferenceSpecifier,
+  ViewportContentMode,
 } from '../types';
 import { Transform } from './helpers/cpuFallback/rendering/transform';
 import triggerEvent from '../utilities/triggerEvent';
@@ -17,34 +18,36 @@ import Viewport from './Viewport';
 import { getOrCreateCanvas } from './helpers';
 import { getGenericViewportSourceDataId } from './GenericViewport/genericViewportDisplaySetAccess';
 import {
-  ECG_CHANNEL_SPACING,
-  computeECGChannelLayouts,
-  computeECGHeight,
+  ECG_RENDERING_COLORS,
+  ECG_SECONDS_WIDTH,
+  loadECGWaveform,
+} from './GenericViewport/ECG/ecgWaveform';
+import {
+  computeECGTraceGeometry,
+  type ECGChannelLayout,
+} from './GenericViewport/ECG/ecgGeometry';
+import {
+  resolveECGTraceCells,
+  resolveECGTraceLayout,
+} from './GenericViewport/ECG/ecgTraceLayouts';
+import {
   drawECGGrid,
   drawECGLabels,
   drawECGTraces,
-  ECG_RENDERING_COLORS,
-  ECG_SECONDS_WIDTH,
-  getVisibleECGChannelsByFlag,
-  loadECGWaveform,
-} from '../utilities/ECGUtilities';
+} from './GenericViewport/ECG/ecgDrawing';
 
 /** Index-space size for amplitude axis so tools (e.g. Probe) use indexWithinDimensions; Int16 range. */
 const ECG_AMPLITUDE_INDEX_SIZE = 65536;
 
-/**
- * Pre-computed layout information for a single visible channel.
- */
-interface ChannelLayout {
-  channel: ECGChannel;
-  itemHeight: number;
-  yOffset: number;
-  baseline: number;
-}
+type ChannelLayout = ECGChannelLayout<ECGChannel>;
 
 /**
  * ECGViewport renders DICOM ECG waveform data on an HTML canvas.
  * Based on the VideoViewport custom rendering pipeline pattern.
+ *
+ * @deprecated Use `ViewportType.ECG` with the `ECGViewportLegacyAdapter`
+ * (or `ViewportType.ECG_NEXT` with the canonical `GenericViewport/ECG/ECGViewport`) instead.
+ * This legacy class will be removed in a future major release.
  */
 class ECGViewport extends Viewport {
   readonly uid: string;
@@ -57,6 +60,7 @@ class ECGViewport extends Viewport {
   private ecgWidth = 0;
   private ecgHeight = 0;
   private channelScale = 0; // world units per data unit
+  private layouts: ChannelLayout[] = [];
 
   private ecgCamera: InternalECGCamera = {
     panWorld: [0, 0],
@@ -134,7 +138,6 @@ class ECGViewport extends Viewport {
     );
 
     this.computeChannelScale();
-    this.recalculateHeight();
     this.refreshRenderValues();
     this.renderFrame();
   }
@@ -165,7 +168,6 @@ class ECGViewport extends Viewport {
     if (index >= 0 && index < this.channels.length) {
       this.channels[index].visible = visible;
       this.computeChannelScale();
-      this.recalculateHeight();
       this.refreshRenderValues();
       this.renderFrame();
     }
@@ -196,55 +198,41 @@ class ECGViewport extends Viewport {
   }
 
   /**
-   * Computes a per-channel amplitude scale so the total stacked height
-   * has a reasonable aspect ratio relative to the ECG width.
-   * Target: total height = ecgWidth * (canvas height / canvas width),
-   * so the initial fit-to-canvas fills the viewport.
+   * Computes the amplitude scale, the height and the rows of the visible
+   * channels with the `12x1` trace layout. The height fills the canvas aspect
+   * ratio relative to the ECG width, so the initial fit fills the viewport.
    */
   private computeChannelScale(): void {
-    const visibleChannels = getVisibleECGChannelsByFlag(this.channels);
-    if (visibleChannels.length === 0 || this.ecgWidth === 0) {
+    if (!this.waveformData || this.ecgWidth === 0) {
       this.channelScale = 0;
+      this.layouts = [];
       return;
     }
 
-    // Find the maximum amplitude range across all visible channels
-    let maxRange = 1;
-    for (const channel of visibleChannels) {
-      const range = channel.max - channel.min;
-      maxRange = Math.max(maxRange, range);
-    }
-
-    // Target: total ECG height matches canvas aspect ratio relative to width
+    const { numberOfSamples } = this.waveformData;
     const canvasAspect =
       this.canvas.offsetHeight && this.canvas.offsetWidth
         ? this.canvas.offsetHeight / this.canvas.offsetWidth
         : 2 / 3;
-    const targetTotalHeight = this.ecgWidth * canvasAspect;
-    const totalSpacing = ECG_CHANNEL_SPACING * visibleChannels.length;
-    const heightPerChannel =
-      (targetTotalHeight - totalSpacing) / visibleChannels.length;
+    const cells = resolveECGTraceCells({
+      definition: resolveECGTraceLayout('12x1', { channels: this.channels }),
+      channels: this.channels,
+      numberOfSamples,
+      viewSampleWindow: [0, numberOfSamples],
+    });
+    const geometry = computeECGTraceGeometry({
+      cells,
+      ecgWidth: this.ecgWidth,
+      targetHeight: this.ecgWidth * canvasAspect,
+    });
 
-    // Scale: world pixels per data unit, with 1.25x padding for amplitude headroom
-    this.channelScale = heightPerChannel / (maxRange * 1.25);
+    this.channelScale = geometry.channelScale;
+    this.ecgHeight = geometry.ecgHeight;
+    this.layouts = geometry.layouts;
   }
 
-  private recalculateHeight(): void {
-    this.ecgHeight = computeECGHeight(
-      getVisibleECGChannelsByFlag(this.channels),
-      this.channelScale
-    );
-  }
-
-  /**
-   * Computes the vertical layout for each visible channel.
-   * Returns pre-calculated positions used by drawTraces and drawLabels.
-   */
   private computeChannelLayouts(): ChannelLayout[] {
-    return computeECGChannelLayouts({
-      visibleChannels: getVisibleECGChannelsByFlag(this.channels),
-      channelScale: this.channelScale,
-    }) as ChannelLayout[];
+    return this.layouts;
   }
 
   public setProperties(props: ECGViewportProperties): void {
@@ -253,7 +241,6 @@ class ECGViewport extends Viewport {
         this.channels[i].visible = props.visibleChannels.includes(i);
       }
       this.computeChannelScale();
-      this.recalculateHeight();
       this.refreshRenderValues();
       this.renderFrame();
     }
@@ -272,7 +259,6 @@ class ECGViewport extends Viewport {
       channel.visible = true;
     }
     this.computeChannelScale();
-    this.recalculateHeight();
     this.refreshRenderValues();
     this.renderFrame();
   }
@@ -351,7 +337,6 @@ class ECGViewport extends Viewport {
 
     if (this.waveformData) {
       this.computeChannelScale();
-      this.recalculateHeight();
     }
     this.refreshRenderValues();
     this.renderFrame();
@@ -490,6 +475,10 @@ class ECGViewport extends Viewport {
     return this.imageId ? [this.imageId] : [];
   };
 
+  public getCurrentMode = (): ViewportContentMode => {
+    return this.waveformData ? 'ecg' : 'empty';
+  };
+
   public scroll = (): void => {
     // No-op for ECG viewport - not a stack of images
   };
@@ -507,16 +496,21 @@ class ECGViewport extends Viewport {
       return;
     }
 
-    let worldToCanvasRatio = this.canvas.offsetWidth / this.ecgWidth;
-    if (this.ecgHeight * worldToCanvasRatio > this.canvas.offsetHeight) {
-      worldToCanvasRatio = this.canvas.offsetHeight / this.ecgHeight;
+    const canvasWidth =
+      this.canvas.offsetWidth || this.canvas.width || this.ecgWidth;
+    const canvasHeight =
+      this.canvas.offsetHeight || this.canvas.height || this.ecgHeight;
+
+    let worldToCanvasRatio = canvasWidth / this.ecgWidth;
+    if (this.ecgHeight * worldToCanvasRatio > canvasHeight) {
+      worldToCanvasRatio = canvasHeight / this.ecgHeight;
     }
 
     const drawWidth = Math.floor(this.ecgWidth * worldToCanvasRatio);
     const drawHeight = Math.floor(this.ecgHeight * worldToCanvasRatio);
 
-    const xOffsetCanvas = (this.canvas.offsetWidth - drawWidth) / 2;
-    const yOffsetCanvas = (this.canvas.offsetHeight - drawHeight) / 2;
+    const xOffsetCanvas = (canvasWidth - drawWidth) / 2;
+    const yOffsetCanvas = (canvasHeight - drawHeight) / 2;
 
     const xOffsetWorld = xOffsetCanvas / worldToCanvasRatio;
     const yOffsetWorld = yOffsetCanvas / worldToCanvasRatio;
@@ -616,12 +610,7 @@ class ECGViewport extends Viewport {
     ctx: CanvasRenderingContext2D,
     layouts: ChannelLayout[]
   ): void {
-    drawECGTraces({
-      ctx,
-      layouts,
-      ecgWidth: this.ecgWidth,
-      channelScale: this.channelScale,
-    });
+    drawECGTraces({ ctx, layouts });
   }
 
   /**
