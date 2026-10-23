@@ -158,6 +158,11 @@ describe('SegmentationRenderingEngine', () => {
     });
 
     afterEach(() => {
+      // The engine is a shared singleton: run the frames that a test left
+      // scheduled, so that the next test starts with no frame scheduled.
+      while (frames.length) {
+        runNextFrame();
+      }
       rafSpy.mockRestore();
       triggerRenderSpy.mockRestore();
     });
@@ -175,6 +180,22 @@ describe('SegmentationRenderingEngine', () => {
       expect(triggerRenderSpy.mock.calls).toEqual([
         ['viewport-b'],
         ['viewport-a'],
+      ]);
+      expect(frames).toHaveLength(0);
+    });
+
+    it('renders the other viewports of a frame when one viewport throws', () => {
+      triggerRenderSpy.mockImplementationOnce(() => {
+        throw new Error('render failed');
+      });
+
+      segmentationRenderingEngine.renderSegmentationsForViewport('viewport-a');
+      segmentationRenderingEngine.renderSegmentationsForViewport('viewport-b');
+      runNextFrame();
+
+      expect(triggerRenderSpy.mock.calls).toEqual([
+        ['viewport-a'],
+        ['viewport-b'],
       ]);
       expect(frames).toHaveLength(0);
     });
