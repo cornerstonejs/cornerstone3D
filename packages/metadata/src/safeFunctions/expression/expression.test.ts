@@ -136,27 +136,29 @@ describe('compileExpression', () => {
       expect(fn({ Modality: 'CT' })).toBe(false);
     });
 
-    it('reads an array literal next to == as the set of accepted values', () => {
+    it('reads == between a scalar and an array as in, and between two arrays as equal in order', () => {
       const tests = [
         "X == ['MR', 'CT']",
         "['MR', 'CT'] == X",
         "X != ['MR', 'CT']",
-        "X in ['MR', 'CT']",
       ].map((source) => compileExpression(source));
       const row = (X: unknown) => tests.map((test) => test({ X }));
-      expect(row('MR')).toEqual([true, true, false, true]);
-      expect(row('CT')).toEqual([true, true, false, true]);
-      expect(row('PT')).toEqual([false, false, true, false]);
-      expect(row(undefined)).toEqual([false, false, true, false]);
-      // A multi-valued value compares on its first value.
-      expect(row(['MR', 'PT'])).toEqual([true, true, false, true]);
-      expect(compileExpression("X == ['MR']")({ X: ['CT', 'MR'] })).toBe(false);
+      expect(row('MR')).toEqual([true, true, false]);
+      expect(row('CT')).toEqual([true, true, false]);
+      expect(row('PT')).toEqual([false, false, true]);
+      expect(row(undefined)).toEqual([false, false, true]);
+      // Two arrays: the same elements, in the same order.
+      expect(row(['MR', 'CT'])).toEqual([true, true, false]);
+      expect(row(['CT', 'MR'])).toEqual([false, false, true]);
+      expect(row(['MR'])).toEqual([false, false, true]);
+      // A multi-valued value against a scalar is in.
+      expect(
+        compileExpression("X == 'LOCALIZER'")({ X: ['ORIGINAL', 'LOCALIZER'] })
+      ).toBe(true);
+      expect(compileExpression("['mr'] == ['mr', 'ct']")()).toBe(false);
     });
 
-    it('refuses an empty array literal, or array literals on both sides, next to ==', () => {
-      expect(() => compileExpression("['MR'] == ['MR', 'CT']")).toThrow(
-        /'in' or includes/
-      );
+    it('refuses an empty array literal next to ==', () => {
       expect(() => compileExpression('X != []')).toThrow(/accepts no value/);
     });
   });

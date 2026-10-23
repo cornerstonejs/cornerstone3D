@@ -422,58 +422,31 @@ function missingValueTest(
   return undefined;
 }
 
-/**
- * `X == [a, b]` (or `[a, b] == X`): an array literal is the set of accepted
- * values, so the test holds when `looseEquals(X, element)` holds for one
- * element, as an array test of a condition map does. `X` compares on its
- * first value, as everywhere else.
- */
-function compileOneOf(
+/** `X == []` is a compile error: an empty array literal accepts no value. */
+function rejectEmptyArrayLiteral(
   node: Extract<ExpressionNode, { type: 'binary' }>,
   context: NodeContext
-): NodeEvaluator | undefined {
-  const leftArray = node.left.type === 'array';
-  const rightArray = node.right.type === 'array';
-  if (!leftArray && !rightArray) {
-    return undefined;
+): void {
+  for (const side of [node.left, node.right]) {
+    if (side.type === 'array' && !side.elements.length) {
+      throw new ExpressionSyntaxError(
+        `'${node.operator} []' accepts no value; give one or more values, or use '${node.operator} null' to test for no value`,
+        context.expression
+      );
+    }
   }
-  const { expression } = context;
-  if (leftArray && rightArray) {
-    throw new ExpressionSyntaxError(
-      `'${node.operator}' takes one array literal, the accepted values; to test the elements of a list, use 'in' or includes(list, value)`,
-      expression
-    );
-  }
-  const list = (rightArray ? node.right : node.left) as Extract<
-    ExpressionNode,
-    { type: 'array' }
-  >;
-  if (!list.elements.length) {
-    throw new ExpressionSyntaxError(
-      `'${node.operator} []' accepts no value; give one or more values, or use '${node.operator} null' to test for no value`,
-      expression
-    );
-  }
-  const elements = list.elements.map((element) =>
-    compileNode(element, context)
-  );
-  const operand = compileNode(rightArray ? node.left : node.right, context);
-  const oneOf = (scope: EvaluationScope) => {
-    const value = operand(scope);
-    return elements.some((element) => looseEquals(value, element(scope)));
-  };
-  return node.operator === '!=' ? (scope) => !oneOf(scope) : oneOf;
 }
 
+/**
+ * `==` and `!=`, with the meaning of {@link looseEquals}: a scalar against an
+ * array is "in", and two arrays are equal element by element, in order.
+ */
 function compileEquality(
   node: Extract<ExpressionNode, { type: 'binary' }>,
   context: NodeContext
 ): NodeEvaluator {
   const negate = node.operator === '!=';
-  const oneOf = compileOneOf(node, context);
-  if (oneOf) {
-    return oneOf;
-  }
+  rejectEmptyArrayLiteral(node, context);
   const rightTest = missingValueTest(node.right);
   const leftTest = missingValueTest(node.left);
   if (rightTest || leftTest) {
@@ -723,10 +696,10 @@ function compileNode(
  *
  * - `==` is the only equality, and `===` / `!==` are compile errors. `'1' == 1`
  *   is true.
- * - An array literal next to `==` is the set of accepted values:
- *   `X == ['MR', 'CT']` (or `['MR', 'CT'] == X`) holds when `X` equals one
- *   element, and `X` compares on its first value. `!=` is the negation. An
- *   empty array literal, or an array literal on both sides, is a compile error.
+ * - `==` between a scalar and an array is "in": `X == ['MR', 'CT']` holds when
+ *   `X` is one of the elements, on either side. Two arrays are equal when
+ *   they have the same elements in the same order. `!=` is the negation. An
+ *   empty array literal is a compile error.
  * - The literal tests: `X == undefined` holds when `X` is absent; `X == null`
  *   holds when `X` has no value (absent, or `null`, `''`, `[]`); `X == defined`
  *   holds when `X` has a value. `!=` is the opposite of each. Two values

@@ -87,10 +87,11 @@ number.
   `false`, so `Rows && Rows > 1000` is `false` when `Rows` is absent.
 - `==` is the only equality, and `"1" == 1` is `true`. `===` and `!==` are
   compile errors.
-- An array literal next to `==` is the set of accepted values, as an array is
-  in a condition map: `Modality == ['MR', 'CT']` holds for `'MR'` and for
-  `'CT'`. A multi-valued value compares on its first value. An empty array
-  literal, and an array literal on both sides, are compile errors.
+- `==` between a single value and an array means "in", on either side:
+  `Modality == ['MR', 'CT']` holds for `'MR'` and for `'CT'`, and
+  `ImageType == 'LOCALIZER'` holds when one value of `ImageType` is
+  `LOCALIZER`. Two arrays are equal when they have the same elements in the
+  same order. An empty array literal is a compile error.
 - An aggregate inside the argument of another aggregate is a compile error.
   Put the inner aggregate in its own context entry, and read that name.
 
@@ -108,8 +109,9 @@ and `false` on a named boolean is its negation.
 | an object, one operator | the operator holds                             |
 | a function              | `test(value, subject, context)` is true        |
 
-A multi-valued attribute compares on its first value, so `['MR']` equals
-`'MR'`.
+The equality is the `==` of expressions. A multi-valued attribute against a
+scalar test is "in", so `"ImageType": "LOCALIZER"` holds for
+`['ORIGINAL', 'LOCALIZER']`, and `['MR']` equals `'MR'`.
 
 ### Operators
 

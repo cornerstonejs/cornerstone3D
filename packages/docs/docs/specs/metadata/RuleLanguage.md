@@ -304,7 +304,11 @@ compile.
   fails on no value, and its `doesNot...` form holds. `doesNotEqual` and
   `doesNotInclude` hold on no value.
 - **RL-VALUE-5** `==` is the only equality. `"1" == 1` is `true`. `===` and
-  `!==` are compile errors.
+  `!==` are compile errors. A single value against an array means "in", on
+  either side: `Modality == ['MR', 'CT']`, and `ImageType == 'LOCALIZER'` for
+  a multi-valued `ImageType`. Two arrays are equal when they have the same
+  elements in the same order. The scalar test and the array test of a
+  condition map use the same equality.
 - **RL-VALUE-6** An expression can compare text without case: `lower(text)`
   gives the text in lowercase.
 - **RL-VALUE-7** `-`, `*`, `/` and `%` read a numeric string as a number, so
@@ -611,9 +615,10 @@ packages/metadata/src/
 - **RL-VAL-3** `looseEquals` (the `==` of expressions, and the scalar test):
   two values with no value are equal only when they are of the same kind
   (absent, `null`, `""`, or an empty array); a value with no value is not
-  equal to a value with one; a multi-valued attribute compares on its first
-  value; a number and a numeric string compare by value; other scalars compare
-  as text. The expression compiler gives `X == undefined`, `X == null` and
+  equal to a value with one; a scalar and an array are equal when the scalar
+  equals one element; two arrays are equal when they have the same length and
+  each element is equal in order; a number and a numeric string compare by
+  value; other scalars compare as text. The expression compiler gives `X == undefined`, `X == null` and
   `X == defined` (a literal operand) the tests of `RL-VALUE-2`. The parser
   reads `defined` as a literal, and the compiler rejects it in every other
   position.
@@ -684,12 +689,9 @@ packages/metadata/src/
 - **RL-EXPR-6** A compiled expression gives one warning and `undefined` for an
   error at run time, except for a `RuleCompileError`, which goes to the
   caller.
-- **RL-EXPR-7** An array literal next to `==` is the set of accepted values, as
-  an array is in a condition map (`RL-READ-2`). `X == ['MR', 'CT']` and
-  `['MR', 'CT'] == X` hold when `X` equals one element, with the scalar test of
-  `RL-VAL-3`, so a multi-valued `X` compares on its first value. `!=` is the
-  negation. An empty array literal, and an array literal on both sides, are
-  compile errors.
+- **RL-EXPR-7** An array literal compiles to an array, and `==` gives it the
+  meaning of `RL-VAL-3`. An empty array literal next to `==` or `!=` is a
+  compile error.
 
 ### The context (RL-CTXI)
 

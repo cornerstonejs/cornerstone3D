@@ -15,7 +15,7 @@
  * @module safeFunctions/values
  */
 
-import { asArrayFirst, toFiniteFirst } from '@cornerstonejs/utils';
+import { toFiniteFirst } from '@cornerstonejs/utils';
 
 /** True when the value is absent: `undefined` (no element). */
 export function isAbsent(value: unknown): boolean {
@@ -47,27 +47,43 @@ export function hasNoValue(value: unknown): boolean {
  *   So `null == undefined` is false. A value with no value is not equal to a
  *   value that has one. Only the literal tests of the expression compiler
  *   (`X == null`) treat the kinds as one.
- * - A multi-valued attribute compares on its first value, so `['MR']` equals
- *   `'MR'`.
+ * - A scalar and an array: the scalar is one of the elements ("in"), so
+ *   `'MR' == ['MR', 'CT']` and `['ORIGINAL', 'LOCALIZER'] == 'LOCALIZER'`.
+ * - Two arrays: the same length, and each element equal in order.
  * - A number and a numeric string are equal by value: `'1' == 1`.
  * - Other scalars compare as text, so `'true'` equals `true`.
  *
  * The literal tests `X == null` (no value) and `X == undefined` (absent only)
  * are not this function: the expression compiler gives them their own test.
- * An array literal next to `==` (`X == ['MR', 'CT']`) is a set of accepted
- * values: the compiler calls this function for each element.
  */
 export function looseEquals(left: unknown, right: unknown): boolean {
   if (hasNoValue(left) || hasNoValue(right)) {
     return emptyKind(left) === emptyKind(right);
   }
-  const a = asArrayFirst(left);
-  const b = asArrayFirst(right);
+  const leftArray = Array.isArray(left);
+  const rightArray = Array.isArray(right);
+  if (leftArray && rightArray) {
+    return (
+      left.length === right.length &&
+      left.every((element, index) => scalarEquals(element, right[index]))
+    );
+  }
+  if (leftArray) {
+    return left.some((element) => scalarEquals(element, right));
+  }
+  if (rightArray) {
+    return right.some((element) => scalarEquals(left, element));
+  }
+  return scalarEquals(left, right);
+}
+
+/** The equality of two single values, with the no-value rule of {@link looseEquals}. */
+function scalarEquals(a: unknown, b: unknown): boolean {
+  if (hasNoValue(a) || hasNoValue(b)) {
+    return emptyKind(a) === emptyKind(b);
+  }
   if (a === b) {
     return true;
-  }
-  if (hasNoValue(a) || hasNoValue(b)) {
-    return false;
   }
   if (typeof a === 'object' || typeof b === 'object') {
     return false;
