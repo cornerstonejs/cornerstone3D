@@ -50,6 +50,7 @@ import {
 } from '../safeFunctions';
 import type {
   CompiledExpression,
+  ExpressionNode,
   ExpressionRead,
   SchemaSite,
   TemplateSegment,
@@ -372,14 +373,73 @@ function parseExpression(
   scope:
     | typeof EXPRESSION_SCOPE
     | typeof ATTRIBUTE_EXPRESSION_SCOPE = EXPRESSION_SCOPE
-): { evaluate: CompiledExpression; reads: ExpressionRead[]; single?: string } {
+): {
+  evaluate: CompiledExpression;
+  reads: ExpressionRead[];
+  single?: string;
+  ast: ExpressionNode;
+} {
   const evaluate = compileExpressionAt(source, site, scope);
   const ast = parseExpressionSource(source);
   return {
     evaluate,
     reads: collectReads(ast, { aggregates: true }),
     single: ast.type === 'identifier' ? ast.name : undefined,
+    ast,
   };
+}
+
+/**
+ * The field names that an expression reads below a value: the property of
+ * each member access, and the text of each literal string index. A computed
+ * index gives `undefined`. A numeric literal index reads an element or an
+ * item, and gives nothing.
+ */
+function propertyReads(node: ExpressionNode): Array<string | undefined> {
+  const found: Array<string | undefined> = [];
+  const walk = (current: ExpressionNode): void => {
+    switch (current.type) {
+      case 'member':
+        found.push(current.property);
+        walk(current.object);
+        return;
+      case 'index':
+        if (current.index.type !== 'literal') {
+          found.push(undefined);
+        } else if (typeof current.index.value === 'string') {
+          found.push(current.index.value);
+        }
+        walk(current.object);
+        walk(current.index);
+        return;
+      case 'call':
+        current.args.forEach(walk);
+        return;
+      case 'unary':
+        walk(current.argument);
+        return;
+      case 'binary':
+      case 'logical':
+        walk(current.left);
+        walk(current.right);
+        return;
+      case 'conditional':
+        walk(current.test);
+        walk(current.consequent);
+        walk(current.alternate);
+        return;
+      case 'array':
+        current.elements.forEach(walk);
+        return;
+      case 'template':
+        current.parts.forEach(
+          (part) => part.kind === 'expr' && walk(part.node)
+        );
+        return;
+    }
+  };
+  walk(node);
+  return found;
 }
 
 /**
@@ -771,11 +831,16 @@ export class ContextProgram {
   private readonly seriesFunctions: ContextProgramOptions['seriesFunctions'];
   private readonly empty: ContextLayer;
   private readonly denied: ReadonlySet<string>;
+  /** The hex tags of the denied keywords, so a declaration cannot read one. */
+  private readonly deniedTags: ReadonlySet<string>;
   private fallbackLogged = false;
 
   constructor(context: unknown, options: ContextProgramOptions) {
     this.seriesFunctions = options.seriesFunctions;
     this.denied = new Set(options.deniedNames ?? []);
+    this.deniedTags = new Set(
+      [...this.denied].map(resolveHexFromKeyword).filter(Boolean)
+    );
     for (const definition of this.parseLayer(
       context,
       options.site,
@@ -802,6 +867,38 @@ export class ContextProgram {
   /** True when the host denies the name. */
   isDenied(name: string): boolean {
     return this.denied.has(name);
+  }
+
+  /**
+   * Parses one expression, and applies the deny list to the reads below a
+   * name. The name check sees only the first name of a path, so a field of a
+   * sequence item (`OtherPatientIDsSequence[0].PatientID`) is checked here. A
+   * computed field name cannot be checked, so it is a compile error when the
+   * host has a deny list.
+   */
+  private parseExpression(
+    source: string,
+    site: SchemaSite,
+    scope?: typeof EXPRESSION_SCOPE | typeof ATTRIBUTE_EXPRESSION_SCOPE
+  ): ReturnType<typeof parseExpression> {
+    const parsed = parseExpression(source, site, scope);
+    if (this.denied.size) {
+      for (const property of propertyReads(parsed.ast)) {
+        if (property === undefined) {
+          invalidAt(
+            site,
+            'a computed field name is not allowed when the host has a deny list; use a literal index, e.g. ViewCodeSequence[0].CodeValue'
+          );
+        }
+        if (this.denied.has(property)) {
+          invalidAt(
+            site,
+            `the name '${property}' is on the deny list of the host, so no rule can read it`
+          );
+        }
+      }
+    }
+    return parsed;
   }
 
   /**
@@ -902,7 +999,7 @@ export class ContextProgram {
     instances: readonly NaturalizedInstance[],
     extras: Extras
   ) => unknown {
-    const { evaluate, reads } = parseExpression(
+    const { evaluate, reads } = this.parseExpression(
       source,
       site,
       ATTRIBUTE_EXPRESSION_SCOPE
@@ -1253,7 +1350,7 @@ export class ContextProgram {
       return { ...base, kind: 'fixed', reads: [], value: raw };
     }
     if (typeof raw === 'string') {
-      const { evaluate, reads, single } = parseExpression(raw, site);
+      const { evaluate, reads, single } = this.parseExpression(raw, site);
       return { ...base, kind: 'expression', reads, evaluate, aliasOf: single };
     }
     if (!raw || typeof raw !== 'object') {
@@ -1270,6 +1367,16 @@ export class ContextProgram {
     if (form === 'declaration') {
       if (!fields.attribute) {
         return invalidAt(at(site, 'attribute'), 'expected a non-empty string');
+      }
+      const attribute = String(fields.attribute);
+      if (
+        this.denied.has(attribute) ||
+        this.deniedTags.has(attribute.replace(/^x/i, '').toUpperCase())
+      ) {
+        return invalidAt(
+          at(site, 'attribute'),
+          `the attribute '${attribute}' is on the deny list of the host, so no rule can read it`
+        );
       }
 
       return {
@@ -1364,7 +1471,7 @@ export class ContextProgram {
         return { name, fixed: raw, reads: [] };
       }
       if (typeof raw === 'string') {
-        const { evaluate, reads } = parseExpression(raw, argumentSite);
+        const { evaluate, reads } = this.parseExpression(raw, argumentSite);
         return { name, evaluate, reads };
       }
       return invalidAt(

@@ -1200,6 +1200,54 @@ describe('the deny list of the host', () => {
       )
     ).toEqual(['p']);
   });
+
+  it('rejects a declaration of a denied attribute, by keyword or by hex tag', () => {
+    for (const attribute of ['PatientName', '00100010', 'x00100010']) {
+      expect(
+        errorOf(
+          {
+            context: { pn: { attribute } },
+            attributes: { SeriesDescription: { template: 'leak {pn}' } },
+          },
+          options
+        )
+      ).toContain('deny list');
+    }
+  });
+
+  it('rejects a field of a sequence item that is denied, also a computed field', () => {
+    const denyId = { deniedNames: ['PatientID'] };
+    for (const expression of [
+      "'x' + OtherPatientIDsSequence[0].PatientID",
+      "'x' + OtherPatientIDsSequence[0]['PatientID']",
+      "'x' + OtherPatientIDsSequence[0]['Patient' + 'ID']",
+    ]) {
+      expect(
+        errorOf({ attributes: { label: { expression } } }, denyId)
+      ).toContain('deny list');
+    }
+    // A literal index and a field that is not denied still compile.
+    expect(() =>
+      compileOne({ context: { view: 'ViewCodeSequence[0].CodeValue' } }, denyId)
+    ).not.toThrow();
+  });
+});
+
+describe('the default rules and Rows', () => {
+  it('does not give a display set to an image with Rows: null', () => {
+    const groups = groupInstancesBySplitRules(
+      [
+        instance({
+          SOPInstanceUID: 'no-rows',
+          Rows: null as unknown as number,
+        }),
+      ],
+      defaultDisplaySetSplitRules
+    );
+    expect(groups.map((group) => group.matchedRule.id)).toEqual([
+      'unsupported',
+    ]);
+  });
 });
 
 describe('expressions and names: the DICOM rule for no value', () => {
