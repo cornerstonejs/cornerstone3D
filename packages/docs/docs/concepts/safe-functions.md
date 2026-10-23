@@ -125,13 +125,27 @@ operand is the bare value: `{ "greaterThan": 1 }`.
 
 A text test on no value fails, and its `doesNot...` form holds.
 
-:::note Five operators differ from `validator.js`
-OHIF `validator.js` reads `greaterThan` as `>=` and `lessThan` as `<=`, and it
-rejects a string value. It accepts only an array operand for `includes`. It uses
-`===` for `equals`, and its `notNull` accepts `""`. The safe functions give
-these five operators the meanings in the table above. A later OHIF pull
-request moves the hanging protocols to these meanings.
+:::note Operators that differ from `validator.js`
+The safe functions give these operators the meanings in the table above. OHIF
+`validator.js` gives them other meanings:
+
+- `greaterThan` is `>=`, and rejects a string value or an array value.
+  `lessThan` is `<=`.
+- `includes` accepts only an array operand.
+- `equals` uses `===`, and compares an array operand element by element. Here,
+  an array operand of `equals` is a compile error.
+- `notNull` accepts `""`.
+- `containsAll` needs an array value and an array operand.
+- The operand wrappers `{ "value": x }` and `[x]` (for `greaterThan` and
+  `lessThan`) are accepted. Here, they are compile errors.
+
+A later OHIF pull request moves the hanging protocols to these meanings.
 :::
+
+An index reads one part of a value. `ImageType[2]` is the third value of a
+multi-valued attribute. On a single-valued text attribute, an index reads one
+character: `Modality[0]` of `"CT"` is `"C"`. So test a single-valued attribute
+by its name, without an index.
 
 ## Values
 

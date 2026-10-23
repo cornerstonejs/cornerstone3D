@@ -68,14 +68,38 @@ The review of 14 October changed these user requirements: `RL-READ-3`,
 `RL-SCOPE-8`. The review added the groups `RL-VALUE` and `RL-CTX`.
 `RL-SCOPE-9` (the deny list) did not change.
 
-The review of the implementation changed the meaning of three more user
-requirements:
+Three more user requirements changed after the review of the implementation.
+Each change has a reason that the change rule permits:
 
 - `RL-EXT-3`: a named attribute no longer computes a value over a whole
-  display set. An `{ "expression" }` value in `attributes` does.
+  display set. An `{ "expression" }` value in `attributes` does. Reason: the
+  intended behaviour changed. The review of 6 October removed
+  `scopeAttributes`, and the reviewer accepted the `{ "expression" }` form on
+  16 October.
 - `RL-SCOPE-7`: the compile checks a name against the DICOM dictionary and the
-  context, and not against an allow list.
+  context, and not against an allow list. Reason: the intended behaviour
+  changed. The review of 14 October asked that a misspelt keyword is an error,
+  and the allow lists went away with the scopes.
 - `RL-ERR-3`: a loop through a code entry gives an error at the first read.
+  Reason: the earlier text described the behaviour wrongly. The compile cannot
+  read inside a code entry, so no compile can find such a loop.
+
+### Changes of 23 October
+
+- `RL-SCOPE-3` and `RL-SCOPE-4` (values that the host supplies at the start of
+  a split) are withdrawn. Reason: the intended behaviour changed. The review of
+  6 October found that a value such as `rightOnLeft` is a hanging protocol
+  decision, and not a split decision. The code has no option for such values.
+- `RL-SCOPE-9` names each kind of access that the deny list covers: a name, a
+  declaration, and a field of a sequence item. Reason: the earlier text
+  ("strict or optional") described the optional access that `RL-SCOPE-8`
+  removed.
+- `RL-READ-4` lists each operator meaning that is different from
+  `validator.js`. Reason: the earlier text ("five operators") described the
+  behaviour wrongly. `equals` with an array operand, `containsAll` and the
+  operand wrappers are also different.
+- `RL-VALUE-9` is new. It states the meaning of an index on a single-valued
+  attribute, which the code already has.
 
 Other user requirements changed their words only, because the scopes went
 away: `RL-READ-1`, `RL-READ-2`, `RL-SHARE-1`, `RL-SHARE-3`, `RL-SHARE-4`,
@@ -180,12 +204,23 @@ compile.
   A string at every other place of a rule is a name.
 - **RL-READ-4** The author uses the operator names of the OHIF hanging protocol
   constraints (`equals`, `includes`, `contains`, `containsI`, `greaterThan`,
-  `range`, `notNull`, and the others). Five operators have a meaning that is
-  different from `validator.js`: `equals` is the scalar test, `notNull` is the
-  exact opposite of `null`, `includes` accepts a scalar operand, and
-  `greaterThan` and `lessThan` are strict and read a numeric string as a
-  number. The other operators keep the meaning of `validator.js`, except for
-  the rule of `RL-VALUE-4`.
+  `range`, `notNull`, and the others). These meanings are different from
+  `validator.js`:
+  - `equals` is the scalar test. An array operand is a compile error.
+    `validator.js` compares an array operand element by element.
+  - `notNull` is the exact opposite of `null`.
+  - `includes` accepts a scalar operand.
+  - `greaterThan` and `lessThan` are strict (`>` and `<`), and read a numeric
+    string as a number. `validator.js` uses `>=` and `<=`, and its
+    `greaterThan` rejects a string value.
+  - `containsAll` accepts a scalar operand and a single value, and compares
+    with `==`. `validator.js` needs two arrays.
+  - The operand wrappers of `validator.js` (`{ "value": x }`, and `[x]` for
+    `greaterThan` and `lessThan`) are compile errors.
+
+  The other operators keep the meaning of `validator.js`, except for the rule
+  of `RL-VALUE-4`.
+
 - **RL-READ-5** The author writes a test over the instances of a series (for
   example "the series has fewer than 10 instances", "some instances have a
   b-value") as a context entry with a name. The rule reads the name in the same
@@ -251,6 +286,15 @@ compile.
 - **RL-VALUE-8** `!`, `&&`, `||` and `?:` read no value as `false`. `&&` and
   `||` give `true` or `false`. So `"isTall": "Rows && Rows > 1000"` is `false`
   when `Rows` is absent, and `"isTall": false` holds.
+- **RL-VALUE-9** An index reads one part of a value. On a multi-valued
+  attribute, `X[n]` is element `n`: `ImageType[2]` of
+  `["ORIGINAL", "PRIMARY", "AXIAL"]` is `"AXIAL"`. On a single-valued text
+  attribute, `X[n]` is character `n`: `Modality[0]` of `"CT"` is `"C"`. On a
+  sequence, `X[n]` is item `n`, and a path reads a field of the item:
+  `ViewCodeSequence[0].CodeValue`. An index outside the value has no value. A
+  rule that tests a single-valued attribute reads the attribute by its name
+  without an index. A rule that tests a multi-valued attribute, for example
+  `ModalitiesInStudy`, uses `includes` or an index.
 
 ### The context (RL-CTX)
 
@@ -331,12 +375,13 @@ compile.
   hides a value of the instance.
 - **RL-SCOPE-2** The consumer, and not the rule language, names the built-in
   values of its rules. The host can add context entries.
-- **RL-SCOPE-3** The host supplies values when it starts a split or a match,
-  for example `rightOnLeft: false` from a user preference. A change of such a
-  value needs no change to the rules.
-- **RL-SCOPE-4** A rule tests a host value in a condition. So one rule set
-  holds branches: one set of rules for `rightOnLeft` not equal to `false`, and
-  another set for `rightOnLeft` equal to `false`.
+- **RL-SCOPE-3** _Withdrawn on 23 October._ The host does not supply values
+  at the start of a split. A preference such as `rightOnLeft` is a decision of
+  the hanging protocol, which places the display sets. A split rule does not
+  test it.
+- **RL-SCOPE-4** _Withdrawn on 23 October_, with `RL-SCOPE-3`. A site that
+  needs a different split sets a context entry or a rule in its customization
+  (`RL-CTX-8`).
 - **RL-SCOPE-5** A deployment defines computed values from other values, as
   data or as a function. The compile computes a series value one time for each
   series, and not one time for each subject.
@@ -347,9 +392,17 @@ compile.
 - **RL-SCOPE-8** A rule reads an attribute that the dictionary does not hold
   only through a declaration (`RL-CTX-6`). A rule cannot read a hex tag
   directly. There is no optional access with `?`.
-- **RL-SCOPE-9** No access reads a name on the deny list, strict or optional.
+- **RL-SCOPE-9** No rule reads an attribute on the deny list. The deny list
+  covers each kind of access:
+  - a name in a condition key, `groupBy`, `sortBy`, `attributes`, a template
+    or an expression;
+  - a declaration of the attribute (`{ "attribute": "PatientName" }`);
+  - a field of a sequence item (`OtherPatientIDsSequence[0].PatientID`), also
+    a field with a computed name.
+
   The deny list lets a host keep a value (for example a patient identifier) out
   of every rule.
+
 - **RL-SCOPE-10** Names are case sensitive, as DICOM keywords are. A name in a
   rule is valid only when it matches a keyword of the DICOM dictionary of
   dcmjs, or a declared context name, with the same case. Any other name is a
@@ -508,7 +561,10 @@ packages/metadata/src/
   path.
 - **RL-NAME-7** The deny list (`RL-SCOPE-9`) is the option `deniedNames` of
   `createDisplaySetSplitRules`. A rule or a context entry that names a denied
-  name is a compile error. The `values` of a code entry give `undefined` for a
+  name is a compile error. The compile checks the `attribute` of each
+  declaration against the deny list. The compile checks each field name of a
+  path into a sequence item, and a computed field name on a sequence item is a
+  compile error when a deny list is set. The `values` of a code entry give `undefined` for a
   denied name, and the logger gives a warning. A code entry also gets the
   instance itself, so the host must not register a code entry that reads a
   denied attribute from the instance.
@@ -624,10 +680,17 @@ packages/metadata/src/
   (`"NumberOfFrames == series.instances.max(NumberOfFrames)"`) runs over the
   series one time for
   each instance: the cost grows with the square of the number of instances. Put
-  the aggregate in its own series entry, and read that name.
+  the aggregate in its own series entry, and read that name. An aggregate in the
+  argument of another aggregate is a compile error, because each level
+  multiplies the cost by the number of instances, and a rule from an untrusted
+  source could then stop the viewer (`RL-SAFE-1`).
 - **RL-EXPR-6** A compiled expression gives one warning and `undefined` for an
   error at run time, except for a `RuleCompileError`, which goes to the
   caller.
+- **RL-EXPR-7** An array literal next to `==` or `!=` is a compile error. The
+  error names the `in` operator and the `includes` helper. Reason: in a
+  condition map, an array means "one of" (`RL-READ-2`), and `==` with an array
+  compares one value only, so the same form would have two meanings.
 
 ### The context (RL-CTXI)
 
@@ -719,20 +782,8 @@ packages/metadata/src/
   `options.series` also computes the values again, over the instances of the
   split and the new instances. It finds the new instances by `instanceKey`, so
   an instance that the host naturalizes again is not counted twice.
-- **RL-CTXI-12** A sort of a display set and the attributes of a display set
-  read a second runtime (`displaySetContextFor`). In it, a group with
-  `over: 'displaySet'` runs over the instances of the display set; a group with
-  `over: 'series'`, and `series.instances.*(...)`, run over the instances of
-  the split (`RL-CTX-9`). A series function definition gives the default
-  (`planeGeometry`: `'displaySet'`, `timeClusters` and a function with no
-  setting: `'series'`), and a group entry `{ "function", "args"?, "over"? }`
-  overrides it. So a rule can test the lattice of the series and also measure
-  the display set: `"seriesGeometry": { "function": "planeGeometry", "over":
-"series" }`.
-- **RL-CTXI-13** A split key part is normalized, so that two hosts that
-  naturalize differently build the same key: no value (absent, `null`, `''`,
-  `[]`) is `null`, a one-element array is its element, and a string that is the
-  canonical text of a finite number is that number. `'05'` stays text.
+- **RL-CTXI-9** The logger `cs3d.metadata.displayset.displaySetContext` records
+  each replacement and each new name of a rule context at the debug level.
 - **RL-CTXI-10** A hook that a host calls directly, with no split context,
   computes the values over the instances of the call only: one instance for
   `matches`, the pair for a comparator, the group for `customAttributes`. So
@@ -745,8 +796,22 @@ packages/metadata/src/
   `first -> second -> third -> first`. A read of its own name by a rule entry
   resolves to the global level, so it is not a loop. Each call of a code entry
   gets a new `values` wrapper.
-- **RL-CTXI-9** The logger `cs3d.metadata.displayset.displaySetContext` records
-  each replacement and each new name of a rule context at the debug level.
+- **RL-CTXI-12** A sort of a display set and the attributes of a display set
+  read a second runtime (`displaySetContextFor`). In it, a group with
+  `over: 'displaySet'` runs over the instances of the display set; a group with
+  `over: 'series'`, and `series.instances.*(...)`, run over the instances of
+  the split (`RL-CTX-9`). A series function definition gives the default
+  (`planeGeometry`: `'displaySet'`, `timeClusters` and a function with no
+  setting: `'series'`), and a group entry `{ "function", "args"?, "over"? }`
+  overrides it. So a rule can test the lattice of the series and also measure
+  the display set: `"seriesGeometry": { "function": "planeGeometry", "over":
+"series" }`. The second runtime shares the cache of the split for each value
+  that runs over the series, so a series value is computed one time for each
+  split, and not one time for each display set (`RL-SCOPE-5`).
+- **RL-CTXI-13** A split key part is normalized, so that two hosts that
+  naturalize differently build the same key: no value (absent, `null`, `''`,
+  `[]`) is `null`, a one-element array is its element, and a string that is the
+  canonical text of a finite number is that number. `'05'` stays text.
 
 ### Functions (RL-FN)
 
@@ -872,7 +937,9 @@ packages/metadata/src/
 ### Example 3: `regularVolume`
 
 The module adds one series value to the global context. Both of its rules read
-the value:
+the value. `irregularImages` is off (`priority: null`). A site turns it on with
+`"irregularImages": { "priority": { "$set": -1 } }`, and the rule then puts
+the other images of the series into one stack:
 
 ```jsonc
 "displaySetContext": {
@@ -913,14 +980,16 @@ the value:
   reads them by path.
 - `"sliceIndex": null` means "no value". Index 0 is a valid index, and
   `notNull` is true for 0.
-- `{sliceSpacing}` is a series value, so each display set of the series shows
-  the same spacing (`RL-CTX-9`).
+- In `matches`, `planeGeometry` runs over the series, so `mixesIrregular`
+  tests the full series. In `attributes` and `sortBy`, `planeGeometry` runs
+  over the display set (`RL-CTX-9`). So `{sliceSpacing}` is the spacing of the
+  regular slices of this display set, and `sliceDistance` orders those slices.
 
 ### Example 4: `volumeProjectionOrder`
 
 ```jsonc
 "volume3d": {
-  "priority": 4,
+  "priority": 7,
   "viewportTypes": ["volume", "volume3d", "stack"],
   "matches": {
     "isStackImage": true,
@@ -933,10 +1002,17 @@ the value:
 }
 ```
 
-- `sliceDistance` uses one origin for the full series, so the order does not
-  change with the arrival order of the instances.
-- An image outside the dominant plane has no `sliceDistance`. For that image,
-  the sort entry gives `0`, and the default order applies.
+- The rule replaces the default rule `volume3d` under its own id, so the rule
+  keeps the default priority 7 and the default `matches`. Only `sortBy` is new.
+  The OHIF default rules give `volume3d` the priority 4, so the OHIF module
+  `split/volumeProjectionOrder.jsonc` uses 4.
+- In `sortBy`, `planeGeometry` runs over the display set (`RL-CTX-9`). This
+  rule groups by `SeriesInstanceUID`, so the display set holds the full series.
+  The origin is the lowest regular slice, so the order does not change with the
+  arrival order of the instances.
+- An image outside the dominant plane has no `sliceDistance`. That image sorts
+  after the images that have a value (`RL-SORT-2`). Two such images keep the
+  default order.
 
 ### Example 5: small DX / CR series, with a configured limit
 

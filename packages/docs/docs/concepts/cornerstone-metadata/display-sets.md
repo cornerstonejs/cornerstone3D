@@ -180,17 +180,47 @@ It has nine rules. Eight have the priorities `1` to `8`, and the catch-all
 Each raw rule also has a `description` that a UI can show. The next sections
 explain how your own rules combine with these.
 
+### Changes from the earlier default rules
+
+The default rules of this release give different display sets for some
+series. A short UID such as `6.1` is the suffix after `1.2.840.10008.5.1.4.1.1.`.
+
+| Rule                                             | Change                                                                                                                                                                                                                                                                                  | Effect                                                                                                                                                               |
+| ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| all image rules (`isImage`)                      | `isImageInstance` adds MG For Presentation and For Processing (`1.2`, `1.2.1`), Intra-Oral, US (`3.1`, `6.1`, `6.2`), NM (`20`), IVOCT, ophthalmic photography and tomography, Enhanced PET (`130`) and RT Image. It removes MR Spectroscopy (`4.2`), `13.1.6`, and `128.2` to `128.5`. | US and NM series get a display set. MR spectroscopy goes to `unsupported`.                                                                                           |
+| all image rules (`Rows`)                         | `!!Rows` is now `Rows: { notNull: true }`.                                                                                                                                                                                                                                              | An instance with `Rows: 0` is now a renderable image. Before, it was not.                                                                                            |
+| `singleImageModality`                            | No change in the rule.                                                                                                                                                                                                                                                                  | Before, MG was not `isImage`, so the rule never matched MG. Now MG splits by image size.                                                                             |
+| `multiFrame`                                     | The test was on `instances[0]` for the whole series. Now each instance is tested. `SliceLocation !== undefined` is now `notNull`.                                                                                                                                                       | A mixed series no longer sends its single frames to `multiFrame`. An instance with `SliceLocation: null` is not a clip.                                              |
+| `mixedDimensionalityBValue`                      | The MR test was on `instances[0]`; now each instance. `!== undefined` is now a test for no value.                                                                                                                                                                                       | `null` and `''` b-values count as no value. A DWI series with `DiffusionBValue: ''` on the b0 frames splits into two. A b-value of `0` is a value.                   |
+| `volume3d`                                       | The modality test was on `instances[0]`; now each instance.                                                                                                                                                                                                                             | A series with mixed modalities splits by modality.                                                                                                                   |
+| `unsupported`                                    | New rule, at `Number.MAX_SAFE_INTEGER`.                                                                                                                                                                                                                                                 | Objects that no rule matched were dropped. Now each series of them gives one non-displayable display set, and `onUnmatchedInstance` does not fire with the defaults. |
+| `video`, `ecg`, `wholeslide`, `defaultImageRule` | No change in the rule.                                                                                                                                                                                                                                                                  | `defaultImageRule` follows the `isImage` change.                                                                                                                     |
+
+**Migration from the array form.** `groupInstancesBySplitRules`,
+`splitImageIdsBySplitRules` and `defaultDisplaySetSplitRules` take and give a
+`SplitRuleSet` keyed by rule id, and not an ordered array of rules. To migrate a
+call:
+
+1. Make each rule of the array an entry of an object, with its `id` as the key.
+2. Give each entry a `priority`. The earlier position in the array becomes the
+   priority: the first rule gets the lowest number.
+3. Merge your rules over `defaultDisplaySetSplitRules` by key, and not with
+   `concat`. See [Where your rule runs among the defaults](#where-your-rule-runs-among-the-defaults).
+
 ### Viewport types are hints
 
 `viewportTypes` names the kind of view a display set supports, not a viewport
 class. `stack` means the images are shown one at a time and are not
-reconstructed into a volume. With the legacy viewports `stack` maps to
-`ViewportType.STACK`; with the next-generation viewports it maps to the planar
-viewport (`ViewportType.PLANAR_NEXT`). So the same rules work with both
-viewport families. `volume` and `volume3d` mean the display set can be
-reconstructed for MPR and 3D. See
+reconstructed into a volume. `volume` and `volume3d` mean the display set can
+be reconstructed for MPR and 3D.
+
+The consumer of the display set maps each hint to a viewport class, and this
+package does not. The mapping in
 [Driving a viewport from a display set](#driving-a-viewport-from-a-display-set)
-for the mapping in code.
+is for the legacy viewports, so `stack` becomes `ViewportType.STACK`. A
+consumer of the next-generation viewports maps `stack` to the planar viewport
+(`ViewportType.PLANAR_NEXT`) instead. The rules do not change, so the same rules
+work with both viewport families.
 
 ### Rule sets keyed by id
 
@@ -253,13 +283,13 @@ that is missing, or neither `null` nor a finite number, is an error.
 
 A `SplitRule` has up to five parts:
 
-| Field              | Purpose                                                                                                                                                            |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `matches`          | Returns true if an instance belongs to this rule. Omit to match everything.                                                                                        |
-| `groupBy`          | Keys (tag names or functions) that partition matched instances into separate display sets.                                                                         |
-| `series`           | Optional. Runs once per split and **returns** facts that extend the series context every rule reads as `context.series`. The first rule that computes a name wins. |
-| `viewportTypes`    | Allowed viewport types for the produced display sets; index `0` is preferred.                                                                                      |
-| `customAttributes` | Returns extra attributes spread flat onto the display set (e.g. `isClip`, `numImageFrames`).                                                                       |
+| Field              | Purpose                                                                                                                                                                                                                                                                                                                      |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `matches`          | Returns true if an instance belongs to this rule. Omit to match everything.                                                                                                                                                                                                                                                  |
+| `groupBy`          | Keys (tag names or functions) that partition matched instances into separate display sets.                                                                                                                                                                                                                                   |
+| `series`           | Optional, code form only. Runs once per split and **returns** facts that extend the series context every code rule reads as `context.series`. The first rule that computes a name wins. A raw rule does not use this hook: it reads the [display set context](#the-display-set-context), where each name has one definition. |
+| `viewportTypes`    | Allowed viewport types for the produced display sets; index `0` is preferred.                                                                                                                                                                                                                                                |
+| `customAttributes` | Returns extra attributes spread flat onto the display set (e.g. `isClip`, `numImageFrames`).                                                                                                                                                                                                                                 |
 
 A rule's `id` is its key in the rule set, so an entry does not repeat it. Most
 rules only need `matches` and `groupBy`, plus the entry's `priority`:
@@ -367,6 +397,23 @@ A few engine guarantees worth knowing when writing rules:
   then by a stable, rule-namespaced split key, so a series' display sets —
   and any id derived from their position — are stable
   regardless of the order the image ids were passed in.
+- **A key can change when the series grows.** For one set of instances, the
+  keys do not depend on the arrival order. When new instances arrive, a key
+  stays the same only if the rule reads no value of the whole series. A key
+  changes in these cases:
+  - A rule that tests a series value claims different instances. With one CT
+    instance, `seriesInstanceCount > 1` is false, so `defaultImageRule` claims
+    the instance. With two instances, `volume3d` claims both.
+    `mixedDimensionalityBValue` starts to match when the first instance with no
+    b-value arrives.
+  - A `groupBy` value is a series value. `sweepStart` is the start time of a
+    time cluster, so an instance with an earlier time moves the start, and an
+    instance in the gap between two clusters joins them into one.
+
+  A host that keeps the display sets of a growing series splits the full series
+  again, and matches the old and the new display sets by `splitKey`. A display
+  set whose key is gone has become part of another display set.
+
 - **Each group carries the series context.** `InstanceGroup.series` holds
   the facts the `series` hooks computed over _all_ the instances
   passed to the split, not only the group's. Those can differ: a "mixed b-value"
@@ -556,8 +603,8 @@ The other fields are data: `id` (optional, must equal the key), `groupId`,
   "priority": -1,
   "viewportTypes": ["stack"],
   "context": {
-    "isDiffusion": "series.instances.count(DiffusionBValue) > 0",
-    "bValue": "Number(DiffusionBValue)"
+    "bValue": "Number(DiffusionBValue)",
+    "isDiffusion": "series.instances.max(bValue) > 0"
   },
   "matches": {
     "Modality": "MR",
@@ -572,6 +619,13 @@ The other fields are data: `id` (optional, must equal the key), `groupId`,
   }
 }
 ```
+
+`isDiffusion` needs a b-value above 0 in the series. Some scanners write
+`DiffusionBValue` = 0 into every MR series, also into T2 and STIR series. With
+`series.instances.count(DiffusionBValue) > 0`, the rule would claim those
+series too, because `count(x)` counts a value of `0`. `max` skips an instance
+with no b-value, so a series with no b-value gives no value, and the test is
+`false`.
 
 #### `matches`
 
