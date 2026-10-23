@@ -158,7 +158,13 @@ class SegmentationRenderingEngine {
     this._animationFrameHandle = null;
 
     viewportIds.forEach((viewportId) => {
-      this._triggerRender(viewportId);
+      // A viewport that throws must not skip the other viewports of the frame,
+      // because the set is already cleared and they would not render again.
+      try {
+        this._triggerRender(viewportId);
+      } catch (error) {
+        cs3dLogger.error(error);
+      }
     });
   };
 
