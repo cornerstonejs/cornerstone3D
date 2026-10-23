@@ -623,9 +623,9 @@ export class ContextRuntime {
         bound,
       ];
       throw new RuleCompileError(
-        'raw display set selector',
+        'display set rules',
         bound.name,
-        `Invalid raw display set selector: the context entries form a loop: ${loopText(loop)}`
+        `Invalid display set rules: the context entries form a loop: ${loopText(loop)}`
       );
     }
     this.inProgress.push({ bound, instance });

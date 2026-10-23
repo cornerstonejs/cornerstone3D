@@ -1,6 +1,6 @@
 ---
 name: display-set-rules
-description: Write, review or debug display set split rules of @cornerstonejs/metadata (rawDisplaySetSelector, createDisplaySetSplitRules, the displaySetContext and the rule context). Use when an author asks for a new split rule, a change to a default rule, a hanging protocol test in the same language, or a fix for a compile error such as "unknown name".
+description: Write, review or debug display set split rules of @cornerstonejs/metadata (displaySetRules, createDisplaySetSplitRules, the displaySetContext and the rule context). Use when an author asks for a new split rule, a change to a default rule, a hanging protocol test in the same language, or a fix for a compile error such as "unknown name".
 ---
 
 # Display set split rules
@@ -8,7 +8,7 @@ description: Write, review or debug display set split rules of @cornerstonejs/me
 Use this skill to build a split rule on the default display set context. The
 source of truth is `packages/docs/docs/specs/metadata/RuleLanguage.md`. The code
 is in `packages/metadata/src/displayset/` (`displaySetContext.ts`,
-`compileSplitRules.ts`, `rawDisplaySetSelector.js`) and
+`compileSplitRules.ts`, `displaySetRules.js`) and
 `packages/metadata/src/safeFunctions/`.
 
 ## The model in one page

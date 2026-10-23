@@ -10,10 +10,10 @@ import dicomImageLoader from '@cornerstonejs/dicom-image-loader';
 import {
   createDisplaySetSplitRules,
   Enums as metadataEnums,
-  rawDisplaySetSelector,
+  displaySetRules,
   type IDisplaySet,
   type NaturalizedInstance,
-  type RawDisplaySetSelector,
+  type DisplaySetRules,
   type RawSplitRule,
   type SplitRuleSet,
 } from '@cornerstonejs/metadata';
@@ -62,7 +62,7 @@ const LOCAL_ROOT = getLocalUrl() || 'http://localhost:5000/dicomweb';
 
 setTitleAndDescription(
   'Display Set Rules — editing the raw selector',
-  'The standard display-set split rules are data (rawDisplaySetSelector), not ' +
+  'The standard display-set split rules are data (displaySetRules), not ' +
     'code, so they can be inspected, toggled and extended at runtime — and the ' +
     'same selector can be used by a server. Untick a rule to see what the ' +
     'series splits into without it, add your own rules as JSON (keyed by rule ' +
@@ -362,7 +362,7 @@ const disabledRuleIds = new Set<string>();
  * Rules the user added or the server supplied, keyed by rule id. Merged over the
  * standard ones by key, so an added rule with a standard id replaces that rule.
  */
-let addedRules: RawDisplaySetSelector = {};
+let addedRules: DisplaySetRules = {};
 /** Customization merge commands applied on top, in order. */
 const mergeCommands: unknown[] = [];
 
@@ -422,8 +422,8 @@ function setStatus(message: string, isError = false) {
 // ======== The selector, assembled from user state ======== //
 
 /** The standard rules with the user/server rules merged over them by key. */
-function mergedRules(): RawDisplaySetSelector {
-  return { ...rawDisplaySetSelector, ...addedRules };
+function mergedRules(): DisplaySetRules {
+  return { ...displaySetRules, ...addedRules };
 }
 
 /**
@@ -435,8 +435,8 @@ function mergedRules(): RawDisplaySetSelector {
  * would silently discard everything no other rule claims, which is the failure
  * mode it exists to prevent. Its checkbox is disabled for the same reason.
  */
-function buildSelector(): RawDisplaySetSelector {
-  let selector: RawDisplaySetSelector = Object.fromEntries(
+function buildSelector(): DisplaySetRules {
+  let selector: DisplaySetRules = Object.fromEntries(
     Object.entries(mergedRules()).map(([id, rule]) => [
       id,
       disabledRuleIds.has(id) ? { ...rule, priority: null } : rule,
@@ -457,9 +457,7 @@ function buildSelector(): RawDisplaySetSelector {
  * priorities by id. Excluded rules (`priority: null`) come last, so the list
  * still shows them.
  */
-function rulesInOrder(
-  selector: RawDisplaySetSelector
-): [string, RawSplitRule][] {
+function rulesInOrder(selector: DisplaySetRules): [string, RawSplitRule][] {
   const rank = (rule: RawSplitRule) =>
     typeof rule.priority === 'number' ? rule.priority : Infinity;
   return Object.entries(selector).sort(
@@ -475,7 +473,7 @@ function rulesInOrder(
  * which becomes `{ [id]: { ...rule, priority: -1 } }` (it runs before the
  * standard rules) unless it states its own priority.
  */
-function toKeyedRules(parsed: unknown): RawDisplaySetSelector {
+function toKeyedRules(parsed: unknown): DisplaySetRules {
   if (Array.isArray(parsed)) {
     throw new Error(
       'the array form is not supported: key the rules by id, each with a priority'
@@ -496,7 +494,7 @@ function toKeyedRules(parsed: unknown): RawDisplaySetSelector {
       },
     };
   }
-  return record as RawDisplaySetSelector;
+  return record as DisplaySetRules;
 }
 
 function compileSelector(): SplitRuleSet {
@@ -598,7 +596,7 @@ function renderRules() {
   for (const [id, rule] of rulesInOrder(mergedRules())) {
     const origin = !(id in addedRules)
       ? 'standard'
-      : id in rawDisplaySetSelector
+      : id in displaySetRules
         ? 'replaced'
         : 'added';
     rulesList.appendChild(ruleRow(id, rule, origin));

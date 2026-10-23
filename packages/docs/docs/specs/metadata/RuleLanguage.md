@@ -464,7 +464,7 @@ compile.
   - `compileSplitRules.ts`: the rule fields, and their mapping onto the
     `SplitRule` hooks.
   - `splitRuleSchema.ts`: the table of the rule fields and forms.
-  - `rawDisplaySetSelector.js`: the default rules, as JSON data.
+  - `displaySetRules.js`: the default rules, as JSON data.
 - **RL-PKG-4** The hanging protocol consumer is in OHIF
   (`HangingProtocolService`), or in a later CS3D package. Either location uses
   only the public API of `RL-API`.
@@ -483,7 +483,7 @@ packages/metadata/src/
     displaySetContext.ts      context, default context, binding, cache
     compileSplitRules.ts      rule fields -> SplitRule hooks
     splitRuleSchema.ts
-    rawDisplaySetSelector.js  default rules as data
+    displaySetRules.js  default rules as data
     ...engine files, unchanged
 ```
 
@@ -501,7 +501,7 @@ packages/metadata/src/
   collectIdentifiers(node): string[];
   collectReads(node, { aggregates? }): ExpressionRead[];
   class RuleCompileError extends Error {
-    readonly definition: string; // e.g. 'raw display set selector'
+    readonly definition: string; // e.g. 'display set rules'
     readonly path: string;       // e.g. "rule 'r'.matches.Modality"
   }
 
@@ -509,7 +509,7 @@ packages/metadata/src/
   createDisplaySetSplitRules(selector?, options?: CreateDisplaySetSplitRulesOptions): SplitRuleSet;
   compileDisplaySetSplitRules(selector, options?): SplitRuleSet;
   defaultDisplaySetContext: DisplaySetContext;
-  rawDisplaySetSelector: RawDisplaySetSelector;
+  displaySetRules: DisplaySetRules;
   ```
 
 - **RL-API-2** `CompileOptions` holds the path and the name of the definition

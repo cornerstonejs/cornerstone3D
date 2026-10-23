@@ -1,5 +1,5 @@
 /**
- * The compiler of the raw display set selector: it turns rule data into the
+ * The compiler of the display set rules: it turns rule data into the
  * `SplitRule` hooks that the split engine in `groupInstancesBySplitRules`
  * runs. The engine and the hooks do not change; only the data that compiles
  * onto them is this module.
@@ -44,8 +44,8 @@ import { validateSplitRuleSetEntry } from './splitRuleSet';
 import { splitRuleSchema } from './splitRuleSchema';
 import type {
   CreateDisplaySetSplitRulesOptions,
-  RawDisplaySetSelector,
-} from './rawDisplaySetSelectorTypes';
+  DisplaySetRules,
+} from './displaySetRulesTypes';
 import type {
   NaturalizedInstance,
   RuleContext,
@@ -54,7 +54,7 @@ import type {
 } from './types';
 
 /** What the messages call a selector. */
-const DEFINITION = 'raw display set selector';
+const DEFINITION = 'display set rules';
 
 type Comparator = NonNullable<SplitRule['compareInstances']>;
 
@@ -338,7 +338,7 @@ function compileRule(
 }
 
 /**
- * Compiles a raw display set selector into executable split rules.
+ * Compiles a display set rules into executable split rules.
  *
  * The result is a {@link SplitRuleSet} with the same keys and priorities, ready
  * to hand to `splitImageIdsBySplitRules` / `groupInstancesBySplitRules`, or to
@@ -353,7 +353,7 @@ function compileRule(
  * with the rule id and the path of the fragment.
  */
 export function compileDisplaySetSplitRules(
-  selector: RawDisplaySetSelector,
+  selector: DisplaySetRules,
   options: CreateDisplaySetSplitRulesOptions = {}
 ): SplitRuleSet {
   if (!selector || typeof selector !== 'object' || Array.isArray(selector)) {

@@ -340,7 +340,7 @@ Invalid safe function definition: Rows: the operand of greaterThan must be a fin
 
 A consumer gives the path and its own name. So a message from a display set
 rule is
-`Invalid raw display set selector: rule 'r'.matches.BodyPartExamind: unknown name 'BodyPartExamind': ...`.
+`Invalid display set rules: rule 'r'.matches.BodyPartExamind: unknown name 'BodyPartExamind': ...`.
 
 Compile one time, at setup. Then a bad definition fails at startup, and not
 during the work that it describes.

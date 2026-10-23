@@ -6,7 +6,7 @@
  * The vocabulary is deliberately not about display sets, or about DICOM. It
  * describes tests and values over *some subject object*: "does this name equal
  * that", "build this string from these names". Display-set split rules are the
- * first consumer (see `displayset/rawDisplaySetSelector.js`); hanging protocols
+ * first consumer (see `displayset/displaySetRules.js`); hanging protocols
  * and any other place that today ships hand-written matching code are the
  * intended next ones.
  *

@@ -4,8 +4,9 @@ export * as Enums from './enums';
 export { version } from './version';
 export * as metaData from './metaData';
 export * as utilities from './utilities';
-export * as safeFunctions from './safeFunctions';
 export * as displaySet from './displayset';
+// The safe functions: what a consumer such as a hanging protocol needs to
+// compile its own conditions, values and expressions with the same meanings.
 export {
   collectIdentifiers,
   collectReads,
@@ -14,24 +15,32 @@ export {
   compileTemplate,
   compileValue,
   ExpressionSyntaxError,
+  hasNoValue,
+  isAbsent,
+  isEmpty,
+  looseEquals,
+  MATCH_OPERATOR_NAMES,
   parseExpressionSource,
   RuleCompileError,
 } from './safeFunctions';
 export type {
   CompiledExpression,
   CompileExpressionOptions,
+  CompileOptions,
   CompiledPredicate,
   CompiledValue,
+  ExpressionNode,
   ExpressionRead,
   ExpressionScope,
   InlinePredicate,
   InlineValue,
+  NameReader,
+  NameReaderFunction,
   RawMatchTest,
-  Schema,
-  SchemaForm,
-  SchemaKey,
-  SchemaShape,
+  RawScalar,
+  RawValue,
   SafeFunctionSubject,
+  SchemaSite,
 } from './safeFunctions';
 export type {
   IDisplaySet,
@@ -74,7 +83,7 @@ export type {
   RawName,
   RawSortKey,
   RawSplitRule,
-  RawDisplaySetSelector,
+  DisplaySetRules,
   CreateDisplaySetSplitRulesOptions,
 } from './displayset';
 export {
@@ -86,19 +95,18 @@ export {
   splitImageIdsBySplitRules,
   registerDisplaySetMetadata,
   registerDisplaySetProviders,
+  compiledDisplaySetRules,
   defaultDisplaySetSplitRules,
   orderInstancesForRule,
-  computeSeriesFacts,
   BUILT_IN_SERIES_FUNCTIONS,
   planeGeometry,
   timeClusters,
   resolveSplitRuleSet,
   validateSplitRuleSetEntry,
-  rawDisplaySetSelector,
+  displaySetRules,
   createDisplaySetSplitRules,
   compileDisplaySetSplitRules,
   defaultDisplaySetContext,
-  splitRuleSchema,
   createDisplaySetFromGroup,
   isImageInstance,
   isVideoInstance,

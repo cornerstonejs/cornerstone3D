@@ -1,7 +1,7 @@
 import { describe, expect, it } from '@jest/globals';
 import { buildSeriesInfo } from './buildSeriesInfo';
 import { createDisplaySetFromGroup } from './createDisplaySetFromGroup';
-import { defaultDisplaySetSplitRules } from './defaultDisplaySetSplitRules';
+import { compiledDisplaySetRules } from './compiledDisplaySetRules';
 import {
   groupInstancesBySplitRules,
   orderInstancesForRule,
@@ -78,7 +78,7 @@ describe('displayset split utilities', () => {
       instances.map((i) => i.imageId!),
       {
         getNaturalizedInstance: (id) => instances.find((i) => i.imageId === id),
-        splitRules: defaultDisplaySetSplitRules,
+        splitRules: compiledDisplaySetRules,
       }
     );
     expect(groups).toHaveLength(1);
@@ -99,7 +99,7 @@ describe('displayset split utilities', () => {
     };
     const groups = splitImageIdsBySplitRules(['wadors:video'], {
       getNaturalizedInstance: () => videoInstance,
-      splitRules: defaultDisplaySetSplitRules,
+      splitRules: compiledDisplaySetRules,
     });
     expect(groups[0].matchedRule.id).toBe('video');
     const displaySet = createDisplaySetFromGroup(groups[0]);
@@ -118,7 +118,7 @@ describe('displayset split utilities', () => {
     };
     const groups = splitImageIdsBySplitRules(['wadors:ecg'], {
       getNaturalizedInstance: () => ecgInstance,
-      splitRules: defaultDisplaySetSplitRules,
+      splitRules: compiledDisplaySetRules,
     });
     expect(groups[0].matchedRule.id).toBe('ecg');
     expect(createDisplaySetFromGroup(groups[0]).viewportTypes[0]).toBe('ecg');
@@ -147,7 +147,7 @@ describe('displayset split utilities', () => {
       {
         getNaturalizedInstance: (id) =>
           mrInstances.find((i) => i.imageId === id),
-        splitRules: defaultDisplaySetSplitRules,
+        splitRules: compiledDisplaySetRules,
       }
     );
     expect(groups).toHaveLength(2);
@@ -191,7 +191,7 @@ describe('displayset split utilities', () => {
     ];
     const groups = splitImageIdsBySplitRules(['wadors:mf'], {
       getNaturalizedInstance: () => multiFrameInstances[0],
-      splitRules: defaultDisplaySetSplitRules,
+      splitRules: compiledDisplaySetRules,
     });
     expect(groups[0].matchedRule.id).toBe('multiFrame');
 
@@ -220,7 +220,7 @@ describe('displayset split utilities', () => {
     ];
     const groups = splitImageIdsBySplitRules(['wadors:mf-str'], {
       getNaturalizedInstance: () => multiFrameInstances[0],
-      splitRules: defaultDisplaySetSplitRules,
+      splitRules: compiledDisplaySetRules,
     });
     expect(groups[0].matchedRule.id).toBe('multiFrame');
 
@@ -250,9 +250,7 @@ describe('displayset split utilities', () => {
 
     const seriesInfo = buildSeriesInfo([]);
     expect(seriesInfo.NumberOfSeriesRelatedInstances).toBe(0);
-    expect(groupInstancesBySplitRules([], defaultDisplaySetSplitRules)).toEqual(
-      []
-    );
+    expect(groupInstancesBySplitRules([], compiledDisplaySetRules)).toEqual([]);
   });
 
   it('does not let customAttributes clobber resolved data fields', () => {
@@ -525,7 +523,7 @@ describe('displayset split utilities', () => {
     ];
     const options = {
       getNaturalizedInstance: (id: string) => mr.find((i) => i.imageId === id),
-      splitRules: defaultDisplaySetSplitRules,
+      splitRules: compiledDisplaySetRules,
     };
 
     const forward = splitImageIdsBySplitRules(['a', 'b'], options);
@@ -556,7 +554,7 @@ describe('displayset split utilities', () => {
     ];
     const groups = splitImageIdsBySplitRules(['b800', 'noB'], {
       getNaturalizedInstance: (id) => mixed.find((i) => i.imageId === id),
-      splitRules: defaultDisplaySetSplitRules,
+      splitRules: compiledDisplaySetRules,
     });
 
     expect(groups).toHaveLength(2);
@@ -588,7 +586,7 @@ describe('displayset split utilities', () => {
     ];
     const groups = splitImageIdsBySplitRules(['b0', 'b1000'], {
       getNaturalizedInstance: (id) => allBValue.find((i) => i.imageId === id),
-      splitRules: defaultDisplaySetSplitRules,
+      splitRules: compiledDisplaySetRules,
     });
 
     expect(groups).toHaveLength(1);

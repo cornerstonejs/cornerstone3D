@@ -7,14 +7,11 @@ export { resolveInstances } from './resolveInstances';
 export type { ResolveInstancesOptions } from './resolveInstances';
 export { buildSeriesInfo } from './buildSeriesInfo';
 export {
-  computeSeriesFacts,
   groupInstancesBySplitRules,
   orderInstancesForRule,
 } from './groupInstancesBySplitRules';
 export {
   BUILT_IN_SERIES_FUNCTIONS,
-  dicomDateTimeToSeconds,
-  instanceKey,
   planeGeometry,
   timeClusters,
 } from './seriesFunctions';
@@ -27,19 +24,13 @@ export {
   type RegisterDisplaySetMetadataOptions,
 } from './registerDisplaySetMetadata';
 export { registerDisplaySetProviders } from './displaySetProvider';
-export { defaultDisplaySetSplitRules } from './defaultDisplaySetSplitRules';
 export {
-  rawDisplaySetSelector,
-  createDisplaySetSplitRules,
-} from './rawDisplaySetSelector';
+  compiledDisplaySetRules,
+  defaultDisplaySetSplitRules,
+} from './compiledDisplaySetRules';
+export { displaySetRules, createDisplaySetSplitRules } from './displaySetRules';
 export { compileDisplaySetSplitRules } from './compileSplitRules';
-export { splitRuleSchema, ATTRIBUTE_ONLY_NAMES } from './splitRuleSchema';
-export {
-  defaultDisplaySetContext,
-  DISPLAY_SET_CONTEXT_FACT,
-  DisplaySetContextValues,
-  isTagKeyword,
-} from './displaySetContext';
+export { defaultDisplaySetContext } from './displaySetContext';
 export type {
   ContextEntry,
   ContextGroupEntry,
@@ -55,9 +46,9 @@ export type {
   RawName,
   RawSortKey,
   RawSplitRule,
-  RawDisplaySetSelector,
+  DisplaySetRules,
   CreateDisplaySetSplitRulesOptions,
-} from './rawDisplaySetSelectorTypes';
+} from './displaySetRulesTypes';
 export { createDisplaySetFromGroup } from './createDisplaySetFromGroup';
 export type { CreateDisplaySetFromGroupOptions } from './createDisplaySetFromGroup';
 export { isImageInstance } from './isImageInstance';

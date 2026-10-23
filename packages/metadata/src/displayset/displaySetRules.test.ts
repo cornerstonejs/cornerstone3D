@@ -1,11 +1,8 @@
 import { createDisplaySetFromGroup } from './createDisplaySetFromGroup';
-import { defaultDisplaySetSplitRules } from './defaultDisplaySetSplitRules';
+import { compiledDisplaySetRules } from './compiledDisplaySetRules';
 import { groupInstancesBySplitRules } from './groupInstancesBySplitRules';
-import {
-  createDisplaySetSplitRules,
-  rawDisplaySetSelector,
-} from './rawDisplaySetSelector';
-import type { RawDisplaySetSelector } from './rawDisplaySetSelectorTypes';
+import { createDisplaySetSplitRules, displaySetRules } from './displaySetRules';
+import type { DisplaySetRules } from './displaySetRulesTypes';
 import { resolveSplitRuleSet } from './splitRuleSet';
 import type { NaturalizedInstance, SplitRule } from './types';
 
@@ -30,17 +27,17 @@ function instance(
 function ruleIdsFor(instances: NaturalizedInstance[], rules = undefined) {
   return groupInstancesBySplitRules(
     instances,
-    rules ?? defaultDisplaySetSplitRules
+    rules ?? compiledDisplaySetRules
   ).map((group) => group.matchedRule.id);
 }
 
-describe('rawDisplaySetSelector - the selector as data', () => {
+describe('displaySetRules - the selector as data', () => {
   it('is pure JSON: survives a stringify/parse round trip', () => {
     // The whole point of the raw form is that it can cross a process boundary
     // (server index -> client viewer) as JSON, so it must contain no functions.
-    const roundTripped = JSON.parse(JSON.stringify(rawDisplaySetSelector));
+    const roundTripped = JSON.parse(JSON.stringify(displaySetRules));
 
-    expect(roundTripped).toEqual(rawDisplaySetSelector);
+    expect(roundTripped).toEqual(displaySetRules);
   });
 
   it('compiles the same rules after a JSON round trip', () => {
@@ -50,12 +47,12 @@ describe('rawDisplaySetSelector - the selector as data', () => {
     ];
 
     const overTheWire = createDisplaySetSplitRules(
-      JSON.parse(JSON.stringify(rawDisplaySetSelector))
+      JSON.parse(JSON.stringify(displaySetRules))
     );
 
     const local = groupInstancesBySplitRules(
       instances,
-      defaultDisplaySetSplitRules
+      compiledDisplaySetRules
     );
     const remote = groupInstancesBySplitRules(instances, overTheWire);
 
@@ -66,7 +63,7 @@ describe('rawDisplaySetSelector - the selector as data', () => {
   });
 
   it('gives the defaults the priorities 1..n, and runs the catch-all last', () => {
-    const entries = Object.entries(rawDisplaySetSelector);
+    const entries = Object.entries(displaySetRules);
     expect(entries.map(([id, rule]) => [id, rule.priority])).toEqual([
       ['video', 1],
       ['ecg', 2],
@@ -79,7 +76,7 @@ describe('rawDisplaySetSelector - the selector as data', () => {
       ['unsupported', Number.MAX_SAFE_INTEGER],
     ]);
     expect(
-      resolveSplitRuleSet(defaultDisplaySetSplitRules).map((rule) => rule.id)
+      resolveSplitRuleSet(compiledDisplaySetRules).map((rule) => rule.id)
     ).toEqual(entries.map(([id]) => id));
   });
 });
@@ -124,7 +121,7 @@ describe('createDisplaySetSplitRules - compiled default behaviour', () => {
           Columns: 2048,
         }),
       ],
-      defaultDisplaySetSplitRules
+      compiledDisplaySetRules
     );
 
     expect(groups.length).toBe(2);
@@ -147,7 +144,7 @@ describe('createDisplaySetSplitRules - compiled default behaviour', () => {
           InstanceNumber: 1,
         }),
       ],
-      defaultDisplaySetSplitRules
+      compiledDisplaySetRules
     );
 
     expect(groups[0].matchedRule.id).toBe('multiFrame');
@@ -204,7 +201,7 @@ describe('createDisplaySetSplitRules - compiled default behaviour', () => {
 
     const groups = groupInstancesBySplitRules(
       instances,
-      defaultDisplaySetSplitRules
+      compiledDisplaySetRules
     );
 
     expect(groups.length).toBe(2);
@@ -234,7 +231,7 @@ describe('createDisplaySetSplitRules - compiled default behaviour', () => {
     ];
 
     expect(
-      groupInstancesBySplitRules(instances, defaultDisplaySetSplitRules).length
+      groupInstancesBySplitRules(instances, compiledDisplaySetRules).length
     ).toBe(2);
   });
 
@@ -330,7 +327,7 @@ describe('default rules - the unsupported catch-all', () => {
           Columns: undefined,
         }),
       ],
-      defaultDisplaySetSplitRules
+      compiledDisplaySetRules
     );
     return createDisplaySetFromGroup(groups[0]);
   };
@@ -392,7 +389,7 @@ describe('default rules - the unsupported catch-all', () => {
           Rows: undefined,
         }),
       ],
-      defaultDisplaySetSplitRules
+      compiledDisplaySetRules
     );
 
     expect(groups.map((group) => group.matchedRule.id)).toEqual([
@@ -406,7 +403,7 @@ describe('default rules - the unsupported catch-all', () => {
 
   it('lets a fallback rule above the priority limit run before the catch-all', () => {
     const rules = createDisplaySetSplitRules({
-      ...rawDisplaySetSelector,
+      ...displaySetRules,
       srFallback: { priority: 20000, matches: { Modality: 'SR' } },
     });
     const sr = instance({
@@ -429,7 +426,7 @@ describe('default rules - the unsupported catch-all', () => {
   it('yields to an application rule with a lower priority', () => {
     // This is how an application that *does* support SEG opts in.
     const rules = createDisplaySetSplitRules({
-      ...rawDisplaySetSelector,
+      ...displaySetRules,
       seg: {
         priority: -1,
         viewportTypes: ['stack'],
@@ -453,14 +450,12 @@ describe('default rules - the unsupported catch-all', () => {
   });
 
   it('has the highest priority, so it never shadows a real one', () => {
-    const priorities = Object.values(rawDisplaySetSelector).map(
+    const priorities = Object.values(displaySetRules).map(
       (rule) => rule.priority as number
     );
-    expect(rawDisplaySetSelector.unsupported.priority).toBe(
-      Math.max(...priorities)
-    );
+    expect(displaySetRules.unsupported.priority).toBe(Math.max(...priorities));
     // A rule with no `matches` claims everything, so any later rule is dead code.
-    const catchAlls = Object.entries(rawDisplaySetSelector).filter(
+    const catchAlls = Object.entries(displaySetRules).filter(
       ([, rule]) => !rule.matches
     );
     expect(catchAlls.map(([id]) => id)).toEqual(['unsupported']);
@@ -468,7 +463,7 @@ describe('default rules - the unsupported catch-all', () => {
 
   it('lets a fallback rule run between defaultImageRule and unsupported', () => {
     const rules = createDisplaySetSplitRules({
-      ...rawDisplaySetSelector,
+      ...displaySetRules,
       segFallback: {
         priority: 8.5,
         matches: { Modality: 'SEG' },
@@ -494,8 +489,8 @@ describe('default rules - the unsupported catch-all', () => {
 
   it('can be excluded with a null priority', () => {
     const rules = createDisplaySetSplitRules({
-      ...rawDisplaySetSelector,
-      unsupported: { ...rawDisplaySetSelector.unsupported, priority: null },
+      ...displaySetRules,
+      unsupported: { ...displaySetRules.unsupported, priority: null },
     });
     const unmatched: NaturalizedInstance[] = [];
 
@@ -517,7 +512,7 @@ describe('default rules - the unsupported catch-all', () => {
 
 const compileOne = (rule: Record<string, unknown>, options = {}) =>
   createDisplaySetSplitRules(
-    { r: { priority: 1, ...rule } } as unknown as RawDisplaySetSelector,
+    { r: { priority: 1, ...rule } } as unknown as DisplaySetRules,
     options
   );
 
@@ -668,7 +663,7 @@ describe('matches - the operator meanings', () => {
 describe('names - the compile checks every name', () => {
   it('rejects a misspelt keyword, with the rule, the place and the name', () => {
     expect(errorOf({ matches: { BodyPartExamind: 'CHEST' } })).toBe(
-      "Invalid raw display set selector: rule 'r'.matches.BodyPartExamind: " +
+      "Invalid display set rules: rule 'r'.matches.BodyPartExamind: " +
         "unknown name 'BodyPartExamind': it is not a keyword of the DICOM " +
         'dictionary; a private, vendor or synthetic attribute needs a ' +
         'declaration, e.g. "myValue": { "attribute": "BodyPartExamind" }'
@@ -913,7 +908,7 @@ describe('sortBy and attributes', () => {
 
   it('rejects a bare string that is not a name, and names the template form', () => {
     expect(errorOf({ attributes: { label: 'SCOUT' } })).toBe(
-      "Invalid raw display set selector: rule 'r'.attributes.label: unknown " +
+      "Invalid display set rules: rule 'r'.attributes.label: unknown " +
         "name 'SCOUT': it is not a keyword of the DICOM dictionary; a private, " +
         'vendor or synthetic attribute needs a declaration, e.g. "myValue": ' +
         '{ "attribute": "SCOUT" }; fixed text is { "template": "SCOUT" }'
@@ -984,7 +979,7 @@ describe('createDisplaySetSplitRules - validation', () => {
   it('rejects a selector that is not an object keyed by rule id', () => {
     expect(createDisplaySetSplitRules({})).toEqual({});
     expect(() => createDisplaySetSplitRules('rules' as never)).toThrow(
-      /Invalid raw display set selector: selector must be an object keyed by rule id/
+      /Invalid display set rules: selector must be an object keyed by rule id/
     );
     expect(() =>
       createDisplaySetSplitRules([{ id: 'x', priority: 1 }] as never)
@@ -1019,7 +1014,7 @@ describe('createDisplaySetSplitRules - validation', () => {
 
   it('rejects an unknown rule field, with the rule id and the allowed fields', () => {
     expect(errorOf({ matchs: { Modality: 'CT' } })).toBe(
-      "Invalid raw display set selector: rule 'r': unknown field 'matchs'; " +
+      "Invalid display set rules: rule 'r': unknown field 'matchs'; " +
         'allowed: id, groupId, priority, description, viewportTypes, context, ' +
         'matches, groupBy, sortBy, attributes'
     );
@@ -1242,7 +1237,7 @@ describe('the default rules and Rows', () => {
           Rows: null as unknown as number,
         }),
       ],
-      defaultDisplaySetSplitRules
+      compiledDisplaySetRules
     );
     expect(groups.map((group) => group.matchedRule.id)).toEqual([
       'unsupported',

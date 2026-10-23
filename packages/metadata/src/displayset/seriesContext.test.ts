@@ -4,8 +4,8 @@ import {
   orderInstancesForRule,
 } from './groupInstancesBySplitRules';
 import { withInstances } from './displaySetContext';
-import { createDisplaySetSplitRules } from './rawDisplaySetSelector';
-import type { RawDisplaySetSelector } from './rawDisplaySetSelectorTypes';
+import { createDisplaySetSplitRules } from './displaySetRules';
+import type { DisplaySetRules } from './displaySetRulesTypes';
 import { planeGeometry, timeClusters } from './seriesFunctions';
 import type { PlaneGeometry, TimeClusters } from './seriesFunctions';
 import type { NaturalizedInstance } from './types';
@@ -36,7 +36,7 @@ describe('the display set context over a split', () => {
         'planeGeometry.regularCount >= 3 && planeGeometry.irregularCount > 0 && planeGeometry.complete',
     },
   };
-  const selector: RawDisplaySetSelector = {
+  const selector: DisplaySetRules = {
     regularVolume: {
       priority: -2,
       matches: {

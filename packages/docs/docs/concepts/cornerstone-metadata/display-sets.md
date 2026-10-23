@@ -38,7 +38,7 @@ it is just:
 import {
   splitImageIdsBySplitRules,
   createDisplaySetFromGroup,
-  defaultDisplaySetSplitRules,
+  compiledDisplaySetRules,
   metaData,
   type IDisplaySet,
   type NaturalizedInstance,
@@ -55,7 +55,7 @@ function getNaturalizedInstance(
 
 const groups = splitImageIdsBySplitRules(seriesImageIds, {
   getNaturalizedInstance,
-  splitRules: defaultDisplaySetSplitRules,
+  splitRules: compiledDisplaySetRules,
 });
 
 const displaySets: IDisplaySet[] = groups.map((group) =>
@@ -159,9 +159,9 @@ priority, first match wins per instance**.
 
 ### The default rules
 
-`defaultDisplaySetSplitRules` is the rule set you get without writing any rules.
-It is the compiled form of `rawDisplaySetSelector`, the same rules as JSON data
-(see [Sharing rules between applications](#sharing-rules-between-applications-the-raw-selector)).
+`compiledDisplaySetRules` is the rule set you get without writing any rules.
+It is the compiled form of `displaySetRules`, the same rules as JSON data
+(see [Sharing rules between applications](#sharing-rules-between-applications-the-display-set-rules)).
 It has nine rules. Eight have the priorities `1` to `8`, and the catch-all
 `unsupported` runs last, at `Number.MAX_SAFE_INTEGER`:
 
@@ -197,14 +197,14 @@ series. A short UID such as `6.1` is the suffix after `1.2.840.10008.5.1.4.1.1.`
 | `video`, `ecg`, `wholeslide`, `defaultImageRule` | No change in the rule.                                                                                                                                                                                                                                                                  | `defaultImageRule` follows the `isImage` change.                                                                                                                     |
 
 **Migration from the array form.** `groupInstancesBySplitRules`,
-`splitImageIdsBySplitRules` and `defaultDisplaySetSplitRules` take and give a
+`splitImageIdsBySplitRules` and `compiledDisplaySetRules` take and give a
 `SplitRuleSet` keyed by rule id, and not an ordered array of rules. To migrate a
 call:
 
 1. Make each rule of the array an entry of an object, with its `id` as the key.
 2. Give each entry a `priority`. The earlier position in the array becomes the
    priority: the first rule gets the lowest number.
-3. Merge your rules over `defaultDisplaySetSplitRules` by key, and not with
+3. Merge your rules over `compiledDisplaySetRules` by key, and not with
    `concat`. See [Where your rule runs among the defaults](#where-your-rule-runs-among-the-defaults).
 
 ### Viewport types are hints
@@ -274,7 +274,7 @@ A fallback rule runs after every other default rule and before `unsupported`,
 so it sees the instances that no other default claims. A later release may add
 default rules with priorities up to `10000`, so do not depend on the gap
 between `8` and `10000` staying empty. To replace the catch-all, exclude it
-with `unsupported: { ...defaultDisplaySetSplitRules.unsupported, priority: null }`.
+with `unsupported: { ...compiledDisplaySetRules.unsupported, priority: null }`.
 
 An entry that states an `id` different from its key, or that has a priority
 that is missing, or neither `null` nor a finite number, is an error.
@@ -349,7 +349,7 @@ adds a rule, an existing id replaces one — and pass the result as `splitRules`
 
 ```ts
 const splitRules: SplitRuleSet = {
-  ...defaultDisplaySetSplitRules,
+  ...compiledDisplaySetRules,
   // Runs before every default rule.
   ctScout: {
     priority: -1,
@@ -357,14 +357,14 @@ const splitRules: SplitRuleSet = {
   },
   // Turns a default rule off without removing its key.
   singleImageModality: {
-    ...defaultDisplaySetSplitRules.singleImageModality,
+    ...compiledDisplaySetRules.singleImageModality,
     priority: null,
   },
 };
 ```
 
 Prefer authoring them as data — see
-[Sharing rules between applications](#sharing-rules-between-applications-the-raw-selector)
+[Sharing rules between applications](#sharing-rules-between-applications-the-display-set-rules)
 — so the same rules can also be used outside the viewer.
 `customAttributes` may set any attribute, but
 the resolved data fields a display set is built from — `imageIds`,
@@ -500,7 +500,7 @@ the format.
 
 ```ts
 const splitRules = createDisplaySetSplitRules({
-  ...rawDisplaySetSelector,
+  ...displaySetRules,
   seg: {
     // Below 0: runs before every default rule.
     priority: -1,
@@ -516,9 +516,9 @@ reaches it. It runs at `Number.MAX_SAFE_INTEGER`, so every other rule runs
 before it. A rule meant only for what the other default rules leave takes a
 priority above `DEFAULT_SPLIT_RULE_PRIORITY_LIMIT`, for example `20000`. To
 replace the catch-all instead, exclude it with
-`unsupported: { ...rawDisplaySetSelector.unsupported, priority: null }`.
+`unsupported: { ...displaySetRules.unsupported, priority: null }`.
 
-## Sharing rules between applications (the raw selector)
+## Sharing rules between applications (the display set rules)
 
 A display set is not only a client-side idea. A server that indexes a study —
 static-dicomweb building its metadata tree, say — wants to know what display sets
@@ -528,7 +528,7 @@ advertises stop being the ones the client builds.
 
 So the rules are data, and one shared compiler turns them into functions:
 
-- `rawDisplaySetSelector` — the default rules as pure JSON, keyed by rule id:
+- `displaySetRules` — the default rules as pure JSON, keyed by rule id:
   `video` (priority `1`), `ecg` (`2`), `wholeslide` (`3`),
   `singleImageModality` (`4`), `multiFrame` (`5`), `mixedDimensionalityBValue`
   (`6`), `volume3d` (`7`), `defaultImageRule` (`8`) and `unsupported`
@@ -540,19 +540,19 @@ So the rules are data, and one shared compiler turns them into functions:
   An excluded entry (`priority: null`) is compiled and kept, so a later layer
   can include it again by giving it a priority.
 
-`defaultDisplaySetSplitRules` is literally `createDisplaySetSplitRules(rawDisplaySetSelector)`,
+`compiledDisplaySetRules` is literally `createDisplaySetSplitRules(displaySetRules)`,
 so the data form is never a second-class path: if it could not express a default
 rule, the package would not build.
 
 ```js
 import {
   createDisplaySetSplitRules,
-  rawDisplaySetSelector,
+  displaySetRules,
   splitImageIdsBySplitRules,
 } from '@cornerstonejs/metadata';
 
 // A server can ship its selector to the client verbatim...
-const selectorJson = JSON.stringify(rawDisplaySetSelector);
+const selectorJson = JSON.stringify(displaySetRules);
 
 // ...and the client compiles the identical rules from it.
 const splitRules = createDisplaySetSplitRules(JSON.parse(selectorJson));
@@ -913,10 +913,10 @@ The compiler is **strict**. A wrong rule fails at compile time, and the
 compiler never ignores it:
 
 ```text
-Invalid raw display set selector: rule 'r': unknown field 'matchs'; allowed: id, groupId, priority, description, viewportTypes, context, matches, groupBy, sortBy, attributes
-Invalid raw display set selector: rule 'r'.matches.BodyPartExamind: unknown name 'BodyPartExamind': it is not a keyword of the DICOM dictionary; a private, vendor or synthetic attribute needs a declaration, e.g. "myValue": { "attribute": "BodyPartExamind" }
-Invalid raw display set selector: rule 'r'.attributes.label: unknown name 'SCOUT': ...; fixed text is { "template": "SCOUT" }
-Invalid raw display set selector: displaySetContext.first: the context entries form a loop: first -> second -> first
+Invalid display set rules: rule 'r': unknown field 'matchs'; allowed: id, groupId, priority, description, viewportTypes, context, matches, groupBy, sortBy, attributes
+Invalid display set rules: rule 'r'.matches.BodyPartExamind: unknown name 'BodyPartExamind': it is not a keyword of the DICOM dictionary; a private, vendor or synthetic attribute needs a declaration, e.g. "myValue": { "attribute": "BodyPartExamind" }
+Invalid display set rules: rule 'r'.attributes.label: unknown name 'SCOUT': ...; fixed text is { "template": "SCOUT" }
+Invalid display set rules: displaySetContext.first: the context entries form a loop: first -> second -> first
 ```
 
 An actual function passes through as is at every function place: a whole
@@ -1020,7 +1020,7 @@ default rule sees them:
 ```js
 const splitRules = createDisplaySetSplitRules(
   {
-    ...rawDisplaySetSelector,
+    ...displaySetRules,
     dxCrSingleImages: {
       priority: -1,
       viewportTypes: ['stack'],
@@ -1065,7 +1065,7 @@ way: the application resolves its own overrides and gives
 // In the application, not in cornerstone.
 const selector =
   customizationService.getCustomization('displaySetSelector') ??
-  rawDisplaySetSelector;
+  displaySetRules;
 
 const splitRules = createDisplaySetSplitRules(selector, {
   displaySetContext: customizationService.getCustomization('displaySetContext'),

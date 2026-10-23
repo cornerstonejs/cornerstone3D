@@ -1,5 +1,5 @@
 /**
- * The **raw display set selector**: the default display-set split rules as
+ * The **display set rules**: the default display-set split rules as
  * **pure JSON data** - no functions, no imports of app state.
  *
  * Why the data form matters: the rules that decide how a series becomes display
@@ -25,15 +25,15 @@
  * See the "Sharing rules between applications" section of
  * `packages/docs/docs/concepts/cornerstone-metadata/display-sets.md`.
  *
- * @module rawDisplaySetSelector
+ * @module displaySetRules
  */
 
 import { compileDisplaySetSplitRules } from './compileSplitRules';
 import { NO_VIEWPORT_TYPE } from './types';
 
 /**
- * @typedef {import('./rawDisplaySetSelectorTypes').RawDisplaySetSelector} RawDisplaySetSelector
- * @typedef {import('./rawDisplaySetSelectorTypes').CreateDisplaySetSplitRulesOptions} CreateDisplaySetSplitRulesOptions
+ * @typedef {import('./displaySetRulesTypes').DisplaySetRules} DisplaySetRules
+ * @typedef {import('./displaySetRulesTypes').CreateDisplaySetSplitRulesOptions} CreateDisplaySetSplitRulesOptions
  * @typedef {import('./types').SplitRuleSet} SplitRuleSet
  */
 
@@ -63,9 +63,9 @@ const RENDERABLE_IMAGE = { isImage: true, Rows: { notNull: true } };
  * rule, and still before `unsupported`, so it sees the instances that no other
  * default claims.
  *
- * @type {RawDisplaySetSelector}
+ * @type {DisplaySetRules}
  */
-export const rawDisplaySetSelector = {
+export const displaySetRules = {
   video: {
     priority: 1,
     description:
@@ -225,7 +225,7 @@ export const rawDisplaySetSelector = {
 };
 
 /**
- * Compiles a raw display set selector into executable split rules.
+ * Compiles a display set rules into executable split rules.
  *
  * The result is a `SplitRuleSet` with the same keys and priorities, ready to
  * hand to `splitImageIdsBySplitRules` / `groupInstancesBySplitRules`, or to
@@ -235,17 +235,17 @@ export const rawDisplaySetSelector = {
  * ```js
  * import {
  *   createDisplaySetSplitRules,
- *   rawDisplaySetSelector,
+ *   displaySetRules,
  * } from '@cornerstonejs/metadata';
  *
- * // The defaults, compiled (this is exactly `defaultDisplaySetSplitRules`):
- * const rules = createDisplaySetSplitRules(rawDisplaySetSelector);
+ * // The defaults, compiled (this is exactly `compiledDisplaySetRules`):
+ * const rules = createDisplaySetSplitRules(displaySetRules);
  *
  * // A deployment's own selector and context, e.g. read from JSON on a server
  * // or supplied by an application's customization layer on a client:
  * const custom = createDisplaySetSplitRules(
  *   {
- *     ...rawDisplaySetSelector,
+ *     ...displaySetRules,
  *     dxCrSingleImages: {
  *       priority: -1,
  *       viewportTypes: ['stack'],
@@ -262,12 +262,12 @@ export const rawDisplaySetSelector = {
  * );
  * ```
  *
- * @param {RawDisplaySetSelector} [selector=rawDisplaySetSelector] - the rules as data, keyed by rule id.
+ * @param {DisplaySetRules} [selector=displaySetRules] - the rules as data, keyed by rule id.
  * @param {CreateDisplaySetSplitRulesOptions} [options] - the global context, and named extension points.
  * @returns {SplitRuleSet} compiled rules, keyed by rule id.
  */
 export function createDisplaySetSplitRules(
-  selector = rawDisplaySetSelector,
+  selector = displaySetRules,
   options = {}
 ) {
   return compileDisplaySetSplitRules(selector, options);

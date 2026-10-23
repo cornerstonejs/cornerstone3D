@@ -1,7 +1,7 @@
 import { Enums, metaData } from '@cornerstonejs/core';
 import {
   createDisplaySetFromGroup,
-  defaultDisplaySetSplitRules,
+  compiledDisplaySetRules,
   splitImageIdsBySplitRules,
   Enums as metadataEnums,
   metaData as typedMetaData,
@@ -163,12 +163,12 @@ function collectFrameImageIdsForGroup(
  *
  * @param seriesImageIds - the series' (frame-level) imageIds.
  * @param splitRules - compiled split rules, keyed by rule id; defaults to
- *   {@link defaultDisplaySetSplitRules}. Pass the result of
+ *   {@link compiledDisplaySetRules}. Pass the result of
  *   `createDisplaySetSplitRules(selector)` to split with a custom selector.
  */
 export function splitDisplaySetsFromImageIds(
   seriesImageIds: string[],
-  splitRules: SplitRuleSet = defaultDisplaySetSplitRules
+  splitRules: SplitRuleSet = compiledDisplaySetRules
 ): IDisplaySet[] {
   const instanceLevelImageIds = getInstanceLevelImageIds(seriesImageIds);
 

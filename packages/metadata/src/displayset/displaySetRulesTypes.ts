@@ -13,7 +13,7 @@ import type {
 } from './displaySetContext';
 
 /**
- * Types for the **raw display set selector** - the serializable, data-shaped
+ * Types for the **display set rules** - the serializable, data-shaped
  * description of a set of display-set split rules that
  * `createDisplaySetSplitRules` compiles into executable {@link SplitRule}s.
  *
@@ -31,7 +31,7 @@ import type {
  * actual function is accepted at every function place.
  *
  * @see displaySetContext.ts for the context and its default entries.
- * @see rawDisplaySetSelector.js for the default selector.
+ * @see displaySetRules.js for the default selector.
  */
 
 export type {
@@ -139,7 +139,7 @@ export type RawSplitRule = {
  * A whole raw selector: rules keyed by rule id, the data form of a
  * `SplitRuleSet`. Rules are tried in ascending priority; first match wins.
  */
-export type RawDisplaySetSelector = Record<string, RawSplitRule>;
+export type DisplaySetRules = Record<string, RawSplitRule>;
 
 /** Options for {@link createDisplaySetSplitRules}. */
 export type CreateDisplaySetSplitRulesOptions = {

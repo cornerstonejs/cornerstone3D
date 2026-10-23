@@ -1,6 +1,6 @@
 import { describe, expect, it } from '@jest/globals';
 import { groupInstancesBySplitRules } from './groupInstancesBySplitRules';
-import { createDisplaySetSplitRules } from './rawDisplaySetSelector';
+import { createDisplaySetSplitRules } from './displaySetRules';
 import { resolveSplitRuleSet, validateSplitRuleSetEntry } from './splitRuleSet';
 import type { NaturalizedInstance, SplitRuleSet } from './types';
 
