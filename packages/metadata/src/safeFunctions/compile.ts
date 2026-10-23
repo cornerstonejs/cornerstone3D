@@ -1,26 +1,13 @@
 /**
  * The **safe function compiler**: turns the JSON vocabulary in `types.ts` into
- * executable predicates and value readers.
+ * executable predicates and value readers, with no `eval` and no
+ * `new Function`.
  *
- * The compiled functions are *safe* because they are assembled from a closed
- * vocabulary rather than evaluated from source: there is no `eval`, no
- * `new Function`, and no other code path from definition data to executed code.
- * A definition can therefore be loaded from a config file, an HTTP response, or
- * an application's customization layer. The worst a malformed one can do is
- * throw here, at compile time, naming the offending fragment.
- *
- * The compiler is **strict**, and it reads its rules from the schema in
- * `schema.ts`: an unknown key, a form the place does not accept, or a second
- * operator is a compile error that names the path of the fragment. An actual
- * function passes through as is wherever a condition, a test or a value is
- * expected.
- *
- * The compiler does not know the names of the subject. A name is a key of a
- * condition map, a bare string value, or a template placeholder; the
- * `readName` of the site gives its reader, and can throw a compile error for
- * a name that the place does not know. The default reads an own property of
- * the subject, so a name such as `constructor` never reaches
- * `Object.prototype`.
+ * The compiler is strict, and reads its rules from `schema.ts`. It does not
+ * know the names of the subject: the `readName` of the site gives the reader
+ * of each name, and can reject a name. The default reads an own property of
+ * the subject, never `Object.prototype`. See
+ * `packages/docs/docs/concepts/safe-functions.md`.
  *
  * @module safeFunctions/compile
  */

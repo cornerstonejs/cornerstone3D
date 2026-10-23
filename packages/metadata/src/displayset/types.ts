@@ -217,33 +217,16 @@ export type SplitRule = {
     | ((instance: NaturalizedInstance, context: RuleContext) => unknown)
   )[];
   /**
-   * Optional. Orders the instances this rule claims: the order each group's
-   * {@link InstanceGroup.instances} are returned in. Returns a negative number if `a` comes
-   * before `b`, a positive number if `b` comes before `a`, and 0 if they are
-   * interchangeable. The third argument carries this rule's derived `series`
-   * facts.
+   * Optional. Orders the instances this rule claims, in each group's
+   * {@link InstanceGroup.instances}: negative if `a` comes before `b`, positive
+   * if `b` comes before `a`. The third argument carries this rule's derived
+   * `series` facts. Example: `(a, b) => a.SliceLocation - b.SliceLocation`.
    *
-   * Defaults to acquisition order: `InstanceNumber`, then `SOPInstanceUID` as a
-   * tiebreak. Declare it when that is the wrong order for the display set this
-   * rule produces - a reconstructed volume belongs in spatial order, which
-   * `InstanceNumber` does not always follow:
-   *
-   * ```ts
-   * {
-   *   id: 'volume3d',
-   *   compareInstances: (a, b) => a.SliceLocation - b.SliceLocation,
-   * }
-   * ```
-   *
-   * It need not be a total order, and is not expected to be. **Returning 0 (or a
-   * `NaN`, as arithmetic on a tag one instance is missing produces) declines to
-   * have an opinion**, rather than asserting the two are interchangeable: the
-   * host's default comparator is consulted next, and failing that the base order
-   * stands - the host's {@link GroupInstancesOptions.sortInstances}, itself
-   * falling back to acquisition order. So a rule can order by one thing and
-   * leave everything else to the default, without restating it, and an
-   * incomplete comparator still cannot make the result depend on the order the
-   * instances were passed in.
+   * It need not be a total order. **0 or `NaN` means no opinion**: the host's
+   * comparator decides next, then the base order of
+   * {@link GroupInstancesOptions.sortInstances}, then acquisition order
+   * (`InstanceNumber`, then `SOPInstanceUID`). See "Who decides instance
+   * order" in `packages/docs/docs/concepts/cornerstone-metadata/display-sets.md`.
    */
   compareInstances?: (
     a: NaturalizedInstance,

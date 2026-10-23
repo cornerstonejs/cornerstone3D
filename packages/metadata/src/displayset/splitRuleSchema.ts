@@ -1,25 +1,13 @@
 /**
  * The **split rule schema**: one table of every place in a raw display set
- * split rule, of what each place holds, and - for a place that becomes a
- * function - of how the compiled function is called and what it returns.
+ * split rule, of what each place holds, and of how the compiled function of a
+ * function place is called and what it returns.
  *
- * `createDisplaySetSplitRules` reads this table. It checks the fields of a
- * rule against it, selects the object form of each fragment from it, and
- * builds its error messages from it. So the table is not documentation next to
- * the compiler: a key that is not in the table does not compile.
- *
- * The rules the table enforces:
- *
- * - An unknown key, anywhere in a rule, is a compile error. The message names
- *   the rule id, the path of the key, and the allowed keys.
- * - A form the place does not accept is a compile error. The message lists the
- *   accepted forms and the call signature of the place.
- * - An actual function passes through as is at every function place.
- *
- * The names in a rule (the keys of `matches`, the entries of `groupBy` and
- * `sortBy`, the strings of `attributes`, the placeholders of a template, and
- * the identifiers of an expression) are not in this table: the display set
- * context checks them (see `displaySetContext.ts`).
+ * `createDisplaySetSplitRules` checks the fields, selects the form of each
+ * fragment, and builds its error messages from this table, so a key that is
+ * not in the table does not compile. The names in a rule are not in this
+ * table: `displaySetContext.ts` checks them. See "The schema of a rule" in
+ * `packages/docs/docs/concepts/cornerstone-metadata/display-sets.md`.
  *
  * @module displayset/splitRuleSchema
  */

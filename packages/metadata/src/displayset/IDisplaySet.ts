@@ -3,34 +3,16 @@ import type { NaturalizedInstance, ViewportTypeHint } from './types';
 /**
  * Framework-agnostic display set metadata stored in the Cornerstone metadata cache.
  *
- * `IDisplaySet` declares the **common attributes** read from a display set,
- * matching the OHIF display set shape. They are plain data attributes — not
- * accessor methods — so a display set behaves like a data object that can be
- * destructured, spread, and serialized.
+ * `IDisplaySet` declares the **common attributes** of a display set, in the
+ * OHIF display set shape. They are plain data attributes, not accessor
+ * methods, so a display set can be destructured, spread, and serialized.
+ * Split rules make many of them through `customAttributes`, and
+ * `createDisplaySetFromGroup` spreads the values flat onto the display set.
  *
- * Attributes that are shared across different display-set uses belong here, even
- * when only some display-set types populate them (they are declared optional).
- * Split rules produce many of these via their `customAttributes` callback; the
- * values are spread flat onto the display set in `createDisplaySetFromGroup`.
- *
- * ## Adding new attributes
- *
- * - Shared / common attributes: add them to this interface (optional unless every
- *   display set sets them).
- * - App- or extension-specific attributes that are not part of the common model:
- *   declare them with TypeScript module augmentation so they stay type-checked
- *   without widening this shared surface:
- *
- *   ```ts
- *   // my-extension.ts
- *   import '@cornerstonejs/metadata';
- *
- *   declare module '@cornerstonejs/metadata' {
- *     interface IDisplaySet {
- *       myAppSpecificAttribute?: string;
- *     }
- *   }
- *   ```
+ * Add a shared attribute here, optional unless every display set sets it. Add
+ * an app-specific attribute with TypeScript module augmentation. See "Adding
+ * new display set attributes" in
+ * `packages/docs/docs/concepts/cornerstone-metadata/display-sets.md`.
  */
 export interface IDisplaySet {
   /**

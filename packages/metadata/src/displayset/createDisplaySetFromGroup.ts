@@ -158,6 +158,13 @@ function applyCustomAttributes(
  * types, and last the remaining attributes are applied. So a rule whose custom
  * attributes make a group non-displayable gets the non-displayable shape (empty
  * `imageIds`), and the reverse.
+ *
+ * The default `displaySetId` is the SeriesInstanceUID plus a non-zero
+ * `splitNumber`, so the display sets of one split series stay unique. Callers
+ * pass the same id to a viewport. A non-displayable group gets a
+ * `BaseDisplaySet`, not an ImageStack: `imageIds` is empty, so code that
+ * ignores `isDisplayable` renders nothing, and `underlyingImageIds` keeps the
+ * SOP-level ids, so the display set stays resolvable from an imageId.
  */
 export function createDisplaySetFromGroup(
   group: InstanceGroup,
@@ -167,11 +174,7 @@ export function createDisplaySetFromGroup(
   const attributes = runCustomAttributes(group, ruleViewportTypes, options);
   const viewportTypes = resolveViewportTypes(ruleViewportTypes, attributes);
   const { instances } = group;
-  // A single series can split into multiple display sets (e.g. the DWI
-  // mixed-b-value split), so the default id folds in the 0-based `splitNumber`
-  // to stay unique within a series rather than collapsing every split to the
-  // bare SeriesInstanceUID. This is the same value callers pass to a viewport as
-  // `displaySetId` - the metadata id and the viewport/registry id are one.
+  // The default id holds the `splitNumber`, so each split of a series is unique.
   const baseDisplaySetId =
     instances[0]?.SeriesInstanceUID ??
     `display-set-${instances[0]?.imageId ?? 'unknown'}`;
@@ -185,13 +188,7 @@ export function createDisplaySetFromGroup(
   let displaySet: IDisplaySet;
 
   if (!isDisplayableViewportTypes(viewportTypes)) {
-    // Nothing can render this (the catch-all `unsupported` rule claimed it), so
-    // build the plain base shape rather than an image stack: an ImageStack would
-    // advertise frame-level `imageIds` for an object that has no frames. The
-    // SOP-level ids are still kept as `underlyingImageIds` so the display set
-    // remains resolvable from the instance's imageId, while the empty `imageIds`
-    // means anything that ignores `isDisplayable` renders nothing rather than
-    // something broken.
+    // Nothing can render this: build the base shape, with no frame-level imageIds.
     const underlyingImageIds = instances
       .map((i) => i.imageId)
       .filter(Boolean) as string[];

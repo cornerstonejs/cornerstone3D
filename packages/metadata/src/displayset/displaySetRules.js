@@ -1,28 +1,11 @@
 /**
- * The **display set rules**: the default display-set split rules as
- * **pure JSON data** - no functions, no imports of app state.
+ * The default display-set split rules as pure JSON data: no functions, and no
+ * imports of application state. A server that indexes a study and a viewer
+ * that splits a series compile the same data, so both get the same splits.
  *
- * Why the data form matters: the rules that decide how a series becomes display
- * sets are needed on **both** sides of the wire. A server building a study index
- * (static-dicomweb) and a viewer splitting a loaded series (OHIF) must agree, or
- * the display sets the server advertises are not the ones the client builds. With
- * the rules as data plus one compiler, both sides read the same selector and get
- * the same splits - nobody redefines anything.
- *
- * Each name in a rule is a DICOM keyword (`Modality`) or a context name
- * (`isImage`, `seriesInstanceCount`) of the display set context in
- * `displaySetContext.ts`. The values that only code can give - the SOP class
- * heuristics - are code entries of that context, so the rules stay data.
- *
- * {@link createDisplaySetSplitRules} compiles a selector (see
- * `compileSplitRules.ts`). The compiler is *strict*: an unknown key, an unknown
- * name or an unaccepted form is a compile error that names the rule and the
- * path, never a key that is silently ignored.
- *
- * Deliberately no dependency on any application service. Cornerstone knows
- * nothing about OHIF's `customizationService`, and must not: an application that
- * has one resolves its overrides itself and passes the resulting plain data in.
- * See the "Sharing rules between applications" section of
+ * Each name in a rule is a DICOM keyword or a context name of
+ * `displaySetContext.ts`. {@link createDisplaySetSplitRules} compiles the data
+ * strictly. See "Sharing rules between applications" in
  * `packages/docs/docs/concepts/cornerstone-metadata/display-sets.md`.
  *
  * @module displaySetRules
@@ -139,12 +122,6 @@ export const displaySetRules = {
     },
   },
 
-  /**
-   * This rule splits off images containing an undefined bValue from the
-   * 4d b-value containing images, since the undefined versions are not
-   * part of the 4d data set.  That prevents applying incorrect 4d rendering
-   * to the 3d portion.
-   */
   mixedDimensionalityBValue: {
     priority: 6,
     description:
@@ -192,23 +169,8 @@ export const displaySetRules = {
   },
 
   /**
-   * Final catch-all. Every rule above requires a renderable image, so without
-   * this one a SEG, RTSTRUCT, RTDOSE, SR, presentation state - or an image whose
-   * `Rows` has not loaded yet - would match nothing and be **silently dropped**,
-   * producing no display set and so no trace that the object exists.
-   *
-   * Instead it produces a display set marked `isDisplayable: false` (via the
-   * `none` viewport type) with empty `imageIds` and its `sopClassUids` recorded,
-   * so an application can list the series and say what it is rather than losing
-   * it. An application that supports one of these formats adds its own rule
-   * *before* this one, with real viewport types.
-   *
-   * Grouped per series: one display set lists the objects of the series that
-   * nothing can render, with their distinct `sopClassUids`. A series of 300
-   * presentation states is one entry, not 300.
-   *
-   * The priority is `Number.MAX_SAFE_INTEGER`, so a fallback rule of an
-   * application (any priority above the other defaults) still runs before it.
+   * Gives an application a way to list and identify each object that it cannot
+   * render. A rule that supports one of these formats takes a lower priority.
    */
   unsupported: {
     priority: Number.MAX_SAFE_INTEGER,
@@ -225,42 +187,16 @@ export const displaySetRules = {
 };
 
 /**
- * Compiles a display set rules into executable split rules.
- *
- * The result is a `SplitRuleSet` with the same keys and priorities, ready to
- * hand to `splitImageIdsBySplitRules` / `groupInstancesBySplitRules`, or to
- * merge with another rule set by key. Compilation is eager: a malformed
- * selector throws here, at setup, rather than midway through splitting a study.
+ * Compiles the display set rules into a `SplitRuleSet` with the same keys and
+ * priorities, for `splitImageIdsBySplitRules` / `groupInstancesBySplitRules`.
+ * A malformed selector throws here, at setup, and not during a split.
  *
  * ```js
- * import {
- *   createDisplaySetSplitRules,
- *   displaySetRules,
- * } from '@cornerstonejs/metadata';
- *
- * // The defaults, compiled (this is exactly `compiledDisplaySetRules`):
- * const rules = createDisplaySetSplitRules(displaySetRules);
- *
- * // A deployment's own selector and context, e.g. read from JSON on a server
- * // or supplied by an application's customization layer on a client:
- * const custom = createDisplaySetSplitRules(
- *   {
- *     ...displaySetRules,
- *     dxCrSingleImages: {
- *       priority: -1,
- *       viewportTypes: ['stack'],
- *       matches: { Modality: ['DX', 'CR'], isStackImage: true, isSmallSeries: true },
- *       groupBy: ['SeriesInstanceUID', 'SOPInstanceUID'],
- *     },
- *   },
- *   {
- *     displaySetContext: {
- *       dxCrMaxImages: 9,
- *       isSmallSeries: 'seriesInstanceCount <= dxCrMaxImages',
- *     },
- *   }
- * );
+ * const rules = createDisplaySetSplitRules(displaySetRules); // = compiledDisplaySetRules
  * ```
+ *
+ * See "Extending a selector" in
+ * `packages/docs/docs/concepts/cornerstone-metadata/display-sets.md`.
  *
  * @param {DisplaySetRules} [selector=displaySetRules] - the rules as data, keyed by rule id.
  * @param {CreateDisplaySetSplitRulesOptions} [options] - the global context, and named extension points.

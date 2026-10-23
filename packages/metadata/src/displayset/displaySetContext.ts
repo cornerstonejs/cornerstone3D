@@ -2,31 +2,12 @@
  * The **display set context**: the named values that the display set split
  * rules read, in addition to the DICOM keywords of the instance.
  *
- * Each name in a rule is one of two kinds:
- *
- * - A **tag keyword** is a keyword of the DICOM dictionary of dcmjs, for
- *   example `Modality`. The value comes from the instance.
- * - A **context name** starts with a lowercase letter, and a context entry
- *   defines it. The global context (`displaySetContext`) defines a name for
- *   every rule, and the `context` of a rule defines or replaces a name for that
- *   rule only.
- *
- * Every other name is a compile error that names the rule, the place and the
- * name. A context entry cannot have the name of a tag keyword, so a context
- * never hides a value of the instance. An attribute that the dictionary does
- * not hold is available only through a declaration.
- *
- * An entry has one of five forms: a fixed value; a string, which is an
- * expression; a declaration `{ attribute, vr?, vm? }`; a template
- * `{ template }`; or a group `{ function, args? }`, which is one call of a
- * series function. In code, an entry can also be a function
- * `(instance, values) => value`, and the `function` of a group can be a
- * function `(instances, { args }) => value`.
- *
- * No entry declares a scope. The scope comes from the entry: a declaration, a
- * code function, and an entry that reads an instance value outside of `min`,
- * `max`, `sum` or `count` have the instance scope; every other entry has the
- * series scope, and is computed one time for each series.
+ * A context name starts with a lowercase letter. The global context defines a
+ * name for every rule, and the `context` of a rule defines or replaces a name
+ * for that rule only. An entry is a fixed value, an expression, a declaration,
+ * a template or a group; the compile infers its instance or series scope. See
+ * "The display set context" in
+ * `packages/docs/docs/concepts/cornerstone-metadata/display-sets.md`.
  *
  * @module displayset/displaySetContext
  */

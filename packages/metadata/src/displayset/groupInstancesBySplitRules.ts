@@ -106,32 +106,18 @@ function compareByAcquisition(
 }
 
 /**
- * The order each group's `instances` are returned in.
+ * The order each group's `instances` are returned in. Each layer defers to the
+ * one below it:
  *
- * Three layers, each deferring to the one below it:
+ *  1. Acquisition order, never the input order. It is also the final tie-break.
+ *  2. The host's base sort ({@link GroupInstancesOptions.sortInstances}), a
+ *     whole-list sort. Ties keep step 1, because `Array.prototype.sort` is stable.
+ *  3. Comparators: {@link SplitRule.compareInstances}, then
+ *     {@link GroupInstancesOptions.compareInstances}. The first finite non-zero
+ *     result decides; 0 and `NaN` mean no opinion.
  *
- *  1. **Acquisition order**, always applied first. Not the caller's input order:
- *     an order derived from that would make the order of a display set depend
- *     on the sequence imageIds happened to arrive in, which is the property
- *     this module exists to guarantee against. Everything below is
- *     applied to this canonical order, so it is also the final tie-break.
- *  2. **The host's base sort** ({@link GroupInstancesOptions.sortInstances}), a
- *     whole-list sort rather than a comparator. It has to be: a real base order
- *     is not always pairwise - ordering slices along the scan axis means picking
- *     a reference instance and projecting onto its normal, which no `(a, b)`
- *     function can express. Ties it leaves alone keep the order from step 1,
- *     because `Array.prototype.sort` is stable.
- *  3. **Comparators**, the rule's own {@link SplitRule.compareInstances} first,
- *     then the host's default ({@link GroupInstancesOptions.compareInstances}).
- *     The first one to return a finite non-zero value decides. **A comparator
- *     returning 0 is declining to have an opinion**, not asserting equality: the
- *     next comparator is consulted, and if none has an opinion the base order
- *     from steps 1-2 stands. So a comparator can express "order by this one
- *     thing, and leave the rest alone" without having to restate the default.
- *
- * A `NaN` counts as no opinion too - arithmetic on a tag one instance is missing
- * produces one, and treating it as 0 would otherwise hand ordering to whatever
- * `sort` does with a non-numeric result.
+ * See "Who decides instance order" in
+ * `packages/docs/docs/concepts/cornerstone-metadata/display-sets.md`.
  */
 function buildInstanceOrderer(
   splitRule: SplitRule,
@@ -176,22 +162,14 @@ function buildInstanceOrderer(
 }
 
 /**
- * The order one rule puts a set of instances in, for a host that has to reproduce
- * it outside a split - re-sorting a display set after new instances arrive, say.
+ * Returns `instances` in the order of `splitRule` (see `buildInstanceOrderer`),
+ * for a host that orders a display set again outside a split, for example
+ * after new instances arrive. It is the one implementation of the order.
  *
- * Exported so that ordering has exactly one implementation: a host applying its
- * own sort a second time would discard the rule's comparator, which is precisely
- * the bug this replaces.
- *
- * Pass the group's {@link InstanceGroup.series} as `options.series`, so the
- * comparators see the facts the split computed from the whole series. Without
- * it, the facts are computed from `instances` alone, by this rule's own
- * `series` hook only, so a fact that an earlier rule computed is missing.
- *
- * When `instances` holds an instance that the split did not see (the series
- * got new instances), the values of the display set context are computed
- * again over the instances of the split and the new instances, so a
- * `sortBy` name such as `sliceDistance` is correct for the new instances too.
+ * Pass the group's {@link InstanceGroup.series} as `options.series`. Without
+ * it, only this rule's `series` hook computes the facts, from `instances`
+ * alone. With it, the context values are computed again over the split and
+ * any new instances, so a `sortBy` name such as `sliceDistance` stays correct.
  */
 export function orderInstancesForRule(
   instances: NaturalizedInstance[],
@@ -352,35 +330,19 @@ function buildSplitKey(
 }
 
 /**
- * Groups instances into instance groups using the first matching split rule per
- * instance (rules are evaluated in order; first match wins).
+ * Groups instances by the first matching split rule of `ruleSet` (keyed by rule
+ * id, tried in ascending priority; see `resolveSplitRuleSet`).
  *
- * Each rule's optional `series` hook runs **once** here (per rule, per call),
- * in priority order, and extends one series context that every rule reads
- * through the {@link RuleContext} - see {@link computeSeriesFacts}. The first
- * rule that computes a name wins.
- *
- * The split key of a group is `[ruleId, ...groupBy values]`, and nothing else
- * groups instances.
- *
- * Groups are returned in a **deterministic order** - by the position of the rule
- * that produced them, then by split key - so a series' display sets are stable
- * regardless of the order the imageIds were passed in. The key comparison is
- * numeric-aware, so a group keyed on instance 10 sorts after instance 2 rather
- * than lexically before it.
- *
- * `ruleSet` is keyed by rule id, and its rules are tried in ascending priority
- * (see `resolveSplitRuleSet`).
- *
- * Instances *within* a group are ordered by their rule's
- * {@link SplitRule.compareInstances}, defaulting to acquisition order, so nothing
- * about the result - which groups, their order, or their contents' order - depends
- * on the order the instances were passed in.
+ * - Each rule's `series` hook runs once, in priority order, and extends one
+ *   series context (see {@link computeSeriesFacts}); the first rule that
+ *   computes a name wins.
+ * - The split key of a group is `[ruleId, ...groupBy values]`.
+ * - Groups are ordered by rule position, then by a numeric-aware split key
+ *   order. Instances in a group are ordered by `buildInstanceOrderer`. So no
+ *   part of the result depends on the input order.
  *
  * @param onUnmatched - called for each instance that matches no rule and is
- *   therefore placed in no group (e.g. a non-image SOP such as an SR or
- *   presentation state). Lets callers observe what was dropped instead of it
- *   disappearing silently.
+ *   therefore placed in no group, so callers can see what was dropped.
  * @throws if a rule set entry is invalid (see `validateSplitRuleSetEntry`).
  */
 export function groupInstancesBySplitRules(
@@ -389,10 +351,7 @@ export function groupInstancesBySplitRules(
   onUnmatched?: (instance: NaturalizedInstance) => void,
   options: GroupInstancesOptions = {}
 ): InstanceGroup[] {
-  // Resolved ahead of the empty-input shortcut: an invalid rule set is broken
-  // whether or not there are instances to split, and reporting it only for a
-  // non-empty series would let it through in exactly the case a caller is least
-  // likely to be testing.
+  // Resolve before the empty-input return, so an invalid rule set always throws.
   const splitRules = resolveSplitRuleSet(ruleSet);
 
   if (!instances.length) {
@@ -463,10 +422,7 @@ export function groupInstancesBySplitRules(
 
   const groups = Array.from(instancesMap.values());
 
-  // Order each group's instances by its rule's comparator. Grouping decides which
-  // instances belong together; the rule decides what order they belong in - and
-  // leaving them in input order would make a display set's frame order depend on
-  // the order the imageIds arrived in, which nothing else about the result does.
+  // Order each group's instances by its rule, never by the input order.
   for (const group of groups) {
     const ruleIndex = groupRuleIndex.get(group.splitKey ?? '') ?? 0;
     group.instances = ruleOrderers[ruleIndex](group.instances);

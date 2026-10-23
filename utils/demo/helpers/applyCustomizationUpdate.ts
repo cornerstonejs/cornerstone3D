@@ -1,21 +1,11 @@
 import update, { extend } from 'immutability-helper';
 
 /**
- * The update function OHIF's customization service uses to merge a customization
- * value over an existing one — `immutability-helper`'s `update`, plus OHIF's
- * custom `$filter` command.
- *
- * This lives in the **demo helpers** rather than in a package: it is the seam an
- * example needs to merge a rule set the way an OHIF deployment would, and
- * `immutability-helper` is a root devDependency (pinned to `3.1.1`, the version
- * `@ohif/core` uses) so no published Cornerstone package gains a dependency.
- * No published package source imports this file; only the examples do (for
- * example `packages/core/examples/displaySetRules`).
- *
- * Commands are `immutability-helper`'s built-ins — `$set`, `$merge`, `$push`,
- * `$unshift`, `$splice`, `$apply`, `$toggle`, `$add`, `$remove` — plus
- * {@link applyFilterCommand}'s `$filter`. A value with no command at all is the
- * new value rather than a spec, matching OHIF's `hasDollarKey` short-circuit.
+ * The update function of OHIF's customization service: `immutability-helper`'s
+ * `update` plus OHIF's `$filter` ({@link applyFilterCommand}). A value with no
+ * command is the new value, as in OHIF's `hasDollarKey`. Only the examples
+ * import it; `immutability-helper` is a root devDependency pinned to `3.1.1`
+ * (the version of `@ohif/core`), so no published package gains a dependency.
  */
 
 /** A command spec: `$`-commands, or a nested object of specs. */

@@ -2,28 +2,12 @@
  * The **schema** of a safe function definition: a table of the places where
  * data becomes a function, and of the forms each place accepts.
  *
- * The table is the single source of truth. The compiler reads it to decide
- * which form a fragment is, which keys that form allows, which of them are
- * required, how an expression at that place is called, and what an error
- * message lists as the accepted forms. Nothing in the compiler restates a key
- * list by hand, so the table cannot drift from what actually compiles.
- *
- * The rules the table enforces are strict on purpose. A definition is usually
- * written by hand or shipped as config, and a typo that is silently ignored
- * (`matchs` instead of `matches`) changes what the definition means without any
- * trace. So:
- *
- * - An unknown key, anywhere, is a compile error that names the path and the
- *   allowed keys.
- * - A form the place does not accept is a compile error that lists the
- *   accepted forms and the call signature of the place.
- * - An actual function passes through as is wherever the table says that a
- *   function is accepted. Strictness applies to data only.
- *
- * This module is generic: it knows conditions, tests and values (see
- * {@link conditionShape}, {@link matchTestShape} and {@link valueShape}), and
- * nothing about display sets. A consumer adds its own shapes (the display-set rule, a comparator, ...)
- * and compilers for them, and reuses {@link compileKey} to walk its table.
+ * The table is the single source of truth: the compiler reads the forms, the
+ * keys and the error messages from it, and restates no key list by hand. The
+ * module is generic ({@link conditionShape}, {@link matchTestShape},
+ * {@link valueShape}). A consumer adds its own shapes and compilers, and
+ * reuses {@link compileKey} to walk its table. See "The schema: one table,
+ * strict keys" in `packages/docs/docs/concepts/safe-functions.md`.
  *
  * @module safeFunctions/schema
  */
