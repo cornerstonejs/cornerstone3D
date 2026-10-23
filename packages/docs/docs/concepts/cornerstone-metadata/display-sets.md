@@ -397,22 +397,25 @@ A few engine guarantees worth knowing when writing rules:
   then by a stable, rule-namespaced split key, so a series' display sets —
   and any id derived from their position — are stable
   regardless of the order the image ids were passed in.
-- **A key can change when the series grows.** For one set of instances, the
-  keys do not depend on the arrival order. When new instances arrive, a key
-  stays the same only if the rule reads no value of the whole series. A key
-  changes in these cases:
-  - A rule that tests a series value claims different instances. With one CT
-    instance, `seriesInstanceCount > 1` is false, so `defaultImageRule` claims
-    the instance. With two instances, `volume3d` claims both.
-    `mixedDimensionalityBValue` starts to match when the first instance with no
-    b-value arrives.
-  - A `groupBy` value is a series value. `sweepStart` is the start time of a
-    time cluster, so an instance with an earlier time moves the start, and an
-    instance in the gap between two clusters joins them into one.
+- **A key follows the series values that the rule reads.** For one set of
+  instances, the keys do not depend on the arrival order. When the series
+  grows, the key of a display set stays the same, unless the rule reads a
+  series value in `matches` or `groupBy`, and the new instances change that
+  value. This is the intended behaviour: the display sets describe the series
+  as it is now. Which values a rule reads depends on the rule:
+  - A series value in `matches` decides which rule claims an instance. With one
+    CT instance, `seriesInstanceCount > 1` is false, so `defaultImageRule`
+    claims it; with two, `volume3d` claims both. `mixedDimensionalityBValue`
+    starts to match when the first instance with no b-value arrives.
+  - A series value in `groupBy` is part of the key. `sweepStart` is the start
+    time of a time cluster, so an instance with an earlier time moves the
+    start, and an instance in the gap between two clusters joins them.
+  - A rule that reads only instance values (for example
+    `groupBy: ['SeriesInstanceUID', 'SOPInstanceUID']`) keeps every key.
 
-  A host that keeps the display sets of a growing series splits the full series
+  A host that keeps the display sets of a growing series splits the series
   again, and matches the old and the new display sets by `splitKey`. A display
-  set whose key is gone has become part of another display set.
+  set whose key is gone is now part of another display set.
 
 - **Each group carries the series context.** `InstanceGroup.series` holds
   the facts the `series` hooks computed over _all_ the instances
@@ -901,13 +904,10 @@ const splitRules = createDisplaySetSplitRules(mySelector, {
 
 ### The schema of a rule
 
-Every place in a rule, and the forms each place accepts, are one table:
-`splitRuleSchema`, exported from `@cornerstonejs/metadata`.
-`createDisplaySetSplitRules` reads it to check the keys, to select the form of
-each fragment, and to build its error messages. It is keyed by shape: `rule`
-(the rule itself), `contextEntry`, `sortKey`, `attributeValue`, `name`, and the
-generic `condition` and `matchTest` shapes from
-[Safe Functions](../safe-functions.md#the-schema-one-table-strict-keys).
+Every place in a rule, and the forms each place accepts, are one internal
+table. `createDisplaySetSplitRules` reads it to check the keys, to select the
+form of each fragment, and to build its error messages. The table is not
+exported; the field table above and the errors below describe it.
 
 The compiler is **strict**. A wrong rule fails at compile time, and the
 compiler never ignores it:

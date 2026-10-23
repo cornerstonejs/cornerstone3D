@@ -50,8 +50,9 @@ The safe functions use the DICOM meaning, and not the JavaScript meaning:
 An array whose elements all have no value (`[""]`, `[null]`) is also empty, as
 DICOM JSON can give an empty value in that form.
 
-"No value" means absent or empty. `safeFunctions/values.ts` exports the helpers
-`isAbsent`, `isEmpty`, `hasNoValue` and `looseEquals`. A number is read with
+"No value" means absent or empty. `@cornerstonejs/metadata` exports the helpers
+`isAbsent`, `isEmpty`, `hasNoValue` and `looseEquals`, so a consumer can use
+the same meaning. A number is read with
 `toFiniteFirst` from `@cornerstonejs/utils`: the finite number of the first
 value, and `undefined` for no value, a blank string, or a value that is not a
 number.
@@ -86,6 +87,12 @@ number.
   `false`, so `Rows && Rows > 1000` is `false` when `Rows` is absent.
 - `==` is the only equality, and `"1" == 1` is `true`. `===` and `!==` are
   compile errors.
+- An array literal next to `==` is the set of accepted values, as an array is
+  in a condition map: `Modality == ['MR', 'CT']` holds for `'MR'` and for
+  `'CT'`. A multi-valued value compares on its first value. An empty array
+  literal, and an array literal on both sides, are compile errors.
+- An aggregate inside the argument of another aggregate is a compile error.
+  Put the inner aggregate in its own context entry, and read that name.
 
 ## Conditions
 
@@ -141,11 +148,6 @@ The safe functions give these operators the meanings in the table above. OHIF
 
 A later OHIF pull request moves the hanging protocols to these meanings.
 :::
-
-An index reads one part of a value. `ImageType[2]` is the third value of a
-multi-valued attribute. On a single-valued text attribute, an index reads one
-character: `Modality[0]` of `"CT"` is `"C"`. So test a single-valued attribute
-by its name, without an index.
 
 ## Values
 
@@ -252,13 +254,14 @@ const countLarge = compileExpression('series.instances.count(Rows > 512)', {
 
 ## The schema: one table, strict keys
 
-The forms above are one table, the **schema** (`safeFunctions/schema.ts`). The
-compiler reads it. The compiler selects the form of a fragment from it, checks
-the keys against it, and builds its error messages from it. The schema exports
-`conditionShape`, `matchTestShape` and `valueShape`. A consumer that wraps
-conditions and values in a shape of its own adds its shapes to the same kind of
-table. The display set split rules do this: see
-[`splitRuleSchema`](./cornerstone-metadata/display-sets.md#the-schema-of-a-rule).
+The forms above are one internal table, the **schema**. The compiler selects
+the form of a fragment from it, checks the keys against it, and builds its
+error messages from it. A consumer, for example a hanging protocol, does not
+change the table. It wraps `compileCondition`, `compileValue`,
+`compileTemplate` and `compileExpression` in the fields of its own rules, and
+gives the reader of each name (`readName`). The display set split rules are
+the worked example: see
+[the schema of a rule](./cornerstone-metadata/display-sets.md#the-schema-of-a-rule).
 
 The compiler is **strict**, because a key that the compiler ignores changes
 the meaning of a definition with no trace:

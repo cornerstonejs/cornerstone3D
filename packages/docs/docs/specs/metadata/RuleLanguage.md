@@ -98,8 +98,11 @@ Each change has a reason that the change rule permits:
   `validator.js`. Reason: the earlier text ("five operators") described the
   behaviour wrongly. `equals` with an array operand, `containsAll` and the
   operand wrappers are also different.
-- `RL-VALUE-9` is new. It states the meaning of an index on a single-valued
-  attribute, which the code already has.
+- `RL-CTX-7`, `RL-CTX-9`, `RL-SHARE-3` and `RL-SCOPE-10` no longer hold
+  implementation detail. The detail is in `RL-CTXI-4` (the scope rules),
+  `RL-CTXI-12` (where a series function runs), `RL-PKG-2` (no import of the
+  display set code) and `RL-NAME-5` (the text of the messages). The meaning
+  of the user requirements does not change.
 
 Other user requirements changed their words only, because the scopes went
 away: `RL-READ-1`, `RL-READ-2`, `RL-SHARE-1`, `RL-SHARE-3`, `RL-SHARE-4`,
@@ -286,15 +289,6 @@ compile.
 - **RL-VALUE-8** `!`, `&&`, `||` and `?:` read no value as `false`. `&&` and
   `||` give `true` or `false`. So `"isTall": "Rows && Rows > 1000"` is `false`
   when `Rows` is absent, and `"isTall": false` holds.
-- **RL-VALUE-9** An index reads one part of a value. On a multi-valued
-  attribute, `X[n]` is element `n`: `ImageType[2]` of
-  `["ORIGINAL", "PRIMARY", "AXIAL"]` is `"AXIAL"`. On a single-valued text
-  attribute, `X[n]` is character `n`: `Modality[0]` of `"CT"` is `"C"`. On a
-  sequence, `X[n]` is item `n`, and a path reads a field of the item:
-  `ViewCodeSequence[0].CodeValue`. An index outside the value has no value. A
-  rule that tests a single-valued attribute reads the attribute by its name
-  without an index. A rule that tests a multi-valued attribute, for example
-  `ModalitiesInStudy`, uses `includes` or an index.
 
 ### The context (RL-CTX)
 
@@ -316,28 +310,19 @@ compile.
 - **RL-CTX-6** A declaration gives access to an attribute that the dictionary
   does not hold: a private tag, a vendor attribute, or a synthetic attribute
   such as `imageId`. A declaration can record `vr` and `vm`.
-- **RL-CTX-7** No entry declares a scope. The author can know the scope from
-  the entry:
-  - A fixed value and a group have one value for the series.
-  - A declaration and a code entry have one value for each instance.
-  - An expression or a template that reads an instance value outside of
-    `series.instances.min(...)`, `.max(...)`, `.sum(...)` or `.count(...)`
-    has one value for each instance.
-  - Every other entry has one value for the series.
+- **RL-CTX-7** No entry declares a scope. The author can tell from the entry
+  alone whether it has one value for the series or one value for each
+  instance. The rules of `RL-CTXI-4` decide the scope.
 - **RL-CTX-8** A site changes one entry by its name, for example
   `"dxCrMaxImages": { "$set": 20 }`. The site does not copy the expression text
   of a rule into a `$merge`.
 - **RL-CTX-9** A rule tests the full series, and describes each display set.
-  In `context`, `matches` and `groupBy`, every series function runs over all
-  the instances of the series. In `sortBy` and `attributes`, a series function
-  that measures the display set (`planeGeometry`) runs over the instances of
-  the display set, so `sliceSpacing` and `sliceDistance` describe the display
-  set. A series function that describes the series (`timeClusters`) runs over
-  the series in every place, so `sweepOffset` stays the offset from the start
-  of the series. A group entry can choose with `over` (`RL-CTXI-12`).
-  `series.instances.*(...)` runs over the series in every place. _Changed:
-  before, every value of the series was the same for each display set, also in
-  `attributes`._
+  In `context`, `matches` and `groupBy`, every series value describes all the
+  instances of the series. In `sortBy` and `attributes`, a value that measures
+  the display set (`sliceSpacing`, `sliceDistance`) describes the display set,
+  and a value that describes the series (`sweepOffset`) stays the value of the
+  series. `series.instances.*(...)` describes the series in every place.
+  `RL-CTXI-12` gives the place where each series function runs.
 
 ### One language for each consumer (RL-SHARE)
 
@@ -346,8 +331,8 @@ compile.
 - **RL-SHARE-2** The host registers a named attribute once, and both a split
   rule and a hanging protocol can use the named attribute.
 - **RL-SHARE-3** A new consumer (for example a rule for a worklist filter)
-  uses the rule language without a change to the rule language, and without an
-  import of the display set code.
+  uses the rule language without a change to the rule language. `RL-PKG-2`
+  keeps the rule language free of the display set code.
 - **RL-SHARE-4** The documentation describes the rule language once. The
   documentation of a consumer describes only the fields of its rules.
 
@@ -407,9 +392,10 @@ compile.
   rule is valid only when it matches a keyword of the DICOM dictionary of
   dcmjs, or a declared context name, with the same case. Any other name is a
   compile error. When a known name differs only in case, the error names the
-  known name: `unknown name 'modality'; did you mean 'Modality'?`. Operators
-  are also case sensitive (`notnull` gives `did you mean 'notNull'?`). A
-  declared context name is valid also when a keyword differs from it only in
+  known name, for example `Modality` for `modality`. Operators are also case
+  sensitive, and the error names the known operator (`notNull` for
+  `notnull`). `RL-NAME-5` gives the text of the messages. A declared context
+  name is valid also when a keyword differs from it only in
   case (`imageId` and the keyword `ImageID`). A value comparison is case
   sensitive: `"CT"` does not match `"ct"`. `containsI`, `doesNotContainI` and
   `lower()` compare text without case.
@@ -489,27 +475,43 @@ packages/metadata/src/
 
 ### Public API (RL-API)
 
-- **RL-API-1** `@cornerstonejs/metadata` exports these names of the rule
-  language and of the split consumer:
+- **RL-API-1** `@cornerstonejs/metadata` exports the names that a second
+  consumer, for example the OHIF hanging protocols, needs to compile its own
+  rules with the same meanings. The package root exports no other name of the
+  rule language. The schema tables, the `*At` compile variants and the
+  tokenizer stay internal.
 
   ```ts
-  // generic
+  // generic: compile
   compileCondition(condition, options?: CompileOptions): CompiledPredicate;
   compileValue(value, options?: CompileOptions): CompiledValue;
-  compileTemplate(template, site?): CompiledValue;
+  compileTemplate(template, site?: SchemaSite): CompiledValue;
   compileExpression(source, options?: CompileExpressionOptions): CompiledExpression;
-  collectIdentifiers(node): string[];
+  // generic: check the names of an expression of the consumer
+  parseExpressionSource(source): ExpressionNode;
   collectReads(node, { aggregates? }): ExpressionRead[];
+  collectIdentifiers(node): string[];
+  // generic: the same meaning of no value, and the operator names
+  hasNoValue, isAbsent, isEmpty, looseEquals;
+  MATCH_OPERATOR_NAMES;
   class RuleCompileError extends Error {
     readonly definition: string; // e.g. 'display set rules'
     readonly path: string;       // e.g. "rule 'r'.matches.Modality"
   }
+  class ExpressionSyntaxError extends Error {}
+  // types: CompileOptions, NameReader, NameReaderFunction, SchemaSite,
+  // CompiledPredicate, CompiledValue, CompiledExpression,
+  // CompileExpressionOptions, ExpressionNode, ExpressionRead, ExpressionScope,
+  // RawMatchTest, RawScalar, RawValue, InlinePredicate, InlineValue,
+  // SafeFunctionSubject
 
   // split consumer
-  createDisplaySetSplitRules(selector?, options?: CreateDisplaySetSplitRulesOptions): SplitRuleSet;
-  compileDisplaySetSplitRules(selector, options?): SplitRuleSet;
+  displaySetRules: DisplaySetRules;            // the default rules, as data
+  compiledDisplaySetRules: SplitRuleSet;       // the default rules, compiled
+  defaultDisplaySetSplitRules: SplitRuleSet;   // deprecated name of compiledDisplaySetRules
+  createDisplaySetSplitRules(rules?, options?: CreateDisplaySetSplitRulesOptions): SplitRuleSet;
+  compileDisplaySetSplitRules(rules, options?): SplitRuleSet;
   defaultDisplaySetContext: DisplaySetContext;
-  displaySetRules: DisplaySetRules;
   ```
 
 - **RL-API-2** `CompileOptions` holds the path and the name of the definition
@@ -553,7 +555,10 @@ packages/metadata/src/
   vendor attributes and the synthetic attributes.
 - **RL-NAME-5** The error message of an unknown name says how to declare the
   attribute. For a hex tag, the message names the declaration form. In
-  `attributes`, the message also names `{ "template": "..." }`.
+  `attributes`, the message also names `{ "template": "..." }`. A name that
+  differs from a known name only in case gives
+  `unknown name 'modality'; did you mean 'Modality'?`, and an operator gives
+  `did you mean 'notNull'?`.
 - **RL-NAME-6** A keyword or a declaration has no field: `{Modality.foo}` and
   `Modality.foo` are compile errors. An item of a sequence is read with an
   index (`ViewCodeSequence[0].CodeValue`). An index on a group
@@ -687,10 +692,12 @@ packages/metadata/src/
 - **RL-EXPR-6** A compiled expression gives one warning and `undefined` for an
   error at run time, except for a `RuleCompileError`, which goes to the
   caller.
-- **RL-EXPR-7** An array literal next to `==` or `!=` is a compile error. The
-  error names the `in` operator and the `includes` helper. Reason: in a
-  condition map, an array means "one of" (`RL-READ-2`), and `==` with an array
-  compares one value only, so the same form would have two meanings.
+- **RL-EXPR-7** An array literal next to `==` is the set of accepted values, as
+  an array is in a condition map (`RL-READ-2`). `X == ['MR', 'CT']` and
+  `['MR', 'CT'] == X` hold when `X` equals one element, with the scalar test of
+  `RL-VAL-3`, so a multi-valued `X` compares on its first value. `!=` is the
+  negation. An empty array literal, and an array literal on both sides, are
+  compile errors.
 
 ### The context (RL-CTXI)
 
@@ -750,7 +757,7 @@ packages/metadata/src/
   A series function in code with no declared fields has fields that the
   compile does not check, with the series scope.
 
-- **RL-CTXI-4** The compile infers the scope of each entry:
+- **RL-CTXI-4** The compile infers the scope of each entry (`RL-CTX-7`):
   - A fixed value and a group have the series scope.
   - A declaration and a code entry have the instance scope.
   - An expression or a template that reads, outside of a
