@@ -866,6 +866,10 @@ sweep does not match.
 
 #### Code entries
 
+A split that needs complex logic is best written as a new series function in
+code. The context then gives a name to each field of its result, and the rules
+stay data.
+
 In code, an entry can be a function `(instance, values) => value`, with the
 instance scope. `values` reads every name; each call gets a new `values`. A
 series entry in code is a group `{ "function": fn }`: the runtime calls

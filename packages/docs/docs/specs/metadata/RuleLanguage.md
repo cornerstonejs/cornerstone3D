@@ -103,6 +103,34 @@ Each change has a reason that the change rule permits:
   `RL-CTXI-12` (where a series function runs), `RL-PKG-2` (no import of the
   display set code) and `RL-NAME-5` (the text of the messages). The meaning
   of the user requirements does not change.
+- More user requirements no longer hold implementation detail, with no change
+  of meaning:
+  - `RL-SCOPE-1` merges the name rules of `RL-SCOPE-1` and `RL-SCOPE-7`: a
+    name is in scope or not. The first-letter convention is an implementation
+    detail of the scope, now in `RL-NAME-1`. `RL-SCOPE-10` holds the case
+    rules only. `RL-SCOPE-7` is removed.
+  - `RL-SCOPE-2` asks that each consumer documents its built-in names. Which
+    package names them is in `RL-PKG-2`.
+  - `RL-SCOPE-5` no longer holds the cost of a series value. `RL-CTXI-7`
+    holds it.
+  - `RL-EXT-3` states the need: a value over the series and a value over a
+    display set.
+  - `RL-EXT-5` moves to `RL-CONS-5`.
+  - `RL-CODE-4` no longer gives the reason for the second place.
+  - `RL-CODE-6` was guidance, and moves to the docs (`display-sets.md`, code
+    entries).
+  - `RL-ERR-3` states the need: every error shows when the rules load. When
+    each check runs is in `RL-CTXI-11` and `RL-NAME-7`.
+  - `RL-VALUE-7` no longer holds a history note. Before, `+` read both sides as
+    numbers.
+  - `RL-API-1` states the intent of the exports, not the names.
+  - `RL-SCOPE-3` and `RL-SCOPE-4` are removed from the list; this note records
+    the withdrawal.
+- `RL-READ-8` changes its meaning: the split key identifies the split group
+  in this study in a form that a host can use again, and a change to the
+  rules, the series or the implementation can change it without warning.
+  Reason: the earlier text promised a key format that the engine does not
+  guarantee.
 
 Other user requirements changed their words only, because the scopes went
 away: `RL-READ-1`, `RL-READ-2`, `RL-SHARE-1`, `RL-SHARE-3`, `RL-SHARE-4`,
@@ -234,8 +262,9 @@ compile.
   context entry, and the rule reads its name. The rule language has no `all`,
   `any` or `not`.
 - **RL-READ-8** Only the `groupBy` values of a rule group instances. The split
-  key of a display set is the rule id and the `groupBy` values, and nothing
-  else.
+  key identifies the split group of a display set in this study, in a form
+  that a host can store and use again. A change to the rules, to the series or
+  to the implementation can change the split key without warning.
 
 ### Absent and empty values (RL-VALUE)
 
@@ -284,8 +313,7 @@ compile.
   `{ "lessThan": 100 }` on it fails. `+` follows the type of its left operand:
   text on the left (also `''`) joins, so `"2" + 3` is `"23"`, and no value on
   the right joins as `''`; no value on the left gives no value; a number on the
-  left adds, so `3 + "2"` is `5`. _Changed: before, `+` read both sides as
-  numbers, and `"2" + 1` was `3`._
+  left adds, so `3 + "2"` is `5`.
 - **RL-VALUE-8** `!`, `&&`, `||` and `?:` read no value as `false`. `&&` and
   `||` give `true` or `false`. So `"isTall": "Rows && Rows > 1000"` is `false`
   when `Rows` is absent, and `"isTall": false` holds.
@@ -343,37 +371,30 @@ compile.
 - **RL-EXT-2** A rule uses a named attribute at every place that accepts a
   name: a condition key, a grouping entry, a sort entry, a display set
   attribute, a template and an expression.
-- **RL-EXT-3** A named attribute can read the subject and the other names of the context. A group can compute a value over a whole series. A value over the instances of a display set is an `{ "expression" }` value in `attributes`.
+- **RL-EXT-3** A rule can use a value over the whole series, and a value over
+  the instances of one display set. A named attribute can read the subject and
+  the other names of the context.
 - **RL-EXT-4** The author cannot see a difference between a named attribute of
   the host and a built-in named attribute. The syntax is the same.
-- **RL-EXT-5** Each consumer supplies its own subjects. A host that shares one
-  named attribute between two consumers knows which subject the function gets
-  from each consumer.
 
 ### Names (RL-SCOPE)
 
-- **RL-SCOPE-1** The reader of a rule sees from the first letter of a name
-  where the value comes from. A name with an uppercase first letter is a tag
-  keyword, and reads the instance. A name with a lowercase first letter is a
-  context name. The one exception is the lowercase DICOM keyword `dBdt`, which
-  is a tag keyword. A context name cannot be a tag keyword, so a context never
-  hides a value of the instance.
-- **RL-SCOPE-2** The consumer, and not the rule language, names the built-in
-  values of its rules. The host can add context entries.
-- **RL-SCOPE-3** _Withdrawn on 23 October._ The host does not supply values
-  at the start of a split. A preference such as `rightOnLeft` is a decision of
-  the hanging protocol, which places the display sets. A split rule does not
-  test it.
-- **RL-SCOPE-4** _Withdrawn on 23 October_, with `RL-SCOPE-3`. A site that
-  needs a different split sets a context entry or a rule in its customization
-  (`RL-CTX-8`).
+- **RL-SCOPE-1** A name in a rule is in scope or not. The scope holds the
+  attributes of the instance (the DICOM keywords, and the attributes that a
+  declaration names) and the context names. A name that is not in scope is a
+  compile error that names the rule, the place and the name, so a misspelt
+  name (`BodyPartExamind`, `sweepStrat`) fails when the rules load. A field
+  that a group does not declare is also a compile error. A context name cannot
+  be the name of an attribute of the instance, so a context never hides a
+  value of the instance. How the scope decides that a name is in scope is an
+  implementation detail (`RL-NAME-1`).
+- **RL-SCOPE-2** Each consumer documents the built-in names of its rules. The
+  host can add context entries.
 - **RL-SCOPE-5** A deployment defines computed values from other values, as
-  data or as a function. The compile computes a series value one time for each
-  series, and not one time for each subject.
+  data or as a function.
 - **RL-SCOPE-6** A rule reads a value of the display set (`splitNumber`,
   `sopClassUids`) only in `attributes`. A read of such a value at another
   place is a compile error that names the place.
-- **RL-SCOPE-7** A name in a rule is a DICOM keyword, a context name or a declared attribute, with the same case. Any other name is a compile error that names the rule, the place and the name. So a misspelt name (`BodyPartExamind`, `sweepStrat`) fails at compile time. A field that a group does not declare is a compile error. A context name that is a DICOM keyword is a compile error.
 - **RL-SCOPE-8** A rule reads an attribute that the dictionary does not hold
   only through a declaration (`RL-CTX-6`). A rule cannot read a hex tag
   directly. There is no optional access with `?`.
@@ -388,17 +409,12 @@ compile.
   The deny list lets a host keep a value (for example a patient identifier) out
   of every rule.
 
-- **RL-SCOPE-10** Names are case sensitive, as DICOM keywords are. A name in a
-  rule is valid only when it matches a keyword of the DICOM dictionary of
-  dcmjs, or a declared context name, with the same case. Any other name is a
-  compile error. When a known name differs only in case, the error names the
-  known name, for example `Modality` for `modality`. Operators are also case
-  sensitive, and the error names the known operator (`notNull` for
-  `notnull`). `RL-NAME-5` gives the text of the messages. A declared context
-  name is valid also when a keyword differs from it only in
-  case (`imageId` and the keyword `ImageID`). A value comparison is case
-  sensitive: `"CT"` does not match `"ct"`. `containsI`, `doesNotContainI` and
-  `lower()` compare text without case.
+- **RL-SCOPE-10** Names and operators are case sensitive, as DICOM keywords
+  are. A name is in scope only with the same case. When a name in scope differs
+  only in case, the error names it, for example `Modality` for `modality`, and
+  `notNull` for `notnull`. A value comparison is case sensitive: `"CT"` does
+  not match `"ct"`. `containsI`, `doesNotContainI` and `lower()` compare text
+  without case.
 
 ### Code for the complex cases (RL-CODE)
 
@@ -409,11 +425,8 @@ compile.
 - **RL-CODE-3** An extension can write a whole rule as code, with the hooks of
   the consumer, and put that rule in the same rule set as data rules.
 - **RL-CODE-4** The compile permits an expression in two places only: a
-  context entry, and the `{ "expression": "..." }` form of `attributes`. The
-  second place is for a value over the instances of a display set.
+  context entry, and the `{ "expression": "..." }` form of `attributes`.
 - **RL-CODE-5** An expression can read a named attribute by its name.
-- **RL-CODE-6** A split that needs complex logic is a new series function in
-  code. The context then gives names to its result fields.
 
 ### Safe data (RL-SAFE)
 
@@ -430,7 +443,9 @@ compile.
   path.
 - **RL-ERR-2** An unknown name gives an error that names the name, and says
   how to declare an attribute that the dictionary does not hold.
-- **RL-ERR-3** The compile finds every error of the rule data before the consumer uses the rule. A loop of data entries is a compile error. A loop that goes through a code entry gives an error at the first read, and the error names each entry of the loop. The other check at run time is the deny list check (`RL-SCOPE-9`).
+- **RL-ERR-3** Every error of the rule data shows when the rules load, before
+  the consumer uses a rule. A loop of entries is an error that names each entry
+  of the loop.
 - **RL-ERR-4** A string in `attributes` that is not a name (`"SCOUT"`) is a
   compile error. The error names the template form of fixed text.
 
@@ -443,13 +458,14 @@ compile.
   module to `rules/`.
 - **RL-PKG-2** No file in `safeFunctions/` imports from `displayset/`, or from
   any other consumer, and no file in `safeFunctions/` knows the DICOM
-  dictionary. The consumer gives the reader of each name (`readName`).
+  dictionary. The consumer gives the reader of each name (`readName`), and
+  the consumer, not the rule language, names the built-in values of its rules.
 - **RL-PKG-3** The split rule consumer is in `packages/metadata/src/displayset/`:
   - `displaySetContext.ts`: the context, the default context, the name check,
     the binding of the entries, and the cache.
   - `compileSplitRules.ts`: the rule fields, and their mapping onto the
     `SplitRule` hooks.
-  - `splitRuleSchema.ts`: the table of the rule fields and forms.
+  - `splitRuleSchema.ts`: the table of the rule fields and forms (internal).
   - `displaySetRules.js`: the default rules, as JSON data.
 - **RL-PKG-4** The hanging protocol consumer is in OHIF
   (`HangingProtocolService`), or in a later CS3D package. Either location uses
@@ -469,51 +485,19 @@ packages/metadata/src/
     displaySetContext.ts      context, default context, binding, cache
     compileSplitRules.ts      rule fields -> SplitRule hooks
     splitRuleSchema.ts
-    displaySetRules.js  default rules as data
+    displaySetRules.js        default rules as data
     ...engine files, unchanged
 ```
 
 ### Public API (RL-API)
 
-- **RL-API-1** `@cornerstonejs/metadata` exports the names that a second
-  consumer, for example the OHIF hanging protocols, needs to compile its own
-  rules with the same meanings. The package root exports no other name of the
-  rule language. The schema tables, the `*At` compile variants and the
-  tokenizer stay internal.
-
-  ```ts
-  // generic: compile
-  compileCondition(condition, options?: CompileOptions): CompiledPredicate;
-  compileValue(value, options?: CompileOptions): CompiledValue;
-  compileTemplate(template, site?: SchemaSite): CompiledValue;
-  compileExpression(source, options?: CompileExpressionOptions): CompiledExpression;
-  // generic: check the names of an expression of the consumer
-  parseExpressionSource(source): ExpressionNode;
-  collectReads(node, { aggregates? }): ExpressionRead[];
-  collectIdentifiers(node): string[];
-  // generic: the same meaning of no value, and the operator names
-  hasNoValue, isAbsent, isEmpty, looseEquals;
-  MATCH_OPERATOR_NAMES;
-  class RuleCompileError extends Error {
-    readonly definition: string; // e.g. 'display set rules'
-    readonly path: string;       // e.g. "rule 'r'.matches.Modality"
-  }
-  class ExpressionSyntaxError extends Error {}
-  // types: CompileOptions, NameReader, NameReaderFunction, SchemaSite,
-  // CompiledPredicate, CompiledValue, CompiledExpression,
-  // CompileExpressionOptions, ExpressionNode, ExpressionRead, ExpressionScope,
-  // RawMatchTest, RawScalar, RawValue, InlinePredicate, InlineValue,
-  // SafeFunctionSubject
-
-  // split consumer
-  displaySetRules: DisplaySetRules;            // the default rules, as data
-  compiledDisplaySetRules: SplitRuleSet;       // the default rules, compiled
-  defaultDisplaySetSplitRules: SplitRuleSet;   // deprecated name of compiledDisplaySetRules
-  createDisplaySetSplitRules(rules?, options?: CreateDisplaySetSplitRulesOptions): SplitRuleSet;
-  compileDisplaySetSplitRules(rules, options?): SplitRuleSet;
-  defaultDisplaySetContext: DisplaySetContext;
-  ```
-
+- **RL-API-1** The safe functions export the functions and the types that a
+  second consumer, for example the OHIF hanging protocols, needs to use the
+  rule language in its own context: to compile its conditions, values,
+  templates and expressions with its own reader of names, to check the names of
+  an expression, to use the same meaning of no value, and to report the errors
+  of the compile. The safe functions export nothing that only the split
+  consumer uses, such as the schema tables.
 - **RL-API-2** `CompileOptions` holds the path and the name of the definition
   for the messages, the expression scope of the place, and `readName`: the
   function that gives the reader of a name, or throws a compile error for an
@@ -536,13 +520,21 @@ packages/metadata/src/
   OHIF reads `displaySetContext` from the `useMetadataDisplaySet`
   customization, next to `splitRules`.
 
+- **RL-API-4** The split consumer exports the default rules as data, the
+  compiled default rules, the compile functions for a rule set, and the default
+  display set context. A name that a release exported stays as a deprecated
+  alias when it is renamed.
+
 ### Names (RL-NAME)
 
 - **RL-NAME-1** The compile resolves each name in this order: a tag keyword
   (`resolveHexFromKeyword` of `packages/metadata/src/utilities/Tags.ts` gives a
   hex tag), then an entry of the rule context, then an entry of the global
   context, then (in `attributes` only) `splitNumber` and `sopClassUids`.
-  Every other name is a compile error.
+  Every other name is a compile error. This order is the scope of
+  `RL-SCOPE-1`. Today every DICOM keyword starts with an uppercase letter
+  except `dBdt`, and every context name starts with a lowercase letter
+  (`RL-NAME-3`), but the scope does not depend on the first letter.
 - **RL-NAME-2** `resolveHexFromKeyword` reads own keys of the dictionary only,
   so `constructor` and `toString` are not keywords.
 - **RL-NAME-3** A context name matches `/^[a-z][A-Za-z0-9_]*$/`, is not a tag
@@ -873,6 +865,9 @@ packages/metadata/src/
 - **RL-CONS-4** The hanging protocol consumer gives its own subject and its
   own reader of a name. A later OHIF pull request moves the hanging protocol
   constraints to the operator meanings of `RL-COND-3`.
+- **RL-CONS-5** Each consumer supplies its own subjects. A host that shares one
+  named attribute between two consumers knows which subject the function gets
+  from each consumer.
 
 ### Tests (RL-TEST)
 
