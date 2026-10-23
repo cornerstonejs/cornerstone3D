@@ -247,19 +247,14 @@ describe('ultrasound', () => {
     ]);
   });
 
-  // Fails today: the default multiFrame rule requires SliceLocation, which US
-  // clips do not carry, so defaultImageRule puts both clips in one display set.
-  // The jest types of this package do not declare `it.failing` (jest 30 has it).
-  (it as typeof it & { failing: typeof it }).failing(
-    'keeps each cine clip of the series as its own display set',
-    () => {
-      expect(
-        displaySetsOf(instances, rules)
-          .slice(2)
-          .map((d) => d.uids)
-      ).toEqual(clips.map((clip) => uidsOf([clip])));
-    }
-  );
+  // US clips carry no SliceLocation, and must still be one display set each.
+  it('keeps each cine clip of the series as its own display set', () => {
+    expect(
+      displaySetsOf(instances, rules)
+        .slice(2)
+        .map((d) => d.uids)
+    ).toEqual(clips.map((clip) => uidsOf([clip])));
+  });
 });
 
 describe('mammography', () => {

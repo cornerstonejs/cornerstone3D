@@ -101,16 +101,20 @@ export const displaySetRules = {
   multiFrame: {
     priority: 5,
     description:
-      'Multi-frame instances that carry a slice location - a cine clip. One ' +
-      'display set per instance, flagged isClip with its frame count.',
+      'Multi-frame cine clips: one display set per instance, flagged isClip ' +
+      'with its frame count. A CT, MR, PT or NM multi-frame instance with no ' +
+      'slice location is an enhanced volume, and goes to volume3d.',
     viewportTypes: ['stack'],
-    // The `SliceLocation` test mirrors OHIF: a multi-frame object without a
-    // slice location is not treated as a clip here, and falls through to the
-    // volume/stack rules below.
+    context: {
+      // US, XA and other cine clips have no SliceLocation.
+      isCineClip: `SliceLocation != null || !(Modality in [${VOLUME_MODALITIES.map(
+        (modality) => `'${modality}'`
+      ).join(', ')}])`,
+    },
     matches: {
       ...RENDERABLE_IMAGE,
       isMultiFrame: true,
-      SliceLocation: { notNull: true },
+      isCineClip: true,
     },
     groupBy: ['SeriesInstanceUID', 'InstanceNumber'],
     attributes: {

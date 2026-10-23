@@ -133,7 +133,7 @@ describe('createDisplaySetSplitRules - compiled default behaviour', () => {
     );
   });
 
-  it('does not treat a multi-frame instance without a slice location as a clip', () => {
+  it('treats a US multi-frame as a clip, and a CT multi-frame with no slice location as a volume', () => {
     expect(
       ruleIdsFor([
         instance({
@@ -143,7 +143,12 @@ describe('createDisplaySetSplitRules - compiled default behaviour', () => {
           NumberOfFrames: 30,
         }),
       ])
-    ).toEqual(['defaultImageRule']);
+    ).toEqual(['multiFrame']);
+    expect(
+      ruleIdsFor([
+        instance({ SOPInstanceUID: 'enhanced-ct', NumberOfFrames: 200 }),
+      ])
+    ).not.toContain('multiFrame');
   });
 
   it('splits a mixed-b-value DWI series in two', () => {
