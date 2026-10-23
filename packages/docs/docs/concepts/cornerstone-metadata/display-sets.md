@@ -177,7 +177,7 @@ It has nine rules. Eight have the priorities `1` to `8`, and the catch-all
 | 8        | `defaultImageRule`          | `stack`, `volume`, `volume3d` | Any other renderable image, one display set per series.                                                                                                                                                                                 |
 | max      | `unsupported`               | `none`                        | Everything else (SEG, RTSTRUCT, SR, PDF, …); see [Objects nothing can render](#objects-nothing-can-render).                                                                                                                             |
 
-Each raw rule also has a `description` that a UI can show. The next sections
+Each rule in data form also has a `description` that a UI can show. The next sections
 explain how your own rules combine with these.
 
 ### Changes from the earlier default rules
@@ -282,13 +282,13 @@ that is missing, or neither `null` nor a finite number, is an error.
 
 A `SplitRule` has up to five parts:
 
-| Field              | Purpose                                                                                                                                                                                                                                                                                                                      |
-| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `matches`          | Returns true if an instance belongs to this rule. Omit to match everything.                                                                                                                                                                                                                                                  |
-| `groupBy`          | Keys (tag names or functions) that partition matched instances into separate display sets.                                                                                                                                                                                                                                   |
-| `series`           | Optional, code form only. Runs once per split and **returns** facts that extend the series context every code rule reads as `context.series`. The first rule that computes a name wins. A raw rule does not use this hook: it reads the [display set context](#the-display-set-context), where each name has one definition. |
-| `viewportTypes`    | Allowed viewport types for the produced display sets; index `0` is preferred.                                                                                                                                                                                                                                                |
-| `customAttributes` | Returns extra attributes spread flat onto the display set (e.g. `isClip`, `numImageFrames`).                                                                                                                                                                                                                                 |
+| Field              | Purpose                                                                                                                                                                                                                                                                                                                               |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `matches`          | Returns true if an instance belongs to this rule. Omit to match everything.                                                                                                                                                                                                                                                           |
+| `groupBy`          | Keys (tag names or functions) that partition matched instances into separate display sets.                                                                                                                                                                                                                                            |
+| `series`           | Optional, code form only. Runs once per split and **returns** facts that extend the series context every code rule reads as `context.series`. The first rule that computes a name wins. A rule in data form does not use this hook: it reads the [display set context](#the-display-set-context), where each name has one definition. |
+| `viewportTypes`    | Allowed viewport types for the produced display sets; index `0` is preferred.                                                                                                                                                                                                                                                         |
+| `customAttributes` | Returns extra attributes spread flat onto the display set (e.g. `isClip`, `numImageFrames`).                                                                                                                                                                                                                                          |
 
 A rule's `id` is its key in the rule set, so an entry does not repeat it. Most
 rules only need `matches` and `groupBy`, plus the entry's `priority`:
@@ -305,7 +305,7 @@ rules only need `matches` and `groupBy`, plus the entry's `priority`:
 
 In code, use `series` only when a rule needs a value computed from the
 **whole series** and reused by `matches`, `groupBy` or `compareInstances`. A
-raw rule reads such a value as a series entry of the
+rule in data form reads such a value as a series entry of the
 [display set context](#the-display-set-context). It is
 optional, runs **once per split operation**, and returns facts — it should
 **not** mutate `context.series`. A fact can be any value: a boolean, a number,
@@ -428,7 +428,7 @@ A few engine guarantees worth knowing when writing rules:
   b-value mix of `mixedDimensionalityBValue`, is computed over all the
   instances of the series.
 - **`series` is shared, and the first name wins.** Every rule reads one series
-  context. The compiled raw rules keep the values of the display set context
+  context. The compiled data-form rules keep the values of the display set context
   there, under the fact `displaySetContext`. A rule in code that adds its own
   fact must give a name that no other rule gives with a different meaning,
   because the later rule does not compute it.
@@ -451,7 +451,7 @@ which leaves **no trace that the object was in the study at all** — the
 application cannot list it, cannot explain it, and cannot tell "we don't support
 this" apart from "this isn't here".
 
-So the default selector's `unsupported` rule, which runs last at
+So the `unsupported` rule of the default rules, which runs last at
 `Number.MAX_SAFE_INTEGER`, is a catch-all that claims everything left and marks
 the result **not displayable**:
 
@@ -497,7 +497,7 @@ Points worth knowing:
 
 Add your own rule with a priority _below_ the catch-all's, with real viewport
 types. This is the other half of the user's choice: either take the
-non-displayable display set and present it, or teach the selector how to render
+non-displayable display set and present it, or teach the rules how to render
 the format.
 
 ```ts
@@ -536,7 +536,7 @@ So the rules are data, and one shared compiler turns them into functions:
   (`6`), `volume3d` (`7`), `defaultImageRule` (`8`) and `unsupported`
   (`Number.MAX_SAFE_INTEGER`). No
   functions, no imports of application state.
-- `createDisplaySetSplitRules(selector, options)` — turns that JSON, and the
+- `createDisplaySetSplitRules(rules, options)` — turns that JSON, and the
   display set context of `options.displaySetContext`, into the `SplitRuleSet`
   the split engine executes, with the same keys and priorities.
   An excluded entry (`priority: null`) is compiled and kept, so a later layer
@@ -553,11 +553,11 @@ import {
   splitImageIdsBySplitRules,
 } from '@cornerstonejs/metadata';
 
-// A server can ship its selector to the client verbatim...
-const selectorJson = JSON.stringify(displaySetRules);
+// A server can ship its rules to the client verbatim...
+const rulesJson = JSON.stringify(displaySetRules);
 
 // ...and the client compiles the identical rules from it.
-const splitRules = createDisplaySetSplitRules(JSON.parse(selectorJson));
+const splitRules = createDisplaySetSplitRules(JSON.parse(rulesJson));
 const groups = splitImageIdsBySplitRules(imageIds, {
   getNaturalizedInstance,
   splitRules,
@@ -727,7 +727,7 @@ does not change the split: groups and split keys stay per rule id.
 
 ### The display set context
 
-`createDisplaySetSplitRules(selector, { displaySetContext })` takes one map of
+`createDisplaySetSplitRules(rules, { displaySetContext })` takes one map of
 named entries, over the entries of `defaultDisplaySetContext`. OHIF reads the
 map from the `displaySetContext` customization of `useMetadataDisplaySet`, next
 to `splitRules`. Each entry has one of five forms:
@@ -891,11 +891,11 @@ deny each sequence that holds a denied attribute too: `OtherPatientIDsSequence`
 holds `PatientID`. A code entry also gets the instance itself, so do not register a code
 entry that reads a denied attribute from the instance. A split that needs complex logic is a new series
 function in code, and the context then gives names to its result fields. A
-selector that reads a code entry is still JSON, but the host that compiles it
+rule set that reads a code entry is still JSON, but the host that compiles it
 must register the same entry.
 
 ```js
-const splitRules = createDisplaySetSplitRules(mySelector, {
+const splitRules = createDisplaySetSplitRules(myRules, {
   displaySetContext: {
     // Read from data as "isSiteProtocol": true
     isSiteProtocol: (instance) => instance.ProtocolName?.startsWith('SITE-'),
@@ -927,7 +927,7 @@ Invalid display set rules: displaySetContext.first: the context entries form a l
 An actual function passes through as is at every function place: a whole
 `matches`, the test of one entry of `matches`, a `groupBy` entry, a
 `sortBy` entry, a whole `attributes` (the `customAttributes` hook), and one
-attribute value. The strictness applies to data only. A selector with a
+attribute value. The strictness applies to data only. A rule set with a
 function in it is no longer JSON, so it cannot be shared with a server.
 
 ### Who decides instance order
@@ -972,7 +972,7 @@ const reordered = orderInstancesForRule(
 
 A rule also has a `description`. The explanation is in the rule data, and not
 in a code comment, so a UI that lets a user inspect or toggle rules reads it
-from the selector. The **Display Set Rules** example
+from the rules. The **Display Set Rules** example
 (`packages/core/examples/displaySetRules`) does this. It lists every standard
 rule with a checkbox, its priority and its description, it accepts rules as JSON
 keyed by id, and it splits the loaded series again at once.
@@ -1016,7 +1016,7 @@ Two rules from the defaults, in raw form:
 }
 ```
 
-### Extending a selector
+### Extending the display set rules
 
 Derive from the defaults and compile the result. Rules run in ascending
 priority, so give a rule a priority below `0` to claim instances before any
@@ -1050,11 +1050,11 @@ A site changes the limit for all rules with `"dxCrMaxImages": { "$set": 20 }`.
 One rule changes the limit for itself with `"context": { "dxCrMaxImages": 20 }`.
 
 The key is the id of the rule, so ids are unique by construction. An id
-namespaces the bucket keys that its rule makes. Thus a site can edit a selector
+namespaces the bucket keys that its rule makes. Thus a site can edit a rule set
 (move a rule, or insert a rule), and the display set identities of the other
 rules do not change.
 
-A selector can only read the attributes that the host puts on the instance. A
+A rule set can only read the attributes that the host puts on the instance. A
 rule that reads an attribute that the host does not supply compiles, and then
 groups every instance together. See
 [the subject is part of the contract](../safe-functions.md#names-belong-to-the-consumer).
@@ -1064,21 +1064,23 @@ groups every instance together. See
 Cornerstone knows nothing about OHIF `customizationService`, or about the
 configuration of any other application, and must not. The dependency goes one
 way: the application resolves its own overrides and gives
-`createDisplaySetSplitRules` plain data.
+`createDisplaySetSplitRules` plain data. OHIF reads the rules from
+`splitRules` of the `useMetadataDisplaySet` customization, and the context
+from `displaySetContext` next to it.
 
 ```js
 // In the application, not in cornerstone.
-const selector =
-  customizationService.getCustomization('displaySetSelector') ??
-  displaySetRules;
+const { splitRules: customRules, displaySetContext } =
+  customizationService.getCustomization('useMetadataDisplaySet') ?? {};
 
-const splitRules = createDisplaySetSplitRules(selector, {
-  displaySetContext: customizationService.getCustomization('displaySetContext'),
-});
+const splitRules = createDisplaySetSplitRules(
+  { ...displaySetRules, ...customRules },
+  { displaySetContext }
+);
 ```
 
 The customization value is JSON. So a back end with no customization service can
-get the same value: it reads the selector and the context from its
+get the same value: it reads the rules and the context from its
 configuration, and compiles them with the same call. Thus the display set rules
 of one deployment are the same on both sides of the wire. The OHIF side is in
 [Customization Service → Display Set Split Rules](https://docs.ohif.org/platform/services/customization-service/displaySetSplitRules).

@@ -36,7 +36,7 @@ describe('the display set context over a split', () => {
         'planeGeometry.regularCount >= 3 && planeGeometry.irregularCount > 0 && planeGeometry.complete',
     },
   };
-  const selector: DisplaySetRules = {
+  const ruleSet: DisplaySetRules = {
     regularVolume: {
       priority: -2,
       matches: {
@@ -85,7 +85,7 @@ describe('the display set context over a split', () => {
   it('splits the lattice from the other images, and labels each display set from its own instances', () => {
     const groups = groupInstancesBySplitRules(
       series,
-      createDisplaySetSplitRules(selector, options)
+      createDisplaySetSplitRules(ruleSet, options)
     );
     expect(
       groups.map((group) => [

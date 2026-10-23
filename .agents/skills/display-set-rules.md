@@ -171,6 +171,6 @@ URL customization modules), and the `context` of each rule.
    that several rules share in `displaySetContext`.
 3. Use `{ "greaterThan": n }` for a strict `>`; use `null` / `notNull` for
    presence. Remember that index `0` is a value.
-4. Compile the selector (`createDisplaySetSplitRules`) and read the error: it
+4. Compile the rules (`createDisplaySetSplitRules`) and read the error: it
    gives the rule, the place and the name.
 5. Add a test only for what the user must get, or what the API must do.

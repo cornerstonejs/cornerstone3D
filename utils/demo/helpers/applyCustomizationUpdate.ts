@@ -142,7 +142,7 @@ extend('$filter', (query, original) => applyFilterCommand(original, query));
  * never mutated). A spec with no `$` command replaces the value outright, which
  * is how OHIF treats a plain customization value.
  *
- * @param source - the current value, e.g. the default display set selector.
+ * @param source - the current value, e.g. the default display set rules.
  * @param spec - a command spec, or a plain value that replaces `source`.
  * @returns the updated value.
  */

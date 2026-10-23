@@ -53,7 +53,7 @@ import type {
   SplitRuleSet,
 } from './types';
 
-/** What the messages call a selector. */
+/** What the messages call the rules as data. */
 const DEFINITION = 'display set rules';
 
 type Comparator = NonNullable<SplitRule['compareInstances']>;
@@ -276,7 +276,7 @@ function compileList<T>(
   return value.map((entry, index) => compileEntry(entry, at(site, index)));
 }
 
-/** Compiles one raw rule into a {@link SplitRule}. */
+/** Compiles one rule in data form into a {@link SplitRule}. */
 function compileRule(
   id: string,
   rule: Record<string, unknown>,
@@ -338,13 +338,13 @@ function compileRule(
 }
 
 /**
- * Compiles a display set rules into executable split rules.
+ * Compiles a set of display set rules into executable split rules.
  *
  * The result is a {@link SplitRuleSet} with the same keys and priorities, ready
  * to hand to `splitImageIdsBySplitRules` / `groupInstancesBySplitRules`, or to
  * merge with another rule set by key. An excluded entry (`priority: null`) is
  * compiled and kept, so a later layer can include it again by giving it a
- * priority. Compilation is eager: a malformed selector throws here, at setup,
+ * priority. Compilation is eager: a malformed rule set throws here, at setup,
  * rather than midway through splitting a study.
  *
  * The rules read the names of {@link defaultDisplaySetContext}, with the
@@ -353,12 +353,12 @@ function compileRule(
  * with the rule id and the path of the fragment.
  */
 export function compileDisplaySetSplitRules(
-  selector: DisplaySetRules,
+  rules: DisplaySetRules,
   options: CreateDisplaySetSplitRulesOptions = {}
 ): SplitRuleSet {
-  if (!selector || typeof selector !== 'object' || Array.isArray(selector)) {
+  if (!rules || typeof rules !== 'object' || Array.isArray(rules)) {
     throw new Error(
-      `Invalid ${DEFINITION}: selector must be an object keyed by rule id: ${JSON.stringify(selector)}`
+      `Invalid ${DEFINITION}: the rules must be an object keyed by rule id: ${JSON.stringify(rules)}`
     );
   }
 
@@ -380,7 +380,7 @@ export function compileDisplaySetSplitRules(
   const sortFunctions = options.sortFunctions ?? {};
 
   const compiledSet: SplitRuleSet = {};
-  for (const [id, rule] of Object.entries(selector)) {
+  for (const [id, rule] of Object.entries(rules)) {
     validateSplitRuleSetEntry(id, rule);
     const site = createSite(
       { definition: DEFINITION, path: `rule '${id}'` },

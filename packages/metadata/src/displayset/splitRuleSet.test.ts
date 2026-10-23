@@ -152,7 +152,7 @@ describe('groupInstancesBySplitRules with a rule set', () => {
   });
 });
 
-describe('createDisplaySetSplitRules with a raw rule set', () => {
+describe('createDisplaySetSplitRules with a rule set as data', () => {
   it('compiles to a keyed rule set that resolves in priority order', () => {
     const rules = createDisplaySetSplitRules({
       catchAll: { priority: 2 },

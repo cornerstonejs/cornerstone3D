@@ -61,15 +61,15 @@ const wadoRsRoot =
 const LOCAL_ROOT = getLocalUrl() || 'http://localhost:5000/dicomweb';
 
 setTitleAndDescription(
-  'Display Set Rules — editing the raw selector',
+  'Display Set Rules — editing the rules as data',
   'The standard display-set split rules are data (displaySetRules), not ' +
     'code, so they can be inspected, toggled and extended at runtime — and the ' +
-    'same selector can be used by a server. Untick a rule to see what the ' +
+    'same rules can be used by a server. Untick a rule to see what the ' +
     'series splits into without it, add your own rules as JSON (keyed by rule ' +
     'id, with a priority: below 0 runs before the standard rules), or load a rule ' +
     'set the server hosts. Upload local DICOM files or a study folder to split ' +
     'your own data: each series in the upload is added to the Series list. ' +
-    'Every rule shown is read from the selector itself, ' +
+    'Every rule shown is read from the rules themselves, ' +
     'including its explanation. Each display set that comes out gets its own ' +
     'viewport: a 2x2 MPR + 3D layout when the display set is volume-capable, ' +
     'otherwise a single viewport of its requested type. Every viewport carries ' +
@@ -170,9 +170,9 @@ function firstItem(sequence: unknown): Record<string, unknown> | undefined {
  * The context entries this example adds to the default display set context.
  * A rule reads each one by its name, in the same way as a DICOM keyword.
  *
- * Most entries are data, so a pasted or fetched selector can also define its
+ * Most entries are data, so a pasted or fetched rule set can also define its
  * own. The code entries are for the values that data cannot state: the view of
- * a mammogram lives in `ViewCodeSequence`. A selector that reads a code entry
+ * a mammogram lives in `ViewCodeSequence`. A rule set that reads a code entry
  * works only where the host registers the same entry.
  */
 const DEMO_CONTEXT = {
@@ -306,7 +306,7 @@ const SAMPLE_SNIPPETS: Record<string, string> = {
     null,
     2
   ),
-  // The raw-selector form of OHIF's `dwiByBValue` URL customization
+  // The data form of OHIF's `dwiByBValue` URL customization
   // (platform/app/public/customizations/split/dwiByBValue.jsonc), without the
   // customization `$merge` wrapper.
   'DWI: one display set per b-value': JSON.stringify(
@@ -357,7 +357,7 @@ const SAMPLE_SNIPPETS: Record<string, string> = {
 
 // ======== State ======== //
 
-/** Rule ids the user unticked. Ids come from the selector, never hard-coded. */
+/** Rule ids the user unticked. Ids come from the rules, never hard-coded. */
 const disabledRuleIds = new Set<string>();
 /**
  * Rules the user added or the server supplied, keyed by rule id. Merged over the
@@ -420,7 +420,7 @@ function setStatus(message: string, isError = false) {
   statusLine.textContent = message;
 }
 
-// ======== The selector, assembled from user state ======== //
+// ======== The rule set, assembled from user state ======== //
 
 /** The standard rules with the user/server rules merged over them by key. */
 function mergedRules(): DisplaySetRules {
@@ -428,7 +428,7 @@ function mergedRules(): DisplaySetRules {
 }
 
 /**
- * The selector as data: the standard rules with the user/server rules merged
+ * The rule set as data: the standard rules with the user/server rules merged
  * over them by key, the unticked ids excluded (`priority: null`), then any
  * customization merge commands on top.
  *
@@ -436,8 +436,8 @@ function mergedRules(): DisplaySetRules {
  * would silently discard everything no other rule claims, which is the failure
  * mode it exists to prevent. Its checkbox is disabled for the same reason.
  */
-function buildSelector(): DisplaySetRules {
-  let selector: DisplaySetRules = Object.fromEntries(
+function buildRuleSet(): DisplaySetRules {
+  let ruleSet: DisplaySetRules = Object.fromEntries(
     Object.entries(mergedRules()).map(([id, rule]) => [
       id,
       disabledRuleIds.has(id) ? { ...rule, priority: null } : rule,
@@ -447,21 +447,21 @@ function buildSelector(): DisplaySetRules {
   // Applied the way OHIF's customization service merges a customization over an
   // extension default: same command vocabulary, same order.
   for (const command of mergeCommands) {
-    selector = applyCustomizationUpdate(selector, command);
+    ruleSet = applyCustomizationUpdate(ruleSet, command);
   }
 
-  return selector;
+  return ruleSet;
 }
 
 /**
- * The rules of a selector in evaluation order: ascending priority, equal
+ * The rules of a rule set in evaluation order: ascending priority, equal
  * priorities by id. Excluded rules (`priority: null`) come last, so the list
  * still shows them.
  */
-function rulesInOrder(selector: DisplaySetRules): [string, RawSplitRule][] {
+function rulesInOrder(ruleSet: DisplaySetRules): [string, RawSplitRule][] {
   const rank = (rule: RawSplitRule) =>
     typeof rule.priority === 'number' ? rule.priority : Infinity;
-  return Object.entries(selector).sort(
+  return Object.entries(ruleSet).sort(
     ([aId, a], [bId, b]) =>
       rank(a) - rank(b) || (aId < bId ? -1 : aId > bId ? 1 : 0)
   );
@@ -470,7 +470,7 @@ function rulesInOrder(selector: DisplaySetRules): [string, RawSplitRule][] {
 /**
  * Turns pasted or fetched JSON into keyed rules.
  *
- * Accepts a selector keyed by rule id, or a single rule object with an `id`,
+ * Accepts rules keyed by rule id, or a single rule object with an `id`,
  * which becomes `{ [id]: { ...rule, priority: -1 } }` (it runs before the
  * standard rules) unless it states its own priority.
  */
@@ -498,8 +498,8 @@ function toKeyedRules(parsed: unknown): DisplaySetRules {
   return record as DisplaySetRules;
 }
 
-function compileSelector(): SplitRuleSet {
-  return createDisplaySetSplitRules(buildSelector(), {
+function compileRuleSet(): SplitRuleSet {
+  return createDisplaySetSplitRules(buildRuleSet(), {
     displaySetContext: DEMO_CONTEXT,
   });
 }
@@ -783,7 +783,7 @@ const MAMMO_RULE_SET_URL = new URL('./mammoViewSplit.json', import.meta.url)
   .href;
 
 /**
- * Where a server-hosted selector is fetched from. Free text rather than a list
+ * Where a server-hosted rule set is fetched from. Free text rather than a list
  * of known files: which rule sets a deployment serves is a property of that
  * deployment, not of this example, and a hard-coded list only ever describes
  * one site's data.
@@ -800,14 +800,14 @@ serverPathInput.placeholder = 'path/to/displaySets.json';
 serverPathInput.value = MAMMO_RULE_SET_URL;
 serverPathInput.onkeydown = (event) => {
   if (event.key === 'Enter') {
-    void loadServerSelector(serverPathInput.value.trim());
+    void loadServerRuleSet(serverPathInput.value.trim());
   }
 };
 
 const serverLoadButton = document.createElement('button');
 serverLoadButton.textContent = 'Load';
 serverLoadButton.onclick = () =>
-  void loadServerSelector(serverPathInput.value.trim());
+  void loadServerRuleSet(serverPathInput.value.trim());
 
 const serverGroup = document.createElement('span');
 serverGroup.style.display = 'flex';
@@ -864,7 +864,7 @@ sampleSelect.onchange = () => {
 sourcePickerRow.appendChild(sampleSelect);
 
 /**
- * Opens a selector JSON file from disk into the editor.
+ * Opens a rule set JSON file from disk into the editor.
  *
  * Loaded into the editor rather than applied straight away: a rule set being
  * developed locally is the one most likely to need a look — and an edit —
@@ -957,11 +957,11 @@ function addButton(label: string, onClick: () => void) {
 /**
  * Adds rules (or applies a merge command) and re-splits.
  *
- * Compiles eagerly and rolls back on failure, so a bad selector is rejected here
+ * Compiles eagerly and rolls back on failure, so a bad rule set is rejected here
  * — with the offending fragment named — instead of leaving the UI in a state that
  * cannot split.
  */
-function applyParsedSelector(parsed: unknown, source: string): boolean {
+function applyParsedRules(parsed: unknown, source: string): boolean {
   const previousAdded = addedRules;
   const previousCommandCount = mergeCommands.length;
 
@@ -971,7 +971,7 @@ function applyParsedSelector(parsed: unknown, source: string): boolean {
     } else {
       addedRules = { ...addedRules, ...toKeyedRules(parsed) };
     }
-    compileSelector();
+    compileRuleSet();
   } catch (error) {
     addedRules = previousAdded;
     mergeCommands.length = previousCommandCount;
@@ -998,7 +998,7 @@ addButton('Add rule', () => {
     return;
   }
 
-  if (applyParsedSelector(parsed, 'Rule')) {
+  if (applyParsedRules(parsed, 'Rule')) {
     setStatus('Rule added.');
     void resplit();
   }
@@ -1014,29 +1014,29 @@ addButton('Reset', () => {
   void resplit();
 });
 
-addButton('Copy selector JSON', async () => {
-  const json = JSON.stringify(buildSelector(), null, 2);
+addButton('Copy rules JSON', async () => {
+  const json = JSON.stringify(buildRuleSet(), null, 2);
   try {
     await navigator.clipboard.writeText(json);
-    setStatus('Selector JSON copied — this is what a server would read.');
+    setStatus('Rules JSON copied — this is what a server would read.');
   } catch {
     console.log(json);
-    setStatus('Clipboard unavailable; selector JSON logged to the console.');
+    setStatus('Clipboard unavailable; rules JSON logged to the console.');
   }
 });
 
 /**
- * Loads a rule set the server hosts. Accepts a bare selector keyed by rule id,
+ * Loads a rule set the server hosts. Accepts bare rules keyed by rule id,
  * or a document with a keyed `rules` object plus metadata (`name`, `notes`,
  * `requires`).
  *
  * A bare path is resolved against the DICOMweb root the current series reads
- * from, which is the point of the raw form: the back end that indexed the study
+ * from, which is the point of the data form: the back end that indexed the study
  * can serve the very rules it indexed it with.
  */
-async function loadServerSelector(path: string) {
+async function loadServerRuleSet(path: string) {
   if (!path) {
-    setStatus('Enter a path or URL to a selector JSON file first.', true);
+    setStatus('Enter a path or URL to a rule set JSON file first.', true);
     return;
   }
 
@@ -1076,13 +1076,13 @@ async function loadServerSelector(path: string) {
 
   if (!rules || typeof rules !== 'object' || Array.isArray(rules)) {
     setStatus(
-      `${url} is neither a selector keyed by rule id nor a document with a keyed "rules" object.`,
+      `${url} is neither a rule set keyed by rule id nor a document with a keyed "rules" object.`,
       true
     );
     return;
   }
 
-  // A selector may read code entries of the context; if the host has not
+  // A rule set may read code entries of the context; if the host has not
   // registered them, say so by name before the compile reports the first one.
   const missing = (doc.requires?.displaySetContext ?? []).filter(
     (name) => !(name in DEMO_CONTEXT)
@@ -1097,7 +1097,7 @@ async function loadServerSelector(path: string) {
     return;
   }
 
-  if (applyParsedSelector(rules, url)) {
+  if (applyParsedRules(rules, url)) {
     setStatus(
       `Loaded ${(isDocument && doc.name) || url} — ${
         Object.keys(toKeyedRules(rules)).length
@@ -1531,7 +1531,7 @@ async function renderGrid() {
   }
 }
 
-/** Re-splits the loaded series with the current selector. No refetch needed. */
+/** Re-splits the loaded series with the current rules. No refetch needed. */
 async function resplit() {
   if (!seriesImageIds.length) {
     return;
@@ -1540,7 +1540,7 @@ async function resplit() {
   try {
     displaySets = splitDisplaySetsFromImageIds(
       seriesImageIds,
-      compileSelector()
+      compileRuleSet()
     );
   } catch (error) {
     setStatus(

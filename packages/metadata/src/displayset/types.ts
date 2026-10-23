@@ -64,7 +64,7 @@ export type SeriesInfo = {
  * The series context of one split: values computed once from the whole
  * series, and read back by every rule through {@link RuleContext}.
  *
- * A compiled raw rule keeps one entry here, `displaySetContext`: the values of
+ * A compiled data-form rule keeps one entry here, `displaySetContext`: the values of
  * the display set context for the series, computed at the first read and kept
  * in a cache (see `displaySetContext.ts`). A rule in code can add its own
  * entries with its `series` hook. **The first rule, in priority order, that
@@ -315,10 +315,10 @@ export type SortInstances = (
  * once, for every rule, by whatever application is doing the splitting - and it
  * has to be settable the same way whether that application is a viewer or a
  * server building a study index. A per-rule-only hook would leave the *default*
- * order defined by whoever calls the engine, so two consumers of one selector
+ * order defined by whoever calls the engine, so two consumers of one rule set
  * could order the same display set differently while both appearing correct.
  *
- * A later revision is expected to let a selector carry its sort as data; when it
+ * A later revision is expected to let a rule set carry its sort as data; when it
  * does it will compile to these same hooks, so ownership of ordering does not
  * change hands again.
  */

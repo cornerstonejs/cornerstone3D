@@ -1112,7 +1112,7 @@ the other images of the series into one stack:
 ### Example 8: the code form
 
 ```ts
-createDisplaySetSplitRules(selector, {
+createDisplaySetSplitRules(rules, {
   displaySetContext: {
     // A code entry with the instance scope.
     mammoView: (instance) => readMammoView(instance),

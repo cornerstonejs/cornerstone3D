@@ -56,7 +56,7 @@ export function validateSplitRuleSetEntry(
  *   (UTF-16 code unit order, not a locale collation), so the result never
  *   depends on the order the keys were inserted in.
  *
- * Generic over the entry shape so that the raw (data) selector and the compiled
+ * Generic over the entry shape so that the rules as data and the compiled
  * rules share one ordering implementation.
  *
  * @throws see {@link validateSplitRuleSetEntry}.

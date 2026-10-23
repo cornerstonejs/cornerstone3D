@@ -164,7 +164,7 @@ function collectFrameImageIdsForGroup(
  * @param seriesImageIds - the series' (frame-level) imageIds.
  * @param splitRules - compiled split rules, keyed by rule id; defaults to
  *   {@link compiledDisplaySetRules}. Pass the result of
- *   `createDisplaySetSplitRules(selector)` to split with a custom selector.
+ *   `createDisplaySetSplitRules(rules)` to split with custom rules.
  */
 export function splitDisplaySetsFromImageIds(
   seriesImageIds: string[],

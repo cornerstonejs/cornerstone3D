@@ -18,7 +18,7 @@ import type { SplitRuleSet } from './types';
  *
  * To customize splitting, do not edit this set - merge your own rules over it by
  * key (a new id adds a rule, an existing id replaces one, `priority: null`
- * excludes one), or compile your own selector with `createDisplaySetSplitRules`.
+ * excludes one), or compile your own rule set with `createDisplaySetSplitRules`.
  */
 export const compiledDisplaySetRules: SplitRuleSet =
   createDisplaySetSplitRules(displaySetRules);

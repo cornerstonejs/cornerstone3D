@@ -32,7 +32,7 @@ function ruleIdsFor(instances: NaturalizedInstance[], rules = undefined) {
   ).map((group) => group.matchedRule.id);
 }
 
-describe('displaySetRules - the selector as data', () => {
+describe('displaySetRules - the rules as data', () => {
   it('is pure JSON: survives a stringify/parse round trip', () => {
     // The whole point of the raw form is that it can cross a process boundary
     // (server index -> client viewer) as JSON, so it must contain no functions.
@@ -991,14 +991,14 @@ describe('sortBy and attributes', () => {
 });
 
 describe('createDisplaySetSplitRules - validation', () => {
-  it('rejects a selector that is not an object keyed by rule id', () => {
+  it('rejects rules that are not an object keyed by rule id', () => {
     expect(createDisplaySetSplitRules({})).toEqual({});
     expect(() => createDisplaySetSplitRules('rules' as never)).toThrow(
-      /Invalid display set rules: selector must be an object keyed by rule id/
+      /Invalid display set rules: the rules must be an object keyed by rule id/
     );
     expect(() =>
       createDisplaySetSplitRules([{ id: 'x', priority: 1 }] as never)
-    ).toThrow(/selector must be an object keyed by rule id/);
+    ).toThrow(/the rules must be an object keyed by rule id/);
   });
 
   // JSON.parse makes `__proto__` a real own key. Stored in a plain object, the

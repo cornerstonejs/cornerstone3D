@@ -51,7 +51,7 @@ function displaySetsOf(
   );
 }
 
-/** A selector of rules merged over the default rules, then compiled. */
+/** A rule set merged over the default rules, then compiled. */
 function withDefaults(
   rules: DisplaySetRules,
   options?: CreateDisplaySetSplitRulesOptions

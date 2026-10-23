@@ -206,22 +206,22 @@ export const displaySetRules = {
 /**
  * Compiles the display set rules into a `SplitRuleSet` with the same keys and
  * priorities, for `splitImageIdsBySplitRules` / `groupInstancesBySplitRules`.
- * A malformed selector throws here, at setup, and not during a split.
+ * A malformed rule set throws here, at setup, and not during a split.
  *
  * ```js
  * const rules = createDisplaySetSplitRules(displaySetRules); // = compiledDisplaySetRules
  * ```
  *
- * See "Extending a selector" in
+ * See "Extending the display set rules" in
  * `packages/docs/docs/concepts/cornerstone-metadata/display-sets.md`.
  *
- * @param {DisplaySetRules} [selector=displaySetRules] - the rules as data, keyed by rule id.
+ * @param {DisplaySetRules} [rules=displaySetRules] - the rules as data, keyed by rule id.
  * @param {CreateDisplaySetSplitRulesOptions} [options] - the global context, and named extension points.
  * @returns {SplitRuleSet} compiled rules, keyed by rule id.
  */
 export function createDisplaySetSplitRules(
-  selector = displaySetRules,
+  rules = displaySetRules,
   options = {}
 ) {
-  return compileDisplaySetSplitRules(selector, options);
+  return compileDisplaySetSplitRules(rules, options);
 }

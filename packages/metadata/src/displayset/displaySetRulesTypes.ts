@@ -31,7 +31,7 @@ import type {
  * actual function is accepted at every function place.
  *
  * @see displaySetContext.ts for the context and its default entries.
- * @see displaySetRules.js for the default selector.
+ * @see displaySetRules.js for the default rules.
  */
 
 export type {
@@ -83,12 +83,12 @@ export type RawAttributeValue =
   | { expression: string }
   | ((instances: NaturalizedInstance[], values: ContextValues) => unknown);
 
-/** One rule in a raw selector. Mirrors {@link SplitRuleSetEntry}, in data form. */
+/** One rule of the display set rules. Mirrors {@link SplitRuleSetEntry}, in data form. */
 export type RawSplitRule = {
   /**
-   * The rule id. Optional, because the rule's key in the selector is the id.
+   * The rule id. Optional, because the key of the rule in the rule set is the id.
    * When present it must equal that key. The id namespaces every bucket key the
-   * rule produces, so the selector can be edited without changing other rules'
+   * rule produces, so the rule set can be edited without changing other rules'
    * keys.
    */
   id?: string;
@@ -105,7 +105,7 @@ export type RawSplitRule = {
   /**
    * Human-readable explanation of what this rule is for. Part of the rule data
    * rather than a code comment so a UI that lets a user inspect or toggle rules
-   * can read it from the selector itself instead of maintaining its own copy.
+   * can read it from the rules themselves instead of maintaining its own copy.
    */
   description?: string;
   /** Allowed viewport types; index 0 is preferred. */
@@ -136,7 +136,7 @@ export type RawSplitRule = {
 };
 
 /**
- * A whole raw selector: rules keyed by rule id, the data form of a
+ * A whole rule set as data: rules keyed by rule id, the data form of a
  * `SplitRuleSet`. Rules are tried in ascending priority; first match wins.
  */
 export type DisplaySetRules = Record<string, RawSplitRule>;

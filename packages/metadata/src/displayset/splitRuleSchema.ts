@@ -32,7 +32,7 @@ const ruleShape: SchemaShape = {
           kind: 'string',
           optional: true,
           description:
-            'The rule id. Optional: the key of the rule in the selector is the id. When present it must equal that key.',
+            'The rule id. Optional: the key of the rule in the rule set is the id. When present it must equal that key.',
         },
         groupId: {
           kind: 'string',
