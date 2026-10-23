@@ -150,6 +150,45 @@ describe('series functions in the series and in one display set', () => {
       [['z1', 'z3', 'z5', 'z7'], 2, 0, 8, 1],
     ]);
   });
+
+  it('computes a series value one time for each split, and not one time for each display set', () => {
+    const compute = jest.fn((instances: NaturalizedInstance[]) => ({
+      count: instances.length,
+    }));
+    const rules = createDisplaySetSplitRules(
+      {
+        pairs: {
+          priority: 1,
+          groupBy: ['pair'],
+          sortBy: ['seriesCount', 'InstanceNumber'],
+          attributes: { count: { expression: 'summary.count' } },
+        },
+      },
+      {
+        displaySetContext: {
+          pair: { attribute: 'Pair' },
+          summary: { function: 'summarize' },
+          seriesCount: 'summary.count',
+        },
+        seriesFunctions: {
+          summarize: { compute, fields: { count: 'series' } },
+        },
+      }
+    );
+    const groups = groupInstancesBySplitRules(
+      [0, 1, 2, 3, 4, 5].map((n) =>
+        slice(`z${n}`, n, { InstanceNumber: n, Pair: Math.floor(n / 2) })
+      ),
+      rules
+    );
+    const counts = groups.map(
+      (group) =>
+        (createDisplaySetFromGroup(group) as unknown as Record<string, unknown>)
+          .count
+    );
+    expect(counts).toEqual([6, 6, 6]);
+    expect(compute).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe('timeClusters in attributes', () => {
@@ -279,6 +318,23 @@ describe('planeGeometry', () => {
       3,
       true,
     ]);
+  });
+
+  it('finds the lattice of a long series with work that grows about linearly', () => {
+    // The work is counted, and not timed: a check of every pair of 5000
+    // positions takes 25 million steps.
+    const count = 5000;
+    const long = Array.from({ length: count }, (_, i) =>
+      slice(`s${i}`, i % 97 ? i * 1.25 : i * 1.25 + 0.4)
+    );
+    const round = jest.spyOn(Math, 'round');
+    try {
+      const result = geometry(long);
+      expect([result.spacing, result.regularCount]).toEqual([1.25, 4948]);
+      expect(round.mock.calls.length).toBeLessThan(100 * count);
+    } finally {
+      round.mockRestore();
+    }
   });
 });
 

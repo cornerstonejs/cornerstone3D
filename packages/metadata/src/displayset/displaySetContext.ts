@@ -269,6 +269,11 @@ type Bound = {
   closure: ReadonlySet<string>;
   /** The rule of a rule entry; undefined for a global entry. */
   ruleId?: string;
+  /**
+   * True when the value can differ for each display set: a group with
+   * `over: 'displaySet'`, a code entry, or an entry that reads one.
+   */
+  perDisplaySet: boolean;
   /** For a code entry: the layer that resolves the names it reads at run time. */
   layer?: ContextLayer;
   /** For a code entry: its definition, so that a read of its own name gets the global entry. */
@@ -504,7 +509,8 @@ export function withInstances(
  * values in `context`, `matches` and `groupBy`. `sortBy` and `attributes` read
  * the values of one display set ({@link displaySetContextFor}): a series
  * function such as `planeGeometry` runs over the instances of the display set,
- * and `series.instances.*(...)` still runs over the series.
+ * and `series.instances.*(...)` still runs over the series. A series value
+ * that is the same for every display set comes from the cache of the split.
  */
 export class DisplaySetContextValues {
   private readonly runtimes = new WeakMap<ContextProgram, ContextRuntime>();
@@ -514,17 +520,24 @@ export class DisplaySetContextValues {
    *   series, or one display set.
    * @param seriesInstances - the instances of `series.instances.*(...)`.
    *   Defaults to `instances`.
+   * @param split - for one display set: the values of the split, which keep
+   *   the series values that are the same for every display set.
    */
   constructor(
     readonly instances: readonly NaturalizedInstance[],
-    readonly seriesInstances: readonly NaturalizedInstance[] = instances
+    readonly seriesInstances: readonly NaturalizedInstance[] = instances,
+    private readonly split?: DisplaySetContextValues
   ) {}
 
   /** The cache of one compiled rule set. */
   runtime(program: ContextProgram): ContextRuntime {
     let runtime = this.runtimes.get(program);
     if (!runtime) {
-      runtime = new ContextRuntime(this.instances, this.seriesInstances);
+      runtime = new ContextRuntime(
+        this.instances,
+        this.seriesInstances,
+        this.split?.runtime(program)
+      );
       this.runtimes.set(program, runtime);
     }
     return runtime;
@@ -534,19 +547,19 @@ export class DisplaySetContextValues {
 /**
  * The context values of one display set: a series function runs over
  * `instances`, and `series.instances.*(...)` over the instances of the split
- * that `series` holds.
+ * that `series` holds. The split computes each series value that is the same
+ * for every display set (a group with `over: 'series'`, an aggregate of
+ * `series.instances`), so the value is computed one time for each split.
+ * Without a split in `series`, the values cover `instances` only.
  */
 export function displaySetContextFor(
   series: SeriesFacts | undefined,
   instances: readonly NaturalizedInstance[]
 ): DisplaySetContextValues {
   const values = readOwn(series, DISPLAY_SET_CONTEXT_FACT);
-  return new DisplaySetContextValues(
-    instances,
-    values instanceof DisplaySetContextValues
-      ? values.seriesInstances
-      : instances
-  );
+  return values instanceof DisplaySetContextValues
+    ? new DisplaySetContextValues(instances, values.seriesInstances, values)
+    : new DisplaySetContextValues(instances);
 }
 
 /**
@@ -575,15 +588,22 @@ export class ContextRuntime {
   /**
    * @param instances - the instances that a series function runs over.
    * @param seriesInstances - the instances of `series.instances.*(...)`.
+   * @param split - for the runtime of one display set: the runtime of the
+   *   split, which computes and keeps each series value that is the same for
+   *   every display set. So such a value is computed one time for each split.
    */
   constructor(
     readonly instances: readonly NaturalizedInstance[],
-    readonly seriesInstances: readonly NaturalizedInstance[] = instances
+    readonly seriesInstances: readonly NaturalizedInstance[] = instances,
+    private readonly split?: ContextRuntime
   ) {}
 
   /** The value of a bound entry: for the series, or for one instance. */
   value(bound: Bound, instance: NaturalizedInstance | undefined): unknown {
     if (bound.scope === 'series') {
+      if (this.split && !bound.perDisplaySet) {
+        return this.split.value(bound, undefined);
+      }
       if (!this.seriesValues.has(bound.key)) {
         this.seriesValues.set(bound.key, this.compute(bound, undefined));
       }
@@ -728,14 +748,24 @@ export class ContextRuntime {
     return env;
   }
 
-  /** The instance environments of an entry, for the aggregates. */
+  /**
+   * The instance environments of an entry, for the aggregates. The
+   * environments of the series instances come from the split when they are
+   * the same for every display set.
+   */
   envsOf(
-    bound: Pick<Bound, 'key' | 'deps' | 'layer' | 'definition'>,
+    bound: Pick<
+      Bound,
+      'key' | 'deps' | 'layer' | 'definition' | 'perDisplaySet'
+    >,
     instances: readonly NaturalizedInstance[] = this.seriesInstances,
     extras?: Extras
   ): object[] {
     if (extras || instances !== this.seriesInstances) {
       return instances.map((instance) => this.env(bound, instance, extras));
+    }
+    if (this.split && !bound.perDisplaySet) {
+      return this.split.envsOf(bound, this.split.seriesInstances);
     }
     let envs = this.instanceEnvs.get(bound.key);
     if (!envs) {
@@ -1011,11 +1041,19 @@ export class ContextProgram {
         this.dependencyOf(read, undefined, layer, [], site, 'attributes')
       );
     }
-    const scope = { key: `#attribute:${site.path}`, deps };
+    const perDisplaySet = [...deps.values()].some(
+      (dependency) =>
+        dependency.kind === 'attribute' ||
+        (dependency.kind === 'entry' && dependency.bound.perDisplaySet)
+    );
+    const scope = { key: `#attribute:${site.path}`, deps, perDisplaySet };
     return (runtime, instances, extras) =>
       evaluate(
         runtime.env(scope, instances[0], extras),
-        runtime.envsOf(scope, runtime.seriesInstances, extras),
+        // With no attribute-only name, the series environments need no extras.
+        perDisplaySet
+          ? runtime.envsOf(scope, runtime.seriesInstances, extras)
+          : runtime.envsOf(scope),
         runtime.envsOf(scope, instances, extras)
       );
   }
@@ -1205,6 +1243,14 @@ export class ContextProgram {
       deps,
       closure,
       ruleId: definition.ruleId,
+      // A code entry resolves its names at run time, so it can read anything.
+      perDisplaySet:
+        definition.kind === 'code' ||
+        (definition.kind === 'group' && definition.over === 'displaySet') ||
+        [...deps.values()].some(
+          (dependency) =>
+            dependency.kind === 'entry' && dependency.bound.perDisplaySet
+        ),
       compute: () => undefined,
     };
 

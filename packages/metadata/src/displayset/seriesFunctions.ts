@@ -65,6 +65,102 @@ function readVector(
 
 const round = (value: number, step: number) => Math.round(value / step) * step;
 
+/** The first index of the sorted `values` with a value >= `value` (or > with `after`). */
+function searchSorted(values: number[], value: number, after = false): number {
+  let low = 0;
+  let high = values.length;
+  while (low < high) {
+    const mid = (low + high) >> 1;
+    if (values[mid] < value || (after && values[mid] === value)) {
+      low = mid + 1;
+    } else {
+      high = mid;
+    }
+  }
+  return low;
+}
+
+/**
+ * The lattice anchor of {@link planeGeometry}: the first of the ascending
+ * `distinct` positions that puts the most positions on its lattice.
+ *
+ * Each position has a phase, its offset from `distinct[0]` in units of the
+ * spacing, modulo 1. Two positions are on one lattice when their phases are
+ * within `tolerance` on the circle, so a binary search over the sorted phases
+ * counts the members of each candidate in O(log n). A phase within `EPSILON`
+ * of the edge of the window is checked with `offLattice` itself, so the count
+ * is the same as a check of every pair, also at the edge.
+ */
+function latticeAnchor(
+  distinct: number[],
+  spacing: number,
+  tolerance: number,
+  offLattice: (from: number, to: number) => boolean
+): number {
+  const EPSILON = 1e-6;
+  const n = distinct.length;
+  const countOf = (from: number, lo: number, hi: number, values: number[]) => {
+    let count = 0;
+    for (let i = lo; i < hi; i++) {
+      count += offLattice(from, values[i]) ? 0 : 1;
+    }
+    return count;
+  };
+  if (tolerance >= 0.5) {
+    // No offset is more than half a step from an integer.
+    return distinct[0];
+  }
+  let counts: (index: number) => number;
+  if (tolerance + EPSILON >= 0.5) {
+    // The window wraps the circle: check every pair.
+    counts = (index) => countOf(distinct[index], 0, n, distinct);
+  } else {
+    const phaseOf = (d: number) => {
+      const steps = (d - distinct[0]) / spacing;
+      return steps - Math.floor(steps);
+    };
+    const order = distinct
+      .map((d) => [phaseOf(d), d])
+      .sort(([a], [b]) => a - b);
+    // Three turns of the circle, so a window near 0 or 1 wraps.
+    const phases: number[] = [];
+    const values: number[] = [];
+    for (const turn of [-1, 0, 1]) {
+      for (const [phase, d] of order) {
+        phases.push(phase + turn);
+        values.push(d);
+      }
+    }
+    counts = (index) => {
+      const from = distinct[index];
+      const phase = phaseOf(from);
+      const lo = searchSorted(phases, phase - tolerance - EPSILON);
+      const hi = searchSorted(phases, phase + tolerance + EPSILON, true);
+      const innerLo = searchSorted(phases, phase - tolerance + EPSILON);
+      const innerHi = searchSorted(phases, phase + tolerance - EPSILON, true);
+      if (innerLo >= innerHi) {
+        return countOf(from, lo, hi, values);
+      }
+      return (
+        innerHi -
+        innerLo +
+        countOf(from, lo, innerLo, values) +
+        countOf(from, innerHi, hi, values)
+      );
+    };
+  }
+  let anchor = distinct[0];
+  let bestCount = -1;
+  for (let index = 0; index < n; index++) {
+    const count = counts(index);
+    if (count > bestCount) {
+      bestCount = count;
+      anchor = distinct[index];
+    }
+  }
+  return anchor;
+}
+
 /** The summary that {@link planeGeometry} returns. */
 export type PlaneGeometry = {
   /** The unit normal of the dominant image orientation. */
@@ -207,15 +303,7 @@ export const planeGeometry: SeriesFunction = (instances, { args }) => {
     const steps = (to - from) / spacing;
     return Math.abs(steps - Math.round(steps)) > tolerance;
   };
-  let anchor = distinct[0];
-  let bestCount = -1;
-  for (const candidate of distinct) {
-    const count = distinct.filter((d) => !offLattice(candidate, d)).length;
-    if (count > bestCount) {
-      bestCount = count;
-      anchor = candidate;
-    }
-  }
+  const anchor = latticeAnchor(distinct, spacing, tolerance, offLattice);
 
   const regular = projected.filter(({ d }) => !offLattice(anchor, d));
   result.irregularCount += projected.length - regular.length;
