@@ -1,0 +1,198 @@
+import * as cornerstone3D from '../src/index';
+import {
+  fakeImageLoader,
+  fakeMetaDataProvider,
+} from '../../../utils/test/testUtilsImageLoader';
+
+import { describe, it, expect } from '@jest/globals';
+
+const {
+  utilities,
+  setUseCPURendering,
+  RenderingEngine,
+  Enums,
+  imageLoader,
+  metaData,
+  init,
+} = cornerstone3D;
+const { ViewportType, Events } = Enums;
+
+const renderingEngineId = utilities.uuidv4();
+const viewportId = 'VIEWPORT';
+
+function encodeImageIdInfo(info) {
+  return `fakeImageLoader:${encodeURIComponent(JSON.stringify(info))}`;
+}
+
+const imageInfo = {
+  loader: 'fakeImageLoader',
+  name: 'imageURI',
+  rows: 64,
+  columns: 64,
+  barStart: 20,
+  barWidth: 5,
+  xSpacing: 1,
+  ySpacing: 1,
+  sliceIndex: 0,
+};
+
+const imageId = encodeImageIdInfo(imageInfo);
+
+function setSize(element, width, height) {
+  Object.defineProperty(element, 'offsetWidth', { value: width });
+  Object.defineProperty(element, 'offsetHeight', { value: height });
+  Object.defineProperty(element, 'clientWidth', { value: width });
+  Object.defineProperty(element, 'clientHeight', { value: height });
+  Object.defineProperty(element, 'getBoundingClientRect', {
+    value: () => ({ width, height }),
+  });
+}
+
+function initCore() {
+  init({});
+  imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader);
+
+  metaData.addProvider(utilities.calibratedPixelSpacingMetadataProvider.get);
+  metaData.addProvider(utilities.genericMetadataProvider.get);
+  metaData.addProvider(fakeMetaDataProvider, 10000);
+
+  document.body.innerHTML = `<div id="elementId" style="width:128px; height: 128px">
+      <div id="viewport-element" class="viewport-element">
+        <canvas id="cornerstone-canvas" class="cornerstone-canvas" width="128" height="128"/>
+      </div>
+    </div>`;
+  const renderingEngine = new RenderingEngine(renderingEngineId);
+  const element = document.getElementById('elementId');
+  setSize(element, 100, 100);
+  const viewportElement = document.getElementById('viewport-element');
+  setSize(viewportElement, 100, 100);
+  const canvasElement = document.getElementById('cornerstone-canvas');
+  setSize(canvasElement, 100, 100);
+  return { renderingEngine, element };
+}
+
+describe('stackViewport CPU setDisplayArea', function () {
+  let viewport, element, renderingEngine;
+
+  beforeEach(async () => {
+    setUseCPURendering(true);
+    window.devicePixelRatio = 1;
+
+    const initData = initCore();
+    element = initData.element;
+    renderingEngine = initData.renderingEngine;
+
+    renderingEngine.enableElement({
+      viewportId,
+      type: ViewportType.STACK,
+      element,
+    });
+    viewport = renderingEngine.getViewport(viewportId);
+    await viewport.setStack([imageId], 0);
+  });
+
+  afterEach(() => {
+    renderingEngine.destroy();
+    metaData.removeAllProviders();
+    imageLoader.unregisterAllImageLoaders();
+    setUseCPURendering(false);
+  });
+
+  it('does not throw and zooms to the requested image area', () => {
+    const fitZoom = viewport.getZoom();
+
+    expect(() =>
+      viewport.setDisplayArea({ imageArea: [0.5, 0.5] })
+    ).not.toThrow();
+
+    expect(viewport.getZoom()).toBeCloseTo(fitZoom * 2, 5);
+  });
+
+  it('gives the same result when the same area is set twice', () => {
+    const displayArea = {
+      imageArea: [0.5, 0.5],
+      imageCanvasPoint: { imagePoint: [0.25, 0.25], canvasPoint: [0.5, 0.5] },
+    };
+    viewport.setDisplayArea(displayArea);
+    const first = viewport.getCamera();
+    viewport.setDisplayArea(displayArea);
+    const second = viewport.getCamera();
+
+    expect(second.scale).toBeCloseTo(first.scale, 5);
+    first.focalPoint.forEach((value, i) =>
+      expect(second.focalPoint[i]).toBeCloseTo(value, 5)
+    );
+  });
+
+  it('applies a SCALE display area as one image pixel per screen pixel', () => {
+    viewport.setDisplayArea({ type: 'SCALE', scale: 1 });
+
+    expect(viewport.getZoom()).toBeCloseTo(1, 5);
+  });
+
+  function imageTopLeftOnCanvas() {
+    const { imageData } = viewport.getImageData();
+    return viewport.worldToCanvas(imageData.indexToWorld([0, 0, 0]));
+  }
+
+  it('moves the image point to the requested canvas point', () => {
+    viewport.setDisplayArea({
+      imageCanvasPoint: { imagePoint: [0, 0], canvasPoint: [0.5, 0.5] },
+    });
+
+    const topLeft = imageTopLeftOnCanvas();
+    expect(topLeft[0]).toBeCloseTo(50, 3);
+    expect(topLeft[1]).toBeCloseTo(50, 3);
+  });
+
+  it('keeps a centered image in place for a centered point', () => {
+    viewport.setDisplayArea({
+      imageCanvasPoint: { imagePoint: [0.5, 0.5], canvasPoint: [0.5, 0.5] },
+    });
+
+    const topLeft = imageTopLeftOnCanvas();
+    expect(topLeft[0]).toBeCloseTo(0, 3);
+    expect(topLeft[1]).toBeCloseTo(0, 3);
+  });
+
+  it('applies the zoom and the pan together', () => {
+    const fitZoom = viewport.getZoom();
+    viewport.setDisplayArea({
+      imageArea: [0.5, 0.5],
+      imageCanvasPoint: { imagePoint: [0, 0], canvasPoint: [0, 0] },
+    });
+
+    expect(viewport.getZoom()).toBeCloseTo(fitZoom * 2, 5);
+    const topLeft = imageTopLeftOnCanvas();
+    expect(topLeft[0]).toBeCloseTo(0, 3);
+    expect(topLeft[1]).toBeCloseTo(0, 3);
+  });
+
+  it('keeps a stored display area after a camera reset', () => {
+    const fitZoom = viewport.getZoom();
+    viewport.setDisplayArea({
+      imageArea: [0.5, 0.5],
+      storeAsInitialCamera: true,
+    });
+    viewport.setZoom(fitZoom * 5);
+
+    viewport.resetCamera();
+
+    expect(viewport.getZoom()).toBeCloseTo(fitZoom * 2, 5);
+  });
+
+  it('applies a display area given in the viewport options on load', async () => {
+    const fitZoom = viewport.getZoom();
+    renderingEngine.disableElement(viewportId);
+    renderingEngine.enableElement({
+      viewportId,
+      type: ViewportType.STACK,
+      element,
+      defaultOptions: { displayArea: { imageArea: [0.5, 0.5] } },
+    });
+    viewport = renderingEngine.getViewport(viewportId);
+    await viewport.setStack([imageId], 0);
+
+    expect(viewport.getZoom()).toBeCloseTo(fitZoom * 2, 5);
+  });
+});
