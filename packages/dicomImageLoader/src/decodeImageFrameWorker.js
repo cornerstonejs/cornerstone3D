@@ -195,6 +195,7 @@ function _handleTargetBuffer(
     offset: rawOffset = 0,
     length: rawLength,
     rows,
+    columns,
   } = options.targetBuffer;
 
   const TypedArrayConstructor = typedArrayConstructors[type];
@@ -203,7 +204,11 @@ function _handleTargetBuffer(
     throw new Error(`target array ${type} is not supported, or doesn't exist.`);
   }
 
-  if (rows && rows != imageFrame.rows) {
+  if (
+    (rows && rows != imageFrame.rows) ||
+    (columns && columns != imageFrame.columns)
+  ) {
+    _checkSameScaleRatio(imageFrame, rows, columns);
     scaleImageFrame(imageFrame, options.targetBuffer, TypedArrayConstructor);
   }
   const imageFrameLength = imageFrame.pixelDataLength;
@@ -233,6 +238,25 @@ function _handleTargetBuffer(
   // If need to scale, need to scale correct array.
   pixelDataArray = typedArray;
   return pixelDataArray;
+}
+
+/**
+ * scaleImageFrame is meant for scaling the rows and the columns by one ratio.
+ * The ratio comes from the rows, and the columns have to follow it. A small
+ * difference is allowed, because a reduced resolution decode rounds an odd
+ * size up (513 columns at half size decode to 257, not 256.5).
+ */
+function _checkSameScaleRatio(imageFrame, rows, columns) {
+  if (!columns) {
+    return;
+  }
+  const ratio = rows ? rows / imageFrame.rows : NaN;
+  const expectedColumns = imageFrame.columns * ratio;
+  if (!(Math.abs(columns - expectedColumns) < Math.max(1, ratio))) {
+    throw new Error(
+      `target buffer size ${rows}x${columns} (rows x columns) does not have the same rows to columns ratio as the decoded image ${imageFrame.rows}x${imageFrame.columns}, and scaleImageFrame only scales rows and columns by the same ratio.`
+    );
+  }
 }
 
 function _handlePreScaleSetup(

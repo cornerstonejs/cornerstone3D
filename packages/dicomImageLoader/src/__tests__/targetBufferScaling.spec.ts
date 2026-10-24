@@ -1,0 +1,107 @@
+import { postProcessDecodedPixels } from '../decodeImageFrameWorker';
+
+// The worker imports every decoder, and the WASM ones don't load under jest.
+jest.mock('../shared/decoders/decodeJPEGBaseline8Bit', () => jest.fn());
+jest.mock('../shared/decoders/decodeJPEGLossless', () => jest.fn());
+jest.mock('../shared/decoders/decodeJPEGLS', () => jest.fn());
+jest.mock('../shared/decoders/decodeJPEG2000', () => jest.fn());
+jest.mock('../shared/decoders/decodeHTJ2K', () => jest.fn());
+jest.mock('../shared/decoders/decodeJPEGXL', () => jest.fn());
+
+/** A grayscale frame of the given size, with values 1, 2, 3, ... */
+function makeFrame(rows: number, columns: number) {
+  return {
+    rows,
+    columns,
+    samplesPerPixel: 1,
+    pixelRepresentation: 0,
+    photometricInterpretation: 'MONOCHROME2',
+    pixelData: Uint16Array.from({ length: rows * columns }, (_, i) => i + 1),
+  };
+}
+
+function process(frame, targetBuffer) {
+  return postProcessDecodedPixels(
+    frame,
+    { preScale: { enabled: false }, targetBuffer },
+    Date.now(),
+    {}
+  );
+}
+
+describe('postProcessDecodedPixels with a target buffer', () => {
+  it('scales rows and columns by the same ratio', () => {
+    // 2 x 2 decoded, 4 x 4 wanted, so both sides double. The default
+    // replicate scaling lines up the first and last pixels of each side.
+    const result = process(makeFrame(2, 2), {
+      type: 'Uint16Array',
+      rows: 4,
+      columns: 4,
+    });
+
+    expect(result.rows).toBe(4);
+    expect(result.columns).toBe(4);
+    expect(Array.from(result.pixelData)).toEqual([
+      1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 2, 3, 3, 3, 4,
+    ]);
+  });
+
+  it('scales a frame that is not square by the same ratio', () => {
+    // 2 x 3 decoded, 4 x 6 wanted
+    const result = process(makeFrame(2, 3), {
+      type: 'Uint16Array',
+      rows: 4,
+      columns: 6,
+    });
+
+    expect(result.rows).toBe(4);
+    expect(result.columns).toBe(6);
+    expect(result.pixelData.length).toBe(24);
+  });
+
+  it('accepts a target whose columns round to the rows ratio', () => {
+    // A half size decode of 4 x 5 gives 2 x 3 (the odd side rounds up)
+    const result = process(makeFrame(2, 3), {
+      type: 'Uint16Array',
+      rows: 4,
+      columns: 5,
+    });
+
+    expect(result.rows).toBe(4);
+    expect(result.columns).toBe(5);
+    expect(result.pixelData.length).toBe(20);
+  });
+
+  it('throws a clear error when only the columns differ from the target', () => {
+    expect(() =>
+      process(makeFrame(2, 2), {
+        type: 'Uint16Array',
+        rows: 2,
+        columns: 4,
+      })
+    ).toThrow(/does not have the same rows to columns ratio/);
+  });
+
+  it('throws a clear error when the columns do not follow the rows ratio', () => {
+    // rows double, columns triple
+    expect(() =>
+      process(makeFrame(2, 2), {
+        type: 'Uint16Array',
+        rows: 4,
+        columns: 6,
+      })
+    ).toThrow(/does not have the same rows to columns ratio/);
+  });
+
+  it('leaves a frame that already has the target size alone', () => {
+    const result = process(makeFrame(2, 3), {
+      type: 'Uint16Array',
+      rows: 2,
+      columns: 3,
+    });
+
+    expect(result.rows).toBe(2);
+    expect(result.columns).toBe(3);
+    expect(Array.from(result.pixelData)).toEqual([1, 2, 3, 4, 5, 6]);
+  });
+});
