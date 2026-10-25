@@ -181,6 +181,16 @@ describe('stackViewport CPU setDisplayArea', function () {
     expect(viewport.getZoom()).toBeCloseTo(fitZoom * 2, 5);
   });
 
+  it('keeps the fit baseline when a reset leaves the zoom alone', () => {
+    const fitZoom = viewport.getZoom();
+    viewport.setZoom(fitZoom * 3);
+
+    viewport.resetCamera({ resetPan: true, resetZoom: false });
+    viewport.setDisplayArea({ imageArea: [0.5, 0.5] });
+
+    expect(viewport.getZoom()).toBeCloseTo(fitZoom * 2, 5);
+  });
+
   it('applies a display area given in the viewport options on load', async () => {
     const fitZoom = viewport.getZoom();
     renderingEngine.disableElement(viewportId);

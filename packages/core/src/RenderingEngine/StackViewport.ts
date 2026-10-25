@@ -2977,8 +2977,11 @@ class StackViewport extends Viewport {
     });
 
     // setDisplayArea works relative to the fit to canvas camera, so keep it
-    // up to date here the same way the GPU reset does.
-    this.setFitToCanvasCamera(this.getCameraCPU() as ICamera);
+    // up to date here. Only a full reset gives a fitted camera; a partial
+    // reset keeps the user's zoom or pan, so keep the existing baseline.
+    if (resetPan && resetZoom) {
+      this.setFitToCanvasCamera(this.getCameraCPU() as ICamera);
+    }
   }
 
   private resetCameraGPU(resetOptions: ResetCameraOptions): boolean {
