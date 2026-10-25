@@ -2527,8 +2527,18 @@ class StackViewport extends Viewport {
 
     // setDisplayArea measures against the fit to canvas camera, so take it
     // from a fresh fit of this image. The next image in the stack can have a
-    // different size or spacing than the last one.
-    this._cpuFallbackEnabledElement.viewport = viewport;
+    // different size or spacing than the last one. Fit with the stored aspect
+    // ratio, as resetCameraCPU does, so setDisplayArea keeps the stretch.
+    const fitAspectRatio = this.options?.aspectRatio || ([1, 1] as Point2);
+    const [stretchX, stretchY] = getNormalizedAspectRatio(fitAspectRatio);
+    this._cpuFallbackEnabledElement.viewport = {
+      ...viewport,
+      scale:
+        viewport.scale /
+        (this.getFitParallelScaleCPU(stretchX / stretchY) /
+          this.getFitParallelScaleCPU(1)),
+      aspectRatio: fitAspectRatio,
+    };
     this._cpuFallbackEnabledElement.transform = calculateTransform(
       this._cpuFallbackEnabledElement
     );
@@ -2854,7 +2864,9 @@ class StackViewport extends Viewport {
 
   /**
    * The base flip moves the vtk camera, which the CPU fallback does not use.
-   * On CPU flip the image itself, toggling like the base method does.
+   * On CPU flip the image itself. Callers only ask for a flip when the state
+   * has to change, and setViewPresentation passes false to clear a flip, so
+   * any defined value toggles.
    */
   protected flip({ flipHorizontal, flipVertical }: FlipDirection): void {
     if (!this.useCPURendering) {
@@ -2863,8 +2875,9 @@ class StackViewport extends Viewport {
     }
 
     this.setFlipCPU({
-      flipHorizontal: flipHorizontal ? !this.flipHorizontal : undefined,
-      flipVertical: flipVertical ? !this.flipVertical : undefined,
+      flipHorizontal:
+        flipHorizontal !== undefined ? !this.flipHorizontal : undefined,
+      flipVertical: flipVertical !== undefined ? !this.flipVertical : undefined,
     });
     this.render();
   }

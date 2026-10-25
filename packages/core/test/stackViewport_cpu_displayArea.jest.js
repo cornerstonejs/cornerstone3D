@@ -219,4 +219,31 @@ describe('stackViewport CPU setDisplayArea', function () {
     expect(viewport.getCamera().flipHorizontal).toBe(true);
     expect(viewport._cpuFallbackEnabledElement.viewport.hflip).toBe(true);
   });
+
+  it('clears a CPU flip when the view presentation asks for no flip', () => {
+    viewport.setViewPresentation({ flipHorizontal: true, flipVertical: true });
+    viewport.setViewPresentation({
+      flipHorizontal: false,
+      flipVertical: false,
+    });
+
+    const { viewport: cpuViewport } = viewport._cpuFallbackEnabledElement;
+    expect(viewport.getCamera().flipHorizontal).toBe(false);
+    expect(viewport.getCamera().flipVertical).toBe(false);
+    expect(cpuViewport.hflip).toBe(false);
+    expect(cpuViewport.vflip).toBe(false);
+  });
+
+  it('keeps a stored aspect ratio when a display area is set after scrolling', async () => {
+    const otherImageId = encodeImageIdInfo({ ...imageInfo, sliceIndex: 1 });
+    await viewport.setStack([imageId, otherImageId], 0);
+    viewport.setAspectRatio([2, 1], { storeAsInitialCamera: true, fit: true });
+    const stretchedFitZoom = viewport.getZoom();
+
+    await viewport.setImageIdIndex(1);
+    viewport.setDisplayArea({ imageArea: [0.5, 0.5] });
+
+    expect(viewport.getAspectRatio()).toEqual([2, 1]);
+    expect(viewport.getZoom()).toBeCloseTo(stretchedFitZoom * 2, 5);
+  });
 });
