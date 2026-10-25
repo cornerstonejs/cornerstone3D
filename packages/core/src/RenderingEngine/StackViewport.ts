@@ -2525,6 +2525,15 @@ class StackViewport extends Viewport {
 
     const isNewViewport = this.stackInvalidated;
 
+    // setDisplayArea measures against the fit to canvas camera, so take it
+    // from a fresh fit of this image. The next image in the stack can have a
+    // different size or spacing than the last one.
+    this._cpuFallbackEnabledElement.viewport = viewport;
+    this._cpuFallbackEnabledElement.transform = calculateTransform(
+      this._cpuFallbackEnabledElement
+    );
+    this.setFitToCanvasCamera(this.getCameraCPU() as ICamera);
+
     // Important: this.stackInvalidated is different than cpuRenderingInvalidated. The
     // former is being used to maintain the previous state of the viewport
     // in the same stack, the latter is used to trigger drawImageSync
@@ -2542,13 +2551,8 @@ class StackViewport extends Viewport {
       this._cpuFallbackEnabledElement
     );
 
-    // A fresh CPU viewport is already fit to the canvas, so that is the camera
-    // setDisplayArea has to measure against. Without it setDisplayArea throws.
-    if (isNewViewport || !this.fitToCanvasCamera) {
-      this.setFitToCanvasCamera(this.getCameraCPU() as ICamera);
-      if (isNewViewport && this.options?.displayArea) {
-        this.setDisplayArea(this.options.displayArea);
-      }
+    if (isNewViewport && this.options?.displayArea) {
+      this.setDisplayArea(this.options.displayArea);
     }
   }
 
@@ -2846,6 +2850,23 @@ class StackViewport extends Viewport {
       return this.getImageDataCPU()?.imageData as unknown as vtkImageDataType;
     }
     return super.getDefaultImageData();
+  }
+
+  /**
+   * The base flip moves the vtk camera, which the CPU fallback does not use.
+   * On CPU flip the image itself, toggling like the base method does.
+   */
+  protected flip({ flipHorizontal, flipVertical }: FlipDirection): void {
+    if (!this.useCPURendering) {
+      super.flip({ flipHorizontal, flipVertical });
+      return;
+    }
+
+    this.setFlipCPU({
+      flipHorizontal: flipHorizontal ? !this.flipHorizontal : undefined,
+      flipVertical: flipVertical ? !this.flipVertical : undefined,
+    });
+    this.render();
   }
 
   /**

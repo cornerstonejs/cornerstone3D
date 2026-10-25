@@ -195,4 +195,28 @@ describe('stackViewport CPU setDisplayArea', function () {
 
     expect(viewport.getZoom()).toBeCloseTo(fitZoom * 2, 5);
   });
+
+  it('measures the display area against the image on screen after scrolling', async () => {
+    const largeImageId = encodeImageIdInfo({
+      ...imageInfo,
+      rows: 128,
+      columns: 128,
+      sliceIndex: 1,
+    });
+    await viewport.setStack([largeImageId], 0);
+    const largeFitZoom = viewport.getZoom();
+
+    await viewport.setStack([imageId, largeImageId], 0);
+    await viewport.setImageIdIndex(1);
+    viewport.setDisplayArea({ imageArea: [0.5, 0.5] });
+
+    expect(viewport.getZoom()).toBeCloseTo(largeFitZoom * 2, 5);
+  });
+
+  it('flips the CPU image when the view presentation asks for a flip', () => {
+    viewport.setViewPresentation({ flipHorizontal: true });
+
+    expect(viewport.getCamera().flipHorizontal).toBe(true);
+    expect(viewport._cpuFallbackEnabledElement.viewport.hflip).toBe(true);
+  });
 });
