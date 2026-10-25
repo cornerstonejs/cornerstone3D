@@ -72,6 +72,19 @@ describe('postProcessDecodedPixels with a target buffer', () => {
     expect(result.pixelData.length).toBe(20);
   });
 
+  it('accepts a half size decode of a frame with odd rows and columns', () => {
+    // 513 x 2049 at half size decodes to 257 x 1025, where both sides round up
+    const result = process(makeFrame(257, 1025), {
+      type: 'Uint16Array',
+      rows: 513,
+      columns: 2049,
+    });
+
+    expect(result.rows).toBe(513);
+    expect(result.columns).toBe(2049);
+    expect(result.pixelData.length).toBe(513 * 2049);
+  });
+
   it('throws a clear error when only the columns differ from the target', () => {
     expect(() =>
       process(makeFrame(2, 2), {

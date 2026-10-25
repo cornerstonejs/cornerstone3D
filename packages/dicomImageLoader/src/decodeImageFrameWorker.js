@@ -242,21 +242,35 @@ function _handleTargetBuffer(
 
 /**
  * scaleImageFrame is meant for scaling the rows and the columns by one ratio.
- * The ratio comes from the rows, and the columns have to follow it. A small
- * difference is allowed, because a reduced resolution decode rounds an odd
- * size up (513 columns at half size decode to 257, not 256.5).
+ * The target is accepted when both sides follow the same ratio exactly, or
+ * when the decoded frame is what a reduced resolution decode by a whole
+ * factor gives, since that rounds an odd size up (513 x 2049 at half size
+ * decodes to 257 x 1025).
  */
 function _checkSameScaleRatio(imageFrame, rows, columns) {
   if (!columns) {
     return;
   }
-  const ratio = rows ? rows / imageFrame.rows : NaN;
-  const expectedColumns = imageFrame.columns * ratio;
-  if (!(Math.abs(columns - expectedColumns) < Math.max(1, ratio))) {
-    throw new Error(
-      `target buffer size ${rows}x${columns} (rows x columns) does not have the same rows to columns ratio as the decoded image ${imageFrame.rows}x${imageFrame.columns}, and scaleImageFrame only scales rows and columns by the same ratio.`
-    );
+  if (rows && _isSameScaleRatio(imageFrame, rows, columns)) {
+    return;
   }
+  throw new Error(
+    `target buffer size ${rows}x${columns} (rows x columns) does not have the same rows to columns ratio as the decoded image ${imageFrame.rows}x${imageFrame.columns}, and scaleImageFrame only scales rows and columns by the same ratio.`
+  );
+}
+
+function _isSameScaleRatio(imageFrame, rows, columns) {
+  if (rows * imageFrame.columns === columns * imageFrame.rows) {
+    return true;
+  }
+  const factor = Math.round(rows / imageFrame.rows);
+  if (factor < 1) {
+    return false;
+  }
+  return (
+    Math.ceil(rows / factor) === imageFrame.rows &&
+    Math.ceil(columns / factor) === imageFrame.columns
+  );
 }
 
 function _handlePreScaleSetup(
