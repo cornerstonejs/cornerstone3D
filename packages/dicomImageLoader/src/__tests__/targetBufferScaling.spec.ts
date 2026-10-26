@@ -152,6 +152,22 @@ describe('postProcessDecodedPixels with a target buffer', () => {
     expect(Array.from(result.pixelData)).toEqual([1, 2, 3, 4, 5, 6]);
   });
 
+  it('writes a view at the byte offset when length is left out', () => {
+    // offset is in bytes, so 4 bytes skips two Uint16 values
+    const arrayBuffer = new ArrayBuffer(4 + 6 * 2);
+    const result = process(makeFrame(2, 3), {
+      type: 'Uint16Array',
+      arrayBuffer,
+      offset: 4,
+    });
+
+    expect(result.pixelData.buffer).toBe(arrayBuffer);
+    expect(result.pixelData.byteOffset).toBe(4);
+    expect(Array.from(new Uint16Array(arrayBuffer))).toEqual([
+      0, 0, 1, 2, 3, 4, 5, 6,
+    ]);
+  });
+
   it('leaves a frame that already has the target size alone', () => {
     const result = process(makeFrame(2, 3), {
       type: 'Uint16Array',

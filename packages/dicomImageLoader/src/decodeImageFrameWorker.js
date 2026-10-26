@@ -227,7 +227,7 @@ function _handleTargetBuffer(
   const length =
     rawLength !== null && rawLength !== undefined
       ? rawLength
-      : imageFrameLength - offset;
+      : imageFrameLength;
 
   const imageFramePixelData = imageFrame.pixelData;
 
