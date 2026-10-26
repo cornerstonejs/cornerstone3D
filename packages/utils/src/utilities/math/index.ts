@@ -9,3 +9,5 @@ export {
   isNumber,
 } from './isEqual';
 export { default as isEqualDefault } from './isEqual';
+export { isSameScaleRatio } from './isSameScaleRatio';
+export type { ImageSize } from './isSameScaleRatio';
