@@ -2977,10 +2977,20 @@ class StackViewport extends Viewport {
     });
 
     // setDisplayArea works relative to the fit to canvas camera, so keep it
-    // up to date here. Only a full reset gives a fitted camera; a partial
-    // reset keeps the user's zoom or pan, so keep the existing baseline.
-    if (resetPan && resetZoom) {
-      this.setFitToCanvasCamera(this.getCameraCPU() as ICamera);
+    // up to date here. A full reset gives a fitted camera. A zoom only reset
+    // (as setAspectRatioCPU does with fit) gives the fitted zoom and aspect
+    // ratio but keeps the user's pan, so take those and keep the baseline
+    // pan. A reset that leaves the zoom alone keeps the existing baseline.
+    const fittedCamera = this.getCameraCPU() as ICamera;
+    if ((resetPan && resetZoom) || !this.fitToCanvasCamera) {
+      this.setFitToCanvasCamera(fittedCamera);
+    } else if (resetZoom) {
+      this.setFitToCanvasCamera({
+        ...this.fitToCanvasCamera,
+        parallelScale: fittedCamera.parallelScale,
+        scale: fittedCamera.scale,
+        aspectRatio: fittedCamera.aspectRatio,
+      });
     }
   }
 

@@ -256,4 +256,14 @@ describe('stackViewport CPU setDisplayArea', function () {
     expect(viewport.getAspectRatio()).toEqual([2, 1]);
     expect(viewport.getZoom()).toBeCloseTo(stretchedFitZoom * 2, 5);
   });
+
+  it('keeps a fitted aspect ratio change as the display area baseline', () => {
+    viewport.setAspectRatio([2, 1], { storeAsInitialCamera: true, fit: true });
+    const stretchedFitZoom = viewport.getZoom();
+
+    viewport.setDisplayArea({ imageArea: [0.5, 0.5] });
+
+    expect(viewport.getAspectRatio()).toEqual([2, 1]);
+    expect(viewport.getZoom()).toBeCloseTo(stretchedFitZoom * 2, 5);
+  });
 });
