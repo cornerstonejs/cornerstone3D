@@ -34,7 +34,7 @@ export type RawScalar = string | number | boolean;
 export type RawMatchTest =
   /** Equal to the scalar, with `==`. */
   | RawScalar
-  /** Equal to one element. */
+  /** Shorthand for `includes`: one value is in the array. */
   | RawScalar[]
   /** No value: absent, or `null`, `''`, `[]`. */
   | null

@@ -172,6 +172,21 @@ and no release had them:
 - The aggregates `some`, `every`, `minOf`, `maxOf`, `sumOf` and
   `count(list, expr)` (`RL-EXPR-1`).
 
+### Changes of 26 October
+
+- `RL-VALUE-5`, `RL-READ-2` and `RL-VAL-3` change their meaning again. `==`
+  and the scalar test are now strict: a single value equals an array only when
+  the array has one element. The array test of a condition map is now a
+  shorthand for `includes`. Reason: the intended behaviour changed. The review
+  of the OHIF pull request asked for one meaning of `equals` in the rules and
+  in the hanging protocols. The hanging protocol `equals` now compares the
+  whole value, and its `includes` accepts a scalar operand. So
+  `ImageType == 'LOCALIZER'` no longer holds for
+  `['ORIGINAL', 'LOCALIZER']`; use `'LOCALIZER' in ImageType`, or
+  `{ "includes": "LOCALIZER" }`. `"Modality": ["MR", "CT"]` still holds for
+  `'MR'`, and `"ImageType": ["LOCALIZER"]` now holds for
+  `['ORIGINAL', 'LOCALIZER']`.
+
 ## Definitions
 
 **Subject.** The object that a condition or a value tests or reads. For a split
@@ -242,11 +257,9 @@ compile.
   names, and sibling keys must all hold. The author does not need `all`,
   `attribute` or `equals` for the common case.
 - **RL-READ-2** The author writes the common tests without an operator: a
-  scalar means "equals", an array means "equals the array", and `null` means
-  "no value". Both use the equality of `RL-VALUE-5`: a single value is one of
-  the elements of an array, and a multi-valued value equals an array when it
-  has the same elements in the same order. To test that a multi-valued value
-  has one of several elements, use `includes`.
+  scalar means "equals", with the equality of `RL-VALUE-5`; an array means
+  "includes", so a single value is one of the elements, and a multi-valued
+  value has one element in common with the array; and `null` means "no value".
 - **RL-READ-3** A string in a context entry is an expression. A name or a path
   is the simplest expression. A key of a condition map is never an expression.
   A string at every other place of a rule is a name.
@@ -254,15 +267,14 @@ compile.
   constraints (`equals`, `includes`, `contains`, `containsI`, `greaterThan`,
   `range`, `notNull`, and the others). These meanings are different from
   `validator.js`:
-  - `equals` is the scalar test, so on a multi-valued value it means "in".
-    `validator.js` compares a scalar operand with the first element only. An
-    array operand is a compile error here; `validator.js` compares an array
-    operand element by element.
+  - `equals` is the scalar test, with the equality of `RL-VALUE-5`. A numeric
+    string equals a number; `validator.js` uses `===`. An array operand is a
+    compile error here; `validator.js` compares an array operand element by
+    element.
   - `notNull` is the exact opposite of `null`.
-  - `includes` accepts a scalar operand.
-  - `greaterThan` and `lessThan` are strict (`>` and `<`), and read a numeric
-    string as a number. `validator.js` uses `>=` and `<=`, and its
-    `greaterThan` rejects a string value.
+  - `greaterThan` and `lessThan` read a numeric string as a number.
+    `validator.js` `greaterThan` rejects a string value. Both are strict (`>`
+    and `<`) in both places since OHIF/Viewers#6386.
   - `containsAll` accepts a scalar operand and a single value, and compares
     with `==`. `validator.js` needs two arrays.
   - The operand wrappers of `validator.js` (`{ "value": x }`, and `[x]` for
@@ -323,11 +335,12 @@ compile.
   fails on no value, and its `doesNot...` form holds. `doesNotEqual` and
   `doesNotInclude` hold on no value.
 - **RL-VALUE-5** `==` is the only equality. `"1" == 1` is `true`. `===` and
-  `!==` are compile errors. A single value against an array means "in", on
-  either side: `Modality == ['MR', 'CT']`, and `ImageType == 'LOCALIZER'` for
-  a multi-valued `ImageType`. Two arrays are equal when they have the same
-  elements in the same order. The scalar test and the array test of a
-  condition map use the same equality.
+  `!==` are compile errors. A single value equals an array only when the array
+  has one element, equal to the value: `['MR'] == 'MR'`, but
+  `['ORIGINAL', 'LOCALIZER'] == 'LOCALIZER'` is `false`. Two arrays are equal
+  when they have the same elements in the same order. The scalar test of a
+  condition map uses the same equality. To test that a value is one of a list,
+  use `in`, `includes`, or the array test of `RL-READ-2`.
 - **RL-VALUE-6** An expression can compare text without case: `lower(text)`
   gives the text in lowercase.
 - **RL-VALUE-7** `-`, `*`, `/` and `%` read a numeric string as a number, so
@@ -636,8 +649,8 @@ packages/metadata/src/
 - **RL-VAL-3** `looseEquals` (the `==` of expressions, and the scalar test):
   two values with no value are equal only when they are of the same kind
   (absent, `null`, `""`, or an empty array); a value with no value is not
-  equal to a value with one; a scalar and an array are equal when the scalar
-  equals one element; two arrays are equal when they have the same length and
+  equal to a value with one; a scalar and an array are equal when the array
+  has one element, equal to the scalar; two arrays are equal when they have the same length and
   each element is equal in order; a number and a numeric string compare by
   value; other scalars compare as text. The expression compiler gives `X == undefined`, `X == null` and
   `X == defined` (a literal operand) the tests of `RL-VALUE-2`. The parser
@@ -1160,8 +1173,9 @@ priority, and keeps the function of `groupBy`.
 4. **Multiframe instances.** A per-frame subject (frames of one instance) is
    future work in the split engine. The rule language needs no change for it:
    the consumer gives a different subject.
-5. **Multi-valued values outside of equality.** `==`, the scalar test, the
-   array test, `equals` and `doesNotEqual` read every value (`RL-VALUE-5`).
+5. **Multi-valued values outside of equality.** `==`, the scalar test,
+   `equals` and `doesNotEqual` read every value (`RL-VALUE-5`), and the array
+   test reads any value (`RL-READ-2`).
    These places still read a multi-valued value in another way. With
    `EchoNumbers = [1, 2]` and `ImageType = ['ORIGINAL', 'PRIMARY', 'AXIAL']`:
 
@@ -1177,7 +1191,7 @@ priority, and keeps the function of `groupBy`.
 
    Suggested fixes, one for each row:
    - **Comparisons.** No fix is clearly right. "Any value" (`EchoNumbers >= 2`
-     is `true`) matches the "in" of `==`, but then
+     is `true`) matches the array test, but then
      `X > 1 && X < 3` holds for `[0, 5]`, which reads wrong. "Every value"
      makes `EchoNumbers >= 1` hold and `EchoNumbers >= 2` fail, which also
      surprises. The suggested fix: keep the first value, document it, and give
@@ -1186,7 +1200,7 @@ priority, and keeps the function of `groupBy`.
    - **Arithmetic.** Keep the first value, as for comparisons. A multi-valued
      operand is rare in arithmetic, and `minOf` and `maxOf` cover the rest.
    - **Text helpers.** Make `lower()` give an array for an array, element by
-     element, so `lower(ImageType) == 'axial'` is "in", as `==` is. Keep the
+     element, so `'axial' in lower(ImageType)` reads every value. Keep the
      number helpers on the first value.
    - **`sortBy`.** Keep the first value, and document it. An order needs one
      key for each instance.

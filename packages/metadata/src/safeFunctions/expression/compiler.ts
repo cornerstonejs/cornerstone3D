@@ -438,8 +438,8 @@ function rejectEmptyArrayLiteral(
 }
 
 /**
- * `==` and `!=`, with the meaning of {@link looseEquals}: a scalar against an
- * array is "in", and two arrays are equal element by element, in order.
+ * `==` and `!=`, with the meaning of {@link looseEquals}: a scalar equals an
+ * array of one element, and two arrays are equal element by element, in order.
  */
 function compileEquality(
   node: Extract<ExpressionNode, { type: 'binary' }>,
@@ -696,10 +696,11 @@ function compileNode(
  *
  * - `==` is the only equality, and `===` / `!==` are compile errors. `'1' == 1`
  *   is true.
- * - `==` between a scalar and an array is "in": `X == ['MR', 'CT']` holds when
- *   `X` is one of the elements, on either side. Two arrays are equal when
- *   they have the same elements in the same order. `!=` is the negation. An
- *   empty array literal is a compile error.
+ * - `==` between a scalar and an array holds only when the array has one
+ *   element, equal to the scalar. Two arrays are equal when they have the same
+ *   elements in the same order. `!=` is the negation. Use `X in ['MR', 'CT']`
+ *   to test that `X` is one of a list. An empty array literal is a compile
+ *   error.
  * - The literal tests: `X == undefined` holds when `X` is absent; `X == null`
  *   holds when `X` has no value (absent, or `null`, `''`, `[]`); `X == defined`
  *   holds when `X` has a value. `!=` is the opposite of each. Two values

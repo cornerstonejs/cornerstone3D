@@ -607,16 +607,16 @@ describe('matches - the operator meanings', () => {
     expect(holds(['ORIGINAL'], { doesNotInclude: 'LOCALIZER' })).toBe(true);
   });
 
-  it('gives a scalar test and an array test the meaning of ==', () => {
+  it('gives an array test the meaning of includes, and a scalar test the meaning of ==', () => {
     const test = ['ORIGINAL', 'PRIMARY'];
     // A single value is one of the elements.
     expect(holds('ORIGINAL', test)).toBe(true);
-    // A multi-valued value equals the array in order; it does not "overlap".
-    expect(holds(['ORIGINAL', 'PRIMARY'], test)).toBe(true);
-    expect(holds(['ORIGINAL', 'SECONDARY'], test)).toBe(false);
-    expect(holds(['PRIMARY', 'ORIGINAL'], test)).toBe(false);
-    // A scalar test on a multi-valued value is "in".
-    expect(holds(['ORIGINAL', 'LOCALIZER'], 'LOCALIZER')).toBe(true);
+    // A multi-valued value has one element in common with the array.
+    expect(holds(['ORIGINAL', 'SECONDARY'], test)).toBe(true);
+    expect(holds(['DERIVED', 'SECONDARY'], test)).toBe(false);
+    // A scalar test on a multi-valued value is equality, not "in".
+    expect(holds(['ORIGINAL', 'LOCALIZER'], 'LOCALIZER')).toBe(false);
+    expect(holds(['LOCALIZER'], 'LOCALIZER')).toBe(true);
   });
 
   it('fails notNull for an empty string', () => {

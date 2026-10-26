@@ -5,7 +5,7 @@
  * | Test                     | The entry holds when                                     |
  * | ------------------------ | -------------------------------------------------------- |
  * | a scalar                 | the value is equal to the scalar, with `==`              |
- * | an array of scalars      | the value is equal to one element of the array            |
+ * | an array of scalars      | shorthand for `includes`: one value is in the array       |
  * | `null`                   | the value has no value: absent or empty                  |
  * | an object, one operator  | the operator holds (see {@link MATCH_OPERATORS})          |
  * | a function               | `test(value, subject, context)` is true                  |
@@ -259,9 +259,9 @@ export function compileMatchTest(test: unknown, site: SchemaSite): ValueTest {
         test
       );
     }
-    // The same test as `==` with the array: a single value is one of the
-    // elements, and a multi-valued value equals the array in order.
-    return (value) => looseEquals(value, test);
+    // Shorthand for `includes`: a single value is one of the elements, and a
+    // multi-valued value has one element in common with the array.
+    return includesTest(test);
   }
   if (!test || typeof test !== 'object') {
     return invalidAt(

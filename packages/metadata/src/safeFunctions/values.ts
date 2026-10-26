@@ -47,8 +47,10 @@ export function hasNoValue(value: unknown): boolean {
  *   So `null == undefined` is false. A value with no value is not equal to a
  *   value that has one. Only the literal tests of the expression compiler
  *   (`X == null`) treat the kinds as one.
- * - A scalar and an array: the scalar is one of the elements ("in"), so
- *   `'MR' == ['MR', 'CT']` and `['ORIGINAL', 'LOCALIZER'] == 'LOCALIZER'`.
+ * - A scalar and an array: equal only when the array has one element, and
+ *   that element is equal to the scalar. So `['MR'] == 'MR'`, but
+ *   `['ORIGINAL', 'LOCALIZER'] == 'LOCALIZER'` is false. Use `in` or
+ *   `includes` to test that a value is one of a list.
  * - Two arrays: the same length, and each element equal in order.
  * - A number and a numeric string are equal by value: `'1' == 1`.
  * - Other scalars compare as text, so `'true'` equals `true`.
@@ -69,10 +71,10 @@ export function looseEquals(left: unknown, right: unknown): boolean {
     );
   }
   if (leftArray) {
-    return left.some((element) => scalarEquals(element, right));
+    return left.length === 1 && scalarEquals(left[0], right);
   }
   if (rightArray) {
-    return right.some((element) => scalarEquals(left, element));
+    return right.length === 1 && scalarEquals(left, right[0]);
   }
   return scalarEquals(left, right);
 }

@@ -136,24 +136,30 @@ describe('compileExpression', () => {
       expect(fn({ Modality: 'CT' })).toBe(false);
     });
 
-    it('reads == between a scalar and an array as in, and between two arrays as equal in order', () => {
+    it('reads == between a scalar and an array as equal only for one element, and between two arrays as equal in order', () => {
       const tests = [
         "X == ['MR', 'CT']",
         "['MR', 'CT'] == X",
         "X != ['MR', 'CT']",
+        "X in ['MR', 'CT']",
       ].map((source) => compileExpression(source));
       const row = (X: unknown) => tests.map((test) => test({ X }));
-      expect(row('MR')).toEqual([true, true, false]);
-      expect(row('CT')).toEqual([true, true, false]);
-      expect(row('PT')).toEqual([false, false, true]);
-      expect(row(undefined)).toEqual([false, false, true]);
+      // A single value is not equal to a list of two; `in` tests membership.
+      expect(row('MR')).toEqual([false, false, true, true]);
+      expect(row('PT')).toEqual([false, false, true, false]);
+      expect(row(undefined)).toEqual([false, false, true, false]);
       // Two arrays: the same elements, in the same order.
-      expect(row(['MR', 'CT'])).toEqual([true, true, false]);
-      expect(row(['CT', 'MR'])).toEqual([false, false, true]);
-      expect(row(['MR'])).toEqual([false, false, true]);
-      // A multi-valued value against a scalar is in.
+      expect(row(['MR', 'CT'])).toEqual([true, true, false, true]);
+      expect(row(['CT', 'MR'])).toEqual([false, false, true, true]);
+      // A single value equals an array of one element.
+      expect(compileExpression("X == ['MR']")({ X: 'MR' })).toBe(true);
+      expect(compileExpression("X == 'MR'")({ X: ['MR'] })).toBe(true);
+      // A multi-valued value against a scalar is not equal; use in.
       expect(
         compileExpression("X == 'LOCALIZER'")({ X: ['ORIGINAL', 'LOCALIZER'] })
+      ).toBe(false);
+      expect(
+        compileExpression("'LOCALIZER' in X")({ X: ['ORIGINAL', 'LOCALIZER'] })
       ).toBe(true);
       expect(compileExpression("['mr'] == ['mr', 'ct']")()).toBe(false);
     });

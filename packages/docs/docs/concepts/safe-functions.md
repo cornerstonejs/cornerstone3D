@@ -87,11 +87,12 @@ number.
   `false`, so `Rows && Rows > 1000` is `false` when `Rows` is absent.
 - `==` is the only equality, and `"1" == 1` is `true`. `===` and `!==` are
   compile errors.
-- `==` between a single value and an array means "in", on either side:
-  `Modality == ['MR', 'CT']` holds for `'MR'` and for `'CT'`, and
-  `ImageType == 'LOCALIZER'` holds when one value of `ImageType` is
-  `LOCALIZER`. Two arrays are equal when they have the same elements in the
-  same order. An empty array literal is a compile error.
+- `==` between a single value and an array holds only when the array has one
+  element, equal to the value: `['MR'] == 'MR'`, but
+  `['ORIGINAL', 'LOCALIZER'] == 'LOCALIZER'` is `false`. Two arrays are equal
+  when they have the same elements in the same order. To test that a value is
+  one of a list, use `in`: `Modality in ['MR', 'CT']`, or
+  `'LOCALIZER' in ImageType`. An empty array literal is a compile error.
 - An aggregate inside the argument of another aggregate is a compile error.
   Put the inner aggregate in its own context entry, and read that name.
 
@@ -101,20 +102,19 @@ A condition is a map of name to test. Every entry must hold, so `{}` is `true`.
 There is no `all`, `any` or `not`. A consumer gives an "or" a name of its own,
 and `false` on a named boolean is its negation.
 
-| Test                    | The entry holds when                        |
-| ----------------------- | ------------------------------------------- |
-| a scalar                | the value is equal to the scalar, with `==` |
-| an array of scalars     | the value is equal to the array, with `==`  |
-| `null`                  | the value has no value                      |
-| an object, one operator | the operator holds                          |
-| a function              | `test(value, subject, context)` is true     |
+| Test                    | The entry holds when                              |
+| ----------------------- | ------------------------------------------------- |
+| a scalar                | the value is equal to the scalar, with `==`       |
+| an array of scalars     | shorthand for `includes`: a value is in the array |
+| `null`                  | the value has no value                            |
+| an object, one operator | the operator holds                                |
+| a function              | `test(value, subject, context)` is true           |
 
-The equality is the `==` of expressions. A single value against an array test
-is "in", so `"Modality": ["MR", "CT"]` holds for `'MR'`. A multi-valued
-attribute against a scalar test is also "in", so `"ImageType": "LOCALIZER"`
-holds for `['ORIGINAL', 'LOCALIZER']`. A multi-valued attribute against an
-array test must have the same values in the same order; to test that it has
-one of several values, use `{ "includes": [...] }`.
+The scalar test uses the `==` of expressions, so `"ImageType": "LOCALIZER"`
+holds for `['LOCALIZER']`, and not for `['ORIGINAL', 'LOCALIZER']`. The array
+test holds when one value is in the array, so `"Modality": ["MR", "CT"]` holds
+for `'MR'`, and `"ImageType": ["LOCALIZER"]` holds for
+`['ORIGINAL', 'LOCALIZER']`.
 
 ### Operators
 
