@@ -131,6 +131,18 @@ describe('postProcessDecodedPixels with a target buffer', () => {
     ).toThrow(/needs both rows and columns/);
   });
 
+  it.each([
+    [0, 0],
+    [NaN, NaN],
+    [-4, -4],
+    [4.5, 4.5],
+    [4, 0],
+  ])('throws when rows and columns are %p x %p', (rows, columns) => {
+    expect(() =>
+      process(makeFrame(2, 2), { type: 'Uint16Array', rows, columns })
+    ).toThrow(/have to be positive integers/);
+  });
+
   it('gives a buffer of the image size when rows and columns are left out', () => {
     const result = process(makeFrame(2, 3), { type: 'Uint16Array' });
 

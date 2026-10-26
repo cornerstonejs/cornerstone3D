@@ -260,8 +260,9 @@ function _handleTargetBuffer(
  * Returns false when rows and columns are both undefined, or are the same as
  * the image rows and columns.
  *
- * Throws otherwise: when only one of rows and columns is given, or when they
- * do not keep the aspect ratio of the image.
+ * Throws otherwise: when only one of rows and columns is given, when either
+ * is not a positive integer, or when they do not keep the aspect ratio of the
+ * image.
  *
  * The replicate and bilinear scalers map each destination pixel to a source
  * pixel. That works for an upscale and for a downscale, but a downscale uses
@@ -269,12 +270,19 @@ function _handleTargetBuffer(
  * downscale can alias.
  */
 function _checkScaleRatio(imageFrame, rows, columns) {
-  if (!rows || !columns) {
-    if (!rows && !columns) {
+  const hasRows = rows !== undefined && rows !== null;
+  const hasColumns = columns !== undefined && columns !== null;
+  if (!hasRows || !hasColumns) {
+    if (!hasRows && !hasColumns) {
       return false;
     }
     throw new Error(
       `target buffer needs both rows and columns to scale the decoded image ${imageFrame.rows}x${imageFrame.columns}, but got ${rows}x${columns} (rows x columns).`
+    );
+  }
+  if (!_isPositiveInteger(rows) || !_isPositiveInteger(columns)) {
+    throw new Error(
+      `target buffer rows and columns have to be positive integers, but got ${rows}x${columns} (rows x columns).`
     );
   }
   if (rows === imageFrame.rows && columns === imageFrame.columns) {
@@ -286,6 +294,10 @@ function _checkScaleRatio(imageFrame, rows, columns) {
   throw new Error(
     `target buffer size ${rows}x${columns} (rows x columns) does not have the same rows to columns ratio as the decoded image ${imageFrame.rows}x${imageFrame.columns}, and scaleImageFrame only scales rows and columns by the same ratio.`
   );
+}
+
+function _isPositiveInteger(value) {
+  return Number.isInteger(value) && value > 0;
 }
 
 function _handlePreScaleSetup(
