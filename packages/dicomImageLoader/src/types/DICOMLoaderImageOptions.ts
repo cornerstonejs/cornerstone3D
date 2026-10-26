@@ -11,8 +11,8 @@ export interface DICOMLoaderImageOptions {
   };
   targetBuffer?: {
     type: Types.PixelDataTypedArrayString;
-    arrayBuffer: ArrayBufferLike;
-    length: number;
+    arrayBuffer?: ArrayBufferLike;
+    length?: number;
     offset: number;
     /**
      * The size wanted in the destination. Give both rows and columns or
