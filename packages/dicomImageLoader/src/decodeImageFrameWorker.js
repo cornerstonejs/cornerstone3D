@@ -2,6 +2,7 @@
 import bilinear from './shared/scaling/bilinear';
 import replicate from './shared/scaling/replicate';
 import { expose } from 'comlink';
+import { isSameScaleRatio } from '@cornerstonejs/utils/utilities/math';
 
 import decodeLittleEndian from './shared/decoders/decodeLittleEndian';
 import decodeBigEndian from './shared/decoders/decodeBigEndian';
@@ -183,6 +184,19 @@ function _isRequiredScaling(scalingParameters) {
   return hasRescaleValues || isRTDOSEWithScaling || isPTWithSUV;
 }
 
+/**
+ * Copies the decoded frame into the target buffer given by
+ * options.targetBuffer.
+ *
+ * targetBuffer.rows and targetBuffer.columns are the size wanted in the
+ * destination. Give both or neither. When both are given and differ from the
+ * decoded size, the frame is scaled to that size with scaleImageFrame, so they
+ * have to keep the aspect ratio of the decoded image (see _checkScaleRatio).
+ *
+ * To get a buffer of the right size for the image, leave out rows, columns
+ * and length. The buffer then has the decoded size, either as a new array or
+ * as a view into targetBuffer.arrayBuffer at targetBuffer.offset.
+ */
 function _handleTargetBuffer(
   options,
   imageFrame,
@@ -204,11 +218,7 @@ function _handleTargetBuffer(
     throw new Error(`target array ${type} is not supported, or doesn't exist.`);
   }
 
-  if (
-    (rows && rows != imageFrame.rows) ||
-    (columns && columns != imageFrame.columns)
-  ) {
-    _checkSameScaleRatio(imageFrame, rows, columns);
+  if (_checkScaleRatio(imageFrame, rows, columns)) {
     scaleImageFrame(imageFrame, options.targetBuffer, TypedArrayConstructor);
   }
   const imageFrameLength = imageFrame.pixelDataLength;
@@ -241,35 +251,40 @@ function _handleTargetBuffer(
 }
 
 /**
- * scaleImageFrame is meant for scaling the rows and the columns by one ratio.
- * The target is accepted when both sides follow the same ratio exactly, or
- * when the decoded frame is what a reduced resolution decode by a whole
- * factor gives, since that rounds an odd size up (513 x 2049 at half size
- * decodes to 257 x 1025).
+ * Checks whether the decoded frame needs scaling to fit the target buffer.
+ *
+ * Returns true when rows and columns are both defined, differ from the image
+ * size, and keep its aspect ratio (see isSameScaleRatio in
+ * @cornerstonejs/utils). The scale can go up or down.
+ *
+ * Returns false when rows and columns are both undefined, or are the same as
+ * the image rows and columns.
+ *
+ * Throws otherwise: when only one of rows and columns is given, or when they
+ * do not keep the aspect ratio of the image.
+ *
+ * The replicate and bilinear scalers map each destination pixel to a source
+ * pixel. That works for an upscale and for a downscale, but a downscale uses
+ * point sampling and does not average the source pixels, so a large
+ * downscale can alias.
  */
-function _checkSameScaleRatio(imageFrame, rows, columns) {
-  if (!columns) {
-    return;
+function _checkScaleRatio(imageFrame, rows, columns) {
+  if (!rows || !columns) {
+    if (!rows && !columns) {
+      return false;
+    }
+    throw new Error(
+      `target buffer needs both rows and columns to scale the decoded image ${imageFrame.rows}x${imageFrame.columns}, but got ${rows}x${columns} (rows x columns).`
+    );
   }
-  if (rows && _isSameScaleRatio(imageFrame, rows, columns)) {
-    return;
+  if (rows === imageFrame.rows && columns === imageFrame.columns) {
+    return false;
+  }
+  if (isSameScaleRatio(imageFrame, rows, columns)) {
+    return true;
   }
   throw new Error(
     `target buffer size ${rows}x${columns} (rows x columns) does not have the same rows to columns ratio as the decoded image ${imageFrame.rows}x${imageFrame.columns}, and scaleImageFrame only scales rows and columns by the same ratio.`
-  );
-}
-
-function _isSameScaleRatio(imageFrame, rows, columns) {
-  if (rows * imageFrame.columns === columns * imageFrame.rows) {
-    return true;
-  }
-  const factor = Math.round(rows / imageFrame.rows);
-  if (factor < 1) {
-    return false;
-  }
-  return (
-    Math.ceil(rows / factor) === imageFrame.rows &&
-    Math.ceil(columns / factor) === imageFrame.columns
   );
 }
 

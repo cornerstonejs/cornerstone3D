@@ -96,14 +96,48 @@ describe('postProcessDecodedPixels with a target buffer', () => {
   });
 
   it('throws a clear error when the columns do not follow the rows ratio', () => {
-    // rows double, columns triple
+    // rows double, columns go up by 2.56
     expect(() =>
-      process(makeFrame(2, 2), {
+      process(makeFrame(256, 200), {
         type: 'Uint16Array',
-        rows: 4,
-        columns: 6,
+        rows: 512,
+        columns: 512,
       })
     ).toThrow(/does not have the same rows to columns ratio/);
+  });
+
+  it('scales down by the same ratio', () => {
+    // 4 x 4 decoded, 2 x 2 wanted, replicate takes the corner pixels
+    const result = process(makeFrame(4, 4), {
+      type: 'Uint16Array',
+      rows: 2,
+      columns: 2,
+    });
+
+    expect(result.rows).toBe(2);
+    expect(result.columns).toBe(2);
+    expect(Array.from(result.pixelData)).toEqual([1, 4, 13, 16]);
+  });
+
+  it('throws when only the rows are given', () => {
+    expect(() =>
+      process(makeFrame(2, 2), { type: 'Uint16Array', rows: 4 })
+    ).toThrow(/needs both rows and columns/);
+  });
+
+  it('throws when only the columns are given', () => {
+    expect(() =>
+      process(makeFrame(2, 2), { type: 'Uint16Array', columns: 4 })
+    ).toThrow(/needs both rows and columns/);
+  });
+
+  it('gives a buffer of the image size when rows and columns are left out', () => {
+    const result = process(makeFrame(2, 3), { type: 'Uint16Array' });
+
+    expect(result.rows).toBe(2);
+    expect(result.columns).toBe(3);
+    expect(result.pixelData).toBeInstanceOf(Uint16Array);
+    expect(Array.from(result.pixelData)).toEqual([1, 2, 3, 4, 5, 6]);
   });
 
   it('leaves a frame that already has the target size alone', () => {
