@@ -183,6 +183,10 @@ export function createDisplaySetFromGroup(
   if (handler !== undefined) {
     displaySet.handler = handler;
   }
+  // Copied for the host; CS3D does not read it.
+  if (group.matchedRule.viewportTypes !== undefined) {
+    displaySet.viewportTypes = [...group.matchedRule.viewportTypes];
+  }
   // Every display set carries these, so a rule does not ask for them.
   displaySet.sopClassUids = [
     ...new Set(instances.map((i) => i.SOPClassUID).filter(Boolean)),

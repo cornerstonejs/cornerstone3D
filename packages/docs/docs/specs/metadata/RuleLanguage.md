@@ -206,23 +206,23 @@ and no release had them:
   shorthand forms and `==` with a list read differently from what an author
   expects. No default rule changes its result: the default rules use the
   shorthand only on single-valued attributes (`Modality`) and on booleans.
-- The rule field `viewportTypes` is removed, from every default rule and from
-  the rule language: a rule with `viewportTypes` is now a compile error (an
-  unknown field). The display set has no `viewportTypes` and no
-  `preferredViewportType`. A host chooses the viewport from `handler` (a
-  non-image object) and from the instance data (an image). The handler alone
-  decides the display set class and `isDisplayable` (`RL-CONS-1`,
-  `RL-CONS-3`). No user requirement of this specification named the viewport
-  types, so none changes here; the field table of `RL-CONS-1` loses the field.
-  The design note of OHIF #6137 and CS3D #2861 changes its user requirement
-  `DS-USER-HANDLER-4` ("the viewport types of a rule are hints").
+- `viewportTypes` no longer has a meaning in CS3D. No default rule sets it. A
+  rule may still have it (an optional array of strings), for its own reasons:
+  `createDisplaySetFromGroup` copies it to the display set unchanged, and CS3D
+  reads it nowhere. The handler alone decides the display set class and
+  `isDisplayable` (`RL-CONS-1`, `RL-CONS-3`). A host chooses the viewport from
+  `handler` (a non-image object) and from the instance data (an image). No user
+  requirement of this specification named the viewport types, so none changes
+  here. The design note of OHIF #6137 and CS3D #2861 changes its user
+  requirement `DS-USER-HANDLER-4` ("the viewport types of a rule are hints").
   `viewportTypes` was released on CS3D `main` (#2738), so a caller sees these
-  removals: the rule field `viewportTypes` (`SplitRule`, `RawSplitRule`), the
-  display set fields `viewportTypes` and `preferredViewportType`, the
-  `viewportTypes` option of `ImageStackDisplaySet.fromInstances` and
-  `fromImageIds`, the `viewportTypes` key of the `customAttributes` context
-  and result, the type `ViewportTypeHint`, the sentinel `NO_VIEWPORT_TYPE`
-  (`'none'`), and the functions `getViewportTypesForRule`,
+  removals: the display set field `preferredViewportType`; the defaults of
+  `viewportTypes` (`['stack']` for a rule with none) and their effect on the
+  class and `isDisplayable`; the `viewportTypes` option of
+  `ImageStackDisplaySet.fromInstances` and `fromImageIds`; the `viewportTypes`
+  key of the `customAttributes` context (an attribute can still set
+  `viewportTypes`, as plain data); the type `ViewportTypeHint`; the sentinel
+  `NO_VIEWPORT_TYPE` (`'none'`); and the functions `getViewportTypesForRule`,
   `getViewportTypesForGroup` and `getPreferredViewportType`.
 - `RL-READ-4` no longer lists the meanings that OHIF/Viewers#6386 gave to
   `validator.js`. It now lists the differences that remain, and it points to
@@ -1001,16 +1001,17 @@ packages/metadata/src/
 
 - **RL-CONS-1** The fields of a split rule:
 
-  | Field                          | Holds                                          | `SplitRule` hook   |
-  | ------------------------------ | ---------------------------------------------- | ------------------ |
-  | `priority`                     | a finite number, or `null` to exclude the rule | (rule set entry)   |
-  | `id`, `groupId`, `description` | data                                           | the same names     |
-  | `handler`                      | a string; any name compiles                    | `handler`          |
-  | `context`                      | the rule context (`RL-CTX-3`)                  | (compile only)     |
-  | `matches`                      | a condition                                    | `matches`          |
-  | `groupBy`                      | names                                          | `groupBy`          |
-  | `sortBy`                       | sort entries (`RL-SORT-2`)                     | `compareInstances` |
-  | `attributes`                   | a map of attribute values (`RL-CONS-2`)        | `customAttributes` |
+  | Field                          | Holds                                                       | `SplitRule` hook   |
+  | ------------------------------ | ----------------------------------------------------------- | ------------------ |
+  | `priority`                     | a finite number, or `null` to exclude the rule              | (rule set entry)   |
+  | `id`, `groupId`, `description` | data                                                        | the same names     |
+  | `viewportTypes`                | data that CS3D copies to the display set, and does not read | `viewportTypes`    |
+  | `handler`                      | a string; any name compiles                                 | `handler`          |
+  | `context`                      | the rule context (`RL-CTX-3`)                               | (compile only)     |
+  | `matches`                      | a condition                                                 | `matches`          |
+  | `groupBy`                      | names                                                       | `groupBy`          |
+  | `sortBy`                       | sort entries (`RL-SORT-2`)                                  | `compareInstances` |
+  | `attributes`                   | a map of attribute values (`RL-CONS-2`)                     | `customAttributes` |
 
   Every compiled rule also has the `series` hook of `RL-CTXI-8`.
 
@@ -1032,8 +1033,9 @@ packages/metadata/src/
   `createDisplaySetFromGroup` copies the `handler` of the rule to the display
   set. The handler decides the class and `isDisplayable`: no handler or
   `image` gives an image stack; `unsupported` gives a base display set that is
-  not displayable; any other handler gives a displayable base display set. The
-  display set has no viewport types.
+  not displayable; any other handler gives a displayable base display set. A
+  rule's `viewportTypes` is copied to the display set unchanged, and changes
+  nothing else.
 - **RL-CONS-4** The hanging protocol consumer gives its own subject and its
   own reader of a name. OHIF/Viewers#6386 moved most of the hanging protocol
   constraints to the operator meanings of `RL-COND-3`. A later OHIF pull

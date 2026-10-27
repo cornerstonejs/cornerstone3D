@@ -172,6 +172,12 @@ export type SplitRule = {
    */
   handler?: string;
   /**
+   * Viewport types for the host's own use. CS3D does not read them: the
+   * handler decides the class and `isDisplayable`. Copied to the display set
+   * unchanged. No default rule sets them.
+   */
+  viewportTypes?: readonly string[];
+  /**
    * Optional. Runs once per split operation, before matching, in priority
    * order, and returns facts that extend the shared series context - read back
    * by every rule's `matches`, `groupBy` and `compareInstances`

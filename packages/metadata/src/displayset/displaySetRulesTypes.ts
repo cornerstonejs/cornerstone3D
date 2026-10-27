@@ -116,6 +116,12 @@ export type RawSplitRule = {
    */
   handler?: string;
   /**
+   * Viewport types for the host's own use. CS3D does not read them: the
+   * handler decides the class and `isDisplayable`. Copied to the display set
+   * unchanged. No default rule sets them.
+   */
+  viewportTypes?: string[];
+  /**
    * Context entries for this rule only. An entry replaces the global entry of
    * the same name, also inside the global entries that the rule reads, or it
    * defines a new name that only this rule reads.

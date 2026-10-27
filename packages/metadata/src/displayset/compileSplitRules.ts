@@ -297,6 +297,9 @@ function compileRule(
   if (rule.groupId !== undefined) {
     compiled.groupId = rule.groupId as string;
   }
+  if (rule.viewportTypes !== undefined) {
+    compiled.viewportTypes = rule.viewportTypes as string[];
+  }
   if (rule.handler !== undefined) {
     compiled.handler = rule.handler as string;
   }

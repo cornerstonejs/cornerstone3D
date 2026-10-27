@@ -65,8 +65,9 @@ const displaySets: IDisplaySet[] = groups.map((group) =>
 
 ## Driving a viewport from a display set
 
-A display set gives no viewport type. The host chooses the viewport from
-`displaySet.handler` (a non-image object) and the instance data (an image).
+The default rules give no viewport type. The host chooses the viewport from
+`displaySet.handler` (a non-image object) and the instance data (an image). A
+custom rule's `viewportTypes`, if any, is on `displaySet.viewportTypes`.
 A viewport's
 `setDisplaySets({ displaySetId })` is the single entry point that loads a display
 set: it resolves `displaySetId` to renderable data, calls the viewport's native
@@ -187,8 +188,9 @@ catch-all `unsupported` runs last, at `Number.MAX_SAFE_INTEGER`:
 | 15       | `chart`                     | `chart`                | `chartSopClassUids`, empty by default. One display set per revision chain; see [Revision chains](#revision-chains).                                    |
 | max      | `unsupported`               | `unsupported`          | Everything else (presentation states, RT Plan, …); see [Objects nothing can render](#objects-nothing-can-render).                                      |
 
-No rule gives a viewport type. The host chooses the viewport from `handler`
-and the instance data.
+No default rule gives viewport types. The host chooses the viewport from
+`handler` and the instance data. A custom rule may set `viewportTypes` for its
+own use: CS3D copies it to the display set unchanged, and does not read it.
 
 Each rule in data form also has a `description` that a UI can show. The next sections
 explain how your own rules combine with these.
@@ -262,7 +264,7 @@ series. A short UID such as `6.1` is the suffix after `1.2.840.10008.5.1.4.1.1.`
 | `video`                     | A video-only SOP class decides alone. Else any available transfer syntax (`AvailableTransferSyntaxUID`, `TransferSyntaxUID`) decides. The guess for a long secondary capture runs only when no transfer syntax is known.                                                                                                                                                         | A long secondary capture with an image transfer syntax is an image, and not a video.                                                                                                                                                                                                |
 | `segmentation` to `chart`   | New rules, each with a `handler`.                                                                                                                                                                                                                                                                                                                                                | SEG, RTSTRUCT, parametric map, SR and bulk annotations get one display set per series. Encapsulated documents and charts get one display set per revision chain. Each has the handler name.                                                                                         |
 | `unsupported`               | New rule, at `Number.MAX_SAFE_INTEGER`.                                                                                                                                                                                                                                                                                                                                          | Objects that no rule matched were dropped. Now each series of them gives one non-displayable display set, and `onUnmatchedInstance` does not fire with the defaults.                                                                                                                |
-| all rules                   | The rule field `viewportTypes` is removed, and a rule that has it is a compile error. The display set has no `viewportTypes` and no `preferredViewportType`.                                                                                                                                                                                                                     | A host chooses the viewport from `handler` and the instance data. The handler decides the class and `isDisplayable`. The helpers `getViewportTypesForRule`, `getViewportTypesForGroup`, `getPreferredViewportType`, the type `ViewportTypeHint` and `NO_VIEWPORT_TYPE` are removed. |
+| all rules                   | `viewportTypes` has no meaning in CS3D, and no default rule sets it. A rule may still have it: CS3D copies it to the display set unchanged, and reads it nowhere. The display set has no `preferredViewportType`.                                                                                                                                                                | A host chooses the viewport from `handler` and the instance data. The handler decides the class and `isDisplayable`. The helpers `getViewportTypesForRule`, `getViewportTypesForGroup`, `getPreferredViewportType`, the type `ViewportTypeHint` and `NO_VIEWPORT_TYPE` are removed. |
 
 **Migration from the array form.** `groupInstancesBySplitRules`,
 `splitImageIdsBySplitRules` and `compiledDisplaySetRules` take and give a
@@ -333,7 +335,7 @@ An entry that states an `id` different from its key, or that has a priority
 that is missing, or neither `null` nor a finite number, is an error.
 `createDisplaySetSplitRules` and `resolveSplitRuleSet` run that check.
 
-A `SplitRule` has up to five parts:
+A `SplitRule` has up to six parts:
 
 | Field              | Purpose                                                                                                                                                                                                                                                                                                                               |
 | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -342,6 +344,7 @@ A `SplitRule` has up to five parts:
 | `series`           | Optional, code form only. Runs once per split and **returns** facts that extend the series context every code rule reads as `context.series`. The first rule that computes a name wins. A rule in data form does not use this hook: it reads the [display set context](#the-display-set-context), where each name has one definition. |
 | `customAttributes` | Returns extra attributes spread flat onto the display set (e.g. `isClip`, `numImageFrames`).                                                                                                                                                                                                                                          |
 | `handler`          | The generic handler name of a non-image object. It decides the display set class and `isDisplayable` (see [Handlers](#handlers)).                                                                                                                                                                                                     |
+| `viewportTypes`    | Optional strings for the host's own use. CS3D copies them to the display set unchanged, and does not read them. No default rule sets them.                                                                                                                                                                                            |
 
 A rule's `id` is its key in the rule set, so an entry does not repeat it. Most
 rules only need `matches` and `groupBy`, plus the entry's `priority`:
@@ -645,8 +648,8 @@ absent value and an empty value.
 | `attributes` | the attributes of the display set, keyed by attribute name                                 | `customAttributes: (attributes, options) => {...}` |
 
 The other fields are data: `id` (optional, must equal the key), `groupId`,
-`priority`, `description` and `handler` (see
-[Handlers](#handlers)).
+`priority`, `description`, `handler` (see [Handlers](#handlers)) and
+`viewportTypes` (copied to the display set, and not read by CS3D).
 
 ```jsonc
 "dwiByBValue": {
@@ -1038,7 +1041,7 @@ The compiler is **strict**. A wrong rule fails at compile time, and the
 compiler never ignores it:
 
 ```text
-Invalid display set rules: rule 'r': unknown field 'matchs'; allowed: id, groupId, priority, description, handler, context, matches, groupBy, sortBy, attributes
+Invalid display set rules: rule 'r': unknown field 'matchs'; allowed: id, groupId, priority, description, viewportTypes, handler, context, matches, groupBy, sortBy, attributes
 Invalid display set rules: rule 'r'.matches.BodyPartExamind: unknown name 'BodyPartExamind': it is not a keyword of the DICOM dictionary; a private, vendor or synthetic attribute needs a declaration, e.g. "myValue": { "attribute": "BodyPartExamind" }
 Invalid display set rules: rule 'r'.attributes.label: unknown name 'SCOUT': ...; fixed text is { "template": "SCOUT" }
 Invalid display set rules: context.first: the context entries form a loop: first -> second -> first

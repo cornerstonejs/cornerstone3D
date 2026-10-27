@@ -50,6 +50,13 @@ const ruleShape: SchemaShape = {
           optional: true,
           description: 'Human-readable explanation. Not compiled.',
         },
+        viewportTypes: {
+          kind: 'string',
+          list: true,
+          optional: true,
+          description:
+            'Viewport types for the host. CS3D copies them to the display set unchanged, and does not read them.',
+        },
         handler: {
           kind: 'string',
           optional: true,

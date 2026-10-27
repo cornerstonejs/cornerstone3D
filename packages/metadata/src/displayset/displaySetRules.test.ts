@@ -302,8 +302,23 @@ describe('createDisplaySetFromGroup - the handler decides the class', () => {
     });
   }
 
-  it('rejects a rule with viewportTypes: the field is gone', () => {
-    expectRejected({ viewportTypes: ['stack'] }, "rule 'r'", "'viewportTypes'");
+  it('copies the viewportTypes of a rule unchanged, and decides the class from handler only', () => {
+    const { r: rule } = compileOne({
+      handler: 'unsupported',
+      viewportTypes: ['stack'],
+    });
+    const displaySet = createDisplaySetFromGroup({
+      instances: [instance({ imageId: 'wadors:/x' })],
+      matchedRule: { id: 'r', ...rule },
+    });
+    expect([
+      displaySet.viewportTypes,
+      displaySet.constructor,
+      displaySet.isDisplayable,
+    ]).toEqual([['stack'], BaseDisplaySet, false]);
+    expect(
+      Object.values(displaySetRules).filter((r) => 'viewportTypes' in r)
+    ).toEqual([]);
   });
 });
 

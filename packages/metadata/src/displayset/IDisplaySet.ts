@@ -42,6 +42,11 @@ export interface IDisplaySet {
    */
   handler?: string;
   /**
+   * The `viewportTypes` of the rule, copied unchanged, for the host's own use.
+   * CS3D does not read them. Absent when the rule has none.
+   */
+  viewportTypes?: readonly string[];
+  /**
    * Whether this display set can be shown on a viewport.
    *
    * False exactly for the handler `unsupported`. A plain field rather than a
