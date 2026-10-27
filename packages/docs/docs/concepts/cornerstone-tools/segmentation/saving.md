@@ -93,8 +93,8 @@ Each save function writes three header attributes that name the software that
 wrote the object. This applies to the SEG (`generateSegmentation`), the
 RTSTRUCT (`generateRTSSFromRepresentation`) and the SR
 (`MeasurementReport.generateReport`), and also to the legacy Cornerstone SR and
-SEG adapters. A value in `options` wins over the default. An empty value (`''`,
-`null` or `[]`) gets the default:
+SEG adapters. A value in `options` wins over the default. An empty value
+(`undefined`, `''`, `null` or `[]`) gets the default:
 
 | Attribute               | Option                  | Default                             |
 | ----------------------- | ----------------------- | ----------------------------------- |
@@ -110,6 +110,11 @@ versions.
 The `MetadataModules.NEW_INSTANCE_DATA` metadata module (`'NewInstanceData'`)
 also holds the three defaults, so every instance that `createInstance` builds
 from it names the adapters as its writer unless the options give a value.
+
+For the RTSTRUCT, the writer values come first from `options`, then from the
+adapters default, and only then from the instance provider. A custom
+`RtssInstanceData` or `NewInstanceData` provider therefore cannot set the
+writer; pass the values in `options`.
 
 `utilities.getWriterHeader(options)` gives the three values, and
 `utilities.DEFAULT_WRITER_HEADER` holds the defaults.

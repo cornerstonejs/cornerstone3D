@@ -291,7 +291,7 @@ export function generateRTSSFromAnnotations(
 function _initializeDataset(segmentation: Segmentation, imgMetadata, options) {
   // get the first annotation data
   const { referencedImageId: studyExemplarImageId } = imgMetadata;
-  // In the base, so that an instance provider without these keys still gets them
+  // In the base: options, then the adapters default, win over the instance provider
   const writerHeader = getWriterHeader(options);
 
   return createInstance<RtssModule>(

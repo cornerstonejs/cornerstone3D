@@ -187,11 +187,13 @@ describe('writer header', () => {
     }
   );
 
-  it('RTSTRUCT writes the header values with an instance provider that has no writer keys', () => {
+  it('RTSTRUCT takes the options, then the adapters default, over the instance provider', () => {
     const instanceProvider = (type) =>
       type === Enums.MetadataModules.RTSS_INSTANCE_DATA
         ? {
             Modality: 'RTSTRUCT',
+            // A provider value, and no ManufacturerModelName or SoftwareVersions
+            Manufacturer: 'MyApp',
             StructureSetROISequence: [],
             ROIContourSequence: [],
             RTROIObservationsSequence: [],
