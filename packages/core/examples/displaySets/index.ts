@@ -125,7 +125,7 @@ const HANDLER_TO_HINT: Record<string, string> = {
 
 /**
  * The viewport choices of a display set. A non-image display set: the
- * viewport of its handler. An image display set with `isVolume`: volume, 3D or
+ * viewport of its handler. An image display set with `isReconstructable`: volume, 3D or
  * stack. Any other image display set: stack.
  */
 function hintsOf(displaySet: DisplaySet): string[] {
@@ -133,7 +133,9 @@ function hintsOf(displaySet: DisplaySet): string[] {
   if (byHandler) {
     return [byHandler];
   }
-  return displaySet.isVolume ? ['volume', 'volume3d', 'stack'] : ['stack'];
+  return displaySet.isReconstructable
+    ? ['volume', 'volume3d', 'stack']
+    : ['stack'];
 }
 
 function instanceField(displaySet: DisplaySet, key: string): string {

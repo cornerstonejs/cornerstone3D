@@ -78,9 +78,9 @@ setTitleAndDescription(
     'a plain left drag, so a split can be measured across as well as looked at.'
 );
 
-/** An image display set opens as a volume when `isVolume` is true. */
+/** An image display set opens as a volume when `isReconstructable` is true. */
 function isVolumeCapable(displaySet: IDisplaySet): boolean {
-  return displaySet.isVolume === true;
+  return displaySet.isReconstructable === true;
 }
 
 /** The 2x2 MPR + 3D layout, as [label, viewport type, orientation] slots. */

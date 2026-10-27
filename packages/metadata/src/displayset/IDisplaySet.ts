@@ -78,12 +78,14 @@ export interface IDisplaySet {
   isClip?: boolean;
   /**
    * For an image display set (no handler, or `image`): true when its
-   * instances form a volume (see `isVolumeInstances`: the answer of OHIF
-   * `isDisplaySetReconstructable`, with the `planeGeometry` series function).
-   * False for a single image and for a clip. Absent for another handler. A
-   * host opens the display set as a volume when true.
+   * instances form a volume. The name of the OHIF display set attribute. CS3D
+   * gives a first value from the instance attributes (see
+   * `isReconstructableInstances`, which follows OHIF
+   * `isDisplaySetReconstructable`); a host may refine it for display. False for
+   * a single image and for a clip. Absent for another handler. A host opens
+   * the display set as a volume when true.
    */
-  isVolume?: boolean;
+  isReconstructable?: boolean;
   /** Number of image frames for a clip / multi-frame display set. */
   numImageFrames?: number;
   /** 0-based index of this display set among the series' split groups. */

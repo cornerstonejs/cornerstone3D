@@ -66,8 +66,8 @@ const displaySets: IDisplaySet[] = groups.map((group) =>
 ## Driving a viewport from a display set
 
 The default rules give no viewport type. The host chooses the viewport from
-`displaySet.handler` (a non-image object) and `displaySet.isVolume` (an image;
-see [Volume display sets](#volume-display-sets)). A custom rule's
+`displaySet.handler` (a non-image object) and `displaySet.isReconstructable` (an image;
+see [Reconstructable display sets](#reconstructable-display-sets)). A custom rule's
 `viewportTypes`, if any, is on `displaySet.viewportTypes`. A viewport's
 `setDisplaySets({ displaySetId })` is the single entry point that loads a display
 set: it resolves `displaySetId` to renderable data, calls the viewport's native
@@ -102,10 +102,12 @@ utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
   imageIds: [...displaySet.imageIds],
 });
 
-// 2. Choose the viewport: from the handler, else from isVolume.
+// 2. Choose the viewport: from the handler, else from isReconstructable.
 const viewportType =
   HANDLER_TO_VIEWPORT_TYPE[displaySet.handler ?? ''] ??
-  (displaySet.isVolume ? ViewportType.ORTHOGRAPHIC : ViewportType.STACK);
+  (displaySet.isReconstructable
+    ? ViewportType.ORTHOGRAPHIC
+    : ViewportType.STACK);
 renderingEngine.enableElement({ viewportId, type: viewportType, element });
 
 const viewport = renderingEngine.getViewport(viewportId);
@@ -121,17 +123,20 @@ The runnable end-to-end version (all five viewport families, plus a dropdown to
 switch a display set among the viewports that the example allows) is the **Display Sets**
 example under `packages/core/examples/displaySets`.
 
-### Volume display sets
+### Reconstructable display sets
 
-`createDisplaySetFromGroup` sets `isVolume` on each image display set (no
-handler, or the handler `image`), and on no other display set. A host opens
-the display set as a volume when `isVolume` is true, else as a stack. A clip
-(`isClip`) is never a volume, and an attribute that sets `isVolume` wins.
+`createDisplaySetFromGroup` sets `isReconstructable` on each image display set
+(no handler, or the handler `image`), and on no other display set. The attribute
+has the name of the OHIF display set attribute `isReconstructable`. A host opens
+the display set as a volume when it is true, else as a stack. A clip (`isClip`)
+is never reconstructable, and an attribute that sets `isReconstructable` wins.
 
-`isVolumeInstances(instances)` computes it from the naturalized instances of
-the display set alone, so a server gets the same answer. It gives the answer of
-OHIF `isDisplaySetReconstructable`, and reads the plane, the spacing and the
-slice lattice with the `planeGeometry` series function:
+CS3D gives a reasonable first value from the instance attributes, and a host
+may refine it for display (for example with a texture size limit).
+`isReconstructableInstances(instances)` computes it from the naturalized
+instances of the display set alone, so a server gets the same answer. It
+follows OHIF `isDisplaySetReconstructable`, and reads the plane, the spacing
+and the slice lattice with the `planeGeometry` series function:
 
 - Single-frame instances: two or more, all with the same `Rows`, `Columns`,
   `SamplesPerPixel` and orientation, at two or more locations, and every slice
@@ -143,6 +148,16 @@ slice lattice with the `planeGeometry` series function:
   instance is a reconstructed tomo (`ImageType[2]` is `RECON TOMO` or
   `RECON GATED TOMO`); and the frames are not all at one location.
 - There is no modality list: the geometry decides.
+
+Known differences from OHIF `isDisplaySetReconstructable`:
+
+- A clip is never reconstructable here; OHIF has no clip rule.
+- No texture size limit here; OHIF can apply `max3DTextureSize` from its
+  configuration.
+- The orientation is rounded to 1e-3 here; OHIF allows a difference of 0.01.
+- The spacing is the most frequent gap here; OHIF averages first to last.
+- Frames of a multi-frame instance that differ only in-plane are one location
+  here (the distance is along the slice normal); OHIF measures 3D distance.
 
 The `isValidVolume(imageIds)` utility of `@cornerstonejs/core` reads the
 metadata providers by imageId; `@cornerstonejs/metadata` cannot import core, so
@@ -1334,7 +1349,7 @@ displaySet.underlyingImageIds; // SOP-level image ids (one per instance)
   rule's `customAttributes` callback and spread flat onto the display set in
   `createDisplaySetFromGroup` (for example `isMultiFrame`, `isClip`,
   `numImageFrames`, `splitNumber`). `createDisplaySetFromGroup` also sets
-  `isVolume` on each image display set.
+  `isReconstructable` on each image display set.
 - **App- or extension-specific attributes** that are not part of the common model
   should be added through **TypeScript module augmentation**, so they stay
   type-checked without widening the shared surface:

@@ -33,9 +33,9 @@ const VIEWPORT_TYPE_BY_HANDLER: Record<string, Enums.ViewportType> = {
   ecg: ViewportType.ECG,
 };
 
-/** True for an image display set that opens as a volume (`isVolume`). */
+/** True for an image display set that opens as a volume (`isReconstructable`). */
 export function isVolumeDisplaySet(displaySet: IDisplaySet): boolean {
-  return displaySet.isVolume === true;
+  return displaySet.isReconstructable === true;
 }
 
 /**

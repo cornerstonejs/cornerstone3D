@@ -322,7 +322,7 @@ describe('createDisplaySetFromGroup - the handler decides the class', () => {
   });
 });
 
-describe('createDisplaySetFromGroup - isVolume, as OHIF isDisplaySetReconstructable', () => {
+describe('createDisplaySetFromGroup - isReconstructable, as OHIF isDisplaySetReconstructable', () => {
   const AXIAL = [1, 0, 0, 0, 1, 0];
   const SAGITTAL = [0, 1, 0, 0, 0, 1];
   const slice = (id: string, z: number, orientation = AXIAL) =>
@@ -351,7 +351,7 @@ describe('createDisplaySetFromGroup - isVolume, as OHIF isDisplaySetReconstructa
       })),
     });
 
-  /** [name, rule fields, instances, isVolume (undefined: absent)] */
+  /** [name, rule fields, instances, isReconstructable (undefined: absent)] */
   const CASES: [
     string,
     Partial<SplitRule>,
@@ -405,13 +405,13 @@ describe('createDisplaySetFromGroup - isVolume, as OHIF isDisplaySetReconstructa
     ],
   ];
 
-  for (const [name, fields, instances, isVolume] of CASES) {
-    it(`gives ${name} isVolume ${isVolume}`, () => {
+  for (const [name, fields, instances, isReconstructable] of CASES) {
+    it(`gives ${name} isReconstructable ${isReconstructable}`, () => {
       const displaySet = createDisplaySetFromGroup({
         instances,
         matchedRule: { id: 'r', ...fields },
       });
-      expect(displaySet.isVolume).toBe(isVolume);
+      expect(displaySet.isReconstructable).toBe(isReconstructable);
     });
   }
 });

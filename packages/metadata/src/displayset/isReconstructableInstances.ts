@@ -5,7 +5,7 @@
  * (`isReconstructable`); the plane, the spacing and the lattice come from the
  * `planeGeometry` series function.
  *
- * @module displayset/isVolumeInstances
+ * @module displayset/isReconstructableInstances
  */
 
 import {
@@ -178,7 +178,7 @@ function isMultiFrameVolume(instance: NaturalizedInstance): boolean {
  *
  * There is no modality list: OHIF decides by geometry too.
  */
-export function isVolumeInstances(
+export function isReconstructableInstances(
   instances: readonly NaturalizedInstance[]
 ): boolean {
   const defined = instances.filter(Boolean);
