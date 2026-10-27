@@ -86,3 +86,28 @@ The module throws if a provider holds the image id but carries no
 `PredecessorDocumentsSequence`. The module cannot write the sequence without
 them, and a stored object that names an empty predecessor is worse for the user
 than a save that fails and says why.
+
+## The writer of a report
+
+`MeasurementReport.generateReport` writes three header attributes that name the
+software that wrote the report. A value in `options` wins over the default:
+
+| Attribute               | Option                  | Default                             |
+| ----------------------- | ----------------------- | ----------------------------------- |
+| `Manufacturer`          | `Manufacturer`          | `CornerstoneJS`                     |
+| `ManufacturerModelName` | `ManufacturerModelName` | `@cornerstonejs/adapters`           |
+| `SoftwareVersions`      | `SoftwareVersions`      | the adapters version, e.g. `5.13.2` |
+
+An application that builds on the adapters should pass its own values, for
+example its name in `Manufacturer` and both its version and the adapters
+`version` (exported from `@cornerstonejs/adapters`) in `SoftwareVersions`:
+
+```js
+import { adaptersSR, version } from '@cornerstonejs/adapters';
+
+const { MeasurementReport } = adaptersSR.Cornerstone3D;
+MeasurementReport.generateReport(toolState, metaData, {
+  Manufacturer: 'MyViewer',
+  SoftwareVersions: ['MyViewer 2.1.0', `CS3D ${version}`],
+});
+```
