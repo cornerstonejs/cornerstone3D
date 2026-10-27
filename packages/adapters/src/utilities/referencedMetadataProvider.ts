@@ -226,7 +226,6 @@ export const metadataProvider = {
       OperatorsName: '',
       ReferringPhysicianName: '',
       SpecificCharacterSet: 'ISO_IR 192',
-      // createInstance replaces each of these with a value in its options
       ...getWriterHeader(),
       SOPInstanceUID: DicomMetaDictionary.uid(),
       SeriesInstanceUID: DicomMetaDictionary.uid(),

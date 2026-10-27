@@ -35,7 +35,12 @@ jest.mock('@cornerstonejs/tools', () => {
   };
 });
 
-const { metaData, Enums } = require('@cornerstonejs/core');
+const { metaData, Enums, utilities } = require('@cornerstonejs/core');
+
+// The RTSTRUCT fixture has no segment data, and the writer logs a warning for it.
+utilities.logger.adaptersLog
+  .getLogger('Cornerstone3D.RTStruct.RTSS')
+  .setLevel('error');
 const MeasurementReport =
   require('../src/adapters/Cornerstone3D/MeasurementReport').default;
 const LegacyMeasurementReport =
@@ -181,4 +186,24 @@ describe('writer header', () => {
       expect(callerOptions).toEqual(options);
     }
   );
+
+  it('RTSTRUCT writes the header values with an instance provider that has no writer keys', () => {
+    const instanceProvider = (type) =>
+      type === Enums.MetadataModules.RTSS_INSTANCE_DATA
+        ? {
+            Modality: 'RTSTRUCT',
+            StructureSetROISequence: [],
+            ROIContourSequence: [],
+            RTROIObservationsSequence: [],
+            ReferencedFrameOfReferenceSequence: [],
+          }
+        : undefined;
+    metaData.addProvider(instanceProvider, 100001);
+    try {
+      expect(writers.RTSTRUCT({})).toMatchObject(DEFAULTS);
+      expect(writers.RTSTRUCT({ ...GIVEN })).toMatchObject(GIVEN);
+    } finally {
+      metaData.removeProvider(instanceProvider);
+    }
+  });
 });

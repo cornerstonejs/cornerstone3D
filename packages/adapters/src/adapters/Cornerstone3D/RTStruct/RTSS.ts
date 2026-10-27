@@ -291,6 +291,8 @@ export function generateRTSSFromAnnotations(
 function _initializeDataset(segmentation: Segmentation, imgMetadata, options) {
   // get the first annotation data
   const { referencedImageId: studyExemplarImageId } = imgMetadata;
+  // In the base, so that an instance provider without these keys still gets them
+  const writerHeader = getWriterHeader(options);
 
   return createInstance<RtssModule>(
     MetadataModules.RTSS_INSTANCE_DATA,
@@ -301,8 +303,9 @@ function _initializeDataset(segmentation: Segmentation, imgMetadata, options) {
       StructureSetName: segmentation.label,
       SeriesDescription: segmentation.label,
       _meta: metaData.get(MetadataModules.RTSS_CONTOUR, studyExemplarImageId),
+      ...writerHeader,
     },
-    { ...options, ...getWriterHeader(options) }
+    { ...options, ...writerHeader }
   );
 }
 

@@ -107,8 +107,9 @@ an existing series (`predecessorImageId`) does not copy the writer of its
 predecessor, so the instances of one series can name different writers or
 versions.
 
-The `newInstanceData` metadata module, which the RTSTRUCT starts from, also
-holds the three defaults.
+The `MetadataModules.NEW_INSTANCE_DATA` metadata module (`'NewInstanceData'`)
+also holds the three defaults, so every instance that `createInstance` builds
+from it names the adapters as its writer unless the options give a value.
 
 `utilities.getWriterHeader(options)` gives the three values, and
 `utilities.DEFAULT_WRITER_HEADER` holds the defaults.
