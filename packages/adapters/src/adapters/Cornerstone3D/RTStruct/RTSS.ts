@@ -7,7 +7,7 @@ import getReferencedFrameOfReferenceSequence from './utilities/getReferencedFram
 import getReferencedSeriesSequence from './utilities/getReferencedSeriesSequence';
 import getRTROIObservationsSequence from './utilities/getRTROIObservationsSequence';
 import getStructureSetModule from './utilities/getStructureSetModule';
-import { createInstance } from '../../../utilities';
+import { createInstance, getWriterHeader } from '../../../utilities';
 import '../../../utilities/referencedMetadataProvider';
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
 
@@ -302,7 +302,7 @@ function _initializeDataset(segmentation: Segmentation, imgMetadata, options) {
       SeriesDescription: segmentation.label,
       _meta: metaData.get(MetadataModules.RTSS_CONTOUR, studyExemplarImageId),
     },
-    options
+    { ...options, ...getWriterHeader(options) }
   );
 }
 

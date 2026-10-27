@@ -1,7 +1,7 @@
 ---
 id: saving
 title: Saving and Replacing
-summary: How a stored segmentation, structure set or report either starts a new series or becomes the next revision of an existing one, and what makes a viewer show the revision instead of the original
+summary: How a stored segmentation, structure set or report either starts a new series or becomes the next revision of an existing one, what makes a viewer show the revision instead of the original, and how the object names the software that wrote it
 ---
 
 # Saving and Replacing
@@ -89,16 +89,26 @@ than a save that fails and says why.
 
 ## The writer of the object
 
-Each of the three save functions writes three header attributes that name the
-software that wrote the object: `generateSegmentation`,
-`generateRTSSFromRepresentation` and `MeasurementReport.generateReport`. A value
-in `options` wins over the default:
+Each save function writes three header attributes that name the software that
+wrote the object. This applies to the SEG (`generateSegmentation`), the
+RTSTRUCT (`generateRTSSFromRepresentation`) and the SR
+(`MeasurementReport.generateReport`), and also to the legacy Cornerstone SR and
+SEG adapters. A value in `options` wins over the default. An empty value (`''`,
+`null` or `[]`) gets the default:
 
 | Attribute               | Option                  | Default                             |
 | ----------------------- | ----------------------- | ----------------------------------- |
 | `Manufacturer`          | `Manufacturer`          | `CornerstoneJS`                     |
 | `ManufacturerModelName` | `ManufacturerModelName` | `@cornerstonejs/adapters`           |
 | `SoftwareVersions`      | `SoftwareVersions`      | the adapters version, e.g. `5.13.2` |
+
+Each instance names the software that wrote it. A revision that is saved into
+an existing series (`predecessorImageId`) does not copy the writer of its
+predecessor, so the instances of one series can name different writers or
+versions.
+
+The `newInstanceData` metadata module, which the RTSTRUCT starts from, also
+holds the three defaults.
 
 `utilities.getWriterHeader(options)` gives the three values, and
 `utilities.DEFAULT_WRITER_HEADER` holds the defaults.

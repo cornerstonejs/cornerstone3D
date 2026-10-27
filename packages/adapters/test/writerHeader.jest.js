@@ -158,10 +158,17 @@ const GIVEN = {
   SoftwareVersions: ['OHIF 3.14.0', 'CS3D 5.13.2'],
 };
 
+const EMPTY = {
+  Manufacturer: '',
+  ManufacturerModelName: null,
+  SoftwareVersions: [],
+};
+
 describe('writer header', () => {
   const cases = Object.keys(writers).flatMap((writer) => [
     [writer, 'no writer options', {}, DEFAULTS],
     [writer, 'writer options', GIVEN, GIVEN],
+    [writer, 'empty writer options', EMPTY, DEFAULTS],
   ]);
 
   it.each(cases)(
