@@ -31,7 +31,7 @@ import {
 } from './constants';
 import LabelData from './LabelData';
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
-import { version } from '../../version';
+import { getWriterHeader } from '../../utilities/getWriterHeader';
 
 const cs3dLogger = cornerstoneUtilities.logger.adaptersLog.getLogger(
   'Cornerstone3D.MeasurementReport'
@@ -686,10 +686,8 @@ export default class MeasurementReport {
   /**
    * Generates the SR report dataset from the tool state.
    *
-   * The header values `Manufacturer`, `ManufacturerModelName` and
-   * `SoftwareVersions` identify the writer of the SR. A value in `options`
-   * wins; otherwise the report gets `CornerstoneJS`,
-   * `@cornerstonejs/adapters` and the adapters version.
+   * The writer header (`Manufacturer`, `ManufacturerModelName`,
+   * `SoftwareVersions`) comes from `getWriterHeader(options)`.
    */
   static generateReport(toolState, metadataProvider, options) {
     // ToolState for array of imageIDs to a Report
@@ -753,10 +751,7 @@ export default class MeasurementReport {
 
     const report = new StructuredReport(derivationSourceDatasets, {
       ...options,
-      Manufacturer: options.Manufacturer || 'CornerstoneJS',
-      ManufacturerModelName:
-        options.ManufacturerModelName || '@cornerstonejs/adapters',
-      SoftwareVersions: options.SoftwareVersions || version,
+      ...getWriterHeader(options),
     });
 
     const contentItem = tid1500MeasurementReport.contentItem(

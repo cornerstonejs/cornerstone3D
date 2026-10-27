@@ -87,10 +87,12 @@ The module throws if a provider holds the image id but carries no
 them, and a stored object that names an empty predecessor is worse for the user
 than a save that fails and says why.
 
-## The writer of a report
+## The writer of the object
 
-`MeasurementReport.generateReport` writes three header attributes that name the
-software that wrote the report. A value in `options` wins over the default:
+Each of the three save functions writes three header attributes that name the
+software that wrote the object: `generateSegmentation`,
+`generateRTSSFromRepresentation` and `MeasurementReport.generateReport`. A value
+in `options` wins over the default:
 
 | Attribute               | Option                  | Default                             |
 | ----------------------- | ----------------------- | ----------------------------------- |
@@ -98,16 +100,22 @@ software that wrote the report. A value in `options` wins over the default:
 | `ManufacturerModelName` | `ManufacturerModelName` | `@cornerstonejs/adapters`           |
 | `SoftwareVersions`      | `SoftwareVersions`      | the adapters version, e.g. `5.13.2` |
 
+`utilities.getWriterHeader(options)` gives the three values, and
+`utilities.DEFAULT_WRITER_HEADER` holds the defaults.
+
 An application that builds on the adapters should pass its own values, for
 example its name in `Manufacturer` and both its version and the adapters
-`version` (exported from `@cornerstonejs/adapters`) in `SoftwareVersions`:
+`version` (exported from `@cornerstonejs/adapters`) in `SoftwareVersions`. Pass
+the same options to each of the three functions:
 
 ```js
-import { adaptersSR, version } from '@cornerstonejs/adapters';
+import { version } from '@cornerstonejs/adapters';
 
-const { MeasurementReport } = adaptersSR.Cornerstone3D;
-MeasurementReport.generateReport(toolState, metaData, {
+const writer = {
   Manufacturer: 'MyViewer',
   SoftwareVersions: ['MyViewer 2.1.0', `CS3D ${version}`],
-});
+};
+generateSegmentation(images, labelmaps, metaData, { ...writer });
+generateRTSSFromRepresentation(segmentation, { ...writer });
+MeasurementReport.generateReport(toolState, metaData, { ...writer });
 ```

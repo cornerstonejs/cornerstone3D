@@ -19,6 +19,7 @@ import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
 import { utilities as metadataUtilities } from '@cornerstonejs/metadata';
 import { vec3 } from 'gl-matrix';
 import { toArray } from '../../helpers/toArray';
+import { getWriterHeader } from '../../../utilities/getWriterHeader';
 import {
   GEOMETRY_TOLERANCE,
   getSourceFrame,
@@ -820,7 +821,8 @@ function generateSegmentation(
  * series that the segmentation is derived from. You can use methods such as
  * volume.getCornerstoneImages() to get this array.
  *
- * @param options - the options object for the SegmentationDerivation.
+ * @param options - the options object for the SegmentationDerivation. The
+ * writer header comes from `getWriterHeader(options)`.
  * @returns The Seg derived dataSet.
  */
 function _createMultiframeSegmentationFromReferencedImages(
@@ -893,7 +895,10 @@ function _createMultiframeSegmentationFromReferencedImages(
     ];
     multiframe.NumberOfFrames = 1;
   }
-  return new SegmentationDerivation([multiframe], options);
+  return new SegmentationDerivation([multiframe], {
+    ...options,
+    ...getWriterHeader(options),
+  });
 }
 
 export {
