@@ -31,7 +31,6 @@
     "mammoViewSplit": {
       "priority": -1,
       "description": "Mammography: split a single MG series into one display set per laterality/view, so RCC, RMLO, LCC and LMLO are separately selectable.",
-      "viewportTypes": ["stack"],
       "matches": { "Modality": "MG" },
       "groupBy": [
         "SeriesInstanceUID",

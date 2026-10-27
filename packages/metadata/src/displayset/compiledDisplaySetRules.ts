@@ -13,8 +13,8 @@ import type { SplitRuleSet } from './types';
  * not build.
  *
  * Rules are evaluated in ascending `priority` (the defaults use `1..n`); the
- * first match wins. Each rule's `viewportTypes` (index 0 = preferred) is
- * applied to the resulting display set.
+ * first match wins. The `handler` of a rule decides the class of the display
+ * set and `isDisplayable`; a rule gives no viewport hint.
  *
  * To customize splitting, do not edit this set - merge your own rules over it by
  * key (a new id adds a rule, an existing id replaces one, `priority: null`

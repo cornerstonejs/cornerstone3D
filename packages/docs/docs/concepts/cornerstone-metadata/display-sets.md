@@ -7,8 +7,8 @@ summary: Framework-agnostic display-set splitting in @cornerstonejs/metadata —
 # Display Sets
 
 A **display set** is the unit a viewport renders. It groups the instances of a
-series that should be shown together and records which viewport type(s) can
-render them. This mirrors the OHIF "display set" concept, but lives in
+series that should be shown together, and names the handler of a non-image
+object. This mirrors the OHIF "display set" concept, but lives in
 `@cornerstonejs/metadata` as a framework-agnostic, **data-shaped** object
 (`IDisplaySet`) so any application — not just OHIF — can reuse it.
 
@@ -65,8 +65,9 @@ const displaySets: IDisplaySet[] = groups.map((group) =>
 
 ## Driving a viewport from a display set
 
-Each display set exposes the viewport type(s) it can be shown in
-(`viewportTypes`, with `preferredViewportType` being the first). A viewport's
+A display set gives no viewport type. The host chooses the viewport from
+`displaySet.handler` (a non-image object) and the instance data (an image).
+A viewport's
 `setDisplaySets({ displaySetId })` is the single entry point that loads a display
 set: it resolves `displaySetId` to renderable data, calls the viewport's native
 setter (`setStack` / `setVolumes` / `setVideo` / `setWSI` / `setEcg`), and
@@ -85,14 +86,12 @@ import { Enums, utilities } from '@cornerstonejs/core';
 
 const { ViewportType } = Enums;
 
-const HINT_TO_VIEWPORT_TYPE: Record<string, Enums.ViewportType> = {
-  stack: ViewportType.STACK,
-  volume: ViewportType.ORTHOGRAPHIC,
-  volume3d: ViewportType.VOLUME_3D,
+const HANDLER_TO_VIEWPORT_TYPE: Record<string, Enums.ViewportType> = {
   video: ViewportType.VIDEO,
-  wholeslide: ViewportType.WHOLE_SLIDE,
+  wholeSlide: ViewportType.WHOLE_SLIDE,
   ecg: ViewportType.ECG,
 };
+const VOLUME_MODALITIES = new Set(['CT', 'MR', 'PT', 'NM']);
 
 const displaySetId = displaySet.displaySetId;
 
@@ -103,9 +102,13 @@ utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
   imageIds: [...displaySet.imageIds],
 });
 
-// 2. Enable a viewport of the display set's preferred type, then mount it.
+// 2. Choose the viewport: from the handler, else from the instance data.
+const isVolume =
+  displaySet.imageIds.length > 1 &&
+  VOLUME_MODALITIES.has(String(displaySet.instances[0]?.Modality));
 const viewportType =
-  HINT_TO_VIEWPORT_TYPE[displaySet.preferredViewportType] ?? ViewportType.STACK;
+  HANDLER_TO_VIEWPORT_TYPE[displaySet.handler ?? ''] ??
+  (isVolume ? ViewportType.ORTHOGRAPHIC : ViewportType.STACK);
 renderingEngine.enableElement({ viewportId, type: viewportType, element });
 
 const viewport = renderingEngine.getViewport(viewportId);
@@ -118,7 +121,7 @@ viewport.getDisplaySets(); // [{ displaySetId }] — reflects what was mounted
 viewport, so mounted display sets can be read uniformly across either hierarchy.
 
 The runnable end-to-end version (all five viewport families, plus a dropdown to
-switch a display set among its allowed viewport types) is the **Display Sets**
+switch a display set among the viewports that the example allows) is the **Display Sets**
 example under `packages/core/examples/displaySets`.
 
 ## Caching display sets in the metadata layer
@@ -153,8 +156,8 @@ read never drift apart.
 
 ## Split rules
 
-Split rules decide how a series' instances are grouped into display sets and
-which viewport types each group supports. Rules are evaluated in **ascending
+Split rules decide how a series' instances are grouped into display sets, and
+which handler builds each one. Rules are evaluated in **ascending
 priority, first match wins per instance**.
 
 ### The default rules
@@ -165,24 +168,27 @@ It is the compiled form of `displaySetRules`, the same rules as JSON data
 It has sixteen rules. Fifteen have the priorities `1` to `15`, and the
 catch-all `unsupported` runs last, at `Number.MAX_SAFE_INTEGER`:
 
-| Priority | Id                          | Handler                | Viewport types                | Claims                                                                                                                                                                               |
-| -------- | --------------------------- | ---------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 1        | `video`                     | `video`                | `video`                       | `isVideo`: a video-only SOP class, a video transfer syntax, or (with no known transfer syntax) a long secondary capture. One display set per instance.                               |
-| 2        | `ecg`                       | `ecg`                  | `ecg`                         | `isEcg`: ECG and waveform SOP classes. One display set per instance.                                                                                                                 |
-| 3        | `wholeslide`                | `wholeSlide`           | `wholeslide`                  | `isWsi`: VL Whole Slide Microscopy, or modality SM; all pyramid levels form one display set.                                                                                         |
-| 4        | `singleImageModality`       |                        | `stack`                       | CR, DX and MG: one display set per instance.                                                                                                                                         |
-| 5        | `multiFrame`                |                        | `stack`                       | Each multi-frame image instance: one display set per `SOPInstanceUID`. A cine clip gets `isClip: true`; another multi-frame instance (an enhanced CT, for example) prefers `volume`. |
-| 6        | `mixedDimensionalityBValue` |                        | `volume`, `volume3d`, `stack` | Diffusion MR that mixes b-value frames with frames that have none; the two parts split.                                                                                              |
-| 7        | `volume3d`                  |                        | `volume`, `volume3d`, `stack` | Multi-slice CT, MR, PT and NM that reconstruct into a volume.                                                                                                                        |
-| 8        | `defaultImageRule`          |                        | `stack`, `volume`, `volume3d` | Any other image SOP class (`isImage`), also with no `Rows` in the metadata. One display set per series.                                                                              |
-| 9        | `segmentation`              | `segmentation`         | `stack`, `volume`             | `segmentationSopClassUids`. One display set per series.                                                                                                                              |
-| 10       | `rtStructureSet`            | `rtStructureSet`       | `stack`, `volume`             | `rtStructureSetSopClassUids`. One display set per series.                                                                                                                            |
-| 11       | `parametricMap`             | `parametricMap`        | `volume`, `stack`             | `parametricMapSopClassUids`. One display set per series.                                                                                                                             |
-| 12       | `structuredReport`          | `structuredReport`     | `stack`                       | `structuredReportSopClassUids`, also Comprehensive 3D SR. One display set per series, with the attributes `Manufacturer` and `ManufacturerModelName`.                                |
-| 13       | `encapsulatedDocument`      | `encapsulatedDocument` | `document`                    | `encapsulatedDocumentSopClassUids`. One display set per revision chain; see [Revision chains](#revision-chains).                                                                     |
-| 14       | `bulkAnnotation`            | `bulkAnnotation`       | `wholeslide`                  | `bulkAnnotationSopClassUids`. One display set per series.                                                                                                                            |
-| 15       | `chart`                     | `chart`                | `chart`                       | `chartSopClassUids`, empty by default. One display set per revision chain; see [Revision chains](#revision-chains).                                                                  |
-| max      | `unsupported`               | `unsupported`          | `none`                        | Everything else (presentation states, RT Plan, …); see [Objects nothing can render](#objects-nothing-can-render).                                                                    |
+| Priority | Id                          | Handler                | Claims                                                                                                                                                 |
+| -------- | --------------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1        | `video`                     | `video`                | `isVideo`: a video-only SOP class, a video transfer syntax, or (with no known transfer syntax) a long secondary capture. One display set per instance. |
+| 2        | `ecg`                       | `ecg`                  | `isEcg`: ECG and waveform SOP classes. One display set per instance.                                                                                   |
+| 3        | `wholeslide`                | `wholeSlide`           | `isWsi`: VL Whole Slide Microscopy, or modality SM; all pyramid levels form one display set.                                                           |
+| 4        | `singleImageModality`       |                        | CR, DX and MG: one display set per instance.                                                                                                           |
+| 5        | `multiFrame`                |                        | Each multi-frame image instance: one display set per `SOPInstanceUID`. A cine clip gets `isClip: true`.                                                |
+| 6        | `mixedDimensionalityBValue` |                        | Diffusion MR that mixes b-value frames with frames that have none; the two parts split.                                                                |
+| 7        | `volume3d`                  |                        | Multi-slice CT, MR, PT and NM that reconstruct into a volume.                                                                                          |
+| 8        | `defaultImageRule`          |                        | Any other image SOP class (`isImage`), also with no `Rows` in the metadata. One display set per series.                                                |
+| 9        | `segmentation`              | `segmentation`         | `segmentationSopClassUids`. One display set per series.                                                                                                |
+| 10       | `rtStructureSet`            | `rtStructureSet`       | `rtStructureSetSopClassUids`. One display set per series.                                                                                              |
+| 11       | `parametricMap`             | `parametricMap`        | `parametricMapSopClassUids`. One display set per series.                                                                                               |
+| 12       | `structuredReport`          | `structuredReport`     | `structuredReportSopClassUids`, also Comprehensive 3D SR. One display set per series, with the attributes `Manufacturer` and `ManufacturerModelName`.  |
+| 13       | `encapsulatedDocument`      | `encapsulatedDocument` | `encapsulatedDocumentSopClassUids`. One display set per revision chain; see [Revision chains](#revision-chains).                                       |
+| 14       | `bulkAnnotation`            | `bulkAnnotation`       | `bulkAnnotationSopClassUids`. One display set per series.                                                                                              |
+| 15       | `chart`                     | `chart`                | `chartSopClassUids`, empty by default. One display set per revision chain; see [Revision chains](#revision-chains).                                    |
+| max      | `unsupported`               | `unsupported`          | Everything else (presentation states, RT Plan, …); see [Objects nothing can render](#objects-nothing-can-render).                                      |
+
+No rule gives a viewport type. The host chooses the viewport from `handler`
+and the instance data.
 
 Each rule in data form also has a `description` that a UI can show. The next sections
 explain how your own rules combine with these.
@@ -223,8 +229,10 @@ rules do not.
 
 A rule can name a `handler`: the generic name of the code that builds the
 display sets of one kind of object. `createDisplaySetFromGroup` copies the name
-to `displaySet.handler`, and builds a `BaseDisplaySet` (not an image stack) for
-a handler other than `image`. The host maps the name to its own code; OHIF maps
+to `displaySet.handler`. The handler decides the class and `isDisplayable`:
+no handler or `image` gives an `ImageStackDisplaySet`; `unsupported` gives a
+`BaseDisplaySet` that is not displayable; any other handler gives a
+displayable `BaseDisplaySet`. The host maps the name to its own code; OHIF maps
 it to a SOP class handler. The default names are in
 `DISPLAY_SET_HANDLER_NAMES`:
 
@@ -243,17 +251,18 @@ it to a SOP class handler. The default names are in
 The default rules of this release give different display sets for some
 series. A short UID such as `6.1` is the suffix after `1.2.840.10008.5.1.4.1.1.`.
 
-| Rule                        | Change                                                                                                                                                                                                                                                                                                                                                                           | Effect                                                                                                                                                                                         |
-| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| all image rules (`isImage`) | `isImage` reads the list `imageSopClassUids`. The list adds MG For Presentation and For Processing (`1.2`, `1.2.1`), Intra-Oral, US (`3.1`, `6.1`, `6.2`), NM (`20`), IVOCT, ophthalmic photography and tomography, Corneal Topography Map (`82.1`), Enhanced PET (`130`), RT Image and RT Dose (`481.2`). It removes MR Spectroscopy (`4.2`), `13.1.6`, and `128.2` to `128.5`. | US, NM and RT Dose series get an image display set. MR spectroscopy goes to `unsupported`.                                                                                                     |
-| `singleImageModality`       | CR, DX and MG, one display set per instance. Before, the rule split by a coarse image-size bucket; that split is now an example, see [Example: single images by size](#example-single-images-by-size).                                                                                                                                                                           | Each view of a four-view MG series is its own display set.                                                                                                                                     |
-| `multiFrame`                | Each multi-frame image instance, grouped by `SOPInstanceUID`. Each instance is tested. A cine clip gets `isClip: true`.                                                                                                                                                                                                                                                          | An enhanced CT, MR, PT or NM, an Enhanced US Volume and a multi-frame secondary capture are one display set per instance, and prefer a volume viewport. Before, they went to the volume rules. |
-| `defaultImageRule`          | A known image SOP class matches with no `Rows`.                                                                                                                                                                                                                                                                                                                                  | An image whose `Rows` has not loaded gets an image display set, and not `unsupported`.                                                                                                         |
-| `mixedDimensionalityBValue` | The MR test was on `instances[0]`; now each instance. `!== undefined` is now a test for no value.                                                                                                                                                                                                                                                                                | `null` and `''` b-values count as no value. A DWI series with `DiffusionBValue: ''` on the b0 frames splits into two. A b-value of `0` is a value.                                             |
-| `volume3d`                  | The modality test was on `instances[0]`; now each instance.                                                                                                                                                                                                                                                                                                                      | A series with mixed modalities splits by modality.                                                                                                                                             |
-| `video`                     | A video-only SOP class decides alone. Else any available transfer syntax (`AvailableTransferSyntaxUID`, `TransferSyntaxUID`) decides. The guess for a long secondary capture runs only when no transfer syntax is known.                                                                                                                                                         | A long secondary capture with an image transfer syntax is an image, and not a video.                                                                                                           |
-| `segmentation` to `chart`   | New rules, each with a `handler`.                                                                                                                                                                                                                                                                                                                                                | SEG, RTSTRUCT, parametric map, SR and bulk annotations get one display set per series. Encapsulated documents and charts get one display set per revision chain. Each has the handler name.    |
-| `unsupported`               | New rule, at `Number.MAX_SAFE_INTEGER`.                                                                                                                                                                                                                                                                                                                                          | Objects that no rule matched were dropped. Now each series of them gives one non-displayable display set, and `onUnmatchedInstance` does not fire with the defaults.                           |
+| Rule                        | Change                                                                                                                                                                                                                                                                                                                                                                           | Effect                                                                                                                                                                                                                                                                              |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| all image rules (`isImage`) | `isImage` reads the list `imageSopClassUids`. The list adds MG For Presentation and For Processing (`1.2`, `1.2.1`), Intra-Oral, US (`3.1`, `6.1`, `6.2`), NM (`20`), IVOCT, ophthalmic photography and tomography, Corneal Topography Map (`82.1`), Enhanced PET (`130`), RT Image and RT Dose (`481.2`). It removes MR Spectroscopy (`4.2`), `13.1.6`, and `128.2` to `128.5`. | US, NM and RT Dose series get an image display set. MR spectroscopy goes to `unsupported`.                                                                                                                                                                                          |
+| `singleImageModality`       | CR, DX and MG, one display set per instance. Before, the rule split by a coarse image-size bucket; that split is now an example, see [Example: single images by size](#example-single-images-by-size).                                                                                                                                                                           | Each view of a four-view MG series is its own display set.                                                                                                                                                                                                                          |
+| `multiFrame`                | Each multi-frame image instance, grouped by `SOPInstanceUID`. Each instance is tested. A cine clip gets `isClip: true`.                                                                                                                                                                                                                                                          | An enhanced CT, MR, PT or NM, an Enhanced US Volume and a multi-frame secondary capture are one display set per instance. Before, they went to the volume rules.                                                                                                                    |
+| `defaultImageRule`          | A known image SOP class matches with no `Rows`.                                                                                                                                                                                                                                                                                                                                  | An image whose `Rows` has not loaded gets an image display set, and not `unsupported`.                                                                                                                                                                                              |
+| `mixedDimensionalityBValue` | The MR test was on `instances[0]`; now each instance. `!== undefined` is now a test for no value.                                                                                                                                                                                                                                                                                | `null` and `''` b-values count as no value. A DWI series with `DiffusionBValue: ''` on the b0 frames splits into two. A b-value of `0` is a value.                                                                                                                                  |
+| `volume3d`                  | The modality test was on `instances[0]`; now each instance.                                                                                                                                                                                                                                                                                                                      | A series with mixed modalities splits by modality.                                                                                                                                                                                                                                  |
+| `video`                     | A video-only SOP class decides alone. Else any available transfer syntax (`AvailableTransferSyntaxUID`, `TransferSyntaxUID`) decides. The guess for a long secondary capture runs only when no transfer syntax is known.                                                                                                                                                         | A long secondary capture with an image transfer syntax is an image, and not a video.                                                                                                                                                                                                |
+| `segmentation` to `chart`   | New rules, each with a `handler`.                                                                                                                                                                                                                                                                                                                                                | SEG, RTSTRUCT, parametric map, SR and bulk annotations get one display set per series. Encapsulated documents and charts get one display set per revision chain. Each has the handler name.                                                                                         |
+| `unsupported`               | New rule, at `Number.MAX_SAFE_INTEGER`.                                                                                                                                                                                                                                                                                                                                          | Objects that no rule matched were dropped. Now each series of them gives one non-displayable display set, and `onUnmatchedInstance` does not fire with the defaults.                                                                                                                |
+| all rules                   | The rule field `viewportTypes` is removed, and a rule that has it is a compile error. The display set has no `viewportTypes` and no `preferredViewportType`.                                                                                                                                                                                                                     | A host chooses the viewport from `handler` and the instance data. The handler decides the class and `isDisplayable`. The helpers `getViewportTypesForRule`, `getViewportTypesForGroup`, `getPreferredViewportType`, the type `ViewportTypeHint` and `NO_VIEWPORT_TYPE` are removed. |
 
 **Migration from the array form.** `groupInstancesBySplitRules`,
 `splitImageIdsBySplitRules` and `compiledDisplaySetRules` take and give a
@@ -265,21 +274,6 @@ call:
    priority: the first rule gets the lowest number.
 3. Merge your rules over `compiledDisplaySetRules` by key, and not with
    `concat`. See [Where your rule runs among the defaults](#where-your-rule-runs-among-the-defaults).
-
-### Viewport types are hints
-
-`viewportTypes` names the kind of view a display set supports, not a viewport
-class. `stack` means the images are shown one at a time and are not
-reconstructed into a volume. `volume` and `volume3d` mean the display set can
-be reconstructed for MPR and 3D.
-
-The consumer of the display set maps each hint to a viewport class, and this
-package does not. The mapping in
-[Driving a viewport from a display set](#driving-a-viewport-from-a-display-set)
-is for the legacy viewports, so `stack` becomes `ViewportType.STACK`. A
-consumer of the next-generation viewports maps `stack` to the planar viewport
-(`ViewportType.PLANAR_NEXT`) instead. The rules do not change, so the same rules
-work with both viewport families.
 
 ### Rule sets keyed by id
 
@@ -346,8 +340,8 @@ A `SplitRule` has up to five parts:
 | `matches`          | Returns true if an instance belongs to this rule. Omit to match everything.                                                                                                                                                                                                                                                           |
 | `groupBy`          | Keys (tag names or functions) that partition matched instances into separate display sets.                                                                                                                                                                                                                                            |
 | `series`           | Optional, code form only. Runs once per split and **returns** facts that extend the series context every code rule reads as `context.series`. The first rule that computes a name wins. A rule in data form does not use this hook: it reads the [display set context](#the-display-set-context), where each name has one definition. |
-| `viewportTypes`    | Allowed viewport types for the produced display sets; index `0` is preferred.                                                                                                                                                                                                                                                         |
 | `customAttributes` | Returns extra attributes spread flat onto the display set (e.g. `isClip`, `numImageFrames`).                                                                                                                                                                                                                                          |
+| `handler`          | The generic handler name of a non-image object. It decides the display set class and `isDisplayable` (see [Handlers](#handlers)).                                                                                                                                                                                                     |
 
 A rule's `id` is its key in the rule set, so an entry does not repeat it. Most
 rules only need `matches` and `groupBy`, plus the entry's `priority`:
@@ -384,7 +378,6 @@ import type { SplitRuleSetEntry } from '@cornerstonejs/metadata';
 // Keyed as `mixedDimensionalityBValue` in the rule set.
 const mixedDimensionalityBValue: SplitRuleSetEntry = {
   priority: 6,
-  viewportTypes: ['volume', 'volume3d', 'stack'],
   // Computed once over the whole series; returned, not mutated onto shared state.
   series: ({ instances }) => ({
     mixedBValue:
@@ -431,15 +424,9 @@ be overwritten, so the underlying-vs-frame image id invariant the viewports rely
 on always holds. The split identity — `splitKey`, `splitRuleId` and
 `splitGroupId` — is reserved too, so a rule cannot rename the display set.
 
-A `viewportTypes` key in the returned attributes replaces the rule's viewport
-types, and it does so **before** the display set is built:
-`createDisplaySetFromGroup` runs `customAttributes` first, resolves the
-effective viewport types, chooses the display set class from them (an image
-stack, a base display set, or the non-displayable shape with empty `imageIds`),
-and then applies the other attributes. So custom attributes that turn a
-displayable group into `['none']` get the non-displayable shape, and the
-reverse. `isDisplayable` and `preferredViewportType` are always derived from
-the effective viewport types; custom attributes cannot set them to disagree.
+The `handler` of the rule decides the display set class and `isDisplayable`
+(see [Handlers](#handlers)). `handler` and `isDisplayable` are reserved too, so
+custom attributes cannot make them disagree with the class.
 
 A few engine guarantees worth knowing when writing rules:
 
@@ -527,8 +514,6 @@ the result **not displayable**:
 const displaySet = createDisplaySetFromGroup(group);
 
 displaySet.isDisplayable; // false
-displaySet.viewportTypes; // ['none']  — the "no viewport" value
-displaySet.preferredViewportType; // 'none', not a misleading 'stack'
 displaySet.imageIds; // [] — there is nothing to render
 displaySet.underlyingImageIds; // ['wadors:/…'] — still resolvable by imageId
 displaySet.sopClassUids; // ['1.2.840.10008.5.1.4.1.1.11.1'] — *what* it is
@@ -538,11 +523,10 @@ displaySet.instances; // the full instances, e.g. for Modality / description
 
 Points worth knowing:
 
-- **`isDisplayable` is required and derived**, not optional. It is computed from
-  `viewportTypes` (false exactly when they contain `'none'`) and stored
-  as a plain field, so it spreads and serializes like every other attribute and
-  can never disagree with the viewport types. Check it before mounting a display
-  set:
+- **`isDisplayable` is required and derived**, not optional. It is false
+  exactly for the handler `unsupported`, and stored as a plain field, so it
+  spreads and serializes like every other attribute. Check it before mounting a
+  display set:
 
   ```ts
   if (!displaySet.isDisplayable) {
@@ -552,9 +536,6 @@ Points worth knowing:
   await viewport.setDisplaySets({ displaySetId: displaySet.displaySetId });
   ```
 
-- **`'none'` is a sentinel, not an empty list.** An absent or empty
-  `viewportTypes` falls back to `['stack']`, so "empty" cannot mean "not
-  renderable" — that fallback would quietly turn a structured report into a stack.
 - **One display set per series**, not per object. A series of 300 presentation
   states is one entry, and `sopClassUids` lists the distinct SOP classes in it.
   An application that supports a format adds its own rule (see below), and can
@@ -564,8 +545,8 @@ Points worth knowing:
 
 ### Supporting one of these formats
 
-Add your own rule with a priority _below_ the catch-all's, with real viewport
-types. This is the other half of the user's choice: either take the
+Add your own rule with a priority _below_ the catch-all's, with its own
+`handler`. This is the other half of the user's choice: either take the
 non-displayable display set and present it, or teach the rules how to render
 the format.
 
@@ -576,7 +557,6 @@ const splitRules = createDisplaySetSplitRules({
     // Below 0: runs before every default rule.
     priority: -1,
     handler: 'presentationState',
-    viewportTypes: ['stack'],
     matches: { Modality: 'PR' },
     groupBy: ['SeriesInstanceUID', 'SOPInstanceUID'],
   },
@@ -665,13 +645,12 @@ absent value and an empty value.
 | `attributes` | the attributes of the display set, keyed by attribute name                                 | `customAttributes: (attributes, options) => {...}` |
 
 The other fields are data: `id` (optional, must equal the key), `groupId`,
-`priority`, `description`, `viewportTypes` and `handler` (see
+`priority`, `description` and `handler` (see
 [Handlers](#handlers)).
 
 ```jsonc
 "dwiByBValue": {
   "priority": -1,
-  "viewportTypes": ["stack"],
   "context": {
     "bValue": "Number(DiffusionBValue)",
     "isDiffusion": "series.instances.max(bValue) > 0"
@@ -705,6 +684,12 @@ with no b-value, so a series with no b-value gives no value, and the test is
 - `false` on a named boolean gives "not": `"isMultiFrame": false` holds when
   `NumberOfFrames` is absent, because `NumberOfFrames > 1` gives `false`.
 - An "or" goes in a context entry, and the rule reads the name of the entry.
+- A test without an operator is `includes`, in both forms:
+  `"ImageType": "LOCALIZER"` and `"ImageType": ["LOCALIZER"]` both hold for
+  `['ORIGINAL', 'LOCALIZER']`, and `"Modality": ["MR", "CT"]` holds for `'MR'`.
+  For a whole-value test, use `{ "equals": ["ORIGINAL", "LOCALIZER"] }`.
+- In an expression, `Modality == ['MR', 'CT']` is a compile error that names
+  `in`; write `Modality in ['MR', 'CT']`.
 
 ```jsonc
 "context": {
@@ -980,7 +965,6 @@ that the compile does not check.
 ```jsonc
 "usTimeClusters": {
   "priority": -1,
-  "viewportTypes": ["stack"],
   "context": { "timeClustersMaxGap": 20 },
   "matches": {
     "isImage": true,
@@ -1054,7 +1038,7 @@ The compiler is **strict**. A wrong rule fails at compile time, and the
 compiler never ignores it:
 
 ```text
-Invalid display set rules: rule 'r': unknown field 'matchs'; allowed: id, groupId, priority, description, viewportTypes, handler, context, matches, groupBy, sortBy, attributes
+Invalid display set rules: rule 'r': unknown field 'matchs'; allowed: id, groupId, priority, description, handler, context, matches, groupBy, sortBy, attributes
 Invalid display set rules: rule 'r'.matches.BodyPartExamind: unknown name 'BodyPartExamind': it is not a keyword of the DICOM dictionary; a private, vendor or synthetic attribute needs a declaration, e.g. "myValue": { "attribute": "BodyPartExamind" }
 Invalid display set rules: rule 'r'.attributes.label: unknown name 'SCOUT': ...; fixed text is { "template": "SCOUT" }
 Invalid display set rules: context.first: the context entries form a loop: first -> second -> first
@@ -1123,7 +1107,6 @@ Two rules from the defaults, in raw form:
   // Each multi-frame image instance; a cine clip is flagged isClip.
   multiFrame: {
     priority: 5,
-    viewportTypes: ['stack'],
     context: { isCineClip: 'SliceLocation != null || ...' },
     matches: { isImage: true, isMultiFrame: true },
     // DICOM groups an object by InstanceNumber, but no known data needs it.
@@ -1131,16 +1114,12 @@ Two rules from the defaults, in raw form:
     attributes: {
       isClip: 'isCineClip',
       numImageFrames: { expression: 'Number(NumberOfFrames)' },
-      viewportTypes: {
-        expression: "isCineClip ? ['stack'] : ['volume', 'volume3d', 'stack']",
-      },
     },
   },
 
   // The DWI fix: split the undefined-b-value frames off the 4D set.
   mixedDimensionalityBValue: {
     priority: 6,
-    viewportTypes: ['volume', 'volume3d', 'stack'],
     context: {
       isMixedBValue:
         'series.instances.count(DiffusionBValue) > 0 && ' +
@@ -1172,7 +1151,6 @@ const splitRules = createDisplaySetSplitRules({
   ...displaySetRules,
   singleImagesBySize: {
     priority: -1,
-    viewportTypes: ['stack'],
     // The `/64` rounding is a fuzzy bucket, and can straddle a boundary
     // (480 -> 8, 544 -> 9).
     context: {
@@ -1194,7 +1172,6 @@ const splitRules = createDisplaySetSplitRules(
     ...displaySetRules,
     dxCrSmallSeries: {
       priority: -1,
-      viewportTypes: ['stack'],
       matches: { Modality: ['DX', 'CR'], isImage: true, isSmallSeries: true },
       groupBy: ['SeriesInstanceUID', 'SOPInstanceUID'],
     },
@@ -1300,8 +1277,9 @@ getContextValue('isMultiFrame', instance); // any instance-scope name
 - `getContextValue(name, instance, context?)` reads one context name for one
   instance, with no rules. A series-scope entry (for example
   `seriesInstanceCount`) is an error, because one instance is not a series.
-- `createDisplaySetFromGroup` reads the context that its rule set was compiled
-  with (`SplitRule.metadataContext`), or the `context` option.
+- `createDisplaySetSplitRules` with no series functions and no deny list uses
+  the same cache, so a split and the code tests share one compile of the same
+  context object.
 
 ## Display set attributes (`IDisplaySet`)
 
@@ -1317,8 +1295,6 @@ displaySet.splitKey; // the rule id and the groupBy values: the stable identity
 displaySet.splitRuleId; // the rule that made the display set
 displaySet.splitGroupId; // the rule's groupId, else the rule id
 displaySet.handler; // the rule's handler name, e.g. 'segmentation'; absent for an image
-displaySet.viewportTypes; // readonly ViewportTypeHint[]
-displaySet.preferredViewportType; // viewportTypes[0]
 displaySet.isDisplayable; // false for objects nothing can render — check before mounting
 displaySet.instances; // readonly NaturalizedInstance[]
 displaySet.imageIds; // frame-level, renderable image ids

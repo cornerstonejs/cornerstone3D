@@ -32,7 +32,7 @@ export type RawScalar = string | number | boolean;
  * meaning of each form and operator.
  */
 export type RawMatchTest =
-  /** Equal to the scalar, with `==`. */
+  /** Shorthand for `includes`: the value is the scalar, or holds it. */
   | RawScalar
   /** Shorthand for `includes`: one value is in the array. */
   | RawScalar[]

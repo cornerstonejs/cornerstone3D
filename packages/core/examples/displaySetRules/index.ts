@@ -78,9 +78,21 @@ setTitleAndDescription(
     'a plain left drag, so a split can be measured across as well as looked at.'
 );
 
-/** A display set is volume-capable when a rule allowed a volume viewport for it. */
+/** Modalities whose multi-image display sets this example opens as a volume. */
+const VOLUME_MODALITIES = new Set(['CT', 'MR', 'PT', 'NM']);
+
+/**
+ * The example decides the viewport itself; the rules give no viewport hint. An
+ * image display set (no handler) with more than one image of CT, MR, PT or NM
+ * opens as a volume.
+ */
 function isVolumeCapable(displaySet: IDisplaySet): boolean {
-  return displaySet.viewportTypes.includes('volume');
+  const modality = displaySet.instances[0]?.Modality;
+  return (
+    !displaySet.handler &&
+    displaySet.imageIds.length > 1 &&
+    VOLUME_MODALITIES.has(String(modality))
+  );
 }
 
 /** The 2x2 MPR + 3D layout, as [label, viewport type, orientation] slots. */
@@ -209,7 +221,6 @@ const SAMPLE_SNIPPETS: Record<string, string> = {
         description:
           'Split scout / localizer images off into their own stack so they do ' +
           'not join the volume.',
-        viewportTypes: ['stack'],
         matches: { isLocalizer: true },
         groupBy: ['SeriesInstanceUID'],
       },
@@ -225,7 +236,6 @@ const SAMPLE_SNIPPETS: Record<string, string> = {
           'Ultrasound: a gap of more than 20 seconds between frames starts a ' +
           'new sweep, and each sweep becomes a display set. The gap applies to ' +
           'this rule only.',
-        viewportTypes: ['stack'],
         context: { timeClustersMaxGap: 20 },
         matches: {
           isImage: true,
@@ -254,7 +264,6 @@ const SAMPLE_SNIPPETS: Record<string, string> = {
           'Mammography: a screening exam that arrives as a single series still ' +
           'holds four distinct views. Split it by laterality and view so each ' +
           'becomes its own display set, grouped by laterality and view.',
-        viewportTypes: ['stack'],
         matches: { Modality: 'MG', Rows: { notNull: true } },
         // ViewPosition first for the vendors that send it; PatientOrientation is
         // the fallback that distinguishes CC from MLO when they do not
@@ -285,7 +294,6 @@ const SAMPLE_SNIPPETS: Record<string, string> = {
           'read out of ViewCodeSequence by the mammoView code entry of the ' +
           'context. A hanging protocol can then select a viewport by view ' +
           'rather than by position.',
-        viewportTypes: ['stack'],
         matches: { Modality: 'MG', Rows: { notNull: true } },
         groupBy: [
           'SeriesInstanceUID',
@@ -316,7 +324,6 @@ const SAMPLE_SNIPPETS: Record<string, string> = {
           'DiffusionBValue (a b=0 set that carries its b-value only in a ' +
           'private tag, or a trace / ADC set) fall through to the standard ' +
           'rules and form a display set of their own.',
-        viewportTypes: ['stack'],
         context: {
           bValue: 'Number(DiffusionBValue)',
           // A series value: one instance has a b-value above 0. Some scanners
@@ -342,7 +349,7 @@ const SAMPLE_SNIPPETS: Record<string, string> = {
     2
   ),
   'Customization merge command ($merge by key)': JSON.stringify(
-    { volume3d: { $merge: { viewportTypes: ['stack'] } } },
+    { volume3d: { $merge: { groupBy: ['SeriesInstanceUID', 'EchoNumbers'] } } },
     null,
     2
   ),
@@ -564,8 +571,8 @@ function ruleRow(
           : rule.priority
     }`,
   ];
-  if (rule.viewportTypes?.length) {
-    meta.push(`viewports: ${rule.viewportTypes.join(', ')}`);
+  if (rule.handler) {
+    meta.push(`handler: ${rule.handler}`);
   }
   meta.push(`groupBy: ${describeGroupBy(rule)}`);
   if (rule.context && Object.keys(rule.context).length) {
@@ -1107,18 +1114,37 @@ async function loadServerRuleSet(path: string) {
 
 // ======== Viewports: one per display set ======== //
 
+/** The viewport of a non-image display set, from its handler. */
+const HANDLER_TO_LAYOUT: Record<string, string> = {
+  video: 'video',
+  ecg: 'ecg',
+  wholeSlide: 'wholeslide',
+};
+
+/**
+ * The viewport choices of a display set: the viewport of its handler, else a
+ * volume and a stack for a volume-capable image display set, else a stack.
+ */
+function viewportChoicesOf(displaySet: IDisplaySet): string[] {
+  const byHandler = HANDLER_TO_LAYOUT[displaySet.handler ?? ''];
+  if (byHandler) {
+    return [byHandler];
+  }
+  return isVolumeCapable(displaySet) ? ['volume', 'stack'] : ['stack'];
+}
+
 /** Layout options for a display set: MPR+3D when volume-capable, else its types. */
 function layoutOptionsFor(displaySet: IDisplaySet): string[] {
   const options = isVolumeCapable(displaySet) ? [MPR_3D_LAYOUT] : [];
-  return [...options, ...displaySet.viewportTypes];
+  return [...options, ...viewportChoicesOf(displaySet)];
 }
 
 function defaultLayoutFor(displaySet: IDisplaySet): string {
   // Volume-capable display sets default to 2x2 MPR + 3D; everything else shows
-  // the single viewport type the rule asked for.
+  // its first viewport choice.
   return isVolumeCapable(displaySet)
     ? MPR_3D_LAYOUT
-    : displaySet.preferredViewportType;
+    : viewportChoicesOf(displaySet)[0];
 }
 
 /**
@@ -1375,7 +1401,7 @@ async function buildCell(displaySet: IDisplaySet, index: number) {
   const detailParts = [
     `${displaySet.instances.length} instance(s)`,
     `${displaySet.imageIds.length} imageId(s)`,
-    `allowed: ${displaySet.viewportTypes.join(', ')}`,
+    `handler: ${displaySet.handler ?? 'none (image)'}`,
   ];
   if (displaySet.sopClassUids?.length) {
     detailParts.push(`SOP: ${displaySet.sopClassUids.join(', ')}`);

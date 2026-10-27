@@ -6,6 +6,8 @@ import type { DisplaySetRules } from './displaySetRulesTypes';
 import { RuleCompileError } from '../safeFunctions';
 import { isVideoInstance } from './isVideoInstance';
 import { resolveSplitRuleSet } from './splitRuleSet';
+import { BaseDisplaySet } from './BaseDisplaySet';
+import { ImageStackDisplaySet } from './ImageStackDisplaySet';
 import { DISPLAY_SET_HANDLER_NAMES } from './types';
 import type { NaturalizedInstance, SplitRule } from './types';
 
@@ -139,31 +141,18 @@ describe('createDisplaySetSplitRules - compiled default behaviour', () => {
     ]);
   });
 
-  const MULTI_FRAME: [string, string, string, boolean, string][] = [
-    ['a US clip', US_MULTIFRAME_SOP_CLASS, 'US', true, 'stack'],
-    ['an enhanced CT', '1.2.840.10008.5.1.4.1.1.2.1', 'CT', false, 'volume'],
-    [
-      'an Enhanced US Volume',
-      '1.2.840.10008.5.1.4.1.1.6.2',
-      'US',
-      false,
-      'volume',
-    ],
+  const MULTI_FRAME: [string, string, string, boolean][] = [
+    ['a US clip', US_MULTIFRAME_SOP_CLASS, 'US', true],
+    ['an enhanced CT', '1.2.840.10008.5.1.4.1.1.2.1', 'CT', false],
+    ['an Enhanced US Volume', '1.2.840.10008.5.1.4.1.1.6.2', 'US', false],
     [
       'a multi-frame secondary capture',
       '1.2.840.10008.5.1.4.1.1.7.4',
       'OT',
       false,
-      'volume',
     ],
   ];
-  for (const [
-    name,
-    SOPClassUID,
-    Modality,
-    isClip,
-    preferredViewportType,
-  ] of MULTI_FRAME) {
+  for (const [name, SOPClassUID, Modality, isClip] of MULTI_FRAME) {
     it(`gives ${name} one display set for each instance`, () => {
       const groups = groupInstancesBySplitRules(
         ['a', 'b'].map((SOPInstanceUID, index) =>
@@ -184,7 +173,6 @@ describe('createDisplaySetSplitRules - compiled default behaviour', () => {
       const displaySet = createDisplaySetFromGroup(groups[0]);
       expect(displaySet.isClip).toBe(isClip);
       expect(displaySet.numImageFrames).toBe(30);
-      expect(displaySet.preferredViewportType).toBe(preferredViewportType);
     });
   }
 
@@ -285,6 +273,37 @@ describe('default rules - image classifier coverage', () => {
     expect(claimedBy('1.2.840.10008.5.1.4.1.1.4.2', 'MR')).toEqual([
       'unsupported',
     ]);
+  });
+});
+
+describe('createDisplaySetFromGroup - the handler decides the class', () => {
+  /** [name, rule fields, class, isDisplayable] */
+  const CASES: [string, Partial<SplitRule>, typeof BaseDisplaySet, boolean][] =
+    [
+      ['no handler', {}, ImageStackDisplaySet, true],
+      ['the image handler', { handler: 'image' }, ImageStackDisplaySet, true],
+      [
+        'the unsupported handler',
+        { handler: 'unsupported' },
+        BaseDisplaySet,
+        false,
+      ],
+      ['the video handler', { handler: 'video' }, BaseDisplaySet, true],
+    ];
+
+  for (const [name, fields, displaySetClass, isDisplayable] of CASES) {
+    it(`builds the display set of ${name}`, () => {
+      const displaySet = createDisplaySetFromGroup({
+        instances: [instance({ imageId: 'wadors:/x' })],
+        matchedRule: { id: 'r', ...fields },
+      });
+      expect(displaySet.constructor).toBe(displaySetClass);
+      expect(displaySet.isDisplayable).toBe(isDisplayable);
+    });
+  }
+
+  it('rejects a rule with viewportTypes: the field is gone', () => {
+    expectRejected({ viewportTypes: ['stack'] }, "rule 'r'", "'viewportTypes'");
   });
 });
 
@@ -613,9 +632,7 @@ describe('default rules - the unsupported catch-all', () => {
     const displaySet = displaySetFor('1.2.840.10008.5.1.4.1.1.11.1', 'PR');
 
     expect(displaySet.isDisplayable).toBe(false);
-    expect(displaySet.viewportTypes).toEqual(['none']);
-    // A consumer switching on the preferred type is told 'none', not 'stack'.
-    expect(displaySet.preferredViewportType).toBe('none');
+    expect(displaySet.handler).toBe('unsupported');
   });
 
   it('records what it could not render, so a consumer can say which kind', () => {
@@ -699,7 +716,6 @@ describe('default rules - the unsupported catch-all', () => {
       ...displaySetRules,
       seg: {
         priority: -1,
-        viewportTypes: ['stack'],
         matches: { Modality: 'SEG' },
       },
     });
@@ -909,7 +925,7 @@ describe('matches - the operator meanings', () => {
     }
   });
 
-  it('gives equals the meaning of a scalar test, with ==', () => {
+  it('reads a number shorthand and equals with ==', () => {
     expect(holds('1', 1)).toBe(true);
     expect(holds('1', { equals: 1 })).toBe(true);
     expect(holds(['MR'], { equals: 'MR' })).toBe(true);
@@ -945,16 +961,29 @@ describe('matches - the operator meanings', () => {
     expect(holds(['ORIGINAL'], { doesNotInclude: 'LOCALIZER' })).toBe(true);
   });
 
-  it('gives an array test the meaning of includes, and a scalar test the meaning of ==', () => {
-    const test = ['ORIGINAL', 'PRIMARY'];
-    // A single value is one of the elements.
-    expect(holds('ORIGINAL', test)).toBe(true);
-    // A multi-valued value has one element in common with the array.
-    expect(holds(['ORIGINAL', 'SECONDARY'], test)).toBe(true);
-    expect(holds(['DERIVED', 'SECONDARY'], test)).toBe(false);
-    // A scalar test on a multi-valued value is equality, not "in".
-    expect(holds(['ORIGINAL', 'LOCALIZER'], 'LOCALIZER')).toBe(false);
-    expect(holds(['LOCALIZER'], 'LOCALIZER')).toBe(true);
+  // [value, test, holds]: the shorthand is includes in both forms; equals
+  // compares the whole value.
+  const SHORTHAND: [unknown, unknown, boolean][] = [
+    ['LOCALIZER', 'LOCALIZER', true],
+    [['ORIGINAL', 'LOCALIZER'], 'LOCALIZER', true],
+    [['ORIGINAL', 'PRIMARY'], 'LOCALIZER', false],
+    ['ORIGINAL', ['ORIGINAL', 'PRIMARY'], true],
+    [['ORIGINAL', 'SECONDARY'], ['ORIGINAL', 'PRIMARY'], true],
+    [['DERIVED', 'SECONDARY'], ['ORIGINAL', 'PRIMARY'], false],
+    [['ORIGINAL', 'LOCALIZER'], { equals: ['LOCALIZER'] }, false],
+    [['ORIGINAL', 'LOCALIZER'], { equals: ['ORIGINAL', 'LOCALIZER'] }, true],
+    [['ORIGINAL', 'LOCALIZER'], { equals: 'LOCALIZER' }, false],
+    [true, true, true],
+    [false, true, false],
+  ];
+  it('reads a scalar and an array shorthand as includes, and equals as the whole value', () => {
+    for (const [value, test, expected] of SHORTHAND) {
+      expect([value, test, holds(value, test)]).toEqual([
+        value,
+        test,
+        expected,
+      ]);
+    }
   });
 
   it('fails notNull for an empty string', () => {

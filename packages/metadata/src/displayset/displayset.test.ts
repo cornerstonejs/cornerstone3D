@@ -16,7 +16,6 @@ import type {
   SplitRule,
   SplitRuleSet,
 } from './types';
-import { getPreferredViewportType } from './viewportTypes';
 
 /**
  * A keyed rule set from rules listed in evaluation order: each rule's id is its
@@ -76,7 +75,7 @@ describe('displayset split utilities', () => {
     ).toThrow(/"bad".*priority/);
   });
 
-  it('default rules group multi-slice CT as volume (MPR) preferred', () => {
+  it('default rules group multi-slice CT as one image stack, with no handler', () => {
     const groups = splitImageIdsBySplitRules(
       instances.map((i) => i.imageId!),
       {
@@ -87,14 +86,11 @@ describe('displayset split utilities', () => {
     expect(groups).toHaveLength(1);
     expect(groups[0].matchedRule.id).toBe('volume3d');
     const displaySet = createDisplaySetFromGroup(groups[0]);
-    // The volume3d rule defaults volumetric series to MPR (volume); volume3d
-    // remains an allowed-but-not-preferred viewport type.
-    expect(displaySet.viewportTypes[0]).toBe('volume');
-    expect(displaySet.viewportTypes).toContain('volume3d');
-    expect(displaySet.preferredViewportType).toBe('volume');
+    expect(displaySet).toBeInstanceOf(ImageStackDisplaySet);
+    expect(displaySet.handler).toBeUndefined();
   });
 
-  it('video rule uses video viewportTypes', () => {
+  it('video rule gives the video handler', () => {
     const videoInstance: NaturalizedInstance = {
       imageId: 'wadors:video',
       SOPClassUID: '1.2.840.10008.5.1.4.1.1.77.1.4.1',
@@ -106,14 +102,13 @@ describe('displayset split utilities', () => {
     });
     expect(groups[0].matchedRule.id).toBe('video');
     const displaySet = createDisplaySetFromGroup(groups[0]);
-    expect(displaySet.viewportTypes).toEqual(['video']);
-    expect(getPreferredViewportType(displaySet.viewportTypes)).toBe('video');
+    expect(displaySet.handler).toBe('video');
     // The video display set exposes its instances so consumers (e.g. the video
     // viewport's setDisplaySets) can resolve the source imageId directly.
     expect(displaySet.instances[0]?.imageId).toBe('wadors:video');
   });
 
-  it('ecg rule uses ecg viewportTypes', () => {
+  it('ecg rule gives the ecg handler', () => {
     const ecgInstance: NaturalizedInstance = {
       imageId: 'wadors:ecg',
       SOPClassUID: '1.2.840.10008.5.1.4.1.1.9.1.1',
@@ -124,17 +119,14 @@ describe('displayset split utilities', () => {
       splitRules: compiledDisplaySetRules,
     });
     expect(groups[0].matchedRule.id).toBe('ecg');
-    expect(createDisplaySetFromGroup(groups[0]).viewportTypes[0]).toBe('ecg');
+    expect(createDisplaySetFromGroup(groups[0]).handler).toBe('ecg');
   });
 
   it('ImageStackDisplaySet exposes underlying and frame ids', () => {
     const displaySet = ImageStackDisplaySet.fromInstances(instances, {
       displaySetId: 'uid-1',
-      viewportTypes: ['stack', 'volume', 'volume3d'],
     });
     expect(displaySet.underlyingImageIds.length).toBe(2);
-    expect(displaySet.viewportTypes[0]).toBe('stack');
-    expect(displaySet.preferredViewportType).toBe('stack');
   });
 
   it('spreads matched-rule customAttributes flat onto the display set', () => {
@@ -168,7 +160,6 @@ describe('displayset split utilities', () => {
     expect(displaySet.sopClassUids).toEqual([
       multiFrameInstances[0].SOPClassUID,
     ]);
-    expect(displaySet.viewportTypes).toEqual(['stack']);
   });
 
   it('classifies an MPEG2 transfer syntax instance as video', () => {
@@ -209,7 +200,6 @@ describe('displayset split utilities', () => {
       instances: stackInstances,
       matchedRule: {
         id: 'reserved-clobber',
-        viewportTypes: ['stack'],
         customAttributes: () => ({
           // Reserved data fields must be ignored ...
           imageIds: ['evil-frame'],
@@ -235,29 +225,6 @@ describe('displayset split utilities', () => {
     );
   });
 
-  it('reads an empty viewportTypes from the attributes as no override', () => {
-    const group: InstanceGroup = {
-      instances: [
-        {
-          imageId: 'wadors:empty-types',
-          SOPClassUID: '1.2.840.10008.5.1.4.1.1.2',
-          Rows: 512,
-          SeriesInstanceUID: 'series-empty-types',
-          InstanceNumber: 1,
-        },
-      ],
-      matchedRule: {
-        id: 'emptyTypes',
-        customAttributes: () => ({ viewportTypes: [] }),
-      },
-    };
-
-    const displaySet = createDisplaySetFromGroup(group);
-
-    expect(displaySet.viewportTypes).toEqual(['stack']);
-    expect(displaySet.isDisplayable).toBe(true);
-  });
-
   it('records the split identity, and attributes cannot rename it', () => {
     const group: InstanceGroup = {
       instances: [
@@ -272,7 +239,6 @@ describe('displayset split utilities', () => {
       matchedRule: {
         id: 'mgLegacy',
         groupId: 'mammo',
-        viewportTypes: ['stack'],
         customAttributes: () => ({
           splitKey: 'other',
           splitRuleId: 'other',
@@ -302,7 +268,6 @@ describe('displayset split utilities', () => {
       ],
       matchedRule: {
         id: 'proto',
-        viewportTypes: ['stack'],
         // JSON.parse makes `__proto__` a real own key.
         customAttributes: () => JSON.parse('{"__proto__": {"x": 1}, "y": 2}'),
       },
@@ -317,76 +282,28 @@ describe('displayset split utilities', () => {
     expect((displaySet as unknown as Record<string, unknown>).y).toBe(2);
   });
 
-  describe('customAttributes that replace viewportTypes', () => {
-    const imageInstances: NaturalizedInstance[] = [
-      {
-        imageId: 'wadors:vt-1',
-        SOPClassUID: '1.2.840.10008.5.1.4.1.1.2',
-        Modality: 'CT',
-        Rows: 512,
-        SeriesInstanceUID: 'series-vt',
-        InstanceNumber: 1,
+  it('does not let customAttributes change isDisplayable or the handler', () => {
+    const displaySet = createDisplaySetFromGroup({
+      instances: [
+        {
+          imageId: 'wadors:pr',
+          SOPClassUID: '1.2.840.10008.5.1.4.1.1.11.1',
+          SeriesInstanceUID: 'series-pr',
+        },
+      ],
+      matchedRule: {
+        id: 'unsupported',
+        handler: 'unsupported',
+        customAttributes: () => ({ isDisplayable: true, handler: 'image' }),
       },
-    ];
-
-    it('builds the non-displayable shape when customAttributes turn a displayable rule off', () => {
-      const displaySet = createDisplaySetFromGroup({
-        instances: imageInstances,
-        matchedRule: {
-          id: 'turnedOff',
-          viewportTypes: ['stack'],
-          customAttributes: () => ({ viewportTypes: ['none'], label: 'x' }),
-        },
-      });
-
-      expect(displaySet.viewportTypes).toEqual(['none']);
-      expect(displaySet.isDisplayable).toBe(false);
-      expect(displaySet.preferredViewportType).toBe('none');
-      // The class and imageIds match isDisplayable: no frame-level imageIds.
-      expect(displaySet).not.toBeInstanceOf(ImageStackDisplaySet);
-      expect(displaySet.imageIds).toEqual([]);
-      expect(displaySet.underlyingImageIds).toEqual(['wadors:vt-1']);
-      expect((displaySet as unknown as Record<string, unknown>).label).toBe(
-        'x'
-      );
     });
 
-    it('builds an image stack when customAttributes turn a non-displayable rule on', () => {
-      const displaySet = createDisplaySetFromGroup({
-        instances: imageInstances,
-        matchedRule: {
-          id: 'turnedOn',
-          viewportTypes: ['none'],
-          customAttributes: () => ({ viewportTypes: ['stack', 'volume'] }),
-        },
-      });
-
-      expect(displaySet.viewportTypes).toEqual(['stack', 'volume']);
-      expect(displaySet.isDisplayable).toBe(true);
-      expect(displaySet.preferredViewportType).toBe('stack');
-      expect(displaySet).toBeInstanceOf(ImageStackDisplaySet);
-      expect(displaySet.imageIds).toEqual(['wadors:vt-1']);
-    });
-
-    it('passes the rule viewportTypes to customAttributes, and cannot be overridden by isDisplayable', () => {
-      let seen: unknown;
-      const displaySet = createDisplaySetFromGroup({
-        instances: imageInstances,
-        matchedRule: {
-          id: 'lies',
-          viewportTypes: ['none'],
-          customAttributes: ({ viewportTypes }) => {
-            seen = viewportTypes;
-            return { isDisplayable: true, preferredViewportType: 'stack' };
-          },
-        },
-      });
-
-      expect(seen).toEqual(['none']);
-      expect(displaySet.isDisplayable).toBe(false);
-      expect(displaySet.preferredViewportType).toBe('none');
-      expect(displaySet.imageIds).toEqual([]);
-    });
+    expect([displaySet.isDisplayable, displaySet.handler]).toEqual([
+      false,
+      'unsupported',
+    ]);
+    expect(displaySet.imageIds).toEqual([]);
+    expect(displaySet.underlyingImageIds).toEqual(['wadors:pr']);
   });
 
   it('derives unique displaySetIds for splits of one series', () => {
@@ -400,7 +317,7 @@ describe('displayset split utilities', () => {
           SeriesInstanceUID: seriesUID,
         },
       ],
-      matchedRule: { id: 'split', viewportTypes: ['stack'] },
+      matchedRule: { id: 'split' },
     });
 
     // A series can split into multiple display sets (the DWI case); the split

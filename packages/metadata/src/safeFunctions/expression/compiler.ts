@@ -422,6 +422,29 @@ function missingValueTest(
   return undefined;
 }
 
+/**
+ * `X == ['MR', 'CT']` is a compile error: it reads as "one of", but `==`
+ * compares the whole value, so it is quietly false for `'MR'`. A one-item
+ * array literal and a non-literal array keep the meaning of `==`.
+ */
+function rejectListArrayLiteral(
+  node: Extract<ExpressionNode, { type: 'binary' }>,
+  context: NodeContext
+): void {
+  for (const [side, other] of [
+    [node.left, node.right],
+    [node.right, node.left],
+  ]) {
+    if (side.type === 'array' && side.elements.length > 1) {
+      const name = other.type === 'identifier' ? other.name : 'X';
+      throw new ExpressionSyntaxError(
+        `'${node.operator}' with an array of ${side.elements.length} values compares the whole value; to test that a value is one of a list, use ${node.operator === '!=' ? `!(${name} in [...])` : `${name} in [...]`} or includes(...), e.g. Modality in ['MR', 'CT']`,
+        context.expression
+      );
+    }
+  }
+}
+
 /** `X == []` is a compile error: an empty array literal accepts no value. */
 function rejectEmptyArrayLiteral(
   node: Extract<ExpressionNode, { type: 'binary' }>,
@@ -447,6 +470,7 @@ function compileEquality(
 ): NodeEvaluator {
   const negate = node.operator === '!=';
   rejectEmptyArrayLiteral(node, context);
+  rejectListArrayLiteral(node, context);
   const rightTest = missingValueTest(node.right);
   const leftTest = missingValueTest(node.left);
   if (rightTest || leftTest) {

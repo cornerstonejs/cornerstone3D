@@ -12,7 +12,6 @@
  */
 
 import { compileDisplaySetSplitRules } from './compileSplitRules';
-import { NO_VIEWPORT_TYPE } from './types';
 
 /**
  * @typedef {import('./displaySetRulesTypes').DisplaySetRules} DisplaySetRules
@@ -56,18 +55,14 @@ const REVISION_CHAIN = {
   attributes: { activeSopInstanceUid: 'revisionChainUid' },
 };
 
-/** The viewport types of a multi-frame instance that is not a clip. */
-const VOLUME_VIEWPORT_TYPES = ['volume', 'volume3d', 'stack'];
-
 /**
  * A rule for one kind of non-image object: the instances of its SOP class
  * list, one display set for each series, built by the handler of the host.
  */
-const objectRule = (priority, kind, handler, viewportTypes, description) => ({
+const objectRule = (priority, kind, handler, description) => ({
   priority,
   description,
   handler,
-  viewportTypes,
   matches: { [kind]: true },
   groupBy: ['SeriesInstanceUID'],
 });
@@ -98,7 +93,6 @@ export const displaySetRules = {
       'transfer syntax) a long multi-frame secondary capture. One display set ' +
       'per instance, shown on a video viewport.',
     handler: 'video',
-    viewportTypes: ['video'],
     matches: { isVideo: true },
     groupBy: ['SOPInstanceUID'],
   },
@@ -109,7 +103,6 @@ export const displaySetRules = {
       'ECG / waveform SOP classes. One display set per instance, shown on a ' +
       'waveform viewport rather than an image viewport.',
     handler: 'ecg',
-    viewportTypes: ['ecg'],
     matches: { isEcg: true },
     groupBy: ['SOPInstanceUID'],
   },
@@ -120,7 +113,6 @@ export const displaySetRules = {
       'VL Whole Slide Microscopy (or modality SM). All pyramid levels of the ' +
       'series form a single whole-slide display set.',
     handler: 'wholeSlide',
-    viewportTypes: ['wholeslide'],
     matches: { isWsi: true },
     groupBy: ['SeriesInstanceUID'],
   },
@@ -131,7 +123,6 @@ export const displaySetRules = {
       'CR / DX / MG, which acquire one image per instance. One display set ' +
       'per instance, so each view of a mammography series is its own display ' +
       'set.',
-    viewportTypes: ['stack'],
     matches: { Modality: SINGLE_IMAGE_MODALITIES, isImage: true },
     groupBy: ['SOPInstanceUID'],
   },
@@ -141,9 +132,8 @@ export const displaySetRules = {
     description:
       'Multi-frame image instances, one display set per instance. A cine clip ' +
       '(a slice location, or a US, XA, RF, ES or XC multi-frame that is not a ' +
-      'volume) is flagged isClip on a stack. Another multi-frame instance, ' +
-      'such as an enhanced CT, prefers a volume viewport.',
-    viewportTypes: ['stack'],
+      'volume) is flagged isClip. Another multi-frame instance, such as an ' +
+      'enhanced CT, is not a clip.',
     context: {
       // US, XA and other cine clips have no SliceLocation.
       isCineClip:
@@ -158,9 +148,6 @@ export const displaySetRules = {
       isClip: 'isCineClip',
       // NumberOfFrames is frequently naturalized as a string (e.g. '30').
       numImageFrames: { expression: 'Number(NumberOfFrames)' },
-      viewportTypes: {
-        expression: `isCineClip ? ['stack'] : ${quotedList(VOLUME_VIEWPORT_TYPES)}`,
-      },
     },
   },
 
@@ -170,10 +157,6 @@ export const displaySetRules = {
       'Diffusion MR that mixes 4D b-value frames with trailing frames that have ' +
       'none. The undefined-b-value frames are not part of the 4D set, so they ' +
       'split off - otherwise 4D rendering is applied to the 3D portion.',
-    // Both subgroups are multi-slice MR; default them to MPR (volume) like any
-    // volumetric MR series. This rule matches before `volume3d`, so listing
-    // stack first here would regress the defined-b-value subgroup to a stack.
-    viewportTypes: ['volume', 'volume3d', 'stack'],
     context: {
       // A series value: some instances of the series have a b-value, and
       // some have none.
@@ -189,10 +172,7 @@ export const displaySetRules = {
   volume3d: {
     priority: 7,
     description:
-      'Multi-slice CT / MR / PT / NM, which reconstruct into a volume. Defaults ' +
-      'to MPR, with 3D and stack also allowed.',
-    // Default volumetric series to MPR (volume); 3D is an extra allowed type.
-    viewportTypes: ['volume', 'volume3d', 'stack'],
+      'Multi-slice CT / MR / PT / NM, which reconstruct into a volume.',
     matches: {
       Modality: VOLUME_MODALITIES,
       seriesInstanceCount: { greaterThan: 1 },
@@ -206,7 +186,6 @@ export const displaySetRules = {
     description:
       'Fallback for any remaining image SOP class, also with no Rows in the ' +
       'metadata. Grouped one display set per series.',
-    viewportTypes: ['stack', 'volume', 'volume3d'],
     matches: { isImage: true },
   },
 
@@ -214,7 +193,6 @@ export const displaySetRules = {
     9,
     'isSegmentation',
     'segmentation',
-    ['stack', 'volume'],
     'Segmentations (segmentationSopClassUids). One display set per series.'
   ),
 
@@ -222,7 +200,6 @@ export const displaySetRules = {
     10,
     'isRtStructureSet',
     'rtStructureSet',
-    ['stack', 'volume'],
     'RT structure sets (rtStructureSetSopClassUids). One display set per series.'
   ),
 
@@ -230,7 +207,6 @@ export const displaySetRules = {
     11,
     'isParametricMap',
     'parametricMap',
-    ['volume', 'stack'],
     'Parametric maps (parametricMapSopClassUids). One display set per series.'
   ),
 
@@ -239,7 +215,6 @@ export const displaySetRules = {
       12,
       'isStructuredReport',
       'structuredReport',
-      ['stack'],
       'Structured reports (structuredReportSopClassUids), also Comprehensive ' +
         '3D SR. One display set per series. Manufacturer and ' +
         'ManufacturerModelName name the writer of the SR.'
@@ -255,7 +230,6 @@ export const displaySetRules = {
       13,
       'isEncapsulatedDocument',
       'encapsulatedDocument',
-      ['document'],
       'Encapsulated documents (encapsulatedDocumentSopClassUids). One ' +
         'display set per revision chain (PredecessorDocumentsSequence) of ' +
         'the series; activeSopInstanceUid names the current revision.'
@@ -267,7 +241,6 @@ export const displaySetRules = {
     14,
     'isBulkAnnotation',
     'bulkAnnotation',
-    ['wholeslide'],
     'Microscopy bulk annotations (bulkAnnotationSopClassUids). One display ' +
       'set per series.'
   ),
@@ -277,7 +250,6 @@ export const displaySetRules = {
       15,
       'isChart',
       'chart',
-      ['chart'],
       'Charts (chartSopClassUids, empty by default: a host adds its chart ' +
         'SOP class). One display set per revision chain of the series; ' +
         'activeSopInstanceUid names the current revision.'
@@ -297,7 +269,6 @@ export const displaySetRules = {
       'marked isDisplayable: false, so the objects are surfaced rather than ' +
       'silently dropped. Runs last.',
     handler: 'unsupported',
-    viewportTypes: [NO_VIEWPORT_TYPE],
     // No `matches`: claims whatever is left.
     groupBy: ['SeriesInstanceUID'],
   },

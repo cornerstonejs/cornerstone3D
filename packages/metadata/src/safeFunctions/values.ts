@@ -40,7 +40,7 @@ export function hasNoValue(value: unknown): boolean {
 }
 
 /**
- * The `==` of the rule language, and the scalar test of `matches`.
+ * The `==` of the rule language, and the `equals` operator of `matches`.
  *
  * - Two values with no value are equal only when they are of the same kind:
  *   absent and absent, `null` and `null`, `''` and `''`, or two empty arrays.

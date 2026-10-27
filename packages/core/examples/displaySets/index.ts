@@ -116,6 +116,33 @@ type Row = {
 
 let renderingEngine: RenderingEngine;
 
+/** The viewport of a non-image display set, from its handler. */
+const HANDLER_TO_HINT: Record<string, string> = {
+  video: 'video',
+  ecg: 'ecg',
+  wholeSlide: 'wholeslide',
+};
+
+/** Modalities whose multi-image display sets this example opens as a volume. */
+const VOLUME_MODALITIES = new Set(['CT', 'MR', 'PT', 'NM']);
+
+/**
+ * The viewport choices of a display set. The example decides them; the rules
+ * give no viewport hint. A non-image display set: the viewport of its handler.
+ * An image display set with more than one image of CT, MR, PT or NM: volume,
+ * 3D or stack. Any other image display set: stack.
+ */
+function hintsOf(displaySet: DisplaySet): string[] {
+  const byHandler = HANDLER_TO_HINT[displaySet.handler ?? ''];
+  if (byHandler) {
+    return [byHandler];
+  }
+  const modality = String(displaySet.instances[0]?.Modality);
+  return displaySet.imageIds.length > 1 && VOLUME_MODALITIES.has(modality)
+    ? ['volume', 'volume3d', 'stack']
+    : ['stack'];
+}
+
 function instanceField(displaySet: DisplaySet, key: string): string {
   const instance = displaySet.instances[0] as
     | Record<string, unknown>
@@ -172,8 +199,8 @@ function renderDetails(row: Row, viewport: Types.IViewport, status: string) {
     ['SOP class', instanceField(ds, 'SOPClassUID')],
     ['Instances', String(ds.instances.length)],
     ['Image ids', String(ds.imageIds.length)],
-    ['Preferred', ds.preferredViewportType],
-    ['Allowed', ds.viewportTypes.join(', ')],
+    ['Handler', ds.handler ?? '— (image)'],
+    ['Choices', hintsOf(ds).join(', ')],
     ['Mounted as', row.hint],
     ['getDisplaySets()', `[${recorded}]`],
   ];
@@ -279,7 +306,7 @@ function buildRow(
     displaySetId,
     viewportId,
     displaySet,
-    hint: displaySet.preferredViewportType,
+    hint: hintsOf(displaySet)[0],
     viewportElement,
     detailsElement,
     client,
@@ -292,14 +319,15 @@ function buildRow(
   selectLabel.innerText = 'Viewport type: ';
 
   const select = document.createElement('select');
-  for (const hint of displaySet.viewportTypes) {
+  const hints = hintsOf(displaySet);
+  for (const hint of hints) {
     const option = document.createElement('option');
     option.value = hint;
     option.text = hint;
-    option.selected = hint === displaySet.preferredViewportType;
+    option.selected = hint === row.hint;
     select.appendChild(option);
   }
-  select.disabled = displaySet.viewportTypes.length <= 1;
+  select.disabled = hints.length <= 1;
   select.onchange = () => {
     row.hint = select.value;
     mountRow(row);

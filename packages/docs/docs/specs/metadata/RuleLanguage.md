@@ -194,6 +194,36 @@ and no release had them:
 
 ### Changes of 27 October
 
+- `RL-READ-2` and `RL-VALUE-5` change their meaning, and `RL-EXPR-7` adds
+  one compile error. The scalar shorthand of a condition map is now `includes`
+  (before: the strict `==` of 26 October), so `"ImageType": "LOCALIZER"`
+  holds for `['ORIGINAL', 'LOCALIZER']`, as `"ImageType": ["LOCALIZER"]`
+  does. The array shorthand stays `includes`. `equals` and `doesNotEqual`
+  stay whole-value tests. `==` and `!=` with an array literal of two or more
+  values are a compile error that names `in`, so `Modality == ['MR', 'CT']`
+  no longer compiles to a quietly false test; the form can open again later.
+  Reason: the intended behaviour changed. The review found that the two
+  shorthand forms and `==` with a list read differently from what an author
+  expects. No default rule changes its result: the default rules use the
+  shorthand only on single-valued attributes (`Modality`) and on booleans.
+- The rule field `viewportTypes` is removed, from every default rule and from
+  the rule language: a rule with `viewportTypes` is now a compile error (an
+  unknown field). The display set has no `viewportTypes` and no
+  `preferredViewportType`. A host chooses the viewport from `handler` (a
+  non-image object) and from the instance data (an image). The handler alone
+  decides the display set class and `isDisplayable` (`RL-CONS-1`,
+  `RL-CONS-3`). No user requirement of this specification named the viewport
+  types, so none changes here; the field table of `RL-CONS-1` loses the field.
+  The design note of OHIF #6137 and CS3D #2861 changes its user requirement
+  `DS-USER-HANDLER-4` ("the viewport types of a rule are hints").
+  `viewportTypes` was released on CS3D `main` (#2738), so a caller sees these
+  removals: the rule field `viewportTypes` (`SplitRule`, `RawSplitRule`), the
+  display set fields `viewportTypes` and `preferredViewportType`, the
+  `viewportTypes` option of `ImageStackDisplaySet.fromInstances` and
+  `fromImageIds`, the `viewportTypes` key of the `customAttributes` context
+  and result, the type `ViewportTypeHint`, the sentinel `NO_VIEWPORT_TYPE`
+  (`'none'`), and the functions `getViewportTypesForRule`,
+  `getViewportTypesForGroup` and `getPreferredViewportType`.
 - `RL-READ-4` no longer lists the meanings that OHIF/Viewers#6386 gave to
   `validator.js`. It now lists the differences that remain, and it points to
   the OHIF migration guide _Hanging protocol comparisons_. Reason: after the
@@ -211,7 +241,9 @@ and no release had them:
   intended behaviour changed. The review asked that the split rules and the
   hanging protocols give one meaning to each operator name, and the hanging
   protocols have these operators since OHIF/Viewers#6386. A boolean still does
-  not equal a number.
+  not equal a number. `RL-READ-4` no longer lists the boolean as a difference:
+  after OHIF/Viewers#6394, a boolean in a hanging protocol also equals only
+  `'true'` and `'false'`, and not `1` or `0`.
 
 ## Definitions
 
@@ -282,10 +314,13 @@ compile.
 - **RL-READ-1** The rule author writes a condition as a map. The keys are
   names, and sibling keys must all hold. The author does not need `all`,
   `attribute` or `equals` for the common case.
-- **RL-READ-2** The author writes the common tests without an operator: a
-  scalar means "equals", with the equality of `RL-VALUE-5`; an array means
-  "includes", so a single value is one of the elements, and a multi-valued
-  value has one element in common with the array; and `null` means "no value".
+- **RL-READ-2** The author writes the common tests without an operator. The
+  shorthand is `includes` in both forms: a scalar holds when the value is the
+  scalar or holds it (`"ImageType": "LOCALIZER"` holds for
+  `['ORIGINAL', 'LOCALIZER']`); an array holds when a single value is one of
+  the elements, or a multi-valued value has one element in common with the
+  array; and `null` means "no value". A whole-value test uses `equals`:
+  `{ "equals": ["ORIGINAL", "LOCALIZER"] }`.
 - **RL-READ-3** A string in a context entry is an expression. A name or a path
   is the simplest expression. A key of a condition map is never an expression.
   A string at every other place of a rule is a name.
@@ -309,8 +344,6 @@ compile.
     exact opposite of `null`. In `validator.js`, the operand `null` skips the
     constraint, and `notNull` reads every operand other than `false` as
     `true`.
-  - A boolean equals `'true'` or `'false'` only (`RL-VALUE-5`). In
-    `validator.js`, a boolean also equals the number `1` or `0`.
   - `containsAll` accepts a scalar operand and a single value, and compares
     with `==`. `validator.js` needs two arrays, and compares with `===`.
   - An empty text and an empty array stay apart, `includes` fails on no
@@ -381,9 +414,13 @@ compile.
   `!==` are compile errors. A single value equals an array only when the array
   has one element, equal to the value: `['MR'] == 'MR'`, but
   `['ORIGINAL', 'LOCALIZER'] == 'LOCALIZER'` is `false`. Two arrays are equal
-  when they have the same elements in the same order. The scalar test of a
-  condition map uses the same equality. To test that a value is one of a list,
-  use `in`, `includes`, or the array test of `RL-READ-2`.
+  when they have the same elements in the same order. The `equals` operator
+  of a condition map uses the same equality. To test that a value is one of a
+  list, use `in`, `includes`, or the shorthand of `RL-READ-2`. `==` and
+  `!=` with an array literal of two or more values are a compile error, whose
+  message names `in`: `Modality == ['MR', 'CT']` reads as "one of", but
+  would be quietly false for `'MR'`. A one-value array literal and an array
+  value keep the meaning of `==`.
 - **RL-VALUE-6** An expression can compare text without case: `lower(text)`
   gives the text in lowercase.
 - **RL-VALUE-7** `-`, `*`, `/` and `%` read a numeric string as a number, so
@@ -616,9 +653,9 @@ packages/metadata/src/
   read the entries `isImage`, `isVideo`, `isEcg` and `isWsi` of their
   `context` argument, else of the active context, so the code tests and the
   rules give the same answer. Each context object compiles one time, with the
-  context compile of `RL-CTXI`; the cache is keyed by the object. A compiled
-  rule keeps its context as `SplitRule.metadataContext`, and
-  `createDisplaySetFromGroup` reads it (or its `context` option).
+  context compile of `RL-CTXI`; the cache is keyed by the object.
+  `createDisplaySetSplitRules` with no series functions and no deny list reads
+  the same cache, so a split and the code tests share one compile.
 
 ### Names (RL-NAME)
 
@@ -667,19 +704,19 @@ packages/metadata/src/
   entry must hold, so `{}` is `true`.
 - **RL-COND-2** The test of one map entry is one of:
 
-  | Test                     | The entry holds when                                     |
-  | ------------------------ | -------------------------------------------------------- |
-  | scalar                   | the value is equal to the scalar, with `==` (`RL-VAL-3`) |
-  | array of scalars         | the value is equal to the array, with `==` (`RL-VAL-3`)  |
-  | `null`                   | the value has no value                                   |
-  | object with one operator | the operator holds (`RL-COND-3`)                         |
-  | function                 | `test(value, subject, context)` is true                  |
+  | Test                     | The entry holds when                             |
+  | ------------------------ | ------------------------------------------------ |
+  | scalar                   | `includes`: the value is the scalar, or holds it |
+  | array of scalars         | `includes`: one value is in the array            |
+  | `null`                   | the value has no value                           |
+  | object with one operator | the operator holds (`RL-COND-3`)                 |
+  | function                 | `test(value, subject, context)` is true          |
 
 - **RL-COND-3** The operators:
 
   | Operator                            | Operand                       | The entry holds when                                                          |
   | ----------------------------------- | ----------------------------- | ----------------------------------------------------------------------------- |
-  | `equals`                            | scalar, array or `null`       | the scalar test; an array operand equals an array value in order              |
+  | `equals`                            | scalar, array or `null`       | the whole value, with `==`; an array operand equals an array value in order   |
   | `doesNotEqual`                      | scalar, array or `null`       | `equals` does not hold; no value passes                                       |
   | `notNull`                           | boolean                       | `true`: the value has a value; `false`: the value has no value                |
   | `includes`                          | scalar or array of scalars    | the value has the element, or one of the elements; a single value is an array |
@@ -705,7 +742,7 @@ packages/metadata/src/
   reads the first value of a multi-valued attribute.
 - **RL-VAL-2** A template placeholder is a name or a path. A placeholder with
   no value gives `""`. `\{` and `\}` escape a brace.
-- **RL-VAL-3** `looseEquals` (the `==` of expressions, and the scalar test):
+- **RL-VAL-3** `looseEquals` (the `==` of expressions, and `equals`):
   two values with no value are equal only when they are of the same kind
   (absent, `null`, `""`, or an empty array); a value with no value is not
   equal to a value with one; a scalar and an array are equal when the array
@@ -783,8 +820,10 @@ packages/metadata/src/
   error at run time, except for a `RuleCompileError`, which goes to the
   caller.
 - **RL-EXPR-7** An array literal compiles to an array, and `==` gives it the
-  meaning of `RL-VAL-3`. An empty array literal next to `==` or `!=` is a
-  compile error.
+  meaning of `RL-VAL-3`. An array literal of literals folds into one array.
+  Next to `==` or `!=`, an empty array literal is a compile error, and an
+  array literal of two or more values is a compile error whose message names
+  `in` and `includes(...)`.
 
 ### The context (RL-CTXI)
 
@@ -962,16 +1001,16 @@ packages/metadata/src/
 
 - **RL-CONS-1** The fields of a split rule:
 
-  | Field                                           | Holds                                          | `SplitRule` hook   |
-  | ----------------------------------------------- | ---------------------------------------------- | ------------------ |
-  | `priority`                                      | a finite number, or `null` to exclude the rule | (rule set entry)   |
-  | `id`, `groupId`, `description`, `viewportTypes` | data                                           | the same names     |
-  | `handler`                                       | a string; any name compiles                    | `handler`          |
-  | `context`                                       | the rule context (`RL-CTX-3`)                  | (compile only)     |
-  | `matches`                                       | a condition                                    | `matches`          |
-  | `groupBy`                                       | names                                          | `groupBy`          |
-  | `sortBy`                                        | sort entries (`RL-SORT-2`)                     | `compareInstances` |
-  | `attributes`                                    | a map of attribute values (`RL-CONS-2`)        | `customAttributes` |
+  | Field                          | Holds                                          | `SplitRule` hook   |
+  | ------------------------------ | ---------------------------------------------- | ------------------ |
+  | `priority`                     | a finite number, or `null` to exclude the rule | (rule set entry)   |
+  | `id`, `groupId`, `description` | data                                           | the same names     |
+  | `handler`                      | a string; any name compiles                    | `handler`          |
+  | `context`                      | the rule context (`RL-CTX-3`)                  | (compile only)     |
+  | `matches`                      | a condition                                    | `matches`          |
+  | `groupBy`                      | names                                          | `groupBy`          |
+  | `sortBy`                       | sort entries (`RL-SORT-2`)                     | `compareInstances` |
+  | `attributes`                   | a map of attribute values (`RL-CONS-2`)        | `customAttributes` |
 
   Every compiled rule also has the `series` hook of `RL-CTXI-8`.
 
@@ -991,7 +1030,10 @@ packages/metadata/src/
   `customAttributes` hook. An attribute reads a bare name over the series, and
   a `displaySet.<name>` over the instances of the display set (`RL-CTX-9`).
   `createDisplaySetFromGroup` copies the `handler` of the rule to the display
-  set.
+  set. The handler decides the class and `isDisplayable`: no handler or
+  `image` gives an image stack; `unsupported` gives a base display set that is
+  not displayable; any other handler gives a displayable base display set. The
+  display set has no viewport types.
 - **RL-CONS-4** The hanging protocol consumer gives its own subject and its
   own reader of a name. OHIF/Viewers#6386 moved most of the hanging protocol
   constraints to the operator meanings of `RL-COND-3`. A later OHIF pull
@@ -1025,7 +1067,6 @@ packages/metadata/src/
 ```jsonc
 "usTimeClusters": {
   "priority": -1,
-  "viewportTypes": ["stack"],
   "context": { "timeClustersMaxGap": 20 },
   "matches": {
     "isImage": true,
@@ -1054,7 +1095,6 @@ packages/metadata/src/
 ```jsonc
 "usLongSweeps": {
   "priority": -1,
-  "viewportTypes": ["stack"],
   "context": { "timeClusters": "longTimeClusters" },
   "matches": { "isImage": true, "Modality": "US", "sweepCount": { "greaterThan": 1 } },
   "groupBy": ["SeriesInstanceUID", "sweepStart"],
@@ -1082,7 +1122,6 @@ the other images of the series into one stack:
   "$merge": {
     "regularVolume": {
       "priority": -2,
-      "viewportTypes": ["volume", "volume3d", "stack"],
       "matches": {
         "isImage": true,
         "Modality": ["CT", "MR", "PT", "NM"],
@@ -1095,7 +1134,6 @@ the other images of the series into one stack:
     },
     "irregularImages": {
       "priority": null,
-      "viewportTypes": ["stack"],
       "matches": {
         "isImage": true,
         "Modality": ["CT", "MR", "PT", "NM"],
@@ -1124,7 +1162,6 @@ the other images of the series into one stack:
 ```jsonc
 "volume3d": {
   "priority": 7,
-  "viewportTypes": ["volume", "volume3d", "stack"],
   "matches": {
     "isImage": true,
     "Modality": ["CT", "MR", "PT", "NM"],
@@ -1159,7 +1196,6 @@ the other images of the series into one stack:
   "$merge": {
     "dxCrSingleImages": {
       "priority": -1,
-      "viewportTypes": ["stack"],
       "matches": { "Modality": ["DX", "CR"], "isImage": true, "isSmallSeries": true },
       "groupBy": ["SeriesInstanceUID", "SOPInstanceUID"]
     }
@@ -1259,10 +1295,10 @@ priority, and keeps the function of `groupBy`.
    is the OHIF migration guide _Hanging protocol comparisons_. The differences
    of `RL-READ-4` stay open. The later OHIF pull request that moves the
    hanging protocols onto the rule language (`RL-CONS-4`) must state each one
-   in a migration note. For the boolean equality, the OHIF migration guide
-   says that this pull request plans the `validator.js` meaning (`true`
-   equals `1`). `RL-VALUE-5` does not give that meaning yet, so this pull
-   request must give it, or the OHIF migration guide must drop the plan.
+   in a migration note. The boolean equality is closed (27 October): a
+   boolean equals only `'true'` and `'false'` (`RL-VALUE-5`), and not the
+   number `1` or `0`. The OHIF hanging protocols have the same meaning after
+   OHIF/Viewers#6394.
 2. **JSON Schema.** The schema can list the tag keywords, the pattern of a
    context name, and the `vr` and `vm` of each declaration. The schema can
    then check an operator against the VR (for example `greaterThan` on a text
@@ -1272,9 +1308,9 @@ priority, and keeps the function of `groupBy`.
 4. **Multiframe instances.** A per-frame subject (frames of one instance) is
    future work in the split engine. The rule language needs no change for it:
    the consumer gives a different subject.
-5. **Multi-valued values outside of equality.** `==`, the scalar test,
-   `equals` and `doesNotEqual` read every value (`RL-VALUE-5`), and the array
-   test reads any value (`RL-READ-2`).
+5. **Multi-valued values outside of equality.** `==`, `equals` and
+   `doesNotEqual` read every value (`RL-VALUE-5`), and the shorthand reads
+   any value (`RL-READ-2`).
    These places still read a multi-valued value in another way. With
    `EchoNumbers = [1, 2]` and `ImageType = ['ORIGINAL', 'PRIMARY', 'AXIAL']`:
 

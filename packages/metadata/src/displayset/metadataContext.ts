@@ -50,9 +50,9 @@ export type CompileMetadataContextOptions = {
 };
 
 /**
- * Compiles `context` over `defaultMetadataContext`, and keeps the program in
- * the cache under the `context` object. `createDisplaySetSplitRules` uses it
- * too, so a split rule set and the code tests share one compile.
+ * Compiles `context` over `defaultMetadataContext`. With no series functions
+ * and no deny list, the program goes into the cache under the `context` object
+ * (`defaultMetadataContext` when absent).
  */
 export function compileMetadataContext(
   context: DisplaySetContext | undefined,
@@ -76,15 +76,31 @@ export function compileMetadataContext(
       ),
     }
   );
-  if (context) {
-    programs.set(context, program);
+  if (!options.seriesFunctions && !options.deniedNames) {
+    programs.set(context ?? defaultMetadataContext, program);
   }
   return program;
 }
 
+/**
+ * The program of `context`: from the cache, else compiled. A split rule set
+ * with no series functions and no deny list reads the same cache, so it and
+ * the code tests share one compile of the same context object.
+ */
+export function getMetadataContextProgram(
+  context: DisplaySetContext | undefined,
+  options: CompileMetadataContextOptions = {}
+): ContextProgram {
+  const shareable = !options.seriesFunctions && !options.deniedNames;
+  const cached = shareable
+    ? programs.get(context ?? defaultMetadataContext)
+    : undefined;
+  return cached ?? compileMetadataContext(context, options);
+}
+
 /** The cached program of `context`, compiled at the first read. */
 function programOf(context: DisplaySetContext): ContextProgram {
-  return programs.get(context) ?? compileMetadataContext(context);
+  return getMetadataContextProgram(context);
 }
 
 /**

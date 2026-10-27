@@ -1,16 +1,13 @@
 import type { IDisplaySet } from './IDisplaySet';
-import type { NaturalizedInstance, ViewportTypeHint } from './types';
-import {
-  getPreferredViewportType,
-  isDisplayableViewportTypes,
-} from './viewportTypes';
+import type { NaturalizedInstance } from './types';
 
 export type BaseDisplaySetOptions = {
   displaySetId: string;
-  viewportTypes?: readonly ViewportTypeHint[];
   instances?: NaturalizedInstance[];
   imageIds?: Iterable<string>;
   underlyingImageIds?: Iterable<string>;
+  /** False for an object nothing can render (the `unsupported` handler). */
+  isDisplayable?: boolean;
 };
 
 /**
@@ -20,8 +17,6 @@ export type BaseDisplaySetOptions = {
  */
 export class BaseDisplaySet implements IDisplaySet {
   displaySetId: string;
-  viewportTypes: readonly ViewportTypeHint[];
-  preferredViewportType: ViewportTypeHint;
   isDisplayable: boolean;
   readonly instances: readonly NaturalizedInstance[];
   readonly imageIds: readonly string[];
@@ -29,11 +24,7 @@ export class BaseDisplaySet implements IDisplaySet {
 
   constructor(options: BaseDisplaySetOptions) {
     this.displaySetId = options.displaySetId;
-    this.viewportTypes = options.viewportTypes?.length
-      ? [...options.viewportTypes]
-      : ['stack'];
-    this.preferredViewportType = getPreferredViewportType(this.viewportTypes);
-    this.isDisplayable = isDisplayableViewportTypes(this.viewportTypes);
+    this.isDisplayable = options.isDisplayable ?? true;
     this.instances = [...(options.instances ?? [])];
     // Preserve caller cardinality/order: IDisplaySet documents
     // underlyingImageIds as one entry per instance, so deduping could drop a

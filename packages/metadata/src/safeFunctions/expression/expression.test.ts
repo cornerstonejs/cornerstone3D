@@ -136,32 +136,34 @@ describe('compileExpression', () => {
       expect(fn({ Modality: 'CT' })).toBe(false);
     });
 
-    it('reads == between a scalar and an array as equal only for one element, and between two arrays as equal in order', () => {
-      const tests = [
-        "X == ['MR', 'CT']",
-        "['MR', 'CT'] == X",
-        "X != ['MR', 'CT']",
-        "X in ['MR', 'CT']",
-      ].map((source) => compileExpression(source));
-      const row = (X: unknown) => tests.map((test) => test({ X }));
-      // A single value is not equal to a list of two; `in` tests membership.
-      expect(row('MR')).toEqual([false, false, true, true]);
-      expect(row('PT')).toEqual([false, false, true, false]);
-      expect(row(undefined)).toEqual([false, false, true, false]);
-      // Two arrays: the same elements, in the same order.
-      expect(row(['MR', 'CT'])).toEqual([true, true, false, true]);
-      expect(row(['CT', 'MR'])).toEqual([false, false, true, true]);
-      // A single value equals an array of one element.
+    it('reads == as the whole value: a scalar equals an array of one element, and two arrays are equal in order', () => {
+      const equal = compileExpression('X == Y');
+      const CASES: [unknown, unknown, boolean][] = [
+        ['MR', ['MR'], true],
+        [['MR', 'CT'], ['MR', 'CT'], true],
+        [['CT', 'MR'], ['MR', 'CT'], false],
+        [['ORIGINAL', 'LOCALIZER'], 'LOCALIZER', false],
+        ['MR', ['MR', 'CT'], false],
+      ];
+      for (const [X, Y, expected] of CASES) {
+        expect([X, Y, equal({ X, Y })]).toEqual([X, Y, expected]);
+      }
       expect(compileExpression("X == ['MR']")({ X: 'MR' })).toBe(true);
-      expect(compileExpression("X == 'MR'")({ X: ['MR'] })).toBe(true);
-      // A multi-valued value against a scalar is not equal; use in.
-      expect(
-        compileExpression("X == 'LOCALIZER'")({ X: ['ORIGINAL', 'LOCALIZER'] })
-      ).toBe(false);
+      expect(compileExpression("X in ['MR', 'CT']")({ X: 'MR' })).toBe(true);
       expect(
         compileExpression("'LOCALIZER' in X")({ X: ['ORIGINAL', 'LOCALIZER'] })
       ).toBe(true);
-      expect(compileExpression("['mr'] == ['mr', 'ct']")()).toBe(false);
+    });
+
+    it('refuses == and != with an array literal of two or more values, and names in', () => {
+      for (const source of [
+        "Modality == ['MR', 'CT']",
+        "['MR', 'CT'] == Modality",
+        "Modality != ['MR', 'CT']",
+      ]) {
+        expect(() => compileExpression(source)).toThrow(/use .*in \[\.\.\.\]/);
+      }
+      expect(() => compileExpression("Modality == ['MR']")).not.toThrow();
     });
 
     it('refuses an empty array literal next to ==', () => {

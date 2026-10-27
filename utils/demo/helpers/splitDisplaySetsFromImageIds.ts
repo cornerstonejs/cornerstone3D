@@ -26,26 +26,38 @@ const { splitImageIdsBy4DTags } = metadataUtilities;
 const { ViewportType } = Enums;
 const { MetadataModules } = metadataEnums;
 
-/** Maps a display set's preferred viewport type hint to a cornerstone ViewportType. */
-const VIEWPORT_TYPE_BY_PREFERRED_HINT: Record<string, Enums.ViewportType> = {
-  stack: ViewportType.STACK,
-  volume: ViewportType.ORTHOGRAPHIC,
-  volume3d: ViewportType.VOLUME_3D,
+/** Maps a display set's handler (a non-image object) to a ViewportType. */
+const VIEWPORT_TYPE_BY_HANDLER: Record<string, Enums.ViewportType> = {
   video: ViewportType.VIDEO,
-  wholeslide: ViewportType.WHOLE_SLIDE,
+  wholeSlide: ViewportType.WHOLE_SLIDE,
   ecg: ViewportType.ECG,
 };
 
+/** Modalities whose multi-image display sets the demos open as a volume. */
+const VOLUME_MODALITIES = new Set(['CT', 'MR', 'PT', 'NM']);
+
+/**
+ * True for an image display set (no handler) with more than one image of CT,
+ * MR, PT or NM. The demos decide this; the rules give no viewport hint.
+ */
+export function isVolumeDisplaySet(displaySet: IDisplaySet): boolean {
+  return (
+    !displaySet.handler &&
+    displaySet.imageIds.length > 1 &&
+    VOLUME_MODALITIES.has(String(displaySet.instances[0]?.Modality))
+  );
+}
+
 /**
  * Resolves the cornerstone {@link Enums.ViewportType} to enable for a display
- * set, based on its preferred viewport type. Falls back to a stack viewport.
+ * set: from its handler for a non-image object, else a stack viewport. (A demo
+ * that wants a volume checks {@link isVolumeDisplaySet}.)
  */
 export function getViewportTypeForDisplaySet(
   displaySet: IDisplaySet
 ): Enums.ViewportType {
   return (
-    VIEWPORT_TYPE_BY_PREFERRED_HINT[displaySet.preferredViewportType] ??
-    ViewportType.STACK
+    VIEWPORT_TYPE_BY_HANDLER[displaySet.handler ?? ''] ?? ViewportType.STACK
   );
 }
 
@@ -206,7 +218,7 @@ export function getVideoImageIdFromImageIds(
 ): string | undefined {
   const displaySets = splitDisplaySetsFromImageIds(seriesImageIds);
   const videoDisplaySet = displaySets.find(
-    (displaySet) => displaySet.preferredViewportType === 'video'
+    (displaySet) => displaySet.handler === 'video'
   );
 
   if (!videoDisplaySet) {
@@ -225,10 +237,7 @@ export function getPrimaryStackFrameImageIds(
   const displaySets = splitDisplaySetsFromImageIds(seriesImageIds);
 
   const primaryDisplaySet =
-    displaySets.find((displaySet) => {
-      const preferred = displaySet.preferredViewportType;
-      return preferred === 'stack' || preferred === 'volume3d';
-    }) ?? displaySets[0];
+    displaySets.find((displaySet) => !displaySet.handler) ?? displaySets[0];
 
   if (!primaryDisplaySet) {
     return seriesImageIds;
@@ -245,13 +254,7 @@ export function getVolumeFrameImageIds(seriesImageIds: string[]): string[] {
   const displaySets = splitDisplaySetsFromImageIds(seriesImageIds);
 
   const volumeDisplaySet =
-    displaySets.find(
-      (displaySet) => displaySet.preferredViewportType === 'volume3d'
-    ) ??
-    displaySets.find(
-      (displaySet) => displaySet.preferredViewportType === 'volume'
-    ) ??
-    displaySets[0];
+    displaySets.find(isVolumeDisplaySet) ?? displaySets[0];
 
   if (!volumeDisplaySet) {
     return seriesImageIds;

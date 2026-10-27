@@ -93,7 +93,10 @@ number.
   `['ORIGINAL', 'LOCALIZER'] == 'LOCALIZER'` is `false`. Two arrays are equal
   when they have the same elements in the same order. To test that a value is
   one of a list, use `in`: `Modality in ['MR', 'CT']`, or
-  `'LOCALIZER' in ImageType`. An empty array literal is a compile error.
+  `'LOCALIZER' in ImageType`. Next to `==` or `!=`, an empty array literal is
+  a compile error, and so is an array literal of two or more values:
+  `Modality == ['MR', 'CT']` fails with a message that names `in`. A
+  one-value array literal (`Modality == ['MR']`) still compiles.
 - An aggregate inside the argument of another aggregate is a compile error.
   Put the inner aggregate in its own context entry, and read that name.
 
@@ -103,19 +106,20 @@ A condition is a map of name to test. Every entry must hold, so `{}` is `true`.
 There is no `all`, `any` or `not`. A consumer gives an "or" a name of its own,
 and `false` on a named boolean is its negation.
 
-| Test                    | The entry holds when                              |
-| ----------------------- | ------------------------------------------------- |
-| a scalar                | the value is equal to the scalar, with `==`       |
-| an array of scalars     | shorthand for `includes`: a value is in the array |
-| `null`                  | the value has no value                            |
-| an object, one operator | the operator holds                                |
-| a function              | `test(value, subject, context)` is true           |
+| Test                    | The entry holds when                               |
+| ----------------------- | -------------------------------------------------- |
+| a scalar                | shorthand for `includes`: the value is or holds it |
+| an array of scalars     | shorthand for `includes`: a value is in the array  |
+| `null`                  | the value has no value                             |
+| an object, one operator | the operator holds                                 |
+| a function              | `test(value, subject, context)` is true            |
 
-The scalar test uses the `==` of expressions, so `"ImageType": "LOCALIZER"`
-holds for `['LOCALIZER']`, and not for `['ORIGINAL', 'LOCALIZER']`. The array
-test holds when one value is in the array, so `"Modality": ["MR", "CT"]` holds
-for `'MR'`, and `"ImageType": ["LOCALIZER"]` holds for
-`['ORIGINAL', 'LOCALIZER']`.
+The shorthand is `includes` in both forms. `"ImageType": "LOCALIZER"` holds
+for `'LOCALIZER'` and for `['ORIGINAL', 'LOCALIZER']`. `"Modality": ["MR", "CT"]`
+holds for `'MR'`, and `"ImageType": ["LOCALIZER"]` holds for
+`['ORIGINAL', 'LOCALIZER']`. For a whole-value test, use `equals`:
+`{ "equals": ["ORIGINAL", "LOCALIZER"] }` holds only for that array, in that
+order.
 
 ### Operators
 
@@ -124,7 +128,7 @@ operand is the bare value: `{ "greaterThan": 1 }`.
 
 | Operator                            | Operand                       | The entry holds when                                                          |
 | ----------------------------------- | ----------------------------- | ----------------------------------------------------------------------------- |
-| `equals`                            | scalar, array or `null`       | the same test as a scalar; an array operand equals an array value in order    |
+| `equals`                            | scalar, array or `null`       | the whole value, with `==`; an array operand equals an array value in order   |
 | `doesNotEqual`                      | scalar, array or `null`       | `equals` does not hold; a value with no value passes                          |
 | `notNull`                           | boolean                       | `true`: the value has a value; `false`: the value has no value                |
 | `includes`                          | scalar or array of scalars    | the value has the element, or one of the elements; a single value is an array |

@@ -28,7 +28,6 @@ import {
 import type { NameReaderFunction, SchemaSite } from '../safeFunctions';
 import {
   ContextProgram,
-  defaultMetadataContext,
   displaySetContextFor,
   isFixedValue,
 } from './displaySetContext';
@@ -39,7 +38,7 @@ import type {
   ContextRuntime,
   ContextValues,
 } from './displaySetContext';
-import { compileMetadataContext } from './metadataContext';
+import { getMetadataContextProgram } from './metadataContext';
 import { validateSplitRuleSetEntry } from './splitRuleSet';
 import { splitRuleSchema } from './splitRuleSchema';
 import type {
@@ -298,9 +297,6 @@ function compileRule(
   if (rule.groupId !== undefined) {
     compiled.groupId = rule.groupId as string;
   }
-  if (rule.viewportTypes !== undefined) {
-    compiled.viewportTypes = rule.viewportTypes as string[];
-  }
   if (rule.handler !== undefined) {
     compiled.handler = rule.handler as string;
   }
@@ -376,10 +372,9 @@ export function compileDisplaySetSplitRules(
     );
   }
 
-  // One context object for this rule set: the key of its compile in the
-  // cache, and the context that createDisplaySetFromGroup reads.
-  const context = { ...defaultMetadataContext, ...options.context };
-  const program = compileMetadataContext(context, {
+  // The shared cache: the code tests read the same compile of the same
+  // context object.
+  const program = getMetadataContextProgram(options.context, {
     seriesFunctions: options.seriesFunctions,
     deniedNames: options.deniedNames,
     definition: DEFINITION,
@@ -402,11 +397,7 @@ export function compileDisplaySetSplitRules(
       program,
       sortFunctions
     );
-    compiledSet[id] = {
-      ...compiledRule,
-      metadataContext: context,
-      priority: rule.priority,
-    };
+    compiledSet[id] = { ...compiledRule, priority: rule.priority };
   }
   return compiledSet;
 }

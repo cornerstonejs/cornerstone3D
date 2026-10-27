@@ -4,14 +4,14 @@
  *
  * | Test                     | The entry holds when                                     |
  * | ------------------------ | -------------------------------------------------------- |
- * | a scalar                 | the value is equal to the scalar, with `==`              |
+ * | a scalar                 | shorthand for `includes`: the value is or holds the scalar |
  * | an array of scalars      | shorthand for `includes`: one value is in the array       |
  * | `null`                   | the value has no value: absent or empty                  |
  * | an object, one operator  | the operator holds (see {@link MATCH_OPERATORS})          |
  * | a function               | `test(value, subject, context)` is true                  |
  *
  * The operators have the names of the OHIF hanging protocol constraints.
- * `equals` compares the whole value: an array operand equals an array value
+ * Use `equals` for a whole-value test. `equals` compares the whole value: an array operand equals an array value
  * element by element. `notNull` is the opposite of `null`, `includes` accepts
  * a scalar operand. `greaterThan` / `lessThan` are strict, and
  * `greaterThanOrEqual` / `lessThanOrEqual` include the limit; the four read a
@@ -72,7 +72,7 @@ const needlesOf = (operand: unknown, ignoreCase = false): string[] =>
     ignoreCase ? String(item).toLowerCase() : String(item)
   );
 
-/** The scalar test, and `null` for "no value". */
+/** `equals`: the whole value with `==`, and `null` for "no value". */
 function equalsTest(operand: unknown): ValueTest {
   return operand === null
     ? (value) => hasNoValue(value)
@@ -306,8 +306,13 @@ export function compileMatchTest(test: unknown, site: SchemaSite): ValueTest {
   if (typeof test === 'function') {
     return test as ValueTest;
   }
-  if (test === null || isScalar(test)) {
+  if (test === null) {
     return equalsTest(test);
+  }
+  if (isScalar(test)) {
+    // The shorthand is `includes`: a single value equals the scalar, and a
+    // multi-valued value holds it. `{ equals }` compares the whole value.
+    return includesTest(test);
   }
   if (Array.isArray(test)) {
     if (!test.length || !test.every(isScalar)) {

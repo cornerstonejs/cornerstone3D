@@ -1,7 +1,4 @@
-import type {
-  DisplaySetContext,
-  DisplaySetContextValues,
-} from './displaySetContext';
+import type { DisplaySetContextValues } from './displaySetContext';
 
 /**
  * Naturalized DICOM instance used by display-set split rules and metadata.
@@ -22,32 +19,6 @@ export type NaturalizedInstance = {
   AvailableTransferSyntaxUID?: string;
   [key: string]: unknown;
 };
-
-export type ViewportTypeHint =
-  | 'stack'
-  | 'volume'
-  | 'volume3d'
-  | 'video'
-  | 'wholeslide'
-  | 'ecg'
-  /**
-   * No viewport can render this display set - see {@link NO_VIEWPORT_TYPE}. The
-   * display set still exists (so a study browser can list it and say why it is
-   * not viewable), but it must not be handed to a viewport. Read it as
-   * `displaySet.isDisplayable === false`.
-   */
-  | 'none'
-  | string;
-
-/**
- * The `viewportTypes` entry meaning "nothing can render this".
- *
- * Deliberately an explicit sentinel rather than an empty `viewportTypes` array:
- * an absent or empty list falls back to `['stack']` (see
- * {@link getViewportTypesForRule}), so "empty" cannot express "not renderable"
- * without that fallback silently turning a non-image object into a stack.
- */
-export const NO_VIEWPORT_TYPE = 'none';
 
 /**
  * The generic handler names of the default rules. A rule `handler` names the
@@ -161,7 +132,6 @@ export type SplitRuleCustomAttributesContext = {
   instance: NaturalizedInstance;
   isMultiFrame?: boolean;
   sopClassUids?: string[];
-  viewportTypes?: readonly ViewportTypeHint[];
   [key: string]: unknown;
 };
 
@@ -195,20 +165,12 @@ export type SplitRule = {
    * the rule splits: groups and split keys stay per rule id.
    */
   groupId?: string;
-  /** Allowed viewport types; index 0 is the preferred viewport type. */
-  viewportTypes?: readonly ViewportTypeHint[];
   /**
    * The generic name of the handler for the display sets of this rule (see
    * {@link DISPLAY_SET_HANDLER_NAMES}). `createDisplaySetFromGroup` copies it
    * to the display set. No handler: the display set needs none (an image).
    */
   handler?: string;
-  /**
-   * The metadata context that the rule was compiled with, for the code tests
-   * of `createDisplaySetFromGroup`. Set by `createDisplaySetSplitRules`;
-   * absent on a rule in code, which then reads the active context.
-   */
-  metadataContext?: DisplaySetContext;
   /**
    * Optional. Runs once per split operation, before matching, in priority
    * order, and returns facts that extend the shared series context - read back

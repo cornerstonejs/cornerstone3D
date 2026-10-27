@@ -66,7 +66,6 @@ const bySliceLocation = (a: NaturalizedInstance, b: NaturalizedInstance) =>
 const dwiByBValue: DisplaySetRules = {
   dwiByBValue: {
     priority: -1,
-    viewportTypes: ['stack'],
     context: {
       bValue: 'Number(DiffusionBValue)',
       isDiffusion: 'series.instances.max(bValue) > 0',
@@ -95,7 +94,6 @@ describe('diffusion MR', () => {
     const geDwiByBValue: DisplaySetRules = {
       geDwiByBValue: {
         priority: -1,
-        viewportTypes: ['stack'],
         context: {
           geBValues: { attribute: '00431039', vr: 'IS', vm: '4' },
           bValue: 'Number(geBValues)',
@@ -156,7 +154,6 @@ describe('CT localizers', () => {
   const ctScout: DisplaySetRules = {
     ctScout: {
       priority: -1,
-      viewportTypes: ['stack'],
       context: {
         isLocalizer: "includes(ImageType, 'LOCALIZER')",
         hasScout:
@@ -172,12 +169,9 @@ describe('CT localizers', () => {
     },
   };
   const rules = withDefaults(ctScout);
-  const viewOf = (displaySet: Record<string, unknown>) => [
-    displaySet.label,
-    displaySet.preferredViewportType,
-  ];
+  const viewOf = (displaySet: Record<string, unknown>) => displaySet.label;
 
-  it('puts the localizers of a mixed series in their own display set, and keeps the axial slices a volume', () => {
+  it('puts the localizers of a mixed series in their own display set, and keeps the axial slices in volume3d', () => {
     const series = ctSeriesWithScouts();
     const localizers = series.slice(0, 2);
     const axial = series.slice(2);
@@ -186,12 +180,12 @@ describe('CT localizers', () => {
       {
         rule: 'ctScout',
         uids: uidsOf(localizers),
-        description: ['SCOUT', 'stack'],
+        description: 'SCOUT',
       },
       {
         rule: 'volume3d',
         uids: uidsOf(axial),
-        description: [undefined, 'volume'],
+        description: undefined,
       },
     ]);
   });
@@ -210,7 +204,6 @@ describe('ultrasound', () => {
   const usTimeClusters: DisplaySetRules = {
     usTimeClusters: {
       priority: -1,
-      viewportTypes: ['stack'],
       context: { timeClustersMaxGap: 20 },
       matches: {
         isImage: true,

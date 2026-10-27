@@ -50,12 +50,6 @@ const ruleShape: SchemaShape = {
           optional: true,
           description: 'Human-readable explanation. Not compiled.',
         },
-        viewportTypes: {
-          kind: 'string',
-          list: true,
-          optional: true,
-          description: 'Allowed viewport types; index 0 is preferred.',
-        },
         handler: {
           kind: 'string',
           optional: true,

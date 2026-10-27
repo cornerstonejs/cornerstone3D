@@ -108,8 +108,6 @@ export type RawSplitRule = {
    * can read it from the rules themselves instead of maintaining its own copy.
    */
   description?: string;
-  /** Allowed viewport types; index 0 is preferred. */
-  viewportTypes?: string[];
   /**
    * The generic name of the handler for the display sets of this rule, for
    * example `segmentation` (see `DISPLAY_SET_HANDLER_NAMES`). The compile

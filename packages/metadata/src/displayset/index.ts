@@ -79,11 +79,6 @@ export { isVideoInstance } from './isVideoInstance';
 export { isEcgInstance } from './isEcgInstance';
 export { isWsiInstance } from './isWsiInstance';
 export {
-  getViewportTypesForRule,
-  getPreferredViewportType,
-  getViewportTypesForGroup,
-} from './viewportTypes';
-export {
   DEFAULT_SPLIT_RULE_PRIORITY_LIMIT,
   DISPLAY_SET_HANDLER_NAMES,
 } from './types';
@@ -101,7 +96,6 @@ export type {
   SplitRuleOptions,
   SplitRuleCustomAttributesContext,
   InstanceGroup,
-  ViewportTypeHint,
   InstanceOrderContext,
   SortInstances,
   GroupInstancesOptions,
