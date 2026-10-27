@@ -22,13 +22,30 @@ jest.mock('@cornerstonejs/core', () => {
   };
 });
 
+// The contour writer reads its annotations from the tool state.
+const mockGetAnnotation = jest.fn();
+jest.mock('@cornerstonejs/tools', () => {
+  const actual = jest.requireActual('@cornerstonejs/tools');
+  return {
+    ...actual,
+    annotation: {
+      ...actual.annotation,
+      state: { ...actual.annotation.state, getAnnotation: mockGetAnnotation },
+    },
+  };
+});
+
 const { metaData, Enums } = require('@cornerstonejs/core');
 const MeasurementReport =
   require('../src/adapters/Cornerstone3D/MeasurementReport').default;
+const LegacyMeasurementReport =
+  require('../src/adapters/Cornerstone/MeasurementReport').default;
 const {
   generateSegmentation,
 } = require('../src/adapters/Cornerstone3D/Segmentation/generateSegmentation');
-const { createInstance } = require('../src/utilities');
+const {
+  generateRTSSFromRepresentation,
+} = require('../src/adapters/Cornerstone3D/RTStruct/RTSS');
 const { version } = require('../src');
 const {
   LABELMAP_SEG_SOP_CLASS_UID,
@@ -65,6 +82,17 @@ const SHAPE = [
 ];
 
 const writers = {
+  'legacy SR': (options) =>
+    LegacyMeasurementReport.generateReport(
+      { [SR_IMAGE_ID]: {} },
+      {
+        get: (type) =>
+          type === 'generalSeriesModule'
+            ? { studyInstanceUID: '1', seriesInstanceUID: '2' }
+            : srMetadataProvider.get(type),
+      },
+      options
+    ).dataset,
   SR: (options) =>
     MeasurementReport.generateReport(
       { [SR_IMAGE_ID]: {} },
@@ -95,10 +123,21 @@ const writers = {
       type === Enums.MetadataModules.STUDY_DATA ? studyData : undefined;
     metaData.addProvider(studyProvider, 100000);
     try {
-      return createInstance(
-        Enums.MetadataModules.RTSS_INSTANCE_DATA,
-        'rtss:exemplar',
-        {},
+      // One contour annotation without segment data: the writer builds the
+      // instance from its image and skips its contour.
+      const contour = {
+        metadata: { referencedImageId: 'rtss:exemplar' },
+        data: {},
+      };
+      mockGetAnnotation.mockReturnValue(contour);
+      return generateRTSSFromRepresentation(
+        {
+          label: 'Contours',
+          segments: {},
+          representationData: {
+            Contour: { annotationUIDsMap: new Map([[1, new Set(['uid'])]]) },
+          },
+        },
         options
       );
     } finally {
