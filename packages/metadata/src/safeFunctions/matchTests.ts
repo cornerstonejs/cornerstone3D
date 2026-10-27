@@ -79,12 +79,56 @@ function equalsTest(operand: unknown): ValueTest {
     : (value) => looseEquals(value, operand);
 }
 
+/** A list of at most this many elements keeps the loop. */
+const SET_MIN_LENGTH = 9;
+const stringSets = new WeakMap<
+  readonly unknown[],
+  ReadonlySet<string> | null
+>();
+
+/**
+ * The cached `Set` of a stable array of more than 8 non-empty strings, else
+ * `null`. The array is the key, so it must not change after the compile. The
+ * compile holds its own copy of each array of a rule and of the context, and
+ * folds an array literal of literals into one array.
+ */
+function stringSetOf(list: unknown): ReadonlySet<string> | null {
+  if (!Array.isArray(list) || list.length < SET_MIN_LENGTH) {
+    return null;
+  }
+  let set = stringSets.get(list);
+  if (set === undefined) {
+    set = list.every((element) => typeof element === 'string' && element)
+      ? new Set(list as string[])
+      : null;
+    stringSets.set(list, set);
+  }
+  return set;
+}
+
+/**
+ * True when one of `items` equals an element of `list` with
+ * {@link looseEquals}. `list` is the stable side of the membership test.
+ *
+ * With a `Set` of `list`, a string and a boolean (as `'true'` / `'false'`)
+ * look up the `Set`. That gives the result of `looseEquals`, which compares two
+ * non-empty texts as `String(a) === String(b)`. A number, or an item of
+ * another kind, keeps the loop, so `1` still equals `'1'` and `'01'`.
+ */
+function someInList(items: readonly unknown[], list: unknown): boolean {
+  const set = stringSetOf(list);
+  const elements = set ? (list as readonly unknown[]) : elementsOf(list);
+  return items.some((item) =>
+    set && (typeof item === 'string' || typeof item === 'boolean')
+      ? set.has(String(item))
+      : elements.some((element) => looseEquals(item, element))
+  );
+}
+
 function includesTest(operand: unknown): ValueTest {
-  const wanted = asArray(operand);
-  return (value) =>
-    elementsOf(value).some((item) =>
-      wanted.some((element) => looseEquals(item, element))
-    );
+  const wanted = [...asArray(operand)];
+  stringSetOf(wanted);
+  return (value) => someInList(elementsOf(value), wanted);
 }
 
 function textTest(
@@ -125,7 +169,9 @@ const endsWith = textTest(false, (text, needle) => text.endsWith(needle));
  * and `{ "includes": "LOCALIZER" }` give the same result.
  */
 export const MATCH_HELPERS = Object.freeze({
-  includes: (value: unknown, operand: unknown) => includesTest(operand)(value),
+  // The value is the stable side: `X in list` calls includes(list, X).
+  includes: (value: unknown, operand: unknown) =>
+    someInList(elementsOf(operand), value),
   contains: (value: unknown, operand: unknown) => contains(operand)(value),
   startsWith: (value: unknown, operand: unknown) => startsWith(operand)(value),
   endsWith: (value: unknown, operand: unknown) => endsWith(operand)(value),

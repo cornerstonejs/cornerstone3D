@@ -40,11 +40,37 @@ const quotedList = (values) => `[${values.map((v) => `'${v}'`).join(', ')}]`;
 const SINGLE_IMAGE_MODALITIES = ['CR', 'DX', 'MG'];
 
 /**
- * An image instance that actually carries a raster (`Rows` has a value). Every
- * image-oriented rule below requires it, so it is factored out here rather than
- * repeated in each rule.
+ * An image instance that actually carries a raster (`Rows` has a value). The
+ * volume rules require it.
  */
 const RENDERABLE_IMAGE = { isImage: true, Rows: { notNull: true } };
+
+/**
+ * One display set for each revision chain of a series (each document, when it
+ * has no predecessor). The active instance sorts last, and every instance of
+ * the chain stays in the display set.
+ */
+const REVISION_CHAIN = {
+  groupBy: ['SeriesInstanceUID', 'revisionChainUid'],
+  sortBy: ['isActiveRevision', 'InstanceNumber'],
+  attributes: { activeSopInstanceUid: 'revisionChainUid' },
+};
+
+/** The viewport types of a multi-frame instance that is not a clip. */
+const VOLUME_VIEWPORT_TYPES = ['volume', 'volume3d', 'stack'];
+
+/**
+ * A rule for one kind of non-image object: the instances of its SOP class
+ * list, one display set for each series, built by the handler of the host.
+ */
+const objectRule = (priority, kind, handler, viewportTypes, description) => ({
+  priority,
+  description,
+  handler,
+  viewportTypes,
+  matches: { [kind]: true },
+  groupBy: ['SeriesInstanceUID'],
+});
 
 /**
  * The default display-set split rules, as data.
@@ -59,15 +85,19 @@ const RENDERABLE_IMAGE = { isImage: true, Rows: { notNull: true } };
  * rule, and still before `unsupported`, so it sees the instances that no other
  * default claims.
  *
+ * A rule with `handler` makes display sets that the host builds with its own
+ * code for that kind of object. The image rules name no handler.
+ *
  * @type {DisplaySetRules}
  */
 export const displaySetRules = {
   video: {
     priority: 1,
     description:
-      'Instances encoded with a video transfer syntax, or a dedicated video SOP ' +
-      'class, or a long multi-frame secondary capture. One display set per ' +
-      'instance, shown on a video viewport.',
+      'A video-only SOP class, or a video transfer syntax, or (with no known ' +
+      'transfer syntax) a long multi-frame secondary capture. One display set ' +
+      'per instance, shown on a video viewport.',
+    handler: 'video',
     viewportTypes: ['video'],
     matches: { isVideo: true },
     groupBy: ['SOPInstanceUID'],
@@ -78,6 +108,7 @@ export const displaySetRules = {
     description:
       'ECG / waveform SOP classes. One display set per instance, shown on a ' +
       'waveform viewport rather than an image viewport.',
+    handler: 'ecg',
     viewportTypes: ['ecg'],
     matches: { isEcg: true },
     groupBy: ['SOPInstanceUID'],
@@ -88,6 +119,7 @@ export const displaySetRules = {
     description:
       'VL Whole Slide Microscopy (or modality SM). All pyramid levels of the ' +
       'series form a single whole-slide display set.',
+    handler: 'wholeSlide',
     viewportTypes: ['wholeslide'],
     matches: { isWsi: true },
     groupBy: ['SeriesInstanceUID'],
@@ -96,28 +128,21 @@ export const displaySetRules = {
   singleImageModality: {
     priority: 4,
     description:
-      'CR / DX / MG, which acquire one image per instance. Split within the ' +
-      'series by a coarse image-size bucket so differently sized views (e.g. ' +
-      'mammography projections) become separate stacks.',
+      'CR / DX / MG, which acquire one image per instance. One display set ' +
+      'per instance, so each view of a mammography series is its own display ' +
+      'set.',
     viewportTypes: ['stack'],
-    // The `/64` rounding is a deliberately fuzzy bucket and can straddle a
-    // boundary (480 -> 8, 544 -> 9).
-    context: {
-      rowsBucket: 'round(Rows / 64)',
-      columnsBucket: 'round(Columns / 64)',
-      imageSizeBucket: { template: 'rows={rowsBucket}&cols={columnsBucket}' },
-    },
-    matches: { Modality: SINGLE_IMAGE_MODALITIES, ...RENDERABLE_IMAGE },
-    groupBy: ['SeriesInstanceUID', 'imageSizeBucket'],
+    matches: { Modality: SINGLE_IMAGE_MODALITIES, isImage: true },
+    groupBy: ['SOPInstanceUID'],
   },
 
   multiFrame: {
     priority: 5,
     description:
-      'Multi-frame cine clips: a multi-frame instance with a slice location, ' +
-      'or a US, XA, RF, ES or XC multi-frame that is not a volume. One display ' +
-      'set per InstanceNumber, flagged isClip with its frame count. Other ' +
-      'multi-frame instances, such as an enhanced CT, go to the volume rules.',
+      'Multi-frame image instances, one display set per instance. A cine clip ' +
+      '(a slice location, or a US, XA, RF, ES or XC multi-frame that is not a ' +
+      'volume) is flagged isClip on a stack. Another multi-frame instance, ' +
+      'such as an enhanced CT, prefers a volume viewport.',
     viewportTypes: ['stack'],
     context: {
       // US, XA and other cine clips have no SliceLocation.
@@ -125,18 +150,17 @@ export const displaySetRules = {
         `SliceLocation != null || (Modality in ${quotedList(CINE_MODALITIES)}` +
         ` && !(SOPClassUID in ${quotedList(VOLUME_MULTIFRAME_SOP_CLASSES)}))`,
     },
-    matches: {
-      ...RENDERABLE_IMAGE,
-      isMultiFrame: true,
-      isCineClip: true,
-    },
-    // DICOM: the instances of one series with the same InstanceNumber are one
-    // object, so they are one display set.
-    groupBy: ['SeriesInstanceUID', 'InstanceNumber'],
+    matches: { isImage: true, isMultiFrame: true },
+    // DICOM groups an object by InstanceNumber, but no known data needs it,
+    // and much code expects one instance in a multi-frame display set.
+    groupBy: ['SOPInstanceUID'],
     attributes: {
-      isClip: true,
+      isClip: 'isCineClip',
       // NumberOfFrames is frequently naturalized as a string (e.g. '30').
       numImageFrames: { expression: 'Number(NumberOfFrames)' },
+      viewportTypes: {
+        expression: `isCineClip ? ['stack'] : ${quotedList(VOLUME_VIEWPORT_TYPES)}`,
+      },
     },
   },
 
@@ -180,10 +204,85 @@ export const displaySetRules = {
   defaultImageRule: {
     priority: 8,
     description:
-      'Fallback for any remaining renderable image. Grouped one display set per ' +
-      'series.',
+      'Fallback for any remaining image SOP class, also with no Rows in the ' +
+      'metadata. Grouped one display set per series.',
     viewportTypes: ['stack', 'volume', 'volume3d'],
-    matches: RENDERABLE_IMAGE,
+    matches: { isImage: true },
+  },
+
+  segmentation: objectRule(
+    9,
+    'isSegmentation',
+    'segmentation',
+    ['stack', 'volume'],
+    'Segmentations (segmentationSopClassUids). One display set per series.'
+  ),
+
+  rtStructureSet: objectRule(
+    10,
+    'isRtStructureSet',
+    'rtStructureSet',
+    ['stack', 'volume'],
+    'RT structure sets (rtStructureSetSopClassUids). One display set per series.'
+  ),
+
+  parametricMap: objectRule(
+    11,
+    'isParametricMap',
+    'parametricMap',
+    ['volume', 'stack'],
+    'Parametric maps (parametricMapSopClassUids). One display set per series.'
+  ),
+
+  structuredReport: {
+    ...objectRule(
+      12,
+      'isStructuredReport',
+      'structuredReport',
+      ['stack'],
+      'Structured reports (structuredReportSopClassUids), also Comprehensive ' +
+        '3D SR. One display set per series. Manufacturer and ' +
+        'ManufacturerModelName name the writer of the SR.'
+    ),
+    attributes: {
+      Manufacturer: 'Manufacturer',
+      ManufacturerModelName: 'ManufacturerModelName',
+    },
+  },
+
+  encapsulatedDocument: {
+    ...objectRule(
+      13,
+      'isEncapsulatedDocument',
+      'encapsulatedDocument',
+      ['document'],
+      'Encapsulated documents (encapsulatedDocumentSopClassUids). One ' +
+        'display set per revision chain (PredecessorDocumentsSequence) of ' +
+        'the series; activeSopInstanceUid names the current revision.'
+    ),
+    ...REVISION_CHAIN,
+  },
+
+  bulkAnnotation: objectRule(
+    14,
+    'isBulkAnnotation',
+    'bulkAnnotation',
+    ['wholeslide'],
+    'Microscopy bulk annotations (bulkAnnotationSopClassUids). One display ' +
+      'set per series.'
+  ),
+
+  chart: {
+    ...objectRule(
+      15,
+      'isChart',
+      'chart',
+      ['chart'],
+      'Charts (chartSopClassUids, empty by default: a host adds its chart ' +
+        'SOP class). One display set per revision chain of the series; ' +
+        'activeSopInstanceUid names the current revision.'
+    ),
+    ...REVISION_CHAIN,
   },
 
   /**
@@ -193,10 +292,11 @@ export const displaySetRules = {
   unsupported: {
     priority: Number.MAX_SAFE_INTEGER,
     description:
-      'Catch-all for objects nothing can render (SEG, RTSTRUCT, RTDOSE, SR, ' +
-      'PDF, presentation states, or an image whose Rows have not loaded). ' +
-      'Produces one display set for each series, marked isDisplayable: false, ' +
-      'so the objects are surfaced rather than silently dropped. Runs last.',
+      'Catch-all for objects that no other rule claims (presentation states, ' +
+      'other non-image objects). Produces one display set for each series, ' +
+      'marked isDisplayable: false, so the objects are surfaced rather than ' +
+      'silently dropped. Runs last.',
+    handler: 'unsupported',
     viewportTypes: [NO_VIEWPORT_TYPE],
     // No `matches`: claims whatever is left.
     groupBy: ['SeriesInstanceUID'],

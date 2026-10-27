@@ -56,6 +56,12 @@ const ruleShape: SchemaShape = {
           optional: true,
           description: 'Allowed viewport types; index 0 is preferred.',
         },
+        handler: {
+          kind: 'string',
+          optional: true,
+          description:
+            'The generic handler name of the display sets, e.g. segmentation. Any string; the host decides what an unknown name does.',
+        },
         context: {
           kind: 'contextEntry',
           record: true,
@@ -101,7 +107,7 @@ const ruleShape: SchemaShape = {
   },
 };
 
-/** One entry of `displaySetContext`, or of the `context` of a rule. */
+/** One entry of the `context` option, or of the `context` of a rule. */
 const contextEntryShape: SchemaShape = {
   name: 'context entry',
   string: 'expression',
@@ -136,15 +142,9 @@ const contextEntryShape: SchemaShape = {
           description:
             'The arguments of the series function. Each value is a fixed value, or an expression with one value for the series.',
         },
-        over: {
-          kind: 'literal',
-          optional: true,
-          description:
-            "Where the function runs in sortBy and attributes: 'displaySet' or 'series'. Default: the setting of the series function (planeGeometry: 'displaySet', timeClusters: 'series').",
-        },
       },
       description:
-        'One call of a series function. A rule reads a result field by path, e.g. timeClusters.start.',
+        'One call of a series function over the series. A rule reads a result field by path, e.g. timeClusters.start. In sortBy and attributes, displaySet.<name> runs it over the display set.',
     },
   },
 };

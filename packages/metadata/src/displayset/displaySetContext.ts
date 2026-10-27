@@ -37,11 +37,24 @@ import type {
   TemplateSegment,
 } from '../safeFunctions';
 import { keywordIgnoringCase, resolveHexFromKeyword } from '../utilities/Tags';
-import { isEcgInstance } from './isEcgInstance';
-import { isImageInstance } from './isImageInstance';
-import { isVideoInstance } from './isVideoInstance';
-import { isWsiInstance } from './isWsiInstance';
+import { sortInstancesCopy } from './sortInstances';
 import { instanceKey } from './seriesFunctions';
+import {
+  bulkAnnotationSopClassUids,
+  chartSopClassUids,
+  ecgSopClassUids,
+  encapsulatedDocumentSopClassUids,
+  imageSopClassUids,
+  longVideoMinFrames,
+  longVideoSopClassUids,
+  parametricMapSopClassUids,
+  rtStructureSetSopClassUids,
+  segmentationSopClassUids,
+  structuredReportSopClassUids,
+  videoSopClassUids,
+  videoTransferSyntaxUids,
+  wholeSlideSopClassUids,
+} from './sopClassUidLists';
 import { ATTRIBUTE_ONLY_NAMES, splitRuleSchema } from './splitRuleSchema';
 import type {
   NaturalizedInstance,
@@ -50,7 +63,6 @@ import type {
   SeriesFieldScope,
   SeriesFunction,
   SeriesFunctionDefinition,
-  SeriesFunctionScope,
 } from './types';
 
 const log = logging.metadataLog.getLogger('displayset', 'displaySetContext');
@@ -64,15 +76,13 @@ export type InstanceContextFunction = (
   values: ContextValues
 ) => unknown;
 
-/** A group entry: one call of a series function. */
+/**
+ * A group entry: one call of a series function. It runs over the series; in
+ * `sortBy` and `attributes`, `displaySet.<name>` runs it over the display set.
+ */
 export type ContextGroupEntry = {
   function: string | SeriesFunction | SeriesFunctionDefinition;
   args?: Record<string, unknown>;
-  /**
-   * Where the function runs in `sortBy` and `attributes`: over the display set,
-   * or over the series. Default: the `over` of the function definition.
-   */
-  over?: SeriesFunctionScope;
 };
 
 /** One entry of a display set context. See the module documentation. */
@@ -80,32 +90,35 @@ export type ContextEntry =
   | number
   | boolean
   | null
-  | unknown[]
+  | readonly unknown[]
   | string
   | { attribute: string; vr?: string; vm?: string }
   | { template: string }
   | ContextGroupEntry
   | InstanceContextFunction;
 
-/** A map of context names to entries: `displaySetContext`, or a rule `context`. */
+/** A map of context names to entries: the `context` option, or a rule `context`. */
 export type DisplaySetContext = Readonly<Record<string, ContextEntry>>;
 
 /** The series fact under which a split keeps the values of the context. */
 export const DISPLAY_SET_CONTEXT_FACT = 'displaySetContext';
 
 /**
- * The default display set context. The default rules, the example modules and
- * a site's own rules read these names.
+ * The default metadata context. The default rules, the example modules and a
+ * site's own rules read these names. Every entry is data, so a host or a
+ * server applies the same JSON overlay to it.
  *
  * - `timeClusters` and `planeGeometry` are groups; their aliases give names to
  *   the result fields. A rule changes an argument (`timeClustersMaxGap`) or
  *   selects another group (`"timeClusters": "longTimeClusters"`) in its
  *   `context`, and every alias follows.
- * - `isImage`, `isVideo`, `isEcg`, `isWsi` and `isStackImage` are code
- *   entries: SOP class heuristics that data cannot state.
+ * - The `*SopClassUids` and `*TransferSyntaxUids` entries are the lists of
+ *   `sopClassUidLists.ts`, under the same names. `isImage`, `isVideo`,
+ *   `isEcg`, `isWsi` and one `is*` entry for each other kind of object test
+ *   the lists; `isImageInstance` and the other code tests give the same result.
  * - `imageId` declares the synthetic attribute that the series functions read.
  */
-export const defaultDisplaySetContext: DisplaySetContext = Object.freeze({
+export const defaultMetadataContext: DisplaySetContext = {
   timeClustersMaxGap: 30,
   timeClusters: {
     function: 'timeClusters',
@@ -126,22 +139,51 @@ export const defaultDisplaySetContext: DisplaySetContext = Object.freeze({
   sliceIndex: 'planeGeometry.index',
   sliceDistance: 'planeGeometry.distance',
 
+  // Revision chains of PredecessorDocumentsSequence, inside one series.
+  revisionChains: { function: 'revisionChains' },
+  revisionChainUid: 'revisionChains.active',
+  isActiveRevision: 'SOPInstanceUID == revisionChainUid',
+
   seriesInstanceCount: 'series.instances.count()',
   isMultiFrame: 'NumberOfFrames > 1',
 
   imageId: { attribute: 'imageId' },
 
-  isImage: (instance: NaturalizedInstance) => isImageInstance(instance),
-  isVideo: (instance: NaturalizedInstance) => isVideoInstance(instance),
-  isEcg: (instance: NaturalizedInstance) => isEcgInstance(instance),
-  isWsi: (instance: NaturalizedInstance) => isWsiInstance(instance),
-  /** An image for a stack viewport: not a video, a waveform or a whole slide. */
-  isStackImage: (instance: NaturalizedInstance) =>
-    isImageInstance(instance) &&
-    !isVideoInstance(instance) &&
-    !isEcgInstance(instance) &&
-    !isWsiInstance(instance),
-});
+  imageSopClassUids,
+  videoSopClassUids,
+  videoTransferSyntaxUids,
+  longVideoSopClassUids,
+  longVideoMinFrames,
+  ecgSopClassUids,
+  wholeSlideSopClassUids,
+  segmentationSopClassUids,
+  rtStructureSetSopClassUids,
+  parametricMapSopClassUids,
+  structuredReportSopClassUids,
+  encapsulatedDocumentSopClassUids,
+  bulkAnnotationSopClassUids,
+  chartSopClassUids,
+
+  isImage: 'SOPClassUID in imageSopClassUids',
+  transferSyntaxKnown:
+    'AvailableTransferSyntaxUID != null || TransferSyntaxUID != null',
+  // The same three steps as isVideoInstance.
+  isVideo:
+    'SOPClassUID in videoSopClassUids || ' +
+    'AvailableTransferSyntaxUID in videoTransferSyntaxUids || ' +
+    'TransferSyntaxUID in videoTransferSyntaxUids || ' +
+    '(!transferSyntaxKnown && SOPClassUID in longVideoSopClassUids && ' +
+    'NumberOfFrames >= longVideoMinFrames)',
+  isEcg: 'SOPClassUID in ecgSopClassUids',
+  isWsi: "SOPClassUID in wholeSlideSopClassUids || Modality == 'SM'",
+  isSegmentation: 'SOPClassUID in segmentationSopClassUids',
+  isRtStructureSet: 'SOPClassUID in rtStructureSetSopClassUids',
+  isParametricMap: 'SOPClassUID in parametricMapSopClassUids',
+  isStructuredReport: 'SOPClassUID in structuredReportSopClassUids',
+  isEncapsulatedDocument: 'SOPClassUID in encapsulatedDocumentSopClassUids',
+  isBulkAnnotation: 'SOPClassUID in bulkAnnotationSopClassUids',
+  isChart: 'SOPClassUID in chartSopClassUids',
+};
 
 const CONTEXT_NAME = /^[a-z][A-Za-z0-9_]*$/;
 /** The literals of the expression language: no context entry can have these names. */
@@ -220,16 +262,25 @@ type Definition = {
   compute?: SeriesFunction;
   fields?: Readonly<Record<string, Scope>>;
   args?: GroupArgument[];
-  /** For a group: the instances it runs over in `sortBy` and `attributes`. */
-  over?: SeriesFunctionScope;
   fn?: InstanceContextFunction;
 };
 
-/** What a name in an entry or a rule reads. */
+/**
+ * What a name in an entry or a rule reads. `displaySet` is the `displaySet.`
+ * prefix of `sortBy` and `attributes`: its fields read over the display set.
+ */
 type Dependency =
   | { kind: 'keyword' }
   | { kind: 'attribute' }
-  | { kind: 'entry'; bound: Bound };
+  | { kind: 'entry'; bound: Bound }
+  | { kind: 'series'; inner: Dependency }
+  | { kind: 'displaySet'; fields: Map<string, Dependency> };
+
+/** The places where a bare name reads the series, and `displaySet.` the display set. */
+const DISPLAY_SET_PLACES = new Set(['sortBy', 'attributes']);
+
+const DISPLAY_SET_PREFIX_ONLY =
+  "the 'displaySet.' prefix is valid only in sortBy and attributes";
 
 /** Extra values of a place: the attribute-only names of `attributes`. */
 type Extras = Readonly<Record<string, unknown>>;
@@ -251,8 +302,8 @@ type Bound = {
   /** The rule of a rule entry; undefined for a global entry. */
   ruleId?: string;
   /**
-   * True when the value can differ for each display set: a group with
-   * `over: 'displaySet'`, a code entry, or an entry that reads one.
+   * True when the value can differ for each display set: a group, a code
+   * entry, or an entry that reads one.
    */
   perDisplaySet: boolean;
   /** For a code entry: the layer that resolves the names it reads at run time. */
@@ -441,6 +492,15 @@ export function isFixedValue(raw: unknown, arrays = true): boolean {
   );
 }
 
+/**
+ * A fixed array as a copy that the compile owns: one stable array for each
+ * compile, so a membership test can cache its `Set`, and a later change of the
+ * input does not reach the compiled rules.
+ */
+function copyFixedValue(raw: unknown): unknown {
+  return Array.isArray(raw) ? [...raw] : raw;
+}
+
 /** The text of a loop of entries, e.g. `a -> b -> a`. */
 function loopText(entries: { name: string; ruleId?: string }[]): string {
   return entries
@@ -474,10 +534,10 @@ export function withInstances(
   }
   return {
     ...series,
-    [DISPLAY_SET_CONTEXT_FACT]: new DisplaySetContextValues([
-      ...values.instances,
-      ...added,
-    ]),
+    // The default order, as a new split of the same series gives.
+    [DISPLAY_SET_CONTEXT_FACT]: new DisplaySetContextValues(
+      sortInstancesCopy([...values.instances, ...added])
+    ),
   };
 }
 
@@ -487,11 +547,11 @@ export function withInstances(
  *
  * A split keeps the values of the series as the series fact
  * {@link DISPLAY_SET_CONTEXT_FACT}, so every rule of the split reads the same
- * values in `context`, `matches` and `groupBy`. `sortBy` and `attributes` read
- * the values of one display set ({@link displaySetContextFor}): a series
- * function such as `planeGeometry` runs over the instances of the display set,
- * and `series.instances.*(...)` still runs over the series. A series value
- * that is the same for every display set comes from the cache of the split.
+ * values. In `sortBy` and `attributes`, a bare name also reads the values of
+ * the split, and a `displaySet.<name>` reads the values of one display set
+ * ({@link displaySetContextFor}): a series function such as `planeGeometry`
+ * runs over the instances of the display set, and `series.instances.*(...)`
+ * still runs over the series.
  */
 export class DisplaySetContextValues {
   private readonly runtimes = new WeakMap<ContextProgram, ContextRuntime>();
@@ -528,10 +588,10 @@ export class DisplaySetContextValues {
 /**
  * The context values of one display set: a series function runs over
  * `instances`, and `series.instances.*(...)` over the instances of the split
- * that `series` holds. The split computes each series value that is the same
- * for every display set (a group with `over: 'series'`, an aggregate of
- * `series.instances`), so the value is computed one time for each split.
- * Without a split in `series`, the values cover `instances` only.
+ * that `series` holds. The split computes each value that does not read a
+ * series function (an aggregate of `series.instances`, for example), so the
+ * value is computed one time for each split. Without a split in `series`, the
+ * values cover `instances` only.
  */
 export function displaySetContextFor(
   series: SeriesFacts | undefined,
@@ -578,6 +638,11 @@ export class ContextRuntime {
     readonly seriesInstances: readonly NaturalizedInstance[] = instances,
     private readonly split?: ContextRuntime
   ) {}
+
+  /** The runtime of the split: a bare name in `sortBy` and `attributes` reads it. */
+  get seriesRuntime(): ContextRuntime {
+    return this.split ?? this;
+  }
 
   /** The value of a bound entry: for the series, or for one instance. */
   value(bound: Bound, instance: NaturalizedInstance | undefined): unknown {
@@ -688,6 +753,20 @@ export class ContextRuntime {
         return dependency.bound.group
           ? this.groupView(dependency.bound, instance)
           : this.value(dependency.bound, instance);
+      case 'series':
+        return this.seriesRuntime.read(
+          name,
+          dependency.inner,
+          instance,
+          extras
+        );
+      case 'displaySet': {
+        const fields: Record<string, unknown> = Object.create(null);
+        dependency.fields.forEach((field, fieldName) => {
+          fields[fieldName] = this.read(fieldName, field, instance, extras);
+        });
+        return fields;
+      }
     }
   }
 
@@ -947,6 +1026,26 @@ export class ContextProgram {
     ).runtime(this);
   }
 
+  /**
+   * The value of the global entry `name` for one instance, with no split: the
+   * runtime covers that instance only. A series-scope entry is an error.
+   */
+  instanceValue(name: string, instance: NaturalizedInstance): unknown {
+    const definition = this.global.get(name);
+    if (!definition) {
+      throw new Error(`the metadata context has no entry '${name}'`);
+    }
+    const bound = this.bind(definition, this.empty, []);
+    if (bound.scope !== 'instance') {
+      throw new Error(
+        `the context entry '${name}' has the series scope, so one instance cannot give its value`
+      );
+    }
+    return new DisplaySetContextValues([instance])
+      .runtime(this)
+      .read(name, { kind: 'entry', bound }, instance);
+  }
+
   /** The context of one rule, with its `context` block. */
   layer(ruleId: string, context: unknown, site: SchemaSite): ContextLayer {
     if (context === undefined) {
@@ -972,6 +1071,11 @@ export class ContextProgram {
    * The reader of a name at a place of a rule: a tag keyword, a context name,
    * or (in `attributes` only) a value of the display set. A field reads a
    * result field of a group.
+   *
+   * In `sortBy` and `attributes`, a bare name reads the value of the series,
+   * and `displaySet.<name>` (or `displaySet.<name>.<field>`) reads the value
+   * over the instances of the display set. Every other place rejects the
+   * prefix.
    */
   readerAt(
     layer: ContextLayer,
@@ -980,17 +1084,38 @@ export class ContextProgram {
     options: { field?: string; place?: string } = {}
   ): ContextReader {
     const place = options.place ?? '';
-    const dependency = this.dependencyOf(
-      { name, field: options.field, inAggregate: false },
+    let { field } = options;
+    let target = name;
+    const prefixed = name === 'displaySet' || name.startsWith('displaySet.');
+    if (prefixed) {
+      if (!DISPLAY_SET_PLACES.has(place)) {
+        invalidAt(site, DISPLAY_SET_PREFIX_ONLY);
+      }
+      const path = name.split('.').slice(1);
+      if (field !== undefined) {
+        path.push(field);
+      }
+      if (!path.length || path.length > 2 || path.some((part) => !part)) {
+        invalidAt(
+          site,
+          `'${name}' must be displaySet.<name> or displaySet.<name>.<field>, e.g. displaySet.sliceSpacing`
+        );
+      }
+      [target, field] = path;
+    }
+    let dependency = this.dependencyOf(
+      { name: target, field, inAggregate: false },
       undefined,
       layer,
       [],
       site,
       place
     );
-    const { field } = options;
+    if (!prefixed && DISPLAY_SET_PLACES.has(place)) {
+      dependency = { kind: 'series', inner: dependency };
+    }
     return (runtime, instance, extras) => {
-      const value = runtime.read(name, dependency, instance, extras);
+      const value = runtime.read(target, dependency, instance, extras);
       return field === undefined ? value : readOwn(value, field);
     };
   }
@@ -999,7 +1124,8 @@ export class ContextProgram {
    * An expression of `attributes`, read over the instances of a display set.
    * A tag keyword reads the first instance. `series.instances.*(...)` runs
    * over the instances of the series, and `displaySet.instances.*(...)` over
-   * the instances of the display set.
+   * the instances of the display set. A bare context name reads the series,
+   * and `displaySet.<name>` the display set.
    */
   attributeExpression(
     layer: ContextLayer,
@@ -1016,17 +1142,47 @@ export class ContextProgram {
       ATTRIBUTE_EXPRESSION_SCOPE
     );
     const deps = new Map<string, Dependency>();
+    const displaySetFields = new Map<string, Dependency>();
     for (const read of reads) {
-      deps.set(
-        read.name,
-        this.dependencyOf(read, undefined, layer, [], site, 'attributes')
+      if (read.name === 'displaySet') {
+        if (read.field === undefined) {
+          invalidAt(
+            site,
+            "'displaySet' needs a name, e.g. displaySet.sliceSpacing"
+          );
+        }
+        displaySetFields.set(
+          read.field,
+          this.dependencyOf(
+            { name: read.field, inAggregate: read.inAggregate },
+            undefined,
+            layer,
+            [],
+            site,
+            'attributes'
+          )
+        );
+        continue;
+      }
+      const dependency = this.dependencyOf(
+        read,
+        undefined,
+        layer,
+        [],
+        site,
+        'attributes'
       );
+      deps.set(read.name, { kind: 'series', inner: dependency });
     }
-    const perDisplaySet = [...deps.values()].some(
-      (dependency) =>
-        dependency.kind === 'attribute' ||
-        (dependency.kind === 'entry' && dependency.bound.perDisplaySet)
-    );
+    if (displaySetFields.size) {
+      deps.set('displaySet', { kind: 'displaySet', fields: displaySetFields });
+    }
+    const perDisplaySet =
+      displaySetFields.size > 0 ||
+      [...deps.values()].some(
+        (dependency) =>
+          dependency.kind === 'series' && dependency.inner.kind === 'attribute'
+      );
     const scope = { key: `#attribute:${site.path}`, deps, perDisplaySet };
     return (runtime, instances, extras) =>
       evaluate(
@@ -1149,6 +1305,9 @@ export class ContextProgram {
         `the name '${name}' is on the deny list of the host, so no rule can read it`
       );
     }
+    if (name === 'displaySet') {
+      return invalidAt(site, DISPLAY_SET_PREFIX_ONLY);
+    }
     if (isTagKeyword(name)) {
       if (field !== undefined) {
         return invalidAt(
@@ -1227,7 +1386,7 @@ export class ContextProgram {
       // A code entry resolves its names at run time, so it can read anything.
       perDisplaySet:
         definition.kind === 'code' ||
-        (definition.kind === 'group' && definition.over === 'displaySet') ||
+        definition.kind === 'group' ||
         [...deps.values()].some(
           (dependency) =>
             dependency.kind === 'entry' && dependency.bound.perDisplaySet
@@ -1315,13 +1474,8 @@ export class ContextProgram {
                 )
               : argument.fixed;
           }
-          // In the runtime of a display set, `instances` are the display set,
-          // and a group that describes the series runs over the series.
-          const instances =
-            definition.over === 'displaySet'
-              ? runtime.instances
-              : runtime.seriesInstances;
-          return compute(instances as NaturalizedInstance[], {
+          // In the runtime of a display set, `instances` are the display set.
+          return compute(runtime.instances as NaturalizedInstance[], {
             args: Object.freeze(values),
           });
         };
@@ -1374,7 +1528,7 @@ export class ContextProgram {
       };
     }
     if (isFixedValue(raw)) {
-      return { ...base, kind: 'fixed', reads: [], value: raw };
+      return { ...base, kind: 'fixed', reads: [], value: copyFixedValue(raw) };
     }
     if (typeof raw === 'string') {
       const { evaluate, reads, single } = this.parseExpression(raw, site);
@@ -1434,14 +1588,6 @@ export class ContextProgram {
       at(site, 'function')
     );
     const args = this.parseArguments(fields.args, at(site, 'args'));
-    const over = fields.over ?? definition.over ?? 'series';
-    if (over !== 'series' && over !== 'displaySet') {
-      return invalidAt(
-        at(site, 'over'),
-        "expected 'series' or 'displaySet'",
-        fields.over
-      );
-    }
     return {
       ...base,
       kind: 'group',
@@ -1449,7 +1595,6 @@ export class ContextProgram {
       compute: definition.compute,
       fields: definition.fields,
       args,
-      over,
     };
   }
 
@@ -1495,7 +1640,7 @@ export class ContextProgram {
         invalidAt(argumentSite, `the argument name "${name}" is not allowed`);
       }
       if (isFixedValue(raw)) {
-        return { name, fixed: raw, reads: [] };
+        return { name, fixed: copyFixedValue(raw), reads: [] };
       }
       if (typeof raw === 'string') {
         const { evaluate, reads } = this.parseExpression(raw, argumentSite);
@@ -1522,7 +1667,10 @@ function readsInstance(
     case 'keyword':
       return true;
     case 'attribute':
+    case 'displaySet':
       return false;
+    case 'series':
+      return readsInstance(read, dependency.inner);
     case 'entry': {
       const { bound } = dependency;
       if (read.field !== undefined) {

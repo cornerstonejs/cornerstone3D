@@ -4,6 +4,7 @@ import { isEcgInstance } from './isEcgInstance';
 import { isVideoInstance } from './isVideoInstance';
 import { isWsiInstance } from './isWsiInstance';
 import { isUnsafeKey } from '../safeFunctions/schema';
+import type { DisplaySetContext } from './displaySetContext';
 import type { IDisplaySet } from './IDisplaySet';
 import type { InstanceGroup, ViewportTypeHint } from './types';
 import {
@@ -18,6 +19,11 @@ export type CreateDisplaySetFromGroupOptions = {
   /** 0-based index of this group among the series' split groups. */
   splitNumber?: number;
   descriptionName?: string;
+  /**
+   * The metadata context of the video, ECG and whole slide tests. Defaults to
+   * the context that the rule was compiled with, else the active context.
+   */
+  context?: DisplaySetContext;
 };
 
 /**
@@ -36,6 +42,7 @@ const RESERVED_ATTRIBUTE_KEYS = new Set<string>([
   'splitKey',
   'splitRuleId',
   'splitGroupId',
+  'handler',
 ]);
 
 /**
@@ -185,6 +192,8 @@ export function createDisplaySetFromGroup(
       : baseDisplaySetId);
 
   const first = instances[0];
+  const { handler } = group.matchedRule;
+  const context = options.context ?? group.matchedRule.metadataContext;
   let displaySet: IDisplaySet;
 
   if (!isDisplayableViewportTypes(viewportTypes)) {
@@ -200,9 +209,13 @@ export function createDisplaySetFromGroup(
       underlyingImageIds,
     });
   } else if (
-    first &&
-    (isVideoInstance(first) || isEcgInstance(first) || isWsiInstance(first))
+    (handler !== undefined && handler !== 'image') ||
+    (first &&
+      (isVideoInstance(first, context) ||
+        isEcgInstance(first, context) ||
+        isWsiInstance(first, context)))
   ) {
+    // Not an image stack: the handler of the host builds the rest.
     const imageIds = instances.map((i) => i.imageId).filter(Boolean);
     displaySet = new BaseDisplaySet({
       displaySetId,
@@ -222,6 +235,9 @@ export function createDisplaySetFromGroup(
   displaySet.splitKey = group.splitKey;
   displaySet.splitRuleId = group.matchedRule.id;
   displaySet.splitGroupId = group.matchedRule.groupId ?? group.matchedRule.id;
+  if (handler !== undefined) {
+    displaySet.handler = handler;
+  }
   // Every display set carries these, so a rule does not ask for them.
   displaySet.sopClassUids = [
     ...new Set(instances.map((i) => i.SOPClassUID).filter(Boolean)),

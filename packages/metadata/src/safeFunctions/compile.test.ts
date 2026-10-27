@@ -1,5 +1,48 @@
 import { compileCondition, compileValue } from './compile';
+import { MATCH_HELPERS } from './matchTests';
 import { RuleCompileError } from './schema';
+
+describe('membership - the cached Set of a long list', () => {
+  // 50 UIDs; '7' and 'true' test a number and a boolean.
+  const uids = [
+    ...Array.from({ length: 48 }, (_, i) => `1.2.840.10008.5.1.4.1.1.${i}`),
+    '7',
+    'true',
+  ];
+  // -1 equals no value below, and keeps this list on the loop.
+  const loopList = [...uids, -1];
+  const cases: [unknown, boolean][] = [
+    ['1.2.840.10008.5.1.4.1.1.4', true],
+    ['9.9', false],
+    [7, true],
+    ['07', false],
+    [true, true],
+    [false, false],
+    ['', false],
+    [null, false],
+    [undefined, false],
+    [[], false],
+    [['x', '1.2.840.10008.5.1.4.1.1.5'], true],
+    [['x', 'y'], false],
+  ];
+
+  it('gives the result of the loop in matches and in the in operator', () => {
+    const viaSet = compileCondition({ X: uids });
+    const viaLoop = compileCondition({ X: loopList });
+    for (const [X, expected] of cases) {
+      expect([X, viaSet({ X }), viaLoop({ X })]).toEqual([
+        X,
+        expected,
+        expected,
+      ]);
+      expect([
+        X,
+        MATCH_HELPERS.includes(uids, X),
+        MATCH_HELPERS.includes(loopList, X),
+      ]).toEqual([X, expected, expected]);
+    }
+  });
+});
 
 const errorOf = (compile: () => unknown): RuleCompileError => {
   try {

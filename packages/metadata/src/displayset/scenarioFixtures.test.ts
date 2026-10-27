@@ -213,7 +213,7 @@ describe('ultrasound', () => {
       viewportTypes: ['stack'],
       context: { timeClustersMaxGap: 20 },
       matches: {
-        isStackImage: true,
+        isImage: true,
         Modality: 'US',
         isMultiFrame: false,
         sweepCount: { greaterThan: 1 },
@@ -273,14 +273,14 @@ describe('mammography', () => {
       (instance.ViewCodeSequence as { CodeValue?: string }[] | undefined)?.[0]
         ?.CodeValue;
     const options: CreateDisplaySetSplitRulesOptions = {
-      displaySetContext: {
+      context: {
         viewCode: viewCodeOf,
         mammoView: (instance: NaturalizedInstance) =>
           ({ 'R-10242': 'CC', 'R-10226': 'MLO' })[viewCodeOf(instance) ?? ''],
       },
     };
-    expect(ruleSet.requires.displaySetContext).toEqual(
-      Object.keys(options.displaySetContext ?? {}).sort()
+    expect(ruleSet.requires.context).toEqual(
+      Object.keys(options.context ?? {}).sort()
     );
 
     const series = fourViewMammogram();

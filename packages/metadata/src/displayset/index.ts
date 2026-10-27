@@ -12,6 +12,14 @@ export {
 } from './groupInstancesBySplitRules';
 export type { PlaneGeometry, TimeClusters } from './seriesFunctions';
 export { resolveSplitRuleSet } from './splitRuleSet';
+export {
+  compare,
+  compareInstanceNumber,
+  compareSOPInstanceUID,
+  sortByInstanceNumber,
+  instancesSortCriteria,
+  sortInstancesCopy,
+} from './sortInstances';
 export { splitImageIdsBySplitRules } from './splitImageIdsBySplitRules';
 export type { SplitImageIdsBySplitRulesOptions } from './splitImageIdsBySplitRules';
 export {
@@ -24,7 +32,28 @@ export {
   defaultDisplaySetSplitRules,
 } from './compiledDisplaySetRules';
 export { displaySetRules, createDisplaySetSplitRules } from './displaySetRules';
-export { defaultDisplaySetContext } from './displaySetContext';
+export { defaultMetadataContext } from './displaySetContext';
+export {
+  setMetadataContext,
+  getMetadataContext,
+  getContextValue,
+} from './metadataContext';
+export {
+  imageSopClassUids,
+  videoSopClassUids,
+  videoTransferSyntaxUids,
+  longVideoSopClassUids,
+  longVideoMinFrames,
+  ecgSopClassUids,
+  wholeSlideSopClassUids,
+  segmentationSopClassUids,
+  rtStructureSetSopClassUids,
+  parametricMapSopClassUids,
+  structuredReportSopClassUids,
+  encapsulatedDocumentSopClassUids,
+  bulkAnnotationSopClassUids,
+  chartSopClassUids,
+} from './sopClassUidLists';
 export type {
   ContextEntry,
   ContextGroupEntry,
@@ -54,7 +83,10 @@ export {
   getPreferredViewportType,
   getViewportTypesForGroup,
 } from './viewportTypes';
-export { DEFAULT_SPLIT_RULE_PRIORITY_LIMIT } from './types';
+export {
+  DEFAULT_SPLIT_RULE_PRIORITY_LIMIT,
+  DISPLAY_SET_HANDLER_NAMES,
+} from './types';
 export type {
   NaturalizedInstance,
   SeriesInfo,
@@ -62,7 +94,6 @@ export type {
   SeriesContext,
   SeriesFunction,
   SeriesFunctionDefinition,
-  SeriesFunctionScope,
   SeriesFieldScope,
   RuleContext,
   SplitRule,

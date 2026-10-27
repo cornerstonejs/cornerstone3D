@@ -28,7 +28,7 @@ import {
 import type { NameReaderFunction, SchemaSite } from '../safeFunctions';
 import {
   ContextProgram,
-  defaultDisplaySetContext,
+  defaultMetadataContext,
   displaySetContextFor,
   isFixedValue,
 } from './displaySetContext';
@@ -39,7 +39,7 @@ import type {
   ContextRuntime,
   ContextValues,
 } from './displaySetContext';
-import { BUILT_IN_SERIES_FUNCTIONS } from './seriesFunctions';
+import { compileMetadataContext } from './metadataContext';
 import { validateSplitRuleSetEntry } from './splitRuleSet';
 import { splitRuleSchema } from './splitRuleSchema';
 import type {
@@ -73,9 +73,13 @@ function instanceReader(
   compile: RuleCompile,
   name: string,
   site: SchemaSite,
+  place: 'matches' | 'groupBy',
   field?: string
 ): (instance: NaturalizedInstance, context?: RuleContext) => unknown {
-  const read = compile.program.readerAt(compile.layer, name, site, { field });
+  const read = compile.program.readerAt(compile.layer, name, site, {
+    field,
+    place,
+  });
   const { program } = compile;
   return (instance, context) =>
     read(program.runtimeFrom(context, instance), instance);
@@ -96,7 +100,7 @@ function compileName(
   if (typeof value !== 'string') {
     return unrecognized(splitRuleSchema.name, value, site);
   }
-  return instanceReader(compile, value, site);
+  return instanceReader(compile, value, site, 'groupBy');
 }
 
 /**
@@ -129,7 +133,9 @@ function compileSortKey(
     return value as Comparator;
   }
   if (typeof value === 'string') {
-    const read = compile.program.readerAt(compile.layer, value, site);
+    const read = compile.program.readerAt(compile.layer, value, site, {
+      place: 'sortBy',
+    });
     const { program } = compile;
     return (a, b, context) => {
       const runtime = program.runtimeFrom(context, [a, b]);
@@ -242,8 +248,7 @@ function compileAttributes(
   const { program } = compile;
   return (engine, options) => {
     const instances = options.instances ?? [];
-    // The attributes describe one display set: a series function such as
-    // planeGeometry runs over its instances.
+    // The runtime of one display set, for the displaySet.<name> reads.
     const runtime = program.runtimeFrom(
       {
         series: options.series,
@@ -296,12 +301,21 @@ function compileRule(
   if (rule.viewportTypes !== undefined) {
     compiled.viewportTypes = rule.viewportTypes as string[];
   }
+  if (rule.handler !== undefined) {
+    compiled.handler = rule.handler as string;
+  }
 
   if (rule.matches !== undefined) {
     const matchesSite = {
       ...at(site, 'matches'),
       readName: (name: string, nameSite: SchemaSite, field?: string) =>
-        instanceReader(compile, name, nameSite, field) as NameReaderFunction,
+        instanceReader(
+          compile,
+          name,
+          nameSite,
+          'matches',
+          field
+        ) as NameReaderFunction,
     };
     compiled.matches = compileConditionAt(rule.matches, matchesSite);
   }
@@ -347,8 +361,8 @@ function compileRule(
  * priority. Compilation is eager: a malformed rule set throws here, at setup,
  * rather than midway through splitting a study.
  *
- * The rules read the names of {@link defaultDisplaySetContext}, with the
- * entries of `options.displaySetContext` over them. Every name is checked: an
+ * The rules read the names of {@link defaultMetadataContext}, with the
+ * entries of `options.context` over them. Every name is checked: an
  * unknown name, a loop of context entries, an unknown field or form, throws
  * with the rule id and the path of the fragment.
  */
@@ -362,21 +376,14 @@ export function compileDisplaySetSplitRules(
     );
   }
 
-  const program = new ContextProgram(
-    { ...defaultDisplaySetContext, ...options.displaySetContext },
-    {
-      seriesFunctions: {
-        ...BUILT_IN_SERIES_FUNCTIONS,
-        ...options.seriesFunctions,
-      },
-      deniedNames: options.deniedNames,
-      site: createSite(
-        { definition: DEFINITION, path: 'displaySetContext' },
-        splitRuleSchema,
-        safeFunctionCompilers
-      ),
-    }
-  );
+  // One context object for this rule set: the key of its compile in the
+  // cache, and the context that createDisplaySetFromGroup reads.
+  const context = { ...defaultMetadataContext, ...options.context };
+  const program = compileMetadataContext(context, {
+    seriesFunctions: options.seriesFunctions,
+    deniedNames: options.deniedNames,
+    definition: DEFINITION,
+  });
   const sortFunctions = options.sortFunctions ?? {};
 
   const compiledSet: SplitRuleSet = {};
@@ -395,7 +402,11 @@ export function compileDisplaySetSplitRules(
       program,
       sortFunctions
     );
-    compiledSet[id] = { ...compiledRule, priority: rule.priority };
+    compiledSet[id] = {
+      ...compiledRule,
+      metadataContext: context,
+      priority: rule.priority,
+    };
   }
   return compiledSet;
 }

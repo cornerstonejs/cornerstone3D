@@ -2,9 +2,9 @@
   "name": "Mammography — one series into the four standard views",
   "notes": [
     "A screening mammogram often arrives as a single series holding all four",
-    "views. The standard `singleImageModality` rule splits MG on a coarse",
-    "image-size bucket, and the four views are usually identically sized, so",
-    "without this rule the study stays one four-image stack.",
+    "views. The standard `singleImageModality` rule gives each MG instance its",
+    "own display set, but it does not name the view. This rule groups by",
+    "laterality and view, and labels each display set with the view name.",
     "",
     "The rule runs at priority -1, before every standard rule, so it claims MG",
     "images before `singleImageModality` can.",
@@ -17,7 +17,7 @@
     "",
     "The view *name* does need code: it lives in ViewCodeSequence, which no",
     "keyword reads. Hence the `mammoView` and `viewCode` context entries in",
-    "`requires` — the host registers them as code entries of its display set",
+    "`requires` — the host registers them as code entries of its metadata",
     "context, and the rule reads them by name like any keyword.",
     "",
     "This file only decides *which* display sets exist. Where each one hangs is",
@@ -25,7 +25,7 @@
     "arrangement built on these same view codes."
   ],
   "requires": {
-    "displaySetContext": ["mammoView", "viewCode"]
+    "context": ["mammoView", "viewCode"]
   },
   "rules": {
     "mammoViewSplit": {

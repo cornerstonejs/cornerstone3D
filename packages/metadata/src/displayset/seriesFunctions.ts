@@ -12,12 +12,15 @@
  *
  * Every function here is pure, and its result does not depend on the order of
  * the instances it gets, so a split stays independent of the arrival order.
+ * {@link revisionChains} reads the order: the split gives every series function
+ * the instances in the default order (`InstanceNumber`, then
+ * `SOPInstanceUID`), so its result is still independent of the arrival order.
  *
  * @module displayset/seriesFunctions
  */
 
 import { vec3 } from 'gl-matrix';
-import { toFiniteFirst, toFiniteVector } from '@cornerstonejs/utils';
+import { asArray, toFiniteFirst, toFiniteVector } from '@cornerstonejs/utils';
 import { readOwn } from '../safeFunctions';
 import type {
   NaturalizedInstance,
@@ -431,6 +434,90 @@ export const timeClusters: SeriesFunction = (instances, { args }) => {
   return result;
 };
 
+/** The summary that {@link revisionChains} returns. */
+export type RevisionChains = {
+  /** The key of the active instance of the chain of each instance. */
+  active: Record<string, string>;
+};
+
+/** The `ReferencedSOPInstanceUID`s of `PredecessorDocumentsSequence`. */
+function predecessorUids(instance: NaturalizedInstance): string[] {
+  const uids: string[] = [];
+  const items = (value: unknown) =>
+    value == null ? [] : (asArray(value) as unknown[]);
+  for (const study of items(
+    readOwn(instance, 'PredecessorDocumentsSequence')
+  )) {
+    for (const series of items(readOwn(study, 'ReferencedSeriesSequence'))) {
+      for (const sop of items(readOwn(series, 'ReferencedSOPSequence'))) {
+        const uid = readOwn(sop, 'ReferencedSOPInstanceUID');
+        if (typeof uid === 'string' && uid) {
+          uids.push(uid);
+        }
+      }
+    }
+  }
+  return uids;
+}
+
+/**
+ * Finds the revision chains of a series from `PredecessorDocumentsSequence`
+ * (for example of encapsulated documents). Only references to instances of
+ * the given series count.
+ *
+ * Each chain end (an instance that no other instance names as a predecessor)
+ * starts its own chain, and is its active instance. The ends are visited in
+ * the order of `instances`: the default instance order (`InstanceNumber`,
+ * then `SOPInstanceUID`), because the split sorts the series one time before
+ * the series functions run. Each end takes its predecessors, directly and
+ * through other instances, that no earlier chain took; so in a branch, the
+ * first end takes the shared predecessors. An instance that no end reaches (only in a cycle)
+ * is its own chain.
+ */
+export const revisionChains: SeriesFunction = (instances) => {
+  const keys = instances.map(instanceKey);
+  const indexOf = new Map<string, number>();
+  keys.forEach((key, index) => key !== undefined && indexOf.set(key, index));
+
+  const predecessors = instances.map((instance, index) =>
+    predecessorUids(instance)
+      .map((uid) => indexOf.get(uid))
+      .filter(
+        (predecessor): predecessor is number =>
+          predecessor !== undefined &&
+          predecessor !== index &&
+          instances[predecessor].SeriesInstanceUID ===
+            instance.SeriesInstanceUID
+      )
+  );
+  const named = new Set(predecessors.flat());
+
+  const chainOf: (number | undefined)[] = instances.map(() => undefined);
+  instances.forEach((_instance, end) => {
+    if (named.has(end)) {
+      return;
+    }
+    const stack = [end];
+    while (stack.length) {
+      const index = stack.pop() as number;
+      if (chainOf[index] !== undefined) {
+        continue;
+      }
+      chainOf[index] = end;
+      stack.push(...predecessors[index]);
+    }
+  });
+
+  const result: RevisionChains = { active: {} };
+  keys.forEach((key, index) => {
+    const activeKey = keys[chainOf[index] ?? index];
+    if (key !== undefined && activeKey !== undefined) {
+      result.active[key] = activeKey;
+    }
+  });
+  return result;
+};
+
 /**
  * The built-in series functions, by name, with their result fields. An
  * application adds its own, or replaces one, through
@@ -441,9 +528,6 @@ export const BUILT_IN_SERIES_FUNCTIONS: Readonly<
 > = Object.freeze({
   planeGeometry: Object.freeze({
     compute: planeGeometry,
-    // A measure of the display set: sliceSpacing and sliceDistance describe
-    // the display set in sortBy and attributes.
-    over: 'displaySet',
     fields: Object.freeze({
       normal: 'series',
       origin: 'series',
@@ -466,5 +550,9 @@ export const BUILT_IN_SERIES_FUNCTIONS: Readonly<
       clusters: 'series',
       untimedCount: 'series',
     } as const),
+  }),
+  revisionChains: Object.freeze({
+    compute: revisionChains,
+    fields: Object.freeze({ active: 'instance' } as const),
   }),
 });

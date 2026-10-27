@@ -535,6 +535,13 @@ function compileNode(
       const elements = node.elements.map((element) =>
         compileNode(element, context)
       );
+      if (node.elements.every((element) => element.type === 'literal')) {
+        // One stable array, so a membership test can cache its Set.
+        const folded = node.elements.map(
+          (element) => (element as { value: unknown }).value
+        );
+        return () => folded;
+      }
       return (scope) => elements.map((element) => element(scope));
     }
     case 'template': {

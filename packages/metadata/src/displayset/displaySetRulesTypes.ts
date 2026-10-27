@@ -111,6 +111,13 @@ export type RawSplitRule = {
   /** Allowed viewport types; index 0 is preferred. */
   viewportTypes?: string[];
   /**
+   * The generic name of the handler for the display sets of this rule, for
+   * example `segmentation` (see `DISPLAY_SET_HANDLER_NAMES`). The compile
+   * accepts any string; a host decides what an unknown name does. A rule
+   * without `handler` names no handler (the common case for images).
+   */
+  handler?: string;
+  /**
    * Context entries for this rule only. An entry replaces the global entry of
    * the same name, also inside the global entries that the rule reads, or it
    * defines a new name that only this rule reads.
@@ -144,11 +151,11 @@ export type DisplaySetRules = Record<string, RawSplitRule>;
 /** Options for {@link createDisplaySetSplitRules}. */
 export type CreateDisplaySetSplitRulesOptions = {
   /**
-   * Global context entries, over the entries of `defaultDisplaySetContext`.
+   * Global context entries, over the entries of `defaultMetadataContext`.
    * An entry replaces the default entry of the same name. OHIF reads it from
-   * the `displaySetContext` customization of `useMetadataDisplaySet`.
+   * the `metadataContext` customization.
    */
-  displaySetContext?: Record<string, ContextEntry>;
+  context?: Record<string, ContextEntry>;
   /**
    * Extra (or replacement) series functions, over the built-in
    * `planeGeometry` / `timeClusters`, for a group entry

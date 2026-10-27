@@ -1,4 +1,7 @@
-import type { DisplaySetContextValues } from './displaySetContext';
+import type {
+  DisplaySetContext,
+  DisplaySetContextValues,
+} from './displaySetContext';
 
 /**
  * Naturalized DICOM instance used by display-set split rules and metadata.
@@ -45,6 +48,26 @@ export type ViewportTypeHint =
  * without that fallback silently turning a non-image object into a stack.
  */
 export const NO_VIEWPORT_TYPE = 'none';
+
+/**
+ * The generic handler names of the default rules. A rule `handler` names the
+ * kind of object, and a host maps the name to its own code (OHIF: a SOP class
+ * handler). A rule can use another name; the compile does not check it.
+ */
+export const DISPLAY_SET_HANDLER_NAMES = [
+  'image',
+  'video',
+  'wholeSlide',
+  'ecg',
+  'segmentation',
+  'rtStructureSet',
+  'parametricMap',
+  'structuredReport',
+  'encapsulatedDocument',
+  'bulkAnnotation',
+  'chart',
+  'unsupported',
+] as const;
 
 /**
  * Series-level statistics aggregated once over a series' instances (see
@@ -116,19 +139,7 @@ export type SeriesFunctionDefinition = {
   compute: SeriesFunction;
   /** The result fields. Omitted: the fields are not checked, and have the series scope. */
   fields?: Readonly<Record<string, SeriesFieldScope>>;
-  /**
-   * The instances the function runs over in `sortBy` and `attributes`:
-   * `'displaySet'` (the instances of the display set, for a measure of the
-   * display set such as `planeGeometry`), or `'series'` (all the instances of
-   * the series, for a property of the series such as `timeClusters`). Default
-   * `'series'`. In `context`, `matches` and `groupBy` a function always runs
-   * over the series. A group entry can override it with `over`.
-   */
-  over?: SeriesFunctionScope;
 };
-
-/** Where a series function runs in `sortBy` and `attributes`. */
-export type SeriesFunctionScope = 'series' | 'displaySet';
 
 /**
  * Argument to a rule's `matches` predicate, `groupBy` extractors and
@@ -139,8 +150,9 @@ export type RuleContext = {
   series: SeriesFacts;
   /**
    * The context values of one display set, in a sort of its instances. A
-   * series function such as `planeGeometry` then runs over the instances of
-   * the display set. Absent in `matches` and `groupBy`, which read the series.
+   * `displaySet.<name>` in `sortBy` reads them, so a series function such as
+   * `planeGeometry` runs over the instances of the display set. Absent in
+   * `matches` and `groupBy`, which read the series.
    */
   displaySet?: DisplaySetContextValues;
 };
@@ -185,6 +197,18 @@ export type SplitRule = {
   groupId?: string;
   /** Allowed viewport types; index 0 is the preferred viewport type. */
   viewportTypes?: readonly ViewportTypeHint[];
+  /**
+   * The generic name of the handler for the display sets of this rule (see
+   * {@link DISPLAY_SET_HANDLER_NAMES}). `createDisplaySetFromGroup` copies it
+   * to the display set. No handler: the display set needs none (an image).
+   */
+  handler?: string;
+  /**
+   * The metadata context that the rule was compiled with, for the code tests
+   * of `createDisplaySetFromGroup`. Set by `createDisplaySetSplitRules`;
+   * absent on a rule in code, which then reads the active context.
+   */
+  metadataContext?: DisplaySetContext;
   /**
    * Optional. Runs once per split operation, before matching, in priority
    * order, and returns facts that extend the shared series context - read back

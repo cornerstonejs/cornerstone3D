@@ -138,9 +138,9 @@ const SOURCE_SERIES: SourceSeries[] = [
   {
     // CMMD patient D2-0140 (TCIA, CC BY 4.0, DOI 10.7937/tcia.eqde-4b16). All
     // four screening views arrive as one series, which is what makes it worth
-    // having here: the standard `singleImageModality` rule splits MG on a coarse
-    // image-size bucket, and these four are identically sized, so out of the box
-    // the study is a single four-image stack. Local-only data.
+    // having here: the standard `singleImageModality` rule gives each view its
+    // own display set, and the mammo rules below also name the view.
+    // Local-only data.
     label: 'MG — screening mammogram, 4 views in one series (local)',
     StudyInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.1239.1759.598888059044635576254843278173',
@@ -167,7 +167,7 @@ function firstItem(sequence: unknown): Record<string, unknown> | undefined {
 }
 
 /**
- * The context entries this example adds to the default display set context.
+ * The context entries this example adds to the default metadata context.
  * A rule reads each one by its name, in the same way as a DICOM keyword.
  *
  * Most entries are data, so a pasted or fetched rule set can also define its
@@ -228,7 +228,7 @@ const SAMPLE_SNIPPETS: Record<string, string> = {
         viewportTypes: ['stack'],
         context: { timeClustersMaxGap: 20 },
         matches: {
-          isStackImage: true,
+          isImage: true,
           Modality: 'US',
           isMultiFrame: false,
           sweepCount: { greaterThan: 1 },
@@ -253,9 +253,7 @@ const SAMPLE_SNIPPETS: Record<string, string> = {
         description:
           'Mammography: a screening exam that arrives as a single series still ' +
           'holds four distinct views. Split it by laterality and view so each ' +
-          'becomes its own display set — the standard singleImageModality rule ' +
-          'only splits MG on a coarse image-size bucket, which is identical ' +
-          'across the four.',
+          'becomes its own display set, grouped by laterality and view.',
         viewportTypes: ['stack'],
         matches: { Modality: 'MG', Rows: { notNull: true } },
         // ViewPosition first for the vendors that send it; PatientOrientation is
@@ -500,7 +498,7 @@ function toKeyedRules(parsed: unknown): DisplaySetRules {
 
 function compileRuleSet(): SplitRuleSet {
   return createDisplaySetSplitRules(buildRuleSet(), {
-    displaySetContext: DEMO_CONTEXT,
+    context: DEMO_CONTEXT,
   });
 }
 
@@ -1066,7 +1064,7 @@ async function loadServerRuleSet(path: string) {
   const doc = (document_ ?? {}) as {
     name?: string;
     rules?: unknown;
-    requires?: { displaySetContext?: string[] };
+    requires?: { context?: string[] };
   };
   const isDocument =
     !Array.isArray(document_) &&
@@ -1084,7 +1082,7 @@ async function loadServerRuleSet(path: string) {
 
   // A rule set may read code entries of the context; if the host has not
   // registered them, say so by name before the compile reports the first one.
-  const missing = (doc.requires?.displaySetContext ?? []).filter(
+  const missing = (doc.requires?.context ?? []).filter(
     (name) => !(name in DEMO_CONTEXT)
   );
   if (missing.length) {

@@ -11,7 +11,7 @@ import type {
 } from './types';
 import { resolveSplitRuleSet } from './splitRuleSet';
 import { displaySetContextFor, withInstances } from './displaySetContext';
-import { toFiniteFirst } from '@cornerstonejs/utils';
+import { sortInstancesCopy } from './sortInstances';
 import { hasNoValue, isUnsafeKey } from '../safeFunctions';
 
 /**
@@ -72,44 +72,11 @@ export function chainComparators(comparators: Comparator[]): Comparator {
 }
 
 /**
- * Canonical acquisition order, and the default a rule gets when it declares no
- * {@link SplitRule.compareInstances}.
- *
- * Deliberately *not* the caller's input order: an order derived from input order
- * would make the order of a display set depend on the order imageIds happened
- * to be passed in, which is exactly the property this module guarantees against.
- * `InstanceNumber` is the acquisition sequence; `SOPInstanceUID` breaks ties so
- * the order is total even when instance numbers are absent or duplicated.
- */
-function compareByAcquisition(
-  a: NaturalizedInstance,
-  b: NaturalizedInstance
-): number {
-  // `toFiniteFirst`, not `Number`: an absent InstanceNumber must not alias to 0.
-  const aNumber = toFiniteFirst(a.InstanceNumber);
-  const bNumber = toFiniteFirst(b.InstanceNumber);
-  const aHas = aNumber !== undefined;
-  const bHas = bNumber !== undefined;
-
-  if (aHas && bHas && aNumber !== bNumber) {
-    return aNumber - bNumber;
-  }
-  // Instances without a usable InstanceNumber sort after those with one, rather
-  // than aliasing to 0 and interleaving with the numbered ones.
-  if (aHas !== bHas) {
-    return aHas ? -1 : 1;
-  }
-
-  const aUid = String(a.SOPInstanceUID ?? a.imageId ?? '');
-  const bUid = String(b.SOPInstanceUID ?? b.imageId ?? '');
-  return aUid < bUid ? -1 : aUid > bUid ? 1 : 0;
-}
-
-/**
  * The order each group's `instances` are returned in. Each layer defers to the
  * one below it:
  *
- *  1. Acquisition order, never the input order. It is also the final tie-break.
+ *  1. The default order, {@link sortByInstanceNumber}, never the input order.
+ *     It is also the final tie-break.
  *  2. The host's base sort ({@link GroupInstancesOptions.sortInstances}), a
  *     whole-list sort. Ties keep step 1, because `Array.prototype.sort` is stable.
  *  3. Comparators: {@link SplitRule.compareInstances}, then
@@ -138,7 +105,7 @@ function buildInstanceOrderer(
   };
 
   return (instances) => {
-    let ordered = [...instances].sort(compareByAcquisition);
+    let ordered = sortInstancesCopy(instances);
 
     if (baseSort) {
       // Copied because a host sort may return the array it was handed, and the
@@ -148,8 +115,8 @@ function buildInstanceOrderer(
 
     if (comparators.length) {
       const compare = chainComparators(comparators);
-      // The order is the order of one display set: a series function such as
-      // planeGeometry runs over these instances, and not over the series.
+      // The order of one display set: a displaySet.<name> reads these
+      // instances, and a bare name reads the series.
       const sortContext: RuleContext = {
         ...context,
         displaySet: displaySetContextFor(context.series, ordered),
@@ -179,7 +146,7 @@ export function orderInstancesForRule(
   const context: RuleContext = {
     series: options.series
       ? withInstances(options.series, instances)
-      : computeSeriesFacts(instances, [splitRule]),
+      : computeSeriesFacts(sortInstancesCopy(instances), [splitRule]),
   };
   return buildInstanceOrderer(splitRule, context, options)(instances);
 }
@@ -333,6 +300,10 @@ function buildSplitKey(
  * Groups instances by the first matching split rule of `ruleSet` (keyed by rule
  * id, tried in ascending priority; see `resolveSplitRuleSet`).
  *
+ * - The split sorts a copy of the input one time into the default order,
+ *   {@link sortByInstanceNumber}
+ *   (`InstanceNumber`, then `SOPInstanceUID`) before anything else, so the
+ *   series functions never see the input order.
  * - Each rule's `series` hook runs once, in priority order, and extends one
  *   series context (see {@link computeSeriesFacts}); the first rule that
  *   computes a name wins.
@@ -358,16 +329,20 @@ export function groupInstancesBySplitRules(
     return [];
   }
 
+  // One sort into the default order, so every series function and every
+  // later step sees the same order for the same series.
+  const sorted = sortInstancesCopy(instances);
+
   // Derive the series context once for this split operation, so the
   // per-instance `matches`/`groupBy` only read an already-computed value.
   const context: RuleContext = {
-    series: computeSeriesFacts(instances, splitRules),
+    series: computeSeriesFacts(sorted, splitRules),
   };
 
   // Claim instances first, then group the instances of each rule.
   const claimedByRule: NaturalizedInstance[][] = splitRules.map(() => []);
 
-  for (const instance of instances) {
+  for (const instance of sorted) {
     let matched = false;
 
     for (let ruleIndex = 0; ruleIndex < splitRules.length; ruleIndex++) {

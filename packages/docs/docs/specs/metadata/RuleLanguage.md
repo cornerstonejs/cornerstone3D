@@ -199,6 +199,13 @@ and no release had them:
   the OHIF migration guide _Hanging protocol comparisons_. Reason: after the
   merge of OHIF/Viewers#6386, the earlier text described the behaviour of
   `validator.js` wrongly. The meaning of the rule language does not change.
+- `RL-CTX-9` changes its meaning. Before, a name such as `sliceSpacing` in
+  `sortBy` and `attributes` read the display set for `planeGeometry`, and the
+  series for `timeClusters`; a group entry chose with `over`. Now a bare name
+  always reads the series, and `displaySet.<name>` reads the display set. The
+  field `over` is removed. Reason: the intended behaviour changed. The review
+  found that one name gave two values, and asked that the display set value is
+  explicit.
 - `RL-READ-4` adds the operators `greaterThanOrEqual` and `lessThanOrEqual`,
   and lets `equals` and `doesNotEqual` take an array operand. Reason: the
   intended behaviour changed. The review asked that the split rules and the
@@ -216,7 +223,7 @@ subject is a study, a display set or an instance.
 `Modality`. A rule reads the value of a tag keyword from the instance.
 
 **Context.** A map of named entries. Each entry gives one value. The
-**global context** (`displaySetContext`) holds the entries for every rule. The
+**global context** (the `context` option) holds the entries for every rule. The
 **rule context** (the `context` field of a rule) holds entries for that rule
 only.
 
@@ -417,12 +424,12 @@ compile.
   `"dxCrMaxImages": { "$set": 20 }`. The site does not copy the expression text
   of a rule into a `$merge`.
 - **RL-CTX-9** A rule tests the full series, and describes each display set.
-  In `context`, `matches` and `groupBy`, every series value describes all the
-  instances of the series. In `sortBy` and `attributes`, a value that measures
-  the display set (`sliceSpacing`, `sliceDistance`) describes the display set,
-  and a value that describes the series (`sweepOffset`) stays the value of the
-  series. `series.instances.*(...)` describes the series in every place.
-  `RL-CTXI-12` gives the place where each series function runs.
+  A bare name always means the value of the series, in every place. In
+  `sortBy` and `attributes`, the author reads a value of the display set with
+  the `displaySet.` prefix: `displaySet.sliceSpacing` is the lattice of the
+  instances of the display set. `matches`, `groupBy` and a context entry
+  reject the prefix. `series.instances.*(...)` describes the series in every
+  place. `RL-CTXI-12` gives the implementation.
 
 ### One language for each consumer (RL-SHARE)
 
@@ -580,8 +587,8 @@ packages/metadata/src/
 
   ```ts
   type CreateDisplaySetSplitRulesOptions = {
-    /** Global context entries, over the entries of defaultDisplaySetContext. */
-    displaySetContext?: Record<string, ContextEntry>;
+    /** Global context entries, over the entries of defaultMetadataContext. */
+    context?: Record<string, ContextEntry>;
     /** Series functions, over planeGeometry and timeClusters. */
     seriesFunctions?: Record<string, SeriesFunction | SeriesFunctionDefinition>;
     /** Names that no rule can read (RL-SCOPE-9, RL-NAME-7). */
@@ -591,13 +598,27 @@ packages/metadata/src/
   };
   ```
 
-  OHIF reads `displaySetContext` from the `useMetadataDisplaySet`
-  customization, next to `splitRules`.
+  OHIF reads `context` from the standalone `metadataContext` customization.
 
 - **RL-API-4** The split consumer exports the default rules as data, the
-  compiled default rules, the compile functions for a rule set, and the default
-  display set context. A name that a release exported stays as a deprecated
-  alias when it is renamed.
+  compiled default rules, the compile functions for a rule set, the default
+  metadata context (`defaultMetadataContext`), each SOP class and transfer
+  syntax list of the context under the same name, and the handler names
+  (`DISPLAY_SET_HANDLER_NAMES`). A name that a release exported stays as a
+  deprecated alias when it is renamed. No release exported
+  `defaultDisplaySetContext`, so it has no alias.
+- **RL-API-5** The split consumer has an active metadata context:
+  `setMetadataContext(context)` sets it (`undefined` goes back to
+  `defaultMetadataContext`), and `getMetadataContext()` returns it.
+  `getContextValue(name, instance, context?)` reads one instance-scope context
+  name for one instance, with no rules; a series-scope name is an error.
+  `isImageInstance`, `isVideoInstance`, `isEcgInstance` and `isWsiInstance`
+  read the entries `isImage`, `isVideo`, `isEcg` and `isWsi` of their
+  `context` argument, else of the active context, so the code tests and the
+  rules give the same answer. Each context object compiles one time, with the
+  context compile of `RL-CTXI`; the cache is keyed by the object. A compiled
+  rule keeps its context as `SplitRule.metadataContext`, and
+  `createDisplaySetFromGroup` reads it (or its `context` option).
 
 ### Names (RL-NAME)
 
@@ -767,8 +788,8 @@ packages/metadata/src/
 
 ### The context (RL-CTXI)
 
-- **RL-CTXI-1** The global context is `defaultDisplaySetContext` with the
-  entries of `options.displaySetContext` over it. An entry of the options
+- **RL-CTXI-1** The global context is `defaultMetadataContext` with the
+  entries of `options.context` over it. An entry of the options
   replaces the default entry with the same name.
 - **RL-CTXI-2** The default context:
 
@@ -797,6 +818,10 @@ packages/metadata/src/
     "sliceIndex": "planeGeometry.index",
     "sliceDistance": "planeGeometry.distance",
 
+    "revisionChains": { "function": "revisionChains" },
+    "revisionChainUid": "revisionChains.active",
+    "isActiveRevision": "SOPInstanceUID == revisionChainUid",
+
     "seriesInstanceCount": "series.instances.count()",
     "isMultiFrame": "NumberOfFrames > 1",
 
@@ -804,21 +829,50 @@ packages/metadata/src/
   }
   ```
 
-  The default context also holds the code entries `isImage`, `isVideo`,
-  `isEcg`, `isWsi` and `isStackImage` (an image that is not a video, a
-  waveform or a whole slide). The default context declares each synthetic
-  attribute that the default rules and the series functions read; today that
-  attribute is `imageId`.
+  The default context also holds the SOP class and transfer syntax lists
+  (`imageSopClassUids`, `videoSopClassUids`, `videoTransferSyntaxUids`,
+  `longVideoSopClassUids`, `ecgSopClassUids`, `wholeSlideSopClassUids`,
+  `segmentationSopClassUids`, `rtStructureSetSopClassUids`,
+  `parametricMapSopClassUids`, `structuredReportSopClassUids`,
+  `encapsulatedDocumentSopClassUids`, `bulkAnnotationSopClassUids`,
+  `chartSopClassUids`), the number `longVideoMinFrames`, and one expression
+  for each kind of object that tests the lists: `isImage`, `isVideo`, `isEcg`,
+  `isWsi`, `isSegmentation`, `isRtStructureSet`, `isParametricMap`,
+  `isStructuredReport`, `isEncapsulatedDocument`, `isBulkAnnotation` and
+  `isChart`. The default context holds no code entry. It declares each
+  synthetic attribute that the default rules and the series functions read;
+  today that attribute is `imageId`.
 
 - **RL-CTXI-3** Each series function declares its result fields, and the scope
   of each field. An `instance` field is a map keyed by `instanceKey` (the
   `SOPInstanceUID`, else the `imageId`), and a read of the path gives the value
   of the instance at hand. The built-in fields:
 
-  | Function        | Series fields                                                                                          | Instance fields     |
-  | --------------- | ------------------------------------------------------------------------------------------------------ | ------------------- |
-  | `timeClusters`  | `first`, `clusters`, `untimedCount`                                                                    | `time`, `start`     |
-  | `planeGeometry` | `normal`, `origin`, `spacing`, `regularCount`, `irregularCount`, `positions`, `complete`, `duplicates` | `distance`, `index` |
+  | Function         | Series fields                                                                                          | Instance fields     |
+  | ---------------- | ------------------------------------------------------------------------------------------------------ | ------------------- |
+  | `timeClusters`   | `first`, `clusters`, `untimedCount`                                                                    | `time`, `start`     |
+  | `planeGeometry`  | `normal`, `origin`, `spacing`, `regularCount`, `irregularCount`, `positions`, `complete`, `duplicates` | `distance`, `index` |
+  | `revisionChains` |                                                                                                        | `active`            |
+
+  `revisionChains` reads `PredecessorDocumentsSequence` > `ReferencedSeriesSequence`
+
+  > `ReferencedSOPSequence` > `ReferencedSOPInstanceUID` one time for each series.
+  > Only a reference to an instance of the same series counts. Each chain end
+  > (an instance that no other instance names) starts its own chain, and is its
+  > active instance. The split sorts the instances of the series one time, in
+  > the default order `sortByInstanceNumber` (`InstanceNumber`, then
+  > `SOPInstanceUID`), before the
+  > series functions run. The ends are visited in that order, and each end takes
+  > its predecessors, directly and through other instances, that no earlier chain
+  > took; so in a branch, the first chain end in the default order takes the
+  > shared predecessors. The input order never matters. An instance
+  > that no end reaches (only in a reference cycle) is its own chain. `active` is
+  > the key of the active instance of the chain of each instance. `revisionChainUid` is the alias of
+  > `revisionChains.active`, and `isActiveRevision` is
+  > `SOPInstanceUID == revisionChainUid`. Only the default rules
+  > `encapsulatedDocument` and `chart` read them: they group by
+  > `revisionChainUid`, sort the active instance last, and give the display set
+  > attribute `activeSopInstanceUid`.
 
   A series function in code with no declared fields has fields that the
   compile does not check, with the series scope.
@@ -869,18 +923,17 @@ packages/metadata/src/
   `first -> second -> third -> first`. A read of its own name by a rule entry
   resolves to the global level, so it is not a loop. Each call of a code entry
   gets a new `values` wrapper.
-- **RL-CTXI-12** A sort of a display set and the attributes of a display set
-  read a second runtime (`displaySetContextFor`). In it, a group with
-  `over: 'displaySet'` runs over the instances of the display set; a group with
-  `over: 'series'`, and `series.instances.*(...)`, run over the instances of
-  the split (`RL-CTX-9`). A series function definition gives the default
-  (`planeGeometry`: `'displaySet'`, `timeClusters` and a function with no
-  setting: `'series'`), and a group entry `{ "function", "args"?, "over"? }`
-  overrides it. So a rule can test the lattice of the series and also measure
-  the display set: `"seriesGeometry": { "function": "planeGeometry", "over":
-"series" }`. The second runtime shares the cache of the split for each value
-  that runs over the series, so a series value is computed one time for each
-  split, and not one time for each display set (`RL-SCOPE-5`).
+- **RL-CTXI-12** A bare name always reads the series: in `sortBy` and
+  `attributes`, it reads the runtime of the split. A `displaySet.<name>` (or
+  `displaySet.<name>.<field>`, `{displaySet.<name>}` in a template, and
+  `displaySet.<name>` in an expression) reads a second runtime
+  (`displaySetContextFor`), in which every group runs over the instances of
+  the display set, and `series.instances.*(...)` still runs over the instances
+  of the split (`RL-CTX-9`). Only `sortBy` and `attributes` accept the prefix;
+  `matches`, `groupBy` and a context entry reject it. A group entry has no
+  field `over`. The second runtime shares the cache of the split for each value
+  that reads no group and no code entry, so such a value is computed one time
+  for each split, and not one time for each display set (`RL-SCOPE-5`).
 - **RL-CTXI-13** A split key part is normalized, so that two hosts that
   naturalize differently build the same key: no value (absent, `null`, `''`,
   `[]`) is `null`, a one-element array is its element, and a string that is the
@@ -913,6 +966,7 @@ packages/metadata/src/
   | ----------------------------------------------- | ---------------------------------------------- | ------------------ |
   | `priority`                                      | a finite number, or `null` to exclude the rule | (rule set entry)   |
   | `id`, `groupId`, `description`, `viewportTypes` | data                                           | the same names     |
+  | `handler`                                       | a string; any name compiles                    | `handler`          |
   | `context`                                       | the rule context (`RL-CTX-3`)                  | (compile only)     |
   | `matches`                                       | a condition                                    | `matches`          |
   | `groupBy`                                       | names                                          | `groupBy`          |
@@ -924,7 +978,8 @@ packages/metadata/src/
 - **RL-CONS-2** An attribute value is one of:
   - a name. A tag keyword reads the first instance of the sorted display set.
     An instance value of the context reads the same instance. A series value
-    is the value of the whole series.
+    is the value of the whole series. `displaySet.<name>` is the value over the
+    instances of the display set (`RL-CTXI-12`).
   - a fixed number, boolean or `null`.
   - `{ "template": "..." }`. `{ "template": "SCOUT" }` is fixed text.
   - `{ "expression": "..." }`. `displaySet.instances.*(...)` runs over the
@@ -933,9 +988,10 @@ packages/metadata/src/
     set.
   - in code, a function (`RL-FN-4`).
 - **RL-CONS-3** `createDisplaySetFromGroup` passes `group.series` to the
-  `customAttributes` hook. An attribute reads a series function with
-  `over: 'displaySet'` over the instances of the display set, and every other
-  series value over the series (`RL-CTX-9`).
+  `customAttributes` hook. An attribute reads a bare name over the series, and
+  a `displaySet.<name>` over the instances of the display set (`RL-CTX-9`).
+  `createDisplaySetFromGroup` copies the `handler` of the rule to the display
+  set.
 - **RL-CONS-4** The hanging protocol consumer gives its own subject and its
   own reader of a name. OHIF/Viewers#6386 moved most of the hanging protocol
   constraints to the operator meanings of `RL-COND-3`. A later OHIF pull
@@ -972,7 +1028,7 @@ packages/metadata/src/
   "viewportTypes": ["stack"],
   "context": { "timeClustersMaxGap": 20 },
   "matches": {
-    "isStackImage": true,
+    "isImage": true,
     "Modality": "US",
     "isMultiFrame": false,
     "sweepCount": { "greaterThan": 1 },
@@ -1000,7 +1056,7 @@ packages/metadata/src/
   "priority": -1,
   "viewportTypes": ["stack"],
   "context": { "timeClusters": "longTimeClusters" },
-  "matches": { "isStackImage": true, "Modality": "US", "sweepCount": { "greaterThan": 1 } },
+  "matches": { "isImage": true, "Modality": "US", "sweepCount": { "greaterThan": 1 } },
   "groupBy": ["SeriesInstanceUID", "sweepStart"],
   "sortBy": ["acquisitionSeconds"]
 }
@@ -1019,7 +1075,7 @@ the value. `irregularImages` is off (`priority: null`). A site turns it on with
 the other images of the series into one stack:
 
 ```jsonc
-"displaySetContext": {
+"context": {
   "mixesIrregular": "planeGeometry.regularCount >= 3 && planeGeometry.irregularCount > 0 && planeGeometry.complete"
 },
 "splitRules": {
@@ -1028,20 +1084,20 @@ the other images of the series into one stack:
       "priority": -2,
       "viewportTypes": ["volume", "volume3d", "stack"],
       "matches": {
-        "isStackImage": true,
+        "isImage": true,
         "Modality": ["CT", "MR", "PT", "NM"],
         "mixesIrregular": true,
         "sliceIndex": { "notNull": true }
       },
       "groupBy": ["SeriesInstanceUID"],
-      "sortBy": ["sliceDistance"],
-      "attributes": { "SeriesDescription": { "template": "{SeriesDescription} ({sliceSpacing} mm)" } }
+      "sortBy": ["displaySet.sliceDistance"],
+      "attributes": { "SeriesDescription": { "template": "{SeriesDescription} ({displaySet.sliceSpacing} mm)" } }
     },
     "irregularImages": {
       "priority": null,
       "viewportTypes": ["stack"],
       "matches": {
-        "isStackImage": true,
+        "isImage": true,
         "Modality": ["CT", "MR", "PT", "NM"],
         "mixesIrregular": true,
         "sliceIndex": null
@@ -1058,9 +1114,10 @@ the other images of the series into one stack:
 - `"sliceIndex": null` means "no value". Index 0 is a valid index, and
   `notNull` is true for 0.
 - In `matches`, `planeGeometry` runs over the series, so `mixesIrregular`
-  tests the full series. In `attributes` and `sortBy`, `planeGeometry` runs
-  over the display set (`RL-CTX-9`). So `{sliceSpacing}` is the spacing of the
-  regular slices of this display set, and `sliceDistance` orders those slices.
+  tests the full series. In `attributes` and `sortBy`, the `displaySet.`
+  prefix runs `planeGeometry` over the display set (`RL-CTX-9`). So
+  `{displaySet.sliceSpacing}` is the spacing of the regular slices of this
+  display set, and `displaySet.sliceDistance` orders those slices.
 
 ### Example 4: `volumeProjectionOrder`
 
@@ -1069,13 +1126,13 @@ the other images of the series into one stack:
   "priority": 7,
   "viewportTypes": ["volume", "volume3d", "stack"],
   "matches": {
-    "isStackImage": true,
+    "isImage": true,
     "Modality": ["CT", "MR", "PT", "NM"],
     "seriesInstanceCount": { "greaterThan": 1 },
     "Rows": { "notNull": true }
   },
   "groupBy": ["SeriesInstanceUID"],
-  "sortBy": ["sliceDistance"]
+  "sortBy": ["displaySet.sliceDistance"]
 }
 ```
 
@@ -1083,7 +1140,7 @@ the other images of the series into one stack:
   keeps the default priority 7 and the default `matches`. Only `sortBy` is new.
   The OHIF default rules give `volume3d` the priority 4, so the OHIF module
   `split/volumeProjectionOrder.jsonc` uses 4.
-- In `sortBy`, `planeGeometry` runs over the display set (`RL-CTX-9`). This
+- `displaySet.sliceDistance` runs `planeGeometry` over the display set (`RL-CTX-9`). This
   rule groups by `SeriesInstanceUID`, so the display set holds the full series.
   The origin is the lowest regular slice, so the order does not change with the
   arrival order of the instances.
@@ -1094,7 +1151,7 @@ the other images of the series into one stack:
 ### Example 5: small DX / CR series, with a configured limit
 
 ```jsonc
-"displaySetContext": {
+"context": {
   "dxCrMaxImages": 9,
   "isSmallSeries": "seriesInstanceCount <= dxCrMaxImages"
 },
@@ -1103,7 +1160,7 @@ the other images of the series into one stack:
     "dxCrSingleImages": {
       "priority": -1,
       "viewportTypes": ["stack"],
-      "matches": { "Modality": ["DX", "CR"], "isStackImage": true, "isSmallSeries": true },
+      "matches": { "Modality": ["DX", "CR"], "isImage": true, "isSmallSeries": true },
       "groupBy": ["SeriesInstanceUID", "SOPInstanceUID"]
     }
   }
@@ -1139,7 +1196,7 @@ the other images of the series into one stack:
 ### Example 7: an "or", and a declaration
 
 ```jsonc
-"displaySetContext": {
+"context": {
   "isBreastImage": "Modality == 'MG' || (Modality == 'CT' && lower(BodyPartExamined) == 'breast')",
   "pixelCount": "Rows * Columns",
   "siemensBValue": { "attribute": "00191010", "vr": "FD", "vm": "1" }
@@ -1165,7 +1222,7 @@ the other images of the series into one stack:
 
 ```ts
 createDisplaySetSplitRules(rules, {
-  displaySetContext: {
+  context: {
     // A code entry with the instance scope.
     mammoView: (instance) => readMammoView(instance),
     // A group in code, with declared fields.
@@ -1184,7 +1241,7 @@ createDisplaySetSplitRules(rules, {
 
 ```ts
 {
-  matches: { Modality: 'PT', isStackImage: true },     // data
+  matches: { Modality: 'PT', isImage: true },     // data
   groupBy: ['SeriesInstanceUID', frameOfReferenceGroup], // data and code
   sortBy: [{ sortFunction: 'byInstanceNumberDescending' }],
   attributes: { label: { template: 'PET {mammoView}' } },

@@ -36,6 +36,12 @@ export interface IDisplaySet {
    */
   splitGroupId?: string;
   /**
+   * The generic handler name of the rule that made this display set, for
+   * example `segmentation` (see `DISPLAY_SET_HANDLER_NAMES`). Absent when the
+   * rule names no handler.
+   */
+  handler?: string;
+  /**
    * Allowed viewport types for this display set.
    * `viewportTypes[0]` is the preferred viewport type.
    */

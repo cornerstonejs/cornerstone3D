@@ -31,7 +31,7 @@ describe('the display set context over a split', () => {
   // The regularVolume module: one series value in the global context, read by
   // two rules.
   const options = {
-    displaySetContext: {
+    context: {
       mixesIrregular:
         'planeGeometry.regularCount >= 3 && planeGeometry.irregularCount > 0 && planeGeometry.complete',
     },
@@ -40,7 +40,7 @@ describe('the display set context over a split', () => {
     regularVolume: {
       priority: -2,
       matches: {
-        isStackImage: true,
+        isImage: true,
         Modality: ['CT', 'MR', 'PT', 'NM'],
         mixesIrregular: true,
         sliceIndex: { notNull: true },
@@ -56,7 +56,7 @@ describe('the display set context over a split', () => {
     irregularImages: {
       priority: -1,
       matches: {
-        isStackImage: true,
+        isImage: true,
         Modality: ['CT', 'MR', 'PT', 'NM'],
         mixesIrregular: true,
         sliceIndex: null,
@@ -110,22 +110,21 @@ describe('series functions in the series and in one display set', () => {
   const rules = createDisplaySetSplitRules({
     echoes: {
       priority: 1,
-      context: {
-        // The same function over the series also in attributes.
-        seriesGeometry: { function: 'planeGeometry', over: 'series' },
-      },
-      // matches reads the series: the lattice of all the instances.
+      // A bare name reads the series: the lattice of all the instances.
       matches: { sliceSpacing: 1 },
       groupBy: ['SeriesInstanceUID', 'EchoNumbers'],
-      // sortBy and attributes read the display set.
-      sortBy: ['sliceDistance'],
+      // displaySet.<name> reads the lattice of the display set.
+      sortBy: ['displaySet.sliceDistance'],
       attributes: {
-        spacing: 'sliceSpacing',
+        spacing: 'displaySet.sliceSpacing',
         firstDistance: {
-          expression: 'displaySet.instances.min(sliceDistance)',
+          expression: 'displaySet.instances.min(displaySet.sliceDistance)',
         },
         seriesCount: 'seriesInstanceCount',
-        seriesSpacing: { expression: 'seriesGeometry.spacing' },
+        seriesSpacing: 'sliceSpacing',
+        seriesFirstDistance: {
+          expression: 'displaySet.instances.min(sliceDistance)',
+        },
       },
     },
   });
@@ -143,11 +142,12 @@ describe('series functions in the series and in one display set', () => {
           displaySet.firstDistance,
           displaySet.seriesCount,
           displaySet.seriesSpacing,
+          displaySet.seriesFirstDistance,
         ];
       })
     ).toEqual([
-      [['z0', 'z2', 'z4', 'z6'], 2, 0, 8, 1],
-      [['z1', 'z3', 'z5', 'z7'], 2, 0, 8, 1],
+      [['z0', 'z2', 'z4', 'z6'], 2, 0, 8, 1, 0],
+      [['z1', 'z3', 'z5', 'z7'], 2, 0, 8, 1, 1],
     ]);
   });
 
@@ -165,7 +165,7 @@ describe('series functions in the series and in one display set', () => {
         },
       },
       {
-        displaySetContext: {
+        context: {
           pair: { attribute: 'Pair' },
           summary: { function: 'summarize' },
           seriesCount: 'summary.count',
@@ -188,19 +188,6 @@ describe('series functions in the series and in one display set', () => {
     );
     expect(counts).toEqual([6, 6, 6]);
     expect(compute).toHaveBeenCalledTimes(1);
-  });
-});
-
-describe('a group declaration', () => {
-  it('rejects a group with an unknown over', () => {
-    expect(() =>
-      createDisplaySetSplitRules({
-        r: {
-          priority: 1,
-          context: { g: { function: 'planeGeometry', over: 'study' as never } },
-        },
-      })
-    ).toThrow(/expected 'series' or 'displaySet'/);
   });
 });
 
