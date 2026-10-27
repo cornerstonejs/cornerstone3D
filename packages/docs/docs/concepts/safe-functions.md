@@ -76,7 +76,8 @@ number.
 - When `==` compares two values, two values with no value are equal only when
   they are of the same kind. So `Y == Z` is `false` when `Y` is `null` and `Z`
   is absent. Only the literal tests treat the kinds as one.
-- `<`, `<=`, `>`, `>=`, `greaterThan`, `lessThan` and `range` give `false` when
+- `<`, `<=`, `>`, `>=`, `greaterThan`, `greaterThanOrEqual`, `lessThan`,
+  `lessThanOrEqual` and `range` give `false` when
   the value has no value, or is not a finite number. A numeric string is a
   number, so `"2" > 1` is `true`. A value with no value never compares as `0`.
 - `-`, `*`, `/` and `%` read a numeric string as a number, so `"6" - 1` is `5`.
@@ -123,12 +124,14 @@ operand is the bare value: `{ "greaterThan": 1 }`.
 
 | Operator                            | Operand                       | The entry holds when                                                          |
 | ----------------------------------- | ----------------------------- | ----------------------------------------------------------------------------- |
-| `equals`                            | scalar or `null`              | the same test as a scalar                                                     |
-| `doesNotEqual`                      | scalar or `null`              | `equals` does not hold; a value with no value passes                          |
+| `equals`                            | scalar, array or `null`       | the same test as a scalar; an array operand equals an array value in order    |
+| `doesNotEqual`                      | scalar, array or `null`       | `equals` does not hold; a value with no value passes                          |
 | `notNull`                           | boolean                       | `true`: the value has a value; `false`: the value has no value                |
 | `includes`                          | scalar or array of scalars    | the value has the element, or one of the elements; a single value is an array |
 | `doesNotInclude`                    | scalar or array of scalars    | `includes` does not hold                                                      |
 | `greaterThan`, `lessThan`           | finite number                 | the value is a finite number, and `>` or `<` the operand                      |
+| `greaterThanOrEqual`                | finite number                 | the value is a finite number, and `>=` the operand                            |
+| `lessThanOrEqual`                   | finite number                 | the value is a finite number, and `<=` the operand                            |
 | `range`                             | two finite numbers, any order | the value is a finite number in `[min, max]`                                  |
 | `contains`, `containsI`             | string or array of strings    | one element of the value holds one of the strings (`I`: without case)         |
 | `doesNotContain`, `doesNotContainI` | string or array of strings    | the `contains` form does not hold                                             |
@@ -138,21 +141,18 @@ operand is the bare value: `{ "greaterThan": 1 }`.
 A text test on no value fails, and its `doesNot...` form holds.
 
 :::note Operators that differ from `validator.js`
-The safe functions give these operators the meanings in the table above. OHIF
-`validator.js` gives them other meanings:
+Since OHIF/Viewers#6386, the OHIF hanging protocols give most operators the
+meanings in the table above. These differences remain (the full list is
+`RL-READ-4` of the rule language specification):
 
-- `greaterThan` is `>=`, and rejects a string value or an array value.
-  `lessThan` is `<=`.
-- `includes` accepts only an array operand.
-- `equals` uses `===`, and compares an array operand element by element. Here,
-  an array operand of `equals` is a compile error.
-- `notNull` accepts `""`.
-- `containsAll` needs an array value and an array operand.
-- The operand wrappers `{ "value": x }` and `[x]` (for `greaterThan` and
-  `lessThan`) are accepted. Here, they are compile errors.
-
-A later OHIF pull request moves the hanging protocols to these meanings.
-:::
+- An operand of the wrong kind (`greaterThan: '4'`, `startsWith: 0`) is a
+  compile error here. `validator.js` reads it as text or as a number.
+- `"X": null` and `{ "equals": null }` mean "no value" here. In
+  `validator.js`, the operand `null` skips the constraint.
+- `containsAll` accepts a scalar operand and a single value here.
+- The operand wrappers `{ "value": x }` and `[x]` are accepted by
+  `validator.js`. Here, they are compile errors.
+  :::
 
 ## Values
 

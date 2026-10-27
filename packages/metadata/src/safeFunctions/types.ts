@@ -38,13 +38,16 @@ export type RawMatchTest =
   | RawScalar[]
   /** No value: absent, or `null`, `''`, `[]`. */
   | null
-  | { equals: RawScalar | null }
-  | { doesNotEqual: RawScalar | null }
+  /** An array operand compares the whole array, element by element. */
+  | { equals: RawScalar | RawScalar[] | null }
+  | { doesNotEqual: RawScalar | RawScalar[] | null }
   | { notNull: boolean }
   | { includes: RawScalar | RawScalar[] }
   | { doesNotInclude: RawScalar | RawScalar[] }
   | { greaterThan: number }
+  | { greaterThanOrEqual: number }
   | { lessThan: number }
+  | { lessThanOrEqual: number }
   | { range: [number, number] }
   | { contains: string | string[] }
   | { containsI: string | string[] }

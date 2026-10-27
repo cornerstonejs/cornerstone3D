@@ -591,12 +591,41 @@ describe('matches - the operator meanings', () => {
     expect(holds(1, { lessThan: 1 })).toBe(false);
   });
 
+  it.each([
+    [1, { greaterThanOrEqual: 1 }, true],
+    [0, { greaterThanOrEqual: 1 }, false],
+    ['2', { greaterThanOrEqual: 2 }, true],
+    [[3, 1], { greaterThanOrEqual: 3 }, true],
+    [1, { lessThanOrEqual: 1 }, true],
+    [2, { lessThanOrEqual: 1 }, false],
+    ['x', { lessThanOrEqual: 1 }, false],
+    [undefined, { greaterThanOrEqual: 0 }, false],
+  ])('reads %j %j as %s: the limit is included', (value, test, expected) => {
+    expect(holds(value, test)).toBe(expected);
+  });
+
   it('gives equals the meaning of a scalar test, with ==', () => {
     expect(holds('1', 1)).toBe(true);
     expect(holds('1', { equals: 1 })).toBe(true);
     expect(holds(['MR'], { equals: 'MR' })).toBe(true);
     expect(holds('CT', ['MR', 'CT'])).toBe(true);
   });
+
+  it.each([
+    [['R', 'L'], { equals: ['R', 'L'] }, true],
+    [['L', 'R'], { equals: ['R', 'L'] }, false],
+    [['R', 'L', 'F'], { equals: ['R', 'L'] }, false],
+    ['R', { equals: ['R', 'L'] }, false],
+    [['R', 'L'], { doesNotEqual: ['R', 'L'] }, false],
+    [true, { equals: 'true' }, true],
+    [true, { equals: 1 }, false],
+    [true, { equals: '1' }, false],
+  ])(
+    'compares %j with %j as %s: equals reads the whole value',
+    (value, test, expected) => {
+      expect(holds(value, test)).toBe(expected);
+    }
+  );
 
   it('reads includes with a scalar operand as "has the element"', () => {
     expect(holds(['ORIGINAL', 'LOCALIZER'], { includes: 'LOCALIZER' })).toBe(

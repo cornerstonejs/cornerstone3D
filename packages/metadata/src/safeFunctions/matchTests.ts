@@ -10,11 +10,13 @@
  * | an object, one operator  | the operator holds (see {@link MATCH_OPERATORS})          |
  * | a function               | `test(value, subject, context)` is true                  |
  *
- * The operators have the names of the OHIF hanging protocol constraints. Five
- * of them have a meaning that is different from `validator.js`: `equals` is the
- * scalar test, `notNull` is the opposite of `null`, `includes` accepts a scalar
- * operand, and `greaterThan` / `lessThan` are strict and read a numeric string
- * as a number. A test on no value fails, and the `does...Not` form holds.
+ * The operators have the names of the OHIF hanging protocol constraints.
+ * `equals` compares the whole value: an array operand equals an array value
+ * element by element. `notNull` is the opposite of `null`, `includes` accepts
+ * a scalar operand. `greaterThan` / `lessThan` are strict, and
+ * `greaterThanOrEqual` / `lessThanOrEqual` include the limit; the four read a
+ * numeric string or the first element of an array as a number. A test on no
+ * value fails, and the `does...Not` form holds.
  *
  * @module safeFunctions/matchTests
  */
@@ -138,13 +140,13 @@ export const MATCH_HELPERS = Object.freeze({
 export const MATCH_OPERATORS: Readonly<Record<string, Operator>> =
   Object.freeze({
     equals: {
-      operand: 'a scalar, or null',
-      accepts: (operand) => operand === null || isScalar(operand),
+      operand: 'a scalar, a non-empty array of scalars, or null',
+      accepts: (operand) => operand === null || isScalarOrScalars(operand),
       compile: equalsTest,
     },
     doesNotEqual: {
-      operand: 'a scalar, or null',
-      accepts: (operand) => operand === null || isScalar(operand),
+      operand: 'a scalar, a non-empty array of scalars, or null',
+      accepts: (operand) => operand === null || isScalarOrScalars(operand),
       compile: not(equalsTest),
     },
     notNull: {
@@ -168,10 +170,20 @@ export const MATCH_OPERATORS: Readonly<Record<string, Operator>> =
       accepts: isFiniteNumber,
       compile: numberTest((value, operand) => value > operand),
     },
+    greaterThanOrEqual: {
+      operand: 'a finite number',
+      accepts: isFiniteNumber,
+      compile: numberTest((value, operand) => value >= operand),
+    },
     lessThan: {
       operand: 'a finite number',
       accepts: isFiniteNumber,
       compile: numberTest((value, operand) => value < operand),
+    },
+    lessThanOrEqual: {
+      operand: 'a finite number',
+      accepts: isFiniteNumber,
+      compile: numberTest((value, operand) => value <= operand),
     },
     range: {
       operand: 'an array of two finite numbers',

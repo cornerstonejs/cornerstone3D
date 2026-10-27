@@ -199,6 +199,12 @@ and no release had them:
   the OHIF migration guide _Hanging protocol comparisons_. Reason: after the
   merge of OHIF/Viewers#6386, the earlier text described the behaviour of
   `validator.js` wrongly. The meaning of the rule language does not change.
+- `RL-READ-4` adds the operators `greaterThanOrEqual` and `lessThanOrEqual`,
+  and lets `equals` and `doesNotEqual` take an array operand. Reason: the
+  intended behaviour changed. The review asked that the split rules and the
+  hanging protocols give one meaning to each operator name, and the hanging
+  protocols have these operators since OHIF/Viewers#6386. A boolean still does
+  not equal a number.
 
 ## Definitions
 
@@ -283,12 +289,15 @@ compile.
   here: `greaterThan` and `lessThan` are strict (`>` and `<`), a numeric
   string reads as a number, `equals` compares the whole value, `includes`
   accepts a single operand, and `notNull` reads an empty value as no value.
-  These meanings are still different from `validator.js`:
+  `greaterThanOrEqual` and `lessThanOrEqual` include the limit (`>=` and `<=`),
+  and read a number in the same way as `greaterThan` and `lessThan`. An array
+  operand of `equals` and `doesNotEqual` compares the whole array, element by
+  element in order, when the value is also an array. These meanings are still
+  different from `validator.js`:
   - An operand of the wrong kind is a compile error here: a number operand of
-    a text operator (`startsWith: 0`), a text operand of a number operator
-    (`greaterThan: '4'`), and an array operand of `equals` and
-    `doesNotEqual`. `validator.js` reads such an operand as text or as a
-    number, and compares an array operand with the whole value.
+    a text operator (`startsWith: 0`), and a text operand of a number operator
+    (`greaterThan: '4'`). `validator.js` reads such an operand as text or as a
+    number.
   - `"X": null` and `{ "equals": null }` mean "no value", and `notNull` is the
     exact opposite of `null`. In `validator.js`, the operand `null` skips the
     constraint, and `notNull` reads every operand other than `false` as
@@ -301,10 +310,9 @@ compile.
     value, and an empty array operand is a compile error. In `validator.js`,
     `equals: ''` holds on `['']`, `includes: ''` holds on `''`, and
     `contains: []` always fails.
-  - `greaterThanOrEqual` and `lessThanOrEqual` are `validator.js` operators
-    only. Here, an expression uses `>=` and `<=`.
   - The operand wrappers of `validator.js` (`{ "value": x }`, and `[x]` for
-    `greaterThan` and `lessThan`) are compile errors.
+    `greaterThan`, `greaterThanOrEqual`, `lessThan` and `lessThanOrEqual`)
+    are compile errors.
 
   The other operators keep the meaning of `validator.js`, except for the rule
   of `RL-VALUE-4`. The section "Known differences from
@@ -357,7 +365,7 @@ compile.
   is `null` and `Z` is absent, and `null == ""` is `false`. Only the literal
   tests of `RL-VALUE-2` treat the kinds as one.
 - **RL-VALUE-4** A comparison (`<`, `<=`, `>`, `>=`, `greaterThan`,
-  `lessThan`, `range`) gives `false` when the value has no value, or is not a
+  `greaterThanOrEqual`, `lessThan`, `lessThanOrEqual`, `range`) gives `false` when the value has no value, or is not a
   finite number. A numeric string is a number, so `"2" > 1` is `true`. A text
   test (`contains`, `containsI`, `containsAll`, `startsWith`, `endsWith`)
   fails on no value, and its `doesNot...` form holds. `doesNotEqual` and
@@ -650,12 +658,14 @@ packages/metadata/src/
 
   | Operator                            | Operand                       | The entry holds when                                                          |
   | ----------------------------------- | ----------------------------- | ----------------------------------------------------------------------------- |
-  | `equals`                            | scalar or `null`              | the scalar test                                                               |
-  | `doesNotEqual`                      | scalar or `null`              | `equals` does not hold; no value passes                                       |
+  | `equals`                            | scalar, array or `null`       | the scalar test; an array operand equals an array value in order              |
+  | `doesNotEqual`                      | scalar, array or `null`       | `equals` does not hold; no value passes                                       |
   | `notNull`                           | boolean                       | `true`: the value has a value; `false`: the value has no value                |
   | `includes`                          | scalar or array of scalars    | the value has the element, or one of the elements; a single value is an array |
   | `doesNotInclude`                    | scalar or array of scalars    | `includes` does not hold                                                      |
   | `greaterThan`, `lessThan`           | finite number                 | the value is a finite number, and `>` or `<` the operand                      |
+  | `greaterThanOrEqual`                | finite number                 | the value is a finite number, and `>=` the operand                            |
+  | `lessThanOrEqual`                   | finite number                 | the value is a finite number, and `<=` the operand                            |
   | `range`                             | two finite numbers, any order | the value is a finite number in `[min, max]`                                  |
   | `contains`, `containsI`             | string or array of strings    | one element of the value holds one of the strings (`I`: without case)         |
   | `doesNotContain`, `doesNotContainI` | string or array of strings    | the `contains` form does not hold                                             |
@@ -1211,15 +1221,15 @@ priority, and keeps the function of `groupBy`.
    These places still read a multi-valued value in another way. With
    `EchoNumbers = [1, 2]` and `ImageType = ['ORIGINAL', 'PRIMARY', 'AXIAL']`:
 
-   | Place                                                    | Result today                       | Reads                          |
-   | -------------------------------------------------------- | ---------------------------------- | ------------------------------ |
-   | `<`, `<=`, `>`, `>=`, `greaterThan`, `lessThan`, `range` | `EchoNumbers >= 2` is `false`      | the first value                |
-   | `-`, `*`, `/`, `%`, `+`                                  | `EchoNumbers + 0` is `1`           | the first value                |
-   | `lower()`, `round()` and the other helpers               | `lower(ImageType)` is `'original'` | the first value                |
-   | `sortBy`                                                 | orders by `1`                      | the first value                |
-   | `contains`, `startsWith`, `endsWith`, `includes`, `in`   | `true` for `'AXIAL'`               | any value                      |
-   | a template `{ImageType}`                                 | `'ORIGINAL,PRIMARY,AXIAL'`         | every value, with commas       |
-   | `{ "equals": [...] }`                                    | a compile error                    | (a bare array test is allowed) |
+   | Place                                                    | Result today                       | Reads                    |
+   | -------------------------------------------------------- | ---------------------------------- | ------------------------ |
+   | `<`, `<=`, `>`, `>=`, `greaterThan`, `lessThan`, `range` | `EchoNumbers >= 2` is `false`      | the first value          |
+   | `-`, `*`, `/`, `%`, `+`                                  | `EchoNumbers + 0` is `1`           | the first value          |
+   | `lower()`, `round()` and the other helpers               | `lower(ImageType)` is `'original'` | the first value          |
+   | `sortBy`                                                 | orders by `1`                      | the first value          |
+   | `contains`, `startsWith`, `endsWith`, `includes`, `in`   | `true` for `'AXIAL'`               | any value                |
+   | a template `{ImageType}`                                 | `'ORIGINAL,PRIMARY,AXIAL'`         | every value, with commas |
+   | `{ "equals": [...] }`                                    | equal in order to an array value   | every value              |
 
    Suggested fixes, one for each row:
    - **Comparisons.** No fix is clearly right. "Any value" (`EchoNumbers >= 2`
@@ -1240,6 +1250,5 @@ priority, and keeps the function of `groupBy`.
      the "any value" forms on purpose; `==` is equality.
    - **Templates.** Join the values with `\`, the DICOM value separator, so
      the text reads as DICOM text.
-   - **`equals` with an array.** Allow an array operand, with the same meaning
-     as the array test (equal in order). This also removes one difference from
-     `validator.js`.
+   - **`equals` with an array.** Done on 27 October: an array operand is
+     equal in order to an array value.
