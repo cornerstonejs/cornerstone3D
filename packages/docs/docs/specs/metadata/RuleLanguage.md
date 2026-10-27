@@ -58,8 +58,13 @@ Out of scope:
 - The scoring and the layout of a hanging protocol. A hanging protocol uses the
   rule language only to test a study, a display set or an instance.
 - The change of the OHIF hanging protocols to the operator meanings of
-  `RL-READ-4`. A later OHIF pull request makes that change. That pull request
-  converts the old form, or gives a warning for the old form.
+  `RL-READ-4`. OHIF/Viewers#6386 made the first part of that change: strict
+  `greaterThan` and `lessThan`, an `equals` that compares the whole value, an
+  `includes` with a single operand, and the same reading of numbers, text and
+  no value. The OHIF migration guide _Hanging protocol comparisons_ states the
+  change, and lists the differences that remain. A later OHIF pull request
+  moves the hanging protocols onto the rule language (`RL-CONS-4`). That pull
+  request converts the old form, or gives a warning for the old form.
 - A JSON Schema of the rules. A later pull request adds the schema. The
   declarations record `vr` and `vm` for that schema (`RL-CTX-6`).
 
@@ -187,6 +192,14 @@ and no release had them:
   `'MR'`, and `"ImageType": ["LOCALIZER"]` now holds for
   `['ORIGINAL', 'LOCALIZER']`.
 
+### Changes of 27 October
+
+- `RL-READ-4` no longer lists the meanings that OHIF/Viewers#6386 gave to
+  `validator.js`. It now lists the differences that remain, and it points to
+  the OHIF migration guide _Hanging protocol comparisons_. Reason: after the
+  merge of OHIF/Viewers#6386, the earlier text described the behaviour of
+  `validator.js` wrongly. The meaning of the rule language does not change.
+
 ## Definitions
 
 **Subject.** The object that a condition or a value tests or reads. For a split
@@ -265,23 +278,38 @@ compile.
   A string at every other place of a rule is a name.
 - **RL-READ-4** The author uses the operator names of the OHIF hanging protocol
   constraints (`equals`, `includes`, `contains`, `containsI`, `greaterThan`,
-  `range`, `notNull`, and the others). These meanings are different from
-  `validator.js`:
-  - `equals` is the scalar test, with the equality of `RL-VALUE-5`. A numeric
-    string equals a number; `validator.js` uses `===`. An array operand is a
-    compile error here; `validator.js` compares an array operand element by
-    element.
-  - `notNull` is the exact opposite of `null`.
-  - `greaterThan` and `lessThan` read a numeric string as a number.
-    `validator.js` `greaterThan` rejects a string value. Both are strict (`>`
-    and `<`) in both places since OHIF/Viewers#6386.
+  `range`, `notNull`, and the others). Since OHIF/Viewers#6386, the OHIF
+  `validator.js` gives most of these operators the meaning that they have
+  here: `greaterThan` and `lessThan` are strict (`>` and `<`), a numeric
+  string reads as a number, `equals` compares the whole value, `includes`
+  accepts a single operand, and `notNull` reads an empty value as no value.
+  These meanings are still different from `validator.js`:
+  - An operand of the wrong kind is a compile error here: a number operand of
+    a text operator (`startsWith: 0`), a text operand of a number operator
+    (`greaterThan: '4'`), and an array operand of `equals` and
+    `doesNotEqual`. `validator.js` reads such an operand as text or as a
+    number, and compares an array operand with the whole value.
+  - `"X": null` and `{ "equals": null }` mean "no value", and `notNull` is the
+    exact opposite of `null`. In `validator.js`, the operand `null` skips the
+    constraint, and `notNull` reads every operand other than `false` as
+    `true`.
+  - A boolean equals `'true'` or `'false'` only (`RL-VALUE-5`). In
+    `validator.js`, a boolean also equals the number `1` or `0`.
   - `containsAll` accepts a scalar operand and a single value, and compares
-    with `==`. `validator.js` needs two arrays.
+    with `==`. `validator.js` needs two arrays, and compares with `===`.
+  - An empty text and an empty array stay apart, `includes` fails on no
+    value, and an empty array operand is a compile error. In `validator.js`,
+    `equals: ''` holds on `['']`, `includes: ''` holds on `''`, and
+    `contains: []` always fails.
+  - `greaterThanOrEqual` and `lessThanOrEqual` are `validator.js` operators
+    only. Here, an expression uses `>=` and `<=`.
   - The operand wrappers of `validator.js` (`{ "value": x }`, and `[x]` for
     `greaterThan` and `lessThan`) are compile errors.
 
   The other operators keep the meaning of `validator.js`, except for the rule
-  of `RL-VALUE-4`.
+  of `RL-VALUE-4`. The section "Known differences from
+  `@cornerstonejs/metadata`" of the OHIF migration guide _Hanging protocol
+  comparisons_ has the same list, with examples.
 
 - **RL-READ-5** The author writes a test over the instances of a series (for
   example "the series has fewer than 10 instances", "some instances have a
@@ -899,8 +927,9 @@ packages/metadata/src/
   `over: 'displaySet'` over the instances of the display set, and every other
   series value over the series (`RL-CTX-9`).
 - **RL-CONS-4** The hanging protocol consumer gives its own subject and its
-  own reader of a name. A later OHIF pull request moves the hanging protocol
-  constraints to the operator meanings of `RL-COND-3`.
+  own reader of a name. OHIF/Viewers#6386 moved most of the hanging protocol
+  constraints to the operator meanings of `RL-COND-3`. A later OHIF pull
+  request moves the rest (the differences of `RL-READ-4`).
 - **RL-CONS-5** Each consumer supplies its own subjects. A host that shares one
   named attribute between two consumers knows which subject the function gets
   from each consumer.
@@ -1157,13 +1186,16 @@ priority, and keeps the function of `groupBy`.
 
 ## Open questions
 
-1. **Hanging protocol migration.** The later OHIF pull request must state the
-   change of `greaterThan` from `>=` to `>`, and of `lessThan` from `<=` to
-   `<`, as a change of the behaviour that the user sees, with a migration
-   note. Two more operator changes go in that note: `containsAll` accepts a
-   scalar and a single value and compares with `==`, where `validator.js`
-   needs two arrays; and the operand wrappers of `validator.js`
-   (`{ "value": x }`, `[x]` for `greaterThan`) are compile errors.
+1. **Hanging protocol migration.** Partly resolved. OHIF/Viewers#6386 states
+   the change of `greaterThan` from `>=` to `>`, and of `lessThan` from `<=`
+   to `<`, as a change of the behaviour that the user sees. Its migration note
+   is the OHIF migration guide _Hanging protocol comparisons_. The differences
+   of `RL-READ-4` stay open. The later OHIF pull request that moves the
+   hanging protocols onto the rule language (`RL-CONS-4`) must state each one
+   in a migration note. For the boolean equality, the OHIF migration guide
+   says that this pull request plans the `validator.js` meaning (`true`
+   equals `1`). `RL-VALUE-5` does not give that meaning yet, so this pull
+   request must give it, or the OHIF migration guide must drop the plan.
 2. **JSON Schema.** The schema can list the tag keywords, the pattern of a
    context name, and the `vr` and `vm` of each declaration. The schema can
    then check an operator against the VR (for example `greaterThan` on a text
