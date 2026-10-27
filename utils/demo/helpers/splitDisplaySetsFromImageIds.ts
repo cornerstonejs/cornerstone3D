@@ -33,19 +33,9 @@ const VIEWPORT_TYPE_BY_HANDLER: Record<string, Enums.ViewportType> = {
   ecg: ViewportType.ECG,
 };
 
-/** Modalities whose multi-image display sets the demos open as a volume. */
-const VOLUME_MODALITIES = new Set(['CT', 'MR', 'PT', 'NM']);
-
-/**
- * True for an image display set (no handler) with more than one image of CT,
- * MR, PT or NM. The demos decide this; the rules give no viewport hint.
- */
+/** True for an image display set that opens as a volume (`isVolume`). */
 export function isVolumeDisplaySet(displaySet: IDisplaySet): boolean {
-  return (
-    !displaySet.handler &&
-    displaySet.imageIds.length > 1 &&
-    VOLUME_MODALITIES.has(String(displaySet.instances[0]?.Modality))
-  );
+  return displaySet.isVolume === true;
 }
 
 /**

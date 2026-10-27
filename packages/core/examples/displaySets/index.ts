@@ -123,24 +123,17 @@ const HANDLER_TO_HINT: Record<string, string> = {
   wholeSlide: 'wholeslide',
 };
 
-/** Modalities whose multi-image display sets this example opens as a volume. */
-const VOLUME_MODALITIES = new Set(['CT', 'MR', 'PT', 'NM']);
-
 /**
- * The viewport choices of a display set. The example decides them; the rules
- * give no viewport hint. A non-image display set: the viewport of its handler.
- * An image display set with more than one image of CT, MR, PT or NM: volume,
- * 3D or stack. Any other image display set: stack.
+ * The viewport choices of a display set. A non-image display set: the
+ * viewport of its handler. An image display set with `isVolume`: volume, 3D or
+ * stack. Any other image display set: stack.
  */
 function hintsOf(displaySet: DisplaySet): string[] {
   const byHandler = HANDLER_TO_HINT[displaySet.handler ?? ''];
   if (byHandler) {
     return [byHandler];
   }
-  const modality = String(displaySet.instances[0]?.Modality);
-  return displaySet.imageIds.length > 1 && VOLUME_MODALITIES.has(modality)
-    ? ['volume', 'volume3d', 'stack']
-    : ['stack'];
+  return displaySet.isVolume ? ['volume', 'volume3d', 'stack'] : ['stack'];
 }
 
 function instanceField(displaySet: DisplaySet, key: string): string {

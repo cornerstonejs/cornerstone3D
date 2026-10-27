@@ -66,9 +66,9 @@ const displaySets: IDisplaySet[] = groups.map((group) =>
 ## Driving a viewport from a display set
 
 The default rules give no viewport type. The host chooses the viewport from
-`displaySet.handler` (a non-image object) and the instance data (an image). A
-custom rule's `viewportTypes`, if any, is on `displaySet.viewportTypes`.
-A viewport's
+`displaySet.handler` (a non-image object) and `displaySet.isVolume` (an image;
+see [Volume display sets](#volume-display-sets)). A custom rule's
+`viewportTypes`, if any, is on `displaySet.viewportTypes`. A viewport's
 `setDisplaySets({ displaySetId })` is the single entry point that loads a display
 set: it resolves `displaySetId` to renderable data, calls the viewport's native
 setter (`setStack` / `setVolumes` / `setVideo` / `setWSI` / `setEcg`), and
@@ -92,7 +92,6 @@ const HANDLER_TO_VIEWPORT_TYPE: Record<string, Enums.ViewportType> = {
   wholeSlide: ViewportType.WHOLE_SLIDE,
   ecg: ViewportType.ECG,
 };
-const VOLUME_MODALITIES = new Set(['CT', 'MR', 'PT', 'NM']);
 
 const displaySetId = displaySet.displaySetId;
 
@@ -103,13 +102,10 @@ utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
   imageIds: [...displaySet.imageIds],
 });
 
-// 2. Choose the viewport: from the handler, else from the instance data.
-const isVolume =
-  displaySet.imageIds.length > 1 &&
-  VOLUME_MODALITIES.has(String(displaySet.instances[0]?.Modality));
+// 2. Choose the viewport: from the handler, else from isVolume.
 const viewportType =
   HANDLER_TO_VIEWPORT_TYPE[displaySet.handler ?? ''] ??
-  (isVolume ? ViewportType.ORTHOGRAPHIC : ViewportType.STACK);
+  (displaySet.isVolume ? ViewportType.ORTHOGRAPHIC : ViewportType.STACK);
 renderingEngine.enableElement({ viewportId, type: viewportType, element });
 
 const viewport = renderingEngine.getViewport(viewportId);
@@ -124,6 +120,33 @@ viewport, so mounted display sets can be read uniformly across either hierarchy.
 The runnable end-to-end version (all five viewport families, plus a dropdown to
 switch a display set among the viewports that the example allows) is the **Display Sets**
 example under `packages/core/examples/displaySets`.
+
+### Volume display sets
+
+`createDisplaySetFromGroup` sets `isVolume` on each image display set (no
+handler, or the handler `image`), and on no other display set. A host opens
+the display set as a volume when `isVolume` is true, else as a stack. A clip
+(`isClip`) is never a volume, and an attribute that sets `isVolume` wins.
+
+`isVolumeInstances(instances)` computes it from the naturalized instances of
+the display set alone, so a server gets the same answer. It gives the answer of
+OHIF `isDisplaySetReconstructable`, and reads the plane, the spacing and the
+slice lattice with the `planeGeometry` series function:
+
+- Single-frame instances: two or more, all with the same `Rows`, `Columns`,
+  `SamplesPerPixel` and orientation, at two or more locations, and every slice
+  on one regular lattice with a 20% tolerance. A missing slice is allowed; two
+  slices at one location are not.
+- A multi-frame instance (the first instance has more than one frame): pixel
+  spacing (`PixelMeasuresSequence`, or `PixelSpacing` with `SliceThickness` or
+  `SpacingBetweenFrames`), an orientation and a position are known; an NM
+  instance is a reconstructed tomo (`ImageType[2]` is `RECON TOMO` or
+  `RECON GATED TOMO`); and the frames are not all at one location.
+- There is no modality list: the geometry decides.
+
+The `isValidVolume(imageIds)` utility of `@cornerstonejs/core` reads the
+metadata providers by imageId; `@cornerstonejs/metadata` cannot import core, so
+the display set test does not use it.
 
 ## Caching display sets in the metadata layer
 
@@ -1310,7 +1333,8 @@ displaySet.underlyingImageIds; // SOP-level image ids (one per instance)
   optional unless every display set populates them. Many are produced by a split
   rule's `customAttributes` callback and spread flat onto the display set in
   `createDisplaySetFromGroup` (for example `isMultiFrame`, `isClip`,
-  `numImageFrames`, `splitNumber`).
+  `numImageFrames`, `splitNumber`). `createDisplaySetFromGroup` also sets
+  `isVolume` on each image display set.
 - **App- or extension-specific attributes** that are not part of the common model
   should be added through **TypeScript module augmentation**, so they stay
   type-checked without widening the shared surface:

@@ -128,6 +128,7 @@ export {
   isVideoInstance,
   isEcgInstance,
   isWsiInstance,
+  isVolumeInstances,
   DEFAULT_SPLIT_RULE_PRIORITY_LIMIT,
   DISPLAY_SET_HANDLER_NAMES,
 } from './displayset';

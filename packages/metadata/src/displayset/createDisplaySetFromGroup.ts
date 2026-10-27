@@ -2,6 +2,7 @@ import { BaseDisplaySet } from './BaseDisplaySet';
 import { ImageStackDisplaySet } from './ImageStackDisplaySet';
 import { isUnsafeKey } from '../safeFunctions/schema';
 import type { IDisplaySet } from './IDisplaySet';
+import { isVolumeInstances } from './isVolumeInstances';
 import type { InstanceGroup } from './types';
 
 export type CreateDisplaySetFromGroupOptions = {
@@ -123,8 +124,9 @@ function applyCustomAttributes(
  * - any other handler: a displayable `BaseDisplaySet`; the handler of the host
  *   builds the rest.
  *
- * The display set gives no viewport hint: the host chooses the viewport from
- * `handler` and the instance data.
+ * An image display set also gets `isVolume` (see {@link isVolumeInstances}):
+ * the host opens it as a volume when it is true. The host chooses the viewport
+ * from `handler` and `isVolume`; a rule's `viewportTypes` is copied as data.
  *
  * The default `displaySetId` is the SeriesInstanceUID plus a non-zero
  * `splitNumber`, so the display sets of one split series stay unique. Callers
@@ -196,6 +198,14 @@ export function createDisplaySetFromGroup(
   }
   displaySet.isMultiFrame ??= Number(first?.NumberOfFrames) > 1;
   applyCustomAttributes(displaySet, attributes);
+  // An image display set says if it can open as a volume; a clip cannot.
+  // An attribute that sets isVolume wins.
+  if (
+    (handler === undefined || handler === 'image') &&
+    typeof displaySet.isVolume !== 'boolean'
+  ) {
+    displaySet.isVolume = !displaySet.isClip && isVolumeInstances(instances);
+  }
 
   return displaySet;
 }

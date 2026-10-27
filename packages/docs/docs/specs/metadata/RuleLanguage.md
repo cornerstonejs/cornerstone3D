@@ -1035,7 +1035,10 @@ packages/metadata/src/
   `image` gives an image stack; `unsupported` gives a base display set that is
   not displayable; any other handler gives a displayable base display set. A
   rule's `viewportTypes` is copied to the display set unchanged, and changes
-  nothing else.
+  nothing else. An image display set also gets `isVolume` from
+  `isVolumeInstances` (the answer of OHIF `isDisplaySetReconstructable`, with
+  the `planeGeometry` series function); a clip is not a volume, and an attribute
+  that sets `isVolume` wins.
 - **RL-CONS-4** The hanging protocol consumer gives its own subject and its
   own reader of a name. OHIF/Viewers#6386 moved most of the hanging protocol
   constraints to the operator meanings of `RL-COND-3`. A later OHIF pull

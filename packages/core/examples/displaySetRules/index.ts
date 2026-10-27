@@ -78,21 +78,9 @@ setTitleAndDescription(
     'a plain left drag, so a split can be measured across as well as looked at.'
 );
 
-/** Modalities whose multi-image display sets this example opens as a volume. */
-const VOLUME_MODALITIES = new Set(['CT', 'MR', 'PT', 'NM']);
-
-/**
- * The example decides the viewport itself; the rules give no viewport hint. An
- * image display set (no handler) with more than one image of CT, MR, PT or NM
- * opens as a volume.
- */
+/** An image display set opens as a volume when `isVolume` is true. */
 function isVolumeCapable(displaySet: IDisplaySet): boolean {
-  const modality = displaySet.instances[0]?.Modality;
-  return (
-    !displaySet.handler &&
-    displaySet.imageIds.length > 1 &&
-    VOLUME_MODALITIES.has(String(modality))
-  );
+  return displaySet.isVolume === true;
 }
 
 /** The 2x2 MPR + 3D layout, as [label, viewport type, orientation] slots. */

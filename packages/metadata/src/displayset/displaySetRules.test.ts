@@ -322,6 +322,100 @@ describe('createDisplaySetFromGroup - the handler decides the class', () => {
   });
 });
 
+describe('createDisplaySetFromGroup - isVolume, as OHIF isDisplaySetReconstructable', () => {
+  const AXIAL = [1, 0, 0, 0, 1, 0];
+  const SAGITTAL = [0, 1, 0, 0, 0, 1];
+  const slice = (id: string, z: number, orientation = AXIAL) =>
+    instance({
+      SOPInstanceUID: id,
+      InstanceNumber: Math.round(z * 10) + 1,
+      imageId: `wadors:/${id}`,
+      SamplesPerPixel: 1,
+      ImageOrientationPatient: orientation,
+      ImagePositionPatient: [0, 0, z],
+    });
+  const slices = (...zs: number[]) => zs.map((z, i) => slice(`s${i}`, z));
+  /** An MR multi-frame instance with these per-frame positions. */
+  const multiFrame = (positions: number[][]): NaturalizedInstance =>
+    instance({
+      SOPInstanceUID: 'mf',
+      Modality: 'MR',
+      SOPClassUID: '1.2.840.10008.5.1.4.1.1.4.1',
+      NumberOfFrames: positions.length,
+      PixelSpacing: [1, 1],
+      SliceThickness: 5,
+      ImageOrientationPatient: AXIAL,
+      ImagePositionPatient: positions[0],
+      PerFrameFunctionalGroupsSequence: positions.map((position) => ({
+        PlanePositionSequence: [{ ImagePositionPatient: position }],
+      })),
+    });
+
+  /** [name, rule fields, instances, isVolume (undefined: absent)] */
+  const CASES: [
+    string,
+    Partial<SplitRule>,
+    NaturalizedInstance[],
+    boolean | undefined,
+  ][] = [
+    ['a regular multi-slice series', {}, slices(0, 2.5, 5, 7.5), true],
+    ['a single image', {}, slices(0), false],
+    // The cases of OHIF isDisplaySetReconstructable.test.js:
+    ['single frames with through-plane extent', {}, slices(0, 2, 4), true],
+    ['single frames all at one location', {}, slices(0, 0, 0), false],
+    ['two single frames at one location', {}, slices(0, 0), false],
+    [
+      'a multi-frame instance over several locations',
+      {},
+      [
+        multiFrame([
+          [0, 0, 0],
+          [0, 0, 2],
+          [0, 0, 4],
+        ]),
+      ],
+      true,
+    ],
+    [
+      'a multi-frame cine at one location',
+      {},
+      [
+        multiFrame([
+          [0, 0, 0],
+          [0, 0, 0],
+          [0, 0, 0],
+        ]),
+      ],
+      false,
+    ],
+    // The orientation and spacing tests:
+    [
+      'a mixed orientation',
+      {},
+      [slice('a', 0), slice('b', 2), slice('c', 4, SAGITTAL)],
+      false,
+    ],
+    ['a missing slice on a regular lattice', {}, slices(0, 2, 4, 8), true],
+    ['an irregular spacing', {}, slices(0, 2, 4, 5), false],
+    [
+      'a non-image handler',
+      { handler: 'segmentation' },
+      slices(0, 2, 4),
+      undefined,
+    ],
+  ];
+
+  for (const [name, fields, instances, isVolume] of CASES) {
+    it(`gives ${name} isVolume ${isVolume}`, () => {
+      const displaySet = createDisplaySetFromGroup({
+        instances,
+        matchedRule: { id: 'r', ...fields },
+      });
+      expect(displaySet.isVolume).toBe(isVolume);
+    });
+  }
+});
+
 describe('default rules - the non-image objects', () => {
   const OBJECTS: [string, string, string, string, string][] = [
     [

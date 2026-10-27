@@ -78,6 +78,7 @@ export { isImageInstance } from './isImageInstance';
 export { isVideoInstance } from './isVideoInstance';
 export { isEcgInstance } from './isEcgInstance';
 export { isWsiInstance } from './isWsiInstance';
+export { isVolumeInstances } from './isVolumeInstances';
 export {
   DEFAULT_SPLIT_RULE_PRIORITY_LIMIT,
   DISPLAY_SET_HANDLER_NAMES,
