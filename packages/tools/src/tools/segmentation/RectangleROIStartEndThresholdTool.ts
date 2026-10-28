@@ -19,7 +19,6 @@ import {
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import throttle from '../../utilities/throttle';
 import debounce from '../../utilities/debounce';
-import getWorldWidthAndHeightFromCorners from '../../utilities/planar/getWorldWidthAndHeightFromCorners';
 
 import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
 import {
@@ -405,7 +404,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     enabledElement
   ) {
     const { data, metadata } = annotation;
-    const { viewPlaneNormal, viewUp } = metadata;
+    const { viewPlaneNormal } = metadata;
     const { viewport } = enabledElement;
 
     const projectionPoints = data.cachedStats.projectionPoints;
@@ -416,12 +415,6 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     const worldPos1 = data.handles.points[0];
     const worldPos2 = data.handles.points[3];
 
-    const { worldWidth, worldHeight } = getWorldWidthAndHeightFromCorners(
-      viewPlaneNormal,
-      viewUp,
-      worldPos1,
-      worldPos2
-    );
     // The calibration compares the handles against the pixel bounds of the
     // ultrasound regions of the image, so it reads index coordinates, as the
     // other ROI tools pass.
@@ -433,9 +426,17 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
       indexCoordinates
     );
 
-    const area =
-      Math.abs(worldWidth * worldHeight) /
-      (measureInfo.scale * measureInfo.scale);
+    // The scale converts index distances, so the sides are measured in index
+    // space, as RectangleROITool does.
+    const width = RectangleROIStartEndThresholdTool.calculateLengthInIndex(
+      measureInfo,
+      [indexCoordinates[0], indexCoordinates[1]]
+    );
+    const height = RectangleROIStartEndThresholdTool.calculateLengthInIndex(
+      measureInfo,
+      [indexCoordinates[0], indexCoordinates[2]]
+    );
+    const area = Math.abs(width * height);
 
     const modalityUnitOptions = {
       isPreScaled: isViewportPreScaled(viewport, targetId),
