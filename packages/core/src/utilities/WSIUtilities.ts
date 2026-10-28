@@ -54,13 +54,62 @@ export interface WSIMapViewLike {
   setZoom(zoom: number): void;
 }
 
+interface WSIOverviewViewOptions {
+  projection: ReturnType<WSIMapViewLike['getProjection']>;
+  rotation: number;
+  center: [number, number];
+  resolution: number;
+  minResolution: number;
+  maxResolution: number;
+  extent: number[];
+  constrainOnlyCenter: boolean;
+  showFullExtent: boolean;
+}
+
+interface WSIOverviewViewLike {
+  constructor: new (options: WSIOverviewViewOptions) => WSIOverviewViewLike;
+  getProjection(): ReturnType<WSIMapViewLike['getProjection']>;
+  getRotation(): number;
+  getMinResolution(): number;
+  getMaxResolution(): number;
+  on(eventName: 'change:rotation', handler: () => void): void;
+  un(eventName: 'change:rotation', handler: () => void): void;
+}
+
+export interface WSIOverviewMapLike {
+  getEventCoordinate(event: Event): [number, number];
+  getSize(): number[] | undefined;
+  getView(): WSIOverviewViewLike;
+  setView(view: WSIOverviewViewLike): void;
+  on(eventName: 'change:size' | 'change:view', handler: () => void): void;
+  un(eventName: 'change:size' | 'change:view', handler: () => void): void;
+}
+
+export interface WSIMapControlLike {
+  element?: HTMLElement;
+  getCollapsed?(): boolean;
+  getOverviewMap?(): WSIOverviewMapLike;
+  setCollapsed?(collapsed: boolean): void;
+}
+
 export interface WSIMapLike {
+  getControls?(): {
+    getArray(): WSIMapControlLike[];
+  };
+  getOverlayContainerStopEvent?(): HTMLElement;
+  getOwnerDocument?(): Document;
   getView(): WSIMapViewLike;
   getViewport(): HTMLElement;
   on(eventName: string, handler: () => void): void;
   render(): void;
+  setTarget?(target: HTMLElement | null): void;
   un(eventName: string, handler: () => void): void;
   updateSize?(): void;
+}
+
+export interface WSIOverviewMapInteraction {
+  cleanup(): void;
+  getCollapsed(): boolean | undefined;
 }
 
 export interface WSIViewerLike {
@@ -126,6 +175,165 @@ export async function getDicomMicroscopyViewer(): Promise<DicomMicroscopyViewerL
   return peerImport(
     'dicom-microscopy-viewer'
   ) as Promise<DicomMicroscopyViewerLike>;
+}
+
+/**
+ * Restores overview-map state, isolates its events from viewport tools, and
+ * fits the full slide to its rendered size. Owns listeners without importing
+ * OpenLayers types from the peer viewer.
+ */
+export function configureWSIOverviewMap(
+  map: WSIMapLike,
+  collapsed?: boolean
+): WSIOverviewMapInteraction {
+  const controlContainer = map.getOverlayContainerStopEvent?.();
+  const blockedEventTypes = [
+    'pointerdown',
+    'pointermove',
+    'pointerup',
+    'pointercancel',
+    'mousedown',
+    'dblclick',
+    'wheel',
+  ];
+  const stopPropagation = (event: Event) => event.stopPropagation();
+
+  blockedEventTypes.forEach((eventType) => {
+    controlContainer?.addEventListener(eventType, stopPropagation);
+  });
+
+  const overviewMapControl = map
+    .getControls?.()
+    .getArray()
+    .find((control) => control.getOverviewMap);
+
+  if (collapsed !== undefined) {
+    overviewMapControl?.setCollapsed?.(collapsed);
+  }
+
+  const overviewMap = overviewMapControl?.getOverviewMap?.();
+  let overviewView: WSIOverviewViewLike;
+  let fittedOverviewView: WSIOverviewViewLike;
+  const fitOverviewMap = () => {
+    const size = overviewMap.getSize();
+    if (!size || size[0] <= 0 || size[1] <= 0) {
+      return;
+    }
+    const view = overviewMap.getView();
+    const projection = view.getProjection();
+    const extent = projection.getExtent();
+    const width = extent[2] - extent[0];
+    const height = extent[3] - extent[1];
+    const rotation = view.getRotation();
+    const cos = Math.abs(Math.cos(rotation));
+    const sin = Math.abs(Math.sin(rotation));
+    const resolution = Math.max(
+      (width * cos + height * sin) / size[0],
+      (width * sin + height * cos) / size[1]
+    );
+    if (
+      view.getMinResolution() === resolution &&
+      view.getMaxResolution() === resolution
+    ) {
+      return;
+    }
+    const center: [number, number] = [
+      (extent[0] + extent[2]) / 2,
+      (extent[1] + extent[3]) / 2,
+    ];
+    // The microscopy viewer locks zoom to its inline dimensions, which CSS can override.
+    fittedOverviewView = new view.constructor({
+      projection,
+      rotation,
+      center,
+      resolution,
+      minResolution: resolution,
+      maxResolution: resolution,
+      extent: center.concat(center),
+      constrainOnlyCenter: true,
+      showFullExtent: true,
+    });
+    overviewMap.setView(fittedOverviewView);
+  };
+  const bindOverviewView = () => {
+    overviewView?.un('change:rotation', fitOverviewMap);
+    overviewView = overviewMap.getView();
+    overviewView.on('change:rotation', fitOverviewMap);
+    if (overviewView !== fittedOverviewView) {
+      fitOverviewMap();
+    }
+  };
+  if (overviewMap) {
+    overviewMap.on('change:size', fitOverviewMap);
+    overviewMap.on('change:view', bindOverviewView);
+    bindOverviewView();
+  }
+  const overviewMapElement = overviewMapControl?.element?.querySelector(
+    '.ol-overviewmap-map'
+  );
+  const magnificationBox = overviewMapControl?.element?.querySelector(
+    '.ol-overviewmap-box'
+  );
+  let stopPanning: (() => void) | undefined;
+
+  const startPanning = (event: Event) => {
+    if (
+      event.target !== magnificationBox ||
+      !overviewMap ||
+      !map.getOwnerDocument
+    ) {
+      return;
+    }
+
+    event.stopImmediatePropagation();
+    stopPanning?.();
+
+    const ownerDocument = map.getOwnerDocument();
+    const panViewport = (pointerEvent: Event) => {
+      map.getView().setCenter(overviewMap.getEventCoordinate(pointerEvent));
+    };
+    const stopCurrentPan = () => {
+      ownerDocument.removeEventListener('pointermove', panViewport, true);
+      ownerDocument.removeEventListener('pointerup', finishPanning, true);
+      ownerDocument.removeEventListener('pointercancel', finishPanning, true);
+      stopPanning = undefined;
+    };
+
+    const finishPanning = (pointerEvent: Event) => {
+      pointerEvent.stopPropagation();
+      stopCurrentPan();
+    };
+    stopPanning = stopCurrentPan;
+    ownerDocument.addEventListener('pointermove', panViewport, true);
+    ownerDocument.addEventListener('pointerup', finishPanning, {
+      capture: true,
+      once: true,
+    });
+    ownerDocument.addEventListener('pointercancel', finishPanning, {
+      capture: true,
+      once: true,
+    });
+  };
+
+  overviewMapElement?.addEventListener('pointerdown', startPanning, true);
+
+  return {
+    cleanup: () => {
+      overviewView?.un('change:rotation', fitOverviewMap);
+      overviewMap?.un('change:size', fitOverviewMap);
+      overviewMap?.un('change:view', bindOverviewView);
+      stopPanning?.();
+      overviewMapElement?.removeEventListener(
+        'pointerdown',
+        startPanning,
+        true
+      );
+      blockedEventTypes.forEach((eventType) => {
+        controlContainer?.removeEventListener(eventType, stopPropagation);
+      });
+    },
+    getCollapsed: () => overviewMapControl?.getCollapsed?.(),
+  };
 }
 
 export function addWSIMiniNavigationOverlayCss() {
