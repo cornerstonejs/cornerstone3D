@@ -198,16 +198,20 @@ describe('LABELMAP SEG export Frame Content', () => {
     ).toEqual([[1, 0, 0, 0, 1, 0], sagittal, [1, 0, 0, 0, 1, 0]]);
   });
 
-  it('refuses a frame without a plane', () => {
-    expect(() =>
-      exportLabelmap(
-        { 3: SHAPE_A, 6: MULTI_LABEL },
-        {
-          orientationForSlice: (slice) =>
-            slice === 6 ? undefined : [1, 0, 0, 0, 1, 0],
-        }
-      )
-    ).toThrow(/frame 2 has no ImagePositionPatient or ImageOrientationPatient/);
+  it('writes a stack without a Frame of Reference when a frame has no plane', () => {
+    const dataset = exportLabelmap(
+      { 3: SHAPE_A, 6: MULTI_LABEL },
+      {
+        orientationForSlice: (slice) =>
+          slice === 6 ? undefined : [1, 0, 0, 0, 1, 0],
+      }
+    );
+
+    expect(dataset.FrameOfReferenceUID).toBeUndefined();
+    expect(dimensionPointers(dataset)).toEqual([
+      STACK_ID_TAG,
+      IN_STACK_POSITION_NUMBER_TAG,
+    ]);
   });
 
   it("takes the source's Slice Thickness and spacing for non-adjacent frames", () => {

@@ -68,6 +68,7 @@
   },
   "scripts": {
     "test": "jest --testTimeout 60000",
+    "test:dciodvfy": "jest --testTimeout 60000 --testMatch \"<rootDir>/test/manual/*.manual.js\"",
     "build": "rollup -c rollup.config.mjs && tsc-alias -p ./tsconfig.json --resolve-full-paths && node ../../scripts/write-dist-esm-package-json.js ./",
     "build:esm": "pnpm run prebuild && rollup -c rollup.config.mjs && tsc-alias -p ./tsconfig.json --resolve-full-paths && node ../../scripts/write-dist-esm-package-json.js ./",
     "build:esm:watch": "sh -c 'tsc-alias -p ./tsconfig.json --resolve-full-paths --watch & alias_pid=$!; node ../../scripts/write-dist-esm-package-json.js ./ --watch & writer_pid=$!; trap \"kill $alias_pid $writer_pid\" EXIT; rollup --watch -c rollup.config.mjs'",

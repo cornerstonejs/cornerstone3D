@@ -8,6 +8,10 @@
 import { Enums, utilities } from '@cornerstonejs/core';
 import { utilities as metadataUtilities } from '@cornerstonejs/metadata';
 import { GEOMETRY_TOLERANCE } from './sourceFrame';
+import {
+  createDerivationImageItem,
+  createSourceImageReference,
+} from '../../dcmjsSegmentation';
 
 const { MetadataModules } = Enums;
 
@@ -40,31 +44,25 @@ export function getReferencedFrameNumber(imageId, metadata) {
 }
 
 /**
- * Builds a SourceImageSequence item (ReferencedSOPInstanceUID + optional
- * ReferencedFrameNumber) for a cornerstone image, using the shared frame
- * extraction so all SEG export paths resolve multi-frame references identically.
+ * Builds a SourceImageSequence item for a cornerstone image, using the shared
+ * frame extraction so all SEG export paths resolve multi-frame references
+ * identically. See createSourceImageReference: ReferencedFrameNumber is
+ * written only for a multi-frame source.
  *
  * @param {{ imageId?: string }} image
  * @param {object} metadata - metadata provider
- * @returns {{ ReferencedSOPInstanceUID: string, ReferencedFrameNumber?: number }}
+ * @returns {{ ReferencedSOPClassUID?: string, ReferencedSOPInstanceUID: string, ReferencedFrameNumber?: number }}
  */
 export function getReferencedSourceImageSequenceItem(image, metadata) {
   const imageData =
     metadata?.get?.(MetadataModules.IMAGE_DATA, image?.imageId) || {};
-  const referencedFrameNumber = getReferencedFrameNumber(
-    image?.imageId,
-    metadata
-  );
 
-  const item = {
-    ReferencedSOPInstanceUID: imageData.SOPInstanceUID,
-  };
-
-  if (Number.isFinite(referencedFrameNumber) && referencedFrameNumber > 0) {
-    item.ReferencedFrameNumber = referencedFrameNumber;
-  }
-
-  return item;
+  return createSourceImageReference({
+    sopClassUID: imageData.SOPClassUID,
+    sopInstanceUID: imageData.SOPInstanceUID,
+    numberOfFrames: imageData.NumberOfFrames,
+    frameNumber: getReferencedFrameNumber(image?.imageId, metadata),
+  });
 }
 
 export function normalizeSharedFunctionalGroupsSequence(dataset) {
@@ -121,9 +119,7 @@ export function applyPerFrameFunctionalGroups(dataset, frames) {
     const group = {
       ...priorRest,
       DerivationImageSequence: [
-        {
-          SourceImageSequence: [frame.sourceImageSequenceItem],
-        },
+        createDerivationImageItem(frame.sourceImageSequenceItem),
       ],
     };
 
