@@ -1,4 +1,4 @@
-import { data } from 'dcmjs';
+import { data } from '@dcmjs-org/dcmjs';
 const { datasetToBlob } = data;
 
 interface DicomDataset {

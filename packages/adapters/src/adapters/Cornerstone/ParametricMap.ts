@@ -1,4 +1,4 @@
-import { log, data as dcmjsData, normalizers } from 'dcmjs';
+import { log, data as dcmjsData, normalizers } from '@dcmjs-org/dcmjs';
 import checkOrientation from '../helpers/checkOrientation';
 import { utilities } from '@cornerstonejs/core';
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';

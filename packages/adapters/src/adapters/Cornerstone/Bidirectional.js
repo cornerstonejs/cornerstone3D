@@ -1,7 +1,8 @@
-import { utilities } from 'dcmjs';
+import { utilities } from '@dcmjs-org/dcmjs';
 import MeasurementReport from './MeasurementReport';
 import CORNERSTONE_4_TAG from './cornerstone4Tag';
 import { toArray } from '../helpers';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
 
 const { Bidirectional: TID300Bidirectional } = utilities.TID300;
 
@@ -71,7 +72,8 @@ class Bidirectional {
 
     const state = {
       sopInstanceUid: ReferencedSOPInstanceUID,
-      frameIndex: ReferencedFrameNumber || 1,
+      // VM 1-n: dcmjs 1.0 naturalizes it as a list, also for one value.
+      frameIndex: cornerstoneUtilities.asArrayFirst(ReferencedFrameNumber) || 1,
       toolType: Bidirectional.toolType,
       active: false,
       handles: {

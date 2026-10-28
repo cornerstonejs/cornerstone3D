@@ -1,4 +1,5 @@
-import { data } from 'dcmjs';
+import { data } from '@dcmjs-org/dcmjs';
+import { toArray } from '../helpers/toArray';
 
 const { Colors, BitArray } = data;
 
@@ -177,12 +178,14 @@ export default class Segmentation {
     });
 
     // make a list of functional groups per segment
-    dataset.PerFrameFunctionalGroupsSequence.forEach((functionalGroup) => {
-      const segmentNumber =
-        functionalGroup.SegmentIdentificationSequence.ReferencedSegmentNumber;
+    toArray(dataset.PerFrameFunctionalGroupsSequence).forEach(
+      (functionalGroup) => {
+        const segmentNumber =
+          functionalGroup.SegmentIdentificationSequence.ReferencedSegmentNumber;
 
-      segments[segmentNumber].functionalGroups.push(functionalGroup);
-    });
+        segments[segmentNumber].functionalGroups.push(functionalGroup);
+      }
+    );
 
     // determine per-segment index into the pixel data
     // TODO: only handles one-bit-per pixel

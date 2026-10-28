@@ -1,6 +1,6 @@
 import { eventTarget, imageLoader, triggerEvent } from '@cornerstonejs/core';
 import { utilities as cstUtils } from '@cornerstonejs/tools';
-import { data as dcmjsData, normalizers } from 'dcmjs';
+import { data as dcmjsData, normalizers } from '@dcmjs-org/dcmjs';
 import ndarray from 'ndarray';
 import checkOrientation from '../../helpers/checkOrientation';
 import {

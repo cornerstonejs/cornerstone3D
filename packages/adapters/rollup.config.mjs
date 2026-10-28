@@ -8,7 +8,7 @@ const pkg = JSON.parse(readFileSync('package.json', { encoding: 'utf8' }));
 
 /** Declared dependencies + Babel runtime (babelHelpers: "runtime"); keep out of dist/esm/node_modules. */
 const EXTERNAL_IDS = new Set([
-  'dcmjs',
+  '@dcmjs-org/dcmjs',
   'gl-matrix',
   'ndarray',
   '@cornerstonejs/tools',

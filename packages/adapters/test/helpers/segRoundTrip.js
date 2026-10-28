@@ -6,7 +6,7 @@
  *
  * Not a test file — jest only collects test/**\/*.jest.js.
  */
-const { data: dcmjsData } = require('dcmjs');
+const { data: dcmjsData } = require('@dcmjs-org/dcmjs');
 const { vec3 } = require('gl-matrix');
 
 const { DicomMetaDictionary, DicomDict } = dcmjsData;

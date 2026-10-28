@@ -613,12 +613,12 @@ importers:
       '@babel/runtime-corejs2':
         specifier: 7.26.10
         version: 7.26.10
+      '@dcmjs-org/dcmjs':
+        specifier: 1.0.0-beta.5
+        version: 1.0.0-beta.5
       buffer:
         specifier: 6.0.3
         version: 6.0.3
-      dcmjs:
-        specifier: 0.52.0
-        version: 0.52.0
       gl-matrix:
         specifier: 3.4.3
         version: 3.4.3
@@ -641,12 +641,12 @@ importers:
       '@babel/runtime-corejs2':
         specifier: 7.26.10
         version: 7.26.10
+      '@dcmjs-org/dcmjs':
+        specifier: 1.0.0-beta.5
+        version: 1.0.0-beta.5
       buffer:
         specifier: 6.0.3
         version: 6.0.3
-      dcmjs:
-        specifier: 0.52.0
-        version: 0.52.0
       gl-matrix:
         specifier: 3.4.3
         version: 3.4.3
@@ -843,9 +843,9 @@ importers:
       '@cornerstonejs/utils':
         specifier: 5.14.0
         version: link:../utils
-      dcmjs:
-        specifier: 0.52.0
-        version: 0.52.0
+      '@dcmjs-org/dcmjs':
+        specifier: 1.0.0-beta.5
+        version: 1.0.0-beta.5
       gl-matrix:
         specifier: 3.4.3
         version: 3.4.3
@@ -918,9 +918,9 @@ importers:
 
   packages/utils:
     dependencies:
-      dcmjs:
-        specifier: 0.52.0
-        version: 0.52.0
+      '@dcmjs-org/dcmjs':
+        specifier: 1.0.0-beta.5
+        version: 1.0.0-beta.5
 
 packages:
   '@algolia/abtesting@1.18.1':
@@ -3078,6 +3078,55 @@ packages:
     engines: { node: '>=18' }
     peerDependencies:
       postcss: 8.5.26
+
+  '@dcmjs-org/core@1.0.0-beta.5':
+    resolution:
+      {
+        integrity: sha512-AYn+tyoU9pI3Aq16W8HpC5ApcqA90sE1HcffajKttHu8Tox0JYw+YTQMVkzJNaTX45GeRP1IYFY9r6pfA5QiHw==,
+      }
+
+  '@dcmjs-org/dcmjs@1.0.0-beta.5':
+    resolution:
+      {
+        integrity: sha512-8EG6K36RXw0W11Kryi/kJZVBZ1UZEQY/S5waBfgdWMzaWbALRe7vgtIJR5qZLNnyrO4ab5PjFU9+64tQhSquOw==,
+      }
+    engines: { node: '>=22.13' }
+
+  '@dcmjs-org/dicomdir@1.0.0-beta.5':
+    resolution:
+      {
+        integrity: sha512-JdqbsixDdE2hOB4jWCSVWkYjTZ69w0W0/02xeye3ZMREwwVkgomjxqH+ez/WJsafg1PvXL1FBdm/ZKp0DTxaUQ==,
+      }
+
+  '@dcmjs-org/encapsulated@1.0.0-beta.5':
+    resolution:
+      {
+        integrity: sha512-PlVp+SKT56ID/IFKWaQtL4SEHFGYZHxTQOxjgZzgN2DY3pmoqJ/1UmdYcLobggVvChlQQxgDM1mOsW9iKqsGkQ==,
+      }
+
+  '@dcmjs-org/imaging@1.0.0-beta.5':
+    resolution:
+      {
+        integrity: sha512-4AxuX39KfHhubag3DOGlvEIHOBLBsiX83qOpazBmmNRdR111ioI19gEfg77b+qkzPr+y/nQpzcUTVZ6/bdFzGQ==,
+      }
+
+  '@dcmjs-org/media@1.0.0-beta.5':
+    resolution:
+      {
+        integrity: sha512-IMHXZbDKnggNW+Ag4/uWBf/tOefuhdqZmoLMzbVKaI2bR/19I7Ye7K8GDbohfp8e2Enjz39canBGQZ5lL21FNw==,
+      }
+
+  '@dcmjs-org/parser@1.0.0-beta.5':
+    resolution:
+      {
+        integrity: sha512-2aLtw5zNC9IadZZPkCB18GhGBBKlxgQqY1LA8ff2xHW/Ga3VxFuUzvWy2wE2eTrLr3QwyeYse75iVqr8Br3U7w==,
+      }
+
+  '@dcmjs-org/video@1.0.0-beta.5':
+    resolution:
+      {
+        integrity: sha512-EnrkQ6d+KBJa4d9+3C5FlYYsXPrt6pbpchxBhhtsqz2+iXjzbEE/dk5m3f2cBkmVdhtrG43C3bRqaSMXQs9Rkg==,
+      }
 
   '@discoveryjs/json-ext@0.5.7':
     resolution:
@@ -8138,13 +8187,6 @@ packages:
       {
         integrity: sha512-kr46REomItFeWz+0ck4Wif4uS5VVDWVlwdh5GGaCtTYHWfNQmrcCSiQOkrShc7Dc5zP8vNKrHEdORlZXenlg3w==,
       }
-
-  dcmjs@0.52.0:
-    resolution:
-      {
-        integrity: sha512-0/mT9NACKnwnOnkUx7JAqmWxRcUr7HiCoptw1KhN2StNYE0Hy6+tmpI7CU+lJuBc4rFpcMCalvI8QO6JkJ+7Fg==,
-      }
-    engines: { node: '>=22.13' }
 
   debounce@1.2.1:
     resolution:
@@ -20411,6 +20453,57 @@ snapshots:
     dependencies:
       postcss: 8.5.26
 
+  '@dcmjs-org/core@1.0.0-beta.5':
+    dependencies:
+      loglevel: 1.9.2
+      pako: 2.1.0
+
+  '@dcmjs-org/dcmjs@1.0.0-beta.5':
+    dependencies:
+      '@babel/runtime-corejs3': 7.29.2
+      '@dcmjs-org/core': 1.0.0-beta.5
+      '@dcmjs-org/encapsulated': 1.0.0-beta.5
+      '@dcmjs-org/imaging': 1.0.0-beta.5
+      '@dcmjs-org/media': 1.0.0-beta.5
+      '@dcmjs-org/parser': 1.0.0-beta.5
+      '@dcmjs-org/video': 1.0.0-beta.5
+      adm-zip: 0.6.1
+      gl-matrix: 3.4.4
+      lodash.clonedeep: 4.5.0
+      loglevel: 1.9.2
+      ndarray: 1.0.19
+      pako: 2.1.0
+
+  '@dcmjs-org/dicomdir@1.0.0-beta.5':
+    dependencies:
+      '@dcmjs-org/core': 1.0.0-beta.5
+
+  '@dcmjs-org/encapsulated@1.0.0-beta.5':
+    dependencies:
+      '@dcmjs-org/core': 1.0.0-beta.5
+
+  '@dcmjs-org/imaging@1.0.0-beta.5':
+    dependencies:
+      '@dcmjs-org/core': 1.0.0-beta.5
+
+  '@dcmjs-org/media@1.0.0-beta.5':
+    dependencies:
+      '@dcmjs-org/dicomdir': 1.0.0-beta.5
+      '@dcmjs-org/encapsulated': 1.0.0-beta.5
+      '@dcmjs-org/imaging': 1.0.0-beta.5
+      '@dcmjs-org/video': 1.0.0-beta.5
+
+  '@dcmjs-org/parser@1.0.0-beta.5':
+    dependencies:
+      '@dcmjs-org/core': 1.0.0-beta.5
+      pako: 2.1.0
+
+  '@dcmjs-org/video@1.0.0-beta.5':
+    dependencies:
+      '@dcmjs-org/core': 1.0.0-beta.5
+      '@dcmjs-org/imaging': 1.0.0-beta.5
+      '@dcmjs-org/parser': 1.0.0-beta.5
+
   '@discoveryjs/json-ext@0.5.7': {}
 
   '@docsearch/css@3.9.0': {}
@@ -24415,16 +24508,6 @@ snapshots:
       '@babel/runtime-corejs3': 7.26.10
       adm-zip: 0.6.1
       gl-matrix: 3.4.3
-      lodash.clonedeep: 4.5.0
-      loglevel: 1.9.2
-      ndarray: 1.0.19
-      pako: 2.1.0
-
-  dcmjs@0.52.0:
-    dependencies:
-      '@babel/runtime-corejs3': 7.29.2
-      adm-zip: 0.6.1
-      gl-matrix: 3.4.4
       lodash.clonedeep: 4.5.0
       loglevel: 1.9.2
       ndarray: 1.0.19

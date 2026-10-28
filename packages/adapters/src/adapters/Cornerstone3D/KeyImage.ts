@@ -1,4 +1,4 @@
-import { utilities } from 'dcmjs';
+import { utilities } from '@dcmjs-org/dcmjs';
 import Probe from './Probe';
 const { Point: TID300Point } = utilities.TID300;
 

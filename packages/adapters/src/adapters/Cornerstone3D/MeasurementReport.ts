@@ -3,7 +3,7 @@ import {
   data,
   utilities as dcmjsUtilities,
   derivations,
-} from 'dcmjs';
+} from '@dcmjs-org/dcmjs';
 import {
   cache,
   Enums,
@@ -336,8 +336,12 @@ export default class MeasurementReport {
     metadata,
   }) {
     const { ReferencedSOPSequence } = SCOORDGroup.ContentSequence;
-    const { ReferencedSOPInstanceUID, ReferencedFrameNumber = 1 } =
-      ReferencedSOPSequence;
+    const { ReferencedSOPInstanceUID } = ReferencedSOPSequence;
+    // VM 1-n: dcmjs 1.0 naturalizes it as a list, also for one value.
+    const ReferencedFrameNumber =
+      cornerstoneUtilities.asArrayFirst(
+        ReferencedSOPSequence.ReferencedFrameNumber
+      ) ?? 1;
 
     const referencedImageId =
       sopInstanceUIDToImageIdMap[

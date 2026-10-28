@@ -1,4 +1,4 @@
-import dcmjs from 'dcmjs';
+import dcmjs from '@dcmjs-org/dcmjs';
 import { MetadataModules } from '../../enums';
 import { addAddProvider, addTypedProvider } from '../../metaData';
 import { MetaDataIterator, NaturalTagListener } from '../dicomStream';

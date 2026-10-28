@@ -27,7 +27,7 @@
  * configuration of `init`. Thus the same interface controls the loggers of
  * Cornerstone, of dcmjs, and of the other components.
  */
-import { log } from 'dcmjs';
+import { log } from '@dcmjs-org/dcmjs';
 
 export type Logger = {
   getLogger: (...categories: string[]) => Logger;

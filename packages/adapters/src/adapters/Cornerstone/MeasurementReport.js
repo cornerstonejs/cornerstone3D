@@ -1,4 +1,4 @@
-import { normalizers, data, utilities, derivations } from 'dcmjs';
+import { normalizers, data, utilities, derivations } from '@dcmjs-org/dcmjs';
 
 import { toArray, codeMeaningEquals } from '../helpers';
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
@@ -94,7 +94,8 @@ export default class MeasurementReport {
 
     const defaultState = {
       sopInstanceUid: ReferencedSOPInstanceUID,
-      frameIndex: ReferencedFrameNumber || 1,
+      // VM 1-n: dcmjs 1.0 naturalizes it as a list, also for one value.
+      frameIndex: cornerstoneUtilities.asArrayFirst(ReferencedFrameNumber) || 1,
       complete: true,
       finding: findingGroup
         ? addAccessors(findingGroup.ConceptCodeSequence)

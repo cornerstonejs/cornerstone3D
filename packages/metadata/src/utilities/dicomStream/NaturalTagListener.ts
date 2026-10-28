@@ -1,4 +1,4 @@
-import dcmjs from 'dcmjs';
+import dcmjs from '@dcmjs-org/dcmjs';
 import { makeArrayLike } from '../metadataProvider/makeArrayLike';
 import { dictionaryLookup, mapTagInfo, parseVm } from '../Tags';
 import type { IListenerInfo } from '../../types';

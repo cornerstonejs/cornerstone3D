@@ -1,4 +1,4 @@
-import { log, utilities, normalizers, derivations } from 'dcmjs';
+import { log, utilities, normalizers, derivations } from '@dcmjs-org/dcmjs';
 import ndarray from 'ndarray';
 import getDatasetsFromImages from '../helpers/getDatasetsFromImages';
 import {

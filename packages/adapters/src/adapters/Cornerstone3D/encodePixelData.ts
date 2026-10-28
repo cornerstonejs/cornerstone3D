@@ -1,4 +1,4 @@
-import { constants } from 'dcmjs';
+import { constants } from '@dcmjs-org/dcmjs';
 
 // dcmjs has no named constant for RLE Lossless, so keep it declared here.
 const RLE_LOSSLESS_TRANSFER_SYNTAX_UID = '1.2.840.10008.1.2.5';
