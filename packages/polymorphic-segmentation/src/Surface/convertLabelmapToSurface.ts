@@ -10,6 +10,8 @@ import {
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import type { Types as ToolsTypes } from '@cornerstonejs/tools';
 
+import { cropLabelmapToSegment } from './cropLabelmapToSegment';
+
 const { WorkerTypes } = cornerstoneTools.Enums;
 const { computeVolumeLabelmapFromStack } =
   cornerstoneTools.utilities.segmentation;
@@ -26,6 +28,10 @@ const triggerWorkerProgress = (eventTarget, progress, id) => {
 
 /**
  * Converts a labelmap representation to a surface representation.
+ *
+ * Only the block of the labelmap that holds the segment goes to the worker (see
+ * `cropLabelmapToSegment`). A segment with no voxels has an empty surface, and
+ * the worker is not started for it, so no progress is reported.
  *
  * @param labelmapRepresentationData - The labelmap segmentation data.
  * @param segmentIndex - The index of the segment to convert.
@@ -58,16 +64,29 @@ export async function convertLabelmapToSurface(
   const scalarData = volume.voxelManager.getCompleteScalarDataArray();
   const { dimensions, spacing, origin, direction } = volume;
 
+  const cropped = cropLabelmapToSegment(
+    scalarData,
+    dimensions,
+    spacing,
+    origin,
+    direction,
+    segmentIndex
+  );
+
+  if (!cropped) {
+    return { points: [], polys: [] } as Types.SurfaceData;
+  }
+
   triggerWorkerProgress(eventTarget, 0, segmentIndex);
 
   const results = await workerManager.executeTask(
     'polySeg',
     'convertLabelmapToSurface',
     {
-      scalarData,
-      dimensions,
+      scalarData: cropped.scalarData,
+      dimensions: cropped.dimensions,
       spacing,
-      origin,
+      origin: cropped.origin,
       direction,
       segmentIndex,
     },
