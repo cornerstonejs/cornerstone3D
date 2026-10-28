@@ -8,6 +8,7 @@ import {
 import ndarray from 'ndarray';
 import { vec3 } from 'gl-matrix';
 import getDatasetsFromImages from '../helpers/getDatasetsFromImages';
+import { getWriterHeader } from '../../utilities/getWriterHeader';
 import checkOrientation from '../helpers/checkOrientation';
 import { utilities as csUtilities } from '@cornerstonejs/core';
 import { utilities as metadataUtilities } from '@cornerstonejs/metadata';
@@ -480,10 +481,17 @@ export function _getLabelmapsFromReferencedFrameIndicies(
  * @param  {Boolean} isMultiframe Whether the images are multiframe.
  * @returns {Object}              The Seg derived dataSet.
  */
-export function _createSegFromImages(images, isMultiframe, options) {
+export function _createSegFromImages(
+  images,
+  isMultiframe,
+  options = { includeSliceSpacing: true }
+) {
   const multiframe = getDatasetsFromImages(images, isMultiframe);
 
-  return new SegmentationDerivation([multiframe], options);
+  return new SegmentationDerivation([multiframe], {
+    ...options,
+    ...getWriterHeader(options),
+  });
 }
 
 /**

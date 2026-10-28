@@ -1,7 +1,7 @@
 ---
 id: saving
 title: Saving and Replacing
-summary: How a stored segmentation, structure set or report either starts a new series or becomes the next revision of an existing one, and what makes a viewer show the revision instead of the original
+summary: How a stored segmentation, structure set or report either starts a new series or becomes the next revision of an existing one, what makes a viewer show the revision instead of the original, and how the object names the software that wrote it
 ---
 
 # Saving and Replacing
@@ -86,3 +86,52 @@ The module throws if a provider holds the image id but carries no
 `PredecessorDocumentsSequence`. The module cannot write the sequence without
 them, and a stored object that names an empty predecessor is worse for the user
 than a save that fails and says why.
+
+## The writer of the object
+
+Each save function writes three header attributes that name the software that
+wrote the object. This applies to the SEG (`generateSegmentation`), the
+RTSTRUCT (`generateRTSSFromRepresentation`) and the SR
+(`MeasurementReport.generateReport`), and also to the legacy Cornerstone SR and
+SEG adapters. A value in `options` wins over the default. An empty value
+(`undefined`, `''`, `null` or `[]`) gets the default:
+
+| Attribute               | Option                  | Default                             |
+| ----------------------- | ----------------------- | ----------------------------------- |
+| `Manufacturer`          | `Manufacturer`          | `CornerstoneJS`                     |
+| `ManufacturerModelName` | `ManufacturerModelName` | `@cornerstonejs/adapters`           |
+| `SoftwareVersions`      | `SoftwareVersions`      | the adapters version, e.g. `5.13.2` |
+
+Each instance names the software that wrote it. A revision that is saved into
+an existing series (`predecessorImageId`) does not copy the writer of its
+predecessor, so the instances of one series can name different writers or
+versions.
+
+The `MetadataModules.NEW_INSTANCE_DATA` metadata module (`'NewInstanceData'`)
+also holds the three defaults, so every instance that `createInstance` builds
+from it names the adapters as its writer unless the options give a value.
+
+For the RTSTRUCT, the writer values come first from `options`, then from the
+adapters default, and only then from the instance provider. A custom
+`RtssInstanceData` or `NewInstanceData` provider therefore cannot set the
+writer; pass the values in `options`.
+
+`utilities.getWriterHeader(options)` gives the three values, and
+`utilities.DEFAULT_WRITER_HEADER` holds the defaults.
+
+An application that builds on the adapters should pass its own values, for
+example its name in `Manufacturer` and both its version and the adapters
+`version` (exported from `@cornerstonejs/adapters`) in `SoftwareVersions`. Pass
+the same options to each of the three functions:
+
+```js
+import { version } from '@cornerstonejs/adapters';
+
+const writer = {
+  Manufacturer: 'MyViewer',
+  SoftwareVersions: ['MyViewer 2.1.0', `CS3D ${version}`],
+};
+generateSegmentation(images, labelmaps, metaData, { ...writer });
+generateRTSSFromRepresentation(segmentation, { ...writer });
+MeasurementReport.generateReport(toolState, metaData, { ...writer });
+```

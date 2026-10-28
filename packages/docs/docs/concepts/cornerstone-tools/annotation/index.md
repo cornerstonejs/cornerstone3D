@@ -34,6 +34,10 @@ annotation.config.XYZ;
 annotation.AnnotationGroup;
 ```
 
+To store annotations as a DICOM SR, use `MeasurementReport.generateReport` of
+`@cornerstonejs/adapters`. The SR names its writer in its header; see
+[The writer of the object](../segmentation/saving.md#the-writer-of-the-object).
+
 Let's start by looking deeper into each of these methods.
 
 <DocCardList items={useCurrentSidebarCategory().items}/>

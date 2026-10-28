@@ -7,7 +7,7 @@ import getReferencedFrameOfReferenceSequence from './utilities/getReferencedFram
 import getReferencedSeriesSequence from './utilities/getReferencedSeriesSequence';
 import getRTROIObservationsSequence from './utilities/getRTROIObservationsSequence';
 import getStructureSetModule from './utilities/getStructureSetModule';
-import { createInstance } from '../../../utilities';
+import { createInstance, getWriterHeader } from '../../../utilities';
 import '../../../utilities/referencedMetadataProvider';
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
 
@@ -291,6 +291,8 @@ export function generateRTSSFromAnnotations(
 function _initializeDataset(segmentation: Segmentation, imgMetadata, options) {
   // get the first annotation data
   const { referencedImageId: studyExemplarImageId } = imgMetadata;
+  // In the base: options, then the adapters default, win over the instance provider
+  const writerHeader = getWriterHeader(options);
 
   return createInstance<RtssModule>(
     MetadataModules.RTSS_INSTANCE_DATA,
@@ -301,8 +303,9 @@ function _initializeDataset(segmentation: Segmentation, imgMetadata, options) {
       StructureSetName: segmentation.label,
       SeriesDescription: segmentation.label,
       _meta: metaData.get(MetadataModules.RTSS_CONTOUR, studyExemplarImageId),
+      ...writerHeader,
     },
-    options
+    { ...options, ...writerHeader }
   );
 }
 
