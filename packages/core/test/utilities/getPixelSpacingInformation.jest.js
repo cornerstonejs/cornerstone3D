@@ -78,6 +78,16 @@ describe('getPixelSpacingInformation', function () {
       const { type } = calculateRadiographicPixelSpacing(instance);
       expect(type).toBe('Unknown');
     });
+    it('Should keep the stored pixel spacing when the source to patient distance is zero', () => {
+      const instance = {
+        PixelSpacing: [0.139, 0.139],
+        ImagerPixelSpacing: [0.139, 0.139],
+        DistanceSourceToDetector: 1450,
+        DistanceSourceToPatient: 0,
+      };
+      const { PixelSpacing } = calculateRadiographicPixelSpacing(instance);
+      expect(PixelSpacing).toEqual([0.139, 0.139]);
+    });
     it('Should return ERMF', () => {
       const instance = {
         ImagerPixelSpacing,
