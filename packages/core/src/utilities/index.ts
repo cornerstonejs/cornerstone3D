@@ -78,7 +78,6 @@ import { getRandomSampleFromArray } from './getRandomSampleFromArray';
 import { getVolumeId } from './getVolumeId';
 import { hasFloatScalingParameters } from './hasFloatScalingParameters';
 import { pointInShapeCallback } from './pointInShapeCallback';
-import * as ECGUtilities from './ECGUtilities';
 import * as VideoUtilities from './VideoUtilities';
 import * as WSIUtilities from './WSIUtilities';
 // name spaces
@@ -138,6 +137,8 @@ import {
   viewportSupportsVolumeURI,
   isGenericViewport,
   viewportSupportsDisplaySetPresentation,
+  viewportSupportsWaveform,
+  type WaveformViewport,
   getViewportContentMode,
   viewportIsInVolumeMode,
   viewportIsInStackMode,
@@ -254,7 +255,6 @@ export {
   handleMultiframe4D,
   generateFrameImageId,
   pointInShapeCallback,
-  ECGUtilities,
   VideoUtilities,
   WSIUtilities,
   deepEqual,
@@ -284,6 +284,8 @@ export {
   viewportSupportsVolumeURI,
   isGenericViewport,
   viewportSupportsDisplaySetPresentation,
+  viewportSupportsWaveform,
+  type WaveformViewport,
   getViewportContentMode,
   viewportIsInVolumeMode,
   viewportIsInStackMode,

@@ -231,5 +231,65 @@ describe('ECGHelpers', () => {
         result?.channelDefinitionSequence[2].channelSourceSequence?.codeMeaning
       ).toBe('Unknown');
     });
+
+    it('should parse WaveformAnnotationSequence, patientInfo, and studyInfo from DICOMweb metadata', () => {
+      const metadata = {
+        '00100010': { Value: [{ Alphabetic: 'Curie^Marie' }] },
+        '00100020': { Value: ['RAD-001'] },
+        '00100040': { Value: ['F'] },
+        '00080020': { Value: ['20230615'] },
+        '00080060': { Value: ['ECG'] },
+        '00080070': { Value: ['Philips Medical Systems'] },
+        '54000100': {
+          Value: [
+            {
+              '003A0005': { Value: [1] },
+              '003A0010': { Value: [10] },
+              '003A001A': { Value: [500] },
+              '003A0200': { Value: [] },
+              '54001010': { Value: [] },
+            },
+          ],
+        },
+        '0040B020': {
+          Value: [
+            {
+              '0040A043': {
+                Value: [
+                  {
+                    '00080100': { Value: ['8867-4'] },
+                    '00080104': { Value: ['Ventricular Heart Rate'] },
+                  },
+                ],
+              },
+              '0040A30A': { Value: [72] },
+              '004008EA': {
+                Value: [
+                  {
+                    '00080104': { Value: ['bpm'] },
+                  },
+                ],
+              },
+            },
+            {
+              '0040A160': { Value: ['SINUS RHYTHM'] },
+            },
+          ],
+        },
+      };
+
+      const result = getECGModule(metadata);
+      expect(result).not.toBeNull();
+      expect(result?.annotations?.ventricularHeartRate).toBe(72);
+      expect(result?.annotations?.interpretations).toEqual(['SINUS RHYTHM']);
+      expect(result?.annotations?.all).toHaveLength(2);
+      expect(result?.annotations?.all?.[0].unit).toBe('bpm');
+      expect(result?.patientInfo?.patientName).toBe('Curie^Marie');
+      expect(result?.patientInfo?.patientId).toBe('RAD-001');
+      expect(result?.patientInfo?.patientSex).toBe('F');
+      expect(result?.studyInfo?.studyDate).toBe('20230615');
+      expect(result?.studyInfo?.modality).toBe('ECG');
+      expect(result?.studyInfo?.manufacturer).toBe('Philips Medical Systems');
+    });
   });
 });
