@@ -175,6 +175,92 @@ describe('Probe Tool:', () => {
     }
   });
 
+  it('Should read the probe value on a stack image other than the first one', function (done) {
+    const element = createViewports(renderingEngine, {
+      viewportType: ViewportType.STACK,
+      width: 512,
+      height: 128,
+      viewportId: viewportId,
+    });
+
+    const imageInfo = {
+      loader: 'fakeImageLoader',
+      name: 'imageURI',
+      rows: 64,
+      columns: 64,
+      barStart: 10,
+      barWidth: 5,
+      xSpacing: 1,
+      ySpacing: 1,
+    };
+
+    const imageId0 = encodeImageIdInfo({ ...imageInfo, sliceIndex: 0 });
+    const imageId1 = encodeImageIdInfo({ ...imageInfo, sliceIndex: 1 });
+    const vp = renderingEngine.getViewport(viewportId);
+
+    const addEventListenerForAnnotationRendered = () => {
+      element.addEventListener(csToolsEvents.ANNOTATION_RENDERED, () => {
+        const probeAnnotations = annotation.state.getAnnotations(
+          ProbeTool.toolName,
+          element
+        );
+        expect(probeAnnotations.length).toBe(1);
+
+        const probeAnnotation = probeAnnotations[0];
+        expect(probeAnnotation.metadata.referencedImageId).toBe(imageId1);
+
+        const data = probeAnnotation.data.cachedStats;
+        const targets = Array.from(Object.keys(data));
+        expect(targets.length).toBe(1);
+
+        // The world coordinate is on the white bar of the second image
+        expect(data[targets[0]].value).toBe(255);
+        // The displayed index still reports the stack position
+        expect(data[targets[0]].index[2]).toBe(1);
+
+        annotation.state.removeAnnotation(probeAnnotation.annotationUID);
+        done();
+      });
+    };
+
+    element.addEventListener(Events.IMAGE_RENDERED, () => {
+      const index1 = [11, 20, 0];
+
+      const { imageData } = vp.getImageData();
+
+      const {
+        pageX: pageX1,
+        pageY: pageY1,
+        clientX: clientX1,
+        clientY: clientY1,
+      } = createNormalizedMouseEvent(imageData, index1, element, vp);
+
+      const mouseDownEvt = new MouseEvent('mousedown', {
+        target: element,
+        buttons: 1,
+        pageX: pageX1,
+        pageY: pageY1,
+        clientX: clientX1,
+        clientY: clientY1,
+      });
+      const mouseUpEvt = new MouseEvent('mouseup');
+
+      performMouseDownAndUp(
+        element,
+        mouseDownEvt,
+        mouseUpEvt,
+        addEventListenerForAnnotationRendered
+      );
+    });
+
+    try {
+      vp.setStack([imageId0, imageId1], 1);
+      renderingEngine.render();
+    } catch (e) {
+      done.fail(e);
+    }
+  });
+
   it('Should successfully click to put two probe tools on a canvas - 256 x 256', function (done) {
     const element = createViewports(renderingEngine, {
       viewportType: ViewportType.STACK,
