@@ -3,6 +3,14 @@ export { checkForCanvasSnapshot } from './checkForCanvasSnapshot';
 export { expectAnnotationText } from './expectAnnotationText';
 export { screenShotPaths } from './screenShotPaths';
 export { simulateDrag } from './simulateDrag';
+export type { SimulateDragOptions } from './simulateDrag';
+export {
+  annotationLabelMatches,
+  viewportVoiChanged,
+  getAnnotationLabels,
+  REGISTERED_LENGTH_LABEL,
+} from './gestureVerifiers';
+export type { GestureVerifier } from './gestureVerifiers';
 export { simulateClicksOnElement } from './simulateClicksOnElement';
 export { simulateDrawPath } from './simulateDrawPath';
 export { reduceViewportsSize } from './reduceViewportsSize';
