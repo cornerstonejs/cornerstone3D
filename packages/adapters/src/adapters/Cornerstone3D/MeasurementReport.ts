@@ -103,7 +103,7 @@ type SetupMeasurementData = {
   ReferencedSOPInstanceUID?: string;
   referencedImageId?: string;
   textBoxPosition?: ScoordType;
-  ReferencedFrameNumber?: string;
+  ReferencedFrameNumber?: number | string;
   SCOORD3DGroup?: ScoordType;
   FrameOfReferenceUID?: string;
 };

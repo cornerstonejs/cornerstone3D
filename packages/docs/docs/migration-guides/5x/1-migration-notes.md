@@ -506,3 +506,59 @@ gives that map for one layer.
   that list does not cause a move.
 - If you export SEG from a multi-layer labelmap, set `labelToSegmentIndex` on
   each `labelmap3D` instead of a remap of the voxel values in your own code.
+
+## dcmjs 1.0 beta (`@dcmjs-org/dcmjs`)
+
+### What Changed
+
+`@cornerstonejs/adapters`, `@cornerstonejs/metadata`, `@cornerstonejs/utils` and
+`@cornerstonejs/ai` now depend on `@dcmjs-org/dcmjs` 1.0.0-beta.5 instead of
+`dcmjs` 0.52.0. The default export of the beta has the 0.52 names, but the
+naturalized datasets have new shapes (see the dcmjs `docs/MIGRATION.md`,
+section "Naturalization"):
+
+- A sequence with one item is the item object, not an array. The item has a
+  hidden `[0]` (the item), a `length` of 1 and an iterator. `Array.isArray`,
+  `map`, `forEach`, `filter` and `push` do not work on it.
+- The dictionary VM sets the shape of a value. A VM 1 value is a scalar (`null`
+  when it is empty). A VM 1-n value is a list, also for one value, for example
+  `ImageType`, `WindowCenter`, `ReferencedSegmentNumber` and
+  `ReferencedFrameNumber`.
+- A PN value is an object, for example `{ Alphabetic: 'Doe^John' }`.
+  `String(value)` gives `'Doe^John'`.
+
+These shapes reach your code through the adapters:
+
+- The segment items in `segMetadata.data` (from `getSegmentMetadata`) have the
+  new shapes when the adapter reads the Part 10 buffer itself
+  (`createLabelmapsFromDICOMBuffer`, `createFromDICOMSegBuffer`). When the SEG
+  comes from a metadata provider (`createFromDicomSegImageId`), the items have
+  the shapes of the code that naturalized the SEG.
+- `finding` and `findingSites[i]` of the SR `generateToolState` results come
+  from the dcmjs `addAccessors`. In 1.0 each one is the code item object, not a
+  Proxy array.
+- `DicomMetaDictionary.uid()` makes the UIDs of new SEG, SR and RTSTRUCT
+  instances, and the `annotationUID` of the annotations that the SR reader
+  makes, from a random UUID (`2.25.<integer>`). The integer has 39 digits or
+  fewer. In 0.52 it always had 39 digits.
+- The log root of Cornerstone is now the log root of `@dcmjs-org/dcmjs`.
+
+### Why This Matters
+
+- Code that tests `Array.isArray(finding)`, or that calls `map` or `forEach` on a
+  sequence with one item, now gets a different result or a `TypeError`.
+- A spread, `structuredClone` or `JSON.stringify` of an item object does not
+  keep the hidden `[0]` and `length`.
+- An application that also loads `dcmjs` 0.x has two copies of dcmjs. Each copy
+  has its own log root and its own `registerTag()` entries. The `log` of the
+  0.x copy does not control the Cornerstone loggers.
+
+### Migration Guidance
+
+- Read a code item as `item.CodeValue` or `item[0].CodeValue`. Both work with
+  0.52 and with 1.0.
+- Use `asArray` or `asArrayFirst` from `@cornerstonejs/utils` when a value can
+  be a scalar or a list.
+- Move the application to `@dcmjs-org/dcmjs` in the same release, so that one
+  copy of dcmjs sets the log levels and the shapes.
+- Do not rely on a fixed length of the generated UIDs.

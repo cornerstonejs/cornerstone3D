@@ -1,5 +1,6 @@
 import { data } from '@dcmjs-org/dcmjs';
-import { toArray } from '../helpers/toArray';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+import { toArray } from '../helpers';
 
 const { Colors, BitArray } = data;
 
@@ -180,8 +181,10 @@ export default class Segmentation {
     // make a list of functional groups per segment
     toArray(dataset.PerFrameFunctionalGroupsSequence).forEach(
       (functionalGroup) => {
-        const segmentNumber =
-          functionalGroup.SegmentIdentificationSequence.ReferencedSegmentNumber;
+        // VM 1-n: dcmjs 1.0 naturalizes it as a list, also for one value.
+        const segmentNumber = cornerstoneUtilities.asArrayFirst(
+          functionalGroup.SegmentIdentificationSequence.ReferencedSegmentNumber
+        );
 
         segments[segmentNumber].functionalGroups.push(functionalGroup);
       }

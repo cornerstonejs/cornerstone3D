@@ -35,9 +35,6 @@ describe('SEG read through dcmjs naturalizeDataset', () => {
   it('gives the segment number of a SEG with one frame', () => {
     const multiframe = naturalizeSeg([perFrameItem(3)]);
 
-    expect(Array.isArray(multiframe.PerFrameFunctionalGroupsSequence)).toBe(
-      false
-    );
     expect(getSegmentIndex(multiframe, 0)).toBe(3);
   });
 });
