@@ -159,6 +159,32 @@ function init(configuration = config): boolean {
         `CornerstoneRender: software rasterizer detected (${capabilities.renderer}), GPU rendering may be slow`
       );
     }
+
+    // Full probe snapshot: class/budget from the fill-rate test, plus hard
+    // WebGL limits and texture-format results used elsewhere at runtime.
+    log.info(
+      'CornerstoneRender: GPU capabilities ' +
+        JSON.stringify({
+          gpuClass: capabilities.gpuClass,
+          budgetFrac: capabilities.recommendedInteractiveBudgetFrac,
+          msPerMpx: capabilities.gpuPerfMsPerMpx,
+          webgl: capabilities.webgl,
+          webgl2: capabilities.webgl2,
+          maxTextureSize: capabilities.maxTextureSize,
+          max3DTextureSize: capabilities.max3DTextureSize,
+          maxArrayTextureLayers: capabilities.maxArrayTextureLayers,
+          maxRenderbufferSize: capabilities.maxRenderbufferSize,
+          maxViewportDims: capabilities.maxViewportDims,
+          renderer: capabilities.renderer,
+          softwareRasterizer: capabilities.softwareRasterizer,
+          norm16: capabilities.norm16,
+          norm16Linear: capabilities.norm16Linear,
+          float: capabilities.float,
+          floatLinear: capabilities.floatLinear,
+          halfFloat: capabilities.halfFloat,
+          halfFloatLinear: capabilities.halfFloatLinear,
+        })
+    );
   }
 
   csRenderInitialized = true;
