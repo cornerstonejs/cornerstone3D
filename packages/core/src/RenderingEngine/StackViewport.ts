@@ -17,6 +17,7 @@ import type {
   CPUFallbackEnabledElement,
   CPUIImageData,
   ColormapPublic,
+  DisplayArea,
   EventTypes,
   FlipDirection,
   ICamera,
@@ -2522,6 +2523,27 @@ class StackViewport extends Viewport {
       this._cpuFallbackEnabledElement.viewport
     );
 
+    const isNewViewport = this.stackInvalidated;
+
+    // setDisplayArea measures against the fit to canvas camera, so take it
+    // from a fresh fit of this image. The next image in the stack can have a
+    // different size or spacing than the last one. Fit with the stored aspect
+    // ratio, as resetCameraCPU does, so setDisplayArea keeps the stretch.
+    const fitAspectRatio = this.options?.aspectRatio || ([1, 1] as Point2);
+    const [stretchX, stretchY] = getNormalizedAspectRatio(fitAspectRatio);
+    this._cpuFallbackEnabledElement.viewport = {
+      ...viewport,
+      scale:
+        viewport.scale /
+        (this.getFitParallelScaleCPU(stretchX / stretchY) /
+          this.getFitParallelScaleCPU(1)),
+      aspectRatio: fitAspectRatio,
+    };
+    this._cpuFallbackEnabledElement.transform = calculateTransform(
+      this._cpuFallbackEnabledElement
+    );
+    this.setFitToCanvasCamera(this.getCameraCPU() as ICamera);
+
     // Important: this.stackInvalidated is different than cpuRenderingInvalidated. The
     // former is being used to maintain the previous state of the viewport
     // in the same stack, the latter is used to trigger drawImageSync
@@ -2538,6 +2560,10 @@ class StackViewport extends Viewport {
     this._cpuFallbackEnabledElement.transform = calculateTransform(
       this._cpuFallbackEnabledElement
     );
+
+    if (isNewViewport && this.options?.displayArea) {
+      this.setDisplayArea(this.options.displayArea);
+    }
   }
 
   public getSliceViewInfo(): {
@@ -2824,6 +2850,86 @@ class StackViewport extends Viewport {
     return imageId;
   }
 
+  /**
+   * The display area code works on the default image data. In CPU fallback
+   * mode there is no vtk actor, so hand back the CPU image data instead. It
+   * has the same dimensions, spacing and index to world helpers.
+   */
+  protected getDefaultImageData(): vtkImageDataType {
+    if (this.useCPURendering) {
+      return this.getImageDataCPU()?.imageData as unknown as vtkImageDataType;
+    }
+    return super.getDefaultImageData();
+  }
+
+  /**
+   * The base flip moves the vtk camera, which the CPU fallback does not use.
+   * On CPU flip the image itself. Callers only ask for a flip when the state
+   * has to change, and setViewPresentation passes false to clear a flip, so
+   * any defined value toggles.
+   */
+  protected flip({ flipHorizontal, flipVertical }: FlipDirection): void {
+    if (!this.useCPURendering) {
+      super.flip({ flipHorizontal, flipVertical });
+      return;
+    }
+
+    this.setFlipCPU({
+      flipHorizontal:
+        flipHorizontal !== undefined ? !this.flipHorizontal : undefined,
+      flipVertical: flipVertical !== undefined ? !this.flipVertical : undefined,
+    });
+    this.render();
+  }
+
+  /**
+   * The base pan math works in GPU pan units, which the CPU fallback does not
+   * share, so on CPU the zoom part runs as usual and the pan part is done
+   * here by moving the camera so the image point lands on the canvas point.
+   */
+  protected setDisplayAreaFit(
+    displayArea: DisplayArea,
+    baseCamera = this.fitToCanvasCamera
+  ): void {
+    if (!this.useCPURendering || !displayArea.imageCanvasPoint) {
+      super.setDisplayAreaFit(displayArea, baseCamera);
+      return;
+    }
+
+    const { imageCanvasPoint, ...zoomOnly } = displayArea;
+    super.setDisplayAreaFit(zoomOnly, baseCamera);
+    this.setDisplayAreaPanCPU(imageCanvasPoint);
+  }
+
+  private setDisplayAreaPanCPU(
+    imageCanvasPoint: DisplayArea['imageCanvasPoint']
+  ): void {
+    const imageData = this.getImageDataCPU();
+    if (!imageData) {
+      return;
+    }
+
+    const { imagePoint, canvasPoint = imagePoint || [0.5, 0.5] } =
+      imageCanvasPoint;
+    const [imageX, imageY] = imagePoint || canvasPoint;
+    const [canvasX, canvasY] = canvasPoint;
+    const [columns, rows] = imageData.dimensions;
+    const { clientWidth, clientHeight } = this.element;
+
+    const imagePointCanvas = this.worldToCanvasCPU(
+      imageData.imageData.indexToWorld([imageX * columns, imageY * rows, 0])
+    );
+    const deltaX = canvasX * clientWidth - imagePointCanvas[0];
+    const deltaY = canvasY * clientHeight - imagePointCanvas[1];
+
+    // Moving the focal point one way moves the image the other way
+    const focalPoint = this.canvasToWorldCPU([
+      clientWidth / 2 - deltaX,
+      clientHeight / 2 - deltaY,
+    ]);
+    this.setCameraCPU({ focalPoint });
+  }
+
   private resetCameraCPU({
     resetPan = true,
     resetZoom = true,
@@ -2869,6 +2975,23 @@ class StackViewport extends Viewport {
       scale,
       aspectRatio: targetAspectRatio,
     });
+
+    // setDisplayArea works relative to the fit to canvas camera, so keep it
+    // up to date here. A full reset gives a fitted camera. A zoom only reset
+    // (as setAspectRatioCPU does with fit) gives the fitted zoom and aspect
+    // ratio but keeps the user's pan, so take those and keep the baseline
+    // pan. A reset that leaves the zoom alone keeps the existing baseline.
+    const fittedCamera = this.getCameraCPU() as ICamera;
+    if ((resetPan && resetZoom) || !this.fitToCanvasCamera) {
+      this.setFitToCanvasCamera(fittedCamera);
+    } else if (resetZoom) {
+      this.setFitToCanvasCamera({
+        ...this.fitToCanvasCamera,
+        parallelScale: fittedCamera.parallelScale,
+        scale: fittedCamera.scale,
+        aspectRatio: fittedCamera.aspectRatio,
+      });
+    }
   }
 
   private resetCameraGPU(resetOptions: ResetCameraOptions): boolean {
@@ -3815,6 +3938,12 @@ class StackViewport extends Viewport {
         // `resetToCenter` and `storeAsInitialCamera` do not apply to the CPU
         // fallback, which always centres and keeps no initial camera.
         this.resetCameraCPU({ resetPan, resetZoom, resetAspectRatio });
+        // Same as the GPU reset, re-apply a stored display area after a
+        // full reset so it survives resizes and new images.
+        const { displayArea } = this.options;
+        if (displayArea && resetPan && resetZoom && this.getImageDataCPU()) {
+          this.setDisplayArea(displayArea);
+        }
         return true;
       },
       gpu: (options: ResetCameraOptions = {}): boolean => {
