@@ -14,4 +14,5 @@ export const tags: ModuleTagEntry[] = [
   'Modality',
   'SOPInstanceUID',
   'SOPClassUID',
+  'WaveformAnnotationSequence',
 ];

@@ -1,4 +1,5 @@
 import type { IDisplaySet } from '../displayset/IDisplaySet';
+import type { EcgWaveformAnnotation } from '../utilities/metadataProvider/ecgFromInstance';
 
 export interface DicomDateObject {
   year: number;
@@ -81,6 +82,7 @@ export interface EcgModuleMetadata {
   seriesTime?: string;
   seriesInstanceUID: string;
   studyInstanceUID: string;
+  waveformAnnotationSequence?: EcgWaveformAnnotation[];
 }
 
 export interface FrameMetadata extends SopCommonModuleMetadata {
