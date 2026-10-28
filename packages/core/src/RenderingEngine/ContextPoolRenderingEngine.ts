@@ -538,23 +538,43 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
       return;
     }
 
-    const maxSizeChanged = this.contextPool.updateViewportSize(
+    this.contextPool.updateViewportSize(
       viewport.id,
       viewport.sWidth,
       viewport.sHeight
     );
 
-    if (!maxSizeChanged) {
-      return;
-    }
+    // Compare against the canvas itself rather than relying on the pool's
+    // max size having just changed: the max size can also go down when a
+    // viewport is removed, and the canvas must follow it either way.
+    this._fitOffScreenCanvasToContext(
+      contextIndex,
+      offScreenCanvasContainer,
+      offscreenMultiRenderWindow
+    );
+  }
 
+  /**
+   * Sizes a context's shared offscreen canvas to the largest viewport still
+   * assigned to it. Each viewport renders into the bottom-left corner of that
+   * canvas and is copied out using the context's max size, so a canvas larger
+   * than the max size makes every viewport render into a region bigger than
+   * itself and only part of it reaches the screen (the image looks zoomed in).
+   */
+  private _fitOffScreenCanvasToContext(
+    contextIndex: number,
+    offScreenCanvasContainer: HTMLDivElement,
+    offscreenMultiRenderWindow: VtkOffscreenMultiRenderWindow
+  ): void {
     const maxSize = this.contextPool.getMaxSizeForContext(contextIndex);
 
     if (
+      !maxSize?.width ||
+      !maxSize?.height ||
       // @ts-expect-error
-      offScreenCanvasContainer.width === maxSize.width &&
-      // @ts-expect-error
-      offScreenCanvasContainer.height === maxSize.height
+      (offScreenCanvasContainer.width === maxSize.width &&
+        // @ts-expect-error
+        offScreenCanvasContainer.height === maxSize.height)
     ) {
       return;
     }
@@ -742,16 +762,26 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
       const contextIndex =
         this.contextPool.getContextIndexForViewport(viewportId);
 
-      if (contextIndex !== undefined) {
-        const contextData = this.contextPool.getContextByIndex(contextIndex);
+      const contextData =
+        contextIndex !== undefined
+          ? this.contextPool.getContextByIndex(contextIndex)
+          : null;
 
-        if (contextData) {
-          const { context: offscreenMultiRenderWindow } = contextData;
-          offscreenMultiRenderWindow.removeRenderer(viewportId);
-        }
+      if (contextData) {
+        contextData.context.removeRenderer(viewportId);
       }
 
       this.contextPool.removeViewport(viewportId);
+
+      // The removed viewport may have been the largest one on this context:
+      // shrink the shared offscreen canvas to the viewports that remain.
+      if (contextData) {
+        this._fitOffScreenCanvasToContext(
+          contextIndex,
+          contextData.container,
+          contextData.context
+        );
+      }
     }
   }
 
