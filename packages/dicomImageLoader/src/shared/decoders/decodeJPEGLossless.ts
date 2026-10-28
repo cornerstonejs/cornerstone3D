@@ -50,7 +50,7 @@ async function decodeJPEGLossless(
   imageFrame.planarConfiguration = 0;
 
   if (imageFrame.pixelRepresentation === 0) {
-    if (imageFrame.bitsAllocated === 16) {
+    if (imageFrame.bitsAllocated === 16 || imageFrame.bitsAllocated === 12) {
       imageFrame.pixelData = new Uint16Array(decompressedData.buffer);
 
       return imageFrame;
