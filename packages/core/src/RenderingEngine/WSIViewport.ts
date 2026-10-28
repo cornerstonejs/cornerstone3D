@@ -612,6 +612,16 @@ class WSIViewport extends Viewport {
       bindings: {},
     });
 
+    // Block interactions over the overview map from reaching tool handlers
+    // on the viewport element. getOverlayContainerStopEvent()
+    // returns OL's internal reference, available before render() is called.
+    const controlContainer = viewer.getMap().getOverlayContainerStopEvent();
+    ['pointerdown', 'mousedown', 'dblclick', 'wheel'].forEach((eventType) => {
+      controlContainer.addEventListener(eventType, (event) => {
+        event.stopPropagation();
+      });
+    });
+
     // Render viewer instance in the "viewport" HTML element
     viewer.render({ container: this.microscopyElement });
 
