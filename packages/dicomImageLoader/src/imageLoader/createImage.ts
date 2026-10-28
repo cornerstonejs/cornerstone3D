@@ -20,7 +20,6 @@ import removeAFromRGBA from './removeAFromRGBA';
 import isModalityLUTForDisplay from './isModalityLutForDisplay';
 import setPixelDataType from './setPixelDataType';
 import { fetchPaletteData } from './colorSpaceConverters/fetchPaletteData';
-import getVOILUTFunction from './getVOILUTFunction';
 
 const log = logging.loaderLog.getLogger('createImage');
 
@@ -416,9 +415,10 @@ async function createImage(
           windowWidth: voiLutModule.windowWidth
             ? voiLutModule.windowWidth[0]
             : undefined,
-          voiLUTFunction: getVOILUTFunction(
-            voiLutModule
-          ) as Enums.VOILUTFunctionType,
+          voiLUTFunction:
+            utilities.asArrayFirst(voiLutModule.voiLUTFunction) ||
+            voiLutModule.voiLutFunction ||
+            undefined,
           decodeTimeInMS: imageFrame.decodeTimeInMS,
           floatPixelData: undefined,
           imageFrame,
