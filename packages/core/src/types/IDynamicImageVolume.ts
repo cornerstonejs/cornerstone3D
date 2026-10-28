@@ -21,6 +21,13 @@ interface IDynamicImageVolume extends IImageVolume {
   get numDimensionGroups(): number;
 
   /**
+   * Returns the imageIds of the active dimension group only. The volume's
+   * `imageIds` span every dimension group, so anything resolving an imageId
+   * for what is currently on screen needs this subset instead.
+   */
+  getCurrentDimensionGroupImageIds(): string[];
+
+  /**
    * Scroll through dimension groups, handling wrapping at start/end
    * @param delta - The number of dimension groups to scroll by (positive or negative)
    */
