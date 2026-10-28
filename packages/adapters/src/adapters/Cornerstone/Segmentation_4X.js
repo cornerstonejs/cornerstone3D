@@ -481,7 +481,11 @@ export function _getLabelmapsFromReferencedFrameIndicies(
  * @param  {Boolean} isMultiframe Whether the images are multiframe.
  * @returns {Object}              The Seg derived dataSet.
  */
-export function _createSegFromImages(images, isMultiframe, options) {
+export function _createSegFromImages(
+  images,
+  isMultiframe,
+  options = { includeSliceSpacing: true }
+) {
   const multiframe = getDatasetsFromImages(images, isMultiframe);
 
   return new SegmentationDerivation([multiframe], {
