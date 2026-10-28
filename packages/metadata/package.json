@@ -6,7 +6,8 @@
   "types": "./dist/esm/index.d.ts",
   "repository": "https://github.com/cornerstonejs/cornerstone3D",
   "files": [
-    "./dist/"
+    "./dist/",
+    "./rules/"
   ],
   "sideEffects": false,
   "exports": {
@@ -61,13 +62,14 @@
       "import": "./dist/esm/version.js",
       "default": "./dist/esm/version.js"
     },
+    "./rules/*": "./rules/*",
     "./package.json": "./package.json"
   },
   "publishConfig": {
     "access": "public"
   },
   "scripts": {
-    "prebuild": "node ../../scripts/generate-version.js ./",
+    "prebuild": "node ../../scripts/generate-version.js ./ && node ./scripts/generate-optional-rules.js",
     "build:esm": "pnpm run prebuild && tsc --project ./tsconfig.json && tsc-alias -p ./tsconfig.json --resolve-full-paths && node ../../scripts/write-dist-esm-package-json.js ./",
     "build:esm:watch": "sh -c 'tsc-alias -p ./tsconfig.json --resolve-full-paths --watch & alias_pid=$!; node ../../scripts/write-dist-esm-package-json.js ./ --watch & writer_pid=$!; trap \"kill $alias_pid $writer_pid\" EXIT; tsc --project ./tsconfig.json --watch'",
     "clean": "rm -rf node_modules/.cache/storybook && shx rm -rf dist",

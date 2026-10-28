@@ -1,0 +1,42 @@
+{
+  "name": "Multi-echo MR — one display set for each echo time",
+  "notes": [
+    "A single-frame MR series that holds more than one EchoTime gives one",
+    "display set for each EchoTime, with the description",
+    "`<SeriesDescription> TE=<EchoTime>`. The slices of each display set are in",
+    "the order of their position along the normal of the image plane.",
+    "",
+    "`isMultiEcho` is a series value: the images of the series have two or more",
+    "echo times. A series with one echo time keeps the default display sets.",
+    "",
+    "Multi-frame instances (for example an Enhanced MR instance with more than",
+    "one echo) stay with the default `multiFrame` rule. A split of the frames of",
+    "one instance needs a change to the rule language.",
+    "",
+    "Priority -1: the rule runs before every default rule."
+  ],
+  "rules": {
+    "multiEchoByEchoTime": {
+      "priority": -1,
+      "description": "Single-frame MR with two or more echo times: one display set for each EchoTime.",
+      "context": {
+        "echoTime": "Number(EchoTime)",
+        "isMultiEcho": "series.instances.min(echoTime) < series.instances.max(echoTime)"
+      },
+      "matches": {
+        "Modality": "MR",
+        "isImage": true,
+        "isMultiFrame": false,
+        "isMultiEcho": true,
+        "echoTime": { "notNull": true }
+      },
+      "groupBy": ["SeriesInstanceUID", "echoTime"],
+      "sortBy": ["displaySet.sliceDistance", "InstanceNumber"],
+      "attributes": {
+        "SeriesDescription": {
+          "template": "{SeriesDescription} TE={EchoTime}"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "name": "CR, DX and MG — one stack for each series",
+  "notes": [
+    "The default `singleImageModality` rule gives each CR, DX or MG image its",
+    "own display set. This rule puts the single-frame images of one series into",
+    "one stack, in the order ImageLaterality, ViewPosition, InstanceNumber.",
+    "",
+    "The limit `singleImageSeriesMaxImages` (default 9) applies to CR and DX: a",
+    "larger series keeps one display set for each image. The limit does not",
+    "apply to MG. Change the limit with a context entry, for example",
+    "`{ \"singleImageSeriesMaxImages\": 20 }`.",
+    "",
+    "Do not use this rule when a hanging protocol needs one display set for",
+    "each mammography view.",
+    "",
+    "Priority -1: the rule runs before every default rule."
+  ],
+  "displaySetContext": {
+    "singleImageSeriesMaxImages": 9
+  },
+  "rules": {
+    "singleImageSeriesStack": {
+      "priority": -1,
+      "description": "CR / DX / MG single images: one stack for each series. CR and DX only up to singleImageSeriesMaxImages images.",
+      "context": {
+        "fitsSingleImageStack": "Modality == 'MG' || seriesInstanceCount <= singleImageSeriesMaxImages"
+      },
+      "matches": {
+        "Modality": ["CR", "DX", "MG"],
+        "isImage": true,
+        "isMultiFrame": false,
+        "fitsSingleImageStack": true
+      },
+      "groupBy": ["SeriesInstanceUID"],
+      "sortBy": ["ImageLaterality", "ViewPosition", "InstanceNumber"]
+    }
+  }
+}

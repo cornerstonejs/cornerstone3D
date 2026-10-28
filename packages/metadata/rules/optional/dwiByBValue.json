@@ -1,0 +1,42 @@
+{
+  "name": "Diffusion MR — one display set for each b-value",
+  "notes": [
+    "Without this rule, a DWI series is one display set, and the viewer can show",
+    "it as 4D, with one dimension group for each b-value. This rule puts each",
+    "b-value of the series into its own display set, with the description",
+    "`<SeriesDescription> b=<DiffusionBValue>`.",
+    "",
+    "`isDiffusion` is true when one instance of the series has a b-value above",
+    "0. Some scanners write DiffusionBValue = 0 into every MR series, so a",
+    "series of b=0 images only is not a diffusion series.",
+    "",
+    "The rule reads the standard DiffusionBValue (0018,9087) only. Images",
+    "without a b-value (for example a trace or ADC set) go to the default",
+    "`mixedDimensionalityBValue` rule, and form one more display set.",
+    "",
+    "Priority -1: the rule runs before every default rule."
+  ],
+  "rules": {
+    "dwiByBValue": {
+      "priority": -1,
+      "description": "Diffusion MR: one display set for each b-value.",
+      "context": {
+        "bValue": "Number(DiffusionBValue)",
+        "isDiffusion": "series.instances.max(bValue) > 0"
+      },
+      "matches": {
+        "Modality": "MR",
+        "isDiffusion": true,
+        "isImage": true,
+        "DiffusionBValue": { "notNull": true }
+      },
+      "groupBy": ["SeriesInstanceUID", "bValue"],
+      "sortBy": ["SliceLocation"],
+      "attributes": {
+        "SeriesDescription": {
+          "template": "{SeriesDescription} b={DiffusionBValue}"
+        }
+      }
+    }
+  }
+}

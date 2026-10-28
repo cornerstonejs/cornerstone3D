@@ -1,0 +1,50 @@
+{
+  "name": "SR and SEG — one display set for each version",
+  "notes": [
+    "A series of structured reports or segmentations can hold more than one",
+    "version of the object. The default rules make one display set for each",
+    "series.",
+    "",
+    "With these rules, each SR or SEG instance becomes its own display set. The",
+    "display sets are in the order of ContentDate and ContentTime, so the",
+    "newest version is last. `isLatestVersion` is true on the display set of",
+    "the newest version of the series.",
+    "",
+    "`contentStamp` is ContentDate and ContentTime as one number,",
+    "`YYYYMMDDhhmmss.ffffff`. `isLatestVersion` compares it with the maximum of",
+    "the series.",
+    "",
+    "Each rule keeps the handler of the default rule, so the host builds the",
+    "display set with its SR or SEG code.",
+    "",
+    "Priority -1: the rules run before every default rule."
+  ],
+  "displaySetContext": {
+    "contentStamp": "Number(ContentDate) * 1000000 + max(Number(ContentTime), 0)",
+    "isLatestVersion": "contentStamp == series.instances.max(contentStamp)"
+  },
+  "rules": {
+    "structuredReportVersions": {
+      "priority": -1,
+      "description": "Structured reports: one display set for each instance, in content date order, with isLatestVersion.",
+      "handler": "structuredReport",
+      "matches": { "isStructuredReport": true },
+      "groupBy": ["SeriesInstanceUID", "contentStamp", "SOPInstanceUID"],
+      "attributes": {
+        "Manufacturer": "Manufacturer",
+        "ManufacturerModelName": "ManufacturerModelName",
+        "isLatestVersion": "isLatestVersion"
+      }
+    },
+    "segmentationVersions": {
+      "priority": -1,
+      "description": "Segmentations: one display set for each instance, in content date order, with isLatestVersion.",
+      "handler": "segmentation",
+      "matches": { "isSegmentation": true },
+      "groupBy": ["SeriesInstanceUID", "contentStamp", "SOPInstanceUID"],
+      "attributes": {
+        "isLatestVersion": "isLatestVersion"
+      }
+    }
+  }
+}

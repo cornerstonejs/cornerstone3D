@@ -152,6 +152,23 @@ export type RawSplitRule = {
  */
 export type DisplaySetRules = Record<string, RawSplitRule>;
 
+/**
+ * One optional rule file of `rules/optional/<id>.json`, in the format of the
+ * `mammoViewSplit.json` example. The file id is the file name.
+ */
+export type OptionalDisplaySetRuleFile = {
+  /** A short title for a UI. */
+  name: string;
+  /** The explanation, one line for each element. */
+  notes?: string[];
+  /** The context entries that the host must register as code. */
+  requires?: { context?: string[] };
+  /** Global context entries that the rules read, over the default context. */
+  displaySetContext?: Record<string, ContextEntry>;
+  /** The rules, keyed by rule id. */
+  rules: DisplaySetRules;
+};
+
 /** Options for {@link createDisplaySetSplitRules}. */
 export type CreateDisplaySetSplitRulesOptions = {
   /**
