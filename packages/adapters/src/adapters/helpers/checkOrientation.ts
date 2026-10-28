@@ -11,17 +11,23 @@ export default function checkOrientation(
     multiframe;
 
   const sharedImageOrientationPatient =
-    SharedFunctionalGroupsSequence.PlaneOrientationSequence
-      ? SharedFunctionalGroupsSequence.PlaneOrientationSequence
-          .ImageOrientationPatient
-      : undefined;
+    SharedFunctionalGroupsSequence?.PlaneOrientationSequence
+      ?.ImageOrientationPatient;
 
   // Check if in plane.
   const PerFrameFunctionalGroups = PerFrameFunctionalGroupsSequence[0];
 
   const iopRaw =
     sharedImageOrientationPatient ||
-    PerFrameFunctionalGroups.PlaneOrientationSequence.ImageOrientationPatient;
+    PerFrameFunctionalGroups?.PlaneOrientationSequence?.ImageOrientationPatient;
+
+  // A SEG of images that have no Frame of Reference (2D ultrasound, endoscopy,
+  // photographs) carries no plane orientation. Each of its pixels corresponds
+  // to a pixel of the image referenced by its Derivation Image Functional
+  // Group (PS3.3 A.51.5), so it is in-plane with its source by definition.
+  if (!iopRaw) {
+    return 'Planar';
+  }
 
   // ImageOrientationPatient can arrive as DICOM DS strings (e.g. from DICOMweb
   // JSON metadata) while validOrientations are numeric source cosines. isEqual
