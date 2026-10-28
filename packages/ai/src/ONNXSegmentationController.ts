@@ -430,6 +430,10 @@ export default class ONNXSegmentationController {
    *     create a new preview instance.
    */
   public initViewport(viewport) {
+    if (!this.viewport) {
+      // Catch prompts added before annotation listeners were attached.
+      this.annotationsNeedUpdating = true;
+    }
     this.viewportGeneration++;
     const { desiredImage } = this;
     if (this.viewport) {
