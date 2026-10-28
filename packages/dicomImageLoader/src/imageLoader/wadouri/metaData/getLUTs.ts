@@ -5,7 +5,8 @@ function getLUT(pixelRepresentation: number, lutDataSet: DataSet): LutType {
   let numLUTEntries = lutDataSet.uint16('x00283002', 0);
 
   if (numLUTEntries === 0) {
-    numLUTEntries = 65535;
+    // DICOM PS3.3 C.11.1.1.1
+    numLUTEntries = 65536;
   }
   let firstValueMapped = 0;
 
