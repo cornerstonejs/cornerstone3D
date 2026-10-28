@@ -163,6 +163,18 @@ URL customization modules), and the `context` of each rule.
 - Complex split logic is a new series function in code; the context then gives
   names to its result fields.
 
+## Priorities and optional rules
+
+- The default rules use the priorities `10` to `160`, in steps of 10, and
+  `unsupported` is last. A site or optional rule uses a priority below `0`, or a
+  number between two defaults that is not a multiple of 10 (for example `79`
+  runs just before `volume3d` at `80`). A new default takes a multiple of 10.
+- Before you write a rule, check `packages/metadata/rules/optional/`. Each JSON
+  file there is an optional rule set (`name`, `notes`, `requires`,
+  `displaySetContext`, `rules`). A host turns files on with
+  `withOptionalDisplaySetRules(ids)`. After a change to a file, run
+  `node packages/metadata/scripts/generate-optional-rules.js`.
+
 ## Checklist for a new rule
 
 1. Prefer the existing context names. Add a context entry for each new value,

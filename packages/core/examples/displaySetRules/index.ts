@@ -11,6 +11,7 @@ import {
   createDisplaySetSplitRules,
   Enums as metadataEnums,
   displaySetRules,
+  optionalDisplaySetRules,
   type IDisplaySet,
   type NaturalizedInstance,
   type DisplaySetRules,
@@ -199,12 +200,21 @@ const DEMO_CONTEXT = {
       ? `${String(viewCode.CodingSchemeDesignator)}:${String(viewCode.CodeValue)}`
       : undefined;
   },
+
+  // The global entries of the optional rule files, so that each optional
+  // rule below compiles when it is pasted.
+  ...Object.assign(
+    {},
+    ...Object.values(optionalDisplaySetRules).map(
+      (file) => file.displaySetContext ?? {}
+    )
+  ),
 };
 
 const SAMPLE_SNIPPETS: Record<string, string> = {
-  'A single new rule (localizers first)': JSON.stringify(
+  'A single new rule (localizers by description)': JSON.stringify(
     {
-      localizer: {
+      localizerByDescription: {
         priority: -1,
         description:
           'Split scout / localizer images off into their own stack so they do ' +
@@ -347,6 +357,15 @@ const SAMPLE_SNIPPETS: Record<string, string> = {
     2
   ),
 };
+
+// The optional rules of @cornerstonejs/metadata (rules/optional/*.json).
+for (const [id, file] of Object.entries(optionalDisplaySetRules)) {
+  SAMPLE_SNIPPETS[`Optional rule: ${id} (${file.name})`] = JSON.stringify(
+    file.rules,
+    null,
+    2
+  );
+}
 
 // ======== State ======== //
 
