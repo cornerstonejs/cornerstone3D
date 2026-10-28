@@ -2,6 +2,7 @@ import { utilities } from 'dcmjs';
 import MeasurementReport from './MeasurementReport';
 import BaseAdapter3D from './BaseAdapter3D';
 import { toScoord } from '../helpers';
+import { resolveUnit } from './metricHandler';
 
 const { Length: TID300Length } = utilities.TID300;
 
@@ -15,6 +16,10 @@ export default class Length extends BaseAdapter3D {
   }
 
   // TODO: this function is required for all Cornerstone Tool Adapters, since it is called by MeasurementReport.
+  /**
+   * Restores a Length annotation from a TID 1500 measurement group, including
+   * the length and the unit it was measured in.
+   */
   static getMeasurementData(
     MeasurementGroup,
     sopInstanceUIDToImageIdMap,
@@ -37,8 +42,11 @@ export default class Length extends BaseAdapter3D {
       ? {
           [`imageId:${referencedImageId}`]: {
             length: NUMGroup ? NUMGroup.MeasuredValueSequence.NumericValue : 0,
-            unit: NUMGroup.MeasuredValueSequence.MeasurementUnitsCodeSequence
-              .CodeValue,
+            // dcmjs writes px as the UCUM unity code "1" with CodeMeaning "px"
+            unit: resolveUnit(
+              'Length',
+              NUMGroup.MeasuredValueSequence.MeasurementUnitsCodeSequence
+            ),
           },
         }
       : {};
@@ -56,6 +64,10 @@ export default class Length extends BaseAdapter3D {
     return state;
   }
 
+  /**
+   * Builds the TID300 Length arguments from the annotation: the two points,
+   * the length and its unit from the cached stats.
+   */
   static getTID300RepresentationArguments(tool, is3DMeasurement = false) {
     const { data, finding, findingSites, metadata } = tool;
     const { cachedStats = {}, handles } = data;
@@ -70,12 +82,17 @@ export default class Length extends BaseAdapter3D {
     const point1 = toScoord(scoordProps, handles.points[0]);
     const point2 = toScoord(scoordProps, handles.points[1]);
 
-    const { length: distance } = super.getCachedStats(cachedStats, metadata);
+    const { length: distance, unit } = super.getCachedStats(
+      cachedStats,
+      metadata
+    );
 
     return {
       point1,
       point2,
       distance,
+      // Without a unit dcmjs writes "mm", whatever the length was measured in
+      unit,
       trackingIdentifierTextValue: this.trackingIdentifierTextValue,
       finding,
       findingSites: findingSites || [],
