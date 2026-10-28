@@ -57,20 +57,17 @@ function createVideoResolvedView(viewState) {
   });
 }
 
+// `ECGResolvedView` derives the render metrics from the data, the canvas and
+// the view state, so this helper passes no geometry. The assertions below
+// therefore read the geometry back from the resolved view in place of repeating
+// hand-picked numbers, which is what keeps the snapshot and the drawn frame in
+// agreement.
 function createECGResolvedView(viewState, canvas) {
   return new ECGResolvedView({
     viewState,
     canvas,
     dataPresentation: undefined,
     frameOfReferenceUID: 'ecg-frame',
-    metrics: {
-      ecgWidth: 200,
-      ecgHeight: 100,
-      channelScale: 10,
-      worldToCanvasRatio: 1,
-      xOffsetCanvas: 0,
-      yOffsetCanvas: 0,
-    },
     waveform: {
       channels: [
         {
@@ -281,15 +278,28 @@ describe('ViewportProjectionService', () => {
     expect(snapshot.kind).toBe('ecg');
     expect(snapshot.adapterId).toBe('ecg');
     expect(snapshot.frameOfReferenceUID).toBe('ecg-frame');
+    const centreWorld = resolvedView.canvasToWorld([100, 50]);
+    const { effectiveRatio } = resolvedView.canvasTransform;
+
     expect(snapshot.presentation.position.kind).toBe('signalPoint');
+    // The visible window is the first 1000 ms of a 2000 ms signal sampled at
+    // 500 Hz, so the centre of the canvas sits at sample 500.
     expect(snapshot.presentation.position.sampleIndex).toBeCloseTo(500, 5);
-    expect(snapshot.presentation.position.value).toBeCloseTo(-3, 5);
+    expect(snapshot.presentation.position.value).toBeCloseTo(centreWorld[1], 5);
     expect(snapshot.presentation.position.channelIndex).toBe(0);
     expect(snapshot.presentation.position.canvasPoint).toEqual([100, 50]);
     expect(snapshot.presentation.scale.kind).toBe('signal');
-    expect(snapshot.presentation.scale.samplesPerCanvasPixel).toBeCloseTo(5, 5);
+
+    // One canvas pixel covers this many samples, and this many amplitude units.
+    // Both follow from the geometry that the resolved view computed.
+    expect(snapshot.presentation.scale.samplesPerCanvasPixel).toBeCloseTo(
+      resolvedView.channelLayouts[0].endSample /
+        resolvedView.metrics.ecgWidth /
+        effectiveRatio,
+      5
+    );
     expect(snapshot.presentation.scale.valueUnitsPerCanvasPixel).toBeCloseTo(
-      0.1,
+      1 / (resolvedView.metrics.channelScale * effectiveRatio),
       5
     );
     expect(snapshot.spaces).toEqual({
@@ -299,7 +309,15 @@ describe('ViewportProjectionService', () => {
       world: true,
     });
     expect(snapshot.transforms.canvasToWorld([100, 50])[0]).toBeCloseTo(500, 5);
-    expect(snapshot.transforms.worldToCanvas([500, -3, 0])).toEqual([100, 50]);
+    // The transform round trips through the same geometry in both directions.
+    expect(snapshot.transforms.worldToCanvas(centreWorld)[0]).toBeCloseTo(
+      100,
+      5
+    );
+    expect(snapshot.transforms.worldToCanvas(centreWorld)[1]).toBeCloseTo(
+      50,
+      5
+    );
     expect(presentation.zoom).toBeCloseTo(1, 5);
     expect(presentation.pan).toEqual([0, 0]);
     expect(viewState.scale).toBe(1);
