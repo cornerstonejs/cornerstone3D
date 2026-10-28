@@ -1,5 +1,5 @@
 import { BaseDisplaySet, type BaseDisplaySetOptions } from './BaseDisplaySet';
-import type { NaturalizedInstance, ViewportTypeHint } from './types';
+import type { NaturalizedInstance } from './types';
 
 export type ImageStackDisplaySetOptions = Omit<
   BaseDisplaySetOptions,
@@ -65,7 +65,6 @@ export class ImageStackDisplaySet extends BaseDisplaySet {
     instances: NaturalizedInstance[],
     options?: {
       displaySetId?: string;
-      viewportTypes?: readonly ViewportTypeHint[];
       imageIds?: Iterable<string>;
     }
   ): ImageStackDisplaySet {
@@ -76,7 +75,6 @@ export class ImageStackDisplaySet extends BaseDisplaySet {
 
     return new ImageStackDisplaySet({
       displaySetId,
-      viewportTypes: options?.viewportTypes ?? ['stack', 'volume', 'volume3d'],
       instances,
       imageIds: options?.imageIds,
     });
@@ -89,7 +87,6 @@ export class ImageStackDisplaySet extends BaseDisplaySet {
     ) => NaturalizedInstance | undefined,
     options?: {
       displaySetId?: string;
-      viewportTypes?: readonly ViewportTypeHint[];
     }
   ): ImageStackDisplaySet {
     const instances = imageIds

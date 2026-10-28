@@ -132,9 +132,7 @@ async function run() {
   // This example only supports video series, so bail clearly if the series did
   // not contain a video display set.
   if (!displaySet) {
-    const resolved = displaySets
-      .map((ds) => ds.preferredViewportType)
-      .join(', ');
+    const resolved = displaySets.map((ds) => ds.handler ?? 'image').join(', ');
     throw new Error(
       `No video display set found in series (resolved types: ${resolved}). ` +
         'This example only supports video series.'
