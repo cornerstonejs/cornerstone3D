@@ -18,6 +18,8 @@ import {
 import type { LoadedData } from '../ViewportArchitectureTypes';
 import type { PlanarRendering } from './planarRuntimeTypes';
 import { getVolumeImageIdIndexWorldPoint } from './planarSliceBasis';
+import { acquiredFrameIndexOfVolumePoint } from './planarAcquiredFrames';
+import cache from '../../../cache/cache';
 import {
   getPlanarReferencedImageId,
   getPlanarViewReference,
@@ -415,12 +417,57 @@ class PlanarViewReferenceController {
       return true;
     }
 
+    const acquiredFrameIndex = this.findAcquiredFrameIndexOfVolumeReference(
+      referenceContext,
+      viewRef,
+      imageIds
+    );
+
+    if (typeof acquiredFrameIndex === 'number') {
+      this.host.setImageIdIndex(acquiredFrameIndex);
+      return true;
+    }
+
     if (typeof viewRef.sliceIndex === 'number') {
       this.host.setImageIdIndex(viewRef.sliceIndex);
       return true;
     }
 
     return false;
+  }
+
+  /**
+   * The acquired frame that a reference to a volume points at, when the image
+   * path draws the acquired frames of that same volume. The `sliceIndex` of a
+   * volume reference counts in camera order, so the focal point decides.
+   */
+  private findAcquiredFrameIndexOfVolumeReference(
+    referenceContext: PlanarReferenceContext,
+    viewRef: ViewReference,
+    imageIds: string[]
+  ): number | undefined {
+    const { volumeId } = referenceContext.data;
+
+    if (
+      !viewRef.cameraFocalPoint ||
+      !volumeId ||
+      viewRef.volumeId !== volumeId
+    ) {
+      return;
+    }
+
+    const imageVolume = cache.getVolume(volumeId);
+
+    if (!imageVolume) {
+      return;
+    }
+
+    return acquiredFrameIndexOfVolumePoint(
+      imageVolume,
+      imageIds,
+      viewRef.cameraFocalPoint,
+      viewRef.viewPlaneNormal
+    );
   }
 
   private applyVolumeViewReference(

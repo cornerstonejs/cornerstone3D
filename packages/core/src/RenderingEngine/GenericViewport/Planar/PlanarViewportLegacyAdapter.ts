@@ -35,6 +35,11 @@ class PlanarViewportLegacyAdapter extends PlanarViewport {
       this.createLegacyCompatibilityHost()
     );
 
+  /** The legacy volume API navigates by camera, so the volume path stays. */
+  protected override prefersAcquiredFrames(): boolean {
+    return false;
+  }
+
   private cloneTuple<T extends ArrayLike<number> | undefined>(
     tuple: T
   ): T extends undefined ? undefined : [number, number, number] {

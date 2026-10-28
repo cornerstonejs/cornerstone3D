@@ -260,6 +260,27 @@ function bytesPerVoxelOf(volume: IImageVolume): number {
 }
 
 /**
+ * The reduction factors of the full-extent texture of a volume under a profile.
+ *
+ * The default provider builds the full-resolution strategy when every factor
+ * is 1, and the reduced strategy with these factors otherwise. A caller that
+ * must know whether a volume draws reduced, before any texture exists, reads
+ * the same answer here.
+ *
+ * @param volume - the volume to draw
+ * @param profile - the capability profile that applies
+ * @returns the box size on each axis of the voxel grid
+ */
+export function volumeTextureReductionFactors(
+  volume: IImageVolume,
+  profile: GpuCapabilityProfile
+): Point3 {
+  const limits = gridLimitsOfProfile(profile, bytesPerVoxelOf(volume));
+
+  return boxAverageReductionFactors(volume.voxelGrid.dimensions, limits);
+}
+
+/**
  * The name of the set that holds a reduction by these factors.
  *
  * The name derives from the strategy, so a second viewport that chooses the
@@ -283,8 +304,7 @@ export function provisionFullResolutionStrategy({
   profile,
 }: VolumeStrategyProvisionContext): IVolumeRenderStrategy | undefined {
   const grid = volume.voxelGrid;
-  const limits = gridLimitsOfProfile(profile, bytesPerVoxelOf(volume));
-  const factors = boxAverageReductionFactors(grid.dimensions, limits);
+  const factors = volumeTextureReductionFactors(volume, profile);
 
   if (factors.some((factor) => factor > 1)) {
     return undefined;
@@ -324,11 +344,7 @@ export function provisionReducedResolutionStrategy({
   profile,
 }: VolumeStrategyProvisionContext): IVolumeRenderStrategy | undefined {
   const fullResolutionGrid = volume.voxelGrid;
-  const limits = gridLimitsOfProfile(profile, bytesPerVoxelOf(volume));
-  const factors = boxAverageReductionFactors(
-    fullResolutionGrid.dimensions,
-    limits
-  );
+  const factors = volumeTextureReductionFactors(volume, profile);
 
   if (!factors.some((factor) => factor > 1)) {
     return undefined;
