@@ -4,7 +4,56 @@ import {
   getReferencedSourceImageSequenceItem,
   applyPerFrameFunctionalGroups,
   normalizeSharedFunctionalGroupsSequence,
+  setPlaneOrientations,
 } from '../src/adapters/Cornerstone3D/Segmentation/perFrameFunctionalGroups';
+
+const AXIAL = [1, 0, 0, 0, 1, 0];
+const TILTED = [1, 0, 0, 0, 0.8, 0.6];
+const orientationOf = (sequence) => sequence?.ImageOrientationPatient;
+
+describe('setPlaneOrientations', () => {
+  it('moves one orientation to the shared group and removes the per-frame copies', () => {
+    // dcmjs copies a per-frame orientation from a multiframe source.
+    const dataset = {
+      SharedFunctionalGroupsSequence: {},
+      PerFrameFunctionalGroupsSequence: [
+        { PlaneOrientationSequence: { ImageOrientationPatient: TILTED } },
+        { PlaneOrientationSequence: { ImageOrientationPatient: TILTED } },
+      ],
+    };
+
+    setPlaneOrientations(dataset, [AXIAL, AXIAL]);
+
+    expect(
+      orientationOf(
+        dataset.SharedFunctionalGroupsSequence.PlaneOrientationSequence
+      )
+    ).toEqual(AXIAL);
+    dataset.PerFrameFunctionalGroupsSequence.forEach((group) =>
+      expect(group.PlaneOrientationSequence).toBeUndefined()
+    );
+  });
+
+  it('keeps the known orientations per frame when one frame has none', () => {
+    const dataset = {
+      SharedFunctionalGroupsSequence: {
+        PlaneOrientationSequence: { ImageOrientationPatient: AXIAL },
+      },
+      PerFrameFunctionalGroupsSequence: [{}, {}, {}],
+    };
+
+    setPlaneOrientations(dataset, [AXIAL, undefined, TILTED]);
+
+    expect(
+      dataset.SharedFunctionalGroupsSequence.PlaneOrientationSequence
+    ).toBeUndefined();
+    expect(
+      dataset.PerFrameFunctionalGroupsSequence.map((group) =>
+        orientationOf(group.PlaneOrientationSequence)
+      )
+    ).toEqual([AXIAL, AXIAL, TILTED]);
+  });
+});
 
 // Metadata stub whose getFrameInformationFromURL understands every imageId shape
 // the host produces (wadors /frames/N as well as ?frame=N / &frame=N), so the

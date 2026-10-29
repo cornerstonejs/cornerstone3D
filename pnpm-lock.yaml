@@ -233,7 +233,7 @@ overrides:
   mdast-util-to-hast: 13.2.1
   '@remix-run/router': 1.23.2
   '@types/minimatch': 3.0.5
-  shell-quote: 1.10.0
+  shell-quote: 1.12.0
   minimatch@<3.1.4: 3.1.5
   minimatch@>=10.0.0 <10.2.3: 10.2.5
   form-data: 4.0.6
@@ -253,6 +253,10 @@ overrides:
   image-size@>=0.6.3 <2.0.4: 2.0.4
   webpack-dev-middleware@>=8.0.0 <8.3.0: 8.3.0
   webpack-dev-middleware@<7.4.5: 7.4.6
+  compression@<1.8.2: 1.8.2
+  proxy-addr@>=1.1.0 <2.0.8: 2.0.8
+  source-map-js@>=1.0.0 <1.2.2: 1.2.2
+  http-cache-semantics@<4.3.0: 4.3.0
   '@cornerstonejs/codec-charls': 1.2.7
   '@cornerstonejs/codec-libjpeg-turbo-8bit': 1.2.7
   '@cornerstonejs/codec-openjpeg': 1.3.6
@@ -450,6 +454,9 @@ importers:
       husky:
         specifier: 9.1.7
         version: 9.1.7
+      immutability-helper:
+        specifier: 3.1.1
+        version: 3.1.1
       jasmine:
         specifier: 6.0.0
         version: 6.0.0
@@ -620,13 +627,13 @@ importers:
         version: 1.0.19
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.11.4
+        specifier: 5.14.0
         version: link:../core
       '@cornerstonejs/metadata':
-        specifier: 5.11.4
+        specifier: 5.14.0
         version: link:../metadata
       '@cornerstonejs/tools':
-        specifier: 5.11.4
+        specifier: 5.14.0
         version: link:../tools
 
   packages/ai:
@@ -657,10 +664,10 @@ importers:
         version: 1.17.1
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.11.4
+        specifier: 5.14.0
         version: link:../core
       '@cornerstonejs/tools':
-        specifier: 5.11.4
+        specifier: 5.14.0
         version: link:../tools
 
   packages/codemods: {}
@@ -668,7 +675,7 @@ importers:
   packages/core:
     dependencies:
       '@cornerstonejs/utils':
-        specifier: 5.11.4
+        specifier: 5.14.0
         version: link:../utils
       '@kitware/vtk.js':
         specifier: 36.4.1
@@ -684,7 +691,7 @@ importers:
         version: 1.9.2
     devDependencies:
       '@cornerstonejs/metadata':
-        specifier: 5.11.4
+        specifier: 5.14.0
         version: link:../metadata
 
   packages/dicomImageLoader:
@@ -721,10 +728,10 @@ importers:
         version: 9.0.1
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.11.4
+        specifier: 5.14.0
         version: link:../core
       '@cornerstonejs/metadata':
-        specifier: 5.11.4
+        specifier: 5.14.0
         version: link:../metadata
       '@cornerstonejs/utils':
         specifier: 5.11.4
@@ -825,10 +832,10 @@ importers:
         version: 1.0.0-b.165(debug@4.4.3(supports-color@8.1.1))(supports-color@8.1.1)
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.11.4
+        specifier: 5.14.0
         version: link:../core
       '@cornerstonejs/tools':
-        specifier: 5.11.4
+        specifier: 5.14.0
         version: link:../tools
 
   packages/metadata:
@@ -837,7 +844,7 @@ importers:
         specifier: 1.0.3
         version: 1.0.3
       '@cornerstonejs/utils':
-        specifier: 5.11.4
+        specifier: 5.14.0
         version: link:../utils
       dcmjs:
         specifier: 0.52.0
@@ -853,7 +860,7 @@ importers:
         version: 0.6.9
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.11.4
+        specifier: 5.14.0
         version: link:../core
 
   packages/polymorphic-segmentation:
@@ -866,10 +873,10 @@ importers:
         version: 36.4.1(autoprefixer@10.4.21(postcss@8.5.26))(wslink@2.5.0)
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.11.4
+        specifier: 5.14.0
         version: link:../core
       '@cornerstonejs/tools':
-        specifier: 5.11.4
+        specifier: 5.14.0
         version: link:../tools
 
   packages/tools:
@@ -906,7 +913,7 @@ importers:
         version: 4.4.2
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.11.4
+        specifier: 5.14.0
         version: link:../core
       canvas:
         specifier: 3.2.0
@@ -7610,10 +7617,10 @@ packages:
       }
     engines: { node: '>= 0.6' }
 
-  compression@1.8.1:
+  compression@1.8.2:
     resolution:
       {
-        integrity: sha512-9mAqGPHLakhCLeNyxPkK4xVo746zQ/czLH1Ky+vkitMnWfWZps8r0qXuwhwizagCRttsL4lfG4pIOvaWLpAP0w==,
+        integrity: sha512-o8vI5RE5A6EVVOd9o41jKp41aJom+QTEO/Bx8MYNjexMo/Bv2WOjUfZr+aL0WnYSgymUy6zeguqLTsIhV0gMvQ==,
       }
     engines: { node: '>= 0.8.0' }
 
@@ -10339,10 +10346,10 @@ packages:
         integrity: sha512-GYdjWKDkbRLkZ5geuHs5NY1puJ+PXwP7+fHPRz06Eirsb9ugf6d8kkXav6ADhcODhFFPMIXyxkxSuMf3D6NCFA==,
       }
 
-  http-cache-semantics@4.2.0:
+  http-cache-semantics@4.3.0:
     resolution:
       {
-        integrity: sha512-dTxcvPXqPvXBQpq5dUr6mEMJX4oIEFv6bwom3FDwKRDsuIjjJGANqhBuoAn9c1RQJIdAKav33ED65E2ys+87QQ==,
+        integrity: sha512-M5t5LlJpS1UHMjvwRQVdFHvPISGeLAxNcrWuJkeGh0KxsqCHZ1O3NXZU/8x7cD0BDcGW8kapxMKTvwlqrNkHkA==,
       }
 
   http-deceiver@1.2.7:
@@ -10509,6 +10516,12 @@ packages:
     resolution:
       {
         integrity: sha512-bc4NBHqOqSfRW7POMkHd51LvClaeMXpm8dx0e8oE2GORbq5aRK7Bxl4FyzVLdGtLmvLKL7BTDBG5ACQm4HWjTA==,
+      }
+
+  immutability-helper@3.1.1:
+    resolution:
+      {
+        integrity: sha512-Q0QaXjPjwIju/28TsugCHNEASwoCcJSyJV3uO1sOIQGI0jKgm9f41Lvz0DZj3n46cNCyAZTsEYoY4C2bVRUzyQ==,
       }
 
   import-fresh@3.3.1:
@@ -14829,10 +14842,10 @@ packages:
         integrity: sha512-/Kde+sB9DsMFrddJT/UZWe6XqvL7SL5dbag/DBCElFKhkwDj7XKt53S+mzLyaDP5OqS0wXjV5SA572uWDaT0Hg==,
       }
 
-  proxy-addr@2.0.7:
+  proxy-addr@2.0.8:
     resolution:
       {
-        integrity: sha512-llQsMLSUDUPT44jdrU/O37qlnifitDP+ZwrmmZcoSKyLKvtZxpyV0n2/bD/N4tBAAZ/gJEdZU7KMraoK1+XYAg==,
+        integrity: sha512-5nnx0yGyVUcY6t9RnWcARWtwT9F1D8O9rt08htPvnd49W1IgZtmLkhu9WfMzQj1cFxjHIO6connUNVW5k7AVyQ==,
       }
     engines: { node: '>= 0.10' }
 
@@ -15877,10 +15890,10 @@ packages:
       }
     engines: { node: '>=8' }
 
-  shell-quote@1.10.0:
+  shell-quote@1.12.0:
     resolution:
       {
-        integrity: sha512-w1aiOKwKuRgtwAReIIj89puqg+I7GvX4IbLrvmhXbzQsj1+Zwi4VO3+fa6ZF91TWSjIxoEkKnMeHcLEODK5ZXA==,
+        integrity: sha512-PcByqNyT/38F2kDNi006HAMRJaULuBzq/FOsw3qdZvX/GA9W/jamDaRskgHjubHiftXK5sIFxLNkvrXUwcof6Q==,
       }
     engines: { node: '>= 0.4' }
 
@@ -16085,10 +16098,10 @@ packages:
         integrity: sha512-qnQ7gVMxGNxsiL4lEuJwe/To8UnK7fAnmbGEEH8RpLouuKbeEm0lhbQVFIrNSuB+G7tVrAlVsZgETT5nljf+Iw==,
       }
 
-  source-map-js@1.2.1:
+  source-map-js@1.2.2:
     resolution:
       {
-        integrity: sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA==,
+        integrity: sha512-KGj/8Y43x35aZVDtt+J4mK1hoLGHULMYfSkODJNQjNDC3oW1PqPoxMwo0pLUsWM/UEGzON/NxeHywEfNXNP3Vw==,
       }
     engines: { node: '>=0.10.0' }
 
@@ -23748,7 +23761,7 @@ snapshots:
     dependencies:
       '@types/http-cache-semantics': 4.2.0
       get-stream: 6.0.1
-      http-cache-semantics: 4.2.0
+      http-cache-semantics: 4.3.0
       keyv: 4.5.4
       mimic-response: 4.0.0
       normalize-url: 8.1.1
@@ -24036,11 +24049,12 @@ snapshots:
     dependencies:
       mime-db: 1.54.0
 
-  compression@1.8.1(supports-color@7.2.0):
+  compression@1.8.2(supports-color@7.2.0):
     dependencies:
       bytes: 3.1.2
       compressible: 2.0.18
       debug: 2.6.9(supports-color@7.2.0)
+      destroy: 1.2.0
       negotiator: 0.6.4
       on-headers: 1.1.0
       safe-buffer: 5.2.1
@@ -24048,11 +24062,12 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  compression@1.8.1(supports-color@8.1.1):
+  compression@1.8.2(supports-color@8.1.1):
     dependencies:
       bytes: 3.1.2
       compressible: 2.0.18
       debug: 2.6.9(supports-color@8.1.1)
+      destroy: 1.2.0
       negotiator: 0.6.4
       on-headers: 1.1.0
       safe-buffer: 5.2.1
@@ -24278,12 +24293,12 @@ snapshots:
   css-tree@2.2.1:
     dependencies:
       mdn-data: 2.0.28
-      source-map-js: 1.2.1
+      source-map-js: 1.2.2
 
   css-tree@2.3.1:
     dependencies:
       mdn-data: 2.0.30
-      source-map-js: 1.2.1
+      source-map-js: 1.2.2
 
   css-what@6.2.2: {}
 
@@ -25122,7 +25137,7 @@ snapshots:
       on-finished: 2.4.1
       parseurl: 1.3.3
       path-to-regexp: 0.1.13
-      proxy-addr: 2.0.7
+      proxy-addr: 2.0.8
       qs: 6.14.1
       range-parser: 1.2.1
       safe-buffer: 5.2.1
@@ -25158,7 +25173,7 @@ snapshots:
       on-finished: 2.4.1
       parseurl: 1.3.3
       path-to-regexp: 0.1.13
-      proxy-addr: 2.0.7
+      proxy-addr: 2.0.8
       qs: 6.14.1
       range-parser: 1.2.1
       safe-buffer: 5.2.1
@@ -25882,7 +25897,7 @@ snapshots:
       domutils: 3.2.2
       entities: 4.5.0
 
-  http-cache-semantics@4.2.0: {}
+  http-cache-semantics@4.3.0: {}
 
   http-deceiver@1.2.7: {}
 
@@ -26016,6 +26031,8 @@ snapshots:
       file-type: 10.11.0
 
   immer@9.0.21: {}
+
+  immutability-helper@3.1.1: {}
 
   import-fresh@3.3.1:
     dependencies:
@@ -26989,7 +27006,7 @@ snapshots:
   launch-editor@2.13.2:
     dependencies:
       picocolors: 1.1.1
-      shell-quote: 1.10.0
+      shell-quote: 1.12.0
 
   lerc@3.0.0: {}
 
@@ -29118,7 +29135,7 @@ snapshots:
     dependencies:
       nanoid: 3.3.18
       picocolors: 1.1.1
-      source-map-js: 1.2.1
+      source-map-js: 1.2.2
 
   prebuild-install@7.1.3:
     dependencies:
@@ -29214,7 +29231,7 @@ snapshots:
       uint8arraylist: 2.4.9
       uint8arrays: 5.1.1
 
-  proxy-addr@2.0.7:
+  proxy-addr@2.0.8:
     dependencies:
       forwarded: 0.2.0
       ipaddr.js: 1.9.1
@@ -29332,7 +29349,7 @@ snapshots:
       prompts: 2.4.2
       react-error-overlay: 6.1.0
       recursive-readdir: 2.2.3
-      shell-quote: 1.10.0
+      shell-quote: 1.12.0
       strip-ansi: 6.0.1
       text-table: 0.2.0
       webpack: 5.105.0(@swc/core@1.15.33)(@swc/html@1.15.33)(clean-css@5.3.3)(cssnano@6.1.2(postcss@8.5.26))(csso@5.0.5)(esbuild@0.14.54)(html-minifier-terser@7.2.0)(lightningcss@1.32.0)(postcss@8.5.26)(webpack-cli@5.1.4)
@@ -30007,7 +30024,7 @@ snapshots:
 
   shebang-regex@3.0.0: {}
 
-  shell-quote@1.10.0: {}
+  shell-quote@1.12.0: {}
 
   shelljs@0.10.0:
     dependencies:
@@ -30167,7 +30184,7 @@ snapshots:
 
   source-list-map@2.0.1: {}
 
-  source-map-js@1.2.1: {}
+  source-map-js@1.2.2: {}
 
   source-map-support@0.5.13:
     dependencies:
@@ -31094,7 +31111,7 @@ snapshots:
       bonjour-service: 1.3.0
       chokidar: 3.6.0
       colorette: 2.0.20
-      compression: 1.8.1(supports-color@8.1.1)
+      compression: 1.8.2(supports-color@8.1.1)
       connect-history-api-fallback: 2.0.0
       default-gateway: 6.0.3
       express: 4.22.2(supports-color@8.1.1)
@@ -31137,7 +31154,7 @@ snapshots:
       bonjour-service: 1.4.0
       chokidar: 3.6.0
       colorette: 2.0.20
-      compression: 1.8.1(supports-color@7.2.0)
+      compression: 1.8.2(supports-color@7.2.0)
       connect-history-api-fallback: 2.0.0
       express: 4.22.2(supports-color@7.2.0)
       graceful-fs: 4.2.11
@@ -31177,7 +31194,7 @@ snapshots:
       bonjour-service: 1.4.0
       chokidar: 3.6.0
       colorette: 2.0.20
-      compression: 1.8.1(supports-color@8.1.1)
+      compression: 1.8.2(supports-color@8.1.1)
       connect-history-api-fallback: 2.0.0
       express: 4.22.2(supports-color@8.1.1)
       graceful-fs: 4.2.11

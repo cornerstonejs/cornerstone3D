@@ -1118,9 +1118,11 @@ export function insertPixelDataPlanar({
           continue;
         }
 
+        // Compare the aligned frame: a frame rotated by 90 degrees in-plane has
+        // its Rows and Columns swapped relative to the source image.
         if (
-          Rows !== sourceImageMetadata.Rows ||
-          Columns !== sourceImageMetadata.Columns
+          alignedPixelDataI.shape[0] !== sourceImageMetadata.Rows ||
+          alignedPixelDataI.shape[1] !== sourceImageMetadata.Columns
         ) {
           throw new Error(
             'Individual SEG frames have different geometry dimensions (Rows and Columns) ' +
@@ -1294,8 +1296,8 @@ export function insertPixelDataPlanar({
         }
 
         if (
-          Rows !== sourceImageMetadata.Rows ||
-          Columns !== sourceImageMetadata.Columns
+          alignedPixelDataI.shape[0] !== sourceImageMetadata.Rows ||
+          alignedPixelDataI.shape[1] !== sourceImageMetadata.Columns
         ) {
           throw new Error(
             'Individual Labelmap SEG frames have different geometry dimensions (Rows and Columns) ' +
@@ -1666,8 +1668,8 @@ const getSegmentData = ({
 
     checkImageDimensions({
       metadataProvider,
-      Rows,
-      Columns,
+      Rows: alignedPixelDataI.shape[0],
+      Columns: alignedPixelDataI.shape[1],
       imageId: referencedImageId,
     });
 

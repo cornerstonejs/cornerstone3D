@@ -26,6 +26,7 @@ export default {
       labelValue,
       labelmapId,
       segmentationId,
+      labelmapEditTransaction,
     } = operationData;
 
     const existingValue = segmentationVoxelManager.getAtIndex(index);
@@ -37,6 +38,18 @@ export default {
     const writeValue = previewSegmentIndex ?? labelValue ?? segmentIndex;
 
     if (segmentsLocked.includes(existingSegmentIndex)) {
+      return;
+    }
+
+    // A locked segment on another layer of the segmentation also stops the
+    // brush, for example after a move of the edited segment to a private layer.
+    if (
+      writeValue &&
+      labelmapEditTransaction?.lockedVoxelsOnOtherLayers?.some(
+        ({ voxelManager, labelValues }) =>
+          labelValues.has(voxelManager.getAtIndex(index))
+      )
+    ) {
       return;
     }
 

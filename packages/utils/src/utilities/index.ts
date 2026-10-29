@@ -3,11 +3,12 @@ export * as math from './math';
 export * as logging from './logging';
 
 export { default as isColorImage } from './isColorImage';
-
-export { asArray } from './object';
+export { asArray, asArrayFirst } from './object';
 export {
   toNumber,
   toFiniteNumber,
+  toFiniteFirst,
+  toFiniteVector,
   isEqual,
   isEqualNegative,
   isEqualAbs,

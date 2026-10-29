@@ -3115,7 +3115,7 @@ class StackViewport extends Viewport {
     vtkCamera.setClippingRange(distance, distance + 0.1);
 
     const devicePixelRatio = window.devicePixelRatio || 1;
-    const { width, height } = this.canvas;
+    const { width, height } = this.getRenderedCanvasSize();
     const aspectRatio = width / height;
 
     // Convert canvas coordinates to normalized display coordinates
@@ -3225,7 +3225,7 @@ class StackViewport extends Viewport {
 
     const devicePixelRatio = window.devicePixelRatio || 1;
 
-    const { width, height } = this.canvas;
+    const { width, height } = this.getRenderedCanvasSize();
 
     const aspectRatio = width / height;
 

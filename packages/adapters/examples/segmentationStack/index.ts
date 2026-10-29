@@ -7,6 +7,7 @@ import { dicomMap } from './demo';
 
 import {
   addButtonToToolbar,
+  addDropdownToToolbar,
   addManipulationBindings,
   addToggleButtonToToolbar,
   addUploadToToolbar,
@@ -150,7 +151,35 @@ function createSegmentationRepresentation() {
   );
 }
 
+let segmentationLoaded = false;
+
+function removeAllSegmentations() {
+  csToolsSegmentation.removeAllSegmentationRepresentations();
+  csToolsSegmentation.state
+    .getSegmentations()
+    .forEach(({ segmentationId }) =>
+      csToolsSegmentation.state.removeSegmentation(segmentationId)
+    );
+  segmentationLoaded = false;
+}
+
 // ============================= //
+addDropdownToToolbar({
+  id: 'DICOM_SOURCE',
+  labelText: 'Example:',
+  options: {
+    values: [...dicomMap.keys()],
+    labels: [...dicomMap.values()].map(({ label }) => label),
+  },
+  onSelectedValueChange: (key) => {
+    removeAllSegmentations();
+    state.segmentationId = 'LOAD_SEG_ID:' + cornerstone.utilities.uuidv4();
+    state.referenceImageIds = [];
+    state.devConfig = { ...dicomMap.get(key) };
+  },
+  container: group1,
+});
+
 addButtonToToolbar({
   id: 'LOAD_DICOM',
   title: 'Load DICOM',
@@ -163,8 +192,6 @@ addButtonToToolbar({
   },
   container: group1,
 });
-
-let segmentationLoaded = false;
 
 addButtonToToolbar({
   id: 'LOAD_SEGMENTATION',

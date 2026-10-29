@@ -1,6 +1,7 @@
 import { getSegmentation } from '../../../../stateManagement/segmentation/getSegmentation';
 import {
   beginLabelmapEditTransaction,
+  getLockedVoxelsOnOtherLayers,
   resolveLabelmapLayerEditTarget,
 } from '../../../../stateManagement/segmentation/helpers/labelmapSegmentationState';
 import type { InitializedOperationData } from '../BrushStrategy';
@@ -21,6 +22,7 @@ function prepareOverlapOperationData(
   const transaction = beginLabelmapEditTransaction(segmentation, {
     segmentIndex: operationData.segmentIndex,
     overwriteSegmentIndices: operationData.overwriteSegmentIndices,
+    segmentsLocked: operationData.segmentsLocked,
     segmentationVoxelManager: operationData.segmentationVoxelManager,
     segmentationImageData: operationData.segmentationImageData,
     isInObject: operationData.isInObject,
@@ -51,6 +53,19 @@ function prepareOverlapOperationData(
       operationData.segmentationVoxelManager = target.voxelManager;
     }
   }
+
+  // After a move, the locked segments are on other layers than the edited
+  // layer. setValue reads those layers too.
+  transaction.lockedVoxelsOnOtherLayers = getLockedVoxelsOnOtherLayers(
+    segmentation,
+    transaction.labelmapId,
+    operationData.segmentsLocked,
+    {
+      viewport: operationData.viewport,
+      imageId: operationData.imageId,
+      sourceLayer: transaction.activeLayer,
+    }
+  );
 }
 
 export { eraseCrossLayerOverwrites, prepareOverlapOperationData };
