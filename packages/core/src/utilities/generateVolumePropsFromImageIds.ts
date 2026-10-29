@@ -1,3 +1,4 @@
+import { isColorImage } from '@cornerstonejs/utils';
 import { vec3 } from 'gl-matrix';
 import makeVolumeMetadata from './makeVolumeMetadata';
 import sortImageIdsAndGetSpacing from './sortImageIdsAndGetSpacing';
@@ -77,8 +78,10 @@ function generateVolumePropsFromImageIds(
     imageIds: sortedImageIds,
     volumeId,
     voxelManager: null,
-    numberOfComponents:
-      volumeMetadata.PhotometricInterpretation === 'RGB' ? 3 : 1,
+    // Color frames (RGB, YBR_* and PALETTE COLOR) are decoded to interleaved RGB
+    numberOfComponents: isColorImage(volumeMetadata.PhotometricInterpretation)
+      ? 3
+      : 1,
   };
 }
 

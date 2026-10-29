@@ -129,6 +129,7 @@
   "peerDependencies": {
     "@cornerstonejs/core": "5.14.0",
     "@cornerstonejs/metadata": "5.14.0",
+    "@cornerstonejs/utils": "5.14.0",
     "dicom-parser": "1.8.21"
   },
   "config": {

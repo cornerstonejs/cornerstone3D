@@ -1,3 +1,5 @@
+import { isColorImage } from '@cornerstonejs/utils';
+
 import {
   convertRGBColorByPixel,
   convertRGBColorByPlane,
@@ -15,7 +17,6 @@ import { default as createImage } from './createImage';
 import { default as decodeJPEGBaseline8BitColor } from './decodeJPEGBaseline8BitColor';
 import { default as getImageFrame } from './getImageFrame';
 import { default as getMinMax } from '../shared/getMinMax';
-import { default as isColorImage } from '../shared/isColorImage';
 import { default as isJPEGBaseline8BitColor } from './isJPEGBaseline8BitColor';
 import { default as getPixelData } from './wadors/getPixelData';
 import { default as getScalingParameters } from './getScalingParameters';

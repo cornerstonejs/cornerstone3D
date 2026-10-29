@@ -35,7 +35,6 @@ import getPixelDataTypeFromMinMax, {
   validatePixelDataType,
 } from '../shared/getPixelDataTypeFromMinMax';
 import setPixelDataType from '../imageLoader/setPixelDataType';
-import isColorImage from '../shared/isColorImage';
 import scaleArray from '../shared/scaling/scaleArray';
 import bilinear from '../shared/scaling/bilinear';
 import replicate from '../shared/scaling/replicate';
@@ -797,31 +796,6 @@ describe('pixelMath', () => {
     // `pixelDataType || Float32Array`, i.e. it never returns a falsy value.
     // See "suspected bugs" in the final report -- not tested here since
     // reaching it would require modifying src.
-  });
-
-  // ---------------------------------------------------------------------
-  // shared/isColorImage
-  // ---------------------------------------------------------------------
-  describe('isColorImage', () => {
-    it.each([
-      'RGB',
-      'PALETTE COLOR',
-      'YBR_FULL',
-      'YBR_FULL_422',
-      'YBR_PARTIAL_422',
-      'YBR_PARTIAL_420',
-      'YBR_RCT',
-      'YBR_ICT',
-    ])('returns true for %s', (pmi) => {
-      expect(isColorImage(pmi)).toBe(true);
-    });
-
-    it.each(['MONOCHROME1', 'MONOCHROME2', '', 'UNKNOWN'])(
-      'returns false for %s',
-      (pmi) => {
-        expect(isColorImage(pmi)).toBe(false);
-      }
-    );
   });
 
   // ---------------------------------------------------------------------
