@@ -328,9 +328,7 @@ with a failure count. `auto` does not try a failed value again. A retest is the 
 again, and the application decides when to offer the retest; the counts are for its display and its
 decision. An application reads the record with `getStoredRenderingCapabilities()`, clears failures
 with `retestRenderingCapabilities()`, and removes the record with
-`resetRenderingCapabilities({ clearStorage: true })`. `setCapabilityStorage` replaces the store, and
-`setEdgeRenderCheck` states a check for a uniform gray after the first render above the verified
-edge.
+`resetRenderingCapabilities({ clearStorage: true })`. `setCapabilityStorage` replaces the store.
 
 ```json
 {
@@ -512,10 +510,10 @@ so two tabs keep both of their changes.
 volumes (at least 16 MB). It does not set the budget of the store, so it does not evict the textures
 of another volume. A named profile limits one texture, as before.
 
-**VRS-I-17.** The second check of type 1 (a uniform gray after the first render above the verified
-edge) is the exported hook `setEdgeRenderCheck`, with no default check. A uniform gray can be a
-correct image: uniform source data, a texture that has no data yet, or a window that saturates every
-value.
+**VRS-I-17.** No check after a render detects type 1. The probe runs before every allocation above
+the reliable edge, and it fails a uniform gray, so a second check adds nothing. A check after a
+render can also give a false failure, because a uniform gray can be a correct image: uniform source
+data, a texture that has no data yet, or a window that saturates every value.
 
 ## What a new render type defines
 
@@ -538,7 +536,6 @@ and needs no change.
 | A consumer of the `refinement` role                                                                                                                                                                                                                                            | the multi-texture render component       |
 | A performance-bound choice of strategy                                                                                                                                                                                                                                         | task T14                                 |
 | An automatic policy with recorded fixtures                                                                                                                                                                                                                                     | task T15                                 |
-| A default check for a uniform gray after the first render above the verified edge. The exported hook `setEdgeRenderCheck` exists                                                                                                                                               | cornerstone3D#3020, follow-up            |
 | An eviction of the textures of another volume for the memory limit of `auto`                                                                                                                                                                                                   | cornerstone3D#3020, follow-up            |
 | A reduction in `convertMapperToNotSharedMapper`, which uploads full resolution                                                                                                                                                                                                 | cornerstone3D#3020, follow-up            |
 | A brick loader, and the sets that it would provision                                                                                                                                                                                                                           | task T7                                  |

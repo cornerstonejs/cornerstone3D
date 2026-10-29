@@ -290,7 +290,6 @@ function vtkStreamingOpenGLImageResliceMapper(publicAPI, model) {
         noteTextureAllocation({
           textureBytes,
           totalBytes: volumeTextureStore.bytesUsed + textureBytes,
-          maxEdge: Math.max(dims[0], dims[1], dims[2]),
         });
         const newScalarTexture = vtkOpenGLTexture.newInstance();
 

@@ -136,8 +136,6 @@ let cachedCapabilities: RenderingCapabilities | null = null;
  * also when the probe could not run, and it is stored once it holds a value.
  */
 let record: StoredRenderingCapabilities | null = null;
-/** The reliable edge of the record when the page started. */
-let edgeAtStart: number | undefined;
 /** True after this page ran the edge search for a record with no edge. */
 let edgeSearchTried = false;
 /** The edges whose probe could not run in this page. */
@@ -454,7 +452,6 @@ export function detectRenderingCapabilities({
   }
 
   updateRecord(recoverPendingAllocations);
-  edgeAtStart = getReliableEdge();
 
   return {
     ...contextInfo,
@@ -597,29 +594,16 @@ export function recordRenderingCapabilitySuccess(
 /**
  * Adds a failure to one value of the stored record. See `addFailure` for what
  * a failure at or below the reliable value does.
- *
- * @param reliableFallback - for the edge, an edge that passed, to keep when the
- * failure contradicts the reliable edge
  */
 export function recordRenderingCapabilityFailure(
   category: RenderingCapabilityCategory,
-  value: number,
-  reliableFallback?: number
+  value: number
 ): void {
   getRenderingCapabilities();
 
   if (value > 0) {
-    updateRecord((target) =>
-      addFailure(target, category, value, reliableFallback)
-    );
+    updateRecord((target) => addFailure(target, category, value));
   }
-}
-
-/** The reliable edge of the record when this page started. */
-export function getEdgeVerifiedAtStart(): number | undefined {
-  getRenderingCapabilities();
-
-  return edgeAtStart;
 }
 
 /** The time of the last probe context of this page, from `performance.now()`. */
@@ -774,7 +758,6 @@ export function resetRenderingCapabilities({
 }: { clearStorage?: boolean } = {}): void {
   cachedCapabilities = null;
   record = null;
-  edgeAtStart = undefined;
   edgeSearchTried = false;
   unprobeableEdges.clear();
 

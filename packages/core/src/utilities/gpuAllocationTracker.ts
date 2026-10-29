@@ -4,7 +4,6 @@ import { coreLog } from './logger';
 import {
   beginPendingAllocation,
   clearPendingAllocation,
-  getEdgeVerifiedAtStart,
   getLastProbeTime,
   recordRenderingCapabilityFailure,
   recordRenderingCapabilitySuccess,
@@ -37,25 +36,6 @@ const LOSS_WINDOW_MS = 5000;
  */
 const PROBE_LOSS_WINDOW_MS = 1000;
 
-/** What an edge render check receives. */
-export type EdgeRenderCheckContext = {
-  /** The edge of the texture, which is above the edge verified at start. */
-  edge: number;
-  volumeId?: string;
-  /** The context of the render that drew the texture. */
-  gl?: WebGL2RenderingContext;
-};
-
-/**
- * The second check of the texture edge, after the first render of a texture
- * with an edge above the edge verified at the start of the page. It returns
- * false for a render that failed (a uniform gray), and `undefined` when it
- * cannot decide.
- */
-export type EdgeRenderCheck = (
-  context: EdgeRenderCheckContext
-) => boolean | undefined;
-
 type PendingAllocation = {
   totalBytes: number;
   rendered: boolean;
@@ -64,20 +44,7 @@ type PendingAllocation = {
 
 let pending: PendingAllocation | null = null;
 let lastLargeAllocation: { totalBytes: number; at: number } | null = null;
-let edgeChecks: EdgeRenderCheckContext[] = [];
-let edgeRenderCheck: EdgeRenderCheck | undefined;
 let listening = false;
-
-/**
- * States the second check of the texture edge. No check applies by default,
- * because a uniform gray can also be a correct image: uniform source data, a
- * texture that has no data yet, or a window that saturates every value. A
- * check that returns false records the edge as failed, with the edge verified
- * at the start of the page as the reliable edge.
- */
-export function setEdgeRenderCheck(check?: EdgeRenderCheck): void {
-  edgeRenderCheck = check;
-}
 
 function isHidden(): boolean {
   return (
@@ -118,24 +85,6 @@ function abandonPendingAllocation(): void {
   clearTimeout(pending.timer);
   pending = null;
   clearPendingAllocation();
-}
-
-function runEdgeChecks(gl?: WebGL2RenderingContext): void {
-  const checks = edgeChecks;
-  edgeChecks = [];
-
-  for (const check of checks) {
-    if (edgeRenderCheck?.({ ...check, gl }) === false) {
-      recordRenderingCapabilityFailure(
-        'edge',
-        check.edge,
-        getEdgeVerifiedAtStart()
-      );
-      log.warn(
-        `the texture of the edge ${check.edge} rendered a uniform gray, but the probe passed that edge; the edge is recorded as failed`
-      );
-    }
-  }
 }
 
 function settle(): void {
@@ -198,31 +147,17 @@ function onContextLost(): void {
  * `onContextLost`). A hidden page writes no pending record, because its
  * timers and its renders can wait for minutes.
  *
- * A texture with an edge above the edge verified at the start of the page is
- * queued for the edge render check (see {@link setEdgeRenderCheck}).
- *
  * @param textureBytes - the bytes of this texture
  * @param totalBytes - the texture bytes of the page, this texture included
- * @param maxEdge - the largest edge of this texture
  */
 export function noteTextureAllocation({
   textureBytes,
   totalBytes,
-  maxEdge,
-  volumeId,
 }: {
   textureBytes: number;
   totalBytes: number;
-  maxEdge: number;
-  volumeId?: string;
 }): void {
   listen();
-
-  const verified = getEdgeVerifiedAtStart();
-
-  if (verified && maxEdge > verified) {
-    edgeChecks.push({ edge: maxEdge, volumeId });
-  }
 
   if (textureBytes < LARGE_ALLOCATION_BYTES || isHidden()) {
     return;
@@ -245,16 +180,11 @@ export function noteTextureAllocation({
 
 /**
  * Notes the end of a render of a volume mapper. The first render after a
- * large allocation settles that allocation after `SETTLE_MS`, and runs the
- * edge render checks.
+ * large allocation settles that allocation after `SETTLE_MS`.
  *
  * @param gl - the context of the render
  */
 export function noteTextureRendered(gl?: WebGL2RenderingContext): void {
-  if (edgeChecks.length) {
-    runEdgeChecks(gl);
-  }
-
   if (!pending || pending.rendered || gl?.isContextLost?.()) {
     return;
   }

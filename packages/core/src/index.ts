@@ -233,11 +233,6 @@ export {
   setCapabilityStorage,
 } from './utilities/capabilityStorage';
 export type { CapabilityStorage } from './utilities/capabilityStorage';
-export { setEdgeRenderCheck } from './utilities/gpuAllocationTracker';
-export type {
-  EdgeRenderCheck,
-  EdgeRenderCheckContext,
-} from './utilities/gpuAllocationTracker';
 
 // Classes
 import Settings from './Settings';

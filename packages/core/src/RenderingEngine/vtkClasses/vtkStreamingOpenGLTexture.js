@@ -123,8 +123,6 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     noteTextureAllocation({
       textureBytes,
       totalBytes: Math.max(volumeTextureStore.bytesUsed, textureBytes),
-      maxEdge: Math.max(width, height, depth),
-      volumeId: model.volumeId,
     });
   }
 

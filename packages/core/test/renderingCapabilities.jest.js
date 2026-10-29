@@ -294,7 +294,6 @@ describe('renderingCapabilities', () => {
     noteTextureAllocation({
       textureBytes: 128 * MEGABYTE,
       totalBytes: 512 * MEGABYTE,
-      maxEdge: 512,
     });
 
     // The page stops here: no render settles the allocation, and no pagehide

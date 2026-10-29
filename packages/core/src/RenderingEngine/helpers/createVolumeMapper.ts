@@ -137,7 +137,6 @@ export function convertMapperToNotSharedMapper(sharedMapper: vtkVolumeMapper) {
   noteTextureAllocation({
     textureBytes,
     totalBytes: volumeTextureStore.bytesUsed + textureBytes,
-    maxEdge: Math.max(dimensions[0], dimensions[1], dimensions[2]),
   });
 
   volumeMapper.setInputData(imageData);

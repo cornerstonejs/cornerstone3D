@@ -529,7 +529,7 @@ probes again once.
   mobile GPU starts at 1 GB.
 - New exports: `getStoredRenderingCapabilities`, `retestRenderingCapabilities`,
   `resetRenderingCapabilities`, `setCapabilityStorage`, `getCapabilityStorage`,
-  `setEdgeRenderCheck`, and their types.
+  and their types.
 
 ### Migration Guidance
 
