@@ -158,8 +158,9 @@ describe('fidelityIndicatorState', () => {
       ).toBe('lossy');
     });
 
-    it('is done when a reduction is not visible at the display spacing', () => {
-      // FIDELITY-STATE-6: box average under low magnification is not a warning.
+    it('is lossy for a standing box average even when the verdict is lossless', () => {
+      // FIDELITY-STATE-6: standing box average of a coarser grid is lossy at
+      // every magnification (shared 1×1×2 texture).
       expect(
         lineKind(
           line({
@@ -180,11 +181,10 @@ describe('fidelityIndicatorState', () => {
             },
           })
         )
-      ).toBe('done');
+      ).toBe('lossy');
     });
 
-    it('is lossy when a spatial reduction is visible at the display spacing', () => {
-      // Same 1×1×2 texture with a resolution cause → lossy.
+    it('is lossy for a standing box average when the verdict flags resolution', () => {
       expect(
         lineKind(
           line({
@@ -301,9 +301,9 @@ describe('fidelityIndicatorState', () => {
         ])
       );
 
-    it('shows no indicator for a box average displayed at its own spacing', () => {
+    it('shows lossy for a standing box average displayed at its own spacing', () => {
       expect(stateOf(display2mm(), VoxelReductions.BoxAverage, [2, 2, 1])).toBe(
-        'done'
+        'lossy'
       );
     });
 
@@ -314,18 +314,18 @@ describe('fidelityIndicatorState', () => {
     });
 
     it('shows lossy for a box average on the axis normal to a slice view', () => {
-      // The normal axis compares with the source slice spacing (1 mm).
+      // Through-plane 1×1×2 and standing box-average rule.
       expect(stateOf(display2mm(), VoxelReductions.BoxAverage, [1, 1, 2])).toBe(
         'lossy'
       );
-      // A 3D view uses the display pixel size on every axis.
+      // Volume3D also stays lossy: standing box average, not magnification.
       expect(
         stateOf(
           display2mm([0, 0, 1], true),
           VoxelReductions.BoxAverage,
           [1, 1, 2]
         )
-      ).toBe('done');
+      ).toBe('lossy');
     });
 
     it('shows lossy for an in-plane box average in a double-oblique view', () => {
@@ -367,9 +367,9 @@ describe('fidelityIndicatorState', () => {
       }
     };
 
-    it('judges a box average at device pixels, not CSS pixels', () => {
-      expect(stateAtRatio(1)).toBe('done');
-      // At devicePixelRatio 2 one device pixel is 1 mm, finer than the data.
+    it('shows lossy for a standing box average at CSS and device pixel spacing', () => {
+      // FIDELITY-STATE-6: standing box average is lossy at every magnification.
+      expect(stateAtRatio(1)).toBe('lossy');
       expect(stateAtRatio(2)).toBe('lossy');
     });
 

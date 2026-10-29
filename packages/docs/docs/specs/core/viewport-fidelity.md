@@ -1,7 +1,7 @@
 ---
 id: viewport-fidelity
 title: Viewport fidelity
-summary: How the user learns that a viewport shows a lossy image - replicated, sub-resolution or lossy data, a decimation, a box average under magnification, or a sample distance larger than at full quality - and the events and queries that report it
+summary: How the user learns that a viewport shows a lossy image - replicated, sub-resolution or lossy data, a decimation, a standing box average of a coarser grid, or a sample distance larger than at full quality - and the events and queries that report it
 ---
 
 # Viewport fidelity
@@ -54,8 +54,15 @@ displayed image lossy:
   delivered.
 - The data is a decimation. A decimation aliases, so it is lossy at every
   magnification.
-- The data is a box average, and one data voxel covers more than one display
-  pixel.
+- The data is a standing box average of a coarser grid. The render samples the
+  averaged texture, not the full source, so the image can differ from a display
+  of the full data at every magnification (for example a one-slice-thick
+  structure at half contrast). A box average along the slice normal (for
+  example a shared progressive texture at 1×1×2 in the acquisition orientation)
+  is lossy on every slice and at every zoom. Visiting or loading the source
+  instances does not remove the indication: the viewport still samples the
+  box-averaged texture. Only a bind of a texture at the full resolution removes
+  it.
 - The render samples the data more coarsely than at full quality. The sample
   distance is larger than at full quality, during an interaction or after it.
 
@@ -103,18 +110,24 @@ and it does not make the displayed image lossy.
   FIDELITY-USER-1.
 - **FIDELITY-STATE-5** Each viewport reports its own fidelity. Two viewports
   that show one volume can report a different state at one time.
-- **FIDELITY-STATE-6** A box average is lossless when the data spacing on each
-  axis is no coarser than the display spacing of FIDELITY-RECORD-2. This serves
-  FIDELITY-USER-1 and FIDELITY-USER-2.
-  - In the view plane, one data voxel then covers no more than one display
-    pixel.
-  - In a slice view, a box average on the axis normal to the view plane is
-    lossy at every zoom. That axis compares with the source slice spacing.
-  - Example: the code loads the data at 1/2 in-plane resolution by a box
-    average. The viewport displays the data at 1/2 resolution. The view then
-    shows no indicator. When the user zooms in, the view becomes `lossy`.
-  - A decimation of the same data, at the same display, still shows `lossy`. A
-    decimation aliases at every magnification.
+- **FIDELITY-STATE-6** A standing box average of a grid coarser than the full
+  volume is `lossy` at every magnification. This serves FIDELITY-USER-1 and
+  FIDELITY-USER-2: the absence of an indication must not hide a texture that is
+  not the full stored data.
+  - Example: a progressive volume binds a shared 1×1×2 box-average texture. In
+    the acquisition orientation the reduced axis is the slice normal; each
+    displayed slice is the mean of two source slices. The viewport shows
+    `lossy` on every slice and at every zoom. Loading the source instances does
+    not clear the indication. Only a bind of the full-resolution texture does.
+  - In the other MPR orientations the same texture puts the reduced axis in the
+    view plane. The viewport still shows `lossy` at the default zoom, not only
+    after the user zooms in.
+  - In a slice view, display spacing on the view-normal axis still uses the
+    source slice spacing (FIDELITY-RECORD-2), so a through-plane-only reduction
+    stays visible even before the standing-box rule above.
+  - A decimation of reduced data also shows `lossy` at every magnification. A
+    decimation aliases; a standing box average does not alias in the voxel
+    quality registry, but the indicator treats both as standing lossy data.
 - **FIDELITY-STATE-7** WHERE more than one cause applies, the viewport shows
   one indicator. The indicator shows the most urgent state, in this order:
   `loading`, `lod`, `lossy`, `done`.

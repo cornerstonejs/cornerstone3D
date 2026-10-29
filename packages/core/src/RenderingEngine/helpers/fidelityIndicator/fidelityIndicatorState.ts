@@ -1,4 +1,5 @@
 import ImageQualityStatus from '../../../enums/ImageQualityStatus';
+import VoxelReductions from '../../../enums/VoxelReductions';
 import type {
   Point3,
   VoxelGrid,
@@ -114,7 +115,8 @@ export type FidelityDataKind = 'loading' | 'decimated' | 'reduced' | 'full';
  *   that has not arrived. Missing data with only full-resolution deliveries is
  *   not `loading`.
  * - `decimated`: an aliasing reduction, lossy at every magnification.
- * - `reduced`: lossy deliveries, or a box average coarser than the display.
+ * - `reduced`: lossy deliveries, or a standing box average of a coarser grid
+ *   (lossy at every magnification — FIDELITY-STATE-6).
  * - `full`: lossless at the current display spacing.
  */
 export function dataKindOf(line: FidelityLine): FidelityDataKind {
@@ -160,7 +162,15 @@ export function dataKindOf(line: FidelityLine): FidelityDataKind {
     return 'full';
   }
 
-  // Magnification-aware path for actually reduced data (FIDELITY-STATE-6).
+  // Standing box average of a coarser grid is lossy at every magnification
+  // (FIDELITY-STATE-6 / FIDELITY-USER-2): the render samples the averaged
+  // texture, not the full source. Thin structures can lose contrast at every
+  // zoom. Interactive lines still become `lod` in `lineKind`.
+  if (record.reduction === VoxelReductions.BoxAverage) {
+    return 'reduced';
+  }
+
+  // Magnification-aware path for other non-aliasing reductions.
   // Only the spatial causes count here: `missingData` of an ordinary load
   // is not lossy.
   if (verdict) {
