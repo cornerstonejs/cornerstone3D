@@ -6,7 +6,7 @@ import {
   peekStoredRenderingCapabilities,
   probeRenderingEdge,
 } from './renderingCapabilities';
-import { MEMORY_RECENT_MS } from './renderingCapabilities';
+import { getPageMemoryReduction } from './renderingCapabilities';
 import type {
   RendererClass,
   RenderingCapabilityMemory,
@@ -157,20 +157,17 @@ const MIN_TEXTURE_BYTES = 16 * 1024 * 1024;
  * The memory limit of `auto`, in GPU bytes of the page.
  *
  * The limit is the larger of the start value and the normal level, the
- * largest total that worked. A ceiling, which several failures set, caps it.
- * For `MEMORY_RECENT_MS` after a failure, the limit is at most half of the
- * failed total, so the reload after a failure uses a lower level. One failure
- * therefore lowers only the next load, and several failures lower the limit
- * until a retest.
+ * largest total that worked. A ceiling, which several failure episodes set,
+ * caps it. A failure episode lowers it further for its time, and for the rest
+ * of a page that saw it (see `getPageMemoryReduction`): one failure allows 1/2
+ * of the failed total, two allow 1/4.
  *
  * @param start - the memory of the start preset of the renderer class
  * @param records - the memory records (context loss and stopped tab)
- * @param now - the time, from `Date.now()`
  */
 function autoMemoryLimit(
   start: number,
-  records: RenderingCapabilityMemory[],
-  now = Date.now()
+  records: RenderingCapabilityMemory[]
 ): number {
   let limit = Math.max(
     start,
@@ -181,13 +178,9 @@ function autoMemoryLimit(
     if (memory.ceiling > 0) {
       limit = Math.min(limit, memory.ceiling);
     }
-
-    if (memory.recent && now - memory.recent.at < MEMORY_RECENT_MS) {
-      limit = Math.min(limit, Math.floor(memory.recent.value / 2));
-    }
   }
 
-  return limit;
+  return Math.min(limit, getPageMemoryReduction());
 }
 
 /**
@@ -217,8 +210,8 @@ function autoEdge(rendererClass: RendererClass): number {
  * The start preset of the class of the renderer (see `START_PRESET_OF_CLASS`)
  * gives the memory before the record holds any, and the speed. The edge is
  * the reliable edge of the probe (see `autoEdge`). The memory is the start
- * memory, raised by a larger total that worked, capped after several failures,
- * and lowered for the reload after a failure (see `autoMemoryLimit`). A
+ * memory, raised by a larger total that worked, capped after several failure
+ * episodes, and lowered for the time of an episode (see `autoMemoryLimit`). A
  * software rasterizer keeps the memory of `low`.
  */
 function getAutoGpuSettings(): GpuSettings {

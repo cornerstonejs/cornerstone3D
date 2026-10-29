@@ -326,11 +326,13 @@ seconds of the allocation, records the total as a `textureBytes` failure, except
 within one second of a probe context. A pending record that a later start finds records the total as
 a `gpuBytes` failure. Two tabs share the record: each change applies to a fresh read of the store.
 
-**The memory level.** Each memory category keeps `normal`, the largest total that worked. One failure
-becomes `recent`: for 10 minutes the limit is at most half of the failed total, so the reload after a
-failure uses a lower level, and later sessions keep `normal`. Three failures within 7 days set a
-`ceiling` at 0.75 of the smallest of them, and the limit stays below it until a retest or a success
-above it.
+**The memory level.** Each memory category keeps `normal`, the largest total that worked. A failure
+starts an episode, and a failure within 1 hour of the previous one joins it. Each failure of the
+episode halves the limit again, from the total of its first failure, for 1 hour after its last
+failure, so the reload after a failure uses a lower level. A page that saw the reduction keeps it
+until it reloads (`getPageMemoryReduction`). Three episodes within 7 days set a `ceiling` at 0.75 of
+the smallest first failure of them, and the limit stays below it until a retest or a success above
+it. Later sessions otherwise keep `normal`.
 
 **Counts and retest.** The edge keeps a reliable value with a success count, and a failed value with
 a failure count. `auto` does not try a failed edge or a memory ceiling again. A retest is the one way
@@ -350,7 +352,7 @@ with `retestRenderingCapabilities()`, and removes the record with
   "textureBytes": {
     "normal": { "value": 1200000000, "successes": 25 },
     "failures": [{ "value": 1800000000, "at": 1793000000000 }],
-    "recent": { "value": 1800000000, "at": 1793000000000 }
+    "recent": { "value": 1800000000, "at": 1793000060000, "count": 2 }
   },
   "gpuBytes": {
     "normal": { "value": 1200000000, "successes": 25 },
@@ -436,8 +438,8 @@ non-streaming slice paths. When no probe can run, the edge is a fixed floor (see
 of `convertMapperToNotSharedMapper` uploads the full-resolution scalars with no reduction: it runs
 the probe and logs a warning for a grid above the limits, and it does not refuse the upload.
 
-**VRS-C-13.** A failed edge and a memory ceiling stay until a retest. One memory failure lowers only
-the loads of the next 10 minutes. The retest is the recovery path, and the application decides when
+**VRS-C-13.** A failed edge and a memory ceiling stay until a retest. One memory failure episode
+lowers only the loads of its hour, and the pages that saw it until they reload. The retest is the recovery path, and the application decides when
 to offer it. `retestRenderingCapabilities` clears the failures of the selected categories, and
 `resetRenderingCapabilities({ clearStorage: true })` removes the whole record.
 
@@ -494,8 +496,9 @@ rasterizer also keeps the edge of `low` (256) at most, because a larger texture 
 page, and with no probe at all the edge is 128 (8 when a failure at or below 128 is stored). A failed
 edge at or below the reliable edge replaces the reliable edge by an edge that passed, or removes it.
 The memory limit of `auto` is the larger of the start value and `normal`, capped by a `ceiling`,
-and for 10 minutes after a failure at most half of the failed total. Three failures within 7 days set
-the ceiling at 0.75 of the smallest of them. The constants are `MEMORY_RECENT_MS`,
+and by `value / 2^count` of the current episode for 1 hour after its last failure, and for the rest
+of a page that saw it. Three episodes within 7 days set the ceiling at 0.75 of the smallest first
+failure of them. The constants are `MEMORY_RECENT_MS`,
 `MEMORY_FAILURES_FOR_CEILING`, `MEMORY_FAILURE_WINDOW_MS` and `MEMORY_CEILING_FRACTION`.
 
 **VRS-I-15.** The memory values count the GPU bytes of the page from `gpuMemoryLedger`. A

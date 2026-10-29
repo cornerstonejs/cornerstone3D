@@ -501,9 +501,11 @@ renderer, in the `localStorage` key `cornerstone3D.renderingCapabilities`:
 - **The GPU memory.** The page counts its own GPU bytes: the textures, the
   canvases, the render buffers and the contexts of its viewports. Another tab
   does not count. The record keeps the largest total that worked as the
-  normal level. The reload after a context loss or a stopped tab uses at most
-  half of the failed total for 10 minutes. Three failures within 7 days set a
-  ceiling below the smallest of them, until a retest. A new texture gets the
+  normal level. A failure within 1 hour of the previous one joins its episode.
+  Each failure of an episode halves the limit again (1/2, then 1/4) for 1 hour
+  after its last failure, and a page that saw the reduction keeps it until it
+  reloads. Three episodes within 7 days set a ceiling below the smallest of
+  them, until a retest. A new texture gets the
   memory limit of `auto` minus the GPU bytes of the rest of the page. `auto`
   does not evict the textures of another volume.
 - **The start.** The memory starts from `low` for a software rasterizer,

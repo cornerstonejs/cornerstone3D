@@ -135,12 +135,17 @@ viewer asked it to render a data set that is too large.
 - **GPULIMIT-MEM-3** The `normal` level is the largest page total that worked.
   The `auto` limit is the larger of the start value of the renderer class and
   `normal`.
-- **GPULIMIT-MEM-4** For 10 minutes after a failure, the limit is at most half
-  of the failed total, so the reload after a failure uses a lower level. A
-  success at the failed total ends this earlier.
-- **GPULIMIT-MEM-5** Three failures within 7 days set a ceiling at 0.75 of the
-  smallest of them, and lower `normal` to the ceiling. One failure does not
-  lower the limit of a later session. A success above the ceiling removes it.
+- **GPULIMIT-MEM-4** A failure within 1 hour of the previous failure joins its
+  episode. Each failure of an episode halves the limit again, from the total
+  of its first failure: one failure allows 1/2, two allow 1/4. The reduction
+  lasts 1 hour after the last failure of the episode, so the reload after a
+  failure uses a lower level. A page that saw the reduction keeps it until that
+  browser window reloads. A success does not end the reduction.
+- **GPULIMIT-MEM-5** Only the first failure of an episode counts toward a
+  ceiling, so a GPU that is overloaded for a short time counts once. Three
+  episodes within 7 days set a ceiling at 0.75 of the smallest first failure of
+  them, and lower `normal` to the ceiling. One episode does not lower the limit
+  of a later session. A success above the ceiling removes it.
 
 ### The stored record (GPULIMIT-RECORD)
 
@@ -150,8 +155,9 @@ viewer asked it to render a data set that is too large.
   (`VRS-C-15`).
 - **GPULIMIT-RECORD-2** The edge keeps a reliable value with a count of
   successes, and a failed value with a count of failures. Each memory category
-  keeps `normal` with a count of successes, a `ceiling`, the `failures` within
-  the window, and the `recent` failure (GPULIMIT-MEM).
+  keeps `normal` with a count of successes, a `ceiling`, the first failure of
+  each episode within the window, and the current episode as `recent`
+  (GPULIMIT-MEM).
 - **GPULIMIT-RECORD-3** A write re-reads the stored record and merges the
   change, so two tabs do not lose a recorded failure.
 
@@ -160,7 +166,8 @@ viewer asked it to render a data set that is too large.
 - **GPULIMIT-RETEST-1** A failed edge and a memory ceiling stay until a retest
   (`VRS-C-13`). `retestRenderingCapabilities()` clears the failures of the
   categories that it names, or of all categories. For memory, it clears the
-  ceiling, the failures and the recent failure, and keeps `normal`.
+  ceiling, the failures, the current episode and the reduction of the page,
+  and keeps `normal`.
 - **GPULIMIT-RETEST-2** `resetRenderingCapabilities({ clearStorage: true })`
   removes the record, so the next load probes from the start.
 - **GPULIMIT-RETEST-3** Cornerstone3D shows no prompt. The application reads

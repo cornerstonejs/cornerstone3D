@@ -158,7 +158,7 @@ describe('the auto preset', () => {
     });
   });
 
-  it('lowers only the reload after one failure, and caps after several', () => {
+  it('reduces for an hour and until the reload after an episode, and caps after several', () => {
     const start = Date.now();
     const clock = jest.spyOn(Date, 'now').mockReturnValue(start);
 
@@ -168,20 +168,34 @@ describe('the auto preset', () => {
 
       expect(getActiveGpuSettings().textureMemoryBytes).toBe(12 * GIGABYTE);
 
-      // The reload after a failure uses half of the failed total.
+      // One failure allows half of the failed total, and a second failure in
+      // the same hour allows a quarter.
       recordRenderingCapabilityFailure('gpuBytes', 10 * GIGABYTE);
 
       expect(getActiveGpuSettings().textureMemoryBytes).toBe(5 * GIGABYTE);
 
-      // Later, one failure no longer lowers the limit.
-      clock.mockReturnValue(start + MEMORY_RECENT_MS + 1);
+      clock.mockReturnValue(start + 1000);
+      recordRenderingCapabilityFailure('gpuBytes', 5 * GIGABYTE);
+
+      expect(getActiveGpuSettings().textureMemoryBytes).toBe(2.5 * GIGABYTE);
+
+      // After the hour, the page that saw the reduction keeps it.
+      clock.mockReturnValue(start + MEMORY_RECENT_MS + 2000);
+
+      expect(getActiveGpuSettings().textureMemoryBytes).toBe(2.5 * GIGABYTE);
+
+      // A reload after the hour returns to the full limit.
+      resetRenderingCapabilities();
 
       expect(getActiveGpuSettings().textureMemoryBytes).toBe(12 * GIGABYTE);
 
-      // Three failures set a ceiling below the smallest of them.
+      // Three episodes, each an hour apart, set a ceiling below the smallest
+      // first failure of them. The episode above counts as one.
       recordRenderingCapabilityFailure('gpuBytes', 10 * GIGABYTE);
-      recordRenderingCapabilityFailure('gpuBytes', 8 * GIGABYTE);
       clock.mockReturnValue(start + 3 * MEMORY_RECENT_MS);
+      recordRenderingCapabilityFailure('gpuBytes', 8 * GIGABYTE);
+      clock.mockReturnValue(start + 5 * MEMORY_RECENT_MS);
+      resetRenderingCapabilities();
 
       expect(getActiveGpuSettings().textureMemoryBytes).toBe(6 * GIGABYTE);
     } finally {

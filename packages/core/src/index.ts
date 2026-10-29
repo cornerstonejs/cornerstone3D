@@ -221,6 +221,7 @@ import {
   getStoredRenderingCapabilities,
   retestRenderingCapabilities,
   resetRenderingCapabilities,
+  getPageMemoryReduction,
 } from './utilities/renderingCapabilities';
 export type {
   RenderingCapabilities,
@@ -229,6 +230,7 @@ export type {
   RenderingCapabilitySuccess,
   RenderingCapabilityMemory,
   RenderingCapabilityMemoryFailure,
+  RenderingCapabilityMemoryEpisode,
   RetestRenderingCapabilitiesOptions,
   StoredRenderingCapabilities,
 } from './utilities/renderingCapabilities';
@@ -500,6 +502,7 @@ export {
   getStoredRenderingCapabilities,
   retestRenderingCapabilities,
   resetRenderingCapabilities,
+  getPageMemoryReduction,
   // GenericViewport
   getUseGenericViewport,
   // Geometry Loader

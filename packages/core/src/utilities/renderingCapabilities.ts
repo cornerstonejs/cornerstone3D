@@ -23,16 +23,22 @@ const log = coreLog.getLogger('utilities', 'renderingCapabilities');
 export const RENDERING_CAPABILITIES_PROBE_VERSION = 3;
 
 /**
- * The number of memory failures, within `MEMORY_FAILURE_WINDOW_MS`, that sets a
- * ceiling. One failure only lowers the next load (see `recent`).
+ * The number of memory failure episodes, within `MEMORY_FAILURE_WINDOW_MS`,
+ * that sets a ceiling. One episode only lowers the loads of its own time (see
+ * `recent`).
  */
 export const MEMORY_FAILURES_FOR_CEILING = 3;
 
-/** The time in which memory failures count together. */
+/** The time in which memory failure episodes count together. */
 export const MEMORY_FAILURE_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 
-/** The time for which the last memory failure lowers the limit. */
-export const MEMORY_RECENT_MS = 10 * 60 * 1000;
+/**
+ * The length of a failure episode. A failure within this time of the previous
+ * failure joins its episode, so a GPU that is overloaded for a short time
+ * counts one episode. The reduction of an episode lasts this long after its
+ * last failure, and a page that saw the reduction keeps it until it reloads.
+ */
+export const MEMORY_RECENT_MS = 60 * 60 * 1000;
 
 /** The ceiling, as a fraction of the smallest failure that set it. */
 export const MEMORY_CEILING_FRACTION = 0.75;
@@ -90,21 +96,32 @@ export type RenderingCapabilityFailure = { value: number; failures: number };
 export type RenderingCapabilityMemoryFailure = { value: number; at: number };
 
 /**
+ * The current failure episode: the total of its first failure, the time of its
+ * last failure, and the number of its failures.
+ */
+export type RenderingCapabilityMemoryEpisode =
+  RenderingCapabilityMemoryFailure & {
+    count: number;
+  };
+
+/**
  * The record of one memory category. The values are GPU bytes of the page.
  *
  * - `normal`: the high water mark, the largest total that worked.
  * - `ceiling`: set when `MEMORY_FAILURES_FOR_CEILING` failures occur within
  *   `MEMORY_FAILURE_WINDOW_MS`. The limit stays below it until a retest, or
  *   until a larger total works.
- * - `failures`: the failures since the ceiling last changed, oldest first.
- * - `recent`: the last failure. It halves the limit for `MEMORY_RECENT_MS`, so
- *   the reload after a failure uses a lower level.
+ * - `failures`: the first failure of each episode since the ceiling last
+ *   changed, oldest first. Two entries are at least `MEMORY_RECENT_MS` apart.
+ * - `recent`: the current episode. Each of its failures halves the limit
+ *   again, from the total of its first failure, for `MEMORY_RECENT_MS` after
+ *   its last failure (see `getPageMemoryReduction`).
  */
 export type RenderingCapabilityMemory = {
   normal?: RenderingCapabilitySuccess;
   ceiling?: number;
   failures?: RenderingCapabilityMemoryFailure[];
-  recent?: RenderingCapabilityMemoryFailure;
+  recent?: RenderingCapabilityMemoryEpisode;
 };
 
 /**
@@ -173,6 +190,8 @@ let edgeSearchTried = false;
 const unprobeableEdges = new Set<number>();
 /** The time of the last probe context, from `performance.now()`. */
 let lastProbeAt = Number.NEGATIVE_INFINITY;
+/** The reduction of a failure episode that this page saw, until it reloads. */
+let pageMemoryReduction = Number.POSITIVE_INFINITY;
 
 let tabId: string | undefined;
 
@@ -386,8 +405,9 @@ function addFailure(
  * Adds one memory success.
  *
  * A total above `normal` raises it. A success removes the failures at or below
- * its total, and the recent failure when the total reaches it, because those
- * failures did not repeat. A success above the ceiling removes the ceiling.
+ * its total, because those failures did not repeat. A success above the
+ * ceiling removes the ceiling. A success does not end the current episode, so
+ * its reduction lasts its full time.
  */
 function addMemorySuccess(
   entry: RenderingCapabilityMemory,
@@ -403,10 +423,6 @@ function addMemorySuccess(
     entry.failures = entry.failures.filter((failure) => failure.value > value);
   }
 
-  if (entry.recent && value >= entry.recent.value) {
-    delete entry.recent;
-  }
-
   if (entry.ceiling && value > entry.ceiling) {
     delete entry.ceiling;
   }
@@ -415,18 +431,33 @@ function addMemorySuccess(
 /**
  * Adds one memory failure at the time `now`.
  *
- * The failure becomes `recent`, which lowers the next load. It also joins
- * `failures`. When `MEMORY_FAILURES_FOR_CEILING` failures fall within
- * `MEMORY_FAILURE_WINDOW_MS`, the ceiling becomes `MEMORY_CEILING_FRACTION`
- * of the smallest of them, `normal` drops to the ceiling, and the list
- * empties. One failure therefore does not lower the limit for later sessions.
+ * A failure within `MEMORY_RECENT_MS` of the last failure joins the current
+ * episode: the count of the episode rises, and its time moves to `now`. It
+ * does not count toward the ceiling, so a GPU that is overloaded for a short
+ * time does not set one.
+ *
+ * Any other failure starts an episode, and joins `failures`. When
+ * `MEMORY_FAILURES_FOR_CEILING` episodes fall within
+ * `MEMORY_FAILURE_WINDOW_MS`, the ceiling becomes `MEMORY_CEILING_FRACTION` of
+ * the smallest first failure of them, `normal` drops to the ceiling, and the
+ * list empties.
  */
 export function addMemoryFailure(
   entry: RenderingCapabilityMemory,
   value: number,
   now: number
 ): void {
-  entry.recent = { value, at: now };
+  if (entry.recent && now - entry.recent.at < MEMORY_RECENT_MS) {
+    entry.recent = {
+      value: entry.recent.value,
+      at: now,
+      count: (entry.recent.count ?? 1) + 1,
+    };
+
+    return;
+  }
+
+  entry.recent = { value, at: now, count: 1 };
   entry.failures = [
     ...(entry.failures ?? []).filter(
       (failure) => now - failure.at < MEMORY_FAILURE_WINDOW_MS
@@ -710,6 +741,35 @@ export function recordRenderingCapabilityFailure(
   }
 }
 
+/**
+ * The memory limit that the failure episodes set for this page, in GPU bytes,
+ * or `Infinity` for none.
+ *
+ * An episode of `count` failures allows `value / 2^count` for
+ * `MEMORY_RECENT_MS` after its last failure, where `value` is the total of its
+ * first failure: one failure allows 1/2, two allow 1/4. The page keeps the
+ * smallest such limit that it saw until it reloads, so a reload after that time
+ * returns to the full limit, and a page that saw the reduction never loses it.
+ *
+ * @param now - the time, from `Date.now()`
+ */
+export function getPageMemoryReduction(now = Date.now()): number {
+  getRenderingCapabilities();
+
+  for (const category of ['textureBytes', 'gpuBytes'] as const) {
+    const episode = record?.[category]?.recent;
+
+    if (episode && now - episode.at < MEMORY_RECENT_MS) {
+      pageMemoryReduction = Math.min(
+        pageMemoryReduction,
+        Math.floor(episode.value / 2 ** (episode.count ?? 1))
+      );
+    }
+  }
+
+  return pageMemoryReduction;
+}
+
 /** The time of the last probe context of this page, from `performance.now()`. */
 export function getLastProbeTime(): number {
   return lastProbeAt;
@@ -807,8 +867,8 @@ export type RetestRenderingCapabilitiesOptions = {
  *
  * - `edge`: the reliable edge stays, and the next need above it runs the probe
  *   again. A record with no reliable edge runs the edge search again.
- * - `textureBytes`, `gpuBytes`: the ceiling, the failures and the recent
- *   failure go, and the memory limit returns to the larger of the start value
+ * - `textureBytes`, `gpuBytes`: the ceiling, the failures and the current
+ *   episode go, the page drops its episode reduction, and the memory limit returns to the larger of the start value
  *   and the normal level. A crash during the next try is recorded again by the
  *   same pending record.
  * - `formats`: the next detection probes the data types again. Decisions that
@@ -849,6 +909,10 @@ export function retestRenderingCapabilities(
     unprobeableEdges.clear();
   }
 
+  if (all || options.textureBytes || options.gpuBytes) {
+    pageMemoryReduction = Number.POSITIVE_INFINITY;
+  }
+
   if (all || options.formats) {
     cachedCapabilities = null;
   }
@@ -867,6 +931,9 @@ export function resetRenderingCapabilities({
   record = null;
   edgeSearchTried = false;
   unprobeableEdges.clear();
+  // As a reload: the next read takes the reduction of an episode from the
+  // record again.
+  pageMemoryReduction = Number.POSITIVE_INFINITY;
 
   if (clearStorage) {
     const storage = getCapabilityStorage();

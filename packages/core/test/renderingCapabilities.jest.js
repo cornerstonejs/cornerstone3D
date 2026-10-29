@@ -4,6 +4,7 @@ import {
   getStoredRenderingCapabilities,
   recordRenderingCapabilityFailure,
   addMemoryFailure,
+  MEMORY_RECENT_MS,
   recordRenderingCapabilitySuccess,
   resetRenderingCapabilities,
   retestRenderingCapabilities,
@@ -217,40 +218,54 @@ describe('renderingCapabilities', () => {
     expect(third).not.toBe(first);
   });
 
-  it('keeps the normal level, and sets a ceiling only after several failures', () => {
-    mockWebGL();
-    detectRenderingCapabilities();
+  it('keeps the normal level, and sets a ceiling only after several episodes', () => {
+    const start = Date.now();
+    const clock = jest.spyOn(Date, 'now').mockReturnValue(start);
 
-    recordRenderingCapabilitySuccess('textureBytes', 1000);
-    recordRenderingCapabilitySuccess('textureBytes', 800);
-    recordRenderingCapabilitySuccess('textureBytes', 6000);
-    recordRenderingCapabilityFailure('textureBytes', 4000);
+    try {
+      mockWebGL();
+      detectRenderingCapabilities();
 
-    // The record survives a new page.
-    resetRenderingCapabilities();
-    let stored = getStoredRenderingCapabilities();
+      recordRenderingCapabilitySuccess('textureBytes', 1000);
+      recordRenderingCapabilitySuccess('textureBytes', 800);
+      recordRenderingCapabilitySuccess('textureBytes', 6000);
+      recordRenderingCapabilityFailure('textureBytes', 4000);
+      // A failure within the hour joins the episode, and does not count.
+      recordRenderingCapabilityFailure('textureBytes', 2000);
 
-    expect(stored.edge.reliable).toEqual({ value: 2048, successes: 1 });
-    expect(stored.textureBytes.normal).toEqual({ value: 6000, successes: 1 });
-    // One failure is recent, and sets no ceiling.
-    expect(stored.textureBytes.recent.value).toBe(4000);
-    expect(stored.textureBytes.ceiling).toBeUndefined();
+      // The record survives a new page.
+      resetRenderingCapabilities();
+      let stored = getStoredRenderingCapabilities();
 
-    recordRenderingCapabilityFailure('textureBytes', 5000);
-    recordRenderingCapabilityFailure('textureBytes', 3000);
+      expect(stored.edge.reliable).toEqual({ value: 2048, successes: 1 });
+      expect(stored.textureBytes.normal).toEqual({ value: 6000, successes: 1 });
+      expect(stored.textureBytes.recent).toEqual({
+        value: 4000,
+        at: start,
+        count: 2,
+      });
+      expect(stored.textureBytes.failures).toHaveLength(1);
 
-    stored = getStoredRenderingCapabilities();
-    // The third failure sets the ceiling at 0.75 of the smallest failure.
-    expect(stored.textureBytes.ceiling).toBe(2250);
-    expect(stored.textureBytes.normal).toEqual({ value: 2250, successes: 0 });
-    expect(stored.textureBytes.failures).toEqual([]);
+      clock.mockReturnValue(start + MEMORY_RECENT_MS);
+      recordRenderingCapabilityFailure('textureBytes', 5000);
+      clock.mockReturnValue(start + 2 * MEMORY_RECENT_MS);
+      recordRenderingCapabilityFailure('textureBytes', 3000);
 
-    // A success above the ceiling removes it.
-    recordRenderingCapabilitySuccess('textureBytes', 4000);
+      stored = getStoredRenderingCapabilities();
+      // The third episode sets the ceiling at 0.75 of the smallest first failure.
+      expect(stored.textureBytes.ceiling).toBe(2250);
+      expect(stored.textureBytes.normal).toEqual({ value: 2250, successes: 0 });
+      expect(stored.textureBytes.failures).toEqual([]);
 
-    stored = getStoredRenderingCapabilities();
-    expect(stored.textureBytes.ceiling).toBeUndefined();
-    expect(stored.textureBytes.recent).toBeUndefined();
+      // A success above the ceiling removes it.
+      recordRenderingCapabilitySuccess('textureBytes', 4000);
+
+      expect(
+        getStoredRenderingCapabilities().textureBytes.ceiling
+      ).toBeUndefined();
+    } finally {
+      clock.mockRestore();
+    }
   });
 
   it('counts only the failures within the window toward a ceiling', () => {
@@ -334,7 +349,7 @@ describe('renderingCapabilities', () => {
       const nextPage = require('../src/utilities/renderingCapabilities');
 
       expect(nextPage.getStoredRenderingCapabilities().gpuBytes.recent).toEqual(
-        { value: 512 * MEGABYTE, at: now + 60000 }
+        { value: 512 * MEGABYTE, at: now + 60000, count: 1 }
       );
     });
 
