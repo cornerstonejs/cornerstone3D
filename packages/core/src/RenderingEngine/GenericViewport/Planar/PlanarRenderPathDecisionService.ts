@@ -9,7 +9,7 @@ import {
   getRenderSurfaceForRenderMode,
 } from '../../helpers/renderBackendRegistry';
 import { volumeTextureReductionFactors } from '../../helpers/volumeRenderStrategy';
-import { getActiveGpuCapabilityProfile } from '../../../utilities/gpuCapabilityProfiles';
+import { getActiveGpuSettings } from '../../../utilities/gpuSettingsPresets';
 import type { EffectiveRenderBackend } from '../../../types/RenderBackendRegistry';
 import { isValidVolume } from '../../../utilities/isValidVolume';
 import { getOrientationFromScanAxisNormal } from '../../helpers/getCameraVectors';
@@ -191,8 +191,8 @@ export class PlanarRenderPathDecisionService {
    *
    * All of these must hold: the caller prefers the acquired frames; the data
    * set names a cached, non-dynamic volume; the volume path of the resolved
-   * backend draws from a GPU texture; the active GPU capability profile
-   * reduces that texture on at least one axis; the slab is not thicker than
+   * backend draws from a GPU texture; final downsampling with the active GPU
+   * settings reduces that texture on at least one axis; the slab is not thicker than
    * one acquired slice; and the blend mode is composite.
    *
    * A CPU volume path reads the full-resolution voxels, so it never needs the
@@ -234,10 +234,9 @@ export class PlanarRenderPathDecisionService {
       return false;
     }
 
-    return volumeTextureReductionFactors(
-      volume,
-      getActiveGpuCapabilityProfile()
-    ).some((factor) => factor > 1);
+    return volumeTextureReductionFactors(volume, getActiveGpuSettings()).some(
+      (factor) => factor > 1
+    );
   }
 
   private selectImageRenderMode(

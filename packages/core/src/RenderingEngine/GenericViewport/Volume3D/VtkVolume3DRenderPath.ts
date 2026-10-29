@@ -25,7 +25,7 @@ import type {
   VolumeStrategyProvider,
   VolumeStrategyProvisionReason,
 } from '../../helpers/volumeRenderStrategy';
-import { getActiveGpuCapabilityProfile } from '../../../utilities/gpuCapabilityProfiles';
+import { getActiveGpuSettings } from '../../../utilities/gpuSettingsPresets';
 import {
   canvasToWorldContextPool,
   worldToCanvasContextPool,
@@ -285,7 +285,7 @@ export class VtkVolume3DRenderPath
     const held = rendering.strategies ?? [];
     const built = this.provideStrategies({
       volume: rendering.imageVolume,
-      profile: getActiveGpuCapabilityProfile(),
+      gpuSettings: getActiveGpuSettings(),
       viewportId: rendering.viewportId,
       reason,
     });

@@ -470,14 +470,26 @@ image of any encapsulated syntax takes the direct fragment path.
 - If you special-cased `1.2.840.10008.1.2.4.140` as JPEG XL anywhere in your own
   code, change it to the `.110`/`.111`/`.112` block.
 
-## Volume textures: the default GPU profile is `auto`
+## Volume textures: lossy downsampling is a configuration choice, and the default GPU preset is `auto`
 
 ### What Changed
 
-A volume texture now comes from a GPU capability profile. When an application
-states no profile, the `auto` profile applies. Earlier 5.x pre-releases used
-`high` as the default, with a fixed edge of 2048 voxels; `auto` replaces `high`
-as the default.
+`rendering.lossyDownsampling` of the `init` configuration states which lossy
+downsampling the viewer may use:
+
+| Kind                 | Default | What it does                                                                                 |
+| -------------------- | ------- | -------------------------------------------------------------------------------------------- |
+| `final`              | `false` | Reduces a volume texture that exceeds the GPU settings. The image stays reduced.             |
+| `interactive`        | `true`  | Lowers the detail during an interaction, for example the sample distance of a 3D rotation.   |
+| `interleavedLoading` | `true`  | Fills the frames that have not loaded yet with copies of the nearby frames, during the load. |
+
+With the defaults, a volume texture has the full dimensions of the volume, as in
+4.x. The `interactive` and `interleavedLoading` kinds keep the behaviour of 4.x.
+
+With `final: true`, a volume texture comes from the GPU settings. When an
+application selects no preset, the `auto` preset applies. Earlier 5.x
+pre-releases used `high` as the default, with a fixed edge of 2048 voxels;
+`auto` replaces `high` as the default.
 
 `auto` takes its limits from a record that the browser keeps for each GPU
 renderer, in the `localStorage` key `cornerstone3D.renderingCapabilities`:
@@ -496,32 +508,33 @@ renderer, in the `localStorage` key `cornerstone3D.renderingCapabilities`:
   always an edge that the probe passed.
 
 A volume with an axis longer than the limit draws from a box-average reduction
-of that axis. Before this release, the mapper allocated the texture at the full
-dimensions of the volume.
-
-For example, a CT of 512 × 512 × 2464 draws with a factor of 2 along k on a
-device with a `MAX_3D_TEXTURE_SIZE` of 2048, and at full resolution on a device
-that passes the probe at 2464.
+of that axis. For example, a CT of 512 × 512 × 2464 draws with a factor of 2
+along k on a device with a `MAX_3D_TEXTURE_SIZE` of 2048, and at full
+resolution on a device that passes the probe at 2464.
 
 ### Why This Matters
 
+Each kind of lossy downsampling shows pixels that differ from the source data.
+An application turns on a kind only when it also tells the user that the image
+is lossy.
+
 The reported `MAX_3D_TEXTURE_SIZE` is not a reliable limit. Some Android
 devices report 2048 or more, but render a uniform gray above 128 or 256 per
-axis. The probe tests the edge that the device really renders.
-
-A volume with an axis longer than the limit shows less detail along that axis
-than in 4.x. The voxel quality record of the viewport states the reduction
-(`reduction: boxAverage`), so a fidelity readout can show it to the user.
+axis. Without final downsampling, such a device can show a uniform gray image
+or lose its WebGL context. With final downsampling, the probe tests the edge
+that the device really renders, and the voxel quality record of the viewport
+states the reduction (`reduction: boxAverage`), so a fidelity readout can show
+it to the user.
 
 The probe version of the stored record changes from 1 to 2, so each browser
 probes again once.
 
 ### API changes
 
-- `GpuCapabilityProfileId` has a new member `'auto'`. An exhaustive `switch`
+- `GpuSettingsPresetId` has a new member `'auto'`. An exhaustive `switch`
   over the type needs a new case.
-- `defaultGpuCapabilityProfileId` changes from `'high'` to `'auto'`.
-- `getGpuCapabilityProfiles()` returns `auto` first, then the named profiles.
+- `defaultGpuSettingsPresetId` changes from `'high'` to `'auto'`.
+- `getGpuSettingsPresets()` returns `auto` first, then the named presets.
   Its first call can run the probe, which creates a WebGL context.
 - The start memory on a desktop GPU changes from 32 GB (`high`) to 8 GB
   (`medium`), and the page total of all volumes counts against it. More
@@ -533,11 +546,16 @@ probes again once.
 
 ### Migration Guidance
 
-- **No action is needed** for most applications: `auto` applies by default.
-- **To keep the earlier default,** call `setActiveGpuCapabilityProfile('high')`
-  before a viewport adds its actors. A named profile (`low-tablet`, `low`,
-  `medium`, `high`) overrides `auto`, and `resetActiveGpuCapabilityProfile()`
-  returns to `auto`.
+- **No action is needed** to keep the behaviour of 4.x.
+- **To fit the texture to the device,** set
+  `rendering.lossyDownsampling.final` to `true` in the `init` configuration, or
+  call `setLossyDownsampling({ final: true })` before a viewport adds its
+  actors. `auto` then applies.
+- **To select a fixed preset,** call `setGpuSettingsPreset('medium')` (or
+  `low-tablet`, `low`, `high`) before a viewport adds its actors. A named preset
+  overrides `auto`, and `resetGpuSettingsPreset()` returns to `auto`.
+- **To show no lossy pixels at all,** set `interactive` and
+  `interleavedLoading` to `false` as well.
 - **To show the limits,** read `getStoredRenderingCapabilities()`. Each value
   has a success count and a failure count.
 - **To try a failed limit again,** call `retestRenderingCapabilities()`, or

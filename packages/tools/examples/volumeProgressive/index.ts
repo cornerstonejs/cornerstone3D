@@ -13,9 +13,10 @@ import {
   metaData,
   getRenderingCapabilities,
   getStoredRenderingCapabilities,
-  getActiveGpuCapabilityProfile,
+  getActiveGpuSettings,
   retestRenderingCapabilities,
   resetRenderingCapabilities,
+  getLossyDownsampling,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -23,7 +24,7 @@ import {
   setTitleAndDescription,
   getLocalUrl,
   addDropdownToToolbar,
-  addGpuCapabilityProfileDropdown,
+  addGpuSettingsPresetDropdown,
   addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
@@ -82,7 +83,7 @@ const viewportIds = [
  * The series that this example can load.
  *
  * The DTI series holds 3720 images of 128 x 128, which is a volume that no
- * profile with a small edge can hold in one texture, so the reduction is
+ * preset with a small edge can hold in one texture, so the reduction is
  * visible. The CT series is the one that this example loaded before, and the
  * alternate paths of the progressive configurations exist on that server only.
  */
@@ -98,7 +99,7 @@ const seriesOptions = {
   },
   // A real 3D volume of 2464 images, each of 512 x 512, with one image at each
   // position. The k axis exceeds an edge of 2048, so a reduction of that one
-  // axis applies under a named profile, and under `auto` on a device whose
+  // axis applies under a named preset, and under `auto` on a device whose
   // MAX_3D_TEXTURE_SIZE is 2048 or whose edge probe fails at 2464. Nothing is
   // interleaved: a streak in this series comes from the code and not from the
   // acquisition. This series is the test data of commit 9, which gives a
@@ -497,7 +498,7 @@ const configHtj2kMixed = {
  */
 async function run() {
   // Init Cornerstone and related libraries
-  // The reduction that the GPU class forces is visible on a legacy viewport and
+  // The reduction that the GPU settings preset forces is visible on a legacy viewport and
   // on a generic viewport, because the choice of a strategy lives in the actor
   // helpers that both of them use. Add `?type=next` to the address to draw
   // through the generic viewports and their render paths.
@@ -512,7 +513,11 @@ async function run() {
     window.history.replaceState(null, '', url.toString());
   }
 
-  await initDemo();
+  // This example turns on final downsampling, so that the GPU settings preset
+  // reduces a volume. `?finalDownsampling=false` turns it off.
+  await initDemo({
+    core: { rendering: { lossyDownsampling: { final: true } } },
+  });
 
   const toolGroupId = 'TOOL_GROUP_ID';
 
@@ -593,15 +598,15 @@ async function run() {
     },
   });
 
-  // No profile is set, so `auto` applies: its limits come from the stored
-  // record of the device. A named profile in the drop down overrides `auto`.
+  // No preset is selected, so `auto` applies: its limits come from the stored
+  // record of the device. A named preset in the drop down overrides `auto`.
   // The strategies of a viewport are built when that viewport adds its actor,
   // so a change applies at the next load, which rebuilds every viewport.
-  addGpuCapabilityProfileDropdown({
+  addGpuSettingsPresetDropdown({
     container: loaders,
-    onSelectedValueChange: (profile) => {
+    onSelectedValueChange: (gpuSettings) => {
       getOrCreateTiming('loadingStatus').innerText =
-        `GPU class ${profile.id}. Press a load button to apply it.`;
+        `GPU settings preset ${gpuSettings.id}. Press a load button to apply it.`;
     },
   });
 
@@ -633,7 +638,7 @@ async function run() {
     return [
       `GPU edge: reliable ${reliable?.value ?? 'none'} (${reliable?.successes ?? 0} successes)`,
       `failed ${failed?.value ?? 'none'} (${failed?.failures ?? 0} failures)`,
-      `${getActiveGpuCapabilityProfile().id} edge ${getActiveGpuCapabilityProfile().maxTextureEdge}`,
+      `${getActiveGpuSettings().id} edge ${getActiveGpuSettings().maxTextureEdge}`,
       `probe ${stored?.probeMs ?? '-'} ms`,
     ].join(', ');
   };
@@ -648,7 +653,7 @@ async function run() {
 ` +
       JSON.stringify(
         {
-          activeProfile: getActiveGpuCapabilityProfile(),
+          activeGpuSettings: getActiveGpuSettings(),
           storedRecord: getStoredRenderingCapabilities(),
           capabilities: getRenderingCapabilities(),
         },
@@ -695,6 +700,24 @@ async function run() {
   });
 
   loaders.appendChild(probePanel);
+
+  // The flag applies at init, so a change reloads the page with the URL
+  // parameter that the demo helpers read.
+  const finalDownsampling = getLossyDownsampling().final;
+
+  addButtonToToolbar({
+    id: 'toggleFinalDownsampling',
+    title: finalDownsampling
+      ? 'Reload with final downsampling off'
+      : 'Reload with final downsampling on',
+    container: loaders,
+    onClick: () => {
+      const url = new URL(window.location.href);
+
+      url.searchParams.set('finalDownsampling', String(!finalDownsampling));
+      window.location.href = url.toString();
+    },
+  });
 
   // Instantiate a rendering engine
   const renderingEngine = new RenderingEngine(renderingEngineId);

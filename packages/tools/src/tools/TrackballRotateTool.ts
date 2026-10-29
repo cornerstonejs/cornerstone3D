@@ -5,6 +5,7 @@ import {
   getEnabledElement,
   getEnabledElementByIds,
   utilities as csUtils,
+  getLossyDownsampling,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { mat4, vec3 } from 'gl-matrix';
@@ -64,7 +65,10 @@ class TrackballRotateTool extends BaseTool {
     const originalSampleDistance = mapper.getSampleDistance();
 
     if (!this._hasResolutionChanged) {
-      const { rotateSampleDistanceFactor } = this.configuration;
+      // A larger sample distance is an interactive downsampling.
+      const rotateSampleDistanceFactor = getLossyDownsampling().interactive
+        ? this.configuration.rotateSampleDistanceFactor
+        : 1;
       mapper.setSampleDistance(
         originalSampleDistance * rotateSampleDistanceFactor
       );

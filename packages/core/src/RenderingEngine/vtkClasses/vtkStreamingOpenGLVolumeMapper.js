@@ -11,7 +11,7 @@ import { getCanUseNorm16Texture } from '../../init';
 import canUseFloatOpacityTexture from './canUseFloatOpacityTexture';
 import { coreLog } from '../../utilities/logger';
 import { noteTextureRendered } from '../../utilities/gpuAllocationTracker';
-import gridFitsProfile from './gridFitsProfile';
+import gridFitsGpuSettings from './gridFitsGpuSettings';
 
 const log = coreLog.getLogger(
   'RenderingEngine',
@@ -410,7 +410,7 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
             // allocation instead, and the render path draws what it drew
             // before. MR-API-IV-7, and acceptance criterion 15.
             if (
-              !gridFitsProfile(dims, dataType, textureNumberOfComponents, {
+              !gridFitsGpuSettings(dims, dataType, textureNumberOfComponents, {
                 volumeId: currentTexture.getVolumeId?.(),
               })
             ) {

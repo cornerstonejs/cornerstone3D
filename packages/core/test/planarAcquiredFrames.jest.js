@@ -8,11 +8,16 @@ import { PlanarRenderPathDecisionService } from '../src/RenderingEngine/GenericV
 import renderingEngineCache from '../src/RenderingEngine/renderingEngineCache';
 import genericViewportDisplaySetMetadataProvider from '../src/utilities/genericViewportDisplaySetMetadataProvider';
 import {
-  resetActiveGpuCapabilityProfile,
-  setActiveGpuCapabilityProfile,
-} from '../src/utilities/gpuCapabilityProfiles';
+  resetGpuSettingsPreset,
+  setGpuSettingsPreset,
+} from '../src/utilities/gpuSettingsPresets';
+import { setLossyDownsampling } from '../src/init';
 
-// A volume whose texture the profile reduces. Only the fields that the
+// These tests need final downsampling, which is off by default.
+beforeAll(() => setLossyDownsampling({ final: true }));
+afterAll(() => setLossyDownsampling({ final: false }));
+
+// A volume whose texture the preset reduces. Only the fields that the
 // decision and the slice conversion read are present.
 function createVolume({ volumeId, dimensions, spacing, imageIds }) {
   const origin = [0, 0, 0];
@@ -43,7 +48,7 @@ describe('PlanarRenderPathDecisionService acquired frames (API)', () => {
   beforeEach(() => {
     // The example of the issue: 512 x 512 x 2464 under `medium` reduces the
     // texture by [1, 1, 2].
-    setActiveGpuCapabilityProfile('medium');
+    setGpuSettingsPreset('medium');
     service = new PlanarRenderPathDecisionService();
     getVolumeSpy = jest.spyOn(cache, 'getVolume').mockReturnValue(
       createVolume({
@@ -57,7 +62,7 @@ describe('PlanarRenderPathDecisionService acquired frames (API)', () => {
 
   afterEach(() => {
     getVolumeSpy.mockRestore();
-    resetActiveGpuCapabilityProfile();
+    resetGpuSettingsPreset();
   });
 
   it('selects the image path for a reduced volume in the acquisition plane', () => {
@@ -88,7 +93,7 @@ describe('PlanarRenderPathDecisionService acquired frames (API)', () => {
       ).toBe(ActorRenderMode.VTK_VOLUME_SLICE);
     }
 
-    setActiveGpuCapabilityProfile('high-texture-4096');
+    setGpuSettingsPreset('high-texture-4096');
     expect(
       service.select(dataSet, { preferAcquiredFrames: true }).renderMode
     ).toBe(ActorRenderMode.VTK_VOLUME_SLICE);
@@ -129,7 +134,7 @@ describe('PlanarViewport acquired frames (user experience)', () => {
 
   beforeEach(() => {
     // `low` reduces a 512 x 512 frame by 2 in the plane of the frame.
-    setActiveGpuCapabilityProfile('low');
+    setGpuSettingsPreset('low');
     renderingEngineId = 'acquired-frames-engine';
     const element = document.createElement('div');
     const renderer = {
@@ -205,7 +210,7 @@ describe('PlanarViewport acquired frames (user experience)', () => {
     metaData.removeProvider(metadataProvider);
     genericViewportDisplaySetMetadataProvider.clear();
     getVolumeSpy.mockRestore();
-    resetActiveGpuCapabilityProfile();
+    resetGpuSettingsPreset();
     jest.restoreAllMocks();
   });
 

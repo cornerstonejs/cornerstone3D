@@ -35,7 +35,7 @@ already exists.
   ║            │ asks         │                        │                            ║
   ║            ▼              │                        │                            ║
   ║   VolumeStrategyProvider ─┘                        │                            ║
-  ║            │   · reads the GpuCapabilityProfile    │                            ║
+  ║            │   · reads the GpuSettings    │                            ║
   ║            │   · computes the box factors per axis │                            ║
   ║            │   · provisions the texture sets ──────┘                            ║
   ║            │                                                                    ║
@@ -85,7 +85,7 @@ already exists.
 | `VolumeTextureSet`       | A named set of textures, and the unit of storage, of cost and of eviction. Its members carry an area index.                                            |
 | `volumeTextureStore`     | The global store of the sets, with one budget for the texture memory of every volume.                                                                  |
 | `CompositeVoxelManager`  | The voxels. It holds the full-resolution data and every reduced representation, and it fills a grid from the best sources that it has.                 |
-| `GpuCapabilityProfile`   | The limits of the device. `auto` (the default) reads the stored record of the device. A named profile, which an application states, overrides `auto`.  |
+| `GpuSettings`            | The limits of the device. `auto` (the default) computes them from the stored record of the device. A named preset overrides `auto`.                    |
 | `VoxelQualityRecord`     | The absolute record of the data that a render drew. It states no verdict.                                                                              |
 
 ## Where the code is
@@ -95,7 +95,7 @@ table gives the file of each piece. The paths are under `packages/core/src/`, ex
 
 | Piece or step                                       | Code                                                                                                               |
 | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| The profiles, and the limits of a grid              | `utilities/gpuCapabilityProfiles.ts`: `setActiveGpuCapabilityProfile`, `gridLimitsOfProfile`, `profileForGrid`     |
+| The presets, and the limits of a grid               | `utilities/gpuSettingsPresets.ts`: `setGpuSettingsPreset`, `gridLimitsOfGpuSettings`, `gpuSettingsForGrid`         |
 | The probe, and the stored record of the device      | `utilities/textureSupport.ts`, `utilities/renderingCapabilities.ts`, `utilities/capabilityStorage.ts`              |
 | The memory record of a large allocation             | `utilities/gpuAllocationTracker.ts`, called by `vtkStreamingOpenGLTexture.create3DFromRaw`                         |
 | The factors of a reduction, and the reduced grid    | `utilities/voxelGrid/`: `boxAverageReductionFactors`, `reducedDimensions`, `deriveBoxAverageGrid`                  |
@@ -114,7 +114,9 @@ table gives the file of each piece. The paths are under `packages/core/src/`, ex
 **The provider runs when the render path adds its actor, and it never runs on the frame path.** It
 does the expensive thing: it allocates the textures.
 
-The default provider reads the capability profile and answers in one of two ways:
+With final downsampling off (`rendering.lossyDownsampling.final`, the default), the default provider
+always builds the full-resolution strategy. With final downsampling on, the provider reads the GPU
+settings and answers in one of two ways:
 
 - The device can hold the full-resolution grid, so the provider builds the **full-resolution
   strategy** and provisions the set `full-resolution/full-extent`.
@@ -278,9 +280,9 @@ the display resolution sits below the resolution of the data.
 
 ## How the device limits are found
 
-The default profile is `auto`. Its edge and its texture memory come from a record that the browser
+The default preset is `auto`. Its edge and its texture memory come from a record that the browser
 keeps for each renderer, in the `localStorage` key `cornerstone3D.renderingCapabilities`. The renderer
-string and the probe version are the key of the record. A named profile (`low-tablet`, `low`,
+string and the probe version are the key of the record. A named preset (`low-tablet`, `low`,
 `medium`, `high`) overrides `auto`.
 
 A GPU fails in four ways, and each way has its own detection:
@@ -304,7 +306,7 @@ uniform gray above an edge of 128.
 
 **The probe at a larger edge.** When a volume needs an edge above the reliable edge, below a failed
 edge and not above `MAX_3D_TEXTURE_SIZE`, `volumeTextureReductionFactors` and the mappers (through
-`gridFitsProfile`) run the probe at that edge before the texture is allocated. That probe took 10 to
+`gridFitsGpuSettings`) run the probe at that edge before the texture is allocated. That probe took 10 to
 20 ms. A pass raises the reliable edge, and a failure keeps the volume reduced. An edge whose probe
 could not run is not tried again in the same page.
 
@@ -416,8 +418,8 @@ texture, which is what lets a basis point move.
 **VRS-C-10.** The record that the selection receives is open. A render component adds the fields
 that its own function reads, and no existing caller changes.
 
-**VRS-C-11.** When an application states no profile, `auto` applies. A named profile overrides
-`auto`, and `resetActiveGpuCapabilityProfile` returns to `auto`.
+**VRS-C-11.** When an application selects no preset, `auto` applies. A named preset overrides
+`auto`, and `resetGpuSettingsPreset` returns to `auto`.
 
 **VRS-C-12.** Under `auto`, no texture with an edge above the reliable edge of the device is
 allocated before the probe passes at that edge, on the streaming volume path, the streaming and the
@@ -439,8 +441,8 @@ next load.
 
 ## § Implementation choices
 
-**VRS-I-1.** The default provider builds the full-resolution strategy when the capability profile
-admits it, and the reduced-resolution strategy otherwise. It reads the capability alone: a
+**VRS-I-1.** The default provider builds the full-resolution strategy when final downsampling is off
+or the GPU settings admit it, and the reduced-resolution strategy otherwise. It reads the capability alone: a
 performance-bound choice belongs to task T14, which supplies its own provider.
 
 **VRS-I-2.** The default selection keeps the strategy of the previous render while that strategy is
@@ -475,7 +477,7 @@ removal of an actor, and a legacy viewport has many such paths.
 edge on each of the three axes, because a driver can store the depth axis as layers. The first edge
 is 2048, and the search halves the edge down to 16.
 
-**VRS-I-13.** `auto` takes its memory and its speed from a named profile of the class of the
+**VRS-I-13.** `auto` takes its memory and its speed from a named preset of the class of the
 renderer: `low` for a software rasterizer or no WebGL2, `low-tablet` for a mobile GPU (Mali, Adreno,
 PowerVR, Apple GPU, Immortalis, Xclipse, Vivante), and `medium` for any other GPU. A software
 rasterizer also keeps the edge of `low` (256) at most, because a larger texture is too slow on it.
@@ -500,7 +502,7 @@ so two tabs keep both of their changes.
 
 **VRS-I-16.** `auto` limits a new texture to its memory limit minus the texture bytes of the other
 volumes (at least 16 MB). It does not set the budget of the store, so it does not evict the textures
-of another volume. A named profile limits one texture, as before.
+of another volume. A named preset limits one texture, as before.
 
 **VRS-I-17.** No check after a render detects type 1. The probe runs before every allocation above
 the reliable edge, and it fails a uniform gray, so a second check adds nothing. A check after a

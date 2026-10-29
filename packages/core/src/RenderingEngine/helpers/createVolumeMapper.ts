@@ -6,10 +6,10 @@ import vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import vtkBoundingBox from '@kitware/vtk.js/Common/DataModel/BoundingBox';
 import {
-  getActiveGpuCapabilityProfile,
-  gridLimitsOfProfile,
-  profileForGrid,
-} from '../../utilities/gpuCapabilityProfiles';
+  getActiveGpuSettings,
+  gridLimitsOfGpuSettings,
+  gpuSettingsForGrid,
+} from '../../utilities/gpuSettingsPresets';
 import { voxelGridWithinLimits } from '../../utilities/voxelGrid';
 import volumeTextureStore from '../../cache/volumeTextureStore';
 import { noteTextureAllocation } from '../../utilities/gpuAllocationTracker';
@@ -89,7 +89,7 @@ export default function createVolumeMapper(
  * The new mapper is a plain vtk.js mapper, which uploads the complete scalar
  * array at full resolution, with no reduction. Under `auto`, the edge probe
  * runs first, the upload counts in the memory record, and a grid above the
- * limits of the profile logs a warning.
+ * limits of the GPU settings logs a warning.
  *
  * @param sharedMapper - The shared mapper to convert.
  * @returns The converted volume mapper.
@@ -113,8 +113,8 @@ export function convertMapperToNotSharedMapper(sharedMapper: vtkVolumeMapper) {
   const bytesPerVoxel = values.BYTES_PER_ELEMENT;
   const textureBytes =
     dimensions[0] * dimensions[1] * dimensions[2] * bytesPerVoxel;
-  const limits = gridLimitsOfProfile(
-    profileForGrid(getActiveGpuCapabilityProfile(), dimensions, bytesPerVoxel),
+  const limits = gridLimitsOfGpuSettings(
+    gpuSettingsForGrid(getActiveGpuSettings(), dimensions, bytesPerVoxel),
     bytesPerVoxel
   );
 
@@ -130,7 +130,7 @@ export function convertMapperToNotSharedMapper(sharedMapper: vtkVolumeMapper) {
     )
   ) {
     log.warn(
-      `a full-resolution texture of ${dimensions.join('x')} exceeds the limits of the GPU profile, and this mapper cannot reduce it`
+      `a full-resolution texture of ${dimensions.join('x')} exceeds the limits of the GPU settings, and this mapper cannot reduce it`
     );
   }
 

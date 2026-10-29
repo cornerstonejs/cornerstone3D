@@ -19,27 +19,30 @@ import type { ProbeTextureFormat } from './textureSupport';
  * 1 is a slow CPU that emulates a GPU in software. 100 is a recent
  * top-of-the-line GPU at the time of writing. The scale has no upper bound, so
  * a device that is faster than anything available today takes a value above
- * 100, and no existing profile changes.
+ * 100, and no existing preset changes.
  *
  * The value is relative, and it states no number of frames for each second,
  * because a measurement of the frame rate belongs to task T14 and not to a
- * declared profile.
+ * declared preset.
  */
 export type GpuSpeedIndex = number;
 
 /**
- * A capability profile.
+ * The GPU settings that the volume render reads: the limits that a texture must
+ * respect, and the speed class of the device. They apply only when final
+ * downsampling is on (see `rendering.lossyDownsampling.final`).
  *
- * `auto` is the default. Its edge and memory come from the stored record of
- * the device (see `getStoredRenderingCapabilities`). A named profile, which an
- * application states, overrides `auto`.
+ * A preset is a named set of these values. `auto` is the default preset, and
+ * it computes its edge and memory from the stored record of the device (see
+ * `getStoredRenderingCapabilities`). A named preset, which an application
+ * selects, overrides `auto`.
  */
-export type GpuCapabilityProfile = {
-  /** The name of the profile. */
-  id: GpuCapabilityProfileId;
+export type GpuSettings = {
+  /** The name of the preset. */
+  id: GpuSettingsPresetId;
   /**
    * The largest number of voxels that one axis of one texture can hold.
-   * WebGL devices commonly report 2048; a profile may state a lower policy
+   * WebGL devices commonly report 2048; a preset may state a lower policy
    * edge so weak GPUs reduce before they lose the context.
    */
   maxTextureEdge: number;
@@ -48,13 +51,13 @@ export type GpuCapabilityProfile = {
   /** How fast this class of device draws. See `GpuSpeedIndex`. */
   speed: GpuSpeedIndex;
   /**
-   * True for a profile that exists for a test, which an application must not
+   * True for a preset that exists for a test, which an application must not
    * state in production.
    */
   internal?: boolean;
 };
 
-export type GpuCapabilityProfileId =
+export type GpuSettingsPresetId =
   | 'auto'
   | 'low-tablet'
   | 'low'
@@ -65,7 +68,7 @@ export type GpuCapabilityProfileId =
 const GIGABYTE = 1024 * 1024 * 1024;
 
 /**
- * The profiles.
+ * The presets.
  *
  * `medium` and `high` share the WebGL edge of 2048 and differ by memory.
  * `low` and `low-tablet` use a 256 policy edge so weak integrated GPUs
@@ -77,9 +80,9 @@ const GIGABYTE = 1024 * 1024 * 1024;
  * with a reduction under `high`, which shows that the reduction comes from the
  * limit and not from a defect.
  */
-type NamedProfileId = Exclude<GpuCapabilityProfileId, 'auto'>;
+type NamedPresetId = Exclude<GpuSettingsPresetId, 'auto'>;
 
-const PROFILES: Record<NamedProfileId, GpuCapabilityProfile> = {
+const PRESETS: Record<NamedPresetId, GpuSettings> = {
   'low-tablet': {
     id: 'low-tablet',
     maxTextureEdge: 256,
@@ -115,23 +118,23 @@ const PROFILES: Record<NamedProfileId, GpuCapabilityProfile> = {
 };
 
 /**
- * The profile that applies when an application states none.
+ * The preset that applies when an application states none.
  *
  * `auto` reads the stored record of the device, which the probe and the
  * allocation tracker fill. The reported `MAX_3D_TEXTURE_SIZE` is not a
  * reliable limit, because some Android devices report 2048 or more but render
  * only 128 or 256 per axis; the probe tests the edge instead.
  */
-const DEFAULT_PROFILE_ID: GpuCapabilityProfileId = 'auto';
+const DEFAULT_PRESET_ID: GpuSettingsPresetId = 'auto';
 
-let activeProfileId: GpuCapabilityProfileId = DEFAULT_PROFILE_ID;
+let activePresetId: GpuSettingsPresetId = DEFAULT_PRESET_ID;
 
 /**
- * The named profile that sets the conservative start of `auto` for a class of
+ * The named preset that sets the conservative start of `auto` for a class of
  * renderer: `low` for a software rasterizer or no WebGL2, `low-tablet` for a
  * GPU of a phone or a tablet, and `medium` for any other GPU.
  */
-const START_PROFILE_OF_CLASS: Record<RendererClass, NamedProfileId> = {
+const START_PRESET_OF_CLASS: Record<RendererClass, NamedPresetId> = {
   none: 'low',
   software: 'low',
   mobile: 'low-tablet',
@@ -206,23 +209,23 @@ function autoEdge(rendererClass: RendererClass): number {
 
   // A software rasterizer is too slow for a larger texture.
   return rendererClass === 'software'
-    ? Math.min(edge, PROFILES.low.maxTextureEdge)
+    ? Math.min(edge, PRESETS.low.maxTextureEdge)
     : edge;
 }
 
 /**
- * The `auto` profile, from the stored record of the device.
+ * The `auto` preset, from the stored record of the device.
  *
- * The start profile of the class of the renderer (see `START_PROFILE_OF_CLASS`)
+ * The start preset of the class of the renderer (see `START_PRESET_OF_CLASS`)
  * gives the memory before the record holds any, and the speed. The edge is
  * the reliable edge of the probe (see `autoEdge`). The memory is the start
  * memory, raised by a larger total that worked, and lowered below a total at
  * which a context was lost or the tab stopped (see `autoMemoryLimit`). A
  * software rasterizer keeps the memory of `low`.
  */
-function getAutoGpuCapabilityProfile(): GpuCapabilityProfile {
+function getAutoGpuSettings(): GpuSettings {
   const rendererClass = getRendererClass();
-  const start = PROFILES[START_PROFILE_OF_CLASS[rendererClass]];
+  const start = PRESETS[START_PRESET_OF_CLASS[rendererClass]];
 
   if (rendererClass === 'none') {
     return { ...start, id: 'auto' };
@@ -247,90 +250,88 @@ function getAutoGpuCapabilityProfile(): GpuCapabilityProfile {
 }
 
 /**
- * Every profile: `auto` first, then the named profiles, the internal one
+ * Every preset: `auto` first, then the named presets, the internal one
  * included. The values of `auto` come from the stored record, so the first
  * call can run the probe.
  */
-function getGpuCapabilityProfiles(): GpuCapabilityProfile[] {
-  return [getAutoGpuCapabilityProfile(), ...Object.values(PROFILES)];
+function getGpuSettingsPresets(): GpuSettings[] {
+  return [getAutoGpuSettings(), ...Object.values(PRESETS)];
 }
 
-/** The profile of one name. `auto` reads the stored record each time. */
-function getGpuCapabilityProfile(
-  id: GpuCapabilityProfileId
-): GpuCapabilityProfile {
+/** The preset of one name. `auto` reads the stored record each time. */
+function getGpuSettingsPreset(id: GpuSettingsPresetId): GpuSettings {
   if (id === 'auto') {
-    return getAutoGpuCapabilityProfile();
+    return getAutoGpuSettings();
   }
 
-  const profile = Object.prototype.hasOwnProperty.call(PROFILES, id)
-    ? PROFILES[id]
+  const preset = Object.prototype.hasOwnProperty.call(PRESETS, id)
+    ? PRESETS[id]
     : undefined;
 
-  if (!profile) {
-    throw new Error(`gpuCapabilityProfiles: there is no profile named ${id}`);
+  if (!preset) {
+    throw new Error(`gpuSettingsPresets: there is no preset named ${id}`);
   }
 
-  return profile;
+  return preset;
 }
 
 /**
- * States which profile applies. A named profile overrides `auto`, and
- * `resetActiveGpuCapabilityProfile` returns to `auto`.
+ * States which preset applies. A named preset overrides `auto`, and
+ * `resetGpuSettingsPreset` returns to `auto`.
  */
-function setActiveGpuCapabilityProfile(id: GpuCapabilityProfileId): void {
+function setGpuSettingsPreset(id: GpuSettingsPresetId): void {
   if (id !== 'auto') {
     // The lookup states the error for a name that does not exist.
-    getGpuCapabilityProfile(id);
+    getGpuSettingsPreset(id);
   }
 
-  activeProfileId = id;
+  activePresetId = id;
 }
 
-/** The profile that applies now. */
-function getActiveGpuCapabilityProfile(): GpuCapabilityProfile {
-  return getGpuCapabilityProfile(activeProfileId);
+/** The preset that applies now. */
+function getActiveGpuSettings(): GpuSettings {
+  return getGpuSettingsPreset(activePresetId);
 }
 
-/** Returns the active profile to the default, which is `auto`. */
-function resetActiveGpuCapabilityProfile(): void {
-  activeProfileId = DEFAULT_PROFILE_ID;
+/** Returns the active preset to the default, which is `auto`. */
+function resetGpuSettingsPreset(): void {
+  activePresetId = DEFAULT_PRESET_ID;
 }
 
 /**
- * The profile that applies to a grid of these dimensions.
+ * The preset that applies to a grid of these dimensions.
  *
  * Under `auto`, a grid with an edge above the reliable edge first runs the
  * probe at that edge, synchronously, before the real texture is allocated
- * (see `probeRenderingEdge`). The profile then comes from the updated record.
+ * (see `probeRenderingEdge`). The preset then comes from the updated record.
  *
  * `auto` states its memory limit for the texture bytes of the page, so the
  * texture of this grid gets the limit minus `otherTextureBytes`, the bytes that
- * the other textures of the page already take. A named profile comes back as
+ * the other textures of the page already take. A named preset comes back as
  * it is, and its memory limits one texture.
  *
- * @param profile - the profile that applies
+ * @param gpuSettings - the GPU settings that apply
  * @param dimensions - the number of voxels on each axis of the grid
  * @param bytesPerVoxel - the number of bytes of one voxel of the texture
  * @param otherTextureBytes - the texture bytes of the page that this grid
  * does not replace
  */
-function profileForGrid(
-  profile: GpuCapabilityProfile,
+function gpuSettingsForGrid(
+  gpuSettings: GpuSettings,
   dimensions: ArrayLike<number>,
   bytesPerVoxel: number,
   otherTextureBytes = 0
-): GpuCapabilityProfile {
-  if (profile.id !== 'auto') {
-    return profile;
+): GpuSettings {
+  if (gpuSettings.id !== 'auto') {
+    return gpuSettings;
   }
 
   const edge = Math.max(dimensions[0], dimensions[1], dimensions[2]);
   const rendererClass = getRendererClass();
-  let result = profile;
+  let result = gpuSettings;
 
   if (
-    edge > profile.maxTextureEdge &&
+    edge > gpuSettings.maxTextureEdge &&
     rendererClass !== 'software' &&
     rendererClass !== 'none'
   ) {
@@ -344,7 +345,7 @@ function profileForGrid(
           : 'float';
 
     if (probeRenderingEdge(edge, format)) {
-      result = getAutoGpuCapabilityProfile();
+      result = getAutoGpuSettings();
     }
   }
 
@@ -362,7 +363,7 @@ function profileForGrid(
 }
 
 /**
- * The limits of one grid under one profile.
+ * The limits of one grid under one preset.
  *
  * `maxEdge` is the limit of the device on one axis. `maxVoxelCount` comes from
  * the memory of the device and from the width of one voxel: a texture that no
@@ -370,19 +371,19 @@ function profileForGrid(
  * texture is too large" and "there is not sufficient memory" give the same
  * result to the user, so one mechanism covers the two causes.
  *
- * @param profile - the profile that applies
+ * @param gpuSettings - the GPU settings that apply
  * @param bytesPerVoxel - the number of bytes of one voxel of the texture
  * @returns the limits that a grid must respect
  */
-function gridLimitsOfProfile(
-  profile: GpuCapabilityProfile,
+function gridLimitsOfGpuSettings(
+  gpuSettings: GpuSettings,
   bytesPerVoxel: number
 ): VoxelGridLimits {
-  const limits: VoxelGridLimits = { maxEdge: profile.maxTextureEdge };
+  const limits: VoxelGridLimits = { maxEdge: gpuSettings.maxTextureEdge };
 
-  if (bytesPerVoxel > 0 && profile.textureMemoryBytes > 0) {
+  if (bytesPerVoxel > 0 && gpuSettings.textureMemoryBytes > 0) {
     limits.maxVoxelCount = Math.floor(
-      profile.textureMemoryBytes / bytesPerVoxel
+      gpuSettings.textureMemoryBytes / bytesPerVoxel
     );
   }
 
@@ -390,12 +391,12 @@ function gridLimitsOfProfile(
 }
 
 export {
-  getGpuCapabilityProfile,
-  profileForGrid,
-  getGpuCapabilityProfiles,
-  setActiveGpuCapabilityProfile,
-  getActiveGpuCapabilityProfile,
-  resetActiveGpuCapabilityProfile,
-  gridLimitsOfProfile,
-  DEFAULT_PROFILE_ID as defaultGpuCapabilityProfileId,
+  getGpuSettingsPreset,
+  gpuSettingsForGrid,
+  getGpuSettingsPresets,
+  setGpuSettingsPreset,
+  getActiveGpuSettings,
+  resetGpuSettingsPreset,
+  gridLimitsOfGpuSettings,
+  DEFAULT_PRESET_ID as defaultGpuSettingsPresetId,
 };

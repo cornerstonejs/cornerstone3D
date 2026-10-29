@@ -1,13 +1,13 @@
 import { describe, it, expect, afterEach, jest } from '@jest/globals';
 import {
-  getGpuCapabilityProfile,
-  getGpuCapabilityProfiles,
-  getActiveGpuCapabilityProfile,
-  setActiveGpuCapabilityProfile,
-  resetActiveGpuCapabilityProfile,
-  gridLimitsOfProfile,
-  profileForGrid,
-} from '../src/utilities/gpuCapabilityProfiles';
+  getGpuSettingsPreset,
+  getGpuSettingsPresets,
+  getActiveGpuSettings,
+  setGpuSettingsPreset,
+  resetGpuSettingsPreset,
+  gridLimitsOfGpuSettings,
+  gpuSettingsForGrid,
+} from '../src/utilities/gpuSettingsPresets';
 import {
   recordRenderingCapabilityFailure,
   recordRenderingCapabilitySuccess,
@@ -26,10 +26,10 @@ jest.mock('../src/utilities/textureSupport', () => ({
   probeEdgeSearch: jest.fn(),
 }));
 
-// The named capability profiles, which an application states. MR-CODE-1 and
+// The named capability presets, which an application states. MR-CODE-1 and
 // MR-CODE-2 of cornerstone3D issue #2921.
 //
-// The strategies that read a profile are in volumeRenderStrategy.jest.js.
+// The strategies that read a preset are in volumeRenderStrategy.jest.js.
 
 const GIGABYTE = 1024 * 1024 * 1024;
 let getContextSpy;
@@ -55,17 +55,17 @@ function mockWebGL(renderer = 'NVIDIA GeForce RTX 3080') {
 }
 
 afterEach(() => {
-  resetActiveGpuCapabilityProfile();
+  resetGpuSettingsPreset();
   getContextSpy?.mockRestore();
   getContextSpy = undefined;
   resetRenderingCapabilities({ clearStorage: true });
 });
 
-describe('the capability profiles', () => {
-  it('ships auto and five named profiles, and marks the control of the example as internal', () => {
-    const profiles = getGpuCapabilityProfiles();
+describe('the capability presets', () => {
+  it('ships auto and five named presets, and marks the control of the example as internal', () => {
+    const presets = getGpuSettingsPresets();
 
-    expect(profiles.map((profile) => profile.id)).toEqual([
+    expect(presets.map((preset) => preset.id)).toEqual([
       'auto',
       'low-tablet',
       'low',
@@ -74,12 +74,12 @@ describe('the capability profiles', () => {
       'high-texture-4096',
     ]);
     expect(
-      profiles.filter((profile) => profile.internal).map((p) => p.id)
+      presets.filter((preset) => preset.internal).map((p) => p.id)
     ).toEqual(['high-texture-4096']);
   });
 
-  it('states the edge and the memory of each profile', () => {
-    expect(getGpuCapabilityProfile('low-tablet')).toEqual({
+  it('states the edge and the memory of each preset', () => {
+    expect(getGpuSettingsPreset('low-tablet')).toEqual({
       id: 'low-tablet',
       maxTextureEdge: 256,
       textureMemoryBytes: 1 * GIGABYTE,
@@ -87,54 +87,46 @@ describe('the capability profiles', () => {
     });
     // `low` / `low-tablet` use a 256 policy edge so weak iGPUs reduce first;
     // `medium` and `high` keep 2048 and differ by memory.
-    expect(getGpuCapabilityProfile('low').maxTextureEdge).toBe(256);
-    expect(getGpuCapabilityProfile('medium').maxTextureEdge).toBe(2048);
-    expect(getGpuCapabilityProfile('high').maxTextureEdge).toBe(2048);
-    expect(getGpuCapabilityProfile('low').textureMemoryBytes).toBe(
-      2 * GIGABYTE
-    );
-    expect(getGpuCapabilityProfile('medium').textureMemoryBytes).toBe(
+    expect(getGpuSettingsPreset('low').maxTextureEdge).toBe(256);
+    expect(getGpuSettingsPreset('medium').maxTextureEdge).toBe(2048);
+    expect(getGpuSettingsPreset('high').maxTextureEdge).toBe(2048);
+    expect(getGpuSettingsPreset('low').textureMemoryBytes).toBe(2 * GIGABYTE);
+    expect(getGpuSettingsPreset('medium').textureMemoryBytes).toBe(
       8 * GIGABYTE
     );
-    expect(getGpuCapabilityProfile('high').textureMemoryBytes).toBe(
-      32 * GIGABYTE
-    );
+    expect(getGpuSettingsPreset('high').textureMemoryBytes).toBe(32 * GIGABYTE);
     // The speed is a relative index: 1 is software emulation of a GPU, and 100
     // is a recent top-of-the-line GPU. The scale has no upper bound.
-    expect(getGpuCapabilityProfile('low').speed).toBe(30);
-    expect(getGpuCapabilityProfile('medium').speed).toBe(60);
-    expect(getGpuCapabilityProfile('high').speed).toBe(100);
-    // The control of the example is the one profile with a larger edge.
-    expect(getGpuCapabilityProfile('high-texture-4096').maxTextureEdge).toBe(
-      4096
-    );
+    expect(getGpuSettingsPreset('low').speed).toBe(30);
+    expect(getGpuSettingsPreset('medium').speed).toBe(60);
+    expect(getGpuSettingsPreset('high').speed).toBe(100);
+    // The control of the example is the one preset with a larger edge.
+    expect(getGpuSettingsPreset('high-texture-4096').maxTextureEdge).toBe(4096);
   });
 
-  it('applies auto by default, and a named profile overrides auto', () => {
+  it('applies auto by default, and a named preset overrides auto', () => {
     mockWebGL();
 
-    expect(getActiveGpuCapabilityProfile().id).toBe('auto');
+    expect(getActiveGpuSettings().id).toBe('auto');
 
-    setActiveGpuCapabilityProfile('low-tablet');
+    setGpuSettingsPreset('low-tablet');
 
-    expect(getActiveGpuCapabilityProfile()).toEqual(
-      getGpuCapabilityProfile('low-tablet')
-    );
+    expect(getActiveGpuSettings()).toEqual(getGpuSettingsPreset('low-tablet'));
 
-    resetActiveGpuCapabilityProfile();
+    resetGpuSettingsPreset();
 
-    expect(getActiveGpuCapabilityProfile().id).toBe('auto');
+    expect(getActiveGpuSettings().id).toBe('auto');
   });
 
   it('states an error for a name that does not exist', () => {
-    expect(() => getGpuCapabilityProfile('enormous')).toThrow(
-      'there is no profile named enormous'
+    expect(() => getGpuSettingsPreset('enormous')).toThrow(
+      'there is no preset named enormous'
     );
   });
 
   it('takes the limits of a grid from the edge and from the memory', () => {
-    const limits = gridLimitsOfProfile(
-      getGpuCapabilityProfile('low-tablet'),
+    const limits = gridLimitsOfGpuSettings(
+      getGpuSettingsPreset('low-tablet'),
       4
     );
 
@@ -143,11 +135,11 @@ describe('the capability profiles', () => {
   });
 });
 
-describe('the auto profile', () => {
+describe('the auto preset', () => {
   it('starts a desktop GPU from medium, with the edge of the probe', () => {
     mockWebGL();
 
-    expect(getActiveGpuCapabilityProfile()).toEqual({
+    expect(getActiveGpuSettings()).toEqual({
       id: 'auto',
       maxTextureEdge: 2048,
       textureMemoryBytes: 8 * GIGABYTE,
@@ -158,7 +150,7 @@ describe('the auto profile', () => {
   it('starts a software rasterizer from low', () => {
     mockWebGL('Google SwiftShader');
 
-    expect(getActiveGpuCapabilityProfile()).toMatchObject({
+    expect(getActiveGpuSettings()).toMatchObject({
       id: 'auto',
       maxTextureEdge: 256,
       textureMemoryBytes: 2 * GIGABYTE,
@@ -169,31 +161,25 @@ describe('the auto profile', () => {
     mockWebGL();
     recordRenderingCapabilitySuccess('textureBytes', 12 * GIGABYTE);
 
-    expect(getActiveGpuCapabilityProfile().textureMemoryBytes).toBe(
-      12 * GIGABYTE
-    );
+    expect(getActiveGpuSettings().textureMemoryBytes).toBe(12 * GIGABYTE);
 
     // A crash above the reliable value keeps the reliable value.
     recordRenderingCapabilityFailure('gpuBytes', 14 * GIGABYTE);
 
-    expect(getActiveGpuCapabilityProfile().textureMemoryBytes).toBe(
-      12 * GIGABYTE
-    );
+    expect(getActiveGpuSettings().textureMemoryBytes).toBe(12 * GIGABYTE);
 
     // A context loss below the reliable value gives half of the failed value.
     recordRenderingCapabilityFailure('textureBytes', 6 * GIGABYTE);
 
-    expect(getActiveGpuCapabilityProfile().textureMemoryBytes).toBe(
-      3 * GIGABYTE
-    );
+    expect(getActiveGpuSettings().textureMemoryBytes).toBe(3 * GIGABYTE);
   });
 
   it('probes an edge that a grid needs before it raises the edge', () => {
     mockWebGL();
     probeTextureEdge.mockReturnValueOnce(true).mockReturnValueOnce(false);
 
-    const raised = profileForGrid(
-      getActiveGpuCapabilityProfile(),
+    const raised = gpuSettingsForGrid(
+      getActiveGpuSettings(),
       [512, 512, 2464],
       4
     );
@@ -202,10 +188,10 @@ describe('the auto profile', () => {
     expect(raised.maxTextureEdge).toBe(2464);
 
     // A failed edge stays the limit until a retest.
-    const kept = profileForGrid(raised, [512, 512, 4096], 4);
+    const kept = gpuSettingsForGrid(raised, [512, 512, 4096], 4);
 
     expect(kept.maxTextureEdge).toBe(2464);
-    profileForGrid(kept, [512, 512, 5000], 4);
+    gpuSettingsForGrid(kept, [512, 512, 5000], 4);
     expect(probeTextureEdge).toHaveBeenCalledTimes(2);
   });
 });
@@ -231,21 +217,21 @@ describe('auto on a device that renders gray above an edge of 128', () => {
   it('never gives an edge above 128 after a retest of the edge', () => {
     mockSmallEdgeDevice();
 
-    expect(getActiveGpuCapabilityProfile().maxTextureEdge).toBe(128);
+    expect(getActiveGpuSettings().maxTextureEdge).toBe(128);
 
     retestRenderingCapabilities({ edge: true });
 
     // The start edge of the class is 256, which no probe passed.
-    expect(getActiveGpuCapabilityProfile().maxTextureEdge).toBe(128);
+    expect(getActiveGpuSettings().maxTextureEdge).toBe(128);
 
-    const profile = profileForGrid(
-      getActiveGpuCapabilityProfile(),
+    const preset = gpuSettingsForGrid(
+      getActiveGpuSettings(),
       [256, 256, 200],
       4
     );
 
     expect(probeTextureEdge).toHaveBeenCalledWith(256, 'float');
-    expect(profile.maxTextureEdge).toBe(128);
+    expect(preset.maxTextureEdge).toBe(128);
   });
 
   it('searches the edge again when the first probe could not run', () => {
@@ -254,15 +240,15 @@ describe('auto on a device that renders gray above an edge of 128', () => {
     probeEdgeSearch.mockReturnValueOnce(null).mockReturnValue(edgeSearch);
 
     // The search could not run either, so the edge is the unprobed floor.
-    expect(getActiveGpuCapabilityProfile().maxTextureEdge).toBe(128);
+    expect(getActiveGpuSettings().maxTextureEdge).toBe(128);
     // A search that could not run is not repeated in the same page.
-    getActiveGpuCapabilityProfile();
+    getActiveGpuSettings();
     expect(probeEdgeSearch).toHaveBeenCalledTimes(1);
 
     // The next page runs the search, and finds the edge.
     resetRenderingCapabilities();
 
-    expect(getActiveGpuCapabilityProfile().maxTextureEdge).toBe(128);
+    expect(getActiveGpuSettings().maxTextureEdge).toBe(128);
     expect(probeEdgeSearch).toHaveBeenCalledTimes(2);
   });
 });

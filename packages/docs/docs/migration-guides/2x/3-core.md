@@ -31,7 +31,7 @@ cornerstone3D.init({ gpuTier: 3 });
 
 :::note
 The `gpuTier` option no longer exists. In 5.x, the `auto` GPU capability
-profile finds the limits of the device, and `setActiveGpuCapabilityProfile`
+profile finds the limits of the device, and `setGpuSettingsPreset`
 states a named profile. See the 5.x migration notes.
 :::
 

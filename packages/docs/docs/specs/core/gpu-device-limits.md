@@ -1,7 +1,7 @@
 ---
 id: gpu-device-limits
 title: GPU device limits
-summary: How a viewer adjusts the display of a volume to the rendering capability of the device - the automatic GPU profile auto, the probe, the stored record of each device, and the retest
+summary: How a viewer adjusts the display of a volume to the rendering capability of the device - the automatic GPU preset auto, the probe, the stored record of each device, and the retest
 ---
 
 # GPU device limits
@@ -12,6 +12,11 @@ A viewer runs on devices with very different GPUs. One volume can render on a
 desktop GPU and show a uniform gray on a tablet. This specification states what
 the user can expect from the display of a volume on any device, and how
 Cornerstone3D finds the limits of the device.
+
+The requirements apply when the application turns on final downsampling
+(`rendering.lossyDownsampling.final`). Final downsampling is off by default,
+because a reduced image is lossy. With final downsampling off, a volume gets a
+full-resolution texture, and no preset applies.
 
 The "user" of the user requirements is the person who reads the images in a
 viewer. The implementation requirements are for the developer who builds an
@@ -86,13 +91,13 @@ viewer asked it to render a data set that is too large.
 
 ## Implementation requirements
 
-### The profile (GPULIMIT-PROFILE)
+### The preset (GPULIMIT-PROFILE)
 
-- **GPULIMIT-PROFILE-1** The default GPU capability profile is `auto`. An
-  application that states no profile gets `auto` (`VRS-C-11`).
-- **GPULIMIT-PROFILE-2** A named profile (`low-tablet`, `low`, `medium`,
-  `high`) that the application states with `setActiveGpuCapabilityProfile`
-  overrides `auto`. The stored record has no effect on a named profile.
+- **GPULIMIT-PROFILE-1** The default GPU settings preset is `auto`. An
+  application that selects no preset gets `auto` (`VRS-C-11`).
+- **GPULIMIT-PROFILE-2** A named preset (`low-tablet`, `low`, `medium`,
+  `high`) that the application selects with `setGpuSettingsPreset`
+  overrides `auto`. The stored record has no effect on a named preset.
 - **GPULIMIT-PROFILE-3** Under `auto`, the edge of a texture is never above an
   edge that a probe passed (`VRS-C-12`, `VRS-I-14`).
 
@@ -172,15 +177,15 @@ sequenceDiagram
 sequenceDiagram
     participant VP as Viewport
     participant Strat as volumeRenderStrategy
-    participant Prof as gpuCapabilityProfiles
+    participant Prof as gpuSettingsPresets
     participant RC as renderingCapabilities
     participant Track as gpuAllocationTracker
     participant GPU as WebGL
 
     VP->>Strat: choose the texture of the volume
-    Strat->>Prof: profileForGrid(getActiveGpuCapabilityProfile(), dimensions)
-    alt a named profile
-        Prof-->>Strat: the limits of the named profile
+    Strat->>Prof: gpuSettingsForGrid(getActiveGpuSettings(), dimensions)
+    alt a named preset
+        Prof-->>Strat: the limits of the named preset
     else auto, and the volume needs an edge above the reliable edge
         Prof->>RC: probeRenderingEdge(edge, format)
         RC->>GPU: N x 4 x 4 probe texture, draw, read back

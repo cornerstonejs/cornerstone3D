@@ -14,7 +14,7 @@ import {
   noteTextureAllocation,
   noteTextureRendered,
 } from '../../utilities/gpuAllocationTracker';
-import gridFitsProfile from './gridFitsProfile';
+import gridFitsGpuSettings from './gridFitsGpuSettings';
 
 const { vtkErrorMacro } = macro;
 
@@ -271,11 +271,16 @@ function vtkStreamingOpenGLImageResliceMapper(publicAPI, model) {
         const numberOfComponents = scalars.getNumberOfComponents();
 
         // The full-resolution voxels have no reduction here, so a grid that
-        // the profile cannot hold gets no texture rather than a gray one.
+        // the GPU settings cannot hold gets no texture rather than a gray one.
         if (
-          !gridFitsProfile(dims, scalars.getDataType(), numberOfComponents, {
-            volumeId: imageData.get('volumeId')?.volumeId,
-          })
+          !gridFitsGpuSettings(
+            dims,
+            scalars.getDataType(),
+            numberOfComponents,
+            {
+              volumeId: imageData.get('volumeId')?.volumeId,
+            }
+          )
         ) {
           return;
         }
