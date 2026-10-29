@@ -1,10 +1,11 @@
 /** CSS for the viewport fidelity indicator (.fi-* / .fidelity-indicator). */
 export const FIDELITY_INDICATOR_CSS = `/*
- * Drawn in a 10 × 10 box. The whole indicator scales with its rendered size, strokes
- * included. The state comes from attributes on the .fi-root wrapper:
+ * Icon is 10 × 10. The root grows leftward when the permanent Low Fidelity
+ * label is shown. State attributes on .fi-root:
  *   data-state  loading | done | lossy | lod
  *   data-from   the previous state (lossy only animates its change when it comes from loading)
  *   data-shown  false while Done has faded out
+ *   data-label  low | transient — permanent clinician label beside the icon
  *
  * Loading / LOD use an HTML disc (compositor-friendly transform). Done / lossy use SVG.
  *
@@ -13,8 +14,11 @@ export const FIDELITY_INDICATOR_CSS = `/*
 .fi-root {
   --fi-amber: #f0a030;
   --fi-blue: #358cfd;
-  width: 10px;
-  height: 10px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  width: auto;
+  height: auto;
   overflow: visible;
   line-height: 0;
   pointer-events: auto;
@@ -28,10 +32,31 @@ export const FIDELITY_INDICATOR_CSS = `/*
 
 .fidelity-indicator {
   display: block;
+  flex-shrink: 0;
+  width: 10px;
+  height: 10px;
   overflow: visible;
 }
 
-/* Product fidelity tooltip (icon hover). Separate from the debug badge dump. */
+/* Permanent clinician label (FIDELITY-NOTIFY-1): bright red on black. */
+.fi-label {
+  display: none;
+  flex-shrink: 0;
+  margin-right: 6px;
+  padding: 4px 8px;
+  font: 600 12px/1.2 system-ui, sans-serif;
+  color: #ff2020;
+  background: #000;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.fi-root[data-label='low'] .fi-label,
+.fi-root[data-label='transient'] .fi-label {
+  display: block;
+}
+
+/* Product fidelity tooltip (icon hover). Clinician copy (FIDELITY-DISCOVER). */
 .fi-details {
   display: none;
   position: absolute;
@@ -42,11 +67,12 @@ export const FIDELITY_INDICATOR_CSS = `/*
   background: rgba(0, 0, 0, 0.85);
   border-radius: 4px;
   color: #fff;
-  font: 11px/1.3 monospace;
+  font: 12px/1.35 system-ui, sans-serif;
   text-align: left;
-  white-space: pre;
+  white-space: pre-wrap;
   pointer-events: none;
   z-index: 1;
+  max-width: 240px;
 }
 
 .fi-root[data-hover='true'] .fi-details {
@@ -58,6 +84,7 @@ export const FIDELITY_INDICATOR_CSS = `/*
 .fi-html {
   display: none;
   position: relative;
+  flex-shrink: 0;
   width: 10px;
   height: 10px;
   transform-origin: center;

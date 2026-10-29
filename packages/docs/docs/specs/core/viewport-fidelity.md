@@ -1,7 +1,7 @@
 ---
 id: viewport-fidelity
 title: Viewport fidelity
-summary: How the user learns that a viewport shows a lossy image - replicated, sub-resolution or lossy data, a decimation, a box average under magnification, or a sample distance larger than at full quality - and the events and queries that report it
+summary: How the user learns that a viewport shows a lossy image - replicated, sub-resolution or lossy data, a decimation, a standing box average of a coarser grid, or a sample distance larger than at full quality - and the events and queries that report it
 ---
 
 # Viewport fidelity
@@ -54,8 +54,15 @@ displayed image lossy:
   delivered.
 - The data is a decimation. A decimation aliases, so it is lossy at every
   magnification.
-- The data is a box average, and one data voxel covers more than one display
-  pixel.
+- The data is a standing box average of a coarser grid. The render samples the
+  averaged texture, not the full source, so the image can differ from a display
+  of the full data at every magnification (for example a one-slice-thick
+  structure at half contrast). A box average along the slice normal (for
+  example a shared progressive texture at 1×1×2 in the acquisition orientation)
+  is lossy on every slice and at every zoom. Visiting or loading the source
+  instances does not remove the indication: the viewport still samples the
+  box-averaged texture. Only a bind of a texture at the full resolution removes
+  it.
 - The render samples the data more coarsely than at full quality. The sample
   distance is larger than at full quality, during an interaction or after it.
 
@@ -103,18 +110,24 @@ and it does not make the displayed image lossy.
   FIDELITY-USER-1.
 - **FIDELITY-STATE-5** Each viewport reports its own fidelity. Two viewports
   that show one volume can report a different state at one time.
-- **FIDELITY-STATE-6** A box average is lossless when the data spacing on each
-  axis is no coarser than the display spacing of FIDELITY-RECORD-2. This serves
-  FIDELITY-USER-1 and FIDELITY-USER-2.
-  - In the view plane, one data voxel then covers no more than one display
-    pixel.
-  - In a slice view, a box average on the axis normal to the view plane is
-    lossy at every zoom. That axis compares with the source slice spacing.
-  - Example: the code loads the data at 1/2 in-plane resolution by a box
-    average. The viewport displays the data at 1/2 resolution. The view then
-    shows no indicator. When the user zooms in, the view becomes `lossy`.
-  - A decimation of the same data, at the same display, still shows `lossy`. A
-    decimation aliases at every magnification.
+- **FIDELITY-STATE-6** A standing box average of a grid coarser than the full
+  volume is `lossy` at every magnification. This serves FIDELITY-USER-1 and
+  FIDELITY-USER-2: the absence of an indication must not hide a texture that is
+  not the full stored data.
+  - Example: a progressive volume binds a shared 1×1×2 box-average texture. In
+    the acquisition orientation the reduced axis is the slice normal; each
+    displayed slice is the mean of two source slices. The viewport shows
+    `lossy` on every slice and at every zoom. Loading the source instances does
+    not clear the indication. Only a bind of the full-resolution texture does.
+  - In the other MPR orientations the same texture puts the reduced axis in the
+    view plane. The viewport still shows `lossy` at the default zoom, not only
+    after the user zooms in.
+  - In a slice view, display spacing on the view-normal axis still uses the
+    source slice spacing (FIDELITY-RECORD-2), so a through-plane-only reduction
+    stays visible even before the standing-box rule above.
+  - A decimation of reduced data also shows `lossy` at every magnification. A
+    decimation aliases; a standing box average does not alias in the voxel
+    quality registry, but the indicator treats both as standing lossy data.
 - **FIDELITY-STATE-7** WHERE more than one cause applies, the viewport shows
   one indicator. The indicator shows the most urgent state, in this order:
   `loading`, `lod`, `lossy`, `done`.
@@ -264,32 +277,30 @@ and it does not make the displayed image lossy.
 - **FIDELITY-UI-2** The indicator is a DOM element in the top-right corner of the
   viewport element. The user does not need to hover over the viewport, and the
   viewport does not need to be the active viewport. The indicator has the same
-  form in every viewport type. The state is on the `data-state`, `data-from`
-  and `data-shown` attributes of `.fi-root`. The styles go into
-  `document.head` once. This serves FIDELITY-USER-1.
-- **FIDELITY-UI-3** `svgStateOf()` and `lineKind()` hold the decision of the
-  state, and the decision has no DOM. A unit test checks the decision without a
-  user interface.
+  form in every viewport type. While the view is degraded, a permanent text
+  label sits beside the icon: `Low Fidelity` for a standing reduction, or
+  `Transient Low Fidelity` for a load or interactive reduction. The label uses
+  a bright red foreground on a black background. The state is on the
+  `data-state`, `data-from`, `data-shown` and `data-label` attributes of
+  `.fi-root`. The styles go into `document.head` once. This serves
+  FIDELITY-USER-1 / FIDELITY-NOTIFY-1.
+- **FIDELITY-UI-3** `svgStateOf()`, `lineKind()`, `fidelityLabelOf()` and
+  `fidelityDetailsTextOf()` hold the decision of the state and the copy, and
+  the decision has no DOM. A unit test checks the decision without a user
+  interface.
 - **FIDELITY-UI-4** The `done` state shows only as a recovery from `loading`,
   `lod` or `lossy`. A change from no indicator to `done` shows nothing. The
   `done` state shows for `DONE_HOLD_MS` (3 seconds) and then fades. The
+  permanent Low Fidelity label is hidden during `done` and after the fade. The
   indicator does not stay over the image after the recovery, because a mark on
   the image can hide a finding. A hover over the corner does not show the
   `done` state again after the fade. This serves FIDELITY-USER-2.
-- **FIDELITY-UI-5** A hover over the indicator shows the details. The details
-  hold these items:
-  - the status;
-  - the delivery quality;
-  - the grid;
-  - the percentage of voxels that have not arrived;
-  - the source and the reduction;
-  - the sample distance.
-
-  The details give the amount as a number, for example `2×2×4`. The details
-  use developer words, and the text is not translated. An application
-  indicator that needs clinician words builds them from `getFidelityState()`
-  or `VIEWPORT_FIDELITY_CHANGED`.
-
+- **FIDELITY-UI-5** A hover over the indicator shows clinician details
+  (FIDELITY-DISCOVER-1..4), built by `fidelityDetailsTextOf()` from the
+  absolute `ViewportFidelityState`: why the image is degraded, how much
+  (percentage arrived, reduction `x/2, y/2, z/4`), and whether waiting should
+  improve the image. The copy avoids GPU, texture and retrieval jargon. The
+  debug badge (`fidelityIndicatorDebug`) keeps a separate developer dump.
 - **FIDELITY-UI-6** A consumer reads the derived state with
   `viewport.getFidelityState()` (FIDELITY-EVENT-5), and observes changes with
   `Events.VIEWPORT_FIDELITY_CHANGED` on the viewport element (FIDELITY-EVENT-2

@@ -770,7 +770,8 @@ describe('fidelityIndicator attach gates', () => {
 
       const state = viewport.getFidelityState();
       expect(state.displayResolution.spacing).toEqual([2, 2, 2]);
-      expect(state.lossy).toBe(false);
+      // Standing box average of a coarser grid is lossy at every magnification.
+      expect(state.lossy).toBe(true);
     });
   });
 });

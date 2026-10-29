@@ -30,4 +30,6 @@ export {
   buildViewportFidelityState,
   viewportFidelityStateKey,
 } from './buildViewportFidelityState';
+export { fidelityDetailsTextOf } from './fidelityDetailsText';
+export { fidelityLabelOf } from './fidelityLabel';
 export { notifyFidelityStateChanged } from './notifyFidelityStateChanged';

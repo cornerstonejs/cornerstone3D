@@ -2,6 +2,9 @@ import { Events, ImageQualityStatus } from '../../../enums';
 import eventTarget from '../../../eventTarget';
 import { getConfiguration } from '../../../init';
 import type { IViewport, Point3 } from '../../../types';
+import { buildViewportFidelityState } from './buildViewportFidelityState';
+import { fidelityDetailsTextOf } from './fidelityDetailsText';
+import { fidelityLabelOf } from './fidelityLabel';
 import { ensureFidelityIndicatorStyles } from './fidelityIndicatorStyles';
 import { isLabelmapActorEntry } from './isLabelmapActorEntry';
 import {
@@ -73,9 +76,9 @@ const cleanups = new WeakMap<object, () => void>();
  * default). When `init({ dangerouslyDisableFidelityIndicator: true })` is set,
  * this detaches any existing indicator and is otherwise a no-op.
  *
- * The built-in hover text is a developer view of the record (grid, delivery,
- * source, sample distance). Clinician-facing copy belongs on an application
- * indicator that reads the same state (FIDELITY-UI-5).
+ * While degraded, a permanent label reads "Low Fidelity" or
+ * "Transient Low Fidelity" (FIDELITY-NOTIFY-1). Hover details use clinician
+ * copy from the absolute fidelity record (FIDELITY-DISCOVER-1..4).
  *
  * @returns a function that removes the indicator and its listeners
  */
@@ -304,10 +307,13 @@ function createSvgIndicator(host: HTMLElement): FidelityView {
   svg.setAttribute('role', 'img');
   svg.setAttribute('aria-label', 'Image fidelity');
 
+  const label = document.createElement('div');
+  label.className = 'fi-label';
+
   const details = document.createElement('pre');
   details.className = 'fi-details';
 
-  root.append(htmlLayer, svg, details);
+  root.append(label, htmlLayer, svg, details);
   host.appendChild(root);
 
   let currentState: SvgFidelityState | 'hidden' = 'hidden';
@@ -323,7 +329,7 @@ function createSvgIndicator(host: HTMLElement): FidelityView {
   root.addEventListener('mouseenter', () => {
     hovered = true;
     root.dataset.hover = 'true';
-    details.textContent = fidelityHoverTextOf(lastLines);
+    details.textContent = clinicianHoverTextOf(lastLines);
   });
   root.addEventListener('mouseleave', () => {
     hovered = false;
@@ -336,6 +342,7 @@ function createSvgIndicator(host: HTMLElement): FidelityView {
       doneFadeTimer = 0;
       if (currentState === 'done') {
         root.dataset.shown = 'false';
+        clearPermanentLabel();
       }
     }, DONE_HOLD_MS);
   };
@@ -344,6 +351,27 @@ function createSvgIndicator(host: HTMLElement): FidelityView {
     if (!svg.querySelector('.fi-glyph')) {
       svg.innerHTML = SVG_GLYPH;
     }
+  };
+
+  const clearPermanentLabel = () => {
+    delete root.dataset.label;
+    label.textContent = '';
+  };
+
+  const setPermanentLabel = (
+    svgState: SvgFidelityState | 'hidden',
+    lines: FidelityLine[]
+  ) => {
+    const text = fidelityLabelOf(svgState, buildViewportFidelityState(lines));
+
+    if (!text) {
+      clearPermanentLabel();
+      return;
+    }
+
+    label.textContent = text;
+    root.dataset.label =
+      text === 'Transient Low Fidelity' ? 'transient' : 'low';
   };
 
   const setSvgState = (next: SvgFidelityState | 'hidden') => {
@@ -358,6 +386,7 @@ function createSvgIndicator(host: HTMLElement): FidelityView {
       delete root.dataset.state;
       delete root.dataset.from;
       root.dataset.shown = 'false';
+      clearPermanentLabel();
       svg.innerHTML = '';
       svg.setAttribute('aria-label', 'Image fidelity');
       return;
@@ -391,6 +420,7 @@ function createSvgIndicator(host: HTMLElement): FidelityView {
     currentState = next;
 
     if (next === 'done') {
+      clearPermanentLabel();
       scheduleDoneFade();
     }
   };
@@ -398,9 +428,15 @@ function createSvgIndicator(host: HTMLElement): FidelityView {
   return {
     update: (lines) => {
       lastLines = lines;
-      setSvgState(svgStateOf(lines));
+      const next = svgStateOf(lines);
+      setSvgState(next);
+      // Label can change (transient ↔ standing) while the glyph state stays
+      // the same; refresh every update except during the done recovery flash.
+      if (next !== 'done' && next !== 'hidden') {
+        setPermanentLabel(next, lines);
+      }
       if (hovered) {
-        details.textContent = fidelityHoverTextOf(lines);
+        details.textContent = clinicianHoverTextOf(lines);
       }
     },
     remove: () => {
@@ -408,6 +444,10 @@ function createSvgIndicator(host: HTMLElement): FidelityView {
       root.remove();
     },
   };
+}
+
+function clinicianHoverTextOf(lines: FidelityLine[]): string {
+  return fidelityDetailsTextOf(buildViewportFidelityState(lines), lines);
 }
 
 function summaryOf(line: FidelityLine): {
@@ -474,9 +514,8 @@ function summaryOf(line: FidelityLine): {
 }
 
 /**
- * Developer-facing hover text for the built-in indicator. This is not
- * clinician copy (FIDELITY-UI-5); applications should render clinician
- * words from the absolute `getFidelityState()` / `VIEWPORT_FIDELITY_CHANGED`.
+ * Developer-facing hover for the debug badge only. The product icon uses
+ * {@link clinicianHoverTextOf}.
  */
 function fidelityHoverTextOf(lines: FidelityLine[]): string {
   if (!lines.length) {
