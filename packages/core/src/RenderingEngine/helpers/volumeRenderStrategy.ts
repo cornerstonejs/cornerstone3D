@@ -4,10 +4,11 @@ import {
   deriveBoxAverageGrid,
 } from '../../utilities/voxelGrid';
 import { getBufferConfiguration } from '../../utilities/getBufferConfiguration';
-import { gridLimitsOfProfile } from '../../utilities/gpuCapabilityProfiles';
+import { gridLimitsOfGpuSettings } from '../../utilities/gpuSettingsPresets';
+import { getLossyDownsampling } from '../../init';
 import { isMutableSlab } from '../../cache/classes/VolumeTextureSet';
 import { FULL_RESOLUTION_TEXTURE_SET } from '../../cache/classes/ImageVolume';
-import type { GpuCapabilityProfile } from '../../utilities/gpuCapabilityProfiles';
+import type { GpuSettings } from '../../utilities/gpuSettingsPresets';
 import type { vtkStreamingOpenGLTexture } from '../../cache/classes/ImageVolume';
 import type {
   IImageVolume,
@@ -98,8 +99,8 @@ export type VolumeStrategyProvisionReason =
 export type VolumeStrategyProvisionContext = {
   /** The volume to draw. */
   volume: IImageVolume;
-  /** The capability profile that the application stated. */
-  profile: GpuCapabilityProfile;
+  /** The GPU settings that apply. */
+  gpuSettings: GpuSettings;
   /** The viewport that draws. */
   viewportId?: string;
   /** Why this provision runs. */
@@ -260,27 +261,6 @@ function bytesPerVoxelOf(volume: IImageVolume): number {
 }
 
 /**
- * The reduction factors of the full-extent texture of a volume under a profile.
- *
- * The default provider builds the full-resolution strategy when every factor
- * is 1, and the reduced strategy with these factors otherwise. A caller that
- * must know whether a volume draws reduced, before any texture exists, reads
- * the same answer here.
- *
- * @param volume - the volume to draw
- * @param profile - the capability profile that applies
- * @returns the box size on each axis of the voxel grid
- */
-export function volumeTextureReductionFactors(
-  volume: IImageVolume,
-  profile: GpuCapabilityProfile
-): Point3 {
-  const limits = gridLimitsOfProfile(profile, bytesPerVoxelOf(volume));
-
-  return boxAverageReductionFactors(volume.voxelGrid.dimensions, limits);
-}
-
-/**
  * The name of the set that holds a reduction by these factors.
  *
  * The name derives from the strategy, so a second viewport that chooses the
@@ -294,17 +274,45 @@ export function reducedStrategyName(
 }
 
 /**
- * Builds the full-resolution strategy when the device can hold it.
+ * The reduction factors of the full-extent texture of a volume under some GPU
+ * settings. Every factor is 1 when final downsampling is off, because the
+ * volume then gets its full-resolution texture whatever its size.
  *
- * @returns the strategy, or `undefined` when the profile cannot hold the
+ * The default provider builds the full-resolution strategy when every factor
+ * is 1, and the reduced strategy with these factors otherwise. A caller that
+ * must know whether a volume draws reduced, before any texture exists, reads
+ * the same answer here.
+ *
+ * @param volume - the volume to draw
+ * @param gpuSettings - the GPU settings that apply
+ * @returns the box size on each axis of the voxel grid
+ */
+export function volumeTextureReductionFactors(
+  volume: IImageVolume,
+  gpuSettings: GpuSettings
+): Point3 {
+  if (!getLossyDownsampling().final) {
+    return [1, 1, 1];
+  }
+
+  const limits = gridLimitsOfGpuSettings(gpuSettings, bytesPerVoxelOf(volume));
+
+  return boxAverageReductionFactors(volume.voxelGrid.dimensions, limits);
+}
+
+/**
+ * Builds the full-resolution strategy when the GPU settings can hold it, or
+ * when final downsampling is off.
+ *
+ * @returns the strategy, or `undefined` when the GPU settings cannot hold the
  * full-resolution grid, in which case a caller builds a reduced strategy
  */
 export function provisionFullResolutionStrategy({
   volume,
-  profile,
+  gpuSettings,
 }: VolumeStrategyProvisionContext): IVolumeRenderStrategy | undefined {
   const grid = volume.voxelGrid;
-  const factors = volumeTextureReductionFactors(volume, profile);
+  const factors = volumeTextureReductionFactors(volume, gpuSettings);
 
   if (factors.some((factor) => factor > 1)) {
     return undefined;
@@ -329,7 +337,8 @@ export function provisionFullResolutionStrategy({
 }
 
 /**
- * Builds the reduced-resolution strategy that the device can hold.
+ * Builds the reduced-resolution strategy that the GPU settings can hold. With
+ * final downsampling off, this builds nothing.
  *
  * The reduction applies a separate factor to each axis. An edge of 2049 voxels
  * exceeds a limit of 2048 on one axis and by one voxel, so the reduction takes
@@ -341,10 +350,10 @@ export function provisionFullResolutionStrategy({
  */
 export function provisionReducedResolutionStrategy({
   volume,
-  profile,
+  gpuSettings,
 }: VolumeStrategyProvisionContext): IVolumeRenderStrategy | undefined {
   const fullResolutionGrid = volume.voxelGrid;
-  const factors = volumeTextureReductionFactors(volume, profile);
+  const factors = volumeTextureReductionFactors(volume, gpuSettings);
 
   if (!factors.some((factor) => factor > 1)) {
     return undefined;

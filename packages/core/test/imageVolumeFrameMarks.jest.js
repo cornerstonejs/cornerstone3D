@@ -1,11 +1,25 @@
-import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  afterEach,
+  beforeAll,
+  afterAll,
+} from '@jest/globals';
 import ImageVolume from '../src/cache/classes/ImageVolume';
 import volumeTextureStore from '../src/cache/volumeTextureStore';
 import VoxelManager from '../src/utilities/VoxelManager';
 import cache from '../src/cache/cache';
 import ImageQualityStatus from '../src/enums/ImageQualityStatus';
 import { defaultVolumeStrategyProvider } from '../src/RenderingEngine/helpers/volumeRenderStrategy';
-import { getGpuCapabilityProfile } from '../src/utilities/gpuCapabilityProfiles';
+import { getGpuSettingsPreset } from '../src/utilities/gpuSettingsPresets';
+import { setLossyDownsampling } from '../src/init';
+
+// These tests check the reductions of final downsampling, which is off by
+// default.
+beforeAll(() => setLossyDownsampling({ final: true }));
+afterAll(() => setLossyDownsampling({ final: false }));
 
 const identityDirection = [1, 0, 0, 0, 1, 0, 0, 0, 1];
 
@@ -74,7 +88,7 @@ describe('ImageVolume frame marks and deliveries', () => {
     const { volume, imageIds } = makeStreamingVolume(512);
     defaultVolumeStrategyProvider({
       volume,
-      profile: getGpuCapabilityProfile('low-tablet'),
+      gpuSettings: getGpuSettingsPreset('low-tablet'),
       viewportId: 'vp',
     });
     const fullResolution = volume.getFullResolutionTexture();

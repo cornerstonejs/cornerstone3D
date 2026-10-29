@@ -1,5 +1,6 @@
 import type IBaseStreamingImageVolume from './IBaseStreamingImageVolume';
 import type Cornerstone3DConfig from './Cornerstone3DConfig';
+import type { LossyDownsampling } from './Cornerstone3DConfig';
 import type ICamera from './ICamera';
 import type IEnabledElement from './IEnabledElement';
 import type ICache from './ICache';
@@ -223,6 +224,7 @@ export type * from './InstanceTypes';
 export type {
   // config
   Cornerstone3DConfig,
+  LossyDownsampling,
   //
   IBaseStreamingImageVolume,
   ICamera,

@@ -15,7 +15,7 @@ The diagrams use Mermaid. GitHub shows a diagram in the view of a file and in a 
 
 The six sequences are:
 
-1. [The application states the device and creates the volume](#1-the-application-states-the-device-and-creates-the-volume)
+1. [The application selects the GPU settings and creates the volume](#1-the-application-selects-the-gpu-settings-and-creates-the-volume)
 2. [A viewport adds its actor, and the provider chooses the texture](#2-a-viewport-adds-its-actor-and-the-provider-chooses-the-texture)
 3. [The loader delivers the images](#3-the-loader-delivers-the-images)
 4. [A render fills the dirty slices of a reduced texture](#4-a-render-fills-the-dirty-slices-of-a-reduced-texture)
@@ -25,9 +25,9 @@ The six sequences are:
 ## A worked example
 
 A CT series of 512 × 512 × 2464 voxels gives these results. The edge limit decides each factor here,
-because the memory of each profile is larger than the reduced texture.
+because the memory of each preset is larger than the reduced texture.
 
-| Profile             | `maxTextureEdge` | Factors (i, j, k) | Texture grid     | Texture set                          |
+| Preset              | `maxTextureEdge` | Factors (i, j, k) | Texture grid     | Texture set                          |
 | ------------------- | ---------------- | ----------------- | ---------------- | ------------------------------------ |
 | `high-texture-4096` | 4096             | 1, 1, 1           | 512 × 512 × 2464 | `full-resolution/full-extent`        |
 | `high`, `medium`    | 2048             | 1, 1, 2           | 512 × 512 × 1232 | `reduced-1x1x2/full-extent/average`  |
@@ -37,22 +37,22 @@ because the memory of each profile is larger than the reduced texture.
 reduced grid holds more voxels than `textureMemoryBytes / bytesPerVoxel`, it adds 1 to the factor of
 the largest reduced axis. `reducedDimensions` rounds up, so 2464 / 10 gives 247 slices.
 
-## 1. The application states the device and creates the volume
+## 1. The application selects the GPU settings and creates the volume
 
-Nothing probes the device. The application states a profile before a viewport adds its actor. A
-viewport reads the profile only at that moment.
+Nothing probes the device. The application turns on final downsampling and selects a preset
+before a viewport adds its actor. A viewport reads the preset only at that moment.
 
 ```mermaid
 sequenceDiagram
     autonumber
     participant App as Application
-    participant Prof as gpuCapabilityProfiles
+    participant Prof as gpuSettingsPresets
     participant Retr as imageRetrieveMetadataProvider
     participant VL as volumeLoader
     participant Vol as ImageVolume / BaseStreamingImageVolume
     participant CVM as CompositeVoxelManager
 
-    App->>Prof: setActiveGpuCapabilityProfile('medium')
+    App->>Prof: setGpuSettingsPreset('medium')
     Note over Prof: No call means the default 'high'.<br/>An unknown name throws.
     App->>Retr: add('volume', ProgressiveRetrieveImages.coarseInterleavedRetrieveStages)
     App->>VL: createAndCacheVolume(volumeId, { imageIds })
@@ -83,9 +83,9 @@ sequenceDiagram
 
     VP->>CA: volumeId
     CA->>RVT: resolveVolumeTexture(volume, options)
-    RVT->>RVT: getActiveGpuCapabilityProfile()
-    RVT->>Prov: provideStrategies({ volume, profile, reason: 'initial' })
-    Prov->>Grid: gridLimitsOfProfile(profile, bytesPerVoxel)
+    RVT->>RVT: getActiveGpuSettings()
+    RVT->>Prov: provideStrategies({ volume, gpuSettings, reason: 'initial' })
+    Prov->>Grid: gridLimitsOfGpuSettings(gpuSettings, bytesPerVoxel)
     Grid-->>Prov: { maxEdge, maxVoxelCount }
     Prov->>Grid: boxAverageReductionFactors(dimensions, limits)
     Grid-->>Prov: factors, for example [1, 1, 2]

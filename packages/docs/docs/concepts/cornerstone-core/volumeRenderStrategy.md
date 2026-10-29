@@ -35,7 +35,7 @@ already exists.
   ║            │ asks         │                        │                            ║
   ║            ▼              │                        │                            ║
   ║   VolumeStrategyProvider ─┘                        │                            ║
-  ║            │   · reads the GpuCapabilityProfile    │                            ║
+  ║            │   · reads the GpuSettings    │                            ║
   ║            │   · computes the box factors per axis │                            ║
   ║            │   · provisions the texture sets ──────┘                            ║
   ║            │                                                                    ║
@@ -85,7 +85,7 @@ already exists.
 | `VolumeTextureSet`       | A named set of textures, and the unit of storage, of cost and of eviction. Its members carry an area index.                                            |
 | `volumeTextureStore`     | The global store of the sets, with one budget for the texture memory of every volume.                                                                  |
 | `CompositeVoxelManager`  | The voxels. It holds the full-resolution data and every reduced representation, and it fills a grid from the best sources that it has.                 |
-| `GpuCapabilityProfile`   | A declared class of device. An application states which profile applies, and nothing probes.                                                           |
+| `GpuSettings`            | The values that a preset gives: the texture edge, the texture memory and the speed. An application selects the preset, and nothing probes.             |
 | `VoxelQualityRecord`     | The absolute record of the data that a render drew. It states no verdict.                                                                              |
 
 ## Where the code is
@@ -95,7 +95,7 @@ table gives the file of each piece. The paths are under `packages/core/src/`, ex
 
 | Piece or step                                       | Code                                                                                                               |
 | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| The profiles, and the limits of a grid              | `utilities/gpuCapabilityProfiles.ts`: `setActiveGpuCapabilityProfile`, `gridLimitsOfProfile`                       |
+| The presets, and the limits of a grid               | `utilities/gpuSettingsPresets.ts`: `setGpuSettingsPreset`, `gridLimitsOfGpuSettings`                               |
 | The factors of a reduction, and the reduced grid    | `utilities/voxelGrid/`: `boxAverageReductionFactors`, `reducedDimensions`, `deriveBoxAverageGrid`                  |
 | The default provider and the default selection      | `RenderingEngine/helpers/volumeRenderStrategy.ts`: `defaultVolumeStrategyProvider`, `selectFirstReadyStrategy`     |
 | The one place that both architectures share         | `RenderingEngine/helpers/resolveVolumeTexture.ts`, called by `createVolumeActor` and `createVolumeSliceActor`      |
@@ -112,7 +112,9 @@ table gives the file of each piece. The paths are under `packages/core/src/`, ex
 **The provider runs when the render path adds its actor, and it never runs on the frame path.** It
 does the expensive thing: it allocates the textures.
 
-The default provider reads the capability profile and answers in one of two ways:
+With final downsampling off (`rendering.lossyDownsampling.final`, the default), the default provider
+always builds the full-resolution strategy. With final downsampling on, the provider reads the GPU
+settings and answers in one of two ways:
 
 - The device can hold the full-resolution grid, so the provider builds the **full-resolution
   strategy** and provisions the set `full-resolution/full-extent`.
@@ -331,8 +333,8 @@ that its own function reads, and no existing caller changes.
 
 ## § Implementation choices
 
-**VRS-I-1.** The default provider builds the full-resolution strategy when the capability profile
-admits it, and the reduced-resolution strategy otherwise. It reads the capability alone: a
+**VRS-I-1.** The default provider builds the full-resolution strategy when final downsampling is off
+or the GPU settings admit it, and the reduced-resolution strategy otherwise. It reads the capability alone: a
 performance-bound choice belongs to task T14, which supplies its own provider.
 
 **VRS-I-2.** The default selection keeps the strategy of the previous render while that strategy is

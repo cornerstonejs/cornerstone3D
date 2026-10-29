@@ -5,6 +5,8 @@ import {
   jest,
   afterEach,
   beforeEach,
+  beforeAll,
+  afterAll,
 } from '@jest/globals';
 import { VtkVolume3DRenderPath } from '../src/RenderingEngine/GenericViewport/Volume3D/VtkVolume3DRenderPath';
 import { VtkVolumeSliceRenderPath } from '../src/RenderingEngine/GenericViewport/Planar/VtkVolumeSliceRenderPath';
@@ -17,9 +19,15 @@ import ImageVolume from '../src/cache/classes/ImageVolume';
 import volumeTextureStore from '../src/cache/volumeTextureStore';
 import { VoxelManager } from '../src/utilities';
 import {
-  getGpuCapabilityProfile,
-  resetActiveGpuCapabilityProfile,
-} from '../src/utilities/gpuCapabilityProfiles';
+  getGpuSettingsPreset,
+  resetGpuSettingsPreset,
+} from '../src/utilities/gpuSettingsPresets';
+import { setLossyDownsampling } from '../src/init';
+
+// These tests check the reductions of final downsampling, which is off by
+// default.
+beforeAll(() => setLossyDownsampling({ final: true }));
+afterAll(() => setLossyDownsampling({ final: false }));
 
 // The 3D render path chooses a strategy in the same way that the slice render
 // path does. A 3D render samples the whole texture, where a slice render
@@ -74,7 +82,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  resetActiveGpuCapabilityProfile();
+  resetGpuSettingsPreset();
 });
 
 describe('the 3D render path chooses a strategy', () => {
@@ -116,7 +124,7 @@ describe('the 3D render path chooses a strategy', () => {
       ({ volume: aVolume }) => [
         provisionReducedResolutionStrategy({
           volume: aVolume,
-          profile: getGpuCapabilityProfile('low-tablet'),
+          gpuSettings: getGpuSettingsPreset('low-tablet'),
         }),
       ],
       ({ strategies }) => strategies[0]
@@ -177,13 +185,13 @@ describe('two viewports over one volume report independently', () => {
     const volume3D = new VtkVolume3DRenderPath(({ volume: aVolume }) => [
       provisionReducedResolutionStrategy({
         volume: aVolume,
-        profile: getGpuCapabilityProfile('low-tablet'),
+        gpuSettings: getGpuSettingsPreset('low-tablet'),
       }),
     ]);
     const slice = new VtkVolumeSliceRenderPath(({ volume: aVolume }) => [
       provisionFullResolutionStrategy({
         volume: aVolume,
-        profile: getGpuCapabilityProfile('high'),
+        gpuSettings: getGpuSettingsPreset('high'),
       }),
     ]);
 

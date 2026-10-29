@@ -1,12 +1,12 @@
 import { describe, it, expect, afterEach } from '@jest/globals';
 import {
-  getGpuCapabilityProfile,
-  getGpuCapabilityProfiles,
-  getActiveGpuCapabilityProfile,
-  setActiveGpuCapabilityProfile,
-  resetActiveGpuCapabilityProfile,
-  gridLimitsOfProfile,
-} from '../src/utilities/gpuCapabilityProfiles';
+  getGpuSettingsPreset,
+  getGpuSettingsPresets,
+  getActiveGpuSettings,
+  setGpuSettingsPreset,
+  resetGpuSettingsPreset,
+  gridLimitsOfGpuSettings,
+} from '../src/utilities/gpuSettingsPresets';
 
 // The named capability profiles, which an application states. MR-CODE-1 and
 // MR-CODE-2 of cornerstone3D issue #2921.
@@ -15,12 +15,12 @@ import {
 
 const GIGABYTE = 1024 * 1024 * 1024;
 afterEach(() => {
-  resetActiveGpuCapabilityProfile();
+  resetGpuSettingsPreset();
 });
 
-describe('the capability profiles', () => {
+describe('the GPU settings presets', () => {
   it('ships five profiles, and marks the control of the example as internal', () => {
-    const profiles = getGpuCapabilityProfiles();
+    const profiles = getGpuSettingsPresets();
 
     expect(profiles.map((profile) => profile.id)).toEqual([
       'low-tablet',
@@ -35,7 +35,7 @@ describe('the capability profiles', () => {
   });
 
   it('states the edge and the memory of each profile', () => {
-    expect(getGpuCapabilityProfile('low-tablet')).toEqual({
+    expect(getGpuSettingsPreset('low-tablet')).toEqual({
       id: 'low-tablet',
       maxTextureEdge: 256,
       textureMemoryBytes: 1 * GIGABYTE,
@@ -43,46 +43,40 @@ describe('the capability profiles', () => {
     });
     // `low` / `low-tablet` use a 256 policy edge so weak iGPUs reduce first;
     // `medium` and `high` keep 2048 and differ by memory.
-    expect(getGpuCapabilityProfile('low').maxTextureEdge).toBe(256);
-    expect(getGpuCapabilityProfile('medium').maxTextureEdge).toBe(2048);
-    expect(getGpuCapabilityProfile('high').maxTextureEdge).toBe(2048);
-    expect(getGpuCapabilityProfile('low').textureMemoryBytes).toBe(
-      2 * GIGABYTE
-    );
-    expect(getGpuCapabilityProfile('medium').textureMemoryBytes).toBe(
+    expect(getGpuSettingsPreset('low').maxTextureEdge).toBe(256);
+    expect(getGpuSettingsPreset('medium').maxTextureEdge).toBe(2048);
+    expect(getGpuSettingsPreset('high').maxTextureEdge).toBe(2048);
+    expect(getGpuSettingsPreset('low').textureMemoryBytes).toBe(2 * GIGABYTE);
+    expect(getGpuSettingsPreset('medium').textureMemoryBytes).toBe(
       8 * GIGABYTE
     );
-    expect(getGpuCapabilityProfile('high').textureMemoryBytes).toBe(
-      32 * GIGABYTE
-    );
+    expect(getGpuSettingsPreset('high').textureMemoryBytes).toBe(32 * GIGABYTE);
     // The speed is a relative index: 1 is software emulation of a GPU, and 100
     // is a recent top-of-the-line GPU. The scale has no upper bound.
-    expect(getGpuCapabilityProfile('low').speed).toBe(30);
-    expect(getGpuCapabilityProfile('medium').speed).toBe(60);
-    expect(getGpuCapabilityProfile('high').speed).toBe(100);
+    expect(getGpuSettingsPreset('low').speed).toBe(30);
+    expect(getGpuSettingsPreset('medium').speed).toBe(60);
+    expect(getGpuSettingsPreset('high').speed).toBe(100);
     // The control of the example is the one profile with a larger edge.
-    expect(getGpuCapabilityProfile('high-texture-4096').maxTextureEdge).toBe(
-      4096
-    );
+    expect(getGpuSettingsPreset('high-texture-4096').maxTextureEdge).toBe(4096);
   });
 
   it('takes the profile that an application states, and probes nothing', () => {
-    expect(getActiveGpuCapabilityProfile().id).toBe('high');
+    expect(getActiveGpuSettings().id).toBe('high');
 
-    setActiveGpuCapabilityProfile('low-tablet');
+    setGpuSettingsPreset('low-tablet');
 
-    expect(getActiveGpuCapabilityProfile().id).toBe('low-tablet');
+    expect(getActiveGpuSettings().id).toBe('low-tablet');
   });
 
   it('states an error for a name that does not exist', () => {
-    expect(() => getGpuCapabilityProfile('enormous')).toThrow(
-      'there is no profile named enormous'
+    expect(() => getGpuSettingsPreset('enormous')).toThrow(
+      'there is no preset named enormous'
     );
   });
 
   it('takes the limits of a grid from the edge and from the memory', () => {
-    const limits = gridLimitsOfProfile(
-      getGpuCapabilityProfile('low-tablet'),
+    const limits = gridLimitsOfGpuSettings(
+      getGpuSettingsPreset('low-tablet'),
       4
     );
 
