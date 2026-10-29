@@ -1,8 +1,7 @@
 import type { RenderingEngineModeType } from '../types';
 import type { RenderBackendValue, VoxelManagerEnum } from '../enums';
 
-/** Which lossy downsampling the viewer may use. See 
-endering.lossyDownsampling. */
+/** Which lossy downsampling the viewer may use. See `rendering.lossyDownsampling`. */
 interface LossyDownsampling {
   final?: boolean;
   interactive?: boolean;

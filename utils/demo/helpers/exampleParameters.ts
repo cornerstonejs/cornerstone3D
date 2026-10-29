@@ -86,7 +86,7 @@ export function applyUrlParameterOverridesToDemoConfig(
 }
 
 /**
- * Reads ?finalDownsampling=true|false, which turns final downsampling on or
+ * Reads `?finalDownsampling=true|false`, which turns final downsampling on or
  * off. Without the parameter, the example keeps its own value, and an example
  * that states none keeps the Cornerstone3D default, which is off.
  */

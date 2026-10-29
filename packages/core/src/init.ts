@@ -458,8 +458,7 @@ function getWebWorkerManager() {
 
 /**
  * The lossy downsampling that the viewer may use, with the defaults filled in.
- * See 
-endering.lossyDownsampling of the configuration.
+ * See `rendering.lossyDownsampling` of the configuration.
  */
 function getLossyDownsampling(): Required<LossyDownsampling> {
   return {
@@ -470,7 +469,7 @@ function getLossyDownsampling(): Required<LossyDownsampling> {
 }
 
 /**
- * Turns kinds of lossy downsampling on or off. A kind that change omits keeps
+ * Turns kinds of lossy downsampling on or off. A kind that `change` omits keeps
  * its value. A viewport that already holds a texture keeps it until its next
  * provision, so an application states this before it opens a viewport.
  */

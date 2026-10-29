@@ -474,21 +474,21 @@ image of any encapsulated syntax takes the direct fragment path.
 
 ### What Changed
 
-endering.lossyDownsampling of the init configuration states which lossy
+`rendering.lossyDownsampling` of the `init` configuration states which lossy
 downsampling the viewer may use:
 
-| Kind               | Default | What it does                                                                                 |
-| ------------------ | ------- | -------------------------------------------------------------------------------------------- |
-| inal               | alse    | Reduces a volume texture that exceeds the GPU settings preset. The image stays reduced.      |
-| interactive        | rue     | Lowers the detail during an interaction, for example the sample distance of a 3D rotation.   |
-| interleavedLoading | rue     | Fills the frames that have not loaded yet with copies of the nearby frames, during the load. |
+| Kind                 | Default | What it does                                                                                 |
+| -------------------- | ------- | -------------------------------------------------------------------------------------------- |
+| `final`              | `false` | Reduces a volume texture that exceeds the GPU settings preset. The image stays reduced.      |
+| `interactive`        | `true`  | Lowers the detail during an interaction, for example the sample distance of a 3D rotation.   |
+| `interleavedLoading` | `true`  | Fills the frames that have not loaded yet with copies of the nearby frames, during the load. |
 
 With the defaults, a volume texture has the full dimensions of the volume, as in
-4.x. The interactive and interleavedLoading kinds keep the behaviour of 4.x.
+4.x. The `interactive` and `interleavedLoading` kinds keep the behaviour of 4.x.
 
-With inal: true, a volume texture comes from a GPU settings preset. A preset
-is a named set of values (low-tablet, low, medium, high), and nothing
-probes the device to choose it. When an application selects no preset, high
+With `final: true`, a volume texture comes from a GPU settings preset. A preset
+is a named set of values (`low-tablet`, `low`, `medium`, `high`), and nothing
+probes the device to choose it. When an application selects no preset, `high`
 applies, and it limits each edge of a 3D texture to 2048 voxels. A volume with a
 longer axis then draws from a box-average reduction of that axis. For example, a
 CT of 512 × 512 × 2464 draws with a factor of 2 along k, also on a device that
@@ -500,7 +500,7 @@ Each kind of lossy downsampling shows pixels that differ from the source data.
 An application turns on a kind only when it also tells the user that the image
 is lossy.
 
-The reported MAX_3D_TEXTURE_SIZE is not a reliable limit, so no preset reads
+The reported `MAX_3D_TEXTURE_SIZE` is not a reliable limit, so no preset reads
 it. Some Android devices report 2048 or more, but render only 256 per axis. No
 tested device renders beyond 2048. Without final downsampling, such a device can
 show a uniform gray image or lose its WebGL context.
@@ -509,16 +509,14 @@ show a uniform gray image or lose its WebGL context.
 
 - **No action is needed** to keep the behaviour of 4.x.
 - **To fit the texture to a weak device,** set
-
-endering.lossyDownsampling.final to rue in the init configuration, or
-call setLossyDownsampling({ final: true }) before a viewport adds its
-actors. Then call setGpuSettingsPreset. Use low or low-tablet for a
-device that renders only 256 per axis.
-
-- **To show no lossy pixels at all,** set interactive and
-  interleavedLoading to alse as well.
+  `rendering.lossyDownsampling.final` to `true` in the `init` configuration, or
+  call `setLossyDownsampling({ final: true })` before a viewport adds its
+  actors. Then call `setGpuSettingsPreset`. Use `low` or `low-tablet` for a
+  device that renders only 256 per axis.
+- **To show no lossy pixels at all,** set `interactive` and
+  `interleavedLoading` to `false` as well.
 - **For a full-resolution long axis with final downsampling on,** the only
-  preset with a larger edge is high-texture-4096. That preset is internal: it
+  preset with a larger edge is `high-texture-4096`. That preset is internal: it
   is a control for comparison, and no device is tested at that edge. Use it only
   on hardware that you have tested.
 
