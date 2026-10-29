@@ -10,6 +10,7 @@
 
 import {
   asArrayFirst,
+  asMultiValueArray,
   toFiniteFirst,
   toFiniteVector,
 } from '@cornerstonejs/utils';
@@ -152,7 +153,7 @@ function isMultiFrameVolume(instance: NaturalizedInstance): boolean {
     return false;
   }
   if (String(instance.Modality ?? '').includes('NM')) {
-    const subType = asArrayFromSequence(instance.ImageType)[2];
+    const subType = asMultiValueArray(instance.ImageType as string[])[2];
     if (subType !== 'RECON TOMO' && subType !== 'RECON GATED TOMO') {
       return false;
     }
