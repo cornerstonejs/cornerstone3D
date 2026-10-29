@@ -20,6 +20,10 @@ const EXTERNAL_IDS = new Set([
 
 function isExternal(id) {
   if (EXTERNAL_IDS.has(id)) return true;
+  // Subpath imports, for example `@dcmjs-org/dcmjs/eventStream`
+  for (const external of EXTERNAL_IDS) {
+    if (id.startsWith(`${external}/`)) return true;
+  }
   // @babel/runtime and @babel/runtime-corejs2 (transform-runtime + package.json)
   if (id.startsWith('@babel/runtime')) return true;
   // Rollup may pass absolute resolved paths
