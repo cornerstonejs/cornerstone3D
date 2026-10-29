@@ -682,6 +682,25 @@ abstract class BaseRenderingEngine {
     return Array.from(this._viewports.values());
   }
 
+  /**
+   * Fires the fidelity event of each rendered viewport, after
+   * `IMAGE_RENDERED` (FIDELITY-EVENT-2..4). An `IMAGE_RENDERED` listener can
+   * disable a viewport or destroy this engine, so a viewport that this engine
+   * no longer holds is skipped: it has no renderer and no camera.
+   */
+  protected _notifyFidelityOfRenderedViewports(viewports: IViewport[]): void {
+    viewports.forEach((viewport) => {
+      if (
+        this.hasBeenDestroyed ||
+        this._viewports.get(viewport.id) !== viewport
+      ) {
+        return;
+      }
+
+      viewport.notifyFidelityStateChanged();
+    });
+  }
+
   private _setViewportsToBeRenderedNextFrame(viewportIds: string[]) {
     // Add the viewports to the set of flagged viewports
     viewportIds.forEach((viewportId) => {
