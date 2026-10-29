@@ -213,7 +213,7 @@ enum MetadataModules {
 
   /**
    * Display set metadata for a series group (frame and underlying image ids,
-   * viewport hints). Registered per imageId via addTyped / registerDisplaySetMetadata.
+   * handler). Registered per imageId via addTyped / registerDisplaySetMetadata.
    */
   DISPLAY_SET = 'displaySetModule',
 }

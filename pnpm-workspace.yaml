@@ -50,7 +50,7 @@ overrides:
   mdast-util-to-hast: 13.2.1
   '@remix-run/router': 1.23.2
   '@types/minimatch': 3.0.5
-  shell-quote: 1.10.0
+  shell-quote: 1.12.0
   'minimatch@<3.1.4': 3.1.5
   'minimatch@>=10.0.0 <10.2.3': 10.2.5
   'form-data': 4.0.6
@@ -70,6 +70,10 @@ overrides:
   'image-size@>=0.6.3 <2.0.4': 2.0.4
   'webpack-dev-middleware@>=8.0.0 <8.3.0': 8.3.0
   'webpack-dev-middleware@<7.4.5': 7.4.6
+  'compression@<1.8.2': 1.8.2
+  'proxy-addr@>=1.1.0 <2.0.8': 2.0.8
+  'source-map-js@>=1.0.0 <1.2.2': 1.2.2
+  'http-cache-semantics@<4.3.0': 4.3.0
   # Hold every package on the codec versions packages/dicomImageLoader pins.
   # dicom-microscopy-viewer asks for older ones, and the resolver hoists those to the
   # root, where a bundler that searches the root before a package's own node_modules
@@ -93,6 +97,10 @@ auditConfig:
     # node-forge is used only by selfsigned (via webpack-dev-server) to create a
     # local dev cert; it never checks signatures from outside
     - GHSA-86w9-cpqp-85rv
+    # braces has no patched release. It only expands glob patterns that build and
+    # dev tools (chokidar, micromatch, and the shelljs CLI that vtk.js lists) write
+    # themselves; no shipped code passes it an untrusted pattern
+    - GHSA-vfj7-8cjw-p6xm
 allowBuilds:
   '@swc/core': true
   canvas: true

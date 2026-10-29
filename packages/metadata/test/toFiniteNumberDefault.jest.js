@@ -28,6 +28,20 @@ describe('toFiniteNumber without a default value', () => {
     expect(toFiniteNumber({})).toBeUndefined();
   });
 
+  // A blank string is the DICOM empty value: it reads as no value, the same as
+  // null, and not as the 0 that Number('') gives. Also inside an array.
+  it('answers undefined for a blank string or a null entry, as for null', () => {
+    expect(toFiniteNumber('')).toBeUndefined();
+    expect(toFiniteNumber('  ')).toBeUndefined();
+    expect(toFiniteNumber('', 0)).toBe(0);
+    expect(toFiniteNumber(['1', '', null, '3'])).toEqual([
+      1,
+      undefined,
+      undefined,
+      3,
+    ]);
+  });
+
   it('still converts an array-like value entry by entry', () => {
     expect(toFiniteNumber(new Float32Array([1, 2]))).toEqual([1, 2]);
     expect(toFiniteNumber({ length: 2, 0: '4', 1: '5' })).toEqual([4, 5]);

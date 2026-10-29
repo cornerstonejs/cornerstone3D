@@ -6,13 +6,17 @@ import {
   derivations,
 } from 'dcmjs';
 import ndarray from 'ndarray';
+import { vec3 } from 'gl-matrix';
 import getDatasetsFromImages from '../helpers/getDatasetsFromImages';
 import checkOrientation from '../helpers/checkOrientation';
 import { utilities as csUtilities } from '@cornerstonejs/core';
+import { utilities as metadataUtilities } from '@cornerstonejs/metadata';
 import {
   applyPerFrameFunctionalGroups,
   getReferencedSourceImageSequenceItem,
+  setPlaneOrientations,
 } from '../Cornerstone3D/Segmentation/perFrameFunctionalGroups';
+import { getSourceFrame } from '../Cornerstone3D/Segmentation/sourceFrame';
 import {
   encodeFramesToTransferSyntax,
   getBitmapFramesFromDataset,
@@ -25,13 +29,6 @@ import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
 const cs3dLogger = cornerstoneUtilities.logger.adaptersLog.getLogger(
   'Cornerstone.Segmentation_4X'
 );
-
-const {
-  rotateDirectionCosinesInPlane,
-  flipImageOrientationPatient: flipIOP,
-  flipMatrix2D,
-  rotateMatrix902D,
-} = utilities.orientation;
 
 const { BitArray, DicomMessage, DicomMetaDictionary } = dcmjsData;
 
@@ -75,6 +72,43 @@ export function generateSegmentation(
 }
 
 /**
+ * Logs one warning for the SEG frames whose source image has no position or
+ * no orientation. Such a frame keeps the plane value that dcmjs gave it.
+ */
+function warnMissingPlanes(frameDescriptors, getSource) {
+  const missing = { position: [], orientation: [] };
+  frameDescriptors.forEach((desc, frameIndex) => {
+    const source = getSource(desc.sourceFrameIndex);
+    Object.keys(missing).forEach((key) => {
+      if (!source[key]) {
+        missing[key].push(frameIndex + 1);
+      }
+    });
+  });
+
+  const details = [
+    ['ImagePositionPatient', missing.position],
+    ['ImageOrientationPatient', missing.orientation],
+  ]
+    .filter(([, frames]) => frames.length)
+    .map(([name, frames]) => `no ${name} for SEG frames ${frames.join(', ')}`);
+  if (details.length) {
+    cs3dLogger.warn(
+      `The source images have ${details.join('; ')}. These frames keep the ` +
+        `values that dcmjs gave them, which can be those of other source images.`
+    );
+  }
+}
+
+/**
+ * The segment index of a voxel value of one labelmap3D. A value that is not in
+ * `labelmap3D.labelToSegmentIndex` is its own segment index.
+ */
+export function getSegmentIndexForLabel(labelmap3D, labelValue) {
+  return labelmap3D?.labelToSegmentIndex?.[labelValue] ?? labelValue;
+}
+
+/**
  * The set of non-zero segment values actually present in a frame's pixel data,
  * collected in a single pass. `segmentsOnLabelmap` can be stale, so presence is
  * verified against the pixels — but once per frame, not with one full-frame
@@ -103,6 +137,12 @@ function segmentsPresentInFrame(pixelData) {
  *
  * @param segmentation - The segmentation object to be filled.
  * @param inputLabelmaps3D - An array of 3D labelmaps, or a single 3D labelmap.
+ *   The voxels of a labelmap3D hold label values. `labelToSegmentIndex` maps a
+ *   label value to its segment index, for a layer that stores a segment under
+ *   another label value; a value that is not in the map is its own segment
+ *   index. `segmentsOnLabelmap` of each labelmap2D lists label values. Two
+ *   label values with the same segment index, in one labelmap3D or in two,
+ *   give one SEG segment.
  * @param userOptions - Optional configuration settings. Will override the default options.
  *   - `transferSyntaxUid` — the output transfer syntax. Defaults to RLE Lossless
  *     (`1.2.840.10008.1.2.5`); Explicit VR Little Endian
@@ -112,6 +152,18 @@ function segmentsPresentInFrame(pixelData) {
  *     valid RLE-encoded SEG), so it has been dropped rather than fixed. RLE
  *     output is now selected via `transferSyntaxUid` (RLE Lossless is the
  *     default), and encoding is handled by `encodeFramesToTransferSyntax`.
+ * @param images - The source images, in the order of the derived frames.
+ * @param metadata - A metadata provider for the `imageId` of each image.
+ *
+ * With `images` and `metadata`, each SEG frame gets the source reference, the
+ * position and the orientation of its own source image. dcmjs gives a frame
+ * the position of the referenced multiframe frame with the same index, but it
+ * sorts that multiframe by position, so for a stack in the other scan
+ * direction the frame gets the position of the mirrored slice. dcmjs also
+ * writes one shared orientation, from one source image. A frame without a
+ * source SOP Instance UID throws, so that the per-frame groups always match
+ * the PixelData frames. Without `images` or `metadata`, as from the legacy
+ * `generateSegmentation`, the frames keep the planes of dcmjs.
  *
  * @returns {object} The filled segmentation object.
  */
@@ -133,8 +185,8 @@ export function fillSegmentation(
     ? inputLabelmaps3D
     : [inputLabelmaps3D];
 
-  const referencedFramesPerLabelmap = [];
   const frameDescriptors = [];
+  const entriesBySegmentIndex = new Map();
 
   for (
     let labelmapIndex = 0;
@@ -144,77 +196,57 @@ export function fillSegmentation(
     const labelmap3D = labelmaps3D[labelmapIndex];
     const { labelmaps2D, metadata: segmentMetadata } = labelmap3D;
 
-    const referencedFramesPerSegment = [];
-
-    for (let i = 1; i < segmentMetadata.length; i++) {
-      if (segmentMetadata[i]) {
-        referencedFramesPerSegment[i] = [];
-      }
-    }
-
     for (let i = 0; i < labelmaps2D.length; i++) {
       const labelmap2D = labelmaps2D[i];
 
-      if (!labelmap2D?.pixelData) {
+      if (!labelmap2D) {
         continue;
       }
 
       const { segmentsOnLabelmap } = labelmap2D;
-      const presentSegments = segmentsPresentInFrame(labelmap2D.pixelData);
 
-      segmentsOnLabelmap.forEach((segmentIndex) => {
+      segmentsPresentInFrame(labelmap2D.pixelData).forEach((labelValue) => {
+        const segmentIndex = getSegmentIndexForLabel(labelmap3D, labelValue);
+
         if (
-          segmentIndex !== 0 &&
-          segmentMetadata[segmentIndex] &&
-          referencedFramesPerSegment[segmentIndex] &&
-          presentSegments.has(segmentIndex)
+          !segmentMetadata[segmentIndex] ||
+          !segmentsOnLabelmap.includes(labelValue)
         ) {
-          referencedFramesPerSegment[segmentIndex].push(i);
+          return;
         }
+
+        if (!entriesBySegmentIndex.has(segmentIndex)) {
+          entriesBySegmentIndex.set(segmentIndex, {
+            segmentIndex,
+            metadata: segmentMetadata[segmentIndex],
+            sources: [],
+            frameIndices: new Set(),
+          });
+        }
+        const entry = entriesBySegmentIndex.get(segmentIndex);
+        if (
+          !entry.sources.some(
+            (source) =>
+              source.labelmap3D === labelmap3D &&
+              source.labelValue === labelValue
+          )
+        ) {
+          entry.sources.push({ labelmap3D, labelValue });
+        }
+        entry.frameIndices.add(i);
       });
     }
-
-    referencedFramesPerLabelmap[labelmapIndex] = referencedFramesPerSegment;
   }
 
-  let numberOfFrames = 0;
+  // dcmjs numbers the segments in the order they are added.
+  const segmentEntries = [...entriesBySegmentIndex.values()].sort(
+    (a, b) => a.segmentIndex - b.segmentIndex
+  );
 
-  for (
-    let labelmapIndex = 0;
-    labelmapIndex < labelmaps3D.length;
-    labelmapIndex++
-  ) {
-    const referencedFramesPerSegment =
-      referencedFramesPerLabelmap[labelmapIndex];
-    const labelmap3D = labelmaps3D[labelmapIndex];
-    const { metadata: segmentMetadata } = labelmap3D;
-
-    for (
-      let segmentIndex = 1;
-      segmentIndex < referencedFramesPerSegment.length;
-      segmentIndex++
-    ) {
-      const referencedFrameIndicies = referencedFramesPerSegment[segmentIndex];
-
-      if (!referencedFrameIndicies?.length || !segmentMetadata[segmentIndex]) {
-        continue;
-      }
-
-      const labelmaps = _getLabelmapsFromReferencedFrameIndicies(
-        labelmap3D,
-        referencedFrameIndicies
-      );
-
-      if (
-        !labelmaps.length ||
-        !labelmaps.some((frame) => frame?.length && frame.some((v) => v !== 0))
-      ) {
-        continue;
-      }
-
-      numberOfFrames += referencedFrameIndicies.length;
-    }
-  }
+  const numberOfFrames = segmentEntries.reduce(
+    (total, entry) => total + entry.frameIndices.size,
+    0
+  );
 
   if (numberOfFrames === 0) {
     throw new Error('No non-empty segmentation frames found for SEG export');
@@ -222,72 +254,63 @@ export function fillSegmentation(
 
   segmentation.setNumberOfFrames(numberOfFrames);
 
-  for (
-    let labelmapIndex = 0;
-    labelmapIndex < labelmaps3D.length;
-    labelmapIndex++
-  ) {
-    const referencedFramesPerSegment =
-      referencedFramesPerLabelmap[labelmapIndex];
+  const firstSegmentNumber =
+    (segmentation.dataset.SegmentSequence?.length ?? 0) + 1;
 
-    const labelmap3D = labelmaps3D[labelmapIndex];
-    const { metadata: segmentMetadata } = labelmap3D;
+  segmentEntries.forEach((entry, entryIndex) => {
+    const referencedFrameIndicies = [...entry.frameIndices].sort(
+      (a, b) => a - b
+    );
+    const { labelmaps, labelValue } = _getSegmentLabelmaps(
+      entry.sources,
+      referencedFrameIndicies
+    );
 
-    for (
-      let segmentIndex = 1;
-      segmentIndex < referencedFramesPerSegment.length;
-      segmentIndex++
-    ) {
-      const referencedFrameIndicies = referencedFramesPerSegment[segmentIndex];
+    // Frame numbers start from 1.
+    const referencedFrameNumbers = referencedFrameIndicies.map(
+      (element) => element + 1
+    );
 
-      if (!referencedFrameIndicies?.length || !segmentMetadata[segmentIndex]) {
-        continue;
-      }
+    segmentation.addSegmentFromLabelmap(
+      entry.metadata,
+      labelmaps,
+      labelValue,
+      referencedFrameNumbers
+    );
 
-      const labelmaps = _getLabelmapsFromReferencedFrameIndicies(
-        labelmap3D,
-        referencedFrameIndicies
-      );
+    const referencedSegmentNumber = firstSegmentNumber + entryIndex;
 
-      if (
-        !labelmaps.length ||
-        !labelmaps.some((frame) => frame?.length && frame.some((v) => v !== 0))
-      ) {
-        continue;
-      }
-
-      // Frame numbers start from 1.
-      const referencedFrameNumbers = referencedFrameIndicies.map(
-        (element) => element + 1
-      );
-
-      referencedFrameNumbers.forEach((frameNumber) => {
-        frameDescriptors.push({
-          referencedSegmentNumber: segmentIndex,
-          sourceFrameIndex: frameNumber - 1,
-        });
+    referencedFrameNumbers.forEach((frameNumber) => {
+      frameDescriptors.push({
+        referencedSegmentNumber,
+        sourceFrameIndex: frameNumber - 1,
       });
-
-      segmentation.addSegmentFromLabelmap(
-        segmentMetadata[segmentIndex],
-        labelmaps,
-        segmentIndex,
-        referencedFrameNumbers
-      );
-    }
-  }
+    });
+  });
 
   if (frameDescriptors.length && images?.length && metadata) {
-    // Every SEG frame must reference a resolvable source SOP Instance UID.
-    // Reject rather than silently dropping frames: a dropped frame would make
-    // the per-frame functional groups disagree with the encoded PixelData and
-    // produce a SEG whose source-image references are unreliable.
+    // Read each source image one time, also when it holds many segments.
+    const sources = new Map();
+    const getSource = (sourceFrameIndex) => {
+      if (!sources.has(sourceFrameIndex)) {
+        const image = images[sourceFrameIndex];
+        sources.set(sourceFrameIndex, {
+          ...getSourceFrame(image, metadata),
+          sourceImageSequenceItem: getReferencedSourceImageSequenceItem(
+            image,
+            metadata
+          ),
+        });
+      }
+      return sources.get(sourceFrameIndex);
+    };
+
     const perFrameInputs = frameDescriptors.map((desc) => {
-      const sourceImageSequenceItem = getReferencedSourceImageSequenceItem(
-        images[desc.sourceFrameIndex],
-        metadata
+      const { position, sourceImageSequenceItem } = getSource(
+        desc.sourceFrameIndex
       );
 
+      // Throw, so that the per-frame groups always match the PixelData frames.
       if (!sourceImageSequenceItem?.ReferencedSOPInstanceUID) {
         throw new Error(
           `Cannot resolve a source ReferencedSOPInstanceUID for SEG frame ` +
@@ -300,10 +323,20 @@ export function fillSegmentation(
       return {
         referencedSegmentNumber: desc.referencedSegmentNumber,
         sourceImageSequenceItem,
+        planePositionSequence: position
+          ? { ImagePositionPatient: position }
+          : undefined,
       };
     });
 
     applyPerFrameFunctionalGroups(segmentation.dataset, perFrameInputs);
+    setPlaneOrientations(
+      segmentation.dataset,
+      frameDescriptors.map(
+        (desc) => getSource(desc.sourceFrameIndex).orientation
+      )
+    );
+    warnMissingPlanes(frameDescriptors, getSource);
   }
   const transferSyntaxUid =
     options.transferSyntaxUid ??
@@ -383,6 +416,44 @@ export function fillSegmentation(
   }
 
   return segmentation;
+}
+
+/**
+ * The frames of one SEG segment and the value that marks the segment in them.
+ * A segment with one source uses the frames of its labelmap3D. A segment with
+ * more sources gets new binary frames, with 1 where any source has its label
+ * value.
+ */
+function _getSegmentLabelmaps(sources, referencedFrameIndicies) {
+  if (sources.length === 1) {
+    const [{ labelmap3D, labelValue }] = sources;
+    return {
+      labelmaps: _getLabelmapsFromReferencedFrameIndicies(
+        labelmap3D,
+        referencedFrameIndicies
+      ),
+      labelValue,
+    };
+  }
+
+  const labelmaps = referencedFrameIndicies.map((frameIndex) => {
+    let merged;
+    sources.forEach(({ labelmap3D, labelValue }) => {
+      const pixelData = labelmap3D.labelmaps2D[frameIndex]?.pixelData;
+      if (!pixelData) {
+        return;
+      }
+      merged ||= new Uint8Array(pixelData.length);
+      for (let i = 0; i < pixelData.length; i++) {
+        if (pixelData[i] === labelValue) {
+          merged[i] = 1;
+        }
+      }
+    });
+    return merged;
+  });
+
+  return { labelmaps, labelValue: 1 };
 }
 
 export function _getLabelmapsFromReferencedFrameIndicies(
@@ -1163,9 +1234,11 @@ export function insertOverlappingPixelDataPlanar(
       }
 
       const sourceImageMetadata = metadataProvider.get('instance', imageId);
+      // Compare the aligned frame: a frame rotated by 90 degrees in-plane has
+      // its Rows and Columns swapped relative to the source image.
       if (
-        Rows !== sourceImageMetadata.Rows ||
-        Columns !== sourceImageMetadata.Columns
+        alignedPixelDataI.shape[0] !== sourceImageMetadata.Rows ||
+        alignedPixelDataI.shape[1] !== sourceImageMetadata.Columns
       ) {
         throw new Error(
           'Individual SEG frames have different geometry dimensions (Rows and Columns) ' +
@@ -1379,8 +1452,8 @@ export function insertPixelDataPlanar(
 
         const sourceImageMetadata = imageIdMaps.metadata[imageId];
         if (
-          Rows !== sourceImageMetadata.Rows ||
-          Columns !== sourceImageMetadata.Columns
+          alignedPixelDataI.shape[0] !== sourceImageMetadata.Rows ||
+          alignedPixelDataI.shape[1] !== sourceImageMetadata.Columns
         ) {
           throw new Error(
             'Individual SEG frames have different geometry dimensions (Rows and Columns) ' +
@@ -1597,6 +1670,12 @@ function isMultiframeImage(imageMetadata) {
 /**
  * getImageIdOfSourceImagebyGeometry - Returns the Cornerstone imageId of the source image.
  *
+ * The lookup first matches the SEG frame position exactly with the source
+ * image position. If no image matches, the lookup selects the source image
+ * whose plane holds the SEG frame position. A SEG frame that is flipped or
+ * rotated in-plane has its origin at a different corner of the source slice,
+ * so only the plane match finds that frame.
+ *
  * @param  {String}    ReferencedSeriesInstanceUID    Referenced series of the source image.
  * @param  {String}    FrameOfReferenceUID            Frame of reference.
  * @param  {Object}    PerFrameFunctionalGroup        Sequence describing segmentation reference attributes per frame.
@@ -1621,8 +1700,10 @@ export function getImageIdOfSourceImagebyGeometry(
     return undefined;
   }
 
-  const segFramePosition =
-    PerFrameFunctionalGroup.PlanePositionSequence[0].ImagePositionPatient;
+  const segFramePosition = metadataUtilities.toNumber(
+    PerFrameFunctionalGroup.PlanePositionSequence[0].ImagePositionPatient
+  );
+  const candidates = [];
 
   for (let imageId of imageIds) {
     const sourceImageMetadata = metadataProvider.get('instance', imageId);
@@ -1630,8 +1711,6 @@ export function getImageIdOfSourceImagebyGeometry(
     if (!sourceImageMetadata) {
       continue;
     }
-
-    const isMultiframe = isMultiframeImage(sourceImageMetadata);
 
     if (
       !sourceImageMetadata.ImagePositionPatient ||
@@ -1641,26 +1720,37 @@ export function getImageIdOfSourceImagebyGeometry(
       continue;
     }
 
+    const imagePlane = metadataProvider.get('imagePlaneModule', imageId);
     // For multiframe images, check each frame's position
-    if (isMultiframe) {
-      const framePosition = metadataProvider.get(
-        'imagePlaneModule',
-        imageId
-      )?.imagePositionPatient;
+    const position = metadataUtilities.toNumber(
+      isMultiframeImage(sourceImageMetadata)
+        ? imagePlane?.imagePositionPatient
+        : sourceImageMetadata.ImagePositionPatient
+    );
 
-      if (
-        framePosition &&
-        csUtilities.isEqual(segFramePosition, framePosition, tolerance)
-      ) {
-        return imageId;
-      }
-    } else if (
-      csUtilities.isEqual(
-        segFramePosition,
-        sourceImageMetadata.ImagePositionPatient,
-        tolerance
-      )
-    ) {
+    if (!position) {
+      continue;
+    }
+    if (csUtilities.isEqual(segFramePosition, position, tolerance)) {
+      return imageId;
+    }
+    candidates.push({ imageId, position, imagePlane });
+  }
+
+  for (const { imageId, position, imagePlane } of candidates) {
+    const rowCosines = metadataUtilities.toNumber(imagePlane?.rowCosines);
+    const columnCosines = metadataUtilities.toNumber(imagePlane?.columnCosines);
+    if (!rowCosines || !columnCosines) {
+      continue;
+    }
+
+    const normal = vec3.cross([0, 0, 0], rowCosines, columnCosines);
+    const distance = csUtilities.voxelSlab.signedDistanceToPlane(
+      segFramePosition,
+      position,
+      normal
+    );
+    if (Math.abs(distance) < tolerance) {
       return imageId;
     }
   }
@@ -1700,42 +1790,81 @@ export function getImageIdOfReferencedFrame(
 }
 
 /**
- * getValidOrientations - returns an array of valid orientations.
+ * getValidOrientations - returns the 8 in-plane orientations of a source
+ * image, as the row (r) and column (c) cosines of a SEG frame in that plane.
  *
- * @param  {Number[6]} iop The row (0..2) an column (3..5) direction cosines.
- * @return {Number[8][6]} An array of valid orientations.
+ * | Index | SEG IOP    | SEG frame relative to the source |
+ * | ----- | ---------- | -------------------------------- |
+ * | 0     | (r, c)     | identity                         |
+ * | 1     | (r, -c)    | flipped vertically               |
+ * | 2     | (-r, c)    | flipped horizontally             |
+ * | 3     | (c, -r)    | rotated 90 degrees               |
+ * | 4     | (c, r)     | transposed                       |
+ * | 5     | (-c, -r)   | anti-transposed                  |
+ * | 6     | (-r, -c)   | rotated 180 degrees              |
+ * | 7     | (-c, r)    | rotated 270 degrees              |
+ *
+ * The list is built from the cosines directly: dcmjs
+ * rotateDirectionCosinesInPlane negates its result, so it never yields the
+ * 180 degree orientation. See
+ * https://github.com/cornerstonejs/cornerstone3D/issues/2959
+ *
+ * @param  {Number[6]|String[6]} iop The row (0..2) and column (3..5) direction
+ *   cosines. DS strings are converted to numbers.
+ * @return {Number[8][6]} The valid orientations, in the order of the table.
  */
 export function getValidOrientations(iop) {
-  const orientations = [];
+  const numericIop = metadataUtilities.toNumber(iop);
+  const r = numericIop.slice(0, 3);
+  const c = numericIop.slice(3, 6);
+  const negR = vec3.negate([0, 0, 0], r);
+  const negC = vec3.negate([0, 0, 0], c);
 
-  // [0,  1,  2]: 0,   0hf,   0vf
-  // [3,  4,  5]: 90,  90hf,  90vf
-  // [6, 7]:      180, 270
-
-  orientations[0] = iop;
-  orientations[1] = flipIOP.h(iop);
-  orientations[2] = flipIOP.v(iop);
-
-  const iop90 = rotateDirectionCosinesInPlane(iop, Math.PI / 2);
-
-  orientations[3] = iop90;
-  orientations[4] = flipIOP.h(iop90);
-  orientations[5] = flipIOP.v(iop90);
-
-  orientations[6] = rotateDirectionCosinesInPlane(iop, Math.PI);
-  orientations[7] = rotateDirectionCosinesInPlane(iop, 1.5 * Math.PI);
-
-  return orientations;
+  return [
+    [...r, ...c],
+    [...r, ...negC],
+    [...negR, ...c],
+    [...c, ...negR],
+    [...c, ...r],
+    [...negC, ...negR],
+    [...negR, ...negC],
+    [...negC, ...r],
+  ];
 }
 
 /**
- * alignPixelDataWithSourceData -
+ * The pixel operation that aligns a SEG frame with its source image, per entry
+ * of getValidOrientations. The aligned pixel (a, b) reads the SEG pixel (i, j),
+ * where (i, j) is (a, b), or (b, a) when `transpose` is set, and then
+ * `flipRows` and `flipColumns` mirror i and j.
+ */
+const ORIENTATION_ALIGNMENTS = [
+  { transpose: false, flipRows: false, flipColumns: false },
+  { transpose: false, flipRows: true, flipColumns: false },
+  { transpose: false, flipRows: false, flipColumns: true },
+  { transpose: true, flipRows: true, flipColumns: false },
+  { transpose: true, flipRows: false, flipColumns: false },
+  { transpose: true, flipRows: true, flipColumns: true },
+  { transpose: false, flipRows: true, flipColumns: true },
+  { transpose: true, flipRows: false, flipColumns: true },
+];
+
+/**
+ * alignPixelDataWithSourceData - finds the orientation of a SEG frame in the
+ * list from getValidOrientations, and returns the frame in the pixel order of
+ * the source image.
  *
- * @param {Ndarray} pixelData2D - The data to align.
- * @param {Number[6]} iop - The orientation of the image slice.
- * @param {Number[8][6]} orientations - An array of valid imageOrientationPatient values.
- * @param {Number} tolerance.
- * @return {Ndarray} The aligned pixelData.
+ * The result keeps the typed array type of the input, so 16-bit LABELMAP
+ * values are not truncated. A frame that is not aligned already is copied in
+ * one pass.
+ *
+ * @param {Ndarray} pixelData2D - The SEG frame, with shape [Rows, Columns].
+ * @param {Number[6]|String[6]} iop - The orientation of the SEG frame. DS
+ *   strings are converted to numbers.
+ * @param {Number[8][6]} orientations - The result of getValidOrientations.
+ * @param {Number} tolerance - The tolerance of the IOP comparison.
+ * @return {Ndarray|undefined} The aligned frame, with shape
+ *   [source Rows, source Columns], or undefined when the frame is not in-plane.
  */
 export function alignPixelDataWithSourceData(
   pixelData2D,
@@ -1743,43 +1872,43 @@ export function alignPixelDataWithSourceData(
   orientations,
   tolerance
 ) {
-  if (csUtilities.isEqual(iop, orientations[0], tolerance)) {
-    return pixelData2D;
-  } else if (csUtilities.isEqual(iop, orientations[1], tolerance)) {
-    // Flipped vertically.
+  const numericIop = metadataUtilities.toNumber(iop);
+  const index = orientations.findIndex((orientation) =>
+    csUtilities.isEqual(numericIop, orientation, tolerance)
+  );
 
-    // Undo Flip
-    return flipMatrix2D.v(pixelData2D);
-  } else if (csUtilities.isEqual(iop, orientations[2], tolerance)) {
-    // Flipped horizontally.
-
-    // Unfo flip
-    return flipMatrix2D.h(pixelData2D);
-  } else if (csUtilities.isEqual(iop, orientations[3], tolerance)) {
-    //Rotated 90 degrees
-
-    // Rotate back
-    return rotateMatrix902D(pixelData2D);
-  } else if (csUtilities.isEqual(iop, orientations[4], tolerance)) {
-    //Rotated 90 degrees and fliped horizontally.
-
-    // Undo flip and rotate back.
-    return rotateMatrix902D(flipMatrix2D.h(pixelData2D));
-  } else if (csUtilities.isEqual(iop, orientations[5], tolerance)) {
-    // Rotated 90 degrees and fliped vertically
-
-    // Unfo flip and rotate back.
-    return rotateMatrix902D(flipMatrix2D.v(pixelData2D));
-  } else if (csUtilities.isEqual(iop, orientations[6], tolerance)) {
-    // Rotated 180 degrees. // TODO -> Do this more effeciently, there is a 1:1 mapping like 90 degree rotation.
-
-    return rotateMatrix902D(rotateMatrix902D(pixelData2D));
-  } else if (csUtilities.isEqual(iop, orientations[7], tolerance)) {
-    // Rotated 270 degrees
-
-    // Rotate back.
-    return rotateMatrix902D(rotateMatrix902D(rotateMatrix902D(pixelData2D)));
+  if (index === -1) {
+    return undefined;
   }
+  if (index === 0) {
+    return pixelData2D;
+  }
+
+  const { transpose, flipRows, flipColumns } = ORIENTATION_ALIGNMENTS[index];
+  const [rows, columns] = pixelData2D.shape;
+  const alignedRows = transpose ? columns : rows;
+  const alignedColumns = transpose ? rows : columns;
+  const TypedArrayConstructor = pixelData2D.data.constructor;
+  const aligned = ndarray(new TypedArrayConstructor(rows * columns), [
+    alignedRows,
+    alignedColumns,
+  ]);
+
+  for (let a = 0; a < alignedRows; a++) {
+    for (let b = 0; b < alignedColumns; b++) {
+      let i = transpose ? b : a;
+      let j = transpose ? a : b;
+      if (flipRows) {
+        i = rows - 1 - i;
+      }
+      if (flipColumns) {
+        j = columns - 1 - j;
+      }
+      aligned.set(a, b, pixelData2D.get(i, j));
+    }
+  }
+
+  return aligned;
 }
 
 export function getSegmentMetadata(multiframe, seriesInstanceUid) {

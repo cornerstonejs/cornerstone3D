@@ -225,6 +225,8 @@ export default class ONNXSegmentationController {
   private loadingAI: Promise<unknown>;
 
   protected viewport;
+  /** Counts the initViewport calls, so a decode can tell that it is stale. */
+  private viewportGeneration = 0;
   protected excludeTool = ONNXSegmentationController.MarkerExclude;
   protected currentImage;
   private listeners: LogListener[] = [
@@ -417,8 +419,10 @@ export default class ONNXSegmentationController {
    * load data about the active viewport.  This method will disconnect a previous
    * viewport automatically.
    *
-   * The viewport must have a labelmap segmentation registered, as well as a
-   * tool which extends LabelmapBaseTool to use for setting the preview view
+   * The viewport needs an active labelmap segmentation to preview into; until
+   * it has one, the controller encodes images but does not decode them (see
+   * getActiveSegmentation).  A
+   * tool which extends LabelmapBaseTool is used for setting the preview view
    * once the decode is completed.  This is provided as toolForPreview
    *
    * @param viewport - a viewport to listen for annotations and rendered events
@@ -426,11 +430,15 @@ export default class ONNXSegmentationController {
    *     create a new preview instance.
    */
   public initViewport(viewport) {
+    this.viewportGeneration++;
     const { desiredImage } = this;
     if (this.viewport) {
       this.disconnectViewport(this.viewport);
     }
     this.currentImage = null;
+    // These are world points on the previous viewport's segmentation; decoding
+    // them against this viewport would preview into a segmentation it lacks.
+    this.randomPoints = [];
     this.viewport = viewport;
 
     const brushInstance = new LabelmapBaseTool(
@@ -659,6 +667,24 @@ export default class ONNXSegmentationController {
   };
 
   /**
+   * Gets the active segmentation of the connected viewport.
+   *
+   * The controller follows whichever viewport the tool was pointed at, and that
+   * viewport need not have a segmentation.  Without one there is nothing to
+   * preview into, so the controller does not decode: no preview and no
+   * propagation.  It still encodes the image, so the first marker after a
+   * segmentation is added does not wait for an encode.
+   */
+  protected getActiveSegmentation(viewport = this.viewport) {
+    if (!viewport) {
+      return;
+    }
+    return cornerstoneTools.segmentation.activeSegmentation.getActiveSegmentation(
+      viewport.id
+    );
+  }
+
+  /**
    * A listener for viewport being rendered that tried loading/encoding the
    * new image if it is different from the previous image.  Will return before
    * the image is encoded.  Can be called without binding as it is already
@@ -686,11 +712,16 @@ export default class ONNXSegmentationController {
     } else {
       desiredImage.sampleImageId = desiredImage.imageId;
     }
+    // Without a segmentation there is nothing to propagate into.
+    const segmentation = this.getActiveSegmentation();
+    if (!segmentation) {
+      this.randomPoints = [];
+    }
     if (desiredImage.imageId === currentImage?.imageId) {
       return;
     }
 
-    if (this._enabled && this._autoSegmentMode) {
+    if (segmentation && this._enabled && this._autoSegmentMode) {
       if (
         'isInAcquisitionPlane' in viewport &&
         !viewport.isInAcquisitionPlane()
@@ -700,11 +731,6 @@ export default class ONNXSegmentationController {
         );
         return;
       }
-
-      const segmentation =
-        cornerstoneTools.segmentation.activeSegmentation.getActiveSegmentation(
-          viewport.id
-        );
 
       const segmentIndex =
         cornerstoneTools.segmentation.segmentIndex.getActiveSegmentIndex(
@@ -836,6 +862,10 @@ export default class ONNXSegmentationController {
       this.viewportRenderedListener
     );
     const boundListener = this.annotationModifiedListener;
+    eventTarget.removeEventListener(
+      toolsEvents.ANNOTATION_ADDED,
+      boundListener
+    );
     eventTarget.removeEventListener(
       toolsEvents.ANNOTATION_MODIFIED,
       boundListener
@@ -1076,7 +1106,12 @@ export default class ONNXSegmentationController {
    */
   protected async runDecode() {
     const { canvas } = this;
-    if (this.isGpuInUse || !this.currentImage?.imageEmbeddings) {
+    if (
+      this.isGpuInUse ||
+      !this.currentImage?.imageEmbeddings ||
+      // No segmentation to preview into: keep the encode, skip the decode.
+      !this.getActiveSegmentation()
+    ) {
       return;
     }
     this.isGpuInUse = true;
@@ -1296,6 +1331,9 @@ export default class ONNXSegmentationController {
   createLabelmap(mask, canvasPosition, _points, _labels) {
     const { canvas, viewport } = this;
     const preview = this.tool.addPreview(viewport.element);
+    if (!preview) {
+      return;
+    }
     const {
       previewSegmentIndex,
       memo,
@@ -1376,8 +1414,15 @@ export default class ONNXSegmentationController {
    * Runs the GPU decoder operation itself.
    */
   async decode(points, labels, useSession = this.currentImage) {
-    const { canvas, canvasMask, imageImageData, desiredImage, boxRadius } =
-      this;
+    const {
+      canvas,
+      canvasMask,
+      imageImageData,
+      desiredImage,
+      boxRadius,
+      viewport,
+      viewportGeneration,
+    } = this;
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     canvas.width = imageImageData.width;
@@ -1410,6 +1455,14 @@ export default class ONNXSegmentationController {
 
       const feed = feedForSam(emb, points, labels);
       const res = await session.run(feed);
+      // initViewport may have switched viewports while the decoder ran, also
+      // away and back to the same viewport.
+      if (
+        viewport !== this.viewport ||
+        viewportGeneration !== this.viewportGeneration
+      ) {
+        return;
+      }
 
       for (let i = 0; i < points.length; i += 2) {
         const label = labels[i / 2];

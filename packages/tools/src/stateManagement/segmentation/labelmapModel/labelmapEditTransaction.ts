@@ -8,6 +8,10 @@ import type {
 } from '../../../types/LabelmapTypes';
 import { getLabelmap, getOrCreateLabelmapVolume } from './labelmapLayerStore';
 import {
+  getLabelmapImageIdsForReferencedImageId,
+  getReferencedImageIdForImageIndex,
+} from './labelmapImageIdMapping';
+import {
   getSegmentBinding,
   getSegmentIndexForLabelValue,
   getSegmentsOnLabelmap,
@@ -32,6 +36,9 @@ type MoveSegmentToPrivateLabelmap = (
 type BeginLabelmapEditTransactionOptions = {
   segmentIndex: number;
   overwriteSegmentIndices?: number[];
+  /** Locked segments. The edit skips their voxels, so they never cause a
+   *  move of the edited segment to a private layer. */
+  segmentsLocked?: number[];
   segmentationVoxelManager?: Types.IVoxelManager<number>;
   segmentationImageData?: vtkImageData;
   isInObject?: (point: Types.Point3) => boolean;
@@ -53,6 +60,15 @@ type LabelmapEditTransaction = {
    *  (layer registration + bulk voxel move + binding change), for recording
    *  on the stroke's memo. */
   moveStep?: LabelmapRestoreStep;
+  /** The locked segments on layers other than the edited layer. The edit
+   *  skips a voxel that one of these layers holds. */
+  lockedVoxelsOnOtherLayers?: LockedLabelmapVoxels[];
+};
+
+/** The voxels of the locked segments on one layer. */
+type LockedLabelmapVoxels = {
+  voxelManager: Types.IVoxelManager<number>;
+  labelValues: Set<number>;
 };
 
 type ResolveLabelmapLayerEditTargetOptions = {
@@ -202,10 +218,15 @@ function beginLabelmapEditTransaction(
     overwriteSegmentIndices
   );
 
+  // A locked segment means "do not paint here": setValue skips its voxels,
+  // so it is not an overlap and does not move the segment to a private layer.
+  const segmentsLocked = options.segmentsLocked ?? [];
   const shouldMoveSegment = hasProtectedSegmentOverwrite(
     segmentation,
     labelmapId,
-    protectedSegmentIndices,
+    protectedSegmentIndices.filter(
+      (protectedSegmentIndex) => !segmentsLocked.includes(protectedSegmentIndex)
+    ),
     options.segmentationVoxelManager,
     {
       segmentationImageData: options.segmentationImageData,
@@ -256,6 +277,84 @@ function beginLabelmapEditTransaction(
     movedSegment,
     moveStep,
   };
+}
+
+/**
+ * Finds the locked segments that are on a layer other than `labelmapId`. An
+ * edit of `labelmapId` reads the voxels of these layers, so that it does not
+ * paint over a locked segment after a move to a private layer.
+ */
+function getLockedVoxelsOnOtherLayers(
+  segmentation: Segmentation,
+  labelmapId: string | undefined,
+  segmentsLocked: number[] = [],
+  targetOptions: ResolveLabelmapLayerEditTargetOptions = {}
+): LockedLabelmapVoxels[] {
+  const labelValuesByLayer = new Map<string, Set<number>>();
+
+  for (const lockedSegmentIndex of segmentsLocked) {
+    const binding = getSegmentBinding(segmentation, lockedSegmentIndex);
+    if (!binding || binding.labelmapId === labelmapId) {
+      continue;
+    }
+
+    if (!labelValuesByLayer.has(binding.labelmapId)) {
+      labelValuesByLayer.set(binding.labelmapId, new Set());
+    }
+    labelValuesByLayer.get(binding.labelmapId).add(binding.labelValue);
+  }
+
+  // A stack layer can list the referenced images in another order than the
+  // edited layer, so its image is found by the referenced image, not by index.
+  const { sourceLayer: editedLayer, imageId: editedImageId } = targetOptions;
+  const editedImageIndex = editedLayer?.imageIds?.indexOf(editedImageId) ?? -1;
+  const referencedImageId =
+    editedLayer?.referencedImageIds && editedImageIndex >= 0
+      ? getReferencedImageIdForImageIndex(editedLayer, editedImageIndex)
+      : undefined;
+  const isVolumeEdit =
+    targetOptions.preferVolume ||
+    targetOptions.viewport instanceof BaseVolumeViewport;
+
+  const lockedVoxels: LockedLabelmapVoxels[] = [];
+  labelValuesByLayer.forEach((labelValues, lockedLabelmapId) => {
+    const layer = getLabelmap(segmentation, lockedLabelmapId);
+    if (!layer) {
+      return;
+    }
+
+    let layerTargetOptions = targetOptions;
+    if (
+      !isVolumeEdit &&
+      !layer.volumeId &&
+      referencedImageId &&
+      layer.referencedImageIds
+    ) {
+      const [lockedImageId] = getLabelmapImageIdsForReferencedImageId(
+        layer,
+        referencedImageId
+      );
+      if (!lockedImageId) {
+        // The layer has no image for this slice, so nothing is locked here.
+        return;
+      }
+      layerTargetOptions = {
+        ...targetOptions,
+        imageId: lockedImageId,
+        sourceLayer: layer,
+      };
+    }
+
+    const { voxelManager } = resolveLabelmapLayerEditTarget(
+      layer,
+      layerTargetOptions
+    );
+    if (voxelManager) {
+      lockedVoxels.push({ voxelManager, labelValues });
+    }
+  });
+
+  return lockedVoxels;
 }
 
 function getViewportImageIds(viewport?: Types.IViewport): string[] {
@@ -475,6 +574,7 @@ export {
   collectCrossLayerEraseBindings,
   eraseLabelmapEditTransactionOverwrites,
   getLabelmapLayerImageId,
+  getLockedVoxelsOnOtherLayers,
   getProtectedSegmentIndicesForLayer,
   hasProtectedSegmentOverwrite,
   resolveLabelmapLayerEditTarget,
@@ -485,5 +585,6 @@ export type {
   EraseLabelmapEditTransactionOptions,
   LabelmapEditTransaction,
   LabelmapLayerEditTarget,
+  LockedLabelmapVoxels,
   ResolveLabelmapLayerEditTargetOptions,
 };
