@@ -88,6 +88,25 @@ already exists.
 | `GpuCapabilityProfile`   | A declared class of device. An application states which profile applies, and nothing probes.                                                           |
 | `VoxelQualityRecord`     | The absolute record of the data that a render drew. It states no verdict.                                                                              |
 
+## Where the code is
+
+[Volume Render Sequences](./volumeRenderSequences.md) gives the sequence of calls as diagrams. The
+table gives the file of each piece. The paths are under `packages/core/src/`, except the last row.
+
+| Piece or step                                       | Code                                                                                                               |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| The profiles, and the limits of a grid              | `utilities/gpuCapabilityProfiles.ts`: `setActiveGpuCapabilityProfile`, `gridLimitsOfProfile`                       |
+| The factors of a reduction, and the reduced grid    | `utilities/voxelGrid/`: `boxAverageReductionFactors`, `reducedDimensions`, `deriveBoxAverageGrid`                  |
+| The default provider and the default selection      | `RenderingEngine/helpers/volumeRenderStrategy.ts`: `defaultVolumeStrategyProvider`, `selectFirstReadyStrategy`     |
+| The one place that both architectures share         | `RenderingEngine/helpers/resolveVolumeTexture.ts`, called by `createVolumeActor` and `createVolumeSliceActor`      |
+| The texture sets and the store                      | `cache/classes/VolumeTextureSet.ts`, `cache/volumeTextureStore.ts`, `ImageVolume.provisionTextureSet`              |
+| The marks and the deliveries                        | `cache/classes/ImageVolume.ts`: `markFrameTexturesDirty`, `recordFrameDelivery`, `markFrameModified`               |
+| The load                                            | `cache/classes/BaseStreamingImageVolume.ts`: `load`, `successCallback`, `takeInCachedImages`                       |
+| The fill of a reduced texture                       | `RenderingEngine/vtkClasses/vtkStreamingOpenGLTexture.js`: `updateTextureFromComposite`, `fillSliceByBoxStatistic` |
+| The selection on each render (generic architecture) | `RenderingEngine/GenericViewport/Planar/VtkVolumeSliceRenderPath.ts`: `provisionStrategies`, `applyStrategy`       |
+| The sample distance of a 3D render                  | `RenderingEngine/helpers/createVolumeMapper.ts`: `sampleDistanceOf`                                                |
+| The statistic of a labelmap                         | `packages/tools/src/stateManagement/segmentation/labelmapModel/labelmapLayerStore.ts`: `tagLabelmapVolume`         |
+
 ## How the viewport builds the strategies
 
 **The provider runs when the render path adds its actor, and it never runs on the frame path.** It
