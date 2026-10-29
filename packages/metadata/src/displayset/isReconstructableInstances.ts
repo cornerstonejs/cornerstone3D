@@ -1,9 +1,10 @@
 /**
  * The volume test of an image display set, from its naturalized instances
  * alone (no imageIds, no metadata providers), so a server gets the same
- * answer as a viewer. It gives the answer of OHIF `isDisplaySetReconstructable`
- * (`isReconstructable`); the plane, the spacing and the lattice come from the
- * `planeGeometry` series function.
+ * answer as a viewer. It follows OHIF `isDisplaySetReconstructable`
+ * (`isReconstructable`), with the differences that `display-sets.md` lists; the
+ * plane, the spacing and the lattice come from the `planeGeometry` series
+ * function.
  *
  * @module displayset/isReconstructableInstances
  */
@@ -172,12 +173,15 @@ function isMultiFrameVolume(instance: NaturalizedInstance): boolean {
 }
 
 /**
- * True when the instances of an image display set form a volume: the answer of
- * OHIF `isDisplaySetReconstructable` for the same instances.
+ * True when the instances of an image display set form a volume. It follows
+ * OHIF `isDisplaySetReconstructable`, except where `display-sets.md` lists a
+ * difference (for example, OHIF does not need `PixelSpacing` on a single-frame
+ * instance).
  *
  * - Single-frame: two or more instances of one size, samples per pixel and
- *   orientation, each with a `PixelSpacing`, at two or more locations, on one regular slice lattice (20%
- *   tolerance; a missing slice is allowed, two slices at one location are not).
+ *   orientation, each with a `PixelSpacing`, at two or more locations, on one
+ *   regular slice lattice (20% tolerance; a missing slice is allowed, two
+ *   slices at one location are not).
  * - Multi-frame (the first instance has more than one frame): that instance has
  *   pixel spacing, an orientation and a position; an NM instance is a
  *   reconstructed tomo; and its frames are not all at one location.

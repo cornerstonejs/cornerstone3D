@@ -22,6 +22,9 @@ export const optionalDisplaySetRuleFiles: Record<
       '',
       'Priority 78: the rule runs after `mixedDimensionalityBValue` (70) and',
       'before `volume3d` (80).',
+      '',
+      'Some CT scanners give a new AcquisitionNumber to each rotation of an axial',
+      '(step) scan. Such a series gives one display set for each rotation.',
     ],
     rules: {
       byAcquisitionTime: {
@@ -62,6 +65,12 @@ export const optionalDisplaySetRuleFiles: Record<
       '`contentStamp` is ContentDate and ContentTime as one number,',
       '`YYYYMMDDhhmmss.ffffff`. `isLatestVersion` compares it with the maximum of',
       'the series.',
+      '',
+      'The stamp needs ContentTime in the form `hhmmss`. A time `hhmm` (for',
+      'example `1200`) gives a smaller stamp than `090000`, so that version sorts',
+      'first, and `isLatestVersion` can mark the wrong version. Two versions in',
+      'the same second can also sort in the wrong order, because the split key',
+      'compares the digits of the fraction as one number.',
       '',
       'Each rule keeps the handler of the default rule, so the host builds the',
       'display set with its SR or SEG code.',
@@ -344,6 +353,9 @@ export const optionalDisplaySetRuleFiles: Record<
       'before `volume3d` (80), so it claims the instances that `volume3d` would',
       'claim. The `matches` of this rule is a copy of the `matches` of',
       '`volume3d`.',
+      '',
+      'The display sets of this rule have `splitRuleId` `volumePositionOrder`, so',
+      'a hanging protocol that selects `splitRuleId` `volume3d` does not find them.',
     ],
     rules: {
       volumePositionOrder: {

@@ -14,6 +14,12 @@
     "`YYYYMMDDhhmmss.ffffff`. `isLatestVersion` compares it with the maximum of",
     "the series.",
     "",
+    "The stamp needs ContentTime in the form `hhmmss`. A time `hhmm` (for",
+    "example `1200`) gives a smaller stamp than `090000`, so that version sorts",
+    "first, and `isLatestVersion` can mark the wrong version. Two versions in",
+    "the same second can also sort in the wrong order, because the split key",
+    "compares the digits of the fraction as one number.",
+    "",
     "Each rule keeps the handler of the default rule, so the host builds the",
     "display set with its SR or SEG code.",
     "",
@@ -28,7 +34,9 @@
       "priority": -1,
       "description": "Structured reports: one display set for each instance, in content date order, with isLatestVersion.",
       "handler": "structuredReport",
-      "matches": { "isStructuredReport": true },
+      "matches": {
+        "isStructuredReport": true
+      },
       "groupBy": ["SeriesInstanceUID", "contentStamp", "SOPInstanceUID"],
       "attributes": {
         "Manufacturer": "Manufacturer",
@@ -40,7 +48,9 @@
       "priority": -1,
       "description": "Segmentations: one display set for each instance, in content date order, with isLatestVersion.",
       "handler": "segmentation",
-      "matches": { "isSegmentation": true },
+      "matches": {
+        "isSegmentation": true
+      },
       "groupBy": ["SeriesInstanceUID", "contentStamp", "SOPInstanceUID"],
       "attributes": {
         "isLatestVersion": "isLatestVersion"

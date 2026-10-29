@@ -92,7 +92,7 @@ const objectRule = (priority, kind, handler, description) => ({
  * catch-all `unsupported` runs last, at `Number.MAX_SAFE_INTEGER`. The steps
  * leave room for a new default rule with an integer priority. A rule with a
  * priority below `0` runs before all of them. A rule with a priority between
- * two defaults that is not a multiple of 10 (for example `75`) runs between
+ * two defaults that is not a multiple of 10 (for example `85`) runs between
  * them, and no later default takes that number. A rule with a priority above
  * `DEFAULT_SPLIT_RULE_PRIORITY_LIMIT` (10000) runs after every other default
  * rule, and still before `unsupported`, so it sees the instances that no other

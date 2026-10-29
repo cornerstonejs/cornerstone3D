@@ -17,13 +17,26 @@ import type {
 } from './displaySetRulesTypes';
 import { optionalDisplaySetRuleFiles } from './optionalDisplaySetRules.generated';
 
+/** Freezes a JSON value and every object or array in it. */
+function deepFreeze<T>(value: T): T {
+  if (value && typeof value === 'object' && !Object.isFrozen(value)) {
+    for (const child of Object.values(value)) {
+      deepFreeze(child);
+    }
+    Object.freeze(value);
+  }
+  return value;
+}
+
 /**
  * The optional rule files, keyed by file id (the file name without `.json`).
- * Each value is the content of `rules/optional/<id>.json`.
+ * Each value is the content of `rules/optional/<id>.json`. The data is frozen,
+ * so a consumer cannot change the result of a later
+ * {@link withOptionalDisplaySetRules} call.
  */
 export const optionalDisplaySetRules: Readonly<
   Record<string, OptionalDisplaySetRuleFile>
-> = optionalDisplaySetRuleFiles;
+> = deepFreeze(optionalDisplaySetRuleFiles);
 
 /** The result of {@link withOptionalDisplaySetRules}. */
 export type WithOptionalDisplaySetRules = {
@@ -49,6 +62,10 @@ export type WithOptionalDisplaySetRules = {
  * already in the base rules or in an earlier file, and a context name that is
  * already in `defaultMetadataContext` or in an earlier file, is an error. To
  * replace a default rule, merge the rule over the result by key.
+ *
+ * The check covers `defaultMetadataContext` only. A host with its own context
+ * merges the result into it, `{ ...hostContext, ...context }`, and checks its
+ * own names: in that merge, an entry of `context` wins.
  *
  * @param ids - the file ids, see {@link optionalDisplaySetRules}.
  * @param baseRules - the rules to add to. Defaults to `displaySetRules`.

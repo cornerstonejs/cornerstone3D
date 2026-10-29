@@ -13,7 +13,10 @@
     "`volume3d`, with the images in time order.",
     "",
     "Priority 78: the rule runs after `mixedDimensionalityBValue` (70) and",
-    "before `volume3d` (80)."
+    "before `volume3d` (80).",
+    "",
+    "Some CT scanners give a new AcquisitionNumber to each rotation of an axial",
+    "(step) scan. Such a series gives one display set for each rotation."
   ],
   "rules": {
     "byAcquisitionTime": {
@@ -21,10 +24,14 @@
       "description": "Multi-slice CT / MR / PT / NM: one display set for each AcquisitionNumber, in acquisition time order.",
       "matches": {
         "Modality": ["CT", "MR", "PT", "NM"],
-        "seriesInstanceCount": { "greaterThan": 1 },
+        "seriesInstanceCount": {
+          "greaterThan": 1
+        },
         "isImage": true,
         "isMultiFrame": false,
-        "Rows": { "notNull": true }
+        "Rows": {
+          "notNull": true
+        }
       },
       "groupBy": ["SeriesInstanceUID", "AcquisitionNumber"],
       "sortBy": ["acquisitionSeconds", "InstanceNumber"],

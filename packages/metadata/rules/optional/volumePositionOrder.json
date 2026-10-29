@@ -13,7 +13,10 @@
     "Priority 79: the rule runs after `mixedDimensionalityBValue` (70) and just",
     "before `volume3d` (80), so it claims the instances that `volume3d` would",
     "claim. The `matches` of this rule is a copy of the `matches` of",
-    "`volume3d`."
+    "`volume3d`.",
+    "",
+    "The display sets of this rule have `splitRuleId` `volumePositionOrder`, so",
+    "a hanging protocol that selects `splitRuleId` `volume3d` does not find them."
   ],
   "rules": {
     "volumePositionOrder": {
@@ -21,9 +24,13 @@
       "description": "Multi-slice CT / MR / PT / NM, as volume3d, with the slices in position order.",
       "matches": {
         "Modality": ["CT", "MR", "PT", "NM"],
-        "seriesInstanceCount": { "greaterThan": 1 },
+        "seriesInstanceCount": {
+          "greaterThan": 1
+        },
         "isImage": true,
-        "Rows": { "notNull": true }
+        "Rows": {
+          "notNull": true
+        }
       },
       "groupBy": ["SeriesInstanceUID"],
       "sortBy": ["displaySet.sliceDistance", "InstanceNumber"]

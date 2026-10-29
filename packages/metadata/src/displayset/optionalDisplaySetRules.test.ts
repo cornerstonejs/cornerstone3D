@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { createDisplaySetFromGroup } from './createDisplaySetFromGroup';
-import { createDisplaySetSplitRules } from './displaySetRules';
+import { createDisplaySetSplitRules, displaySetRules } from './displaySetRules';
 import { groupInstancesBySplitRules } from './groupInstancesBySplitRules';
 import {
   optionalDisplaySetRules,
@@ -112,6 +112,13 @@ describe('optionalDisplaySetRules - the JSON files', () => {
         expect(priority < 0 || priority % 10 !== 0).toBe(true);
       }
     }
+  });
+
+  it('volumePositionOrder claims the same instances as volume3d (same matches)', () => {
+    expect(
+      optionalDisplaySetRules.volumePositionOrder.rules.volumePositionOrder
+        .matches
+    ).toEqual(displaySetRules.volume3d.matches);
   });
 });
 
@@ -277,15 +284,28 @@ describe('withOptionalDisplaySetRules', () => {
   });
 
   it('reports a collision of a context name with the default context', () => {
-    const file = optionalDisplaySetRules.singleImageSeriesStack;
-    const original = file.displaySetContext;
-    file.displaySetContext = { ...original, isImage: true };
-    try {
-      expect(() =>
-        withOptionalDisplaySetRules(['singleImageSeriesStack'])
-      ).toThrow(/context name 'isImage' .* default metadata context/);
-    } finally {
-      file.displaySetContext = original;
-    }
+    // Own file data, so the test does not change the shared, frozen export.
+    jest.isolateModules(() => {
+      jest.doMock('./optionalDisplaySetRules.generated', () => ({
+        optionalDisplaySetRuleFiles: {
+          collides: {
+            name: 'collides',
+            rules: {},
+            displaySetContext: { isImage: true },
+          },
+        },
+      }));
+      const isolated = require('./optionalDisplaySetRules');
+      expect(() => isolated.withOptionalDisplaySetRules(['collides'])).toThrow(
+        /context name 'isImage' .* default metadata context/
+      );
+    });
+    jest.dontMock('./optionalDisplaySetRules.generated');
+  });
+
+  it('freezes the shared optional rule data', () => {
+    expect(Object.isFrozen(optionalDisplaySetRules.dwiByBValue.rules)).toBe(
+      true
+    );
   });
 });
