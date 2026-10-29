@@ -7,7 +7,7 @@
  * @module displayset/optionalDisplaySetRules
  */
 
-import { hasOwn } from '../safeFunctions';
+import { deepFreeze, hasOwn } from '../safeFunctions';
 import { defaultMetadataContext } from './displaySetContext';
 import type { ContextEntry } from './displaySetContext';
 import { displaySetRules } from './displaySetRules';
@@ -16,17 +16,6 @@ import type {
   OptionalDisplaySetRuleFile,
 } from './displaySetRulesTypes';
 import { optionalDisplaySetRuleFiles } from './optionalDisplaySetRules.generated';
-
-/** Freezes a JSON value and every object or array in it. */
-function deepFreeze<T>(value: T): T {
-  if (value && typeof value === 'object' && !Object.isFrozen(value)) {
-    for (const child of Object.values(value)) {
-      deepFreeze(child);
-    }
-    Object.freeze(value);
-  }
-  return value;
-}
 
 /**
  * The optional rule files, keyed by file id (the file name without `.json`).

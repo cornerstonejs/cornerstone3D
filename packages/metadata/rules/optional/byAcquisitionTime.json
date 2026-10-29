@@ -12,15 +12,17 @@
     "A series with one AcquisitionNumber gives one display set, as with",
     "`volume3d`, with the images in time order.",
     "",
-    "Priority 78: the rule runs after `mixedDimensionalityBValue` (70) and",
-    "before `volume3d` (80).",
+    "Priority 88: the rule runs after the slot 80 that is reserved for a later",
+    "default `dynamicVolume` rule, and before `volume3d` (90). So a later 4D",
+    "series stays one `dynamicVolume` display set, and this rule does not split",
+    "it into one display set for each acquisition.",
     "",
     "Some CT scanners give a new AcquisitionNumber to each rotation of an axial",
     "(step) scan. Such a series gives one display set for each rotation."
   ],
   "rules": {
     "byAcquisitionTime": {
-      "priority": 78,
+      "priority": 88,
       "description": "Multi-slice CT / MR / PT / NM: one display set for each AcquisitionNumber, in acquisition time order.",
       "matches": {
         "Modality": ["CT", "MR", "PT", "NM"],

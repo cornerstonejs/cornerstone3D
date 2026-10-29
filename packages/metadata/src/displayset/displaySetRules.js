@@ -45,7 +45,8 @@ const LOCALIZER_MODALITIES = ['CT', 'MR', 'PT'];
  * The `groupBy` of a rule that makes one display set for each instance. The
  * groups are the groups of `SOPInstanceUID` alone, but the split key holds
  * `InstanceNumber`, and runs of digits in a split key compare by value, so
- * the display sets come out in `InstanceNumber` order.
+ * the display sets come out in `InstanceNumber` order. A text value with
+ * leading zeros (`'007'`) or a negative value does not sort by value.
  */
 const INSTANCE_NUMBER_ORDER = [
   'SeriesInstanceUID',
@@ -88,12 +89,14 @@ const objectRule = (priority, kind, handler, description) => ({
  * The key is the rule id. Rules are evaluated in ascending `priority` and the
  * first match wins per instance, so the priorities are part of the contract.
  *
- * The defaults use the priorities `10, 20, 30, ...` (steps of 10), and the
- * catch-all `unsupported` runs last, at `Number.MAX_SAFE_INTEGER`. The steps
- * leave room for a new default rule with an integer priority. A rule with a
- * priority below `0` runs before all of them. A rule with a priority between
- * two defaults that is not a multiple of 10 (for example `85`) runs between
- * them, and no later default takes that number. A rule with a priority above
+ * The defaults use the priorities `10` to `170` (steps of 10), and the
+ * catch-all `unsupported` runs last, at `Number.MAX_SAFE_INTEGER`. The
+ * priority `80` is reserved for a later default `dynamicVolume` rule, and no
+ * rule of this release uses it. The steps leave room for a new default rule
+ * with an integer priority. A rule with a priority below `0` runs before all of
+ * them. A rule with a priority between two defaults that is not a multiple of
+ * 10 (for example `85`) runs between them, and no later default takes that
+ * number. A rule with a priority above
  * `DEFAULT_SPLIT_RULE_PRIORITY_LIMIT` (10000) runs after every other default
  * rule, and still before `unsupported`, so it sees the instances that no other
  * default claims.
@@ -212,7 +215,7 @@ export const displaySetRules = {
   },
 
   volume3d: {
-    priority: 80,
+    priority: 90,
     description:
       'Multi-slice CT / MR / PT / NM, which reconstruct into a volume.',
     matches: {
@@ -224,7 +227,7 @@ export const displaySetRules = {
   },
 
   defaultImageRule: {
-    priority: 90,
+    priority: 100,
     description:
       'Fallback for any remaining image SOP class, also with no Rows in the ' +
       'metadata. Grouped one display set per series.',
@@ -232,21 +235,21 @@ export const displaySetRules = {
   },
 
   segmentation: objectRule(
-    100,
+    110,
     'isSegmentation',
     'segmentation',
     'Segmentations (segmentationSopClassUids). One display set per series.'
   ),
 
   rtStructureSet: objectRule(
-    110,
+    120,
     'isRtStructureSet',
     'rtStructureSet',
     'RT structure sets (rtStructureSetSopClassUids). One display set per series.'
   ),
 
   parametricMap: objectRule(
-    120,
+    130,
     'isParametricMap',
     'parametricMap',
     'Parametric maps (parametricMapSopClassUids). One display set per series.'
@@ -254,7 +257,7 @@ export const displaySetRules = {
 
   structuredReport: {
     ...objectRule(
-      130,
+      140,
       'isStructuredReport',
       'structuredReport',
       'Structured reports (structuredReportSopClassUids), also Comprehensive ' +
@@ -269,7 +272,7 @@ export const displaySetRules = {
 
   encapsulatedDocument: {
     ...objectRule(
-      140,
+      150,
       'isEncapsulatedDocument',
       'encapsulatedDocument',
       'Encapsulated documents (encapsulatedDocumentSopClassUids). One ' +
@@ -280,7 +283,7 @@ export const displaySetRules = {
   },
 
   bulkAnnotation: objectRule(
-    150,
+    160,
     'isBulkAnnotation',
     'bulkAnnotation',
     'Microscopy bulk annotations (bulkAnnotationSopClassUids). One display ' +
@@ -289,7 +292,7 @@ export const displaySetRules = {
 
   chart: {
     ...objectRule(
-      160,
+      170,
       'isChart',
       'chart',
       'Charts (chartSopClassUids, empty by default: a host adds its chart ' +

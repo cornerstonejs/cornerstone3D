@@ -20,15 +20,17 @@ export const optionalDisplaySetRuleFiles: Record<
       'A series with one AcquisitionNumber gives one display set, as with',
       '`volume3d`, with the images in time order.',
       '',
-      'Priority 78: the rule runs after `mixedDimensionalityBValue` (70) and',
-      'before `volume3d` (80).',
+      'Priority 88: the rule runs after the slot 80 that is reserved for a later',
+      'default `dynamicVolume` rule, and before `volume3d` (90). So a later 4D',
+      'series stays one `dynamicVolume` display set, and this rule does not split',
+      'it into one display set for each acquisition.',
       '',
       'Some CT scanners give a new AcquisitionNumber to each rotation of an axial',
       '(step) scan. Such a series gives one display set for each rotation.',
     ],
     rules: {
       byAcquisitionTime: {
-        priority: 78,
+        priority: 88,
         description:
           'Multi-slice CT / MR / PT / NM: one display set for each AcquisitionNumber, in acquisition time order.',
         matches: {
@@ -349,17 +351,18 @@ export const optionalDisplaySetRuleFiles: Record<
       'the image plane, from one origin for the series. An image that is not in',
       'the main plane has no distance, and goes after the images that have one.',
       '',
-      'Priority 79: the rule runs after `mixedDimensionalityBValue` (70) and just',
-      'before `volume3d` (80), so it claims the instances that `volume3d` would',
-      'claim. The `matches` of this rule is a copy of the `matches` of',
-      '`volume3d`.',
+      'Priority 89: the rule runs after the slot 80 that is reserved for a later',
+      'default `dynamicVolume` rule, and just before `volume3d` (90), so it',
+      'claims the instances that `volume3d` would claim. A later 4D series stays',
+      'with `dynamicVolume`, which orders the slices of each dimension group.',
+      'The `matches` of this rule is a copy of the `matches` of `volume3d`.',
       '',
       'The display sets of this rule have `splitRuleId` `volumePositionOrder`, so',
       'a hanging protocol that selects `splitRuleId` `volume3d` does not find them.',
     ],
     rules: {
       volumePositionOrder: {
-        priority: 79,
+        priority: 89,
         description:
           'Multi-slice CT / MR / PT / NM, as volume3d, with the slices in position order.',
         matches: {

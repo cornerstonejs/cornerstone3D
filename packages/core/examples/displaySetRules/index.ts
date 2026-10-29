@@ -149,6 +149,35 @@ const SOURCE_SERIES: SourceSeries[] = [
       '1.3.6.1.4.1.14519.5.2.1.1239.1759.115060983843511037348481244160',
     wadoRsRoot: LOCAL_ROOT,
   },
+  {
+    // Multi-frame clips whose UID order is not the InstanceNumber order.
+    label: 'US — LiverUS-06, clips in InstanceNumber order',
+    StudyInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.1188.2803.137585363493444318569098508293',
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.1188.2803.699272945123913604672897602509',
+  },
+  {
+    label: 'NM — DATSCAN brain SPECT, 5 multi-frame instances',
+    StudyInstanceUID: '1.2.276.0.7230010.3.1.2.447481088.1.1669202398.851612',
+    SeriesInstanceUID: '1.2.276.0.7230010.3.1.3.447481088.1.1669202398.851613',
+  },
+  {
+    // Optional rule dwiByBValue: b=0 and b=800.
+    label: 'MR — DWI, DTI_high_iso SENSE (2380 images)',
+    StudyInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.4792.2001.921758700577562664959693695481',
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.4792.2001.168514320643150242908573671981',
+  },
+  {
+    // Optional rule multiEchoByEchoTime: EchoTime 2.39 and 4.77.
+    label: 'MR — DIXON, two echoes',
+    StudyInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.99.1071.21255249241959598781018667405790',
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.99.1071.17388172878860580544764140390086',
+  },
 ];
 
 // ======== The display set context of this example ======== //
@@ -177,8 +206,11 @@ function firstItem(sequence: unknown): Record<string, unknown> | undefined {
  * works only where the host registers the same entry.
  */
 const DEMO_CONTEXT = {
-  /** A localizer / scout / survey series, by description. */
-  isLocalizer:
+  /**
+   * A localizer / scout / survey series, by description. The default
+   * `localizer` rule reads `ImageType` instead.
+   */
+  isLocalizerByDescription:
     "contains(lower(SeriesDescription), 'localizer') || " +
     "contains(lower(SeriesDescription), 'scout') || " +
     "contains(lower(SeriesDescription), 'survey')",
@@ -219,36 +251,8 @@ const SAMPLE_SNIPPETS: Record<string, string> = {
         description:
           'Split scout / localizer images off into their own stack so they do ' +
           'not join the volume.',
-        matches: { isLocalizer: true },
+        matches: { isLocalizerByDescription: true },
         groupBy: ['SeriesInstanceUID'],
-      },
-    },
-    null,
-    2
-  ),
-  'US: one display set for each sweep': JSON.stringify(
-    {
-      usTimeClusters: {
-        priority: -1,
-        description:
-          'Ultrasound: a gap of more than 20 seconds between frames starts a ' +
-          'new sweep, and each sweep becomes a display set. The gap applies to ' +
-          'this rule only.',
-        context: { timeClustersMaxGap: 20 },
-        matches: {
-          isImage: true,
-          Modality: 'US',
-          isMultiFrame: false,
-          sweepCount: { greaterThan: 1 },
-          sweepStart: { notNull: true },
-        },
-        groupBy: ['SeriesInstanceUID', 'sweepStart'],
-        sortBy: ['acquisitionSeconds'],
-        attributes: {
-          SeriesDescription: {
-            template: '{SeriesDescription} +{sweepOffset} s',
-          },
-        },
       },
     },
     null,
@@ -304,42 +308,6 @@ const SAMPLE_SNIPPETS: Record<string, string> = {
           mammoView: 'mammoView',
           viewCode: 'viewCode',
           descriptionName: { template: '{ImageLaterality}{mammoView}' },
-        },
-      },
-    },
-    null,
-    2
-  ),
-  // The data form of OHIF's `dwiByBValue` URL customization
-  // (platform/app/public/customizations/split/dwiByBValue.jsonc), without the
-  // customization `$merge` wrapper.
-  'DWI: one display set per b-value': JSON.stringify(
-    {
-      dwiByBValue: {
-        priority: -1,
-        description:
-          'Diffusion MR: one display set for each b-value. Images without ' +
-          'DiffusionBValue (a b=0 set that carries its b-value only in a ' +
-          'private tag, or a trace / ADC set) fall through to the standard ' +
-          'rules and form a display set of their own.',
-        context: {
-          bValue: 'Number(DiffusionBValue)',
-          // A series value: one instance has a b-value above 0. Some scanners
-          // write DiffusionBValue = 0 into every MR series.
-          isDiffusion: 'series.instances.max(bValue) > 0',
-        },
-        matches: {
-          Modality: 'MR',
-          isDiffusion: true,
-          isImage: true,
-          DiffusionBValue: { notNull: true },
-        },
-        groupBy: ['SeriesInstanceUID', 'bValue'],
-        sortBy: ['SliceLocation'],
-        attributes: {
-          SeriesDescription: {
-            template: '{SeriesDescription} b={DiffusionBValue}',
-          },
         },
       },
     },
@@ -930,7 +898,7 @@ for (const step of [
     'folder, not the whole study: the example reads and decodes every file ' +
     'when you upload it.',
   'Look at the display sets that the standard rules make.',
-  'Pick the "DWI: one display set per b-value" sample above and press "Add ' +
+  'Pick the "Optional rule: dwiByBValue" sample above and press "Add ' +
     'rule". Expect one display set for each DiffusionBValue (b=1000: 32 images, ' +
     'in SliceLocation order), and one more display set for the images without ' +
     'DiffusionBValue.',

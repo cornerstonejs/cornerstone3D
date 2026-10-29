@@ -219,6 +219,25 @@ describe('optionalDisplaySetRules - one split for each file', () => {
     ]);
   });
 
+  it('usTimeClusters: a gap of 25 s starts a new sweep (rule gap 20 s, default gap 30 s)', () => {
+    const us = (time: string) =>
+      instance({
+        SOPClassUID: '1.2.840.10008.5.1.4.1.1.6.1',
+        Modality: 'US',
+        SeriesDescription: 'US',
+        AcquisitionDateTime: `20260101${time}.000000`,
+      });
+    const first = [us('100000'), us('100005')];
+    const second = [us('100030')];
+
+    expect(
+      splitWith('usTimeClusters', [...first, ...second], description)
+    ).toEqual([
+      ['usTimeClusters', uids(first), 'US +0 s'],
+      ['usTimeClusters', uids(second), 'US +30 s'],
+    ]);
+  });
+
   it('regularVolume: the regular slices become one volume, and the other image stays with the defaults', () => {
     const regular = [0, 2, 4, 6, 8].map((z) =>
       ct({ ImagePositionPatient: [0, 0, z] })

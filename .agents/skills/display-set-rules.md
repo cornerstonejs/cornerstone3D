@@ -165,10 +165,11 @@ URL customization modules), and the `context` of each rule.
 
 ## Priorities and optional rules
 
-- The default rules use the priorities `10` to `160`, in steps of 10, and
-  `unsupported` is last. A site or optional rule uses a priority below `0`, or a
-  number between two defaults that is not a multiple of 10 (for example `79`
-  runs just before `volume3d` at `80`). A new default takes a multiple of 10.
+- The default rules use the priorities `10` to `170`, in steps of 10, and
+  `unsupported` is last. `80` is reserved for a later `dynamicVolume` rule. A
+  site or optional rule uses a priority below `0`, or a number between two
+  defaults that is not a multiple of 10 (for example `89` runs just before
+  `volume3d` at `90`). A new default takes a multiple of 10.
 - Before you write a rule, check `packages/metadata/rules/optional/`. Each JSON
   file there is an optional rule set (`name`, `notes`, `requires`,
   `displaySetContext`, `rules`). A host turns files on with

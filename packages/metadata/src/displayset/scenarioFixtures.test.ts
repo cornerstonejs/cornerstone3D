@@ -220,6 +220,22 @@ describe('CT localizers', () => {
       },
     ]);
   });
+
+  it('gives no localizer display set when no image has LOCALIZER in ImageType', () => {
+    const withImageType = (imageType?: string[]) =>
+      ctSeriesWithScouts().map(({ ImageType: _ignored, ...rest }) =>
+        imageType ? { ...rest, ImageType: imageType } : rest
+      );
+
+    for (const series of [
+      withImageType(),
+      withImageType(['DERIVED', 'SECONDARY']),
+    ]) {
+      expect(
+        displaySetsOf(series, compiledDisplaySetRules).map((d) => d.rule)
+      ).toEqual(['volume3d']);
+    }
+  });
 });
 
 describe('ultrasound', () => {

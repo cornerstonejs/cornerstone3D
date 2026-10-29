@@ -12,7 +12,12 @@
  * @module displayset/splitRuleSchema
  */
 
-import { conditionShape, matchTestShape, valueShape } from '../safeFunctions';
+import {
+  conditionShape,
+  deepFreeze,
+  matchTestShape,
+  valueShape,
+} from '../safeFunctions';
 import type { Schema, SchemaShape } from '../safeFunctions';
 
 /** The names that only `attributes` can read: values of the display set. */
@@ -190,16 +195,6 @@ const nameShape: SchemaShape = {
   function: true,
   forms: {},
 };
-
-function deepFreeze<T>(value: T): T {
-  if (value && typeof value === 'object' && !Object.isFrozen(value)) {
-    Object.freeze(value);
-    for (const entry of Object.values(value)) {
-      deepFreeze(entry);
-    }
-  }
-  return value;
-}
 
 /**
  * The schema of a raw split rule, keyed by shape name. `rule` is the rule

@@ -67,7 +67,7 @@ describe('displaySetRules - the rules as data', () => {
     expect(remote.map((g) => g.splitKey)).toEqual(local.map((g) => g.splitKey));
   });
 
-  it('gives the defaults the priorities 10, 20, 30, ..., in the earlier order, and runs the catch-all last', () => {
+  it('gives the defaults the priorities 10 to 170 with 80 free, in the earlier order, and runs the catch-all last', () => {
     const entries = Object.entries(displaySetRules);
     expect(entries.map(([id, rule]) => [id, rule.priority])).toEqual([
       ['video', 10],
@@ -77,15 +77,16 @@ describe('displaySetRules - the rules as data', () => {
       ['multiFrame', 50],
       ['localizer', 60],
       ['mixedDimensionalityBValue', 70],
-      ['volume3d', 80],
-      ['defaultImageRule', 90],
-      ['segmentation', 100],
-      ['rtStructureSet', 110],
-      ['parametricMap', 120],
-      ['structuredReport', 130],
-      ['encapsulatedDocument', 140],
-      ['bulkAnnotation', 150],
-      ['chart', 160],
+      // 80 is reserved for the later default rule dynamicVolume.
+      ['volume3d', 90],
+      ['defaultImageRule', 100],
+      ['segmentation', 110],
+      ['rtStructureSet', 120],
+      ['parametricMap', 130],
+      ['structuredReport', 140],
+      ['encapsulatedDocument', 150],
+      ['bulkAnnotation', 160],
+      ['chart', 170],
       ['unsupported', Number.MAX_SAFE_INTEGER],
     ]);
     expect(
@@ -937,7 +938,7 @@ describe('default rules - the unsupported catch-all', () => {
     const rules = createDisplaySetSplitRules({
       ...displaySetRules,
       prFallback: {
-        priority: 170,
+        priority: 180,
         matches: { Modality: 'PR' },
       },
     });
