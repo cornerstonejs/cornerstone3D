@@ -67,11 +67,10 @@ and the viewport fidelity indicator tells the user that the display is lossy.
 - **GPULIMIT-USER-3** A device that can render a volume within its limits never
   shows that volume as a uniform gray or a uniform black, and never shows an
   incorrect image because of a texel data type.
-- **GPULIMIT-USER-4** The viewer does not ask a device to render a volume that
-  is too large for that device. A context loss or a stop of the tab from GPU
-  memory can occur one time at a new size. After that, the viewer keeps the
-  size, and the failure does not occur again at that size until a retest
-  (GPULIMIT-USER-6).
+- **GPULIMIT-USER-4** The viewer does not ask a device to render a data set
+  that is too large for that device. The requirement fails when a viewport goes
+  blank, the WebGL context is lost, or the tab stops, because the data set
+  exceeds the texture memory or the GPU memory of the device.
 - **GPULIMIT-USER-5** When the display is reduced, the user can determine that
   the image is lossy (FIDELITY-USER-1 of [Viewport fidelity](./viewport-fidelity.md)).
 - **GPULIMIT-USER-6** One failure does not reduce the display permanently. The
@@ -111,6 +110,13 @@ viewer asked it to render a data set that is too large.
   A record that remains at the next start counts as a stop of the tab.
 - **GPULIMIT-DETECT-4** No probe tests the memory limits, because a probe of
   memory can cause type 2 or type 3.
+- **GPULIMIT-DETECT-5** A known gap. No safe probe measures the memory limits
+  (GPULIMIT-DETECT-4), so this version does not meet GPULIMIT-USER-4 at a
+  memory size that the device has not used before. The first context loss or
+  stop of the tab at a new size can occur one time. The viewer then records the
+  size, and does not exceed the size again until a retest (GPULIMIT-USER-6). A
+  later version can close this gap with a conservative start limit for each
+  class of device, or with a memory value that the browser reports.
 
 ### The stored record (GPULIMIT-RECORD)
 
