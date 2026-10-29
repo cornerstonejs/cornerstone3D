@@ -470,39 +470,63 @@ image of any encapsulated syntax takes the direct fragment path.
 - If you special-cased `1.2.840.10008.1.2.4.140` as JPEG XL anywhere in your own
   code, change it to the `.110`/`.111`/`.112` block.
 
-## Volume textures: the default edge limit is 2048
+## Volume textures: the default GPU profile is `auto`
 
 ### What Changed
 
 A volume texture now comes from a GPU capability profile. When an application
-states no profile, the `high` profile applies, and it limits each edge of a 3D
-texture to 2048 voxels. A volume with a longer axis draws from a box-average
-reduction of that axis. Before this release, the mapper allocated the texture at
-the full dimensions of the volume.
+states no profile, the `auto` profile applies. Earlier 5.x pre-releases used
+`high` as the default, with a fixed edge of 2048 voxels; `auto` replaces `high`
+as the default.
 
-For example, a CT of 512 × 512 × 2464 now draws with a factor of 2 along k, also
-on a device that supports a 4096 texture edge.
+`auto` takes its limits from a record that the browser keeps for each GPU
+renderer, in the `localStorage` key `cornerstone3D.renderingCapabilities`:
+
+- **The texture edge.** At the first start, a probe draws thin 3D textures and
+  finds the largest edge that renders correctly, from 2048 down to 16. When a
+  volume needs a larger edge, the probe runs at that edge before the texture is
+  allocated, up to `MAX_3D_TEXTURE_SIZE`.
+- **The texture memory.** The record keeps the total texture bytes that
+  worked, the total at which a WebGL context was lost, and the total at which
+  the tab stopped. `auto` stays below a failed total.
+- **The start.** With no stored value, `auto` starts from `low` for a software
+  rasterizer, `low-tablet` for a mobile GPU, and `medium` for any other GPU.
+
+A volume with an axis longer than the limit draws from a box-average reduction
+of that axis. Before this release, the mapper allocated the texture at the full
+dimensions of the volume.
+
+For example, a CT of 512 × 512 × 2464 draws with a factor of 2 along k on a
+device with a `MAX_3D_TEXTURE_SIZE` of 2048, and at full resolution on a device
+that passes the probe at 2464.
 
 ### Why This Matters
 
-The reported `MAX_3D_TEXTURE_SIZE` is not a reliable limit, so no profile reads
-it. Some Android devices report 2048 or more, but render only 256 per axis. No
-tested device renders beyond 2048.
+The reported `MAX_3D_TEXTURE_SIZE` is not a reliable limit. Some Android
+devices report 2048 or more, but render a uniform gray above 128 or 256 per
+axis. The probe tests the edge that the device really renders.
 
-A volume with an axis longer than 2048 shows less detail along that axis than in
-4.x. The voxel quality record of the viewport states the reduction
+A volume with an axis longer than the limit shows less detail along that axis
+than in 4.x. The voxel quality record of the viewport states the reduction
 (`reduction: boxAverage`), so a fidelity readout can show it to the user.
+
+The probe version of the stored record changes from 1 to 2, so each browser
+probes again once.
 
 ### Migration Guidance
 
-- **No action is needed** for a volume with no axis longer than 2048.
-- **Choose the profile of the device.** Call `setActiveGpuCapabilityProfile`
-  before a viewport adds its actors. Use `low` or `low-tablet` for devices that
-  render only 256 per axis.
-- **For a full-resolution long axis,** the only profile with a larger edge is
-  `high-texture-4096`. That profile is internal: it is a control for comparison,
-  and no device is tested at that edge. Use it only on hardware that you have
-  tested.
+- **No action is needed** for most applications: `auto` applies by default.
+- **To keep the earlier default,** call `setActiveGpuCapabilityProfile('high')`
+  before a viewport adds its actors. A named profile (`low-tablet`, `low`,
+  `medium`, `high`) overrides `auto`, and `resetActiveGpuCapabilityProfile()`
+  returns to `auto`.
+- **To show the limits,** read `getStoredRenderingCapabilities()`. Each value
+  has a success count and a failure count.
+- **To try a failed limit again,** call `retestRenderingCapabilities()`, or
+  `retestRenderingCapabilities({ edge: true })` for one category. Cornerstone3D
+  shows no prompt; the application decides when to offer a retest.
+- **To probe from the start,** call
+  `resetRenderingCapabilities({ clearStorage: true })`, and then reload.
 
 ## Locked segments stop the brush, and do not cause an overlap
 

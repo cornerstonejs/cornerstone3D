@@ -29,6 +29,12 @@ If you were previously relying on `detect-gpu` for GPU tier detection, you'll ne
 cornerstone3D.init({ gpuTier: 3 });
 ```
 
+:::note
+The `gpuTier` option no longer exists. In 5.x, the `auto` GPU capability
+profile finds the limits of the device, and `setActiveGpuCapabilityProfile`
+states a named profile. See the 5.x migration notes.
+:::
+
 ### removal of `use16BitDataType`
 
 This flag requested 16-bit data type from the web worker. Now, we always use the native data type for cache storage and convert it for rendering when necessary.

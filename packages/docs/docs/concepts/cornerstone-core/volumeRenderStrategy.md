@@ -85,7 +85,7 @@ already exists.
 | `VolumeTextureSet`       | A named set of textures, and the unit of storage, of cost and of eviction. Its members carry an area index.                                            |
 | `volumeTextureStore`     | The global store of the sets, with one budget for the texture memory of every volume.                                                                  |
 | `CompositeVoxelManager`  | The voxels. It holds the full-resolution data and every reduced representation, and it fills a grid from the best sources that it has.                 |
-| `GpuCapabilityProfile`   | A declared class of device. An application states which profile applies, and nothing probes.                                                           |
+| `GpuCapabilityProfile`   | The limits of the device. `auto` (the default) reads the stored record of the device. A named profile, which an application states, overrides `auto`.  |
 | `VoxelQualityRecord`     | The absolute record of the data that a render drew. It states no verdict.                                                                              |
 
 ## Where the code is
@@ -95,7 +95,9 @@ table gives the file of each piece. The paths are under `packages/core/src/`, ex
 
 | Piece or step                                       | Code                                                                                                               |
 | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| The profiles, and the limits of a grid              | `utilities/gpuCapabilityProfiles.ts`: `setActiveGpuCapabilityProfile`, `gridLimitsOfProfile`                       |
+| The profiles, and the limits of a grid              | `utilities/gpuCapabilityProfiles.ts`: `setActiveGpuCapabilityProfile`, `gridLimitsOfProfile`, `profileForGrid`     |
+| The probe, and the stored record of the device      | `utilities/textureSupport.ts`, `utilities/renderingCapabilities.ts`, `utilities/capabilityStorage.ts`              |
+| The memory record of a large allocation             | `utilities/gpuAllocationTracker.ts`, called by `vtkStreamingOpenGLTexture.create3DFromRaw`                         |
 | The factors of a reduction, and the reduced grid    | `utilities/voxelGrid/`: `boxAverageReductionFactors`, `reducedDimensions`, `deriveBoxAverageGrid`                  |
 | The default provider and the default selection      | `RenderingEngine/helpers/volumeRenderStrategy.ts`: `defaultVolumeStrategyProvider`, `selectFirstReadyStrategy`     |
 | The one place that both architectures share         | `RenderingEngine/helpers/resolveVolumeTexture.ts`, called by `createVolumeActor` and `createVolumeSliceActor`      |
@@ -274,6 +276,66 @@ The record states **no verdict**. A reader compares it against its own requireme
 viewports over one volume report differently at one moment, and how a viewport reports lossless when
 the display resolution sits below the resolution of the data.
 
+## How the device limits are found
+
+The default profile is `auto`. Its edge and its texture memory come from a record that the browser
+keeps for each renderer, in the `localStorage` key `cornerstone3D.renderingCapabilities`. The renderer
+string and the probe version are the key of the record. A named profile (`low-tablet`, `low`,
+`medium`, `high`) overrides `auto`.
+
+A GPU fails in four ways, and each way has its own detection:
+
+| #   | Cause                                           | Symptom               | Detection                                            |
+| --- | ----------------------------------------------- | --------------------- | ---------------------------------------------------- |
+| 1   | The edge of a texture is too large.             | A uniform gray.       | The probe, before the allocation.                    |
+| 2   | The texture memory of the context is too large. | `WEBGL_CONTEXT_LOST`. | The loss during or shortly after a large allocation. |
+| 3   | The GPU memory of the browser is too large.     | The tab stops.        | A pending record that a later start finds.           |
+| 4   | A texel data type does not work.                | An incorrect image.   | The probe, at the first start.                       |
+
+**The probe.** The probe draws N × 4 × 4 3D textures through a `sampler3D`, which is the path that a
+volume uses. It tests each data type at an edge of 8, so a data type failure is not an edge failure.
+It tests an edge on each of the three axes, and it samples four texels with different values along
+the long axis, the last texel included. A uniform gray or an empty texture therefore fails. At the
+first start, the probe tests an edge of 2048 (or `MAX_3D_TEXTURE_SIZE` when that is smaller), and
+halves the edge on each failure, down to 16. In headless Chromium, the first probe took about 50 ms
+with SwiftShader and about 64 ms on an Intel UHD GPU, which is below the budget of 250 ms.
+
+**The probe at a larger edge.** When a volume needs an edge above the reliable edge, below a failed
+edge and not above `MAX_3D_TEXTURE_SIZE`, `volumeTextureReductionFactors` runs the probe at that edge
+before the provider allocates the texture. That probe took 10 to 20 ms. A pass raises the reliable
+edge, and a failure keeps the volume reduced.
+
+**The memory.** A page cannot read the memory of the GPU, so the record counts the texture bytes of
+the page: the total of the texture store, which is the sum of all viewports. Before an allocation of
+64 MB or more, the page writes a pending record under a key of its own tab. Two seconds later, the
+allocation and its first render count as a success, and the page removes the pending record. A
+context loss before that, or within five seconds of the allocation, records the total as `lost`. A
+pending record that a later start finds records the total as `crash`.
+
+**Counts and retest.** Each value keeps a reliable value with a success count, and a failed value
+with a failure count. `auto` does not try a failed value again. An application reads the record with
+`getStoredRenderingCapabilities()`, clears failures with `retestRenderingCapabilities()`, and removes
+the record with `resetRenderingCapabilities({ clearStorage: true })`.
+
+```json
+{
+  "probeVersion": 2,
+  "renderer": "ANGLE (...)",
+  "formats": { "norm16": true, "float": true },
+  "max3DTextureSize": 2048,
+  "probeMs": 63.6,
+  "edge": { "reliable": { "value": 2048, "successes": 1 } },
+  "textureBytes": {
+    "reliable": { "value": 1200000000, "successes": 25 },
+    "lost": { "value": 1800000000, "failures": 1 }
+  },
+  "gpuBytes": {
+    "reliable": { "value": 1200000000, "successes": 25 },
+    "crash": { "value": 9000000000, "failures": 1 }
+  }
+}
+```
+
 ## Scope, and the rule for a change to this document
 
 The **user requirements** of this work are `MR-U-*` in
@@ -329,6 +391,23 @@ texture, which is what lets a basis point move.
 **VRS-C-10.** The record that the selection receives is open. A render component adds the fields
 that its own function reads, and no existing caller changes.
 
+**VRS-C-11.** When an application states no profile, `auto` applies. A named profile overrides
+`auto`, and `resetActiveGpuCapabilityProfile` returns to `auto`.
+
+**VRS-C-12.** Under `auto`, no texture with an edge above the reliable edge of the device is
+allocated before the probe passes at that edge. `auto` does not try a failed value again before a
+retest.
+
+**VRS-C-13.** One failure does not lower a limit permanently. Each stored value keeps a success count
+and a failure count. `retestRenderingCapabilities` clears the failures of the selected categories, and
+`resetRenderingCapabilities({ clearStorage: true })` removes the whole record.
+
+**VRS-C-14.** Cornerstone3D shows no prompt about the limits. The application reads the record and
+decides when to offer a retest.
+
+**VRS-C-15.** A missing or failing storage does not stop a render. The page then probes again at the
+next load.
+
 ## § Implementation choices
 
 **VRS-I-1.** The default provider builds the full-resolution strategy when the capability profile
@@ -363,6 +442,33 @@ at once, and each later batch runs in an idle callback.
 **VRS-I-11.** A legacy viewport pins its set instead of claiming it. A claim needs a release at every
 removal of an actor, and a legacy viewport has many such paths.
 
+**VRS-I-12.** The probe uses N × 4 × 4 3D textures. It tests the data types at an edge of 8, and the
+edge on each of the three axes, because a driver can store the depth axis as layers. The first edge
+is 2048, and the search halves the edge down to 16.
+
+**VRS-I-13.** With no stored value, `auto` starts from a named profile of the class of the renderer:
+`low` for a software rasterizer or no WebGL2, `low-tablet` for a mobile GPU (Mali, Adreno, PowerVR,
+Apple GPU, Immortalis, Xclipse, Vivante), and `medium` for any other GPU. A software rasterizer keeps
+the values of `low`, because a larger texture is too slow on it.
+
+**VRS-I-14.** The limit of `auto` for one value: with no failure, the larger of the start value and
+the reliable value. With a failure, the larger of the reliable value (when it is below the failure)
+and the smaller of the start value and half of the failed value. A failure at or below the reliable
+value lowers the reliable value, with no successes.
+
+**VRS-I-15.** The memory values count the texture bytes of the texture store, which is the sum of
+all viewports and contexts. A large allocation is 64 MB or more. It settles 2 s after the allocation,
+and a context loss within 5 s of it counts. A pending record younger than 10 s can belong to a tab
+that still runs, so the startup scan leaves it. `pagehide` and a hidden page remove the pending
+record of the tab.
+
+**VRS-I-16.** `auto` limits one texture through `textureMemoryBytes`, as a named profile does. It does
+not set the budget of the store.
+
+**VRS-I-17.** The second check of type 1 (a uniform gray after the first render above the verified
+edge) is a hook, `setEdgeRenderCheck`, with no default check. A uniform gray can be a correct image:
+uniform source data, a texture that has no data yet, or a window that saturates every value.
+
 ## What a new render type defines
 
 A new render type supplies two things, and it changes no existing file:
@@ -384,6 +490,7 @@ and needs no change.
 | A consumer of the `refinement` role                                                                                                                                                                                                                                            | the multi-texture render component       |
 | A performance-bound choice of strategy                                                                                                                                                                                                                                         | task T14                                 |
 | An automatic policy with recorded fixtures                                                                                                                                                                                                                                     | task T15                                 |
-| A capability probe, and the override of an overstated memory value                                                                                                                                                                                                             | task T15                                 |
+| A default check for a uniform gray after the first render above the verified edge. The hook `setEdgeRenderCheck` exists                                                                                                                                                        | cornerstone3D#3020, follow-up            |
+| A budget of the texture store from the memory limit of `auto`                                                                                                                                                                                                                  | cornerstone3D#3020, follow-up            |
 | A brick loader, and the sets that it would provision                                                                                                                                                                                                                           | task T7                                  |
 | The state that a user sees, and the indicator of OHIF                                                                                                                                                                                                                          | tasks T3 and T6                          |

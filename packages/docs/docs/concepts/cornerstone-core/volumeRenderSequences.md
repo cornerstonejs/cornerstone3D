@@ -33,14 +33,18 @@ because the memory of each profile is larger than the reduced texture.
 | `high`, `medium`    | 2048             | 1, 1, 2           | 512 × 512 × 1232 | `reduced-1x1x2/full-extent/average`  |
 | `low`, `low-tablet` | 256              | 2, 2, 10          | 256 × 256 × 247  | `reduced-2x2x10/full-extent/average` |
 
+Under `auto`, the result depends on the device. A device with a `MAX_3D_TEXTURE_SIZE` of 2048 gives
+the row of `high`. A device that passes the probe at 2464 gives the row of `high-texture-4096`.
+
 `boxAverageReductionFactors` sets each factor to `ceil(dimension / maxTextureEdge)`. Then, while the
 reduced grid holds more voxels than `textureMemoryBytes / bytesPerVoxel`, it adds 1 to the factor of
 the largest reduced axis. `reducedDimensions` rounds up, so 2464 / 10 gives 247 slices.
 
 ## 1. The application states the device and creates the volume
 
-Nothing probes the device. The application states a profile before a viewport adds its actor. A
-viewport reads the profile only at that moment.
+The default profile is `auto`, which reads the stored record of the device. An application that
+states a named profile does so before a viewport adds its actor. A viewport reads the profile only
+at that moment.
 
 ```mermaid
 sequenceDiagram
@@ -53,7 +57,7 @@ sequenceDiagram
     participant CVM as CompositeVoxelManager
 
     App->>Prof: setActiveGpuCapabilityProfile('medium')
-    Note over Prof: No call means the default 'high'.<br/>An unknown name throws.
+    Note over Prof: No call means the default 'auto'.<br/>An unknown name throws.
     App->>Retr: add('volume', ProgressiveRetrieveImages.coarseInterleavedRetrieveStages)
     App->>VL: createAndCacheVolume(volumeId, { imageIds })
     VL->>Vol: new volume (voxelGrid, dataType, imageIds)
@@ -85,6 +89,7 @@ sequenceDiagram
     CA->>RVT: resolveVolumeTexture(volume, options)
     RVT->>RVT: getActiveGpuCapabilityProfile()
     RVT->>Prov: provideStrategies({ volume, profile, reason: 'initial' })
+    Note over Prov: Under 'auto', profileForGrid probes an edge<br/>above the reliable edge before any allocation.
     Prov->>Grid: gridLimitsOfProfile(profile, bytesPerVoxel)
     Grid-->>Prov: { maxEdge, maxVoxelCount }
     Prov->>Grid: boxAverageReductionFactors(dimensions, limits)
