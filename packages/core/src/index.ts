@@ -156,18 +156,18 @@ export type {
   VolumeTextureSlot,
 } from './cache';
 export {
-  getGpuCapabilityProfile,
-  getGpuCapabilityProfiles,
-  getActiveGpuCapabilityProfile,
-  setActiveGpuCapabilityProfile,
-  resetActiveGpuCapabilityProfile,
-  gridLimitsOfProfile,
-} from './utilities/gpuCapabilityProfiles';
+  getGpuSettingsPreset,
+  getGpuSettingsPresets,
+  getActiveGpuSettings,
+  setGpuSettingsPreset,
+  resetGpuSettingsPreset,
+  gridLimitsOfGpuSettings,
+} from './utilities/gpuSettingsPresets';
 export type {
-  GpuCapabilityProfile,
-  GpuCapabilityProfileId,
+  GpuSettings,
+  GpuSettingsPresetId,
   GpuSpeedIndex,
-} from './utilities/gpuCapabilityProfiles';
+} from './utilities/gpuSettingsPresets';
 export {
   defaultVolumeStrategyProvider,
   provisionFullResolutionStrategy,
@@ -208,6 +208,8 @@ import {
   getEffectiveRenderBackend,
   getConfiguration,
   setConfiguration,
+  getLossyDownsampling,
+  setLossyDownsampling,
   getWebWorkerManager,
   canRenderFloatTextures,
   peerImport,
@@ -350,6 +352,8 @@ export {
   // configs
   getConfiguration,
   setConfiguration,
+  getLossyDownsampling,
+  setLossyDownsampling,
   getWebWorkerManager,
   canRenderFloatTextures,
   // enums

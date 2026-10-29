@@ -21,6 +21,7 @@ import cache from '../cache/cache';
 import eventTarget from '../eventTarget';
 import { fillNearbyFrames } from './fillNearbyFrames';
 import { coreLog } from '../utilities/logger';
+import { getLossyDownsampling } from '../init';
 
 const log = coreLog.getLogger('loaders', 'ProgressiveRetrieveImages');
 
@@ -358,7 +359,9 @@ class ProgressiveRetrieveImagesInstance {
    */
   protected findNearbyRequests(index: number, stage): NearbyRequest[] {
     const nearby = new Array<NearbyRequest>();
-    if (!stage.nearbyFrames) {
+    // A nearby fill shows a copy of another frame, which is a lossy
+    // interleaved downsampling.
+    if (!stage.nearbyFrames || !getLossyDownsampling().interleavedLoading) {
       return nearby;
     }
     for (const nearbyItem of stage.nearbyFrames) {
