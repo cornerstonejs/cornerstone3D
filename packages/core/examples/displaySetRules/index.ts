@@ -158,11 +158,6 @@ const SOURCE_SERIES: SourceSeries[] = [
       '1.3.6.1.4.1.14519.5.2.1.1188.2803.699272945123913604672897602509',
   },
   {
-    label: 'NM — DATSCAN brain SPECT, 5 multi-frame instances',
-    StudyInstanceUID: '1.2.276.0.7230010.3.1.2.447481088.1.1669202398.851612',
-    SeriesInstanceUID: '1.2.276.0.7230010.3.1.3.447481088.1.1669202398.851613',
-  },
-  {
     // Optional rule dwiByBValue: b=0 and b=800.
     label: 'MR — DWI, DTI_high_iso SENSE (2380 images)',
     StudyInstanceUID:
