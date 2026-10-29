@@ -10,6 +10,7 @@ import {
 } from '../../utilities/gpuCapabilityProfiles';
 import { isMutableSlab } from '../../cache/classes/VolumeTextureSet';
 import { FULL_RESOLUTION_TEXTURE_SET } from '../../cache/classes/ImageVolume';
+import volumeTextureStore from '../../cache/volumeTextureStore';
 import type { GpuCapabilityProfile } from '../../utilities/gpuCapabilityProfiles';
 import type { vtkStreamingOpenGLTexture } from '../../cache/classes/ImageVolume';
 import type {
@@ -271,7 +272,8 @@ function bytesPerVoxelOf(volume: IImageVolume): number {
  * the same answer here.
  *
  * This is where the `auto` profile tests an edge that the volume needs and
- * that the device has not yet passed, before any texture is allocated.
+ * that the device has not yet passed, before any texture is allocated. Under
+ * `auto`, the textures of the other volumes count against the memory limit.
  *
  * @param volume - the volume to draw
  * @param profile - the capability profile that applies
@@ -282,8 +284,16 @@ export function volumeTextureReductionFactors(
   profile: GpuCapabilityProfile
 ): Point3 {
   const bytesPerVoxel = bytesPerVoxelOf(volume);
+  const ownBytes = volumeTextureStore
+    .setsOfVolume(volume.volumeId)
+    .reduce((total, set) => total + set.bytes, 0);
   const limits = gridLimitsOfProfile(
-    profileForGrid(profile, volume.voxelGrid.dimensions, bytesPerVoxel),
+    profileForGrid(
+      profile,
+      volume.voxelGrid.dimensions,
+      bytesPerVoxel,
+      volumeTextureStore.bytesUsed - ownBytes
+    ),
     bytesPerVoxel
   );
 

@@ -1,8 +1,9 @@
 import type { VoxelGridLimits } from '../types';
 import {
+  ensureReliableEdge,
   getRendererClass,
   getRenderingCapabilities,
-  getStoredRenderingCapabilities,
+  peekStoredRenderingCapabilities,
   probeRenderingEdge,
 } from './renderingCapabilities';
 import type {
@@ -138,14 +139,27 @@ const START_PROFILE_OF_CLASS: Record<RendererClass, NamedProfileId> = {
 };
 
 /**
- * The limit of `auto` for one value of the record.
+ * The edge of `auto` when no probe has passed any edge, because no probe could
+ * run. The smallest edge known to fail on a real device is above 128. When the
+ * record states a failure at or below 128, the edge is 8, which the format
+ * probe passed.
+ */
+const UNPROBED_EDGE_FLOOR = 128;
+const FORMAT_PROBE_EDGE = 8;
+
+/** The smallest texture memory that `auto` gives to a new texture. */
+const MIN_TEXTURE_BYTES = 16 * 1024 * 1024;
+
+/**
+ * The memory limit of `auto`.
  *
  * With no failure, the limit is the larger of the start value and the reliable
  * value. With a failure, `auto` does not try the failed value again: the limit
- * is the larger of the reliable value and of the smaller of the start value
- * and half of the failed value. A retest removes the failure.
+ * is the larger of the reliable value (when it is below the failure) and of
+ * the smaller of the start value and half of the failed value. A retest
+ * removes the failure, and the limit returns to the first rule.
  */
-function autoLimit(
+function autoMemoryLimit(
   start: number,
   reliable?: RenderingCapabilitySuccess,
   failure?: RenderingCapabilityFailure
@@ -159,10 +173,7 @@ function autoLimit(
   return Math.max(known, Math.min(start, Math.floor(failure.value / 2)));
 }
 
-function smallerFailure(
-  a?: RenderingCapabilityFailure,
-  b?: RenderingCapabilityFailure
-): RenderingCapabilityFailure | undefined {
+function smaller<T extends { value: number }>(a?: T, b?: T): T | undefined {
   if (!a || !b) {
     return a ?? b;
   }
@@ -170,48 +181,76 @@ function smallerFailure(
   return a.value <= b.value ? a : b;
 }
 
+function larger<T extends { value: number }>(a?: T, b?: T): T | undefined {
+  if (!a || !b) {
+    return a ?? b;
+  }
+
+  return a.value >= b.value ? a : b;
+}
+
+/**
+ * The edge of `auto`: the largest edge that a probe passed, and never an edge
+ * that no probe passed. With no such edge, the edge search runs once in this
+ * page (see `ensureReliableEdge`). When no probe can run, the edge is
+ * `UNPROBED_EDGE_FLOOR`.
+ */
+function autoEdge(rendererClass: RendererClass): number {
+  const reliable = ensureReliableEdge();
+  const failed = peekStoredRenderingCapabilities()?.edge.failed?.value;
+  const edge =
+    reliable ??
+    (failed && failed <= UNPROBED_EDGE_FLOOR
+      ? FORMAT_PROBE_EDGE
+      : UNPROBED_EDGE_FLOOR);
+
+  // A software rasterizer is too slow for a larger texture.
+  return rendererClass === 'software'
+    ? Math.min(edge, PROFILES.low.maxTextureEdge)
+    : edge;
+}
+
 /**
  * The `auto` profile, from the stored record of the device.
  *
  * The start profile of the class of the renderer (see `START_PROFILE_OF_CLASS`)
- * gives the values before the record holds any. The edge is the reliable edge
- * of the probe. The memory is the start memory, raised by a larger total that
- * worked, and lowered below a total at which a context was lost or the tab
- * stopped. A software rasterizer keeps the values of `low`, because it is too
- * slow for a larger texture.
+ * gives the memory before the record holds any, and the speed. The edge is
+ * the reliable edge of the probe (see `autoEdge`). The memory is the start
+ * memory, raised by a larger total that worked, and lowered below a total at
+ * which a context was lost or the tab stopped (see `autoMemoryLimit`). A
+ * software rasterizer keeps the memory of `low`.
  */
 function getAutoGpuCapabilityProfile(): GpuCapabilityProfile {
   const rendererClass = getRendererClass();
   const start = PROFILES[START_PROFILE_OF_CLASS[rendererClass]];
-  const stored = getStoredRenderingCapabilities();
 
-  if (!stored || rendererClass === 'software' || rendererClass === 'none') {
+  if (rendererClass === 'none') {
     return { ...start, id: 'auto' };
   }
 
-  const memoryReliable =
-    stored.textureBytes.reliable?.value >=
-    (stored.gpuBytes.reliable?.value ?? 0)
-      ? stored.textureBytes.reliable
-      : stored.gpuBytes.reliable;
+  const stored = peekStoredRenderingCapabilities();
+  const memory =
+    rendererClass === 'software' || !stored
+      ? start.textureMemoryBytes
+      : autoMemoryLimit(
+          start.textureMemoryBytes,
+          larger(stored.textureBytes.reliable, stored.gpuBytes.reliable),
+          smaller(stored.textureBytes.lost, stored.gpuBytes.crash)
+        );
 
   return {
     id: 'auto',
-    maxTextureEdge: autoLimit(
-      start.maxTextureEdge,
-      stored.edge.reliable,
-      stored.edge.failed
-    ),
-    textureMemoryBytes: autoLimit(
-      start.textureMemoryBytes,
-      memoryReliable,
-      smallerFailure(stored.textureBytes.lost, stored.gpuBytes.crash)
-    ),
+    maxTextureEdge: autoEdge(rendererClass),
+    textureMemoryBytes: memory,
     speed: start.speed,
   };
 }
 
-/** Every profile, `auto` and the internal one included. */
+/**
+ * Every profile: `auto` first, then the named profiles, the internal one
+ * included. The values of `auto` come from the stored record, so the first
+ * call can run the probe.
+ */
 function getGpuCapabilityProfiles(): GpuCapabilityProfile[] {
   return [getAutoGpuCapabilityProfile(), ...Object.values(PROFILES)];
 }
@@ -264,16 +303,23 @@ function resetActiveGpuCapabilityProfile(): void {
  * Under `auto`, a grid with an edge above the reliable edge first runs the
  * probe at that edge, synchronously, before the real texture is allocated
  * (see `probeRenderingEdge`). The profile then comes from the updated record.
- * A named profile comes back as it is.
+ *
+ * `auto` states its memory limit for the texture bytes of the page, so the
+ * texture of this grid gets the limit minus `otherTextureBytes`, the bytes that
+ * the other textures of the page already take. A named profile comes back as
+ * it is, and its memory limits one texture.
  *
  * @param profile - the profile that applies
  * @param dimensions - the number of voxels on each axis of the grid
  * @param bytesPerVoxel - the number of bytes of one voxel of the texture
+ * @param otherTextureBytes - the texture bytes of the page that this grid
+ * does not replace
  */
 function profileForGrid(
   profile: GpuCapabilityProfile,
   dimensions: ArrayLike<number>,
-  bytesPerVoxel: number
+  bytesPerVoxel: number,
+  otherTextureBytes = 0
 ): GpuCapabilityProfile {
   if (profile.id !== 'auto') {
     return profile;
@@ -281,27 +327,38 @@ function profileForGrid(
 
   const edge = Math.max(dimensions[0], dimensions[1], dimensions[2]);
   const rendererClass = getRendererClass();
+  let result = profile;
 
   if (
-    edge <= profile.maxTextureEdge ||
-    rendererClass === 'software' ||
-    rendererClass === 'none'
+    edge > profile.maxTextureEdge &&
+    rendererClass !== 'software' &&
+    rendererClass !== 'none'
   ) {
-    return profile;
+    const format: ProbeTextureFormat =
+      bytesPerVoxel === 1
+        ? 'uint8'
+        : bytesPerVoxel === 2
+          ? getRenderingCapabilities().norm16
+            ? 'norm16'
+            : 'halfFloat'
+          : 'float';
+
+    if (probeRenderingEdge(edge, format)) {
+      result = getAutoGpuCapabilityProfile();
+    }
   }
 
-  const format: ProbeTextureFormat =
-    bytesPerVoxel === 1
-      ? 'uint8'
-      : bytesPerVoxel === 2
-        ? getRenderingCapabilities().norm16
-          ? 'norm16'
-          : 'halfFloat'
-        : 'float';
+  if (otherTextureBytes <= 0) {
+    return result;
+  }
 
-  return probeRenderingEdge(edge, format)
-    ? getAutoGpuCapabilityProfile()
-    : profile;
+  return {
+    ...result,
+    textureMemoryBytes: Math.max(
+      result.textureMemoryBytes - otherTextureBytes,
+      MIN_TEXTURE_BYTES
+    ),
+  };
 }
 
 /**

@@ -9,10 +9,12 @@ import {
   RENDERING_CAPABILITIES_PROBE_VERSION,
 } from '../src/utilities/renderingCapabilities';
 import { probeRenderingLimits } from '../src/utilities/textureSupport';
+import { noteTextureAllocation } from '../src/utilities/gpuAllocationTracker';
 
 jest.mock('../src/utilities/textureSupport', () => ({
   probeRenderingLimits: jest.fn(),
   probeTextureEdge: jest.fn(),
+  probeEdgeSearch: jest.fn(),
 }));
 
 // The probe needs WebGL, which jest does not have, so the probe is a mock and
@@ -282,5 +284,33 @@ describe('renderingCapabilities', () => {
     // The formats were cleared too, so the detection probed again.
     expect(stored.formats).toEqual(ALL_FORMATS);
     expect(getSupportedTextureFormats).toHaveBeenCalledTimes(2);
+  });
+
+  it('records a crash when a page stops during a large allocation', () => {
+    const MEGABYTE = 1024 * 1024;
+
+    mockWebGL();
+    detectRenderingCapabilities();
+    noteTextureAllocation({
+      textureBytes: 128 * MEGABYTE,
+      totalBytes: 512 * MEGABYTE,
+      maxEdge: 512,
+    });
+
+    // The page stops here: no render settles the allocation, and no pagehide
+    // removes the pending record. A new page starts a minute later.
+    const now = Date.now();
+    const dateSpy = jest.spyOn(Date, 'now').mockReturnValue(now + 60000);
+
+    jest.isolateModules(() => {
+      const nextPage = require('../src/utilities/renderingCapabilities');
+
+      expect(nextPage.getStoredRenderingCapabilities().gpuBytes.crash).toEqual({
+        value: 512 * MEGABYTE,
+        failures: 1,
+      });
+    });
+
+    dateSpy.mockRestore();
   });
 });

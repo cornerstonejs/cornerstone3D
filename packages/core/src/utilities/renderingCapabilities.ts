@@ -2,7 +2,11 @@ import type {
   ProbeTextureFormat,
   TextureFormatSupport,
 } from './textureSupport';
-import { probeRenderingLimits, probeTextureEdge } from './textureSupport';
+import {
+  probeEdgeSearch,
+  probeRenderingLimits,
+  probeTextureEdge,
+} from './textureSupport';
 import { getCapabilityStorage } from './capabilityStorage';
 import { coreLog } from './logger';
 import uuidv4 from './uuidv4';
@@ -127,12 +131,28 @@ const NO_GPU_FORMATS: TextureFormatSupport = {
 };
 
 let cachedCapabilities: RenderingCapabilities | null = null;
-/** The record of the renderer of this page. */
+/**
+ * The record of the renderer of this page. It exists whenever WebGL2 exists,
+ * also when the probe could not run, and it is stored once it holds a value.
+ */
 let record: StoredRenderingCapabilities | null = null;
 /** The reliable edge of the record when the page started. */
 let edgeAtStart: number | undefined;
+/** True after this page ran the edge search for a record with no edge. */
+let edgeSearchTried = false;
+/** The edges whose probe could not run in this page. */
+const unprobeableEdges = new Set<number>();
+/** The time of the last probe context, from `performance.now()`. */
+let lastProbeAt = Number.NEGATIVE_INFINITY;
 
-const tabId = uuidv4();
+let tabId: string | undefined;
+
+/** Created on first use, so an import needs no `crypto`. */
+function getTabId(): string {
+  tabId ??= uuidv4();
+
+  return tabId;
+}
 
 function getWebGLContextInfo(): WebGLContextInfo {
   const info: WebGLContextInfo = {
@@ -186,6 +206,10 @@ function emptyRecord(renderer: string): StoredRenderingCapabilities {
   };
 }
 
+function isObject(value: unknown): value is object {
+  return typeof value === 'object' && value !== null;
+}
+
 /**
  * Reads the record of one renderer. A record of another renderer or of
  * another probe version is no record.
@@ -209,7 +233,13 @@ function readRecord(renderer: string): StoredRenderingCapabilities | null {
 
     const stored = { ...emptyRecord(renderer), ...parsed };
 
-    if (typeof stored.formats === 'object' && stored.formats !== null) {
+    for (const category of Object.keys(FAILURE_KEYS)) {
+      if (!isObject(stored[category])) {
+        stored[category] = {};
+      }
+    }
+
+    if (isObject(stored.formats)) {
       stored.formats = { ...NO_GPU_FORMATS, ...stored.formats };
     } else {
       delete stored.formats;
@@ -221,9 +251,35 @@ function readRecord(renderer: string): StoredRenderingCapabilities | null {
   }
 }
 
-function writeRecord(): void {
-  if (record) {
-    getCapabilityStorage().setItem(STORAGE_KEY, JSON.stringify(record));
+function holdsData(target: StoredRenderingCapabilities): boolean {
+  return Boolean(
+    target.formats ||
+      Object.keys(FAILURE_KEYS).some(
+        (category) => Object.keys(target[category]).length > 0
+      )
+  );
+}
+
+/**
+ * Applies one change to the record. The change applies to a fresh read of the
+ * store, so a change that another tab stored in the meantime stays.
+ */
+function updateRecord(
+  change: (target: StoredRenderingCapabilities) => void
+): void {
+  if (!record) {
+    return;
+  }
+
+  const target = readRecord(record.renderer) ?? record;
+
+  change(target);
+  record = target;
+
+  if (holdsData(target)) {
+    getCapabilityStorage().setItem(STORAGE_KEY, JSON.stringify(target));
+  } else {
+    getCapabilityStorage().removeItem(STORAGE_KEY);
   }
 }
 
@@ -260,9 +316,10 @@ function addSuccess(
  * Adds one failure to the record. The failed value is the smallest value that
  * failed, and `failures` counts every failure.
  *
- * A failure at or below the reliable value contradicts that value, so the
- * reliable value falls to `reliableFallback`, or to half of the failed value,
- * with no successes. A retest removes the failure again.
+ * A failed edge at or below the reliable edge contradicts that edge, so the
+ * reliable edge becomes `reliableFallback` (an edge that passed), or is
+ * removed, which makes the next need probe again. A memory failure leaves the
+ * reliable value, so a retest restores it.
  */
 function addFailure(
   target: StoredRenderingCapabilities,
@@ -281,10 +338,12 @@ function addFailure(
     failures: (failure?.failures ?? 0) + 1,
   };
 
-  if (entry.reliable && entry.reliable.value >= value) {
-    const fallback = reliableFallback ?? Math.floor(value / 2);
-
-    entry.reliable = { value: Math.min(fallback, value - 1), successes: 0 };
+  if (category === 'edge' && entry.reliable && entry.reliable.value >= value) {
+    if (reliableFallback > 0 && reliableFallback < value) {
+      entry.reliable = { value: reliableFallback, successes: 0 };
+    } else {
+      delete entry.reliable;
+    }
   }
 }
 
@@ -326,6 +385,10 @@ function recoverPendingAllocations(target: StoredRenderingCapabilities): void {
   }
 }
 
+function noteProbe(): void {
+  lastProbeAt = performance.now();
+}
+
 /**
  * Runs the capability detection: one cheap context to gather renderer string,
  * WebGL2 availability and MAX_TEXTURE_SIZE, then the combined probe of the
@@ -355,53 +418,48 @@ export function detectRenderingCapabilities({
     };
   }
 
-  const stored = readRecord(contextInfo.renderer);
-  const next = stored ?? emptyRecord(contextInfo.renderer);
-  let formats = useCache ? next.formats : undefined;
+  record =
+    readRecord(contextInfo.renderer) ?? emptyRecord(contextInfo.renderer);
+  let formats = useCache ? record.formats : undefined;
 
   if (!formats) {
     const start = performance.now();
     const probed = probeRenderingLimits({ startEdge: SAFE_PROBE_EDGE });
     const probeMs = performance.now() - start;
 
+    noteProbe();
     log.debug(
       `the probe of the rendering capabilities took ${probeMs.toFixed(1)} ms`
     );
 
-    // A null probe result means the probes could not run (context limit hit,
-    // GPU process restarting, context lost mid-probe) — report no format
-    // support for this load but do not store it, so a transient bad run costs
-    // one re-probe next load instead of poisoning the record.
+    // A null result means that the probe could not run. Nothing is stored,
+    // and `auto` probes again when it needs an edge.
     if (probed) {
-      next.formats = probed.formats;
-      next.max3DTextureSize = probed.max3DTextureSize;
-      next.probeMs = Math.round(probeMs * 10) / 10;
+      updateRecord((target) => {
+        target.formats = probed.formats;
+        target.max3DTextureSize = probed.max3DTextureSize;
+        target.probeMs = Math.round(probeMs * 10) / 10;
 
-      if (probed.reliableEdge) {
-        addSuccess(next, 'edge', probed.reliableEdge);
-      }
+        if (probed.reliableEdge) {
+          addSuccess(target, 'edge', probed.reliableEdge);
+        }
 
-      if (probed.failedEdge) {
-        addFailure(next, 'edge', probed.failedEdge, probed.reliableEdge);
-      }
+        if (probed.failedEdge) {
+          addFailure(target, 'edge', probed.failedEdge, probed.reliableEdge);
+        }
+      });
     }
 
     formats = probed?.formats ?? { ...NO_GPU_FORMATS };
   }
 
-  record = next.formats || stored ? next : null;
-
-  if (record) {
-    recoverPendingAllocations(record);
-    writeRecord();
-  }
-
-  edgeAtStart = record?.edge.reliable?.value;
+  updateRecord(recoverPendingAllocations);
+  edgeAtStart = getReliableEdge();
 
   return {
     ...contextInfo,
     ...formats,
-    max3DTextureSize: record?.max3DTextureSize ?? 0,
+    max3DTextureSize: record.max3DTextureSize ?? 0,
     softwareRasterizer: SOFTWARE_RASTERIZER_PATTERN.test(contextInfo.renderer),
   };
 }
@@ -447,13 +505,78 @@ export function getRendererClass(): RendererClass {
  * counts of each value. An application reads it to show the limits, or to
  * decide to offer a retest.
  *
- * @returns a copy of the record, or `null` when the page has no WebGL2 or
- * the probe could not run
+ * @returns a copy of the record, or `null` when the page has no WebGL2
  */
 export function getStoredRenderingCapabilities(): StoredRenderingCapabilities | null {
+  const current = peekStoredRenderingCapabilities();
+
+  return current ? JSON.parse(JSON.stringify(current)) : null;
+}
+
+/**
+ * The record itself, with no copy, for the readers of this package. A caller
+ * must not change it.
+ */
+export function peekStoredRenderingCapabilities(): Readonly<StoredRenderingCapabilities> | null {
   getRenderingCapabilities();
 
-  return record ? JSON.parse(JSON.stringify(record)) : null;
+  return record;
+}
+
+/**
+ * The largest edge that a probe passed and that no later failure
+ * contradicts, or `undefined` when there is none.
+ */
+export function getReliableEdge(): number | undefined {
+  const { reliable, failed } = record?.edge ?? {};
+
+  if (!reliable || (failed && reliable.value >= failed.value)) {
+    return undefined;
+  }
+
+  return reliable.value;
+}
+
+/**
+ * Makes sure that the record holds an edge that a probe passed.
+ *
+ * When it holds none (the first probe could not run, or a failure removed
+ * it), this runs the edge search once in this page, from the safe edge down.
+ *
+ * @returns the reliable edge, or `undefined` when no probe could run
+ */
+export function ensureReliableEdge(): number | undefined {
+  getRenderingCapabilities();
+
+  if (!record || getReliableEdge() || edgeSearchTried) {
+    return getReliableEdge();
+  }
+
+  edgeSearchTried = true;
+
+  const start = performance.now();
+  const probed = probeEdgeSearch({ startEdge: SAFE_PROBE_EDGE });
+
+  noteProbe();
+  log.debug(
+    `the edge search took ${(performance.now() - start).toFixed(1)} ms and found ${probed?.reliableEdge}`
+  );
+
+  if (probed) {
+    updateRecord((target) => {
+      target.max3DTextureSize = probed.max3DTextureSize;
+
+      if (probed.reliableEdge) {
+        addSuccess(target, 'edge', probed.reliableEdge);
+      }
+
+      if (probed.failedEdge) {
+        addFailure(target, 'edge', probed.failedEdge, probed.reliableEdge);
+      }
+    });
+  }
+
+  return getReliableEdge();
 }
 
 /**
@@ -466,9 +589,8 @@ export function recordRenderingCapabilitySuccess(
 ): void {
   getRenderingCapabilities();
 
-  if (record && value > 0) {
-    addSuccess(record, category, value);
-    writeRecord();
+  if (value > 0) {
+    updateRecord((target) => addSuccess(target, category, value));
   }
 }
 
@@ -476,8 +598,8 @@ export function recordRenderingCapabilitySuccess(
  * Adds a failure to one value of the stored record. See `addFailure` for what
  * a failure at or below the reliable value does.
  *
- * @param reliableFallback - the reliable value to keep when the failure
- * contradicts the reliable value
+ * @param reliableFallback - for the edge, an edge that passed, to keep when the
+ * failure contradicts the reliable edge
  */
 export function recordRenderingCapabilityFailure(
   category: RenderingCapabilityCategory,
@@ -486,9 +608,10 @@ export function recordRenderingCapabilityFailure(
 ): void {
   getRenderingCapabilities();
 
-  if (record && value > 0) {
-    addFailure(record, category, value, reliableFallback);
-    writeRecord();
+  if (value > 0) {
+    updateRecord((target) =>
+      addFailure(target, category, value, reliableFallback)
+    );
   }
 }
 
@@ -499,13 +622,19 @@ export function getEdgeVerifiedAtStart(): number | undefined {
   return edgeAtStart;
 }
 
+/** The time of the last probe context of this page, from `performance.now()`. */
+export function getLastProbeTime(): number {
+  return lastProbeAt;
+}
+
 /**
  * Tests an edge that a volume needs, before the allocation of the real
  * texture, and stores the result.
  *
  * The probe runs only when the edge is above the reliable edge, below the
  * failed edge and not above MAX_3D_TEXTURE_SIZE. It runs synchronously in a
- * new probe context, and its time is logged at the debug level.
+ * new probe context, and its time is logged at the debug level. An edge whose
+ * probe could not run is not tried again in this page.
  *
  * @returns true when the probe ran
  */
@@ -517,7 +646,8 @@ export function probeRenderingEdge(
 
   if (
     !record ||
-    edge <= (record.edge.reliable?.value ?? 0) ||
+    unprobeableEdges.has(edge) ||
+    edge <= (getReliableEdge() ?? 0) ||
     (record.edge.failed && edge >= record.edge.failed.value) ||
     edge > (record.max3DTextureSize ?? 0)
   ) {
@@ -527,21 +657,20 @@ export function probeRenderingEdge(
   const start = performance.now();
   const passed = probeTextureEdge(edge, format);
 
+  noteProbe();
   log.debug(
     `the probe of the edge ${edge} (${format}) took ${(performance.now() - start).toFixed(1)} ms and ${passed ? 'passed' : 'failed'}`
   );
 
   if (passed === undefined) {
+    unprobeableEdges.add(edge);
+
     return false;
   }
 
-  if (passed) {
-    addSuccess(record, 'edge', edge);
-  } else {
-    addFailure(record, 'edge', edge);
-  }
-
-  writeRecord();
+  updateRecord((target) =>
+    passed ? addSuccess(target, 'edge', edge) : addFailure(target, 'edge', edge)
+  );
 
   return true;
 }
@@ -559,7 +688,7 @@ export function beginPendingAllocation(totalBytes: number): void {
   }
 
   getCapabilityStorage().setItem(
-    PENDING_KEY_PREFIX + tabId,
+    PENDING_KEY_PREFIX + getTabId(),
     JSON.stringify({
       renderer: record.renderer,
       probeVersion: RENDERING_CAPABILITIES_PROBE_VERSION,
@@ -571,7 +700,9 @@ export function beginPendingAllocation(totalBytes: number): void {
 
 /** Removes the pending record of this tab. */
 export function clearPendingAllocation(): void {
-  getCapabilityStorage().removeItem(PENDING_KEY_PREFIX + tabId);
+  if (tabId) {
+    getCapabilityStorage().removeItem(PENDING_KEY_PREFIX + tabId);
+  }
 }
 
 /** What {@link retestRenderingCapabilities} clears. All by default. */
@@ -583,13 +714,19 @@ export type RetestRenderingCapabilitiesOptions = {
 };
 
 /**
- * Clears the failures of the selected categories, so the next need above the
- * reliable value tries again. A crash during that try is recorded again by the
- * same pending record. `formats` clears the data types, so the next detection
- * probes again.
+ * Clears the failures of the selected categories. A retest is the one way to
+ * try a failed value again, and the application decides when to offer it.
  *
- * Cornerstone3D shows no prompt. The application decides when to offer a
- * retest.
+ * - `edge`: the reliable edge stays, and the next need above it runs the probe
+ *   again. A record with no reliable edge runs the edge search again.
+ * - `textureBytes`, `gpuBytes`: the memory limit returns to the larger of the
+ *   start value and the reliable value. A crash during the next try is
+ *   recorded again by the same pending record.
+ * - `formats`: the next detection probes the data types again. Decisions that
+ *   `init()` already took from the formats (for example `useCPURendering` or
+ *   the use of norm16) do not change until the next load.
+ *
+ * Cornerstone3D shows no prompt.
  *
  * @param options - the categories to clear; none stated clears all
  */
@@ -598,28 +735,32 @@ export function retestRenderingCapabilities(
 ): void {
   getRenderingCapabilities();
 
-  if (!record) {
-    return;
-  }
-
   const all = !Object.values(options).some(Boolean);
 
-  for (const category of Object.keys(
-    FAILURE_KEYS
-  ) as RenderingCapabilityCategory[]) {
-    if (all || options[category]) {
-      delete (record[category] as Record<string, unknown>)[
-        FAILURE_KEYS[category]
-      ];
+  updateRecord((target) => {
+    for (const category of Object.keys(
+      FAILURE_KEYS
+    ) as RenderingCapabilityCategory[]) {
+      if (all || options[category]) {
+        delete (target[category] as Record<string, unknown>)[
+          FAILURE_KEYS[category]
+        ];
+      }
     }
+
+    if (all || options.formats) {
+      delete target.formats;
+    }
+  });
+
+  if (all || options.edge) {
+    edgeSearchTried = false;
+    unprobeableEdges.clear();
   }
 
   if (all || options.formats) {
-    delete record.formats;
     cachedCapabilities = null;
   }
-
-  writeRecord();
 }
 
 /**
@@ -634,6 +775,8 @@ export function resetRenderingCapabilities({
   cachedCapabilities = null;
   record = null;
   edgeAtStart = undefined;
+  edgeSearchTried = false;
+  unprobeableEdges.clear();
 
   if (clearStorage) {
     const storage = getCapabilityStorage();

@@ -12,8 +12,10 @@ import {
   recordRenderingCapabilityFailure,
   recordRenderingCapabilitySuccess,
   resetRenderingCapabilities,
+  retestRenderingCapabilities,
 } from '../src/utilities/renderingCapabilities';
 import {
+  probeEdgeSearch,
   probeRenderingLimits,
   probeTextureEdge,
 } from '../src/utilities/textureSupport';
@@ -21,6 +23,7 @@ import {
 jest.mock('../src/utilities/textureSupport', () => ({
   probeRenderingLimits: jest.fn(),
   probeTextureEdge: jest.fn(),
+  probeEdgeSearch: jest.fn(),
 }));
 
 // The named capability profiles, which an application states. MR-CODE-1 and
@@ -204,5 +207,62 @@ describe('the auto profile', () => {
     expect(kept.maxTextureEdge).toBe(2464);
     profileForGrid(kept, [512, 512, 5000], 4);
     expect(probeTextureEdge).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('auto on a device that renders gray above an edge of 128', () => {
+  const edgeSearch = {
+    max3DTextureSize: 8192,
+    reliableEdge: 128,
+    failedEdge: 256,
+  };
+
+  function mockSmallEdgeDevice() {
+    mockWebGL('Mali-G52');
+    probeRenderingLimits.mockReturnValue({
+      formats: { float: true, norm16: false },
+      ...edgeSearch,
+    });
+    probeTextureEdge.mockReset();
+    probeTextureEdge.mockImplementation((edge) => edge <= 128);
+    probeEdgeSearch.mockReset();
+  }
+
+  it('never gives an edge above 128 after a retest of the edge', () => {
+    mockSmallEdgeDevice();
+
+    expect(getActiveGpuCapabilityProfile().maxTextureEdge).toBe(128);
+
+    retestRenderingCapabilities({ edge: true });
+
+    // The start edge of the class is 256, which no probe passed.
+    expect(getActiveGpuCapabilityProfile().maxTextureEdge).toBe(128);
+
+    const profile = profileForGrid(
+      getActiveGpuCapabilityProfile(),
+      [256, 256, 200],
+      4
+    );
+
+    expect(probeTextureEdge).toHaveBeenCalledWith(256, 'float');
+    expect(profile.maxTextureEdge).toBe(128);
+  });
+
+  it('searches the edge again when the first probe could not run', () => {
+    mockSmallEdgeDevice();
+    probeRenderingLimits.mockReturnValue(null);
+    probeEdgeSearch.mockReturnValueOnce(null).mockReturnValue(edgeSearch);
+
+    // The search could not run either, so the edge is the unprobed floor.
+    expect(getActiveGpuCapabilityProfile().maxTextureEdge).toBe(128);
+    // A search that could not run is not repeated in the same page.
+    getActiveGpuCapabilityProfile();
+    expect(probeEdgeSearch).toHaveBeenCalledTimes(1);
+
+    // The next page runs the search, and finds the edge.
+    resetRenderingCapabilities();
+
+    expect(getActiveGpuCapabilityProfile().maxTextureEdge).toBe(128);
+    expect(probeEdgeSearch).toHaveBeenCalledTimes(2);
   });
 });

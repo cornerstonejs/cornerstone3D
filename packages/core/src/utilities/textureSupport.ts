@@ -256,8 +256,8 @@ export class TextureProbe {
       dims[axis] = edge;
 
       // The value depends on the index along the long axis alone. Every edge
-      // is at least 8, so texel 1 is a middle texel.
-      const middle = 1;
+      // is at least 8, so the middle texel is distinct from the end texels.
+      const middle = Math.floor(edge / 2);
       const valueAt = (i: number) =>
         i === 0
           ? FIRST_VALUE
@@ -374,26 +374,70 @@ export function probeRenderingLimits({
 
   try {
     const formats = formatsOf(probe);
-    const edgeFormat: ProbeTextureFormat = formats.float ? 'float' : 'uint8';
     const result: RenderingLimitsProbeResult = {
       formats,
       max3DTextureSize: probe.max3DTextureSize,
+      ...searchEdge(probe, startEdge, formats.float ? 'float' : 'halfFloat'),
     };
 
-    for (
-      let edge = Math.min(startEdge, probe.max3DTextureSize);
-      edge >= MIN_PROBE_EDGE;
-      edge = Math.floor(edge / 2)
-    ) {
-      if (probe.probeEdge(edge, edgeFormat)) {
-        result.reliableEdge = edge;
-        break;
-      }
+    // A context lost during the probe reads zeros, which are not answers.
+    return probe.isContextLost() ? null : result;
+  } finally {
+    probe.dispose();
+  }
+}
 
-      result.failedEdge = edge;
+function searchEdge(
+  probe: TextureProbe,
+  startEdge: number,
+  format: ProbeTextureFormat
+): Pick<RenderingLimitsProbeResult, 'reliableEdge' | 'failedEdge'> {
+  const result: Pick<
+    RenderingLimitsProbeResult,
+    'reliableEdge' | 'failedEdge'
+  > = {};
+
+  for (
+    let edge = Math.min(startEdge, probe.max3DTextureSize);
+    edge >= MIN_PROBE_EDGE;
+    edge = Math.floor(edge / 2)
+  ) {
+    if (probe.probeEdge(edge, format)) {
+      result.reliableEdge = edge;
+      break;
     }
 
-    // A context lost during the probe reads zeros, which are not answers.
+    result.failedEdge = edge;
+  }
+
+  return result;
+}
+
+/**
+ * Runs the edge search of {@link probeRenderingLimits} alone, in a new probe
+ * context.
+ *
+ * @returns the result without formats, or `null` when the probe could not run
+ */
+export function probeEdgeSearch({
+  startEdge = 2048,
+  format = 'float',
+}: {
+  startEdge?: number;
+  format?: ProbeTextureFormat;
+} = {}): Omit<RenderingLimitsProbeResult, 'formats'> | null {
+  const probe = TextureProbe.create();
+
+  if (!probe) {
+    return null;
+  }
+
+  try {
+    const result = {
+      max3DTextureSize: probe.max3DTextureSize,
+      ...searchEdge(probe, startEdge, format),
+    };
+
     return probe.isContextLost() ? null : result;
   } finally {
     probe.dispose();
