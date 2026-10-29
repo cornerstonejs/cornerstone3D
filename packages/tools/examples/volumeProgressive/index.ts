@@ -12,6 +12,10 @@ import {
   imageLoader,
   metaData,
   getRenderingCapabilities,
+  getStoredRenderingCapabilities,
+  getActiveGpuCapabilityProfile,
+  retestRenderingCapabilities,
+  resetRenderingCapabilities,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -93,10 +97,11 @@ const seriesOptions = {
       getLocalUrl() || 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   },
   // A real 3D volume of 2464 images, each of 512 x 512, with one image at each
-  // position. The k axis exceeds the limit of 2048 of every known device, so a
-  // reduction of that one axis applies, and nothing is interleaved: a streak in
-  // this series comes from the code and not from the acquisition. This series
-  // is the test data of commit 9, which gives a derived representation that
+  // position. The k axis exceeds an edge of 2048, so a reduction of that one
+  // axis applies under a named profile, and under `auto` on a device whose
+  // MAX_3D_TEXTURE_SIZE is 2048 or whose edge probe fails at 2464. Nothing is
+  // interleaved: a streak in this series comes from the code and not from the
+  // acquisition. This series is the test data of commit 9, which gives a derived representation that
   // follows the load.
   'CT body 2464 images of 512 x 512': {
     StudyInstanceUID:
@@ -493,6 +498,17 @@ async function run() {
   // on a generic viewport, because the choice of a strategy lives in the actor
   // helpers that both of them use. Add `?type=next` to the address to draw
   // through the generic viewports and their render paths.
+  //
+  // `?gpuReset=1` clears the stored GPU record before anything probes, so a
+  // tester can re-probe a device from the start without the buttons below.
+  const url = new URL(window.location.href);
+
+  if (url.searchParams.get('gpuReset') === '1') {
+    resetRenderingCapabilities({ clearStorage: true });
+    url.searchParams.delete('gpuReset');
+    window.history.replaceState(null, '', url.toString());
+  }
+
   await initDemo();
 
   const toolGroupId = 'TOOL_GROUP_ID';
@@ -574,9 +590,10 @@ async function run() {
     },
   });
 
-  // An application states the GPU class, and nothing probes the device. The
-  // strategies of a viewport are built when that viewport adds its actor, so a
-  // change applies at the next load, which rebuilds every viewport.
+  // No profile is set, so `auto` applies: its limits come from the stored
+  // record of the device. A named profile in the drop down overrides `auto`.
+  // The strategies of a viewport are built when that viewport adds its actor,
+  // so a change applies at the next load, which rebuilds every viewport.
   addGpuCapabilityProfileDropdown({
     container: loaders,
     onSelectedValueChange: (profile) => {
@@ -585,8 +602,8 @@ async function run() {
     },
   });
 
-  // The GPU-class drop down is an application statement; this button shows what
-  // getRenderingCapabilities() actually probed (WebGL level, formats, renderer).
+  // The stored record: the probed edge and data types, the memory totals that
+  // worked or failed, each with its counts, and the time of the probe.
   const probePanel = document.createElement('div');
   probePanel.style.display = 'none';
   probePanel.style.clear = 'both';
@@ -604,17 +621,52 @@ async function run() {
 
   probePanel.appendChild(probeOutput);
 
+  const showGpuRecord = () => {
+    probeOutput.textContent = JSON.stringify(
+      {
+        activeProfile: getActiveGpuCapabilityProfile(),
+        storedRecord: getStoredRenderingCapabilities(),
+        capabilities: getRenderingCapabilities(),
+      },
+      null,
+      2
+    );
+  };
+
   addButtonToToolbar({
     id: 'viewRenderingCapabilitiesProbe',
-    title: 'View GPU probe',
+    title: 'View GPU record',
     container: loaders,
     onClick: () => {
-      const caps = getRenderingCapabilities();
-      const text = JSON.stringify(caps, null, 2);
       const wasVisible = probePanel.style.display !== 'none';
 
-      probeOutput.textContent = text;
+      showGpuRecord();
       probePanel.style.display = wasVisible ? 'none' : 'block';
+    },
+  });
+
+  // A failure is not tried again on its own. A retest clears the failures, so
+  // the next load above the reliable values tries again.
+  addButtonToToolbar({
+    id: 'retestGpuLimits',
+    title: 'Retest failed GPU limits',
+    container: loaders,
+    onClick: () => {
+      retestRenderingCapabilities();
+      showGpuRecord();
+      getOrCreateTiming('loadingStatus').innerText =
+        'The GPU failures are cleared. Press a load button to try again.';
+    },
+  });
+
+  // The same as `?gpuReset=1`: the next load probes the device from the start.
+  addButtonToToolbar({
+    id: 'clearGpuRecord',
+    title: 'Clear GPU record and reload',
+    container: loaders,
+    onClick: () => {
+      resetRenderingCapabilities({ clearStorage: true });
+      window.location.reload();
     },
   });
 

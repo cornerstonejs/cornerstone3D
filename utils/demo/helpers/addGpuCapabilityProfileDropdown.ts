@@ -26,8 +26,9 @@ const BYTES_IN_A_GIGABYTE = 1024 * 1024 * 1024;
 function formatMemory(bytes: number): string {
   if (bytes >= BYTES_IN_A_GIGABYTE) {
     const gigabytes = bytes / BYTES_IN_A_GIGABYTE;
-    const rounded =
-      Number.isInteger(gigabytes) ? String(gigabytes) : gigabytes.toFixed(1);
+    const rounded = Number.isInteger(gigabytes)
+      ? String(gigabytes)
+      : gigabytes.toFixed(1);
 
     return `${rounded} GB`;
   }
@@ -37,6 +38,12 @@ function formatMemory(bytes: number): string {
 
 /** Describes one profile in a form that a reader can compare at a glance. */
 function describe(profile: GpuCapabilityProfile): string {
+  // The values of `auto` change as the device record grows, so the label
+  // names the source and not the values.
+  if (profile.id === 'auto') {
+    return 'auto (from the stored device record)';
+  }
+
   const internal = profile.internal ? ', internal' : '';
 
   return `${profile.id} (edge ${profile.maxTextureEdge}, ${formatMemory(profile.textureMemoryBytes)}, speed ${profile.speed}${internal})`;
@@ -45,10 +52,10 @@ function describe(profile: GpuCapabilityProfile): string {
 /**
  * Adds a drop down that states which GPU capability profile applies.
  *
- * An application states a profile, and nothing probes the device. The profile
- * decides which render strategies a provider can build, so a page reloads its
- * data after a change: the strategies of a viewport are built when that
- * viewport adds its actor.
+ * `auto` is the default, and takes its limits from the stored record of the
+ * device. A named profile overrides `auto`. The profile decides which render
+ * strategies a provider can build, so a page reloads its data after a change:
+ * the strategies of a viewport are built when that viewport adds its actor.
  *
  * `high` and `high-texture-4096` are the pair to compare. They describe the
  * same device, and only the edge of a texture differs, so one volume draws with
