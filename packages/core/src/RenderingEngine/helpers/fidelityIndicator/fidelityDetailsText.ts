@@ -17,6 +17,12 @@ export function fidelityDetailsTextOf(
     return 'No image data in this viewport yet';
   }
 
+  // A reduced texture keeps `cause` and `magnitude` at every zoom; the
+  // verdict decides whether the reduction is visible.
+  if (state.shownState === 'done' || state.lossy === false) {
+    return 'Image is at full available detail.';
+  }
+
   const parts: string[] = [];
   const multi =
     lines && lines.length > 1
@@ -87,7 +93,7 @@ function magnitudeLines(magnitude?: Point3): string[] {
   }
 
   return [
-    `Reduction: x/${formatAxis(magnitude[0])}, y/${formatAxis(magnitude[1])}, z/${formatAxis(magnitude[2])}`,
+    `Reduction: i/${formatAxis(magnitude[0])}, j/${formatAxis(magnitude[1])}, k/${formatAxis(magnitude[2])}`,
   ];
 }
 
