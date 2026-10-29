@@ -9,7 +9,11 @@ import {
 } from '@kitware/vtk.js/Rendering/OpenGL/RenderWindow/resourceSharingHelper';
 import vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture';
 import { getCanUseNorm16Texture } from '../../init';
-import volumeTextureStore from '../../cache/volumeTextureStore';
+import {
+  getGpuMemoryTotal,
+  removeGpuMemoryEntry,
+  setGpuMemoryEntry,
+} from '../../utilities/gpuMemoryLedger';
 import {
   noteTextureAllocation,
   noteTextureRendered,
@@ -294,9 +298,21 @@ function vtkStreamingOpenGLImageResliceMapper(publicAPI, model) {
 
         noteTextureAllocation({
           textureBytes,
-          totalBytes: volumeTextureStore.bytesUsed + textureBytes,
+          totalBytes: getGpuMemoryTotal() + textureBytes,
         });
         const newScalarTexture = vtkOpenGLTexture.newInstance();
+        const superRelease = newScalarTexture.releaseGraphicsResources;
+
+        setGpuMemoryEntry(newScalarTexture, {
+          kind: 'texture',
+          bytes: textureBytes,
+          volumeId: imageData.get('volumeId')?.volumeId,
+        });
+        newScalarTexture.releaseGraphicsResources = (...args) => {
+          removeGpuMemoryEntry(newScalarTexture);
+
+          return superRelease(...args);
+        };
 
         newScalarTexture.setOpenGLRenderWindow(model._openGLRenderWindow);
         // This path builds the texture from the scalars of `imageData`, which

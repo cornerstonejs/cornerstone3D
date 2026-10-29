@@ -108,20 +108,39 @@ viewer asked it to render a data set that is too large.
   first start, and again before an allocation that needs an edge above the
   reliable edge. No check after a render detects type 1 (`VRS-I-17`).
 - **GPULIMIT-DETECT-2** Type 2: a `WEBGL_CONTEXT_LOST` shortly after a large
-  allocation records the texture bytes of the page as lost. A loss on a hidden
-  page, or just after a probe, does not count (`VRS-I-15`).
+  allocation records the GPU bytes of the page as a `textureBytes` failure. A
+  loss on a hidden page, or just after a probe, does not count (`VRS-I-15`).
 - **GPULIMIT-DETECT-3** Type 3: a pending record in browser storage before a
   large allocation. The first render after the allocation removes the record.
-  A record that remains at the next start counts as a stop of the tab.
+  A record that remains at the next start counts as a `gpuBytes` failure.
 - **GPULIMIT-DETECT-4** No probe tests the memory limits, because a probe of
   memory can cause type 2 or type 3.
 - **GPULIMIT-DETECT-5** A known gap. No safe probe measures the memory limits
   (GPULIMIT-DETECT-4), so this version does not meet GPULIMIT-USER-4 at a
   memory size that the device has not used before. The first context loss or
-  stop of the tab at a new size can occur one time. The viewer then records the
-  size, and does not exceed the size again until a retest (GPULIMIT-USER-6). A
-  later version can close this gap with a conservative start limit for each
-  class of device, or with a memory value that the browser reports.
+  stop of the tab at a new size can occur one time. The reload after it uses a
+  lower size (GPULIMIT-MEM-4), and repeated failures cap the size until a
+  retest (GPULIMIT-MEM-5). A later version can close this gap with a memory
+  value that the browser reports.
+
+### The GPU memory of the page (GPULIMIT-MEM)
+
+- **GPULIMIT-MEM-1** The memory values count the GPU bytes of the viewports of
+  this page, from an in-memory ledger (`gpuMemoryLedger`): each texture upload,
+  the on-screen canvas of each viewport, the color and depth buffers of each
+  WebGL context, and a fixed estimate for each vtk.js context. Another tab does
+  not count.
+- **GPULIMIT-MEM-2** A texture that moves to another WebGL context counts once,
+  because vtk.js releases the upload in the earlier context.
+- **GPULIMIT-MEM-3** The `normal` level is the largest page total that worked.
+  The `auto` limit is the larger of the start value of the renderer class and
+  `normal`.
+- **GPULIMIT-MEM-4** For 10 minutes after a failure, the limit is at most half
+  of the failed total, so the reload after a failure uses a lower level. A
+  success at the failed total ends this earlier.
+- **GPULIMIT-MEM-5** Three failures within 7 days set a ceiling at 0.75 of the
+  smallest of them, and lower `normal` to the ceiling. One failure does not
+  lower the limit of a later session. A success above the ceiling removes it.
 
 ### The stored record (GPULIMIT-RECORD)
 
@@ -129,16 +148,19 @@ viewer asked it to render a data set that is too large.
   `cornerstone3D.renderingCapabilities`. The renderer string and the probe
   version are its key. A missing or failing storage does not stop a render
   (`VRS-C-15`).
-- **GPULIMIT-RECORD-2** Each value keeps a reliable value with a count of
-  successes, and a failed value with a count of failures.
+- **GPULIMIT-RECORD-2** The edge keeps a reliable value with a count of
+  successes, and a failed value with a count of failures. Each memory category
+  keeps `normal` with a count of successes, a `ceiling`, the `failures` within
+  the window, and the `recent` failure (GPULIMIT-MEM).
 - **GPULIMIT-RECORD-3** A write re-reads the stored record and merges the
   change, so two tabs do not lose a recorded failure.
 
 ### The retest (GPULIMIT-RETEST)
 
-- **GPULIMIT-RETEST-1** A failed value stays until a retest (`VRS-C-13`).
-  `retestRenderingCapabilities()` clears the failures of the categories that it
-  names, or of all categories.
+- **GPULIMIT-RETEST-1** A failed edge and a memory ceiling stay until a retest
+  (`VRS-C-13`). `retestRenderingCapabilities()` clears the failures of the
+  categories that it names, or of all categories. For memory, it clears the
+  ceiling, the failures and the recent failure, and keeps `normal`.
 - **GPULIMIT-RETEST-2** `resetRenderingCapabilities({ clearStorage: true })`
   removes the record, so the next load probes from the start.
 - **GPULIMIT-RETEST-3** Cornerstone3D shows no prompt. The application reads
@@ -168,7 +190,7 @@ sequenceDiagram
         Store-->>RC: formats, edge and memory values with their counts
     end
     RC->>Store: recoverPendingAllocations()
-    Note over RC,Store: A pending record of a stopped tab<br/>becomes a gpuBytes crash value
+    Note over RC,Store: A pending record of a stopped tab<br/>becomes a gpuBytes failure
 ```
 
 ### A volume needs a texture
@@ -202,9 +224,9 @@ sequenceDiagram
     alt no context loss within 500 ms
         Track->>RC: record a success, and remove the pending record
     else WEBGL_CONTEXT_LOST within 5 s of the allocation
-        Track->>RC: record the textureBytes total as lost
+        Track->>RC: record the page total as a textureBytes failure
     else the tab stops
-        Note over RC: The pending record remains, and the<br/>next start records a crash
+        Note over RC: The pending record remains, and the<br/>next start records a gpuBytes failure
     end
 ```
 
@@ -218,10 +240,10 @@ sequenceDiagram
     participant Store as localStorage
 
     App->>RC: getStoredRenderingCapabilities()
-    RC-->>App: reliable and failed values, with their counts
+    RC-->>App: the edge values, and normal, ceiling and failures of memory
     App->>User: the display is reduced because of an earlier failure. Retest?
     User->>App: yes
     App->>RC: retestRenderingCapabilities({ gpuBytes: true })
-    RC->>Store: clear the failed value of gpuBytes
-    Note over App,RC: The next volume above the reliable value<br/>tries the larger size again, with a pending record
+    RC->>Store: clear the ceiling and the failures of gpuBytes
+    Note over App,RC: The next volume above the ceiling<br/>tries the larger size again, with a pending record
 ```

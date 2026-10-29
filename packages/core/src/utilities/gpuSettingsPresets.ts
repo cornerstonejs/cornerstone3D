@@ -6,10 +6,10 @@ import {
   peekStoredRenderingCapabilities,
   probeRenderingEdge,
 } from './renderingCapabilities';
+import { MEMORY_RECENT_MS } from './renderingCapabilities';
 import type {
   RendererClass,
-  RenderingCapabilityFailure,
-  RenderingCapabilitySuccess,
+  RenderingCapabilityMemory,
 } from './renderingCapabilities';
 import type { ProbeTextureFormat } from './textureSupport';
 
@@ -154,42 +154,40 @@ const FORMAT_PROBE_EDGE = 8;
 const MIN_TEXTURE_BYTES = 16 * 1024 * 1024;
 
 /**
- * The memory limit of `auto`.
+ * The memory limit of `auto`, in GPU bytes of the page.
  *
- * With no failure, the limit is the larger of the start value and the reliable
- * value. With a failure, `auto` does not try the failed value again: the limit
- * is the larger of the reliable value (when it is below the failure) and of
- * the smaller of the start value and half of the failed value. A retest
- * removes the failure, and the limit returns to the first rule.
+ * The limit is the larger of the start value and the normal level, the
+ * largest total that worked. A ceiling, which several failures set, caps it.
+ * For `MEMORY_RECENT_MS` after a failure, the limit is at most half of the
+ * failed total, so the reload after a failure uses a lower level. One failure
+ * therefore lowers only the next load, and several failures lower the limit
+ * until a retest.
+ *
+ * @param start - the memory of the start preset of the renderer class
+ * @param records - the memory records (context loss and stopped tab)
+ * @param now - the time, from `Date.now()`
  */
 function autoMemoryLimit(
   start: number,
-  reliable?: RenderingCapabilitySuccess,
-  failure?: RenderingCapabilityFailure
+  records: RenderingCapabilityMemory[],
+  now = Date.now()
 ): number {
-  if (!failure) {
-    return Math.max(start, reliable?.value ?? 0);
+  let limit = Math.max(
+    start,
+    ...records.map((memory) => memory.normal?.value ?? 0)
+  );
+
+  for (const memory of records) {
+    if (memory.ceiling > 0) {
+      limit = Math.min(limit, memory.ceiling);
+    }
+
+    if (memory.recent && now - memory.recent.at < MEMORY_RECENT_MS) {
+      limit = Math.min(limit, Math.floor(memory.recent.value / 2));
+    }
   }
 
-  const known = reliable && reliable.value < failure.value ? reliable.value : 0;
-
-  return Math.max(known, Math.min(start, Math.floor(failure.value / 2)));
-}
-
-function smaller<T extends { value: number }>(a?: T, b?: T): T | undefined {
-  if (!a || !b) {
-    return a ?? b;
-  }
-
-  return a.value <= b.value ? a : b;
-}
-
-function larger<T extends { value: number }>(a?: T, b?: T): T | undefined {
-  if (!a || !b) {
-    return a ?? b;
-  }
-
-  return a.value >= b.value ? a : b;
+  return limit;
 }
 
 /**
@@ -219,8 +217,8 @@ function autoEdge(rendererClass: RendererClass): number {
  * The start preset of the class of the renderer (see `START_PRESET_OF_CLASS`)
  * gives the memory before the record holds any, and the speed. The edge is
  * the reliable edge of the probe (see `autoEdge`). The memory is the start
- * memory, raised by a larger total that worked, and lowered below a total at
- * which a context was lost or the tab stopped (see `autoMemoryLimit`). A
+ * memory, raised by a larger total that worked, capped after several failures,
+ * and lowered for the reload after a failure (see `autoMemoryLimit`). A
  * software rasterizer keeps the memory of `low`.
  */
 function getAutoGpuSettings(): GpuSettings {
@@ -235,11 +233,10 @@ function getAutoGpuSettings(): GpuSettings {
   const memory =
     rendererClass === 'software' || !stored
       ? start.textureMemoryBytes
-      : autoMemoryLimit(
-          start.textureMemoryBytes,
-          larger(stored.textureBytes.reliable, stored.gpuBytes.reliable),
-          smaller(stored.textureBytes.lost, stored.gpuBytes.crash)
-        );
+      : autoMemoryLimit(start.textureMemoryBytes, [
+          stored.textureBytes,
+          stored.gpuBytes,
+        ]);
 
   return {
     id: 'auto',

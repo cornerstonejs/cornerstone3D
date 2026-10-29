@@ -9,6 +9,7 @@ import {
   gpuSettingsForGrid,
 } from '../src/utilities/gpuSettingsPresets';
 import {
+  MEMORY_RECENT_MS,
   recordRenderingCapabilityFailure,
   recordRenderingCapabilitySuccess,
   resetRenderingCapabilities,
@@ -157,21 +158,35 @@ describe('the auto preset', () => {
     });
   });
 
-  it('takes the memory from the record, and stays below a failure', () => {
-    mockWebGL();
-    recordRenderingCapabilitySuccess('textureBytes', 12 * GIGABYTE);
+  it('lowers only the reload after one failure, and caps after several', () => {
+    const start = Date.now();
+    const clock = jest.spyOn(Date, 'now').mockReturnValue(start);
 
-    expect(getActiveGpuSettings().textureMemoryBytes).toBe(12 * GIGABYTE);
+    try {
+      mockWebGL();
+      recordRenderingCapabilitySuccess('textureBytes', 12 * GIGABYTE);
 
-    // A crash above the reliable value keeps the reliable value.
-    recordRenderingCapabilityFailure('gpuBytes', 14 * GIGABYTE);
+      expect(getActiveGpuSettings().textureMemoryBytes).toBe(12 * GIGABYTE);
 
-    expect(getActiveGpuSettings().textureMemoryBytes).toBe(12 * GIGABYTE);
+      // The reload after a failure uses half of the failed total.
+      recordRenderingCapabilityFailure('gpuBytes', 10 * GIGABYTE);
 
-    // A context loss below the reliable value gives half of the failed value.
-    recordRenderingCapabilityFailure('textureBytes', 6 * GIGABYTE);
+      expect(getActiveGpuSettings().textureMemoryBytes).toBe(5 * GIGABYTE);
 
-    expect(getActiveGpuSettings().textureMemoryBytes).toBe(3 * GIGABYTE);
+      // Later, one failure no longer lowers the limit.
+      clock.mockReturnValue(start + MEMORY_RECENT_MS + 1);
+
+      expect(getActiveGpuSettings().textureMemoryBytes).toBe(12 * GIGABYTE);
+
+      // Three failures set a ceiling below the smallest of them.
+      recordRenderingCapabilityFailure('gpuBytes', 10 * GIGABYTE);
+      recordRenderingCapabilityFailure('gpuBytes', 8 * GIGABYTE);
+      clock.mockReturnValue(start + 3 * MEMORY_RECENT_MS);
+
+      expect(getActiveGpuSettings().textureMemoryBytes).toBe(6 * GIGABYTE);
+    } finally {
+      clock.mockRestore();
+    }
   });
 
   it('probes an edge that a grid needs before it raises the edge', () => {

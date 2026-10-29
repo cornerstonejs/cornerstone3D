@@ -18,8 +18,24 @@ const log = coreLog.getLogger('utilities', 'renderingCapabilities');
  * profiles cached by earlier versions are discarded.
  *
  * Version 2 probes 3D textures, and adds the edge and the memory records.
+ * Version 3 keeps a normal level and a ceiling for each memory record.
  */
-export const RENDERING_CAPABILITIES_PROBE_VERSION = 2;
+export const RENDERING_CAPABILITIES_PROBE_VERSION = 3;
+
+/**
+ * The number of memory failures, within `MEMORY_FAILURE_WINDOW_MS`, that sets a
+ * ceiling. One failure only lowers the next load (see `recent`).
+ */
+export const MEMORY_FAILURES_FOR_CEILING = 3;
+
+/** The time in which memory failures count together. */
+export const MEMORY_FAILURE_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
+
+/** The time for which the last memory failure lowers the limit. */
+export const MEMORY_RECENT_MS = 10 * 60 * 1000;
+
+/** The ceiling, as a fraction of the smallest failure that set it. */
+export const MEMORY_CEILING_FRACTION = 0.75;
 
 const STORAGE_KEY = 'cornerstone3D.renderingCapabilities';
 const PENDING_KEY_PREFIX = `${STORAGE_KEY}.pending.`;
@@ -70,6 +86,27 @@ export type RenderingCapabilitySuccess = { value: number; successes: number };
 /** The smallest value that failed, and how often a failure occurred. */
 export type RenderingCapabilityFailure = { value: number; failures: number };
 
+/** One memory failure, and its time from `Date.now()`. */
+export type RenderingCapabilityMemoryFailure = { value: number; at: number };
+
+/**
+ * The record of one memory category. The values are GPU bytes of the page.
+ *
+ * - `normal`: the high water mark, the largest total that worked.
+ * - `ceiling`: set when `MEMORY_FAILURES_FOR_CEILING` failures occur within
+ *   `MEMORY_FAILURE_WINDOW_MS`. The limit stays below it until a retest, or
+ *   until a larger total works.
+ * - `failures`: the failures since the ceiling last changed, oldest first.
+ * - `recent`: the last failure. It halves the limit for `MEMORY_RECENT_MS`, so
+ *   the reload after a failure uses a lower level.
+ */
+export type RenderingCapabilityMemory = {
+  normal?: RenderingCapabilitySuccess;
+  ceiling?: number;
+  failures?: RenderingCapabilityMemoryFailure[];
+  recent?: RenderingCapabilityMemoryFailure;
+};
+
 /**
  * A stored value: the texture edge, the texture bytes of the page when a
  * context was lost, or the texture bytes of the page when the tab stopped.
@@ -79,10 +116,10 @@ export type RenderingCapabilityCategory = 'edge' | 'textureBytes' | 'gpuBytes';
 /**
  * The record of one renderer, in the store of the rendering capabilities.
  *
- * `textureBytes` and `gpuBytes` both count the texture bytes of the page,
- * because a page cannot read the GPU memory of the browser. They differ in the
- * failure: `lost` is a WebGL context loss, and `crash` is a tab or GPU process
- * that stopped.
+ * `textureBytes` and `gpuBytes` both count the GPU bytes of the page (see
+ * `gpuMemoryLedger`), because a page cannot read the GPU memory of the browser.
+ * They differ in the failure: `textureBytes` records a WebGL context loss, and
+ * `gpuBytes` records a tab or GPU process that stopped.
  */
 export interface StoredRenderingCapabilities {
   probeVersion: number;
@@ -96,14 +133,8 @@ export interface StoredRenderingCapabilities {
     reliable?: RenderingCapabilitySuccess;
     failed?: RenderingCapabilityFailure;
   };
-  textureBytes: {
-    reliable?: RenderingCapabilitySuccess;
-    lost?: RenderingCapabilityFailure;
-  };
-  gpuBytes: {
-    reliable?: RenderingCapabilitySuccess;
-    crash?: RenderingCapabilityFailure;
-  };
+  textureBytes: RenderingCapabilityMemory;
+  gpuBytes: RenderingCapabilityMemory;
 }
 
 /** The class of a renderer, which sets the conservative start of `auto`. */
@@ -115,11 +146,11 @@ interface WebGLContextInfo {
   renderer: string;
 }
 
-const FAILURE_KEYS = {
-  edge: 'failed',
-  textureBytes: 'lost',
-  gpuBytes: 'crash',
-} as const;
+const CATEGORIES: RenderingCapabilityCategory[] = [
+  'edge',
+  'textureBytes',
+  'gpuBytes',
+];
 
 const NO_GPU_FORMATS: TextureFormatSupport = {
   norm16: false,
@@ -231,7 +262,7 @@ function readRecord(renderer: string): StoredRenderingCapabilities | null {
 
     const stored = { ...emptyRecord(renderer), ...parsed };
 
-    for (const category of Object.keys(FAILURE_KEYS)) {
+    for (const category of CATEGORIES) {
       if (!isObject(stored[category])) {
         stored[category] = {};
       }
@@ -252,9 +283,7 @@ function readRecord(renderer: string): StoredRenderingCapabilities | null {
 function holdsData(target: StoredRenderingCapabilities): boolean {
   return Boolean(
     target.formats ||
-      Object.keys(FAILURE_KEYS).some(
-        (category) => Object.keys(target[category]).length > 0
-      )
+      CATEGORIES.some((category) => Object.keys(target[category]).length > 0)
   );
 }
 
@@ -284,20 +313,25 @@ function updateRecord(
 /**
  * Adds one success to the record.
  *
- * A value above the reliable value replaces it, with one success. A value at
- * or below it adds one to the count, so `successes` counts the successes since
- * the reliable value last rose. A success at or above a failed value removes
- * that failure, because the failure did not repeat.
+ * For the edge, a value above the reliable value replaces it, with one
+ * success. A value at or below it adds one to the count, so `successes` counts
+ * the successes since the reliable value last rose. A success at or above a
+ * failed edge removes that failure, because the failure did not repeat.
+ *
+ * For memory, see `addMemorySuccess`.
  */
 function addSuccess(
   target: StoredRenderingCapabilities,
   category: RenderingCapabilityCategory,
   value: number
 ): void {
-  const entry = target[category] as {
-    reliable?: RenderingCapabilitySuccess;
-  } & Record<string, RenderingCapabilityFailure>;
-  const failureKey = FAILURE_KEYS[category];
+  if (category !== 'edge') {
+    addMemorySuccess(target[category], value);
+
+    return;
+  }
+
+  const entry = target.edge;
 
   if (!entry.reliable || value > entry.reliable.value) {
     entry.reliable = { value, successes: 1 };
@@ -305,19 +339,20 @@ function addSuccess(
     entry.reliable.successes++;
   }
 
-  if (entry[failureKey] && value >= entry[failureKey].value) {
-    delete entry[failureKey];
+  if (entry.failed && value >= entry.failed.value) {
+    delete entry.failed;
   }
 }
 
 /**
- * Adds one failure to the record. The failed value is the smallest value that
- * failed, and `failures` counts every failure.
+ * Adds one failure to the record.
  *
- * A failed edge at or below the reliable edge contradicts that edge, so the
- * reliable edge becomes `reliableFallback` (an edge that passed), or is
- * removed, which makes the next need probe again. A memory failure leaves the
- * reliable value, so a retest restores it.
+ * For the edge, the failed value is the smallest value that failed, and
+ * `failures` counts every failure. A failed edge at or below the reliable edge
+ * contradicts that edge, so the reliable edge becomes `reliableFallback` (an
+ * edge that passed), or is removed, which makes the next need probe again.
+ *
+ * For memory, see `addMemoryFailure`.
  */
 function addFailure(
   target: StoredRenderingCapabilities,
@@ -325,23 +360,92 @@ function addFailure(
   value: number,
   reliableFallback?: number
 ): void {
-  const entry = target[category] as {
-    reliable?: RenderingCapabilitySuccess;
-  } & Record<string, RenderingCapabilityFailure>;
-  const failureKey = FAILURE_KEYS[category];
-  const failure = entry[failureKey];
+  if (category !== 'edge') {
+    addMemoryFailure(target[category], value, Date.now());
 
-  entry[failureKey] = {
-    value: failure ? Math.min(failure.value, value) : value,
-    failures: (failure?.failures ?? 0) + 1,
+    return;
+  }
+
+  const entry = target.edge;
+
+  entry.failed = {
+    value: entry.failed ? Math.min(entry.failed.value, value) : value,
+    failures: (entry.failed?.failures ?? 0) + 1,
   };
 
-  if (category === 'edge' && entry.reliable && entry.reliable.value >= value) {
+  if (entry.reliable && entry.reliable.value >= value) {
     if (reliableFallback > 0 && reliableFallback < value) {
       entry.reliable = { value: reliableFallback, successes: 0 };
     } else {
       delete entry.reliable;
     }
+  }
+}
+
+/**
+ * Adds one memory success.
+ *
+ * A total above `normal` raises it. A success removes the failures at or below
+ * its total, and the recent failure when the total reaches it, because those
+ * failures did not repeat. A success above the ceiling removes the ceiling.
+ */
+function addMemorySuccess(
+  entry: RenderingCapabilityMemory,
+  value: number
+): void {
+  if (!entry.normal || value > entry.normal.value) {
+    entry.normal = { value, successes: 1 };
+  } else {
+    entry.normal.successes++;
+  }
+
+  if (entry.failures) {
+    entry.failures = entry.failures.filter((failure) => failure.value > value);
+  }
+
+  if (entry.recent && value >= entry.recent.value) {
+    delete entry.recent;
+  }
+
+  if (entry.ceiling && value > entry.ceiling) {
+    delete entry.ceiling;
+  }
+}
+
+/**
+ * Adds one memory failure at the time `now`.
+ *
+ * The failure becomes `recent`, which lowers the next load. It also joins
+ * `failures`. When `MEMORY_FAILURES_FOR_CEILING` failures fall within
+ * `MEMORY_FAILURE_WINDOW_MS`, the ceiling becomes `MEMORY_CEILING_FRACTION`
+ * of the smallest of them, `normal` drops to the ceiling, and the list
+ * empties. One failure therefore does not lower the limit for later sessions.
+ */
+export function addMemoryFailure(
+  entry: RenderingCapabilityMemory,
+  value: number,
+  now: number
+): void {
+  entry.recent = { value, at: now };
+  entry.failures = [
+    ...(entry.failures ?? []).filter(
+      (failure) => now - failure.at < MEMORY_FAILURE_WINDOW_MS
+    ),
+    { value, at: now },
+  ];
+
+  if (entry.failures.length < MEMORY_FAILURES_FOR_CEILING) {
+    return;
+  }
+
+  const smallest = Math.min(...entry.failures.map((failure) => failure.value));
+  const ceiling = Math.floor(smallest * MEMORY_CEILING_FRACTION);
+
+  entry.ceiling = entry.ceiling ? Math.min(entry.ceiling, ceiling) : ceiling;
+  entry.failures = [];
+
+  if (entry.normal && entry.normal.value > entry.ceiling) {
+    entry.normal = { value: entry.ceiling, successes: 0 };
   }
 }
 
@@ -703,9 +807,10 @@ export type RetestRenderingCapabilitiesOptions = {
  *
  * - `edge`: the reliable edge stays, and the next need above it runs the probe
  *   again. A record with no reliable edge runs the edge search again.
- * - `textureBytes`, `gpuBytes`: the memory limit returns to the larger of the
- *   start value and the reliable value. A crash during the next try is
- *   recorded again by the same pending record.
+ * - `textureBytes`, `gpuBytes`: the ceiling, the failures and the recent
+ *   failure go, and the memory limit returns to the larger of the start value
+ *   and the normal level. A crash during the next try is recorded again by the
+ *   same pending record.
  * - `formats`: the next detection probes the data types again. Decisions that
  *   `init()` already took from the formats (for example `useCPURendering` or
  *   the use of norm16) do not change until the next load.
@@ -722,13 +827,15 @@ export function retestRenderingCapabilities(
   const all = !Object.values(options).some(Boolean);
 
   updateRecord((target) => {
-    for (const category of Object.keys(
-      FAILURE_KEYS
-    ) as RenderingCapabilityCategory[]) {
+    if (all || options.edge) {
+      delete target.edge.failed;
+    }
+
+    for (const category of ['textureBytes', 'gpuBytes'] as const) {
       if (all || options[category]) {
-        delete (target[category] as Record<string, unknown>)[
-          FAILURE_KEYS[category]
-        ];
+        delete target[category].ceiling;
+        delete target[category].failures;
+        delete target[category].recent;
       }
     }
 

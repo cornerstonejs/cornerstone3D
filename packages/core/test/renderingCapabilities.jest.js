@@ -3,6 +3,7 @@ import {
   getRenderingCapabilities,
   getStoredRenderingCapabilities,
   recordRenderingCapabilityFailure,
+  addMemoryFailure,
   recordRenderingCapabilitySuccess,
   resetRenderingCapabilities,
   retestRenderingCapabilities,
@@ -216,28 +217,56 @@ describe('renderingCapabilities', () => {
     expect(third).not.toBe(first);
   });
 
-  it('keeps the largest success and the smallest failure, with counts', () => {
+  it('keeps the normal level, and sets a ceiling only after several failures', () => {
     mockWebGL();
     detectRenderingCapabilities();
 
     recordRenderingCapabilitySuccess('textureBytes', 1000);
     recordRenderingCapabilitySuccess('textureBytes', 800);
-    recordRenderingCapabilitySuccess('textureBytes', 2000);
+    recordRenderingCapabilitySuccess('textureBytes', 6000);
     recordRenderingCapabilityFailure('textureBytes', 4000);
-    recordRenderingCapabilityFailure('textureBytes', 3000);
 
     // The record survives a new page.
     resetRenderingCapabilities();
-    const stored = getStoredRenderingCapabilities();
+    let stored = getStoredRenderingCapabilities();
 
     expect(stored.edge.reliable).toEqual({ value: 2048, successes: 1 });
-    expect(stored.textureBytes.reliable).toEqual({ value: 2000, successes: 1 });
-    expect(stored.textureBytes.lost).toEqual({ value: 3000, failures: 2 });
+    expect(stored.textureBytes.normal).toEqual({ value: 6000, successes: 1 });
+    // One failure is recent, and sets no ceiling.
+    expect(stored.textureBytes.recent.value).toBe(4000);
+    expect(stored.textureBytes.ceiling).toBeUndefined();
 
-    // One failure does not stay when the value works later.
-    recordRenderingCapabilitySuccess('textureBytes', 3000);
+    recordRenderingCapabilityFailure('textureBytes', 5000);
+    recordRenderingCapabilityFailure('textureBytes', 3000);
 
-    expect(getStoredRenderingCapabilities().textureBytes.lost).toBeUndefined();
+    stored = getStoredRenderingCapabilities();
+    // The third failure sets the ceiling at 0.75 of the smallest failure.
+    expect(stored.textureBytes.ceiling).toBe(2250);
+    expect(stored.textureBytes.normal).toEqual({ value: 2250, successes: 0 });
+    expect(stored.textureBytes.failures).toEqual([]);
+
+    // A success above the ceiling removes it.
+    recordRenderingCapabilitySuccess('textureBytes', 4000);
+
+    stored = getStoredRenderingCapabilities();
+    expect(stored.textureBytes.ceiling).toBeUndefined();
+    expect(stored.textureBytes.recent).toBeUndefined();
+  });
+
+  it('counts only the failures within the window toward a ceiling', () => {
+    const entry = {};
+    const day = 24 * 60 * 60 * 1000;
+
+    addMemoryFailure(entry, 3000, 0);
+    addMemoryFailure(entry, 3000, 6 * day);
+    addMemoryFailure(entry, 3000, 8 * day);
+
+    expect(entry.ceiling).toBeUndefined();
+    // The first failure is older than the window of 7 days.
+    expect(entry.failures.map((failure) => failure.at)).toEqual([
+      6 * day,
+      8 * day,
+    ]);
   });
 
   it('records a pending allocation that a stopped page left as a crash', () => {
@@ -256,7 +285,7 @@ describe('renderingCapabilities', () => {
     resetRenderingCapabilities();
     const stored = getStoredRenderingCapabilities();
 
-    expect(stored.gpuBytes.crash).toEqual({ value: 9000, failures: 1 });
+    expect(stored.gpuBytes.recent.value).toBe(9000);
     expect(
       window.localStorage.getItem(`${STORAGE_KEY}.pending.another-tab`)
     ).toBeNull();
@@ -273,14 +302,14 @@ describe('renderingCapabilities', () => {
 
     let stored = getStoredRenderingCapabilities();
     expect(stored.edge.failed).toBeUndefined();
-    expect(stored.textureBytes.lost.value).toBe(3000);
-    expect(stored.gpuBytes.crash.value).toBe(9000);
+    expect(stored.textureBytes.recent.value).toBe(3000);
+    expect(stored.gpuBytes.recent.value).toBe(9000);
 
     retestRenderingCapabilities();
 
     stored = getStoredRenderingCapabilities();
-    expect(stored.textureBytes.lost).toBeUndefined();
-    expect(stored.gpuBytes.crash).toBeUndefined();
+    expect(stored.textureBytes.recent).toBeUndefined();
+    expect(stored.gpuBytes.recent).toBeUndefined();
     // The formats were cleared too, so the detection probed again.
     expect(stored.formats).toEqual(ALL_FORMATS);
     expect(getSupportedTextureFormats).toHaveBeenCalledTimes(2);
@@ -304,10 +333,9 @@ describe('renderingCapabilities', () => {
     jest.isolateModules(() => {
       const nextPage = require('../src/utilities/renderingCapabilities');
 
-      expect(nextPage.getStoredRenderingCapabilities().gpuBytes.crash).toEqual({
-        value: 512 * MEGABYTE,
-        failures: 1,
-      });
+      expect(nextPage.getStoredRenderingCapabilities().gpuBytes.recent).toEqual(
+        { value: 512 * MEGABYTE, at: now + 60000 }
+      );
     });
 
     dateSpy.mockRestore();

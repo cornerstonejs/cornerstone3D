@@ -9,8 +9,13 @@ import VoxelStatistics from '../../enums/VoxelStatistics';
 import ImageQualityStatus from '../../enums/ImageQualityStatus';
 import autoLoad from '../../utilities/autoLoad';
 import { getConfiguration } from '../../init';
-import volumeTextureStore from '../../cache/volumeTextureStore';
 import { noteTextureAllocation } from '../../utilities/gpuAllocationTracker';
+import {
+  getGpuMemoryEntryBytes,
+  getGpuMemoryTotal,
+  removeGpuMemoryEntry,
+  setGpuMemoryEntry,
+} from '../../utilities/gpuMemoryLedger';
 
 const DEFAULT_MAX_SLICES_PER_RENDER = 16;
 
@@ -101,16 +106,13 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
 
   /**
    * Tells the allocation tracker about a new GPU allocation, before it
-   * happens. An update of some extents of the same texture is no allocation.
+   * happens, and records the upload in the GPU memory ledger. An update of
+   * some extents of the same texture is no allocation. A new upload of the same
+   * shape, after the texture moved to another context, updates the ledger only,
+   * so a move writes no pending record.
    */
   function noteAllocation({ width, height, depth, numComps, dataType }) {
     const shape = `${width}x${height}x${depth}x${numComps}x${dataType}`;
-
-    if (shape === model.allocatedShape) {
-      return;
-    }
-
-    model.allocatedShape = shape;
 
     // `dataType` names a typed array, such as 'Float32Array'.
     const textureBytes =
@@ -120,11 +122,34 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
       (numComps || 1) *
       (globalThis[dataType]?.BYTES_PER_ELEMENT ?? 4);
 
-    noteTextureAllocation({
-      textureBytes,
-      totalBytes: Math.max(volumeTextureStore.bytesUsed, textureBytes),
+    if (shape !== model.allocatedShape) {
+      model.allocatedShape = shape;
+      // The page total leaves out the earlier upload of this texture, which
+      // the new allocation replaces.
+      noteTextureAllocation({
+        textureBytes,
+        totalBytes:
+          getGpuMemoryTotal() -
+          getGpuMemoryEntryBytes(publicAPI) +
+          textureBytes,
+      });
+    }
+
+    setGpuMemoryEntry(publicAPI, {
+      kind: 'texture',
+      bytes: textureBytes,
+      volumeId: model.volumeId,
     });
   }
+
+  const superReleaseGraphicsResources = publicAPI.releaseGraphicsResources;
+
+  /** vtk.js releases the upload when the texture moves to another context. */
+  publicAPI.releaseGraphicsResources = (...args) => {
+    removeGpuMemoryEntry(publicAPI);
+
+    return superReleaseGraphicsResources(...args);
+  };
 
   /**
    * The mappers allocate with `data: null`, which leaves the GPU storage empty,

@@ -11,8 +11,12 @@ import {
   gpuSettingsForGrid,
 } from '../../utilities/gpuSettingsPresets';
 import { voxelGridWithinLimits } from '../../utilities/voxelGrid';
-import volumeTextureStore from '../../cache/volumeTextureStore';
 import { noteTextureAllocation } from '../../utilities/gpuAllocationTracker';
+import {
+  getGpuMemoryTotal,
+  removeGpuMemoryEntry,
+  setGpuMemoryEntry,
+} from '../../utilities/gpuMemoryLedger';
 import { coreLog } from '../../utilities/logger';
 
 const log = coreLog.getLogger('RenderingEngine', 'createVolumeMapper');
@@ -136,8 +140,23 @@ export function convertMapperToNotSharedMapper(sharedMapper: vtkVolumeMapper) {
 
   noteTextureAllocation({
     textureBytes,
-    totalBytes: volumeTextureStore.bytesUsed + textureBytes,
+    totalBytes: getGpuMemoryTotal() + textureBytes,
   });
+  // vtk.js uploads the texture inside the mapper, so the mapper owns the entry
+  // of the ledger until it is deleted.
+  setGpuMemoryEntry(volumeMapper, {
+    kind: 'texture',
+    bytes: textureBytes,
+    volumeId: imageData.get('volumeId')?.volumeId,
+  });
+
+  const superDelete = volumeMapper.delete;
+
+  volumeMapper.delete = () => {
+    removeGpuMemoryEntry(volumeMapper);
+
+    return superDelete();
+  };
 
   volumeMapper.setInputData(imageData);
   volumeMapper.setMaximumSamplesPerRay(sharedMapper.getMaximumSamplesPerRay());

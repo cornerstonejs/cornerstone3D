@@ -498,11 +498,14 @@ renderer, in the `localStorage` key `cornerstone3D.renderingCapabilities`:
   finds the largest edge that renders correctly, from 2048 down to 16. When a
   volume needs a larger edge, the probe runs at that edge before the texture is
   allocated, up to `MAX_3D_TEXTURE_SIZE`.
-- **The texture memory.** The record keeps the total texture bytes of the page
-  that worked, the total at which a WebGL context was lost, and the total at
-  which the tab stopped. A new texture gets the memory limit of `auto` minus
-  the texture bytes of the other volumes, so the page total stays below a
-  failed total. `auto` does not evict the textures of another volume.
+- **The GPU memory.** The page counts its own GPU bytes: the textures, the
+  canvases, the render buffers and the contexts of its viewports. Another tab
+  does not count. The record keeps the largest total that worked as the
+  normal level. The reload after a context loss or a stopped tab uses at most
+  half of the failed total for 10 minutes. Three failures within 7 days set a
+  ceiling below the smallest of them, until a retest. A new texture gets the
+  memory limit of `auto` minus the GPU bytes of the rest of the page. `auto`
+  does not evict the textures of another volume.
 - **The start.** The memory starts from `low` for a software rasterizer,
   `low-tablet` for a mobile GPU, and `medium` for any other GPU. The edge is
   always an edge that the probe passed.
@@ -526,7 +529,7 @@ that the device really renders, and the voxel quality record of the viewport
 states the reduction (`reduction: boxAverage`), so a fidelity readout can show
 it to the user.
 
-The probe version of the stored record changes from 1 to 2, so each browser
+The probe version of the stored record changes from 1 to 3, so each browser
 probes again once.
 
 ### API changes

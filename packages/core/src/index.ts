@@ -227,6 +227,8 @@ export type {
   RenderingCapabilityCategory,
   RenderingCapabilityFailure,
   RenderingCapabilitySuccess,
+  RenderingCapabilityMemory,
+  RenderingCapabilityMemoryFailure,
   RetestRenderingCapabilitiesOptions,
   StoredRenderingCapabilities,
 } from './utilities/renderingCapabilities';
@@ -235,6 +237,14 @@ export {
   setCapabilityStorage,
 } from './utilities/capabilityStorage';
 export type { CapabilityStorage } from './utilities/capabilityStorage';
+export {
+  getGpuMemoryTotal,
+  getGpuMemoryByKind,
+} from './utilities/gpuMemoryLedger';
+export type {
+  GpuMemoryKind,
+  GpuMemoryEntry,
+} from './utilities/gpuMemoryLedger';
 
 // Classes
 import Settings from './Settings';

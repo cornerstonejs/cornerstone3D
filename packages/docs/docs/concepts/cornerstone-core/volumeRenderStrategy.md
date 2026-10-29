@@ -315,38 +315,47 @@ a probe passed. When the record has none (the first probe could not run, or a fa
 the edge search runs once in the page. When no probe can run at all, the edge is 128, or 8 when the
 record states a failure at or below 128.
 
-**The memory.** A page cannot read the memory of the GPU, so the record counts the texture bytes of
-the page: the total of the texture store, which is the sum of all viewports. Under `auto`, a new
-texture gets the memory limit minus the texture bytes of the other volumes, so the page total stays
-below the limit. Before an allocation of 64 MB or more on a visible page, the page writes a pending
-record under a key of its own tab. The first render after the allocation settles it: 500 ms later,
-the total counts as a success, and the page removes the pending record. A context loss before that,
-or within five seconds of the allocation, records the total as `lost`, except on a hidden page and
+**The memory.** A page cannot read the memory of the GPU, so the record counts the GPU bytes of the
+page from an in-memory ledger (`gpuMemoryLedger`): each texture upload, the canvas of each viewport,
+the render buffers of each WebGL context, and a fixed estimate for each context. Another tab does not
+count. Under `auto`, a new texture gets the memory limit minus the GPU bytes of the rest of the page.
+Before an allocation of 64 MB or more on a visible page, the page writes a pending record under a key
+of its own tab. The first render after the allocation settles it: 500 ms later, the total counts as
+a success, and the page removes the pending record. A context loss before that, or within five
+seconds of the allocation, records the total as a `textureBytes` failure, except on a hidden page and
 within one second of a probe context. A pending record that a later start finds records the total as
-`crash`. Two tabs share the record: each change applies to a fresh read of the store.
+a `gpuBytes` failure. Two tabs share the record: each change applies to a fresh read of the store.
 
-**Counts and retest.** Each value keeps a reliable value with a success count, and a failed value
-with a failure count. `auto` does not try a failed value again. A retest is the one way to try it
-again, and the application decides when to offer the retest; the counts are for its display and its
-decision. An application reads the record with `getStoredRenderingCapabilities()`, clears failures
+**The memory level.** Each memory category keeps `normal`, the largest total that worked. One failure
+becomes `recent`: for 10 minutes the limit is at most half of the failed total, so the reload after a
+failure uses a lower level, and later sessions keep `normal`. Three failures within 7 days set a
+`ceiling` at 0.75 of the smallest of them, and the limit stays below it until a retest or a success
+above it.
+
+**Counts and retest.** The edge keeps a reliable value with a success count, and a failed value with
+a failure count. `auto` does not try a failed edge or a memory ceiling again. A retest is the one way
+to try it again, and the application decides when to offer the retest; the counts are for its display
+and its decision. An application reads the record with `getStoredRenderingCapabilities()`, clears failures
 with `retestRenderingCapabilities()`, and removes the record with
 `resetRenderingCapabilities({ clearStorage: true })`. `setCapabilityStorage` replaces the store.
 
 ```json
 {
-  "probeVersion": 2,
+  "probeVersion": 3,
   "renderer": "ANGLE (...)",
   "formats": { "norm16": true, "float": true },
   "max3DTextureSize": 2048,
   "probeMs": 63.6,
   "edge": { "reliable": { "value": 2048, "successes": 1 } },
   "textureBytes": {
-    "reliable": { "value": 1200000000, "successes": 25 },
-    "lost": { "value": 1800000000, "failures": 1 }
+    "normal": { "value": 1200000000, "successes": 25 },
+    "failures": [{ "value": 1800000000, "at": 1793000000000 }],
+    "recent": { "value": 1800000000, "at": 1793000000000 }
   },
   "gpuBytes": {
-    "reliable": { "value": 1200000000, "successes": 25 },
-    "crash": { "value": 9000000000, "failures": 1 }
+    "normal": { "value": 1200000000, "successes": 25 },
+    "ceiling": 900000000,
+    "failures": []
   }
 }
 ```
@@ -427,11 +436,10 @@ non-streaming slice paths. When no probe can run, the edge is a fixed floor (see
 of `convertMapperToNotSharedMapper` uploads the full-resolution scalars with no reduction: it runs
 the probe and logs a warning for a grid above the limits, and it does not refuse the upload.
 
-**VRS-C-13.** A failed value stays until a retest. The retest is the recovery path, and the
-application decides when to offer it. `retestRenderingCapabilities` clears the failures of the
-selected categories, and `resetRenderingCapabilities({ clearStorage: true })` removes the whole
-record. Each stored value keeps a success count and a failure count, for the display and the decision
-of the application. Cornerstone3D does not lower or raise a limit from the counts.
+**VRS-C-13.** A failed edge and a memory ceiling stay until a retest. One memory failure lowers only
+the loads of the next 10 minutes. The retest is the recovery path, and the application decides when
+to offer it. `retestRenderingCapabilities` clears the failures of the selected categories, and
+`resetRenderingCapabilities({ clearStorage: true })` removes the whole record.
 
 **VRS-C-14.** Cornerstone3D shows no prompt about the limits. The application reads the record and
 decides when to offer a retest.
@@ -485,14 +493,18 @@ rasterizer also keeps the edge of `low` (256) at most, because a larger texture 
 **VRS-I-14.** The edge of `auto` is the reliable edge. With none, the edge search runs once in the
 page, and with no probe at all the edge is 128 (8 when a failure at or below 128 is stored). A failed
 edge at or below the reliable edge replaces the reliable edge by an edge that passed, or removes it.
-The memory limit of `auto`: with no failure, the larger of the start value and the reliable value.
-With a failure, the larger of the reliable value (when it is below the failure) and the smaller of
-the start value and half of the failed value. A memory failure leaves the reliable value, so a
-retest restores the limit.
+The memory limit of `auto` is the larger of the start value and `normal`, capped by a `ceiling`,
+and for 10 minutes after a failure at most half of the failed total. Three failures within 7 days set
+the ceiling at 0.75 of the smallest of them. The constants are `MEMORY_RECENT_MS`,
+`MEMORY_FAILURES_FOR_CEILING`, `MEMORY_FAILURE_WINDOW_MS` and `MEMORY_CEILING_FRACTION`.
 
-**VRS-I-15.** The memory values count the texture bytes of the texture store and of the
-non-streaming paths, which is the sum of all viewports and contexts. A large allocation is 64 MB or
-more. A visible page writes its pending record, and a hidden page does not. The first render of a
+**VRS-I-15.** The memory values count the GPU bytes of the page from `gpuMemoryLedger`. A
+`vtkStreamingOpenGLTexture` adds an entry at each upload and removes it in
+`releaseGraphicsResources`, which vtk.js calls when the texture moves to another context. The plain
+textures of the reslice mapper and of `convertMapperToNotSharedMapper` add entries too.
+`WebGLContextPool` adds the canvas of each viewport (4 bytes for each pixel), the render buffers of
+each context (8 bytes for each pixel of its largest viewport), and 32 MB for each context. The
+`TiledRenderingEngine` adds no canvas entries. A large allocation is 64 MB or more. A visible page writes its pending record, and a hidden page does not. The first render of a
 volume mapper after the allocation settles it 500 ms later; with no render in 30 s, the pending record
 is removed and nothing is recorded. A context loss counts while the allocation waits, or within 5 s of
 it, but not on a hidden page and not within 1 s of a probe context. A pending record younger than
@@ -500,8 +512,8 @@ it, but not on a hidden page and not within 1 s of a probe context. A pending re
 remove the pending record of the tab. Each change of the record applies to a fresh read of the store,
 so two tabs keep both of their changes.
 
-**VRS-I-16.** `auto` limits a new texture to its memory limit minus the texture bytes of the other
-volumes (at least 16 MB). It does not set the budget of the store, so it does not evict the textures
+**VRS-I-16.** `auto` limits a new texture to its memory limit minus the GPU bytes of the rest of the
+page (at least 16 MB). It does not set the budget of the store, so it does not evict the textures
 of another volume. A named preset limits one texture, as before.
 
 **VRS-I-17.** No check after a render detects type 1. The probe runs before every allocation above

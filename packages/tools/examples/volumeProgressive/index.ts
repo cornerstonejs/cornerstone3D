@@ -14,6 +14,7 @@ import {
   getRenderingCapabilities,
   getStoredRenderingCapabilities,
   getActiveGpuSettings,
+  getGpuMemoryByKind,
   retestRenderingCapabilities,
   resetRenderingCapabilities,
   getLossyDownsampling,
@@ -654,6 +655,7 @@ async function run() {
       JSON.stringify(
         {
           activeGpuSettings: getActiveGpuSettings(),
+          gpuMemoryOfPage: getGpuMemoryByKind(),
           storedRecord: getStoredRenderingCapabilities(),
           capabilities: getRenderingCapabilities(),
         },
