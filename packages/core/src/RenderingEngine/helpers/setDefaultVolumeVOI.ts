@@ -142,8 +142,8 @@ function getVOIFromMetadata(imageVolume: IImageVolume): VOIRange | undefined {
       const center = asArrayFirst(voiLutModule.windowCenter);
       const voiLUTFunction = asArrayFirst(voiLutModule.voiLUTFunction);
 
-      // Skip if width is 0
-      if (width !== 0) {
+      // Skip if width is 0 or missing
+      if (width) {
         voi = {
           windowWidth: width,
           windowCenter: center,
