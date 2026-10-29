@@ -559,6 +559,10 @@ These shapes reach your code through the adapters:
   0.52 and with 1.0.
 - Use `asArray` or `asArrayFirst` from `@cornerstonejs/utils` when a value can
   be a scalar or a list.
+- Use `asMultiValueArray` from `@cornerstonejs/utils` for a multi-valued
+  attribute such as `ImageType` or `CorrectedImage`: it splits a
+  backslash-joined value (`['DECY\\ATTN\\SCAT']` in 1.0, a string in 0.52) and
+  gives `[]` for a missing value, where `asArray(undefined)` gives `[undefined]`.
 - Move the application to `@dcmjs-org/dcmjs` in the same release, so that one
   copy of dcmjs sets the log levels and the shapes.
 - Do not rely on a fixed length of the generated UIDs.
