@@ -409,16 +409,11 @@ async function createImage(
           width: imageFrame.columns,
           // use the first value for rendering, if other values
           // are needed later, it can be grabbed again from the voiLUtModule
-          windowCenter: voiLutModule.windowCenter
-            ? voiLutModule.windowCenter[0]
-            : undefined,
-          windowWidth: voiLutModule.windowWidth
-            ? voiLutModule.windowWidth[0]
-            : undefined,
+          windowCenter: utilities.asArrayFirst(voiLutModule.windowCenter),
+          windowWidth: utilities.asArrayFirst(voiLutModule.windowWidth),
           voiLUTFunction:
             utilities.asArrayFirst(voiLutModule.voiLUTFunction) ||
-            voiLutModule.voiLutFunction ||
-            undefined,
+            voiLutModule.voiLutFunction,
           decodeTimeInMS: imageFrame.decodeTimeInMS,
           floatPixelData: undefined,
           imageFrame,
