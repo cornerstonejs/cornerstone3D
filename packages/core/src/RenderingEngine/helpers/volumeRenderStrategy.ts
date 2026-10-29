@@ -4,7 +4,10 @@ import {
   deriveBoxAverageGrid,
 } from '../../utilities/voxelGrid';
 import { getBufferConfiguration } from '../../utilities/getBufferConfiguration';
-import { gridLimitsOfProfile } from '../../utilities/gpuCapabilityProfiles';
+import {
+  gridLimitsOfProfile,
+  profileForGrid,
+} from '../../utilities/gpuCapabilityProfiles';
 import { isMutableSlab } from '../../cache/classes/VolumeTextureSet';
 import { FULL_RESOLUTION_TEXTURE_SET } from '../../cache/classes/ImageVolume';
 import type { GpuCapabilityProfile } from '../../utilities/gpuCapabilityProfiles';
@@ -267,6 +270,9 @@ function bytesPerVoxelOf(volume: IImageVolume): number {
  * must know whether a volume draws reduced, before any texture exists, reads
  * the same answer here.
  *
+ * This is where the `auto` profile tests an edge that the volume needs and
+ * that the device has not yet passed, before any texture is allocated.
+ *
  * @param volume - the volume to draw
  * @param profile - the capability profile that applies
  * @returns the box size on each axis of the voxel grid
@@ -275,7 +281,11 @@ export function volumeTextureReductionFactors(
   volume: IImageVolume,
   profile: GpuCapabilityProfile
 ): Point3 {
-  const limits = gridLimitsOfProfile(profile, bytesPerVoxelOf(volume));
+  const bytesPerVoxel = bytesPerVoxelOf(volume);
+  const limits = gridLimitsOfProfile(
+    profileForGrid(profile, volume.voxelGrid.dimensions, bytesPerVoxel),
+    bytesPerVoxel
+  );
 
   return boxAverageReductionFactors(volume.voxelGrid.dimensions, limits);
 }

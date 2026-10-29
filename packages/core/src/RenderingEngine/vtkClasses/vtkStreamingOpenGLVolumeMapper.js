@@ -15,6 +15,7 @@ import { voxelGridWithinLimits } from '../../utilities/voxelGrid';
 import {
   getActiveGpuCapabilityProfile,
   gridLimitsOfProfile,
+  profileForGrid,
 } from '../../utilities/gpuCapabilityProfiles';
 
 const log = coreLog.getLogger(
@@ -26,8 +27,8 @@ const log = coreLog.getLogger(
  * States whether the device that the active capability profile describes can
  * hold a texture of these dimensions.
  *
- * The count happens before the allocation. An application states the profile,
- * and this function probes nothing.
+ * The count happens before the allocation. Under `auto`, an edge above the
+ * reliable edge runs the edge probe first (see `profileForGrid`).
  *
  * @param {number[]} dims - the number of voxels on each axis
  * @param {string} dataType - the type of the buffer of the texture
@@ -36,11 +37,15 @@ const log = coreLog.getLogger(
  * @returns {boolean} true when the device can hold the texture
  */
 function gridFitsProfile(dims, dataType, numberOfComponents, context) {
-  const profile = getActiveGpuCapabilityProfile();
   const { numBytes } = getBufferConfiguration(
     dataType,
     numberOfComponents || 1,
     { isVolumeBuffer: true }
+  );
+  const profile = profileForGrid(
+    getActiveGpuCapabilityProfile(),
+    dims,
+    numBytes
   );
   const limits = gridLimitsOfProfile(profile, numBytes);
   const grid = {

@@ -87,6 +87,8 @@ function render(path, rendering) {
 beforeEach(() => {
   volumeTextureStore.clear();
   volumeTextureStore.setBudget(0);
+  // The default `auto` reads a WebGL probe, which jest does not have.
+  setActiveGpuCapabilityProfile('high');
 });
 
 afterEach(() => {

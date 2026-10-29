@@ -18,6 +18,7 @@ import volumeTextureStore from '../src/cache/volumeTextureStore';
 import { VoxelManager } from '../src/utilities';
 import {
   getGpuCapabilityProfile,
+  setActiveGpuCapabilityProfile,
   resetActiveGpuCapabilityProfile,
 } from '../src/utilities/gpuCapabilityProfiles';
 
@@ -71,6 +72,8 @@ function render(path, rendering) {
 beforeEach(() => {
   volumeTextureStore.clear();
   volumeTextureStore.setBudget(0);
+  // The default `auto` reads a WebGL probe, which jest does not have.
+  setActiveGpuCapabilityProfile('high');
 });
 
 afterEach(() => {
