@@ -358,7 +358,8 @@ not restate them, and it does not change one.
 
 The automatic GPU limits of
 [cornerstone3D#3020](https://github.com/cornerstonejs/cornerstone3D/issues/3020) have their user
-requirements in **§ User requirements** below (`VRS-U-*`).
+requirements in the specification [GPU device limits](../../specs/core/gpu-device-limits.md)
+(`GPULIMIT-USER-*`).
 
 This document holds the design, in three sections with different change rules:
 
@@ -372,17 +373,8 @@ This document holds the design, in three sections with different change rules:
 
 ## § User requirements
 
-**VRS-U-1.** A viewer that states no GPU profile uses `auto`, which needs no configuration.
-
-**VRS-U-2.** A named profile that the application states overrides `auto`.
-
-**VRS-U-3.** A device that renders a uniform gray above an edge shows a volume reduced, and never
-gray. The first start on a new browser adds less than 250 ms for this.
-
-**VRS-U-4.** A limit that failed once stays until a retest. The application can offer the retest to
-the user, and decides when.
-
-**VRS-U-5.** A reset of the stored record makes the next load find the limits from the start.
+The user requirements of the device limits are `GPULIMIT-USER-*` in
+[GPU device limits](../../specs/core/gpu-device-limits.md). This document does not restate them.
 
 ## § Contracts
 
