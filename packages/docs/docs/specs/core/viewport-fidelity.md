@@ -277,32 +277,30 @@ and it does not make the displayed image lossy.
 - **FIDELITY-UI-2** The indicator is a DOM element in the top-right corner of the
   viewport element. The user does not need to hover over the viewport, and the
   viewport does not need to be the active viewport. The indicator has the same
-  form in every viewport type. The state is on the `data-state`, `data-from`
-  and `data-shown` attributes of `.fi-root`. The styles go into
-  `document.head` once. This serves FIDELITY-USER-1.
-- **FIDELITY-UI-3** `svgStateOf()` and `lineKind()` hold the decision of the
-  state, and the decision has no DOM. A unit test checks the decision without a
-  user interface.
+  form in every viewport type. While the view is degraded, a permanent text
+  label sits beside the icon: `Low Fidelity` for a standing reduction, or
+  `Transient Low Fidelity` for a load or interactive reduction. The label uses
+  a bright red foreground on a black background. The state is on the
+  `data-state`, `data-from`, `data-shown` and `data-label` attributes of
+  `.fi-root`. The styles go into `document.head` once. This serves
+  FIDELITY-USER-1 / FIDELITY-NOTIFY-1.
+- **FIDELITY-UI-3** `svgStateOf()`, `lineKind()`, `fidelityLabelOf()` and
+  `fidelityDetailsTextOf()` hold the decision of the state and the copy, and
+  the decision has no DOM. A unit test checks the decision without a user
+  interface.
 - **FIDELITY-UI-4** The `done` state shows only as a recovery from `loading`,
   `lod` or `lossy`. A change from no indicator to `done` shows nothing. The
   `done` state shows for `DONE_HOLD_MS` (3 seconds) and then fades. The
+  permanent Low Fidelity label is hidden during `done` and after the fade. The
   indicator does not stay over the image after the recovery, because a mark on
   the image can hide a finding. A hover over the corner does not show the
   `done` state again after the fade. This serves FIDELITY-USER-2.
-- **FIDELITY-UI-5** A hover over the indicator shows the details. The details
-  hold these items:
-  - the status;
-  - the delivery quality;
-  - the grid;
-  - the percentage of voxels that have not arrived;
-  - the source and the reduction;
-  - the sample distance.
-
-  The details give the amount as a number, for example `2×2×4`. The details
-  use developer words, and the text is not translated. An application
-  indicator that needs clinician words builds them from `getFidelityState()`
-  or `VIEWPORT_FIDELITY_CHANGED`.
-
+- **FIDELITY-UI-5** A hover over the indicator shows clinician details
+  (FIDELITY-DISCOVER-1..4), built by `fidelityDetailsTextOf()` from the
+  absolute `ViewportFidelityState`: why the image is degraded, how much
+  (percentage arrived, reduction `x/2, y/2, z/4`), and whether waiting should
+  improve the image. The copy avoids GPU, texture and retrieval jargon. The
+  debug badge (`fidelityIndicatorDebug`) keeps a separate developer dump.
 - **FIDELITY-UI-6** A consumer reads the derived state with
   `viewport.getFidelityState()` (FIDELITY-EVENT-5), and observes changes with
   `Events.VIEWPORT_FIDELITY_CHANGED` on the viewport element (FIDELITY-EVENT-2
