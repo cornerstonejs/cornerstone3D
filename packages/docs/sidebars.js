@@ -141,6 +141,7 @@ module.exports = {
             'concepts/cornerstone-core/voxelManager',
             'concepts/cornerstone-core/compositeVoxelManager',
             'concepts/cornerstone-core/volumeRenderStrategy',
+            'concepts/cornerstone-core/volumeRenderSequences',
             'concepts/cornerstone-core/volumeLoader',
             'concepts/cornerstone-core/geometryLoader',
             'concepts/cornerstone-core/cache',

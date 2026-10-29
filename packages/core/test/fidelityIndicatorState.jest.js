@@ -158,9 +158,9 @@ describe('fidelityIndicatorState', () => {
       ).toBe('lossy');
     });
 
-    it('is lossy for a standing box average even when the verdict is lossless', () => {
-      // FIDELITY-STATE-6: standing box average of a coarser grid is lossy at
-      // every magnification (shared 1×1×2 texture).
+    it('is done when a reduction is not visible at the display spacing', () => {
+      // FIDELITY-STATE-6 / MR-U-5: box average under low magnification is not
+      // a warning (e.g. sagittal/coronal of a 1×1×2 texture when p ≥ 2S).
       expect(
         lineKind(
           line({
@@ -181,10 +181,12 @@ describe('fidelityIndicatorState', () => {
             },
           })
         )
-      ).toBe('lossy');
+      ).toBe('done');
     });
 
-    it('is lossy for a standing box average when the verdict flags resolution', () => {
+    it('is lossy when a spatial reduction is visible at the display spacing', () => {
+      // Same 1×1×2 texture with a resolution cause → lossy (acquisition plane,
+      // or sag/cor after zoom-in).
       expect(
         lineKind(
           line({
@@ -301,9 +303,9 @@ describe('fidelityIndicatorState', () => {
         ])
       );
 
-    it('shows lossy for a standing box average displayed at its own spacing', () => {
+    it('shows no indicator for a box average displayed at its own spacing', () => {
       expect(stateOf(display2mm(), VoxelReductions.BoxAverage, [2, 2, 1])).toBe(
-        'lossy'
+        'done'
       );
     });
 
@@ -314,18 +316,19 @@ describe('fidelityIndicatorState', () => {
     });
 
     it('shows lossy for a box average on the axis normal to a slice view', () => {
-      // Through-plane 1×1×2 and standing box-average rule.
+      // Acquisition / through-plane 1×1×2: reduced axis k is the view normal,
+      // so the check compares with source slice spacing S → always lossy.
       expect(stateOf(display2mm(), VoxelReductions.BoxAverage, [1, 1, 2])).toBe(
         'lossy'
       );
-      // Volume3D also stays lossy: standing box average, not magnification.
+      // Volume3D uses the display pixel size on every axis (p = 2 mm ≥ 2S).
       expect(
         stateOf(
           display2mm([0, 0, 1], true),
           VoxelReductions.BoxAverage,
           [1, 1, 2]
         )
-      ).toBe('lossy');
+      ).toBe('done');
     });
 
     it('shows lossy for an in-plane box average in a double-oblique view', () => {
@@ -367,9 +370,9 @@ describe('fidelityIndicatorState', () => {
       }
     };
 
-    it('shows lossy for a standing box average at CSS and device pixel spacing', () => {
-      // FIDELITY-STATE-6: standing box average is lossy at every magnification.
-      expect(stateAtRatio(1)).toBe('lossy');
+    it('judges a box average at device pixels, not CSS pixels', () => {
+      expect(stateAtRatio(1)).toBe('done');
+      // At devicePixelRatio 2 one device pixel is 1 mm, finer than the data.
       expect(stateAtRatio(2)).toBe('lossy');
     });
 

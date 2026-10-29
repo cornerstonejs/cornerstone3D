@@ -235,12 +235,10 @@ describe('notifyFidelityStateChanged (FIDELITY-EVENT-4)', () => {
     });
   }
 
-  it('does not fire on a zoom of a standing box average', () => {
-    // FIDELITY-STATE-6: standing box average stays lossy at every magnification,
-    // so display-spacing-only zooms do not change the derived state.
+  it('does not fire on a zoom that keeps the verdict', () => {
     const viewport = source();
 
-    for (const spacing of [4, 3, 2.5, 2, 1]) {
+    for (const spacing of [4, 3, 2.5, 2]) {
       notifyFidelityStateChanged(viewport, [
         boxAverageAt([spacing, spacing, 1]),
       ]);
@@ -249,25 +247,16 @@ describe('notifyFidelityStateChanged (FIDELITY-EVENT-4)', () => {
     expect(viewport.events).toHaveLength(1);
   });
 
-  it('fires when a standing box average upgrades to full resolution', () => {
+  it('fires on a zoom that changes a box-average verdict', () => {
     const viewport = source();
 
     notifyFidelityStateChanged(viewport, [boxAverageAt([2, 2, 1])]);
-    notifyFidelityStateChanged(viewport, [
-      line({
-        reductionFactors: [1, 1, 1],
-        fullResolution: true,
-        record: record({
-          grid: grid([64, 64, 64], [1, 1, 1]),
-          reduction: VoxelReductions.None,
-        }),
-        displaySpacing: [1, 1, 1],
-      }),
-    ]);
+    notifyFidelityStateChanged(viewport, [boxAverageAt([1, 1, 1])]);
 
     expect(viewport.events).toHaveLength(2);
-    expect(viewport.events[0].state.lossy).toBe(true);
-    expect(viewport.events[1].state.lossy).toBe(false);
+    expect(viewport.events[1].state.displayResolution.spacing).toEqual([
+      1, 1, 1,
+    ]);
   });
 
   it('fires nothing for a viewport with suppressEvents', () => {
