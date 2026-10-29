@@ -8,6 +8,11 @@ type DemoConfig = {
         renderBackend?: 'auto' | 'gpu' | 'cpu';
       };
       useGenericViewport?: boolean;
+      lossyDownsampling?: {
+        final?: boolean;
+        interactive?: boolean;
+        interleavedLoading?: boolean;
+      };
     };
   };
 };
@@ -75,6 +80,29 @@ export function applyUrlParameterOverridesToDemoConfig(
         planar: {
           renderBackend: 'cpu',
         },
+      },
+    },
+  });
+}
+
+/**
+ * Reads ?finalDownsampling=true|false, which turns final downsampling on or
+ * off. Without the parameter, the example keeps its own value, and an example
+ * that states none keeps the Cornerstone3D default, which is off.
+ */
+export function applyLossyDownsamplingOverride(
+  config: DemoConfig = {}
+): DemoConfig {
+  const value = getUrlParam('finalDownsampling');
+
+  if (value === null) {
+    return config;
+  }
+
+  return utilities.deepMerge(config, {
+    core: {
+      rendering: {
+        lossyDownsampling: { final: value === 'true' || value === '1' },
       },
     },
   });

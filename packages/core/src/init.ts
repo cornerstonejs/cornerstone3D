@@ -1,7 +1,7 @@
 import { getRenderingEngines } from './RenderingEngine/getRenderingEngine';
 let csRenderInitialized = false;
 import deepMerge from './utilities/deepMerge';
-import type { Cornerstone3DConfig } from './types';
+import type { Cornerstone3DConfig, LossyDownsampling } from './types';
 import CentralizedWebWorkerManager from './webWorkerManager/webWorkerManager';
 import { getRenderingCapabilities } from './utilities/renderingCapabilities';
 import triggerEvent from './utilities/triggerEvent';
@@ -57,6 +57,11 @@ const defaultConfig: Cornerstone3DConfig = {
     volumeRendering: {
       /** Multiplier for the calculated sample distance */
       sampleDistanceMultiplier: 1,
+    },
+    lossyDownsampling: {
+      final: false,
+      interactive: true,
+      interleavedLoading: true,
     },
   },
 
@@ -451,6 +456,31 @@ function getWebWorkerManager() {
   return webWorkerManager;
 }
 
+/**
+ * The lossy downsampling that the viewer may use, with the defaults filled in.
+ * See 
+endering.lossyDownsampling of the configuration.
+ */
+function getLossyDownsampling(): Required<LossyDownsampling> {
+  return {
+    ...(defaultConfig.rendering
+      .lossyDownsampling as Required<LossyDownsampling>),
+    ...config.rendering?.lossyDownsampling,
+  };
+}
+
+/**
+ * Turns kinds of lossy downsampling on or off. A kind that change omits keeps
+ * its value. A viewport that already holds a texture keeps it until its next
+ * provision, so an application states this before it opens a viewport.
+ */
+function setLossyDownsampling(change: LossyDownsampling): void {
+  config.rendering = {
+    ...config.rendering,
+    lossyDownsampling: { ...getLossyDownsampling(), ...change },
+  };
+}
+
 async function peerImport(moduleId: string) {
   return config.peerImport(moduleId);
 }
@@ -469,6 +499,8 @@ export {
   resolveAutoRenderBackend,
   getConfiguration,
   setConfiguration,
+  getLossyDownsampling,
+  setLossyDownsampling,
   getWebWorkerManager,
   canRenderFloatTextures,
   peerImport,

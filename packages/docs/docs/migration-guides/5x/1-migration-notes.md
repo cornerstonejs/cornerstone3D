@@ -470,39 +470,57 @@ image of any encapsulated syntax takes the direct fragment path.
 - If you special-cased `1.2.840.10008.1.2.4.140` as JPEG XL anywhere in your own
   code, change it to the `.110`/`.111`/`.112` block.
 
-## Volume textures: the default edge limit is 2048
+## Volume textures: lossy downsampling is a configuration choice
 
 ### What Changed
 
-A volume texture now comes from a GPU capability profile. When an application
-states no profile, the `high` profile applies, and it limits each edge of a 3D
-texture to 2048 voxels. A volume with a longer axis draws from a box-average
-reduction of that axis. Before this release, the mapper allocated the texture at
-the full dimensions of the volume.
+endering.lossyDownsampling of the init configuration states which lossy
+downsampling the viewer may use:
 
-For example, a CT of 512 × 512 × 2464 now draws with a factor of 2 along k, also
-on a device that supports a 4096 texture edge.
+| Kind               | Default | What it does                                                                                 |
+| ------------------ | ------- | -------------------------------------------------------------------------------------------- |
+| inal               | alse    | Reduces a volume texture that exceeds the GPU settings preset. The image stays reduced.      |
+| interactive        | rue     | Lowers the detail during an interaction, for example the sample distance of a 3D rotation.   |
+| interleavedLoading | rue     | Fills the frames that have not loaded yet with copies of the nearby frames, during the load. |
+
+With the defaults, a volume texture has the full dimensions of the volume, as in
+4.x. The interactive and interleavedLoading kinds keep the behaviour of 4.x.
+
+With inal: true, a volume texture comes from a GPU settings preset. A preset
+is a named set of values (low-tablet, low, medium, high), and nothing
+probes the device to choose it. When an application selects no preset, high
+applies, and it limits each edge of a 3D texture to 2048 voxels. A volume with a
+longer axis then draws from a box-average reduction of that axis. For example, a
+CT of 512 × 512 × 2464 draws with a factor of 2 along k, also on a device that
+supports a 4096 texture edge.
 
 ### Why This Matters
 
-The reported `MAX_3D_TEXTURE_SIZE` is not a reliable limit, so no profile reads
-it. Some Android devices report 2048 or more, but render only 256 per axis. No
-tested device renders beyond 2048.
+Each kind of lossy downsampling shows pixels that differ from the source data.
+An application turns on a kind only when it also tells the user that the image
+is lossy.
 
-A volume with an axis longer than 2048 shows less detail along that axis than in
-4.x. The voxel quality record of the viewport states the reduction
-(`reduction: boxAverage`), so a fidelity readout can show it to the user.
+The reported MAX_3D_TEXTURE_SIZE is not a reliable limit, so no preset reads
+it. Some Android devices report 2048 or more, but render only 256 per axis. No
+tested device renders beyond 2048. Without final downsampling, such a device can
+show a uniform gray image or lose its WebGL context.
 
 ### Migration Guidance
 
-- **No action is needed** for a volume with no axis longer than 2048.
-- **Choose the profile of the device.** Call `setActiveGpuCapabilityProfile`
-  before a viewport adds its actors. Use `low` or `low-tablet` for devices that
-  render only 256 per axis.
-- **For a full-resolution long axis,** the only profile with a larger edge is
-  `high-texture-4096`. That profile is internal: it is a control for comparison,
-  and no device is tested at that edge. Use it only on hardware that you have
-  tested.
+- **No action is needed** to keep the behaviour of 4.x.
+- **To fit the texture to a weak device,** set
+
+endering.lossyDownsampling.final to rue in the init configuration, or
+call setLossyDownsampling({ final: true }) before a viewport adds its
+actors. Then call setGpuSettingsPreset. Use low or low-tablet for a
+device that renders only 256 per axis.
+
+- **To show no lossy pixels at all,** set interactive and
+  interleavedLoading to alse as well.
+- **For a full-resolution long axis with final downsampling on,** the only
+  preset with a larger edge is high-texture-4096. That preset is internal: it
+  is a control for comparison, and no device is tested at that edge. Use it only
+  on hardware that you have tested.
 
 ## Locked segments stop the brush, and do not cause an overlap
 

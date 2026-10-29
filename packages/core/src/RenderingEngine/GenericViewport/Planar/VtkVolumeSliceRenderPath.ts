@@ -17,7 +17,7 @@ import type {
   VolumeStrategyProvider,
   VolumeStrategyProvisionReason,
 } from '../../helpers/volumeRenderStrategy';
-import { getActiveGpuCapabilityProfile } from '../../../utilities/gpuCapabilityProfiles';
+import { getActiveGpuSettings } from '../../../utilities/gpuSettingsPresets';
 import { ActorRenderMode } from '../../../types';
 import type {
   IImageData,
@@ -416,7 +416,7 @@ export class VtkVolumeSliceRenderPath
     const held = rendering.strategies ?? [];
     const built = this.provideStrategies({
       volume: rendering.imageVolume,
-      profile: getActiveGpuCapabilityProfile(),
+      gpuSettings: getActiveGpuSettings(),
       viewportId: rendering.viewportId,
       reason,
     });

@@ -5,6 +5,8 @@ import {
   jest,
   afterEach,
   beforeEach,
+  beforeAll,
+  afterAll,
 } from '@jest/globals';
 import { VtkVolumeSliceRenderPath } from '../src/RenderingEngine/GenericViewport/Planar/VtkVolumeSliceRenderPath';
 import {
@@ -18,11 +20,17 @@ import ImageVolume from '../src/cache/classes/ImageVolume';
 import volumeTextureStore from '../src/cache/volumeTextureStore';
 import VoxelManager from '../src/utilities/VoxelManager';
 import {
-  getGpuCapabilityProfile,
-  setActiveGpuCapabilityProfile,
-  resetActiveGpuCapabilityProfile,
-} from '../src/utilities/gpuCapabilityProfiles';
+  getGpuSettingsPreset,
+  setGpuSettingsPreset,
+  resetGpuSettingsPreset,
+} from '../src/utilities/gpuSettingsPresets';
 import { VoxelStatistics } from '../src/enums';
+import { setLossyDownsampling } from '../src/init';
+
+// These tests check the reductions of final downsampling, which is off by
+// default.
+beforeAll(() => setLossyDownsampling({ final: true }));
+afterAll(() => setLossyDownsampling({ final: false }));
 
 // A STRATEGY IS THE UNIT: it states how a render gets its voxels, and the names
 // of the texture sets derive from it. The provider builds the strategies when
@@ -66,16 +74,16 @@ function makeRendering(volume) {
 function context(volume, profileId = 'high') {
   return {
     volume,
-    profile: getGpuCapabilityProfile(profileId),
+    gpuSettings: getGpuSettingsPreset(profileId),
     viewportId: 'viewport-1',
   };
 }
 
 /** Calls the private member that provisions, as `addData` does. */
 function provision(path, rendering, profileId, reason = 'initial') {
-  const active = getGpuCapabilityProfile(profileId ?? 'high');
+  const active = getGpuSettingsPreset(profileId ?? 'high');
 
-  setActiveGpuCapabilityProfile(active.id);
+  setGpuSettingsPreset(active.id);
   path.provisionStrategies(rendering, reason);
 }
 
@@ -90,7 +98,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  resetActiveGpuCapabilityProfile();
+  resetGpuSettingsPreset();
 });
 
 describe('the default provider builds the strategies', () => {
@@ -124,7 +132,25 @@ describe('the default provider builds the strategies', () => {
     ]);
   });
 
-  it('gives no full-resolution strategy when the profile cannot hold it', () => {
+  it('builds the full-resolution strategy with final downsampling off', () => {
+    const volume = makeVolume();
+
+    setLossyDownsampling({ final: false });
+
+    try {
+      const strategies = defaultVolumeStrategyProvider(
+        context(volume, 'low-tablet')
+      );
+
+      expect(strategies.map((strategy) => strategy.name)).toEqual([
+        'full-resolution/full-extent',
+      ]);
+    } finally {
+      setLossyDownsampling({ final: true });
+    }
+  });
+
+  it('gives no full-resolution strategy when the preset cannot hold it', () => {
     const volume = makeVolume();
 
     expect(
@@ -234,12 +260,12 @@ describe('the render path provisions once and selects per render', () => {
     // A render component that implements phases supplies a function like this.
     const select = ({ strategies }) => strategies[strategies.length - 1];
     const path = new VtkVolumeSliceRenderPath(
-      ({ volume: aVolume, profile }) => [
+      ({ volume: aVolume, gpuSettings }) => [
         provisionReducedResolutionStrategy({
           volume: aVolume,
-          profile: getGpuCapabilityProfile('low-tablet'),
+          gpuSettings: getGpuSettingsPreset('low-tablet'),
         }),
-        provisionFullResolutionStrategy({ volume: aVolume, profile }),
+        provisionFullResolutionStrategy({ volume: aVolume, gpuSettings }),
       ],
       select
     );
@@ -274,11 +300,11 @@ describe('the render path provisions once and selects per render', () => {
       ({ volume: aVolume }) => [
         provisionReducedResolutionStrategy({
           volume: aVolume,
-          profile: getGpuCapabilityProfile('low-tablet'),
+          gpuSettings: getGpuSettingsPreset('low-tablet'),
         }),
         provisionFullResolutionStrategy({
           volume: aVolume,
-          profile: getGpuCapabilityProfile('high'),
+          gpuSettings: getGpuSettingsPreset('high'),
         }),
       ],
       ({ strategies }) => (useFull ? strategies[1] : strategies[0])
@@ -369,13 +395,13 @@ describe('the strategies are rebuilt when something changes', () => {
         ? [
             provisionReducedResolutionStrategy({
               volume: aVolume,
-              profile: getGpuCapabilityProfile('low-tablet'),
+              gpuSettings: getGpuSettingsPreset('low-tablet'),
             }),
           ]
         : [
             provisionFullResolutionStrategy({
               volume: aVolume,
-              profile: getGpuCapabilityProfile('high'),
+              gpuSettings: getGpuSettingsPreset('high'),
             }),
           ]
     );
@@ -440,7 +466,7 @@ describe('the strategies are rebuilt when something changes', () => {
 
 describe('the render reports the quality', () => {
   it('reports the record of the grid that it really bound', () => {
-    setActiveGpuCapabilityProfile('low-tablet');
+    setGpuSettingsPreset('low-tablet');
 
     const volume = makeVolume();
     const rendering = makeRendering(volume);
@@ -499,7 +525,7 @@ describe('the actor helpers choose a strategy for either architecture', () => {
       provideStrategies: ({ volume: aVolume }) =>
         defaultVolumeStrategyProvider({
           volume: aVolume,
-          profile: getGpuCapabilityProfile('low-tablet'),
+          gpuSettings: getGpuSettingsPreset('low-tablet'),
         }),
     });
 
@@ -516,7 +542,7 @@ describe('the actor helpers choose a strategy for either architecture', () => {
       provideStrategies: ({ volume: aVolume }) =>
         defaultVolumeStrategyProvider({
           volume: aVolume,
-          profile: getGpuCapabilityProfile('high'),
+          gpuSettings: getGpuSettingsPreset('high'),
         }),
     });
 
