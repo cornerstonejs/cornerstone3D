@@ -73,7 +73,7 @@ function volumetricGetStatistics(
   stats: NamedStatistics,
   options: {
     spacing?: number[] | number;
-    calibration?: unknown;
+    calibration?: Types.IImageCalibration;
     hasPixelSpacing?: boolean;
     unit?: string;
   }
@@ -134,7 +134,7 @@ export class VolumetricCalculator extends BasicStatsCalculator {
   public static getStatistics(options: {
     spacing?: number[] | number;
     unit?: string;
-    calibration?: unknown;
+    calibration?: Types.IImageCalibration;
     hasPixelSpacing?: boolean;
   }): NamedStatistics {
     const optionsWithUnit = {
@@ -180,7 +180,7 @@ export class InstanceVolumetricCalculator extends InstanceBasicStatsCalculator {
   getStatistics(options?: {
     spacing?: number[] | number;
     unit?: string;
-    calibration?: unknown;
+    calibration?: Types.IImageCalibration;
     hasPixelSpacing?: boolean;
   }): NamedStatistics {
     const optionsWithUnit = {
