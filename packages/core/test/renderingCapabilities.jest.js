@@ -1,14 +1,23 @@
 import {
   detectRenderingCapabilities,
   getRenderingCapabilities,
+  getStoredRenderingCapabilities,
+  recordRenderingCapabilityFailure,
+  recordRenderingCapabilitySuccess,
   resetRenderingCapabilities,
+  retestRenderingCapabilities,
   RENDERING_CAPABILITIES_PROBE_VERSION,
 } from '../src/utilities/renderingCapabilities';
-import { getSupportedTextureFormats } from '../src/utilities/textureSupport';
+import { probeRenderingLimits } from '../src/utilities/textureSupport';
 
 jest.mock('../src/utilities/textureSupport', () => ({
-  getSupportedTextureFormats: jest.fn(),
+  probeRenderingLimits: jest.fn(),
+  probeTextureEdge: jest.fn(),
 }));
+
+// The probe needs WebGL, which jest does not have, so the probe is a mock and
+// these tests cover what the record does with its results.
+const getSupportedTextureFormats = probeRenderingLimits;
 
 const STORAGE_KEY = 'cornerstone3D.renderingCapabilities';
 
@@ -63,7 +72,11 @@ describe('renderingCapabilities', () => {
     window.localStorage.clear();
     resetRenderingCapabilities();
     getSupportedTextureFormats.mockReset();
-    getSupportedTextureFormats.mockReturnValue({ ...ALL_FORMATS });
+    getSupportedTextureFormats.mockReturnValue({
+      formats: { ...ALL_FORMATS },
+      max3DTextureSize: 2048,
+      reliableEdge: 2048,
+    });
   });
 
   afterEach(() => {
@@ -90,6 +103,7 @@ describe('renderingCapabilities', () => {
     expect(capabilities).toMatchObject({
       webgl: true,
       maxTextureSize: 16384,
+      max3DTextureSize: 2048,
       renderer: 'NVIDIA GeForce RTX 3080',
       softwareRasterizer: false,
       ...ALL_FORMATS,
@@ -198,5 +212,75 @@ describe('renderingCapabilities', () => {
 
     const third = getRenderingCapabilities();
     expect(third).not.toBe(first);
+  });
+
+  it('keeps the largest success and the smallest failure, with counts', () => {
+    mockWebGL();
+    detectRenderingCapabilities();
+
+    recordRenderingCapabilitySuccess('textureBytes', 1000);
+    recordRenderingCapabilitySuccess('textureBytes', 800);
+    recordRenderingCapabilitySuccess('textureBytes', 2000);
+    recordRenderingCapabilityFailure('textureBytes', 4000);
+    recordRenderingCapabilityFailure('textureBytes', 3000);
+
+    // The record survives a new page.
+    resetRenderingCapabilities();
+    const stored = getStoredRenderingCapabilities();
+
+    expect(stored.edge.reliable).toEqual({ value: 2048, successes: 1 });
+    expect(stored.textureBytes.reliable).toEqual({ value: 2000, successes: 1 });
+    expect(stored.textureBytes.lost).toEqual({ value: 3000, failures: 2 });
+
+    // One failure does not stay when the value works later.
+    recordRenderingCapabilitySuccess('textureBytes', 3000);
+
+    expect(getStoredRenderingCapabilities().textureBytes.lost).toBeUndefined();
+  });
+
+  it('records a pending allocation that a stopped page left as a crash', () => {
+    mockWebGL();
+    detectRenderingCapabilities();
+    window.localStorage.setItem(
+      `${STORAGE_KEY}.pending.another-tab`,
+      JSON.stringify({
+        renderer: 'NVIDIA GeForce RTX 3080',
+        probeVersion: RENDERING_CAPABILITIES_PROBE_VERSION,
+        totalBytes: 9000,
+        at: Date.now() - 60000,
+      })
+    );
+
+    resetRenderingCapabilities();
+    const stored = getStoredRenderingCapabilities();
+
+    expect(stored.gpuBytes.crash).toEqual({ value: 9000, failures: 1 });
+    expect(
+      window.localStorage.getItem(`${STORAGE_KEY}.pending.another-tab`)
+    ).toBeNull();
+  });
+
+  it('clears the failures of the selected categories on a retest', () => {
+    mockWebGL();
+    detectRenderingCapabilities();
+    recordRenderingCapabilityFailure('edge', 4096);
+    recordRenderingCapabilityFailure('textureBytes', 3000);
+    recordRenderingCapabilityFailure('gpuBytes', 9000);
+
+    retestRenderingCapabilities({ edge: true });
+
+    let stored = getStoredRenderingCapabilities();
+    expect(stored.edge.failed).toBeUndefined();
+    expect(stored.textureBytes.lost.value).toBe(3000);
+    expect(stored.gpuBytes.crash.value).toBe(9000);
+
+    retestRenderingCapabilities();
+
+    stored = getStoredRenderingCapabilities();
+    expect(stored.textureBytes.lost).toBeUndefined();
+    expect(stored.gpuBytes.crash).toBeUndefined();
+    // The formats were cleared too, so the detection probed again.
+    expect(stored.formats).toEqual(ALL_FORMATS);
+    expect(getSupportedTextureFormats).toHaveBeenCalledTimes(2);
   });
 });

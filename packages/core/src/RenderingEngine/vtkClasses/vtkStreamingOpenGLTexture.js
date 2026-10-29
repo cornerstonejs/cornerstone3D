@@ -9,8 +9,21 @@ import VoxelStatistics from '../../enums/VoxelStatistics';
 import ImageQualityStatus from '../../enums/ImageQualityStatus';
 import autoLoad from '../../utilities/autoLoad';
 import { getConfiguration } from '../../init';
+import volumeTextureStore from '../../cache/volumeTextureStore';
+import { noteTextureAllocation } from '../../utilities/gpuAllocationTracker';
 
 const DEFAULT_MAX_SLICES_PER_RENDER = 16;
+
+const BYTES_PER_ELEMENT = {
+  Uint8Array: 1,
+  Int8Array: 1,
+  Uint8ClampedArray: 1,
+  Uint16Array: 2,
+  Int16Array: 2,
+  Float32Array: 4,
+  Uint32Array: 4,
+  Int32Array: 4,
+};
 const DEFAULT_MAX_MILLISECONDS_PER_RENDER = 8;
 
 /**
@@ -97,11 +110,42 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
   const superCreate3DFromRaw = publicAPI.create3DFromRaw;
 
   /**
+   * Tells the allocation tracker about a new GPU allocation, before it
+   * happens. An update of some extents of the same texture is no allocation.
+   */
+  function noteAllocation({ width, height, depth, numComps, dataType }) {
+    const shape = `${width}x${height}x${depth}x${numComps}x${dataType}`;
+
+    if (shape === model.allocatedShape) {
+      return;
+    }
+
+    model.allocatedShape = shape;
+
+    const textureBytes =
+      width *
+      height *
+      depth *
+      (numComps || 1) *
+      (BYTES_PER_ELEMENT[dataType] ?? 4);
+
+    noteTextureAllocation({
+      textureBytes,
+      totalBytes: Math.max(volumeTextureStore.bytesUsed, textureBytes),
+      maxEdge: Math.max(width, height, depth),
+      volumeId: model.volumeId,
+      gl: model.context,
+    });
+  }
+
+  /**
    * The mappers allocate with `data: null`, which leaves the GPU storage empty,
    * so every slice needs a fill. `modified()` no longer implies that, and a
    * re-allocation after the first fill would otherwise stay black.
    */
   publicAPI.create3DFromRaw = (options) => {
+    noteAllocation(options);
+
     const created = superCreate3DFromRaw(options);
 
     if (created && !options.data) {

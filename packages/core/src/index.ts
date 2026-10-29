@@ -216,6 +216,17 @@ import {
 import {
   getRenderingCapabilities,
   detectRenderingCapabilities,
+  getStoredRenderingCapabilities,
+  retestRenderingCapabilities,
+  resetRenderingCapabilities,
+} from './utilities/renderingCapabilities';
+export type {
+  RenderingCapabilities,
+  RenderingCapabilityCategory,
+  RenderingCapabilityFailure,
+  RenderingCapabilitySuccess,
+  RetestRenderingCapabilitiesOptions,
+  StoredRenderingCapabilities,
 } from './utilities/renderingCapabilities';
 
 // Classes
@@ -467,6 +478,9 @@ export {
   getEffectiveRenderBackend,
   getRenderingCapabilities,
   detectRenderingCapabilities,
+  getStoredRenderingCapabilities,
+  retestRenderingCapabilities,
+  resetRenderingCapabilities,
   // GenericViewport
   getUseGenericViewport,
   // Geometry Loader
