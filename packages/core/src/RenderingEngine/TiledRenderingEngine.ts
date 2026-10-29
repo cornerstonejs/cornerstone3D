@@ -406,11 +406,8 @@ class TiledRenderingEngine extends BaseRenderingEngine {
     });
 
     // Fidelity event after IMAGE_RENDERED so consumers can query the frame
-    // that was just drawn (FIDELITY-EVENT-2..4). Declared on IViewportFidelity;
-    // both Viewport and GenericViewport implement it.
-    renderedViewports.forEach((viewport) => {
-      viewport.notifyFidelityStateChanged();
-    });
+    // that was just drawn.
+    this._notifyFidelityOfRenderedViewports(renderedViewports);
   };
 
   /**

@@ -29,9 +29,21 @@ describe('fidelityDetailsTextOf (FIDELITY-DISCOVER)', () => {
     });
 
     expect(text).toContain('Image detail is reduced');
-    expect(text).toContain('Reduction: x/1, y/1, z/2');
+    expect(text).toContain('Reduction: i/1, j/1, k/2');
     expect(text).not.toContain('Waiting should improve');
     expect(text).not.toMatch(/GPU|texture|boxAverage|clientDerived/i);
+  });
+
+  it('reports full detail for a reduced texture when the view is lossless', () => {
+    const text = fidelityDetailsTextOf({
+      cause: 'deviceTextureLimit',
+      transient: false,
+      magnitude: [1, 1, 2],
+      shownState: 'done',
+      lossy: false,
+    });
+
+    expect(text).toBe('Image is at full available detail.');
   });
 
   it('describes interactive LOD without jargon', () => {
