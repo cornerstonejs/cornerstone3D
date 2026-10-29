@@ -486,11 +486,14 @@ renderer, in the `localStorage` key `cornerstone3D.renderingCapabilities`:
   finds the largest edge that renders correctly, from 2048 down to 16. When a
   volume needs a larger edge, the probe runs at that edge before the texture is
   allocated, up to `MAX_3D_TEXTURE_SIZE`.
-- **The texture memory.** The record keeps the total texture bytes that
-  worked, the total at which a WebGL context was lost, and the total at which
-  the tab stopped. `auto` stays below a failed total.
-- **The start.** With no stored value, `auto` starts from `low` for a software
-  rasterizer, `low-tablet` for a mobile GPU, and `medium` for any other GPU.
+- **The texture memory.** The record keeps the total texture bytes of the page
+  that worked, the total at which a WebGL context was lost, and the total at
+  which the tab stopped. A new texture gets the memory limit of `auto` minus
+  the texture bytes of the other volumes, so the page total stays below a
+  failed total. `auto` does not evict the textures of another volume.
+- **The start.** The memory starts from `low` for a software rasterizer,
+  `low-tablet` for a mobile GPU, and `medium` for any other GPU. The edge is
+  always an edge that the probe passed.
 
 A volume with an axis longer than the limit draws from a box-average reduction
 of that axis. Before this release, the mapper allocated the texture at the full
@@ -512,6 +515,21 @@ than in 4.x. The voxel quality record of the viewport states the reduction
 
 The probe version of the stored record changes from 1 to 2, so each browser
 probes again once.
+
+### API changes
+
+- `GpuCapabilityProfileId` has a new member `'auto'`. An exhaustive `switch`
+  over the type needs a new case.
+- `defaultGpuCapabilityProfileId` changes from `'high'` to `'auto'`.
+- `getGpuCapabilityProfiles()` returns `auto` first, then the named profiles.
+  Its first call can run the probe, which creates a WebGL context.
+- The start memory on a desktop GPU changes from 32 GB (`high`) to 8 GB
+  (`medium`), and the page total of all volumes counts against it. More
+  volumes, or larger volumes, therefore draw reduced than under `high`. A
+  mobile GPU starts at 1 GB.
+- New exports: `getStoredRenderingCapabilities`, `retestRenderingCapabilities`,
+  `resetRenderingCapabilities`, `setCapabilityStorage`, `getCapabilityStorage`,
+  `setEdgeRenderCheck`, and their types.
 
 ### Migration Guidance
 
