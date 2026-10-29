@@ -101,8 +101,8 @@ const seriesOptions = {
   // axis applies under a named profile, and under `auto` on a device whose
   // MAX_3D_TEXTURE_SIZE is 2048 or whose edge probe fails at 2464. Nothing is
   // interleaved: a streak in this series comes from the code and not from the
-  // acquisition. This series is the test data of commit 9, which gives a derived representation that
-  // follows the load.
+  // acquisition. This series is the test data of commit 9, which gives a
+  // derived representation that follows the load.
   'CT body 2464 images of 512 x 512': {
     StudyInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.99.1071.24993177073256607564948872275593',
@@ -205,7 +205,10 @@ const getOrCreateTiming = (id: string) => ({
 
 function resetTimingInfo() {
   for (const id of timingLines.keys()) {
-    timingLines.set(id, `Waiting ${id}`);
+    // The GPU record line describes the device, not the load.
+    if (id !== 'gpuRecord') {
+      timingLines.set(id, `Waiting ${id}`);
+    }
   }
   renderTiming();
 }
@@ -621,16 +624,37 @@ async function run() {
 
   probePanel.appendChild(probeOutput);
 
+  // One line for a test on a device: the edge that passed, the edge that
+  // failed, each with its count, the edge that `auto` uses, and the probe time.
+  const gpuSummary = () => {
+    const stored = getStoredRenderingCapabilities();
+    const { reliable, failed } = stored?.edge ?? {};
+
+    return [
+      `GPU edge: reliable ${reliable?.value ?? 'none'} (${reliable?.successes ?? 0} successes)`,
+      `failed ${failed?.value ?? 'none'} (${failed?.failures ?? 0} failures)`,
+      `${getActiveGpuCapabilityProfile().id} edge ${getActiveGpuCapabilityProfile().maxTextureEdge}`,
+      `probe ${stored?.probeMs ?? '-'} ms`,
+    ].join(', ');
+  };
+
+  getOrCreateTiming('gpuRecord').innerText = gpuSummary();
+
   const showGpuRecord = () => {
-    probeOutput.textContent = JSON.stringify(
-      {
-        activeProfile: getActiveGpuCapabilityProfile(),
-        storedRecord: getStoredRenderingCapabilities(),
-        capabilities: getRenderingCapabilities(),
-      },
-      null,
-      2
-    );
+    getOrCreateTiming('gpuRecord').innerText = gpuSummary();
+    probeOutput.textContent =
+      `${gpuSummary()}
+
+` +
+      JSON.stringify(
+        {
+          activeProfile: getActiveGpuCapabilityProfile(),
+          storedRecord: getStoredRenderingCapabilities(),
+          capabilities: getRenderingCapabilities(),
+        },
+        null,
+        2
+      );
   };
 
   addButtonToToolbar({
@@ -765,6 +789,8 @@ async function run() {
       imageRetrieveMetadataProvider.add('volume', config);
     }
     resetTimingInfo();
+    // The probe at a larger edge runs when the viewports add their actors.
+    setTimeout(showGpuRecord, 2000);
     // The segmentation starts with the CT, so both loads show side by side.
     const segmentation = prepareSegmentation(selectedSeries, imageIds);
 
