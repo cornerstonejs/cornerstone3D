@@ -1,0 +1,40 @@
+{
+  "name": "Volumes — slices in position order",
+  "notes": [
+    "The default `volume3d` rule keeps the default instance order",
+    "(InstanceNumber). InstanceNumber does not always follow the position of",
+    "the slice, so the stack order and the volume order can differ.",
+    "",
+    "This rule claims the same instances as `volume3d`, and orders the slices",
+    "of each display set by `sliceDistance`: the distance along the normal of",
+    "the image plane, from one origin for the series. An image that is not in",
+    "the main plane has no distance, and goes after the images that have one.",
+    "",
+    "Priority 89: the rule runs after the slot 80 that is reserved for a later",
+    "default `dynamicVolume` rule, and just before `volume3d` (90), so it",
+    "claims the instances that `volume3d` would claim. A later 4D series stays",
+    "with `dynamicVolume`, which orders the slices of each dimension group.",
+    "The `matches` of this rule is a copy of the `matches` of `volume3d`.",
+    "",
+    "The display sets of this rule have `splitRuleId` `volumePositionOrder`, so",
+    "a hanging protocol that selects `splitRuleId` `volume3d` does not find them."
+  ],
+  "rules": {
+    "volumePositionOrder": {
+      "priority": 89,
+      "description": "Multi-slice CT / MR / PT / NM, as volume3d, with the slices in position order.",
+      "matches": {
+        "Modality": ["CT", "MR", "PT", "NM"],
+        "seriesInstanceCount": {
+          "greaterThan": 1
+        },
+        "isImage": true,
+        "Rows": {
+          "notNull": true
+        }
+      },
+      "groupBy": ["SeriesInstanceUID"],
+      "sortBy": ["displaySet.sliceDistance", "InstanceNumber"]
+    }
+  }
+}

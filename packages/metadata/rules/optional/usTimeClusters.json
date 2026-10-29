@@ -1,0 +1,40 @@
+{
+  "name": "Ultrasound — one display set for each sweep",
+  "notes": [
+    "An ultrasound series can hold the single images of several sweeps. The",
+    "default rules put all of the single images in one stack.",
+    "",
+    "With this rule, each sweep becomes its own display set, in time order. A",
+    "sweep is a run of images with no gap in time longer than",
+    "`timeClustersMaxGap` seconds (20 for this rule; the default context uses",
+    "30). The description gets the start of the sweep, in seconds from the",
+    "first image of the series.",
+    "",
+    "The rule claims single-frame US images that have a time, and only in a",
+    "series with two or more sweeps. Multi-frame clips stay with the default",
+    "`multiFrame` rule.",
+    "",
+    "Priority -1: the rule runs before every default rule."
+  ],
+  "rules": {
+    "usTimeClusters": {
+      "priority": -1,
+      "description": "Ultrasound single images: one display set for each sweep of contiguous acquisition time.",
+      "context": { "timeClustersMaxGap": 20 },
+      "matches": {
+        "isImage": true,
+        "Modality": "US",
+        "isMultiFrame": false,
+        "sweepCount": { "greaterThan": 1 },
+        "sweepStart": { "notNull": true }
+      },
+      "groupBy": ["SeriesInstanceUID", "sweepStart"],
+      "sortBy": ["acquisitionSeconds"],
+      "attributes": {
+        "SeriesDescription": {
+          "template": "{SeriesDescription} +{sweepOffset} s"
+        }
+      }
+    }
+  }
+}

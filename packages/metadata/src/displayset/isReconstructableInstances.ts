@@ -1,9 +1,10 @@
 /**
  * The volume test of an image display set, from its naturalized instances
  * alone (no imageIds, no metadata providers), so a server gets the same
- * answer as a viewer. It gives the answer of OHIF `isDisplaySetReconstructable`
- * (`isReconstructable`); the plane, the spacing and the lattice come from the
- * `planeGeometry` series function.
+ * answer as a viewer. It follows OHIF `isDisplaySetReconstructable`
+ * (`isReconstructable`), with the differences that `display-sets.md` lists; the
+ * plane, the spacing and the lattice come from the `planeGeometry` series
+ * function.
  *
  * @module displayset/isReconstructableInstances
  */
@@ -53,11 +54,16 @@ function geometryOf(
   ) as PlaneGeometry;
 }
 
+/** True when `PixelSpacing` has two finite values. */
+const hasPixelSpacing = (instance: NaturalizedInstance): boolean =>
+  toFiniteVector(readOwn(instance, 'PixelSpacing'), 2) !== undefined;
+
 /**
- * Single-frame instances: two or more, all with a position and the same rows,
- * columns, samples per pixel and orientation, at two or more locations, and
- * every slice on one regular lattice (a missing slice is allowed; two slices
- * at one location are not).
+ * Single-frame instances: two or more, all with a position, a `PixelSpacing`
+ * and the same rows, columns, samples per pixel and orientation, at two or
+ * more locations, and every slice on one regular lattice (a missing slice is
+ * allowed; two slices at one location are not). With no `PixelSpacing` the
+ * volume has no in-plane scale, so the host must not offer MPR.
  */
 function isSingleFrameVolume(
   instances: readonly NaturalizedInstance[]
@@ -72,7 +78,8 @@ function isSingleFrameVolume(
   if (
     !instances.every(same('Rows')) ||
     !instances.every(same('Columns')) ||
-    !instances.every(same('SamplesPerPixel'))
+    !instances.every(same('SamplesPerPixel')) ||
+    !instances.every((instance) => hasPixelSpacing(instance))
   ) {
     return false;
   }
@@ -166,12 +173,15 @@ function isMultiFrameVolume(instance: NaturalizedInstance): boolean {
 }
 
 /**
- * True when the instances of an image display set form a volume: the answer of
- * OHIF `isDisplaySetReconstructable` for the same instances.
+ * True when the instances of an image display set form a volume. It follows
+ * OHIF `isDisplaySetReconstructable`, except where `display-sets.md` lists a
+ * difference (for example, OHIF does not need `PixelSpacing` on a single-frame
+ * instance).
  *
  * - Single-frame: two or more instances of one size, samples per pixel and
- *   orientation, at two or more locations, on one regular slice lattice (20%
- *   tolerance; a missing slice is allowed, two slices at one location are not).
+ *   orientation, each with a `PixelSpacing`, at two or more locations, on one
+ *   regular slice lattice (20% tolerance; a missing slice is allowed, two
+ *   slices at one location are not).
  * - Multi-frame (the first instance has more than one frame): that instance has
  *   pixel spacing, an orientation and a position; an NM instance is a
  *   reconstructed tomo; and its frames are not all at one location.

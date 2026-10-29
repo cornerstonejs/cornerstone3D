@@ -87,7 +87,8 @@ export const videoTransferSyntaxUids = list([...videoUIDs]);
 
 /**
  * Secondary capture SOP classes that are video when they have at least
- * {@link longVideoMinFrames} frames and no transfer syntax is known. A subset
+ * {@link longVideoMinFrames} frames, no transfer syntax is known, and the
+ * image is not grayscale (`MONOCHROME1`, `MONOCHROME2`). A subset
  * of {@link imageSopClassUids}.
  */
 export const longVideoSopClassUids = list([

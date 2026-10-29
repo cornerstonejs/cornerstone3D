@@ -197,6 +197,45 @@ describe('CT localizers', () => {
       ['volume3d', uidsOf(series)],
     ]);
   });
+
+  it('with the default rules alone, gives a localizer display set and a reconstructable volume', () => {
+    const series = ctSeriesWithScouts();
+    const isLocalizerAndVolume = (displaySet: Record<string, unknown>) => [
+      displaySet.isLocalizer,
+      displaySet.isReconstructable,
+    ];
+
+    expect(
+      displaySetsOf(series, compiledDisplaySetRules, isLocalizerAndVolume)
+    ).toEqual([
+      {
+        rule: 'localizer',
+        uids: uidsOf(series.slice(0, 2)),
+        description: [true, false],
+      },
+      {
+        rule: 'volume3d',
+        uids: uidsOf(series.slice(2)),
+        description: [undefined, true],
+      },
+    ]);
+  });
+
+  it('gives no localizer display set when no image has LOCALIZER in ImageType', () => {
+    const withImageType = (imageType?: string[]) =>
+      ctSeriesWithScouts().map(({ ImageType: _ignored, ...rest }) =>
+        imageType ? { ...rest, ImageType: imageType } : rest
+      );
+
+    for (const series of [
+      withImageType(),
+      withImageType(['DERIVED', 'SECONDARY']),
+    ]) {
+      expect(
+        displaySetsOf(series, compiledDisplaySetRules).map((d) => d.rule)
+      ).toEqual(['volume3d']);
+    }
+  });
 });
 
 describe('ultrasound', () => {

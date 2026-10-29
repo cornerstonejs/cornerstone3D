@@ -9,7 +9,8 @@ import type { NaturalizedInstance } from './types';
  * (`AvailableTransferSyntaxUID`, `TransferSyntaxUID`) in
  * `videoTransferSyntaxUids`; else, only when no transfer syntax is known, a
  * secondary capture of `longVideoSopClassUids` with at least
- * `longVideoMinFrames` frames.
+ * `longVideoMinFrames` frames that is not grayscale (`PhotometricInterpretation`
+ * does not start with `MONOCHROME`).
  *
  * The test is the `isVideo` entry of `context`, else of the active metadata
  * context (`setMetadataContext`), so a customized list or expression applies,

@@ -1,0 +1,45 @@
+{
+  "name": "Volumes — the regular slices of a series become one volume",
+  "notes": [
+    "A CT, MR, PT or NM series can be a volume, except for some images that",
+    "are not on the regular slice spacing: an extra slice, a slice at another",
+    "angle, or a slice between two positions. The default `volume3d` rule puts",
+    "all of them in one display set, which is then not reconstructable.",
+    "",
+    "With this rule, the regular slices become one volume display set, in",
+    "position order. The other images stay with the default rules.",
+    "",
+    "`mixesIrregular` is a series value: the series has a complete regular",
+    "lattice of 3 or more slices, and also other images. Remove",
+    "`&& planeGeometry.complete` to accept a lattice with a missing slice.",
+    "",
+    "A fully regular series, and a series with no lattice, keep the default",
+    "display sets.",
+    "",
+    "Priority -2: the rule runs before every default rule, and before the",
+    "optional rules at -1."
+  ],
+  "rules": {
+    "regularVolume": {
+      "priority": -2,
+      "description": "Volume series with some irregular images: the regular slices become one volume display set.",
+      "context": {
+        "mixesIrregular": "planeGeometry.regularCount >= 3 && planeGeometry.irregularCount > 0 && planeGeometry.complete",
+        "isRegularSlice": "sliceIndex != null"
+      },
+      "matches": {
+        "isImage": true,
+        "Modality": ["CT", "MR", "PT", "NM"],
+        "mixesIrregular": true,
+        "isRegularSlice": true
+      },
+      "groupBy": ["SeriesInstanceUID"],
+      "sortBy": ["displaySet.sliceDistance"],
+      "attributes": {
+        "SeriesDescription": {
+          "template": "{SeriesDescription} ({displaySet.sliceSpacing} mm)"
+        }
+      }
+    }
+  }
+}
