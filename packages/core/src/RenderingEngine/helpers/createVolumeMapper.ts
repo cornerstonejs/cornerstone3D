@@ -5,6 +5,17 @@ import type vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture';
 import vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import vtkBoundingBox from '@kitware/vtk.js/Common/DataModel/BoundingBox';
+import {
+  getActiveGpuCapabilityProfile,
+  gridLimitsOfProfile,
+  profileForGrid,
+} from '../../utilities/gpuCapabilityProfiles';
+import { voxelGridWithinLimits } from '../../utilities/voxelGrid';
+import volumeTextureStore from '../../cache/volumeTextureStore';
+import { noteTextureAllocation } from '../../utilities/gpuAllocationTracker';
+import { coreLog } from '../../utilities/logger';
+
+const log = coreLog.getLogger('RenderingEngine', 'createVolumeMapper');
 
 /** The largest number of samples along one ray of a volume mapper. */
 export const MAXIMUM_SAMPLES_PER_RAY = 4000;
@@ -75,6 +86,11 @@ export default function createVolumeMapper(
  * a shared mapper and apply some changes to it, since otherwise, the changes
  * will be applied to all the mappers that share the same data.
  *
+ * The new mapper is a plain vtk.js mapper, which uploads the complete scalar
+ * array at full resolution, with no reduction. Under `auto`, the edge probe
+ * runs first, the upload counts in the memory record, and a grid above the
+ * limits of the profile logs a warning.
+ *
  * @param sharedMapper - The shared mapper to convert.
  * @returns The converted volume mapper.
  */
@@ -92,6 +108,37 @@ export function convertMapperToNotSharedMapper(sharedMapper: vtkVolumeMapper) {
   });
 
   imageData.getPointData().setScalars(scalarArray);
+
+  const dimensions = imageData.getDimensions();
+  const bytesPerVoxel = values.BYTES_PER_ELEMENT;
+  const textureBytes =
+    dimensions[0] * dimensions[1] * dimensions[2] * bytesPerVoxel;
+  const limits = gridLimitsOfProfile(
+    profileForGrid(getActiveGpuCapabilityProfile(), dimensions, bytesPerVoxel),
+    bytesPerVoxel
+  );
+
+  if (
+    !voxelGridWithinLimits(
+      {
+        dimensions: [dimensions[0], dimensions[1], dimensions[2]],
+        spacing: [1, 1, 1],
+        origin: [0, 0, 0],
+        direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
+      },
+      limits
+    )
+  ) {
+    log.warn(
+      `a full-resolution texture of ${dimensions.join('x')} exceeds the limits of the GPU profile, and this mapper cannot reduce it`
+    );
+  }
+
+  noteTextureAllocation({
+    textureBytes,
+    totalBytes: volumeTextureStore.bytesUsed + textureBytes,
+    maxEdge: Math.max(dimensions[0], dimensions[1], dimensions[2]),
+  });
 
   volumeMapper.setInputData(imageData);
   volumeMapper.setMaximumSamplesPerRay(sharedMapper.getMaximumSamplesPerRay());

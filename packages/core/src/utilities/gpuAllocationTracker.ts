@@ -5,6 +5,7 @@ import {
   beginPendingAllocation,
   clearPendingAllocation,
   getEdgeVerifiedAtStart,
+  getLastProbeTime,
   recordRenderingCapabilityFailure,
   recordRenderingCapabilitySuccess,
 } from './renderingCapabilities';
@@ -15,20 +16,33 @@ const log = coreLog.getLogger('utilities', 'gpuAllocationTracker');
 export const LARGE_ALLOCATION_BYTES = 64 * 1024 * 1024;
 
 /**
- * The time after a large allocation at which the allocation and its first
- * render count as a success. The render of the allocation runs in the same
- * frame, so this also covers that render.
+ * The time after the first render that follows a large allocation at which
+ * the allocation counts as a success. A context loss that the render causes
+ * arrives in this time.
  */
-const SETTLE_MS = 2000;
+const SETTLE_MS = 500;
+
+/**
+ * A large allocation with no render in this time is abandoned: its pending
+ * record is removed, and nothing is recorded.
+ */
+const RENDER_TIMEOUT_MS = 30000;
 
 /** A context loss this long after a large allocation is caused by it. */
 const LOSS_WINDOW_MS = 5000;
+
+/**
+ * A context loss this long after a probe context can come from that probe: a
+ * new context near the context limit of the browser drops the oldest one.
+ */
+const PROBE_LOSS_WINDOW_MS = 1000;
 
 /** What an edge render check receives. */
 export type EdgeRenderCheckContext = {
   /** The edge of the texture, which is above the edge verified at start. */
   edge: number;
   volumeId?: string;
+  /** The context of the render that drew the texture. */
   gl?: WebGL2RenderingContext;
 };
 
@@ -44,6 +58,7 @@ export type EdgeRenderCheck = (
 
 type PendingAllocation = {
   totalBytes: number;
+  rendered: boolean;
   timer: ReturnType<typeof setTimeout>;
 };
 
@@ -56,10 +71,18 @@ let listening = false;
 /**
  * States the second check of the texture edge. No check applies by default,
  * because a uniform gray can also be a correct image: uniform source data, a
- * texture that has no data yet, or a window that saturates every value.
+ * texture that has no data yet, or a window that saturates every value. A
+ * check that returns false records the edge as failed, with the edge verified
+ * at the start of the page as the reliable edge.
  */
 export function setEdgeRenderCheck(check?: EdgeRenderCheck): void {
   edgeRenderCheck = check;
+}
+
+function isHidden(): boolean {
+  return (
+    typeof document !== 'undefined' && document.visibilityState === 'hidden'
+  );
 }
 
 function listen(): void {
@@ -76,11 +99,11 @@ function listen(): void {
   }
 
   if (typeof document !== 'undefined') {
-    // A hidden page does not render, so its pending record would stay, and a
-    // new tab would read it as a crash.
+    // A hidden page does not render, and a browser can reclaim its GPU.
     document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'hidden') {
+      if (isHidden()) {
         abandonPendingAllocation();
+        lastLargeAllocation = null;
       }
     });
   }
@@ -97,7 +120,7 @@ function abandonPendingAllocation(): void {
   clearPendingAllocation();
 }
 
-function settle(gl?: WebGL2RenderingContext): void {
+function runEdgeChecks(gl?: WebGL2RenderingContext): void {
   const checks = edgeChecks;
   edgeChecks = [];
 
@@ -113,7 +136,9 @@ function settle(gl?: WebGL2RenderingContext): void {
       );
     }
   }
+}
 
+function settle(): void {
   if (!pending) {
     return;
   }
@@ -126,6 +151,15 @@ function settle(gl?: WebGL2RenderingContext): void {
   recordRenderingCapabilitySuccess('gpuBytes', totalBytes);
 }
 
+/**
+ * Attributes a context loss to a large allocation.
+ *
+ * A loss counts when it arrives while a large allocation waits for its render,
+ * or within `LOSS_WINDOW_MS` of a large allocation. A loss does not count when
+ * the page is hidden (the browser can reclaim the GPU of a hidden page), or
+ * within `PROBE_LOSS_WINDOW_MS` of a probe context (the probe can drop a
+ * viewport context at the context limit of the browser).
+ */
 function onContextLost(): void {
   const recent =
     lastLargeAllocation && Date.now() - lastLargeAllocation.at < LOSS_WINDOW_MS
@@ -135,9 +169,13 @@ function onContextLost(): void {
 
   abandonPendingAllocation();
 
-  if (!totalBytes) {
+  if (
+    !totalBytes ||
+    isHidden() ||
+    performance.now() - getLastProbeTime() < PROBE_LOSS_WINDOW_MS
+  ) {
     log.debug(
-      'a WebGL context was lost with no large allocation shortly before it, so no limit changes'
+      'a WebGL context was lost, but not in a large allocation of a visible page, so no limit changes'
     );
 
     return;
@@ -152,11 +190,13 @@ function onContextLost(): void {
 /**
  * Notes the allocation of one texture, just before the allocation.
  *
- * A large allocation writes a pending record, so a crash during the
- * allocation or its first render is found at the next start. The record is
- * removed, and the total counts as a success, when the allocation and its
- * first render settle. A context loss before that, or shortly after, records
- * the total as lost.
+ * A large allocation of a visible page writes a pending record, so a crash
+ * during the allocation or its first render is found at the next start. The
+ * first render after the allocation (see {@link noteTextureRendered}) settles
+ * it: the pending record is removed, and the total counts as a success. A
+ * context loss before that, or shortly after, records the total as lost (see
+ * `onContextLost`). A hidden page writes no pending record, because its
+ * timers and its renders can wait for minutes.
  *
  * A texture with an edge above the edge verified at the start of the page is
  * queued for the edge render check (see {@link setEdgeRenderCheck}).
@@ -170,28 +210,21 @@ export function noteTextureAllocation({
   totalBytes,
   maxEdge,
   volumeId,
-  gl,
 }: {
   textureBytes: number;
   totalBytes: number;
   maxEdge: number;
   volumeId?: string;
-  gl?: WebGL2RenderingContext;
 }): void {
   listen();
 
   const verified = getEdgeVerifiedAtStart();
-  const checkEdge = Boolean(verified && maxEdge > verified);
 
-  if (checkEdge) {
+  if (verified && maxEdge > verified) {
     edgeChecks.push({ edge: maxEdge, volumeId });
   }
 
-  if (textureBytes < LARGE_ALLOCATION_BYTES) {
-    if (checkEdge && !pending) {
-      setTimeout(() => settle(gl), SETTLE_MS);
-    }
-
+  if (textureBytes < LARGE_ALLOCATION_BYTES || isHidden()) {
     return;
   }
 
@@ -203,8 +236,30 @@ export function noteTextureAllocation({
 
   pending = {
     totalBytes: total,
-    timer: setTimeout(() => settle(gl), SETTLE_MS),
+    rendered: false,
+    timer: setTimeout(abandonPendingAllocation, RENDER_TIMEOUT_MS),
   };
   lastLargeAllocation = { totalBytes: total, at: Date.now() };
   beginPendingAllocation(total);
+}
+
+/**
+ * Notes the end of a render of a volume mapper. The first render after a
+ * large allocation settles that allocation after `SETTLE_MS`, and runs the
+ * edge render checks.
+ *
+ * @param gl - the context of the render
+ */
+export function noteTextureRendered(gl?: WebGL2RenderingContext): void {
+  if (edgeChecks.length) {
+    runEdgeChecks(gl);
+  }
+
+  if (!pending || pending.rendered || gl?.isContextLost?.()) {
+    return;
+  }
+
+  clearTimeout(pending.timer);
+  pending.rendered = true;
+  pending.timer = setTimeout(settle, SETTLE_MS);
 }

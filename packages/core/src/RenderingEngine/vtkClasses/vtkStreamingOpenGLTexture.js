@@ -14,16 +14,6 @@ import { noteTextureAllocation } from '../../utilities/gpuAllocationTracker';
 
 const DEFAULT_MAX_SLICES_PER_RENDER = 16;
 
-const BYTES_PER_ELEMENT = {
-  Uint8Array: 1,
-  Int8Array: 1,
-  Uint8ClampedArray: 1,
-  Uint16Array: 2,
-  Int16Array: 2,
-  Float32Array: 4,
-  Uint32Array: 4,
-  Int32Array: 4,
-};
 const DEFAULT_MAX_MILLISECONDS_PER_RENDER = 8;
 
 /**
@@ -122,19 +112,19 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
 
     model.allocatedShape = shape;
 
+    // `dataType` names a typed array, such as 'Float32Array'.
     const textureBytes =
       width *
       height *
       depth *
       (numComps || 1) *
-      (BYTES_PER_ELEMENT[dataType] ?? 4);
+      (globalThis[dataType]?.BYTES_PER_ELEMENT ?? 4);
 
     noteTextureAllocation({
       textureBytes,
       totalBytes: Math.max(volumeTextureStore.bytesUsed, textureBytes),
       maxEdge: Math.max(width, height, depth),
       volumeId: model.volumeId,
-      gl: model.context,
     });
   }
 

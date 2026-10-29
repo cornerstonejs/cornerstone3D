@@ -9,6 +9,12 @@ import {
 } from '@kitware/vtk.js/Rendering/OpenGL/RenderWindow/resourceSharingHelper';
 import vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture';
 import { getCanUseNorm16Texture } from '../../init';
+import volumeTextureStore from '../../cache/volumeTextureStore';
+import {
+  noteTextureAllocation,
+  noteTextureRendered,
+} from '../../utilities/gpuAllocationTracker';
+import gridFitsProfile from './gridFitsProfile';
 
 const { vtkErrorMacro } = macro;
 
@@ -120,6 +126,7 @@ function vtkStreamingOpenGLImageResliceMapper(publicAPI, model) {
     publicAPI.renderPieceStart(ren, actor);
     publicAPI.renderPieceDraw(ren, actor);
     publicAPI.renderPieceFinish(ren, actor);
+    noteTextureRendered(model.context);
     publicAPI.invokeEvent({ type: 'EndEvent' });
   };
 
@@ -260,13 +267,37 @@ function vtkStreamingOpenGLImageResliceMapper(publicAPI, model) {
         !tex?.oglObject?.getHandle() || tex?.hash !== scalarsHash;
 
       if (reBuildTex && !hasUpdatedExtents) {
+        const dims = imageData.getDimensions();
+        const numberOfComponents = scalars.getNumberOfComponents();
+
+        // The full-resolution voxels have no reduction here, so a grid that
+        // the profile cannot hold gets no texture rather than a gray one.
+        if (
+          !gridFitsProfile(dims, scalars.getDataType(), numberOfComponents, {
+            volumeId: imageData.get('volumeId')?.volumeId,
+          })
+        ) {
+          return;
+        }
+
+        const textureBytes =
+          dims[0] *
+          dims[1] *
+          dims[2] *
+          numberOfComponents *
+          (scalars.getData()?.BYTES_PER_ELEMENT ?? 4);
+
+        noteTextureAllocation({
+          textureBytes,
+          totalBytes: volumeTextureStore.bytesUsed + textureBytes,
+          maxEdge: Math.max(dims[0], dims[1], dims[2]),
+        });
         const newScalarTexture = vtkOpenGLTexture.newInstance();
 
         newScalarTexture.setOpenGLRenderWindow(model._openGLRenderWindow);
         // This path builds the texture from the scalars of `imageData`, which
         // are the full-resolution voxels, so the dimensions must be the ones of
         // `imageData`. Only the streaming path below reads a reduced grid.
-        const dims = imageData.getDimensions();
         newScalarTexture.setOglNorm16Ext(
           model.context.getExtension('EXT_texture_norm16')
         );
