@@ -2,7 +2,7 @@ import { describe, it, expect } from '@jest/globals';
 import { fidelityDetailsTextOf } from '../src/RenderingEngine/helpers/fidelityIndicator/fidelityDetailsText';
 import ImageQualityStatus from '../src/enums/ImageQualityStatus';
 
-describe('fidelityDetailsTextOf (FIDELITY-DISCOVER)', () => {
+describe('fidelityDetailsTextOf (FIDELITY-UI-5)', () => {
   it('describes an incomplete load with progress and wait (DISCOVER-1..3)', () => {
     const text = fidelityDetailsTextOf({
       cause: 'incompleteLoad',

@@ -7,7 +7,7 @@ import {
 
 /**
  * Clinician-facing hover details from the absolute fidelity record
- * (FIDELITY-DISCOVER-1..4). No GPU / texture / retrieval jargon.
+ * (FIDELITY-UI-5). No GPU / texture / retrieval jargon.
  */
 export function fidelityDetailsTextOf(
   state: ViewportFidelityState,

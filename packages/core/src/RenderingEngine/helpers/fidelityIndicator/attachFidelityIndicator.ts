@@ -81,8 +81,8 @@ const cleanups = new WeakMap<object, () => void>();
  * this detaches any existing indicator and is otherwise a no-op.
  *
  * While degraded, a permanent label reads "Low Fidelity" or
- * "Transient Low Fidelity" (FIDELITY-NOTIFY-1). Hover details use clinician
- * copy from the absolute fidelity record (FIDELITY-DISCOVER-1..4).
+ * "Transient Low Fidelity" (FIDELITY-UI-2). Hover details use clinician
+ * copy from the absolute fidelity record (FIDELITY-UI-5).
  *
  * @returns a function that removes the indicator and its listeners
  */
