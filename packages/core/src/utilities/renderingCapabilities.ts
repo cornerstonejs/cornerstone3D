@@ -10,6 +10,7 @@ import {
 import { getCapabilityStorage } from './capabilityStorage';
 import { coreLog } from './logger';
 import uuidv4 from './uuidv4';
+import fnv1aHash from './fnv1aHash';
 
 const log = coreLog.getLogger('utilities', 'renderingCapabilities');
 
@@ -45,6 +46,11 @@ export const MEMORY_CEILING_FRACTION = 0.75;
 
 const STORAGE_KEY = 'cornerstone3D.renderingCapabilities';
 const PENDING_KEY_PREFIX = `${STORAGE_KEY}.pending.`;
+
+/** The key of the record of one renderer, so each GPU keeps its own record. */
+function recordKey(renderer: string): string {
+  return `${STORAGE_KEY}.${fnv1aHash(renderer)}`;
+}
 
 /** The edge that the first probe tests. */
 const SAFE_PROBE_EDGE = 2048;
@@ -259,13 +265,95 @@ function isObject(value: unknown): value is object {
   return typeof value === 'object' && value !== null;
 }
 
+/** The number, or `undefined` when it is not a finite number. */
+function finite(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value)
+    ? value
+    : undefined;
+}
+
+/**
+ * The object with each named field as a finite number, or `undefined` when one
+ * of them is not.
+ */
+function numbers<T>(value: unknown, fields: (keyof T)[]): T | undefined {
+  if (!isObject(value)) {
+    return undefined;
+  }
+
+  const result = {} as T;
+
+  for (const field of fields) {
+    const number = finite(value[field as string]);
+
+    if (number === undefined) {
+      return undefined;
+    }
+
+    result[field] = number as T[keyof T];
+  }
+
+  return result;
+}
+
+/** Puts `value` at `key`, or removes the key when the value is missing. */
+function setOrDelete<T extends object>(
+  target: T,
+  key: keyof T,
+  value: unknown
+): void {
+  if (value === undefined) {
+    delete target[key];
+  } else {
+    target[key] = value as T[keyof T];
+  }
+}
+
+/** A memory record with every invalid value removed. */
+function validMemory(value: unknown): RenderingCapabilityMemory {
+  const memory: RenderingCapabilityMemory = {};
+
+  if (!isObject(value)) {
+    return memory;
+  }
+
+  const entry = value as RenderingCapabilityMemory;
+
+  setOrDelete(
+    memory,
+    'normal',
+    numbers<RenderingCapabilitySuccess>(entry.normal, ['value', 'successes'])
+  );
+  setOrDelete(memory, 'ceiling', finite(entry.ceiling));
+  setOrDelete(
+    memory,
+    'recent',
+    numbers<RenderingCapabilityMemoryEpisode>(entry.recent, [
+      'value',
+      'at',
+      'count',
+    ])
+  );
+
+  if (Array.isArray(entry.failures)) {
+    memory.failures = entry.failures
+      .map((failure) =>
+        numbers<RenderingCapabilityMemoryFailure>(failure, ['value', 'at'])
+      )
+      .filter(Boolean);
+  }
+
+  return memory;
+}
+
 /**
  * Reads the record of one renderer. A record of another renderer or of
- * another probe version is no record.
+ * another probe version is no record. A stored value that is not a finite
+ * number, or that has the wrong shape, counts as missing.
  */
 function readRecord(renderer: string): StoredRenderingCapabilities | null {
   try {
-    const raw = getCapabilityStorage().getItem(STORAGE_KEY);
+    const raw = getCapabilityStorage().getItem(recordKey(renderer));
 
     if (!raw) {
       return null;
@@ -280,18 +368,30 @@ function readRecord(renderer: string): StoredRenderingCapabilities | null {
       return null;
     }
 
-    const stored = { ...emptyRecord(renderer), ...parsed };
+    const stored = emptyRecord(renderer);
+    const edge = isObject(parsed.edge) ? parsed.edge : {};
 
-    for (const category of CATEGORIES) {
-      if (!isObject(stored[category])) {
-        stored[category] = {};
+    setOrDelete(
+      stored.edge,
+      'reliable',
+      numbers<RenderingCapabilitySuccess>(edge.reliable, ['value', 'successes'])
+    );
+    setOrDelete(
+      stored.edge,
+      'failed',
+      numbers<RenderingCapabilityFailure>(edge.failed, ['value', 'failures'])
+    );
+    stored.textureBytes = validMemory(parsed.textureBytes);
+    stored.gpuBytes = validMemory(parsed.gpuBytes);
+    setOrDelete(stored, 'max3DTextureSize', finite(parsed.max3DTextureSize));
+    setOrDelete(stored, 'probeMs', finite(parsed.probeMs));
+
+    if (isObject(parsed.formats)) {
+      stored.formats = { ...NO_GPU_FORMATS };
+
+      for (const name of Object.keys(NO_GPU_FORMATS)) {
+        stored.formats[name] = parsed.formats[name] === true;
       }
-    }
-
-    if (isObject(stored.formats)) {
-      stored.formats = { ...NO_GPU_FORMATS, ...stored.formats };
-    } else {
-      delete stored.formats;
     }
 
     return stored;
@@ -318,15 +418,21 @@ function updateRecord(
     return;
   }
 
-  const target = readRecord(record.renderer) ?? record;
+  try {
+    const target = readRecord(record.renderer) ?? record;
+    const key = recordKey(target.renderer);
 
-  change(target);
-  record = target;
+    change(target);
+    record = target;
 
-  if (holdsData(target)) {
-    getCapabilityStorage().setItem(STORAGE_KEY, JSON.stringify(target));
-  } else {
-    getCapabilityStorage().removeItem(STORAGE_KEY);
+    if (holdsData(target)) {
+      getCapabilityStorage().setItem(key, JSON.stringify(target));
+    } else {
+      getCapabilityStorage().removeItem(key);
+    }
+  } catch (error) {
+    // A render must not stop because the record cannot change.
+    log.warn('the record of the rendering capabilities did not change', error);
   }
 }
 
@@ -922,7 +1028,7 @@ export function retestRenderingCapabilities(
 /**
  * Drops the in-memory profile (and optionally the stored record) so the
  * next {@link getRenderingCapabilities} call re-detects. `clearStorage`
- * removes the whole record and every pending record, so the next load probes
+ * removes the record of every renderer and every pending record, so the next load probes
  * from the start.
  */
 export function resetRenderingCapabilities({
@@ -939,9 +1045,8 @@ export function resetRenderingCapabilities({
   if (clearStorage) {
     const storage = getCapabilityStorage();
 
-    storage.removeItem(STORAGE_KEY);
-
-    for (const key of storage.keys(PENDING_KEY_PREFIX)) {
+    // The record of each renderer, and every pending record.
+    for (const key of storage.keys(STORAGE_KEY)) {
       storage.removeItem(key);
     }
   }

@@ -282,8 +282,9 @@ the display resolution sits below the resolution of the data.
 ## How the device limits are found
 
 The default preset is `auto`. Its edge and its texture memory come from a record that the browser
-keeps for each renderer, in the `localStorage` key `cornerstone3D.renderingCapabilities`. The renderer
-string and the probe version are the key of the record. A named preset (`low-tablet`, `low`,
+keeps for each renderer, in the `localStorage` key `cornerstone3D.renderingCapabilities.<hash>`, where
+`<hash>` is a hash of the renderer string. The record also states its renderer string and its probe
+version, and a record of another renderer or another probe version is no record. A named preset (`low-tablet`, `low`,
 `medium`, `high`) overrides `auto`.
 
 A GPU fails in four ways, and each way has its own detection:
@@ -448,7 +449,8 @@ to offer it. `retestRenderingCapabilities` clears the failures of the selected c
 decides when to offer a retest.
 
 **VRS-C-15.** A missing or failing storage does not stop a render. The page then probes again at the
-next load.
+next load. A stored value that is not a finite number, or that has the wrong shape, counts as missing,
+and a write that fails leaves the record as it was.
 
 **VRS-C-16.** With final downsampling off (`rendering.lossyDownsampling.final`), a volume renders as
 in 4.x: it gets a full-resolution texture, no GPU settings preset applies, and a 3D render uses the

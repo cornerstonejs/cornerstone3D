@@ -152,17 +152,21 @@ viewer asked it to render a data set that is too large.
 
 ### The stored record (GPULIMIT-RECORD)
 
-- **GPULIMIT-RECORD-1** The record is in the `localStorage` key
-  `cornerstone3D.renderingCapabilities`. The renderer string and the probe
-  version are its key. A missing or failing storage does not stop a render
-  (`VRS-C-15`).
+- **GPULIMIT-RECORD-1** Each renderer has its own record, in the
+  `localStorage` key `cornerstone3D.renderingCapabilities.<hash>`, where
+  `<hash>` is a hash of the renderer string. A record of another renderer or of
+  another probe version is no record. A missing or failing storage does not
+  stop a render, and a stored value that is not a finite number or that has the
+  wrong shape counts as missing (`VRS-C-15`).
 - **GPULIMIT-RECORD-2** The edge keeps a reliable value with a count of
   successes, and a failed value with a count of failures. Each memory category
   keeps `normal` with a count of successes, a `ceiling`, the first failure of
   each episode within the window, and the current episode as `recent`
   (GPULIMIT-MEM).
 - **GPULIMIT-RECORD-3** A write re-reads the stored record and merges the
-  change, so two tabs do not lose a recorded failure.
+  change, so two tabs do not lose a recorded failure. No tab listens to the
+  `storage` events of another tab: a tab sees the failure that another tab
+  recorded at its next write, or at its next load.
 
 ### The retest (GPULIMIT-RETEST)
 

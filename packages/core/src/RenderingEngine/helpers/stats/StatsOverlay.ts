@@ -11,6 +11,7 @@ import type { Panel, StatsInstance, PerformanceWithMemory } from './types';
 import { PanelType } from './enums';
 import { STATS_CONFIG, PANEL_CONFIGS, CONVERSION } from './constants';
 import { coreLog } from '../../../utilities/logger';
+import { localCapabilityStorage } from '../../../utilities/capabilityStorage';
 
 const log = coreLog.getLogger('RenderingEngine', 'StatsOverlay');
 
@@ -556,7 +557,7 @@ export class StatsOverlay implements StatsInstance {
 
   private readSavedPosition(): { left: number; top: number } | null {
     try {
-      const raw = window.localStorage.getItem(
+      const raw = localCapabilityStorage.getItem(
         STATS_CONFIG.POSITION_STORAGE_KEY
       );
       if (!raw) {
@@ -580,14 +581,10 @@ export class StatsOverlay implements StatsInstance {
   }
 
   private savePosition(left: number, top: number): void {
-    try {
-      window.localStorage.setItem(
-        STATS_CONFIG.POSITION_STORAGE_KEY,
-        JSON.stringify({ left, top })
-      );
-    } catch {
-      // Storage may be unavailable (private mode, quota exceeded); ignore.
-    }
+    localCapabilityStorage.setItem(
+      STATS_CONFIG.POSITION_STORAGE_KEY,
+      JSON.stringify({ left, top })
+    );
   }
 }
 

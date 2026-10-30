@@ -494,7 +494,9 @@ pre-releases used `high` as the default, with a fixed edge of 2048 voxels;
 `auto` replaces `high` as the default.
 
 `auto` takes its limits from a record that the browser keeps for each GPU
-renderer, in the `localStorage` key `cornerstone3D.renderingCapabilities`:
+renderer, in the `localStorage` key `cornerstone3D.renderingCapabilities.<hash>`,
+where `<hash>` is a hash of the renderer string, so each GPU of a dual-GPU
+device keeps its own record:
 
 - **The texture edge.** At the first start, a probe draws thin 3D textures and
   finds the largest edge that renders correctly, from 2048 down to 16. When a

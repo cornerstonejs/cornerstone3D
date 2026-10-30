@@ -27,7 +27,7 @@ function browserStorage(): Storage | undefined {
  * The default store, which is `localStorage`. Each member catches the errors of
  * a privacy mode, a full quota or blocked site data.
  */
-const localCapabilityStorage: CapabilityStorage = {
+export const localCapabilityStorage: CapabilityStorage = {
   getItem: (key) => {
     try {
       return browserStorage()?.getItem(key) ?? null;

@@ -34,6 +34,15 @@ const getSupportedTextureFormats = probeRenderingLimits;
 
 const STORAGE_KEY = 'cornerstone3D.renderingCapabilities';
 
+/** The key of the stored record of the renderer, or null when none is stored. */
+function recordKey() {
+  return (
+    Object.keys(window.localStorage).find(
+      (key) => key.startsWith(`${STORAGE_KEY}.`) && !key.includes('.pending.')
+    ) ?? null
+  );
+}
+
 const ALL_FORMATS = {
   norm16: true,
   norm16Linear: true,
@@ -162,15 +171,53 @@ describe('renderingCapabilities', () => {
     mockWebGL();
     detectRenderingCapabilities();
 
-    const cached = JSON.parse(window.localStorage.getItem(STORAGE_KEY));
+    const cached = JSON.parse(window.localStorage.getItem(recordKey()));
     expect(cached.probeVersion).toBe(RENDERING_CAPABILITIES_PROBE_VERSION);
 
     cached.probeVersion = RENDERING_CAPABILITIES_PROBE_VERSION - 1;
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(cached));
+    window.localStorage.setItem(recordKey(), JSON.stringify(cached));
 
     detectRenderingCapabilities();
 
     expect(getSupportedTextureFormats).toHaveBeenCalledTimes(2);
+  });
+
+  it('keeps one record for each renderer, and reads an invalid stored value as missing', () => {
+    mockWebGL('Renderer A');
+    detectRenderingCapabilities();
+    recordRenderingCapabilityFailure('textureBytes', 3000);
+    const keyOfA = recordKey();
+
+    getContextSpy.mockRestore();
+    mockWebGL('Renderer B');
+    resetRenderingCapabilities();
+    detectRenderingCapabilities();
+
+    const stored = JSON.parse(window.localStorage.getItem(keyOfA));
+
+    // The other renderer did not replace the record of A.
+    expect(stored.textureBytes.recent.value).toBe(3000);
+
+    stored.textureBytes = {
+      recent: { value: 'x', at: Date.now(), count: 1 },
+      failures: {},
+    };
+    stored.edge.reliable = { value: null, successes: 1 };
+    window.localStorage.setItem(keyOfA, JSON.stringify(stored));
+    getContextSpy.mockRestore();
+    mockWebGL('Renderer A');
+    resetRenderingCapabilities();
+
+    const reread = getStoredRenderingCapabilities();
+
+    expect(reread.edge).toEqual({});
+    expect(reread.textureBytes).toEqual({});
+    expect(() =>
+      recordRenderingCapabilitySuccess('textureBytes', 1000)
+    ).not.toThrow();
+    expect(getStoredRenderingCapabilities().textureBytes.normal.value).toBe(
+      1000
+    );
   });
 
   it('re-probes when useCache is false', () => {
@@ -190,7 +237,7 @@ describe('renderingCapabilities', () => {
     expect(capabilities.webgl).toBe(true);
     expect(capabilities.norm16).toBe(false);
     expect(capabilities.float).toBe(false);
-    expect(window.localStorage.getItem(STORAGE_KEY)).toBeNull();
+    expect(recordKey()).toBeNull();
   });
 
   it('re-probes on the next detection after a failed probe run', () => {
@@ -202,7 +249,7 @@ describe('renderingCapabilities', () => {
 
     expect(getSupportedTextureFormats).toHaveBeenCalledTimes(2);
     expect(second.norm16).toBe(true);
-    expect(window.localStorage.getItem(STORAGE_KEY)).not.toBeNull();
+    expect(recordKey()).not.toBeNull();
   });
 
   it('flags software rasterizers from the renderer string', () => {
