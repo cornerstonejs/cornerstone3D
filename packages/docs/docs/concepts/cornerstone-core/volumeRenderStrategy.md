@@ -85,7 +85,7 @@ already exists.
 | `VolumeTextureSet`       | A named set of textures, and the unit of storage, of cost and of eviction. Its members carry an area index.                                            |
 | `volumeTextureStore`     | The global store of the sets, with one budget for the texture memory of every volume.                                                                  |
 | `CompositeVoxelManager`  | The voxels. It holds the full-resolution data and every reduced representation, and it fills a grid from the best sources that it has.                 |
-| `GpuSettings`            | The values that a preset gives: the texture edge, the texture memory and the speed. An application selects the preset, and nothing probes.             |
+| `GpuSettings`            | The limits of the device. `auto` (the default) computes them from the stored record of the device. A named preset overrides `auto`.                    |
 | `VoxelQualityRecord`     | The absolute record of the data that a render drew. It states no verdict.                                                                              |
 
 ## Where the code is
@@ -95,7 +95,9 @@ table gives the file of each piece. The paths are under `packages/core/src/`, ex
 
 | Piece or step                                       | Code                                                                                                               |
 | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| The presets, and the limits of a grid               | `utilities/gpuSettingsPresets.ts`: `setGpuSettingsPreset`, `gridLimitsOfGpuSettings`                               |
+| The presets, and the limits of a grid               | `utilities/gpuSettingsPresets.ts`: `setGpuSettingsPreset`, `gridLimitsOfGpuSettings`, `gpuSettingsForGrid`         |
+| The probe, and the stored record of the device      | `utilities/textureSupport.ts`, `utilities/renderingCapabilities.ts`, `utilities/capabilityStorage.ts`              |
+| The memory record of a large allocation             | `utilities/gpuAllocationTracker.ts`, called by `vtkStreamingOpenGLTexture.create3DFromRaw`                         |
 | The factors of a reduction, and the reduced grid    | `utilities/voxelGrid/`: `boxAverageReductionFactors`, `reducedDimensions`, `deriveBoxAverageGrid`                  |
 | The default provider and the default selection      | `RenderingEngine/helpers/volumeRenderStrategy.ts`: `defaultVolumeStrategyProvider`, `selectFirstReadyStrategy`     |
 | The one place that both architectures share         | `RenderingEngine/helpers/resolveVolumeTexture.ts`, called by `createVolumeActor` and `createVolumeSliceActor`      |
@@ -123,7 +125,7 @@ settings and answers in one of two ways:
 
 The reduction is per axis and it is not uniform. An edge of 2049 voxels exceeds a limit of 2048 on
 one axis and by one voxel, so one axis reduces and the other two do not. A factor can hold a
-fraction, see `VRS-I-12`.
+fraction, see `VRS-I-18`.
 
 **The provider derives no representation.** A reduced texture fills each slice with the
 `fillPlane` of the statistic of the volume (`ImageVolume.reductionStatistic`) straight from the
@@ -277,6 +279,93 @@ The record states **no verdict**. A reader compares it against its own requireme
 viewports over one volume report differently at one moment, and how a viewport reports lossless when
 the display resolution sits below the resolution of the data.
 
+## How the device limits are found
+
+The default preset is `auto`. Its edge and its texture memory come from a record that the browser
+keeps for each renderer, in the `localStorage` key `cornerstone3D.renderingCapabilities.<hash>`, where
+`<hash>` is a hash of the renderer string. The record also states its renderer string and its probe
+version, and a record of another renderer or another probe version is no record. A named preset (`low-tablet`, `low`,
+`medium`, `high`) overrides `auto`.
+
+A GPU fails in four ways, and each way has its own detection:
+
+| #   | Cause                                           | Symptom               | Detection                                            |
+| --- | ----------------------------------------------- | --------------------- | ---------------------------------------------------- |
+| 1   | The edge of a texture is too large.             | A uniform gray.       | The probe, before the allocation.                    |
+| 2   | The texture memory of the context is too large. | `WEBGL_CONTEXT_LOST`. | The loss during or shortly after a large allocation. |
+| 3   | The GPU memory of the browser is too large.     | The tab stops.        | A pending record that a later start finds.           |
+| 4   | A texel data type does not work.                | An incorrect image.   | The probe, at the first start.                       |
+
+**The probe.** The probe draws N × 4 × 4 3D textures through a `sampler3D`, which is the path that a
+volume uses. It tests each data type at an edge of 8, so a data type failure is not an edge failure.
+It tests an edge on each of the three axes, and it samples four texels with different values along
+the long axis: the first, the middle, the next to last and the last. A uniform gray or an empty
+texture therefore fails. At the first start, the probe tests an edge of 2048 (or
+`MAX_3D_TEXTURE_SIZE` when that is smaller), and halves the edge on each failure, down to 16. In
+headless Chromium, the first probe took about 50 ms with SwiftShader and about 64 ms on an Intel UHD
+GPU, which is below the budget of 250 ms. The probe is not yet measured on a device that renders a
+uniform gray above an edge of 128.
+
+**The probe at a larger edge.** When a volume needs an edge above the reliable edge, below a failed
+edge and not above `MAX_3D_TEXTURE_SIZE`, `volumeTextureReductionFactors` and the mappers (through
+`gridFitsGpuSettings`) run the probe at that edge before the texture is allocated. That probe took 10 to
+20 ms. A pass raises the reliable edge, and a failure keeps the volume reduced. An edge whose probe
+could not run is not tried again in the same page.
+
+**No edge that a probe did not pass.** The edge of `auto` is the reliable edge, which is an edge that
+a probe passed. When the record has none (the first probe could not run, or a failure removed it),
+the edge search runs once in the page. When no probe can run at all, the edge is 128, or 8 when the
+record states a failure at or below 128.
+
+**The memory.** A page cannot read the memory of the GPU, so the record counts the GPU bytes of the
+page from an in-memory ledger (`gpuMemoryLedger`): each texture upload, the canvas of each viewport,
+the render buffers of each WebGL context, and a fixed estimate for each context. Another tab does not
+count. Under `auto`, a new texture gets the memory limit minus the GPU bytes of the rest of the page.
+Before an allocation of 64 MB or more on a visible page, the page writes a pending record under a key
+of its own tab. The first render after the allocation settles it: 5 s later, the total counts as a
+success, and the page removes the pending record. A context loss before that, or within five seconds
+of the allocation, records the total as a `textureBytes` failure, except on a hidden page and
+within one second of a probe context that ran after the allocation. A pending record that a later start finds records the total as
+a `gpuBytes` failure. Two tabs share the record: each change applies to a fresh read of the store.
+
+**The memory level.** Each memory category keeps `normal`, the largest total that worked. The `auto`
+limit is the larger of the start value of the renderer class and 2 × `normal`, up to `rendering.autoGpuSettings.maxTextureMemoryBytes` (32 GB by default). So each success above the
+earlier `normal` raises the limit one step, and a total in that step is a test of a new size. A failure
+starts an episode, and a failure within 1 hour of the previous one joins it. Each failure of the
+episode halves the limit again, from the total of its first failure, for 1 hour after its last
+failure, so the reload after a failure uses a lower level. A page that saw the reduction keeps it
+until it reloads (`getPageMemoryReduction`). Three episodes within 7 days set a `ceiling` at 0.75 of
+the smallest first failure of them, and the limit stays below it until a retest or a success above
+it. Later sessions otherwise keep `normal`.
+
+**Counts and retest.** The edge keeps a reliable value with a success count, and a failed value with
+a failure count. `auto` does not try a failed edge or a memory ceiling again. A retest is the one way
+to try it again, and the application decides when to offer the retest; the counts are for its display
+and its decision. An application reads the record with `getStoredRenderingCapabilities()`, clears failures
+with `retestRenderingCapabilities()`, and removes the record with
+`resetRenderingCapabilities({ clearStorage: true })`. `setCapabilityStorage` replaces the store.
+
+```json
+{
+  "probeVersion": 3,
+  "renderer": "ANGLE (...)",
+  "formats": { "norm16": true, "float": true },
+  "max3DTextureSize": 2048,
+  "probeMs": 63.6,
+  "edge": { "reliable": { "value": 2048, "successes": 1 } },
+  "textureBytes": {
+    "normal": { "value": 1200000000, "successes": 25 },
+    "failures": [{ "value": 1800000000, "at": 1793000000000 }],
+    "recent": { "value": 1800000000, "at": 1793000060000, "count": 2 }
+  },
+  "gpuBytes": {
+    "normal": { "value": 1200000000, "successes": 25 },
+    "ceiling": 900000000,
+    "failures": []
+  }
+}
+```
+
 ## Scope, and the rule for a change to this document
 
 The **user requirements** of this work are `MR-U-*` in
@@ -284,13 +373,25 @@ The **user requirements** of this work are `MR-U-*` in
 [cornerstone3D#2902](https://github.com/cornerstonejs/cornerstone3D/issues/2902). This document does
 not restate them, and it does not change one.
 
-This document holds the design, in two sections with different change rules:
+The automatic GPU limits of
+[cornerstone3D#3020](https://github.com/cornerstonejs/cornerstone3D/issues/3020) have their user
+requirements in the specification [GPU device limits](../../specs/core/gpu-device-limits.md)
+(`GPULIMIT-USER-*`).
 
+This document holds the design, in three sections with different change rules:
+
+- **§ User requirements** — what the user of a viewer must see. Change one of these only when the
+  statement describes the behaviour wrongly, or when the intended user-facing behaviour changes.
 - **§ Contracts** — what a consumer of this design may rely on. Change one of these in two cases
   only: the statement describes the behaviour wrongly, or the intended behaviour itself changes.
   That a contract is inconvenient to implement is never a reason to change it.
 - **§ Implementation choices** — how this version does the work. Change any of these freely when a
   better approach appears.
+
+## § User requirements
+
+The user requirements of the device limits are `GPULIMIT-USER-*` in
+[GPU device limits](../../specs/core/gpu-device-limits.md). This document does not restate them.
 
 ## § Contracts
 
@@ -332,15 +433,38 @@ texture, which is what lets a basis point move.
 **VRS-C-10.** The record that the selection receives is open. A render component adds the fields
 that its own function reads, and no existing caller changes.
 
-**VRS-C-11.** With final downsampling off (`rendering.lossyDownsampling.final`), a volume renders as
+**VRS-C-11.** When an application selects no preset, `auto` applies. A named preset overrides
+`auto`, and `resetGpuSettingsPreset` returns to `auto`.
+
+**VRS-C-12.** With final downsampling on and under `auto`, no texture with an edge above the reliable edge of the device is
+allocated before the probe passes at that edge, on the streaming volume path, the streaming and the
+non-streaming slice paths. When no probe can run, the edge is a fixed floor (see VRS-I-14). The mapper
+of `convertMapperToNotSharedMapper` uploads the full-resolution scalars with no reduction: it runs
+the probe and logs a warning for a grid above the limits, and it does not refuse the upload.
+
+**VRS-C-13.** A failed edge and a memory ceiling stay until a retest. One memory failure episode
+lowers only the loads of its hour, and the pages that saw it until they reload. The retest is the recovery path, and the application decides when
+to offer it. `retestRenderingCapabilities` clears the failures of the selected categories, and
+`resetRenderingCapabilities({ clearStorage: true })` removes the whole record.
+
+**VRS-C-14.** Cornerstone3D shows no prompt about the limits. The application reads the record and
+decides when to offer a retest.
+
+**VRS-C-15.** A missing or failing storage does not stop a render. The page then probes again at the
+next load. A stored value that is not a finite number, or that has the wrong shape, counts as missing,
+and a write that fails leaves the record as it was.
+
+**VRS-C-16.** With final downsampling off (`rendering.lossyDownsampling.final`), a volume renders as
 in 4.x: it gets a full-resolution texture, no GPU settings preset applies, and a 3D render uses the
-sample distance of 4.x. Every render path reads the GPU settings through `gpuSettingsForRender`,
-which gives no settings in that case.
+sample distance of 4.x, and no probe runs. Every render path reads the GPU settings through
+`gpuSettingsForRender`, which gives no settings in that case. A public call of the application to
+`getActiveGpuSettings()` or `getGpuSettingsPresets()` under `auto` can still run the probe, because
+those calls read the record of the device.
 
 ## § Implementation choices
 
 **VRS-I-1.** The default provider builds the full-resolution strategy when it gets no GPU settings
-(see `VRS-C-11`) or the GPU settings admit it, and the reduced-resolution strategy otherwise. It reads the capability alone: a
+(see `VRS-C-16`) or the GPU settings admit it, and the reduced-resolution strategy otherwise. It reads the capability alone: a
 performance-bound choice belongs to task T14, which supplies its own provider.
 
 **VRS-I-2.** The default selection keeps the strategy of the previous render while that strategy is
@@ -371,7 +495,51 @@ at once, and each later batch runs in an idle callback.
 **VRS-I-11.** A legacy viewport pins its set instead of claiming it. A claim needs a release at every
 removal of an actor, and a legacy viewport has many such paths.
 
-**VRS-I-12.** A reduced texture spans the full-resolution extent. The mappers allocate the
+**VRS-I-12.** The probe uses N × 4 × 4 3D textures. It tests the data types at an edge of 8, and the
+edge on each of the three axes, because a driver can store the depth axis as layers. The first edge
+is 2048, and the search halves the edge down to 16.
+
+**VRS-I-13.** `auto` takes its memory and its speed from a named preset of the class of the
+renderer: `low` for a software rasterizer or no WebGL2, `low-tablet` for a mobile GPU (Mali, Adreno,
+PowerVR, Apple GPU, Immortalis, Xclipse, Vivante), and `medium` for any other GPU. A software
+rasterizer also keeps the edge of `low` (256) at most, because a larger texture is too slow on it.
+
+**VRS-I-14.** The edge of `auto` is the reliable edge. With none, the edge search runs once in the
+page, and with no probe at all the edge is 128 (8 when a failure at or below 128 is stored). A failed
+edge at or below the reliable edge replaces the reliable edge by an edge that passed, or removes it.
+The memory limit of `auto` is the larger of the start value and `normal`, capped by a `ceiling`,
+and by `value / 2^count` of the current episode for 1 hour after its last failure, and for the rest
+of a page that saw it. Three episodes within 7 days set the ceiling at 0.75 of the smallest first
+failure of them. The constants are `MEMORY_RECENT_MS`,
+`MEMORY_FAILURES_FOR_CEILING`, `MEMORY_FAILURE_WINDOW_MS` and `MEMORY_CEILING_FRACTION`.
+
+**VRS-I-15.** The memory values count the GPU bytes of the page from `gpuMemoryLedger`. A
+`vtkStreamingOpenGLTexture` adds an entry at each upload and removes it in
+`releaseGraphicsResources`, which vtk.js calls when the texture moves to another context. The plain
+textures of the reslice mapper and of `convertMapperToNotSharedMapper` add entries too.
+`WebGLContextPool` adds the canvas of each viewport (4 bytes for each pixel), the render buffers of
+each context (8 bytes for each pixel of its largest viewport), and 32 MB for each context. The
+`TiledRenderingEngine` adds no canvas entries. A large allocation is 64 MB or more. A visible page writes its pending record, and a hidden page does not. The first render of a
+volume mapper after the allocation settles it 5 s later, which is the loss window, so one allocation
+records a success or a loss and never both; with no render in 30 s, the pending record
+is removed and nothing is recorded. A context loss counts while the allocation waits, or within 5 s of
+it, but not on a hidden page and not within 1 s of a probe context that ran after the allocation (the
+allocation then keeps its pending record). The edge probe that runs just before an allocation does
+not exempt a loss of that allocation. A pending record younger than
+60 s can belong to a tab that still runs, so the startup scan leaves it. `pagehide` and a hidden page
+remove the pending record of the tab. Each change of the record applies to a fresh read of the store,
+so two tabs keep both of their changes.
+
+**VRS-I-16.** `auto` limits a new texture to its memory limit minus the GPU bytes of the rest of the
+page (at least 16 MB). It does not set the budget of the store, so it does not evict the textures
+of another volume. A named preset limits one texture, as before.
+
+**VRS-I-17.** No check after a render detects type 1. The probe runs before every allocation above
+the reliable edge, and it fails a uniform gray, so a second check adds nothing. A check after a
+render can also give a false failure, because a uniform gray can be a correct image: uniform source
+data, a texture that has no data yet, or a window that saturates every value.
+
+**VRS-I-18.** A reduced texture spans the full-resolution extent. The mappers allocate the
 dimensions of the reduced grid, and vtk.js maps the texture over the extent of the full-resolution
 `imageData`. On an axis of N source voxels and M texels, texel j therefore covers the source
 `[j · N / M, (j + 1) · N / M)`, and the box of the fill must be that same range:
@@ -387,12 +555,12 @@ dimensions of the reduced grid, and vtk.js maps the texture over the extent of t
 - A whole factor that does not divide N gives `ceil(N / f)` texels, which do not span N source
   voxels. A texture of such a grid draws stretched, so no reduced texture uses one.
 
-**VRS-I-13.** A dynamic (4D) volume is not reduced: its factors are `[1, 1, 1]`, and it draws one
+**VRS-I-19.** A dynamic (4D) volume is not reduced: its factors are `[1, 1, 1]`, and it draws one
 full-resolution texture of the current dimension group, as in 4.x. The dynamic texture update writes
 full frames before any check of the grid, and the reduced fill reads frames by image-id index. An
 open issue tracks the support, to resolve after the first merge.
 
-**VRS-I-14.** A volume of more than one component (for example RGB) is not reduced: its factors are
+**VRS-I-20.** A volume of more than one component (for example RGB) is not reduced: its factors are
 `[1, 1, 1]`. The reduced fill and its upload have no component stride. An open issue tracks the
 support, to resolve after the first merge.
 
@@ -420,6 +588,8 @@ and needs no change.
 | A consumer of the `refinement` role                                                                                                                                                                                                                                            | the multi-texture render component       |
 | A performance-bound choice of strategy                                                                                                                                                                                                                                         | task T14                                 |
 | An automatic policy with recorded fixtures                                                                                                                                                                                                                                     | task T15                                 |
-| A capability probe, and the override of an overstated memory value                                                                                                                                                                                                             | task T15                                 |
+| An eviction of the textures of another volume for the memory limit of `auto`                                                                                                                                                                                                   | cornerstone3D#3020, follow-up            |
+| A reduction in `convertMapperToNotSharedMapper`, which uploads full resolution                                                                                                                                                                                                 | cornerstone3D#3020, follow-up            |
+| The first context loss or stop of the tab at a memory size that the device has not used before (GPULIMIT-DETECT-5)                                                                                                                                                             | cornerstone3D#3020, known gap            |
 | A brick loader, and the sets that it would provision                                                                                                                                                                                                                           | task T7                                  |
 | The state that a user sees, and the indicator of OHIF                                                                                                                                                                                                                          | tasks T3 and T6                          |

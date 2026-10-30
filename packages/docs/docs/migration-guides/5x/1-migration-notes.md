@@ -470,7 +470,7 @@ image of any encapsulated syntax takes the direct fragment path.
 - If you special-cased `1.2.840.10008.1.2.4.140` as JPEG XL anywhere in your own
   code, change it to the `.110`/`.111`/`.112` block.
 
-## Volume textures: lossy downsampling is a configuration choice
+## Volume textures: lossy downsampling is a configuration choice, and the default GPU preset is `auto`
 
 ### What Changed
 
@@ -479,22 +479,52 @@ downsampling the viewer may use:
 
 | Kind                 | Default | What it does                                                                                 |
 | -------------------- | ------- | -------------------------------------------------------------------------------------------- |
-| `final`              | `false` | Reduces a volume texture that exceeds the GPU settings preset. The image stays reduced.      |
+| `final`              | `false` | Reduces a volume texture that exceeds the GPU settings. The image stays reduced.             |
 | `interactive`        | `true`  | Lowers the detail during an interaction, for example the sample distance of a 3D rotation.   |
 | `interleavedLoading` | `true`  | Fills the frames that have not loaded yet with copies of the nearby frames, during the load. |
 
 With the defaults, a volume renders as in 4.x: the volume texture has the full
-dimensions of the volume, no GPU settings preset applies, and a 3D render uses
-the sample distance of 4.x. The `interactive` and `interleavedLoading` kinds
+dimensions of the volume, no GPU settings preset applies, no probe runs, and a
+3D render uses the sample distance of 4.x. The `interactive` and `interleavedLoading` kinds
 keep the behaviour of 4.x.
 
-With `final: true`, a volume texture comes from a GPU settings preset. A preset
-is a named set of values (`low-tablet`, `low`, `medium`, `high`), and nothing
-probes the device to choose it. When an application selects no preset, `high`
-applies, and it limits each edge of a 3D texture to 2048 voxels. A volume with a
-longer axis then draws from a box-average reduction of that axis. For example, a
-CT of 512 × 512 × 2464 draws with a factor of 2 along k, also on a device that
-supports a 4096 texture edge.
+With `final: true`, a volume texture comes from the GPU settings. When an
+application selects no preset, the `auto` preset applies. Earlier 5.x
+pre-releases used `high` as the default, with a fixed edge of 2048 voxels;
+`auto` replaces `high` as the default.
+
+`auto` takes its limits from a record that the browser keeps for each GPU
+renderer, in the `localStorage` key `cornerstone3D.renderingCapabilities.<hash>`,
+where `<hash>` is a hash of the renderer string, so each GPU of a dual-GPU
+device keeps its own record:
+
+- **The texture edge.** At the first start, a probe draws thin 3D textures and
+  finds the largest edge that renders correctly, from 2048 down to 16. When a
+  volume needs a larger edge, the probe runs at that edge before the texture is
+  allocated, up to `MAX_3D_TEXTURE_SIZE`, or up to
+  `rendering.autoGpuSettings.maxTextureEdge` when that is smaller. The edge cap
+  of 2048 applies to the named presets only, and not to `auto`.
+- **The GPU memory.** The page counts its own GPU bytes: the textures, the
+  canvases, the render buffers and the contexts of its viewports. Another tab
+  does not count. The record keeps the largest total that worked as the
+  normal level. The limit of `auto` is one step above it (2 × the normal
+  level), so the limit rises after each success at a larger total, up to
+  `rendering.autoGpuSettings.maxTextureMemoryBytes` (32 GB by default). A failure within 1 hour of the previous one joins its episode.
+  Each failure of an episode halves the limit again (1/2, then 1/4) for 1 hour
+  after its last failure, and a page that saw the reduction keeps it until it
+  reloads. Three episodes within 7 days set a ceiling below the smallest of
+  them, until a retest. A new texture gets the
+  memory limit of `auto` minus the GPU bytes of the rest of the page. `auto`
+  does not evict the textures of another volume.
+- **The start.** The memory starts from `low` for a software rasterizer,
+  `low-tablet` for a mobile GPU, and `medium` for any other GPU. Safari
+  reports `"Apple GPU"` on a Mac too, and a Mac with no touch screen starts
+  from `medium`. The edge is always an edge that the probe passed.
+
+A volume with an axis longer than the limit draws from a box-average reduction
+of that axis. For example, a CT of 512 × 512 × 2464 draws with a factor of 2
+along k on a device with a `MAX_3D_TEXTURE_SIZE` of 2048, and at full
+resolution on a device that passes the probe at 2464.
 
 ### Why This Matters
 
@@ -502,25 +532,58 @@ Each kind of lossy downsampling shows pixels that differ from the source data.
 An application turns on a kind only when it also tells the user that the image
 is lossy.
 
-The reported `MAX_3D_TEXTURE_SIZE` is not a reliable limit, so no preset reads
-it. Some Android devices report 2048 or more, but render only 256 per axis. No
-tested device renders beyond 2048. Without final downsampling, such a device can
-show a uniform gray image or lose its WebGL context.
+The reported `MAX_3D_TEXTURE_SIZE` is not a reliable limit. Some Android
+devices report 2048 or more, but render a uniform gray above 128 or 256 per
+axis. Without final downsampling, such a device can show a uniform gray image
+or lose its WebGL context. With final downsampling, the probe tests the edge
+that the device really renders, and the voxel quality record of the viewport
+states the reduction (`reduction: boxAverage`), so a fidelity readout can show
+it to the user.
+
+The probe version of the stored record changes from 1 to 3, so each browser
+probes again once.
+
+### API changes
+
+- `GpuSettingsPresetId` has a new member `'auto'`. An exhaustive `switch`
+  over the type needs a new case.
+- `defaultGpuSettingsPresetId` changes from `'high'` to `'auto'`.
+- `getGpuSettingsPresets()` returns `auto` first, then the named presets.
+  Its first call can run the probe, which creates a WebGL context. A call to
+  `getGpuSettingsPresets()` or `getActiveGpuSettings()` under `auto` can run
+  the probe also with `final` off. No render path makes these calls with
+  `final` off.
+- The start memory on a desktop GPU changes from 32 GB (`high`) to 8 GB
+  (`medium`), and the page total of all volumes counts against it. More
+  volumes, or larger volumes, therefore draw reduced than under `high`. A
+  mobile GPU starts at 1 GB.
+- New `init` configuration `rendering.autoGpuSettings`:
+  `maxTextureMemoryBytes` (default 32 GB) bounds the memory that `auto` tests,
+  and `maxTextureEdge` (default and upper bound `MAX_3D_TEXTURE_SIZE`) bounds
+  the edge that `auto` probes.
+- New exports: `getStoredRenderingCapabilities`, `retestRenderingCapabilities`,
+  `resetRenderingCapabilities`, `setCapabilityStorage`, `getCapabilityStorage`,
+  and their types.
 
 ### Migration Guidance
 
 - **No action is needed** to keep the behaviour of 4.x.
-- **To fit the texture to a weak device,** set
+- **To fit the texture to the device,** set
   `rendering.lossyDownsampling.final` to `true` in the `init` configuration, or
   call `setLossyDownsampling({ final: true })` before a viewport adds its
-  actors. Then call `setGpuSettingsPreset`. Use `low` or `low-tablet` for a
-  device that renders only 256 per axis.
+  actors. `auto` then applies.
+- **To select a fixed preset,** call `setGpuSettingsPreset('medium')` (or
+  `low-tablet`, `low`, `high`) before a viewport adds its actors. A named preset
+  overrides `auto`, and `resetGpuSettingsPreset()` returns to `auto`.
 - **To show no lossy pixels at all,** set `interactive` and
   `interleavedLoading` to `false` as well.
-- **For a full-resolution long axis with final downsampling on,** the only
-  preset with a larger edge is `high-texture-4096`. That preset is internal: it
-  is a control for comparison, and no device is tested at that edge. Use it only
-  on hardware that you have tested.
+- **To show the limits,** read `getStoredRenderingCapabilities()`. Each value
+  has a success count and a failure count.
+- **To try a failed limit again,** call `retestRenderingCapabilities()`, or
+  `retestRenderingCapabilities({ edge: true })` for one category. Cornerstone3D
+  shows no prompt; the application decides when to offer a retest.
+- **To probe from the start,** call
+  `resetRenderingCapabilities({ clearStorage: true })`, and then reload.
 - **The quality record of a reduced volume during a load** (`getGridQuality`)
   now counts only the empty boxes as missing. A box that holds some arrived
   frames is the average of those frames, and it holds data.

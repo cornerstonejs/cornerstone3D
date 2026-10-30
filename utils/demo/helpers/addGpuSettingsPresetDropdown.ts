@@ -3,12 +3,15 @@ import {
   getGpuSettingsPresets,
   setGpuSettingsPreset,
 } from '@cornerstonejs/core';
-import type { GpuSettings, GpuSettingsPresetId } from '@cornerstonejs/core';
+import type {
+  GpuSettings,
+  GpuSettingsPresetId,
+} from '@cornerstonejs/core';
 import addDropdownToToolbar from './addDropdownToToolbar';
 
 interface configGpuSettingsDropdown {
   /** Called after the preset changes, so a page can reload its data. */
-  onSelectedValueChange?: (gpuSettings: GpuSettings) => void;
+  onSelectedValueChange?: (preset: GpuSettings) => void;
   /** The preset to select at the start. The active preset by default. */
   defaultValue?: GpuSettingsPresetId;
   container?: HTMLElement;
@@ -23,8 +26,9 @@ const BYTES_IN_A_GIGABYTE = 1024 * 1024 * 1024;
 function formatMemory(bytes: number): string {
   if (bytes >= BYTES_IN_A_GIGABYTE) {
     const gigabytes = bytes / BYTES_IN_A_GIGABYTE;
-    const rounded =
-      Number.isInteger(gigabytes) ? String(gigabytes) : gigabytes.toFixed(1);
+    const rounded = Number.isInteger(gigabytes)
+      ? String(gigabytes)
+      : gigabytes.toFixed(1);
 
     return `${rounded} GB`;
   }
@@ -33,22 +37,28 @@ function formatMemory(bytes: number): string {
 }
 
 /** Describes one preset in a form that a reader can compare at a glance. */
-function describe(gpuSettings: GpuSettings): string {
-  const internal = gpuSettings.internal ? ', internal' : '';
+function describe(preset: GpuSettings): string {
+  // The values of `auto` change as the device record grows, so the label
+  // names the source and not the values.
+  if (preset.id === 'auto') {
+    return 'auto (from the stored device record)';
+  }
 
-  return `${gpuSettings.id} (edge ${gpuSettings.maxTextureEdge}, ${formatMemory(gpuSettings.textureMemoryBytes)}, speed ${gpuSettings.speed}${internal})`;
+  const internal = preset.internal ? ', internal' : '';
+
+  return `${preset.id} (edge ${preset.maxTextureEdge}, ${formatMemory(preset.textureMemoryBytes)}, speed ${preset.speed}${internal})`;
 }
 
 /**
  * Adds a drop down that selects the GPU settings preset.
  *
- * A preset is a set of values, and nothing probes the device. The preset
- * decides which render strategies a provider can build, so a page reloads its
- * data after a change: the strategies of a viewport are built when that
- * viewport adds its actor.
+ * `auto` is the default, and takes its limits from the stored record of the
+ * device. A named preset overrides `auto`. The preset decides which render
+ * strategies a provider can build, so a page reloads its data after a change:
+ * the strategies of a viewport are built when that viewport adds its actor.
  *
  * `high` and `high-texture-4096` are the pair to compare. They describe the
- * same values except the edge of a texture, so one volume draws with
+ * same device, and only the edge of a texture differs, so one volume draws with
  * no reduction under `high-texture-4096` and with a reduction under `high`.
  */
 export default function addGpuSettingsPresetDropdown({
@@ -60,10 +70,10 @@ export default function addGpuSettingsPresetDropdown({
 }: configGpuSettingsDropdown = {}): void {
   const presets = getGpuSettingsPresets();
   const map = new Map<string, GpuSettings>(
-    presets.map((gpuSettings) => [describe(gpuSettings), gpuSettings])
+    presets.map((preset) => [describe(preset), preset])
   );
   const selected = defaultValue
-    ? presets.find((gpuSettings) => gpuSettings.id === defaultValue)
+    ? presets.find((preset) => preset.id === defaultValue)
     : undefined;
 
   // The drop-down shows the preset that applies, so a page that loads before
@@ -81,10 +91,10 @@ export default function addGpuSettingsPresetDropdown({
       defaultValue: describe(getActiveGpuSettings()),
     },
     onSelectedValueChange: (_key, value) => {
-      const gpuSettings = value as GpuSettings;
+      const preset = value as GpuSettings;
 
-      setGpuSettingsPreset(gpuSettings.id);
-      onSelectedValueChange?.(gpuSettings);
+      setGpuSettingsPreset(preset.id);
+      onSelectedValueChange?.(preset);
     },
   });
 }

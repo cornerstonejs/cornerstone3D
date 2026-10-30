@@ -29,8 +29,16 @@ import {
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import { sampleDistanceOf } from '../src/RenderingEngine/helpers/createVolumeMapper';
 import { VoxelStatistics } from '../src/enums';
+import { resetRenderingCapabilities } from '../src/utilities/renderingCapabilities';
+import { probeRenderingLimits } from '../src/utilities/textureSupport';
+
+jest.mock('../src/utilities/textureSupport', () => ({
+  probeRenderingLimits: jest.fn(),
+  probeTextureEdge: jest.fn(() => false),
+  probeEdgeSearch: jest.fn(),
+}));
 import { setLossyDownsampling } from '../src/init';
-import { gridFitsGpuSettings } from '../src/RenderingEngine/vtkClasses/vtkStreamingOpenGLVolumeMapper';
+import gridFitsGpuSettings from '../src/RenderingEngine/vtkClasses/gridFitsGpuSettings';
 
 // These tests check the reductions of final downsampling, which is off by
 // default.
@@ -100,6 +108,8 @@ function render(path, rendering) {
 beforeEach(() => {
   volumeTextureStore.clear();
   volumeTextureStore.setBudget(0);
+  // The default `auto` reads a WebGL probe, which jest does not have.
+  setGpuSettingsPreset('high');
 });
 
 afterEach(() => {
@@ -107,6 +117,44 @@ afterEach(() => {
 });
 
 describe('the default provider builds the strategies', () => {
+  it('reduces under auto on a device that renders gray above an edge of 128', () => {
+    const gl = {
+      getParameter: (param) =>
+        param === 'unmasked-renderer' ? 'Mali-G52' : 16384,
+      getExtension: (name) =>
+        name === 'WEBGL_debug_renderer_info'
+          ? { UNMASKED_RENDERER_WEBGL: 'unmasked-renderer' }
+          : null,
+    };
+    const getContextSpy = jest
+      .spyOn(HTMLCanvasElement.prototype, 'getContext')
+      .mockImplementation((type) => (type === 'webgl2' ? gl : null));
+
+    probeRenderingLimits.mockReturnValue({
+      formats: { float: true },
+      max3DTextureSize: 8192,
+      reliableEdge: 128,
+      failedEdge: 256,
+    });
+    resetGpuSettingsPreset();
+
+    try {
+      const volume = makeVolume();
+      const strategies = defaultVolumeStrategyProvider({
+        volume,
+        gpuSettings: getGpuSettingsPreset('auto'),
+        viewportId: 'viewport-1',
+      });
+
+      expect(strategies.map((strategy) => strategy.name)).toEqual([
+        'reduced-4x4x1/full-extent/average',
+      ]);
+    } finally {
+      getContextSpy.mockRestore();
+      resetRenderingCapabilities({ clearStorage: true });
+    }
+  });
+
   it('builds the full-resolution strategy when the device can hold it', () => {
     const volume = makeVolume();
     const strategies = defaultVolumeStrategyProvider(

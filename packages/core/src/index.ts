@@ -218,7 +218,35 @@ import {
 import {
   getRenderingCapabilities,
   detectRenderingCapabilities,
+  getStoredRenderingCapabilities,
+  retestRenderingCapabilities,
+  resetRenderingCapabilities,
+  getPageMemoryReduction,
 } from './utilities/renderingCapabilities';
+export type {
+  RenderingCapabilities,
+  RenderingCapabilityCategory,
+  RenderingCapabilityFailure,
+  RenderingCapabilitySuccess,
+  RenderingCapabilityMemory,
+  RenderingCapabilityMemoryFailure,
+  RenderingCapabilityMemoryEpisode,
+  RetestRenderingCapabilitiesOptions,
+  StoredRenderingCapabilities,
+} from './utilities/renderingCapabilities';
+export {
+  getCapabilityStorage,
+  setCapabilityStorage,
+} from './utilities/capabilityStorage';
+export type { CapabilityStorage } from './utilities/capabilityStorage';
+export {
+  getGpuMemoryTotal,
+  getGpuMemoryByKind,
+} from './utilities/gpuMemoryLedger';
+export type {
+  GpuMemoryKind,
+  GpuMemoryEntry,
+} from './utilities/gpuMemoryLedger';
 
 // Classes
 import Settings from './Settings';
@@ -471,6 +499,10 @@ export {
   getEffectiveRenderBackend,
   getRenderingCapabilities,
   detectRenderingCapabilities,
+  getStoredRenderingCapabilities,
+  retestRenderingCapabilities,
+  resetRenderingCapabilities,
+  getPageMemoryReduction,
   // GenericViewport
   getUseGenericViewport,
   // Geometry Loader

@@ -5,10 +5,14 @@ import {
 } from '../../utilities/voxelGrid';
 import type { ViewportFidelityCause } from '../../types/ViewportFidelity';
 import { volumeTextureBytes } from '../../utilities/getBufferConfiguration';
-import { gridLimitsOfGpuSettings } from '../../utilities/gpuSettingsPresets';
+import {
+  gridLimitsOfGpuSettings,
+  gpuSettingsForGrid,
+} from '../../utilities/gpuSettingsPresets';
 import { getLossyDownsampling } from '../../init';
 import { isMutableSlab } from '../../cache/classes/VolumeTextureSet';
 import { FULL_RESOLUTION_TEXTURE_SET } from '../../cache/classes/ImageVolume';
+import { getGpuMemoryTotal } from '../../utilities/gpuMemoryLedger';
 import type { GpuSettings } from '../../utilities/gpuSettingsPresets';
 import type { vtkStreamingOpenGLTexture } from '../../cache/classes/ImageVolume';
 import type {
@@ -275,6 +279,57 @@ function bytesPerVoxelOf(volume: IImageVolume): number {
 }
 
 /**
+ * The reduction factors of the full-extent texture of a volume under some GPU
+ * settings. Every factor is 1 when final downsampling is off, because the
+ * volume then gets its full-resolution texture whatever its size.
+ *
+ * A dynamic (4D) volume and a volume of more than one component also get
+ * factors of 1, because the reduced fill does not support them yet (see
+ * VRS-I-19 and VRS-I-20).
+ *
+ * The default provider builds the full-resolution strategy when every factor
+ * is 1, and the reduced strategy with these factors otherwise. A caller that
+ * must know whether a volume draws reduced, before any texture exists, reads
+ * the same answer here.
+ *
+ * This is where the `auto` preset tests an edge that the volume needs and
+ * that the device has not yet passed, before any texture is allocated. Under
+ * `auto`, the GPU memory of the rest of the page counts against the memory
+ * limit: the textures of the other volumes, the canvases and the contexts (see
+ * `gpuMemoryLedger`).
+ *
+ * @param volume - the volume to draw
+ * @param gpuSettings - the GPU settings that apply
+ * @returns the box size on each axis of the voxel grid
+ */
+export function volumeTextureReductionFactors(
+  volume: IImageVolume,
+  gpuSettings: GpuSettings | undefined
+): Point3 {
+  if (
+    !gpuSettings ||
+    !getLossyDownsampling().final ||
+    volume.isDynamicVolume?.() ||
+    componentsOf(volume) > 1
+  ) {
+    return [1, 1, 1];
+  }
+
+  const bytesPerVoxel = bytesPerVoxelOf(volume);
+  const limits = gridLimitsOfGpuSettings(
+    gpuSettingsForGrid(
+      gpuSettings,
+      volume.voxelGrid.dimensions,
+      bytesPerVoxel,
+      getGpuMemoryTotal(volume.volumeId)
+    ),
+    bytesPerVoxel
+  );
+
+  return boxAverageReductionFactors(volume.voxelGrid.dimensions, limits);
+}
+
+/**
  * The name of the set that holds a reduction by these factors.
  *
  * The name derives from the strategy, so a second viewport that chooses the
@@ -296,45 +351,10 @@ export function reducedStrategyName(
 }
 
 /**
- * The reduction factors of the full-extent texture of a volume under some GPU
- * settings. Every factor is 1 when final downsampling is off, because the
- * volume then gets its full-resolution texture whatever its size.
- *
- * A dynamic (4D) volume and a volume of more than one component also get
- * factors of 1, because the reduced fill does not support them yet (see
- * VRS-I-13 and VRS-I-14).
- *
- * The default provider builds the full-resolution strategy when every factor
- * is 1, and the reduced strategy with these factors otherwise. A caller that
- * must know whether a volume draws reduced, before any texture exists, reads
- * the same answer here.
- *
- * @param volume - the volume to draw
- * @param gpuSettings - the GPU settings that apply
- * @returns the box size on each axis of the voxel grid
- */
-export function volumeTextureReductionFactors(
-  volume: IImageVolume,
-  gpuSettings: GpuSettings | undefined
-): Point3 {
-  if (
-    !gpuSettings ||
-    !getLossyDownsampling().final ||
-    volume.isDynamicVolume?.() ||
-    componentsOf(volume) > 1
-  ) {
-    return [1, 1, 1];
-  }
-
-  const limits = gridLimitsOfGpuSettings(gpuSettings, bytesPerVoxelOf(volume));
-
-  return boxAverageReductionFactors(volume.voxelGrid.dimensions, limits);
-}
-
-/**
  * Why the GPU settings reduce this volume: `deviceTextureLimit` when the edge
  * limit alone reduces it, `memoryBudget` when only the texture memory does.
- * Undefined when the settings do not reduce the volume.
+ * Undefined when the settings do not reduce the volume. The edge is the one of
+ * the settings for this grid, as in {@link volumeTextureReductionFactors}.
  */
 export function reductionCauseOf(
   volume: IImageVolume,
@@ -344,8 +364,15 @@ export function reductionCauseOf(
     return undefined;
   }
 
-  const edgeFactors = boxAverageReductionFactors(volume.voxelGrid.dimensions, {
-    maxEdge: gpuSettings.maxTextureEdge,
+  const { dimensions } = volume.voxelGrid;
+  const { maxTextureEdge } = gpuSettingsForGrid(
+    gpuSettings,
+    dimensions,
+    bytesPerVoxelOf(volume),
+    getGpuMemoryTotal(volume.volumeId)
+  );
+  const edgeFactors = boxAverageReductionFactors(dimensions, {
+    maxEdge: maxTextureEdge,
   });
 
   return edgeFactors.some((f) => f > 1) ? 'deviceTextureLimit' : 'memoryBudget';

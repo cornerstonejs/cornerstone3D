@@ -10,8 +10,16 @@ import VoxelStatistics from '../../enums/VoxelStatistics';
 import ImageQualityStatus from '../../enums/ImageQualityStatus';
 import autoLoad from '../../utilities/autoLoad';
 import { getConfiguration } from '../../init';
+import { noteTextureAllocation } from '../../utilities/gpuAllocationTracker';
+import {
+  getGpuMemoryEntryBytes,
+  getGpuMemoryTotal,
+  removeGpuMemoryEntry,
+  setGpuMemoryEntry,
+} from '../../utilities/gpuMemoryLedger';
 
 const DEFAULT_MAX_SLICES_PER_RENDER = 16;
+
 const DEFAULT_MAX_MILLISECONDS_PER_RENDER = 8;
 
 /**
@@ -98,23 +106,48 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
   const superCreate3DFromRaw = publicAPI.create3DFromRaw;
 
   /**
-   * The mappers allocate with `data: null`, which leaves the GPU storage empty,
-   * so every slice needs a fill. `modified()` no longer implies that, and a
-   * re-allocation after the first fill would otherwise stay black.
+   * Tells the allocation tracker about a new GPU allocation, before it
+   * happens, and records the upload in the GPU memory ledger. An update of
+   * some extents of the same texture is no allocation. A new upload of the same
+   * shape, after the texture moved to another context, updates the ledger only,
+   * so a move writes no pending record.
    */
-  publicAPI.create3DFromRaw = (options) => {
-    const created = superCreate3DFromRaw(options);
+  function noteAllocation({ width, height, depth, numComps, dataType }) {
+    const shape = `${width}x${height}x${depth}x${numComps}x${dataType}`;
 
-    if (created && !options.data) {
-      publicAPI.markAllFramesUpdated();
+    // `dataType` names a typed array, such as 'Float32Array'.
+    const textureBytes =
+      width *
+      height *
+      depth *
+      (numComps || 1) *
+      (globalThis[dataType]?.BYTES_PER_ELEMENT ?? 4);
+
+    if (shape !== model.allocatedShape) {
+      model.allocatedShape = shape;
+      // The page total leaves out the earlier upload of this texture, which
+      // the new allocation replaces.
+      noteTextureAllocation({
+        textureBytes,
+        totalBytes:
+          getGpuMemoryTotal() -
+          getGpuMemoryEntryBytes(publicAPI) +
+          textureBytes,
+      });
     }
 
-    return created;
-  };
+    setGpuMemoryEntry(publicAPI, {
+      kind: 'texture',
+      bytes: textureBytes,
+      volumeId: model.volumeId,
+    });
+  }
 
   const superReleaseGraphicsResources = publicAPI.releaseGraphicsResources;
 
   /**
+   * vtk.js releases the upload when the texture moves to another context.
+   *
    * vtk.js deletes the GL texture only when it gets a render window. The
    * texture store and `setOpenGLRenderWindow` call this with none, so the
    * texture defaults to its own window, which created the handle. A deleted
@@ -123,9 +156,28 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
   publicAPI.releaseGraphicsResources = (rwin) => {
     const window = model._openGLRenderWindow;
 
-    superReleaseGraphicsResources(
+    removeGpuMemoryEntry(publicAPI);
+
+    return superReleaseGraphicsResources(
       rwin ?? (window?.isDeleted?.() ? undefined : window)
     );
+  };
+
+  /**
+   * The mappers allocate with `data: null`, which leaves the GPU storage empty,
+   * so every slice needs a fill. `modified()` no longer implies that, and a
+   * re-allocation after the first fill would otherwise stay black.
+   */
+  publicAPI.create3DFromRaw = (options) => {
+    noteAllocation(options);
+
+    const created = superCreate3DFromRaw(options);
+
+    if (created && !options.data) {
+      publicAPI.markAllFramesUpdated();
+    }
+
+    return created;
   };
 
   const superUpdate = publicAPI.updateVolumeInfoForGL;

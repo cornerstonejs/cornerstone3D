@@ -2,9 +2,25 @@ import { vtkSharedVolumeMapper } from '../vtkClasses';
 import { getConfiguration, getLossyDownsampling } from '../../init';
 import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture';
+import macro from '@kitware/vtk.js/macros';
 import vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import vtkBoundingBox from '@kitware/vtk.js/Common/DataModel/BoundingBox';
+import {
+  gpuSettingsForRender,
+  gridLimitsOfGpuSettings,
+  gpuSettingsForGrid,
+} from '../../utilities/gpuSettingsPresets';
+import { voxelGridWithinLimits } from '../../utilities/voxelGrid';
+import { noteTextureAllocation } from '../../utilities/gpuAllocationTracker';
+import {
+  getGpuMemoryTotal,
+  removeGpuMemoryEntry,
+  setGpuMemoryEntry,
+} from '../../utilities/gpuMemoryLedger';
+import { coreLog } from '../../utilities/logger';
+
+const log = coreLog.getLogger('RenderingEngine', 'createVolumeMapper');
 
 /** The largest number of samples along one ray of a volume mapper. */
 export const MAXIMUM_SAMPLES_PER_RAY = 4000;
@@ -144,11 +160,17 @@ export default function createVolumeMapper(
  * a shared mapper and apply some changes to it, since otherwise, the changes
  * will be applied to all the mappers that share the same data.
  *
+ * The new mapper is a plain vtk.js mapper, which uploads the complete scalar
+ * array at full resolution, with no reduction. With final downsampling off,
+ * the mapper is the one of 4.x. With final downsampling on, under `auto` the
+ * edge probe runs first, the upload counts in the memory record, and a grid
+ * above the limits of the GPU settings logs a warning.
+ *
  * @param sharedMapper - The shared mapper to convert.
  * @returns The converted volume mapper.
  */
 export function convertMapperToNotSharedMapper(sharedMapper: vtkVolumeMapper) {
-  const volumeMapper = vtkVolumeMapper.newInstance();
+  const volumeMapper = newLedgerVolumeMapper();
   volumeMapper.setBlendMode(sharedMapper.getBlendMode());
 
   const imageData = sharedMapper.getInputData();
@@ -161,9 +183,73 @@ export function convertMapperToNotSharedMapper(sharedMapper: vtkVolumeMapper) {
   });
 
   imageData.getPointData().setScalars(scalarArray);
-
   volumeMapper.setInputData(imageData);
   volumeMapper.setMaximumSamplesPerRay(sharedMapper.getMaximumSamplesPerRay());
   volumeMapper.setSampleDistance(sharedMapper.getSampleDistance());
+
+  const gpuSettings = gpuSettingsForRender();
+
+  // With final downsampling off, no preset applies and no probe runs.
+  if (!gpuSettings) {
+    return volumeMapper;
+  }
+
+  const dimensions = imageData.getDimensions();
+  const bytesPerVoxel = values.BYTES_PER_ELEMENT;
+  const textureBytes =
+    dimensions[0] * dimensions[1] * dimensions[2] * bytesPerVoxel;
+  const limits = gridLimitsOfGpuSettings(
+    gpuSettingsForGrid(gpuSettings, dimensions, bytesPerVoxel),
+    bytesPerVoxel
+  );
+
+  if (
+    !voxelGridWithinLimits(
+      {
+        dimensions: [dimensions[0], dimensions[1], dimensions[2]],
+        spacing: [1, 1, 1],
+        origin: [0, 0, 0],
+        direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
+      },
+      limits
+    )
+  ) {
+    log.warn(
+      `a full-resolution texture of ${dimensions.join('x')} exceeds the limits of the GPU settings, and this mapper cannot reduce it`
+    );
+  }
+
+  noteTextureAllocation({
+    textureBytes,
+    totalBytes: getGpuMemoryTotal() + textureBytes,
+  });
+  // vtk.js uploads the texture inside the mapper, so the mapper owns the entry
+  // of the ledger until it is deleted.
+  setGpuMemoryEntry(volumeMapper, {
+    kind: 'texture',
+    bytes: textureBytes,
+    volumeId: imageData.get('volumeId')?.volumeId,
+  });
+
   return volumeMapper;
 }
+
+/**
+ * A plain vtk.js volume mapper whose `delete` also removes its entry of the
+ * GPU memory ledger. vtk.js freezes the public API of an instance, so the
+ * override happens in the constructor, before the freeze.
+ */
+const newLedgerVolumeMapper = macro.newInstance(
+  (publicAPI, model, initialValues = {}) => {
+    vtkVolumeMapper.extend(publicAPI, model, initialValues);
+
+    const mapper = publicAPI as vtkVolumeMapper;
+    const superDelete = mapper.delete;
+
+    mapper.delete = () => {
+      removeGpuMemoryEntry(mapper);
+      superDelete();
+    };
+  },
+  'vtkLedgerVolumeMapper'
+) as () => vtkVolumeMapper;
