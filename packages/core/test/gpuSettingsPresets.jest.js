@@ -7,7 +7,13 @@ import {
   resetGpuSettingsPreset,
   gridLimitsOfGpuSettings,
   gpuSettingsForGrid,
+  gpuSettingsForRender,
 } from '../src/utilities/gpuSettingsPresets';
+import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
+import vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
+import gridFitsGpuSettings from '../src/RenderingEngine/vtkClasses/gridFitsGpuSettings';
+import { convertMapperToNotSharedMapper } from '../src/RenderingEngine/helpers/createVolumeMapper';
+import { getLossyDownsampling } from '../src/init';
 import {
   MEMORY_RECENT_MS,
   recordRenderingCapabilityFailure,
@@ -133,6 +139,38 @@ describe('the capability presets', () => {
 
     expect(limits.maxEdge).toBe(256);
     expect(limits.maxVoxelCount).toBe(GIGABYTE / 4);
+  });
+});
+
+describe('final downsampling off', () => {
+  it('runs no probe under auto on any render path', () => {
+    jest.clearAllMocks();
+    mockWebGL();
+
+    const dimensions = [16, 16, 3000];
+    const imageData = vtkImageData.newInstance();
+
+    imageData.setDimensions(dimensions);
+    imageData.set(
+      {
+        voxelManager: {
+          getCompleteScalarDataArray: () => new Float32Array(16 * 16 * 3000),
+        },
+      },
+      true
+    );
+    const sharedMapper = vtkVolumeMapper.newInstance();
+
+    sharedMapper.setInputData(imageData);
+
+    expect(getLossyDownsampling().final).toBe(false);
+    expect(gpuSettingsForRender()).toBeUndefined();
+    expect(gridFitsGpuSettings(dimensions, 'Float32Array', 1)).toBe(true);
+    convertMapperToNotSharedMapper(sharedMapper).delete();
+
+    expect(probeRenderingLimits).not.toHaveBeenCalled();
+    expect(probeTextureEdge).not.toHaveBeenCalled();
+    expect(probeEdgeSearch).not.toHaveBeenCalled();
   });
 });
 

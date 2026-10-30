@@ -1,9 +1,8 @@
-import { getLossyDownsampling } from '../../init';
 import { coreLog } from '../../utilities/logger';
-import { getBufferConfiguration } from '../../utilities/getBufferConfiguration';
+import { volumeTextureBytes } from '../../utilities/getBufferConfiguration';
 import { voxelGridWithinLimits } from '../../utilities/voxelGrid';
 import {
-  getActiveGpuSettings,
+  gpuSettingsForRender,
   gridLimitsOfGpuSettings,
   gpuSettingsForGrid,
 } from '../../utilities/gpuSettingsPresets';
@@ -31,24 +30,20 @@ export default function gridFitsGpuSettings(
   numberOfComponents,
   context
 ) {
-  if (!getLossyDownsampling().final) {
+  const active = gpuSettingsForRender();
+
+  if (!active) {
     return true;
   }
 
   let numBytes = 4 * (numberOfComponents || 1);
 
   try {
-    ({ numBytes } = getBufferConfiguration(dataType, numberOfComponents || 1, {
-      isVolumeBuffer: true,
-    }));
+    numBytes = volumeTextureBytes(1, dataType, numberOfComponents);
   } catch {
     // A type that the volume buffer does not name counts as float.
   }
-  const gpuSettings = gpuSettingsForGrid(
-    getActiveGpuSettings(),
-    dims,
-    numBytes
-  );
+  const gpuSettings = gpuSettingsForGrid(active, dims, numBytes);
   const limits = gridLimitsOfGpuSettings(gpuSettings, numBytes);
   const grid = {
     dimensions: [dims[0], dims[1], dims[2]],

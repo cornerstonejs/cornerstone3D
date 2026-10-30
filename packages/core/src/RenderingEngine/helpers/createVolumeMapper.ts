@@ -6,7 +6,7 @@ import vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import vtkBoundingBox from '@kitware/vtk.js/Common/DataModel/BoundingBox';
 import {
-  getActiveGpuSettings,
+  gpuSettingsForRender,
   gridLimitsOfGpuSettings,
   gpuSettingsForGrid,
 } from '../../utilities/gpuSettingsPresets';
@@ -98,9 +98,10 @@ export default function createVolumeMapper(
  * will be applied to all the mappers that share the same data.
  *
  * The new mapper is a plain vtk.js mapper, which uploads the complete scalar
- * array at full resolution, with no reduction. Under `auto`, the edge probe
- * runs first, the upload counts in the memory record, and a grid above the
- * limits of the GPU settings logs a warning.
+ * array at full resolution, with no reduction. With final downsampling off,
+ * the mapper is the one of 4.x. With final downsampling on, under `auto` the
+ * edge probe runs first, the upload counts in the memory record, and a grid
+ * above the limits of the GPU settings logs a warning.
  *
  * @param sharedMapper - The shared mapper to convert.
  * @returns The converted volume mapper.
@@ -119,13 +120,23 @@ export function convertMapperToNotSharedMapper(sharedMapper: vtkVolumeMapper) {
   });
 
   imageData.getPointData().setScalars(scalarArray);
+  volumeMapper.setInputData(imageData);
+  volumeMapper.setMaximumSamplesPerRay(sharedMapper.getMaximumSamplesPerRay());
+  volumeMapper.setSampleDistance(sharedMapper.getSampleDistance());
+
+  const gpuSettings = gpuSettingsForRender();
+
+  // With final downsampling off, no preset applies and no probe runs.
+  if (!gpuSettings) {
+    return volumeMapper;
+  }
 
   const dimensions = imageData.getDimensions();
   const bytesPerVoxel = values.BYTES_PER_ELEMENT;
   const textureBytes =
     dimensions[0] * dimensions[1] * dimensions[2] * bytesPerVoxel;
   const limits = gridLimitsOfGpuSettings(
-    gpuSettingsForGrid(getActiveGpuSettings(), dimensions, bytesPerVoxel),
+    gpuSettingsForGrid(gpuSettings, dimensions, bytesPerVoxel),
     bytesPerVoxel
   );
 
@@ -165,8 +176,5 @@ export function convertMapperToNotSharedMapper(sharedMapper: vtkVolumeMapper) {
     return superDelete();
   };
 
-  volumeMapper.setInputData(imageData);
-  volumeMapper.setMaximumSamplesPerRay(sharedMapper.getMaximumSamplesPerRay());
-  volumeMapper.setSampleDistance(sharedMapper.getSampleDistance());
   return volumeMapper;
 }

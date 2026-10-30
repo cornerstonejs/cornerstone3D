@@ -484,8 +484,8 @@ downsampling the viewer may use:
 | `interleavedLoading` | `true`  | Fills the frames that have not loaded yet with copies of the nearby frames, during the load. |
 
 With the defaults, a volume renders as in 4.x: the volume texture has the full
-dimensions of the volume, no GPU settings preset applies, and a 3D render uses
-the sample distance of 4.x. The `interactive` and `interleavedLoading` kinds
+dimensions of the volume, no GPU settings preset applies, no probe runs, and a
+3D render uses the sample distance of 4.x. The `interactive` and `interleavedLoading` kinds
 keep the behaviour of 4.x.
 
 With `final: true`, a volume texture comes from the GPU settings. When an

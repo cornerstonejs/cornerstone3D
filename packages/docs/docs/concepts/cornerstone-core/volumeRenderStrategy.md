@@ -433,7 +433,7 @@ that its own function reads, and no existing caller changes.
 **VRS-C-11.** When an application selects no preset, `auto` applies. A named preset overrides
 `auto`, and `resetGpuSettingsPreset` returns to `auto`.
 
-**VRS-C-12.** Under `auto`, no texture with an edge above the reliable edge of the device is
+**VRS-C-12.** With final downsampling on and under `auto`, no texture with an edge above the reliable edge of the device is
 allocated before the probe passes at that edge, on the streaming volume path, the streaming and the
 non-streaming slice paths. When no probe can run, the edge is a fixed floor (see VRS-I-14). The mapper
 of `convertMapperToNotSharedMapper` uploads the full-resolution scalars with no reduction: it runs
@@ -452,8 +452,8 @@ next load.
 
 **VRS-C-16.** With final downsampling off (`rendering.lossyDownsampling.final`), a volume renders as
 in 4.x: it gets a full-resolution texture, no GPU settings preset applies, and a 3D render uses the
-sample distance of 4.x. Every render path reads the GPU settings through `gpuSettingsForRender`,
-which gives no settings in that case.
+sample distance of 4.x, and no probe runs. Every render path reads the GPU settings through
+`gpuSettingsForRender`, which gives no settings in that case.
 
 ## § Implementation choices
 
