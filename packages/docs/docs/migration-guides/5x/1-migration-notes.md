@@ -521,6 +521,9 @@ show a uniform gray image or lose its WebGL context.
   preset with a larger edge is `high-texture-4096`. That preset is internal: it
   is a control for comparison, and no device is tested at that edge. Use it only
   on hardware that you have tested.
+- **The quality record of a reduced volume during a load** (`getGridQuality`)
+  now counts only the empty boxes as missing. A box that holds some arrived
+  frames is the average of those frames, and it holds data.
 
 ## Locked segments stop the brush, and do not cause an overlap
 

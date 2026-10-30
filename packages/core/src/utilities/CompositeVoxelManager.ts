@@ -119,8 +119,9 @@ export type VoxelRepresentation<T> = {
    *
    * A voxel of a derived representation is a box of source voxels, and not one
    * source voxel, so the quality of that voxel is the quality of the WORST
-   * source voxel of its box, and the voxel holds no data at all while any
-   * source voxel of its box has not arrived. `getRegionQuality` therefore maps
+   * source voxel of its box. The voxel is the average of the source voxels of
+   * its box that arrived, and it holds no data only while no source voxel of
+   * its box has arrived. `getRegionQuality` therefore maps
    * the region back into the source and reads this record, instead of holding a
    * record of its own.
    *
@@ -1582,9 +1583,11 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
    * source gives.
    *
    * The function maps the region back into the source, and it reads the frozen
-   * record of the source there. A derived voxel holds no data while any source
-   * voxel of its box is missing, so the part of the region that is missing
-   * follows the part of the source that is missing.
+   * record of the source there for the qualities. A derived voxel is the
+   * average of the source voxels of its box that arrived (P31.3), so it holds
+   * data when any source voxel of its box arrived. Only a box that no source
+   * delivery meets counts as missing. A box can be fractional (see `boxSpan`),
+   * and a source voxel that the box cuts counts as a voxel of that box.
    */
   private qualityOfDerived(
     representation: VoxelRepresentation<T>,
@@ -1610,22 +1613,29 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
       return withStatus(record);
     }
 
-    let missingSource = sourceVoxels - coverage.covered;
-
-    if (missingSource > 0 && quality !== undefined) {
+    if (coverage.covered < sourceVoxels && quality !== undefined) {
       record.lowest = Math.min(record.lowest ?? quality, quality);
       record.highest = Math.max(record.highest ?? quality, quality);
-      missingSource = 0;
+      record.missing = 0;
+
+      return withStatus(record);
     }
 
-    record.missing = Math.ceil((record.voxels * missingSource) / sourceVoxels);
+    // The deliveries of the source, mapped onto the boxes that they meet.
+    const boxes = coverageOfRegion(
+      (delivered ?? []).map((delivery) => ({
+        bounds: mapBoundsBetweenGrids(
+          grid,
+          representation.grid,
+          delivery.bounds
+        ),
+        quality: delivery.quality,
+      })),
+      target
+    );
 
-    // A voxel of this representation is a BOX of source voxels, so the part of
-    // the source that is missing gives the part of this representation that is
-    // missing, in proportion. The count is exact when the source holds
-    // everything, and when the source holds nothing.
-    record.exact =
-      record.exact && (missingSource === 0 || missingSource === sourceVoxels);
+    record.missing = record.voxels - boxes.covered;
+    record.exact = record.exact && boxes.exact;
 
     return withStatus(record);
   }

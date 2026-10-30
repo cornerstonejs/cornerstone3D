@@ -781,7 +781,7 @@ describe('CompositeVoxelManager stores the quality by region', () => {
     );
   });
 
-  it('states that a record is not exact, and never states less than what is missing', () => {
+  it('counts only a derived box with no arrived source voxel as missing', () => {
     const dimensions = [8, 8, 4];
     const composite = new CompositeVoxelManager({
       primary: VoxelManager.createMapVoxelManager({ dimension: dimensions }),
@@ -797,27 +797,24 @@ describe('CompositeVoxelManager stores the quality by region', () => {
     const derived = composite.createRepresentation({ factors: [2, 2, 2] });
     const record = composite.getRegionQuality(derived);
 
-    // One frame of the four arrived, so the derived record is an estimate.
-    expect(record.exact).toBe(false);
-    expect(record.missing).toBeGreaterThan(0);
+    // Frame 0 feeds the boxes of k = 0, and the boxes of k = 1 are empty.
+    expect(record.voxels).toBe(32);
+    expect(record.missing).toBe(16);
+    expect(record.exact).toBe(true);
 
+    // Frames 0 and 2 of 4: each box holds the average of one arrived frame
+    // (P31.3), so no box is missing.
     composite.acceptData({
       grid: composite.grid,
-      bounds: [
-        [0, 7],
-        [0, 7],
-        [0, 3],
-      ],
+      frameIndex: 2,
       quality: ImageQualityStatus.FULL_RESOLUTION,
     });
 
-    const complete = composite.getRegionQuality(
+    const partial = composite.getRegionQuality(
       composite.createRepresentation({ factors: [2, 2, 2] })
     );
 
-    // A source that holds everything gives an exact record.
-    expect(complete.exact).toBe(true);
-    expect(complete.missing).toBe(0);
+    expect(partial.missing).toBe(0);
   });
 });
 
