@@ -288,21 +288,24 @@ export function isReduced(factors: Point3): boolean {
   return factors.some((factor) => factor > 1 + 1e-6);
 }
 
-/** Formats per-axis factors as `2×2×10`. */
+/**
+ * Formats per-axis reduction factors as `2×2×10` or `1×1×1.20`: a whole
+ * factor without decimals, any other factor with 2 decimals.
+ */
 export function formatFactors(factors: Point3): string {
-  return factors.map(formatFactor).join('×');
+  return factors.map((factor) => formatFactor(factor, 2)).join('×');
 }
 
 export function isInteractiveLod(sampleDistanceLod: number): boolean {
   return sampleDistanceLod > 1 + 1e-2;
 }
 
-export function formatFactor(value: number): string {
+export function formatFactor(value: number, digits = 1): string {
   const rounded = Math.round(value);
 
   if (Math.abs(value - rounded) < 1e-6) {
     return String(rounded);
   }
 
-  return value.toFixed(1);
+  return value.toFixed(digits);
 }
