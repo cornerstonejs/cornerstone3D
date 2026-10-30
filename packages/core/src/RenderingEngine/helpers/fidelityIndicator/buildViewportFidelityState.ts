@@ -45,6 +45,8 @@ export function buildViewportFidelityState(
   const loading = dataKindOf(line) === 'loading';
   const lod =
     isInteractiveLod(sampleDistanceLod) || !!line.interactiveReduction;
+  // A lossless view has no reduction to explain (FIDELITY-EVENT-8).
+  const lossy = isLossyShownState(shownState);
 
   const state: ViewportFidelityState = {
     dataResolution: record
@@ -58,18 +60,21 @@ export function buildViewportFidelityState(
       : undefined,
     reductionKind: record?.reduction,
     reductionSource: record?.source,
-    magnitude: [...reductionFactors] as Point3,
-    cause: causeOf({
-      record,
-      imageQualityStatus,
-      spatiallyReduced,
-      loading,
-      lod,
-    }),
-    transient: loading || lod,
+    magnitude: lossy ? ([...reductionFactors] as Point3) : undefined,
+    cause: lossy
+      ? causeOf({
+          record,
+          imageQualityStatus,
+          reductionCause: line.reductionCause,
+          spatiallyReduced,
+          loading,
+          lod,
+        })
+      : undefined,
+    transient: lossy ? loading || lod : undefined,
     progressive: progressiveOf(line),
     shownState,
-    lossy: isLossyShownState(shownState),
+    lossy,
   };
 
   return state;
@@ -160,11 +165,19 @@ function progressiveOf(
 function causeOf(args: {
   record: FidelityLine['record'];
   imageQualityStatus?: ImageQualityStatus;
+  reductionCause?: ViewportFidelityCause;
   spatiallyReduced: boolean;
   loading: boolean;
   lod: boolean;
 }): ViewportFidelityCause | undefined {
-  const { record, imageQualityStatus, spatiallyReduced, loading, lod } = args;
+  const {
+    record,
+    imageQualityStatus,
+    reductionCause,
+    spatiallyReduced,
+    loading,
+    lod,
+  } = args;
 
   if (loading) {
     return 'incompleteLoad';
@@ -174,9 +187,10 @@ function causeOf(args: {
     return 'performanceTarget';
   }
 
-  // A decimation is a spatial reduction, not a lossy decode.
+  // A spatial reduction takes the cause that its strategy states, and a
+  // decimation is not a lossy decode.
   if (spatiallyReduced || (record && isAliasingReduction(record.reduction))) {
-    return 'deviceTextureLimit';
+    return reductionCause;
   }
 
   const delivered = record ? record.lowest : imageQualityStatus;

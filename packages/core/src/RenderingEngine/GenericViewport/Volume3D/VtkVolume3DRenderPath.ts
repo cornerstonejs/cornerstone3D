@@ -49,6 +49,7 @@ import applyVolume3DCamera from './applyVolume3DCamera';
 import { getInitialVolume3DCamera } from './vtkVolume3DInitialCamera';
 import {
   isSegmentationOverlayData,
+  isVolumeLoading,
   readBoundQuality,
 } from '../renderingFidelity';
 import setVtkCameraClippingRange from '../setVtkCameraClippingRange';
@@ -251,6 +252,7 @@ export class VtkVolume3DRenderPath
 
     rendering.fidelityStale = false;
     rendering.voxelQuality = this.readQuality(rendering);
+    rendering.qualityPending = isVolumeLoading(rendering.imageVolume);
   }
 
   private render(
@@ -381,9 +383,11 @@ export class VtkVolume3DRenderPath
 
     if (base) {
       rendering.boundGrid = { grid: base.grid, statistic: base.statistic };
+      rendering.reductionCause = strategy.reductionCause;
     }
 
     rendering.voxelQuality = this.readQuality(rendering);
+    rendering.qualityPending = isVolumeLoading(rendering.imageVolume);
     rendering.fidelityStale = false;
     rendering.fullGrid = rendering.imageVolume?.voxelGrid;
     rendering.sampleDistanceLod = this.readSampleDistanceLod(rendering);

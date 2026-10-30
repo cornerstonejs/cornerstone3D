@@ -346,6 +346,7 @@ abstract class GenericViewport<
         interactiveReduction: rendering.interactiveReduction,
         imageQualityStatus: rendering.imageQualityStatus,
         qualityPending: rendering.qualityPending,
+        reductionCause: rendering.reductionCause,
         skip: rendering.excludeFromFidelity,
       });
     });

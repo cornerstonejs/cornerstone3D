@@ -50,10 +50,14 @@ export function fidelityDetailsTextOf(
       parts.push(...waitLine(state.transient));
       break;
     case 'deviceTextureLimit':
-    case 'memoryBudget':
-      parts.push('Image detail is reduced.');
+      parts.push('Image detail is reduced to fit the limits of this device.');
       parts.push(...magnitudeLines(state.magnitude));
-      parts.push(...waitLine(state.transient));
+      parts.push('Waiting will not improve the image.');
+      break;
+    case 'memoryBudget':
+      parts.push('Image detail is reduced to fit the available memory.');
+      parts.push(...magnitudeLines(state.magnitude));
+      parts.push('Waiting will not improve the image.');
       break;
     default:
       if (state.transient) {

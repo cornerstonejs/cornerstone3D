@@ -3,6 +3,7 @@ import type {
   ICamera,
   Point2,
   Point3,
+  ViewportFidelityCause,
   VoxelGrid,
   VoxelQualityRecord,
 } from '../../types';
@@ -86,8 +87,13 @@ export type RenderingFidelity = {
   interactiveReduction?: boolean;
   /** The quality of the stack image that the render drew. */
   imageQualityStatus?: ImageQualityStatus;
-  /** True while a later progressive stage replaces the stack image. */
+  /**
+   * True while a later delivery replaces the data: a later progressive stage
+   * of the stack image, or a volume load that continues.
+   */
   qualityPending?: boolean;
+  /** Why the drawn grid is coarser than the volume, from the strategy. */
+  reductionCause?: ViewportFidelityCause;
   /** True for an overlay that the fidelity ignores, e.g. a labelmap. */
   excludeFromFidelity?: boolean;
   /**

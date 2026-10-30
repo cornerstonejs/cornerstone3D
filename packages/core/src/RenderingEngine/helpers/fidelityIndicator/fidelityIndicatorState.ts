@@ -1,6 +1,7 @@
 import ImageQualityStatus from '../../../enums/ImageQualityStatus';
 import type {
   Point3,
+  ViewportFidelityCause,
   VoxelGrid,
   VoxelQualityRecord,
   VoxelQualityVerdict,
@@ -22,9 +23,16 @@ export type FidelityLine = {
   imageQualityStatus?: ImageQualityStatus;
   /**
    * True while a later delivery replaces the data shown: a later progressive
-   * stage of a stack image. Reduced data that is pending is `loading`.
+   * stage of a stack image, or a volume load that continues. Reduced data that
+   * is pending is `loading`.
    */
   qualityPending?: boolean;
+  /**
+   * Why the drawn grid is coarser than the full volume, as the strategy that
+   * chose the grid states it. A reduced grid with no cause, while the load
+   * continues, is an interim texture of the load.
+   */
+  reductionCause?: ViewportFidelityCause;
   /**
    * Magnification-aware verdict from `compareVoxelQuality` when a volume
    * record and display spacing are available (FIDELITY-STATE-6).
@@ -145,7 +153,7 @@ export function dataKindOf(line: FidelityLine): FidelityDataKind {
   const lowest = record.lowest ?? ImageQualityStatus.FULL_RESOLUTION;
   const lossyDelivery = lowest < ImageQualityStatus.FULL_RESOLUTION;
 
-  if (lossyDelivery && record.missing > 0) {
+  if (lossyDelivery && (record.missing > 0 || line.qualityPending)) {
     return 'loading';
   }
 
@@ -168,15 +176,22 @@ export function dataKindOf(line: FidelityLine): FidelityDataKind {
   // Magnification-aware path for actually reduced data (FIDELITY-STATE-6 /
   // MR-U-5). Only the spatial causes count here: `missingData` of an ordinary
   // load is not lossy.
-  if (verdict) {
-    if (verdict.causes.includes('aliasing')) {
-      return 'decimated';
-    }
+  const spatialKind = verdict ? spatialKindOf(verdict) : 'reduced';
 
-    return verdict.causes.includes('resolution') ? 'reduced' : 'full';
+  // A reduction that no strategy states, during a load, ends with the load.
+  if (spatialKind !== 'full' && line.qualityPending && !line.reductionCause) {
+    return 'loading';
   }
 
-  return 'reduced';
+  return spatialKind;
+}
+
+function spatialKindOf(verdict: VoxelQualityVerdict): FidelityDataKind {
+  if (verdict.causes.includes('aliasing')) {
+    return 'decimated';
+  }
+
+  return verdict.causes.includes('resolution') ? 'reduced' : 'full';
 }
 
 /**

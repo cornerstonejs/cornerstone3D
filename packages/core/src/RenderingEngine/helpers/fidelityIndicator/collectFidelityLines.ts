@@ -5,6 +5,7 @@ import type {
   ActorEntry,
   IImage,
   Point3,
+  ViewportFidelityCause,
   VoxelGrid,
   VoxelQualityRecord,
   VoxelStatistic,
@@ -14,6 +15,9 @@ import {
   voxelGridsEqual,
 } from '../../../utilities/voxelGrid';
 import { sampleDistanceOf } from '../createVolumeMapper';
+import { reductionCauseOf } from '../volumeRenderStrategy';
+import { isVolumeLoading } from '../../GenericViewport/renderingFidelity';
+import { gpuSettingsForRender } from '../../../utilities/gpuSettingsPresets';
 import {
   type FidelityDisplay,
   displaySpacingForGrid,
@@ -65,6 +69,7 @@ export type BindingFidelitySource = {
   interactiveReduction?: boolean;
   imageQualityStatus?: ImageQualityStatus;
   qualityPending?: boolean;
+  reductionCause?: ViewportFidelityCause;
   label?: string;
   skip?: boolean;
 };
@@ -121,6 +126,8 @@ export function fidelityLinesFromBindings(
       fullResolution,
       sampleDistanceLod: source.sampleDistanceLod ?? 1,
       interactiveReduction: source.interactiveReduction,
+      qualityPending: source.qualityPending,
+      reductionCause: source.reductionCause,
     });
   }
 
@@ -178,6 +185,7 @@ export function fidelityLinesFromVolumeActors(
     }
 
     const reductionFactors = reductionFactorsOf(grid, fullGrid);
+    const fullResolution = !isReduced(reductionFactors);
     const record = cached.record;
     const displaySpacing = display
       ? displaySpacingForGrid(display, grid, fullGrid)
@@ -194,8 +202,12 @@ export function fidelityLinesFromVolumeActors(
       displaySpacing,
       reductionFactors,
       // Spacing only — dims/origin differences must not sticky-flag lossy.
-      fullResolution: !isReduced(reductionFactors),
+      fullResolution,
       sampleDistanceLod: sampleDistanceLodOf(mapper),
+      qualityPending: isVolumeLoading(volume),
+      reductionCause: fullResolution
+        ? undefined
+        : reductionCauseOf(volume, gpuSettingsForRender()),
     });
   }
 
