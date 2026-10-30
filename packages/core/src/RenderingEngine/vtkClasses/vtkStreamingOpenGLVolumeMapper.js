@@ -8,6 +8,7 @@ import { getTransferFunctionsHash } from '@kitware/vtk.js/Rendering/OpenGL/Rende
 import { Representation } from '@kitware/vtk.js/Rendering/Core/Property/Constants';
 import { BlendMode } from '@kitware/vtk.js/Rendering/Core/VolumeMapper/Constants';
 import { getCanUseNorm16Texture } from '../../init';
+import cache from '../../cache/cache';
 import canUseFloatOpacityTexture from './canUseFloatOpacityTexture';
 import { coreLog } from '../../utilities/logger';
 import { noteTextureRendered } from '../../utilities/gpuAllocationTracker';
@@ -412,6 +413,9 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
             if (
               !gridFitsGpuSettings(dims, dataType, textureNumberOfComponents, {
                 volumeId: currentTexture.getVolumeId?.(),
+                dynamic: cache
+                  .getVolume(currentTexture.getVolumeId?.())
+                  ?.isDynamicVolume?.(),
               })
             ) {
               currentTexture.deactivate();

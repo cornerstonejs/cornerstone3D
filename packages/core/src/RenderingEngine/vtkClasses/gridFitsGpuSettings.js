@@ -18,10 +18,15 @@ const log = coreLog.getLogger('RenderingEngine', 'gridFitsGpuSettings');
  * final downsampling off, every texture fits, so the mapper allocates as it
  * did before the GPU settings existed.
  *
+ * A dynamic (4D) volume and a texture of more than one component also always
+ * fit: the strategy does not reduce them (VRS-I-13, VRS-I-14), so the mapper
+ * tries the upload as in 4.x instead of keeping the previous image.
+ *
  * @param {number[]} dims - the number of voxels on each axis
  * @param {string} dataType - the type of the buffer of the texture
  * @param {number} numberOfComponents - the number of components of one voxel
- * @param {{volumeId?: string}} context - what the mapper knows, for the message
+ * @param {{volumeId?: string, dynamic?: boolean}} context - what the mapper
+ *   knows about the volume
  * @returns {boolean} true when the GPU settings can hold the texture
  */
 export default function gridFitsGpuSettings(
@@ -32,7 +37,7 @@ export default function gridFitsGpuSettings(
 ) {
   const active = gpuSettingsForRender();
 
-  if (!active) {
+  if (!active || numberOfComponents > 1 || context?.dynamic) {
     return true;
   }
 

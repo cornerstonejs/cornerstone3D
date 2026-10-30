@@ -145,11 +145,22 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
 
   const superReleaseGraphicsResources = publicAPI.releaseGraphicsResources;
 
-  /** vtk.js releases the upload when the texture moves to another context. */
-  publicAPI.releaseGraphicsResources = (...args) => {
+  /**
+   * vtk.js releases the upload when the texture moves to another context.
+   *
+   * vtk.js deletes the GL texture only when it gets a render window. The
+   * texture store and `setOpenGLRenderWindow` call this with none, so the
+   * texture defaults to its own window, which created the handle. A deleted
+   * window has no context to delete in.
+   */
+  publicAPI.releaseGraphicsResources = (rwin) => {
+    const window = model._openGLRenderWindow;
+
     removeGpuMemoryEntry(publicAPI);
 
-    return superReleaseGraphicsResources(...args);
+    return superReleaseGraphicsResources(
+      rwin ?? (window?.isDeleted?.() ? undefined : window)
+    );
   };
 
   /**
