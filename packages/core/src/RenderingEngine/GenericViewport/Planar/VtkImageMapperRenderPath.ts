@@ -96,7 +96,6 @@ export class VtkImageMapperRenderPath
       actor,
       currentImage: payload.image,
       imageQualityStatus: imageQualityStatusOf(payload.image),
-      qualityPending: payload.image?.imageQualityPending,
       excludeFromFidelity: isSegmentationOverlayData(payload, options),
       mapper,
       imageData,
@@ -412,7 +411,6 @@ async function updateRenderedImage(args: {
 
   rendering.currentImage = image;
   rendering.imageQualityStatus = imageQualityStatusOf(image);
-  rendering.qualityPending = image?.imageQualityPending;
   rendering.imageData = imageData;
   rendering.currentImageIdIndex = imageIdIndex;
   rendering.defaultVOIRange = getDefaultImageVOIRange(image);

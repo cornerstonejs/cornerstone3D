@@ -114,7 +114,6 @@ export class CpuImageSliceRenderPath
       actorEntryUID: uuidv4(),
       excludeFromFidelity: isSegmentationOverlayData(payload, options),
       imageQualityStatus: imageQualityStatusOf(payload.image),
-      qualityPending: payload.image?.imageQualityPending,
       enabledElement,
       compatibilityActor,
       currentImageIdIndex: payload.initialImageIdIndex ?? 0,
@@ -744,7 +743,6 @@ async function updateRenderedImage(args: {
 
   enabledElement.image = image;
   rendering.imageQualityStatus = imageQualityStatusOf(image);
-  rendering.qualityPending = image?.imageQualityPending;
   enabledElement.viewport = {
     ...defaultViewport,
     hflip: previousViewport?.hflip ?? defaultViewport.hflip,

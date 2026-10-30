@@ -93,8 +93,9 @@ export type RenderingFidelity = {
   /** The quality of the stack image that the render drew. */
   imageQualityStatus?: ImageQualityStatus;
   /**
-   * True while a later delivery replaces the data: a later progressive stage
-   * of the stack image, or a volume load that continues.
+   * True while a volume load continues, so a later delivery replaces the
+   * data. A generic stack path leaves it unset: it does not redraw a later
+   * stage, so the image that it draws is final for that view.
    */
   qualityPending?: boolean;
   /** Why the drawn grid is coarser than the volume, from the strategy. */
