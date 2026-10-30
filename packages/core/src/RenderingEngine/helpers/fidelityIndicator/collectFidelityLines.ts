@@ -64,6 +64,7 @@ export type BindingFidelitySource = {
   sampleDistanceLod?: number;
   interactiveReduction?: boolean;
   imageQualityStatus?: ImageQualityStatus;
+  qualityPending?: boolean;
   label?: string;
   skip?: boolean;
 };
@@ -87,7 +88,10 @@ export function fidelityLinesFromBindings(
     if (!source.record) {
       if (source.imageQualityStatus !== undefined) {
         lines.push({
-          ...fidelityLineFromImageQuality(source.imageQualityStatus),
+          ...fidelityLineFromImageQuality(
+            source.imageQualityStatus,
+            source.qualityPending
+          ),
           label: source.label ?? 'Image',
           interactiveReduction: source.interactiveReduction,
         });
@@ -207,11 +211,13 @@ function isVolume3D(viewport: VolumeViewportLike): boolean {
 
 /** One fidelity line for a stack image of the given quality. */
 function fidelityLineFromImageQuality(
-  imageQualityStatus: ImageQualityStatus
+  imageQualityStatus: ImageQualityStatus,
+  qualityPending?: boolean
 ): FidelityLine {
   return {
     label: 'Image',
     imageQualityStatus,
+    qualityPending,
     reductionFactors: [1, 1, 1] as Point3,
     fullResolution: imageQualityStatus === ImageQualityStatus.FULL_RESOLUTION,
     sampleDistanceLod: 1,
@@ -229,7 +235,12 @@ export function fidelityLineFromStackImage(
     return [];
   }
 
-  return [fidelityLineFromImageQuality(imageQualityStatusOf(image))];
+  return [
+    fidelityLineFromImageQuality(
+      imageQualityStatusOf(image),
+      image.imageQualityPending
+    ),
+  ];
 }
 
 /** The quality of a stack image; an image with no status is full resolution. */

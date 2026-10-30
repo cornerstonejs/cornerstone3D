@@ -150,6 +150,28 @@ describe('buildViewportFidelityState (FIDELITY-EVENT-5)', () => {
     expect(state.magnitude).toEqual([1, 1, 1]);
   });
 
+  it('shows a stack stage that a later stage replaces as loading, and the last stage as lossy', () => {
+    const stage = (qualityPending) =>
+      buildViewportFidelityState([
+        line({
+          record: undefined,
+          imageQualityStatus: ImageQualityStatus.SUBRESOLUTION,
+          qualityPending,
+        }),
+      ]);
+
+    expect(stage(true)).toEqual(
+      expect.objectContaining({
+        shownState: 'loading',
+        cause: 'incompleteLoad',
+        transient: true,
+      })
+    );
+    expect(stage(false)).toEqual(
+      expect.objectContaining({ shownState: 'lossy', transient: false })
+    );
+  });
+
   it('changes viewportFidelityStateKey when progressive load advances', () => {
     const loading = buildViewportFidelityState([
       line({

@@ -86,6 +86,8 @@ export type RenderingFidelity = {
   interactiveReduction?: boolean;
   /** The quality of the stack image that the render drew. */
   imageQualityStatus?: ImageQualityStatus;
+  /** True while a later progressive stage replaces the stack image. */
+  qualityPending?: boolean;
   /** True for an overlay that the fidelity ignores, e.g. a labelmap. */
   excludeFromFidelity?: boolean;
   /**

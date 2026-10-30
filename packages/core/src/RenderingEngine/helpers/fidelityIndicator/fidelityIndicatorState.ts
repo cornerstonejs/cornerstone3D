@@ -21,6 +21,11 @@ export type FidelityLine = {
    */
   imageQualityStatus?: ImageQualityStatus;
   /**
+   * True while a later delivery replaces the data shown: a later progressive
+   * stage of a stack image. Reduced data that is pending is `loading`.
+   */
+  qualityPending?: boolean;
+  /**
    * Magnification-aware verdict from `compareVoxelQuality` when a volume
    * record and display spacing are available (FIDELITY-STATE-6).
    */
@@ -127,7 +132,7 @@ export function dataKindOf(line: FidelityLine): FidelityDataKind {
   } = line;
 
   if (!record && imageQualityStatus !== undefined) {
-    return dataKindOfImageQuality(imageQualityStatus);
+    return dataKindOfImageQuality(imageQualityStatus, line.qualityPending);
   }
 
   // A reduced texture with no record is lossy, not hidden.
@@ -174,17 +179,21 @@ export function dataKindOf(line: FidelityLine): FidelityDataKind {
   return 'reduced';
 }
 
-/** Maps a stack ImageQualityStatus to a data kind (FIDELITY-STATE-8). */
+/**
+ * Maps a stack ImageQualityStatus to a data kind (FIDELITY-STATE-8).
+ * `pending` is true while a later progressive stage replaces the image.
+ */
 export function dataKindOfImageQuality(
-  status: ImageQualityStatus
+  status: ImageQualityStatus,
+  pending = false
 ): FidelityDataKind {
   if (status >= ImageQualityStatus.FULL_RESOLUTION) {
     return 'full';
   }
 
-  // SUBRESOLUTION and LOSSY are standing reduced qualities.
+  // SUBRESOLUTION and LOSSY are final only when no later stage comes.
   if (status >= ImageQualityStatus.SUBRESOLUTION) {
-    return 'reduced';
+    return pending ? 'loading' : 'reduced';
   }
 
   // Replicates are placeholders that improve as neighbours arrive.

@@ -7,6 +7,7 @@ import type {
 import { isAliasingReduction } from '../../../utilities/voxelGrid';
 import {
   type FidelityLine,
+  dataKindOf,
   fidelityStateRank,
   isInteractiveLod,
   isReduced,
@@ -39,14 +40,9 @@ export function buildViewportFidelityState(
     line;
   const shownSpacing = line.displaySpacing ?? displaySpacing;
   const spatiallyReduced = isReduced(reductionFactors);
-  // A load counts only while replicated, sub-resolution or lossy data shows
-  // in place of data that has not arrived (FIDELITY-STATE-2).
-  const loading = record
-    ? record.missing > 0 &&
-      (record.lowest ?? ImageQualityStatus.FULL_RESOLUTION) <
-        ImageQualityStatus.FULL_RESOLUTION
-    : imageQualityStatus !== undefined &&
-      imageQualityStatus < ImageQualityStatus.SUBRESOLUTION;
+  // A load counts only while reduced data shows in place of data that a later
+  // delivery replaces (FIDELITY-STATE-2).
+  const loading = dataKindOf(line) === 'loading';
   const lod =
     isInteractiveLod(sampleDistanceLod) || !!line.interactiveReduction;
 
