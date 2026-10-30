@@ -27,18 +27,21 @@ The six sequences are:
 A CT series of 512 × 512 × 2464 voxels gives these results. The edge limit decides each factor here,
 because the memory of each preset is larger than the reduced texture.
 
-| Preset              | `maxTextureEdge` | Factors (i, j, k) | Texture grid     | Texture set                          |
-| ------------------- | ---------------- | ----------------- | ---------------- | ------------------------------------ |
-| `high-texture-4096` | 4096             | 1, 1, 1           | 512 × 512 × 2464 | `full-resolution/full-extent`        |
-| `high`, `medium`    | 2048             | 1, 1, 2           | 512 × 512 × 1232 | `reduced-1x1x2/full-extent/average`  |
-| `low`, `low-tablet` | 256              | 2, 2, 10          | 256 × 256 × 247  | `reduced-2x2x10/full-extent/average` |
+| Preset              | `maxTextureEdge` | Factors (i, j, k) | Texture grid     | Texture set                                |
+| ------------------- | ---------------- | ----------------- | ---------------- | ------------------------------------------ |
+| `high-texture-4096` | 4096             | 1, 1, 1           | 512 × 512 × 2464 | `full-resolution/full-extent`              |
+| `high`, `medium`    | 2048             | 1, 1, 1.203125    | 512 × 512 × 2048 | `reduced-1x1x1.203125/full-extent/average` |
+| `low`, `low-tablet` | 256              | 2, 2, 9.625       | 256 × 256 × 256  | `reduced-2x2x9.625/full-extent/average`    |
 
 Under `auto`, the result depends on the device. A device with a `MAX_3D_TEXTURE_SIZE` of 2048 gives
 the row of `high`. A device that passes the probe at 2464 gives the row of `high-texture-4096`.
 
-`boxAverageReductionFactors` sets each factor to `ceil(dimension / maxTextureEdge)`. Then, while the
-reduced grid holds more voxels than `textureMemoryBytes / bytesPerVoxel`, it adds 1 to the factor of
-the largest reduced axis. `reducedDimensions` rounds up, so 2464 / 10 gives 247 slices.
+`boxAverageReductionFactors` sets each reduced edge M to `min(dimension, maxTextureEdge)`. Then,
+while the reduced grid holds more voxels than `textureMemoryBytes / bytesPerVoxel`, it takes one
+voxel from the largest reduced axis. Last, an axis takes a whole factor f that divides its edge when
+`dimension / f` is at least 0.9 of M. The factor is `dimension / M`, so 2464 / 256 gives 9.625: no
+divisor of 2464 gives an edge between 231 and 256. Each texel covers its exact range of the source,
+see `VRS-I-18` in [Volume Render Strategy](./volumeRenderStrategy.md).
 
 ## 1. The application selects the GPU settings and creates the volume
 
@@ -94,13 +97,13 @@ sequenceDiagram
     Prov->>Grid: gridLimitsOfGpuSettings(gpuSettings, bytesPerVoxel)
     Grid-->>Prov: { maxEdge, maxVoxelCount }
     Prov->>Grid: boxAverageReductionFactors(dimensions, limits)
-    Grid-->>Prov: factors, for example [1, 1, 2]
+    Grid-->>Prov: factors, for example [1, 1, 1.203125]
     alt every factor is 1
         Prov->>Vol: provisionTextureSet('full-resolution/full-extent', backstop)
     else a factor is more than 1
         Prov->>Grid: deriveBoxAverageGrid(voxelGrid, { factors })
         Note over Prov: The statistic is volume.reductionStatistic:<br/>average for an image, foregroundMajority for a labelmap
-        Prov->>Vol: provisionTextureSet('reduced-1x1x2/full-extent/average')
+        Prov->>Vol: provisionTextureSet('reduced-1x1x1.203125/full-extent/average')
     end
     Vol->>Store: provision({ volumeId, grids, coverage })
     alt the store already holds a set of this name
@@ -300,7 +303,7 @@ sequenceDiagram
     else a legacy volume viewport
         Plan->>VP: addVolumesToViewports([labelmap volumeId])
         VP->>RVT: createVolumeActor() then resolveVolumeTexture(labelmap volume)
-        Note over RVT: Sequence 2, with the grid and the voxel width of the labelmap.<br/>The same dimensions give the same factors as the CT,<br/>for example the set reduced-1x1x2/full-extent/foregroundMajority.
+        Note over RVT: Sequence 2, with the grid and the voxel width of the labelmap.<br/>The same dimensions give the same factors as the CT,<br/>for example the set reduced-1x1x1.203125/full-extent/foregroundMajority.
     end
     App->>LV: a brush tool writes voxels through volume.voxelManager
     App-->>Upd: SEGMENTATION_DATA_MODIFIED, onLabelmapSegmentationDataModified

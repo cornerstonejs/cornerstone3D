@@ -5,6 +5,7 @@ import { getConstructorFromType } from '../../utilities/getBufferConfiguration';
 import VoxelManager from '../../utilities/VoxelManager';
 import { voxelGridsEqual } from '../../utilities/voxelGrid';
 import { requireVoxelStatistic } from '../../utilities/voxelGrid/voxelStatistics';
+import { spanOfBox, weightInSpan } from '../../utilities/voxelGrid/boxSpan';
 import VoxelStatistics from '../../enums/VoxelStatistics';
 import ImageQualityStatus from '../../enums/ImageQualityStatus';
 import autoLoad from '../../utilities/autoLoad';
@@ -232,8 +233,12 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
    */
   /**
    * The size of the box on each axis that takes the grid of the volume to the
-   * grid of this texture, when the two share their axes and the ratio of the
-   * spacing is a whole number on every axis.
+   * grid of this texture, when the two share their axes.
+   *
+   * The texture spans the full-resolution extent, so texel j of an axis of N
+   * source voxels and M texels covers the source `[j * N / M, (j + 1) * N / M)`.
+   * The factor is therefore `N / M`, which can hold a fraction, and a ratio of
+   * the spacing within 1e-6 of that value gives exactly that value.
    *
    * A grid that this does not describe, such as an oblique slab, returns
    * nothing, and the fill then reads the composite voxel by voxel.
@@ -260,13 +265,17 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
       }
 
       const ratio = grid.spacing[axis] / volumeGrid.spacing[axis];
-      const factor = Math.round(ratio);
+      const extentRatio = volumeGrid.dimensions[axis] / grid.dimensions[axis];
 
-      if (factor < 1 || Math.abs(ratio - factor) > 1e-6) {
+      if (!(ratio > 1 - 1e-6)) {
         return null;
       }
 
-      factors.push(factor);
+      factors.push(
+        Math.abs(ratio - extentRatio) <= 1e-6 * extentRatio
+          ? extentRatio
+          : ratio
+      );
     }
 
     return factors;
@@ -285,19 +294,23 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
    * so the slice reads replicates only when no frame of the box has arrived,
    * and then only the one nearest to the centre.
    *
-   * @returns the frames, or null when the volume has no slice reader or the
-   * slice lies past the end of the volume
+   * A fractional `factorK` cuts the two end frames of the box, and each frame
+   * then counts with the part of it that lies inside the box.
+   *
+   * @returns the frames and the weight of each one, or null when the volume
+   * has no slice reader or the slice lies past the end of the volume
    */
   function framesOfSlice(volume, factorK, slice) {
     const [sourceWidth, sourceHeight, sourceDepth] = volume.dimensions;
     const voxelManager = volume.voxelManager;
-    const firstK = slice * factorK;
+    const span = spanOfBox(0, factorK, sourceDepth, slice);
+    const firstK = span.first;
 
     if (!voxelManager?.getSliceData || firstK >= sourceDepth) {
       return null;
     }
 
-    const lastK = Math.min(firstK + factorK, sourceDepth);
+    const lastK = span.end;
     const centre = (firstK + lastK - 1) / 2;
     const loaded = [];
     const replicates = [];
@@ -317,16 +330,18 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     const indices = loaded.length ? loaded : nearestTo(centre, replicates);
     const frameLength = sourceWidth * sourceHeight;
     const frames = [];
+    const weights = [];
 
     for (const k of indices) {
       const frame = readFrame(volume, k, frameLength);
 
       if (frame) {
         frames.push(frame);
+        weights.push(weightInSpan(span, k));
       }
     }
 
-    return frames;
+    return { frames, weights };
   }
 
   /** The indices at the smallest distance from `centre`: one, or two on a tie. */
@@ -384,7 +399,7 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     }
 
     const [factorI, factorJ, factorK] = factors;
-    const frames = framesOfSlice(volume, factorK, slice);
+    const { frames, weights } = framesOfSlice(volume, factorK, slice) ?? {};
 
     if (!frames?.length) {
       return false;
@@ -395,7 +410,8 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
       [volume.dimensions[0], volume.dimensions[1]],
       [grid.dimensions[0], grid.dimensions[1]],
       [factorI, factorJ],
-      target.getScalarData()
+      target.getScalarData(),
+      weights
     );
 
     return true;

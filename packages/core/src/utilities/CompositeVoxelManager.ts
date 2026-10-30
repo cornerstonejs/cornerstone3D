@@ -35,6 +35,7 @@ import {
   voxelGridKey,
   voxelGridsEqual,
 } from './voxelGrid';
+import { snapToWhole } from './voxelGrid/boxSpan';
 
 /**
  * One sub voxel manager of a composite, with the grid and the statistic that
@@ -248,7 +249,7 @@ export type RepresentationStorage<T> = {
 
 /** The options of a derivation of a new representation. */
 export type CreateVoxelRepresentationOptions = {
-  /** The box size of each axis of the derivation. */
+  /** The box size of each axis of the derivation, which can hold a fraction. */
   factors: Point3;
   /** The representation that the derivation reads. The best source by default. */
   sourceGrid?: VoxelGrid;
@@ -770,8 +771,9 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
    * Derives a new representation, and adds it to the composite.
    *
    * The source is the representation of `sourceGrid`, or the best that the
-   * composite holds. A box size is a whole number of at least 1, so the result
-   * is never finer than its source: A DERIVATION ALWAYS GOES FROM A HIGHER
+   * composite holds. A box size is at least 1, and it can hold a fraction
+   * (`N / M`, see `deriveBoxAverageGrid`), so the result is never finer than
+   * its source: A DERIVATION ALWAYS GOES FROM A HIGHER
    * RESOLUTION TO A LOWER ONE, and data that no derivation can give comes from
    * a direct load through `acceptData`.
    */
@@ -801,8 +803,8 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
       sourceDimensions,
     };
     // A DERIVATION ALWAYS GOES FROM A HIGHER RESOLUTION TO A LOWER ONE. The
-    // construction holds that rule: a box size is a whole number of at least 1,
-    // so the result is never finer than the source that it reads.
+    // construction holds that rule: a box size is at least 1, so the result is
+    // never finer than the source that it reads.
     const grid = deriveBoxAverageGrid(sourceRepresentation.grid, reduction);
     const { voxelManager, imageIds } = this.createStorageForGrid(
       grid,
@@ -936,11 +938,18 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
     const batches = Math.ceil(depth / DERIVATION_BATCH_SLICES);
 
     const reduceBatch = (batch: number): BoundsIJK => {
-      const firstK = offsetK + batch * DERIVATION_BATCH_SLICES * factorK;
+      // A fractional factor makes the bounds of a batch fall inside a source
+      // slice, so the batch takes every slice that it meets.
+      const firstK = Math.floor(
+        snapToWhole(offsetK + batch * DERIVATION_BATCH_SLICES * factorK)
+      );
       const lastK =
-        offsetK +
-        Math.min((batch + 1) * DERIVATION_BATCH_SLICES, depth) * factorK -
-        1;
+        Math.ceil(
+          snapToWhole(
+            offsetK +
+              Math.min((batch + 1) * DERIVATION_BATCH_SLICES, depth) * factorK
+          )
+        ) - 1;
       const sourceBounds = boundsOfGrid(source.grid);
       const slab: BoundsIJK = [
         sourceBounds[0],
@@ -1292,8 +1301,10 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
         return 0;
       }
 
-      const firstBox = Math.floor(first / factors[axis]);
-      const lastBox = Math.floor(last / factors[axis]);
+      // A box of a fractional factor can cut a source voxel, which then meets
+      // two boxes.
+      const firstBox = Math.floor(snapToWhole(first / factors[axis]));
+      const lastBox = Math.ceil(snapToWhole((last + 1) / factors[axis])) - 1;
 
       sourceOffset[axis] = offset[axis] + firstBox * factors[axis];
       sourceDimensions[axis] = Math.min(

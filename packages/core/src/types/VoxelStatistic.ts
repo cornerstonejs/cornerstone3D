@@ -20,8 +20,14 @@ import type { VoxelStatistic } from './VoxelStatisticRegistry';
 export interface VoxelStatisticAccumulator {
   /** Drops every value of the box that came before. */
   reset: () => void;
-  /** Takes one component of one source voxel. The value is always a number. */
-  add: (value: number) => void;
+  /**
+   * Takes one component of one source voxel. The value is always a number.
+   *
+   * The weight is the part of the source voxel that lies inside the box, which
+   * is 1 except at the two ends of a box of a fractional factor `N / M`. An
+   * accumulator that ignores the weight treats every voxel as whole.
+   */
+  add: (value: number, weight?: number) => void;
   /**
    * Gives the value of the box, or `undefined` when the box took no value. A
    * caller then keeps the value that the target already holds.
@@ -49,13 +55,19 @@ export type VoxelStatisticSliceReducer = <T extends number | number[] = number>(
  * Fills one reduced plane of a texture from the source planes of its box
  * along k. The last column and row of the plane also take the source voxels
  * beyond the last whole box.
+ *
+ * A factor can hold a fraction, and cell j on an axis then covers the source
+ * `[j * f, (j + 1) * f)` with partial weights for the two end voxels.
+ * `frameWeights` gives the weight of each frame in the same way, and each frame
+ * has the weight 1 when it is absent.
  */
 export type VoxelStatisticPlaneFill = (
   frames: ArrayLike<number>[],
   sourceSize: [number, number],
   targetSize: [number, number],
   factors: [number, number],
-  values: { [index: number]: number }
+  values: { [index: number]: number },
+  frameWeights?: number[]
 ) => void;
 
 /**
