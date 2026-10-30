@@ -1,5 +1,5 @@
 import dcmjs from '@dcmjs-org/dcmjs';
-import { getPrivateTagValue } from '../../src/utilities';
+import { getPrivateTagValue } from '../src';
 import { describe, it, expect } from '@jest/globals';
 
 const PHILIPS = 'Philips PET Private Group';
