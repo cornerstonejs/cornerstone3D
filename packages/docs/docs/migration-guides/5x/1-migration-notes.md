@@ -513,9 +513,10 @@ gives that map for one layer.
 
 `@cornerstonejs/adapters`, `@cornerstonejs/metadata` and `@cornerstonejs/utils`
 now depend on `@dcmjs-org/dcmjs` 1.0.0-beta.5 instead of `dcmjs` 0.52.0.
-`@cornerstonejs/ai` no longer depends on dcmjs, because it did not use it. The default export of the beta has the 0.52 names, but the
-naturalized datasets have new shapes (see the dcmjs `docs/MIGRATION.md`,
-section "Naturalization"):
+`@cornerstonejs/ai` no longer depends on dcmjs, because it did not use it.
+The default export of the beta has the 0.52 names, but the naturalized
+datasets have new shapes (see the dcmjs `docs/MIGRATION.md`, section
+"Naturalization"):
 
 - A sequence with one item is the item object, not an array. The item has a
   hidden `[0]` (the item), a `length` of 1 and an iterator. `Array.isArray`,
@@ -537,6 +538,9 @@ These shapes reach your code through the adapters:
 - `finding` and `findingSites[i]` of the SR `generateToolState` results come
   from the dcmjs `addAccessors`. In 1.0 each one is the code item object, not a
   Proxy array.
+- The `ReferencedFrameNumber` of the SR measurement data (`MeasurementReport`
+  in `Cornerstone3D`) now has the type `number | string`, not `string`, because
+  dcmjs 1.0 gives a number.
 - `DicomMetaDictionary.uid()` makes the UIDs of new SEG, SR and RTSTRUCT
   instances, and the `annotationUID` of the annotations that the SR reader
   makes, from a random UUID (`2.25.<integer>`). The integer has 39 digits or
