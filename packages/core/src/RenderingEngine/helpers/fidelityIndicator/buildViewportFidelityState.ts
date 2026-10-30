@@ -131,7 +131,7 @@ function worstLineOf(lines: FidelityLine[]): FidelityLine | undefined {
     }
   }
 
-  return worst ?? lines.find((line) => line.record) ?? lines[0];
+  return worst;
 }
 
 function progressiveOf(
@@ -218,7 +218,8 @@ function causeOf(args: {
  *
  * The key leaves out `displayResolution`, because it changes on each zoom,
  * pan and resize. It holds `shownState` and `lossy`, so a zoom that changes a
- * box-average verdict still changes the key.
+ * box-average verdict still changes the key. It holds the load progress only
+ * while the view is lossy, so an ordinary load fires no event per frame.
  */
 export function viewportFidelityStateKey(state: ViewportFidelityState): string {
   return JSON.stringify({
@@ -230,6 +231,6 @@ export function viewportFidelityStateKey(state: ViewportFidelityState): string {
     magnitude: state.magnitude,
     cause: state.cause,
     transient: state.transient,
-    progressive: state.progressive,
+    progressive: state.lossy ? state.progressive : undefined,
   });
 }

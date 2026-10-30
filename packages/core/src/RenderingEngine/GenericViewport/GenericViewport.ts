@@ -38,6 +38,8 @@ import type {
 import { buildViewportFidelityState } from '../helpers/fidelityIndicator/buildViewportFidelityState';
 import {
   type FidelityDisplay,
+  type SlabViewportLike,
+  averageSlabThicknessOf,
   displaySpacingOfDisplay,
   pixelSpacingOfCanvasToWorld,
 } from '../helpers/fidelityIndicator/displaySpacingOfViewport';
@@ -316,14 +318,18 @@ abstract class GenericViewport<
       view.canvasToWorld(canvasPos)
     );
 
-    if (!pixelSpacing) {
+    const camera = view.toICamera();
+
+    // A perspective view has no single pixel size (FIDELITY-RECORD-2).
+    if (!pixelSpacing || camera?.parallelProjection === false) {
       return undefined;
     }
 
     return {
       pixelSpacing,
-      viewPlaneNormal: view.toICamera()?.viewPlaneNormal,
+      viewPlaneNormal: camera?.viewPlaneNormal,
       volume3D: this.isFidelityView3D(),
+      averageSlabThickness: averageSlabThicknessOf(this as SlabViewportLike),
     };
   }
 

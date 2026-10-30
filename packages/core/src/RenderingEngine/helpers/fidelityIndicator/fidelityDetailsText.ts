@@ -135,7 +135,5 @@ function formatAxis(value: number): string {
     return '1';
   }
 
-  const rounded = Math.round(value * 100) / 100;
-
-  return Number.isInteger(rounded) ? String(rounded) : String(rounded);
+  return String(Math.round(value * 100) / 100);
 }
