@@ -128,6 +128,7 @@ export * from './getPlaneCubeIntersectionDimensions';
 export * from './rotateToViewCoordinates';
 export * as voxelSlab from './voxelSlab';
 import { asArray, asArrayFirst, asMultiValueArray } from './asArray';
+import { findPrivateTag, getPrivateTagValue } from './privateTag';
 import {
   viewportSupportsImageSlices,
   viewportSupportsStackCalibration,
@@ -276,6 +277,8 @@ export {
   asArray,
   asArrayFirst,
   asMultiValueArray,
+  findPrivateTag,
+  getPrivateTagValue,
   viewportSupportsImageSlices,
   viewportSupportsStackCalibration,
   viewportSupportsStackCompatibility,
