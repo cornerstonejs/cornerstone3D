@@ -7,13 +7,13 @@ import { Filter } from '@kitware/vtk.js/Rendering/OpenGL/Texture/Constants';
 import { getTransferFunctionsHash } from '@kitware/vtk.js/Rendering/OpenGL/RenderWindow/resourceSharingHelper';
 import { Representation } from '@kitware/vtk.js/Rendering/Core/Property/Constants';
 import { BlendMode } from '@kitware/vtk.js/Rendering/Core/VolumeMapper/Constants';
-import { getCanUseNorm16Texture, getLossyDownsampling } from '../../init';
+import { getCanUseNorm16Texture } from '../../init';
 import canUseFloatOpacityTexture from './canUseFloatOpacityTexture';
 import { coreLog } from '../../utilities/logger';
-import { getBufferConfiguration } from '../../utilities/getBufferConfiguration';
+import { volumeTextureBytes } from '../../utilities/getBufferConfiguration';
 import { voxelGridWithinLimits } from '../../utilities/voxelGrid';
 import {
-  getActiveGpuSettings,
+  gpuSettingsForRender,
   gridLimitsOfGpuSettings,
 } from '../../utilities/gpuSettingsPresets';
 
@@ -38,17 +38,16 @@ const log = coreLog.getLogger(
  * @returns {boolean} true when the GPU settings can hold the texture
  */
 function gridFitsGpuSettings(dims, dataType, numberOfComponents, context) {
-  if (!getLossyDownsampling().final) {
+  const gpuSettings = gpuSettingsForRender();
+
+  if (!gpuSettings) {
     return true;
   }
 
-  const gpuSettings = getActiveGpuSettings();
-  const { numBytes } = getBufferConfiguration(
-    dataType,
-    numberOfComponents || 1,
-    { isVolumeBuffer: true }
+  const limits = gridLimitsOfGpuSettings(
+    gpuSettings,
+    volumeTextureBytes(1, dataType, numberOfComponents)
   );
-  const limits = gridLimitsOfGpuSettings(gpuSettings, numBytes);
   const grid = {
     dimensions: [dims[0], dims[1], dims[2]],
     spacing: [1, 1, 1],

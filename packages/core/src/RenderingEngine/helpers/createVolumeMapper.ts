@@ -1,5 +1,5 @@
 import { vtkSharedVolumeMapper } from '../vtkClasses';
-import { getConfiguration } from '../../init';
+import { getConfiguration, getLossyDownsampling } from '../../init';
 import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture';
 import vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
@@ -16,10 +16,12 @@ export const MAXIMUM_SAMPLES_PER_RAY = 4000;
  * https://github.com/Kitware/VTK/blob/6b559c65bb90614fb02eb6d1b9e3f0fca3fe4b0b/Rendering/VolumeOpenGL2/vtkSmartVolumeMapper.cxx#L344
  *
  * A reduced texture holds a grid of a larger spacing, and a sample finer than
- * half of its voxel adds no detail. The distance also never falls below the
- * diagonal of the volume divided by `MAXIMUM_SAMPLES_PER_RAY`, so a long
- * series needs no more samples than that on one ray. vtk.js does not enforce
- * the maximum: it warns on every render and samples the whole ray.
+ * half of its voxel adds no detail. With final downsampling on, the distance
+ * also never falls below the diagonal of the volume divided by
+ * `MAXIMUM_SAMPLES_PER_RAY`, so a long series needs no more samples than that
+ * on one ray. vtk.js does not enforce the maximum: it warns on every render
+ * and samples the whole ray. With final downsampling off, the distance is the
+ * one of 4.x.
  *
  * @param imageData - the image data of the volume
  * @param texture - the texture that the mapper reads, which can state a grid
@@ -37,6 +39,11 @@ export function sampleDistanceOf(
   )?.getGrid?.();
   const spacing = grid?.spacing ?? imageData.getSpacing();
   const distance = (multiplier * (spacing[0] + spacing[1] + spacing[2])) / 6;
+
+  if (!getLossyDownsampling().final) {
+    return distance;
+  }
+
   const diagonal = vtkBoundingBox.getDiagonalLength(imageData.getBounds());
 
   return Math.max(distance, diagonal / (MAXIMUM_SAMPLES_PER_RAY - 1));
