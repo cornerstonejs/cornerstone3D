@@ -64,15 +64,17 @@ export type FidelityLine = {
 };
 
 /**
- * Whether a line carries data that the fidelity can judge: a volume record,
- * a stack image status, or a drawn grid coarser than the full volume.
+ * Whether a line carries data that the fidelity can judge: a volume record
+ * with delivered data, a stack image status, or a drawn grid coarser than the
+ * full volume. A record with no delivered quality (`lowest` undefined) is no
+ * data.
  */
 export function lineHasData(line: FidelityLine): boolean {
-  return (
-    !!line.record ||
-    line.imageQualityStatus !== undefined ||
-    !line.fullResolution
-  );
+  if (line.record) {
+    return line.record.lowest !== undefined;
+  }
+
+  return line.imageQualityStatus !== undefined || !line.fullResolution;
 }
 
 export type SvgFidelityState = 'loading' | 'done' | 'lossy' | 'lod';

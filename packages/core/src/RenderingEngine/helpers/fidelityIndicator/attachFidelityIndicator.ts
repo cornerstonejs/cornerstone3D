@@ -51,6 +51,8 @@ const ARIA_LABELS: Record<SvgFidelityState, string> = {
 /** One view of the fidelity lines: the product icon, or the debug badge. */
 type FidelityView = {
   update: (lines: FidelityLine[]) => void;
+  /** Forgets the lossiness history, for a viewport that shows new data. */
+  reset?: () => void;
   remove: () => void;
 };
 
@@ -165,6 +167,26 @@ function linesOf(viewport: FidelityViewport): FidelityLine[] {
 }
 
 /**
+ * A key of the data that a viewport shows: its volume ids, and the first and
+ * last image id and the count of its image ids. Scroll, zoom and pan keep it.
+ */
+function dataKeyOf(viewport: FidelityViewport): string {
+  try {
+    const ids = viewport as {
+      getAllVolumeIds?: () => string[];
+      getImageIds?: () => string[];
+    };
+    const volumeIds = ids.getAllVolumeIds?.() ?? [];
+    const imageIds = ids.getImageIds?.() ?? [];
+
+    return `${volumeIds.join('|')}#${imageIds.length}:${imageIds[0]}:${imageIds[imageIds.length - 1]}`;
+  } catch {
+    // A volume viewport with no volume throws from getImageIds.
+    return '';
+  }
+}
+
+/**
  * Reads fidelity lines from the viewport API and passes them to every view:
  * on attach, after a render, on `VIEWPORT_FIDELITY_CHANGED`, and when volume
  * data changes without a render. The indicator never fires the event
@@ -178,6 +200,25 @@ function subscribeToFidelity(
   const { element } = viewport;
   let rafId = 0;
   let disposed = false;
+  let dataKey: string | undefined;
+
+  const updateViews = () => {
+    const lines = linesOf(viewport);
+    const key = dataKeyOf(viewport);
+
+    // New data starts a new lossiness history (no recovery mark from the
+    // data that the viewport showed before).
+    if (key !== dataKey) {
+      dataKey = key;
+      for (const view of views) {
+        view.reset?.();
+      }
+    }
+
+    for (const view of views) {
+      view.update(lines);
+    }
+  };
 
   const update = () => {
     rafId = 0;
@@ -185,11 +226,7 @@ function subscribeToFidelity(
       return;
     }
 
-    const lines = linesOf(viewport);
-
-    for (const view of views) {
-      view.update(lines);
-    }
+    updateViews();
   };
 
   const schedule = () => {
@@ -206,10 +243,7 @@ function subscribeToFidelity(
     if (disposed) {
       return;
     }
-    const lines = linesOf(viewport);
-    for (const view of views) {
-      view.update(lines);
-    }
+    updateViews();
   };
 
   const cleanUp = () => {
@@ -439,6 +473,7 @@ function createSvgIndicator(host: HTMLElement): FidelityView {
         details.textContent = clinicianHoverTextOf(lines);
       }
     },
+    reset: () => setSvgState('hidden'),
     remove: () => {
       clearTimeout(doneFadeTimer);
       root.remove();

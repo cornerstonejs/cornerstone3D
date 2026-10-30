@@ -181,7 +181,7 @@ describe.each([
     const { volume, ctx, attachment } = await mount();
     const { rendering } = attachment;
 
-    expect(shownState(rendering)).toBe('done');
+    expect(shownState(rendering)).toBe('hidden');
 
     volume.delivered = {
       lowest: ImageQualityStatus.ADJACENT_REPLICATE,
