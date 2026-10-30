@@ -387,6 +387,15 @@ dimensions of the reduced grid, and vtk.js maps the texture over the extent of t
 - A whole factor that does not divide N gives `ceil(N / f)` texels, which do not span N source
   voxels. A texture of such a grid draws stretched, so no reduced texture uses one.
 
+**VRS-I-13.** A dynamic (4D) volume is not reduced: its factors are `[1, 1, 1]`, and it draws one
+full-resolution texture of the current dimension group, as in 4.x. The dynamic texture update writes
+full frames before any check of the grid, and the reduced fill reads frames by image-id index. An
+open issue tracks the support, to resolve after the first merge.
+
+**VRS-I-14.** A volume of more than one component (for example RGB) is not reduced: its factors are
+`[1, 1, 1]`. The reduced fill and its upload have no component stride. An open issue tracks the
+support, to resolve after the first merge.
+
 ## What a new render type defines
 
 A new render type supplies two things, and it changes no existing file:

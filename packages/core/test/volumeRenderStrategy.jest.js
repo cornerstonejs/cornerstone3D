@@ -172,6 +172,38 @@ describe('the default provider builds the strategies', () => {
     }
   });
 
+  it('does not reduce a dynamic volume or a multi-component volume', () => {
+    const dynamic = makeVolume({ volumeId: 'dynamic-volume' });
+    const [width, height, depth] = dimensions;
+    const rgb = new ImageVolume({
+      volumeId: 'rgb-volume',
+      metadata: { FrameOfReferenceUID: 'for-1' },
+      dimensions,
+      spacing: [1, 1, 1],
+      origin: [0, 0, 0],
+      direction: identityDirection,
+      imageIds: Array.from({ length: depth }, (_, k) => `image:rgb:${k}`),
+      dataType: 'Uint8Array',
+      numberOfComponents: 3,
+      voxelManager: VoxelManager.createScalarVolumeVoxelManager({
+        dimensions,
+        scalarData: new Uint8Array(width * height * depth * 3),
+        numberOfComponents: 3,
+      }),
+    });
+
+    dynamic.isDynamicVolume = () => true;
+
+    // The edge of 512 exceeds the edge of 256 of `low-tablet`.
+    for (const volume of [dynamic, rgb]) {
+      expect(
+        defaultVolumeStrategyProvider(context(volume, 'low-tablet')).map(
+          (strategy) => strategy.name
+        )
+      ).toEqual(['full-resolution/full-extent']);
+    }
+  });
+
   it('gives no full-resolution strategy when the preset cannot hold it', () => {
     const volume = makeVolume();
 

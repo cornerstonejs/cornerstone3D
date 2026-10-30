@@ -10,7 +10,7 @@ import { BlendMode } from '@kitware/vtk.js/Rendering/Core/VolumeMapper/Constants
 import { getCanUseNorm16Texture } from '../../init';
 import canUseFloatOpacityTexture from './canUseFloatOpacityTexture';
 import { coreLog } from '../../utilities/logger';
-import { getBufferConfiguration } from '../../utilities/getBufferConfiguration';
+import { volumeTextureBytes } from '../../utilities/getBufferConfiguration';
 import { voxelGridWithinLimits } from '../../utilities/voxelGrid';
 import {
   gpuSettingsForRender,
@@ -44,12 +44,10 @@ function gridFitsGpuSettings(dims, dataType, numberOfComponents, context) {
     return true;
   }
 
-  const { numBytes } = getBufferConfiguration(
-    dataType,
-    numberOfComponents || 1,
-    { isVolumeBuffer: true }
+  const limits = gridLimitsOfGpuSettings(
+    gpuSettings,
+    volumeTextureBytes(1, dataType, numberOfComponents)
   );
-  const limits = gridLimitsOfGpuSettings(gpuSettings, numBytes);
   const grid = {
     dimensions: [dims[0], dims[1], dims[2]],
     spacing: [1, 1, 1],
