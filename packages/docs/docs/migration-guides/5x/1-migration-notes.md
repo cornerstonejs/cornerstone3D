@@ -483,8 +483,10 @@ downsampling the viewer may use:
 | `interactive`        | `true`  | Lowers the detail during an interaction, for example the sample distance of a 3D rotation.   |
 | `interleavedLoading` | `true`  | Fills the frames that have not loaded yet with copies of the nearby frames, during the load. |
 
-With the defaults, a volume texture has the full dimensions of the volume, as in
-4.x. The `interactive` and `interleavedLoading` kinds keep the behaviour of 4.x.
+With the defaults, a volume renders as in 4.x: the volume texture has the full
+dimensions of the volume, no GPU settings preset applies, and a 3D render uses
+the sample distance of 4.x. The `interactive` and `interleavedLoading` kinds
+keep the behaviour of 4.x.
 
 With `final: true`, a volume texture comes from the GPU settings. When an
 application selects no preset, the `auto` preset applies. Earlier 5.x
@@ -568,6 +570,9 @@ probes again once.
   shows no prompt; the application decides when to offer a retest.
 - **To probe from the start,** call
   `resetRenderingCapabilities({ clearStorage: true })`, and then reload.
+- **The quality record of a reduced volume during a load** (`getGridQuality`)
+  now counts only the empty boxes as missing. A box that holds some arrived
+  frames is the average of those frames, and it holds data.
 
 ## Locked segments stop the brush, and do not cause an overlap
 

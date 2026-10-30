@@ -21,9 +21,12 @@ import volumeTextureStore from '../src/cache/volumeTextureStore';
 import VoxelManager from '../src/utilities/VoxelManager';
 import {
   getGpuSettingsPreset,
+  gpuSettingsForRender,
   setGpuSettingsPreset,
   resetGpuSettingsPreset,
 } from '../src/utilities/gpuSettingsPresets';
+import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
+import { sampleDistanceOf } from '../src/RenderingEngine/helpers/createVolumeMapper';
 import { VoxelStatistics } from '../src/enums';
 import { resetRenderingCapabilities } from '../src/utilities/renderingCapabilities';
 import { probeRenderingLimits } from '../src/utilities/textureSupport';
@@ -180,21 +183,72 @@ describe('the default provider builds the strategies', () => {
     ]);
   });
 
-  it('builds the full-resolution strategy with final downsampling off', () => {
+  it('renders as in 4.x with final downsampling off', () => {
     const volume = makeVolume();
 
+    setGpuSettingsPreset('low-tablet');
     setLossyDownsampling({ final: false });
 
     try {
-      const strategies = defaultVolumeStrategyProvider(
-        context(volume, 'low-tablet')
-      );
+      // No preset applies, so the default provider gets no settings.
+      expect(gpuSettingsForRender()).toBeUndefined();
 
-      expect(strategies.map((strategy) => strategy.name)).toEqual([
-        'full-resolution/full-extent',
-      ]);
+      for (const gpuSettings of [
+        gpuSettingsForRender(),
+        getGpuSettingsPreset('low-tablet'),
+      ]) {
+        const strategies = defaultVolumeStrategyProvider({
+          volume,
+          gpuSettings,
+        });
+
+        expect(strategies.map((strategy) => strategy.name)).toEqual([
+          'full-resolution/full-extent',
+        ]);
+      }
+
+      // The 4.x sample distance: no floor from the length of the ray.
+      const imageData = vtkImageData.newInstance();
+
+      imageData.setDimensions([512, 512, 2464]);
+      imageData.setSpacing([0.7, 0.7, 0.5]);
+      expect(sampleDistanceOf(imageData, undefined, 0.5)).toBeCloseTo(
+        (0.5 * (0.7 + 0.7 + 0.5)) / 6
+      );
     } finally {
       setLossyDownsampling({ final: true });
+    }
+  });
+
+  it('does not reduce a dynamic volume or a multi-component volume', () => {
+    const dynamic = makeVolume({ volumeId: 'dynamic-volume' });
+    const [width, height, depth] = dimensions;
+    const rgb = new ImageVolume({
+      volumeId: 'rgb-volume',
+      metadata: { FrameOfReferenceUID: 'for-1' },
+      dimensions,
+      spacing: [1, 1, 1],
+      origin: [0, 0, 0],
+      direction: identityDirection,
+      imageIds: Array.from({ length: depth }, (_, k) => `image:rgb:${k}`),
+      dataType: 'Uint8Array',
+      numberOfComponents: 3,
+      voxelManager: VoxelManager.createScalarVolumeVoxelManager({
+        dimensions,
+        scalarData: new Uint8Array(width * height * depth * 3),
+        numberOfComponents: 3,
+      }),
+    });
+
+    dynamic.isDynamicVolume = () => true;
+
+    // The edge of 512 exceeds the edge of 256 of `low-tablet`.
+    for (const volume of [dynamic, rgb]) {
+      expect(
+        defaultVolumeStrategyProvider(context(volume, 'low-tablet')).map(
+          (strategy) => strategy.name
+        )
+      ).toEqual(['full-resolution/full-extent']);
     }
   });
 

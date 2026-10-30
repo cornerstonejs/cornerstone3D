@@ -1,5 +1,5 @@
 import VoxelStatistics from '../enums/VoxelStatistics';
-import { getBufferConfiguration } from '../utilities/getBufferConfiguration';
+import { volumeTextureBytes } from '../utilities/getBufferConfiguration';
 import { maxEdgeOfGrid, voxelCountOfGrid } from '../utilities/voxelGrid';
 import {
   MutableVolumeTextureSlab,
@@ -178,14 +178,11 @@ class VolumeTextureStore {
     dataType?: PixelDataTypedArrayString,
     numberOfComponents = 1
   ): number {
-    const voxels = voxelCountOfGrid(grid) * Math.max(numberOfComponents, 1);
-
-    if (!dataType) {
-      return voxels;
-    }
-
-    return getBufferConfiguration(dataType, voxels, { isVolumeBuffer: true })
-      .numBytes;
+    return volumeTextureBytes(
+      voxelCountOfGrid(grid),
+      dataType,
+      numberOfComponents
+    );
   }
 
   /**

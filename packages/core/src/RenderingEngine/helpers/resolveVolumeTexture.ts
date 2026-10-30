@@ -2,7 +2,7 @@ import {
   defaultVolumeStrategyProvider,
   selectFirstReadyStrategy,
 } from './volumeRenderStrategy';
-import { getActiveGpuSettings } from '../../utilities/gpuSettingsPresets';
+import { gpuSettingsForRender } from '../../utilities/gpuSettingsPresets';
 import type {
   IVolumeRenderStrategy,
   SelectVolumeStrategy,
@@ -68,7 +68,7 @@ export function resolveVolumeTexture(
 
   const strategies = provideStrategies({
     volume,
-    gpuSettings: getActiveGpuSettings(),
+    gpuSettings: gpuSettingsForRender(),
     viewportId,
     reason: 'initial',
   });

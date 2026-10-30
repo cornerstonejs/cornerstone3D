@@ -3,7 +3,7 @@ import {
   boxAverageReductionFactors,
   deriveBoxAverageGrid,
 } from '../../utilities/voxelGrid';
-import { getBufferConfiguration } from '../../utilities/getBufferConfiguration';
+import { volumeTextureBytes } from '../../utilities/getBufferConfiguration';
 import {
   gridLimitsOfGpuSettings,
   gpuSettingsForGrid,
@@ -103,8 +103,8 @@ export type VolumeStrategyProvisionReason =
 export type VolumeStrategyProvisionContext = {
   /** The volume to draw. */
   volume: IImageVolume;
-  /** The GPU settings that apply. */
-  gpuSettings: GpuSettings;
+  /** The GPU settings that apply, undefined when final downsampling is off. */
+  gpuSettings?: GpuSettings;
   /** The viewport that draws. */
   viewportId?: string;
   /** Why this provision runs. */
@@ -258,16 +258,24 @@ class FullExtentTextureStrategy implements IVolumeRenderStrategy {
   }
 }
 
+/** The number of components of one voxel of this volume. */
+function componentsOf(volume: IImageVolume): number {
+  return volume.voxelManager?.numberOfComponents || 1;
+}
+
 /** The number of bytes of one voxel of a texture of this volume. */
 function bytesPerVoxelOf(volume: IImageVolume): number {
-  return getBufferConfiguration(volume.dataType, 1, { isVolumeBuffer: true })
-    .numBytes;
+  return volumeTextureBytes(1, volume.dataType, componentsOf(volume));
 }
 
 /**
  * The reduction factors of the full-extent texture of a volume under some GPU
  * settings. Every factor is 1 when final downsampling is off, because the
  * volume then gets its full-resolution texture whatever its size.
+ *
+ * A dynamic (4D) volume and a volume of more than one component also get
+ * factors of 1, because the reduced fill does not support them yet (see
+ * VRS-I-19 and VRS-I-20).
  *
  * The default provider builds the full-resolution strategy when every factor
  * is 1, and the reduced strategy with these factors otherwise. A caller that
@@ -286,9 +294,14 @@ function bytesPerVoxelOf(volume: IImageVolume): number {
  */
 export function volumeTextureReductionFactors(
   volume: IImageVolume,
-  gpuSettings: GpuSettings
+  gpuSettings: GpuSettings | undefined
 ): Point3 {
-  if (!getLossyDownsampling().final) {
+  if (
+    !gpuSettings ||
+    !getLossyDownsampling().final ||
+    volume.isDynamicVolume?.() ||
+    componentsOf(volume) > 1
+  ) {
     return [1, 1, 1];
   }
 

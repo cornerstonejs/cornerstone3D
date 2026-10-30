@@ -91,7 +91,7 @@ sequenceDiagram
 
     VP->>CA: volumeId
     CA->>RVT: resolveVolumeTexture(volume, options)
-    RVT->>RVT: getActiveGpuSettings()
+    RVT->>RVT: gpuSettingsForRender()
     RVT->>Prov: provideStrategies({ volume, gpuSettings, reason: 'initial' })
     Note over Prov: Under 'auto', gpuSettingsForGrid probes an edge<br/>above the reliable edge before any allocation.
     Prov->>Grid: gridLimitsOfGpuSettings(gpuSettings, bytesPerVoxel)
