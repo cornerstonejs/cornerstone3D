@@ -112,6 +112,22 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     return created;
   };
 
+  const superReleaseGraphicsResources = publicAPI.releaseGraphicsResources;
+
+  /**
+   * vtk.js deletes the GL texture only when it gets a render window. The
+   * texture store and `setOpenGLRenderWindow` call this with none, so the
+   * texture defaults to its own window, which created the handle. A deleted
+   * window has no context to delete in.
+   */
+  publicAPI.releaseGraphicsResources = (rwin) => {
+    const window = model._openGLRenderWindow;
+
+    superReleaseGraphicsResources(
+      rwin ?? (window?.isDeleted?.() ? undefined : window)
+    );
+  };
+
   const superUpdate = publicAPI.updateVolumeInfoForGL;
 
   publicAPI.updateVolumeInfoForGL = (dataType, numComps) => {
