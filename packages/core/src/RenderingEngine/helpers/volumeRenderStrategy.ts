@@ -345,7 +345,8 @@ export function reducedStrategyName(
 /**
  * Why the GPU settings reduce this volume: `deviceTextureLimit` when the edge
  * limit alone reduces it, `memoryBudget` when only the texture memory does.
- * Undefined when the settings do not reduce the volume.
+ * Undefined when the settings do not reduce the volume. The edge is the one of
+ * the settings for this grid, as in {@link volumeTextureReductionFactors}.
  */
 export function reductionCauseOf(
   volume: IImageVolume,
@@ -355,8 +356,15 @@ export function reductionCauseOf(
     return undefined;
   }
 
-  const edgeFactors = boxAverageReductionFactors(volume.voxelGrid.dimensions, {
-    maxEdge: gpuSettings.maxTextureEdge,
+  const { dimensions } = volume.voxelGrid;
+  const { maxTextureEdge } = gpuSettingsForGrid(
+    gpuSettings,
+    dimensions,
+    bytesPerVoxelOf(volume),
+    getGpuMemoryTotal(volume.volumeId)
+  );
+  const edgeFactors = boxAverageReductionFactors(dimensions, {
+    maxEdge: maxTextureEdge,
   });
 
   return edgeFactors.some((f) => f > 1) ? 'deviceTextureLimit' : 'memoryBudget';
