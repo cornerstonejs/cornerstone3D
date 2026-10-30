@@ -1,4 +1,5 @@
 import { readFileSync } from 'fs';
+import { getPrivateTagValue } from '@cornerstonejs/utils';
 import { join } from 'path';
 import { createDisplaySetFromGroup } from './createDisplaySetFromGroup';
 import { compiledDisplaySetRules } from './compiledDisplaySetRules';
@@ -87,54 +88,69 @@ const dwiByBValue: DisplaySetRules = {
 };
 
 describe('diffusion MR', () => {
-  it('splits a GE DWI series by the b-value of the private tag (0043,1039), only with a declaration of the tag', () => {
-    const series = geDiffusionSeries();
-    // The same rule as dwiByBValue, but the b-value is the first value of the
-    // GE private tag.
-    const geDwiByBValue: DisplaySetRules = {
-      geDwiByBValue: {
-        priority: -1,
-        context: {
-          geBValues: { attribute: '00431039', vr: 'IS', vm: '4' },
-          bValue: 'Number(geBValues)',
-          isDiffusion: 'series.instances.max(bValue) > 0',
+  for (const form of ['block', 'hex'] as const) {
+    it(`splits a GE DWI series by the b-value of the private tag (0043,1039) in the ${form} form, only with a declaration of the tag`, () => {
+      const series = geDiffusionSeries(form);
+      // The same rule as dwiByBValue, but the b-value is the first value of the
+      // GE private tag.
+      const geDwiByBValue: DisplaySetRules = {
+        geDwiByBValue: {
+          priority: -1,
+          context: {
+            geBValues: {
+              attribute: '00431039',
+              creator: 'GEMS_PARM_01',
+              vr: 'IS',
+              vm: '4',
+            },
+            bValue: 'Number(geBValues)',
+            isDiffusion: 'series.instances.max(bValue) > 0',
+          },
+          matches: {
+            Modality: 'MR',
+            isDiffusion: true,
+            isImage: true,
+            bValue: { notNull: true },
+          },
+          groupBy: ['SeriesInstanceUID', 'bValue'],
+          sortBy: ['SliceLocation'],
+          attributes: {
+            SeriesDescription: { template: '{SeriesDescription} b={bValue}' },
+          },
         },
-        matches: {
-          Modality: 'MR',
-          isDiffusion: true,
-          isImage: true,
-          bValue: { notNull: true },
-        },
-        groupBy: ['SeriesInstanceUID', 'bValue'],
-        sortBy: ['SliceLocation'],
-        attributes: {
-          SeriesDescription: { template: '{SeriesDescription} b={bValue}' },
-        },
-      },
-    };
-    const atB = (bValue: string) =>
-      uidsOf(
-        series
-          .filter((i) => (i['00431039'] as string[])[0] === bValue)
-          .sort(bySliceLocation)
-      );
+      };
+      const atB = (bValue: string) =>
+        uidsOf(
+          series
+            .filter(
+              (i) =>
+                getPrivateTagValue<string[]>(
+                  i,
+                  '0043',
+                  'GEMS_PARM_01',
+                  '39'
+                )[0] === bValue
+            )
+            .sort(bySliceLocation)
+        );
 
-    expect(displaySetsOf(series, withDefaults(geDwiByBValue))).toEqual([
-      { rule: 'geDwiByBValue', uids: atB('0'), description: 'DWI ASSET b=0' },
-      {
-        rule: 'geDwiByBValue',
-        uids: atB('1000'),
-        description: 'DWI ASSET b=1000',
-      },
-    ]);
-    expect(atB('0').length).toBe(32);
+      expect(displaySetsOf(series, withDefaults(geDwiByBValue))).toEqual([
+        { rule: 'geDwiByBValue', uids: atB('0'), description: 'DWI ASSET b=0' },
+        {
+          rule: 'geDwiByBValue',
+          uids: atB('1000'),
+          description: 'DWI ASSET b=1000',
+        },
+      ]);
+      expect(atB('0').length).toBe(32);
 
-    // The default rules do not read the private tag: one display set.
-    const defaults = displaySetsOf(series, compiledDisplaySetRules);
-    expect(defaults.map((d) => [d.rule, d.uids.length])).toEqual([
-      ['volume3d', 64],
-    ]);
-  });
+      // The default rules do not read the private tag: one display set.
+      const defaults = displaySetsOf(series, compiledDisplaySetRules);
+      expect(defaults.map((d) => [d.rule, d.uids.length])).toEqual([
+        ['volume3d', 64],
+      ]);
+    });
+  }
 
   it('does not split an MR series whose images all carry DiffusionBValue = 0', () => {
     const series = t2SeriesWithZeroBValue();

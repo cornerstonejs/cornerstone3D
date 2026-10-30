@@ -563,6 +563,12 @@ These shapes reach your code through the adapters:
   attribute such as `ImageType` or `CorrectedImage`: it splits a
   backslash-joined value (`['DECY\\ATTN\\SCAT']` in 1.0, a string in 0.52) and
   gives `[]` for a missing value, where `asArray(undefined)` gives `[undefined]`.
+- Read a private tag with `getPrivateTagValue(dataset, group, creator, element)`
+  from `@cornerstonejs/utils`, not by its 8-digit hex key. dcmjs 1.0 puts a
+  private element in a block (`dataset['7053:Philips PET Private Group'].x09`),
+  and the hex key is a hidden alias that a spread or JSON loses. The reader also
+  reads the hex-key form. A display set rule declaration takes `creator` for the
+  same read: `{ "attribute": "00431039", "creator": "GEMS_PARM_01" }`.
 - Move the application to `@dcmjs-org/dcmjs` in the same release, so that one
   copy of dcmjs sets the log levels and the shapes.
 - Do not rely on a fixed length of the generated UIDs.

@@ -118,11 +118,12 @@ const contextEntryShape: SchemaShape = {
       selectBy: 'attribute',
       keys: {
         attribute: { kind: 'string' },
+        creator: { kind: 'string', optional: true },
         vr: { kind: 'string', optional: true },
         vm: { kind: 'string', optional: true },
       },
       description:
-        'Reads one attribute of the instance that the DICOM dictionary does not hold: a private tag as 8-digit hex, a vendor attribute, or a synthetic attribute such as imageId. vr and vm are recorded only.',
+        'Reads one attribute of the instance that the DICOM dictionary does not hold: a private tag as 8-digit hex, a vendor attribute, or a synthetic attribute such as imageId. With creator, a private tag reads with getPrivateTagValue: group and element come from the hex tag, and the block number comes from the creator. vr and vm are recorded only.',
     },
     template: {
       selectBy: 'template',

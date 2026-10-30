@@ -824,13 +824,13 @@ does not change the split: groups and split keys stay per rule id.
 entries, over the entries of `defaultMetadataContext`. OHIF reads the map from
 the `metadataContext` customization. Each entry has one of five forms:
 
-| Form                                                     | Meaning                                                                                               |
-| -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| a number, a boolean, `null` or an array                  | a fixed value; a site changes it with `$set`                                                          |
-| a string                                                 | an expression; a name or a path (`"timeClusters.start"`) is the simplest expression                   |
-| `{ "attribute": "00191010", "vr"?, "vm"? }`              | a declaration: reads one attribute of the instance that the dictionary does not hold                  |
-| `{ "template": "{SeriesDescription} +{sweepOffset} s" }` | text; each `{name}` gives the value of a name or a path                                               |
-| `{ "function": "timeClusters", "args": {...} }`          | a group: one call of a series function; each argument is a fixed value or an expression of the series |
+| Form                                                     | Meaning                                                                                                                                                                         |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| a number, a boolean, `null` or an array                  | a fixed value; a site changes it with `$set`                                                                                                                                    |
+| a string                                                 | an expression; a name or a path (`"timeClusters.start"`) is the simplest expression                                                                                             |
+| `{ "attribute": "00191010", "creator"?, "vr"?, "vm"? }`  | a declaration: reads one attribute of the instance that the dictionary does not hold; with `creator`, reads the private tag in the block of that creator (`getPrivateTagValue`) |
+| `{ "template": "{SeriesDescription} +{sweepOffset} s" }` | text; each `{name}` gives the value of a name or a path                                                                                                                         |
+| `{ "function": "timeClusters", "args": {...} }`          | a group: one call of a series function; each argument is a fixed value or an expression of the series                                                                           |
 
 The rules:
 
