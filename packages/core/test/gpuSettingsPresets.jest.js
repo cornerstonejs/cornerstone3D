@@ -17,7 +17,9 @@ import {
   getConfiguration,
   getLossyDownsampling,
   setConfiguration,
+  setLossyDownsampling,
 } from '../src/init';
+import { getGpuMemoryEntryBytes } from '../src/utilities/gpuMemoryLedger';
 import {
   MEMORY_RECENT_MS,
   recordRenderingCapabilityFailure,
@@ -175,6 +177,42 @@ describe('final downsampling off', () => {
     expect(probeRenderingLimits).not.toHaveBeenCalled();
     expect(probeTextureEdge).not.toHaveBeenCalled();
     expect(probeEdgeSearch).not.toHaveBeenCalled();
+  });
+});
+
+describe('final downsampling on', () => {
+  it('converts a real vtk.js mapper, and its delete removes the entry of the ledger', () => {
+    mockWebGL();
+    setLossyDownsampling({ final: true });
+
+    try {
+      const dimensions = [16, 16, 16];
+      const imageData = vtkImageData.newInstance();
+
+      imageData.setDimensions(dimensions);
+      imageData.set(
+        {
+          voxelManager: {
+            getCompleteScalarDataArray: () => new Float32Array(16 * 16 * 16),
+          },
+        },
+        true
+      );
+
+      const sharedMapper = vtkVolumeMapper.newInstance();
+
+      sharedMapper.setInputData(imageData);
+
+      const mapper = convertMapperToNotSharedMapper(sharedMapper);
+
+      expect(getGpuMemoryEntryBytes(mapper)).toBe(16 * 16 * 16 * 4);
+
+      mapper.delete();
+
+      expect(getGpuMemoryEntryBytes(mapper)).toBe(0);
+    } finally {
+      setLossyDownsampling({ final: false });
+    }
   });
 });
 

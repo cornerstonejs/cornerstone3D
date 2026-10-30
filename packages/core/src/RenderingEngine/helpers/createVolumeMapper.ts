@@ -2,6 +2,7 @@ import { vtkSharedVolumeMapper } from '../vtkClasses';
 import { getConfiguration, getLossyDownsampling } from '../../init';
 import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture';
+import macro from '@kitware/vtk.js/macros';
 import vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import vtkBoundingBox from '@kitware/vtk.js/Common/DataModel/BoundingBox';
@@ -169,7 +170,7 @@ export default function createVolumeMapper(
  * @returns The converted volume mapper.
  */
 export function convertMapperToNotSharedMapper(sharedMapper: vtkVolumeMapper) {
-  const volumeMapper = vtkVolumeMapper.newInstance();
+  const volumeMapper = newLedgerVolumeMapper();
   volumeMapper.setBlendMode(sharedMapper.getBlendMode());
 
   const imageData = sharedMapper.getInputData();
@@ -230,13 +231,25 @@ export function convertMapperToNotSharedMapper(sharedMapper: vtkVolumeMapper) {
     volumeId: imageData.get('volumeId')?.volumeId,
   });
 
-  const superDelete = volumeMapper.delete;
-
-  volumeMapper.delete = () => {
-    removeGpuMemoryEntry(volumeMapper);
-
-    return superDelete();
-  };
-
   return volumeMapper;
 }
+
+/**
+ * A plain vtk.js volume mapper whose `delete` also removes its entry of the
+ * GPU memory ledger. vtk.js freezes the public API of an instance, so the
+ * override happens in the constructor, before the freeze.
+ */
+const newLedgerVolumeMapper = macro.newInstance(
+  (publicAPI, model, initialValues = {}) => {
+    vtkVolumeMapper.extend(publicAPI, model, initialValues);
+
+    const mapper = publicAPI as vtkVolumeMapper;
+    const superDelete = mapper.delete;
+
+    mapper.delete = () => {
+      removeGpuMemoryEntry(mapper);
+      superDelete();
+    };
+  },
+  'vtkLedgerVolumeMapper'
+) as () => vtkVolumeMapper;
