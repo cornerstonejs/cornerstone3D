@@ -501,7 +501,9 @@ device keeps its own record:
 - **The texture edge.** At the first start, a probe draws thin 3D textures and
   finds the largest edge that renders correctly, from 2048 down to 16. When a
   volume needs a larger edge, the probe runs at that edge before the texture is
-  allocated, up to `MAX_3D_TEXTURE_SIZE`.
+  allocated, up to `MAX_3D_TEXTURE_SIZE`, or up to
+  `rendering.autoGpuSettings.maxTextureEdge` when that is smaller. The edge cap
+  of 2048 applies to the named presets only, and not to `auto`.
 - **The GPU memory.** The page counts its own GPU bytes: the textures, the
   canvases, the render buffers and the contexts of its viewports. Another tab
   does not count. The record keeps the largest total that worked as the

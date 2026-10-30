@@ -111,6 +111,12 @@ viewer asked it to render a data set that is too large.
   phone or a tablet, and `medium` for any other GPU. Safari reports
   `"Apple GPU"` on every Apple device, so an `"Apple GPU"` on a macOS device with
   no touch screen is a desktop GPU.
+- **GPULIMIT-PROFILE-6** The edge cap of 2048 applies to the named presets
+  only. `auto` probes an edge up to the device limit: `MAX_3D_TEXTURE_SIZE`, or
+  `maxTextureEdge` when that is smaller (GPULIMIT-PROFILE-4). No evidence shows
+  that a thin probe that passes predicts a full texture that displays, and no
+  evidence shows the opposite. A context loss after the allocation at a new edge
+  is recorded (GPULIMIT-DETECT-2).
 
 ### The detection of each failure (GPULIMIT-DETECT)
 
