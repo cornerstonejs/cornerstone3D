@@ -122,7 +122,8 @@ settings and answers in one of two ways:
   reduced set whose name carries those factors.
 
 The reduction is per axis and it is not uniform. An edge of 2049 voxels exceeds a limit of 2048 on
-one axis and by one voxel, so one axis reduces and the other two do not.
+one axis and by one voxel, so one axis reduces and the other two do not. A factor can hold a
+fraction, see `VRS-I-12`.
 
 **The provider derives no representation.** A reduced texture fills each slice with the
 `fillPlane` of the statistic of the volume (`ImageVolume.reductionStatistic`) straight from the
@@ -364,6 +365,22 @@ at once, and each later batch runs in an idle callback.
 
 **VRS-I-11.** A legacy viewport pins its set instead of claiming it. A claim needs a release at every
 removal of an actor, and a legacy viewport has many such paths.
+
+**VRS-I-12.** A reduced texture spans the full-resolution extent. The mappers allocate the
+dimensions of the reduced grid, and vtk.js maps the texture over the extent of the full-resolution
+`imageData`. On an axis of N source voxels and M texels, texel j therefore covers the source
+`[j · N / M, (j + 1) · N / M)`, and the box of the fill must be that same range:
+
+- The factor of an axis is `N / M`, and it can hold a fraction. A fill averages the source over the
+  range of the texel, and a source voxel that an end of the range cuts counts with the part of it
+  that lies inside the range. The foreground majority of a labelmap uses the same weights.
+- `deriveBoxAverageGrid` of that factor gives the spacing `s · N / M` and puts the centre of box j at
+  the centre of its range, so a CPU grid of the same reduction agrees with the texture.
+- `boxAverageReductionFactors` takes the largest M that fits the limits. It takes a whole factor f
+  that divides N in place of that M when `N / f` is at least `DIVISOR_PREFERENCE_MIN_RATIO` (0.9) of
+  M, because the box is then exact and whole.
+- A whole factor that does not divide N gives `ceil(N / f)` texels, which do not span N source
+  voxels. A texture of such a grid draws stretched, so no reduced texture uses one.
 
 ## What a new render type defines
 

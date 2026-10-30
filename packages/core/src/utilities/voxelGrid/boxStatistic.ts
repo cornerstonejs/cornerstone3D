@@ -6,6 +6,7 @@ import type {
   VoxelStatisticDefinition,
 } from '../../types';
 import resolveReduction, { type ResolvedReduction } from './resolveReduction';
+import { spanOfBox, weightInSpan } from './boxSpan';
 import VoxelStatistics from '../../enums/VoxelStatistics';
 import { requireVoxelStatistic } from './voxelStatistics';
 
@@ -109,12 +110,9 @@ function valueOfBox(
   const { factors, sourceOffset, sourceEnd } = resolved;
   const { perComponent } = accumulators;
 
-  const startI = sourceOffset[0] + i * factors[0];
-  const startJ = sourceOffset[1] + j * factors[1];
-  const startK = sourceOffset[2] + k * factors[2];
-  const endI = Math.min(startI + factors[0], sourceEnd[0]);
-  const endJ = Math.min(startJ + factors[1], sourceEnd[1]);
-  const endK = Math.min(startK + factors[2], sourceEnd[2]);
+  const spanI = spanOfBox(sourceOffset[0], factors[0], sourceEnd[0], i);
+  const spanJ = spanOfBox(sourceOffset[1], factors[1], sourceEnd[1], j);
+  const spanK = spanOfBox(sourceOffset[2], factors[2], sourceEnd[2], k);
 
   for (let component = 0; component < perComponent.length; component++) {
     perComponent[component].reset();
@@ -123,9 +121,14 @@ function valueOfBox(
   // 0 means that every value of this box holds one component.
   let components = 0;
 
-  for (let sourceK = startK; sourceK < endK; sourceK++) {
-    for (let sourceJ = startJ; sourceJ < endJ; sourceJ++) {
-      for (let sourceI = startI; sourceI < endI; sourceI++) {
+  for (let sourceK = spanK.first; sourceK < spanK.end; sourceK++) {
+    const weightK = weightInSpan(spanK, sourceK);
+
+    for (let sourceJ = spanJ.first; sourceJ < spanJ.end; sourceJ++) {
+      const weightJK = weightK * weightInSpan(spanJ, sourceJ);
+
+      for (let sourceI = spanI.first; sourceI < spanI.end; sourceI++) {
+        const weight = weightJK * weightInSpan(spanI, sourceI);
         const value = source.getAtIJK(sourceI, sourceJ, sourceK);
 
         if (typeof value === 'number') {
@@ -134,7 +137,7 @@ function valueOfBox(
           // arrived, and one such voxel must not destroy the value of the box.
           if (Number.isFinite(value)) {
             growAccumulators(accumulators, 1);
-            perComponent[0].add(value);
+            perComponent[0].add(value, weight);
           }
 
           continue;
@@ -156,7 +159,7 @@ function valueOfBox(
           const componentValue = value[component];
 
           if (Number.isFinite(componentValue)) {
-            perComponent[component].add(componentValue);
+            perComponent[component].add(componentValue, weight);
           }
         }
       }

@@ -102,6 +102,7 @@ describe('the image id of a reduced slice', () => {
       columns: 64,
       rows: 32,
       frames: 4,
+      frameSpan: [0, 4],
       inPlaneOffset: [0, 0],
       statistic: 'minimum',
     });
