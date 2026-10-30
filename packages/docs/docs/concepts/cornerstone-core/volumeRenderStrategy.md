@@ -324,7 +324,7 @@ Before an allocation of 64 MB or more on a visible page, the page writes a pendi
 of its own tab. The first render after the allocation settles it: 5 s later, the total counts as a
 success, and the page removes the pending record. A context loss before that, or within five seconds
 of the allocation, records the total as a `textureBytes` failure, except on a hidden page and
-within one second of a probe context. A pending record that a later start finds records the total as
+within one second of a probe context that ran after the allocation. A pending record that a later start finds records the total as
 a `gpuBytes` failure. Two tabs share the record: each change applies to a fresh read of the store.
 
 **The memory level.** Each memory category keeps `normal`, the largest total that worked. A failure
@@ -517,7 +517,9 @@ each context (8 bytes for each pixel of its largest viewport), and 32 MB for eac
 volume mapper after the allocation settles it 5 s later, which is the loss window, so one allocation
 records a success or a loss and never both; with no render in 30 s, the pending record
 is removed and nothing is recorded. A context loss counts while the allocation waits, or within 5 s of
-it, but not on a hidden page and not within 1 s of a probe context. A pending record younger than
+it, but not on a hidden page and not within 1 s of a probe context that ran after the allocation (the
+allocation then keeps its pending record). The edge probe that runs just before an allocation does
+not exempt a loss of that allocation. A pending record younger than
 10 s can belong to a tab that still runs, so the startup scan leaves it. `pagehide` and a hidden page
 remove the pending record of the tab. Each change of the record applies to a fresh read of the store,
 so two tabs keep both of their changes.

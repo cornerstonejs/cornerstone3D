@@ -37,14 +37,19 @@ const RENDER_TIMEOUT_MS = 30000;
  */
 const PROBE_LOSS_WINDOW_MS = 1000;
 
-type PendingAllocation = {
-  totalBytes: number;
+/**
+ * A large allocation. `probeAt` is the time of the last probe context when the
+ * allocation happened, so a later probe shows as a different time.
+ */
+type LargeAllocation = { totalBytes: number; at: number; probeAt: number };
+
+type PendingAllocation = LargeAllocation & {
   rendered: boolean;
   timer: ReturnType<typeof setTimeout>;
 };
 
 let pending: PendingAllocation | null = null;
-let lastLargeAllocation: { totalBytes: number; at: number } | null = null;
+let lastLargeAllocation: LargeAllocation | null = null;
 let listening = false;
 
 function isHidden(): boolean {
@@ -106,24 +111,39 @@ function settle(): void {
  *
  * A loss counts when it arrives while a large allocation waits for its render,
  * or within `LOSS_WINDOW_MS` of a large allocation. A loss does not count when
- * the page is hidden (the browser can reclaim the GPU of a hidden page), or
- * within `PROBE_LOSS_WINDOW_MS` of a probe context (the probe can drop a
- * viewport context at the context limit of the browser).
+ * the page is hidden (the browser can reclaim the GPU of a hidden page).
+ *
+ * A loss within `PROBE_LOSS_WINDOW_MS` of a probe context that ran after the
+ * allocation does not count either, because that probe can drop a viewport
+ * context at the context limit of the browser. The allocation then keeps its
+ * pending record. The edge probe that runs just before an allocation does not
+ * exempt a loss of that allocation.
  */
 function onContextLost(): void {
-  const recent =
-    lastLargeAllocation && Date.now() - lastLargeAllocation.at < LOSS_WINDOW_MS
-      ? lastLargeAllocation.totalBytes
-      : undefined;
-  const totalBytes = pending?.totalBytes ?? recent;
+  const allocation =
+    pending ??
+    (lastLargeAllocation && Date.now() - lastLargeAllocation.at < LOSS_WINDOW_MS
+      ? lastLargeAllocation
+      : undefined);
+  const lastProbeAt = getLastProbeTime();
+
+  if (
+    allocation &&
+    lastProbeAt !== allocation.probeAt &&
+    performance.now() - lastProbeAt < PROBE_LOSS_WINDOW_MS
+  ) {
+    log.debug(
+      'a WebGL context was lost just after a probe that followed the allocation, so no limit changes'
+    );
+
+    return;
+  }
 
   abandonPendingAllocation();
 
-  if (
-    !totalBytes ||
-    isHidden() ||
-    performance.now() - getLastProbeTime() < PROBE_LOSS_WINDOW_MS
-  ) {
+  const totalBytes = allocation?.totalBytes;
+
+  if (!totalBytes || isHidden()) {
     log.debug(
       'a WebGL context was lost, but not in a large allocation of a visible page, so no limit changes'
     );
@@ -170,12 +190,16 @@ export function noteTextureAllocation({
     clearTimeout(pending.timer);
   }
 
-  pending = {
+  lastLargeAllocation = {
     totalBytes: total,
+    at: Date.now(),
+    probeAt: getLastProbeTime(),
+  };
+  pending = {
+    ...lastLargeAllocation,
     rendered: false,
     timer: setTimeout(abandonPendingAllocation, RENDER_TIMEOUT_MS),
   };
-  lastLargeAllocation = { totalBytes: total, at: Date.now() };
   beginPendingAllocation(total);
 }
 

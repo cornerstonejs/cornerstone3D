@@ -2,6 +2,7 @@ import {
   detectRenderingCapabilities,
   getRenderingCapabilities,
   getStoredRenderingCapabilities,
+  probeRenderingEdge,
   recordRenderingCapabilityFailure,
   addMemoryFailure,
   MEMORY_RECENT_MS,
@@ -10,7 +11,10 @@ import {
   retestRenderingCapabilities,
   RENDERING_CAPABILITIES_PROBE_VERSION,
 } from '../src/utilities/renderingCapabilities';
-import { probeRenderingLimits } from '../src/utilities/textureSupport';
+import {
+  probeRenderingLimits,
+  probeTextureEdge,
+} from '../src/utilities/textureSupport';
 import {
   noteTextureAllocation,
   noteTextureRendered,
@@ -360,6 +364,59 @@ describe('renderingCapabilities', () => {
       expect(textureBytes.failures).toEqual([
         expect.objectContaining({ value: 6 * GIGABYTE }),
       ]);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('exempts a loss only after a probe that followed the allocation', () => {
+    const GIGABYTE = 1024 * 1024 * 1024;
+    const lose = () =>
+      eventTarget.dispatchEvent(
+        new CustomEvent(Events.WEBGL_CONTEXT_LOST, { detail: {} })
+      );
+
+    jest.useFakeTimers();
+
+    try {
+      getSupportedTextureFormats.mockReturnValue({
+        formats: { ...ALL_FORMATS },
+        max3DTextureSize: 16384,
+        reliableEdge: 2048,
+      });
+      mockWebGL();
+      detectRenderingCapabilities();
+      jest.advanceTimersByTime(5000);
+      probeTextureEdge.mockReturnValue(true);
+
+      // The allocation comes first, so the loss can come from the probe.
+      noteTextureAllocation({ textureBytes: GIGABYTE, totalBytes: GIGABYTE });
+      probeRenderingEdge(3000);
+      jest.advanceTimersByTime(300);
+      lose();
+
+      expect(
+        getStoredRenderingCapabilities().textureBytes.recent
+      ).toBeUndefined();
+      expect(
+        Object.keys(window.localStorage).some((key) =>
+          key.includes('.pending.')
+        )
+      ).toBe(true);
+
+      // The edge probe runs just before the allocation that it protects.
+      jest.advanceTimersByTime(10000);
+      probeRenderingEdge(4000);
+      noteTextureAllocation({
+        textureBytes: 12 * GIGABYTE,
+        totalBytes: 12 * GIGABYTE,
+      });
+      jest.advanceTimersByTime(300);
+      lose();
+
+      expect(getStoredRenderingCapabilities().textureBytes.recent.value).toBe(
+        12 * GIGABYTE
+      );
     } finally {
       jest.useRealTimers();
     }

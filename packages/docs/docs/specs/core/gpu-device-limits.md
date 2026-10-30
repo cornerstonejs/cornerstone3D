@@ -109,7 +109,10 @@ viewer asked it to render a data set that is too large.
   reliable edge. No check after a render detects type 1 (`VRS-I-17`).
 - **GPULIMIT-DETECT-2** Type 2: a `WEBGL_CONTEXT_LOST` shortly after a large
   allocation records the GPU bytes of the page as a `textureBytes` failure. A
-  loss on a hidden page, or just after a probe, does not count (`VRS-I-15`).
+  loss on a hidden page does not count. A loss within 1 s of a probe that ran
+  after the allocation does not count, and the allocation keeps its pending
+  record. The edge probe that runs just before an allocation does not exempt a
+  loss of that allocation (`VRS-I-15`).
 - **GPULIMIT-DETECT-3** Type 3: a pending record in browser storage before a
   large allocation. The first render after the allocation removes the record.
   A record that remains at the next start counts as a `gpuBytes` failure.
