@@ -51,9 +51,10 @@ const SAFE_PROBE_EDGE = 2048;
 
 /**
  * A pending record younger than this can belong to a tab that still runs its
- * allocation, so the startup scan leaves it for a later start.
+ * allocation, so the startup scan leaves it for a later start. A live tab keeps
+ * its record for up to 30 s with no render, and 5 s more to settle.
  */
-const PENDING_STALE_MS = 10000;
+const PENDING_STALE_MS = 60000;
 
 const SOFTWARE_RASTERIZER_PATTERN =
   /swiftshader|llvmpipe|softpipe|software|microsoft basic render/i;

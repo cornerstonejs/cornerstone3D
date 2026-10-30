@@ -520,7 +520,7 @@ is removed and nothing is recorded. A context loss counts while the allocation w
 it, but not on a hidden page and not within 1 s of a probe context that ran after the allocation (the
 allocation then keeps its pending record). The edge probe that runs just before an allocation does
 not exempt a loss of that allocation. A pending record younger than
-10 s can belong to a tab that still runs, so the startup scan leaves it. `pagehide` and a hidden page
+60 s can belong to a tab that still runs, so the startup scan leaves it. `pagehide` and a hidden page
 remove the pending record of the tab. Each change of the record applies to a fresh read of the store,
 so two tabs keep both of their changes.
 
