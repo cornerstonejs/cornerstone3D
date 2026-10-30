@@ -457,7 +457,9 @@ and a write that fails leaves the record as it was.
 **VRS-C-16.** With final downsampling off (`rendering.lossyDownsampling.final`), a volume renders as
 in 4.x: it gets a full-resolution texture, no GPU settings preset applies, and a 3D render uses the
 sample distance of 4.x, and no probe runs. Every render path reads the GPU settings through
-`gpuSettingsForRender`, which gives no settings in that case.
+`gpuSettingsForRender`, which gives no settings in that case. A public call of the application to
+`getActiveGpuSettings()` or `getGpuSettingsPresets()` under `auto` can still run the probe, because
+those calls read the record of the device.
 
 ## § Implementation choices
 

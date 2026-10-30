@@ -282,7 +282,8 @@ function getAutoGpuSettings(): GpuSettings {
 /**
  * Every preset: `auto` first, then the named presets, the internal one
  * included. The values of `auto` come from the stored record, so the first
- * call can run the probe.
+ * call can run the probe, also with final downsampling off. No render path
+ * calls this with final downsampling off.
  */
 function getGpuSettingsPresets(): GpuSettings[] {
   return [getAutoGpuSettings(), ...Object.values(PRESETS)];
@@ -318,7 +319,11 @@ function setGpuSettingsPreset(id: GpuSettingsPresetId): void {
   activePresetId = id;
 }
 
-/** The preset that applies now. */
+/**
+ * The preset that applies now. Under `auto`, a call can run the probe, also
+ * with final downsampling off. The render paths read `gpuSettingsForRender`
+ * instead, which runs no probe with final downsampling off.
+ */
 function getActiveGpuSettings(): GpuSettings {
   return getGpuSettingsPreset(activePresetId);
 }

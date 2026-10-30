@@ -549,7 +549,10 @@ probes again once.
   over the type needs a new case.
 - `defaultGpuSettingsPresetId` changes from `'high'` to `'auto'`.
 - `getGpuSettingsPresets()` returns `auto` first, then the named presets.
-  Its first call can run the probe, which creates a WebGL context.
+  Its first call can run the probe, which creates a WebGL context. A call to
+  `getGpuSettingsPresets()` or `getActiveGpuSettings()` under `auto` can run
+  the probe also with `final` off. No render path makes these calls with
+  `final` off.
 - The start memory on a desktop GPU changes from 32 GB (`high`) to 8 GB
   (`medium`), and the page total of all volumes counts against it. More
   volumes, or larger volumes, therefore draw reduced than under `high`. A
