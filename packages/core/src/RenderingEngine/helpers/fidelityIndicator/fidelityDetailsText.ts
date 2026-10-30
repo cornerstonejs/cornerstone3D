@@ -1,6 +1,7 @@
 import type { Point3, ViewportFidelityState } from '../../../types';
 import {
   type FidelityLine,
+  formatFactor,
   lineHasData,
   lineKind,
 } from './fidelityIndicatorState';
@@ -135,5 +136,5 @@ function formatAxis(value: number): string {
     return '1';
   }
 
-  return String(Math.round(value * 100) / 100);
+  return formatFactor(value, 2);
 }
