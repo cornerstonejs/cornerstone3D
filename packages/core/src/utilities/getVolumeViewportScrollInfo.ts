@@ -14,9 +14,19 @@ function getVolumeViewportScrollInfo(
   volumeId: string,
   useSlabThickness = false
 ) {
-  const { sliceRange, spacingInNormalDirection, camera } =
-    getVolumeSliceRangeInfo(viewport, volumeId, useSlabThickness);
+  const rangeInfo = getVolumeSliceRangeInfo(
+    viewport,
+    volumeId,
+    useSlabThickness
+  );
 
+  if (!rangeInfo) {
+    // The viewport holds no volume that the range applies to. It therefore
+    // scrolls no steps, and every caller already returns for that answer.
+    return { numScrollSteps: 0, currentStepIndex: 0, sliceRangeInfo: null };
+  }
+
+  const { sliceRange, spacingInNormalDirection, camera } = rangeInfo;
   const { min, max, current } = sliceRange;
 
   const range = max - min;

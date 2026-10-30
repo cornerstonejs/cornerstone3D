@@ -10,7 +10,7 @@ import { createCanvas } from '../../helpers/getOrCreateCanvas';
 import drawImageSync from '../../helpers/cpuFallback/drawImageSync';
 import setToPixelCoordinateSystem from '../../helpers/cpuFallback/rendering/setToPixelCoordinateSystem';
 import { getDefaultVolumeVOIRange } from '../../helpers/setDefaultVolumeVOI';
-import { getConfiguration } from '../../../init';
+import { getConfiguration, getLossyDownsampling } from '../../../init';
 import uuidv4 from '../../../utilities/uuidv4';
 import type {
   DataAddOptions,
@@ -35,6 +35,10 @@ import {
   resolvePlanarRenderPathProjection,
   worldToCanvasPlanarRenderPathProjection,
 } from './planarRenderPathProjection';
+import {
+  isSegmentationOverlayData,
+  isVolumeLoading,
+} from '../renderingFidelity';
 
 const DEFERRED_VIEWPORT_RESAMPLE_DELAY_MS = 80;
 
@@ -47,7 +51,7 @@ export class CpuVolumeSliceRenderPath
   async addData(
     ctx: PlanarCpuVolumeAdapterContext,
     data: LoadedData,
-    _options: DataAddOptions
+    options: DataAddOptions
   ): Promise<RenderPathAttachment<PlanarDataPresentation>> {
     const payload: PlanarPayload = data as unknown as LoadedData<PlanarPayload>;
 
@@ -75,6 +79,9 @@ export class CpuVolumeSliceRenderPath
     rendering = {
       renderMode: ActorRenderMode.CPU_VOLUME,
       actorEntryUID: uuidv4(),
+      excludeFromFidelity: isSegmentationOverlayData(payload, options),
+      fullGrid: payload.imageVolume.voxelGrid,
+      sampleDistanceLod: 1,
       compatibilityActor,
       imageVolume: payload.imageVolume,
       imageIds: payload.imageIds,
@@ -405,7 +412,10 @@ export class CpuVolumeSliceRenderPath
           height: ctx.cpu.canvas.height,
           camera: activeSourceICamera,
           dataPresentation: runtime.dataPresentation,
-          deferViewportResample: useViewportSamplingForLinear,
+          // A deferred resample shows the previous sample while the camera
+          // moves, which is an interactive downsampling.
+          deferViewportResample:
+            useViewportSamplingForLinear && getLossyDownsampling().interactive,
         });
     const shouldResample = resampleDecision === 'resample';
 
@@ -414,6 +424,15 @@ export class CpuVolumeSliceRenderPath
     } else {
       cancelDeferredViewportResample(runtime);
     }
+
+    // The sampler reads the full volume, so the record is the record of the
+    // full grid. A deferred resample shows the older sample, transformed to
+    // the new camera, until the high-quality resample (GENVIEW-FIDELITY-1).
+    runtime.voxelQuality = runtime.imageVolume.getVoxelQuality?.();
+    runtime.qualityPending = isVolumeLoading(runtime.imageVolume);
+    runtime.fullGrid = runtime.imageVolume.voxelGrid;
+    runtime.interactiveReduction =
+      resampleDecision === 'defer' && !!runtime.sampledSliceState;
 
     let sampledSliceState = runtime.sampledSliceState;
 

@@ -74,6 +74,16 @@ enum Events {
    */
   IMAGE_RENDERED = 'CORNERSTONE_IMAGE_RENDERED',
   /**
+   * Triggers on the HTML element when the derived viewport fidelity state
+   * changes (loading / lod / lossy / done / hidden). Fires only on a state
+   * change, not on every render (FIDELITY-EVENT-2..4).
+   *
+   * Make use of {@link EventTypes.ViewportFidelityChangedEvent | ViewportFidelityChanged Event Type }
+   * for typing your event listeners, and see what event detail is included in
+   * {@link EventTypes.ViewportFidelityChangedEventDetail | ViewportFidelityChanged Event Detail }.
+   */
+  VIEWPORT_FIDELITY_CHANGED = 'CORNERSTONE_VIEWPORT_FIDELITY_CHANGED',
+  /**
    * Triggers on the eventTarget when the image volume data is modified. This happens
    * in the streamingImageLoader when each frame is loaded and inserted into a volume.
    *

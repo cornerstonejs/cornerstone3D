@@ -2,6 +2,7 @@ import { vec3 } from 'gl-matrix';
 import { ActorRenderMode } from '../../../types';
 import type {
   ICamera,
+  IStackViewport,
   Point3,
   ReferenceCompatibleOptions,
   ViewReference,
@@ -9,6 +10,7 @@ import type {
 } from '../../../types';
 import type { PlaneRestriction } from '../../../types/IViewport';
 import getClosestImageId from '../../../utilities/getClosestImageId';
+import getClosestStackImageIndexForPoint from '../../../utilities/getClosestStackImageIndexForPoint';
 import imageIdToURI from '../../../utilities/imageIdToURI';
 import isEqual from '../../../utilities/isEqual';
 import {
@@ -18,6 +20,8 @@ import {
 import type { LoadedData } from '../ViewportArchitectureTypes';
 import type { PlanarRendering } from './planarRuntimeTypes';
 import { getVolumeImageIdIndexWorldPoint } from './planarSliceBasis';
+import { acquiredFrameIndexOfVolumePoint } from './planarAcquiredFrames';
+import cache from '../../../cache/cache';
 import {
   getPlanarReferencedImageId,
   getPlanarViewReference,
@@ -415,12 +419,105 @@ class PlanarViewReferenceController {
       return true;
     }
 
+    const acquiredFrameIndex = this.findAcquiredFrameIndexOfVolumeReference(
+      referenceContext,
+      viewRef,
+      imageIds
+    );
+
+    if (typeof acquiredFrameIndex === 'number') {
+      this.host.setImageIdIndex(acquiredFrameIndex);
+      return true;
+    }
+
     if (typeof viewRef.sliceIndex === 'number') {
       this.host.setImageIdIndex(viewRef.sliceIndex);
       return true;
     }
 
+    const closestFrameIndex = this.findClosestFrameIndexOfFocalPoint(
+      referenceContext,
+      viewRef,
+      imageIds
+    );
+
+    if (typeof closestFrameIndex === 'number') {
+      this.host.setImageIdIndex(closestFrameIndex);
+      return true;
+    }
+
     return false;
+  }
+
+  /**
+   * The frame nearest to the focal point of a reference that has no slice
+   * index, for example the reference that crosshairs send. Any `volumeId` on
+   * the reference is ignored, because only the focal point locates the frame.
+   */
+  private findClosestFrameIndexOfFocalPoint(
+    referenceContext: PlanarReferenceContext,
+    viewRef: ViewReference,
+    imageIds: string[]
+  ): number | undefined {
+    const point = viewRef.cameraFocalPoint;
+
+    if (!point || !imageIds.length) {
+      return;
+    }
+
+    const { volumeId } = referenceContext.data;
+    const imageVolume = volumeId ? cache.getVolume(volumeId) : undefined;
+
+    if (imageVolume) {
+      return acquiredFrameIndexOfVolumePoint(
+        imageVolume,
+        imageIds,
+        point,
+        viewRef.viewPlaneNormal
+      );
+    }
+
+    const stackLike = {
+      getImageIds: () => imageIds,
+      getCurrentImageIdIndex: () =>
+        referenceContext.rendering.currentImageIdIndex ?? 0,
+    } as unknown as IStackViewport;
+
+    return getClosestStackImageIndexForPoint(point, stackLike) ?? undefined;
+  }
+
+  /**
+   * The acquired frame that a reference to a volume points at, when the image
+   * path draws the acquired frames of that same volume. The `sliceIndex` of a
+   * volume reference counts in camera order, so the focal point decides.
+   */
+  private findAcquiredFrameIndexOfVolumeReference(
+    referenceContext: PlanarReferenceContext,
+    viewRef: ViewReference,
+    imageIds: string[]
+  ): number | undefined {
+    const { volumeId } = referenceContext.data;
+
+    if (
+      !viewRef.cameraFocalPoint ||
+      !volumeId ||
+      viewRef.volumeId !== volumeId
+    ) {
+      return;
+    }
+
+    const imageVolume = cache.getVolume(volumeId);
+
+    if (!imageVolume) {
+      return;
+    }
+
+    return acquiredFrameIndexOfVolumePoint(
+      imageVolume,
+      imageIds,
+      viewRef.cameraFocalPoint,
+      viewRef.viewPlaneNormal
+    );
   }
 
   private applyVolumeViewReference(

@@ -26,6 +26,7 @@ import {
   getLabelmaps,
   getOrCreateLabelmapVolume,
 } from '../../../../stateManagement/segmentation/helpers/labelmapSegmentationState';
+import { tagLabelmapVolume } from '../../../../stateManagement/segmentation/labelmapModel/labelmapLayerStore';
 import { addVolumesAsIndependentComponents } from '../addVolumesAsIndependentComponents';
 import { createLabelmapRepresentationUID } from '../labelmapRepresentationUID';
 import {
@@ -156,6 +157,12 @@ async function mountLegacyVolumeLabelmap({
     });
   }
 
+  // Every labelmap reaches the GPU through here, whichever loader built its
+  // volume, so the statistic is set before the actor provisions a texture.
+  for (const layer of labelmapLayers) {
+    tagLabelmapVolume(cache.getVolume(layer.volumeId));
+  }
+
   let blendMode = config?.blendMode ?? Enums.BlendModes.MAXIMUM_INTENSITY_BLEND;
 
   let useIndependentComponents =
@@ -211,6 +218,8 @@ async function mountLegacyVolumeLabelmap({
       segmentationId,
       referencedId: layer.labelmapId,
     }),
+    // FIDELITY-STATE-9: legacy fidelity skips overlays via this flag, not the UID name.
+    excludeFromFidelity: true,
     useIndependentComponents,
     blendMode,
   }));
@@ -247,7 +256,12 @@ async function mountLegacyVolumeLabelmap({
       immediateRender,
       suppressEvents
     );
-    triggerSegmentationDataModified(segmentationId);
+    // Adding the labelmap to this viewport changed no voxel, so the labelmap
+    // is not re-reduced once per viewport. An edit made while no volume
+    // viewport showed it still forces one full refresh here.
+    triggerSegmentationDataModified(segmentationId, undefined, undefined, {
+      voxelsUnchanged: true,
+    });
     return;
   }
 

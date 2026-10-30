@@ -1,0 +1,496 @@
+import VoxelStatistics from '../../enums/VoxelStatistics';
+import {
+  boxAverageReductionFactors,
+  deriveBoxAverageGrid,
+} from '../../utilities/voxelGrid';
+import type { ViewportFidelityCause } from '../../types/ViewportFidelity';
+import { volumeTextureBytes } from '../../utilities/getBufferConfiguration';
+import { gridLimitsOfGpuSettings } from '../../utilities/gpuSettingsPresets';
+import { getLossyDownsampling } from '../../init';
+import { isMutableSlab } from '../../cache/classes/VolumeTextureSet';
+import { FULL_RESOLUTION_TEXTURE_SET } from '../../cache/classes/ImageVolume';
+import type { GpuSettings } from '../../utilities/gpuSettingsPresets';
+import type { vtkStreamingOpenGLTexture } from '../../cache/classes/ImageVolume';
+import type {
+  IImageVolume,
+  Point3,
+  VoxelGrid,
+  VoxelStatistic,
+} from '../../types';
+
+/**
+ * What one texture of a strategy is for.
+ *
+ * A strategy that draws one texture states one binding of the role `base`. A
+ * strategy that draws a coarse texture to decide which fine textures to read
+ * states the coarse one as `base` and the fine ones as `refinement`, and the
+ * render decides what to do with each.
+ */
+export type StrategyBindingRole = 'base' | 'refinement';
+
+/** One texture that a strategy offers, and what that texture is for. */
+export type StrategyBinding = {
+  texture: vtkStreamingOpenGLTexture;
+  grid: VoxelGrid;
+  statistic: VoxelStatistic;
+  role: StrategyBindingRole;
+};
+
+/**
+ * How a render gets its voxels.
+ *
+ * The strategy is the unit that a render path works with, and the name of a
+ * texture set derives from it. A render component defines the strategies that
+ * it can use, and a strategy says what to bind and how to keep those bindings
+ * current.
+ *
+ * A strategy need not be backed by a texture. "Full resolution over the whole
+ * region" is the default intent, and a device that cannot hold that texture may
+ * still hold the data in the voxel manager. Such a strategy is ready, its
+ * bindings are empty, and the render reads the composite instead.
+ *
+ * A render may also choose no strategy at all, which binds no texture. A CPU
+ * render does that for its lossless pass.
+ *
+ * A strategy instance belongs to one render path, which belongs to one
+ * viewport. It is therefore the single owner that a slab which re-points
+ * requires, which `IMutableVolumeTextureSlab` describes.
+ */
+export interface IVolumeRenderStrategy {
+  /** The name of the strategy. The names of its texture sets derive from it. */
+  readonly name: string;
+  /** The volume that this strategy draws. */
+  readonly volume: IImageVolume;
+  /**
+   * Why the grid of this strategy is coarser than the volume, for the fidelity
+   * state. Undefined for a full-resolution strategy.
+   */
+  readonly reductionCause?: ViewportFidelityCause;
+  /** Whether this strategy can draw now. */
+  isReady(): boolean;
+  /** The textures to bind, in order. An empty list is legal and binds nothing. */
+  bindings(): StrategyBinding[];
+  /** Takes what this strategy needs to draw. */
+  activate(): void;
+  /** Gives back what this strategy holds. */
+  deactivate(): void;
+  /**
+   * Brings what this strategy holds up to date. A strategy that holds an
+   * element that moves re-points that element here.
+   */
+  update(): void;
+}
+
+/**
+ * Why a provider runs.
+ *
+ * A provider runs when the render path adds its actor, and it runs again when
+ * something changes that could change the answer. The core states two reasons:
+ *
+ * - `loaded` — the data of the volume finished loading, so a strategy that
+ *   could not draw before may now be worth building;
+ * - `memory` — the budget of the texture memory changed, or the store evicted a
+ *   set, so a strategy may need to be rebuilt or replaced by a cheaper one.
+ *
+ * A render component may state a reason of its own, and the type admits one.
+ */
+export type VolumeStrategyProvisionReason =
+  | 'initial'
+  | 'loaded'
+  | 'memory'
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  | (string & {});
+
+/** What a render component tells a provider when it provisions. */
+export type VolumeStrategyProvisionContext = {
+  /** The volume to draw. */
+  volume: IImageVolume;
+  /** The GPU settings that apply, undefined when final downsampling is off. */
+  gpuSettings?: GpuSettings;
+  /** The viewport that draws. */
+  viewportId?: string;
+  /** Why this provision runs. */
+  reason?: VolumeStrategyProvisionReason;
+};
+
+/**
+ * Builds the strategies that a render component can use.
+ *
+ * This never runs on the frame path. It derives the voxels that a strategy
+ * needs and it allocates the texture sets, which are the two expensive steps.
+ *
+ * It runs when the render path adds its actor, and it runs again whenever
+ * something could change the answer: the data finished loading, or the memory
+ * changed. `reason` says which. A provider must therefore be safe to run more
+ * than once. A texture set that the store already holds comes back as it is, so
+ * a second run of the same provider allocates nothing.
+ *
+ * A new render type defines its own provider, and that is how a new render type
+ * defines new texture sets. The provider below is the default one.
+ *
+ * The textures that this builds hold no data yet. The loader fills the voxel
+ * managers as the data arrives, the volume marks the affected textures, and
+ * each render refills the marked slices — which is what the code already does.
+ */
+export type VolumeStrategyProvider = (
+  context: VolumeStrategyProvisionContext
+) => IVolumeRenderStrategy[];
+
+/** What a render path tells the function that selects a strategy. */
+export type SelectVolumeStrategyContext = {
+  /** The strategies to choose among, in the order that the provider built them. */
+  strategies: IVolumeRenderStrategy[];
+  /** The strategy of the previous render. */
+  previous?: IVolumeRenderStrategy;
+  /** The volume that the render path draws. */
+  volume: IImageVolume;
+  /** The viewport that draws. */
+  viewportId?: string;
+};
+
+/**
+ * Chooses the strategy of one render.
+ *
+ * This runs on the frame path, and it cannot fail. The provider already built
+ * every strategy, so this function chooses among them and never allocates.
+ * There is no refusal to answer, and nothing to repeat.
+ *
+ * The phase of a render is not a field here. A phased render is tightly bound
+ * to how that render draws, so the render component that implements phases adds
+ * the fields that its own function reads. A reader therefore takes the fields
+ * that it needs by name, and does not assume that this record holds nothing
+ * else.
+ *
+ * @returns the strategy, or `undefined` to bind no texture at all
+ */
+export type SelectVolumeStrategy = (
+  context: SelectVolumeStrategyContext
+) => IVolumeRenderStrategy | undefined;
+
+/**
+ * A strategy that draws one full-extent texture set.
+ *
+ * The full-resolution strategy and the reduced-resolution strategy differ only
+ * in the grid that they state, so one class serves both.
+ */
+class FullExtentTextureStrategy implements IVolumeRenderStrategy {
+  public readonly name: string;
+  public readonly volume: IImageVolume;
+  public readonly reductionCause?: ViewportFidelityCause;
+
+  private readonly grid: VoxelGrid;
+  private readonly statistic: VoxelStatistic;
+  private active = false;
+  /** The set that the claim of this strategy holds. */
+  private claimedSet: unknown;
+
+  constructor({
+    name,
+    volume,
+    grid,
+    statistic = VoxelStatistics.Average,
+    reductionCause,
+  }: {
+    name: string;
+    volume: IImageVolume;
+    grid: VoxelGrid;
+    statistic?: VoxelStatistic;
+    reductionCause?: ViewportFidelityCause;
+  }) {
+    this.name = name;
+    this.volume = volume;
+    this.grid = grid;
+    this.statistic = statistic;
+    this.reductionCause = reductionCause;
+  }
+
+  public isReady(): boolean {
+    return Boolean(this.volume.getTextureSet(this.name));
+  }
+
+  public bindings(): StrategyBinding[] {
+    const member = this.volume.getTextureSet(this.name)?.members()[0];
+
+    if (!member || isMutableSlab(member)) {
+      return [];
+    }
+
+    return [
+      {
+        texture: member.texture,
+        grid: member.grid,
+        statistic: member.statistic,
+        role: 'base',
+      },
+    ];
+  }
+
+  public activate(): void {
+    const set = this.volume.getTextureSet(this.name);
+
+    // The store can evict the set and a provision can rebuild it. The claim
+    // went with the old set, so an active strategy claims the new one.
+    if (this.active && this.claimedSet === set) {
+      return;
+    }
+
+    this.claimedSet =
+      set && this.volume.claimTextureSet(this.name) ? set : undefined;
+    this.active = true;
+  }
+
+  public deactivate(): void {
+    if (!this.active) {
+      return;
+    }
+
+    if (
+      this.claimedSet &&
+      this.claimedSet === this.volume.getTextureSet(this.name)
+    ) {
+      this.volume.releaseTextureSet(this.name);
+    }
+
+    this.claimedSet = undefined;
+    this.active = false;
+  }
+
+  public update(): void {
+    // The volume marks the slices that new data changed, and the texture
+    // refills them at the next render. Only the claim can need renewal.
+    if (this.active) {
+      this.activate();
+    }
+  }
+}
+
+/** The number of components of one voxel of this volume. */
+function componentsOf(volume: IImageVolume): number {
+  return volume.voxelManager?.numberOfComponents || 1;
+}
+
+/** The number of bytes of one voxel of a texture of this volume. */
+function bytesPerVoxelOf(volume: IImageVolume): number {
+  return volumeTextureBytes(1, volume.dataType, componentsOf(volume));
+}
+
+/**
+ * The name of the set that holds a reduction by these factors.
+ *
+ * The name derives from the strategy, so a second viewport that chooses the
+ * same strategy finds the same textures instead of building them again.
+ *
+ * Each factor is rounded to 4 decimals, for example `reduced-1x1x1.2031`. A
+ * factor is `N / M` for a source edge N and a reduced edge M < N, so two factors
+ * of one axis differ by more than `1 / M`. Two different reductions of one
+ * volume therefore keep different names while every reduced edge is at most
+ * 10000 voxels.
+ */
+export function reducedStrategyName(
+  factors: Point3,
+  statistic: VoxelStatistic = VoxelStatistics.Average
+): string {
+  const rounded = factors.map((factor) => Number(factor.toFixed(4)));
+
+  return `reduced-${rounded.join('x')}/full-extent/${statistic}`;
+}
+
+/**
+ * The reduction factors of the full-extent texture of a volume under some GPU
+ * settings. Every factor is 1 when final downsampling is off, because the
+ * volume then gets its full-resolution texture whatever its size.
+ *
+ * A dynamic (4D) volume and a volume of more than one component also get
+ * factors of 1, because the reduced fill does not support them yet (see
+ * VRS-I-13 and VRS-I-14).
+ *
+ * The default provider builds the full-resolution strategy when every factor
+ * is 1, and the reduced strategy with these factors otherwise. A caller that
+ * must know whether a volume draws reduced, before any texture exists, reads
+ * the same answer here.
+ *
+ * @param volume - the volume to draw
+ * @param gpuSettings - the GPU settings that apply
+ * @returns the box size on each axis of the voxel grid
+ */
+export function volumeTextureReductionFactors(
+  volume: IImageVolume,
+  gpuSettings: GpuSettings | undefined
+): Point3 {
+  if (
+    !gpuSettings ||
+    !getLossyDownsampling().final ||
+    volume.isDynamicVolume?.() ||
+    componentsOf(volume) > 1
+  ) {
+    return [1, 1, 1];
+  }
+
+  const limits = gridLimitsOfGpuSettings(gpuSettings, bytesPerVoxelOf(volume));
+
+  return boxAverageReductionFactors(volume.voxelGrid.dimensions, limits);
+}
+
+/**
+ * Why the GPU settings reduce this volume: `deviceTextureLimit` when the edge
+ * limit alone reduces it, `memoryBudget` when only the texture memory does.
+ * Undefined when the settings do not reduce the volume.
+ */
+export function reductionCauseOf(
+  volume: IImageVolume,
+  gpuSettings: GpuSettings | undefined
+): ViewportFidelityCause | undefined {
+  if (!volumeTextureReductionFactors(volume, gpuSettings).some((f) => f > 1)) {
+    return undefined;
+  }
+
+  const edgeFactors = boxAverageReductionFactors(volume.voxelGrid.dimensions, {
+    maxEdge: gpuSettings.maxTextureEdge,
+  });
+
+  return edgeFactors.some((f) => f > 1) ? 'deviceTextureLimit' : 'memoryBudget';
+}
+
+/**
+ * Builds the full-resolution strategy when the GPU settings can hold it, or
+ * when final downsampling is off.
+ *
+ * @returns the strategy, or `undefined` when the GPU settings cannot hold the
+ * full-resolution grid, in which case a caller builds a reduced strategy
+ */
+export function provisionFullResolutionStrategy({
+  volume,
+  gpuSettings,
+}: VolumeStrategyProvisionContext): IVolumeRenderStrategy | undefined {
+  const grid = volume.voxelGrid;
+  const factors = volumeTextureReductionFactors(volume, gpuSettings);
+
+  if (factors.some((factor) => factor > 1)) {
+    return undefined;
+  }
+
+  const set = volume.provisionTextureSet({
+    name: FULL_RESOLUTION_TEXTURE_SET,
+    grids: [grid],
+    coverage: 'full-extent',
+    backstop: true,
+  });
+
+  if (!set) {
+    return undefined;
+  }
+
+  return new FullExtentTextureStrategy({
+    name: FULL_RESOLUTION_TEXTURE_SET,
+    volume,
+    grid,
+  });
+}
+
+/**
+ * Builds the reduced-resolution strategy that the GPU settings can hold. With
+ * final downsampling off, this builds nothing.
+ *
+ * The reduction applies a separate factor to each axis. An edge of 2049 voxels
+ * exceeds a limit of 2048 on one axis and by one voxel, so the reduction takes
+ * that one axis and leaves the other two. A uniform reduction by 2 on three
+ * axes would take 8 times fewer voxels for an excess of one voxel.
+ *
+ * Intensity volumes reduce with the box average. Labelmaps set
+ * `reductionStatistic` to foregroundMajority so segment indices stay real labels.
+ */
+export function provisionReducedResolutionStrategy({
+  volume,
+  gpuSettings,
+}: VolumeStrategyProvisionContext): IVolumeRenderStrategy | undefined {
+  const fullResolutionGrid = volume.voxelGrid;
+  const factors = volumeTextureReductionFactors(volume, gpuSettings);
+
+  if (!factors.some((factor) => factor > 1)) {
+    return undefined;
+  }
+
+  const statistic = volume.reductionStatistic ?? VoxelStatistics.Average;
+  const grid = deriveBoxAverageGrid(fullResolutionGrid, { factors });
+  const name = reducedStrategyName(factors, statistic);
+
+  // No derived representation is built here. The texture of this grid fills
+  // each slice by the statistic of the volume straight from its frames: the
+  // box average that P31.2 asks for, or the foreground majority of a labelmap,
+  // at no cost in CPU memory. `ImageVolume.getGridQuality` gives the record of
+  // that texture from the deliveries of the volume. A derivation of a volume
+  // that holds all of its data would otherwise reduce every voxel during this
+  // provision. A CPU reader that needs the reduced voxels calls
+  // `createRepresentation` itself.
+  const set = volume.provisionTextureSet({
+    name,
+    grids: [grid],
+    coverage: 'full-extent',
+    statistic,
+  });
+
+  if (!set) {
+    return undefined;
+  }
+
+  return new FullExtentTextureStrategy({
+    name,
+    volume,
+    grid,
+    statistic,
+    reductionCause: reductionCauseOf(volume, gpuSettings),
+  });
+}
+
+/**
+ * The default provider, and the only one that this version ships.
+ *
+ * It builds the full-resolution strategy when the device can hold it, and the
+ * reduced-resolution strategy otherwise. It reads the capability alone.
+ *
+ * It implements no performance-bound reduction. "The texture is too large" and
+ * "the frame rate is too low" are different causes with different timing: a
+ * capability does not change while a viewport lives, and a frame rate changes
+ * inside one interaction. The second belongs to task T14, which also owns the
+ * correction of the opacity that goes with a change of the sample distance.
+ * Task T14 supplies its own provider and its own selection.
+ */
+export const defaultVolumeStrategyProvider: VolumeStrategyProvider = (
+  context
+) => {
+  const strategies: IVolumeRenderStrategy[] = [];
+  const full = provisionFullResolutionStrategy(context);
+
+  if (full) {
+    strategies.push(full);
+
+    return strategies;
+  }
+
+  const reduced = provisionReducedResolutionStrategy(context);
+
+  if (reduced) {
+    strategies.push(reduced);
+  }
+
+  return strategies;
+};
+
+/**
+ * The default selection. It keeps the strategy of the previous render while
+ * that strategy is still ready, and takes the first ready strategy otherwise.
+ *
+ * A render component that implements phases supplies its own function, and that
+ * is where "reduced for the first render, full resolution for the lossless
+ * render" belongs.
+ */
+export const selectFirstReadyStrategy: SelectVolumeStrategy = ({
+  strategies,
+  previous,
+}) => {
+  if (previous?.isReady()) {
+    return previous;
+  }
+
+  return strategies.find((strategy) => strategy.isReady());
+};

@@ -14,10 +14,16 @@ export function performVolumeLabelmapUpdate({
   modifiedSlicesToUse,
   representationData,
   type,
+  voxelsUnchanged = false,
 }: {
   modifiedSlicesToUse: number[];
   representationData: Record<string, unknown>;
   type: SegmentationRepresentations;
+  /**
+   * No voxel changed (a representation was added), so the volume skips the
+   * frame marks, which re-reduce its derived representations, and only renders.
+   */
+  voxelsUnchanged?: boolean;
 }): void {
   const labelmapData = representationData[
     type
@@ -25,7 +31,12 @@ export function performVolumeLabelmapUpdate({
   const volumes = getVolumesToUpdate(labelmapData);
 
   volumes.forEach((segmentationVolume) => {
-    const { imageData, vtkOpenGLTexture, voxelManager } = segmentationVolume;
+    const { imageData, voxelManager } = segmentationVolume;
+
+    if (voxelsUnchanged) {
+      triggerVolumeModified(segmentationVolume);
+      return;
+    }
 
     let slicesToUpdate;
     if (modifiedSlicesToUse?.length > 0) {
@@ -35,25 +46,36 @@ export function performVolumeLabelmapUpdate({
       slicesToUpdate = [...Array(numSlices).keys()];
     }
 
-    vtkOpenGLTexture?.setUpdatedFrame &&
+    // An edit changes the voxels of a slice and not their quality. The volume
+    // holds a pool of textures, so one slice is dirty in every texture whose
+    // grid covers that slice, and `markFrameModified` fans the mark out to
+    // each of them and redoes the derived boxes of the slice.
+    segmentationVolume.markFrameModified &&
       slicesToUpdate.forEach((i) => {
-        vtkOpenGLTexture.setUpdatedFrame(i);
+        segmentationVolume.markFrameModified(i);
       });
 
     voxelManager?.invalidateCache?.();
     imageData.modified();
+    triggerVolumeModified(segmentationVolume);
+  });
+}
 
-    const numberOfFrames =
-      segmentationVolume.imageIds?.length ?? imageData.getDimensions()[2] ?? 0;
-    const FrameOfReferenceUID =
-      segmentationVolume.metadata?.FrameOfReferenceUID ?? '';
+/** Tells the viewports that hold the volume to render it. */
+function triggerVolumeModified(
+  segmentationVolume: NonNullable<ReturnType<typeof cache.getVolume>>
+): void {
+  const { imageData } = segmentationVolume;
+  const numberOfFrames =
+    segmentationVolume.imageIds?.length ?? imageData.getDimensions()[2] ?? 0;
+  const FrameOfReferenceUID =
+    segmentationVolume.metadata?.FrameOfReferenceUID ?? '';
 
-    triggerEvent(eventTarget, Enums.Events.IMAGE_VOLUME_MODIFIED, {
-      volumeId: segmentationVolume.volumeId,
-      FrameOfReferenceUID,
-      numberOfFrames,
-      framesProcessed: numberOfFrames,
-    });
+  triggerEvent(eventTarget, Enums.Events.IMAGE_VOLUME_MODIFIED, {
+    volumeId: segmentationVolume.volumeId,
+    FrameOfReferenceUID,
+    numberOfFrames,
+    framesProcessed: numberOfFrames,
   });
 }
 

@@ -40,6 +40,7 @@ type PlanarSliceRenderingViewport = SliceRenderingViewport & {
       imageData?: vtkImageData;
       reference?: SegmentationReference;
       useWorldCoordinateImageData?: boolean;
+      excludeFromFidelity?: boolean;
       callback?: (args: { imageActor: vtkImageSlice }) => void;
     }>
   ) => void | Promise<void>;
@@ -82,6 +83,8 @@ function createActorEntry(args: {
     },
     referencedId: args.referencedId,
     representationUID: args.representationUID,
+    // FIDELITY-STATE-9: labelmap overlay actors are out of fidelity scope.
+    excludeFromFidelity: true,
   };
 }
 
@@ -388,6 +391,8 @@ async function addPlanarLabelmapImageMapperActors(args: {
           labelmapId: layer.labelmapId,
         },
         useWorldCoordinateImageData: true,
+        // FIDELITY-STATE-9: labelmap overlay actors are out of fidelity scope.
+        excludeFromFidelity: true,
         callback: ({ imageActor }) => {
           const mapper = imageActor.getMapper() as vtkImageMapper;
           const camera = getSliceRenderingCamera(viewport);

@@ -11,6 +11,12 @@ import createVolumeMapper, {
   convertMapperToNotSharedMapper,
 } from './RenderingEngine/helpers/createVolumeMapper';
 export * from './RenderingEngine/helpers/getOrCreateCanvas';
+export {
+  attachFidelityIndicator,
+  maybeAttachFidelityIndicator,
+  detachFidelityIndicator,
+  canReportFidelity,
+} from './RenderingEngine/helpers/fidelityIndicator';
 import VolumeViewport from './RenderingEngine/VolumeViewport';
 import VolumeViewport3D from './RenderingEngine/VolumeViewport3D';
 import BaseVolumeViewport from './RenderingEngine/BaseVolumeViewport';
@@ -132,7 +138,53 @@ import {
   Surface,
   StreamingDynamicImageVolume,
   StreamingImageVolume,
+  VolumeTextureSet,
+  VolumeTextureStore,
+  volumeTextureStore,
+  isMutableSlab,
+  isReducedImageId,
+  parseReducedImageId,
+  provideReducedImages,
+  reducedImageId,
 } from './cache';
+export type {
+  FixedVolumeTextureSlot,
+  IMutableVolumeTextureSlab,
+  ProvisionTextureSetOptions,
+  VolumeTextureLimits,
+  VolumeTextureMutability,
+  VolumeTextureSlot,
+} from './cache';
+export {
+  getGpuSettingsPreset,
+  getGpuSettingsPresets,
+  getActiveGpuSettings,
+  setGpuSettingsPreset,
+  resetGpuSettingsPreset,
+  gridLimitsOfGpuSettings,
+} from './utilities/gpuSettingsPresets';
+export type {
+  GpuSettings,
+  GpuSettingsPresetId,
+  GpuSpeedIndex,
+} from './utilities/gpuSettingsPresets';
+export {
+  defaultVolumeStrategyProvider,
+  provisionFullResolutionStrategy,
+  provisionReducedResolutionStrategy,
+  selectFirstReadyStrategy,
+  reducedStrategyName,
+} from './RenderingEngine/helpers/volumeRenderStrategy';
+export type {
+  IVolumeRenderStrategy,
+  SelectVolumeStrategy,
+  SelectVolumeStrategyContext,
+  StrategyBinding,
+  StrategyBindingRole,
+  VolumeStrategyProvider,
+  VolumeStrategyProvisionContext,
+  VolumeStrategyProvisionReason,
+} from './RenderingEngine/helpers/volumeRenderStrategy';
 import cache from './cache/cache';
 import imageRetrievalPoolManager from './requestPool/imageRetrievalPoolManager';
 import imageLoadPoolManager from './requestPool/imageLoadPoolManager';
@@ -156,6 +208,8 @@ import {
   getEffectiveRenderBackend,
   getConfiguration,
   setConfiguration,
+  getLossyDownsampling,
+  setLossyDownsampling,
   getWebWorkerManager,
   canRenderFloatTextures,
   peerImport,
@@ -210,6 +264,10 @@ import {
   registerRenderBackend,
   isRegisteredRenderBackend,
 } from './RenderingEngine/helpers/renderBackendRegistry';
+import {
+  registerVoxelStatistic,
+  isRegisteredVoxelStatistic,
+} from './utilities/voxelGrid/voxelStatistics';
 export type {
   ViewportType,
   ViewportTypeConstants,
@@ -232,6 +290,13 @@ export type {
   RenderBackendRenderModes,
   RenderSurface,
 } from './RenderingEngine/helpers/renderBackendRegistry';
+export type {
+  VoxelStatistic,
+  VoxelStatisticConstants,
+  VoxelStatisticRegistry,
+} from './types/VoxelStatisticRegistry';
+export type { VoxelStatisticsMap } from './enums/VoxelStatistics';
+export type { RegisterVoxelStatisticOptions } from './utilities/voxelGrid/voxelStatistics';
 
 export * from './loaders/decimatedVolumeLoader';
 
@@ -287,6 +352,8 @@ export {
   // configs
   getConfiguration,
   setConfiguration,
+  getLossyDownsampling,
+  setLossyDownsampling,
   getWebWorkerManager,
   canRenderFloatTextures,
   // enums
@@ -320,6 +387,14 @@ export {
   ContextPoolRenderingEngine,
   ImageVolume,
   Surface,
+  VolumeTextureSet,
+  VolumeTextureStore,
+  volumeTextureStore,
+  isMutableSlab,
+  isReducedImageId,
+  parseReducedImageId,
+  provideReducedImages,
+  reducedImageId,
   // Helpers
   getRenderingEngine,
   getRenderingEngines,
@@ -378,6 +453,8 @@ export {
   isRegisteredViewportType,
   registerRenderBackend,
   isRegisteredRenderBackend,
+  registerVoxelStatistic,
+  isRegisteredVoxelStatistic,
   //
   imageLoadPoolManager as requestPoolManager,
   imageRetrievalPoolManager,

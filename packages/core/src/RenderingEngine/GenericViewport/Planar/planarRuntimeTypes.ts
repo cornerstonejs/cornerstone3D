@@ -17,6 +17,7 @@
  *   - `cpuVolume`  -- CPU path for volume slicing (samples a slice from the volume on the CPU).
  *   - `vtkVolumeSlice` -- GPU path for volume slicing via vtkImageResliceMapper.
  */
+import type { BoundGrid } from '../renderingFidelity';
 import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type vtkImageMapper from '@kitware/vtk.js/Rendering/Core/ImageMapper';
 import type vtkImageResliceMapper from '@kitware/vtk.js/Rendering/Core/ImageResliceMapper';
@@ -32,6 +33,8 @@ import type {
   VOIRange,
 } from '../../../types';
 import type { MountedRendering } from '../ViewportArchitectureTypes';
+import type { IVolumeRenderStrategy } from '../../helpers/volumeRenderStrategy';
+import type { vtkStreamingOpenGLTexture } from '../../../cache/classes/ImageVolume';
 import type {
   PlanarViewState,
   PlanarDataPresentation,
@@ -151,6 +154,19 @@ export type PlanarVolumeSliceRendering = MountedRendering<{
   dataPresentation?: PlanarDataPresentation;
   isSegmentationOverlay?: boolean;
   removeStreamingSubscriptions?: () => void;
+  /** The viewport that draws. */
+  viewportId?: string;
+  /** The strategies that the provider has built. */
+  strategies?: IVolumeRenderStrategy[];
+  /** The strategy of the present render. */
+  strategy?: IVolumeRenderStrategy;
+  /** The texture that the mapper holds. */
+  boundTexture?: vtkStreamingOpenGLTexture;
+  /** True when a volume data event came after the last record. */
+  fidelityStale?: boolean;
+  /** The grid of the base texture that the mapper holds. */
+  boundGrid?: BoundGrid;
+  // The fidelity fields come from `RenderingFidelity` on `MountedRendering`.
 }>;
 
 /**

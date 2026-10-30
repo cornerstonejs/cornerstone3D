@@ -6,8 +6,24 @@ import uuidv4 from '../../../utilities/uuidv4';
 import { Events, ViewportType } from '../../../enums';
 import eventTarget from '../../../eventTarget';
 import createVolumeSliceActor from '../../helpers/createVolumeSliceActor';
+import {
+  defaultVolumeStrategyProvider,
+  selectFirstReadyStrategy,
+} from '../../helpers/volumeRenderStrategy';
+import type {
+  IVolumeRenderStrategy,
+  SelectVolumeStrategy,
+  VolumeStrategyProvider,
+  VolumeStrategyProvisionReason,
+} from '../../helpers/volumeRenderStrategy';
+import { gpuSettingsForRender } from '../../../utilities/gpuSettingsPresets';
 import { ActorRenderMode } from '../../../types';
-import type { IImageData, Point2, Point3 } from '../../../types';
+import type {
+  IImageData,
+  Point2,
+  Point3,
+  VoxelQualityRecord,
+} from '../../../types';
 import type {
   DataAddOptions,
   LoadedData,
@@ -38,16 +54,45 @@ import {
   resolvePlanarRenderPathProjection,
 } from './planarRenderPathProjection';
 import { applyPlanarVolumePresentation } from './planarVolumePresentation';
+import {
+  isSegmentationOverlayData,
+  isVolumeLoading,
+  readBoundQuality,
+} from '../renderingFidelity';
 
 const SLICE_OVERLAY_DEPTH_EPSILON = 1e-4;
 // Trailing delay before repainting a slab-projecting segmentation overlay
 // after its volume was modified (brush edits fire many events per second).
 const PROJECTING_OVERLAY_RENDER_DELAY_MS = 240;
-
 /** @internal */
 export class VtkVolumeSliceRenderPath
   implements RenderPath<PlanarVtkVolumeAdapterContext>
 {
+  /**
+   * The provider that builds the strategies of this render path.
+   *
+   * A new render type defines its own provider, and that is how a new render
+   * type defines new texture sets.
+   */
+  private readonly provideStrategies: VolumeStrategyProvider;
+
+  /**
+   * The function that chooses the strategy of one render.
+   *
+   * A render component that implements phases supplies its own function, and
+   * that is where "reduced for the first render, full resolution for the
+   * lossless render" belongs.
+   */
+  private readonly selectStrategy: SelectVolumeStrategy;
+
+  constructor(
+    provideStrategies: VolumeStrategyProvider = defaultVolumeStrategyProvider,
+    selectStrategy: SelectVolumeStrategy = selectFirstReadyStrategy
+  ) {
+    this.provideStrategies = provideStrategies;
+    this.selectStrategy = selectStrategy;
+  }
+
   async addData(
     ctx: PlanarVtkVolumeAdapterContext,
     data: LoadedData,
@@ -55,8 +100,7 @@ export class VtkVolumeSliceRenderPath
   ): Promise<RenderPathAttachment<PlanarDataPresentation>> {
     const payload: PlanarPayload = data as unknown as LoadedData<PlanarPayload>;
     const imageVolume = payload.imageVolume;
-    const isSegmentationOverlay =
-      options.role === 'overlay' && payload.reference?.kind === 'segmentation';
+    const isSegmentationOverlay = isSegmentationOverlayData(payload, options);
 
     if (!imageVolume) {
       throw new Error(
@@ -67,6 +111,8 @@ export class VtkVolumeSliceRenderPath
     const { actor } = await createVolumeSliceActor(
       {
         volumeId: payload.volumeId,
+        provideStrategies: this.provideStrategies,
+        selectStrategy: this.selectStrategy,
       },
       ctx.viewport.element,
       ctx.viewportId,
@@ -96,20 +142,23 @@ export class VtkVolumeSliceRenderPath
         : undefined,
       dataPresentation: undefined,
       isSegmentationOverlay,
+      viewportId: ctx.viewportId,
+      excludeFromFidelity: isSegmentationOverlay,
+      fullGrid: imageVolume.voxelGrid,
+      // A slice samples no ray, so it has no interactive sample reduction.
+      sampleDistanceLod: 1,
     };
+    rendering.refreshFidelity = () => this.refreshFidelity(rendering);
+
+    this.provisionStrategies(rendering, 'initial');
+    this.applyStrategy(rendering);
 
     let deferredProjectionRenderTimer: ReturnType<typeof setTimeout> | null =
       null;
     const removeVolumeSubscriptions = subscribeToVolumeEvents(
       payload.volumeId,
       (eventType) => {
-        if (eventType === Events.IMAGE_VOLUME_MODIFIED) {
-          // Volume writers (streaming loader, labelmap updates) mark the
-          // modified slices on the shared streaming texture themselves, so
-          // the next render only re-uploads those slices; the mapper just
-          // needs to know its buffers are stale.
-          mapper.modified();
-        }
+        this.onVolumeData(rendering, eventType);
 
         const isProjectingOverlay =
           rendering.isSegmentationOverlay &&
@@ -178,7 +227,7 @@ export class VtkVolumeSliceRenderPath
         return this.getImageData(rendering);
       },
       render: () => {
-        this.render(ctx);
+        this.render(ctx, rendering);
       },
       resize: () => {
         this.resize(ctx, rendering, data.id);
@@ -323,14 +372,210 @@ export class VtkVolumeSliceRenderPath
     return rendering.imageVolume.metadata?.FrameOfReferenceUID;
   }
 
+  /**
+   * Handles a volume data event without a camera change (GENVIEW-FIDELITY-1).
+   * A completed load runs the provider and binds again at once. Any other
+   * event only marks the record stale; `refreshFidelity` recomputes it once,
+   * when the viewport next reads the fidelity, so a stream of volume events
+   * reads the quality at most once for each read of the fidelity.
+   */
+  private onVolumeData(
+    rendering: PlanarVolumeSliceRendering,
+    eventType: string
+  ): void {
+    if (eventType === Events.IMAGE_VOLUME_MODIFIED) {
+      // Volume writers (streaming loader, labelmap updates) mark the
+      // modified slices on the shared streaming texture themselves, so
+      // the next render only re-uploads those slices; the mapper just
+      // needs to know its buffers are stale.
+      rendering.mapper.modified();
+    }
+
+    if (eventType === Events.IMAGE_VOLUME_LOADING_COMPLETED) {
+      this.provisionStrategies(rendering, 'loaded');
+      this.applyStrategy(rendering);
+      return;
+    }
+
+    // A labelmap overlay has no fidelity, and a brush fires many events.
+    if (!rendering.excludeFromFidelity) {
+      rendering.fidelityStale = true;
+    }
+  }
+
+  /** Recomputes a stale record of the bound grid (see `onVolumeData`). */
+  private refreshFidelity(rendering: PlanarVolumeSliceRendering): void {
+    if (!rendering.fidelityStale) {
+      return;
+    }
+
+    rendering.fidelityStale = false;
+    rendering.voxelQuality = this.readQuality(rendering);
+    rendering.qualityPending = isVolumeLoading(rendering.imageVolume);
+  }
+
   private getImageData(
     rendering: PlanarVolumeSliceRendering
   ): IImageData | undefined {
     return buildPlanarVolumeImageData(rendering.imageVolume);
   }
 
-  private render(ctx: PlanarVtkVolumeAdapterContext): void {
+  private render(
+    ctx: PlanarVtkVolumeAdapterContext,
+    rendering?: PlanarVolumeSliceRendering
+  ): void {
+    if (rendering) {
+      this.applyStrategy(rendering);
+    }
+
     ctx.display.requestRender();
+  }
+
+  /**
+   * Runs the provider, and takes the strategies that it builds.
+   *
+   * This derives the voxels that a strategy needs and it allocates the
+   * textures, which are the two expensive steps, so it never runs during a
+   * render. It is called when the render path adds its actor, to build the
+   * first strategies, and when the data of the volume finishes loading, so that
+   * a strategy which could not draw before can be built. A later caller states
+   * its own reason.
+   *
+   * The textures that this builds hold no data yet. The loader fills the voxel
+   * managers as the data arrives, the volume marks the affected textures, and
+   * each render refills the marked slices.
+   *
+   * A strategy that the provider builds again keeps its identity. The provider
+   * builds fresh objects, and a fresh object holds no claim on its texture set,
+   * so a run that replaced a live strategy would leave that claim behind.
+   */
+  private provisionStrategies(
+    rendering: PlanarVolumeSliceRendering,
+    reason: VolumeStrategyProvisionReason
+  ): void {
+    const held = rendering.strategies ?? [];
+    const built = this.provideStrategies({
+      volume: rendering.imageVolume,
+      gpuSettings: gpuSettingsForRender(),
+      viewportId: rendering.viewportId,
+      reason,
+    });
+    const strategies = built.map(
+      (fresh) => held.find((existing) => existing.name === fresh.name) ?? fresh
+    );
+
+    for (const existing of held) {
+      if (!strategies.includes(existing)) {
+        existing.deactivate();
+      }
+    }
+
+    rendering.strategies = strategies;
+
+    if (rendering.strategy && !strategies.includes(rendering.strategy)) {
+      // The provider stopped naming the strategy that this render path drew, so
+      // the next render selects again and binds again.
+      rendering.strategy = undefined;
+      rendering.boundTexture = undefined;
+    }
+  }
+
+  /**
+   * Chooses the strategy of this render, and binds what it offers.
+   *
+   * This runs on every render, so the render path changes its strategy between
+   * two frames with no tear-down of the actor. `setScalarTexture` of the mapper
+   * permits that.
+   *
+   * Nothing is allocated here. The provider already built every strategy, so
+   * this member chooses among them and cannot fail.
+   *
+   * A choice of nothing is legal, and it binds no texture. A CPU render does
+   * that for its lossless pass.
+   */
+  private applyStrategy(rendering: PlanarVolumeSliceRendering): void {
+    const volume = rendering.imageVolume;
+
+    if (!volume?.voxelGrid) {
+      return;
+    }
+
+    const selected = this.selectStrategy({
+      strategies: rendering.strategies ?? [],
+      previous: rendering.strategy,
+      volume,
+      viewportId: rendering.viewportId,
+    });
+
+    if (selected !== rendering.strategy) {
+      rendering.strategy?.deactivate();
+      selected?.activate();
+      rendering.strategy = selected;
+    }
+
+    selected?.update();
+
+    this.bindStrategy(rendering, selected);
+  }
+
+  /**
+   * Binds what the strategy offers.
+   *
+   * A strategy that offers no binding is ready, and it states that the data is
+   * not in a texture: the full-resolution data may live in the voxel manager of
+   * a device that cannot hold the texture. The render path then binds nothing
+   * and leaves the texture of the previous render.
+   */
+  private bindStrategy(
+    rendering: PlanarVolumeSliceRendering,
+    strategy: IVolumeRenderStrategy | undefined
+  ): void {
+    const bindings = strategy?.bindings() ?? [];
+    const base = bindings.find((binding) => binding.role === 'base');
+
+    if (base && base.texture !== rendering.boundTexture) {
+      // `vtkSharedImageResliceMapper` adds this member, and the typing of
+      // `vtkImageResliceMapper` does not hold it. `createVolumeSliceActor`
+      // calls it in the same way.
+      (
+        rendering.mapper as unknown as {
+          setScalarTexture?: (texture: unknown) => void;
+        }
+      ).setScalarTexture?.(base.texture);
+      rendering.mapper.modified();
+      rendering.boundTexture = base.texture;
+    }
+
+    if (base) {
+      rendering.boundGrid = { grid: base.grid, statistic: base.statistic };
+      rendering.reductionCause = strategy.reductionCause;
+    }
+
+    rendering.voxelQuality = this.readQuality(rendering);
+    rendering.qualityPending = isVolumeLoading(rendering.imageVolume);
+    rendering.fidelityStale = false;
+    rendering.fullGrid = rendering.imageVolume.voxelGrid;
+  }
+
+  /**
+   * The record of the quality of the grid that the render binds. It is read
+   * when the render binds, and again after a volume data event.
+   *
+   * The render composes this record, because the render is the only party that
+   * knows which textures it used and how it used them. A render that reads a
+   * coarse texture only to decide which fine textures to sample does not report
+   * the quality of that coarse texture.
+   *
+   * This render path samples one plane from one texture, so the record follows
+   * the grid that the mapper holds: the last `base` binding. A strategy that
+   * offers no binding leaves that texture bound, so the record keeps its grid.
+   * Only a render that never bound a texture reads the composite at its full
+   * resolution, with no ceiling.
+   */
+  private readQuality(
+    rendering: PlanarVolumeSliceRendering
+  ): VoxelQualityRecord | undefined {
+    return readBoundQuality(rendering.imageVolume, rendering.boundGrid);
   }
 
   private resize(
@@ -349,6 +594,11 @@ export class VtkVolumeSliceRenderPath
     rendering: PlanarVolumeSliceRendering
   ): void {
     const { actor, removeStreamingSubscriptions } = rendering;
+
+    // The actor is gone, so this render path holds no strategy any more.
+    rendering.strategy?.deactivate();
+    rendering.strategy = undefined;
+    rendering.strategies = undefined;
 
     removeStreamingSubscriptions?.();
     ctx.vtk.renderer.removeActor(actor);

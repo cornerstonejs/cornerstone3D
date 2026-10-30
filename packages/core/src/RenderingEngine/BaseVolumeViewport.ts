@@ -92,6 +92,11 @@ import {
   createSharpeningRenderPass,
   createSmoothingRenderPass,
 } from './renderPasses';
+import type { FidelityLine } from './helpers/fidelityIndicator/fidelityIndicatorState';
+import {
+  type CachedRecord,
+  fidelityLinesFromVolumeActors,
+} from './helpers/fidelityIndicator/collectFidelityLines';
 /**
  * Abstract base class for volume viewports. VolumeViewports are used to render
  * 3D volumes from which various orientations can be viewed. Since VolumeViewports
@@ -120,6 +125,72 @@ abstract class BaseVolumeViewport extends Viewport {
   protected initialViewUp: Point3;
   protected viewportProperties: VolumeViewportProperties = {};
   private volumeIds = new Set<string>();
+  /** Quality-record cache for fidelity lines; cleared on volume data events. */
+  private _fidelityRecords = new Map<string, CachedRecord>();
+  private _fidelityRecordListenersAttached = false;
+  /** Set on ELEMENT_DISABLED of this element; the listeners never return. */
+  private _fidelityRecordsDisposed = false;
+
+  public canReportFidelity(): boolean {
+    return true;
+  }
+
+  protected collectFidelityLines(): FidelityLine[] {
+    this.ensureFidelityRecordInvalidation();
+    return fidelityLinesFromVolumeActors(this, this._fidelityRecords);
+  }
+
+  /**
+   * Adds the global listeners that clear the record cache on volume data
+   * events. The listeners are removed on ELEMENT_DISABLED of this element, so
+   * a disabled viewport does not stay in memory. `_reset` fires that event
+   * without `isDisabled`, so a disposed flag stops a later attach.
+   */
+  private ensureFidelityRecordInvalidation(): void {
+    if (
+      this._fidelityRecordListenersAttached ||
+      this._fidelityRecordsDisposed ||
+      this.isDisabled
+    ) {
+      return;
+    }
+    this._fidelityRecordListenersAttached = true;
+
+    const invalidate = (evt: Event) => {
+      const { volumeId } = (evt as CustomEvent<{ volumeId?: string }>).detail;
+      if (volumeId) {
+        this._fidelityRecords.delete(volumeId);
+      } else {
+        this._fidelityRecords.clear();
+      }
+    };
+
+    const cleanUp = (evt: Event) => {
+      // Match the element: a viewport of another engine can share the id.
+      if (
+        (evt as EventTypes.ElementDisabledEvent).detail?.element !==
+        this.element
+      ) {
+        return;
+      }
+
+      eventTarget.removeEventListener(Events.IMAGE_VOLUME_MODIFIED, invalidate);
+      eventTarget.removeEventListener(
+        Events.IMAGE_VOLUME_LOADING_COMPLETED,
+        invalidate
+      );
+      eventTarget.removeEventListener(Events.ELEMENT_DISABLED, cleanUp);
+      this._fidelityRecords.clear();
+      this._fidelityRecordsDisposed = true;
+    };
+
+    eventTarget.addEventListener(Events.IMAGE_VOLUME_MODIFIED, invalidate);
+    eventTarget.addEventListener(
+      Events.IMAGE_VOLUME_LOADING_COMPLETED,
+      invalidate
+    );
+    eventTarget.addEventListener(Events.ELEMENT_DISABLED, cleanUp);
+  }
 
   constructor(props: ViewportInput) {
     super(props);
@@ -154,6 +225,7 @@ abstract class BaseVolumeViewport extends Viewport {
     }
 
     this.initializeVolumeNewImageEventDispatcher();
+    this.initializeVolumeModifiedRenderDispatcher();
   }
 
   static get useCustomRenderingPipeline(): boolean {
@@ -258,6 +330,80 @@ abstract class BaseVolumeViewport extends Viewport {
       Events.ELEMENT_DISABLED,
       volumeNewImageCleanUpBound
     );
+  }
+
+  /**
+   * Requests a render when a streaming volume that this viewport holds
+   * receives new frames. Legacy VolumeViewports otherwise never hear
+   * IMAGE_VOLUME_MODIFIED (GenericViewport paths do), so dirties piled up and
+   * rare paints uploaded hundreds of texture slices at once.
+   *
+   * While the volume loads, the loader renders every 2% of its frames
+   * (`autoRenderOnLoad`), and this dispatcher stays out of the way. It renders
+   * for a change after the load, such as a labelmap edit.
+   */
+  private initializeVolumeModifiedRenderDispatcher(): void {
+    const handleVolumeModified = (evt: Event) => {
+      const detail = (evt as CustomEvent<{ volumeId?: string }>).detail;
+      const volumeId = detail?.volumeId;
+
+      if (!volumeId || !this.volumeIds.has(volumeId) || this.isDisabled) {
+        return;
+      }
+
+      // A volume that is still loading renders through the throttle of its
+      // loader, so a 3D viewport does not ray cast on every frame.
+      if (cache.getVolume(volumeId)?.loadStatus?.loading) {
+        return;
+      }
+
+      this.renderVolumeModified(volumeId);
+    };
+
+    eventTarget.addEventListener(
+      Events.IMAGE_VOLUME_MODIFIED,
+      handleVolumeModified
+    );
+
+    const cleanUp = (evt: Event) => {
+      // Match the element: a viewport of another engine can share the id.
+      if (
+        (evt as EventTypes.ElementDisabledEvent).detail?.element !==
+        this.element
+      ) {
+        return;
+      }
+
+      eventTarget.removeEventListener(
+        Events.IMAGE_VOLUME_MODIFIED,
+        handleVolumeModified
+      );
+      eventTarget.removeEventListener(Events.ELEMENT_DISABLED, cleanUp);
+    };
+
+    eventTarget.addEventListener(Events.ELEMENT_DISABLED, cleanUp);
+  }
+
+  private renderVolumeModified(volumeId: string): void {
+    if (this.isDisabled) {
+      return;
+    }
+
+    const actors = this.getActors();
+
+    for (const entry of actors) {
+      const referencedId = entry.referencedId ?? entry.uid;
+
+      if (referencedId !== volumeId && entry.uid !== volumeId) {
+        continue;
+      }
+
+      const mapper = entry.actor?.getMapper?.();
+
+      mapper?.modified?.();
+    }
+
+    this.render();
   }
 
   /**
@@ -1305,7 +1451,7 @@ abstract class BaseVolumeViewport extends Viewport {
     }
   }
 
-  public setSampleDistanceMultiplier(multiplier: number): void {}
+  public setSampleDistanceMultiplier(_multiplier: number): void {}
 
   /**
    * Retrieve the viewport default properties
@@ -2518,7 +2664,7 @@ abstract class BaseVolumeViewport extends Viewport {
    * allow using it as a parameter key.
    */
   public getViewReferenceId(specifier: ViewReferenceSpecifier = {}): string {
-    let { volumeId, sliceIndex: sliceIndex } = specifier;
+    let { volumeId, sliceIndex } = specifier;
     if (!volumeId) {
       const actorEntries = this.getActors();
       if (!actorEntries) {
