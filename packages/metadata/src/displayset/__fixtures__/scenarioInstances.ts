@@ -3,8 +3,10 @@ import type { NaturalizedInstance } from '../types';
 /**
  * Instances shaped like the output of dcmjs `naturalizeDataset` for the series
  * of the scenario tests: a multi-valued attribute is an array, a sequence is an
- * array of items, a number VR is a number, and a private tag that has no
- * keyword is under its 8-digit hex key.
+ * array of items, and a number VR is a number. A private tag is in the dcmjs
+ * 1.0 block form, as a spread or a JSON copy of the dataset keeps it (no hex
+ * alias); `geDiffusionSeries('hex')` gives the hex-key form of dcmjs 0.x and
+ * of the CS3D NaturalTagListener.
  */
 
 const SOP_CLASS = {
@@ -49,7 +51,22 @@ function common(
  * tag (0043,1039) "Slop_int_6...9", as four integer strings; the first one is
  * the b-value. DiffusionBValue (0018,9087) is absent.
  */
-export function geDiffusionSeries(): NaturalizedInstance[] {
+export function geDiffusionSeries(
+  form: 'block' | 'hex' = 'block'
+): NaturalizedInstance[] {
+  const privateTags = (bValue: string) =>
+    form === 'block'
+      ? {
+          '0043:GEMS_PARM_01': {
+            creator: 'GEMS_PARM_01',
+            reservedBlock: 0x10,
+            x39: [bValue, '8', '0', '0'],
+          },
+        }
+      : {
+          '00430010': ['GEMS_PARM_01'],
+          '00431039': [bValue, '8', '0', '0'],
+        };
   const seriesUid = '1.2.840.113619.2.312.4120.14306937.11001';
   const instances: NaturalizedInstance[] = [];
   for (let position = 0; position < 32; position++) {
@@ -75,7 +92,7 @@ export function geDiffusionSeries(): NaturalizedInstance[] {
           SliceLocation: z,
           EchoTime: 81.4,
           RepetitionTime: 6000,
-          '00431039': [bValue, '8', '0', '0'],
+          ...privateTags(bValue),
         })
       );
     }

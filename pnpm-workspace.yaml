@@ -113,5 +113,8 @@ allowBuilds:
 
 # Exempt the cornerstone3D packages from the release-age check: they are pinned
 # to an exact version (5.0.0) that may be newer than the cutoff.
+# The dcmjs 1.0 beta (@dcmjs-org/*) is pinned to an exact beta version that may
+# be newer than the cutoff.
 minimumReleaseAgeExclude:
   - '@cornerstonejs/*'
+  - '@dcmjs-org/*'

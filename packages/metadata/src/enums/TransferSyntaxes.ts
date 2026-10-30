@@ -1,4 +1,4 @@
-import { constants } from 'dcmjs';
+import { constants } from '@dcmjs-org/dcmjs';
 
 /**
  * DICOM Transfer Syntax UIDs, keyed by name.

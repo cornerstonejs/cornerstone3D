@@ -1,6 +1,10 @@
 import * as metaData from '../metaData';
 import { toFiniteNumber } from './toNumber';
-import { logging as cornerstoneLogging } from '@cornerstonejs/utils';
+import {
+  getPrivateTagValue,
+  logging as cornerstoneLogging,
+} from '@cornerstonejs/utils';
+import { MetadataModules } from '../enums';
 
 const cs3dLogger = cornerstoneLogging.metadataLog.getLogger(
   'utilities.splitImageIdsBy4DTags'
@@ -377,10 +381,47 @@ function getFiniteValue(imageId: string, tag: string): number | undefined {
   return toFiniteNumber(getTagValue(imageId, tag));
 }
 
+/**
+ * A private element of the instance of `imageId`, read with
+ * `getPrivateTagValue` (block form and hex-key form) from the INSTANCE
+ * metadata, then from the NATURALIZED metadata. The last source is a provider
+ * that answers the 8-digit hex tag query, with the creator in block 0x10.
+ *
+ * @param group - 4 hex digits, for example `'0043'`
+ * @param element - 2 hex digits, for example `'39'`
+ */
+function getPrivateValue(
+  imageId: string,
+  group: string,
+  creator: string,
+  element: string
+) {
+  for (const type of [MetadataModules.INSTANCE, MetadataModules.NATURALIZED]) {
+    const value = getPrivateTagValue(
+      metaData.get(type, imageId),
+      group,
+      creator,
+      element
+    );
+    if (value !== undefined) {
+      return value;
+    }
+  }
+  const hexTag = `${group}10${element}`.toUpperCase();
+  return (
+    metaData.get(hexTag, imageId) ?? metaData.get(hexTag.toLowerCase(), imageId)
+  );
+}
+
 function getPhilipsPrivateBValue(imageId: string) {
   // Philips Private Diffusion B-factor tag (2001, 1003)
   // Private creator: Philips Imaging DD 001, VR=FL, VM=1
-  const value = metaData.get('20011003', imageId);
+  const value = getPrivateValue(
+    imageId,
+    '2001',
+    'Philips Imaging DD 001',
+    '03'
+  );
   try {
     const { InlineBinary } = value;
     if (InlineBinary) {
@@ -402,8 +443,7 @@ function getPhilipsPrivateBValue(imageId: string) {
 function getSiemensPrivateBValue(imageId: string) {
   // Siemens Private Diffusion B-factor tag (0019, 100c)
   // Private creator: SIEMENS MR HEADER, VR=IS, VM=1
-  let value =
-    metaData.get('0019100c', imageId) || metaData.get('0019100C', imageId);
+  let value = getPrivateValue(imageId, '0019', 'SIEMENS MR HEADER', '0C');
 
   try {
     const { InlineBinary } = value;
@@ -419,7 +459,7 @@ function getSiemensPrivateBValue(imageId: string) {
 function getGEPrivateBValue(imageId: string) {
   // GE Private Diffusion B-factor tag (0043, 1039)
   // Private creator: GEMS_PARM_01, VR=IS, VM=4
-  let value = metaData.get('00431039', imageId);
+  let value = getPrivateValue(imageId, '0043', 'GEMS_PARM_01', '39');
 
   try {
     const { InlineBinary } = value;

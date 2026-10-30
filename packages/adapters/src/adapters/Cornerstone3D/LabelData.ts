@@ -1,7 +1,7 @@
 import type { Types } from '@cornerstonejs/tools';
 import { COMMENT_CODE, TEXT_ANNOTATION_POSITION } from './constants';
 import { toScoord } from '../helpers';
-import dcmjs from 'dcmjs';
+import dcmjs from '@dcmjs-org/dcmjs';
 
 const {
   sr: { valueTypes, coding },

@@ -1,4 +1,4 @@
-import { utilities } from 'dcmjs';
+import { utilities } from '@dcmjs-org/dcmjs';
 import { utilities as csUtilities } from '@cornerstonejs/core';
 
 import MeasurementReport from './MeasurementReport';

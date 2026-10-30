@@ -1,5 +1,5 @@
 import * as metaData from '../metaData';
-import dcmjs from 'dcmjs';
+import dcmjs from '@dcmjs-org/dcmjs';
 import {
   moduleDefinitions,
   USRegionChild,

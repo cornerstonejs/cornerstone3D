@@ -1,4 +1,9 @@
-import { log, utilities, normalizers, derivations } from 'dcmjs';
+import {
+  log,
+  data as dcmjsData,
+  normalizers,
+  derivations,
+} from '@dcmjs-org/dcmjs';
 import ndarray from 'ndarray';
 import getDatasetsFromImages from '../helpers/getDatasetsFromImages';
 import {
@@ -12,7 +17,7 @@ const cs3dLogger = cornerstoneUtilities.logger.adaptersLog.getLogger(
 );
 
 const { datasetToBlob, BitArray, DicomMessage, DicomMetaDictionary } =
-  utilities;
+  dcmjsData;
 
 const { Normalizer } = normalizers;
 const { Segmentation: SegmentationDerivation } = derivations;
@@ -58,7 +63,7 @@ function generateSegmentation(
 
   dims.xy = dims.x * dims.y;
 
-  const numSegments = _getSegCount(seg, segments);
+  const numSegments = _getSegCount(segments);
 
   if (!numSegments) {
     throw new Error('No segments to export!');
@@ -174,7 +179,7 @@ function _getNumberOfFramesPerSegment(toolState, images, segments) {
   };
 }
 
-function _getSegCount(seg, segments) {
+function _getSegCount(segments) {
   let numSegments = 0;
 
   for (let i = 0; i < segments.length; i++) {
@@ -285,8 +290,10 @@ function generateToolState(imageIds, arrayBuffer, metadataProvider) {
     }
 
     const segmentIndex =
-      PerFrameFunctionalGroups.SegmentIdentificationSequence
-        .ReferencedSegmentNumber - 1;
+      cornerstoneUtilities.asArrayFirst(
+        PerFrameFunctionalGroups.SegmentIdentificationSequence
+          .ReferencedSegmentNumber
+      ) - 1;
 
     let SourceImageSequence;
     if (
@@ -330,12 +337,16 @@ function generateToolState(imageIds, arrayBuffer, metadataProvider) {
  */
 function unpackPixelData(multiframe) {
   const segType = multiframe.SegmentationType;
+  // dcmjs naturalizes PixelData as a list of frame buffers.
+  const data = Array.isArray(multiframe.PixelData)
+    ? multiframe.PixelData[0]
+    : multiframe.PixelData;
 
   if (segType === 'BINARY') {
-    return BitArray.unpack(multiframe.PixelData);
+    return BitArray.unpack(data);
   }
 
-  const pixelData = new Uint8Array(multiframe.PixelData);
+  const pixelData = new Uint8Array(data);
 
   const max = multiframe.MaximumFractionalValue;
   const onlyMaxAndZero =
@@ -412,8 +423,10 @@ function getImageIdOfSourceImage(
   imageIds,
   metadataProvider
 ) {
-  const { ReferencedSOPInstanceUID, ReferencedFrameNumber } =
-    SourceImageSequence;
+  const { ReferencedSOPInstanceUID } = SourceImageSequence;
+  const ReferencedFrameNumber = cornerstoneUtilities.asArrayFirst(
+    SourceImageSequence.ReferencedFrameNumber
+  );
 
   return ReferencedFrameNumber
     ? getImageIdOfReferencedFrame(

@@ -5,6 +5,7 @@ import { peerImport } from '../init';
 import * as metaData from '../metaData';
 import microscopyViewportCss from '../constants/microscopyViewportCss';
 import imageIdToURI from './imageIdToURI';
+import { asMultiValueArray } from './asArray';
 
 export interface WSIImageMetadataSource {
   NumberOfFrames?: number;
@@ -237,8 +238,8 @@ export async function loadWSIData(args: {
     });
     const imageType = imageMetadata['00080008']?.Value;
 
-    if (imageType?.length === 1) {
-      imageMetadata['00080008'].Value = imageType[0].split('\\');
+    if (imageType) {
+      imageMetadata['00080008'].Value = asMultiValueArray(imageType);
     }
 
     const imageFrameOfReference = imageMetadata['00200052']?.Value?.[0];

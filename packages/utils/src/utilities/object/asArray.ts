@@ -30,4 +30,47 @@ export function asArrayFirst<T>(item: T | T[]): T {
   return Array.isArray(item) ? item[0] : item;
 }
 
+/**
+ * The values of a multi-valued attribute (VM 1-n, for example `ImageType`,
+ * `CorrectedImage` or `FrameType`) as one flat list, with each string value
+ * split on the DICOM value separator `\`.
+ *
+ * Some DICOMweb servers store a multi-valued CS attribute as ONE
+ * backslash-joined string (`"DECY\\ATTN\\SCAT"`) instead of separate values.
+ * dcmjs 0.x naturalized such a value as the string itself; dcmjs 1.0
+ * naturalizes it as a one-item list (`["DECY\\ATTN\\SCAT"]`). Code that splits
+ * only a string, or calls `includes` on the value, fails for one of the two
+ * shapes. This function gives `['DECY', 'ATTN', 'SCAT']` for both shapes, and
+ * for a correct list `['DECY', 'ATTN', 'SCAT']`.
+ *
+ * - `undefined` and `null` give `[]` (unlike `asArray`, which gives
+ *   `[undefined]`).
+ * - A string gives its values split on `\`; an empty string gives `['']`.
+ * - A list gives its items, with each string item split on `\`.
+ * - A non-string item (a number, an object) is kept unchanged.
+ *
+ * Do not use it on a value that can hold a literal backslash, such as a
+ * value of VR LT, ST or UT.
+ *
+ * @param value a single value, a list of values, or `undefined`/`null`
+ * @returns a new flat list of the values
+ */
+export function asMultiValueArray<T = string>(
+  value: T | readonly T[] | null | undefined
+): T[] {
+  if (value === undefined || value === null) {
+    return [];
+  }
+  const items = Array.isArray(value) ? (value as readonly T[]) : [value as T];
+  const result: T[] = [];
+  for (const item of items) {
+    if (typeof item === 'string') {
+      result.push(...(item.split('\\') as T[]));
+    } else {
+      result.push(item);
+    }
+  }
+  return result;
+}
+
 export default asArray;

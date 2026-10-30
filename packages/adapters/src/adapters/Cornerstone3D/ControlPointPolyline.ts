@@ -1,4 +1,4 @@
-import { utilities, sr } from 'dcmjs';
+import { utilities, sr } from '@dcmjs-org/dcmjs';
 import { CONTROL_POINTS_CODE, SPLINE_TYPE_CODE } from './constants';
 const { valueTypes } = sr;
 const { Polyline: TID300Polyline } = utilities.TID300;

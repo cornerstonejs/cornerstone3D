@@ -12,7 +12,7 @@
  * @module displayset/displaySetContext
  */
 
-import { asArray, logging } from '@cornerstonejs/utils';
+import { asArray, getPrivateTagValue, logging } from '@cornerstonejs/utils';
 import {
   at,
   collectReads,
@@ -92,7 +92,7 @@ export type ContextEntry =
   | null
   | readonly unknown[]
   | string
-  | { attribute: string; vr?: string; vm?: string }
+  | { attribute: string; creator?: string; vr?: string; vm?: string }
   | { template: string }
   | ContextGroupEntry
   | InstanceContextFunction;
@@ -252,6 +252,8 @@ type Definition = {
   reads: ExpressionRead[];
   value?: unknown;
   attribute?: string;
+  /** The private creator of a declaration of a private tag. */
+  creator?: string;
   /** The VR and the VM of a declaration, recorded for a later JSON Schema. */
   vr?: string;
   vm?: string;
@@ -1401,8 +1403,17 @@ export class ContextProgram {
         break;
       }
       case 'declaration': {
-        const { attribute } = definition;
-        bound.compute = (_runtime, instance) => readOwn(instance, attribute);
+        const { attribute, creator } = definition;
+        bound.compute =
+          creator && HEX_TAG.test(attribute)
+            ? (_runtime, instance) =>
+                getPrivateTagValue(
+                  instance,
+                  attribute.slice(0, 4),
+                  creator,
+                  attribute.slice(6, 8)
+                )
+            : (_runtime, instance) => readOwn(instance, attribute);
         break;
       }
       case 'code': {
@@ -1565,6 +1576,7 @@ export class ContextProgram {
         kind: 'declaration',
         reads: [],
         attribute: fields.attribute as string,
+        creator: fields.creator as string | undefined,
         vr: fields.vr as string | undefined,
         vm: fields.vm as string | undefined,
       };

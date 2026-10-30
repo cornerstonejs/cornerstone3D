@@ -1,5 +1,5 @@
 import { describe, it, expect, jest, beforeAll } from '@jest/globals';
-import { data as dcmjsData } from 'dcmjs';
+import { data as dcmjsData } from '@dcmjs-org/dcmjs';
 
 // Only the derived-labelmap image factory needs stubbing — the referenced
 // images are not really loaded in this unit test. Everything else (decode,

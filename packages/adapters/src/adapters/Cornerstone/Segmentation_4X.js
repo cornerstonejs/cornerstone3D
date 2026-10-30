@@ -4,7 +4,7 @@ import {
   utilities,
   normalizers,
   derivations,
-} from 'dcmjs';
+} from '@dcmjs-org/dcmjs';
 import ndarray from 'ndarray';
 import { vec3 } from 'gl-matrix';
 import getDatasetsFromImages from '../helpers/getDatasetsFromImages';
@@ -1317,7 +1317,8 @@ function getReferencedSegmentNumberFromIdentificationSequence(
     ? segmentIdentificationSequence[0]
     : segmentIdentificationSequence;
 
-  return normalized?.ReferencedSegmentNumber;
+  // VM 1-n: dcmjs 1.0 naturalizes it as a list, also for one value.
+  return csUtilities.asArrayFirst(normalized?.ReferencedSegmentNumber);
 }
 
 function getSharedFunctionalGroupsSequence(multiframe) {
@@ -1617,8 +1618,10 @@ export function getImageIdOfSourceImageBySourceImageSequence(
   SourceImageSequence,
   sopUIDImageIdIndexMap
 ) {
-  const { ReferencedSOPInstanceUID, ReferencedFrameNumber } =
-    SourceImageSequence;
+  const { ReferencedSOPInstanceUID } = SourceImageSequence;
+  const ReferencedFrameNumber = csUtilities.asArrayFirst(
+    SourceImageSequence.ReferencedFrameNumber
+  );
 
   const baseImageId = sopUIDImageIdIndexMap[ReferencedSOPInstanceUID];
 
@@ -1629,7 +1632,8 @@ export function getImageIdOfSourceImageBySourceImageSequence(
     return undefined;
   }
 
-  if (ReferencedFrameNumber !== undefined) {
+  // An empty value ([] from DICOMweb JSON, or null) adds no frame suffix.
+  if (ReferencedFrameNumber !== undefined && ReferencedFrameNumber !== null) {
     if (baseImageId.includes('frames/')) {
       return baseImageId.replace(
         /frames\/\d+/,

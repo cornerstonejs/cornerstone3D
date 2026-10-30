@@ -1,3 +1,4 @@
+import { utilities } from '@cornerstonejs/core';
 import getTagValue from '../getTagValue';
 import getValue from './getValue';
 import isNMReconstructable from '../../isNMReconstructable';
@@ -22,16 +23,8 @@ function isNMModality(metaData) {
 function getImageTypeSubItemFromMetadata(metaData, index) {
   const imageType = getTagValue(metaData['00080008'], false);
 
-  if (imageType) {
-    // const subTypes = imageType.split('\\');
-
-    // if (subTypes.length > index) {
-    //   return subTypes[index];
-    // }
-    return imageType[index];
-  }
-
-  return undefined;
+  // A server can store ImageType as one backslash-joined value.
+  return utilities.asMultiValueArray(imageType)[index];
 }
 /**
  * Extracts the orientation from NM multiframe metadata, if image type

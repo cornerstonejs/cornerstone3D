@@ -1,4 +1,4 @@
-import { log, data as dcmjsData, normalizers } from 'dcmjs';
+import { log, data as dcmjsData, normalizers } from '@dcmjs-org/dcmjs';
 import checkOrientation from '../helpers/checkOrientation';
 import { utilities } from '@cornerstonejs/core';
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
@@ -291,8 +291,10 @@ function getImageIdOfSourceImageBySourceImageSequence(
   SourceImageSequence,
   sopUIDImageIdIndexMap
 ) {
-  const { ReferencedSOPInstanceUID, ReferencedFrameNumber } =
-    SourceImageSequence;
+  const { ReferencedSOPInstanceUID } = SourceImageSequence;
+  const ReferencedFrameNumber = utilities.asArrayFirst(
+    SourceImageSequence.ReferencedFrameNumber
+  );
 
   return ReferencedFrameNumber
     ? getImageIdOfReferencedFrame(

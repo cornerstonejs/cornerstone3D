@@ -1,4 +1,4 @@
-import { normalizers, derivations, data as dcmjsData } from 'dcmjs';
+import { normalizers, derivations, data as dcmjsData } from '@dcmjs-org/dcmjs';
 import { Enums } from '@cornerstonejs/core';
 import {
   fillSegmentation as fillBitmapSegmentation,

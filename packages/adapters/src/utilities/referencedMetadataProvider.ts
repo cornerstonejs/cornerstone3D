@@ -5,7 +5,7 @@ import {
   type Types,
 } from '@cornerstonejs/core';
 import { utilities as metadataUtilities } from '@cornerstonejs/metadata';
-import dcmjs from 'dcmjs';
+import dcmjs from '@dcmjs-org/dcmjs';
 
 import {
   metaSRAnnotation,

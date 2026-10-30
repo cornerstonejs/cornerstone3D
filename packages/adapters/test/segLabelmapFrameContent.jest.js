@@ -1,5 +1,5 @@
 import { describe, it, expect } from '@jest/globals';
-import { data as dcmjsData } from 'dcmjs';
+import { data as dcmjsData } from '@dcmjs-org/dcmjs';
 
 const {
   generateSegmentation,

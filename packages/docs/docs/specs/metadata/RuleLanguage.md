@@ -442,7 +442,7 @@ compile.
   definition for all rules: an alias of a field of a group.
 - **RL-CTX-3** An entry has one of five forms: a fixed value (a number, a
   boolean, `null` or an array); a string, which is an expression; a
-  declaration `{ "attribute", "vr"?, "vm"? }`; a template `{ "template" }`;
+  declaration `{ "attribute", "creator"?, "vr"?, "vm"? }`; a template `{ "template" }`;
   or a group `{ "function", "args"? }`.
 - **RL-CTX-4** A rule context replaces a global entry with the same name, for
   that rule only. The replacement also applies inside the global entries that
@@ -1255,12 +1255,14 @@ the other images of the series into one stack:
 - A site replaces the breast test with `"isBreastImage": { "$set": "..." }`,
   and changes the threshold with
   `"pixelCount": { "greaterThan": { "$set": 2000000 } }`.
-- The private tag of dcmjs 1.0 reads a private block as one value, by the group
-  and the creator. Then a declaration can read the block, and a path can read
-  one element of the block:
-  `"bValuesGroup": { "attribute": "0019:Siemens b values group" }` and
-  `"siemensBValue": "bValuesGroup.0010"`. This syntax can change before dcmjs
-  1.0 is released.
+- A declaration with `creator` reads a private tag by its creator, with
+  `getPrivateTagValue` of `@cornerstonejs/utils`:
+  `{ "attribute": "00191010", "creator": "SIEMENS MR HEADER" }` takes the
+  group `0019` and the element `10` from the hex tag, and finds the block of the
+  creator. It reads the dcmjs 1.0 private block
+  (`"0019:SIEMENS MR HEADER": { "x10": ... }`), also in a copy of the instance,
+  and the 8-digit hex keys of other naturalizers. A declaration with no
+  `creator` reads the hex key only.
 
 ### Example 8: the code form
 

@@ -40,6 +40,16 @@
       "import": "./dist/esm/utilities/math/*.js",
       "default": "./dist/esm/utilities/math/*.js"
     },
+    "./utilities/dicom": {
+      "types": "./dist/esm/utilities/dicom/index.d.ts",
+      "import": "./dist/esm/utilities/dicom/index.js",
+      "default": "./dist/esm/utilities/dicom/index.js"
+    },
+    "./utilities/dicom/*": {
+      "types": "./dist/esm/utilities/dicom/*.d.ts",
+      "import": "./dist/esm/utilities/dicom/*.js",
+      "default": "./dist/esm/utilities/dicom/*.js"
+    },
     "./utilities/logging": {
       "types": "./dist/esm/utilities/logging/index.d.ts",
       "import": "./dist/esm/utilities/logging/index.js",
@@ -74,7 +84,7 @@
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
-    "dcmjs": "0.52.0"
+    "@dcmjs-org/dcmjs": "1.0.0-beta.5"
   },
   "contributors": [
     {

@@ -1,4 +1,5 @@
-import {
+import dcmjs from '@dcmjs-org/dcmjs';
+import splitImageIdsBy4DTags, {
   handleMultiframe4D,
   generateFrameImageId,
 } from '../../src/utilities/splitImageIdsBy4DTags';
@@ -210,6 +211,41 @@ describe('splitImageIdsBy4DTags - Multiframe 4D Functions', () => {
       );
 
       loggerWarnSpy.mockRestore();
+    });
+  });
+
+  describe('GE diffusion b-value', () => {
+    it('splits by the b-value of the GEMS_PARM_01 block of a copied dcmjs 1.0 instance', () => {
+      const instances = {};
+      const positions = {};
+      for (const z of [0, 4]) {
+        for (const bValue of ['0', '1000']) {
+          const imageId = `wadors:/ge/${z}/${bValue}`;
+          const naturalized = dcmjs.data.DicomMetaDictionary.naturalizeDataset({
+            '00430010': { vr: 'LO', Value: ['GEMS_PARM_01'] },
+            '00431039': { vr: 'IS', Value: [bValue, '8', '0', '0'] },
+          });
+          // A copy, as a multi-frame or a JSON path makes: no hex alias.
+          instances[imageId] = { ...naturalized };
+          positions[imageId] = [0, 0, z];
+        }
+      }
+      mockMetaDataGet.mockImplementation((type, imageId) => {
+        if (type === 'instance') {
+          return instances[imageId];
+        }
+        if (type === 'imagePlaneModule') {
+          return { imagePositionPatient: positions[imageId] };
+        }
+      });
+
+      const result = splitImageIdsBy4DTags(Object.keys(instances));
+
+      expect(result.splittingTag).toBe('GEPrivateBValue');
+      expect(result.imageIdGroups).toEqual([
+        ['wadors:/ge/0/0', 'wadors:/ge/4/0'],
+        ['wadors:/ge/0/1000', 'wadors:/ge/4/1000'],
+      ]);
     });
   });
 });

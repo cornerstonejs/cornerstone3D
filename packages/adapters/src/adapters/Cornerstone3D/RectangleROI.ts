@@ -1,6 +1,6 @@
-import { utilities } from 'dcmjs';
+import { utilities } from '@dcmjs-org/dcmjs';
 
-import { toScoords } from '../helpers';
+import { toArray, toScoords } from '../helpers';
 import MeasurementReport from './MeasurementReport';
 import BaseAdapter3D from './BaseAdapter3D';
 import { extractAllNUMGroups, restoreAdditionalMetrics } from './metricHandler';
@@ -43,7 +43,7 @@ export class RectangleROI extends BaseAdapter3D {
     const points =
       worldCoords.length === 5 ? worldCoords.slice(0, 4) : worldCoords;
 
-    const areaGroup = MeasurementGroup.ContentSequence.find(
+    const areaGroup = toArray(MeasurementGroup.ContentSequence).find(
       (g) =>
         g.ValueType === 'NUM' &&
         g.ConceptNameCodeSequence.CodeMeaning === 'Area'
