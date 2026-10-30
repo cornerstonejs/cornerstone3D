@@ -290,8 +290,10 @@ function generateToolState(imageIds, arrayBuffer, metadataProvider) {
     }
 
     const segmentIndex =
-      PerFrameFunctionalGroups.SegmentIdentificationSequence
-        .ReferencedSegmentNumber - 1;
+      cornerstoneUtilities.asArrayFirst(
+        PerFrameFunctionalGroups.SegmentIdentificationSequence
+          .ReferencedSegmentNumber
+      ) - 1;
 
     let SourceImageSequence;
     if (
@@ -421,8 +423,10 @@ function getImageIdOfSourceImage(
   imageIds,
   metadataProvider
 ) {
-  const { ReferencedSOPInstanceUID, ReferencedFrameNumber } =
-    SourceImageSequence;
+  const { ReferencedSOPInstanceUID } = SourceImageSequence;
+  const ReferencedFrameNumber = cornerstoneUtilities.asArrayFirst(
+    SourceImageSequence.ReferencedFrameNumber
+  );
 
   return ReferencedFrameNumber
     ? getImageIdOfReferencedFrame(

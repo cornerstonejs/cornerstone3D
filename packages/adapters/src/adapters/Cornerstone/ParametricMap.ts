@@ -291,8 +291,10 @@ function getImageIdOfSourceImageBySourceImageSequence(
   SourceImageSequence,
   sopUIDImageIdIndexMap
 ) {
-  const { ReferencedSOPInstanceUID, ReferencedFrameNumber } =
-    SourceImageSequence;
+  const { ReferencedSOPInstanceUID } = SourceImageSequence;
+  const ReferencedFrameNumber = utilities.asArrayFirst(
+    SourceImageSequence.ReferencedFrameNumber
+  );
 
   return ReferencedFrameNumber
     ? getImageIdOfReferencedFrame(

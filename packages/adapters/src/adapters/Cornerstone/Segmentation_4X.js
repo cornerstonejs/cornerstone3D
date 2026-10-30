@@ -1618,8 +1618,10 @@ export function getImageIdOfSourceImageBySourceImageSequence(
   SourceImageSequence,
   sopUIDImageIdIndexMap
 ) {
-  const { ReferencedSOPInstanceUID, ReferencedFrameNumber } =
-    SourceImageSequence;
+  const { ReferencedSOPInstanceUID } = SourceImageSequence;
+  const ReferencedFrameNumber = csUtilities.asArrayFirst(
+    SourceImageSequence.ReferencedFrameNumber
+  );
 
   const baseImageId = sopUIDImageIdIndexMap[ReferencedSOPInstanceUID];
 
@@ -1630,7 +1632,8 @@ export function getImageIdOfSourceImageBySourceImageSequence(
     return undefined;
   }
 
-  if (ReferencedFrameNumber !== undefined) {
+  // An empty value ([] from DICOMweb JSON, or null) adds no frame suffix.
+  if (ReferencedFrameNumber !== undefined && ReferencedFrameNumber !== null) {
     if (baseImageId.includes('frames/')) {
       return baseImageId.replace(
         /frames\/\d+/,
