@@ -855,7 +855,6 @@ export class ImageVolume {
    * destroy the volume and make it unusable
    */
   destroy(): void {
-    // TODO: GPU memory associated with volume is not cleared.
     this.imageData.delete();
     this.imageData = null;
     this.voxelManager.clear();
