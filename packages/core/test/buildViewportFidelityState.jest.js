@@ -55,6 +55,7 @@ describe('buildViewportFidelityState (FIDELITY-EVENT-5)', () => {
         line({
           reductionFactors: [1, 1, 2],
           fullResolution: false,
+          reductionCause: 'deviceTextureLimit',
           record: record({
             grid: grid([512, 512, 1232], [1, 1, 2]),
             reduction: VoxelReductions.BoxAverage,
@@ -101,7 +102,7 @@ describe('buildViewportFidelityState (FIDELITY-EVENT-5)', () => {
     expect(state.lossy).toBe(false);
     expect(state.shownState).toBe('done');
     expect(state.cause).toBeUndefined();
-    expect(state.transient).toBe(false);
+    expect(state.transient).toBeUndefined();
     expect(state.progressive.lowest).toBe(ImageQualityStatus.FULL_RESOLUTION);
     expect(state.progressive.loadedFraction).toBeCloseTo(0.9);
   });
@@ -127,7 +128,9 @@ describe('buildViewportFidelityState (FIDELITY-EVENT-5)', () => {
   });
 
   it('marks interactive LOD as performanceTarget and transient', () => {
-    const state = buildViewportFidelityState([line({ sampleDistanceLod: 2 })]);
+    const state = buildViewportFidelityState([
+      line({ sampleDistanceLod: 2, sampleDistanceIdle: 1 }),
+    ]);
 
     expect(state.cause).toBe('performanceTarget');
     expect(state.transient).toBe(true);
@@ -150,6 +153,28 @@ describe('buildViewportFidelityState (FIDELITY-EVENT-5)', () => {
     expect(state.magnitude).toEqual([1, 1, 1]);
   });
 
+  it('shows a stack stage that a later stage replaces as loading, and the last stage as lossy', () => {
+    const stage = (qualityPending) =>
+      buildViewportFidelityState([
+        line({
+          record: undefined,
+          imageQualityStatus: ImageQualityStatus.SUBRESOLUTION,
+          qualityPending,
+        }),
+      ]);
+
+    expect(stage(true)).toEqual(
+      expect.objectContaining({
+        shownState: 'loading',
+        cause: 'incompleteLoad',
+        transient: true,
+      })
+    );
+    expect(stage(false)).toEqual(
+      expect.objectContaining({ shownState: 'lossy', transient: false })
+    );
+  });
+
   it('changes viewportFidelityStateKey when progressive load advances', () => {
     const loading = buildViewportFidelityState([
       line({
@@ -169,7 +194,7 @@ describe('buildViewportFidelityState (FIDELITY-EVENT-5)', () => {
     );
     expect(loading.transient).toBe(true);
     expect(done.cause).toBeUndefined();
-    expect(done.transient).toBe(false);
+    expect(done.transient).toBeUndefined();
   });
 
   it('takes cause and progress from the worst volume when volumes differ', () => {
@@ -197,16 +222,34 @@ describe('buildViewportFidelityState (FIDELITY-EVENT-5)', () => {
     }
   });
 
-  it('gives a decimation the cause of a spatial reduction, not lossyDecode', () => {
+  it('takes the cause of a reduction from its strategy, and states no reduction on a lossless view', () => {
     const state = buildViewportFidelityState([
       line({
         reductionFactors: [2, 2, 2],
         fullResolution: false,
+        reductionCause: 'memoryBudget',
         record: record({ reduction: VoxelReductions.Decimation }),
       }),
     ]);
+    const lossless = buildViewportFidelityState([
+      line({
+        reductionFactors: [2, 2, 1],
+        fullResolution: false,
+        reductionCause: 'deviceTextureLimit',
+        verdict: { lossless: true, causes: [], magnitude: 1 },
+        record: record({ reduction: VoxelReductions.BoxAverage }),
+      }),
+    ]);
 
-    expect(state.cause).toBe('deviceTextureLimit');
+    expect(state.cause).toBe('memoryBudget');
+    expect(lossless).toEqual(
+      expect.objectContaining({
+        shownState: 'done',
+        cause: undefined,
+        magnitude: undefined,
+        transient: undefined,
+      })
+    );
   });
 });
 

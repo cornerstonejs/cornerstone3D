@@ -6,6 +6,17 @@ import type {
 } from '../../types';
 import type { DataAddOptions } from './ViewportArchitectureTypes';
 
+/**
+ * Whether the load of a volume continues, so that a later delivery replaces
+ * the data that it shows now.
+ */
+export function isVolumeLoading(imageVolume: unknown): boolean {
+  return (
+    (imageVolume as { loadStatus?: { loading?: boolean } })?.loadStatus
+      ?.loading === true
+  );
+}
+
 /** The grid and the statistic of the base texture that a mapper holds. */
 export type BoundGrid = { grid: VoxelGrid; statistic: VoxelStatistic };
 

@@ -56,6 +56,7 @@ import {
 import { applyPlanarVolumePresentation } from './planarVolumePresentation';
 import {
   isSegmentationOverlayData,
+  isVolumeLoading,
   readBoundQuality,
 } from '../renderingFidelity';
 
@@ -410,6 +411,7 @@ export class VtkVolumeSliceRenderPath
 
     rendering.fidelityStale = false;
     rendering.voxelQuality = this.readQuality(rendering);
+    rendering.qualityPending = isVolumeLoading(rendering.imageVolume);
   }
 
   private getImageData(
@@ -546,9 +548,11 @@ export class VtkVolumeSliceRenderPath
 
     if (base) {
       rendering.boundGrid = { grid: base.grid, statistic: base.statistic };
+      rendering.reductionCause = strategy.reductionCause;
     }
 
     rendering.voxelQuality = this.readQuality(rendering);
+    rendering.qualityPending = isVolumeLoading(rendering.imageVolume);
     rendering.fidelityStale = false;
     rendering.fullGrid = rendering.imageVolume.voxelGrid;
   }

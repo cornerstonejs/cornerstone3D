@@ -12,14 +12,7 @@ describe('fidelityLabelOf', () => {
     expect(fidelityLabelOf('lod')).toBe('Transient Low Fidelity');
   });
 
-  it('uses Low Fidelity for standing lossy', () => {
-    expect(fidelityLabelOf('lossy', { transient: false })).toBe('Low Fidelity');
+  it('uses Low Fidelity for a standing reduction', () => {
     expect(fidelityLabelOf('lossy')).toBe('Low Fidelity');
-  });
-
-  it('uses Transient Low Fidelity when absolute state is transient', () => {
-    expect(fidelityLabelOf('lossy', { transient: true })).toBe(
-      'Transient Low Fidelity'
-    );
   });
 });

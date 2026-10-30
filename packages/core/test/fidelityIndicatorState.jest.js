@@ -58,7 +58,7 @@ describe('fidelityIndicatorState', () => {
       expect(svgStateOf([line({ record: undefined })])).toBe('hidden');
     });
 
-    it('prioritises loading over lod, lossy, and done', () => {
+    it('does not hide a standing reduction under a load or an interaction', () => {
       expect(
         svgStateOf([
           line({
@@ -69,23 +69,27 @@ describe('fidelityIndicatorState', () => {
           }),
           line({
             sampleDistanceLod: 2,
+            sampleDistanceIdle: 1,
             fullResolution: false,
             reductionFactors: [2, 2, 2],
           }),
         ])
-      ).toBe('loading');
+      ).toBe('lossy');
     });
 
-    it('prioritises lod over lossy and done', () => {
+    it('prioritises loading over lod and done', () => {
       expect(
         svgStateOf([
-          line({ sampleDistanceLod: 2 }),
+          line({ sampleDistanceLod: 2, sampleDistanceIdle: 1 }),
           line({
-            fullResolution: false,
-            reductionFactors: [2, 2, 2],
+            record: record({
+              missing: 10,
+              lowest: ImageQualityStatus.ADJACENT_REPLICATE,
+            }),
           }),
+          line(),
         ])
-      ).toBe('lod');
+      ).toBe('loading');
     });
 
     it('prioritises lossy over done', () => {
@@ -133,8 +137,15 @@ describe('fidelityIndicatorState', () => {
       ).toBe('lossy');
     });
 
-    it('is lod when sample distance is raised', () => {
-      expect(lineKind(line({ sampleDistanceLod: 2 }))).toBe('lod');
+    it('is lod only for the part of the sample distance that ends with the interaction', () => {
+      expect(
+        lineKind(line({ sampleDistanceLod: 2, sampleDistanceIdle: 1 }))
+      ).toBe('lod');
+      // An idle multiplier stays after the interaction: standing, not lod.
+      expect(
+        lineKind(line({ sampleDistanceLod: 2, sampleDistanceIdle: 2 }))
+      ).toBe('lossy');
+      expect(lineKind(line({ sampleDistanceLod: 2 }))).toBe('lossy');
     });
 
     it('is lossy for aliasing reduction', () => {
