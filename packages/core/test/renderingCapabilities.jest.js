@@ -11,7 +11,12 @@ import {
   RENDERING_CAPABILITIES_PROBE_VERSION,
 } from '../src/utilities/renderingCapabilities';
 import { probeRenderingLimits } from '../src/utilities/textureSupport';
-import { noteTextureAllocation } from '../src/utilities/gpuAllocationTracker';
+import {
+  noteTextureAllocation,
+  noteTextureRendered,
+} from '../src/utilities/gpuAllocationTracker';
+import eventTarget from '../src/eventTarget';
+import Events from '../src/enums/Events';
 
 jest.mock('../src/utilities/textureSupport', () => ({
   probeRenderingLimits: jest.fn(),
@@ -328,6 +333,36 @@ describe('renderingCapabilities', () => {
     // The formats were cleared too, so the detection probed again.
     expect(stored.formats).toEqual(ALL_FORMATS);
     expect(getSupportedTextureFormats).toHaveBeenCalledTimes(2);
+  });
+
+  it('records a loss 2 s after the render of a large allocation as a failure only, with no success', () => {
+    const GIGABYTE = 1024 * 1024 * 1024;
+
+    jest.useFakeTimers();
+
+    try {
+      mockWebGL();
+      detectRenderingCapabilities();
+      noteTextureAllocation({
+        textureBytes: 6 * GIGABYTE,
+        totalBytes: 6 * GIGABYTE,
+      });
+      noteTextureRendered();
+      jest.advanceTimersByTime(2000);
+      eventTarget.dispatchEvent(
+        new CustomEvent(Events.WEBGL_CONTEXT_LOST, { detail: {} })
+      );
+      jest.advanceTimersByTime(10000);
+
+      const { textureBytes } = getStoredRenderingCapabilities();
+
+      expect(textureBytes.normal).toBeUndefined();
+      expect(textureBytes.failures).toEqual([
+        expect.objectContaining({ value: 6 * GIGABYTE }),
+      ]);
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
   it('records a crash when a page stops during a large allocation', () => {

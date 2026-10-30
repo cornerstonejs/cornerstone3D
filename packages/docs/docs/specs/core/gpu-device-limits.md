@@ -228,7 +228,7 @@ sequenceDiagram
     end
     Strat->>GPU: allocate and fill the texture
     GPU->>Track: noteTextureRendered() after the first render
-    alt no context loss within 500 ms
+    alt no context loss within 5 s of the render
         Track->>RC: record a success, and remove the pending record
     else WEBGL_CONTEXT_LOST within 5 s of the allocation
         Track->>RC: record the page total as a textureBytes failure

@@ -14,21 +14,22 @@ const log = coreLog.getLogger('utilities', 'gpuAllocationTracker');
 /** An allocation of at least this size is a large allocation. */
 export const LARGE_ALLOCATION_BYTES = 64 * 1024 * 1024;
 
+/** A context loss this long after a large allocation is caused by it. */
+const LOSS_WINDOW_MS = 5000;
+
 /**
  * The time after the first render that follows a large allocation at which
- * the allocation counts as a success. A context loss that the render causes
- * arrives in this time.
+ * the allocation counts as a success. It equals `LOSS_WINDOW_MS`, so one
+ * allocation records a success or a loss, never both: a success would remove
+ * the failure of the same total, and no ceiling could form.
  */
-const SETTLE_MS = 500;
+const SETTLE_MS = LOSS_WINDOW_MS;
 
 /**
  * A large allocation with no render in this time is abandoned: its pending
  * record is removed, and nothing is recorded.
  */
 const RENDER_TIMEOUT_MS = 30000;
-
-/** A context loss this long after a large allocation is caused by it. */
-const LOSS_WINDOW_MS = 5000;
 
 /**
  * A context loss this long after a probe context can come from that probe: a

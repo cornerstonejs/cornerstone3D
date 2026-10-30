@@ -321,9 +321,9 @@ page from an in-memory ledger (`gpuMemoryLedger`): each texture upload, the canv
 the render buffers of each WebGL context, and a fixed estimate for each context. Another tab does not
 count. Under `auto`, a new texture gets the memory limit minus the GPU bytes of the rest of the page.
 Before an allocation of 64 MB or more on a visible page, the page writes a pending record under a key
-of its own tab. The first render after the allocation settles it: 500 ms later, the total counts as
-a success, and the page removes the pending record. A context loss before that, or within five
-seconds of the allocation, records the total as a `textureBytes` failure, except on a hidden page and
+of its own tab. The first render after the allocation settles it: 5 s later, the total counts as a
+success, and the page removes the pending record. A context loss before that, or within five seconds
+of the allocation, records the total as a `textureBytes` failure, except on a hidden page and
 within one second of a probe context. A pending record that a later start finds records the total as
 a `gpuBytes` failure. Two tabs share the record: each change applies to a fresh read of the store.
 
@@ -514,7 +514,8 @@ textures of the reslice mapper and of `convertMapperToNotSharedMapper` add entri
 `WebGLContextPool` adds the canvas of each viewport (4 bytes for each pixel), the render buffers of
 each context (8 bytes for each pixel of its largest viewport), and 32 MB for each context. The
 `TiledRenderingEngine` adds no canvas entries. A large allocation is 64 MB or more. A visible page writes its pending record, and a hidden page does not. The first render of a
-volume mapper after the allocation settles it 500 ms later; with no render in 30 s, the pending record
+volume mapper after the allocation settles it 5 s later, which is the loss window, so one allocation
+records a success or a loss and never both; with no render in 30 s, the pending record
 is removed and nothing is recorded. A context loss counts while the allocation waits, or within 5 s of
 it, but not on a hidden page and not within 1 s of a probe context. A pending record younger than
 10 s can belong to a tab that still runs, so the startup scan leaves it. `pagehide` and a hidden page
