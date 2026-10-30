@@ -279,12 +279,20 @@ function bytesPerVoxelOf(volume: IImageVolume): number {
  *
  * The name derives from the strategy, so a second viewport that chooses the
  * same strategy finds the same textures instead of building them again.
+ *
+ * Each factor is rounded to 4 decimals, for example `reduced-1x1x1.2031`. A
+ * factor is `N / M` for a source edge N and a reduced edge M < N, so two factors
+ * of one axis differ by more than `1 / M`. Two different reductions of one
+ * volume therefore keep different names while every reduced edge is at most
+ * 10000 voxels.
  */
 export function reducedStrategyName(
   factors: Point3,
   statistic: VoxelStatistic = VoxelStatistics.Average
 ): string {
-  return `reduced-${factors.join('x')}/full-extent/${statistic}`;
+  const rounded = factors.map((factor) => Number(factor.toFixed(4)));
+
+  return `reduced-${rounded.join('x')}/full-extent/${statistic}`;
 }
 
 /**
