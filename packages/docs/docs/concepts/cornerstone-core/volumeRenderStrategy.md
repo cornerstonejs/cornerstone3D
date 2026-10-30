@@ -328,7 +328,9 @@ of the allocation, records the total as a `textureBytes` failure, except on a hi
 within one second of a probe context that ran after the allocation. A pending record that a later start finds records the total as
 a `gpuBytes` failure. Two tabs share the record: each change applies to a fresh read of the store.
 
-**The memory level.** Each memory category keeps `normal`, the largest total that worked. A failure
+**The memory level.** Each memory category keeps `normal`, the largest total that worked. The `auto`
+limit is the larger of the start value of the renderer class and 2 × `normal`, up to `rendering.autoGpuSettings.maxTextureMemoryBytes` (32 GB by default). So each success above the
+earlier `normal` raises the limit one step, and a total in that step is a test of a new size. A failure
 starts an episode, and a failure within 1 hour of the previous one joins it. Each failure of the
 episode halves the limit again, from the total of its first failure, for 1 hour after its last
 failure, so the reload after a failure uses a lower level. A page that saw the reduction keeps it

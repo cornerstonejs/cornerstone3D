@@ -12,7 +12,7 @@ import type {
   RenderingCapabilityMemory,
 } from './renderingCapabilities';
 import type { ProbeTextureFormat } from './textureSupport';
-import { getLossyDownsampling } from '../init';
+import { getConfiguration, getLossyDownsampling } from '../init';
 
 /**
  * How fast a device of this class draws, on a relative scale.
@@ -155,13 +155,45 @@ const FORMAT_PROBE_EDGE = 8;
 const MIN_TEXTURE_BYTES = 16 * 1024 * 1024;
 
 /**
+ * The default of the largest texture memory that `auto` tests. An assumption
+ * about the likely devices, not a limit of a device.
+ */
+const DEFAULT_AUTO_MAX_TEXTURE_MEMORY_BYTES = 32 * GIGABYTE;
+
+/**
+ * How far above the normal level `auto` lets the page go. A total up to this
+ * multiple of the largest total that worked is a test of the next step.
+ */
+const MEMORY_TEST_STEP = 2;
+
+/**
+ * The bounds of what `auto` tests, from `rendering.autoGpuSettings` of the
+ * configuration. `MAX_3D_TEXTURE_SIZE` bounds the edge in any case, because no
+ * probe runs above it.
+ */
+function autoTestBounds(): {
+  maxTextureMemoryBytes: number;
+  maxTextureEdge: number;
+} {
+  const bounds = getConfiguration()?.rendering?.autoGpuSettings;
+
+  return {
+    maxTextureMemoryBytes:
+      bounds?.maxTextureMemoryBytes ?? DEFAULT_AUTO_MAX_TEXTURE_MEMORY_BYTES,
+    maxTextureEdge: bounds?.maxTextureEdge ?? Number.POSITIVE_INFINITY,
+  };
+}
+
+/**
  * The memory limit of `auto`, in GPU bytes of the page.
  *
- * The limit is the larger of the start value and the normal level, the
- * largest total that worked. A ceiling, which several failure episodes set,
- * caps it. A failure episode lowers it further for its time, and for the rest
- * of a page that saw it (see `getPageMemoryReduction`): one failure allows 1/2
- * of the failed total, two allow 1/4.
+ * The limit is the larger of the start value and `MEMORY_TEST_STEP` times the
+ * normal level, the largest total that worked. So the limit rises one step
+ * after each success above the earlier normal level. `maxTextureMemoryBytes`
+ * of `rendering.autoGpuSettings` caps it, and so does a ceiling, which several
+ * failure episodes set. A failure episode lowers it further for its time, and
+ * for the rest of a page that saw it (see `getPageMemoryReduction`): one
+ * failure allows 1/2 of the failed total, two allow 1/4.
  *
  * @param start - the memory of the start preset of the renderer class
  * @param records - the memory records (context loss and stopped tab)
@@ -170,9 +202,13 @@ function autoMemoryLimit(
   start: number,
   records: RenderingCapabilityMemory[]
 ): number {
-  let limit = Math.max(
-    start,
+  const normal = Math.max(
+    0,
     ...records.map((memory) => memory.normal?.value ?? 0)
+  );
+  let limit = Math.min(
+    Math.max(start, MEMORY_TEST_STEP * normal),
+    autoTestBounds().maxTextureMemoryBytes
   );
 
   for (const memory of records) {
@@ -188,16 +224,19 @@ function autoMemoryLimit(
  * The edge of `auto`: the largest edge that a probe passed, and never an edge
  * that no probe passed. With no such edge, the edge search runs once in this
  * page (see `ensureReliableEdge`). When no probe can run, the edge is
- * `UNPROBED_EDGE_FLOOR`.
+ * `UNPROBED_EDGE_FLOOR`. `maxTextureEdge` of `rendering.autoGpuSettings` caps
+ * the edge.
  */
 function autoEdge(rendererClass: RendererClass): number {
   const reliable = ensureReliableEdge();
   const failed = peekStoredRenderingCapabilities()?.edge.failed?.value;
-  const edge =
+  const edge = Math.min(
     reliable ??
-    (failed && failed <= UNPROBED_EDGE_FLOOR
-      ? FORMAT_PROBE_EDGE
-      : UNPROBED_EDGE_FLOOR);
+      (failed && failed <= UNPROBED_EDGE_FLOOR
+        ? FORMAT_PROBE_EDGE
+        : UNPROBED_EDGE_FLOOR),
+    autoTestBounds().maxTextureEdge
+  );
 
   // A software rasterizer is too slow for a larger texture.
   return rendererClass === 'software'
@@ -211,7 +250,7 @@ function autoEdge(rendererClass: RendererClass): number {
  * The start preset of the class of the renderer (see `START_PRESET_OF_CLASS`)
  * gives the memory before the record holds any, and the speed. The edge is
  * the reliable edge of the probe (see `autoEdge`). The memory is the start
- * memory, raised by a larger total that worked, capped after several failure
+ * memory, raised one step above a larger total that worked, capped after several failure
  * episodes, and lowered for the time of an episode (see `autoMemoryLimit`). A
  * software rasterizer keeps the memory of `low`.
  */
@@ -333,6 +372,7 @@ function gpuSettingsForGrid(
 
   if (
     edge > gpuSettings.maxTextureEdge &&
+    edge <= autoTestBounds().maxTextureEdge &&
     rendererClass !== 'software' &&
     rendererClass !== 'none'
   ) {

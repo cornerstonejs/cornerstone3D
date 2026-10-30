@@ -505,7 +505,9 @@ device keeps its own record:
 - **The GPU memory.** The page counts its own GPU bytes: the textures, the
   canvases, the render buffers and the contexts of its viewports. Another tab
   does not count. The record keeps the largest total that worked as the
-  normal level. A failure within 1 hour of the previous one joins its episode.
+  normal level. The limit of `auto` is one step above it (2 × the normal
+  level), so the limit rises after each success at a larger total, up to
+  `rendering.autoGpuSettings.maxTextureMemoryBytes` (32 GB by default). A failure within 1 hour of the previous one joins its episode.
   Each failure of an episode halves the limit again (1/2, then 1/4) for 1 hour
   after its last failure, and a page that saw the reduction keeps it until it
   reloads. Three episodes within 7 days set a ceiling below the smallest of
@@ -513,8 +515,9 @@ device keeps its own record:
   memory limit of `auto` minus the GPU bytes of the rest of the page. `auto`
   does not evict the textures of another volume.
 - **The start.** The memory starts from `low` for a software rasterizer,
-  `low-tablet` for a mobile GPU, and `medium` for any other GPU. The edge is
-  always an edge that the probe passed.
+  `low-tablet` for a mobile GPU, and `medium` for any other GPU. Safari
+  reports `"Apple GPU"` on a Mac too, and a Mac with no touch screen starts
+  from `medium`. The edge is always an edge that the probe passed.
 
 A volume with an axis longer than the limit draws from a box-average reduction
 of that axis. For example, a CT of 512 × 512 × 2464 draws with a factor of 2
@@ -549,6 +552,10 @@ probes again once.
   (`medium`), and the page total of all volumes counts against it. More
   volumes, or larger volumes, therefore draw reduced than under `high`. A
   mobile GPU starts at 1 GB.
+- New `init` configuration `rendering.autoGpuSettings`:
+  `maxTextureMemoryBytes` (default 32 GB) bounds the memory that `auto` tests,
+  and `maxTextureEdge` (default and upper bound `MAX_3D_TEXTURE_SIZE`) bounds
+  the edge that `auto` probes.
 - New exports: `getStoredRenderingCapabilities`, `retestRenderingCapabilities`,
   `resetRenderingCapabilities`, `setCapabilityStorage`, `getCapabilityStorage`,
   and their types.

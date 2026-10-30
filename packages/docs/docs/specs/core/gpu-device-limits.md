@@ -100,6 +100,17 @@ viewer asked it to render a data set that is too large.
   overrides `auto`. The stored record has no effect on a named preset.
 - **GPULIMIT-PROFILE-3** Under `auto`, the edge of a texture is never above an
   edge that a probe passed (`VRS-C-12`, `VRS-I-14`).
+- **GPULIMIT-PROFILE-4** Two values of the `init` configuration bound what
+  `auto` tests, in `rendering.autoGpuSettings`: `maxTextureMemoryBytes`, the
+  largest texture memory that `auto` allows (default 32 GB), and
+  `maxTextureEdge`, the largest edge that `auto` probes (default and upper bound
+  `MAX_3D_TEXTURE_SIZE`). The 32 GB default is an assumption about the likely
+  devices, not a limit of a device. A named preset ignores both values.
+- **GPULIMIT-PROFILE-5** The class of the renderer sets the start of `auto`:
+  `low` for a software rasterizer or no WebGL2, `low-tablet` for a GPU of a
+  phone or a tablet, and `medium` for any other GPU. Safari reports
+  `"Apple GPU"` on every Apple device, so an `"Apple GPU"` on a macOS device with
+  no touch screen is a desktop GPU.
 
 ### The detection of each failure (GPULIMIT-DETECT)
 
@@ -120,8 +131,9 @@ viewer asked it to render a data set that is too large.
   memory can cause type 2 or type 3.
 - **GPULIMIT-DETECT-5** A known gap. No safe probe measures the memory limits
   (GPULIMIT-DETECT-4), so this version does not meet GPULIMIT-USER-4 at a
-  memory size that the device has not used before. The first context loss or
-  stop of the tab at a new size can occur one time. The reload after it uses a
+  memory size that the device has not used before. Each step of the `auto`
+  limit above `normal` (GPULIMIT-MEM-3) is such a size. The first context loss
+  or stop of the tab at a new size can occur one time. The reload after it uses a
   lower size (GPULIMIT-MEM-4), and repeated failures cap the size until a
   retest (GPULIMIT-MEM-5). A later version can close this gap with a memory
   value that the browser reports.
@@ -137,7 +149,12 @@ viewer asked it to render a data set that is too large.
   because vtk.js releases the upload in the earlier context.
 - **GPULIMIT-MEM-3** The `normal` level is the largest page total that worked.
   The `auto` limit is the larger of the start value of the renderer class and
-  `normal`.
+  2 × `normal`, and never above `maxTextureMemoryBytes` (GPULIMIT-PROFILE-4).
+  Thus each success above the earlier `normal` raises the limit one step, and a
+  total up to one step above `normal` is a test of a new size (GPULIMIT-DETECT-5).
+  The ceiling (GPULIMIT-MEM-5) and the reduction of an episode
+  (GPULIMIT-MEM-4) bound the limit. A failed test usually loses the WebGL
+  context, not the browser, so its cost is a reload of the tab.
 - **GPULIMIT-MEM-4** A failure within 1 hour of the previous failure joins its
   episode. Each failure of an episode halves the limit again, from the total
   of its first failure: one failure allows 1/2, two allow 1/4. The reduction

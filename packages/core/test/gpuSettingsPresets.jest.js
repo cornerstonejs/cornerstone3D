@@ -13,7 +13,11 @@ import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
 import gridFitsGpuSettings from '../src/RenderingEngine/vtkClasses/gridFitsGpuSettings';
 import { convertMapperToNotSharedMapper } from '../src/RenderingEngine/helpers/createVolumeMapper';
-import { getLossyDownsampling } from '../src/init';
+import {
+  getConfiguration,
+  getLossyDownsampling,
+  setConfiguration,
+} from '../src/init';
 import {
   MEMORY_RECENT_MS,
   recordRenderingCapabilityFailure,
@@ -204,7 +208,8 @@ describe('the auto preset', () => {
       mockWebGL();
       recordRenderingCapabilitySuccess('textureBytes', 12 * GIGABYTE);
 
-      expect(getActiveGpuSettings().textureMemoryBytes).toBe(12 * GIGABYTE);
+      // The limit allows one step above the normal level.
+      expect(getActiveGpuSettings().textureMemoryBytes).toBe(24 * GIGABYTE);
 
       // One failure allows half of the failed total, and a second failure in
       // the same hour allows a quarter.
@@ -225,7 +230,7 @@ describe('the auto preset', () => {
       // A reload after the hour returns to the full limit.
       resetRenderingCapabilities();
 
-      expect(getActiveGpuSettings().textureMemoryBytes).toBe(12 * GIGABYTE);
+      expect(getActiveGpuSettings().textureMemoryBytes).toBe(24 * GIGABYTE);
 
       // Three episodes, each an hour apart, set a ceiling below the smallest
       // first failure of them. The episode above counts as one.
@@ -238,6 +243,78 @@ describe('the auto preset', () => {
       expect(getActiveGpuSettings().textureMemoryBytes).toBe(6 * GIGABYTE);
     } finally {
       clock.mockRestore();
+    }
+  });
+
+  it('raises the memory one step after each larger success, up to the configured maximum', () => {
+    mockWebGL();
+
+    recordRenderingCapabilitySuccess('textureBytes', 7 * GIGABYTE);
+    expect(getActiveGpuSettings().textureMemoryBytes).toBe(14 * GIGABYTE);
+
+    recordRenderingCapabilitySuccess('textureBytes', 14 * GIGABYTE);
+    expect(getActiveGpuSettings().textureMemoryBytes).toBe(28 * GIGABYTE);
+
+    recordRenderingCapabilitySuccess('textureBytes', 28 * GIGABYTE);
+    expect(getActiveGpuSettings().textureMemoryBytes).toBe(32 * GIGABYTE);
+
+    setConfiguration({
+      ...getConfiguration(),
+      rendering: {
+        ...getConfiguration().rendering,
+        autoGpuSettings: { maxTextureMemoryBytes: 16 * GIGABYTE },
+      },
+    });
+
+    try {
+      expect(getActiveGpuSettings().textureMemoryBytes).toBe(16 * GIGABYTE);
+    } finally {
+      setConfiguration({
+        ...getConfiguration(),
+        rendering: { ...getConfiguration().rendering, autoGpuSettings: {} },
+      });
+    }
+  });
+
+  it('probes no edge above the configured maximum edge', () => {
+    mockWebGL();
+    probeTextureEdge.mockClear();
+    setConfiguration({
+      ...getConfiguration(),
+      rendering: {
+        ...getConfiguration().rendering,
+        autoGpuSettings: { maxTextureEdge: 1024 },
+      },
+    });
+
+    try {
+      const settings = gpuSettingsForGrid(
+        getActiveGpuSettings(),
+        [512, 512, 2464],
+        4
+      );
+
+      expect(probeTextureEdge).not.toHaveBeenCalled();
+      expect(settings.maxTextureEdge).toBe(1024);
+    } finally {
+      setConfiguration({
+        ...getConfiguration(),
+        rendering: { ...getConfiguration().rendering, autoGpuSettings: {} },
+      });
+    }
+  });
+
+  it('classes "Apple GPU" on a Mac with no touch screen as a desktop', () => {
+    const platform = jest
+      .spyOn(navigator, 'platform', 'get')
+      .mockReturnValue('MacIntel');
+
+    try {
+      mockWebGL('Apple GPU');
+
+      expect(getActiveGpuSettings().textureMemoryBytes).toBe(8 * GIGABYTE);
+    } finally {
+      platform.mockRestore();
     }
   });
 

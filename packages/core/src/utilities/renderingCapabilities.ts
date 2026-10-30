@@ -68,6 +68,21 @@ const SOFTWARE_RASTERIZER_PATTERN =
 const MOBILE_RENDERER_PATTERN =
   /mali|adreno|powervr|apple gpu|immortalis|xclipse|vivante/i;
 
+/** Safari reports this renderer on every Apple device, a Mac included. */
+const APPLE_GPU_PATTERN = /apple gpu/i;
+
+/**
+ * True on a Mac with no touch screen. An iPad in desktop mode also reports a
+ * Mac platform, but it has touch points.
+ */
+function isMacDesktop(): boolean {
+  return (
+    typeof navigator !== 'undefined' &&
+    /mac/i.test(navigator.platform ?? '') &&
+    !(navigator.maxTouchPoints > 0)
+  );
+}
+
 /**
  * The GPU capability profile detected through offscreen WebGL probes.
  *
@@ -721,7 +736,8 @@ export function getRenderingCapabilities(): RenderingCapabilities {
  *
  * `none` has no WebGL2, `software` is a software rasterizer, `mobile` is a GPU
  * of a phone or a tablet (Mali, Adreno, PowerVR, Apple GPU and others), and
- * `desktop` is any other GPU.
+ * `desktop` is any other GPU. Safari reports "Apple GPU" on a Mac too, so an
+ * "Apple GPU" on a Mac with no touch screen is `desktop`.
  */
 export function getRendererClass(): RendererClass {
   const capabilities = getRenderingCapabilities();
@@ -734,7 +750,10 @@ export function getRendererClass(): RendererClass {
     return 'software';
   }
 
-  return MOBILE_RENDERER_PATTERN.test(capabilities.renderer)
+  const { renderer } = capabilities;
+
+  return MOBILE_RENDERER_PATTERN.test(renderer) &&
+    !(APPLE_GPU_PATTERN.test(renderer) && isMacDesktop())
     ? 'mobile'
     : 'desktop';
 }
