@@ -9,7 +9,7 @@ import {
   getRenderSurfaceForRenderMode,
 } from '../../helpers/renderBackendRegistry';
 import { volumeTextureReductionFactors } from '../../helpers/volumeRenderStrategy';
-import { getActiveGpuSettings } from '../../../utilities/gpuSettingsPresets';
+import { gpuSettingsForRender } from '../../../utilities/gpuSettingsPresets';
 import type { EffectiveRenderBackend } from '../../../types/RenderBackendRegistry';
 import { isValidVolume } from '../../../utilities/isValidVolume';
 import { getOrientationFromScanAxisNormal } from '../../helpers/getCameraVectors';
@@ -234,7 +234,7 @@ export class PlanarRenderPathDecisionService {
       return false;
     }
 
-    return volumeTextureReductionFactors(volume, getActiveGpuSettings()).some(
+    return volumeTextureReductionFactors(volume, gpuSettingsForRender()).some(
       (factor) => factor > 1
     );
   }

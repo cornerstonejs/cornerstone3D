@@ -1,4 +1,5 @@
 import type { VoxelGridLimits } from '../types';
+import { getLossyDownsampling } from '../init';
 
 /**
  * How fast a device of this class draws, on a relative scale.
@@ -145,6 +146,16 @@ function getActiveGpuSettings(): GpuSettings {
   return getGpuSettingsPreset(activePresetId);
 }
 
+/**
+ * The GPU settings that a render applies, or `undefined` when final
+ * downsampling is off. With final downsampling off, no preset applies, and a
+ * volume renders as in 4.x. Every render path reads the settings here, so that
+ * one check covers them all.
+ */
+function gpuSettingsForRender(): GpuSettings | undefined {
+  return getLossyDownsampling().final ? getActiveGpuSettings() : undefined;
+}
+
 /** Returns to the default preset. */
 function resetGpuSettingsPreset(): void {
   activePresetId = DEFAULT_PRESET_ID;
@@ -183,6 +194,7 @@ export {
   getGpuSettingsPresets,
   setGpuSettingsPreset,
   getActiveGpuSettings,
+  gpuSettingsForRender,
   resetGpuSettingsPreset,
   gridLimitsOfGpuSettings,
   DEFAULT_PRESET_ID as defaultGpuSettingsPresetId,
