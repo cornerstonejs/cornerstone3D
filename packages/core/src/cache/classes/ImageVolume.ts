@@ -457,8 +457,9 @@ export class ImageVolume {
    * derives nothing again.
    *
    * THE DERIVATION MUST READ THE GRID OF THIS VOLUME. A slice of the derived
-   * grid then covers a whole number of frames of this volume, and the image id
-   * of the first of those frames names it. A derivation from another
+   * grid then covers a run of frames of this volume, and the image id of the
+   * first of those frames names it. A fractional factor cuts the two end frames
+   * of the run, and the id also states that cut. A derivation from another
    * representation gets no store here, and the composite keeps an array of its
    * own for it.
    *

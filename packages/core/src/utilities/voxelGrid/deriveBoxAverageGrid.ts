@@ -17,12 +17,17 @@ import { normalizedFactors, reducedDimensions } from './reducedDimensions';
  * does not change. A grid whose direction is oblique keeps that direction, and
  * the origin moves along the oblique axes.
  *
- * THE LAST BOX ON AN AXIS CAN BE PARTIAL, because `reducedDimensions` rounds
- * up. The value of a partial box is the average of the source voxels that the
- * box holds, and the position of that value stays on the uniform lattice of the
- * grid. The value therefore sits up to half a source voxel away from the centre
- * of the source voxels that produced it. A grid descriptor holds one spacing
- * for each axis, so the descriptor cannot express that one distance.
+ * A factor can hold a fraction. With the factor `N / M` of an edge of N source
+ * voxels, box j covers `[j * N / M, (j + 1) * N / M)` and its centre lies on the
+ * lattice of the result, which is also how a reduced texture spans the
+ * full-resolution extent. `boxAverageReductionFactors` gives such factors.
+ *
+ * A whole factor f that does not divide the edge gives a partial last box,
+ * because `reducedDimensions` rounds up. The value of that box is the average
+ * of the source voxels that it holds, and it stays on the uniform lattice, so
+ * it sits `(M * f - N) / 2` source voxels away from the centre of those voxels.
+ * That is up to `(f - 1) / 2` source voxels, and a grid descriptor holds one
+ * spacing for each axis, so the descriptor cannot express that distance.
  *
  * A DERIVATION ALWAYS GOES FROM A HIGHER RESOLUTION TO A LOWER ONE, or the data
  * comes from a direct load. Nothing derives a grid from a lower resolution.

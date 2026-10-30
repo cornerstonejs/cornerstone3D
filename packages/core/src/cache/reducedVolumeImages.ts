@@ -4,6 +4,7 @@ import VoxelManager from '../utilities/VoxelManager';
 import { createAndCacheLocalImage } from '../loaders/imageLoader';
 import { getConstructorFromType } from '../utilities/getBufferConfiguration';
 import { coreLog } from '../utilities/logger';
+import { snapToWhole } from '../utilities/voxelGrid/boxSpan';
 import type {
   IImage,
   IVoxelManager,
@@ -32,7 +33,10 @@ export const REDUCED_IMAGE_SCHEME = 'reduced';
  * happen and a reduced slice keeps a URI of its own.
  */
 const REDUCED_IMAGE_ID =
-  /^reduced:(\d+)x(\d+)(?:x(\d+))?(?:@(\d+),(\d+))?:([^:]+):(.+)$/;
+  /^reduced:(\d+)x(\d+)(?:x(\d+))?(?:~([\d.]+)\+([\d.]+))?(?:@(\d+),(\d+))?:([^:]+):(.+)$/;
+
+/** The digits that the id keeps of a cut of a fractional slice. */
+const FRAME_SPAN_DIGITS = 6;
 
 /** The element types that `createAndCacheLocalImage` accepts. */
 const STORABLE_TYPES = new Set([
@@ -52,6 +56,12 @@ export type ReducedImageIdOptions = {
   rows: number;
   /** The number of source frames that the reduced slice covers. One by default. */
   frames?: number;
+  /**
+   * The cut of a slice of a fractional k factor: where the slice starts inside
+   * the first frame, and its length in frames. Absent for a slice of whole
+   * frames.
+   */
+  frameSpan?: [number, number];
   /**
    * The first source column and row that the reduced slice covers, for one
    * brick of the plane. `[0, 0]` by default.
@@ -108,7 +118,8 @@ export type ReducedImages = {
  * A reduction of the k axis makes one reduced slice from several source frames.
  * The id then names the FIRST of those frames and states how many frames the
  * slice covers, which identifies the set, because the frames of a volume are
- * ordered.
+ * ordered. A fractional k factor cuts the two end frames, and the id then also
+ * states the cut as `~<start>+<length>`, in frames.
  *
  * A brick that starts away from the first column or row also names that start,
  * so two bricks of one plane never share a reduced slice.
@@ -118,12 +129,17 @@ export function reducedImageId({
   columns,
   rows,
   frames = 1,
+  frameSpan,
   inPlaneOffset = [0, 0],
   statistic = VoxelStatistics.Average,
 }: ReducedImageIdOptions): string {
   const [offsetI, offsetJ] = inPlaneOffset;
+  const cut = frameSpan
+    ? `~${frameSpan.map((value) => Number(value.toFixed(FRAME_SPAN_DIGITS))).join('+')}`
+    : '';
   const size =
     (frames > 1 ? `${columns}x${rows}x${frames}` : `${columns}x${rows}`) +
+    cut +
     (offsetI || offsetJ ? `@${offsetI},${offsetJ}` : '');
 
   return `${REDUCED_IMAGE_SCHEME}:${size}:${statistic}:${sourceImageId}`;
@@ -149,13 +165,16 @@ export function parseReducedImageId(
     return undefined;
   }
 
+  const frames = match[3] ? Number(match[3]) : 1;
+
   return {
     columns: Number(match[1]),
     rows: Number(match[2]),
-    frames: match[3] ? Number(match[3]) : 1,
-    inPlaneOffset: [Number(match[4] ?? 0), Number(match[5] ?? 0)],
-    statistic: match[6] as VoxelStatistic,
-    sourceImageId: match[7],
+    frames,
+    frameSpan: match[4] ? [Number(match[4]), Number(match[5])] : [0, frames],
+    inPlaneOffset: [Number(match[6] ?? 0), Number(match[7] ?? 0)],
+    statistic: match[8] as VoxelStatistic,
+    sourceImageId: match[9],
   };
 }
 
@@ -188,7 +207,7 @@ export function provideReducedImages({
   id,
 }: ReducedImagesOptions): ReducedImages | undefined {
   const [columns, rows, depth] = grid.dimensions;
-  const frameFactor = Math.max(Math.round(factors[2]), 1);
+  const frameFactor = Math.max(factors[2], 1);
 
   if (!STORABLE_TYPES.has(dataType)) {
     log.warn(
@@ -205,7 +224,8 @@ export function provideReducedImages({
   const imageIds: string[] = [];
 
   for (let slice = 0; slice < depth; slice++) {
-    const firstFrame = sourceOffset[2] + slice * frameFactor;
+    const lo = snapToWhole(sourceOffset[2] + slice * frameFactor);
+    const firstFrame = Math.floor(lo);
 
     if (firstFrame >= sourceImageIds.length) {
       log.warn(
@@ -215,12 +235,19 @@ export function provideReducedImages({
       return undefined;
     }
 
-    const frames = Math.min(frameFactor, sourceImageIds.length - firstFrame);
+    const hi = snapToWhole(Math.min(lo + frameFactor, sourceImageIds.length));
+    const frames = Math.ceil(hi) - firstFrame;
     const imageId = reducedImageId({
       sourceImageId: sourceImageIds[firstFrame],
       columns,
       rows,
       frames,
+      // A slice of a fractional factor cuts its end frames, so the id states
+      // the cut and two factors that meet the same frames get two ids.
+      frameSpan:
+        Number.isInteger(lo) && Number.isInteger(hi)
+          ? undefined
+          : [lo - firstFrame, hi - lo],
       inPlaneOffset: [sourceOffset[0], sourceOffset[1]],
       statistic,
     });

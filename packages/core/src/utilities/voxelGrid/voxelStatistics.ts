@@ -46,9 +46,9 @@ function createAverageAccumulator(): VoxelStatisticAccumulator {
       sum = 0;
       count = 0;
     },
-    add: (value: number) => {
-      sum += value;
-      count++;
+    add: (value: number, weight = 1) => {
+      sum += value * weight;
+      count += weight;
     },
     getValue: () => (count === 0 ? undefined : sum / count),
   };
@@ -75,13 +75,13 @@ function createForegroundMajorityAccumulator(): VoxelStatisticAccumulator {
       majorityCount = 0;
       sawBackground = false;
     },
-    add: (value: number) => {
+    add: (value: number, weight = 1) => {
       if (value === 0) {
         sawBackground = true;
         return;
       }
 
-      const next = (counts.get(value) ?? 0) + 1;
+      const next = (counts.get(value) ?? 0) + weight;
 
       counts.set(value, next);
 
