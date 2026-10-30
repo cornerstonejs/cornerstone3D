@@ -29,8 +29,7 @@ export type FidelityLine = {
   qualityPending?: boolean;
   /**
    * Why the drawn grid is coarser than the full volume, as the strategy that
-   * chose the grid states it. A reduced grid with no cause, while the load
-   * continues, is an interim texture of the load.
+   * chose the grid states it.
    */
   reductionCause?: ViewportFidelityCause;
   /**
@@ -138,8 +137,8 @@ export type FidelityDataKind = 'loading' | 'decimated' | 'reduced' | 'full';
  * - `decimated`: an aliasing reduction, lossy at every magnification.
  * - `reduced`: a box average coarser than the display, final lossy
  *   deliveries, or a standing sample distance multiplier above 1.
- * - `loading`: replicated, sub-resolution or lossy data, or an interim grid,
- *   that a later delivery replaces. Missing data with only full-resolution
+ * - `loading`: replicated, sub-resolution or lossy data that a later
+ *   delivery replaces. Missing data with only full-resolution
  *   deliveries is not `loading`.
  * - `full`: lossless at the current display spacing.
  */
@@ -154,11 +153,8 @@ export function dataKindOf(line: FidelityLine): FidelityDataKind {
   }
 
   const spatialKind = spatialKindOf(line);
-  // A reduction that no strategy states, during a load, ends with the load.
-  const interimGrid =
-    spatialKind === 'reduced' && qualityPending && !line.reductionCause;
 
-  if (spatialKind !== 'full' && !interimGrid) {
+  if (spatialKind !== 'full') {
     return spatialKind;
   }
 
@@ -167,10 +163,7 @@ export function dataKindOf(line: FidelityLine): FidelityDataKind {
   const lowest = record.lowest ?? ImageQualityStatus.FULL_RESOLUTION;
   const lossyDelivery = lowest < ImageQualityStatus.FULL_RESOLUTION;
 
-  if (
-    interimGrid ||
-    (lossyDelivery && (record.missing > 0 || qualityPending))
-  ) {
+  if (lossyDelivery && (record.missing > 0 || qualityPending)) {
     return 'loading';
   }
 

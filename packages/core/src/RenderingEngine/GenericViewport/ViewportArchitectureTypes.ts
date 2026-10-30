@@ -86,7 +86,12 @@ export type RenderingFidelity = {
    * sampling.
    */
   sampleDistanceLod?: number;
-  /** The same ratio when no interaction runs (a standing multiplier). */
+  /**
+   * The same ratio when no interaction runs (a standing multiplier). A path
+   * that samples rays sets it, so that the part of `sampleDistanceLod` above
+   * it shows as `lod`. When it is unset, the whole of `sampleDistanceLod`
+   * counts as standing, and a ratio above 1 shows `lossy` (FIDELITY-RECORD-6).
+   */
   sampleDistanceIdle?: number;
   /** True while the path shows an older or coarser sample during interaction. */
   interactiveReduction?: boolean;

@@ -104,6 +104,12 @@ recovery mark `done`.
   reduction is not hidden under `loading` or `lod`. The user can therefore
   determine whether waiting is expected to improve the image, and whether a
   lossless image is reachable at all. This serves FIDELITY-USER-1.
+- **FIDELITY-STATE-12** A view that shows more than one data set shows the
+  state of the worst data set (FIDELITY-STATE-7). A mixed view with any lossy
+  data set shows `lossy`, with the `Low Fidelity` label, also while another
+  data set still loads. Example: a CT that loads next to a decimated PET shows
+  `lossy`. The hover details then state that other data still loads. This
+  serves FIDELITY-USER-1.
 - **FIDELITY-STATE-6** A box average is lossless when the data spacing on each
   axis is no coarser than the display spacing of FIDELITY-RECORD-2. This serves
   FIDELITY-USER-1 and FIDELITY-USER-2 (MR-U-5 of #2931).
@@ -127,9 +133,8 @@ recovery mark `done`.
   - A decimation of the same data, at the same display, still shows `lossy`. A
     decimation aliases at every magnification.
 
-  Testing note (shared 1×1×2 texture): on the volume path, and for the
-  interim texture of a progressive load, the acquisition plane shows `lossy`
-  at every zoom. The acquisition-plane frame path of #3018 draws the original
+  Testing note (shared 1×1×2 texture): on the volume path the acquisition
+  plane shows `lossy` at every zoom. The acquisition-plane frame path of #3018 draws the original
   frames, so the acquisition plane shows no indicator on that path. Sagittal
   and coronal show no indicator while the `k` extent uses no more device
   pixels than half of the source slice count (`p ≥ 2S`). After more zoom,
@@ -165,7 +170,7 @@ recovery mark `done`.
 
 | State     | What it means                                                                                                      | Expected to improve |
 | --------- | ------------------------------------------------------------------------------------------------------------------ | ------------------- |
-| `loading` | The viewport shows replicated, sub-resolution or lossy data, or an interim grid, that a later delivery replaces.   | Yes                 |
+| `loading` | The viewport shows replicated, sub-resolution or lossy data that a later delivery replaces.                        | Yes                 |
 | `lod`     | An interaction samples the data more coarsely than when no interaction runs.                                       | When it stops       |
 | `lossy`   | A standing reduction: the data is reduced, decimated or lossy, or sampled coarsely, and this is the final quality. | No                  |
 | `done`    | The viewport shows a lossless image.                                                                               | Not applicable      |
@@ -178,12 +183,19 @@ recovery mark `done`.
   a transient state never hides it (FIDELITY-STATE-4). Inside one line, the
   same order applies: a decimated or reduced grid is `lossy` also while the
   load or an interaction continues. When a standing reduction shows and
-  another line still loads, the hover details say so.
+  another line still loads, the hover details say so (FIDELITY-STATE-12).
+  `fidelityDetailsTextOf()` adds "Other data is still loading." for a state
+  that is not transient when a line with data is `loading`. VF owns the user
+  rule of the mixed view.
 - **FIDELITY-STATE-8** A stack viewport reports the fidelity of the image that
   it shows now, and not the worst image of the stack.
   `ProgressiveRetrieveImages` sets `IImage.imageQualityPending` while the same
   request or a later stage still replaces the image, and clears it when no
   stage follows. A pending `SUBRESOLUTION` or `LOSSY` image is `loading`.
+  Known limit: the generic stack render paths do not read
+  `imageQualityPending`. They set `imageQualityStatus` when they render, so
+  the final stage of a generic stack view turns red only at the next render.
+  See Known deviations.
 - **FIDELITY-STATE-9** A viewport reports the fidelity of its source data. The
   fidelity of an overlay, for example a reduced segmentation labelmap, is out
   of scope.
@@ -195,8 +207,10 @@ recovery mark `done`.
   its volume continues (`loadStatus.loading`), and `reductionCause` from the
   strategy that chose the bound grid. Lossy deliveries with `qualityPending`
   give `loading`, also with no missing voxels. A reduced grid that is lossy at
-  the display, with `qualityPending` and no `reductionCause`, is an interim
-  grid of the load and gives `loading`. A record with `lowest` undefined has no
+  the display gives `lossy`, also while the load continues. No code makes an
+  interim grid of a load yet (for example a progressive 1×1×2 texture), so no
+  rule gives such a grid `loading`. The rule returns with the code that makes
+  the interim grid. A record with `lowest` undefined has no
   delivered data, and the line has no data (FIDELITY-STATE-2).
 
 ### The record and the verdict (FIDELITY-RECORD)
@@ -257,7 +271,9 @@ recovery mark `done`.
   The part of the current ratio above the idle ratio is `lod`: for example
   `rotateSampleDistanceFactor` of `TrackballRotateTool` and
   `VolumeCroppingTool` during an interaction. A line that states no idle ratio
-  counts its whole ratio as standing, so it promises no recovery. A slice view
+  counts its whole ratio as standing, so it promises no recovery: a ratio
+  above 1 gives `lossy`, also during an interaction. A custom render path
+  reports the idle ratio in `RenderingFidelity.sampleDistanceIdle`. A slice view
   samples no ray, so a slice line has ratios of 1 on the legacy and the
   generic paths.
 - **FIDELITY-RECORD-7** `record.lowest` decides whether delivered data is lossy.
@@ -336,9 +352,8 @@ recovery mark `done`.
   - A spatial reduction takes `cause` from the strategy that chose the grid
     (`IVolumeRenderStrategy.reductionCause`, `reductionCauseOf()`):
     `deviceTextureLimit` when the edge limit of the GPU settings alone reduces
-    the volume, `memoryBudget` when only the texture memory does. An interim
-    grid of a load gives `incompleteLoad`. A reduction that no strategy
-    explains gives no cause. `lod` and an idle sample distance multiplier give
+    the volume, `memoryBudget` when only the texture memory does. A reduction
+    that no strategy explains gives no cause. `lod` and an idle sample distance multiplier give
     `performanceTarget`.
   - `shownState` and `lossy` come from every volume of the viewport. The other
     fields describe the worst volume, the volume that decides `shownState`.
