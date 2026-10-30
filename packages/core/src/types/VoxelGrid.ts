@@ -78,12 +78,16 @@ export type VoxelRepresentationId = {
 export type VoxelGridReduction = {
   /**
    * The size of the box on each axis, in source voxels. A factor of 1 leaves
-   * that axis at the source resolution.
+   * that axis at the source resolution. A factor can hold a fraction: the
+   * factor `N / M` takes an edge of N voxels to M voxels, box j covers the
+   * source `[j * N / M, (j + 1) * N / M)`, and the source voxels that the two
+   * ends of a box cut count with the part of them inside the box.
    */
   factors: Point3;
   /**
    * The index in the source grid of the first voxel of the region. The default
-   * is `[0, 0, 0]`, which is the whole grid.
+   * is `[0, 0, 0]`, which is the whole grid. A reduction of a fractional factor
+   * can start the region inside a source voxel.
    */
   sourceOffset?: Point3;
   /**

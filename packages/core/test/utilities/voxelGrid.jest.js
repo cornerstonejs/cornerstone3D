@@ -3,6 +3,8 @@ import VoxelManager from '../../src/utilities/VoxelManager';
 import * as voxelGrid from '../../src/utilities/voxelGrid';
 import { VoxelStatistics } from '../../src/enums';
 import { __resetVoxelStatisticRegistry } from '../../src/utilities/voxelGrid/voxelStatistics';
+import fillPlaneByAverage from '../../src/utilities/voxelGrid/averagePlane';
+import fillPlaneByForegroundMajority from '../../src/utilities/voxelGrid/foregroundMajorityPlane';
 
 const {
   boxAverageAtIJK,
@@ -58,13 +60,32 @@ describe('voxelGrid.boxAverageReductionFactors', () => {
   it('reduces exactly one axis for an edge of 2049 against a limit of 2048', () => {
     // Acceptance criterion 4 of issue #2921. A uniform reduction by 2 on three
     // axes takes 8 times fewer voxels for an excess of one voxel.
+    // The edge takes the largest size that fits, because 2049 has no divisor
+    // near 2048.
     const factors = boxAverageReductionFactors([2049, 512, 512], {
       maxEdge: 2048,
     });
 
-    expect(factors).toEqual([2, 1, 1]);
+    expect(factors).toEqual([2049 / 2048, 1, 1]);
     expect(reducedDimensions([2049, 512, 512], factors)).toEqual([
-      1025, 512, 512,
+      2048, 512, 512,
+    ]);
+  });
+
+  it('prefers a factor that divides the edge, and takes N / M otherwise', () => {
+    // 2400 / 10 = 240 is at least 0.9 of 256, so the box is exact and whole.
+    expect(
+      boxAverageReductionFactors([512, 512, 2400], { maxEdge: 256 })
+    ).toEqual([2, 2, 10]);
+
+    // 601 is prime, so the axis takes 256 voxels of 601 / 256 source voxels.
+    const factors = boxAverageReductionFactors([512, 512, 601], {
+      maxEdge: 256,
+    });
+
+    expect(factors).toEqual([2, 2, 601 / 256]);
+    expect(reducedDimensions([512, 512, 601], factors)).toEqual([
+      256, 256, 256,
     ]);
   });
 
@@ -113,6 +134,111 @@ describe('voxelGrid.boxAverageReductionFactors', () => {
 
   it('rounds the number of reduced voxels up, so the grid covers the region', () => {
     expect(reducedDimensions([2049, 3, 1], [2, 2, 2])).toEqual([1025, 2, 1]);
+  });
+});
+
+describe('a fractional box of N / M source voxels', () => {
+  /** The average of `values` over the source interval [lo, hi) of one axis. */
+  function averageOver(values, lo, hi) {
+    let sum = 0;
+
+    for (let v = Math.floor(lo); v < Math.ceil(hi); v++) {
+      const weight = Math.min(v + 1, hi) - Math.max(v, lo);
+
+      sum += weight * values[v];
+    }
+
+    return sum / (hi - lo);
+  }
+
+  it('puts each reduced centre at the centre of its source range, and averages that range', () => {
+    // N = 10 to M = 4 on i, and N = 7 to M = 3 on j.
+    const [width, height] = [10, 7];
+    const factors = [width / 4, height / 3, 1];
+    const source = makeGrid({ dimensions: [width, height, 1] });
+    const grid = deriveBoxAverageGrid(source, { factors });
+    const values = Array.from(
+      { length: width * height },
+      (_, index) => (index * 37) % 101
+    );
+    const cpu = makeTarget();
+    const plane = new Float32Array(4 * 3);
+
+    reduceByBoxAverage(
+      makeSource([width, height, 1], values),
+      { factors },
+      cpu,
+      {
+        round: false,
+      }
+    );
+    fillPlaneByAverage(
+      [Float32Array.from(values)],
+      [width, height],
+      [4, 3],
+      [factors[0], factors[1]],
+      plane
+    );
+
+    expect(grid.dimensions).toEqual([4, 3, 1]);
+
+    for (let j = 0; j < 3; j++) {
+      for (let i = 0; i < 4; i++) {
+        // Texel (i, j) covers [i * N / M, (i + 1) * N / M), whose centre in
+        // source index space is (i + 0.5) * N / M - 0.5.
+        expect(grid.origin[0] + i * grid.spacing[0]).toBeCloseTo(
+          (i + 0.5) * factors[0] - 0.5,
+          10
+        );
+        expect(grid.origin[1] + j * grid.spacing[1]).toBeCloseTo(
+          (j + 0.5) * factors[1] - 0.5,
+          10
+        );
+
+        const rows = Array.from({ length: height }, (_, row) =>
+          averageOver(
+            values.slice(row * width, (row + 1) * width),
+            i * factors[0],
+            (i + 1) * factors[0]
+          )
+        );
+        const expected = averageOver(
+          rows,
+          j * factors[1],
+          (j + 1) * factors[1]
+        );
+
+        expect(cpu.written.get(`${i},${j},0`)).toBeCloseTo(expected, 6);
+        expect(plane[j * 4 + i]).toBeCloseTo(expected, 4);
+      }
+    }
+  });
+
+  it('weighs a cut label by the part of it inside the box, for a labelmap', () => {
+    // N = 3 to M = 2: box 1 covers [1.5, 3), so label 5 counts 0.5 and label
+    // 7 counts 1. A whole count would tie, and the first label would win.
+    const labels = [5, 5, 7];
+    const target = makeTarget();
+    const plane = new Int16Array(2);
+
+    reduceByBoxStatistic(
+      makeSource([3, 1, 1], labels),
+      { factors: [1.5, 1, 1] },
+      target,
+      { statistic: VoxelStatistics.ForegroundMajority }
+    );
+    fillPlaneByForegroundMajority(
+      [Int16Array.from(labels)],
+      [3, 1],
+      [2, 1],
+      [1.5, 1],
+      plane
+    );
+
+    expect([target.written.get('0,0,0'), target.written.get('1,0,0')]).toEqual([
+      5, 7,
+    ]);
+    expect(Array.from(plane)).toEqual([5, 7]);
   });
 });
 

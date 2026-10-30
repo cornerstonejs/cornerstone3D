@@ -6,6 +6,7 @@ import type {
 } from './boxStatistic';
 import resolveReduction from './resolveReduction';
 import { foregroundMajorityOfBox } from './foregroundMajorityPlane';
+import { spanOfBox, weightInSpan } from './boxSpan';
 
 /**
  * A slice of a source of several components interleaves them, so the slice fast
@@ -137,21 +138,22 @@ function reduceForegroundMajorityBySlices<T extends BoxStatisticValue = number>(
   );
   const [factorI, factorJ, factorK] = factors;
   const [sourceWidth] = source.dimensions;
-  const frameLength = sourceWidth * sourceEnd[1];
+  const frameLength = sourceWidth * Math.ceil(sourceEnd[1]);
   const [targetI, targetJ, targetK] = reduction.targetOffset ?? [0, 0, 0];
   const labels: number[] = [];
   const counts: number[] = [];
   const frames: ArrayLike<number>[] = [];
+  const frameWeights: number[] = [];
   let written = 0;
   const direct = directTargetOf(target);
 
   for (let k = 0; k < dimensions[2]; k++) {
-    const firstK = sourceOffset[2] + k * factorK;
-    const endK = Math.min(firstK + factorK, sourceEnd[2]);
+    const spanK = spanOfBox(sourceOffset[2], factorK, sourceEnd[2], k);
 
     frames.length = 0;
+    frameWeights.length = 0;
 
-    for (let sourceK = firstK; sourceK < endK; sourceK++) {
+    for (let sourceK = spanK.first; sourceK < spanK.end; sourceK++) {
       const frame = readSlice(sourceK);
 
       if (!frame) {
@@ -168,6 +170,7 @@ function reduceForegroundMajorityBySlices<T extends BoxStatisticValue = number>(
       }
 
       frames.push(frame);
+      frameWeights.push(weightInSpan(spanK, sourceK));
     }
 
     if (!frames.length) {
@@ -175,21 +178,18 @@ function reduceForegroundMajorityBySlices<T extends BoxStatisticValue = number>(
     }
 
     for (let j = 0; j < dimensions[1]; j++) {
-      const firstJ = sourceOffset[1] + j * factorJ;
-      const endJ = Math.min(firstJ + factorJ, sourceEnd[1]);
+      const spanJ = spanOfBox(sourceOffset[1], factorJ, sourceEnd[1], j);
       const base = direct
         ? directIndexOf(direct, targetI, targetJ + j, targetK + k)
         : 0;
 
       for (let i = 0; i < dimensions[0]; i++) {
-        const firstI = sourceOffset[0] + i * factorI;
         const majority = foregroundMajorityOfBox(
           frames,
+          frameWeights,
           sourceWidth,
-          firstI,
-          Math.min(firstI + factorI, sourceEnd[0]),
-          firstJ,
-          endJ,
+          spanOfBox(sourceOffset[0], factorI, sourceEnd[0], i),
+          spanJ,
           labels,
           counts
         );
@@ -265,16 +265,17 @@ function reduceAverageAlongKBySlices<T extends BoxStatisticValue = number>(
   let written = 0;
   const direct = directTargetOf(target);
   const frames: ArrayLike<number>[] = [];
+  const frameWeights: number[] = [];
 
   // A streaming load refreshes one box per arriving frame, so this runs once
   // per frame: it allocates nothing, and it reads each voxel of the box once.
   for (let rk = 0; rk < reducedDepth; rk++) {
-    const firstK = sourceOffset[2] + rk * factorK;
-    const lastK = Math.min(firstK + factorK, sourceEnd[2]);
+    const spanK = spanOfBox(sourceOffset[2], factorK, sourceEnd[2], rk);
 
     frames.length = 0;
+    frameWeights.length = 0;
 
-    for (let k = firstK; k < lastK; k++) {
+    for (let k = spanK.first; k < spanK.end; k++) {
       let frame: ArrayLike<number> | undefined;
 
       try {
@@ -291,6 +292,7 @@ function reduceAverageAlongKBySlices<T extends BoxStatisticValue = number>(
       }
 
       frames.push(frame);
+      frameWeights.push(weightInSpan(spanK, k));
     }
 
     if (!frames.length) {
@@ -312,8 +314,8 @@ function reduceAverageAlongKBySlices<T extends BoxStatisticValue = number>(
           const value = frames[m][index];
 
           if (Number.isFinite(value)) {
-            sum += value;
-            count++;
+            sum += value * frameWeights[m];
+            count += frameWeights[m];
           }
         }
 

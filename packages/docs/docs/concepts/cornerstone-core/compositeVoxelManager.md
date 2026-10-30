@@ -217,8 +217,8 @@ The rule for a display is less strict:
 - A fill can average only the source voxels that the display needs, such as the voxels of one
   oblique plane.
 
-**A derivation always goes from a higher resolution to a lower one.** A box size is a whole number
-of at least 1, so the result is never finer than its source. Data that no derivation can give
+**A derivation always goes from a higher resolution to a lower one.** A box size is at least 1, and
+it can hold a fraction (`N / M`), so the result is never finer than its source. Data that no derivation can give
 arrives through `acceptData`.
 
 **A derivation reduces the regions that its source has delivered, and no others.** A source that

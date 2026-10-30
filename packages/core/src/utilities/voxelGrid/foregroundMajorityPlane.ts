@@ -1,3 +1,5 @@
+import { spansOfAxis, weightInSpan, type BoxSpan } from './boxSpan';
+
 /**
  * Gives the foreground majority of one box of a stack of source planes.
  *
@@ -8,26 +10,27 @@
  * with a strictly greater count, so the texture fill, the slice fast path and
  * the accumulator agree on every tie.
  *
+ * A voxel counts with its weight: the part of it that lies inside a box of a
+ * fractional factor, which is 1 for every voxel of a box of a whole factor.
+ *
  * A box holds few distinct labels, so the counts live in two short lists that
  * the caller reuses for every box, rather than in a map per box.
  *
  * @param frames - the source planes of the box along k, in k order
+ * @param frameWeights - the weight of each frame, or nothing for 1
  * @param sourceWidth - the width of one source plane
- * @param firstI - the first column of the box
- * @param endI - one past the last column of the box
- * @param firstJ - the first row of the box
- * @param endJ - one past the last row of the box
+ * @param spanI - the columns of the box
+ * @param spanJ - the rows of the box
  * @param labels - scratch list of the labels of the box
  * @param counts - scratch list of the count of each label
  * @returns the majority label, or 0
  */
 export function foregroundMajorityOfBox(
   frames: ArrayLike<number>[],
+  frameWeights: number[] | undefined,
   sourceWidth: number,
-  firstI: number,
-  endI: number,
-  firstJ: number,
-  endJ: number,
+  spanI: BoxSpan,
+  spanJ: BoxSpan,
   labels: number[],
   counts: number[]
 ): number {
@@ -37,11 +40,15 @@ export function foregroundMajorityOfBox(
   labels.length = 0;
   counts.length = 0;
 
-  for (const frame of frames) {
-    for (let j = firstJ; j < endJ; j++) {
-      const row = j * sourceWidth;
+  for (let f = 0; f < frames.length; f++) {
+    const frame = frames[f];
+    const frameWeight = frameWeights?.[f] ?? 1;
 
-      for (let i = firstI; i < endI; i++) {
+    for (let j = spanJ.first; j < spanJ.end; j++) {
+      const row = j * sourceWidth;
+      const rowWeight = frameWeight * weightInSpan(spanJ, j);
+
+      for (let i = spanI.first; i < spanI.end; i++) {
         const label = frame[row + i];
 
         if (label === 0) {
@@ -56,7 +63,7 @@ export function foregroundMajorityOfBox(
           counts.push(0);
         }
 
-        const count = ++counts[slot];
+        const count = (counts[slot] += rowWeight * weightInSpan(spanI, i));
 
         if (count > majorityCount) {
           majorityCount = count;
@@ -74,45 +81,37 @@ export function foregroundMajorityOfBox(
  * one reduced plane. See {@link foregroundMajorityOfBox} for the rule.
  *
  * The last column and row of the reduced plane also take the source voxels
- * beyond the last whole box.
+ * beyond the last whole box. A factor can hold a fraction, as in
+ * `fillPlaneByAverage`.
  *
  * @param frames - the source planes of the box along k, in k order
  * @param sourceSize - the width and height of one source plane
  * @param targetSize - the width and height of the reduced plane
  * @param factors - the box size along i and j
  * @param values - the reduced plane that receives the labels
+ * @param frameWeights - the weight of each frame, 1 by default
  */
 export default function fillPlaneByForegroundMajority(
   frames: ArrayLike<number>[],
   [sourceWidth, sourceHeight]: [number, number],
   [width, height]: [number, number],
   [factorI, factorJ]: [number, number],
-  values: { [index: number]: number }
+  values: { [index: number]: number },
+  frameWeights?: number[]
 ): void {
   const labels: number[] = [];
   const counts: number[] = [];
+  const columns = spansOfAxis(sourceWidth, width, factorI);
+  const rows = spansOfAxis(sourceHeight, height, factorJ);
 
   for (let targetJ = 0; targetJ < height; targetJ++) {
-    const firstJ = targetJ * factorJ;
-    const endJ =
-      targetJ === height - 1
-        ? sourceHeight
-        : Math.min(firstJ + factorJ, sourceHeight);
-
     for (let targetI = 0; targetI < width; targetI++) {
-      const firstI = targetI * factorI;
-      const endI =
-        targetI === width - 1
-          ? sourceWidth
-          : Math.min(firstI + factorI, sourceWidth);
-
       values[targetJ * width + targetI] = foregroundMajorityOfBox(
         frames,
+        frameWeights,
         sourceWidth,
-        firstI,
-        endI,
-        firstJ,
-        endJ,
+        columns[targetI],
+        rows[targetJ],
         labels,
         counts
       );
