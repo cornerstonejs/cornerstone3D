@@ -35,7 +35,10 @@ import {
   resolvePlanarRenderPathProjection,
   worldToCanvasPlanarRenderPathProjection,
 } from './planarRenderPathProjection';
-import { isSegmentationOverlayData } from '../renderingFidelity';
+import {
+  isSegmentationOverlayData,
+  isVolumeLoading,
+} from '../renderingFidelity';
 
 const DEFERRED_VIEWPORT_RESAMPLE_DELAY_MS = 80;
 
@@ -426,6 +429,7 @@ export class CpuVolumeSliceRenderPath
     // full grid. A deferred resample shows the older sample, transformed to
     // the new camera, until the high-quality resample (GENVIEW-FIDELITY-1).
     runtime.voxelQuality = runtime.imageVolume.getVoxelQuality?.();
+    runtime.qualityPending = isVolumeLoading(runtime.imageVolume);
     runtime.fullGrid = runtime.imageVolume.voxelGrid;
     runtime.interactiveReduction =
       resampleDecision === 'defer' && !!runtime.sampledSliceState;

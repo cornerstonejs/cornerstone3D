@@ -432,6 +432,23 @@ describe('fidelityIndicator attach gates', () => {
       detachFidelityIndicator(viewport);
     });
 
+    it('shows no recovery mark when the viewport switches to new data', () => {
+      const viewport = attach();
+      const root = viewport.element.querySelector('.fi-root');
+      let volumeIds = ['vol'];
+      viewport.getAllVolumeIds = () => volumeIds;
+
+      renderAs(viewport, 10, ImageQualityStatus.LOSSY);
+      expect(root.dataset.state).toBe('loading');
+
+      volumeIds = ['other'];
+      renderAs(viewport, 0, ImageQualityStatus.FULL_RESOLUTION);
+      expect(root.dataset.state).toBeUndefined();
+      expect(root.dataset.shown).toBe('false');
+
+      detachFidelityIndicator(viewport);
+    });
+
     it('reads the quality record again only when the volume data changes', () => {
       const viewport = attach();
       render(viewport);

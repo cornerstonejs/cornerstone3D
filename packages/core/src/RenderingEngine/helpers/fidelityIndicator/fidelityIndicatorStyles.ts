@@ -38,7 +38,7 @@ export const FIDELITY_INDICATOR_CSS = `/*
   overflow: visible;
 }
 
-/* Permanent clinician label (FIDELITY-NOTIFY-1): bright red on black. */
+/* Permanent clinician label (FIDELITY-UI-2): bright red on black. */
 .fi-label {
   display: none;
   flex-shrink: 0;
@@ -56,7 +56,7 @@ export const FIDELITY_INDICATOR_CSS = `/*
   display: block;
 }
 
-/* Product fidelity tooltip (icon hover). Clinician copy (FIDELITY-DISCOVER). */
+/* Product fidelity tooltip (icon hover). Clinician copy (FIDELITY-UI-5). */
 .fi-details {
   display: none;
   position: absolute;

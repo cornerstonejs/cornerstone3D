@@ -14,7 +14,12 @@ import invertRgbTransferFunction from '../../../utilities/invertRgbTransferFunct
 import { updateOpacity as updateVolumeOpacity } from '../../../utilities/colormap';
 import uuidv4 from '../../../utilities/uuidv4';
 import createVolumeActor from '../../helpers/createVolumeActor';
-import { sampleDistanceOf } from '../../helpers/createVolumeMapper';
+import {
+  idleSampleDistanceMultiplierOf,
+  sampleDistanceOf,
+  sampleDistanceRatiosOf,
+  setIdleSampleDistanceMultiplier,
+} from '../../helpers/createVolumeMapper';
 import {
   defaultVolumeStrategyProvider,
   selectFirstReadyStrategy,
@@ -49,6 +54,7 @@ import applyVolume3DCamera from './applyVolume3DCamera';
 import { getInitialVolume3DCamera } from './vtkVolume3DInitialCamera';
 import {
   isSegmentationOverlayData,
+  isVolumeLoading,
   readBoundQuality,
 } from '../renderingFidelity';
 import setVtkCameraClippingRange from '../setVtkCameraClippingRange';
@@ -251,6 +257,7 @@ export class VtkVolume3DRenderPath
 
     rendering.fidelityStale = false;
     rendering.voxelQuality = this.readQuality(rendering);
+    rendering.qualityPending = isVolumeLoading(rendering.imageVolume);
   }
 
   private render(
@@ -371,7 +378,7 @@ export class VtkVolume3DRenderPath
           sampleDistanceOf(
             imageData,
             base.texture,
-            sampleDistanceMultipliers.get(rendering.mapper)
+            idleSampleDistanceMultiplierOf(rendering.mapper)
           )
         );
       }
@@ -381,33 +388,20 @@ export class VtkVolume3DRenderPath
 
     if (base) {
       rendering.boundGrid = { grid: base.grid, statistic: base.statistic };
+      rendering.reductionCause = strategy.reductionCause;
     }
 
     rendering.voxelQuality = this.readQuality(rendering);
+    rendering.qualityPending = isVolumeLoading(rendering.imageVolume);
     rendering.fidelityStale = false;
     rendering.fullGrid = rendering.imageVolume?.voxelGrid;
-    rendering.sampleDistanceLod = this.readSampleDistanceLod(rendering);
-  }
-
-  /**
-   * Current sample distance relative to the idle baseline (FIDELITY-RECORD-6).
-   */
-  private readSampleDistanceLod(rendering: Volume3DVolumeRendering): number {
-    const { mapper } = rendering;
-    const current = mapper.getSampleDistance?.();
-    const imageData = mapper.getInputData?.();
-
-    if (!imageData || !(current > 0)) {
-      return 1;
-    }
-
-    const baseline = sampleDistanceOf(imageData, rendering.boundTexture, 1);
-
-    if (!(baseline > 0)) {
-      return 1;
-    }
-
-    return current / baseline;
+    // FIDELITY-RECORD-6: the current and the idle sample distance.
+    const ratios = sampleDistanceRatiosOf(
+      rendering.mapper,
+      rendering.boundTexture
+    );
+    rendering.sampleDistanceLod = ratios.current;
+    rendering.sampleDistanceIdle = ratios.idle;
   }
 
   /**
@@ -568,9 +562,6 @@ function applyCamera(
   }
 }
 
-/** The last multiplier of each mapper, for a later change of its texture. */
-const sampleDistanceMultipliers = new WeakMap<vtkVolumeMapper, number>();
-
 function applySampleDistanceMultiplier(
   mapper: vtkVolumeMapper,
   multiplier: number
@@ -581,7 +572,7 @@ function applySampleDistanceMultiplier(
     return;
   }
 
-  sampleDistanceMultipliers.set(mapper, multiplier);
+  setIdleSampleDistanceMultiplier(mapper, multiplier);
 
   const safeMultiplier = Number.isFinite(multiplier)
     ? Math.max(multiplier, 0.001)

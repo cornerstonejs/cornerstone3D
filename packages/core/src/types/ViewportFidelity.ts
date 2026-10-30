@@ -56,11 +56,12 @@ export type ViewportFidelityState = {
    * Per-axis reduction factors relative to the full volume, e.g. `[1, 1, 2]`.
    */
   magnitude?: Point3;
-  /** Why the data is reduced or incomplete. */
+  /** Why the data is reduced or incomplete. Undefined when not lossy. */
   cause?: ViewportFidelityCause;
   /**
    * True for a reduction that ends when the interaction or load ends;
-   * false for a standing reduction.
+   * false for a standing reduction anywhere in the view. Undefined when not
+   * lossy (`magnitude` too).
    */
   transient?: boolean;
   /**

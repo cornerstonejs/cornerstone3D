@@ -1,3 +1,4 @@
+import BlendModes from '../../../enums/BlendModes';
 import type { Point2, Point3, VoxelGrid } from '../../../types';
 import getSpacingInNormalDirection from '../../../utilities/getSpacingInNormalDirection';
 
@@ -9,19 +10,45 @@ export type FidelityDisplay = {
   viewPlaneNormal?: Point3;
   /** True for a 3D view, where a rotation can bring any axis into the plane. */
   volume3D?: boolean;
+  /** The slab thickness of an average slab, which averages along the normal. */
+  averageSlabThickness?: number;
 };
 
-type CameraViewportLike = {
+/** The slab accessors of a viewport, when it has them. */
+export type SlabViewportLike = {
+  getBlendMode?: () => unknown;
+  getSlabThickness?: () => number;
+};
+
+type CameraViewportLike = SlabViewportLike & {
   canvas?: { clientHeight?: number; height?: number };
   sHeight?: number;
   getCamera?: () =>
-    | { parallelScale?: number; viewPlaneNormal?: Point3 }
+    | {
+        parallelScale?: number;
+        parallelProjection?: boolean;
+        viewPlaneNormal?: Point3;
+      }
     | undefined;
 };
 
 /**
+ * The slab thickness of a viewport that averages its slab. A MIP or a MinIP
+ * slab picks one sample, so it gets undefined.
+ */
+export function averageSlabThicknessOf(
+  viewport: SlabViewportLike
+): number | undefined {
+  return viewport.getBlendMode?.() === BlendModes.AVERAGE_INTENSITY_BLEND
+    ? viewport.getSlabThickness?.()
+    : undefined;
+}
+
+/**
  * The display of a legacy viewport, from its camera: one device pixel is
- * `2 * parallelScale / canvas.height`. The canvas holds device pixels.
+ * `2 * parallelScale / canvas.height`. The canvas holds device pixels. A
+ * perspective camera has no single pixel size, so it gets no display and the
+ * magnification rule does not apply.
  */
 export function fidelityDisplayOfCamera(
   viewport: CameraViewportLike,
@@ -34,7 +61,11 @@ export function fidelityDisplayOfCamera(
     viewport.canvas?.clientHeight ||
     viewport.sHeight;
 
-  if (!(parallelScale > 0) || !(height > 0)) {
+  if (
+    !(parallelScale > 0) ||
+    !(height > 0) ||
+    camera.parallelProjection === false
+  ) {
     return undefined;
   }
 
@@ -42,6 +73,7 @@ export function fidelityDisplayOfCamera(
     pixelSpacing: (2 * parallelScale) / height,
     viewPlaneNormal: camera.viewPlaneNormal,
     volume3D,
+    averageSlabThickness: averageSlabThicknessOf(viewport),
   };
 }
 
@@ -69,7 +101,8 @@ export function pixelSpacingOfCanvasToWorld(
  *
  * - an axis in the view plane gets the pixel size `p`;
  * - in a slice view, the axis normal to the view plane gets the slice spacing
- *   `S` of the source volume, so a reduction on that axis stays visible;
+ *   `S` of the source volume, so a reduction on that axis stays visible; an
+ *   average slab gets `max(S, slab thickness)`;
  * - an oblique axis gets `min(p / sqrt(1 - c²), S / c)`, with
  *   `c = |axis · normal|`: the finer of the two samplings along that axis;
  * - in a 3D view, every axis gets `p`.
@@ -84,7 +117,12 @@ export function displaySpacingForGrid(
 ): Point3 {
   const { pixelSpacing: pixel, viewPlaneNormal: normal, volume3D } = display;
   const slice =
-    !volume3D && normal ? getSpacingInNormalDirection(sourceGrid, normal) : 0;
+    !volume3D && normal
+      ? Math.max(
+          getSpacingInNormalDirection(sourceGrid, normal),
+          display.averageSlabThickness || 0
+        )
+      : 0;
   const spacing = [pixel, pixel, pixel] as Point3;
 
   for (let axis = 0; axis < 3; axis++) {

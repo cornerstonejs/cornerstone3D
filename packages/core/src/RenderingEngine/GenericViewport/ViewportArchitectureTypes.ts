@@ -3,6 +3,7 @@ import type {
   ICamera,
   Point2,
   Point3,
+  ViewportFidelityCause,
   VoxelGrid,
   VoxelQualityRecord,
 } from '../../types';
@@ -80,12 +81,25 @@ export type RenderingFidelity = {
   voxelQuality?: VoxelQualityRecord;
   /** The full-resolution grid of the source volume. */
   fullGrid?: VoxelGrid;
-  /** Sample distance / idle baseline. 1 for a path with no ray sampling. */
+  /**
+   * Sample distance / distance at a multiplier of 1. 1 for a path with no ray
+   * sampling.
+   */
   sampleDistanceLod?: number;
+  /** The same ratio when no interaction runs (a standing multiplier). */
+  sampleDistanceIdle?: number;
   /** True while the path shows an older or coarser sample during interaction. */
   interactiveReduction?: boolean;
   /** The quality of the stack image that the render drew. */
   imageQualityStatus?: ImageQualityStatus;
+  /**
+   * True while a volume load continues, so a later delivery replaces the
+   * data. A generic stack path leaves it unset: it does not redraw a later
+   * stage, so the image that it draws is final for that view.
+   */
+  qualityPending?: boolean;
+  /** Why the drawn grid is coarser than the volume, from the strategy. */
+  reductionCause?: ViewportFidelityCause;
   /** True for an overlay that the fidelity ignores, e.g. a labelmap. */
   excludeFromFidelity?: boolean;
   /**

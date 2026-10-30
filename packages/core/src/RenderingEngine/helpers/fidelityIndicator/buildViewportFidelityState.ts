@@ -12,6 +12,7 @@ import {
   isReduced,
   lineHasData,
   lineKind,
+  standingSampleRatioOf,
   svgStateOf,
 } from './fidelityIndicatorState';
 
@@ -35,20 +36,16 @@ export function buildViewportFidelityState(
 
   const shownState = svgStateOf(lines);
 
-  const { record, reductionFactors, sampleDistanceLod, imageQualityStatus } =
-    line;
+  const { record, reductionFactors, imageQualityStatus } = line;
   const shownSpacing = line.displaySpacing ?? displaySpacing;
   const spatiallyReduced = isReduced(reductionFactors);
-  // A load counts only while replicated, sub-resolution or lossy data shows
-  // in place of data that has not arrived (FIDELITY-STATE-2).
-  const loading = record
-    ? record.missing > 0 &&
-      (record.lowest ?? ImageQualityStatus.FULL_RESOLUTION) <
-        ImageQualityStatus.FULL_RESOLUTION
-    : imageQualityStatus !== undefined &&
-      imageQualityStatus < ImageQualityStatus.SUBRESOLUTION;
-  const lod =
-    isInteractiveLod(sampleDistanceLod) || !!line.interactiveReduction;
+  const kind = lineKind(line);
+  // A load counts only while reduced data shows in place of data that a later
+  // delivery replaces (FIDELITY-STATE-2).
+  const loading = kind === 'loading';
+  const lod = kind === 'lod';
+  // A lossless view has no reduction to explain (FIDELITY-EVENT-8).
+  const lossy = isLossyShownState(shownState);
 
   const state: ViewportFidelityState = {
     dataResolution: record
@@ -62,18 +59,23 @@ export function buildViewportFidelityState(
       : undefined,
     reductionKind: record?.reduction,
     reductionSource: record?.source,
-    magnitude: [...reductionFactors] as Point3,
-    cause: causeOf({
-      record,
-      imageQualityStatus,
-      spatiallyReduced,
-      loading,
-      lod,
-    }),
-    transient: loading || lod,
+    magnitude: lossy ? ([...reductionFactors] as Point3) : undefined,
+    cause: lossy
+      ? causeOf({
+          record,
+          imageQualityStatus,
+          reductionCause: line.reductionCause,
+          spatiallyReduced,
+          standingSample: isInteractiveLod(standingSampleRatioOf(line)),
+          loading,
+          lod,
+        })
+      : undefined,
+    // The worst line decides: a standing reduction anywhere is not transient.
+    transient: lossy ? loading || lod : undefined,
     progressive: progressiveOf(line),
     shownState,
-    lossy: isLossyShownState(shownState),
+    lossy,
   };
 
   return state;
@@ -129,7 +131,7 @@ function worstLineOf(lines: FidelityLine[]): FidelityLine | undefined {
     }
   }
 
-  return worst ?? lines.find((line) => line.record) ?? lines[0];
+  return worst;
 }
 
 function progressiveOf(
@@ -164,11 +166,21 @@ function progressiveOf(
 function causeOf(args: {
   record: FidelityLine['record'];
   imageQualityStatus?: ImageQualityStatus;
+  reductionCause?: ViewportFidelityCause;
   spatiallyReduced: boolean;
+  standingSample: boolean;
   loading: boolean;
   lod: boolean;
 }): ViewportFidelityCause | undefined {
-  const { record, imageQualityStatus, spatiallyReduced, loading, lod } = args;
+  const {
+    record,
+    imageQualityStatus,
+    reductionCause,
+    spatiallyReduced,
+    standingSample,
+    loading,
+    lod,
+  } = args;
 
   if (loading) {
     return 'incompleteLoad';
@@ -178,9 +190,13 @@ function causeOf(args: {
     return 'performanceTarget';
   }
 
-  // A decimation is a spatial reduction, not a lossy decode.
-  if (spatiallyReduced || (record && isAliasingReduction(record.reduction))) {
-    return 'deviceTextureLimit';
+  // A spatial reduction takes the cause that its strategy states, and a
+  // decimation is not a lossy decode.
+  const spatial =
+    spatiallyReduced || (record && isAliasingReduction(record.reduction));
+
+  if (spatial && reductionCause) {
+    return reductionCause;
   }
 
   const delivered = record ? record.lowest : imageQualityStatus;
@@ -193,7 +209,8 @@ function causeOf(args: {
     return 'lossyDecode';
   }
 
-  return undefined;
+  // A standing sample distance multiplier is a performance choice.
+  return standingSample && !spatial ? 'performanceTarget' : undefined;
 }
 
 /**
@@ -201,7 +218,8 @@ function causeOf(args: {
  *
  * The key leaves out `displayResolution`, because it changes on each zoom,
  * pan and resize. It holds `shownState` and `lossy`, so a zoom that changes a
- * box-average verdict still changes the key.
+ * box-average verdict still changes the key. It holds the load progress only
+ * while the view is lossy, so an ordinary load fires no event per frame.
  */
 export function viewportFidelityStateKey(state: ViewportFidelityState): string {
   return JSON.stringify({
@@ -213,6 +231,6 @@ export function viewportFidelityStateKey(state: ViewportFidelityState): string {
     magnitude: state.magnitude,
     cause: state.cause,
     transient: state.transient,
-    progressive: state.progressive,
+    progressive: state.lossy ? state.progressive : undefined,
   });
 }

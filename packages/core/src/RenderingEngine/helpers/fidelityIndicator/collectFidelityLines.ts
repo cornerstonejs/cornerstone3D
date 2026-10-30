@@ -5,6 +5,7 @@ import type {
   ActorEntry,
   IImage,
   Point3,
+  ViewportFidelityCause,
   VoxelGrid,
   VoxelQualityRecord,
   VoxelStatistic,
@@ -13,7 +14,10 @@ import {
   compareVoxelQuality,
   voxelGridsEqual,
 } from '../../../utilities/voxelGrid';
-import { sampleDistanceOf } from '../createVolumeMapper';
+import { sampleDistanceRatiosOf } from '../createVolumeMapper';
+import { reductionCauseOf } from '../volumeRenderStrategy';
+import { isVolumeLoading } from '../../GenericViewport/renderingFidelity';
+import { gpuSettingsForRender } from '../../../utilities/gpuSettingsPresets';
 import {
   type FidelityDisplay,
   displaySpacingForGrid,
@@ -62,8 +66,11 @@ export type BindingFidelitySource = {
   record?: VoxelQualityRecord;
   fullGrid?: VoxelGrid;
   sampleDistanceLod?: number;
+  sampleDistanceIdle?: number;
   interactiveReduction?: boolean;
   imageQualityStatus?: ImageQualityStatus;
+  qualityPending?: boolean;
+  reductionCause?: ViewportFidelityCause;
   label?: string;
   skip?: boolean;
 };
@@ -87,7 +94,10 @@ export function fidelityLinesFromBindings(
     if (!source.record) {
       if (source.imageQualityStatus !== undefined) {
         lines.push({
-          ...fidelityLineFromImageQuality(source.imageQualityStatus),
+          ...fidelityLineFromImageQuality(
+            source.imageQualityStatus,
+            source.qualityPending
+          ),
           label: source.label ?? 'Image',
           interactiveReduction: source.interactiveReduction,
         });
@@ -116,7 +126,10 @@ export function fidelityLinesFromBindings(
       reductionFactors,
       fullResolution,
       sampleDistanceLod: source.sampleDistanceLod ?? 1,
+      sampleDistanceIdle: source.sampleDistanceIdle,
       interactiveReduction: source.interactiveReduction,
+      qualityPending: source.qualityPending,
+      reductionCause: source.reductionCause,
     });
   }
 
@@ -137,7 +150,8 @@ export function fidelityLinesFromVolumeActors(
     return [];
   }
 
-  const display = fidelityDisplayOfCamera(viewport, isVolume3D(viewport));
+  const volume3D = isVolume3D(viewport);
+  const display = fidelityDisplayOfCamera(viewport, volume3D);
   const lines: FidelityLine[] = [];
   const seen = new Set<string>();
 
@@ -174,7 +188,12 @@ export function fidelityLinesFromVolumeActors(
     }
 
     const reductionFactors = reductionFactorsOf(grid, fullGrid);
+    const fullResolution = !isReduced(reductionFactors);
     const record = cached.record;
+    // A slice samples no ray, as on the generic slice path (FIDELITY-RECORD-6).
+    const sampleDistance = volume3D
+      ? sampleDistanceRatiosOf(mapper)
+      : { current: 1, idle: 1 };
     const displaySpacing = display
       ? displaySpacingForGrid(display, grid, fullGrid)
       : undefined;
@@ -190,8 +209,13 @@ export function fidelityLinesFromVolumeActors(
       displaySpacing,
       reductionFactors,
       // Spacing only — dims/origin differences must not sticky-flag lossy.
-      fullResolution: !isReduced(reductionFactors),
-      sampleDistanceLod: sampleDistanceLodOf(mapper),
+      fullResolution,
+      sampleDistanceLod: sampleDistance.current,
+      sampleDistanceIdle: sampleDistance.idle,
+      qualityPending: isVolumeLoading(volume),
+      reductionCause: fullResolution
+        ? undefined
+        : reductionCauseOf(volume, gpuSettingsForRender()),
     });
   }
 
@@ -207,11 +231,13 @@ function isVolume3D(viewport: VolumeViewportLike): boolean {
 
 /** One fidelity line for a stack image of the given quality. */
 function fidelityLineFromImageQuality(
-  imageQualityStatus: ImageQualityStatus
+  imageQualityStatus: ImageQualityStatus,
+  qualityPending?: boolean
 ): FidelityLine {
   return {
     label: 'Image',
     imageQualityStatus,
+    qualityPending,
     reductionFactors: [1, 1, 1] as Point3,
     fullResolution: imageQualityStatus === ImageQualityStatus.FULL_RESOLUTION,
     sampleDistanceLod: 1,
@@ -229,7 +255,12 @@ export function fidelityLineFromStackImage(
     return [];
   }
 
-  return [fidelityLineFromImageQuality(imageQualityStatusOf(image))];
+  return [
+    fidelityLineFromImageQuality(
+      imageQualityStatusOf(image),
+      image.imageQualityPending
+    ),
+  ];
 }
 
 /** The quality of a stack image; an image with no status is full resolution. */
@@ -243,36 +274,4 @@ export function imageQualityStatusOf(
   return image
     ? (image.imageQualityStatus ?? ImageQualityStatus.FULL_RESOLUTION)
     : undefined;
-}
-
-/**
- * How much coarser the ray sample distance is than idle. 1 when idle or when
- * the mapper has no sample distance (MPR).
- */
-export function sampleDistanceLodOf(
-  mapper: VolumeMapperLike | undefined
-): number {
-  if (!mapper?.getSampleDistance) {
-    return 1;
-  }
-
-  const current = mapper.getSampleDistance();
-  const imageData = mapper.getInputData?.();
-
-  if (!imageData || !(current > 0)) {
-    return 1;
-  }
-
-  const texture = mapper.getScalarTexture?.();
-  const baseline = sampleDistanceOf(
-    imageData as Parameters<typeof sampleDistanceOf>[0],
-    texture,
-    1
-  );
-
-  if (!(baseline > 0)) {
-    return 1;
-  }
-
-  return current / baseline;
 }
