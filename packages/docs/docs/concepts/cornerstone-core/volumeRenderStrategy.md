@@ -396,6 +396,9 @@ open issue tracks the support, to resolve after the first merge.
 `[1, 1, 1]`. The reduced fill and its upload have no component stride. An open issue tracks the
 support, to resolve after the first merge.
 
+For both cases, the mapper does not refuse the allocation when the texture is larger than the GPU
+settings (`gridFitsGpuSettings`). It tries the upload, as in 4.x.
+
 ## What a new render type defines
 
 A new render type supplies two things, and it changes no existing file:

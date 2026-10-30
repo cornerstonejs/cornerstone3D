@@ -8,6 +8,7 @@ import { getTransferFunctionsHash } from '@kitware/vtk.js/Rendering/OpenGL/Rende
 import { Representation } from '@kitware/vtk.js/Rendering/Core/Property/Constants';
 import { BlendMode } from '@kitware/vtk.js/Rendering/Core/VolumeMapper/Constants';
 import { getCanUseNorm16Texture } from '../../init';
+import cache from '../../cache/cache';
 import canUseFloatOpacityTexture from './canUseFloatOpacityTexture';
 import { coreLog } from '../../utilities/logger';
 import { volumeTextureBytes } from '../../utilities/getBufferConfiguration';
@@ -31,16 +32,26 @@ const log = coreLog.getLogger(
  * every texture fits, so the mapper allocates as it did before the GPU
  * settings existed.
  *
+ * A dynamic (4D) volume and a texture of more than one component also always
+ * fit: the strategy does not reduce them (VRS-I-13, VRS-I-14), so the mapper
+ * tries the upload as in 4.x instead of keeping the previous image.
+ *
  * @param {number[]} dims - the number of voxels on each axis
  * @param {string} dataType - the type of the buffer of the texture
  * @param {number} numberOfComponents - the number of components of one voxel
- * @param {{volumeId?: string}} context - what the mapper knows, for the message
+ * @param {{volumeId?: string, dynamic?: boolean}} context - what the mapper
+ *   knows about the volume
  * @returns {boolean} true when the GPU settings can hold the texture
  */
-function gridFitsGpuSettings(dims, dataType, numberOfComponents, context) {
+export function gridFitsGpuSettings(
+  dims,
+  dataType,
+  numberOfComponents,
+  context
+) {
   const gpuSettings = gpuSettingsForRender();
 
-  if (!gpuSettings) {
+  if (!gpuSettings || numberOfComponents > 1 || context?.dynamic) {
     return true;
   }
 
@@ -459,6 +470,9 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
             if (
               !gridFitsGpuSettings(dims, dataType, textureNumberOfComponents, {
                 volumeId: currentTexture.getVolumeId?.(),
+                dynamic: cache
+                  .getVolume(currentTexture.getVolumeId?.())
+                  ?.isDynamicVolume?.(),
               })
             ) {
               currentTexture.deactivate();
