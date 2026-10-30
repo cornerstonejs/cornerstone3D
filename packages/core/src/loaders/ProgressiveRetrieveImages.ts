@@ -10,6 +10,7 @@ import type {
 import singleRetrieveStages from './configuration/singleRetrieve';
 import sequentialRetrieveStages from './configuration/sequentialRetrieve';
 import interleavedRetrieveStages from './configuration/interleavedRetrieve';
+import coarseInterleavedRetrieveStages from './configuration/coarseInterleavedRetrieve';
 import { loadAndCacheImage } from './imageLoader';
 import triggerEvent from '../utilities/triggerEvent';
 import ProgressiveIterator from '../utilities/ProgressiveIterator';
@@ -20,12 +21,14 @@ import cache from '../cache/cache';
 import eventTarget from '../eventTarget';
 import { fillNearbyFrames } from './fillNearbyFrames';
 import { coreLog } from '../utilities/logger';
+import { getLossyDownsampling } from '../init';
 
 const log = coreLog.getLogger('loaders', 'ProgressiveRetrieveImages');
 
 export {
   sequentialRetrieveStages,
   interleavedRetrieveStages,
+  coarseInterleavedRetrieveStages,
   singleRetrieveStages,
 };
 
@@ -104,6 +107,11 @@ export class ProgressiveRetrieveImages
 
   public static interleavedRetrieveStages = {
     stages: interleavedRetrieveStages,
+  };
+
+  /** Interleaved, with coarse stages that fill the whole volume first. */
+  public static coarseInterleavedRetrieveStages = {
+    stages: coarseInterleavedRetrieveStages,
   };
 
   public static singleRetrieveStages = {
@@ -249,7 +257,12 @@ class ProgressiveRetrieveImagesInstance {
     };
     const priority = stage.priority ?? -5;
     const requestType = stage.requestType || RequestType.Interaction;
-    const additionalDetails = { imageId };
+    // The volume id lets the volume cancel its queued requests, and keeps them
+    // apart from a stack prefetch of the same images.
+    const additionalDetails = {
+      imageId,
+      volumeId: (this.listener as { volumeId?: string }).volumeId,
+    };
 
     imageLoadPoolManager.addRequest(
       this.sendRequest.bind(this, request, options),
@@ -346,7 +359,9 @@ class ProgressiveRetrieveImagesInstance {
    */
   protected findNearbyRequests(index: number, stage): NearbyRequest[] {
     const nearby = new Array<NearbyRequest>();
-    if (!stage.nearbyFrames) {
+    // A nearby fill shows a copy of another frame, which is a lossy
+    // interleaved downsampling.
+    if (!stage.nearbyFrames || !getLossyDownsampling().interleavedLoading) {
       return nearby;
     }
     for (const nearbyItem of stage.nearbyFrames) {

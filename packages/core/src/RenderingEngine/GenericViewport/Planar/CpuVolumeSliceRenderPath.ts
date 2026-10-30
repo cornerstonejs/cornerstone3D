@@ -10,7 +10,7 @@ import { createCanvas } from '../../helpers/getOrCreateCanvas';
 import drawImageSync from '../../helpers/cpuFallback/drawImageSync';
 import setToPixelCoordinateSystem from '../../helpers/cpuFallback/rendering/setToPixelCoordinateSystem';
 import { getDefaultVolumeVOIRange } from '../../helpers/setDefaultVolumeVOI';
-import { getConfiguration } from '../../../init';
+import { getConfiguration, getLossyDownsampling } from '../../../init';
 import uuidv4 from '../../../utilities/uuidv4';
 import type {
   DataAddOptions,
@@ -405,7 +405,10 @@ export class CpuVolumeSliceRenderPath
           height: ctx.cpu.canvas.height,
           camera: activeSourceICamera,
           dataPresentation: runtime.dataPresentation,
-          deferViewportResample: useViewportSamplingForLinear,
+          // A deferred resample shows the previous sample while the camera
+          // moves, which is an interactive downsampling.
+          deferViewportResample:
+            useViewportSamplingForLinear && getLossyDownsampling().interactive,
         });
     const shouldResample = resampleDecision === 'resample';
 

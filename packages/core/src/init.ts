@@ -1,7 +1,7 @@
 import { getRenderingEngines } from './RenderingEngine/getRenderingEngine';
 let csRenderInitialized = false;
 import deepMerge from './utilities/deepMerge';
-import type { Cornerstone3DConfig } from './types';
+import type { Cornerstone3DConfig, LossyDownsampling } from './types';
 import CentralizedWebWorkerManager from './webWorkerManager/webWorkerManager';
 import { getRenderingCapabilities } from './utilities/renderingCapabilities';
 import triggerEvent from './utilities/triggerEvent';
@@ -58,6 +58,11 @@ const defaultConfig: Cornerstone3DConfig = {
       /** Multiplier for the calculated sample distance */
       sampleDistanceMultiplier: 1,
     },
+    lossyDownsampling: {
+      final: false,
+      interactive: true,
+      interleavedLoading: true,
+    },
   },
 
   segmentation: {
@@ -113,11 +118,11 @@ function isIOS() {
 
 /**
  * Initialize the cornerstone-core. This function runs the GPU capability
- * detection (WebGL availability, texture-format probes -- cached across page
+ * detection (WebGL2 availability, texture-format probes -- cached across page
  * loads, see `getRenderingCapabilities`) which the 'auto' render backend and
  * texture-format decisions resolve against.
  *
- * If no WebGL context is available, rendering falls back to the CPU for
+ * If no WebGL2 context is available, rendering falls back to the CPU for
  * supported operations.
  *
  * @param configuration - A configuration object
@@ -324,14 +329,13 @@ function setPreferSizeOverAccuracy(status: boolean): void {
  * Whether float (32-bit) textures can be linearly sampled, based on the
  * probed capability profile (OES_texture_float_linear draw + readback).
  * Historically this was a user-agent iOS check; environments where the probe
- * cannot run (no WebGL context, e.g. unit tests, or WebGL1-only browsers --
- * the texture probes require WebGL2) keep the legacy user-agent behavior so
- * data-preparation code paths stay deterministic there.
+ * cannot run (no WebGL2 context, e.g. unit tests) keep the legacy user-agent
+ * behavior so data-preparation code paths stay deterministic there.
  */
 function canRenderFloatTextures(): boolean {
   const capabilities = getRenderingCapabilities();
 
-  if (capabilities.webgl2) {
+  if (capabilities.webgl) {
     return capabilities.floatLinear;
   }
 
@@ -452,6 +456,30 @@ function getWebWorkerManager() {
   return webWorkerManager;
 }
 
+/**
+ * The lossy downsampling that the viewer may use, with the defaults filled in.
+ * See `rendering.lossyDownsampling` of the configuration.
+ */
+function getLossyDownsampling(): Required<LossyDownsampling> {
+  return {
+    ...(defaultConfig.rendering
+      .lossyDownsampling as Required<LossyDownsampling>),
+    ...config.rendering?.lossyDownsampling,
+  };
+}
+
+/**
+ * Turns kinds of lossy downsampling on or off. A kind that `change` omits keeps
+ * its value. A viewport that already holds a texture keeps it until its next
+ * provision, so an application states this before it opens a viewport.
+ */
+function setLossyDownsampling(change: LossyDownsampling): void {
+  config.rendering = {
+    ...config.rendering,
+    lossyDownsampling: { ...getLossyDownsampling(), ...change },
+  };
+}
+
 async function peerImport(moduleId: string) {
   return config.peerImport(moduleId);
 }
@@ -470,6 +498,8 @@ export {
   resolveAutoRenderBackend,
   getConfiguration,
   setConfiguration,
+  getLossyDownsampling,
+  setLossyDownsampling,
   getWebWorkerManager,
   canRenderFloatTextures,
   peerImport,
