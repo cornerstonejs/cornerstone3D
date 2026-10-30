@@ -4,6 +4,7 @@ import {
   lineKind,
   isInteractiveLod,
   isReduced,
+  formatFactors,
   reductionFactorsOf,
 } from '../src/RenderingEngine/helpers/fidelityIndicator/fidelityIndicatorState';
 import { fidelityLinesFromBindings } from '../src/RenderingEngine/helpers/fidelityIndicator/collectFidelityLines';
@@ -429,6 +430,11 @@ describe('fidelityIndicatorState', () => {
       expect(isReduced([1, 1, 1.1])).toBe(true);
       expect(isInteractiveLod(1)).toBe(false);
       expect(isInteractiveLod(1.02)).toBe(true);
+    });
+
+    it('prints a fractional reduction factor with 2 decimals', () => {
+      expect(formatFactors([2, 2, 10])).toBe('2×2×10');
+      expect(formatFactors([1, 1, 2464 / 2048])).toBe('1×1×1.20');
     });
 
     it('does not treat equal spacing with different origin or dims as reduced', () => {

@@ -13,6 +13,7 @@ import {
   defaultVolumeStrategyProvider,
   provisionFullResolutionStrategy,
   provisionReducedResolutionStrategy,
+  reducedStrategyName,
   selectFirstReadyStrategy,
 } from '../src/RenderingEngine/helpers/volumeRenderStrategy';
 import { resolveVolumeTexture } from '../src/RenderingEngine/helpers/resolveVolumeTexture';
@@ -182,6 +183,19 @@ describe('the default provider builds the strategies', () => {
     expect(strategies[0].bindings()[0].texture.getGrid().dimensions).toEqual([
       256, 256, 8,
     ]);
+  });
+
+  it('rounds the factors of a set name to 4 decimals, and keeps them distinct', () => {
+    expect(reducedStrategyName([1, 1, 2464 / 2048])).toBe(
+      'reduced-1x1x1.2031/full-extent/average'
+    );
+
+    // The reduced edges M and M + 1 of one source edge at the 10000 bound.
+    const names = new Set(
+      [10000, 10001].map((edge) => reducedStrategyName([1, 1, 10002 / edge]))
+    );
+
+    expect(names.size).toBe(2);
   });
 
   it('renders as in 4.x with final downsampling off', () => {

@@ -521,6 +521,13 @@ number, and a voxel of an RGB volume is an array of numbers. The reduction build
 for each component, and the components are independent, so a definition states the arithmetic once
 and it serves both cases.
 
+**An accumulator gets the weight of each voxel.** The reduction calls `add(value, weight)`. The
+weight is the part of the source voxel that lies inside the box, from 0 to 1. A whole factor gives
+the weight 1 to every voxel. A fractional factor `N / M` cuts the voxels at the two ends of a box,
+and those voxels get a weight below 1. An accumulator that ignores the weight counts a cut voxel as
+a whole voxel, so a mean or a count gives too much influence to the voxels at the edges of a box. A
+minimum or a maximum, as in the example above, can ignore the weight.
+
 **A statistic can also register fast paths.** The three fields are optional:
 
 | Field            | What it does                                                                                                             | Without it                           |

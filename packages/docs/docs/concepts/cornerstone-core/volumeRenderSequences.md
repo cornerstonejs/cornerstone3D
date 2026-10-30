@@ -27,11 +27,11 @@ The six sequences are:
 A CT series of 512 × 512 × 2464 voxels gives these results. The edge limit decides each factor here,
 because the memory of each preset is larger than the reduced texture.
 
-| Preset              | `maxTextureEdge` | Factors (i, j, k) | Texture grid     | Texture set                                |
-| ------------------- | ---------------- | ----------------- | ---------------- | ------------------------------------------ |
-| `high-texture-4096` | 4096             | 1, 1, 1           | 512 × 512 × 2464 | `full-resolution/full-extent`              |
-| `high`, `medium`    | 2048             | 1, 1, 1.203125    | 512 × 512 × 2048 | `reduced-1x1x1.203125/full-extent/average` |
-| `low`, `low-tablet` | 256              | 2, 2, 9.625       | 256 × 256 × 256  | `reduced-2x2x9.625/full-extent/average`    |
+| Preset              | `maxTextureEdge` | Factors (i, j, k) | Texture grid     | Texture set                              |
+| ------------------- | ---------------- | ----------------- | ---------------- | ---------------------------------------- |
+| `high-texture-4096` | 4096             | 1, 1, 1           | 512 × 512 × 2464 | `full-resolution/full-extent`            |
+| `high`, `medium`    | 2048             | 1, 1, 1.203125    | 512 × 512 × 2048 | `reduced-1x1x1.2031/full-extent/average` |
+| `low`, `low-tablet` | 256              | 2, 2, 9.625       | 256 × 256 × 256  | `reduced-2x2x9.625/full-extent/average`  |
 
 Under `auto`, the result depends on the device. A device with a `MAX_3D_TEXTURE_SIZE` of 2048 gives
 the row of `high`. A device that passes the probe at 2464 gives the row of `high-texture-4096`.
@@ -103,7 +103,7 @@ sequenceDiagram
     else a factor is more than 1
         Prov->>Grid: deriveBoxAverageGrid(voxelGrid, { factors })
         Note over Prov: The statistic is volume.reductionStatistic:<br/>average for an image, foregroundMajority for a labelmap
-        Prov->>Vol: provisionTextureSet('reduced-1x1x1.203125/full-extent/average')
+        Prov->>Vol: provisionTextureSet('reduced-1x1x1.2031/full-extent/average')
     end
     Vol->>Store: provision({ volumeId, grids, coverage })
     alt the store already holds a set of this name
@@ -303,7 +303,7 @@ sequenceDiagram
     else a legacy volume viewport
         Plan->>VP: addVolumesToViewports([labelmap volumeId])
         VP->>RVT: createVolumeActor() then resolveVolumeTexture(labelmap volume)
-        Note over RVT: Sequence 2, with the grid and the voxel width of the labelmap.<br/>The same dimensions give the same factors as the CT,<br/>for example the set reduced-1x1x1.203125/full-extent/foregroundMajority.
+        Note over RVT: Sequence 2, with the grid and the voxel width of the labelmap.<br/>The same dimensions give the same factors as the CT,<br/>for example the set reduced-1x1x1.2031/full-extent/foregroundMajority.
     end
     App->>LV: a brush tool writes voxels through volume.voxelManager
     App-->>Upd: SEGMENTATION_DATA_MODIFIED, onLabelmapSegmentationDataModified
