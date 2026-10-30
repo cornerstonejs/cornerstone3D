@@ -128,7 +128,9 @@ describe('buildViewportFidelityState (FIDELITY-EVENT-5)', () => {
   });
 
   it('marks interactive LOD as performanceTarget and transient', () => {
-    const state = buildViewportFidelityState([line({ sampleDistanceLod: 2 })]);
+    const state = buildViewportFidelityState([
+      line({ sampleDistanceLod: 2, sampleDistanceIdle: 1 }),
+    ]);
 
     expect(state.cause).toBe('performanceTarget');
     expect(state.transient).toBe(true);

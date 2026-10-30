@@ -7,12 +7,12 @@ import type {
 import { isAliasingReduction } from '../../../utilities/voxelGrid';
 import {
   type FidelityLine,
-  dataKindOf,
   fidelityStateRank,
   isInteractiveLod,
   isReduced,
   lineHasData,
   lineKind,
+  standingSampleRatioOf,
   svgStateOf,
 } from './fidelityIndicatorState';
 
@@ -36,15 +36,14 @@ export function buildViewportFidelityState(
 
   const shownState = svgStateOf(lines);
 
-  const { record, reductionFactors, sampleDistanceLod, imageQualityStatus } =
-    line;
+  const { record, reductionFactors, imageQualityStatus } = line;
   const shownSpacing = line.displaySpacing ?? displaySpacing;
   const spatiallyReduced = isReduced(reductionFactors);
+  const kind = lineKind(line);
   // A load counts only while reduced data shows in place of data that a later
   // delivery replaces (FIDELITY-STATE-2).
-  const loading = dataKindOf(line) === 'loading';
-  const lod =
-    isInteractiveLod(sampleDistanceLod) || !!line.interactiveReduction;
+  const loading = kind === 'loading';
+  const lod = kind === 'lod';
   // A lossless view has no reduction to explain (FIDELITY-EVENT-8).
   const lossy = isLossyShownState(shownState);
 
@@ -67,10 +66,12 @@ export function buildViewportFidelityState(
           imageQualityStatus,
           reductionCause: line.reductionCause,
           spatiallyReduced,
+          standingSample: isInteractiveLod(standingSampleRatioOf(line)),
           loading,
           lod,
         })
       : undefined,
+    // The worst line decides: a standing reduction anywhere is not transient.
     transient: lossy ? loading || lod : undefined,
     progressive: progressiveOf(line),
     shownState,
@@ -167,6 +168,7 @@ function causeOf(args: {
   imageQualityStatus?: ImageQualityStatus;
   reductionCause?: ViewportFidelityCause;
   spatiallyReduced: boolean;
+  standingSample: boolean;
   loading: boolean;
   lod: boolean;
 }): ViewportFidelityCause | undefined {
@@ -175,6 +177,7 @@ function causeOf(args: {
     imageQualityStatus,
     reductionCause,
     spatiallyReduced,
+    standingSample,
     loading,
     lod,
   } = args;
@@ -189,7 +192,10 @@ function causeOf(args: {
 
   // A spatial reduction takes the cause that its strategy states, and a
   // decimation is not a lossy decode.
-  if (spatiallyReduced || (record && isAliasingReduction(record.reduction))) {
+  const spatial =
+    spatiallyReduced || (record && isAliasingReduction(record.reduction));
+
+  if (spatial && reductionCause) {
     return reductionCause;
   }
 
@@ -203,7 +209,8 @@ function causeOf(args: {
     return 'lossyDecode';
   }
 
-  return undefined;
+  // A standing sample distance multiplier is a performance choice.
+  return standingSample && !spatial ? 'performanceTarget' : undefined;
 }
 
 /**

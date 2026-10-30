@@ -343,6 +343,7 @@ abstract class GenericViewport<
         record: rendering.voxelQuality,
         fullGrid: rendering.fullGrid,
         sampleDistanceLod: rendering.sampleDistanceLod,
+        sampleDistanceIdle: rendering.sampleDistanceIdle,
         interactiveReduction: rendering.interactiveReduction,
         imageQualityStatus: rendering.imageQualityStatus,
         qualityPending: rendering.qualityPending,

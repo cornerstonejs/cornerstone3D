@@ -81,8 +81,13 @@ export type RenderingFidelity = {
   voxelQuality?: VoxelQualityRecord;
   /** The full-resolution grid of the source volume. */
   fullGrid?: VoxelGrid;
-  /** Sample distance / idle baseline. 1 for a path with no ray sampling. */
+  /**
+   * Sample distance / distance at a multiplier of 1. 1 for a path with no ray
+   * sampling.
+   */
   sampleDistanceLod?: number;
+  /** The same ratio when no interaction runs (a standing multiplier). */
+  sampleDistanceIdle?: number;
   /** True while the path shows an older or coarser sample during interaction. */
   interactiveReduction?: boolean;
   /** The quality of the stack image that the render drew. */

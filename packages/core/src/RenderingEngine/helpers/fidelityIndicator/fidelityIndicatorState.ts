@@ -51,10 +51,16 @@ export type FidelityLine = {
   /** True when drawn spacing matches the full volume (dims/origin ignored). */
   fullResolution: boolean;
   /**
-   * Current mapper sample distance / idle baseline. 1 when idle; ~2 during
-   * TrackballRotateTool drag (rotateSampleDistanceFactor).
+   * Current mapper sample distance / the distance at a multiplier of 1
+   * (FIDELITY-RECORD-6). ~2 during a TrackballRotateTool drag.
    */
   sampleDistanceLod: number;
+  /**
+   * The same ratio when no interaction runs: a standing multiplier, such as a
+   * `sampleDistanceMultiplier` of 2. A line that leaves it out counts all of
+   * `sampleDistanceLod` as standing, so it promises no recovery.
+   */
+  sampleDistanceIdle?: number;
   /**
    * True while the render path shows an older or coarser sample during an
    * interaction (a deferred CPU resample). It gives `lod`, as a raised
@@ -79,15 +85,18 @@ export function lineHasData(line: FidelityLine): boolean {
 
 export type SvgFidelityState = 'loading' | 'done' | 'lossy' | 'lod';
 
-/** The states from the most urgent to the least (FIDELITY-STATE-7). */
+/**
+ * The states from the most urgent to the least (FIDELITY-STATE-7). A standing
+ * reduction (`lossy`) comes first, so a transient state never hides it.
+ */
 export const FIDELITY_STATE_ORDER: readonly SvgFidelityState[] = [
+  'lossy',
   'loading',
   'lod',
-  'lossy',
   'done',
 ];
 
-/** A rank that grows with urgency: `loading` is the highest. */
+/** A rank that grows with urgency: `lossy` is the highest. */
 export function fidelityStateRank(state: SvgFidelityState): number {
   return FIDELITY_STATE_ORDER.length - FIDELITY_STATE_ORDER.indexOf(state);
 }
@@ -123,31 +132,34 @@ export function svgStateOf(lines: FidelityLine[]): SvgFidelityState | 'hidden' {
 export type FidelityDataKind = 'loading' | 'decimated' | 'reduced' | 'full';
 
 /**
- * Classifies the data of one line (FIDELITY-STATE-2, FIDELITY-STATE-6):
+ * Classifies the data of one line (FIDELITY-STATE-2, FIDELITY-STATE-6). A
+ * standing reduction comes first, because waiting does not remove it:
  *
- * - `loading`: replicated, sub-resolution or lossy data stands in for data
- *   that has not arrived. Missing data with only full-resolution deliveries is
- *   not `loading`.
  * - `decimated`: an aliasing reduction, lossy at every magnification.
- * - `reduced`: lossy deliveries, or a box average coarser than the display.
+ * - `reduced`: a box average coarser than the display, final lossy
+ *   deliveries, or a standing sample distance multiplier above 1.
+ * - `loading`: replicated, sub-resolution or lossy data, or an interim grid,
+ *   that a later delivery replaces. Missing data with only full-resolution
+ *   deliveries is not `loading`.
  * - `full`: lossless at the current display spacing.
  */
 export function dataKindOf(line: FidelityLine): FidelityDataKind {
-  const {
-    record,
-    reductionFactors,
-    fullResolution,
-    verdict,
-    imageQualityStatus,
-  } = line;
+  const { record, imageQualityStatus, qualityPending } = line;
 
-  if (!record && imageQualityStatus !== undefined) {
-    return dataKindOfImageQuality(imageQualityStatus, line.qualityPending);
+  if (!record) {
+    // A reduced texture with no record is lossy, not hidden.
+    return imageQualityStatus !== undefined
+      ? dataKindOfImageQuality(imageQualityStatus, qualityPending)
+      : 'reduced';
   }
 
-  // A reduced texture with no record is lossy, not hidden.
-  if (!record) {
-    return fullResolution ? 'loading' : 'reduced';
+  const spatialKind = spatialKindOf(line);
+  // A reduction that no strategy states, during a load, ends with the load.
+  const interimGrid =
+    spatialKind === 'reduced' && qualityPending && !line.reductionCause;
+
+  if (spatialKind !== 'full' && !interimGrid) {
+    return spatialKind;
   }
 
   // Missing data alone is not lossy: an ordinary load delivers only full
@@ -155,45 +167,54 @@ export function dataKindOf(line: FidelityLine): FidelityDataKind {
   const lowest = record.lowest ?? ImageQualityStatus.FULL_RESOLUTION;
   const lossyDelivery = lowest < ImageQualityStatus.FULL_RESOLUTION;
 
-  if (lossyDelivery && (record.missing > 0 || line.qualityPending)) {
+  if (
+    interimGrid ||
+    (lossyDelivery && (record.missing > 0 || qualityPending))
+  ) {
     return 'loading';
   }
+
+  if (lossyDelivery || isInteractiveLod(standingSampleRatioOf(line))) {
+    return 'reduced';
+  }
+
+  return 'full';
+}
+
+/** The spatial part of {@link dataKindOf}: the grid against the display. */
+function spatialKindOf(line: FidelityLine): FidelityDataKind {
+  const { record, reductionFactors, fullResolution, verdict } = line;
 
   if (isAliasingReduction(record.reduction)) {
     return 'decimated';
   }
 
-  if (lossyDelivery) {
-    return 'reduced';
-  }
-
   // An unreduced grid is lossless at every display spacing; a `resolution`
   // cause on it (small study fitted large) must not invent a warning.
-  const spatiallyReduced = !fullResolution || isReduced(reductionFactors);
-
-  if (!spatiallyReduced) {
+  if (fullResolution && !isReduced(reductionFactors)) {
     return 'full';
   }
 
-  // Magnification-aware path for actually reduced data (FIDELITY-STATE-6 /
-  // MR-U-5). Only the spatial causes count here: `missingData` of an ordinary
-  // load is not lossy.
-  const spatialKind = verdict ? spatialKindOf(verdict) : 'reduced';
-
-  // A reduction that no strategy states, during a load, ends with the load.
-  if (spatialKind !== 'full' && line.qualityPending && !line.reductionCause) {
-    return 'loading';
+  // Magnification-aware path for reduced data (FIDELITY-STATE-6 / MR-U-5).
+  if (!verdict) {
+    return 'reduced';
   }
 
-  return spatialKind;
-}
-
-function spatialKindOf(verdict: VoxelQualityVerdict): FidelityDataKind {
   if (verdict.causes.includes('aliasing')) {
     return 'decimated';
   }
 
   return verdict.causes.includes('resolution') ? 'reduced' : 'full';
+}
+
+/** The sample reduction that stays when no interaction runs. */
+export function standingSampleRatioOf(line: FidelityLine): number {
+  return line.sampleDistanceIdle ?? line.sampleDistanceLod;
+}
+
+/** The part of the sample reduction that ends with the interaction. */
+export function interactiveSampleRatioOf(line: FidelityLine): number {
+  return line.sampleDistanceLod / (standingSampleRatioOf(line) || 1);
 }
 
 /**
@@ -217,6 +238,10 @@ export function dataKindOfImageQuality(
   return 'loading';
 }
 
+/**
+ * The state of one line. A standing reduction is `lossy` also during an
+ * interaction; `lod` is a reduction that ends with the interaction.
+ */
 export function lineKind(line: FidelityLine): SvgFidelityState {
   const dataKind = dataKindOf(line);
 
@@ -224,11 +249,19 @@ export function lineKind(line: FidelityLine): SvgFidelityState {
     return 'loading';
   }
 
-  if (isInteractiveLod(line.sampleDistanceLod) || line.interactiveReduction) {
-    return 'lod';
+  if (dataKind !== 'full') {
+    return 'lossy';
   }
 
-  return dataKind === 'full' ? 'done' : 'lossy';
+  return isInteractiveLine(line) ? 'lod' : 'done';
+}
+
+/** Whether an interaction reduces this line now. */
+export function isInteractiveLine(line: FidelityLine): boolean {
+  return (
+    isInteractiveLod(interactiveSampleRatioOf(line)) ||
+    !!line.interactiveReduction
+  );
 }
 
 /**

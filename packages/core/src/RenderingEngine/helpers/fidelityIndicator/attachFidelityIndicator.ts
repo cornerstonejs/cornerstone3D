@@ -14,9 +14,11 @@ import {
   dataKindOf,
   formatFactor,
   formatFactors,
+  interactiveSampleRatioOf,
   isInteractiveLod,
   isReduced,
   lineHasData,
+  standingSampleRatioOf,
   svgStateOf,
 } from './fidelityIndicatorState';
 
@@ -392,11 +394,8 @@ function createSvgIndicator(host: HTMLElement): FidelityView {
     label.textContent = '';
   };
 
-  const setPermanentLabel = (
-    svgState: SvgFidelityState | 'hidden',
-    lines: FidelityLine[]
-  ) => {
-    const text = fidelityLabelOf(svgState, buildViewportFidelityState(lines));
+  const setPermanentLabel = (svgState: SvgFidelityState | 'hidden') => {
+    const text = fidelityLabelOf(svgState);
 
     if (!text) {
       clearPermanentLabel();
@@ -464,10 +463,9 @@ function createSvgIndicator(host: HTMLElement): FidelityView {
       lastLines = lines;
       const next = svgStateOf(lines);
       setSvgState(next);
-      // Label can change (transient ↔ standing) while the glyph state stays
-      // the same; refresh every update except during the done recovery flash.
+      // The done recovery flash has no label.
       if (next !== 'done' && next !== 'hidden') {
-        setPermanentLabel(next, lines);
+        setPermanentLabel(next);
       }
       if (hovered) {
         details.textContent = clinicianHoverTextOf(lines);
@@ -489,8 +487,7 @@ function summaryOf(line: FidelityLine): {
   text: string;
   color: string;
 } {
-  const { record, reductionFactors, sampleDistanceLod, imageQualityStatus } =
-    line;
+  const { record, reductionFactors, imageQualityStatus } = line;
 
   if (!lineHasData(line)) {
     return { text: 'NO DATA', color: COLORS.none };
@@ -527,16 +524,21 @@ function summaryOf(line: FidelityLine): {
 
   if (dataKind === 'reduced') {
     // Every reduced line names its reduction, so the badge never reads FULL.
+    const status = imageQualityStatus ?? record?.lowest;
+
     if (isReduced(reductionFactors)) {
       parts.push(`REDUCED ${formatFactors(reductionFactors)}`);
-    } else {
-      const status = imageQualityStatus ?? record?.lowest;
+    } else if (status < ImageQualityStatus.FULL_RESOLUTION) {
       parts.push(ImageQualityStatus[status] ?? 'REDUCED');
+    } else {
+      parts.push(`SAMPLE ${formatFactor(standingSampleRatioOf(line))}×`);
     }
   }
 
-  if (isInteractiveLod(sampleDistanceLod)) {
-    parts.push(`LOD ${formatFactor(sampleDistanceLod)}×`);
+  const interactive = interactiveSampleRatioOf(line);
+
+  if (isInteractiveLod(interactive)) {
+    parts.push(`LOD ${formatFactor(interactive)}×`);
   } else if (line.interactiveReduction) {
     parts.push('LOD');
   }
@@ -572,7 +574,7 @@ const DETAIL_STATUS: Record<FidelityDataKind, (line: FidelityLine) => string> =
   };
 
 function detailsOf(line: FidelityLine): string {
-  const { label, record, sampleDistanceLod, imageQualityStatus } = line;
+  const { label, record, imageQualityStatus } = line;
 
   if (!record) {
     if (imageQualityStatus !== undefined) {
@@ -601,11 +603,13 @@ function detailsOf(line: FidelityLine): string {
   const missingPercent =
     record.voxels > 0 ? Math.round((100 * record.missing) / record.voxels) : 0;
   const status = DETAIL_STATUS[dataKindOf(line)](line);
-  const lodState = isInteractiveLod(sampleDistanceLod)
-    ? `sample distance ×${formatFactor(sampleDistanceLod)} (interactive)`
+  const interactive = interactiveSampleRatioOf(line);
+  const standing = standingSampleRatioOf(line);
+  const lodState = isInteractiveLod(interactive)
+    ? `sample distance ×${formatFactor(interactive)} (interactive)`
     : line.interactiveReduction
       ? 'deferred resample (interactive)'
-      : 'sample distance idle';
+      : `sample distance idle ×${formatFactor(standing)}`;
 
   return [
     `${label}`,

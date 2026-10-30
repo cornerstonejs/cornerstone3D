@@ -1,5 +1,9 @@
 import type { Point3, ViewportFidelityState } from '../../../types';
-import type { FidelityLine } from './fidelityIndicatorState';
+import {
+  type FidelityLine,
+  lineHasData,
+  lineKind,
+} from './fidelityIndicatorState';
 
 /**
  * Clinician-facing hover details from the absolute fidelity record
@@ -40,9 +44,14 @@ export function fidelityDetailsTextOf(
       parts.push('Waiting should improve the image.');
       break;
     case 'performanceTarget':
-      parts.push('Detail is reduced while you interact.');
-      parts.push(...magnitudeLines(state.magnitude));
-      parts.push('Full detail returns when interaction stops.');
+      if (state.transient) {
+        parts.push('Detail is reduced while you interact.');
+        parts.push(...magnitudeLines(state.magnitude));
+        parts.push('Full detail returns when interaction stops.');
+      } else {
+        parts.push('Detail is reduced to keep the display fast.');
+        parts.push('Waiting will not improve the image.');
+      }
       break;
     case 'lossyDecode':
       parts.push('Image uses reduced decode quality.');
@@ -74,6 +83,14 @@ export function fidelityDetailsTextOf(
         parts.push('Image is at full available detail.');
       }
       break;
+  }
+
+  // A standing reduction shows first; say so when another part still loads.
+  if (
+    !state.transient &&
+    lines?.some((line) => lineHasData(line) && lineKind(line) === 'loading')
+  ) {
+    parts.push('Other data is still loading.');
   }
 
   return parts.filter(Boolean).join('\n');

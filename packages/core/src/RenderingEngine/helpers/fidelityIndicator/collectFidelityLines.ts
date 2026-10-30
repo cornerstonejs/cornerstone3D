@@ -14,7 +14,7 @@ import {
   compareVoxelQuality,
   voxelGridsEqual,
 } from '../../../utilities/voxelGrid';
-import { sampleDistanceOf } from '../createVolumeMapper';
+import { sampleDistanceRatiosOf } from '../createVolumeMapper';
 import { reductionCauseOf } from '../volumeRenderStrategy';
 import { isVolumeLoading } from '../../GenericViewport/renderingFidelity';
 import { gpuSettingsForRender } from '../../../utilities/gpuSettingsPresets';
@@ -66,6 +66,7 @@ export type BindingFidelitySource = {
   record?: VoxelQualityRecord;
   fullGrid?: VoxelGrid;
   sampleDistanceLod?: number;
+  sampleDistanceIdle?: number;
   interactiveReduction?: boolean;
   imageQualityStatus?: ImageQualityStatus;
   qualityPending?: boolean;
@@ -125,6 +126,7 @@ export function fidelityLinesFromBindings(
       reductionFactors,
       fullResolution,
       sampleDistanceLod: source.sampleDistanceLod ?? 1,
+      sampleDistanceIdle: source.sampleDistanceIdle,
       interactiveReduction: source.interactiveReduction,
       qualityPending: source.qualityPending,
       reductionCause: source.reductionCause,
@@ -148,7 +150,8 @@ export function fidelityLinesFromVolumeActors(
     return [];
   }
 
-  const display = fidelityDisplayOfCamera(viewport, isVolume3D(viewport));
+  const volume3D = isVolume3D(viewport);
+  const display = fidelityDisplayOfCamera(viewport, volume3D);
   const lines: FidelityLine[] = [];
   const seen = new Set<string>();
 
@@ -187,6 +190,10 @@ export function fidelityLinesFromVolumeActors(
     const reductionFactors = reductionFactorsOf(grid, fullGrid);
     const fullResolution = !isReduced(reductionFactors);
     const record = cached.record;
+    // A slice samples no ray, as on the generic slice path (FIDELITY-RECORD-6).
+    const sampleDistance = volume3D
+      ? sampleDistanceRatiosOf(mapper)
+      : { current: 1, idle: 1 };
     const displaySpacing = display
       ? displaySpacingForGrid(display, grid, fullGrid)
       : undefined;
@@ -203,7 +210,8 @@ export function fidelityLinesFromVolumeActors(
       reductionFactors,
       // Spacing only — dims/origin differences must not sticky-flag lossy.
       fullResolution,
-      sampleDistanceLod: sampleDistanceLodOf(mapper),
+      sampleDistanceLod: sampleDistance.current,
+      sampleDistanceIdle: sampleDistance.idle,
       qualityPending: isVolumeLoading(volume),
       reductionCause: fullResolution
         ? undefined
@@ -266,36 +274,4 @@ export function imageQualityStatusOf(
   return image
     ? (image.imageQualityStatus ?? ImageQualityStatus.FULL_RESOLUTION)
     : undefined;
-}
-
-/**
- * How much coarser the ray sample distance is than idle. 1 when idle or when
- * the mapper has no sample distance (MPR).
- */
-export function sampleDistanceLodOf(
-  mapper: VolumeMapperLike | undefined
-): number {
-  if (!mapper?.getSampleDistance) {
-    return 1;
-  }
-
-  const current = mapper.getSampleDistance();
-  const imageData = mapper.getInputData?.();
-
-  if (!imageData || !(current > 0)) {
-    return 1;
-  }
-
-  const texture = mapper.getScalarTexture?.();
-  const baseline = sampleDistanceOf(
-    imageData as Parameters<typeof sampleDistanceOf>[0],
-    texture,
-    1
-  );
-
-  if (!(baseline > 0)) {
-    return 1;
-  }
-
-  return current / baseline;
 }
