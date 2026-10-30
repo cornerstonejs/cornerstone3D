@@ -483,8 +483,10 @@ downsampling the viewer may use:
 | `interactive`        | `true`  | Lowers the detail during an interaction, for example the sample distance of a 3D rotation.   |
 | `interleavedLoading` | `true`  | Fills the frames that have not loaded yet with copies of the nearby frames, during the load. |
 
-With the defaults, a volume texture has the full dimensions of the volume, as in
-4.x. The `interactive` and `interleavedLoading` kinds keep the behaviour of 4.x.
+With the defaults, a volume renders as in 4.x: the volume texture has the full
+dimensions of the volume, no GPU settings preset applies, and a 3D render uses
+the sample distance of 4.x. The `interactive` and `interleavedLoading` kinds
+keep the behaviour of 4.x.
 
 With `final: true`, a volume texture comes from a GPU settings preset. A preset
 is a named set of values (`low-tablet`, `low`, `medium`, `high`), and nothing

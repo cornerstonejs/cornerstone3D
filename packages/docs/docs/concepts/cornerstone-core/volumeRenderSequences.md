@@ -86,7 +86,7 @@ sequenceDiagram
 
     VP->>CA: volumeId
     CA->>RVT: resolveVolumeTexture(volume, options)
-    RVT->>RVT: getActiveGpuSettings()
+    RVT->>RVT: gpuSettingsForRender()
     RVT->>Prov: provideStrategies({ volume, gpuSettings, reason: 'initial' })
     Prov->>Grid: gridLimitsOfGpuSettings(gpuSettings, bytesPerVoxel)
     Grid-->>Prov: { maxEdge, maxVoxelCount }

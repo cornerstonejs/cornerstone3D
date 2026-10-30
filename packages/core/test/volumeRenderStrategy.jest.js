@@ -21,9 +21,12 @@ import volumeTextureStore from '../src/cache/volumeTextureStore';
 import VoxelManager from '../src/utilities/VoxelManager';
 import {
   getGpuSettingsPreset,
+  gpuSettingsForRender,
   setGpuSettingsPreset,
   resetGpuSettingsPreset,
 } from '../src/utilities/gpuSettingsPresets';
+import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
+import { sampleDistanceOf } from '../src/RenderingEngine/helpers/createVolumeMapper';
 import { VoxelStatistics } from '../src/enums';
 import { setLossyDownsampling } from '../src/init';
 
@@ -132,19 +135,38 @@ describe('the default provider builds the strategies', () => {
     ]);
   });
 
-  it('builds the full-resolution strategy with final downsampling off', () => {
+  it('renders as in 4.x with final downsampling off', () => {
     const volume = makeVolume();
 
+    setGpuSettingsPreset('low-tablet');
     setLossyDownsampling({ final: false });
 
     try {
-      const strategies = defaultVolumeStrategyProvider(
-        context(volume, 'low-tablet')
-      );
+      // No preset applies, so the default provider gets no settings.
+      expect(gpuSettingsForRender()).toBeUndefined();
 
-      expect(strategies.map((strategy) => strategy.name)).toEqual([
-        'full-resolution/full-extent',
-      ]);
+      for (const gpuSettings of [
+        gpuSettingsForRender(),
+        getGpuSettingsPreset('low-tablet'),
+      ]) {
+        const strategies = defaultVolumeStrategyProvider({
+          volume,
+          gpuSettings,
+        });
+
+        expect(strategies.map((strategy) => strategy.name)).toEqual([
+          'full-resolution/full-extent',
+        ]);
+      }
+
+      // The 4.x sample distance: no floor from the length of the ray.
+      const imageData = vtkImageData.newInstance();
+
+      imageData.setDimensions([512, 512, 2464]);
+      imageData.setSpacing([0.7, 0.7, 0.5]);
+      expect(sampleDistanceOf(imageData, undefined, 0.5)).toBeCloseTo(
+        (0.5 * (0.7 + 0.7 + 0.5)) / 6
+      );
     } finally {
       setLossyDownsampling({ final: true });
     }

@@ -99,8 +99,8 @@ export type VolumeStrategyProvisionReason =
 export type VolumeStrategyProvisionContext = {
   /** The volume to draw. */
   volume: IImageVolume;
-  /** The GPU settings that apply. */
-  gpuSettings: GpuSettings;
+  /** The GPU settings that apply, undefined when final downsampling is off. */
+  gpuSettings?: GpuSettings;
   /** The viewport that draws. */
   viewportId?: string;
   /** Why this provision runs. */
@@ -280,9 +280,9 @@ export function reducedStrategyName(
  */
 function finalReductionFactors(
   volume: IImageVolume,
-  gpuSettings: GpuSettings
+  gpuSettings: GpuSettings | undefined
 ): Point3 {
-  if (!getLossyDownsampling().final) {
+  if (!gpuSettings || !getLossyDownsampling().final) {
     return [1, 1, 1];
   }
 

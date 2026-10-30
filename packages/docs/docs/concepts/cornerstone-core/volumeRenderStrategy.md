@@ -332,10 +332,15 @@ texture, which is what lets a basis point move.
 **VRS-C-10.** The record that the selection receives is open. A render component adds the fields
 that its own function reads, and no existing caller changes.
 
+**VRS-C-11.** With final downsampling off (`rendering.lossyDownsampling.final`), a volume renders as
+in 4.x: it gets a full-resolution texture, no GPU settings preset applies, and a 3D render uses the
+sample distance of 4.x. Every render path reads the GPU settings through `gpuSettingsForRender`,
+which gives no settings in that case.
+
 ## § Implementation choices
 
-**VRS-I-1.** The default provider builds the full-resolution strategy when final downsampling is off
-or the GPU settings admit it, and the reduced-resolution strategy otherwise. It reads the capability alone: a
+**VRS-I-1.** The default provider builds the full-resolution strategy when it gets no GPU settings
+(see `VRS-C-11`) or the GPU settings admit it, and the reduced-resolution strategy otherwise. It reads the capability alone: a
 performance-bound choice belongs to task T14, which supplies its own provider.
 
 **VRS-I-2.** The default selection keeps the strategy of the previous render while that strategy is

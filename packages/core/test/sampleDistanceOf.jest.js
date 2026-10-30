@@ -5,6 +5,7 @@ import {
   sampleDistanceOf,
   MAXIMUM_SAMPLES_PER_RAY,
 } from '../src/RenderingEngine/helpers/createVolumeMapper';
+import { setLossyDownsampling } from '../src/init';
 
 function imageDataOf(dimensions, spacing) {
   const imageData = vtkImageData.newInstance();
@@ -27,10 +28,17 @@ describe('sampleDistanceOf', () => {
   it('keeps the samples of the longest ray within the maximum', () => {
     const imageData = imageDataOf([512, 512, 2464], [0.7, 0.7, 0.5]);
     const diagonal = vtkBoundingBox.getDiagonalLength(imageData.getBounds());
-    const distance = sampleDistanceOf(imageData, undefined, 1);
 
-    expect(Math.ceil(diagonal / distance)).toBeLessThanOrEqual(
-      MAXIMUM_SAMPLES_PER_RAY
-    );
+    setLossyDownsampling({ final: true });
+
+    try {
+      const distance = sampleDistanceOf(imageData, undefined, 1);
+
+      expect(Math.ceil(diagonal / distance)).toBeLessThanOrEqual(
+        MAXIMUM_SAMPLES_PER_RAY
+      );
+    } finally {
+      setLossyDownsampling({ final: false });
+    }
   });
 });
