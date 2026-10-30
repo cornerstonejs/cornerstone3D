@@ -169,6 +169,8 @@ export async function addVolumesAsIndependentComponents({
   viewport.addActor({
     ...defaultActor,
     representationUID,
+    // FIDELITY-STATE-9: combined labelmap actor is out of fidelity scope.
+    excludeFromFidelity: true,
   });
 
   internalCache.set(uid, {

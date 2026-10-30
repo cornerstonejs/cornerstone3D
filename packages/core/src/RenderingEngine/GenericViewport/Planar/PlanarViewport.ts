@@ -156,6 +156,8 @@ class PlanarViewport extends GenericViewport<
   defaultOptions: PlanarViewportInputOptions;
   options: PlanarViewportInputOptions;
   suppressEvents = false;
+  /** Set when a render path draws in `render()` instead of the engine. */
+  private drewOutsideEngine = false;
 
   protected renderContext: PlanarViewportRenderContext;
 
@@ -319,6 +321,7 @@ class PlanarViewport extends GenericViewport<
           this.setNeedsRender();
         },
         markRendered: () => {
+          this.drewOutsideEngine = true;
           this.setRendered();
         },
         activateRenderMode: (renderMode: PlanarEffectiveRenderMode) => {
@@ -699,6 +702,14 @@ class PlanarViewport extends GenericViewport<
 
   getSourceDataId(): string | undefined {
     return this.mountedData.getActiveDataId();
+  }
+
+  /**
+   * The planar family can show a lossy stack image or reduced volume data
+   * (GENVIEW-FIDELITY-8), so it reports fidelity before it mounts data.
+   */
+  override canReportFidelity(): boolean {
+    return true;
   }
 
   /**
@@ -1611,9 +1622,18 @@ class PlanarViewport extends GenericViewport<
 
     this.setNeedsRender();
     this.renderContext.cpu.composition.renderPassId += 1;
+    this.drewOutsideEngine = false;
 
     if (!this.renderBindings()) {
       this.requestRenderingEngineRender();
+    }
+
+    // A CPU path draws here and fires IMAGE_RENDERED itself; the engine does
+    // not draw this frame, so the viewport reports the fidelity
+    // (FIDELITY-EVENT-7). A VTK path draws in the engine, which reports.
+    if (this.drewOutsideEngine) {
+      this.drewOutsideEngine = false;
+      this.notifyFidelityStateChanged();
     }
   }
 

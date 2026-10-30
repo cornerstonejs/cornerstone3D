@@ -87,6 +87,10 @@ export interface vtkStreamingOpenGLTexture extends vtkOpenGLTexture {
   setGrid: (grid: VoxelGrid) => void;
   /** The grid that this texture holds. */
   getGrid: () => VoxelGrid | undefined;
+  /** States the statistic that this texture holds. */
+  setStatistic: (statistic: VoxelStatistic) => void;
+  /** The statistic that this texture holds. */
+  getStatistic: () => VoxelStatistic | null | undefined;
 }
 
 /** The base class for volume data. It includes the volume metadata
@@ -631,11 +635,12 @@ export class ImageVolume {
       volumeGrid: this.voxelGrid,
       dataType: this.dataType,
       numberOfComponents: this._numberOfComponents,
-      createTexture: ({ grid }) => {
+      createTexture: ({ grid, statistic }) => {
         const texture = vtkStreamingOpenGLTexture.newInstance();
 
         texture.setVolumeId(this.volumeId);
         texture.setGrid(grid);
+        texture.setStatistic(statistic);
 
         return texture;
       },

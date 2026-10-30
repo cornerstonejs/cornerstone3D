@@ -196,6 +196,7 @@ class ProgressiveRetrieveImagesInstance {
         }
         const { imageQualityStatus } = image;
         complete ||= imageQualityStatus === ImageQualityStatus.FULL_RESOLUTION;
+        image.imageQualityPending = !complete && (!done || !!next);
         if (oldStatus !== undefined && oldStatus > imageQualityStatus) {
           // We already have a better status, so don't update it
           this.updateStageStatus(request.stage, null, true);
@@ -221,6 +222,11 @@ class ProgressiveRetrieveImagesInstance {
           this.addRequest(next, options.streamingData);
         } else {
           if (!complete) {
+            // No stage follows, so the image shown is final.
+            const shown = cache.getImage(imageId);
+            if (shown) {
+              shown.imageQualityPending = false;
+            }
             this.listener.errorCallback(imageId, true, "Couldn't decode");
           }
           this.outstandingRequests--;
