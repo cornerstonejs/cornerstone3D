@@ -153,7 +153,7 @@ function isMultiFrameVolume(instance: NaturalizedInstance): boolean {
     return false;
   }
   if (String(instance.Modality ?? '').includes('NM')) {
-    const subType = asMultiValueArray(instance.ImageType as string[])[2];
+    const subType = asMultiValueArray(instance.ImageType)[2];
     if (subType !== 'RECON TOMO' && subType !== 'RECON GATED TOMO') {
       return false;
     }
