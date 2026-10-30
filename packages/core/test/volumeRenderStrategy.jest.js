@@ -29,6 +29,7 @@ import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import { sampleDistanceOf } from '../src/RenderingEngine/helpers/createVolumeMapper';
 import { VoxelStatistics } from '../src/enums';
 import { setLossyDownsampling } from '../src/init';
+import { gridFitsGpuSettings } from '../src/RenderingEngine/vtkClasses/vtkStreamingOpenGLVolumeMapper';
 
 // These tests check the reductions of final downsampling, which is off by
 // default.
@@ -201,6 +202,20 @@ describe('the default provider builds the strategies', () => {
           (strategy) => strategy.name
         )
       ).toEqual(['full-resolution/full-extent']);
+    }
+  });
+
+  it('lets the mapper upload a dynamic or multi-component texture that the preset cannot hold', () => {
+    setGpuSettingsPreset('low-tablet');
+
+    try {
+      expect(gridFitsGpuSettings(dimensions, 'Uint16Array', 1, {})).toBe(false);
+      expect(gridFitsGpuSettings(dimensions, 'Uint8Array', 3, {})).toBe(true);
+      expect(
+        gridFitsGpuSettings(dimensions, 'Uint16Array', 1, { dynamic: true })
+      ).toBe(true);
+    } finally {
+      resetGpuSettingsPreset();
     }
   });
 
