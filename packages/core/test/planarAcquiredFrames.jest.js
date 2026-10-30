@@ -166,6 +166,8 @@ describe('PlanarViewport acquired frames (user experience)', () => {
 
       return {
         imageOrientationPatient: [1, 0, 0, 0, 1, 0],
+        rowCosines: [1, 0, 0],
+        columnCosines: [0, 1, 0],
         imagePositionPatient: [0, 0, index * spacing[2]],
       };
     };
@@ -245,5 +247,23 @@ describe('PlanarViewport acquired frames (user experience)', () => {
     expect(viewState.slice).toEqual({ kind: 'stackIndex', imageIdIndex: 7 });
     expect(viewState.anchorWorld).toEqual([100, 120, 14]);
     expect(viewState.scale).toEqual([2, 2]);
+  });
+
+  it('a focal-point reference without volumeId moves a frame-path viewport to the closest frame', () => {
+    mountBinding(ActorRenderMode.VTK_IMAGE, 3);
+    viewport.setViewState({
+      orientation: OrientationAxis.ACQUISITION,
+      slice: { kind: 'stackIndex', imageIdIndex: 3 },
+    });
+    const setImageIdIndex = jest.spyOn(viewport, 'setImageIdIndex');
+
+    // The reference that crosshairs send through jumpToFocalPoint.
+    viewport.setViewReference({ cameraFocalPoint: [100, 100, 16] });
+    expect(setImageIdIndex).toHaveBeenLastCalledWith(8);
+
+    // A plain stack binding, with no volume.
+    viewport.bindings.get(dataId).data.volumeId = undefined;
+    viewport.setViewReference({ cameraFocalPoint: [100, 100, 6] });
+    expect(setImageIdIndex).toHaveBeenLastCalledWith(3);
   });
 });

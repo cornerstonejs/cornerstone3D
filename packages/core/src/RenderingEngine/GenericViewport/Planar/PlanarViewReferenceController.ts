@@ -2,6 +2,7 @@ import { vec3 } from 'gl-matrix';
 import { ActorRenderMode } from '../../../types';
 import type {
   ICamera,
+  IStackViewport,
   Point3,
   ReferenceCompatibleOptions,
   ViewReference,
@@ -9,6 +10,7 @@ import type {
 } from '../../../types';
 import type { PlaneRestriction } from '../../../types/IViewport';
 import getClosestImageId from '../../../utilities/getClosestImageId';
+import getClosestStackImageIndexForPoint from '../../../utilities/getClosestStackImageIndexForPoint';
 import imageIdToURI from '../../../utilities/imageIdToURI';
 import isEqual from '../../../utilities/isEqual';
 import {
@@ -433,7 +435,55 @@ class PlanarViewReferenceController {
       return true;
     }
 
+    const closestFrameIndex = this.findClosestFrameIndexOfFocalPoint(
+      referenceContext,
+      viewRef,
+      imageIds
+    );
+
+    if (typeof closestFrameIndex === 'number') {
+      this.host.setImageIdIndex(closestFrameIndex);
+      return true;
+    }
+
     return false;
+  }
+
+  /**
+   * The frame nearest to the focal point of a reference that has no slice
+   * index, for example the reference that crosshairs send. Any `volumeId` on
+   * the reference is ignored, because only the focal point locates the frame.
+   */
+  private findClosestFrameIndexOfFocalPoint(
+    referenceContext: PlanarReferenceContext,
+    viewRef: ViewReference,
+    imageIds: string[]
+  ): number | undefined {
+    const point = viewRef.cameraFocalPoint;
+
+    if (!point || !imageIds.length) {
+      return;
+    }
+
+    const { volumeId } = referenceContext.data;
+    const imageVolume = volumeId ? cache.getVolume(volumeId) : undefined;
+
+    if (imageVolume) {
+      return acquiredFrameIndexOfVolumePoint(
+        imageVolume,
+        imageIds,
+        point,
+        viewRef.viewPlaneNormal
+      );
+    }
+
+    const stackLike = {
+      getImageIds: () => imageIds,
+      getCurrentImageIdIndex: () =>
+        referenceContext.rendering.currentImageIdIndex ?? 0,
+    } as unknown as IStackViewport;
+
+    return getClosestStackImageIndexForPoint(point, stackLike) ?? undefined;
   }
 
   /**
