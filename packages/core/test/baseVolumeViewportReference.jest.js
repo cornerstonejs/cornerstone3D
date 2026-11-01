@@ -1,5 +1,6 @@
 import { describe, it, expect, jest, afterEach } from '@jest/globals';
 import BaseVolumeViewport from '../src/RenderingEngine/BaseVolumeViewport';
+import Viewport from '../src/RenderingEngine/Viewport';
 import * as metaData from '../src/metaData';
 
 const isReferenceViewable = (viewRef, options) =>
@@ -7,8 +8,9 @@ const isReferenceViewable = (viewRef, options) =>
     {
       hasImageURI: (imageId) => imageId === 'wadors:volume-image',
       getFrameOfReferenceUID: () => '1.2.3',
-      getCamera: () => ({ viewPlaneNormal: [0, 0, 1] }),
+      getCamera: () => ({ focalPoint: [0, 0, 0], viewPlaneNormal: [0, 0, 1] }),
       getSliceIndex: () => 0,
+      isPlaneViewable: Viewport.prototype.isPlaneViewable,
     },
     viewRef,
     options
@@ -36,6 +38,39 @@ describe('BaseVolumeViewport.isReferenceViewable', () => {
     ).toBe(false);
     expect(
       isReferenceViewable({ sliceIndex: 0 }, { withNavigation: true })
+    ).toBe(false);
+  });
+
+  it('accepts a plane restriction without frame of reference for an image of the volume', () => {
+    expect(
+      isReferenceViewable(
+        {
+          referencedImageId: 'wadors:volume-image',
+          planeRestriction: {
+            point: [0, 0, 5],
+            inPlaneVector1: [1, 0, 0],
+            inPlaneVector2: [0, 1, 0],
+          },
+        },
+        { withNavigation: true }
+      )
+    ).toBe(true);
+  });
+
+  it('still rejects a plane restriction in another frame of reference', () => {
+    expect(
+      isReferenceViewable(
+        {
+          referencedImageId: 'wadors:volume-image',
+          planeRestriction: {
+            FrameOfReferenceUID: '9.9.9',
+            point: [0, 0, 5],
+            inPlaneVector1: [1, 0, 0],
+            inPlaneVector2: [0, 1, 0],
+          },
+        },
+        { withNavigation: true }
+      )
     ).toBe(false);
   });
 

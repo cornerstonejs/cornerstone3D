@@ -734,7 +734,22 @@ abstract class BaseVolumeViewport extends Viewport {
     ) {
       return false;
     }
-    if (!super.isReferenceViewable(viewRef, options)) {
+    // Such an image is in this volume's frame of reference, so check a plane
+    // restriction without one against it. A different frame still fails.
+    const { planeRestriction } = viewRef;
+    const checkedRef =
+      !viewRef.FrameOfReferenceUID &&
+      planeRestriction &&
+      !planeRestriction.FrameOfReferenceUID
+        ? {
+            ...viewRef,
+            planeRestriction: {
+              ...planeRestriction,
+              FrameOfReferenceUID: this.getFrameOfReferenceUID(),
+            },
+          }
+        : viewRef;
+    if (!super.isReferenceViewable(checkedRef, options)) {
       return false;
     }
     if (options?.withNavigation) {
