@@ -1,5 +1,6 @@
-import { describe, it, expect } from '@jest/globals';
+import { describe, it, expect, jest, afterEach } from '@jest/globals';
 import BaseVolumeViewport from '../src/RenderingEngine/BaseVolumeViewport';
+import * as metaData from '../src/metaData';
 
 const isReferenceViewable = (viewRef, options) =>
   BaseVolumeViewport.prototype.isReferenceViewable.call(
@@ -48,5 +49,44 @@ describe('BaseVolumeViewport.isReferenceViewable', () => {
         { withNavigation: true }
       )
     ).toBe(false);
+  });
+});
+
+describe('BaseVolumeViewport.setViewReference', () => {
+  const imagePlaneProvider = (type, imageId) =>
+    type === 'imagePlaneModule' && imageId === 'wadors:volume-image'
+      ? { imagePositionPatient: [0, 0, 5] }
+      : undefined;
+
+  afterEach(() => {
+    metaData.removeProvider(imagePlaneProvider);
+  });
+
+  it('navigates to an image of the volume when only the volume has a frame of reference', () => {
+    metaData.addProvider(imagePlaneProvider, 10000);
+    const setCamera = jest.fn();
+    const viewport = {
+      getVolumeId: () => 'volume',
+      getCamera: () => ({
+        focalPoint: [0, 0, 0],
+        position: [0, 0, 10],
+        viewPlaneNormal: [0, 0, 1],
+      }),
+      getFrameOfReferenceUID: () => '1.2.3',
+      hasImageURI: (imageId) => imageId === 'wadors:volume-image',
+      isInAcquisitionPlane: () => true,
+      setCamera,
+      render: () => {},
+    };
+
+    BaseVolumeViewport.prototype.setViewReference.call(viewport, {
+      referencedImageId: 'wadors:volume-image',
+      viewPlaneNormal: [0, 0, 1],
+    });
+
+    expect(setCamera).toHaveBeenCalledTimes(1);
+    const { focalPoint, position } = setCamera.mock.calls[0][0];
+    expect(Array.from(focalPoint)).toEqual([0, 0, 5]);
+    expect(Array.from(position)).toEqual([0, 0, 15]);
   });
 });

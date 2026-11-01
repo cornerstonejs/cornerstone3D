@@ -929,8 +929,14 @@ abstract class BaseVolumeViewport extends Viewport {
         delta
       );
       this.setCamera({ focalPoint: newFocalPoint, position: newPosition });
-    } else if (refFrameOfReference === this.getFrameOfReferenceUID()) {
-      // Handle same frame of reference navigation
+    } else if (
+      refFrameOfReference === this.getFrameOfReferenceUID() ||
+      (!refFrameOfReference &&
+        referencedImageId &&
+        this.hasImageURI(referencedImageId))
+    ) {
+      // Handle same frame of reference navigation, including a reference
+      // without frame of reference to an image of this volume
 
       if (refViewPlaneNormal && !isNegativeNormal && !isSameNormal) {
         // Need to update the orientation vectors correctly for this case
