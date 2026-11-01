@@ -69,10 +69,14 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
       return;
     }
 
-    // get enabled elements
-    const enabledElements = viewportIds.map((e) =>
-      getEnabledElementByIds(e.viewportId, e.renderingEngineId)
-    );
+    // get enabled elements, a viewport of the tool group may not be enabled yet
+    const enabledElements = viewportIds
+      .map((e) => getEnabledElementByIds(e.viewportId, e.renderingEngineId))
+      .filter((enabledElement) => enabledElement?.viewport);
+
+    if (!enabledElements.length) {
+      return;
+    }
 
     let { viewport } = enabledElements[0];
     const { FrameOfReferenceUID } = enabledElements[0];
@@ -238,6 +242,11 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
       worldHeightViewport,
       location
     );
+
+    // No scale size fits, e.g. when zoomed in to a few millimetres
+    if (!scaleSize) {
+      return renderStatus;
+    }
 
     // Applies the scale with the predetermined size to the image in
     // world coordinates, then converts them to canvas coordinates
