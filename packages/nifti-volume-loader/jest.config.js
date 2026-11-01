@@ -1,0 +1,13 @@
+/* eslint-disable */
+const base = require('../../jest.config.base.js');
+const path = require('path');
+
+module.exports = {
+  ...base,
+  displayName: 'nifti-volume-loader',
+  moduleNameMapper: {
+    ...base.moduleNameMapper,
+    '^@cornerstonejs/(\\w+)/(.+)$': path.resolve(__dirname, '../$1/src/$2'),
+    '^@cornerstonejs/(.*)$': path.resolve(__dirname, '../$1/src'),
+  },
+};
