@@ -539,8 +539,12 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
     }
 
     // Without text there is nothing to show, so draw neither the box nor the
-    // dashed line that links it to the annotation.
+    // dashed line that links it to the annotation. Keep the position for a
+    // later render, but drop the bounds so the hidden box cannot be grabbed.
     if (!textLines?.length) {
+      if (data.handles.textBox) {
+        data.handles.textBox.worldBoundingBox = undefined;
+      }
       return false;
     }
 

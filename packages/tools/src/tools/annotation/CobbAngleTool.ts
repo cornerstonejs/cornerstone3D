@@ -867,25 +867,24 @@ class CobbAngleTool extends AnnotationTool {
       }
 
       const textLines = this.configuration.getTextLines(data, targetId);
-      if (
-        !this.renderLinkedTextBoxAnnotation({
-          enabledElement,
-          svgDrawingHelper,
-          annotation,
-          styleSpecifier,
-          textLines: textLines ?? [],
-          canvasCoordinates,
-          textBoxUID: 'cobbAngleText',
-        })
-      ) {
-        continue;
-      }
+      this.renderLinkedTextBoxAnnotation({
+        enabledElement,
+        svgDrawingHelper,
+        annotation,
+        styleSpecifier,
+        textLines: textLines ?? [],
+        canvasCoordinates,
+        textBoxUID: 'cobbAngleText',
+      });
 
-      if (this.configuration.showArcLines) {
-        const textBoxStyleOptions = this.getLinkedTextBoxStyle(
-          styleSpecifier,
-          annotation
-        );
+      const textBoxStyleOptions = this.getLinkedTextBoxStyle(
+        styleSpecifier,
+        annotation
+      );
+
+      // The arc labels are hidden with the text box, but they do not need
+      // its text lines.
+      if (this.configuration.showArcLines && textBoxStyleOptions.visibility) {
         const arc1TextBoxUID = 'arcAngle1';
 
         const arc1TextLine = [
