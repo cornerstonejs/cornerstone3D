@@ -724,7 +724,14 @@ abstract class BaseVolumeViewport extends Viewport {
     viewRef: ViewReference,
     options?: ReferenceCompatibleOptions
   ): boolean {
-    if (!viewRef.FrameOfReferenceUID) {
+    // Without a frame of reference, the reference can only be matched by an
+    // image that is part of this volume
+    if (
+      !viewRef.FrameOfReferenceUID &&
+      !(
+        viewRef.referencedImageId && this.hasImageURI(viewRef.referencedImageId)
+      )
+    ) {
       return false;
     }
     if (!super.isReferenceViewable(viewRef, options)) {
