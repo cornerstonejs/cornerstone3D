@@ -8,11 +8,11 @@ const dj = 0.8;
 const dk = 2.5;
 
 /**
- * A coronal NIfTI-1 file of 4 × 3 × 3 int16 voxels. The sform maps i to x,
- * j to z and k to y (RAS), so the slices are dk apart along y. The buffer is
- * padded to the 540 bytes the loader reads before it parses the header.
+ * A NIfTI-1 file of 4 × 3 × 3 int16 voxels with the given sform rows (RAS).
+ * The buffer is padded to the 540 bytes the loader reads before it parses
+ * the header.
  */
-function createCoronalNifti() {
+function createNifti(srows) {
   const buffer = new ArrayBuffer(540);
   const view = new DataView(buffer);
   view.setInt32(0, 348, true); // sizeof_hdr
@@ -26,11 +26,6 @@ function createCoronalNifti() {
   );
   view.setFloat32(108, 352, true); // vox_offset
   view.setInt16(254, 1, true); // sform_code: scanner
-  const srows = [
-    [di, 0, 0, 0], // srow_x
-    [0, 0, dk, 0], // srow_y
-    [0, dj, 0, 0], // srow_z
-  ];
   srows.forEach((row, rowIndex) =>
     row.forEach((value, index) =>
       view.setFloat32(280 + 16 * rowIndex + 4 * index, value, true)
@@ -66,22 +61,47 @@ describe('createNiftiImageIdsAndCacheMetadata imagePositionPatient', () => {
     delete global.fetch;
   });
 
-  it('places the slices of a coronal volume the slice spacing apart', async () => {
-    mockFetch(createCoronalNifti());
+  async function loadPositions(srows) {
+    mockFetch(createNifti(srows));
 
     const imageIds = await createNiftiImageIdsAndCacheMetadata({
-      url: 'https://example.com/coronal.nii',
+      url: `https://example.com/${srows.flat().join('_')}.nii`,
     });
-    const positions = imageIds.map(
+    expect(imageIds).toHaveLength(3);
+
+    return imageIds.map(
       (imageId) =>
         utilities.genericMetadataProvider.get('imagePlaneModule', imageId)
           .imagePositionPatient
     );
+  }
 
-    // k runs along +y in RAS, which is -y in LPS.
+  it('places the slices of a coronal volume the slice spacing apart', async () => {
+    // i to x, j to z and k to y (RAS). k runs along +y in RAS, -y in LPS.
+    const positions = await loadPositions([
+      [di, 0, 0, 0],
+      [0, 0, dk, 0],
+      [0, dj, 0, 0],
+    ]);
+
     positions.forEach((position, index) => {
       expect(position[0]).toBeCloseTo(0);
       expect(position[1]).toBeCloseTo(-index * dk);
+      expect(position[2]).toBeCloseTo(0);
+    });
+  });
+
+  it('places the slices of a sagittal volume the slice spacing apart', async () => {
+    // i to y, j to z and k to x (RAS). k runs along +x in RAS, -x in LPS.
+    const positions = await loadPositions([
+      [0, 0, dk, 0],
+      [di, 0, 0, 0],
+      [0, dj, 0, 0],
+    ]);
+
+    positions.forEach((position, index) => {
+      expect(position[0]).toBeCloseTo(-index * dk);
+      expect(position[1]).toBeCloseTo(0);
       expect(position[2]).toBeCloseTo(0);
     });
   });
