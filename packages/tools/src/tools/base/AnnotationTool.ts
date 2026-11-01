@@ -497,7 +497,7 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
    * @param options.canvasCoordinates - Canvas anchor points for the link line (and for placement when placementPoints omitted)
    * @param options.textBoxUID - Optional UID for the text box SVG group (default '1')
    * @param options.placementPoints - Optional; when provided, used for getTextBoxCoordsCanvas only (e.g. circle ROI uses corners for placement, center for link)
-   * @returns true if the text box was drawn, false if visibility was off (textBox was reset)
+   * @returns true if the text box was drawn, false if visibility was off (textBox was reset) or there are no text lines
    */
   protected renderLinkedTextBoxAnnotation(options: {
     enabledElement: Types.IEnabledElement;
@@ -535,6 +535,12 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
           bottomRight: <Types.Point3>[0, 0, 0],
         },
       };
+      return false;
+    }
+
+    // Without text there is nothing to show, so draw neither the box nor the
+    // dashed line that links it to the annotation.
+    if (!textLines?.length) {
       return false;
     }
 
