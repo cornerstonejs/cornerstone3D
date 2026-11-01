@@ -91,4 +91,16 @@ describe('ScaleOverlayTool', () => {
 
     expect(() => new ScaleOverlayTool()._init()).not.toThrow();
   });
+
+  it('initializes on render when it was enabled before any viewport', () => {
+    const tool = new ScaleOverlayTool();
+    tool._init = jest.fn();
+
+    tool.renderAnnotation(
+      { viewport: { id: 'viewport' } } as unknown as Types.IEnabledElement,
+      {} as never
+    );
+
+    expect(tool._init).toHaveBeenCalledTimes(1);
+  });
 });

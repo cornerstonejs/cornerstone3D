@@ -181,6 +181,11 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
     enabledElement: Types.IEnabledElement,
     svgDrawingHelper: SVGDrawingHelper
   ) {
+    // The tool may have been enabled before a viewport of its group was
+    if (!this.editData?.viewport) {
+      this._init();
+    }
+
     if (!this.editData || !this.editData.viewport) {
       return;
     }
