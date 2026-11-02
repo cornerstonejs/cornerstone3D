@@ -6,7 +6,10 @@ import setDefaultVolumeVOI from './helpers/setDefaultVolumeVOI';
 import triggerEvent from '../utilities/triggerEvent';
 import { actorIsA } from '../utilities/actorCheck';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
-import type { ViewportInput } from '../types/IViewport';
+import type {
+  ReferenceCompatibleOptions,
+  ViewportInput,
+} from '../types/IViewport';
 import type { ResetCameraOptions } from '../types/ICamera';
 import BaseVolumeViewport from './BaseVolumeViewport';
 import type { Types } from '@cornerstonejs/core';
@@ -74,6 +77,13 @@ class VolumeViewport3D extends BaseVolumeViewport {
 
   public isInAcquisitionPlane(): boolean {
     return false;
+  }
+
+  /** A 3D view shows no slice orientation; as a volume viewport it can when a volume is bound. */
+  public canShowVolumetricOrientation(
+    options?: Pick<ReferenceCompatibleOptions, 'asVolume'>
+  ): boolean {
+    return Boolean(options?.asVolume) && super.canShowVolumetricOrientation();
   }
 
   public resetCamera({

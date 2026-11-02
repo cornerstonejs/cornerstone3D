@@ -5,6 +5,7 @@ import type {
   ICamera,
   IImageData,
   Point3,
+  ReferenceCompatibleOptions,
   ViewReference,
   ViewReferenceSpecifier,
 } from '../../../types';
@@ -340,6 +341,18 @@ class VolumeViewport3D extends GenericViewport<
     }
 
     return viewReference;
+  }
+
+  /** A 3D view shows no acquisition plane. */
+  isInAcquisitionPlane(): boolean {
+    return false;
+  }
+
+  /** A 3D view shows no slice orientation; as a volume viewport it can when a volume is bound. */
+  canShowVolumetricOrientation(
+    options?: Pick<ReferenceCompatibleOptions, 'asVolume'>
+  ): boolean {
+    return Boolean(options?.asVolume && this.getVolumeId());
   }
 
   /**

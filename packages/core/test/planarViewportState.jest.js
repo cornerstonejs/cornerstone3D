@@ -749,7 +749,7 @@ describe('PlanarViewport view state', () => {
   });
 });
 
-describe('PlanarViewport acquisition plane getters', () => {
+describe('PlanarViewport isInAcquisitionPlane and canShowVolumetricOrientation', () => {
   let created = [];
 
   afterEach(() => {
@@ -758,6 +758,11 @@ describe('PlanarViewport acquisition plane getters', () => {
       renderingEngineCache.delete(renderingEngineId);
     }
     created = [];
+    for (const provider of metadataProviders) {
+      metaData.removeProvider(provider);
+    }
+    metadataProviders = [];
+    genericViewportDisplaySetMetadataProvider.clear();
   });
 
   function createTrackedViewport() {
@@ -789,7 +794,7 @@ describe('PlanarViewport acquisition plane getters', () => {
     };
   }
 
-  it('reports a volume source by its view geometry, and as reorientable', () => {
+  it('reports a volume source by its view geometry, and as volumetric', () => {
     const viewport = createTrackedViewport();
     const imageVolume = createImageVolume();
     const { binding, rendering } = mountVolumeBinding(viewport, {
@@ -803,26 +808,42 @@ describe('PlanarViewport acquisition plane getters', () => {
 
     viewport.setViewState({ orientation: OrientationAxis.ACQUISITION });
     expect(viewport.isInAcquisitionPlane()).toBe(true);
-    expect(viewport.canReorientInPlace()).toBe(true);
+    expect(viewport.canShowVolumetricOrientation()).toBe(true);
 
     viewport.setViewState({ orientation: OrientationAxis.SAGITTAL });
     expect(viewport.isInAcquisitionPlane()).toBe(false);
-    expect(viewport.canReorientInPlace()).toBe(true);
+    expect(viewport.canShowVolumetricOrientation()).toBe(true);
   });
 
-  it('reports an image stack as in the acquisition plane and not reorientable', () => {
+  it('reports an image stack as in the acquisition plane, and as volumetric only as a volume', () => {
     const viewport = createTrackedViewport();
-
-    mountStackBinding(viewport, [createPlanarImage('acq-stack-image')]);
+    const images = [0, 1, 2].map((k) => createPlanarImage(`acq-stack:${k}`));
+    const imageIds = images.map((image) => image.imageId);
+    addPlanarImageMetadata(imageIds);
+    // isValidVolume also compares pixelSpacing, which the shared fixture omits.
+    const planeProvider = (type, imageId) =>
+      type === MetadataModules.IMAGE_PLANE && imageIds.includes(imageId)
+        ? { imageOrientationPatient: [1, 0, 0, 0, 1, 0], pixelSpacing: [1, 1] }
+        : undefined;
+    metaData.addProvider(planeProvider, 10001);
+    metadataProviders.push(planeProvider);
+    const { dataId } = mountStackBinding(viewport, images);
+    genericViewportDisplaySetMetadataProvider.add(dataId, imageIds);
 
     expect(viewport.isInAcquisitionPlane()).toBe(true);
-    expect(viewport.canReorientInPlace()).toBe(false);
+    expect(viewport.canShowVolumetricOrientation()).toBe(false);
+    expect(viewport.canShowVolumetricOrientation({ asVolume: true })).toBe(
+      true
+    );
   });
 
   it('reports false for both getters when no source is bound', () => {
     const viewport = createTrackedViewport();
 
     expect(viewport.isInAcquisitionPlane()).toBe(false);
-    expect(viewport.canReorientInPlace()).toBe(false);
+    expect(viewport.canShowVolumetricOrientation()).toBe(false);
+    expect(viewport.canShowVolumetricOrientation({ asVolume: true })).toBe(
+      false
+    );
   });
 });

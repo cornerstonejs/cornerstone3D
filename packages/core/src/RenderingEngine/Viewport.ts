@@ -2242,6 +2242,31 @@ class Viewport {
   }
 
   /**
+   * Answers whether the view shows the acquisition plane of the bound data.
+   * The base gives true, because a stack, a video, a whole slide image and an
+   * ECG show one plane only. Volume viewports override this.
+   */
+  public isInAcquisitionPlane(): boolean {
+    return true;
+  }
+
+  /**
+   * Answers whether this viewport, with the data bound now, can display a
+   * volumetric (non-acquisition) orientation. The answer does not name an
+   * orientation and does not depend on the render path.
+   *
+   * @param options - `asVolume: true` asks the same question for the case
+   *   where the viewport type changes to a volume viewport.
+   * @returns false in the base (video, whole slide image, ECG) and when no
+   *   data is bound.
+   */
+  public canShowVolumetricOrientation(
+    _options?: Pick<ReferenceCompatibleOptions, 'asVolume'>
+  ): boolean {
+    return false;
+  }
+
+  /**
    * Find out if this viewport does or could show this view reference.
    *
    * The plane restriction and the top level orientation are two separate

@@ -221,7 +221,10 @@ function hasExplicitCachedVolume(dataSet: PlanarRegisteredDataSet): boolean {
   return !!(dataSet.volumeId && cache.getVolume(dataSet.volumeId));
 }
 
-function supportsVolumeRendering(dataSet: PlanarRegisteredDataSet): boolean {
+/** True when the data set has a cached volume or image ids that form a volume. */
+export function supportsVolumeRendering(
+  dataSet: PlanarRegisteredDataSet
+): boolean {
   return hasExplicitCachedVolume(dataSet) || isValidVolume(dataSet.imageIds);
 }
 

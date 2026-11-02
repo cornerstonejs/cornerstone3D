@@ -152,17 +152,38 @@ states the contract, and this specification repeats it:
   `getCurrentMode()`. The answer names the content, for example `stack`,
   `volume`, `ecg` or `empty`. The developer does not need an `instanceof` test,
   and the developer does not need a test of the method list.
-- **GENVIEW-API-9** The developer asks a planar viewport if the view shows the
-  acquisition plane with `isInAcquisitionPlane()`. The answer is geometry
-  against the bound data only. For a volume, the view plane normal is parallel
-  to the scan axis of the volume. An image stack always gives true. An empty
-  viewport gives false. The render mode and the render path do not change the
-  answer.
-- **GENVIEW-API-10** The developer asks a planar viewport if the bound data can
-  show a different orientation without new data with `canReorientInPlace()`.
-  The answer is true when the source has a volume. An image stack and an empty
-  viewport give false. The render mode and the render path do not change the
-  answer.
+  `getCurrentMode()` is deprecated. Its answer is the intended UI mode, and new
+  code uses GENVIEW-API-9 and GENVIEW-API-10.
+- **GENVIEW-API-9** The developer asks every viewport if the view shows the
+  acquisition plane with `isInAcquisitionPlane()`. The developer does not need
+  an optional call. The answer is geometry against the bound data only. The
+  render mode and the render path do not change the answer. The answers are:
+  - `VolumeViewport` and a `PlanarViewport` with a volume: true when the view
+    plane normal is parallel to the scan axis of the volume.
+  - `StackViewport` and a `PlanarViewport` with an image stack: true.
+  - A video, a whole slide image and an ECG viewport, legacy or generic: true.
+    These viewports show one plane only.
+  - `VolumeViewport3D` and the generic 3D viewport: false.
+  - An empty `PlanarViewport` or an empty `VolumeViewport`: false.
+- **GENVIEW-API-10** The developer asks every viewport if it can show a
+  volumetric orientation with `canShowVolumetricOrientation()`. A volumetric
+  orientation is an orientation other than the acquisition plane. The question
+  uses the display sets that are bound now and the type of the viewport now.
+  The method does not take a reference, and the answer does not name an
+  orientation. The option `asVolume: true` asks the same question for the case
+  where the viewport type changes to a volume viewport. The render mode and the
+  render path do not change the answer. The answers are:
+  - `VolumeViewport`: true, with and without `asVolume`.
+  - `StackViewport`: false. With `asVolume`, true when the image ids form a
+    valid volume.
+  - `PlanarViewport`: true when the source has an image volume. With
+    `asVolume`, true when the source has a cached volume, or when the image ids
+    form a valid volume. The planar render path decision uses the same test.
+  - `VolumeViewport3D` and the generic 3D viewport: false. With `asVolume`,
+    true when a volume is bound.
+  - A video, a whole slide image and an ECG viewport, legacy or generic: false,
+    with and without `asVolume`.
+  - An empty viewport of each type: false, with and without `asVolume`.
 - **GENVIEW-API-7** An application that used a legacy viewport type keeps its
   API. `ViewportType.ECG`, `STACK`, `ORTHOGRAPHIC`, `VIDEO`, `WHOLE_SLIDE` and
   `VOLUME_3D` each resolve to a legacy adapter that carries the old methods.

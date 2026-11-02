@@ -223,9 +223,35 @@ abstract class GenericViewport<
    * source binding. The base implementation only distinguishes "has bound data"
    * from "empty"; concrete viewport families override it to report `stack`,
    * `volume`, `volume3d`, etc. See {@link ViewportContentMode}.
+   *
+   * @deprecated The answer is the intended UI mode, that is, the kind of
+   * viewport that the user works with (`stack`, `volume`, `volume3d`, ...),
+   * not the render path. New code uses `isInAcquisitionPlane()` and
+   * `canShowVolumetricOrientation()`. Removal waits for a major version.
    */
   getCurrentMode(): ViewportContentMode {
     return this.getSourceBinding() ? 'unknown' : 'empty';
+  }
+
+  /**
+   * Answers whether the view shows the acquisition plane of the bound data.
+   * The base gives true (video, whole slide image, ECG show one plane).
+   */
+  isInAcquisitionPlane(): boolean {
+    return true;
+  }
+
+  /**
+   * Answers whether this viewport, with the data bound now, can display a
+   * volumetric (non-acquisition) orientation. `asVolume: true` asks the same
+   * question for the case where the viewport type changes to a volume
+   * viewport. The answer does not depend on the render path. The base gives
+   * false (video, whole slide image, ECG).
+   */
+  canShowVolumetricOrientation(
+    _options?: Pick<ReferenceCompatibleOptions, 'asVolume'>
+  ): boolean {
+    return false;
   }
 
   /**

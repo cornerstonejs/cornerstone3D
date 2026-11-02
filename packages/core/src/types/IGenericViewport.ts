@@ -13,10 +13,11 @@ import type ResolvedViewportView from '../RenderingEngine/GenericViewport/Resolv
  * volume operations regardless of what it is actually showing.
  *
  * `getCurrentMode()` answers the content question that the capability guards
- * cannot: it reflects the currently bound source data.
+ * cannot: it reflects the currently bound source data. The value is the
+ * intended UI mode, not the render path.
  *
- * - `stack`      — image-id stack content (image render path)
- * - `volume`     — volume-backed slice content (volume slice render path)
+ * - `stack`      — the user works with an image-id stack
+ * - `volume`     — the user works with volume slices
  * - `volume3d`   — 3D volume rendering
  * - `video`      — video frames
  * - `wholeSlide` — whole-slide tiles
@@ -63,18 +64,15 @@ export interface IGenericViewport extends IViewport {
   getViewState(): unknown;
   updateViewState(updater: unknown): void;
   resetViewState(options?: unknown): boolean;
-  /** Content-true classification of the bound source data; see {@link ViewportContentMode}. */
+  /**
+   * Classification of the bound source data; see {@link ViewportContentMode}.
+   *
+   * @deprecated The answer is the intended UI mode, that is, the kind of
+   * viewport that the user works with, not the render path. New code uses
+   * `isInAcquisitionPlane()` and `canShowVolumetricOrientation()`. Removal
+   * waits for a major version.
+   */
   getCurrentMode(): ViewportContentMode;
-  /**
-   * Planar families only: whether the view shows the acquisition plane of the
-   * bound data. Geometry only; independent of the render path.
-   */
-  isInAcquisitionPlane?(): boolean;
-  /**
-   * Planar families only: whether the bound data can show another orientation
-   * without new data (it has a volume). Independent of the render path.
-   */
-  canReorientInPlace?(): boolean;
   /**
    * Applies a spatial reference (frame of reference + plane) to the current view
    * state. Implemented across all Generic families via the base GenericViewport.

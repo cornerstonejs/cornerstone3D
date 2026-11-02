@@ -59,6 +59,7 @@ import { isEqual } from '../utilities/isEqual';
 import invertRgbTransferFunction from '../utilities/invertRgbTransferFunction';
 import imageRetrieveMetadataProvider from '../utilities/imageRetrieveMetadataProvider';
 import imageIdToURI from '../utilities/imageIdToURI';
+import { isValidVolume } from '../utilities/isValidVolume';
 import getVOIRangeFromWindowLevel from '../utilities/getVOIRangeFromWindowLevel';
 
 import Viewport from './Viewport';
@@ -3746,6 +3747,13 @@ class StackViewport extends Viewport {
 
   public isInAcquisitionPlane(): boolean {
     return true;
+  }
+
+  /** A stack shows other orientations only as a volume, when the images form one. */
+  public canShowVolumetricOrientation(
+    options?: Pick<ReferenceCompatibleOptions, 'asVolume'>
+  ): boolean {
+    return Boolean(options?.asVolume) && isValidVolume(this.getImageIds());
   }
 
   private renderingPipelineFunctions = {

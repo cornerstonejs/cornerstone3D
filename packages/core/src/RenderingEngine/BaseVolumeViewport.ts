@@ -780,6 +780,13 @@ abstract class BaseVolumeViewport extends Viewport {
 
   abstract isInAcquisitionPlane(): boolean;
 
+  /** True when a volume is bound; see `Viewport.canShowVolumetricOrientation`. */
+  public canShowVolumetricOrientation(
+    _options?: Pick<ReferenceCompatibleOptions, 'asVolume'>
+  ): boolean {
+    return Boolean(this.getVolumeId());
+  }
+
   /**
    * This will apply a camera orientation that is compatible with inPlaneVector1 and 2
    *

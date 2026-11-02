@@ -56,7 +56,10 @@ import {
 } from '../genericViewportDisplaySetAccess';
 import { DefaultPlanarDataProvider } from './DefaultPlanarDataProvider';
 import { createPlanarRenderPathResolver } from './PlanarRenderPathResolver';
-import { defaultPlanarRenderPathDecisionService } from './PlanarRenderPathDecisionService';
+import {
+  defaultPlanarRenderPathDecisionService,
+  supportsVolumeRendering,
+} from './PlanarRenderPathDecisionService';
 import {
   normalizePlanarOrientation,
   selectPlanarRenderPath,
@@ -709,6 +712,11 @@ class PlanarViewport extends GenericViewport<
    * its content mode is derived from the active source binding's render mode
    * (and, as a fallback, from whether a source volume id is bound) rather than
    * from the viewport type. Returns `empty` when no source data is mounted.
+   *
+   * @deprecated The answer is the intended UI mode, that is, the kind of
+   * viewport that the user works with (`stack`, `volume`, ...), not the render
+   * path. New code uses `isInAcquisitionPlane()` and
+   * `canShowVolumetricOrientation()`. Removal waits for a major version.
    */
   getCurrentMode(): ViewportContentMode {
     const binding = this.getSourceBinding();
@@ -768,14 +776,26 @@ class PlanarViewport extends GenericViewport<
   }
 
   /**
-   * Answers whether the bound source data permits an orientation other than
-   * the acquisition plane without new data, that is, the source has an image
-   * volume. False for an image-stack source and when no source is bound. The
-   * answer depends on the content only, not on the render mode or the render
-   * path.
+   * Answers whether this viewport, with the data bound now, can display a
+   * volumetric (non-acquisition) orientation. The answer does not depend on
+   * the render mode or the render path.
+   *
+   * - No option: true when the source has an image volume.
+   * - `asVolume: true`: the test that the render path decision uses to permit
+   *   a volume render path (a cached volume, or image ids that form a volume).
+   * - No source bound: false.
    */
-  canReorientInPlace(): boolean {
-    return Boolean(this.getPlanarData()?.imageVolume);
+  canShowVolumetricOrientation(
+    options?: Pick<ReferenceCompatibleOptions, 'asVolume'>
+  ): boolean {
+    if (!options?.asVolume) {
+      return Boolean(this.getPlanarData()?.imageVolume);
+    }
+
+    const dataId = this.getSourceDataId();
+    const dataSet = dataId && this.getDataSet(dataId);
+
+    return dataSet ? supportsVolumeRendering(dataSet) : false;
   }
 
   /**
