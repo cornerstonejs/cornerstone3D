@@ -437,6 +437,13 @@ describe('fidelityIndicatorState', () => {
       expect(formatFactors([1, 1, 2464 / 2048])).toBe('1×1×1.20');
     });
 
+    it('prints a reduction factor just above 1 as <1.01, and keeps it reduced', () => {
+      const factors = [1, 1, 2049 / 2048];
+
+      expect(formatFactors(factors)).toBe('1×1×<1.01');
+      expect(isReduced(factors)).toBe(true);
+    });
+
     it('does not treat equal spacing with different origin or dims as reduced', () => {
       const drawn = {
         ...grid([66, 66, 66], [1, 1, 1]),
