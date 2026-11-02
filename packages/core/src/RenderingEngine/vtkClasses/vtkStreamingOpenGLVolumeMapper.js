@@ -10,6 +10,7 @@ import { BlendMode } from '@kitware/vtk.js/Rendering/Core/VolumeMapper/Constants
 import { getCanUseNorm16Texture } from '../../init';
 import cache from '../../cache/cache';
 import canUseFloatOpacityTexture from './canUseFloatOpacityTexture';
+import takeBoundScalarTexture from './takeBoundScalarTexture';
 import { coreLog } from '../../utilities/logger';
 import { volumeTextureBytes } from '../../utilities/getBufferConfiguration';
 import { voxelGridWithinLimits } from '../../utilities/voxelGrid';
@@ -385,6 +386,7 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
     model._colorTextureCore = firstColorTransferFunc;
 
     // rebuild scalarTextures using custom streaming approach
+    takeBoundScalarTexture(model);
     model.currentValidInputs.forEach(
       ({ imageData, inputIndex: _inputIndex }, component) => {
         // rebuild the scalarTexture if the data has changed
