@@ -177,6 +177,8 @@ viewer asked it to render a data set that is too large.
   2 × `normal`, and never above `maxTextureMemoryBytes` (GPULIMIT-PROFILE-4).
   Thus each success above the earlier `normal` raises the limit one step, and a
   total up to one step above `normal` is a test of a new size (GPULIMIT-DETECT-5).
+  When the probed reliable edge is below 2048, the start value is 0.5 GB
+  (`SMALL_EDGE_START_MEMORY_BYTES`), because a small edge and little memory almost always go together.
   The ceiling (GPULIMIT-MEM-5) and the reduction of an episode
   (GPULIMIT-MEM-4) bound the limit. A failed test usually loses the WebGL
   context, not the browser, so its cost is a reload of the tab.

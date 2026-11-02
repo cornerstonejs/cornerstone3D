@@ -238,6 +238,26 @@ describe('the auto preset', () => {
     });
   });
 
+  it('starts from 0.5 GB when the probed edge is below 2048 and no memory is stored', () => {
+    mockWebGL();
+    probeRenderingLimits.mockReturnValue({
+      formats: { float: true, norm16: false },
+      max3DTextureSize: 8192,
+      reliableEdge: 1024,
+    });
+
+    expect(getActiveGpuSettings().textureMemoryBytes).toBe(GIGABYTE / 2);
+
+    resetRenderingCapabilities({ clearStorage: true });
+    probeRenderingLimits.mockReturnValue({
+      formats: { float: true, norm16: false },
+      max3DTextureSize: 8192,
+      reliableEdge: 2048,
+    });
+
+    expect(getActiveGpuSettings().textureMemoryBytes).toBe(8 * GIGABYTE);
+  });
+
   describe('on a software renderer', () => {
     beforeEach(() => {
       mockWebGL('Google SwiftShader');

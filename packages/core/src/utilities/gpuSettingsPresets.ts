@@ -184,6 +184,14 @@ const FORMAT_PROBE_EDGE = 8;
 const MIN_TEXTURE_BYTES = 16 * 1024 * 1024;
 
 /**
+ * A device with a probed edge below `SMALL_EDGE` almost always has little GPU
+ * memory too, so `auto` starts it from `SMALL_EDGE_START_MEMORY_BYTES` and not
+ * from the memory of its class.
+ */
+const SMALL_EDGE = 2048;
+const SMALL_EDGE_START_MEMORY_BYTES = 512 * 1024 * 1024;
+
+/**
  * The default of the largest texture memory that `auto` tests. An assumption
  * about the likely devices, not a limit of a device.
  */
@@ -273,7 +281,8 @@ function autoEdge(): number {
  * The `auto` preset, from the stored record of the device.
  *
  * The start preset of the class of the GPU (see `START_PRESET_OF_CLASS`)
- * gives the memory before the record holds any, and the speed. The edge is
+ * gives the memory before the record holds any, and the speed; a probed edge
+ * below `SMALL_EDGE` gives `SMALL_EDGE_START_MEMORY_BYTES` instead. The edge is
  * the reliable edge of the probe (see `autoEdge`). The memory is the start
  * memory, raised one step above a larger total that worked, capped after several failure
  * episodes, and lowered for the time of an episode (see `autoMemoryLimit`).
@@ -293,13 +302,14 @@ function getAutoGpuSettings(): GpuSettings {
 
   const start =
     PRESETS[START_PRESET_OF_CLASS[getRendererClass() as 'mobile' | 'desktop']];
+  const startMemory =
+    (ensureReliableEdge() ?? Infinity) < SMALL_EDGE
+      ? SMALL_EDGE_START_MEMORY_BYTES
+      : start.textureMemoryBytes;
   const stored = peekStoredRenderingCapabilities();
   const memory = !stored
-    ? start.textureMemoryBytes
-    : autoMemoryLimit(start.textureMemoryBytes, [
-        stored.textureBytes,
-        stored.gpuBytes,
-      ]);
+    ? startMemory
+    : autoMemoryLimit(startMemory, [stored.textureBytes, stored.gpuBytes]);
 
   return {
     id: 'auto',
