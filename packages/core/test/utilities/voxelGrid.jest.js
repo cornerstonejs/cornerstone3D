@@ -60,16 +60,33 @@ describe('voxelGrid.boxAverageReductionFactors', () => {
   it('reduces exactly one axis for an edge of 2049 against a limit of 2048', () => {
     // Acceptance criterion 4 of issue #2921. A uniform reduction by 2 on three
     // axes takes 8 times fewer voxels for an excess of one voxel.
-    // The edge takes the largest size that fits, because 2049 has no divisor
-    // near 2048.
+    // The edge limit gives the whole factor 2, and 1025 boxes of 2049 / 1025.
     const factors = boxAverageReductionFactors([2049, 512, 512], {
       maxEdge: 2048,
     });
 
-    expect(factors).toEqual([2049 / 2048, 1, 1]);
+    expect(factors).toEqual([2049 / 1025, 1, 1]);
     expect(reducedDimensions([2049, 512, 512], factors)).toEqual([
-      2048, 512, 512,
+      1025, 512, 512,
     ]);
+  });
+
+  it('takes a whole factor for an edge limit above 1024, and the largest fit otherwise', () => {
+    // The API must give 2464 -> 1232 under an edge limit of 2048.
+    expect(
+      boxAverageReductionFactors([512, 512, 2464], { maxEdge: 2048 })
+    ).toEqual([1, 1, 2]);
+
+    // An edge limit of 1024 or below keeps the largest edge that fits.
+    expect(
+      boxAverageReductionFactors([512, 512, 2464], { maxEdge: 256 })
+    ).toEqual([2, 2, 2464 / 256]);
+
+    // A memory limit keeps the largest fit: 2464 * 2 * 1 voxels under a
+    // budget of 2000 * 2 voxels gives an edge of 2000, not 1232.
+    expect(
+      boxAverageReductionFactors([2464, 2, 1], { maxVoxelCount: 4000 })
+    ).toEqual([2464 / 2000, 1, 1]);
   });
 
   it('prefers a factor that divides the edge, and takes N / M otherwise', () => {
