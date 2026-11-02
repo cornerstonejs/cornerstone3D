@@ -335,7 +335,8 @@ that its own function reads, and no existing caller changes.
 **VRS-C-11.** With final downsampling off (`rendering.lossyDownsampling.final`), a volume renders as
 in 4.x: it gets a full-resolution texture, no GPU settings preset applies, and a 3D render uses the
 sample distance of 4.x. Every render path reads the GPU settings through `gpuSettingsForRender`,
-which gives no settings in that case.
+which gives no settings in that case. CPU rendering (`useCPURendering`) also gets no settings,
+because the presets describe the limits of a WebGL GPU, not CPU memory.
 
 ## § Implementation choices
 
