@@ -84,6 +84,8 @@ and the viewport fidelity indicator tells the user that the display is lossy.
   the limits of the device from the start.
 - **GPULIMIT-USER-8** The detection adds less than 250 ms to the first start of
   a viewer in a new browser. A later start adds no visible delay.
+- **GPULIMIT-USER-9** The `auto` limits are limits of GPU rendering through
+  WebGL. The viewer applies the `auto` limits to GPU rendering only.
 
 A requirement in this group fails, for example, when a device that can render
 within the limits shows all gray or all black, or does not render because the
@@ -98,25 +100,42 @@ viewer asked it to render a data set that is too large.
 - **GPULIMIT-PROFILE-2** A named preset (`low-tablet`, `low`, `medium`,
   `high`) that the application selects with `setGpuSettingsPreset`
   overrides `auto`. The stored record has no effect on a named preset.
-- **GPULIMIT-PROFILE-3** Under `auto`, the edge of a texture is never above an
-  edge that a probe passed (`VRS-C-12`, `VRS-I-14`).
+- **GPULIMIT-PROFILE-3** Under `auto` on a GPU renderer (GPULIMIT-PROFILE-7),
+  the edge of a texture is never above an edge that a probe passed (`VRS-C-12`,
+  `VRS-I-14`).
 - **GPULIMIT-PROFILE-4** Two values of the `init` configuration bound what
   `auto` tests, in `rendering.autoGpuSettings`: `maxTextureMemoryBytes`, the
   largest texture memory that `auto` allows (default 32 GB), and
   `maxTextureEdge`, the largest edge that `auto` probes (default and upper bound
   `MAX_3D_TEXTURE_SIZE`). The 32 GB default is an assumption about the likely
   devices, not a limit of a device. A named preset ignores both values.
-- **GPULIMIT-PROFILE-5** The class of the renderer sets the start of `auto`:
-  `low` for a software rasterizer or no WebGL2, `low-tablet` for a GPU of a
-  phone or a tablet, and `medium` for any other GPU. Safari reports
-  `"Apple GPU"` on every Apple device, so an `"Apple GPU"` on a macOS device with
-  no touch screen is a desktop GPU.
+- **GPULIMIT-PROFILE-5** The class of the GPU sets the start of `auto`:
+  `low-tablet` for a GPU of a phone or a tablet, and `medium` for any other
+  GPU. Safari reports `"Apple GPU"` on every Apple device, so an `"Apple GPU"`
+  on a macOS device with no touch screen is a desktop GPU.
 - **GPULIMIT-PROFILE-6** The edge cap of 2048 applies to the named presets
   only. `auto` probes an edge up to the device limit: `MAX_3D_TEXTURE_SIZE`, or
-  `maxTextureEdge` when that is smaller (GPULIMIT-PROFILE-4). No evidence shows
+  `maxTextureEdge` when that is smaller (GPULIMIT-PROFILE-4). `auto` probes on a
+  GPU renderer only (GPULIMIT-PROFILE-7). No evidence shows
   that a thin probe that passes predicts a full texture that displays, and no
   evidence shows the opposite. A context loss after the allocation at a new edge
   is recorded (GPULIMIT-DETECT-2).
+- **GPULIMIT-PROFILE-7** The `auto` limits describe the memory and the texture
+  limits of a WebGL GPU, not CPU memory. Thus a software renderer and CPU
+  rendering ignore the `auto` limits:
+  - A software renderer draws WebGL on the CPU, for example SwiftShader,
+    llvmpipe, softpipe, or Microsoft Basic Render Driver (WARP). Its renderer
+    class is `software`.
+  - CPU rendering has the renderer class `none`, or `useCPURendering` is on.
+  - For these renderers, `gpuSettingsForRender()` returns `undefined` under
+    `auto`, so the volume renders as in 4.x. `auto` runs no probe, reads no
+    stored record, and the allocation tracker writes no record.
+  - A named preset still applies to these renderers, because the application
+    selects it explicitly. For example, an e2e test on a CI runner that uses
+    SwiftShader can select `low-tablet` to test the reduction.
+  - If CPU limits become necessary, they are a separate future set of
+    requirements on a separate path.
+  - This version does not decide whether the `auto` limits apply to WebGPU.
 
 ### The detection of each failure (GPULIMIT-DETECT)
 

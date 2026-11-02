@@ -236,13 +236,35 @@ describe('the auto preset', () => {
     });
   });
 
-  it('starts a software rasterizer from low', () => {
-    mockWebGL('Google SwiftShader');
+  describe('on a software renderer', () => {
+    beforeEach(() => {
+      mockWebGL('Google SwiftShader');
+      setLossyDownsampling({ final: true });
+    });
 
-    expect(getActiveGpuSettings()).toMatchObject({
-      id: 'auto',
-      maxTextureEdge: 256,
-      textureMemoryBytes: 2 * GIGABYTE,
+    afterEach(() => setLossyDownsampling({ final: false }));
+
+    it('applies no auto limits, renders as 4.x, and runs no probe', () => {
+      // The detection at init runs its own probe; auto adds none.
+      getActiveGpuSettings();
+      jest.clearAllMocks();
+
+      expect(gpuSettingsForRender()).toBeUndefined();
+      expect(gridFitsGpuSettings([16, 16, 3000], 'Float32Array', 1)).toBe(true);
+      expect(getActiveGpuSettings().maxTextureEdge).toBe(Infinity);
+      expect(probeTextureEdge).not.toHaveBeenCalled();
+      expect(probeEdgeSearch).not.toHaveBeenCalled();
+    });
+
+    it('still applies a named preset', () => {
+      setGpuSettingsPreset('low-tablet');
+
+      expect(gpuSettingsForRender()).toEqual(
+        getGpuSettingsPreset('low-tablet')
+      );
+      expect(gridFitsGpuSettings([16, 16, 3000], 'Float32Array', 1)).toBe(
+        false
+      );
     });
   });
 

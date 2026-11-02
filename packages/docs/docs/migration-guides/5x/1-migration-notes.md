@@ -516,10 +516,18 @@ device keeps its own record:
   them, until a retest or for 7 days after the last failure. A new texture gets the
   memory limit of `auto` minus the GPU bytes of the rest of the page. `auto`
   does not evict the textures of another volume.
-- **The start.** The memory starts from `low` for a software rasterizer,
-  `low-tablet` for a mobile GPU, and `medium` for any other GPU. Safari
-  reports `"Apple GPU"` on a Mac too, and a Mac with no touch screen starts
-  from `medium`. The edge is always an edge that the probe passed.
+- **The start.** The memory starts from `low-tablet` for a mobile GPU, and
+  `medium` for any other GPU. Safari reports `"Apple GPU"` on a Mac too, and a
+  Mac with no touch screen starts from `medium`. The edge is always an edge
+  that the probe passed.
+- **GPU rendering only.** The `auto` limits describe the memory and the
+  texture limits of a WebGL GPU, not CPU memory. A software renderer (for
+  example SwiftShader or llvmpipe) and CPU rendering ignore the `auto` limits,
+  and render as in 4.x. A named preset still applies to them, so an e2e test
+  on a CI runner that uses SwiftShader can select `low-tablet` to test the
+  reduction. CPU limits, if necessary, are a separate future set of
+  requirements. This version does not decide whether the limits apply to
+  WebGPU.
 
 A volume with an axis longer than the limit draws from a box-average reduction
 of that axis. For example, a CT of 512 × 512 × 2464 draws with a factor of 2

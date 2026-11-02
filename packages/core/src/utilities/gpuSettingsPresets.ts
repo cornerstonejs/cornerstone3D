@@ -15,7 +15,11 @@ import type {
   RenderingCapabilityMemory,
 } from './renderingCapabilities';
 import type { ProbeTextureFormat } from './textureSupport';
-import { getConfiguration, getLossyDownsampling } from '../init';
+import {
+  getConfiguration,
+  getLossyDownsampling,
+  getShouldUseCPURendering,
+} from '../init';
 
 /**
  * How fast a device of this class draws, on a relative scale.
@@ -40,6 +44,11 @@ export type GpuSpeedIndex = number;
  * it computes its edge and memory from the stored record of the device (see
  * `getStoredRenderingCapabilities`). A named preset, which an application
  * selects, overrides `auto`.
+ *
+ * The `auto` limits are WebGL GPU limits. A software renderer and CPU
+ * rendering get no `auto` limits (see `autoGpuLimitsApply`). A named preset
+ * applies to every renderer, because the application selects it explicitly,
+ * for example a test on a CI runner that uses SwiftShader.
  */
 export type GpuSettings = {
   /** The name of the preset. */
@@ -135,15 +144,32 @@ let activePresetId: GpuSettingsPresetId = DEFAULT_PRESET_ID;
 
 /**
  * The named preset that sets the conservative start of `auto` for a class of
- * renderer: `low` for a software rasterizer or no WebGL2, `low-tablet` for a
- * GPU of a phone or a tablet, and `medium` for any other GPU.
+ * GPU: `low-tablet` for a GPU of a phone or a tablet, and `medium` for any
+ * other GPU.
  */
-const START_PRESET_OF_CLASS: Record<RendererClass, NamedPresetId> = {
-  none: 'low',
-  software: 'low',
+const START_PRESET_OF_CLASS: Record<
+  Exclude<RendererClass, 'none' | 'software'>,
+  NamedPresetId
+> = {
   mobile: 'low-tablet',
   desktop: 'medium',
 };
+
+/**
+ * True when the `auto` limits apply. They are WebGL GPU limits, so they apply
+ * to GPU rendering only. A software renderer (class `software`) and CPU
+ * rendering (class `none`, or `useCPURendering`) get no `auto` limits, and
+ * render as with final downsampling off. A named preset still applies to them.
+ */
+function autoGpuLimitsApply(): boolean {
+  if (getShouldUseCPURendering()) {
+    return false;
+  }
+
+  const rendererClass = getRendererClass();
+
+  return rendererClass === 'mobile' || rendererClass === 'desktop';
+}
 
 /**
  * The edge of `auto` when no probe has passed any edge, because no probe could
@@ -230,53 +256,54 @@ function autoMemoryLimit(
  * `UNPROBED_EDGE_FLOOR`. `maxTextureEdge` of `rendering.autoGpuSettings` caps
  * the edge.
  */
-function autoEdge(rendererClass: RendererClass): number {
+function autoEdge(): number {
   const reliable = ensureReliableEdge();
   const failed = peekStoredRenderingCapabilities()?.edge.failed?.value;
-  const edge = Math.min(
+
+  return Math.min(
     reliable ??
       (failed && failed <= UNPROBED_EDGE_FLOOR
         ? FORMAT_PROBE_EDGE
         : UNPROBED_EDGE_FLOOR),
     autoTestBounds().maxTextureEdge
   );
-
-  // A software rasterizer is too slow for a larger texture.
-  return rendererClass === 'software'
-    ? Math.min(edge, PRESETS.low.maxTextureEdge)
-    : edge;
 }
 
 /**
  * The `auto` preset, from the stored record of the device.
  *
- * The start preset of the class of the renderer (see `START_PRESET_OF_CLASS`)
+ * The start preset of the class of the GPU (see `START_PRESET_OF_CLASS`)
  * gives the memory before the record holds any, and the speed. The edge is
  * the reliable edge of the probe (see `autoEdge`). The memory is the start
  * memory, raised one step above a larger total that worked, capped after several failure
- * episodes, and lowered for the time of an episode (see `autoMemoryLimit`). A
- * software rasterizer keeps the memory of `low`.
+ * episodes, and lowered for the time of an episode (see `autoMemoryLimit`).
+ *
+ * When the `auto` limits do not apply (see `autoGpuLimitsApply`), `auto` has
+ * no limit, reads no record and runs no probe.
  */
 function getAutoGpuSettings(): GpuSettings {
-  const rendererClass = getRendererClass();
-  const start = PRESETS[START_PRESET_OF_CLASS[rendererClass]];
-
-  if (rendererClass === 'none') {
-    return { ...start, id: 'auto' };
+  if (!autoGpuLimitsApply()) {
+    return {
+      id: 'auto',
+      maxTextureEdge: Number.POSITIVE_INFINITY,
+      textureMemoryBytes: Number.POSITIVE_INFINITY,
+      speed: 1,
+    };
   }
 
+  const start =
+    PRESETS[START_PRESET_OF_CLASS[getRendererClass() as 'mobile' | 'desktop']];
   const stored = peekStoredRenderingCapabilities();
-  const memory =
-    rendererClass === 'software' || !stored
-      ? start.textureMemoryBytes
-      : autoMemoryLimit(start.textureMemoryBytes, [
-          stored.textureBytes,
-          stored.gpuBytes,
-        ]);
+  const memory = !stored
+    ? start.textureMemoryBytes
+    : autoMemoryLimit(start.textureMemoryBytes, [
+        stored.textureBytes,
+        stored.gpuBytes,
+      ]);
 
   return {
     id: 'auto',
-    maxTextureEdge: autoEdge(rendererClass),
+    maxTextureEdge: autoEdge(),
     textureMemoryBytes: memory,
     speed: start.speed,
   };
@@ -332,13 +359,21 @@ function getActiveGpuSettings(): GpuSettings {
 }
 
 /**
- * The GPU settings that a render applies, or `undefined` when final
- * downsampling is off. With final downsampling off, no preset applies, and a
- * volume renders as in 4.x. Every render path reads the settings here, so that
- * one check covers them all.
+ * The GPU settings that a render applies, or `undefined` when no preset
+ * applies: final downsampling is off, or `auto` is active and its limits do
+ * not apply (see `autoGpuLimitsApply`). With `undefined`, a volume renders as
+ * in 4.x, with no probe and no read of the record. Every render path reads the
+ * settings here, so that one check covers them all.
  */
 function gpuSettingsForRender(): GpuSettings | undefined {
-  return getLossyDownsampling().final ? getActiveGpuSettings() : undefined;
+  if (
+    !getLossyDownsampling().final ||
+    (activePresetId === 'auto' && !autoGpuLimitsApply())
+  ) {
+    return undefined;
+  }
+
+  return getActiveGpuSettings();
 }
 
 /** Returns the active preset to the default, which is `auto`. */
@@ -375,14 +410,13 @@ function gpuSettingsForGrid(
   }
 
   const edge = Math.max(dimensions[0], dimensions[1], dimensions[2]);
-  const rendererClass = getRendererClass();
   let result = gpuSettings;
 
+  // An `auto` with no limits (see `autoGpuLimitsApply`) has an infinite edge,
+  // so it never probes.
   if (
     edge > gpuSettings.maxTextureEdge &&
-    edge <= autoTestBounds().maxTextureEdge &&
-    rendererClass !== 'software' &&
-    rendererClass !== 'none'
+    edge <= autoTestBounds().maxTextureEdge
   ) {
     const format: ProbeTextureFormat =
       bytesPerVoxel === 1
@@ -448,5 +482,6 @@ export {
   gpuSettingsForRender,
   resetGpuSettingsPreset,
   gridLimitsOfGpuSettings,
+  autoGpuLimitsApply,
   DEFAULT_PRESET_ID as defaultGpuSettingsPresetId,
 };

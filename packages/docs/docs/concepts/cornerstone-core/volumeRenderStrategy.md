@@ -501,10 +501,16 @@ removal of an actor, and a legacy viewport has many such paths.
 edge on each of the three axes, because a driver can store the depth axis as layers. The first edge
 is 2048, and the search halves the edge down to 16.
 
-**VRS-I-13.** `auto` takes its memory and its speed from a named preset of the class of the
-renderer: `low` for a software rasterizer or no WebGL2, `low-tablet` for a mobile GPU (Mali, Adreno,
-PowerVR, Apple GPU, Immortalis, Xclipse, Vivante), and `medium` for any other GPU. A software
-rasterizer also keeps the edge of `low` (256) at most, because a larger texture is too slow on it.
+**VRS-I-13.** `auto` takes its memory and its speed from a named preset of the class of the GPU:
+`low-tablet` for a mobile GPU (Mali, Adreno, PowerVR, Apple GPU, Immortalis, Xclipse, Vivante), and
+`medium` for any other GPU. The `auto` limits describe the memory and the texture limits of a WebGL
+GPU, not CPU memory. Thus a software renderer (class `software`, for example SwiftShader or llvmpipe)
+and CPU rendering (class `none`, or `useCPURendering`) ignore the `auto` limits. For them,
+`gpuSettingsForRender()` returns `undefined` under `auto`, and the volume renders as in 4.x, with no
+probe and no read or write of the stored record. A named preset still applies to them, because the
+application selects it explicitly. If CPU limits become necessary, they are a separate future set of
+requirements on a separate path. This version does not decide whether the `auto` limits apply to
+WebGPU (GPULIMIT-PROFILE-7 of the GPU device limits specification).
 
 **VRS-I-14.** The edge of `auto` is the reliable edge. With none, the edge search runs once in the
 page, and with no probe at all the edge is 128 (8 when a failure at or below 128 is stored). A failed
