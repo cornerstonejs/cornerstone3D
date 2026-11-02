@@ -1,3 +1,5 @@
+import { asArrayFirst } from '../object/asArray';
+
 type NumberLike = string | String | number | Number;
 
 function isNumberLike(value: unknown): value is NumberLike {
@@ -10,33 +12,113 @@ function isNumberLike(value: unknown): value is NumberLike {
 }
 
 /**
- * Converts a value to a finite number, returning undefined if the value is not finite.
+ * Answers true for a value that `Array.from` converts entry by entry: an
+ * iterable, or an object that carries a numeric `length`.
+ */
+function isEntryWise(value: unknown): value is ArrayLike<unknown> {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+
+  return (
+    Symbol.iterator in value ||
+    typeof (value as ArrayLike<unknown>).length === 'number'
+  );
+}
+
+/** One value as a finite number; no value, a blank string or a non-number gives `defaultValue`. */
+function finiteOrDefault(value: unknown, defaultValue?: number) {
+  if (!isNumberLike(value) || String(value).trim() === '') {
+    return defaultValue;
+  }
+  const converted = Number(value);
+  return Number.isFinite(converted) ? converted : defaultValue;
+}
+
+/**
+ * Converts a value to a finite number, returning `defaultValue` if the value is
+ * not finite. An array converts entry by entry, and each entry that is not
+ * finite becomes `defaultValue`. `defaultValue` also covers a value that cannot
+ * convert at all: `undefined`, `null`, a boolean, a plain object, and a blank
+ * string. A blank string is the DICOM empty value, so it reads as no value,
+ * and not as the `0` that a bare `Number('')` gives.
  *
  * @param value - The value to convert to a finite number
- * @returns The finite number value, or undefined if the value is not finite
+ * @param defaultValue - The number to return for a value that is absent, not
+ *   finite, or not convertible. Defaults to `undefined`.
+ * @returns The finite number value, or `defaultValue`
  */
 export function toFiniteNumber(
-  value: NumberLike | undefined
+  value: NumberLike | null | undefined,
+  defaultValue?: undefined
 ): number | undefined;
+export function toFiniteNumber(
+  value: NumberLike | null | undefined,
+  defaultValue: number
+): number;
 export function toFiniteNumber<T extends NumberLike>(
-  value: ArrayLike<T> | undefined
+  value: ArrayLike<T> | null | undefined,
+  defaultValue?: undefined
 ): number[] | undefined;
 export function toFiniteNumber<T extends NumberLike>(
-  value: T | ArrayLike<T> | undefined
+  value: ArrayLike<T> | null | undefined,
+  defaultValue: number
+): number[];
+export function toFiniteNumber<T extends NumberLike>(
+  value: T | ArrayLike<T> | null | undefined,
+  defaultValue?: number
 ): number | undefined | number[] {
-  if (value === undefined) {
+  if (isNumberLike(value) || !isEntryWise(value)) {
+    return finiteOrDefault(value, defaultValue);
+  }
+
+  return Array.from(value, (entry) =>
+    finiteOrDefault(entry, defaultValue)
+  ) as number[];
+}
+
+/**
+ * The finite number of the first value: `toFiniteNumber` of element 0 of an
+ * array, or of the value itself when it is not an array.
+ *
+ * Use it to read one number from a DICOM attribute that a source can deliver
+ * as a single value (`'5'`) or as a multi-valued array (`['5']`). A value with
+ * no number gives `defaultValue`, as in {@link toFiniteNumber}.
+ *
+ * @param value - an array, or a single value
+ * @param defaultValue - the number to return when there is no finite number.
+ *   Defaults to `undefined`.
+ * @returns the finite number of the first value, or `defaultValue`
+ */
+export function toFiniteFirst(
+  value: unknown,
+  defaultValue?: undefined
+): number | undefined;
+export function toFiniteFirst(value: unknown, defaultValue: number): number;
+export function toFiniteFirst(
+  value: unknown,
+  defaultValue?: number
+): number | undefined {
+  return finiteOrDefault(asArrayFirst(value), defaultValue);
+}
+
+/**
+ * Exactly `length` finite numbers from a multi-valued value, for example
+ * `ImagePositionPatient` (3) or `ImageOrientationPatient` (6), else `undefined`.
+ * Each entry converts as in {@link toFiniteNumber}, so a blank or non-numeric
+ * entry makes the whole vector `undefined`.
+ */
+export function toFiniteVector(
+  value: unknown,
+  length: number
+): number[] | undefined {
+  if (isNumberLike(value) || !isEntryWise(value)) {
     return undefined;
   }
-
-  if (isNumberLike(value)) {
-    const converted = Number(value);
-    return Number.isFinite(converted) ? converted : undefined;
-  }
-
-  return Array.from(value, (entry) => {
-    const converted = Number(entry);
-    return Number.isFinite(converted) ? converted : undefined;
-  }) as number[];
+  const numbers = Array.from(value, (entry) => finiteOrDefault(entry));
+  return numbers.length === length && numbers.every((n) => n !== undefined)
+    ? (numbers as number[])
+    : undefined;
 }
 
 /**

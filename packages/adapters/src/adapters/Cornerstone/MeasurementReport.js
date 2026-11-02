@@ -1,6 +1,11 @@
 import { normalizers, data, utilities, derivations } from 'dcmjs';
 
 import { toArray, codeMeaningEquals } from '../helpers';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.adaptersLog.getLogger(
+  'Cornerstone.MeasurementReport'
+);
 
 const { TID1500, addAccessors } = utilities;
 
@@ -305,8 +310,8 @@ export default class MeasurementReport {
       if (toolClass) {
         const measurement = toolClass.getMeasurementData(measurementGroup);
 
-        console.log(`=== ${toolClass.toolType} ===`);
-        console.log(measurement);
+        cs3dLogger.info(`=== ${toolClass.toolType} ===`);
+        cs3dLogger.info(measurement);
 
         measurementData[toolClass.toolType].push(measurement);
       }

@@ -7,6 +7,7 @@ import triggerEvent from '../utilities/triggerEvent';
 import { actorIsA } from '../utilities/actorCheck';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 import type { ViewportInput } from '../types/IViewport';
+import type { ResetCameraOptions } from '../types/ICamera';
 import BaseVolumeViewport from './BaseVolumeViewport';
 import type { Types } from '@cornerstonejs/core';
 /**
@@ -79,8 +80,16 @@ class VolumeViewport3D extends BaseVolumeViewport {
     resetPan = true,
     resetZoom = true,
     resetToCenter = true,
-  } = {}): boolean {
-    super.resetCamera({ resetPan, resetZoom, resetToCenter });
+    resetAspectRatio = true,
+    storeAsInitialCamera = true,
+  }: ResetCameraOptions = {}): boolean {
+    super.resetCamera({
+      resetPan,
+      resetZoom,
+      resetToCenter,
+      resetAspectRatio,
+      storeAsInitialCamera,
+    });
     const activeCamera = this.getVtkActiveCamera();
 
     if (activeCamera.getParallelProjection()) {

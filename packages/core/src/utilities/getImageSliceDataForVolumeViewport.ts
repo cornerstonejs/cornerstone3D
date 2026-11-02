@@ -1,6 +1,12 @@
 import type { ImageSliceData, IVolumeViewport, VolumeActor } from '../types';
 import getSliceRange from './getSliceRange';
 import getTargetVolumeAndSpacingInNormalDir from './getTargetVolumeAndSpacingInNormalDir';
+import { coreLog } from './logger';
+
+const log = coreLog.getLogger(
+  'utilities',
+  'getImageSliceDataForVolumeViewport'
+);
 
 /**
  * It calculates the number of slices and the current slice index for a given
@@ -31,7 +37,7 @@ function getImageSliceDataForVolumeViewport(
     );
 
   if (!actorEntry) {
-    console.warn('No actor found for with actorUID of', imageVolume.volumeId);
+    log.warn('No actor found for with actorUID of', imageVolume.volumeId);
   }
 
   const volumeActor = actorEntry.actor as VolumeActor;

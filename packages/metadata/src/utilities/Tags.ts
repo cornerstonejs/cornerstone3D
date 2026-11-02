@@ -7,6 +7,9 @@ import {
   RadiopharmaceuticalInfoModule,
 } from './modules';
 import type { ModuleTagEntry } from './modules';
+import { logging as cornerstoneLogging } from '@cornerstonejs/utils';
+
+const cs3dLogger = cornerstoneLogging.metadataLog.getLogger('utilities.Tags');
 
 const dicomDictionary = dcmjs.data.DicomMetaDictionary.dictionary;
 const nameMap = dcmjs.data.DicomMetaDictionary.nameMap;
@@ -139,11 +142,31 @@ export function addTag(name: string, value: TagEntry) {
  * nameMap entries have tag in "(GGGG,EEEE)" format; we unpunctuate to "GGGGEEEE".
  */
 export function resolveHexFromKeyword(keyword: string): string | undefined {
-  const entry = nameMap[keyword];
-  if (!entry) {
+  // Own keys only: `constructor` or `toString` is not a keyword.
+  const entry = Object.prototype.hasOwnProperty.call(nameMap, keyword)
+    ? nameMap[keyword]
+    : undefined;
+  if (!entry?.tag) {
     return undefined;
   }
   return entry.tag.substring(1, 5) + entry.tag.substring(6, 10);
+}
+
+let keywordsByLowerCase: Map<string, string> | undefined;
+
+/**
+ * The DICOM keyword that equals `name` when case is ignored, or `undefined`.
+ * Names are case sensitive, as DICOM keywords are; this finds the correct
+ * name for an error message. The index is built once, at the first call.
+ */
+export function keywordIgnoringCase(name: string): string | undefined {
+  if (!keywordsByLowerCase) {
+    keywordsByLowerCase = new Map();
+    for (const keyword of Object.keys(nameMap)) {
+      keywordsByLowerCase.set(keyword.toLowerCase(), keyword);
+    }
+  }
+  return keywordsByLowerCase.get(name.toLowerCase());
 }
 
 /**
@@ -175,7 +198,7 @@ for (const [moduleName, keywords] of moduleDefinitions) {
 // Create TagEntry objects and register them
 for (const [keyword, { hex, groups }] of tagGroups) {
   if (!hex) {
-    console.warn(`Tags: keyword "${keyword}" not found in dcmjs nameMap`);
+    cs3dLogger.warn(`Tags: keyword "${keyword}" not found in dcmjs nameMap`);
     continue;
   }
   addTag(keyword, createTagEntry(hex, ...groups));

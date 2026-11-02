@@ -16,7 +16,6 @@ import type {
   FloodFillIntensityRangeOptions,
   GetFloodFillIntensityRange,
 } from './floodFillIntensityRangeTypes';
-
 const {
   transformWorldToIndex,
   mapScalarToViewportVoiIntensity,
@@ -27,15 +26,20 @@ type NumberVoxelManager = VoxelManager<number>;
 const { growCutLog: log } = csUtils.logger;
 const ENABLE_VERBOSE_FLOOD_FILL_LOGS = false;
 
-/** console.time/timeEnd wrappers gated behind the verbose flag. */
+/** Timing helpers gated behind the verbose flag. */
+const timingStarts = new Map<string, number>();
 const timeStart = (label: string) => {
   if (ENABLE_VERBOSE_FLOOD_FILL_LOGS) {
-    console.time(label);
+    timingStarts.set(label, performance.now());
   }
 };
 const timeEnd = (label: string) => {
   if (ENABLE_VERBOSE_FLOOD_FILL_LOGS) {
-    console.timeEnd(label);
+    const start = timingStarts.get(label);
+    if (start !== undefined) {
+      log.debug(`${label}: ${performance.now() - start}ms`);
+      timingStarts.delete(label);
+    }
   }
 };
 
@@ -597,7 +601,7 @@ async function runFloodFillSegmentation({
     ...diagnostics,
   });
   if (ENABLE_VERBOSE_FLOOD_FILL_LOGS) {
-    console.info('[cornerstone-tools] flood fill intensity range', {
+    log.info('[cornerstone-tools] flood fill intensity range', {
       rawMin: clampedRangeMin,
       rawMax: clampedRangeMax,
       strategy: diagnostics.strategy,
@@ -641,14 +645,11 @@ async function runFloodFillSegmentation({
       }
     }
     if (ENABLE_VERBOSE_FLOOD_FILL_LOGS) {
-      console.info(
-        '[cornerstone-tools] flood fill seed + effective tolerance',
-        {
-          seedScalar,
-          effectiveMin: positiveMin,
-          effectiveMax: positiveMax,
-        }
-      );
+      log.info('[cornerstone-tools] flood fill seed + effective tolerance', {
+        seedScalar,
+        effectiveMin: positiveMin,
+        effectiveMax: positiveMax,
+      });
     }
 
     const intensityGetter = (
@@ -905,7 +906,7 @@ async function runFloodFillSegmentation({
           otherCount += 1;
         }
       }
-      console.info('[cornerstone-tools] flood fill final voxel check', {
+      log.info('[cornerstone-tools] flood fill final voxel check', {
         floodedPoints: floodedPoints.length,
         segmentIndex,
         paintIndex,

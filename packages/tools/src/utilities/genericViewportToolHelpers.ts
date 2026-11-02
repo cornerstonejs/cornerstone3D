@@ -19,6 +19,39 @@ export function getSlabThicknessOrDefault(viewport: Types.IViewport): number {
 }
 
 /**
+ * The full depth in mm that a viewport's slab shows, or undefined when the
+ * viewport shows no slab of its own.
+ *
+ * `getSlabThickness` does **not** return a depth on every render path, and the
+ * two paths differ:
+ *
+ * - A volume viewport stores a half thickness, because the clipping planes sit
+ *   at `focalPoint ± slabThickness`. This function doubles that value.
+ * - A generic planar viewport uses `vtkImageResliceMapper`, where the field is
+ *   already a full thickness. This function passes that value through.
+ *
+ * A caller that needs a depth, such as a brush fill, must use this function
+ * and not the raw value. See
+ * `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
+ */
+export function getViewSlabDepthOfViewport(
+  viewport: Types.IViewport
+): number | undefined {
+  // Stack viewports have no slab API at all, so keep the call optional.
+  const slabThickness = (
+    viewport as Types.IVolumeViewport
+  ).getSlabThickness?.();
+
+  if (!Number.isFinite(slabThickness)) {
+    return undefined;
+  }
+
+  return csUtils.getViewSlabDepth(
+    csUtils.isGenericViewport(viewport) ? slabThickness : slabThickness * 2
+  );
+}
+
+/**
  * Navigates a native (Generic) viewport to a focal point via its view reference.
  * Native PLANAR_NEXT has no setCamera; navigating by view reference snaps to the
  * nearest slice along the view-plane normal.

@@ -12,7 +12,7 @@ import addSliderToToolbar from './addSliderToToolbar';
 import addToggleButtonToToolbar from './addToggleButtonToToolbar';
 import addVideoTime from './addVideoTime';
 import annotationTools from './annotationTools';
-import camera from './camera';
+import camera, { createObliqueAngleController } from './camera';
 import contourSegmentationToolBindings from './contourSegmentationToolBindings';
 import contourTools from './contourTools';
 import createElement from './createElement';
@@ -28,6 +28,11 @@ export {
   get4DVolumeImageIds,
   getNaturalizedInstanceForDisplaySetSplit,
 } from './splitDisplaySetsFromImageIds';
+export {
+  applyCustomizationUpdate,
+  hasUpdateCommand,
+  applyFilterCommand,
+} from './applyCustomizationUpdate';
 import createInfoSection from './createInfoSection';
 import downloadSurfacesData from './downloadSurfacesData';
 import getLocalUrl from './getLocalUrl';
@@ -68,6 +73,7 @@ export {
   addVideoTime,
   annotationTools,
   camera,
+  createObliqueAngleController,
   contourSegmentationToolBindings,
   contourTools,
   createElement,

@@ -39,6 +39,7 @@ function _setContourSegmentationSegmentAnnotationsLocked(
  * belongs to.
  * @param segmentIndex - The index of the segment
  * @returns A boolean value indicating whether the segment is locked or not.
+ * An undeclared segment index is not locked.
  */
 function isSegmentIndexLocked(
   segmentationId: string,
@@ -51,7 +52,7 @@ function isSegmentIndexLocked(
   }
 
   const { segments } = segmentation;
-  return segments[segmentIndex].locked;
+  return segments?.[segmentIndex]?.locked === true;
 }
 
 /**

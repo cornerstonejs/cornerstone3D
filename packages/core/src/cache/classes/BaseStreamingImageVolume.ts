@@ -24,6 +24,9 @@ import ImageVolume from './ImageVolume';
 import ProgressiveRetrieveImages from '../../loaders/ProgressiveRetrieveImages';
 import { canRenderFloatTextures } from '../../init';
 import { loadAndCacheImage } from '../../loaders/imageLoader';
+import { coreLog } from '../../utilities/logger';
+
+const log = coreLog.getLogger('cache', 'BaseStreamingImageVolume');
 const requestTypeDefault = RequestType.Prefetch;
 
 /**
@@ -210,7 +213,7 @@ export class BaseStreamingImageVolume
     // check if the load was cancelled while we were waiting for the image
     // if so we don't want to do anything
     if (this.loadStatus.cancelled) {
-      console.warn(
+      log.warn(
         'volume load cancelled, returning for imageIdIndex: ',
         imageIdIndex
       );
@@ -585,7 +588,7 @@ export class BaseStreamingImageVolume
     }
 
     return this.imagesLoader.loadImages(imageIds, this).catch((e) => {
-      console.debug('progressive loading failed to complete', e);
+      log.debug('progressive loading failed to complete', e);
     });
   }
 

@@ -9,7 +9,7 @@ import {
 } from '../utils/index';
 import { dicomDimensions } from '../../packages/dicomImageLoader/examples/dicomImageLoaderWADOURI/dicomDimensions';
 
-// This spec exists so `scripts/run-playright.sh --next` picks up the WADOURI
+// This spec exists so `scripts/run-playwright.sh --next` picks up the WADOURI
 // scenario under the GenericViewport code path. It re-runs the same 45 image
 // comparisons as the legacy spec but loads each example with `?type=next` so
 // the GenericViewport implementation is exercised end-to-end.

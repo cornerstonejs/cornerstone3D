@@ -1,5 +1,5 @@
 import type { RenderingEngineModeType } from '../types';
-import type { RenderBackendValue } from '../enums';
+import type { RenderBackendValue, VoxelManagerEnum } from '../enums';
 
 interface Cornerstone3DConfig {
   /**
@@ -49,6 +49,28 @@ interface Cornerstone3DConfig {
      * it might be wrong assumption in certain scenarios.
      */
     strictZSpacingForVolumeViewport?: boolean;
+
+    /**
+     * EXPERIMENTAL, and off by default. Which measure gives the distance
+     * between two adjacent slices of a volume viewport.
+     *
+     * - `'l2'` - the default and the historic behaviour.
+     *   `getSpacingInNormalDirection` gives the L2 length of the projected
+     *   spacing vector, `sqrt( Σᵢ (n · aᵢ · sᵢ)² )`.
+     * - `'l1'` - `getVoxelThicknessAlongNormal` gives the L1 length,
+     *   `Σᵢ |n · aᵢ| · sᵢ`, which is how far one voxel reaches along the
+     *   normal.
+     *
+     * The two measures are equal when the normal is parallel to a voxel axis,
+     * so an acquisition-orientation view behaves the same either way. The L2
+     * value is the smaller one for an oblique normal, so the viewport steps
+     * less than the width of one voxel, and two adjacent oblique slices show
+     * some of the same voxels. A brush fill on an oblique plane then appears
+     * on the next slice and on the previous slice.
+     *
+     * See https://github.com/cornerstonejs/cornerstone3D/issues/2912.
+     */
+    sliceStepMeasure?: 'l1' | 'l2';
 
     /**
      * The rendering engine mode to use.
@@ -101,6 +123,38 @@ interface Cornerstone3DConfig {
      * through legacy compatibility adapters at viewport creation time.
      */
     useGenericViewport?: boolean;
+  };
+
+  /**
+   * Core configuration for the labelmap images that core itself creates. This
+   * is not the segmentation configuration of cstools: `overwriteMode` and the
+   * rest of `SegmentationConfig` in `packages/tools/src/config.ts` describe
+   * display and editing behaviour, which cstools owns. A setting here describes
+   * how core allocates an image, so it stays beside the loader that reads it,
+   * which cstools cannot do - core cannot import cstools.
+   */
+  segmentation?: {
+    /**
+     * The voxel representation labelmap images are created with, for callers
+     * that do not ask for one (see `createAndCacheDerivedLabelmapImage(s)`).
+     *
+     * `'Volume'` (default) gives every labelmap a full frame buffer - one byte
+     * per pixel per slice, segmented or not. `'RLE'` stores each frame as runs
+     * instead, which on a large multi-segment SEG (a whole-body AI
+     * segmentation, say) is a fraction of the memory, and answers per-row
+     * questions ("is segment N on this slice?") from the runs rather than a
+     * whole-frame scan. Hosts that read labelmap pixels directly should opt in
+     * knowingly: an RLE frame's `getScalarData()` is a fresh expansion, not the
+     * writable buffer, so in-place writes to it are discarded
+     * (`getWritableScalarData()` returns undefined for such a frame).
+     *
+     * Accepts the bare string as well as the enum member, so this can come
+     * straight from a host's JSON/deployment configuration. The value is
+     * matched exactly; anything else warns and falls back to `'Volume'` rather
+     * than being silently ignored (see
+     * `getDefaultLabelmapVoxelRepresentation`).
+     */
+    labelmapVoxelRepresentation?: VoxelManagerEnum | `${VoxelManagerEnum}`;
   };
 
   debug: {

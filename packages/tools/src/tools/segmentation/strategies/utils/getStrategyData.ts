@@ -63,7 +63,7 @@ function getStrategyDataForStackViewport({
 
   let segmentationImageData;
   let segmentationVoxelManager;
-  let segmentationScalarData;
+  let getSegmentationScalarData: () => unknown;
   let imageScalarData;
   let imageVoxelManager;
   let imageData;
@@ -77,7 +77,7 @@ function getStrategyDataForStackViewport({
 
     segmentationVoxelManager = operationData.segmentationVoxelManager;
     segmentationImageData = operationData.segmentationImageData;
-    segmentationScalarData = null;
+    getSegmentationScalarData = () => null;
   } else {
     const labelmapImageId = getCurrentLabelmapImageIdForViewport(
       viewport.id,
@@ -105,7 +105,12 @@ function getStrategyDataForStackViewport({
     if (!segmentationImage) {
       return null;
     }
-    segmentationScalarData = segmentationImage.getPixelData?.();
+    // A thunk, not a call: on an RLE backed labelmap image `getPixelData()`
+    // expands the whole frame, and `getStrategyData` runs on every pointer move
+    // of a brush. No caller reads `segmentationScalarData` today, so the eager
+    // call bought a full frame decode and a frame sized allocation per event.
+    // The thunk keeps the field available for a caller that does want it.
+    getSegmentationScalarData = () => segmentationImage.getPixelData?.();
   }
 
   if (strategy.ensureImageVolumeFor3DManipulation) {
@@ -135,7 +140,9 @@ function getStrategyDataForStackViewport({
 
   return {
     segmentationImageData,
-    segmentationScalarData,
+    get segmentationScalarData() {
+      return getSegmentationScalarData();
+    },
     imageScalarData,
     segmentationVoxelManager,
     imageVoxelManager,

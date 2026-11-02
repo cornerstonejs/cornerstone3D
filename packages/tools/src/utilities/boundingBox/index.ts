@@ -3,6 +3,7 @@ import {
   getBoundingBoxAroundShapeIJK,
   getBoundingBoxAroundShapeWorld,
 } from './getBoundingBoxAroundShape';
+// Deprecated, and removed in the next release. See snapIndexBounds.ts.
 import snapIndexBounds from './snapIndexBounds';
 
 export {

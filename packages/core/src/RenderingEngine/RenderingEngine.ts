@@ -8,6 +8,9 @@ import type {
   VtkOffscreenMultiRenderWindow,
 } from '../types';
 import { RenderingEngineModeEnum } from '../enums';
+import { coreLog } from '../utilities/logger';
+
+const log = coreLog.getLogger('RenderingEngine');
 
 class RenderingEngine {
   public hasBeenDestroyed: boolean;
@@ -28,7 +31,7 @@ class RenderingEngine {
         this._implementation = new ContextPoolRenderingEngine(id);
         break;
       default:
-        console.warn(
+        log.warn(
           `RenderingEngine: Unknown rendering engine mode "${renderingEngineMode}". Defaulting to Next rendering engine.`
         );
         this._implementation = new ContextPoolRenderingEngine(id);

@@ -15,6 +15,7 @@ import parseImageId from '../imageLoader/wadouri/parseImageId';
 import { getTransferSyntaxForContentType } from '../imageLoader/wadors/loadImage';
 import isModalityLUTForDisplay from '../imageLoader/isModalityLutForDisplay';
 import isNMReconstructable from '../imageLoader/isNMReconstructable';
+import { logging } from '@cornerstonejs/utils';
 import getOverlayPlaneModule from '../imageLoader/wadors/metaData/getOverlayPlaneModule';
 import { getECGModule } from '../imageLoader/wadors/metaData/ECGHelpers';
 
@@ -285,7 +286,10 @@ describe('getTransferSyntaxForContentType', () => {
       'image/jp2': '1.2.840.10008.1.2.4.90',
       'image/jpx': '1.2.840.10008.1.2.4.92',
       'image/jphc': '3.2.840.10008.1.2.4.96',
-      'image/jxl': '1.2.840.10008.1.2.4.140',
+      // PS3.18 Table 8.7.3-5: image/jxl defaults to JPEG XL Lossless. The
+      // .140 this used to assert is not a JPEG XL UID at all.
+      'image/jxl': '1.2.840.10008.1.2.4.110',
+      'application/x-deflate': '1.2.840.10008.1.2.8.1',
     };
 
     for (const [contentType, transferSyntax] of Object.entries(table)) {
@@ -643,8 +647,8 @@ describe('getInstanceModule', () => {
   });
 
   it('swallows provider errors for a given type and continues with the rest', () => {
-    const consoleErrorSpy = jest
-      .spyOn(console, 'error')
+    const loggerErrorSpy = jest
+      .spyOn(logging.loaderLog.getLogger('getInstanceModule'), 'error')
       .mockImplementation(() => {});
     const provider = jest.fn((type: string) => {
       if (type === 'badModule') {
@@ -659,7 +663,7 @@ describe('getInstanceModule', () => {
     ]);
 
     expect(result).toEqual({ Ok: true });
-    expect(consoleErrorSpy).toHaveBeenCalled();
-    consoleErrorSpy.mockRestore();
+    expect(loggerErrorSpy).toHaveBeenCalled();
+    loggerErrorSpy.mockRestore();
   });
 });

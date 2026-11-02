@@ -5,6 +5,11 @@ import { getEnabledElementByViewportId } from '@cornerstonejs/core';
 import { defaultSegmentationStateManager } from './SegmentationStateManager';
 import { removeSegmentationListener } from './segmentationEventManager';
 import { getSegmentationRepresentationDisplay } from './SegmentationRepresentationDisplayRegistry';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'stateManagement.segmentation.removeSegmentationRepresentations'
+);
 
 /**
  * Removes a segmentation representation from a viewport.
@@ -187,7 +192,7 @@ function _removeRepresentationObject(
         immediate
       );
     } else {
-      console.warn(
+      cs3dLogger.warn(
         `No display registered for segmentation representation type ${representation.type}.`
       );
     }

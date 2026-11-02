@@ -43,6 +43,11 @@ import type {
 import type { LengthAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
 import { getStyleProperty } from '../../stateManagement/annotation/config/helpers';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.annotation.HeightTool'
+);
 
 const { transformWorldToIndex } = csUtils;
 
@@ -673,7 +678,7 @@ class HeightTool extends AnnotationTool {
 
       // If rendering engine has been destroyed while rendering
       if (!viewport.getRenderingEngine()) {
-        console.warn('Rendering Engine has been destroyed');
+        cs3dLogger.warn('Rendering Engine has been destroyed');
         return renderStatus;
       }
 

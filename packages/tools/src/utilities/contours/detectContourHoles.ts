@@ -58,7 +58,6 @@ function checkEnclosed(outerContour, innerContour, points) {
       [points[point][0], points[point][1]],
       vertices
     );
-    //console.log(result);
 
     if (!result) {
       pointsNotEnclosed++;
@@ -74,8 +73,6 @@ function checkEnclosed(outerContour, innerContour, points) {
  * @param {*} bypass
  */
 export function processContourHoles(contours, points, useXOR = true) {
-  //console.log(points);
-
   // Add non-closed planars to contour list
   const retContours = contours.filter(
     (contour) => contour.type !== 'CLOSED_PLANAR'

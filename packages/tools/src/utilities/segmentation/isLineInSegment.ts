@@ -2,6 +2,11 @@ import type { Types } from '@cornerstonejs/core';
 import { cache } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
 import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'utilities.segmentation.isLineInSegment'
+);
 /**
  * Determines if there is a point between point1 and point2 which is not
  * contained in the segmentation
@@ -96,7 +101,7 @@ function createIsInSegment(
 ) {
   const vol = cache.getVolume(segVolumeId);
   if (!vol) {
-    console.warn(`No volume found for ${segVolumeId}`);
+    cs3dLogger.warn(`No volume found for ${segVolumeId}`);
     return;
   }
 

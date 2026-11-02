@@ -10,9 +10,9 @@ async function run() {
   ]);
   console.log('Current branch:', branchName);
 
-  // Read the current version from packages/core/package.json. The root
-  // package.json is a private workspace root with no version field since the
-  // lerna -> pnpm migration removed lerna.json.
+  // The root package.json is a private workspace root, and it carries no
+  // version, so the current version comes from packages/core/package.json.
+  // Every published package carries the same version.
   const corePackageJson = JSON.parse(
     await fs.readFile('packages/core/package.json', 'utf-8')
   );

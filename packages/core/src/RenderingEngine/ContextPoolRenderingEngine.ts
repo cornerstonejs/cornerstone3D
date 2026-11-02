@@ -4,6 +4,7 @@ import { getConfiguration } from '../init';
 import Events from '../enums/Events';
 import eventTarget from '../eventTarget';
 import triggerEvent from '../utilities/triggerEvent';
+import { coreLog } from '../utilities/logger';
 import ViewportType from '../enums/ViewportType';
 import viewportTypeUsesCustomRenderingPipeline, {
   viewportUsesCustomRenderingPipeline,
@@ -11,6 +12,7 @@ import viewportTypeUsesCustomRenderingPipeline, {
 import getOrCreateCanvas, {
   updateCanvasSizeAndAspectRatio,
 } from './helpers/getOrCreateCanvas';
+import { setElementTouchActionNone } from './helpers/elementTouchAction';
 import type * as EventTypes from '../types/EventTypes';
 import type {
   ViewportInput,
@@ -33,6 +35,8 @@ import { isGenericViewport } from '../utilities/viewportCapabilities';
  *
  * @public
  */
+const log = coreLog.getLogger('RenderingEngine', 'ContextPoolRenderingEngine');
+
 class ContextPoolRenderingEngine extends BaseRenderingEngine {
   private contextPool?: WebGLContextPool;
 
@@ -91,6 +95,10 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
       viewportInputEntry;
 
     element.tabIndex = -1;
+
+    // Deliver touch input to cornerstone tools instead of the browser
+    // (scroll, pinch-zoom, double-tap zoom). Restored in _resetViewport.
+    setElementTouchActionNone(element);
 
     // Assign viewport to a context
     // Stack viewports can be distributed across contexts. Planar Next may mount
@@ -412,7 +420,7 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
       viewport.sWidth < VIEWPORT_MIN_SIZE ||
       viewport.sHeight < VIEWPORT_MIN_SIZE
     ) {
-      console.warn('Viewport is too small', viewport.sWidth, viewport.sHeight);
+      log.warn('Viewport is too small', viewport.sWidth, viewport.sHeight);
       return;
     }
 

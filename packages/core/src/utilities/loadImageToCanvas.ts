@@ -14,6 +14,9 @@ import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';
 import renderToCanvasGPU from './renderToCanvasGPU';
 import renderToCanvasCPU from './renderToCanvasCPU';
 import cache from '../cache/cache';
+import { coreLog } from './logger';
+
+const log = coreLog.getLogger('utilities', 'loadImageToCanvas');
 
 /**
  * The original load image options specified just an image id,  which is optimal
@@ -160,7 +163,7 @@ export default function loadImageToCanvas(
     }
 
     function errorCallback(error: Error, imageId: string) {
-      console.error(error, imageId);
+      log.error(error, imageId);
       reject(error);
     }
 

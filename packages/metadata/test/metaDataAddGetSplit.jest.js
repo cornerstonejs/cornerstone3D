@@ -7,6 +7,7 @@ import {
   afterEach,
 } from '@jest/globals';
 import * as metaData from '../src/metaData';
+import { logging } from '@cornerstonejs/utils';
 import {
   addCacheForType,
   addWritableCacheForType,
@@ -54,7 +55,12 @@ describe('metaData add/get split', () => {
   });
 
   it('returns cached value and warns on duplicate writable add', async () => {
-    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    const warnSpy = jest
+      .spyOn(
+        logging.metadataLog.getLogger('utilities.metadataProvider.cacheData'),
+        'warn'
+      )
+      .mockImplementation(() => {});
     const downstream = jest.fn(async () => ({ value: 7 }));
 
     addCacheForType(TEST_TYPE);

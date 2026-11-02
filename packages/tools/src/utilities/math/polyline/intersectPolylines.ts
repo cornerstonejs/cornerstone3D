@@ -11,6 +11,11 @@ import {
   type AugmentedPolyNode,
   type IntersectionInfo,
 } from './robustSegmentIntersection';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'utilities.math.polyline.intersectPolylines'
+);
 
 /**
  * Calculates all unique intersection points between two polylines.
@@ -339,7 +344,7 @@ export default function intersectPolylines(
 
     do {
       if (safetyBreak++ > maxIter) {
-        console.warn(
+        cs3dLogger.warn(
           'Intersection: Max iterations in path tracing.',
           pathStartNode.id,
           currentNode.id
@@ -351,7 +356,7 @@ export default function intersectPolylines(
       if (currentNode.processedInPath && currentNode !== pathStartNode) {
         // Loop detected before closing properly
         // This can happen in complex scenarios, especially with shared boundaries or self-intersections not handled upstream
-        console.warn(
+        cs3dLogger.warn(
           'Intersection: Path processing loop detected, discarding path segment.',
           pathStartNode.id,
           currentNode.id

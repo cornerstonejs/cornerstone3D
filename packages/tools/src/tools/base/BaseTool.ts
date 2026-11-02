@@ -7,9 +7,17 @@ import {
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import ToolModes from '../../enums/ToolModes';
+import Events from '../../enums/Events';
+import {
+  MOUSE_PROXIMITY,
+  TOUCH_PROXIMITY,
+  TOUCH_TAP_MAX_CANVAS_DISTANCE,
+  TOUCH_TAP_TOLERANCE_MS,
+} from '../../utilities/touch/constants';
 import measurementTargetFilters from './measurementTargetFilters';
 import type StrategyCallbacks from '../../enums/StrategyCallbacks';
 import type {
+  EventTypes,
   InteractionTypes,
   ToolProps,
   PublicToolProps,
@@ -45,8 +53,55 @@ abstract class BaseTool {
    */
   public static activeCursorTool;
 
+  /**
+   * Canvas-pixel radius used to hit-test annotations and handles for touch
+   * interactions. A fingertip covers far more screen than a cursor hotspot,
+   * so touch targets are much larger than {@link BaseTool.MOUSE_PROXIMITY}.
+   * Tools that need to widen an in-draw target for touch should use this
+   * rather than restating the number.
+   */
+  public static readonly TOUCH_PROXIMITY = TOUCH_PROXIMITY;
+
+  /**
+   * Canvas-pixel radius used to hit-test annotations and handles for mouse
+   * interactions.
+   */
+  public static readonly MOUSE_PROXIMITY = MOUSE_PROXIMITY;
+
+  /**
+   * Maximum canvas-pixel distance a gesture may travel and still be counted
+   * as a tap by the touch start listener. Tools that commit a gesture on
+   * TOUCH_END need this to recognize the trailing TOUCH_TAP echo.
+   */
+  public static readonly TOUCH_TAP_MAX_CANVAS_DISTANCE =
+    TOUCH_TAP_MAX_CANVAS_DISTANCE;
+
+  /**
+   * Window in milliseconds within which successive taps are aggregated into a
+   * single multi-tap TOUCH_TAP. The tap is emitted one tolerance after the
+   * chain's last touchend.
+   */
+  public static readonly TOUCH_TAP_TOLERANCE_MS = TOUCH_TAP_TOLERANCE_MS;
+
   /** Supported Interaction Types - currently only Mouse */
   public supportedInteractionTypes: InteractionTypes[];
+
+  /**
+   * Whether this tool implements its own handling for touch points that arrive
+   * after a gesture has already started.
+   *
+   * When false (the default), an extra finger during an in-progress gesture
+   * releases the tool through `cancel()` so the gesture can re-resolve to the
+   * tool bound to the new finger count - normally pinch zoom or multi-finger
+   * scroll. See `releaseToolForMultiTouchGesture`.
+   *
+   * Multi-part tools set this to true: cancelling them would discard points
+   * the user has already placed, and they instead ignore the extra finger for
+   * the duration of the gesture. Declaring it also keeps the manipulation
+   * tools reachable, since the dispatcher bypasses the interaction guard for
+   * such tools rather than clearing it.
+   */
+  public handlesMultiTouchGestures = false;
   /**
    * The configuration for this tool.
    * IBaseTool contains some default configuration values, and you can use
@@ -246,6 +301,32 @@ abstract class BaseTool {
    * @param targetId - annotation targetId stored in the cached stats
    * @returns The image data for the target.
    */
+  /**
+   * Whether an interaction event came in through the touch pipeline rather
+   * than the mouse pipeline.
+   *
+   * Note this is a property of the *gesture*, not of the device: hybrid
+   * hardware (touchscreen laptops, tablets with a mouse attached) delivers
+   * both, so tools must branch on the event rather than on a device probe
+   * such as `isMobile()`.
+   *
+   * @param evt - The interaction event, or undefined when a caller has no
+   * event to attribute (treated as not-touch).
+   */
+  protected _isTouchInteraction(
+    evt?: EventTypes.InteractionEventType
+  ): boolean {
+    const eventName = evt?.detail?.eventName;
+    return (
+      eventName === Events.TOUCH_START ||
+      eventName === Events.TOUCH_START_ACTIVATE ||
+      eventName === Events.TOUCH_DRAG ||
+      eventName === Events.TOUCH_END ||
+      eventName === Events.TOUCH_TAP ||
+      eventName === Events.TOUCH_PRESS
+    );
+  }
+
   protected getTargetImageData(
     targetId: string
   ): Types.IImageData | Types.CPUIImageData {

@@ -127,7 +127,7 @@ addDropdownToToolbar({
 });
 
 const niftiURL =
-  'https://ohif-assets.s3.us-east-2.amazonaws.com/nifti/CTACardio.nii.gz';
+  'https://ohif-assets-new.s3.us-east-1.amazonaws.com/nifti/CTACardio.nii.gz';
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
 const volumeId = `${volumeLoaderScheme}:${niftiURL}`; // VolumeId with loader id + volume id
 

@@ -15,6 +15,11 @@ import { defaultSegmentationStateManager } from './SegmentationStateManager';
 import { isSegmentationOverlayCompatible } from './helpers/isSegmentationOverlayCompatible';
 import { addDefaultSegmentationListener } from './segmentationEventManager';
 import { getActiveSegmentIndex, setActiveSegmentIndex } from './segmentIndex';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'stateManagement.segmentation.internalAddSegmentationRepresentation'
+);
 
 function internalAddSegmentationRepresentation(
   viewportId: string,
@@ -33,7 +38,7 @@ function internalAddSegmentationRepresentation(
       representationInput.type
     )
   ) {
-    console.warn(
+    cs3dLogger.warn(
       `Skipping ${representationInput.type} representation of segmentation "${segmentationId}" on viewport "${viewportId}": the viewport is not a compatible destination for it.`
     );
     return;

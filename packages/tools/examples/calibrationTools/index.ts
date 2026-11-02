@@ -8,6 +8,7 @@ import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
+  addButtonToToolbar,
   addDropdownToToolbar,
   viewportId,
   renderingEngineId,
@@ -239,7 +240,7 @@ addDropdownToToolbar({
     const aspect = (value as string).split(':').map((it) => Number(it));
     const renderingEngine = getRenderingEngine(renderingEngineId);
     const viewport = renderingEngine.getViewport(viewportId);
-    viewport.setAspectRatio(aspect, true);
+    viewport.setAspectRatio(aspect, { fit: true });
     viewport.render();
   },
 });

@@ -1,6 +1,11 @@
 import type { Types } from '@cornerstonejs/core';
 import { utilities, cache } from '@cornerstonejs/core';
 import { getVoxelOverlap } from '../segmentation/utilities';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'utilities.dynamicVolume.getDataInTime'
+);
 
 /**
  * Gets the scalar data for a series of dimension groups for either a single
@@ -34,7 +39,7 @@ function getDataInTime(
     Array.from({ length: dynamicVolume.numDimensionGroups }, (_, i) => i + 1);
 
   if (options.frameNumbers) {
-    console.warn(
+    cs3dLogger.warn(
       'Warning: frameNumbers parameter is deprecated. Please use dimensionGroupNumbers instead.'
     );
   }

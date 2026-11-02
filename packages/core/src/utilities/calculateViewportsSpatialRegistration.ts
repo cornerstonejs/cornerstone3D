@@ -2,6 +2,12 @@ import { vec3, mat4 } from 'gl-matrix';
 import type { IStackViewport, IVolumeViewport } from '../types';
 import spatialRegistrationMetadataProvider from './spatialRegistrationMetadataProvider';
 import { get } from '../metaData';
+import { coreLog } from './logger';
+
+const log = coreLog.getLogger(
+  'utilities',
+  'calculateViewportsSpatialRegistration'
+);
 
 /**
  * Defines the allowed difference as a percent between the unit normals before
@@ -34,7 +40,7 @@ function calculateViewportsSpatialRegistration(
   const imagePlaneModule2 = get('imagePlaneModule', imageId2.toString());
 
   if (!imagePlaneModule1 || !imagePlaneModule2) {
-    console.log('Viewport spatial registration requires image plane module');
+    log.info('Viewport spatial registration requires image plane module');
     return;
   }
   const { imageOrientationPatient: iop2 } = imagePlaneModule2;
@@ -43,7 +49,7 @@ function calculateViewportsSpatialRegistration(
   );
 
   if (!isSameImagePlane) {
-    console.log(
+    log.info(
       'Viewport spatial registration only supported for same orientation (hence translation only) for now',
       imagePlaneModule1?.imageOrientationPatient,
       imagePlaneModule2?.imageOrientationPatient

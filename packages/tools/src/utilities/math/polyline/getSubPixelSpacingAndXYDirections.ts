@@ -3,6 +3,8 @@ import type { Types } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
 import getViewportICamera from '../../getViewportICamera';
 
+const { getEffectiveSpacingAlongDirection } = csUtils;
+
 const EPSILON = 1e-3;
 
 /**
@@ -61,9 +63,12 @@ const getSubPixelSpacingAndXYDirections = (
     const jVector = direction.slice(3, 6) as Types.Point3;
     const kVector = direction.slice(6, 9) as Types.Point3;
 
-    const viewRight = vec3.create(); // Get the X direction of the viewport
+    const normalizedViewUp = vec3.create();
+    vec3.normalize(normalizedViewUp, <vec3>viewUp);
 
-    vec3.cross(viewRight, <vec3>viewUp, <vec3>viewPlaneNormal);
+    const viewRight = vec3.create(); // Get the X direction of the viewport
+    vec3.cross(viewRight, normalizedViewUp, <vec3>viewPlaneNormal);
+    vec3.normalize(viewRight, viewRight);
 
     const absViewRightDotI = Math.abs(vec3.dot(viewRight, iVector));
     const absViewRightDotJ = Math.abs(vec3.dot(viewRight, jVector));
@@ -81,12 +86,19 @@ const getSubPixelSpacingAndXYDirections = (
       xSpacing = volumeSpacing[2];
       xDir = kVector;
     } else {
-      throw new Error('No support yet for oblique plane planar contours');
+      // Oblique plane: viewRight is not aligned with any single volume axis.
+      // Compute effective spacing by projecting the view direction onto
+      // the volume's voxel grid.
+      xSpacing = getEffectiveSpacingAlongDirection(
+        imageData,
+        viewRight as unknown as Types.Point3
+      );
+      xDir = Array.from(viewRight) as Types.Point3;
     }
 
-    const absViewUpDotI = Math.abs(vec3.dot(viewUp, iVector));
-    const absViewUpDotJ = Math.abs(vec3.dot(viewUp, jVector));
-    const absViewUpDotK = Math.abs(vec3.dot(viewUp, kVector));
+    const absViewUpDotI = Math.abs(vec3.dot(normalizedViewUp, iVector));
+    const absViewUpDotJ = Math.abs(vec3.dot(normalizedViewUp, jVector));
+    const absViewUpDotK = Math.abs(vec3.dot(normalizedViewUp, kVector));
 
     // Get Y spacing
     let ySpacing;
@@ -100,7 +112,12 @@ const getSubPixelSpacingAndXYDirections = (
       ySpacing = volumeSpacing[2];
       yDir = kVector;
     } else {
-      throw new Error('No support yet for oblique plane planar contours');
+      // Oblique plane: compute effective spacing along viewUp
+      ySpacing = getEffectiveSpacingAlongDirection(
+        imageData,
+        normalizedViewUp as unknown as Types.Point3
+      );
+      yDir = Array.from(normalizedViewUp) as Types.Point3;
     }
 
     spacing = [xSpacing, ySpacing];

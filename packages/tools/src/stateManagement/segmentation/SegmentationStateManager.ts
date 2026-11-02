@@ -35,6 +35,11 @@ import {
   LabelmapImageReferenceResolver,
   syncLegacyLabelmapData,
 } from './labelmapModel';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'stateManagement.segmentation.SegmentationStateManager'
+);
 
 const initialDefaultState: SegmentationState = {
   colorLUT: [],
@@ -130,6 +135,11 @@ export default class SegmentationStateManager {
    * This method updates the state immutably. If the segmentation with the given ID is not found,
    * the method will return without making any changes.
    *
+   * A payload that gives `label` a value, and gives `labelIsGenerated` no
+   * value, clears the flag. Pass `labelIsGenerated: true` beside the label to
+   * keep the flag set. A payload that carries `label` with the value
+   * `undefined` is not a rename, and it leaves the flag alone.
+   *
    * @example
    * ```typescript
    * segmentationStateManager.updateSegmentation('seg1', { label: 'newLabel' });
@@ -145,7 +155,7 @@ export default class SegmentationStateManager {
       );
 
       if (!segmentation) {
-        console.warn(
+        cs3dLogger.warn(
           `Segmentation with id ${segmentationId} not found. Update aborted.`
         );
         return;
@@ -153,6 +163,18 @@ export default class SegmentationStateManager {
 
       // Directly mutate the draft state
       Object.assign(segmentation, payload);
+
+      // A rename with no flag means the user chose the label. The test reads
+      // the value, not the key, because a payload built from an optional field
+      // carries the key with the value `undefined`, and such a payload is not
+      // a rename.
+      if (
+        payload.label !== undefined &&
+        payload.labelIsGenerated === undefined
+      ) {
+        segmentation.labelIsGenerated = false;
+      }
+
       if (segmentation.representationData?.Labelmap) {
         ensureLabelmapState(segmentation);
         syncLegacyLabelmapData(segmentation);
@@ -251,7 +273,7 @@ export default class SegmentationStateManager {
     );
 
     if (existingRepresentations.length > 0) {
-      console.debug(
+      cs3dLogger.debug(
         'A segmentation representation of type',
         type,
         'already exists in viewport',
@@ -591,8 +613,16 @@ export default class SegmentationStateManager {
         if (state.viewportSegRepresentations[viewportId].length === 0) {
           delete state.viewportSegRepresentations[viewportId];
         } else if (activeRepresentationRemoved) {
-          // Set the first remaining representation as active
-          state.viewportSegRepresentations[viewportId][0].active = true;
+          const remainingRepresentations =
+            state.viewportSegRepresentations[viewportId];
+          const hasActiveRepresentation = remainingRepresentations.some(
+            (representation) => representation.active
+          );
+
+          if (!hasActiveRepresentation) {
+            // Set the first remaining representation as active
+            remainingRepresentations[0].active = true;
+          }
         }
       }
 
@@ -640,17 +670,19 @@ export default class SegmentationStateManager {
       );
     });
 
-    // If there are remaining representations, trigger a modified event for the new active one
-    const remainingRepresentations =
-      this.getSegmentationRepresentations(viewportId);
-    if (
-      remainingRepresentations.length > 0 &&
-      remainingRepresentations[0].active
-    ) {
+    // If there are remaining representations, trigger a modified event for the
+    // active one. `removeSegmentationRepresentationsInternal` keeps an active
+    // representation that it finds at any index, so the active representation
+    // is not always the first one.
+    const activeRepresentation = this.getSegmentationRepresentations(
+      viewportId
+    ).find((representation) => representation.active);
+
+    if (activeRepresentation) {
       triggerSegmentationRepresentationModified(
         viewportId,
-        remainingRepresentations[0].segmentationId,
-        remainingRepresentations[0].type
+        activeRepresentation.segmentationId,
+        activeRepresentation.type
       );
     }
 
@@ -893,7 +925,7 @@ export default class SegmentationStateManager {
   addColorLUT(colorLUT: Types.ColorLUT, lutIndex: number): void {
     this.updateState((state) => {
       if (state.colorLUT[lutIndex]) {
-        console.warn('Color LUT table already exists, overwriting');
+        cs3dLogger.warn('Color LUT table already exists, overwriting');
       }
       state.colorLUT[lutIndex] = csUtils.deepClone(colorLUT) as Types.ColorLUT;
     });

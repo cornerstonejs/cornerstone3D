@@ -17,13 +17,16 @@ import RLEVoxelMap from './RLEVoxelMap';
 import isEqual from './isEqual';
 import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import { iterateOverPointsInShapeVoxelManager } from './pointInShapeCallback';
+import { coreLog } from './logger';
+
+const log = coreLog.getLogger('utilities', 'VoxelManager');
 
 /**
  * Have a default size for cached RLE encoded images.  This is hard to guess
  * up front because the RLE is usually used to store new/updated data, but this
  * is a first guess.
  */
-const DEFAULT_RLE_SIZE = 5 * 1024;
+export const DEFAULT_RLE_SIZE = 5 * 1024;
 const worldToIndexDeltaScratch = [0, 0, 0] as vec3;
 const worldToIndexResultScratch = [0, 0, 0] as vec3;
 const worldToIndexTransformCache = new WeakMap<object, mat3>();
@@ -401,13 +404,16 @@ export default class VoxelManager<T> {
     const map = this.map as RLEVoxelMap<T>;
 
     if (!map) {
-      console.warn(
+      log.warn(
         'No map found, you need to use a map voxel manager to use rleForEach'
       );
       return;
     }
 
-    map.defaultValue = undefined;
+    // NOTE: this used to reset `map.defaultValue` to undefined. Nothing here
+    // reads through `get`, so the reset only had the effect of undoing a
+    // default the map's creator had chosen (a labelmap map, for instance, sets
+    // 0 so an unsegmented voxel reads as background rather than undefined).
     for (let k = boundsIJK[2][0]; k <= boundsIJK[2][1]; k++) {
       for (let j = boundsIJK[1][0]; j <= boundsIJK[1][1]; j++) {
         const row = map.getRun(j, k);
@@ -475,10 +481,82 @@ export default class VoxelManager<T> {
   }
 
   /**
-   * Gets the length of the scalar data.
+   * The backing store that a caller can write into - the array that
+   * `getScalarData()` both returns and reads back from - or undefined when this
+   * manager has none.
+   *
+   * A manager that keeps its voxels in something else (an RLE map) can still
+   * produce an array from `getScalarData()`, but that is a fresh expansion:
+   * reads of it are a snapshot and writes into it are discarded. A caller with
+   * a whole frame to read or fill wants to know which one it has, so that it
+   * can touch the array directly where that is correct and only fall back to a
+   * call per voxel (`getAtIndex` / `setAtIndex`, or `setFromScalarData`) where
+   * it is not.
+   *
+   * Undefined is the normal answer for an RLE labelmap, not an error - every
+   * caller needs the per voxel fallback.
+   */
+  public getWritableScalarData(): PixelDataTypedArray | undefined {
+    return this._scalarDataIsCachedExpansion
+      ? undefined
+      : (this.scalarData ?? undefined);
+  }
+
+  /**
+   * Copies `scalarData` INTO this voxel manager, replacing what it holds, in
+   * whatever representation it actually uses.
+   *
+   * Use this rather than `getScalarData().set(...)`: on a manager whose data is
+   * not a typed array (an RLE map, say) `getScalarData()` returns a throwaway
+   * expansion, so writing into it silently discards the update. Unlike
+   * `setScalarData`, this does not install `scalarData` as the backing store, so
+   * an RLE map stays the source of truth for later reads and edits.
+   */
+  public setFromScalarData(scalarData: ArrayLike<number>): void {
+    const map = this.map;
+
+    if (map instanceof RLEVoxelMap) {
+      const [width, height, depth] = this.dimensions;
+      // The value an unwritten voxel reads back as, and so the one that costs
+      // nothing to leave out of the runs. It is the map's default rather than a
+      // literal zero: on a map defaulting to 5, dropping the 0s would make them
+      // read back as 5, and it is the 5s that are free to drop instead.
+      const sparseValue = (map.defaultValue ?? 0) as number;
+      // fillFrom appends runs to the rows it finds, so start from empty to get
+      // replace-the-whole-thing semantics.
+      map.clear();
+      map.fillFrom(
+        (i, j, k) => {
+          const value = scalarData[i + j * width + k * this.frameSize];
+          // fillFrom skips undefined, which is what keeps the map sparse.
+          return (value === sparseValue ? undefined : value) as T;
+        },
+        [
+          [0, width - 1],
+          [0, height - 1],
+          [0, (depth ?? 1) - 1],
+        ]
+      );
+      this.invalidateCachedScalarExpansion();
+      return;
+    }
+
+    this.getScalarData().set(scalarData);
+  }
+
+  /**
+   * Gets the length of the scalar data, i.e. of the array `getScalarData()`
+   * would produce.
+   *
+   * A manager that keeps its voxels in something other than an array (an RLE
+   * map, say) has nothing to measure, but its length is fixed by the geometry -
+   * so it is derived from the dimensions rather than reported as unavailable.
+   * Without that, anything sizing a buffer from a voxel manager
+   * (`getCompleteScalarDataArray`, and so segmentation statistics) throws for
+   * those managers.
    *
    * @returns The length of the scalar data.
-   * @throws {Error} If no scalar data is available.
+   * @throws {Error} If the length can be neither measured nor derived.
    */
   public getScalarDataLength() {
     if (this.scalarData) {
@@ -487,6 +565,11 @@ export default class VoxelManager<T> {
 
     if (this._getScalarDataLength) {
       return this._getScalarDataLength();
+    }
+
+    const [width, height, depth] = this.dimensions ?? [];
+    if (width && height) {
+      return width * height * (depth || 1) * this.numberOfComponents;
     }
 
     throw new Error('No scalar data available');
@@ -499,6 +582,28 @@ export default class VoxelManager<T> {
   public get bytePerVoxel(): number {
     if (this.scalarData) {
       return this.scalarData.BYTES_PER_ELEMENT;
+    }
+
+    // No backing array, but a manager that can say which array type it expands
+    // to (again, RLE) knows the width of a voxel from its constructor.
+    const Constructor = this._getConstructor?.() as unknown as {
+      BYTES_PER_ELEMENT?: number;
+    };
+    if (Constructor?.BYTES_PER_ELEMENT) {
+      return Constructor.BYTES_PER_ELEMENT;
+    }
+
+    // An RLE map whose creator chose no type still expands to a known array
+    // type, so it still has a voxel width. The `_get(0)` fallback below cannot
+    // find that width: an RLE map holds numbers, and a number has no
+    // BYTES_PER_ELEMENT, so an empty map throws on `undefined` and a map with a
+    // default returns NaN. Both reach `sizeInBytes` now that
+    // `getScalarDataLength()` derives a length rather than throwing first.
+    if (this.map instanceof RLEVoxelMap) {
+      const ExpansionConstructor = this.map.pixelDataConstructor
+        ? this.map.pixelDataConstructor
+        : Uint8ClampedArray;
+      return ExpansionConstructor.BYTES_PER_ELEMENT;
     }
 
     // get the first element of the scalar data
@@ -541,9 +646,7 @@ export default class VoxelManager<T> {
       ) => PixelDataTypedArray;
     }
 
-    console.warn(
-      'No scalar data available or can be used to get the constructor'
-    );
+    log.warn('No scalar data available or can be used to get the constructor');
 
     // Return a default constructor (e.g., Float32Array) if no constructor is available
     return Float32Array as new (length: number) => PixelDataTypedArray;
@@ -1008,7 +1111,7 @@ export default class VoxelManager<T> {
       if (!imageId) {
         if (!warnedMissingImageIds.has(sliceIndex)) {
           warnedMissingImageIds.add(sliceIndex);
-          console.warn(`ImageId not found for sliceIndex: ${sliceIndex}`);
+          log.warn(`ImageId not found for sliceIndex: ${sliceIndex}`);
         }
         sliceVoxelManagers[sliceIndex] = null;
         return null;
@@ -1018,7 +1121,7 @@ export default class VoxelManager<T> {
       if (!image?.voxelManager) {
         if (!warnedMissingImages.has(imageId)) {
           warnedMissingImages.add(imageId);
-          console.warn(`Image not found for imageId: ${imageId}`);
+          log.warn(`Image not found for imageId: ${imageId}`);
         }
         return null;
       }
@@ -1342,7 +1445,7 @@ export default class VoxelManager<T> {
     if (dimensionGroupNumber !== undefined) {
       activeDimensionGroup = dimensionGroupNumber - 1;
     } else if (timePoint !== undefined) {
-      console.warn(
+      log.warn(
         'Warning: timePoint parameter is deprecated. Please use dimensionGroupNumber instead. timePoint is zero-based while dimensionGroupNumber starts at 1.'
       );
       activeDimensionGroup = timePoint;
@@ -1404,7 +1507,7 @@ export default class VoxelManager<T> {
 
     // @ts-ignore
     voxelManager.setTimePoint = (newTimePoint: number) => {
-      console.warn(
+      log.warn(
         'Warning: setTimePoint is deprecated. Please use setDimensionGroupNumber instead. Note that timePoint is zero-based while dimensionGroupNumber starts at 1.'
       );
       // @ts-ignore
@@ -1426,7 +1529,7 @@ export default class VoxelManager<T> {
 
     // @ts-ignore
     voxelManager.getAtIndexAndTimePoint = (index: number, tp: number) => {
-      console.warn(
+      log.warn(
         'Warning: getAtIndexAndTimePoint is deprecated. Please use getAtIndexAndDimensionGroup instead. Note that timePoint is zero-based while dimensionGroupNumber starts at 1.'
       );
       // @ts-ignore
@@ -1443,7 +1546,7 @@ export default class VoxelManager<T> {
 
     // @ts-ignore
     voxelManager.getTimePointScalarData = (tp: number) => {
-      console.warn(
+      log.warn(
         'Warning: getTimePointScalarData is deprecated. Please use getDimensionGroupScalarData instead. Note that timePoint is zero-based while dimensionGroupNumber starts at 1.'
       );
       // @ts-ignore
@@ -1459,7 +1562,7 @@ export default class VoxelManager<T> {
 
     // @ts-ignore
     voxelManager.getCurrentTimePointScalarData = () => {
-      console.warn(
+      log.warn(
         'Warning: getCurrentTimePointScalarData is deprecated. Please use getCurrentDimensionGroupScalarData instead.'
       );
       // @ts-ignore
@@ -1481,7 +1584,7 @@ export default class VoxelManager<T> {
 
     // @ts-ignore
     voxelManager.getCurrentTimePoint = () => {
-      console.warn(
+      log.warn(
         'Warning: getCurrentTimePoint is deprecated. Please use getCurrentDimensionGroupNumber instead. Note that timePoint is zero-based while dimensionGroupNumber starts at 1.'
       );
       return activeDimensionGroup;
@@ -1714,16 +1817,34 @@ export default class VoxelManager<T> {
   /**
    * Creates a RLE based voxel manager.  This is effective for storing
    * segmentation maps or already RLE encoded data such as ultrasounds.
+   *
+   * `pixelDataConstructor` and `defaultValue` let a caller that is using the
+   * RLE map to STAND IN FOR a typed array (a labelmap image, say) match what
+   * that array would have done: expanded frames come back as the same type, and
+   * an unwritten voxel reads as the array's zero rather than undefined.
    */
   public static createRLEVolumeVoxelManager<T>({
     dimensions,
     id,
+    pixelDataConstructor,
+    defaultValue,
   }: {
     dimensions: Point3;
     id?: string;
+    pixelDataConstructor?: new (length: number) => PixelDataTypedArray;
+    defaultValue?: T;
   }): VoxelManager<T> {
     const [width, height, depth] = dimensions;
     const map = new RLEVoxelMap<T>(width, height, depth);
+
+    if (pixelDataConstructor) {
+      map.pixelDataConstructor =
+        pixelDataConstructor as typeof map.pixelDataConstructor;
+    }
+
+    if (defaultValue !== undefined) {
+      map.defaultValue = defaultValue;
+    }
 
     const voxelManager = new VoxelManager<T>(dimensions, {
       _get: (index) => map.get(index),
@@ -1732,6 +1853,17 @@ export default class VoxelManager<T> {
         return true;
       },
       _getScalarData: RLEVoxelMap.getScalarData,
+      // Only where the caller chose a type. Without this, getConstructor() has
+      // no scalar data to read the type from and falls back to Float32Array,
+      // which the stack labelmap actor would then build its texture as; but a
+      // caller that chose nothing is left on that pre-existing fallback rather
+      // than being moved onto a type it never asked for.
+      _getConstructor: pixelDataConstructor
+        ? () =>
+            map.pixelDataConstructor as new (
+              length: number
+            ) => PixelDataTypedArray
+        : undefined,
       _updateScalarData: (scalarData) => {
         map.updateScalarData(scalarData as PixelDataTypedArray);
         return scalarData as PixelDataTypedArray;
@@ -1748,14 +1880,20 @@ export default class VoxelManager<T> {
   public static createRLEImageVoxelManager<T>({
     dimensions,
     id,
+    pixelDataConstructor,
+    defaultValue,
   }: {
     dimensions: Point2;
     id?: string;
+    pixelDataConstructor?: new (length: number) => PixelDataTypedArray;
+    defaultValue?: T;
   }): VoxelManager<T> {
     const [width, height] = dimensions;
     return VoxelManager.createRLEVolumeVoxelManager<T>({
       dimensions: [width, height, 1],
       id,
+      pixelDataConstructor,
+      defaultValue,
     });
   }
 

@@ -10,9 +10,10 @@ const charlsWasm = new URL(
   '@cornerstonejs/codec-charls/decodewasm',
   import.meta.url
 );
-import type { ByteArray } from 'dicom-parser';
 import type { WebWorkerDecodeConfig } from '../../types';
 import type { Types } from '@cornerstonejs/core';
+import getPixelData from './getPixelData';
+import { resolveWasmUrl, setWasmBasePathFromConfig } from '../wasmBasePath';
 
 const local: {
   codec: CharlsModule;
@@ -34,6 +35,7 @@ export function initialize(
   decodeConfig?: WebWorkerDecodeConfig
 ): Promise<void> {
   local.decodeConfig = decodeConfig;
+  setWasmBasePathFromConfig(decodeConfig);
 
   if (local.codec) {
     return Promise.resolve();
@@ -42,7 +44,7 @@ export function initialize(
   const charlsModule = charlsFactory({
     locateFile: (f) => {
       if (f.endsWith('.wasm')) {
-        return charlsWasm.toString();
+        return resolveWasmUrl('charlswasm_decode.wasm', charlsWasm);
       }
 
       return f;
@@ -129,38 +131,6 @@ async function decodeAsync(
     // TODO: Copy to other codecs as well
     throw getExceptionMessage(error);
   }
-}
-
-function getPixelData(frameInfo, decodedBuffer: ByteArray, signed: boolean) {
-  if (frameInfo.bitsPerSample > 8) {
-    if (signed) {
-      return new Int16Array(
-        decodedBuffer.buffer,
-        decodedBuffer.byteOffset,
-        decodedBuffer.byteLength / 2
-      );
-    }
-
-    return new Uint16Array(
-      decodedBuffer.buffer,
-      decodedBuffer.byteOffset,
-      decodedBuffer.byteLength / 2
-    );
-  }
-
-  if (signed) {
-    return new Int8Array(
-      decodedBuffer.buffer,
-      decodedBuffer.byteOffset,
-      decodedBuffer.byteLength
-    );
-  }
-
-  return new Uint8Array(
-    decodedBuffer.buffer,
-    decodedBuffer.byteOffset,
-    decodedBuffer.byteLength
-  );
 }
 
 export default decodeAsync;

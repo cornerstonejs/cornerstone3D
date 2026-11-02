@@ -1,3 +1,7 @@
+import { coreLog } from '../logger';
+
+const log = coreLog.getLogger('utilities', 'TargetEventListeners');
+
 enum EventListenerPhases {
   None = 0,
   Capture = 1,
@@ -177,7 +181,7 @@ class TargetEventListeners {
     // because the same listener may be register twice (capturing and bubbling
     // phases)
     if (registeredPhases & listenerPhase) {
-      console.warn('A listener is already registered for this phase');
+      log.warn('A listener is already registered for this phase');
       return;
     }
 

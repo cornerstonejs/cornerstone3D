@@ -19,6 +19,11 @@ import AnnotationTool from './AnnotationTool';
 import updateContourPolyline from '../../utilities/contours/updateContourPolyline';
 import getContourHolesDataCanvas from '../../utilities/contours/getContourHolesDataCanvas';
 import type { ContourWindingDirection } from '../../types/ContourAnnotation';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.base.ContourBaseTool'
+);
 
 /**
  * A contour base class responsible for rendering contour instances such as
@@ -69,7 +74,7 @@ abstract class ContourBaseTool extends AnnotationTool {
 
     // If rendering engine has been destroyed while rendering
     if (!viewport.getRenderingEngine()) {
-      console.warn('Rendering Engine has been destroyed');
+      cs3dLogger.warn('Rendering Engine has been destroyed');
       return renderStatus;
     }
 
