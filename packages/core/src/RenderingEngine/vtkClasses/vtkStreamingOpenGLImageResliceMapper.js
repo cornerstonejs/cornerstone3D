@@ -19,6 +19,7 @@ import {
   noteTextureRendered,
 } from '../../utilities/gpuAllocationTracker';
 import gridFitsGpuSettings from './gridFitsGpuSettings';
+import takeBoundScalarTexture from './takeBoundScalarTexture';
 
 const { vtkErrorMacro } = macro;
 
@@ -177,25 +178,15 @@ function vtkStreamingOpenGLImageResliceMapper(publicAPI, model) {
   /**
    * Builds the textures of each input.
    *
-   * The factory passes the scalar texture of the renderable to this node once,
-   * when it creates the node. A render path binds its strategy texture later
-   * through `setScalarTexture`, so this method takes the texture of the
-   * renderable again on each build. A plain texture that this method makes gets
+   * Each build takes the strategy texture that the renderable holds now
+   * (see `takeBoundScalarTexture`). A plain texture that this method makes gets
    * the render window at once: when the GPU settings refuse the full grid, the
    * texture stays empty, and the draw shows black and does not throw.
    */
   publicAPI.buildBufferObjects = (ren, actor) => {
     const actorProperties = actor.getProperties();
-    const strategyTexture = model.renderable.getScalarTexture?.();
 
-    if (!model.scalarTextures) {
-      model.scalarTextures = [];
-    }
-
-    if (strategyTexture && strategyTexture !== model.scalarTextures[0]) {
-      model.scalarTextures[0] = strategyTexture;
-    }
-
+    takeBoundScalarTexture(model);
     model.currentValidInputs.forEach(({ imageData }, component) => {
       if (!model.scalarTextures[component]) {
         model.scalarTextures[component] = vtkOpenGLTexture.newInstance();
