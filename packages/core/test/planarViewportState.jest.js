@@ -864,6 +864,14 @@ describe('PlanarViewport isInAcquisitionPlane and canShowVolumetricOrientation',
     };
     expect(viewport.setViewState({ orientation: acquisitionPlane })).toBe(true);
     expect(viewport.getViewState().orientation).toEqual(acquisitionPlane);
+
+    // The opposite normal is the same plane, seen from the other side.
+    const oppositePlane = {
+      viewPlaneNormal: [0, 0, 1],
+      viewUp: [0, -1, 0],
+    };
+    expect(viewport.setViewState({ orientation: oppositePlane })).toBe(true);
+    expect(viewport.getViewState().orientation).toEqual(oppositePlane);
   });
 
   it('reports false for both getters when no source is bound', () => {
