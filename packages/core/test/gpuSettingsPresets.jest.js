@@ -24,8 +24,10 @@ import { convertMapperToNotSharedMapper } from '../src/RenderingEngine/helpers/c
 import {
   getConfiguration,
   getLossyDownsampling,
+  resetUseCPURendering,
   setConfiguration,
   setLossyDownsampling,
+  setUseCPURendering,
 } from '../src/init';
 import { getGpuMemoryEntryBytes } from '../src/utilities/gpuMemoryLedger';
 import {
@@ -554,5 +556,26 @@ describe('auto on a device that renders gray above an edge of 128', () => {
 
     expect(getActiveGpuSettings().maxTextureEdge).toBe(128);
     expect(probeEdgeSearch).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('CPU rendering', () => {
+  afterEach(() => {
+    resetUseCPURendering();
+    setLossyDownsampling({ final: false });
+  });
+
+  // The API must do this: the presets are WebGL GPU limits, so CPU rendering
+  // renders as with final downsampling off.
+  it('applies no preset to CPU rendering', () => {
+    mockWebGL();
+    setLossyDownsampling({ final: true });
+    setGpuSettingsPreset('low-tablet');
+
+    expect(gpuSettingsForRender()?.id).toBe('low-tablet');
+
+    setUseCPURendering(true, false);
+
+    expect(gpuSettingsForRender()).toBeUndefined();
   });
 });
