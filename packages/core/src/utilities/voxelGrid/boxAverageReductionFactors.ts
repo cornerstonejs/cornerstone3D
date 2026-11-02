@@ -8,6 +8,29 @@ import type { Point3, VoxelGridLimits } from '../../types';
 export const DIVISOR_PREFERENCE_MIN_RATIO = 0.9;
 
 /**
+ * An axis that the edge limit reduces takes the whole factor
+ * `ceil(N / maxEdge)` in place of the largest edge that fits, when that largest
+ * edge is above this value. The smaller texture helps the stability of the
+ * GPU, and at these sizes the loss of quality is small. A 2464 edge under an
+ * edge limit of 2048 thus gives 1232, not 2048.
+ */
+export const WHOLE_FACTOR_MIN_FITTING_EDGE = 1024;
+
+/**
+ * Gives the edge of one axis after the edge limit alone.
+ */
+function edgeLimitedEdge(sourceEdge: number, maxEdge: number): number {
+  if (!(maxEdge > 0) || sourceEdge <= maxEdge) {
+    return sourceEdge;
+  }
+  const fitting = Math.max(1, Math.floor(maxEdge));
+
+  return fitting > WHOLE_FACTOR_MIN_FITTING_EDGE
+    ? Math.ceil(sourceEdge / Math.ceil(sourceEdge / fitting))
+    : fitting;
+}
+
+/**
  * Gives the axis that holds the most voxels. A tie takes the first axis.
  */
 function largestAxis(dimensions: Point3): number {
@@ -56,8 +79,9 @@ function preferDivisor(sourceEdge: number, fitting: number): number {
  * covers the source `[j * N / M, (j + 1) * N / M)`, and the factor can hold a
  * fraction. The two limits work together. `maxEdge` is the limit of the device
  * on the length of one edge of a texture, and `maxVoxelCount` is the limit of
- * the memory. The function applies `maxEdge` first, for each axis on its own.
- * The function then takes one voxel from the largest remaining axis, one step
+ * the memory. The function applies `maxEdge` first, for each axis on its own:
+ * M is the largest edge that fits, or `ceil(N / ceil(N / maxEdge))` when that
+ * largest edge is above `WHOLE_FACTOR_MIN_FITTING_EDGE`. The function then takes one voxel from the largest remaining axis, one step
  * at a time, until the grid holds no more voxels than `maxVoxelCount`, so the
  * shape stays as balanced as the limits permit. Last, an axis takes a whole
  * factor that divides its edge in place of M when the edge of that factor is at
@@ -73,7 +97,7 @@ function boxAverageReductionFactors(
 ): Point3 {
   const { maxEdge, maxVoxelCount } = limits ?? {};
   const reduced = dimensions.map((edge) =>
-    Math.max(1, maxEdge > 0 ? Math.min(edge, Math.floor(maxEdge)) : edge)
+    Math.max(1, edgeLimitedEdge(edge, maxEdge))
   ) as Point3;
 
   if (maxVoxelCount > 0) {
