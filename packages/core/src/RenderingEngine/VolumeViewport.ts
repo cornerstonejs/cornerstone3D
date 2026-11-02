@@ -24,6 +24,7 @@ import triggerEvent from '../utilities/triggerEvent';
 
 import BaseVolumeViewport from './BaseVolumeViewport';
 import setDefaultVolumeVOI from './helpers/setDefaultVolumeVOI';
+import isAcquisitionPlaneNormal from './helpers/isAcquisitionPlaneNormal';
 import getImageSliceDataForVolumeViewport from '../utilities/getImageSliceDataForVolumeViewport';
 import { transformCanvasToIJK } from '../utilities/transformCanvasToIJK';
 import { transformIJKToCanvas } from '../utilities/transformIJKToCanvas';
@@ -559,13 +560,9 @@ class VolumeViewport extends BaseVolumeViewport {
       return false;
     }
 
-    const { direction } = imageData;
-    const { viewPlaneNormal } = this.getCamera();
-    const normalDirection = [direction[6], direction[7], direction[8]];
-
-    const TOLERANCE = 0.99;
-    return (
-      Math.abs(vec3.dot(viewPlaneNormal, normalDirection as Point3)) > TOLERANCE
+    return isAcquisitionPlaneNormal(
+      this.getCamera().viewPlaneNormal,
+      imageData.direction
     );
   }
 

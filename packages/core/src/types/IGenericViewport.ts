@@ -66,6 +66,16 @@ export interface IGenericViewport extends IViewport {
   /** Content-true classification of the bound source data; see {@link ViewportContentMode}. */
   getCurrentMode(): ViewportContentMode;
   /**
+   * Planar families only: whether the view shows the acquisition plane of the
+   * bound data. Geometry only; independent of the render path.
+   */
+  isInAcquisitionPlane?(): boolean;
+  /**
+   * Planar families only: whether the bound data can show another orientation
+   * without new data (it has a volume). Independent of the render path.
+   */
+  canReorientInPlace?(): boolean;
+  /**
    * Applies a spatial reference (frame of reference + plane) to the current view
    * state. Implemented across all Generic families via the base GenericViewport.
    */

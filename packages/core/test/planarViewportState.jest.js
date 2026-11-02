@@ -748,3 +748,81 @@ describe('PlanarViewport view state', () => {
     ).toBe(secondImage);
   });
 });
+
+describe('PlanarViewport acquisition plane getters', () => {
+  let created = [];
+
+  afterEach(() => {
+    for (const { renderingEngineId, viewport } of created) {
+      viewport.destroy();
+      renderingEngineCache.delete(renderingEngineId);
+    }
+    created = [];
+  });
+
+  function createTrackedViewport() {
+    const context = createViewport();
+    created.push(context);
+    return context.viewport;
+  }
+
+  function createImageVolume(volumeId = 'volume:acq') {
+    const dimensions = [4, 4, 5];
+    const direction = [1, 0, 0, 0, 1, 0, 0, 0, 1];
+
+    return {
+      volumeId,
+      imageIds: [0, 1, 2, 3, 4].map((k) => `${volumeId}:${k}`),
+      dimensions,
+      direction,
+      spacing: [1, 1, 1],
+      origin: [0, 0, 0],
+      metadata: { FrameOfReferenceUID: 'planar-test-frame' },
+      imageData: {
+        getDimensions: () => dimensions,
+        getDirection: () => direction,
+        getExtent: () => [0, 3, 0, 3, 0, 4],
+        extentToBounds: (extent) => extent,
+        indexToWorld: ([i, j, k]) => [i, j, k],
+        worldToIndex: ([x, y, z]) => [x, y, z],
+      },
+    };
+  }
+
+  it('reports a volume source by its view geometry, and as reorientable', () => {
+    const viewport = createTrackedViewport();
+    const imageVolume = createImageVolume();
+    const { binding, rendering } = mountVolumeBinding(viewport, {
+      dataId: 'volume-display-set',
+      role: 'source',
+      volumeId: imageVolume.volumeId,
+    });
+    binding.data.imageVolume = imageVolume;
+    binding.data.imageIds = imageVolume.imageIds;
+    rendering.imageVolume = imageVolume;
+
+    viewport.setViewState({ orientation: OrientationAxis.ACQUISITION });
+    expect(viewport.isInAcquisitionPlane()).toBe(true);
+    expect(viewport.canReorientInPlace()).toBe(true);
+
+    viewport.setViewState({ orientation: OrientationAxis.SAGITTAL });
+    expect(viewport.isInAcquisitionPlane()).toBe(false);
+    expect(viewport.canReorientInPlace()).toBe(true);
+  });
+
+  it('reports an image stack as in the acquisition plane and not reorientable', () => {
+    const viewport = createTrackedViewport();
+
+    mountStackBinding(viewport, [createPlanarImage('acq-stack-image')]);
+
+    expect(viewport.isInAcquisitionPlane()).toBe(true);
+    expect(viewport.canReorientInPlace()).toBe(false);
+  });
+
+  it('reports false for both getters when no source is bound', () => {
+    const viewport = createTrackedViewport();
+
+    expect(viewport.isInAcquisitionPlane()).toBe(false);
+    expect(viewport.canReorientInPlace()).toBe(false);
+  });
+});

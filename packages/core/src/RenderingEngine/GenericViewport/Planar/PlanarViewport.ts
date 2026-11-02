@@ -42,6 +42,7 @@ import eventTarget from '../../../eventTarget';
 import getMinMax from '../../../utilities/getMinMax';
 import renderingEngineCache from '../../renderingEngineCache';
 import { getCameraVectors } from '../../helpers/getCameraVectors';
+import isAcquisitionPlaneNormal from '../../helpers/isAcquisitionPlaneNormal';
 import type {
   LoadedData,
   ViewportDataBinding,
@@ -733,6 +734,48 @@ class PlanarViewport extends GenericViewport<
 
     // Render mode not yet resolved; fall back to bound-data inspection.
     return this.getVolumeId() ? 'volume' : 'stack';
+  }
+
+  /**
+   * Answers whether the current view shows the acquisition plane of the bound
+   * source data. This is geometry against the data only, and does not depend
+   * on the render mode or the render path.
+   *
+   * - Volume source: true when the view plane normal is parallel to the scan
+   *   axis of the image volume (same test as `VolumeViewport`).
+   * - Image-stack source: always true, as in `StackViewport`.
+   * - No source bound: false.
+   */
+  isInAcquisitionPlane(): boolean {
+    const planarData = this.getPlanarData();
+
+    if (!planarData) {
+      return false;
+    }
+
+    if (!planarData.imageVolume) {
+      return true;
+    }
+
+    const viewPlaneNormal = this.getResolvedCameraForEvent()?.viewPlaneNormal;
+
+    return viewPlaneNormal
+      ? isAcquisitionPlaneNormal(
+          viewPlaneNormal,
+          planarData.imageVolume.direction
+        )
+      : false;
+  }
+
+  /**
+   * Answers whether the bound source data permits an orientation other than
+   * the acquisition plane without new data, that is, the source has an image
+   * volume. False for an image-stack source and when no source is bound. The
+   * answer depends on the content only, not on the render mode or the render
+   * path.
+   */
+  canReorientInPlace(): boolean {
+    return Boolean(this.getPlanarData()?.imageVolume);
   }
 
   /**

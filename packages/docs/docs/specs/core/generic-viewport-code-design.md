@@ -152,6 +152,17 @@ states the contract, and this specification repeats it:
   `getCurrentMode()`. The answer names the content, for example `stack`,
   `volume`, `ecg` or `empty`. The developer does not need an `instanceof` test,
   and the developer does not need a test of the method list.
+- **GENVIEW-API-9** The developer asks a planar viewport if the view shows the
+  acquisition plane with `isInAcquisitionPlane()`. The answer is geometry
+  against the bound data only. For a volume, the view plane normal is parallel
+  to the scan axis of the volume. An image stack always gives true. An empty
+  viewport gives false. The render mode and the render path do not change the
+  answer.
+- **GENVIEW-API-10** The developer asks a planar viewport if the bound data can
+  show a different orientation without new data with `canReorientInPlace()`.
+  The answer is true when the source has a volume. An image stack and an empty
+  viewport give false. The render mode and the render path do not change the
+  answer.
 - **GENVIEW-API-7** An application that used a legacy viewport type keeps its
   API. `ViewportType.ECG`, `STACK`, `ORTHOGRAPHIC`, `VIDEO`, `WHOLE_SLIDE` and
   `VOLUME_3D` each resolve to a legacy adapter that carries the old methods.
