@@ -141,7 +141,7 @@ viewer asked it to render a data set that is too large.
   limit above `normal` (GPULIMIT-MEM-3) is such a size. The first context loss
   or stop of the tab at a new size can occur one time. The reload after it uses a
   lower size (GPULIMIT-MEM-4), and repeated failures cap the size until a
-  retest (GPULIMIT-MEM-5). A later version can close this gap with a memory
+  retest, or for 7 days (GPULIMIT-MEM-5). A later version can close this gap with a memory
   value that the browser reports.
 
 ### The GPU memory of the page (GPULIMIT-MEM)
@@ -163,15 +163,21 @@ viewer asked it to render a data set that is too large.
   context, not the browser, so its cost is a reload of the tab.
 - **GPULIMIT-MEM-4** A failure within 1 hour of the previous failure joins its
   episode. Each failure of an episode halves the limit again, from the total
-  of its first failure: one failure allows 1/2, two allow 1/4. The reduction
-  lasts 1 hour after the last failure of the episode, so the reload after a
-  failure uses a lower level. A page that saw the reduction keeps it until that
-  browser window reloads. A success does not end the reduction.
+  of its first failure: one failure allows 1/2, two allow 1/4, and three or
+  more allow 1/8. The halvings stop at 3, and the `auto` limit is never below
+  16 MB (`MIN_TEXTURE_BYTES`), so a reduced texture always remains possible.
+  The reduction lasts 1 hour after the last failure of the episode, so the
+  reload after a failure uses a lower level. A page that saw the reduction
+  keeps it until that browser window reloads. A success does not end the
+  reduction.
 - **GPULIMIT-MEM-5** Only the first failure of an episode counts toward a
   ceiling, so a GPU that is overloaded for a short time counts once. Three
   episodes within 7 days set a ceiling at 0.75 of the smallest first failure of
   them, and lower `normal` to the ceiling. One episode does not lower the limit
-  of a later session. A success above the ceiling removes it.
+  of a later session. A success above the ceiling removes it. The ceiling
+  expires 7 days after its last failure with no new failure: the record stores
+  the time of that failure as `ceilingAt`, and `auto` ignores an expired
+  ceiling. A stored ceiling with no valid `ceilingAt` counts as expired.
 
 ### The stored record (GPULIMIT-RECORD)
 
@@ -183,7 +189,7 @@ viewer asked it to render a data set that is too large.
   wrong shape counts as missing (`VRS-C-15`).
 - **GPULIMIT-RECORD-2** The edge keeps a reliable value with a count of
   successes, and a failed value with a count of failures. Each memory category
-  keeps `normal` with a count of successes, a `ceiling`, the first failure of
+  keeps `normal` with a count of successes, a `ceiling` with its `ceilingAt`, the first failure of
   each episode within the window, and the current episode as `recent`
   (GPULIMIT-MEM).
 - **GPULIMIT-RECORD-3** A write re-reads the stored record and merges the
@@ -193,8 +199,9 @@ viewer asked it to render a data set that is too large.
 
 ### The retest (GPULIMIT-RETEST)
 
-- **GPULIMIT-RETEST-1** A failed edge and a memory ceiling stay until a retest
-  (`VRS-C-13`). `retestRenderingCapabilities()` clears the failures of the
+- **GPULIMIT-RETEST-1** A failed edge stays until a retest (`VRS-C-13`). A
+  memory ceiling stays until a retest, or until 7 days after its last failure
+  with no new failure (GPULIMIT-MEM-5). `retestRenderingCapabilities()` clears the failures of the
   categories that it names, or of all categories. For memory, it clears the
   ceiling, the failures, the current episode and the reduction of the page,
   and keeps `normal`.

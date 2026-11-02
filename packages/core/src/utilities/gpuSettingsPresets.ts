@@ -6,7 +6,10 @@ import {
   peekStoredRenderingCapabilities,
   probeRenderingEdge,
 } from './renderingCapabilities';
-import { getPageMemoryReduction } from './renderingCapabilities';
+import {
+  activeMemoryCeiling,
+  getPageMemoryReduction,
+} from './renderingCapabilities';
 import type {
   RendererClass,
   RenderingCapabilityMemory,
@@ -191,9 +194,11 @@ function autoTestBounds(): {
  * normal level, the largest total that worked. So the limit rises one step
  * after each success above the earlier normal level. `maxTextureMemoryBytes`
  * of `rendering.autoGpuSettings` caps it, and so does a ceiling, which several
- * failure episodes set. A failure episode lowers it further for its time, and
- * for the rest of a page that saw it (see `getPageMemoryReduction`): one
- * failure allows 1/2 of the failed total, two allow 1/4.
+ * failure episodes set, until it expires (see `activeMemoryCeiling`). A failure
+ * episode lowers it further for its time, and for the rest of a page that saw
+ * it (see `getPageMemoryReduction`): one failure allows 1/2 of the failed
+ * total, two allow 1/4, and three or more allow 1/8. The limit is never below
+ * `MIN_TEXTURE_BYTES`.
  *
  * @param start - the memory of the start preset of the renderer class
  * @param records - the memory records (context loss and stopped tab)
@@ -212,12 +217,10 @@ function autoMemoryLimit(
   );
 
   for (const memory of records) {
-    if (memory.ceiling > 0) {
-      limit = Math.min(limit, memory.ceiling);
-    }
+    limit = Math.min(limit, activeMemoryCeiling(memory) ?? limit);
   }
 
-  return Math.min(limit, getPageMemoryReduction());
+  return Math.max(MIN_TEXTURE_BYTES, Math.min(limit, getPageMemoryReduction()));
 }
 
 /**

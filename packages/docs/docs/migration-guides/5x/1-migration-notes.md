@@ -510,10 +510,10 @@ device keeps its own record:
   normal level. The limit of `auto` is one step above it (2 × the normal
   level), so the limit rises after each success at a larger total, up to
   `rendering.autoGpuSettings.maxTextureMemoryBytes` (32 GB by default). A failure within 1 hour of the previous one joins its episode.
-  Each failure of an episode halves the limit again (1/2, then 1/4) for 1 hour
+  Each failure of an episode halves the limit again (1/2, then 1/4, at most 1/8, and never below 16 MB) for 1 hour
   after its last failure, and a page that saw the reduction keeps it until it
   reloads. Three episodes within 7 days set a ceiling below the smallest of
-  them, until a retest. A new texture gets the
+  them, until a retest or for 7 days after the last failure. A new texture gets the
   memory limit of `auto` minus the GPU bytes of the rest of the page. `auto`
   does not evict the textures of another volume.
 - **The start.** The memory starts from `low` for a software rasterizer,

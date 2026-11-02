@@ -332,14 +332,14 @@ a `gpuBytes` failure. Two tabs share the record: each change applies to a fresh 
 limit is the larger of the start value of the renderer class and 2 × `normal`, up to `rendering.autoGpuSettings.maxTextureMemoryBytes` (32 GB by default). So each success above the
 earlier `normal` raises the limit one step, and a total in that step is a test of a new size. A failure
 starts an episode, and a failure within 1 hour of the previous one joins it. Each failure of the
-episode halves the limit again, from the total of its first failure, for 1 hour after its last
-failure, so the reload after a failure uses a lower level. A page that saw the reduction keeps it
+episode halves the limit again, from the total of its first failure, up to 3 times (1/8), for 1 hour
+after its last failure, and the limit is never below 16 MB, so the reload after a failure uses a lower level. A page that saw the reduction keeps it
 until it reloads (`getPageMemoryReduction`). Three episodes within 7 days set a `ceiling` at 0.75 of
-the smallest first failure of them, and the limit stays below it until a retest or a success above
-it. Later sessions otherwise keep `normal`.
+the smallest first failure of them, and the limit stays below it until a retest, a success above
+it, or 7 days after its last failure (`ceilingAt`). Later sessions otherwise keep `normal`.
 
 **Counts and retest.** The edge keeps a reliable value with a success count, and a failed value with
-a failure count. `auto` does not try a failed edge or a memory ceiling again. A retest is the one way
+a failure count. `auto` does not try a failed edge again, nor a memory ceiling before it expires. A retest is the one way
 to try it again, and the application decides when to offer the retest; the counts are for its display
 and its decision. An application reads the record with `getStoredRenderingCapabilities()`, clears failures
 with `retestRenderingCapabilities()`, and removes the record with
@@ -361,6 +361,7 @@ with `retestRenderingCapabilities()`, and removes the record with
   "gpuBytes": {
     "normal": { "value": 1200000000, "successes": 25 },
     "ceiling": 900000000,
+    "ceilingAt": 1793000000000,
     "failures": []
   }
 }
@@ -442,7 +443,8 @@ non-streaming slice paths. When no probe can run, the edge is a fixed floor (see
 of `convertMapperToNotSharedMapper` uploads the full-resolution scalars with no reduction: it runs
 the probe and logs a warning for a grid above the limits, and it does not refuse the upload.
 
-**VRS-C-13.** A failed edge and a memory ceiling stay until a retest. One memory failure episode
+**VRS-C-13.** A failed edge stays until a retest. A memory ceiling stays until a retest, or until 7
+days after its last failure. One memory failure episode
 lowers only the loads of its hour, and the pages that saw it until they reload. The retest is the recovery path, and the application decides when
 to offer it. `retestRenderingCapabilities` clears the failures of the selected categories, and
 `resetRenderingCapabilities({ clearStorage: true })` removes the whole record.
@@ -508,10 +510,12 @@ rasterizer also keeps the edge of `low` (256) at most, because a larger texture 
 page, and with no probe at all the edge is 128 (8 when a failure at or below 128 is stored). A failed
 edge at or below the reliable edge replaces the reliable edge by an edge that passed, or removes it.
 The memory limit of `auto` is the larger of the start value and `normal`, capped by a `ceiling`,
-and by `value / 2^count` of the current episode for 1 hour after its last failure, and for the rest
-of a page that saw it. Three episodes within 7 days set the ceiling at 0.75 of the smallest first
-failure of them. The constants are `MEMORY_RECENT_MS`,
-`MEMORY_FAILURES_FOR_CEILING`, `MEMORY_FAILURE_WINDOW_MS` and `MEMORY_CEILING_FRACTION`.
+and by `value / 2^min(count, 3)` of the current episode for 1 hour after its last failure, and for
+the rest of a page that saw it. Three episodes within 7 days set the ceiling at 0.75 of the smallest
+first failure of them, and the ceiling expires 7 days after its last failure. The limit is never
+below `MIN_TEXTURE_BYTES` (16 MB). The constants are `MEMORY_RECENT_MS`,
+`MEMORY_FAILURES_FOR_CEILING`, `MEMORY_FAILURE_WINDOW_MS`, `MEMORY_CEILING_FRACTION`,
+`MEMORY_CEILING_EXPIRY_MS` and `MEMORY_EPISODE_MAX_HALVINGS`.
 
 **VRS-I-15.** The memory values count the GPU bytes of the page from `gpuMemoryLedger`. A
 `vtkStreamingOpenGLTexture` adds an entry at each upload and removes it in

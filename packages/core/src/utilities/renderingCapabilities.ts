@@ -44,6 +44,12 @@ export const MEMORY_RECENT_MS = 60 * 60 * 1000;
 /** The ceiling, as a fraction of the smallest failure that set it. */
 export const MEMORY_CEILING_FRACTION = 0.75;
 
+/** A ceiling expires this long after its last failure. */
+export const MEMORY_CEILING_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000;
+
+/** The most halvings of one episode, so the reduction is never below 1/8. */
+export const MEMORY_EPISODE_MAX_HALVINGS = 3;
+
 const STORAGE_KEY = 'cornerstone3D.renderingCapabilities';
 const PENDING_KEY_PREFIX = `${STORAGE_KEY}.pending.`;
 
@@ -131,8 +137,11 @@ export type RenderingCapabilityMemoryEpisode =
  *
  * - `normal`: the high water mark, the largest total that worked.
  * - `ceiling`: set when `MEMORY_FAILURES_FOR_CEILING` failures occur within
- *   `MEMORY_FAILURE_WINDOW_MS`. The limit stays below it until a retest, or
- *   until a larger total works.
+ *   `MEMORY_FAILURE_WINDOW_MS`. The limit stays below it until a retest, until
+ *   a larger total works, or until `MEMORY_CEILING_EXPIRY_MS` after
+ *   `ceilingAt`.
+ * - `ceilingAt`: the time of the last failure while a ceiling holds. A ceiling
+ *   with no `ceilingAt` counts as expired.
  * - `failures`: the first failure of each episode since the ceiling last
  *   changed, oldest first. Two entries are at least `MEMORY_RECENT_MS` apart.
  * - `recent`: the current episode. Each of its failures halves the limit
@@ -142,6 +151,7 @@ export type RenderingCapabilityMemoryEpisode =
 export type RenderingCapabilityMemory = {
   normal?: RenderingCapabilitySuccess;
   ceiling?: number;
+  ceilingAt?: number;
   failures?: RenderingCapabilityMemoryFailure[];
   recent?: RenderingCapabilityMemoryEpisode;
 };
@@ -340,6 +350,7 @@ function validMemory(value: unknown): RenderingCapabilityMemory {
     numbers<RenderingCapabilitySuccess>(entry.normal, ['value', 'successes'])
   );
   setOrDelete(memory, 'ceiling', finite(entry.ceiling));
+  setOrDelete(memory, 'ceilingAt', finite(entry.ceilingAt));
   setOrDelete(
     memory,
     'recent',
@@ -547,7 +558,26 @@ function addMemorySuccess(
 
   if (entry.ceiling && value > entry.ceiling) {
     delete entry.ceiling;
+    delete entry.ceilingAt;
   }
+}
+
+/**
+ * The ceiling of a memory record, or `undefined` when it has none or when it
+ * expired: `MEMORY_CEILING_EXPIRY_MS` after `ceilingAt`, or at once when it has
+ * no `ceilingAt`.
+ *
+ * @param now - the time, from `Date.now()`
+ */
+export function activeMemoryCeiling(
+  entry: RenderingCapabilityMemory | undefined,
+  now = Date.now()
+): number | undefined {
+  return entry?.ceiling > 0 &&
+    Number.isFinite(entry.ceilingAt) &&
+    now - entry.ceilingAt < MEMORY_CEILING_EXPIRY_MS
+    ? entry.ceiling
+    : undefined;
 }
 
 /**
@@ -557,6 +587,9 @@ function addMemorySuccess(
  * episode: the count of the episode rises, and its time moves to `now`. It
  * does not count toward the ceiling, so a GPU that is overloaded for a short
  * time does not set one.
+ *
+ * A failure while a ceiling holds moves `ceilingAt` to `now`, and a failure
+ * after the ceiling expired removes it.
  *
  * Any other failure starts an episode, and joins `failures`. When
  * `MEMORY_FAILURES_FOR_CEILING` episodes fall within
@@ -569,6 +602,13 @@ export function addMemoryFailure(
   value: number,
   now: number
 ): void {
+  if (activeMemoryCeiling(entry, now) !== undefined) {
+    entry.ceilingAt = now;
+  } else {
+    delete entry.ceiling;
+    delete entry.ceilingAt;
+  }
+
   if (entry.recent && now - entry.recent.at < MEMORY_RECENT_MS) {
     entry.recent = {
       value: entry.recent.value,
@@ -595,6 +635,7 @@ export function addMemoryFailure(
   const ceiling = Math.floor(smallest * MEMORY_CEILING_FRACTION);
 
   entry.ceiling = entry.ceiling ? Math.min(entry.ceiling, ceiling) : ceiling;
+  entry.ceilingAt = now;
   entry.failures = [];
 
   if (entry.normal && entry.normal.value > entry.ceiling) {
@@ -873,7 +914,8 @@ export function recordRenderingCapabilityFailure(
  *
  * An episode of `count` failures allows `value / 2^count` for
  * `MEMORY_RECENT_MS` after its last failure, where `value` is the total of its
- * first failure: one failure allows 1/2, two allow 1/4. The page keeps the
+ * first failure: one failure allows 1/2, two allow 1/4, and three or more allow
+ * 1/8 (`MEMORY_EPISODE_MAX_HALVINGS`). The page keeps the
  * smallest such limit that it saw until it reloads, so a reload after that time
  * returns to the full limit, and a page that saw the reduction never loses it.
  *
@@ -888,7 +930,10 @@ export function getPageMemoryReduction(now = Date.now()): number {
     if (episode && now - episode.at < MEMORY_RECENT_MS) {
       pageMemoryReduction = Math.min(
         pageMemoryReduction,
-        Math.floor(episode.value / 2 ** (episode.count ?? 1))
+        Math.floor(
+          episode.value /
+            2 ** Math.min(episode.count ?? 1, MEMORY_EPISODE_MAX_HALVINGS)
+        )
       );
     }
   }
@@ -1020,6 +1065,7 @@ export function retestRenderingCapabilities(
     for (const category of ['textureBytes', 'gpuBytes'] as const) {
       if (all || options[category]) {
         delete target[category].ceiling;
+        delete target[category].ceilingAt;
         delete target[category].failures;
         delete target[category].recent;
       }

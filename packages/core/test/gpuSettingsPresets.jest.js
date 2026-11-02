@@ -1,4 +1,12 @@
-import { describe, it, expect, afterEach, jest } from '@jest/globals';
+import {
+  describe,
+  it,
+  expect,
+  afterEach,
+  beforeEach,
+  jest,
+} from '@jest/globals';
+import { volumeTextureReductionFactors } from '../src/RenderingEngine/helpers/volumeRenderStrategy';
 import {
   getGpuSettingsPreset,
   getGpuSettingsPresets,
@@ -282,6 +290,102 @@ describe('the auto preset', () => {
     } finally {
       clock.mockRestore();
     }
+  });
+
+  describe('after stored losses', () => {
+    const DIMS = [512, 512, 2048];
+    const FAILED_TOTAL = 1.32e9;
+    const volume = {
+      volumeId: 'v',
+      dataType: 'Uint16Array',
+      voxelGrid: { dimensions: DIMS },
+      voxelManager: { numberOfComponents: 1 },
+      isDynamicVolume: () => false,
+    };
+    let clock;
+    let start;
+
+    beforeEach(() => {
+      start = Date.now();
+      clock = jest.spyOn(Date, 'now').mockReturnValue(start);
+      mockWebGL();
+      setLossyDownsampling({ final: true });
+    });
+
+    afterEach(() => {
+      setLossyDownsampling({ final: false });
+      clock.mockRestore();
+    });
+
+    /** Three episodes, each two hours apart, which set a ceiling. */
+    function setCeiling() {
+      for (let episode = 0; episode < 3; episode++) {
+        clock.mockReturnValue(start + episode * 2 * MEMORY_RECENT_MS);
+        recordRenderingCapabilityFailure('textureBytes', FAILED_TOTAL);
+      }
+      clock.mockReturnValue(start + 6 * MEMORY_RECENT_MS);
+      resetRenderingCapabilities();
+    }
+
+    it('gives a nonzero limit below the failed total, and the strategy still reduces', () => {
+      // The API must keep a usable limit: 12 losses in one hour stop at 1/8.
+      for (let loss = 0; loss < 12; loss++) {
+        clock.mockReturnValue(start + loss * 1000);
+        recordRenderingCapabilityFailure('textureBytes', FAILED_TOTAL);
+      }
+      resetRenderingCapabilities();
+
+      const settings = gpuSettingsForGrid(getActiveGpuSettings(), DIMS, 2);
+
+      expect(settings.textureMemoryBytes).toBe(Math.floor(FAILED_TOTAL / 8));
+      expect(settings.textureMemoryBytes).toBeGreaterThanOrEqual(
+        16 * 1024 ** 2
+      );
+      expect(settings.textureMemoryBytes).toBeLessThan(FAILED_TOTAL);
+      expect(
+        volumeTextureReductionFactors(volume, getActiveGpuSettings()).some(
+          (factor) => factor > 1
+        )
+      ).toBe(true);
+
+      // A small failed total stops at the 16 MB floor.
+      resetRenderingCapabilities({ clearStorage: true });
+      for (let loss = 0; loss < 3; loss++) {
+        recordRenderingCapabilityFailure('textureBytes', 64 * 1024 ** 2);
+      }
+      resetRenderingCapabilities();
+
+      expect(getActiveGpuSettings().textureMemoryBytes).toBe(16 * 1024 ** 2);
+    });
+
+    it('ignores a ceiling 7 days after its last failure', () => {
+      setCeiling();
+      const ceiling = Math.floor(FAILED_TOTAL * 0.75);
+
+      expect(getActiveGpuSettings().textureMemoryBytes).toBe(ceiling);
+
+      clock.mockReturnValue(start + 4 * MEMORY_RECENT_MS + 7 * 24 * 3600000);
+      resetRenderingCapabilities();
+
+      expect(getActiveGpuSettings().textureMemoryBytes).toBe(8 * GIGABYTE);
+    });
+
+    it('treats a stored ceiling with no ceilingAt as expired', () => {
+      setCeiling();
+      const key = Object.keys(window.localStorage).find(
+        (name) =>
+          name.startsWith('cornerstone3D.renderingCapabilities.') &&
+          !name.includes('.pending.')
+      );
+      const stored = JSON.parse(window.localStorage.getItem(key));
+
+      expect(stored.textureBytes.ceiling).toBeGreaterThan(0);
+      delete stored.textureBytes.ceilingAt;
+      window.localStorage.setItem(key, JSON.stringify(stored));
+      resetRenderingCapabilities();
+
+      expect(getActiveGpuSettings().textureMemoryBytes).toBe(8 * GIGABYTE);
+    });
   });
 
   it('raises the memory one step after each larger success, up to the configured maximum', () => {
