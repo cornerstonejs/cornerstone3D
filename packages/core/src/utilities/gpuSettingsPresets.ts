@@ -1,5 +1,5 @@
 import type { VoxelGridLimits } from '../types';
-import { getLossyDownsampling } from '../init';
+import { getLossyDownsampling, getShouldUseCPURendering } from '../init';
 
 /**
  * How fast a device of this class draws, on a relative scale.
@@ -148,12 +148,15 @@ function getActiveGpuSettings(): GpuSettings {
 
 /**
  * The GPU settings that a render applies, or `undefined` when final
- * downsampling is off. With final downsampling off, no preset applies, and a
- * volume renders as in 4.x. Every render path reads the settings here, so that
- * one check covers them all.
+ * downsampling is off or CPU rendering is on. Then no preset applies, and a
+ * volume renders as in 4.x: the presets describe WebGL GPU limits, not CPU
+ * memory. Every render path reads the settings here, so that one check covers
+ * them all.
  */
 function gpuSettingsForRender(): GpuSettings | undefined {
-  return getLossyDownsampling().final ? getActiveGpuSettings() : undefined;
+  return getLossyDownsampling().final && !getShouldUseCPURendering()
+    ? getActiveGpuSettings()
+    : undefined;
 }
 
 /** Returns to the default preset. */
