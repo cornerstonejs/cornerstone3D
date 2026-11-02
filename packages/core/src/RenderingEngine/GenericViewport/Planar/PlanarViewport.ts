@@ -193,8 +193,13 @@ class PlanarViewport extends GenericViewport<
     string,
     PlanarSetDataOptions
   >();
-  // The last volume slice point before a change to the acquired frames.
-  private acquiredFramesInPlanePoint?: Point3;
+  // The last volume slice point before a change to the acquired frames, and
+  // the volume that the point belongs to.
+  private acquiredFramesInPlanePoint?: { volumeId: string; point: Point3 };
+  // True while a remount pass of applyRenderingPipelineUpdate runs.
+  private renderPipelineSwapInFlight = false;
+  // True while setDisplaySets removes the bindings that it replaces.
+  private replacingData = false;
 
   // ── Static ───────────────────────────────────────────────────────────
 
@@ -383,7 +388,13 @@ class PlanarViewport extends GenericViewport<
     const isStale = () => requestId !== this.setDataRequestId;
 
     this.clearResolvedViewCache();
-    this.removeReplaceableData(entries);
+    // The new source makes its own path decision when it mounts.
+    this.replacingData = true;
+    try {
+      this.removeReplaceableData(entries);
+    } finally {
+      this.replacingData = false;
+    }
 
     for (const [index, { displaySetId, options = {} }] of entries.entries()) {
       if (isStale()) {
@@ -492,9 +503,15 @@ class PlanarViewport extends GenericViewport<
 
   /**
    * Removes a dataset binding and clears the active data id when the
-   * removed dataset was active.
+   * removed dataset was active. The bindings that stay re-run their
+   * render-path decision, so that the source returns to the image path when
+   * the last volume overlay goes.
    */
   removeData(dataId: string): void {
+    if (dataId === this.getSourceDataId()) {
+      this.acquiredFramesInPlanePoint = undefined;
+    }
+
     this.clearResolvedViewCache();
     this.mountOptionsByDataId.delete(dataId);
     this.lastRenderPathErrorByDataId.delete(dataId);
@@ -503,6 +520,10 @@ class PlanarViewport extends GenericViewport<
 
     if (!this.isDestroyed && this.getCurrentBinding()) {
       this.updateBindingsCameraState();
+
+      if (!this.replacingData) {
+        void this.updateRenderPathsForView();
+      }
     }
   }
 
@@ -1762,6 +1783,7 @@ class PlanarViewport extends GenericViewport<
     const isStale = () =>
       swapId !== this.renderPipelineSwapId || this.isDestroyed;
     let changed = false;
+    this.renderPipelineSwapInFlight = true;
     let previousSourceCamera: ICamera | undefined;
 
     // Remount the source binding first: overlays without an explicit
@@ -1847,7 +1869,14 @@ class PlanarViewport extends GenericViewport<
       }
     }
 
-    if (isStale() || !changed) {
+    // A stale pass leaves the flag to the newer pass.
+    if (isStale()) {
+      return;
+    }
+
+    this.renderPipelineSwapInFlight = false;
+
+    if (!changed) {
       return;
     }
 
@@ -1877,20 +1906,34 @@ class PlanarViewport extends GenericViewport<
     if (previousSourceCamera) {
       this.triggerCameraModifiedEvent(previousSourceCamera);
     }
+
+    // An input can change while the pass mounts.
+    if (!isStale()) {
+      await this.updateRenderPathsForView();
+    }
   }
 
   /**
    * Re-runs the render-path decision of each mounted volume display set when
    * an input of that decision changes: the orientation, the slab thickness,
-   * the blend mode, or the overlays. A display set whose path changes
-   * remounts in place through `applyRenderingPipelineUpdate`, which keeps the
-   * view state and converts the slice of the source between the two paths.
+   * the blend mode, or the add or the removal of an overlay. A display set
+   * whose path changes remounts in place through
+   * `applyRenderingPipelineUpdate`, which keeps the view state and converts
+   * the slice of the source between the two paths.
+   *
+   * During a remount the mounted render modes are not the target, so a new
+   * request always starts a new pass and the last request wins. A pass that
+   * remounted checks the decision again when it ends.
    *
    * Display sets without a volume keep the path of their first mount.
    */
   private updateRenderPathsForView(): Promise<void> {
     if (this.isDestroyed) {
       return Promise.resolve();
+    }
+
+    if (this.renderPipelineSwapInFlight) {
+      return this.applyRenderingPipelineUpdate();
     }
 
     const orientation = this.resolveRequestedOrientation(
@@ -1951,16 +1994,21 @@ class PlanarViewport extends GenericViewport<
     const { slice } = this.viewState;
 
     if (!toVolumePath && slice?.kind === 'volumePoint') {
-      this.acquiredFramesInPlanePoint = [...slice.sliceWorldPoint] as Point3;
+      this.acquiredFramesInPlanePoint = {
+        volumeId: dataSet.volumeId,
+        point: [...slice.sliceWorldPoint] as Point3,
+      };
     }
 
+    const inPlane = this.acquiredFramesInPlanePoint;
     const nextSlice = convertAcquiredFrameSlice({
       slice,
       toVolumePath,
       imageVolume,
       imageIds: dataSet.imageIds,
       currentImageIdIndex: this.getActiveImageIdIndex(),
-      inPlanePoint: this.acquiredFramesInPlanePoint,
+      inPlanePoint:
+        inPlane?.volumeId === dataSet.volumeId ? inPlane.point : undefined,
     });
 
     if (!nextSlice || nextSlice === slice) {
