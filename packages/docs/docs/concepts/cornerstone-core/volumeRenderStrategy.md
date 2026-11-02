@@ -384,6 +384,14 @@ dimensions of the reduced grid, and vtk.js maps the texture over the extent of t
 - `boxAverageReductionFactors` takes the largest M that fits the limits. It takes a whole factor f
   that divides N in place of that M when `N / f` is at least `DIVISOR_PREFERENCE_MIN_RATIO` (0.9) of
   M, because the box is then exact and whole.
+- An exception applies when the edge limit reduces an axis and the largest edge that fits is above
+  `WHOLE_FACTOR_MIN_FITTING_EDGE` (1024). The axis then takes the whole factor
+  `f = ceil(N / maxTextureEdge)` and `M = ceil(N / f)`, with the box spacing `N / M`. For example,
+  2464 slices under an edge limit of 2048 give f = 2 and M = 1232, not 2048. A smaller texture helps
+  the stability of the GPU, and at these sizes the loss of quality is small. The memory limit then
+  reduces the axis further only when the grid still holds too many voxels. A reduction that the
+  memory limit causes, and an edge reduction whose largest fit is 1024 or less, take the largest M
+  that fits.
 - A whole factor that does not divide N gives `ceil(N / f)` texels, which do not span N source
   voxels. A texture of such a grid draws stretched, so no reduced texture uses one.
 
