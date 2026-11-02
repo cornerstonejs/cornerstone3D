@@ -6,7 +6,13 @@ import {
   setGpuSettingsPreset,
   resetGpuSettingsPreset,
   gridLimitsOfGpuSettings,
+  gpuSettingsForRender,
 } from '../src/utilities/gpuSettingsPresets';
+import {
+  resetUseCPURendering,
+  setLossyDownsampling,
+  setUseCPURendering,
+} from '../src/init';
 
 // The named capability profiles, which an application states. MR-CODE-1 and
 // MR-CODE-2 of cornerstone3D issue #2921.
@@ -82,5 +88,25 @@ describe('the GPU settings presets', () => {
 
     expect(limits.maxEdge).toBe(256);
     expect(limits.maxVoxelCount).toBe(GIGABYTE / 4);
+  });
+});
+
+describe('CPU rendering', () => {
+  afterEach(() => {
+    resetUseCPURendering();
+    setLossyDownsampling({ final: false });
+  });
+
+  // The API must do this: the presets are WebGL GPU limits, so CPU rendering
+  // renders as with final downsampling off.
+  it('applies no preset to CPU rendering', () => {
+    setLossyDownsampling({ final: true });
+    setGpuSettingsPreset('low-tablet');
+
+    expect(gpuSettingsForRender()?.id).toBe('low-tablet');
+
+    setUseCPURendering(true, false);
+
+    expect(gpuSettingsForRender()).toBeUndefined();
   });
 });
