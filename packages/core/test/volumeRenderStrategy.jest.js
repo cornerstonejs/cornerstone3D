@@ -29,6 +29,7 @@ import {
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import { sampleDistanceOf } from '../src/RenderingEngine/helpers/createVolumeMapper';
 import { VoxelStatistics } from '../src/enums';
+import * as renderingCapabilities from '../src/utilities/renderingCapabilities';
 import { resetRenderingCapabilities } from '../src/utilities/renderingCapabilities';
 import { probeRenderingLimits } from '../src/utilities/textureSupport';
 
@@ -105,15 +106,22 @@ function render(path, rendering) {
   path.applyStrategy(rendering);
 }
 
+let rendererClassSpy;
+
 beforeEach(() => {
   volumeTextureStore.clear();
   volumeTextureStore.setBudget(0);
   // The default `auto` reads a WebGL probe, which jest does not have.
   setGpuSettingsPreset('high');
+  // The GPU settings apply to a GPU renderer only, and jsdom has no WebGL.
+  rendererClassSpy = jest
+    .spyOn(renderingCapabilities, 'getRendererClass')
+    .mockReturnValue('desktop');
 });
 
 afterEach(() => {
   resetGpuSettingsPreset();
+  rendererClassSpy.mockRestore();
 });
 
 describe('the default provider builds the strategies', () => {

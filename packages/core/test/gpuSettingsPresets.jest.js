@@ -256,15 +256,11 @@ describe('the auto preset', () => {
       expect(probeEdgeSearch).not.toHaveBeenCalled();
     });
 
-    it('still applies a named preset', () => {
+    it('applies no named preset either', () => {
       setGpuSettingsPreset('low-tablet');
 
-      expect(gpuSettingsForRender()).toEqual(
-        getGpuSettingsPreset('low-tablet')
-      );
-      expect(gridFitsGpuSettings([16, 16, 3000], 'Float32Array', 1)).toBe(
-        false
-      );
+      expect(gpuSettingsForRender()).toBeUndefined();
+      expect(gridFitsGpuSettings([16, 16, 3000], 'Float32Array', 1)).toBe(true);
     });
   });
 

@@ -520,14 +520,12 @@ device keeps its own record:
   `medium` for any other GPU. Safari reports `"Apple GPU"` on a Mac too, and a
   Mac with no touch screen starts from `medium`. The edge is always an edge
   that the probe passed.
-- **GPU rendering only.** The `auto` limits describe the memory and the
-  texture limits of a WebGL GPU, not CPU memory. A software renderer (for
-  example SwiftShader or llvmpipe) and CPU rendering ignore the `auto` limits,
-  and render as in 4.x. A named preset still applies to them, so an e2e test
-  on a CI runner that uses SwiftShader can select `low-tablet` to test the
-  reduction. CPU limits, if necessary, are a separate future set of
-  requirements. This version does not decide whether the limits apply to
-  WebGPU.
+- **GPU rendering only.** The GPU settings (`auto` and the named presets)
+  describe the memory and the texture limits of a WebGL GPU, not CPU memory. A
+  software renderer (for example SwiftShader or llvmpipe) and CPU rendering
+  ignore all GPU settings, and render as in 4.x. CPU limits, if necessary, are
+  a separate future set of requirements. This version does not decide whether
+  the GPU settings apply to WebGPU.
 
 A volume with an axis longer than the limit draws from a box-average reduction
 of that axis. For example, a CT of 512 × 512 × 2464 draws with a factor of 2

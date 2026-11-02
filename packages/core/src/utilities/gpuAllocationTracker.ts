@@ -8,7 +8,7 @@ import {
   recordRenderingCapabilityFailure,
   recordRenderingCapabilitySuccess,
 } from './renderingCapabilities';
-import { autoGpuLimitsApply } from './gpuSettingsPresets';
+import { gpuSettingsApply } from './gpuSettingsPresets';
 
 const log = coreLog.getLogger('utilities', 'gpuAllocationTracker');
 
@@ -185,7 +185,7 @@ export function noteTextureAllocation({
   if (
     textureBytes < LARGE_ALLOCATION_BYTES ||
     isHidden() ||
-    !autoGpuLimitsApply()
+    !gpuSettingsApply()
   ) {
     return;
   }

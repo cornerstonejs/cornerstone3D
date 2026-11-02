@@ -84,8 +84,9 @@ and the viewport fidelity indicator tells the user that the display is lossy.
   the limits of the device from the start.
 - **GPULIMIT-USER-8** The detection adds less than 250 ms to the first start of
   a viewer in a new browser. A later start adds no visible delay.
-- **GPULIMIT-USER-9** The `auto` limits are limits of GPU rendering through
-  WebGL. The viewer applies the `auto` limits to GPU rendering only.
+- **GPULIMIT-USER-9** The GPU settings (the `auto` limits and the named
+  presets) are limits of GPU rendering through WebGL. The viewer applies the
+  GPU settings to GPU rendering only.
 
 A requirement in this group fails, for example, when a device that can render
 within the limits shows all gray or all black, or does not render because the
@@ -120,22 +121,21 @@ viewer asked it to render a data set that is too large.
   that a thin probe that passes predicts a full texture that displays, and no
   evidence shows the opposite. A context loss after the allocation at a new edge
   is recorded (GPULIMIT-DETECT-2).
-- **GPULIMIT-PROFILE-7** The `auto` limits describe the memory and the texture
-  limits of a WebGL GPU, not CPU memory. Thus a software renderer and CPU
-  rendering ignore the `auto` limits:
+- **GPULIMIT-PROFILE-7** The GPU settings (`auto` and the named presets)
+  describe the memory and the texture limits of a WebGL GPU, not CPU memory.
+  Thus a software renderer and CPU rendering ignore all GPU settings:
   - A software renderer draws WebGL on the CPU, for example SwiftShader,
     llvmpipe, softpipe, or Microsoft Basic Render Driver (WARP). Its renderer
     class is `software`.
   - CPU rendering has the renderer class `none`, or `useCPURendering` is on.
-  - For these renderers, `gpuSettingsForRender()` returns `undefined` under
-    `auto`, so the volume renders as in 4.x. `auto` runs no probe, reads no
+  - For these renderers, `gpuSettingsForRender()` returns `undefined` for every
+    preset, so the volume renders as in 4.x. `auto` runs no probe, reads no
     stored record, and the allocation tracker writes no record.
-  - A named preset still applies to these renderers, because the application
-    selects it explicitly. For example, an e2e test on a CI runner that uses
-    SwiftShader can select `low-tablet` to test the reduction.
+  - `getActiveGpuSettings()` and `getGpuSettingsPreset(id)` still return the
+    values of a named preset as data. The render path ignores these values.
   - If CPU limits become necessary, they are a separate future set of
     requirements on a separate path.
-  - This version does not decide whether the `auto` limits apply to WebGPU.
+  - This version does not decide whether the GPU settings apply to WebGPU.
 
 ### The detection of each failure (GPULIMIT-DETECT)
 

@@ -45,10 +45,9 @@ export type GpuSpeedIndex = number;
  * `getStoredRenderingCapabilities`). A named preset, which an application
  * selects, overrides `auto`.
  *
- * The `auto` limits are WebGL GPU limits. A software renderer and CPU
- * rendering get no `auto` limits (see `autoGpuLimitsApply`). A named preset
- * applies to every renderer, because the application selects it explicitly,
- * for example a test on a CI runner that uses SwiftShader.
+ * The GPU settings, `auto` and the named presets, are limits of GPU rendering
+ * through WebGL. A software renderer and CPU rendering ignore them (see
+ * `gpuSettingsApply`).
  */
 export type GpuSettings = {
   /** The name of the preset. */
@@ -156,12 +155,13 @@ const START_PRESET_OF_CLASS: Record<
 };
 
 /**
- * True when the `auto` limits apply. They are WebGL GPU limits, so they apply
- * to GPU rendering only. A software renderer (class `software`) and CPU
- * rendering (class `none`, or `useCPURendering`) get no `auto` limits, and
- * render as with final downsampling off. A named preset still applies to them.
+ * True when the GPU settings apply, whatever preset is active. They describe
+ * the texture limits and the memory of a WebGL GPU, not CPU memory, so they
+ * apply to GPU rendering only. A software renderer (class `software`) and CPU
+ * rendering (class `none`, or `useCPURendering`) ignore them, and render as
+ * with final downsampling off.
  */
-function autoGpuLimitsApply(): boolean {
+function gpuSettingsApply(): boolean {
   if (getShouldUseCPURendering()) {
     return false;
   }
@@ -278,11 +278,11 @@ function autoEdge(): number {
  * memory, raised one step above a larger total that worked, capped after several failure
  * episodes, and lowered for the time of an episode (see `autoMemoryLimit`).
  *
- * When the `auto` limits do not apply (see `autoGpuLimitsApply`), `auto` has
+ * When the GPU settings do not apply (see `gpuSettingsApply`), `auto` has
  * no limit, reads no record and runs no probe.
  */
 function getAutoGpuSettings(): GpuSettings {
-  if (!autoGpuLimitsApply()) {
+  if (!gpuSettingsApply()) {
     return {
       id: 'auto',
       maxTextureEdge: Number.POSITIVE_INFINITY,
@@ -319,7 +319,12 @@ function getGpuSettingsPresets(): GpuSettings[] {
   return [getAutoGpuSettings(), ...Object.values(PRESETS)];
 }
 
-/** The preset of one name. `auto` reads the stored record each time. */
+/**
+ * The preset of one name. `auto` reads the stored record each time. A named
+ * preset comes back with its values on every renderer, but the render path
+ * ignores it on a software renderer and on CPU rendering (see
+ * `gpuSettingsForRender`).
+ */
 function getGpuSettingsPreset(id: GpuSettingsPresetId): GpuSettings {
   if (id === 'auto') {
     return getAutoGpuSettings();
@@ -352,7 +357,8 @@ function setGpuSettingsPreset(id: GpuSettingsPresetId): void {
 /**
  * The preset that applies now. Under `auto`, a call can run the probe, also
  * with final downsampling off. The render paths read `gpuSettingsForRender`
- * instead, which runs no probe with final downsampling off.
+ * instead, which runs no probe with final downsampling off, and which ignores
+ * every preset on a software renderer and on CPU rendering.
  */
 function getActiveGpuSettings(): GpuSettings {
   return getGpuSettingsPreset(activePresetId);
@@ -360,16 +366,14 @@ function getActiveGpuSettings(): GpuSettings {
 
 /**
  * The GPU settings that a render applies, or `undefined` when no preset
- * applies: final downsampling is off, or `auto` is active and its limits do
- * not apply (see `autoGpuLimitsApply`). With `undefined`, a volume renders as
- * in 4.x, with no probe and no read of the record. Every render path reads the
- * settings here, so that one check covers them all.
+ * applies: final downsampling is off, or the renderer is a software renderer
+ * or CPU rendering (see `gpuSettingsApply`), whatever preset is active. With
+ * `undefined`, a volume renders as in 4.x, with no probe and no read of the
+ * record. Every render path reads the settings here, so that one check covers
+ * them all.
  */
 function gpuSettingsForRender(): GpuSettings | undefined {
-  if (
-    !getLossyDownsampling().final ||
-    (activePresetId === 'auto' && !autoGpuLimitsApply())
-  ) {
+  if (!getLossyDownsampling().final || !gpuSettingsApply()) {
     return undefined;
   }
 
@@ -412,7 +416,7 @@ function gpuSettingsForGrid(
   const edge = Math.max(dimensions[0], dimensions[1], dimensions[2]);
   let result = gpuSettings;
 
-  // An `auto` with no limits (see `autoGpuLimitsApply`) has an infinite edge,
+  // An `auto` with no limits (see `gpuSettingsApply`) has an infinite edge,
   // so it never probes.
   if (
     edge > gpuSettings.maxTextureEdge &&
@@ -482,6 +486,6 @@ export {
   gpuSettingsForRender,
   resetGpuSettingsPreset,
   gridLimitsOfGpuSettings,
-  autoGpuLimitsApply,
+  gpuSettingsApply,
   DEFAULT_PRESET_ID as defaultGpuSettingsPresetId,
 };
