@@ -8,6 +8,7 @@ import {
 } from '../../utilities/gpuSettingsPresets';
 
 const log = coreLog.getLogger('RenderingEngine', 'gridFitsGpuSettings');
+const warnedKeys = new Set();
 
 /**
  * States whether the active GPU settings can hold a texture of these
@@ -21,6 +22,8 @@ const log = coreLog.getLogger('RenderingEngine', 'gridFitsGpuSettings');
  * A dynamic (4D) volume and a texture of more than one component also always
  * fit: the strategy does not reduce them (VRS-I-13, VRS-I-14), so the mapper
  * tries the upload as in 4.x instead of keeping the previous image.
+ *
+ * A refusal logs one warning for each volume, grid and GPU settings.
  *
  * @param {number[]} dims - the number of voxels on each axis
  * @param {string} dataType - the type of the buffer of the texture
@@ -61,9 +64,15 @@ export default function gridFitsGpuSettings(
     return true;
   }
 
-  log.warn(
-    `the GPU settings preset ${gpuSettings.id} cannot hold a texture of ${dims[0]}x${dims[1]}x${dims[2]} for the volume ${context?.volumeId}, so no allocation is issued`
-  );
+  // A refused texture rebuilds on each render, so warn once for each key.
+  const key = `${context?.volumeId}|${grid.dimensions}|${gpuSettings.id}|${limits.maxEdge}|${limits.maxVoxelCount}`;
+
+  if (!warnedKeys.has(key)) {
+    warnedKeys.add(key);
+    log.warn(
+      `the GPU settings preset ${gpuSettings.id} cannot hold a texture of ${dims[0]}x${dims[1]}x${dims[2]} for the volume ${context?.volumeId}, so no allocation is issued`
+    );
+  }
 
   return false;
 }
