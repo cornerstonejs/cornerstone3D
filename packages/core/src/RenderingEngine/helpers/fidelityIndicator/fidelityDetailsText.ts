@@ -1,7 +1,7 @@
 import type { Point3, ViewportFidelityState } from '../../../types';
 import {
   type FidelityLine,
-  formatFactor,
+  formatReductionFactor,
   lineHasData,
   lineKind,
 } from './fidelityIndicatorState';
@@ -136,5 +136,5 @@ function formatAxis(value: number): string {
     return '1';
   }
 
-  return formatFactor(value, 2);
+  return formatReductionFactor(value);
 }

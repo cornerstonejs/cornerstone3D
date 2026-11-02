@@ -282,11 +282,23 @@ export function isReduced(factors: Point3): boolean {
 }
 
 /**
- * Formats per-axis reduction factors as `2×2×10` or `1×1×1.20`: a whole
- * factor without decimals, any other factor with 2 decimals.
+ * Formats per-axis reduction factors as `2×2×10` or `1×1×1.20`. See
+ * {@link formatReductionFactor}.
  */
 export function formatFactors(factors: Point3): string {
-  return factors.map((factor) => formatFactor(factor, 2)).join('×');
+  return factors.map(formatReductionFactor).join('×');
+}
+
+/**
+ * Formats one reduction factor: a whole factor without decimals, any other
+ * factor with 2 decimals. A factor above 1 that would round to `1.00` prints
+ * as `<1.01`, because even a one-pixel reduction is significant: it can cause
+ * moiré patterns, as a one-pixel magnification can.
+ */
+export function formatReductionFactor(value: number): string {
+  const text = formatFactor(value, 2);
+
+  return text === '1.00' && value > 1 ? '<1.01' : text;
 }
 
 export function isInteractiveLod(sampleDistanceLod: number): boolean {
