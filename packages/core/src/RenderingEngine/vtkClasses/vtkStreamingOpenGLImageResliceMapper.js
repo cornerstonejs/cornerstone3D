@@ -9,6 +9,7 @@ import {
 } from '@kitware/vtk.js/Rendering/OpenGL/RenderWindow/resourceSharingHelper';
 import vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture';
 import { getCanUseNorm16Texture } from '../../init';
+import takeBoundScalarTexture from './takeBoundScalarTexture';
 
 const { vtkErrorMacro } = macro;
 
@@ -166,6 +167,7 @@ function vtkStreamingOpenGLImageResliceMapper(publicAPI, model) {
   publicAPI.buildBufferObjects = (ren, actor) => {
     const actorProperties = actor.getProperties();
 
+    takeBoundScalarTexture(model);
     model.currentValidInputs.forEach(({ imageData }, component) => {
       if (!model.scalarTextures) {
         model.scalarTextures = [];
