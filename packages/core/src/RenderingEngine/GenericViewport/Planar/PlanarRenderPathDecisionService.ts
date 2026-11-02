@@ -221,14 +221,16 @@ function hasExplicitCachedVolume(dataSet: PlanarRegisteredDataSet): boolean {
   return !!(dataSet.volumeId && cache.getVolume(dataSet.volumeId));
 }
 
-/** True when the data set has a cached volume or image ids that form a volume. */
-export function supportsVolumeRendering(
-  dataSet: PlanarRegisteredDataSet
-): boolean {
+function supportsVolumeRendering(dataSet: PlanarRegisteredDataSet): boolean {
   return hasExplicitCachedVolume(dataSet) || isValidVolume(dataSet.imageIds);
 }
 
-function isVolumeBackedDataSet(
+/**
+ * True when the data set mounts on a volume render path. With
+ * `isAcquisitionPath` true, this means that the data set has a `volumeId` and
+ * does not use world-coordinate image data.
+ */
+export function isVolumeBackedDataSet(
   dataSet: PlanarRegisteredDataSet,
   isAcquisitionPath: boolean
 ): boolean {

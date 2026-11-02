@@ -149,15 +149,19 @@ export function viewportSupportsDisplaySetPresentation(
 }
 
 /**
- * Returns the content-true mode of the viewport's bound source data when the
- * viewport can classify it (i.e. exposes `getCurrentMode`), otherwise
- * `undefined`.
+ * Returns the `getCurrentMode()` answer of the viewport when the viewport
+ * exposes `getCurrentMode`, otherwise `undefined`.
  *
  * Unlike the capability guards above (which test method presence), this reports
- * what the viewport is actually showing — the question a `PLANAR_NEXT` viewport
+ * the mode of the bound source data — the question a `PLANAR_NEXT` viewport
  * cannot answer through `viewportSupportsImageSlices` /
  * `viewportSupportsVolumeId` alone, since it supports both regardless of
  * content. See {@link ViewportContentMode}.
+ *
+ * @deprecated The answer is the intended UI mode, that is, the kind of
+ * viewport that the user works with (`stack`, `volume`, ...), not the render
+ * path. New code uses `isInAcquisitionPlane()` and
+ * `canShowVolumetricOrientation()`. Removal waits for a major version.
  */
 export function getViewportContentMode(
   viewport: unknown
@@ -168,8 +172,13 @@ export function getViewportContentMode(
 }
 
 /**
- * Returns `true` when the viewport is currently rendering volume-backed content
- * (a volume slice or a 3D volume). Content-true; see {@link getViewportContentMode}.
+ * Returns `true` when the mode of the viewport is volume-backed content
+ * (a volume slice or a 3D volume); see {@link getViewportContentMode}.
+ *
+ * @deprecated The answer is the intended UI mode, that is, the kind of
+ * viewport that the user works with (`stack`, `volume`, ...), not the render
+ * path. New code uses `isInAcquisitionPlane()` and
+ * `canShowVolumetricOrientation()`. Removal waits for a major version.
  */
 export function viewportIsInVolumeMode(viewport: unknown): boolean {
   const mode = getViewportContentMode(viewport);
@@ -177,8 +186,13 @@ export function viewportIsInVolumeMode(viewport: unknown): boolean {
 }
 
 /**
- * Returns `true` when the viewport is currently rendering image-id stack
- * content. Content-true; see {@link getViewportContentMode}.
+ * Returns `true` when the mode of the viewport is image-id stack content; see
+ * {@link getViewportContentMode}.
+ *
+ * @deprecated The answer is the intended UI mode, that is, the kind of
+ * viewport that the user works with (`stack`, `volume`, ...), not the render
+ * path. New code uses `isInAcquisitionPlane()` and
+ * `canShowVolumetricOrientation()`. Removal waits for a major version.
  */
 export function viewportIsInStackMode(viewport: unknown): boolean {
   return getViewportContentMode(viewport) === 'stack';

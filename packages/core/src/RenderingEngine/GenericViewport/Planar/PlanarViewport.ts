@@ -58,7 +58,8 @@ import { DefaultPlanarDataProvider } from './DefaultPlanarDataProvider';
 import { createPlanarRenderPathResolver } from './PlanarRenderPathResolver';
 import {
   defaultPlanarRenderPathDecisionService,
-  supportsVolumeRendering,
+  getPlanarAcquisitionOrientation,
+  isVolumeBackedDataSet,
 } from './PlanarRenderPathDecisionService';
 import {
   normalizePlanarOrientation,
@@ -749,8 +750,9 @@ class PlanarViewport extends GenericViewport<
    * source data. This is geometry against the data only, and does not depend
    * on the render mode or the render path.
    *
-   * - Volume source: true when the view plane normal is parallel to the scan
-   *   axis of the image volume (same test as `VolumeViewport`).
+   * - Volume source (in the payload or in the cache by the `volumeId` of the
+   *   data set): true when the view plane normal is parallel to the scan axis
+   *   of the image volume (same test as `VolumeViewport`).
    * - Image-stack source: always true, as in `StackViewport`.
    * - No source bound: false.
    */
@@ -761,17 +763,18 @@ class PlanarViewport extends GenericViewport<
       return false;
     }
 
-    if (!planarData.imageVolume) {
+    const volumeId = this.getDataSet(this.getSourceDataId())?.volumeId;
+    const imageVolume =
+      planarData.imageVolume ?? (volumeId && cache.getVolume(volumeId));
+
+    if (!imageVolume) {
       return true;
     }
 
     const viewPlaneNormal = this.getResolvedCameraForEvent()?.viewPlaneNormal;
 
     return viewPlaneNormal
-      ? isAcquisitionPlaneNormal(
-          viewPlaneNormal,
-          planarData.imageVolume.direction
-        )
+      ? isAcquisitionPlaneNormal(viewPlaneNormal, imageVolume.direction)
       : false;
   }
 
@@ -780,22 +783,37 @@ class PlanarViewport extends GenericViewport<
    * volumetric (non-acquisition) orientation. The answer does not depend on
    * the render mode or the render path.
    *
-   * - No option: true when the source has an image volume.
-   * - `asVolume: true`: the test that the render path decision uses to permit
-   *   a volume render path (a cached volume, or image ids that form a volume).
+   * - No option: `canRenderOrientation()` for a non-acquisition orientation,
+   *   that is, this viewport can turn to it in place.
+   * - `asVolume: true`: the data can render a non-acquisition orientation on a
+   *   new mount as a volume.
    * - No source bound: false.
    */
   canShowVolumetricOrientation(
     options?: Pick<ReferenceCompatibleOptions, 'asVolume'>
   ): boolean {
-    if (!options?.asVolume) {
-      return Boolean(this.getPlanarData()?.imageVolume);
-    }
-
     const dataId = this.getSourceDataId();
     const dataSet = dataId && this.getDataSet(dataId);
 
-    return dataSet ? supportsVolumeRendering(dataSet) : false;
+    if (!dataSet) {
+      return false;
+    }
+
+    const acquisitionOrientation = getPlanarAcquisitionOrientation(
+      dataSet.imageIds
+    );
+    const axes: PlanarViewState['orientation'][] = [
+      OrientationAxis.AXIAL,
+      OrientationAxis.CORONAL,
+      OrientationAxis.SAGITTAL,
+    ];
+    const orientation = axes.find((axis) => axis !== acquisitionOrientation);
+
+    return options?.asVolume
+      ? defaultPlanarRenderPathDecisionService.canRender(dataSet, {
+          orientation,
+        })
+      : this.canRenderOrientation(orientation, dataId);
   }
 
   /**
@@ -973,10 +991,33 @@ class PlanarViewport extends GenericViewport<
 
   /**
    * Merges partial Planar view-state updates into the viewport state.
+   *
+   * When a source is bound and `canRenderOrientation()` refuses the
+   * orientation of the patch, the viewport logs a warning and applies the
+   * other members of the patch only.
    */
   public override setViewState(viewStatePatch: Partial<PlanarViewState>): void {
     if (this.isDestroyed) {
       return;
+    }
+
+    const sourceDataId = this.getSourceDataId();
+
+    if (
+      viewStatePatch.orientation !== undefined &&
+      sourceDataId &&
+      this.getDataSet(sourceDataId) &&
+      !this.canRenderOrientation(
+        viewStatePatch.orientation as PlanarSetOrientationInput,
+        sourceDataId
+      )
+    ) {
+      log.warn(
+        '[PlanarViewport] The data cannot show this orientation in place; the orientation is not applied',
+        viewStatePatch.orientation
+      );
+      const { orientation: _refused, ...rest } = viewStatePatch;
+      viewStatePatch = rest;
     }
 
     const previousCamera = this.getResolvedCameraForEvent();
@@ -1485,18 +1526,19 @@ class PlanarViewport extends GenericViewport<
   }
 
   /**
-   * Reports whether the viewport could render the given orientation for the
-   * current (or a specified) source data, without throwing.
+   * Reports whether this viewport can render the given orientation now, in
+   * place, for the current (or a specified) source data, without throwing.
+   * This is the single planar decision: `canShowVolumetricOrientation()` and
+   * the orientation check of `setViewState()` use it.
    *
-   * Acquisition-aligned orientations are always renderable; reformatted
-   * orientations (AXIAL/SAGITTAL/CORONAL) require volume-backed data. Use this
-   * to pre-check before `setOrientation()` / `setViewState({ orientation })`
-   * (for example to enable/disable an MPR control) instead of relying on the
-   * render-path decision service throwing on an unsupported request.
+   * The acquisition orientation passes when the render path decision accepts
+   * it. A non-acquisition orientation also needs data that is volume backed in
+   * the acquisition plane (a `volumeId`, no world-coordinate image data), so
+   * that the change of orientation does not need a new mount.
    *
    * @param orientation - The orientation to test.
    * @param dataId - Optional display set id; defaults to the active source.
-   * @returns `true` when the orientation can be rendered for the data.
+   * @returns `true` when the orientation can be rendered in place.
    */
   canRenderOrientation(
     orientation: PlanarSetOrientationInput,
@@ -1514,9 +1556,23 @@ class PlanarViewport extends GenericViewport<
       return false;
     }
 
-    return defaultPlanarRenderPathDecisionService.canRender(dataSet, {
-      orientation: this.resolveSetOrientation(orientation),
-    });
+    const resolvedOrientation = this.resolveSetOrientation(orientation);
+
+    if (
+      !defaultPlanarRenderPathDecisionService.canRender(dataSet, {
+        orientation: resolvedOrientation,
+      })
+    ) {
+      return false;
+    }
+
+    const isAcquisition =
+      normalizePlanarOrientation(
+        resolvedOrientation,
+        getPlanarAcquisitionOrientation(dataSet.imageIds)
+      ) === OrientationAxis.ACQUISITION;
+
+    return isAcquisition || isVolumeBackedDataSet(dataSet, true);
   }
 
   /**

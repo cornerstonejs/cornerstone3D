@@ -156,10 +156,10 @@ states the contract, and this specification repeats it:
   code uses GENVIEW-API-9 and GENVIEW-API-10.
 - **GENVIEW-API-9** The developer asks every viewport if the view shows the
   acquisition plane with `isInAcquisitionPlane()`. The developer does not need
-  an optional call. The answer is geometry against the bound data only. The
+  an optional call. The answer depends on the view and the bound data only. The
   render mode and the render path do not change the answer. The answers are:
   - `VolumeViewport` and a `PlanarViewport` with a volume: true when the view
-    plane normal is parallel to the scan axis of the volume.
+    shows the plane in which the scanner acquired the images.
   - `StackViewport` and a `PlanarViewport` with an image stack: true.
   - A video, a whole slide image and an ECG viewport, legacy or generic: true.
     These viewports show one plane only.
@@ -176,14 +176,23 @@ states the contract, and this specification repeats it:
   - `VolumeViewport`: true, with and without `asVolume`.
   - `StackViewport`: false. With `asVolume`, true when the image ids form a
     valid volume.
-  - `PlanarViewport`: true when the source has an image volume. With
-    `asVolume`, true when the source has a cached volume, or when the image ids
-    form a valid volume. The planar render path decision uses the same test.
+  - `PlanarViewport`: true when the data can show a volumetric orientation, and
+    a change of orientation stays in the same viewport. With `asVolume`, true
+    when the data can mount as a volume. One planar function gives the answer
+    without the option, and the same function decides `canRenderOrientation()`
+    and the orientation of `setViewState()` (GENVIEW-API-11).
   - `VolumeViewport3D` and the generic 3D viewport: false. With `asVolume`,
     true when a volume is bound.
   - A video, a whole slide image and an ECG viewport, legacy or generic: false,
     with and without `asVolume`.
   - An empty viewport of each type: false, with and without `asVolume`.
+- **GENVIEW-API-11** A `PlanarViewport` does not apply an orientation that it
+  cannot show in place. When a source is bound and `canRenderOrientation()`
+  refuses the orientation of a `setViewState()` patch, the viewport logs a
+  warning. The viewport applies the other members of the patch, and it keeps
+  the previous orientation. Thus the answer of `canShowVolumetricOrientation()`
+  and the result of `setViewState()` agree. Before this requirement, the
+  viewport stored the orientation of each patch.
 - **GENVIEW-API-7** An application that used a legacy viewport type keeps its
   API. `ViewportType.ECG`, `STACK`, `ORTHOGRAPHIC`, `VIDEO`, `WHOLE_SLIDE` and
   `VOLUME_3D` each resolve to a legacy adapter that carries the old methods.
@@ -258,6 +267,22 @@ For example `Planar/PlanarViewport.ts`.
 - **GENVIEW-FAMILY-7** The family class creates the canvas or the DOM element of
   the family in the constructor, and it puts the element on the render context.
   A render path receives the element, and it does not create one.
+- **GENVIEW-FAMILY-8** The acquisition plane test of GENVIEW-API-9 uses the
+  shared helper `helpers/isAcquisitionPlaneNormal.ts` for `VolumeViewport` and
+  `PlanarViewport`. The view plane normal is in the acquisition plane when
+  `|dot(viewPlaneNormal, scanAxis)| > 0.99`. The planar viewport reads the scan
+  axis from the image volume of the payload, or from the cached volume of the
+  `volumeId` of the data set. Without a volume, the source is a stack.
+- **GENVIEW-FAMILY-9** `PlanarViewport.canRenderOrientation()` is the one
+  function that decides a planar orientation (GENVIEW-API-10 and
+  GENVIEW-API-11). It calls `PlanarRenderPathDecisionService.canRender()`, which
+  is the single source of the renderability rules, and the planar render path
+  decision uses the same rules. For a non-acquisition orientation, it also
+  needs `isVolumeBackedDataSet(dataSet, true)`: a `volumeId`, and no
+  world-coordinate image data. `canShowVolumetricOrientation()` without an
+  option and the orientation check of `setViewState()` call this function.
+  Only `asVolume: true` calls `canRender()` directly, because it asks about a
+  new mount. No viewport code copies the rules.
 
 ### The view state, and the data presentation (GENVIEW-STATE)
 

@@ -6,6 +6,7 @@ import {
 } from '../src/enums';
 import { ActorRenderMode } from '../src/types';
 import * as metaData from '../src/metaData';
+import cache from '../src/cache/cache';
 import {
   planarProjection,
   viewportProjection,
@@ -763,6 +764,7 @@ describe('PlanarViewport isInAcquisitionPlane and canShowVolumetricOrientation',
     }
     metadataProviders = [];
     genericViewportDisplaySetMetadataProvider.clear();
+    jest.restoreAllMocks();
   });
 
   function createTrackedViewport() {
@@ -797,13 +799,20 @@ describe('PlanarViewport isInAcquisitionPlane and canShowVolumetricOrientation',
   it('reports a volume source by its view geometry, and as volumetric', () => {
     const viewport = createTrackedViewport();
     const imageVolume = createImageVolume();
-    const { binding, rendering } = mountVolumeBinding(viewport, {
+    const { volumeId, imageIds } = imageVolume;
+    jest
+      .spyOn(cache, 'getVolume')
+      .mockImplementation((id) => (id === volumeId ? imageVolume : undefined));
+    const { dataId, rendering } = mountVolumeBinding(viewport, {
       dataId: 'volume-display-set',
       role: 'source',
-      volumeId: imageVolume.volumeId,
+      volumeId,
     });
-    binding.data.imageVolume = imageVolume;
-    binding.data.imageIds = imageVolume.imageIds;
+    genericViewportDisplaySetMetadataProvider.add(dataId, {
+      imageIds,
+      volumeId,
+    });
+    // The resolved camera reads the volume from the render path state.
     rendering.imageVolume = imageVolume;
 
     viewport.setViewState({ orientation: OrientationAxis.ACQUISITION });
@@ -835,6 +844,15 @@ describe('PlanarViewport isInAcquisitionPlane and canShowVolumetricOrientation',
     expect(viewport.canShowVolumetricOrientation({ asVolume: true })).toBe(
       true
     );
+
+    viewport.setViewState({
+      orientation: OrientationAxis.SAGITTAL,
+      rotation: 90,
+    });
+    expect(viewport.getViewState().orientation).toBe(
+      OrientationAxis.ACQUISITION
+    );
+    expect(viewport.getViewState().rotation).toBe(90);
   });
 
   it('reports false for both getters when no source is bound', () => {
