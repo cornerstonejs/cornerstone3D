@@ -15,18 +15,14 @@ import * as renderingCapabilities from '../src/utilities/renderingCapabilities';
 import { setLossyDownsampling } from '../src/init';
 
 // These tests need final downsampling, which is off by default, and a GPU
-// renderer, because the GPU settings apply to a GPU renderer only.
-let rendererClassSpy;
-
-beforeAll(() => {
-  setLossyDownsampling({ final: true });
-  rendererClassSpy = jest
+// renderer, because the GPU settings apply to a GPU renderer only. The spy is
+// set for each test, because the tests restore all mocks after each test.
+beforeAll(() => setLossyDownsampling({ final: true }));
+afterAll(() => setLossyDownsampling({ final: false }));
+beforeEach(() => {
+  jest
     .spyOn(renderingCapabilities, 'getRendererClass')
     .mockReturnValue('desktop');
-});
-afterAll(() => {
-  setLossyDownsampling({ final: false });
-  rendererClassSpy.mockRestore();
 });
 
 // A volume whose texture the preset reduces. Only the fields that the
