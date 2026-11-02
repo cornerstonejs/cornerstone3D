@@ -845,14 +845,25 @@ describe('PlanarViewport isInAcquisitionPlane and canShowVolumetricOrientation',
       true
     );
 
-    viewport.setViewState({
-      orientation: OrientationAxis.SAGITTAL,
-      rotation: 90,
-    });
+    const rotation = viewport.getViewState().rotation;
+    expect(
+      viewport.setViewState({
+        orientation: OrientationAxis.SAGITTAL,
+        rotation: rotation + 90,
+      })
+    ).toBe(false);
     expect(viewport.getViewState().orientation).toBe(
       OrientationAxis.ACQUISITION
     );
-    expect(viewport.getViewState().rotation).toBe(90);
+    expect(viewport.getViewState().rotation).toBe(rotation);
+
+    // A vector orientation in the acquisition plane of the stack applies.
+    const acquisitionPlane = {
+      viewPlaneNormal: [0, 0, -1],
+      viewUp: [0, -1, 0],
+    };
+    expect(viewport.setViewState({ orientation: acquisitionPlane })).toBe(true);
+    expect(viewport.getViewState().orientation).toEqual(acquisitionPlane);
   });
 
   it('reports false for both getters when no source is bound', () => {

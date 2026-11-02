@@ -168,13 +168,12 @@ export default class WSIViewport extends GenericViewport<
     return this.getWSIData()?.imageURISet.has(imageURI) || false;
   }
 
-  setViewState(cameraPatch: Partial<WSIViewState>): void {
+  setViewState(cameraPatch: Partial<WSIViewState>): boolean {
     this.syncCameraFromView();
 
     const view = this.getView();
     if (!view) {
-      super.setViewState(cameraPatch);
-      return;
+      return super.setViewState(cameraPatch);
     }
 
     const nextPatch: Partial<WSIViewState> = {};
@@ -198,7 +197,7 @@ export default class WSIViewport extends GenericViewport<
       nextPatch.resolution = Math.max(cameraPatch.resolution, 0.000001);
     }
 
-    super.setViewState(nextPatch);
+    return super.setViewState(nextPatch);
   }
 
   getResolvedView(): WSIResolvedView | undefined {

@@ -376,10 +376,12 @@ abstract class GenericViewport<
   /**
    * Merges partial view-state updates into the viewport source of truth and
    * propagates the result to every active binding.
+   *
+   * @returns `true` when the viewport applied the patch.
    */
-  setViewState(viewStatePatch: Partial<TViewState>): void {
+  setViewState(viewStatePatch: Partial<TViewState>): boolean {
     if (this.isDestroyed) {
-      return;
+      return false;
     }
 
     const previousCamera = this.getCameraForEvent();
@@ -390,6 +392,7 @@ abstract class GenericViewport<
 
     this.viewState = this.normalizeViewState(next);
     this.modified(previousCamera);
+    return true;
   }
 
   /**

@@ -188,11 +188,12 @@ states the contract, and this specification repeats it:
   - An empty viewport of each type: false, with and without `asVolume`.
 - **GENVIEW-API-11** A `PlanarViewport` does not apply an orientation that it
   cannot show in place. When a source is bound and `canRenderOrientation()`
-  refuses the orientation of a `setViewState()` patch, the viewport logs a
-  warning. The viewport applies the other members of the patch, and it keeps
-  the previous orientation. Thus the answer of `canShowVolumetricOrientation()`
-  and the result of `setViewState()` agree. Before this requirement, the
-  viewport stored the orientation of each patch.
+  refuses the orientation of a `setViewState()` patch, the viewport rejects the
+  whole patch. It logs a warning, it changes nothing, and `setViewState()`
+  returns false. When the viewport applies the patch, `setViewState()` returns
+  true. Thus the answer of `canShowVolumetricOrientation()` and the result of
+  `setViewState()` agree. Before this requirement, the viewport stored the
+  orientation of each patch.
 - **GENVIEW-API-7** An application that used a legacy viewport type keeps its
   API. `ViewportType.ECG`, `STACK`, `ORTHOGRAPHIC`, `VIDEO`, `WHOLE_SLIDE` and
   `VOLUME_3D` each resolve to a legacy adapter that carries the old methods.
@@ -279,7 +280,10 @@ For example `Planar/PlanarViewport.ts`.
   is the single source of the renderability rules, and the planar render path
   decision uses the same rules. For a non-acquisition orientation, it also
   needs `isVolumeBackedDataSet(dataSet, true)`: a `volumeId`, and no
-  world-coordinate image data. `canShowVolumetricOrientation()` without an
+  world-coordinate image data. A vector orientation counts as the acquisition
+  orientation when `isAcquisitionPlaneNormal()` accepts its normal against the
+  scan axis of the data: the direction of the cached volume, or else the image
+  plane metadata of the first image id. `canShowVolumetricOrientation()` without an
   option and the orientation check of `setViewState()` call this function.
   Only `asVolume: true` calls `canRender()` directly, because it asks about a
   new mount. No viewport code copies the rules.

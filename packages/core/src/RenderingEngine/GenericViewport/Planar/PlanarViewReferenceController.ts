@@ -63,7 +63,7 @@ export type PlanarViewReferenceHost = {
   promoteSourceDataId(dataId: string): void;
   render(): void;
   setImageIdIndex(imageIdIndex: number): Promise<string>;
-  setViewState(viewStatePatch: Partial<PlanarViewState>): void;
+  setViewState(viewStatePatch: Partial<PlanarViewState>): boolean;
   updateBindingsCameraState(): void;
 };
 

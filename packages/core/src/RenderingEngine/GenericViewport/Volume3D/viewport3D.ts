@@ -262,9 +262,9 @@ class VolumeViewport3D extends GenericViewport<
     return this.getRuntimeCamera();
   }
 
-  setViewState(viewStatePatch: Partial<Volume3DCamera>): void {
+  setViewState(viewStatePatch: Partial<Volume3DCamera>): boolean {
     if (this.isDestroyed) {
-      return;
+      return false;
     }
 
     const previousCamera = this.getCameraForEvent();
@@ -274,6 +274,7 @@ class VolumeViewport3D extends GenericViewport<
     });
     this.viewState = this.getRuntimeCamera();
     this.modified(previousCamera);
+    return true;
   }
 
   protected getRuntimeCamera(): Volume3DCamera & ICamera {

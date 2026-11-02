@@ -58,6 +58,7 @@ import { DefaultPlanarDataProvider } from './DefaultPlanarDataProvider';
 import { createPlanarRenderPathResolver } from './PlanarRenderPathResolver';
 import {
   defaultPlanarRenderPathDecisionService,
+  getPlanarAcquisitionDirection,
   getPlanarAcquisitionOrientation,
   isVolumeBackedDataSet,
 } from './PlanarRenderPathDecisionService';
@@ -993,12 +994,16 @@ class PlanarViewport extends GenericViewport<
    * Merges partial Planar view-state updates into the viewport state.
    *
    * When a source is bound and `canRenderOrientation()` refuses the
-   * orientation of the patch, the viewport logs a warning and applies the
-   * other members of the patch only.
+   * orientation of the patch, the viewport logs a warning and applies nothing
+   * of the patch.
+   *
+   * @returns `true` when the viewport applied the patch.
    */
-  public override setViewState(viewStatePatch: Partial<PlanarViewState>): void {
+  public override setViewState(
+    viewStatePatch: Partial<PlanarViewState>
+  ): boolean {
     if (this.isDestroyed) {
-      return;
+      return false;
     }
 
     const sourceDataId = this.getSourceDataId();
@@ -1013,11 +1018,10 @@ class PlanarViewport extends GenericViewport<
       )
     ) {
       log.warn(
-        '[PlanarViewport] The data cannot show this orientation in place; the orientation is not applied',
-        viewStatePatch.orientation
+        '[PlanarViewport] The data cannot show this orientation in place; the view state patch is not applied',
+        viewStatePatch
       );
-      const { orientation: _refused, ...rest } = viewStatePatch;
-      viewStatePatch = rest;
+      return false;
     }
 
     const previousCamera = this.getResolvedCameraForEvent();
@@ -1037,6 +1041,7 @@ class PlanarViewport extends GenericViewport<
     this.clearResolvedViewCache();
     this.viewState = this.normalizeViewState(next);
     this.modified(previousCamera);
+    return true;
   }
 
   setDisplaySetPresentation(props: Partial<PlanarDataPresentation>): void;
@@ -1556,7 +1561,20 @@ class PlanarViewport extends GenericViewport<
       return false;
     }
 
-    const resolvedOrientation = this.resolveSetOrientation(orientation);
+    let resolvedOrientation = this.resolveSetOrientation(orientation);
+
+    if (typeof resolvedOrientation !== 'string') {
+      const direction =
+        (dataSet.volumeId && cache.getVolume(dataSet.volumeId)?.direction) ||
+        getPlanarAcquisitionDirection(dataSet.imageIds);
+
+      if (
+        direction &&
+        isAcquisitionPlaneNormal(resolvedOrientation.viewPlaneNormal, direction)
+      ) {
+        resolvedOrientation = OrientationAxis.ACQUISITION;
+      }
+    }
 
     if (
       !defaultPlanarRenderPathDecisionService.canRender(dataSet, {

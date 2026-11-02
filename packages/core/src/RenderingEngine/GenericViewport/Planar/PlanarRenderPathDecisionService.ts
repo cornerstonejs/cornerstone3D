@@ -166,9 +166,13 @@ export function selectPlanarRenderPath(
   return defaultPlanarRenderPathDecisionService.select(dataSet, options);
 }
 
-export function getPlanarAcquisitionOrientation(
+/**
+ * The direction matrix (row cosines, column cosines, scan axis; row-major) of
+ * the first image of the ids, from its image plane metadata.
+ */
+export function getPlanarAcquisitionDirection(
   imageIds: string[]
-): PlanarViewState['orientation'] | undefined {
+): number[] | undefined {
   const imageId = imageIds[0];
 
   if (!imageId) {
@@ -196,10 +200,22 @@ export function getPlanarAcquisitionOrientation(
 
   vec3.cross(scanAxisNormal, rowVec, colVec);
 
+  return [...rowVec, ...colVec, ...scanAxisNormal];
+}
+
+export function getPlanarAcquisitionOrientation(
+  imageIds: string[]
+): PlanarViewState['orientation'] | undefined {
+  const direction = getPlanarAcquisitionDirection(imageIds);
+
+  if (!direction) {
+    return;
+  }
+
   const orientation = getOrientationFromScanAxisNormal([
-    scanAxisNormal[0],
-    scanAxisNormal[1],
-    scanAxisNormal[2],
+    direction[6],
+    direction[7],
+    direction[8],
   ]);
 
   if (

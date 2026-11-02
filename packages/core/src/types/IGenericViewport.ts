@@ -60,7 +60,7 @@ export interface IGenericViewport extends IViewport {
    */
   setDisplaySetPresentation(dataId: string, props: unknown): void;
   getDisplaySetPresentation(displaySetId: string): unknown;
-  setViewState(viewStatePatch: unknown): void;
+  setViewState(viewStatePatch: unknown): boolean;
   getViewState(): unknown;
   updateViewState(updater: unknown): void;
   resetViewState(options?: unknown): boolean;

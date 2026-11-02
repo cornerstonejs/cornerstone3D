@@ -162,7 +162,7 @@ export interface ViewportController<
   getDisplaySets(): Array<{ displaySetId: DisplaySetId; options?: unknown }>;
   removeData(displaySetId: DisplaySetId): void;
 
-  setViewState(viewState: Partial<TViewState>): void;
+  setViewState(viewState: Partial<TViewState>): boolean;
   getViewState(): TViewState;
   getResolvedView():
     | ResolvedViewportView<unknown, ICamera<unknown>>
