@@ -140,47 +140,46 @@ export function buildWSIColorTransform(
       </svg>#colour')`;
 }
 
+/**
+ * Converts a canvas point to a WSI index point. Canvas points, canvasWidth and
+ * canvasHeight are all CSS pixels, the space OpenLayers' view resolution is
+ * expressed in, so the device pixel ratio does not enter the transform (as in
+ * the legacy WSIViewport since #2769).
+ */
 export function canvasToIndexForWSI(args: {
   canvasPos: Point2;
   canvasWidth: number;
   canvasHeight: number;
   view: WSIMapViewLike;
-  devicePixelRatio?: number;
 }): Point3 {
   const transform = getWSICanvasTransform(args);
 
   transform.invert();
 
-  const indexPoint = transform.transformPoint(
-    args.canvasPos.map(
-      (value) => value * (args.devicePixelRatio || window.devicePixelRatio || 1)
-    ) as Point2
-  );
+  const indexPoint = transform.transformPoint(args.canvasPos);
 
   return [indexPoint[0], indexPoint[1], 0];
 }
 
+/**
+ * Converts a WSI index point to a canvas point in CSS pixels, the inverse of
+ * canvasToIndexForWSI.
+ */
 export function indexToCanvasForWSI(args: {
   indexPos: Point3;
   canvasWidth: number;
   canvasHeight: number;
   view: WSIMapViewLike;
-  devicePixelRatio?: number;
 }): Point2 {
   const transform = getWSICanvasTransform(args);
 
-  return transform
-    .transformPoint([args.indexPos[0], args.indexPos[1]])
-    .map(
-      (value) => value / (args.devicePixelRatio || window.devicePixelRatio || 1)
-    ) as Point2;
+  return transform.transformPoint([args.indexPos[0], args.indexPos[1]]);
 }
 
 function getWSICanvasTransform(args: {
   canvasWidth: number;
   canvasHeight: number;
   view: WSIMapViewLike;
-  devicePixelRatio?: number;
 }): Transform {
   const resolution = args.view.getResolution();
   const rotation = args.view.getRotation();
