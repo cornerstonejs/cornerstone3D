@@ -18,6 +18,7 @@ import { getOptions } from './internal/options';
 import isColorImageFn from '../shared/isColorImage';
 import removeAFromRGBA from './removeAFromRGBA';
 import isModalityLUTForDisplay from './isModalityLutForDisplay';
+import getVOILUTFunction from './getVOILUTFunction';
 import setPixelDataType from './setPixelDataType';
 import { fetchPaletteData } from './colorSpaceConverters/fetchPaletteData';
 
@@ -415,11 +416,7 @@ async function createImage(
           windowWidth: voiLutModule.windowWidth
             ? voiLutModule.windowWidth[0]
             : undefined,
-          voiLUTFunction:
-            (voiLutModule.voiLUTFunction?.length &&
-              voiLutModule.voiLUTFunction[0]) ||
-            voiLutModule.voiLutFunction ||
-            undefined,
+          voiLUTFunction: getVOILUTFunction(voiLutModule),
           decodeTimeInMS: imageFrame.decodeTimeInMS,
           floatPixelData: undefined,
           imageFrame,
