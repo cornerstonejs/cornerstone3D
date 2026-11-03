@@ -93,8 +93,10 @@ Each save function writes three header attributes that name the software that
 wrote the object. This applies to the SEG (`generateSegmentation`), the
 RTSTRUCT (`generateRTSSFromRepresentation`) and the SR
 (`MeasurementReport.generateReport`), and also to the legacy Cornerstone SR and
-SEG adapters. A value in `options` wins over the default. An empty value
-(`undefined`, `''`, `null` or `[]`) gets the default:
+SEG adapters. A value in `options` wins over the default. For `Manufacturer`
+and `ManufacturerModelName`, a value with no value (`undefined`, `''`, `null`,
+`[]` or `['']`) gets the default. For `SoftwareVersions`, only `undefined` gets
+the default. Any other value with no value writes an empty `SoftwareVersions`:
 
 | Attribute               | Option                  | Default                             |
 | ----------------------- | ----------------------- | ----------------------------------- |

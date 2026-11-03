@@ -1,3 +1,4 @@
+import { hasNoValue } from '@cornerstonejs/metadata';
 import { version } from '../version';
 
 export type WriterHeader = {
@@ -14,20 +15,21 @@ export const DEFAULT_WRITER_HEADER: Readonly<WriterHeader> = {
 };
 
 const valueOr = <T>(value: T | null | undefined, fallback: T): T =>
-  value === undefined ||
-  value === null ||
-  value === '' ||
-  (Array.isArray(value) && !value.length)
-    ? fallback
-    : value;
+  hasNoValue(value) ? fallback : value;
 
 /**
  * Gets the header attributes that name the writer of a derived object (SR,
  * SEG or RTSTRUCT): `Manufacturer`, `ManufacturerModelName` and
  * `SoftwareVersions`. A value in `options` wins over the default of
- * `DEFAULT_WRITER_HEADER`. An empty value (`undefined`, `null`, `''` or `[]`)
- * gets the default. Every writer uses this function, so all of them apply the
- * same rule.
+ * `DEFAULT_WRITER_HEADER`. Every writer uses this function, so all of them
+ * apply the same rule.
+ *
+ * - `Manufacturer` and `ManufacturerModelName`: a value with no value
+ *   (`undefined`, `null`, `''`, `[]` or `['']`) gets the default.
+ * - `SoftwareVersions`: only `undefined` gets the default. Any other value
+ *   with no value gives `[]`, so the object has an empty `SoftwareVersions`.
+ *   The result is `[]` and not `''`, because dcmjs replaces `''` and `null`
+ *   with `0`.
  *
  * Each instance names the software that wrote it. A revision that is saved
  * into an existing series does not copy the writer of the predecessor, so
@@ -45,9 +47,9 @@ export function getWriterHeader(
       options.ManufacturerModelName,
       DEFAULT_WRITER_HEADER.ManufacturerModelName
     ),
-    SoftwareVersions: valueOr(
-      options.SoftwareVersions,
-      DEFAULT_WRITER_HEADER.SoftwareVersions
-    ),
+    SoftwareVersions:
+      options.SoftwareVersions === undefined
+        ? DEFAULT_WRITER_HEADER.SoftwareVersions
+        : valueOr(options.SoftwareVersions, []),
   };
 }

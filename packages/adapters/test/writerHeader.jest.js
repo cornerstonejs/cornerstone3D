@@ -166,14 +166,17 @@ const GIVEN = {
 const EMPTY = {
   Manufacturer: '',
   ManufacturerModelName: null,
-  SoftwareVersions: [],
+  SoftwareVersions: '',
 };
+
+// An empty SoftwareVersions writes an empty value, not the default.
+const EMPTY_RESULT = { ...DEFAULTS, SoftwareVersions: [] };
 
 describe('writer header', () => {
   const cases = Object.keys(writers).flatMap((writer) => [
     [writer, 'no writer options', {}, DEFAULTS],
     [writer, 'writer options', GIVEN, GIVEN],
-    [writer, 'empty writer options', EMPTY, DEFAULTS],
+    [writer, 'empty writer options', EMPTY, EMPTY_RESULT],
   ]);
 
   it.each(cases)(
