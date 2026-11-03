@@ -126,6 +126,27 @@ describe('CompositeVoxelManager.createRepresentation', () => {
     expect(composite.getRepresentations()).toHaveLength(2);
   });
 
+  it('redoes a derived box after a write to the source with no delivery (rederiveAll)', () => {
+    const composite = makeComposite([4, 4, 1]);
+    const derived = composite.createRepresentation({ factors: [2, 2, 1] });
+
+    // A computed volume writes new values; the derived box keeps the old mean.
+    for (const [i, j] of [
+      [0, 0],
+      [1, 0],
+      [0, 1],
+      [1, 1],
+    ]) {
+      composite.setAtIJK(i, j, 0, 100);
+    }
+    expect(derived.voxelManager.getAtIJK(0, 0, 0)).toBe(3);
+
+    composite.rederiveAll();
+
+    expect(derived.voxelManager.getAtIJK(0, 0, 0)).toBe(100);
+    expect(derived.voxelManager.getAtIJK(1, 1, 0)).toBe(13);
+  });
+
   it('derives one brick of the source', () => {
     const composite = makeComposite([8, 1, 1]);
     const derived = composite.createRepresentation({

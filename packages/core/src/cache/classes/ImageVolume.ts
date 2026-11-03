@@ -877,9 +877,13 @@ export class ImageVolume {
    * Updates the internals of the volume to reflect the changes in the
    * underlying scalar data. This should be called when the scalar data
    * is modified externally
+   *
+   * A reduced representation holds its own voxels, so this also redoes each
+   * one from the new data (`CompositeVoxelManager.rederiveAll`), in batches.
    */
   public modified() {
     this.imageData.modified();
+    this._compositeVoxelManager?.rederiveAll();
     this.markAllTexturesDirty();
 
     this.numFrames = this._getNumFrames();
