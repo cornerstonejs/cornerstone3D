@@ -9,7 +9,8 @@ import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransf
 import { loadAndCacheImage } from '../../loaders/imageLoader';
 import * as metaData from '../../metaData';
 import * as windowLevel from '../../utilities/windowLevel';
-import { MetadataModules, RequestType } from '../../enums';
+import { asArrayFirst } from '../../utilities/asArray';
+import { MetadataModules, RequestType, VOILUTFunctionType } from '../../enums';
 import cache from '../../cache/cache';
 
 const PRIORITY = 0;
@@ -137,20 +138,22 @@ function getVOIFromMetadata(imageVolume: IImageVolume): VOIRange | undefined {
     const imageId = imageIds[imageIdIndex];
     const voiLutModule = metaData.get(MetadataModules.VOI_LUT, imageId);
     if (voiLutModule && voiLutModule.windowWidth && voiLutModule.windowCenter) {
-      if (voiLutModule?.voiLUTFunction) {
-        voi = {};
-        voi.voiLUTFunction = voiLutModule?.voiLUTFunction;
-      }
-      const { windowWidth, windowCenter } = voiLutModule;
+      const width = asArrayFirst(voiLutModule.windowWidth);
+      const center = asArrayFirst(voiLutModule.windowCenter);
+      const voiLUTFunction = asArrayFirst(voiLutModule.voiLUTFunction);
 
-      const width = Array.isArray(windowWidth) ? windowWidth[0] : windowWidth;
-      const center = Array.isArray(windowCenter)
-        ? windowCenter[0]
-        : windowCenter;
-
-      // Skip if width is 0
-      if (width !== 0) {
-        voi = { windowWidth: width, windowCenter: center };
+      // Skip if width is 0 or missing
+      if (width) {
+        voi = {
+          windowWidth: width,
+          windowCenter: center,
+          // toLowHighRange throws on an unknown function
+          voiLUTFunction: Object.values(VOILUTFunctionType).includes(
+            voiLUTFunction
+          )
+            ? voiLUTFunction
+            : undefined,
+        };
       }
     }
   } else {
