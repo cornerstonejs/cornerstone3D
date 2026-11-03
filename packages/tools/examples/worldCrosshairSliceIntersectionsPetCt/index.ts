@@ -30,6 +30,7 @@ const {
   ToolGroupManager,
   WorldCrosshairTool,
   SliceIntersectionTool,
+  MIPJumpToClickTool,
   Enums: csToolsEnums,
 } = cornerstoneTools;
 
@@ -194,6 +195,7 @@ const instructions = document.createElement('p');
 instructions.innerText = `
   - Reference Point (WorldCrosshairTool): the yellow crosshair (with an optional gap at its center) initializes automatically and moves ONLY with shift: hold Shift and move (or drag) the mouse. Linked viewports jump to it and the 3D view shows it as world-space lines. Scroll/pan/zoom never move it; off-slice the lines render dashed with an optional distance label.
   - Slice Intersections (SliceIntersectionTool): each viewport shows ONE line per other plane (red = axial, yellow = sagittal, green = coronal). Dragging a line scrolls EVERY viewport of that plane (CT and PT together); hover it for rotation handles (reorients the volume slices of that plane) and slab thickness handles near the line end.
+  - Jump to click (MIPJumpToClickTool): Left click on the CT 3D view to jump the other viewports.
   - Use the two toggle buttons to enable/disable each tool independently; they share no state.
   `;
 content.append(instructions);
@@ -303,6 +305,7 @@ async function run() {
 
   cornerstoneTools.addTool(WorldCrosshairTool);
   cornerstoneTools.addTool(SliceIntersectionTool);
+  cornerstoneTools.addTool(MIPJumpToClickTool);
 
   const [ctImageIds, ptImageIds] = await Promise.all([
     createImageIdsAndCacheMetaData({
@@ -485,6 +488,15 @@ async function run() {
   // The default manipulation bindings put stack scrolling on the mouse
   // wheel, which has no meaning for a 3D volume rendering.
   toolGroup3d.setToolDisabled(cornerstoneTools.StackScrollTool.toolName);
+
+  toolGroup3d.addTool(MIPJumpToClickTool.toolName, { toolGroupId });
+  toolGroup3d.setToolActive(MIPJumpToClickTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Primary,
+      },
+    ],
+  });
   toolGroup3d.addViewport(ct3dViewportId, renderingEngineId);
 
   // Wheel zooms the 3D volume rendering through the native view-state API
