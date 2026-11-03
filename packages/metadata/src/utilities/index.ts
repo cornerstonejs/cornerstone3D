@@ -1,6 +1,11 @@
 export { getSingleBufferFromArray } from './bulkDataFromArray';
 export { definedAttributesOf } from './definedAttributesOf';
-export { toNumber, toFiniteNumber } from './toNumber';
+export {
+  toNumber,
+  toFiniteNumber,
+  toFiniteFirst,
+  toFiniteVector,
+} from './toNumber';
 export { default as toNumberDefault } from './toNumber';
 export {
   default as isVideoTransferSyntax,

@@ -104,10 +104,9 @@ describe('measurement target regressions', () => {
       imageIds: ['frame:ct'],
       instances: [instance],
       isClip: true,
-      preferredViewportType: 'volume',
+      isDisplayable: true,
       splitNumber: 2,
       underlyingImageIds: ['series:ct'],
-      viewportTypes: ['volume'],
     };
 
     registerDisplaySetMetadata(['series:ct'], displaySet);
