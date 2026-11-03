@@ -232,17 +232,24 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
       location
     );
 
-    // Computes which scale size to use, ex: 100mm, 50mm
-    const scaleSize = this.computeScaleSize(
+    // Computes which scale size to use, ex: 100mm, 50mm, and the world
+    // length it covers
+    const { scaleSize, worldScaleSize, unit } = this._computeScale(
+      viewport,
       worldWidthViewport,
       worldHeightViewport,
       location
     );
+    // None of the scale sizes fits the view (it is too small, in the image's
+    // units, for the smallest size)
+    if (scaleSize === undefined) {
+      return renderStatus;
+    }
 
     // Applies the scale with the predetermined size to the image in
     // world coordinates, then converts them to canvas coordinates
     const canvasCoordinates = this.computeWorldScaleCoordinates(
-      scaleSize,
+      worldScaleSize,
       location,
       pointSet1
     ).map((world) => viewport.worldToCanvas(world));
@@ -333,7 +340,7 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
       scaleCanvasCoordinates[0][0] + locationTextOffest[location][0],
       scaleCanvasCoordinates[0][1] + locationTextOffest[location][1],
     ];
-    const textBoxLines = this._getTextLines(scaleSize);
+    const textBoxLines = this._getTextLines(scaleSize, unit);
 
     const { tickIds, tickUIDs, tickCoordinates } = this.computeInnerScaleTicks(
       scaleSize,
@@ -381,7 +388,42 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
     return renderStatus;
   }
 
-  _getTextLines(scaleSize: number): string[] | undefined {
+  /**
+   * Picks the scale size in the units the image is measured in, and the world
+   * length that size covers.
+   * World units are mm on an image with pixel spacing, and pixels on one
+   * without (hasPixelSpacing false), where the scale is labelled in px. A user
+   * calibration measures a world length L as L / calibration.scale mm, so a
+   * scale of S mm covers S * calibration.scale world units.
+   *
+   * @param viewport - the viewport the scale is drawn on
+   * @param worldWidthViewport - the width of the view in world units
+   * @param worldHeightViewport - the height of the view in world units
+   * @param location - where the scale is drawn: top, bottom, left or right
+   * @returns the scale size in `unit`, and the world length it covers
+   */
+  _computeScale(
+    viewport,
+    worldWidthViewport: number,
+    worldHeightViewport: number,
+    location: string
+  ): { scaleSize: number; worldScaleSize: number; unit: string } {
+    const imageData = viewport.getImageData?.();
+    const unit = imageData?.hasPixelSpacing === false ? 'px' : 'mm';
+    const worldPerUnit = imageData?.calibration?.scale || 1;
+    const scaleSize = this.computeScaleSize(
+      worldWidthViewport / worldPerUnit,
+      worldHeightViewport / worldPerUnit,
+      location
+    );
+
+    return { scaleSize, worldScaleSize: scaleSize * worldPerUnit, unit };
+  }
+
+  _getTextLines(scaleSize: number, unit = 'mm'): string[] | undefined {
+    if (unit !== 'mm') {
+      return [`${scaleSize} ${unit}`];
+    }
     let scaleSizeDisplayValue;
     let scaleSizeUnits;
     if (scaleSize >= 50) {
