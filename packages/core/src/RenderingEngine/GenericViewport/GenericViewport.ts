@@ -336,26 +336,30 @@ abstract class GenericViewport<
   /**
    * Builds fidelity lines from the typed fidelity fields that each render
    * path sets on its rendering (GENVIEW-FIDELITY-2): a record for volume
-   * data, an image quality for a stack image (FIDELITY-STATE-8).
+   * data, an image quality for a stack image (FIDELITY-STATE-8). It reads
+   * every rendering of a binding (`getRenderings`); a hidden rendering sets
+   * `excludeFromFidelity`.
    */
   protected collectFidelityLines(display?: FidelityDisplay): FidelityLine[] {
     const sources: BindingFidelitySource[] = [];
 
     this.forEachBinding((binding) => {
-      const { rendering } = binding;
-
-      rendering.refreshFidelity?.();
-      sources.push({
-        record: rendering.voxelQuality,
-        fullGrid: rendering.fullGrid,
-        sampleDistanceLod: rendering.sampleDistanceLod,
-        sampleDistanceIdle: rendering.sampleDistanceIdle,
-        interactiveReduction: rendering.interactiveReduction,
-        imageQualityStatus: rendering.imageQualityStatus,
-        qualityPending: rendering.qualityPending,
-        reductionCause: rendering.reductionCause,
-        skip: rendering.excludeFromFidelity,
-      });
+      for (const rendering of binding.getRenderings?.() ?? [
+        binding.rendering,
+      ]) {
+        rendering.refreshFidelity?.();
+        sources.push({
+          record: rendering.voxelQuality,
+          fullGrid: rendering.fullGrid,
+          sampleDistanceLod: rendering.sampleDistanceLod,
+          sampleDistanceIdle: rendering.sampleDistanceIdle,
+          interactiveReduction: rendering.interactiveReduction,
+          imageQualityStatus: rendering.imageQualityStatus,
+          qualityPending: rendering.qualityPending,
+          reductionCause: rendering.reductionCause,
+          skip: rendering.excludeFromFidelity,
+        });
+      }
     });
 
     return fidelityLinesFromBindings(display, sources);

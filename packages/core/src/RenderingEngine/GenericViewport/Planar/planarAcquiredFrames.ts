@@ -1,142 +1,276 @@
 import { vec3 } from 'gl-matrix';
-import getClosestImageId from '../../../utilities/getClosestImageId';
-import type { IImageVolume, Point3 } from '../../../types';
-import { getVolumeImageIdIndexWorldPoint } from './planarSliceBasis';
-import type { PlanarViewState } from './PlanarViewportTypes';
+import { loadAndCacheImage } from '../../../loaders/imageLoader';
+import { ActorRenderMode } from '../../../types';
+import type { ActorEntry, IImageVolume, Point3 } from '../../../types';
+import { coreLog } from '../../../utilities/logger';
+import type {
+  LoadedData,
+  RenderPathAttachment,
+} from '../ViewportArchitectureTypes';
+import type {
+  PlanarDataPresentation,
+  PlanarPayload,
+  PlanarVtkVolumeAdapterContext,
+} from './PlanarViewportTypes';
+import type {
+  PlanarImageMapperRendering,
+  PlanarVolumeSliceRendering,
+} from './planarRuntimeTypes';
+import { applyPlanarICameraToActor } from './planarRenderCamera';
+import { getPlanarRenderPathActiveSourceICamera } from './planarRenderPathProjection';
+import { VtkImageMapperRenderPath } from './VtkImageMapperRenderPath';
+
+const log = coreLog.getLogger('RenderingEngine', 'planarAcquiredFrames');
+
+/** The legacy rule of `VolumeViewport.isInAcquisitionPlane`. */
+const ACQUISITION_PLANE_DOT = 0.99;
 
 /**
- * Converts the slice of a planar view state between the volume path and the
- * image path that draws the acquired frames of the same volume.
- *
- * The volume path keeps a world point (`volumePoint`), and the image path
- * keeps an index into its own image ids (`stackIndex`). The conversion goes
- * through the image id, so the two paths can list the frames in different
- * orders.
- *
- * @param args.slice - the slice of the current view state
- * @param args.toVolumePath - true for a change to the volume path
- * @param args.imageVolume - the volume that both paths draw
- * @param args.imageIds - the image ids of the image path
- * @param args.currentImageIdIndex - the index that the image path draws now,
- * for a slice that does not state one
- * @param args.inPlanePoint - a point whose position in the acquisition plane
- * the volume point keeps, so a sagittal or coronal view returns to the same
- * column after a visit to the acquisition plane
- * @returns the converted slice, or `undefined` when it cannot be converted
+ * The actors that draw acquired frames. The overlay order of a volume slice
+ * skips them, so a frame actor sits at the depth of its source.
  */
-export function convertAcquiredFrameSlice(args: {
-  slice: PlanarViewState['slice'];
-  toVolumePath: boolean;
-  imageVolume: IImageVolume;
-  imageIds: string[];
-  currentImageIdIndex?: number;
-  inPlanePoint?: Point3;
-}): PlanarViewState['slice'] | undefined {
-  const { slice, toVolumePath, imageVolume, imageIds } = args;
+export const acquiredFrameActors = new WeakSet<object>();
 
-  if (slice?.kind === (toVolumePath ? 'volumePoint' : 'stackIndex')) {
-    return slice;
-  }
+/** Whether a view plane normal is parallel to the scan axis of a volume. */
+export function isAcquisitionPlaneNormal(
+  imageVolume: IImageVolume,
+  viewPlaneNormal: Point3
+): boolean {
+  const { direction } = imageVolume;
+  const scanAxis = vec3.fromValues(direction[6], direction[7], direction[8]);
 
-  if (toVolumePath) {
-    const imageIdIndex =
-      slice?.kind === 'stackIndex'
-        ? slice.imageIdIndex
-        : args.currentImageIdIndex;
-    const sliceWorldPoint =
-      typeof imageIdIndex === 'number'
-        ? volumePointOfAcquiredFrame(
-            imageVolume,
-            imageIds,
-            imageIdIndex,
-            args.inPlanePoint
-          )
-        : undefined;
-
-    return sliceWorldPoint ? { kind: 'volumePoint', sliceWorldPoint } : slice;
-  }
-
-  if (slice?.kind !== 'volumePoint') {
-    return typeof args.currentImageIdIndex === 'number'
-      ? { kind: 'stackIndex', imageIdIndex: args.currentImageIdIndex }
-      : slice;
-  }
-
-  const imageIdIndex = acquiredFrameIndexOfVolumePoint(
-    imageVolume,
-    imageIds,
-    slice.sliceWorldPoint
+  return (
+    Math.abs(vec3.dot(scanAxis, viewPlaneNormal as unknown as vec3)) >
+    ACQUISITION_PLANE_DOT
   );
-
-  return typeof imageIdIndex === 'number'
-    ? { kind: 'stackIndex', imageIdIndex }
-    : undefined;
-}
-
-/** The scan axis of a volume: the normal of its acquired frames. */
-function scanAxisOf(imageVolume: IImageVolume): Point3 {
-  return [
-    imageVolume.direction[6],
-    imageVolume.direction[7],
-    imageVolume.direction[8],
-  ];
 }
 
 /**
- * The index in `imageIds` of the acquired frame nearest to a world point,
- * measured along the scan axis. A `viewPlaneNormal` that is not parallel to
- * the scan axis gives no frame.
+ * The index in `imageIds` of the acquired frame nearest to a world point.
+ *
+ * The frame is the voxel slice `k = round(worldToIndex(point)[2])` of the
+ * full-resolution volume grid. A labelmap that reslices the same grid with
+ * nearest sampling rounds in the same way, so the frame and the labelmap stay
+ * on one plane, also when the point is between two frames.
+ *
+ * @returns the index, or `undefined` when the point is outside the volume
  */
 export function acquiredFrameIndexOfVolumePoint(
   imageVolume: IImageVolume,
   imageIds: string[],
-  sliceWorldPoint: Point3,
-  viewPlaneNormal: Point3 = scanAxisOf(imageVolume)
+  point: Point3
 ): number | undefined {
-  const imageId = getClosestImageId(
-    imageVolume,
-    sliceWorldPoint,
-    viewPlaneNormal,
-    { ignoreSpacing: true }
-  );
-  const imageIdIndex = imageId ? imageIds.indexOf(imageId) : -1;
+  const imageData = imageVolume.imageData;
+
+  if (!imageData) {
+    return;
+  }
+
+  const k = Math.round(imageData.worldToIndex([...point])[2]);
+
+  if (!(k >= 0 && k < imageData.getDimensions()[2])) {
+    return;
+  }
+
+  const imageId = imageVolume.imageIds?.[k];
+
+  if (!imageId || imageIds[k] === imageId) {
+    return k < imageIds.length ? k : undefined;
+  }
+
+  const imageIdIndex = imageIds.indexOf(imageId);
 
   return imageIdIndex >= 0 ? imageIdIndex : undefined;
 }
 
 /**
- * A world point on an acquired frame. With `inPlanePoint`, the point is
- * `inPlanePoint` moved along the scan axis onto the frame; otherwise it is the
- * center of the frame.
+ * Adds the acquired frames to the volume slice attachment of a source.
+ *
+ * The binding keeps the volume slice render path for navigation, and keeps an
+ * image path (`VtkImageMapperRenderPath`) mounted for the acquired frames. Both
+ * actors stay in the renderer. The frame actor is visible only while the view
+ * is in the acquisition plane, `canDrawAcquiredFrames` holds, and the frame of
+ * the current plane has loaded; otherwise the volume slice actor is visible.
+ *
+ * The frame uses the presentation of the volume, with the default VOI of the
+ * volume. The hidden rendering is excluded from the fidelity, so the indicator
+ * follows the visible path.
  */
-export function volumePointOfAcquiredFrame(
-  imageVolume: IImageVolume,
-  imageIds: string[],
-  imageIdIndex: number,
-  inPlanePoint?: Point3
-): Point3 | undefined {
-  const volumeIndex = imageVolume.imageIds?.indexOf(imageIds[imageIdIndex]);
-  const framePoint = getVolumeImageIdIndexWorldPoint(
-    imageVolume,
-    volumeIndex >= 0 ? volumeIndex : imageIdIndex
-  );
+export function withAcquiredFrames(
+  ctx: PlanarVtkVolumeAdapterContext,
+  data: LoadedData<PlanarPayload>,
+  volume: RenderPathAttachment<PlanarDataPresentation>
+): RenderPathAttachment<PlanarDataPresentation> {
+  const volumeRendering = volume.rendering as PlanarVolumeSliceRendering;
+  const { imageVolume, imageIds } = volumeRendering;
+  let frame: RenderPathAttachment<PlanarDataPresentation> | undefined;
+  let mounting = false;
+  let removed = false;
+  let wantedIndex: number | undefined;
 
-  if (!framePoint || !inPlanePoint) {
-    return framePoint;
+  const frameRendering = () =>
+    frame?.rendering as PlanarImageMapperRendering | undefined;
+  const isSource = () => ctx.viewport.isCurrentDataId(data.id);
+  // The image path follows the volume camera, so it never drives the
+  // renderer camera or the render mode of the viewport. As an overlay it sends
+  // no STACK_NEW_IMAGE: the volume path sends the slice events of a scroll.
+  const frameCtx = {
+    ...ctx,
+    viewport: { ...ctx.viewport, isCurrentDataId: () => false },
+    display: {
+      ...ctx.display,
+      activateRenderMode: () => undefined,
+      requestRender: () => {
+        updateVisibility();
+        ctx.display.requestRender();
+      },
+    },
+  };
+  const framePresentation = (): PlanarDataPresentation => ({
+    ...volumeRendering.dataPresentation,
+    voiRange:
+      volumeRendering.dataPresentation?.voiRange ??
+      volumeRendering.defaultVOIRange,
+  });
+
+  function updateVisibility(): void {
+    const rendering = frameRendering();
+    const showsFrame =
+      wantedIndex !== undefined &&
+      rendering?.currentImageIdIndex === wantedIndex;
+    const visible = volumeRendering.dataPresentation?.visible !== false;
+
+    volumeRendering.actor.setVisibility(visible && !showsFrame);
+
+    if (!volumeRendering.isSegmentationOverlay) {
+      // A hidden volume ignores its data events; read the record again.
+      volumeRendering.fidelityStale ||=
+        !showsFrame && volumeRendering.showsAcquiredFrame;
+      volumeRendering.excludeFromFidelity = showsFrame;
+    }
+
+    volumeRendering.showsAcquiredFrame = showsFrame;
+
+    if (!rendering) {
+      return;
+    }
+
+    rendering.actor.setVisibility(visible && showsFrame);
+    rendering.excludeFromFidelity = !showsFrame;
+    applyPlanarICameraToActor({
+      actor: rendering.actor,
+      activeSourceICamera: getPlanarRenderPathActiveSourceICamera(ctx),
+    });
   }
 
-  const scanAxis = scanAxisOf(imageVolume) as unknown as vec3;
-  const offset = vec3.sub(
-    vec3.create(),
-    framePoint as unknown as vec3,
-    inPlanePoint as unknown as vec3
-  );
-  const point = vec3.scaleAndAdd(
-    vec3.create(),
-    inPlanePoint as unknown as vec3,
-    scanAxis,
-    vec3.dot(offset, scanAxis)
-  );
+  async function mountFrame(imageIdIndex: number): Promise<void> {
+    mounting = true;
 
-  return [point[0], point[1], point[2]];
+    try {
+      const image = await loadAndCacheImage(imageIds[imageIdIndex]);
+      const attachment = await new VtkImageMapperRenderPath().addData(
+        frameCtx,
+        {
+          ...data,
+          image,
+          imageData: undefined,
+          initialImageIdIndex: imageIdIndex,
+        } as LoadedData,
+        { renderMode: ActorRenderMode.VTK_IMAGE, role: 'overlay' }
+      );
+
+      if (removed) {
+        attachment.removeData();
+        return;
+      }
+
+      frame = attachment;
+      acquiredFrameActors.add(frameRendering().actor);
+      frame.updateDataPresentation(framePresentation());
+    } catch (error) {
+      log.warn('The acquired frame did not load', error);
+      return;
+    } finally {
+      mounting = false;
+    }
+
+    sync();
+    ctx.display.requestRender();
+  }
+
+  function sync(): void {
+    if (removed) {
+      return;
+    }
+
+    const camera = getPlanarRenderPathActiveSourceICamera(ctx);
+
+    wantedIndex =
+      camera &&
+      isSource() &&
+      ctx.viewport.canDrawAcquiredFrames?.(data.id) &&
+      isAcquisitionPlaneNormal(imageVolume, camera.viewPlaneNormal)
+        ? acquiredFrameIndexOfVolumePoint(
+            imageVolume,
+            imageIds,
+            camera.focalPoint
+          )
+        : undefined;
+
+    if (wantedIndex !== undefined) {
+      if (frame) {
+        frame.applyViewState({
+          ...ctx.viewport.getViewState(),
+          slice: { kind: 'stackIndex', imageIdIndex: wantedIndex },
+        });
+      } else if (!mounting) {
+        void mountFrame(wantedIndex);
+      }
+    }
+
+    updateVisibility();
+  }
+
+  const frameActorEntry = (): ActorEntry | undefined => {
+    const rendering = frameRendering();
+
+    // No referencedId: a measurement tool must not see a second target.
+    return (
+      rendering && {
+        uid: rendering.actorEntryUID,
+        actor: rendering.actor,
+        actorMapper: {
+          actor: rendering.actor,
+          mapper: rendering.mapper,
+          renderMode: ActorRenderMode.VTK_IMAGE,
+        } as ActorEntry['actorMapper'],
+      }
+    );
+  };
+
+  return {
+    ...volume,
+    updateDataPresentation: (props) => {
+      volume.updateDataPresentation(props);
+      frame?.updateDataPresentation(framePresentation());
+      sync();
+    },
+    applyViewState: (viewState) => {
+      volume.applyViewState(viewState);
+      sync();
+    },
+    resize: () => {
+      volume.resize?.();
+      sync();
+    },
+    getActorEntries: (loadedData) =>
+      [volume.getActorEntry?.(loadedData), frameActorEntry()].filter(Boolean),
+    getRenderings: () =>
+      frame ? [volume.rendering, frame.rendering] : [volume.rendering],
+    removeData: () => {
+      removed = true;
+      frame?.removeData();
+      volume.removeData();
+    },
+  };
 }

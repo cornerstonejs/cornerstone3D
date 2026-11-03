@@ -57,7 +57,6 @@ import { DefaultPlanarDataProvider } from './DefaultPlanarDataProvider';
 import { createPlanarRenderPathResolver } from './PlanarRenderPathResolver';
 import { defaultPlanarRenderPathDecisionService } from './PlanarRenderPathDecisionService';
 import type { PlanarRenderPathDecisionOptions } from './PlanarRenderPathDecisionService';
-import { convertAcquiredFrameSlice } from './planarAcquiredFrames';
 import {
   normalizePlanarOrientation,
   selectPlanarRenderPath,
@@ -193,13 +192,6 @@ class PlanarViewport extends GenericViewport<
     string,
     PlanarSetDataOptions
   >();
-  // The last volume slice point before a change to the acquired frames, and
-  // the volume that the point belongs to.
-  private acquiredFramesInPlanePoint?: { volumeId: string; point: Point3 };
-  // True while a remount pass of applyRenderingPipelineUpdate runs.
-  private renderPipelineSwapInFlight = false;
-  // True while setDisplaySets removes the bindings that it replaces.
-  private replacingData = false;
 
   // ── Static ───────────────────────────────────────────────────────────
 
@@ -314,6 +306,7 @@ class PlanarViewport extends GenericViewport<
           this.getCurrentBinding()?.data.id === dataId,
         getOverlayActors: () =>
           this.mountedData.getProjectedActorEntries('overlay'),
+        canDrawAcquiredFrames: (dataId) => this.canDrawAcquiredFrames(dataId),
       },
       renderPath: {
         renderMode: ActorRenderMode.VTK_IMAGE,
@@ -388,13 +381,7 @@ class PlanarViewport extends GenericViewport<
     const isStale = () => requestId !== this.setDataRequestId;
 
     this.clearResolvedViewCache();
-    // The new source makes its own path decision when it mounts.
-    this.replacingData = true;
-    try {
-      this.removeReplaceableData(entries);
-    } finally {
-      this.replacingData = false;
-    }
+    this.removeReplaceableData(entries);
 
     for (const [index, { displaySetId, options = {} }] of entries.entries()) {
       if (isStale()) {
@@ -486,11 +473,6 @@ class PlanarViewport extends GenericViewport<
       this.notifyDataPresentationModified(dataId, { voiRange });
     }
 
-    if (role !== 'source') {
-      // A volume overlay keeps the source on the volume path.
-      await this.updateRenderPathsForView();
-    }
-
     if (role === 'source') {
       // Emit an initial CAMERA_MODIFIED for the source binding only, mirroring
       // legacy StackViewport's first-image triggerCameraEvent. Overlays and
@@ -503,15 +485,9 @@ class PlanarViewport extends GenericViewport<
 
   /**
    * Removes a dataset binding and clears the active data id when the
-   * removed dataset was active. The bindings that stay re-run their
-   * render-path decision, so that the source returns to the image path when
-   * the last volume overlay goes.
+   * removed dataset was active.
    */
   removeData(dataId: string): void {
-    if (dataId === this.getSourceDataId()) {
-      this.acquiredFramesInPlanePoint = undefined;
-    }
-
     this.clearResolvedViewCache();
     this.mountOptionsByDataId.delete(dataId);
     this.lastRenderPathErrorByDataId.delete(dataId);
@@ -520,10 +496,6 @@ class PlanarViewport extends GenericViewport<
 
     if (!this.isDestroyed && this.getCurrentBinding()) {
       this.updateBindingsCameraState();
-
-      if (!this.replacingData) {
-        void this.updateRenderPathsForView();
-      }
     }
   }
 
@@ -542,6 +514,16 @@ class PlanarViewport extends GenericViewport<
    * Returns the primary actor entry for the viewport.
    */
   getDefaultActor(): ActorEntry | undefined {
+    return this.getDefaultActorEntry();
+  }
+
+  /**
+   * The default actor entry of `getDefaultActor`, `getImageActor()` and
+   * `getDefaultImageData`. It is the volume slice entry, also while the
+   * acquired frame shows (`showsAcquiredFrame` of the source rendering), until
+   * the rule for the frame entry is decided.
+   */
+  private getDefaultActorEntry(): ActorEntry | undefined {
     return this.mountedData.getDefaultActor();
   }
 
@@ -558,7 +540,7 @@ class PlanarViewport extends GenericViewport<
   getImageActor(volumeId?: string): ImageActor | null {
     const actorEntries = this.getActors();
 
-    let actorEntry = actorEntries[0];
+    let actorEntry = this.getDefaultActorEntry();
     if (volumeId) {
       // Match by actor referencedId first (e.g. the prefixed volume id
       // "cornerstoneStreamingImageVolume:<uid>"). VOI/colorbar tooling, however,
@@ -970,19 +952,10 @@ class PlanarViewport extends GenericViewport<
       ...this.viewState,
       ...viewStatePatch,
     };
-    const previousOrientation = this.viewState.orientation;
 
     this.clearResolvedViewCache();
     this.viewState = this.normalizeViewState(next);
     this.modified(previousCamera);
-
-    if (
-      Object.prototype.hasOwnProperty.call(viewStatePatch, 'orientation') &&
-      JSON.stringify(previousOrientation) !==
-        JSON.stringify(this.viewState.orientation)
-    ) {
-      void this.updateRenderPathsForView();
-    }
   }
 
   setDisplaySetPresentation(props: Partial<PlanarDataPresentation>): void;
@@ -1008,18 +981,8 @@ class PlanarViewport extends GenericViewport<
     dataId: string,
     props: PlanarDataPresentation
   ): void {
-    const previous = this.getDataPresentationState(dataId);
-
     this.clearResolvedViewCache();
     super.setDataPresentationState(dataId, props);
-
-    if (
-      this.bindings.has(dataId) &&
-      (previous?.slabThickness !== props?.slabThickness ||
-        previous?.blendMode !== props?.blendMode)
-    ) {
-      void this.updateRenderPathsForView();
-    }
   }
 
   /**
@@ -1783,8 +1746,6 @@ class PlanarViewport extends GenericViewport<
     const isStale = () =>
       swapId !== this.renderPipelineSwapId || this.isDestroyed;
     let changed = false;
-    this.renderPipelineSwapInFlight = true;
-    let previousSourceCamera: ICamera | undefined;
 
     // Remount the source binding first: overlays without an explicit
     // renderBackend inherit the source's mounted backend, so the source must
@@ -1810,18 +1771,12 @@ class PlanarViewport extends GenericViewport<
       }
 
       const options = this.mountOptionsByDataId.get(dataId) ?? {};
-      const sliceBeforeSwap = this.viewState.slice;
-      let sliceConverted = false;
 
       try {
-        const { data, selectedPath } = await this.loadPlanarData(
-          dataId,
-          {
-            ...options,
-            role: binding.role,
-          },
-          true
-        );
+        const { data, selectedPath } = await this.loadPlanarData(dataId, {
+          ...options,
+          role: binding.role,
+        });
 
         if (isStale() || this.bindings.get(dataId) !== binding) {
           continue;
@@ -1829,20 +1784,6 @@ class PlanarViewport extends GenericViewport<
 
         if (selectedPath.renderMode === binding.rendering.renderMode) {
           continue;
-        }
-
-        if (binding === sourceBinding) {
-          const cameraBeforeSwap = this.getResolvedCameraForEvent();
-
-          sliceConverted = this.convertSliceForRenderPath(
-            dataId,
-            binding.rendering.renderMode,
-            selectedPath.renderMode
-          );
-
-          if (sliceConverted) {
-            previousSourceCamera ??= cameraBeforeSwap;
-          }
         }
 
         const added = await this.addLoadedData(
@@ -1855,28 +1796,13 @@ class PlanarViewport extends GenericViewport<
           () => isStale() || this.bindings.get(dataId) !== binding
         );
 
-        if (!added && sliceConverted && this.bindings.get(dataId) === binding) {
-          this.restoreSlice(sliceBeforeSwap);
-        }
-
         changed = changed || added;
       } catch (error) {
-        if (sliceConverted && this.bindings.get(dataId) === binding) {
-          this.restoreSlice(sliceBeforeSwap);
-        }
-
         this.reportRenderPathError(error, dataId);
       }
     }
 
-    // A stale pass leaves the flag to the newer pass.
-    if (isStale()) {
-      return;
-    }
-
-    this.renderPipelineSwapInFlight = false;
-
-    if (!changed) {
+    if (isStale() || !changed) {
       return;
     }
 
@@ -1902,127 +1828,6 @@ class PlanarViewport extends GenericViewport<
       renderingEngineId: this.renderingEngineId,
       viewportId: this.id,
     });
-
-    if (previousSourceCamera) {
-      this.triggerCameraModifiedEvent(previousSourceCamera);
-    }
-
-    // An input can change while the pass mounts.
-    if (!isStale()) {
-      await this.updateRenderPathsForView();
-    }
-  }
-
-  /**
-   * Re-runs the render-path decision of each mounted volume display set when
-   * an input of that decision changes: the orientation, the slab thickness,
-   * the blend mode, or the add or the removal of an overlay. A display set
-   * whose path changes remounts in place through
-   * `applyRenderingPipelineUpdate`, which keeps the view state and converts
-   * the slice of the source between the two paths.
-   *
-   * During a remount the mounted render modes are not the target, so a new
-   * request always starts a new pass and the last request wins. A pass that
-   * remounted checks the decision again when it ends.
-   *
-   * Display sets without a volume keep the path of their first mount.
-   */
-  private updateRenderPathsForView(): Promise<void> {
-    if (this.isDestroyed) {
-      return Promise.resolve();
-    }
-
-    if (this.renderPipelineSwapInFlight) {
-      return this.applyRenderingPipelineUpdate();
-    }
-
-    const orientation = this.resolveRequestedOrientation(
-      this.viewState.orientation
-    );
-
-    for (const [dataId, binding] of this.bindings.entries()) {
-      const dataSet = this.getDataSet(dataId);
-
-      if (!dataSet?.volumeId) {
-        continue;
-      }
-
-      const options = {
-        ...(this.mountOptionsByDataId.get(dataId) ?? {}),
-        role: binding.role,
-      };
-
-      try {
-        const { renderMode } = selectPlanarRenderPath(
-          dataSet,
-          this.getRenderPathDecisionOptions(dataId, options, orientation)
-        );
-
-        if (renderMode !== binding.rendering.renderMode) {
-          return this.applyRenderingPipelineUpdate();
-        }
-      } catch {
-        // The remount reports a path that cannot render.
-        continue;
-      }
-    }
-
-    return Promise.resolve();
-  }
-
-  /**
-   * Converts the slice of the view state for a change of the source between
-   * the volume path and the image path that draws the acquired frames.
-   *
-   * @returns true when the slice changed
-   */
-  private convertSliceForRenderPath(
-    dataId: string,
-    fromRenderMode: PlanarEffectiveRenderMode,
-    toRenderMode: PlanarEffectiveRenderMode
-  ): boolean {
-    const toVolumePath = isVolumeRenderMode(toRenderMode);
-    const dataSet = this.getDataSet(dataId);
-    const imageVolume = dataSet?.volumeId
-      ? cache.getVolume(dataSet.volumeId)
-      : undefined;
-
-    if (!imageVolume || isVolumeRenderMode(fromRenderMode) === toVolumePath) {
-      return false;
-    }
-
-    const { slice } = this.viewState;
-
-    if (!toVolumePath && slice?.kind === 'volumePoint') {
-      this.acquiredFramesInPlanePoint = {
-        volumeId: dataSet.volumeId,
-        point: [...slice.sliceWorldPoint] as Point3,
-      };
-    }
-
-    const inPlane = this.acquiredFramesInPlanePoint;
-    const nextSlice = convertAcquiredFrameSlice({
-      slice,
-      toVolumePath,
-      imageVolume,
-      imageIds: dataSet.imageIds,
-      currentImageIdIndex: this.getActiveImageIdIndex(),
-      inPlanePoint:
-        inPlane?.volumeId === dataSet.volumeId ? inPlane.point : undefined,
-    });
-
-    if (!nextSlice || nextSlice === slice) {
-      return false;
-    }
-
-    this.restoreSlice(nextSlice);
-
-    return true;
-  }
-
-  private restoreSlice(slice: PlanarViewState['slice']): void {
-    this.clearResolvedViewCache();
-    this.viewState = this.normalizeViewState({ ...this.viewState, slice });
   }
 
   /**
@@ -2034,27 +1839,36 @@ class PlanarViewport extends GenericViewport<
     return true;
   }
 
-  /** Whether an overlay other than `dataId` is mounted on a volume path. */
-  private hasVolumeOverlay(dataId: string): boolean {
-    for (const [otherDataId, binding] of this.bindings.entries()) {
-      if (
-        otherDataId !== dataId &&
-        binding.role !== 'source' &&
-        isVolumeRenderMode(binding.rendering.renderMode)
-      ) {
-        return true;
-      }
+  /**
+   * Whether the volume slice path of `dataId` may draw the acquired frames
+   * (`PlanarRenderPathDecisionService.canDrawAcquiredFrames`). The render path
+   * reads this at each change of the view or the presentation.
+   */
+  private canDrawAcquiredFrames(dataId: string): boolean {
+    const binding = this.bindings.get(dataId);
+    const dataSet = this.getDataSet(dataId);
+
+    if (!binding || !dataSet) {
+      return false;
     }
 
-    return false;
+    return defaultPlanarRenderPathDecisionService.canDrawAcquiredFrames(
+      dataSet,
+      this.getRenderPathDecisionOptions(
+        dataId,
+        {
+          ...(this.mountOptionsByDataId.get(dataId) ?? {}),
+          role: binding.role,
+        },
+        this.viewState.orientation
+      )
+    );
   }
 
   /**
    * The inputs of the render-path decision for one display set.
    *
-   * Only the source may draw the acquired frames of a reduced volume, and only
-   * when no overlay is on a volume path, so that the source and its overlays
-   * stay on one kind of path. A labelmap volume mounts as such an overlay.
+   * Only the source may draw the acquired frames of a reduced volume.
    */
   private getRenderPathDecisionOptions(
     dataId: string,
@@ -2072,9 +1886,7 @@ class PlanarViewport extends GenericViewport<
         options.renderBackend ??
         this.getInheritedOverlayRenderBackend(options.role),
       preferAcquiredFrames:
-        options.role === 'source' &&
-        this.prefersAcquiredFrames() &&
-        !this.hasVolumeOverlay(dataId),
+        options.role === 'source' && this.prefersAcquiredFrames(),
       slabThickness: presentation?.slabThickness,
       blendMode: presentation?.blendMode,
     };
@@ -2338,15 +2150,9 @@ class PlanarViewport extends GenericViewport<
     return dataSet;
   }
 
-  /**
-   * Selects the render path of a display set and loads its data. A remount of
-   * volume data decides for the current orientation of the view, and a first
-   * mount decides for the requested orientation.
-   */
   private async loadPlanarData(
     dataId: string,
-    options: PlanarSetDataOptions,
-    isRemount = false
+    options: PlanarSetDataOptions
   ): Promise<{
     data: LoadedData<PlanarPayload>;
     selectedPath: SelectedPlanarRenderPath;
@@ -2361,9 +2167,7 @@ class PlanarViewport extends GenericViewport<
     }
 
     const resolvedOrientation = this.resolveRequestedOrientation(
-      isRemount && dataSet.volumeId
-        ? this.viewState.orientation
-        : options.orientation
+      options.orientation
     );
     const selectedPath = selectPlanarRenderPath(
       dataSet,
@@ -2422,13 +2226,8 @@ class PlanarViewport extends GenericViewport<
         )
       : {
           kind: 'stackIndex' as const,
-          // A stack opens at slice 0 when no initial index was requested. The
-          // acquired frames of a volume open at the center, as the volume does.
-          imageIdIndex:
-            planarData.initialImageIdIndex ??
-            (selectedPath.drawsAcquiredFrames
-              ? Math.floor((planarData.imageIds.length - 1) / 2)
-              : 0),
+          // A stack opens at slice 0 when no initial index was requested.
+          imageIdIndex: planarData.initialImageIdIndex ?? 0,
         };
 
     this.clearResolvedViewCache();

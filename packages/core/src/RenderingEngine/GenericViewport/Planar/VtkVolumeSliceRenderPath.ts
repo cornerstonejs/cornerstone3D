@@ -55,6 +55,10 @@ import {
 } from './planarRenderPathProjection';
 import { applyPlanarVolumePresentation } from './planarVolumePresentation';
 import {
+  acquiredFrameActors,
+  withAcquiredFrames,
+} from './planarAcquiredFrames';
+import {
   isSegmentationOverlayData,
   isVolumeLoading,
   readBoundQuality,
@@ -201,7 +205,7 @@ export class VtkVolumeSliceRenderPath
       maxImageIdIndex: rendering.maxImageIdIndex,
     });
 
-    return {
+    const attachment: RenderPathAttachment<PlanarDataPresentation> = {
       rendering,
       updateDataPresentation: (props) => {
         this.updateDataPresentation(ctx, rendering, props);
@@ -236,6 +240,10 @@ export class VtkVolumeSliceRenderPath
         this.removeData(ctx, rendering);
       },
     };
+
+    return isSegmentationOverlay
+      ? attachment
+      : withAcquiredFrames(ctx, data as LoadedData<PlanarPayload>, attachment);
   }
 
   private updateDataPresentation(
@@ -715,14 +723,17 @@ function updateVolumeSlicePlane(
   slicePlane.setNormal(...activeSourceICamera.viewPlaneNormal);
 }
 
-function getImageSliceOverlayOrder(
+/** @internal The depth order of a slice actor; acquired frame actors do not count. */
+export function getImageSliceOverlayOrder(
   renderer: PlanarVtkVolumeAdapterContext['vtk']['renderer'],
   actor: PlanarVolumeSliceRendering['actor']
 ): number {
   const imageSliceActors = renderer
     .getActors()
     .filter(
-      (currentActor) => currentActor?.getClassName?.() === 'vtkImageSlice'
+      (currentActor) =>
+        currentActor?.getClassName?.() === 'vtkImageSlice' &&
+        !acquiredFrameActors.has(currentActor)
     );
 
   return Math.max(0, imageSliceActors.indexOf(actor));

@@ -119,6 +119,11 @@ class PlanarMountedData {
         continue;
       }
 
+      if (binding.getActorEntries) {
+        actorEntries.push(...binding.getActorEntries(binding.data));
+        continue;
+      }
+
       const actorEntry = binding.getActorEntry?.(binding.data);
 
       if (actorEntry) {
