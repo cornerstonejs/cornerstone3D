@@ -513,7 +513,15 @@ describe('PlanarViewport acquired frames in the volume path (user experience)', 
       volumeVOI.lower,
       volumeVOI.upper,
     ]);
-    expect(transferFunction.getSize()).toBe(2);
+    const nodes = (tf) =>
+      Array.from({ length: tf.getSize() }, (_, i) => {
+        const node = [];
+        tf.getNodeValue(i, node);
+        return node;
+      });
+    expect(nodes(transferFunction)).toEqual(
+      nodes(utilities.createLinearRGBTransferFunction(volumeVOI))
+    );
   });
 
   it('moves the frame actor onto the focal plane between two frames (CS-S22)', async () => {
@@ -574,17 +582,17 @@ describe('PlanarViewport acquired frames in the volume path (user experience)', 
     renderer.addActor(laterOverlay);
     expect(getImageSliceOverlayOrder(renderer, laterOverlay)).toBe(2);
 
-    // On a frame (z = 10) and between two frames (z = 11 and z = 13): the
-    // frame and the nearest voxel slice of a labelmap on the volume grid
-    // round in the same way.
-    for (const z of [10, 11, 13]) {
-      const labelmapSlice = Math.round(
-        volume.imageData.worldToIndex([100, 100, z])[2]
-      );
-
+    // Slices are 2 mm apart. On a frame (z = 10) and between two frames
+    // (z = 11, 13), the frame is the nearest voxel slice, as a labelmap with
+    // nearest sampling on the volume grid reads it.
+    for (const [z, frame] of [
+      [10, 5],
+      [11, 6],
+      [13, 7],
+    ]) {
       expect(
         acquiredFrameIndexOfVolumePoint(volume, imageIds, [100, 100, z])
-      ).toBe(labelmapSlice);
+      ).toBe(frame);
     }
   });
 });

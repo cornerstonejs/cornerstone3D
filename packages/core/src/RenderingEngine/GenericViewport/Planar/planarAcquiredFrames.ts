@@ -29,6 +29,18 @@ const log = coreLog.getLogger('RenderingEngine', 'planarAcquiredFrames');
  */
 export const acquiredFrameActors = new WeakSet<object>();
 
+/** The volume index of a world point, with k rounded to the nearest voxel slice. */
+function nearestSliceIndex(
+  imageData: IImageVolume['imageData'],
+  point: Point3
+): Point3 {
+  const index = imageData.worldToIndex([...point]) as Point3;
+
+  index[2] = Math.round(index[2]);
+
+  return index;
+}
+
 /**
  * The translation that moves the frame of the nearest voxel slice onto the
  * plane of the focal point, so that an overlay at that plane stays in front.
@@ -41,11 +53,9 @@ function framePlaneOffset(
   viewPlaneNormal: Point3
 ): Point3 {
   const { imageData } = imageVolume;
-  const index = imageData.worldToIndex([...focalPoint]);
-
-  index[2] = Math.round(index[2]);
-
-  const framePoint = imageData.indexToWorld(index);
+  const framePoint = imageData.indexToWorld(
+    nearestSliceIndex(imageData, focalPoint)
+  );
   const distance =
     (focalPoint[0] - framePoint[0]) * viewPlaneNormal[0] +
     (focalPoint[1] - framePoint[1]) * viewPlaneNormal[1] +
@@ -79,7 +89,7 @@ export function acquiredFrameIndexOfVolumePoint(
     return;
   }
 
-  const k = Math.round(imageData.worldToIndex([...point])[2]);
+  const k = nearestSliceIndex(imageData, point)[2];
 
   if (!(k >= 0 && k < imageData.getDimensions()[2])) {
     return;

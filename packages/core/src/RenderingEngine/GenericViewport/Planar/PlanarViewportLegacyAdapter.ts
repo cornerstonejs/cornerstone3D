@@ -35,7 +35,7 @@ class PlanarViewportLegacyAdapter extends PlanarViewport {
       this.createLegacyCompatibilityHost()
     );
 
-  /** The legacy volume API navigates by camera, so the volume path stays. */
+  /** The legacy viewports keep their 4.x display, so no acquired frames. */
   protected override prefersAcquiredFrames(): boolean {
     return false;
   }

@@ -520,8 +520,8 @@ class PlanarViewport extends GenericViewport<
   /**
    * The default actor entry of `getDefaultActor`, `getImageActor()` and
    * `getDefaultImageData`. It is the volume slice entry, also while the
-   * acquired frame shows (`showsAcquiredFrame` of the source rendering), until
-   * the rule for the frame entry is decided.
+   * acquired frame shows (`showsAcquiredFrame` of the source rendering): the
+   * volume data is at full resolution, and only its GPU texture is reduced.
    */
   private getDefaultActorEntry(): ActorEntry | undefined {
     return this.mountedData.getDefaultActor();
@@ -1832,8 +1832,8 @@ class PlanarViewport extends GenericViewport<
 
   /**
    * Whether the source of this viewport may draw the acquired frames of a
-   * reduced volume in the acquisition plane. The legacy adapter keeps the
-   * volume path, because the legacy volume API navigates by camera.
+   * reduced volume in the acquisition plane. The legacy adapter turns this off,
+   * so the legacy viewports keep their 4.x display (AQP-I-10 of #3017).
    */
   protected prefersAcquiredFrames(): boolean {
     return true;

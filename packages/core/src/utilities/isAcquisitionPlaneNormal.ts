@@ -26,5 +26,3 @@ export function isAcquisitionPlaneNormal(
 
   return sin * halfDiagonal < spacing[2] / 2;
 }
-
-export default isAcquisitionPlaneNormal;
