@@ -506,3 +506,34 @@ gives that map for one layer.
   that list does not cause a move.
 - If you export SEG from a multi-layer labelmap, set `labelToSegmentIndex` on
   each `labelmap3D` instead of a remap of the voxel values in your own code.
+
+## Adapters name the writer in SR, SEG and RTSTRUCT
+
+### What Changed
+
+The SR, SEG and RTSTRUCT writers of `@cornerstonejs/adapters` now write
+`Manufacturer`, `ManufacturerModelName` and `SoftwareVersions`. The defaults
+are `CornerstoneJS`, `@cornerstonejs/adapters` and the adapters version. A
+value in `options` wins over the default. Before this change, the SR and the
+SEG wrote `Unspecified`, `Unspecified` and `0`. See
+[The writer of the object](../../concepts/cornerstone-tools/segmentation/saving.md#the-writer-of-the-object).
+
+Two changes can change the output of an existing application:
+
+1. The RTSTRUCT ignores the writer values of a custom provider. Before this
+   change, an application that returned `Manufacturer`,
+   `ManufacturerModelName` or `SoftwareVersions` from its own
+   `NewInstanceData` or `RtssInstanceData` provider got that value in the
+   RTSTRUCT. Now the RTSTRUCT gets the value from `options`, or else the
+   adapters default. The SR and the SEG never read the writer from a provider.
+2. `MetadataModules.NEW_INSTANCE_DATA` (`'NewInstanceData'`) now gives
+   `Manufacturer: 'CornerstoneJS'` in place of `'cs3d'`. The module also gives
+   `ManufacturerModelName` and `SoftwareVersions`.
+
+### Migration Guidance
+
+- If your provider sets the writer of the RTSTRUCT, pass the values in the
+  `options` of `generateRTSSFromRepresentation`, or of the other
+  `generateRTSSFrom*` functions.
+- If your code compares `Manufacturer` with `'cs3d'`, compare it with
+  `utilities.DEFAULT_WRITER_HEADER.Manufacturer`.
