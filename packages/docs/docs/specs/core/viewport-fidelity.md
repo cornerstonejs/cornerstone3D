@@ -134,8 +134,10 @@ recovery mark `done`.
     decimation aliases at every magnification.
 
   Testing note (shared 1×1×2 texture): on the volume path the acquisition
-  plane shows `lossy` at every zoom. The acquisition-plane frame path of #3018 draws the original
-  frames, so the acquisition plane shows no indicator on that path. Sagittal
+  plane shows `lossy` at every zoom. When the volume slice path of a source draws the
+  acquired frames (#3018), the acquisition plane shows `lossy` until the frame of the plane
+  loads. When the frame shows, the indicator reports the quality of the frame, so a
+  full-resolution frame shows no indicator. Sagittal
   and coronal show no indicator while the `k` extent uses no more device
   pixels than half of the source slice count (`p ≥ 2S`). After more zoom,
   sagittal and coronal show `lossy`.
