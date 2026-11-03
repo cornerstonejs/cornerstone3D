@@ -4,6 +4,8 @@ import {
   checkForCanvasSnapshot,
   screenShotPaths,
   simulateDrag,
+  annotationLabelMatches,
+  REGISTERED_LENGTH_LABEL,
 } from './utils/index';
 
 test.beforeEach(async ({ page }) => {
@@ -13,7 +15,13 @@ test.beforeEach(async ({ page }) => {
 test.describe('Stack Annotation Tools', async () => {
   test('should draw a length measurement on the viewport', async ({ page }) => {
     const locator = page.locator('.cornerstone-canvas').nth(0);
-    await simulateDrag(page, locator, { steps: 10 });
+    await simulateDrag(page, locator, {
+      steps: 10,
+      // Fail with the reason when the runner drops a mousemove, rather than
+      // leaving a half-drawn measurement for the screenshot to report as a
+      // few hundred differing pixels.
+      verify: annotationLabelMatches(REGISTERED_LENGTH_LABEL),
+    });
     await checkForCanvasSnapshot(
       page,
       '',
