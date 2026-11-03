@@ -1,10 +1,27 @@
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
-import { BlendModes, MetadataModules, OrientationAxis } from '../src/enums';
+import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
+import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
+import {
+  BlendModes,
+  Events,
+  ImageQualityStatus,
+  MetadataModules,
+  OrientationAxis,
+  VoxelReductions,
+} from '../src/enums';
 import { ActorRenderMode } from '../src/types';
 import * as metaData from '../src/metaData';
 import cache from '../src/cache/cache';
+import * as imageLoader from '../src/loaders/imageLoader';
 import PlanarViewport from '../src/RenderingEngine/GenericViewport/Planar/PlanarViewport';
 import { PlanarRenderPathDecisionService } from '../src/RenderingEngine/GenericViewport/Planar/PlanarRenderPathDecisionService';
+import {
+  acquiredFrameIndexOfVolumePoint,
+  withAcquiredFrames,
+} from '../src/RenderingEngine/GenericViewport/Planar/planarAcquiredFrames';
+import { getImageSliceOverlayOrder } from '../src/RenderingEngine/GenericViewport/Planar/VtkVolumeSliceRenderPath';
+import { triggerPlanarVolumeNewImage } from '../src/RenderingEngine/GenericViewport/Planar/planarImageEvents';
+import { resolvePlanarRenderPathProjection } from '../src/RenderingEngine/GenericViewport/Planar/planarRenderPathProjection';
 import renderingEngineCache from '../src/RenderingEngine/renderingEngineCache';
 import genericViewportDisplaySetMetadataProvider from '../src/utilities/genericViewportDisplaySetMetadataProvider';
 import {
@@ -25,8 +42,14 @@ beforeEach(() => {
     .mockReturnValue('desktop');
 });
 
+const flush = async () => {
+  for (let i = 0; i < 20; i++) {
+    await Promise.resolve();
+  }
+};
+
 // A volume whose texture the preset reduces. Only the fields that the
-// decision and the slice conversion read are present.
+// decision and the frame lookup read are present.
 function createVolume({ volumeId, dimensions, spacing, imageIds }) {
   const origin = [0, 0, 0];
   const direction = [1, 0, 0, 0, 1, 0, 0, 0, 1];
@@ -40,10 +63,12 @@ function createVolume({ volumeId, dimensions, spacing, imageIds }) {
     dimensions,
     spacing,
     direction,
+    origin,
     dataType: 'Int16Array',
     voxelGrid: { dimensions, spacing, direction, origin },
     isDynamicVolume: () => false,
     imageData,
+    metadata: { FrameOfReferenceUID: 'planar-test-frame' },
   };
 }
 
@@ -51,14 +76,13 @@ describe('PlanarRenderPathDecisionService acquired frames (API)', () => {
   const imageIds = Array.from({ length: 2464 }, (_, i) => `ct:${i}`);
   const dataSet = { imageIds, volumeId: 'ct-volume' };
   let service;
-  let getVolumeSpy;
 
   beforeEach(() => {
     // The example of the issue: 512 x 512 x 2464 under `medium` reduces the
     // texture by [1, 1, 2].
     setGpuSettingsPreset('medium');
     service = new PlanarRenderPathDecisionService();
-    getVolumeSpy = jest.spyOn(cache, 'getVolume').mockReturnValue(
+    jest.spyOn(cache, 'getVolume').mockReturnValue(
       createVolume({
         volumeId: 'ct-volume',
         dimensions: [512, 512, 2464],
@@ -69,106 +93,215 @@ describe('PlanarRenderPathDecisionService acquired frames (API)', () => {
   });
 
   afterEach(() => {
-    getVolumeSpy.mockRestore();
     resetGpuSettingsPreset();
+    jest.restoreAllMocks();
   });
 
-  it('selects the image path for a reduced volume in the acquisition plane', () => {
-    const selected = service.select(dataSet, {
+  it('keeps the volume path for a reduced volume, and allows the frames', () => {
+    const options = {
       orientation: OrientationAxis.ACQUISITION,
       preferAcquiredFrames: true,
-    });
+    };
 
-    expect(selected.renderMode).toBe(ActorRenderMode.VTK_IMAGE);
-    expect(selected.drawsAcquiredFrames).toBe(true);
-    expect(selected.volumeId).toBe('ct-volume');
+    expect(service.select(dataSet, options).renderMode).toBe(
+      ActorRenderMode.VTK_VOLUME_SLICE
+    );
+    expect(service.canDrawAcquiredFrames(dataSet, options)).toBe(true);
   });
 
-  it('keeps the volume path off the acquisition plane, for a slab or MIP, and without a reduction', () => {
-    const volumePathCases = [
-      { orientation: OrientationAxis.SAGITTAL },
+  it('does not allow the frames for a slab, a MIP, or no reduction', () => {
+    for (const options of [
       { slabThickness: 5 },
       { blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND },
-    ];
-
-    for (const options of volumePathCases) {
+    ]) {
       expect(
-        service.select(dataSet, {
-          orientation: OrientationAxis.ACQUISITION,
+        service.canDrawAcquiredFrames(dataSet, {
           preferAcquiredFrames: true,
           ...options,
-        }).renderMode
-      ).toBe(ActorRenderMode.VTK_VOLUME_SLICE);
+        })
+      ).toBe(false);
     }
 
     setGpuSettingsPreset('high-texture-4096');
     expect(
-      service.select(dataSet, { preferAcquiredFrames: true }).renderMode
-    ).toBe(ActorRenderMode.VTK_VOLUME_SLICE);
+      service.canDrawAcquiredFrames(dataSet, { preferAcquiredFrames: true })
+    ).toBe(false);
   });
 });
 
-describe('PlanarViewport acquired frames (user experience)', () => {
+describe('PlanarViewport acquired frames in the volume path (user experience)', () => {
   const dataId = 'ct-display-set';
+  const segId = 'seg-display-set';
   const volumeId = 'ct-volume';
+  const FOR = 'planar-test-frame';
   const sliceCount = 12;
   const imageIds = Array.from({ length: sliceCount }, (_, i) => `ct:${i}`);
   const spacing = [1, 1, 2];
-  let viewport;
-  let renderingEngineId;
-  let metadataProvider;
-  let getVolumeSpy;
-  let volume;
-
-  const flush = async () => {
-    for (let i = 0; i < 10; i++) {
-      await Promise.resolve();
-    }
+  const volumeVOI = { lower: -100, upper: 300 };
+  const fullGrid = {
+    dimensions: [512, 512, sliceCount],
+    spacing,
+    direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
+    origin: [0, 0, 0],
   };
+  let viewport;
+  let renderer;
+  let provider;
+  let volume;
+  let segVolume;
+  let releaseFrames;
+  const engineId = 'acquired-frames-engine';
 
-  function mountBinding(renderMode, currentImageIdIndex) {
-    viewport.bindings.set(dataId, {
-      applyViewState: jest.fn(),
-      data: { id: dataId, type: 'image', imageIds, volumeId },
-      getImageData: jest.fn(() => volume.imageData),
-      getFrameOfReferenceUID: () => 'planar-test-frame',
+  const sourceBinding = () => viewport.bindings.get(dataId);
+  const volumeActor = () => sourceBinding().rendering.actor;
+  const frameRendering = () => sourceBinding().getRenderings()[1];
+
+  // The volume slice render path, without WebGL: one vtk actor, and the
+  // camera that the real path resolves from the view state.
+  function createVolumeAttachment(ctx, data) {
+    const actor = vtkImageSlice.newInstance();
+    const rendering = {
+      renderMode: ActorRenderMode.VTK_VOLUME_SLICE,
+      actorEntryUID: `${data.id}-volume`,
+      actor,
+      imageVolume: data.imageVolume,
+      imageIds: data.imageIds,
+      currentImageIdIndex: 0,
+      maxImageIdIndex: data.imageIds.length - 1,
+      defaultVOIRange: volumeVOI,
+      voxelQuality: {
+        grid: { ...fullGrid, spacing: [2, 2, 2] },
+        status: ImageQualityStatus.FULL_RESOLUTION,
+        lowest: ImageQualityStatus.FULL_RESOLUTION,
+        highest: ImageQualityStatus.FULL_RESOLUTION,
+        missing: 0,
+        voxels: 1,
+        exact: true,
+        source: 'clientDerived',
+        reduction: VoxelReductions.BoxAverage,
+        deliveries: 1,
+      },
+      fullGrid,
+      sampleDistanceLod: 1,
+      excludeFromFidelity: data.id === segId,
+      isSegmentationOverlay: data.id === segId,
+    };
+
+    ctx.vtk.renderer.addActor(actor);
+
+    return {
+      rendering,
+      updateDataPresentation: (props) => {
+        rendering.dataPresentation = props;
+        actor.setVisibility(props?.visible !== false);
+      },
+      applyViewState: (viewState) => {
+        const projection = resolvePlanarRenderPathProjection({
+          ctx,
+          dataId: data.id,
+          rendering,
+          viewState,
+        });
+
+        if (
+          projection &&
+          projection.currentImageIdIndex !== rendering.currentImageIdIndex
+        ) {
+          rendering.currentImageIdIndex = projection.currentImageIdIndex;
+          // As the volume slice path does on a change of slice.
+          triggerPlanarVolumeNewImage(ctx, {
+            camera: viewState,
+            imageIds: rendering.imageIds,
+            imageIdIndex: rendering.currentImageIdIndex,
+            maxImageIdIndex: rendering.maxImageIdIndex,
+          });
+        }
+      },
+      getFrameOfReferenceUID: () => FOR,
+      getActorEntry: () => ({
+        uid: rendering.actorEntryUID,
+        actor,
+        referencedId: data.volumeId,
+        actorMapper: { actor, renderMode: ActorRenderMode.VTK_VOLUME_SLICE },
+      }),
+      getImageData: () => volume.imageData,
       removeData: jest.fn(),
-      rendering: { renderMode, currentImageIdIndex, imageVolume: volume },
-      role: 'source',
-      updateDataPresentation: jest.fn(),
+    };
+  }
+
+  function createImage(imageId) {
+    return {
+      imageId,
+      rows: 4,
+      columns: 4,
+      rowPixelSpacing: 1,
+      columnPixelSpacing: 1,
+      windowCenter: 1000,
+      windowWidth: 50,
+      imageQualityStatus: ImageQualityStatus.FULL_RESOLUTION,
+      voxelManager: { getScalarData: () => new Int16Array(16) },
+      getPixelData: () => new Int16Array(16),
+    };
+  }
+
+  async function mount(orientation = OrientationAxis.AXIAL) {
+    await viewport.setDisplaySets({
+      displaySetId: dataId,
+      options: { orientation },
     });
-    viewport.mountedData.promoteSourceDataId(dataId);
+    await flush();
   }
 
   beforeEach(() => {
     // `low` reduces a 512 x 512 frame by 2 in the plane of the frame.
     setGpuSettingsPreset('low');
-    renderingEngineId = 'acquired-frames-engine';
-    const element = document.createElement('div');
-    const renderer = {
-      getActiveCamera: jest.fn(() => ({ setParallelProjection: jest.fn() })),
-    };
+    const actors = [];
 
+    renderer = {
+      getActiveCamera: jest.fn(() => ({ setParallelProjection: jest.fn() })),
+      addActor: jest.fn((actor) => actors.push(actor)),
+      removeActor: jest.fn((actor) => actors.splice(actors.indexOf(actor), 1)),
+      getActors: jest.fn(() => actors),
+      resetCameraClippingRange: jest.fn(),
+    };
     renderingEngineCache.set({
-      id: renderingEngineId,
+      id: engineId,
       getRenderer: jest.fn(() => renderer),
       getViewports: jest.fn(() => (viewport ? [viewport] : [])),
       renderViewport: jest.fn(),
     });
     viewport = new PlanarViewport({
       id: 'acquired-frames-viewport',
-      element,
-      renderingEngineId,
+      element: document.createElement('div'),
+      renderingEngineId: engineId,
       canvas: document.createElement('canvas'),
       sWidth: 200,
       sHeight: 100,
       defaultOptions: {},
     });
+    provider = (type, imageId) => {
+      const i = imageIds.indexOf(imageId);
 
-    metadataProvider = (type, imageId) => {
-      const index = imageIds.indexOf(imageId);
+      if (i < 0) {
+        return;
+      }
 
-      if (index < 0 || type !== MetadataModules.IMAGE_PLANE) {
+      if (type === MetadataModules.IMAGE_PIXEL) {
+        return {
+          pixelRepresentation: 1,
+          bitsAllocated: 16,
+          bitsStored: 16,
+          highBit: 15,
+          photometricInterpretation: 'MONOCHROME2',
+          samplesPerPixel: 1,
+        };
+      }
+
+      if (type === MetadataModules.GENERAL_SERIES) {
+        return { modality: 'CT' };
+      }
+
+      if (type !== MetadataModules.IMAGE_PLANE) {
         return;
       }
 
@@ -176,317 +309,269 @@ describe('PlanarViewport acquired frames (user experience)', () => {
         imageOrientationPatient: [1, 0, 0, 0, 1, 0],
         rowCosines: [1, 0, 0],
         columnCosines: [0, 1, 0],
-        imagePositionPatient: [0, 0, index * spacing[2]],
+        imagePositionPatient: [0, 0, i * spacing[2]],
+        rowPixelSpacing: 1,
+        columnPixelSpacing: 1,
+        rows: 4,
+        columns: 4,
+        frameOfReferenceUID: FOR,
       };
     };
-    metaData.addProvider(metadataProvider, 10000);
+    metaData.addProvider(provider, 10000);
     genericViewportDisplaySetMetadataProvider.add(dataId, {
       kind: 'planar',
       imageIds,
       volumeId,
     });
-
+    genericViewportDisplaySetMetadataProvider.add(segId, {
+      kind: 'planar',
+      imageIds,
+      volumeId: 'seg-volume',
+    });
     volume = createVolume({
       volumeId,
       dimensions: [512, 512, sliceCount],
       spacing,
       imageIds,
     });
-
-    getVolumeSpy = jest
+    segVolume = createVolume({
+      volumeId: 'seg-volume',
+      dimensions: [512, 512, sliceCount],
+      spacing,
+      imageIds,
+    });
+    jest
       .spyOn(cache, 'getVolume')
-      .mockImplementation((id) => (id === volumeId ? volume : undefined));
+      .mockImplementation((id) =>
+        id === volumeId ? volume : id === 'seg-volume' ? segVolume : undefined
+      );
     jest
       .spyOn(viewport.dataProvider, 'load')
       .mockImplementation(async (id, options) => ({
         id,
         type: 'image',
         imageIds,
-        imageVolume: volume,
+        imageVolume: id === segId ? segVolume : volume,
         renderMode: options.renderMode,
-        volumeId,
+        volumeId: id === segId ? 'seg-volume' : volumeId,
       }));
+    // The frames load when the test releases them.
+    let release;
+    let gate = new Promise((resolve) => (release = resolve));
+    releaseFrames = async () => {
+      release();
+      gate = Promise.resolve();
+      await flush();
+    };
     jest
-      .spyOn(viewport, 'addLoadedData')
-      .mockImplementation(async (id, data, options) => {
-        mountBinding(options.renderMode, undefined);
-        return true;
+      .spyOn(imageLoader, 'loadAndCacheImage')
+      .mockImplementation(async (imageId) => {
+        await gate;
+        return createImage(imageId);
       });
+    jest
+      .spyOn(
+        require('../src/RenderingEngine/helpers/planarImageRendering'),
+        'createVTKImageDataFromImage'
+      )
+      .mockImplementation(() => {
+        const imageData = vtkImageData.newInstance();
+
+        imageData.setDimensions([4, 4, 1]);
+        imageData.getPointData().setScalars(
+          vtkDataArray.newInstance({
+            numberOfComponents: 1,
+            values: new Int16Array(16),
+          })
+        );
+        return imageData;
+      });
+    viewport.renderPathResolver = {
+      resolve: () => ({
+        createRenderPath: () => ({
+          addData: async (ctx, data) =>
+            data.id === segId
+              ? createVolumeAttachment(ctx, data)
+              : withAcquiredFrames(
+                  ctx,
+                  data,
+                  createVolumeAttachment(ctx, data)
+                ),
+        }),
+      }),
+    };
   });
 
   afterEach(() => {
     viewport.destroy();
-    renderingEngineCache.delete(renderingEngineId);
-    metaData.removeProvider(metadataProvider);
+    renderingEngineCache.delete(engineId);
+    metaData.removeProvider(provider);
     genericViewportDisplaySetMetadataProvider.clear();
-    getVolumeSpy.mockRestore();
     resetGpuSettingsPreset();
     jest.restoreAllMocks();
   });
 
-  it('keeps the image index and the camera through axial, sagittal, and back', async () => {
-    mountBinding(ActorRenderMode.VTK_IMAGE, 7);
-    viewport.setViewState({
-      orientation: OrientationAxis.ACQUISITION,
-      slice: { kind: 'stackIndex', imageIdIndex: 7 },
-      anchorWorld: [100, 120, 14],
-      scale: [2, 2],
-    });
+  it('reports volume, shows the reduced slice until the frame loads, then the frame', async () => {
+    await mount();
+
+    expect(sourceBinding().rendering.renderMode).toBe(
+      ActorRenderMode.VTK_VOLUME_SLICE
+    );
+    expect(viewport.getCurrentMode()).toBe('volume');
+    expect(volumeActor().getVisibility()).toBe(true);
+
+    await releaseFrames();
+
+    expect(frameRendering().actor.getVisibility()).toBe(true);
+    expect(volumeActor().getVisibility()).toBe(false);
+    expect(viewport.getCurrentMode()).toBe('volume');
+
+    // A scroll sends one VOLUME_NEW_IMAGE (the OHIF scroll bar of a volume)
+    // and one STACK_NEW_IMAGE, also while the frame shows.
+    const events = [];
+    for (const type of [Events.STACK_NEW_IMAGE, Events.VOLUME_NEW_IMAGE]) {
+      viewport.element.addEventListener(type, () => events.push(type));
+    }
+    await viewport.scroll(1);
+    await flush();
+
+    expect(events.sort()).toEqual(
+      [Events.STACK_NEW_IMAGE, Events.VOLUME_NEW_IMAGE].sort()
+    );
+    expect(frameRendering().actor.getVisibility()).toBe(true);
+  });
+
+  it('rotates axial, sagittal, axial with no remount, and keeps the camera and the index', async () => {
+    await mount();
+    await releaseFrames();
+    viewport.setViewState({ anchorWorld: [100, 120, 10], scale: [2, 2] });
+    const index = viewport.getCurrentImageIdIndex();
+    const frameIndex = frameRendering().currentImageIdIndex;
 
     viewport.setOrientation(OrientationAxis.SAGITTAL);
     await flush();
+    expect(volumeActor().getVisibility()).toBe(true);
+    expect(frameRendering().actor.getVisibility()).toBe(false);
+    expect(viewport.getCurrentMode()).toBe('volume');
 
-    expect(viewport.bindings.get(dataId).rendering.renderMode).toBe(
-      ActorRenderMode.VTK_VOLUME_SLICE
-    );
-    expect(viewport.getViewState().slice).toEqual({
-      kind: 'volumePoint',
-      sliceWorldPoint: [255.5, 255.5, 14],
-    });
-
-    viewport.setOrientation(OrientationAxis.ACQUISITION);
+    viewport.setOrientation(OrientationAxis.AXIAL);
     await flush();
 
-    const viewState = viewport.getViewState();
-
-    expect(viewport.bindings.get(dataId).rendering.renderMode).toBe(
-      ActorRenderMode.VTK_IMAGE
-    );
-    expect(viewState.slice).toEqual({ kind: 'stackIndex', imageIdIndex: 7 });
-    expect(viewState.anchorWorld).toEqual([100, 120, 14]);
-    expect(viewState.scale).toEqual([2, 2]);
+    expect(viewport.dataProvider.load).toHaveBeenCalledTimes(1);
+    expect(frameRendering().actor.getVisibility()).toBe(true);
+    expect(volumeActor().getVisibility()).toBe(false);
+    expect(viewport.getCurrentImageIdIndex()).toBe(index);
+    expect(frameRendering().currentImageIdIndex).toBe(frameIndex);
+    expect(viewport.getViewState().scale).toEqual([2, 2]);
+    expect(viewport.getViewState().anchorWorld).toEqual([100, 120, 10]);
   });
 
-  it('a focal-point reference without volumeId moves a frame-path viewport to the closest frame', () => {
-    mountBinding(ActorRenderMode.VTK_IMAGE, 3);
-    viewport.setViewState({
-      orientation: OrientationAxis.ACQUISITION,
-      slice: { kind: 'stackIndex', imageIdIndex: 3 },
+  it('turns an axial viewport sagittal for a sagittal volume reference (CS-S6)', async () => {
+    await mount();
+    await releaseFrames();
+
+    viewport.setViewReference({
+      FrameOfReferenceUID: FOR,
+      volumeId,
+      cameraFocalPoint: [300, 255.5, 11],
+      viewPlaneNormal: [1, 0, 0],
+      viewUp: [0, 0, 1],
+      sliceIndex: 300,
     });
+    await flush();
+
+    expect(viewport.getViewState().orientation.viewPlaneNormal).toEqual([
+      1, 0, 0,
+    ]);
+    expect(volumeActor().getVisibility()).toBe(true);
+    expect(frameRendering().actor.getVisibility()).toBe(false);
+  });
+
+  it('reports lossy while the reduced slice shows, and the frame quality while the frame shows', async () => {
+    await mount();
+    // Zoom in, so that one screen pixel is finer than the reduced voxels.
+    viewport.setViewState({ scale: [8, 8] });
+    expect(viewport.getFidelityState().lossy).toBe(true);
+
+    await releaseFrames();
+    expect(viewport.getFidelityState().lossy).toBe(false);
+    const lines = viewport.getFidelityLines();
+
+    expect(lines).toHaveLength(1);
+    expect(lines[0].record).toBeUndefined();
+    expect(lines[0].imageQualityStatus).toBe(
+      ImageQualityStatus.FULL_RESOLUTION
+    );
+  });
+
+  it('draws the frame with the volume VOI', async () => {
+    await mount();
+    await releaseFrames();
+
+    const range = frameRendering()
+      .actor.getProperty()
+      .getRGBTransferFunction(0)
+      .getRange();
+
+    // The frame window (center 1000, width 50) does not apply.
+    expect(range).toEqual([volumeVOI.lower, volumeVOI.upper]);
+  });
+
+  it('moves a stack to the image closest to a focal-point reference', () => {
+    viewport.bindings.set(dataId, {
+      applyViewState: jest.fn(),
+      data: { id: dataId, type: 'image', imageIds },
+      getImageData: jest.fn(),
+      getFrameOfReferenceUID: () => FOR,
+      removeData: jest.fn(),
+      rendering: {
+        renderMode: ActorRenderMode.VTK_IMAGE,
+        currentImageIdIndex: 3,
+      },
+      role: 'source',
+      updateDataPresentation: jest.fn(),
+    });
+    viewport.mountedData.promoteSourceDataId(dataId);
     const setImageIdIndex = jest.spyOn(viewport, 'setImageIdIndex');
 
     // The reference that crosshairs send through jumpToFocalPoint.
     viewport.setViewReference({ cameraFocalPoint: [100, 100, 16] });
     expect(setImageIdIndex).toHaveBeenLastCalledWith(8);
-
-    // A plain stack binding, with no volume.
-    viewport.bindings.get(dataId).data.volumeId = undefined;
-    viewport.setViewReference({ cameraFocalPoint: [100, 100, 6] });
-    expect(setImageIdIndex).toHaveBeenLastCalledWith(3);
   });
-});
 
-describe('PlanarViewport render path decision (API)', () => {
-  const spacing = [1, 1, 2];
-  const sliceCount = 12;
-  // Both series are above the 256 edge of `low`, so both reduce.
-  const series = {
-    A: { dataId: 'ds-A', volumeId: 'vol-A', size: 512 },
-    B: { dataId: 'ds-B', volumeId: 'vol-B', size: 300 },
-    seg: { dataId: 'seg', volumeId: 'seg-volume', size: 512 },
-  };
-  let viewport;
-  let renderingEngineId;
-  let metadataProvider;
-  let volumes;
-  let addLoadedDataGate;
+  it('shows the frames with a volume labelmap, on one plane, and below the labelmap', async () => {
+    await mount();
+    await viewport.addDisplaySet(segId, { role: 'overlay' });
+    await releaseFrames();
 
-  const imageIdsOf = (key) =>
-    Array.from({ length: sliceCount }, (_, i) => `${key}:${i}`);
-  const entryOf = (dataId) =>
-    Object.values(series).find((entry) => entry.dataId === dataId);
-  const sourceMode = (key = 'A') =>
-    viewport.bindings.get(series[key].dataId).rendering.renderMode;
-  const flush = async () => {
-    for (let i = 0; i < 20; i++) {
-      await Promise.resolve();
+    expect(frameRendering().actor.getVisibility()).toBe(true);
+    // The overlay counts only the volume slice of the source below it.
+    const actors = viewport.getActors();
+    expect(actors.map((entry) => entry.actorMapper.renderMode)).toEqual([
+      ActorRenderMode.VTK_VOLUME_SLICE,
+      ActorRenderMode.VTK_IMAGE,
+      ActorRenderMode.VTK_VOLUME_SLICE,
+    ]);
+    // The frame entry gives no second measurement target.
+    expect(actors[1].referencedId).toBeUndefined();
+    expect(viewport.getDefaultActor().uid).toBe(`${dataId}-volume`);
+    // Both source actors are below the labelmap in the depth order.
+    expect(getImageSliceOverlayOrder(renderer, actors[2].actor)).toBe(1);
+    const laterOverlay = vtkImageSlice.newInstance();
+    renderer.addActor(laterOverlay);
+    expect(getImageSliceOverlayOrder(renderer, laterOverlay)).toBe(2);
+
+    // On a frame (z = 10) and between two frames (z = 11 and z = 13): the
+    // frame and the nearest voxel slice of a labelmap on the volume grid
+    // round in the same way.
+    for (const z of [10, 11, 13]) {
+      const labelmapSlice = Math.round(
+        volume.imageData.worldToIndex([100, 100, z])[2]
+      );
+
+      expect(
+        acquiredFrameIndexOfVolumePoint(volume, imageIds, [100, 100, z])
+      ).toBe(labelmapSlice);
     }
-  };
-
-  function mountBinding(id, role, renderMode) {
-    const volume = volumes[entryOf(id).volumeId];
-
-    viewport.bindings.set(id, {
-      applyViewState: jest.fn(),
-      data: { id, type: 'image', imageIds: volume.imageIds },
-      getImageData: jest.fn(() => volume.imageData),
-      getFrameOfReferenceUID: () => 'planar-test-frame',
-      removeData: jest.fn(),
-      rendering: { renderMode, imageVolume: volume },
-      role,
-      updateDataPresentation: jest.fn(),
-    });
-
-    if (role === 'source') {
-      viewport.mountedData.promoteSourceDataId(id);
-    }
-  }
-
-  function startAxial() {
-    mountBinding(series.A.dataId, 'source', ActorRenderMode.VTK_IMAGE);
-    viewport.setViewState({
-      orientation: OrientationAxis.ACQUISITION,
-      slice: { kind: 'stackIndex', imageIdIndex: 7 },
-    });
-  }
-
-  // Rotates twice while the first remount waits in addLoadedData.
-  async function rotateTwiceDuringRemount(first, second) {
-    let release;
-
-    addLoadedDataGate = new Promise((resolve) => (release = resolve));
-    viewport.setOrientation(first);
-    await flush();
-    viewport.setOrientation(second);
-    await flush();
-    addLoadedDataGate = undefined;
-    release();
-    await flush();
-  }
-
-  beforeEach(() => {
-    setGpuSettingsPreset('low');
-    renderingEngineId = 'render-path-decision-engine';
-    const renderer = {
-      getActiveCamera: jest.fn(() => ({ setParallelProjection: jest.fn() })),
-    };
-
-    renderingEngineCache.set({
-      id: renderingEngineId,
-      getRenderer: jest.fn(() => renderer),
-      getViewports: jest.fn(() => (viewport ? [viewport] : [])),
-      renderViewport: jest.fn(),
-    });
-    viewport = new PlanarViewport({
-      id: 'render-path-decision-viewport',
-      element: document.createElement('div'),
-      renderingEngineId,
-      canvas: document.createElement('canvas'),
-      sWidth: 200,
-      sHeight: 100,
-      defaultOptions: {},
-    });
-    metadataProvider = (type, imageId) => {
-      const [key, i] = String(imageId).split(':');
-
-      if (!series[key] || type !== MetadataModules.IMAGE_PLANE) {
-        return;
-      }
-
-      return {
-        imageOrientationPatient: [1, 0, 0, 0, 1, 0],
-        imagePositionPatient: [0, 0, Number(i) * spacing[2]],
-      };
-    };
-    metaData.addProvider(metadataProvider, 10000);
-    volumes = {};
-
-    for (const [key, { dataId, volumeId, size }] of Object.entries(series)) {
-      const imageIds = imageIdsOf(key);
-
-      genericViewportDisplaySetMetadataProvider.add(dataId, {
-        kind: 'planar',
-        imageIds,
-        volumeId,
-      });
-      volumes[volumeId] = createVolume({
-        volumeId,
-        dimensions: [size, size, sliceCount],
-        spacing,
-        imageIds,
-      });
-    }
-
-    jest.spyOn(cache, 'getVolume').mockImplementation((id) => volumes[id]);
-    jest
-      .spyOn(viewport.dataProvider, 'load')
-      .mockImplementation(async (id, options) => {
-        const imageVolume = volumes[entryOf(id).volumeId];
-
-        return {
-          id,
-          type: 'image',
-          imageIds: imageVolume.imageIds,
-          imageVolume,
-          renderMode: options.renderMode,
-          volumeId: imageVolume.volumeId,
-        };
-      });
-    addLoadedDataGate = undefined;
-    jest
-      .spyOn(viewport, 'addLoadedData')
-      .mockImplementation(async (id, data, options, shouldIgnore) => {
-        await addLoadedDataGate;
-
-        if (shouldIgnore?.()) {
-          return false;
-        }
-
-        mountBinding(id, options.role, options.renderMode);
-        return true;
-      });
-  });
-
-  afterEach(() => {
-    viewport.destroy();
-    renderingEngineCache.delete(renderingEngineId);
-    metaData.removeProvider(metadataProvider);
-    genericViewportDisplaySetMetadataProvider.clear();
-    resetGpuSettingsPreset();
-    jest.restoreAllMocks();
-  });
-
-  it('returns the source to the image path when the last volume overlay goes', async () => {
-    startAxial();
-    await viewport.addDisplaySet('seg', { role: 'overlay' });
-    await flush();
-    expect(sourceMode()).toBe(ActorRenderMode.VTK_VOLUME_SLICE);
-
-    viewport.removeData('seg');
-    await flush();
-
-    expect(sourceMode()).toBe(ActorRenderMode.VTK_IMAGE);
-  });
-
-  it('ends a fast rotate on the path of the last orientation', async () => {
-    startAxial();
-    await rotateTwiceDuringRemount(
-      OrientationAxis.SAGITTAL,
-      OrientationAxis.ACQUISITION
-    );
-    expect(sourceMode()).toBe(ActorRenderMode.VTK_IMAGE);
-
-    viewport.setOrientation(OrientationAxis.SAGITTAL);
-    await flush();
-    await rotateTwiceDuringRemount(
-      OrientationAxis.ACQUISITION,
-      OrientationAxis.SAGITTAL
-    );
-    expect(sourceMode()).toBe(ActorRenderMode.VTK_VOLUME_SLICE);
-  });
-
-  it('does not use the in-plane point of the previous volume', async () => {
-    startAxial();
-    viewport.setOrientation(OrientationAxis.SAGITTAL);
-    await flush();
-    // Column x = 400 is outside the 300-wide series B.
-    const { slice } = viewport.getViewState();
-    viewport.setViewState({
-      slice: {
-        ...slice,
-        sliceWorldPoint: [400, ...slice.sliceWorldPoint.slice(1)],
-      },
-    });
-    viewport.setOrientation(OrientationAxis.ACQUISITION);
-    await flush();
-
-    await viewport.setDisplaySets({ displaySetId: series.B.dataId });
-    await flush();
-    expect(sourceMode('B')).toBe(ActorRenderMode.VTK_IMAGE);
-
-    viewport.setOrientation(OrientationAxis.SAGITTAL);
-    await flush();
-
-    expect(viewport.getViewState().slice.sliceWorldPoint[0]).toBeLessThan(300);
   });
 });

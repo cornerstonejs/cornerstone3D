@@ -25,11 +25,6 @@ export interface SelectedPlanarRenderPath {
   acquisitionOrientation?: PlanarViewState['orientation'];
   renderMode: PlanarEffectiveRenderMode;
   volumeId: string;
-  /**
-   * True when the image path draws the acquired frames of a volume whose
-   * texture is reduced. See `PlanarRenderPathDecisionOptions.preferAcquiredFrames`.
-   */
-  drawsAcquiredFrames?: boolean;
 }
 
 export interface PlanarRenderPathDecisionOptions {
@@ -43,11 +38,11 @@ export interface PlanarRenderPathDecisionOptions {
    */
   renderBackend?: RenderBackendValue;
   /**
-   * Lets the image path draw the acquired frames of a volume in the
-   * acquisition plane when the GPU texture of that volume is reduced. The
-   * volume path stays for a slab thicker than one acquired slice, and for a
-   * blend mode other than composite. The viewport sets this for its source
-   * data only, and only when no overlay needs the volume path.
+   * Lets the volume slice path of a source draw the acquired frames in the
+   * acquisition plane when the GPU texture of that volume is reduced (see
+   * `canDrawAcquiredFrames`). The volume slice shows for a slab thicker than
+   * one acquired slice, and for a blend mode other than composite. The
+   * viewport sets this for its source data only.
    */
   preferAcquiredFrames?: boolean;
   /** The slab thickness of the data, in mm. */
@@ -60,7 +55,6 @@ type PlanarPathInputs = {
   acquisitionOrientation?: PlanarViewState['orientation'];
   isAcquisitionPath: boolean;
   useVolumePath: boolean;
-  drawsAcquiredFrames: boolean;
 };
 
 /**
@@ -82,12 +76,8 @@ export class PlanarRenderPathDecisionService {
       throw new Error('[PlanarViewport] Cannot add an empty planar dataset');
     }
 
-    const {
-      acquisitionOrientation,
-      isAcquisitionPath,
-      useVolumePath,
-      drawsAcquiredFrames,
-    } = this.resolvePathInputs(dataSet, options);
+    const { acquisitionOrientation, isAcquisitionPath, useVolumePath } =
+      this.resolvePathInputs(dataSet, options);
     const volumeId = getVolumeId(dataSet);
 
     if (
@@ -112,7 +102,6 @@ export class PlanarRenderPathDecisionService {
         ? this.selectVolumeRenderMode(options)
         : this.selectImageRenderMode(options),
       volumeId,
-      ...(drawsAcquiredFrames ? { drawsAcquiredFrames } : {}),
     };
   }
 
@@ -154,11 +143,8 @@ export class PlanarRenderPathDecisionService {
 
   /**
    * The inputs that `select` and `canRender` share, so the two cannot drift.
-   *
-   * A data set with a volume takes the volume path, except in the
-   * acquisition plane when `shouldDrawAcquiredFrames` holds. The image path
-   * then draws the original frames. The volume path applies again when the
-   * view leaves the acquisition plane or a condition stops being true.
+   * A data set with a volume always takes the volume path, also when its
+   * slice path draws the acquired frames (see `canDrawAcquiredFrames`).
    */
   private resolvePathInputs(
     dataSet: PlanarRegisteredDataSet,
@@ -172,22 +158,19 @@ export class PlanarRenderPathDecisionService {
       orientation === OrientationAxis.ACQUISITION ||
       (acquisitionOrientation !== undefined &&
         orientation === acquisitionOrientation);
-    const drawsAcquiredFrames =
-      isAcquisitionPath && this.shouldDrawAcquiredFrames(dataSet, options);
-    const useVolumePath =
-      !drawsAcquiredFrames && isVolumeBackedDataSet(dataSet, isAcquisitionPath);
+    const useVolumePath = isVolumeBackedDataSet(dataSet, isAcquisitionPath);
 
     return {
       acquisitionOrientation,
       isAcquisitionPath,
       useVolumePath,
-      drawsAcquiredFrames,
     };
   }
 
   /**
-   * Whether the image path should draw the acquired frames of a volume in the
-   * acquisition plane.
+   * Whether the volume slice path of a data set may draw the acquired frames
+   * in place of the reduced slice. The orientation is not an input: the render
+   * path draws a frame only while the view is in the acquisition plane.
    *
    * All of these must hold: the caller prefers the acquired frames; the data
    * set names a cached, non-dynamic volume; the volume path of the resolved
@@ -196,9 +179,9 @@ export class PlanarRenderPathDecisionService {
    * one acquired slice; and the blend mode is composite.
    *
    * A CPU volume path reads the full-resolution voxels, so it never needs the
-   * image path for this reason.
+   * frames for this reason.
    */
-  private shouldDrawAcquiredFrames(
+  canDrawAcquiredFrames(
     dataSet: PlanarRegisteredDataSet,
     options: PlanarRenderPathDecisionOptions
   ): boolean {

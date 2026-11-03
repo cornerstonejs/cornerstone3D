@@ -385,7 +385,12 @@ group says which part of a generic viewport owns each piece of the fidelity.
   image to read it. A render path sets `excludeFromFidelity` on an overlay that
   the fidelity ignores, for example a segmentation labelmap. The rendering
   also carries a `refreshFidelity()` callback, which the base class calls
-  before it reads the fields.
+  before it reads the fields. A binding that keeps two render paths mounted
+  gives each rendering through `getRenderings()`, and the base class reads
+  each of them. The volume slice path of a source that draws the acquired
+  frames is such a binding. At each change of the visible actor, the binding
+  sets `excludeFromFidelity` on the hidden rendering and clears it on the
+  visible rendering. Thus the fidelity follows the path that the user sees.
 - **GENVIEW-FIDELITY-3** The resolved view supplies the display spacing of the
   verdict, because the display spacing is a world size of one device pixel. The
   base class reads it with `canvasToWorld()` of the resolved view. A render path

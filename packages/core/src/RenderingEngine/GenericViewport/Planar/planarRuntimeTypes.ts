@@ -154,6 +154,11 @@ export type PlanarVolumeSliceRendering = MountedRendering<{
   dataPresentation?: PlanarDataPresentation;
   isSegmentationOverlay?: boolean;
   removeStreamingSubscriptions?: () => void;
+  /**
+   * The internal render path state: true while the acquired frame shows in
+   * place of this slice (see `withAcquiredFrames`).
+   */
+  showsAcquiredFrame?: boolean;
   /** The viewport that draws. */
   viewportId?: string;
   /** The strategies that the provider has built. */
