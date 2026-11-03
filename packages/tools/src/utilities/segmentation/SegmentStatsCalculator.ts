@@ -75,7 +75,7 @@ export default class SegmentStatsCalculator {
   public static getStatistics(options?: {
     spacing?: number[] | number;
     unit?: string;
-    calibration?: unknown;
+    calibration?: Types.IImageCalibration;
     hasPixelSpacing?: boolean;
   }): NamedStatistics | { [segmentIndex: number]: NamedStatistics } {
     if (this.mode === 'individual') {

@@ -55,6 +55,19 @@ describe('getCalibratedUnits', function () {
       expect(scale).toBe(0.5);
       expect(scaleY).toBe(0.25);
     });
+
+    it('Should accept a function returning the handles', () => {
+      const image = {
+        calibration: { type: CalibrationTypes, sequenceOfUltrasoundRegions },
+      };
+      const handles = [[25, 25, 25]];
+      const calibrate = getCalibratedLengthUnitsAndScale(image, () => handles);
+      expect(calibrate).toEqual(
+        getCalibratedLengthUnitsAndScale(image, handles)
+      );
+      expect(calibrate.unit).toBe('cm US Region');
+    });
+
     it('Should return px for mixed region', () => {
       const image = {
         calibration: { type: CalibrationTypes, sequenceOfUltrasoundRegions },
