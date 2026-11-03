@@ -50,8 +50,10 @@ addButtonToToolbar({
     ) as Types.IVolumeViewport;
 
     // Set a range to highlight bones
-    viewport.setProperties({ VOILUTFunction: Enums.VOILUTFunctionType.LINEAR });
-
+    viewport.setProperties({
+      VOILUTFunction: Enums.VOILUTFunctionType.LINEAR,
+      voiRange: { lower: -1000, upper: 3000 },
+    });
     viewport.render();
   },
 });
@@ -70,6 +72,7 @@ addButtonToToolbar({
     // Set a range to highlight bones
     viewport.setProperties({
       VOILUTFunction: Enums.VOILUTFunctionType.SAMPLED_SIGMOID,
+      voiRange: { lower: 300, upper: 1200 },
     });
 
     viewport.render();
