@@ -43,7 +43,8 @@ export function getERMF(instance) {
   if (ermf > 1) {
     return ermf;
   }
-  if (sod < sid) {
+  // Some modalities write a source to patient distance of 0, which would make the ERMF Infinity.
+  if (sod > 0 && sod < sid) {
     return sid / sod;
   }
   if (ImagerPixelSpacing?.[0] > PixelSpacing?.[0]) {
