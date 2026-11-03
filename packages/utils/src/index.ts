@@ -2,6 +2,7 @@ export { version } from './version';
 export * as utilities from './utilities';
 export * as logging from './utilities/logging';
 
+export { default as isColorImage } from './utilities/isColorImage';
 export { asArray, asArrayFirst } from './utilities/object';
 export {
   toNumber,

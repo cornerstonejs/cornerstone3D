@@ -2,6 +2,7 @@ export * as object from './object';
 export * as math from './math';
 export * as logging from './logging';
 
+export { default as isColorImage } from './isColorImage';
 export { asArray, asArrayFirst } from './object';
 export {
   toNumber,

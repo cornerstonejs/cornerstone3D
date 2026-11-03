@@ -9,13 +9,13 @@ import {
   utilities,
 } from '@cornerstonejs/core';
 import { logging } from '@cornerstonejs/metadata';
+import { isColorImage as isColorImageFn } from '@cornerstonejs/utils';
 import convertColorSpace from './convertColorSpace';
 import isColorConversionRequired from './isColorConversionRequired';
 import decodeImageFrame from './decodeImageFrame';
 import getImageFrame from './getImageFrame';
 import getScalingParameters from './getScalingParameters';
 import { getOptions } from './internal/options';
-import isColorImageFn from '../shared/isColorImage';
 import removeAFromRGBA from './removeAFromRGBA';
 import isModalityLUTForDisplay from './isModalityLutForDisplay';
 import setPixelDataType from './setPixelDataType';
