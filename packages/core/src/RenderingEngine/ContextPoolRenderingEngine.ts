@@ -237,8 +237,7 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
    * Only updates the VTK offscreen size when the displayed size (canvas client size in device pixels)
    * differs from the current rendered size (canvas.width/height). The on-screen canvas dimensions
    * are updated only when the VTK render result is copied in _copyToOnscreenCanvas, avoiding
-   * flicker during resize. If a render is already scheduled, resize is deferred until the next
-   * resize() call.
+   * flicker during resize.
    */
   protected _resizeVTKViewports(
     vtkDrivenViewports: IViewport[],
@@ -277,10 +276,6 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
 
       vp.sWidth = targetWidth;
       vp.sHeight = targetHeight;
-    }
-
-    if (this._animationFrameSet) {
-      return;
     }
 
     if (vtkDrivenViewports.length) {
