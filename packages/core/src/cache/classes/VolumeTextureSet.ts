@@ -232,7 +232,8 @@ export class MutableVolumeTextureSlab<TextureType = unknown>
 
 /**
  * What a set is for. A selection reads this to rank the sets without touching
- * one member.
+ * one member. `partial` is reserved for bricks; the cache index does not export
+ * this type until a brick set exists.
  */
 export type VolumeTextureSetCoverage = 'full-extent' | 'partial';
 

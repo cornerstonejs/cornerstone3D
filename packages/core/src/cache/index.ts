@@ -21,7 +21,6 @@ export type {
   FixedVolumeTextureSlot,
   IMutableVolumeTextureSlab,
   VolumeTextureMutability,
-  VolumeTextureSetCoverage,
   VolumeTextureSetDescription,
   VolumeTextureSlot,
 } from './classes/VolumeTextureSet';

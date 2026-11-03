@@ -598,6 +598,10 @@ function boxReductionOf(statistic: VoxelStatistic): VoxelReduction {
 
 export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
   private readonly representations: VoxelRepresentation<T>[] = [];
+  private readonly derivationRuns = new WeakMap<
+    VoxelRepresentation<T>,
+    number
+  >();
   private readonly primaryRepresentation: VoxelRepresentation<T>;
   private readonly compositeId: string;
   /**
@@ -933,6 +937,9 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
     regions: BoundsIJK[]
   ): void {
     const { derivedFrom } = representation;
+    // A later derivation of the same representation supersedes this one.
+    const run = (this.derivationRuns.get(representation) ?? 0) + 1;
+    this.derivationRuns.set(representation, run);
     const factorK = derivedFrom.reduction.factors[2];
     const offsetK = derivedFrom.reduction.sourceOffset?.[2] ?? 0;
     const depth = representation.grid.dimensions[2];
@@ -986,6 +993,7 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
         if (
           this.disposed ||
           !this.representations.includes(representation) ||
+          this.derivationRuns.get(representation) !== run ||
           batch >= batches
         ) {
           resolve();

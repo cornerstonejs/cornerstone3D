@@ -1353,6 +1353,22 @@ describe('CompositeVoxelManager derives a large grid in batches', () => {
     });
   }
 
+  it('stops a running derivation when rederiveAll starts a new one', async () => {
+    const changed = [];
+    const composite = makeFullComposite(64, (region) => changed.push(region));
+    const derived = composite.createRepresentation({ factors: [1, 1, 2] });
+    const first = derived.derivation;
+
+    composite.rederiveAll();
+    await first;
+    await derived.derivation;
+
+    // Only the second derivation reports its second batch.
+    expect(changed).toHaveLength(1);
+    expect(derived.voxelManager.getAtIJK(0, 0, 31)).toBe(5);
+    expect(composite.getRegionQuality(derived).missing).toBe(0);
+  });
+
   it('reduces the first batch at once and the rest in idle time', async () => {
     const changed = [];
     // 64 source slices reduce by 2 to 32 derived slices, which is two batches
