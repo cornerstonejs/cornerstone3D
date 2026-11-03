@@ -7,6 +7,7 @@ import {
   ImageQualityStatus,
   MetadataModules,
   OrientationAxis,
+  VOILUTFunctionType,
   VoxelReductions,
 } from '../src/enums';
 import { ActorRenderMode } from '../src/types';
@@ -479,34 +480,38 @@ describe('PlanarViewport acquired frames in the volume path (user experience)', 
     expect(frameRendering().actor.getVisibility()).toBe(false);
   });
 
-  it('reports lossy while the reduced slice shows, and the frame quality while the frame shows', async () => {
+  it('draws the frame with the volume VOI and its linear function', async () => {
     await mount();
-    // Zoom in, so that one screen pixel is finer than the reduced voxels.
-    viewport.setViewState({ scale: [8, 8] });
-    expect(viewport.getFidelityState().lossy).toBe(true);
-
     await releaseFrames();
-    expect(viewport.getFidelityState().lossy).toBe(false);
-    const lines = viewport.getFidelityLines();
+    viewport.setDisplaySetPresentation(dataId, {
+      voiLUTFunction: VOILUTFunctionType.SAMPLED_SIGMOID,
+    });
 
-    expect(lines).toHaveLength(1);
-    expect(lines[0].record).toBeUndefined();
-    expect(lines[0].imageQualityStatus).toBe(
-      ImageQualityStatus.FULL_RESOLUTION
-    );
+    const transferFunction = frameRendering()
+      .actor.getProperty()
+      .getRGBTransferFunction(0);
+
+    // The frame window (center 1000, width 50) does not apply, and a sigmoid
+    // does not apply because the volume slice draws a linear VOI.
+    expect(transferFunction.getRange()).toEqual([
+      volumeVOI.lower,
+      volumeVOI.upper,
+    ]);
+    expect(transferFunction.getSize()).toBe(2);
   });
 
-  it('draws the frame with the volume VOI', async () => {
+  it('moves the frame actor onto the focal plane between two frames (CS-S22)', async () => {
     await mount();
     await releaseFrames();
+    // z = 11 is between the frames at z = 10 and z = 12; the frame is k = 6.
+    viewport.setViewState({
+      slice: { kind: 'volumePoint', sliceWorldPoint: [255.5, 255.5, 11] },
+    });
+    await flush();
 
-    const range = frameRendering()
-      .actor.getProperty()
-      .getRGBTransferFunction(0)
-      .getRange();
-
-    // The frame window (center 1000, width 50) does not apply.
-    expect(range).toEqual([volumeVOI.lower, volumeVOI.upper]);
+    expect(frameRendering().actor.getVisibility()).toBe(true);
+    expect(frameRendering().currentImageIdIndex).toBe(6);
+    expect(frameRendering().actor.getPosition()[2]).toBeCloseTo(-1);
   });
 
   it('moves a stack to the image closest to a focal-point reference', () => {

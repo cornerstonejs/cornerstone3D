@@ -1,5 +1,6 @@
 import { vec3 } from 'gl-matrix';
 import { loadAndCacheImage } from '../../../loaders/imageLoader';
+import { VOILUTFunctionType } from '../../../enums';
 import { ActorRenderMode } from '../../../types';
 import type { ActorEntry, IImageVolume, Point3 } from '../../../types';
 import { coreLog } from '../../../utilities/logger';
@@ -22,27 +23,61 @@ import { VtkImageMapperRenderPath } from './VtkImageMapperRenderPath';
 
 const log = coreLog.getLogger('RenderingEngine', 'planarAcquiredFrames');
 
-/** The legacy rule of `VolumeViewport.isInAcquisitionPlane`. */
-const ACQUISITION_PLANE_DOT = 0.99;
-
 /**
  * The actors that draw acquired frames. The overlay order of a volume slice
  * skips them, so a frame actor sits at the depth of its source.
  */
 export const acquiredFrameActors = new WeakSet<object>();
 
-/** Whether a view plane normal is parallel to the scan axis of a volume. */
+/**
+ * Whether an acquired frame may stand in for the slice at a view plane normal.
+ *
+ * The tilt of the normal from the scan axis must move the plane by less than
+ * half a slice across the in-plane extent of the volume. This is a rule for
+ * drawing only; the 0.99 tolerance of `VolumeViewport.isInAcquisitionPlane`
+ * still decides whether a reference to an image counts as the view.
+ */
 export function isAcquisitionPlaneNormal(
   imageVolume: IImageVolume,
   viewPlaneNormal: Point3
 ): boolean {
-  const { direction } = imageVolume;
+  const { direction, dimensions, spacing } = imageVolume;
   const scanAxis = vec3.fromValues(direction[6], direction[7], direction[8]);
+  const cos = Math.abs(vec3.dot(scanAxis, viewPlaneNormal as unknown as vec3));
+  const sin = Math.sqrt(Math.max(0, 1 - cos * cos));
+  const halfDiagonal =
+    Math.hypot(dimensions[0] * spacing[0], dimensions[1] * spacing[1]) / 2;
 
-  return (
-    Math.abs(vec3.dot(scanAxis, viewPlaneNormal as unknown as vec3)) >
-    ACQUISITION_PLANE_DOT
-  );
+  return sin * halfDiagonal < spacing[2] / 2;
+}
+
+/**
+ * The translation that moves the frame of the nearest voxel slice onto the
+ * plane of the focal point, so that an overlay at that plane stays in front.
+ * Only the actor moves: the frame index, the events and the references keep
+ * the nearest frame.
+ */
+function framePlaneOffset(
+  imageVolume: IImageVolume,
+  focalPoint: Point3,
+  viewPlaneNormal: Point3
+): Point3 {
+  const { imageData } = imageVolume;
+  const index = imageData.worldToIndex([...focalPoint]);
+
+  index[2] = Math.round(index[2]);
+
+  const framePoint = imageData.indexToWorld(index);
+  const distance =
+    (focalPoint[0] - framePoint[0]) * viewPlaneNormal[0] +
+    (focalPoint[1] - framePoint[1]) * viewPlaneNormal[1] +
+    (focalPoint[2] - framePoint[2]) * viewPlaneNormal[2];
+
+  return [
+    distance * viewPlaneNormal[0],
+    distance * viewPlaneNormal[1],
+    distance * viewPlaneNormal[2],
+  ];
 }
 
 /**
@@ -126,11 +161,14 @@ export function withAcquiredFrames(
       },
     },
   };
+  // The volume slice draws a linear VOI and ignores `voiLUTFunction`, so the
+  // frame does too. Limit: the frame has no colormap opacity table.
   const framePresentation = (): PlanarDataPresentation => ({
     ...volumeRendering.dataPresentation,
     voiRange:
       volumeRendering.dataPresentation?.voiRange ??
       volumeRendering.defaultVOIRange,
+    voiLUTFunction: VOILUTFunctionType.LINEAR,
   });
 
   function updateVisibility(): void {
@@ -155,12 +193,24 @@ export function withAcquiredFrames(
       return;
     }
 
+    const camera = getPlanarRenderPathActiveSourceICamera(ctx);
+
     rendering.actor.setVisibility(visible && showsFrame);
     rendering.excludeFromFidelity = !showsFrame;
     applyPlanarICameraToActor({
       actor: rendering.actor,
-      activeSourceICamera: getPlanarRenderPathActiveSourceICamera(ctx),
+      activeSourceICamera: camera,
     });
+
+    if (showsFrame && camera) {
+      rendering.actor.setPosition(
+        ...framePlaneOffset(
+          imageVolume,
+          camera.focalPoint,
+          camera.viewPlaneNormal
+        )
+      );
+    }
   }
 
   async function mountFrame(imageIdIndex: number): Promise<void> {
