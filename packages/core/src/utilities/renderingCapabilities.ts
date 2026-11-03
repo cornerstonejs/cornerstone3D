@@ -1,16 +1,49 @@
 import type { TextureFormatSupport } from './textureSupport';
 import { getSupportedTextureFormats } from './textureSupport';
+import {
+  classifyGpuClass,
+  getRecommendedInteractiveBudgetFrac,
+  probeGpuMsPerMpx,
+  GPU_CLASSES,
+  type GpuClass,
+} from './gpuBudgetProbe';
 
-/**
- * Bump when the probes (or the meaning of any profile field) change so that
- * profiles cached by earlier versions are discarded.
- */
-export const RENDERING_CAPABILITIES_PROBE_VERSION = 1;
+export type { GpuClass } from './gpuBudgetProbe';
+export {
+  GPU_CLASSES,
+  GPU_CLASS_BUDGET_FRAC,
+  getRecommendedInteractiveBudgetFrac,
+  classifyGpuClass,
+} from './gpuBudgetProbe';
 
 const STORAGE_KEY = 'cornerstone3D.renderingCapabilities';
 
 const SOFTWARE_RASTERIZER_PATTERN =
   /swiftshader|llvmpipe|softpipe|software|microsoft basic render/i;
+
+const GPU_CLASS_SET = new Set<string>(GPU_CLASSES);
+
+/** Hard WebGL size limits gathered from a cheap context probe. */
+export interface WebGLSizeLimits {
+  /** MAX_TEXTURE_SIZE (2D). */
+  maxTextureSize: number;
+  /** MAX_3D_TEXTURE_SIZE (WebGL2 only; 0 on WebGL1 / no context). */
+  max3DTextureSize: number;
+  /** MAX_ARRAY_TEXTURE_LAYERS (WebGL2 only; 0 on WebGL1 / no context). */
+  maxArrayTextureLayers: number;
+  /** MAX_RENDERBUFFER_SIZE. */
+  maxRenderbufferSize: number;
+  /** MAX_VIEWPORT_DIMS as [width, height]. */
+  maxViewportDims: [number, number];
+}
+
+const NO_GPU_SIZE_LIMITS: WebGLSizeLimits = {
+  maxTextureSize: 0,
+  max3DTextureSize: 0,
+  maxArrayTextureLayers: 0,
+  maxRenderbufferSize: 0,
+  maxViewportDims: [0, 0],
+};
 
 /**
  * The GPU capability profile detected through offscreen WebGL probes.
@@ -20,32 +53,50 @@ const SOFTWARE_RASTERIZER_PATTERN =
  * texture-format decisions read the {@link TextureFormatSupport} flags, and
  * `renderer`/`softwareRasterizer` let applications surface or log degraded
  * environments (e.g. SwiftShader after a driver denylist hit).
+ *
+ * `gpuClass` is a classify-only fill-rate probe (`minimal`|`low`|`medium`|`high`,
+ * or null when there is no WebGL — use `useCPURendering` for the CPU path).
+ * Interactive pixel-budget seeding uses {@link recommendedInteractiveBudgetFrac}
+ * from a fixed class→frac table — not a continuous timing→budget formula.
  */
-export interface RenderingCapabilities extends TextureFormatSupport {
+export interface RenderingCapabilities
+  extends TextureFormatSupport,
+    WebGLSizeLimits {
   /** Any WebGL context (1 or 2) could be created. */
   webgl: boolean;
   /** A WebGL2 context could be created. */
   webgl2: boolean;
-  /** MAX_TEXTURE_SIZE of the probed context, 0 when no context exists. */
-  maxTextureSize: number;
   /** Unmasked renderer string when exposed by the browser, '' otherwise. */
   renderer: string;
   /** True when the renderer string identifies a software rasterizer. */
   softwareRasterizer: boolean;
+  /**
+   * Named GPU class when WebGL is available; null when there is no WebGL
+   * (CPU pipeline via useCPURendering).
+   */
+  gpuClass: GpuClass | null;
+  /**
+   * Fixed table lookup from {@link gpuClass} for Target FPS startPx.
+   * 0 when gpuClass is null.
+   */
+  recommendedInteractiveBudgetFrac: number;
+  /** Raw probe metric (ms per megapixel); null when skipped or unavailable. */
+  gpuPerfMsPerMpx: number | null;
 }
 
-interface WebGLContextInfo {
+interface WebGLContextInfo extends WebGLSizeLimits {
   webgl: boolean;
   webgl2: boolean;
-  maxTextureSize: number;
   renderer: string;
 }
 
-interface CachedCapabilities {
-  probeVersion: number;
+interface CachedCapabilities extends WebGLSizeLimits {
   renderer: string;
   webgl2: boolean;
+  softwareRasterizer: boolean;
   formats: TextureFormatSupport;
+  gpuClass: GpuClass;
+  gpuPerfMsPerMpx: number | null;
 }
 
 const NO_GPU_FORMATS: TextureFormatSupport = {
@@ -59,11 +110,36 @@ const NO_GPU_FORMATS: TextureFormatSupport = {
 
 let cachedCapabilities: RenderingCapabilities | null = null;
 
+function readGlNumber(
+  gl: WebGLRenderingContext | WebGL2RenderingContext,
+  pname: number
+): number {
+  return Number(gl.getParameter(pname)) || 0;
+}
+
+function readGlViewportDims(
+  gl: WebGLRenderingContext | WebGL2RenderingContext
+): [number, number] {
+  const dims = gl.getParameter(gl.MAX_VIEWPORT_DIMS);
+  if (
+    dims &&
+    typeof dims === 'object' &&
+    typeof (dims as ArrayLike<number>)[0] === 'number' &&
+    typeof (dims as ArrayLike<number>)[1] === 'number'
+  ) {
+    return [
+      Number((dims as ArrayLike<number>)[0]) || 0,
+      Number((dims as ArrayLike<number>)[1]) || 0,
+    ];
+  }
+  return [0, 0];
+}
+
 function getWebGLContextInfo(): WebGLContextInfo {
   const info: WebGLContextInfo = {
     webgl: false,
     webgl2: false,
-    maxTextureSize: 0,
+    ...NO_GPU_SIZE_LIMITS,
     renderer: '',
   };
 
@@ -85,7 +161,17 @@ function getWebGLContextInfo(): WebGLContextInfo {
 
     info.webgl = true;
     info.webgl2 = !!gl2;
-    info.maxTextureSize = Number(gl.getParameter(gl.MAX_TEXTURE_SIZE)) || 0;
+    info.maxTextureSize = readGlNumber(gl, gl.MAX_TEXTURE_SIZE);
+    info.maxRenderbufferSize = readGlNumber(gl, gl.MAX_RENDERBUFFER_SIZE);
+    info.maxViewportDims = readGlViewportDims(gl);
+
+    if (gl2) {
+      info.max3DTextureSize = readGlNumber(gl2, gl2.MAX_3D_TEXTURE_SIZE);
+      info.maxArrayTextureLayers = readGlNumber(
+        gl2,
+        gl2.MAX_ARRAY_TEXTURE_LAYERS
+      );
+    }
 
     // Modern browsers expose the unmasked renderer through RENDERER directly;
     // older ones require the WEBGL_debug_renderer_info extension.
@@ -107,10 +193,44 @@ function getWebGLContextInfo(): WebGLContextInfo {
   return info;
 }
 
-function readCachedFormats(
+function withPerformanceFields(
+  base: Omit<
+    RenderingCapabilities,
+    'gpuClass' | 'recommendedInteractiveBudgetFrac' | 'gpuPerfMsPerMpx'
+  >,
+  gpuClass: GpuClass | null,
+  gpuPerfMsPerMpx: number | null
+): RenderingCapabilities {
+  return {
+    ...base,
+    gpuClass,
+    recommendedInteractiveBudgetFrac:
+      getRecommendedInteractiveBudgetFrac(gpuClass),
+    gpuPerfMsPerMpx,
+  };
+}
+
+function isCachedSizeLimits(parsed: CachedCapabilities): boolean {
+  return (
+    typeof parsed?.maxTextureSize === 'number' &&
+    typeof parsed?.max3DTextureSize === 'number' &&
+    typeof parsed?.maxArrayTextureLayers === 'number' &&
+    typeof parsed?.maxRenderbufferSize === 'number' &&
+    Array.isArray(parsed?.maxViewportDims) &&
+    parsed.maxViewportDims.length === 2 &&
+    typeof parsed.maxViewportDims[0] === 'number' &&
+    typeof parsed.maxViewportDims[1] === 'number'
+  );
+}
+
+function readCachedProfile(
   renderer: string,
   webgl2: boolean
-): TextureFormatSupport | null {
+): {
+  formats: TextureFormatSupport;
+  gpuClass: GpuClass;
+  gpuPerfMsPerMpx: number | null;
+} | null {
   try {
     const raw = window.localStorage?.getItem(STORAGE_KEY);
 
@@ -123,33 +243,54 @@ function readCachedFormats(
     // The texture probes require WebGL2, so a profile cached on a WebGL1-only
     // run is all-false; invalidate it when WebGL2 availability changes for
     // the same renderer (browser update/flag) instead of pinning it forever.
+    // Size-limit fields are required so incomplete cache entries are ignored.
+    // There is no probe-version field — clear localStorage manually to refresh.
     if (
-      parsed?.probeVersion !== RENDERING_CAPABILITIES_PROBE_VERSION ||
       parsed?.renderer !== renderer ||
       parsed?.webgl2 !== webgl2 ||
+      !isCachedSizeLimits(parsed) ||
+      typeof parsed?.softwareRasterizer !== 'boolean' ||
       typeof parsed?.formats !== 'object' ||
-      parsed?.formats === null
+      parsed?.formats === null ||
+      typeof parsed?.gpuClass !== 'string' ||
+      !GPU_CLASS_SET.has(parsed.gpuClass)
     ) {
       return null;
     }
 
-    return { ...NO_GPU_FORMATS, ...parsed.formats };
+    return {
+      formats: { ...NO_GPU_FORMATS, ...parsed.formats },
+      gpuClass: parsed.gpuClass,
+      gpuPerfMsPerMpx:
+        typeof parsed.gpuPerfMsPerMpx === 'number'
+          ? parsed.gpuPerfMsPerMpx
+          : null,
+    };
   } catch {
     return null;
   }
 }
 
-function writeCachedFormats(
-  renderer: string,
-  webgl2: boolean,
-  formats: TextureFormatSupport
+function writeCachedProfile(
+  contextInfo: WebGLContextInfo,
+  softwareRasterizer: boolean,
+  formats: TextureFormatSupport,
+  gpuClass: GpuClass,
+  gpuPerfMsPerMpx: number | null
 ): void {
   try {
     const payload: CachedCapabilities = {
-      probeVersion: RENDERING_CAPABILITIES_PROBE_VERSION,
-      renderer,
-      webgl2,
+      renderer: contextInfo.renderer,
+      webgl2: contextInfo.webgl2,
+      maxTextureSize: contextInfo.maxTextureSize,
+      max3DTextureSize: contextInfo.max3DTextureSize,
+      maxArrayTextureLayers: contextInfo.maxArrayTextureLayers,
+      maxRenderbufferSize: contextInfo.maxRenderbufferSize,
+      maxViewportDims: contextInfo.maxViewportDims,
+      softwareRasterizer,
       formats,
+      gpuClass,
+      gpuPerfMsPerMpx,
     };
 
     window.localStorage?.setItem(STORAGE_KEY, JSON.stringify(payload));
@@ -161,12 +302,13 @@ function writeCachedFormats(
 
 /**
  * Runs the capability detection: one cheap context to gather renderer string,
- * WebGL level and MAX_TEXTURE_SIZE, then the texture-format probes.
+ * WebGL level and size limits (2D/3D texture, array layers, renderbuffer,
+ * viewport), then the texture-format and GPU class probes.
  *
- * Probe results are cached in localStorage keyed by renderer string, WebGL2
- * availability, and probe version, so repeat page loads on the same GPU skip
- * the probe contexts entirely. Pass `useCache: false` to force a fresh probe
- * run (also refreshes the stored cache).
+ * Probe results are cached in localStorage keyed by renderer string and WebGL2
+ * availability, so repeat page loads on the same GPU skip the probe contexts
+ * entirely. Pass `useCache: false` to force a fresh probe run (also refreshes
+ * the stored cache). Clear the storage key manually after probe-shape changes.
  */
 export function detectRenderingCapabilities({
   useCache = true,
@@ -174,37 +316,73 @@ export function detectRenderingCapabilities({
   const contextInfo = getWebGLContextInfo();
 
   if (!contextInfo.webgl) {
-    return {
-      ...contextInfo,
-      ...NO_GPU_FORMATS,
-      softwareRasterizer: false,
-    };
+    return withPerformanceFields(
+      {
+        ...contextInfo,
+        ...NO_GPU_FORMATS,
+        softwareRasterizer: false,
+      },
+      null,
+      null
+    );
   }
 
-  let formats = useCache
-    ? readCachedFormats(contextInfo.renderer, contextInfo.webgl2)
+  const softwareRasterizer = SOFTWARE_RASTERIZER_PATTERN.test(
+    contextInfo.renderer
+  );
+
+  const cached = useCache
+    ? readCachedProfile(contextInfo.renderer, contextInfo.webgl2)
     : null;
 
-  if (!formats) {
-    const probed = getSupportedTextureFormats();
-
-    // A null probe result means the probes could not run (context limit hit,
-    // GPU process restarting, context lost mid-probe) — report no format
-    // support for this load but do NOT persist it, so a transient bad run
-    // costs one re-probe next load instead of poisoning the cache under an
-    // otherwise valid renderer key.
-    if (probed) {
-      writeCachedFormats(contextInfo.renderer, contextInfo.webgl2, probed);
-    }
-
-    formats = probed ?? { ...NO_GPU_FORMATS };
+  if (cached) {
+    return withPerformanceFields(
+      {
+        ...contextInfo,
+        ...cached.formats,
+        softwareRasterizer,
+      },
+      // Software rasterizer always wins over a stale cached class.
+      softwareRasterizer ? 'minimal' : cached.gpuClass,
+      softwareRasterizer ? null : cached.gpuPerfMsPerMpx
+    );
   }
 
-  return {
-    ...contextInfo,
-    ...formats,
-    softwareRasterizer: SOFTWARE_RASTERIZER_PATTERN.test(contextInfo.renderer),
-  };
+  const probedFormats = getSupportedTextureFormats();
+  const formats = probedFormats ?? { ...NO_GPU_FORMATS };
+
+  let gpuPerfMsPerMpx: number | null = null;
+  if (!softwareRasterizer) {
+    gpuPerfMsPerMpx = probeGpuMsPerMpx();
+  }
+
+  const gpuClass = classifyGpuClass({
+    webgl: true,
+    softwareRasterizer,
+    msPerMpx: gpuPerfMsPerMpx,
+  });
+
+  // Only persist when texture probing succeeded so a transient GL failure does
+  // not poison the cache under an otherwise valid renderer key.
+  if (probedFormats && gpuClass != null) {
+    writeCachedProfile(
+      contextInfo,
+      softwareRasterizer,
+      probedFormats,
+      gpuClass,
+      gpuPerfMsPerMpx
+    );
+  }
+
+  return withPerformanceFields(
+    {
+      ...contextInfo,
+      ...formats,
+      softwareRasterizer,
+    },
+    gpuClass,
+    gpuPerfMsPerMpx
+  );
 }
 
 /**
