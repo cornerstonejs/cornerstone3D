@@ -76,5 +76,20 @@ describe('getCalibratedUnits', function () {
       expect(unit).toBe('mm');
       expect(scale).toBe(0.5);
     });
+
+    it('Should apply a user calibration to both directions of an image with pixel spacing', () => {
+      // A line measured as 20 mm with the 0.5 mm pixel spacing, calibrated to
+      // 10 mm: the user scale is 20 / 10 = 2, as OHIF's calibration line sets.
+      const image = {
+        calibration: { type: CalibrationTypes.USER, scale: 2 },
+        hasPixelSpacing: true,
+        spacing: [0.5, 0.5, 1],
+      };
+      const calibrate = getCalibratedLengthUnitsAndScale(image, [[10, 10, 0]]);
+      const { scale, scaleY } = calibrate;
+      // 40 pixels (20 mm) read 10 mm, along the rows and along the columns
+      expect(40 / scale).toBe(10);
+      expect(40 / scaleY).toBe(10);
+    });
   });
 });
