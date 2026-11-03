@@ -13,6 +13,7 @@ import {
 import { ActorRenderMode } from '../src/types';
 import * as metaData from '../src/metaData';
 import cache from '../src/cache/cache';
+import * as utilities from '../src/utilities';
 import * as imageLoader from '../src/loaders/imageLoader';
 import PlanarViewport from '../src/RenderingEngine/GenericViewport/Planar/PlanarViewport';
 import { PlanarRenderPathDecisionService } from '../src/RenderingEngine/GenericViewport/Planar/PlanarRenderPathDecisionService';
@@ -100,6 +101,21 @@ describe('PlanarRenderPathDecisionService acquired frames (API)', () => {
       ActorRenderMode.VTK_VOLUME_SLICE
     );
     expect(service.canDrawAcquiredFrames(dataSet, options)).toBe(true);
+  });
+
+  it('isAcquisitionPlaneNormal accepts both scan directions, and refuses a 5 degree tilt', () => {
+    const volume = cache.getVolume('ct-volume');
+    const angle = (5 * Math.PI) / 180;
+
+    expect(utilities.isAcquisitionPlaneNormal(volume, [0, 0, 1])).toBe(true);
+    expect(utilities.isAcquisitionPlaneNormal(volume, [0, 0, -1])).toBe(true);
+    expect(
+      utilities.isAcquisitionPlaneNormal(volume, [
+        0,
+        Math.sin(angle),
+        Math.cos(angle),
+      ])
+    ).toBe(false);
   });
 
   it('does not allow the frames for a slab, a MIP, or no reduction', () => {

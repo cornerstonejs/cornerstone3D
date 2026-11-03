@@ -1,5 +1,5 @@
-import { vec3 } from 'gl-matrix';
 import { loadAndCacheImage } from '../../../loaders/imageLoader';
+import { isAcquisitionPlaneNormal } from '../../../utilities/isAcquisitionPlaneNormal';
 import { VOILUTFunctionType } from '../../../enums';
 import { ActorRenderMode } from '../../../types';
 import type { ActorEntry, IImageVolume, Point3 } from '../../../types';
@@ -28,28 +28,6 @@ const log = coreLog.getLogger('RenderingEngine', 'planarAcquiredFrames');
  * skips them, so a frame actor sits at the depth of its source.
  */
 export const acquiredFrameActors = new WeakSet<object>();
-
-/**
- * Whether an acquired frame may stand in for the slice at a view plane normal.
- *
- * The tilt of the normal from the scan axis must move the plane by less than
- * half a slice across the in-plane extent of the volume. This is a rule for
- * drawing only; the 0.99 tolerance of `VolumeViewport.isInAcquisitionPlane`
- * still decides whether a reference to an image counts as the view.
- */
-export function isAcquisitionPlaneNormal(
-  imageVolume: IImageVolume,
-  viewPlaneNormal: Point3
-): boolean {
-  const { direction, dimensions, spacing } = imageVolume;
-  const scanAxis = vec3.fromValues(direction[6], direction[7], direction[8]);
-  const cos = Math.abs(vec3.dot(scanAxis, viewPlaneNormal as unknown as vec3));
-  const sin = Math.sqrt(Math.max(0, 1 - cos * cos));
-  const halfDiagonal =
-    Math.hypot(dimensions[0] * spacing[0], dimensions[1] * spacing[1]) / 2;
-
-  return sin * halfDiagonal < spacing[2] / 2;
-}
 
 /**
  * The translation that moves the frame of the nearest voxel slice onto the
