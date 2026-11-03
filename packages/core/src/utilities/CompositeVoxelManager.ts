@@ -1212,6 +1212,40 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
   }
 
   /**
+   * Redoes every derived representation from its source, in batches.
+   *
+   * A caller that changed the source voxels with no delivery, for example a
+   * computed volume that writes new values, calls this member. The first batch
+   * runs at once and each later batch runs in idle time, as in the first
+   * derivation, and `onDerivedRegionChanged` reports each later batch. The
+   * cost is one read of every source voxel that a derived grid covers, so a
+   * composite with no derived representation pays nothing.
+   */
+  public rederiveAll(): void {
+    for (const representation of this.representations) {
+      const { derivedFrom } = representation;
+
+      if (!derivedFrom?.reduction) {
+        continue;
+      }
+
+      const source = this.sourceOfDerivation(derivedFrom.grid, representation);
+
+      if (!source) {
+        continue;
+      }
+
+      this.deriveInBatches(
+        representation,
+        source,
+        source.delivered
+          ? source.delivered.map((delivery) => delivery.bounds)
+          : [boundsOfGrid(source.grid)]
+      );
+    }
+  }
+
+  /**
    * The representation of `grid` that a derivation of `statistic` reads.
    *
    * A derivation prefers the source of its own statistic, and it falls back to
