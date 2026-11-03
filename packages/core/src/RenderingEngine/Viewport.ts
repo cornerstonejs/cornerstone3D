@@ -563,7 +563,7 @@ class Viewport {
     this.render();
   }
 
-  private getDefaultImageData(): vtkImageData {
+  protected getDefaultImageData(): vtkImageData {
     const actorEntry = this.getDefaultActor();
 
     if (actorEntry && isImageActor(actorEntry)) {
