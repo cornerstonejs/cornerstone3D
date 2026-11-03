@@ -18,6 +18,7 @@ const SUPPORTED_PROBE_VARIANT = [
   '4,3', // x: seconds & y : cm
   '4,7', // x: seconds & y : cm/sec
   '4,-1', // x: seconds & y : mV (ECG)
+  '4,-2', // x: seconds (ms) & y : mV (ECG)
 ];
 
 /**
@@ -38,10 +39,80 @@ const UNIT_MAPPING = {
   0xc: 'degrees',
   /** Extension for ECG amplitude (not in DICOM table). */
   [-1]: 'mV',
+  /**
+   * @deprecated An earlier build wrote -2 in the Y direction to mean "the X
+   * axis is in milliseconds". The code put X-axis information in a Y-axis
+   * field, so an area measurement reported the wrong unit. An ECG region now
+   * writes -1 for millivolts, and the display converts seconds to milliseconds.
+   * The entry stays so that stored data with -2 still reads.
+   */
+  [-2]: 'mV',
 };
 
-const EPS = 1e-3;
 const SQUARE = '\xb2';
+
+const MS_PER_SECOND = 1000;
+/** Unit of the X axis of an ECG region, as the display reports it. */
+const ECG_TIME_UNIT = 'ms';
+/** Unit of the Y axis of an ECG region. */
+const ECG_AMPLITUDE_UNIT = 'mV';
+
+/**
+ * Returns true when the region describes an ECG waveform.
+ *
+ * The Y direction carries the Cornerstone extension code -1 for millivolts. The
+ * code -2 stays accepted, because an earlier build wrote -2 to mean "the X axis
+ * is in milliseconds". The X axis now keeps the DICOM code for seconds, and the
+ * display converts to milliseconds.
+ */
+function isECGRegion(region): boolean {
+  return (
+    region.physicalUnitsYDirection === -1 ||
+    region.physicalUnitsYDirection === -2
+  );
+}
+
+/**
+ * Returns true when the annotation spans more of the amplitude axis than of the
+ * time axis.
+ *
+ * The test normalizes each axis against the extent of the region, so it
+ * compares two dimensionless fractions. A direct comparison of the two physical
+ * values is meaningless, because a time in seconds and an amplitude in
+ * millivolts have no common unit.
+ */
+function isAnnotationVertical(region, handles): boolean {
+  if (!handles || handles.length < 2) {
+    return false;
+  }
+
+  const xExtent = Math.abs(
+    region.regionLocationMaxX1 - region.regionLocationMinX0
+  );
+  const yExtent = Math.abs(
+    region.regionLocationMaxY1 - region.regionLocationMinY0
+  );
+
+  if (!xExtent || !yExtent) {
+    return false;
+  }
+
+  let maxSampleDelta = 0;
+  let maxAmplitudeDelta = 0;
+
+  for (let index = 1; index < handles.length; index++) {
+    maxSampleDelta = Math.max(
+      maxSampleDelta,
+      Math.abs(handles[index][0] - handles[0][0])
+    );
+    maxAmplitudeDelta = Math.max(
+      maxAmplitudeDelta,
+      Math.abs(handles[index][1] - handles[0][1])
+    );
+  }
+
+  return maxAmplitudeDelta / yExtent > maxSampleDelta / xExtent;
+}
 
 // everything except REGION/Uncalibrated
 const types = [
@@ -123,19 +194,37 @@ const getCalibratedLengthUnitsAndScale = (image, handles) => {
       calibrationType = 'US Region';
       unit = UNIT_MAPPING[region.physicalUnitsXDirection] || 'unknown';
       areaUnit = unit + SQUARE;
-    } else if (region && region.physicalUnitsYDirection === -1) {
+    } else if (region && isECGRegion(region)) {
       const physicalDeltaX = Math.abs(region.physicalDeltaX);
       const physicalDeltaY = Math.abs(region.physicalDeltaY);
-      scale = 1 / physicalDeltaX;
-      scaleY = 1 / physicalDeltaY;
 
       calibrationType = 'ECG Region';
-      unit =
-        UNIT_MAPPING[region.physicalUnitsXDirection] ||
-        UNIT_MAPPING[region.physicalUnitsYDirection] ||
-        'unknown';
-      areaUnit =
-        (UNIT_MAPPING[region.physicalUnitsYDirection] || 'px') + SQUARE;
+
+      // The X axis of an ECG region is in seconds, and a clinical reader works
+      // in milliseconds. The region keeps the DICOM unit code for seconds, and
+      // the conversion to milliseconds belongs here, in the display layer.
+      scale = 1 / (physicalDeltaX * MS_PER_SECOND);
+      scaleY = 1 / physicalDeltaY;
+
+      // Decide the axis from the direction of the annotation on the canvas, and
+      // not from the physical values. A time in seconds and an amplitude in
+      // millivolts have no common unit, so a comparison of the two is
+      // meaningless.
+      const isVertical = isAnnotationVertical(region, handles);
+
+      if (isVertical) {
+        // A vertical annotation measures amplitude, so the caller must scale
+        // the Y component. `scale` stays on the X axis, because
+        // `calculateLengthInIndex` applies `scale` to the X component and
+        // `scaleY` to the Y component.
+        unit = ECG_AMPLITUDE_UNIT;
+      } else {
+        unit = ECG_TIME_UNIT;
+      }
+
+      // The area of an ECG region is a time multiplied by an amplitude, so the
+      // area has no square unit. Report the product.
+      areaUnit = `${ECG_TIME_UNIT}\xb7${ECG_AMPLITUDE_UNIT}`;
     }
   } else if (calibration.scale) {
     scale = calibration.scale;
@@ -208,13 +297,19 @@ const getCalibratedProbeUnitsAndValue = (image, handles) => {
       (imageIndex[0] - region.regionLocationMinX0 - referencePixelX0) *
       physicalDeltaX;
 
-    calibrationType =
-      region.physicalUnitsYDirection === -1 ? 'ECG Region' : 'US Region';
-    values = [xValue, yValue];
-    units = [
-      UNIT_MAPPING[region.physicalUnitsXDirection] ?? 'unknown',
-      UNIT_MAPPING[region.physicalUnitsYDirection] ?? 'unknown',
-    ];
+    if (isECGRegion(region)) {
+      // The X axis is in seconds, and the display reports milliseconds.
+      calibrationType = 'ECG Region';
+      values = [xValue * MS_PER_SECOND, yValue];
+      units = [ECG_TIME_UNIT, ECG_AMPLITUDE_UNIT];
+    } else {
+      calibrationType = 'US Region';
+      values = [xValue, yValue];
+      units = [
+        UNIT_MAPPING[region.physicalUnitsXDirection] ?? 'unknown',
+        UNIT_MAPPING[region.physicalUnitsYDirection] ?? 'unknown',
+      ];
+    }
   }
 
   return {

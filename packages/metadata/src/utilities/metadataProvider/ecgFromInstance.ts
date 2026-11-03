@@ -23,10 +23,75 @@ export interface EcgModuleFull {
   multiplexGroupLabel: string;
   channelDefinitionSequence: Array<{
     channelSourceSequence?: { codeMeaning?: string };
+    /**
+     * Millivolts that one raw sample unit represents, from
+     * `ChannelSensitivity` x `ChannelSensitivityCorrectionFactor`, converted
+     * from `ChannelSensitivityUnitsSequence` to millivolts. The value is
+     * `ECG_DEFAULT_MV_PER_UNIT` when the instance omits the sensitivity.
+     */
+    mvPerUnit: number;
   }>;
   waveformData: {
     retrieveBulkData: () => Promise<Int16Array[]>;
   };
+}
+
+/**
+ * Millivolts for one raw sample unit when the instance carries no channel
+ * sensitivity. A 16-bit diagnostic ECG normally samples at 1 microvolt for each
+ * unit.
+ */
+export const ECG_DEFAULT_MV_PER_UNIT = 0.001;
+
+/** Millivolts for one unit of each sensitivity unit that ECG instances use. */
+const MV_PER_SENSITIVITY_UNIT: Record<string, number> = {
+  v: 1000,
+  mv: 1,
+  uv: 0.001,
+  µv: 0.001,
+  nv: 0.000001,
+};
+
+/**
+ * Returns the millivolts that one raw sample unit of a channel represents.
+ *
+ * DICOM gives the amplitude of one unit as `ChannelSensitivity`, in the units of
+ * `ChannelSensitivityUnitsSequence`, and `ChannelSensitivityCorrectionFactor`
+ * corrects that value. The function returns the default when the instance omits
+ * the sensitivity, or when the unit code is not a voltage.
+ */
+function getChannelMvPerUnit(channel: Record<string, unknown>): number {
+  const sensitivity = Number(channel.ChannelSensitivity);
+
+  if (!Number.isFinite(sensitivity) || sensitivity === 0) {
+    return ECG_DEFAULT_MV_PER_UNIT;
+  }
+
+  const rawCorrection = Number(channel.ChannelSensitivityCorrectionFactor);
+  const correction =
+    Number.isFinite(rawCorrection) && rawCorrection !== 0 ? rawCorrection : 1;
+  const unitsSeq = toArray(
+    channel.ChannelSensitivityUnitsSequence as
+      | ArrayLike<Record<string, unknown>>
+      | undefined
+  );
+  const unitCode = (
+    (unitsSeq[0]?.CodeValue as string) ??
+    (unitsSeq[0]?.CodeMeaning as string) ??
+    ''
+  )
+    .trim()
+    .toLowerCase();
+  const mvPerSensitivityUnit = MV_PER_SENSITIVITY_UNIT[unitCode];
+
+  if (mvPerSensitivityUnit === undefined) {
+    cs3dLogger.warn(
+      `[ecgFromInstance] Unknown ChannelSensitivityUnits "${unitCode}". Using ${ECG_DEFAULT_MV_PER_UNIT} mV for each unit.`
+    );
+    return ECG_DEFAULT_MV_PER_UNIT;
+  }
+
+  return sensitivity * correction * mvPerSensitivityUnit;
 }
 
 function base64ToUint8Array(base64: string): Uint8Array {
@@ -184,6 +249,7 @@ export function buildEcgModuleFromInstance(
     const codeMeaning = (srcSeq?.CodeMeaning as string) ?? '';
     return {
       channelSourceSequence: { codeMeaning },
+      mvPerUnit: getChannelMvPerUnit(ch),
     };
   });
 
@@ -318,7 +384,17 @@ const ecgCalibrationProvider: TypedProvider = (next, query, data, options) => {
     (group.NumberOfWaveformSamples as number) ?? 0;
   const samplingFrequency = (group.SamplingFrequency as number) ?? 1;
   const physicalDeltaX = 1 / (samplingFrequency || 1);
-  const physicalDeltaY = 0.001;
+  // One raw sample unit in millivolts, from the channel sensitivity of the
+  // first channel. Every channel of a multiplex group shares one sampling
+  // frequency, and in practice they share one sensitivity as well.
+  const firstChannel = toArray(
+    group.ChannelDefinitionSequence as
+      | ArrayLike<Record<string, unknown>>
+      | undefined
+  )[0];
+  const physicalDeltaY = firstChannel
+    ? getChannelMvPerUnit(firstChannel)
+    : ECG_DEFAULT_MV_PER_UNIT;
   return {
     sequenceOfUltrasoundRegions: [
       {
@@ -330,6 +406,10 @@ const ecgCalibrationProvider: TypedProvider = (next, query, data, options) => {
         referencePixelY0: ECG_AMPLITUDE_OFFSET,
         physicalDeltaX,
         physicalDeltaY,
+        // X is in seconds (DICOM unit code 4), and Y is in millivolts (the
+        // Cornerstone extension code -1). The display layer converts seconds to
+        // milliseconds; the region does not encode that choice. See
+        // getCalibratedUnits.ts.
         physicalUnitsXDirection: 4,
         physicalUnitsYDirection: -1,
         regionDataType: 1,
