@@ -538,15 +538,11 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
       return;
     }
 
-    const maxSizeChanged = this.contextPool.updateViewportSize(
+    this.contextPool.updateViewportSize(
       viewport.id,
       viewport.sWidth,
       viewport.sHeight
     );
-
-    if (!maxSizeChanged) {
-      return;
-    }
 
     const maxSize = this.contextPool.getMaxSizeForContext(contextIndex);
 
