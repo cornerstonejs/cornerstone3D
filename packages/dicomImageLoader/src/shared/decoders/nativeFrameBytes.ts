@@ -52,3 +52,26 @@ export function trimToNativeFrame(
 
   return pixelData.subarray(0, expected);
 }
+
+/**
+ * Drops the pad byte a native (uncompressed) frame may carry.
+ *
+ * Pixel Data is padded to an even length (PS3.5 7.1.1), so a frame of odd
+ * length, such as 8 bit RGB with an odd number of pixels, can arrive one byte
+ * longer than its pixels: WADO-RS servers may return the pad byte with the
+ * frame. Handed on, the extra byte leaves a sample count that is not a
+ * multiple of the samples per pixel, and the frame fails to render.
+ *
+ * Unlike trimToNativeFrame, a shorter frame is left as it is: native
+ * YBR_FULL_422 carries two samples per pixel although Samples per Pixel is 3.
+ */
+export function dropNativePadding(
+  imageFrame: Types.IImageFrame,
+  pixelData: ByteArray
+): ByteArray {
+  const expected = nativeFrameLength(imageFrame);
+
+  return pixelData.length > expected
+    ? pixelData.subarray(0, expected)
+    : pixelData;
+}
