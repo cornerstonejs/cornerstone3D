@@ -916,8 +916,6 @@ class StackViewport extends Viewport {
 
     this.setVOI(voiRange);
 
-    this.setInvertColor(this.initialInvert);
-
     this.setInterpolationType(InterpolationType.LINEAR);
 
     if (!this.useCPURendering) {
@@ -941,7 +939,12 @@ class StackViewport extends Viewport {
       );
 
       this.setColormap(matchedColormap);
+      // setColormap leaves the transfer function not inverted
+      this.invert = false;
     }
+
+    // Last, so that a MONOCHROME1 image is inverted again after the colormap reset
+    this.setInvertColor(this.initialInvert);
   }
 
   public resetToDefaultProperties(): void {
@@ -2528,6 +2531,12 @@ class StackViewport extends Viewport {
     this._cpuFallbackEnabledElement.viewport = this.stackInvalidated
       ? viewport
       : viewportSettingToUse;
+
+    if (this.stackInvalidated) {
+      // A MONOCHROME1 image loads inverted: keep it so on resetProperties
+      this.initialInvert = !!viewport.invert;
+      this.invert = this.initialInvert;
+    }
 
     // used the previous state of the viewport, then stackInvalidated is set to false
     this.stackInvalidated = false;
