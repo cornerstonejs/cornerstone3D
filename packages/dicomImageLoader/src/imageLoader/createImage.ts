@@ -150,7 +150,7 @@ async function createImage(
           const length =
             rawLength !== null && rawLength !== undefined
               ? rawLength
-              : imageFrameLength - offset;
+              : imageFrameLength;
 
           const typedArrayConstructors = {
             Uint8Array,
