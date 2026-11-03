@@ -117,7 +117,6 @@ async function createImage(
     imageFrame,
     transferSyntax,
     pixelData,
-    canvas,
     options,
     taskDecodeConfig
   );
