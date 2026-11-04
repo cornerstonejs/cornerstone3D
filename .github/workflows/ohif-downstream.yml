@@ -147,7 +147,7 @@ jobs:
     runs-on: [nashua]
     timeout-minutes: 120
     env:
-      NODE_VERSION: 24.15.0
+      NODE_VERSION: 24.22.2
       OHIF_REF: master
       OHIF_DIR: ohif
       # Update to force a rebuild of the OHIF integration
