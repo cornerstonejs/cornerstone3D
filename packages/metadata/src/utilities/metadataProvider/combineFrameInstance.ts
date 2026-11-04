@@ -1,261 +1,121 @@
+import dcmjs from '@dcmjs-org/dcmjs';
 import { vec3 } from 'gl-matrix';
 import { dicomSplit } from './dicomSplit';
 import { addTypedProvider, getMetaData } from '../../metaData';
 import { MetadataModules } from '../../enums';
 import { isEqual } from '../isEqual';
 
-/**
- * Combine the Per instance frame data, the shared frame data
- * and the root data objects.
- * The data is combined by taking nested sequence objects within
- * the functional group sequences.  Data that is directly contained
- * within the functional group sequences, such as private creators
- * will be ignored.
- * This can be safely called with an undefined frame in order to handle
- * single frame data. (eg frame is undefined is the same as frame===1).
- */
-export const combineFrameInstance = (frame, instance) => {
-  const {
-    PerFrameFunctionalGroupsSequence,
-    SharedFunctionalGroupsSequence,
-    NumberOfFrames,
-    ImageType,
-  } = instance;
+const { frameDataset } = dcmjs.data;
 
-  if (NumberOfFrames < 2) {
-    return instance;
-  }
-
-  instance.ImageType = dicomSplit(ImageType);
-  const frameNumber = Number.parseInt(frame || 1);
-
-  const hasDetectorButMissingSpatialInfo =
-    instance.DetectorInformationSequence &&
-    (!instance.ImagePositionPatient || !instance.ImageOrientationPatient);
-
-  if (
-    (PerFrameFunctionalGroupsSequence && SharedFunctionalGroupsSequence) ||
-    hasDetectorButMissingSpatialInfo
-  ) {
-    // this is to fix NM multiframe datasets with position and orientation
-    // information inside DetectorInformationSequence
-    if (
-      !instance.ImageOrientationPatient &&
-      instance.DetectorInformationSequence
-    ) {
-      instance.ImageOrientationPatient =
-        instance.DetectorInformationSequence[0].ImageOrientationPatient;
-    }
-
-    const rootImagePositionPatient = instance.ImagePositionPatient;
-    let detectorDerivedImagePositionPatient;
-
-    if (
-      !instance.ImagePositionPatient &&
-      instance.DetectorInformationSequence
-    ) {
-      let imagePositionPatient =
-        instance.DetectorInformationSequence[0].ImagePositionPatient;
-      let imageOrientationPatient = instance.ImageOrientationPatient;
-
-      imagePositionPatient = imagePositionPatient?.map((it) => Number(it));
-      imageOrientationPatient = imageOrientationPatient?.map((it) =>
-        Number(it)
-      );
-      const SpacingBetweenSlices = Number(instance.SpacingBetweenSlices);
-
-      // Calculate the position for the current frame
-      if (imageOrientationPatient && SpacingBetweenSlices) {
-        const rowOrientation = vec3.fromValues(
-          imageOrientationPatient[0],
-          imageOrientationPatient[1],
-          imageOrientationPatient[2]
-        );
-
-        const colOrientation = vec3.fromValues(
-          imageOrientationPatient[3],
-          imageOrientationPatient[4],
-          imageOrientationPatient[5]
-        );
-
-        const normalVector = vec3.cross(
-          vec3.create(),
-          rowOrientation,
-          colOrientation
-        );
-
-        const position = vec3.scaleAndAdd(
-          vec3.create(),
-          imagePositionPatient,
-          normalVector,
-          SpacingBetweenSlices * (frameNumber - 1)
-        );
-
-        detectorDerivedImagePositionPatient = [
-          position[0],
-          position[1],
-          position[2],
-        ];
-      }
-    }
-
-    // Cache the _parentInstance at the top level as a full copy to prevent
-    // setting values hard.
-    if (!instance._parentInstance) {
-      Object.defineProperty(instance, '_parentInstance', {
-        value: { ...instance },
-      });
-    }
-    const sharedInstance = createCombinedValue(
-      instance._parentInstance,
-      SharedFunctionalGroupsSequence?.[0],
-      '_shared'
-    );
-    const newInstance = createCombinedValue(
-      sharedInstance,
-      PerFrameFunctionalGroupsSequence?.[frameNumber - 1],
-      frameNumber
-    );
-
-    if (detectorDerivedImagePositionPatient) {
-      newInstance.ImagePositionPatient = detectorDerivedImagePositionPatient;
-    } else if (!newInstance.ImagePositionPatient && rootImagePositionPatient) {
-      newInstance.ImagePositionPatient = rootImagePositionPatient;
-    } else if (!newInstance.ImagePositionPatient) {
-      newInstance.ImagePositionPatient = [0, 0, frameNumber];
-    }
-
-    Object.defineProperty(newInstance, 'frameNumber', {
-      value: frameNumber,
-      writable: true,
-      enumerable: true,
-      configurable: true,
-    });
-    return newInstance;
-  }
-
-  // For RTDOSE datasets
-  if (instance.GridFrameOffsetVector) {
-    if (!instance._parentInstance) {
-      Object.defineProperty(instance, '_parentInstance', {
-        value: { ...instance },
-      });
-    }
-
-    const sharedInstance = createCombinedValue(
-      instance._parentInstance,
-      SharedFunctionalGroupsSequence?.[0],
-      '_shared'
-    );
-
-    const newInstance = createCombinedValue(
-      sharedInstance,
-      PerFrameFunctionalGroupsSequence?.[frameNumber - 1],
-      frameNumber
-    );
-
-    const origin = newInstance.ImagePositionPatient?.map(Number);
-    const orientation = newInstance.ImageOrientationPatient?.map(Number);
-    const offsets = instance.GridFrameOffsetVector;
-    const firstOffset = Number(offsets[0]);
-    const offset = Number(offsets[frameNumber - 1]);
-
-    if (origin && orientation && !Number.isNaN(offset)) {
-      const isIdentityAxialOrientation =
-        isEqual(orientation[0], 1) &&
-        isEqual(orientation[1], 0) &&
-        isEqual(orientation[2], 0) &&
-        isEqual(orientation[3], 0) &&
-        isEqual(orientation[4], 1) &&
-        isEqual(orientation[5], 0);
-
-      // RTDOSE GridFrameOffsetVector has two valid encodings:
-      // (a) relative offsets where first value is 0
-      // (b) absolute patient z positions for axial orientation
-      const isRelativeOffsetForm = isEqual(firstOffset, 0);
-      const isAbsolutePatientZForm =
-        isIdentityAxialOrientation && isEqual(firstOffset, origin[2]);
-
-      if (isAbsolutePatientZForm) {
-        newInstance.ImagePositionPatient = [origin[0], origin[1], offset];
-      } else if (isRelativeOffsetForm) {
-        const row = vec3.fromValues(
-          orientation[0],
-          orientation[1],
-          orientation[2]
-        );
-        const col = vec3.fromValues(
-          orientation[3],
-          orientation[4],
-          orientation[5]
-        );
-        const normal = vec3.cross(vec3.create(), row, col);
-
-        const position = vec3.scaleAndAdd(
-          vec3.create(),
-          origin,
-          normal,
-          offset
-        );
-        newInstance.ImagePositionPatient = [
-          position[0],
-          position[1],
-          position[2],
-        ];
-      }
-    }
-
-    Object.defineProperty(newInstance, 'frameNumber', {
-      value: frameNumber,
-      writable: true,
-      enumerable: true,
-      configurable: true,
-    });
-
-    return newInstance;
-  }
-
-  return instance;
-};
-
-/**
- * Creates a combined instance stored in the parent object which
- * inherits from the parent instance the attributes in the functional groups.
- * The storage key in the parent is in key
- */
-export function createCombinedValue(parent, functionalGroups, key) {
-  if (parent[key]) {
-    return parent[key];
-  }
-  // Exclude any proxying values
-  const newInstance = Object.create(parent);
-  Object.defineProperty(parent, key, {
-    value: newInstance,
-    writable: false,
-    enumerable: false,
-  });
-  if (!functionalGroups) {
-    return newInstance;
-  }
-  const shared = functionalGroups
-    ? Object.values(functionalGroups)
-        .filter(Boolean)
-        .map((it) => it[0])
-        .filter((it) => typeof it === 'object')
-    : [];
-
-  // merge the shared first then the per frame to override
-  [...shared].forEach((item) => {
-    if (item.SOPInstanceUID) {
-      // This sub-item is a previous value information item, so don't merge it
-      return;
-    }
-    Object.entries(item).forEach(([key, value]) => {
-      newInstance[key] = value;
-    });
-  });
-  return newInstance;
+/** The position of `origin` moved `distance` along the normal of `orientation`. */
+function alongNormal(origin, orientation, distance) {
+  const row = vec3.fromValues(orientation[0], orientation[1], orientation[2]);
+  const col = vec3.fromValues(orientation[3], orientation[4], orientation[5]);
+  const normal = vec3.cross(vec3.create(), row, col);
+  return Array.from(vec3.scaleAndAdd(vec3.create(), origin, normal, distance));
 }
+
+/** RTDOSE: the frame position from GridFrameOffsetVector. */
+function rtdosePosition(view, dataset, frameNumber) {
+  const origin = view.ImagePositionPatient?.map(Number);
+  const orientation = view.ImageOrientationPatient?.map(Number);
+  const offsets = dataset.GridFrameOffsetVector;
+  const firstOffset = Number(offsets[0]);
+  const offset = Number(offsets[frameNumber - 1]);
+  if (!origin || !orientation || Number.isNaN(offset)) {
+    return;
+  }
+  const isIdentityAxialOrientation =
+    isEqual(orientation[0], 1) &&
+    isEqual(orientation[1], 0) &&
+    isEqual(orientation[2], 0) &&
+    isEqual(orientation[3], 0) &&
+    isEqual(orientation[4], 1) &&
+    isEqual(orientation[5], 0);
+  // RTDOSE GridFrameOffsetVector has two valid encodings:
+  // (a) relative offsets where first value is 0
+  // (b) absolute patient z positions for axial orientation
+  if (isIdentityAxialOrientation && isEqual(firstOffset, origin[2])) {
+    return [origin[0], origin[1], offset];
+  }
+  if (isEqual(firstOffset, 0)) {
+    return alongNormal(origin, orientation, offset);
+  }
+}
+
+/**
+ * The computed attributes of a frame view: the split ImageType, and the
+ * position and orientation that a modality keeps outside the functional
+ * groups.
+ *
+ * - Enhanced multi-frame (per-frame and shared functional groups), or NM with
+ *   a DetectorInformationSequence and no root position or orientation: the
+ *   NM orientation comes from the detector when the frame has none. When the
+ *   root has no position, the NM position is the detector position moved
+ *   `SpacingBetweenSlices * (frameNumber - 1)` along the normal, and it
+ *   replaces a per-frame position. A frame with no position gets
+ *   `[0, 0, frameNumber]`.
+ * - Otherwise RTDOSE: the position from GridFrameOffsetVector.
+ */
+function frameAttributes(view, { dataset, frameNumber }) {
+  const attributes: Record<string, unknown> = {};
+  if (view.ImageType !== undefined) {
+    attributes.ImageType = dicomSplit(view.ImageType);
+  }
+  const detector = dataset.DetectorInformationSequence?.[0];
+  const isEnhanced =
+    (dataset.PerFrameFunctionalGroupsSequence &&
+      dataset.SharedFunctionalGroupsSequence) ||
+    (detector &&
+      (!dataset.ImagePositionPatient || !dataset.ImageOrientationPatient));
+
+  if (isEnhanced) {
+    const rootOrientation =
+      dataset.ImageOrientationPatient ?? detector?.ImageOrientationPatient;
+    if (!view.ImageOrientationPatient && detector) {
+      attributes.ImageOrientationPatient = rootOrientation;
+    }
+    const spacing = Number(dataset.SpacingBetweenSlices);
+    if (
+      !dataset.ImagePositionPatient &&
+      detector?.ImagePositionPatient &&
+      rootOrientation &&
+      spacing
+    ) {
+      attributes.ImagePositionPatient = alongNormal(
+        detector.ImagePositionPatient.map(Number),
+        rootOrientation.map(Number),
+        spacing * (frameNumber - 1)
+      );
+    } else if (!view.ImagePositionPatient) {
+      attributes.ImagePositionPatient = [0, 0, frameNumber];
+    }
+  } else if (dataset.GridFrameOffsetVector) {
+    const position = rtdosePosition(view, dataset, frameNumber);
+    if (position) {
+      attributes.ImagePositionPatient = position;
+    }
+  }
+  return attributes;
+}
+
+function frameProperties(_view, { frameNumber }) {
+  return { frameNumber };
+}
+
+const frameOptions = { frameAttributes, frameProperties };
+
+/**
+ * The view of one frame of a multi-frame naturalized instance, from
+ * `dcmjs.data.frameDataset`: per-frame functional groups, then shared
+ * functional groups, then the root, plus the modality fallbacks of
+ * `frameAttributes`. The view is cached on the instance, and the instance is
+ * not changed. `frameNumber` is a non-enumerable property of the view.
+ * An instance with fewer than 2 frames and no functional groups comes back
+ * unchanged. An undefined frame is frame 1.
+ */
+export const combineFrameInstance = (frame, instance) =>
+  frameDataset(instance, frame || 1, frameOptions);
 
 export const combineFrameProvider = (next, query, instance, options) => {
   if (!instance) {
