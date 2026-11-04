@@ -128,6 +128,17 @@ export interface RenderPathAttachment<TPresentation = unknown> {
   applyViewState(viewState: unknown): void;
   getFrameOfReferenceUID(): string | undefined;
   getActorEntry?(data: LoadedData): ActorEntry | undefined;
+  /**
+   * All the actor entries of the attachment, when it has more than one actor.
+   * `getActorEntry` stays the default entry.
+   */
+  getActorEntries?(data: LoadedData): ActorEntry[];
+  /**
+   * All the renderings of the attachment, when it keeps more than one render
+   * path mounted. The fidelity reads each of them. `rendering` stays the
+   * rendering that defines the navigation and the render mode.
+   */
+  getRenderings?(): MountedRendering[];
   getImageData?(): unknown;
   render?(): void;
   resize?(): void;

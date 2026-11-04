@@ -152,6 +152,7 @@ import {
 } from './wasmBasePath';
 import resolveApplicationUrl, { getPublicUrl } from './resolveApplicationUrl';
 export { updatePlaneRestriction } from './updatePlaneRestriction';
+export { isAcquisitionPlaneNormal } from './isAcquisitionPlaneNormal';
 const getViewportModality = (viewport: IViewport, volumeId?: string) =>
   _getViewportModality(viewport, volumeId, cache.getVolume);
 const getScalingDescriptor = (viewport: IViewport, targetId?: string) =>

@@ -296,15 +296,24 @@ export function reducedStrategyName(
 }
 
 /**
- * The reduction factors that the GPU settings need for this volume. All of the
- * factors are 1 when final downsampling is off, because the volume then gets
- * its full-resolution texture whatever its size.
+ * The reduction factors of the full-extent texture of a volume under some GPU
+ * settings. Every factor is 1 when final downsampling is off, because the
+ * volume then gets its full-resolution texture whatever its size.
  *
  * A dynamic (4D) volume and a volume of more than one component also get
  * factors of 1, because the reduced fill does not support them yet (see
  * VRS-I-13 and VRS-I-14).
+ *
+ * The default provider builds the full-resolution strategy when every factor
+ * is 1, and the reduced strategy with these factors otherwise. A caller that
+ * must know whether a volume draws reduced, before any texture exists, reads
+ * the same answer here.
+ *
+ * @param volume - the volume to draw
+ * @param gpuSettings - the GPU settings that apply
+ * @returns the box size on each axis of the voxel grid
  */
-function finalReductionFactors(
+export function volumeTextureReductionFactors(
   volume: IImageVolume,
   gpuSettings: GpuSettings | undefined
 ): Point3 {
@@ -331,7 +340,7 @@ export function reductionCauseOf(
   volume: IImageVolume,
   gpuSettings: GpuSettings | undefined
 ): ViewportFidelityCause | undefined {
-  if (!finalReductionFactors(volume, gpuSettings).some((f) => f > 1)) {
+  if (!volumeTextureReductionFactors(volume, gpuSettings).some((f) => f > 1)) {
     return undefined;
   }
 
@@ -354,7 +363,7 @@ export function provisionFullResolutionStrategy({
   gpuSettings,
 }: VolumeStrategyProvisionContext): IVolumeRenderStrategy | undefined {
   const grid = volume.voxelGrid;
-  const factors = finalReductionFactors(volume, gpuSettings);
+  const factors = volumeTextureReductionFactors(volume, gpuSettings);
 
   if (factors.some((factor) => factor > 1)) {
     return undefined;
@@ -395,7 +404,7 @@ export function provisionReducedResolutionStrategy({
   gpuSettings,
 }: VolumeStrategyProvisionContext): IVolumeRenderStrategy | undefined {
   const fullResolutionGrid = volume.voxelGrid;
-  const factors = finalReductionFactors(volume, gpuSettings);
+  const factors = volumeTextureReductionFactors(volume, gpuSettings);
 
   if (!factors.some((factor) => factor > 1)) {
     return undefined;

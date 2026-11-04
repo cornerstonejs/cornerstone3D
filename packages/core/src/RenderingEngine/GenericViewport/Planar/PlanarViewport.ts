@@ -56,6 +56,7 @@ import {
 import { DefaultPlanarDataProvider } from './DefaultPlanarDataProvider';
 import { createPlanarRenderPathResolver } from './PlanarRenderPathResolver';
 import { defaultPlanarRenderPathDecisionService } from './PlanarRenderPathDecisionService';
+import type { PlanarRenderPathDecisionOptions } from './PlanarRenderPathDecisionService';
 import {
   normalizePlanarOrientation,
   selectPlanarRenderPath,
@@ -305,6 +306,7 @@ class PlanarViewport extends GenericViewport<
           this.getCurrentBinding()?.data.id === dataId,
         getOverlayActors: () =>
           this.mountedData.getProjectedActorEntries('overlay'),
+        canDrawAcquiredFrames: (dataId) => this.canDrawAcquiredFrames(dataId),
       },
       renderPath: {
         renderMode: ActorRenderMode.VTK_IMAGE,
@@ -512,6 +514,16 @@ class PlanarViewport extends GenericViewport<
    * Returns the primary actor entry for the viewport.
    */
   getDefaultActor(): ActorEntry | undefined {
+    return this.getDefaultActorEntry();
+  }
+
+  /**
+   * The default actor entry of `getDefaultActor`, `getImageActor()` and
+   * `getDefaultImageData`. It is the volume slice entry, also while the
+   * acquired frame shows (`showsAcquiredFrame` of the source rendering): the
+   * volume data is at full resolution, and only its GPU texture is reduced.
+   */
+  private getDefaultActorEntry(): ActorEntry | undefined {
     return this.mountedData.getDefaultActor();
   }
 
@@ -528,7 +540,7 @@ class PlanarViewport extends GenericViewport<
   getImageActor(volumeId?: string): ImageActor | null {
     const actorEntries = this.getActors();
 
-    let actorEntry = actorEntries[0];
+    let actorEntry = this.getDefaultActorEntry();
     if (volumeId) {
       // Match by actor referencedId first (e.g. the prefixed volume id
       // "cornerstoneStreamingImageVolume:<uid>"). VOI/colorbar tooling, however,
@@ -1819,6 +1831,68 @@ class PlanarViewport extends GenericViewport<
   }
 
   /**
+   * Whether the source of this viewport may draw the acquired frames of a
+   * reduced volume in the acquisition plane. The legacy adapter turns this off,
+   * so the legacy viewports keep their 4.x display (AQP-I-10 of #3017).
+   */
+  protected prefersAcquiredFrames(): boolean {
+    return true;
+  }
+
+  /**
+   * Whether the volume slice path of `dataId` may draw the acquired frames
+   * (`PlanarRenderPathDecisionService.canDrawAcquiredFrames`). The render path
+   * reads this at each change of the view or the presentation.
+   */
+  private canDrawAcquiredFrames(dataId: string): boolean {
+    const binding = this.bindings.get(dataId);
+    const dataSet = this.getDataSet(dataId);
+
+    if (!binding || !dataSet) {
+      return false;
+    }
+
+    return defaultPlanarRenderPathDecisionService.canDrawAcquiredFrames(
+      dataSet,
+      this.getRenderPathDecisionOptions(
+        dataId,
+        {
+          ...(this.mountOptionsByDataId.get(dataId) ?? {}),
+          role: binding.role,
+        },
+        this.viewState.orientation
+      )
+    );
+  }
+
+  /**
+   * The inputs of the render-path decision for one display set.
+   *
+   * Only the source may draw the acquired frames of a reduced volume.
+   */
+  private getRenderPathDecisionOptions(
+    dataId: string,
+    options: PlanarSetDataOptions,
+    orientation: PlanarViewState['orientation']
+  ): PlanarRenderPathDecisionOptions {
+    const presentation = this.getDataPresentationState(dataId);
+
+    return {
+      orientation,
+      // Per-mount backend pin/override. Overlays without an explicit pin
+      // follow the source binding's mounted backend rather than the global
+      // configuration; only then does the global renderBackend decide.
+      renderBackend:
+        options.renderBackend ??
+        this.getInheritedOverlayRenderBackend(options.role),
+      preferAcquiredFrames:
+        options.role === 'source' && this.prefersAcquiredFrames(),
+      slabThickness: presentation?.slabThickness,
+      blendMode: presentation?.blendMode,
+    };
+  }
+
+  /**
    * Emits the RENDER_PATH_ERROR degradation signal (and logs) for a render
    * path that threw while mounting or rendering. Repeated identical failures
    * for a display set are reported once so a per-frame render error does not
@@ -2095,15 +2169,10 @@ class PlanarViewport extends GenericViewport<
     const resolvedOrientation = this.resolveRequestedOrientation(
       options.orientation
     );
-    const selectedPath = selectPlanarRenderPath(dataSet, {
-      orientation: resolvedOrientation,
-      // Per-mount backend pin/override. Overlays without an explicit pin
-      // follow the source binding's mounted backend rather than the global
-      // configuration; only then does the global renderBackend decide.
-      renderBackend:
-        options.renderBackend ??
-        this.getInheritedOverlayRenderBackend(options.role),
-    });
+    const selectedPath = selectPlanarRenderPath(
+      dataSet,
+      this.getRenderPathDecisionOptions(dataId, options, resolvedOrientation)
+    );
     const data = await (this.dataProvider as PlanarDataProvider).load(dataId, {
       acquisitionOrientation: selectedPath.acquisitionOrientation,
       orientation: resolvedOrientation,
