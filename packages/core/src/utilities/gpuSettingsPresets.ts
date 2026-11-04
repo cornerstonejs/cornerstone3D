@@ -1,5 +1,25 @@
 import type { VoxelGridLimits } from '../types';
-import { getLossyDownsampling, getShouldUseCPURendering } from '../init';
+import {
+  ensureReliableEdge,
+  getRendererClass,
+  getRenderingCapabilities,
+  peekStoredRenderingCapabilities,
+  probeRenderingEdge,
+} from './renderingCapabilities';
+import {
+  activeMemoryCeiling,
+  getPageMemoryReduction,
+} from './renderingCapabilities';
+import type {
+  RendererClass,
+  RenderingCapabilityMemory,
+} from './renderingCapabilities';
+import type { ProbeTextureFormat } from './textureSupport';
+import {
+  getConfiguration,
+  getLossyDownsampling,
+  getShouldUseCPURendering,
+} from '../init';
 
 /**
  * How fast a device of this class draws, on a relative scale.
@@ -11,40 +31,46 @@ import { getLossyDownsampling, getShouldUseCPURendering } from '../init';
  *
  * The value is relative, and it states no number of frames for each second,
  * because a measurement of the frame rate belongs to task T14 and not to a
- * preset.
+ * declared preset.
  */
 export type GpuSpeedIndex = number;
 
 /**
  * The GPU settings that the volume render reads: the limits that a texture must
- * respect, and the speed class of the device.
+ * respect, and the speed class of the device. They apply only when final
+ * downsampling is on (see `rendering.lossyDownsampling.final`).
  *
- * A preset is a named set of these values, which an application selects. A
- * preset does not describe a real device, and nothing probes the device to
- * choose one. The values apply only when final downsampling is on (see
- * `rendering.lossyDownsampling.final` of the configuration).
+ * A preset is a named set of these values. `auto` is the default preset, and
+ * it computes its edge and memory from the stored record of the device (see
+ * `getStoredRenderingCapabilities`). A named preset, which an application
+ * selects, overrides `auto`.
+ *
+ * The GPU settings, `auto` and the named presets, are limits of GPU rendering
+ * through WebGL. A software renderer and CPU rendering ignore them (see
+ * `gpuSettingsApply`).
  */
 export type GpuSettings = {
-  /** The name of the preset that gave these values. */
+  /** The name of the preset. */
   id: GpuSettingsPresetId;
   /**
    * The largest number of voxels that one axis of one texture can hold.
-   * WebGL devices commonly report 2048; a preset may state a lower edge so
-   * that a weak GPU reduces before it loses the context.
+   * WebGL devices commonly report 2048; a preset may state a lower policy
+   * edge so weak GPUs reduce before they lose the context.
    */
   maxTextureEdge: number;
-  /** The number of bytes of texture memory that a texture can use. */
+  /** The number of bytes of texture memory that the device holds. */
   textureMemoryBytes: number;
   /** How fast this class of device draws. See `GpuSpeedIndex`. */
   speed: GpuSpeedIndex;
   /**
    * True for a preset that exists for a test, which an application must not
-   * select in production.
+   * state in production.
    */
   internal?: boolean;
 };
 
 export type GpuSettingsPresetId =
+  | 'auto'
   | 'low-tablet'
   | 'low'
   | 'medium'
@@ -57,16 +83,18 @@ const GIGABYTE = 1024 * 1024 * 1024;
  * The presets.
  *
  * `medium` and `high` share the WebGL edge of 2048 and differ by memory.
- * `low` and `low-tablet` use an edge of 256, so that a weak integrated GPU
- * reduces a large volume before a WebGL context loss; `low` states more memory
+ * `low` and `low-tablet` use a 256 policy edge so weak integrated GPUs
+ * reduce large volumes before WebGL context loss; `low` states more memory
  * than `low-tablet`.
  *
- * `high-texture-4096` is the control of the example, and it fits no real
+ * `high-texture-4096` is the control of the example, and it is not a real
  * device. One volume renders with no reduction under `high-texture-4096` and
  * with a reduction under `high`, which shows that the reduction comes from the
  * limit and not from a defect.
  */
-const PRESETS: Record<GpuSettingsPresetId, GpuSettings> = {
+type NamedPresetId = Exclude<GpuSettingsPresetId, 'auto'>;
+
+const PRESETS: Record<NamedPresetId, GpuSettings> = {
   'low-tablet': {
     id: 'low-tablet',
     maxTextureEdge: 256,
@@ -95,33 +123,223 @@ const PRESETS: Record<GpuSettingsPresetId, GpuSettings> = {
     id: 'high-texture-4096',
     maxTextureEdge: 4096,
     textureMemoryBytes: 32 * GIGABYTE,
-    // The control shares the speed of `high`; only its edge differs.
+    // The control shares the device class of `high`; only its edge differs.
     speed: 100,
     internal: true,
   },
 };
 
 /**
- * The preset that applies when an application selects none.
+ * The preset that applies when an application states none.
  *
- * `high` states an edge of 2048 and the largest memory of the presets. The
- * reported `MAX_3D_TEXTURE_SIZE` is not a reliable limit, so no preset reads
- * it: some Android devices report 2048 or more but render only 256 per axis,
- * and need `low` or `low-tablet`. Some Linux devices report more than 2048, but
- * no such device is tested to render beyond 2048, so `high-texture-4096` stays
- * internal.
+ * `auto` reads the stored record of the device, which the probe and the
+ * allocation tracker fill. The reported `MAX_3D_TEXTURE_SIZE` is not a
+ * reliable limit, because some Android devices report 2048 or more but render
+ * only 128 or 256 per axis; the probe tests the edge instead.
  */
-const DEFAULT_PRESET_ID: GpuSettingsPresetId = 'high';
+const DEFAULT_PRESET_ID: GpuSettingsPresetId = 'auto';
 
 let activePresetId: GpuSettingsPresetId = DEFAULT_PRESET_ID;
 
-/** Every preset, the internal one included. */
-function getGpuSettingsPresets(): GpuSettings[] {
-  return Object.values(PRESETS);
+/**
+ * The named preset that sets the conservative start of `auto` for a class of
+ * GPU: `low-tablet` for a GPU of a phone or a tablet, and `medium` for any
+ * other GPU.
+ */
+const START_PRESET_OF_CLASS: Record<
+  Exclude<RendererClass, 'none' | 'software'>,
+  NamedPresetId
+> = {
+  mobile: 'low-tablet',
+  desktop: 'medium',
+};
+
+/**
+ * True when the GPU settings apply, whatever preset is active. They describe
+ * the texture limits and the memory of a WebGL GPU, not CPU memory, so they
+ * apply to GPU rendering only. A software renderer (class `software`) and CPU
+ * rendering (class `none`, or `useCPURendering`) ignore them, and render as
+ * with final downsampling off.
+ */
+function gpuSettingsApply(): boolean {
+  if (getShouldUseCPURendering()) {
+    return false;
+  }
+
+  const rendererClass = getRendererClass();
+
+  return rendererClass === 'mobile' || rendererClass === 'desktop';
 }
 
-/** The settings of one preset. */
+/**
+ * The edge of `auto` when no probe has passed any edge, because no probe could
+ * run. The smallest edge known to fail on a real device is above 128. When the
+ * record states a failure at or below 128, the edge is 8, which the format
+ * probe passed.
+ */
+const UNPROBED_EDGE_FLOOR = 128;
+const FORMAT_PROBE_EDGE = 8;
+
+/** The smallest texture memory that `auto` gives to a new texture. */
+const MIN_TEXTURE_BYTES = 16 * 1024 * 1024;
+
+/**
+ * A device with a probed edge below `SMALL_EDGE` almost always has little GPU
+ * memory too, so `auto` starts it from `SMALL_EDGE_START_MEMORY_BYTES` and not
+ * from the memory of its class.
+ */
+const SMALL_EDGE = 2048;
+const SMALL_EDGE_START_MEMORY_BYTES = 512 * 1024 * 1024;
+
+/**
+ * The default of the largest texture memory that `auto` tests. An assumption
+ * about the likely devices, not a limit of a device.
+ */
+const DEFAULT_AUTO_MAX_TEXTURE_MEMORY_BYTES = 32 * GIGABYTE;
+
+/**
+ * How far above the normal level `auto` lets the page go. A total up to this
+ * multiple of the largest total that worked is a test of the next step.
+ */
+const MEMORY_TEST_STEP = 2;
+
+/**
+ * The bounds of what `auto` tests, from `rendering.autoGpuSettings` of the
+ * configuration. `MAX_3D_TEXTURE_SIZE` bounds the edge in any case, because no
+ * probe runs above it.
+ */
+function autoTestBounds(): {
+  maxTextureMemoryBytes: number;
+  maxTextureEdge: number;
+} {
+  const bounds = getConfiguration()?.rendering?.autoGpuSettings;
+
+  return {
+    maxTextureMemoryBytes:
+      bounds?.maxTextureMemoryBytes ?? DEFAULT_AUTO_MAX_TEXTURE_MEMORY_BYTES,
+    maxTextureEdge: bounds?.maxTextureEdge ?? Number.POSITIVE_INFINITY,
+  };
+}
+
+/**
+ * The memory limit of `auto`, in GPU bytes of the page.
+ *
+ * The limit is the larger of the start value and `MEMORY_TEST_STEP` times the
+ * normal level, the largest total that worked. So the limit rises one step
+ * after each success above the earlier normal level. `maxTextureMemoryBytes`
+ * of `rendering.autoGpuSettings` caps it, and so does a ceiling, which several
+ * failure episodes set, until it expires (see `activeMemoryCeiling`). A failure
+ * episode lowers it further for its time, and for the rest of a page that saw
+ * it (see `getPageMemoryReduction`): one failure allows 1/2 of the failed
+ * total, two allow 1/4, and three or more allow 1/8. The limit is never below
+ * `MIN_TEXTURE_BYTES`.
+ *
+ * @param start - the memory of the start preset of the renderer class
+ * @param records - the memory records (context loss and stopped tab)
+ */
+function autoMemoryLimit(
+  start: number,
+  records: RenderingCapabilityMemory[]
+): number {
+  const normal = Math.max(
+    0,
+    ...records.map((memory) => memory.normal?.value ?? 0)
+  );
+  let limit = Math.min(
+    Math.max(start, MEMORY_TEST_STEP * normal),
+    autoTestBounds().maxTextureMemoryBytes
+  );
+
+  for (const memory of records) {
+    limit = Math.min(limit, activeMemoryCeiling(memory) ?? limit);
+  }
+
+  return Math.max(MIN_TEXTURE_BYTES, Math.min(limit, getPageMemoryReduction()));
+}
+
+/**
+ * The edge of `auto`: the largest edge that a probe passed, and never an edge
+ * that no probe passed. With no such edge, the edge search runs once in this
+ * page (see `ensureReliableEdge`). When no probe can run, the edge is
+ * `UNPROBED_EDGE_FLOOR`. `maxTextureEdge` of `rendering.autoGpuSettings` caps
+ * the edge.
+ */
+function autoEdge(): number {
+  const reliable = ensureReliableEdge();
+  const failed = peekStoredRenderingCapabilities()?.edge.failed?.value;
+
+  return Math.min(
+    reliable ??
+      (failed && failed <= UNPROBED_EDGE_FLOOR
+        ? FORMAT_PROBE_EDGE
+        : UNPROBED_EDGE_FLOOR),
+    autoTestBounds().maxTextureEdge
+  );
+}
+
+/**
+ * The `auto` preset, from the stored record of the device.
+ *
+ * The start preset of the class of the GPU (see `START_PRESET_OF_CLASS`)
+ * gives the memory before the record holds any, and the speed; a probed edge
+ * below `SMALL_EDGE` gives `SMALL_EDGE_START_MEMORY_BYTES` instead. The edge is
+ * the reliable edge of the probe (see `autoEdge`). The memory is the start
+ * memory, raised one step above a larger total that worked, capped after several failure
+ * episodes, and lowered for the time of an episode (see `autoMemoryLimit`).
+ *
+ * When the GPU settings do not apply (see `gpuSettingsApply`), `auto` has
+ * no limit, reads no record and runs no probe.
+ */
+function getAutoGpuSettings(): GpuSettings {
+  if (!gpuSettingsApply()) {
+    return {
+      id: 'auto',
+      maxTextureEdge: Number.POSITIVE_INFINITY,
+      textureMemoryBytes: Number.POSITIVE_INFINITY,
+      speed: 1,
+    };
+  }
+
+  const start =
+    PRESETS[START_PRESET_OF_CLASS[getRendererClass() as 'mobile' | 'desktop']];
+  const startMemory =
+    (ensureReliableEdge() ?? Infinity) < SMALL_EDGE
+      ? SMALL_EDGE_START_MEMORY_BYTES
+      : start.textureMemoryBytes;
+  const stored = peekStoredRenderingCapabilities();
+  const memory = !stored
+    ? startMemory
+    : autoMemoryLimit(startMemory, [stored.textureBytes, stored.gpuBytes]);
+
+  return {
+    id: 'auto',
+    maxTextureEdge: autoEdge(),
+    textureMemoryBytes: memory,
+    speed: start.speed,
+  };
+}
+
+/**
+ * Every preset: `auto` first, then the named presets, the internal one
+ * included. The values of `auto` come from the stored record, so the first
+ * call can run the probe, also with final downsampling off. No render path
+ * calls this with final downsampling off.
+ */
+function getGpuSettingsPresets(): GpuSettings[] {
+  return [getAutoGpuSettings(), ...Object.values(PRESETS)];
+}
+
+/**
+ * The preset of one name. `auto` reads the stored record each time. A named
+ * preset comes back with its values on every renderer, but the render path
+ * ignores it on a software renderer and on CPU rendering (see
+ * `gpuSettingsForRender`).
+ */
 function getGpuSettingsPreset(id: GpuSettingsPresetId): GpuSettings {
+  if (id === 'auto') {
+    return getAutoGpuSettings();
+  }
+
   const preset = Object.prototype.hasOwnProperty.call(PRESETS, id)
     ? PRESETS[id]
     : undefined;
@@ -133,47 +351,124 @@ function getGpuSettingsPreset(id: GpuSettingsPresetId): GpuSettings {
   return preset;
 }
 
-/** Selects the preset that applies. Nothing probes a device to choose it. */
+/**
+ * States which preset applies. A named preset overrides `auto`, and
+ * `resetGpuSettingsPreset` returns to `auto`.
+ */
 function setGpuSettingsPreset(id: GpuSettingsPresetId): void {
-  // The lookup states the error for a name that does not exist.
-  getGpuSettingsPreset(id);
+  if (id !== 'auto') {
+    // The lookup states the error for a name that does not exist.
+    getGpuSettingsPreset(id);
+  }
 
   activePresetId = id;
 }
 
-/** The GPU settings that apply now. */
+/**
+ * The preset that applies now. Under `auto`, a call can run the probe, also
+ * with final downsampling off. The render paths read `gpuSettingsForRender`
+ * instead, which runs no probe with final downsampling off, and which ignores
+ * every preset on a software renderer and on CPU rendering.
+ */
 function getActiveGpuSettings(): GpuSettings {
   return getGpuSettingsPreset(activePresetId);
 }
 
 /**
- * The GPU settings that a render applies, or `undefined` when final
- * downsampling is off or CPU rendering is on. Then no preset applies, and a
- * volume renders as in 4.x: the presets describe WebGL GPU limits, not CPU
- * memory. Every render path reads the settings here, so that one check covers
+ * The GPU settings that a render applies, or `undefined` when no preset
+ * applies: final downsampling is off, or the renderer is a software renderer
+ * or CPU rendering (see `gpuSettingsApply`), whatever preset is active. With
+ * `undefined`, a volume renders as in 4.x, with no probe and no read of the
+ * record. Every render path reads the settings here, so that one check covers
  * them all.
  */
 function gpuSettingsForRender(): GpuSettings | undefined {
-  return getLossyDownsampling().final && !getShouldUseCPURendering()
-    ? getActiveGpuSettings()
-    : undefined;
+  if (!getLossyDownsampling().final || !gpuSettingsApply()) {
+    return undefined;
+  }
+
+  return getActiveGpuSettings();
 }
 
-/** Returns to the default preset. */
+/** Returns the active preset to the default, which is `auto`. */
 function resetGpuSettingsPreset(): void {
   activePresetId = DEFAULT_PRESET_ID;
 }
 
 /**
- * The limits of one grid under some GPU settings.
+ * The preset that applies to a grid of these dimensions.
  *
- * `maxEdge` is the limit on one axis. `maxVoxelCount` comes from the texture
- * memory and from the width of one voxel: a texture that the texture memory
- * cannot hold cannot work, whatever its shape. "The texture is too large" and
- * "there is not sufficient memory" give the same result to the user, so one
- * mechanism covers the two causes.
+ * Under `auto`, a grid with an edge above the reliable edge first runs the
+ * probe at that edge, synchronously, before the real texture is allocated
+ * (see `probeRenderingEdge`). The preset then comes from the updated record.
  *
- * @param gpuSettings - the settings that apply
+ * `auto` states its memory limit for the texture bytes of the page, so the
+ * texture of this grid gets the limit minus `otherTextureBytes`, the bytes that
+ * the other textures of the page already take. A named preset comes back as
+ * it is, and its memory limits one texture.
+ *
+ * @param gpuSettings - the GPU settings that apply
+ * @param dimensions - the number of voxels on each axis of the grid
+ * @param bytesPerVoxel - the number of bytes of one voxel of the texture
+ * @param otherTextureBytes - the texture bytes of the page that this grid
+ * does not replace
+ */
+function gpuSettingsForGrid(
+  gpuSettings: GpuSettings,
+  dimensions: ArrayLike<number>,
+  bytesPerVoxel: number,
+  otherTextureBytes = 0
+): GpuSettings {
+  if (gpuSettings.id !== 'auto') {
+    return gpuSettings;
+  }
+
+  const edge = Math.max(dimensions[0], dimensions[1], dimensions[2]);
+  let result = gpuSettings;
+
+  // An `auto` with no limits (see `gpuSettingsApply`) has an infinite edge,
+  // so it never probes.
+  if (
+    edge > gpuSettings.maxTextureEdge &&
+    edge <= autoTestBounds().maxTextureEdge
+  ) {
+    const format: ProbeTextureFormat =
+      bytesPerVoxel === 1
+        ? 'uint8'
+        : bytesPerVoxel === 2
+          ? getRenderingCapabilities().norm16
+            ? 'norm16'
+            : 'halfFloat'
+          : 'float';
+
+    if (probeRenderingEdge(edge, format)) {
+      result = getAutoGpuSettings();
+    }
+  }
+
+  if (otherTextureBytes <= 0) {
+    return result;
+  }
+
+  return {
+    ...result,
+    textureMemoryBytes: Math.max(
+      result.textureMemoryBytes - otherTextureBytes,
+      MIN_TEXTURE_BYTES
+    ),
+  };
+}
+
+/**
+ * The limits of one grid under one preset.
+ *
+ * `maxEdge` is the limit of the device on one axis. `maxVoxelCount` comes from
+ * the memory of the device and from the width of one voxel: a texture that no
+ * device can hold in its texture memory cannot work, whatever its shape. "The
+ * texture is too large" and "there is not sufficient memory" give the same
+ * result to the user, so one mechanism covers the two causes.
+ *
+ * @param gpuSettings - the GPU settings that apply
  * @param bytesPerVoxel - the number of bytes of one voxel of the texture
  * @returns the limits that a grid must respect
  */
@@ -194,11 +489,13 @@ function gridLimitsOfGpuSettings(
 
 export {
   getGpuSettingsPreset,
+  gpuSettingsForGrid,
   getGpuSettingsPresets,
   setGpuSettingsPreset,
   getActiveGpuSettings,
   gpuSettingsForRender,
   resetGpuSettingsPreset,
   gridLimitsOfGpuSettings,
+  gpuSettingsApply,
   DEFAULT_PRESET_ID as defaultGpuSettingsPresetId,
 };

@@ -9,6 +9,16 @@ import {
 } from '@kitware/vtk.js/Rendering/OpenGL/RenderWindow/resourceSharingHelper';
 import vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture';
 import { getCanUseNorm16Texture } from '../../init';
+import {
+  getGpuMemoryTotal,
+  removeGpuMemoryEntry,
+  setGpuMemoryEntry,
+} from '../../utilities/gpuMemoryLedger';
+import {
+  noteTextureAllocation,
+  noteTextureRendered,
+} from '../../utilities/gpuAllocationTracker';
+import gridFitsGpuSettings from './gridFitsGpuSettings';
 import takeBoundScalarTexture from './takeBoundScalarTexture';
 
 const { vtkErrorMacro } = macro;
@@ -121,6 +131,7 @@ function vtkStreamingOpenGLImageResliceMapper(publicAPI, model) {
     publicAPI.renderPieceStart(ren, actor);
     publicAPI.renderPieceDraw(ren, actor);
     publicAPI.renderPieceFinish(ren, actor);
+    noteTextureRendered(model.context);
     publicAPI.invokeEvent({ type: 'EndEvent' });
   };
 
@@ -164,17 +175,24 @@ function vtkStreamingOpenGLImageResliceMapper(publicAPI, model) {
     return false;
   };
 
+  /**
+   * Builds the textures of each input.
+   *
+   * Each build takes the strategy texture that the renderable holds now
+   * (see `takeBoundScalarTexture`). A plain texture that this method makes gets
+   * the render window at once: when the GPU settings refuse the full grid, the
+   * texture stays empty, and the draw shows black and does not throw.
+   */
   publicAPI.buildBufferObjects = (ren, actor) => {
     const actorProperties = actor.getProperties();
 
     takeBoundScalarTexture(model);
     model.currentValidInputs.forEach(({ imageData }, component) => {
-      if (!model.scalarTextures) {
-        model.scalarTextures = [];
-      }
-
       if (!model.scalarTextures[component]) {
         model.scalarTextures[component] = vtkOpenGLTexture.newInstance();
+        model.scalarTextures[component].setOpenGLRenderWindow(
+          model._openGLRenderWindow
+        );
       }
 
       const currentTexture = model.scalarTextures[component];
@@ -262,13 +280,53 @@ function vtkStreamingOpenGLImageResliceMapper(publicAPI, model) {
         !tex?.oglObject?.getHandle() || tex?.hash !== scalarsHash;
 
       if (reBuildTex && !hasUpdatedExtents) {
+        const dims = imageData.getDimensions();
+        const numberOfComponents = scalars.getNumberOfComponents();
+
+        // The full-resolution voxels have no reduction here, so a grid that
+        // the GPU settings cannot hold gets no texture rather than a gray one.
+        if (
+          !gridFitsGpuSettings(
+            dims,
+            scalars.getDataType(),
+            numberOfComponents,
+            {
+              volumeId: imageData.get('volumeId')?.volumeId,
+            }
+          )
+        ) {
+          return;
+        }
+
+        const textureBytes =
+          dims[0] *
+          dims[1] *
+          dims[2] *
+          numberOfComponents *
+          (scalars.getData()?.BYTES_PER_ELEMENT ?? 4);
+
+        noteTextureAllocation({
+          textureBytes,
+          totalBytes: getGpuMemoryTotal() + textureBytes,
+        });
         const newScalarTexture = vtkOpenGLTexture.newInstance();
+        const superRelease = newScalarTexture.releaseGraphicsResources;
+
+        setGpuMemoryEntry(newScalarTexture, {
+          kind: 'texture',
+          bytes: textureBytes,
+          volumeId: imageData.get('volumeId')?.volumeId,
+        });
+        newScalarTexture.releaseGraphicsResources = (...args) => {
+          removeGpuMemoryEntry(newScalarTexture);
+
+          return superRelease(...args);
+        };
 
         newScalarTexture.setOpenGLRenderWindow(model._openGLRenderWindow);
         // This path builds the texture from the scalars of `imageData`, which
         // are the full-resolution voxels, so the dimensions must be the ones of
         // `imageData`. Only the streaming path below reads a reduced grid.
-        const dims = imageData.getDimensions();
         newScalarTexture.setOglNorm16Ext(
           model.context.getExtension('EXT_texture_norm16')
         );

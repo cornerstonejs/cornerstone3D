@@ -30,11 +30,19 @@ import {
   resetGpuSettingsPreset,
   setGpuSettingsPreset,
 } from '../src/utilities/gpuSettingsPresets';
+import * as renderingCapabilities from '../src/utilities/renderingCapabilities';
 import { setLossyDownsampling } from '../src/init';
 
-// These tests need final downsampling, which is off by default.
+// These tests need final downsampling, which is off by default, and a GPU
+// renderer, because the GPU settings apply to a GPU renderer only. The spy is
+// set for each test, because the tests restore all mocks after each test.
 beforeAll(() => setLossyDownsampling({ final: true }));
 afterAll(() => setLossyDownsampling({ final: false }));
+beforeEach(() => {
+  jest
+    .spyOn(renderingCapabilities, 'getRendererClass')
+    .mockReturnValue('desktop');
+});
 
 const flush = async () => {
   for (let i = 0; i < 20; i++) {

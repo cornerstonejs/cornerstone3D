@@ -33,19 +33,24 @@ because the memory of each preset is larger than the reduced texture.
 | `high`, `medium`    | 2048             | 1, 1, 2           | 512 × 512 × 1232 | `reduced-1x1x2/full-extent/average`     |
 | `low`, `low-tablet` | 256              | 2, 2, 9.625       | 256 × 256 × 256  | `reduced-2x2x9.625/full-extent/average` |
 
+Under `auto`, the result depends on the device. A device with a `MAX_3D_TEXTURE_SIZE` of 2048 gives
+the row of `high`. A device that passes the probe at 2464 gives the row of `high-texture-4096`.
+
 `boxAverageReductionFactors` sets each reduced edge M to `min(dimension, maxTextureEdge)`. When the
 edge limit reduces an axis and that limit is above 1024, M is `ceil(dimension / f)` of the whole
 factor `f = ceil(dimension / maxTextureEdge)`, so 2464 under 2048 gives 1232. Then, while the reduced
 grid holds more voxels than `textureMemoryBytes / bytesPerVoxel`, it takes one voxel from the largest
 reduced axis. Last, an axis takes a whole factor f that divides its edge when `dimension / f` is at
 least 0.9 of M. The factor is `dimension / M`, so 2464 / 256 gives 9.625: no divisor of 2464 gives
-an edge between 231 and 256. Each texel covers its exact range of the source, see `VRS-I-12` in
+an edge between 231 and 256. Each texel covers its exact range of the source, see `VRS-I-18` in
 [Volume Render Strategy](./volumeRenderStrategy.md).
 
 ## 1. The application selects the GPU settings and creates the volume
 
-Nothing probes the device. The application turns on final downsampling and selects a preset
-before a viewport adds its actor. A viewport reads the preset only at that moment.
+Without final downsampling (`rendering.lossyDownsampling.final`), a volume gets its full-resolution
+texture. With it, the default preset is `auto`, which reads the stored record of the device. An
+application that selects a named preset does so before a viewport adds its actor. A viewport reads
+the preset only at that moment.
 
 ```mermaid
 sequenceDiagram
@@ -58,7 +63,7 @@ sequenceDiagram
     participant CVM as CompositeVoxelManager
 
     App->>Prof: setGpuSettingsPreset('medium')
-    Note over Prof: No call means the default 'high'.<br/>An unknown name throws.
+    Note over Prof: No call means the default 'auto'.<br/>An unknown name throws.
     App->>Retr: add('volume', ProgressiveRetrieveImages.coarseInterleavedRetrieveStages)
     App->>VL: createAndCacheVolume(volumeId, { imageIds })
     VL->>Vol: new volume (voxelGrid, dataType, imageIds)
@@ -90,6 +95,7 @@ sequenceDiagram
     CA->>RVT: resolveVolumeTexture(volume, options)
     RVT->>RVT: gpuSettingsForRender()
     RVT->>Prov: provideStrategies({ volume, gpuSettings, reason: 'initial' })
+    Note over Prov: Under 'auto', gpuSettingsForGrid probes an edge<br/>above the reliable edge before any allocation.
     Prov->>Grid: gridLimitsOfGpuSettings(gpuSettings, bytesPerVoxel)
     Grid-->>Prov: { maxEdge, maxVoxelCount }
     Prov->>Grid: boxAverageReductionFactors(dimensions, limits)

@@ -164,6 +164,20 @@ interface Cornerstone3DConfig {
      */
     lossyDownsampling?: LossyDownsampling;
     /**
+     * The bounds of what the `auto` GPU settings preset tests on a device.
+     *
+     * - `maxTextureMemoryBytes` is the largest texture memory that `auto`
+     *   allows. The default is 32 GB, an assumption about the likely devices.
+     * - `maxTextureEdge` is the largest texture edge that `auto` probes. The
+     *   default, and the upper bound, is `MAX_3D_TEXTURE_SIZE` of the device.
+     *
+     * A named preset ignores both.
+     */
+    autoGpuSettings?: {
+      maxTextureMemoryBytes?: number;
+      maxTextureEdge?: number;
+    };
+    /**
      * When true, legacy viewport types (STACK, ORTHOGRAPHIC, VIDEO, ECG,
      * WHOLE_SLIDE) are internally backed by GenericViewport implementations
      * through legacy compatibility adapters at viewport creation time.

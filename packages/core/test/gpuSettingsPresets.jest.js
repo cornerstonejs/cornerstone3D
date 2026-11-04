@@ -1,4 +1,12 @@
-import { describe, it, expect, afterEach } from '@jest/globals';
+import {
+  describe,
+  it,
+  expect,
+  afterEach,
+  beforeEach,
+  jest,
+} from '@jest/globals';
+import { volumeTextureReductionFactors } from '../src/RenderingEngine/helpers/volumeRenderStrategy';
 import {
   getGpuSettingsPreset,
   getGpuSettingsPresets,
@@ -6,29 +14,82 @@ import {
   setGpuSettingsPreset,
   resetGpuSettingsPreset,
   gridLimitsOfGpuSettings,
+  gpuSettingsForGrid,
   gpuSettingsForRender,
 } from '../src/utilities/gpuSettingsPresets';
+import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
+import vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
+import gridFitsGpuSettings from '../src/RenderingEngine/vtkClasses/gridFitsGpuSettings';
+import { convertMapperToNotSharedMapper } from '../src/RenderingEngine/helpers/createVolumeMapper';
 import {
+  getConfiguration,
+  getLossyDownsampling,
   resetUseCPURendering,
+  setConfiguration,
   setLossyDownsampling,
   setUseCPURendering,
 } from '../src/init';
+import { getGpuMemoryEntryBytes } from '../src/utilities/gpuMemoryLedger';
+import {
+  MEMORY_RECENT_MS,
+  recordRenderingCapabilityFailure,
+  recordRenderingCapabilitySuccess,
+  resetRenderingCapabilities,
+  retestRenderingCapabilities,
+} from '../src/utilities/renderingCapabilities';
+import {
+  probeEdgeSearch,
+  probeRenderingLimits,
+  probeTextureEdge,
+} from '../src/utilities/textureSupport';
 
-// The named capability profiles, which an application states. MR-CODE-1 and
+jest.mock('../src/utilities/textureSupport', () => ({
+  probeRenderingLimits: jest.fn(),
+  probeTextureEdge: jest.fn(),
+  probeEdgeSearch: jest.fn(),
+}));
+
+// The named capability presets, which an application states. MR-CODE-1 and
 // MR-CODE-2 of cornerstone3D issue #2921.
 //
-// The strategies that read a profile are in volumeRenderStrategy.jest.js.
+// The strategies that read a preset are in volumeRenderStrategy.jest.js.
 
 const GIGABYTE = 1024 * 1024 * 1024;
+let getContextSpy;
+
+/** A WebGL2 context of one renderer, which is all that the detection reads. */
+function mockWebGL(renderer = 'NVIDIA GeForce RTX 3080') {
+  const gl = {
+    getParameter: (param) => (param === 'unmasked-renderer' ? renderer : 16384),
+    getExtension: (name) =>
+      name === 'WEBGL_debug_renderer_info'
+        ? { UNMASKED_RENDERER_WEBGL: 'unmasked-renderer' }
+        : null,
+  };
+
+  getContextSpy = jest
+    .spyOn(HTMLCanvasElement.prototype, 'getContext')
+    .mockImplementation((type) => (type === 'webgl2' ? gl : null));
+  probeRenderingLimits.mockReturnValue({
+    formats: { float: true, norm16: false },
+    max3DTextureSize: 8192,
+    reliableEdge: 2048,
+  });
+}
+
 afterEach(() => {
   resetGpuSettingsPreset();
+  getContextSpy?.mockRestore();
+  getContextSpy = undefined;
+  resetRenderingCapabilities({ clearStorage: true });
 });
 
-describe('the GPU settings presets', () => {
-  it('ships five profiles, and marks the control of the example as internal', () => {
-    const profiles = getGpuSettingsPresets();
+describe('the capability presets', () => {
+  it('ships auto and five named presets, and marks the control of the example as internal', () => {
+    const presets = getGpuSettingsPresets();
 
-    expect(profiles.map((profile) => profile.id)).toEqual([
+    expect(presets.map((preset) => preset.id)).toEqual([
+      'auto',
       'low-tablet',
       'low',
       'medium',
@@ -36,11 +97,11 @@ describe('the GPU settings presets', () => {
       'high-texture-4096',
     ]);
     expect(
-      profiles.filter((profile) => profile.internal).map((p) => p.id)
+      presets.filter((preset) => preset.internal).map((p) => p.id)
     ).toEqual(['high-texture-4096']);
   });
 
-  it('states the edge and the memory of each profile', () => {
+  it('states the edge and the memory of each preset', () => {
     expect(getGpuSettingsPreset('low-tablet')).toEqual({
       id: 'low-tablet',
       maxTextureEdge: 256,
@@ -62,16 +123,22 @@ describe('the GPU settings presets', () => {
     expect(getGpuSettingsPreset('low').speed).toBe(30);
     expect(getGpuSettingsPreset('medium').speed).toBe(60);
     expect(getGpuSettingsPreset('high').speed).toBe(100);
-    // The control of the example is the one profile with a larger edge.
+    // The control of the example is the one preset with a larger edge.
     expect(getGpuSettingsPreset('high-texture-4096').maxTextureEdge).toBe(4096);
   });
 
-  it('takes the profile that an application states, and probes nothing', () => {
-    expect(getActiveGpuSettings().id).toBe('high');
+  it('applies auto by default, and a named preset overrides auto', () => {
+    mockWebGL();
+
+    expect(getActiveGpuSettings().id).toBe('auto');
 
     setGpuSettingsPreset('low-tablet');
 
-    expect(getActiveGpuSettings().id).toBe('low-tablet');
+    expect(getActiveGpuSettings()).toEqual(getGpuSettingsPreset('low-tablet'));
+
+    resetGpuSettingsPreset();
+
+    expect(getActiveGpuSettings().id).toBe('auto');
   });
 
   it('states an error for a name that does not exist', () => {
@@ -91,6 +158,427 @@ describe('the GPU settings presets', () => {
   });
 });
 
+describe('final downsampling off', () => {
+  it('runs no probe under auto on any render path', () => {
+    jest.clearAllMocks();
+    mockWebGL();
+
+    const dimensions = [16, 16, 3000];
+    const imageData = vtkImageData.newInstance();
+
+    imageData.setDimensions(dimensions);
+    imageData.set(
+      {
+        voxelManager: {
+          getCompleteScalarDataArray: () => new Float32Array(16 * 16 * 3000),
+        },
+      },
+      true
+    );
+    const sharedMapper = vtkVolumeMapper.newInstance();
+
+    sharedMapper.setInputData(imageData);
+
+    expect(getLossyDownsampling().final).toBe(false);
+    expect(gpuSettingsForRender()).toBeUndefined();
+    expect(gridFitsGpuSettings(dimensions, 'Float32Array', 1)).toBe(true);
+    convertMapperToNotSharedMapper(sharedMapper).delete();
+
+    expect(probeRenderingLimits).not.toHaveBeenCalled();
+    expect(probeTextureEdge).not.toHaveBeenCalled();
+    expect(probeEdgeSearch).not.toHaveBeenCalled();
+  });
+});
+
+describe('final downsampling on', () => {
+  it('converts a real vtk.js mapper, and its delete removes the entry of the ledger', () => {
+    mockWebGL();
+    setLossyDownsampling({ final: true });
+
+    try {
+      const dimensions = [16, 16, 16];
+      const imageData = vtkImageData.newInstance();
+
+      imageData.setDimensions(dimensions);
+      imageData.set(
+        {
+          voxelManager: {
+            getCompleteScalarDataArray: () => new Float32Array(16 * 16 * 16),
+          },
+        },
+        true
+      );
+
+      const sharedMapper = vtkVolumeMapper.newInstance();
+
+      sharedMapper.setInputData(imageData);
+
+      const mapper = convertMapperToNotSharedMapper(sharedMapper);
+
+      expect(getGpuMemoryEntryBytes(mapper)).toBe(16 * 16 * 16 * 4);
+
+      mapper.delete();
+
+      expect(getGpuMemoryEntryBytes(mapper)).toBe(0);
+    } finally {
+      setLossyDownsampling({ final: false });
+    }
+  });
+});
+
+describe('the auto preset', () => {
+  it('starts a desktop GPU from medium, with the edge of the probe', () => {
+    mockWebGL();
+
+    expect(getActiveGpuSettings()).toEqual({
+      id: 'auto',
+      maxTextureEdge: 2048,
+      textureMemoryBytes: 8 * GIGABYTE,
+      speed: 60,
+    });
+  });
+
+  it('starts from 0.5 GB when the probed edge is below 2048 and no memory is stored', () => {
+    mockWebGL();
+    probeRenderingLimits.mockReturnValue({
+      formats: { float: true, norm16: false },
+      max3DTextureSize: 8192,
+      reliableEdge: 1024,
+    });
+
+    expect(getActiveGpuSettings().textureMemoryBytes).toBe(GIGABYTE / 2);
+
+    resetRenderingCapabilities({ clearStorage: true });
+    probeRenderingLimits.mockReturnValue({
+      formats: { float: true, norm16: false },
+      max3DTextureSize: 8192,
+      reliableEdge: 2048,
+    });
+
+    expect(getActiveGpuSettings().textureMemoryBytes).toBe(8 * GIGABYTE);
+  });
+
+  describe('on a software renderer', () => {
+    beforeEach(() => {
+      mockWebGL('Google SwiftShader');
+      setLossyDownsampling({ final: true });
+    });
+
+    afterEach(() => setLossyDownsampling({ final: false }));
+
+    it('applies no auto limits, renders as 4.x, and runs no probe', () => {
+      // The detection at init runs its own probe; auto adds none.
+      getActiveGpuSettings();
+      jest.clearAllMocks();
+
+      expect(gpuSettingsForRender()).toBeUndefined();
+      expect(gridFitsGpuSettings([16, 16, 3000], 'Float32Array', 1)).toBe(true);
+      expect(getActiveGpuSettings().maxTextureEdge).toBe(Infinity);
+      expect(probeTextureEdge).not.toHaveBeenCalled();
+      expect(probeEdgeSearch).not.toHaveBeenCalled();
+    });
+
+    it('applies no named preset either', () => {
+      setGpuSettingsPreset('low-tablet');
+
+      expect(gpuSettingsForRender()).toBeUndefined();
+      expect(gridFitsGpuSettings([16, 16, 3000], 'Float32Array', 1)).toBe(true);
+    });
+  });
+
+  it('reduces for an hour and until the reload after an episode, and caps after several', () => {
+    const start = Date.now();
+    const clock = jest.spyOn(Date, 'now').mockReturnValue(start);
+
+    try {
+      mockWebGL();
+      recordRenderingCapabilitySuccess('textureBytes', 12 * GIGABYTE);
+
+      // The limit allows one step above the normal level.
+      expect(getActiveGpuSettings().textureMemoryBytes).toBe(24 * GIGABYTE);
+
+      // One failure allows half of the failed total, and a second failure in
+      // the same hour allows a quarter.
+      recordRenderingCapabilityFailure('gpuBytes', 10 * GIGABYTE);
+
+      expect(getActiveGpuSettings().textureMemoryBytes).toBe(5 * GIGABYTE);
+
+      clock.mockReturnValue(start + 1000);
+      recordRenderingCapabilityFailure('gpuBytes', 5 * GIGABYTE);
+
+      expect(getActiveGpuSettings().textureMemoryBytes).toBe(2.5 * GIGABYTE);
+
+      // After the hour, the page that saw the reduction keeps it.
+      clock.mockReturnValue(start + MEMORY_RECENT_MS + 2000);
+
+      expect(getActiveGpuSettings().textureMemoryBytes).toBe(2.5 * GIGABYTE);
+
+      // A reload after the hour returns to the full limit.
+      resetRenderingCapabilities();
+
+      expect(getActiveGpuSettings().textureMemoryBytes).toBe(24 * GIGABYTE);
+
+      // Three episodes, each an hour apart, set a ceiling below the smallest
+      // first failure of them. The episode above counts as one.
+      recordRenderingCapabilityFailure('gpuBytes', 10 * GIGABYTE);
+      clock.mockReturnValue(start + 3 * MEMORY_RECENT_MS);
+      recordRenderingCapabilityFailure('gpuBytes', 8 * GIGABYTE);
+      clock.mockReturnValue(start + 5 * MEMORY_RECENT_MS);
+      resetRenderingCapabilities();
+
+      expect(getActiveGpuSettings().textureMemoryBytes).toBe(6 * GIGABYTE);
+    } finally {
+      clock.mockRestore();
+    }
+  });
+
+  describe('after stored losses', () => {
+    const DIMS = [512, 512, 2048];
+    const FAILED_TOTAL = 1.32e9;
+    const volume = {
+      volumeId: 'v',
+      dataType: 'Uint16Array',
+      voxelGrid: { dimensions: DIMS },
+      voxelManager: { numberOfComponents: 1 },
+      isDynamicVolume: () => false,
+    };
+    let clock;
+    let start;
+
+    beforeEach(() => {
+      start = Date.now();
+      clock = jest.spyOn(Date, 'now').mockReturnValue(start);
+      mockWebGL();
+      setLossyDownsampling({ final: true });
+    });
+
+    afterEach(() => {
+      setLossyDownsampling({ final: false });
+      clock.mockRestore();
+    });
+
+    /** Three episodes, each two hours apart, which set a ceiling. */
+    function setCeiling() {
+      for (let episode = 0; episode < 3; episode++) {
+        clock.mockReturnValue(start + episode * 2 * MEMORY_RECENT_MS);
+        recordRenderingCapabilityFailure('textureBytes', FAILED_TOTAL);
+      }
+      clock.mockReturnValue(start + 6 * MEMORY_RECENT_MS);
+      resetRenderingCapabilities();
+    }
+
+    it('gives a nonzero limit below the failed total, and the strategy still reduces', () => {
+      // The API must keep a usable limit: 12 losses in one hour stop at 1/8.
+      for (let loss = 0; loss < 12; loss++) {
+        clock.mockReturnValue(start + loss * 1000);
+        recordRenderingCapabilityFailure('textureBytes', FAILED_TOTAL);
+      }
+      resetRenderingCapabilities();
+
+      const settings = gpuSettingsForGrid(getActiveGpuSettings(), DIMS, 2);
+
+      expect(settings.textureMemoryBytes).toBe(Math.floor(FAILED_TOTAL / 8));
+      expect(settings.textureMemoryBytes).toBeGreaterThanOrEqual(
+        16 * 1024 ** 2
+      );
+      expect(settings.textureMemoryBytes).toBeLessThan(FAILED_TOTAL);
+      expect(
+        volumeTextureReductionFactors(volume, getActiveGpuSettings()).some(
+          (factor) => factor > 1
+        )
+      ).toBe(true);
+
+      // A small failed total stops at the 16 MB floor.
+      resetRenderingCapabilities({ clearStorage: true });
+      for (let loss = 0; loss < 3; loss++) {
+        recordRenderingCapabilityFailure('textureBytes', 64 * 1024 ** 2);
+      }
+      resetRenderingCapabilities();
+
+      expect(getActiveGpuSettings().textureMemoryBytes).toBe(16 * 1024 ** 2);
+    });
+
+    it('ignores a ceiling 7 days after its last failure', () => {
+      setCeiling();
+      const ceiling = Math.floor(FAILED_TOTAL * 0.75);
+
+      expect(getActiveGpuSettings().textureMemoryBytes).toBe(ceiling);
+
+      clock.mockReturnValue(start + 4 * MEMORY_RECENT_MS + 7 * 24 * 3600000);
+      resetRenderingCapabilities();
+
+      expect(getActiveGpuSettings().textureMemoryBytes).toBe(8 * GIGABYTE);
+    });
+
+    it('treats a stored ceiling with no ceilingAt as expired', () => {
+      setCeiling();
+      const key = Object.keys(window.localStorage).find(
+        (name) =>
+          name.startsWith('cornerstone3D.renderingCapabilities.') &&
+          !name.includes('.pending.')
+      );
+      const stored = JSON.parse(window.localStorage.getItem(key));
+
+      expect(stored.textureBytes.ceiling).toBeGreaterThan(0);
+      delete stored.textureBytes.ceilingAt;
+      window.localStorage.setItem(key, JSON.stringify(stored));
+      resetRenderingCapabilities();
+
+      expect(getActiveGpuSettings().textureMemoryBytes).toBe(8 * GIGABYTE);
+    });
+  });
+
+  it('raises the memory one step after each larger success, up to the configured maximum', () => {
+    mockWebGL();
+
+    recordRenderingCapabilitySuccess('textureBytes', 7 * GIGABYTE);
+    expect(getActiveGpuSettings().textureMemoryBytes).toBe(14 * GIGABYTE);
+
+    recordRenderingCapabilitySuccess('textureBytes', 14 * GIGABYTE);
+    expect(getActiveGpuSettings().textureMemoryBytes).toBe(28 * GIGABYTE);
+
+    recordRenderingCapabilitySuccess('textureBytes', 28 * GIGABYTE);
+    expect(getActiveGpuSettings().textureMemoryBytes).toBe(32 * GIGABYTE);
+
+    setConfiguration({
+      ...getConfiguration(),
+      rendering: {
+        ...getConfiguration().rendering,
+        autoGpuSettings: { maxTextureMemoryBytes: 16 * GIGABYTE },
+      },
+    });
+
+    try {
+      expect(getActiveGpuSettings().textureMemoryBytes).toBe(16 * GIGABYTE);
+    } finally {
+      setConfiguration({
+        ...getConfiguration(),
+        rendering: { ...getConfiguration().rendering, autoGpuSettings: {} },
+      });
+    }
+  });
+
+  it('probes no edge above the configured maximum edge', () => {
+    mockWebGL();
+    probeTextureEdge.mockClear();
+    setConfiguration({
+      ...getConfiguration(),
+      rendering: {
+        ...getConfiguration().rendering,
+        autoGpuSettings: { maxTextureEdge: 1024 },
+      },
+    });
+
+    try {
+      const settings = gpuSettingsForGrid(
+        getActiveGpuSettings(),
+        [512, 512, 2464],
+        4
+      );
+
+      expect(probeTextureEdge).not.toHaveBeenCalled();
+      expect(settings.maxTextureEdge).toBe(1024);
+    } finally {
+      setConfiguration({
+        ...getConfiguration(),
+        rendering: { ...getConfiguration().rendering, autoGpuSettings: {} },
+      });
+    }
+  });
+
+  it('classes "Apple GPU" on a Mac with no touch screen as a desktop', () => {
+    const platform = jest
+      .spyOn(navigator, 'platform', 'get')
+      .mockReturnValue('MacIntel');
+
+    try {
+      mockWebGL('Apple GPU');
+
+      expect(getActiveGpuSettings().textureMemoryBytes).toBe(8 * GIGABYTE);
+    } finally {
+      platform.mockRestore();
+    }
+  });
+
+  it('probes an edge that a grid needs before it raises the edge', () => {
+    mockWebGL();
+    probeTextureEdge.mockReturnValueOnce(true).mockReturnValueOnce(false);
+
+    const raised = gpuSettingsForGrid(
+      getActiveGpuSettings(),
+      [512, 512, 2464],
+      4
+    );
+
+    expect(probeTextureEdge).toHaveBeenCalledWith(2464, 'float');
+    expect(raised.maxTextureEdge).toBe(2464);
+
+    // A failed edge stays the limit until a retest.
+    const kept = gpuSettingsForGrid(raised, [512, 512, 4096], 4);
+
+    expect(kept.maxTextureEdge).toBe(2464);
+    gpuSettingsForGrid(kept, [512, 512, 5000], 4);
+    expect(probeTextureEdge).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('auto on a device that renders gray above an edge of 128', () => {
+  const edgeSearch = {
+    max3DTextureSize: 8192,
+    reliableEdge: 128,
+    failedEdge: 256,
+  };
+
+  function mockSmallEdgeDevice() {
+    mockWebGL('Mali-G52');
+    probeRenderingLimits.mockReturnValue({
+      formats: { float: true, norm16: false },
+      ...edgeSearch,
+    });
+    probeTextureEdge.mockReset();
+    probeTextureEdge.mockImplementation((edge) => edge <= 128);
+    probeEdgeSearch.mockReset();
+  }
+
+  it('never gives an edge above 128 after a retest of the edge', () => {
+    mockSmallEdgeDevice();
+
+    expect(getActiveGpuSettings().maxTextureEdge).toBe(128);
+
+    retestRenderingCapabilities({ edge: true });
+
+    // The start edge of the class is 256, which no probe passed.
+    expect(getActiveGpuSettings().maxTextureEdge).toBe(128);
+
+    const preset = gpuSettingsForGrid(
+      getActiveGpuSettings(),
+      [256, 256, 200],
+      4
+    );
+
+    expect(probeTextureEdge).toHaveBeenCalledWith(256, 'float');
+    expect(preset.maxTextureEdge).toBe(128);
+  });
+
+  it('searches the edge again when the first probe could not run', () => {
+    mockSmallEdgeDevice();
+    probeRenderingLimits.mockReturnValue(null);
+    probeEdgeSearch.mockReturnValueOnce(null).mockReturnValue(edgeSearch);
+
+    // The search could not run either, so the edge is the unprobed floor.
+    expect(getActiveGpuSettings().maxTextureEdge).toBe(128);
+    // A search that could not run is not repeated in the same page.
+    getActiveGpuSettings();
+    expect(probeEdgeSearch).toHaveBeenCalledTimes(1);
+
+    // The next page runs the search, and finds the edge.
+    resetRenderingCapabilities();
+
+    expect(getActiveGpuSettings().maxTextureEdge).toBe(128);
+    expect(probeEdgeSearch).toHaveBeenCalledTimes(2);
+  });
+});
+
 describe('CPU rendering', () => {
   afterEach(() => {
     resetUseCPURendering();
@@ -100,6 +588,7 @@ describe('CPU rendering', () => {
   // The API must do this: the presets are WebGL GPU limits, so CPU rendering
   // renders as with final downsampling off.
   it('applies no preset to CPU rendering', () => {
+    mockWebGL();
     setLossyDownsampling({ final: true });
     setGpuSettingsPreset('low-tablet');
 
