@@ -3,6 +3,7 @@ import {
   boxAverageReductionFactors,
   deriveBoxAverageGrid,
 } from '../../utilities/voxelGrid';
+import type { ViewportFidelityCause } from '../../types/ViewportFidelity';
 import { volumeTextureBytes } from '../../utilities/getBufferConfiguration';
 import { gridLimitsOfGpuSettings } from '../../utilities/gpuSettingsPresets';
 import { getLossyDownsampling } from '../../init';
@@ -60,6 +61,11 @@ export interface IVolumeRenderStrategy {
   readonly name: string;
   /** The volume that this strategy draws. */
   readonly volume: IImageVolume;
+  /**
+   * Why the grid of this strategy is coarser than the volume, for the fidelity
+   * state. Undefined for a full-resolution strategy.
+   */
+  readonly reductionCause?: ViewportFidelityCause;
   /** Whether this strategy can draw now. */
   isReady(): boolean;
   /** The textures to bind, in order. An empty list is legal and binds nothing. */
@@ -170,6 +176,7 @@ export type SelectVolumeStrategy = (
 class FullExtentTextureStrategy implements IVolumeRenderStrategy {
   public readonly name: string;
   public readonly volume: IImageVolume;
+  public readonly reductionCause?: ViewportFidelityCause;
 
   private readonly grid: VoxelGrid;
   private readonly statistic: VoxelStatistic;
@@ -182,16 +189,19 @@ class FullExtentTextureStrategy implements IVolumeRenderStrategy {
     volume,
     grid,
     statistic = VoxelStatistics.Average,
+    reductionCause,
   }: {
     name: string;
     volume: IImageVolume;
     grid: VoxelGrid;
     statistic?: VoxelStatistic;
+    reductionCause?: ViewportFidelityCause;
   }) {
     this.name = name;
     this.volume = volume;
     this.grid = grid;
     this.statistic = statistic;
+    this.reductionCause = reductionCause;
   }
 
   public isReady(): boolean {
@@ -313,6 +323,26 @@ function finalReductionFactors(
 }
 
 /**
+ * Why the GPU settings reduce this volume: `deviceTextureLimit` when the edge
+ * limit alone reduces it, `memoryBudget` when only the texture memory does.
+ * Undefined when the settings do not reduce the volume.
+ */
+export function reductionCauseOf(
+  volume: IImageVolume,
+  gpuSettings: GpuSettings | undefined
+): ViewportFidelityCause | undefined {
+  if (!finalReductionFactors(volume, gpuSettings).some((f) => f > 1)) {
+    return undefined;
+  }
+
+  const edgeFactors = boxAverageReductionFactors(volume.voxelGrid.dimensions, {
+    maxEdge: gpuSettings.maxTextureEdge,
+  });
+
+  return edgeFactors.some((f) => f > 1) ? 'deviceTextureLimit' : 'memoryBudget';
+}
+
+/**
  * Builds the full-resolution strategy when the GPU settings can hold it, or
  * when final downsampling is off.
  *
@@ -394,7 +424,13 @@ export function provisionReducedResolutionStrategy({
     return undefined;
   }
 
-  return new FullExtentTextureStrategy({ name, volume, grid, statistic });
+  return new FullExtentTextureStrategy({
+    name,
+    volume,
+    grid,
+    statistic,
+    reductionCause: reductionCauseOf(volume, gpuSettings),
+  });
 }
 
 /**

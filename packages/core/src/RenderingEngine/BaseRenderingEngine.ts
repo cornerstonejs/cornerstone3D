@@ -34,6 +34,10 @@ import type {
 import { OrientationAxis } from '../enums';
 import type { VtkOffscreenMultiRenderWindow } from '../types';
 import { StatsOverlay } from './helpers/stats';
+import {
+  detachFidelityIndicator,
+  maybeAttachFidelityIndicator,
+} from './helpers/fidelityIndicator';
 import { convertColorArrayToRgbString } from '../utilities/convertColorArrayToRgbString';
 
 // Rendering engines seem to not like rendering things less than 2 pixels per side
@@ -154,6 +158,12 @@ abstract class BaseRenderingEngine {
     const canvas = getOrCreateCanvas(element);
     const { background } = viewportInput.defaultOptions;
     this.fillCanvasWithBackgroundColor(canvas, background);
+
+    // 6. Product fidelity indicator for volume viewports (unless disabled)
+    const enabledViewport = this.getViewport(viewportId);
+    if (enabledViewport) {
+      maybeAttachFidelityIndicator(enabledViewport);
+    }
   }
 
   /**
@@ -285,6 +295,10 @@ abstract class BaseRenderingEngine {
       const canvas = getOrCreateCanvas(vp.element);
       const { background } = vp.defaultOptions;
       this.fillCanvasWithBackgroundColor(canvas, background);
+    });
+
+    this._getViewportsAsArray().forEach((viewport) => {
+      maybeAttachFidelityIndicator(viewport);
     });
   }
 
@@ -668,6 +682,25 @@ abstract class BaseRenderingEngine {
     return Array.from(this._viewports.values());
   }
 
+  /**
+   * Fires the fidelity event of each rendered viewport, after
+   * `IMAGE_RENDERED` (FIDELITY-EVENT-2..4). An `IMAGE_RENDERED` listener can
+   * disable a viewport or destroy this engine, so a viewport that this engine
+   * no longer holds is skipped: it has no renderer and no camera.
+   */
+  protected _notifyFidelityOfRenderedViewports(viewports: IViewport[]): void {
+    viewports.forEach((viewport) => {
+      if (
+        this.hasBeenDestroyed ||
+        this._viewports.get(viewport.id) !== viewport
+      ) {
+        return;
+      }
+
+      viewport.notifyFidelityStateChanged();
+    });
+  }
+
   private _setViewportsToBeRenderedNextFrame(viewportIds: string[]) {
     // Add the viewports to the set of flagged viewports
     viewportIds.forEach((viewportId) => {
@@ -715,6 +748,7 @@ abstract class BaseRenderingEngine {
       renderingEngineId,
     };
 
+    detachFidelityIndicator(viewport);
     viewport.removeWidgets();
 
     // Trigger first before removing the data attributes, as we need the enabled

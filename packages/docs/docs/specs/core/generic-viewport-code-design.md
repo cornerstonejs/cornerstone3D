@@ -359,6 +359,59 @@ For example `Planar/PlanarViewportLegacyAdapter.ts`.
 - **GENVIEW-LEGACY-5** The legacy adapter is temporary. A new feature goes on the
   family class, and the adapter translates to it.
 
+### The fidelity of the view (GENVIEW-FIDELITY)
+
+The user requirements are in [Viewport fidelity](./viewport-fidelity.md). This
+group says which part of a generic viewport owns each piece of the fidelity.
+
+- **GENVIEW-FIDELITY-1** The render path composes the fidelity of each frame,
+  because only the render path knows which texture it bound and at which
+  sample distance it drew. The fidelity stays on the mounted rendering:
+  - `VtkVolumeSliceRenderPath` and `VtkVolume3DRenderPath` set `voxelQuality`
+    from the grid that they bound, on each render request. A volume data event
+    only marks the record stale. The render path recomputes the record once,
+    in `refreshFidelity()`, when the viewport next reads the fidelity. Thus
+    the record stays current while the volume streams, also with no camera
+    change.
+  - `CpuVolumeSliceRenderPath` sets `voxelQuality` from the full volume on
+    each draw, because its sampler reads the full volume. It sets
+    `interactiveReduction` while it shows a deferred resample.
+  - `VtkImageMapperRenderPath` and `CpuImageSliceRenderPath` set
+    `imageQualityStatus` from the image that they draw.
+  - Each volume path sets `fullGrid` and `sampleDistanceLod` (1 for a slice).
+- **GENVIEW-FIDELITY-2** The binding exposes the fidelity of its rendering
+  through the typed fields of `RenderingFidelity` on `MountedRendering`. The
+  viewport and a consumer do not reach into an actor, a mapper, a volume or an
+  image to read it. A render path sets `excludeFromFidelity` on an overlay that
+  the fidelity ignores, for example a segmentation labelmap. The rendering
+  also carries a `refreshFidelity()` callback, which the base class calls
+  before it reads the fields.
+- **GENVIEW-FIDELITY-3** The resolved view supplies the display spacing of the
+  verdict, because the display spacing is a world size of one device pixel. The
+  base class reads it with `canvasToWorld()` of the resolved view. A render path
+  does not compute the display spacing. The family decides whether the view is
+  3D with `isFidelityView3D()`. See GENVIEW-VIEW-6 and FIDELITY-RECORD-2.
+- **GENVIEW-FIDELITY-4** The base class derives the verdict from the record of
+  each binding and the display spacing, with `compareVoxelQuality()`. The base
+  class fires the fidelity event and answers the fidelity query, because every
+  family needs both. The event goes through the helper that the legacy
+  `Viewport` also uses (FIDELITY-EVENT-7). See GENVIEW-BASE-1 and
+  GENVIEW-BASE-4.
+- **GENVIEW-FIDELITY-5** A binding that cannot show degraded data supplies no
+  record, and the viewport then reports no degradation. A video, an ECG and a
+  stack of images at full quality are examples.
+- **GENVIEW-FIDELITY-6** The fidelity configuration is global configuration.
+  It is not view state and not data presentation. See GENVIEW-STATE-1 and
+  GENVIEW-STATE-2.
+- **GENVIEW-FIDELITY-7** A user interface that shows the fidelity is a consumer
+  of the event. It is not part of the family class, the render path or the
+  base class. It does not fire the event (FIDELITY-UI-8).
+- **GENVIEW-FIDELITY-8** The family class decides that a viewport can report
+  fidelity, with `canReportFidelity()`. The base answer is `false`. The Planar
+  family and the Volume3D family return `true`, also before they mount data.
+  The ECG, Video and WSI families keep `false`, so they get no indicator. The
+  code does not use a list of viewport types. See GENVIEW-API-6.
+
 ### The file layout of a family (GENVIEW-FILE)
 
 - **GENVIEW-FILE-1** Every file of one family lives in one directory,
@@ -395,6 +448,7 @@ For example `Planar/PlanarViewportLegacyAdapter.ts`.
 | Does the code change what the user navigates to?                                     | The view state, on the family class                      |
 | Does the code change how a mounted data set looks?                                   | The data presentation, on the binding                    |
 | Does the code persist or restore the look of the view?                               | The projection adapter                                   |
+| Does the code record or report the fidelity of the frame?                            | See GENVIEW-FIDELITY                                     |
 | Does the code exist for an application that has not migrated?                        | The legacy adapter                                       |
 | Do two or more families need the same code?                                          | The base class, or a shared module in `GenericViewport/` |
 
@@ -479,11 +533,13 @@ Breaks GENVIEW-FILE-1 and GENVIEW-FILE-5. The fix moves the code into
 Breaks GENVIEW-STATE-5. The dead declaration goes, and the duplicate becomes a
 type alias, so a future change to one shape cannot silently pass the cast.
 
-### Only the Planar family answers `getCurrentMode()`
+### Only the Planar and Volume3D families answer `getCurrentMode()`
 
-`PlanarViewport` overrides `getCurrentMode()`. The ECG family, the Video family,
-the WSI family and the Volume3D family do not, so each one answers `'unknown'`
-whenever data is mounted.
+`PlanarViewport` and the Volume3D family override `getCurrentMode()`. The
+Volume3D family answers `'volume3d'` for a volume and `'unknown'` for a
+geometry-only source. The ECG family, the Video family and the WSI family do not
+override `getCurrentMode()`, so each one answers `'unknown'` when data is
+mounted.
 
 `UltrasoundDirectionalTool` shows the cost. Its guard reads:
 
@@ -496,6 +552,16 @@ an application registers, and it cannot tell a planar viewport that shows a
 stack from one that shows a volume.
 
 Breaks GENVIEW-FAMILY-5 and GENVIEW-API-6.
+
+### The fidelity display spacing reads `devicePixelRatio`
+
+The resolved view gives `canvasToWorld()` in CSS pixels, and it holds no device
+pixel size. The helper `pixelSpacingOfCanvasToWorld()` therefore divides by
+`window.devicePixelRatio`. The base class calls that helper, so a DOM value
+reaches the base class.
+
+Breaks GENVIEW-BASE-1 and GENVIEW-FIDELITY-3. The fix gives the resolved view
+the size of one device pixel.
 
 ## Past defects
 

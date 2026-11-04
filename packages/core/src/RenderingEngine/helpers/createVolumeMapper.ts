@@ -49,6 +49,68 @@ export function sampleDistanceOf(
   return Math.max(distance, diagonal / (MAXIMUM_SAMPLES_PER_RAY - 1));
 }
 
+const idleSampleDistanceMultipliers = new WeakMap<object, number>();
+
+/** Records the multiplier that a mapper samples with when no interaction runs. */
+export function setIdleSampleDistanceMultiplier(
+  mapper: object,
+  multiplier: number
+): void {
+  idleSampleDistanceMultipliers.set(mapper, multiplier);
+}
+
+/**
+ * The multiplier that a mapper samples with when no interaction runs: the last
+ * one that a viewport set, else the one of the configuration.
+ */
+export function idleSampleDistanceMultiplierOf(mapper: object): number {
+  return (
+    idleSampleDistanceMultipliers.get(mapper) ??
+    (getConfiguration().rendering?.volumeRendering?.sampleDistanceMultiplier ||
+      1)
+  );
+}
+
+type SampledMapper = {
+  getSampleDistance?: () => number;
+  getInputData?: () => unknown;
+  getScalarTexture?: () => unknown;
+};
+
+/**
+ * The sample distance of a mapper over its distance at a multiplier of 1:
+ * `current` now, and `idle` when no interaction runs. `idle` above 1 is a
+ * standing reduction; `current / idle` above 1 ends with the interaction
+ * (FIDELITY-RECORD-6).
+ *
+ * @param texture - the bound texture, when the mapper does not expose it
+ */
+export function sampleDistanceRatiosOf(
+  mapper: SampledMapper | undefined,
+  texture: unknown = mapper?.getScalarTexture?.()
+): { current: number; idle: number } {
+  const current = mapper?.getSampleDistance?.();
+  const imageData = mapper?.getInputData?.() as vtkImageData | undefined;
+
+  if (!imageData || !(current > 0)) {
+    return { current: 1, idle: 1 };
+  }
+
+  const baseline = sampleDistanceOf(imageData, texture, 1);
+
+  if (!(baseline > 0)) {
+    return { current: 1, idle: 1 };
+  }
+
+  const idle = sampleDistanceOf(
+    imageData,
+    texture,
+    idleSampleDistanceMultiplierOf(mapper)
+  );
+
+  return { current: current / baseline, idle: idle / baseline };
+}
+
 /**
  * Given an imageData and a vtkOpenGLTexture, it creates a "shared" vtk volume mapper
  * from which various volume actors can be created.

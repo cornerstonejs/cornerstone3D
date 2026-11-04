@@ -9,6 +9,8 @@ import drawImageSync from '../src/RenderingEngine/helpers/cpuFallback/drawImageS
 import { CpuVolumeSliceRenderPath } from '../src/RenderingEngine/GenericViewport/Planar/CpuVolumeSliceRenderPath';
 import PlanarCPUVolumeSampler from '../src/RenderingEngine/GenericViewport/Planar/PlanarCPUVolumeSampler';
 import eventTarget from '../src/eventTarget';
+import { svgStateOf } from '../src/RenderingEngine/helpers/fidelityIndicator/fidelityIndicatorState';
+import { fidelityLinesFromBindings } from '../src/RenderingEngine/helpers/fidelityIndicator/collectFidelityLines';
 
 function createCanvas(width = 256, height = 256) {
   const canvas = document.createElement('canvas');
@@ -272,6 +274,62 @@ describe('CpuVolumeSliceRenderPath', () => {
     expect(rendering.forceHighQualityResample).toBe(true);
     expect(rendering.renderingInvalidated).toBe(true);
     expect(ctx.display.renderNow).toHaveBeenCalledTimes(1);
+
+    jest.useRealTimers();
+  });
+
+  it('records the volume quality and reports a deferred resample as interactive reduction', () => {
+    jest.useFakeTimers();
+
+    const sampledSliceState = {
+      ...createSampledSliceState(),
+      samplingMode: 'viewport',
+    };
+    const rendering = createRendering(sampledSliceState);
+    const record = {
+      grid: { spacing: [1, 1, 1] },
+      missing: 0,
+      voxels: 1,
+      lowest: 8,
+      reduction: 'none',
+    };
+    const shownState = () =>
+      svgStateOf(
+        fidelityLinesFromBindings(undefined, [
+          {
+            record: rendering.voxelQuality,
+            fullGrid: rendering.fullGrid,
+            interactiveReduction: rendering.interactiveReduction,
+          },
+        ])
+      );
+    rendering.imageVolume.getVoxelQuality = jest.fn(() => record);
+    rendering.imageVolume.voxelGrid = { spacing: [1, 1, 1] };
+    const path = new CpuVolumeSliceRenderPath();
+    const ctx = createContext();
+    let decision = 'defer';
+
+    path.sampler = {
+      getResampleDecision: jest.fn(() => decision),
+      sampleSliceImage: jest.fn(() => sampledSliceState),
+      createOrUpdateEnabledElement: jest.fn(() => rendering.enabledElement),
+      updateCPUFallbackViewport: jest.fn(),
+      getResolvedVOIRange: jest.fn(() => ({ lower: 0, upper: 255 })),
+    };
+
+    path.render(ctx, rendering);
+
+    expect(rendering.voxelQuality).toBe(record);
+    expect(rendering.fullGrid).toBe(rendering.imageVolume.voxelGrid);
+    expect(rendering.interactiveReduction).toBe(true);
+    // The user sees the interactive state while the older sample shows.
+    expect(shownState()).toBe('lod');
+
+    decision = 'resample';
+    path.render(ctx, rendering);
+
+    expect(rendering.interactiveReduction).toBe(false);
+    expect(shownState()).toBe('done');
 
     jest.useRealTimers();
   });
