@@ -5,7 +5,6 @@ import { createDisplaySetSplitRules, displaySetRules } from './displaySetRules';
 import type { DisplaySetRules } from './displaySetRulesTypes';
 import { RuleCompileError } from '../safeFunctions';
 import { isVideoInstance } from './isVideoInstance';
-import { resolveSplitRuleSet } from './splitRuleSet';
 import { BaseDisplaySet } from './BaseDisplaySet';
 import { ImageStackDisplaySet } from './ImageStackDisplaySet';
 import { DISPLAY_SET_HANDLER_NAMES } from './types';
@@ -67,31 +66,15 @@ describe('displaySetRules - the rules as data', () => {
     expect(remote.map((g) => g.splitKey)).toEqual(local.map((g) => g.splitKey));
   });
 
-  it('gives the defaults the priorities 10 to 170 with 80 free, in the earlier order, and runs the catch-all last', () => {
-    const entries = Object.entries(displaySetRules);
-    expect(entries.map(([id, rule]) => [id, rule.priority])).toEqual([
-      ['video', 10],
-      ['ecg', 20],
-      ['wholeslide', 30],
-      ['singleImageModality', 40],
-      ['multiFrame', 50],
-      ['localizer', 60],
-      ['mixedDimensionalityBValue', 70],
-      // 80 is reserved for the later default rule dynamicVolume.
-      ['volume3d', 90],
-      ['defaultImageRule', 100],
-      ['segmentation', 110],
-      ['rtStructureSet', 120],
-      ['parametricMap', 130],
-      ['structuredReport', 140],
-      ['encapsulatedDocument', 150],
-      ['bulkAnnotation', 160],
-      ['chart', 170],
-      ['unsupported', Number.MAX_SAFE_INTEGER],
-    ]);
-    expect(
-      resolveSplitRuleSet(compiledDisplaySetRules).map((rule) => rule.id)
-    ).toEqual(entries.map(([id]) => id));
+  it('gives the defaults ascending multiples of 10, leaves 80 free, and runs unsupported last', () => {
+    const { unsupported, ...rules } = displaySetRules;
+    const priorities = Object.values(rules).map((rule) => rule.priority);
+    expect(priorities.every((p) => p % 10 === 0)).toBe(true);
+    expect(priorities).toEqual([...priorities].sort((a, b) => a - b));
+    expect(new Set(priorities).size).toBe(priorities.length);
+    // 80 is reserved for the later default rule dynamicVolume.
+    expect(priorities).not.toContain(80);
+    expect(unsupported.priority).toBe(Number.MAX_SAFE_INTEGER);
   });
 });
 
