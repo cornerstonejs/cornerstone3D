@@ -546,6 +546,15 @@ These shapes reach your code through the adapters:
   makes, from a random UUID (`2.25.<integer>`). The integer has 39 digits or
   fewer. In 0.52 it always had 39 digits.
 - The log root of Cornerstone is now the log root of `@dcmjs-org/dcmjs`.
+- A zero-length string element now naturalizes as empty: `[]` for a list VM
+  and `null` for VM 1. Before 1.0.0-beta.9 the reader gave `['']`.
+- `combineFrameInstance` of `@cornerstonejs/metadata` now uses the dcmjs
+  `frameDataset`. The frame view is cached on the instance, and the function
+  no longer changes the instance (`ImageType`, `ImageOrientationPatient`,
+  `_parentInstance`). `frameNumber` is a non-enumerable property of the view.
+  An enhanced instance with one frame now gets a frame view. A frame number
+  that is not from 1 to `NumberOfFrames` throws a `RangeError`. The export
+  `createCombinedValue` is removed.
 
 ### Why This Matters
 
