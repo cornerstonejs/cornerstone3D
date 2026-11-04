@@ -1192,12 +1192,13 @@ Two rules from the defaults, in raw form:
 
 ### Optional rules
 
-`@cornerstonejs/metadata` ships rules that are not defaults. A host turns them
-on by id. Each one is a JSON file in `rules/optional/<id>.json` of the npm
-package, in the format of the `mammoViewSplit.json` example: `name`, `notes`,
-`requires`, `displaySetContext` and `rules`. A server reads the files from the
-package (`@cornerstonejs/metadata/rules/optional/<id>.json`).
-`optionalDisplaySetRules` holds the same data, keyed by id.
+`@cornerstonejs/metadata` ships rules that are not defaults. Each file
+`rules/optional/<id>.jsonc` of the npm package holds bare rule data: a rule map
+keyed by rule id, the same form as `displaySetRules`. The comments of the file
+give the explanation. A file has no global context: a rule keeps each name that
+it reads in its own `context`. The package exports no code for these files. A
+host reads a file (`@cornerstonejs/metadata/rules/optional/<id>.jsonc`), removes
+the comments, and merges the rule map over the defaults.
 
 | Id                       | What it does                                                                                                                                                         | Priority |
 | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
@@ -1210,28 +1211,45 @@ package (`@cornerstonejs/metadata/rules/optional/<id>.json`).
 | `regularVolume`          | The regular slices of a series with some irregular images become one volume.                                                                                         | `-2`     |
 | `derivedObjectVersions`  | One display set for each SR or SEG instance, in content date order, with `isLatestVersion`.                                                                          | `-1`     |
 
-`withOptionalDisplaySetRules` merges the selected files into the default rules.
-It throws when a rule id or a context name of a file is already in the rules,
-in the default metadata context, or in an earlier file:
+A host with a build step or a server reads the file directly:
 
 ```ts
+import { readFileSync } from 'fs';
+import JSON5 from 'json5'; // or any parser that accepts comments
 import {
   createDisplaySetSplitRules,
-  withOptionalDisplaySetRules,
+  displaySetRules,
 } from '@cornerstonejs/metadata';
 
-const { rules, context } = withOptionalDisplaySetRules([
-  'dwiByBValue',
-  'byAcquisitionTime',
-]);
-const splitRules = createDisplaySetSplitRules(rules, { context });
+const read = (id: string) =>
+  JSON5.parse(
+    readFileSync(
+      require.resolve(`@cornerstonejs/metadata/rules/optional/${id}.jsonc`),
+      'utf8'
+    )
+  );
+
+const splitRules = createDisplaySetSplitRules({
+  ...displaySetRules,
+  ...read('dwiByBValue'),
+  ...read('byAcquisitionTime'),
+});
 ```
 
-The collision check of `withOptionalDisplaySetRules` covers only the names of
-`defaultMetadataContext`. A host with its own context, such as OHIF
-`metadataContext`, merges the result into it with
-`{ ...hostContext, ...context }`, and checks its own names. In that merge, an
-entry of `context` wins.
+Check the rule ids before the merge: a rule id that is already in the rules
+replaces that rule.
+
+**OHIF.** The OHIF build copies each file to
+`customizations/split/optional/<id>.jsonc`, and wraps the rule map in a
+customization module that `$merge`s it into `splitRules` and requires
+`split/enableNewSplit`. The viewer loads the module only when the URL asks for
+it, for example `?customization=split/optional/dwiByBValue`. To change a value of
+an optional rule, for example `singleImageSeriesMaxImages` of
+`singleImageSeriesStack`, a later customization `$merge`s into the `context` of
+that rule.
+
+The `displaySetRules` example lists every optional rule, off at the start, and
+the user turns each one on with its checkbox.
 
 An optional rule uses a priority below `0`, or a priority between two defaults
 that is not a multiple of 10. `byAcquisitionTime` (88) and `volumePositionOrder`

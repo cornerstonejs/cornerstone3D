@@ -83,8 +83,6 @@ export type {
   RawSplitRule,
   DisplaySetRules,
   CreateDisplaySetSplitRulesOptions,
-  OptionalDisplaySetRuleFile,
-  WithOptionalDisplaySetRules,
 } from './displayset';
 export {
   BaseDisplaySet,
@@ -107,8 +105,6 @@ export {
   sortInstancesCopy,
   displaySetRules,
   createDisplaySetSplitRules,
-  optionalDisplaySetRules,
-  withOptionalDisplaySetRules,
   defaultMetadataContext,
   setMetadataContext,
   getMetadataContext,

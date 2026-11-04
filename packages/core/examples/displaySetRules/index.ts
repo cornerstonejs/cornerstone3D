@@ -11,7 +11,6 @@ import {
   createDisplaySetSplitRules,
   Enums as metadataEnums,
   displaySetRules,
-  optionalDisplaySetRules,
   type IDisplaySet,
   type NaturalizedInstance,
   type DisplaySetRules,
@@ -227,15 +226,6 @@ const DEMO_CONTEXT = {
       ? `${String(viewCode.CodingSchemeDesignator)}:${String(viewCode.CodeValue)}`
       : undefined;
   },
-
-  // The global entries of the optional rule files, so that each optional
-  // rule below compiles when it is pasted.
-  ...Object.assign(
-    {},
-    ...Object.values(optionalDisplaySetRules).map(
-      (file) => file.displaySetContext ?? {}
-    )
-  ),
 };
 
 const SAMPLE_SNIPPETS: Record<string, string> = {
@@ -321,19 +311,40 @@ const SAMPLE_SNIPPETS: Record<string, string> = {
   ),
 };
 
-// The optional rules of @cornerstonejs/metadata (rules/optional/*.json).
-for (const [id, file] of Object.entries(optionalDisplaySetRules)) {
-  SAMPLE_SNIPPETS[`Optional rule: ${id} (${file.name})`] = JSON.stringify(
-    file.rules,
-    null,
-    2
+// ======== The optional rules of @cornerstonejs/metadata ======== //
+
+/** Removes the line and block comments of a JSONC text, and keeps the strings. */
+const stripJsonComments = (text: string) =>
+  text.replace(
+    /("(?:\\.|[^"\\])*")|\/\/[^\n]*|\/\*[\s\S]*?\*\//g,
+    (_, string) => string ?? ''
   );
-}
+
+/**
+ * Every `rules/optional/*.jsonc` file of the metadata package, as text (the
+ * `asset/source` rule of the example build). A new file shows in the rule list
+ * with no change to this example.
+ */
+const optionalRuleFiles = import.meta.webpackContext(
+  '../../../metadata/rules/optional',
+  { recursive: false, regExp: /\.jsonc$/ }
+);
+
+/** The optional rules, keyed by rule id. Off until the user ticks one. */
+const optionalRules: DisplaySetRules = Object.assign(
+  {},
+  ...optionalRuleFiles
+    .keys()
+    .map((key) => JSON.parse(stripJsonComments(optionalRuleFiles(key))))
+);
 
 // ======== State ======== //
 
-/** Rule ids the user unticked. Ids come from the rules, never hard-coded. */
-const disabledRuleIds = new Set<string>();
+/**
+ * Rule ids that are off: the optional rules at the start, and the rules the
+ * user unticked. Ids come from the rules, never hard-coded.
+ */
+const disabledRuleIds = new Set<string>(Object.keys(optionalRules));
 /**
  * Rules the user added or the server supplied, keyed by rule id. Merged over the
  * standard ones by key, so an added rule with a standard id replaces that rule.
@@ -397,9 +408,12 @@ function setStatus(message: string, isError = false) {
 
 // ======== The rule set, assembled from user state ======== //
 
-/** The standard rules with the user/server rules merged over them by key. */
+/**
+ * The standard and optional rules with the user/server rules merged over them
+ * by key.
+ */
 function mergedRules(): DisplaySetRules {
-  return { ...displaySetRules, ...addedRules };
+  return { ...displaySetRules, ...optionalRules, ...addedRules };
 }
 
 /**
@@ -494,7 +508,7 @@ function describeGroupBy(rule: RawSplitRule): string {
 function ruleRow(
   id: string,
   rule: RawSplitRule,
-  origin: 'standard' | 'added' | 'replaced'
+  origin: 'standard' | 'optional' | 'added' | 'replaced'
 ) {
   const row = document.createElement('div');
   row.style.display = 'flex';
@@ -549,7 +563,13 @@ function ruleRow(
     meta.push(`context: ${Object.keys(rule.context).join(', ')}`);
   }
   if (origin !== 'standard') {
-    meta.push(origin === 'added' ? 'added' : 'replaces the standard rule');
+    meta.push(
+      {
+        optional: 'optional (rules/optional)',
+        added: 'added',
+        replaced: 'replaces the standard rule',
+      }[origin]
+    );
   }
   const metaEl = document.createElement('span');
   metaEl.style.color = '#7f8c8d';
@@ -571,7 +591,9 @@ function renderRules() {
   rulesList.replaceChildren();
   for (const [id, rule] of rulesInOrder(mergedRules())) {
     const origin = !(id in addedRules)
-      ? 'standard'
+      ? id in optionalRules
+        ? 'optional'
+        : 'standard'
       : id in displaySetRules
         ? 'replaced'
         : 'added';
@@ -893,8 +915,8 @@ for (const step of [
     'folder, not the whole study: the example reads and decodes every file ' +
     'when you upload it.',
   'Look at the display sets that the standard rules make.',
-  'Pick the "Optional rule: dwiByBValue" sample above and press "Add ' +
-    'rule". Expect one display set for each DiffusionBValue (b=1000: 32 images, ' +
+  'Tick the optional rule "dwiByBValue" in the rule list. Expect one ' +
+    'display set for each DiffusionBValue (b=1000: 32 images, ' +
     'in SliceLocation order), and one more display set for the images without ' +
     'DiffusionBValue.',
   'Untick "dwiByBValue" to compare with the standard split again.',
@@ -983,9 +1005,10 @@ addButton('Reset', () => {
   addedRules = {};
   mergeCommands.length = 0;
   disabledRuleIds.clear();
+  Object.keys(optionalRules).forEach((id) => disabledRuleIds.add(id));
   layoutBySplitKey.clear();
   renderRules();
-  setStatus('Back to the standard rules.');
+  setStatus('Back to the standard rules, with the optional rules off.');
   void resplit();
 });
 

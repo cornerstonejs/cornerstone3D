@@ -170,11 +170,15 @@ URL customization modules), and the `context` of each rule.
   site or optional rule uses a priority below `0`, or a number between two
   defaults that is not a multiple of 10 (for example `89` runs just before
   `volume3d` at `90`). A new default takes a multiple of 10.
-- Before you write a rule, check `packages/metadata/rules/optional/`. Each JSON
-  file there is an optional rule set (`name`, `notes`, `requires`,
-  `displaySetContext`, `rules`). A host turns files on with
-  `withOptionalDisplaySetRules(ids)`. After a change to a file, run
-  `node packages/metadata/scripts/generate-optional-rules.js`.
+- Before you write a rule, check `packages/metadata/rules/optional/`. Each
+  `<id>.jsonc` file there is bare rule data: a rule map keyed by rule id, with
+  `//` comments for the explanation. A file has no global context; put each
+  name in the rule `context`. The package exports no code for the files: a host
+  reads a file, removes the comments, and merges the map over
+  `displaySetRules`. OHIF copies the files to
+  `customizations/split/optional/<id>.jsonc` and loads one with
+  `?customization=split/optional/<id>`. `optionalRules.test.ts` compiles each
+  file, and the `displaySetRules` example lists each file with no code change.
 
 ## Checklist for a new rule
 

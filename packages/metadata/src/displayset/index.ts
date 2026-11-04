@@ -32,11 +32,6 @@ export {
   defaultDisplaySetSplitRules,
 } from './compiledDisplaySetRules';
 export { displaySetRules, createDisplaySetSplitRules } from './displaySetRules';
-export {
-  optionalDisplaySetRules,
-  withOptionalDisplaySetRules,
-} from './optionalDisplaySetRules';
-export type { WithOptionalDisplaySetRules } from './optionalDisplaySetRules';
 export { defaultMetadataContext } from './displaySetContext';
 export {
   setMetadataContext,
@@ -76,7 +71,6 @@ export type {
   RawSplitRule,
   DisplaySetRules,
   CreateDisplaySetSplitRulesOptions,
-  OptionalDisplaySetRuleFile,
 } from './displaySetRulesTypes';
 export { createDisplaySetFromGroup } from './createDisplaySetFromGroup';
 export type { CreateDisplaySetFromGroupOptions } from './createDisplaySetFromGroup';

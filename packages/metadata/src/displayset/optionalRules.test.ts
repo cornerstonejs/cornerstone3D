@@ -3,14 +3,30 @@ import { join } from 'path';
 import { createDisplaySetFromGroup } from './createDisplaySetFromGroup';
 import { createDisplaySetSplitRules, displaySetRules } from './displaySetRules';
 import { groupInstancesBySplitRules } from './groupInstancesBySplitRules';
-import {
-  optionalDisplaySetRules,
-  withOptionalDisplaySetRules,
-} from './optionalDisplaySetRules';
+import type { DisplaySetRules } from './displaySetRulesTypes';
 import type { NaturalizedInstance } from './types';
 import { usSweepsAndClips } from './__fixtures__/scenarioInstances';
 
 const RULES_DIR = join(__dirname, '../../rules/optional');
+
+/** Removes the line and block comments of a JSONC text, and keeps the strings. */
+const stripJsonComments = (text: string) =>
+  text.replace(
+    /("(?:\\.|[^"\\])*")|\/\/[^\n]*|\/\*[\s\S]*?\*\//g,
+    (_, string) => string ?? ''
+  );
+
+/** The rule maps of `rules/optional/*.jsonc`, keyed by file id. */
+const optionalRules: Record<string, DisplaySetRules> = Object.fromEntries(
+  readdirSync(RULES_DIR)
+    .filter((name) => name.endsWith('.jsonc'))
+    .map((name) => [
+      name.slice(0, -'.jsonc'.length),
+      JSON.parse(
+        stripJsonComments(readFileSync(join(RULES_DIR, name), 'utf8'))
+      ),
+    ])
+);
 const AXIAL = [1, 0, 0, 0, 1, 0];
 
 let uidCount = 0;
@@ -68,8 +84,10 @@ function splitWith(
   instances: NaturalizedInstance[],
   read: (displaySet: Record<string, unknown>) => unknown = () => undefined
 ): View[] {
-  const { rules, context } = withOptionalDisplaySetRules([id]);
-  const ruleSet = createDisplaySetSplitRules(rules, { context });
+  const ruleSet = createDisplaySetSplitRules({
+    ...displaySetRules,
+    ...optionalRules[id],
+  });
   // Reverse the arrival order: the result must not depend on it.
   return groupInstancesBySplitRules([...instances].reverse(), ruleSet).map(
     (group) => {
@@ -92,22 +110,22 @@ const uids = (instances: NaturalizedInstance[]) =>
 const description = (displaySet: Record<string, unknown>) =>
   displaySet.SeriesDescription;
 
-describe('optionalDisplaySetRules - the JSON files', () => {
-  it('holds the same data as rules/optional/*.json (run scripts/generate-optional-rules.js)', () => {
-    const files = Object.fromEntries(
-      readdirSync(RULES_DIR)
-        .filter((name) => name.endsWith('.json'))
-        .map((name) => [
-          name.slice(0, -'.json'.length),
-          JSON.parse(readFileSync(join(RULES_DIR, name), 'utf8')),
-        ])
-    );
-    expect(optionalDisplaySetRules).toEqual(files);
+describe('rules/optional/*.jsonc', () => {
+  it('each file compiles over the defaults, with no rule id of a default', () => {
+    expect(Object.keys(optionalRules).length).toBeGreaterThan(0);
+    for (const rules of Object.values(optionalRules)) {
+      for (const id of Object.keys(rules)) {
+        expect(Object.keys(displaySetRules)).not.toContain(id);
+      }
+      expect(() =>
+        createDisplaySetSplitRules({ ...displaySetRules, ...rules })
+      ).not.toThrow();
+    }
   });
 
   it('uses priorities below 0, or between the defaults and not a multiple of 10', () => {
-    for (const file of Object.values(optionalDisplaySetRules)) {
-      for (const rule of Object.values(file.rules)) {
+    for (const rules of Object.values(optionalRules)) {
+      for (const rule of Object.values(rules)) {
         const priority = rule.priority as number;
         expect(priority < 0 || priority % 10 !== 0).toBe(true);
       }
@@ -116,13 +134,12 @@ describe('optionalDisplaySetRules - the JSON files', () => {
 
   it('volumePositionOrder claims the same instances as volume3d (same matches)', () => {
     expect(
-      optionalDisplaySetRules.volumePositionOrder.rules.volumePositionOrder
-        .matches
+      optionalRules.volumePositionOrder.volumePositionOrder.matches
     ).toEqual(displaySetRules.volume3d.matches);
   });
 });
 
-describe('optionalDisplaySetRules - one split for each file', () => {
+describe('rules/optional/*.jsonc - one split for each file', () => {
   it('dwiByBValue: one display set for each b-value, and one for the images with none', () => {
     const b0 = [
       mr({ DiffusionBValue: 0, SliceLocation: 2 }),
@@ -285,46 +302,5 @@ describe('optionalDisplaySetRules - one split for each file', () => {
         ['structuredReport', true],
       ],
     ]);
-  });
-});
-
-describe('withOptionalDisplaySetRules', () => {
-  it('reports a collision of a rule id with the base rules or with an earlier file', () => {
-    expect(() =>
-      withOptionalDisplaySetRules(['dwiByBValue'], {
-        dwiByBValue: { priority: 1 },
-      })
-    ).toThrow(
-      /rule id 'dwiByBValue' of 'dwiByBValue' is already in the base rules/
-    );
-    expect(() =>
-      withOptionalDisplaySetRules(['dwiByBValue', 'dwiByBValue'])
-    ).toThrow(/is already in 'dwiByBValue'/);
-  });
-
-  it('reports a collision of a context name with the default context', () => {
-    // Own file data, so the test does not change the shared, frozen export.
-    jest.isolateModules(() => {
-      jest.doMock('./optionalDisplaySetRules.generated', () => ({
-        optionalDisplaySetRuleFiles: {
-          collides: {
-            name: 'collides',
-            rules: {},
-            displaySetContext: { isImage: true },
-          },
-        },
-      }));
-      const isolated = require('./optionalDisplaySetRules');
-      expect(() => isolated.withOptionalDisplaySetRules(['collides'])).toThrow(
-        /context name 'isImage' .* default metadata context/
-      );
-    });
-    jest.dontMock('./optionalDisplaySetRules.generated');
-  });
-
-  it('freezes the shared optional rule data', () => {
-    expect(Object.isFrozen(optionalDisplaySetRules.dwiByBValue.rules)).toBe(
-      true
-    );
   });
 });
