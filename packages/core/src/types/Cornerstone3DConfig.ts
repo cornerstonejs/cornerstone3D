@@ -1,11 +1,26 @@
 import type { RenderingEngineModeType } from '../types';
 import type { RenderBackendValue, VoxelManagerEnum } from '../enums';
 
+/** Which lossy downsampling the viewer may use. See `rendering.lossyDownsampling`. */
+interface LossyDownsampling {
+  final?: boolean;
+  interactive?: boolean;
+  interleavedLoading?: boolean;
+}
+
 interface Cornerstone3DConfig {
   /**
    * Whether the device is mobile or not.
    */
   isMobile?: boolean;
+
+  /**
+   * When true, viewports do not show the built-in fidelity indicator. For an
+   * application that shows its own indicator, for example OHIF. Dangerous:
+   * without such an indicator the user sees lossy pixels with no disclosure
+   * (FIDELITY-CONF-4).
+   */
+  dangerouslyDisableFidelityIndicator?: boolean;
 
   rendering?: {
     // vtk.js supports 8bit integer textures and 32bit float textures.
@@ -118,6 +133,37 @@ interface Cornerstone3DConfig {
       sampleDistanceMultiplier?: number;
     };
     /**
+     * The work that one render does to fill the dirty slices of a reduced
+     * volume texture. The render stops after `maxSlicesPerRender` slices that
+     * hold data, or when `maxMillisecondsPerRender` has passed after at least
+     * one slice. It then requests another render for the slices that remain.
+     * The defaults are 16 slices and 8 ms.
+     */
+    reducedTextureFill?: {
+      maxSlicesPerRender?: number;
+      maxMillisecondsPerRender?: number;
+    };
+    /**
+     * Which lossy downsampling the viewer may use. Each kind shows pixels that
+     * differ from the source data, so an application turns on a kind only
+     * when it also shows a fidelity indication.
+     *
+     * - `final` reduces a volume texture that exceeds the active GPU settings
+     *   (see `setGpuSettingsPreset`), so the image stays reduced after all of
+     *   the data loads. Off by default: a volume then gets a full-resolution
+     *   texture whatever its size, as before the GPU settings existed.
+     * - `interactive` lowers the detail while the user interacts, for example
+     *   a larger sample distance during a 3D rotation. The full detail
+     *   returns when the interaction ends. On by default.
+     * - `interleavedLoading` fills the frames that have not loaded yet with
+     *   copies of the nearby loaded frames, so the whole volume shows early.
+     *   Each frame becomes exact when its own data loads. On by default.
+     *
+     * Read the merged value with `getLossyDownsampling`. A change applies to
+     * the next texture that a viewport provisions and to the next load.
+     */
+    lossyDownsampling?: LossyDownsampling;
+    /**
      * When true, legacy viewport types (STACK, ORTHOGRAPHIC, VIDEO, ECG,
      * WHOLE_SLIDE) are internally backed by GenericViewport implementations
      * through legacy compatibility adapters at viewport creation time.
@@ -165,6 +211,12 @@ interface Cornerstone3DConfig {
      * - MB MBytes of allocated memory. (Run Chrome with --enable-precise-memory-info)
      */
     statsOverlay?: boolean;
+    /**
+     * When true, the fidelity indicator also shows the verbose text badge
+     * (top-left) beside the minimal SVG indicator (top-right).
+     * When false/unset (default), only the SVG indicator is shown.
+     */
+    fidelityIndicatorDebug?: boolean;
   };
 
   /**
@@ -176,4 +228,4 @@ interface Cornerstone3DConfig {
   peerImport?: (moduleId: string) => Promise<any>;
 }
 
-export type { Cornerstone3DConfig as default };
+export type { Cornerstone3DConfig as default, LossyDownsampling };

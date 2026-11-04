@@ -59,6 +59,8 @@ import {
   resolvePlanarRenderPathProjection,
   worldToCanvasPlanarRenderPathProjection,
 } from './planarRenderPathProjection';
+import { imageQualityStatusOf } from '../../helpers/fidelityIndicator/collectFidelityLines';
+import { isSegmentationOverlayData } from '../renderingFidelity';
 
 /** @internal */
 export class CpuImageSliceRenderPath
@@ -110,6 +112,8 @@ export class CpuImageSliceRenderPath
     rendering = {
       renderMode: ActorRenderMode.CPU_IMAGE,
       actorEntryUID: uuidv4(),
+      excludeFromFidelity: isSegmentationOverlayData(payload, options),
+      imageQualityStatus: imageQualityStatusOf(payload.image),
       enabledElement,
       compatibilityActor,
       currentImageIdIndex: payload.initialImageIdIndex ?? 0,
@@ -738,6 +742,7 @@ async function updateRenderedImage(args: {
   defaultViewport.displayedArea = resolvePlanarCpuImageDisplayedArea(image);
 
   enabledElement.image = image;
+  rendering.imageQualityStatus = imageQualityStatusOf(image);
   enabledElement.viewport = {
     ...defaultViewport,
     hflip: previousViewport?.hflip ?? defaultViewport.hflip,
