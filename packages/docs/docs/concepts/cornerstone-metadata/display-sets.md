@@ -1257,6 +1257,64 @@ that is not a multiple of 10. `byAcquisitionTime` (88) and `volumePositionOrder`
 series stays with `dynamicVolume`. No optional rule reads a vendor private
 attribute.
 
+### Overriding a default rule by id
+
+A host overrides a default rule with a rule of the same id in a later layer.
+The later rule replaces the whole default rule, so give every field of the rule,
+not only the changed fields. `priority: null` turns the default rule off.
+
+```ts
+import {
+  createDisplaySetSplitRules,
+  displaySetRules,
+} from '@cornerstonejs/metadata';
+
+const siteRules = {
+  // Replaces the default localizer rule.
+  localizer: { ...displaySetRules.localizer, matches: { Modality: 'CT' } },
+  // Turns the default ecg rule off.
+  ecg: { priority: null },
+};
+
+const splitRules = createDisplaySetSplitRules({
+  ...displaySetRules,
+  ...siteRules,
+});
+```
+
+A default context name is overridden the same way: an entry of
+`options.context` with the same name replaces the default entry for every rule.
+For example, `createDisplaySetSplitRules(displaySetRules, { context: { isImage: 'false' } })`
+sends a CT series to `unsupported`.
+
+In OHIF, a site default does the same with a customization that `$merge`s the
+rules into `useMetadataDisplaySet.splitRules`. List the customization in the
+`customizationService.requires` of the app config, so that it loads on every
+page.
+
+#### Newer rules on an older version
+
+A server component, for example a study indexer, often stays on an older
+`@cornerstonejs/metadata` version. To use a newer default rule there, copy the
+data of the newer rule into the override layer of the server component, with
+the same id. Do not update the package only to get the rule.
+
+This is the recommended approach when you need newer rules, because you test
+and validate the newer rules on the older API before you use them:
+
+1. Copy the rule from `displaySetRules` (or from `rules/optional/<id>.jsonc`)
+   of the newer version.
+2. Change its `priority` to the numbering of the older version. In 5.14 and
+   earlier, the defaults use `1` to `15`, not `10` to `170`.
+3. Compile the override layer with the older `createDisplaySetSplitRules`. A
+   compile error shows a construct that the older rule language does not have.
+4. Run the rules on your test studies, and compare the display sets with the
+   newer version. A context name or a function can exist in both versions and
+   still give a different result.
+
+The viewer and the server must use the same rules, so give the same override
+layer to the viewer, or update both together.
+
 ### Extending the display set rules
 
 Derive from the defaults and compile the result. Rules run in ascending
