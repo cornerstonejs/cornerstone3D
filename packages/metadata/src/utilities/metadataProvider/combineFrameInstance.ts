@@ -103,14 +103,15 @@ function frameProperties(_view, { frameNumber }) {
   return { frameNumber };
 }
 
-const frameOptions = { frameAttributes, frameProperties };
+const frameOptions = { frameAttributes, frameProperties, privateMacros: true };
 
 /**
  * The view of one frame of a multi-frame naturalized instance, from
  * `dcmjs.data.frameDataset`: per-frame functional groups, then shared
  * functional groups, then the root, plus the modality fallbacks of
- * `frameAttributes`. The view is cached on the instance, and the instance is
- * not changed. `frameNumber` is a non-enumerable property of the view.
+ * `frameAttributes`. A private sequence directly in a functional group item
+ * (for example Philips `00211001`) is merged too (`privateMacros: true`). The
+ * view is cached on the instance, and the instance is not changed. `frameNumber` is a non-enumerable property of the view.
  * An instance with fewer than 2 frames and no functional groups comes back
  * unchanged. An undefined frame is frame 1.
  */

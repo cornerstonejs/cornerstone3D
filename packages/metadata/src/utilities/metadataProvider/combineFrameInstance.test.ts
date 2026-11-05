@@ -1,4 +1,7 @@
+import dcmjs from '@dcmjs-org/dcmjs';
 import { combineFrameInstance } from './combineFrameInstance';
+
+const { naturalizeDataset } = dcmjs.data.DicomMetaDictionary;
 
 // The API must do this: the modality fallbacks that dcmjs frameDataset does not
 // compute (NM detector position, RTDOSE GridFrameOffsetVector).
@@ -36,5 +39,57 @@ describe('combineFrameInstance fallbacks', () => {
     expect(combineFrameInstance(3, instance).ImagePositionPatient).toEqual([
       0, 20, 30,
     ]);
+  });
+
+  // PS3.3 C.8.8.3.2: the offsets can be the absolute z values (axial only).
+  it('gives the RTDOSE frame position from absolute GridFrameOffsetVector values', () => {
+    const instance = {
+      NumberOfFrames: 3,
+      ImagePositionPatient: [0, 0, -100],
+      ImageOrientationPatient: [1, 0, 0, 0, 1, 0],
+      GridFrameOffsetVector: [-100, -97.5, -95],
+    };
+
+    expect(combineFrameInstance(1, instance).ImagePositionPatient).toEqual([
+      0, 0, -100,
+    ]);
+    expect(combineFrameInstance(2, instance).ImagePositionPatient).toEqual([
+      0, 0, -97.5,
+    ]);
+  });
+});
+
+// The API must do this: a private sequence directly in a functional group item
+// is merged, and the private tag aliases of the root stay on the view.
+describe('combineFrameInstance private macros', () => {
+  const frameGroup = (value) => ({
+    vr: 'SQ',
+    Value: [
+      {
+        '20050010': { vr: 'LO', Value: ['Philips MR Imaging DD 005'] },
+        '2005100D': { vr: 'DS', Value: [value] },
+      },
+    ],
+  });
+
+  it('keeps the private tag aliases of the root and of the private frame macros', () => {
+    const instance = naturalizeDataset({
+      '00280008': { vr: 'IS', Value: [2] },
+      '70530010': { vr: 'LO', Value: ['Philips PET Private Group'] },
+      '70531009': { vr: 'DS', Value: [1.88] },
+      '52009229': { vr: 'SQ', Value: [{}] },
+      '52009230': {
+        vr: 'SQ',
+        Value: [{ '00211001': frameGroup(1) }, { '00211001': frameGroup(2) }],
+      },
+    });
+
+    const frame1 = combineFrameInstance(1, instance);
+    const frame2 = combineFrameInstance(2, instance);
+
+    expect(frame1['70531009']).toEqual([1.88]);
+    expect(frame2['70531009']).toEqual([1.88]);
+    expect(frame1['2005100D']).toEqual([1]);
+    expect(frame2['2005100D']).toEqual([2]);
   });
 });
