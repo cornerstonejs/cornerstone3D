@@ -249,7 +249,8 @@ export type SplitRuleSetEntry = Omit<SplitRule, 'id'> & {
    * `null` excludes the rule. That is how a customization turns a default rule
    * off without having to remove its key.
    *
-   * The default rules use the priorities `1..n`, in their documented order, and
+   * The default rules use the priorities `10, 20, ... 170` (steps of 10, with
+   * `80` reserved for a later default rule), in their documented order, and
    * the catch-all `unsupported` runs last, at `Number.MAX_SAFE_INTEGER`. A
    * priority below `0` therefore runs before every default rule, and a priority
    * above {@link DEFAULT_SPLIT_RULE_PRIORITY_LIMIT} runs after every other

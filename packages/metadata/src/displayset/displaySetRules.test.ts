@@ -5,7 +5,6 @@ import { createDisplaySetSplitRules, displaySetRules } from './displaySetRules';
 import type { DisplaySetRules } from './displaySetRulesTypes';
 import { RuleCompileError } from '../safeFunctions';
 import { isVideoInstance } from './isVideoInstance';
-import { resolveSplitRuleSet } from './splitRuleSet';
 import { BaseDisplaySet } from './BaseDisplaySet';
 import { ImageStackDisplaySet } from './ImageStackDisplaySet';
 import { DISPLAY_SET_HANDLER_NAMES } from './types';
@@ -67,29 +66,15 @@ describe('displaySetRules - the rules as data', () => {
     expect(remote.map((g) => g.splitKey)).toEqual(local.map((g) => g.splitKey));
   });
 
-  it('gives the defaults the priorities 1..n, and runs the catch-all last', () => {
-    const entries = Object.entries(displaySetRules);
-    expect(entries.map(([id, rule]) => [id, rule.priority])).toEqual([
-      ['video', 1],
-      ['ecg', 2],
-      ['wholeslide', 3],
-      ['singleImageModality', 4],
-      ['multiFrame', 5],
-      ['mixedDimensionalityBValue', 6],
-      ['volume3d', 7],
-      ['defaultImageRule', 8],
-      ['segmentation', 9],
-      ['rtStructureSet', 10],
-      ['parametricMap', 11],
-      ['structuredReport', 12],
-      ['encapsulatedDocument', 13],
-      ['bulkAnnotation', 14],
-      ['chart', 15],
-      ['unsupported', Number.MAX_SAFE_INTEGER],
-    ]);
-    expect(
-      resolveSplitRuleSet(compiledDisplaySetRules).map((rule) => rule.id)
-    ).toEqual(entries.map(([id]) => id));
+  it('gives the defaults ascending multiples of 10, leaves 80 free, and runs unsupported last', () => {
+    const { unsupported, ...rules } = displaySetRules;
+    const priorities = Object.values(rules).map((rule) => rule.priority);
+    expect(priorities.every((p) => p % 10 === 0)).toBe(true);
+    expect(priorities).toEqual([...priorities].sort((a, b) => a - b));
+    expect(new Set(priorities).size).toBe(priorities.length);
+    // 80 is reserved for the later default rule dynamicVolume.
+    expect(priorities).not.toContain(80);
+    expect(unsupported.priority).toBe(Number.MAX_SAFE_INTEGER);
   });
 });
 
@@ -175,6 +160,48 @@ describe('createDisplaySetSplitRules - compiled default behaviour', () => {
       expect(displaySet.numImageFrames).toBe(30);
     });
   }
+
+  it('orders the display sets of US multi-frame instances by InstanceNumber', () => {
+    // UID order (a, b, c) is the reverse of InstanceNumber order.
+    const groups = groupInstancesBySplitRules(
+      [
+        ['a', 10],
+        ['b', 2],
+        ['c', 1],
+      ].map(([SOPInstanceUID, InstanceNumber]) =>
+        instance({
+          SOPClassUID: US_MULTIFRAME_SOP_CLASS,
+          Modality: 'US',
+          SOPInstanceUID: SOPInstanceUID as string,
+          InstanceNumber: InstanceNumber as number,
+          NumberOfFrames: 30,
+        })
+      ),
+      compiledDisplaySetRules
+    );
+    expect(
+      groups.map((g) => [g.matchedRule.id, g.instances[0].InstanceNumber])
+    ).toEqual([
+      ['multiFrame', 1],
+      ['multiFrame', 2],
+      ['multiFrame', 10],
+    ]);
+  });
+
+  it('does not guess video for a long grayscale secondary capture', () => {
+    const secondaryCapture = (PhotometricInterpretation: string) =>
+      instance({
+        SOPClassUID: '1.2.840.10008.5.1.4.1.1.7',
+        Modality: 'OT',
+        SOPInstanceUID: PhotometricInterpretation,
+        NumberOfFrames: 176,
+        PhotometricInterpretation,
+      });
+    expect(ruleIdsFor([secondaryCapture('MONOCHROME2')])).toEqual([
+      'multiFrame',
+    ]);
+    expect(ruleIdsFor([secondaryCapture('RGB')])).toEqual(['video']);
+  });
 
   it('splits a mixed-b-value DWI series in two', () => {
     const instances = [
@@ -331,10 +358,37 @@ describe('createDisplaySetFromGroup - isReconstructable, as OHIF isDisplaySetRec
       InstanceNumber: Math.round(z * 10) + 1,
       imageId: `wadors:/${id}`,
       SamplesPerPixel: 1,
+      PixelSpacing: [1, 1],
       ImageOrientationPatient: orientation,
       ImagePositionPatient: [0, 0, z],
     });
   const slices = (...zs: number[]) => zs.map((z, i) => slice(`s${i}`, z));
+  /** A Breast Tomosynthesis instance, with per-frame positions only. */
+  const dbt = (frames: number): NaturalizedInstance =>
+    instance({
+      SOPInstanceUID: 'dbt',
+      Modality: 'MG',
+      SOPClassUID: '1.2.840.10008.5.1.4.1.1.13.1.3',
+      NumberOfFrames: frames,
+      Rows: 2457,
+      Columns: 1890,
+      SharedFunctionalGroupsSequence: [
+        {
+          PixelMeasuresSequence: [
+            { PixelSpacing: [0.1, 0.1], SliceThickness: 1 },
+          ],
+          PlaneOrientationSequence: [
+            { ImageOrientationPatient: [0, 1, 0, 0, 0, -1] },
+          ],
+        },
+      ],
+      PerFrameFunctionalGroupsSequence: Array.from(
+        { length: frames },
+        (_, index) => ({
+          PlanePositionSequence: [{ ImagePositionPatient: [index, 0, 0] }],
+        })
+      ),
+    });
   /** An MR multi-frame instance with these per-frame positions. */
   const multiFrame = (positions: number[][]): NaturalizedInstance =>
     instance({
@@ -397,6 +451,13 @@ describe('createDisplaySetFromGroup - isReconstructable, as OHIF isDisplaySetRec
     ],
     ['a missing slice on a regular lattice', {}, slices(0, 2, 4, 8), true],
     ['an irregular spacing', {}, slices(0, 2, 4, 5), false],
+    [
+      'a series with no PixelSpacing',
+      {},
+      slices(0, 2, 4).map(({ PixelSpacing: _, ...rest }) => rest),
+      false,
+    ],
+    ['a Breast Tomosynthesis instance', {}, [dbt(50)], true],
     [
       'a non-image handler',
       { handler: 'segmentation' },
@@ -860,7 +921,7 @@ describe('default rules - the unsupported catch-all', () => {
     const rules = createDisplaySetSplitRules({
       ...displaySetRules,
       prFallback: {
-        priority: 16,
+        priority: 180,
         matches: { Modality: 'PR' },
       },
     });

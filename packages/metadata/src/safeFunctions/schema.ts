@@ -209,6 +209,20 @@ export function readOwn(object: unknown, key: string): unknown {
 }
 
 /**
+ * Freezes a JSON-like value and every object or array in it, and returns the
+ * value. A value that is already frozen is not visited again.
+ */
+export function deepFreeze<T>(value: T): T {
+  if (value && typeof value === 'object' && !Object.isFrozen(value)) {
+    Object.freeze(value);
+    for (const child of Object.values(value)) {
+      deepFreeze(child);
+    }
+  }
+  return value;
+}
+
+/**
  * Is `key` a key that a plain object cannot store? `result['__proto__'] = v`
  * replaces the prototype of `result` instead of adding an entry, so a
  * definition keyed by `__proto__` (a real own key after `JSON.parse`) would

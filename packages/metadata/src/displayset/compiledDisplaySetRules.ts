@@ -12,7 +12,8 @@ import type { SplitRuleSet } from './types';
  * honest: if the raw vocabulary could not express a default rule, this file would
  * not build.
  *
- * Rules are evaluated in ascending `priority` (the defaults use `1..n`); the
+ * Rules are evaluated in ascending `priority` (the defaults use `10` to `170`
+ * in steps of 10, with `80` reserved, and `unsupported` last); the
  * first match wins. The `handler` of a rule decides the class of the display
  * set and `isDisplayable`; a rule gives no viewport hint.
  *

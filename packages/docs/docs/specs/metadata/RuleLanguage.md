@@ -1169,7 +1169,7 @@ the other images of the series into one stack:
 
 ```jsonc
 "volume3d": {
-  "priority": 7,
+  "priority": 90,
   "matches": {
     "isImage": true,
     "Modality": ["CT", "MR", "PT", "NM"],
@@ -1182,9 +1182,8 @@ the other images of the series into one stack:
 ```
 
 - The rule replaces the default rule `volume3d` under its own id, so the rule
-  keeps the default priority 7 and the default `matches`. Only `sortBy` is new.
-  The OHIF default rules give `volume3d` the priority 4, so the OHIF module
-  `split/volumeProjectionOrder.jsonc` uses 4.
+  keeps the default priority 90 and the default `matches`. Only `sortBy` is
+  new.
 - `displaySet.sliceDistance` runs `planeGeometry` over the display set (`RL-CTX-9`). This
   rule groups by `SeriesInstanceUID`, so the display set holds the full series.
   The origin is the lowest regular slice, so the order does not change with the
