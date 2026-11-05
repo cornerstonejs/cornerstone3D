@@ -135,15 +135,15 @@ jobs:
       max-parallel: 3
       matrix:
         include:
-          - node-version: 24.15.0
+          - node-version: 24.22.2
             mode: legacy
             run_args: '--project=chromium'
             collect_coverage: true
-          - node-version: 24.15.0
+          - node-version: 24.22.2
             mode: compatibility
             run_args: '--compat --project=chromium'
             collect_coverage: false
-          - node-version: 24.15.0
+          - node-version: 24.22.2
             mode: next
             run_args: '--next --project=chromium'
             collect_coverage: false

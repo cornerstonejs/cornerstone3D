@@ -972,9 +972,7 @@ class Viewport {
    */
   protected setDisplayAreaScale(displayArea: DisplayArea): void {
     const { scale = 1 } = displayArea;
-    const canvas = this.canvas;
-    const height = canvas.height;
-    const width = canvas.width;
+    const { width, height } = this.getRenderedCanvasSize();
     if (height < 8 || width < 8) {
       return;
     }
@@ -998,10 +996,10 @@ class Viewport {
     // focal point to the center of an image pixel.
     const { focalPoint, position, viewUp, viewPlaneNormal } = this.getCamera();
     const focalChange = vec3.create();
-    if (canvas.height % 2) {
+    if (height % 2) {
       vec3.scaleAndAdd(focalChange, focalChange, viewUp, scale * 0.5 * spacing);
     }
-    if (canvas.width % 2) {
+    if (width % 2) {
       const viewRight = vec3.cross(vec3.create(), viewUp, viewPlaneNormal);
       vec3.scaleAndAdd(
         focalChange,
@@ -1042,8 +1040,21 @@ class Viewport {
    * the right most edge of the image, at the top of the image, will be
    * displayed at the right most edge of the canvas, at the top.
    *
+   * The zoom is measured against `baseCamera`, and not against the initial
+   * camera.  A previous `storeAsInitialCamera` display area leaves its own
+   * result as the initial camera, so measuring against that would apply the
+   * area on top of itself, and the same display area would land somewhere
+   * else on every call.  The pan uses the image extent at the camera the
+   * viewport holds on entry, which for a SCALE area is already zoomed.
+   *
+   * @param displayArea - the display area to apply
+   * @param baseCamera - the camera that the zoom is relative to; defaults to
+   *   the fit to canvas camera, which `setDisplayArea` sets before this call
    */
-  protected setDisplayAreaFit(displayArea: DisplayArea) {
+  protected setDisplayAreaFit(
+    displayArea: DisplayArea,
+    baseCamera = this.fitToCanvasCamera
+  ) {
     const { imageArea, imageCanvasPoint } = displayArea;
 
     const devicePixelRatio = window?.devicePixelRatio || 1;
@@ -1071,7 +1082,11 @@ class Viewport {
     ];
     const [imgWidth, imgHeight] = canvasImage;
 
-    let zoom = this.getZoom() / this.insetImageMultiplier;
+    const baseZoom = this.getZoom(baseCamera);
+    if (!Number.isFinite(baseZoom) || baseZoom <= 0) {
+      return;
+    }
+    let zoom = baseZoom / this.insetImageMultiplier;
     if (imageArea) {
       const [areaX, areaY] = imageArea;
 
@@ -1081,18 +1096,14 @@ class Viewport {
       );
       const requireX = Math.abs((areaX * imgWidth) / canvasWidth);
       const requireY = Math.abs((areaY * imgHeight) / canvasHeight);
-      const initZoom = this.getZoom();
-      const fitZoom = this.getZoom(this.fitToCanvasCamera);
 
       const absZoom =
         requireX > requireY ? currentScale / requireX : currentScale / requireY;
-      const applyZoom = (absZoom * initZoom) / fitZoom;
 
-      zoom = applyZoom;
+      zoom = absZoom * baseZoom;
       // Don't set as initial camera because then the zoom interactions don't
       // work consistently.
-      // TODO: Add a better method to handle initial camera
-      this.setZoom(this.insetImageMultiplier * zoom, false);
+      this.setZoom(this.insetImageMultiplier * zoom, false, baseCamera);
     }
     if (imageCanvasPoint) {
       const { imagePoint, canvasPoint = imagePoint || [0.5, 0.5] } =
@@ -1102,11 +1113,11 @@ class Viewport {
       const canvasPanY = canvasHeight * (canvasY - 0.5);
 
       const [imageX, imageY] = imagePoint || canvasPoint;
-      const useZoom = zoom;
-      const imagePanX =
-        this.insetImageMultiplier * useZoom * imgWidth * (0.5 - imageX);
-      const imagePanY =
-        this.insetImageMultiplier * useZoom * imgHeight * (0.5 - imageY);
+      // The image extent is measured at the camera this was called with, so
+      // scale it by the zoom applied since, not by the zoom from baseCamera
+      const useZoom = (this.insetImageMultiplier * zoom) / baseZoom;
+      const imagePanX = useZoom * imgWidth * (0.5 - imageX);
+      const imagePanY = useZoom * imgHeight * (0.5 - imageY);
 
       // const imagePanX =
       //   (zoom * imgWidth * (0.5 - imageX) * canvasHeight) / imgHeight;
@@ -1122,6 +1133,23 @@ class Viewport {
       // don't store as initial camera here - that breaks rotation and other changes.
       this.setPan(deltaPoint2, false);
     }
+  }
+
+  /**
+   * The size, in device pixels, the viewport renders at.
+   *
+   * The context pool engine resizes the on-screen canvas only when it copies
+   * the next frame onto it, so between a resize and that render
+   * `canvas.width`/`canvas.height` still hold the old size while `sWidth`,
+   * `sHeight` and the renderer viewport already hold the new one. Coordinate
+   * conversions made in that window (the camera reset that follows a resize
+   * applies the display area through them) must use the rendered size.
+   */
+  protected getRenderedCanvasSize(): { width: number; height: number } {
+    return {
+      width: this.sWidth || this.canvas.width,
+      height: this.sHeight || this.canvas.height,
+    };
   }
 
   public getDisplayArea(): DisplayArea | undefined {
@@ -1565,12 +1593,16 @@ class Viewport {
    * @param storeAsInitialCamera - can be set to true to reset the camera
    *   after applying this zoom as the initial camera.  A subsequent getZoom
    *   call will return "1", but the zoom will have been applied.
+   * @param compareCamera - the camera the zoom is relative to, as for
+   *   `getZoom`; defaults to the initial camera.
    */
-  public setZoom(value: number, storeAsInitialCamera = false): void {
+  public setZoom(
+    value: number,
+    storeAsInitialCamera = false,
+    compareCamera = this.initialCamera
+  ): void {
     const camera = this.getCamera();
-    const initialParallelScale = this.getComparableParallelScale(
-      this.initialCamera
-    );
+    const initialParallelScale = this.getComparableParallelScale(compareCamera);
     if (!initialParallelScale) {
       // The viewport holds no baseline, so no zoom is relative to a fit.
       return;
