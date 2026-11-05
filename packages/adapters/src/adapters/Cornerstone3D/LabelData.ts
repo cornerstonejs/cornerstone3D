@@ -1,6 +1,6 @@
 import type { Types } from '@cornerstonejs/tools';
 import { COMMENT_CODE, TEXT_ANNOTATION_POSITION } from './constants';
-import { toScoord } from '../helpers';
+import { toArray, toScoord } from '../helpers';
 import dcmjs from '@dcmjs-org/dcmjs';
 
 const {
@@ -80,6 +80,8 @@ export default class LabelData {
   /**
    * Remove the incorrect finding sites entry for the text label.
    * Updated to support the new coding scheme with legacy fallback.
+   * `ConceptCodeSequence` is read as an array or a single item, because the
+   * dcmjs 1.0 TID300 writer gives a one-item sequence as the item object.
    */
   public filterCornerstoneFreeText(contentEntries) {
     const { codeValues } = Cornerstone3D.CodeScheme;
@@ -95,14 +97,17 @@ export default class LabelData {
         continue;
       }
 
-      const csLabel = group.ConceptCodeSequence.findIndex((item) =>
+      const codes = toArray(group.ConceptCodeSequence);
+      const csLabel = codes.findIndex((item) =>
         freeTextCodes.includes(item.CodeValue)
       );
 
       if (csLabel !== -1) {
-        group.ConceptCodeSequence.splice(csLabel, 1);
-        if (group.ConceptCodeSequence.length === 0) {
+        const remaining = codes.filter((_, index) => index !== csLabel);
+        if (remaining.length === 0) {
           contentEntries.splice(i, 1);
+        } else {
+          group.ConceptCodeSequence = remaining;
         }
         return;
       }
