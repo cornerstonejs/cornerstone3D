@@ -537,7 +537,9 @@ These shapes reach your code through the adapters:
   the shapes of the code that naturalized the SEG.
 - `finding` and `findingSites[i]` of the SR `generateToolState` results come
   from the dcmjs `addAccessors`. In 1.0 each one is the code item object, not a
-  Proxy array.
+  Proxy array. The same applies to the one-item sequences of the SR writer
+  objects (`dcmjs.utilities.TID300`), for example `ConceptCodeSequence`. Read
+  them with `toArray` or `asArray`.
 - The `ReferencedFrameNumber` of the SR measurement data (`MeasurementReport`
   in `Cornerstone3D`) now has the type `number | string`, not `string`, because
   dcmjs 1.0 gives a number.
@@ -552,8 +554,10 @@ These shapes reach your code through the adapters:
   `frameDataset`. The frame view is cached on the instance, and the function
   no longer changes the instance (`ImageType`, `ImageOrientationPatient`,
   `_parentInstance`). `frameNumber` is a non-enumerable property of the view.
-  An enhanced instance with one frame now gets a frame view. A frame number
-  that is not from 1 to `NumberOfFrames` throws a `RangeError`. The export
+  An enhanced instance with one frame now gets a frame view. A frame with no
+  position gets `[0, 0, frameNumber]`, also for a plain multi-frame image. A
+  missing or `0` frame number is frame 1. A frame number above
+  `NumberOfFrames`, or one that is not an integer, throws a `RangeError`. The export
   `createCombinedValue` is removed.
 
 ### Why This Matters
