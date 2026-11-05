@@ -1,4 +1,9 @@
-export { toNumber, toFiniteNumber } from './toNumber';
+export {
+  toNumber,
+  toFiniteNumber,
+  toFiniteFirst,
+  toFiniteVector,
+} from './toNumber';
 export { default as toNumberDefault } from './toNumber';
 export {
   DEFAULT_EPSILON,
