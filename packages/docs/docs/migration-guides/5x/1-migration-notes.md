@@ -512,7 +512,7 @@ gives that map for one layer.
 ### What Changed
 
 `@cornerstonejs/adapters`, `@cornerstonejs/metadata` and `@cornerstonejs/utils`
-now depend on `@dcmjs-org/dcmjs` 1.0.0-beta.9 instead of `dcmjs` 0.52.0.
+now depend on `@dcmjs-org/dcmjs` 1.0.0-beta.10 instead of `dcmjs` 0.52.0.
 `@cornerstonejs/ai` no longer depends on dcmjs, because it did not use it.
 The default export of the beta has the 0.52 names, but the naturalized
 datasets have new shapes (see the dcmjs `docs/MIGRATION.md`, section
