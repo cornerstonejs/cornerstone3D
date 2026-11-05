@@ -53,9 +53,10 @@ function rtdosePosition(view, dataset, frameNumber) {
  *   NM orientation comes from the detector when the frame has none. When the
  *   root has no position, the NM position is the detector position moved
  *   `SpacingBetweenSlices * (frameNumber - 1)` along the normal, and it
- *   replaces a per-frame position. A frame with no position gets
- *   `[0, 0, frameNumber]`.
+ *   replaces a per-frame position.
  * - Otherwise RTDOSE: the position from GridFrameOffsetVector.
+ * - Any frame that still has no position gets `[0, 0, frameNumber]`, so the
+ *   frames of a multi-frame image with no position (US, XA) stay distinct.
  */
 function frameAttributes(view, { dataset, frameNumber }) {
   const attributes: Record<string, unknown> = {};
@@ -87,14 +88,15 @@ function frameAttributes(view, { dataset, frameNumber }) {
         rootOrientation.map(Number),
         spacing * (frameNumber - 1)
       );
-    } else if (!view.ImagePositionPatient) {
-      attributes.ImagePositionPatient = [0, 0, frameNumber];
     }
   } else if (dataset.GridFrameOffsetVector) {
     const position = rtdosePosition(view, dataset, frameNumber);
     if (position) {
       attributes.ImagePositionPatient = position;
     }
+  }
+  if (!attributes.ImagePositionPatient && !view.ImagePositionPatient) {
+    attributes.ImagePositionPatient = [0, 0, frameNumber];
   }
   return attributes;
 }

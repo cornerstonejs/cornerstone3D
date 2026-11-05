@@ -57,6 +57,19 @@ describe('combineFrameInstance fallbacks', () => {
       0, 0, -97.5,
     ]);
   });
+
+  // The user experience must have this: the frames of a US or XA cine with no
+  // position stay distinct (OHIF/Viewers#5811, RTSTRUCT contours per frame).
+  it('gives [0, 0, frameNumber] to a plain multi-frame frame with no position', () => {
+    const instance = naturalizeDataset({
+      '00280008': { vr: 'IS', Value: [3] },
+      '00080060': { vr: 'CS', Value: ['US'] },
+    });
+
+    expect(combineFrameInstance(2, instance).ImagePositionPatient).toEqual([
+      0, 0, 2,
+    ]);
+  });
 });
 
 // The API must do this: a private sequence directly in a functional group item
