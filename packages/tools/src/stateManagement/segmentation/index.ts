@@ -30,7 +30,13 @@ import * as utilities from './utilities';
 import { convertStackToVolumeLabelmap } from './helpers/convertStackToVolumeLabelmap';
 import { computeVolumeLabelmapFromStack } from './helpers/computeVolumeLabelmapFromStack';
 import { clearSegmentValue } from './helpers/clearSegmentValue';
+import { moveSegmentToPrivateLabelmap } from './helpers/moveSegmentToPrivateLabelmap';
 import { convertVolumeToStackLabelmap } from './helpers/computeStackLabelmapFromVolume';
+import {
+  getLabelToSegmentIndex,
+  getLabelValueForSegment,
+  getSegmentIndexForLabelValue,
+} from './labelmapModel';
 import { removeSegment } from './removeSegment';
 import { getLabelmapImageIds } from './getLabelmapImageIds';
 import * as strategies from './../../tools/segmentation/strategies';
@@ -57,6 +63,10 @@ const helpers = {
   convertStackToVolumeLabelmap,
   computeVolumeLabelmapFromStack,
   convertVolumeToStackLabelmap,
+  getLabelToSegmentIndex,
+  getLabelValueForSegment,
+  getSegmentIndexForLabelValue,
+  moveSegmentToPrivateLabelmap,
 };
 
 export {

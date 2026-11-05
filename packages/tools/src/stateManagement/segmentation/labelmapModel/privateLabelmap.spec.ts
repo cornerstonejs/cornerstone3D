@@ -26,7 +26,13 @@ jest.mock('../triggerSegmentationEvents', () => ({
   triggerSegmentationDataModified: jest.fn(),
 }));
 
+jest.mock('../getSegmentation', () => ({ getSegmentation: jest.fn() }));
+
+import { utilities } from '@cornerstonejs/core';
 import { moveSegmentToPrivateLabelmap } from './privateLabelmap';
+import { moveSegmentToPrivateLabelmap as moveSegmentToNewLayer } from '../helpers/moveSegmentToPrivateLabelmap';
+import { getSegmentation } from '../getSegmentation';
+import { triggerSegmentationDataModified } from '../triggerSegmentationEvents';
 import {
   beginLabelmapEditTransaction,
   eraseLabelmapEditTransactionOverwrites,
@@ -276,6 +282,38 @@ describe('overlap undo/redo bookkeeping', () => {
 
       expect(transaction.movedSegment).toBe(false);
       expect(transaction.moveStep).toBeUndefined();
+    });
+  });
+
+  describe('segmentation.helpers.moveSegmentToPrivateLabelmap', () => {
+    it('moves a segment to a new layer on request, and undo puts it back', () => {
+      const segmentation = createSegmentation();
+      (getSegmentation as jest.Mock).mockReturnValue(segmentation);
+      const layerAVoxels = createVoxelManager([1, 2, 2, 0]);
+      wireImages({ 'layerA-image': layerAVoxels });
+      const { DefaultHistoryMemo } = utilities.HistoryMemo;
+
+      const labelmapId = moveSegmentToNewLayer('segmentation', 2, {
+        recordHistory: true,
+      });
+
+      expect(labelmapId).not.toBe('layerA');
+      expect(getSegmentBinding(segmentation, 2)).toEqual({
+        labelmapId,
+        labelValue: 1,
+      });
+      expect(layerAVoxels.values).toEqual([1, 0, 0, 0]);
+      expect(triggerSegmentationDataModified).toHaveBeenCalledWith(
+        'segmentation'
+      );
+
+      DefaultHistoryMemo.undo();
+      expect(getSegmentBinding(segmentation, 2)).toEqual({
+        labelmapId: 'layerA',
+        labelValue: 2,
+      });
+      expect(layerAVoxels.values).toEqual([1, 2, 2, 0]);
+      expect(getLabelmap(segmentation, labelmapId)).toBeUndefined();
     });
   });
 

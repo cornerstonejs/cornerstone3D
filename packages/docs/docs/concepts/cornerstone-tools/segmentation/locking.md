@@ -81,3 +81,63 @@ segmentation.locking.setSegmentIndexLocked('segmentation1', 1, false);
 ```
 
 Note that the locking state applies to the segmentation as a whole, not to specific representations or viewports. If a segment is locked, it will be locked across all viewports and representations.
+
+## Locked segments stop the brush
+
+The brush, the threshold brush and the scissors do not change the voxels of a
+locked segment, on any layer of the segmentation. The painted segment stops at
+the edge of the locked segment, and a locked segment never causes a new
+labelmap layer.
+
+## Protected segments and overlap
+
+The `overwriteMode` setting of the segmentation configuration protects the
+segments that the brush does not overwrite:
+
+| `overwriteMode`   | Segments that the brush overwrites | Protected segments          |
+| ----------------- | ---------------------------------- | --------------------------- |
+| `'all'` (default) | all unlocked segments              | none                        |
+| `'visible'`       | visible unlocked segments          | hidden segments             |
+| `'none'`          | none                               | all other unlocked segments |
+
+```js
+import { init } from '@cornerstonejs/tools';
+
+init({
+  segmentation: { overwriteMode: 'none' },
+});
+```
+
+When a stroke would overwrite a protected segment that is not locked, the brush
+moves the painted segment to a new labelmap layer, and the two segments overlap.
+The protected segment keeps its voxels. The move and the stroke are one undo
+step.
+
+## Overlapping segments
+
+Two segments can overlap only when they are on different labelmap layers. To put
+a segment on a layer of its own before a stroke, call
+`segmentation.helpers.moveSegmentToPrivateLabelmap`:
+
+```js
+import { segmentation } from '@cornerstonejs/tools';
+
+const labelmapId = segmentation.helpers.moveSegmentToPrivateLabelmap(
+  segmentationId,
+  segmentIndex,
+  { recordHistory: true }
+);
+```
+
+- The function moves the voxels and the binding of the segment to a new layer,
+  and returns the id of that layer.
+- If the segment is already the only segment on its layer, the segment stays on
+  that layer.
+- With `recordHistory: true`, the move is one undo step. Undo puts the segment
+  back on its previous layer.
+- The function triggers `SEGMENTATION_DATA_MODIFIED`.
+
+After the move, a stroke of that segment can paint over the other segments,
+unless they are locked. Use `overwriteMode: 'none'` to keep the voxels of the
+other segments under the overlap. The brush uses the same move when a stroke
+would overwrite a protected segment.
