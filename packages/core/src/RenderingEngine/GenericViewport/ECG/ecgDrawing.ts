@@ -206,7 +206,7 @@ export function drawECGLabels<TChannel extends ECGChannelLike>(
   layouts.forEach(({ label, itemHeight, yOffset, xOffset }) => {
     const labelY = yOffset - itemHeight + fontSize;
 
-    ctx.font = `px monospace`;
+    ctx.font = `${fontSize}px monospace`;
     const textWidth = ctx.measureText(label).width;
     ctx.fillStyle = ECG_RENDERING_COLORS.background;
     ctx.fillRect(xOffset + 5, labelY - fontSize, textWidth + 4, fontSize + 4);

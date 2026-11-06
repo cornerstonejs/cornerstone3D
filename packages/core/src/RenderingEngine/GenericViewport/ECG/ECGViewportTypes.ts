@@ -1,10 +1,3 @@
-import type {
-  EcgAnnotations,
-  EcgNumericMetricKey,
-  EcgPatientInfo,
-  EcgStudyInfo,
-  EcgWaveformAnnotation,
-} from '@cornerstonejs/metadata';
 import type { AABB2, ViewportInputOptions } from '../../../types';
 import type {
   BaseViewportRenderContext,
@@ -16,14 +9,6 @@ import type {
 import type { ViewportCameraBase } from '../ViewportCameraTypes';
 import type ECGResolvedView from './ECGResolvedView';
 
-export type {
-  EcgAnnotations,
-  EcgNumericMetricKey,
-  EcgPatientInfo,
-  EcgStudyInfo,
-  EcgWaveformAnnotation,
-};
-
 export interface ECGChannelData {
   name: string;
   /** Lead code value, from `ChannelSourceSequence`. */
@@ -31,6 +16,8 @@ export interface ECGChannelData {
   data: Int16Array;
   min: number;
   max: number;
+  /** Millivolts for each raw unit; see `getECGChannelMvPerUnit`. */
+  mvPerUnit?: number;
 }
 
 /**
@@ -115,9 +102,6 @@ export interface ECGWaveformPayload {
   sampleInterpretation: string;
   multiplexGroupLabel?: string;
   calibration?: unknown;
-  annotations?: EcgAnnotations;
-  patientInfo?: EcgPatientInfo;
-  studyInfo?: EcgStudyInfo;
 }
 
 export type ECGPresentationProps = BasePresentationProps;

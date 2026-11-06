@@ -24,11 +24,8 @@ export type {
   DicomWaveformAnnotationItem,
   DicomWaveformData,
   DicomWaveformGroupItem,
-  DicomPatientNameObject,
   DicomEcgInstance,
   EcgWaveformAnnotation,
   EcgAnnotations,
   EcgNumericMetricKey,
-  EcgPatientInfo,
-  EcgStudyInfo,
 } from '../utilities/metadataProvider/ecgFromInstance';

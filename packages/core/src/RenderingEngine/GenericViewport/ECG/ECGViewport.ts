@@ -10,6 +10,7 @@ import type {
   Mat3,
   Point2,
   Point3,
+  ReferenceCompatibleOptions,
   ViewReference,
   ViewReferenceSpecifier,
   ViewportContentMode,
@@ -24,9 +25,6 @@ import type {
   ECGViewportInput,
   ECGWaveformPayload,
   ECGResetViewStateOptions,
-  EcgAnnotations,
-  EcgPatientInfo,
-  EcgStudyInfo,
 } from './ECGViewportTypes';
 import {
   createDefaultECGViewState,
@@ -140,32 +138,6 @@ class ECGViewport extends GenericViewport<
   }
 
   /**
-   * Returns the ECG waveform annotations / summary measurements (such as
-   * heart rate, PR interval, QRS duration, QT/QTc, electrical axes, and
-   * machine interpretations) from the mounted DICOM waveform instance, or
-   * undefined if no annotations are present.
-   */
-  getAnnotations(): EcgAnnotations | undefined {
-    return this.getWaveformData()?.annotations;
-  }
-
-  /**
-   * Returns patient metadata (name, ID, sex, age, birth date) parsed from the
-   * mounted DICOM instance, or undefined.
-   */
-  getPatientInfo(): EcgPatientInfo | undefined {
-    return this.getWaveformData()?.patientInfo;
-  }
-
-  /**
-   * Returns study metadata (date, time, modality, manufacturer, descriptions)
-   * parsed from the mounted DICOM instance, or undefined.
-   */
-  getStudyInfo(): EcgStudyInfo | undefined {
-    return this.getWaveformData()?.studyInfo;
-  }
-
-  /**
    * Reports the content-true classification of the viewport's bound data.
    * Returns 'ecg' when a waveform is mounted, 'empty' otherwise.
    */
@@ -175,18 +147,47 @@ class ECGViewport extends GenericViewport<
 
   /**
    * Returns a view reference describing the mounted ECG dataset state.
-   * @param _specifier - Optional specifier flags.
+   * With `specifier.points`, `sliceIndex` is the lead index (world Z) of the
+   * first point, so that an annotation records its lead. Without points, the
+   * reference covers the whole record and has no `sliceIndex`.
+   * @param specifier - Optional specifier flags.
    * @returns View reference representation.
    */
-  getViewReference(_specifier: ViewReferenceSpecifier = {}): ViewReference {
+  getViewReference(specifier: ViewReferenceSpecifier = {}): ViewReference {
     const dataId = this.getFirstBinding()?.data.id;
+    const lead = specifier.points?.[0]?.[2];
 
     return {
       FrameOfReferenceUID: this.getFrameOfReferenceUID(),
       dataId,
       referencedImageId: this.getCurrentImageId(),
-      sliceIndex: 0,
+      ...(Number.isFinite(lead) ? { sliceIndex: Math.round(lead) } : {}),
     };
+  }
+
+  /**
+   * Checks the record as the base class does, and then rejects a reference
+   * whose lead (`sliceIndex`, see {@link getViewReference}) the current trace
+   * layout does not show, so that a tool does not draw it.
+   */
+  isReferenceViewable(
+    viewReference: ViewReference,
+    options: ReferenceCompatibleOptions = {}
+  ): boolean {
+    if (!viewReference) {
+      return false;
+    }
+    const { sliceIndex, ...recordReference } = viewReference;
+
+    if (!super.isReferenceViewable(recordReference, options)) {
+      return false;
+    }
+    if (typeof sliceIndex !== 'number') {
+      return true;
+    }
+    const layouts = this.getResolvedView()?.channelLayouts;
+
+    return !layouts || layouts.some((item) => item.leadIndex === sliceIndex);
   }
 
   /**

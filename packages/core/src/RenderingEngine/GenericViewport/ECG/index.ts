@@ -46,8 +46,4 @@ export type {
   ECGTraceLayoutName,
   ECGTraceLayoutRegistry,
   ECGTraceRegion,
-  EcgAnnotations,
-  EcgPatientInfo,
-  EcgStudyInfo,
-  EcgWaveformAnnotation,
 } from './ECGViewportTypes';
