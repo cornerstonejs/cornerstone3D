@@ -26,9 +26,9 @@ by default:
   example `StackViewport` or `VolumeViewport`.
 - A `_NEXT` viewport type, for example `ViewportType.PLANAR_NEXT`, always uses
   the Generic Viewport family, with or without the flag.
-- `ECG` is the first family whose default is the Generic Viewport. `ECG` and
-  `ECG_NEXT` both give `ECGViewportLegacyAdapter` over the ECG family, with or
-  without the flag. `ECG_LEGACY` gives the old ECG class.
+- `ECG` is the first family whose default is the Generic Viewport. `ECG` gives
+  `ECGViewportLegacyAdapter` over the ECG family, with or without the flag.
+  `ECG_NEXT` gives the ECG family class. `ECG_LEGACY` gives the old ECG class.
 
 The plan is to move all applications from the old viewport classes to the
 Generic Viewport families, and then to remove the old viewport classes. The
@@ -161,10 +161,9 @@ states the contract, and this specification repeats it:
   When a family makes the Generic Viewport its default, a `<FAMILY>_LEGACY`
   type, for example `ViewportType.ECG_LEGACY`, keeps the old class.
 - **GENVIEW-API-8** A direct generic viewport type, for example
-  `ViewportType.PLANAR_NEXT`, carries the clean API only. The developer reads
-  the list of clean methods, and the developer knows which methods survive the
-  removal of the legacy adapters. Exception: `ECG_NEXT` gives the same legacy
-  adapter as `ECG`, because `ECG` already defaults to the ECG family.
+  `ViewportType.ECG_NEXT`, carries the clean API only. The developer reads the
+  list of clean methods, and the developer knows which methods survive the
+  removal of the legacy adapters.
 
 ### The extension points of the architecture (GENVIEW-EXT)
 

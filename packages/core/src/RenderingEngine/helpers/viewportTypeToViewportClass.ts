@@ -146,7 +146,7 @@ function registerCoreViewportTypes() {
   });
   registerViewportType({
     type: ViewportType.ECG_NEXT,
-    ViewportClass: ECGViewportLegacyAdapter as unknown as ViewportConstructor,
+    ViewportClass: ECGViewport as unknown as ViewportConstructor,
   });
   registerViewportType({
     type: ViewportType.WHOLE_SLIDE_NEXT,

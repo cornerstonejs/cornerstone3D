@@ -47,9 +47,12 @@ internally:
 | `ViewportType.STACK`        | `ViewportType.PLANAR_NEXT`      |
 | `ViewportType.ORTHOGRAPHIC` | `ViewportType.PLANAR_NEXT`      |
 | `ViewportType.VIDEO`        | `ViewportType.VIDEO_NEXT`       |
-| `ViewportType.ECG`          | `ViewportType.ECG_NEXT`         |
 | `ViewportType.WHOLE_SLIDE`  | `ViewportType.WHOLE_SLIDE_NEXT` |
 | `ViewportType.VOLUME_3D`    | `ViewportType.VOLUME_3D_NEXT`   |
+
+`ViewportType.ECG` gives the ECG family through its compatibility adapter
+with or without the flag, so the adapter keeps `setEcg()`. Use
+`ViewportType.ECG_LEGACY` to keep the old ECG class.
 
 Direct Generic viewport types use the new APIs. Remapped legacy viewport types use
 compatibility adapters that preserve legacy methods such as `setStack()`,
