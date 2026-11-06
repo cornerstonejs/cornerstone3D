@@ -1,4 +1,8 @@
-import { parseEcgAnnotations } from '../src/utilities/metadataProvider/ecgFromInstance';
+import {
+  buildEcgModuleFromInstance,
+  findPrimaryWaveformGroup,
+  parseEcgAnnotations,
+} from '../src/utilities/metadataProvider/ecgFromInstance';
 
 describe('ECG WaveformAnnotationSequence Parsing', () => {
   describe('Positive Tests: Standard LOINC Codes', () => {
@@ -496,6 +500,64 @@ describe('ECG WaveformAnnotationSequence Parsing', () => {
         WaveformAnnotationSequence: [item('QT Interval', ' ')],
       });
       expect(annotations.qtInterval).toBeUndefined();
+    });
+  });
+
+  describe('Multiplex group selection', () => {
+    const medianGroup = {
+      MultiplexGroupLabel: 'MEDIAN',
+      NumberOfWaveformChannels: 12,
+      NumberOfWaveformSamples: 600,
+      SamplingFrequency: 500,
+      WaveformData: { Value: new Int16Array(12 * 600).buffer },
+    };
+
+    const rhythmGroup = {
+      MultiplexGroupLabel: 'RHYTHM',
+      NumberOfWaveformChannels: 12,
+      NumberOfWaveformSamples: 5000,
+      SamplingFrequency: 500,
+      WaveformData: { Value: new Int16Array(12 * 5000).buffer },
+    };
+
+    it('prefers a group labeled RHYTHM over a MEDIAN beat group', () => {
+      const selected = findPrimaryWaveformGroup([medianGroup, rhythmGroup]);
+      expect(selected.index).toBe(1);
+      expect(selected.group.MultiplexGroupLabel).toBe('RHYTHM');
+    });
+
+    it('prefers the group with the longest sample duration when labels are absent', () => {
+      const shortGroup = {
+        NumberOfWaveformChannels: 12,
+        NumberOfWaveformSamples: 600,
+        SamplingFrequency: 500,
+      };
+      const longGroup = {
+        NumberOfWaveformChannels: 12,
+        NumberOfWaveformSamples: 5000,
+        SamplingFrequency: 500,
+      };
+      const selected = findPrimaryWaveformGroup([shortGroup, longGroup]);
+      expect(selected.index).toBe(1);
+      expect(selected.group.NumberOfWaveformSamples).toBe(5000);
+    });
+
+    it('honors preferredIndex when explicitly requested', () => {
+      const selected = findPrimaryWaveformGroup([medianGroup, rhythmGroup], 0);
+      expect(selected.index).toBe(0);
+      expect(selected.group.MultiplexGroupLabel).toBe('MEDIAN');
+    });
+
+    it('builds EcgModule from the primary rhythm group', () => {
+      const instance = {
+        WaveformSequence: [medianGroup, rhythmGroup],
+      };
+      const ecg = buildEcgModuleFromInstance(instance);
+      expect(ecg).toBeDefined();
+      expect(ecg.multiplexGroupLabel).toBe('RHYTHM');
+      expect(ecg.numberOfWaveformSamples).toBe(5000);
+      expect(ecg.multiplexGroupIndex).toBe(1);
+      expect(ecg.totalMultiplexGroups).toBe(2);
     });
   });
 });

@@ -2,6 +2,7 @@ import {
   getECGTraceLayout,
   getECGTraceLayoutNames,
   registerECGTraceLayout,
+  resolveDefaultECGTraceLayout,
   resolveECGTraceCells,
   resolveECGTraceLayout,
 } from '../src/RenderingEngine/GenericViewport/ECG/ecgTraceLayouts';
@@ -112,5 +113,150 @@ describe('ECG trace layouts', () => {
     expect(cellsFor('no-such-layout')).toHaveLength(CHANNELS.length);
     expect(warn).toHaveBeenCalledTimes(1);
     warn.mockRestore();
+  });
+
+  describe('dynamic trace layout resolution and choices', () => {
+    const twelveLeads = [
+      'I',
+      'II',
+      'III',
+      'aVR',
+      'aVL',
+      'aVF',
+      'V1',
+      'V2',
+      'V3',
+      'V4',
+      'V5',
+      'V6',
+    ].map((name) => ({ name, code: name }));
+
+    const fifteenLeads = [
+      ...twelveLeads,
+      { name: 'V7', code: 'V7' },
+      { name: 'V8', code: 'V8' },
+      { name: 'V9', code: 'V9' },
+    ];
+
+    it('resolves default layout dynamically based on channel count and duration', () => {
+      // 12-lead standard ECG -> 3x4+1
+      expect(
+        resolveDefaultECGTraceLayout({
+          channels: twelveLeads,
+          numberOfSamples: 5000,
+          samplingFrequency: 500,
+        })
+      ).toBe('3x4+1');
+
+      // 15-lead ECG -> 3x5+1
+      expect(
+        resolveDefaultECGTraceLayout({
+          channels: fifteenLeads,
+          numberOfSamples: 5000,
+          samplingFrequency: 500,
+        })
+      ).toBe('3x5+1');
+
+      // 3-lead rhythm strip -> 3x1
+      expect(
+        resolveDefaultECGTraceLayout({
+          channels: twelveLeads.slice(0, 3),
+          numberOfSamples: 5000,
+          samplingFrequency: 500,
+        })
+      ).toBe('3x1');
+
+      // Short recording (< 5s) -> 12x1
+      expect(
+        resolveDefaultECGTraceLayout({
+          channels: twelveLeads,
+          numberOfSamples: 1000,
+          samplingFrequency: 500,
+        })
+      ).toBe('12x1');
+    });
+
+    it('provides dynamic dropdown layout names for 12-lead ECGs', () => {
+      const names = getECGTraceLayoutNames({ channels: twelveLeads });
+      expect(names).toEqual(
+        expect.arrayContaining(['3x4+1', '3x4', '6x2', '12x1'])
+      );
+    });
+
+    it('provides dynamic dropdown layout names for 15-lead ECGs', () => {
+      const names = getECGTraceLayoutNames({ channels: fifteenLeads });
+      expect(names).toEqual(
+        expect.arrayContaining(['3x5+1', '3x5', '6x3', '15x1'])
+      );
+    });
+
+    it('provides dynamic dropdown layout names for few-lead rhythm strips', () => {
+      const names = getECGTraceLayoutNames({
+        channels: twelveLeads.slice(0, 3),
+      });
+      expect(names).toEqual(['3x1']);
+    });
+
+    it('dynamically resolves 3x5+1 grid for 15 leads without warning', () => {
+      const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+      const definition = resolveECGTraceLayout('3x5+1', {
+        channels: fifteenLeads,
+        numberOfSamples: 5000,
+        samplingFrequency: 500,
+      });
+
+      // 15 leads + 1 continuous rhythm strip = 16 regions
+      expect(definition.regions).toHaveLength(16);
+      expect(definition.regions.find((r) => r.id === 'rhythm')).toBeDefined();
+      expect(warn).not.toHaveBeenCalled();
+      warn.mockRestore();
+    });
+
+    it('dynamically resolves 15x1 rows for 15 leads without warning', () => {
+      const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+      const definition = resolveECGTraceLayout('15x1', {
+        channels: fifteenLeads,
+        numberOfSamples: 5000,
+        samplingFrequency: 500,
+      });
+
+      expect(definition.regions).toHaveLength(15);
+      expect(warn).not.toHaveBeenCalled();
+      warn.mockRestore();
+    });
+
+    it.each([4, 6, 8, 18, 21])(
+      'handles %i leads dynamically: resolves default, dropdown options, and grid layout',
+      (leadCount) => {
+        const leads = Array.from({ length: leadCount }, (_, i) => ({
+          name: `Lead ${i + 1}`,
+          code: `lead-${i + 1}`,
+        }));
+        const context = {
+          channels: leads,
+          numberOfSamples: 5000,
+          samplingFrequency: 500,
+        };
+
+        const defaultLayout = resolveDefaultECGTraceLayout(context);
+        expect(defaultLayout).toBeDefined();
+
+        const names = getECGTraceLayoutNames(context);
+        expect(names.length).toBeGreaterThan(0);
+        expect(names).toContain(defaultLayout);
+
+        const definition = resolveECGTraceLayout(defaultLayout, context);
+        // Each channel must be mapped to at least one region
+        leads.forEach((_, leadIndex) => {
+          expect(definition.regions.some((r) => r.lead === leadIndex)).toBe(
+            true
+          );
+        });
+
+        // Rows layout should have exactly leadCount regions
+        const rowsDefinition = resolveECGTraceLayout(`${leadCount}x1`, context);
+        expect(rowsDefinition.regions).toHaveLength(leadCount);
+      }
+    );
   });
 });

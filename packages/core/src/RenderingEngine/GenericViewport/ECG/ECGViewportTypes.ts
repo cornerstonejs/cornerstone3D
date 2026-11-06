@@ -20,35 +20,8 @@ export interface ECGChannelData {
   mvPerUnit?: number;
 }
 
-/**
- * Names of the registered trace layouts. An application adds a name with an
- * augmentation, and registers the layout with `registerECGTraceLayout`:
- *
- * ```ts
- * declare module '@cornerstonejs/core' {
- *   interface ECGTraceLayoutRegistry {
- *     'myOrg:6x2+1': true;
- *   }
- * }
- * registerECGTraceLayout('myOrg:6x2+1', (context) => ({ regions: [...] }));
- * ```
- */
-export interface ECGTraceLayoutRegistry {
-  /** One row for each lead. Each row shows the time window of the view. */
-  '12x1': true;
-  /** 6 rows and 2 columns. Each column shows half of the record. */
-  '6x2': true;
-  /** 3 rows and 4 columns. Each column shows a quarter of the record. */
-  '3x4': true;
-  /** The `3x4` grid, and a rhythm strip of lead II with the full record. */
-  '3x4+1': true;
-}
-
-/**
- * A registered layout name. A name that is not in `ECGTraceLayoutRegistry` is
- * accepted too, because a hanging protocol in JSON can give any name.
- */
-export type ECGTraceLayoutName = keyof ECGTraceLayoutRegistry | (string & {});
+/** A registered layout name or dynamic grid pattern (e.g. '3x4+1', '3x5+1', '15x1', '12x1'). */
+export type ECGTraceLayoutName = string;
 
 /** One trace of a trace layout. */
 export interface ECGTraceRegion {
@@ -86,6 +59,8 @@ export type ECGTraceLayout = ECGTraceLayoutName | ECGTraceLayoutDefinition;
 /** What a layout factory receives to build a definition for one waveform. */
 export interface ECGTraceLayoutContext {
   channels: { name: string; code?: string }[];
+  numberOfSamples?: number;
+  samplingFrequency?: number;
 }
 
 export type ECGTraceLayoutFactory = (

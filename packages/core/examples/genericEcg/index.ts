@@ -3,12 +3,7 @@ import type {
   ECGGenericViewport,
   ECGViewState,
 } from '@cornerstonejs/core';
-import {
-  RenderingEngine,
-  Enums,
-  utilities,
-  getECGTraceLayoutNames,
-} from '@cornerstonejs/core';
+import { RenderingEngine, Enums, utilities } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
   initDemo,
@@ -164,10 +159,13 @@ async function run() {
     activateAnnotationTool(firstToolName);
   }
 
+  const layoutNames = viewport.getTraceLayoutNames();
+  const currentLayout = viewport.getViewState().traceLayout;
+
   addDropdownToToolbar({
     options: {
-      values: getECGTraceLayoutNames(),
-      defaultValue: '12x1',
+      values: layoutNames,
+      defaultValue: currentLayout,
     },
     labelText: 'Layout: ',
     onSelectedValueChange: (newLayout) => {

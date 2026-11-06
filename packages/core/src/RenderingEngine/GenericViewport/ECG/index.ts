@@ -12,6 +12,7 @@ export {
   registerECGTraceLayout,
   getECGTraceLayout,
   getECGTraceLayoutNames,
+  resolveDefaultECGTraceLayout,
 } from './ecgTraceLayouts';
 /**
  * Lower-level ECG projection helpers for custom synchronizers and tooling.
@@ -44,6 +45,5 @@ export type {
   ECGTraceLayoutDefinition,
   ECGTraceLayoutFactory,
   ECGTraceLayoutName,
-  ECGTraceLayoutRegistry,
   ECGTraceRegion,
 } from './ECGViewportTypes';

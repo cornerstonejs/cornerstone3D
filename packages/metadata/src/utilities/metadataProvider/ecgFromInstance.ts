@@ -136,6 +136,8 @@ export interface EcgModuleFull {
   waveformBitsAllocated: number;
   waveformSampleInterpretation: string;
   multiplexGroupLabel: string;
+  multiplexGroupIndex?: number;
+  totalMultiplexGroups?: number;
   channelDefinitionSequence: Array<{
     /**
      * The lead of the channel. `codeValue` identifies the lead in every
@@ -495,6 +497,57 @@ export function parseEcgAnnotations(
 export interface BuildEcgModuleOptions {
   /** Extra request headers for a `BulkDataURI` fetch, for example auth headers. */
   getHeaders?: () => Record<string, string> | undefined;
+  /** Preferred multiplex group index (0-based) when WaveformSequence has multiple groups. */
+  multiplexGroupIndex?: number;
+}
+
+/**
+ * Selects the primary diagnostic waveform multiplex group from WaveformSequence.
+ * When an instance carries multiple groups (for example, a 1.2s median beat in
+ * group 0 and a 10s rhythm strip in group 1):
+ * 1. Honors `preferredIndex` if given and within bounds.
+ * 2. Prefers a group whose `MultiplexGroupLabel` contains "RHYTHM" or "CONTINUOUS".
+ * 3. Prefers the group with the longest sample duration (NumberOfWaveformSamples / SamplingFrequency).
+ */
+export function findPrimaryWaveformGroup(
+  groups: Record<string, unknown>[],
+  preferredIndex?: number
+): { group: Record<string, unknown>; index: number } {
+  if (!groups.length) {
+    throw new Error('[ecgFromInstance] WaveformSequence has no groups');
+  }
+
+  if (
+    typeof preferredIndex === 'number' &&
+    preferredIndex >= 0 &&
+    preferredIndex < groups.length
+  ) {
+    return { group: groups[preferredIndex], index: preferredIndex };
+  }
+
+  const rhythmIndex = groups.findIndex((g) => {
+    const label = String(g.MultiplexGroupLabel || '').toUpperCase();
+    return label.includes('RHYTHM') || label.includes('CONTINUOUS');
+  });
+
+  if (rhythmIndex >= 0) {
+    return { group: groups[rhythmIndex], index: rhythmIndex };
+  }
+
+  let bestIndex = 0;
+  let maxDuration = -1;
+
+  groups.forEach((g, idx) => {
+    const samples = Number(g.NumberOfWaveformSamples) || 0;
+    const freq = Number(g.SamplingFrequency) || 1;
+    const duration = freq > 0 ? samples / freq : samples;
+    if (duration > maxDuration) {
+      maxDuration = duration;
+      bestIndex = idx;
+    }
+  });
+
+  return { group: groups[bestIndex], index: bestIndex };
 }
 
 /**
@@ -515,7 +568,10 @@ export function buildEcgModuleFromInstance(
   const groups = toArray(raw);
   if (!groups.length) return null;
 
-  const group = groups[0];
+  const { group, index: multiplexGroupIndex } = findPrimaryWaveformGroup(
+    groups,
+    options.multiplexGroupIndex
+  );
   const numberOfChannels = (group.NumberOfWaveformChannels as number) ?? 0;
   const numberOfSamples = (group.NumberOfWaveformSamples as number) ?? 0;
   const samplingFrequency = (group.SamplingFrequency as number) ?? 1;
@@ -643,6 +699,8 @@ export function buildEcgModuleFromInstance(
     waveformBitsAllocated: bitsAllocated,
     waveformSampleInterpretation: sampleInterpretation,
     multiplexGroupLabel,
+    multiplexGroupIndex,
+    totalMultiplexGroups: groups.length,
     channelDefinitionSequence,
     waveformData: { retrieveBulkData },
     annotations,
@@ -678,7 +736,7 @@ const ecgCalibrationProvider: TypedProvider = (next, query, data, options) => {
   const raw = instance?.WaveformSequence;
   const groups = toArray(raw as ArrayLike<Record<string, unknown>> | undefined);
   if (!groups.length) return next(query, data, options);
-  const group = groups[0];
+  const { group } = findPrimaryWaveformGroup(groups);
   const numberOfWaveformSamples =
     (group.NumberOfWaveformSamples as number) ?? 0;
   const samplingFrequency = (group.SamplingFrequency as number) ?? 1;

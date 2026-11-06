@@ -83,4 +83,55 @@ describe('ECG viewport references and camera', () => {
     expect(viewport.getPan()[0]).toBeCloseTo(panBefore[0], 3);
     expect(viewport.getPan()[1]).toBeCloseTo(panBefore[1], 3);
   });
+
+  it('defaults to auto layout and renders 12-lead ECG as 3x4+1 with rhythm strip', async () => {
+    const twelveNames = [
+      'I',
+      'II',
+      'III',
+      'aVR',
+      'aVL',
+      'aVF',
+      'V1',
+      'V2',
+      'V3',
+      'V4',
+      'V5',
+      'V6',
+    ];
+    const waveform12 = {
+      id: 'ecg:12',
+      type: 'ecg',
+      channels: twelveNames.map((name) => ({
+        name,
+        code: name,
+        data: new Int16Array(N),
+        min: -500,
+        max: 500,
+        mvPerUnit: 0.001,
+      })),
+      numberOfChannels: 12,
+      numberOfSamples: N,
+      samplingFrequency: 500,
+      bitsAllocated: 16,
+      sampleInterpretation: 'SS',
+    };
+
+    const element = document.createElement('div');
+    document.body.appendChild(element);
+    const viewport = new ECGViewportLegacyAdapter({
+      id: 'vp12',
+      element,
+      renderingEngineId: 're12',
+      dataProvider: { load: async () => waveform12 },
+    });
+    Object.defineProperty(viewport.canvas, 'clientWidth', { value: 800 });
+    Object.defineProperty(viewport.canvas, 'clientHeight', { value: 600 });
+    await viewport.setDisplaySets({ displaySetId: 'ecg:12' });
+
+    expect(viewport.getViewState().traceLayout).toBe('3x4+1');
+    const resolved = viewport.getResolvedView();
+    expect(resolved?.channelLayouts).toHaveLength(13);
+    expect(viewport.getTraceLayoutNames()[0]).toBe('3x4+1');
+  });
 });

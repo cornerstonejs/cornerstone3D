@@ -94,7 +94,11 @@ class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
   get traceLayout(): ECGTraceLayoutDefinition {
     this.cachedDefinition ||= resolveECGTraceLayout(
       this.state.viewState.traceLayout,
-      { channels: this.state.waveform.channels }
+      {
+        channels: this.state.waveform.channels,
+        numberOfSamples: this.state.waveform.numberOfSamples,
+        samplingFrequency: this.state.waveform.samplingFrequency,
+      }
     );
 
     return this.cachedDefinition;
