@@ -1,4 +1,5 @@
 export { getSingleBufferFromArray } from './bulkDataFromArray';
+export { decodeMultipartRelated } from './decodeMultipartRelated';
 export { definedAttributesOf } from './definedAttributesOf';
 export {
   toNumber,
