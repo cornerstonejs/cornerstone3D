@@ -191,7 +191,8 @@ states the contract, and this specification repeats it:
   language of the device, so a lead matches by its code meaning only when the
   channel has no code value.
 - **GENVIEW-ECG-5** A hidden lead does not move another lead in time or in
-  position. A band of regions in which every lead is hidden gets zero height.
+  column. A band of regions in which every lead is hidden gets zero height,
+  and the other bands share its height.
 
 ## Implementation requirements
 
