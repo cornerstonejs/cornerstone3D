@@ -1,4 +1,5 @@
 import ECGViewportLegacyAdapter from '../src/RenderingEngine/GenericViewport/ECG/ECGViewportLegacyAdapter';
+import * as metaData from '../src/metaData';
 
 const N = 5000;
 const NAMES = ['I', 'II', 'III', 'aVR', 'aVL', 'aVF'];
@@ -20,11 +21,11 @@ function makeWaveform() {
   };
 }
 
-async function makeViewport() {
+async function makeViewport(id = 'vp') {
   const element = document.createElement('div');
   document.body.appendChild(element);
   const viewport = new ECGViewportLegacyAdapter({
-    id: 'vp',
+    id,
     element,
     renderingEngineId: 're',
     dataProvider: { load: async () => makeWaveform() },
@@ -50,6 +51,24 @@ describe('ECG viewport references and camera', () => {
     expect(viewport.isReferenceViewable(viewport.getViewReference())).toBe(
       true
     );
+  });
+
+  it('shows an annotation in every viewport of the same ECG', async () => {
+    const provider = (type, imageId) =>
+      type === 'sopCommonModule' && imageId === 'ecg:1'
+        ? { sopInstanceUID: '1.2.3.4' }
+        : undefined;
+    metaData.addProvider(provider, 100000);
+    try {
+      const viewportA = await makeViewport('vpA');
+      const viewportB = await makeViewport('vpB');
+      const reference = viewportA.getViewReference({ points: [[100, 0, 2]] });
+
+      expect(reference.FrameOfReferenceUID).toBe('1.2.3.4');
+      expect(viewportB.isReferenceViewable(reference)).toBe(true);
+    } finally {
+      metaData.removeProvider(provider);
+    }
   });
 
   it('keeps the view when a saved camera is restored past the record end', async () => {

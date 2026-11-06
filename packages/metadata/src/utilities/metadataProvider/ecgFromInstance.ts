@@ -55,7 +55,10 @@ export interface DicomWaveformAnnotationItem {
   UnformattedTextValue?: string | string[];
   TextValue?: string | string[];
   ReferencedWaveformChannels?: number | number[];
+  TemporalRangeType?: string | string[];
   ReferencedSamplePositions?: number | number[];
+  ReferencedTimeOffsets?: number | number[];
+  ReferencedDateTime?: string | string[];
 }
 
 export interface DicomWaveformData {
@@ -102,9 +105,10 @@ export interface EcgWaveformAnnotation {
 
 /**
  * The global ECG measurements and findings of `WaveformAnnotationSequence`.
- * A metric comes from the first global item (no referenced channels or sample
- * positions) that matches it. Values keep the units of the instance; see
- * `all[].unit`.
+ * A metric comes from the first global item that matches it. A global item has
+ * no time reference, and its `ReferencedWaveformChannels` is absent or names
+ * all channels (channel number 0, PS3.3 C.10.10.1.1). Values keep the units of
+ * the instance, and `units` gives the unit of each metric.
  */
 export interface EcgAnnotations {
   ventricularHeartRate?: number;
@@ -116,6 +120,11 @@ export interface EcgAnnotations {
   pAxis?: number;
   qrsAxis?: number;
   tAxis?: number;
+  /**
+   * The unit of each metric, from the item that gives the value: the UCUM code
+   * value, for example `ms` or `/min`, or the code meaning when no code value.
+   */
+  units?: Partial<Record<EcgNumericMetricKey, string>>;
   interpretations?: string[];
   all?: EcgWaveformAnnotation[];
 }
@@ -397,6 +406,7 @@ export function parseEcgAnnotations(
   }
 
   const annotations: EcgAnnotations = {
+    units: {},
     interpretations: [],
     all: [],
   };
@@ -409,14 +419,20 @@ export function parseEcgAnnotations(
     const codeMeaning = firstText(concept?.CodeMeaning) ?? '';
     const codeValue = firstText(concept?.CodeValue) ?? '';
     const numericVal = toFiniteFirst(item.NumericValue);
-    const unit = codeText(toArray(item.MeasurementUnitsCodeSequence)[0]);
+    const unitItem = toArray(item.MeasurementUnitsCodeSequence)[0];
+    const unit = codeText(unitItem);
     const codedValue = codeText(toArray(item.ConceptCodeSequence)[0]);
     const textVal =
       firstText(item.UnformattedTextValue ?? item.TextValue) ?? codedValue;
     // A marker on the trace, or a value of one lead, is not a global result.
+    // Channel pairs are (multiplex group, channel); channel 0 is all channels.
+    const channelPairs = [item.ReferencedWaveformChannels ?? []].flat();
     const isGlobal =
+      item.TemporalRangeType === undefined &&
       item.ReferencedSamplePositions === undefined &&
-      item.ReferencedWaveformChannels === undefined;
+      item.ReferencedTimeOffsets === undefined &&
+      item.ReferencedDateTime === undefined &&
+      channelPairs.every((value, index) => index % 2 === 0 || value === 0);
 
     if (codeMeaning || codeValue || numericVal !== undefined || textVal) {
       annotations.all.push({
@@ -444,7 +460,10 @@ export function parseEcgAnnotations(
         ? matchEcgMetric(codeValue, codeMeaning)
         : undefined;
     if (metric) {
-      annotations[metric] ??= numericVal;
+      if (annotations[metric] === undefined) {
+        annotations[metric] = numericVal;
+        annotations.units[metric] = firstText(unitItem?.CodeValue) || unit;
+      }
       continue;
     }
 
@@ -461,12 +480,13 @@ export function parseEcgAnnotations(
     annotations.rrInterval !== undefined &&
     annotations.rrInterval > 0
   ) {
-    // If RR interval is given in seconds (< 5s, e.g. 0.85s instead of 850ms), normalize to ms
-    const rrMs =
-      annotations.rrInterval < 5
-        ? annotations.rrInterval * 1000
-        : annotations.rrInterval;
+    const rrUnit = annotations.units.rrInterval;
+    // With no unit, a value below 5 is in seconds (0.85 s, not 850 ms).
+    const inSeconds =
+      rrUnit === 's' || (rrUnit !== 'ms' && annotations.rrInterval < 5);
+    const rrMs = annotations.rrInterval * (inSeconds ? 1000 : 1);
     annotations.ventricularHeartRate = Math.round(60000 / rrMs);
+    annotations.units.ventricularHeartRate = '/min';
   }
 
   return annotations;

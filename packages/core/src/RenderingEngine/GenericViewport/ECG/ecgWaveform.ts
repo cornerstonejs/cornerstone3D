@@ -72,6 +72,24 @@ export function getECGChannelMvPerUnit(channel: {
     : ECG_DEFAULT_MV_PER_UNIT;
 }
 
+/**
+ * Frame of reference of an ECG: its SOP Instance UID. An ECG instance has no
+ * Frame of Reference UID. Its Synchronization Frame of Reference UID can be
+ * shared by other instances, so it does not identify one ECG. Every viewport
+ * of the same ECG gets the same value, so an annotation shows in each one.
+ */
+export function getECGFrameOfReferenceUID(
+  imageId: string | undefined
+): string | undefined {
+  if (!imageId) {
+    return;
+  }
+  return (
+    metaData.get(MetadataModules.SOP_COMMON, imageId)?.sopInstanceUID ||
+    `ecg:${imageId}`
+  );
+}
+
 export async function loadECGWaveform(dataId: string): Promise<{
   waveform: ECGWaveformLike;
   calibration: unknown;

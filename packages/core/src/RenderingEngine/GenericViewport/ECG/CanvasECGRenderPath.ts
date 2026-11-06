@@ -62,7 +62,7 @@ export class CanvasECGRenderPath implements RenderPath<ECGCanvasRenderContext> {
         // frame, so there is no incremental state to apply.
       },
       getFrameOfReferenceUID: () => {
-        return this.getFrameOfReferenceUID(ctx);
+        return ctx.getResolvedView()?.getFrameOfReferenceUID();
       },
       render: () => {
         drawFrame(ctx);
@@ -71,12 +71,6 @@ export class CanvasECGRenderPath implements RenderPath<ECGCanvasRenderContext> {
         this.removeData();
       },
     };
-  }
-
-  private getFrameOfReferenceUID(
-    ctx: ECGCanvasRenderContext
-  ): string | undefined {
-    return `ecg-viewport-${ctx.viewportId}`;
   }
 
   private removeData(): void {
