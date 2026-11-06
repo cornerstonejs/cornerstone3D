@@ -788,9 +788,8 @@ const ecgCalibrationProvider: TypedProvider = (next, query, data, options) => {
     (group.NumberOfWaveformSamples as number) ?? 0;
   const samplingFrequency = (group.SamplingFrequency as number) ?? 1;
   const physicalDeltaX = 1 / (samplingFrequency || 1);
-  // One raw sample unit in millivolts, from the channel sensitivity of the
-  // first channel. Every channel of a multiplex group shares one sampling
-  // frequency, and in practice they share one sensitivity as well.
+  // One raw sample unit of the first channel, in millivolts. The ECG viewport
+  // gives world Y in raw units of the first channel for every lead.
   const firstChannel = toArray(
     group.ChannelDefinitionSequence as
       | ArrayLike<Record<string, unknown>>

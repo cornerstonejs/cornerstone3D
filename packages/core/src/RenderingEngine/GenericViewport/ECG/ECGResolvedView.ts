@@ -10,6 +10,7 @@ import {
   resolveECGTraceLayout,
   type ECGTraceCell,
 } from './ecgTraceLayouts';
+import { getECGChannelMvPerUnit } from './ecgWaveform';
 import ResolvedViewportView from '../ResolvedViewportView';
 import {
   getAnchorWorldForCanvasPoint,
@@ -196,11 +197,25 @@ class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
   /**
    * Converts a canvas-space point into 3D world-space coordinates.
    * @param canvasPos - Point in canvas space [x, y].
-   * @returns 3D world point `[sampleIndex, amplitude, leadIndex]`. The sample
+   * @returns 3D world point `[sampleIndex, amplitude, leadIndex]`. The
+   * amplitude is in raw units of the first channel. The sample
    * index is global, so it does not depend on the layout cell. The lead index
    * identifies the layout cell; see {@link ECGChannelLayout.leadIndex}.
    */
   canvasToWorld(canvasPos: Point2): Point3 {
+    const world = this.canvasToWorldUnclamped(canvasPos);
+    world[0] = Math.max(
+      0,
+      Math.min(this.state.waveform.numberOfSamples - 1, world[0])
+    );
+    return world;
+  }
+
+  /**
+   * As {@link canvasToWorld}, but the sample index can be outside the record.
+   * The camera uses it, so that `setCamera(getCamera())` keeps the pan.
+   */
+  private canvasToWorldUnclamped(canvasPos: Point2): Point3 {
     const mapping = this.getCanvasMapping();
     const channelLayouts = this.channelLayouts;
     const subCanvasPos: Point2 = [
@@ -250,10 +265,7 @@ class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
     const effectiveChannelScale = this.getDrawnScale(layout);
 
     return [
-      Math.max(
-        0,
-        Math.min(this.state.waveform.numberOfSamples - 1, sampleIndex)
-      ),
+      sampleIndex,
       (layout.baseline - subCanvasPos[1]) / effectiveChannelScale,
       leadIndex,
     ];
@@ -336,7 +348,7 @@ class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
 
     return {
       parallelProjection: true,
-      focalPoint: this.canvasToWorld(canvasCenter),
+      focalPoint: this.canvasToWorldUnclamped(canvasCenter),
       position: [0, 0, 0],
       viewUp: [0, -1, 0],
       parallelScale:
@@ -377,9 +389,19 @@ class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
     return dx * dx + dy * dy;
   }
 
-  /** World units for each raw amplitude unit, as the trace is drawn. */
+  /**
+   * Canvas world units for each world Y unit, as the trace is drawn. World Y
+   * is in raw units of the first channel, so that the one CALIBRATION region
+   * (which uses the first channel's sensitivity) gives the correct mV on a lead
+   * with a different sensitivity.
+   */
   private getDrawnScale(layout: ECGChannelLayout<ECGChannelData>): number {
-    return layout.channelScale * this.amplitudeScale;
+    const firstChannel = this.state.waveform.channels[0];
+    const unitRatio = firstChannel
+      ? getECGChannelMvPerUnit(layout.channel) /
+        getECGChannelMvPerUnit(firstChannel)
+      : 1;
+    return (layout.channelScale * this.amplitudeScale) / unitRatio;
   }
 
   private getGeometry() {
