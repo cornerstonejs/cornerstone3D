@@ -72,9 +72,9 @@ describe('Ultrasound Directional measurements', () => {
             regionLocationMaxY1: 65535,
             referencePixelX0: 0,
             referencePixelY0: 32768,
-            physicalUnitsXDirection: 4, // seconds -> converted to ms
+            physicalUnitsXDirection: -2, // ms
             physicalUnitsYDirection: -1, // mV
-            physicalDeltaX: 0.001, // 1 ms/sample (0.001 s)
+            physicalDeltaX: 1, // 1 ms/sample
             physicalDeltaY: 0.005, // 0.005 mV/unit
           },
         ],
@@ -135,9 +135,9 @@ describe('Ultrasound Directional measurements', () => {
             regionLocationMaxY1: 65535,
             referencePixelX0: 0,
             referencePixelY0: 32768,
-            physicalUnitsXDirection: 4,
+            physicalUnitsXDirection: -2,
             physicalUnitsYDirection: -1,
-            physicalDeltaX: 0.001,
+            physicalDeltaX: 1,
             physicalDeltaY: 0.005,
           },
         ],
@@ -192,9 +192,9 @@ describe('Ultrasound Directional measurements', () => {
             regionLocationMaxY1: 65535,
             referencePixelX0: 0,
             referencePixelY0: 32768,
-            physicalUnitsXDirection: 4,
+            physicalUnitsXDirection: -2,
             physicalUnitsYDirection: -1,
-            physicalDeltaX: 0.001,
+            physicalDeltaX: 1,
             physicalDeltaY: 0.005,
           },
         ],
@@ -233,7 +233,7 @@ describe('Ultrasound Directional measurements', () => {
   });
 
   // Negative flows
-  it('falls back to unitless pixels when endpoints are on two ECG leads', () => {
+  it('shows no distance when endpoints are on two ECG leads', () => {
     const tool = new UltrasoundDirectionalTool();
     const targetId = 'imageId:twoLeads';
     const image = {
@@ -275,9 +275,12 @@ describe('Ultrasound Directional measurements', () => {
     tool.getTargetImageData = () => image;
     tool._calculateCachedStats(annotation, {}, { viewport });
 
-    const stats = annotation.data.cachedStats[targetId];
-    expect(stats.isUnitless).toBe(true);
-    expect(stats.units).toEqual(['px']);
+    const textLines = tool.configuration.getTextLines(
+      annotation.data,
+      targetId,
+      tool.configuration
+    );
+    expect(textLines).toEqual(['different regions']);
   });
 
   it('falls back to unitless pixels when endpoints have mismatched units', () => {

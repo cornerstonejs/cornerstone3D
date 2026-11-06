@@ -193,23 +193,19 @@ const getCalibratedProbeUnitsAndValue = (image, handles) => {
     const { referencePixelX0 = 0, referencePixelY0 = 0 } = region;
     const { physicalDeltaX, physicalDeltaY } = region;
 
-    const isEcg = region.physicalUnitsYDirection === -1;
-    const isSeconds = isEcg && region.physicalUnitsXDirection === 4;
-
     const yValue =
       (imageIndex[1] - region.regionLocationMinY0 - referencePixelY0) *
       physicalDeltaY;
 
     const xValue =
       (imageIndex[0] - region.regionLocationMinX0 - referencePixelX0) *
-      (isSeconds ? physicalDeltaX * 1000 : physicalDeltaX);
+      physicalDeltaX;
 
-    calibrationType = isEcg ? 'ECG Region' : 'US Region';
+    calibrationType =
+      region.physicalUnitsYDirection === -1 ? 'ECG Region' : 'US Region';
     values = [xValue, yValue];
     units = [
-      isSeconds
-        ? 'ms'
-        : (UNIT_MAPPING[region.physicalUnitsXDirection] ?? 'unknown'),
+      UNIT_MAPPING[region.physicalUnitsXDirection] ?? 'unknown',
       UNIT_MAPPING[region.physicalUnitsYDirection] ?? 'unknown',
     ];
   }

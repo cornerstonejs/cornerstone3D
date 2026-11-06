@@ -85,9 +85,9 @@ describe('getCalibratedUnits', function () {
               regionLocationMaxX1: 100,
               regionLocationMinY0: 0,
               regionLocationMaxY1: 100,
-              physicalUnitsXDirection: 4,
+              physicalUnitsXDirection: -2,
               physicalUnitsYDirection: -1,
-              physicalDeltaX: 0.001,
+              physicalDeltaX: 1,
               physicalDeltaY: 0.005,
               regionDataType: 1,
             },
@@ -145,7 +145,7 @@ describe('getCalibratedUnits', function () {
       getCalibratedProbeUnitsAndValue,
     } = require('../../src/utilities/getCalibratedUnits');
 
-    it('returns converted ms and mV values for ECG probe points', () => {
+    it('returns ms and mV values for ECG probe points', () => {
       const image = {
         calibration: {
           sequenceOfUltrasoundRegions: [
@@ -156,9 +156,9 @@ describe('getCalibratedUnits', function () {
               regionLocationMaxY1: 65535,
               referencePixelX0: 0,
               referencePixelY0: 32768,
-              physicalUnitsXDirection: 4, // seconds -> converted to ms
+              physicalUnitsXDirection: -2, // ms
               physicalUnitsYDirection: -1, // mV
-              physicalDeltaX: 0.001, // 1 ms/sample (0.001 s)
+              physicalDeltaX: 1, // 1 ms/sample
               physicalDeltaY: 0.005,
               regionDataType: 1,
             },
@@ -168,7 +168,7 @@ describe('getCalibratedUnits', function () {
       const point = [250, 32768 + 100]; // 250 samples, +100 units above baseline
       const result = getCalibratedProbeUnitsAndValue(image, [point]);
       expect(result.units).toEqual(['ms', 'mV']);
-      expect(result.values[0]).toBeCloseTo(250); // 250 * 0.001 * 1000 = 250 ms
+      expect(result.values[0]).toBeCloseTo(250); // 250 samples * 1 ms
       expect(result.values[1]).toBeCloseTo(0.5); // 100 * 0.005 = 0.5 mV
       expect(result.calibrationType).toBe('ECG Region');
     });

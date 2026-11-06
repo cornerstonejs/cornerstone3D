@@ -662,7 +662,8 @@ const ecgCalibrationProvider: TypedProvider = (next, query, data, options) => {
   const numberOfWaveformSamples =
     (group.NumberOfWaveformSamples as number) ?? 0;
   const samplingFrequency = (group.SamplingFrequency as number) ?? 1;
-  const physicalDeltaX = 1 / (samplingFrequency || 1);
+  // Milliseconds for each sample.
+  const physicalDeltaX = 1000 / (samplingFrequency || 1);
   // One raw sample unit of the first channel, in millivolts. The ECG viewport
   // gives world Y in raw units of the first channel for every lead.
   const firstChannel = toArray(
@@ -684,11 +685,9 @@ const ecgCalibrationProvider: TypedProvider = (next, query, data, options) => {
         referencePixelY0: ECG_AMPLITUDE_OFFSET,
         physicalDeltaX,
         physicalDeltaY,
-        // X is in seconds (DICOM unit code 4), and Y is in millivolts (the
-        // Cornerstone extension code -1). The display layer converts seconds to
-        // milliseconds; the region does not encode that choice. See
-        // getCalibratedUnits.ts.
-        physicalUnitsXDirection: 4,
+        // X is in ms and Y is in mV: the Cornerstone extension codes -2 and
+        // -1, which are not in the DICOM table. See getCalibratedUnits.ts.
+        physicalUnitsXDirection: -2,
         physicalUnitsYDirection: -1,
         regionDataType: 1,
       },
