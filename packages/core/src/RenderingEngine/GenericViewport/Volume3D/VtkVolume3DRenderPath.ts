@@ -253,6 +253,10 @@ function applyDataPresentation(
     updateVolumeOpacity(actor, props.opacity);
   }
 
+  if (props?.blendMode !== undefined) {
+    rendering.mapper.setBlendMode(props.blendMode);
+  }
+
   if (!voiRange) {
     return;
   }
