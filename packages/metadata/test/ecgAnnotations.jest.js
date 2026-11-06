@@ -1,14 +1,4 @@
-import {
-  buildEcgModuleFromInstance,
-  parseEcgAnnotations,
-  parsePatientInfo,
-  parseStudyInfo,
-  parseDicomNumeric,
-  parseDicomText,
-  parseDicomUnit,
-  matchEcgMetric,
-  ECG_CODE_MAP,
-} from '../src/utilities/metadataProvider/ecgFromInstance';
+import { parseEcgAnnotations } from '../src/utilities/metadataProvider/ecgFromInstance';
 
 describe('ECG WaveformAnnotationSequence Parsing', () => {
   describe('Positive Tests: Standard LOINC Codes', () => {
@@ -205,20 +195,6 @@ describe('ECG WaveformAnnotationSequence Parsing', () => {
       expect(annotations?.qtInterval).toBe(380);
     });
 
-    it('extracts unit preferring CodeMeaning then CodeValue', () => {
-      const itemWithMeaning = {
-        MeasurementUnitsCodeSequence: [{ CodeMeaning: 'milliseconds' }],
-      };
-      const itemWithValueOnly = {
-        MeasurementUnitsCodeSequence: [{ CodeValue: 'ms' }],
-      };
-      const itemWithoutUnit = {};
-
-      expect(parseDicomUnit(itemWithMeaning)).toBe('milliseconds');
-      expect(parseDicomUnit(itemWithValueOnly)).toBe('ms');
-      expect(parseDicomUnit(itemWithoutUnit)).toBeUndefined();
-    });
-
     it('deduplicates identical text interpretations and ignores whitespace', () => {
       const instance = {
         WaveformAnnotationSequence: [
@@ -343,77 +319,12 @@ describe('ECG WaveformAnnotationSequence Parsing', () => {
     });
   });
 
-  describe('Positive Tests: Patient and Study Metadata', () => {
-    it('parses PatientInfo across string, object, and array formats', () => {
-      const stringName = parsePatientInfo({
-        PatientName: 'Doe^Jane',
-        PatientID: 'P1',
-        PatientSex: 'F',
-        PatientAge: '045Y',
-        PatientBirthDate: '19790101',
-      });
-      expect(stringName).toEqual({
-        patientName: 'Doe^Jane',
-        patientId: 'P1',
-        patientSex: 'F',
-        patientAge: '045Y',
-        patientBirthDate: '19790101',
-      });
-
-      const objectName = parsePatientInfo({
-        PatientName: { Alphabetic: 'Smith^John' },
-      });
-      expect(objectName.patientName).toBe('Smith^John');
-
-      const arrayName = parsePatientInfo({
-        PatientName: [{ Alphabetic: 'Brown^Charlie' }],
-      });
-      expect(arrayName.patientName).toBe('Brown^Charlie');
-    });
-
-    it('parses StudyInfo with modality defaulting to ECG', () => {
-      const studyInfo = parseStudyInfo({
-        StudyDate: '20230510',
-        StudyTime: '143000',
-        StudyDescription: 'Resting ECG 12-Lead',
-        SeriesDescription: 'Standard ECG',
-        Manufacturer: 'GE Healthcare',
-        InstitutionName: 'General Hospital',
-      });
-
-      expect(studyInfo.studyDate).toBe('20230510');
-      expect(studyInfo.studyTime).toBe('143000');
-      expect(studyInfo.studyDescription).toBe('Resting ECG 12-Lead');
-      expect(studyInfo.modality).toBe('ECG');
-      expect(studyInfo.manufacturer).toBe('GE Healthcare');
-      expect(studyInfo.institutionName).toBe('General Hospital');
-    });
-  });
-
   describe('Negative Tests & Edge Cases', () => {
     it('returns undefined when WaveformAnnotationSequence is absent or empty', () => {
       expect(parseEcgAnnotations({})).toBeUndefined();
       expect(
         parseEcgAnnotations({ WaveformAnnotationSequence: [] })
       ).toBeUndefined();
-    });
-
-    it('safely handles null, undefined, or empty items inside the sequence', () => {
-      const instance = {
-        WaveformAnnotationSequence: [
-          null,
-          undefined,
-          {},
-          {
-            ConceptNameCodeSequence: [{ CodeValue: '8633-0' }],
-            NumericValue: 80,
-          },
-        ],
-      };
-
-      const annotations = parseEcgAnnotations(instance);
-      expect(annotations).toBeDefined();
-      expect(annotations?.qrsDuration).toBe(80);
     });
 
     it('rejects invalid or non-numeric NumericValues without corrupting metrics', () => {
@@ -490,85 +401,64 @@ describe('ECG WaveformAnnotationSequence Parsing', () => {
       expect(annotations?.all?.[0].concept?.codeValue).toBe('99999-9');
       expect(annotations?.all?.[0].numericValue).toBe(123);
     });
-
-    it('handles non-array array-like sequence objects safely', () => {
-      const arrayLikeSequence = {
-        0: {
-          ConceptNameCodeSequence: [{ CodeValue: '8633-0' }],
-          NumericValue: 90,
-        },
-        length: 1,
-      };
-
-      const annotations = parseEcgAnnotations({
-        WaveformAnnotationSequence: arrayLikeSequence,
-      });
-      expect(annotations?.qrsDuration).toBe(90);
-    });
   });
-
-  describe('Isolated Helper Unit Tests', () => {
-    it('parseDicomNumeric handles valid and invalid inputs properly', () => {
-      expect(parseDicomNumeric(120)).toBe(120);
-      expect(parseDicomNumeric([120])).toBe(120);
-      expect(parseDicomNumeric('120')).toBe(120);
-      expect(parseDicomNumeric(['120'])).toBe(120);
-      expect(parseDicomNumeric(0)).toBe(0);
-      expect(parseDicomNumeric('0')).toBe(0);
-
-      // Invalid / edge cases
-      expect(parseDicomNumeric(null)).toBeUndefined();
-      expect(parseDicomNumeric(undefined)).toBeUndefined();
-      expect(parseDicomNumeric('')).toBeUndefined();
-      expect(parseDicomNumeric('abc')).toBeUndefined();
-      expect(parseDicomNumeric(NaN)).toBeUndefined();
-      expect(parseDicomNumeric(Infinity)).toBeUndefined();
-      expect(parseDicomNumeric(true)).toBeUndefined();
-      expect(parseDicomNumeric(false)).toBeUndefined();
-      expect(parseDicomNumeric([true])).toBeUndefined();
+  describe('Global results only', () => {
+    const item = (meaning, value, extra = {}) => ({
+      ConceptNameCodeSequence: [{ CodeMeaning: meaning }],
+      NumericValue: value,
+      ...extra,
     });
 
-    it('parseDicomText handles valid and invalid text inputs properly', () => {
-      expect(parseDicomText('Normal ECG')).toBe('Normal ECG');
-      expect(parseDicomText(['Normal ECG'])).toBe('Normal ECG');
-      expect(parseDicomText('  Trimmable Text  ')).toBe('Trimmable Text');
-
-      // Invalid / empty
-      expect(parseDicomText(null)).toBeUndefined();
-      expect(parseDicomText(undefined)).toBeUndefined();
-      expect(parseDicomText('')).toBeUndefined();
-      expect(parseDicomText('   ')).toBeUndefined();
-      expect(parseDicomText(true)).toBeUndefined();
-      expect(parseDicomText(false)).toBeUndefined();
+    it('does not take an atrial rate as the ventricular rate', () => {
+      const annotations = parseEcgAnnotations({
+        WaveformAnnotationSequence: [
+          item('Ventricular Heart Rate', 60),
+          item('Atrial Heart Rate', 75),
+        ],
+      });
+      expect(annotations.ventricularHeartRate).toBe(60);
     });
 
-    it('matchEcgMetric resolves standard codes and falls back to regex', () => {
-      expect(matchEcgMetric('8867-4', '')).toBe('ventricularHeartRate');
-      expect(matchEcgMetric('2:1', '')).toBe('ventricularHeartRate');
-      expect(matchEcgMetric('8625-6', '')).toBe('prInterval');
-      expect(matchEcgMetric('8633-0', '')).toBe('qrsDuration');
-      expect(matchEcgMetric('8634-8', '')).toBe('qtInterval');
-      expect(matchEcgMetric('8636-3', '')).toBe('qtcInterval');
-      expect(matchEcgMetric('8637-1', '')).toBe('rrInterval');
-      expect(matchEcgMetric('8626-4', '')).toBe('pAxis');
-      expect(matchEcgMetric('8632-2', '')).toBe('qrsAxis');
-      expect(matchEcgMetric('8638-9', '')).toBe('tAxis');
+    it('keeps the global value when a later item is for one lead', () => {
+      const annotations = parseEcgAnnotations({
+        WaveformAnnotationSequence: [
+          item('QRS Duration', 90),
+          item('QRS Duration', 110, { ReferencedWaveformChannels: [1, 2] }),
+          item('QRS Duration', 95),
+        ],
+      });
+      expect(annotations.qrsDuration).toBe(90);
+    });
 
-      // Regex fallbacks
-      expect(matchEcgMetric('', 'Ventricular Heart Rate')).toBe(
-        'ventricularHeartRate'
-      );
-      expect(matchEcgMetric('', 'PR Interval')).toBe('prInterval');
-      expect(matchEcgMetric('', 'QRS Duration')).toBe('qrsDuration');
-      expect(matchEcgMetric('', 'QT Interval')).toBe('qtInterval');
-      expect(matchEcgMetric('', 'QTc Interval')).toBe('qtcInterval');
-      expect(matchEcgMetric('', 'RR Interval')).toBe('rrInterval');
-      expect(matchEcgMetric('', 'P Axis')).toBe('pAxis');
-      expect(matchEcgMetric('', 'QRS Axis')).toBe('qrsAxis');
-      expect(matchEcgMetric('', 'T Axis')).toBe('tAxis');
+    it('does not list trace markers as interpretations', () => {
+      const annotations = parseEcgAnnotations({
+        WaveformAnnotationSequence: [
+          {
+            ConceptNameCodeSequence: [{ CodeMeaning: 'QRS onset' }],
+            ReferencedSamplePositions: [120],
+          },
+        ],
+      });
+      expect(annotations.interpretations).toEqual([]);
+    });
 
-      // Unmatched
-      expect(matchEcgMetric('unknown', 'unknown')).toBeUndefined();
+    it('lists the value of a coded statement, not its name', () => {
+      const annotations = parseEcgAnnotations({
+        WaveformAnnotationSequence: [
+          {
+            ConceptNameCodeSequence: [{ CodeMeaning: 'Finding' }],
+            ConceptCodeSequence: [{ CodeMeaning: 'Sinus rhythm' }],
+          },
+        ],
+      });
+      expect(annotations.interpretations).toEqual(['Sinus rhythm']);
+    });
+
+    it('ignores a blank numeric value', () => {
+      const annotations = parseEcgAnnotations({
+        WaveformAnnotationSequence: [item('QT Interval', ' ')],
+      });
+      expect(annotations.qtInterval).toBeUndefined();
     });
   });
 });

@@ -1,9 +1,4 @@
 import { utilities as metadataUtilities } from '@cornerstonejs/metadata';
-import type {
-  EcgAnnotations,
-  EcgPatientInfo,
-  EcgStudyInfo,
-} from '@cornerstonejs/metadata';
 import { MetadataModules } from '../../../enums';
 import * as metaData from '../../../metaData';
 
@@ -66,9 +61,6 @@ export interface ECGWaveformLike<
   sampleInterpretation: string;
   multiplexGroupLabel?: string;
   calibration?: unknown;
-  annotations?: EcgAnnotations;
-  patientInfo?: EcgPatientInfo;
-  studyInfo?: EcgStudyInfo;
 }
 
 /** Millivolts for each raw sample unit of one channel. */
@@ -131,9 +123,6 @@ export async function loadECGWaveform(dataId: string): Promise<{
       sampleInterpretation,
       multiplexGroupLabel,
       calibration,
-      annotations: ecgModule.annotations,
-      patientInfo: ecgModule.patientInfo,
-      studyInfo: ecgModule.studyInfo,
     },
     calibration,
   };
