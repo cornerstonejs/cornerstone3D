@@ -8,9 +8,10 @@ summary: What a clinician must see and be able to do when Cornerstone3D shows a 
 
 ## Scope
 
-This specification gives the user requirements of the ECG display: what a
-clinician sees, and what a clinician can do. It names no class, file or
-algorithm.
+This specification gives the user requirements of the ECG display of the
+Generic Viewport: what a clinician sees, and what a clinician can do. It names
+no class, file or algorithm. The deprecated ECG display does not meet ECG-U-3,
+ECG-U-7 and ECG-U-8.
 
 The code design is in the
 [Generic Viewport code design](../generic-viewport-code-design.md), section
@@ -23,11 +24,14 @@ change a requirement.
 
 ## Paper scale and grid
 
-- **ECG-U-1** At zoom 1 and at the nominal screen scale (96 pixels for each
-  inch), the trace shows 25 mm/s and 10 mm/mV by default. The clinician can
-  change the sweep speed and the sensitivity.
-- **ECG-U-2** With a calibrated sensitivity, the grid shows a minor block of
-  1 mm and a major block of 5 mm.
+- **ECG-U-1** By default, the record fits the viewport, and the sweep speed
+  is 25 mm/s. The clinician can set the sweep speed in mm/s and the
+  sensitivity in mm/mV. With a set sensitivity, the trace has the shape of a
+  paper ECG at that sweep speed and sensitivity, at each zoom.
+- **ECG-U-2** A minor block of the grid is one paper millimetre, and a major
+  block is five minor blocks. In time, a minor block is 1/sweep speed seconds,
+  for example 0.04 s at 25 mm/s. With a set sensitivity, a minor block in
+  amplitude is 1/sensitivity mV, for example 0.1 mV at 10 mm/mV.
 - **ECG-U-3** Each lead shows its amplitude from its own channel sensitivity.
   An amplitude that the clinician reads or measures in mV on a lead is the
   value that the device recorded on that lead.
