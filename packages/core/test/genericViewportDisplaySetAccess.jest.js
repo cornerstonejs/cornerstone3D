@@ -58,18 +58,39 @@ describe('Display set lookup by display set id', () => {
     expect(getGenericViewportImageDisplaySet('ecg:imageId')).toBeUndefined();
   });
 
-  it('loads a WSI display set that has a web client', () => {
-    const webClient = { getDICOMwebMetadata: () => undefined };
+  it('shows the instance of a video or ECG display set', () => {
     registerDisplaySetMetadata(
       [],
-      displaySet('ds-4', { handler: 'wholeSlide', options: { webClient } })
+      displaySet('ds-6', { instance: { imageId: 'ds-6:shown' } })
     );
+
+    expect(getGenericViewportSourceDataId('ds-6')).toBe('ds-6:shown');
+  });
+
+  it('loads a WSI display set with its own web client', () => {
+    const webClient = { getDICOMwebMetadata: () => undefined };
+    registerDisplaySetMetadata([], displaySet('ds-4', { webClient }));
 
     expect(getGenericViewportWSIDisplaySet('ds-4')).toEqual({
       kind: 'wsi',
       imageIds: ['ds-4:frame1', 'ds-4:frame2'],
-      options: { miniNavigationOverlay: undefined, webClient },
+      options: { webClient },
     });
+  });
+
+  it('loads a WSI display set with the WADO_WEB_CLIENT of its first image', () => {
+    const webClient = { getDICOMwebMetadata: () => undefined };
+    const provider = (type, imageId) =>
+      type === 'wadoWebClient' && imageId === 'ds-7:frame1'
+        ? webClient
+        : undefined;
+    metaData.addProvider(provider, 100000);
+    registerDisplaySetMetadata([], displaySet('ds-7'));
+
+    expect(getGenericViewportWSIDisplaySet('ds-7').options.webClient).toBe(
+      webClient
+    );
+    metaData.removeProvider(provider);
   });
 
   it('uses the viewport registry first', () => {

@@ -86,9 +86,10 @@ family, legacy or generic, reads it from one of two places:
 2. The `DISPLAY_SET` metadata cache, under the display set id.
    `registerDisplaySetMetadata` stores the display set there (see
    [Caching display sets in the metadata layer](#caching-display-sets-in-the-metadata-layer)).
-   A stack or a volume shows `imageIds`. A video or an ECG shows the first
-   entry of `underlyingImageIds`, else the first entry of `imageIds`. A WSI
-   display set must also carry `options.webClient`.
+   A stack or a volume shows `imageIds`. A video or an ECG shows `instance`
+   (the object to show), else the first entry of `underlyingImageIds`, else the
+   first entry of `imageIds`. A WSI display set uses its own `webClient`, else
+   the `WADO_WEB_CLIENT` metadata of its first image id.
 
 With the cache, you do not register a second shape for each family. With the
 provider, the registered shape depends on the viewport family:

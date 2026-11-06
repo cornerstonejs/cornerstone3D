@@ -20,11 +20,14 @@ export interface GenericViewportPlanarDisplaySet
 
 /**
  * A display set from the `DISPLAY_SET` metadata cache, in the shape that the
- * data providers read. `sourceDataId` is the image id of the first instance.
+ * data providers read. `sourceDataId` is the image id of the object to show:
+ * `instance.imageId`, else the first underlying image id, else the first image
+ * id. `webClient` is the WSI client that the display set carries, if any.
  */
 export interface GenericViewportCachedDisplaySet
   extends GenericViewportImageDisplaySet {
   sourceDataId: string;
+  webClient?: unknown;
 }
 
 export interface GenericViewportSourceAliasDisplaySet {
@@ -73,7 +76,7 @@ export function getGenericViewportRegisteredDisplaySet(
  */
 function getCachedDisplaySet(
   displaySetId: string
-): GenericViewportCachedDisplaySet | GenericViewportWSIDisplaySet | undefined {
+): GenericViewportCachedDisplaySet | undefined {
   const displaySet: unknown = metaData.getTyped(
     Enums.MetadataModules.DISPLAY_SET,
     displaySetId
@@ -90,27 +93,21 @@ function getCachedDisplaySet(
   const imageIds = isStringArray(displaySet.imageIds)
     ? [...displaySet.imageIds]
     : [];
-  const { options } = displaySet;
-
-  if (isRecord(options) && isWSIClientLike(options.webClient)) {
-    return {
-      kind: 'wsi',
-      imageIds,
-      options: {
-        miniNavigationOverlay: options.miniNavigationOverlay as
-          | boolean
-          | undefined,
-        webClient: options.webClient,
-      },
-    };
-  }
-
   const underlyingImageIds = isStringArray(displaySet.underlyingImageIds)
     ? displaySet.underlyingImageIds
     : [];
-  const sourceDataId = underlyingImageIds[0] ?? imageIds[0];
+  // `instance` is the object to show for a video, an ECG or a SEG.
+  const instanceImageId = isRecord(displaySet.instance)
+    ? displaySet.instance.imageId
+    : undefined;
+  const sourceDataId =
+    (typeof instanceImageId === 'string' && instanceImageId) ||
+    underlyingImageIds[0] ||
+    imageIds[0];
 
-  return sourceDataId ? { imageIds, sourceDataId } : undefined;
+  return sourceDataId
+    ? { imageIds, sourceDataId, webClient: displaySet.webClient }
+    : undefined;
 }
 
 export function getGenericViewportImageDisplaySet(
@@ -178,6 +175,30 @@ export function getGenericViewportWSIDisplaySet(
         webClient: registered.options.webClient as WSIClientLike,
       },
     };
+  }
+
+  // A cached display set: its own client, else the client that the
+  // application registered under `WADO_WEB_CLIENT` for the first image id.
+  if (
+    isRecord(registered) &&
+    typeof registered.sourceDataId === 'string' &&
+    isStringArray(registered.imageIds) &&
+    registered.imageIds.length
+  ) {
+    const webClient =
+      registered.webClient ??
+      metaData.get(
+        Enums.MetadataModules.WADO_WEB_CLIENT,
+        registered.imageIds[0]
+      );
+
+    if (isWSIClientLike(webClient)) {
+      return {
+        kind: 'wsi',
+        imageIds: registered.imageIds,
+        options: { webClient },
+      };
+    }
   }
 }
 
