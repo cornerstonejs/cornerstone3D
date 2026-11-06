@@ -445,7 +445,8 @@ class ECGViewport extends Viewport {
 
   /**
    * Records the lead of the first point in `sliceIndex`, as the Generic
-   * Viewport ECG family does, so that both classes write the same reference.
+   * Viewport ECG family does. The reference also has the plane of the base
+   * class, so the ECG family does not show an annotation of this class.
    */
   public getViewReference(
     specifier: ViewReferenceSpecifier = {}
@@ -470,7 +471,7 @@ class ECGViewport extends Viewport {
   /**
    * All annotations created on this ECG viewport are always viewable.
    * The base implementation filters by plane distance, but ECG uses the
-   * z coordinate for channel index rather than spatial position, so the
+   * z coordinate for the lead index rather than spatial position, so the
    * plane check incorrectly rejects annotations on non-zero channels.
    */
   public isReferenceViewable(viewRef: {
