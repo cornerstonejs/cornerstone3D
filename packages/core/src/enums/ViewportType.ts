@@ -39,7 +39,7 @@ enum ViewportType {
   ECG_NEXT = 'ecgNext',
   /**
    * The deprecated ECG viewport class, before the Generic Viewport design.
-   * \ECG\ and \ECG_NEXT\ both give the Generic Viewport ECG family.
+   * `ECG` and `ECG_NEXT` both give the Generic Viewport ECG family.
    */
   ECG_LEGACY = 'ecgLegacy',
 }
