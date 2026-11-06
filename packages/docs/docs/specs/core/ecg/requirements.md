@@ -49,6 +49,10 @@ change a requirement.
   the clinician hides that lead, the annotation does not show. The annotation
   shows again when the lead shows. The annotation is not lost.
 - **ECG-U-9** An annotation shows in every viewport that shows the same ECG.
+- **ECG-U-12** A time measurement on an ECG shows its value in ms. An
+  amplitude measurement shows its value in mV.
+- **ECG-U-13** A measurement with its two points on two different leads shows
+  no value, and tells the clinician that the points are in different regions.
 
 ## Measurements of the device
 
