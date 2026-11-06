@@ -784,10 +784,16 @@ class UltrasoundDirectionalTool extends AnnotationTool {
 
       let xValues, yValues, units, isHorizontal;
       let isUnitless = false;
+      let isCrossRegion = false;
       // Handles on different index Z, for example two ECG leads, are in
-      // different regions.
-      if (
-        Math.round(imageIndex1[2]) !== Math.round(imageIndex2[2]) ||
+      // different regions, so no distance between them has a meaning.
+      if (Math.round(imageIndex1[2]) !== Math.round(imageIndex2[2])) {
+        isCrossRegion = true;
+        isUnitless = true;
+        xValues = [0, 0];
+        yValues = [0, 0];
+        units = [''];
+      } else if (
         units1[0] !== units2[0] ||
         units1[1] !== units2[1] ||
         (units1[0] === 'raw' && units2[0] === 'raw')
@@ -820,6 +826,7 @@ class UltrasoundDirectionalTool extends AnnotationTool {
         isHorizontal,
         units,
         isUnitless,
+        isCrossRegion,
       };
     }
 
@@ -837,7 +844,12 @@ class UltrasoundDirectionalTool extends AnnotationTool {
 
 function defaultGetTextLines(data, targetId, configuration): string[] {
   const cachedStats = data.cachedStats[targetId];
-  const { xValues, yValues, units, isUnitless, isHorizontal } = cachedStats;
+  const { xValues, yValues, units, isUnitless, isHorizontal, isCrossRegion } =
+    cachedStats;
+
+  if (isCrossRegion) {
+    return ['different regions'];
+  }
 
   if (isUnitless) {
     return [`${csUtils.roundNumber(xValues[0])} px`];
