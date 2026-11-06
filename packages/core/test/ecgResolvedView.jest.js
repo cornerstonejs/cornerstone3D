@@ -236,7 +236,7 @@ describe('ECGResolvedView owns the world geometry', () => {
   });
 
   describe('per-channel calibrated coordinate transforms', () => {
-    it('applies distinct channel scales in worldToCanvas and canvasToWorld', () => {
+    it('gives world Y in the units of the first channel on a lead with another sensitivity', () => {
       const waveform = makeWaveform();
       // Set different sensitivities on Channel 0 (0.001 mV/unit) and Channel 1 (0.002 mV/unit)
       waveform.channels[0].mvPerUnit = 0.001;
@@ -277,13 +277,14 @@ describe('ECGResolvedView owns the world geometry', () => {
       expect(back1[1]).toBeCloseTo(500, 3);
       expect(back1[2]).toBe(layout1.leadIndex);
 
-      // Deflection on screen for 500 units on ch1 vs ch2 relative to baseline
+      // World Y is in raw units of channel 0, so 500 units is 0.5 mV on both
+      // leads, and the one calibration region gives the same mV for each.
       const mapping = view.canvasTransform;
       const ch0CanvasDeflection =
         layout0.baseline * mapping.effectiveRatio + mapping.yOffset - p0[1];
       const ch1CanvasDeflection =
         layout1.baseline * mapping.effectiveRatio + mapping.yOffset - p1[1];
-      expect(ch1CanvasDeflection).toBeCloseTo(ch0CanvasDeflection * 2, 4);
+      expect(ch1CanvasDeflection).toBeCloseTo(ch0CanvasDeflection, 4);
     });
 
     it('returns [0, 0] from worldToCanvas when leadIndex does not match any layout cell', () => {

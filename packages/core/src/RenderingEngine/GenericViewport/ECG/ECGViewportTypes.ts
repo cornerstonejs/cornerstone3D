@@ -16,6 +16,8 @@ export interface ECGChannelData {
   data: Int16Array;
   min: number;
   max: number;
+  /** Millivolts for each raw unit; see `getECGChannelMvPerUnit`. */
+  mvPerUnit?: number;
 }
 
 /**
