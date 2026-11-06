@@ -181,9 +181,8 @@ states the contract, and this specification repeats it:
   example `'3x4+1'`, or a full layout definition with its trace regions. The
   same attribute accepts both forms.
 - **GENVIEW-ECG-2** The developer adds a named layout with
-  `registerECGTraceLayout()`, and declares the name in the interface
-  `ECGTraceLayoutRegistry`. The developer finds every registered name with
-  `getECGTraceLayoutNames()`, and finds the built-in names in the type.
+  `registerECGTraceLayout()`. The developer finds every registered name with
+  `getECGTraceLayoutNames()`.
 - **GENVIEW-ECG-3** The view state keeps `traceLayout` as the caller gave it,
   so a saved presentation keeps a name as a name.
 - **GENVIEW-ECG-4** A trace region names its lead by a channel index, or by the
@@ -193,6 +192,14 @@ states the contract, and this specification repeats it:
 - **GENVIEW-ECG-5** A hidden lead does not move another lead in time or in
   column. A band of regions in which every lead is hidden gets zero height,
   and the other bands share its height. This satisfies ECG-U-6 of the
+  [ECG display requirements](./ecg/requirements.md).
+- **GENVIEW-ECG-6** When no layout is explicitly configured, the viewport
+  dynamically derives its default layout from the waveform: standard continuous
+  recordings of at least 8 leads open in 3x4 with a continuous rhythm strip
+  (`'3x4+1'`, or `'3x5+1'` for 15 leads), while recordings with fewer leads or
+  short duration open in stacked rows (`'Nx1'`). `getTraceLayoutNames()`
+  gives the available layout names matching the waveform channel count.
+  This satisfies ECG-U-4 of the
   [ECG display requirements](./ecg/requirements.md).
 
 ## Implementation requirements

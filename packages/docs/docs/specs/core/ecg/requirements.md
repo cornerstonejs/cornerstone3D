@@ -38,9 +38,12 @@ change a requirement.
 
 ## Layout and navigation
 
-- **ECG-U-4** The clinician can select a trace layout, for example 12x1, 6x2,
-  3x4 or 3x4 with a rhythm strip. In a layout with more than one column, each
-  column shows its own time window of the record.
+- **ECG-U-4** By default, the trace layout dynamically matches the waveform
+  data: a standard 12-lead continuous recording opens in 3x4 with a rhythm
+  strip, while a rhythm strip or telemetry recording with fewer leads opens in
+  stacked rows. The clinician can select any trace layout, for example 12x1,
+  6x2, 3x4 or 3x4 with a rhythm strip. In a layout with more than one column,
+  each column shows its own time window of the record.
 - **ECG-U-5** Each trace shows the label of its lead.
 - **ECG-U-6** When the clinician hides a lead, no other lead moves in time or
   to another column. In a layout with one lead for each row, the rows below

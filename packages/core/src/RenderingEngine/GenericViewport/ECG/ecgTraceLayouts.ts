@@ -3,7 +3,6 @@ import type {
   ECGTraceLayoutContext,
   ECGTraceLayoutDefinition,
   ECGTraceLayoutFactory,
-  ECGTraceLayoutRegistry,
   ECGTraceRegion,
 } from './ECGViewportTypes';
 import type { ECGChannelLike } from './ecgWaveform';
@@ -17,16 +16,16 @@ const traceLayouts = new Map<string, ECGTraceLayoutFactory>();
 const warnedNames = new Set<string>();
 
 /**
- * Registers a named trace layout. Declare the name in `ECGTraceLayoutRegistry`
- * first, so that the name is discoverable in the type.
+ * Registers a named trace layout.
  *
  * @param name - The layout name.
  * @param layout - A definition, or a factory that builds the definition for
  *   the channels of one waveform.
  */
-export function registerECGTraceLayout<
-  Name extends keyof ECGTraceLayoutRegistry,
->(name: Name, layout: ECGTraceLayoutDefinition | ECGTraceLayoutFactory): void {
+export function registerECGTraceLayout(
+  name: string,
+  layout: ECGTraceLayoutDefinition | ECGTraceLayoutFactory
+): void {
   if (traceLayouts.has(name)) {
     throw new Error(`ECG trace layout "${name}" is already registered`);
   }
@@ -34,14 +33,49 @@ export function registerECGTraceLayout<
   traceLayouts.set(name, typeof layout === 'function' ? layout : () => layout);
 }
 
-/** Returns the names of every registered trace layout. */
-export function getECGTraceLayoutNames(): string[] {
-  return Array.from(traceLayouts.keys());
+/**
+ * Returns the names of every registered trace layout, or when given a waveform
+ * context, returns the layout names dynamically derived for that waveform.
+ */
+export function getECGTraceLayoutNames(
+  context?: ECGTraceLayoutContext
+): string[] {
+  if (!context || !context.channels || context.channels.length === 0) {
+    return Array.from(traceLayouts.keys());
+  }
+
+  const channelCount = context.channels.length;
+  if (channelCount < 4) {
+    return [`${channelCount}x1`];
+  }
+
+  const cols3 = Math.max(1, Math.ceil(channelCount / 3));
+  const names: string[] = [`3x${cols3}+1`, `3x${cols3}`];
+
+  if (channelCount >= 6) {
+    const cols6 = Math.max(1, Math.ceil(channelCount / 6));
+    names.push(`6x${cols6}`);
+  }
+
+  names.push(`${channelCount}x1`);
+
+  const BUILTIN_LAYOUT_NAMES = new Set(['12x1', '6x2', '3x4', '3x4+1']);
+  const knownNames = new Set(names);
+
+  for (const name of traceLayouts.keys()) {
+    if (!BUILTIN_LAYOUT_NAMES.has(name) && !knownNames.has(name)) {
+      names.push(name);
+    }
+  }
+
+  return names;
 }
 
 /**
  * Returns the definition of a trace layout for the channels of one waveform.
- * A definition is returned as it is. An unknown name returns undefined.
+ * A definition is returned as it is. Registered names are checked first, then
+ * dynamic RxC(+1) grid patterns (e.g. 3x5+1, 3x5, 15x1). An unknown name returns
+ * undefined.
  */
 export function getECGTraceLayout(
   traceLayout: ECGTraceLayout,
@@ -51,7 +85,51 @@ export function getECGTraceLayout(
     return traceLayout;
   }
 
-  return traceLayouts.get(traceLayout)?.(context);
+  const registered = traceLayouts.get(traceLayout);
+  if (registered) {
+    return registered(context);
+  }
+
+  // Dynamically resolve RxC(+1) grid pattern (e.g. 3x5+1 for 15 leads, 3x1 for 3 leads)
+  const match = /^(\d+)x(\d+)(\+1)?$/.exec(traceLayout);
+  if (match) {
+    const rows = parseInt(match[1], 10);
+    const cols = parseInt(match[2], 10);
+    const withRhythm = Boolean(match[3]);
+
+    if (rows > 0 && cols === 1 && !withRhythm) {
+      return createRowsLayout(context);
+    }
+    if (rows > 0 && cols > 0) {
+      return createGridLayout(rows, cols, withRhythm)(context);
+    }
+  }
+
+  return undefined;
+}
+
+/**
+ * Returns the default trace layout name derived dynamically from the waveform:
+ * - Continuous recordings of >= 8 leads (e.g. 12-lead ECG) default to '3x4+1' (or '3x5+1' for 15 leads).
+ * - Records with fewer leads (< 8 leads, e.g. rhythm strips or Holter) default to rows ('Nx1').
+ * - Short beat recordings (< 5s, e.g. median beat) default to rows.
+ */
+export function resolveDefaultECGTraceLayout(
+  context: ECGTraceLayoutContext
+): string {
+  const { channels, numberOfSamples = 0, samplingFrequency = 1 } = context;
+  const channelCount = channels.length;
+  const durationSec =
+    samplingFrequency > 0 && numberOfSamples > 0
+      ? numberOfSamples / samplingFrequency
+      : 0;
+
+  if (channelCount >= 8 && (durationSec >= 5 || numberOfSamples === 0)) {
+    const cols = Math.ceil(channelCount / 3);
+    return `3x${cols}+1`;
+  }
+
+  return `${channelCount}x1`;
 }
 
 /**

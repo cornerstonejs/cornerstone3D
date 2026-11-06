@@ -30,6 +30,10 @@ import type {
   ECGResetViewStateOptions,
 } from './ECGViewportTypes';
 import {
+  getECGTraceLayoutNames,
+  resolveDefaultECGTraceLayout,
+} from './ecgTraceLayouts';
+import {
   createDefaultECGViewState,
   normalizeECGViewState,
 } from './ecgViewportCamera';
@@ -110,6 +114,13 @@ class ECGViewport extends GenericViewport<
         (waveform.numberOfSamples / waveform.samplingFrequency) * 1000;
       const { traceLayout, sweepSpeed, sensitivityMmMv, amplitudeScale } =
         this.viewState;
+      const resolvedTraceLayout =
+        traceLayout ??
+        resolveDefaultECGTraceLayout({
+          channels: waveform.channels,
+          numberOfSamples: waveform.numberOfSamples,
+          samplingFrequency: waveform.samplingFrequency,
+        });
 
       this.setDefaultDataPresentation(displaySetId, {
         visible: true,
@@ -120,7 +131,7 @@ class ECGViewport extends GenericViewport<
       this.viewState = createDefaultECGViewState({
         timeRange: [0, durationMs],
         valueRange: getDefaultECGValueRange(waveform),
-        traceLayout,
+        traceLayout: resolvedTraceLayout,
         sweepSpeed,
         sensitivityMmMv,
         amplitudeScale,
@@ -130,6 +141,24 @@ class ECGViewport extends GenericViewport<
         renderMode: 'signal2d',
       });
     }
+  }
+
+  /**
+   * Returns the clinically available trace layout names for the active
+   * ECG dataset, dynamically matching its channel count.
+   */
+  getTraceLayoutNames(): string[] {
+    const waveform = this.getWaveformData();
+
+    return getECGTraceLayoutNames(
+      waveform
+        ? {
+            channels: waveform.channels,
+            numberOfSamples: waveform.numberOfSamples,
+            samplingFrequency: waveform.samplingFrequency,
+          }
+        : undefined
+    );
   }
 
   /**
