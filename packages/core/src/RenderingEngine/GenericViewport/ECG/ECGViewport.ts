@@ -2,7 +2,10 @@ import getOrCreateCanvas from '../../helpers/getOrCreateCanvas';
 import type { LoadedData } from '../ViewportArchitectureTypes';
 import GenericViewport from '../GenericViewport';
 import { ViewportType } from '../../../enums';
-import { getDefaultECGValueRange } from './ecgWaveform';
+import {
+  getDefaultECGValueRange,
+  getECGFrameOfReferenceUID,
+} from './ecgWaveform';
 import { getGenericViewportSourceDataId } from '../genericViewportDisplaySetAccess';
 import imageIdToURI from '../../../utilities/imageIdToURI';
 import type {
@@ -633,7 +636,7 @@ class ECGViewport extends GenericViewport<
       viewState: this.viewState,
       canvas: this.canvas,
       dataPresentation: this.getDisplaySetPresentation(waveform.id),
-      frameOfReferenceUID: `ecg-viewport-${this.id}`,
+      frameOfReferenceUID: getECGFrameOfReferenceUID(this.getCurrentImageId()),
       waveform,
     });
   }

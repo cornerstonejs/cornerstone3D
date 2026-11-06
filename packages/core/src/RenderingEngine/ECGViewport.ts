@@ -9,6 +9,7 @@ import type {
   ECGChannel,
   ECGWaveformData,
   ECGViewportProperties,
+  ViewReference,
   ViewReferenceSpecifier,
   ViewportContentMode,
 } from '../types';
@@ -20,6 +21,7 @@ import { getGenericViewportSourceDataId } from './GenericViewport/genericViewpor
 import {
   ECG_RENDERING_COLORS,
   ECG_SECONDS_WIDTH,
+  getECGFrameOfReferenceUID,
   loadECGWaveform,
 } from './GenericViewport/ECG/ecgWaveform';
 import {
@@ -323,7 +325,7 @@ class ECGViewport extends Viewport {
   };
 
   public getFrameOfReferenceUID = (): string => {
-    return `ecg-viewport-${this.id}`;
+    return getECGFrameOfReferenceUID(this.imageId) ?? `ecg-viewport-${this.id}`;
   };
 
   public resize = (): void => {
@@ -440,6 +442,22 @@ class ECGViewport extends Viewport {
   public getCurrentImageId = (): string | undefined => {
     return this.imageId;
   };
+
+  /**
+   * Records the lead of the first point in `sliceIndex`, as the Generic
+   * Viewport ECG family does, so that both classes write the same reference.
+   */
+  public getViewReference(
+    specifier: ViewReferenceSpecifier = {}
+  ): ViewReference {
+    const viewReference = super.getViewReference(specifier);
+    const lead = specifier.points?.[0]?.[2];
+
+    if (Number.isFinite(lead)) {
+      viewReference.sliceIndex = Math.round(lead);
+    }
+    return viewReference;
+  }
 
   public getViewReferenceId(_specifier?: ViewReferenceSpecifier): string {
     return `imageId:${this.imageId}`;
