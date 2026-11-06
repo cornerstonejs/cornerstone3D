@@ -3,7 +3,6 @@ import {
   getEnabledElement,
   utilities as csUtils,
   StackViewport,
-  ECGViewport,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
@@ -122,12 +121,15 @@ class UltrasoundDirectionalTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
 
+    const contentMode = csUtils.getViewportContentMode(viewport);
+
     if (
       !(viewport instanceof StackViewport) &&
-      !(viewport instanceof ECGViewport)
+      contentMode !== 'stack' &&
+      contentMode !== 'ecg'
     ) {
       throw new Error(
-        'UltrasoundDirectionalTool can only be used on a StackViewport or ECGViewport'
+        'UltrasoundDirectionalTool can only be used on a viewport that shows a stack or an ECG'
       );
     }
 
@@ -782,7 +784,16 @@ class UltrasoundDirectionalTool extends AnnotationTool {
 
       let xValues, yValues, units, isHorizontal;
       let isUnitless = false;
-      if (
+      let isCrossRegion = false;
+      // Handles on different index Z, for example two ECG leads, are in
+      // different regions, so no distance between them has a meaning.
+      if (Math.round(imageIndex1[2]) !== Math.round(imageIndex2[2])) {
+        isCrossRegion = true;
+        isUnitless = true;
+        xValues = [0, 0];
+        yValues = [0, 0];
+        units = [''];
+      } else if (
         units1[0] !== units2[0] ||
         units1[1] !== units2[1] ||
         (units1[0] === 'raw' && units2[0] === 'raw')
@@ -815,6 +826,7 @@ class UltrasoundDirectionalTool extends AnnotationTool {
         isHorizontal,
         units,
         isUnitless,
+        isCrossRegion,
       };
     }
 
@@ -832,7 +844,12 @@ class UltrasoundDirectionalTool extends AnnotationTool {
 
 function defaultGetTextLines(data, targetId, configuration): string[] {
   const cachedStats = data.cachedStats[targetId];
-  const { xValues, yValues, units, isUnitless, isHorizontal } = cachedStats;
+  const { xValues, yValues, units, isUnitless, isHorizontal, isCrossRegion } =
+    cachedStats;
+
+  if (isCrossRegion) {
+    return ['different regions'];
+  }
 
   if (isUnitless) {
     return [`${csUtils.roundNumber(xValues[0])} px`];

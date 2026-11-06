@@ -1,4 +1,8 @@
-import type { Types, ECGGenericViewport } from '@cornerstonejs/core';
+import type {
+  Types,
+  ECGGenericViewport,
+  ECGViewState,
+} from '@cornerstonejs/core';
 import { RenderingEngine, Enums, utilities } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
@@ -155,6 +159,22 @@ async function run() {
     activateAnnotationTool(firstToolName);
   }
 
+  const layoutNames = viewport.getTraceLayoutNames();
+  const currentLayout = viewport.getViewState().traceLayout;
+
+  addDropdownToToolbar({
+    options: {
+      values: layoutNames,
+      defaultValue: currentLayout,
+    },
+    labelText: 'Layout: ',
+    onSelectedValueChange: (newLayout) => {
+      viewport.setViewState({
+        traceLayout: newLayout as ECGViewState['traceLayout'],
+      });
+    },
+  });
+
   addButtonToToolbar({
     title: 'Reset View',
     onClick: () => {
@@ -174,9 +194,8 @@ async function run() {
           return;
         }
 
-        const current = viewport.getDisplaySetPresentation(ecgDataId) || {};
         const nextVisibleChannels = new Set(
-          current.visibleChannels ||
+          viewport.getViewState().visibleChannels ||
             waveform.channels.map((_channel, channelIndex) => channelIndex)
         );
 
@@ -186,7 +205,7 @@ async function run() {
           nextVisibleChannels.delete(index);
         }
 
-        viewport.setDisplaySetPresentation(ecgDataId, {
+        viewport.setViewState({
           visibleChannels: Array.from(nextVisibleChannels).sort(
             (a, b) => a - b
           ),

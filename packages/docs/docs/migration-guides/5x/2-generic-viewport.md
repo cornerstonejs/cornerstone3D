@@ -47,9 +47,22 @@ internally:
 | `ViewportType.STACK`        | `ViewportType.PLANAR_NEXT`      |
 | `ViewportType.ORTHOGRAPHIC` | `ViewportType.PLANAR_NEXT`      |
 | `ViewportType.VIDEO`        | `ViewportType.VIDEO_NEXT`       |
-| `ViewportType.ECG`          | `ViewportType.ECG_NEXT`         |
 | `ViewportType.WHOLE_SLIDE`  | `ViewportType.WHOLE_SLIDE_NEXT` |
 | `ViewportType.VOLUME_3D`    | `ViewportType.VOLUME_3D_NEXT`   |
+
+`ViewportType.ECG` gives the ECG family through its compatibility adapter
+with or without the flag, so the adapter keeps `setEcg()`. Use
+`ViewportType.ECG_LEGACY` to keep the old ECG class.
+
+For `ViewportType.ECG`, these changes apply also with the flag off:
+
+- `viewport instanceof ECGViewport` is `false`, because the exported
+  `ECGViewport` is the old class. Use `utilities.viewportSupportsWaveform(viewport)`
+  or `viewport.getCurrentMode() === 'ecg'`.
+- `viewport.type` is `'ecgNext'`.
+- The adapter has no `getMiddleSliceData()`, `getSliceViewInfo()`,
+  `getRenderer()` or `getDisplayArea()`. The old class threw an error in the
+  first two, and an ECG has no VTK renderer.
 
 Direct Generic viewport types use the new APIs. Remapped legacy viewport types use
 compatibility adapters that preserve legacy methods such as `setStack()`,
@@ -536,7 +549,7 @@ Search your codebase for these patterns:
 
 ```sh
 rg "getStackViewport|getStackViewports|getVolumeViewports|setDataIds"
-rg "instanceof (StackViewport|VolumeViewport|BaseVolumeViewport|VolumeViewport3D)"
+rg "instanceof (StackViewport|VolumeViewport|BaseVolumeViewport|VolumeViewport3D|ECGViewport)"
 rg "viewport\\.type === Enums\\.ViewportType\\.(STACK|ORTHOGRAPHIC|VIDEO|ECG|WHOLE_SLIDE|VOLUME_3D)"
 rg "setCamera\\(\\{\\s*position"
 ```
@@ -547,7 +560,8 @@ Then migrate in this order:
    `getViewports()` plus capability guards.
 2. Replace concrete class checks with capability guards.
 3. If enabling `rendering.useGenericViewport`, audit `viewport.type` checks for
-   legacy types that now run as Next runtime types.
+   legacy types that now run as Next runtime types. Audit the checks for
+   `ViewportType.ECG` with or without the flag.
 4. For direct Generic viewports, replace generic `setDataIds()` and legacy data
    loading calls with logical display set ids plus `setDisplaySets()`.
 5. Move clean Next presentation code from `setProperties()` to

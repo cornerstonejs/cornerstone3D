@@ -8,6 +8,12 @@ export {
   createECGRenderPathResolver,
 } from './ECGRenderPathResolver';
 export { DefaultECGDataProvider } from './DefaultECGDataProvider';
+export {
+  registerECGTraceLayout,
+  getECGTraceLayout,
+  getECGTraceLayoutNames,
+  resolveDefaultECGTraceLayout,
+} from './ecgTraceLayouts';
 /**
  * Lower-level ECG projection helpers for custom synchronizers and tooling.
  * ECG projection exposes signal space as sample index, amplitude value, and
@@ -34,4 +40,10 @@ export type {
   ECGProperties,
   ECGViewportInput,
   ECGGenericViewportInput,
+  ECGTraceLayout,
+  ECGTraceLayoutContext,
+  ECGTraceLayoutDefinition,
+  ECGTraceLayoutFactory,
+  ECGTraceLayoutName,
+  ECGTraceRegion,
 } from './ECGViewportTypes';
