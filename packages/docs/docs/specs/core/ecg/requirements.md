@@ -49,3 +49,13 @@ change a requirement.
   the clinician hides that lead, the annotation does not show. The annotation
   shows again when the lead shows. The annotation is not lost.
 - **ECG-U-9** An annotation shows in every viewport that shows the same ECG.
+
+## Measurements of the device
+
+- **ECG-U-10** The application can show the global measurements that the
+  device recorded, for example the heart rate and the QT interval, each with
+  its unit. A value for one lead, or a marker on the trace, is not a global
+  measurement.
+- **ECG-U-11** The application can show the findings that the device recorded,
+  for example "Sinus rhythm". A marker on the trace, for example "QRS onset",
+  is not a finding.

@@ -430,6 +430,17 @@ describe('ECG WaveformAnnotationSequence Parsing', () => {
       expect(annotations.qrsDuration).toBe(90);
     });
 
+    it('reads a value for all channels (channel number 0)', () => {
+      const annotations = parseEcgAnnotations({
+        WaveformAnnotationSequence: [
+          item('Ventricular Heart Rate', 72, {
+            ReferencedWaveformChannels: [1, 0],
+          }),
+        ],
+      });
+      expect(annotations.ventricularHeartRate).toBe(72);
+    });
+
     it('does not list trace markers as interpretations', () => {
       const annotations = parseEcgAnnotations({
         WaveformAnnotationSequence: [
@@ -437,9 +448,35 @@ describe('ECG WaveformAnnotationSequence Parsing', () => {
             ConceptNameCodeSequence: [{ CodeMeaning: 'QRS onset' }],
             ReferencedSamplePositions: [120],
           },
+          {
+            ConceptNameCodeSequence: [{ CodeMeaning: 'T end' }],
+            TemporalRangeType: 'POINT',
+            ReferencedTimeOffsets: [0.4],
+          },
         ],
       });
       expect(annotations.interpretations).toEqual([]);
+    });
+
+    it('gives the unit of each metric', () => {
+      const ucum = (CodeValue) => [
+        { CodeValue, CodingSchemeDesignator: 'UCUM' },
+      ];
+      const annotations = parseEcgAnnotations({
+        WaveformAnnotationSequence: [
+          item('QT Interval', 0.4, { MeasurementUnitsCodeSequence: ucum('s') }),
+          item('RR Interval', 800, {
+            MeasurementUnitsCodeSequence: ucum('ms'),
+          }),
+        ],
+      });
+      expect(annotations.qtInterval).toBe(0.4);
+      expect(annotations.units).toEqual({
+        qtInterval: 's',
+        rrInterval: 'ms',
+        ventricularHeartRate: '/min',
+      });
+      expect(annotations.ventricularHeartRate).toBe(75);
     });
 
     it('lists the value of a coded statement, not its name', () => {
