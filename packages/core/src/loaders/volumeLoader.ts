@@ -407,6 +407,22 @@ export function createLocalVolume(
     );
   }
 
+  // A previous volume with the same volumeId may have left its per-slice
+  // images in the image cache: Cache._decacheVolume only unlinks
+  // sharedCacheKey and never deletes image cache entries, while
+  // createAndCacheLocalImage unconditionally putImageSync's each slice
+  // (imageLoader.ts). Re-creating a local volume with a deterministic
+  // volumeId (e.g. rebuilding a labelmap for the same case) then throws
+  // "putImageSync: imageId already in cache". Purge the stale slices first:
+  // the `${volumeId}_slice_*` namespace is owned exclusively by this
+  // function, so this cannot affect images shared across volumes.
+  for (let i = 0; i < dimensions[2]; i++) {
+    const staleImageId = `${volumeId}_slice_${i}`;
+    if (cache.getImage(staleImageId)) {
+      cache.removeImageLoadObject(staleImageId);
+    }
+  }
+
   // Create derived images
   const imageIds = [];
   const derivedImages = [];
