@@ -6,6 +6,16 @@ import * as metaData from '../../../metaData';
 export const ECG_DEFAULT_SWEEP_SPEED_MM_S = 25;
 /** Default ECG amplitude calibration: 10 mm/mV */
 export const ECG_DEFAULT_SENSITIVITY_MM_MV = 10;
+
+/** Standard clinical paper sweep speeds in mm/s (IEC 60601-2-25 / AHA / ACC standard speeds) */
+export const ECG_CLINICAL_SWEEP_SPEEDS = [12.5, 25, 50] as const;
+
+/** Standard clinical amplitude sensitivities in mm/mV (IEC 60601-2-25 / AHA / ACC standard gains) */
+export const ECG_CLINICAL_SENSITIVITIES = [2.5, 5, 10, 20] as const;
+
+export type ECGClinicalSweepSpeed = (typeof ECG_CLINICAL_SWEEP_SPEEDS)[number];
+export type ECGClinicalSensitivity =
+  (typeof ECG_CLINICAL_SENSITIVITIES)[number];
 /** Pixels per mm at 1:1 scale (96 DPI nominal; governs grid density) */
 export const ECG_PX_PER_MM = 3.779;
 /** World pixels for each second in the deprecated ECG viewport. */

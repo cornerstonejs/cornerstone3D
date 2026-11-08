@@ -5,6 +5,9 @@ import { ViewportType } from '../../../enums';
 import {
   getDefaultECGValueRange,
   getECGFrameOfReferenceUID,
+  ECG_DEFAULT_SWEEP_SPEED_MM_S,
+  ECG_CLINICAL_SWEEP_SPEEDS,
+  ECG_CLINICAL_SENSITIVITIES,
 } from './ecgWaveform';
 import { getGenericViewportSourceDataId } from '../genericViewportDisplaySetAccess';
 import imageIdToURI from '../../../utilities/imageIdToURI';
@@ -159,6 +162,48 @@ class ECGViewport extends GenericViewport<
           }
         : undefined
     );
+  }
+
+  /**
+   * Returns standard clinical paper sweep speeds in mm/s (IEC 60601-2-25: 12.5, 25, 50).
+   */
+  getClinicalSweepSpeeds(): readonly number[] {
+    return ECG_CLINICAL_SWEEP_SPEEDS;
+  }
+
+  /**
+   * Returns standard clinical sensitivities in mm/mV (IEC 60601-2-25: 2.5, 5, 10, 20).
+   */
+  getClinicalSensitivities(): readonly number[] {
+    return ECG_CLINICAL_SENSITIVITIES;
+  }
+
+  /**
+   * Returns the current sweep speed in mm/s (defaults to 25 mm/s).
+   */
+  getSweepSpeed(): number {
+    return this.viewState.sweepSpeed ?? ECG_DEFAULT_SWEEP_SPEED_MM_S;
+  }
+
+  /**
+   * Sets the sweep speed in mm/s and triggers a render.
+   */
+  setSweepSpeed(speed: number): void {
+    this.setViewState({ sweepSpeed: speed });
+  }
+
+  /**
+   * Returns the current amplitude sensitivity in mm/mV (or undefined for auto-fit).
+   */
+  getSensitivity(): number | undefined {
+    return this.viewState.sensitivityMmMv;
+  }
+
+  /**
+   * Sets the amplitude sensitivity in mm/mV (or undefined for auto-fit) and triggers a render.
+   */
+  setSensitivity(sensitivity: number | undefined): void {
+    this.setViewState({ sensitivityMmMv: sensitivity });
   }
 
   /**

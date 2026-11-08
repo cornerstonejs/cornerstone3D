@@ -21,7 +21,10 @@ import {
     pxPerSecond?: number;
   },
   options?: { showGrid?: boolean },
-  layouts?: Pick<ECGChannelLayout<TChannel>, 'baseline' | 'itemHeight'>[]
+  layouts?: Pick<
+    ECGChannelLayout<TChannel>,
+    'baseline' | 'itemHeight' | 'xOffset'
+  >[]
 ): void {
   if (options?.showGrid === false || metrics.channelScale <= 0) {
     return;
@@ -33,7 +36,7 @@ import {
     channelScale,
     sweepSpeed,
     sensitivityMmMv,
-    showAmplitudeLabels = true,
+    showAmplitudeLabels = false,
     worldToCanvasRatio = 1,
     pxPerSecond,
   } = metrics;
@@ -122,18 +125,24 @@ import {
     const fontSize = 10;
     ctx.font = `${fontSize}px monospace`;
 
-    layouts.forEach((layout) => {
-      const { baseline, itemHeight } = layout;
-      const yPlus = baseline - majorH;
-      const yMinus = baseline + majorH;
+    const firstColumnLayouts = layouts.filter(
+      (layout) => !layout.xOffset || layout.xOffset === 0
+    );
 
-      if (yPlus >= baseline - itemHeight) {
-        ctx.fillText(`+${mvPerMajor.toFixed(1)} mV`, 5, yPlus - 2);
-      }
-      if (yMinus <= baseline + itemHeight) {
-        ctx.fillText(`-${mvPerMajor.toFixed(1)} mV`, 5, yMinus - 2);
-      }
-    });
+    if (majorH >= fontSize + 4) {
+      firstColumnLayouts.forEach((layout) => {
+        const { baseline, itemHeight } = layout;
+        const yPlus = baseline - majorH;
+        const yMinus = baseline + majorH;
+
+        if (yPlus >= baseline - itemHeight) {
+          ctx.fillText(`+${mvPerMajor.toFixed(1)} mV`, 5, yPlus - 2);
+        }
+        if (yMinus <= baseline + itemHeight) {
+          ctx.fillText(`-${mvPerMajor.toFixed(1)} mV`, 5, yMinus - 2);
+        }
+      });
+    }
   }
 }
 
@@ -146,8 +155,21 @@ export function drawECGTraces<TChannel extends ECGChannelLike>(args: {
   layouts: ECGChannelLayout<TChannel>[];
   lineWidth?: number;
   amplitudeScale?: number;
+  sweepSpeed?: number;
+  sensitivityMmMv?: number;
 }): void {
-  const { ctx, layouts, lineWidth = 1, amplitudeScale = 1 } = args;
+  const {
+    ctx,
+    layouts,
+    lineWidth = 1,
+    amplitudeScale = 1,
+    sweepSpeed,
+    sensitivityMmMv,
+  } = args;
+
+  const speedScale = sweepSpeed && sweepSpeed > 0 ? sweepSpeed / 25 : 1;
+  const sensScale =
+    sensitivityMmMv && sensitivityMmMv > 0 ? sensitivityMmMv / 10 : 1;
 
   layouts.forEach(
     ({
@@ -156,6 +178,8 @@ export function drawECGTraces<TChannel extends ECGChannelLike>(args: {
       channelScale,
       xOffset,
       width,
+      itemHeight,
+      yOffset,
       startSample,
       endSample,
     }) => {
@@ -174,14 +198,24 @@ export function drawECGTraces<TChannel extends ECGChannelLike>(args: {
         return;
       }
 
+      ctx.save?.();
+      ctx.beginPath?.();
+      // Clip horizontally to column width to prevent trace spillover into adjacent leads,
+      // while providing vertical headroom so tall R-peaks and deep S-waves are not chopped off
+      ctx.rect?.(xOffset, yOffset - itemHeight * 2, width, itemHeight * 3);
+      ctx.clip?.();
+
       ctx.strokeStyle = ECG_RENDERING_COLORS.trace;
       ctx.lineWidth = lineWidth;
       ctx.beginPath();
 
+      const step = (width / sampleCount) * speedScale;
+
       for (let index = startSample; index < lastSample; index++) {
-        const x = xOffset + ((index - startSample) * width) / sampleCount;
+        const x = xOffset + (index - startSample) * step;
         const y =
-          baseline - channel.data[index] * channelScale * amplitudeScale;
+          baseline -
+          channel.data[index] * channelScale * amplitudeScale * sensScale;
 
         if (index === startSample) {
           ctx.moveTo(x, y);
@@ -191,6 +225,7 @@ export function drawECGTraces<TChannel extends ECGChannelLike>(args: {
       }
 
       ctx.stroke();
+      ctx.restore?.();
     }
   );
 }
@@ -199,19 +234,55 @@ export function drawECGTraces<TChannel extends ECGChannelLike>(args: {
 export function drawECGLabels<TChannel extends ECGChannelLike>(
   ctx: CanvasRenderingContext2D,
   layouts: ECGChannelLayout<TChannel>[],
-  worldToCanvasRatio: number
+  worldToCanvasRatio: number,
+  canvasOptions?: {
+    clientWidth?: number;
+    clientHeight?: number;
+    ecgWidth?: number;
+    ecgHeight?: number;
+    scaleX?: number;
+    scaleY?: number;
+    transX?: number;
+    transY?: number;
+    dpr?: number;
+  }
 ): void {
-  const fontSize = 14 / (worldToCanvasRatio || 1);
+  const dpr = canvasOptions?.dpr || 1;
+  const fontSize = 12 * dpr;
+  ctx.font = `${fontSize}px monospace`;
+
+  const clientW = canvasOptions?.clientWidth;
+  const clientH = canvasOptions?.clientHeight;
+  const ecgW = canvasOptions?.ecgWidth || 1;
+  const ecgH = canvasOptions?.ecgHeight || 1;
+
+  const scaleX = canvasOptions?.scaleX ?? (clientW ? clientW / ecgW : 1) * dpr;
+  const scaleY = canvasOptions?.scaleY ?? (clientH ? clientH / ecgH : 1) * dpr;
+  const transX = canvasOptions?.transX ?? 0;
+  const transY = canvasOptions?.transY ?? 0;
 
   layouts.forEach(({ label, itemHeight, yOffset, xOffset }) => {
-    const labelY = yOffset - itemHeight + fontSize;
+    let screenX: number;
+    let screenY: number;
 
-    ctx.font = `${fontSize}px monospace`;
+    if (canvasOptions?.scaleX !== undefined || (clientW && clientH)) {
+      screenX = xOffset * scaleX + transX + 5 * dpr;
+      screenY = (yOffset - itemHeight) * scaleY + transY + fontSize + 2 * dpr;
+    } else {
+      screenX = xOffset + 5;
+      screenY = yOffset - itemHeight + fontSize;
+    }
+
     const textWidth = ctx.measureText(label).width;
     ctx.fillStyle = ECG_RENDERING_COLORS.background;
-    ctx.fillRect(xOffset + 5, labelY - fontSize, textWidth + 4, fontSize + 4);
+    ctx.fillRect(
+      screenX,
+      screenY - fontSize,
+      textWidth + 4 * dpr,
+      fontSize + 4 * dpr
+    );
     ctx.fillStyle = ECG_RENDERING_COLORS.label;
-    ctx.fillText(label, xOffset + 5, labelY);
+    ctx.fillText(label, screenX, screenY);
   });
 }
 
