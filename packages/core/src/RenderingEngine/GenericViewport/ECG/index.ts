@@ -26,6 +26,12 @@ export const ecgProjection = {
   adapter: ecgProjectionAdapter,
   getSnapshot: getECGProjectionSnapshot,
 };
+export {
+  ECG_CLINICAL_SWEEP_SPEEDS,
+  ECG_CLINICAL_SENSITIVITIES,
+  type ECGClinicalSweepSpeed,
+  type ECGClinicalSensitivity,
+} from './ecgWaveform';
 export type {
   ECGProjectionPresentation,
   ECGProjectionRequest,

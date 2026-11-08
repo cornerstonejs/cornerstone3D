@@ -128,12 +128,6 @@ async function run() {
   });
   await viewport.setDisplaySets({ displaySetId: ecgDataId });
 
-  const { width: ecgWidth, height: ecgHeight } =
-    viewport.getContentDimensions();
-  element.style.width = `${ecgWidth}px`;
-  element.style.height = `${ecgHeight}px`;
-  renderingEngine.resize();
-
   let activeAnnotationTool: string | null = null;
 
   function activateAnnotationTool(toolName: string) {

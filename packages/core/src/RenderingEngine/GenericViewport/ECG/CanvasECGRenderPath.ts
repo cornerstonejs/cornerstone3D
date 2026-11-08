@@ -124,14 +124,22 @@ function drawFrame(ecgCtx: ECGCanvasRenderContext): void {
   }
 
   canvasContext.globalAlpha = dataPresentation?.opacity ?? 1;
-  canvasContext.setTransform(
-    effectiveRatio * dpr,
-    0,
-    0,
-    effectiveRatio * dpr,
-    xOffset * dpr,
-    yOffset * dpr
-  );
+
+  const isDefaultView =
+    (!viewState.scale || viewState.scale === 1) &&
+    !viewState.anchorWorld &&
+    (!viewState.scrollOffset || viewState.scrollOffset === 0);
+
+  const scaleX = isDefaultView
+    ? (canvas.clientWidth / (metrics.ecgWidth || 1)) * dpr
+    : effectiveRatio * dpr;
+  const scaleY = isDefaultView
+    ? (canvas.clientHeight / (metrics.ecgHeight || 1)) * dpr
+    : effectiveRatio * dpr;
+  const transX = isDefaultView ? 0 : xOffset * dpr;
+  const transY = isDefaultView ? 0 : yOffset * dpr;
+
+  canvasContext.setTransform(scaleX, 0, 0, scaleY, transX, transY);
 
   drawECGGrid(
     canvasContext,
@@ -152,10 +160,25 @@ function drawFrame(ecgCtx: ECGCanvasRenderContext): void {
     layouts,
     lineWidth: dataPresentation?.lineWidth,
     amplitudeScale: resolvedView.amplitudeScale,
+    sweepSpeed: viewState.sweepSpeed ?? metrics.sweepSpeed,
+    sensitivityMmMv: viewState.sensitivityMmMv,
   });
-  drawECGLabels(canvasContext, layouts, metrics.worldToCanvasRatio);
 
+  // Reset transform before drawing labels so text font glyphs are never scaled or distorted
   canvasContext.resetTransform();
+
+  drawECGLabels(canvasContext, layouts, metrics.worldToCanvasRatio, {
+    clientWidth: canvas.clientWidth,
+    clientHeight: canvas.clientHeight,
+    ecgWidth: metrics.ecgWidth,
+    ecgHeight: metrics.ecgHeight,
+    scaleX,
+    scaleY,
+    transX,
+    transY,
+    dpr,
+  });
+
   canvasContext.globalAlpha = 1;
 
   triggerEvent(ecgCtx.element, EVENTS.IMAGE_RENDERED, {

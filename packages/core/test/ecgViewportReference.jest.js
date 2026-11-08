@@ -134,4 +134,35 @@ describe('ECG viewport references and camera', () => {
     expect(resolved?.channelLayouts).toHaveLength(13);
     expect(viewport.getTraceLayoutNames()[0]).toBe('3x4+1');
   });
+
+  describe('clinical sweep speed and sensitivity controls', () => {
+    it('provides clinical speed and sensitivity presets', async () => {
+      const viewport = await makeViewport('vp-clinical');
+
+      expect(viewport.getClinicalSweepSpeeds()).toEqual([12.5, 25, 50]);
+      expect(viewport.getClinicalSensitivities()).toEqual([2.5, 5, 10, 20]);
+    });
+
+    it('updates sweep speed and sensitivity via viewport API methods', async () => {
+      const viewport = await makeViewport('vp-speed-sens');
+
+      // Default speed is 25 mm/s
+      expect(viewport.getSweepSpeed()).toBe(25);
+
+      // Change speed to 50 mm/s
+      viewport.setSweepSpeed(50);
+      expect(viewport.getSweepSpeed()).toBe(50);
+      expect(viewport.getViewState().sweepSpeed).toBe(50);
+
+      // Change sensitivity to 20 mm/mV
+      viewport.setSensitivity(20);
+      expect(viewport.getSensitivity()).toBe(20);
+      expect(viewport.getViewState().sensitivityMmMv).toBe(20);
+
+      // Reset sensitivity to undefined (auto-fit mode)
+      viewport.setSensitivity(undefined);
+      expect(viewport.getSensitivity()).toBeUndefined();
+      expect(viewport.getViewState().sensitivityMmMv).toBeUndefined();
+    });
+  });
 });
