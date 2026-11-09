@@ -64,6 +64,28 @@ For `ViewportType.ECG`, these changes apply also with the flag off:
   `getRenderer()` or `getDisplayArea()`. The old class threw an error in the
   first two, and an ECG has no VTK renderer.
 
+These ECG changes apply to `ViewportType.ECG` and `ViewportType.ECG_NEXT`:
+
+- A probe or a directional time value is in ms, not in seconds. The ECG
+  CALIBRATION region uses X unit `-2` (ms).
+- An ECG length (`LengthTool`) shows `px`, because time and amplitude have
+  different units. Use the probe or the directional tool for ms and mV.
+- The ECG frame of reference is the SOP Instance UID, not
+  `ecg-viewport-<viewport id>`. A saved annotation with the old value does not
+  show.
+- The CALIBRATION `physicalDeltaY` comes from the sensitivity of the first
+  channel, not a fixed `0.001`. A value in mV changes on a file whose
+  `ChannelSensitivity` is not 1 uV.
+- A record of 8 or more leads and 5 s or more opens in `3x4+1`, not in rows.
+  Set `traceLayout` to keep rows.
+- An instance with more than one multiplex group shows the rhythm group. Use
+  `setDisplaySets({ displaySetId, options: { multiplexGroupIndex } })` to show
+  another group.
+- On `ECG_NEXT`, `visibleChannels`, `sweepSpeed`, `sensitivityMmMv`,
+  `amplitudeScale` and `traceLayout` are in `ECGViewState`. Set them with
+  `setViewState()`. `setDisplaySetPresentation(id, { visibleChannels })` has no
+  effect. The legacy adapter `setProperties()` still accepts them.
+
 Direct Generic viewport types use the new APIs. Remapped legacy viewport types use
 compatibility adapters that preserve legacy methods such as `setStack()`,
 `setVolumes()`, `setVideo()`, `setEcg()`, and `setWSI()` where applicable.
