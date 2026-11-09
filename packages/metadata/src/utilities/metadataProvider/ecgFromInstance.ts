@@ -751,14 +751,20 @@ export const ECG_AMPLITUDE_INDEX_SIZE = 65536;
 const ECG_AMPLITUDE_OFFSET = ECG_AMPLITUDE_INDEX_SIZE / 2;
 
 /**
- * CALIBRATION provider for ECG: when instance has WaveformSequence, return
- * sequenceOfUltrasoundRegions so measurement tools get physical units (time, mV).
+ * Builds the CALIBRATION module of an ECG instance: one
+ * sequenceOfUltrasoundRegions entry, so measurement tools get physical units
+ * (time, mV). An application that does not use the typed providers stores
+ * the result itself, as it does for the ECG module.
+ *
+ * @returns undefined when the instance has no WaveformSequence
  */
-const ecgCalibrationProvider: TypedProvider = (next, query, data, options) => {
-  const instance = data as Record<string, unknown> | undefined;
+export function buildEcgCalibrationFromInstance(
+  instance: Record<string, unknown> | undefined,
+  options?: { multiplexGroupIndex?: number }
+) {
   const raw = instance?.WaveformSequence;
   const groups = toArray(raw as ArrayLike<Record<string, unknown>> | undefined);
-  if (!groups.length) return next(query, data, options);
+  if (!groups.length) return undefined;
   const { group } = findPrimaryWaveformGroup(
     groups,
     getEcgMultiplexGroupIndex(options)
@@ -798,7 +804,14 @@ const ecgCalibrationProvider: TypedProvider = (next, query, data, options) => {
       },
     ],
   };
-};
+}
+
+/** CALIBRATION provider for ECG: see buildEcgCalibrationFromInstance. */
+const ecgCalibrationProvider: TypedProvider = (next, query, data, options) =>
+  buildEcgCalibrationFromInstance(
+    data as Record<string, unknown> | undefined,
+    options
+  ) ?? next(query, data, options);
 
 export function registerEcgFromInstanceProvider(): void {
   addTypedProvider(MetadataModules.ECG, ecgFromInstanceProvider, {
