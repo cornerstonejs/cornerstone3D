@@ -11,6 +11,8 @@ enum ViewportStatus {
   RESIZE = 'resize',
   /** Rendered image data */
   RENDERED = 'rendered',
+  /** The last render threw an error; the next successful render clears it */
+  RENDER_ERROR = 'renderError',
 }
 
 export default ViewportStatus;
