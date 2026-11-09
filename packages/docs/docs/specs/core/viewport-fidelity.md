@@ -145,15 +145,16 @@ recovery mark `done`.
 - **FIDELITY-UI-2** The indicator sits in the top-right corner of the viewport.
   The user does not need to hover over the viewport, and the viewport does not
   need to be the active viewport. The indicator has the same form in every
-  viewport type. While the view is lossy, a permanent text label sits beside
-  the icon: `Low Fidelity` for a standing reduction (`lossy`), or
-  `Transient Low Fidelity` for `loading` and `lod`. This serves
-  FIDELITY-USER-1.
+  viewport type. While the view is lossy, a permanent text label is the
+  indicator: `Low Fidelity` for a standing reduction (`lossy`), or
+  `Transient Low Fidelity` for `loading` and `lod`. There is no product icon
+  or disc. This serves FIDELITY-USER-1.
 - **FIDELITY-UI-4** The `done` state shows only as a recovery from `loading`,
   `lod` or `lossy`. A change from no indicator to `done` shows nothing. The
-  `done` state shows for a short time and then fades. The permanent label is
-  hidden during `done` and after the fade. The indicator does not stay over the
-  image after the recovery, because a mark on the image can hide a finding.
+  `done` state is held for a short time and then fades; with no glyph it has
+  no visible mark. The permanent label is hidden during `done` and after the
+  fade. The indicator does not stay over the image after the recovery, because
+  a mark on the image can hide a finding.
   When the viewport begins to show different data (other volume ids or other
   image ids), the lossiness history resets: the indicator goes back to no
   indicator, and the new data shows no recovery mark for the old data. Zoom,
