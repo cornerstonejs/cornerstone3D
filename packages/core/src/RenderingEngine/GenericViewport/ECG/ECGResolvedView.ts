@@ -8,6 +8,7 @@ import {
   hasViewTimeRegion,
   resolveECGTraceCells,
   findECGLayoutForZ,
+  type ECGLeadGroup,
   resolveDefaultECGTraceLayout,
   resolveECGTraceLayout,
   type ECGTraceCell,
@@ -138,6 +139,7 @@ class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
       numberOfSamples: this.state.waveform.numberOfSamples,
       viewSampleWindow: [startSample, endSample],
       visibleChannels: this.state.viewState.visibleChannels,
+      group: this.leadGroup,
     });
 
     return this.cachedCells;
@@ -186,10 +188,11 @@ class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
   }
 
   /** Multiplier on the drawn amplitude. The transforms apply it too. */
+  /** 1 with a set sensitivity, which is the clinical gain (ECG-U-1). */
   get amplitudeScale(): number {
-    const scale = this.state.viewState.amplitudeScale;
+    const { amplitudeScale: scale, sensitivityMmMv } = this.state.viewState;
 
-    return scale > 0 ? scale : 1;
+    return scale > 0 && !(sensitivityMmMv > 0) ? scale : 1;
   }
 
   /** World position of each visible region, in the order of the layout. */
@@ -230,6 +233,19 @@ class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
       maxX: (canvasWidth - xOffset) / effectiveRatio,
       maxY: (canvasHeight - yOffset) / effectiveRatio,
     };
+  }
+
+  /** The multiplex group of the waveform, for world Z; see `getECGLeadZ`. */
+  get leadGroup(): ECGLeadGroup {
+    const { multiplexGroupIndex = 0, numberOfMultiplexGroups = 1 } =
+      this.state.waveform;
+
+    return { index: multiplexGroupIndex, count: numberOfMultiplexGroups };
+  }
+
+  /** The layout of world Z, or undefined; see `findECGLayoutForZ`. */
+  findLayoutForZ(z: number): ECGChannelLayout<ECGChannelData> | undefined {
+    return findECGLayoutForZ(this.channelLayouts, z, this.leadGroup);
   }
 
   /**
@@ -314,7 +330,7 @@ class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
     const channelLayouts = this.channelLayouts;
     const z = Math.round(worldPos[2]);
 
-    const layout = findECGLayoutForZ(channelLayouts, z);
+    const layout = this.findLayoutForZ(z);
 
     if (!layout) {
       return [0, 0];

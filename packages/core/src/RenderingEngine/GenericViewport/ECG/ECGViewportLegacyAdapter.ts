@@ -12,7 +12,6 @@ import type {
   ECGResetViewStateOptions,
 } from './ECGViewportTypes';
 import ECGViewport from './ECGViewport';
-import { findECGLayoutForZ } from './ecgTraceLayouts';
 
 /** Legacy properties that move the trace, and so belong to the view state. */
 const LEGACY_VIEW_STATE_PROPERTIES = [
@@ -248,7 +247,7 @@ class ECGViewportLegacyAdapter extends ECGViewport {
     }
 
     const z = Math.round(focalPoint[2]);
-    if (!findECGLayoutForZ(resolvedView.channelLayouts, z)) {
+    if (!resolvedView.findLayoutForZ(z)) {
       return;
     }
 

@@ -15,7 +15,6 @@ import {
 } from '@cornerstonejs/utils';
 import { getSingleBufferFromArray } from '../bulkDataFromArray';
 import { decodeMultipartRelated } from '../decodeMultipartRelated';
-import { frameRangeExtractor } from './uriModule';
 
 const cs3dLogger = cornerstoneLogging.metadataLog.getLogger(
   'utilities.metadataProvider.ecgFromInstance'
@@ -498,27 +497,26 @@ export function parseEcgAnnotations(
 export interface BuildEcgModuleOptions {
   /** Extra request headers for a `BulkDataURI` fetch, for example auth headers. */
   getHeaders?: () => Record<string, string> | undefined;
-  /**
-   * The multiplex group to show (0-based). The providers take it from the
-   * image id; see {@link getEcgMultiplexGroupIndex}.
-   */
+  /** The multiplex group to show (0-based); see {@link getEcgMultiplexGroupIndex}. */
   multiplexGroupIndex?: number;
 }
 
 /**
- * The multiplex group that an ECG image id names. Frame N of the image id
- * (`/frames/N`, `frame=N`) is group N - 1. An image id with no frame gives
- * undefined, and {@link findPrimaryWaveformGroup} picks the default group. The
- * ECG and CALIBRATION providers both use this, so the trace and the
- * calibration always describe the same group.
+ * The multiplex group that a request names: `options.multiplexGroupIndex`
+ * (0-based) of `metaData.get(ECG | CALIBRATION, imageId, options)`. Undefined
+ * gives the default group of {@link findPrimaryWaveformGroup}. The ECG viewport
+ * passes the same option to both requests, so the trace and the calibration
+ * always describe the same group.
  */
 export function getEcgMultiplexGroupIndex(
-  imageId?: string
+  options: unknown
 ): number | undefined {
-  const match = imageId?.match(frameRangeExtractor);
-  const frame = match ? Number.parseInt(match[2], 10) : NaN;
+  const index = (options as { multiplexGroupIndex?: unknown } | undefined)
+    ?.multiplexGroupIndex;
 
-  return frame >= 1 ? frame - 1 : undefined;
+  return Number.isInteger(index) && (index as number) >= 0
+    ? (index as number)
+    : undefined;
 }
 
 /**
@@ -741,7 +739,7 @@ const ecgFromInstanceProvider: TypedProvider = (next, query, data, options) => {
     return next(query, data, options);
   }
   const result = buildEcgModuleFromInstance(instance, query, {
-    multiplexGroupIndex: getEcgMultiplexGroupIndex(query),
+    multiplexGroupIndex: getEcgMultiplexGroupIndex(options),
   });
   return result ?? next(query, data, options);
 };
@@ -760,7 +758,7 @@ const ecgCalibrationProvider: TypedProvider = (next, query, data, options) => {
   if (!groups.length) return next(query, data, options);
   const { group } = findPrimaryWaveformGroup(
     groups,
-    getEcgMultiplexGroupIndex(query)
+    getEcgMultiplexGroupIndex(options)
   );
   const numberOfWaveformSamples =
     (group.NumberOfWaveformSamples as number) ?? 0;

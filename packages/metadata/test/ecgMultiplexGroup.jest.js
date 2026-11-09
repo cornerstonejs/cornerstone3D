@@ -23,23 +23,25 @@ describe('ECG multiplex group of an image id', () => {
     });
   });
 
-  const read = (imageId) => ({
-    label: getMetaData(MetadataModules.ECG, imageId)?.multiplexGroupLabel,
-    samples: getMetaData(MetadataModules.ECG, imageId)?.numberOfWaveformSamples,
-    calibrated: getMetaData(MetadataModules.CALIBRATION, imageId)
+  const read = (imageId, options) => ({
+    label: getMetaData(MetadataModules.ECG, imageId, options)
+      ?.multiplexGroupLabel,
+    samples: getMetaData(MetadataModules.ECG, imageId, options)
+      ?.numberOfWaveformSamples,
+    calibrated: getMetaData(MetadataModules.CALIBRATION, imageId, options)
       ?.sequenceOfUltrasoundRegions?.[0]?.regionLocationMaxX1,
   });
 
-  it('shows the default group for an image id with no frame', () => {
-    expect(read(BASE)).toEqual({
+  it('shows the default group for a DICOMweb image id with a frame', () => {
+    expect(read(`${BASE}/frames/1`)).toEqual({
       label: 'RHYTHM',
       samples: 5000,
       calibrated: 5000,
     });
   });
 
-  it('shows group N - 1 for frame N, with the calibration of the same group', () => {
-    expect(read(`${BASE}/frames/1`)).toEqual({
+  it('shows the group that the request names, with the calibration of the same group', () => {
+    expect(read(`${BASE}/frames/1`, { multiplexGroupIndex: 0 })).toEqual({
       label: 'MEDIAN',
       samples: 600,
       calibrated: 600,

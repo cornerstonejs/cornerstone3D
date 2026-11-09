@@ -4,9 +4,14 @@ import { loadECGWaveform } from './ecgWaveform';
 import { getGenericViewportSourceDataId } from '../genericViewportDisplaySetAccess';
 
 export class DefaultECGDataProvider implements DataProvider {
-  async load(dataId: string): Promise<LoadedData<ECGWaveformPayload>> {
+  async load(
+    dataId: string,
+    options?: { multiplexGroupIndex?: number }
+  ): Promise<LoadedData<ECGWaveformPayload>> {
     const sourceDataId = getGenericViewportSourceDataId(dataId);
-    const { waveform } = await loadECGWaveform(sourceDataId);
+    const { waveform } = await loadECGWaveform(sourceDataId, {
+      multiplexGroupIndex: options?.multiplexGroupIndex,
+    });
 
     return {
       id: dataId,

@@ -130,25 +130,58 @@ export function hasViewTimeRegion(definition: ECGTraceLayoutDefinition) {
   );
 }
 
-/**
- * The Z of the k-th extra copy of a lead, for example a rhythm strip, is
- * `channelIndex + k * ECG_LEAD_COPY_STRIDE`. The first copy uses the channel
- * index, whether or not every channel shows.
- */
+/** The step of world Z between two copies of one lead. */
 export const ECG_LEAD_COPY_STRIDE = 1000;
+
+/** The multiplex group that a waveform shows, and the group count of the instance. */
+export interface ECGLeadGroup {
+  index: number;
+  count: number;
+}
+
+const SINGLE_GROUP: ECGLeadGroup = { index: 0, count: 1 };
+
+/**
+ * World Z of copy `copy` of channel `channelIndex` in multiplex group
+ * `group.index`: `channelIndex + ECG_LEAD_COPY_STRIDE * k`, with
+ * `k = copy * group.count + group.index`. The k index counts across all the
+ * groups of the instance, so two groups never share a Z, and an annotation of
+ * one group does not show on another group. An instance with one group gives
+ * `k = copy`: the first copy of a lead is its channel index.
+ */
+export function getECGLeadZ(
+  channelIndex: number,
+  copy: number,
+  group: ECGLeadGroup = SINGLE_GROUP
+): number {
+  return (
+    channelIndex + ECG_LEAD_COPY_STRIDE * (copy * group.count + group.index)
+  );
+}
 
 /**
  * Returns the layout of world Z: the region of that copy of the lead, else
- * the first region of the lead, when the layout does not show the copy.
+ * the first region of the lead in the same group, when the layout does not
+ * show the copy. A Z of another group finds no layout.
  */
 export function findECGLayoutForZ<T extends { leadIndex: number }>(
   layouts: T[],
-  z: number
+  z: number,
+  group: ECGLeadGroup = SINGLE_GROUP
 ): T | undefined {
-  return (
-    layouts.find((item) => item.leadIndex === z) ??
-    layouts.find((item) => item.leadIndex === z % ECG_LEAD_COPY_STRIDE)
-  );
+  const exact = layouts.find((item) => item.leadIndex === z);
+
+  if (exact) {
+    return exact;
+  }
+  const k = Math.floor(z / ECG_LEAD_COPY_STRIDE);
+
+  if (k < 0 || k % group.count !== group.index) {
+    return;
+  }
+  const baseZ = getECGLeadZ(z % ECG_LEAD_COPY_STRIDE, 0, group);
+
+  return layouts.find((item) => item.leadIndex === baseZ);
 }
 
 /** One region of a layout, resolved to a channel and a sample range. */
@@ -160,9 +193,8 @@ export interface ECGTraceCell<
   channel: TChannel;
   channelIndex: number;
   /**
-   * The Z of a world point in this region: the channel index, plus
-   * `ECG_LEAD_COPY_STRIDE` for each earlier region of the same lead. The value
-   * does not change with the lead count or with the visible leads.
+   * The Z of a world point in this region; see {@link getECGLeadZ}. The value
+   * does not change with the layout, the lead count or the visible leads.
    */
   leadIndex: number;
   visible: boolean;
@@ -183,6 +215,8 @@ export function resolveECGTraceCells<TChannel extends ECGChannelLike>(args: {
   viewSampleWindow: [number, number];
   /** Visible channel indices. Undefined shows every channel. */
   visibleChannels?: number[];
+  /** The multiplex group of the waveform. See {@link getECGLeadZ}. */
+  group?: ECGLeadGroup;
 }): ECGTraceCell<TChannel>[] {
   const {
     definition,
@@ -190,6 +224,7 @@ export function resolveECGTraceCells<TChannel extends ECGChannelLike>(args: {
     numberOfSamples,
     viewSampleWindow,
     visibleChannels,
+    group,
   } = args;
   const visible = visibleChannels ? new Set(visibleChannels) : undefined;
   const copies = new Map<number, number>();
@@ -208,7 +243,7 @@ export function resolveECGTraceCells<TChannel extends ECGChannelLike>(args: {
 
     const copy = copies.get(channelIndex) ?? 0;
     copies.set(channelIndex, copy + 1);
-    const leadIndex = channelIndex + copy * ECG_LEAD_COPY_STRIDE;
+    const leadIndex = getECGLeadZ(channelIndex, copy, group);
 
     const time = region.time ?? 'view';
     const [startSample, endSample] =

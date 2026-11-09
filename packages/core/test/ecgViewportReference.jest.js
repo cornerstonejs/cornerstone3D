@@ -104,6 +104,47 @@ describe('ECG viewport references and camera', () => {
     expect(viewport.isReferenceViewable(reference)).toBe(false);
   });
 
+  it('gives each multiplex group its own Z, so annotations of two groups do not mix', async () => {
+    const loads = [];
+    const viewport = await makeViewport('vp-groups');
+    viewport.dataProvider = {
+      load: async (id, options) => {
+        loads.push(options);
+        const group = options?.multiplexGroupIndex ?? 1;
+        return {
+          ...makeWaveform(),
+          multiplexGroupIndex: group,
+          numberOfMultiplexGroups: 2,
+        };
+      },
+    };
+
+    await viewport.setDisplaySets({
+      displaySetId: 'ecg:1',
+      options: { multiplexGroupIndex: 0 },
+    });
+    expect(loads[0]).toEqual({ multiplexGroupIndex: 0 });
+    const group0 = viewport.getViewReference({ points: [[100, 0, 0]] });
+    expect(viewport.getResolvedView().findLayoutForZ(0)).toBeDefined();
+
+    await viewport.setDisplaySets({ displaySetId: 'ecg:1' });
+    const leads = viewport.getResolvedView().channelLayouts;
+    // Group 1 of 2: lead 0 is 0 + 1000 * (0 * 2 + 1).
+    expect(leads[0].leadIndex).toBe(1000);
+    expect(viewport.isReferenceViewable(group0)).toBe(false);
+  });
+
+  it('ignores amplitudeScale with a set sensitivity, and warns on load', async () => {
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    const viewport = await makeViewport('vp-amplitude');
+    viewport.setViewState({ sensitivityMmMv: 10, amplitudeScale: 2 });
+    await viewport.setDisplaySets({ displaySetId: 'ecg:1' });
+
+    expect(viewport.getResolvedView().amplitudeScale).toBe(1);
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
   it('keeps the view when a saved camera is restored past the record end', async () => {
     const viewport = await makeViewport();
     viewport.setZoom(4);

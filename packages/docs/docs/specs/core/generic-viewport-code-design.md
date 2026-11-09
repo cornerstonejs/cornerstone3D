@@ -202,15 +202,19 @@ states the contract, and this specification repeats it:
   (GENVIEW-ECG-3), and `ECGResolvedView.traceLayoutName` gives the name that
   shows. This satisfies ECG-U-4 of the
   [ECG display requirements](./ecg/requirements.md).
-- **GENVIEW-ECG-7** World Z is the channel index for the first region of a
-  lead, whether or not every channel shows. Each further copy of the lead adds
-  `ECG_LEAD_COPY_STRIDE` (1000). `findECGLayoutForZ` maps a copy that the
-  layout does not show to the first region of its lead. This satisfies
-  ECG-U-8.
-- **GENVIEW-ECG-8** Frame N of an ECG image id (`/frames/N`, `frame=N`) names
-  multiplex group N - 1. The ECG and CALIBRATION providers both read it with
-  `getEcgMultiplexGroupIndex`, and with no frame they use
-  `findPrimaryWaveformGroup`. This satisfies ECG-U-14.
+- **GENVIEW-ECG-7** World Z is `getECGLeadZ(channel, copy, group)`:
+  `channel + 1000 * k`, with `k = copy * groupCount + groupIndex`. The k index
+  counts across all the multiplex groups of the instance, so two groups never
+  share a Z. With one group, the first copy of a lead is its channel index,
+  whether or not every channel shows. `findECGLayoutForZ` maps a copy that the
+  layout does not show to the first region of its lead in the same group. This
+  satisfies ECG-U-8.
+- **GENVIEW-ECG-8** `setDisplaySets({ displaySetId, options:
+{ multiplexGroupIndex } })` names the multiplex group. The data provider
+  passes the option to the ECG and the CALIBRATION requests
+  (`getEcgMultiplexGroupIndex`), so the trace and the calibration describe one
+  group. The frame of the image id does not name a group. With no option, the
+  providers use `findPrimaryWaveformGroup`. This satisfies ECG-U-14.
 
 ## Implementation requirements
 

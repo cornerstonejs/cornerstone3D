@@ -103,6 +103,10 @@ export interface ECGWaveformPayload {
   bitsAllocated: number;
   sampleInterpretation: string;
   multiplexGroupLabel?: string;
+  /** The multiplex group that the waveform shows (0-based). */
+  multiplexGroupIndex?: number;
+  /** The number of multiplex groups of the instance. */
+  numberOfMultiplexGroups?: number;
   calibration?: unknown;
 }
 
@@ -133,7 +137,10 @@ export interface ECGViewState extends ViewportCameraBase<[number, number]> {
    * shows no millivolt labels.
    */
   sensitivityMmMv?: number;
-  /** Multiplier on the drawn amplitude. Defaults to 1. */
+  /**
+   * Multiplier on the drawn amplitude in auto-fit. Defaults to 1. A set
+   * `sensitivityMmMv` ignores it, and the viewport warns on load.
+   */
   amplitudeScale?: number;
   /**
    * Indices of the visible channels. A hidden lead keeps its region, and a
