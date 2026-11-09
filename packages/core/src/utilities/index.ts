@@ -78,9 +78,16 @@ import { getRandomSampleFromArray } from './getRandomSampleFromArray';
 import { getVolumeId } from './getVolumeId';
 import { hasFloatScalingParameters } from './hasFloatScalingParameters';
 import { pointInShapeCallback } from './pointInShapeCallback';
-import * as ECGUtilities from './ECGUtilities';
+import * as ECGUtilitiesModule from './ECGUtilities';
 import * as VideoUtilities from './VideoUtilities';
 import * as WSIUtilities from './WSIUtilities';
+
+/**
+ * @deprecated Kept for 5.x compatibility. Use the ECG functions of
+ * `GenericViewport/ECG`, for example `getECGTraceLayout`. The next major
+ * release removes it.
+ */
+const ECGUtilities = ECGUtilitiesModule;
 // name spaces
 export * as planar from './planar';
 import * as windowLevel from './windowLevel';

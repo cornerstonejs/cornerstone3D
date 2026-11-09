@@ -8,7 +8,10 @@
 import { addTypedProvider } from '../../metaData';
 import { MetadataModules } from '../../enums';
 import type { TypedProvider } from '../../metaData';
-import { logging as cornerstoneLogging } from '@cornerstonejs/utils';
+import {
+  logging as cornerstoneLogging,
+  toFiniteFirst,
+} from '@cornerstonejs/utils';
 import { getSingleBufferFromArray } from '../bulkDataFromArray';
 import { decodeMultipartRelated } from '../decodeMultipartRelated';
 
@@ -71,15 +74,14 @@ const MV_PER_SENSITIVITY_UNIT: Record<string, number> = {
  * the sensitivity, or when the unit code is not a voltage.
  */
 function getChannelMvPerUnit(channel: Record<string, unknown>): number {
-  const sensitivity = Number(channel.ChannelSensitivity);
+  const sensitivity = toFiniteFirst(channel.ChannelSensitivity);
 
-  if (!Number.isFinite(sensitivity) || sensitivity === 0) {
+  if (sensitivity === undefined || sensitivity === 0) {
     return ECG_DEFAULT_MV_PER_UNIT;
   }
 
-  const rawCorrection = Number(channel.ChannelSensitivityCorrectionFactor);
   const correction =
-    Number.isFinite(rawCorrection) && rawCorrection !== 0 ? rawCorrection : 1;
+    toFiniteFirst(channel.ChannelSensitivityCorrectionFactor) || 1;
   const unitsSeq = toArray(
     channel.ChannelSensitivityUnitsSequence as
       | ArrayLike<Record<string, unknown>>
@@ -368,8 +370,12 @@ const ecgFromInstanceProvider: TypedProvider = (next, query, data, options) => {
   return result ?? next(query, data, options);
 };
 
-const ECG_AMPLITUDE_INDEX_SIZE = 65536;
-const ECG_AMPLITUDE_OFFSET = 32768;
+/**
+ * Index size of the amplitude axis of the ECG image data in core. Index Y is
+ * the raw amplitude plus half of this size.
+ */
+export const ECG_AMPLITUDE_INDEX_SIZE = 65536;
+const ECG_AMPLITUDE_OFFSET = ECG_AMPLITUDE_INDEX_SIZE / 2;
 
 /**
  * CALIBRATION provider for ECG: when instance has WaveformSequence, return

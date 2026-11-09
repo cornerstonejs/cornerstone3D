@@ -232,10 +232,7 @@ class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
     });
 
     if (!layout && channelLayouts.length > 0) {
-      // Pick the nearest cell by the distance to its rectangle, in both axes.
-      // A comparison of the vertical distance alone always returned column 0 in
-      // a multi-column layout, because every cell of a row shares one vertical
-      // distance.
+      // The nearest cell by the distance to its rectangle, in both axes.
       layout = channelLayouts.reduce(
         (nearest, item) =>
           this.getDistanceToCell(subCanvasPos, item) <
