@@ -4,9 +4,6 @@ import * as metaData from '../../../metaData';
 
 /** Default ECG paper speed: 25 mm/s */
 export const ECG_DEFAULT_SWEEP_SPEED_MM_S = 25;
-/** Default ECG amplitude calibration: 10 mm/mV */
-export const ECG_DEFAULT_SENSITIVITY_MM_MV = 10;
-
 /** Standard clinical paper sweep speeds in mm/s (IEC 60601-2-25 / AHA / ACC standard speeds) */
 export const ECG_CLINICAL_SWEEP_SPEEDS = [12.5, 25, 50] as const;
 
@@ -30,6 +27,13 @@ export const ECG_CHANNEL_SPACING = 5;
  */
 export const ECG_DEFAULT_MV_PER_UNIT =
   metadataUtilities.ECG_DEFAULT_MV_PER_UNIT;
+
+/**
+ * Index size of the amplitude axis of the ECG image data. Index Y is the raw
+ * amplitude plus half of this size, as in the ECG CALIBRATION region.
+ */
+export const ECG_AMPLITUDE_INDEX_SIZE =
+  metadataUtilities.ECG_AMPLITUDE_INDEX_SIZE;
 
 export const ECG_RENDERING_COLORS = {
   gridMajor: '#7f0000',

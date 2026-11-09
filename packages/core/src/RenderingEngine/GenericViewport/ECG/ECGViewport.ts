@@ -3,6 +3,7 @@ import type { LoadedData } from '../ViewportArchitectureTypes';
 import GenericViewport from '../GenericViewport';
 import { ViewportType } from '../../../enums';
 import {
+  ECG_AMPLITUDE_INDEX_SIZE,
   getDefaultECGValueRange,
   getECGFrameOfReferenceUID,
   ECG_DEFAULT_SWEEP_SPEED_MM_S,
@@ -39,8 +40,6 @@ import {
   normalizeECGViewState,
 } from './ecgViewportCamera';
 import ECGResolvedView from './ECGResolvedView';
-
-const ECG_AMPLITUDE_INDEX_SIZE = 65536;
 
 class ECGViewport extends GenericViewport<
   ECGViewState,
@@ -635,21 +634,11 @@ class ECGViewport extends GenericViewport<
         | import('../../../types').IImageCalibration
         | undefined,
       preScale: { scaled: false },
-      metadata: { Modality: 'ECG', FrameOfReferenceUID: '' },
+      metadata: {
+        Modality: 'ECG',
+        FrameOfReferenceUID: this.getFrameOfReferenceUID(),
+      },
     };
-  }
-
-  private setScaleAtCanvasPoint(scale: number, canvasPoint: Point2): void {
-    const resolvedView = this.getResolvedView();
-
-    if (!resolvedView) {
-      this.setZoom(scale);
-      return;
-    }
-
-    this.applyResolvedViewState(
-      resolvedView.withZoom(scale, canvasPoint).state.viewState
-    );
   }
 
   private async loadWaveformData(
