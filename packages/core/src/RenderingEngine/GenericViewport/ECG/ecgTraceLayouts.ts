@@ -88,6 +88,27 @@ export function hasViewTimeRegion(definition: ECGTraceLayoutDefinition) {
   );
 }
 
+/**
+ * The Z of the k-th extra copy of a lead, for example a rhythm strip, is
+ * `channelIndex + k * ECG_LEAD_COPY_STRIDE`. The first copy uses the channel
+ * index, whether or not every channel shows.
+ */
+export const ECG_LEAD_COPY_STRIDE = 1000;
+
+/**
+ * Returns the layout of world Z: the region of that copy of the lead, else
+ * the first region of the lead, when the layout does not show the copy.
+ */
+export function findECGLayoutForZ<T extends { leadIndex: number }>(
+  layouts: T[],
+  z: number
+): T | undefined {
+  return (
+    layouts.find((item) => item.leadIndex === z) ??
+    layouts.find((item) => item.leadIndex === z % ECG_LEAD_COPY_STRIDE)
+  );
+}
+
 /** One region of a layout, resolved to a channel and a sample range. */
 export interface ECGTraceCell<
   TChannel extends ECGChannelLike = ECGChannelLike,
@@ -97,10 +118,9 @@ export interface ECGTraceCell<
   channel: TChannel;
   channelIndex: number;
   /**
-   * The Z of a world point in this region. The first region of a lead uses
-   * the channel index, so the value does not change with the layout or with
-   * the visible leads. A region that repeats a lead gets a value above the
-   * last channel index.
+   * The Z of a world point in this region: the channel index, plus
+   * `ECG_LEAD_COPY_STRIDE` for each earlier region of the same lead. The value
+   * does not change with the lead count or with the visible leads.
    */
   leadIndex: number;
   visible: boolean;
@@ -130,8 +150,7 @@ export function resolveECGTraceCells<TChannel extends ECGChannelLike>(args: {
     visibleChannels,
   } = args;
   const visible = visibleChannels ? new Set(visibleChannels) : undefined;
-  const usedChannels = new Set<number>();
-  let nextRepeatIndex = channels.length;
+  const copies = new Map<number, number>();
   const cells: ECGTraceCell<TChannel>[] = [];
 
   definition.regions.forEach((region, regionIndex) => {
@@ -145,10 +164,9 @@ export function resolveECGTraceCells<TChannel extends ECGChannelLike>(args: {
       return;
     }
 
-    const leadIndex = usedChannels.has(channelIndex)
-      ? nextRepeatIndex++
-      : channelIndex;
-    usedChannels.add(channelIndex);
+    const copy = copies.get(channelIndex) ?? 0;
+    copies.set(channelIndex, copy + 1);
+    const leadIndex = channelIndex + copy * ECG_LEAD_COPY_STRIDE;
 
     const time = region.time ?? 'view';
     const [startSample, endSample] =

@@ -73,8 +73,8 @@ describe('ECG trace layouts', () => {
     );
 
     expect(rhythm.channelIndex).toBe(1);
-    // The rhythm strip repeats lead II, so it takes a Z above the channels.
-    expect(rhythm.leadIndex).toBe(CHANNELS.length);
+    // The rhythm strip is the second copy of lead II: 1 + 1000.
+    expect(rhythm.leadIndex).toBe(1001);
   });
 
   it('matches a channel with no code value by its code meaning', () => {

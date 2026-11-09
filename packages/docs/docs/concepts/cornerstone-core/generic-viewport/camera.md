@@ -136,8 +136,10 @@ ECG projection reports signal coordinates:
 
 - world tuples are `[sampleIndex, amplitude, leadIndex]`
 - the amplitude is in raw units of the first channel, for every lead
-- `leadIndex` is the channel index of the first region of a lead; a repeated
-  lead, for example a rhythm strip, gets an index above the last channel
+- `leadIndex` is the channel index of the first region of a lead, whether or
+  not every channel shows; each further copy of the lead, for example a rhythm
+  strip, adds 1000 (`ECG_LEAD_COPY_STRIDE`). A copy that the layout does not
+  show maps to the first region of its lead
 - the frame of reference is the SOP Instance UID of the ECG, so every viewport
   of one ECG shares its annotations
 - `ProjectionPosition.kind === 'signalPoint'`
