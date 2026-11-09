@@ -209,8 +209,6 @@ class PlanarViewport extends GenericViewport<
     this.sHeight = args.sHeight;
     this.defaultOptions = cloneViewportOptions(args.defaultOptions || {});
     this.options = cloneViewportOptions(this.defaultOptions);
-    this.canvasToWorld = this.canvasToWorld.bind(this);
-    this.worldToCanvas = this.worldToCanvas.bind(this);
     this.dataProvider = args.dataProvider || new DefaultPlanarDataProvider();
     this.renderPathResolver =
       args.renderPathResolver || createPlanarRenderPathResolver();
