@@ -10,7 +10,6 @@ import { isLabelmapActorEntry } from './isLabelmapActorEntry';
 import {
   type FidelityDataKind,
   type FidelityLine,
-  type SvgFidelityState,
   dataKindOf,
   formatFactor,
   formatFactors,
@@ -19,7 +18,7 @@ import {
   isReduced,
   lineHasData,
   standingSampleRatioOf,
-  svgStateOf,
+  shownStateOf,
 } from './fidelityIndicatorState';
 
 export { isLabelmapActorEntry };
@@ -32,21 +31,9 @@ const COLORS = {
   none: '#666',
 };
 
-/** How long Done stays visible before it fades. */
-export const DONE_HOLD_MS = 3000;
-
-const ARIA_LABELS: Record<SvgFidelityState, string> = {
-  loading: 'Image fidelity: loading',
-  done: 'Image fidelity: full resolution',
-  lossy: 'Image fidelity: reduced or decimated',
-  lod: 'Image fidelity: interactive LOD',
-};
-
 /** One view of the fidelity lines: the product text label, or the debug badge. */
 type FidelityView = {
   update: (lines: FidelityLine[]) => void;
-  /** Forgets the lossiness history, for a viewport that shows new data. */
-  reset?: () => void;
   remove: () => void;
 };
 
@@ -59,8 +46,8 @@ const cleanups = new WeakMap<object, () => void>();
 /**
  * Attaches the fidelity indicator to a viewport that can report fidelity.
  *
- * Default UI is the fidelity indicator in the top-right (`loading` / `done` /
- * `lossy` / `lod`). When `init({ debug: { fidelityIndicatorDebug: true } })`
+ * Default UI is the fidelity label in the top-right while the view is
+ * `loading`, `lod` or `lossy`; a lossless view shows nothing. When `init({ debug: { fidelityIndicatorDebug: true } })`
  * is set, the verbose debug badge is also shown in the top-left.
  *
  * The indicator is a consumer of `viewport.getFidelityLines()` and
@@ -161,26 +148,6 @@ function linesOf(viewport: FidelityViewport): FidelityLine[] {
 }
 
 /**
- * A key of the data that a viewport shows: its volume ids, and the first and
- * last image id and the count of its image ids. Scroll, zoom and pan keep it.
- */
-function dataKeyOf(viewport: FidelityViewport): string {
-  try {
-    const ids = viewport as {
-      getAllVolumeIds?: () => string[];
-      getImageIds?: () => string[];
-    };
-    const volumeIds = ids.getAllVolumeIds?.() ?? [];
-    const imageIds = ids.getImageIds?.() ?? [];
-
-    return `${volumeIds.join('|')}#${imageIds.length}:${imageIds[0]}:${imageIds[imageIds.length - 1]}`;
-  } catch {
-    // A volume viewport with no volume throws from getImageIds.
-    return '';
-  }
-}
-
-/**
  * Reads fidelity lines from the viewport API and passes them to every view:
  * on attach, after a render, on `VIEWPORT_FIDELITY_CHANGED`, and when volume
  * data changes without a render. The indicator never fires the event
@@ -194,20 +161,9 @@ function subscribeToFidelity(
   const { element } = viewport;
   let rafId = 0;
   let disposed = false;
-  let dataKey: string | undefined;
 
   const updateViews = () => {
     const lines = linesOf(viewport);
-    const key = dataKeyOf(viewport);
-
-    // New data starts a new lossiness history (no recovery mark from the
-    // data that the viewport showed before).
-    if (key !== dataKey) {
-      dataKey = key;
-      for (const view of views) {
-        view.reset?.();
-      }
-    }
 
     for (const view of views) {
       view.update(lines);
@@ -313,8 +269,6 @@ function overlayHostOf(element: HTMLDivElement): {
 function createProductIndicator(host: HTMLElement): FidelityView {
   const root = document.createElement('div');
   root.className = 'fi-root';
-  root.setAttribute('role', 'status');
-  root.setAttribute('aria-label', 'Image fidelity');
   Object.assign(root.style, {
     position: 'absolute',
     top: '14px',
@@ -322,7 +276,6 @@ function createProductIndicator(host: HTMLElement): FidelityView {
     zIndex: '1000',
     transform: 'translateZ(0)',
   });
-  root.dataset.shown = 'false';
 
   const label = document.createElement('div');
   label.className = 'fi-label';
@@ -333,8 +286,6 @@ function createProductIndicator(host: HTMLElement): FidelityView {
   root.append(label, details);
   host.appendChild(root);
 
-  let currentState: SvgFidelityState | 'hidden' = 'hidden';
-  let doneFadeTimer = 0;
   let hovered = false;
   let lastLines: FidelityLine[] = [];
 
@@ -353,99 +304,28 @@ function createProductIndicator(host: HTMLElement): FidelityView {
     delete root.dataset.hover;
   });
 
-  const scheduleDoneFade = () => {
-    clearTimeout(doneFadeTimer);
-    doneFadeTimer = window.setTimeout(() => {
-      doneFadeTimer = 0;
-      if (currentState === 'done') {
-        root.dataset.shown = 'false';
-        clearPermanentLabel();
-      }
-    }, DONE_HOLD_MS);
-  };
-
-  const clearPermanentLabel = () => {
-    delete root.dataset.label;
-    label.textContent = '';
-  };
-
-  const setPermanentLabel = (svgState: SvgFidelityState | 'hidden') => {
-    const text = fidelityLabelOf(svgState);
-
-    if (!text) {
-      clearPermanentLabel();
-      return;
-    }
-
-    label.textContent = text;
-    root.dataset.label =
-      text === 'Transient Low Fidelity' ? 'transient' : 'low';
-  };
-
-  const setIndicatorState = (next: SvgFidelityState | 'hidden') => {
-    if (next === 'hidden') {
-      if (currentState === 'hidden') {
-        return;
-      }
-
-      clearTimeout(doneFadeTimer);
-      doneFadeTimer = 0;
-      currentState = 'hidden';
-      delete root.dataset.state;
-      delete root.dataset.from;
-      root.dataset.shown = 'false';
-      clearPermanentLabel();
-      root.setAttribute('aria-label', 'Image fidelity');
-      return;
-    }
-
-    // A render in the same state keeps the running fade, so Done still fades
-    // while the viewport renders every frame.
-    if (next === currentState) {
-      return;
-    }
-
-    // Done is a recovery from a lossy state (FIDELITY-UI-4). A lossless view
-    // that was never lossy shows nothing.
-    if (next === 'done' && currentState === 'hidden') {
-      return;
-    }
-
-    const from = currentState;
-
-    root.dataset.from = from === 'hidden' ? 'hidden' : from;
-    root.dataset.state = next;
-    root.dataset.shown = 'true';
-    root.setAttribute('aria-label', ARIA_LABELS[next]);
-
-    clearTimeout(doneFadeTimer);
-    doneFadeTimer = 0;
-    currentState = next;
-
-    if (next === 'done') {
-      clearPermanentLabel();
-      scheduleDoneFade();
-    }
-  };
-
   return {
     update: (lines) => {
       lastLines = lines;
-      const next = svgStateOf(lines);
-      setIndicatorState(next);
-      // The done recovery has no permanent label.
-      if (next !== 'done' && next !== 'hidden') {
-        setPermanentLabel(next);
+      const state = shownStateOf(lines);
+      const text = fidelityLabelOf(state);
+
+      label.textContent = text ?? '';
+
+      if (!text) {
+        delete root.dataset.state;
+        // The label is gone, so its tooltip goes too.
+        hovered = false;
+        delete root.dataset.hover;
+        return;
       }
+
+      root.dataset.state = state;
       if (hovered) {
         details.textContent = clinicianHoverTextOf(lines);
       }
     },
-    reset: () => setIndicatorState('hidden'),
-    remove: () => {
-      clearTimeout(doneFadeTimer);
-      root.remove();
-    },
+    remove: () => root.remove(),
   };
 }
 

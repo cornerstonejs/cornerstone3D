@@ -10,8 +10,6 @@ summary: How the user learns that a viewport shows a lossy image - replicated, s
 
 The indicator exists so that the user does not read a lossy image as a
 lossless image. Only a viewport that shows a lossy image shows the indicator.
-There is one exception: after a lossy state ends, the indicator shows the
-recovered state `done` for a short time (FIDELITY-UI-4).
 
 The user requirements apply to every viewport type. Today the code implements
 them for the stack viewports and the volume viewports only. A different
@@ -72,8 +70,8 @@ and it does not make the displayed image lossy.
 
 These requirements follow VF (see Scope). The VF names of the lossiness
 states map to the states of this specification: transiently lossy is
-`loading` or `lod`, terminally lossy is `lossy`, and formerly lossy is the
-recovery mark `done`.
+`loading` or `lod`, and terminally lossy is `lossy`. A formerly lossy view is
+`done`, and shows no indicator (FIDELITY-UI-4).
 
 ### The user knows when the image is lossy (FIDELITY-USER)
 
@@ -87,8 +85,7 @@ recovery mark `done`.
 
 - **FIDELITY-STATE-2** A viewport that shows no data shows no indicator. A
   volume that has no delivered data is no data. A viewport that shows a
-  lossless image shows no indicator, except the short recovery mark of
-  FIDELITY-UI-4. A load that delivers only full-quality frames shows no
+  lossless image shows no indicator. A load that delivers only full-quality frames shows no
   indicator while the load continues. Data that has not arrived is not
   `loading` by itself. This serves FIDELITY-USER-2.
 - **FIDELITY-STATE-3** The user can tell a load that continues from a load that
@@ -147,26 +144,18 @@ recovery mark `done`.
   need to be the active viewport. The indicator has the same form in every
   viewport type. While the view is lossy, a permanent text label is the
   indicator: `Low Fidelity` for a standing reduction (`lossy`), or
-  `Transient Low Fidelity` for `loading` and `lod`. There is no product icon
-  or disc. This serves FIDELITY-USER-1.
-- **FIDELITY-UI-4** The `done` state shows only as a recovery from `loading`,
-  `lod` or `lossy`. A change from no indicator to `done` shows nothing. The
-  `done` state is held for a short time and then fades; with no glyph it has
-  no visible mark. The permanent label is hidden during `done` and after the
-  fade. The indicator does not stay over the image after the recovery, because
-  a mark on the image can hide a finding.
-  When the viewport begins to show different data (other volume ids or other
-  image ids), the lossiness history resets: the indicator goes back to no
-  indicator, and the new data shows no recovery mark for the old data. Zoom,
-  pan, window level, scroll and a layout change do not reset the history. This
-  serves FIDELITY-USER-2. The duration and the hover behaviour of the interim
-  CS3D indicator are in Known deviations.
+  `Transient Low Fidelity` for `loading` and `lod`. This serves
+  FIDELITY-USER-1.
+- **FIDELITY-UI-4** When the view becomes lossless (`done`), the label and its
+  hover details disappear at once. Nothing stays over the image after the
+  recovery, because a mark on the image can hide a finding. This serves
+  FIDELITY-USER-2. The difference from VF is in Known deviations.
 
 ## Implementation requirements
 
 ### The decision of the state (FIDELITY-STATE)
 
-`svgStateOf()`, `lineKind()` and `dataKindOf()` hold this decision.
+`shownStateOf()`, `lineKind()` and `dataKindOf()` hold this decision.
 
 - **FIDELITY-STATE-1** The viewport reports its fidelity in one of four states.
   This serves FIDELITY-USER-1.
@@ -361,8 +350,8 @@ recovery mark `done`.
   - `shownState` and `lossy` come from every volume of the viewport. The other
     fields describe the worst volume, the volume that decides `shownState`.
     Thus `cause` agrees with `lossy` when the viewport shows several volumes.
-  - `done` is the state of every lossless view. An application shows `done`
-    only as the recovery mark of FIDELITY-UI-4.
+  - `done` is the state of every lossless view. The built-in indicator shows
+    nothing for `done` (FIDELITY-UI-4).
 
 ### The built-in indicator (FIDELITY-UI)
 
@@ -378,15 +367,12 @@ recovery mark `done`.
 - **FIDELITY-UI-9** The indicator of FIDELITY-UI-2 is a DOM element in the
   top-right corner of the viewport element. `fidelityLabelOf()` takes the
   label from the shown state alone. The label uses a bright red foreground on
-  a black background. The state is on the `data-state`, `data-from`,
-  `data-shown` and `data-label` attributes of `.fi-root`. The styles go into
-  `document.head` once.
-- **FIDELITY-UI-10** The indicator keys the data of the viewport by
-  `getAllVolumeIds()` and by the count, the first and the last of
-  `getImageIds()`. When the key changes, the indicator resets to no indicator
-  before it reads the new lines (FIDELITY-UI-4). The `done` state shows for
-  `DONE_HOLD_MS` and then fades.
-- **FIDELITY-UI-3** `svgStateOf()`, `lineKind()`, `fidelityLabelOf()` and
+  a black background. The indicator is text only, with no icon. `.fi-root`
+  has `data-state` (`loading`, `lod` or `lossy`) only while the label shows,
+  and `data-hover` while the hover details show. When the label goes, the
+  indicator clears `data-hover`, so no details stay with no label. The styles
+  go into `document.head` once.
+- **FIDELITY-UI-3** `shownStateOf()`, `lineKind()`, `fidelityLabelOf()` and
   `fidelityDetailsTextOf()` hold the decision of the state and the copy, and
   the decision has no DOM. A unit test checks the decision without a user
   interface.
@@ -444,16 +430,12 @@ first quality until the next image change. Because no later stage reaches the
 view, the generic paths do not read `imageQualityPending`: a reduced first
 image shows `lossy`, not `loading`.
 
-### The interim CS3D indicator differs from VF in two choices
+### The interim CS3D indicator shows no recovered state
 
 The built-in indicator is an interim indicator until the application shows its
-own (FIDELITY-CONF-1). It makes two choices that differ from VF:
-
-- **C1.** After the `done` mark fades, a hover over the corner does not show
-  the recovered state again (`pointer-events: none`). VF-VIS-1d requires that
-  the recovered state is re-revealable on demand.
-- **C2.** The `done` mark holds for `DONE_HOLD_MS`, 3 seconds. VF §5.4 suggests
-  about 1 second.
+own (FIDELITY-CONF-1). It shows nothing for `done`. VF §5.4 suggests a short
+recovery mark, and VF-VIS-1d requires that the recovered state is
+re-revealable on demand.
 
 The OHIF indicator follows VF.
 

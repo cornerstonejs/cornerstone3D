@@ -80,9 +80,8 @@ export type ViewportFidelityState = {
   /**
    * The derived state of the view, with the same decision as the built-in
    * indicator: `hidden` (no data), `done` (lossless), `loading`, `lod` or
-   * `lossy`. `done` is the state of every lossless view: an application
-   * shows it only as a short recovery mark after a lossy state
-   * (FIDELITY-UI-4), and otherwise shows nothing for `done`.
+   * `lossy`. `done` is the state of every lossless view; the built-in
+   * indicator shows nothing for it (FIDELITY-UI-4).
    */
   shownState?: ViewportFidelityShownState;
   /**

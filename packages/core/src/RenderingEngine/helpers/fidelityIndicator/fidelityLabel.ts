@@ -1,4 +1,4 @@
-import type { SvgFidelityState } from './fidelityIndicatorState';
+import type { FidelityLineState } from './fidelityIndicatorState';
 
 export type FidelityLabelText = 'Low Fidelity' | 'Transient Low Fidelity';
 
@@ -9,11 +9,11 @@ export type FidelityLabelText = 'Low Fidelity' | 'Transient Low Fidelity';
  * over another part of the view.
  */
 export function fidelityLabelOf(
-  svgState: SvgFidelityState | 'hidden'
+  state: FidelityLineState | 'hidden'
 ): FidelityLabelText | null {
-  if (svgState === 'hidden' || svgState === 'done') {
+  if (state === 'hidden' || state === 'done') {
     return null;
   }
 
-  return svgState === 'lossy' ? 'Low Fidelity' : 'Transient Low Fidelity';
+  return state === 'lossy' ? 'Low Fidelity' : 'Transient Low Fidelity';
 }

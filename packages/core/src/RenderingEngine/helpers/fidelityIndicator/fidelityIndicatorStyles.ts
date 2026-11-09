@@ -1,28 +1,18 @@
 /** CSS for the viewport fidelity indicator (.fi-*). */
 export const FIDELITY_INDICATOR_CSS = `/*
- * Text-only product indicator in the top-right. State attributes on .fi-root:
- *   data-state  loading | done | lossy | lod
- *   data-from   the previous state
- *   data-shown  false while Done has faded out
- *   data-label  low | transient — permanent clinician label
+ * Text-only product indicator in the top-right. .fi-root has data-state
+ * (loading | lod | lossy) only while the label shows.
  */
 
 .fi-root {
-  --fi-amber: #f0a030;
-  --fi-blue: #358cfd;
   display: flex;
   flex-direction: row;
   align-items: center;
-  width: auto;
-  height: auto;
-  overflow: visible;
-  line-height: 0;
   pointer-events: auto;
 }
 
-/* No state / faded Done: not hoverable (avoids a floating tooltip). */
-.fi-root:not([data-state]),
-.fi-root[data-state='done'][data-shown='false'] {
+/* No label: not hoverable (avoids a floating tooltip). */
+.fi-root:not([data-state]) {
   pointer-events: none;
 }
 
@@ -38,8 +28,7 @@ export const FIDELITY_INDICATOR_CSS = `/*
   pointer-events: none;
 }
 
-.fi-root[data-label='low'] .fi-label,
-.fi-root[data-label='transient'] .fi-label {
+.fi-root[data-state] .fi-label {
   display: block;
 }
 
@@ -64,16 +53,6 @@ export const FIDELITY_INDICATOR_CSS = `/*
 
 .fi-root[data-hover='true'] .fi-details {
   display: block;
-}
-
-/* Held for DONE_HOLD_MS (attachFidelityIndicator.ts), then fades out over
- * 0.2 s. Does not reappear. With no glyph, done has no visible mark. */
-.fi-root[data-state='done'] {
-  transition: opacity 0.2s linear;
-}
-
-.fi-root[data-state='done'][data-shown='false'] {
-  opacity: 0;
 }
 `;
 

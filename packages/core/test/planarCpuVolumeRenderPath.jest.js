@@ -9,7 +9,7 @@ import drawImageSync from '../src/RenderingEngine/helpers/cpuFallback/drawImageS
 import { CpuVolumeSliceRenderPath } from '../src/RenderingEngine/GenericViewport/Planar/CpuVolumeSliceRenderPath';
 import PlanarCPUVolumeSampler from '../src/RenderingEngine/GenericViewport/Planar/PlanarCPUVolumeSampler';
 import eventTarget from '../src/eventTarget';
-import { svgStateOf } from '../src/RenderingEngine/helpers/fidelityIndicator/fidelityIndicatorState';
+import { shownStateOf } from '../src/RenderingEngine/helpers/fidelityIndicator/fidelityIndicatorState';
 import { fidelityLinesFromBindings } from '../src/RenderingEngine/helpers/fidelityIndicator/collectFidelityLines';
 
 function createCanvas(width = 256, height = 256) {
@@ -294,7 +294,7 @@ describe('CpuVolumeSliceRenderPath', () => {
       reduction: 'none',
     };
     const shownState = () =>
-      svgStateOf(
+      shownStateOf(
         fidelityLinesFromBindings(undefined, [
           {
             record: rendering.voxelQuality,

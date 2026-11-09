@@ -1,6 +1,6 @@
 import { describe, it, expect } from '@jest/globals';
 import {
-  svgStateOf,
+  shownStateOf,
   lineKind,
   isInteractiveLod,
   isReduced,
@@ -53,15 +53,15 @@ function line(overrides = {}) {
 }
 
 describe('fidelityIndicatorState', () => {
-  describe('svgStateOf', () => {
+  describe('shownStateOf', () => {
     it('stays hidden with no lines or no quality record', () => {
-      expect(svgStateOf([])).toBe('hidden');
-      expect(svgStateOf([line({ record: undefined })])).toBe('hidden');
+      expect(shownStateOf([])).toBe('hidden');
+      expect(shownStateOf([line({ record: undefined })])).toBe('hidden');
     });
 
     it('does not hide a standing reduction under a load or an interaction', () => {
       expect(
-        svgStateOf([
+        shownStateOf([
           line({
             record: record({
               missing: 10,
@@ -80,7 +80,7 @@ describe('fidelityIndicatorState', () => {
 
     it('prioritises loading over lod and done', () => {
       expect(
-        svgStateOf([
+        shownStateOf([
           line({ sampleDistanceLod: 2, sampleDistanceIdle: 1 }),
           line({
             record: record({
@@ -95,7 +95,7 @@ describe('fidelityIndicatorState', () => {
 
     it('prioritises lossy over done', () => {
       expect(
-        svgStateOf([
+        shownStateOf([
           line({
             fullResolution: false,
             reductionFactors: [2, 2, 2],
@@ -106,11 +106,11 @@ describe('fidelityIndicatorState', () => {
     });
 
     it('ignores a volume with no record yet', () => {
-      expect(svgStateOf([line(), line({ record: undefined })])).toBe('done');
+      expect(shownStateOf([line(), line({ record: undefined })])).toBe('done');
     });
 
     it('reports done when every recorded line is full resolution', () => {
-      expect(svgStateOf([line(), line()])).toBe('done');
+      expect(shownStateOf([line(), line()])).toBe('done');
     });
   });
 
@@ -306,7 +306,7 @@ describe('fidelityIndicatorState', () => {
       volume3D,
     });
     const stateOf = (display, reduction, spacing, fullGrid = full) =>
-      svgStateOf(
+      shownStateOf(
         fidelityLinesFromBindings(display, [
           {
             record: record({ grid: grid([32, 32, 64], spacing), reduction }),
@@ -371,7 +371,7 @@ describe('fidelityIndicatorState', () => {
       window.devicePixelRatio = ratio;
       try {
         const pixelSpacing = pixelSpacingOfCanvasToWorld(canvasToWorld);
-        return svgStateOf(
+        return shownStateOf(
           fidelityLinesFromBindings(
             { pixelSpacing, viewPlaneNormal: [0, 0, 1] },
             [{ record: boxAverage, fullGrid: full }]
@@ -404,7 +404,7 @@ describe('fidelityIndicatorState', () => {
   describe('lines without a record', () => {
     it('shows lossy for a reduced texture that has no record', () => {
       expect(
-        svgStateOf([
+        shownStateOf([
           line({
             record: undefined,
             fullResolution: false,

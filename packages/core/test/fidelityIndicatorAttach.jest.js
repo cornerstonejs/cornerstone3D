@@ -21,7 +21,6 @@ import {
   isLabelmapActorEntry,
   maybeAttachFidelityIndicator,
 } from '../src/RenderingEngine/helpers/fidelityIndicator';
-import { DONE_HOLD_MS } from '../src/RenderingEngine/helpers/fidelityIndicator/attachFidelityIndicator';
 import BaseVolumeViewport from '../src/RenderingEngine/BaseVolumeViewport';
 import VolumeViewport3DNext from '../src/RenderingEngine/GenericViewport/Volume3D/viewport3D';
 import GenericViewport from '../src/RenderingEngine/GenericViewport/GenericViewport';
@@ -403,48 +402,33 @@ describe('fidelityIndicator attach gates', () => {
       const root = viewport.element.querySelector('.fi-root');
 
       renderAs(viewport, 10, ImageQualityStatus.FULL_RESOLUTION);
-      expect(root.dataset.shown).toBe('false');
+      expect(root.dataset.state).toBeUndefined();
       renderAs(viewport, 0, ImageQualityStatus.FULL_RESOLUTION);
       expect(root.dataset.state).toBeUndefined();
-      expect(root.dataset.shown).toBe('false');
 
       detachFidelityIndicator(viewport);
     });
 
-    it('announces done again after a later degradation', () => {
+    it('shows only the label, and removes it and its details on recovery', () => {
       const viewport = attach();
       const root = viewport.element.querySelector('.fi-root');
+      const label = root.querySelector('.fi-label');
 
       renderAs(viewport, 10, ImageQualityStatus.LOSSY);
       expect(root.dataset.state).toBe('loading');
-      renderAs(viewport, 0, ImageQualityStatus.FULL_RESOLUTION);
-      expect(root.dataset.state).toBe('done');
-      expect(root.dataset.shown).toBe('true');
-      jest.advanceTimersByTime(DONE_HOLD_MS + 100);
-      expect(root.dataset.shown).toBe('false');
+      expect(label.textContent).toBe('Transient Low Fidelity');
+      expect([...root.children].map((child) => child.className)).toEqual([
+        'fi-label',
+        'fi-details',
+      ]);
 
-      renderAs(viewport, 10, ImageQualityStatus.ADJACENT_REPLICATE);
-      expect(root.dataset.state).toBe('loading');
-      renderAs(viewport, 0, ImageQualityStatus.FULL_RESOLUTION);
-      expect(root.dataset.state).toBe('done');
-      expect(root.dataset.shown).toBe('true');
+      root.dispatchEvent(new MouseEvent('mouseenter'));
+      expect(root.dataset.hover).toBe('true');
 
-      detachFidelityIndicator(viewport);
-    });
-
-    it('shows no recovery mark when the viewport switches to new data', () => {
-      const viewport = attach();
-      const root = viewport.element.querySelector('.fi-root');
-      let volumeIds = ['vol'];
-      viewport.getAllVolumeIds = () => volumeIds;
-
-      renderAs(viewport, 10, ImageQualityStatus.LOSSY);
-      expect(root.dataset.state).toBe('loading');
-
-      volumeIds = ['other'];
       renderAs(viewport, 0, ImageQualityStatus.FULL_RESOLUTION);
       expect(root.dataset.state).toBeUndefined();
-      expect(root.dataset.shown).toBe('false');
+      expect(label.textContent).toBe('');
+      expect(root.dataset.hover).toBeUndefined();
 
       detachFidelityIndicator(viewport);
     });
@@ -628,13 +612,12 @@ describe('fidelityIndicator attach gates', () => {
       maybeAttachFidelityIndicator(viewport);
       const root = viewport.element.querySelector('.fi-root');
       expect(root).not.toBeNull();
-      expect(root.dataset.shown).toBe('false');
+      expect(root.dataset.state).toBeUndefined();
 
       await viewport.addDisplaySet('ds-1', { renderMode: 'vtkVolumeSlice' });
       render(viewport);
 
       expect(root.dataset.state).toBe('lossy');
-      expect(root.dataset.shown).toBe('true');
       detachFidelityIndicator(viewport);
     });
 
@@ -725,10 +708,7 @@ describe('fidelityIndicator attach gates', () => {
       // The strategy binds the full-resolution texture.
       rendering.voxelQuality = quality(fullGrid, VoxelReductions.None);
       render(viewport);
-      expect(root.dataset.state).toBe('done');
-      expect(root.dataset.shown).toBe('true');
-      jest.advanceTimersByTime(DONE_HOLD_MS + 100);
-      expect(root.dataset.shown).toBe('false');
+      expect(root.dataset.state).toBeUndefined();
 
       render(viewport);
       expect(events.map((state) => state.shownState)).toEqual([
