@@ -59,10 +59,11 @@ import {
   withAcquiredFrames,
 } from './planarAcquiredFrames';
 import {
+  isBindingPending,
   isSegmentationOverlayData,
-  isVolumeLoading,
   readBoundQuality,
 } from '../renderingFidelity';
+import { gridWorldToIndex } from '../../../utilities/voxelGrid';
 
 const SLICE_OVERLAY_DEPTH_EPSILON = 1e-4;
 // Trailing delay before repainting a slab-projecting segmentation overlay
@@ -417,15 +418,20 @@ export class VtkVolumeSliceRenderPath
     }
   }
 
-  /** Recomputes a stale record of the bound grid (see `onVolumeData`). */
+  /**
+   * Recomputes a stale record of the bound grid (see `onVolumeData`), and
+   * reads at each call whether the bound texture still waits for its fill.
+   */
   private refreshFidelity(rendering: PlanarVolumeSliceRendering): void {
-    if (!rendering.fidelityStale) {
-      return;
+    if (rendering.fidelityStale) {
+      rendering.fidelityStale = false;
+      rendering.voxelQuality = this.readQuality(rendering);
     }
 
-    rendering.fidelityStale = false;
-    rendering.voxelQuality = this.readQuality(rendering);
-    rendering.qualityPending = isVolumeLoading(rendering.imageVolume);
+    rendering.qualityPending = isBindingPending(
+      rendering.imageVolume,
+      rendering.boundTexture
+    );
   }
 
   private getImageData(
@@ -440,9 +446,28 @@ export class VtkVolumeSliceRenderPath
   ): void {
     if (rendering) {
       this.applyStrategy(rendering);
+      this.setFillHint(ctx, rendering);
     }
 
     ctx.display.requestRender();
+  }
+
+  /**
+   * Starts the next budgeted fill of the bound texture at the slice of the
+   * focal point, so the slice that this view shows fills first.
+   */
+  private setFillHint(
+    ctx: PlanarVtkVolumeAdapterContext,
+    rendering: PlanarVolumeSliceRendering
+  ): void {
+    const focalPoint = getPlanarRenderPathActiveSourceICamera(ctx)?.focalPoint;
+    const grid = rendering.boundGrid?.grid;
+
+    if (focalPoint && grid) {
+      rendering.boundTexture?.setFillHint?.(
+        gridWorldToIndex(grid, focalPoint)[2]
+      );
+    }
   }
 
   /**
@@ -566,7 +591,10 @@ export class VtkVolumeSliceRenderPath
     }
 
     rendering.voxelQuality = this.readQuality(rendering);
-    rendering.qualityPending = isVolumeLoading(rendering.imageVolume);
+    rendering.qualityPending = isBindingPending(
+      rendering.imageVolume,
+      rendering.boundTexture
+    );
     rendering.fidelityStale = false;
     rendering.fullGrid = rendering.imageVolume.voxelGrid;
   }

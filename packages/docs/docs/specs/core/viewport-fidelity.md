@@ -204,6 +204,11 @@ states map to the states of this specification: transiently lossy is
   rule gives such a grid `loading`. The rule returns with the code that makes
   the interim grid. A record with `lowest` undefined has no
   delivered data, and the line has no data (FIDELITY-STATE-2).
+  A volume line also states `qualityPending` while slices of its bound texture
+  wait for the budgeted fill (`isFillPending()`), because those slices show 0.
+  Pending data with no missing voxels gives `loading`, also with only
+  full-resolution deliveries. The line reads the texture at each read of the
+  fidelity after a draw, so the draw that fills the last slice ends `loading`.
 
 ### The record and the verdict (FIDELITY-RECORD)
 

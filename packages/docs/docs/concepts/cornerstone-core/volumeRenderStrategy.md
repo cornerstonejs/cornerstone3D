@@ -142,8 +142,10 @@ marked slices. That is the path that the code already used, and a strategy does 
 main thread inside the render, so a render stops after `rendering.reducedTextureFill.maxSlicesPerRender`
 slices that hold data (16 by default). It also stops when
 `rendering.reducedTextureFill.maxMillisecondsPerRender` (8 ms by default) has passed, but only after
-it filled at least one slice. The texture then requests another render for the slices that remain,
-and the next fill starts where the last one stopped.
+it filled at least one slice. A value below 1 slice counts as 1. The texture then requests another
+render for the slices that remain, and the next fill starts where the last one stopped. A slice view
+sets the start to the slice of its focal point before it draws (`setFillHint`), so the slice that it
+shows fills first. While slices wait for the fill, the fidelity of the viewport is `loading`.
 
 **A reduced slice reads only the frames that have arrived.** A frame that has not arrived would pull
 the average towards 0. A replicate is a copy of another frame, so a slice reads a replicate only when

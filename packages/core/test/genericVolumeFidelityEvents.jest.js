@@ -128,7 +128,11 @@ function shownState(rendering) {
 
   return shownStateOf(
     fidelityLinesFromBindings(display, [
-      { record: rendering.voxelQuality, fullGrid: rendering.fullGrid },
+      {
+        record: rendering.voxelQuality,
+        fullGrid: rendering.fullGrid,
+        qualityPending: rendering.qualityPending,
+      },
     ])
   );
 }
@@ -194,6 +198,28 @@ describe.each([
     volume.delivered = { lowest: ImageQualityStatus.LOSSY, missing: 0 };
     sendVolumeEvent(Events.IMAGE_VOLUME_LOADING_COMPLETED, volumeId);
     expect(shownState(rendering)).toBe('lossy');
+
+    attachment.removeData();
+  });
+
+  // The user experience must have this: slices that wait for the fill show 0,
+  // and the read after the draw that fills the last slice leaves `loading`.
+  it('shows loading while the bound texture waits for its fill', async () => {
+    const { volume, attachment, strategy } = await mount();
+    const { rendering } = attachment;
+    const [{ texture }] = strategy.bindings();
+    let fillPending = true;
+
+    texture.isFillPending = () => fillPending;
+    volume.delivered = {
+      lowest: ImageQualityStatus.FULL_RESOLUTION,
+      missing: 0,
+    };
+    sendVolumeEvent(Events.IMAGE_VOLUME_MODIFIED, volumeId);
+    expect(shownState(rendering)).toBe('loading');
+
+    fillPending = false;
+    expect(shownState(rendering)).toBe('done');
 
     attachment.removeData();
   });

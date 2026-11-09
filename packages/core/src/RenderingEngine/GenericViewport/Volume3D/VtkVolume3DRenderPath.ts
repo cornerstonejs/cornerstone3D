@@ -53,8 +53,8 @@ import type {
 import applyVolume3DCamera from './applyVolume3DCamera';
 import { getInitialVolume3DCamera } from './vtkVolume3DInitialCamera';
 import {
+  isBindingPending,
   isSegmentationOverlayData,
-  isVolumeLoading,
   readBoundQuality,
 } from '../renderingFidelity';
 import setVtkCameraClippingRange from '../setVtkCameraClippingRange';
@@ -255,15 +255,20 @@ export class VtkVolume3DRenderPath
     }
   }
 
-  /** Recomputes a stale record of the bound grid (see `onVolumeData`). */
+  /**
+   * Recomputes a stale record of the bound grid (see `onVolumeData`), and
+   * reads at each call whether the bound texture still waits for its fill.
+   */
   private refreshFidelity(rendering: Volume3DVolumeRendering): void {
-    if (!rendering.fidelityStale) {
-      return;
+    if (rendering.fidelityStale) {
+      rendering.fidelityStale = false;
+      rendering.voxelQuality = this.readQuality(rendering);
     }
 
-    rendering.fidelityStale = false;
-    rendering.voxelQuality = this.readQuality(rendering);
-    rendering.qualityPending = isVolumeLoading(rendering.imageVolume);
+    rendering.qualityPending = isBindingPending(
+      rendering.imageVolume,
+      rendering.boundTexture
+    );
   }
 
   private render(
@@ -398,7 +403,10 @@ export class VtkVolume3DRenderPath
     }
 
     rendering.voxelQuality = this.readQuality(rendering);
-    rendering.qualityPending = isVolumeLoading(rendering.imageVolume);
+    rendering.qualityPending = isBindingPending(
+      rendering.imageVolume,
+      rendering.boundTexture
+    );
     rendering.fidelityStale = false;
     rendering.fullGrid = rendering.imageVolume?.voxelGrid;
     // FIDELITY-RECORD-6: the current and the idle sample distance.

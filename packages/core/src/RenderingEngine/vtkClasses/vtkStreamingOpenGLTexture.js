@@ -22,8 +22,11 @@ function reducedTextureFillBudget() {
   const budget = getConfiguration()?.rendering?.reducedTextureFill;
 
   return {
-    maxSlicesPerRender:
-      budget?.maxSlicesPerRender ?? DEFAULT_MAX_SLICES_PER_RENDER,
+    // A budget of 0 slices would request renders that never fill.
+    maxSlicesPerRender: Math.max(
+      1,
+      budget?.maxSlicesPerRender ?? DEFAULT_MAX_SLICES_PER_RENDER
+    ),
     maxMillisecondsPerRender:
       budget?.maxMillisecondsPerRender ?? DEFAULT_MAX_MILLISECONDS_PER_RENDER,
   };
@@ -778,6 +781,36 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
 
   publicAPI.hasUpdatedFrames = () =>
     !model.updatedFrames.length || model.updatedFrames.some((frame) => frame);
+
+  /**
+   * Sets the slice at which the next fill of a reduced texture starts, so a
+   * slice view fills the slice that it shows first. The fill goes on from that
+   * slice and wraps around. A slice outside the texture is clamped to it.
+   */
+  publicAPI.setFillHint = (slice) => {
+    const depth = model.grid?.dimensions[2];
+
+    if (depth && Number.isFinite(slice)) {
+      model.fillCursor = Math.min(depth - 1, Math.max(0, Math.round(slice)));
+    }
+  };
+
+  /**
+   * Whether slices of this reduced texture wait for the budgeted fill, and so
+   * show 0. A texture of the grid of the volume, or of a dynamic volume,
+   * uploads its slices with no budget, so it never waits.
+   */
+  publicAPI.isFillPending = () => {
+    const volume = model.volumeId ? cache.getVolume(model.volumeId) : null;
+
+    return (
+      !!volume &&
+      !!model.grid &&
+      !volume.isDynamicVolume?.() &&
+      !isGridOfVolume(volume, model.grid) &&
+      model.updatedFrames.some((frame) => frame)
+    );
+  };
 
   publicAPI.getUpdatedFrames = () => model.updatedFrames;
 

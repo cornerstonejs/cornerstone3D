@@ -69,6 +69,10 @@ export interface vtkStreamingOpenGLTexture extends vtkOpenGLTexture {
   setVolumeId: (volumeId: string) => void;
   releaseGraphicsResources: () => void;
   hasUpdatedFrames: () => boolean;
+  /** Sets the slice at which the next budgeted fill of a reduced texture starts. */
+  setFillHint?: (slice: number) => void;
+  /** Whether slices of a reduced texture wait for the budgeted fill. */
+  isFillPending?: () => boolean;
   /** States the grid that this texture holds. */
   setGrid: (grid: VoxelGrid) => void;
   /** The grid that this texture holds. */

@@ -16,7 +16,7 @@ import {
 } from '../../../utilities/voxelGrid';
 import { sampleDistanceRatiosOf } from '../createVolumeMapper';
 import { reductionCauseOf } from '../volumeRenderStrategy';
-import { isVolumeLoading } from '../../GenericViewport/renderingFidelity';
+import { isBindingPending } from '../../GenericViewport/renderingFidelity';
 import { gpuSettingsForRender } from '../../../utilities/gpuSettingsPresets';
 import {
   type FidelityDisplay,
@@ -34,6 +34,7 @@ type VolumeScalarTextureLike = {
   getGrid?: () => VoxelGrid;
   /** Statistic the texture was provisioned with (FIDELITY-RECORD-3). */
   getStatistic?: () => VoxelStatistic | null | undefined;
+  isFillPending?: () => boolean;
 };
 
 type VolumeMapperLike = {
@@ -212,7 +213,7 @@ export function fidelityLinesFromVolumeActors(
       fullResolution,
       sampleDistanceLod: sampleDistance.current,
       sampleDistanceIdle: sampleDistance.idle,
-      qualityPending: isVolumeLoading(volume),
+      qualityPending: isBindingPending(volume, texture),
       reductionCause: fullResolution
         ? undefined
         : reductionCauseOf(volume, gpuSettingsForRender()),

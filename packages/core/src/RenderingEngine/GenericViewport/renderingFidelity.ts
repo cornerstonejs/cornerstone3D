@@ -17,6 +17,19 @@ export function isVolumeLoading(imageVolume: unknown): boolean {
   );
 }
 
+/**
+ * Whether a later delivery or fill replaces the data that a volume binding
+ * shows: the load of the volume continues, or slices of the bound texture wait
+ * for the budgeted fill and show 0 (FIDELITY-STATE-11). The fill ends with no
+ * volume event, so a reader calls this at each read of the fidelity.
+ */
+export function isBindingPending(
+  imageVolume: unknown,
+  texture: { isFillPending?: () => boolean } | undefined
+): boolean {
+  return isVolumeLoading(imageVolume) || texture?.isFillPending?.() === true;
+}
+
 /** The grid and the statistic of the base texture that a mapper holds. */
 export type BoundGrid = { grid: VoxelGrid; statistic: VoxelStatistic };
 

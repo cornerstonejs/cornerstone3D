@@ -23,8 +23,9 @@ export type FidelityLine = {
   imageQualityStatus?: ImageQualityStatus;
   /**
    * True while a later delivery replaces the data shown: a later progressive
-   * stage of a stack image, or a volume load that continues. Reduced data that
-   * is pending is `loading`.
+   * stage of a stack image, a volume load that continues, or slices of the
+   * bound texture that wait for the fill. Reduced data that is pending is
+   * `loading`.
    */
   qualityPending?: boolean;
   /**
@@ -139,8 +140,9 @@ export type FidelityDataKind = 'loading' | 'decimated' | 'reduced' | 'full';
  * - `reduced`: a box average coarser than the display, final lossy
  *   deliveries, or a standing sample distance multiplier above 1.
  * - `loading`: replicated, sub-resolution or lossy data that a later
- *   delivery replaces. Missing data with only full-resolution
- *   deliveries is not `loading`.
+ *   delivery replaces, or delivered data that the bound texture has not
+ *   filled yet. Missing data with only full-resolution deliveries is not
+ *   `loading`.
  * - `full`: lossless at the current display spacing.
  */
 export function dataKindOf(line: FidelityLine): FidelityDataKind {
@@ -165,6 +167,12 @@ export function dataKindOf(line: FidelityLine): FidelityDataKind {
   const lossyDelivery = lowest < ImageQualityStatus.FULL_RESOLUTION;
 
   if (lossyDelivery && (record.missing > 0 || qualityPending)) {
+    return 'loading';
+  }
+
+  // Every voxel arrived, and the data still waits: the bound texture shows 0
+  // in the slices that its budgeted fill has not reached.
+  if (qualityPending && record.missing === 0) {
     return 'loading';
   }
 

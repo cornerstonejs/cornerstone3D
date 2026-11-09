@@ -137,7 +137,7 @@ interface Cornerstone3DConfig {
      * volume texture. The render stops after `maxSlicesPerRender` slices that
      * hold data, or when `maxMillisecondsPerRender` has passed after at least
      * one slice. It then requests another render for the slices that remain.
-     * The defaults are 16 slices and 8 ms.
+     * The defaults are 16 slices and 8 ms. A value below 1 slice counts as 1.
      */
     reducedTextureFill?: {
       maxSlicesPerRender?: number;
