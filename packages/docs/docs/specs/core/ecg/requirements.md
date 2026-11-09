@@ -31,19 +31,21 @@ change a requirement.
 - **ECG-U-2** A minor block of the grid is one paper millimetre, and a major
   block is five minor blocks. In time, a minor block is 1/sweep speed seconds,
   for example 0.04 s at 25 mm/s. With a set sensitivity, a minor block in
-  amplitude is 1/sensitivity mV, for example 0.1 mV at 10 mm/mV.
+  amplitude is 1/sensitivity mV, for example 0.1 mV at 10 mm/mV. The grid
+  covers the whole viewport. The mV labels on the grid are off by default, and
+  the application can show them.
 - **ECG-U-3** Each lead shows its amplitude from its own channel sensitivity.
   An amplitude that the clinician reads or measures in mV on a lead is the
   value that the device recorded on that lead.
 
 ## Layout and navigation
 
-- **ECG-U-4** By default, the trace layout dynamically matches the waveform
-  data: a standard 12-lead continuous recording opens in 3x4 with a rhythm
-  strip, while a rhythm strip or telemetry recording with fewer leads opens in
-  stacked rows. The clinician can select any trace layout, for example 12x1,
-  6x2, 3x4 or 3x4 with a rhythm strip. In a layout with more than one column,
-  each column shows its own time window of the record.
+- **ECG-U-4** By default, a record of 8 or more leads and at least 5 s opens
+  in 3x4 with a rhythm strip of lead II. Another record opens with one lead in
+  each row. Each record gets its own default. The clinician can select a trace
+  layout, for example 12x1, 6x2, 3x4 or 3x4 with a rhythm strip. In a layout
+  with more than one column, each column shows its own time window of the
+  record.
 - **ECG-U-5** Each trace shows the label of its lead.
 - **ECG-U-6** When the clinician hides a lead, no other lead moves in time or
   to another column. In a layout with one lead for each row, the rows below
@@ -54,8 +56,17 @@ change a requirement.
 
 - **ECG-U-8** An annotation stays on the lead where the clinician made it. When
   the clinician hides that lead, the annotation does not show. The annotation
-  shows again when the lead shows. The annotation is not lost.
+  shows again when the lead shows. The annotation is not lost. An annotation
+  on a rhythm strip shows on its lead in a layout with no rhythm strip.
 - **ECG-U-9** An annotation shows in every viewport that shows the same ECG.
+
+## Waveform groups
+
+- **ECG-U-14** An ECG can hold more than one waveform group, for example a
+  rhythm group and a median beat. By default, the clinician sees the rhythm
+  group: the group with the label RHYTHM or CONTINUOUS, else the longest group.
+  The application can show another group. A measurement uses the group that
+  shows.
 
 ## Measurements of the device
 

@@ -181,8 +181,11 @@ states the contract, and this specification repeats it:
   example `'3x4+1'`, or a full layout definition with its trace regions. The
   same attribute accepts both forms.
 - **GENVIEW-ECG-2** The developer adds a named layout with
-  `registerECGTraceLayout()`. The developer finds every registered name with
-  `getECGTraceLayoutNames()`.
+  `registerECGTraceLayout()`, and declares the name in the interface
+  `ECGTraceLayoutRegistry`. A registration can give `supports(context)`.
+  `getECGTraceLayoutNames(context)` lists the names whose `supports` accepts
+  the waveform, and every name with no `supports`. The registry is the only
+  source of layout names.
 - **GENVIEW-ECG-3** The view state keeps `traceLayout` as the caller gave it,
   so a saved presentation keeps a name as a name.
 - **GENVIEW-ECG-4** A trace region names its lead by a channel index, or by the
@@ -193,14 +196,21 @@ states the contract, and this specification repeats it:
   column. A band of regions in which every lead is hidden gets zero height,
   and the other bands share its height. This satisfies ECG-U-6 of the
   [ECG display requirements](./ecg/requirements.md).
-- **GENVIEW-ECG-6** When no layout is explicitly configured, the viewport
-  dynamically derives its default layout from the waveform: standard continuous
-  recordings of at least 8 leads open in 3x4 with a continuous rhythm strip
-  (`'3x4+1'`, or `'3x5+1'` for 15 leads), while recordings with fewer leads or
-  short duration open in stacked rows (`'Nx1'`). `getTraceLayoutNames()`
-  gives the available layout names matching the waveform channel count.
-  This satisfies ECG-U-4 of the
+- **GENVIEW-ECG-6** `ECGResolvedView` resolves an undefined `traceLayout` with
+  `resolveDefaultECGTraceLayout`: `'3x4+1'` for 8 or more leads and 5 s or
+  more, else `'12x1'`. The view state keeps `traceLayout` undefined
+  (GENVIEW-ECG-3), and `ECGResolvedView.traceLayoutName` gives the name that
+  shows. This satisfies ECG-U-4 of the
   [ECG display requirements](./ecg/requirements.md).
+- **GENVIEW-ECG-7** World Z is the channel index for the first region of a
+  lead, whether or not every channel shows. Each further copy of the lead adds
+  `ECG_LEAD_COPY_STRIDE` (1000). `findECGLayoutForZ` maps a copy that the
+  layout does not show to the first region of its lead. This satisfies
+  ECG-U-8.
+- **GENVIEW-ECG-8** Frame N of an ECG image id (`/frames/N`, `frame=N`) names
+  multiplex group N - 1. The ECG and CALIBRATION providers both read it with
+  `getEcgMultiplexGroupIndex`, and with no frame they use
+  `findPrimaryWaveformGroup`. This satisfies ECG-U-14.
 
 ## Implementation requirements
 
