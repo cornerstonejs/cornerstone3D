@@ -324,6 +324,8 @@ states map to the states of this specification: transiently lossy is
   - The `Viewport` class and the `GenericViewport` class use one shared
     helper, `helpers/fidelityIndicator/notifyFidelityStateChanged.ts`. The
     helper obeys `suppressEvents`.
+  - A viewport whose `canReportFidelity()` is false returns at once. It
+    reads no fidelity lines and fires no event.
 - **FIDELITY-EVENT-8** The state gives the result directly, so that an
   application indicator can obey FIDELITY-USER-1 and FIDELITY-USER-2:
   - `shownState` is the state of FIDELITY-STATE-1, or `hidden` when there is
@@ -388,8 +390,10 @@ states map to the states of this specification: transiently lossy is
 - **FIDELITY-UI-7** The indicator and its details are read-only. The user does
   not select the resolution, and the user does not configure the fidelity.
 - **FIDELITY-UI-8** The indicator does not fire `VIEWPORT_FIDELITY_CHANGED`.
-  It reads the fidelity lines when it attaches, after each render, on the
-  event, and when the volume data changes without a render.
+  It reads the fidelity lines when it attaches, on the event, and when the
+  volume data changes without a render. Only the debug badge also reads the
+  lines after each render. The label writes to the DOM only when its text or
+  its state changes. A hover reads the lines when the details open.
 - **FIDELITY-UI-10** The built-in indicator is a backup. It prevents a case
   where an application turns on multi-resolution and gives no indicator of its
   own. The indicator has English text only. An application that needs

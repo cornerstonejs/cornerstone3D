@@ -1,5 +1,8 @@
 import { describe, it, expect, jest } from '@jest/globals';
 import BaseRenderingEngine from '../src/RenderingEngine/BaseRenderingEngine';
+import Viewport from '../src/RenderingEngine/Viewport';
+import GenericViewport from '../src/RenderingEngine/GenericViewport/GenericViewport';
+import Events from '../src/enums/Events';
 
 function viewportStub(id) {
   return { id, notifyFidelityStateChanged: jest.fn() };
@@ -41,5 +44,36 @@ describe('rendering engine fidelity notification (FIDELITY-EVENT-2)', () => {
     notifyRendered(engine, [viewport]);
 
     expect(viewport.notifyFidelityStateChanged).not.toHaveBeenCalled();
+  });
+
+  it('does no fidelity work for a viewport that cannot report fidelity', () => {
+    // An ECG, video or WSI viewport keeps the base answer `false`.
+    const viewports = [Viewport, GenericViewport].map((ViewportClass, i) =>
+      Object.assign(Object.create(ViewportClass.prototype), {
+        id: `vp-${i}`,
+        renderingEngineId: 're-1',
+        element: document.createElement('div'),
+        collectFidelityLines: jest.fn(
+          ViewportClass.prototype.collectFidelityLines
+        ),
+        forEachBinding: () => {},
+        getResolvedView: () => undefined,
+        getCamera: () => undefined,
+      })
+    );
+    const events = [];
+    for (const viewport of viewports) {
+      viewport.element.addEventListener(Events.VIEWPORT_FIDELITY_CHANGED, () =>
+        events.push(viewport.id)
+      );
+    }
+
+    notifyRendered(engineStub(viewports), viewports);
+
+    for (const viewport of viewports) {
+      expect(viewport.collectFidelityLines).not.toHaveBeenCalled();
+      expect(viewport.getFidelityState().shownState).toBe('hidden');
+    }
+    expect(events).toEqual([]);
   });
 });

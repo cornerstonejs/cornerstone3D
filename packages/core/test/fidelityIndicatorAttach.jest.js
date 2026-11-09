@@ -433,6 +433,36 @@ describe('fidelityIndicator attach gates', () => {
       detachFidelityIndicator(viewport);
     });
 
+    it('writes the label one time when the shown state does not change', () => {
+      const viewport = attach();
+      renderAs(viewport, 10, ImageQualityStatus.LOSSY);
+      const label = viewport.element.querySelector('.fi-label');
+      const { get, set } = Object.getOwnPropertyDescriptor(
+        Node.prototype,
+        'textContent'
+      );
+      const writes = [];
+      Object.defineProperty(label, 'textContent', {
+        get,
+        set(value) {
+          writes.push(value);
+          set.call(this, value);
+        },
+      });
+
+      for (let i = 0; i < 2; i++) {
+        invalidate(viewport);
+        viewport.element.dispatchEvent(
+          new CustomEvent(Events.VIEWPORT_FIDELITY_CHANGED)
+        );
+        jest.advanceTimersByTime(20);
+      }
+
+      expect(writes).toEqual([]);
+      expect(label.textContent).toBe('Transient Low Fidelity');
+      detachFidelityIndicator(viewport);
+    });
+
     it('reads the quality record again only when the volume data changes', () => {
       const viewport = attach();
       render(viewport);

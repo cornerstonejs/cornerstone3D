@@ -81,13 +81,13 @@ export function attachFidelityIndicator(viewport: IViewport): () => void {
   ensureFidelityIndicatorStyles();
 
   const { host, restore: restoreHost } = overlayHostOf(viewport.element);
-  const views = [createProductIndicator(host)];
+  const views = [createProductIndicator(host, () => linesOf(viewport))];
 
   if (verbose) {
     views.push(createTextBadge(host));
   }
 
-  const cleanup = subscribeToFidelity(viewport, views, restoreHost);
+  const cleanup = subscribeToFidelity(viewport, views, restoreHost, verbose);
   const registered = () => {
     if (cleanups.get(viewport) === registered) {
       cleanups.delete(viewport);
@@ -149,14 +149,16 @@ function linesOf(viewport: FidelityViewport): FidelityLine[] {
 
 /**
  * Reads fidelity lines from the viewport API and passes them to every view:
- * on attach, after a render, on `VIEWPORT_FIDELITY_CHANGED`, and when volume
- * data changes without a render. The indicator never fires the event
- * (FIDELITY-UI-8).
+ * on attach, on `VIEWPORT_FIDELITY_CHANGED`, and when volume data changes
+ * without a render. The product label depends only on the shown state, which
+ * the event reports, so only the debug badge (`onRender`) also reads the
+ * lines after each render. The indicator never fires the event (FIDELITY-UI-8).
  */
 function subscribeToFidelity(
   viewport: FidelityViewport,
   views: FidelityView[],
-  restoreHost: () => void
+  restoreHost: () => void,
+  onRender: boolean
 ): () => void {
   const { element } = viewport;
   let rafId = 0;
@@ -205,7 +207,9 @@ function subscribeToFidelity(
       cancelAnimationFrame(rafId);
       rafId = 0;
     }
-    element.removeEventListener(Events.IMAGE_RENDERED, schedule);
+    if (onRender) {
+      element.removeEventListener(Events.IMAGE_RENDERED, schedule);
+    }
     element.removeEventListener(
       Events.VIEWPORT_FIDELITY_CHANGED,
       onFidelityChanged
@@ -219,7 +223,9 @@ function subscribeToFidelity(
     restoreHost();
   };
 
-  element.addEventListener(Events.IMAGE_RENDERED, schedule);
+  if (onRender) {
+    element.addEventListener(Events.IMAGE_RENDERED, schedule);
+  }
   element.addEventListener(Events.VIEWPORT_FIDELITY_CHANGED, onFidelityChanged);
   for (const type of VOLUME_DATA_EVENTS) {
     eventTarget.addEventListener(type, onVolumeModified);
@@ -266,7 +272,10 @@ function overlayHostOf(element: HTMLDivElement): {
   };
 }
 
-function createProductIndicator(host: HTMLElement): FidelityView {
+function createProductIndicator(
+  host: HTMLElement,
+  readLines: () => FidelityLine[]
+): FidelityView {
   const root = document.createElement('div');
   root.className = 'fi-root';
   Object.assign(root.style, {
@@ -287,7 +296,8 @@ function createProductIndicator(host: HTMLElement): FidelityView {
   host.appendChild(root);
 
   let hovered = false;
-  let lastLines: FidelityLine[] = [];
+  let lastText: string | undefined;
+  let lastState: string | undefined;
 
   for (const type of ['mousedown', 'pointerdown', 'wheel']) {
     root.addEventListener(type, (event) => event.stopPropagation());
@@ -297,7 +307,7 @@ function createProductIndicator(host: HTMLElement): FidelityView {
   root.addEventListener('mouseenter', () => {
     hovered = true;
     root.dataset.hover = 'true';
-    details.textContent = clinicianHoverTextOf(lastLines);
+    details.textContent = clinicianHoverTextOf(readLines());
   });
   root.addEventListener('mouseleave', () => {
     hovered = false;
@@ -306,10 +316,19 @@ function createProductIndicator(host: HTMLElement): FidelityView {
 
   return {
     update: (lines) => {
-      lastLines = lines;
       const state = shownStateOf(lines);
       const text = fidelityLabelOf(state);
 
+      if (text && hovered) {
+        details.textContent = clinicianHoverTextOf(lines);
+      }
+
+      if (text === lastText && state === lastState) {
+        return;
+      }
+
+      lastText = text;
+      lastState = state;
       label.textContent = text ?? '';
 
       if (!text) {
@@ -321,9 +340,6 @@ function createProductIndicator(host: HTMLElement): FidelityView {
       }
 
       root.dataset.state = state;
-      if (hovered) {
-        details.textContent = clinicianHoverTextOf(lines);
-      }
     },
     remove: () => root.remove(),
   };

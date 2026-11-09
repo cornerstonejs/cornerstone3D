@@ -421,10 +421,15 @@ class Viewport implements IViewportFidelity {
   /**
    * Fires `VIEWPORT_FIDELITY_CHANGED` when the derived fidelity state changes
    * (FIDELITY-EVENT-2..4). The rendering engines call this after each render.
+   * A viewport that cannot report fidelity does nothing.
    *
    * @internal
    */
   public notifyFidelityStateChanged(): void {
+    if (!this.canReportFidelity()) {
+      return;
+    }
+
     notifyFidelityStateChanged(
       this,
       this.collectFidelityLines(),

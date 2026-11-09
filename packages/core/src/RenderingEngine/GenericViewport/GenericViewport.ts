@@ -284,11 +284,16 @@ abstract class GenericViewport<
 
   /**
    * Fires `VIEWPORT_FIDELITY_CHANGED` when the derived fidelity state changes
-   * (FIDELITY-EVENT-2..4). Called after each draw (FIDELITY-EVENT-7).
+   * (FIDELITY-EVENT-2..4). Called after each draw (FIDELITY-EVENT-7). A
+   * viewport that cannot report fidelity does nothing.
    *
    * @internal
    */
   notifyFidelityStateChanged(): void {
+    if (!this.canReportFidelity()) {
+      return;
+    }
+
     const display = this.getFidelityDisplay();
 
     // Subclasses such as PlanarViewport define `suppressEvents`.
