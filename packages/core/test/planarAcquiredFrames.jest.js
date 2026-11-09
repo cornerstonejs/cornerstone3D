@@ -1,6 +1,7 @@
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
+import vtkCamera from '@kitware/vtk.js/Rendering/Core/Camera';
 import {
   BlendModes,
   Events,
@@ -31,6 +32,10 @@ import {
   setGpuSettingsPreset,
 } from '../src/utilities/gpuSettingsPresets';
 import { setLossyDownsampling } from '../src/init';
+import eventTarget from '../src/eventTarget';
+import triggerEvent from '../src/utilities/triggerEvent';
+import { VtkImageMapperRenderPath } from '../src/RenderingEngine/GenericViewport/Planar/VtkImageMapperRenderPath';
+import { dataKindOf } from '../src/RenderingEngine/helpers/fidelityIndicator/fidelityIndicatorState';
 
 // These tests need final downsampling, which is off by default.
 beforeAll(() => setLossyDownsampling({ final: true }));
@@ -536,6 +541,68 @@ describe('PlanarViewport acquired frames in the volume path (user experience)', 
     expect(frameRendering().actor.getVisibility()).toBe(true);
     expect(frameRendering().currentImageIdIndex).toBe(6);
     expect(frameRendering().actor.getPosition()[2]).toBeCloseTo(-1);
+  });
+
+  // Two progressive stages of one image: a lossy stage with a stage to come,
+  // then the final stage, which the loader announces with IMAGE_LOADED.
+  async function expectStagesToRedraw(shownRendering) {
+    const shownIndex = shownRendering().currentImageIdIndex;
+    const imageId = imageIds[shownIndex];
+    const lines = () =>
+      viewport.getFidelityLines().map((line) => dataKindOf(line));
+
+    expect(shownRendering().currentImage.imageQualityStatus).toBe(
+      ImageQualityStatus.LOSSY
+    );
+    expect(lines()).toEqual(['loading']);
+
+    const final = createImage(imageId);
+    triggerEvent(eventTarget, Events.IMAGE_LOADED, { image: final });
+    await flush();
+
+    expect(shownRendering().currentImage).toBe(final);
+    expect(shownRendering().currentImageIdIndex).toBe(shownIndex);
+    expect(lines()).toEqual(['full']);
+  }
+
+  const lossyStage = (imageId) => ({
+    ...createImage(imageId),
+    imageQualityStatus: ImageQualityStatus.LOSSY,
+    imageQualityPending: true,
+  });
+
+  it('draws the final stage of a progressive frame, and says loading before it', async () => {
+    imageLoader.loadAndCacheImage.mockImplementation(async (imageId) =>
+      lossyStage(imageId)
+    );
+    await mount();
+
+    expect(frameRendering().actor.getVisibility()).toBe(true);
+    await expectStagesToRedraw(frameRendering);
+  });
+
+  it('draws the final stage of a progressive image on a plain stack, and says loading before it', async () => {
+    viewport.dataProvider.load.mockImplementation(async (id) => ({
+      id,
+      type: 'image',
+      imageIds,
+      image: lossyStage(imageIds[3]),
+      initialImageIdIndex: 3,
+    }));
+    // A stack drives the renderer camera.
+    renderer.getActiveCamera.mockReturnValue(vtkCamera.newInstance());
+    viewport.renderPathResolver = {
+      resolve: () => ({
+        createRenderPath: () => new VtkImageMapperRenderPath(),
+      }),
+    };
+    await viewport.setDisplaySets({
+      displaySetId: dataId,
+      options: { renderMode: ActorRenderMode.VTK_IMAGE },
+    });
+    await flush();
+
+    await expectStagesToRedraw(() => sourceBinding().rendering);
   });
 
   it('moves a stack to the image closest to a focal-point reference', () => {

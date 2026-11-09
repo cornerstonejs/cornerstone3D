@@ -40,7 +40,10 @@ import {
   worldToCanvasContextPool,
 } from './planarAdapterCoordinateTransforms';
 import { buildPlanarImageData } from './CpuImageSliceRenderPath';
-import { triggerPlanarNewImage } from './planarImageEvents';
+import {
+  subscribeToBetterImageStages,
+  triggerPlanarNewImage,
+} from './planarImageEvents';
 import {
   applyPlanarICameraToActor,
   applyPlanarICameraToRenderer,
@@ -104,7 +107,23 @@ export class VtkImageMapperRenderPath
       defaultVOIRange: getDefaultImageVOIRange(payload.image),
       dataPresentation: undefined,
       loadRequestId: 0,
+      refreshFidelity: () => {
+        rendering.qualityPending = rendering.currentImage.imageQualityPending;
+      },
     };
+    const unsubscribeStages = subscribeToBetterImageStages(
+      rendering,
+      () => rendering.currentImage.imageId,
+      (image) =>
+        void updateRenderedImage({
+          ctx,
+          dataId: data.id,
+          image,
+          rendering,
+          imageIdIndex: rendering.currentImageIdIndex,
+          dataPresentation: rendering.dataPresentation,
+        })
+    );
 
     // STACK_NEW_IMAGE drives the source slice scrollbar/thumb. Only the source
     // binding represents a displayed-slice change; overlays (e.g. a segmentation
@@ -144,6 +163,7 @@ export class VtkImageMapperRenderPath
         this.resize(ctx, rendering, data.id);
       },
       removeData: () => {
+        unsubscribeStages();
         this.removeData(ctx, rendering);
       },
     };

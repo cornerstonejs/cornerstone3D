@@ -184,10 +184,9 @@ states map to the states of this specification: transiently lossy is
   `ProgressiveRetrieveImages` sets `IImage.imageQualityPending` while the same
   request or a later stage still replaces the image, and clears it when no
   stage follows. A pending `SUBRESOLUTION` or `LOSSY` image is `loading`.
-  Known limit: the generic stack render paths do not read
-  `imageQualityPending`. They set `imageQualityStatus` when they render, so
-  the final stage of a generic stack view turns red only at the next render.
-  See Known deviations.
+  The generic stack render paths read `imageQualityPending` of the image that
+  they draw, and draw again when `IMAGE_LOADED` gives a better stage of that
+  image.
 - **FIDELITY-STATE-9** A viewport reports the fidelity of its source data. The
   fidelity of an overlay, for example a reduced segmentation labelmap, is out
   of scope.
@@ -434,16 +433,6 @@ The value is exact for an axis in the plane and for an axis normal to the
 plane. Between the two, the value can ask for more than the display shows. The
 error can show an indicator that is not necessary. The error never hides a
 lossy view.
-
-### A generic stack image does not show a progressive upgrade
-
-The generic image render paths draw the image that `loadAndCacheImage()`
-returns. They do not redraw when a later retrieval stage replaces that image.
-The viewport reports the quality of the image that it draws
-(FIDELITY-STATE-8), so the report is correct. The view itself stays at the
-first quality until the next image change. Because no later stage reaches the
-view, the generic paths do not read `imageQualityPending`: a reduced first
-image shows `lossy`, not `loading`.
 
 ### The interim CS3D indicator shows no recovered state
 

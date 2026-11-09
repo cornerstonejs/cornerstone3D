@@ -52,7 +52,10 @@ import {
   resolvePlanarCpuImageDisplayedArea,
   resolvePlanarCpuViewportScale,
 } from './planarCpuViewportMath';
-import { triggerPlanarNewImage } from './planarImageEvents';
+import {
+  subscribeToBetterImageStages,
+  triggerPlanarNewImage,
+} from './planarImageEvents';
 import {
   canvasToWorldPlanarRenderPathProjection,
   resolvePlanarRenderPathCurrentImageIdIndex,
@@ -122,7 +125,24 @@ export class CpuImageSliceRenderPath
       fitScale: getCPUFallbackScalarScale(enabledElement.viewport.scale),
       loadRequestId: 0,
       renderingInvalidated: true,
+      refreshFidelity: () => {
+        rendering.qualityPending =
+          rendering.enabledElement.image?.imageQualityPending;
+      },
     };
+    const unsubscribeStages = subscribeToBetterImageStages(
+      rendering,
+      () => rendering.enabledElement.image?.imageId,
+      (image) =>
+        void updateRenderedImage({
+          ctx,
+          dataId: data.id,
+          image,
+          imageIdIndex: rendering.currentImageIdIndex,
+          props: rendering.dataPresentation,
+          rendering,
+        })
+    );
 
     triggerPlanarNewImage(ctx, {
       image: payload.image,
@@ -159,6 +179,7 @@ export class CpuImageSliceRenderPath
         this.resize(ctx, rendering, data.id);
       },
       removeData: () => {
+        unsubscribeStages();
         this.removeData(ctx, rendering);
       },
     };
