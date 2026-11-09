@@ -344,17 +344,23 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     return frame && frame.length >= frameLength ? frame : null;
   }
 
+  /** The statistic that this texture holds, else the one of the volume. */
+  function statisticOf(volume) {
+    return (
+      model.statistic ?? volume.reductionStatistic ?? VoxelStatistics.Average
+    );
+  }
+
   /**
    * Fills one reduced slice with the `fillPlane` of the statistic of the
-   * volume, read straight from the frames that the slice covers.
+   * texture, read straight from the frames that the slice covers.
    *
    * @returns false when the statistic has no `fillPlane` or this slice holds no
    * data yet, so a caller can fall back
-   * @throws when nothing registered the statistic of the volume
+   * @throws when nothing registered the statistic
    */
   function fillSliceByBoxStatistic(volume, grid, factors, slice, target) {
-    const statistic = volume.reductionStatistic ?? VoxelStatistics.Average;
-    const { fillPlane } = requireVoxelStatistic(statistic);
+    const { fillPlane } = requireVoxelStatistic(statisticOf(volume));
 
     if (!fillPlane) {
       return false;
@@ -459,7 +465,7 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     const frameLength = width * height;
     const composite = volume.compositeVoxelManager;
     const gl = model.context;
-    const statistic = volume.reductionStatistic ?? VoxelStatistics.Average;
+    const statistic = statisticOf(volume);
     const derivedSliceOf = derivedSliceReaderOf(composite, grid, statistic);
     // The factors serve the slices that the composite cannot give, so they are
     // computed even when a derived representation exists: the image cache can

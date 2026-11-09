@@ -163,7 +163,6 @@ import {
 export type {
   FixedVolumeTextureSlot,
   ProvisionTextureSetOptions,
-  VolumeTextureLimits,
   VolumeTextureSlot,
 } from './cache';
 export {

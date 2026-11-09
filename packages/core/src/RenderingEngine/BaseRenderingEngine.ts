@@ -159,7 +159,7 @@ abstract class BaseRenderingEngine {
     const { background } = viewportInput.defaultOptions;
     this.fillCanvasWithBackgroundColor(canvas, background);
 
-    // 6. Product fidelity indicator for volume viewports (unless disabled)
+    // 6. Product fidelity indicator for a viewport that can report fidelity (unless disabled)
     const enabledViewport = this.getViewport(viewportId);
     if (enabledViewport) {
       maybeAttachFidelityIndicator(enabledViewport);

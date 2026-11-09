@@ -29,7 +29,7 @@ describe('fidelityDetailsTextOf (FIDELITY-UI-5)', () => {
     });
 
     expect(text).toContain('Image detail is reduced');
-    expect(text).toContain('Reduction: i/1, j/1, k/2');
+    expect(text).toContain('Reduction: x/1, y/1, z/2');
     expect(text).not.toContain('Waiting should improve');
     expect(text).not.toMatch(/GPU|texture|boxAverage|clientDerived/i);
   });

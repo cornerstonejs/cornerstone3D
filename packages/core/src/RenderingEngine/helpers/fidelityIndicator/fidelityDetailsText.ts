@@ -2,6 +2,7 @@ import type { Point3, ViewportFidelityState } from '../../../types';
 import {
   type FidelityLine,
   formatReductionFactor,
+  isReduced,
   lineHasData,
   lineKind,
 } from './fidelityIndicatorState';
@@ -75,7 +76,7 @@ export function fidelityDetailsTextOf(
         parts.push(...progressLines(state));
         parts.push(...magnitudeLines(state.magnitude));
         parts.push('Waiting should improve the image.');
-      } else if (state.magnitude && isReducedMagnitude(state.magnitude)) {
+      } else if (state.magnitude && isReduced(state.magnitude)) {
         parts.push('Image detail is reduced.');
         parts.push(...magnitudeLines(state.magnitude));
       } else if (state.progressive) {
@@ -110,12 +111,12 @@ function progressLines(state: ViewportFidelityState): string[] {
 }
 
 function magnitudeLines(magnitude?: Point3): string[] {
-  if (!magnitude || !isReducedMagnitude(magnitude)) {
+  if (!magnitude || !isReduced(magnitude)) {
     return [];
   }
 
   return [
-    `Reduction: i/${formatAxis(magnitude[0])}, j/${formatAxis(magnitude[1])}, k/${formatAxis(magnitude[2])}`,
+    `Reduction: x/${formatAxis(magnitude[0])}, y/${formatAxis(magnitude[1])}, z/${formatAxis(magnitude[2])}`,
   ];
 }
 
@@ -125,10 +126,6 @@ function waitLine(transient?: boolean): string[] {
   }
 
   return [];
-}
-
-function isReducedMagnitude(magnitude: Point3): boolean {
-  return magnitude.some((value) => value > 1 + 1e-6);
 }
 
 function formatAxis(value: number): string {

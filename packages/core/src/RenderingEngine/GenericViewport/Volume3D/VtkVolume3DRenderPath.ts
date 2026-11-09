@@ -368,15 +368,12 @@ function applySampleDistanceMultiplier(
 
   setIdleSampleDistanceMultiplier(mapper, multiplier);
 
-  const safeMultiplier = Number.isFinite(multiplier)
-    ? Math.max(multiplier, 0.001)
-    : 1;
   const texture = (
     mapper as unknown as { getScalarTexture?: () => unknown }
   ).getScalarTexture?.();
 
   mapper.setSampleDistance(
-    sampleDistanceOf(imageData, texture, safeMultiplier)
+    sampleDistanceOf(imageData, texture, idleSampleDistanceMultiplierOf(mapper))
   );
 }
 

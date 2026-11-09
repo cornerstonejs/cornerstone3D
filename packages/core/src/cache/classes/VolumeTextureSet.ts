@@ -5,7 +5,6 @@ import {
   intersectBounds,
   mapBoundsBetweenGrids,
   volumeOfBounds,
-  voxelCountOfGrid,
 } from '../../utilities/voxelGrid';
 import type { BoundsIJK, Point3, VoxelGrid, VoxelStatistic } from '../../types';
 
@@ -189,9 +188,4 @@ function addRegion(slot: { dirty: BoundsIJK[] }, region: BoundsIJK): void {
     (existing) => !containsBounds(region, existing)
   );
   slot.dirty.push(region);
-}
-
-/** The number of voxels of a grid, which gives the cost of a texture. */
-export function voxelsOfGrid(grid: VoxelGrid): number {
-  return voxelCountOfGrid(grid);
 }

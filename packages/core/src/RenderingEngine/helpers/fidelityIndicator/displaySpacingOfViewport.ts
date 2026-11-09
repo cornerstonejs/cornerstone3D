@@ -20,7 +20,7 @@ export type SlabViewportLike = {
   getSlabThickness?: () => number;
 };
 
-type CameraViewportLike = SlabViewportLike & {
+export type CameraViewportLike = SlabViewportLike & {
   canvas?: { clientHeight?: number; height?: number };
   sHeight?: number;
   getCamera?: () =>

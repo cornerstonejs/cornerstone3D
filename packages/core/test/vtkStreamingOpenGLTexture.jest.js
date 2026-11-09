@@ -105,4 +105,18 @@ describe('vtkStreamingOpenGLTexture budgeted fill of a reduced texture', () => {
 
     expect(uploadedSlices()).toEqual([0]);
   });
+
+  // The API must do this: a texture fills with the statistic that it reports,
+  // also after the volume changed its statistic.
+  it('fills with the statistic of the texture, not a later one of the volume', () => {
+    const { texture } = reducedTexture();
+    const volume = mockVolumes.get('vol');
+    const composite = volume.compositeVoxelManager;
+    const getRepresentation = jest.spyOn(composite, 'getRepresentation');
+    texture.setStatistic('max');
+    volume.reductionStatistic = 'min';
+    texture.update3DFromRaw();
+
+    expect(getRepresentation).toHaveBeenCalledWith(expect.anything(), 'max');
+  });
 });

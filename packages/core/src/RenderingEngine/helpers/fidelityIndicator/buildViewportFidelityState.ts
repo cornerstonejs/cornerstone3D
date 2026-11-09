@@ -15,6 +15,7 @@ import {
   standingSampleRatioOf,
   shownStateOf,
 } from './fidelityIndicatorState';
+import { fidelityLabelOf } from './fidelityLabel';
 
 /**
  * Builds the absolute {@link ViewportFidelityState} (FIDELITY-EVENT-5) from
@@ -45,7 +46,7 @@ export function buildViewportFidelityState(
   const loading = kind === 'loading';
   const lod = kind === 'lod';
   // A lossless view has no reduction to explain (FIDELITY-EVENT-8).
-  const lossy = isLossyShownState(shownState);
+  const lossy = fidelityLabelOf(shownState) !== null;
 
   const state: ViewportFidelityState = {
     dataResolution: record
@@ -96,14 +97,6 @@ function emptyState(displaySpacing?: Point3): ViewportFidelityState {
     shownState: 'hidden',
     lossy: false,
   };
-}
-
-function isLossyShownState(
-  shownState: ViewportFidelityState['shownState']
-): boolean {
-  return (
-    shownState === 'loading' || shownState === 'lod' || shownState === 'lossy'
-  );
 }
 
 /**

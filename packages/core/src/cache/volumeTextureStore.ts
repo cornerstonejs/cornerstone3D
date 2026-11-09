@@ -1,6 +1,9 @@
 import VoxelStatistics from '../enums/VoxelStatistics';
 import { volumeTextureBytes } from '../utilities/getBufferConfiguration';
-import { maxEdgeOfGrid, voxelCountOfGrid } from '../utilities/voxelGrid';
+import {
+  voxelCountOfGrid,
+  voxelGridWithinLimits,
+} from '../utilities/voxelGrid';
 import { VolumeTextureSet } from './classes/VolumeTextureSet';
 import type {
   FixedVolumeTextureSlot,
@@ -10,6 +13,7 @@ import type {
 import type {
   PixelDataTypedArrayString,
   VoxelGrid,
+  VoxelGridLimits,
   VoxelStatistic,
 } from '../types';
 import { coreLog } from '../utilities/logger';
@@ -17,14 +21,6 @@ import eventTarget from '../eventTarget';
 import Events from '../enums/Events';
 
 const log = coreLog.getLogger('cache', 'volumeTextureStore');
-
-/** The limits that the store respects. */
-export type VolumeTextureLimits = {
-  /** The largest number of voxels that one axis of one texture can hold. */
-  maxEdge?: number;
-  /** The largest number of voxels that one texture can hold. */
-  maxVoxelCount?: number;
-};
 
 /** What a caller states to provision one named set. */
 export type ProvisionTextureSetOptions<TextureType> = {
@@ -69,7 +65,7 @@ export type ProvisionTextureSetOptions<TextureType> = {
     slice: number
   ) => void;
   /** The limits of one texture. No limit by default. */
-  limits?: VolumeTextureLimits;
+  limits?: VoxelGridLimits;
 };
 
 type StoredSet = {
@@ -217,7 +213,7 @@ class VolumeTextureStore {
     }
 
     for (const grid of grids) {
-      if (!withinLimits(grid, limits)) {
+      if (!voxelGridWithinLimits(grid, limits)) {
         log.warn(
           `the set ${name} of the volume ${volumeId} holds a grid of ${grid.dimensions} that exceeds the limits, so nothing is built`
         );
@@ -329,9 +325,9 @@ class VolumeTextureStore {
 
   /** Removes every set of one volume. */
   public evictVolume(volumeId: string): void {
-    for (const [key, stored] of [...this.sets.entries()]) {
+    for (const stored of [...this.sets.values()]) {
       if (stored.volumeId === volumeId) {
-        this.evict(stored.volumeId, key.slice(stored.volumeId.length + 1));
+        this.evict(volumeId, stored.set.name);
       }
     }
   }
@@ -397,22 +393,9 @@ class VolumeTextureStore {
   }
 }
 
+// JSON keeps the two parts apart, whatever characters they hold.
 function keyOf(volumeId: string, name: string): string {
-  return `${volumeId}|${name}`;
-}
-
-function withinLimits(grid: VoxelGrid, limits?: VolumeTextureLimits): boolean {
-  const { maxEdge, maxVoxelCount } = limits ?? {};
-
-  if (maxEdge > 0 && maxEdgeOfGrid(grid) > maxEdge) {
-    return false;
-  }
-
-  if (maxVoxelCount > 0 && voxelCountOfGrid(grid) > maxVoxelCount) {
-    return false;
-  }
-
-  return true;
+  return JSON.stringify([volumeId, name]);
 }
 
 const volumeTextureStore = new VolumeTextureStore();

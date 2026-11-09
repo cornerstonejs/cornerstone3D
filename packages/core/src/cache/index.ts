@@ -12,10 +12,7 @@ export type {
   VolumeTextureSetDescription,
   VolumeTextureSlot,
 } from './classes/VolumeTextureSet';
-export type {
-  ProvisionTextureSetOptions,
-  VolumeTextureLimits,
-} from './volumeTextureStore';
+export type { ProvisionTextureSetOptions } from './volumeTextureStore';
 
 export {
   ImageVolume,

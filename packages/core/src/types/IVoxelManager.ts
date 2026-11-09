@@ -115,8 +115,8 @@ export interface IVoxelManager<T> {
   /** Refreshes an array that a caller holds from the sparse store. */
   _updateScalarData?: (scalarData: ArrayLike<number>) => PixelDataTypedArray;
   /**
-   * Produces the data of one slice. No factory installs this member today, and
-   * no code reads it.
+   * Produces the data of one slice, for a voxel manager that already holds the
+   * values of that slice together. `getSliceData` calls this member first.
    */
   _getSliceData?: (args: {
     sliceIndex: number;

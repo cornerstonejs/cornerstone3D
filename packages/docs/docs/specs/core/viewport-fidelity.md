@@ -162,7 +162,7 @@ states map to the states of this specification: transiently lossy is
 
 `shownStateOf()`, `lineKind()` and `dataKindOf()` hold this decision.
 
-- **FIDELITY-STATE-1** The viewport reports its fidelity in one of four states.
+- **FIDELITY-STATE-1** The viewport reports its fidelity in one of five states.
   This serves FIDELITY-USER-1.
 
 | State     | What it means                                                                                                      | Expected to improve |
@@ -171,6 +171,7 @@ states map to the states of this specification: transiently lossy is
 | `lod`     | An interaction samples the data more coarsely than when no interaction runs.                                       | When it stops       |
 | `lossy`   | A standing reduction: the data is reduced, decimated or lossy, or sampled coarsely, and this is the final quality. | No                  |
 | `done`    | The viewport shows a lossless image.                                                                               | Not applicable      |
+| `hidden`  | The viewport shows no image data yet.                                                                              | Not applicable      |
 
 - **FIDELITY-STATE-5** Each viewport reports its own fidelity. Two viewports
   that show one volume can report a different state at one time.

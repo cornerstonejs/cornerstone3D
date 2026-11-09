@@ -213,8 +213,8 @@ interface Cornerstone3DConfig {
     statsOverlay?: boolean;
     /**
      * When true, the fidelity indicator also shows the verbose text badge
-     * (top-left) beside the minimal SVG indicator (top-right).
-     * When false/unset (default), only the SVG indicator is shown.
+     * (top-left) beside the fidelity text label (top-right).
+     * When false/unset (default), only the text label is shown.
      */
     fidelityIndicatorDebug?: boolean;
   };

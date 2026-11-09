@@ -19,6 +19,7 @@ import { reductionCauseOf } from '../volumeRenderStrategy';
 import { isBindingPending } from '../../GenericViewport/renderingFidelity';
 import { gpuSettingsForRender } from '../../../utilities/gpuSettingsPresets';
 import {
+  type CameraViewportLike,
   type FidelityDisplay,
   displaySpacingForGrid,
   fidelityDisplayOfCamera,
@@ -46,14 +47,9 @@ type VolumeMapperLike = {
   };
 };
 
-type VolumeViewportLike = {
+type VolumeViewportLike = CameraViewportLike & {
   getActors: () => ActorEntry[];
   type?: string;
-  canvas?: { clientHeight?: number; height?: number };
-  sHeight?: number;
-  getCamera?: () =>
-    | { parallelScale?: number; viewPlaneNormal?: Point3 }
-    | undefined;
 };
 
 /** The quality record of one volume, for the grid that it was read for. */

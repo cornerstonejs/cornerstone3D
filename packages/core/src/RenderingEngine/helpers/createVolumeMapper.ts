@@ -56,7 +56,10 @@ export function setIdleSampleDistanceMultiplier(
   mapper: object,
   multiplier: number
 ): void {
-  idleSampleDistanceMultipliers.set(mapper, multiplier);
+  idleSampleDistanceMultipliers.set(
+    mapper,
+    Number.isFinite(multiplier) ? Math.max(multiplier, 0.001) : 1
+  );
 }
 
 /**
