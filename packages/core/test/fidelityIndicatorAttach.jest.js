@@ -333,6 +333,7 @@ describe('fidelityIndicator attach gates', () => {
     let missing;
     let lowest;
     let getGridQuality;
+    let loadStatus;
 
     beforeEach(() => {
       jest.useFakeTimers();
@@ -342,6 +343,7 @@ describe('fidelityIndicator attach gates', () => {
       });
       missing = 0;
       lowest = ImageQualityStatus.FULL_RESOLUTION;
+      loadStatus = { loading: false };
       getGridQuality = jest.fn(() => ({
         grid: voxelGrid,
         status: lowest,
@@ -356,7 +358,7 @@ describe('fidelityIndicator attach gates', () => {
       }));
       jest
         .spyOn(cache, 'getVolume')
-        .mockReturnValue({ voxelGrid, getGridQuality });
+        .mockReturnValue({ voxelGrid, getGridQuality, loadStatus });
     });
 
     afterEach(() => {
@@ -393,6 +395,7 @@ describe('fidelityIndicator attach gates', () => {
     function renderAs(viewport, missingVoxels, quality) {
       missing = missingVoxels;
       lowest = quality;
+      loadStatus.loading = missingVoxels > 0;
       invalidate(viewport);
       render(viewport);
     }

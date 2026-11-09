@@ -62,9 +62,11 @@ displayed image lossy:
 - The render samples the data more coarsely than at full quality. The sample
   distance is larger than at full quality, during an interaction or after it.
 
-Data that has not arrived does not make the image lossy when the viewport shows
-no other data in its place. An ordinary load delivers only full-quality frames,
-and it does not make the displayed image lossy.
+While the load continues, data that has not arrived does not make the image
+lossy when the viewport shows no other data in its place. An ordinary load
+delivers only full-quality frames, and it does not make the displayed image
+lossy while it continues. After the load ended, data that did not arrive (for
+example, a frame that failed) makes the image lossy.
 
 ## User requirements
 
@@ -86,8 +88,11 @@ states map to the states of this specification: transiently lossy is
 - **FIDELITY-STATE-2** A viewport that shows no data shows no indicator. A
   volume that has no delivered data is no data. A viewport that shows a
   lossless image shows no indicator. A load that delivers only full-quality frames shows no
-  indicator while the load continues. Data that has not arrived is not
-  `loading` by itself. This serves FIDELITY-USER-2.
+  indicator while the load continues. While the load continues, data that has
+  not arrived is not `loading` and not `lossy` by itself. After the load ended,
+  data that did not arrive is lossy, and the viewport shows `lossy`: for
+  example, a load that ended with a failed frame. This serves FIDELITY-USER-1
+  and FIDELITY-USER-2.
 - **FIDELITY-STATE-3** The user can tell a load that continues from a load that
   completed at a lossy quality. A progressive load shows `loading` until its
   last stage, also when a stage fills every slot with replicated, sub-resolution
@@ -208,6 +213,9 @@ states map to the states of this specification: transiently lossy is
   Pending data with no missing voxels gives `loading`, also with only
   full-resolution deliveries. The line reads the texture at each read of the
   fidelity after a draw, so the draw that fills the last slice ends `loading`.
+  A volume line with `record.missing` above 0 and no `qualityPending` gives
+  `lossy`, because the load ended and the missing voxels stay missing
+  (FIDELITY-STATE-2).
 
 ### The record and the verdict (FIDELITY-RECORD)
 
@@ -274,9 +282,9 @@ states map to the states of this specification: transiently lossy is
   generic paths.
 - **FIDELITY-RECORD-7** `record.lowest` decides whether delivered data is lossy.
   A value below `ImageQualityStatus.FULL_RESOLUTION` is replicated,
-  sub-resolution or lossy data. When some voxels have not arrived, or while
-  the load continues (FIDELITY-STATE-11), that data gives `loading`. When the
-  load ended, that data gives `lossy`.
+  sub-resolution or lossy data. While the load continues (FIDELITY-STATE-11),
+  that data gives `loading`. When the load ended, that data gives `lossy`, and
+  `missing` above 0 also gives `lossy` (FIDELITY-STATE-2).
 
 ### The events and the queries (FIDELITY-EVENT)
 
@@ -340,7 +348,9 @@ states map to the states of this specification: transiently lossy is
     arrived, also in an ordinary load. Thus `status` alone does not tell an
     ordinary load from a lossy load.
   - `cause` is `incompleteLoad`, and `transient` is true, only while the
-    shown state is `loading`. An ordinary load gives no cause.
+    shown state is `loading`. An ordinary load gives no cause. A load that
+    ended with missing voxels and full-quality deliveries gives `lossy` and
+    no cause.
     `progressive.missing` and `progressive.loadedFraction` still show its
     progress.
   - `transient` is true only for `loading` and `lod`. A standing reduction

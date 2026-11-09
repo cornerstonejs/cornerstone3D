@@ -138,11 +138,12 @@ export type FidelityDataKind = 'loading' | 'decimated' | 'reduced' | 'full';
  *
  * - `decimated`: an aliasing reduction, lossy at every magnification.
  * - `reduced`: a box average coarser than the display, final lossy
- *   deliveries, or a standing sample distance multiplier above 1.
- * - `loading`: replicated, sub-resolution or lossy data that a later
- *   delivery replaces, or delivered data that the bound texture has not
- *   filled yet. Missing data with only full-resolution deliveries is not
- *   `loading`.
+ *   deliveries, missing data after the load ended (`qualityPending` false),
+ *   or a standing sample distance multiplier above 1.
+ * - `loading`: while `qualityPending`, replicated, sub-resolution or lossy
+ *   data that a later delivery replaces, or delivered data that the bound
+ *   texture has not filled yet. Missing data with only full-resolution
+ *   deliveries is not `loading` and not lossy while the load runs.
  * - `full`: lossless at the current display spacing.
  */
 export function dataKindOf(line: FidelityLine): FidelityDataKind {
@@ -161,19 +162,18 @@ export function dataKindOf(line: FidelityLine): FidelityDataKind {
     return spatialKind;
   }
 
-  // Missing data alone is not lossy: an ordinary load delivers only full
-  // resolution frames. Replicated, sub-resolution or lossy data is lossy.
   const lowest = record.lowest ?? ImageQualityStatus.FULL_RESOLUTION;
   const lossyDelivery = lowest < ImageQualityStatus.FULL_RESOLUTION;
 
-  if (lossyDelivery && (record.missing > 0 || qualityPending)) {
-    return 'loading';
-  }
-
-  // Every voxel arrived, and the data still waits: the bound texture shows 0
-  // in the slices that its budgeted fill has not reached.
-  if (qualityPending && record.missing === 0) {
-    return 'loading';
+  if (qualityPending) {
+    // With every voxel delivered, the wait is for the budgeted texture fill,
+    // which shows 0 in the slices that it has not reached.
+    if (lossyDelivery || record.missing === 0) {
+      return 'loading';
+    }
+  } else if (record.missing > 0) {
+    // The load ended, and the failed frames stay missing.
+    return 'reduced';
   }
 
   if (lossyDelivery || isInteractiveLod(standingSampleRatioOf(line))) {

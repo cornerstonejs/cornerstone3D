@@ -67,6 +67,7 @@ describe('fidelityIndicatorState', () => {
               missing: 10,
               lowest: ImageQualityStatus.ADJACENT_REPLICATE,
             }),
+            qualityPending: true,
           }),
           line({
             sampleDistanceLod: 2,
@@ -87,6 +88,7 @@ describe('fidelityIndicatorState', () => {
               missing: 10,
               lowest: ImageQualityStatus.ADJACENT_REPLICATE,
             }),
+            qualityPending: true,
           }),
           line(),
         ])
@@ -115,8 +117,10 @@ describe('fidelityIndicatorState', () => {
   });
 
   describe('lineKind', () => {
-    it('is done for an ordinary load: voxels missing, all deliveries full resolution', () => {
-      expect(lineKind(line({ record: record({ missing: 1 }) }))).toBe('done');
+    it('is done while an ordinary load runs: voxels missing, all deliveries full resolution', () => {
+      expect(
+        lineKind(line({ record: record({ missing: 1 }), qualityPending: true }))
+      ).toBe('done');
     });
 
     it('is loading while replicated, sub-resolution or lossy data stands in for missing voxels', () => {
@@ -126,10 +130,32 @@ describe('fidelityIndicatorState', () => {
         ImageQualityStatus.SUBRESOLUTION,
         ImageQualityStatus.LOSSY,
       ]) {
-        expect(lineKind(line({ record: record({ missing: 1, lowest }) }))).toBe(
-          'loading'
-        );
+        expect(
+          lineKind(
+            line({
+              record: record({ missing: 1, lowest }),
+              qualityPending: true,
+            })
+          )
+        ).toBe('loading');
       }
+    });
+
+    it('is lossy when a lossy load ended with a missing frame', () => {
+      expect(
+        lineKind(
+          line({
+            record: record({
+              missing: 1,
+              lowest: ImageQualityStatus.ADJACENT_REPLICATE,
+            }),
+          })
+        )
+      ).toBe('lossy');
+    });
+
+    it('is lossy when an ordinary load ended with a missing frame', () => {
+      expect(lineKind(line({ record: record({ missing: 1 }) }))).toBe('lossy');
     });
 
     it('is lossy when the complete data was delivered lossy', () => {

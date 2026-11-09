@@ -96,6 +96,7 @@ describe('buildViewportFidelityState (FIDELITY-EVENT-5)', () => {
           voxels: 1000,
           status: ImageQualityStatus.ADJACENT_REPLICATE,
         }),
+        qualityPending: true,
       }),
     ]);
 
@@ -115,6 +116,7 @@ describe('buildViewportFidelityState (FIDELITY-EVENT-5)', () => {
           voxels: 1000,
           lowest: ImageQualityStatus.ADJACENT_REPLICATE,
         }),
+        qualityPending: true,
       }),
     ]);
 
@@ -183,6 +185,7 @@ describe('buildViewportFidelityState (FIDELITY-EVENT-5)', () => {
           voxels: 100,
           lowest: ImageQualityStatus.LOSSY,
         }),
+        qualityPending: true,
       }),
     ]);
     const done = buildViewportFidelityState([
@@ -206,6 +209,7 @@ describe('buildViewportFidelityState (FIDELITY-EVENT-5)', () => {
         voxels: 100,
         lowest: ImageQualityStatus.ADJACENT_REPLICATE,
       }),
+      qualityPending: true,
     });
 
     for (const lines of [

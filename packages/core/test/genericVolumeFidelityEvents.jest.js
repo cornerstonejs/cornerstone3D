@@ -59,6 +59,7 @@ function streamingVolume(volumeId) {
     voxelGrid: fullGrid,
     imageIds: [],
     delivered: { lowest: undefined, missing: 32 * 32 * 8 },
+    loadStatus: { loading: false },
     load: jest.fn(),
     getGridQuality: jest.fn((grid) => ({
       grid,
@@ -188,6 +189,7 @@ describe.each([
 
     expect(shownState(rendering)).toBe('hidden');
 
+    volume.loadStatus.loading = true;
     volume.delivered = {
       lowest: ImageQualityStatus.ADJACENT_REPLICATE,
       missing: 100,
@@ -196,6 +198,7 @@ describe.each([
     expect(ctx.display.requestRender).toHaveBeenCalled();
     expect(shownState(rendering)).toBe('loading');
 
+    volume.loadStatus.loading = false;
     volume.delivered = { lowest: ImageQualityStatus.LOSSY, missing: 0 };
     sendVolumeEvent(Events.IMAGE_VOLUME_LOADING_COMPLETED, volumeId);
     expect(shownState(rendering)).toBe('lossy');
