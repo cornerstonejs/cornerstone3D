@@ -116,23 +116,4 @@ describe('ImageVolume frame marks and deliveries', () => {
 
     expect(volume.getVoxelQuality().deliveries).toBe(before + 1);
   });
-
-  it('updates the derived box from the first frame alone (progressive)', async () => {
-    const { volume, imageIds } = makeStreamingVolume(512);
-    // A CPU reader derives the representation. The render strategy does not.
-    const derived = volume.createVoxelRepresentation({ factors: [1, 1, 2] });
-
-    await derived.derivation;
-
-    putSlice(imageIds[0], 40);
-    volume.recordFrameDelivery(0, ImageQualityStatus.FULL_RESOLUTION);
-
-    // Only one source slice present — average of what arrived.
-    expect(derived.voxelManager.getAtIJK(0, 0, 0)).toBe(40);
-
-    putSlice(imageIds[1], 20);
-    volume.recordFrameDelivery(1, ImageQualityStatus.FULL_RESOLUTION);
-
-    expect(derived.voxelManager.getAtIJK(0, 0, 0)).toBe(30);
-  });
 });

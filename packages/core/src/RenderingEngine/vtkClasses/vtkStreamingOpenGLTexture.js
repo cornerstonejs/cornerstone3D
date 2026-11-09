@@ -380,16 +380,10 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
    * Reads one slice of the representation that the composite holds at this
    * exact grid.
    *
-   * A CPU reader derives that representation, and
-   * `ImageVolume.recordFrameDelivery` redoes its boxes as each frame arrives, so
-   * the values follow the load. The values hold the statistic that the render
-   * path asks for.
-   *
-   * THE IMAGE CACHE HOLDS THOSE VOXELS. One image holds one slice of the
-   * reduced grid, exactly as one image holds one frame of the volume, so this
-   * reads the same way that the full-resolution path reads a frame and it
-   * copies nothing. A representation that keeps an array of its own, which a
-   * composite without the cache builds, gives a view of that array instead.
+   * A loader adds such a representation with `acceptData`. When the
+   * representation states one image of the cache for each slice, this reads
+   * those images and copies nothing. A representation that keeps an array of
+   * its own gives a view of that array instead.
    *
    * @returns a function that gives the voxels of one slice, or nothing when the
    * composite holds no such representation, and the caller then computes the

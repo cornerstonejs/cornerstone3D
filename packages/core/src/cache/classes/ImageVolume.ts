@@ -3,19 +3,9 @@ import imageIdToURI from '../../utilities/imageIdToURI';
 import VoxelManager from '../../utilities/VoxelManager';
 import CompositeVoxelManager from '../../utilities/CompositeVoxelManager';
 import volumeTextureStore from '../volumeTextureStore';
-import { provideReducedImages } from '../reducedVolumeImages';
-import { isMutableSlab } from './VolumeTextureSet';
-import {
-  boundsOfFrame,
-  normalizedFactors,
-  voxelGridKey,
-  voxelGridsEqual,
-} from '../../utilities/voxelGrid';
+import { boundsOfFrame } from '../../utilities/voxelGrid';
 import { vtkStreamingOpenGLTexture } from '../../RenderingEngine/vtkClasses';
 import type {
-  CompositeVoxelManagerOptions,
-  CreateVoxelRepresentationOptions,
-  RepresentationStorage,
   VoxelRepresentation,
   VoxelRepresentationSelector,
 } from '../../utilities/CompositeVoxelManager';
@@ -61,19 +51,12 @@ export type VolumeProvisionTextureSetOptions = Omit<
   | 'applyGrid'
 >;
 
-/**
- * Marks one z slice of one texture for a refill.
- *
- * A slab that re-points holds two textures, and the mark belongs to the back
- * texture, which is the one that the owner fills.
- */
+/** Marks one z slice of one texture for a refill. */
 function markSlice(
   slot: VolumeTextureSlot<vtkStreamingOpenGLTexture>,
   slice: number
 ): void {
-  const texture = isMutableSlab(slot) ? slot.writeTarget() : slot.texture;
-
-  texture.setUpdatedFrame(slice);
+  slot.texture.setUpdatedFrame(slice);
 }
 
 export interface vtkStreamingOpenGLTexture extends vtkOpenGLTexture {
@@ -381,22 +364,14 @@ export class ImageVolume {
     }
 
     const effective = statistic ?? VoxelStatistics.Average;
-    const reducedWithAnother =
-      this._compositeVoxelManager
-        ?.getRepresentations()
-        .some(
-          (representation) =>
-            representation.derivedFrom && representation.statistic !== effective
-        ) ||
-      this.textureSets.some(
-        (set) =>
-          set.name !== FULL_RESOLUTION_TEXTURE_SET &&
-          set.statistic !== effective
-      );
+    const reducedWithAnother = this.textureSets.some(
+      (set) =>
+        set.name !== FULL_RESOLUTION_TEXTURE_SET && set.statistic !== effective
+    );
 
     if (reducedWithAnother) {
       log.warn(
-        `reductionStatistic of ${this.volumeId} changed to ${statistic} after a reduction with another statistic; existing reduced textures and representations do not match it.`
+        `reductionStatistic of ${this.volumeId} changed to ${statistic} after a reduction with another statistic; existing reduced textures do not match it.`
       );
     }
 
@@ -406,11 +381,10 @@ export class ImageVolume {
   /**
    * Discards the composite, so that the next read builds it again from
    * `deliveredRegions`. A caller that replaces every voxel of the volume calls
-   * this member, because each record and each derived representation then
-   * describes data that the volume no longer holds.
+   * this member, because each record then describes data that the volume no
+   * longer holds.
    */
   protected resetCompositeVoxelManager(): void {
-    this._compositeVoxelManager?.dispose();
     this._compositeVoxelManager = undefined;
   }
 
@@ -421,7 +395,6 @@ export class ImageVolume {
       !this._compositeVoxelManager ||
       this._compositeVoxelManager.primary !== primary
     ) {
-      this._compositeVoxelManager?.dispose();
       const delivered = this.deliveredRegions();
       this._compositeVoxelManager = new CompositeVoxelManager<number | RGB>({
         primary,
@@ -433,64 +406,10 @@ export class ImageVolume {
             ? ImageQualityStatus.FULL_RESOLUTION
             : undefined,
         id: `composite-${this.volumeId}`,
-        createStorage: (request) => this.createRepresentationStorage(request),
-        // A derivation in batches writes voxels that a texture of the derived
-        // grid reads, so the textures refill there.
-        onDerivedRegionChanged: (region) => {
-          for (const set of this.textureSets) {
-            set.markDirty(region, markSlice);
-          }
-        },
       });
     }
 
     return this._compositeVoxelManager;
-  }
-
-  /**
-   * Builds the store of a derived representation in the IMAGE CACHE.
-   *
-   * One image of the cache holds one slice of the derived grid, exactly as one
-   * image holds one frame of this volume, so the one cache that already holds
-   * the full-resolution frames counts and evicts the reduced voxels as well. A
-   * second viewport that asks for the same reduction finds the same images and
-   * derives nothing again.
-   *
-   * THE DERIVATION MUST READ THE GRID OF THIS VOLUME. A slice of the derived
-   * grid then covers a run of frames of this volume, and the image id of the
-   * first of those frames names it. A fractional factor cuts the two end frames
-   * of the run, and the id also states that cut. A derivation from another
-   * representation gets no store here, and the composite keeps an array of its
-   * own for it.
-   *
-   * @returns the store, or `undefined` to keep an array
-   */
-  private createRepresentationStorage({
-    grid,
-    statistic,
-    reduction,
-    source,
-  }: Parameters<
-    CompositeVoxelManagerOptions<number | RGB>['createStorage']
-  >[0]): RepresentationStorage<number | RGB> | undefined {
-    if (!voxelGridsEqual(source.grid, this.voxelGrid)) {
-      return undefined;
-    }
-
-    return provideReducedImages({
-      grid,
-      sourceImageIds: this.imageIds,
-      factors: normalizedFactors(reduction.factors),
-      sourceOffset: reduction.sourceOffset,
-      statistic,
-      dataType: this.dataType,
-      numberOfComponents: this._numberOfComponents,
-      // The image cache exempts an image of a volume from its own eviction, and
-      // a reduced slice lives as long as the volume that derived it.
-      sharedCacheKey: this.volumeId,
-      frameOfReferenceUID: this.metadata?.FrameOfReferenceUID,
-      id: `${this.volumeId}-${voxelGridKey(grid, statistic)}`,
-    }) as RepresentationStorage<number | RGB> | undefined;
   }
 
   /**
@@ -510,27 +429,12 @@ export class ImageVolume {
    * render path that fills a texture at one eighth passes the spacing of that
    * texture, and the selection does not return the full-resolution data.
    *
-   * The selection never creates. `createVoxelRepresentation` creates, and the
-   * caller decides whether a new representation is worth its cost.
+   * The selection never creates a representation.
    */
   public selectVoxelRepresentation(
     selector: VoxelRepresentationSelector = {}
   ): VoxelRepresentation<number | RGB> {
     return this.compositeVoxelManager.selectRepresentation(selector);
-  }
-
-  /**
-   * Derives a new representation from the data that the volume already holds,
-   * and adds that representation to the composite.
-   *
-   * A derivation always goes from a higher resolution to a lower one. Data that
-   * no derivation can give arrives through `compositeVoxelManager.acceptData`,
-   * which is the member that a loader calls.
-   */
-  public createVoxelRepresentation(
-    options: CreateVoxelRepresentationOptions
-  ): VoxelRepresentation<number | RGB> {
-    return this.compositeVoxelManager.createRepresentation(options);
   }
 
   /**
@@ -621,10 +525,6 @@ export class ImageVolume {
    * A set of this name that already exists comes back as it is, so a caller may
    * ask without a test of its own.
    *
-   * `ownerId` gives a set of slabs that re-point, and exactly one owner holds
-   * such a set, because the owner is the only party that knows when a draw
-   * starts and stops.
-   *
    * @returns the set, or `undefined` when the store refuses it
    */
   public provisionTextureSet(
@@ -712,12 +612,12 @@ export class ImageVolume {
       FULL_RESOLUTION_TEXTURE_SET
     )?.members()[0];
 
-    return member && !isMutableSlab(member) ? member.texture : undefined;
+    return member?.texture;
   }
 
   /**
    * Marks one frame for a refill in every texture of every set whose grid
-   * covers the frame. The member records no quality and redoes no derived box.
+   * covers the frame. The member records no quality.
    *
    * One frame changes several textures, because each texture that covers the
    * frame reads the same voxels, and MR-API-IV-6 states that rule. A mark
@@ -737,11 +637,9 @@ export class ImageVolume {
   /**
    * Records that the data of one frame arrived at a known quality.
    *
-   * The composite records the delivery, and it redoes the boxes of every
-   * derived representation that the frame changed, because a derivation must
-   * follow the load. A second record of the same frame at the same quality
-   * redoes nothing. Only a caller that knows the quality of the data calls this
-   * member, because a lower record never replaces a higher one.
+   * The composite records the delivery. Only a caller that knows the quality
+   * of the data calls this member, because a lower record never replaces a
+   * higher one.
    *
    * The member marks no texture. A loader calls `markFrameTexturesDirty` too.
    *
@@ -751,9 +649,6 @@ export class ImageVolume {
     frameIndex: number,
     quality: ImageQualityStatus
   ): void {
-    // The reduction below reads the frame, so it must read the new image.
-    this.voxelManager?.invalidateSlice?.(frameIndex);
-
     this.compositeVoxelManager.acceptData({
       grid: this.voxelGrid,
       frameIndex,
@@ -765,15 +660,10 @@ export class ImageVolume {
    * Takes a change of the voxels of one frame at an unchanged quality.
    *
    * An edit of a labelmap, or a computed volume that writes new values, is
-   * such a change. The member redoes the derived boxes of the frame, whatever
-   * the record of earlier refreshes states, and it marks the textures.
+   * such a change. The member marks the textures.
    */
   public markFrameModified(frameIndex: number): void {
     this.markFrameTexturesDirty(frameIndex);
-    this.compositeVoxelManager.refreshDerivedFrames(
-      boundsOfFrame(this.voxelGrid, frameIndex),
-      this.voxelGrid
-    );
   }
 
   /** Marks every voxel of every texture of every set for a refill. */
@@ -882,13 +772,9 @@ export class ImageVolume {
    * Updates the internals of the volume to reflect the changes in the
    * underlying scalar data. This should be called when the scalar data
    * is modified externally
-   *
-   * A reduced representation holds its own voxels, so this also redoes each
-   * one from the new data (`CompositeVoxelManager.rederiveAll`), in batches.
    */
   public modified() {
     this.imageData.modified();
-    this._compositeVoxelManager?.rederiveAll();
     this.markAllTexturesDirty();
 
     this.numFrames = this._getNumFrames();

@@ -1,6 +1,5 @@
 import { describe, it, expect, jest, afterEach } from '@jest/globals';
 import { VolumeTextureStore } from '../src/cache/volumeTextureStore';
-import { isMutableSlab } from '../src/cache/classes/VolumeTextureSet';
 
 // The global store of the named texture sets. A set is the unit of storage, of
 // cost and of EVICTION, and a selection reads the stored sets instead of
@@ -48,7 +47,7 @@ function makeStore() {
   return { store, built, destroyed, applied, options };
 }
 
-/** A set of bricks that tile the volume, for the area index. */
+/** A set of bricks that tile the volume. */
 function brickGrids(edge = 16) {
   const grids = [];
 
@@ -211,45 +210,7 @@ describe('the store counts one global budget', () => {
   });
 });
 
-describe('the area index of a set', () => {
-  it('answers a full-extent set of one member directly', () => {
-    const { store, options } = makeStore();
-    const set = store.provision(options());
-
-    expect(
-      set.membersCovering([
-        [0, 0],
-        [0, 0],
-        [0, 0],
-      ]).length
-    ).toBe(1);
-  });
-
-  it('gives only the bricks that meet a region', () => {
-    const { store, options } = makeStore();
-    const set = store.provision(options({ grids: brickGrids(16) }));
-
-    expect(set.size).toBe(4 * 4 * 1);
-
-    const corner = set.membersCovering([
-      [0, 3],
-      [0, 3],
-      [0, 3],
-    ]);
-
-    expect(corner.length).toBe(1);
-    expect(corner[0].grid.origin).toEqual([0, 0, 0]);
-
-    // A region that straddles two bricks on one axis gives both.
-    const straddle = set.membersCovering([
-      [14, 18],
-      [0, 3],
-      [0, 3],
-    ]);
-
-    expect(straddle.length).toBe(2);
-  });
-
+describe('the dirty marks of a set', () => {
   it('marks a region dirty in the bricks that cover it, and in no other', () => {
     const { store, options } = makeStore();
     const set = store.provision(options({ grids: brickGrids(16) }));
@@ -274,107 +235,5 @@ describe('the area index of a set', () => {
     expect(dirty.length).toBe(1);
     expect(dirty[0].grid.origin).toEqual([0, 0, 0]);
     expect(marked.length).toBe(4);
-  });
-});
-
-describe('a slab that re-points, and that one viewport owns', () => {
-  function makeSlab(store, options, overrides = {}) {
-    const set = store.provision(
-      options({
-        name: 'oblique-slab',
-        ownerId: 'viewport-1',
-        grids: [makeGrid([64, 64, 25])],
-        ...overrides,
-      })
-    );
-
-    return set.members()[0];
-  }
-
-  it('is a different kind of texture, and the attribute says so', () => {
-    const { store, options } = makeStore();
-    const slab = makeSlab(store, options);
-
-    expect(slab.mutability).toBe('owned');
-    expect(isMutableSlab(slab)).toBe(true);
-    expect(slab.ownerId).toBe('viewport-1');
-  });
-
-  it('holds two textures, and counts both', () => {
-    const { store, built, options } = makeStore();
-    const slab = makeSlab(store, options);
-
-    expect(built.length).toBe(2);
-    expect(slab.bytes).toBe(2 * 64 * 64 * 25 * 4);
-  });
-
-  it('re-points the back texture, and a draw keeps reading the front', () => {
-    const { store, options } = makeStore();
-    const slab = makeSlab(store, options);
-    const front = slab.beginRender();
-    const moved = makeGrid([64, 64, 25], [1, 1, 1], [10, 0, 0]);
-
-    slab.retarget(moved);
-
-    // The draw still reads the texture that it started with.
-    expect(slab.grid.origin).toEqual([0, 0, 0]);
-    expect(slab.pendingGrid).toBe(moved);
-    expect(slab.writeTarget()).not.toBe(front);
-    expect(slab.dirty.length).toBe(1);
-  });
-
-  it('defers the exchange while a draw is in flight, and completes it after', () => {
-    const { store, options } = makeStore();
-    const slab = makeSlab(store, options);
-    const front = slab.beginRender();
-
-    expect(slab.inFlight).toBe(true);
-
-    slab.retarget(makeGrid([64, 64, 25], [1, 1, 1], [10, 0, 0]));
-
-    expect(slab.publish()).toBe(false);
-    expect(slab.grid.origin).toEqual([0, 0, 0]);
-
-    slab.endRender();
-
-    // The exchange happened when the draw stopped, so the next draw reads the
-    // new basis.
-    expect(slab.inFlight).toBe(false);
-    expect(slab.grid.origin).toEqual([10, 0, 0]);
-    expect(slab.beginRender()).not.toBe(front);
-  });
-
-  it('exchanges at once when no draw is in flight', () => {
-    const { store, options } = makeStore();
-    const slab = makeSlab(store, options);
-
-    slab.retarget(makeGrid([64, 64, 25], [1, 1, 1], [10, 0, 0]));
-
-    expect(slab.publish()).toBe(true);
-    expect(slab.grid.origin).toEqual([10, 0, 0]);
-    expect(slab.hasPendingFill).toBe(false);
-  });
-
-  it('publishes nothing when no fill is pending', () => {
-    const { store, options } = makeStore();
-    const slab = makeSlab(store, options);
-    const before = slab.grid;
-
-    slab.publish();
-
-    expect(slab.grid).toBe(before);
-  });
-
-  it('states the grid on each texture, and again on each re-point', () => {
-    const { store, applied, options } = makeStore();
-    const slab = makeSlab(store, options);
-    const moved = makeGrid([64, 64, 25], [1, 1, 1], [10, 0, 0]);
-
-    // Both textures took the first grid.
-    expect(applied.length).toBe(2);
-
-    slab.retarget(moved);
-
-    expect(applied[applied.length - 1].grid).toBe(moved);
   });
 });

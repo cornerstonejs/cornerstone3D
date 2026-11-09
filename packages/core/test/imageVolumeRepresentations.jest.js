@@ -1,7 +1,7 @@
 import { describe, it, expect } from '@jest/globals';
 import ImageVolume from '../src/cache/classes/ImageVolume';
 import VoxelManager from '../src/utilities/VoxelManager';
-import { VoxelStatistics, VoxelReductions } from '../src/enums';
+import { VoxelStatistics } from '../src/enums';
 
 // The composite on `ImageVolume`, which is MR-API-IV-1 and MR-API-IV-4 of
 // cornerstone3D issue #2921. The existing public surface does not change, and a
@@ -121,35 +121,6 @@ describe('ImageVolume — the alternate representations', () => {
     expect(volume.compositeVoxelManager).toBe(volume.compositeVoxelManager);
   });
 
-  it('adds a derived representation, which the box average produces', () => {
-    const volume = makeVolume();
-    const derived = volume.createVoxelRepresentation({ factors: [2, 2, 1] });
-
-    expect(volume.getVoxelRepresentations().length).toBe(2);
-    expect(derived.grid.dimensions).toEqual([2, 2, 4]);
-    expect(derived.grid.spacing).toEqual([2, 2, 2]);
-    expect(derived.reduction).toBe(VoxelReductions.BoxAverage);
-    // The box of the voxels 0, 1, 4 and 5 averages to 2.5, and the derivation
-    // rounds that value for a store of whole numbers.
-    expect(derived.voxelManager.getAtIJK(0, 0, 0)).toBe(3);
-  });
-
-  it('selects the derived representation under a ceiling, and the primary without one', () => {
-    const volume = makeVolume();
-    const derived = volume.createVoxelRepresentation({ factors: [2, 2, 1] });
-
-    // A render path that draws at a spacing of 2 states that ceiling, and the
-    // selection gives the data at that resolution. Without the ceiling the rule
-    // degenerates to "the highest resolution available", which is the
-    // behaviour of today.
-    expect(volume.selectVoxelRepresentation({ ceiling: [2, 2, 2] })).toBe(
-      derived
-    );
-    expect(volume.selectVoxelRepresentation().voxelManager).toBe(
-      volume.voxelManager
-    );
-  });
-
   it('reports the quality record of the representation that a reader gets', () => {
     const volume = makeVolume();
 
@@ -166,9 +137,7 @@ describe('ImageVolume — the alternate representations', () => {
 describe('ImageVolume — the life of the composite', () => {
   it('discards the composite when a caller assigns a new voxel manager', () => {
     const volume = makeVolume();
-
-    volume.createVoxelRepresentation({ factors: [2, 2, 1] });
-    expect(volume.getVoxelRepresentations().length).toBe(2);
+    const original = volume.compositeVoxelManager;
 
     // `volumeLoader.createLocalVolume` assigns a new voxel manager immediately
     // after the construction. The alternate representations describe the data
@@ -176,16 +145,8 @@ describe('ImageVolume — the life of the composite', () => {
     const replacement = makeRamp(dimensions);
     volume.voxelManager = replacement;
 
+    expect(volume.compositeVoxelManager).not.toBe(original);
     expect(volume.compositeVoxelManager.primary).toBe(replacement);
-    expect(volume.getVoxelRepresentations().length).toBe(1);
-  });
-
-  it('releases the composite when the volume is destroyed', () => {
-    const volume = makeVolume();
-
-    volume.createVoxelRepresentation({ factors: [2, 2, 1] });
-    volume.destroy();
-
     expect(volume.getVoxelRepresentations().length).toBe(1);
   });
 });

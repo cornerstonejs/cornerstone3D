@@ -1,13 +1,9 @@
 import VoxelStatistics from '../enums/VoxelStatistics';
 import { volumeTextureBytes } from '../utilities/getBufferConfiguration';
 import { maxEdgeOfGrid, voxelCountOfGrid } from '../utilities/voxelGrid';
-import {
-  MutableVolumeTextureSlab,
-  VolumeTextureSet,
-} from './classes/VolumeTextureSet';
+import { VolumeTextureSet } from './classes/VolumeTextureSet';
 import type {
   FixedVolumeTextureSlot,
-  IMutableVolumeTextureSlab,
   VolumeTextureSetDescription,
   VolumeTextureSlot,
 } from './classes/VolumeTextureSet';
@@ -50,13 +46,6 @@ export type ProvisionTextureSetOptions<TextureType> = {
   coverage?: VolumeTextureSetDescription['coverage'];
   /** True for the set that a selection falls back on. */
   backstop?: boolean;
-  /**
-   * The owner of a set of slabs that re-point. When a caller states an owner,
-   * every member is a slab with a front texture and a back texture, and only
-   * that owner may re-point or publish it. A set with no owner holds fixed
-   * textures that any number of viewports read.
-   */
-  ownerId?: string;
   /** Builds one texture. The store calls this after it accepts the cost. */
   createTexture: (request: {
     grid: VoxelGrid;
@@ -66,7 +55,7 @@ export type ProvisionTextureSetOptions<TextureType> = {
   }) => TextureType;
   /** Releases one texture. The store calls this when it evicts the set. */
   destroyTexture?: (texture: TextureType) => void;
-  /** States the grid on a texture. A slab calls this again on each re-point. */
+  /** States the grid on a texture. */
   applyGrid?: (texture: TextureType, grid: VoxelGrid) => void;
   /**
    * Marks one z slice of one texture for a refill.
@@ -209,7 +198,6 @@ class VolumeTextureStore {
       statistic = VoxelStatistics.Average,
       coverage,
       backstop,
-      ownerId,
       createTexture,
       destroyTexture,
       applyGrid,
@@ -238,14 +226,10 @@ class VolumeTextureStore {
       }
     }
 
-    // A slab holds a front texture and a back texture, so it costs twice.
     const perTexture = grids.map((grid) =>
       this.costOf(grid, dataType, numberOfComponents)
     );
-    const bytes = perTexture.reduce(
-      (total, cost) => total + (ownerId ? cost * 2 : cost),
-      0
-    );
+    const bytes = perTexture.reduce((total, cost) => total + cost, 0);
 
     if (!this.makeRoomFor(bytes)) {
       log.warn(
@@ -266,30 +250,11 @@ class VolumeTextureStore {
 
     grids.forEach((grid, index) => {
       const id = `${name}#${index}`;
-
-      if (ownerId) {
-        set.add(
-          new MutableVolumeTextureSlab<TextureType>({
-            id,
-            ownerId,
-            grid,
-            statistic,
-            bytes: perTexture[index],
-            front: createTexture({ grid, statistic, setName: name, id }),
-            back: createTexture({ grid, statistic, setName: name, id }),
-            applyGrid: applyGrid ?? (() => undefined),
-          }) as unknown as VolumeTextureSlot<TextureType>
-        );
-
-        return;
-      }
-
       const texture = createTexture({ grid, statistic, setName: name, id });
 
       applyGrid?.(texture, grid);
 
       const slot: FixedVolumeTextureSlot<TextureType> = {
-        mutability: 'fixed',
         id,
         grid,
         statistic,
@@ -372,7 +337,7 @@ class VolumeTextureStore {
 
     if (stored.destroyTexture) {
       for (const slot of stored.set.members()) {
-        releaseTexturesOf(slot, stored.destroyTexture);
+        stored.destroyTexture(slot.texture);
       }
     }
 
@@ -449,31 +414,6 @@ function withinLimits(grid: VoxelGrid, limits?: VolumeTextureLimits): boolean {
   }
 
   return true;
-}
-
-function releaseTexturesOf(
-  slot: VolumeTextureSlot<unknown>,
-  destroyTexture: (texture: unknown) => void
-): void {
-  if (slot.mutability === 'owned') {
-    const slab = slot as IMutableVolumeTextureSlab<unknown>;
-
-    // A slab holds two textures. `endRender` exchanges them when a fill is
-    // pending, so the release takes both before it ends the render.
-    const front = slab.beginRender();
-    const back = slab.writeTarget();
-
-    slab.endRender();
-    destroyTexture(front);
-
-    if (back !== front) {
-      destroyTexture(back);
-    }
-
-    return;
-  }
-
-  destroyTexture((slot as FixedVolumeTextureSlot<unknown>).texture);
 }
 
 const volumeTextureStore = new VolumeTextureStore();

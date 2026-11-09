@@ -159,18 +159,11 @@ import {
   VolumeTextureSet,
   VolumeTextureStore,
   volumeTextureStore,
-  isMutableSlab,
-  isReducedImageId,
-  parseReducedImageId,
-  provideReducedImages,
-  reducedImageId,
 } from './cache';
 export type {
   FixedVolumeTextureSlot,
-  IMutableVolumeTextureSlab,
   ProvisionTextureSetOptions,
   VolumeTextureLimits,
-  VolumeTextureMutability,
   VolumeTextureSlot,
 } from './cache';
 export {
@@ -422,11 +415,6 @@ export {
   VolumeTextureSet,
   VolumeTextureStore,
   volumeTextureStore,
-  isMutableSlab,
-  isReducedImageId,
-  parseReducedImageId,
-  provideReducedImages,
-  reducedImageId,
   // Helpers
   getRenderingEngine,
   getRenderingEngines,

@@ -82,7 +82,7 @@ already exists.
 | `VolumeStrategyProvider` | Builds the strategies of one render path. **A render component defines its own provider**, and that is how a new render type defines new texture sets. |
 | `SelectVolumeStrategy`   | Chooses the strategy of one render, among the strategies that the provider already built.                                                              |
 | `StrategyBinding`        | One texture that a strategy offers, with the role `base` or `refinement`.                                                                              |
-| `VolumeTextureSet`       | A named set of textures, and the unit of storage, of cost and of eviction. Its members carry an area index.                                            |
+| `VolumeTextureSet`       | A named set of textures, and the unit of storage, of cost and of eviction.                                                                             |
 | `volumeTextureStore`     | The global store of the sets, with one budget for the texture memory of every volume.                                                                  |
 | `CompositeVoxelManager`  | The voxels. It holds the full-resolution data and every reduced representation, and it fills a grid from the best sources that it has.                 |
 | `GpuSettings`            | The values that a preset gives: the texture edge, the texture memory and the speed. An application selects the preset, and nothing probes.             |
@@ -156,8 +156,8 @@ no frame of its box has arrived.
 | Member                   | What it does                                                                                                                    | Who calls it                                                      |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
 | `markFrameTexturesDirty` | Forgets the image that the voxel manager last resolved for the frame, and marks the frame in every texture whose grid covers it | every caller that changes the image of a frame                    |
-| `recordFrameDelivery`    | Records the quality of the frame, and redoes the boxes of every derived representation that the frame touches                   | a loader, which knows the quality of the data that it delivered   |
-| `markFrameModified`      | Redoes the derived boxes of the frame whatever the record states, and marks the textures. It records no quality                 | an edit of the voxels at an unchanged quality, such as a labelmap |
+| `recordFrameDelivery`    | Records the quality of the frame                                                                                                | a loader, which knows the quality of the data that it delivered   |
+| `markFrameModified`      | Marks the textures of the frame. It records no quality                                                                          | an edit of the voxels at an unchanged quality, such as a labelmap |
 
 **Only a caller that knows the quality records it.** A lower record never replaces a higher one, so a
 record of `FULL_RESOLUTION` for a thumbnail would stay for ever. The cache adds an image before the
@@ -168,28 +168,11 @@ quality is not known yet, and `successCallback` records the delivery right after
 as the next dimension group of a dynamic volume, so the volume discards its composite and builds it
 again from the deliveries of the data that the grid now shows, and it marks every texture.
 
-## How a derived representation follows the load
+## How the load reaches a reduced texture
 
-**A derivation is not a single event.** `createRepresentation` reduces the data that the composite
-holds at the moment of the call, and a streaming loader delivers its frames after that moment.
-`recordFrameDelivery` therefore redoes the boxes of every derived representation that a frame
-touches. It redoes **those boxes only**: a volume of 2464 frames re-derives far too slowly to run in
-full on each frame.
-
-A source that states which regions it has delivered is reduced over those regions and no others, so
-a derivation over a volume that has loaded nothing costs nothing, and a derivation over a volume
-that has loaded half of its frames reduces that half.
-
-**A large derivation runs in batches.** `createRepresentation` reduces the first 16 slices of the
-derived grid at once, and each later batch of 16 slices in idle time. While the batches run, the
-record of the representation covers the slices that they reduced and no others, so the record never
-states a voxel that the derivation has not written. Each batch tells the volume which region it
-wrote, and the volume marks its textures there. `representation.derivation` resolves when the last
-batch is done.
-
-P31.3 states the rule for the values. Before the full-resolution data of a box arrives, the box
-average is an approximation over the frames that have arrived, and the code **replaces** that value
-in place when the rest arrives. There are never two stored copies.
+The reduced-copy pipeline (derived representations, reduced images, slabs and the brick index) is
+under further development on the branch `brick-loader`. A reduced texture reads the frames of the
+volume directly, so it needs no derived copy.
 
 **The loader keeps the true decoded size.** The request states the type of the buffer and no size,
 so an image keeps the size that the decoder produced: a sub-resolution HTJ2K decode and a JLS
@@ -251,17 +234,6 @@ that it needs by name, and it must not assume that the record holds nothing else
 
 A strategy is asked to update itself on each render. Most strategies do nothing there, because a
 full-extent texture never moves and the volume already marks its dirty slices.
-
-A strategy that holds an **oblique slab** is the case that needs the call. The slab follows the
-camera, so the strategy re-points it rather than building a new texture for each position. The slab
-holds a front texture and a back texture: the strategy writes the back one and a draw reads the
-front one, and a publish while a draw is in flight waits for that draw to finish instead of tearing
-it.
-
-This works because **the strategy instance is the single owner**. It belongs to one render path,
-which belongs to one viewport, so exactly one party knows when a draw starts and when it stops. A
-texture that any number of viewports may read is a different kind, it never re-points, and it needs
-none of this.
 
 ## How the quality is reported
 
@@ -355,19 +327,16 @@ they differ only in the grid that they state.
 **VRS-I-5.** The store holds no budget until an application states one, so a viewport behaves as it
 behaved before the store existed.
 
-**VRS-I-6.** The area index of a set buckets its members over a coarse grid of the volume. A set of
-one member answers directly.
+**VRS-I-6.** Removed: the area index of a set moved to the branch `brick-loader`.
 
-**VRS-I-7.** A slab that re-points counts twice, because it holds a front texture and a back
-texture.
+**VRS-I-7.** Removed: the slab that re-points moved to the branch `brick-loader`.
 
 **VRS-I-8.** The volume slice render path reads the `base` binding alone.
 
 **VRS-I-9.** The default provider derives no representation. A reduced texture fills by the
 statistic of the volume from the frames of the volume, and its record comes from the deliveries of the volume.
 
-**VRS-I-10.** A derivation reduces 16 slices of the derived grid in one batch. The first batch runs
-at once, and each later batch runs in an idle callback.
+**VRS-I-10.** Removed: the derivation in batches moved to the branch `brick-loader`.
 
 **VRS-I-11.** A legacy viewport pins its set instead of claiming it. A claim needs a release at every
 removal of an actor, and a legacy viewport has many such paths.

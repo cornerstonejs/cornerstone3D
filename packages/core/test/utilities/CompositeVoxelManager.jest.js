@@ -113,66 +113,23 @@ describe('CompositeVoxelManager delegates the existing API', () => {
   });
 });
 
-describe('CompositeVoxelManager.createRepresentation', () => {
-  it('derives a box average, and the derivation goes to a lower resolution', () => {
-    const composite = makeComposite([4, 4, 1]);
-    const derived = composite.createRepresentation({ factors: [2, 2, 1] });
-
-    expect(derived.grid.dimensions).toEqual([2, 2, 1]);
-    expect(derived.grid.spacing).toEqual([2, 2, 1]);
-    // The ramp holds 0..15, so each 2 x 2 box gives its mean.
-    expect(derived.voxelManager.getAtIJK(0, 0, 0)).toBe(3);
-    expect(derived.voxelManager.getAtIJK(1, 1, 0)).toBe(13);
-    expect(composite.getRepresentations()).toHaveLength(2);
-  });
-
-  it('redoes a derived box after a write to the source with no delivery (rederiveAll)', () => {
-    const composite = makeComposite([4, 4, 1]);
-    const derived = composite.createRepresentation({ factors: [2, 2, 1] });
-
-    // A computed volume writes new values; the derived box keeps the old mean.
-    for (const [i, j] of [
-      [0, 0],
-      [1, 0],
-      [0, 1],
-      [1, 1],
-    ]) {
-      composite.setAtIJK(i, j, 0, 100);
-    }
-    expect(derived.voxelManager.getAtIJK(0, 0, 0)).toBe(3);
-
-    composite.rederiveAll();
-
-    expect(derived.voxelManager.getAtIJK(0, 0, 0)).toBe(100);
-    expect(derived.voxelManager.getAtIJK(1, 1, 0)).toBe(13);
-  });
-
-  it('derives one brick of the source', () => {
-    const composite = makeComposite([8, 1, 1]);
-    const derived = composite.createRepresentation({
-      factors: [2, 1, 1],
-      sourceOffset: [4, 0, 0],
-      sourceDimensions: [4, 1, 1],
-    });
-
-    expect(derived.grid.dimensions).toEqual([2, 1, 1]);
-    expect(derived.voxelManager.getAtIJK(0, 0, 0)).toBe(5);
-    expect(derived.voxelManager.getAtIJK(1, 0, 0)).toBe(7);
-  });
-});
-
 describe('CompositeVoxelManager.selectRepresentation', () => {
   let composite;
   let half;
 
   beforeEach(() => {
     composite = makeComposite([8, 8, 8]);
-    half = composite.createRepresentation({ factors: [2, 2, 2] });
-    // The quarter resolution derives from the half resolution, and never from
-    // a resolution below its own.
-    composite.createRepresentation({
-      factors: [2, 2, 2],
-      sourceGrid: half.grid,
+    half = composite.addRepresentation({
+      grid: deriveBoxAverageGrid(composite.grid, { factors: [2, 2, 2] }),
+      statistic: VoxelStatistics.Average,
+      voxelManager: makeFilled([4, 4, 4], 0),
+      quality: ImageQualityStatus.FULL_RESOLUTION,
+    });
+    composite.addRepresentation({
+      grid: deriveBoxAverageGrid(half.grid, { factors: [2, 2, 2] }),
+      statistic: VoxelStatistics.Average,
+      voxelManager: makeFilled([2, 2, 2], 0),
+      quality: ImageQualityStatus.FULL_RESOLUTION,
     });
   });
 
@@ -313,9 +270,11 @@ describe('CompositeVoxelManager and the statistics', () => {
 
   it('keeps a statistic that is not for a default selection out of the selection', () => {
     const composite = makeComposite([4, 4, 1]);
-    const maximum = composite.createRepresentation({
-      factors: [2, 2, 1],
+    const maximum = composite.addRepresentation({
+      grid: deriveBoxAverageGrid(composite.grid, { factors: [2, 2, 1] }),
       statistic: MAXIMUM,
+      voxelManager: makeFilled([2, 2, 1], 5),
+      quality: ImageQualityStatus.FULL_RESOLUTION,
     });
 
     expect(maximum.voxelManager.getAtIJK(0, 0, 0)).toBe(5);
@@ -483,32 +442,6 @@ describe('CompositeVoxelManager records what a loader delivered', () => {
     expect(representation.delivered[0].quality).toBe(
       ImageQualityStatus.FULL_RESOLUTION
     );
-  });
-
-  it('carries the record of the source into a derived representation', () => {
-    composite.acceptData({
-      grid: composite.grid,
-      frameIndex: 0,
-      quality: ImageQualityStatus.SUBRESOLUTION,
-    });
-    composite.acceptData({
-      grid: composite.grid,
-      frameIndex: 1,
-      quality: ImageQualityStatus.FULL_RESOLUTION,
-    });
-
-    const derived = composite.createRepresentation({ factors: [2, 2, 2] });
-
-    // The derived representation holds no record of its own. It holds the
-    // frozen record of the source, because each of its voxels is a box of
-    // source voxels.
-    expect(derived.derivedFrom.delivered).toHaveLength(2);
-    // The two source frames fed the first frame of the derived grid, and the
-    // derived data is no better than the data that produced it.
-    expect(composite.getRegionQuality(derived).lowest).toBe(
-      ImageQualityStatus.SUBRESOLUTION
-    );
-    expect(composite.getRegionQuality(derived).missing).toBe(4 * 4 * 1);
   });
 
   it('gives the record of the representation that a reader will read', () => {
@@ -714,28 +647,6 @@ describe('CompositeVoxelManager records deliveries that overlap', () => {
     expect(thirdFrame.missing).toBe(60);
     expect(thirdFrame.lowest).toBe(ImageQualityStatus.FULL_RESOLUTION);
   });
-
-  it('carries overlapping deliveries into a derived representation', () => {
-    deliver(boundsOfFrame(composite.grid, 0), ImageQualityStatus.SUBRESOLUTION);
-    deliver(
-      [
-        [0, 3],
-        [0, 3],
-        [0, 1],
-      ],
-      ImageQualityStatus.FULL_RESOLUTION
-    );
-
-    const derived = composite.createRepresentation({ factors: [2, 2, 2] });
-    const record = composite.getRegionQuality(derived);
-
-    // The derived grid holds 4 x 4 x 2 voxels, and the two deliveries map onto
-    // it. The record of the source becomes the record of the result.
-    expect(record.voxels).toBe(32);
-    expect(record.highest).toBe(ImageQualityStatus.FULL_RESOLUTION);
-    expect(record.lowest).toBe(ImageQualityStatus.SUBRESOLUTION);
-    expect(record.missing).toBeLessThan(32);
-  });
 });
 
 describe('CompositeVoxelManager stores the quality by region', () => {
@@ -801,42 +712,6 @@ describe('CompositeVoxelManager stores the quality by region', () => {
       ImageQualityStatus.FULL_RESOLUTION
     );
   });
-
-  it('counts only a derived box with no arrived source voxel as missing', () => {
-    const dimensions = [8, 8, 4];
-    const composite = new CompositeVoxelManager({
-      primary: VoxelManager.createMapVoxelManager({ dimension: dimensions }),
-      grid: makeGrid(dimensions),
-    });
-
-    composite.acceptData({
-      grid: composite.grid,
-      frameIndex: 0,
-      quality: ImageQualityStatus.FULL_RESOLUTION,
-    });
-
-    const derived = composite.createRepresentation({ factors: [2, 2, 2] });
-    const record = composite.getRegionQuality(derived);
-
-    // Frame 0 feeds the boxes of k = 0, and the boxes of k = 1 are empty.
-    expect(record.voxels).toBe(32);
-    expect(record.missing).toBe(16);
-    expect(record.exact).toBe(true);
-
-    // Frames 0 and 2 of 4: each box holds the average of one arrived frame
-    // (P31.3), so no box is missing.
-    composite.acceptData({
-      grid: composite.grid,
-      frameIndex: 2,
-      quality: ImageQualityStatus.FULL_RESOLUTION,
-    });
-
-    const partial = composite.getRegionQuality(
-      composite.createRepresentation({ factors: [2, 2, 2] })
-    );
-
-    expect(partial.missing).toBe(0);
-  });
 });
 
 describe('CompositeVoxelManager reads across a reduction of 2, 3 and 4', () => {
@@ -849,62 +724,6 @@ describe('CompositeVoxelManager reads across a reduction of 2, 3 and 4', () => {
   // of that axis holds one row of the three, which is the partial box.
   const dimensions = [8, 10, 8];
   const factors = [2, 3, 4];
-  const valueOf = (i, j, k) => i + j * 10 + k * 100;
-
-  /** The box of the source that one voxel of the reduced grid holds. */
-  function sourceBoxOf(si, sj, sk) {
-    return {
-      i: [si * 2, Math.min(si * 2 + 1, dimensions[0] - 1)],
-      j: [sj * 3, Math.min(sj * 3 + 2, dimensions[1] - 1)],
-      k: [sk * 4, Math.min(sk * 4 + 3, dimensions[2] - 1)],
-    };
-  }
-
-  /** The box average that the reduction must produce. */
-  function expectedAverage(si, sj, sk) {
-    const box = sourceBoxOf(si, sj, sk);
-    let sum = 0;
-    let count = 0;
-
-    for (let k = box.k[0]; k <= box.k[1]; k++) {
-      for (let j = box.j[0]; j <= box.j[1]; j++) {
-        for (let i = box.i[0]; i <= box.i[1]; i++) {
-          sum += valueOf(i, j, k);
-          count++;
-        }
-      }
-    }
-
-    return Math.round(sum / count);
-  }
-
-  it('derives the reduced grid, and each voxel holds the average of its own box', () => {
-    // The full resolution data arrives, and a reader takes the reduced data.
-    const composite = new CompositeVoxelManager({
-      primary: makeFunction(dimensions, valueOf),
-      grid: makeGrid(dimensions),
-      quality: ImageQualityStatus.FULL_RESOLUTION,
-    });
-    const reduced = composite.createRepresentation({ factors });
-
-    // 8 / 2 = 4, 10 / 3 rounds up to 4, and 8 / 4 = 2.
-    expect(reduced.grid.dimensions).toEqual([4, 4, 2]);
-    expect(reduced.grid.spacing).toEqual([2, 3, 4]);
-    // The origin carries (factor - 1) / 2 source voxels on each axis.
-    expect(reduced.grid.origin[0]).toBeCloseTo(0.5, 10);
-    expect(reduced.grid.origin[1]).toBeCloseTo(1, 10);
-    expect(reduced.grid.origin[2]).toBeCloseTo(1.5, 10);
-
-    for (let sk = 0; sk < 2; sk++) {
-      for (let sj = 0; sj < 4; sj++) {
-        for (let si = 0; si < 4; si++) {
-          expect(reduced.voxelManager.getAtIJK(si, sj, sk)).toBe(
-            expectedAverage(si, sj, sk)
-          );
-        }
-      }
-    }
-  });
 
   it('reads the full resolution index from the reduced data that holds it', () => {
     // Only the reduced data arrived, and a tool reads at the full resolution.
@@ -938,30 +757,6 @@ describe('CompositeVoxelManager reads across a reduction of 2, 3 and 4', () => {
         }
       }
     }
-  });
-
-  it('gives the same values in both directions for one region', () => {
-    // The reduced data derives from the full resolution data, and a read at the
-    // full resolution then gives the average of the box that holds the index.
-    const composite = new CompositeVoxelManager({
-      primary: makeFunction(dimensions, valueOf),
-      grid: makeGrid(dimensions),
-      quality: ImageQualityStatus.FULL_RESOLUTION,
-    });
-    const reduced = composite.createRepresentation({ factors });
-
-    // A reader that draws at the reduced resolution states that ceiling, and it
-    // gets the reduced representation.
-    const selected = composite.selectRepresentation({ ceiling: [2, 3, 4] });
-
-    expect(selected.voxelManager).toBe(reduced.voxelManager);
-
-    // The full resolution index [5, 7, 6] lies in the box [2, 2, 1] of the
-    // reduced grid, on each of the three axes independently.
-    expect(selected.voxelManager.getAtIJK(2, 2, 1)).toBe(
-      expectedAverage(2, 2, 1)
-    );
-    expect(composite.getAtIJK(5, 7, 6)).toBe(valueOf(5, 7, 6));
   });
 
   it('maps a delivery of one reduced frame onto the full resolution region', () => {
@@ -1012,7 +807,14 @@ describe('CompositeVoxelManager gives a record that two readers judge', () => {
       quality: ImageQualityStatus.FULL_RESOLUTION,
     });
 
-    composite.createRepresentation({ factors: [2, 2, 2] });
+    composite.addRepresentation({
+      grid: deriveBoxAverageGrid(composite.grid, { factors: [2, 2, 2] }),
+      statistic: VoxelStatistics.Average,
+      voxelManager: makeFilled([4, 4, 4], 0),
+      quality: ImageQualityStatus.FULL_RESOLUTION,
+      reduction: VoxelReductions.BoxAverage,
+      source: VoxelDataSources.ClientDerived,
+    });
 
     // The 3D viewport draws the whole volume small, so it takes the reduced
     // data, and one of its display pixels covers 4 mm.
@@ -1217,197 +1019,7 @@ describe('CompositeVoxelManager over a WSI-shaped pyramid', () => {
   });
 });
 
-describe('a derivation follows the load', () => {
-  const dimensions = [4, 4, 4];
-  const factors = [2, 2, 2];
-
-  const frameSize = dimensions[0] * dimensions[1];
-
-  /**
-   * A composite whose primary representation streams.
-   *
-   * The primary gives NOTHING for a frame that has not arrived, which is what
-   * the voxel manager of an image volume does: it reads the image of the cache
-   * for the slice, and no image is there yet. The composite states an empty
-   * list of deliveries to say the same thing about the whole grid.
-   */
-  function makeStreaming() {
-    const frames = new Map();
-    const primary = new VoxelManager(dimensions, {
-      _get: (index) => frames.get(Math.floor(index / frameSize)),
-      numberOfComponents: 1,
-      _getConstructor: () => Uint16Array,
-    });
-
-    const composite = new CompositeVoxelManager({
-      primary,
-      grid: makeGrid(dimensions),
-      delivered: [],
-    });
-
-    // Gives one k slice its value, and then delivers that slice.
-    composite.deliver = (frameIndex, value) => {
-      frames.set(frameIndex, value);
-      composite.acceptData({
-        grid: composite.grid,
-        frameIndex,
-        quality: ImageQualityStatus.FULL_RESOLUTION,
-      });
-    };
-
-    return composite;
-  }
-
-  it('reduces no box when the source has delivered nothing', () => {
-    const composite = makeStreaming();
-    const derived = composite.createRepresentation({ factors });
-
-    // The primary holds zeros everywhere, so this states nothing about the
-    // values. What it states is that the derivation reduced NO region: the
-    // record of the source is the empty list that the primary carries.
-    expect(derived.grid.dimensions).toEqual([2, 2, 2]);
-    expect(derived.derivedFrom.delivered).toEqual([]);
-  });
-
-  it('redoes the box of a frame that arrives after the derivation', () => {
-    const composite = makeStreaming();
-    const derived = composite.createRepresentation({ factors });
-
-    composite.deliver(0, 10);
-    composite.deliver(1, 20);
-
-    // The box on k holds the frames 0 and 1, and both arrived, so the average
-    // of the box is 15. The box of the frames 2 and 3 holds nothing yet.
-    expect(derived.voxelManager.getAtIJK(0, 0, 0)).toBe(15);
-    expect(derived.voxelManager.getAtIJK(0, 0, 1)).toBe(0);
-  });
-
-  it('replaces the value of a box in place as more of it arrives', () => {
-    const composite = makeStreaming();
-    const derived = composite.createRepresentation({ factors });
-
-    composite.deliver(2, 40);
-
-    // The box holds the frames 2 and 3, and the frame 3 has not arrived, so
-    // the average reads the one frame that has.
-    expect(derived.voxelManager.getAtIJK(0, 0, 1)).toBe(40);
-
-    composite.deliver(3, 60);
-
-    // P31.3: the code REPLACES the value in place, and it never keeps two
-    // copies of the data of one box.
-    expect(derived.voxelManager.getAtIJK(0, 0, 1)).toBe(50);
-  });
-
-  it('takes the deliveries that arrived before the derivation', () => {
-    const composite = makeStreaming();
-
-    composite.deliver(0, 10);
-    composite.deliver(1, 20);
-
-    const derived = composite.createRepresentation({ factors });
-
-    expect(derived.voxelManager.getAtIJK(0, 0, 0)).toBe(15);
-    expect(derived.derivedFrom.delivered.length).toBe(2);
-  });
-
-  it('reduces the whole grid when the source states no delivery', () => {
-    // A volume that holds every voxel from its construction states no list,
-    // and the derivation then reads the whole grid.
-    const composite = new CompositeVoxelManager({
-      primary: makeFilled(dimensions, 7),
-      grid: makeGrid(dimensions),
-    });
-    const derived = composite.createRepresentation({ factors });
-
-    expect(derived.voxelManager.getAtIJK(0, 0, 0)).toBe(7);
-    expect(derived.voxelManager.getAtIJK(1, 1, 1)).toBe(7);
-  });
-
-  it('leaves a derivation of another source alone', () => {
-    const composite = makeStreaming();
-    const derived = composite.createRepresentation({ factors });
-    const other = makeGrid([2, 2, 2], [2, 2, 2]);
-
-    // A delivery into a grid that this derivation does not read changes no box
-    // of it.
-    composite.acceptData({
-      grid: other,
-      voxelManager: makeFilled([2, 2, 2], 99),
-      frameIndex: 0,
-    });
-
-    expect(derived.voxelManager.getAtIJK(0, 0, 0)).toBe(0);
-  });
-});
-
-describe('CompositeVoxelManager derives a large grid in batches', () => {
-  function makeFullComposite(depth, onDerivedRegionChanged) {
-    const grid = makeGrid([4, 4, depth]);
-
-    return new CompositeVoxelManager({
-      primary: makeFilled(grid.dimensions, 5),
-      grid,
-      quality: ImageQualityStatus.FULL_RESOLUTION,
-      onDerivedRegionChanged,
-    });
-  }
-
-  it('stops a running derivation when rederiveAll starts a new one', async () => {
-    const changed = [];
-    const composite = makeFullComposite(64, (region) => changed.push(region));
-    const derived = composite.createRepresentation({ factors: [1, 1, 2] });
-    const first = derived.derivation;
-
-    composite.rederiveAll();
-    await first;
-    await derived.derivation;
-
-    // Only the second derivation reports its second batch.
-    expect(changed).toHaveLength(1);
-    expect(derived.voxelManager.getAtIJK(0, 0, 31)).toBe(5);
-    expect(composite.getRegionQuality(derived).missing).toBe(0);
-  });
-
-  it('reduces the first batch at once and the rest in idle time', async () => {
-    const changed = [];
-    // 64 source slices reduce by 2 to 32 derived slices, which is two batches
-    // of 16.
-    const composite = makeFullComposite(64, (region) => changed.push(region));
-    const derived = composite.createRepresentation({ factors: [1, 1, 2] });
-
-    expect(derived.voxelManager.getAtIJK(0, 0, 15)).toBe(5);
-    expect(derived.voxelManager.getAtIJK(0, 0, 16)).toBe(0);
-
-    // The record covers the reduced slices and no others.
-    const partial = composite.getRegionQuality(derived);
-
-    expect(partial.missing).toBe(4 * 4 * 16);
-
-    await derived.derivation;
-
-    expect(derived.voxelManager.getAtIJK(0, 0, 31)).toBe(5);
-    expect(composite.getRegionQuality(derived).missing).toBe(0);
-    // The second batch states the source slices that it wrote.
-    expect(changed).toEqual([
-      [
-        [0, 3],
-        [0, 3],
-        [32, 63],
-      ],
-    ]);
-  });
-
-  it('stops when the composite is disposed', async () => {
-    const composite = makeFullComposite(64);
-    const derived = composite.createRepresentation({ factors: [1, 1, 2] });
-
-    composite.dispose();
-    await derived.derivation;
-
-    expect(derived.voxelManager.getAtIJK(0, 0, 16)).toBe(0);
-  });
-
+describe('CompositeVoxelManager.getGridQuality', () => {
   it('gives the record of a grid that no representation holds from the live deliveries', () => {
     const grid = makeGrid([4, 4, 8]);
     const composite = new CompositeVoxelManager({

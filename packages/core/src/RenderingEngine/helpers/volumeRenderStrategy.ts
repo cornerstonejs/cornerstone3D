@@ -7,7 +7,6 @@ import type { ViewportFidelityCause } from '../../types/ViewportFidelity';
 import { volumeTextureBytes } from '../../utilities/getBufferConfiguration';
 import { gridLimitsOfGpuSettings } from '../../utilities/gpuSettingsPresets';
 import { getLossyDownsampling } from '../../init';
-import { isMutableSlab } from '../../cache/classes/VolumeTextureSet';
 import { FULL_RESOLUTION_TEXTURE_SET } from '../../cache/classes/ImageVolume';
 import type { GpuSettings } from '../../utilities/gpuSettingsPresets';
 import type { vtkStreamingOpenGLTexture } from '../../cache/classes/ImageVolume';
@@ -53,8 +52,7 @@ export type StrategyBinding = {
  * render does that for its lossless pass.
  *
  * A strategy instance belongs to one render path, which belongs to one
- * viewport. It is therefore the single owner that a slab which re-points
- * requires, which `IMutableVolumeTextureSlab` describes.
+ * viewport.
  */
 export interface IVolumeRenderStrategy {
   /** The name of the strategy. The names of its texture sets derive from it. */
@@ -211,7 +209,7 @@ class FullExtentTextureStrategy implements IVolumeRenderStrategy {
   public bindings(): StrategyBinding[] {
     const member = this.volume.getTextureSet(this.name)?.members()[0];
 
-    if (!member || isMutableSlab(member)) {
+    if (!member) {
       return [];
     }
 
@@ -420,8 +418,7 @@ export function provisionReducedResolutionStrategy({
   // at no cost in CPU memory. `ImageVolume.getGridQuality` gives the record of
   // that texture from the deliveries of the volume. A derivation of a volume
   // that holds all of its data would otherwise reduce every voxel during this
-  // provision. A CPU reader that needs the reduced voxels calls
-  // `createRepresentation` itself.
+  // provision.
   const set = volume.provisionTextureSet({
     name,
     grids: [grid],

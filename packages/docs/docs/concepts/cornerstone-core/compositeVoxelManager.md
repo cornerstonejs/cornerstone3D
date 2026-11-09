@@ -145,7 +145,7 @@ available", which is the behaviour of today.
 **The rule resolves for a region, and not for each voxel.** A test inside the inner loop of a brush
 tool is too slow. Select once for the region, then read through the result.
 
-**The rule never creates.** See [Creating a representation](#creating-a-representation).
+**The rule never creates.** See [Reduced grids](#reduced-grids).
 
 ### Addressing one representation directly
 
@@ -181,28 +181,13 @@ parameter in this version.
 The fill writes no value for a voxel that no representation holds, so the target keeps what the
 target already holds for that voxel.
 
-## Creating a representation
+## Reduced grids
 
-**The selection never creates.** Whether a new representation is worth its cost depends on the
-configuration and on the data that is available, so a **caller** decides, and a separate member
-creates:
+**The selection never creates.** A caller adds a representation with `addRepresentation`, or a
+loader adds one with `acceptData`. The reduced-copy pipeline (derived representations, reduced
+images, slabs and the brick index) is under further development on the branch `brick-loader`.
 
-```ts
-const reduced = composite.createRepresentation({
-  factors: [2, 2, 1],
-  statistic: Enums.VoxelStatistics.Average,
-});
-```
-
-| Option                             | Meaning                                                                                    |
-| ---------------------------------- | ------------------------------------------------------------------------------------------ |
-| `factors`                          | the box size of each axis. A factor of 1 leaves that axis at the resolution of the source  |
-| `sourceGrid`                       | the representation that the derivation reads. The best that the composite holds by default |
-| `sourceOffset`, `sourceDimensions` | the region of the source, for a derivation of one brick                                    |
-| `statistic`                        | the statistic of the result. `average` by default                                          |
-| `round`                            | rounds each value. `true` by default, for a store of whole numbers                         |
-
-**A derivation is a box average, and it is not a decimation.** A decimation of 2 takes every
+**A reduction is a box average, and it is not a decimation.** A decimation of 2 takes every
 second voxel, which keeps the high spatial frequencies and folds them into the signal as an alias.
 A reformat then shows vertical blur with stair steps on an oblique structure.
 
@@ -216,27 +201,6 @@ The rule for a display is less strict:
   at the reduced resolution.
 - A fill can average only the source voxels that the display needs, such as the voxels of one
   oblique plane.
-
-**A derivation always goes from a higher resolution to a lower one.** A box size is at least 1, and
-it can hold a fraction (`N / M`), so the result is never finer than its source. Data that no derivation can give
-arrives through `acceptData`.
-
-**A derivation reduces the regions that its source has delivered, and no others.** A source that
-states a list of deliveries is read over those regions alone, so a derivation over a streaming
-volume that has loaded nothing costs nothing, and a derivation over a volume that has loaded half
-of its frames reduces that half. A source that states no list holds every voxel, and the derivation
-then reads the whole grid.
-
-**A large derivation runs in batches.** The call reduces the first 16 slices of the derived grid at
-once, and each later batch of 16 slices in idle time. Until the last batch is done, the record of
-the result covers the reduced slices and no others. `representation.derivation` resolves when the
-derivation is complete, and `dispose` stops the batches that still run:
-
-```js
-const reduced = composite.createRepresentation({ factors: [1, 1, 2] });
-
-await reduced.derivation;
-```
 
 **A grid needs no representation to have a record.** `getGridQuality(grid)` answers for a grid that
 no representation holds with the live record of the source, mapped into that grid. A texture that
@@ -279,15 +243,6 @@ that no delivery covers.
 A representation that shares the key (grid, statistic) of a representation that the composite
 already holds **replaces** that representation.
 
-**A delivery also updates every derived representation that reads it.** `acceptData` redoes the
-boxes that the delivery touches, and it redoes those boxes only: a volume of 2464 frames re-derives
-far too slowly to run in full on the arrival of each frame. A caller that delivers data therefore
-needs no second call, and a derivation that ran before the data arrived catches up.
-
-P31.3 states the rule for the values. Before the full-resolution data of a box arrives, the box
-average is an approximation over the source voxels that have arrived, and the code **replaces**
-that value in place when the rest arrives. There are never two stored copies.
-
 ### What the record holds
 
 A record answers **what the data is**, and a separate pure function answers **what one reader gets
@@ -307,8 +262,8 @@ whole volume that arrives at the full quality takes the record back to one entry
 `exact` states whether `missing` is a count or an estimate. **A record that is not exact never
 states less than what is missing**, so a reader that trusts it errs towards "the data is not
 complete", and never towards a wrong statement of completeness. One case gives an estimate: a set
-of deliveries at unrelated offsets whose edges are too many to cut exactly. A derived
-representation counts its boxes exactly, by the rule of P31.3 above.
+of deliveries at unrelated offsets whose edges are too many to cut exactly. The record of a reduced
+grid counts its boxes exactly (see [The record of a reduced grid](#the-record-of-a-reduced-grid)).
 
 The record is **absolute**, and it states **no verdict**. It says which data exists and how much is
 missing, and a reader compares that against its own requirement. Two viewports over one volume can
@@ -339,10 +294,10 @@ frame that a progressive loader already delivered.
   record**, and a delivery that holds an earlier delivery of no better quality **replaces** it, so
   an overlap never makes the record grow without a limit.
 
-### A derived representation
+### The record of a reduced grid
 
-A derived representation holds **no record of its own**. One of its voxels is a box of source
-voxels, so:
+The record of a reduced grid comes from the record of its source. One of its voxels is a box of
+source voxels, so:
 
 - the quality of that voxel is the quality of the **worst** source voxel of its box;
 - the voxel is the average of the source voxels of its box that have arrived (P31.3), so it holds
@@ -350,11 +305,7 @@ voxels, so:
 - only a box with **no** arrived source voxel counts as missing. A fractional box counts a source
   voxel that it cuts as one of its voxels.
 
-`createRepresentation` therefore takes a copy of the record of its source, and `getRegionQuality`
-maps the region back into the source and reads that copy. **The copy states the data that the
-derivation really read**, and never more: a box that has read no source voxel holds nothing, and
-the copy says so. When a delivery redoes that box, it takes the copy forward at
-the same time, so the record and the data always describe the same moment.
+`getGridQuality` maps the region back into the source and reads the live record of the source.
 
 ### The verdict of one reader
 
@@ -505,11 +456,6 @@ registerVoxelStatistic({
     };
   },
 });
-
-composite.createRepresentation({
-  factors: [8, 8, 8],
-  statistic: Enums.VoxelStatistics.MINIMUM,
-});
 ```
 
 `VoxelStatisticRegistry` feeds the `VoxelStatistic` string union that every call site takes, and
@@ -534,10 +480,10 @@ minimum or a maximum, as in the example above, can ignore the weight.
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------ |
 | `reduceBySlices` | a fast path of `reduceByBoxStatistic` that reads whole slices. It returns `undefined` when it does not apply to a source | the reduction uses the accumulator   |
 | `fillPlane`      | fills one reduced slice of a GPU texture from the source frames of its box that have arrived                             | the texture falls back to `fillGrid` |
-| `boxReduction`   | the kind of reduction that a box derivation of this statistic records                                                    | the derivation records `boxAverage`  |
+| `boxReduction`   | the kind of reduction that the record of a reduced grid of this statistic states                                         | the record states `boxAverage`       |
 
-A fast path must give the same values as the accumulator. A reduction, a texture fill and a box
-derivation throw for a statistic that nothing registered.
+A fast path must give the same values as the accumulator. A reduction and a texture fill throw for
+a statistic that nothing registered.
 
 **A default selection considers the `average` statistic only.** `defaultSelection` is `false` for
 every other statistic, and the field must stay `false` for a minimum and for a maximum: a minimum

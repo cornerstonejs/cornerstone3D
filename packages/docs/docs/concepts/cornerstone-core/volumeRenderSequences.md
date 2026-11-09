@@ -168,7 +168,7 @@ sequenceDiagram
         SV->>Vol: markFrameTexturesDirty(frameIndex)
         SV->>Vol: recordFrameDelivery(frameIndex, quality)
         Vol->>CVM: acceptData({ grid, frameIndex, quality })
-        Note over CVM: Records the quality.<br/>Redoes only the boxes of a derived representation that the frame touches.
+        Note over CVM: Records the quality.
     end
     SV-->>Caller: IMAGE_VOLUME_LOADING_COMPLETED
 ```
@@ -204,7 +204,7 @@ sequenceDiagram
         loop each dirty slice, from fillCursor
             alt 16 slices with data are filled, or 8 ms passed after one slice
                 Tex->>Tex: fillCursor = slice, stop
-            else a derived representation holds this slice
+            else a representation of the composite holds this slice
                 Tex->>Cache: getImage(representation imageId).getScalarData()
             else compute the slice
                 Tex->>Tex: fillSliceByBoxStatistic(volume, grid, factors, slice)
@@ -305,7 +305,6 @@ sequenceDiagram
     App-->>Upd: SEGMENTATION_DATA_MODIFIED, onLabelmapSegmentationDataModified
     Upd->>LV: markFrameModified(slice) for each modified slice
     LV->>LV: markFrameTexturesDirty(slice)
-    LV->>LV: compositeVoxelManager.refreshDerivedFrames(bounds)
     Upd-->>App: IMAGE_VOLUME_MODIFIED
     Note over Tex: The next render fills the dirty slices with<br/>fillPlaneByForegroundMajority (sequence 4).
 ```

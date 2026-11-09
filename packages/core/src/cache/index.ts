@@ -5,22 +5,10 @@ import { Mesh } from './classes/Mesh';
 import StreamingImageVolume from './classes/StreamingImageVolume';
 import StreamingDynamicImageVolume from './classes/StreamingDynamicImageVolume';
 import volumeTextureStore, { VolumeTextureStore } from './volumeTextureStore';
-import {
-  MutableVolumeTextureSlab,
-  VolumeTextureSet,
-  isMutableSlab,
-} from './classes/VolumeTextureSet';
-import {
-  isReducedImageId,
-  parseReducedImageId,
-  provideReducedImages,
-  reducedImageId,
-} from './reducedVolumeImages';
+import { VolumeTextureSet } from './classes/VolumeTextureSet';
 
 export type {
   FixedVolumeTextureSlot,
-  IMutableVolumeTextureSlab,
-  VolumeTextureMutability,
   VolumeTextureSetDescription,
   VolumeTextureSlot,
 } from './classes/VolumeTextureSet';
@@ -28,11 +16,6 @@ export type {
   ProvisionTextureSetOptions,
   VolumeTextureLimits,
 } from './volumeTextureStore';
-export type {
-  ReducedImageIdOptions,
-  ReducedImages,
-  ReducedImagesOptions,
-} from './reducedVolumeImages';
 
 export {
   ImageVolume,
@@ -43,11 +26,5 @@ export {
   StreamingDynamicImageVolume,
   VolumeTextureStore,
   VolumeTextureSet,
-  MutableVolumeTextureSlab,
-  isMutableSlab,
   volumeTextureStore,
-  isReducedImageId,
-  parseReducedImageId,
-  provideReducedImages,
-  reducedImageId,
 };
