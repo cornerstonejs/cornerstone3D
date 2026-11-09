@@ -102,6 +102,11 @@ enum Events {
    */
   IMAGE_VOLUME_LOADING_COMPLETED = 'CORNERSTONE_IMAGE_VOLUME_LOADING_COMPLETED',
   /**
+   * Triggers on the eventTarget when a streaming volume cancels its load,
+   * while the volume is still in the cache. The detail holds `volumeId`.
+   */
+  IMAGE_VOLUME_LOADING_CANCELLED = 'CORNERSTONE_IMAGE_VOLUME_LOADING_CANCELLED',
+  /**
    * Triggers on the eventTarget when the image has successfully loaded by imageLoaders.
    * This event may be fired multiple times for different statuses as the image data gets loaded.
    *

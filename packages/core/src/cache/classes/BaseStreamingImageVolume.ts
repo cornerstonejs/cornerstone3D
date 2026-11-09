@@ -103,7 +103,7 @@ export class BaseStreamingImageVolume
   /**
    * It cancels loading the images of the volume. It sets the loading status to false
    * and filters any imageLoad request in the requestPoolManager that has the same
-   * volumeId
+   * volumeId, then fires `IMAGE_VOLUME_LOADING_CANCELLED`.
    */
   public cancelLoading = (): void => {
     const { loadStatus } = this;
@@ -130,6 +130,12 @@ export class BaseStreamingImageVolume
     // requests to ensure requests we no longer need are
     // no longer sent.
     imageLoadPoolManager.filterRequests(filterFunction);
+
+    // A progressive load removed the prefetch of other loaders; they can
+    // queue it again.
+    triggerEvent(eventTarget, Events.IMAGE_VOLUME_LOADING_CANCELLED, {
+      volumeId: this.volumeId,
+    });
   };
 
   /**

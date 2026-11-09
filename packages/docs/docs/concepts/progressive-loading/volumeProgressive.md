@@ -167,6 +167,10 @@ than the stages of the volume. Two rules keep the two loads apart:
   series before a switch to MPR queued such requests.
 - `stackPrefetch` and `stackContextPrefetch` queue nothing for a stack whose
   images a volume loads progressively.
+- When the volume cancels its load, it fires
+  `Events.IMAGE_VOLUME_LOADING_CANCELLED`, and `stackPrefetch` queues the
+  prefetch of its stack again. `stackContextPrefetch` starts again on the next
+  change of the image.
 
 `volume.isLoadingProgressively()` states whether a volume loads in this way.
 

@@ -666,7 +666,9 @@ differently, and the 5.x code to use.
    `stackContextPrefetch` do not start while
    `volume.isLoadingProgressively()` is true. An application that relied on
    the stack prefetch to fill the cache during a volume load gets the images
-   from the volume load in its own order.
+   from the volume load in its own order. When the volume cancels its load, it
+   fires `Events.IMAGE_VOLUME_LOADING_CANCELLED`, and `stackPrefetch` queues
+   the prefetch of the stack again.
 
 10. **A legacy volume viewport renders when its volume changes.** Default
     settings. After the load of a volume, `BaseVolumeViewport` calls
