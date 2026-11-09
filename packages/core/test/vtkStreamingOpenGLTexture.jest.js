@@ -73,8 +73,15 @@ function reducedTexture() {
 }
 
 describe('vtkStreamingOpenGLTexture budgeted fill of a reduced texture', () => {
+  // An unreachable time budget makes the slice budget the only limit, so the
+  // tests do not depend on the speed of the machine.
   beforeEach(() => {
-    mockConfig.rendering = { reducedTextureFill: { maxSlicesPerRender: 2 } };
+    mockConfig.rendering = {
+      reducedTextureFill: {
+        maxSlicesPerRender: 2,
+        maxMillisecondsPerRender: Infinity,
+      },
+    };
   });
 
   // The user experience must have this: the slice that a view shows fills
@@ -98,7 +105,12 @@ describe('vtkStreamingOpenGLTexture budgeted fill of a reduced texture', () => {
 
   // The API must do this: a budget of 0 slices still fills.
   it('fills one slice for each render with a budget of 0 slices', () => {
-    mockConfig.rendering = { reducedTextureFill: { maxSlicesPerRender: 0 } };
+    mockConfig.rendering = {
+      reducedTextureFill: {
+        maxSlicesPerRender: 0,
+        maxMillisecondsPerRender: Infinity,
+      },
+    };
     const { texture, uploadedSlices } = reducedTexture();
 
     texture.update3DFromRaw();
