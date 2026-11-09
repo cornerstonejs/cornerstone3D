@@ -119,14 +119,6 @@ class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
     return this.cachedCells;
   }
 
-  /** One more than the largest Z of a world point in this layout. */
-  get leadIndexCount(): number {
-    return this.traceCells.reduce(
-      (count, cell) => Math.max(count, cell.leadIndex + 1),
-      this.state.waveform.channels.length
-    );
-  }
-
   /**
    * Time window that this frame shows: the `timeRange` of the view state,
    * clamped to the record. A layout with no region that follows the view

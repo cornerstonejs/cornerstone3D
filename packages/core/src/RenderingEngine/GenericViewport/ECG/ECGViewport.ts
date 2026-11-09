@@ -29,7 +29,7 @@ import type {
   ECGWaveformPayload,
   ECGResetViewStateOptions,
 } from './ECGViewportTypes';
-import { findECGLayoutForZ } from './ecgTraceLayouts';
+import { ECG_LEAD_COPY_STRIDE, findECGLayoutForZ } from './ecgTraceLayouts';
 import {
   createDefaultECGViewState,
   normalizeECGViewState,
@@ -541,11 +541,12 @@ class ECGViewport extends GenericViewport<
 
     const nSamples = waveform.numberOfSamples;
     // The Z of a world point is the channel index, plus ECG_LEAD_COPY_STRIDE
-    // for a copy of a lead. The tools reject an index outside `dimensions`.
+    // for each copy of a lead. The size does not depend on the layout, so a
+    // tool keeps the value of a copy that the current layout does not show.
     const dimensions: Point3 = [
       nSamples,
       ECG_AMPLITUDE_INDEX_SIZE,
-      this.getResolvedView()?.leadIndexCount ?? waveform.channels.length,
+      ECG_LEAD_COPY_STRIDE * ECG_LEAD_COPY_STRIDE,
     ];
     const spacing: Point3 = [1, 1, 1];
     const origin: Point3 = [0, 0, 0];

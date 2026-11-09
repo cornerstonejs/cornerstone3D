@@ -92,6 +92,10 @@ describe('ECG viewport references and camera', () => {
       .getResolvedView()
       .channelLayouts.find((item) => item.leadIndex === 1);
     expect(viewport.isReferenceViewable(reference)).toBe(true);
+    // A tool still finds the index of the copy, so a probe keeps its value.
+    expect(viewport.getImageData().dimensions[2]).toBeGreaterThan(
+      reference.sliceIndex
+    );
     expect(viewport.worldToCanvas(world)).toEqual(
       viewport.worldToCanvas([world[0], world[1], leadII.leadIndex])
     );
