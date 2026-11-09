@@ -91,6 +91,10 @@ abstract class GenericViewport<
   constructor(args: { id: ViewportId; element: HTMLDivElement }) {
     this.id = args.id;
     this.element = args.element;
+    // Tools take these off the viewport (`const { worldToCanvas } = viewport`),
+    // as the legacy viewports allow, so they must keep `this`.
+    this.canvasToWorld = this.canvasToWorld.bind(this);
+    this.worldToCanvas = this.worldToCanvas.bind(this);
   }
 
   // ====================================================================

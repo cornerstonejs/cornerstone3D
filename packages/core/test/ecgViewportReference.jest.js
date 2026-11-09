@@ -145,6 +145,16 @@ describe('ECG viewport references and camera', () => {
     warn.mockRestore();
   });
 
+  it('keeps the transforms bound, as the tools take them off the viewport', async () => {
+    const viewport = await makeViewport('vp-bound');
+    const { worldToCanvas, canvasToWorld } = viewport;
+
+    expect(worldToCanvas([100, 0, 0])).toEqual(
+      viewport.worldToCanvas([100, 0, 0])
+    );
+    expect(canvasToWorld([10, 10])).toEqual(viewport.canvasToWorld([10, 10]));
+  });
+
   it('keeps the view when a saved camera is restored past the record end', async () => {
     const viewport = await makeViewport();
     viewport.setZoom(4);
