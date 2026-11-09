@@ -149,7 +149,9 @@ export interface ECGViewState extends ViewportCameraBase<[number, number]> {
   visibleChannels?: number[];
   /**
    * The trace layout: a registered name, or a full definition. The view
-   * state keeps the value as the caller gave it. Defaults to `'12x1'`.
+   * state keeps the value as the caller gave it. Undefined gives the default
+   * of the waveform: `'3x4+1'` for 8 or more leads and 5 s or more, else
+   * `'12x1'`.
    */
   traceLayout?: ECGTraceLayout;
 }
