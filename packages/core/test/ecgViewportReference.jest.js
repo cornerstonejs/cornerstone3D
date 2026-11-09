@@ -71,6 +71,35 @@ describe('ECG viewport references and camera', () => {
     }
   });
 
+  it('keeps an annotation of the rhythm strip on its lead in every layout', async () => {
+    const viewport = await makeViewport('vp-rhythm');
+    viewport.setViewState({ traceLayout: '3x4+1' });
+    const rhythm = viewport
+      .getResolvedView()
+      .channelLayouts.find((item) => item.leadIndex >= 1000);
+    // Lead II is channel 1; its second copy is 1 + 1000.
+    expect(rhythm.leadIndex).toBe(1001);
+
+    const world = viewport.canvasToWorld(
+      viewport.worldToCanvas([3000, 0, rhythm.leadIndex])
+    );
+    const reference = viewport.getViewReference({ points: [world] });
+    expect(reference.sliceIndex).toBe(1001);
+
+    // 12x1 has no rhythm strip, so the copy maps to the row of lead II.
+    viewport.setViewState({ traceLayout: '12x1' });
+    const leadII = viewport
+      .getResolvedView()
+      .channelLayouts.find((item) => item.leadIndex === 1);
+    expect(viewport.isReferenceViewable(reference)).toBe(true);
+    expect(viewport.worldToCanvas(world)).toEqual(
+      viewport.worldToCanvas([world[0], world[1], leadII.leadIndex])
+    );
+
+    viewport.setViewState({ visibleChannels: [0, 2, 3, 4, 5] });
+    expect(viewport.isReferenceViewable(reference)).toBe(false);
+  });
+
   it('keeps the view when a saved camera is restored past the record end', async () => {
     const viewport = await makeViewport();
     viewport.setZoom(4);

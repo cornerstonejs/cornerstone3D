@@ -7,6 +7,7 @@ import {
 import {
   hasViewTimeRegion,
   resolveECGTraceCells,
+  findECGLayoutForZ,
   resolveDefaultECGTraceLayout,
   resolveECGTraceLayout,
   type ECGTraceCell,
@@ -321,8 +322,7 @@ class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
     const channelLayouts = this.channelLayouts;
     const z = Math.round(worldPos[2]);
 
-    // `leadIndex` identifies one region; see `ECGTraceCell.leadIndex`.
-    const layout = channelLayouts.find((item) => item.leadIndex === z);
+    const layout = findECGLayoutForZ(channelLayouts, z);
 
     if (!layout) {
       return [0, 0];

@@ -78,14 +78,14 @@ describe('ECG trace layouts in world space', () => {
       });
     });
 
-    it('gives the 3x4+1 rhythm strip an index above the channels', () => {
+    it('gives the 3x4+1 rhythm strip the Z of lead II plus 1000', () => {
       const channels = makeChannels(TWELVE_LEAD_NAMES);
       const layouts = layoutsFor(channels, '3x4+1');
       const rhythm = layouts.filter(isRhythm(channels));
 
       expect(rhythm).toHaveLength(1);
       expect(rhythm[0].channel.name).toBe('Lead II');
-      expect(rhythm[0].leadIndex).toBe(channels.length);
+      expect(rhythm[0].leadIndex).toBe(1001);
 
       // The grid region of lead II keeps its own index.
       const gridLeadTwo = layouts.find((layout) => layout.leadIndex === 1);

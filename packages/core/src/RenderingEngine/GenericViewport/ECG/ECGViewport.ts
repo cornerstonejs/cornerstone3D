@@ -30,7 +30,7 @@ import type {
   ECGWaveformPayload,
   ECGResetViewStateOptions,
 } from './ECGViewportTypes';
-import { getECGTraceLayoutNames } from './ecgTraceLayouts';
+import { findECGLayoutForZ, getECGTraceLayoutNames } from './ecgTraceLayouts';
 import {
   createDefaultECGViewState,
   normalizeECGViewState,
@@ -238,7 +238,7 @@ class ECGViewport extends GenericViewport<
     }
     const layouts = this.getResolvedView()?.channelLayouts;
 
-    return !layouts || layouts.some((item) => item.leadIndex === sliceIndex);
+    return !layouts || !!findECGLayoutForZ(layouts, sliceIndex);
   }
 
   /**
@@ -587,9 +587,8 @@ class ECGViewport extends GenericViewport<
     }
 
     const nSamples = waveform.numberOfSamples;
-    // The Z of a world point identifies a trace region. A region that repeats
-    // a lead takes a Z above the last channel index, and the annotation tools
-    // reject a handle whose index is outside `dimensions`.
+    // The Z of a world point is the channel index, plus ECG_LEAD_COPY_STRIDE
+    // for a copy of a lead. The tools reject an index outside `dimensions`.
     const dimensions: Point3 = [
       nSamples,
       ECG_AMPLITUDE_INDEX_SIZE,
