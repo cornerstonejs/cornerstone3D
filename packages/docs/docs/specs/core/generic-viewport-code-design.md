@@ -174,6 +174,48 @@ states the contract, and this specification repeats it:
   `registerViewportType()`, and the developer does not edit
   `viewportTypeToViewportClass.ts`.
 
+### The trace layout of the ECG family (GENVIEW-ECG)
+
+- **GENVIEW-ECG-1** A hanging protocol and an application set the ECG layout
+  with one attribute, `traceLayout`. The value is a registered layout name, for
+  example `'3x4+1'`, or a full layout definition with its trace regions. The
+  same attribute accepts both forms.
+- **GENVIEW-ECG-2** The developer adds a named layout with
+  `registerECGTraceLayout()`, and declares the name in the interface
+  `ECGTraceLayoutRegistry`. A registration can give `supports(context)`.
+  `getECGTraceLayoutNames(context)` lists the names whose `supports` accepts
+  the waveform, and every name with no `supports`. The registry is the only
+  source of layout names.
+- **GENVIEW-ECG-3** The view state keeps `traceLayout` as the caller gave it,
+  so a saved presentation keeps a name as a name.
+- **GENVIEW-ECG-4** A trace region names its lead by a channel index, or by the
+  lead code value from `ChannelSourceSequence`. The code meaning depends on the
+  language of the device, so a lead matches by its code meaning only when the
+  channel has no code value.
+- **GENVIEW-ECG-5** A hidden lead does not move another lead in time or in
+  column. A band of regions in which every lead is hidden gets zero height,
+  and the other bands share its height. This satisfies ECG-U-6 of the
+  [ECG display requirements](./ecg/requirements.md).
+- **GENVIEW-ECG-6** `ECGResolvedView` resolves an undefined `traceLayout` with
+  `resolveDefaultECGTraceLayout`: `'3x4+1'` for 8 or more leads and 5 s or
+  more, else `'12x1'`. The view state keeps `traceLayout` undefined
+  (GENVIEW-ECG-3), and `ECGResolvedView.traceLayoutName` gives the name that
+  shows. This satisfies ECG-U-4 of the
+  [ECG display requirements](./ecg/requirements.md).
+- **GENVIEW-ECG-7** World Z is `getECGLeadZ(channel, copy, group)`:
+  `channel + 1000 * k`, with `k = copy * groupCount + groupIndex`. The k index
+  counts across all the multiplex groups of the instance, so two groups never
+  share a Z. With one group, the first copy of a lead is its channel index,
+  whether or not every channel shows. `findECGLayoutForZ` maps a copy that the
+  layout does not show to the first region of its lead in the same group. This
+  satisfies ECG-U-8.
+- **GENVIEW-ECG-8** `setDisplaySets({ displaySetId, options:
+{ multiplexGroupIndex } })` names the multiplex group. The data provider
+  passes the option to the ECG and the CALIBRATION requests
+  (`getEcgMultiplexGroupIndex`), so the trace and the calibration describe one
+  group. The frame of the image id does not name a group. With no option, the
+  providers use `findPrimaryWaveformGroup`. This satisfies ECG-U-14.
+
 ## Implementation requirements
 
 ### The base class (GENVIEW-BASE)
@@ -317,6 +359,12 @@ For example `Planar/DefaultPlanarDataProvider.ts`.
   no view state.
 - **GENVIEW-DATA-3** The payload carries the logical data only. It carries no
   canvas, no actor and no mapper.
+- **GENVIEW-DATA-4** Every data source has a display set, also a source that
+  is not a DICOM instance. The data provider finds the display set by its
+  display set id through `genericViewportDisplaySetAccess.ts`, and not by an
+  image id. An entry of `genericViewportDisplaySetMetadataProvider` wins.
+  Otherwise the display set comes from the `DISPLAY_SET` metadata cache, and its
+  `displaySetId` or `displaySetInstanceUID` equals the key.
 
 ### The projection adapter (GENVIEW-PROJ)
 
@@ -405,85 +453,18 @@ places below. Each item names the requirement that the deviation breaks. An
 item that breaks no requirement yet says so, and names the requirement that a
 future change must obey.
 
-Most items below are in the `ECG` family. The rules apply in the same way to
-the `Planar` family and to the other families. A deviation in another family
-goes into this list when a review finds it.
+The rules apply in the same way to every family. A deviation goes into this
+list when a review finds it.
 
 A review uses this section in two ways. A deviation that this section already
 holds is not a new finding. A change that makes one of these deviations worse is
 a finding, and the report names the deviation.
 
-### The resolved view of the ECG family reads render-path output
+### Only the Planar and ECG families answer `getCurrentMode()`
 
-`CanvasECGRenderPath.addData` creates a `metrics` object on the mounted
-rendering. On each draw, `drawFrame` computes new metrics and replaces that
-object. `ECGViewport.getResolvedView` passes the current `metrics` object into a
-new `ECGResolvedView`, and the resolved view divides by `metrics.ecgWidth` and
-`metrics.channelScale` in
-`canvasToWorld`.
-
-The world/canvas transform is therefore one frame old after any change of the
-canvas size or of the time window. Before the first draw, the transform uses the
-placeholder values that `addData` wrote, which are all ones.
-
-Breaks GENVIEW-VIEW-2, GENVIEW-PATH-2 and GENVIEW-API-4.
-
-### `amplitudeScale` scales the drawn trace and not the transform
-
-`ECGDataPresentation` holds `amplitudeScale`. `drawECGTraces` multiplies each
-sample by `channelScale * amplitudeScale`, and `ECGResolvedView.canvasToWorld`
-divides by `channelScale` only.
-
-An `amplitudeScale` other than 1 therefore moves the trace on the canvas, and it
-does not move the coordinate transform. An annotation no longer sits on the
-feature that the user placed it on, and no `CAMERA_MODIFIED` event reports the
-change.
-
-Breaks GENVIEW-STATE-1 and GENVIEW-API-5. `amplitudeScale` belongs in
-`ECGViewState`, because it changes where a world point lands on the canvas.
-
-### `sweepSpeed` is declared and never read
-
-`ECGProperties` declares `sweepSpeed`, and no code in the ECG family or in
-`utilities/ECGUtilities.ts` reads it. `computeECGRenderMetrics` uses the constant
-`ECG_SECONDS_WIDTH` for the horizontal scale.
-
-The option is dead. When a change makes it live, the option goes into
-`ECGViewState` and not into `ECGDataPresentation`, for the reason above.
-
-Breaks no requirement today. A change that reads `sweepSpeed` must obey
-GENVIEW-STATE-1 and GENVIEW-API-5.
-
-### `utilities/ECGUtilities.ts` serves two viewport classes
-
-The module holds the ECG layout code, the ECG metric code and the ECG drawing
-code. Two classes import it: the ECG family, and the deprecated
-`packages/core/src/RenderingEngine/ECGViewport.ts`.
-
-The Video family and the WSI family have no equivalent module. Their drawing
-code lives inside the family directory.
-
-Breaks GENVIEW-FILE-1 and GENVIEW-FILE-5. The fix moves the code into
-`GenericViewport/ECG/` and leaves a re-export for the deprecated class.
-
-### Three declarations of the ECG layout, and two of the render metrics
-
-| Declaration           | File                                      | State                                                |
-| --------------------- | ----------------------------------------- | ---------------------------------------------------- |
-| `ChannelLayout`       | `GenericViewport/ECG/ECGViewportTypes.ts` | Exported, and no file imports it                     |
-| `ChannelLayout`       | `RenderingEngine/ECGViewport.ts`          | A second local declaration                           |
-| `ECGChannelLayout`    | `utilities/ECGUtilities.ts`               | The one that the code uses                           |
-| `RenderWindowMetrics` | `GenericViewport/ECG/ECGViewportTypes.ts` | Structurally the same as `ECGRenderMetrics`          |
-| `ECGRenderMetrics`    | `utilities/ECGUtilities.ts`               | `CanvasECGRenderPath` casts to `RenderWindowMetrics` |
-
-Breaks GENVIEW-STATE-5. The dead declaration goes, and the duplicate becomes a
-type alias, so a future change to one shape cannot silently pass the cast.
-
-### Only the Planar family answers `getCurrentMode()`
-
-`PlanarViewport` overrides `getCurrentMode()`. The ECG family, the Video family,
-the WSI family and the Volume3D family do not, so each one answers `'unknown'`
-whenever data is mounted.
+`PlanarViewport` and `ECGViewport` override `getCurrentMode()`. The Video
+family, the WSI family and the Volume3D family do not, so each one answers
+`'unknown'` whenever data is mounted.
 
 `UltrasoundDirectionalTool` shows the cost. Its guard reads:
 
@@ -503,4 +484,14 @@ This section records the defects that the requirements above prevent. A new
 defect of the same kind gets a new line here, with the pull request that fixed
 it and the requirement that covers it.
 
-No entry yet. The § Known deviations section holds what is open.
+The § Known deviations section holds what is open.
+
+| Defect                                                                                                                                                                                                                                                                                | Fixed in                                                          | Requirement                                                   |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------- |
+| The ECG resolved view read the render metrics that the last draw left on the mounted rendering, and the render path computed its own time window. A transform was one frame old, and a click in a `12x1` row mapped to the wrong sample after a change of the time window.            | [#2899](https://github.com/cornerstonejs/cornerstone3D/pull/2899) | GENVIEW-VIEW-2, GENVIEW-VIEW-6, GENVIEW-PATH-2, GENVIEW-API-4 |
+| `amplitudeScale` was in the ECG data presentation. It scaled the drawn trace and not the transform, and a change fired no `CAMERA_MODIFIED`.                                                                                                                                          | [#2899](https://github.com/cornerstonejs/cornerstone3D/pull/2899) | GENVIEW-STATE-1, GENVIEW-API-5                                |
+| `sweepSpeed` was declared on the ECG data presentation and never read. It is now in `ECGViewState`, with `sensitivityMmMv`, `visibleChannels` and `traceLayout`.                                                                                                                      | [#2899](https://github.com/cornerstonejs/cornerstone3D/pull/2899) | GENVIEW-STATE-1, GENVIEW-STATE-3                              |
+| `RenderWindowMetrics` and `ECGRenderMetrics` were two declarations of one shape, joined by a cast, and the deprecated class declared its own `ChannelLayout`. `ECGRenderMetrics` and `ECGChannelLayout` are now the only declarations.                                                | [#2899](https://github.com/cornerstonejs/cornerstone3D/pull/2899) | GENVIEW-STATE-5                                               |
+| The ECG family answered `getCurrentMode()` with `'unknown'`.                                                                                                                                                                                                                          | [#2899](https://github.com/cornerstonejs/cornerstone3D/pull/2899) | GENVIEW-FAMILY-5, GENVIEW-API-6                               |
+| `utilities/ECGUtilities.ts` held the ECG layout, metric and drawing code, outside the family directory, and served the ECG family and the deprecated class. The code is now in `GenericViewport/ECG/`, and `utilities.ECGUtilities` is deprecated. The next major release removes it. | [#2899](https://github.com/cornerstonejs/cornerstone3D/pull/2899) | GENVIEW-FILE-1, GENVIEW-FILE-5                                |
+| The ECG layout had two attributes: `layoutType`, a closed list of names, and `traceRegions`, which no code read. `traceLayout` now takes a registered name or a full definition.                                                                                                      | [#2899](https://github.com/cornerstonejs/cornerstone3D/pull/2899) | GENVIEW-ECG-1, GENVIEW-ECG-2                                  |

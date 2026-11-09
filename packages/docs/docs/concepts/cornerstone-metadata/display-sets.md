@@ -78,9 +78,21 @@ The viewport/registry `displaySetId` is the same value as the display set's
 `displaySetId` field — there is one identifier for a display set, used on both
 the metadata object and the viewport API.
 
-For the legacy viewports, `setDisplaySets` resolves `displaySetId` through the
-**generic-viewport display-set provider**, so you register the renderable data
-there first. The registered shape depends on the viewport family:
+`setDisplaySets` finds the display set by its `displaySetId`. Every viewport
+family, legacy or generic, reads it from one of two places:
+
+1. The **generic-viewport display-set provider**, when you registered the
+   renderable data there. This entry wins.
+2. The `DISPLAY_SET` metadata cache, under the display set id.
+   `registerDisplaySetMetadata` stores the display set there (see
+   [Caching display sets in the metadata layer](#caching-display-sets-in-the-metadata-layer)).
+   A stack or a volume shows `imageIds`. A video or an ECG shows `instance`
+   (the object to show), else the first entry of `underlyingImageIds`, else the
+   first entry of `imageIds`. A WSI display set uses its own `webClient`, else
+   the `WADO_WEB_CLIENT` metadata of its first image id.
+
+With the cache, you do not register a second shape for each family. With the
+provider, the registered shape depends on the viewport family:
 
 ```ts
 import { Enums, utilities } from '@cornerstonejs/core';
@@ -180,7 +192,8 @@ import {
 // Once at app init (after registerDefaultProviders):
 registerDisplaySetProviders();
 
-// After creating a display set, cache it keyed by its (underlying) image ids:
+// After creating a display set, cache it keyed by its displaySetId and by its
+// (underlying) image ids:
 registerDisplaySetMetadata(seriesImageIds, displaySet);
 
 // Anywhere downstream, resolve the display set from one of its image ids:
