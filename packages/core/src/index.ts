@@ -182,6 +182,10 @@ import {
 import {
   getRenderingCapabilities,
   detectRenderingCapabilities,
+  GPU_CLASSES,
+  GPU_CLASS_BUDGET_FRAC,
+  getRecommendedInteractiveBudgetFrac,
+  classifyGpuClass,
 } from './utilities/renderingCapabilities';
 
 // Classes
@@ -432,6 +436,10 @@ export {
   getEffectiveRenderBackend,
   getRenderingCapabilities,
   detectRenderingCapabilities,
+  GPU_CLASSES,
+  GPU_CLASS_BUDGET_FRAC,
+  getRecommendedInteractiveBudgetFrac,
+  classifyGpuClass,
   // GenericViewport
   getUseGenericViewport,
   // Geometry Loader
