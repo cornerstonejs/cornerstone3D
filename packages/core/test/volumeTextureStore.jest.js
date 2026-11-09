@@ -161,6 +161,25 @@ describe('the store counts one global budget', () => {
     expect(store.getSet('volume-1', 'b')).toBeDefined();
   });
 
+  it('evicts nothing when all the idle sets together cannot make room', () => {
+    const { store, destroyed, options } = makeStore();
+    const slab = (depth) => ({ grids: [makeGrid([64, 64, depth])] });
+    const oneSlab = 64 * 64 * 4;
+
+    store.setBudget(10 * oneSlab);
+    store.provision(options({ name: 'held', ...slab(7) }));
+    store.claim('volume-1', 'held');
+    store.provision(options({ name: 'idle-1', ...slab(1) }));
+    store.provision(options({ name: 'idle-2', ...slab(1) }));
+
+    expect(
+      store.provision(options({ name: 'new', ...slab(4) }))
+    ).toBeUndefined();
+    expect(store.getSet('volume-1', 'idle-1')).toBeDefined();
+    expect(store.getSet('volume-1', 'idle-2')).toBeDefined();
+    expect(destroyed.length).toBe(0);
+  });
+
   it('never evicts a pinned set under a budget, but its volume takes it', () => {
     const { store, options } = makeStore();
     const oneSet = 64 * 64 * 16 * 4;

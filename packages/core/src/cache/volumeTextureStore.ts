@@ -369,22 +369,37 @@ class VolumeTextureStore {
    * A backstop set leaves last, because a fill that finds no source leaves a
    * blank region and MR-U-6 forbids that.
    *
+   * When all the evictable sets together cannot make room, the store evicts
+   * nothing and refuses, so a refusal never costs the sets that it kept.
+   *
    * @returns true when the store can now hold the new set
    */
   private makeRoomFor(bytes: number): boolean {
-    if (this.budgetBytes <= 0 || this.bytesUsed + bytes <= this.budgetBytes) {
+    const used = this.bytesUsed;
+
+    if (this.budgetBytes <= 0 || used + bytes <= this.budgetBytes) {
       return true;
     }
 
-    const evictable = [...this.sets.values()]
-      .filter((stored) => stored.set.references === 0 && !stored.set.pinned)
-      .sort((a, b) => {
-        if (a.set.backstop !== b.set.backstop) {
-          return a.set.backstop ? 1 : -1;
-        }
+    const evictable = [...this.sets.values()].filter(
+      (stored) => stored.set.references === 0 && !stored.set.pinned
+    );
+    const evictableBytes = evictable.reduce(
+      (total, stored) => total + stored.set.bytes,
+      0
+    );
 
-        return a.set.lastUsed - b.set.lastUsed;
-      });
+    if (used - evictableBytes + bytes > this.budgetBytes) {
+      return false;
+    }
+
+    evictable.sort((a, b) => {
+      if (a.set.backstop !== b.set.backstop) {
+        return a.set.backstop ? 1 : -1;
+      }
+
+      return a.set.lastUsed - b.set.lastUsed;
+    });
 
     for (const stored of evictable) {
       this.evict(stored.volumeId, stored.set.name);
