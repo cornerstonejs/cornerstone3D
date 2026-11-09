@@ -605,7 +605,7 @@ describe('PlanarViewport acquired frames in the volume path (user experience)', 
     await expectStagesToRedraw(() => sourceBinding().rendering);
   });
 
-  it('moves a stack to the image closest to a focal-point reference', () => {
+  function bindStack() {
     viewport.bindings.set(dataId, {
       applyViewState: jest.fn(),
       data: { id: dataId, type: 'image', imageIds },
@@ -620,11 +620,28 @@ describe('PlanarViewport acquired frames in the volume path (user experience)', 
       updateDataPresentation: jest.fn(),
     });
     viewport.mountedData.promoteSourceDataId(dataId);
-    const setImageIdIndex = jest.spyOn(viewport, 'setImageIdIndex');
+    return jest.spyOn(viewport, 'setImageIdIndex');
+  }
+
+  it('moves a stack to the image closest to a focal-point reference', () => {
+    const setImageIdIndex = bindStack();
 
     // The reference that crosshairs send through jumpToFocalPoint.
     viewport.setViewReference({ cameraFocalPoint: [100, 100, 16] });
     expect(setImageIdIndex).toHaveBeenLastCalledWith(8);
+  });
+
+  // The API must do this: a focal point that no image of the stack holds,
+  // or a plane of another orientation, does not move the stack.
+  it('keeps the image for a focal point far from the stack or of another plane', () => {
+    const setImageIdIndex = bindStack();
+
+    viewport.setViewReference({ cameraFocalPoint: [100, 100, 516] });
+    viewport.setViewReference({
+      cameraFocalPoint: [100, 100, 16],
+      viewPlaneNormal: [1, 0, 0],
+    });
+    expect(setImageIdIndex).not.toHaveBeenCalled();
   });
 
   it('shows the frames with a volume labelmap, on one plane, and below the labelmap', async () => {
