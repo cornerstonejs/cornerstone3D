@@ -662,4 +662,30 @@ describe('PlanarViewport acquired frames in the volume path (user experience)', 
       ).toBe(frame);
     }
   });
+
+  // The labelmap texture has the spacing `labelmapSpacing`; the full grid has 1 x 1 x 2.
+  async function fidelityOfFrameWithLabelmap(labelmapSpacing) {
+    await mount();
+    await viewport.addDisplaySet(segId, { role: 'overlay' });
+    const segRendering = viewport.bindings.get(segId).rendering;
+    segRendering.voxelQuality = {
+      ...segRendering.voxelQuality,
+      grid: { ...fullGrid, spacing: labelmapSpacing },
+    };
+    await releaseFrames();
+
+    expect(frameRendering().actor.getVisibility()).toBe(true);
+    return viewport.getFidelityLines().map((line) => dataKindOf(line));
+  }
+
+  it('reports a reduced labelmap that draws over the full-resolution frame', async () => {
+    expect(await fidelityOfFrameWithLabelmap([1, 1, 4])).toEqual([
+      'full',
+      'reduced',
+    ]);
+  });
+
+  it('adds no line for a full-resolution labelmap over the frame', async () => {
+    expect(await fidelityOfFrameWithLabelmap([1, 1, 2])).toEqual(['full']);
+  });
 });

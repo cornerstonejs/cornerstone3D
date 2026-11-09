@@ -439,6 +439,9 @@ group says which part of a generic viewport owns each piece of the fidelity.
   frames is such a binding. At each change of the visible actor, the binding
   sets `excludeFromFidelity` on the hidden rendering and clears it on the
   visible rendering. Thus the fidelity follows the path that the user sees.
+  While the frame shows, `PlanarViewport` adds a line for each labelmap
+  rendering whose record grid is coarser than its `fullGrid`
+  (FIDELITY-STATE-9).
 - **GENVIEW-FIDELITY-3** The resolved view supplies the display spacing of the
   verdict, because the display spacing is a world size of one device pixel. The
   base class reads it with `canvasToWorld()` of the resolved view. A render path

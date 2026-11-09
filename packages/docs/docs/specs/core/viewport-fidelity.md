@@ -194,7 +194,12 @@ states map to the states of this specification: transiently lossy is
   image.
 - **FIDELITY-STATE-9** A viewport reports the fidelity of its source data. The
   fidelity of an overlay, for example a reduced segmentation labelmap, is out
-  of scope.
+  of scope, with one exception. When the viewport shows the original acquired
+  frame of the source, and a labelmap with a reduced resolution draws over that
+  frame, the viewport reports the labelmap as reduced. The labelmap can then
+  show a contour of a nearby slice on the frame. A labelmap at full resolution
+  adds nothing. Over a reduced source image, the source already reports the
+  reduction, and the labelmap adds nothing.
 - **FIDELITY-STATE-10** A drawn grid that is coarser than the full volume, and
   that has no record, gives `lossy`. The indicator does not hide it. Only a
   legacy volume viewport makes such a line. A generic render path always sets

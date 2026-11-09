@@ -90,7 +90,17 @@ import {
   createPlanarVolumeSliceBasis,
   getVolumeImageIdIndexWorldPoint,
 } from './planarSliceBasis';
-import type { PlanarRendering } from './planarRuntimeTypes';
+import type {
+  PlanarRendering,
+  PlanarVolumeSliceRendering,
+} from './planarRuntimeTypes';
+import type { FidelityDisplay } from '../../helpers/fidelityIndicator/displaySpacingOfViewport';
+import { fidelityLinesFromBindings } from '../../helpers/fidelityIndicator/collectFidelityLines';
+import {
+  type FidelityLine,
+  isReduced,
+  reductionFactorsOf,
+} from '../../helpers/fidelityIndicator/fidelityIndicatorState';
 import PlanarMountedData from './PlanarMountedData';
 import PlanarViewReferenceController from './PlanarViewReferenceController';
 export type { PlanarReferenceContext } from './PlanarViewReferenceController';
@@ -1650,6 +1660,52 @@ class PlanarViewport extends GenericViewport<
   // ====================================================================
   // Protected & private
   // ====================================================================
+
+  /**
+   * Adds a line for each reduced labelmap while the acquired frame shows
+   * (FIDELITY-STATE-9). The frame draws the source at full resolution, and a
+   * labelmap with a reduced texture can then draw a contour of a nearby slice
+   * on it. Over the reduced volume slice, the source line already reports the
+   * reduction, so a labelmap adds no line there.
+   */
+  protected override collectFidelityLines(
+    display?: FidelityDisplay
+  ): FidelityLine[] {
+    const lines = super.collectFidelityLines(display);
+    const renderings: Partial<PlanarVolumeSliceRendering>[] = [];
+
+    this.forEachBinding((binding) => {
+      renderings.push(
+        ...((binding.getRenderings?.() ?? [
+          binding.rendering,
+        ]) as Partial<PlanarVolumeSliceRendering>[])
+      );
+    });
+
+    if (!renderings.some((rendering) => rendering.showsAcquiredFrame)) {
+      return lines;
+    }
+
+    const labelmaps = renderings.filter(
+      ({ isSegmentationOverlay, voxelQuality, fullGrid }) =>
+        isSegmentationOverlay &&
+        voxelQuality &&
+        fullGrid &&
+        isReduced(reductionFactorsOf(voxelQuality.grid, fullGrid))
+    );
+
+    return lines.concat(
+      fidelityLinesFromBindings(
+        display,
+        labelmaps.map((rendering) => ({
+          record: rendering.voxelQuality,
+          fullGrid: rendering.fullGrid,
+          reductionCause: rendering.reductionCause,
+          label: 'Labelmap',
+        }))
+      )
+    );
+  }
 
   protected override onDestroy(): void {
     this.clearResolvedViewCache();
