@@ -8,6 +8,7 @@ import type {
   ECGTraceRegion,
 } from './ECGViewportTypes';
 import type { ECGChannelLike } from './ecgWaveform';
+import clamp from '../../../utilities/clamp';
 
 /** Lead code values of lead II, in SCPECG and in MDC. */
 const LEAD_II_CODES = new Set(['5.6.3-9-2', '2:2']);
@@ -214,8 +215,8 @@ export function resolveECGTraceCells<TChannel extends ECGChannelLike>(args: {
       time === 'view'
         ? viewSampleWindow
         : [
-            Math.floor(clamp01(time[0]) * numberOfSamples),
-            Math.floor(clamp01(time[1]) * numberOfSamples),
+            Math.floor(clamp(time[0], 0, 1) * numberOfSamples),
+            Math.floor(clamp(time[1], 0, 1) * numberOfSamples),
           ];
 
     cells.push({
@@ -250,10 +251,6 @@ function findLeadByCode(
   return byCode >= 0
     ? byCode
     : channels.findIndex((channel) => !channel.code && channel.name === lead);
-}
-
-function clamp01(value: number): number {
-  return Math.max(0, Math.min(1, value));
 }
 
 /** Index of lead II by its code value, then by its name, then the second channel. */

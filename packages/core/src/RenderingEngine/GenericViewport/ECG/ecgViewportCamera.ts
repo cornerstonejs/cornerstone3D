@@ -38,7 +38,13 @@ export function getECGLayoutOptions(viewState: ECGViewState): ECGLayoutOptions {
   const options: ECGLayoutOptions = {};
 
   ECG_LAYOUT_OPTION_KEYS.forEach((key) => {
-    if (viewState[key] !== undefined) {
+    const value = viewState[key];
+    // A paper scale that is not a positive number means the default.
+    const isBadScale =
+      (key === 'sweepSpeed' || key === 'sensitivityMmMv') &&
+      !(Number.isFinite(value) && (value as number) > 0);
+
+    if (value !== undefined && !isBadScale) {
       (options as Record<string, unknown>)[key] = viewState[key];
     }
   });

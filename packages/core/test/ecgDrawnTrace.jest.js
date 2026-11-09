@@ -197,4 +197,15 @@ describe('ECG drawn trace', () => {
       6
     );
   });
+
+  it('uses the default paper scale for a sweep speed or a sensitivity that is not positive', async () => {
+    const viewport = await makeViewport(
+      { a: makeWaveform('a', 12) },
+      { sweepSpeed: 0, sensitivityMmMv: -10 }
+    );
+
+    expect(viewport.getViewState().sweepSpeed).toBeUndefined();
+    expect(viewport.getViewState().sensitivityMmMv).toBeUndefined();
+    expect(viewport.getResolvedView().metrics.sweepSpeed).toBe(25);
+  });
 });

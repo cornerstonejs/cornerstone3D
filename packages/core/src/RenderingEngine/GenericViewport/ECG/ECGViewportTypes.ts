@@ -153,7 +153,7 @@ export interface ECGProperties {
   showGrid?: boolean;
   /**
    * Whether to render millivolt labels on the grid. Applies only when
-   * `ECGViewState.sensitivityMmMv` is set. Defaults to true.
+   * `ECGViewState.sensitivityMmMv` is set. Defaults to false.
    */
   showAmplitudeLabels?: boolean;
 }
