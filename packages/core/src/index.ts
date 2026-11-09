@@ -47,6 +47,7 @@ import ECGGenericViewport, {
   type ECGTraceLayoutDefinition,
   type ECGTraceLayoutFactory,
   type ECGTraceLayoutName,
+  type ECGTraceLayoutRegistry,
   type ECGTraceRegion,
   type ECGProperties,
 } from './RenderingEngine/GenericViewport/ECG';
@@ -304,6 +305,7 @@ export type {
   ECGTraceLayoutDefinition,
   ECGTraceLayoutFactory,
   ECGTraceLayoutName,
+  ECGTraceLayoutRegistry,
   ECGTraceRegion,
   ECGProperties,
 };

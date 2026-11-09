@@ -58,6 +58,7 @@ function makeView({
       rotation: 0,
       anchorCanvas: [0.5, 0.5],
       scrollOffset: 0,
+      traceLayout: '12x1',
       ...options,
     },
     canvas,

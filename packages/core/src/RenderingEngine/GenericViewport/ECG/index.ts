@@ -51,5 +51,6 @@ export type {
   ECGTraceLayoutDefinition,
   ECGTraceLayoutFactory,
   ECGTraceLayoutName,
+  ECGTraceLayoutRegistry,
   ECGTraceRegion,
 } from './ECGViewportTypes';

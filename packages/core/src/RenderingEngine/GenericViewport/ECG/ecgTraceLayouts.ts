@@ -1,81 +1,73 @@
 import type {
   ECGTraceLayout,
   ECGTraceLayoutContext,
+  ECGTraceLayoutName,
+  ECGTraceLayoutRegistry,
   ECGTraceLayoutDefinition,
   ECGTraceLayoutFactory,
   ECGTraceRegion,
 } from './ECGViewportTypes';
 import type { ECGChannelLike } from './ecgWaveform';
 
-const DEFAULT_TRACE_LAYOUT = '12x1';
-
 /** Lead code values of lead II, in SCPECG and in MDC. */
 const LEAD_II_CODES = new Set(['5.6.3-9-2', '2:2']);
 
-const traceLayouts = new Map<string, ECGTraceLayoutFactory>();
+/** The leads, and the duration, from which a grid layout is the default. */
+const GRID_MIN_LEADS = 8;
+const GRID_MIN_SECONDS = 5;
+
+type ECGTraceLayoutSupports = (context: ECGTraceLayoutContext) => boolean;
+
+const traceLayouts = new Map<
+  string,
+  { factory: ECGTraceLayoutFactory; supports?: ECGTraceLayoutSupports }
+>();
 const warnedNames = new Set<string>();
 
 /**
- * Registers a named trace layout.
+ * Registers a named trace layout. Declare the name in `ECGTraceLayoutRegistry`
+ * first, so that the name is discoverable in the type.
  *
  * @param name - The layout name.
  * @param layout - A definition, or a factory that builds the definition for
  *   the channels of one waveform.
+ * @param options - `supports` tells {@link getECGTraceLayoutNames} if the
+ *   layout suits a waveform. Without it, the layout suits every waveform.
  */
-export function registerECGTraceLayout(
-  name: string,
-  layout: ECGTraceLayoutDefinition | ECGTraceLayoutFactory
+export function registerECGTraceLayout<
+  Name extends keyof ECGTraceLayoutRegistry,
+>(
+  name: Name,
+  layout: ECGTraceLayoutDefinition | ECGTraceLayoutFactory,
+  options: { supports?: ECGTraceLayoutSupports } = {}
 ): void {
   if (traceLayouts.has(name)) {
     throw new Error(`ECG trace layout "${name}" is already registered`);
   }
 
-  traceLayouts.set(name, typeof layout === 'function' ? layout : () => layout);
+  traceLayouts.set(name, {
+    factory: typeof layout === 'function' ? layout : () => layout,
+    supports: options.supports,
+  });
 }
 
 /**
- * Returns the names of every registered trace layout, or when given a waveform
- * context, returns the layout names dynamically derived for that waveform.
+ * Returns the names of the registered trace layouts. With a waveform context,
+ * it returns the names whose `supports` accepts the waveform.
  */
 export function getECGTraceLayoutNames(
   context?: ECGTraceLayoutContext
-): string[] {
-  if (!context || !context.channels || context.channels.length === 0) {
-    return Array.from(traceLayouts.keys());
-  }
-
-  const channelCount = context.channels.length;
-  if (channelCount < 4) {
-    return [`${channelCount}x1`];
-  }
-
-  const cols3 = Math.max(1, Math.ceil(channelCount / 3));
-  const names: string[] = [`3x${cols3}+1`, `3x${cols3}`];
-
-  if (channelCount >= 6) {
-    const cols6 = Math.max(1, Math.ceil(channelCount / 6));
-    names.push(`6x${cols6}`);
-  }
-
-  names.push(`${channelCount}x1`);
-
-  const BUILTIN_LAYOUT_NAMES = new Set(['12x1', '6x2', '3x4', '3x4+1']);
-  const knownNames = new Set(names);
-
-  for (const name of traceLayouts.keys()) {
-    if (!BUILTIN_LAYOUT_NAMES.has(name) && !knownNames.has(name)) {
-      names.push(name);
-    }
-  }
-
-  return names;
+): ECGTraceLayoutName[] {
+  return Array.from(traceLayouts.entries())
+    .filter(
+      ([, entry]) => !context || !entry.supports || entry.supports(context)
+    )
+    .map(([name]) => name);
 }
 
 /**
  * Returns the definition of a trace layout for the channels of one waveform.
- * A definition is returned as it is. Registered names are checked first, then
- * dynamic RxC(+1) grid patterns (e.g. 3x5+1, 3x5, 15x1). An unknown name returns
- * undefined.
+ * A definition is returned as it is. An unknown name returns undefined.
  */
 export function getECGTraceLayout(
   traceLayout: ECGTraceLayout,
@@ -85,65 +77,36 @@ export function getECGTraceLayout(
     return traceLayout;
   }
 
-  const registered = traceLayouts.get(traceLayout);
-  if (registered) {
-    return registered(context);
-  }
-
-  // Dynamically resolve RxC(+1) grid pattern (e.g. 3x5+1 for 15 leads, 3x1 for 3 leads)
-  const match = /^(\d+)x(\d+)(\+1)?$/.exec(traceLayout);
-  if (match) {
-    const rows = parseInt(match[1], 10);
-    const cols = parseInt(match[2], 10);
-    const withRhythm = Boolean(match[3]);
-
-    if (rows > 0 && cols === 1 && !withRhythm) {
-      return createRowsLayout(context);
-    }
-    if (rows > 0 && cols > 0) {
-      return createGridLayout(rows, cols, withRhythm)(context);
-    }
-  }
-
-  return undefined;
+  return traceLayouts.get(traceLayout)?.factory(context);
 }
 
 /**
- * Returns the default trace layout name derived dynamically from the waveform:
- * - Continuous recordings of >= 8 leads (e.g. 12-lead ECG) default to '3x4+1' (or '3x5+1' for 15 leads).
- * - Records with fewer leads (< 8 leads, e.g. rhythm strips or Holter) default to rows ('Nx1').
- * - Short beat recordings (< 5s, e.g. median beat) default to rows.
+ * Returns the registered name of the default layout of a waveform: `'3x4+1'`
+ * for a record of at least 8 leads and 5 s, else `'12x1'` (one row for each
+ * lead). A record of unknown duration counts as long.
  */
 export function resolveDefaultECGTraceLayout(
   context: ECGTraceLayoutContext
-): string {
-  const { channels, numberOfSamples = 0, samplingFrequency = 1 } = context;
-  const channelCount = channels.length;
-  const durationSec =
-    samplingFrequency > 0 && numberOfSamples > 0
-      ? numberOfSamples / samplingFrequency
-      : 0;
+): ECGTraceLayoutName {
+  const { channels, numberOfSamples = 0, samplingFrequency = 0 } = context;
+  const isLong =
+    !(numberOfSamples > 0 && samplingFrequency > 0) ||
+    numberOfSamples / samplingFrequency >= GRID_MIN_SECONDS;
 
-  if (channelCount >= 8 && (durationSec >= 5 || numberOfSamples === 0)) {
-    const cols = Math.ceil(channelCount / 3);
-    return `3x${cols}+1`;
-  }
-
-  return `${channelCount}x1`;
+  return channels.length >= GRID_MIN_LEADS && isLong ? '3x4+1' : '12x1';
 }
 
 /**
- * Returns the definition of `traceLayout`, or of `'12x1'` when the name is
- * unknown. An unknown name logs one warning.
+ * Returns the definition of `traceLayout`. An undefined layout, or an unknown
+ * name, gives the default layout of the waveform. An unknown name logs one
+ * warning.
  */
 export function resolveECGTraceLayout(
   traceLayout: ECGTraceLayout | undefined,
   context: ECGTraceLayoutContext
 ): ECGTraceLayoutDefinition {
-  const definition = getECGTraceLayout(
-    traceLayout ?? DEFAULT_TRACE_LAYOUT,
-    context
-  );
+  const defaultLayout = resolveDefaultECGTraceLayout(context);
+  const definition = getECGTraceLayout(traceLayout ?? defaultLayout, context);
 
   if (definition) {
     return definition;
@@ -152,11 +115,11 @@ export function resolveECGTraceLayout(
   if (!warnedNames.has(traceLayout as string)) {
     warnedNames.add(traceLayout as string);
     console.warn(
-      `[ECG] Unknown trace layout "${traceLayout}", using "${DEFAULT_TRACE_LAYOUT}"`
+      `[ECG] Unknown trace layout "${traceLayout}", using "${defaultLayout}"`
     );
   }
 
-  return getECGTraceLayout(DEFAULT_TRACE_LAYOUT, context);
+  return getECGTraceLayout(defaultLayout, context);
 }
 
 /** True when a region of the layout follows the time window of the view. */
@@ -361,7 +324,16 @@ function createGridLayout(
   };
 }
 
+const supportsGrid: ECGTraceLayoutSupports = ({ channels }) =>
+  channels.length >= GRID_MIN_LEADS;
+
 registerECGTraceLayout('12x1', createRowsLayout);
-registerECGTraceLayout('6x2', createGridLayout(6, 2, false));
-registerECGTraceLayout('3x4', createGridLayout(3, 4, false));
-registerECGTraceLayout('3x4+1', createGridLayout(3, 4, true));
+registerECGTraceLayout('6x2', createGridLayout(6, 2, false), {
+  supports: supportsGrid,
+});
+registerECGTraceLayout('3x4', createGridLayout(3, 4, false), {
+  supports: supportsGrid,
+});
+registerECGTraceLayout('3x4+1', createGridLayout(3, 4, true), {
+  supports: supportsGrid,
+});

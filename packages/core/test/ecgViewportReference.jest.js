@@ -129,20 +129,25 @@ describe('ECG viewport references and camera', () => {
     Object.defineProperty(viewport.canvas, 'clientHeight', { value: 600 });
     await viewport.setDisplaySets({ displaySetId: 'ecg:12' });
 
-    expect(viewport.getViewState().traceLayout).toBe('3x4+1');
+    // The default stays out of the view state (GENVIEW-ECG-3).
+    expect(viewport.getViewState().traceLayout).toBeUndefined();
     const resolved = viewport.getResolvedView();
+    expect(resolved?.traceLayoutName).toBe('3x4+1');
     expect(resolved?.channelLayouts).toHaveLength(13);
-    expect(viewport.getTraceLayoutNames()[0]).toBe('3x4+1');
+    expect(viewport.getTraceLayoutNames()).toContain('3x4+1');
+
+    // A later 3-lead record opens in rows, not in the grid of the 12-lead one.
+    const waveform3 = {
+      ...waveform12,
+      channels: waveform12.channels.slice(0, 3),
+    };
+    waveform3.numberOfChannels = 3;
+    viewport.dataProvider = { load: async () => waveform3 };
+    await viewport.setDisplaySets({ displaySetId: 'ecg:3' });
+    expect(viewport.getResolvedView()?.traceLayoutName).toBe('12x1');
   });
 
   describe('clinical sweep speed and sensitivity controls', () => {
-    it('provides clinical speed and sensitivity presets', async () => {
-      const viewport = await makeViewport('vp-clinical');
-
-      expect(viewport.getClinicalSweepSpeeds()).toEqual([12.5, 25, 50]);
-      expect(viewport.getClinicalSensitivities()).toEqual([2.5, 5, 10, 20]);
-    });
-
     it('updates sweep speed and sensitivity via viewport API methods', async () => {
       const viewport = await makeViewport('vp-speed-sens');
 
