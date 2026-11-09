@@ -32,7 +32,7 @@ export interface VoxelReductionConstants extends CoreVoxelReductionConstants {}
  *
  * The kind of the reduction is not the source of the data, and the two answer
  * different questions. A box average and a decimation at one spacing have a
- * DIFFERENT LOSS: a decimation keeps the high spatial frequencies and folds
+ * different loss: a decimation keeps the high spatial frequencies and folds
  * them into the signal as an alias, so a decimation is lossy at every display
  * resolution, and a box average is lossless at a display resolution that is
  * coarser than its spacing.

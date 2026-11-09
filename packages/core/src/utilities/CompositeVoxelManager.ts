@@ -36,8 +36,8 @@ import {
  * One sub voxel manager of a composite, with the grid and the statistic that
  * identify it.
  *
- * A representation is identified by the pair (grid, statistic). MANY
- * REPRESENTATIONS CAN EXIST AT ONE RESOLUTION, each one covering a different
+ * A representation is identified by the pair (grid, statistic). Many
+ * representations can exist at one resolution, each one covering a different
  * part of the volume: a set of bricks is exactly that. What is single is one
  * representation for one region, at one resolution, at one statistic.
  */
@@ -49,7 +49,7 @@ export type VoxelRepresentation<T> = {
   /** The voxels of this representation. */
   voxelManager: IVoxelManager<T>;
   /**
-   * THE IMAGES OF THE IMAGE CACHE THAT HOLD THE VOXELS, when the voxels live
+   * The images of the image cache that hold the voxels, when the voxels live
    * there. One image holds one slice of the grid, in the order of the grid, and
    * the voxel manager above reads them. A consumer that wants the voxels of one
    * slice without a copy reads `cache.getImage(imageIds[slice])`.
@@ -58,9 +58,9 @@ export type VoxelRepresentation<T> = {
    */
   imageIds?: string[];
   /**
-   * WHAT A LOADER HAS DELIVERED, and at which quality.
+   * What a loader has delivered, and at which quality.
    *
-   * THE UNIT OF A DELIVERY IS NOT ALWAYS A FRAME. A streaming volume delivers
+   * The unit of a delivery is not always a frame. A streaming volume delivers
    * one frame at a time, a brick store delivers a box of voxels, and a whole
    * slide image delivers a tile. Each entry therefore carries the REGION that
    * the delivery covered, in the index space of THIS representation, and the
@@ -72,16 +72,16 @@ export type VoxelRepresentation<T> = {
    * and the rest of that frame arrives later as `FULL_RESOLUTION`.
    * `setDeliveredQuality` applies the rule that
    * `BaseStreamingImageVolume.updateTextureAndTriggerEvents` applies to
-   * `cachedFrames`: A LOWER QUALITY NEVER REPLACES A HIGHER ONE.
+   * `cachedFrames`: a lower quality never replaces a higher one.
    *
-   * MR-API-VM-12: one vocabulary describes the quality, and the vocabulary
+   * One vocabulary describes the quality, and the vocabulary
    * applies at more than one granularity. The record of one delivery and the
    * record of a region that a viewport reads are the same thing at two scales,
    * and `getRegionQuality` aggregates the one into the other.
    *
-   * DELIVERIES CAN OVERLAP, and they often do: a brick store delivers a box
+   * Deliveries can overlap, and they often do: a brick store delivers a box
    * that holds part of a frame that a progressive loader already delivered.
-   * EACH VOXEL THEN CARRIES THE BEST QUALITY THAT ANY DELIVERY GAVE IT, and
+   * Each voxel then carries the best quality that any delivery gave it, and
    * `getRegionQuality` counts the union of the deliveries exactly, so an
    * overlap is never counted twice.
    */
@@ -109,7 +109,7 @@ export type VoxelRepresentation<T> = {
    */
   source?: VoxelDataSource;
   /**
-   * THE RECORD OF THE DATA THAT PRODUCED A DERIVED REPRESENTATION, in the
+   * The record of the data that produced a derived representation, in the
    * index space of that source.
    *
    * A voxel of a derived representation is a box of source voxels, and not one
@@ -224,13 +224,13 @@ function edgesOfAxis(
  * Gives what the deliveries cover inside the region, and the quality of that
  * coverage.
  *
- * DELIVERIES CAN OVERLAP. The function therefore cuts the region at every edge
+ * Deliveries can overlap. The function therefore cuts the region at every edge
  * of every delivery, which gives a set of cells that no delivery crosses. Each
- * cell then takes THE BEST QUALITY OF THE DELIVERIES THAT HOLD IT, because a
+ * cell then takes the best quality of the deliveries that hold it, because a
  * voxel that arrived twice holds the better of the two. The count of what the
  * deliveries cover is exact, and an overlap is never counted twice.
  *
- * The cost grows with the number of deliveries that MEET THE REGION, and not
+ * The cost grows with the number of deliveries that meet the region, and not
  * with the number of deliveries that the representation holds.
  */
 function coverageOfRegion(
@@ -285,8 +285,8 @@ function coverageOfRegion(
   );
 
   if (cellCount > MAX_COVERAGE_CELLS || work > MAX_COVERAGE_WORK) {
-    // The edges of these deliveries are too many to cut exactly. THE ESTIMATE
-    // TAKES THE LARGEST DELIVERY ALONE, which never counts more than the
+    // The edges of these deliveries are too many to cut exactly. The estimate
+    // takes the largest delivery alone, which never counts more than the
     // deliveries really cover, so the record never states less than what is
     // missing.
     for (const delivery of clipped) {
@@ -382,7 +382,7 @@ function withinCeiling(grid: VoxelGrid, ceiling: Point3): boolean {
 }
 
 /**
- * THE INDEX OF ONE RECORD OF DELIVERIES, so that one delivery costs a constant
+ * The index of one record of deliveries, so that one delivery costs a constant
  * number of comparisons and not one for each delivery that arrived before it.
  *
  * A streaming volume of 3720 frames records 3720 deliveries, and each frame is
@@ -390,7 +390,7 @@ function withinCeiling(grid: VoxelGrid, ceiling: Point3): boolean {
  * scan of the record for each delivery is therefore quadratic over a load.
  *
  * `byBounds` answers "did this exact region arrive before". `bySlice` holds the
- * deliveries that touch one k slice, and CONTAINMENT NEEDS AN OVERLAP IN K, so
+ * deliveries that touch one k slice, and containment needs an overlap in k, so
  * a delivery compares itself against the deliveries of its own k slices alone.
  */
 type DeliveryIndex = {
@@ -446,8 +446,8 @@ function buildDeliveryIndex(delivered: DeliveredRegion[]): DeliveryIndex {
 }
 
 /**
- * A voxel manager that holds MORE THAN ONE REPRESENTATION OF THE SAME DATA AT
- * THE SAME TIME.
+ * A voxel manager that holds more than one representation of the same data at
+ * the same time.
  *
  * The composite implements `IVoxelManager`, and it is not a subclass of
  * `VoxelManager`. Every member of the existing API delegates to the PRIMARY
@@ -455,7 +455,7 @@ function buildDeliveryIndex(delivered: DeliveredRegion[]): DeliveryIndex {
  * the same geometry, the same number of slices and the same positions that they
  * get today. New code opts in to the new API.
  *
- * WHAT THE COMPOSITE ADDS:
+ * What the composite adds:
  *
  * - `addRepresentation` and `getRepresentations` hold the sub voxel managers.
  * - `getRepresentation` addresses one representation DIRECTLY, and no selection
@@ -463,13 +463,13 @@ function buildDeliveryIndex(delivered: DeliveredRegion[]): DeliveryIndex {
  * - `selectRepresentation` holds the selection rule, which is a volatility. A
  *   later implementation can select a different access pattern, and no call
  *   site changes.
- * - THE SELECTION NEVER CREATES. A caller adds a representation with
+ * - The selection never creates. A caller adds a representation with
  *   `addRepresentation` or `acceptData`.
  * - `acceptData` takes new data for a region at a stated quality, which is what
  *   a loader calls when a brick, a sub-resolution frame or a full frame
  *   arrives.
  * - `fillGrid` fills a grid from the best sources that the composite has. A
- *   FILL IS MANY TO ONE: several representations can cover one region between
+ *   fill is many to one: several representations can cover one region between
  *   them, which is the brick case.
  *
  * `getAtIJK` returns the nearest value that is available, and it never returns
@@ -578,25 +578,25 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
   }
 
   /**
-   * THE SELECTION RULE. It takes three inputs: the region, the statistic and
+   * The selection rule. It takes three inputs: the region, the statistic and
    * the ceiling.
    *
-   * The rule selects the representation of the HIGHEST RESOLUTION THAT IS NOT
-   * HIGHER THAN THE CEILING, among those that match the statistic and cover the
+   * The rule selects the representation of the highest resolution that is not
+   * higher than the ceiling, among those that match the statistic and cover the
    * region. A tie of the resolution takes the better quality.
    *
-   * WHY THE CEILING MATTERS. Without it, a request that fills a texture at one
+   * Why the ceiling matters. Without it, a request that fills a texture at one
    * eighth selects the full-resolution data, and it reduces that data at every
    * fill.
    *
-   * WHEN NOTHING SITS AT THE CEILING the rule returns the best that exists.
+   * When nothing sits at the ceiling the rule returns the best that exists.
    * Every candidate is then finer than the ceiling, and the rule takes the
    * coarsest of them, which is the cheapest source that still holds the
    * resolution that the caller asked for.
    *
-   * THE RULE NEVER CREATES a representation.
+   * The rule never creates a representation.
    *
-   * The rule resolves FOR A REGION, and not for each voxel, because a test
+   * The rule resolves for a region, and not for each voxel, because a test
    * inside the inner loop of a brush tool is too slow.
    */
   public selectRepresentation({
@@ -696,7 +696,7 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
    * the composite adds that representation when the composite does not hold it
    * yet.
    *
-   * THE UNIT OF A DELIVERY IS NOT ALWAYS A FRAME. `bounds` states the region
+   * The unit of a delivery is not always a frame. `bounds` states the region
    * that the delivery covered, in the index space of that representation, so a
    * brick of a brick store and a tile of a whole slide image each state their
    * own box. `frameIndex` is the convenience for the case of one frame, and it
@@ -802,7 +802,7 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
   /**
    * Records the quality of one delivery of one representation.
    *
-   * A LOWER QUALITY NEVER REPLACES A HIGHER ONE for a region that a delivery
+   * A lower quality never replaces a higher one for a region that a delivery
    * already covered, which is the rule that
    * `BaseStreamingImageVolume.updateTextureAndTriggerEvents` applies to
    * `cachedFrames`: a decimated frame that arrives after the full frame must
@@ -824,8 +824,8 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
     const existing = index.byBounds.get(boundsKey(bounds));
 
     if (existing) {
-      // The same region arrived again. A LOWER QUALITY NEVER REPLACES A HIGHER
-      // ONE, which is the rule of `cachedFrames`. The key is the region alone,
+      // The same region arrived again. A lower quality never replaces a higher
+      // one, which is the rule of `cachedFrames`. The key is the region alone,
       // so a change of the quality leaves the index true.
       if (existing.quality >= quality) {
         return false;
@@ -920,8 +920,8 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
    *
    * The region belongs to the index space of the composite, and the function
    * maps that region into the grid of the representation. The record then
-   * aggregates the deliveries that meet the region: THE RECORD OF ONE DELIVERY
-   * AND THE RECORD OF A REGION ARE THE SAME THING AT TWO SCALES.
+   * aggregates the deliveries that meet the region: the record of one delivery
+   * and the record of a region are the same thing at two scales.
    *
    * The record states no verdict. A reader compares the record against its own
    * requirement, so two viewports over one volume can report differently.
@@ -992,7 +992,7 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
   /**
    * Fills a target grid from the best sources that the composite holds.
    *
-   * A FILL IS MANY TO ONE. Several representations can cover one region between
+   * A fill is many to one. Several representations can cover one region between
    * them, which is the brick case, so the fill asks the composite for a value
    * at each voxel of the target, and the composite answers from the best source
    * that holds that voxel. There is no strategy parameter in this version.
@@ -1037,12 +1037,12 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
    *
    * The reader states the same three inputs that the selection takes, so a
    * reader that will draw at one eighth passes that ceiling and gets the record
-   * of the representation that it will really read. TWO VIEWPORTS OVER ONE
-   * VOLUME CAN THEREFORE HOLD A DIFFERENT RECORD AT ONE MOMENT, and each record
+   * of the representation that it will really read. Two viewports over one
+   * volume can therefore hold a different record at one moment, and each record
    * is correct for its reader.
    *
-   * The record states no verdict. Commit 4 of this work adds the pure function
-   * that compares a record against the requirement of one reader.
+   * The record states no verdict. `compareVoxelQuality` compares a record
+   * against the requirement of one reader.
    */
   public getQuality(
     selector: VoxelRepresentationSelector = {}
@@ -1055,12 +1055,12 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
   }
 
   /**
-   * The record of a region of a DERIVED representation, which the record of its
+   * The record of a region of a derived representation, which the record of its
    * source gives.
    *
    * The function maps the region back into the source, and it reads the frozen
    * record of the source there for the qualities. A derived voxel is the
-   * average of the source voxels of its box that arrived (P31.3), so it holds
+   * average of the source voxels of its box that arrived, so it holds
    * data when any source voxel of its box arrived. Only a box that no source
    * delivery meets counts as missing. A box can be fractional (see `boxSpan`),
    * and a source voxel that the box cuts counts as a voxel of that box.
@@ -1130,7 +1130,7 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
           return false;
         }
       } else if (!isDefaultSelectionStatistic(candidate.statistic)) {
-        // A DEFAULT SELECTION CONSIDERS THE `average` STATISTIC ONLY. A minimum
+        // A default selection considers the `average` statistic only. A minimum
         // grid at a high resolution would otherwise win, and a read would
         // return minimum values in place of the data.
         return false;
@@ -1179,7 +1179,7 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
       return Math.sign(difference) === direction;
     }
 
-    // THE QUALITY OF A TIE IS THE QUALITY OVER THE REGION, and not a quality of
+    // The quality of a tie is the quality over the region, and not a quality of
     // the whole representation. A representation whose deliveries have arrived
     // for this region wins against a representation that holds the same
     // resolution and has nothing here yet.
@@ -1233,8 +1233,8 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
    *
    * The primary representation answers when the primary representation holds a
    * value. Otherwise the read falls back to the representations that cover that
-   * voxel, from the finest to the coarsest, so THE READ NEVER GIVES
-   * `undefined` FOR A VOXEL THAT IS IN BOUNDS while any representation holds
+   * voxel, from the finest to the coarsest, so the read never gives
+   * `undefined` for a voxel that is in bounds while any representation holds
    * the region.
    */
   public getAtIJK = (i: number, j: number, k: number): T => {

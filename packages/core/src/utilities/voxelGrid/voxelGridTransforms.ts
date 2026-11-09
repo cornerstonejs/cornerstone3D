@@ -29,8 +29,8 @@ function gridIndexToWorld(grid: VoxelGrid, ijk: Point3): Point3 {
  * Gives the index of a world position in a grid. The index holds a fraction,
  * and the index can lie outside the grid.
  *
- * THE FUNCTION TAKES THE AXES OF THE GRID AS UNIT VECTORS THAT ARE AT A RIGHT
- * ANGLE TO EACH OTHER, which every grid of Cornerstone3D is. The inverse of
+ * The function takes the axes of the grid as unit vectors that are at a right
+ * angle to each other, which every grid of Cornerstone3D is. The inverse of
  * such a direction is its transpose, so the function needs no inverse of a
  * matrix: it projects the distance from the origin onto each axis.
  *
@@ -120,7 +120,7 @@ function cornersOfBounds(bounds: BoundsIJK): Point3[] {
 /**
  * States whether the target grid covers a region of the source grid.
  *
- * The function maps the EIGHT CORNERS of the region, and not the two extreme
+ * The function maps the eight corners of the region, and not the two extreme
  * corners alone, because the direction of the target grid can differ from the
  * direction of the source grid. A tolerance of half a voxel of the target grid
  * applies at each face, so a voxel of the target grid that holds the corner
@@ -157,17 +157,17 @@ function gridCoversRegion(
 /**
  * Gives the voxels of the target grid that a region of the source grid covers.
  *
- * THE FUNCTION WORKS ON THE EXTENT OF A VOXEL, and not on the centre of a
+ * The function works on the extent of a voxel, and not on the centre of a
  * voxel. A voxel covers half a spacing on each side of its centre, so the
  * region of the source reaches from `min - 0.5` to `max + 0.5` in the index
  * space of the source. The function maps those two faces, and it then gives
  * every voxel of the target whose own extent meets them.
  *
- * That rule is correct in BOTH DIRECTIONS, and a rule that rounds a centre is
+ * That rule is correct in both directions, and a rule that rounds a centre is
  * not:
  *
  * - From a fine grid to a coarse grid, four slices of the full resolution meet
- *   ONE frame of a grid whose k factor is 4, and not two.
+ *   one frame of a grid whose k factor is 4, and not two.
  * - From a coarse grid to a fine grid, one voxel of that coarse grid meets the
  *   FOUR slices that feed it, and not one.
  *

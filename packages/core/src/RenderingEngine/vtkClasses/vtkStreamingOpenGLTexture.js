@@ -62,11 +62,9 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
   // The slice where the next fill of a reduced texture starts.
   model.fillCursor = 0;
   model.remainingFillScheduled = false;
-  // The grid that this texture holds. The texture store of `ImageVolume` states
-  // it when it builds the texture. A texture whose grid is the grid of the
-  // volume reads the cached images frame by frame, which is the path of the
-  // full-resolution data. A texture of any other grid reads the composite,
-  // because no cached image holds a reduced voxel.
+  // The grid that this texture holds, set by the texture store. A texture of
+  // any grid other than the grid of the volume reads the composite, because
+  // no cached image holds a reduced voxel.
   model.grid = null;
   // The statistic that this texture holds (set at provision with the grid).
   // Fidelity reads it so the record matches the voxels in the texture
@@ -181,18 +179,6 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     return volume.voxelGrid ? voxelGridsEqual(volume.voxelGrid, grid) : true;
   }
 
-  /**
-   * Fills a texture whose grid is not the grid of the volume.
-   *
-   * The composite computes which sub voxel managers fill this texture, and
-   * `fillGrid` reads the best sources that it holds. A fill is many to one:
-   * several representations can cover one region between them, which is the
-   * brick case, so this function states no single source.
-   *
-   * The fill computes every voxel of the grid, because `fillGrid` takes no
-   * region. The upload stays partial: the function uploads the slices that a
-   * delivery marked, and it leaves the others.
-   */
   /**
    * The size of the box on each axis that takes the grid of the volume to the
    * grid of this texture, when the two share their axes.
@@ -454,6 +440,23 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     }, 0);
   }
 
+  /**
+   * Fills a texture whose grid is not the grid of the volume.
+   *
+   * The composite computes which sub voxel managers fill this texture, and
+   * `fillGrid` reads the best sources that it holds. A fill is many to one:
+   * several representations can cover one region between them, which is the
+   * brick case, so this function states no single source.
+   *
+   * The fill computes every voxel of the grid, because `fillGrid` takes no
+   * region. The upload stays partial: the function uploads the slices that a
+   * delivery marked, and it leaves the others.
+   *
+   * A slice whose data has not arrived uploads the cleared slab, which costs
+   * nothing to compute. The volume marks that slice again when its frames
+   * arrive. A fill of every slice of a new texture from the data would stall
+   * the first render: a volume of 512 x 512 x 1232 took about 17 seconds.
+   */
   function updateTextureFromComposite(volume) {
     const { grid } = model;
     const [width, height, depth] = grid.dimensions;
@@ -514,11 +517,6 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
         // does not fill would keep the value that an earlier slice wrote.
         slab.getScalarData().fill(0);
 
-        // A slice whose data has not arrived uploads the cleared slab, which
-        // costs nothing to compute. The volume marks that slice again when its
-        // frames arrive, and the next render fills it with real voxels.
-        // Filling every slice of a new texture from the data would stall the
-        // first render: a volume of 512 x 512 x 1232 measured about 17 seconds.
         const filled =
           factors &&
           fillSliceByBoxStatistic(volume, grid, factors, slice, slab);

@@ -2,10 +2,10 @@ import { describe, it, expect, jest, afterEach } from '@jest/globals';
 import { VolumeTextureStore } from '../src/cache/volumeTextureStore';
 
 // The global store of the named texture sets. A set is the unit of storage, of
-// cost and of EVICTION, and a selection reads the stored sets instead of
+// cost and of eviction, and a selection reads the stored sets instead of
 // building anything.
 //
-// NONE OF THESE TESTS NEEDS A GPU. A fake texture object stands in for the real
+// None of these tests needs a GPU. A fake texture object stands in for the real
 // one, because the store builds a texture only through the factory that the
 // caller states.
 
@@ -185,7 +185,7 @@ describe('the store counts one global budget', () => {
     const oneSet = 64 * 64 * 16 * 4;
 
     store.setBudget(2 * oneSet);
-    // The backstop is provisioned FIRST, so a rule that read the age alone
+    // The backstop is provisioned first, so a rule that read the age alone
     // would take it first.
     store.provision(options({ name: 'backstop', backstop: true }));
     store.provision(options({ name: 'b' }));

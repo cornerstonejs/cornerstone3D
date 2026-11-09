@@ -35,7 +35,7 @@ export type VoxelManagerForEachCallbackArguments = {
  * (`export type IVoxelManager<T> = VoxelManager<T>`), and an alias admits only
  * a subclass.
  *
- * FOUR MEMBERS ARE OPTIONAL, and they are optional for a reason. They are not
+ * Four members are optional, and they are optional for a reason. They are not
  * methods of the class. They are function-valued properties that a factory
  * installs on the instance after the constructor returns, and only some of the
  * factories install them:
@@ -85,7 +85,7 @@ export interface IVoxelManager<T> {
   /**
    * Returns every voxel in one array. A factory installs this member, so a
    * caller that does not know which factory made this voxel manager must guard
-   * the call. THE ARRAY IS READ ONLY: a write into the array does not reach the
+   * the call. The array is read only: a write into the array does not reach the
    * voxels.
    */
   getCompleteScalarDataArray?: () => ArrayLike<number>;
@@ -244,7 +244,7 @@ export interface IVoxelManager<T> {
  * A voxel manager over a whole volume, which a factory built with all four of
  * the function-valued properties installed.
  *
- * WHY THIS SECOND INTERFACE EXISTS. A survey found about 39 call sites of the
+ * Why this second interface exists. A survey found about 39 call sites of the
  * four properties that apply no guard, and about 30 of those call sites call
  * `getCompleteScalarDataArray`. Every one of the 39 sites holds a volume voxel
  * manager - a labelmap, a segmentation, a sub-volume or a reference volume -
@@ -252,12 +252,12 @@ export interface IVoxelManager<T> {
  * properties. The calls are therefore safe for a structural reason, and this
  * interface states that reason in the type system.
  *
- * NOTE ON THE DYNAMIC VOLUME. `VoxelManager.createScalarDynamicVolumeVoxelManager`
+ * Note on the dynamic volume. `VoxelManager.createScalarDynamicVolumeVoxelManager`
  * installs `getRange` and `getCompleteScalarDataArray`, and it installs neither
  * `setCompleteScalarDataArray` nor `invalidateCache`. That factory therefore
  * returns an `IVoxelManager` and not an `IVolumeVoxelManager`.
  *
- * NOTE ON THE COMPILER. `tsconfig.base.json` sets `strictNullChecks` to false,
+ * Note on the compiler. `tsconfig.base.json` sets `strictNullChecks` to false,
  * so the compiler lets a caller call an optional property of `IVoxelManager`
  * with no guard. This interface therefore records the structural reason for the
  * reader, and it enforces nothing today. It starts to enforce the reason on the

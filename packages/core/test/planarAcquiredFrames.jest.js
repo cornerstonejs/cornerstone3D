@@ -480,7 +480,7 @@ describe('PlanarViewport acquired frames in the volume path (user experience)', 
     expect(viewport.getViewState().anchorWorld).toEqual([100, 120, 10]);
   });
 
-  it('turns an axial viewport sagittal for a sagittal volume reference (CS-S6)', async () => {
+  it('turns an axial viewport sagittal for a sagittal volume reference', async () => {
     await mount();
     await releaseFrames();
 
@@ -529,7 +529,7 @@ describe('PlanarViewport acquired frames in the volume path (user experience)', 
     );
   });
 
-  it('moves the frame actor onto the focal plane between two frames (CS-S22)', async () => {
+  it('moves the frame actor onto the focal plane between two frames', async () => {
     await mount();
     await releaseFrames();
     // z = 11 is between the frames at z = 10 and z = 12; the frame is k = 6.

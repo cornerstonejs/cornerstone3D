@@ -6,11 +6,11 @@ import type { VoxelStatistic } from './VoxelStatisticRegistry';
 /**
  * The accumulator of one statistic over one box of source voxels.
  *
- * The code that reduces a grid creates ONE accumulator, and it calls `reset`
+ * The code that reduces a grid creates one accumulator, and it calls `reset`
  * for each box. An accumulator that a box needs is therefore not an allocation
  * for each reduced voxel.
  *
- * AN ACCUMULATOR TAKES ONE COMPONENT OF ONE VOXEL. A voxel of a volume of one
+ * An accumulator takes one component of one voxel. A voxel of a volume of one
  * component is a number, and a voxel of an RGB volume is an array of numbers.
  * The code that reduces a grid builds one accumulator for each component, and
  * the components are independent of each other. A definition therefore states
@@ -87,7 +87,7 @@ export interface VoxelStatisticDefinition {
   /**
    * Whether a default selection can return a representation of this statistic.
    *
-   * A DEFAULT SELECTION MUST CONSIDER THE `average` STATISTIC ONLY, so a
+   * A default selection must consider the `average` statistic only, so a
    * definition of a minimum or of a maximum sets this field to `false`. A
    * minimum grid at a high resolution would otherwise win a selection that asks
    * for the highest resolution, and a read would then return minimum values in

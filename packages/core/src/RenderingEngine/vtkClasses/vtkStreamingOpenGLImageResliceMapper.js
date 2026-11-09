@@ -185,11 +185,8 @@ function vtkStreamingOpenGLImageResliceMapper(publicAPI, model) {
         currentTexture && typeof currentTexture.hasUpdatedFrames === 'function';
 
       if (canStream) {
-        // The dimensions come from the texture when the texture states a grid.
-        // `imageData` always describes the full-resolution grid, so a mapper
-        // that read it alone would allocate a reduced texture at the full
-        // dimensions, and a device that cannot hold that allocation fails
-        // inside the driver.
+        // A reduced texture states its own grid; `imageData` is always the
+        // full-resolution grid.
         const dims =
           currentTexture.getGrid?.()?.dimensions ?? imageData.getDimensions();
         const { dataType } = imageData.get('dataType');

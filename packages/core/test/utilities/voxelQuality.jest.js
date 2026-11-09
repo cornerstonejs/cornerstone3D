@@ -51,7 +51,7 @@ function makeRecord({
 
 describe('voxelQuality.compareVoxelQuality', () => {
   it('gives two verdicts from one record, for two readers', () => {
-    // Acceptance criterion 7 of issue #2921. One volume, one record, and two
+    // One volume, one record, and two
     // viewports that report their quality independently.
     const record = makeRecord({
       spacing: [2, 2, 2],
@@ -85,7 +85,7 @@ describe('voxelQuality.compareVoxelQuality', () => {
   });
 
   it('reports the reduced data as lossless where the reduction is not visible', () => {
-    // MR-U-5: the user does not get a warning that is not necessary.
+    // The user does not get a warning that is not necessary.
     const record = makeRecord({
       spacing: [2, 2, 2],
       reduction: VoxelReductions.BoxAverage,

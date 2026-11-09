@@ -31,16 +31,16 @@ function keyNumbers(values: ArrayLike<number>): string {
 /**
  * Gives the key of one representation of the voxel data.
  *
- * THE KEY IS THE PAIR (GRID, STATISTIC), AND IT IS NOT THE GRID ALONE. A
+ * The key is the pair (grid, statistic), and it is not the grid alone. A
  * `minimum` grid of an extension shares the geometry of the `average` grid, and
  * the two must not collide in a cache.
  *
- * THE KEY HOLDS THE DIRECTION, so an oblique grid gets a key of its own and no
+ * The key holds the direction, so an oblique grid gets a key of its own and no
  * caller needs a second cache for a second kind of grid. The key holds the
  * origin as well, so a set of the odd slices and a set of the even slices, which
  * share a spacing, get two keys.
  *
- * THERE IS NO LEVEL NUMBER IN THE KEY. A grid descriptor holds no ordinal.
+ * There is no level number in the key. A grid descriptor holds no ordinal.
  *
  * @param grid - the grid of the representation
  * @param statistic - the statistic of the representation

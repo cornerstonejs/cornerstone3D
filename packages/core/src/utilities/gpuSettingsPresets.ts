@@ -13,8 +13,7 @@ import triggerEvent from './triggerEvent';
  * 100, and no existing preset changes.
  *
  * The value is relative, and it states no number of frames for each second,
- * because a measurement of the frame rate belongs to task T14 and not to a
- * preset.
+ * because a measurement of the frame rate does not belong to a preset.
  */
 export type GpuSpeedIndex = number;
 

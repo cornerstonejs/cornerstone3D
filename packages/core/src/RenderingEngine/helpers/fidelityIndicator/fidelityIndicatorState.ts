@@ -197,7 +197,7 @@ function spatialKindOf(line: FidelityLine): FidelityDataKind {
     return 'full';
   }
 
-  // Magnification-aware path for reduced data (FIDELITY-STATE-6 / MR-U-5).
+  // Magnification-aware path for reduced data (FIDELITY-STATE-6).
   if (!verdict) {
     return 'reduced';
   }

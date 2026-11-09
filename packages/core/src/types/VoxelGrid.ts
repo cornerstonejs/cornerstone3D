@@ -5,7 +5,7 @@ import type { VoxelStatistic } from './VoxelStatisticRegistry';
 /**
  * A grid descriptor. A grid is one representation of the voxel data, and the
  * descriptor carries an origin, a direction, a spacing and a set of dimensions.
- * IT CARRIES NOTHING ELSE.
+ * It carries nothing else.
  *
  * One type describes each of these cases, and a grid can be more than one of
  * them at the same time:
@@ -16,7 +16,7 @@ import type { VoxelStatistic } from './VoxelStatisticRegistry';
  * - A level of a server side brick store is a grid whose values are on the
  *   server.
  *
- * THERE IS NO LEVEL INDEX. There is no `levelIndex` field, no convention that
+ * There is no level index. There is no `levelIndex` field, no convention that
  * "level 0 is the finest", no array of levels, and no pool that a level number
  * keys. There are two reasons:
  *
@@ -28,10 +28,10 @@ import type { VoxelStatistic } from './VoxelStatisticRegistry';
  *
  * Two grids can share a spacing and differ in origin. A set of the odd slices
  * and a set of the even slices are two distinct grids, and so are a decimation
- * and a box average of one region, which lie apart by a part of a voxel. NO
- * CODE MAY ASSUME ONE GRID FOR EACH SPACING.
+ * and a box average of one region, which lie apart by a part of a voxel. No
+ * code may assume one grid for each spacing.
  *
- * MANY GRIDS CAN EXIST AT ONE RESOLUTION, each one covering a different part of
+ * Many grids can exist at one resolution, each one covering a different part of
  * the volume. A set of bricks is exactly that. What is single is one sub voxel
  * manager for one region, at one resolution, at one statistic.
  *
@@ -69,7 +69,7 @@ export type VoxelRepresentationId = {
 /**
  * The description of a box reduction of a region of a source grid.
  *
- * The reduction applies A SEPARATE FACTOR TO EACH AXIS, and the reduction is
+ * The reduction applies a separate factor to each axis, and the reduction is
  * not uniform. A volume that has an edge of 2049 voxels exceeds a limit of 2048
  * on one axis and by one voxel, and the correct answer reduces that one axis. A
  * uniform reduction by a factor of 2 on three axes takes 8 times fewer voxels

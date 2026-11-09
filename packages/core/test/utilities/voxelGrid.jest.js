@@ -58,7 +58,7 @@ function makeTarget() {
 
 describe('voxelGrid.boxAverageReductionFactors', () => {
   it('reduces exactly one axis for an edge of 2049 against a limit of 2048', () => {
-    // Acceptance criterion 4 of issue #2921. A uniform reduction by 2 on three
+    // A uniform reduction by 2 on three
     // axes takes 8 times fewer voxels for an excess of one voxel.
     // The edge limit gives the whole factor 2, and 1025 boxes of 2049 / 1025.
     const factors = boxAverageReductionFactors([2049, 512, 512], {
@@ -113,7 +113,7 @@ describe('voxelGrid.boxAverageReductionFactors', () => {
   });
 
   it('reduces each axis by its own factor', () => {
-    // MR-CODE-3: a device whose maximum edge is 256 takes the 512 x 1024 x 25
+    // A device whose maximum edge is 256 takes the 512 x 1024 x 25
     // slab down to 256 x 256 x 25.
     const dimensions = [512, 1024, 25];
     const factors = boxAverageReductionFactors(dimensions, { maxEdge: 256 });

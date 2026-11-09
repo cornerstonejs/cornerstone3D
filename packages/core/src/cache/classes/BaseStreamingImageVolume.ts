@@ -260,6 +260,11 @@ export class BaseStreamingImageVolume
    * `cache.setPartialImage`, which is how a replicate reaches the cache, sends
    * no event, so this member hears the arrival of real images only. The
    * delivery path marks the frame for a replicate.
+   *
+   * The cache adds an image before the loader calls `successCallback`, so a
+   * first image arrives here with no quality yet, and `successCallback`
+   * records it. A known quality belongs to a delivery whose reduction ran
+   * before its image arrived, so the record runs again.
    */
   protected listenForCachedImages(): void {
     if (this.markOnImageCached) {
@@ -279,11 +284,6 @@ export class BaseStreamingImageVolume
 
       this.markFrameTexturesDirty(frameIndex);
 
-      // The cache adds an image before the loader calls `successCallback`, so
-      // a first image arrives here with no quality yet. `successCallback`
-      // records it with its real quality. A quality that is known here belongs
-      // to a delivery whose reduction ran before its image arrived and wrote
-      // nothing, so the record runs again with the image in the cache.
       if (
         quality !== undefined &&
         this.isInCurrentDimensionGroup(imageIdIndex)
@@ -567,6 +567,15 @@ export class BaseStreamingImageVolume
     return regions;
   }
 
+  /**
+   * The options that the image loader gets for one image of this volume.
+   *
+   * The target buffer states the type and no size, so the cached image keeps
+   * the size that the decoder produced. A sub-resolution decode (HTJ2K, a JLS
+   * thumbnail) gives fewer voxels than one slice, and a size would make the
+   * loader replicate them up to full size and lose the saving. The voxel
+   * manager of this volume scales the image on read.
+   */
   public getLoaderImageOptions(imageId: string) {
     const { transferSyntaxUID: transferSyntaxUID } =
       metaData.get(MetadataModules.TRANSFER_SYNTAX, imageId) || {};
@@ -628,16 +637,8 @@ export class BaseStreamingImageVolume
       this.isPreScaled = false;
     }
 
-    // The buffer states the type, and it states no size, so the image keeps
-    // the size that the decoder really produced. A sub-resolution decode of
-    // HTJ2K and a JLS thumbnail each give fewer voxels than one slice of this
-    // volume, and a size here would make the loader replicate those voxels up
-    // to the size of the volume before anything saw them: the saving of the
-    // reduced decode would disappear, and no reader could tell the two apart.
-    //
-    // The image of the cache therefore holds what the loader provided. The
-    // voxel manager of this volume reads that image and scales it, so a read
-    // of the primary grid gives the value that the replicate up-scale gave.
+    // No size, so a sub-resolution decode keeps its own size in the cache; the
+    // voxel manager scales it on read.
     const targetBuffer = {
       type: this.dataType,
     };
@@ -677,10 +678,8 @@ export class BaseStreamingImageVolume
       return;
     }
 
-    // No listener for the arrival of the image in the cache here.
-    // `markFrameWhenReadable` covers every delivery, and it states the quality
-    // of the delivery, which a mark from this place stated as full resolution
-    // whatever the loader really gave.
+    // `successCallback` marks the frame with the quality of the delivery, and
+    // `listenForCachedImages` marks it again when the image reaches the cache.
     const uncompressedIterator = ProgressiveIterator.as(
       loadAndCacheImage(imageId, options)
     );

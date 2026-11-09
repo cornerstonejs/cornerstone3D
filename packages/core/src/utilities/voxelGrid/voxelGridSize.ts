@@ -23,7 +23,7 @@ function maxEdgeOfGrid(grid: VoxelGrid): number {
 /**
  * States whether the grid respects the limits.
  *
- * A caller counts the cost of a grid BEFORE it allocates a texture for that
+ * A caller counts the cost of a grid before it allocates a texture for that
  * grid, so the caller knows in advance whether the texture can work.
  *
  * @param grid - the grid

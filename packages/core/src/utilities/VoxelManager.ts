@@ -78,13 +78,11 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
   public isInObject: (pointLPS, pointIJK) => boolean;
   public readonly dimensions: Point3;
   public readonly numberOfComponents: number;
-  // These four members are not methods. A factory installs each one on the
-  // instance after the constructor returns, and only some of the factories
-  // install them: `createScalarVolumeVoxelManager` and
-  // `createImageVoxelManager` install none of the four. Every one of the four
-  // is therefore OPTIONAL. `getRange` carried no `?` before, which promised a
-  // caller that the call was always safe while `getRange()` threw a TypeError
-  // on the instances of those two factories.
+  /**
+   * These four members are not methods. A factory installs each one on the
+   * instance after the constructor returns, and `createScalarVolumeVoxelManager`
+   * and `createImageVoxelManager` install none of the four, so each is optional.
+   */
   public getCompleteScalarDataArray?: () => ArrayLike<number>;
   public setCompleteScalarDataArray?: (scalarData: ArrayLike<number>) => void;
   public invalidateCache?: () => void;
@@ -1123,6 +1121,22 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
   /**
    * Creates a VoxelManager for an image volume. which are those volumes
    * that are composed of multiple images, one for each slice.
+   *
+   * A frame that has not arrived is the ordinary state of a streaming volume,
+   * so a missing image logs at the debug level only, once for each image. The
+   * absence is cached, because a reduction reads every voxel of a slice and
+   * would otherwise ask the cache for the same image for each voxel.
+   * `invalidateSlice` clears the entry, and the next image that reaches the
+   * cache expires it.
+   *
+   * `getSliceData` copies a k slice from its cached image in one call, rather
+   * than voxel by voxel. The copy keeps the contract of `getSliceData`, which
+   * gives the caller an array of its own, and it keeps the cached image
+   * unchanged.
+   *
+   * `getConstructor` answers from `dataType` before the first image arrives,
+   * so a derivation that runs before the load allocates the right type.
+   *
    * @param dimensions - The dimensions of the image volume.
    * @param imageIds - The array of image IDs.
    * @param dataType - the type that the images of this volume hold. The volume
@@ -1145,11 +1159,8 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
   }): IVolumeVoxelManager<number> | IVolumeVoxelManager<RGB> {
     const [width, height, depth] = dimensions;
     const pixelsPerSlice = width * height;
-    // The slice voxel managers are typed as the CLASS and not as the interface,
-    // because `setCompleteScalarDataArray` below reads the private
-    // `scalarData` field of a slice voxel manager. Every image voxel manager is
-    // an instance of this class, so the cast at `resolveSliceVoxelManager`
-    // states a fact.
+    // Typed as the class, because `setCompleteScalarDataArray` reads the
+    // private `scalarData` of a slice voxel manager.
     const sliceVoxelManagers = new Array<
       VoxelManager<number> | VoxelManager<RGB> | null | undefined
     >(depth);
@@ -1247,25 +1258,14 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
 
       const image = cache.getImage(imageId);
       if (!image?.voxelManager) {
-        // A frame that has not arrived is the ordinary state of a streaming
-        // volume, and not a defect: `getAtIJK` answers with the nearest value
-        // that it holds, and a box reduction takes the source voxels that have
-        // arrived and skips the rest. A derivation that follows the load reads
-        // every frame of a box as soon as one frame of that box arrives, so a
-        // warning here reports the normal case once for each image of the
-        // volume. The message stays available at the debug level.
+        // A frame that has not arrived is normal while a volume streams.
         if (!warnedMissingImages.has(imageId)) {
           warnedMissingImages.add(imageId);
           log.debug(`Image not found for imageId: ${imageId}`);
         }
 
-        // THE ABSENCE IS CACHED, exactly as the absence of an image id is. A
-        // reduction reads every voxel of a slice, so without this each of the
-        // 262144 reads of one slice of 512 x 512 asks the cache for the same
-        // image again. `invalidateSlice` clears the entry, and
-        // `ImageVolume.markFrameTexturesDirty` calls it when the image of the
-        // frame arrives. The next image that reaches the cache also expires the
-        // entry, so a frame that arrives with no such call still shows.
+        // Cache the absence; `invalidateSlice` or the next cached image
+        // expires it.
         sliceVoxelManagers[sliceIndex] = null;
         sliceMissGenerations[sliceIndex] = cache.getImageGeneration();
 
@@ -1373,11 +1373,7 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
         return imageVoxelManager.getConstructor();
       }
 
-      // No image has arrived yet. The volume states the type of its images from
-      // the metadata, so a derivation that runs before the load can still
-      // allocate the right type. Without this answer the caller takes the
-      // Float32Array of the default, which holds twice the bytes of the
-      // Int16Array that a CT needs.
+      // No image has arrived yet; use the type from the metadata.
       return dataType ? getConstructorFromType(dataType, false) : null;
     };
 
@@ -1420,16 +1416,7 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
       }
     };
 
-    // One k slice of this volume is one image of the cache, and that image
-    // already holds the values of the slice together and in order. Copy them,
-    // rather than read the slice voxel by voxel: a volume of 512 x 512 x 1232
-    // holds 323 million voxels, and one call for each of them takes tens of
-    // seconds.
-    //
-    // The copy keeps the contract of `getSliceData`, which gives the caller an
-    // array of its own. It also keeps the image of the cache exactly as the
-    // loader provided it, which a caller that writes to the result would
-    // otherwise change.
+    // One k slice is one cached image, so copy it in one call.
     voxelManager._getSliceData = ({ sliceIndex, slicePlane }) => {
       if (slicePlane !== 2) {
         // A YZ or an XZ slice reads one voxel of every image, so no image
@@ -1667,16 +1654,9 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
       ];
     };
 
-    // Every one of the four function-valued properties is installed above, so
-    // this factory returns the VOLUME interface, and a caller of one of the
-    // four needs no guard.
-    //
-    // The assertion goes through `unknown` for two reasons, and each one is a
-    // limit of the compiler and not a doubt about the code. First, the class
-    // declares the four properties as optional, because other factories install
-    // none of them, so the compiler cannot see the four assignments above.
-    // Second, the instance is a `VoxelManager<number | RGB>` and the result is
-    // a union of two voxel managers, one over `number` and one over `RGB`.
+    // All four optional members are installed above. The compiler cannot see
+    // those assignments, and it cannot narrow `VoxelManager<number | RGB>` to
+    // the union of the result, so the cast goes through `unknown`.
     return voxelManager as unknown as
       | IVolumeVoxelManager<number>
       | IVolumeVoxelManager<RGB>;
@@ -1741,7 +1721,7 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
    * Creates a voxel manager over a set of dimension groups, and gives the
    * values of the active dimension group.
    *
-   * THE RESULT IS AN `IVoxelManager` AND NOT AN `IVolumeVoxelManager`. This
+   * The result is an `IVoxelManager` and not an `IVolumeVoxelManager`. This
    * factory installs `getRange` and `getCompleteScalarDataArray`, and it
    * installs neither `setCompleteScalarDataArray` nor `invalidateCache`, so a
    * call to one of those two throws a TypeError. A caller must guard the call,

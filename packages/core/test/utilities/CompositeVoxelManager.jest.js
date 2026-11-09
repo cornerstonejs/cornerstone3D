@@ -320,7 +320,7 @@ describe('CompositeVoxelManager reads over a hole', () => {
 
     expect(composite.getAtIJK(0, 0, 0)).toBe(100);
     // Every other voxel is a hole in the primary representation, and the
-    // backstop answers. MR-U-6: the user must not see a blank region.
+    // backstop answers, so the user never sees a blank region.
     expect(composite.getAtIJK(7, 7, 0)).toBe(42);
     expect(composite.getAtIJK(3, 5, 0)).toBe(42);
   });
@@ -715,12 +715,12 @@ describe('CompositeVoxelManager stores the quality by region', () => {
 });
 
 describe('CompositeVoxelManager reads across a reduction of 2, 3 and 4', () => {
-  // THE FACTORS DIFFER ON EACH AXIS, and none of them is the same as another.
+  // The factors differ on each axis, and none of them is the same as another.
   // An axis that the code takes for another axis, and a sample offset that the
   // code applies to the wrong axis, both give a wrong value here and nowhere in
   // a test whose factors are equal.
   //
-  // The volume is 8 x 10 x 8, so the j axis does NOT divide by 3: the last box
+  // The volume is 8 x 10 x 8, so the j axis does not divide by 3: the last box
   // of that axis holds one row of the three, which is the partial box.
   const dimensions = [8, 10, 8];
   const factors = [2, 3, 4];
@@ -799,7 +799,7 @@ describe('CompositeVoxelManager gives a record that two readers judge', () => {
   const dimensions = [8, 8, 8];
 
   it('gives one record to two viewports, which report differently', () => {
-    // Acceptance criterion 7 of issue #2921. The full resolution data arrived,
+    // The full resolution data arrived,
     // and a reduction of it exists beside it.
     const composite = new CompositeVoxelManager({
       primary: makeFunction(dimensions, (i, j, k) => i + j + k),
@@ -904,8 +904,8 @@ describe('CompositeVoxelManager gives a record that two readers judge', () => {
 });
 
 describe('CompositeVoxelManager over a WSI-shaped pyramid', () => {
-  // Acceptance criterion 9 of issue #2921. The tiles have PER-LEVEL DIFFERING
-  // EXTENTS and NON-UNIFORM TILING, and the levels are NOT a clean pyramid of
+  // The tiles have per-level differing
+  // extents and non-uniform tiling, and the levels are not a clean pyramid of
   // powers of two: the coarse level reduces by 3 on i and by 2 on j.
   const dimensions = [100, 60, 1];
   let composite;
@@ -982,8 +982,8 @@ describe('CompositeVoxelManager over a WSI-shaped pyramid', () => {
   });
 
   it('leaves out every tile for a region that no single tile covers', () => {
-    // The tiles cover this region BETWEEN THEM, and no one tile covers it, so
-    // no tile is a candidate. A read of such a region composes over the SET of
+    // The tiles cover this region between them, and no one tile covers it, so
+    // no tile is a candidate. A read of such a region composes over the set of
     // the tiles, which `fillGrid` does.
     const acrossTwoTiles = [
       [30, 50],
@@ -1004,7 +1004,7 @@ describe('CompositeVoxelManager over a WSI-shaped pyramid', () => {
   });
 
   it('fills a grid from several tiles at the same time', () => {
-    // A FILL IS MANY TO ONE. The target covers the whole volume at one fifth on
+    // A fill is many to one. The target covers the whole volume at one fifth on
     // i, and the three tiles fill it between them.
     const target = deriveBoxAverageGrid(composite.grid, { factors: [5, 5, 1] });
     const filled = makeFilled(target.dimensions, 0);

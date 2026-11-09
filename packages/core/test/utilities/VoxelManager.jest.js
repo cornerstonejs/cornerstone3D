@@ -575,7 +575,7 @@ describe('VoxelManager', () => {
         ),
       });
       expect(installedMembers(voxelManager)).toEqual([]);
-      // The type promised that this call was safe before commit 1.
+      // The type promised that this call was safe before `getRange` became optional.
       expect(() => voxelManager.getRange()).toThrow(TypeError);
     });
 

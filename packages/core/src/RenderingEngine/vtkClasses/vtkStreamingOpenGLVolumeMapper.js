@@ -210,6 +210,19 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
    * vtkStreamingOpenGLTexture's methods, and also prevents recomputation of the texture for each
    * vtkStreamingOpenGLVolumeMapper using the texture.
    *
+   * The texture dimensions come from the grid of the texture when it states
+   * one. `imageData` always describes the full-resolution grid, so a mapper
+   * that read `imageData` alone would allocate every texture at full size and
+   * overwrite a reduced texture on the next render. The texture coordinates
+   * stay normalized over the same world bounds, so a reduced texture covers
+   * the same volume with fewer voxels.
+   *
+   * The cost of a texture is counted here, before the allocation, because this
+   * is the only place where the dimensions are known and the allocation has not
+   * started. An allocation that the device cannot hold fails inside the driver
+   * and shows a black viewport, so the mapper refuses it and draws nothing for
+   * this volume. A change of the limits rebinds a texture that fits them, so a
+   * refusal lasts only until then.
    *
    * @param {*} ren The renderer.
    * @param {*} actor The actor to build the buffer objects for.
@@ -426,15 +439,7 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
         }
 
         if (model.scalarTextureStrings[component] !== toString) {
-          // Build the textures.
-          //
-          // The dimensions come from the texture when the texture states a
-          // grid. `imageData` always describes the full-resolution grid, so a
-          // mapper that read `imageData` alone would allocate every texture at
-          // the full dimensions and would overwrite a reduced texture on the
-          // next render. The texture coordinates stay normalized over the same
-          // world bounds, so a reduced texture covers the same volume with
-          // fewer voxels.
+          // A reduced texture states its own grid.
           const dims =
             currentTexture.getGrid?.()?.dimensions ?? imageData.getDimensions();
           currentTexture.setOpenGLRenderWindow(model._openGLRenderWindow);
@@ -471,14 +476,7 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
           }
 
           if (shouldReset) {
-            // The cost of the texture, counted before the allocation. This is
-            // the only place where the dimensions are known and the allocation
-            // has not started. An allocation that the device cannot hold fails
-            // inside the driver, and the viewport then shows black, which is
-            // the defect that issue #2921 names. The mapper refuses that
-            // allocation instead and draws nothing for this volume. A change
-            // of the limits rebinds a texture that fits them, so a refusal
-            // lasts only until then. MR-API-IV-7, and acceptance criterion 15.
+            // Refuse a texture that the device cannot hold.
             if (
               !gridFitsGpuSettings(dims, dataType, textureNumberOfComponents, {
                 volumeId: currentTexture.getVolumeId?.(),

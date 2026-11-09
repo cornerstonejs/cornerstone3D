@@ -89,7 +89,7 @@ function growAccumulators(accumulators: BoxAccumulators, count: number): void {
 /**
  * Gives the statistic of one box.
  *
- * A VALUE OF MORE THAN ONE COMPONENT GETS ONE ACCUMULATOR FOR EACH COMPONENT.
+ * A value of more than one component gets one accumulator for each component.
  * The components of one voxel are independent of each other, so a definition of
  * a statistic states the arithmetic of one component only, and the same
  * definition then serves a value of one component and a value of three.
@@ -132,7 +132,7 @@ function valueOfBox(
         const value = source.getAtIJK(sourceI, sourceJ, sourceK);
 
         if (typeof value === 'number') {
-          // THE BOX TAKES ONLY THE VALUES THAT ARE NUMBERS. A source that is
+          // The box takes only the values that are numbers. A source that is
           // not completely loaded gives `undefined` for a voxel that has not
           // arrived, and one such voxel must not destroy the value of the box.
           if (Number.isFinite(value)) {
@@ -207,7 +207,7 @@ function roundValue(value: BoxStatisticValue): BoxStatisticValue {
  * clips the box to the region. A box at the end of an axis can therefore hold
  * fewer source voxels than the factor of that axis states.
  *
- * THE FUNCTION TAKES ONLY THE VALUES THAT ARE NUMBERS. A source that is not
+ * The function takes only the values that are numbers. A source that is not
  * completely loaded returns `undefined` for a voxel that has not arrived, and
  * one such voxel must not destroy the value of the whole box. The function
  * returns `undefined` when the box holds no such value, and a caller then keeps
@@ -268,7 +268,7 @@ function boxAverageAtIJK<T extends BoxStatisticValue = number>(
  * larger target. The function writes no value for a box that holds no value, so
  * the target keeps what the target already holds for that voxel.
  *
- * The function builds ONE accumulator for each component, and it resets those
+ * The function builds one accumulator for each component, and it resets those
  * accumulators for each box.
  *
  * A statistic that registers `reduceBySlices` tries that fast path first. The
@@ -330,13 +330,13 @@ function reduceByBoxStatistic<T extends BoxStatisticValue = number>(
 /**
  * Writes the box average of a region of the source into the target.
  *
- * THE REDUCTION OF THE RESOLUTION IS A BOX AVERAGE, AND IT IS NEVER A
- * DECIMATION. A decimation of 2 takes every second voxel, which keeps the high
+ * The reduction of the resolution is a box average, and it is never a
+ * decimation. A decimation of 2 takes every second voxel, which keeps the high
  * spatial frequencies and folds them into the signal as an alias. A reformat
  * then shows vertical blur with stair steps on an oblique structure, and that
  * result is not acceptable when a reformat is diagnostic.
  *
- * THE AVERAGE APPLIES TO A VALUE THAT A MEAN DESCRIBES. A mean of the labels of
+ * The average applies to a value that a mean describes. A mean of the labels of
  * a segmentation has no meaning. Labelmap volumes set `reductionStatistic` to
  * `ForegroundMajority`, which core registers for that case.
  *

@@ -4,7 +4,7 @@ import { normalizedFactors, reducedDimensions } from './reducedDimensions';
 /**
  * Gives the grid that a box average of a region of the source grid produces.
  *
- * THE ORIGIN CARRIES THE SAMPLE OFFSET. A decimation reports the corner voxel
+ * The origin carries the sample offset. A decimation reports the corner voxel
  * of a box, and a box average reports the centre of the box. The two points lie
  * apart by `(factor - 1) / 2` source voxels on each axis, which approaches half
  * a voxel of the reduced grid as the factor grows. The origin of the result
@@ -29,7 +29,7 @@ import { normalizedFactors, reducedDimensions } from './reducedDimensions';
  * That is up to `(f - 1) / 2` source voxels, and a grid descriptor holds one
  * spacing for each axis, so the descriptor cannot express that distance.
  *
- * A DERIVATION ALWAYS GOES FROM A HIGHER RESOLUTION TO A LOWER ONE, or the data
+ * A derivation always goes from a higher resolution to a lower one, or the data
  * comes from a direct load. Nothing derives a grid from a lower resolution.
  *
  * @param source - the grid of the data that the reduction reads

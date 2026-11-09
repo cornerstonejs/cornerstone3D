@@ -5,12 +5,11 @@ import ImageVolume, {
 import volumeTextureStore from '../src/cache/volumeTextureStore';
 import VoxelManager from '../src/utilities/VoxelManager';
 
-// The named texture sets on `ImageVolume`, which is MR-API-IV-2, MR-API-IV-3
-// and MR-API-IV-6 to MR-API-IV-8 of cornerstone3D issue #2921.
+// The named texture sets on `ImageVolume`.
 //
-// NONE OF THESE TESTS NEEDS A GPU. A texture object costs no GPU memory; the
-// allocation happens when a mapper first renders the texture, and commit 7 of
-// this work puts the check of the limits at that allocation.
+// None of these tests needs a GPU. A texture object costs no GPU memory; the
+// allocation, and the check of the limits, happen when a mapper first renders
+// the texture.
 
 beforeEach(() => {
   volumeTextureStore.clear();

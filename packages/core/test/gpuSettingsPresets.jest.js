@@ -14,8 +14,7 @@ import {
   setUseCPURendering,
 } from '../src/init';
 
-// The named capability profiles, which an application states. MR-CODE-1 and
-// MR-CODE-2 of cornerstone3D issue #2921.
+// The named capability profiles, which an application states.
 //
 // The strategies that read a profile are in volumeRenderStrategy.jest.js.
 

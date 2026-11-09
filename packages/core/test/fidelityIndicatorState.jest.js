@@ -197,7 +197,7 @@ describe('fidelityIndicatorState', () => {
     });
 
     it('is done when a reduction is not visible at the display spacing', () => {
-      // FIDELITY-STATE-6 / MR-U-5: box average under low magnification is not
+      // FIDELITY-STATE-6: box average under low magnification is not
       // a warning (e.g. sagittal/coronal of a 1×1×2 texture when p ≥ 2S).
       expect(
         lineKind(

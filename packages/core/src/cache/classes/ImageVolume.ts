@@ -284,18 +284,8 @@ export class ImageVolume {
   }
 
   // ==========================================================================
-  // The multi-resolution API
-  //
-  // The existing public surface does not change. `dimensions`, `spacing`,
-  // `origin`, `direction`, `imageIds`, `getImageIdIndex`, `voxelManager` and
-  // `getCompleteScalarDataArray` keep their behaviour, so a tool, a
-  // segmentation and a measurement see no difference. MR-API-IV-1 and
-  // MR-API-IV-9 require that.
-  //
-  // The members below are new, and they give the alternate representations of
-  // the voxel data to a caller, which MR-API-IV-4 requires. A render path reads
-  // them to select the grid that it draws, and a loader reads them to deliver
-  // data at a grid that is not the grid of this volume.
+  // The multi-resolution API: the alternate representations of the voxel
+  // data. The members above keep their behaviour.
   // ==========================================================================
 
   /**
@@ -319,24 +309,6 @@ export class ImageVolume {
     };
   }
 
-  /**
-   * The composite of this volume, which holds every representation of the voxel
-   * data. The volume builds it on the first request, and the representation of
-   * `voxelManager` is the primary one.
-   *
-   * `voxelManager` stays the primary voxel manager, so a read through it reads
-   * the data of this grid alone. A caller that wants the best data for a
-   * region, at a resolution that it states, reads the composite.
-   *
-   * The volume discards the composite when a caller assigns a new
-   * `voxelManager`, because the alternate representations describe the data of
-   * the voxel manager that produced them. `volumeLoader.createLocalVolume`
-   * assigns a new voxel manager immediately after the construction, and the
-   * discard makes that assignment safe.
-   *
-   * `sizeInBytes` counts the primary voxel manager alone. A derived
-   * representation is extra memory that the cache does not count yet.
-   */
   /**
    * The regions of this volume that a loader has already delivered.
    *
@@ -395,6 +367,24 @@ export class ImageVolume {
     this._compositeVoxelManager = undefined;
   }
 
+  /**
+   * The composite of this volume, which holds every representation of the voxel
+   * data. The volume builds it on the first request, and the representation of
+   * `voxelManager` is the primary one.
+   *
+   * `voxelManager` stays the primary voxel manager, so a read through it reads
+   * the data of this grid alone. A caller that wants the best data for a
+   * region, at a resolution that it states, reads the composite.
+   *
+   * The volume discards the composite when a caller assigns a new
+   * `voxelManager`, because the alternate representations describe the data of
+   * the voxel manager that produced them. `volumeLoader.createLocalVolume`
+   * assigns a new voxel manager immediately after the construction, and the
+   * discard makes that assignment safe.
+   *
+   * `sizeInBytes` counts the primary voxel manager alone. A derived
+   * representation is extra memory that the cache does not count yet.
+   */
   public get compositeVoxelManager(): CompositeVoxelManager<number | RGB> {
     const primary = this.voxelManager as IVoxelManager<number | RGB>;
 
@@ -472,16 +462,8 @@ export class ImageVolume {
   }
 
   // ==========================================================================
-  // The named texture sets
-  //
-  // The set is the unit of storage, of cost and of eviction, and the store that
-  // holds the sets is global, because a device holds one amount of texture
-  // memory and one volume does not know what the other volumes take. The list
-  // below is a view of that store.
-  //
-  // The two costs are deliberately different. `provisionTextureSet` derives
-  // voxels and allocates textures, and it never runs on the frame path. A
-  // selection reads `textureSets` and touches neither.
+  // The named texture sets: a view of the global texture store. Only
+  // `provisionTextureSet` allocates, and it never runs on the frame path.
   // ==========================================================================
 
   /** The number of bytes that the textures of every volume take. */
@@ -620,7 +602,7 @@ export class ImageVolume {
    * covers the frame. The member records no quality.
    *
    * One frame changes several textures, because each texture that covers the
-   * frame reads the same voxels, and MR-API-IV-6 states that rule. A mark
+   * frame reads the same voxels. A mark
    * uploads nothing: the refill happens at the next render of each texture.
    */
   public markFrameTexturesDirty(frameIndex: number): void {

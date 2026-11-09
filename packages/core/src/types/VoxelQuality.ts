@@ -21,7 +21,7 @@ export interface VoxelReductionDefinition {
   /** The identifier of the kind. */
   reduction: VoxelReduction;
   /**
-   * WHETHER THIS KIND OF A REDUCTION ALIASES. A reduction that aliases folds
+   * Whether this kind of a reduction aliases. A reduction that aliases folds
    * the high spatial frequencies into the signal, and no display resolution
    * removes that error, so a verdict reports a view of such data as lossy at
    * every magnification. A reduction that does not alias is lossless at a
@@ -33,9 +33,9 @@ export interface VoxelReductionDefinition {
 }
 
 /**
- * WHAT A REGION OF ONE REPRESENTATION HOLDS, as an ABSOLUTE RECORD.
+ * What a region of one representation holds, as an absolute record.
  *
- * THE RECORD STATES NO VERDICT. It says which data exists, at which spacing,
+ * The record states no verdict. It says which data exists, at which spacing,
  * with which loss, and how much is missing. A reader compares the record
  * against its own requirement with `compareVoxelQuality`, and two viewports
  * over one volume can therefore reach a different answer from one record.
@@ -62,8 +62,8 @@ export type VoxelQualityRecord = {
   /** The number of deliveries that meet the region. */
   deliveries: number;
   /**
-   * Whether `missing` is exact. A record that is not exact NEVER STATES LESS
-   * THAN WHAT IS MISSING, so a reader that trusts the record errs towards "the
+   * Whether `missing` is exact. A record that is not exact never states less
+   * than what is missing, so a reader that trusts the record errs towards "the
    * data is not complete", and never towards a wrong statement of completeness.
    */
   exact: boolean;
@@ -79,7 +79,7 @@ export type VoxelQualityRecord = {
 /** What one reader needs of the data. */
 export type VoxelQualityRequirement = {
   /**
-   * The distance in world units that ONE DISPLAY PIXEL covers, on each axis of
+   * The distance in world units that one display pixel covers, on each axis of
    * the grid. A viewport that shows one voxel of 1 mm on 4 display pixels needs
    * 0.25 mm, and a viewport at a low magnification needs more than the spacing
    * of the data.
@@ -112,7 +112,7 @@ export type VoxelQualityCause =
   | 'quality';
 
 /**
- * WHAT ONE READER GETS FROM ONE RECORD.
+ * What one reader gets from one record.
  *
  * A verdict belongs to the pair of the data and the reader. Two viewports over
  * one volume can hold one record and a different verdict at one moment, and

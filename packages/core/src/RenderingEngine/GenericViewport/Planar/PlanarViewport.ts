@@ -1887,7 +1887,7 @@ class PlanarViewport extends GenericViewport<
   /**
    * Whether the source of this viewport may draw the acquired frames of a
    * reduced volume in the acquisition plane. The legacy adapter turns this off,
-   * so the legacy viewports keep their 4.x display (AQP-I-10 of #3017).
+   * so the legacy viewports keep their 4.x display.
    */
   protected prefersAcquiredFrames(): boolean {
     return true;

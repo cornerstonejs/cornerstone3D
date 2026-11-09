@@ -3,7 +3,7 @@ import { fidelityDetailsTextOf } from '../src/RenderingEngine/helpers/fidelityIn
 import ImageQualityStatus from '../src/enums/ImageQualityStatus';
 
 describe('fidelityDetailsTextOf (FIDELITY-UI-5)', () => {
-  it('describes an incomplete load with progress and wait (DISCOVER-1..3)', () => {
+  it('describes an incomplete load with progress and wait', () => {
     const text = fidelityDetailsTextOf({
       cause: 'incompleteLoad',
       transient: true,

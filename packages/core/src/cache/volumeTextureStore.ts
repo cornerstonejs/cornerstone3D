@@ -347,7 +347,7 @@ class VolumeTextureStore {
    * path claims the set that it draws, and a legacy viewport claims the set of
    * each actor that it holds.
    * A backstop set leaves last, because a fill that finds no source leaves a
-   * blank region and MR-U-6 forbids that.
+   * blank region, and the user must not see a blank region.
    *
    * When all the evictable sets together cannot make room, the store evicts
    * nothing and refuses, so a refusal never costs the sets that it kept.

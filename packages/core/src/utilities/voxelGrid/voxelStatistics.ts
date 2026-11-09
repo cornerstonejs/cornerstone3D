@@ -134,7 +134,7 @@ function registerCoreVoxelStatistics(): void {
  * given — a constant on `Enums.VoxelStatistics`.
  *
  * The definition carries the arithmetic of the statistic. An accumulator takes
- * ONE COMPONENT of one voxel, because the code that reduces a grid builds one
+ * one component of one voxel, because the code that reduces a grid builds one
  * accumulator for each component of a voxel. A definition therefore serves a
  * volume of one component and an RGB volume, and it states the arithmetic once.
  *

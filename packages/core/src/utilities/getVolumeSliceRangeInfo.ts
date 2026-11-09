@@ -39,13 +39,8 @@ function getVolumeSliceRangeInfo(
     );
 
   if (!actorUID) {
-    // A viewport holds no volume until a caller sets one, and a viewport of a
-    // volume that no actor draws, such as a 3D viewport of an empty scene, has
-    // no slice range either. A scroll of such a viewport moves nothing, so
-    // report that this function cannot measure the viewport and let the caller
-    // return. This is the same answer as the missing actor below, and a throw
-    // here reached the user as an exception whenever a scroll arrived before a
-    // volume.
+    // No volume yet, or no actor draws it: a scroll moves nothing, so report
+    // that the viewport cannot be measured, as for the missing actor below.
     log.warn('No volume found in the viewport for the volumeId of', volumeId);
     return null;
   }

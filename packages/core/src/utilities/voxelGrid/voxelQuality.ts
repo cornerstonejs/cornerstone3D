@@ -70,7 +70,7 @@ function registerCoreVoxelReductions(): void {
  *
  * `aliases` states whether this kind folds the high spatial frequencies into
  * the signal. A verdict reads that field, and nothing else of the definition:
- * a reduction that aliases makes a view lossy at EVERY display resolution,
+ * a reduction that aliases makes a view lossy at every display resolution,
  * because no display removes an alias, and a reduction that does not alias is
  * lossless at a display resolution that its spacing can carry.
  *
@@ -200,10 +200,10 @@ function imageQualityStatusOfRecord(
 }
 
 /**
- * COMPARES ONE RECORD AGAINST THE REQUIREMENT OF ONE READER, and gives the
+ * Compares one record against the requirement of one reader, and gives the
  * verdict.
  *
- * THE FUNCTION IS PURE, and the verdict belongs to the pair of the data and the
+ * The function is pure, and the verdict belongs to the pair of the data and the
  * reader. Two viewports over one volume hold one record and a different verdict
  * at one moment, and both verdicts are correct. A caller can cache a record,
  * and a caller must not cache a verdict.
@@ -216,8 +216,8 @@ function imageQualityStatusOfRecord(
  * - no more of the region is missing than the reader accepts;
  * - the comparable summary reaches the floor that the reader states.
  *
- * MR-U-5: a viewport that shows reduced data at a magnification where the
- * reduction is not visible reports the view as LOSSLESS. The user does not get
+ * A viewport that shows reduced data at a magnification where the
+ * reduction is not visible reports the view as lossless. The user does not get
  * a warning that is not necessary.
  *
  * @param record - the absolute record of a region

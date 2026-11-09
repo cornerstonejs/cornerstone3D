@@ -308,11 +308,8 @@ class VolumeViewport3DLegacyAdapter extends VolumeViewport3D {
       });
 
       if (replaceExisting) {
-        // A legacy volume viewport resets its camera whenever it sets its
-        // actors, through `addActors(actors, { resetCamera: true })`. Nothing
-        // did so here, so the camera kept the default of a new vtk camera and
-        // pointed away from the volume, which drew an empty viewport. The reset
-        // runs after the mount, because a reset before it has no actor to fit.
+        // As a legacy volume viewport does when it sets its actors. The reset
+        // runs after the mount, because before it there is no actor to fit.
         this.resetCamera();
       }
 

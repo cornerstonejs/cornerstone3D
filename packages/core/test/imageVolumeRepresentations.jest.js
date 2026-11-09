@@ -3,9 +3,8 @@ import ImageVolume from '../src/cache/classes/ImageVolume';
 import VoxelManager from '../src/utilities/VoxelManager';
 import { VoxelStatistics } from '../src/enums';
 
-// The composite on `ImageVolume`, which is MR-API-IV-1 and MR-API-IV-4 of
-// cornerstone3D issue #2921. The existing public surface does not change, and a
-// new API gives the alternate representations to a caller.
+// The composite on `ImageVolume`. The existing public surface does not change,
+// and a new API gives the alternate representations to a caller.
 
 const identityDirection = [1, 0, 0, 0, 1, 0, 0, 0, 1];
 const dimensions = [4, 4, 4];

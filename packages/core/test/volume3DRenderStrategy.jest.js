@@ -152,7 +152,7 @@ describe('the 3D render path chooses a strategy', () => {
 
 describe('two viewports over one volume report independently', () => {
   it('holds a different record at the same moment', () => {
-    // Acceptance criterion 7 of issue #2921. One volume, one moment, two
+    // One volume, one moment, two
     // viewports: the 3D viewport draws reduced data because it samples the
     // whole texture, and the slice viewport draws the full-resolution data.
     const volume = makeVolume();
@@ -178,8 +178,7 @@ describe('two viewports over one volume report independently', () => {
     provision(slice, renderingSlice);
     render(slice, renderingSlice);
 
-    // The two viewports bound a different grid at the same moment, which is
-    // what acceptance criterion 7 asks for.
+    // The two viewports bound a different grid at the same moment.
     expect(rendering3D.strategy.name).toBe('reduced-2x2x1/full-extent/average');
     expect(renderingSlice.strategy.name).toBe('full-resolution/full-extent');
     expect(rendering3D.boundTexture.getGrid().dimensions).toEqual([

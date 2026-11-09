@@ -37,12 +37,12 @@ import { gridFitsGpuSettings } from '../src/RenderingEngine/vtkClasses/vtkStream
 beforeAll(() => setLossyDownsampling({ final: true }));
 afterAll(() => setLossyDownsampling({ final: false }));
 
-// A STRATEGY IS THE UNIT: it states how a render gets its voxels, and the names
+// A strategy is the unit: it states how a render gets its voxels, and the names
 // of the texture sets derive from it. The provider builds the strategies when
 // the render path adds its actor, and the selection runs on the frame path and
 // cannot fail.
 //
-// NONE OF THESE TESTS NEEDS A GPU. `setScalarTexture` is a spy.
+// None of these tests needs a GPU. `setScalarTexture` is a spy.
 
 const identityDirection = [1, 0, 0, 0, 1, 0, 0, 0, 1];
 const dimensions = [512, 512, 8];
@@ -128,7 +128,7 @@ describe('the default provider builds the strategies', () => {
     );
 
     // The limit of one edge is 256, so the two in-plane axes reduce by 2 and
-    // the k axis of 8 slices does not reduce. THE REDUCTION IS PER AXIS.
+    // the k axis of 8 slices does not reduce. The reduction is per axis.
     expect(strategies.map((strategy) => strategy.name)).toEqual([
       'reduced-2x2x1/full-extent/average',
     ]);
@@ -315,7 +315,7 @@ describe('the render path provisions once and selects per render', () => {
     render(path, rendering);
     render(path, rendering);
 
-    // THE PROVISION NEVER RUNS ON THE FRAME PATH.
+    // The provision never runs on the frame path.
     expect(provider).toHaveBeenCalledTimes(1);
     expect(rendering.mapper.setScalarTexture).toHaveBeenCalledTimes(1);
   });

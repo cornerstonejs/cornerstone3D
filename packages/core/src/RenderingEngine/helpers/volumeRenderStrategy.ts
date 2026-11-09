@@ -397,6 +397,11 @@ export function provisionFullResolutionStrategy({
  *
  * Intensity volumes reduce with the box average. Labelmaps set
  * `reductionStatistic` to foregroundMajority so segment indices stay real labels.
+ *
+ * No derived representation is built. The texture fills each slice by the
+ * statistic straight from the frames of the volume, at no cost in CPU memory,
+ * and `ImageVolume.getGridQuality` gives the record of that texture. A
+ * derivation of a fully loaded volume would reduce every voxel here.
  */
 export function provisionReducedResolutionStrategy({
   volume,
@@ -413,13 +418,6 @@ export function provisionReducedResolutionStrategy({
   const grid = deriveBoxAverageGrid(fullResolutionGrid, { factors });
   const name = reducedStrategyName(factors, statistic);
 
-  // No derived representation is built here. The texture of this grid fills
-  // each slice by the statistic of the volume straight from its frames: the
-  // box average that P31.2 asks for, or the foreground majority of a labelmap,
-  // at no cost in CPU memory. `ImageVolume.getGridQuality` gives the record of
-  // that texture from the deliveries of the volume. A derivation of a volume
-  // that holds all of its data would otherwise reduce every voxel during this
-  // provision.
   const set = volume.provisionTextureSet({
     name,
     grids: [grid],
@@ -449,9 +447,9 @@ export function provisionReducedResolutionStrategy({
  * It implements no performance-bound reduction. "The texture is too large" and
  * "the frame rate is too low" are different causes with different timing: a
  * capability does not change while a viewport lives, and a frame rate changes
- * inside one interaction. The second belongs to task T14, which also owns the
- * correction of the opacity that goes with a change of the sample distance.
- * Task T14 supplies its own provider and its own selection.
+ * inside one interaction. A provider for the frame rate, with the correction
+ * of the opacity that goes with a change of the sample distance, is separate
+ * work.
  */
 export const defaultVolumeStrategyProvider: VolumeStrategyProvider = (
   context
