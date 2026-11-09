@@ -1,4 +1,5 @@
 import type { ECGChannelLayout, ECGRenderMetrics } from './ecgGeometry';
+import type { ECGCanvasTransform } from './ECGResolvedView';
 import {
   ECG_DEFAULT_SWEEP_SPEED_MM_S,
   ECG_PX_PER_MM,
@@ -7,9 +8,13 @@ import {
   type ECGChannelLike,
 } from './ecgWaveform';
 
-/** Draws the ECG paper grid, and the millivolt labels when calibrated. */ export function drawECGGrid<
-  TChannel extends ECGChannelLike = ECGChannelLike,
->(
+/**
+ * Draws the ECG paper grid, and the millivolt labels when calibrated.
+ * `options.bounds` is the area to cover, in layout units. It defaults to the
+ * paper area; the render path gives the whole canvas, so that the grid fills
+ * the canvas at one scale.
+ */
+export function drawECGGrid<TChannel extends ECGChannelLike = ECGChannelLike>(
   ctx: CanvasRenderingContext2D,
   metrics: Partial<ECGRenderMetrics> & {
     ecgWidth: number;
@@ -20,7 +25,10 @@ import {
     showAmplitudeLabels?: boolean;
     pxPerSecond?: number;
   },
-  options?: { showGrid?: boolean },
+  options?: {
+    showGrid?: boolean;
+    bounds?: { minX: number; minY: number; maxX: number; maxY: number };
+  },
   layouts?: Pick<
     ECGChannelLayout<TChannel>,
     'baseline' | 'itemHeight' | 'xOffset'
@@ -71,6 +79,12 @@ import {
   const minorV = resolvedPxPerSecond / resolvedSweepSpeed;
   const majorV = minorV * 5;
 
+  const {
+    minX = 0,
+    minY = 0,
+    maxX = ecgWidth,
+    maxY = ecgHeight,
+  } = options?.bounds ?? {};
   const effectiveMinorH = minorH * worldToCanvasRatio;
   const effectiveMinorV = minorV * worldToCanvasRatio;
 
@@ -80,19 +94,18 @@ import {
     ctx.lineWidth = 0.5;
     ctx.beginPath();
 
-    for (let y = minorH; y <= ecgHeight; y += minorH) {
-      if (Math.round(y / minorH) % 5 !== 0) {
-        ctx.moveTo(0, y);
-        ctx.lineTo(ecgWidth, y);
+    forEachGridLine(minY, maxY, minorH, (y, k) => {
+      if (k % 5 !== 0) {
+        ctx.moveTo(minX, y);
+        ctx.lineTo(maxX, y);
       }
-    }
-
-    for (let x = minorV; x <= ecgWidth; x += minorV) {
-      if (Math.round(x / minorV) % 5 !== 0) {
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, ecgHeight);
+    });
+    forEachGridLine(minX, maxX, minorV, (x, k) => {
+      if (k % 5 !== 0) {
+        ctx.moveTo(x, minY);
+        ctx.lineTo(x, maxY);
       }
-    }
+    });
 
     ctx.stroke();
   }
@@ -101,15 +114,14 @@ import {
   ctx.lineWidth = 1;
   ctx.beginPath();
 
-  for (let y = majorH; y <= ecgHeight; y += majorH) {
-    ctx.moveTo(0, y);
-    ctx.lineTo(ecgWidth, y);
-  }
-
-  for (let x = majorV; x <= ecgWidth; x += majorV) {
-    ctx.moveTo(x, 0);
-    ctx.lineTo(x, ecgHeight);
-  }
+  forEachGridLine(minY, maxY, majorH, (y) => {
+    ctx.moveTo(minX, y);
+    ctx.lineTo(maxX, y);
+  });
+  forEachGridLine(minX, maxX, majorV, (x) => {
+    ctx.moveTo(x, minY);
+    ctx.lineTo(x, maxY);
+  });
 
   ctx.stroke();
 
@@ -155,21 +167,8 @@ export function drawECGTraces<TChannel extends ECGChannelLike>(args: {
   layouts: ECGChannelLayout<TChannel>[];
   lineWidth?: number;
   amplitudeScale?: number;
-  sweepSpeed?: number;
-  sensitivityMmMv?: number;
 }): void {
-  const {
-    ctx,
-    layouts,
-    lineWidth = 1,
-    amplitudeScale = 1,
-    sweepSpeed,
-    sensitivityMmMv,
-  } = args;
-
-  const speedScale = sweepSpeed && sweepSpeed > 0 ? sweepSpeed / 25 : 1;
-  const sensScale =
-    sensitivityMmMv && sensitivityMmMv > 0 ? sensitivityMmMv / 10 : 1;
+  const { ctx, layouts, lineWidth = 1, amplitudeScale = 1 } = args;
 
   layouts.forEach(
     ({
@@ -209,13 +208,12 @@ export function drawECGTraces<TChannel extends ECGChannelLike>(args: {
       ctx.lineWidth = lineWidth;
       ctx.beginPath();
 
-      const step = (width / sampleCount) * speedScale;
+      const step = width / sampleCount;
 
       for (let index = startSample; index < lastSample; index++) {
         const x = xOffset + (index - startSample) * step;
         const y =
-          baseline -
-          channel.data[index] * channelScale * amplitudeScale * sensScale;
+          baseline - channel.data[index] * channelScale * amplitudeScale;
 
         if (index === startSample) {
           ctx.moveTo(x, y);
@@ -230,60 +228,72 @@ export function drawECGTraces<TChannel extends ECGChannelLike>(args: {
   );
 }
 
-/** Draws the label of each layout at its top left corner. */
+/**
+ * Draws the label of each layout at its top left corner, under the world
+ * transform of the deprecated ECG class. The text keeps 14 screen px.
+ */
 export function drawECGLabels<TChannel extends ECGChannelLike>(
   ctx: CanvasRenderingContext2D,
   layouts: ECGChannelLayout<TChannel>[],
-  worldToCanvasRatio: number,
-  canvasOptions?: {
-    clientWidth?: number;
-    clientHeight?: number;
-    ecgWidth?: number;
-    ecgHeight?: number;
-    scaleX?: number;
-    scaleY?: number;
-    transX?: number;
-    transY?: number;
-    dpr?: number;
-  }
+  worldToCanvasRatio: number
 ): void {
-  const dpr = canvasOptions?.dpr || 1;
-  const fontSize = 12 * dpr;
-  ctx.font = `${fontSize}px monospace`;
-
-  const clientW = canvasOptions?.clientWidth;
-  const clientH = canvasOptions?.clientHeight;
-  const ecgW = canvasOptions?.ecgWidth || 1;
-  const ecgH = canvasOptions?.ecgHeight || 1;
-
-  const scaleX = canvasOptions?.scaleX ?? (clientW ? clientW / ecgW : 1) * dpr;
-  const scaleY = canvasOptions?.scaleY ?? (clientH ? clientH / ecgH : 1) * dpr;
-  const transX = canvasOptions?.transX ?? 0;
-  const transY = canvasOptions?.transY ?? 0;
+  const fontSize = 14 / (worldToCanvasRatio || 1);
 
   layouts.forEach(({ label, itemHeight, yOffset, xOffset }) => {
-    let screenX: number;
-    let screenY: number;
+    const labelY = yOffset - itemHeight + fontSize;
 
-    if (canvasOptions?.scaleX !== undefined || (clientW && clientH)) {
-      screenX = xOffset * scaleX + transX + 5 * dpr;
-      screenY = (yOffset - itemHeight) * scaleY + transY + fontSize + 2 * dpr;
-    } else {
-      screenX = xOffset + 5;
-      screenY = yOffset - itemHeight + fontSize;
-    }
-
+    ctx.font = `${fontSize}px monospace`;
     const textWidth = ctx.measureText(label).width;
     ctx.fillStyle = ECG_RENDERING_COLORS.background;
-    ctx.fillRect(
-      screenX,
-      screenY - fontSize,
-      textWidth + 4 * dpr,
-      fontSize + 4 * dpr
-    );
+    ctx.fillRect(xOffset + 5, labelY - fontSize, textWidth + 4, fontSize + 4);
     ctx.fillStyle = ECG_RENDERING_COLORS.label;
-    ctx.fillText(label, screenX, screenY);
+    ctx.fillText(label, xOffset + 5, labelY);
   });
+}
+
+/**
+ * Draws the label of each layout at its top left corner, with no transform on
+ * the context. `transform` is the canvas transform of the resolved view, so
+ * the label is at its region at every zoom, and the text keeps 12 CSS px.
+ */
+export function drawECGCanvasLabels<TChannel extends ECGChannelLike>(
+  ctx: CanvasRenderingContext2D,
+  layouts: ECGChannelLayout<TChannel>[],
+  transform: ECGCanvasTransform,
+  dpr = 1
+): void {
+  const fontSize = 12 * dpr;
+  const { effectiveRatio, xOffset, yOffset } = transform;
+
+  ctx.font = `${fontSize}px monospace`;
+  layouts.forEach((layout) => {
+    const x = (layout.xOffset * effectiveRatio + xOffset + 5) * dpr;
+    const y =
+      ((layout.yOffset - layout.itemHeight) * effectiveRatio + yOffset + 2) *
+        dpr +
+      fontSize;
+    const textWidth = ctx.measureText(layout.label).width;
+
+    ctx.fillStyle = ECG_RENDERING_COLORS.background;
+    ctx.fillRect(x, y - fontSize, textWidth + 4 * dpr, fontSize + 4 * dpr);
+    ctx.fillStyle = ECG_RENDERING_COLORS.label;
+    ctx.fillText(layout.label, x, y);
+  });
+}
+
+/** Calls `draw` for each multiple `k * step` in `[min, max]`. */
+function forEachGridLine(
+  min: number,
+  max: number,
+  step: number,
+  draw: (value: number, k: number) => void
+): void {
+  if (!(step > 0)) {
+    return;
+  }
+  for (let k = Math.ceil(min / step); k * step <= max; k++) {
+    draw(k * step, Math.abs(k));
+  }
 }
 
 export function ensureECGCanvasSize(canvas: HTMLCanvasElement): void {

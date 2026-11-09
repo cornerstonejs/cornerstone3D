@@ -2,7 +2,7 @@ import { Events as EVENTS, ViewportType } from '../../../enums';
 import triggerEvent from '../../../utilities/triggerEvent';
 import {
   drawECGGrid,
-  drawECGLabels,
+  drawECGCanvasLabels,
   drawECGTraces,
   ensureECGCanvasSize,
 } from './ecgDrawing';
@@ -125,21 +125,14 @@ function drawFrame(ecgCtx: ECGCanvasRenderContext): void {
 
   canvasContext.globalAlpha = dataPresentation?.opacity ?? 1;
 
-  const isDefaultView =
-    (!viewState.scale || viewState.scale === 1) &&
-    !viewState.anchorWorld &&
-    (!viewState.scrollOffset || viewState.scrollOffset === 0);
-
-  const scaleX = isDefaultView
-    ? (canvas.clientWidth / (metrics.ecgWidth || 1)) * dpr
-    : effectiveRatio * dpr;
-  const scaleY = isDefaultView
-    ? (canvas.clientHeight / (metrics.ecgHeight || 1)) * dpr
-    : effectiveRatio * dpr;
-  const transX = isDefaultView ? 0 : xOffset * dpr;
-  const transY = isDefaultView ? 0 : yOffset * dpr;
-
-  canvasContext.setTransform(scaleX, 0, 0, scaleY, transX, transY);
+  canvasContext.setTransform(
+    effectiveRatio * dpr,
+    0,
+    0,
+    effectiveRatio * dpr,
+    xOffset * dpr,
+    yOffset * dpr
+  );
 
   drawECGGrid(
     canvasContext,
@@ -152,6 +145,7 @@ function drawFrame(ecgCtx: ECGCanvasRenderContext): void {
     },
     {
       showGrid: dataPresentation?.showGrid,
+      bounds: resolvedView.canvasBounds,
     },
     layouts
   );
@@ -160,25 +154,16 @@ function drawFrame(ecgCtx: ECGCanvasRenderContext): void {
     layouts,
     lineWidth: dataPresentation?.lineWidth,
     amplitudeScale: resolvedView.amplitudeScale,
-    sweepSpeed: viewState.sweepSpeed ?? metrics.sweepSpeed,
-    sensitivityMmMv: viewState.sensitivityMmMv,
   });
 
-  // Reset transform before drawing labels so text font glyphs are never scaled or distorted
+  // The labels keep one screen size, so they draw with no transform.
   canvasContext.resetTransform();
-
-  drawECGLabels(canvasContext, layouts, metrics.worldToCanvasRatio, {
-    clientWidth: canvas.clientWidth,
-    clientHeight: canvas.clientHeight,
-    ecgWidth: metrics.ecgWidth,
-    ecgHeight: metrics.ecgHeight,
-    scaleX,
-    scaleY,
-    transX,
-    transY,
-    dpr,
-  });
-
+  drawECGCanvasLabels(
+    canvasContext,
+    layouts,
+    resolvedView.canvasTransform,
+    dpr
+  );
   canvasContext.globalAlpha = 1;
 
   triggerEvent(ecgCtx.element, EVENTS.IMAGE_RENDERED, {
