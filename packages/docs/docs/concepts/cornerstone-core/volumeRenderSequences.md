@@ -293,7 +293,7 @@ sequenceDiagram
     Seg->>Plan: mountLegacyVolumeLabelmap()
     Plan->>Store: getOrCreateLabelmapVolume(layer), tagLabelmapVolume(volume)
     Store->>LV: reductionStatistic = foregroundMajority
-    alt blendMode is LABELMAP_EDGE_PROJECTION_BLEND and the dimensions match
+    alt blendMode is LABELMAP_EDGE_PROJECTION_BLEND, the dimensions match and the GPU settings hold the 2-component grid
         Plan->>Plan: addVolumesAsIndependentComponents()
         Note over Plan: Builds a full-resolution 2-component CPU array<br/>on an unshared mapper. No strategy and no reduction.
     else a PlanarViewport of the generic architecture

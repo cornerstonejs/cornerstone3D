@@ -9,6 +9,7 @@ import {
   setGpuSettingsPreset,
 } from '../src/utilities/gpuSettingsPresets';
 import { setLossyDownsampling } from '../src/init';
+import vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
 
 // A legacy viewport has no render path, so the set that its actor draws is held
 // while the viewport holds the actor, and a budget can take it afterwards.
@@ -131,6 +132,42 @@ describe('a legacy viewport follows a change of the GPU settings', () => {
       expect(
         volume.getTextureSet('full-resolution/full-extent').references
       ).toBe(0);
+    } finally {
+      resetGpuSettingsPreset();
+      setLossyDownsampling({ final: false });
+    }
+  });
+
+  it('keeps the set of an actor that a tool moved to a mapper with no shared texture', async () => {
+    // The combined labelmap actor of edge projection: the tool removes the
+    // actor, gives it a CPU-array mapper, adds it back, and restores it later.
+    const viewport = legacyViewport();
+    const volume = makeVolume('wide', [512, 64, 8]);
+
+    setLossyDownsampling({ final: true });
+
+    try {
+      await show(viewport, 'wide');
+
+      const entry = viewport.getActor('wide');
+      const sharedMapper = entry.actor.getMapper();
+      const texture = sharedMapper.getScalarTexture();
+
+      viewport.removeActors(['wide']);
+      entry.actor.setMapper(vtkVolumeMapper.newInstance());
+      viewport.addActor(entry);
+
+      expect(() => setGpuSettingsPreset('low')).not.toThrow();
+
+      // The restored mapper still draws the set that the claim holds.
+      viewport.removeActors(['wide']);
+      entry.actor.setMapper(sharedMapper);
+      viewport.addActor(entry);
+
+      expect(sharedMapper.getScalarTexture()).toBe(texture);
+      expect(
+        volume.getTextureSet('full-resolution/full-extent').references
+      ).toBe(1);
     } finally {
       resetGpuSettingsPreset();
       setLossyDownsampling({ final: false });

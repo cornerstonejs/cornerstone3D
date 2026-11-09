@@ -4,6 +4,8 @@ import {
   addVolumesToViewports,
   Enums,
   cache,
+  gpuSettingsForRender,
+  gridLimitsOfGpuSettings,
   volumeLoader,
   utilities,
 } from '@cornerstonejs/core';
@@ -207,6 +209,12 @@ async function mountLegacyVolumeLabelmap({
         cs3dLogger.debug(
           'Dimensions mismatch - falling back to regular volume addition'
         );
+      } else if (!combinedTextureFitsGpuSettings(baseVolume)) {
+        useIndependentComponents = false;
+        blendMode = Enums.BlendModes.MAXIMUM_INTENSITY_BLEND;
+        cs3dLogger.warn(
+          `The GPU settings cannot hold the full-resolution two-component texture of edge projection for ${baseVolume.volumeId}, so the labelmap uses a separate actor`
+        );
       }
     }
   }
@@ -270,6 +278,24 @@ async function mountLegacyVolumeLabelmap({
     volumeInputs,
     segmentationId,
   });
+}
+
+/**
+ * Whether the GPU settings of a render can hold the texture that
+ * `addVolumesAsIndependentComponents` builds: the full grid of the base
+ * volume, with two Float32 components. The strategy does not reduce that
+ * texture, so a grid above the limits would draw nothing.
+ */
+function combinedTextureFitsGpuSettings(baseVolume: Types.IImageVolume) {
+  const gpuSettings = gpuSettingsForRender();
+
+  return (
+    !gpuSettings ||
+    utilities.voxelGrid.voxelGridWithinLimits(
+      baseVolume.voxelGrid,
+      gridLimitsOfGpuSettings(gpuSettings, 2 * Float32Array.BYTES_PER_ELEMENT)
+    )
+  );
 }
 
 function canResolveLayerAsVolume(layer: LabelmapLayer): boolean {

@@ -84,13 +84,9 @@ export async function addVolumesAsIndependentComponents({
   const { imageData: segImageData } = segImageVolume;
   const baseVolume = cache.getVolume(referenceVolumeId);
 
-  // The volume names a full-resolution texture only while the pool holds that
-  // entry, and a texture that does not exist has no pending frame.
-  const volumeTexture = baseVolume.vtkOpenGLTexture;
-  const hasPendingFrames = volumeTexture?.hasUpdatedFrames() ?? false;
-  if (hasPendingFrames) {
-    // We do not change the actor if there are pending frames (i.e. the viewport is still rendering).
-    // If we did proceed to change the actor, the viewport would be blanked out.
+  // The combined array copies the base voxels once, so a frame that loads
+  // later would stay empty in it. A reduced base volume names no texture here.
+  if (baseVolume.loadStatus?.loading) {
     return;
   }
 
@@ -166,11 +162,11 @@ export async function addVolumesAsIndependentComponents({
     (volumeInputArray[0].representationUID as string) ??
     `${segmentationId}-${SegmentationRepresentations.Labelmap}`;
 
+  // The combined actor draws the base volume at full resolution, so it stays
+  // in the fidelity record of the viewport.
   viewport.addActor({
     ...defaultActor,
     representationUID,
-    // FIDELITY-STATE-9: combined labelmap actor is out of fidelity scope.
-    excludeFromFidelity: true,
   });
 
   internalCache.set(uid, {

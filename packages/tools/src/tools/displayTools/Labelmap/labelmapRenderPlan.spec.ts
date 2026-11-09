@@ -21,24 +21,26 @@ jest.mock('@cornerstonejs/core', () => ({
   cache: {
     getVolume: jest.fn(),
   },
-  utilities: {
-    logger: {
-      toolsLog: {
-        getLogger: jest.fn(() => ({
-          debug: jest.fn(),
-          info: jest.fn(),
-          warn: jest.fn(),
-          error: jest.fn(),
-          setLevel: jest.fn(),
-        })),
+  gpuSettingsForRender: jest.fn(),
+  gridLimitsOfGpuSettings: jest.fn(() => ({})),
+  utilities: (() => {
+    const logger = {
+      debug: jest.fn(),
+      info: jest.fn(),
+      warn: jest.fn(),
+      error: jest.fn(),
+      setLevel: jest.fn(),
+    };
+    return {
+      logger: { toolsLog: { getLogger: jest.fn(() => logger) } },
+      voxelGrid: { voxelGridWithinLimits: jest.fn(() => true) },
+      uuidv4: jest.fn(() => 'generated-volume-id'),
+      genericViewportDisplaySetMetadataProvider: {
+        add: jest.fn(),
+        remove: jest.fn(),
       },
-    },
-    uuidv4: jest.fn(() => 'generated-volume-id'),
-    genericViewportDisplaySetMetadataProvider: {
-      add: jest.fn(),
-      remove: jest.fn(),
-    },
-  },
+    };
+  })(),
   volumeLoader: {
     createAndCacheVolumeFromImages: jest.fn(),
   },
@@ -116,7 +118,14 @@ jest.mock('./volumeLabelmapImageMapper', () => ({
 }));
 
 import { getCurrentLabelmapImageIdsForViewport } from '../../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
-import { cache } from '@cornerstonejs/core';
+import {
+  addVolumesToViewports,
+  cache,
+  Enums,
+  gpuSettingsForRender,
+  utilities,
+} from '@cornerstonejs/core';
+import { addVolumesAsIndependentComponents } from './addVolumesAsIndependentComponents';
 import { getLabelmapActorEntries } from '../../../stateManagement/segmentation/helpers/getSegmentationActor';
 import getViewportLabelmapRenderMode from '../../../stateManagement/segmentation/helpers/getViewportLabelmapRenderMode';
 import {
@@ -406,5 +415,58 @@ describe('labelmapRenderPlan', () => {
       undefined,
       { voxelsUnchanged: true }
     );
+  });
+
+  it('keeps a separate labelmap actor when the GPU settings cannot hold the edge projection texture', async () => {
+    const volumeLayer = {
+      labelmapId: 'volume-layer-id',
+      storageKind: 'volume',
+      volumeId: 'segmentation-volume-id',
+    };
+    const volumeOf = (volumeId) => ({
+      volumeId,
+      dimensions: [2048, 2048, 2048],
+      voxelGrid: { dimensions: [2048, 2048, 2048] },
+    });
+    const viewport = {
+      id: 'viewport-id',
+      type: 'orthographic',
+      getRenderingEngine: jest.fn(),
+      getVolumeId: jest.fn(() => 'source-volume-id'),
+    };
+    const segmentation = {
+      segmentationId: 'segmentation-id',
+      representationData: {
+        Labelmap: { labelmaps: { 'volume-layer-id': volumeLayer } },
+      },
+    };
+
+    getViewportLabelmapRenderModeMock.mockReturnValue('volume');
+    getLabelmapsMock.mockReturnValue([volumeLayer]);
+    getVolumeMock.mockImplementation(volumeOf);
+    (gpuSettingsForRender as jest.Mock).mockReturnValue({ id: 'low' });
+    (utilities.voxelGrid.voxelGridWithinLimits as jest.Mock).mockReturnValue(
+      false
+    );
+
+    const renderPlan = resolveLabelmapRenderPlan({
+      viewport: viewport as never,
+      segmentation: segmentation as never,
+      representation: {
+        segmentationId: 'segmentation-id',
+        config: {
+          blendMode: Enums.BlendModes.LABELMAP_EDGE_PROJECTION_BLEND,
+        } as never,
+      },
+    });
+
+    await renderPlan.reconcile({
+      actorEntries: [],
+      labelMapData: segmentation.representationData.Labelmap as never,
+    });
+
+    expect(addVolumesAsIndependentComponents).not.toHaveBeenCalled();
+    expect(addVolumesToViewports).toHaveBeenCalled();
+    expect(utilities.logger.toolsLog.getLogger().warn).toHaveBeenCalledTimes(1);
   });
 });

@@ -173,6 +173,7 @@ export {
   setGpuSettingsPreset,
   resetGpuSettingsPreset,
   gridLimitsOfGpuSettings,
+  gpuSettingsForRender,
 } from './utilities/gpuSettingsPresets';
 export type {
   GpuSettings,

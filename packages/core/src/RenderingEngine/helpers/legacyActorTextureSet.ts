@@ -70,6 +70,23 @@ export function holdLegacyActorTextureSet(actor: object, held: boolean): void {
  */
 function rebindLegacyActor(actor: object): void {
   const claim = claims.get(actor);
+  const mapper = (
+    actor as {
+      getMapper: () => {
+        setScalarTexture?: (texture: unknown) => void;
+        setSampleDistance: (distance: number) => void;
+        getInputData: () => Parameters<typeof sampleDistanceOf>[0];
+        modified: () => void;
+      };
+    }
+  ).getMapper();
+
+  // A tool can give the actor a mapper of its own for a time, such as the
+  // combined labelmap actor; the claim stays with the mapper that it restores.
+  if (!mapper?.setScalarTexture) {
+    return;
+  }
+
   const { strategy, texture } = resolveVolumeTexture(claim.volume);
 
   if (!texture || strategy.name === claim.name) {
@@ -83,17 +100,6 @@ function rebindLegacyActor(actor: object): void {
   if (!claim.held) {
     heldActors.delete(actor);
   }
-
-  const mapper = (
-    actor as {
-      getMapper: () => {
-        setScalarTexture: (texture: unknown) => void;
-        setSampleDistance: (distance: number) => void;
-        getInputData: () => Parameters<typeof sampleDistanceOf>[0];
-        modified: () => void;
-      };
-    }
-  ).getMapper();
 
   mapper.setScalarTexture(texture);
   mapper.setSampleDistance(
