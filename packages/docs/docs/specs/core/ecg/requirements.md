@@ -59,6 +59,13 @@ change a requirement.
   shows again when the lead shows. The annotation is not lost. An annotation
   on a rhythm strip shows on its lead in a layout with no rhythm strip.
 - **ECG-U-9** An annotation shows in every viewport that shows the same ECG.
+- **ECG-U-12** A point measurement on an ECG shows its time in ms and its
+  amplitude in mV. A measurement along the time axis shows ms, and a
+  measurement along the amplitude axis shows mV. A free length on an ECG shows
+  px, because time and amplitude have different units.
+- **ECG-U-13** A measurement along one axis with its two points on two
+  different leads shows no value, and tells the clinician that the points are
+  in different regions.
 
 ## Waveform groups
 

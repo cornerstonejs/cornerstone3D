@@ -464,7 +464,6 @@ abstract class BaseRenderingEngine {
     [ViewportType.ORTHOGRAPHIC]: ViewportType.PLANAR_NEXT,
     [ViewportType.VIDEO]: ViewportType.VIDEO_NEXT,
     [ViewportType.WHOLE_SLIDE]: ViewportType.WHOLE_SLIDE_NEXT,
-    [ViewportType.ECG]: ViewportType.ECG_NEXT,
     [ViewportType.VOLUME_3D]: ViewportType.VOLUME_3D_NEXT,
   };
 

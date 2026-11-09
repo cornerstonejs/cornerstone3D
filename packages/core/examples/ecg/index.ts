@@ -34,7 +34,7 @@ const wadoRsRoot =
 // ======== Set up page ======== //
 setTitleAndDescription(
   'ECG Viewport',
-  'Displays a 12-lead ECG from DICOM Waveform data. Left-click to use annotation tools (select from dropdown). Right-drag to pan, scroll to zoom. Use checkboxes to toggle traces.'
+  'Displays a 12-lead ECG from DICOM Waveform data. Left-click to use annotation tools (select from dropdown). Right-drag to pan, scroll to zoom. Use checkboxes to toggle traces. Add ?type=legacy to the URL for the deprecated ECG viewport.'
 );
 
 const content = document.getElementById('content');
@@ -124,9 +124,12 @@ async function run() {
   // ======== Create rendering engine and ECG viewport ======== //
   const renderingEngine = new RenderingEngine(renderingEngineId);
 
+  // `?type=legacy` shows the deprecated ECG class.
+  const useLegacy =
+    new URLSearchParams(window.location.search).get('type') === 'legacy';
   const viewportInput = {
     viewportId,
-    type: ViewportType.ECG,
+    type: useLegacy ? ViewportType.ECG_LEGACY : ViewportType.ECG,
     element,
     defaultOptions: {
       background: [0.2, 0, 0.2] as Types.Point3,

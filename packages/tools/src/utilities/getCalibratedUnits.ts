@@ -43,7 +43,6 @@ const UNIT_MAPPING = {
   [-2]: 'ms',
 };
 
-const EPS = 1e-3;
 const SQUARE = '\xb2';
 
 // everything except REGION/Uncalibrated
