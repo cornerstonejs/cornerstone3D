@@ -128,6 +128,10 @@ export function computeECGTraceGeometry<TChannel extends ECGChannelLike>(args: {
   );
   const range = (cell: ECGTraceCell) =>
     Math.max(1, cell.channel.max - cell.channel.min);
+  // The auto-fit scale is in px for each mV, so 1 mV has one height on every
+  // lead, whatever the channel sensitivity (ECG-U-3).
+  const rangeMv = (cell: ECGTraceCell) =>
+    range(cell) * getECGChannelMvPerUnit(cell.channel);
 
   let autoFitScale = 0;
   let ecgHeight: number;
@@ -152,7 +156,7 @@ export function computeECGTraceGeometry<TChannel extends ECGChannelLike>(args: {
         ...bands.map(
           (band, index) =>
             (targetHeight * fractions[index] - ECG_CHANNEL_SPACING) /
-            (Math.max(...band.cells.map(range)) * AMPLITUDE_HEADROOM)
+            (Math.max(...band.cells.map(rangeMv)) * AMPLITUDE_HEADROOM)
         )
       )
     );
@@ -162,7 +166,7 @@ export function computeECGTraceGeometry<TChannel extends ECGChannelLike>(args: {
   function scaleOf(cell: ECGTraceCell): number {
     return isCalibrated
       ? sensitivityMmMv * ECG_PX_PER_MM * getECGChannelMvPerUnit(cell.channel)
-      : autoFitScale;
+      : autoFitScale * getECGChannelMvPerUnit(cell.channel);
   }
 
   const layouts: ECGChannelLayout<TChannel>[] = [];
