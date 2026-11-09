@@ -7,9 +7,9 @@ export {
 } from './attachFidelityIndicator';
 export {
   type FidelityLine,
-  type SvgFidelityState,
+  type FidelityLineState,
   type FidelityDataKind,
-  svgStateOf,
+  shownStateOf,
   lineKind,
   dataKindOf,
   dataKindOfImageQuality,

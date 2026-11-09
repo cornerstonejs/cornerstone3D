@@ -37,7 +37,7 @@ import { Events, ImageQualityStatus } from '../src/enums';
 import eventTarget from '../src/eventTarget';
 import { VtkVolumeSliceRenderPath } from '../src/RenderingEngine/GenericViewport/Planar/VtkVolumeSliceRenderPath';
 import { VtkVolume3DRenderPath } from '../src/RenderingEngine/GenericViewport/Volume3D/VtkVolume3DRenderPath';
-import { svgStateOf } from '../src/RenderingEngine/helpers/fidelityIndicator/fidelityIndicatorState';
+import { shownStateOf } from '../src/RenderingEngine/helpers/fidelityIndicator/fidelityIndicatorState';
 import { fidelityLinesFromBindings } from '../src/RenderingEngine/helpers/fidelityIndicator/collectFidelityLines';
 
 const fullGrid = {
@@ -126,7 +126,7 @@ const display = { pixelSpacing: 4, viewPlaneNormal: [0, 0, 1] };
 function shownState(rendering) {
   rendering.refreshFidelity?.();
 
-  return svgStateOf(
+  return shownStateOf(
     fidelityLinesFromBindings(display, [
       { record: rendering.voxelQuality, fullGrid: rendering.fullGrid },
     ])

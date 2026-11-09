@@ -82,13 +82,13 @@ export function lineHasData(line: FidelityLine): boolean {
   return line.imageQualityStatus !== undefined || !line.fullResolution;
 }
 
-export type SvgFidelityState = 'loading' | 'done' | 'lossy' | 'lod';
+export type FidelityLineState = 'loading' | 'done' | 'lossy' | 'lod';
 
 /**
  * The states from the most urgent to the least (FIDELITY-STATE-7). A standing
  * reduction (`lossy`) comes first, so a transient state never hides it.
  */
-export const FIDELITY_STATE_ORDER: readonly SvgFidelityState[] = [
+export const FIDELITY_STATE_ORDER: readonly FidelityLineState[] = [
   'lossy',
   'loading',
   'lod',
@@ -96,18 +96,19 @@ export const FIDELITY_STATE_ORDER: readonly SvgFidelityState[] = [
 ];
 
 /** A rank that grows with urgency: `lossy` is the highest. */
-export function fidelityStateRank(state: SvgFidelityState): number {
+export function fidelityStateRank(state: FidelityLineState): number {
   return FIDELITY_STATE_ORDER.length - FIDELITY_STATE_ORDER.indexOf(state);
 }
 
 /**
  * The most urgent state across lines (see {@link FIDELITY_STATE_ORDER}).
  * A line with no data (see {@link lineHasData}) adds nothing, so no lines or
- * only such lines give `hidden`. `done` means lossless; the indicator shows it
- * only as a recovery from a lossy state.
+ * only such lines give `hidden`. `done` means lossless.
  */
-export function svgStateOf(lines: FidelityLine[]): SvgFidelityState | 'hidden' {
-  let worst: SvgFidelityState | 'hidden' = 'hidden';
+export function shownStateOf(
+  lines: FidelityLine[]
+): FidelityLineState | 'hidden' {
+  let worst: FidelityLineState | 'hidden' = 'hidden';
   let worstRank = 0;
 
   for (const line of lines) {
@@ -235,7 +236,7 @@ export function dataKindOfImageQuality(
  * The state of one line. A standing reduction is `lossy` also during an
  * interaction; `lod` is a reduction that ends with the interaction.
  */
-export function lineKind(line: FidelityLine): SvgFidelityState {
+export function lineKind(line: FidelityLine): FidelityLineState {
   const dataKind = dataKindOf(line);
 
   if (dataKind === 'loading') {

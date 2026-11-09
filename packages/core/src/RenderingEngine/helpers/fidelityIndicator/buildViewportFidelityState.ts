@@ -13,13 +13,13 @@ import {
   lineHasData,
   lineKind,
   standingSampleRatioOf,
-  svgStateOf,
+  shownStateOf,
 } from './fidelityIndicatorState';
 
 /**
  * Builds the absolute {@link ViewportFidelityState} (FIDELITY-EVENT-5) from
  * fidelity lines. `shownState` and `lossy` come from every line, with the
- * same decision as the built-in indicator (`svgStateOf`). Every other field
+ * same decision as the built-in indicator (`shownStateOf`). Every other field
  * describes the worst line, the line that decides `shownState`, so that
  * `cause` agrees with `lossy` for several volumes. The display spacing comes
  * from that line, else from `displaySpacing`.
@@ -34,7 +34,7 @@ export function buildViewportFidelityState(
     return emptyState(displaySpacing);
   }
 
-  const shownState = svgStateOf(lines);
+  const shownState = shownStateOf(lines);
 
   const { record, reductionFactors, imageQualityStatus } = line;
   const shownSpacing = line.displaySpacing ?? displaySpacing;
