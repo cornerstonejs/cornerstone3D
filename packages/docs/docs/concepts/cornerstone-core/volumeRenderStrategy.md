@@ -377,6 +377,29 @@ support, to resolve after the first merge.
 For both cases, the mapper does not refuse the allocation when the texture is larger than the GPU
 settings (`gridFitsGpuSettings`). It tries the upload, as in 4.x.
 
+## The frames of the acquisition plane
+
+This section applies only when `rendering.lossyDownsampling.final` is on, and the final
+downsampling reduces the texture of a volume.
+
+**What a user sees.** A generic `PlanarViewport` shows the source volume in the acquisition plane.
+The source draws the loaded image of the nearest acquired frame in place of the reduced slice. The
+frame has full resolution, so the fidelity indicator reports the quality of the frame. Outside the
+acquisition plane, the viewport draws the reduced slice.
+
+**The limits.**
+
+- The frame has no interpolation between frames. The viewport shows the nearest frame.
+- The reduced slice shows until the frame loads.
+- `viewport.getActors()` has one more entry for the frame. That entry has no `referencedId`, so a
+  measurement tool does not see a second target.
+- The legacy viewports (`StackViewport`, `VolumeViewport`) keep the reduced slice, as in 4.x.
+- The viewport does not draw the frame for a slab thicker than one acquired slice, for a blend mode
+  other than composite, for a dynamic volume, or for a CPU volume path.
+
+`PlanarRenderPathDecisionService.canDrawAcquiredFrames` holds these conditions, and
+`planarAcquiredFrames.ts` draws the frame.
+
 ## What a new render type defines
 
 A new render type supplies two things, and it changes no existing file:

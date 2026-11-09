@@ -390,6 +390,12 @@ states map to the states of this specification: transiently lossy is
 - **FIDELITY-UI-8** The indicator does not fire `VIEWPORT_FIDELITY_CHANGED`.
   It reads the fidelity lines when it attaches, after each render, on the
   event, and when the volume data changes without a render.
+- **FIDELITY-UI-10** The built-in indicator is a backup. It prevents a case
+  where an application turns on multi-resolution and gives no indicator of its
+  own. The indicator has English text only. An application that needs
+  localized text, accessibility or touch support disables the built-in
+  indicator (FIDELITY-CONF-1), and builds its own from
+  `VIEWPORT_FIDELITY_CHANGED`.
 
 ### The configuration (FIDELITY-CONF)
 
