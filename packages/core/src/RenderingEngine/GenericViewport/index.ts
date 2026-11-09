@@ -84,7 +84,6 @@ export type {
   ECGTraceLayoutDefinition,
   ECGTraceLayoutFactory,
   ECGTraceLayoutName,
-  ECGTraceLayoutRegistry,
   ECGTraceRegion,
   ECGViewState,
   ECGDataPresentation,

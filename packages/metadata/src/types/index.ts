@@ -18,3 +18,14 @@ export type {
   CompressedFrameDataMetadata,
   MetadataModuleType,
 } from './MetadataModuleTypes';
+export type {
+  DicomCodeSequenceItem,
+  DicomChannelDefinitionItem,
+  DicomWaveformAnnotationItem,
+  DicomWaveformData,
+  DicomWaveformGroupItem,
+  DicomEcgInstance,
+  EcgWaveformAnnotation,
+  EcgAnnotations,
+  EcgNumericMetricKey,
+} from '../utilities/metadataProvider/ecgFromInstance';

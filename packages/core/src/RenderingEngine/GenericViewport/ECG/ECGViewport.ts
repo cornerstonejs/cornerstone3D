@@ -6,6 +6,7 @@ import {
   ECG_AMPLITUDE_INDEX_SIZE,
   getDefaultECGValueRange,
   getECGFrameOfReferenceUID,
+  ECG_DEFAULT_SWEEP_SPEED_MM_S,
 } from './ecgWaveform';
 import { getGenericViewportSourceDataId } from '../genericViewportDisplaySetAccess';
 import imageIdToURI from '../../../utilities/imageIdToURI';
@@ -30,7 +31,10 @@ import type {
   ECGWaveformPayload,
   ECGResetViewStateOptions,
 } from './ECGViewportTypes';
-import { ECG_LEAD_COPY_STRIDE, findECGLayoutForZ } from './ecgTraceLayouts';
+import {
+  ECG_LEAD_COPY_STRIDE,
+  getECGTraceLayoutNames,
+} from './ecgTraceLayouts';
 import {
   createDefaultECGViewState,
   normalizeECGViewState,
@@ -98,14 +102,19 @@ class ECGViewport extends GenericViewport<
    * trace layout, the sweep speed, the sensitivity and the amplitude scale stay.
    *
    * @param entries - Waveform display sets to mount.
+   * `options.multiplexGroupIndex` (0-based) names the multiplex group to
+   * show; undefined shows the default group.
    */
   async setDisplaySets(
-    ...entries: Array<{ displaySetId: string }>
+    ...entries: Array<{
+      displaySetId: string;
+      options?: { multiplexGroupIndex?: number };
+    }>
   ): Promise<void> {
     this.removeAllData();
 
-    for (const { displaySetId } of entries) {
-      const waveform = await this.loadWaveformData(displaySetId);
+    for (const { displaySetId, options } of entries) {
+      const waveform = await this.loadWaveformData(displaySetId, options);
       const durationMs =
         (waveform.numberOfSamples / waveform.samplingFrequency) * 1000;
       const { traceLayout, sweepSpeed, sensitivityMmMv, amplitudeScale } =
@@ -125,11 +134,58 @@ class ECGViewport extends GenericViewport<
         sensitivityMmMv,
         amplitudeScale,
       });
+      warnIfAmplitudeScaleIgnored(this.viewState);
 
       await this.addLoadedData(displaySetId, waveform, {
         renderMode: 'signal2d',
       });
     }
+  }
+
+  /**
+   * Returns the names of the registered trace layouts that suit the mounted
+   * waveform. See `getECGTraceLayoutNames`.
+   */
+  getTraceLayoutNames(): string[] {
+    const waveform = this.getWaveformData();
+
+    return getECGTraceLayoutNames(
+      waveform
+        ? {
+            channels: waveform.channels,
+            numberOfSamples: waveform.numberOfSamples,
+            samplingFrequency: waveform.samplingFrequency,
+          }
+        : undefined
+    );
+  }
+
+  /**
+   * Returns the current sweep speed in mm/s (defaults to 25 mm/s).
+   */
+  getSweepSpeed(): number {
+    return this.viewState.sweepSpeed ?? ECG_DEFAULT_SWEEP_SPEED_MM_S;
+  }
+
+  /**
+   * Sets the sweep speed in mm/s and triggers a render.
+   */
+  setSweepSpeed(speed: number): void {
+    this.setViewState({ sweepSpeed: speed });
+  }
+
+  /**
+   * Returns the current amplitude sensitivity in mm/mV (or undefined for auto-fit).
+   */
+  getSensitivity(): number | undefined {
+    return this.viewState.sensitivityMmMv;
+  }
+
+  /**
+   * Sets the amplitude sensitivity in mm/mV (or undefined for auto-fit) and triggers a render.
+   */
+  setSensitivity(sensitivity: number | undefined): void {
+    this.setViewState({ sensitivityMmMv: sensitivity });
   }
 
   /**
@@ -188,9 +244,9 @@ class ECGViewport extends GenericViewport<
     if (typeof sliceIndex !== 'number') {
       return true;
     }
-    const layouts = this.getResolvedView()?.channelLayouts;
+    const resolvedView = this.getResolvedView();
 
-    return !layouts || !!findECGLayoutForZ(layouts, sliceIndex);
+    return !resolvedView || !!resolvedView.findLayoutForZ(sliceIndex);
   }
 
   /**
@@ -586,9 +642,10 @@ class ECGViewport extends GenericViewport<
   }
 
   private async loadWaveformData(
-    dataId: string
+    dataId: string,
+    options?: { multiplexGroupIndex?: number }
   ): Promise<LoadedData<ECGWaveformPayload>> {
-    const waveform = await this.dataProvider.load(dataId);
+    const waveform = await this.dataProvider.load(dataId, options);
 
     if (!isECGWaveformData(waveform)) {
       throw new Error(
@@ -655,5 +712,27 @@ function isECGWaveformData(
     typeof waveform.numberOfSamples === 'number' &&
     typeof waveform.samplingFrequency === 'number' &&
     typeof waveform.numberOfChannels === 'number'
+  );
+}
+
+/**
+ * A set sensitivity is the clinical gain, so `amplitudeScale` has no effect
+ * with it (ECG-U-1). Warns once when a view state has both.
+ */
+let warnedAmplitudeScale = false;
+function warnIfAmplitudeScaleIgnored(viewState: ECGViewState): void {
+  const { amplitudeScale, sensitivityMmMv } = viewState;
+
+  if (
+    warnedAmplitudeScale ||
+    !sensitivityMmMv ||
+    amplitudeScale === undefined ||
+    amplitudeScale === 1
+  ) {
+    return;
+  }
+  warnedAmplitudeScale = true;
+  console.warn(
+    `[ECG] amplitudeScale ${amplitudeScale} has no effect with sensitivityMmMv ${sensitivityMmMv}`
   );
 }

@@ -4,6 +4,15 @@ import * as metaData from '../../../metaData';
 
 /** Default ECG paper speed: 25 mm/s */
 export const ECG_DEFAULT_SWEEP_SPEED_MM_S = 25;
+/** Standard clinical paper sweep speeds in mm/s (IEC 60601-2-25 / AHA / ACC standard speeds) */
+export const ECG_CLINICAL_SWEEP_SPEEDS = [12.5, 25, 50] as const;
+
+/** Standard clinical amplitude sensitivities in mm/mV (IEC 60601-2-25 / AHA / ACC standard gains) */
+export const ECG_CLINICAL_SENSITIVITIES = [2.5, 5, 10, 20] as const;
+
+export type ECGClinicalSweepSpeed = (typeof ECG_CLINICAL_SWEEP_SPEEDS)[number];
+export type ECGClinicalSensitivity =
+  (typeof ECG_CLINICAL_SENSITIVITIES)[number];
 /** Pixels per mm at 1:1 scale (96 DPI nominal; governs grid density) */
 export const ECG_PX_PER_MM = 3.779;
 /** World pixels for each second in the deprecated ECG viewport. */
@@ -65,6 +74,10 @@ export interface ECGWaveformLike<
   bitsAllocated: number;
   sampleInterpretation: string;
   multiplexGroupLabel?: string;
+  /** The multiplex group that the waveform shows (0-based). */
+  multiplexGroupIndex?: number;
+  /** The number of multiplex groups of the instance. */
+  numberOfMultiplexGroups?: number;
   calibration?: unknown;
 }
 
@@ -95,11 +108,19 @@ export function getECGFrameOfReferenceUID(
   );
 }
 
-export async function loadECGWaveform(dataId: string): Promise<{
+/**
+ * Loads the waveform of `dataId`. `options.multiplexGroupIndex` names the
+ * multiplex group; undefined gives the default group. The ECG module and the
+ * CALIBRATION get the same option, so they describe the same group.
+ */
+export async function loadECGWaveform(
+  dataId: string,
+  options: { multiplexGroupIndex?: number } = {}
+): Promise<{
   waveform: ECGWaveformLike;
   calibration: unknown;
 }> {
-  const ecgModule = metaData.get(MetadataModules.ECG, dataId);
+  const ecgModule = metaData.getMetaData(MetadataModules.ECG, dataId, options);
 
   if (!ecgModule?.waveformData?.retrieveBulkData) {
     throw new Error(`[ECG] No ECG waveform data for ${dataId}`);
@@ -112,12 +133,18 @@ export async function loadECGWaveform(dataId: string): Promise<{
     waveformBitsAllocated: bitsAllocated = 16,
     waveformSampleInterpretation: sampleInterpretation = 'SS',
     multiplexGroupLabel,
+    multiplexGroupIndex = 0,
+    totalMultiplexGroups: numberOfMultiplexGroups = 1,
     channelDefinitionSequence: channelDefinitions = [],
   } = ecgModule;
 
   const channelArrays: Int16Array[] =
     await ecgModule.waveformData.retrieveBulkData();
-  const calibration = metaData.get(MetadataModules.CALIBRATION, dataId);
+  const calibration = metaData.getMetaData(
+    MetadataModules.CALIBRATION,
+    dataId,
+    options
+  );
   const channels: ECGChannelLike[] = [];
 
   for (let index = 0; index < numberOfChannels; index++) {
@@ -145,6 +172,8 @@ export async function loadECGWaveform(dataId: string): Promise<{
       bitsAllocated,
       sampleInterpretation,
       multiplexGroupLabel,
+      multiplexGroupIndex,
+      numberOfMultiplexGroups,
       calibration,
     },
     calibration,

@@ -182,8 +182,10 @@ states the contract, and this specification repeats it:
   same attribute accepts both forms.
 - **GENVIEW-ECG-2** The developer adds a named layout with
   `registerECGTraceLayout()`, and declares the name in the interface
-  `ECGTraceLayoutRegistry`. The developer finds every registered name with
-  `getECGTraceLayoutNames()`, and finds the built-in names in the type.
+  `ECGTraceLayoutRegistry`. A registration can give `supports(context)`.
+  `getECGTraceLayoutNames(context)` lists the names whose `supports` accepts
+  the waveform, and every name with no `supports`. The registry is the only
+  source of layout names.
 - **GENVIEW-ECG-3** The view state keeps `traceLayout` as the caller gave it,
   so a saved presentation keeps a name as a name.
 - **GENVIEW-ECG-4** A trace region names its lead by a channel index, or by the
@@ -194,6 +196,25 @@ states the contract, and this specification repeats it:
   column. A band of regions in which every lead is hidden gets zero height,
   and the other bands share its height. This satisfies ECG-U-6 of the
   [ECG display requirements](./ecg/requirements.md).
+- **GENVIEW-ECG-6** `ECGResolvedView` resolves an undefined `traceLayout` with
+  `resolveDefaultECGTraceLayout`: `'3x4+1'` for 8 or more leads and 5 s or
+  more, else `'12x1'`. The view state keeps `traceLayout` undefined
+  (GENVIEW-ECG-3), and `ECGResolvedView.traceLayoutName` gives the name that
+  shows. This satisfies ECG-U-4 of the
+  [ECG display requirements](./ecg/requirements.md).
+- **GENVIEW-ECG-7** World Z is `getECGLeadZ(channel, copy, group)`:
+  `channel + 1000 * k`, with `k = copy * groupCount + groupIndex`. The k index
+  counts across all the multiplex groups of the instance, so two groups never
+  share a Z. With one group, the first copy of a lead is its channel index,
+  whether or not every channel shows. `findECGLayoutForZ` maps a copy that the
+  layout does not show to the first region of its lead in the same group. This
+  satisfies ECG-U-8.
+- **GENVIEW-ECG-8** `setDisplaySets({ displaySetId, options:
+{ multiplexGroupIndex } })` names the multiplex group. The data provider
+  passes the option to the ECG and the CALIBRATION requests
+  (`getEcgMultiplexGroupIndex`), so the trace and the calibration describe one
+  group. The frame of the image id does not name a group. With no option, the
+  providers use `findPrimaryWaveformGroup`. This satisfies ECG-U-14.
 
 ## Implementation requirements
 

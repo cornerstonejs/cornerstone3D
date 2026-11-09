@@ -104,6 +104,47 @@ describe('ECG viewport references and camera', () => {
     expect(viewport.isReferenceViewable(reference)).toBe(false);
   });
 
+  it('gives each multiplex group its own Z, so annotations of two groups do not mix', async () => {
+    const loads = [];
+    const viewport = await makeViewport('vp-groups');
+    viewport.dataProvider = {
+      load: async (id, options) => {
+        loads.push(options);
+        const group = options?.multiplexGroupIndex ?? 1;
+        return {
+          ...makeWaveform(),
+          multiplexGroupIndex: group,
+          numberOfMultiplexGroups: 2,
+        };
+      },
+    };
+
+    await viewport.setDisplaySets({
+      displaySetId: 'ecg:1',
+      options: { multiplexGroupIndex: 0 },
+    });
+    expect(loads[0]).toEqual({ multiplexGroupIndex: 0 });
+    const group0 = viewport.getViewReference({ points: [[100, 0, 0]] });
+    expect(viewport.getResolvedView().findLayoutForZ(0)).toBeDefined();
+
+    await viewport.setDisplaySets({ displaySetId: 'ecg:1' });
+    const leads = viewport.getResolvedView().channelLayouts;
+    // Group 1 of 2: lead 0 is 0 + 1000 * (0 * 2 + 1).
+    expect(leads[0].leadIndex).toBe(1000);
+    expect(viewport.isReferenceViewable(group0)).toBe(false);
+  });
+
+  it('ignores amplitudeScale with a set sensitivity, and warns on load', async () => {
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    const viewport = await makeViewport('vp-amplitude');
+    viewport.setViewState({ sensitivityMmMv: 10, amplitudeScale: 2 });
+    await viewport.setDisplaySets({ displaySetId: 'ecg:1' });
+
+    expect(viewport.getResolvedView().amplitudeScale).toBe(1);
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
   it('keeps the transforms bound, as the tools take them off the viewport', async () => {
     const viewport = await makeViewport('vp-bound');
     const { worldToCanvas, canvasToWorld } = viewport;
@@ -125,5 +166,92 @@ describe('ECG viewport references and camera', () => {
 
     expect(viewport.getPan()[0]).toBeCloseTo(panBefore[0], 3);
     expect(viewport.getPan()[1]).toBeCloseTo(panBefore[1], 3);
+  });
+
+  it('defaults to auto layout and renders 12-lead ECG as 3x4+1 with rhythm strip', async () => {
+    const twelveNames = [
+      'I',
+      'II',
+      'III',
+      'aVR',
+      'aVL',
+      'aVF',
+      'V1',
+      'V2',
+      'V3',
+      'V4',
+      'V5',
+      'V6',
+    ];
+    const waveform12 = {
+      id: 'ecg:12',
+      type: 'ecg',
+      channels: twelveNames.map((name) => ({
+        name,
+        code: name,
+        data: new Int16Array(N),
+        min: -500,
+        max: 500,
+        mvPerUnit: 0.001,
+      })),
+      numberOfChannels: 12,
+      numberOfSamples: N,
+      samplingFrequency: 500,
+      bitsAllocated: 16,
+      sampleInterpretation: 'SS',
+    };
+
+    const element = document.createElement('div');
+    document.body.appendChild(element);
+    const viewport = new ECGViewportLegacyAdapter({
+      id: 'vp12',
+      element,
+      renderingEngineId: 're12',
+      dataProvider: { load: async () => waveform12 },
+    });
+    Object.defineProperty(viewport.canvas, 'clientWidth', { value: 800 });
+    Object.defineProperty(viewport.canvas, 'clientHeight', { value: 600 });
+    await viewport.setDisplaySets({ displaySetId: 'ecg:12' });
+
+    // The default stays out of the view state (GENVIEW-ECG-3).
+    expect(viewport.getViewState().traceLayout).toBeUndefined();
+    const resolved = viewport.getResolvedView();
+    expect(resolved?.traceLayoutName).toBe('3x4+1');
+    expect(resolved?.channelLayouts).toHaveLength(13);
+    expect(viewport.getTraceLayoutNames()).toContain('3x4+1');
+
+    // A later 3-lead record opens in rows, not in the grid of the 12-lead one.
+    const waveform3 = {
+      ...waveform12,
+      channels: waveform12.channels.slice(0, 3),
+    };
+    waveform3.numberOfChannels = 3;
+    viewport.dataProvider = { load: async () => waveform3 };
+    await viewport.setDisplaySets({ displaySetId: 'ecg:3' });
+    expect(viewport.getResolvedView()?.traceLayoutName).toBe('12x1');
+  });
+
+  describe('clinical sweep speed and sensitivity controls', () => {
+    it('updates sweep speed and sensitivity via viewport API methods', async () => {
+      const viewport = await makeViewport('vp-speed-sens');
+
+      // Default speed is 25 mm/s
+      expect(viewport.getSweepSpeed()).toBe(25);
+
+      // Change speed to 50 mm/s
+      viewport.setSweepSpeed(50);
+      expect(viewport.getSweepSpeed()).toBe(50);
+      expect(viewport.getViewState().sweepSpeed).toBe(50);
+
+      // Change sensitivity to 20 mm/mV
+      viewport.setSensitivity(20);
+      expect(viewport.getSensitivity()).toBe(20);
+      expect(viewport.getViewState().sensitivityMmMv).toBe(20);
+
+      // Reset sensitivity to undefined (auto-fit mode)
+      viewport.setSensitivity(undefined);
+      expect(viewport.getSensitivity()).toBeUndefined();
+      expect(viewport.getViewState().sensitivityMmMv).toBeUndefined();
+    });
   });
 });

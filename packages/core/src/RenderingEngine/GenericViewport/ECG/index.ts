@@ -12,6 +12,7 @@ export {
   registerECGTraceLayout,
   getECGTraceLayout,
   getECGTraceLayoutNames,
+  resolveDefaultECGTraceLayout,
 } from './ecgTraceLayouts';
 /**
  * Lower-level ECG projection helpers for custom synchronizers and tooling.
@@ -25,6 +26,12 @@ export const ecgProjection = {
   adapter: ecgProjectionAdapter,
   getSnapshot: getECGProjectionSnapshot,
 };
+export {
+  ECG_CLINICAL_SWEEP_SPEEDS,
+  ECG_CLINICAL_SENSITIVITIES,
+  type ECGClinicalSweepSpeed,
+  type ECGClinicalSensitivity,
+} from './ecgWaveform';
 export type {
   ECGProjectionPresentation,
   ECGProjectionRequest,

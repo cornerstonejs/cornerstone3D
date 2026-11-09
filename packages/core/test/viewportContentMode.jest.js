@@ -20,6 +20,12 @@ const legacyStackViewport = {
   setStack: noop,
   setProperties: noop,
   getCamera: noop,
+  getImageData: noop,
+};
+
+const waveformViewport = {
+  getWaveformData: noop,
+  getImageData: noop,
 };
 
 const stackModeViewport = { ...genericViewport, getCurrentMode: () => 'stack' };
@@ -93,10 +99,6 @@ describe('viewportCapabilities — Generic ("next") viewport guards (CS-5/CS-17)
 
   describe('viewportSupportsWaveform', () => {
     it('returns true when the viewport exposes getWaveformData and getImageData', () => {
-      const waveformViewport = {
-        getWaveformData: noop,
-        getImageData: noop,
-      };
       expect(viewportSupportsWaveform(waveformViewport)).toBe(true);
     });
 

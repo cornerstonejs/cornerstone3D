@@ -2,7 +2,7 @@ import { Events as EVENTS, ViewportType } from '../../../enums';
 import triggerEvent from '../../../utilities/triggerEvent';
 import {
   drawECGGrid,
-  drawECGLabels,
+  drawECGCanvasLabels,
   drawECGTraces,
   ensureECGCanvasSize,
 } from './ecgDrawing';
@@ -124,6 +124,7 @@ function drawFrame(ecgCtx: ECGCanvasRenderContext): void {
   }
 
   canvasContext.globalAlpha = dataPresentation?.opacity ?? 1;
+
   canvasContext.setTransform(
     effectiveRatio * dpr,
     0,
@@ -144,6 +145,7 @@ function drawFrame(ecgCtx: ECGCanvasRenderContext): void {
     },
     {
       showGrid: dataPresentation?.showGrid,
+      bounds: resolvedView.canvasBounds,
     },
     layouts
   );
@@ -153,9 +155,15 @@ function drawFrame(ecgCtx: ECGCanvasRenderContext): void {
     lineWidth: dataPresentation?.lineWidth,
     amplitudeScale: resolvedView.amplitudeScale,
   });
-  drawECGLabels(canvasContext, layouts, metrics.worldToCanvasRatio);
 
+  // The labels keep one screen size, so they draw with no transform.
   canvasContext.resetTransform();
+  drawECGCanvasLabels(
+    canvasContext,
+    layouts,
+    resolvedView.canvasTransform,
+    dpr
+  );
   canvasContext.globalAlpha = 1;
 
   triggerEvent(ecgCtx.element, EVENTS.IMAGE_RENDERED, {

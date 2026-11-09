@@ -1,19 +1,28 @@
 import type {
   ECGTraceLayout,
   ECGTraceLayoutContext,
+  ECGTraceLayoutName,
+  ECGTraceLayoutRegistry,
   ECGTraceLayoutDefinition,
   ECGTraceLayoutFactory,
-  ECGTraceLayoutRegistry,
   ECGTraceRegion,
 } from './ECGViewportTypes';
 import type { ECGChannelLike } from './ecgWaveform';
-
-const DEFAULT_TRACE_LAYOUT = '12x1';
+import clamp from '../../../utilities/clamp';
 
 /** Lead code values of lead II, in SCPECG and in MDC. */
 const LEAD_II_CODES = new Set(['5.6.3-9-2', '2:2']);
 
-const traceLayouts = new Map<string, ECGTraceLayoutFactory>();
+/** The leads, and the duration, from which a grid layout is the default. */
+const GRID_MIN_LEADS = 8;
+const GRID_MIN_SECONDS = 5;
+
+type ECGTraceLayoutSupports = (context: ECGTraceLayoutContext) => boolean;
+
+const traceLayouts = new Map<
+  string,
+  { factory: ECGTraceLayoutFactory; supports?: ECGTraceLayoutSupports }
+>();
 const warnedNames = new Set<string>();
 
 /**
@@ -23,20 +32,38 @@ const warnedNames = new Set<string>();
  * @param name - The layout name.
  * @param layout - A definition, or a factory that builds the definition for
  *   the channels of one waveform.
+ * @param options - `supports` tells {@link getECGTraceLayoutNames} if the
+ *   layout suits a waveform. Without it, the layout suits every waveform.
  */
 export function registerECGTraceLayout<
   Name extends keyof ECGTraceLayoutRegistry,
->(name: Name, layout: ECGTraceLayoutDefinition | ECGTraceLayoutFactory): void {
+>(
+  name: Name,
+  layout: ECGTraceLayoutDefinition | ECGTraceLayoutFactory,
+  options: { supports?: ECGTraceLayoutSupports } = {}
+): void {
   if (traceLayouts.has(name)) {
     throw new Error(`ECG trace layout "${name}" is already registered`);
   }
 
-  traceLayouts.set(name, typeof layout === 'function' ? layout : () => layout);
+  traceLayouts.set(name, {
+    factory: typeof layout === 'function' ? layout : () => layout,
+    supports: options.supports,
+  });
 }
 
-/** Returns the names of every registered trace layout. */
-export function getECGTraceLayoutNames(): string[] {
-  return Array.from(traceLayouts.keys());
+/**
+ * Returns the names of the registered trace layouts. With a waveform context,
+ * it returns the names whose `supports` accepts the waveform.
+ */
+export function getECGTraceLayoutNames(
+  context?: ECGTraceLayoutContext
+): ECGTraceLayoutName[] {
+  return Array.from(traceLayouts.entries())
+    .filter(
+      ([, entry]) => !context || !entry.supports || entry.supports(context)
+    )
+    .map(([name]) => name);
 }
 
 /**
@@ -51,21 +78,36 @@ export function getECGTraceLayout(
     return traceLayout;
   }
 
-  return traceLayouts.get(traceLayout)?.(context);
+  return traceLayouts.get(traceLayout)?.factory(context);
 }
 
 /**
- * Returns the definition of `traceLayout`, or of `'12x1'` when the name is
- * unknown. An unknown name logs one warning.
+ * Returns the registered name of the default layout of a waveform: `'3x4+1'`
+ * for a record of at least 8 leads and 5 s, else `'12x1'` (one row for each
+ * lead). A record of unknown duration counts as long.
+ */
+export function resolveDefaultECGTraceLayout(
+  context: ECGTraceLayoutContext
+): ECGTraceLayoutName {
+  const { channels, numberOfSamples = 0, samplingFrequency = 0 } = context;
+  const isLong =
+    !(numberOfSamples > 0 && samplingFrequency > 0) ||
+    numberOfSamples / samplingFrequency >= GRID_MIN_SECONDS;
+
+  return channels.length >= GRID_MIN_LEADS && isLong ? '3x4+1' : '12x1';
+}
+
+/**
+ * Returns the definition of `traceLayout`. An undefined layout, or an unknown
+ * name, gives the default layout of the waveform. An unknown name logs one
+ * warning.
  */
 export function resolveECGTraceLayout(
   traceLayout: ECGTraceLayout | undefined,
   context: ECGTraceLayoutContext
 ): ECGTraceLayoutDefinition {
-  const definition = getECGTraceLayout(
-    traceLayout ?? DEFAULT_TRACE_LAYOUT,
-    context
-  );
+  const defaultLayout = resolveDefaultECGTraceLayout(context);
+  const definition = getECGTraceLayout(traceLayout ?? defaultLayout, context);
 
   if (definition) {
     return definition;
@@ -74,11 +116,11 @@ export function resolveECGTraceLayout(
   if (!warnedNames.has(traceLayout as string)) {
     warnedNames.add(traceLayout as string);
     console.warn(
-      `[ECG] Unknown trace layout "${traceLayout}", using "${DEFAULT_TRACE_LAYOUT}"`
+      `[ECG] Unknown trace layout "${traceLayout}", using "${defaultLayout}"`
     );
   }
 
-  return getECGTraceLayout(DEFAULT_TRACE_LAYOUT, context);
+  return getECGTraceLayout(defaultLayout, context);
 }
 
 /** True when a region of the layout follows the time window of the view. */
@@ -88,25 +130,58 @@ export function hasViewTimeRegion(definition: ECGTraceLayoutDefinition) {
   );
 }
 
-/**
- * The Z of the k-th extra copy of a lead, for example a rhythm strip, is
- * `channelIndex + k * ECG_LEAD_COPY_STRIDE`. The first copy uses the channel
- * index, whether or not every channel shows.
- */
+/** The step of world Z between two copies of one lead. */
 export const ECG_LEAD_COPY_STRIDE = 1000;
+
+/** The multiplex group that a waveform shows, and the group count of the instance. */
+export interface ECGLeadGroup {
+  index: number;
+  count: number;
+}
+
+const SINGLE_GROUP: ECGLeadGroup = { index: 0, count: 1 };
+
+/**
+ * World Z of copy `copy` of channel `channelIndex` in multiplex group
+ * `group.index`: `channelIndex + ECG_LEAD_COPY_STRIDE * k`, with
+ * `k = copy * group.count + group.index`. The k index counts across all the
+ * groups of the instance, so two groups never share a Z, and an annotation of
+ * one group does not show on another group. An instance with one group gives
+ * `k = copy`: the first copy of a lead is its channel index.
+ */
+export function getECGLeadZ(
+  channelIndex: number,
+  copy: number,
+  group: ECGLeadGroup = SINGLE_GROUP
+): number {
+  return (
+    channelIndex + ECG_LEAD_COPY_STRIDE * (copy * group.count + group.index)
+  );
+}
 
 /**
  * Returns the layout of world Z: the region of that copy of the lead, else
- * the first region of the lead, when the layout does not show the copy.
+ * the first region of the lead in the same group, when the layout does not
+ * show the copy. A Z of another group finds no layout.
  */
 export function findECGLayoutForZ<T extends { leadIndex: number }>(
   layouts: T[],
-  z: number
+  z: number,
+  group: ECGLeadGroup = SINGLE_GROUP
 ): T | undefined {
-  return (
-    layouts.find((item) => item.leadIndex === z) ??
-    layouts.find((item) => item.leadIndex === z % ECG_LEAD_COPY_STRIDE)
-  );
+  const exact = layouts.find((item) => item.leadIndex === z);
+
+  if (exact) {
+    return exact;
+  }
+  const k = Math.floor(z / ECG_LEAD_COPY_STRIDE);
+
+  if (k < 0 || k % group.count !== group.index) {
+    return;
+  }
+  const baseZ = getECGLeadZ(z % ECG_LEAD_COPY_STRIDE, 0, group);
+
+  return layouts.find((item) => item.leadIndex === baseZ);
 }
 
 /** One region of a layout, resolved to a channel and a sample range. */
@@ -118,9 +193,8 @@ export interface ECGTraceCell<
   channel: TChannel;
   channelIndex: number;
   /**
-   * The Z of a world point in this region: the channel index, plus
-   * `ECG_LEAD_COPY_STRIDE` for each earlier region of the same lead. The value
-   * does not change with the lead count or with the visible leads.
+   * The Z of a world point in this region; see {@link getECGLeadZ}. The value
+   * does not change with the layout, the lead count or the visible leads.
    */
   leadIndex: number;
   visible: boolean;
@@ -141,6 +215,8 @@ export function resolveECGTraceCells<TChannel extends ECGChannelLike>(args: {
   viewSampleWindow: [number, number];
   /** Visible channel indices. Undefined shows every channel. */
   visibleChannels?: number[];
+  /** The multiplex group of the waveform. See {@link getECGLeadZ}. */
+  group?: ECGLeadGroup;
 }): ECGTraceCell<TChannel>[] {
   const {
     definition,
@@ -148,6 +224,7 @@ export function resolveECGTraceCells<TChannel extends ECGChannelLike>(args: {
     numberOfSamples,
     viewSampleWindow,
     visibleChannels,
+    group,
   } = args;
   const visible = visibleChannels ? new Set(visibleChannels) : undefined;
   const copies = new Map<number, number>();
@@ -166,15 +243,15 @@ export function resolveECGTraceCells<TChannel extends ECGChannelLike>(args: {
 
     const copy = copies.get(channelIndex) ?? 0;
     copies.set(channelIndex, copy + 1);
-    const leadIndex = channelIndex + copy * ECG_LEAD_COPY_STRIDE;
+    const leadIndex = getECGLeadZ(channelIndex, copy, group);
 
     const time = region.time ?? 'view';
     const [startSample, endSample] =
       time === 'view'
         ? viewSampleWindow
         : [
-            Math.floor(clamp01(time[0]) * numberOfSamples),
-            Math.floor(clamp01(time[1]) * numberOfSamples),
+            Math.floor(clamp(time[0], 0, 1) * numberOfSamples),
+            Math.floor(clamp(time[1], 0, 1) * numberOfSamples),
           ];
 
     cells.push({
@@ -209,10 +286,6 @@ function findLeadByCode(
   return byCode >= 0
     ? byCode
     : channels.findIndex((channel) => !channel.code && channel.name === lead);
-}
-
-function clamp01(value: number): number {
-  return Math.max(0, Math.min(1, value));
 }
 
 /** Index of lead II by its code value, then by its name, then the second channel. */
@@ -301,7 +374,16 @@ function createGridLayout(
   };
 }
 
+const supportsGrid: ECGTraceLayoutSupports = ({ channels }) =>
+  channels.length >= GRID_MIN_LEADS;
+
 registerECGTraceLayout('12x1', createRowsLayout);
-registerECGTraceLayout('6x2', createGridLayout(6, 2, false));
-registerECGTraceLayout('3x4', createGridLayout(3, 4, false));
-registerECGTraceLayout('3x4+1', createGridLayout(3, 4, true));
+registerECGTraceLayout('6x2', createGridLayout(6, 2, false), {
+  supports: supportsGrid,
+});
+registerECGTraceLayout('3x4', createGridLayout(3, 4, false), {
+  supports: supportsGrid,
+});
+registerECGTraceLayout('3x4+1', createGridLayout(3, 4, true), {
+  supports: supportsGrid,
+});

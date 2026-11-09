@@ -8,6 +8,8 @@ import {
   hasViewTimeRegion,
   resolveECGTraceCells,
   findECGLayoutForZ,
+  type ECGLeadGroup,
+  resolveDefaultECGTraceLayout,
   resolveECGTraceLayout,
   type ECGTraceCell,
 } from './ecgTraceLayouts';
@@ -37,7 +39,7 @@ type ECGResolvedViewState = {
 };
 
 /** Canvas transform that the render path applies before it draws. */
-type ECGCanvasTransform = {
+export type ECGCanvasTransform = {
   effectiveRatio: number;
   xOffset: number;
   yOffset: number;
@@ -91,11 +93,34 @@ class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
     return this.getGeometry().metrics;
   }
 
+  /**
+   * The name of the layout that the view shows: the name in the view state,
+   * else the default name for the waveform. Undefined for a full definition.
+   */
+  get traceLayoutName(): string | undefined {
+    const { traceLayout } = this.state.viewState;
+
+    if (traceLayout !== undefined && typeof traceLayout !== 'string') {
+      return;
+    }
+    return (
+      (traceLayout as string | undefined) ??
+      resolveDefaultECGTraceLayout(this.traceLayoutContext)
+    );
+  }
+
+  private get traceLayoutContext() {
+    const { channels, numberOfSamples, samplingFrequency } =
+      this.state.waveform;
+
+    return { channels, numberOfSamples, samplingFrequency };
+  }
+
   /** The trace layout definition, with a registered name resolved. */
   get traceLayout(): ECGTraceLayoutDefinition {
     this.cachedDefinition ||= resolveECGTraceLayout(
       this.state.viewState.traceLayout,
-      { channels: this.state.waveform.channels }
+      this.traceLayoutContext
     );
 
     return this.cachedDefinition;
@@ -114,6 +139,7 @@ class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
       numberOfSamples: this.state.waveform.numberOfSamples,
       viewSampleWindow: [startSample, endSample],
       visibleChannels: this.state.viewState.visibleChannels,
+      group: this.leadGroup,
     });
 
     return this.cachedCells;
@@ -162,10 +188,11 @@ class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
   }
 
   /** Multiplier on the drawn amplitude. The transforms apply it too. */
+  /** 1 with a set sensitivity, which is the clinical gain (ECG-U-1). */
   get amplitudeScale(): number {
-    const scale = this.state.viewState.amplitudeScale;
+    const { amplitudeScale: scale, sensitivityMmMv } = this.state.viewState;
 
-    return scale > 0 ? scale : 1;
+    return scale > 0 && !(sensitivityMmMv > 0) ? scale : 1;
   }
 
   /** World position of each visible region, in the order of the layout. */
@@ -185,6 +212,40 @@ class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
       xOffset: mapping.xOffset,
       yOffset: mapping.yOffset,
     };
+  }
+
+  /**
+   * The area of the canvas in layout units. The grid covers this area, so the
+   * paper fills the canvas at the one scale of {@link canvasTransform}.
+   */
+  get canvasBounds(): {
+    minX: number;
+    minY: number;
+    maxX: number;
+    maxY: number;
+  } {
+    const { effectiveRatio, xOffset, yOffset, canvasWidth, canvasHeight } =
+      this.getCanvasMapping();
+
+    return {
+      minX: -xOffset / effectiveRatio,
+      minY: -yOffset / effectiveRatio,
+      maxX: (canvasWidth - xOffset) / effectiveRatio,
+      maxY: (canvasHeight - yOffset) / effectiveRatio,
+    };
+  }
+
+  /** The multiplex group of the waveform, for world Z; see `getECGLeadZ`. */
+  get leadGroup(): ECGLeadGroup {
+    const { multiplexGroupIndex = 0, numberOfMultiplexGroups = 1 } =
+      this.state.waveform;
+
+    return { index: multiplexGroupIndex, count: numberOfMultiplexGroups };
+  }
+
+  /** The layout of world Z, or undefined; see `findECGLayoutForZ`. */
+  findLayoutForZ(z: number): ECGChannelLayout<ECGChannelData> | undefined {
+    return findECGLayoutForZ(this.channelLayouts, z, this.leadGroup);
   }
 
   /**
@@ -266,7 +327,7 @@ class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
     const channelLayouts = this.channelLayouts;
     const z = Math.round(worldPos[2]);
 
-    const layout = findECGLayoutForZ(channelLayouts, z);
+    const layout = this.findLayoutForZ(z);
 
     if (!layout) {
       return [0, 0];

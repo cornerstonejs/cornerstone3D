@@ -86,6 +86,8 @@ export type ECGTraceLayout = ECGTraceLayoutName | ECGTraceLayoutDefinition;
 /** What a layout factory receives to build a definition for one waveform. */
 export interface ECGTraceLayoutContext {
   channels: { name: string; code?: string }[];
+  numberOfSamples?: number;
+  samplingFrequency?: number;
 }
 
 export type ECGTraceLayoutFactory = (
@@ -101,6 +103,10 @@ export interface ECGWaveformPayload {
   bitsAllocated: number;
   sampleInterpretation: string;
   multiplexGroupLabel?: string;
+  /** The multiplex group that the waveform shows (0-based). */
+  multiplexGroupIndex?: number;
+  /** The number of multiplex groups of the instance. */
+  numberOfMultiplexGroups?: number;
   calibration?: unknown;
 }
 
@@ -131,7 +137,10 @@ export interface ECGViewState extends ViewportCameraBase<[number, number]> {
    * shows no millivolt labels.
    */
   sensitivityMmMv?: number;
-  /** Multiplier on the drawn amplitude. Defaults to 1. */
+  /**
+   * Multiplier on the drawn amplitude in auto-fit. Defaults to 1. A set
+   * `sensitivityMmMv` ignores it, and the viewport warns on load.
+   */
   amplitudeScale?: number;
   /**
    * Indices of the visible channels. A hidden lead keeps its region, and a
@@ -140,7 +149,9 @@ export interface ECGViewState extends ViewportCameraBase<[number, number]> {
   visibleChannels?: number[];
   /**
    * The trace layout: a registered name, or a full definition. The view
-   * state keeps the value as the caller gave it. Defaults to `'12x1'`.
+   * state keeps the value as the caller gave it. Undefined gives the default
+   * of the waveform: `'3x4+1'` for 8 or more leads and 5 s or more, else
+   * `'12x1'`.
    */
   traceLayout?: ECGTraceLayout;
 }
@@ -151,7 +162,7 @@ export interface ECGProperties {
   showGrid?: boolean;
   /**
    * Whether to render millivolt labels on the grid. Applies only when
-   * `ECGViewState.sensitivityMmMv` is set. Defaults to true.
+   * `ECGViewState.sensitivityMmMv` is set. Defaults to false.
    */
   showAmplitudeLabels?: boolean;
 }
