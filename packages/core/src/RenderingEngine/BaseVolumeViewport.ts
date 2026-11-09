@@ -142,7 +142,8 @@ abstract class BaseVolumeViewport extends Viewport {
 
   /**
    * Adds the global listeners that clear the record cache on volume data
-   * events. The listeners are removed on ELEMENT_DISABLED of this element, so
+   * events and fire `VIEWPORT_FIDELITY_CHANGED` when the state changed. The
+   * listeners are removed on ELEMENT_DISABLED of this element, so
    * a disabled viewport does not stay in memory. `_reset` fires that event
    * without `isDisabled`, so a disposed flag stops a later attach.
    */
@@ -163,6 +164,8 @@ abstract class BaseVolumeViewport extends Viewport {
       } else {
         this._fidelityRecords.clear();
       }
+      // A volume event can change the state with no render after it.
+      this.notifyFidelityStateChanged();
     };
 
     const cleanUp = (evt: Event) => {

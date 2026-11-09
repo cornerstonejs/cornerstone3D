@@ -339,6 +339,9 @@ states map to the states of this specification: transiently lossy is
   - The rendering engines call it after a draw in the engine loop.
   - `PlanarViewport.render()` calls it when a render path drew the frame
     itself and marked it with `markRendered()`. The CPU paths do that.
+  - A volume viewport also calls it on `IMAGE_VOLUME_MODIFIED` and
+    `IMAGE_VOLUME_LOADING_COMPLETED`, because no render can follow such an
+    event. A generic render path requests a render on each volume event.
   - The `Viewport` class and the `GenericViewport` class use one shared
     helper, `helpers/fidelityIndicator/notifyFidelityStateChanged.ts`. The
     helper obeys `suppressEvents`.

@@ -528,6 +528,61 @@ describe('fidelityIndicator attach gates', () => {
       viewport.getFidelityLines();
       expect(add).not.toHaveBeenCalled();
     });
+
+    // The API must do this: an application indicator gets the change of a
+    // completed load also when no render follows it.
+    it('fires VIEWPORT_FIDELITY_CHANGED on a volume event with no render', () => {
+      const voxelGrid = {
+        dimensions: [8, 8, 8],
+        spacing: [1, 1, 1],
+        origin: [0, 0, 0],
+        direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
+      };
+      let missing = 10;
+      const loadStatus = { loading: true };
+      jest.spyOn(cache, 'getVolume').mockReturnValue({
+        voxelGrid,
+        loadStatus,
+        getGridQuality: () => ({
+          grid: voxelGrid,
+          status: ImageQualityStatus.FULL_RESOLUTION,
+          lowest: missing
+            ? ImageQualityStatus.LOSSY
+            : ImageQualityStatus.FULL_RESOLUTION,
+          highest: ImageQualityStatus.FULL_RESOLUTION,
+          missing,
+          voxels: 512,
+          exact: true,
+          source: 'directLoad',
+          reduction: VoxelReductions.None,
+          deliveries: 1,
+        }),
+      });
+      const element = document.createElement('div');
+      const viewport = Object.assign(volumeViewport(element), {
+        renderingEngineId: 're-1',
+        getActors: () => [{ uid: 'vol', actor: {} }],
+        getCamera: () => undefined,
+      });
+      const states = [];
+      element.addEventListener(Events.VIEWPORT_FIDELITY_CHANGED, (evt) =>
+        states.push(evt.detail.state.shownState)
+      );
+
+      viewport.notifyFidelityStateChanged();
+      expect(states).toEqual(['loading']);
+
+      missing = 0;
+      loadStatus.loading = false;
+      eventTarget.dispatchEvent(
+        new CustomEvent(Events.IMAGE_VOLUME_LOADING_COMPLETED, {
+          detail: { volumeId: 'vol' },
+        })
+      );
+
+      expect(states).toEqual(['loading', 'done']);
+      disable(element);
+    });
   });
 
   describe('generic viewports', () => {
