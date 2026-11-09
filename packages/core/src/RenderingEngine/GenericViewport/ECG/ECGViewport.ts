@@ -6,8 +6,6 @@ import {
   getDefaultECGValueRange,
   getECGFrameOfReferenceUID,
   ECG_DEFAULT_SWEEP_SPEED_MM_S,
-  ECG_CLINICAL_SWEEP_SPEEDS,
-  ECG_CLINICAL_SENSITIVITIES,
 } from './ecgWaveform';
 import { getGenericViewportSourceDataId } from '../genericViewportDisplaySetAccess';
 import imageIdToURI from '../../../utilities/imageIdToURI';
@@ -32,10 +30,7 @@ import type {
   ECGWaveformPayload,
   ECGResetViewStateOptions,
 } from './ECGViewportTypes';
-import {
-  getECGTraceLayoutNames,
-  resolveDefaultECGTraceLayout,
-} from './ecgTraceLayouts';
+import { findECGLayoutForZ, getECGTraceLayoutNames } from './ecgTraceLayouts';
 import {
   createDefaultECGViewState,
   normalizeECGViewState,
@@ -117,13 +112,6 @@ class ECGViewport extends GenericViewport<
         (waveform.numberOfSamples / waveform.samplingFrequency) * 1000;
       const { traceLayout, sweepSpeed, sensitivityMmMv, amplitudeScale } =
         this.viewState;
-      const resolvedTraceLayout =
-        traceLayout ??
-        resolveDefaultECGTraceLayout({
-          channels: waveform.channels,
-          numberOfSamples: waveform.numberOfSamples,
-          samplingFrequency: waveform.samplingFrequency,
-        });
 
       this.setDefaultDataPresentation(displaySetId, {
         visible: true,
@@ -134,7 +122,7 @@ class ECGViewport extends GenericViewport<
       this.viewState = createDefaultECGViewState({
         timeRange: [0, durationMs],
         valueRange: getDefaultECGValueRange(waveform),
-        traceLayout: resolvedTraceLayout,
+        traceLayout,
         sweepSpeed,
         sensitivityMmMv,
         amplitudeScale,
@@ -147,8 +135,8 @@ class ECGViewport extends GenericViewport<
   }
 
   /**
-   * Returns the clinically available trace layout names for the active
-   * ECG dataset, dynamically matching its channel count.
+   * Returns the names of the registered trace layouts that suit the mounted
+   * waveform. See `getECGTraceLayoutNames`.
    */
   getTraceLayoutNames(): string[] {
     const waveform = this.getWaveformData();
@@ -162,20 +150,6 @@ class ECGViewport extends GenericViewport<
           }
         : undefined
     );
-  }
-
-  /**
-   * Returns standard clinical paper sweep speeds in mm/s (IEC 60601-2-25: 12.5, 25, 50).
-   */
-  getClinicalSweepSpeeds(): readonly number[] {
-    return ECG_CLINICAL_SWEEP_SPEEDS;
-  }
-
-  /**
-   * Returns standard clinical sensitivities in mm/mV (IEC 60601-2-25: 2.5, 5, 10, 20).
-   */
-  getClinicalSensitivities(): readonly number[] {
-    return ECG_CLINICAL_SENSITIVITIES;
   }
 
   /**
@@ -264,7 +238,7 @@ class ECGViewport extends GenericViewport<
     }
     const layouts = this.getResolvedView()?.channelLayouts;
 
-    return !layouts || layouts.some((item) => item.leadIndex === sliceIndex);
+    return !layouts || !!findECGLayoutForZ(layouts, sliceIndex);
   }
 
   /**
@@ -613,9 +587,8 @@ class ECGViewport extends GenericViewport<
     }
 
     const nSamples = waveform.numberOfSamples;
-    // The Z of a world point identifies a trace region. A region that repeats
-    // a lead takes a Z above the last channel index, and the annotation tools
-    // reject a handle whose index is outside `dimensions`.
+    // The Z of a world point is the channel index, plus ECG_LEAD_COPY_STRIDE
+    // for a copy of a lead. The tools reject an index outside `dimensions`.
     const dimensions: Point3 = [
       nSamples,
       ECG_AMPLITUDE_INDEX_SIZE,

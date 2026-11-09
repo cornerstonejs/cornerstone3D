@@ -7,6 +7,8 @@ import {
 import {
   hasViewTimeRegion,
   resolveECGTraceCells,
+  findECGLayoutForZ,
+  resolveDefaultECGTraceLayout,
   resolveECGTraceLayout,
   type ECGTraceCell,
 } from './ecgTraceLayouts';
@@ -36,7 +38,7 @@ type ECGResolvedViewState = {
 };
 
 /** Canvas transform that the render path applies before it draws. */
-type ECGCanvasTransform = {
+export type ECGCanvasTransform = {
   effectiveRatio: number;
   xOffset: number;
   yOffset: number;
@@ -91,14 +93,33 @@ class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
   }
 
   /** The trace layout definition, with a registered name resolved. */
+  /**
+   * The name of the layout that the view shows: the name in the view state,
+   * else the default name for the waveform. Undefined for a full definition.
+   */
+  get traceLayoutName(): string | undefined {
+    const { traceLayout } = this.state.viewState;
+
+    if (traceLayout !== undefined && typeof traceLayout !== 'string') {
+      return;
+    }
+    return (
+      (traceLayout as string | undefined) ??
+      resolveDefaultECGTraceLayout(this.traceLayoutContext)
+    );
+  }
+
+  private get traceLayoutContext() {
+    const { channels, numberOfSamples, samplingFrequency } =
+      this.state.waveform;
+
+    return { channels, numberOfSamples, samplingFrequency };
+  }
+
   get traceLayout(): ECGTraceLayoutDefinition {
     this.cachedDefinition ||= resolveECGTraceLayout(
       this.state.viewState.traceLayout,
-      {
-        channels: this.state.waveform.channels,
-        numberOfSamples: this.state.waveform.numberOfSamples,
-        samplingFrequency: this.state.waveform.samplingFrequency,
-      }
+      this.traceLayoutContext
     );
 
     return this.cachedDefinition;
@@ -199,6 +220,27 @@ class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
   }
 
   /**
+   * The area of the canvas in layout units. The grid covers this area, so the
+   * paper fills the canvas at the one scale of {@link canvasTransform}.
+   */
+  get canvasBounds(): {
+    minX: number;
+    minY: number;
+    maxX: number;
+    maxY: number;
+  } {
+    const { effectiveRatio, xOffset, yOffset, canvasWidth, canvasHeight } =
+      this.getCanvasMapping();
+
+    return {
+      minX: -xOffset / effectiveRatio,
+      minY: -yOffset / effectiveRatio,
+      maxX: (canvasWidth - xOffset) / effectiveRatio,
+      maxY: (canvasHeight - yOffset) / effectiveRatio,
+    };
+  }
+
+  /**
    * Converts a canvas-space point into 3D world-space coordinates.
    * @param canvasPos - Point in canvas space [x, y].
    * @returns 3D world point `[sampleIndex, amplitude, leadIndex]`. The
@@ -280,8 +322,7 @@ class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
     const channelLayouts = this.channelLayouts;
     const z = Math.round(worldPos[2]);
 
-    // `leadIndex` identifies one region; see `ECGTraceCell.leadIndex`.
-    const layout = channelLayouts.find((item) => item.leadIndex === z);
+    const layout = findECGLayoutForZ(channelLayouts, z);
 
     if (!layout) {
       return [0, 0];

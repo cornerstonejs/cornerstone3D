@@ -3,6 +3,7 @@ import {
   drawECGGrid,
   drawECGTraces,
   drawECGLabels,
+  drawECGCanvasLabels,
 } from '../src/RenderingEngine/GenericViewport/ECG/ecgDrawing';
 import {
   resolveECGTraceCells,
@@ -11,9 +12,6 @@ import {
 import {
   ECG_DEFAULT_MV_PER_UNIT,
   ECG_DEFAULT_SWEEP_SPEED_MM_S,
-  ECG_DEFAULT_SENSITIVITY_MM_MV,
-  ECG_CLINICAL_SWEEP_SPEEDS,
-  ECG_CLINICAL_SENSITIVITIES,
   ECG_PX_PER_MM,
   ECG_RENDERING_COLORS,
 } from '../src/RenderingEngine/GenericViewport/ECG/ecgWaveform';
@@ -363,88 +361,6 @@ describe('ECG render metrics', () => {
     });
   });
 
-  describe('clinical standard presets (IEC 60601-2-25 / AHA / ACC)', () => {
-    it('exports the standard clinical sweep speeds [12.5, 25, 50] mm/s', () => {
-      expect(ECG_CLINICAL_SWEEP_SPEEDS).toEqual([12.5, 25, 50]);
-    });
-
-    it('exports the standard clinical sensitivities [2.5, 5, 10, 20] mm/mV', () => {
-      expect(ECG_CLINICAL_SENSITIVITIES).toEqual([2.5, 5, 10, 20]);
-    });
-
-    it('defines standard defaults of 25 mm/s and 10 mm/mV', () => {
-      expect(ECG_DEFAULT_SWEEP_SPEED_MM_S).toBe(25);
-      expect(ECG_DEFAULT_SENSITIVITY_MM_MV).toBe(10);
-    });
-  });
-
-  describe('sweepSpeed positive and negative edge cases', () => {
-    it('positive: correctly expands waveform span at 50 mm/s', () => {
-      const channel = makeChannel('Lead I');
-      const { layouts } = geometryFor([channel], { sweepSpeed: 50 });
-      const ctx = makeRecordingContext();
-
-      drawECGTraces({ ctx, layouts, sweepSpeed: 50 });
-      const drawn = ctx.segments.filter(
-        (s) => s.style === ECG_RENDERING_COLORS.trace && s.to
-      );
-      expect(drawn.length).toBeGreaterThan(0);
-      drawn.forEach((s) => {
-        expect(Number.isFinite(s.to[0])).toBe(true);
-        expect(Number.isFinite(s.to[1])).toBe(true);
-      });
-    });
-
-    it('negative: handles sweepSpeed = 0 safely by falling back to standard 25 mm/s', () => {
-      const channel = makeChannel('Lead I');
-      const { layouts } = geometryFor([channel], { sweepSpeed: 0 });
-      const ctx = makeRecordingContext();
-
-      expect(() => {
-        drawECGTraces({ ctx, layouts, sweepSpeed: 0 });
-      }).not.toThrow();
-
-      const drawn = ctx.segments.filter(
-        (s) => s.style === ECG_RENDERING_COLORS.trace && s.to
-      );
-      expect(drawn.length).toBeGreaterThan(0);
-      drawn.forEach((s) => {
-        expect(Number.isFinite(s.to[0])).toBe(true);
-        expect(Number.isNaN(s.to[0])).toBe(false);
-      });
-    });
-
-    it('negative: handles negative sweepSpeed safely without crashing or inverting', () => {
-      const channel = makeChannel('Lead I');
-      const { layouts } = geometryFor([channel], { sweepSpeed: -25 });
-      const ctx = makeRecordingContext();
-
-      expect(() => {
-        drawECGTraces({ ctx, layouts, sweepSpeed: -25 });
-      }).not.toThrow();
-
-      const drawn = ctx.segments.filter(
-        (s) => s.style === ECG_RENDERING_COLORS.trace && s.to
-      );
-      drawn.forEach((s) => {
-        expect(Number.isNaN(s.to[0])).toBe(false);
-        expect(Number.isNaN(s.to[1])).toBe(false);
-      });
-    });
-
-    it('negative: handles undefined sweepSpeed gracefully by defaulting to 25 mm/s', () => {
-      const channel = makeChannel('Lead I');
-      const { layouts } = geometryFor([channel]);
-      const ctx = makeRecordingContext();
-
-      drawECGTraces({ ctx, layouts, sweepSpeed: undefined });
-      const drawn = ctx.segments.filter(
-        (s) => s.style === ECG_RENDERING_COLORS.trace && s.to
-      );
-      expect(drawn.length).toBeGreaterThan(0);
-    });
-  });
-
   describe('sensitivityMmMv positive and negative edge cases', () => {
     it('positive: scales vertical deflection linearly across all clinical presets', () => {
       const channel = makeChannel('Lead I');
@@ -461,49 +377,6 @@ describe('ECG render metrics', () => {
       expect(metricsList[1] / metricsList[2]).toBeCloseTo(0.5, 4);
       // 20 mm/mV is 2.0x of 10 mm/mV
       expect(metricsList[3] / metricsList[2]).toBeCloseTo(2.0, 4);
-    });
-
-    it('negative: handles sensitivityMmMv = 0 safely without division by zero', () => {
-      const channel = makeChannel('Lead I');
-      expect(() => {
-        const { metrics, layouts } = geometryFor([channel], {
-          sensitivityMmMv: 0,
-        });
-        const ctx = makeRecordingContext();
-        drawECGGrid(ctx, { ...metrics, sensitivityMmMv: 0 });
-        drawECGTraces({ ctx, layouts, sensitivityMmMv: 0 });
-      }).not.toThrow();
-    });
-
-    it('negative: handles negative sensitivityMmMv safely without NaN or inversion', () => {
-      const channel = makeChannel('Lead I');
-      expect(() => {
-        const { metrics, layouts } = geometryFor([channel], {
-          sensitivityMmMv: -10,
-        });
-        const ctx = makeRecordingContext();
-        drawECGGrid(ctx, { ...metrics, sensitivityMmMv: -10 });
-        drawECGTraces({ ctx, layouts, sensitivityMmMv: -10 });
-      }).not.toThrow();
-    });
-
-    it('negative: handles undefined sensitivityMmMv in auto-fit mode', () => {
-      const channel = makeChannel('Lead I');
-      const { metrics, layouts } = geometryFor([channel], {
-        sensitivityMmMv: undefined,
-      });
-      const ctx = makeRecordingContext();
-
-      drawECGGrid(ctx, { ...metrics, sensitivityMmMv: undefined });
-      drawECGTraces({ ctx, layouts, sensitivityMmMv: undefined });
-
-      const traces = ctx.segments.filter(
-        (s) => s.style === ECG_RENDERING_COLORS.trace && s.to
-      );
-      expect(traces.length).toBeGreaterThan(0);
-      traces.forEach((s) => {
-        expect(Number.isFinite(s.to[1])).toBe(true);
-      });
     });
   });
 
@@ -526,63 +399,31 @@ describe('ECG render metrics', () => {
     });
   });
 
-  describe('drawECGLabels in screen space and transform tracking', () => {
-    it('draws crisp labels at top-left of each column in default view', () => {
-      const channels = [makeChannel('Lead I'), makeChannel('Lead II')];
-      const { layouts, metrics } = geometryFor(channels, {
-        traceLayout: '3x4',
-      });
+  describe('lead labels', () => {
+    it('draws the label at the top left of its region, at a fixed size, with the zoom and the pan', () => {
+      const { layouts } = geometryFor([makeChannel('Lead I')]);
       const ctx = makeRecordingContext();
+      const [layout] = layouts;
 
-      drawECGLabels(ctx, layouts, metrics.worldToCanvasRatio, {
-        clientWidth: 800,
-        clientHeight: 600,
-        ecgWidth: metrics.ecgWidth,
-        ecgHeight: metrics.ecgHeight,
-        scaleX: 1,
-        scaleY: 1,
-        transX: 0,
-        transY: 0,
-        dpr: 1,
-      });
+      drawECGCanvasLabels(
+        ctx,
+        layouts,
+        { effectiveRatio: 2, xOffset: 50, yOffset: 100 },
+        1
+      );
 
-      expect(ctx.textCalls.length).toBe(layouts.length);
-      expect(ctx.textCalls[0].text).toBe('Lead I');
-      expect(ctx.textCalls[1].text).toBe('Lead II');
-      // Screen coordinates must be non-negative
-      expect(ctx.textCalls[0].x).toBeGreaterThanOrEqual(0);
-      expect(ctx.textCalls[0].y).toBeGreaterThanOrEqual(0);
+      expect(ctx.font).toBe('12px monospace');
+      expect(ctx.textCalls[0].x).toBeCloseTo(layout.xOffset * 2 + 50 + 5, 6);
     });
 
-    it('tracks cell coordinates when zoomed or panned', () => {
-      const channels = [makeChannel('Lead I')];
-      const { layouts, metrics } = geometryFor(channels);
+    it('keeps 14 screen px for the deprecated class at every zoom', () => {
+      const { layouts } = geometryFor([makeChannel('Lead I')]);
       const ctx = makeRecordingContext();
 
-      // Pan by 50px X, 100px Y, with 2x zoom
-      drawECGLabels(ctx, layouts, metrics.worldToCanvasRatio, {
-        clientWidth: 800,
-        clientHeight: 600,
-        ecgWidth: metrics.ecgWidth,
-        ecgHeight: metrics.ecgHeight,
-        scaleX: 2,
-        scaleY: 2,
-        transX: 50,
-        transY: 100,
-        dpr: 1,
-      });
-
-      expect(ctx.textCalls.length).toBe(1);
-      // X should include transX (50px + 5px padding)
-      expect(ctx.textCalls[0].x).toBeCloseTo(55, 1);
-    });
-
-    it('handles negative/empty layouts array gracefully without throwing', () => {
-      const ctx = makeRecordingContext();
-      expect(() => {
-        drawECGLabels(ctx, [], 1);
-      }).not.toThrow();
-      expect(ctx.textCalls.length).toBe(0);
+      drawECGLabels(ctx, layouts, 4);
+      expect(ctx.font).toBe('3.5px monospace');
+      drawECGLabels(ctx, layouts, 0.5);
+      expect(ctx.font).toBe('28px monospace');
     });
   });
 

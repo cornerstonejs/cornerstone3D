@@ -154,7 +154,7 @@ async function run() {
   }
 
   const layoutNames = viewport.getTraceLayoutNames();
-  const currentLayout = viewport.getViewState().traceLayout;
+  const currentLayout = viewport.getResolvedView()?.traceLayoutName;
 
   addDropdownToToolbar({
     options: {
