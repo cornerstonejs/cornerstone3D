@@ -103,7 +103,7 @@ table gives the file of each piece. The paths are under `packages/core/src/`, ex
 | The marks and the deliveries                        | `cache/classes/ImageVolume.ts`: `markFrameTexturesDirty`, `recordFrameDelivery`, `markFrameModified`               |
 | The load                                            | `cache/classes/BaseStreamingImageVolume.ts`: `load`, `successCallback`, `takeInCachedImages`                       |
 | The fill of a reduced texture                       | `RenderingEngine/vtkClasses/vtkStreamingOpenGLTexture.js`: `updateTextureFromComposite`, `fillSliceByBoxStatistic` |
-| The selection on each render (generic architecture) | `RenderingEngine/GenericViewport/Planar/VtkVolumeSliceRenderPath.ts`: `provisionStrategies`, `applyStrategy`       |
+| The selection on each render (generic architecture) | `RenderingEngine/helpers/volumeStrategyLifecycle.ts`: `provisionStrategies`, `applyStrategy`, `onVolumeData`       |
 | The sample distance of a 3D render                  | `RenderingEngine/helpers/createVolumeMapper.ts`: `sampleDistanceOf`                                                |
 | The statistic of a labelmap                         | `packages/tools/src/stateManagement/segmentation/labelmapModel/labelmapLayerStore.ts`: `tagLabelmapVolume`         |
 

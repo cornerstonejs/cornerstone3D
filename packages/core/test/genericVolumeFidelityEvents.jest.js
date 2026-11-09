@@ -99,6 +99,7 @@ function context() {
       element: document.createElement('div'),
       getViewState: () => ({}),
     },
+    view: {},
     display: { activateRenderMode: jest.fn(), requestRender: jest.fn() },
     vtk: {
       renderer: {
@@ -238,6 +239,18 @@ describe.each([
 
     shownState(rendering);
     shownState(rendering);
+    expect(volume.getGridQuality).toHaveBeenCalledTimes(1);
+
+    attachment.removeData();
+  });
+
+  it('reads the quality record one time for two renders with no change', async () => {
+    const { volume, attachment } = await mount();
+
+    attachment.render();
+    attachment.render();
+
+    // The one read is the bind of the mount.
     expect(volume.getGridQuality).toHaveBeenCalledTimes(1);
 
     attachment.removeData();

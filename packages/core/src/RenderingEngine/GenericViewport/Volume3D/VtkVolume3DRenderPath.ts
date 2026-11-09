@@ -1,14 +1,7 @@
 import '@kitware/vtk.js/Rendering/Profiles/Volume';
 import type vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
-import { Events, ViewportType } from '../../../enums';
-import eventTarget from '../../../eventTarget';
-import type {
-  IImageData,
-  IImageVolume,
-  Point2,
-  Point3,
-  VoxelQualityRecord,
-} from '../../../types';
+import { ViewportType } from '../../../enums';
+import type { IImageData, IImageVolume, Point2, Point3 } from '../../../types';
 import createLinearRGBTransferFunction from '../../../utilities/createLinearRGBTransferFunction';
 import invertRgbTransferFunction from '../../../utilities/invertRgbTransferFunction';
 import { updateOpacity as updateVolumeOpacity } from '../../../utilities/colormap';
@@ -25,12 +18,12 @@ import {
   selectFirstReadyStrategy,
 } from '../../helpers/volumeRenderStrategy';
 import type {
-  IVolumeRenderStrategy,
   SelectVolumeStrategy,
   VolumeStrategyProvider,
   VolumeStrategyProvisionReason,
 } from '../../helpers/volumeRenderStrategy';
-import { gpuSettingsForRender } from '../../../utilities/gpuSettingsPresets';
+import * as lifecycle from '../../helpers/volumeStrategyLifecycle';
+import type { VolumeStrategyHooks } from '../../helpers/volumeStrategyLifecycle';
 import {
   canvasToWorldContextPool,
   worldToCanvasContextPool,
@@ -52,11 +45,7 @@ import type {
 } from './viewport3DTypes';
 import applyVolume3DCamera from './applyVolume3DCamera';
 import { getInitialVolume3DCamera } from './vtkVolume3DInitialCamera';
-import {
-  isBindingPending,
-  isSegmentationOverlayData,
-  readBoundQuality,
-} from '../renderingFidelity';
+import { isSegmentationOverlayData } from '../renderingFidelity';
 import setVtkCameraClippingRange from '../setVtkCameraClippingRange';
 
 /** @internal */
@@ -64,28 +53,26 @@ export class VtkVolume3DRenderPath
   implements RenderPath<Volume3DVtkVolumeAdapterContext>
 {
   /**
-   * The provider that builds the strategies of this render path.
+   * The provider that builds the strategies of this render path, and the
+   * function that chooses the strategy of one render.
    *
    * A new render type defines its own provider, and that is how a new render
-   * type defines new texture sets.
+   * type defines new texture sets. A render component that implements phases
+   * supplies its own selection. The vtk-wasm path will use one: it reads a
+   * coarse maximum-value texture in a first pass to find the bricks that hold
+   * no air, and then draws those.
    */
-  private readonly provideStrategies: VolumeStrategyProvider;
-
-  /**
-   * The function that chooses the strategy of one render.
-   *
-   * A render component that implements phases supplies its own function. The
-   * vtk-wasm path will use one: it reads a coarse maximum-value texture in a
-   * first pass to find the bricks that hold no air, and then draws those.
-   */
-  private readonly selectStrategy: SelectVolumeStrategy;
+  private readonly hooks: VolumeStrategyHooks<Volume3DVolumeRendering>;
 
   constructor(
     provideStrategies: VolumeStrategyProvider = defaultVolumeStrategyProvider,
     selectStrategy: SelectVolumeStrategy = selectFirstReadyStrategy
   ) {
-    this.provideStrategies = provideStrategies;
-    this.selectStrategy = selectStrategy;
+    this.hooks = {
+      provideStrategies,
+      selectStrategy,
+      onBind: bindSampleDistance,
+    };
   }
 
   async addData(
@@ -97,11 +84,7 @@ export class VtkVolume3DRenderPath
       data as unknown as LoadedData<Volume3DVolumePayload>;
     const hadVolume = ctx.vtk.renderer.getVolumes().length > 0;
     const actor = await createVolumeActor(
-      {
-        volumeId: payload.volumeId,
-        provideStrategies: this.provideStrategies,
-        selectStrategy: this.selectStrategy,
-      },
+      { volumeId: payload.volumeId, ...this.hooks },
       ctx.viewport.element,
       ctx.viewportId,
       true
@@ -138,15 +121,15 @@ export class VtkVolume3DRenderPath
         options
       ),
     };
-    rendering.refreshFidelity = () => this.refreshFidelity(rendering);
+    rendering.refreshFidelity = () => lifecycle.refreshFidelity(rendering);
 
     this.provisionStrategies(rendering, 'initial');
     this.applyStrategy(rendering);
 
-    rendering.removeStreamingSubscriptions = subscribeToVolumeEvents(
+    rendering.removeStreamingSubscriptions = lifecycle.subscribeToVolumeEvents(
       payload.volumeId,
       (eventType) => {
-        this.onVolumeData(rendering, eventType);
+        lifecycle.onVolumeData(rendering, eventType, this.hooks);
         ctx.display.requestRender();
       }
     );
@@ -228,49 +211,6 @@ export class VtkVolume3DRenderPath
     return buildVolumeImageData(rendering.imageVolume);
   }
 
-  /**
-   * Handles a volume data event without a camera change (GENVIEW-FIDELITY-1).
-   * A completed load runs the provider and binds again at once. Any other
-   * event only marks the record stale; `refreshFidelity` recomputes it once,
-   * when the viewport next reads the fidelity.
-   */
-  private onVolumeData(
-    rendering: Volume3DVolumeRendering,
-    eventType: string
-  ): void {
-    if (eventType === Events.IMAGE_VOLUME_LOADING_COMPLETED) {
-      this.provisionStrategies(rendering, 'loaded');
-      this.applyStrategy(rendering);
-      return;
-    }
-
-    if (eventType === Events.VOLUME_TEXTURE_LIMITS_CHANGED) {
-      this.provisionStrategies(rendering, 'memory');
-      this.applyStrategy(rendering);
-      return;
-    }
-
-    if (!rendering.excludeFromFidelity) {
-      rendering.fidelityStale = true;
-    }
-  }
-
-  /**
-   * Recomputes a stale record of the bound grid (see `onVolumeData`), and
-   * reads at each call whether the bound texture still waits for its fill.
-   */
-  private refreshFidelity(rendering: Volume3DVolumeRendering): void {
-    if (rendering.fidelityStale) {
-      rendering.fidelityStale = false;
-      rendering.voxelQuality = this.readQuality(rendering);
-    }
-
-    rendering.qualityPending = isBindingPending(
-      rendering.imageVolume,
-      rendering.boundTexture
-    );
-  }
-
   private render(
     ctx: Volume3DVtkVolumeAdapterContext,
     rendering?: Volume3DVolumeRendering
@@ -282,161 +222,6 @@ export class VtkVolume3DRenderPath
     ctx.display.requestRender();
   }
 
-  /**
-   * Runs the provider, and takes the strategies that it builds.
-   *
-   * This derives the voxels that a strategy needs and it allocates the
-   * textures, which are the two expensive steps, so it never runs during a
-   * render. It is called when the render path adds its actor, to build the
-   * first strategies, and when the data of the volume finishes loading, so that
-   * a strategy which could not draw before can be built, and when the texture
-   * limits change (`memory`), so that the bound texture fits the new limits.
-   *
-   * A strategy that the provider builds again keeps its identity. The provider
-   * builds fresh objects, and a fresh object holds no claim on its texture set,
-   * so a run that replaced a live strategy would leave that claim behind.
-   */
-  private provisionStrategies(
-    rendering: Volume3DVolumeRendering,
-    reason: VolumeStrategyProvisionReason
-  ): void {
-    const held = rendering.strategies ?? [];
-    const built = this.provideStrategies({
-      volume: rendering.imageVolume,
-      gpuSettings: gpuSettingsForRender(),
-      viewportId: rendering.viewportId,
-      reason,
-    });
-    const strategies = built.map(
-      (fresh) => held.find((existing) => existing.name === fresh.name) ?? fresh
-    );
-
-    for (const existing of held) {
-      if (!strategies.includes(existing)) {
-        existing.deactivate();
-      }
-    }
-
-    rendering.strategies = strategies;
-
-    if (rendering.strategy && !strategies.includes(rendering.strategy)) {
-      rendering.strategy = undefined;
-      rendering.boundTexture = undefined;
-    }
-  }
-
-  /**
-   * Chooses the strategy of this render, and binds what it offers.
-   *
-   * This runs on every render, so the render path changes its strategy between
-   * two frames with no tear-down of the actor.
-   *
-   * Nothing is allocated here. The provider already built every strategy, so
-   * this member chooses among them and cannot fail.
-   */
-  private applyStrategy(rendering: Volume3DVolumeRendering): void {
-    const volume = rendering.imageVolume;
-
-    if (!volume?.voxelGrid) {
-      return;
-    }
-
-    const selected = this.selectStrategy({
-      strategies: rendering.strategies ?? [],
-      previous: rendering.strategy,
-      volume,
-      viewportId: rendering.viewportId,
-    });
-
-    if (selected !== rendering.strategy) {
-      rendering.strategy?.deactivate();
-      selected?.activate();
-      rendering.strategy = selected;
-    }
-
-    selected?.update();
-
-    this.bindStrategy(rendering, selected);
-  }
-
-  /**
-   * Binds what the strategy offers.
-   *
-   * A strategy that offers no binding is ready, and it states that the data is
-   * not in a texture. The render path then binds nothing and leaves the texture
-   * of the previous render.
-   */
-  private bindStrategy(
-    rendering: Volume3DVolumeRendering,
-    strategy: IVolumeRenderStrategy | undefined
-  ): void {
-    const bindings = strategy?.bindings() ?? [];
-    const base = bindings.find((binding) => binding.role === 'base');
-
-    if (base && base.texture !== rendering.boundTexture) {
-      // `vtkSharedVolumeMapper` adds this member, and the typing of
-      // `vtkVolumeMapper` does not hold it.
-      (
-        rendering.mapper as unknown as {
-          setScalarTexture?: (texture: unknown) => void;
-        }
-      ).setScalarTexture?.(base.texture);
-      // The grid of the new texture sets the sample distance.
-      const imageData = rendering.mapper.getInputData?.();
-
-      if (imageData) {
-        rendering.mapper.setSampleDistance(
-          sampleDistanceOf(
-            imageData,
-            base.texture,
-            idleSampleDistanceMultiplierOf(rendering.mapper)
-          )
-        );
-      }
-      rendering.mapper.modified();
-      rendering.boundTexture = base.texture;
-    }
-
-    if (base) {
-      rendering.boundGrid = { grid: base.grid, statistic: base.statistic };
-      rendering.reductionCause = strategy.reductionCause;
-    }
-
-    rendering.voxelQuality = this.readQuality(rendering);
-    rendering.qualityPending = isBindingPending(
-      rendering.imageVolume,
-      rendering.boundTexture
-    );
-    rendering.fidelityStale = false;
-    rendering.fullGrid = rendering.imageVolume?.voxelGrid;
-    // FIDELITY-RECORD-6: the current and the idle sample distance.
-    const ratios = sampleDistanceRatiosOf(
-      rendering.mapper,
-      rendering.boundTexture
-    );
-    rendering.sampleDistanceLod = ratios.current;
-    rendering.sampleDistanceIdle = ratios.idle;
-  }
-
-  /**
-   * The record of the quality of the grid that the render binds. It is read
-   * when the render binds, and again after a volume data event.
-   *
-   * The render composes this record, because the render is the only party that
-   * knows which textures it used and how it used them.
-   *
-   * A 3D render samples the whole texture, where a slice render samples one
-   * plane of it. The two therefore ask a different question of the data, and a
-   * 3D viewport and a slice viewport over one volume can report a different
-   * quality at the same moment. The record follows the grid that the mapper
-   * holds (see `readBoundQuality`).
-   */
-  private readQuality(
-    rendering: Volume3DVolumeRendering
-  ): VoxelQualityRecord | undefined {
-    return readBoundQuality(rendering.imageVolume, rendering.boundGrid);
-  }
-
   private resize(ctx: Volume3DVtkVolumeAdapterContext): void {
     ctx.display.requestRender();
   }
@@ -445,16 +230,51 @@ export class VtkVolume3DRenderPath
     ctx: Volume3DVtkVolumeAdapterContext,
     rendering: Volume3DVolumeRendering
   ): void {
-    const { actor, removeStreamingSubscriptions } = rendering;
-
-    // The actor is gone, so this render path holds no strategy any more.
-    rendering.strategy?.deactivate();
-    rendering.strategy = undefined;
-    rendering.strategies = undefined;
-
-    removeStreamingSubscriptions?.();
-    ctx.vtk.renderer.removeVolume(actor);
+    lifecycle.releaseStrategies(rendering);
+    rendering.removeStreamingSubscriptions?.();
+    ctx.vtk.renderer.removeVolume(rendering.actor);
   }
+
+  private provisionStrategies(
+    rendering: Volume3DVolumeRendering,
+    reason: VolumeStrategyProvisionReason
+  ): void {
+    lifecycle.provisionStrategies(
+      rendering,
+      this.hooks.provideStrategies,
+      reason
+    );
+  }
+
+  private applyStrategy(rendering: Volume3DVolumeRendering): void {
+    lifecycle.applyStrategy(rendering, this.hooks);
+  }
+}
+
+/**
+ * Sets the sample distance from the grid of a newly bound texture, and records
+ * the current and the idle sample distance (FIDELITY-RECORD-6).
+ */
+function bindSampleDistance(
+  rendering: Volume3DVolumeRendering,
+  textureChanged: boolean
+): void {
+  const { mapper, boundTexture } = rendering;
+  const imageData = textureChanged ? mapper.getInputData?.() : undefined;
+
+  if (imageData) {
+    mapper.setSampleDistance(
+      sampleDistanceOf(
+        imageData,
+        boundTexture,
+        idleSampleDistanceMultiplierOf(mapper)
+      )
+    );
+  }
+
+  const ratios = sampleDistanceRatiosOf(mapper, boundTexture);
+  rendering.sampleDistanceLod = ratios.current;
+  rendering.sampleDistanceIdle = ratios.idle;
 }
 
 /** @internal */
@@ -481,60 +301,6 @@ export class VtkVolume3DPath
   ): Volume3DVtkVolumeAdapterContext {
     return rootContext;
   }
-}
-
-function subscribeToVolumeEvents(
-  volumeId: string,
-  onProgress: (
-    eventType:
-      | Events.IMAGE_VOLUME_MODIFIED
-      | Events.IMAGE_VOLUME_LOADING_COMPLETED
-      | Events.VOLUME_TEXTURE_LIMITS_CHANGED
-  ) => void
-): () => void {
-  const handleProgress = (evt: Event) => {
-    const detail = (evt as CustomEvent<{ volumeId?: string }>).detail;
-
-    // A change of the texture limits names no volume, and applies to each.
-    if (
-      evt.type !== Events.VOLUME_TEXTURE_LIMITS_CHANGED &&
-      detail?.volumeId !== volumeId
-    ) {
-      return;
-    }
-
-    onProgress(
-      evt.type as
-        | Events.IMAGE_VOLUME_MODIFIED
-        | Events.IMAGE_VOLUME_LOADING_COMPLETED
-        | Events.VOLUME_TEXTURE_LIMITS_CHANGED
-    );
-  };
-
-  eventTarget.addEventListener(Events.IMAGE_VOLUME_MODIFIED, handleProgress);
-  eventTarget.addEventListener(
-    Events.IMAGE_VOLUME_LOADING_COMPLETED,
-    handleProgress
-  );
-  eventTarget.addEventListener(
-    Events.VOLUME_TEXTURE_LIMITS_CHANGED,
-    handleProgress
-  );
-
-  return () => {
-    eventTarget.removeEventListener(
-      Events.IMAGE_VOLUME_MODIFIED,
-      handleProgress
-    );
-    eventTarget.removeEventListener(
-      Events.IMAGE_VOLUME_LOADING_COMPLETED,
-      handleProgress
-    );
-    eventTarget.removeEventListener(
-      Events.VOLUME_TEXTURE_LIMITS_CHANGED,
-      handleProgress
-    );
-  };
 }
 
 function applyDataPresentation(

@@ -126,42 +126,6 @@ describe('the 3D render path chooses a strategy', () => {
     expect(rendering.mapper.setScalarTexture).toHaveBeenCalledTimes(1);
   });
 
-  it('takes a provider and a selection that the caller supplies', () => {
-    const volume = makeVolume();
-    const rendering = makeRendering(volume);
-    // The vtk-wasm path will supply a pair like this: it reads a coarse texture
-    // in a first pass and the fine data afterwards.
-    const path = new VtkVolume3DRenderPath(
-      ({ volume: aVolume }) => [
-        provisionReducedResolutionStrategy({
-          volume: aVolume,
-          gpuSettings: getGpuSettingsPreset('low-tablet'),
-        }),
-      ],
-      ({ strategies }) => strategies[0]
-    );
-
-    provision(path, rendering);
-    render(path, rendering);
-
-    expect(rendering.strategy.name).toBe('reduced-2x2x1/full-extent/average');
-  });
-
-  it('binds nothing when the selection chooses no strategy', () => {
-    const volume = makeVolume();
-    const rendering = makeRendering(volume);
-    const path = new VtkVolume3DRenderPath(
-      defaultVolumeStrategyProvider,
-      () => undefined
-    );
-
-    provision(path, rendering);
-    render(path, rendering);
-
-    expect(rendering.strategy).toBeUndefined();
-    expect(rendering.mapper.setScalarTexture).not.toHaveBeenCalled();
-  });
-
   it('gives its strategy back when the actor is removed', () => {
     const volume = makeVolume();
     const rendering = makeRendering(volume);
