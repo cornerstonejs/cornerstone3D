@@ -19,6 +19,7 @@ import Viewport from './Viewport';
 import { getOrCreateCanvas } from './helpers';
 import { getGenericViewportSourceDataId } from './GenericViewport/genericViewportDisplaySetAccess';
 import {
+  ECG_AMPLITUDE_INDEX_SIZE,
   ECG_RENDERING_COLORS,
   ECG_SECONDS_WIDTH,
   getECGFrameOfReferenceUID,
@@ -37,9 +38,6 @@ import {
   drawECGLabels,
   drawECGTraces,
 } from './GenericViewport/ECG/ecgDrawing';
-
-/** Index-space size for amplitude axis so tools (e.g. Probe) use indexWithinDimensions; Int16 range. */
-const ECG_AMPLITUDE_INDEX_SIZE = 65536;
 
 type ChannelLayout = ECGChannelLayout<ECGChannel>;
 
@@ -444,9 +442,10 @@ class ECGViewport extends Viewport {
   };
 
   /**
-   * Records the lead of the first point in `sliceIndex`, as the Generic
-   * Viewport ECG family does. The reference also has the plane of the base
-   * class, so the ECG family does not show an annotation of this class.
+   * Records the Z of the first point in `sliceIndex`. In this class, Z is the
+   * index of the visible row, so it is not the channel index when a lead is
+   * hidden. The reference also has the plane of the base class, so the ECG
+   * family does not show an annotation of this class.
    */
   public getViewReference(
     specifier: ViewReferenceSpecifier = {}

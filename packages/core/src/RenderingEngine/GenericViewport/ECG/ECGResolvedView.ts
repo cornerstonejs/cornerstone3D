@@ -93,7 +93,6 @@ class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
     return this.getGeometry().metrics;
   }
 
-  /** The trace layout definition, with a registered name resolved. */
   /**
    * The name of the layout that the view shows: the name in the view state,
    * else the default name for the waveform. Undefined for a full definition.
@@ -117,6 +116,7 @@ class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
     return { channels, numberOfSamples, samplingFrequency };
   }
 
+  /** The trace layout definition, with a registered name resolved. */
   get traceLayout(): ECGTraceLayoutDefinition {
     this.cachedDefinition ||= resolveECGTraceLayout(
       this.state.viewState.traceLayout,
@@ -293,10 +293,7 @@ class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
     });
 
     if (!layout && channelLayouts.length > 0) {
-      // Pick the nearest cell by the distance to its rectangle, in both axes.
-      // A comparison of the vertical distance alone always returned column 0 in
-      // a multi-column layout, because every cell of a row shares one vertical
-      // distance.
+      // The nearest cell by the distance to its rectangle, in both axes.
       layout = channelLayouts.reduce(
         (nearest, item) =>
           this.getDistanceToCell(subCanvasPos, item) <
