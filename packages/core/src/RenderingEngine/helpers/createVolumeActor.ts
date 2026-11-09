@@ -6,6 +6,7 @@ import { loadVolume } from '../../loaders/volumeLoader';
 import createVolumeMapper from './createVolumeMapper';
 import { resolveVolumeTexture } from './resolveVolumeTexture';
 import type { ResolveVolumeTextureOptions } from './resolveVolumeTexture';
+import { claimLegacyActorTextureSet } from './legacyActorTextureSet';
 import type BlendModes from '../../enums/BlendModes';
 import triggerEvent from '../../utilities/triggerEvent';
 import { Events } from '../../enums';
@@ -57,11 +58,14 @@ async function createVolumeActor(
   // render path, so this one choice is what gives it the reduction that the
   // capability of the device requires. A render path passes its own provider
   // here and then keeps choosing on every render.
-  const { texture: vtkOpenGLTexture } = resolveVolumeTexture(imageVolume, {
-    provideStrategies: props.provideStrategies,
-    selectStrategy: props.selectStrategy,
-    viewportId,
-  });
+  const { strategy, texture: vtkOpenGLTexture } = resolveVolumeTexture(
+    imageVolume,
+    {
+      provideStrategies: props.provideStrategies,
+      selectStrategy: props.selectStrategy,
+      viewportId,
+    }
+  );
 
   // A render path applies its strategies after the mount, and it binds the
   // base texture then, so only a legacy caller needs a texture here.
@@ -82,6 +86,10 @@ async function createVolumeActor(
 
   const volumeActor = vtkVolume.newInstance();
   volumeActor.setMapper(volumeMapper);
+
+  if (!usesRenderPath) {
+    claimLegacyActorTextureSet(volumeActor, imageVolume, strategy.name);
+  }
 
   // Todo: fix this for 3D RGB
   const { numberOfComponents } = imageData.get('numberOfComponents') as {

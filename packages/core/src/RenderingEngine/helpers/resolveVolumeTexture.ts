@@ -43,11 +43,10 @@ export type ResolvedVolumeTexture = {
  * every render. The provision is idempotent, so the render path finds the sets
  * that this call already built.
  *
- * A render path claims the set of the strategy that it selects, and releases
- * the claim when it stops drawing. A legacy viewport has no point at which it
- * could release a claim, so this pins the set that a legacy viewport draws: the
- * set then lives as long as its volume, which is how long the one texture of a
- * volume lived before the store existed. A budget never evicts a pinned set.
+ * This takes no claim. A render path claims the set of the strategy that it
+ * selects, and releases the claim when it stops drawing. For a legacy viewport,
+ * `createVolumeActor` ties the claim to the actor, see
+ * `claimLegacyActorTextureSet`.
  */
 export function resolveVolumeTexture(
   volume: IImageVolume,
@@ -58,10 +57,6 @@ export function resolveVolumeTexture(
     selectStrategy = selectFirstReadyStrategy,
     viewportId,
   } = options;
-  const isLegacy =
-    options.provideStrategies === undefined &&
-    options.selectStrategy === undefined;
-
   if (!volume?.voxelGrid) {
     return {};
   }
@@ -78,10 +73,6 @@ export function resolveVolumeTexture(
     viewportId,
   });
   const base = strategy?.bindings().find((binding) => binding.role === 'base');
-
-  if (isLegacy && strategy && base) {
-    volume.pinTextureSet(strategy.name);
-  }
 
   return { strategy, texture: base?.texture };
 }

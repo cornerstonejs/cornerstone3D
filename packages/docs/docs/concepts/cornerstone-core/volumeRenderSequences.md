@@ -112,13 +112,14 @@ sequenceDiagram
     Prov-->>RVT: [FullExtentTextureStrategy]
     RVT->>RVT: selectFirstReadyStrategy({ strategies })
     RVT->>RVT: strategy.bindings(), take the 'base' texture
-    opt a legacy viewport (no provider and no selection given)
-        RVT->>Vol: pinTextureSet(name)
-    end
     RVT-->>CA: { strategy, texture }
     CA->>Map: createVolumeMapper(imageData, texture)
     Map->>Map: setSampleDistance(sampleDistanceOf(imageData, texture))
     Map->>Map: setScalarTexture(texture)
+    opt a legacy viewport (no provider and no selection given)
+        CA->>Vol: claimTextureSet(name), tied to the actor
+        Note over CA: The viewport releases the claim when it removes the actor<br/>or ends, and claims again when it adds the actor back.
+    end
     Note over Tex: The texture holds no data yet.<br/>Every render fills only the slices that a delivery marked.
 ```
 

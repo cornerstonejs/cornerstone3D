@@ -294,9 +294,10 @@ anything mutable that it holds.
 strategy share one set, and they do not allocate two.
 
 **VRS-C-8.** The set is the unit of eviction. A budget never evicts a set that a viewport draws: a
-render path claims the set that it draws, and a legacy viewport, which has no point at which it
-could release a claim, draws a pinned set that leaves with its volume. A backstop set is evicted
-last, so a fill always finds a source.
+render path claims the set that it draws. A legacy viewport claims the set of each volume actor
+while it holds that actor, and releases the claim when it removes the actor or ends, so a budget
+can evict the set of a volume that no viewport draws. A backstop set is evicted last, so a fill
+always finds a source.
 
 **VRS-C-9.** The identity of a texture is stable and is not its grid. The grid is state of that
 texture, which is what lets a basis point move.

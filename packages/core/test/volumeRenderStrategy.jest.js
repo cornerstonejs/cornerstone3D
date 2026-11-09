@@ -642,28 +642,4 @@ describe('the actor helpers choose a strategy for either architecture', () => {
       0
     );
   });
-
-  it('pins the set that a legacy viewport draws', () => {
-    // A legacy viewport holds no claim, so a budget could otherwise evict the
-    // texture that it draws.
-    const volume = makeVolume();
-
-    resolveVolumeTexture(volume);
-
-    expect(volume.getTextureSet('full-resolution/full-extent').pinned).toBe(
-      true
-    );
-  });
-
-  it('pins nothing for a render path, which claims instead', () => {
-    const volume = makeVolume();
-
-    resolveVolumeTexture(volume, {
-      provideStrategies: defaultVolumeStrategyProvider,
-    });
-
-    expect(volume.getTextureSet('full-resolution/full-extent').pinned).toBe(
-      false
-    );
-  });
 });

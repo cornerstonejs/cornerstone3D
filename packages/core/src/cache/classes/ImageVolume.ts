@@ -563,14 +563,6 @@ export class ImageVolume {
     return volumeTextureStore.claim(this.volumeId, name);
   }
 
-  /**
-   * Keeps a named set until this volume leaves the cache, whatever the budget.
-   * A legacy viewport draws a set that it holds no claim on, so it pins it.
-   */
-  public pinTextureSet(name: string): boolean {
-    return volumeTextureStore.pin(this.volumeId, name);
-  }
-
   /** Gives one holder of a named set back. */
   public releaseTextureSet(name: string): boolean {
     return volumeTextureStore.release(this.volumeId, name);

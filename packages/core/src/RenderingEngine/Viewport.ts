@@ -65,6 +65,7 @@ import type {
 import { buildViewportFidelityState } from './helpers/fidelityIndicator/buildViewportFidelityState';
 import { displaySpacingOfViewport } from './helpers/fidelityIndicator/displaySpacingOfViewport';
 import { notifyFidelityStateChanged } from './helpers/fidelityIndicator/notifyFidelityStateChanged';
+import { holdLegacyActorTextureSet } from './helpers/legacyActorTextureSet';
 
 /**
  * An object representing a single viewport, which is a camera
@@ -292,8 +293,11 @@ class Viewport implements IViewportFidelity {
   };
 
   public dispose(): void {
-    // Legacy viewports do not own extra teardown beyond the rendering engine
-    // reset path and widget cleanup above.
+    // Beyond the rendering engine reset path and the widget cleanup above, a
+    // legacy viewport only gives back the texture sets that its actors hold.
+    this._actors?.forEach(({ actor }) =>
+      holdLegacyActorTextureSet(actor, false)
+    );
   }
 
   public destroy(): void {
@@ -743,6 +747,7 @@ class Viewport implements IViewportFidelity {
     const renderer = this.getRenderer();
     renderer.removeActor(actorEntry.actor as vtkActor);
     this._actors.delete(actorUID);
+    holdLegacyActorTextureSet(actorEntry.actor, false);
 
     return actorEntry;
   }
@@ -848,6 +853,7 @@ class Viewport implements IViewportFidelity {
     const renderer = this.getRenderer();
     renderer?.addActor(actor as vtkActor);
     this._actors.set(actorUID, Object.assign({}, actorEntry));
+    holdLegacyActorTextureSet(actor, true);
 
     // when we add an actor we should update the camera clipping range and
     // clipping planes as well
@@ -869,6 +875,9 @@ class Viewport implements IViewportFidelity {
     const currentActors = this.getActors();
     this.getRenderer()?.removeAllViewProps();
     this._actors = new Map();
+    currentActors.forEach(({ actor }) =>
+      holdLegacyActorTextureSet(actor, false)
+    );
 
     // Trigger ACTORS_CHANGED event when removing all actors
     triggerEvent(this.element, Events.ACTORS_CHANGED, {
