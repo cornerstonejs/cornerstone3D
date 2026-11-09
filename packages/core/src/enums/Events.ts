@@ -172,6 +172,13 @@ enum Events {
    */
   VOLUME_CACHE_VOLUME_REMOVED = 'CORNERSTONE_VOLUME_CACHE_VOLUME_REMOVED',
   /**
+   * Internal. Triggers on the eventTarget when the settings that size a volume
+   * texture change: the GPU settings preset, the lossy downsampling or the
+   * texture budget. Each viewport that draws a volume chooses its texture
+   * again. The event has no detail.
+   */
+  VOLUME_TEXTURE_LIMITS_CHANGED = 'CORNERSTONE_VOLUME_TEXTURE_LIMITS_CHANGED',
+  /**
    * Triggers on the element when a new image is set on the stackViewport
    *
    * Make use of {@link EventTypes.StackNewImageEvent | StackNewImage Event Type } for typing your event listeners for STACK_NEW_IMAGE event,

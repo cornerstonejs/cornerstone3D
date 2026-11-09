@@ -45,7 +45,9 @@ an edge between 231 and 256. Each texel covers its exact range of the source, se
 ## 1. The application selects the GPU settings and creates the volume
 
 Nothing probes the device. The application turns on final downsampling and selects a preset
-before a viewport adds its actor. A viewport reads the preset only at that moment.
+before a viewport adds its actor. A viewport reads the preset when it adds its actor, and again
+when the preset, the lossy downsampling or the texture budget changes. Each viewport that draws the
+volume then binds a texture that fits the new limits.
 
 ```mermaid
 sequenceDiagram

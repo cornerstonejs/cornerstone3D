@@ -27,6 +27,9 @@ import type {
 } from '../../types';
 import ImageQualityStatus from '../../enums/ImageQualityStatus';
 import VoxelStatistics from '../../enums/VoxelStatistics';
+import Events from '../../enums/Events';
+import eventTarget from '../../eventTarget';
+import triggerEvent from '../../utilities/triggerEvent';
 import cache from '../cache';
 import type vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture';
 import { coreLog } from '../../utilities/logger';
@@ -494,6 +497,7 @@ export class ImageVolume {
    */
   public static setTextureBudget(bytes: number): void {
     volumeTextureStore.setBudget(bytes);
+    triggerEvent(eventTarget, Events.VOLUME_TEXTURE_LIMITS_CHANGED);
   }
 
   /** Removes every texture set of every volume. */

@@ -87,8 +87,9 @@ export interface IVolumeRenderStrategy {
  *
  * - `loaded` — the data of the volume finished loading, so a strategy that
  *   could not draw before may now be worth building;
- * - `memory` — the budget of the texture memory changed, or the store evicted a
- *   set, so a strategy may need to be rebuilt or replaced by a cheaper one.
+ * - `memory` — the GPU settings preset, the lossy downsampling or the texture
+ *   budget changed, so a strategy may need to be rebuilt or replaced by a
+ *   cheaper one.
  *
  * A render component may state a reason of its own, and the type admits one.
  */

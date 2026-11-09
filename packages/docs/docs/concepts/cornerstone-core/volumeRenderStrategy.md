@@ -44,7 +44,7 @@ already exists.
   ║                                                                                 ║
   ║   a rebuild runs the provider again, on one of two events, and NEVER on a       ║
   ║   render:   loaded  the data finished loading                                   ║
-  ║             memory  the budget changed, or the store evicted a set              ║
+  ║             memory  the preset, the downsampling or the budget changed          ║
   ╚═════════════════════════════════════════════════════════════════════════════════╝
                                │
                                │  held by the render path
@@ -184,10 +184,10 @@ reads it, so the primary grid answers over its whole extent.
 **The provider runs again whenever something changes that could change its answer.** A render path
 is long-lived, and two things move under it:
 
-| Reason   | What changed                                                                                                                                              |
-| -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `loaded` | The data of the volume finished loading, so a strategy that could not draw before may now be worth building                                               |
-| `memory` | The budget of the texture memory changed, or the store evicted a set, so a strategy may need to be rebuilt, or replaced by one that the device can afford |
+| Reason   | What changed                                                                                                                                                       |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `loaded` | The data of the volume finished loading, so a strategy that could not draw before may now be worth building                                                        |
+| `memory` | The GPU settings preset, the lossy downsampling or the texture budget changed, so a strategy may need to be rebuilt, or replaced by one that the device can afford |
 
 **A rebuild is an event, and never a render**, so `VRS-C-1` still holds: nothing allocates on the
 frame path.

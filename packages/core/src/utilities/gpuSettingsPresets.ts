@@ -1,5 +1,8 @@
 import type { VoxelGridLimits } from '../types';
 import { getLossyDownsampling, getShouldUseCPURendering } from '../init';
+import Events from '../enums/Events';
+import eventTarget from '../eventTarget';
+import triggerEvent from './triggerEvent';
 
 /**
  * How fast a device of this class draws, on a relative scale.
@@ -139,6 +142,7 @@ function setGpuSettingsPreset(id: GpuSettingsPresetId): void {
   getGpuSettingsPreset(id);
 
   activePresetId = id;
+  triggerEvent(eventTarget, Events.VOLUME_TEXTURE_LIMITS_CHANGED);
 }
 
 /** The GPU settings that apply now. */
@@ -162,6 +166,7 @@ function gpuSettingsForRender(): GpuSettings | undefined {
 /** Returns to the default preset. */
 function resetGpuSettingsPreset(): void {
   activePresetId = DEFAULT_PRESET_ID;
+  triggerEvent(eventTarget, Events.VOLUME_TEXTURE_LIMITS_CHANGED);
 }
 
 /**

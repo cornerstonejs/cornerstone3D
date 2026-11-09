@@ -472,14 +472,15 @@ function getLossyDownsampling(): Required<LossyDownsampling> {
 
 /**
  * Turns kinds of lossy downsampling on or off. A kind that `change` omits keeps
- * its value. A viewport that already holds a texture keeps it until its next
- * provision, so an application states this before it opens a viewport.
+ * its value. Each viewport that draws a volume then chooses its texture
+ * again.
  */
 function setLossyDownsampling(change: LossyDownsampling): void {
   config.rendering = {
     ...config.rendering,
     lossyDownsampling: { ...getLossyDownsampling(), ...change },
   };
+  triggerEvent(eventTarget, Events.VOLUME_TEXTURE_LIMITS_CHANGED);
 }
 
 async function peerImport(moduleId: string) {

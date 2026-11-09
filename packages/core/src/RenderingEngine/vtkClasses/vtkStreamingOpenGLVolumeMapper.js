@@ -476,8 +476,9 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
             // has not started. An allocation that the device cannot hold fails
             // inside the driver, and the viewport then shows black, which is
             // the defect that issue #2921 names. The mapper refuses that
-            // allocation instead, and the render path draws what it drew
-            // before. MR-API-IV-7, and acceptance criterion 15.
+            // allocation instead and draws nothing for this volume. A change
+            // of the limits rebinds a texture that fits them, so a refusal
+            // lasts only until then. MR-API-IV-7, and acceptance criterion 15.
             if (
               !gridFitsGpuSettings(dims, dataType, textureNumberOfComponents, {
                 volumeId: currentTexture.getVolumeId?.(),

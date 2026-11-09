@@ -244,6 +244,12 @@ export class VtkVolume3DRenderPath
       return;
     }
 
+    if (eventType === Events.VOLUME_TEXTURE_LIMITS_CHANGED) {
+      this.provisionStrategies(rendering, 'memory');
+      this.applyStrategy(rendering);
+      return;
+    }
+
     if (!rendering.excludeFromFidelity) {
       rendering.fidelityStale = true;
     }
@@ -278,8 +284,8 @@ export class VtkVolume3DRenderPath
    * textures, which are the two expensive steps, so it never runs during a
    * render. It is called when the render path adds its actor, to build the
    * first strategies, and when the data of the volume finishes loading, so that
-   * a strategy which could not draw before can be built. A later caller states
-   * its own reason.
+   * a strategy which could not draw before can be built, and when the texture
+   * limits change (`memory`), so that the bound texture fits the new limits.
    *
    * A strategy that the provider builds again keeps its identity. The provider
    * builds fresh objects, and a fresh object holds no claim on its texture set,
@@ -475,12 +481,17 @@ function subscribeToVolumeEvents(
     eventType:
       | Events.IMAGE_VOLUME_MODIFIED
       | Events.IMAGE_VOLUME_LOADING_COMPLETED
+      | Events.VOLUME_TEXTURE_LIMITS_CHANGED
   ) => void
 ): () => void {
   const handleProgress = (evt: Event) => {
     const detail = (evt as CustomEvent<{ volumeId?: string }>).detail;
 
-    if (detail?.volumeId !== volumeId) {
+    // A change of the texture limits names no volume, and applies to each.
+    if (
+      evt.type !== Events.VOLUME_TEXTURE_LIMITS_CHANGED &&
+      detail?.volumeId !== volumeId
+    ) {
       return;
     }
 
@@ -488,12 +499,17 @@ function subscribeToVolumeEvents(
       evt.type as
         | Events.IMAGE_VOLUME_MODIFIED
         | Events.IMAGE_VOLUME_LOADING_COMPLETED
+        | Events.VOLUME_TEXTURE_LIMITS_CHANGED
     );
   };
 
   eventTarget.addEventListener(Events.IMAGE_VOLUME_MODIFIED, handleProgress);
   eventTarget.addEventListener(
     Events.IMAGE_VOLUME_LOADING_COMPLETED,
+    handleProgress
+  );
+  eventTarget.addEventListener(
+    Events.VOLUME_TEXTURE_LIMITS_CHANGED,
     handleProgress
   );
 
@@ -504,6 +520,10 @@ function subscribeToVolumeEvents(
     );
     eventTarget.removeEventListener(
       Events.IMAGE_VOLUME_LOADING_COMPLETED,
+      handleProgress
+    );
+    eventTarget.removeEventListener(
+      Events.VOLUME_TEXTURE_LIMITS_CHANGED,
       handleProgress
     );
   };

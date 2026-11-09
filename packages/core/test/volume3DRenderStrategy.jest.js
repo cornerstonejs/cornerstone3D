@@ -21,8 +21,19 @@ import { VoxelManager } from '../src/utilities';
 import {
   getGpuSettingsPreset,
   resetGpuSettingsPreset,
+  setGpuSettingsPreset,
 } from '../src/utilities/gpuSettingsPresets';
 import { setLossyDownsampling } from '../src/init';
+
+const mockVolumes = new Map();
+
+jest.mock('../src/loaders/volumeLoader', () => ({
+  loadVolume: async (volumeId) => mockVolumes.get(volumeId),
+}));
+jest.mock('../src/RenderingEngine/helpers/setDefaultVolumeVOI', () => ({
+  __esModule: true,
+  default: async () => undefined,
+}));
 
 // These tests check the reductions of final downsampling, which is off by
 // default.
@@ -232,5 +243,48 @@ describe('two viewports over one volume report independently', () => {
     expect(volume.getTextureSet('full-resolution/full-extent').references).toBe(
       2
     );
+  });
+});
+
+describe('the 3D render path follows a change of the GPU settings', () => {
+  it('binds a texture that fits the new preset when it changes before the first render', async () => {
+    const volume = makeVolume({ volumeId: 'volume-preset' });
+    const requestRender = jest.fn();
+    const ctx = {
+      viewportId: 'viewport-3d',
+      viewport: { element: document.createElement('div') },
+      display: { requestRender },
+      vtk: {
+        renderer: {
+          // A volume is already there, so the path sets no initial camera.
+          getVolumes: () => [{}],
+          addVolume: () => undefined,
+          removeVolume: () => undefined,
+          getActiveCamera: () => ({
+            getParallelProjection: () => false,
+            setClippingRange: () => undefined,
+          }),
+        },
+      },
+    };
+
+    mockVolumes.set(volume.volumeId, volume);
+
+    const { rendering, removeData } = await new VtkVolume3DRenderPath().addData(
+      ctx,
+      { type: 'image', volumeId: volume.volumeId, imageVolume: volume },
+      {}
+    );
+
+    expect(rendering.boundTexture.getGrid().dimensions).toEqual(dimensions);
+
+    setGpuSettingsPreset('low');
+
+    expect(rendering.boundTexture.getGrid().dimensions).toEqual([256, 256, 8]);
+    expect(rendering.mapper.getScalarTexture()).toBe(rendering.boundTexture);
+    expect(requestRender).toHaveBeenCalled();
+
+    removeData();
+    mockVolumes.clear();
   });
 });
