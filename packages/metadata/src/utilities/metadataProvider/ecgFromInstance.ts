@@ -15,6 +15,7 @@ import {
 } from '@cornerstonejs/utils';
 import { getSingleBufferFromArray } from '../bulkDataFromArray';
 import { decodeMultipartRelated } from '../decodeMultipartRelated';
+import { frameRangeExtractor } from './uriModule';
 
 const cs3dLogger = cornerstoneLogging.metadataLog.getLogger(
   'utilities.metadataProvider.ecgFromInstance'
@@ -497,8 +498,27 @@ export function parseEcgAnnotations(
 export interface BuildEcgModuleOptions {
   /** Extra request headers for a `BulkDataURI` fetch, for example auth headers. */
   getHeaders?: () => Record<string, string> | undefined;
-  /** Preferred multiplex group index (0-based) when WaveformSequence has multiple groups. */
+  /**
+   * The multiplex group to show (0-based). The providers take it from the
+   * image id; see {@link getEcgMultiplexGroupIndex}.
+   */
   multiplexGroupIndex?: number;
+}
+
+/**
+ * The multiplex group that an ECG image id names. Frame N of the image id
+ * (`/frames/N`, `frame=N`) is group N - 1. An image id with no frame gives
+ * undefined, and {@link findPrimaryWaveformGroup} picks the default group. The
+ * ECG and CALIBRATION providers both use this, so the trace and the
+ * calibration always describe the same group.
+ */
+export function getEcgMultiplexGroupIndex(
+  imageId?: string
+): number | undefined {
+  const match = imageId?.match(frameRangeExtractor);
+  const frame = match ? Number.parseInt(match[2], 10) : NaN;
+
+  return frame >= 1 ? frame - 1 : undefined;
 }
 
 /**
@@ -720,7 +740,9 @@ const ecgFromInstanceProvider: TypedProvider = (next, query, data, options) => {
   if (!hasWaveform) {
     return next(query, data, options);
   }
-  const result = buildEcgModuleFromInstance(instance, query);
+  const result = buildEcgModuleFromInstance(instance, query, {
+    multiplexGroupIndex: getEcgMultiplexGroupIndex(query),
+  });
   return result ?? next(query, data, options);
 };
 
@@ -736,7 +758,10 @@ const ecgCalibrationProvider: TypedProvider = (next, query, data, options) => {
   const raw = instance?.WaveformSequence;
   const groups = toArray(raw as ArrayLike<Record<string, unknown>> | undefined);
   if (!groups.length) return next(query, data, options);
-  const { group } = findPrimaryWaveformGroup(groups);
+  const { group } = findPrimaryWaveformGroup(
+    groups,
+    getEcgMultiplexGroupIndex(query)
+  );
   const numberOfWaveformSamples =
     (group.NumberOfWaveformSamples as number) ?? 0;
   const samplingFrequency = (group.SamplingFrequency as number) ?? 1;
