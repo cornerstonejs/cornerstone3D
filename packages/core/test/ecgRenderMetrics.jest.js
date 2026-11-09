@@ -139,14 +139,16 @@ describe('ECG render metrics', () => {
       );
     });
 
-    it('uses one amplitude scale for every channel when the amplitude auto-fits', () => {
+    it('draws 1 mV at one height on every lead when the amplitude auto-fits', () => {
       const lead1 = makeChannel('Lead I');
       const lead2 = makeChannel('Lead II');
       lead2.mvPerUnit = 0.002;
 
       const { layouts } = geometryFor([lead1, lead2]);
+      const pxPerMv = (layout) =>
+        layout.channelScale / layout.channel.mvPerUnit;
 
-      expect(layouts[1].channelScale).toBe(layouts[0].channelScale);
+      expect(pxPerMv(layouts[1])).toBeCloseTo(pxPerMv(layouts[0]), 9);
     });
   });
 
