@@ -110,10 +110,136 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
       // New storage reads 0, so a slice with no data needs no upload until a
       // slice with data was written there.
       model.writtenSlices = new Uint8Array(options.depth);
+      startStorageInit(options.dataType, options.numComps);
       publicAPI.markAllFramesUpdated();
     }
 
     return created;
+  };
+
+  /**
+   * Starts the zero-initialisation of new storage, and does not wait for it.
+   *
+   * A browser allocates `texStorage3D` storage lazily and clears the whole
+   * level at its first use. For a large volume the clear takes seconds of GPU
+   * time, and an upload or a draw that samples the texture then blocks the main
+   * thread until the clear ends. A 1x1x1 upload starts the clear now, and a
+   * fence tells when it ends. Until then the texture skips its uploads and the
+   * mappers skip the draw of the actor (see {@link isInitializing}).
+   *
+   * Without WebGL2 fences, the texture keeps the blocking behaviour.
+   */
+  function startStorageInit(dataType, numComps) {
+    releaseInitFence();
+
+    const gl = model.context;
+
+    if (typeof gl?.fenceSync !== 'function') {
+      return;
+    }
+
+    let pixData;
+
+    try {
+      const Constructor = getConstructorFromType(dataType, false);
+      [pixData] = publicAPI.updateArrayDataTypeForGL(dataType, [
+        new Constructor(numComps || 1),
+      ]);
+    } catch {
+      return;
+    }
+
+    model._openGLRenderWindow.activateTexture(publicAPI);
+    publicAPI.bind();
+    gl.texSubImage3D(
+      model.target,
+      0,
+      0,
+      0,
+      0,
+      1,
+      1,
+      1,
+      model.format,
+      model.openGLDataType,
+      pixData
+    );
+    publicAPI.deactivate();
+
+    const sync = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0);
+
+    if (!sync) {
+      return;
+    }
+
+    model.initFence = { gl, sync };
+    gl.flush();
+    pollInitFence();
+  }
+
+  function releaseInitFence() {
+    const fence = model.initFence;
+
+    model.initFence = null;
+
+    if (fence && !fence.gl.isContextLost()) {
+      fence.gl.deleteSync(fence.sync);
+    }
+  }
+
+  /**
+   * Polls the fence of {@link startStorageInit} from a timer, never with a
+   * blocking wait, and renders the viewports of the volume when it signals.
+   */
+  function pollInitFence() {
+    if (model.initFencePolling) {
+      return;
+    }
+
+    model.initFencePolling = true;
+
+    const poll = () => {
+      if (publicAPI.isInitializing()) {
+        setTimeout(poll, 16);
+        return;
+      }
+
+      model.initFencePolling = false;
+      publicAPI.modified();
+
+      if (model.volumeId) {
+        autoLoad(model.volumeId);
+      }
+    };
+
+    setTimeout(poll, 16);
+  }
+
+  /**
+   * Whether the browser still clears the storage of this allocation. A mapper
+   * must not draw an actor that samples this texture while this is true: the
+   * draw would wait for the clear, and a readback of the context then blocks
+   * the main thread. A lost context counts as done.
+   */
+  publicAPI.isInitializing = () => {
+    const fence = model.initFence;
+
+    if (!fence) {
+      return false;
+    }
+
+    const { gl, sync } = fence;
+
+    if (
+      !gl.isContextLost() &&
+      gl.getSyncParameter(sync, gl.SYNC_STATUS) !== gl.SIGNALED
+    ) {
+      return true;
+    }
+
+    releaseInitFence();
+
+    return false;
   };
 
   const superReleaseGraphicsResources = publicAPI.releaseGraphicsResources;
@@ -127,6 +253,7 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
   publicAPI.releaseGraphicsResources = (rwin) => {
     const window = model._openGLRenderWindow;
 
+    releaseInitFence();
     superReleaseGraphicsResources(
       rwin ?? (window?.isDeleted?.() ? undefined : window)
     );
@@ -155,7 +282,8 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
 
     const volume = cache.getVolume(volumeId);
 
-    if (!volume) {
+    // The slices stay marked, and the fence poll renders again.
+    if (!volume || publicAPI.isInitializing()) {
       return;
     }
 

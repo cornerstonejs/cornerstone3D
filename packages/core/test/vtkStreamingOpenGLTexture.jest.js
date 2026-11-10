@@ -161,4 +161,30 @@ describe('vtkStreamingOpenGLTexture budgeted fill of a reduced texture', () => {
 
     expect(uploadedSlices()).toEqual([3]);
   });
+
+  // The API must do this: no upload while the browser clears new storage,
+  // and the fence is deleted once it signals.
+  it('waits for the storage fence before an upload', () => {
+    const { texture, model, uploadedSlices } = reducedTexture();
+    const gl = {
+      SYNC_STATUS: 1,
+      SIGNALED: 2,
+      getSyncParameter: jest.fn(() => 0),
+      isContextLost: () => false,
+      deleteSync: jest.fn(),
+    };
+    model.initFence = { gl, sync: {} };
+
+    texture.update3DFromRaw();
+
+    expect(texture.isInitializing()).toBe(true);
+    expect(uploadedSlices()).toEqual([]);
+
+    gl.getSyncParameter.mockReturnValue(gl.SIGNALED);
+    texture.update3DFromRaw();
+
+    expect(texture.isInitializing()).toBe(false);
+    expect(gl.deleteSync).toHaveBeenCalledTimes(1);
+    expect(uploadedSlices()).toEqual([0, 1]);
+  });
 });
