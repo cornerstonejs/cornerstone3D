@@ -106,16 +106,25 @@ export default function convertContourHoles(
           keys[index]
         ) as ContourSegmentationAnnotation;
         clearParentAnnotation(annotation);
-        if (
-          targetSegmentationId &&
-          typeof targetSegmentationIndex === 'number'
-        ) {
-          // Move to another segmentation/segment
+
+        if (targetUIDsSet) {
+          // Move to another segmentation/segment. The source set can hold the
+          // hole too, so take it out there.
+          annotationsUIDsSet.delete(annotation.annotationUID);
           targetUIDsSet.add(annotation.annotationUID);
         } else {
           // Add the annotationUID of the hole to the annotationUIDsSet in the current segmentation and segmentIndex
           annotationsUIDsSet.add(annotation.annotationUID);
         }
+
+        // The style and every other consumer read the segment from the
+        // annotation itself, not from the annotationUIDsMap, so the annotation
+        // has to name the segment it now belongs to.
+        annotation.data.segmentation = {
+          ...annotation.data.segmentation,
+          segmentationId: targetUIDsSet ? targetSegmentationId : segmentationId,
+          segmentIndex: targetUIDsSet ? targetSegmentationIndex : segmentIndex,
+        };
       });
     });
   }
