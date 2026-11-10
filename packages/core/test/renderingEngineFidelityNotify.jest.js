@@ -3,6 +3,7 @@ import BaseRenderingEngine from '../src/RenderingEngine/BaseRenderingEngine';
 import Viewport from '../src/RenderingEngine/Viewport';
 import GenericViewport from '../src/RenderingEngine/GenericViewport/GenericViewport';
 import Events from '../src/enums/Events';
+import actorsWaitingForStorage from '../src/RenderingEngine/helpers/actorsWaitingForStorage';
 
 function viewportStub(id) {
   return { id, notifyFidelityStateChanged: jest.fn() };
@@ -75,5 +76,32 @@ describe('rendering engine fidelity notification (FIDELITY-EVENT-2)', () => {
       expect(viewport.getFidelityState().shownState).toBe('hidden');
     }
     expect(events).toEqual([]);
+  });
+});
+
+describe('rendering engine and a draw that waits for texture storage', () => {
+  const waits = (actors, renderStart) =>
+    BaseRenderingEngine.prototype._waitsForStorage.call(
+      {},
+      { getActors: () => actors.map((actor) => ({ actor })) },
+      renderStart
+    );
+
+  it('withholds the events only when no actor of the render drew', () => {
+    const ct = {};
+    const pet = {};
+    const renderStart = performance.now();
+
+    actorsWaitingForStorage.set(ct, performance.now());
+    expect(waits([ct], renderStart)).toBe(true);
+    // A PET that drew over a waiting CT keeps IMAGE_RENDERED for the annotations.
+    expect(waits([ct, pet], renderStart)).toBe(false);
+  });
+
+  it('ignores a skip from an earlier render', () => {
+    const ct = {};
+
+    actorsWaitingForStorage.set(ct, performance.now() - 100);
+    expect(waits([ct], performance.now())).toBe(false);
   });
 });

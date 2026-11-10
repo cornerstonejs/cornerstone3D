@@ -130,6 +130,8 @@ abstract class BaseVolumeViewport extends Viewport {
   private _fidelityRecordListenersAttached = false;
   /** Set on ELEMENT_DISABLED of this element; the listeners never return. */
   private _fidelityRecordsDisposed = false;
+  /** The pending animation frame of a coalesced fidelity notification. */
+  private _fidelityNotifyFrame = 0;
 
   public canReportFidelity(): boolean {
     return true;
@@ -146,6 +148,13 @@ abstract class BaseVolumeViewport extends Viewport {
    * listeners are removed on ELEMENT_DISABLED of this element, so
    * a disabled viewport does not stay in memory. `_reset` fires that event
    * without `isDisabled`, so a disposed flag stops a later attach.
+   *
+   * A streaming load fires `IMAGE_VOLUME_MODIFIED` once for each image, and
+   * each state computation reads the quality record of the volume. The
+   * notification of that event therefore runs at most once for each animation
+   * frame, after the last event of the frame, so no update is lost.
+   * `IMAGE_VOLUME_LOADING_COMPLETED` notifies at once, and a render notifies
+   * through the rendering engine, so a user interaction is not delayed.
    */
   private ensureFidelityRecordInvalidation(): void {
     if (
@@ -157,6 +166,11 @@ abstract class BaseVolumeViewport extends Viewport {
     }
     this._fidelityRecordListenersAttached = true;
 
+    const cancelFrame = () => {
+      cancelAnimationFrame(this._fidelityNotifyFrame);
+      this._fidelityNotifyFrame = 0;
+    };
+
     const invalidate = (evt: Event) => {
       const { volumeId } = (evt as CustomEvent<{ volumeId?: string }>).detail;
       if (volumeId) {
@@ -165,7 +179,17 @@ abstract class BaseVolumeViewport extends Viewport {
         this._fidelityRecords.clear();
       }
       // A volume event can change the state with no render after it.
-      this.notifyFidelityStateChanged();
+      if (evt.type !== Events.IMAGE_VOLUME_MODIFIED) {
+        cancelFrame();
+        this.notifyFidelityStateChanged();
+      } else if (!this._fidelityNotifyFrame) {
+        this._fidelityNotifyFrame = requestAnimationFrame(() => {
+          this._fidelityNotifyFrame = 0;
+          if (!this._fidelityRecordsDisposed && !this.isDisabled) {
+            this.notifyFidelityStateChanged();
+          }
+        });
+      }
     };
 
     const cleanUp = (evt: Event) => {
@@ -183,6 +207,7 @@ abstract class BaseVolumeViewport extends Viewport {
         invalidate
       );
       eventTarget.removeEventListener(Events.ELEMENT_DISABLED, cleanUp);
+      cancelFrame();
       this._fidelityRecords.clear();
       this._fidelityRecordsDisposed = true;
     };

@@ -9,6 +9,7 @@ import viewportTypeUsesCustomRenderingPipeline, {
   viewportUsesCustomRenderingPipeline,
 } from './helpers/viewportTypeUsesCustomRenderingPipeline';
 import getOrCreateCanvas from './helpers/getOrCreateCanvas';
+import { skippedDrawSince } from './helpers/actorsWaitingForStorage';
 import {
   setElementTouchActionNone,
   restoreElementTouchAction,
@@ -699,6 +700,30 @@ abstract class BaseRenderingEngine {
 
       viewport.notifyFidelityStateChanged();
     });
+  }
+
+  /**
+   * Whether the render of this viewport that started at `renderStart`
+   * (`performance.now()`) drew no actor, because every actor waits for its
+   * texture storage (see `actorsWaitingForStorage`). The engine then fires no
+   * `IMAGE_RENDERED` and no fidelity event for that empty frame. When any actor
+   * drew, for example a small PET over a waiting CT, the engine fires the
+   * events, so the annotations follow the camera of the frame that shows.
+   */
+  protected _waitsForStorage(
+    viewport: IViewport,
+    renderStart: number
+  ): boolean {
+    const actors = viewport.getActors?.();
+
+    // A CPU viewport does not return an array.
+    return (
+      Array.isArray(actors) &&
+      actors.length > 0 &&
+      actors.every(
+        (entry) => entry?.actor && skippedDrawSince(entry.actor, renderStart)
+      )
+    );
   }
 
   private _setViewportsToBeRenderedNextFrame(viewportIds: string[]) {

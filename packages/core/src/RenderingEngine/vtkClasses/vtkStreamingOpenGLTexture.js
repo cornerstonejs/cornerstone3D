@@ -15,6 +15,23 @@ const DEFAULT_MAX_SLICES_PER_RENDER = 16;
 const DEFAULT_MAX_MILLISECONDS_PER_RENDER = 8;
 
 /**
+ * The smallest allocation that waits on a storage fence. A 256^3 int16
+ * texture (32 MB) clears in about 30 ms, and the blocking clear that the fence
+ * avoids is the one of about 1 GB, so a smaller texture keeps the direct path.
+ */
+const INIT_FENCE_MIN_BYTES = 256 * 1024 * 1024;
+
+/**
+ * The longest wait on a storage fence. A clear of about 1 GB takes 150-300 ms
+ * on an integrated GPU, so 3 s is ten times that. After it the texture stops
+ * the wait and takes the blocking path, so a fence that never signals cannot
+ * leave the volume undrawn.
+ */
+const INIT_FENCE_DEADLINE_MS = 3000;
+
+const INIT_FENCE_POLL_MS = 16;
+
+/**
  * The work that one render does to fill a reduced texture. See
  * `rendering.reducedTextureFill` in `Cornerstone3DConfig`.
  */
@@ -107,10 +124,160 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     const created = superCreate3DFromRaw(options);
 
     if (created && !options.data) {
+      // New storage reads 0, so a slice with no data needs no upload until a
+      // slice with data was written there.
+      model.writtenSlices = new Uint8Array(options.depth);
+      startStorageInit(options.dataType, options.numComps);
       publicAPI.markAllFramesUpdated();
     }
 
     return created;
+  };
+
+  /**
+   * Starts the zero-initialisation of new storage, and does not wait for it.
+   *
+   * A browser allocates `texStorage3D` storage lazily and clears the whole
+   * level at its first use. For a large volume the clear takes seconds of GPU
+   * time, and an upload or a draw that samples the texture then blocks the main
+   * thread until the clear ends. A 1x1x1 upload starts the clear now, and a
+   * fence tells when it ends. Until then the texture skips its uploads and the
+   * mappers skip the draw of the actor (see {@link isInitializing}).
+   *
+   * Without WebGL2 fences, or for an allocation below
+   * `INIT_FENCE_MIN_BYTES`, the texture keeps the blocking behaviour. The wait
+   * ends after `INIT_FENCE_DEADLINE_MS` at the latest.
+   */
+  function startStorageInit(dataType, numComps) {
+    releaseInitFence();
+
+    const gl = model.context;
+
+    if (
+      typeof gl?.fenceSync !== 'function' ||
+      !(model.allocatedGPUMemoryInBytes >= INIT_FENCE_MIN_BYTES)
+    ) {
+      return;
+    }
+
+    let pixData;
+
+    try {
+      const Constructor = getConstructorFromType(dataType, false);
+      [pixData] = publicAPI.updateArrayDataTypeForGL(dataType, [
+        new Constructor(numComps || 1),
+      ]);
+    } catch {
+      return;
+    }
+
+    model._openGLRenderWindow.activateTexture(publicAPI);
+    publicAPI.bind();
+    gl.texSubImage3D(
+      model.target,
+      0,
+      0,
+      0,
+      0,
+      1,
+      1,
+      1,
+      model.format,
+      model.openGLDataType,
+      pixData
+    );
+    publicAPI.deactivate();
+
+    const sync = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0);
+
+    if (!sync) {
+      return;
+    }
+
+    const fence = {
+      gl,
+      sync,
+      deadline: performance.now() + INIT_FENCE_DEADLINE_MS,
+    };
+
+    model.initFence = fence;
+    gl.flush();
+    model.initFenceTimer = setTimeout(
+      () => pollInitFence(fence),
+      INIT_FENCE_POLL_MS
+    );
+  }
+
+  /**
+   * Deletes the fence. `keepPoll` leaves a pending poll to run, so that a
+   * fence that a render saw end still marks the texture modified and renders
+   * the volume, because that render skipped the uploads.
+   */
+  function releaseInitFence(keepPoll = false) {
+    const fence = model.initFence;
+
+    if (!keepPoll) {
+      clearTimeout(model.initFenceTimer);
+      model.initFenceTimer = null;
+    }
+    model.initFence = null;
+
+    if (fence && !fence.gl.isContextLost()) {
+      fence.gl.deleteSync(fence.sync);
+    }
+  }
+
+  /**
+   * Polls the fence of {@link startStorageInit} from a timer, never with a
+   * blocking wait, and renders the viewports of the volume when it signals.
+   * A poll of a deleted texture or of a replaced fence does nothing.
+   */
+  function pollInitFence(fence) {
+    if (model.deleted || (model.initFence && model.initFence !== fence)) {
+      return;
+    }
+
+    if (publicAPI.isInitializing()) {
+      model.initFenceTimer = setTimeout(
+        () => pollInitFence(fence),
+        INIT_FENCE_POLL_MS
+      );
+      return;
+    }
+
+    publicAPI.modified();
+
+    if (model.volumeId) {
+      autoLoad(model.volumeId);
+    }
+  }
+
+  /**
+   * Whether the browser still clears the storage of this allocation. A mapper
+   * must not draw an actor that samples this texture while this is true: the
+   * draw would wait for the clear, and a readback of the context then blocks
+   * the main thread. A lost context, and the deadline, count as done.
+   */
+  publicAPI.isInitializing = () => {
+    const fence = model.initFence;
+
+    if (!fence) {
+      return false;
+    }
+
+    const { gl, sync, deadline } = fence;
+
+    if (
+      !gl.isContextLost() &&
+      performance.now() < deadline &&
+      gl.getSyncParameter(sync, gl.SYNC_STATUS) !== gl.SIGNALED
+    ) {
+      return true;
+    }
+
+    releaseInitFence(true);
+
+    return false;
   };
 
   const superReleaseGraphicsResources = publicAPI.releaseGraphicsResources;
@@ -124,9 +291,17 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
   publicAPI.releaseGraphicsResources = (rwin) => {
     const window = model._openGLRenderWindow;
 
+    releaseInitFence();
     superReleaseGraphicsResources(
       rwin ?? (window?.isDeleted?.() ? undefined : window)
     );
+  };
+
+  const superDelete = publicAPI.delete;
+
+  publicAPI.delete = () => {
+    releaseInitFence();
+    superDelete();
   };
 
   const superUpdate = publicAPI.updateVolumeInfoForGL;
@@ -152,7 +327,8 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
 
     const volume = cache.getVolume(volumeId);
 
-    if (!volume) {
+    // The slices stay marked, and the fence poll renders again.
+    if (!volume || publicAPI.isInitializing()) {
       return;
     }
 
@@ -440,6 +616,12 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     }, 0);
   }
 
+  function markWritten(slice) {
+    if (model.writtenSlices) {
+      model.writtenSlices[slice] = 1;
+    }
+  }
+
   /**
    * Fills a texture whose grid is not the grid of the volume.
    *
@@ -452,9 +634,10 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
    * region. The upload stays partial: the function uploads the slices that a
    * delivery marked, and it leaves the others.
    *
-   * A slice whose data has not arrived uploads the cleared slab, which costs
-   * nothing to compute. The volume marks that slice again when its frames
-   * arrive. A fill of every slice of a new texture from the data would stall
+   * A slice whose data has not arrived uploads nothing while the storage of
+   * this allocation still reads 0, and it costs no budget. A slice that held
+   * data before, such as after the volume reset its composite, uploads the
+   * cleared slab. The volume marks that slice again when its frames arrive. A fill of every slice of a new texture from the data would stall
    * the first render: a volume of 512 x 512 x 1232 took about 17 seconds.
    */
   function updateTextureFromComposite(volume) {
@@ -547,6 +730,11 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
         data = slab.getScalarData();
       }
 
+      if (!hasData && model.writtenSlices && !model.writtenSlices[slice]) {
+        model.updatedFrames[slice] = null;
+        continue;
+      }
+
       if (volume.dataType !== data.constructor.name) {
         data = convertDataType(data, volume.dataType);
       }
@@ -573,6 +761,7 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
 
       publicAPI.deactivate();
       model.updatedFrames[slice] = null;
+      markWritten(slice);
       slicesHandled++;
 
       // A slice with no data uploads zeros, which costs almost nothing, so
@@ -729,6 +918,9 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
       const image = cache.getImage(imageId);
 
       let data;
+      if (!image && model.writtenSlices && !model.writtenSlices[i]) {
+        continue;
+      }
       if (!image) {
         // if there is no data we should set zero
         constructor = getConstructorFromType(volume.dataType, true);
@@ -772,7 +964,7 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
 
       // Unbind the texture
       publicAPI.deactivate();
-      // Reset the updated flag
+      markWritten(i);
     }
 
     if (model.generateMipmap) {

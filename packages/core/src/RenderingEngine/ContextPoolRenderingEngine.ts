@@ -350,6 +350,8 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
       return;
     }
 
+    const renderStart = performance.now();
+
     // Render all viewports synchronously
     const eventDetails = viewportsToRender.map((viewport) => {
       const eventDetail = this.renderViewportUsingCustomOrVtkPipeline(viewport);
@@ -361,16 +363,22 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
     this._animationFrameSet = false;
     this._animationFrameHandle = null;
 
+    const waiting = viewportsToRender.map((vp) =>
+      this._waitsForStorage(vp, renderStart)
+    );
+
     // Trigger all events after rendering is complete
-    eventDetails.forEach((eventDetail) => {
-      if (eventDetail?.element) {
+    eventDetails.forEach((eventDetail, index) => {
+      if (eventDetail?.element && !waiting[index]) {
         triggerEvent(eventDetail.element, Events.IMAGE_RENDERED, eventDetail);
       }
     });
 
     // Fidelity event after IMAGE_RENDERED so consumers can query the frame
     // that was just drawn.
-    this._notifyFidelityOfRenderedViewports(viewportsToRender);
+    this._notifyFidelityOfRenderedViewports(
+      viewportsToRender.filter((_vp, index) => !waiting[index])
+    );
   };
 
   private renderViewportUsingCustomOrVtkPipeline(

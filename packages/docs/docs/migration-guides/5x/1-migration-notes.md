@@ -697,6 +697,33 @@ differently, and the 5.x code to use.
     cache.removeVolumeLoadObject(volumeId);
     ```
 
+12. **A streaming load fires fewer `VIEWPORT_FIDELITY_CHANGED` events.** Default
+    settings, after 5.17.0. A volume viewport sends the fidelity state for
+    `Events.IMAGE_VOLUME_MODIFIED` at most once in each animation frame, and not
+    once for each image. The last state is the same. A render, and
+    `Events.IMAGE_VOLUME_LOADING_COMPLETED`, still send the state at once. In a
+    hidden tab, the browser does not run animation frames, so the state of a
+    load comes at the end of the load, or when the tab shows again. An
+    application that counts the events during a load must read the state, not
+    count the events.
+
+13. **A large volume can show a blank first frame.** Default settings, after
+    5.17.0, with WebGL2, for a volume texture of 256 MB or more. The browser
+    clears new texture storage before its first use. For a large texture, that
+    clear took seconds and stopped the page. The texture now waits for the
+    clear and does not stop the page. The viewport then draws nothing for about
+    0.3 s (at most 3 s). For a frame in which no actor of the viewport drew, the
+    engine fires no `Events.IMAGE_RENDERED` and no
+    `Events.VIEWPORT_FIDELITY_CHANGED`. The first `IMAGE_RENDERED` comes with
+    the first frame that shows the volume. A viewport with another actor that
+    drew, for example a small PET over a large CT, fires the event as before.
+    A smaller volume behaves as in 5.17.0.
+
+    ```js
+    // Code that captures the first frame needs no change: wait for the event.
+    element.addEventListener(Events.IMAGE_RENDERED, capture, { once: true });
+    ```
+
 ## Locked segments stop the brush, and do not cause an overlap
 
 ### What Changed

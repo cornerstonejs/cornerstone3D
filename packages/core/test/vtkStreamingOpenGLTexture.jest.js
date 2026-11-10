@@ -6,6 +6,32 @@ const mockVolumes = new Map();
 jest.mock('../src/init', () => ({
   getConfiguration: () => mockConfig,
 }));
+jest.mock('../src/utilities/autoLoad', () => ({
+  __esModule: true,
+  default: jest.fn(),
+}));
+// The real allocation needs a full GL context. This stands in for the
+// superclass call alone, with the size that vtk.js records.
+jest.mock('@kitware/vtk.js/Rendering/OpenGL/Texture', () => {
+  const actual = jest.requireActual(
+    '@kitware/vtk.js/Rendering/OpenGL/Texture'
+  ).default;
+
+  return {
+    __esModule: true,
+    default: {
+      ...actual,
+      extend: (publicAPI, model, initialValues) => {
+        actual.extend(publicAPI, model, initialValues);
+        publicAPI.create3DFromRaw = ({ width, height, depth, numComps }) => {
+          model.allocatedGPUMemoryInBytes =
+            width * height * depth * numComps * 4;
+          return true;
+        };
+      },
+    },
+  };
+});
 jest.mock('../src/cache/cache', () => ({
   __esModule: true,
   default: {
@@ -15,6 +41,7 @@ jest.mock('../src/cache/cache', () => ({
 }));
 
 import { extend } from '../src/RenderingEngine/vtkClasses/vtkStreamingOpenGLTexture';
+import autoLoad from '../src/utilities/autoLoad';
 
 const depth = 8;
 const frameLength = 4 * 4;
@@ -41,7 +68,7 @@ function loadedVolume() {
 }
 
 /** A reduced texture of a mounted volume, with every slice waiting. */
-function reducedTexture() {
+function reducedTexture(volume = loadedVolume()) {
   const publicAPI = {};
   const model = {};
   const gl = { texSubImage3D: jest.fn() };
@@ -57,7 +84,7 @@ function reducedTexture() {
     updateArrayDataTypeForGL: (_type, data) => data,
   });
 
-  mockVolumes.set('vol', loadedVolume());
+  mockVolumes.set('vol', volume);
   publicAPI.setVolumeId('vol');
   publicAPI.setGrid({
     origin: [0, 0, 0],
@@ -69,7 +96,17 @@ function reducedTexture() {
 
   const uploadedSlices = () => gl.texSubImage3D.mock.calls.map((c) => c[4]);
 
-  return { texture: publicAPI, uploadedSlices };
+  return { texture: publicAPI, model, uploadedSlices };
+}
+
+/** A volume whose frames have not arrived, so no slice holds data. */
+function emptyVolume() {
+  const volume = loadedVolume();
+
+  volume.compositeVoxelManager.getRepresentation = () => undefined;
+  volume.dimensions = [8, 8, depth];
+
+  return volume;
 }
 
 describe('vtkStreamingOpenGLTexture budgeted fill of a reduced texture', () => {
@@ -130,5 +167,126 @@ describe('vtkStreamingOpenGLTexture budgeted fill of a reduced texture', () => {
     texture.update3DFromRaw();
 
     expect(getRepresentation).toHaveBeenCalledWith(expect.anything(), 'max');
+  });
+
+  // The API must do this: fresh storage reads 0, so an empty slice uploads
+  // nothing and costs no budget, but a slice that held data still clears.
+  it('skips the zero upload of a slice that new storage never received', () => {
+    const volume = emptyVolume();
+    const { texture, model, uploadedSlices } = reducedTexture(volume);
+    // What create3DFromRaw does for an allocation with `data: null`.
+    model.writtenSlices = new Uint8Array(depth);
+
+    texture.update3DFromRaw();
+
+    expect(uploadedSlices()).toEqual([]);
+    expect(texture.isFillPending()).toBe(false);
+
+    model.writtenSlices[3] = 1;
+    texture.markAllFramesUpdated();
+    texture.update3DFromRaw();
+
+    expect(uploadedSlices()).toEqual([3]);
+  });
+});
+
+describe('vtkStreamingOpenGLTexture storage fence', () => {
+  let gl;
+
+  /** A texture allocated with `data: null`, of 1 GB or of 4 MB. */
+  function allocated(large) {
+    const { texture, model, uploadedSlices } = reducedTexture();
+
+    gl = Object.assign(model.context, {
+      SYNC_GPU_COMMANDS_COMPLETE: 1,
+      SYNC_STATUS: 2,
+      SIGNALED: 3,
+      fenceSync: jest.fn(() => ({})),
+      getSyncParameter: jest.fn(() => 0),
+      deleteSync: jest.fn(),
+      flush: jest.fn(),
+      isContextLost: () => false,
+    });
+    texture.create3DFromRaw({
+      width: 512,
+      height: 512,
+      depth: large ? 1024 : 4,
+      numComps: 1,
+      dataType: 'Float32Array',
+      data: null,
+    });
+    jest.spyOn(texture, 'modified');
+
+    return { texture, uploadedSlices };
+  }
+
+  beforeEach(() => {
+    jest.useFakeTimers();
+    autoLoad.mockClear();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  // The API must do this: a large allocation starts the clear, waits for the
+  // fence with no upload, and renders the volume once the fence signals.
+  it('waits on the fence of a large allocation, then renders the volume', () => {
+    const { texture, uploadedSlices } = allocated(true);
+
+    expect(gl.texSubImage3D.mock.calls[0].slice(5, 8)).toEqual([1, 1, 1]);
+    expect(texture.isInitializing()).toBe(true);
+    gl.texSubImage3D.mockClear();
+    texture.update3DFromRaw();
+    expect(uploadedSlices()).toEqual([]);
+
+    jest.advanceTimersByTime(32);
+    expect(texture.modified).not.toHaveBeenCalled();
+
+    // A render that sees the signal first still gets the poll's render.
+    gl.getSyncParameter.mockReturnValue(gl.SIGNALED);
+    expect(texture.isInitializing()).toBe(false);
+    jest.advanceTimersByTime(16);
+
+    expect(gl.deleteSync).toHaveBeenCalledTimes(1);
+    expect(texture.modified).toHaveBeenCalledTimes(1);
+    expect(autoLoad).toHaveBeenCalledWith('vol');
+    expect(jest.getTimerCount()).toBe(0);
+  });
+
+  // The user experience must have this: a small volume draws on its first
+  // render, as before the fence.
+  it('creates no fence for a small allocation', () => {
+    const { texture } = allocated(false);
+
+    expect(gl.fenceSync).not.toHaveBeenCalled();
+    expect(gl.texSubImage3D).not.toHaveBeenCalled();
+    expect(texture.isInitializing()).toBe(false);
+  });
+
+  // The user experience must have this: a fence that never signals cannot
+  // leave the volume undrawn.
+  it('ends the wait at the deadline', () => {
+    const { texture } = allocated(true);
+
+    jest.advanceTimersByTime(3100);
+
+    expect(texture.isInitializing()).toBe(false);
+    expect(gl.deleteSync).toHaveBeenCalledTimes(1);
+    expect(autoLoad).toHaveBeenCalledWith('vol');
+  });
+
+  // The API must do this: the poll does not outlive the texture.
+  it('cancels the poll when the texture is deleted', () => {
+    const { texture } = allocated(true);
+    const modified = texture.modified;
+
+    texture.delete();
+    jest.advanceTimersByTime(100);
+
+    expect(jest.getTimerCount()).toBe(0);
+    expect(gl.getSyncParameter).not.toHaveBeenCalled();
+    expect(modified).not.toHaveBeenCalled();
+    expect(autoLoad).not.toHaveBeenCalled();
   });
 });

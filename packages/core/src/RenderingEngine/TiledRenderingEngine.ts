@@ -365,6 +365,7 @@ class TiledRenderingEngine extends BaseRenderingEngine {
    */
   protected _renderFlaggedViewports = () => {
     this._throwIfDestroyed();
+    const renderStart = performance.now();
 
     if (this.offscreenMultiRenderWindow) {
       this.performVtkDrawCall();
@@ -379,8 +380,11 @@ class TiledRenderingEngine extends BaseRenderingEngine {
       if (this._needsRender.has(viewport.id)) {
         const eventDetail =
           this.renderViewportUsingCustomOrVtkPipeline(viewport);
-        eventDetailArray.push(eventDetail);
-        renderedViewports.push(viewport);
+
+        if (!this._waitsForStorage(viewport, renderStart)) {
+          eventDetailArray.push(eventDetail);
+          renderedViewports.push(viewport);
+        }
         viewport.setRendered();
 
         // This viewport has been rendered, we can remove it from the set
