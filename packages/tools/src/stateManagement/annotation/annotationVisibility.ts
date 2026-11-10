@@ -83,7 +83,12 @@ function show(
   if (annotationUIDsSet.delete(annotationUID)) {
     detail.lastVisible.push(annotationUID);
     const annotation = getAnnotation(annotationUID);
-    annotation.isVisible = true;
+
+    // The UID can outlive its annotation: removing an annotation does not
+    // clear it from the hidden set.
+    if (annotation) {
+      annotation.isVisible = true;
+    }
   }
 }
 
@@ -99,7 +104,10 @@ function hide(
     }
     detail.lastHidden.push(annotationUID);
     const annotation = getAnnotation(annotationUID);
-    annotation.isVisible = false;
+
+    if (annotation) {
+      annotation.isVisible = false;
+    }
   }
 }
 
