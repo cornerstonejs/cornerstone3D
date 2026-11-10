@@ -11,6 +11,9 @@ import {
   imageLoader as csImageLoader,
   init,
   RenderingEngine,
+  resetGpuSettingsPreset,
+  setGpuSettingsPreset,
+  setLossyDownsampling,
   utilities,
   volumeLoader,
   type PlanarViewport,
@@ -22,9 +25,13 @@ import {
 
 const { Events, OrientationAxis, RenderBackends, ViewportType } = Enums;
 
+// vtkVolumeSliceFrames is vtkVolumeSlice with final downsampling on and the
+// `low` preset, so the reduced volume draws the acquired frames in the
+// acquisition plane. It needs a stack larger than the edge of `low` (256).
 export type PlanarRenderMode =
   | 'vtkImage'
   | 'vtkVolumeSlice'
+  | 'vtkVolumeSliceFrames'
   | 'cpuImage'
   | 'cpuVolume';
 
@@ -123,12 +130,20 @@ export async function createPlanarViewport(
   const previousUseGenericViewport = renderingConfig.useGenericViewport;
   renderingConfig.useGenericViewport = true;
 
+  const drawsAcquiredFrames = renderMode === 'vtkVolumeSliceFrames';
   const isVolumeBacked =
-    renderMode === 'vtkVolumeSlice' || renderMode === 'cpuVolume';
+    renderMode === 'vtkVolumeSlice' ||
+    renderMode === 'cpuVolume' ||
+    drawsAcquiredFrames;
   const isCpu = renderMode === 'cpuImage' || renderMode === 'cpuVolume';
 
   if (isVolumeBacked) {
     ensureFakeVolumeLoaderRegistered();
+  }
+
+  if (drawsAcquiredFrames) {
+    setLossyDownsampling({ final: true });
+    setGpuSettingsPreset('low');
   }
 
   const fakeStack = registerFakeImageStack(opts.stack);
@@ -168,6 +183,11 @@ export async function createPlanarViewport(
 
     if (element.parentNode) {
       element.parentNode.removeChild(element);
+    }
+
+    if (drawsAcquiredFrames) {
+      setLossyDownsampling({ final: false });
+      resetGpuSettingsPreset();
     }
 
     if (previousUseGenericViewport !== undefined) {

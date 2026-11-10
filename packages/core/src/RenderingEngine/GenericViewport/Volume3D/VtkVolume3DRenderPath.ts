@@ -1,13 +1,29 @@
 import '@kitware/vtk.js/Rendering/Profiles/Volume';
 import type vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
-import { Events, ViewportType } from '../../../enums';
-import eventTarget from '../../../eventTarget';
+import { ViewportType } from '../../../enums';
 import type { IImageData, IImageVolume, Point2, Point3 } from '../../../types';
 import createLinearRGBTransferFunction from '../../../utilities/createLinearRGBTransferFunction';
 import invertRgbTransferFunction from '../../../utilities/invertRgbTransferFunction';
 import { updateOpacity as updateVolumeOpacity } from '../../../utilities/colormap';
 import uuidv4 from '../../../utilities/uuidv4';
 import createVolumeActor from '../../helpers/createVolumeActor';
+import {
+  idleSampleDistanceMultiplierOf,
+  sampleDistanceOf,
+  sampleDistanceRatiosOf,
+  setIdleSampleDistanceMultiplier,
+} from '../../helpers/createVolumeMapper';
+import {
+  defaultVolumeStrategyProvider,
+  selectFirstReadyStrategy,
+} from '../../helpers/volumeRenderStrategy';
+import type {
+  SelectVolumeStrategy,
+  VolumeStrategyProvider,
+  VolumeStrategyProvisionReason,
+} from '../../helpers/volumeRenderStrategy';
+import * as lifecycle from '../../helpers/volumeStrategyLifecycle';
+import type { VolumeStrategyHooks } from '../../helpers/volumeStrategyLifecycle';
 import {
   canvasToWorldContextPool,
   worldToCanvasContextPool,
@@ -29,12 +45,36 @@ import type {
 } from './viewport3DTypes';
 import applyVolume3DCamera from './applyVolume3DCamera';
 import { getInitialVolume3DCamera } from './vtkVolume3DInitialCamera';
+import { isSegmentationOverlayData } from '../renderingFidelity';
 import setVtkCameraClippingRange from '../setVtkCameraClippingRange';
 
 /** @internal */
 export class VtkVolume3DRenderPath
   implements RenderPath<Volume3DVtkVolumeAdapterContext>
 {
+  /**
+   * The provider that builds the strategies of this render path, and the
+   * function that chooses the strategy of one render.
+   *
+   * A new render type defines its own provider, and that is how a new render
+   * type defines new texture sets. A render component that implements phases
+   * supplies its own selection. The vtk-wasm path will use one: it reads a
+   * coarse maximum-value texture in a first pass to find the bricks that hold
+   * no air, and then draws those.
+   */
+  private readonly hooks: VolumeStrategyHooks<Volume3DVolumeRendering>;
+
+  constructor(
+    provideStrategies: VolumeStrategyProvider = defaultVolumeStrategyProvider,
+    selectStrategy: SelectVolumeStrategy = selectFirstReadyStrategy
+  ) {
+    this.hooks = {
+      provideStrategies,
+      selectStrategy,
+      onBind: bindSampleDistance,
+    };
+  }
+
   async addData(
     ctx: Volume3DVtkVolumeAdapterContext,
     data: LoadedData,
@@ -44,9 +84,7 @@ export class VtkVolume3DRenderPath
       data as unknown as LoadedData<Volume3DVolumePayload>;
     const hadVolume = ctx.vtk.renderer.getVolumes().length > 0;
     const actor = await createVolumeActor(
-      {
-        volumeId: payload.volumeId,
-      },
+      { volumeId: payload.volumeId, ...this.hooks },
       ctx.viewport.element,
       ctx.viewportId,
       true
@@ -77,13 +115,24 @@ export class VtkVolume3DRenderPath
         : undefined,
       imageVolume: payload.imageVolume,
       mapper,
-      removeStreamingSubscriptions: subscribeToVolumeEvents(
-        payload.volumeId,
-        () => {
-          ctx.display.requestRender();
-        }
+      viewportId: ctx.viewportId,
+      excludeFromFidelity: isSegmentationOverlayData(
+        payload as { reference?: { kind?: string } },
+        options
       ),
     };
+    rendering.refreshFidelity = () => lifecycle.refreshFidelity(rendering);
+
+    this.provisionStrategies(rendering, 'initial');
+    this.applyStrategy(rendering);
+
+    rendering.removeStreamingSubscriptions = lifecycle.subscribeToVolumeEvents(
+      payload.volumeId,
+      (eventType) => {
+        lifecycle.onVolumeData(rendering, eventType, this.hooks);
+        ctx.display.requestRender();
+      }
+    );
 
     return {
       rendering,
@@ -100,7 +149,7 @@ export class VtkVolume3DRenderPath
         return this.getImageData(rendering);
       },
       render: () => {
-        this.render(ctx);
+        this.render(ctx, rendering);
       },
       resize: () => {
         this.resize(ctx);
@@ -162,7 +211,14 @@ export class VtkVolume3DRenderPath
     return buildVolumeImageData(rendering.imageVolume);
   }
 
-  private render(ctx: Volume3DVtkVolumeAdapterContext): void {
+  private render(
+    ctx: Volume3DVtkVolumeAdapterContext,
+    rendering?: Volume3DVolumeRendering
+  ): void {
+    if (rendering) {
+      this.applyStrategy(rendering);
+    }
+
     ctx.display.requestRender();
   }
 
@@ -174,11 +230,51 @@ export class VtkVolume3DRenderPath
     ctx: Volume3DVtkVolumeAdapterContext,
     rendering: Volume3DVolumeRendering
   ): void {
-    const { actor, removeStreamingSubscriptions } = rendering;
-
-    removeStreamingSubscriptions?.();
-    ctx.vtk.renderer.removeVolume(actor);
+    lifecycle.releaseStrategies(rendering);
+    rendering.removeStreamingSubscriptions?.();
+    ctx.vtk.renderer.removeVolume(rendering.actor);
   }
+
+  private provisionStrategies(
+    rendering: Volume3DVolumeRendering,
+    reason: VolumeStrategyProvisionReason
+  ): void {
+    lifecycle.provisionStrategies(
+      rendering,
+      this.hooks.provideStrategies,
+      reason
+    );
+  }
+
+  private applyStrategy(rendering: Volume3DVolumeRendering): void {
+    lifecycle.applyStrategy(rendering, this.hooks);
+  }
+}
+
+/**
+ * Sets the sample distance from the grid of a newly bound texture, and records
+ * the current and the idle sample distance (FIDELITY-RECORD-6).
+ */
+function bindSampleDistance(
+  rendering: Volume3DVolumeRendering,
+  textureChanged: boolean
+): void {
+  const { mapper, boundTexture } = rendering;
+  const imageData = textureChanged ? mapper.getInputData?.() : undefined;
+
+  if (imageData) {
+    mapper.setSampleDistance(
+      sampleDistanceOf(
+        imageData,
+        boundTexture,
+        idleSampleDistanceMultiplierOf(mapper)
+      )
+    );
+  }
+
+  const ratios = sampleDistanceRatiosOf(mapper, boundTexture);
+  rendering.sampleDistanceLod = ratios.current;
+  rendering.sampleDistanceIdle = ratios.idle;
 }
 
 /** @internal */
@@ -205,38 +301,6 @@ export class VtkVolume3DPath
   ): Volume3DVtkVolumeAdapterContext {
     return rootContext;
   }
-}
-
-function subscribeToVolumeEvents(
-  volumeId: string,
-  onProgress: () => void
-): () => void {
-  const handleProgress = (evt: Event) => {
-    const detail = (evt as CustomEvent<{ volumeId?: string }>).detail;
-
-    if (detail?.volumeId !== volumeId) {
-      return;
-    }
-
-    onProgress();
-  };
-
-  eventTarget.addEventListener(Events.IMAGE_VOLUME_MODIFIED, handleProgress);
-  eventTarget.addEventListener(
-    Events.IMAGE_VOLUME_LOADING_COMPLETED,
-    handleProgress
-  );
-
-  return () => {
-    eventTarget.removeEventListener(
-      Events.IMAGE_VOLUME_MODIFIED,
-      handleProgress
-    );
-    eventTarget.removeEventListener(
-      Events.IMAGE_VOLUME_LOADING_COMPLETED,
-      handleProgress
-    );
-  };
 }
 
 function applyDataPresentation(
@@ -302,13 +366,15 @@ function applySampleDistanceMultiplier(
     return;
   }
 
-  const spacing = imageData.getSpacing();
-  const defaultSampleDistance = (spacing[0] + spacing[1] + spacing[2]) / 6;
-  const safeMultiplier = Number.isFinite(multiplier)
-    ? Math.max(multiplier, 0.001)
-    : 1;
+  setIdleSampleDistanceMultiplier(mapper, multiplier);
 
-  mapper.setSampleDistance(defaultSampleDistance * safeMultiplier);
+  const texture = (
+    mapper as unknown as { getScalarTexture?: () => unknown }
+  ).getScalarTexture?.();
+
+  mapper.setSampleDistance(
+    sampleDistanceOf(imageData, texture, idleSampleDistanceMultiplierOf(mapper))
+  );
 }
 
 function setCameraClippingRange(ctx: Volume3DVtkVolumeAdapterContext): void {

@@ -69,6 +69,7 @@ import { generateVolumePropsFromImageIds } from './generateVolumePropsFromImageI
 import { convertStackToVolumeViewport } from './convertStackToVolumeViewport';
 import { convertVolumeToStackViewport } from './convertVolumeToStackViewport';
 import VoxelManager from './VoxelManager';
+import CompositeVoxelManager from './CompositeVoxelManager';
 import RLEVoxelMap from './RLEVoxelMap';
 import roundNumber, { roundToPrecision } from './roundNumber';
 import convertToGrayscale from './convertToGrayscale';
@@ -81,6 +82,7 @@ import { pointInShapeCallback } from './pointInShapeCallback';
 import * as ECGUtilitiesModule from './ECGUtilities';
 import * as VideoUtilities from './VideoUtilities';
 import * as WSIUtilities from './WSIUtilities';
+import * as voxelGrid from './voxelGrid';
 
 /**
  * @deprecated Kept for 5.x compatibility. Use the ECG functions of
@@ -157,6 +159,7 @@ import {
 } from './wasmBasePath';
 import resolveApplicationUrl, { getPublicUrl } from './resolveApplicationUrl';
 export { updatePlaneRestriction } from './updatePlaneRestriction';
+export { isAcquisitionPlaneNormal } from './isAcquisitionPlaneNormal';
 const getViewportModality = (viewport: IViewport, volumeId?: string) =>
   _getViewportModality(viewport, volumeId, cache.getVolume);
 const getScalingDescriptor = (viewport: IViewport, targetId?: string) =>
@@ -243,6 +246,7 @@ export {
   generateVolumePropsFromImageIds,
   getBufferConfiguration,
   VoxelManager,
+  CompositeVoxelManager,
   RLEVoxelMap,
   convertStackToVolumeViewport,
   convertVolumeToStackViewport,
@@ -264,6 +268,7 @@ export {
   ECGUtilities,
   VideoUtilities,
   WSIUtilities,
+  voxelGrid,
   deepEqual,
   jumpToSlice,
   scroll,
