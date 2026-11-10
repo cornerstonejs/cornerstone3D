@@ -107,6 +107,9 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     const created = superCreate3DFromRaw(options);
 
     if (created && !options.data) {
+      // New storage reads 0, so a slice with no data needs no upload until a
+      // slice with data was written there.
+      model.writtenSlices = new Uint8Array(options.depth);
       publicAPI.markAllFramesUpdated();
     }
 
@@ -440,6 +443,12 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     }, 0);
   }
 
+  function markWritten(slice) {
+    if (model.writtenSlices) {
+      model.writtenSlices[slice] = 1;
+    }
+  }
+
   /**
    * Fills a texture whose grid is not the grid of the volume.
    *
@@ -452,9 +461,10 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
    * region. The upload stays partial: the function uploads the slices that a
    * delivery marked, and it leaves the others.
    *
-   * A slice whose data has not arrived uploads the cleared slab, which costs
-   * nothing to compute. The volume marks that slice again when its frames
-   * arrive. A fill of every slice of a new texture from the data would stall
+   * A slice whose data has not arrived uploads nothing while the storage of
+   * this allocation still reads 0, and it costs no budget. A slice that held
+   * data before, such as after the volume reset its composite, uploads the
+   * cleared slab. The volume marks that slice again when its frames arrive. A fill of every slice of a new texture from the data would stall
    * the first render: a volume of 512 x 512 x 1232 took about 17 seconds.
    */
   function updateTextureFromComposite(volume) {
@@ -547,6 +557,11 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
         data = slab.getScalarData();
       }
 
+      if (!hasData && model.writtenSlices && !model.writtenSlices[slice]) {
+        model.updatedFrames[slice] = null;
+        continue;
+      }
+
       if (volume.dataType !== data.constructor.name) {
         data = convertDataType(data, volume.dataType);
       }
@@ -573,6 +588,7 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
 
       publicAPI.deactivate();
       model.updatedFrames[slice] = null;
+      markWritten(slice);
       slicesHandled++;
 
       // A slice with no data uploads zeros, which costs almost nothing, so
@@ -729,6 +745,9 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
       const image = cache.getImage(imageId);
 
       let data;
+      if (!image && model.writtenSlices && !model.writtenSlices[i]) {
+        continue;
+      }
       if (!image) {
         // if there is no data we should set zero
         constructor = getConstructorFromType(volume.dataType, true);
@@ -772,7 +791,7 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
 
       // Unbind the texture
       publicAPI.deactivate();
-      // Reset the updated flag
+      markWritten(i);
     }
 
     if (model.generateMipmap) {

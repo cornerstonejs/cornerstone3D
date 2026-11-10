@@ -41,7 +41,7 @@ function loadedVolume() {
 }
 
 /** A reduced texture of a mounted volume, with every slice waiting. */
-function reducedTexture() {
+function reducedTexture(volume = loadedVolume()) {
   const publicAPI = {};
   const model = {};
   const gl = { texSubImage3D: jest.fn() };
@@ -57,7 +57,7 @@ function reducedTexture() {
     updateArrayDataTypeForGL: (_type, data) => data,
   });
 
-  mockVolumes.set('vol', loadedVolume());
+  mockVolumes.set('vol', volume);
   publicAPI.setVolumeId('vol');
   publicAPI.setGrid({
     origin: [0, 0, 0],
@@ -69,7 +69,17 @@ function reducedTexture() {
 
   const uploadedSlices = () => gl.texSubImage3D.mock.calls.map((c) => c[4]);
 
-  return { texture: publicAPI, uploadedSlices };
+  return { texture: publicAPI, model, uploadedSlices };
+}
+
+/** A volume whose frames have not arrived, so no slice holds data. */
+function emptyVolume() {
+  const volume = loadedVolume();
+
+  volume.compositeVoxelManager.getRepresentation = () => undefined;
+  volume.dimensions = [8, 8, depth];
+
+  return volume;
 }
 
 describe('vtkStreamingOpenGLTexture budgeted fill of a reduced texture', () => {
@@ -130,5 +140,25 @@ describe('vtkStreamingOpenGLTexture budgeted fill of a reduced texture', () => {
     texture.update3DFromRaw();
 
     expect(getRepresentation).toHaveBeenCalledWith(expect.anything(), 'max');
+  });
+
+  // The API must do this: fresh storage reads 0, so an empty slice uploads
+  // nothing and costs no budget, but a slice that held data still clears.
+  it('skips the zero upload of a slice that new storage never received', () => {
+    const volume = emptyVolume();
+    const { texture, model, uploadedSlices } = reducedTexture(volume);
+    // What create3DFromRaw does for an allocation with `data: null`.
+    model.writtenSlices = new Uint8Array(depth);
+
+    texture.update3DFromRaw();
+
+    expect(uploadedSlices()).toEqual([]);
+    expect(texture.isFillPending()).toBe(false);
+
+    model.writtenSlices[3] = 1;
+    texture.markAllFramesUpdated();
+    texture.update3DFromRaw();
+
+    expect(uploadedSlices()).toEqual([3]);
   });
 });
