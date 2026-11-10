@@ -6,6 +6,14 @@ import {
   afterEach,
   jest,
 } from '@jest/globals';
+
+jest.mock('../src/loaders/imageLoader', () => ({
+  ...jest.requireActual('../src/loaders/imageLoader'),
+  loadAndCacheImage: jest.fn(),
+}));
+
+import { loadAndCacheImage } from '../src/loaders/imageLoader';
+import ProgressiveRetrieveImages from '../src/loaders/ProgressiveRetrieveImages';
 import cache from '../src/cache/cache';
 import StreamingImageVolume from '../src/cache/classes/StreamingImageVolume';
 import volumeTextureStore from '../src/cache/volumeTextureStore';
@@ -118,6 +126,50 @@ describe('StreamingImageVolume — the record of the deliveries', () => {
     expect(record.deliveries).toBe(1);
     expect(record.highest).toBe(ImageQualityStatus.SUBRESOLUTION);
     expect(record.missing).toBe(4 * 4 * 3);
+  });
+});
+
+describe('StreamingImageVolume — a frame that fails to load', () => {
+  it('reports the failed image and ends the load when the last frame fails', async () => {
+    const { volume, imageIds } = makeVolume();
+    const error = new Error('lost');
+    const details = [];
+    const onError = (evt) => details.push(evt.detail);
+
+    volume.totalNumFrames = imageIds.length;
+    imageIds.slice(0, 3).forEach((imageId, index) => {
+      volume.updateTextureAndTriggerEvents(
+        index,
+        imageId,
+        ImageQualityStatus.FULL_RESOLUTION
+      );
+    });
+    loadAndCacheImage.mockReturnValue(Promise.reject(error));
+    eventTarget.addEventListener(Events.IMAGE_LOAD_ERROR, onError);
+
+    await volume.callLoadImage(imageIds[3], 3, {});
+
+    eventTarget.removeEventListener(Events.IMAGE_LOAD_ERROR, onError);
+    expect(details).toEqual([{ error, imageIdIndex: 3, imageId: imageIds[3] }]);
+    expect(volume.loadStatus.loading).toBe(false);
+    expect(volume.loadStatus.loaded).toBe(true);
+  });
+
+  it('counts a failed frame of a progressive retrieve once', async () => {
+    const { volume, imageIds } = makeVolume();
+    const details = [];
+    const onError = (evt) => details.push(evt.detail);
+
+    volume.totalNumFrames = imageIds.length;
+    loadAndCacheImage.mockReturnValue(Promise.reject(new Error('lost')));
+    eventTarget.addEventListener(Events.IMAGE_LOAD_ERROR, onError);
+
+    await new ProgressiveRetrieveImages({}).loadImages([imageIds[0]], volume);
+
+    eventTarget.removeEventListener(Events.IMAGE_LOAD_ERROR, onError);
+    expect(details.map(({ imageIdIndex }) => imageIdIndex)).toEqual([0]);
+    // Three frames are still to come, so the load has not ended.
+    expect(volume.loadStatus.loading).toBe(true);
   });
 });
 

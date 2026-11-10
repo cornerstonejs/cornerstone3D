@@ -175,6 +175,7 @@ class ProgressiveRetrieveImagesInstance {
   protected sendRequest(request, options) {
     const { imageId, next } = request;
     const errorCallback = (reason, done) => {
+      reported = true;
       this.listener.errorCallback(imageId, complete || !next, reason);
       if (done) {
         this.updateStageStatus(request.stage, reason);
@@ -186,6 +187,8 @@ class ProgressiveRetrieveImagesInstance {
     );
     const uncompressedIterator = ProgressiveIterator.as(loadedPromise);
     let complete = false;
+    // A listener counts each permanent failure, so a frame reports one.
+    let reported = false;
 
     uncompressedIterator
       .forEach(async (image, done) => {
@@ -227,7 +230,9 @@ class ProgressiveRetrieveImagesInstance {
             if (shown) {
               shown.imageQualityPending = false;
             }
-            this.listener.errorCallback(imageId, true, "Couldn't decode");
+            if (!reported) {
+              this.listener.errorCallback(imageId, true, "Couldn't decode");
+            }
           }
           this.outstandingRequests--;
           for (let skip = next; skip; skip = skip.next) {

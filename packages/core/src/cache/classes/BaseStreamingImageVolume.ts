@@ -690,7 +690,7 @@ export class BaseStreamingImageVolume
         // image is the pixelData decoded from workers in cornerstoneDICOMImageLoader
         this.successCallback(imageId, image);
       },
-      this.errorCallback.bind(this, imageIdIndex, imageId)
+      (error, done) => this.errorCallback(imageId, done, error)
     );
   }
 
