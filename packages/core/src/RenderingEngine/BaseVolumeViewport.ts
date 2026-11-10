@@ -1292,6 +1292,15 @@ abstract class BaseVolumeViewport extends Viewport {
 
     applyPreset(volumeActor, viewportPreset);
 
+    // A preset sets its own interpolation (most use fast linear). An
+    // interpolation type that was set on the viewport is still what
+    // getProperties reports, so apply it again over the preset's.
+    const { interpolationType } = this.viewportProperties;
+    if (interpolationType !== undefined) {
+      // @ts-ignore
+      volumeActor.getProperty().setInterpolationType(interpolationType);
+    }
+
     this.viewportProperties.preset = viewportPreset.name;
     this.render();
 
