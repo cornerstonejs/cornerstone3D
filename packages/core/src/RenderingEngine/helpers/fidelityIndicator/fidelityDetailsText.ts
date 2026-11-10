@@ -45,6 +45,11 @@ export function fidelityDetailsTextOf(
       parts.push(...progressLines(state));
       parts.push('Waiting should improve the image.');
       break;
+    case 'missingFrames':
+      parts.push('Missing frame(s)');
+      parts.push(...progressLines(state));
+      parts.push('Waiting will not improve the image.');
+      break;
     case 'performanceTarget':
       if (state.transient) {
         parts.push('Detail is reduced while you interact.');

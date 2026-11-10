@@ -11,6 +11,7 @@ export type ViewportFidelityCause =
   | 'memoryBudget'
   | 'performanceTarget'
   | 'incompleteLoad'
+  | 'missingFrames'
   | 'lossyDecode';
 
 /** The derived state of a view; see `ViewportFidelityState.shownState`. */

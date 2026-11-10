@@ -358,8 +358,8 @@ states map to the states of this specification: transiently lossy is
     ordinary load from a lossy load.
   - `cause` is `incompleteLoad`, and `transient` is true, only while the
     shown state is `loading`. An ordinary load gives no cause. A load that
-    ended with missing voxels and full-quality deliveries gives `lossy` and
-    no cause.
+    ended with missing voxels gives `lossy`, cause `missingFrames`, and
+    `transient` false, unless a spatial reduction gives its own cause.
     `progressive.missing` and `progressive.loadedFraction` still show its
     progress.
   - `transient` is true only for `loading` and `lod`. A standing reduction
@@ -404,7 +404,8 @@ states map to the states of this specification: transiently lossy is
 - **FIDELITY-UI-5** A hover over the indicator shows clinician details, built
   by `fidelityDetailsTextOf()` from the absolute `ViewportFidelityState`: why
   the image is degraded (the cause), how much (percentage arrived, reduction
-  `x/2, y/2, z/4`), and whether waiting should improve the image. The copy avoids GPU, texture and retrieval jargon. The
+  `x/2, y/2, z/4`), and whether waiting should improve the image. The text of
+  the cause `missingFrames` is `Missing frame(s)`. The copy avoids GPU, texture and retrieval jargon. The
   debug badge (`fidelityIndicatorDebug`) keeps a separate developer dump.
 - **FIDELITY-UI-6** A consumer reads the derived state with
   `viewport.getFidelityState()` (FIDELITY-EVENT-5), and observes changes with

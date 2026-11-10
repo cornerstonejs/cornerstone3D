@@ -3,6 +3,7 @@ import {
   buildViewportFidelityState,
   viewportFidelityStateKey,
 } from '../src/RenderingEngine/helpers/fidelityIndicator/buildViewportFidelityState';
+import { fidelityDetailsTextOf } from '../src/RenderingEngine/helpers/fidelityIndicator/fidelityDetailsText';
 import { notifyFidelityStateChanged } from '../src/RenderingEngine/helpers/fidelityIndicator/notifyFidelityStateChanged';
 import Events from '../src/enums/Events';
 import ImageQualityStatus from '../src/enums/ImageQualityStatus';
@@ -127,6 +128,21 @@ describe('buildViewportFidelityState (FIDELITY-EVENT-5)', () => {
     expect(state.progressive.lowest).toBe(
       ImageQualityStatus.ADJACENT_REPLICATE
     );
+  });
+
+  it('reports a load that ended with a missing frame as lossy missingFrames', () => {
+    const state = buildViewportFidelityState([
+      line({ record: record({ missing: 100, voxels: 1000 }) }),
+    ]);
+
+    expect(state.shownState).toBe('lossy');
+    expect(state.cause).toBe('missingFrames');
+    expect(state.transient).toBe(false);
+    expect(fidelityDetailsTextOf(state).split('\n')).toEqual([
+      'Missing frame(s)',
+      '90% of data arrived.',
+      'Waiting will not improve the image.',
+    ]);
   });
 
   it('marks interactive LOD as performanceTarget and transient', () => {

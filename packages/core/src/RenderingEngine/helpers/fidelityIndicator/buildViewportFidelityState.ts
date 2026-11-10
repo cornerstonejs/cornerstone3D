@@ -70,6 +70,7 @@ export function buildViewportFidelityState(
           standingSample: isInteractiveLod(standingSampleRatioOf(line)),
           loading,
           lod,
+          missingFrames: !line.qualityPending && record?.missing > 0,
         })
       : undefined,
     // The worst line decides: a standing reduction anywhere is not transient.
@@ -164,6 +165,7 @@ function causeOf(args: {
   standingSample: boolean;
   loading: boolean;
   lod: boolean;
+  missingFrames: boolean;
 }): ViewportFidelityCause | undefined {
   const {
     record,
@@ -173,6 +175,7 @@ function causeOf(args: {
     standingSample,
     loading,
     lod,
+    missingFrames,
   } = args;
 
   if (loading) {
@@ -190,6 +193,11 @@ function causeOf(args: {
 
   if (spatial && reductionCause) {
     return reductionCause;
+  }
+
+  // The load ended, and the failed frames stay missing.
+  if (missingFrames) {
+    return 'missingFrames';
   }
 
   const delivered = record ? record.lowest : imageQualityStatus;
