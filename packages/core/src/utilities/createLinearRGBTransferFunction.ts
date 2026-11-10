@@ -2,6 +2,15 @@ import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransf
 import { EPSILON } from '@kitware/vtk.js/Common/Core/Math/Constants';
 import type { VOIRange } from '../types/voi';
 
+/**
+ * Creates a grayscale color transfer function that maps the VOI range linearly
+ * from black (at `lower`) to white (at `upper`).
+ *
+ * @param voiRange - The VOI range; when `lower` or `upper` is undefined the
+ * default range 0 to 1024 is used.
+ * @returns A vtkColorTransferFunction with two RGB nodes. A zero width range
+ * is widened by a relative epsilon so the function stays rescalable.
+ */
 export default function createLinearRGBTransferFunction(
   voiRange: VOIRange
 ): vtkColorTransferFunction {
