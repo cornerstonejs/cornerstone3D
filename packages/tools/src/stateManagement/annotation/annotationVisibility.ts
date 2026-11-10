@@ -75,6 +75,15 @@ function makeEventDetail(): AnnotationVisibilityChangeEventDetail {
   });
 }
 
+/**
+ * Removes an annotation UID from the hidden set and marks the annotation
+ * visible, recording the UID in the event detail. The annotation may no longer
+ * exist; its UID is still removed from the set.
+ *
+ * @param annotationUID - The UID of the annotation to show.
+ * @param annotationUIDsSet - The set of hidden annotation UIDs.
+ * @param detail - The event detail that collects the UIDs made visible.
+ */
 function show(
   annotationUID: string,
   annotationUIDsSet: Set<string>,
@@ -92,6 +101,15 @@ function show(
   }
 }
 
+/**
+ * Adds an annotation UID to the hidden set, deselects the annotation if it is
+ * selected and marks it hidden, recording the UID in the event detail. The UID
+ * is added even when the annotation is not in the manager.
+ *
+ * @param annotationUID - The UID of the annotation to hide.
+ * @param annotationUIDsSet - The set of hidden annotation UIDs.
+ * @param detail - The event detail that collects the UIDs hidden.
+ */
 function hide(
   annotationUID: string,
   annotationUIDsSet: Set<string>,
