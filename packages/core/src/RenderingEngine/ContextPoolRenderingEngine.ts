@@ -350,6 +350,8 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
       return;
     }
 
+    const renderStart = performance.now();
+
     // Render all viewports synchronously
     const eventDetails = viewportsToRender.map((viewport) => {
       const eventDetail = this.renderViewportUsingCustomOrVtkPipeline(viewport);
@@ -361,7 +363,9 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
     this._animationFrameSet = false;
     this._animationFrameHandle = null;
 
-    const waiting = viewportsToRender.map((vp) => this._waitsForStorage(vp));
+    const waiting = viewportsToRender.map((vp) =>
+      this._waitsForStorage(vp, renderStart)
+    );
 
     // Trigger all events after rendering is complete
     eventDetails.forEach((eventDetail, index) => {

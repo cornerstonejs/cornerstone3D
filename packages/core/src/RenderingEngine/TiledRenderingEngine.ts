@@ -365,6 +365,7 @@ class TiledRenderingEngine extends BaseRenderingEngine {
    */
   protected _renderFlaggedViewports = () => {
     this._throwIfDestroyed();
+    const renderStart = performance.now();
 
     if (this.offscreenMultiRenderWindow) {
       this.performVtkDrawCall();
@@ -380,7 +381,7 @@ class TiledRenderingEngine extends BaseRenderingEngine {
         const eventDetail =
           this.renderViewportUsingCustomOrVtkPipeline(viewport);
 
-        if (!this._waitsForStorage(viewport)) {
+        if (!this._waitsForStorage(viewport, renderStart)) {
           eventDetailArray.push(eventDetail);
           renderedViewports.push(viewport);
         }

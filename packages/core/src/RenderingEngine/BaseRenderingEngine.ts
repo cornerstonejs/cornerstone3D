@@ -9,7 +9,7 @@ import viewportTypeUsesCustomRenderingPipeline, {
   viewportUsesCustomRenderingPipeline,
 } from './helpers/viewportTypeUsesCustomRenderingPipeline';
 import getOrCreateCanvas from './helpers/getOrCreateCanvas';
-import { isWaitingForStorage } from './helpers/actorsWaitingForStorage';
+import { skippedDrawSince } from './helpers/actorsWaitingForStorage';
 import {
   setElementTouchActionNone,
   restoreElementTouchAction,
@@ -703,17 +703,23 @@ abstract class BaseRenderingEngine {
   }
 
   /**
-   * Whether the last render of this viewport skipped the draw of an actor,
-   * because its texture storage is not ready (see `actorsWaitingForStorage`).
-   * The engine fires no `IMAGE_RENDERED` and no fidelity event for that frame.
+   * Whether the render of this viewport that started at `renderStart`
+   * (`performance.now()`) skipped the draw of an actor, because its texture
+   * storage is not ready (see `actorsWaitingForStorage`). The engine fires no
+   * `IMAGE_RENDERED` and no fidelity event for that frame.
    */
-  protected _waitsForStorage(viewport: IViewport): boolean {
+  protected _waitsForStorage(
+    viewport: IViewport,
+    renderStart: number
+  ): boolean {
     const actors = viewport.getActors?.();
 
     // A CPU viewport does not return an array.
     return (
       Array.isArray(actors) &&
-      actors.some((entry) => entry?.actor && isWaitingForStorage(entry.actor))
+      actors.some(
+        (entry) => entry?.actor && skippedDrawSince(entry.actor, renderStart)
+      )
     );
   }
 

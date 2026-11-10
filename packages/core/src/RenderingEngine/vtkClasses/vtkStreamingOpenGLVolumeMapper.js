@@ -204,7 +204,7 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
 
     // A draw that samples storage that the browser still clears would block.
     if (model.scalarTextures.some((texture) => texture?.isInitializing?.())) {
-      actorsWaitingForStorage.set(actor, model.scalarTextures);
+      actorsWaitingForStorage.set(actor, performance.now());
     } else {
       actorsWaitingForStorage.delete(actor);
       publicAPI.renderPieceDraw(ren, actor);
