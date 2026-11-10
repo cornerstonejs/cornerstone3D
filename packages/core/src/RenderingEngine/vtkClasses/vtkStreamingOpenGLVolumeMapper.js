@@ -11,6 +11,7 @@ import { getCanUseNorm16Texture } from '../../init';
 import cache from '../../cache/cache';
 import canUseFloatOpacityTexture from './canUseFloatOpacityTexture';
 import takeBoundScalarTexture from './takeBoundScalarTexture';
+import actorsWaitingForStorage from '../helpers/actorsWaitingForStorage';
 import { coreLog } from '../../utilities/logger';
 import { volumeTextureBytes } from '../../utilities/getBufferConfiguration';
 import { voxelGridWithinLimits } from '../../utilities/voxelGrid';
@@ -202,7 +203,10 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
     publicAPI.renderPieceStart(ren, actor);
 
     // A draw that samples storage that the browser still clears would block.
-    if (!model.scalarTextures.some((texture) => texture?.isInitializing?.())) {
+    if (model.scalarTextures.some((texture) => texture?.isInitializing?.())) {
+      actorsWaitingForStorage.set(actor, model.scalarTextures);
+    } else {
+      actorsWaitingForStorage.delete(actor);
       publicAPI.renderPieceDraw(ren, actor);
     }
 

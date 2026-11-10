@@ -10,6 +10,7 @@ import {
 import vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture';
 import { getCanUseNorm16Texture } from '../../init';
 import takeBoundScalarTexture from './takeBoundScalarTexture';
+import actorsWaitingForStorage from '../helpers/actorsWaitingForStorage';
 
 const { vtkErrorMacro } = macro;
 
@@ -121,7 +122,10 @@ function vtkStreamingOpenGLImageResliceMapper(publicAPI, model) {
     publicAPI.renderPieceStart(ren, actor);
 
     // A draw that samples storage that the browser still clears would block.
-    if (!model.scalarTextures?.some((texture) => texture?.isInitializing?.())) {
+    if (model.scalarTextures?.some((texture) => texture?.isInitializing?.())) {
+      actorsWaitingForStorage.set(actor, model.scalarTextures);
+    } else {
+      actorsWaitingForStorage.delete(actor);
       publicAPI.renderPieceDraw(ren, actor);
     }
 

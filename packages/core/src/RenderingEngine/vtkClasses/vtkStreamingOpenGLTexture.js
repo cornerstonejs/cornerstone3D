@@ -15,6 +15,23 @@ const DEFAULT_MAX_SLICES_PER_RENDER = 16;
 const DEFAULT_MAX_MILLISECONDS_PER_RENDER = 8;
 
 /**
+ * The smallest allocation that waits on a storage fence. A 256^3 int16
+ * texture (32 MB) clears in about 30 ms, and the blocking clear that the fence
+ * avoids is the one of about 1 GB, so a smaller texture keeps the direct path.
+ */
+const INIT_FENCE_MIN_BYTES = 256 * 1024 * 1024;
+
+/**
+ * The longest wait on a storage fence. A clear of about 1 GB takes 150-300 ms
+ * on an integrated GPU, so 3 s is ten times that. After it the texture stops
+ * the wait and takes the blocking path, so a fence that never signals cannot
+ * leave the volume undrawn.
+ */
+const INIT_FENCE_DEADLINE_MS = 3000;
+
+const INIT_FENCE_POLL_MS = 16;
+
+/**
  * The work that one render does to fill a reduced texture. See
  * `rendering.reducedTextureFill` in `Cornerstone3DConfig`.
  */
@@ -127,14 +144,19 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
    * fence tells when it ends. Until then the texture skips its uploads and the
    * mappers skip the draw of the actor (see {@link isInitializing}).
    *
-   * Without WebGL2 fences, the texture keeps the blocking behaviour.
+   * Without WebGL2 fences, or for an allocation below
+   * `INIT_FENCE_MIN_BYTES`, the texture keeps the blocking behaviour. The wait
+   * ends after `INIT_FENCE_DEADLINE_MS` at the latest.
    */
   function startStorageInit(dataType, numComps) {
     releaseInitFence();
 
     const gl = model.context;
 
-    if (typeof gl?.fenceSync !== 'function') {
+    if (
+      typeof gl?.fenceSync !== 'function' ||
+      !(model.allocatedGPUMemoryInBytes >= INIT_FENCE_MIN_BYTES)
+    ) {
       return;
     }
 
@@ -172,14 +194,32 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
       return;
     }
 
-    model.initFence = { gl, sync };
+    const fence = {
+      gl,
+      sync,
+      deadline: performance.now() + INIT_FENCE_DEADLINE_MS,
+    };
+
+    model.initFence = fence;
     gl.flush();
-    pollInitFence();
+    model.initFenceTimer = setTimeout(
+      () => pollInitFence(fence),
+      INIT_FENCE_POLL_MS
+    );
   }
 
-  function releaseInitFence() {
+  /**
+   * Deletes the fence. `keepPoll` leaves a pending poll to run, so that a
+   * fence that a render saw end still marks the texture modified and renders
+   * the volume, because that render skipped the uploads.
+   */
+  function releaseInitFence(keepPoll = false) {
     const fence = model.initFence;
 
+    if (!keepPoll) {
+      clearTimeout(model.initFenceTimer);
+      model.initFenceTimer = null;
+    }
     model.initFence = null;
 
     if (fence && !fence.gl.isContextLost()) {
@@ -190,36 +230,33 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
   /**
    * Polls the fence of {@link startStorageInit} from a timer, never with a
    * blocking wait, and renders the viewports of the volume when it signals.
+   * A poll of a deleted texture or of a replaced fence does nothing.
    */
-  function pollInitFence() {
-    if (model.initFencePolling) {
+  function pollInitFence(fence) {
+    if (model.deleted || (model.initFence && model.initFence !== fence)) {
       return;
     }
 
-    model.initFencePolling = true;
+    if (publicAPI.isInitializing()) {
+      model.initFenceTimer = setTimeout(
+        () => pollInitFence(fence),
+        INIT_FENCE_POLL_MS
+      );
+      return;
+    }
 
-    const poll = () => {
-      if (publicAPI.isInitializing()) {
-        setTimeout(poll, 16);
-        return;
-      }
+    publicAPI.modified();
 
-      model.initFencePolling = false;
-      publicAPI.modified();
-
-      if (model.volumeId) {
-        autoLoad(model.volumeId);
-      }
-    };
-
-    setTimeout(poll, 16);
+    if (model.volumeId) {
+      autoLoad(model.volumeId);
+    }
   }
 
   /**
    * Whether the browser still clears the storage of this allocation. A mapper
    * must not draw an actor that samples this texture while this is true: the
    * draw would wait for the clear, and a readback of the context then blocks
-   * the main thread. A lost context counts as done.
+   * the main thread. A lost context, and the deadline, count as done.
    */
   publicAPI.isInitializing = () => {
     const fence = model.initFence;
@@ -228,16 +265,17 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
       return false;
     }
 
-    const { gl, sync } = fence;
+    const { gl, sync, deadline } = fence;
 
     if (
       !gl.isContextLost() &&
+      performance.now() < deadline &&
       gl.getSyncParameter(sync, gl.SYNC_STATUS) !== gl.SIGNALED
     ) {
       return true;
     }
 
-    releaseInitFence();
+    releaseInitFence(true);
 
     return false;
   };
@@ -257,6 +295,13 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     superReleaseGraphicsResources(
       rwin ?? (window?.isDeleted?.() ? undefined : window)
     );
+  };
+
+  const superDelete = publicAPI.delete;
+
+  publicAPI.delete = () => {
+    releaseInitFence();
+    superDelete();
   };
 
   const superUpdate = publicAPI.updateVolumeInfoForGL;

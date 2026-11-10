@@ -379,8 +379,11 @@ class TiledRenderingEngine extends BaseRenderingEngine {
       if (this._needsRender.has(viewport.id)) {
         const eventDetail =
           this.renderViewportUsingCustomOrVtkPipeline(viewport);
-        eventDetailArray.push(eventDetail);
-        renderedViewports.push(viewport);
+
+        if (!this._waitsForStorage(viewport)) {
+          eventDetailArray.push(eventDetail);
+          renderedViewports.push(viewport);
+        }
         viewport.setRendered();
 
         // This viewport has been rendered, we can remove it from the set
