@@ -795,8 +795,16 @@ class StackViewport extends Viewport {
       smoothing: this.globalDefaultProperties.smoothing ?? smoothing,
     };
 
+    // The inversion to apply once the colormap is set. setColormap rebuilds
+    // the RGB transfer function in its default, non-inverted state, so an
+    // inverted viewport has to be inverted again even when this call does not
+    // set invert (the same convention as _setPropertiesFromCache).
+    let invertToApply = invert;
+
     if (typeof colormap !== 'undefined') {
+      invertToApply ??= this.invert;
       this.setColormap(colormap);
+      this.invert = false;
     }
     // if voi is not applied for the first time, run the setVOI function
     // which will apply the default voi based on the range
@@ -809,8 +817,8 @@ class StackViewport extends Viewport {
       this.setVOILUTFunction(VOILUTFunction, suppressEvents);
     }
 
-    if (typeof invert !== 'undefined') {
-      this.setInvertColor(invert);
+    if (typeof invertToApply !== 'undefined') {
+      this.setInvertColor(invertToApply);
     }
 
     if (typeof interpolationType !== 'undefined') {
