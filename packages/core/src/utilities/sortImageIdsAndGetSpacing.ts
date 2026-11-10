@@ -94,7 +94,8 @@ export default function sortImageIdsAndGetSpacing(
       imageIds[0],
       imageIds[Math.floor(imageIds.length / 2)],
     ];
-    sortedImageIds = imageIds;
+    // Copy, so that a reversal below does not reorder the caller's array.
+    sortedImageIds = [...imageIds];
     const firstImageDistance = getDistance(prefetchedImageIds[0]);
     const middleImageDistance = getDistance(prefetchedImageIds[1]);
     if (firstImageDistance - middleImageDistance < 0) {
