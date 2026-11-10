@@ -583,6 +583,66 @@ describe('fidelityIndicator attach gates', () => {
       expect(states).toEqual(['loading', 'done']);
       disable(element);
     });
+
+    // The API must do this: a burst of image arrivals reads the record once
+    // for each animation frame, and the last state still reaches the consumer.
+    it('coalesces a burst of IMAGE_VOLUME_MODIFIED into one notification', () => {
+      jest.useFakeTimers();
+      const voxelGrid = {
+        dimensions: [8, 8, 8],
+        spacing: [1, 1, 1],
+        origin: [0, 0, 0],
+        direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
+      };
+      let missing = 50;
+      const loadStatus = { loading: true };
+      const getGridQuality = jest.fn(() => ({
+        grid: voxelGrid,
+        status: ImageQualityStatus.FULL_RESOLUTION,
+        lowest: ImageQualityStatus.FULL_RESOLUTION,
+        highest: ImageQualityStatus.FULL_RESOLUTION,
+        missing,
+        voxels: 512,
+        exact: true,
+        source: 'directLoad',
+        reduction: VoxelReductions.None,
+        deliveries: 1,
+      }));
+      jest
+        .spyOn(cache, 'getVolume')
+        .mockReturnValue({ voxelGrid, loadStatus, getGridQuality });
+      const element = document.createElement('div');
+      const viewport = Object.assign(volumeViewport(element), {
+        renderingEngineId: 're-1',
+        getActors: () => [{ uid: 'vol', actor: {} }],
+        getCamera: () => undefined,
+      });
+      const states = [];
+      element.addEventListener(Events.VIEWPORT_FIDELITY_CHANGED, (evt) =>
+        states.push(evt.detail.state.shownState)
+      );
+
+      viewport.notifyFidelityStateChanged();
+      getGridQuality.mockClear();
+
+      while (missing > 0) {
+        missing--;
+        loadStatus.loading = missing > 0;
+        eventTarget.dispatchEvent(
+          new CustomEvent(Events.IMAGE_VOLUME_MODIFIED, {
+            detail: { volumeId: 'vol' },
+          })
+        );
+      }
+      expect(getGridQuality).not.toHaveBeenCalled();
+
+      jest.advanceTimersByTime(20);
+      expect(getGridQuality).toHaveBeenCalledTimes(1);
+      expect(states.at(-1)).toBe('done');
+
+      disable(element);
+      jest.useRealTimers();
+    });
   });
 
   describe('generic viewports', () => {

@@ -349,6 +349,310 @@ function coverageOfRegion(
   return coverage;
 }
 
+/** One maximal k range of equal best quality. */
+type QualityRun = { start: number; end: number; quality: number };
+
+/**
+ * The deliveries of one record that share one i, j footprint, kept up to date
+ * delivery by delivery. `starts` and `ends` are the sorted k bounds, which
+ * count the deliveries that meet a k range. `runs` are the disjoint k ranges
+ * of the best quality, sorted, and `undefined` after a removal until the next
+ * query builds them again.
+ */
+type FootprintCoverage = {
+  i: [number, number];
+  j: [number, number];
+  members: Set<DeliveredRegion>;
+  starts: number[];
+  ends: number[];
+  length: number;
+  runs: QualityRun[];
+};
+
+/** The coverage of one record, by the key of the i, j footprint. */
+type IncrementalCoverage = Map<string, FootprintCoverage>;
+
+/** The number of values of a sorted array that are below `value`. */
+function countBelow(sorted: number[], value: number): number {
+  let low = 0;
+  let high = sorted.length;
+
+  while (low < high) {
+    const middle = (low + high) >> 1;
+
+    if (sorted[middle] < value) {
+      low = middle + 1;
+    } else {
+      high = middle;
+    }
+  }
+
+  return low;
+}
+
+/** The index of the first run whose end is at or after `k`. */
+function firstRunEndingAtOrAfter(runs: QualityRun[], k: number): number {
+  let low = 0;
+  let high = runs.length;
+
+  while (low < high) {
+    const middle = (low + high) >> 1;
+
+    if (runs[middle].end < k) {
+      low = middle + 1;
+    } else {
+      high = middle;
+    }
+  }
+
+  return low;
+}
+
+/**
+ * Raises the best quality of `[start, end]` to at least `quality`. The runs
+ * stay disjoint and sorted, and two adjacent runs of one quality merge. Only
+ * the runs that meet or touch the range change.
+ */
+function addRun(
+  runs: QualityRun[],
+  start: number,
+  end: number,
+  quality: number
+): void {
+  if (!(quality > 0)) {
+    // `coverageOfRegion` marks no cell with such a quality.
+    return;
+  }
+
+  const first = firstRunEndingAtOrAfter(runs, start - 1);
+  let last = first;
+  const pieces: QualityRun[] = [];
+  let cursor = start;
+  const push = (from: number, to: number, value: number) => {
+    const previous = pieces[pieces.length - 1];
+
+    if (previous && previous.end + 1 === from && previous.quality === value) {
+      previous.end = to;
+    } else {
+      pieces.push({ start: from, end: to, quality: value });
+    }
+  };
+
+  for (; last < runs.length && runs[last].start <= end + 1; last++) {
+    const run = runs[last];
+
+    if (run.start < start) {
+      push(run.start, Math.min(run.end, start - 1), run.quality);
+    }
+
+    const from = Math.max(run.start, start);
+    const to = Math.min(run.end, end);
+
+    if (from <= to) {
+      if (cursor < from) {
+        push(cursor, from - 1, quality);
+      }
+
+      push(from, to, Math.max(run.quality, quality));
+      cursor = to + 1;
+    }
+
+    if (run.end > end) {
+      if (cursor <= end) {
+        push(cursor, end, quality);
+        cursor = end + 1;
+      }
+
+      push(Math.max(run.start, end + 1), run.end, run.quality);
+    }
+  }
+
+  if (cursor <= end) {
+    push(cursor, end, quality);
+  }
+
+  runs.splice(first, last - first, ...pieces);
+}
+
+function footprintKey(bounds: BoundsIJK): string {
+  return `${bounds[0][0]},${bounds[0][1]},${bounds[1][0]},${bounds[1][1]}`;
+}
+
+function addToCoverage(
+  coverage: IncrementalCoverage,
+  delivery: DeliveredRegion
+): void {
+  const { bounds } = delivery;
+  const key = footprintKey(bounds);
+  let footprint = coverage.get(key);
+
+  if (!footprint) {
+    footprint = {
+      i: [bounds[0][0], bounds[0][1]],
+      j: [bounds[1][0], bounds[1][1]],
+      members: new Set(),
+      starts: [],
+      ends: [],
+      length: 0,
+      runs: [],
+    };
+    coverage.set(key, footprint);
+  }
+
+  const [start, end] = bounds[2];
+
+  footprint.members.add(delivery);
+  footprint.starts.splice(countBelow(footprint.starts, start), 0, start);
+  footprint.ends.splice(countBelow(footprint.ends, end), 0, end);
+  footprint.length += Math.max(0, end - start + 1);
+
+  if (footprint.runs) {
+    addRun(footprint.runs, start, end, delivery.quality);
+  }
+}
+
+function removeFromCoverage(
+  coverage: IncrementalCoverage,
+  delivery: DeliveredRegion
+): void {
+  const key = footprintKey(delivery.bounds);
+  const footprint = coverage.get(key);
+
+  if (!footprint?.members.delete(delivery)) {
+    return;
+  }
+
+  if (!footprint.members.size) {
+    coverage.delete(key);
+
+    return;
+  }
+
+  const [start, end] = delivery.bounds[2];
+
+  footprint.starts.splice(countBelow(footprint.starts, start), 1);
+  footprint.ends.splice(countBelow(footprint.ends, end), 1);
+  footprint.length -= Math.max(0, end - start + 1);
+  footprint.runs = undefined;
+}
+
+/** Records a raise of the quality of a delivery that the coverage holds. */
+function raiseInCoverage(
+  coverage: IncrementalCoverage,
+  delivery: DeliveredRegion
+): void {
+  const runs = coverage.get(footprintKey(delivery.bounds))?.runs;
+
+  if (runs) {
+    addRun(
+      runs,
+      delivery.bounds[2][0],
+      delivery.bounds[2][1],
+      delivery.quality
+    );
+  }
+}
+
+/**
+ * Gives the same result as `coverageOfRegion` from a coverage that the record
+ * keeps up to date, at a cost that grows with the number of runs inside the
+ * region and not with the number of deliveries.
+ *
+ * The deliveries of one footprint cut the i and j axes into the same cells, so
+ * the cells of `coverageOfRegion` reduce to the runs of k. Each clipped
+ * delivery then spans one cell on i and j, and at most one cell for each of
+ * its k slices, which bounds the work of the exact count.
+ *
+ * @returns `undefined` when the deliveries have more than one footprint, or
+ * when `coverageOfRegion` could give an estimate; the caller then uses
+ * `coverageOfRegion`.
+ */
+function coverageFromIncremental(
+  coverage: IncrementalCoverage,
+  region: BoundsIJK
+): Coverage {
+  const result: Coverage = {
+    covered: 0,
+    lowest: undefined,
+    highest: undefined,
+    deliveries: 0,
+    exact: true,
+  };
+
+  if (coverage.size === 0 || volumeOfBounds(region) === 0) {
+    return result;
+  }
+
+  if (coverage.size > 1) {
+    return undefined;
+  }
+
+  const footprint = coverage.values().next().value as FootprintCoverage;
+  const width =
+    Math.min(footprint.i[1], region[0][1]) -
+    Math.max(footprint.i[0], region[0][0]) +
+    1;
+  const height =
+    Math.min(footprint.j[1], region[1][1]) -
+    Math.max(footprint.j[0], region[1][0]) +
+    1;
+
+  if (width <= 0 || height <= 0) {
+    return result;
+  }
+
+  const [kStart, kEnd] = region[2];
+  const met =
+    countBelow(footprint.starts, kEnd + 1) - countBelow(footprint.ends, kStart);
+
+  if (met <= 0) {
+    return result;
+  }
+
+  // At most 3 cells on i and j, and 2 edges in k for each delivery.
+  const cells = 9 * (2 * met + 1);
+
+  if (
+    cells > MAX_COVERAGE_CELLS ||
+    Math.min(footprint.length, met * cells) > MAX_COVERAGE_WORK
+  ) {
+    return undefined;
+  }
+
+  if (!footprint.runs) {
+    footprint.runs = [];
+
+    for (const delivery of footprint.members) {
+      addRun(
+        footprint.runs,
+        delivery.bounds[2][0],
+        delivery.bounds[2][1],
+        delivery.quality
+      );
+    }
+  }
+
+  const { runs } = footprint;
+  let slices = 0;
+
+  for (
+    let index = firstRunEndingAtOrAfter(runs, kStart);
+    index < runs.length && runs[index].start <= kEnd;
+    index++
+  ) {
+    const { start, end, quality } = runs[index];
+
+    slices += Math.min(end, kEnd) - Math.max(start, kStart) + 1;
+    result.lowest = Math.min(result.lowest ?? quality, quality);
+    result.highest = Math.max(result.highest ?? quality, quality);
+  }
+
+  result.covered = slices * width * height;
+  result.deliveries = met;
+
+  return result;
+}
+
 /**
  * Derives the comparable summary of a record, and gives the record back.
  *
@@ -392,11 +696,53 @@ function withinCeiling(grid: VoxelGrid, ceiling: Point3): boolean {
  * `byBounds` answers "did this exact region arrive before". `bySlice` holds the
  * deliveries that touch one k slice, and containment needs an overlap in k, so
  * a delivery compares itself against the deliveries of its own k slices alone.
+ *
+ * `coverage` answers the quality of a region without a scan of the record (see
+ * `coverageFromIncremental`). `mapped` holds the same coverage for the
+ * deliveries mapped into a derived grid, by the pair of grids, and each copy
+ * of a delivery by its original.
  */
 type DeliveryIndex = {
   byBounds: Map<string, DeliveredRegion>;
   bySlice: Map<number, Set<DeliveredRegion>>;
+  coverage: IncrementalCoverage;
+  mapped: Map<string, MappedCoverage>;
 };
+
+type MappedCoverage = {
+  source: VoxelGrid;
+  target: VoxelGrid;
+  coverage: IncrementalCoverage;
+  copies: Map<DeliveredRegion, DeliveredRegion>;
+};
+
+/** Bounds the number of derived grids that one record keeps a coverage for. */
+const MAX_MAPPED_COVERAGES = 8;
+
+/** The exact geometry of a grid, as a key. */
+function exactGridKey(grid: VoxelGrid): string {
+  return [grid.dimensions, grid.spacing, grid.origin, grid.direction]
+    .map((values) => Array.from(values).join(','))
+    .join('|');
+}
+
+function mappedCopy(
+  mapped: MappedCoverage,
+  delivery: DeliveredRegion
+): DeliveredRegion {
+  const copy = {
+    bounds: mapBoundsBetweenGrids(
+      mapped.source,
+      mapped.target,
+      delivery.bounds
+    ),
+    quality: delivery.quality,
+  };
+
+  mapped.copies.set(delivery, copy);
+
+  return copy;
+}
 
 /** The key of one region. `sameBounds` compares the same six whole numbers. */
 function boundsKey(bounds: BoundsIJK): string {
@@ -419,6 +765,12 @@ function addToDeliveryIndex(
 
     bucket.add(delivery);
   }
+
+  addToCoverage(index.coverage, delivery);
+
+  for (const mapped of index.mapped.values()) {
+    addToCoverage(mapped.coverage, mappedCopy(mapped, delivery));
+  }
 }
 
 function removeFromDeliveryIndex(
@@ -430,12 +782,67 @@ function removeFromDeliveryIndex(
   for (let k = delivery.bounds[2][0]; k <= delivery.bounds[2][1]; k++) {
     index.bySlice.get(k)?.delete(delivery);
   }
+
+  removeFromCoverage(index.coverage, delivery);
+
+  for (const mapped of index.mapped.values()) {
+    removeFromCoverage(mapped.coverage, mapped.copies.get(delivery));
+    mapped.copies.delete(delivery);
+  }
+}
+
+/** Records the raise of the quality of a delivery that the index holds. */
+function raiseInDeliveryIndex(
+  index: DeliveryIndex,
+  delivery: DeliveredRegion
+): void {
+  raiseInCoverage(index.coverage, delivery);
+
+  for (const mapped of index.mapped.values()) {
+    const copy = mapped.copies.get(delivery);
+
+    copy.quality = delivery.quality;
+    raiseInCoverage(mapped.coverage, copy);
+  }
+}
+
+/**
+ * The coverage of the deliveries of the index mapped from `source` into
+ * `target`, which the index builds at the first query and then keeps up to
+ * date.
+ */
+function mappedCoverageOf(
+  index: DeliveryIndex,
+  delivered: DeliveredRegion[],
+  source: VoxelGrid,
+  target: VoxelGrid
+): IncrementalCoverage {
+  const key = `${exactGridKey(source)}>${exactGridKey(target)}`;
+  let mapped = index.mapped.get(key);
+
+  if (!mapped) {
+    if (index.mapped.size >= MAX_MAPPED_COVERAGES) {
+      index.mapped.clear();
+    }
+
+    mapped = { source, target, coverage: new Map(), copies: new Map() };
+
+    for (const delivery of delivered) {
+      addToCoverage(mapped.coverage, mappedCopy(mapped, delivery));
+    }
+
+    index.mapped.set(key, mapped);
+  }
+
+  return mapped.coverage;
 }
 
 function buildDeliveryIndex(delivered: DeliveredRegion[]): DeliveryIndex {
   const index: DeliveryIndex = {
     byBounds: new Map(),
     bySlice: new Map(),
+    coverage: new Map(),
+    mapped: new Map(),
   };
 
   for (const delivery of delivered) {
@@ -483,6 +890,9 @@ function boxReductionOf(statistic: VoxelStatistic): VoxelReduction {
     requireVoxelStatistic(statistic).boxReduction ?? VoxelReductions.BoxAverage
   );
 }
+
+/** @internal The full recomputation, which the tests compare against. */
+export { coverageOfRegion };
 
 export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
   private readonly representations: VoxelRepresentation<T>[] = [];
@@ -832,6 +1242,7 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
       }
 
       existing.quality = quality;
+      raiseInDeliveryIndex(index, existing);
 
       return true;
     }
@@ -916,6 +1327,24 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
   }
 
   /**
+   * `coverageOfRegion` of a record, from the coverage that the index of the
+   * record keeps up to date when the deliveries allow it.
+   */
+  private coverageOf(
+    delivered: DeliveredRegion[],
+    region: BoundsIJK
+  ): Coverage {
+    return (
+      (delivered &&
+        coverageFromIncremental(
+          this.deliveryIndexOf(delivered).coverage,
+          region
+        )) ??
+      coverageOfRegion(delivered, region)
+    );
+  }
+
+  /**
    * The absolute record of what one representation holds for a region.
    *
    * The region belongs to the index space of the composite, and the function
@@ -961,7 +1390,7 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
       return withStatus(this.qualityOfDerived(representation, target, record));
     }
 
-    const coverage = coverageOfRegion(representation.delivered, target);
+    const coverage = this.coverageOf(representation.delivered, target);
     let { covered } = coverage;
 
     record.deliveries = coverage.deliveries;
@@ -1076,7 +1505,7 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
       boundsOfGrid(grid)
     );
     const sourceVoxels = volumeOfBounds(sourceBounds);
-    const coverage = coverageOfRegion(delivered, sourceBounds);
+    const coverage = this.coverageOf(delivered, sourceBounds);
 
     record.deliveries = coverage.deliveries;
     record.lowest = coverage.lowest;
@@ -1098,17 +1527,28 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
     }
 
     // The deliveries of the source, mapped onto the boxes that they meet.
-    const boxes = coverageOfRegion(
-      (delivered ?? []).map((delivery) => ({
-        bounds: mapBoundsBetweenGrids(
-          grid,
-          representation.grid,
-          delivery.bounds
-        ),
-        quality: delivery.quality,
-      })),
-      target
-    );
+    const boxes =
+      (delivered &&
+        coverageFromIncremental(
+          mappedCoverageOf(
+            this.deliveryIndexOf(delivered),
+            delivered,
+            grid,
+            representation.grid
+          ),
+          target
+        )) ??
+      coverageOfRegion(
+        (delivered ?? []).map((delivery) => ({
+          bounds: mapBoundsBetweenGrids(
+            grid,
+            representation.grid,
+            delivery.bounds
+          ),
+          quality: delivery.quality,
+        })),
+        target
+      );
 
     record.missing = record.voxels - boxes.covered;
     record.exact = record.exact && boxes.exact;

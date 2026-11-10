@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from '@jest/globals';
-import CompositeVoxelManager from '../../src/utilities/CompositeVoxelManager';
+import CompositeVoxelManager, * as CompositeVoxelManagerModule from '../../src/utilities/CompositeVoxelManager';
 import VoxelManager from '../../src/utilities/VoxelManager';
 import * as voxelGrid from '../../src/utilities/voxelGrid';
 import {
@@ -1049,5 +1049,173 @@ describe('CompositeVoxelManager.getGridQuality', () => {
     expect(record.reduction).toBe(VoxelReductions.BoxAverage);
     expect(record.missing).toBe(2 * 2 * 3);
     expect(composite.getRepresentations().length).toBe(1);
+  });
+});
+
+describe('the incremental coverage of the deliveries', () => {
+  // A seeded generator, so a failure repeats.
+  function random(seed) {
+    let state = seed;
+    return () => {
+      state = (state * 1664525 + 1013904223) % 4294967296;
+      return state / 4294967296;
+    };
+  }
+
+  function coarseInterleaved(depth) {
+    const order = [];
+    const seen = new Set();
+    for (let step = 64; step >= 1; step = Math.floor(step / 2)) {
+      for (let k = 0; k < depth; k += step) {
+        if (!seen.has(k)) {
+          seen.add(k);
+          order.push(k);
+        }
+      }
+    }
+    return order;
+  }
+
+  function shuffled(depth, next) {
+    const order = [...Array(depth).keys()];
+    for (let index = order.length - 1; index > 0; index--) {
+      const other = Math.floor(next() * (index + 1));
+      [order[index], order[other]] = [order[other], order[index]];
+    }
+    return order;
+  }
+
+  /** The record of the full recomputation, as `getRegionQuality` built it. */
+  function expectedRecord(composite, grid, derivedGrid, region) {
+    const { delivered } = composite.getRepresentations()[0];
+    const { coverageOfRegion } = CompositeVoxelManagerModule;
+
+    if (!derivedGrid) {
+      const coverage = coverageOfRegion(delivered, region);
+      return {
+        deliveries: coverage.deliveries,
+        lowest: coverage.lowest,
+        highest: coverage.highest,
+        exact: coverage.exact,
+        missing: voxelGrid.volumeOfBounds(region) - coverage.covered,
+      };
+    }
+
+    const sourceBounds = voxelGrid.intersectBounds(
+      voxelGrid.mapBoundsBetweenGrids(derivedGrid, grid, region),
+      voxelGrid.boundsOfGrid(grid)
+    );
+    const coverage = coverageOfRegion(delivered, sourceBounds);
+    const boxes = coverageOfRegion(
+      delivered.map((delivery) => ({
+        bounds: voxelGrid.mapBoundsBetweenGrids(
+          grid,
+          derivedGrid,
+          delivery.bounds
+        ),
+        quality: delivery.quality,
+      })),
+      region
+    );
+    return {
+      deliveries: coverage.deliveries,
+      lowest: coverage.lowest,
+      highest: coverage.highest,
+      exact: coverage.exact && boxes.exact,
+      missing: voxelGrid.volumeOfBounds(region) - boxes.covered,
+    };
+  }
+
+  function recordFields(record) {
+    const { deliveries, lowest, highest, exact, missing } = record;
+    return { deliveries, lowest, highest, exact, missing };
+  }
+
+  const qualities = [
+    ImageQualityStatus.SUBRESOLUTION,
+    ImageQualityStatus.LOSSY,
+    ImageQualityStatus.FULL_RESOLUTION,
+  ];
+
+  // The API must do this: the incremental coverage gives the record of the
+  // full recomputation after every delivery, in every delivery order.
+  it.each([
+    ['coarse interleaved', 1],
+    ['shuffled with duplicates and slabs', 2],
+    ['shuffled with partial footprints', 3],
+  ])('matches the full recomputation, %s', (order, seed) => {
+    const next = random(seed);
+    const depth = 150;
+    const grid = makeGrid([4, 4, depth]);
+    const composite = new CompositeVoxelManager({
+      primary: makeFilled(grid.dimensions, 0),
+      grid,
+      delivered: [],
+    });
+    const representation = composite.getRepresentations()[0];
+    const derivedGrids = [
+      deriveBoxAverageGrid(grid, { factors: [2, 2, 2] }),
+      deriveBoxAverageGrid(grid, { factors: [1, 1, 3] }),
+    ];
+    const frames =
+      seed === 1 ? coarseInterleaved(depth) : shuffled(depth, next);
+    const steps = [];
+
+    for (const k of frames) {
+      steps.push({ bounds: boundsOfFrame(grid, k), quality: qualities[2] });
+      if (seed === 1) {
+        continue;
+      }
+      const roll = next();
+      const quality = qualities[Math.floor(next() * 3)];
+      if (roll < 0.2) {
+        steps.push({ bounds: boundsOfFrame(grid, k), quality });
+      } else if (roll < 0.3) {
+        const end = Math.min(depth - 1, k + Math.floor(next() * 5));
+        steps.push({
+          bounds: [
+            [0, 3],
+            [0, 3],
+            [k, end],
+          ],
+          quality,
+        });
+      } else if (seed === 3 && roll < 0.4) {
+        steps.push({
+          bounds: [
+            [0, 1],
+            [1, 3],
+            [k, k],
+          ],
+          quality,
+        });
+      }
+    }
+
+    for (const step of steps) {
+      composite.setDeliveredQuality(representation, step.bounds, step.quality);
+      const k0 = Math.floor(next() * depth);
+      const regions = [
+        voxelGrid.boundsOfGrid(grid),
+        [
+          [1, 2],
+          [0, 3],
+          [k0, Math.min(depth - 1, k0 + 20)],
+        ],
+      ];
+
+      for (const region of regions) {
+        expect(
+          recordFields(composite.getRegionQuality(representation, region))
+        ).toEqual(expectedRecord(composite, grid, undefined, region));
+      }
+
+      for (const derivedGrid of derivedGrids) {
+        const region = voxelGrid.boundsOfGrid(derivedGrid);
+        expect(recordFields(composite.getGridQuality(derivedGrid))).toEqual(
+          expectedRecord(composite, grid, derivedGrid, region)
+        );
+      }
+    }
   });
 });

@@ -341,7 +341,10 @@ states map to the states of this specification: transiently lossy is
     itself and marked it with `markRendered()`. The CPU paths do that.
   - A volume viewport also calls it on `IMAGE_VOLUME_MODIFIED` and
     `IMAGE_VOLUME_LOADING_COMPLETED`, because no render can follow such an
-    event. A generic render path requests a render on each volume event.
+    event. The call for `IMAGE_VOLUME_MODIFIED` runs at most once for each
+    animation frame, after the last event of that frame, because a streaming
+    load fires the event once for each image. A generic render path requests
+    a render on each volume event.
   - The `Viewport` class and the `GenericViewport` class use one shared
     helper, `helpers/fidelityIndicator/notifyFidelityStateChanged.ts`. The
     helper obeys `suppressEvents`.
