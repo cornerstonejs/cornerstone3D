@@ -704,9 +704,11 @@ abstract class BaseRenderingEngine {
 
   /**
    * Whether the render of this viewport that started at `renderStart`
-   * (`performance.now()`) skipped the draw of an actor, because its texture
-   * storage is not ready (see `actorsWaitingForStorage`). The engine fires no
-   * `IMAGE_RENDERED` and no fidelity event for that frame.
+   * (`performance.now()`) drew no actor, because every actor waits for its
+   * texture storage (see `actorsWaitingForStorage`). The engine then fires no
+   * `IMAGE_RENDERED` and no fidelity event for that empty frame. When any actor
+   * drew, for example a small PET over a waiting CT, the engine fires the
+   * events, so the annotations follow the camera of the frame that shows.
    */
   protected _waitsForStorage(
     viewport: IViewport,
@@ -717,7 +719,8 @@ abstract class BaseRenderingEngine {
     // A CPU viewport does not return an array.
     return (
       Array.isArray(actors) &&
-      actors.some(
+      actors.length > 0 &&
+      actors.every(
         (entry) => entry?.actor && skippedDrawSince(entry.actor, renderStart)
       )
     );

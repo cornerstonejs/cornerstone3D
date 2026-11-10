@@ -323,8 +323,11 @@ states map to the states of this specification: transiently lossy is
   view is lossy, so an ordinary load fires no event on each frame. The key
   does not hold the display spacing. Thus a zoom, a pan or a resize that keeps
   the verdict fires no event. A zoom that changes a box-average verdict fires the event. The event
-  has no debounce, so an interactive reduction reaches the consumer on the
-  first frame (FIDELITY-STATE-4).
+  of a render has no debounce, so an interactive reduction reaches the consumer
+  on the first frame (FIDELITY-STATE-4). The event of a volume load comes at
+  most once in each frame, and the last state of the load always comes
+  (FIDELITY-EVENT-7). A frame that shows nothing, because no actor drew, fires
+  no event. The first frame that shows the volume fires the event.
 - **FIDELITY-EVENT-5** A consumer can also read the state when it asks, with
   `viewport.getFidelityState()`. It needs no event and no user interface. A test
   and a measurement harness read the state this way. The state holds
