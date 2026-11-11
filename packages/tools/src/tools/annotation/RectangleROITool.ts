@@ -159,36 +159,19 @@ class RectangleROITool extends AnnotationTool {
     const { currentPoints, element } = eventDetail;
     const worldPos = currentPoints.world;
 
-    const enabledElement = getEnabledElement(element);
-    const { viewport } = enabledElement;
-
     this.isDrawing = true;
 
-    const annotation = (<typeof AnnotationTool>(
-      this.constructor
-    )).createAnnotationForViewport<RectangleROIAnnotation>(viewport, {
-      data: {
-        handles: {
-          points: [
-            <Types.Point3>[...worldPos],
-            <Types.Point3>[...worldPos],
-            <Types.Point3>[...worldPos],
-            <Types.Point3>[...worldPos],
-          ],
-          textBox: {
-            hasMoved: false,
-            worldPosition: <Types.Point3>[0, 0, 0],
-            worldBoundingBox: {
-              topLeft: <Types.Point3>[0, 0, 0],
-              topRight: <Types.Point3>[0, 0, 0],
-              bottomLeft: <Types.Point3>[0, 0, 0],
-              bottomRight: <Types.Point3>[0, 0, 0],
-            },
-          },
-        },
-        cachedStats: {},
-      },
-    });
+    const points = [
+      <Types.Point3>[...worldPos],
+      <Types.Point3>[...worldPos],
+      <Types.Point3>[...worldPos],
+      <Types.Point3>[...worldPos],
+    ];
+
+    const annotation = <RectangleROIAnnotation>(
+      this.createAnnotation(evt, points)
+    );
+
 
     addAnnotation(annotation, element);
 
