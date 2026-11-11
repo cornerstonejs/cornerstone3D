@@ -1216,10 +1216,10 @@ the comments, and merges the rule map over the defaults.
 | Id                       | What it does                                                                                                                                                         | Priority |
 | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
 | `dwiByBValue`            | One display set for each `DiffusionBValue` of a DWI series.                                                                                                          | `-1`     |
-| `multiEchoByEchoTime`    | One display set for each `EchoTime` of a single-frame MR series.                                                                                                     | `-1`     |
+| `multiEchoByEchoTime`    | One display set for each `EchoTime` of a single-frame MR series. Localizer images stay with the `localizer` rule.                                                    | `-1`     |
 | `singleImageSeriesStack` | One stack for each CR, DX or MG series, sorted by `ImageLaterality`, `ViewPosition`, `InstanceNumber`. CR and DX only up to `singleImageSeriesMaxImages` (9) images. | `-1`     |
 | `volumePositionOrder`    | The instances of `volume3d`, with the slices in position order (`sliceDistance`).                                                                                    | `89`     |
-| `byAcquisitionTime`      | One display set for each `AcquisitionNumber` of a CT, MR, PT or NM series, in acquisition time order.                                                                | `88`     |
+| `byAcquisitionTime`      | One display set for each `AcquisitionNumber` of a CT, MR, PT or NM series, with the images in acquisition time order.                                                | `88`     |
 | `usTimeClusters`         | One display set for each ultrasound sweep.                                                                                                                           | `-1`     |
 | `regularVolume`          | The regular slices of a series with some irregular images become one volume.                                                                                         | `-2`     |
 | `derivedObjectVersions`  | One display set for each SR or SEG instance, in content date order, with `isLatestVersion`.                                                                          | `-1`     |

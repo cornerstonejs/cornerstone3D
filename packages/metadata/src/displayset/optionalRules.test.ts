@@ -170,12 +170,30 @@ describe('rules/optional/*.jsonc - one split for each file', () => {
     const te2 = [echo(2.39, 5), echo(2.39, 0)];
     const te4 = [echo(4.77, 0), echo(4.77, 5)];
 
+    const scout = mr({ EchoTime: 1.5, ImageType: ['ORIGINAL', 'LOCALIZER'] });
+
     expect(
-      splitWith('multiEchoByEchoTime', [...te2, ...te4], description)
+      splitWith('multiEchoByEchoTime', [...te2, ...te4, scout], description)
     ).toEqual([
       ['multiEchoByEchoTime', uids([te2[1], te2[0]]), 'AX TE=2.39'],
       ['multiEchoByEchoTime', uids(te4), 'AX TE=4.77'],
+      ['localizer', uids([scout])],
     ]);
+  });
+
+  it('multiEchoByEchoTime: a scout at another echo time does not make a series multi-echo', () => {
+    const te2 = [2, 1].map((z) =>
+      mr({
+        EchoTime: 2.39,
+        ImageOrientationPatient: AXIAL,
+        ImagePositionPatient: [0, 0, z],
+      })
+    );
+    const scout = mr({ EchoTime: 1.5, ImageType: ['ORIGINAL', 'LOCALIZER'] });
+
+    expect(
+      splitWith('multiEchoByEchoTime', [...te2, scout]).map(([rule]) => rule)
+    ).toEqual(['localizer', 'volume3d']);
   });
 
   it('singleImageSeriesStack: one stack for a small DX series, and one display set for each image above the limit', () => {
@@ -198,7 +216,7 @@ describe('rules/optional/*.jsonc - one split for each file', () => {
     ]);
   });
 
-  it('byAcquisitionTime: one display set for each acquisition, in time order', () => {
+  it('byAcquisitionTime: one display set for each acquisition, with the images in time order', () => {
     const at = (
       AcquisitionNumber: number,
       time: string,

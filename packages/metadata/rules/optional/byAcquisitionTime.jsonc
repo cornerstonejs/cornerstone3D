@@ -1,9 +1,11 @@
-// Volumes: one display set for each acquisition, in time order.
+// Volumes: one display set for each acquisition.
 //
 // A CT, MR, PT or NM series that holds more than one AcquisitionNumber gives
-// one display set for each AcquisitionNumber. The images of each display set
-// are in the order of their acquisition time (`acquisitionSeconds`), then
-// InstanceNumber. `acquisitionSeconds` reads AcquisitionDateTime, else
+// one display set for each AcquisitionNumber. The display sets are in
+// AcquisitionNumber order, and not in time order: an AcquisitionNumber that a
+// scanner gives out of time order gives display sets out of time order. The
+// images of each display set are in the order of their acquisition time
+// (`acquisitionSeconds`), then InstanceNumber. `acquisitionSeconds` reads AcquisitionDateTime, else
 // AcquisitionDate and AcquisitionTime, else ContentDate and ContentTime.
 //
 // A series with one AcquisitionNumber gives one display set, as with
@@ -11,13 +13,17 @@
 //
 // Some CT scanners give a new AcquisitionNumber to each rotation of an axial
 // (step) scan. Such a series gives one display set for each rotation.
+//
+// Until the `dynamicVolume` rule exists, the rule also takes a 4D series that
+// gives each time point its own AcquisitionNumber (for example MR perfusion),
+// and gives one display set for each time point.
 {
   "byAcquisitionTime": {
     // After the slot 80 that is reserved for a later default `dynamicVolume`
     // rule, and before `volume3d` (90): a later 4D series stays one
     // `dynamicVolume` display set.
     "priority": 88,
-    "description": "Multi-slice CT / MR / PT / NM: one display set for each AcquisitionNumber, in acquisition time order.",
+    "description": "Multi-slice CT / MR / PT / NM: one display set for each AcquisitionNumber, in AcquisitionNumber order, with the images in acquisition time order.",
     "matches": {
       "Modality": ["CT", "MR", "PT", "NM"],
       "seriesInstanceCount": {

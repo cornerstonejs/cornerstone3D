@@ -11,6 +11,11 @@
 // `YYYYMMDDhhmmss.ffffff`. `isLatestVersion` compares it with the maximum of
 // the series. Each rule holds both names in its own `context`.
 //
+// `isLatestVersion` is correct for a split of the whole series. A host that
+// adds new instances to the display sets of an earlier split (OHIF does) does
+// not compute the value of an earlier display set again, so after a new
+// version arrives, two display sets can have `isLatestVersion: true`.
+//
 // The stamp needs ContentTime in the form `hhmmss`. A time `hhmm` (for example
 // `1200`) gives a smaller stamp than `090000`, so that version sorts first, and
 // `isLatestVersion` can mark the wrong version. Two versions in the same second
