@@ -6,6 +6,7 @@ import {
 } from '../../../../stateManagement/segmentation/helpers/labelmapSegmentationState';
 import type { InitializedOperationData } from '../BrushStrategy';
 import { eraseCrossLayerOverwrites } from './crossLayerErase';
+import { isImageSliceEdit } from './imageSliceEdit';
 import { resolveOverwriteSegmentIndices } from './overwritePolicy';
 
 function prepareOverlapOperationData(
@@ -33,12 +34,15 @@ function prepareOverlapOperationData(
   operationData.labelValue = transaction.labelValue;
   operationData.labelmapId = transaction.labelmapId;
   operationData.crossLayerEraseBindings = transaction.crossLayerEraseBindings;
+  const imageSliceEdit = isImageSliceEdit(operationData);
+  transaction.imageSliceEdit = imageSliceEdit;
 
   if (transaction.movedSegment && transaction.activeLayer) {
     const target = resolveLabelmapLayerEditTarget(transaction.activeLayer, {
       viewport: operationData.viewport,
       imageId: operationData.imageId,
       sourceLayer: transaction.sourceLayer,
+      imageSliceEdit,
     });
 
     if (target.imageId) {
@@ -64,6 +68,7 @@ function prepareOverlapOperationData(
       viewport: operationData.viewport,
       imageId: operationData.imageId,
       sourceLayer: transaction.activeLayer,
+      imageSliceEdit,
     }
   );
 }
