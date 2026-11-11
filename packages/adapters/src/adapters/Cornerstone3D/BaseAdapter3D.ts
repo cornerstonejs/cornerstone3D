@@ -220,10 +220,13 @@ export default class BaseAdapter3D {
    * or the volumeId, depending on which key was used to store them.
    */
   public static getCachedStats(cachedStats, metadata) {
-    const { referencedImageId, volumeId } = metadata;
+    const { referencedImageId, volumeId, sliceIndex, viewPlaneNormal } =
+      metadata;
     return (
       cachedStats[`imageId:${referencedImageId}`] ||
-      cachedStats[`volumeId:${volumeId}`] ||
+      cachedStats[
+        `volumeId:${volumeId}?sliceIndex=${sliceIndex}&viewPlaneNormal=${viewPlaneNormal?.map((vpn) => vpn.toFixed(3)).toString()}`
+      ] ||
       {}
     );
   }
