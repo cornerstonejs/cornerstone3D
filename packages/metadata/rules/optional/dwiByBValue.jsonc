@@ -27,7 +27,9 @@
       "DiffusionBValue": { "notNull": true }
     },
     "groupBy": ["SeriesInstanceUID", "bValue"],
-    "sortBy": ["SliceLocation"],
+    // SliceLocation (0020,1041) is optional and has no defined direction, so
+    // sort by the distance along the slice normal, as volumePositionOrder does.
+    "sortBy": ["displaySet.sliceDistance", "InstanceNumber"],
     "attributes": {
       "SeriesDescription": {
         "template": "{SeriesDescription} b={DiffusionBValue}"

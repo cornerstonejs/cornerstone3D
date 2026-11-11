@@ -720,7 +720,7 @@ The other fields are data: `id` (optional, must equal the key), `groupId`,
     "DiffusionBValue": { "notNull": true }
   },
   "groupBy": ["SeriesInstanceUID", "bValue"],
-  "sortBy": ["SliceLocation"],
+  "sortBy": ["displaySet.sliceDistance", "InstanceNumber"],
   "attributes": {
     "SeriesDescription": { "template": "{SeriesDescription} b={DiffusionBValue}" }
   }

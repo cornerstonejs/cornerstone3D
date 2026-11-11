@@ -141,14 +141,14 @@ describe('rules/optional/*.jsonc', () => {
 
 describe('rules/optional/*.jsonc - one split for each file', () => {
   it('dwiByBValue: one display set for each b-value, and one for the images with none', () => {
-    const b0 = [
-      mr({ DiffusionBValue: 0, SliceLocation: 2 }),
-      mr({ DiffusionBValue: 0, SliceLocation: 1 }),
-    ];
-    const b1000 = [
-      mr({ DiffusionBValue: 1000, SliceLocation: 1 }),
-      mr({ DiffusionBValue: 1000, SliceLocation: 2 }),
-    ];
+    const dwi = (DiffusionBValue: number, z: number) =>
+      mr({
+        DiffusionBValue,
+        ImageOrientationPatient: AXIAL,
+        ImagePositionPatient: [0, 0, z],
+      });
+    const b0 = [dwi(0, 2), dwi(0, 1)];
+    const b1000 = [dwi(1000, 1), dwi(1000, 2)];
     const adc = [mr({ InstanceNumber: 9 })];
 
     expect(
