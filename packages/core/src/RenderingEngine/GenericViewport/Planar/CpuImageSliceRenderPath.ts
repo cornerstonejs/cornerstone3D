@@ -52,13 +52,18 @@ import {
   resolvePlanarCpuImageDisplayedArea,
   resolvePlanarCpuViewportScale,
 } from './planarCpuViewportMath';
-import { triggerPlanarNewImage } from './planarImageEvents';
+import {
+  subscribeToBetterImageStages,
+  triggerPlanarNewImage,
+} from './planarImageEvents';
 import {
   canvasToWorldPlanarRenderPathProjection,
   resolvePlanarRenderPathCurrentImageIdIndex,
   resolvePlanarRenderPathProjection,
   worldToCanvasPlanarRenderPathProjection,
 } from './planarRenderPathProjection';
+import { imageQualityStatusOf } from '../../helpers/fidelityIndicator/collectFidelityLines';
+import { isSegmentationOverlayData } from '../renderingFidelity';
 
 /** @internal */
 export class CpuImageSliceRenderPath
@@ -110,6 +115,8 @@ export class CpuImageSliceRenderPath
     rendering = {
       renderMode: ActorRenderMode.CPU_IMAGE,
       actorEntryUID: uuidv4(),
+      excludeFromFidelity: isSegmentationOverlayData(payload, options),
+      imageQualityStatus: imageQualityStatusOf(payload.image),
       enabledElement,
       compatibilityActor,
       currentImageIdIndex: payload.initialImageIdIndex ?? 0,
@@ -118,7 +125,24 @@ export class CpuImageSliceRenderPath
       fitScale: getCPUFallbackScalarScale(enabledElement.viewport.scale),
       loadRequestId: 0,
       renderingInvalidated: true,
+      refreshFidelity: () => {
+        rendering.qualityPending =
+          rendering.enabledElement.image?.imageQualityPending;
+      },
     };
+    const unsubscribeStages = subscribeToBetterImageStages(
+      rendering,
+      () => rendering.enabledElement.image?.imageId,
+      (image) =>
+        void updateRenderedImage({
+          ctx,
+          dataId: data.id,
+          image,
+          imageIdIndex: rendering.currentImageIdIndex,
+          props: rendering.dataPresentation,
+          rendering,
+        })
+    );
 
     triggerPlanarNewImage(ctx, {
       image: payload.image,
@@ -155,6 +179,7 @@ export class CpuImageSliceRenderPath
         this.resize(ctx, rendering, data.id);
       },
       removeData: () => {
+        unsubscribeStages();
         this.removeData(ctx, rendering);
       },
     };
@@ -738,6 +763,7 @@ async function updateRenderedImage(args: {
   defaultViewport.displayedArea = resolvePlanarCpuImageDisplayedArea(image);
 
   enabledElement.image = image;
+  rendering.imageQualityStatus = imageQualityStatusOf(image);
   enabledElement.viewport = {
     ...defaultViewport,
     hflip: previousViewport?.hflip ?? defaultViewport.hflip,

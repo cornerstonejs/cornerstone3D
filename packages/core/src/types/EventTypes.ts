@@ -14,6 +14,7 @@ import type IImageCalibration from './IImageCalibration';
 import type { ColormapPublic } from './Colormap';
 import type IVolumeViewport from './IVolumeViewport';
 import type { ActorEntry } from './IActor';
+import type { ViewportFidelityState } from './ViewportFidelity';
 
 /**
  * CAMERA_MODIFIED Event's data
@@ -114,6 +115,26 @@ interface ElementEnabledEventDetail {
   /** Unique ID for the renderingEngine */
   renderingEngineId: string;
 }
+
+/**
+ * VIEWPORT_FIDELITY_CHANGED Event's data (FIDELITY-EVENT-3)
+ */
+interface ViewportFidelityChangedEventDetail {
+  /** Viewport Unique ID in the renderingEngine */
+  viewportId: string;
+  /** Unique ID for the renderingEngine */
+  renderingEngineId: string;
+  /**
+   * Absolute per-viewport fidelity record (FIDELITY-EVENT-5). Not a UI summary enum.
+   */
+  state: ViewportFidelityState;
+}
+
+/**
+ * VIEWPORT_FIDELITY_CHANGED Event type
+ */
+type ViewportFidelityChangedEvent =
+  CustomEventType<ViewportFidelityChangedEventDetail>;
 
 /**
  * IMAGE_RENDERED Event's data
@@ -479,6 +500,8 @@ export type {
   VolumeScrollOutOfBoundsEvent,
   ActorsChangedEventDetail,
   ActorsChangedEvent,
+  ViewportFidelityChangedEventDetail,
+  ViewportFidelityChangedEvent,
   CameraModifiedEventDetail,
   CameraModifiedEvent,
   VoiModifiedEvent,

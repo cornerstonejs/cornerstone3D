@@ -11,6 +11,7 @@ import type {
   VOIRange,
   Point3,
 } from '../../../types';
+import type { VolumeStrategyState } from '../../helpers/volumeStrategyLifecycle';
 import type { ViewportInput } from '../../../types/IViewport';
 import type ViewportInputOptions from '../../../types/ViewportInputOptions';
 import type { InterpolationType } from '../../../enums';
@@ -127,7 +128,8 @@ export type Volume3DVolumeRendering = MountedRendering<{
   imageVolume: IImageVolume;
   mapper: vtkVolumeMapper;
   removeStreamingSubscriptions?: () => void;
-}>;
+}> &
+  VolumeStrategyState;
 
 /** @internal */
 export type Volume3DGeometryRendering = MountedRendering<{

@@ -3,6 +3,7 @@ import addButtonToToolbar from './addButtonToToolbar';
 import addCheckboxToToolbar from './addCheckboxToToolbar';
 import addDropdownToToolbar from './addDropdownToToolbar';
 import addFillOpacityDropdownToToolbar from './addFillOpacityDropdownToToolbar';
+import addGpuSettingsPresetDropdown from './addGpuSettingsPresetDropdown';
 import addUShapeModeDropdownToToolbar from './addUShapeModeDropdownToToolbar';
 import addInputToToolbar from './addInputToToolbar';
 import addLabelToToolbar from './addLabelToToolbar';
@@ -63,6 +64,7 @@ export {
   addCheckboxToToolbar,
   addDropdownToToolbar,
   addFillOpacityDropdownToToolbar,
+  addGpuSettingsPresetDropdown,
   addUShapeModeDropdownToToolbar,
   addInputToToolbar,
   addLabelToToolbar,

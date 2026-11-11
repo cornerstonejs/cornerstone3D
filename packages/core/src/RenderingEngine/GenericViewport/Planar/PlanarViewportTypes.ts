@@ -213,6 +213,12 @@ export interface PlanarViewportRenderContext extends BaseViewportRenderContext {
     getViewState(): PlanarViewState;
     isCurrentDataId(dataId: string): boolean;
     getOverlayActors(): ActorEntry[];
+    /**
+     * Whether the volume slice path of `dataId` may draw the acquired frames in
+     * place of a reduced slice. The render path adds the check of the
+     * acquisition plane.
+     */
+    canDrawAcquiredFrames?(dataId: string): boolean;
   };
   renderPath: PlanarRenderPathRuntime;
   view: PlanarActiveViewRuntime;

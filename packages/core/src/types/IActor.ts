@@ -90,6 +90,11 @@ export interface ActorEntry {
     volumeActor: VolumeActor;
     volumeId: string;
   }) => void;
+  /**
+   * When true, viewport fidelity ignores this actor (FIDELITY-STATE-9).
+   * Tools set this on labelmap / segmentation overlay actors.
+   */
+  excludeFromFidelity?: boolean;
   /**  */
   [key: string]: unknown;
 }

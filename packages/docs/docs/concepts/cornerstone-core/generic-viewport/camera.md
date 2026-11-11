@@ -134,7 +134,15 @@ Video projection reports intrinsic media-pixel coordinates:
 
 ECG projection reports signal coordinates:
 
-- world tuples are `[sampleIndex, amplitudeValue, channelIndex]`
+- world tuples are `[sampleIndex, amplitude, leadIndex]`
+- the amplitude is in raw units of the first channel, for every lead
+- `leadIndex` is `channel + 1000 * k`, with `k = copy * groupCount +
+groupIndex` over the multiplex groups of the instance. With one group, the
+  first region of a lead has its channel index, whether or not every channel
+  shows, and a rhythm strip of lead II is 1001. A copy that the layout does not
+  show maps to the first region of its lead in the same group
+- the frame of reference is the SOP Instance UID of the ECG, so every viewport
+  of one ECG shares its annotations
 - `ProjectionPosition.kind === 'signalPoint'`
 - `ProjectionScale.kind === 'signal'`
 
