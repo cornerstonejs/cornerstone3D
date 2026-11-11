@@ -1283,8 +1283,11 @@ import {
 } from '@cornerstonejs/metadata';
 
 const siteRules = {
-  // Replaces the default localizer rule.
-  localizer: { ...displaySetRules.localizer, matches: { Modality: 'CT' } },
+  // Replaces the default localizer rule: the same tests, for CT only.
+  localizer: {
+    ...displaySetRules.localizer,
+    matches: { ...displaySetRules.localizer.matches, Modality: 'CT' },
+  },
   // Turns the default ecg rule off.
   ecg: { priority: null },
 };
