@@ -127,6 +127,13 @@ export default class StreamingDynamicImageVolume
     return Math.floor(flatImageIdIndex / this._imageIdGroups[0].length) + 1;
   }
 
+  protected isInCurrentDimensionGroup(flatImageIdIndex: number): boolean {
+    return (
+      this.flatImageIdIndexToDimensionGroupNumber(flatImageIdIndex) ===
+      this._dimensionGroupNumber
+    );
+  }
+
   public flatImageIdIndexToImageIdIndex(flatImageIdIndex: number): number {
     return flatImageIdIndex % this._imageIdGroups[0].length;
   }

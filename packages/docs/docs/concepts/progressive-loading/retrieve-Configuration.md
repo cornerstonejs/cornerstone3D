@@ -132,6 +132,14 @@ The list is a module-level constant rather than a setting, so adding a syntax to
 it means changing that file — appropriate only for a codec that can genuinely
 decode a truncated codestream, since one that cannot will throw instead.
 
+:::note
+JPEG XL is a case in point. The format supports progressive decoding, but
+`@cornerstonejs/codec-libjxl` closes its input up front and rejects a truncated
+codestream, so JPEG XL is deliberately **absent** from the list even though it
+decodes normally. Adding it would need the codec to adopt libjxl's
+`JxlDecoderSetProgressiveDetail`/`JxlDecoderFlushImage` path first.
+:::
+
 ### Streaming Options
 
 #### Options

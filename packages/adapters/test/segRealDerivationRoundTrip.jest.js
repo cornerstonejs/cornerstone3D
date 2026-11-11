@@ -87,56 +87,132 @@ async function readBack(stack, dataset) {
 
 describe('real-derivation SEG round trip (plan 6a)', () => {
   describe('BINARY export of a lesion that starts at slice 10 (1e)', () => {
-    it('derives, references the correct source slices, and reads back onto them', async () => {
-      // Descending-z: the BINARY path inherits per-frame plane positions
-      // from the dcmjs-normalized multiframe, whose frames are sorted by
-      // DESCENDING distance along the scan axis. Only a stack already in
-      // that order keeps positions aligned with the (input-order) pixels
-      // and source refs — see the helper's makeReferencedStack docs.
-      const stack = makeReferencedStack(SLICE_COUNT, { zDirection: -1 });
+    // dcmjs sorts the referenced multiframe by position, so each frame must
+    // take its plane from its own source image, in either scan direction.
+    it.each([
+      ['ascending', 1],
+      ['descending', -1],
+    ])(
+      'derives, references the correct source slices, and reads back onto them (%s z)',
+      async (_, zDirection) => {
+        const stack = makeReferencedStack(SLICE_COUNT, { zDirection });
+        const labelmap3D = buildLabelmap3D(SLICE_COUNT, {
+          10: SHAPE_A,
+          11: SHAPE_B,
+        });
+
+        // Pre-fix this threw a TypeError (derivation built from filtered
+        // images, referencedFrameNumbers indexed in original space).
+        const generated = generateSegmentation(
+          stack.images,
+          labelmap3D,
+          stack.metadataProvider
+        );
+        const { dataset } = generated;
+
+        expect(dataset.SOPClassUID).toBe(BINARY_SEG_SOP_CLASS_UID);
+        expect(Number(dataset.NumberOfFrames)).toBe(2);
+
+        // Each written frame must reference the source instance it was
+        // drawn on — slices 10 and 11, not 0 and 1.
+        const perFrame = dataset.PerFrameFunctionalGroupsSequence;
+        expect(perFrame).toHaveLength(2);
+        const referencedUids = perFrame.map(
+          (group) => getFrameSourceReference(group)?.ReferencedSOPInstanceUID
+        );
+        expect(referencedUids).toEqual([
+          sopInstanceUidForSlice(10),
+          sopInstanceUidForSlice(11),
+        ]);
+
+        // And carry that slice's geometry, not the mirrored slice's.
+        const positions = perFrame.map(
+          (group) =>
+            firstItem(group.PlanePositionSequence)?.ImagePositionPatient
+        );
+        expect(positions.map((p) => p?.map(Number))).toEqual([
+          [0, 0, zDirection * 10],
+          [0, 0, zDirection * 11],
+        ]);
+
+        const { pixelsForSlice } = await readBack(stack, dataset);
+        expect(pixelsForSlice(10)).toEqual(SHAPE_A);
+        expect(pixelsForSlice(11)).toEqual(SHAPE_B);
+        expect(pixelsForSlice(0)).toEqual(EMPTY_SLICE);
+        expect(pixelsForSlice(1)).toEqual(EMPTY_SLICE);
+
+        // A reader that places frames by their plane only, as for a SEG
+        // without source references, finds the same slices.
+        perFrame.forEach((group) => delete group.DerivationImageSequence);
+        delete dataset.SourceImageSequence;
+        const byGeometry = await readBack(stack, dataset);
+        expect(byGeometry.pixelsForSlice(10)).toEqual(SHAPE_A);
+        expect(byGeometry.pixelsForSlice(11)).toEqual(SHAPE_B);
+        expect(byGeometry.pixelsForSlice(0)).toEqual(EMPTY_SLICE);
+        expect(byGeometry.pixelsForSlice(1)).toEqual(EMPTY_SLICE);
+      }
+    );
+
+    it('gives each frame the orientation of its own source image', () => {
+      // Two orientations, ascending z. dcmjs writes one shared orientation,
+      // so the adapter must move the orientations to the per-frame groups.
+      const tilted = [1, 0, 0, 0, 0.8, 0.6];
+      const orientationForSlice = (sliceIndex) =>
+        sliceIndex % 2 ? tilted : [1, 0, 0, 0, 1, 0];
+      const stack = makeReferencedStack(SLICE_COUNT, { orientationForSlice });
       const labelmap3D = buildLabelmap3D(SLICE_COUNT, {
-        10: SHAPE_A,
-        11: SHAPE_B,
+        2: SHAPE_A,
+        9: SHAPE_B,
       });
 
-      // Pre-fix this threw a TypeError (derivation built from filtered
-      // images, referencedFrameNumbers indexed in original space).
-      const generated = generateSegmentation(
+      const { dataset } = generateSegmentation(
         stack.images,
         labelmap3D,
         stack.metadataProvider
       );
-      const { dataset } = generated;
 
-      expect(dataset.SOPClassUID).toBe(BINARY_SEG_SOP_CLASS_UID);
-      expect(Number(dataset.NumberOfFrames)).toBe(2);
-
-      // Each written frame must reference the source instance it was
-      // drawn on — slices 10 and 11, not 0 and 1.
-      const perFrame = dataset.PerFrameFunctionalGroupsSequence;
-      expect(perFrame).toHaveLength(2);
-      const referencedUids = perFrame.map(
-        (group) => getFrameSourceReference(group)?.ReferencedSOPInstanceUID
+      const orientations = dataset.PerFrameFunctionalGroupsSequence.map(
+        (group) =>
+          firstItem(group.PlaneOrientationSequence)?.ImageOrientationPatient
       );
-      expect(referencedUids).toEqual([
-        sopInstanceUidForSlice(10),
-        sopInstanceUidForSlice(11),
+      expect(orientations.map((o) => o?.map(Number))).toEqual([
+        orientationForSlice(2),
+        orientationForSlice(9),
       ]);
+      // A per-frame orientation and a shared one would contradict each other.
+      expect(
+        firstItem(dataset.SharedFunctionalGroupsSequence)
+          .PlaneOrientationSequence
+      ).toBeUndefined();
+    });
 
-      // And carry that slice's geometry, not slice 0's.
-      const positions = perFrame.map(
-        (group) => firstItem(group.PlanePositionSequence)?.ImagePositionPatient
+    it('shares one orientation when all exported frames have the same', () => {
+      // dcmjs takes the shared orientation from the slice that is farthest
+      // along the normal: here the last slice, which is tilted and not exported.
+      const tilted = [1, 0, 0, 0, 0.8, 0.6];
+      const orientationForSlice = (sliceIndex) =>
+        sliceIndex === SLICE_COUNT - 1 ? tilted : [1, 0, 0, 0, 1, 0];
+      const stack = makeReferencedStack(SLICE_COUNT, { orientationForSlice });
+      const labelmap3D = buildLabelmap3D(SLICE_COUNT, {
+        2: SHAPE_A,
+        9: SHAPE_B,
+      });
+
+      const { dataset } = generateSegmentation(
+        stack.images,
+        labelmap3D,
+        stack.metadataProvider
       );
-      expect(positions.map((p) => p?.map(Number))).toEqual([
-        [0, 0, -10],
-        [0, 0, -11],
-      ]);
 
-      const { pixelsForSlice } = await readBack(stack, dataset);
-      expect(pixelsForSlice(10)).toEqual(SHAPE_A);
-      expect(pixelsForSlice(11)).toEqual(SHAPE_B);
-      expect(pixelsForSlice(0)).toEqual(EMPTY_SLICE);
-      expect(pixelsForSlice(9)).toEqual(EMPTY_SLICE);
+      expect(
+        firstItem(
+          firstItem(dataset.SharedFunctionalGroupsSequence)
+            .PlaneOrientationSequence
+        ).ImageOrientationPatient.map(Number)
+      ).toEqual([1, 0, 0, 0, 1, 0]);
+      dataset.PerFrameFunctionalGroupsSequence.forEach((group) =>
+        expect(group.PlaneOrientationSequence).toBeUndefined()
+      );
     });
   });
 
@@ -180,9 +256,13 @@ describe('real-derivation SEG round trip (plan 6a)', () => {
         [0, 0, 10],
       ]);
 
+      // One orientation is shared; a per-frame value would override it.
+      const shared = firstItem(dataset.SharedFunctionalGroupsSequence);
       const orientations = perFrame.map(
         (group) =>
-          firstItem(group.PlaneOrientationSequence)?.ImageOrientationPatient
+          firstItem(
+            group.PlaneOrientationSequence ?? shared.PlaneOrientationSequence
+          )?.ImageOrientationPatient
       );
       orientations.forEach((orientation) => {
         expect(orientation?.map(Number)).toEqual([1, 0, 0, 0, 1, 0]);

@@ -397,3 +397,397 @@ rather than an uncaught error, so it is reported rather than silent.
   `@cornerstonejs/codec-openjph` below 2.4.10, remove the pin or raise it.
 - **Prefer `decodeLevel: 0` for HTJ2K partial retrieves,** and keep
   sub-resolution levels for genuinely small renditions such as JLS thumbnails.
+
+## Encapsulated Uncompressed and Deflated Image Frame Compression, and the JPEG XL UIDs
+
+### What Changed
+
+Two transfer syntaxes now decode:
+
+- **Encapsulated Uncompressed Explicit VR Little Endian**
+  (`1.2.840.10008.1.2.1.98`). Nothing is compressed; the syntax exists so that
+  uncompressed pixel data can use the encapsulated format, one frame per
+  fragment, which makes a single frame addressable without reading the whole
+  Pixel Data element (PS3.5 A.4.11).
+- **Deflated Image Frame Compression** (`1.2.840.10008.1.2.8.1`). Each frame is
+  separately compressed with raw Deflate per RFC 1951 - no zlib header or
+  Adler-32 trailer - and encapsulated as one fragment (PS3.5 A.4.13). This is
+  per frame, unlike Deflated Explicit VR Little Endian
+  (`1.2.840.10008.1.2.1.99`), which deflates the whole data set and is inflated
+  by dicomParser before a frame is ever decoded.
+
+Separately, the `image/jxl` media type mapping was **corrected**. It previously
+resolved to `1.2.840.10008.1.2.4.140`, which is not a JPEG XL UID. JPEG XL was
+ratified in Supplement 232 as:
+
+| UID                       | Name                       |
+| ------------------------- | -------------------------- |
+| `1.2.840.10008.1.2.4.110` | JPEG XL Lossless           |
+| `1.2.840.10008.1.2.4.111` | JPEG XL JPEG Recompression |
+| `1.2.840.10008.1.2.4.112` | JPEG XL                    |
+
+`image/jxl` now resolves to `1.2.840.10008.1.2.4.110`, which PS3.18
+Table 8.7.3-5 gives as the default when a response carries no
+`transfer-syntax` parameter to disambiguate. `application/x-deflate` was added
+for Deflated Image Frame Compression from the same table.
+
+All three JPEG XL syntaxes now **decode**, through
+`@cornerstonejs/codec-libjxl`. They share one decoder: the difference between
+them is what the encoder was allowed to do, not how the codestream is read.
+
+Two limits worth knowing:
+
+- **Signedness comes from `PixelRepresentation`, not the codestream.** JPEG XL
+  has no signed sample type, so its decoder always reports unsigned and the
+  loader applies `PixelRepresentation` itself - the same arrangement JPEG-LS
+  uses. A JPEG XL frame whose metadata says signed is read correctly; a frame
+  with no metadata is read as unsigned.
+- **Partial decoding is not supported.** The codec rejects a truncated
+  codestream rather than decoding what arrived, so JPEG XL is deliberately not
+  in `streamableTransferSyntaxes` and byte range or streaming retrieves of it
+  decode once, when the frame is complete. The format does support progressive
+  decoding; this codec build does not use it yet.
+
+### Why This Matters
+
+Both new syntaxes reach the decoder as one fragment per frame, and both pad:
+encapsulated fragments are padded to an even length, and Deflated Image Frame
+Compression appends a NULL when the deflated stream is odd. The decoders trim
+that padding to the frame's native pixel length, and treat a frame _shorter_
+than its pixel data as an error rather than rendering it partially.
+
+This release also fixes a latent bug in encapsulated frame extraction: a single
+frame image has no `NumberOfFrames` element, which the fragment reader compared
+against the fragment count and concluded the frames were fragmented, falling
+back to a scan for JPEG SOI markers. That scan finds nothing in a syntax that
+is not JPEG. `NumberOfFrames` now defaults to 1, so a conformant single frame
+image of any encapsulated syntax takes the direct fragment path.
+
+### Migration Guidance
+
+- No action is required to read the two new syntaxes; they are decoded like any
+  other.
+- If you special-cased `1.2.840.10008.1.2.4.140` as JPEG XL anywhere in your own
+  code, change it to the `.110`/`.111`/`.112` block.
+
+## Volume textures: lossy downsampling is a configuration choice
+
+### What Changed
+
+`rendering.lossyDownsampling` of the `init` configuration states which lossy
+downsampling the viewer may use:
+
+| Kind                 | Default | What it does                                                                                 |
+| -------------------- | ------- | -------------------------------------------------------------------------------------------- |
+| `final`              | `false` | Reduces a volume texture that exceeds the GPU settings preset. The image stays reduced.      |
+| `interactive`        | `true`  | Lowers the detail during an interaction, for example the sample distance of a 3D rotation.   |
+| `interleavedLoading` | `true`  | Fills the frames that have not loaded yet with copies of the nearby frames, during the load. |
+
+With the defaults, a volume renders as in 4.x: the volume texture has the full
+dimensions of the volume, no GPU settings preset applies, and a 3D render uses
+the sample distance of 4.x. The `interactive` and `interleavedLoading` kinds
+keep the behaviour of 4.x.
+
+With `final: true`, a volume texture comes from a GPU settings preset. A preset
+is a named set of values (`low-tablet`, `low`, `medium`, `high`), and nothing
+probes the device to choose it. When an application selects no preset, `high`
+applies, and it limits each edge of a 3D texture to 2048 voxels. A volume with a
+longer axis then draws from a box-average reduction of that axis. For example, a
+CT of 512 × 512 × 2464 draws with a factor of 2 along k, also on a device that
+supports a 4096 texture edge.
+
+### Why This Matters
+
+Each kind of lossy downsampling shows pixels that differ from the source data.
+An application turns on a kind only when it also tells the user that the image
+is lossy.
+
+The reported `MAX_3D_TEXTURE_SIZE` is not a reliable limit, so no preset reads
+it. Some Android devices report 2048 or more, but render only 256 per axis. No
+tested device renders beyond 2048. Without final downsampling, such a device can
+show a uniform gray image or lose its WebGL context.
+
+### Migration Guidance
+
+- **With the default settings, the volume pixels are the same as in 4.x, but
+  the API and some behaviour changed.** Items 1 to 7 and 9 to 11 of
+  [Changes that a 4.x application must check](#changes-that-a-4x-application-must-check)
+  apply with the default settings. Item 8 applies only with
+  `rendering.lossyDownsampling.final` on.
+- **To fit the texture to a weak device,** set
+  `rendering.lossyDownsampling.final` to `true` in the `init` configuration, or
+  call `setLossyDownsampling({ final: true })` before a viewport adds its
+  actors. Then call `setGpuSettingsPreset`. Use `low` or `low-tablet` for a
+  device that renders only 256 per axis.
+- **To show no lossy pixels at all,** set `interactive` and
+  `interleavedLoading` to `false` as well.
+- **For a full-resolution long axis with final downsampling on,** the only
+  preset with a larger edge is `high-texture-4096`. That preset is internal: it
+  is a control for comparison, and no device is tested at that edge. Use it only
+  on hardware that you have tested.
+- **The quality record of a reduced volume during a load** (`getGridQuality`)
+  now counts only the empty boxes as missing. A box that holds some arrived
+  frames is the average of those frames, and it holds data.
+
+### Changes that a 4.x application must check
+
+Each item states when it applies, the 4.x code that breaks or behaves
+differently, and the 5.x code to use.
+
+1. **`RenderingCapabilities.webgl2` is removed.** Default settings. The field
+   `webgl` now means that the browser can make a WebGL2 context.
+
+   ```js
+   // 4.x
+   if (getRenderingCapabilities().webgl2) { ... }
+   // 5.x
+   if (getRenderingCapabilities().webgl) { ... }
+   ```
+
+2. **`ImageVolume.vtkOpenGLTexture` is a getter with no setter.** Default
+   settings. The texture store holds the textures of a volume in named sets.
+   The getter returns the texture of the full-resolution set, and it returns
+   `undefined` until something provisions that set, and after the store evicts
+   it. An assignment to the field has no effect.
+
+   ```js
+   // 4.x: this can throw in 5.x
+   volume.vtkOpenGLTexture.setUpdatedFrame(i);
+   // 5.x: marks the frame in every texture of the volume
+   volume.markFrameModified(i);
+   // 5.x: when you need the texture, this provisions it if necessary
+   const texture = volume.getFullResolutionTexture(); // can be undefined
+   ```
+
+3. **The voxel manager types changed.** Default settings.
+   - `IVoxelManager<T>` is a structural interface, and not an alias of the
+     class `VoxelManager<T>`. A type that needs the class must name the class.
+   - `getRange` is optional. `createScalarVolumeVoxelManager` and
+     `createImageVoxelManager` do not install it, so a call can throw a
+     `TypeError`. A volume voxel manager has it: use the type
+     `IVolumeVoxelManager` for that case.
+   - `createHistoryVoxelManager`, `createRLEHistoryVoxelManager` and
+     `createRLEImageVoxelManager` return `IVoxelManager<T>`, and not
+     `VoxelManager<T>`.
+   - `rows` and `columns` of `ImageLoadRequests.options.targetBuffer` are
+     optional.
+
+   ```ts
+   // 4.x
+   const [min, max] = voxelManager.getRange();
+   // 5.x
+   const range = voxelManager.getRange?.();
+   ```
+
+4. **A cached image of a streaming volume keeps the size from the decoder.**
+   Default settings. The volume loader sends a `targetBuffer` with a type and
+   no size. A sub-resolution decode (HTJ2K, a JLS thumbnail) therefore gives a
+   cached image with fewer pixels than one slice of the volume. The voxel
+   manager of the volume scales that image when it reads the slice, so a read
+   of the volume gives the same values as in 4.x. Code that reads
+   `image.getPixelData()` of such an image directly must use `image.rows` and
+   `image.columns`, and not the dimensions of the volume.
+
+   ```js
+   // 4.x: the image always had the slice size of the volume
+   const pixels = cache.getImage(imageId).getPixelData();
+   // 5.x: read the slice through the volume
+   const slice = volume.voxelManager.getSliceData({
+     sliceIndex,
+     slicePlane: 2,
+   });
+   ```
+
+5. **The fidelity indicator is on by default.** Default settings. The viewport
+   shows a label (`Low Fidelity` or `Transient Low Fidelity`) whenever it shows
+   lossy data. Lossy data includes a lossy or sub-resolution delivery, a
+   reduced texture, and the coarser sample distance of a 3D interaction. 4.x
+   showed lossy data with no indicator. That behaviour was a defect, and it can
+   be unsafe, because a user cannot tell a lossy image from a lossless image.
+   5.x corrects the defect. Keep the indicator on. An application that shows
+   its own indicator from `Events.VIEWPORT_FIDELITY_CHANGED` (or from
+   `viewport.getFidelityState()`) can remove the built-in indicator:
+
+   ```js
+   // 5.x, only for an application with its own indicator
+   await init({ dangerouslyDisableFidelityIndicator: true });
+   element.addEventListener(Events.VIEWPORT_FIDELITY_CHANGED, (evt) => {
+     showMyIndicator(evt.detail);
+   });
+   ```
+
+6. **`texture.modified()` does not mark the frames for an upload.** Default
+   settings. In 4.x, `modified()` of the streaming texture marked each frame.
+   In 5.x, only `setUpdatedFrame()` and `markAllFramesUpdated()` mark frames.
+   Code that writes voxels and then calls `modified()` on the texture shows a
+   stale image.
+
+   ```js
+   // 4.x
+   volume.voxelManager.setAtIndex(index, value);
+   volume.vtkOpenGLTexture.modified();
+   // 5.x: one frame, or every frame
+   volume.markFrameModified(frameIndex);
+   volume.modified();
+   ```
+
+7. **`volume.modified()` marks each slice of each texture for a new upload.**
+   Default settings. The volume can hold more than one texture, and the call
+   marks all of them. The next render uploads the full volume again. Call
+   `volume.markFrameModified(i)` for each changed frame when only some frames
+   changed.
+
+8. **The generic `PlanarViewport` draws the original frame in the acquisition
+   plane.** Only with `rendering.lossyDownsampling.final` on, and only when the
+   final downsampling reduces the texture. In the acquisition plane, the source
+   of the viewport draws the loaded image of the nearest frame in place of the
+   reduced slice. The limits are:
+   - The frame has no interpolation between frames.
+   - The reduced slice shows until the frame loads.
+   - `viewport.getActors()` has one more entry for the frame. That entry has no
+     `referencedId`.
+   - The legacy viewports (`StackViewport`, `VolumeViewport`) keep the reduced
+     slice.
+
+   ```js
+   // 4.x: one actor for each data set
+   const [entry] = viewport.getActors();
+   // 5.x: select the entry by referencedId
+   const entry = viewport.getActors().find((a) => a.referencedId === volumeId);
+   ```
+
+   See
+   [Volume Render Strategy](../../concepts/cornerstone-core/volumeRenderStrategy.md#the-frames-of-the-acquisition-plane).
+
+9. **A progressive volume load removes the stack prefetch of the same images.**
+   Default settings, when a volume loads with a progressive retrieve
+   configuration. When the load starts, the volume removes the queued
+   prefetch requests of another loader for its images. `stackPrefetch` and
+   `stackContextPrefetch` do not start while
+   `volume.isLoadingProgressively()` is true. An application that relied on
+   the stack prefetch to fill the cache during a volume load gets the images
+   from the volume load in its own order. When the volume cancels its load, it
+   fires `Events.IMAGE_VOLUME_LOADING_CANCELLED`, and `stackPrefetch` queues
+   the prefetch of the stack again.
+
+10. **A legacy volume viewport renders when its volume changes.** Default
+    settings. After the load of a volume, `BaseVolumeViewport` calls
+    `mapper.modified()` and `render()` on each `Events.IMAGE_VOLUME_MODIFIED`
+    of a volume that it shows. During the load, the loader renders, as in 4.x.
+    An application that rendered on that event itself can remove its call.
+
+    ```js
+    // 4.x: not necessary in 5.x for a legacy volume viewport
+    eventTarget.addEventListener(Events.IMAGE_VOLUME_MODIFIED, () =>
+      viewport.render()
+    );
+    ```
+
+11. **A volume that leaves the cache loses its textures.** Default settings.
+    On `Events.VOLUME_CACHE_VOLUME_REMOVED`, the texture store deletes every
+    texture of that volume, also when a viewport still shows it. In 4.x, that
+    viewport kept its image. Remove the volume from each viewport before you
+    remove it from the cache, or load the volume again.
+
+    ```js
+    // 4.x: the viewport kept its image
+    cache.removeVolumeLoadObject(volumeId);
+    // 5.x
+    viewport.removeVolumeActors([actorUID]); // the volume id, by default
+    cache.removeVolumeLoadObject(volumeId);
+    ```
+
+12. **A streaming load fires fewer `VIEWPORT_FIDELITY_CHANGED` events.** Default
+    settings, after 5.17.0. A volume viewport sends the fidelity state for
+    `Events.IMAGE_VOLUME_MODIFIED` at most once in each animation frame, and not
+    once for each image. The last state is the same. A render, and
+    `Events.IMAGE_VOLUME_LOADING_COMPLETED`, still send the state at once. In a
+    hidden tab, the browser does not run animation frames, so the state of a
+    load comes at the end of the load, or when the tab shows again. An
+    application that counts the events during a load must read the state, not
+    count the events.
+
+13. **A large volume can show a blank first frame.** Default settings, after
+    5.17.0, with WebGL2, for a volume texture of 256 MB or more. The browser
+    clears new texture storage before its first use. For a large texture, that
+    clear took seconds and stopped the page. The texture now waits for the
+    clear and does not stop the page. The viewport then draws nothing for about
+    0.3 s (at most 3 s). For a frame in which no actor of the viewport drew, the
+    engine fires no `Events.IMAGE_RENDERED` and no
+    `Events.VIEWPORT_FIDELITY_CHANGED`. The first `IMAGE_RENDERED` comes with
+    the first frame that shows the volume. A viewport with another actor that
+    drew, for example a small PET over a large CT, fires the event as before.
+    A smaller volume behaves as in 5.17.0.
+
+    ```js
+    // Code that captures the first frame needs no change: wait for the event.
+    element.addEventListener(Events.IMAGE_RENDERED, capture, { once: true });
+    ```
+
+## Locked segments stop the brush, and do not cause an overlap
+
+### What Changed
+
+Earlier 5.x releases moved the painted segment to a new private labelmap layer
+when a stroke touched a segment that the brush could not overwrite. This
+occurred for a locked segment, and for a segment that `overwriteMode` (`'none'`
+or `'visible'`) protects. The painted segment then overlapped the locked
+segment.
+
+Now the brush, the threshold brush and the scissors skip the voxels of a locked
+segment on any layer of the segmentation, and a locked segment never causes a
+new layer. This is the 4.x behavior for locked segments.
+
+A protected segment that is not locked still causes the move to a new layer, as
+before. The move and the stroke are one undo step.
+
+An application can also move a segment before a stroke with
+`segmentation.helpers.moveSegmentToPrivateLabelmap(segmentationId, segmentIndex, { recordHistory })`.
+See
+[Segment Locking](../../concepts/cornerstone-tools/segmentation/locking.md#overlapping-segments).
+
+The SEG adapter now reads `labelmap3D.labelToSegmentIndex`, so a private layer
+that stores a segment under a different label value exports under the correct
+segment number. `segmentation.helpers.getLabelToSegmentIndex(segmentation, labelmapId)`
+gives that map for one layer.
+
+### Migration Guidance
+
+- If your application relied on a locked segment to create an overlap, unlock
+  the segment, or call `segmentation.helpers.moveSegmentToPrivateLabelmap` for
+  the painted segment first.
+- `beginLabelmapEditTransaction` accepts `segmentsLocked`. A locked segment in
+  that list does not cause a move.
+- If you export SEG from a multi-layer labelmap, set `labelToSegmentIndex` on
+  each `labelmap3D` instead of a remap of the voxel values in your own code.
+
+## Adapters name the writer in SR, SEG and RTSTRUCT
+
+### What Changed
+
+The SR, SEG and RTSTRUCT writers of `@cornerstonejs/adapters` now write
+`Manufacturer`, `ManufacturerModelName` and `SoftwareVersions`. The defaults
+are `CornerstoneJS`, `@cornerstonejs/adapters` and the adapters version. A
+value in `options` wins over the default. Before this change, the SR and the
+SEG wrote `Unspecified`, `Unspecified` and `0`. See
+[The writer of the object](../../concepts/cornerstone-tools/segmentation/saving.md#the-writer-of-the-object).
+
+Two changes can change the output of an existing application:
+
+1. The RTSTRUCT ignores the writer values of a custom provider. Before this
+   change, an application that returned `Manufacturer`,
+   `ManufacturerModelName` or `SoftwareVersions` from its own
+   `NewInstanceData` or `RtssInstanceData` provider got that value in the
+   RTSTRUCT. Now the RTSTRUCT gets the value from `options`, or else the
+   adapters default. The SR and the SEG never read the writer from a provider.
+2. `MetadataModules.NEW_INSTANCE_DATA` (`'NewInstanceData'`) now gives
+   `Manufacturer: 'CornerstoneJS'` in place of `'cs3d'`. The module also gives
+   `ManufacturerModelName` and `SoftwareVersions`.
+
+### Migration Guidance
+
+- If your provider sets the writer of the RTSTRUCT, pass the values in the
+  `options` of `generateRTSSFromRepresentation`, or of the other
+  `generateRTSSFrom*` functions.
+- If your code compares `Manufacturer` with `'cs3d'`, compare it with
+  `utilities.DEFAULT_WRITER_HEADER.Manufacturer`.

@@ -39,6 +39,8 @@ yarn-error.log*
 .yalc
 yalc.lock
 package-lock.json
+# The dependency-audit PR check installs its own dependency with `npm ci`.
+!scripts/ci/dependency-audit/package-lock.json
 
 # Example output
 .static-examples

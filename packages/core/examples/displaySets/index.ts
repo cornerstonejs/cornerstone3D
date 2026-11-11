@@ -116,6 +116,28 @@ type Row = {
 
 let renderingEngine: RenderingEngine;
 
+/** The viewport of a non-image display set, from its handler. */
+const HANDLER_TO_HINT: Record<string, string> = {
+  video: 'video',
+  ecg: 'ecg',
+  wholeSlide: 'wholeslide',
+};
+
+/**
+ * The viewport choices of a display set. A non-image display set: the
+ * viewport of its handler. An image display set with `isReconstructable`: volume, 3D or
+ * stack. Any other image display set: stack.
+ */
+function hintsOf(displaySet: DisplaySet): string[] {
+  const byHandler = HANDLER_TO_HINT[displaySet.handler ?? ''];
+  if (byHandler) {
+    return [byHandler];
+  }
+  return displaySet.isReconstructable
+    ? ['volume', 'volume3d', 'stack']
+    : ['stack'];
+}
+
 function instanceField(displaySet: DisplaySet, key: string): string {
   const instance = displaySet.instances[0] as
     | Record<string, unknown>
@@ -172,8 +194,8 @@ function renderDetails(row: Row, viewport: Types.IViewport, status: string) {
     ['SOP class', instanceField(ds, 'SOPClassUID')],
     ['Instances', String(ds.instances.length)],
     ['Image ids', String(ds.imageIds.length)],
-    ['Preferred', ds.preferredViewportType],
-    ['Allowed', ds.viewportTypes.join(', ')],
+    ['Handler', ds.handler ?? '— (image)'],
+    ['Choices', hintsOf(ds).join(', ')],
     ['Mounted as', row.hint],
     ['getDisplaySets()', `[${recorded}]`],
   ];
@@ -279,7 +301,7 @@ function buildRow(
     displaySetId,
     viewportId,
     displaySet,
-    hint: displaySet.preferredViewportType,
+    hint: hintsOf(displaySet)[0],
     viewportElement,
     detailsElement,
     client,
@@ -292,14 +314,15 @@ function buildRow(
   selectLabel.innerText = 'Viewport type: ';
 
   const select = document.createElement('select');
-  for (const hint of displaySet.viewportTypes) {
+  const hints = hintsOf(displaySet);
+  for (const hint of hints) {
     const option = document.createElement('option');
     option.value = hint;
     option.text = hint;
-    option.selected = hint === displaySet.preferredViewportType;
+    option.selected = hint === row.hint;
     select.appendChild(option);
   }
-  select.disabled = displaySet.viewportTypes.length <= 1;
+  select.disabled = hints.length <= 1;
   select.onchange = () => {
     row.hint = select.value;
     mountRow(row);
@@ -366,13 +389,26 @@ async function run() {
         continue;
       }
 
-      for (let dsIndex = 0; dsIndex < displaySets.length; dsIndex++) {
-        const row = buildRow(
-          displaySets[dsIndex],
-          client,
-          seriesIndex,
-          dsIndex
-        );
+      // The split rules also produce display sets for objects nothing can render
+      // (SEG, RTSTRUCT, SR, ...) so they are not silently dropped. This example
+      // gives each display set a viewport, so it lists those separately instead.
+      const renderable = displaySets.filter(
+        (displaySet) => displaySet.isDisplayable
+      );
+      for (const displaySet of displaySets) {
+        if (displaySet.isDisplayable) {
+          continue;
+        }
+        const notRenderable = document.createElement('div');
+        notRenderable.style.color = '#888';
+        notRenderable.innerText = `Not displayable: ${displaySet.displaySetId} (${
+          displaySet.sopClassUids?.join(', ') ?? 'unknown SOP class'
+        })`;
+        rowsContainer.appendChild(notRenderable);
+      }
+
+      for (let dsIndex = 0; dsIndex < renderable.length; dsIndex++) {
+        const row = buildRow(renderable[dsIndex], client, seriesIndex, dsIndex);
         // Mount sequentially so heavy loads (volume/WSI) don't all contend.
         await mountRow(row);
       }

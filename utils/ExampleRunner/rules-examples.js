@@ -98,6 +98,17 @@ module.exports = [
     test: /\.(png|jpe?g|gif)$/i,
     type: 'asset/resource',
   },
+  // A JSON file an example fetches through `new URL('./x.json', import.meta.url)`
+  // (a rule set, a preset) keeps its own name in the build, so the deployed URL
+  // says what it is. A plain `import` of JSON still inlines it as data. All
+  // examples share one output directory, so two examples emitting the same name
+  // with different content fail the build with an asset conflict.
+  {
+    test: /\.json$/i,
+    dependency: 'url',
+    type: 'asset/resource',
+    generator: { filename: '[name][ext]' },
+  },
   {
     test: /\.wasm$/,
     type: 'asset/inline',

@@ -10,6 +10,8 @@ import * as metaData from '../metaData';
 import { getImageDataMetadata as getImageDataMetadataUtil } from '../utilities/getImageDataMetadata';
 import { coreLog } from '../utilities/logger';
 import { getGenericViewportImageDisplaySet } from './GenericViewport/genericViewportDisplaySetAccess';
+import type { FidelityLine } from './helpers/fidelityIndicator/fidelityIndicatorState';
+import { fidelityLineFromStackImage } from './helpers/fidelityIndicator/collectFidelityLines';
 
 import type {
   ActorEntry,
@@ -211,6 +213,14 @@ class StackViewport extends Viewport {
   // if the viewport used the same actor/mapper to render the image
   // or because of the new image inconsistency, a new actor/mapper was created
   public stackActorReInitialized: boolean;
+
+  public canReportFidelity(): boolean {
+    return true;
+  }
+
+  protected collectFidelityLines(): FidelityLine[] {
+    return fidelityLineFromStackImage(this.csImage);
+  }
 
   /**
    * Constructor for the StackViewport class
@@ -3115,7 +3125,7 @@ class StackViewport extends Viewport {
     vtkCamera.setClippingRange(distance, distance + 0.1);
 
     const devicePixelRatio = window.devicePixelRatio || 1;
-    const { width, height } = this.canvas;
+    const { width, height } = this.getRenderedCanvasSize();
     const aspectRatio = width / height;
 
     // Convert canvas coordinates to normalized display coordinates
@@ -3225,7 +3235,7 @@ class StackViewport extends Viewport {
 
     const devicePixelRatio = window.devicePixelRatio || 1;
 
-    const { width, height } = this.canvas;
+    const { width, height } = this.getRenderedCanvasSize();
 
     const aspectRatio = width / height;
 

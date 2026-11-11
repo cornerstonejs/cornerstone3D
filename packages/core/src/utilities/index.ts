@@ -69,6 +69,7 @@ import { generateVolumePropsFromImageIds } from './generateVolumePropsFromImageI
 import { convertStackToVolumeViewport } from './convertStackToVolumeViewport';
 import { convertVolumeToStackViewport } from './convertVolumeToStackViewport';
 import VoxelManager from './VoxelManager';
+import CompositeVoxelManager from './CompositeVoxelManager';
 import RLEVoxelMap from './RLEVoxelMap';
 import roundNumber, { roundToPrecision } from './roundNumber';
 import convertToGrayscale from './convertToGrayscale';
@@ -78,9 +79,17 @@ import { getRandomSampleFromArray } from './getRandomSampleFromArray';
 import { getVolumeId } from './getVolumeId';
 import { hasFloatScalingParameters } from './hasFloatScalingParameters';
 import { pointInShapeCallback } from './pointInShapeCallback';
-import * as ECGUtilities from './ECGUtilities';
+import * as ECGUtilitiesModule from './ECGUtilities';
 import * as VideoUtilities from './VideoUtilities';
 import * as WSIUtilities from './WSIUtilities';
+import * as voxelGrid from './voxelGrid';
+
+/**
+ * @deprecated Kept for 5.x compatibility. Use the ECG functions of
+ * `GenericViewport/ECG`, for example `getECGTraceLayout`. The next major
+ * release removes it.
+ */
+const ECGUtilities = ECGUtilitiesModule;
 // name spaces
 export * as planar from './planar';
 import * as windowLevel from './windowLevel';
@@ -127,7 +136,7 @@ export * from './getPixelSpacingInformation';
 export * from './getPlaneCubeIntersectionDimensions';
 export * from './rotateToViewCoordinates';
 export * as voxelSlab from './voxelSlab';
-import { asArray } from './asArray';
+import { asArray, asArrayFirst } from './asArray';
 import {
   viewportSupportsImageSlices,
   viewportSupportsStackCalibration,
@@ -150,6 +159,7 @@ import {
 } from './wasmBasePath';
 import resolveApplicationUrl, { getPublicUrl } from './resolveApplicationUrl';
 export { updatePlaneRestriction } from './updatePlaneRestriction';
+export { isAcquisitionPlaneNormal } from './isAcquisitionPlaneNormal';
 const getViewportModality = (viewport: IViewport, volumeId?: string) =>
   _getViewportModality(viewport, volumeId, cache.getVolume);
 const getScalingDescriptor = (viewport: IViewport, targetId?: string) =>
@@ -236,6 +246,7 @@ export {
   generateVolumePropsFromImageIds,
   getBufferConfiguration,
   VoxelManager,
+  CompositeVoxelManager,
   RLEVoxelMap,
   convertStackToVolumeViewport,
   convertVolumeToStackViewport,
@@ -257,6 +268,7 @@ export {
   ECGUtilities,
   VideoUtilities,
   WSIUtilities,
+  voxelGrid,
   deepEqual,
   jumpToSlice,
   scroll,
@@ -274,6 +286,7 @@ export {
   mapViewportVoiIntensityToScalar,
   mapMappedBandToRawRange,
   asArray,
+  asArrayFirst,
   viewportSupportsImageSlices,
   viewportSupportsStackCalibration,
   viewportSupportsStackCompatibility,
