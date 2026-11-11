@@ -27,6 +27,8 @@ export {
   type RegisterDisplaySetMetadataOptions,
 } from './registerDisplaySetMetadata';
 export { registerDisplaySetProviders } from './displaySetProvider';
+export { displaySetStore } from './displaySetStore';
+export type { DisplaySetStoreState } from './displaySetStore';
 export {
   compiledDisplaySetRules,
   defaultDisplaySetSplitRules,
