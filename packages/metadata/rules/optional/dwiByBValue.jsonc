@@ -9,6 +9,11 @@
 // a b-value (for example a trace or ADC set) go to the default
 // `mixedDimensionalityBValue` rule, and form one more display set.
 //
+// The rule does not read localizer images (`LOCALIZER` in ImageType): they do
+// not count as a b-value, and they stay with the default `localizer` rule.
+// Multi-frame instances stay with the default `multiFrame` rule, which gives
+// one display set for each instance.
+//
 // The file puts the rule first in the rule order, before every default rule.
 {
   // New rules for the registry.
@@ -17,7 +22,7 @@
       "dwiByBValue": {
         "description": "Diffusion MR: one display set for each b-value.",
         "context": {
-          "bValue": "Number(DiffusionBValue)",
+          "bValue": "isLocalizer ? null : Number(DiffusionBValue)",
           // Some scanners write DiffusionBValue = 0 into every MR series, so a
           // series of b=0 images only is not a diffusion series.
           "isDiffusion": "series.instances.max(bValue) > 0"
@@ -26,6 +31,8 @@
           "Modality": "MR",
           "isDiffusion": true,
           "isImage": true,
+          "isMultiFrame": false,
+          "isLocalizer": false,
           "DiffusionBValue": { "notNull": true }
         },
         "groupBy": ["SeriesInstanceUID", "bValue"],

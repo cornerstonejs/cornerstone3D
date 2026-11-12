@@ -173,6 +173,27 @@ describe('rules/optional/*.jsonc - one split for each file', () => {
     ]);
   });
 
+  it('dwiByBValue: a b=0 scout and a multi-frame instance keep their default rules', () => {
+    const b1000 = [1, 2].map((z) =>
+      mr({
+        DiffusionBValue: 1000,
+        ImageOrientationPatient: AXIAL,
+        ImagePositionPatient: [0, 0, z],
+      })
+    );
+    const scout = mr({
+      DiffusionBValue: 0,
+      ImageType: ['ORIGINAL', 'LOCALIZER'],
+    });
+    const enhanced = mr({ DiffusionBValue: 1000, NumberOfFrames: 20 });
+
+    expect(
+      splitWith('dwiByBValue', [...b1000, scout, enhanced])
+        .map(([rule, ids]) => `${rule}:${ids.length}`)
+        .sort()
+    ).toEqual(['dwiByBValue:2', 'localizer:1', 'multiFrame:1']);
+  });
+
   it('multiEchoByEchoTime: one display set for each echo time, in position order', () => {
     const echo = (EchoTime: number, z: number) =>
       mr({

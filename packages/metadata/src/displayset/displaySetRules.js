@@ -178,7 +178,8 @@ export const displaySetRules = {
       ...RENDERABLE_IMAGE,
     },
     groupBy: ['SeriesInstanceUID'],
-    attributes: { isLocalizer: true },
+    // Scouts are never a volume, even when two of them are parallel.
+    attributes: { isLocalizer: true, isReconstructable: false },
   },
 
   mixedDimensionalityBValue: {

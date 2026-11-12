@@ -183,6 +183,29 @@ describe('createDisplaySetSplitRules - compiled default behaviour', () => {
     });
   }
 
+  it('marks the localizers of a mixed series as not a volume, also when they are parallel', () => {
+    const slice = (z: number, ImageType = ['ORIGINAL', 'PRIMARY']) =>
+      instance({
+        ImageType,
+        PixelSpacing: [1, 1],
+        ImageOrientationPatient: [1, 0, 0, 0, 1, 0],
+        ImagePositionPatient: [0, 0, z],
+      });
+    const scouts = [
+      slice(100, ['ORIGINAL', 'LOCALIZER']),
+      slice(101, ['ORIGINAL', 'LOCALIZER']),
+    ];
+    const groups = groupInstancesBySplitRules(
+      [...scouts, slice(1), slice(2), slice(3)],
+      compiledDisplaySetRules
+    );
+    const scoutGroup = groups.find((g) => g.matchedRule.id === 'localizer');
+    expect(scoutGroup?.instances.length).toBe(2);
+    expect(createDisplaySetFromGroup(scoutGroup!).isReconstructable).toBe(
+      false
+    );
+  });
+
   it('orders the display sets of US multi-frame instances by InstanceNumber', () => {
     // UID order (a, b, c) is the reverse of InstanceNumber order.
     const groups = groupInstancesBySplitRules(
