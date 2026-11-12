@@ -83,10 +83,10 @@ export type RawAttributeValue =
   | { expression: string }
   | ((instances: NaturalizedInstance[], values: ContextValues) => unknown);
 
-/** One rule of the display set rules. Mirrors {@link SplitRuleSetEntry}, in data form. */
+/** One rule of the display set rules. Mirrors {@link SplitRule}, in data form. */
 export type RawSplitRule = {
   /**
-   * The rule id. Optional, because the key of the rule in the rule set is the id.
+   * The rule id. Optional, because the key of the rule in the registry is the id.
    * When present it must equal that key. The id namespaces every bucket key the
    * rule produces, so the rule set can be edited without changing other rules'
    * keys.
@@ -97,11 +97,6 @@ export type RawSplitRule = {
    * Defaults to the rule id.
    */
   groupId?: string;
-  /**
-   * Evaluation order: ascending, first match wins; `null` excludes the rule.
-   * See `SplitRuleSetEntry.priority`.
-   */
-  priority: number | null;
   /**
    * Human-readable explanation of what this rule is for. Part of the rule data
    * rather than a code comment so a UI that lets a user inspect or toggle rules
@@ -147,10 +142,16 @@ export type RawSplitRule = {
 };
 
 /**
- * A whole rule set as data: rules keyed by rule id, the data form of a
- * `SplitRuleSet`. Rules are tried in ascending priority; first match wins.
+ * The rule registry as data: rules keyed by rule id. A rule is used only when
+ * a {@link DisplaySetRuleOrder} names it.
  */
 export type DisplaySetRules = Record<string, RawSplitRule>;
+
+/**
+ * The rule ids in evaluation order; the first rule that matches an instance
+ * claims it. An id that is not in the registry is an error.
+ */
+export type DisplaySetRuleOrder = string[];
 
 /** Options for {@link createDisplaySetSplitRules}. */
 export type CreateDisplaySetSplitRulesOptions = {

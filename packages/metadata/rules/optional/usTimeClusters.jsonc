@@ -11,26 +11,31 @@
 // with two or more sweeps. Multi-frame clips stay with the default `multiFrame`
 // rule.
 //
-// Priority -1: the rule runs before every default rule.
+// The file puts the rule first in the rule order, before every default rule.
 {
-  "usTimeClusters": {
-    "priority": -1,
-    "description": "Ultrasound single images: one display set for each sweep of contiguous acquisition time.",
-    // 20 s for this rule; the default context uses 30 s.
-    "context": { "timeClustersMaxGap": 20 },
-    "matches": {
-      "isImage": true,
-      "Modality": "US",
-      "isMultiFrame": false,
-      "sweepCount": { "greaterThan": 1 },
-      "sweepStart": { "notNull": true }
-    },
-    "groupBy": ["SeriesInstanceUID", "sweepStart"],
-    "sortBy": ["acquisitionSeconds"],
-    "attributes": {
-      "SeriesDescription": {
-        "template": "{SeriesDescription} +{sweepOffset} s"
+  // New rules for the registry.
+  "displaySetRules": {
+    "$merge": {
+      "usTimeClusters": {
+        "description": "Ultrasound single images: one display set for each sweep of contiguous acquisition time.",
+        // 20 s for this rule; the default context uses 30 s.
+        "context": { "timeClustersMaxGap": 20 },
+        "matches": {
+          "isImage": true,
+          "Modality": "US",
+          "isMultiFrame": false,
+          "sweepCount": { "greaterThan": 1 },
+          "sweepStart": { "notNull": true }
+        },
+        "groupBy": ["SeriesInstanceUID", "sweepStart"],
+        "sortBy": ["acquisitionSeconds"],
+        "attributes": {
+          "SeriesDescription": {
+            "template": "{SeriesDescription} +{sweepOffset} s"
+          }
+        }
       }
     }
-  }
+  },
+  "displaySetRuleOrder": { "$unshift": ["usTimeClusters"] }
 }

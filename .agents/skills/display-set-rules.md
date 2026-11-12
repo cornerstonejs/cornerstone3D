@@ -1,6 +1,6 @@
 ---
 name: display-set-rules
-description: Write, review or debug display set split rules of @cornerstonejs/metadata (displaySetRules, createDisplaySetSplitRules, the displaySetContext and the rule context). Use when an author asks for a new split rule, a change to a default rule, a hanging protocol test in the same language, or a fix for a compile error such as "unknown name".
+description: Write, review or debug display set split rules of @cornerstonejs/metadata (displaySetRules, displaySetRuleOrder, createDisplaySetSplitRules, the displaySetContext and the rule context). Use when an author asks for a new split rule, a change to a default rule, a hanging protocol test in the same language, or a fix for a compile error such as "unknown name".
 ---
 
 # Display set split rules
@@ -40,8 +40,7 @@ is in `packages/metadata/src/displayset/` (`displaySetContext.ts`,
 ## Rule fields
 
 ```jsonc
-"ruleId": {
-  "priority": -1,                     // ascending; null excludes the rule
+"ruleId": {                          // the key in the registry; the place is in the order
   "viewportTypes": ["stack"],
   "context": { "timeClustersMaxGap": 20 },   // this rule only
   "matches": { "Modality": "US", "sweepCount": { "greaterThan": 1 } },
@@ -127,6 +126,7 @@ customization). A rule `context` has the same forms.
   "sliceDistance": "planeGeometry.distance",
   "seriesInstanceCount": "series.instances.count()",
   "isMultiFrame": "NumberOfFrames > 1",
+  "isLocalizer": "includes(ImageType, 'LOCALIZER')",
   "imageId": { "attribute": "imageId" },
 }
 ```
@@ -163,22 +163,43 @@ URL customization modules), and the `context` of each rule.
 - Complex split logic is a new series function in code; the context then gives
   names to its result fields.
 
-## Priorities and optional rules
+## Rule order and optional rules
 
-- The default rules use the priorities `10` to `170`, in steps of 10, and
-  `unsupported` is last. `80` is reserved for a later `dynamicVolume` rule. A
-  site or optional rule uses a priority below `0`, or a number between two
-  defaults that is not a multiple of 10 (for example `89` runs just before
-  `volume3d` at `90`). A new default takes a multiple of 10.
+- `displaySetRules` is a registry: rule id to rule. `displaySetRuleOrder` is
+  the list of ids in evaluation order; first match wins. A rule that the order
+  does not name does nothing. Compile with
+  `createDisplaySetSplitRules(materializeSplitRules(registry, order))`; the
+  result is an array. `materializeSplitRules` throws for an id that is not in
+  the registry, a duplicate id, an entry `id` that differs from its key, and an
+  unsafe key.
+- A rule has no place field. To change a rule, patch the registry by id with
+  immutability-helper (`"volume3d": { "sortBy": { "$set": [...] } }`); the
+  rule keeps its id and place. To add one, `$merge` it into the registry and put
+  its id in the order (`$unshift` for first, `$splice` at an index). To remove
+  one, take its id out of the order. Plain immutability-helper `$splice` takes a
+  numeric index; OHIF (#6137) also takes a rule id there.
+- `unsupported` is last in the default order. Without it, an instance that no
+  rule matches gets no display set, and `groupInstancesBySplitRules` warns once
+  with the count when no `onUnmatched` callback is given.
+- `isLocalizer` is in the default context, so a rule before `localizer` can
+  leave out localizers with `"isLocalizer": false`.
 - Before you write a rule, check `packages/metadata/rules/optional/`. Each
-  `<id>.jsonc` file there is bare rule data: a rule map keyed by rule id, with
-  `//` comments for the explanation. A file has no global context; put each
-  name in the rule `context`. The package exports no code for the files: a host
-  reads a file, removes the comments, and merges the map over
-  `displaySetRules`. OHIF copies the files to
+  `<id>.jsonc` file there is an immutability-helper spec over
+  `{ displaySetRules, displaySetRuleOrder }`, with `//` comments for the
+  explanation. A file of new rules uses `"displaySetRules": { "$merge": ... }`
+  and `"displaySetRuleOrder": { "$unshift": [...] }`; with several, the file
+  applied last runs first. `volumePositionOrder` and `byAcquisition` only
+  `$set` fields of `volume3d`, so they combine in either order and keep the
+  `splitRuleId` `volume3d`. A patch of a missing rule id throws. A file has no
+  global context; put each name in the rule `context`. The package exports no
+  code for the files: a host reads a file, removes the comments, and applies
+  it with `update(state, spec)`. OHIF copies the files to
   `customizations/split/optional/<id>.jsonc` and loads one with
   `?customization=split/optional/<id>`. `optionalRules.test.ts` compiles each
   file, and the `displaySetRules` example lists each file with no code change.
+- Migration from the keyed rule sets with `priority` (5.17.x): see
+  "Migration from keyed rules with `priority`" in `display-sets.md`. A
+  `priority` field is now `unknown field`.
 
 ## Checklist for a new rule
 

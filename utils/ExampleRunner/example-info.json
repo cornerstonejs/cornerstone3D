@@ -63,7 +63,7 @@
       },
       "displaySetRules": {
         "name": "Display Set Rules",
-        "description": "Edits the display set split rules as data: turn a rule off, change a priority, or paste, open or fetch a JSON rule set, and see the series split again."
+        "description": "Edits the display set split rules as data: turn a rule off, apply an optional rule file, or paste, open or fetch a JSON rule set, and see the series split again."
       },
       "volumeBasic": {
         "name": "Basic Volume Viewport Usage",

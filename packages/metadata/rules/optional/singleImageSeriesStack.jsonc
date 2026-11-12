@@ -7,25 +7,30 @@
 // Do not use this rule when a hanging protocol needs one display set for each
 // mammography view.
 //
-// Priority -1: the rule runs before every default rule.
+// The file puts the rule first in the rule order, before every default rule.
 {
-  "singleImageSeriesStack": {
-    "priority": -1,
-    "description": "CR / DX / MG single images: one stack for each series. CR and DX only up to singleImageSeriesMaxImages images.",
-    "context": {
-      // The limit applies to CR and DX: a larger series keeps one display set
-      // for each image. The limit does not apply to MG. Change the value here,
-      // for example with a $merge on this rule.
-      "singleImageSeriesMaxImages": 9,
-      "fitsSingleImageStack": "Modality == 'MG' || seriesInstanceCount <= singleImageSeriesMaxImages"
-    },
-    "matches": {
-      "Modality": ["CR", "DX", "MG"],
-      "isImage": true,
-      "isMultiFrame": false,
-      "fitsSingleImageStack": true
-    },
-    "groupBy": ["SeriesInstanceUID"],
-    "sortBy": ["ImageLaterality", "ViewPosition", "InstanceNumber"]
-  }
+  // New rules for the registry.
+  "displaySetRules": {
+    "$merge": {
+      "singleImageSeriesStack": {
+        "description": "CR / DX / MG single images: one stack for each series. CR and DX only up to singleImageSeriesMaxImages images.",
+        "context": {
+          // The limit applies to CR and DX: a larger series keeps one display set
+          // for each image. The limit does not apply to MG. Change the value here,
+          // for example with a $merge on this rule.
+          "singleImageSeriesMaxImages": 9,
+          "fitsSingleImageStack": "Modality == 'MG' || seriesInstanceCount <= singleImageSeriesMaxImages"
+        },
+        "matches": {
+          "Modality": ["CR", "DX", "MG"],
+          "isImage": true,
+          "isMultiFrame": false,
+          "fitsSingleImageStack": true
+        },
+        "groupBy": ["SeriesInstanceUID"],
+        "sortBy": ["ImageLaterality", "ViewPosition", "InstanceNumber"]
+      }
+    }
+  },
+  "displaySetRuleOrder": { "$unshift": ["singleImageSeriesStack"] }
 }

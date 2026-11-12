@@ -146,6 +146,7 @@ export const defaultMetadataContext: DisplaySetContext = {
 
   seriesInstanceCount: 'series.instances.count()',
   isMultiFrame: 'NumberOfFrames > 1',
+  isLocalizer: "includes(ImageType, 'LOCALIZER')",
 
   imageId: { attribute: 'imageId' },
 

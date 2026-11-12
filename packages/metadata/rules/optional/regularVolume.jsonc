@@ -9,31 +9,36 @@
 // position order. The other images stay with the default rules. A fully
 // regular series, and a series with no lattice, keep the default display sets.
 //
-// Priority -2: the rule runs before every default rule, and before the
-// optional rules at -1.
+// The file puts the rule first in the rule order, before every default rule.
+// With other optional files, the file that a host applies last runs first.
 {
-  "regularVolume": {
-    "priority": -2,
-    "description": "Volume series with some irregular images: the regular slices become one volume display set.",
-    "context": {
-      // A series value: a complete regular lattice of 3 or more slices, and
-      // also other images. Remove `&& planeGeometry.complete` to accept a
-      // lattice with a missing slice.
-      "mixesIrregular": "planeGeometry.regularCount >= 3 && planeGeometry.irregularCount > 0 && planeGeometry.complete",
-      "isRegularSlice": "sliceIndex != null"
-    },
-    "matches": {
-      "isImage": true,
-      "Modality": ["CT", "MR", "PT", "NM"],
-      "mixesIrregular": true,
-      "isRegularSlice": true
-    },
-    "groupBy": ["SeriesInstanceUID"],
-    "sortBy": ["displaySet.sliceDistance"],
-    "attributes": {
-      "SeriesDescription": {
-        "template": "{SeriesDescription} ({displaySet.sliceSpacing} mm)"
+  // New rules for the registry.
+  "displaySetRules": {
+    "$merge": {
+      "regularVolume": {
+        "description": "Volume series with some irregular images: the regular slices become one volume display set.",
+        "context": {
+          // A series value: a complete regular lattice of 3 or more slices, and
+          // also other images. Remove `&& planeGeometry.complete` to accept a
+          // lattice with a missing slice.
+          "mixesIrregular": "planeGeometry.regularCount >= 3 && planeGeometry.irregularCount > 0 && planeGeometry.complete",
+          "isRegularSlice": "sliceIndex != null"
+        },
+        "matches": {
+          "isImage": true,
+          "Modality": ["CT", "MR", "PT", "NM"],
+          "mixesIrregular": true,
+          "isRegularSlice": true
+        },
+        "groupBy": ["SeriesInstanceUID"],
+        "sortBy": ["displaySet.sliceDistance"],
+        "attributes": {
+          "SeriesDescription": {
+            "template": "{SeriesDescription} ({displaySet.sliceSpacing} mm)"
+          }
+        }
       }
     }
-  }
+  },
+  "displaySetRuleOrder": { "$unshift": ["regularVolume"] }
 }

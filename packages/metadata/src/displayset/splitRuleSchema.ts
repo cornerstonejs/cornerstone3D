@@ -37,18 +37,13 @@ const ruleShape: SchemaShape = {
           kind: 'string',
           optional: true,
           description:
-            'The rule id. Optional: the key of the rule in the rule set is the id. When present it must equal that key.',
+            'The rule id. Optional: the key of the rule in the registry is the id. When present it must equal that key.',
         },
         groupId: {
           kind: 'string',
           optional: true,
           description:
             'The group of rules this rule belongs to, for a reader that must recognize display sets from several related rules (for example every mammography rule). Defaults to the rule id.',
-        },
-        priority: {
-          kind: 'priority',
-          description:
-            'Evaluation order: ascending, first match wins. null excludes the rule.',
         },
         description: {
           kind: 'string',

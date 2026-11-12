@@ -4,33 +4,18 @@
 // (InstanceNumber). InstanceNumber does not always follow the position of the
 // slice, so the stack order and the volume order can differ.
 //
-// This rule claims the same instances as `volume3d`, and orders the slices of
-// each display set by `sliceDistance`: the distance along the normal of the
+// This file changes the `sortBy` of `volume3d`: the slices of each display set
+// are in the order of `sliceDistance`, the distance along the normal of the
 // image plane, from one origin for the series. An image that is not in the main
 // plane has no distance, and goes after the images that have one.
 //
-// The display sets of this rule have `splitRuleId` `volumePositionOrder`, so a
-// hanging protocol that selects `splitRuleId` `volume3d` does not find them.
+// The rule keeps its id and its place, so a hanging protocol that selects
+// `splitRuleId` `volume3d` still finds the display sets. The file changes only
+// `sortBy`, so it works together with `byAcquisition`, in either order.
 {
-  "volumePositionOrder": {
-    // After the slot 80 that is reserved for a later default `dynamicVolume`
-    // rule, and just before `volume3d` (90), so the rule claims the instances
-    // that `volume3d` would claim. A later 4D series stays with
-    // `dynamicVolume`, which orders the slices of each dimension group.
-    "priority": 89,
-    "description": "Multi-slice CT / MR / PT / NM, as volume3d, with the slices in position order.",
-    // A copy of the `matches` of `volume3d`.
-    "matches": {
-      "Modality": ["CT", "MR", "PT", "NM"],
-      "seriesInstanceCount": {
-        "greaterThan": 1
-      },
-      "isImage": true,
-      "Rows": {
-        "notNull": true
-      }
-    },
-    "groupBy": ["SeriesInstanceUID"],
-    "sortBy": ["displaySet.sliceDistance", "InstanceNumber"]
+  "displaySetRules": {
+    "volume3d": {
+      "sortBy": { "$set": ["displaySet.sliceDistance", "InstanceNumber"] }
+    }
   }
 }

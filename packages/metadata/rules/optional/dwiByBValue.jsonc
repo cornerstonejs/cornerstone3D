@@ -9,31 +9,36 @@
 // a b-value (for example a trace or ADC set) go to the default
 // `mixedDimensionalityBValue` rule, and form one more display set.
 //
-// Priority -1: the rule runs before every default rule.
+// The file puts the rule first in the rule order, before every default rule.
 {
-  "dwiByBValue": {
-    "priority": -1,
-    "description": "Diffusion MR: one display set for each b-value.",
-    "context": {
-      "bValue": "Number(DiffusionBValue)",
-      // Some scanners write DiffusionBValue = 0 into every MR series, so a
-      // series of b=0 images only is not a diffusion series.
-      "isDiffusion": "series.instances.max(bValue) > 0"
-    },
-    "matches": {
-      "Modality": "MR",
-      "isDiffusion": true,
-      "isImage": true,
-      "DiffusionBValue": { "notNull": true }
-    },
-    "groupBy": ["SeriesInstanceUID", "bValue"],
-    // SliceLocation (0020,1041) is optional and has no defined direction, so
-    // sort by the distance along the slice normal, as volumePositionOrder does.
-    "sortBy": ["displaySet.sliceDistance", "InstanceNumber"],
-    "attributes": {
-      "SeriesDescription": {
-        "template": "{SeriesDescription} b={DiffusionBValue}"
+  // New rules for the registry.
+  "displaySetRules": {
+    "$merge": {
+      "dwiByBValue": {
+        "description": "Diffusion MR: one display set for each b-value.",
+        "context": {
+          "bValue": "Number(DiffusionBValue)",
+          // Some scanners write DiffusionBValue = 0 into every MR series, so a
+          // series of b=0 images only is not a diffusion series.
+          "isDiffusion": "series.instances.max(bValue) > 0"
+        },
+        "matches": {
+          "Modality": "MR",
+          "isDiffusion": true,
+          "isImage": true,
+          "DiffusionBValue": { "notNull": true }
+        },
+        "groupBy": ["SeriesInstanceUID", "bValue"],
+        // SliceLocation (0020,1041) is optional and has no defined direction, so
+        // sort by the distance along the slice normal, as volumePositionOrder does.
+        "sortBy": ["displaySet.sliceDistance", "InstanceNumber"],
+        "attributes": {
+          "SeriesDescription": {
+            "template": "{SeriesDescription} b={DiffusionBValue}"
+          }
+        }
       }
     }
-  }
+  },
+  "displaySetRuleOrder": { "$unshift": ["dwiByBValue"] }
 }

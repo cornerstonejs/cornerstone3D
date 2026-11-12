@@ -5,7 +5,7 @@ import {
 } from './groupInstancesBySplitRules';
 import { withInstances } from './displaySetContext';
 import { createDisplaySetSplitRules } from './displaySetRules';
-import type { DisplaySetRules } from './displaySetRulesTypes';
+import type { RawSplitRule } from './displaySetRulesTypes';
 import { planeGeometry, timeClusters } from './seriesFunctions';
 import type { PlaneGeometry, TimeClusters } from './seriesFunctions';
 import type { NaturalizedInstance } from './types';
@@ -36,9 +36,9 @@ describe('the display set context over a split', () => {
         'planeGeometry.regularCount >= 3 && planeGeometry.irregularCount > 0 && planeGeometry.complete',
     },
   };
-  const ruleSet: DisplaySetRules = {
-    regularVolume: {
-      priority: -2,
+  const ruleSet: RawSplitRule[] = [
+    {
+      id: 'regularVolume',
       matches: {
         isImage: true,
         Modality: ['CT', 'MR', 'PT', 'NM'],
@@ -53,8 +53,8 @@ describe('the display set context over a split', () => {
         },
       },
     },
-    irregularImages: {
-      priority: -1,
+    {
+      id: 'irregularImages',
       matches: {
         isImage: true,
         Modality: ['CT', 'MR', 'PT', 'NM'],
@@ -66,7 +66,7 @@ describe('the display set context over a split', () => {
         SeriesDescription: { template: '{SeriesDescription} (other images)' },
       },
     },
-  };
+  ];
   const series = [
     slice('r3', 7.5),
     slice('r0', 0),
@@ -107,9 +107,9 @@ describe('series functions in the series and in one display set', () => {
   const series = [0, 1, 2, 3, 4, 5, 6, 7].map((z) =>
     slice(`z${z}`, z, { EchoNumbers: z % 2 ? 2 : 1 })
   );
-  const rules = createDisplaySetSplitRules({
-    echoes: {
-      priority: 1,
+  const rules = createDisplaySetSplitRules([
+    {
+      id: 'echoes',
       // A bare name reads the series: the lattice of all the instances.
       matches: { sliceSpacing: 1 },
       groupBy: ['SeriesInstanceUID', 'EchoNumbers'],
@@ -127,7 +127,7 @@ describe('series functions in the series and in one display set', () => {
         },
       },
     },
-  });
+  ]);
 
   it('tests the lattice of the series in matches, and measures each display set in sortBy and attributes', () => {
     const groups = groupInstancesBySplitRules([...series].reverse(), rules);
@@ -156,14 +156,14 @@ describe('series functions in the series and in one display set', () => {
       count: instances.length,
     }));
     const rules = createDisplaySetSplitRules(
-      {
-        pairs: {
-          priority: 1,
+      [
+        {
+          id: 'pairs',
           groupBy: ['pair'],
           sortBy: ['seriesCount', 'InstanceNumber'],
           attributes: { count: { expression: 'summary.count' } },
         },
-      },
+      ],
       {
         context: {
           pair: { attribute: 'Pair' },
@@ -193,7 +193,7 @@ describe('series functions in the series and in one display set', () => {
 
 describe('a sort after the series gets new instances', () => {
   it('does not count an instance twice when the host naturalizes it again', () => {
-    const rules = createDisplaySetSplitRules({ all: { priority: 1 } });
+    const rules = createDisplaySetSplitRules([{ id: 'all' }]);
     const [group] = groupInstancesBySplitRules(
       [slice('z0', 0), slice('z2', 2)],
       rules
@@ -203,9 +203,9 @@ describe('a sort after the series gets new instances', () => {
   });
 
   it('computes the context values again, so the new instance takes its place', () => {
-    const rules = createDisplaySetSplitRules({
-      bySlice: { priority: 1, sortBy: ['sliceDistance'] },
-    });
+    const rules = createDisplaySetSplitRules([
+      { id: 'bySlice', sortBy: ['sliceDistance'] },
+    ]);
     const [group] = groupInstancesBySplitRules(
       [slice('z4', 4), slice('z0', 0), slice('z2', 2)],
       rules

@@ -2,10 +2,15 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import { createDisplaySetFromGroup } from './createDisplaySetFromGroup';
 import { compiledDisplaySetRules } from './compiledDisplaySetRules';
-import { createDisplaySetSplitRules, displaySetRules } from './displaySetRules';
+import {
+  createDisplaySetSplitRules,
+  displaySetRuleOrder,
+  displaySetRules,
+} from './displaySetRules';
 import type { CreateDisplaySetSplitRulesOptions } from './displaySetRulesTypes';
 import type { DisplaySetRules } from './displaySetRulesTypes';
 import { groupInstancesBySplitRules } from './groupInstancesBySplitRules';
+import { materializeSplitRules } from './splitRuleSet';
 import type { NaturalizedInstance, SplitRuleSet } from './types';
 import {
   ctLocalizers,
@@ -51,12 +56,18 @@ function displaySetsOf(
   );
 }
 
-/** A rule set merged over the default rules, then compiled. */
+/** New rules before the default rules, then compiled. */
 function withDefaults(
   rules: DisplaySetRules,
   options?: CreateDisplaySetSplitRulesOptions
 ): SplitRuleSet {
-  return createDisplaySetSplitRules({ ...displaySetRules, ...rules }, options);
+  return createDisplaySetSplitRules(
+    materializeSplitRules({ ...displaySetRules, ...rules }, [
+      ...Object.keys(rules),
+      ...displaySetRuleOrder,
+    ]),
+    options
+  );
 }
 
 const bySliceLocation = (a: NaturalizedInstance, b: NaturalizedInstance) =>
@@ -65,7 +76,6 @@ const bySliceLocation = (a: NaturalizedInstance, b: NaturalizedInstance) =>
 /** The rule of the OHIF module split/dwiByBValue.jsonc. */
 const dwiByBValue: DisplaySetRules = {
   dwiByBValue: {
-    priority: -1,
     context: {
       bValue: 'Number(DiffusionBValue)',
       isDiffusion: 'series.instances.max(bValue) > 0',
@@ -93,7 +103,6 @@ describe('diffusion MR', () => {
     // GE private tag.
     const geDwiByBValue: DisplaySetRules = {
       geDwiByBValue: {
-        priority: -1,
         context: {
           geBValues: { attribute: '00431039', vr: 'IS', vm: '4' },
           bValue: 'Number(geBValues)',
@@ -153,7 +162,6 @@ describe('CT localizers', () => {
   /** The rule of the OHIF module split/scoutSeries.jsonc. */
   const ctScout: DisplaySetRules = {
     ctScout: {
-      priority: -1,
       context: {
         isLocalizer: "includes(ImageType, 'LOCALIZER')",
         hasScout:
@@ -242,7 +250,6 @@ describe('ultrasound', () => {
   /** The rule of the OHIF module split/usTimeClusters.jsonc. */
   const usTimeClusters: DisplaySetRules = {
     usTimeClusters: {
-      priority: -1,
       context: { timeClustersMaxGap: 20 },
       matches: {
         isImage: true,

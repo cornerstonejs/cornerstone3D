@@ -25,40 +25,46 @@
 // Each rule keeps the handler of the default rule, so the host builds the
 // display set with its SR or SEG code.
 //
-// Priority -1: the rules run before every default rule.
+// The file puts the rules first in the rule order, before every default rule.
 {
-  "structuredReportVersions": {
-    "priority": -1,
-    "description": "Structured reports: one display set for each instance, in content date order, with isLatestVersion.",
-    "handler": "structuredReport",
-    "context": {
-      "contentStamp": "Number(ContentDate) * 1000000 + max(Number(ContentTime), 0)",
-      "isLatestVersion": "contentStamp == series.instances.max(contentStamp)"
-    },
-    "matches": {
-      "isStructuredReport": true
-    },
-    "groupBy": ["SeriesInstanceUID", "contentStamp", "SOPInstanceUID"],
-    "attributes": {
-      "Manufacturer": "Manufacturer",
-      "ManufacturerModelName": "ManufacturerModelName",
-      "isLatestVersion": "isLatestVersion"
+  // New rules for the registry.
+  "displaySetRules": {
+    "$merge": {
+      "structuredReportVersions": {
+        "description": "Structured reports: one display set for each instance, in content date order, with isLatestVersion.",
+        "handler": "structuredReport",
+        "context": {
+          "contentStamp": "Number(ContentDate) * 1000000 + max(Number(ContentTime), 0)",
+          "isLatestVersion": "contentStamp == series.instances.max(contentStamp)"
+        },
+        "matches": {
+          "isStructuredReport": true
+        },
+        "groupBy": ["SeriesInstanceUID", "contentStamp", "SOPInstanceUID"],
+        "attributes": {
+          "Manufacturer": "Manufacturer",
+          "ManufacturerModelName": "ManufacturerModelName",
+          "isLatestVersion": "isLatestVersion"
+        }
+      },
+      "segmentationVersions": {
+        "description": "Segmentations: one display set for each instance, in content date order, with isLatestVersion.",
+        "handler": "segmentation",
+        "context": {
+          "contentStamp": "Number(ContentDate) * 1000000 + max(Number(ContentTime), 0)",
+          "isLatestVersion": "contentStamp == series.instances.max(contentStamp)"
+        },
+        "matches": {
+          "isSegmentation": true
+        },
+        "groupBy": ["SeriesInstanceUID", "contentStamp", "SOPInstanceUID"],
+        "attributes": {
+          "isLatestVersion": "isLatestVersion"
+        }
+      }
     }
   },
-  "segmentationVersions": {
-    "priority": -1,
-    "description": "Segmentations: one display set for each instance, in content date order, with isLatestVersion.",
-    "handler": "segmentation",
-    "context": {
-      "contentStamp": "Number(ContentDate) * 1000000 + max(Number(ContentTime), 0)",
-      "isLatestVersion": "contentStamp == series.instances.max(contentStamp)"
-    },
-    "matches": {
-      "isSegmentation": true
-    },
-    "groupBy": ["SeriesInstanceUID", "contentStamp", "SOPInstanceUID"],
-    "attributes": {
-      "isLatestVersion": "isLatestVersion"
-    }
+  "displaySetRuleOrder": {
+    "$unshift": ["structuredReportVersions", "segmentationVersions"]
   }
 }

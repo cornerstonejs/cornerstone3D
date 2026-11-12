@@ -34,7 +34,6 @@ export type ExpressionScope = {
  * - `string`, `number` (finite), `boolean`, `true` (only `true`).
  * - `scalar`: a string, a finite number or a boolean.
  * - `literal`: anything, kept as is (the "compile as is" wildcard behaviour).
- * - `priority`: a finite number, or `null`.
  * - `expression`: the source text of an expression (a string). The form that
  *   holds it compiles it with the scope of the place.
  */
@@ -45,7 +44,6 @@ export type SchemaLeafKind =
   | 'true'
   | 'scalar'
   | 'literal'
-  | 'priority'
   | 'expression';
 
 /** What one key of a form holds. */
@@ -324,7 +322,6 @@ const LEAF_KINDS = new Set<string>([
   'true',
   'scalar',
   'literal',
-  'priority',
   'expression',
 ]);
 
@@ -350,10 +347,6 @@ const LEAF_CHECKS: Record<SchemaLeafKind, [string, (v: unknown) => boolean]> = {
       (typeof v === 'number' && Number.isFinite(v)),
   ],
   literal: ['any value', () => true],
-  priority: [
-    'a finite number, or null',
-    (v) => v === null || (typeof v === 'number' && Number.isFinite(v)),
-  ],
 };
 
 function checkLeaf(

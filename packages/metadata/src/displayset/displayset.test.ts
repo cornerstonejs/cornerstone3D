@@ -17,18 +17,8 @@ import type {
   SplitRuleSet,
 } from './types';
 
-/**
- * A keyed rule set from rules listed in evaluation order: each rule's id is its
- * key, and its position gives its priority. For tests whose point is not the
- * shape of the rule set.
- */
-const ruleSet = (...rules: SplitRule[]): SplitRuleSet =>
-  Object.fromEntries(
-    rules.map(({ id, ...rule }, index) => [
-      id,
-      { ...rule, priority: index + 1 },
-    ])
-  );
+/** A rule set from rules listed in evaluation order. */
+const ruleSet = (...rules: SplitRule[]): SplitRuleSet => rules;
 
 describe('displayset split utilities', () => {
   const instances: NaturalizedInstance[] = [
@@ -70,9 +60,9 @@ describe('displayset split utilities', () => {
     expect(() =>
       splitImageIdsBySplitRules(['wadors:missing'], {
         getNaturalizedInstance,
-        splitRules: { bad: { priority: 'high' } } as never,
+        splitRules: [{ id: 'bad' }, { id: 'bad' }],
       })
-    ).toThrow(/"bad".*priority/);
+    ).toThrow(/"bad".*more than once/);
   });
 
   it('default rules group multi-slice CT as one image stack, with no handler', () => {
@@ -471,17 +461,12 @@ describe('split key stability', () => {
     // below an insertion.
     const instances = [ct('a', 1), ct('b', 2)];
 
-    const before = groupInstancesBySplitRules(instances, {
-      ct: { ...ctRule, priority: 1 },
-    });
-    const after = groupInstancesBySplitRules(instances, {
-      ct: { ...ctRule, priority: 1 },
+    const before = groupInstancesBySplitRules(instances, [ctRule]);
+    const after = groupInstancesBySplitRules(instances, [
       // Runs before `ct`, and claims one of its instances.
-      insertedAhead: {
-        priority: -1,
-        matches: (i) => i.InstanceNumber === 2,
-      },
-    });
+      { id: 'insertedAhead', matches: (i) => i.InstanceNumber === 2 },
+      ctRule,
+    ]);
 
     expect(after.map((g) => g.matchedRule.id)).toEqual(['insertedAhead', 'ct']);
     const ctKey = (groups: InstanceGroup[]) =>
@@ -489,10 +474,11 @@ describe('split key stability', () => {
     expect(ctKey(after)).toBe(ctKey(before));
   });
 
-  it('keys a group by the rule id taken from the rule set key', () => {
-    const groups = groupInstancesBySplitRules([ct('a', 1)], {
-      byImage: { priority: 1, groupBy: ['imageId'] },
-    });
+  it('keys a group by the rule id', () => {
+    const groups = groupInstancesBySplitRules(
+      [ct('a', 1)],
+      [{ id: 'byImage', groupBy: ['imageId'] }]
+    );
 
     expect(groups[0].matchedRule.id).toBe('byImage');
     expect(groups[0].splitKey).toBe(JSON.stringify(['byImage', 'a']));

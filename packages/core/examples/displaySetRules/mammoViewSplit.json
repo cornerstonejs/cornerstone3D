@@ -6,8 +6,9 @@
     "own display set, but it does not name the view. This rule groups by",
     "laterality and view, and labels each display set with the view name.",
     "",
-    "The rule runs at priority -1, before every standard rule, so it claims MG",
-    "images before `singleImageModality` can.",
+    "The rule has a new id, so the example puts it first in the rule order,",
+    "before every standard rule: it claims MG images before",
+    "`singleImageModality` can.",
     "",
     "Grouping is by laterality and view. ViewPosition (0018,5101) is listed",
     "first for the vendors that send it; PatientOrientation is the fallback",
@@ -29,7 +30,6 @@
   },
   "rules": {
     "mammoViewSplit": {
-      "priority": -1,
       "description": "Mammography: split a single MG series into one display set per laterality/view, so RCC, RMLO, LCC and LMLO are separately selectable.",
       "matches": { "Modality": "MG" },
       "groupBy": [

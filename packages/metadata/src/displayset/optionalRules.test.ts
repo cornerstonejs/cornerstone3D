@@ -1,9 +1,14 @@
 import { readdirSync, readFileSync } from 'fs';
 import { join } from 'path';
+import update from 'immutability-helper';
 import { createDisplaySetFromGroup } from './createDisplaySetFromGroup';
-import { createDisplaySetSplitRules, displaySetRules } from './displaySetRules';
+import {
+  createDisplaySetSplitRules,
+  displaySetRuleOrder,
+  displaySetRules,
+} from './displaySetRules';
 import { groupInstancesBySplitRules } from './groupInstancesBySplitRules';
-import type { DisplaySetRules } from './displaySetRulesTypes';
+import { materializeSplitRules } from './splitRuleSet';
 import type { NaturalizedInstance } from './types';
 import { usSweepsAndClips } from './__fixtures__/scenarioInstances';
 
@@ -16,8 +21,8 @@ const stripJsonComments = (text: string) =>
     (_, string) => string ?? ''
   );
 
-/** The rule maps of `rules/optional/*.jsonc`, keyed by file id. */
-const optionalRules: Record<string, DisplaySetRules> = Object.fromEntries(
+/** The immutability-helper specs of `rules/optional/*.jsonc`, keyed by file id. */
+const optionalRules: Record<string, object> = Object.fromEntries(
   readdirSync(RULES_DIR)
     .filter((name) => name.endsWith('.jsonc'))
     .map((name) => [
@@ -78,16 +83,26 @@ const sr = (date: string, time: string) =>
 /** One display set as a test reads it. */
 type View = [rule: string, uids: unknown[], value?: unknown];
 
-/** The display sets of one split with the defaults and one optional file. */
+const defaults = { displaySetRules, displaySetRuleOrder };
+
+/** The defaults with the optional files applied, in the order given. */
+function applyFiles(ids: string[]) {
+  return ids.reduce(
+    (rules, id) => update(rules, optionalRules[id] as never),
+    defaults
+  );
+}
+
+/** The display sets of one split with the defaults and the optional files. */
 function splitWith(
-  id: string,
+  ids: string | string[],
   instances: NaturalizedInstance[],
   read: (displaySet: Record<string, unknown>) => unknown = () => undefined
 ): View[] {
-  const ruleSet = createDisplaySetSplitRules({
-    ...displaySetRules,
-    ...optionalRules[id],
-  });
+  const applied = applyFiles([ids].flat());
+  const ruleSet = createDisplaySetSplitRules(
+    materializeSplitRules(applied.displaySetRules, applied.displaySetRuleOrder)
+  );
   // Reverse the arrival order: the result must not depend on it.
   return groupInstancesBySplitRules([...instances].reverse(), ruleSet).map(
     (group) => {
@@ -111,31 +126,29 @@ const description = (displaySet: Record<string, unknown>) =>
   displaySet.SeriesDescription;
 
 describe('rules/optional/*.jsonc', () => {
-  it('each file compiles over the defaults, with no rule id of a default', () => {
+  it('each file applies over the defaults and compiles, and adds no default id', () => {
     expect(Object.keys(optionalRules).length).toBeGreaterThan(0);
-    for (const rules of Object.values(optionalRules)) {
-      for (const id of Object.keys(rules)) {
-        expect(Object.keys(displaySetRules)).not.toContain(id);
+    for (const id of Object.keys(optionalRules)) {
+      const spec = optionalRules[id] as {
+        displaySetRules?: { $merge?: object };
+        displaySetRuleOrder?: { $unshift?: string[] };
+      };
+      const added = Object.keys(spec.displaySetRules?.$merge ?? {});
+      expect(spec.displaySetRuleOrder?.$unshift ?? []).toEqual(added);
+      for (const ruleId of added) {
+        expect(displaySetRuleOrder).not.toContain(ruleId);
+        expect(Object.keys(displaySetRules)).not.toContain(ruleId);
       }
+      const applied = applyFiles([id]);
       expect(() =>
-        createDisplaySetSplitRules({ ...displaySetRules, ...rules })
+        createDisplaySetSplitRules(
+          materializeSplitRules(
+            applied.displaySetRules,
+            applied.displaySetRuleOrder
+          )
+        )
       ).not.toThrow();
     }
-  });
-
-  it('uses priorities below 0, or between the defaults and not a multiple of 10', () => {
-    for (const rules of Object.values(optionalRules)) {
-      for (const rule of Object.values(rules)) {
-        const priority = rule.priority as number;
-        expect(priority < 0 || priority % 10 !== 0).toBe(true);
-      }
-    }
-  });
-
-  it('volumePositionOrder claims the same instances as volume3d (same matches)', () => {
-    expect(
-      optionalRules.volumePositionOrder.volumePositionOrder.matches
-    ).toEqual(displaySetRules.volume3d.matches);
   });
 });
 
@@ -212,35 +225,48 @@ describe('rules/optional/*.jsonc - one split for each file', () => {
     );
 
     expect(splitWith('volumePositionOrder', slices)).toEqual([
-      ['volumePositionOrder', uids([slices[1], slices[2], slices[0]])],
+      ['volume3d', uids([slices[1], slices[2], slices[0]])],
     ]);
   });
 
-  it('byAcquisitionTime: one display set for each acquisition, with the images in time order', () => {
-    const at = (
-      AcquisitionNumber: number,
-      time: string,
-      InstanceNumber: number
-    ) =>
-      ct({
-        AcquisitionNumber,
-        AcquisitionDate: '20260101',
-        AcquisitionTime: time,
-        InstanceNumber,
-      });
-    const first = [at(1, '100010', 1), at(1, '100000', 2)];
-    const second = [at(2, '100500', 3), at(2, '100510', 4)];
+  it('byAcquisition: one display set for each acquisition, in InstanceNumber order', () => {
+    const at = (AcquisitionNumber: number, InstanceNumber: number) =>
+      ct({ AcquisitionNumber, InstanceNumber });
+    const first = [at(1, 1), at(1, 2)];
+    const second = [at(2, 3), at(2, 4)];
 
     expect(
       splitWith(
-        'byAcquisitionTime',
-        [...first, ...second],
+        'byAcquisition',
+        [...second, ...first],
         (d) => d.acquisitionNumber
       )
     ).toEqual([
-      ['byAcquisitionTime', uids([first[1], first[0]]), 1],
-      ['byAcquisitionTime', uids(second), 2],
+      ['volume3d', uids(first), 1],
+      ['volume3d', uids(second), 2],
     ]);
+  });
+
+  it('volumePositionOrder with byAcquisition, in either order: one volume for each acquisition, in position order', () => {
+    const at = (AcquisitionNumber: number, z: number, InstanceNumber: number) =>
+      ct({
+        AcquisitionNumber,
+        InstanceNumber,
+        ImagePositionPatient: [0, 0, z],
+      });
+    const first = [at(1, 5, 1), at(1, 0, 2)];
+    const second = [at(2, 5, 3), at(2, 0, 4)];
+    const expected: View[] = [
+      ['volume3d', uids([first[1], first[0]])],
+      ['volume3d', uids([second[1], second[0]])],
+    ];
+
+    for (const files of [
+      ['volumePositionOrder', 'byAcquisition'],
+      ['byAcquisition', 'volumePositionOrder'],
+    ]) {
+      expect(splitWith(files, [...first, ...second])).toEqual(expected);
+    }
   });
 
   it('usTimeClusters: one display set for each sweep', () => {

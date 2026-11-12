@@ -12,9 +12,12 @@
  */
 
 import { compileDisplaySetSplitRules } from './compileSplitRules';
+import { materializeSplitRules } from './splitRuleSet';
 
 /**
  * @typedef {import('./displaySetRulesTypes').DisplaySetRules} DisplaySetRules
+ * @typedef {import('./displaySetRulesTypes').DisplaySetRuleOrder} DisplaySetRuleOrder
+ * @typedef {import('./displaySetRulesTypes').RawSplitRule} RawSplitRule
  * @typedef {import('./displaySetRulesTypes').CreateDisplaySetSplitRulesOptions} CreateDisplaySetSplitRulesOptions
  * @typedef {import('./types').SplitRuleSet} SplitRuleSet
  */
@@ -75,8 +78,7 @@ const REVISION_CHAIN = {
  * A rule for one kind of non-image object: the instances of its SOP class
  * list, one display set for each series, built by the handler of the host.
  */
-const objectRule = (priority, kind, handler, description) => ({
-  priority,
+const objectRule = (kind, handler, description) => ({
   description,
   handler,
   matches: { [kind]: true },
@@ -84,22 +86,12 @@ const objectRule = (priority, kind, handler, description) => ({
 });
 
 /**
- * The default display-set split rules, as data.
+ * The registry of the default display-set split rules, as data.
  *
- * The key is the rule id. Rules are evaluated in ascending `priority` and the
- * first match wins per instance, so the priorities are part of the contract.
- *
- * The defaults use the priorities `10` to `170` (steps of 10), and the
- * catch-all `unsupported` runs last, at `Number.MAX_SAFE_INTEGER`. The
- * priority `80` is reserved for a later default `dynamicVolume` rule, and no
- * rule of this release uses it. The steps leave room for a new default rule
- * with an integer priority. A rule with a priority below `0` runs before all of
- * them. A rule with a priority between two defaults that is not a multiple of
- * 10 (for example `85`) runs between them, and no later default takes that
- * number. A rule with a priority above
- * `DEFAULT_SPLIT_RULE_PRIORITY_LIMIT` (10000) runs after every other default
- * rule, and still before `unsupported`, so it sees the instances that no other
- * default claims.
+ * The key is the rule id. A rule in the registry does nothing until
+ * {@link displaySetRuleOrder} names it, so the order in which a host adds rules
+ * to the registry does not matter. A host changes a rule by its id, for example
+ * with an immutability-helper patch, and the rule keeps its id and its place.
  *
  * A rule with `handler` makes display sets that the host builds with its own
  * code for that kind of object. The image rules name no handler.
@@ -108,7 +100,6 @@ const objectRule = (priority, kind, handler, description) => ({
  */
 export const displaySetRules = {
   video: {
-    priority: 10,
     description:
       'A video-only SOP class, or a video transfer syntax, or (with no known ' +
       'transfer syntax) a long multi-frame secondary capture. One display set ' +
@@ -119,7 +110,6 @@ export const displaySetRules = {
   },
 
   ecg: {
-    priority: 20,
     description:
       'ECG / waveform SOP classes. One display set per instance, shown on a ' +
       'waveform viewport rather than an image viewport.',
@@ -129,7 +119,6 @@ export const displaySetRules = {
   },
 
   wholeslide: {
-    priority: 30,
     description:
       'VL Whole Slide Microscopy (or modality SM). All pyramid levels of the ' +
       'series form a single whole-slide display set.',
@@ -139,7 +128,6 @@ export const displaySetRules = {
   },
 
   singleImageModality: {
-    priority: 40,
     description:
       'CR / DX / MG, which acquire one image per instance. One display set ' +
       'per instance, so each view of a mammography series is its own display ' +
@@ -149,7 +137,6 @@ export const displaySetRules = {
   },
 
   multiFrame: {
-    priority: 50,
     description:
       'Multi-frame image instances, one display set per instance. A cine clip ' +
       '(a slice location, or a US, XA, RF, ES or XC multi-frame that is not a ' +
@@ -173,14 +160,12 @@ export const displaySetRules = {
   },
 
   localizer: {
-    priority: 60,
     description:
       'CT / MR / PT series that mix localizer (scout) images with other ' +
       'images. The localizer images become one display set, marked ' +
       'isLocalizer, so the other images can form a volume. A series of ' +
       'localizers only, or with no localizer, is not changed.',
     context: {
-      isLocalizer: "includes(ImageType, 'LOCALIZER')",
       // A series value: the series has localizer images and other images.
       mixesLocalizer:
         'series.instances.count(isLocalizer) > 0 && ' +
@@ -197,7 +182,6 @@ export const displaySetRules = {
   },
 
   mixedDimensionalityBValue: {
-    priority: 70,
     description:
       'Diffusion MR that mixes 4D b-value frames with trailing frames that have ' +
       'none. The undefined-b-value frames are not part of the 4D set, so they ' +
@@ -215,7 +199,6 @@ export const displaySetRules = {
   },
 
   volume3d: {
-    priority: 90,
     description:
       'Multi-slice CT / MR / PT / NM, which reconstruct into a volume.',
     matches: {
@@ -227,7 +210,6 @@ export const displaySetRules = {
   },
 
   defaultImageRule: {
-    priority: 100,
     description:
       'Fallback for any remaining image SOP class, also with no Rows in the ' +
       'metadata. Grouped one display set per series.',
@@ -235,21 +217,18 @@ export const displaySetRules = {
   },
 
   segmentation: objectRule(
-    110,
     'isSegmentation',
     'segmentation',
     'Segmentations (segmentationSopClassUids). One display set per series.'
   ),
 
   rtStructureSet: objectRule(
-    120,
     'isRtStructureSet',
     'rtStructureSet',
     'RT structure sets (rtStructureSetSopClassUids). One display set per series.'
   ),
 
   parametricMap: objectRule(
-    130,
     'isParametricMap',
     'parametricMap',
     'Parametric maps (parametricMapSopClassUids). One display set per series.'
@@ -257,7 +236,6 @@ export const displaySetRules = {
 
   structuredReport: {
     ...objectRule(
-      140,
       'isStructuredReport',
       'structuredReport',
       'Structured reports (structuredReportSopClassUids), also Comprehensive ' +
@@ -272,7 +250,6 @@ export const displaySetRules = {
 
   encapsulatedDocument: {
     ...objectRule(
-      150,
       'isEncapsulatedDocument',
       'encapsulatedDocument',
       'Encapsulated documents (encapsulatedDocumentSopClassUids). One ' +
@@ -283,7 +260,6 @@ export const displaySetRules = {
   },
 
   bulkAnnotation: objectRule(
-    160,
     'isBulkAnnotation',
     'bulkAnnotation',
     'Microscopy bulk annotations (bulkAnnotationSopClassUids). One display ' +
@@ -292,7 +268,6 @@ export const displaySetRules = {
 
   chart: {
     ...objectRule(
-      170,
       'isChart',
       'chart',
       'Charts (chartSopClassUids, empty by default: a host adds its chart ' +
@@ -304,15 +279,16 @@ export const displaySetRules = {
 
   /**
    * Gives an application a way to list and identify each object that it cannot
-   * render. A rule that supports one of these formats takes a lower priority.
+   * render. A rule that supports one of these formats goes before it in the
+   * order. A host that removes it from the order gets no display set for an
+   * instance that no other rule claims.
    */
   unsupported: {
-    priority: Number.MAX_SAFE_INTEGER,
     description:
       'Catch-all for objects that no other rule claims (presentation states, ' +
       'other non-image objects). Produces one display set for each series, ' +
       'marked isDisplayable: false, so the objects are surfaced rather than ' +
-      'silently dropped. Runs last.',
+      'silently dropped. Last in the default order.',
     handler: 'unsupported',
     // No `matches`: claims whatever is left.
     groupBy: ['SeriesInstanceUID'],
@@ -320,23 +296,58 @@ export const displaySetRules = {
 };
 
 /**
- * Compiles the display set rules into a `SplitRuleSet` with the same keys and
- * priorities, for `splitImageIdsBySplitRules` / `groupInstancesBySplitRules`.
- * A malformed rule set throws here, at setup, and not during a split.
+ * The default rule order: the ids of {@link displaySetRules}, in evaluation
+ * order. The first rule that matches an instance claims it.
+ *
+ * To add a rule, a host adds its id to a copy of this list. To remove a rule,
+ * the host removes its id. An optional rule file of
+ * `@cornerstonejs/metadata/rules/optional` holds an immutability-helper patch
+ * for the list.
+ *
+ * @type {DisplaySetRuleOrder}
+ */
+export const displaySetRuleOrder = [
+  'video',
+  'ecg',
+  'wholeslide',
+  'singleImageModality',
+  'multiFrame',
+  'localizer',
+  'mixedDimensionalityBValue',
+  'volume3d',
+  'defaultImageRule',
+  'segmentation',
+  'rtStructureSet',
+  'parametricMap',
+  'structuredReport',
+  'encapsulatedDocument',
+  'bulkAnnotation',
+  'chart',
+  'unsupported',
+];
+
+/**
+ * Compiles the display set rules into a `SplitRuleSet`, in the order of the
+ * list, for `splitImageIdsBySplitRules` / `groupInstancesBySplitRules`. A
+ * malformed rule throws here, at setup, and not during a split.
  *
  * ```js
- * const rules = createDisplaySetSplitRules(displaySetRules); // = compiledDisplaySetRules
+ * const rules = createDisplaySetSplitRules(
+ *   materializeSplitRules(displaySetRules, displaySetRuleOrder)
+ * ); // = compiledDisplaySetRules
  * ```
  *
  * See "Extending the display set rules" in
  * `packages/docs/docs/concepts/cornerstone-metadata/display-sets.md`.
  *
- * @param {DisplaySetRules} [rules=displaySetRules] - the rules as data, keyed by rule id.
+ * @param {RawSplitRule[]} [rules] - the rules as data, each with its id, in
+ *   evaluation order (see `materializeSplitRules`). The default is the default
+ *   registry in the default order.
  * @param {CreateDisplaySetSplitRulesOptions} [options] - the global context, and named extension points.
- * @returns {SplitRuleSet} compiled rules, keyed by rule id.
+ * @returns {SplitRuleSet} compiled rules, in evaluation order.
  */
 export function createDisplaySetSplitRules(
-  rules = displaySetRules,
+  rules = materializeSplitRules(displaySetRules, displaySetRuleOrder),
   options = {}
 ) {
   return compileDisplaySetSplitRules(rules, options);
