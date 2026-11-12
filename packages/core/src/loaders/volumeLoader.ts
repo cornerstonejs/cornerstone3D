@@ -181,7 +181,9 @@ export async function createAndCacheVolume(
 
   volumeLoadObject = loadVolumeFromVolumeLoader(volumeId, options);
 
-  cache.putVolumeLoadObject(volumeId, volumeLoadObject);
+  // Load errors reach the caller through the returned promise and the cache
+  // logs its own errors, so ignore the rejection here.
+  cache.putVolumeLoadObject(volumeId, volumeLoadObject).catch(() => undefined);
 
   return volumeLoadObject.promise;
 }

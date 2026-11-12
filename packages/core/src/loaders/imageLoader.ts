@@ -224,7 +224,9 @@ export function loadAndCacheImage(
 
   // if not inside cache, store it
   if (!cache.getImageLoadObject(imageId)) {
-    cache.putImageLoadObject(imageId, imageLoadObject);
+    // Load errors reach the caller through the returned promise and the cache
+    // logs its own errors, so ignore the rejection here.
+    cache.putImageLoadObject(imageId, imageLoadObject).catch(() => undefined);
   }
 
   return imageLoadObject.promise;
