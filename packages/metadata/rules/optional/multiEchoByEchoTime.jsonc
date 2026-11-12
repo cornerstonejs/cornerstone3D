@@ -13,7 +13,10 @@
 // echo) stay with the default `multiFrame` rule. A split of the frames of one
 // instance needs a change to the rule language.
 //
-// The file puts the rule first in the rule order, before every default rule.
+// The file puts the rule just before the default `volume3d` rule, which
+// would otherwise take the series.
+// `$spliceById` needs `spliceById` of @cornerstonejs/metadata, registered with
+// immutability-helper `extend`.
 {
   // New rules for the registry.
   "displaySetRules": {
@@ -43,5 +46,7 @@
       }
     }
   },
-  "displaySetRuleOrder": { "$unshift": ["multiEchoByEchoTime"] }
+  "displaySetRuleOrder": {
+    "$spliceById": [["volume3d", 0, "multiEchoByEchoTime"]]
+  }
 }

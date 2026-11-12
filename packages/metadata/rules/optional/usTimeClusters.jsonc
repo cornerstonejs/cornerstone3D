@@ -11,7 +11,10 @@
 // with two or more sweeps. Multi-frame clips stay with the default `multiFrame`
 // rule.
 //
-// The file puts the rule first in the rule order, before every default rule.
+// The file puts the rule just before the default `defaultImageRule` rule, which
+// would otherwise take the single US images as one display set.
+// `$spliceById` needs `spliceById` of @cornerstonejs/metadata, registered with
+// immutability-helper `extend`.
 {
   // New rules for the registry.
   "displaySetRules": {
@@ -37,5 +40,7 @@
       }
     }
   },
-  "displaySetRuleOrder": { "$unshift": ["usTimeClusters"] }
+  "displaySetRuleOrder": {
+    "$spliceById": [["defaultImageRule", 0, "usTimeClusters"]]
+  }
 }

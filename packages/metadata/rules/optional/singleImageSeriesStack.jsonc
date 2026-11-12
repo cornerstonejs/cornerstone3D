@@ -7,7 +7,10 @@
 // Do not use this rule when a hanging protocol needs one display set for each
 // mammography view.
 //
-// The file puts the rule first in the rule order, before every default rule.
+// The file puts the rule just before the default `singleImageModality` rule, which
+// would otherwise give one display set for each image.
+// `$spliceById` needs `spliceById` of @cornerstonejs/metadata, registered with
+// immutability-helper `extend`.
 {
   // New rules for the registry.
   "displaySetRules": {
@@ -32,5 +35,7 @@
       }
     }
   },
-  "displaySetRuleOrder": { "$unshift": ["singleImageSeriesStack"] }
+  "displaySetRuleOrder": {
+    "$spliceById": [["singleImageModality", 0, "singleImageSeriesStack"]]
+  }
 }

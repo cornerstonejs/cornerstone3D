@@ -9,8 +9,11 @@
 // position order. The other images stay with the default rules. A fully
 // regular series, and a series with no lattice, keep the default display sets.
 //
-// The file puts the rule first in the rule order, before every default rule.
-// With other optional files, the file that a host applies last runs first.
+// The file puts the rule just before the default `localizer` rule, so it runs before the
+// other volume rules. A localizer is not a regular slice, so the `localizer`
+// rule still takes it.
+// `$spliceById` needs `spliceById` of @cornerstonejs/metadata, registered with
+// immutability-helper `extend`.
 {
   // New rules for the registry.
   "displaySetRules": {
@@ -40,5 +43,7 @@
       }
     }
   },
-  "displaySetRuleOrder": { "$unshift": ["regularVolume"] }
+  "displaySetRuleOrder": {
+    "$spliceById": [["localizer", 0, "regularVolume"]]
+  }
 }

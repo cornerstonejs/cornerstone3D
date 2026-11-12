@@ -14,7 +14,10 @@
 // Multi-frame instances stay with the default `multiFrame` rule, which gives
 // one display set for each instance.
 //
-// The file puts the rule first in the rule order, before every default rule.
+// The file puts the rule just before the default `mixedDimensionalityBValue` rule, which
+// would otherwise take the series.
+// `$spliceById` needs `spliceById` of @cornerstonejs/metadata, registered with
+// immutability-helper `extend`.
 {
   // New rules for the registry.
   "displaySetRules": {
@@ -47,5 +50,7 @@
       }
     }
   },
-  "displaySetRuleOrder": { "$unshift": ["dwiByBValue"] }
+  "displaySetRuleOrder": {
+    "$spliceById": [["mixedDimensionalityBValue", 0, "dwiByBValue"]]
+  }
 }

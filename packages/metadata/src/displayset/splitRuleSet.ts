@@ -43,8 +43,13 @@ function checkRuleId(id: unknown, seen: Set<string>): string {
  *
  * Each result entry is the rule with its key as its `id`.
  *
- * @throws for an id of `order` that is not in `registry`, for an id that occurs
- *   twice, and for an entry that is not an object or that states another id.
+ * An id that occurs again in `order` is the same rule, so its later copy can
+ * never claim an instance. The result keeps the first copy, and one
+ * `console.warn` names the repeated ids. This happens when a host loads two
+ * files that add the same rule, or loads one file twice.
+ *
+ * @throws for an id of `order` that is not in `registry`, and for an entry that
+ *   is not an object or that states another id.
  */
 export function materializeSplitRules<Entry extends { id?: string }>(
   registry: Record<string, Entry>,
@@ -61,7 +66,13 @@ export function materializeSplitRules<Entry extends { id?: string }>(
     );
   }
   const seen = new Set<string>();
-  return order.map((value) => {
+  const repeated = new Set<string>();
+  const result = [];
+  for (const value of order) {
+    if (typeof value === 'string' && seen.has(value)) {
+      repeated.add(value);
+      continue;
+    }
     const id = checkRuleId(value, seen);
     if (!Object.prototype.hasOwnProperty.call(registry, id)) {
       invalidEntry(
@@ -79,8 +90,14 @@ export function materializeSplitRules<Entry extends { id?: string }>(
         `the entry states id "${entry.id}", but its key is the id. Remove the id, or make it equal to the key.`
       );
     }
-    return { ...entry, id };
-  });
+    result.push({ ...entry, id });
+  }
+  if (repeated.size) {
+    console.warn(
+      `Split rule order: ${[...repeated].join(', ')} occurs more than once; the first place is used.`
+    );
+  }
+  return result;
 }
 
 /**
@@ -88,7 +105,9 @@ export function materializeSplitRules<Entry extends { id?: string }>(
  * it with immutability-helper as
  * `extend('$spliceById', (spec, list) => spliceById(list, spec))`.
  *
- * Each entry is `[id, deleteCount, ...items]`. The position is the index of the
+ * Each entry is `[id, deleteCount, ...items]`, and `deleteCount` is required:
+ * `$splice` reads a missing count as "to the end", which is never wanted
+ * here. The position is the index of the
  * item that equals `id`, or whose `id` equals it. So
  * `[['volume3d', 0, 'myRule']]` inserts before `volume3d`, and
  * `[['volume3d', 1]]` removes `volume3d`. Each entry finds its position after
@@ -98,8 +117,8 @@ export function materializeSplitRules<Entry extends { id?: string }>(
  * immutability-helper reads a string start of `$splice` as `0` with no error,
  * but it rejects an unknown command.
  *
- * @throws for a position that is not a string, and for an id that is not in the
- *   list.
+ * @throws for a position that is not a string, an id that is not in the list,
+ *   and a `deleteCount` that is not a non-negative integer.
  */
 export function spliceById<Item>(
   list: readonly Item[],
@@ -116,10 +135,15 @@ export function spliceById<Item>(
     );
   }
   const result = [...list];
-  for (const [id, deleteCount = 0, ...items] of splices) {
+  for (const [id, deleteCount, ...items] of splices) {
     if (typeof id !== 'string') {
       throw new Error(
         `$spliceById: the position must be an id string; got ${JSON.stringify(id)}. Use $splice for an index.`
+      );
+    }
+    if (!Number.isInteger(deleteCount) || deleteCount < 0) {
+      throw new Error(
+        `$spliceById: the entry for "${id}" needs a deleteCount of 0 or more; got ${JSON.stringify(deleteCount)}`
       );
     }
     const start = result.findIndex(

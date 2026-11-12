@@ -25,7 +25,11 @@
 // Each rule keeps the handler of the default rule, so the host builds the
 // display set with its SR or SEG code.
 //
-// The file puts the rules first in the rule order, before every default rule.
+// The file puts each rule just before the default rule that it refines:
+// `structuredReportVersions` before `structuredReport`, and
+// `segmentationVersions` before `segmentation`. `$spliceById` needs
+// `spliceById` of @cornerstonejs/metadata, registered with immutability-helper
+// `extend`.
 {
   // New rules for the registry.
   "displaySetRules": {
@@ -65,6 +69,9 @@
     }
   },
   "displaySetRuleOrder": {
-    "$unshift": ["structuredReportVersions", "segmentationVersions"]
+    "$spliceById": [
+      ["structuredReport", 0, "structuredReportVersions"],
+      ["segmentation", 0, "segmentationVersions"]
+    ]
   }
 }

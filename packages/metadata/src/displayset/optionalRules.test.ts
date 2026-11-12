@@ -1,6 +1,6 @@
 import { readdirSync, readFileSync } from 'fs';
 import { join } from 'path';
-import update from 'immutability-helper';
+import update, { extend } from 'immutability-helper';
 import { createDisplaySetFromGroup } from './createDisplaySetFromGroup';
 import {
   createDisplaySetSplitRules,
@@ -8,9 +8,11 @@ import {
   displaySetRules,
 } from './displaySetRules';
 import { groupInstancesBySplitRules } from './groupInstancesBySplitRules';
-import { materializeSplitRules } from './splitRuleSet';
+import { materializeSplitRules, spliceById } from './splitRuleSet';
 import type { NaturalizedInstance } from './types';
 import { usSweepsAndClips } from './__fixtures__/scenarioInstances';
+
+extend('$spliceById', (spec, list) => spliceById(list as string[], spec));
 
 const RULES_DIR = join(__dirname, '../../rules/optional');
 
@@ -131,15 +133,14 @@ describe('rules/optional/*.jsonc', () => {
     for (const id of Object.keys(optionalRules)) {
       const spec = optionalRules[id] as {
         displaySetRules?: { $merge?: object };
-        displaySetRuleOrder?: { $unshift?: string[] };
       };
       const added = Object.keys(spec.displaySetRules?.$merge ?? {});
-      expect(spec.displaySetRuleOrder?.$unshift ?? []).toEqual(added);
+      const applied = applyFiles([id]);
       for (const ruleId of added) {
         expect(displaySetRuleOrder).not.toContain(ruleId);
         expect(Object.keys(displaySetRules)).not.toContain(ruleId);
+        expect(applied.displaySetRuleOrder).toContain(ruleId);
       }
-      const applied = applyFiles([id]);
       expect(() =>
         createDisplaySetSplitRules(
           materializeSplitRules(
@@ -148,6 +149,34 @@ describe('rules/optional/*.jsonc', () => {
           )
         )
       ).not.toThrow();
+    }
+  });
+});
+
+describe('rules/optional/*.jsonc - load order', () => {
+  const placed = (ids: string[]) => {
+    const { displaySetRules: rules, displaySetRuleOrder: order } =
+      applyFiles(ids);
+    return materializeSplitRules(rules, order).map((rule) => rule.id);
+  };
+
+  it('gives one rule order for any load order of the files', () => {
+    const ids = Object.keys(optionalRules);
+    expect(placed([...ids].reverse())).toEqual(placed(ids));
+    expect(placed(ids).indexOf('regularVolume')).toBeLessThan(
+      placed(ids).indexOf('dwiByBValue')
+    );
+  });
+
+  it('a file applied twice gives the same rules, and a warning', () => {
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      expect(placed(['usTimeClusters', 'usTimeClusters'])).toEqual(
+        placed(['usTimeClusters'])
+      );
+      expect(warn).toHaveBeenCalledTimes(1);
+    } finally {
+      warn.mockRestore();
     }
   });
 });
@@ -209,9 +238,9 @@ describe('rules/optional/*.jsonc - one split for each file', () => {
     expect(
       splitWith('multiEchoByEchoTime', [...te2, ...te4, scout], description)
     ).toEqual([
+      ['localizer', uids([scout])],
       ['multiEchoByEchoTime', uids([te2[1], te2[0]]), 'AX TE=2.39'],
       ['multiEchoByEchoTime', uids(te4), 'AX TE=4.77'],
-      ['localizer', uids([scout])],
     ]);
   });
 
@@ -294,7 +323,9 @@ describe('rules/optional/*.jsonc - one split for each file', () => {
     const { instances, sweeps } = usSweepsAndClips();
 
     expect(
-      splitWith('usTimeClusters', instances, description).slice(0, 2)
+      splitWith('usTimeClusters', instances, description).filter(
+        ([rule]) => rule === 'usTimeClusters'
+      )
     ).toEqual([
       ['usTimeClusters', uids(sweeps[0]), 'US ABDOMEN +0 s'],
       ['usTimeClusters', uids(sweeps[1]), 'US ABDOMEN +90 s'],

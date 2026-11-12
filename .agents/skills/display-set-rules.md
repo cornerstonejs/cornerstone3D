@@ -170,8 +170,8 @@ URL customization modules), and the `context` of each rule.
   does not name does nothing. Compile with
   `createDisplaySetSplitRules(materializeSplitRules(registry, order))`; the
   result is an array. `materializeSplitRules` throws for an id that is not in
-  the registry, a duplicate id, an entry `id` that differs from its key, and an
-  unsafe key.
+  the registry, an entry `id` that differs from its key, and an unsafe key. A
+  repeated id keeps its first place, with one `console.warn`.
 - A rule has no place field. To change a rule, patch the registry by id with
   immutability-helper (`"volume3d": { "sortBy": { "$set": [...] } }`); the
   rule keeps its id and place. To add one, `$merge` it into the registry and put
@@ -189,8 +189,8 @@ URL customization modules), and the `context` of each rule.
   `<id>.jsonc` file there is an immutability-helper spec over
   `{ displaySetRules, displaySetRuleOrder }`, with `//` comments for the
   explanation. A file of new rules uses `"displaySetRules": { "$merge": ... }`
-  and `"displaySetRuleOrder": { "$unshift": [...] }`; with several, the file
-  applied last runs first. `volumePositionOrder` and `byAcquisition` only
+  and puts each id just before the default rule that it refines with
+  `$spliceById`, so the result does not depend on the load order. `volumePositionOrder` and `byAcquisition` only
   `$set` fields of `volume3d`, so they combine in either order and keep the
   `splitRuleId` `volume3d`. A patch of a missing rule id throws. A file has no
   global context; put each name in the rule `context`. The package exports no

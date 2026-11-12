@@ -1121,21 +1121,21 @@ packages/metadata/src/
 
 ### Example 3: `regularVolume`
 
-The module adds one series value to the global context. Both of its rules read
-the value. `irregularImages` is in the registry and not in the order, so it is
-off. A site turns it on with
-`"displaySetRuleOrder": { "$splice": [[1, 0, "irregularImages"]] }`, which puts
-it after `regularVolume`, and the rule then puts the other images of the series
-into one stack:
+Both rules of the module read one series value, so each rule has the value in
+its own `context`. The engine computes `planeGeometry`, which both values read,
+one time for each series (`RL-CTXI-7`). `irregularImages` is in the
+registry and not in the order, so it is off. A site turns it on with
+`"displaySetRuleOrder": { "$spliceById": [["volume3d", 0, "irregularImages"]] }`,
+and the rule then puts the other images of the series into one stack:
 
 ```jsonc
-"context": {
-  "mixesIrregular": "planeGeometry.regularCount >= 3 && planeGeometry.irregularCount > 0 && planeGeometry.complete"
-},
-"displaySetRuleOrder": { "$unshift": ["regularVolume"] },
+"displaySetRuleOrder": { "$spliceById": [["localizer", 0, "regularVolume"]] },
 "displaySetRules": {
   "$merge": {
     "regularVolume": {
+      "context": {
+        "mixesIrregular": "planeGeometry.regularCount >= 3 && planeGeometry.irregularCount > 0 && planeGeometry.complete"
+      },
       "matches": {
         "isImage": true,
         "Modality": ["CT", "MR", "PT", "NM"],
@@ -1147,6 +1147,9 @@ into one stack:
       "attributes": { "SeriesDescription": { "template": "{SeriesDescription} ({displaySet.sliceSpacing} mm)" } }
     },
     "irregularImages": {
+      "context": {
+        "mixesIrregular": "planeGeometry.regularCount >= 3 && planeGeometry.irregularCount > 0 && planeGeometry.complete"
+      },
       "matches": {
         "isImage": true,
         "Modality": ["CT", "MR", "PT", "NM"],
@@ -1200,12 +1203,22 @@ into one stack:
 
 ### Example 5: small DX / CR series, with a configured limit
 
+The limit is in the global context, so that one value serves all rules. The
+global context is not part of the patch over `{ displaySetRules,
+displaySetRuleOrder }`. A host gives it to `createDisplaySetSplitRules` as
+`options.context`, and OHIF reads it from the `metadataContext` customization:
+
 ```jsonc
-"context": {
+// The global context
+{
   "dxCrMaxImages": 9,
-  "isSmallSeries": "seriesInstanceCount <= dxCrMaxImages"
-},
-"displaySetRuleOrder": { "$unshift": ["dxCrSingleImages"] },
+  "isSmallSeries": "seriesInstanceCount <= dxCrMaxImages",
+}
+```
+
+```jsonc
+// The patch over { displaySetRules, displaySetRuleOrder }
+"displaySetRuleOrder": { "$spliceById": [["singleImageModality", 0, "dxCrSingleImages"]] },
 "displaySetRules": {
   "$merge": {
     "dxCrSingleImages": {

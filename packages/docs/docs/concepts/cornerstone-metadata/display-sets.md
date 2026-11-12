@@ -391,8 +391,11 @@ const splitRules = createDisplaySetSplitRules(
 ```
 
 `materializeSplitRules` throws for an id of the order that is not in the
-registry, for an id that occurs twice in the order, for an entry that states an
-`id` different from its key, and for an unsafe key such as `__proto__`.
+registry, for an entry that states an `id` different from its key, and for an
+unsafe key such as `__proto__`. An id that occurs again in the order is the same
+rule, and its later copy can never claim an instance. So `materializeSplitRules`
+keeps the first place, and writes one `console.warn` with the repeated ids. This
+happens when a host loads two files that add the same rule.
 `resolveSplitRuleSet` checks a compiled array: each rule must be an object with
 a unique, safe `id`.
 
@@ -1270,24 +1273,27 @@ host reads a file (`@cornerstonejs/metadata/rules/optional/<id>.jsonc`), removes
 the comments, and applies the spec to the registry and the order.
 
 A file of new rules adds them with `"displaySetRules": { "$merge": { ... } }`,
-and puts their ids first with `"displaySetRuleOrder": { "$unshift": [...] }`.
+and puts each id just before the default rule that it refines, with
+`"displaySetRuleOrder": { "$spliceById": [["<default id>", 0, "<new id>"]] }`.
 The file states the place of each rule that it adds, so a host applies one spec
 and needs no other order data. A rule in the registry and not in the order does
 nothing and gives no error, so a file must not add a rule without its place.
-With several such files, the file that the host applies last runs first. A file
+Each file has its own default rule as the anchor where two files can claim the
+same instance, so the order of the rules does not depend on the load order of
+the files. A host must register `$spliceById` (see above). A file
 that changes a default rule patches that rule by id, and the rule keeps its id
 and its place.
 
-| Id                       | What it does                                                                                                                                                           | Change to the rules                                                    |
-| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| `dwiByBValue`            | One display set for each `DiffusionBValue` of a single-frame DWI series. Localizer images stay with the `localizer` rule, and multi-frame instances with `multiFrame`. | new rule, first                                                        |
-| `multiEchoByEchoTime`    | One display set for each `EchoTime` of a single-frame MR series. Localizer images stay with the `localizer` rule.                                                      | new rule, first                                                        |
-| `singleImageSeriesStack` | One stack for each CR, DX or MG series, sorted by `ImageLaterality`, `ViewPosition`, `InstanceNumber`. CR and DX only up to `singleImageSeriesMaxImages` (9) images.   | new rule, first                                                        |
-| `volumePositionOrder`    | The instances of `volume3d`, with the slices in position order (`sliceDistance`).                                                                                      | `$set` of `volume3d.sortBy`                                            |
-| `byAcquisition`          | One display set for each `AcquisitionNumber` of a CT, MR, PT or NM series, in `AcquisitionNumber` order, with the attribute `acquisitionNumber`.                       | `$set` of `volume3d.groupBy` and `volume3d.attributes`                 |
-| `usTimeClusters`         | One display set for each ultrasound sweep.                                                                                                                             | new rule, first                                                        |
-| `regularVolume`          | The regular slices of a series with some irregular images become one volume.                                                                                           | new rule, first                                                        |
-| `derivedObjectVersions`  | One display set for each SR or SEG instance, in content date order, with `isLatestVersion`.                                                                            | new rules `structuredReportVersions` and `segmentationVersions`, first |
+| Id                       | What it does                                                                                                                                                           | Change to the rules                                                                                       |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `dwiByBValue`            | One display set for each `DiffusionBValue` of a single-frame DWI series. Localizer images stay with the `localizer` rule, and multi-frame instances with `multiFrame`. | new rule, before `mixedDimensionalityBValue`                                                              |
+| `multiEchoByEchoTime`    | One display set for each `EchoTime` of a single-frame MR series. Localizer images stay with the `localizer` rule.                                                      | new rule, before `volume3d`                                                                               |
+| `singleImageSeriesStack` | One stack for each CR, DX or MG series, sorted by `ImageLaterality`, `ViewPosition`, `InstanceNumber`. CR and DX only up to `singleImageSeriesMaxImages` (9) images.   | new rule, before `singleImageModality`                                                                    |
+| `volumePositionOrder`    | The instances of `volume3d`, with the slices in position order (`sliceDistance`).                                                                                      | `$set` of `volume3d.sortBy`                                                                               |
+| `byAcquisition`          | One display set for each `AcquisitionNumber` of a CT, MR, PT or NM series, in `AcquisitionNumber` order, with the attribute `acquisitionNumber`.                       | `$set` of `volume3d.groupBy` and `volume3d.attributes`                                                    |
+| `usTimeClusters`         | One display set for each ultrasound sweep.                                                                                                                             | new rule, before `defaultImageRule`                                                                       |
+| `regularVolume`          | The regular slices of a series with some irregular images become one volume.                                                                                           | new rule, before `localizer`                                                                              |
+| `derivedObjectVersions`  | One display set for each SR or SEG instance, in content date order, with `isLatestVersion`.                                                                            | new rules `structuredReportVersions` and `segmentationVersions`, each before the default rule of its kind |
 
 `volumePositionOrder` and `byAcquisition` together give one volume for each
 acquisition, in position order, in either apply order. The display sets keep
@@ -1475,7 +1481,7 @@ A site changes the limit for all rules with `"dxCrMaxImages": { "$set": 20 }`.
 One rule changes the limit for itself with `"context": { "dxCrMaxImages": 20 }`.
 
 The key in the registry is the id of the rule, and `materializeSplitRules`
-rejects an id that occurs twice in the order, so ids are unique. An id
+keeps only the first place of an id, so ids are unique. An id
 namespaces the bucket keys that its rule makes. Thus a site can edit the order
 (move a rule, or insert a rule), and the display set identities of the other
 rules do not change.

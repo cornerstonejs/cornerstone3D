@@ -31,9 +31,6 @@ describe('materializeSplitRules', () => {
     expect(() => materializeSplitRules({ a: {} }, ['x'])).toThrow(
       /"x".*not in the registry/
     );
-    expect(() => materializeSplitRules({ a: {} }, ['a', 'a'])).toThrow(
-      /"a".*more than once/
-    );
     expect(() => materializeSplitRules({ a: { id: 'b' } }, ['a'])).toThrow(
       /"a".*"b"/
     );
@@ -82,6 +79,27 @@ describe('spliceById', () => {
   it('throws for an unknown id and for a numeric position', () => {
     expect(() => spliceById(order, [['missing', 1]])).toThrow(/"missing"/);
     expect(() => spliceById(order, [[1, 1]])).toThrow(/Use \$splice/);
+    expect(() => spliceById(order, [['ecg']])).toThrow(/deleteCount/);
+    expect(() => spliceById(order, [['ecg', '1']])).toThrow(/deleteCount/);
+  });
+});
+
+describe('materializeSplitRules with a repeated id', () => {
+  it('keeps the first place and warns once, as when two files add the same rule', () => {
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const rules = materializeSplitRules({ a: {}, b: {} }, [
+        'a',
+        'b',
+        'a',
+        'a',
+      ]);
+      expect(rules.map((rule) => rule.id)).toEqual(['a', 'b']);
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(String(warn.mock.calls[0][0])).toMatch(/a occurs more than once/);
+    } finally {
+      warn.mockRestore();
+    }
   });
 });
 
