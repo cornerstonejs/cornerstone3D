@@ -126,7 +126,7 @@ const description = (displaySet: Record<string, unknown>) =>
   displaySet.SeriesDescription;
 
 describe('rules/optional/*.jsonc', () => {
-  it('each file applies over the defaults and compiles, and adds no default id', () => {
+  it('each file puts each rule it adds in the order, adds no default id, and compiles over the defaults', () => {
     expect(Object.keys(optionalRules).length).toBeGreaterThan(0);
     for (const id of Object.keys(optionalRules)) {
       const spec = optionalRules[id] as {

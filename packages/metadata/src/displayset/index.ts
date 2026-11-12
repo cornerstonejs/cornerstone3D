@@ -11,7 +11,11 @@ export {
   orderInstancesForRule,
 } from './groupInstancesBySplitRules';
 export type { PlaneGeometry, TimeClusters } from './seriesFunctions';
-export { materializeSplitRules, resolveSplitRuleSet } from './splitRuleSet';
+export {
+  materializeSplitRules,
+  resolveSplitRuleSet,
+  spliceById,
+} from './splitRuleSet';
 export {
   compare,
   compareInstanceNumber,

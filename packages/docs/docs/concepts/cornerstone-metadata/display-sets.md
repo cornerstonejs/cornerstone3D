@@ -340,7 +340,7 @@ compile error (`unknown field 'priority'`). `DEFAULT_SPLIT_RULE_PRIORITY_LIMIT`,
 | a keyed set passed to `createDisplaySetSplitRules`          | `createDisplaySetSplitRules(materializeSplitRules(registry, order))`                 |
 | a keyed `SplitRuleSet` passed to the split functions        | the ordered array that `createDisplaySetSplitRules` returns                          |
 | a priority below `0` (before every default)                 | put the id first in the order (`$unshift`)                                           |
-| a priority between two defaults                             | insert the id at that position in the order (`$splice`)                              |
+| a priority between two defaults                             | insert the id before the later default (`$spliceById`)                               |
 | a priority above `10000` (a fallback)                       | insert the id just before `unsupported`                                              |
 | `priority: null` (exclude a rule)                           | remove the id from the order                                                         |
 | a rule of the same key replaces a default                   | the same: replace the rule in the registry by key (`$set`), or patch one field       |
@@ -429,18 +429,25 @@ error, and does not silently do nothing.
 
 To place a rule of your own (`order` is the current order list):
 
-| You want the rule to run…                            | Put its id in the order                                                                 |
-| ---------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| before every default rule                            | first: `{ $unshift: ['myRule'] }`                                                       |
-| between two default rules                            | before the later rule: `{ $splice: [[order.indexOf('volume3d'), 0, 'myRule']] }`        |
-| as a fallback, on what the other default rules leave | just before `unsupported`: `{ $splice: [[order.indexOf('unsupported'), 0, 'myRule']] }` |
+| You want the rule to run…                            | Put its id in the order                                                      |
+| ---------------------------------------------------- | ---------------------------------------------------------------------------- |
+| before every default rule                            | first: `{ $unshift: ['myRule'] }`                                            |
+| between two default rules                            | before the later rule: `{ $spliceById: [['volume3d', 0, 'myRule']] }`        |
+| as a fallback, on what the other default rules leave | just before `unsupported`: `{ $spliceById: [['unsupported', 0, 'myRule']] }` |
 
 A fallback rule runs after every other default rule and before `unsupported`,
-so it sees the instances that no other default claims. Plain
-immutability-helper takes only a numeric index in `$splice`. OHIF (#6137) keeps
-the registry and the order as customizations, and its `$splice` also takes a
-rule id as the position, for example
-`{ "$splice": [["volume3d", 0, "byAcquisition"]] }`.
+so it sees the instances that no other default claims.
+
+`$spliceById` is `$splice` with a rule id as the position: each entry is
+`[id, deleteCount, ...items]`, so `[['volume3d', 0, 'dwiByBValue']]` inserts
+`dwiByBValue` before `volume3d`, and `[['ecg', 1]]` removes `ecg`. Each entry
+finds its position after the earlier entries, and an unknown id throws.
+immutability-helper does not have the command. Register it one time with
+`extend('$spliceById', (spec, list) => spliceById(list, spec))`, where
+`spliceById` comes from `@cornerstonejs/metadata`. OHIF (#6137) registers it.
+The command has its own name because plain immutability-helper reads a string
+position of `$splice` as `0` and gives no error. An unregistered `$spliceById`
+throws, so a host without it fails and does not build a different order.
 
 To replace the catch-all, take `unsupported` out of the order, and put your
 own rule last. See [Objects nothing can render](#objects-nothing-can-render).
@@ -1264,6 +1271,9 @@ the comments, and applies the spec to the registry and the order.
 
 A file of new rules adds them with `"displaySetRules": { "$merge": { ... } }`,
 and puts their ids first with `"displaySetRuleOrder": { "$unshift": [...] }`.
+The file states the place of each rule that it adds, so a host applies one spec
+and needs no other order data. A rule in the registry and not in the order does
+nothing and gives no error, so a file must not add a rule without its place.
 With several such files, the file that the host applies last runs first. A file
 that changes a default rule patches that rule by id, and the rule keeps its id
 and its place.

@@ -98,6 +98,7 @@ export {
   orderInstancesForRule,
   resolveSplitRuleSet,
   materializeSplitRules,
+  spliceById,
   compare,
   compareInstanceNumber,
   compareSOPInstanceUID,

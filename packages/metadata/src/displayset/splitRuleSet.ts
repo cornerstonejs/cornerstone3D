@@ -84,6 +84,56 @@ export function materializeSplitRules<Entry extends { id?: string }>(
 }
 
 /**
+ * The `$spliceById` command: `$splice` with a rule id as the position. Register
+ * it with immutability-helper as
+ * `extend('$spliceById', (spec, list) => spliceById(list, spec))`.
+ *
+ * Each entry is `[id, deleteCount, ...items]`. The position is the index of the
+ * item that equals `id`, or whose `id` equals it. So
+ * `[['volume3d', 0, 'myRule']]` inserts before `volume3d`, and
+ * `[['volume3d', 1]]` removes `volume3d`. Each entry finds its position after
+ * the edits of the earlier entries.
+ *
+ * A separate command name, and not a string position in `$splice`: plain
+ * immutability-helper reads a string start of `$splice` as `0` with no error,
+ * but it rejects an unknown command.
+ *
+ * @throws for a position that is not a string, and for an id that is not in the
+ *   list.
+ */
+export function spliceById<Item>(
+  list: readonly Item[],
+  splices: unknown
+): Item[] {
+  if (!Array.isArray(list)) {
+    throw new Error(
+      `$spliceById: the target must be an array; got ${JSON.stringify(list)}`
+    );
+  }
+  if (!Array.isArray(splices) || !splices.every(Array.isArray)) {
+    throw new Error(
+      '$spliceById: the spec must be an array of [id, deleteCount, ...items] arrays'
+    );
+  }
+  const result = [...list];
+  for (const [id, deleteCount = 0, ...items] of splices) {
+    if (typeof id !== 'string') {
+      throw new Error(
+        `$spliceById: the position must be an id string; got ${JSON.stringify(id)}. Use $splice for an index.`
+      );
+    }
+    const start = result.findIndex(
+      (item) => item === id || (item as { id?: unknown })?.id === id
+    );
+    if (start === -1) {
+      throw new Error(`$spliceById: no item has the id "${id}"`);
+    }
+    result.splice(start, deleteCount, ...items);
+  }
+  return result;
+}
+
+/**
  * Checks an ordered rule set - the form the split engine takes - and returns
  * its rules in evaluation order.
  *

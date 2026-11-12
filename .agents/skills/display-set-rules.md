@@ -175,9 +175,11 @@ URL customization modules), and the `context` of each rule.
 - A rule has no place field. To change a rule, patch the registry by id with
   immutability-helper (`"volume3d": { "sortBy": { "$set": [...] } }`); the
   rule keeps its id and place. To add one, `$merge` it into the registry and put
-  its id in the order (`$unshift` for first, `$splice` at an index). To remove
-  one, take its id out of the order. Plain immutability-helper `$splice` takes a
-  numeric index; OHIF (#6137) also takes a rule id there.
+  its id in the order (`$unshift` for first, `$spliceById` before a given id).
+  To remove one, take its id out of the order (`$spliceById: [['id', 1]]`).
+  `$spliceById` is not in plain immutability-helper: register `spliceById` of
+  `@cornerstonejs/metadata` with `extend`. Never put an id in `$splice`; plain
+  immutability-helper reads it as index 0 with no error.
 - `unsupported` is last in the default order. Without it, an instance that no
   rule matches gets no display set, and `groupInstancesBySplitRules` warns once
   with the count when no `onUnmatched` callback is given.

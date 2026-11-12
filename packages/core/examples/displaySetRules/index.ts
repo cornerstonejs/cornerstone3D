@@ -308,9 +308,8 @@ const SAMPLE_SNIPPETS: Record<string, string> = {
     null,
     2
   ),
-  // Plain immutability-helper takes an index; OHIF also takes a rule id here.
-  'Customization command (remove the 4th rule of the order)': JSON.stringify(
-    { displaySetRuleOrder: { $splice: [[3, 1]] } },
+  'Customization command (remove a rule from the order)': JSON.stringify(
+    { displaySetRuleOrder: { $spliceById: [['localizer', 1]] } },
     null,
     2
   ),
@@ -868,7 +867,7 @@ editorHint.innerText =
   'Paste rules keyed by rule id (a new id goes first in the rule order, a ' +
   'standard id replaces that rule in its place), one rule with an "id", or a ' +
   'customization command over { displaySetRules, displaySetRuleOrder } ' +
-  '($set / $merge / $unset / $splice). A rule reads DICOM keywords and the names of ' +
+  '($set / $merge / $unset / $splice / $spliceById). A rule reads DICOM keywords and the names of ' +
   'the display set context; this example adds ' +
   `${Object.keys(DEMO_CONTEXT)
     .map((name) => `"${name}"`)

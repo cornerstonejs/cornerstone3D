@@ -1,7 +1,12 @@
 import { describe, expect, it, jest } from '@jest/globals';
 import { groupInstancesBySplitRules } from './groupInstancesBySplitRules';
 import { createDisplaySetSplitRules } from './displaySetRules';
-import { materializeSplitRules, resolveSplitRuleSet } from './splitRuleSet';
+import update, { extend } from 'immutability-helper';
+import {
+  materializeSplitRules,
+  resolveSplitRuleSet,
+  spliceById,
+} from './splitRuleSet';
 import type { NaturalizedInstance, SplitRuleSet } from './types';
 
 const ct = (imageId: string, InstanceNumber: number): NaturalizedInstance => ({
@@ -38,6 +43,45 @@ describe('materializeSplitRules', () => {
     expect(() => materializeSplitRules({}, ['__proto__'])).toThrow(
       /not allowed/
     );
+  });
+});
+
+describe('spliceById', () => {
+  const order = ['video', 'ecg', 'localizer', 'volume3d', 'unsupported'];
+
+  it('as $spliceById: inserts, removes and moves by id, each entry after the earlier ones', () => {
+    extend('$spliceById', (spec, list) => spliceById(list as string[], spec));
+
+    expect(
+      update(order, { $spliceById: [['volume3d', 0, 'dwiByBValue']] } as never)
+    ).toEqual([
+      'video',
+      'ecg',
+      'localizer',
+      'dwiByBValue',
+      'volume3d',
+      'unsupported',
+    ]);
+    expect(update(order, { $spliceById: [['ecg', 1]] } as never)).toEqual([
+      'video',
+      'localizer',
+      'volume3d',
+      'unsupported',
+    ]);
+    expect(
+      spliceById(order, [
+        ['volume3d', 1],
+        ['localizer', 0, 'volume3d'],
+      ])
+    ).toEqual(['video', 'ecg', 'volume3d', 'localizer', 'unsupported']);
+    expect(spliceById([{ id: 'a' }, { id: 'b' }], [['b', 1]])).toEqual([
+      { id: 'a' },
+    ]);
+  });
+
+  it('throws for an unknown id and for a numeric position', () => {
+    expect(() => spliceById(order, [['missing', 1]])).toThrow(/"missing"/);
+    expect(() => spliceById(order, [[1, 1]])).toThrow(/Use \$splice/);
   });
 });
 
