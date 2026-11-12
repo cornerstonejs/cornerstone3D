@@ -13,6 +13,7 @@ import {
 const MAX_RESAMPLED_SLICE_SIZE = 2048;
 const SLICE_INDEX_EPSILON = 1e-6;
 const MINIMUM_PLANE_INTERSECTION_POINTS = 3;
+const EXACT_SLICE_ALIGNMENT = 1 - 1e-8;
 
 type ResampledSliceGeometry = {
   origin: Types.Point3;
@@ -31,6 +32,41 @@ type PlanarSliceImageData = {
 };
 
 /**
+ * Returns an empty vector that holds double precision numbers. A vector from
+ * vec3.create() holds single precision, which is too coarse for a world
+ * position and for the test of an exact alignment.
+ */
+function createVector(): vec3 {
+  return [0, 0, 0] as unknown as vec3;
+}
+
+/**
+ * Returns the volume axis that the view normal follows so closely that the
+ * view plane stays inside one slice of voxels across the whole volume.
+ * Returns undefined for any other view, also for a view with a small tilt
+ * against the slices, which has to be sampled on its own plane.
+ */
+function getExactSliceAxis(
+  volume: Types.IImageVolume,
+  viewPlaneNormal: Types.Point3
+): number | undefined {
+  const axes = getVolumeAxes(volume);
+  const sliceAxis = matchAxis(viewPlaneNormal, axes);
+
+  if (!sliceAxis) {
+    return;
+  }
+
+  const axisDirection = axes[sliceAxis.axis] as unknown as vec3;
+  const alignment =
+    Math.abs(vec3.dot(viewPlaneNormal as unknown as vec3, axisDirection)) /
+    (vec3.length(viewPlaneNormal as unknown as vec3) *
+      vec3.length(axisDirection));
+
+  return alignment >= EXACT_SLICE_ALIGNMENT ? sliceAxis.axis : undefined;
+}
+
+/**
  * Returns the point reached from a start point after a step along a direction.
  */
 function stepAlong(
@@ -39,7 +75,7 @@ function stepAlong(
   distance: number
 ): Types.Point3 {
   return vec3.scaleAndAdd(
-    vec3.create(),
+    createVector(),
     start as unknown as vec3,
     direction as unknown as vec3,
     distance
@@ -71,7 +107,7 @@ function getPlaneVolumeIntersectionPoints(
     distances.push(
       vec3.dot(
         vec3.subtract(
-          vec3.create(),
+          createVector(),
           corner as unknown as vec3,
           planePoint as unknown as vec3
         ),
@@ -103,7 +139,7 @@ function getPlaneVolumeIntersectionPoints(
       if (startDistance * endDistance < 0) {
         points.push(
           vec3.lerp(
-            vec3.create(),
+            createVector(),
             corners[cornerIndex] as unknown as vec3,
             corners[otherIndex] as unknown as vec3,
             startDistance / (startDistance - endDistance)
@@ -147,7 +183,7 @@ function getInPlaneRotatedSliceGeometry(
   const [xAxis, yAxis] = [0, 1, 2].filter((axis) => axis !== sliceAxis);
   const handedness = vec3.dot(
     vec3.cross(
-      vec3.create(),
+      createVector(),
       axes[xAxis] as unknown as vec3,
       axes[yAxis] as unknown as vec3
     ),
@@ -168,7 +204,7 @@ function getInPlaneRotatedSliceGeometry(
     yDirection: rowsFollowAxis
       ? axes[yAxis]
       : (vec3.negate(
-          vec3.create(),
+          createVector(),
           axes[yAxis] as unknown as vec3
         ) as Types.Point3),
     zDirection: viewPlaneNormal,
@@ -196,17 +232,17 @@ function getObliqueSliceGeometry(
   const { dimensions, imageData } = volume;
   const sliceAxisDirection = getVolumeAxes(volume)[2];
   const xDirection = vec3.normalize(
-    vec3.create(),
+    createVector(),
     vec3.cross(
-      vec3.create(),
+      createVector(),
       sliceAxisDirection as unknown as vec3,
       viewPlaneNormal as unknown as vec3
     )
   ) as Types.Point3;
   const yDirection = vec3.normalize(
-    vec3.create(),
+    createVector(),
     vec3.cross(
-      vec3.create(),
+      createVector(),
       xDirection as unknown as vec3,
       viewPlaneNormal as unknown as vec3
     )
@@ -230,7 +266,7 @@ function getObliqueSliceGeometry(
 
   points.forEach((point) => {
     const offset = vec3.subtract(
-      vec3.create(),
+      createVector(),
       point as unknown as vec3,
       focalPoint as unknown as vec3
     );
@@ -312,17 +348,17 @@ function getResampledSliceGeometry(
   }
 
   const viewPlaneNormal = vec3.normalize(
-    vec3.create(),
+    createVector(),
     camera.viewPlaneNormal as unknown as vec3
   ) as Types.Point3;
-  const sliceAxis = matchAxis(viewPlaneNormal, getVolumeAxes(volume));
+  const sliceAxis = getExactSliceAxis(volume, viewPlaneNormal);
 
-  if (sliceAxis) {
+  if (sliceAxis !== undefined) {
     return getInPlaneRotatedSliceGeometry(
       volume,
       camera.focalPoint,
       viewPlaneNormal,
-      sliceAxis.axis
+      sliceAxis
     );
   }
 
@@ -419,15 +455,33 @@ function createResampledSliceImageData(
 }
 
 /**
+ * Whether the view plane of the viewport stays inside one slice of voxels of
+ * the volume, so that a copy of that slice is exact.
+ */
+function isViewOnVoxelSlice(
+  volume: Types.IImageVolume,
+  viewport: SliceRenderingViewport
+): boolean {
+  const camera = getSliceRenderingCamera(viewport);
+
+  return (
+    !!camera && getExactSliceAxis(volume, camera.viewPlaneNormal) !== undefined
+  );
+}
+
+/**
  * Creates the labelmap slice image for a planar viewport. A view aligned with
  * the rows and columns of the volume copies one slice of voxels. Any other
- * view takes the nearest voxel for each pixel of the view plane.
+ * view takes the nearest voxel for each pixel of the view plane, also a view
+ * with a small tilt that the aligned copy would accept.
  */
 function createPlanarSliceImageData(
   volume: Types.IImageVolume,
   viewport: SliceRenderingViewport
 ): PlanarSliceImageData | undefined {
-  const alignedSlice = createSliceImageData(volume, viewport);
+  const alignedSlice = isViewOnVoxelSlice(volume, viewport)
+    ? createSliceImageData(volume, viewport)
+    : undefined;
 
   if (alignedSlice) {
     return {

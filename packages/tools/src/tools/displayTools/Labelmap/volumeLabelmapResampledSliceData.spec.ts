@@ -226,7 +226,8 @@ function indexToWorld(volume: TestVolume, index: number[]): Vector {
 
 /**
  * The index of the voxel of the test volume that is nearest to a world
- * position.
+ * position. A position on the border between two voxels takes the lower
+ * voxel, which is the tie rule of the sampler.
  */
 function nearestVoxel(volume: TestVolume, world: number[]): number[] {
   const { spacing, direction, origin } = volume.imageData;
@@ -241,7 +242,8 @@ function nearestVoxel(volume: TestVolume, world: number[]): number[] {
         0
       ) /
         spacing[axis] +
-        0.5
+        0.5 -
+        1e-6
     )
   );
 }
@@ -497,6 +499,31 @@ describe('createResampledSliceImageData for a view rotated in its own plane', ()
     expect(mismatches).toBe(0);
   });
 
+  it('copies one slice when the volume axes are not exact unit vectors', () => {
+    const volume = makeVolume({
+      direction: [0.866025, 0.5, 0, -0.5, 0.866025, 0, 0, 0, 1],
+      origin: [10, -20, 5],
+    });
+    const viewport = makeViewport({
+      focalPoint: indexToWorld(volume, [3, 2, 1.5]),
+      viewPlaneNormal: [0.866025, 0.5, 0],
+      viewUp: [0, Math.sin(angle), Math.cos(angle)],
+    });
+
+    const result = createResampledSliceImageData(
+      volume as never,
+      viewport as never
+    );
+    const { mismatches, inside } = comparePixelsWithNearestVoxels(
+      volume,
+      getImageState(result)
+    );
+
+    expect(result.sliceIndex).toBe(3);
+    expect(inside).toBe(5 * 4);
+    expect(mismatches).toBe(0);
+  });
+
   it('returns undefined when the view lies outside the slices', () => {
     const viewport = makeViewport({
       focalPoint: [2.5, 2, 40],
@@ -664,6 +691,75 @@ describe('createResampledSliceImageData for an oblique view', () => {
     expect(comparePixelsWithNearestVoxels(volume, state).mismatches).toBe(0);
   });
 
+  it('samples a view with a small tilt on its own plane and not as one slice of voxels', () => {
+    const volume = makeVolume({ dimensions: [60, 50, 40] });
+    const focalPoint = getPointNearCenter(volume);
+    const tilt = Math.PI / 180;
+    const viewPlaneNormal: Vector = [Math.sin(tilt), 0, -Math.cos(tilt)];
+    const viewport = makeViewport({
+      focalPoint,
+      viewPlaneNormal,
+      viewUp: [0, -1, 0],
+    });
+
+    const state = getImageState(
+      createResampledSliceImageData(volume as never, viewport as never)
+    );
+    const { mismatches, inside } = comparePixelsWithNearestVoxels(
+      volume,
+      state
+    );
+    const [width, height] = state.dimensions;
+
+    expect(inside).toBeGreaterThan(0);
+    expect(mismatches).toBe(0);
+    expect(
+      distanceToViewPlane(state, 0, 0, focalPoint, viewPlaneNormal)
+    ).toBeCloseTo(0, 6);
+    expect(
+      distanceToViewPlane(
+        state,
+        width - 1,
+        height - 1,
+        focalPoint,
+        viewPlaneNormal
+      )
+    ).toBeCloseTo(0, 6);
+  });
+
+  it('keeps its precision for a volume far from the world origin', () => {
+    const volume = makeVolume({
+      spacing: [0.1, 0.1, 0.2],
+      origin: [1e6, -1e6, 1e6],
+    });
+    const focalPoint = getPointNearCenter(volume);
+    const oblique = getImageState(
+      createResampledSliceImageData(
+        volume as never,
+        makeViewport({
+          focalPoint,
+          viewPlaneNormal: obliqueNormal,
+          viewUp: [0, 1, 0],
+        }) as never
+      )
+    );
+    const rotated = getImageState(
+      createResampledSliceImageData(
+        volume as never,
+        makeViewport({
+          focalPoint: indexToWorld(volume, [2.5, 2, 1]),
+          viewPlaneNormal: [0, 0, -1],
+          viewUp: [0.5, -Math.sqrt(0.75), 0],
+        }) as never
+      )
+    );
+    const rotatedComparison = comparePixelsWithNearestVoxels(volume, rotated);
+
+    expect(comparePixelsWithNearestVoxels(volume, oblique).mismatches).toBe(0);
+    expect(rotatedComparison.inside).toBe(6 * 5);
+    expect(rotatedComparison.mismatches).toBe(0);
+  });
+
   it('returns undefined when the view plane does not cut the volume', () => {
     const viewport = makeViewport({
       focalPoint: [100, 100, 100],
@@ -783,6 +879,34 @@ describe('createPlanarSliceImageData', () => {
     expect(result.sliceIndex).toBe(1);
     expect(state.dimensions).toEqual([6, 5, 1]);
     expect(cache.getImage).not.toHaveBeenCalled();
+  });
+
+  it('samples a view with a small tilt that the aligned copy would accept', () => {
+    const volume = makeVolume({ dimensions: [60, 50, 40] });
+    const focalPoint = getPointNearCenter(volume);
+    const tilt = Math.PI / 180;
+    const viewPlaneNormal: Vector = [Math.sin(tilt), 0, -Math.cos(tilt)];
+    const viewport = makeViewport({
+      focalPoint,
+      viewPlaneNormal,
+      viewUp: [0, -1, 0],
+    });
+
+    const state = getImageState(
+      createPlanarSliceImageData(volume as never, viewport as never)
+    );
+    const [width, height] = state.dimensions;
+
+    expect(comparePixelsWithNearestVoxels(volume, state).mismatches).toBe(0);
+    expect(
+      distanceToViewPlane(
+        state,
+        width - 1,
+        height - 1,
+        focalPoint,
+        viewPlaneNormal
+      )
+    ).toBeCloseTo(0, 6);
   });
 
   it('copies the slice of a view rotated in its own plane', () => {
