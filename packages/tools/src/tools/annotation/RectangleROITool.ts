@@ -172,7 +172,6 @@ class RectangleROITool extends AnnotationTool {
       this.createAnnotation(evt, points)
     );
 
-
     addAnnotation(annotation, element);
 
     const viewportIdsToRender = getViewportIdsWithToolToRender(
