@@ -5,10 +5,19 @@ type TestImageData = {
 };
 
 jest.mock('@cornerstonejs/core', () => ({
-  cache: {
-    getImage: jest.fn(),
+  Enums: {
+    InterpolationType: {
+      NEAREST: 0,
+      LINEAR: 1,
+    },
   },
   utilities: {
+    getEffectiveSpacingAlongDirection: jest.requireActual(
+      '@cornerstonejs/core/utilities/getEffectiveSpacingAlongDirection'
+    ).default,
+    sampleVolumeGrid: jest.requireActual(
+      '@cornerstonejs/core/utilities/sampleVolumeGrid'
+    ).default,
     transformIndexToWorld: jest.fn(
       (imageData: TestImageData, index: number[]) =>
         [0, 1, 2].map(
@@ -93,7 +102,7 @@ import {
   createResampledSliceImageData,
 } from './volumeLabelmapResampledSliceData';
 
-const { cache } = jest.requireMock('@cornerstonejs/core');
+const cache = jest.requireActual('@cornerstonejs/core/cache/cache').default;
 
 type Vector = [number, number, number];
 
@@ -169,7 +178,7 @@ function makeVolume(options: VolumeOptions = {}) {
     return data;
   });
 
-  cache.getImage.mockImplementation((imageId: string) => {
+  jest.spyOn(cache, 'getImage').mockImplementation((imageId: string) => {
     const sliceIndex = Number(imageId.split('-')[1]);
 
     if (!hasSliceImage(sliceIndex)) {

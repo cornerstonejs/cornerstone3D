@@ -18,6 +18,7 @@ import isOpposite from './isOpposite';
 import getClosestImageId from './getClosestImageId';
 import getSpacingInNormalDirection from './getSpacingInNormalDirection';
 import getEffectiveSpacingAlongDirection from './getEffectiveSpacingAlongDirection';
+import sampleVolumeGrid from './sampleVolumeGrid';
 import getViewSlabDepth from './getViewSlabDepth';
 import getTargetVolumeAndSpacingInNormalDir from './getTargetVolumeAndSpacingInNormalDir';
 import getVolumeActorCorners from './getVolumeActorCorners';
@@ -196,6 +197,7 @@ export {
   getClosestImageId,
   getSpacingInNormalDirection,
   getEffectiveSpacingAlongDirection,
+  sampleVolumeGrid,
   getViewSlabDepth,
   getTargetVolumeAndSpacingInNormalDir,
   getVolumeActorCorners,

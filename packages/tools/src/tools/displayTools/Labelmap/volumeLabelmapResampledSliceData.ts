@@ -1,6 +1,6 @@
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
-import { cache, type Types, utilities } from '@cornerstonejs/core';
+import { Enums, type Types, utilities } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
 import {
   createSliceImageData,
@@ -30,8 +30,6 @@ type PlanarSliceImageData = {
   sliceIndex: number;
 };
 
-type SliceArray = Types.PixelDataTypedArray | null;
-
 /**
  * Returns the point reached from a start point after a step along a direction.
  */
@@ -46,28 +44,6 @@ function stepAlong(
     direction as unknown as vec3,
     distance
   ) as Types.Point3;
-}
-
-/**
- * Returns the distance along a world direction that crosses one voxel of the
- * volume. Along a volume axis this is the spacing of that axis.
- */
-function getSpacingAlongDirection(
-  direction: Types.Point3,
-  axes: Types.Point3[],
-  spacing: Types.Point3
-): number {
-  let squaredVoxelsPerUnit = 0;
-
-  axes.forEach((axis, axisIndex) => {
-    const voxelsPerUnit =
-      vec3.dot(direction as unknown as vec3, axis as unknown as vec3) /
-      spacing[axisIndex];
-
-    squaredVoxelsPerUnit += voxelsPerUnit * voxelsPerUnit;
-  });
-
-  return 1 / Math.sqrt(squaredVoxelsPerUnit);
 }
 
 /**
@@ -143,7 +119,10 @@ function getPlaneVolumeIntersectionPoints(
 /**
  * Geometry of the slice when the view normal follows a volume axis but the
  * view is rotated in its own plane. The slice keeps the voxel grid of the
- * volume, so its pixels are an exact copy of one slice of voxels.
+ * volume, so its pixels are an exact copy of one slice of voxels. Each row of
+ * the slice runs along the lower of the two volume axes of the plane, so that
+ * a row is read from one slice image where that is possible. The rows are in
+ * the order that gives the image the same handedness as an aligned slice.
  */
 function getInPlaneRotatedSliceGeometry(
   volume: Types.IImageVolume,
@@ -165,19 +144,20 @@ function getInPlaneRotatedSliceGeometry(
     return;
   }
 
-  const inPlaneAxes = [0, 1, 2].filter((axis) => axis !== sliceAxis);
+  const [xAxis, yAxis] = [0, 1, 2].filter((axis) => axis !== sliceAxis);
   const handedness = vec3.dot(
     vec3.cross(
       vec3.create(),
-      axes[inPlaneAxes[0]] as unknown as vec3,
-      axes[inPlaneAxes[1]] as unknown as vec3
+      axes[xAxis] as unknown as vec3,
+      axes[yAxis] as unknown as vec3
     ),
     viewPlaneNormal as unknown as vec3
   );
-  const [xAxis, yAxis] = handedness < 0 ? inPlaneAxes : inPlaneAxes.reverse();
+  const rowsFollowAxis = handedness < 0;
   const originIndex: Types.Point3 = [0, 0, 0];
 
   originIndex[sliceAxis] = sliceIndex;
+  originIndex[yAxis] = rowsFollowAxis ? 0 : dimensions[yAxis] - 1;
 
   return {
     origin: utilities.transformIndexToWorld(
@@ -185,7 +165,12 @@ function getInPlaneRotatedSliceGeometry(
       originIndex
     ) as Types.Point3,
     xDirection: axes[xAxis],
-    yDirection: axes[yAxis],
+    yDirection: rowsFollowAxis
+      ? axes[yAxis]
+      : (vec3.negate(
+          vec3.create(),
+          axes[yAxis] as unknown as vec3
+        ) as Types.Point3),
     zDirection: viewPlaneNormal,
     spacing: [spacing[xAxis], spacing[yAxis]],
     width: dimensions[xAxis],
@@ -197,34 +182,25 @@ function getInPlaneRotatedSliceGeometry(
 /**
  * Geometry of the slice when the view plane is oblique to the volume. The
  * slice covers the part of the view plane that cuts the volume, with a pixel
- * size close to the voxel size along each direction of the plane. The columns
- * of the slice follow the volume axis that lies closest to the view plane, so
- * the slice stays the same when the view turns in its own plane.
+ * size close to the voxel size along each direction of the plane. Each row of
+ * the slice is the line where the view plane meets one slice of the volume,
+ * so a row is read from one slice image, which keeps the reads close together
+ * in memory. The rows depend only on the plane, so the slice stays the same
+ * when the view turns in its own plane.
  */
 function getObliqueSliceGeometry(
   volume: Types.IImageVolume,
   focalPoint: Types.Point3,
   viewPlaneNormal: Types.Point3
 ): ResampledSliceGeometry | undefined {
-  const { dimensions, imageData, spacing } = volume;
-  const axes = getVolumeAxes(volume);
-  const alignment = (axis: Types.Point3) =>
-    Math.abs(
-      vec3.dot(axis as unknown as vec3, viewPlaneNormal as unknown as vec3)
-    );
-  const closestAxis = axes.reduce((closest, axis) =>
-    alignment(axis) < alignment(closest) ? axis : closest
-  );
+  const { dimensions, imageData } = volume;
+  const sliceAxisDirection = getVolumeAxes(volume)[2];
   const xDirection = vec3.normalize(
     vec3.create(),
-    vec3.scaleAndAdd(
+    vec3.cross(
       vec3.create(),
-      closestAxis as unknown as vec3,
-      viewPlaneNormal as unknown as vec3,
-      -vec3.dot(
-        closestAxis as unknown as vec3,
-        viewPlaneNormal as unknown as vec3
-      )
+      sliceAxisDirection as unknown as vec3,
+      viewPlaneNormal as unknown as vec3
     )
   ) as Types.Point3;
   const yDirection = vec3.normalize(
@@ -273,14 +249,20 @@ function getObliqueSliceGeometry(
     MAX_RESAMPLED_SLICE_SIZE,
     Math.max(
       1,
-      Math.ceil(extentX / getSpacingAlongDirection(xDirection, axes, spacing))
+      Math.ceil(
+        extentX /
+          utilities.getEffectiveSpacingAlongDirection(volume, xDirection)
+      )
     )
   );
   const height = Math.min(
     MAX_RESAMPLED_SLICE_SIZE,
     Math.max(
       1,
-      Math.ceil(extentY / getSpacingAlongDirection(yDirection, axes, spacing))
+      Math.ceil(
+        extentY /
+          utilities.getEffectiveSpacingAlongDirection(volume, yDirection)
+      )
     )
   );
   const pixelSpacing: Types.Point2 = [extentX / width, extentY / height];
@@ -348,44 +330,22 @@ function getResampledSliceGeometry(
 }
 
 /**
- * Returns the pixel array of one slice image of the volume when the image
- * keeps its voxels in a typed array of the size of the slice. Returns null
- * for an image that is missing, that stores its voxels another way, or that
- * has a different size, so that the caller reads those voxels one at a time.
- */
-function getSliceArray(
-  volume: Types.IImageVolume,
-  sliceIndex: number
-): SliceArray {
-  const imageId = volume.imageIds?.[sliceIndex];
-
-  if (!imageId) {
-    return null;
-  }
-
-  const scalarData = cache
-    .getImage(imageId)
-    ?.voxelManager?.getWritableScalarData?.();
-
-  return scalarData?.length === volume.dimensions[0] * volume.dimensions[1]
-    ? scalarData
-    : null;
-}
-
-/**
- * Fills the pixels of the slice with the value of the nearest voxel. A pixel
- * outside the volume keeps the value 0.
+ * Fills the pixels of the slice with the value of the nearest voxel, through
+ * the volume grid sampler of the core that the CPU volume rendering also uses.
+ * A pixel outside the volume gets the value 0.
  */
 function sampleResampledSlice(
   volume: Types.IImageVolume,
   geometry: ResampledSliceGeometry
 ): Types.PixelDataTypedArray {
-  const { dimensions, imageData, voxelManager } = volume;
-  const [columns, rows, slices] = dimensions;
+  const { imageData, voxelManager } = volume;
   const { origin, xDirection, yDirection, spacing, width, height } = geometry;
   const SliceDataConstructor = voxelManager.getConstructor();
   const pixelData = new SliceDataConstructor(width * height);
-  const start = utilities.transformWorldToIndexContinuous(imageData, origin);
+  const startIndex = utilities.transformWorldToIndexContinuous(
+    imageData,
+    origin
+  );
   const afterColumn = utilities.transformWorldToIndexContinuous(
     imageData,
     stepAlong(origin, xDirection, spacing[0])
@@ -394,46 +354,21 @@ function sampleResampledSlice(
     imageData,
     stepAlong(origin, yDirection, spacing[1])
   );
-  const columnStep = [0, 1, 2].map((axis) => afterColumn[axis] - start[axis]);
-  const rowStep = [0, 1, 2].map((axis) => afterRow[axis] - start[axis]);
-  const sliceArrays = new Array<SliceArray | undefined>(slices);
 
-  for (let row = 0; row < height; row++) {
-    let i = start[0] + row * rowStep[0] + 0.5;
-    let j = start[1] + row * rowStep[1] + 0.5;
-    let k = start[2] + row * rowStep[2] + 0.5;
-    const rowOffset = row * width;
-
-    for (let column = 0; column < width; column++) {
-      const voxelI = Math.floor(i);
-      const voxelJ = Math.floor(j);
-      const voxelK = Math.floor(k);
-
-      if (
-        voxelI >= 0 &&
-        voxelI < columns &&
-        voxelJ >= 0 &&
-        voxelJ < rows &&
-        voxelK >= 0 &&
-        voxelK < slices
-      ) {
-        let sliceArray = sliceArrays[voxelK];
-
-        if (sliceArray === undefined) {
-          sliceArray = getSliceArray(volume, voxelK);
-          sliceArrays[voxelK] = sliceArray;
-        }
-
-        pixelData[rowOffset + column] = sliceArray
-          ? sliceArray[voxelJ * columns + voxelI]
-          : Number(voxelManager.getAtIJK(voxelI, voxelJ, voxelK));
-      }
-
-      i += columnStep[0];
-      j += columnStep[1];
-      k += columnStep[2];
-    }
-  }
+  utilities.sampleVolumeGrid({
+    volume,
+    pixelData,
+    width,
+    height,
+    startIndex,
+    columnStep: [0, 1, 2].map(
+      (axis) => afterColumn[axis] - startIndex[axis]
+    ) as Types.Point3,
+    rowStep: [0, 1, 2].map(
+      (axis) => afterRow[axis] - startIndex[axis]
+    ) as Types.Point3,
+    interpolationType: Enums.InterpolationType.NEAREST,
+  });
 
   return pixelData;
 }
