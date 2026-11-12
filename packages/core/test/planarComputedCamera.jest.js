@@ -635,3 +635,129 @@ describe('Planar CPU image render path', () => {
     });
   });
 });
+
+describe('Planar CPU image render path on a high-DPI display', () => {
+  const dataId = 'cpu-stack';
+  const cssSize = 64;
+  const devicePixelRatio = 2;
+  const originalDevicePixelRatio = window.devicePixelRatio;
+
+  beforeEach(() => {
+    metaData.get.mockImplementation((type) => {
+      if (type === 'imagePixelModule') {
+        return {
+          bitsAllocated: 16,
+          bitsStored: 16,
+          highBit: 15,
+          photometricInterpretation: 'MONOCHROME2',
+          pixelRepresentation: 0,
+          samplesPerPixel: 1,
+        };
+      }
+
+      if (type === 'generalSeriesModule') {
+        return { modality: 'CT' };
+      }
+
+      if (type === 'imagePlaneModule') {
+        return {
+          columnPixelSpacing: 1,
+          rowPixelSpacing: 1,
+          columnCosines: [0, 1, 0],
+          rowCosines: [1, 0, 0],
+          frameOfReferenceUID: 'image-for',
+          imageOrientationPatient: [1, 0, 0, 0, 1, 0],
+          imagePositionPatient: [0, 0, 0],
+        };
+      }
+    });
+    Object.defineProperty(window, 'devicePixelRatio', {
+      configurable: true,
+      value: devicePixelRatio,
+    });
+  });
+
+  afterEach(() => {
+    Object.defineProperty(window, 'devicePixelRatio', {
+      configurable: true,
+      value: originalDevicePixelRatio,
+    });
+  });
+
+  /**
+   * Mounts a stack image on the CPU image path with the canvas sized the way
+   * PlanarViewport.resize sizes it: CSS size times devicePixelRatio.
+   */
+  async function mountCpuImage() {
+    const ctx = createProjectionContext({
+      activeDataId: dataId,
+      canvasHeight: cssSize * devicePixelRatio,
+      canvasWidth: cssSize * devicePixelRatio,
+    });
+    const { canvas } = ctx.cpu;
+    const image = createImage('cpu-image');
+
+    Object.defineProperties(canvas, {
+      clientHeight: { configurable: true, value: cssSize },
+      clientWidth: { configurable: true, value: cssSize },
+    });
+
+    const attachment = await new CpuImageSliceRenderPath().addData(
+      ctx,
+      {
+        id: dataId,
+        type: 'image',
+        image,
+        imageIds: [image.imageId],
+        initialImageIdIndex: 0,
+      },
+      {}
+    );
+
+    return { attachment, canvas, ctx };
+  }
+
+  it('keeps the device pixel size the viewport gave the CPU canvas', async () => {
+    const { attachment, canvas } = await mountCpuImage();
+
+    expect([canvas.width, canvas.height]).toEqual([128, 128]);
+
+    attachment.resize();
+
+    expect([canvas.width, canvas.height]).toEqual([128, 128]);
+  });
+
+  it('resolves a CSS canvas point to the world point drawn under it', async () => {
+    const { attachment, canvas, ctx } = await mountCpuImage();
+    const viewState = { orientation: OrientationAxis.AXIAL };
+
+    attachment.applyViewState(viewState);
+
+    const { resolvedView } = resolvePlanarRenderPathProjection({
+      ctx,
+      dataId,
+      rendering: attachment.rendering,
+      viewState,
+    });
+    const { transform } = attachment.rendering.enabledElement;
+
+    [
+      [32, 32],
+      [16, 20],
+      [50, 8],
+    ].forEach((cssPoint) => {
+      const worldPoint = resolvedView.canvasToWorld(cssPoint);
+      const drawnBackingPoint = transform.transformPoint([
+        worldPoint[0] + 0.5,
+        worldPoint[1] + 0.5,
+      ]);
+      const drawnCssPoint = [
+        (drawnBackingPoint[0] * canvas.clientWidth) / canvas.width,
+        (drawnBackingPoint[1] * canvas.clientHeight) / canvas.height,
+      ];
+
+      expectPoint2Close(drawnCssPoint, cssPoint);
+      expectPoint2Close(resolvedView.worldToCanvas(worldPoint), cssPoint);
+    });
+  });
+});
