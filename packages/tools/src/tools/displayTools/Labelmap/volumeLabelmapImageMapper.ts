@@ -22,6 +22,10 @@ import {
   getSliceState,
   type SliceRenderingViewport,
 } from './volumeLabelmapSliceData';
+import {
+  canCreateResampledSliceImageData,
+  createPlanarSliceImageData,
+} from './volumeLabelmapResampledSliceData';
 
 const OVERLAY_RENDERER_SUFFIX = 'labelmap-image-mapper-overlay';
 
@@ -167,6 +171,23 @@ export function getVolumeLabelmapImageMapperRepresentationUIDs(
       }
 
       const state = getSliceState(viewport as SliceRenderingViewport, volume);
+
+      if (useStablePlanarUID) {
+        const canShowSlice =
+          !!state ||
+          canCreateResampledSliceImageData(
+            volume,
+            viewport as SliceRenderingViewport
+          );
+
+        return canShowSlice
+          ? createLabelmapRepresentationUID({
+              segmentationId,
+              referencedId: layer.labelmapId,
+            })
+          : undefined;
+      }
+
       if (!state) {
         return;
       }
@@ -174,7 +195,7 @@ export function getVolumeLabelmapImageMapperRepresentationUIDs(
       return createLabelmapRepresentationUID({
         segmentationId,
         referencedId: layer.labelmapId,
-        ...(useStablePlanarUID ? {} : { sliceStateKey: state.key }),
+        sliceStateKey: state.key,
       });
     })
     .filter((value): value is string => !!value);
@@ -355,7 +376,7 @@ async function addPlanarLabelmapImageMapperActors(args: {
       continue;
     }
 
-    const sliceData = createSliceImageData(volume, viewport);
+    const sliceData = createPlanarSliceImageData(volume, viewport);
 
     if (!sliceData) {
       continue;
@@ -365,7 +386,7 @@ async function addPlanarLabelmapImageMapperActors(args: {
       viewport.getCurrentImageId() ??
       volume.imageIds[
         Math.min(
-          Math.max(sliceData.state.sliceIndex, 0),
+          Math.max(sliceData.sliceIndex, 0),
           Math.max(volume.imageIds.length - 1, 0)
         )
       ];
@@ -445,7 +466,7 @@ function updatePlanarLabelmapImageMapperActors(args: {
       return;
     }
 
-    const sliceData = createSliceImageData(volume, viewport);
+    const sliceData = createPlanarSliceImageData(volume, viewport);
 
     if (!sliceData) {
       return;

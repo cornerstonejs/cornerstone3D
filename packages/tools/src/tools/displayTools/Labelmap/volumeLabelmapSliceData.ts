@@ -316,5 +316,7 @@ export {
   createSliceImageData,
   getSliceRenderingCamera,
   getSliceState,
+  getVolumeAxes,
+  matchAxis,
 };
 export type { ImageMapperSliceState, SliceRenderingViewport };
