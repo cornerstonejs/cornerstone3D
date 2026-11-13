@@ -206,6 +206,16 @@ export class BaseStreamingImageVolume
       this.framesProcessed++;
     }
 
+    // Record the delivery before any event: a listener of the last frame's
+    // LOADING_COMPLETED reads the record, and no later event clears its read.
+    this.markFrameTexturesDirty(frameIndex);
+
+    // The grid of a dynamic volume holds one dimension group, so the image of
+    // another group delivers nothing to it.
+    if (this.isInCurrentDimensionGroup(imageIdIndex)) {
+      this.recordFrameDelivery(frameIndex, imageQualityStatus);
+    }
+
     const eventDetail = {
       FrameOfReferenceUID,
       volumeId: this.volumeId,
@@ -232,14 +242,6 @@ export class BaseStreamingImageVolume
       complete,
       imageQualityStatus,
     });
-
-    this.markFrameTexturesDirty(frameIndex);
-
-    // The grid of a dynamic volume holds one dimension group, so the image of
-    // another group delivers nothing to it.
-    if (this.isInCurrentDimensionGroup(imageIdIndex)) {
-      this.recordFrameDelivery(frameIndex, imageQualityStatus);
-    }
 
     if (this.loadStatus.loaded) {
       this.loadStatus.callbacks = [];
