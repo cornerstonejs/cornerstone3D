@@ -33,9 +33,9 @@ const dynamicVolumeDimensionGroupChangedListener = function (
     let followsImageVolume = false;
 
     getLabelmaps(segmentation).forEach((layer) => {
-      const labelmapVolume = cache.getVolume(
-        layer.volumeId ?? layer.geometryVolumeId
-      );
+      const labelmapVolumeId = layer.volumeId ?? layer.geometryVolumeId;
+      const labelmapVolume =
+        labelmapVolumeId && cache.getVolume(labelmapVolumeId);
 
       if (isDynamicLabelmapVolume(labelmapVolume)) {
         changed =

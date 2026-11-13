@@ -259,7 +259,8 @@ function setDynamicLabelmapVolumeId(
 function getDynamicLabelmapTimePointForSegmentation(
   segmentationId: string
 ): number | undefined {
-  const volume = cache.getVolume(volumeIdBySegmentationId.get(segmentationId));
+  const volumeId = volumeIdBySegmentationId.get(segmentationId);
+  const volume = volumeId && cache.getVolume(volumeId);
   const dynamicLabelmap = volume && dynamicLabelmaps.get(volume);
 
   return dynamicLabelmap && dynamicLabelmap.groupIndex + 1;

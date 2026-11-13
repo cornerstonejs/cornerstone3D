@@ -2745,7 +2745,8 @@ abstract class BaseVolumeViewport extends Viewport {
   private _getDimensionGroupNumber(
     volumeId = this.getVolumeId()
   ): number | undefined {
-    const volume = cache.getVolume(volumeId) as IDynamicImageVolume;
+    const volume =
+      volumeId && (cache.getVolume(volumeId) as IDynamicImageVolume);
     return volume?.isDynamicVolume?.()
       ? volume.dimensionGroupNumber
       : undefined;
