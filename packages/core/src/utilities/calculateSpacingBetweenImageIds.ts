@@ -62,7 +62,9 @@ export default function calculateSpacingBetweenImageIds(
     } = metaData.get(MetadataModules.IMAGE_PLANE, imageIds[0]);
 
     if (sliceThickness) return sliceThickness;
-    if (spacingBetweenSlices) return spacingBetweenSlices;
+    // Spacing Between Slices may be negative in legacy files; only use it
+    // when positive
+    if (spacingBetweenSlices > 0) return spacingBetweenSlices;
 
     const pixelSpacingValue = getPixelSpacingForCubicVoxel({
       columnPixelSpacing,
@@ -194,7 +196,9 @@ export default function calculateSpacingBetweenImageIds(
   // weirdness. If sliceThickness is not available, we use pixel spacing for
   // cubic voxel creation
   if ((spacing === 0 || isNaN(spacing)) && !strictZSpacingForVolumeViewport) {
-    if (spacingBetweenSlices) {
+    // Spacing Between Slices may be negative in legacy files; only use it
+    // when positive
+    if (spacingBetweenSlices > 0) {
       log.debug('Could not calculate spacing. Using spacingBetweenSlices');
       spacing = spacingBetweenSlices;
     } else if (sliceThickness) {
