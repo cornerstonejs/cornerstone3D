@@ -20,7 +20,40 @@ const {
   Enums: { SegmentationRepresentations },
 } = cornerstoneTools;
 
-export async function updateSurfaceData(segmentationId) {
+const updates = new Map<string, { promise: Promise<void>; rerun: boolean }>();
+
+/**
+ * Updates the surfaces of a segmentation from its labelmap.
+ *
+ * Only one update runs for a segmentation at a time. A call while an update
+ * runs does not start a second conversion: it asks the running update for one
+ * more pass, which reads the latest labelmap, and it gets the promise of that
+ * update. So conversions do not pile up during a paint, and an older result
+ * never replaces a newer one.
+ */
+export function updateSurfaceData(segmentationId: string): Promise<void> {
+  const running = updates.get(segmentationId);
+  if (running) {
+    running.rerun = true;
+    return running.promise;
+  }
+
+  const update = { promise: undefined as Promise<void>, rerun: false };
+  update.promise = (async () => {
+    try {
+      do {
+        update.rerun = false;
+        await updateSurfaceDataOnce(segmentationId);
+      } while (update.rerun);
+    } finally {
+      updates.delete(segmentationId);
+    }
+  })();
+  updates.set(segmentationId, update);
+  return update.promise;
+}
+
+async function updateSurfaceDataOnce(segmentationId: string) {
   const surfacesObj =
     await computeSurfaceFromLabelmapSegmentation(segmentationId);
 

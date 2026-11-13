@@ -128,14 +128,22 @@ const polySegConverters = {
     const [progressCallback] = callbacks;
     await this.initializePolySeg(progressCallback);
 
-    const results = this.polySeg.instance.convertLabelmapToSurface(
-      args.scalarData,
-      args.dimensions,
-      args.spacing,
-      args.direction,
-      args.origin,
-      [args.segmentIndex]
-    );
+    let results;
+    try {
+      results = this.polySeg.instance.convertLabelmapToSurface(
+        args.scalarData,
+        args.dimensions,
+        args.spacing,
+        args.direction,
+        args.origin,
+        [args.segmentIndex]
+      );
+    } catch (error) {
+      // An abort (for example out of heap) leaves the wasm module unusable, so
+      // the next call initializes a new one.
+      this.polySeg = null;
+      throw error;
+    }
     const rotationInfo = checkStandardBasis(args.direction);
     if (!rotationInfo.isStandard) {
       const rotatedPoints = rotatePoints(
