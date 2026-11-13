@@ -898,10 +898,32 @@ abstract class BaseVolumeViewport extends Viewport {
     viewRef: ViewReference,
     options?: ReferenceCompatibleOptions
   ): boolean {
-    if (!viewRef.FrameOfReferenceUID) {
+    // Without a frame of reference, the reference can only be matched by an
+    // image that is part of this volume
+    if (
+      !viewRef.FrameOfReferenceUID &&
+      !(
+        viewRef.referencedImageId && this.hasImageURI(viewRef.referencedImageId)
+      )
+    ) {
       return false;
     }
-    if (!super.isReferenceViewable(viewRef, options)) {
+    // Such an image is in this volume's frame of reference, so check a plane
+    // restriction without one against it. A different frame still fails.
+    const { planeRestriction } = viewRef;
+    const checkedRef =
+      !viewRef.FrameOfReferenceUID &&
+      planeRestriction &&
+      !planeRestriction.FrameOfReferenceUID
+        ? {
+            ...viewRef,
+            planeRestriction: {
+              ...planeRestriction,
+              FrameOfReferenceUID: this.getFrameOfReferenceUID(),
+            },
+          }
+        : viewRef;
+    if (!super.isReferenceViewable(checkedRef, options)) {
       return false;
     }
     if (options?.withNavigation) {
@@ -1096,8 +1118,14 @@ abstract class BaseVolumeViewport extends Viewport {
         delta
       );
       this.setCamera({ focalPoint: newFocalPoint, position: newPosition });
-    } else if (refFrameOfReference === this.getFrameOfReferenceUID()) {
-      // Handle same frame of reference navigation
+    } else if (
+      refFrameOfReference === this.getFrameOfReferenceUID() ||
+      (!refFrameOfReference &&
+        referencedImageId &&
+        this.hasImageURI(referencedImageId))
+    ) {
+      // Handle same frame of reference navigation, including a reference
+      // without frame of reference to an image of this volume
 
       if (refViewPlaneNormal && !isNegativeNormal && !isSameNormal) {
         // Need to update the orientation vectors correctly for this case
