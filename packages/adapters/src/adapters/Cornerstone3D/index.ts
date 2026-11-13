@@ -19,6 +19,7 @@ import * as Segmentation from './Segmentation';
 import * as ParametricMap from './ParametricMap';
 import * as RTSS from './RTStruct';
 import KeyImage from './KeyImage';
+import GSPS from './GSPS';
 import {
   COMMENT_CODE,
   NO_IMAGE_ID,
@@ -40,6 +41,7 @@ const Cornerstone3DSR = {
   UltrasoundDirectional,
   KeyImage,
   MeasurementReport,
+  GSPS,
   CodeScheme,
   CORNERSTONE_3D_TAG,
   COMMENT_CODE,
