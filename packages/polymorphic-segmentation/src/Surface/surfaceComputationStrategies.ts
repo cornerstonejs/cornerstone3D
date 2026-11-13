@@ -4,7 +4,7 @@ import * as cornerstoneTools from '@cornerstonejs/tools';
 
 import { convertContourToSurface } from './convertContourToSurface';
 import { createAndCacheSurfacesFromRaw } from './createAndCacheSurfacesFromRaw';
-import { convertLabelmapToSurface } from './convertLabelmapToSurface';
+import { convertLabelmapToSurfaces } from './convertLabelmapToSurface';
 import type { Types as ToolsTypes } from '@cornerstonejs/tools';
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
 
@@ -97,34 +97,21 @@ async function computeSurfaceFromLabelmapSegmentation(
   const segmentIndices =
     options.segmentIndices || getUniqueSegmentIndices(segmentationId);
 
-  const promises = segmentIndices.map((index) => {
-    const surface = convertLabelmapToSurface(
-      labelmapRepresentationData as
-        | ToolsTypes.LabelmapSegmentationDataVolume
-        | ToolsTypes.LabelmapSegmentationDataStack,
-      index
+  let surfaces: (Types.SurfaceData | undefined)[];
+  try {
+    surfaces = await convertLabelmapToSurfaces(
+      labelmapRepresentationData,
+      segmentIndices
     );
-
-    return surface;
-  });
-
-  const surfaces = await Promise.allSettled(promises);
-  const errors = surfaces.filter((p) => p.status === 'rejected');
-
-  if (errors.length > 0) {
-    cs3dLogger.error(errors);
+  } catch (error) {
+    cs3dLogger.error(error);
     throw new Error('Failed to convert labelmap to surface');
   }
 
-  const rawSurfacesData = surfaces
-    .map((surface, index) => {
-      if (surface.status === 'fulfilled') {
-        return { segmentIndex: segmentIndices[index], data: surface.value };
-      }
-    })
-    .filter(Boolean);
-
-  return rawSurfacesData;
+  // A segment with no result keeps its last surface.
+  return surfaces
+    .map((data, index) => ({ segmentIndex: segmentIndices[index], data }))
+    .filter(({ data }) => data);
 }
 
 /**
