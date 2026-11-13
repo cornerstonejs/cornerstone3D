@@ -898,29 +898,38 @@ describe('pixelMath', () => {
       //   (1,0) = avg(0,10)=5      (0,1) = avg(0,20)=10   (2,1) = avg(10,30)=20
       //   (1,1) = avg(0,10,20,30)=15
       //   (1,2) = avg(20,30)=25
-      const src = { rows: 2, columns: 2, data: [0, 10, 20, 30] };
-      const dest = { rows: 3, columns: 3, data: new Array(9).fill(-1) };
+      const src = { rows: 2, columns: 2, pixelData: [0, 10, 20, 30] };
+      const dest = { rows: 3, columns: 3, pixelData: new Array(9).fill(-1) };
       const result = bilinear(src, dest);
       expect(result).toEqual([0, 5, 10, 10, 15, 20, 20, 25, 30]);
-      expect(result).toBe(dest.data); // writes into dest.data in place
+      expect(result).toBe(dest.pixelData); // writes into dest.pixelData in place
     });
 
     it('is a no-op copy when src and dest have the same dimensions', () => {
-      const src = { rows: 2, columns: 2, data: [1, 2, 3, 4] };
-      const dest = { rows: 2, columns: 2, data: new Array(4).fill(-1) };
+      const src = { rows: 2, columns: 2, pixelData: [1, 2, 3, 4] };
+      const dest = { rows: 2, columns: 2, pixelData: new Array(4).fill(-1) };
       bilinear(src, dest);
-      expect(dest.data).toEqual([1, 2, 3, 4]);
+      expect(dest.pixelData).toEqual([1, 2, 3, 4]);
     });
 
-    it('BUG: produces NaN when a destination dimension is 1 (division by zero in the offset formula)', () => {
-      // xSrc = (x * (srcColumns - 1)) / (columns - 1); when columns===1 this
-      // is 0/0 = NaN for every x (and symmetrically for rows). This looks
-      // like an unhandled edge case rather than intentional behavior -- see
-      // "suspected bugs" in the final report.
-      const src = { rows: 2, columns: 2, data: [0, 10, 20, 30] };
-      const dest = { rows: 1, columns: 1, data: [-1] };
-      bilinear(src, dest);
-      expect(Number.isNaN(dest.data[0])).toBe(true);
+    it('maps a destination dimension of 1 to the first source row/column', () => {
+      const src = { rows: 2, columns: 2, pixelData: [0, 10, 20, 30] };
+
+      const singleRow = {
+        rows: 1,
+        columns: 3,
+        pixelData: new Array(3).fill(-1),
+      };
+      bilinear(src, singleRow);
+      expect(singleRow.pixelData).toEqual([0, 5, 10]);
+
+      const singleColumn = {
+        rows: 3,
+        columns: 1,
+        pixelData: new Array(3).fill(-1),
+      };
+      bilinear(src, singleColumn);
+      expect(singleColumn.pixelData).toEqual([0, 10, 20]);
     });
   });
 
@@ -941,15 +950,11 @@ describe('pixelMath', () => {
       expect(result).toBe(dest.pixelData);
     });
 
-    it('BUG: corrupts output when samplesPerPixel > 1 (RGB) because x/y offsets are not scaled by samplesPerPixel', () => {
+    it('replicates whole pixels when samplesPerPixel > 1 (RGB)', () => {
       // src is 2x2 RGB (samplesPerPixel=3): pixel(0,0)=[1,2,3],
       // pixel(0,1)=[4,5,6], pixel(1,0)=[7,8,9], pixel(1,1)=[10,11,12].
-      // Upscaling to 2x4 SHOULD replicate whole (r,g,b) triples, but the
-      // source computes `yOff = y * columns` (missing `* samplesPerPixel`)
-      // and indexes `pixelData[yOff + x + sample]` (missing `x *
-      // samplesPerPixel`), so writes for different x/sample combinations
-      // collide and overwrite each other. This regression-pins the CURRENT
-      // (incorrect) behavior; see "suspected bugs" in the final report.
+      // dest 2x4: columns 0,1,2 map to src column 0 and column 3 to src
+      // column 1, so each (r,g,b) triple is copied as a unit.
       const src = {
         rows: 2,
         columns: 2,
@@ -962,13 +967,30 @@ describe('pixelMath', () => {
         pixelData: new Array(24).fill(-1),
       };
       replicate(src, dest);
-      // Only indices 0-9 ever get touched (should have been the full 24
-      // for a correctly-scaled 2x4x3 buffer), and several of those are
-      // overwritten multiple times by unrelated source samples.
-      expect(dest.pixelData.slice(0, 10)).toEqual([
-        1, 1, 1, 4, 7, 7, 7, 10, 11, 12,
+      expect(dest.pixelData).toEqual([
+        1, 2, 3, 1, 2, 3, 1, 2, 3, 4, 5, 6, 7, 8, 9, 7, 8, 9, 7, 8, 9, 10, 11,
+        12,
       ]);
-      expect(dest.pixelData.slice(10)).toEqual(new Array(14).fill(-1));
+    });
+
+    it('maps a destination dimension of 1 to the first source row/column', () => {
+      const src = { rows: 2, columns: 2, pixelData: [0, 10, 20, 30] };
+
+      const singleRow = {
+        rows: 1,
+        columns: 4,
+        pixelData: new Array(4).fill(-1),
+      };
+      replicate(src, singleRow);
+      expect(singleRow.pixelData).toEqual([0, 0, 0, 10]);
+
+      const singleColumn = {
+        rows: 4,
+        columns: 1,
+        pixelData: new Array(4).fill(-1),
+      };
+      replicate(src, singleColumn);
+      expect(singleColumn.pixelData).toEqual([0, 0, 0, 20]);
     });
   });
 });
