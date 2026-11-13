@@ -13,18 +13,20 @@ export default function replicate(src, dest) {
 
   // Precompute offsets
   for (let x = 0; x < columns; x++) {
-    const xSrc = (x * (srcColumns - 1)) / (columns - 1);
+    // A single destination column maps to the first source column (avoids 0/0)
+    const xSrc = columns > 1 ? (x * (srcColumns - 1)) / (columns - 1) : 0;
     xSrc1Off[x] = Math.floor(xSrc) * samplesPerPixel;
   }
 
   for (let y = 0; y < rows; y++) {
-    const ySrc = (y * (srcRows - 1)) / (rows - 1);
+    const ySrc = rows > 1 ? (y * (srcRows - 1)) / (rows - 1) : 0;
     const ySrc1Off = Math.floor(ySrc) * srcColumns * samplesPerPixel;
-    const yOff = y * columns;
+    const yOff = y * columns * samplesPerPixel;
 
     for (let x = 0; x < columns; x++) {
       for (let sample = 0; sample < samplesPerPixel; sample++) {
-        pixelData[yOff + x + sample] = srcData[ySrc1Off + xSrc1Off[x] + sample];
+        pixelData[yOff + x * samplesPerPixel + sample] =
+          srcData[ySrc1Off + xSrc1Off[x] + sample];
       }
     }
   }
