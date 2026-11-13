@@ -1,7 +1,6 @@
 import { expose } from 'comlink';
 import { utilities } from '@cornerstonejs/core';
 import SegmentStatsCalculator from '../utilities/segmentation/SegmentStatsCalculator';
-import { getSegmentLargestBidirectional } from '../utilities/segmentation';
 import vtkImageMarchingSquares from '@kitware/vtk.js/Filters/General/ImageMarchingSquares';
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
