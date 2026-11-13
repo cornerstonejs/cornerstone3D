@@ -22,6 +22,7 @@ import ViewportType from '../enums/ViewportType';
 import eventTarget from '../eventTarget';
 import { getShouldUseCPURendering } from '../init';
 import type {
+  IDynamicImageVolume,
   ActorEntry,
   ColormapPublic,
   FlipDirection,
@@ -860,6 +861,10 @@ abstract class BaseVolumeViewport extends Viewport {
     if (viewRefSpecifier?.forFrameOfReference !== true) {
       target.volumeId = volumeId;
     }
+    const dimensionGroupNumber = this._getDimensionGroupNumber(volumeId);
+    if (dimensionGroupNumber) {
+      target.dimensionGroupNumber = dimensionGroupNumber;
+    }
     if (typeof viewRefSpecifier?.sliceIndex !== 'number') {
       return target;
     }
@@ -902,6 +907,15 @@ abstract class BaseVolumeViewport extends Viewport {
       return false;
     }
     if (!super.isReferenceViewable(viewRef, options)) {
+      return false;
+    }
+    const dimensionGroupNumber = this._getDimensionGroupNumber();
+    if (
+      !options?.withNavigation &&
+      viewRef.dimensionGroupNumber &&
+      dimensionGroupNumber &&
+      viewRef.dimensionGroupNumber !== dimensionGroupNumber
+    ) {
       return false;
     }
     if (options?.withNavigation) {
@@ -1054,6 +1068,15 @@ abstract class BaseVolumeViewport extends Viewport {
       viewUp,
     } = viewRef;
     let { sliceIndex } = viewRef;
+
+    if (
+      viewRef.dimensionGroupNumber &&
+      this._getDimensionGroupNumber(volumeId) &&
+      refFrameOfReference === this.getFrameOfReferenceUID()
+    ) {
+      (cache.getVolume(volumeId) as IDynamicImageVolume).dimensionGroupNumber =
+        viewRef.dimensionGroupNumber;
+    }
 
     if (planeRestriction && !refViewPlaneNormal) {
       return this.setViewPlane(planeRestriction);
@@ -2716,6 +2739,16 @@ abstract class BaseVolumeViewport extends Viewport {
       viewPlaneNormal,
       volumeId,
     });
+  }
+
+  /** The time point of a dynamic volume, or undefined for a 3D volume. */
+  private _getDimensionGroupNumber(
+    volumeId = this.getVolumeId()
+  ): number | undefined {
+    const volume = cache.getVolume(volumeId) as IDynamicImageVolume;
+    return volume?.isDynamicVolume?.()
+      ? volume.dimensionGroupNumber
+      : undefined;
   }
 
   private _addVolumeId(volumeId: string): void {
