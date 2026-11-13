@@ -478,7 +478,14 @@ function getVolumeLayerSliceImageId(
     return;
   }
 
-  if (layer.imageIds?.includes(imageId)) {
+  // The primary layer of a segmentation added with only a volumeId does not
+  // list its images; the images of its volume are the slices.
+  const layerImageIds = layer.imageIds?.length
+    ? layer.imageIds
+    : (cache.getVolume(layer.volumeId) as Types.IImageVolume | undefined)
+        ?.imageIds;
+
+  if (layerImageIds?.includes(imageId)) {
     return imageId;
   }
 
@@ -495,7 +502,7 @@ function getVolumeLayerSliceImageId(
   // for a layer without `referencedImageIds` or with ones of another kind.
   return (
     mappedImageId ??
-    layer.imageIds?.find(
+    layerImageIds?.find(
       (candidateImageId) =>
         cache.getImage(candidateImageId)?.referencedImageId ===
         referencedImageId

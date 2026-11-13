@@ -594,6 +594,56 @@ describe('labelmap edit transactions', () => {
       expect(target.voxelManager).toBe(sliceImages['volume-1']);
     });
 
+    it('finds the slice image of a volume layer without image ids by the images of its volume', () => {
+      // addSegmentation creates the primary layer of a segmentation added
+      // with only a volumeId before it lists the labelmap images, so the
+      // layer knows only its volume.
+      const { segmentation, volumeLayer, sliceImages, viewport } =
+        createVolumeLayerSetup();
+      const { layerA } = segmentation.representationData.Labelmap.labelmaps;
+      delete volumeLayer.imageIds;
+      delete volumeLayer.referencedImageIds;
+      const volumeVoxelManager = createVoxelManager([0, 1, 1, 0]);
+      mockCache.getImage.mockImplementation((imageId: string) =>
+        sliceImages[imageId]
+          ? {
+              imageId,
+              referencedImageId: imageId.replace('volume', 'ref'),
+              voxelManager: sliceImages[imageId],
+            }
+          : undefined
+      );
+      mockCache.getVolume.mockImplementation((volumeId: string) =>
+        volumeId === 'volumeLayer-volume'
+          ? {
+              volumeId,
+              imageIds: ['volume-0', 'volume-1'],
+              voxelManager: volumeVoxelManager,
+              imageData,
+            }
+          : undefined
+      );
+      const targetOptions = {
+        viewport,
+        imageId: 'layerA-1',
+        sourceLayer: layerA,
+        imageSliceEdit: true,
+      };
+
+      const lockedVoxels = getLockedVoxelsOnOtherLayers(
+        segmentation,
+        'layerA',
+        [2],
+        targetOptions
+      );
+      const target = resolveLabelmapLayerEditTarget(volumeLayer, targetOptions);
+
+      expect(lockedVoxels).toHaveLength(1);
+      expect(lockedVoxels[0].voxelManager).toBe(sliceImages['volume-1']);
+      expect(target.imageId).toBe('volume-1');
+      expect(target.voxelManager).toBe(sliceImages['volume-1']);
+    });
+
     it('edits the slice image of a private volume layer after a move', () => {
       const { segmentation, volumeLayer, sliceImages, viewport } =
         createVolumeLayerSetup();
