@@ -9,6 +9,7 @@ import {
 } from '../../../enums';
 import { loadAndCacheImage } from '../../../loaders/imageLoader';
 import { updateVTKImageDataWithCornerstoneImage } from '../../../utilities/updateVTKImageDataWithCornerstoneImage';
+import { normalizeRGBAImageToRGB } from '../../../utilities/normalizeRGBAImageToRGB';
 import * as metaData from '../../../metaData';
 import { ActorRenderMode } from '../../../types';
 import type { CPUIImageData, IImage, Point3 } from '../../../types';
@@ -416,6 +417,10 @@ async function updateRenderedImage(args: {
   // the same texture (re-uploaded within the same render), so there is no flash.
   let imageData = rendering.imageData;
 
+  // Convert an RGBA color image to RGB before comparing it with the
+  // 3-component vtkImageData.
+  normalizeRGBAImageToRGB(image);
+
   if (imageData && canReuseImageDataForImage(imageData, image)) {
     updateVTKImageDataWithCornerstoneImage(imageData, image);
     // Reuse keeps the previous frame's geometry; refresh origin/direction/spacing
@@ -510,8 +515,8 @@ function canReuseImageDataForImage(
   // The component count must match what the vtkImageData is actually built with
   // (createVTKImageDataFromImage). In this path a color image's vtkImageData is
   // always 3-component: getImageDataMetadata derives numberOfComponents from the
-  // photometric interpretation (RGB/YBR -> 3) and updateVTKImageDataWithCornerstoneImage
-  // down-converts an RGBA (4-component) source to RGB in place. So the post-transform
+  // photometric interpretation (RGB/YBR -> 3) and normalizeRGBAImageToRGB, called
+  // before this check, converts an RGBA (4-component) source to RGB in place. So the post-transform
   // count is 3 for color and 1 otherwise - do NOT use image.rgba / a raw 4 here, or a
   // fresh RGBA frame (rgba still true, numberOfComponents unset) would mis-report 4,
   // never match the 3-component imageData, and force a recreate (new GPU texture)
