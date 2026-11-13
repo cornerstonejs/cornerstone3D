@@ -4,6 +4,7 @@ import type { Segmentation } from '../../../types/SegmentationStateTypes';
 import type { LabelmapLayer } from '../../../types/LabelmapTypes';
 jest.mock('@cornerstonejs/core', () => ({
   BaseVolumeViewport: class BaseVolumeViewport {},
+  Enums: { VoxelStatistics: { ForegroundMajority: 'ForegroundMajority' } },
   cache: {
     getImage: jest.fn(),
     getVolume: jest.fn(),
@@ -30,6 +31,7 @@ import {
   beginLabelmapEditTransaction,
   eraseLabelmapEditTransactionOverwrites,
   getLockedVoxelsOnOtherLayers,
+  resolveLabelmapLayerEditTarget,
 } from './labelmapEditTransaction';
 import { registerLabelmap } from './labelmapLayerStore';
 import { setSegmentBinding } from './labelmapSegmentBindings';
@@ -418,5 +420,326 @@ describe('labelmap edit transactions', () => {
 
     expect(layerBVoxelManager.values).toEqual([0, 1, 0]);
     expect(modifiedSlices).toEqual([0]);
+  });
+
+  describe('a 2D edit of a volume layer in a stack viewport', () => {
+    // The volume layer holds two slices of two voxels. Its images share their
+    // voxels with the volume; the mock keeps them apart, so a test sees which
+    // one an edit reads. Slice 1 is the edited slice, the volume voxel manager
+    // starts with slice 0.
+    function createVolumeLayerSetup() {
+      const segmentation = createSegmentation();
+      (getSegmentation as jest.Mock).mockReturnValue(segmentation);
+      const { Labelmap } = segmentation.representationData;
+      const volumeLayer: LabelmapLayer = {
+        labelmapId: 'volumeLayer',
+        storageKind: 'volume',
+        volumeId: 'volumeLayer-volume',
+        // Another order than the edited layer.
+        imageIds: ['volume-1', 'volume-0'],
+        referencedImageIds: ['ref-1', 'ref-0'],
+        labelToSegmentIndex: { 1: 2 },
+      };
+      registerLabelmap(segmentation, volumeLayer);
+      Labelmap.segmentBindings[2] = {
+        labelmapId: 'volumeLayer',
+        labelValue: 1,
+      };
+      delete Labelmap.labelmaps.layerA.labelToSegmentIndex[2];
+      Labelmap.labelmaps.layerA.imageIds = ['layerA-0', 'layerA-1'];
+      Labelmap.labelmaps.layerA.referencedImageIds = ['ref-0', 'ref-1'];
+
+      // Segment 2 is on voxel 1 of slice 0 and on voxel 0 of slice 1.
+      const sliceImages = {
+        'volume-0': createVoxelManager([0, 1]),
+        'volume-1': createVoxelManager([1, 0]),
+      };
+      const volumeVoxelManager = createVoxelManager([0, 1, 1, 0]);
+      mockCache.getImage.mockImplementation((imageId: string) =>
+        sliceImages[imageId]
+          ? { imageId, voxelManager: sliceImages[imageId] }
+          : undefined
+      );
+      mockCache.getVolume.mockImplementation((volumeId: string) =>
+        volumeId === 'volumeLayer-volume'
+          ? { volumeId, voxelManager: volumeVoxelManager, imageData }
+          : undefined
+      );
+      const viewport = {
+        getCurrentImageId: () => 'ref-1',
+        getCurrentImageIdIndex: () => 1,
+        getImageIds: () => ['ref-0', 'ref-1'],
+      } as Types.IStackViewport;
+
+      return {
+        segmentation,
+        volumeLayer,
+        sliceImages,
+        volumeVoxelManager,
+        viewport,
+      };
+    }
+
+    it('reads the locked voxels of the edited slice, not of slice 0', () => {
+      const { segmentation, sliceImages, viewport } = createVolumeLayerSetup();
+      const { layerA } = segmentation.representationData.Labelmap.labelmaps;
+      const editedVoxels = createVoxelManager([0, 0]);
+
+      const transaction = beginLabelmapEditTransaction(segmentation, {
+        segmentIndex: 1,
+        segmentsLocked: [2],
+        segmentationVoxelManager: editedVoxels,
+        segmentationImageData: imageData,
+        isInObject: () => true,
+      });
+      transaction.lockedVoxelsOnOtherLayers = getLockedVoxelsOnOtherLayers(
+        segmentation,
+        transaction.labelmapId,
+        [2],
+        {
+          viewport,
+          imageId: 'layerA-1',
+          sourceLayer: layerA,
+          imageSliceEdit: true,
+        }
+      );
+      paintAllVoxels(segmentation, transaction, [2], editedVoxels);
+
+      expect(transaction.lockedVoxelsOnOtherLayers).toHaveLength(1);
+      expect(transaction.lockedVoxelsOnOtherLayers[0].voxelManager).toBe(
+        sliceImages['volume-1']
+      );
+      // Voxel 0 is locked on slice 1, voxel 1 is locked only on slice 0.
+      expect(editedVoxels.values).toEqual([0, 1]);
+    });
+
+    it('reads the locked slice when the edited layer has no referenced image ids', () => {
+      // The primary layer of a segmentation added with only a volumeId lists
+      // its labelmap images, not the referenced ones. A private layer made
+      // from it lists the referenced (CT) images of the volume.
+      const { segmentation, sliceImages, viewport } = createVolumeLayerSetup();
+      const { layerA } = segmentation.representationData.Labelmap.labelmaps;
+      delete layerA.referencedImageIds;
+      const editedImages = {
+        'layerA-0': { referencedImageId: 'ref-0' },
+        'layerA-1': { referencedImageId: 'ref-1' },
+      };
+      mockCache.getImage.mockImplementation((imageId: string) =>
+        sliceImages[imageId]
+          ? { imageId, voxelManager: sliceImages[imageId] }
+          : editedImages[imageId]
+            ? { imageId, ...editedImages[imageId] }
+            : undefined
+      );
+
+      const lockedVoxels = getLockedVoxelsOnOtherLayers(
+        segmentation,
+        'layerA',
+        [2],
+        {
+          viewport,
+          imageId: 'layerA-1',
+          sourceLayer: layerA,
+          imageSliceEdit: true,
+        }
+      );
+
+      expect(lockedVoxels).toHaveLength(1);
+      expect(lockedVoxels[0].voxelManager).toBe(sliceImages['volume-1']);
+    });
+
+    it('does not read slice 0 of the volume when the edited slice has no image on the locked layer', () => {
+      const { segmentation, viewport } = createVolumeLayerSetup();
+      const { layerA } = segmentation.representationData.Labelmap.labelmaps;
+      mockCache.getImage.mockReturnValue(undefined);
+
+      const lockedVoxels = getLockedVoxelsOnOtherLayers(
+        segmentation,
+        'layerA',
+        [2],
+        {
+          viewport,
+          imageId: 'layerA-1',
+          sourceLayer: layerA,
+          imageSliceEdit: true,
+        }
+      );
+
+      expect(lockedVoxels).toEqual([]);
+    });
+
+    it('finds the slice image of a volume layer without referenced image ids by the cached images', () => {
+      const { segmentation, volumeLayer, sliceImages, viewport } =
+        createVolumeLayerSetup();
+      const { layerA } = segmentation.representationData.Labelmap.labelmaps;
+      delete volumeLayer.referencedImageIds;
+      mockCache.getImage.mockImplementation((imageId: string) =>
+        sliceImages[imageId]
+          ? {
+              imageId,
+              referencedImageId: imageId.replace('volume', 'ref'),
+              voxelManager: sliceImages[imageId],
+            }
+          : undefined
+      );
+
+      const target = resolveLabelmapLayerEditTarget(volumeLayer, {
+        viewport,
+        imageId: 'layerA-1',
+        sourceLayer: layerA,
+        imageSliceEdit: true,
+      });
+
+      expect(target.imageId).toBe('volume-1');
+      expect(target.voxelManager).toBe(sliceImages['volume-1']);
+    });
+
+    it('finds the slice image of a volume layer without image ids by the images of its volume', () => {
+      // addSegmentation creates the primary layer of a segmentation added
+      // with only a volumeId before it lists the labelmap images, so the
+      // layer knows only its volume.
+      const { segmentation, volumeLayer, sliceImages, viewport } =
+        createVolumeLayerSetup();
+      const { layerA } = segmentation.representationData.Labelmap.labelmaps;
+      delete volumeLayer.imageIds;
+      delete volumeLayer.referencedImageIds;
+      const volumeVoxelManager = createVoxelManager([0, 1, 1, 0]);
+      mockCache.getImage.mockImplementation((imageId: string) =>
+        sliceImages[imageId]
+          ? {
+              imageId,
+              referencedImageId: imageId.replace('volume', 'ref'),
+              voxelManager: sliceImages[imageId],
+            }
+          : undefined
+      );
+      mockCache.getVolume.mockImplementation((volumeId: string) =>
+        volumeId === 'volumeLayer-volume'
+          ? {
+              volumeId,
+              imageIds: ['volume-0', 'volume-1'],
+              voxelManager: volumeVoxelManager,
+              imageData,
+            }
+          : undefined
+      );
+      const targetOptions = {
+        viewport,
+        imageId: 'layerA-1',
+        sourceLayer: layerA,
+        imageSliceEdit: true,
+      };
+
+      const lockedVoxels = getLockedVoxelsOnOtherLayers(
+        segmentation,
+        'layerA',
+        [2],
+        targetOptions
+      );
+      const target = resolveLabelmapLayerEditTarget(volumeLayer, targetOptions);
+
+      expect(lockedVoxels).toHaveLength(1);
+      expect(lockedVoxels[0].voxelManager).toBe(sliceImages['volume-1']);
+      expect(target.imageId).toBe('volume-1');
+      expect(target.voxelManager).toBe(sliceImages['volume-1']);
+    });
+
+    it('edits the slice image of a private volume layer after a move', () => {
+      const { segmentation, volumeLayer, sliceImages, viewport } =
+        createVolumeLayerSetup();
+      const { layerA } = segmentation.representationData.Labelmap.labelmaps;
+
+      const target = resolveLabelmapLayerEditTarget(volumeLayer, {
+        viewport,
+        imageId: 'layerA-1',
+        sourceLayer: layerA,
+        imageSliceEdit: true,
+      });
+
+      expect(target.imageId).toBe('volume-1');
+      expect(target.voxelManager).toBe(sliceImages['volume-1']);
+      expect(target.image).toBeDefined();
+      expect(target.volume).toBeUndefined();
+      expect(target.imageData).toBeUndefined();
+    });
+
+    it('keeps the volume for a volume edit', () => {
+      const { segmentation, volumeLayer, volumeVoxelManager, viewport } =
+        createVolumeLayerSetup();
+      const { layerA } = segmentation.representationData.Labelmap.labelmaps;
+
+      // A 3D strategy (a sphere) in a stack viewport indexes the volume.
+      expect(
+        resolveLabelmapLayerEditTarget(volumeLayer, {
+          viewport,
+          imageId: 'layerA-1',
+          sourceLayer: layerA,
+        }).voxelManager
+      ).toBe(volumeVoxelManager);
+      expect(
+        resolveLabelmapLayerEditTarget(volumeLayer, {
+          viewport,
+          imageId: 'layerA-1',
+          sourceLayer: layerA,
+          imageSliceEdit: true,
+          preferVolume: true,
+        }).voxelManager
+      ).toBe(volumeVoxelManager);
+
+      const { BaseVolumeViewport } = jest.requireMock('@cornerstonejs/core');
+      expect(
+        resolveLabelmapLayerEditTarget(volumeLayer, {
+          viewport: new BaseVolumeViewport(),
+          imageId: 'layerA-1',
+          sourceLayer: layerA,
+          imageSliceEdit: true,
+        }).voxelManager
+      ).toBe(volumeVoxelManager);
+    });
+
+    it('erases a cross-layer overwrite on the edited slice of the volume layer', () => {
+      const { segmentation, sliceImages, volumeVoxelManager, viewport } =
+        createVolumeLayerSetup();
+      const { layerA } = segmentation.representationData.Labelmap.labelmaps;
+      const erased = [];
+
+      const modifiedSlices = eraseLabelmapEditTransactionOverwrites(
+        segmentation,
+        {
+          segmentIndex: 1,
+          labelmapId: 'layerA',
+          labelValue: 1,
+          sourceLayer: layerA,
+          activeLayer: layerA,
+          overwriteSegmentIndices: [2],
+          protectedSegmentIndices: [],
+          crossLayerEraseBindings: [
+            { labelmapId: 'volumeLayer', labelValue: 1 },
+          ],
+          movedSegment: false,
+        },
+        {
+          viewport,
+          referenceImageData: imageData,
+          isInObject: () => true,
+          isInObjectBoundsIJK: [
+            [0, 1],
+            [0, 0],
+            [0, 0],
+          ],
+          imageId: 'layerA-1',
+          imageSliceEdit: true,
+          crossLayerEraseCallback: (record) => erased.push(record),
+        }
+      );
+
+      expect(sliceImages['volume-1'].values).toEqual([0, 0]);
+      expect(sliceImages['volume-0'].values).toEqual([0, 1]);
+      expect(volumeVoxelManager.values).toEqual([0, 1, 1, 0]);
+      expect(erased).toHaveLength(1);
+      expect(erased[0].voxelManager).toBe(sliceImages['volume-1']);
+      expect(erased[0].indices).toEqual([0]);
+      expect(modifiedSlices).toEqual([1]);
+    });
   });
 });
