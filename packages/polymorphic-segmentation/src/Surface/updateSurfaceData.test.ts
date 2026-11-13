@@ -38,4 +38,21 @@ describe('updateSurfaceData', () => {
     await next;
     expect(compute).toHaveBeenCalledTimes(3);
   });
+
+  it('does the rerun after a failed pass, and rejects a failed last pass', async () => {
+    compute.mockReset();
+    let failFirst;
+    compute
+      .mockImplementationOnce(
+        () => new Promise((_, reject) => (failFirst = reject))
+      )
+      .mockRejectedValueOnce(new Error('second'));
+
+    const update = updateSurfaceData('seg');
+    updateSurfaceData('seg');
+    failFirst(new Error('first'));
+
+    await expect(update).rejects.toThrow('second');
+    expect(compute).toHaveBeenCalledTimes(2);
+  });
 });

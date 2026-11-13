@@ -34,11 +34,12 @@ const WORKER_BYTES_PER_VOXEL = 4;
 /**
  * The largest block, in MiB of the 32-bit copy in the worker, that goes to the
  * worker. It starts at the 2 GiB heap of the worker, and it drops to the size
- * of each block that fails, so a block of that size or more is not tried again.
+ * of each block of at least `MIN_LIMIT_MIB` that fails, so a block of that size
+ * or more is not tried again.
  */
 let maxBlockMiB = 2048;
-
-const EMPTY_SURFACE = { points: [], polys: [] } as Types.SurfaceData;
+/** A smaller block cannot fill the 2 GiB heap, so its failure is not about size. */
+const MIN_LIMIT_MIB = 256;
 
 const triggerWorkerProgress = (
   progress: number,
@@ -119,12 +120,15 @@ function getLabelmapFrames(
  * segment, one after another, sends only its block (see `getSegmentBlock`) to
  * the worker.
  *
- * A segment gets an empty surface, and the worker is not started for it, when:
- * - the segment has no voxels (no progress event),
- * - its block is at least the block limit (`maxBlockMiB`), or
- * - the worker fails for it. The limit then drops to the size of its block.
+ * A segment with no voxels gets an empty surface, and the worker is not started
+ * for it. A segment gets no surface (`undefined`), so the caller keeps its last
+ * surface, when:
+ * - its block is at least the block limit (`maxBlockMiB`),
+ * - the worker fails for it (a block of `MIN_LIMIT_MIB` or more then lowers the
+ *   limit to its size), or
+ * - the volume is destroyed during the conversion.
  *
- * For the last two, a WEB_WORKER_PROGRESS event with progress 100 and an
+ * For the first two, a WEB_WORKER_PROGRESS event with progress 100 and an
  * `error` message reports the failure.
  *
  * @param labelmapRepresentationData - The labelmap segmentation data.
@@ -134,7 +138,7 @@ function getLabelmapFrames(
 export async function convertLabelmapToSurfaces(
   labelmapRepresentationData: ToolsTypes.LabelmapSegmentationData,
   segmentIndices: number[]
-): Promise<Types.SurfaceData[]> {
+): Promise<(Types.SurfaceData | undefined)[]> {
   const volume = await getLabelmapVolume(labelmapRepresentationData);
   const { dimensions, spacing, direction, voxelManager } = volume;
   const getFrame = getLabelmapFrames(volume);
@@ -146,10 +150,14 @@ export async function convertLabelmapToSurfaces(
 
   const surfaces = [];
   for (const segmentIndex of segmentIndices) {
-    const bounds = boundsBySegment.get(segmentIndex);
     // The scans yield, so the volume can be destroyed (imageData null) meanwhile.
-    if (!bounds || !volume.imageData) {
-      surfaces.push(EMPTY_SURFACE);
+    if (!volume.imageData) {
+      surfaces.push(undefined);
+      continue;
+    }
+    const bounds = boundsBySegment.get(segmentIndex);
+    if (!bounds) {
+      surfaces.push({ points: [], polys: [] });
       continue;
     }
 
@@ -162,7 +170,7 @@ export async function convertLabelmapToSurfaces(
         segmentIndex,
         `Segment ${segmentIndex} is too large for a 3D surface (${Math.ceil(blockMiB)} MiB, limit ${Math.ceil(maxBlockMiB)} MiB).`
       );
-      surfaces.push(EMPTY_SURFACE);
+      surfaces.push(undefined);
       continue;
     }
 
@@ -173,7 +181,7 @@ export async function convertLabelmapToSurfaces(
       block
     );
     if (!volume.imageData) {
-      surfaces.push(EMPTY_SURFACE);
+      surfaces.push(undefined);
       continue;
     }
 
@@ -200,12 +208,14 @@ export async function convertLabelmapToSurfaces(
       );
       triggerWorkerProgress(100, segmentIndex);
     } catch (error) {
-      maxBlockMiB = Math.min(maxBlockMiB, blockMiB);
-      reportFailure(
-        segmentIndex,
-        `The 3D surface of segment ${segmentIndex} failed (${Math.ceil(blockMiB)} MiB). Segments of this size or more are not converted now.`
-      );
-      surfaces.push(EMPTY_SURFACE);
+      cs3dLogger.warn(error);
+      let message = `The 3D surface of segment ${segmentIndex} failed (${Math.ceil(blockMiB)} MiB).`;
+      if (blockMiB >= MIN_LIMIT_MIB) {
+        maxBlockMiB = Math.min(maxBlockMiB, blockMiB);
+        message += ' Segments of this size or more are not converted now.';
+      }
+      reportFailure(segmentIndex, message);
+      surfaces.push(undefined);
     }
   }
 

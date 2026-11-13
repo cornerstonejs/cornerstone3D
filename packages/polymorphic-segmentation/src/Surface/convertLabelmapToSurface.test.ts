@@ -1,4 +1,4 @@
-﻿import { cache, eventTarget, Enums } from '@cornerstonejs/core';
+import { cache, eventTarget, Enums } from '@cornerstonejs/core';
 import { convertLabelmapToSurfaces } from './convertLabelmapToSurface';
 
 const mockExecuteTask = jest.fn();
@@ -11,12 +11,13 @@ jest.mock('@cornerstonejs/core', () => ({
 }));
 
 describe('convertLabelmapToSurfaces', () => {
-  it('skips a block as large as one that failed, and reports both', async () => {
+  afterEach(() => jest.restoreAllMocks());
+
+  it('gives no surface for a failed segment, reports it, and still converts the rest', async () => {
     const dimensions = [8, 8, 8];
     const data = new Uint8Array(512);
     data[1 * 64 + 1 * 8 + 1] = 1; // segment 1 at [1, 1, 1]
     data[5 * 64 + 5 * 8 + 5] = 2; // segment 2 at [5, 5, 5], the same block size
-    data[6 * 64 + 6 * 8 + 0] = 3; // segment 3 at [0, 6, 6], a smaller block
     jest.spyOn(cache, 'getVolume').mockReturnValue({
       dimensions,
       spacing: [1, 1, 1],
@@ -46,14 +47,14 @@ describe('convertLabelmapToSurfaces', () => {
       Enums.Events.WEB_WORKER_PROGRESS,
       listener as EventListener
     );
-    // Segment 1 fails in the worker, segment 2 is not sent, segment 3 is smaller.
+    // A small block cannot fill the heap, so its failure does not lower the limit.
     expect(mockExecuteTask).toHaveBeenCalledTimes(2);
-    expect(mockExecuteTask.mock.calls[1][2].segmentIndex).toBe(3);
-    expect(surfaces[0].points).toEqual([]);
-    expect(surfaces[1].points).toEqual([]);
-    expect(surfaces[2].points).toEqual([0, 0, 0]);
+    expect(surfaces[0]).toBeUndefined();
+    expect(surfaces[1].points).toEqual([0, 0, 0]);
+    expect(surfaces[2]).toEqual({ points: [], polys: [] });
     const failures = events.filter((detail) => detail.error);
-    expect(failures.map(({ id }) => id)).toEqual([1, 2]);
-    expect(failures.every(({ progress }) => progress === 100)).toBe(true);
+    expect(failures.map(({ id, progress }) => [id, progress])).toEqual([
+      [1, 100],
+    ]);
   });
 });

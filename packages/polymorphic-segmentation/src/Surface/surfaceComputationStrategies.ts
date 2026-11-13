@@ -97,7 +97,7 @@ async function computeSurfaceFromLabelmapSegmentation(
   const segmentIndices =
     options.segmentIndices || getUniqueSegmentIndices(segmentationId);
 
-  let surfaces: Types.SurfaceData[];
+  let surfaces: (Types.SurfaceData | undefined)[];
   try {
     surfaces = await convertLabelmapToSurfaces(
       labelmapRepresentationData,
@@ -108,10 +108,10 @@ async function computeSurfaceFromLabelmapSegmentation(
     throw new Error('Failed to convert labelmap to surface');
   }
 
-  return surfaces.map((data, index) => ({
-    segmentIndex: segmentIndices[index],
-    data,
-  }));
+  // A segment with no result keeps its last surface.
+  return surfaces
+    .map((data, index) => ({ segmentIndex: segmentIndices[index], data }))
+    .filter(({ data }) => data);
 }
 
 /**

@@ -1,5 +1,9 @@
 import type { Types } from '@cornerstonejs/core';
-import { cache, getEnabledElementByViewportId } from '@cornerstonejs/core';
+import {
+  cache,
+  getEnabledElementByViewportId,
+  utilities,
+} from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
 import { computeSurfaceFromLabelmapSegmentation } from './surfaceComputationStrategies';
@@ -19,6 +23,10 @@ const {
   },
   Enums: { SegmentationRepresentations },
 } = cornerstoneTools;
+
+const cs3dLogger = utilities.logger.polySegLog.getLogger(
+  'Surface.updateSurfaceData'
+);
 
 const updates = new Map<string, { promise: Promise<void>; rerun: boolean }>();
 
@@ -43,7 +51,15 @@ export function updateSurfaceData(segmentationId: string): Promise<void> {
     try {
       do {
         update.rerun = false;
-        await updateSurfaceDataOnce(segmentationId);
+        try {
+          await updateSurfaceDataOnce(segmentationId);
+        } catch (error) {
+          // A newer labelmap is waiting, so its pass replaces this failed one.
+          if (!update.rerun) {
+            throw error;
+          }
+          cs3dLogger.warn(error);
+        }
       } while (update.rerun);
     } finally {
       updates.delete(segmentationId);

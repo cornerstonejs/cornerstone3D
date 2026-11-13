@@ -79,17 +79,18 @@ const polySegConverters = {
     }
 
     this.polySegInitializing = true;
-    this.polySegInitializingPromise = new Promise((resolve) => {
-      this.polySeg = new ICRPolySeg();
-      this.polySeg
-        .initialize({
-          updateProgress: progressCallback,
-        })
-        .then(() => {
-          this.polySegInitializing = false;
-          resolve();
-        });
-    });
+    // A failed initialize rejects every waiting task, and the next task tries again.
+    this.polySegInitializingPromise = (async () => {
+      try {
+        this.polySeg = new ICRPolySeg();
+        await this.polySeg.initialize({ updateProgress: progressCallback });
+      } catch (error) {
+        this.polySeg = null;
+        throw error;
+      } finally {
+        this.polySegInitializing = false;
+      }
+    })();
 
     await this.polySegInitializingPromise;
   },
