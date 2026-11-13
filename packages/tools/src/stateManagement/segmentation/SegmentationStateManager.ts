@@ -130,6 +130,7 @@ export default class SegmentationStateManager {
    *
    * @param segmentationId - The unique identifier of the segmentation to update.
    * @param payload - An object containing the properties to update in the segmentation.
+   * @param suppressEvents - If true, SEGMENTATION_MODIFIED is not triggered.
    *
    * @remarks
    * This method updates the state immutably. If the segmentation with the given ID is not found,
@@ -147,7 +148,8 @@ export default class SegmentationStateManager {
    */
   updateSegmentation(
     segmentationId: string,
-    payload: Partial<Segmentation>
+    payload: Partial<Segmentation>,
+    suppressEvents?: boolean
   ): void {
     this.updateState((draftState) => {
       const segmentation = draftState.segmentations.find(
@@ -181,7 +183,9 @@ export default class SegmentationStateManager {
       }
     });
 
-    triggerSegmentationModified(segmentationId);
+    if (!suppressEvents) {
+      triggerSegmentationModified(segmentationId);
+    }
   }
 
   /**
