@@ -21,6 +21,7 @@ import {
   applyUrlParameterOverridesToDemoConfig,
   applyViewportTypeOverride,
 } from './exampleParameters';
+import updateNextViewportBadge from './updateNextViewportBadge';
 
 window.cornerstone = cornerstone;
 window.cornerstoneTools = cornerstoneTools;
@@ -71,6 +72,7 @@ export default async function initDemo(config: any = {}) {
           },
         }),
   });
+  updateNextViewportBadge();
   await csToolsInit({
     ...toolsConfig,
     addons: {
