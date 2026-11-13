@@ -362,6 +362,24 @@ describe('annotationState', () => {
         expect.objectContaining({ annotation: a1 })
       );
     });
+
+    it('removes every annotation of the tool, not every other one, and triggers one event per annotation', () => {
+      const toolAnnotations = ['a1', 'a2', 'a3', 'a4', 'a5'].map(
+        (annotationUID) => makeAnnotation({ annotationUID, toolName: 'ToolA' })
+      );
+      toolAnnotations.forEach((annotation) =>
+        addAnnotation(annotation, 'FOR-1')
+      );
+      mockTriggerEvent.mockClear();
+
+      removeAnnotations('ToolA', 'FOR-1');
+
+      toolAnnotations.forEach(({ annotationUID }) =>
+        expect(getAnnotation(annotationUID)).toBeUndefined()
+      );
+      expect(getNumberOfAnnotations('ToolA', 'FOR-1')).toBe(0);
+      expect(mockTriggerEvent).toHaveBeenCalledTimes(toolAnnotations.length);
+    });
   });
 
   describe('removeAllAnnotations', () => {
@@ -696,6 +714,46 @@ describe('FrameOfReferenceSpecificAnnotationManager', () => {
 
     expect(removed.map((a) => a.annotationUID).sort()).toEqual(['a1', 'b1']);
     expect(manager.getFramesOfReference()).toEqual([]);
+  });
+
+  it('removeAnnotations removes and returns every annotation of a tool that has several', () => {
+    const uids = ['a1', 'a2', 'a3', 'a4'];
+    uids.forEach((annotationUID) =>
+      manager.addAnnotation(
+        makeAnnotation({ annotationUID, toolName: 'ToolA' }),
+        'FOR-1'
+      )
+    );
+    manager.addAnnotation(
+      makeAnnotation({ annotationUID: 'b1', toolName: 'ToolB' }),
+      'FOR-1'
+    );
+
+    const removed = manager.removeAnnotations('FOR-1', 'ToolA');
+
+    expect(removed.map((a) => a.annotationUID)).toEqual(uids);
+    expect(manager.getAnnotations('FOR-1', 'ToolA')).toEqual([]);
+    expect(manager.getAnnotation('b1')).toBeDefined();
+  });
+
+  it('removeAnnotations with no toolName removes every annotation of every tool in the group', () => {
+    const uids = ['a1', 'a2', 'a3', 'b1', 'b2', 'b3'];
+    uids.forEach((annotationUID) =>
+      manager.addAnnotation(
+        makeAnnotation({ annotationUID, toolName: `Tool${annotationUID[0]}` }),
+        'FOR-1'
+      )
+    );
+    manager.addAnnotation(
+      makeAnnotation({ annotationUID: 'c1', FrameOfReferenceUID: 'FOR-2' }),
+      'FOR-2'
+    );
+
+    const removed = manager.removeAnnotations('FOR-1');
+
+    expect(removed.map((a) => a.annotationUID).sort()).toEqual(uids);
+    expect(manager.getFramesOfReference()).toEqual(['FOR-2']);
+    expect(manager.getAnnotation('c1')).toBeDefined();
   });
 
   it('removeAnnotations returns [] for a group that does not exist', () => {
