@@ -32,6 +32,7 @@ import { segmentationStyle } from './SegmentationStyle';
 import { triggerSegmentationAdded } from './events/triggerSegmentationAdded';
 import {
   ensureLabelmapState,
+  getOrCreateDynamicLabelmapVolume,
   LabelmapImageReferenceResolver,
   syncLegacyLabelmapData,
 } from './labelmapModel';
@@ -1037,10 +1038,15 @@ async function internalConvertStackToVolumeLabelmap({
   const data = segmentation.representationData
     .Labelmap as LabelmapSegmentationDataStack;
 
-  const { volumeId } = await internalComputeVolumeLabelmapFromStack({
-    imageIds: data.imageIds,
-    options,
-  });
+  // A 4D labelmap already is one volume of the current time point. A volume of
+  // the images of every time point has the wrong depth.
+  let volumeId = getOrCreateDynamicLabelmapVolume(segmentation)?.volumeId;
+  if (!volumeId) {
+    ({ volumeId } = await internalComputeVolumeLabelmapFromStack({
+      imageIds: data.imageIds,
+      options,
+    }));
+  }
 
   (
     segmentation.representationData.Labelmap as LabelmapSegmentationDataVolume

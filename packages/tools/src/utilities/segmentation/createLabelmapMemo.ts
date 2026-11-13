@@ -1,6 +1,7 @@
 import { utilities } from '@cornerstonejs/core';
 import { triggerSegmentationDataModified } from '../../stateManagement/segmentation/triggerSegmentationEvents';
 import type { Types } from '@cornerstonejs/core';
+import { getVoxelManagerTimePoint } from '../../stateManagement/segmentation/labelmapModel/dynamicLabelmapVolume';
 
 const { VoxelManager, RLEVoxelMap } = utilities;
 
@@ -89,7 +90,16 @@ export function restoreMemo(isUndo?: boolean) {
       segmentationVoxelManager.setAtIJKPoint(pointIJK, value);
     });
     const slices = useVoxelManager.getArrayOfModifiedSlices();
-    triggerSegmentationDataModified(this.segmentationId, slices);
+    const dimensionGroupNumber = getVoxelManagerTimePoint(
+      segmentationVoxelManager
+    );
+    if (dimensionGroupNumber) {
+      triggerSegmentationDataModified(this.segmentationId, slices, undefined, {
+        dimensionGroupNumber,
+      });
+    } else {
+      triggerSegmentationDataModified(this.segmentationId, slices);
+    }
   };
 
   if (undo) {

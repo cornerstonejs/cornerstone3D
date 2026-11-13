@@ -110,6 +110,10 @@ class Cache {
    */
   public isCacheable = (byteLength) => {
     const bytesAvailable = this.getBytesAvailable();
+    // Skip the scan of every cached image when the free space is enough.
+    if (bytesAvailable >= byteLength) {
+      return true;
+    }
 
     const purgableImageBytes = Array.from(this._imageCache.values()).reduce(
       (total, image) => {
