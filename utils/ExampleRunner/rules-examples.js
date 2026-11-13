@@ -109,6 +109,12 @@ module.exports = [
     type: 'asset/resource',
     generator: { filename: '[name][ext]' },
   },
+  // A JSONC file (for example the optional display set rules) is imported as
+  // its text, so the example strips the comments and keeps the file as is.
+  {
+    test: /\.jsonc$/i,
+    type: 'asset/source',
+  },
   {
     test: /\.wasm$/,
     type: 'asset/inline',

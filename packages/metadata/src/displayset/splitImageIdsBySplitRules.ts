@@ -10,7 +10,7 @@ import type {
 
 export type SplitImageIdsBySplitRulesOptions = SplitContext &
   GroupInstancesOptions & {
-    /** The rules, keyed by rule id and tried in ascending priority. */
+    /** The rules, tried in array order (see `materializeSplitRules`). */
     splitRules: SplitRuleSet;
     onMissingImageId?: (imageId: string) => void;
     /**

@@ -1,7 +1,13 @@
-import { describe, expect, it } from '@jest/globals';
+import { describe, expect, it, jest } from '@jest/globals';
+import { logging } from '@cornerstonejs/utils';
 import { groupInstancesBySplitRules } from './groupInstancesBySplitRules';
 import { createDisplaySetSplitRules } from './displaySetRules';
-import { resolveSplitRuleSet, validateSplitRuleSetEntry } from './splitRuleSet';
+import update, { extend } from 'immutability-helper';
+import {
+  materializeSplitRules,
+  resolveSplitRuleSet,
+  spliceById,
+} from './splitRuleSet';
 import type { NaturalizedInstance, SplitRuleSet } from './types';
 
 const ct = (imageId: string, InstanceNumber: number): NaturalizedInstance => ({
@@ -12,79 +18,102 @@ const ct = (imageId: string, InstanceNumber: number): NaturalizedInstance => ({
   InstanceNumber,
 });
 
-describe('resolveSplitRuleSet', () => {
-  it('orders rules by ascending priority, and takes the id from the key', () => {
-    const rules = resolveSplitRuleSet({
-      late: { priority: 20000 },
-      defaultA: { priority: 1 },
-      early: { priority: -1 },
-      defaultB: { priority: 2 },
-    });
+describe('materializeSplitRules', () => {
+  it('returns the rules in the order of the list, each with its key as id, and leaves out a rule the list does not name', () => {
+    const rules = materializeSplitRules(
+      { a: { groupBy: ['a'] }, b: { id: 'b' }, unused: {} },
+      ['b', 'a']
+    );
 
-    expect(rules.map((rule) => rule.id)).toEqual([
-      'early',
-      'defaultA',
-      'defaultB',
-      'late',
-    ]);
-    // Priority belongs to the rule set, not to the compiled rule.
-    expect(rules.every((rule) => !('priority' in rule))).toBe(true);
+    expect(rules).toEqual([{ id: 'b' }, { id: 'a', groupBy: ['a'] }]);
   });
 
-  it('orders equal priorities by id, whatever order the keys were inserted in', () => {
-    const forward = resolveSplitRuleSet({
-      b: { priority: 5 },
-      a: { priority: 5 },
-    });
-    const reverse = resolveSplitRuleSet({
-      a: { priority: 5 },
-      b: { priority: 5 },
-    });
-
-    expect(forward.map((rule) => rule.id)).toEqual(['a', 'b']);
-    expect(reverse.map((rule) => rule.id)).toEqual(['a', 'b']);
-  });
-
-  it('accepts an entry that states an id equal to its key', () => {
-    const rules = resolveSplitRuleSet({ same: { id: 'same', priority: 1 } });
-
-    expect(rules.map((rule) => rule.id)).toEqual(['same']);
-  });
-
-  it('rejects an array', () => {
-    expect(() =>
-      resolveSplitRuleSet([{ id: 'a' }] as unknown as SplitRuleSet)
-    ).toThrow(/must be an object keyed by rule id/);
+  it('throws for an unknown id, an id mismatch, a non-object entry and an unsafe key', () => {
+    expect(() => materializeSplitRules({ a: {} }, ['x'])).toThrow(
+      /"x".*not in the registry/
+    );
+    expect(() => materializeSplitRules({ a: { id: 'b' } }, ['a'])).toThrow(
+      /"a".*"b"/
+    );
+    expect(() => materializeSplitRules({ a: null } as never, ['a'])).toThrow(
+      /"a".*must be an object/
+    );
+    expect(() => materializeSplitRules({}, ['__proto__'])).toThrow(
+      /not allowed/
+    );
   });
 });
 
-describe('validateSplitRuleSetEntry', () => {
-  it('returns true for a numeric priority, and false for a null priority', () => {
-    expect(validateSplitRuleSetEntry('a', { priority: 0 })).toBe(true);
-    expect(validateSplitRuleSetEntry('a', { id: 'a', priority: -2.5 })).toBe(
-      true
-    );
-    expect(validateSplitRuleSetEntry('a', { priority: null })).toBe(false);
+describe('spliceById', () => {
+  const order = ['video', 'ecg', 'localizer', 'volume3d', 'unsupported'];
+
+  it('as $spliceById: inserts, removes and moves by id, each entry after the earlier ones', () => {
+    extend('$spliceById', (spec, list) => spliceById(list as string[], spec));
+
+    expect(
+      update(order, { $spliceById: [['volume3d', 0, 'dwiByBValue']] } as never)
+    ).toEqual([
+      'video',
+      'ecg',
+      'localizer',
+      'dwiByBValue',
+      'volume3d',
+      'unsupported',
+    ]);
+    expect(update(order, { $spliceById: [['ecg', 1]] } as never)).toEqual([
+      'video',
+      'localizer',
+      'volume3d',
+      'unsupported',
+    ]);
+    expect(
+      spliceById(order, [
+        ['volume3d', 1],
+        ['localizer', 0, 'volume3d'],
+      ])
+    ).toEqual(['video', 'ecg', 'volume3d', 'localizer', 'unsupported']);
+    expect(spliceById([{ id: 'a' }, { id: 'b' }], [['b', 1]])).toEqual([
+      { id: 'a' },
+    ]);
   });
 
-  it('throws for an id that differs from the key', () => {
-    expect(() =>
-      validateSplitRuleSetEntry('a', { id: 'b', priority: 1 })
-    ).toThrow(/"a".*"b"/);
+  it('throws for an unknown id and for a numeric position', () => {
+    expect(() => spliceById(order, [['missing', 1]])).toThrow(/"missing"/);
+    expect(() => spliceById(order, [[1, 1]])).toThrow(/Use \$splice/);
+    expect(() => spliceById(order, [['ecg']])).toThrow(/deleteCount/);
+    expect(() => spliceById(order, [['ecg', '1']])).toThrow(/deleteCount/);
   });
+});
 
-  it('throws for a missing or non-numeric priority', () => {
-    for (const priority of [undefined, '1', Number.NaN, Infinity]) {
-      expect(() =>
-        validateSplitRuleSetEntry('a', { priority } as never)
-      ).toThrow(/"a".*priority/);
+describe('materializeSplitRules with a repeated id', () => {
+  it('keeps the first place and warns once, as when two files add the same rule', () => {
+    const warn = jest
+      .spyOn(
+        logging.metadataLog.getLogger('displayset', 'splitRuleSet'),
+        'warn'
+      )
+      .mockImplementation(() => {});
+    try {
+      const rules = materializeSplitRules({ a: {}, b: {} }, [
+        'a',
+        'b',
+        'a',
+        'a',
+      ]);
+      expect(rules.map((rule) => rule.id)).toEqual(['a', 'b']);
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(String(warn.mock.calls[0][0])).toMatch(/a occurs more than once/);
+    } finally {
+      warn.mockRestore();
     }
   });
+});
 
-  it('throws for an entry that is not an object', () => {
-    expect(() => validateSplitRuleSetEntry('a', null)).toThrow(
-      /"a".*must be an object/
-    );
+describe('resolveSplitRuleSet', () => {
+  it('rejects a keyed object', () => {
+    expect(() =>
+      resolveSplitRuleSet({ a: {} } as unknown as SplitRuleSet)
+    ).toThrow(/must be an array/);
   });
 });
 
@@ -92,9 +121,10 @@ describe('groupInstancesBySplitRules with a rule set', () => {
   it('gives one key for every naturalized form of a value', () => {
     // A server and a viewer can naturalize the same attribute differently.
     const keyOf = (EchoNumbers: unknown) =>
-      groupInstancesBySplitRules([{ ...ct('a', 1), EchoNumbers } as never], {
-        byEcho: { priority: 1, groupBy: ['SeriesInstanceUID', 'EchoNumbers'] },
-      })[0].splitKey;
+      groupInstancesBySplitRules(
+        [{ ...ct('a', 1), EchoNumbers } as never],
+        [{ id: 'byEcho', groupBy: ['SeriesInstanceUID', 'EchoNumbers'] }]
+      )[0].splitKey;
 
     expect(new Set([5, '5', [5], ['5']].map(keyOf)).size).toBe(1);
     expect(new Set([undefined, null, '', []].map(keyOf)).size).toBe(1);
@@ -102,15 +132,15 @@ describe('groupInstancesBySplitRules with a rule set', () => {
     expect(keyOf('05')).not.toBe(keyOf(5));
   });
 
-  it('evaluates the rules in priority order, first match wins', () => {
-    const ruleSet: SplitRuleSet = {
-      everything: { priority: 1, groupBy: ['SeriesInstanceUID'] },
-      first: {
-        priority: -1,
+  it('evaluates the rules in array order, first match wins', () => {
+    const ruleSet: SplitRuleSet = [
+      {
+        id: 'first',
         matches: (instance) => instance.InstanceNumber === 1,
         groupBy: ['SOPInstanceUID'],
       },
-    };
+      { id: 'everything', groupBy: ['SeriesInstanceUID'] },
+    ];
 
     const groups = groupInstancesBySplitRules(
       [ct('a', 1), ct('b', 2), ct('c', 3)],
@@ -128,42 +158,38 @@ describe('groupInstancesBySplitRules with a rule set', () => {
     ]);
   });
 
-  it('lets a layer replace a rule by its key', () => {
-    // A key cannot occur twice, so a later layer that names an existing id
-    // replaces that rule instead of adding a second copy.
-    const defaults: SplitRuleSet = {
-      volume3d: { priority: 1, groupBy: ['SeriesInstanceUID'] },
-    };
-    const layered: SplitRuleSet = {
-      ...defaults,
-      volume3d: { priority: -1, groupBy: ['SOPInstanceUID'] },
-    };
-
-    const groups = groupInstancesBySplitRules(
-      [ct('a', 1), ct('b', 2)],
-      layered
-    );
-
-    // The replacement groups per instance: two groups, not one per series.
-    expect(groups).toHaveLength(2);
-    expect(groups.every((group) => group.matchedRule.id === 'volume3d')).toBe(
-      true
-    );
+  it('warns once with the count when instances match no rule and no callback is given', () => {
+    const warn = jest
+      .spyOn(
+        logging.metadataLog.getLogger(
+          'displayset',
+          'groupInstancesBySplitRules'
+        ),
+        'warn'
+      )
+      .mockImplementation(() => {});
+    try {
+      const groups = groupInstancesBySplitRules(
+        [ct('a', 1), ct('b', 2)],
+        [{ id: 'none', matches: () => false }]
+      );
+      expect(groups).toEqual([]);
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(String(warn.mock.calls[0][0])).toMatch(/: 2 instance/);
+    } finally {
+      warn.mockRestore();
+    }
   });
 });
 
 describe('createDisplaySetSplitRules with a rule set as data', () => {
-  it('compiles to a keyed rule set that resolves in priority order', () => {
-    const rules = createDisplaySetSplitRules({
-      catchAll: { priority: 2 },
-      ctRule: { priority: 1, matches: { Modality: 'CT' } },
-      off: { priority: null, matches: { Modality: 'MR' } },
-    });
-
-    expect(resolveSplitRuleSet(rules).map((rule) => rule.id)).toEqual([
-      'ctRule',
-      'catchAll',
+  it('compiles an ordered array, in the same order', () => {
+    const rules = createDisplaySetSplitRules([
+      { id: 'ctRule', matches: { Modality: 'CT' } },
+      { id: 'catchAll' },
     ]);
-    expect(rules.ctRule.matches?.(ct('a', 1), { series: {} })).toBe(true);
+
+    expect(rules.map((rule) => rule.id)).toEqual(['ctRule', 'catchAll']);
+    expect(rules[0].matches?.(ct('a', 1), { series: {} })).toBe(true);
   });
 });

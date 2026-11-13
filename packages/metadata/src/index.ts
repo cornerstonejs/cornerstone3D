@@ -68,7 +68,6 @@ export type {
   SortInstances,
   GroupInstancesOptions,
   SplitRuleSet,
-  SplitRuleSetEntry,
   OrderInstancesOptions,
   ContextEntry,
   ContextGroupEntry,
@@ -82,6 +81,7 @@ export type {
   RawSortKey,
   RawSplitRule,
   DisplaySetRules,
+  DisplaySetRuleOrder,
   CreateDisplaySetSplitRulesOptions,
 } from './displayset';
 export {
@@ -97,6 +97,8 @@ export {
   defaultDisplaySetSplitRules,
   orderInstancesForRule,
   resolveSplitRuleSet,
+  materializeSplitRules,
+  spliceById,
   compare,
   compareInstanceNumber,
   compareSOPInstanceUID,
@@ -104,6 +106,7 @@ export {
   instancesSortCriteria,
   sortInstancesCopy,
   displaySetRules,
+  displaySetRuleOrder,
   createDisplaySetSplitRules,
   defaultMetadataContext,
   setMetadataContext,
@@ -129,7 +132,6 @@ export {
   isEcgInstance,
   isWsiInstance,
   isReconstructableInstances,
-  DEFAULT_SPLIT_RULE_PRIORITY_LIMIT,
   DISPLAY_SET_HANDLER_NAMES,
 } from './displayset';
 export type { CreateDisplaySetFromGroupOptions } from './displayset';

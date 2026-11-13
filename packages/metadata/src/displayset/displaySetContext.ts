@@ -146,6 +146,7 @@ export const defaultMetadataContext: DisplaySetContext = {
 
   seriesInstanceCount: 'series.instances.count()',
   isMultiFrame: 'NumberOfFrames > 1',
+  isLocalizer: "includes(ImageType, 'LOCALIZER')",
 
   imageId: { attribute: 'imageId' },
 
@@ -167,13 +168,14 @@ export const defaultMetadataContext: DisplaySetContext = {
   isImage: 'SOPClassUID in imageSopClassUids',
   transferSyntaxKnown:
     'AvailableTransferSyntaxUID != null || TransferSyntaxUID != null',
-  // The same three steps as isVideoInstance.
+  // The same three steps as isVideoInstance. The guess skips grayscale.
   isVideo:
     'SOPClassUID in videoSopClassUids || ' +
     'AvailableTransferSyntaxUID in videoTransferSyntaxUids || ' +
     'TransferSyntaxUID in videoTransferSyntaxUids || ' +
     '(!transferSyntaxKnown && SOPClassUID in longVideoSopClassUids && ' +
-    'NumberOfFrames >= longVideoMinFrames)',
+    'NumberOfFrames >= longVideoMinFrames && ' +
+    "!startsWith(PhotometricInterpretation, 'MONOCHROME'))",
   isEcg: 'SOPClassUID in ecgSopClassUids',
   isWsi: "SOPClassUID in wholeSlideSopClassUids || Modality == 'SM'",
   isSegmentation: 'SOPClassUID in segmentationSopClassUids',
