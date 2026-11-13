@@ -22,12 +22,14 @@ import imageIdToURI from '../utilities/imageIdToURI';
 import { getGenericViewportWSIDisplaySet } from './GenericViewport/genericViewportDisplaySetAccess';
 import {
   addWSIMiniNavigationOverlayCss,
+  configureWSIOverviewMap,
   type WSIClientLike,
   getDicomMicroscopyViewer,
   loadWSIData,
   type WSIImageDataMetadata,
   type WSIMapLike,
   type WSIMapViewLike,
+  type WSIOverviewMapInteraction,
   type WSITransformUtilitiesLike,
   type WSIViewerLike,
 } from '../utilities/WSIUtilities';
@@ -60,6 +62,8 @@ class WSIViewport extends Viewport {
 
   protected map: WSIMapLike;
   private imageURISet: Set<string> = new Set();
+  // Owns overview-map state and listeners across WSI replacements.
+  private overviewMapInteraction?: WSIOverviewMapInteraction;
 
   private internalCamera = {
     rotation: 0,
@@ -195,6 +199,8 @@ class WSIViewport extends Viewport {
   }
 
   private elementDisabledHandler() {
+    this.overviewMapInteraction?.cleanup();
+    this.overviewMapInteraction = undefined;
     this.removeEventListeners();
     this.viewer?.cleanup();
     this.viewer = null;
@@ -587,6 +593,14 @@ class WSIViewport extends Viewport {
     // Setting WSI data directly resets any display-set bookkeeping; the
     // setDisplaySets override re-records after calling this.
     this.clearDisplaySets();
+    // Preserve the overview state and stop an active drag before replacing
+    // the map. viewer.cleanup() also terminates shared DICOM workers.
+    const overviewMapCollapsed = this.overviewMapInteraction?.getCollapsed();
+
+    this.overviewMapInteraction?.cleanup();
+    this.overviewMapInteraction = undefined;
+    this.map?.un(EVENT_POSTRENDER, this.postrender);
+    this.map?.setTarget?.(null);
     this.microscopyElement.style.background = 'black';
     this.microscopyElement.innerText = 'Loading';
     this.imageIds = imageIds;
@@ -618,6 +632,10 @@ class WSIViewport extends Viewport {
     viewer.deactivateDragPanInteraction();
     this.viewer = viewer;
     this.map = viewer.getMap();
+    this.overviewMapInteraction = configureWSIOverviewMap(
+      this.map,
+      overviewMapCollapsed
+    );
     this.map.on(EVENT_POSTRENDER, this.postrender);
     this.resize();
     this.microscopyElement.innerText = '';
