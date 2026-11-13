@@ -8,6 +8,7 @@ import {
   canvasToIndexForWSI,
   indexToCanvasForWSI,
 } from '../src/RenderingEngine/GenericViewport/WSI/wsiTransformUtils';
+import WSIResolvedView from '../src/RenderingEngine/GenericViewport/WSI/WSIResolvedView';
 
 // Identity-oriented WSI: row cosines [1,0,0], column cosines [0,1,0],
 // scan-axis normal (cross product) [0,0,1]. Origin offset from slide corner
@@ -384,37 +385,94 @@ describe('wsiTransformUtils', () => {
       expect(canvasPos[1]).toBeLessThan(canvasHeight / 2);
     });
 
-    it('divides the whole transformed point by an explicit devicePixelRatio argument rather than window.devicePixelRatio', () => {
-      Object.defineProperty(window, 'devicePixelRatio', {
-        configurable: true,
-        value: 3, // should be ignored because an explicit value is passed
-      });
-      const view = makeView({ resolution: 1, center: [0, 0] });
-      const canvasWidth = 200;
-      const canvasHeight = 200;
-
-      const canvasPosDpr1 = indexToCanvasForWSI({
-        indexPos: [20, 0, 0],
-        canvasWidth,
-        canvasHeight,
-        view,
-        devicePixelRatio: 1,
-      });
-      const canvasPosDpr2 = indexToCanvasForWSI({
-        indexPos: [20, 0, 0],
-        canvasWidth,
-        canvasHeight,
-        view,
-        devicePixelRatio: 2,
+    // Canvas points are CSS pixels, and so are canvasWidth/canvasHeight (the
+    // viewport passes the element's clientWidth/clientHeight): the device
+    // pixel ratio must not scale either side of the transform.
+    describe.each([1, 2, 3])('at devicePixelRatio %s', (dpr) => {
+      beforeEach(() => {
+        Object.defineProperty(window, 'devicePixelRatio', {
+          configurable: true,
+          value: dpr,
+        });
       });
 
-      // getWSICanvasTransform builds its translation from the raw canvasWidth/
-      // canvasHeight (independent of devicePixelRatio); indexToCanvasForWSI then
-      // divides the entire resulting point -- center offset included -- by
-      // devicePixelRatio. So the whole point scales by 1/dpr, not just the
-      // displacement from the canvas center.
-      expect(canvasPosDpr2[0]).toBeCloseTo(canvasPosDpr1[0] / 2, 6);
-      expect(canvasPosDpr2[1]).toBeCloseTo(canvasPosDpr1[1] / 2, 6);
+      it('maps the canvas center to the view center and back', () => {
+        const view = makeView({
+          resolution: 2,
+          rotation: 0.4,
+          center: [30, 70],
+        });
+
+        const indexPos = canvasToIndexForWSI({
+          canvasPos: [150, 75],
+          canvasWidth: 300,
+          canvasHeight: 150,
+          view,
+        });
+        const canvasPos = indexToCanvasForWSI({
+          indexPos: [30, 70, 0],
+          canvasWidth: 300,
+          canvasHeight: 150,
+          view,
+        });
+
+        expect(indexPos[0]).toBeCloseTo(30, 6);
+        expect(indexPos[1]).toBeCloseTo(70, 6);
+        expect(canvasPos[0]).toBeCloseTo(150, 6);
+        expect(canvasPos[1]).toBeCloseTo(75, 6);
+      });
+
+      it('moves one resolution step of index per CSS pixel', () => {
+        const view = makeView({ resolution: 2, center: [30, 70] });
+
+        const indexPos = canvasToIndexForWSI({
+          canvasPos: [160, 75],
+          canvasWidth: 300,
+          canvasHeight: 150,
+          view,
+        });
+
+        expect(indexPos[0]).toBeCloseTo(50, 6);
+        expect(indexPos[1]).toBeCloseTo(70, 6);
+      });
+
+      it('keeps the index under the cursor when zooming at a canvas point', () => {
+        const canvasPoint = [200, 100];
+        const canvasSize = { canvasWidth: 300, canvasHeight: 150 };
+        const view = {
+          ...makeView({ resolution: 2, center: [30, 70] }),
+          getZoom: () => 1,
+        };
+        const resolvedView = new WSIResolvedView({
+          ...canvasSize,
+          view,
+          viewState: {
+            centerIndex: [30, 70],
+            resolution: 2,
+            rotation: 0,
+            zoom: 1,
+          },
+        });
+        const indexUnderCursor = canvasToIndexForWSI({
+          canvasPos: canvasPoint,
+          ...canvasSize,
+          view,
+        });
+
+        const { centerIndex, resolution } = resolvedView.withZoom(
+          2,
+          canvasPoint
+        ).state.viewState;
+        const indexAfterZoom = canvasToIndexForWSI({
+          canvasPos: canvasPoint,
+          ...canvasSize,
+          view: makeView({ resolution, center: centerIndex }),
+        });
+
+        expect(resolution).toBeCloseTo(1, 6);
+        expect(indexAfterZoom[0]).toBeCloseTo(indexUnderCursor[0], 6);
+        expect(indexAfterZoom[1]).toBeCloseTo(indexUnderCursor[1], 6);
+      });
     });
   });
 });
