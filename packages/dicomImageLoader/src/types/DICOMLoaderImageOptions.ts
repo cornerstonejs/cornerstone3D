@@ -11,10 +11,17 @@ export interface DICOMLoaderImageOptions {
   };
   targetBuffer?: {
     type: Types.PixelDataTypedArrayString;
-    arrayBuffer: ArrayBufferLike;
-    length: number;
+    arrayBuffer?: ArrayBufferLike;
+    length?: number;
     offset: number;
+    /**
+     * The size wanted in the destination. Give both rows and columns or
+     * neither. They have to keep the aspect ratio of the decoded image, which
+     * is scaled to them. Leave out rows, columns and length to get a buffer of
+     * the right size for the decoded image.
+     */
     rows?: number;
+    /** See rows. */
     columns?: number;
   };
   loader?: LoadRequestFunction;

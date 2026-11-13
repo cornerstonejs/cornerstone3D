@@ -8,6 +8,7 @@ module.exports = {
   testMatch: [...base.testMatch, '<rootDir>/src/**/*.spec.ts'],
   moduleNameMapper: {
     ...base.moduleNameMapper,
+    '^@cornerstonejs/utils/(.+)$': path.resolve(__dirname, '../utils/src/$1'),
     '^@cornerstonejs/(.*)$': path.resolve(__dirname, '../$1/src'),
   },
 };
