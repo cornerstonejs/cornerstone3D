@@ -386,9 +386,13 @@ export function getVolumeViewportLabelmapImageMapperState(
   const blendMode = getCompatibilityBlendMode(viewport);
   const slabThickness = getCompatibilitySlabThickness(viewport);
 
+  // The planar slice image lies in world coordinates and does not depend on
+  // viewUp, so a turn of the view in its own plane needs no new slice.
   const orientationKey = [
     normalizedNormal.map((value) => value.toFixed(3)).join(','),
-    normalizedViewUp.map((value) => value.toFixed(3)).join(','),
+    ...(isLegacyVolumeViewport
+      ? [normalizedViewUp.map((value) => value.toFixed(3)).join(',')]
+      : []),
   ].join('|');
 
   if (isLegacyVolumeViewport && !isSupportedImageMapperBlendMode(blendMode)) {
