@@ -102,8 +102,6 @@ import {
   createResampledSliceImageData,
 } from './volumeLabelmapResampledSliceData';
 
-const cache = jest.requireActual('@cornerstonejs/core/cache/cache').default;
-
 type Vector = [number, number, number];
 
 type FakeImageState = {
@@ -119,11 +117,6 @@ type VolumeOptions = {
   spacing?: Vector;
   direction?: number[];
   origin?: Vector;
-  getSliceArray?: (
-    sliceArrays: Uint8Array[],
-    sliceIndex: number
-  ) => Uint8Array | undefined;
-  hasSliceImage?: (sliceIndex: number) => boolean;
 };
 
 type TestVolume = ReturnType<typeof makeVolume>;
@@ -151,10 +144,9 @@ function voxelValue(i: number, j: number, k: number): number {
 }
 
 /**
- * Builds a test volume of one typed array per slice. getSliceArray decides
- * which array a slice image exposes, so a test can hide an array as an RLE
- * image does or expose an array of another size. hasSliceImage decides which
- * slice images are in the cache.
+ * Builds a test volume of one typed array per slice, exposed through
+ * _getSliceView. The ways that the core sampler reads voxels are tested in
+ * sampleVolumeGrid.jest.js.
  */
 function makeVolume(options: VolumeOptions = {}) {
   const {
@@ -162,8 +154,6 @@ function makeVolume(options: VolumeOptions = {}) {
     spacing = [1, 1, 2] as Vector,
     direction = identityDirection,
     origin = [0, 0, 0] as Vector,
-    getSliceArray = (sliceArrays, sliceIndex) => sliceArrays[sliceIndex],
-    hasSliceImage = () => true,
   } = options;
   const [columns, rows, slices] = dimensions;
   const sliceArrays = Array.from({ length: slices }, (_, k) => {
@@ -178,31 +168,17 @@ function makeVolume(options: VolumeOptions = {}) {
     return data;
   });
 
-  jest.spyOn(cache, 'getImage').mockImplementation((imageId: string) => {
-    const sliceIndex = Number(imageId.split('-')[1]);
-
-    if (!hasSliceImage(sliceIndex)) {
-      return;
-    }
-
-    return {
-      voxelManager: {
-        getWritableScalarData: () => getSliceArray(sliceArrays, sliceIndex),
-      },
-    };
-  });
-
   return {
     dimensions,
     spacing,
     direction,
-    imageIds: sliceArrays.map((_, k) => `slice-${k}`),
     imageData: { spacing, direction, origin },
     voxelManager: {
       getConstructor: () => Uint8Array,
-      getAtIJK: jest.fn((i: number, j: number, k: number) =>
-        hasSliceImage(k) ? sliceArrays[k][j * columns + i] : null
+      getAtIJK: jest.fn(
+        (i: number, j: number, k: number) => sliceArrays[k][j * columns + i]
       ),
+      _getSliceView: jest.fn((k: number) => sliceArrays[k]),
     },
   };
 }
@@ -312,12 +288,10 @@ function pixelToWorld(state: FakeImageState, column: number, row: number) {
 /**
  * Compares every pixel of the slice image with the nearest voxel of the test
  * volume and returns how many pixels differ and how many lie in the volume.
- * isMissingSlice names the slices whose voxels read as 0.
  */
 function comparePixelsWithNearestVoxels(
   volume: TestVolume,
-  state: FakeImageState,
-  isMissingSlice: (sliceIndex: number) => boolean = () => false
+  state: FakeImageState
 ) {
   const [width, height] = state.dimensions;
   const pixels = state.scalars.getData();
@@ -334,7 +308,7 @@ function comparePixelsWithNearestVoxels(
         j < volume.dimensions[1] &&
         k >= 0 &&
         k < volume.dimensions[2];
-      const expected = isInside && !isMissingSlice(k) ? voxelValue(i, j, k) : 0;
+      const expected = isInside ? voxelValue(i, j, k) : 0;
 
       if (isInside) {
         inside++;
@@ -383,78 +357,62 @@ describe('createResampledSliceImageData for a view rotated in its own plane', ()
     jest.clearAllMocks();
   });
 
-  it('copies one slice of voxels when the view normal follows the slice axis', () => {
-    const volume = makeVolume();
-    const viewport = makeViewport({
-      focalPoint: [2.5, 2, 4],
-      viewPlaneNormal: [0, 0, -1],
-      viewUp: [Math.sin(angle), -Math.cos(angle), 0],
-    });
+  it.each([
+    {
+      axis: 'slice',
+      focalPoint: [2.5, 2, 4] as Vector,
+      viewPlaneNormal: [0, 0, -1] as Vector,
+      viewUp: [Math.sin(angle), -Math.cos(angle), 0] as Vector,
+      sliceIndex: 2,
+      inside: 6 * 5,
+      worldAxis: 2,
+      worldValue: 4,
+    },
+    {
+      axis: 'column',
+      focalPoint: [3, 2, 3] as Vector,
+      viewPlaneNormal: [1, 0, 0] as Vector,
+      viewUp: [0, Math.sin(angle), Math.cos(angle)] as Vector,
+      sliceIndex: 3,
+      inside: 5 * 4,
+      worldAxis: 0,
+      worldValue: 3,
+    },
+    {
+      axis: 'row',
+      focalPoint: [2.5, 1, 3] as Vector,
+      viewPlaneNormal: [0, -1, 0] as Vector,
+      viewUp: [Math.sin(angle), 0, Math.cos(angle)] as Vector,
+      sliceIndex: 1,
+      inside: 6 * 4,
+      worldAxis: 1,
+      worldValue: 1,
+    },
+  ])(
+    'copies one slice of voxels when the view normal follows the $axis axis',
+    ({
+      focalPoint,
+      viewPlaneNormal,
+      viewUp,
+      sliceIndex,
+      inside,
+      worldAxis,
+      worldValue,
+    }) => {
+      const volume = makeVolume();
+      const result = createResampledSliceImageData(
+        volume as never,
+        makeViewport({ focalPoint, viewPlaneNormal, viewUp }) as never
+      );
+      const state = getImageState(result);
+      const compared = comparePixelsWithNearestVoxels(volume, state);
 
-    const result = createResampledSliceImageData(
-      volume as never,
-      viewport as never
-    );
-    const state = getImageState(result);
-    const { mismatches, inside } = comparePixelsWithNearestVoxels(
-      volume,
-      state
-    );
-
-    expect(result.sliceIndex).toBe(2);
-    expect(state.dimensions[0] * state.dimensions[1]).toBe(6 * 5);
-    expect(inside).toBe(6 * 5);
-    expect(mismatches).toBe(0);
-    expect(pixelToWorld(state, 0, 0)[2]).toBeCloseTo(4);
-  });
-
-  it('copies one slice of voxels when the view normal follows the column axis', () => {
-    const volume = makeVolume();
-    const viewport = makeViewport({
-      focalPoint: [3, 2, 3],
-      viewPlaneNormal: [1, 0, 0],
-      viewUp: [0, Math.sin(angle), Math.cos(angle)],
-    });
-
-    const result = createResampledSliceImageData(
-      volume as never,
-      viewport as never
-    );
-    const state = getImageState(result);
-    const { mismatches, inside } = comparePixelsWithNearestVoxels(
-      volume,
-      state
-    );
-
-    expect(result.sliceIndex).toBe(3);
-    expect(inside).toBe(5 * 4);
-    expect(mismatches).toBe(0);
-    expect(pixelToWorld(state, 0, 0)[0]).toBeCloseTo(3);
-  });
-
-  it('copies one slice of voxels when the view normal follows the row axis', () => {
-    const volume = makeVolume();
-    const viewport = makeViewport({
-      focalPoint: [2.5, 1, 3],
-      viewPlaneNormal: [0, -1, 0],
-      viewUp: [Math.sin(angle), 0, Math.cos(angle)],
-    });
-
-    const result = createResampledSliceImageData(
-      volume as never,
-      viewport as never
-    );
-    const state = getImageState(result);
-    const { mismatches, inside } = comparePixelsWithNearestVoxels(
-      volume,
-      state
-    );
-
-    expect(result.sliceIndex).toBe(1);
-    expect(inside).toBe(6 * 4);
-    expect(mismatches).toBe(0);
-    expect(pixelToWorld(state, 0, 0)[1]).toBeCloseTo(1);
-  });
+      expect(result.sliceIndex).toBe(sliceIndex);
+      expect(compared.inside).toBe(inside);
+      expect(compared.mismatches).toBe(0);
+      expect(pixelToWorld(state, 0, 0)[worldAxis]).toBeCloseTo(worldValue);
+    }
+  );
 
   it('keeps the same handedness for both directions of the view normal', () => {
     [-1, 1].forEach((normalSign) => {
@@ -784,79 +742,6 @@ describe('createResampledSliceImageData for an oblique view', () => {
   });
 });
 
-describe('createResampledSliceImageData voxel access', () => {
-  /**
-   * Resamples the same oblique view of a volume built with the given options.
-   */
-  function resample(options: VolumeOptions = {}) {
-    const volume = makeVolume(options);
-    const state = getImageState(
-      createResampledSliceImageData(
-        volume as never,
-        makeViewport({
-          focalPoint: getPointNearCenter(volume),
-          viewPlaneNormal: obliqueNormal,
-          viewUp: [0, 1, 0],
-        }) as never
-      )
-    );
-
-    return { volume, state };
-  }
-
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
-
-  it('reads the slice arrays directly when the slice images expose them', () => {
-    const { volume, state } = resample();
-
-    expect(volume.voxelManager.getAtIJK).not.toHaveBeenCalled();
-    expect(comparePixelsWithNearestVoxels(volume, state).mismatches).toBe(0);
-  });
-
-  it('reads voxels one at a time when the slice images hide their arrays', () => {
-    const direct = resample();
-    const hidden = resample({ getSliceArray: () => undefined });
-
-    expect(hidden.volume.voxelManager.getAtIJK).toHaveBeenCalled();
-    expect(Array.from(hidden.state.scalars.getData())).toEqual(
-      Array.from(direct.state.scalars.getData())
-    );
-  });
-
-  it('reads voxels one at a time for a slice image of another size', () => {
-    const direct = resample();
-    const otherSize = resample({
-      getSliceArray: (sliceArrays, sliceIndex) =>
-        sliceIndex === 1 ? new Uint8Array(4) : sliceArrays[sliceIndex],
-    });
-    const perVoxelSlices = new Set(
-      otherSize.volume.voxelManager.getAtIJK.mock.calls.map(
-        ([, , sliceIndex]) => sliceIndex
-      )
-    );
-
-    expect(Array.from(perVoxelSlices)).toEqual([1]);
-    expect(Array.from(otherSize.state.scalars.getData())).toEqual(
-      Array.from(direct.state.scalars.getData())
-    );
-  });
-
-  it('leaves the pixels of a slice without an image at 0', () => {
-    const { volume, state } = resample({
-      hasSliceImage: (sliceIndex) => sliceIndex !== 2,
-    });
-    const { mismatches } = comparePixelsWithNearestVoxels(
-      volume,
-      state,
-      (sliceIndex) => sliceIndex === 2
-    );
-
-    expect(mismatches).toBe(0);
-  });
-});
-
 describe('createPlanarSliceImageData', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -878,7 +763,7 @@ describe('createPlanarSliceImageData', () => {
 
     expect(result.sliceIndex).toBe(1);
     expect(state.dimensions).toEqual([6, 5, 1]);
-    expect(cache.getImage).not.toHaveBeenCalled();
+    expect(volume.voxelManager._getSliceView).not.toHaveBeenCalled();
   });
 
   it('samples a view with a small tilt that the aligned copy would accept', () => {

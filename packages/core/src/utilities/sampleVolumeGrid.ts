@@ -1,4 +1,3 @@
-import cache from '../cache/cache';
 import { InterpolationType } from '../enums';
 import {
   NEAREST_VOXEL_TIE_EPSILON,
@@ -9,9 +8,7 @@ import type { IImageVolume, PixelDataTypedArray, Point3 } from '../types';
 const SPAN_MARGIN = 1e-7;
 const MINIMUM_SPAN_STEP = 1e-12;
 
-type SampledVolume = Pick<IImageVolume, 'dimensions' | 'voxelManager'> & {
-  imageIds?: string[];
-};
+type SampledVolume = Pick<IImageVolume, 'dimensions' | 'voxelManager'>;
 
 type SliceArray = PixelDataTypedArray | null;
 
@@ -87,10 +84,9 @@ function getVolumeArray(
 /**
  * Returns the typed array that holds the voxels of one slice of the volume,
  * or null when the slice has to be read one voxel at a time. A slice has such
- * an array when its image keeps its voxels in a typed array of the slice
- * size, or when the volume keeps all its voxels in one typed array. A slice
- * image that is missing, that stores its voxels another way (an RLE map), or
- * that has another size gives null. The answer is kept for the next read.
+ * an array when the volume keeps all its voxels in one typed array, or when
+ * the voxel manager gives an unscaled view of the slice (_getSliceView) of the
+ * slice size. Any other slice gives null. The answer is kept for the next read.
  */
 function getSliceArray(
   context: GridSamplingContext,
@@ -112,10 +108,13 @@ function getSliceArray(
       (sliceIndex + 1) * sliceSize
     ) as PixelDataTypedArray;
   } else {
-    const imageId = volume.imageIds?.[sliceIndex];
-    const scalarData = imageId
-      ? cache.getImage(imageId)?.voxelManager?.getWritableScalarData?.()
-      : undefined;
+    // A voxel manager without _getSliceView (a dynamic volume) is read
+    // through getAtIJK, which follows its current dimension group.
+    const scalarData = (
+      volume.voxelManager as {
+        _getSliceView?: (sliceIndex: number) => PixelDataTypedArray | undefined;
+      }
+    )._getSliceView?.(sliceIndex);
 
     if (scalarData?.length === sliceSize) {
       sliceArray = scalarData;

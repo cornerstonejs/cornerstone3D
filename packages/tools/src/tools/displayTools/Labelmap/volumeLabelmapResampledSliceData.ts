@@ -7,6 +7,7 @@ import {
   getSliceRenderingCamera,
   getVolumeAxes,
   matchAxis,
+  type SliceRenderingCamera,
   type SliceRenderingViewport,
 } from './volumeLabelmapSliceData';
 
@@ -339,10 +340,9 @@ function getObliqueSliceGeometry(
  */
 function getResampledSliceGeometry(
   viewport: SliceRenderingViewport,
-  volume: Types.IImageVolume
+  volume: Types.IImageVolume,
+  camera: SliceRenderingCamera | undefined = getSliceRenderingCamera(viewport)
 ): ResampledSliceGeometry | undefined {
-  const camera = getSliceRenderingCamera(viewport);
-
   if (!camera) {
     return;
   }
@@ -416,9 +416,10 @@ function sampleResampledSlice(
  */
 function createResampledSliceImageData(
   volume: Types.IImageVolume,
-  viewport: SliceRenderingViewport
+  viewport: SliceRenderingViewport,
+  camera: SliceRenderingCamera | undefined = getSliceRenderingCamera(viewport)
 ): PlanarSliceImageData | undefined {
-  const geometry = getResampledSliceGeometry(viewport, volume);
+  const geometry = getResampledSliceGeometry(viewport, volume, camera);
 
   if (!geometry) {
     return;
@@ -455,21 +456,6 @@ function createResampledSliceImageData(
 }
 
 /**
- * Whether the view plane of the viewport stays inside one slice of voxels of
- * the volume, so that a copy of that slice is exact.
- */
-function isViewOnVoxelSlice(
-  volume: Types.IImageVolume,
-  viewport: SliceRenderingViewport
-): boolean {
-  const camera = getSliceRenderingCamera(viewport);
-
-  return (
-    !!camera && getExactSliceAxis(volume, camera.viewPlaneNormal) !== undefined
-  );
-}
-
-/**
  * Creates the labelmap slice image for a planar viewport. A view aligned with
  * the rows and columns of the volume copies one slice of voxels. Any other
  * view takes the nearest voxel for each pixel of the view plane, also a view
@@ -477,11 +463,18 @@ function isViewOnVoxelSlice(
  */
 function createPlanarSliceImageData(
   volume: Types.IImageVolume,
-  viewport: SliceRenderingViewport
+  viewport: SliceRenderingViewport,
+  camera: SliceRenderingCamera | undefined = getSliceRenderingCamera(viewport)
 ): PlanarSliceImageData | undefined {
-  const alignedSlice = isViewOnVoxelSlice(volume, viewport)
-    ? createSliceImageData(volume, viewport)
-    : undefined;
+  if (!camera) {
+    return;
+  }
+
+  // Only a view plane inside one slice of voxels gets the exact copy.
+  const alignedSlice =
+    getExactSliceAxis(volume, camera.viewPlaneNormal) !== undefined
+      ? createSliceImageData(volume, viewport, camera)
+      : undefined;
 
   if (alignedSlice) {
     return {
@@ -490,7 +483,7 @@ function createPlanarSliceImageData(
     };
   }
 
-  return createResampledSliceImageData(volume, viewport);
+  return createResampledSliceImageData(volume, viewport, camera);
 }
 
 /**
@@ -499,9 +492,10 @@ function createPlanarSliceImageData(
  */
 function canCreateResampledSliceImageData(
   volume: Types.IImageVolume,
-  viewport: SliceRenderingViewport
+  viewport: SliceRenderingViewport,
+  camera: SliceRenderingCamera | undefined = getSliceRenderingCamera(viewport)
 ): boolean {
-  return !!getResampledSliceGeometry(viewport, volume);
+  return !!getResampledSliceGeometry(viewport, volume, camera);
 }
 
 export {

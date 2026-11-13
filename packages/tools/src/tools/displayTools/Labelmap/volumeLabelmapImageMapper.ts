@@ -162,6 +162,8 @@ export function getVolumeLabelmapImageMapperRepresentationUIDs(
   }
 
   const useStablePlanarUID = isPlanarSliceRenderingViewport(viewport);
+  const sliceViewport = viewport as SliceRenderingViewport;
+  const camera = getSliceRenderingCamera(sliceViewport);
 
   return getLabelmaps(segmentation)
     .map((layer) => {
@@ -170,15 +172,12 @@ export function getVolumeLabelmapImageMapperRepresentationUIDs(
         return;
       }
 
-      const state = getSliceState(viewport as SliceRenderingViewport, volume);
+      const state = getSliceState(sliceViewport, volume, camera);
 
       if (useStablePlanarUID) {
         const canShowSlice =
           !!state ||
-          canCreateResampledSliceImageData(
-            volume,
-            viewport as SliceRenderingViewport
-          );
+          canCreateResampledSliceImageData(volume, sliceViewport, camera);
 
         return canShowSlice
           ? createLabelmapRepresentationUID({
@@ -368,6 +367,7 @@ async function addPlanarLabelmapImageMapperActors(args: {
   segmentationId: string;
 }): Promise<void> {
   const { viewport, segmentation, segmentationId } = args;
+  const camera = getSliceRenderingCamera(viewport);
 
   for (const [index, layer] of getLabelmaps(segmentation).entries()) {
     const volume = getOrCreateLabelmapVolume(layer);
@@ -376,7 +376,7 @@ async function addPlanarLabelmapImageMapperActors(args: {
       continue;
     }
 
-    const sliceData = createPlanarSliceImageData(volume, viewport);
+    const sliceData = createPlanarSliceImageData(volume, viewport, camera);
 
     if (!sliceData) {
       continue;
@@ -416,7 +416,6 @@ async function addPlanarLabelmapImageMapperActors(args: {
         excludeFromFidelity: true,
         callback: ({ imageActor }) => {
           const mapper = imageActor.getMapper() as vtkImageMapper;
-          const camera = getSliceRenderingCamera(viewport);
 
           mapper.setInputData(sliceData.imageData);
           mapper.modified();
@@ -452,6 +451,7 @@ function updatePlanarLabelmapImageMapperActors(args: {
       )
       .map((actorEntry) => [actorEntry.referencedId, actorEntry] as const)
   );
+  const camera = getSliceRenderingCamera(viewport);
 
   getLabelmaps(segmentation).forEach((layer, index) => {
     const actorEntry = actorEntriesByLabelmapId.get(layer.labelmapId);
@@ -466,7 +466,7 @@ function updatePlanarLabelmapImageMapperActors(args: {
       return;
     }
 
-    const sliceData = createPlanarSliceImageData(volume, viewport);
+    const sliceData = createPlanarSliceImageData(volume, viewport, camera);
 
     if (!sliceData) {
       return;
@@ -476,7 +476,6 @@ function updatePlanarLabelmapImageMapperActors(args: {
 
     mapper.setInputData(sliceData.imageData);
     mapper.modified();
-    const camera = getSliceRenderingCamera(viewport);
 
     if (camera) {
       applyPlanarOverlayDepthOffset(

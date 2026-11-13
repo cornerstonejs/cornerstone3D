@@ -1,4 +1,3 @@
-import cache from '../src/cache/cache';
 import { InterpolationType } from '../src/enums';
 import { getSpatiallyClampedContinuousIndex } from '../src/RenderingEngine/GenericViewport/Planar/planarCPUVolumeSamplingUtils';
 import sampleVolumeGrid from '../src/utilities/sampleVolumeGrid';
@@ -24,10 +23,10 @@ function createRandom(seed) {
 /**
  * Builds a test volume of one typed array per slice. The access option decides
  * how the sampler can reach the voxels:
- * - 'slices': each slice image exposes its typed array.
- * - 'hidden': no slice image exposes an array, as with RLE images.
+ * - 'slices': _getSliceView gives the typed array of each slice.
+ * - 'hidden': _getSliceView gives nothing, as with RLE or scaled images.
  * - 'volume': the voxel manager of the volume exposes one array of all voxels.
- * - 'mixed': one slice image is missing and one has an array of another size.
+ * - 'mixed': one slice view is missing and one has an array of another size.
  */
 function createVolume({ ArrayType = Int16Array, access = 'slices' } = {}) {
   const random = createRandom(7);
@@ -44,39 +43,31 @@ function createVolume({ ArrayType = Int16Array, access = 'slices' } = {}) {
     volumeArray.subarray(k * sliceSize, (k + 1) * sliceSize)
   );
   const getAtIJK = jest.fn((i, j, k) => sliceArrays[k][j * dimensions[0] + i]);
-
-  jest.spyOn(cache, 'getImage').mockImplementation((imageId) => {
-    const sliceIndex = Number(imageId.split('-')[1]);
+  const getSliceView = jest.fn((sliceIndex) => {
+    if (access !== 'slices' && access !== 'mixed') {
+      return undefined;
+    }
 
     if (access === 'mixed' && sliceIndex === 1) {
       return undefined;
     }
 
-    return {
-      voxelManager: {
-        getWritableScalarData: () => {
-          if (access === 'hidden' || access === 'volume') {
-            return undefined;
-          }
+    if (access === 'mixed' && sliceIndex === 3) {
+      return new ArrayType(4);
+    }
 
-          if (access === 'mixed' && sliceIndex === 3) {
-            return new ArrayType(4);
-          }
-
-          return sliceArrays[sliceIndex];
-        },
-      },
-    };
+    return sliceArrays[sliceIndex];
   });
 
   return {
     getAtIJK,
+    getSliceView,
     volumeArray,
     volume: {
       dimensions,
-      imageIds: sliceArrays.map((_, k) => `slice-${k}`),
       voxelManager: {
         getAtIJK,
+        _getSliceView: getSliceView,
         getWritableScalarData: () =>
           access === 'volume' ? volumeArray : undefined,
       },
@@ -265,8 +256,10 @@ describe('sampleVolumeGrid', () => {
     expect(getAtIJK).not.toHaveBeenCalled();
   });
 
-  it('reads the array of the volume without asking the cache for slice images', () => {
-    const { volume, getAtIJK } = createVolume({ access: 'volume' });
+  it('reads the array of the volume without asking for slice views', () => {
+    const { volume, getAtIJK, getSliceView } = createVolume({
+      access: 'volume',
+    });
 
     sampleGrid(volume, {
       width: 12,
@@ -277,7 +270,7 @@ describe('sampleVolumeGrid', () => {
     });
 
     expect(getAtIJK).not.toHaveBeenCalled();
-    expect(cache.getImage).not.toHaveBeenCalled();
+    expect(getSliceView).not.toHaveBeenCalled();
   });
 
   it('reads through the voxel manager only for the slices without a usable array', () => {
