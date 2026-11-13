@@ -290,6 +290,20 @@ describe('getVolumeViewportLabelmapImageMapperState', () => {
     expect(state.key).toContain(':42');
   });
 
+  it('keeps the planar key when the view turns in its own plane', () => {
+    const keyFor = (viewUp: number[]) =>
+      getVolumeViewportLabelmapImageMapperState(
+        makePlanarNextViewport({
+          slabThickness: 0.1,
+          resolvedCamera: { viewPlaneNormal: [0, 0, 1], viewUp },
+        }) as never
+      );
+    const aligned = keyFor([0, 1, 0]);
+
+    expect(aligned.supported).toBe(true);
+    expect(keyFor([0.5, 0.866, 0]).key).toBe(aligned.key);
+  });
+
   it('marks unsupported blend mode with a distinct key', () => {
     const viewport = makeLegacyVolumeViewport({
       blendMode: Enums.BlendModes.LABELMAP_EDGE_PROJECTION_BLEND,

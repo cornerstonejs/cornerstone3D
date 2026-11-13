@@ -2,6 +2,7 @@ import { vec3 } from 'gl-matrix';
 import { ActorRenderMode } from '../../../types';
 import type {
   ICamera,
+  IStackViewport,
   Point3,
   ReferenceCompatibleOptions,
   ViewReference,
@@ -9,6 +10,10 @@ import type {
 } from '../../../types';
 import type { PlaneRestriction } from '../../../types/IViewport';
 import getClosestImageId from '../../../utilities/getClosestImageId';
+import { calculateMinimalDistanceForStackViewport } from '../../../utilities/getClosestStackImageIndexForPoint';
+import calculateSpacingBetweenImageIds from '../../../utilities/calculateSpacingBetweenImageIds';
+import * as metaData from '../../../metaData';
+import { MetadataModules } from '../../../enums';
 import imageIdToURI from '../../../utilities/imageIdToURI';
 import isEqual from '../../../utilities/isEqual';
 import {
@@ -31,6 +36,9 @@ import type {
   PlanarViewportRenderContext,
   PlanarViewState,
 } from './PlanarViewportTypes';
+
+/** The tolerance of `VolumeViewport.isInAcquisitionPlane`. */
+const PARALLEL_COSINE = 0.99;
 
 export type PlanarReferenceContext = {
   dataId: string;
@@ -420,7 +428,75 @@ class PlanarViewReferenceController {
       return true;
     }
 
+    const closestFrameIndex = this.findClosestFrameIndexOfFocalPoint(
+      referenceContext,
+      viewRef,
+      imageIds
+    );
+
+    if (typeof closestFrameIndex === 'number') {
+      this.host.setImageIdIndex(closestFrameIndex);
+      return true;
+    }
+
     return false;
+  }
+
+  /**
+   * The image nearest to the focal point of a reference that has no slice
+   * index, for example the reference that crosshairs send. The image must be
+   * at most one slice spacing from the point, and a reference with a
+   * `viewPlaneNormal` must be parallel to the plane of the image; otherwise
+   * no image of the stack shows the reference.
+   */
+  private findClosestFrameIndexOfFocalPoint(
+    referenceContext: PlanarReferenceContext,
+    viewRef: ViewReference,
+    imageIds: string[]
+  ): number | undefined {
+    const point = viewRef.cameraFocalPoint;
+
+    if (!point || !imageIds.length) {
+      return;
+    }
+
+    const stackLike = {
+      getImageIds: () => imageIds,
+      getCurrentImageIdIndex: () =>
+        referenceContext.rendering.currentImageIdIndex ?? 0,
+    } as unknown as IStackViewport;
+    const closest = calculateMinimalDistanceForStackViewport(point, stackLike);
+
+    if (!closest) {
+      return;
+    }
+
+    const { index, distance } = closest;
+    const neighbour = imageIds[index + 1] ?? imageIds[index - 1];
+    const spacing = calculateSpacingBetweenImageIds(
+      neighbour ? [imageIds[index], neighbour] : [imageIds[index]]
+    );
+
+    if (distance > spacing) {
+      return;
+    }
+
+    if (viewRef.viewPlaneNormal) {
+      const { rowCosines, columnCosines } = metaData.get(
+        MetadataModules.IMAGE_PLANE,
+        imageIds[index]
+      );
+      const normal = vec3.cross(vec3.create(), rowCosines, columnCosines);
+
+      if (
+        Math.abs(vec3.dot(normal, viewRef.viewPlaneNormal as vec3)) <
+        PARALLEL_COSINE
+      ) {
+        return;
+      }
+    }
+
+    return index;
   }
 
   private applyVolumeViewReference(

@@ -14,6 +14,7 @@ import {
   requestType,
   clearFromImageIds,
   getPromiseRemovedHandler,
+  isLoadedByProgressiveVolume,
 } from './stackPrefetchUtils';
 import { Events } from '../../enums';
 import type { EventTypes } from '../../types';
@@ -111,6 +112,10 @@ function prefetch(element, priority = 0) {
   }
   if (!stack?.imageIds?.length) {
     cs3dLogger.warn('CornerstoneTools.stackPrefetch: No images in stack.');
+    return;
+  }
+
+  if (isLoadedByProgressiveVolume(stack.imageIds)) {
     return;
   }
 
