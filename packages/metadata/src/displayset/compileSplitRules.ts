@@ -214,7 +214,8 @@ function compileAttributeValue(
         const text = part(runtime, instances[0], extras);
         return hasNoValue(text) ? '' : String(text);
       })
-      .join('');
+      .join('')
+      .trim(); // A name with no value must not leave a leading space: see compileTemplate.
 }
 
 /** `attributes`: a record of attribute values, or a whole `customAttributes` hook. */
