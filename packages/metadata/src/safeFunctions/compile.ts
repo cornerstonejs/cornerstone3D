@@ -277,7 +277,8 @@ export function parseTemplate(
  *
  * Substitution is all it does - there is no arithmetic or expression syntax -
  * so a template is never a route to evaluated code. A name with no value
- * substitutes an empty string.
+ * substitutes an empty string, and the result is trimmed, so
+ * `'{SeriesDescription} b={bValue}'` with no description gives `'b=0'`.
  */
 export function compileTemplate<Subject extends SafeFunctionSubject>(
   template: string,
@@ -294,7 +295,8 @@ export function compileTemplate<Subject extends SafeFunctionSubject>(
         const value = part(subject, context);
         return hasNoValue(value) ? '' : String(value);
       })
-      .join('');
+      .join('')
+      .trim();
 }
 
 /**
