@@ -148,14 +148,8 @@ function registerEnabledElement(element, overrides = {}) {
 beforeEach(() => {
   jest.clearAllMocks();
   mockEnabledElements.clear();
-  // IMPORTANT: showAllAnnotations()/deselectAnnotation() must run BEFORE
-  // removeAllAnnotations(). annotationVisibility's show()/hide() and the
-  // single-uid form of annotationSelection's deselectAnnotation() dereference
-  // getAnnotation(uid) without a null-guard (unlike annotationLocking's
-  // lock()/unlock(), which do guard) -- see the "suspected product bugs"
-  // tests below. If annotations left over from the previous test were
-  // already removed from the manager before we clear the hidden/selected
-  // sets, these calls throw instead of quietly clearing stale UIDs.
+  // Clear the hidden/selected/locked sets before removing the annotations,
+  // so each test starts with no stale UIDs left over from the previous one.
   showAllAnnotations();
   deselectAnnotation();
   unlockAllAnnotations();
@@ -1092,20 +1086,24 @@ describe('annotationSelection', () => {
     expect(mockTriggerEvent).not.toHaveBeenCalled();
   });
 
-  it('BUG: deselecting a single annotation UID throws once the underlying annotation has been removed', () => {
-    // The single-uid branch of deselectAnnotation() does
-    // `const annotation = getAnnotation(annotationUID); annotation.isSelected = false;`
-    // with no guard, unlike its own no-arg branch (clearSelectionSet, which
-    // guards with `if (annotation) { ... }`) and unlike annotationLocking's
-    // unlock(). Once the annotation has been removed from the manager while
-    // still selected, deselecting it by uid throws instead of silently
-    // clearing the stale UID.
+  it('deselecting a single annotation UID clears the stale UID once the underlying annotation has been removed', () => {
+    // Removing an annotation does not clear its UID from the selection set
+    // (for example an ArrowAnnotate annotation cancelled while selected, see
+    // #1696). Deselecting that UID must not throw, and must still clear it and
+    // publish the change.
     const orphan = makeAnnotation({ annotationUID: 'orphan-sel' });
     addAnnotation(orphan, 'FOR-1');
     setAnnotationSelected('orphan-sel', true);
     removeAnnotation('orphan-sel');
+    mockTriggerEvent.mockClear();
 
-    expect(() => deselectAnnotation('orphan-sel')).toThrow(TypeError);
+    expect(() => deselectAnnotation('orphan-sel')).not.toThrow();
+    expect(getAnnotationsSelected()).toEqual([]);
+    expect(mockTriggerEvent).toHaveBeenCalledWith(
+      mockEventTarget,
+      Events.ANNOTATION_SELECTION_CHANGE,
+      { added: [], removed: ['orphan-sel'], selection: [] }
+    );
   });
 
   it('getAnnotationsSelectedCount reflects the current selection size', () => {
@@ -1248,33 +1246,55 @@ describe('annotationVisibility', () => {
     });
   });
 
-  describe('suspected product bug: missing null-guard on orphaned UIDs', () => {
-    it('BUG: re-showing a hidden annotation throws once the underlying annotation has been removed', () => {
-      // annotationVisibility's show()/hide() do
-      // `const annotation = getAnnotation(annotationUID); annotation.isVisible = ...;`
-      // with no guard for a missing annotation, unlike annotationLocking's
-      // lock()/unlock() which check `if (annotation) { ... }` first (see the
-      // contrast test in the annotationLocking suite). Once an annotation is
-      // removed from the manager while still present in the hidden set (e.g.
-      // removeAnnotation() does not touch visibility state), un-hiding it
-      // throws a TypeError instead of silently clearing the stale UID.
+  describe('orphaned UIDs (the annotation was removed while hidden)', () => {
+    // removeAnnotation() does not touch the hidden set, so a hidden UID can
+    // outlive its annotation. Showing it must clear the stale UID instead of
+    // throwing, the same as annotationLocking's lock()/unlock().
+    it('re-showing a hidden annotation clears the stale UID once the underlying annotation has been removed', () => {
       const orphan = makeAnnotation({ annotationUID: 'orphan-vis' });
       addAnnotation(orphan, 'FOR-1');
       setAnnotationVisibility('orphan-vis', false);
       removeAnnotation('orphan-vis');
+      mockTriggerEvent.mockClear();
 
-      expect(() => setAnnotationVisibility('orphan-vis', true)).toThrow(
-        TypeError
+      expect(() => setAnnotationVisibility('orphan-vis', true)).not.toThrow();
+      expect(mockTriggerEvent).toHaveBeenCalledWith(
+        mockEventTarget,
+        Events.ANNOTATION_VISIBILITY_CHANGE,
+        expect.objectContaining({ lastVisible: ['orphan-vis'], hidden: [] })
+      );
+
+      // The UID is no longer hidden: an annotation added again with it is visible.
+      addAnnotation(makeAnnotation({ annotationUID: 'orphan-vis' }), 'FOR-1');
+      expect(isAnnotationVisible('orphan-vis')).toBe(true);
+    });
+
+    it('showAllAnnotations() shows the remaining annotations if any hidden UID has since been removed from the manager', () => {
+      const orphan = makeAnnotation({ annotationUID: 'orphan-vis-2' });
+      const kept = makeAnnotation({ annotationUID: 'kept-vis' });
+      addAnnotation(orphan, 'FOR-1');
+      addAnnotation(kept, 'FOR-1');
+      setAnnotationVisibility('orphan-vis-2', false);
+      setAnnotationVisibility('kept-vis', false);
+      removeAnnotation('orphan-vis-2');
+
+      mockTriggerEvent.mockClear();
+
+      expect(() => showAllAnnotations()).not.toThrow();
+      expect(kept.isVisible).toBe(true);
+      expect(isAnnotationVisible('kept-vis')).toBe(true);
+      expect(mockTriggerEvent).toHaveBeenCalledWith(
+        mockEventTarget,
+        Events.ANNOTATION_VISIBILITY_CHANGE,
+        expect.objectContaining({
+          lastVisible: expect.arrayContaining(['orphan-vis-2', 'kept-vis']),
+          hidden: [],
+        })
       );
     });
 
-    it('BUG: showAllAnnotations() throws if any hidden UID has since been removed from the manager', () => {
-      const orphan = makeAnnotation({ annotationUID: 'orphan-vis-2' });
-      addAnnotation(orphan, 'FOR-1');
-      setAnnotationVisibility('orphan-vis-2', false);
-      removeAnnotation('orphan-vis-2');
-
-      expect(() => showAllAnnotations()).toThrow(TypeError);
+    it('hiding the UID of an annotation that is not in the manager does not throw', () => {
+      expect(() => setAnnotationVisibility('never-added', false)).not.toThrow();
     });
   });
 });
