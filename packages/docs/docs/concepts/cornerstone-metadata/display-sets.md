@@ -1278,9 +1278,10 @@ and puts each id just before the default rule that it refines, with
 The file states the place of each rule that it adds, so a host applies one spec
 and needs no other order data. A rule in the registry and not in the order does
 nothing and gives no error, so a file must not add a rule without its place.
-Each file has its own default rule as the anchor where two files can claim the
-same instance, so the order of the rules does not depend on the load order of
-the files. A host must register `$spliceById` (see above). A file
+This placement reduces conflicts between files, but it does not remove them.
+The rules depend on their order, so two rules that claim the same instances,
+from any source, still give a result that depends on their order. A host must
+register `$spliceById` (see above). A file
 that changes a default rule patches that rule by id, and the rule keeps its id
 and its place.
 

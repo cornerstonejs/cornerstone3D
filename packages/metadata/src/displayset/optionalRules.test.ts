@@ -153,14 +153,14 @@ describe('rules/optional/*.jsonc', () => {
   });
 });
 
-describe('rules/optional/*.jsonc - load order', () => {
+describe('rules/optional/*.jsonc - placement', () => {
   const placed = (ids: string[]) => {
     const { displaySetRules: rules, displaySetRuleOrder: order } =
       applyFiles(ids);
     return materializeSplitRules(rules, order).map((rule) => rule.id);
   };
 
-  it('gives one rule order for any load order of the files', () => {
+  it('the shipped files, each before its own anchor, give the same order in reverse', () => {
     const ids = Object.keys(optionalRules);
     expect(placed([...ids].reverse())).toEqual(placed(ids));
     expect(placed(ids).indexOf('regularVolume')).toBeLessThan(

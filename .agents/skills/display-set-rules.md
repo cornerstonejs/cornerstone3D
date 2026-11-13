@@ -190,7 +190,7 @@ URL customization modules), and the `context` of each rule.
   `{ displaySetRules, displaySetRuleOrder }`, with `//` comments for the
   explanation. A file of new rules uses `"displaySetRules": { "$merge": ... }`
   and puts each id just before the default rule that it refines with
-  `$spliceById`, so the result does not depend on the load order. `volumePositionOrder` and `byAcquisition` only
+  `$spliceById`, to reduce order conflicts (it does not remove them). `volumePositionOrder` and `byAcquisition` only
   `$set` fields of `volume3d`, so they combine in either order and keep the
   `splitRuleId` `volume3d`. A patch of a missing rule id throws. A file has no
   global context; put each name in the rule `context`. The package exports no
