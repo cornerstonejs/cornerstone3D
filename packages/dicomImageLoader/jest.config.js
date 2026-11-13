@@ -8,6 +8,7 @@ module.exports = {
   testMatch: [...base.testMatch, '<rootDir>/src/**/*.spec.ts'],
   moduleNameMapper: {
     ...base.moduleNameMapper,
-    '^@cornerstonejs/(.*)$': path.resolve(__dirname, '../$1/src'),
+    // Workspace packages resolve to source; the codec-* packages are external.
+    '^@cornerstonejs/(?!codec-)(.*)$': path.resolve(__dirname, '../$1/src'),
   },
 };

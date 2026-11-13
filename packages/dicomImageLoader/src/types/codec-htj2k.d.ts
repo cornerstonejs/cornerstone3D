@@ -30,6 +30,8 @@ declare module '@cornerstonejs/codec-openjph/wasmjs' {
     getBlockDimensions(): Size;
     getTileSize(): Size;
     getTileOffset(): Point;
+    /** Frees the embind object and its buffers in the WASM heap. */
+    delete(): void;
   }
   export interface HTJ2KModule extends EmscriptenModule {
     HTJ2KDecoder: typeof HTJ2KDecoder;
