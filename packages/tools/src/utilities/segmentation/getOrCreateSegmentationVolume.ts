@@ -10,12 +10,7 @@ import type {
   LabelmapSegmentationDataStack,
   LabelmapSegmentationDataVolume,
 } from '../../types/LabelmapTypes';
-import {
-  ensureLabelmapState,
-  getLabelmap,
-  getOrCreateLabelmapVolume,
-} from '../../stateManagement/segmentation/labelmapModel';
-import { isDynamicLabelmapVolume } from '../../stateManagement/segmentation/labelmapModel/dynamicLabelmapVolume';
+import { getOrCreateDynamicLabelmapVolume } from '../../stateManagement/segmentation/labelmapModel';
 
 function getOrCreateSegmentationVolume(
   segmentationId: string
@@ -28,13 +23,9 @@ function getOrCreateSegmentationVolume(
 
   // A 4D labelmap is one volume of the current time point, and not a volume
   // of the images of every time point.
-  const primaryLayer = getLabelmap(
-    segmentation,
-    ensureLabelmapState(segmentation)?.primaryLabelmapId
-  );
-  const layerVolume = primaryLayer && getOrCreateLabelmapVolume(primaryLayer);
-  if (isDynamicLabelmapVolume(layerVolume)) {
-    return layerVolume;
+  const dynamicVolume = getOrCreateDynamicLabelmapVolume(segmentation);
+  if (dynamicVolume) {
+    return dynamicVolume;
   }
 
   let { volumeId } =

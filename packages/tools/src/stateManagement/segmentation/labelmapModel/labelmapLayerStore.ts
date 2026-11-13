@@ -10,7 +10,11 @@ import {
   forEachLabelmapImageReference,
   hasMultipleLabelmapImagesPerReferencedImageId,
 } from './labelmapImageIdMapping';
-import { createDynamicLabelmapVolume } from './dynamicLabelmapVolume';
+import {
+  createDynamicLabelmapVolume,
+  isDynamicLabelmapVolume,
+  setDynamicLabelmapVolumeId,
+} from './dynamicLabelmapVolume';
 
 /** Marks a volume so GPU reduction uses foreground majority instead of average. */
 function tagLabelmapVolume(
@@ -107,6 +111,51 @@ function getOrCreateLabelmapVolume(
     createDynamicLabelmapVolume(volumeId, layer) ??
       volumeLoader.createAndCacheVolumeFromImagesSync(volumeId, imageIds)
   );
+}
+
+const staticLabelmapLayers = new WeakSet<LabelmapLayer>();
+
+/**
+ * Gets the dynamic labelmap volume of the primary labelmap of a segmentation,
+ * and creates it when the labelmap references a 4D series.
+ *
+ * Unlike `getOrCreateLabelmapVolume`, a 3D labelmap gets no volume and no
+ * merged images. The 4D test runs once for each labelmap layer.
+ *
+ * @returns undefined when the primary labelmap is not a 4D labelmap
+ */
+function getOrCreateDynamicLabelmapVolume(
+  segmentation: Segmentation
+): Types.IImageVolume | undefined {
+  const layer = getLabelmap(
+    segmentation,
+    ensureLabelmapState(segmentation)?.primaryLabelmapId
+  );
+
+  if (!layer || staticLabelmapLayers.has(layer)) {
+    return;
+  }
+
+  const volumeId =
+    layer.volumeId ?? layer.geometryVolumeId ?? `${layer.labelmapId}-geometry`;
+  const cachedVolume = cache.getVolume(volumeId) as Types.IImageVolume;
+  const volume = cachedVolume
+    ? isDynamicLabelmapVolume(cachedVolume)
+      ? cachedVolume
+      : undefined
+    : layer.imageIds?.length &&
+      !layer.volumeId &&
+      createDynamicLabelmapVolume(volumeId, layer);
+
+  if (!volume) {
+    staticLabelmapLayers.add(layer);
+    return;
+  }
+
+  layer.geometryVolumeId ??= layer.volumeId ? undefined : volumeId;
+  setDynamicLabelmapVolumeId(segmentation.segmentationId, volumeId);
+
+  return tagLabelmapVolume(volume);
 }
 
 function getOrCreateMergedStackLabelmapVolume(
@@ -282,6 +331,7 @@ export {
   getLabelmapForVolumeId,
   getLabelmapIds,
   getLabelmaps,
+  getOrCreateDynamicLabelmapVolume,
   getOrCreateLabelmapVolume,
   getScalarArrayLengthFromLabelmap,
   registerLabelmap,

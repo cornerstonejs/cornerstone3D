@@ -1,9 +1,20 @@
-import { cache, metaData } from '@cornerstonejs/core';
+import { cache, eventTarget, imageLoader, metaData } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import {
   createDynamicLabelmapVolume,
+  getDynamicLabelmapTimePoint,
   syncDynamicLabelmapVolume,
 } from './dynamicLabelmapVolume';
+import { getOrCreateDynamicLabelmapVolume } from './labelmapLayerStore';
+import { computeStackLabelmapFromVolume } from '../helpers/computeStackLabelmapFromVolume';
+import { createLabelmapMemo } from '../../../utilities/segmentation/createLabelmapMemo';
+import type { LabelmapMemo } from '../../../utilities/segmentation/createLabelmapMemo';
+import addSegmentations from '../addSegmentations';
+import { getSegmentation } from '../getSegmentation';
+import { removeAllSegmentations } from '../removeSegmentation';
+import dynamicVolumeDimensionGroupChangedListener from '../../../eventListeners/segmentation/dynamicVolumeDimensionGroupChangedListener';
+import { Events } from '../../../enums';
+import type { Segmentation } from '../../../types/SegmentationStateTypes';
 
 const TIME_POINTS = 2;
 // Unsorted on purpose: the volume sorts each time point by position.
@@ -52,9 +63,27 @@ const imageVolumeAt = (timePoint: number) =>
       POSITIONS.map((z) => `ref:${timePoint}:${z}`),
   }) as unknown as Types.IImageVolume;
 
+/** Caches one 2x2 labelmap image for each referenced image. */
+function cacheLabelmapImages(timePoints = TIME_POINTS) {
+  ids('lm', timePoints).forEach((imageId, i) =>
+    imageLoader.createAndCacheLocalImage(imageId, {
+      dimensions: [2, 2],
+      spacing: [1, 1, 1],
+      origin: [0, 0, 0],
+      direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
+      scalarData: new Uint8Array(4),
+      referencedImageId: ids('ref', timePoints)[i],
+    })
+  );
+}
+
+const pixel = (imageId: string) =>
+  cache.getImage(imageId).voxelManager.getAtIndex(0);
+
 describe('dynamic labelmap volume', () => {
   beforeEach(() => metaData.addProvider(provider, 10000));
   afterEach(() => {
+    removeAllSegmentations();
     metaData.removeProvider(provider);
     cache.purgeCache();
   });
@@ -90,5 +119,114 @@ describe('dynamic labelmap volume', () => {
         referencedImageIds: ids('ref', 1),
       })
     ).toBeUndefined();
+  });
+
+  it('restores the time point of an edit after a change of time point', () => {
+    cacheLabelmapImages();
+    const volume = createDynamicLabelmapVolume('labelmap-4d', {
+      labelmapId: 'labelmap',
+      imageIds: ids('lm'),
+      referencedImageIds: ids('ref'),
+    });
+    cache.getImage('lm:1:0').voxelManager.setAtIndex(0, 3);
+
+    const timePoint = getDynamicLabelmapTimePoint(volume);
+    expect(timePoint.dimensionGroupNumber).toBe(1);
+    const memo = createLabelmapMemo(
+      'segmentation',
+      timePoint.voxelManager
+    ) as unknown as LabelmapMemo;
+    memo.voxelManager.setAtIndex(0, 1);
+    memo.commitMemo();
+
+    // The paint shows only at its own time point.
+    expect(pixel('lm:0:0')).toBe(1);
+    expect(pixel('lm:1:0')).toBe(3);
+
+    syncDynamicLabelmapVolume(volume, imageVolumeAt(1));
+    memo.restoreMemo(true);
+
+    expect(pixel('lm:0:0')).toBe(0);
+    expect(pixel('lm:1:0')).toBe(3);
+  });
+
+  it('keeps every time point in a conversion back to a stack', async () => {
+    cacheLabelmapImages();
+    createDynamicLabelmapVolume('labelmap-4d', {
+      labelmapId: 'labelmap',
+      imageIds: ids('lm'),
+      referencedImageIds: ids('ref'),
+    });
+
+    const { imageIds } = await computeStackLabelmapFromVolume({
+      volumeId: 'labelmap-4d',
+    });
+
+    expect([...imageIds].sort()).toEqual([...ids('lm')].sort());
+  });
+
+  it('creates no volume for a 3D labelmap', () => {
+    cacheLabelmapImages(1);
+    const segmentation = {
+      segmentationId: 'seg-3d',
+      representationData: {
+        Labelmap: {
+          imageIds: ids('lm', 1),
+          referencedImageIds: ids('ref', 1),
+        },
+      },
+      segments: {},
+    } as unknown as Segmentation;
+
+    expect(getOrCreateDynamicLabelmapVolume(segmentation)).toBeUndefined();
+    expect(getOrCreateDynamicLabelmapVolume(segmentation)).toBeUndefined();
+    expect(cache.getVolumes()).toHaveLength(0);
+  });
+
+  it('sends the time point when the image volume changes time point', () => {
+    cacheLabelmapImages();
+    addSegmentations([
+      {
+        segmentationId: 'seg-4d',
+        representation: {
+          type: 'Labelmap' as never,
+          data: { imageIds: ids('lm'), referencedImageIds: ids('ref') },
+        },
+      },
+    ]);
+    const volume = getOrCreateDynamicLabelmapVolume(getSegmentation('seg-4d'));
+    expect(volume).toBeDefined();
+
+    const imageVolume = {
+      ...imageVolumeAt(1),
+      dimensionGroupNumber: 2,
+      getImageURIIndex: () => -1,
+    };
+    const getVolume = cache.getVolume.bind(cache);
+    jest
+      .spyOn(cache, 'getVolume')
+      .mockImplementation((id) =>
+        id === 'image-4d' ? (imageVolume as never) : getVolume(id)
+      );
+    const details = [];
+    const onModified = (evt) => details.push(evt.detail);
+    eventTarget.addEventListener(Events.SEGMENTATION_DATA_MODIFIED, onModified);
+
+    dynamicVolumeDimensionGroupChangedListener({
+      detail: { volumeId: 'image-4d' },
+    } as CustomEvent);
+
+    eventTarget.removeEventListener(
+      Events.SEGMENTATION_DATA_MODIFIED,
+      onModified
+    );
+    jest.restoreAllMocks();
+    expect(details).toEqual([
+      expect.objectContaining({
+        segmentationId: 'seg-4d',
+        dimensionGroupNumber: 2,
+      }),
+    ]);
+    expect(details[0].voxelsUnchanged).toBeUndefined();
   });
 });

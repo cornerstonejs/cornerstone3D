@@ -6,6 +6,7 @@ import type {
 } from '../../../../types';
 import { getCurrentLabelmapImageIdForViewport } from '../../../../stateManagement/segmentation/segmentationState';
 import { getLabelmapActorEntry } from '../../../../stateManagement/segmentation/helpers';
+import { getDynamicLabelmapTimePoint } from '../../../../stateManagement/segmentation/labelmapModel/dynamicLabelmapVolume';
 import { getReferenceVolumeForSegmentationVolume } from '../../../../utilities/segmentation/getReferenceVolumeForSegmentationVolume';
 
 /**
@@ -63,7 +64,11 @@ function getStrategyDataForVolumeViewport({
   }
 
   const { imageData: segmentationImageData } = segmentationVolume;
-  const { voxelManager: segmentationVoxelManager } = segmentationVolume;
+  // A 4D labelmap edits through the voxel manager of one time point, so that
+  // the undo memo restores that time point.
+  const segmentationVoxelManager =
+    getDynamicLabelmapTimePoint(segmentationVolume)?.voxelManager ??
+    segmentationVolume.voxelManager;
   const { voxelManager: imageVoxelManager, imageData } = imageVolume;
 
   return {
