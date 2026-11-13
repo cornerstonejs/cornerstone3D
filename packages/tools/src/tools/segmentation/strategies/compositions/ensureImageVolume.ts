@@ -3,10 +3,16 @@ import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
 import { getSegmentation } from '../../../../stateManagement/segmentation/getSegmentation';
 import type { LabelmapSegmentationDataStack } from '../../../../types';
 import getOrCreateImageVolume from '../../../../utilities/segmentation/getOrCreateImageVolume';
+import getOrCreateSegmentationVolume from '../../../../utilities/segmentation/getOrCreateSegmentationVolume';
+import { isDynamicLabelmapVolume } from '../../../../stateManagement/segmentation/labelmapModel/dynamicLabelmapVolume';
 
 export default {
   [StrategyCallbacks.EnsureImageVolumeFor3DManipulation]: (data) => {
     const { operationData, viewport } = data;
+
+    const segmentationVolume = viewport
+      ? undefined
+      : getOrCreateSegmentationVolume(operationData.segmentationId);
 
     let referencedImageIds;
     if (viewport) {
@@ -17,6 +23,9 @@ export default {
           'Volume is not reconstructable for sphere manipulation'
         );
       }
+    } else if (isDynamicLabelmapVolume(segmentationVolume)) {
+      // A 4D labelmap: the images of the time point that it shows.
+      referencedImageIds = segmentationVolume.referencedImageIds;
     } else {
       const segmentation = getSegmentation(operationData.segmentationId);
       const imageIds = (

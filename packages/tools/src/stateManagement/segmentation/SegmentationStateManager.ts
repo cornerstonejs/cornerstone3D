@@ -32,9 +32,12 @@ import { segmentationStyle } from './SegmentationStyle';
 import { triggerSegmentationAdded } from './events/triggerSegmentationAdded';
 import {
   ensureLabelmapState,
+  getLabelmap,
+  getOrCreateLabelmapVolume,
   LabelmapImageReferenceResolver,
   syncLegacyLabelmapData,
 } from './labelmapModel';
+import { isDynamicLabelmapVolume } from './labelmapModel/dynamicLabelmapVolume';
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
 
 const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
@@ -1037,10 +1040,20 @@ async function internalConvertStackToVolumeLabelmap({
   const data = segmentation.representationData
     .Labelmap as LabelmapSegmentationDataStack;
 
-  const { volumeId } = await internalComputeVolumeLabelmapFromStack({
-    imageIds: data.imageIds,
-    options,
-  });
+  // A 4D labelmap already is one volume of the current time point. A volume of
+  // the images of every time point has the wrong depth.
+  const primaryLayer = getLabelmap(
+    segmentation,
+    ensureLabelmapState(segmentation)?.primaryLabelmapId
+  );
+  const layerVolume = primaryLayer && getOrCreateLabelmapVolume(primaryLayer);
+
+  const { volumeId } = isDynamicLabelmapVolume(layerVolume)
+    ? layerVolume
+    : await internalComputeVolumeLabelmapFromStack({
+        imageIds: data.imageIds,
+        options,
+      });
 
   (
     segmentation.representationData.Labelmap as LabelmapSegmentationDataVolume

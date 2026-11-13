@@ -10,6 +10,7 @@ import {
   forEachLabelmapImageReference,
   hasMultipleLabelmapImagesPerReferencedImageId,
 } from './labelmapImageIdMapping';
+import { createDynamicLabelmapVolume } from './dynamicLabelmapVolume';
 
 /** Marks a volume so GPU reduction uses foreground majority instead of average. */
 function tagLabelmapVolume(
@@ -103,7 +104,8 @@ function getOrCreateLabelmapVolume(
   }
 
   return tagLabelmapVolume(
-    volumeLoader.createAndCacheVolumeFromImagesSync(volumeId, imageIds)
+    createDynamicLabelmapVolume(volumeId, layer) ??
+      volumeLoader.createAndCacheVolumeFromImagesSync(volumeId, imageIds)
   );
 }
 

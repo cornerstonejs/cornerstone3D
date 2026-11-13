@@ -10,13 +10,31 @@ import type {
   LabelmapSegmentationDataStack,
   LabelmapSegmentationDataVolume,
 } from '../../types/LabelmapTypes';
+import {
+  ensureLabelmapState,
+  getLabelmap,
+  getOrCreateLabelmapVolume,
+} from '../../stateManagement/segmentation/labelmapModel';
+import { isDynamicLabelmapVolume } from '../../stateManagement/segmentation/labelmapModel/dynamicLabelmapVolume';
 
 function getOrCreateSegmentationVolume(
   segmentationId: string
 ): Types.IImageVolume | undefined {
-  const { representationData } = getSegmentation(segmentationId);
+  const segmentation = getSegmentation(segmentationId);
+  const { representationData } = segmentation;
   if (!representationData.Labelmap) {
     return;
+  }
+
+  // A 4D labelmap is one volume of the current time point, and not a volume
+  // of the images of every time point.
+  const primaryLayer = getLabelmap(
+    segmentation,
+    ensureLabelmapState(segmentation)?.primaryLabelmapId
+  );
+  const layerVolume = primaryLayer && getOrCreateLabelmapVolume(primaryLayer);
+  if (isDynamicLabelmapVolume(layerVolume)) {
+    return layerVolume;
   }
 
   let { volumeId } =
