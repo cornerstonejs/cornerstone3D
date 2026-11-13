@@ -5,6 +5,7 @@ import MeasurementReport from './MeasurementReport';
 import BaseAdapter3D from './BaseAdapter3D';
 import { toScoord } from '../helpers';
 import { extractAllNUMGroups, restoreAdditionalMetrics } from './metricHandler';
+import { mapUnitToUCUM } from './unitMapper';
 
 const { Ellipse: TID300Ellipse } = utilities.TID300;
 
@@ -115,7 +116,7 @@ class EllipticalROI extends BaseAdapter3D {
       min,
       mean,
       stdDev,
-      modalityUnit,
+      modalityUnit: mapUnitToUCUM(modalityUnit),
       points: convertedPoints,
       trackingIdentifierTextValue: this.trackingIdentifierTextValue,
       finding,

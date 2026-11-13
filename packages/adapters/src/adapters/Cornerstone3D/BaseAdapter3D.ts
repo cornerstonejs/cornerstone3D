@@ -1,3 +1,4 @@
+import { utilities as csUtilities } from '@cornerstonejs/core';
 import CORNERSTONE_3D_TAG from './cornerstone3DTag';
 import MeasurementReport, {
   type AdapterOptions,
@@ -218,13 +219,38 @@ export default class BaseAdapter3D {
   /**
    * Retrieve cached stats using either the referenced imageId
    * or the volumeId, depending on which key was used to store them.
+   *
+   * For volume annotations, prefer the view reference key, then any
+   * cached stats key for the same volume.
+   *
+   * @param cachedStats - The annotation cachedStats keyed by target id
+   * @param metadata - The annotation metadata
+   * @returns The cached stats for the annotation target, or an empty object
    */
   public static getCachedStats(cachedStats, metadata) {
-    const { referencedImageId, volumeId } = metadata;
-    return (
-      cachedStats[`imageId:${referencedImageId}`] ||
-      cachedStats[`volumeId:${volumeId}`] ||
-      {}
+    const { referencedImageId, volumeId, sliceIndex, viewPlaneNormal } =
+      metadata;
+    const imageStats = cachedStats[`imageId:${referencedImageId}`];
+    if (imageStats) {
+      return imageStats;
+    }
+
+    if (volumeId && viewPlaneNormal) {
+      const viewReferenceId = csUtilities.getVolumeViewReferenceId({
+        volumeId,
+        sliceIndex,
+        viewPlaneNormal,
+      });
+      if (cachedStats[viewReferenceId]) {
+        return cachedStats[viewReferenceId];
+      }
+    }
+
+    const targetId = Object.keys(cachedStats).find(
+      (key) =>
+        key.startsWith('volumeId:') && csUtilities.getVolumeId(key) === volumeId
     );
+
+    return cachedStats[targetId] || {};
   }
 }

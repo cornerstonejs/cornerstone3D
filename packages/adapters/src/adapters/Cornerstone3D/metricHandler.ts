@@ -46,8 +46,8 @@ export function extractAllNUMGroups(
       if (item.ValueType === 'NUM' && item.ConceptNameCodeSequence) {
         const codeMeaning = item.ConceptNameCodeSequence.CodeMeaning;
         const numericValue = item.MeasuredValueSequence?.NumericValue;
-        const unitCode =
-          item.MeasuredValueSequence?.MeasurementUnitsCodeSequence?.CodeValue;
+        const unitCodeSeq =
+          item.MeasuredValueSequence?.MeasurementUnitsCodeSequence;
 
         if (numericValue !== undefined && referencedSOPInstanceUID) {
           if (!numGroupsBySOPInstanceUID[referencedSOPInstanceUID]) {
@@ -55,8 +55,8 @@ export function extractAllNUMGroups(
           }
 
           let unit = '';
-          if (unitCode) {
-            unit = resolveUnit(codeMeaning, unitCode);
+          if (unitCodeSeq) {
+            unit = resolveUnit(codeMeaning, unitCodeSeq);
           }
 
           numGroupsBySOPInstanceUID[referencedSOPInstanceUID][codeMeaning] = {
