@@ -8,6 +8,8 @@
 // With this rule, the regular slices become one volume display set, in
 // position order. The other images stay with the default rules. A fully
 // regular series, and a series with no lattice, keep the default display sets.
+// Localizer images do not count as irregular images, so a regular series with
+// scouts keeps the default `volume3d` display set.
 //
 // The file puts the rule just before the default `localizer` rule, so it runs before the
 // other volume rules. A localizer is not a regular slice, so the `localizer`
@@ -24,7 +26,7 @@
           // A series value: a complete regular lattice of 3 or more slices, and
           // also other images. Remove `&& planeGeometry.complete` to accept a
           // lattice with a missing slice.
-          "mixesIrregular": "planeGeometry.regularCount >= 3 && planeGeometry.irregularCount > 0 && planeGeometry.complete",
+          "mixesIrregular": "planeGeometry.regularCount >= 3 && planeGeometry.irregularCount > series.instances.count(isLocalizer) && planeGeometry.complete",
           "isRegularSlice": "sliceIndex != null"
         },
         "matches": {

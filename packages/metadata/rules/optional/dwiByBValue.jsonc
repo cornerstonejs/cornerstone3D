@@ -5,6 +5,10 @@
 // b-value of the series into its own display set, with the description
 // `<SeriesDescription> b=<DiffusionBValue>`.
 //
+// The rule is for DWI: one direction, or a trace, at each b-value. It does not
+// separate the gradient directions of a DTI series, so a DTI b-value gives one
+// stack with all of its directions at each position.
+//
 // The rule reads the standard DiffusionBValue (0018,9087) only. Images without
 // a b-value (for example a trace or ADC set) go to the default
 // `mixedDimensionalityBValue` rule, and form one more display set.

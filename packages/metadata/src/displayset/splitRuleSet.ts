@@ -1,5 +1,8 @@
+import { logging } from '@cornerstonejs/utils';
 import { isUnsafeKey } from '../safeFunctions/schema';
 import type { SplitRule, SplitRuleSet } from './types';
+
+const log = logging.metadataLog.getLogger('displayset', 'splitRuleSet');
 
 /**
  * Throws with the offending entry named - a rule set is usually built from
@@ -44,8 +47,8 @@ function checkRuleId(id: unknown, seen: Set<string>): string {
  * Each result entry is the rule with its key as its `id`.
  *
  * An id that occurs again in `order` is the same rule, so its later copy can
- * never claim an instance. The result keeps the first copy, and one
- * `console.warn` names the repeated ids. This happens when a host loads two
+ * never claim an instance. The result keeps the first copy, and one warning
+ * of the logger `cs3d.metadata.displayset.splitRuleSet` names the repeated ids. This happens when a host loads two
  * files that add the same rule, or loads one file twice.
  *
  * @throws for an id of `order` that is not in `registry`, and for an entry that
@@ -93,7 +96,7 @@ export function materializeSplitRules<Entry extends { id?: string }>(
     result.push({ ...entry, id });
   }
   if (repeated.size) {
-    console.warn(
+    log.warn(
       `Split rule order: ${[...repeated].join(', ')} occurs more than once; the first place is used.`
     );
   }

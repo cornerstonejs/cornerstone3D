@@ -1,6 +1,7 @@
 import { readdirSync, readFileSync } from 'fs';
 import { join } from 'path';
 import update, { extend } from 'immutability-helper';
+import { logging } from '@cornerstonejs/utils';
 import { createDisplaySetFromGroup } from './createDisplaySetFromGroup';
 import {
   createDisplaySetSplitRules,
@@ -169,7 +170,12 @@ describe('rules/optional/*.jsonc - placement', () => {
   });
 
   it('a file applied twice gives the same rules, and a warning', () => {
-    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    const warn = jest
+      .spyOn(
+        logging.metadataLog.getLogger('displayset', 'splitRuleSet'),
+        'warn'
+      )
+      .mockImplementation(() => {});
     try {
       expect(placed(['usTimeClusters', 'usTimeClusters'])).toEqual(
         placed(['usTimeClusters'])
@@ -367,6 +373,28 @@ describe('rules/optional/*.jsonc - one split for each file', () => {
       ['regularVolume', uids(regular), true],
       ['volume3d', uids([extra]), false],
     ]);
+  });
+
+  it('regularVolume: a regular series with scouts keeps the default volume3d', () => {
+    const regular = [0, 2, 4, 6, 8].map((z) =>
+      ct({ ImagePositionPatient: [0, 0, z] })
+    );
+    const scouts = [
+      [1, 0, 0, 0, 0, -1],
+      [0, 1, 0, 0, 0, -1],
+    ].map((ImageOrientationPatient) =>
+      ct({
+        ImageType: ['ORIGINAL', 'PRIMARY', 'LOCALIZER'],
+        ImageOrientationPatient,
+        ImagePositionPatient: [0, 0, 0],
+      })
+    );
+
+    expect(
+      splitWith('regularVolume', [...regular, ...scouts])
+        .map(([rule, ids]) => `${rule}:${ids.length}`)
+        .sort()
+    ).toEqual(['localizer:2', 'volume3d:5']);
   });
 
   it('derivedObjectVersions: one SR display set for each version, in date order, and only the newest is the latest', () => {

@@ -13,6 +13,12 @@ import { resolveSplitRuleSet } from './splitRuleSet';
 import { displaySetContextFor, withInstances } from './displaySetContext';
 import { sortInstancesCopy } from './sortInstances';
 import { hasNoValue, isUnsafeKey } from '../safeFunctions';
+import { logging } from '@cornerstonejs/utils';
+
+const log = logging.metadataLog.getLogger(
+  'displayset',
+  'groupInstancesBySplitRules'
+);
 
 /**
  * Builds the series context of one split: runs the `series` hook of each rule,
@@ -364,7 +370,7 @@ export function groupInstancesBySplitRules(
   }
   if (unmatchedCount && !onUnmatched) {
     // A rule order without `unsupported` drops what no other rule claims.
-    console.warn(
+    log.warn(
       `groupInstancesBySplitRules: ${unmatchedCount} instance(s) match no split rule, and get no display set`
     );
   }

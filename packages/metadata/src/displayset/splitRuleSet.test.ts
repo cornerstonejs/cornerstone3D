@@ -1,4 +1,5 @@
 import { describe, expect, it, jest } from '@jest/globals';
+import { logging } from '@cornerstonejs/utils';
 import { groupInstancesBySplitRules } from './groupInstancesBySplitRules';
 import { createDisplaySetSplitRules } from './displaySetRules';
 import update, { extend } from 'immutability-helper';
@@ -27,7 +28,7 @@ describe('materializeSplitRules', () => {
     expect(rules).toEqual([{ id: 'b' }, { id: 'a', groupBy: ['a'] }]);
   });
 
-  it('throws for an unknown id, a duplicate id, an id mismatch, a non-object entry and an unsafe key', () => {
+  it('throws for an unknown id, an id mismatch, a non-object entry and an unsafe key', () => {
     expect(() => materializeSplitRules({ a: {} }, ['x'])).toThrow(
       /"x".*not in the registry/
     );
@@ -86,7 +87,12 @@ describe('spliceById', () => {
 
 describe('materializeSplitRules with a repeated id', () => {
   it('keeps the first place and warns once, as when two files add the same rule', () => {
-    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    const warn = jest
+      .spyOn(
+        logging.metadataLog.getLogger('displayset', 'splitRuleSet'),
+        'warn'
+      )
+      .mockImplementation(() => {});
     try {
       const rules = materializeSplitRules({ a: {}, b: {} }, [
         'a',
@@ -153,7 +159,15 @@ describe('groupInstancesBySplitRules with a rule set', () => {
   });
 
   it('warns once with the count when instances match no rule and no callback is given', () => {
-    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    const warn = jest
+      .spyOn(
+        logging.metadataLog.getLogger(
+          'displayset',
+          'groupInstancesBySplitRules'
+        ),
+        'warn'
+      )
+      .mockImplementation(() => {});
     try {
       const groups = groupInstancesBySplitRules(
         [ct('a', 1), ct('b', 2)],
