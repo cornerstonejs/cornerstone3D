@@ -16,6 +16,7 @@ function getImageFrame(imageId: string): Types.IImageFrame {
     columns: imagePixelModule.columns,
     bitsAllocated: imagePixelModule.bitsAllocated,
     bitsStored: imagePixelModule.bitsStored,
+    highBit: imagePixelModule.highBit,
     pixelRepresentation: imagePixelModule.pixelRepresentation, // 0 = unsigned,
     smallestPixelValue: imagePixelModule.smallestPixelValue,
     largestPixelValue: imagePixelModule.largestPixelValue,
