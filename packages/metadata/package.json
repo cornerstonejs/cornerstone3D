@@ -85,7 +85,8 @@
     "@cornerstonejs/calculate-suv": "1.0.3",
     "@cornerstonejs/utils": "5.18.2",
     "dcmjs": "0.52.0",
-    "gl-matrix": "3.4.3"
+    "gl-matrix": "3.4.3",
+    "zustand": "4.5.5"
   },
   "contributors": [
     {
