@@ -1667,7 +1667,11 @@ class StackViewport extends Viewport {
         getTransferFunctionNodes(transferFunction);
     }
 
-    if (!isSigmoidTFun) {
+    // vtk rejects a zero width range: it logs an error and leaves the nodes
+    // as they are. Skipping the call changes nothing but that error. A
+    // function created above for a zero width window already has its nodes
+    // at that value, an epsilon apart.
+    if (!isSigmoidTFun && voiRangeToUse.upper !== voiRangeToUse.lower) {
       // @ts-ignore vtk type error
       transferFunction.setRange(voiRangeToUse.lower, voiRangeToUse.upper);
     }
