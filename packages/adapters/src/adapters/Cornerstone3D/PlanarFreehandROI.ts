@@ -105,6 +105,11 @@ class PlanarFreehandROI extends BaseAdapter3D {
     return state;
   }
 
+  /**
+   * Builds the TID300 polyline arguments from the annotation: the contour, its
+   * control points, and the area and perimeter with their units from the
+   * cached stats. An open contour writes its length as the perimeter.
+   */
   static getTID300RepresentationArguments(tool, is3DMeasurement = false) {
     const { data, finding, findingSites, metadata } = tool;
 
@@ -138,6 +143,7 @@ class PlanarFreehandROI extends BaseAdapter3D {
       max,
       stdDev,
       length,
+      unit,
     } = super.getCachedStats(data.cachedStats, metadata);
 
     return {
@@ -147,6 +153,8 @@ class PlanarFreehandROI extends BaseAdapter3D {
       area,
       areaUnit,
       perimeter: perimeter ?? length,
+      // Without a unit dcmjs writes "mm", whatever the contour was measured in
+      unit,
       modalityUnit,
       mean,
       max,
