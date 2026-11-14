@@ -131,6 +131,18 @@ describe('containsPoint', () => {
     expect(containsPoint(square, [5, 5], { holes: [hole] })).toBe(false);
     expect(containsPoint(square, [1, 1], { holes: [hole] })).toBe(true);
   });
+
+  it('includes the closing edge when closed is true', () => {
+    // Closing [last, first] edge on the right (x = 10)
+    const rightClosing = [
+      [10, 0],
+      [0, 0],
+      [0, 10],
+      [10, 10],
+    ];
+    expect(containsPoint(rightClosing, [5, 5], { closed: true })).toBe(true);
+    expect(containsPoint(square, [-1, 5], { closed: true })).toBe(false);
+  });
 });
 
 describe('containsPoints', () => {
