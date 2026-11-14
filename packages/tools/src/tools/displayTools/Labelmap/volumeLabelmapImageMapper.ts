@@ -369,7 +369,7 @@ async function addPlanarLabelmapImageMapperActors(args: {
   const { viewport, segmentation, segmentationId } = args;
   const camera = getSliceRenderingCamera(viewport);
 
-  for (const [index, layer] of getLabelmaps(segmentation).entries()) {
+  for (const layer of getLabelmaps(segmentation)) {
     const volume = getOrCreateLabelmapVolume(layer);
 
     if (!volume) {
@@ -422,8 +422,9 @@ async function addPlanarLabelmapImageMapperActors(args: {
           if (camera) {
             applyPlanarOverlayDepthOffset(
               imageActor,
-              camera.viewPlaneNormal,
-              index + 1
+              sliceData.imageData,
+              camera,
+              getPlanarOverlayOrder(viewport, imageActor)
             );
           }
         },
@@ -453,7 +454,7 @@ function updatePlanarLabelmapImageMapperActors(args: {
   );
   const camera = getSliceRenderingCamera(viewport);
 
-  getLabelmaps(segmentation).forEach((layer, index) => {
+  getLabelmaps(segmentation).forEach((layer) => {
     const actorEntry = actorEntriesByLabelmapId.get(layer.labelmapId);
 
     if (!actorEntry) {
@@ -480,10 +481,90 @@ function updatePlanarLabelmapImageMapperActors(args: {
     if (camera) {
       applyPlanarOverlayDepthOffset(
         actorEntry.actor as vtkImageSlice,
-        camera.viewPlaneNormal,
-        index + 1
+        sliceData.imageData,
+        camera,
+        getPlanarOverlayOrder(viewport, actorEntry.actor as vtkImageSlice)
       );
     }
     actorEntry.actor.modified?.();
   });
+}
+
+/**
+ * Puts the labelmap slice actors of a segmentation back on the view plane of
+ * a planar viewport, with the slice images that they hold now.
+ *
+ * A camera move along the view normal moves the view plane at once, and the
+ * slice image for the new plane arrives with the next segmentation render.
+ * Without this placement in between, the actors stay on the old plane for one
+ * frame, where the image hides them when the plane moved toward the camera.
+ */
+export function placeVolumeLabelmapImageMapperActors(args: {
+  viewport: Types.IViewport;
+  segmentationId: string;
+}): void {
+  const { viewport, segmentationId } = args;
+
+  if (
+    !isPlanarSliceRenderingViewport(viewport) ||
+    !canRenderVolumeViewportLabelmapAsImage(viewport)
+  ) {
+    return;
+  }
+
+  const camera = getSliceRenderingCamera(viewport);
+
+  if (!camera) {
+    return;
+  }
+
+  viewport
+    .getActors()
+    .filter(
+      (actorEntry) =>
+        actorEntry.actorMapper?.renderMode === ActorRenderMode.VTK_IMAGE &&
+        isLabelmapRepresentationUID(
+          actorEntry.representationUID,
+          segmentationId
+        )
+    )
+    .forEach((actorEntry) => {
+      const actor = actorEntry.actor as vtkImageSlice;
+      const imageData = (actor.getMapper() as vtkImageMapper).getInputData();
+
+      if (!imageData) {
+        return;
+      }
+
+      applyPlanarOverlayDepthOffset(
+        actor,
+        imageData,
+        camera,
+        getPlanarOverlayOrder(viewport, actor)
+      );
+    });
+}
+
+/**
+ * Returns the place of a labelmap slice actor among the image slice actors of
+ * a planar viewport, in the order in which the viewport draws them. The core
+ * uses the same number as the depth order of the image slices that it owns,
+ * such as the PT layer of a fusion view. A labelmap slice that takes its own
+ * number is therefore nearer to the camera than every slice drawn before it,
+ * and shares its depth with none of them. An actor that the viewport does not
+ * hold yet is drawn last.
+ */
+function getPlanarOverlayOrder(
+  viewport: PlanarSliceRenderingViewport,
+  actor: vtkImageSlice
+): number {
+  const sliceActors = viewport
+    .getActors()
+    .map((actorEntry) => actorEntry.actor)
+    .filter(
+      (viewportActor) => viewportActor?.getClassName?.() === 'vtkImageSlice'
+    );
+  const order = sliceActors.indexOf(actor);
+
+  return order === -1 ? sliceActors.length : order;
 }
