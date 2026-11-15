@@ -56,7 +56,10 @@ import {
 import { DefaultPlanarDataProvider } from './DefaultPlanarDataProvider';
 import { createPlanarRenderPathResolver } from './PlanarRenderPathResolver';
 import { defaultPlanarRenderPathDecisionService } from './PlanarRenderPathDecisionService';
-import type { PlanarRenderPathDecisionOptions } from './PlanarRenderPathDecisionService';
+import type {
+  PlanarRenderModeDecision,
+  PlanarRenderPathDecisionOptions,
+} from './PlanarRenderPathDecisionService';
 import {
   normalizePlanarOrientation,
   selectPlanarRenderPath,
@@ -102,6 +105,10 @@ import {
   reductionFactorsOf,
 } from '../../helpers/fidelityIndicator/fidelityIndicatorState';
 import PlanarMountedData from './PlanarMountedData';
+import {
+  createRenderPlanLayer,
+  isSameRenderPlanLayer,
+} from './planarRenderPlan';
 import PlanarViewReferenceController from './PlanarViewReferenceController';
 export type { PlanarReferenceContext } from './PlanarViewReferenceController';
 import type {
@@ -116,6 +123,9 @@ import type {
   PlanarViewportRenderContext,
   PlanarViewportInput,
   PlanarViewportInputOptions,
+  RenderPlanChangedEventDetail,
+  RenderPlanLayer,
+  RenderPlanReason,
 } from './PlanarViewportTypes';
 
 type PlanarSetOrientationInput =
@@ -328,6 +338,13 @@ class PlanarViewport extends GenericViewport<
     object,
     PlanarSlabPresentation
   >();
+  /** The reason of the decision behind the mounted render mode of each display set. */
+  private readonly renderPlanReasonByDataId = new Map<
+    string,
+    RenderPlanReason
+  >();
+  /** The render plan entry of each display set that the last event gave. */
+  private readonly renderPlanByDataId = new Map<string, RenderPlanLayer>();
   /** The passes of `applyRenderingPipelineUpdate` that hold the renders. */
   private remountRenderHolds = 0;
   /** Set when a render was asked for while a remount held the renders. */
@@ -445,6 +462,7 @@ class PlanarViewport extends GenericViewport<
         getOverlayActors: () =>
           this.mountedData.getProjectedActorEntries('overlay'),
         canDrawAcquiredFrames: (dataId) => this.canDrawAcquiredFrames(dataId),
+        refreshRenderPlan: (dataId) => this.updateRenderPlan(dataId),
       },
       renderPath: {
         renderMode: ActorRenderMode.VTK_IMAGE,
@@ -589,6 +607,7 @@ class PlanarViewport extends GenericViewport<
       return;
     }
 
+    this.updateRenderPlan(dataId, selectedPath.reason);
     this.mountOptionsByDataId.set(dataId, resolvedOptions);
     this.clearResolvedViewCache();
     this.setDefaultDataPresentation(dataId, {
@@ -622,6 +641,93 @@ class PlanarViewport extends GenericViewport<
   }
 
   /**
+   * The render plan of this viewport: for each mounted layer (display set),
+   * source first, how its slice is made, what draws it, the render mode and
+   * the reason of the decision. It reads what the last decision stored, so
+   * it gives the same answer at any time and costs nothing.
+   * `Events.RENDER_PLAN_CHANGED` fires when an entry changes.
+   *
+   * @experimental
+   */
+  getRenderPlan(): RenderPlanLayer[] {
+    const source = this.getCurrentBinding();
+    const plan: RenderPlanLayer[] = [];
+
+    for (const [dataId, binding] of this.bindings) {
+      const layer = this.getRenderPlanLayer(dataId);
+
+      if (!layer) {
+        continue;
+      }
+
+      if (binding === source) {
+        plan.unshift(layer);
+      } else {
+        plan.push(layer);
+      }
+    }
+
+    return plan;
+  }
+
+  /** The render plan entry of one mounted display set. */
+  private getRenderPlanLayer(dataId: string): RenderPlanLayer | undefined {
+    const binding = this.bindings.get(dataId);
+    const reason = this.renderPlanReasonByDataId.get(dataId);
+
+    if (!binding || !reason) {
+      return;
+    }
+
+    const { rendering } = binding as {
+      rendering: {
+        renderMode: PlanarEffectiveRenderMode;
+        slabTooLarge?: boolean;
+      };
+    };
+
+    return createRenderPlanLayer(
+      dataId,
+      binding.role,
+      rendering.renderMode,
+      rendering.slabTooLarge ? 'slabTooLarge' : reason
+    );
+  }
+
+  /**
+   * Stores the reason of the decision behind the mounted render mode of a
+   * display set, when one is given, and fires `RENDER_PLAN_CHANGED` on the
+   * element and on the event target when its entry differs from the entry of
+   * the last event.
+   */
+  private updateRenderPlan(dataId: string, reason?: RenderPlanReason): void {
+    if (reason) {
+      this.renderPlanReasonByDataId.set(dataId, reason);
+    }
+
+    const previous = this.renderPlanByDataId.get(dataId);
+    const current = this.getRenderPlanLayer(dataId);
+
+    if (!current || isSameRenderPlanLayer(previous, current)) {
+      return;
+    }
+
+    this.renderPlanByDataId.set(dataId, current);
+
+    const detail: RenderPlanChangedEventDetail = {
+      renderingEngineId: this.renderingEngineId,
+      viewportId: this.id,
+      dataId,
+      previous,
+      current,
+      reason: current.reason,
+    };
+
+    triggerEvent(this.element, Events.RENDER_PLAN_CHANGED, detail);
+    triggerEvent(eventTarget, Events.RENDER_PLAN_CHANGED, detail);
+  }
+
+  /**
    * Removes a dataset binding and clears the active data id when the
    * removed dataset was active.
    */
@@ -629,6 +735,8 @@ class PlanarViewport extends GenericViewport<
     this.clearResolvedViewCache();
     this.mountOptionsByDataId.delete(dataId);
     this.lastRenderPathErrorByDataId.delete(dataId);
+    this.renderPlanReasonByDataId.delete(dataId);
+    this.renderPlanByDataId.delete(dataId);
     super.removeData(dataId);
     this.mountedData.handleRemovedData(dataId);
 
@@ -1137,11 +1245,12 @@ class PlanarViewport extends GenericViewport<
   ): void {
     const previousProps = this.getDataPresentationState(dataId);
     const binding = this.bindings.get(dataId);
-    const renderMode = this.getRenderModeForPresentation(
+    const decision = this.getRenderModeForPresentation(
       dataId,
       previousProps,
       props
     );
+    const renderMode = decision?.renderMode;
     const movesAway =
       !!binding &&
       (renderMode === undefined
@@ -1178,24 +1287,27 @@ class PlanarViewport extends GenericViewport<
     if (remounts) {
       this.startRenderingPipelineUpdate();
       this.releaseRemountRenderHold();
+    } else if (decision && binding) {
+      this.updateRenderPlan(dataId, decision.reason);
     }
   }
 
   /**
-   * The render mode that a mounted volume display set needs for a new
-   * presentation, when it may change: a slab moves a sampled slice to the
-   * GPU volume path, and back. Only a change of the slab thickness or the
-   * blend mode runs the decision, so a window level change costs nothing.
+   * The render mode, and its reason, that a mounted volume display set needs
+   * for a new presentation, when it may change: a slab moves a sampled slice
+   * to the GPU volume path, and back. Only a change of the slab thickness or
+   * the blend mode runs the decision, so a window level change costs nothing.
    * Returns undefined when the decision does not run. The caller starts the
    * remount (`applyRenderingPipelineUpdate`) when the mode differs from the
    * mounted one, and also while a pass is pending, because the pending pass
-   * may mount the mode that an older presentation chose.
+   * may mount the mode that an older presentation chose. Otherwise it stores
+   * the reason in the render plan.
    */
   private getRenderModeForPresentation(
     dataId: string,
     previousProps: PlanarDataPresentation | undefined,
     props: PlanarDataPresentation | undefined
-  ): PlanarEffectiveRenderMode | undefined {
+  ): PlanarRenderModeDecision | undefined {
     if (
       previousProps?.slabThickness === props?.slabThickness &&
       previousProps?.blendMode === props?.blendMode
@@ -1221,7 +1333,7 @@ class PlanarViewport extends GenericViewport<
     };
 
     try {
-      return selectPlanarRenderPath(
+      const { renderMode, reason } = selectPlanarRenderPath(
         dataSet,
         this.getRenderPathDecisionOptions(
           dataId,
@@ -1229,7 +1341,9 @@ class PlanarViewport extends GenericViewport<
           this.resolveRequestedOrientation(options.orientation),
           props
         )
-      ).renderMode;
+      );
+
+      return { renderMode, reason };
     } catch {
       return;
     }
@@ -2059,7 +2173,9 @@ class PlanarViewport extends GenericViewport<
   /**
    * One pass of the live remount. The pass first decides and loads the data
    * of every binding, then mounts the bindings whose render mode changes,
-   * one after the other. From its start to its end it holds the renders of
+   * one after the other. A binding whose decision, load or mount throws
+   * keeps its render path and gets the stored presentation
+   * (`releaseWithheldSlabAfterError`). From its start to its end it holds the renders of
    * this viewport (`holdsRenderForRemount`), so no frame shows the new source
    * with the old overlays while a mount waits for its data. An overlay that
    * has no backend of its own follows the backend of the render mode that the
@@ -2128,6 +2244,7 @@ class PlanarViewport extends GenericViewport<
       binding: ViewportDataBinding<PlanarDataPresentation>;
       data: LoadedData<PlanarPayload>;
       renderMode: PlanarEffectiveRenderMode;
+      reason: RenderPlanReason;
     }> = [];
     let sourceRenderBackend: EffectiveRenderBackend | undefined;
 
@@ -2165,6 +2282,7 @@ class PlanarViewport extends GenericViewport<
         }
 
         if (selectedPath.renderMode === binding.rendering.renderMode) {
+          this.updateRenderPlan(dataId, selectedPath.reason);
           this.releaseWithheldSlab(dataId, binding);
           continue;
         }
@@ -2174,13 +2292,15 @@ class PlanarViewport extends GenericViewport<
           binding,
           data,
           renderMode: selectedPath.renderMode,
+          reason: selectedPath.reason,
         });
       } catch (error) {
         this.reportRenderPathError(error, dataId);
+        this.releaseWithheldSlabAfterError(dataId, binding);
       }
     }
 
-    for (const { dataId, binding, data, renderMode } of mounts) {
+    for (const { dataId, binding, data, renderMode, reason } of mounts) {
       if (isStale()) {
         return false;
       }
@@ -2200,11 +2320,13 @@ class PlanarViewport extends GenericViewport<
 
         if (added) {
           this.keepViewPropPlace(propsBefore, this.bindings.get(dataId));
+          this.updateRenderPlan(dataId, reason);
         }
 
         changed = changed || added;
       } catch (error) {
         this.reportRenderPathError(error, dataId);
+        this.releaseWithheldSlabAfterError(dataId, binding);
       }
     }
 
@@ -2250,6 +2372,20 @@ class PlanarViewport extends GenericViewport<
     if (props !== undefined) {
       binding.updateDataPresentation(props);
       this.render();
+    }
+  }
+
+  /**
+   * Gives the mounted binding of a display set the stored presentation after
+   * its remount failed, so the render path that works draws the new slab and
+   * no binding keeps a withheld slab.
+   */
+  private releaseWithheldSlabAfterError(
+    dataId: string,
+    binding: ViewportDataBinding<PlanarDataPresentation>
+  ): void {
+    if (!this.isDestroyed && this.bindings.get(dataId) === binding) {
+      this.releaseWithheldSlab(dataId, binding);
     }
   }
 
@@ -2697,24 +2833,24 @@ class PlanarViewport extends GenericViewport<
       renderMode: selectedPath.renderMode,
       volumeId: selectedPath.volumeId,
     });
-    const renderMode = isVolumeRenderMode(selectedPath.renderMode)
+    const { renderMode, reason } = isVolumeRenderMode(selectedPath.renderMode)
       ? defaultPlanarRenderPathDecisionService.selectVolumeRenderModeForDataSet(
           dataSet,
           decisionOptions
         )
-      : selectedPath.renderMode;
+      : selectedPath;
 
     if (renderMode === selectedPath.renderMode) {
       return {
         data,
-        selectedPath,
+        selectedPath: { ...selectedPath, reason },
         resolvedOrientation,
       };
     }
 
     return {
       data: { ...data, renderMode },
-      selectedPath: { ...selectedPath, renderMode },
+      selectedPath: { ...selectedPath, renderMode, reason },
       resolvedOrientation,
     };
   }

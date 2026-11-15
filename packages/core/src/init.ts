@@ -207,9 +207,51 @@ function getRenderBackend(): RenderBackendValue {
  * @category Initialization
  */
 function resolveAutoRenderBackend(): EffectiveRenderBackend {
-  return config.rendering.useCPURendering
+  return config.rendering.useCPURendering || drawsOnCpuAfterLostContext()
     ? RenderBackends.CPU
     : RenderBackends.GPU;
+}
+
+let lostContext = false;
+
+/**
+ * Whether 'auto' draws on the CPU because a WebGL context was lost and did
+ * not come back (`recordLostContext`). Only with slice first on, so nothing
+ * changes with it off.
+ */
+function drawsOnCpuAfterLostContext(): boolean {
+  return lostContext && (config.rendering.planar?.sliceFirst ?? false);
+}
+
+/**
+ * Records that a WebGL context was lost and did not come back in time. With
+ * slice first on, the 'auto' render backend then draws on the CPU, and the
+ * planar next viewports run their render path decision again. It stays so
+ * until {@link retryGpu} or a new page load.
+ * @internal
+ */
+function recordLostContext(): void {
+  if (lostContext) {
+    return;
+  }
+
+  lostContext = true;
+  log.warn(
+    'a WebGL context was lost and did not come back; with slice first on, the auto render backend draws on the CPU'
+  );
+
+  if (drawsOnCpuAfterLostContext()) {
+    _updateRenderingPipelinesForAllViewports(isPlanarNextViewport);
+  }
+}
+
+/**
+ * Whether 'auto' draws on the CPU now because a WebGL context was lost
+ * (`recordLostContext`).
+ * @internal
+ */
+function hasLostContext(): boolean {
+  return drawsOnCpuAfterLostContext();
 }
 
 /**
@@ -335,6 +377,62 @@ function setSliceFirst(enabled: boolean): void {
   _updateRenderingPipelinesForAllViewports(
     (viewport) => viewport.type === ViewportType.PLANAR_NEXT
   );
+}
+
+const failedVolumeTextureIds = new Set<string>();
+
+/** Whether a viewport is a planar next viewport, the one the router serves. */
+function isPlanarNextViewport(viewport: { type: string }): boolean {
+  return viewport.type === ViewportType.PLANAR_NEXT;
+}
+
+/**
+ * Records that the 3D texture of a volume failed on this page, and runs the
+ * render path decision of the planar next viewports again after the current
+ * task, so no remount starts inside a render. With slice first on, the
+ * router then samples the slabs of that volume on the CPU. The record stays
+ * until {@link retryGpu} or a new page load.
+ *
+ * @param volumeId - the volume whose 3D texture failed
+ * @internal
+ */
+function recordVolumeTextureFailure(volumeId: string): void {
+  if (!volumeId || failedVolumeTextureIds.has(volumeId)) {
+    return;
+  }
+
+  failedVolumeTextureIds.add(volumeId);
+  log.warn(
+    `the 3D texture of the volume ${volumeId} failed; with slice first on, its slabs are sampled on the CPU`
+  );
+  setTimeout(() => {
+    _updateRenderingPipelinesForAllViewports(isPlanarNextViewport);
+  }, 0);
+}
+
+/**
+ * Whether the 3D texture of a volume failed on this page
+ * (`recordVolumeTextureFailure`).
+ * @internal
+ */
+function hasVolumeTextureFailed(volumeId: string | undefined): boolean {
+  return !!volumeId && failedVolumeTextureIds.has(volumeId);
+}
+
+/**
+ * Lets the GPU try again what failed on this page: forgets every 3D texture
+ * that failed and a WebGL context that was lost and did not come back, and
+ * runs the render path decision of the planar next viewports again, so a
+ * layer that moved to the CPU for one of these reasons goes back to the GPU.
+ * Cornerstone never does this by itself.
+ *
+ * @experimental
+ * @category Initialization
+ */
+function retryGpu(): void {
+  failedVolumeTextureIds.clear();
+  lostContext = false;
+  _updateRenderingPipelinesForAllViewports(isPlanarNextViewport);
 }
 
 /**
@@ -552,6 +650,11 @@ export {
   getRenderBackend,
   setRenderBackend,
   setSliceFirst,
+  retryGpu,
+  recordVolumeTextureFailure,
+  recordLostContext,
+  hasLostContext,
+  hasVolumeTextureFailed,
   getEffectiveRenderBackend,
   resolveAutoRenderBackend,
   getConfiguration,

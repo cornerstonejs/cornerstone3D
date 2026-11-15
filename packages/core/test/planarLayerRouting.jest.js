@@ -14,7 +14,7 @@ import { canRenderFloatTextures, setSliceFirst } from '../src/init';
 import { getRenderingCapabilities } from '../src/utilities/renderingCapabilities';
 import {
   PlanarRenderPathDecisionService,
-  canDrawLayerOnGpuVolumePath,
+  getGpuVolumePathLimit,
 } from '../src/RenderingEngine/GenericViewport/Planar/PlanarRenderPathDecisionService';
 
 jest.mock('../src/utilities/renderingCapabilities', () => ({
@@ -22,7 +22,12 @@ jest.mock('../src/utilities/renderingCapabilities', () => ({
   getRenderingCapabilities: jest.fn(),
 }));
 
-const PHONE = { webgl: true, floatLinear: false };
+const PHONE = {
+  webgl: true,
+  floatLinear: false,
+  norm16: true,
+  norm16Linear: true,
+};
 const DESKTOP = { webgl: true, floatLinear: true };
 const NO_WEBGL = { webgl: false, floatLinear: false };
 
@@ -74,29 +79,29 @@ function setProfile(profile) {
   });
 }
 
-describe('canDrawLayerOnGpuVolumePath', () => {
+describe('getGpuVolumePathLimit', () => {
   it('keeps a float layer off the GPU volume path on a device that cannot filter float textures', () => {
-    expect(
-      canDrawLayerOnGpuVolumePath({ arrayType: 'Float32Array' }, PHONE)
-    ).toBe(false);
+    expect(getGpuVolumePathLimit({ arrayType: 'Float32Array' }, PHONE)).toBe(
+      'floatFilter'
+    );
   });
 
   it('lets an integer layer go there on the same device', () => {
     ['Int16Array', 'Uint16Array', 'Uint8Array'].forEach((arrayType) => {
-      expect(canDrawLayerOnGpuVolumePath({ arrayType }, PHONE)).toBe(true);
+      expect(getGpuVolumePathLimit({ arrayType }, PHONE)).toBeUndefined();
     });
   });
 
   it('lets every layer go there on a device that filters float textures', () => {
     ['Float32Array', 'Int16Array'].forEach((arrayType) => {
-      expect(canDrawLayerOnGpuVolumePath({ arrayType }, DESKTOP)).toBe(true);
+      expect(getGpuVolumePathLimit({ arrayType }, DESKTOP)).toBeUndefined();
     });
   });
 
   it('does not limit the GPU path without a profile of a WebGL2 context', () => {
     expect(
-      canDrawLayerOnGpuVolumePath({ arrayType: 'Float32Array' }, NO_WEBGL)
-    ).toBe(true);
+      getGpuVolumePathLimit({ arrayType: 'Float32Array' }, NO_WEBGL)
+    ).toBeUndefined();
   });
 });
 

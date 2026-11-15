@@ -31,6 +31,12 @@ export interface RenderingCapabilities extends TextureFormatSupport {
   webgl: boolean;
   /** MAX_TEXTURE_SIZE of the probed context, 0 when no context exists. */
   maxTextureSize: number;
+  /**
+   * MAX_3D_TEXTURE_SIZE of the probed context: the largest edge of a 3D
+   * texture. 0 when no context exists.
+   * @experimental
+   */
+  max3DTextureSize: number;
   /** Unmasked renderer string when exposed by the browser, '' otherwise. */
   renderer: string;
   /** True when the renderer string identifies a software rasterizer. */
@@ -47,6 +53,7 @@ export interface RenderingCapabilities extends TextureFormatSupport {
 interface WebGLContextInfo {
   webgl: boolean;
   maxTextureSize: number;
+  max3DTextureSize: number;
   renderer: string;
   webglCanvasCopy: boolean;
 }
@@ -120,6 +127,7 @@ function getWebGLContextInfo(): WebGLContextInfo {
   const info: WebGLContextInfo = {
     webgl: false,
     maxTextureSize: 0,
+    max3DTextureSize: 0,
     renderer: '',
     webglCanvasCopy: false,
   };
@@ -138,6 +146,8 @@ function getWebGLContextInfo(): WebGLContextInfo {
 
     info.webgl = true;
     info.maxTextureSize = Number(gl.getParameter(gl.MAX_TEXTURE_SIZE)) || 0;
+    info.max3DTextureSize =
+      Number(gl.getParameter(gl.MAX_3D_TEXTURE_SIZE)) || 0;
 
     // Modern browsers expose the unmasked renderer through RENDERER directly;
     // older ones require the WEBGL_debug_renderer_info extension.

@@ -1542,6 +1542,24 @@ describe('screen grid at rest on a device that cannot filter float textures', ()
     );
   });
 
+  it('asks for the screen grid for a linear maximum or minimum slab along an axis, and not for a NEAREST one', () => {
+    const volume = createVolume();
+
+    [
+      BlendModes.MAXIMUM_INTENSITY_BLEND,
+      BlendModes.MINIMUM_INTENSITY_BLEND,
+    ].forEach((blendMode) => {
+      const slab = { thickness: 10, blendMode };
+
+      expect(
+        needsScreenGridSample(volume, axialNormal, { ...linear, slab }, false)
+      ).toBe(true);
+      expect(
+        needsScreenGridSample(volume, axialNormal, { ...nearest, slab }, false)
+      ).toBe(false);
+    });
+  });
+
   it('samples an enlarged axis-aligned float slice once more on the screen grid at rest', () => {
     const volume = createVolume();
     const camera = {
@@ -1595,6 +1613,7 @@ describe('work at rest after a cancel', () => {
     const sampler = {
       sampleFiner: jest.fn(() => ({ id: 'fine' })),
       prefetch: jest.fn(() => true),
+      hasPendingSteps: () => false,
     };
 
     cancel = scheduleSampledSliceRestWork({

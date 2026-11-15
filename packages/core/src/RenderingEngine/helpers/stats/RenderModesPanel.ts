@@ -293,6 +293,8 @@ export type RenderModePanelBinding = {
   };
   /** What the binding holds on the GPU to draw. */
   gpuTextures?: RenderModePanelTexture[];
+  /** The reason of the render mode, from the render plan of the viewport. */
+  reason?: string;
 };
 
 /**
@@ -385,6 +387,23 @@ const ROLE_STYLES: Record<
   },
 };
 
+/** The reasons of a render plan (`RenderPlanReason`), in a few words each. */
+const REASON_TEXT: Record<string, string> = {
+  frame: 'acquired frame',
+  slice: 'plain slice',
+  slab: 'slab',
+  sliceFirstOff: 'slice first off',
+  notSampled: 'not sampled on the CPU',
+  floatFilter: 'no float 3D filtering',
+  textureSize: '3D texture too large',
+  textureReduced: '3D texture would be reduced',
+  textureFailed: '3D texture failed',
+  slabTooLarge: 'slab too large for the CPU',
+  pinned: 'backend pinned',
+  noWebGL: 'no WebGL2',
+  contextLost: 'WebGL context lost',
+};
+
 function createBindingRow(binding: RenderModePanelBinding): HTMLDivElement {
   const row = document.createElement('div');
   row.style.cssText = `
@@ -423,6 +442,16 @@ function createBindingRow(binding: RenderModePanelBinding): HTMLDivElement {
   `;
 
   appendField(fields, 'mode', binding.renderMode, 48);
+
+  if (binding.reason) {
+    appendField(
+      fields,
+      'why',
+      REASON_TEXT[binding.reason] ?? binding.reason,
+      48
+    );
+  }
+
   appendField(fields, 'data', binding.dataId, 76);
 
   if (binding.actorUID && binding.actorUID !== binding.dataId) {

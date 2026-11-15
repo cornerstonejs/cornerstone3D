@@ -5,6 +5,14 @@ import triggerEvent from '../../utilities/triggerEvent';
 import type { VtkOffscreenMultiRenderWindow } from '../../types';
 import { coreLog } from '../../utilities/logger';
 import volumeTextureStore from '../../cache/volumeTextureStore';
+import { recordLostContext } from '../../init';
+
+/**
+ * How long a lost WebGL context may take to come back: 2 seconds. A context
+ * that is not back by then counts as gone (`recordLostContext`), and with
+ * slice first on the 'auto' render backend draws on the CPU.
+ */
+export const WEBGL_CONTEXT_RESTORE_WAIT_MS = 2000;
 
 const log = coreLog.getLogger('RenderingEngine', 'attachWebGLContextEvents');
 
@@ -131,7 +139,10 @@ export function releaseLostContextResources(
  * When the context comes back, the GL objects of the window are dropped
  * (`releaseLostContextResources`) before WEBGL_CONTEXT_RESTORED fires, and
  * then `onContextRestored` runs, so the engine can render again the viewports
- * that draw through this context.
+ * that draw through this context. A context that is not back within
+ * WEBGL_CONTEXT_RESTORE_WAIT_MS is recorded as gone (`recordLostContext`).
+ * With slice first off that changes nothing; with it on the 'auto' render
+ * backend then draws on the CPU.
  *
  * @returns a function that removes the listeners
  */
@@ -149,7 +160,18 @@ export function attachWebGLContextEvents(
     return () => undefined;
   }
 
+  let restoreTimer: ReturnType<typeof setTimeout> | undefined;
+  const stopRestoreTimer = () => {
+    clearTimeout(restoreTimer);
+    restoreTimer = undefined;
+  };
+
   const onLost = () => {
+    stopRestoreTimer();
+    restoreTimer = setTimeout(() => {
+      restoreTimer = undefined;
+      recordLostContext();
+    }, WEBGL_CONTEXT_RESTORE_WAIT_MS);
     log.warn(
       `CornerstoneRender: WebGL context lost (renderingEngine=${renderingEngineId}, context=${contextIndex})`
     );
@@ -160,6 +182,7 @@ export function attachWebGLContextEvents(
   };
 
   const onRestored = () => {
+    stopRestoreTimer();
     releaseLostContextResources(offscreenMultiRenderWindow);
     triggerEvent(eventTarget, Events.WEBGL_CONTEXT_RESTORED, {
       renderingEngineId,
@@ -172,6 +195,7 @@ export function attachWebGLContextEvents(
   canvas.addEventListener('webglcontextrestored', onRestored);
 
   return () => {
+    stopRestoreTimer();
     canvas.removeEventListener('webglcontextlost', onLost);
     canvas.removeEventListener('webglcontextrestored', onRestored);
   };

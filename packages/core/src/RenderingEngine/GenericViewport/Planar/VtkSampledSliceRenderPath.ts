@@ -84,6 +84,10 @@ type SampledSliceMount = PlanarSlicePlaneMoves & {
  * image classes). Navigation, events, presentation and depth order follow
  * `VtkVolumeSliceRenderPath`.
  *
+ * It draws one value per voxel, so it refuses a volume of several components
+ * per voxel (a colour volume), which the render path decision never sends
+ * here.
+ *
  * It has no acquired frames (`withAcquiredFrames`): the volume path shows them
  * in place of a reduced texture, and this path samples the full-resolution
  * voxels, so every plane, the acquisition plane too, is already exact.
@@ -108,6 +112,12 @@ export class VtkSampledSliceRenderPath
       );
     }
 
+    if ((imageVolume.voxelManager?.numberOfComponents ?? 1) > 1) {
+      throw new Error(
+        '[PlanarViewport] vtkSampledSlice draws one value per voxel; a volume of several components per voxel needs another render mode'
+      );
+    }
+
     const defaultVOIRange = await getSampledSliceDefaultVOIRange(imageVolume);
     const draw = new PlanarSampledSliceActor({
       voxelManager: imageVolume.voxelManager,
@@ -123,6 +133,7 @@ export class VtkSampledSliceRenderPath
       keepFractions: canFilterFloatTextures(),
       maxSliceSize,
       canFilterFloatTextures: () => canFilterFloatTextures(),
+      sampleSlabsInSteps: true,
     });
     const rendering: PlanarSampledSliceRendering = {
       renderMode: ActorRenderMode.VTK_SAMPLED_SLICE,
@@ -152,7 +163,8 @@ export class VtkSampledSliceRenderPath
       maxSliceSize,
     };
 
-    rendering.refreshFidelity = () => refreshSampledSliceFidelity(rendering);
+    rendering.refreshFidelity = () =>
+      refreshSampledSliceFidelity(rendering, sampler);
     rendering.refreshFidelity();
     rendering.removeStreamingSubscriptions = this.subscribeToVolumeData(
       mount,
@@ -391,6 +403,7 @@ export class VtkSampledSliceRenderPath
         )
       )
     );
+    reportSamplingState(mount);
     this.scheduleRestWork(mount);
   }
 
@@ -454,6 +467,10 @@ export class VtkSampledSliceRenderPath
         );
         ctx.display.requestRender();
       },
+      onStateChange: () => {
+        reportSamplingState(mount);
+        ctx.display.requestRender();
+      },
     });
   }
 
@@ -468,6 +485,23 @@ export class VtkSampledSliceRenderPath
 function cancelRestWork(mount: SampledSliceMount): void {
   mount.cancelRestWork?.();
   mount.cancelRestWork = undefined;
+}
+
+/**
+ * Keeps on the rendering whether the slab of the view is too large for the
+ * CPU (`PlanarSliceSampler.isSlabTooLarge`), and lets the viewport update its
+ * render plan when that changes.
+ */
+function reportSamplingState(mount: SampledSliceMount): void {
+  const { ctx, dataId, rendering, sampler } = mount;
+  const slabTooLarge = sampler.isSlabTooLarge();
+
+  if (!!rendering.slabTooLarge === slabTooLarge) {
+    return;
+  }
+
+  rendering.slabTooLarge = slabTooLarge;
+  ctx.viewport.refreshRenderPlan?.(dataId);
 }
 
 /** @internal */
@@ -557,13 +591,19 @@ export async function getSampledSliceDefaultVOIRange(
 /**
  * Reads the fidelity of a sampled slice. The sampler reads the full-resolution
  * voxels, so the record is the record of the full grid, as for the CPU volume
- * path, and a later delivery replaces the data while the volume loads.
+ * path, and a later delivery replaces the data while the volume loads. A
+ * picture that is not the slab of the view yet, because its steps still run
+ * or because it is too large for the CPU, is pending as a loading picture is.
  */
 function refreshSampledSliceFidelity(
-  rendering: PlanarSampledSliceRendering
+  rendering: PlanarSampledSliceRendering,
+  sampler: PlanarSliceSampler
 ): void {
   rendering.voxelQuality = rendering.imageVolume.getVoxelQuality?.();
-  rendering.qualityPending = isVolumeLoading(rendering.imageVolume);
+  rendering.qualityPending =
+    isVolumeLoading(rendering.imageVolume) ||
+    sampler.hasPendingSteps() ||
+    sampler.isSlabTooLarge();
   rendering.fullGrid = rendering.imageVolume.voxelGrid;
 }
 

@@ -71,4 +71,7 @@ export type {
   PlanarViewPresentationSelector,
   PlanarSliceState,
   PlanarResolvedICamera,
+  RenderPlanChangedEventDetail,
+  RenderPlanLayer,
+  RenderPlanReason,
 } from './PlanarViewportTypes';

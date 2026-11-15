@@ -9,7 +9,7 @@ import { spanOfBox, weightInSpan } from '../../utilities/voxelGrid/boxSpan';
 import VoxelStatistics from '../../enums/VoxelStatistics';
 import ImageQualityStatus from '../../enums/ImageQualityStatus';
 import autoLoad from '../../utilities/autoLoad';
-import { getConfiguration } from '../../init';
+import { getConfiguration, recordVolumeTextureFailure } from '../../init';
 import { sampleUnfilterableFloatNearest } from './floatLinearFilter';
 
 const DEFAULT_MAX_SLICES_PER_RENDER = 16;
@@ -48,6 +48,52 @@ function reducedTextureFillBudget() {
     maxMillisecondsPerRender:
       budget?.maxMillisecondsPerRender ?? DEFAULT_MAX_MILLISECONDS_PER_RENDER,
   };
+}
+
+/**
+ * The most GL errors that one drain reads. A context keeps one flag for each
+ * kind of error, so a handful is all there can be.
+ */
+const MAX_DRAINED_GL_ERRORS = 8;
+
+/**
+ * Whether the allocation of a 3D texture is checked for a failure
+ * (`allocationFailed`): only with slice first on, because only the router of
+ * the planar next viewports acts on a failure. With slice first off the
+ * allocation runs exactly as before.
+ */
+function watchesAllocation() {
+  return !!getConfiguration()?.rendering?.planar?.sliceFirst;
+}
+
+/** Reads and drops the GL errors that are pending on a context. */
+function drainGLErrors(gl) {
+  if (typeof gl?.getError !== 'function') {
+    return;
+  }
+
+  for (let count = 0; count < MAX_DRAINED_GL_ERRORS; count++) {
+    if (gl.getError() === gl.NO_ERROR) {
+      return;
+    }
+  }
+}
+
+/**
+ * Whether the allocation of a 3D texture failed: vtk.js refused it, the
+ * context set an error during it (out of memory, an edge too large), or the
+ * context was lost during it.
+ */
+function allocationFailed(gl, created) {
+  if (!created || !gl) {
+    return !created;
+  }
+
+  if (gl.isContextLost?.()) {
+    return true;
+  }
+
+  return typeof gl.getError === 'function' && gl.getError() !== gl.NO_ERROR;
 }
 
 /**
@@ -125,7 +171,29 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
    * re-allocation after the first fill would otherwise stay black.
    */
   publicAPI.create3DFromRaw = (options) => {
-    const created = superCreate3DFromRaw(options);
+    const watch = watchesAllocation();
+
+    if (watch) {
+      drainGLErrors(model.context);
+    }
+
+    let created;
+
+    try {
+      created = superCreate3DFromRaw(options);
+    } catch (error) {
+      if (!watch) {
+        throw error;
+      }
+
+      recordVolumeTextureFailure(model.volumeId);
+
+      return false;
+    }
+
+    if (watch && allocationFailed(model.context, created)) {
+      recordVolumeTextureFailure(model.volumeId);
+    }
 
     if (created && !options.data) {
       // New storage reads 0, so a slice with no data needs no upload until a

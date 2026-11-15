@@ -37,6 +37,12 @@ export const SAMPLED_SLICE_REST_DELAY_MS = 100;
 export const SAMPLED_SLICE_IDLE_TIMEOUT_MS = 500;
 
 /**
+ * The work of one step of a slab sampled in steps, in milliseconds: 12 ms per
+ * animation frame, so a frame of 16.7 ms keeps time to draw.
+ */
+export const SAMPLED_SLICE_STEP_MS = 12;
+
+/**
  * The smallest move of the view plane along its normal that counts as a
  * scroll step, in world units.
  */
@@ -203,16 +209,66 @@ export function getNeighbourCameras(args: {
 }
 
 /**
+ * Runs the steps of a slab that a sampler samples in steps
+ * (`PlanarSliceSampler.continueSampling`), SAMPLED_SLICE_STEP_MS of work per
+ * animation frame, until none is left. `onSlice` gets the slab when it is
+ * done, and `onDone` runs after the last step.
+ *
+ * @returns the function that cancels the steps that remain
+ */
+export function runSampledSliceSteps(args: {
+  sampler: PlanarSliceSampler;
+  volume: IImageVolume;
+  onSlice: (slice: PlanarSampledSlice) => void;
+  onDone: () => void;
+}): () => void {
+  const { sampler, volume } = args;
+  let cancelled = false;
+  let frameId = requestAnimationFrame(function step() {
+    if (cancelled) {
+      return;
+    }
+
+    const slice = sampler.continueSampling(
+      volume,
+      performance.now() + SAMPLED_SLICE_STEP_MS
+    );
+
+    if (slice) {
+      args.onSlice(slice);
+    }
+
+    if (cancelled) {
+      return;
+    }
+
+    if (sampler.hasPendingSteps()) {
+      frameId = requestAnimationFrame(step);
+    } else {
+      args.onDone();
+    }
+  });
+
+  return () => {
+    cancelled = true;
+    cancelAnimationFrame(frameId);
+  };
+}
+
+/**
  * Starts the work of a view at rest: it runs once the view has not changed
- * for SAMPLED_SLICE_REST_DELAY_MS. First the slice on screen is sampled once
- * more on the screen grid when the sampler wants that
- * (`PlanarSliceSampler.sampleFiner`), and `onFinerSlice` draws it. Then the
- * neighbour slices are prefetched in idle time, one sample per idle callback,
- * in the order of `getNeighbours`. Nothing is prefetched while the volume
- * loads, since each new frame makes the kept slices stale. Each request reads
- * the camera, the inputs and the screen grid at the time it runs. Once the
- * work is cancelled, no part of it runs or schedules more, also when the
- * cancel comes from `onFinerSlice`.
+ * for SAMPLED_SLICE_REST_DELAY_MS. First the steps of a slab that the sampler
+ * samples in steps run (`runSampledSliceSteps`), and `onFinerSlice` draws the
+ * slab when it is done. Then the slice on screen is sampled once more on the
+ * screen grid when the sampler wants that (`PlanarSliceSampler.sampleFiner`),
+ * at once or in steps, and `onFinerSlice` draws it. Then the neighbour slices
+ * are prefetched in idle time, one sample per idle callback, in the order of
+ * `getNeighbours`. Nothing is prefetched while the volume loads, since each
+ * new frame makes the kept slices stale. Each request reads the camera, the
+ * inputs and the screen grid at the time it runs. `onStateChange` runs after
+ * each part, so the caller can read the state of the sampler. Once the work
+ * is cancelled, no part of it runs or schedules more, also when the cancel
+ * comes from `onFinerSlice`.
  *
  * @returns the function that cancels the pending work
  */
@@ -228,6 +284,7 @@ export function scheduleSampledSliceRestWork(args: {
     camera: PlanarResolvedICamera | undefined
   ) => PlanarResolvedICamera[];
   onFinerSlice: (slice: PlanarSampledSlice) => void;
+  onStateChange?: () => void;
 }): () => void {
   const { sampler, volume } = args;
   let cancelPending: () => void;
@@ -251,6 +308,24 @@ export function scheduleSampledSliceRestWork(args: {
       : () => undefined;
   };
   const onRest = () => {
+    if (cancelled) {
+      return;
+    }
+
+    if (sampler.hasPendingSteps()) {
+      cancelPending = runSampledSliceSteps({
+        sampler,
+        volume,
+        onSlice: args.onFinerSlice,
+        onDone: () => {
+          args.onStateChange?.();
+          onRest();
+        },
+      });
+
+      return;
+    }
+
     const camera = args.getCamera();
     const inputs = args.getInputs();
     const finer = sampler.sampleFiner(
@@ -266,7 +341,19 @@ export function scheduleSampledSliceRestWork(args: {
       args.onFinerSlice(finer);
     }
 
-    if (cancelled || isVolumeLoading(volume)) {
+    args.onStateChange?.();
+
+    if (cancelled) {
+      return;
+    }
+
+    if (sampler.hasPendingSteps()) {
+      onRest();
+
+      return;
+    }
+
+    if (isVolumeLoading(volume)) {
       return;
     }
 

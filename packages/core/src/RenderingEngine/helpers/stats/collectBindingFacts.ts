@@ -31,6 +31,7 @@ export type DebugBinding = {
 /** A viewport that can list its display sets for the stats overlay. */
 export type DebugBindingsSource = {
   getDebugBindings?: () => ReadonlyArray<DebugBinding>;
+  getRenderPlan?: () => ReadonlyArray<{ dataId: string; reason?: string }>;
 };
 
 type DebugSliceCacheStatistics = {
@@ -70,7 +71,12 @@ type DebugImageData = {
 /** The facts of one binding that the overlay adds to its row. */
 export type BindingFacts = Pick<
   RenderModePanelBinding,
-  'sliceSize' | 'sampleMs' | 'fineSampleMs' | 'sliceCache' | 'gpuTextures'
+  | 'sliceSize'
+  | 'sampleMs'
+  | 'fineSampleMs'
+  | 'sliceCache'
+  | 'gpuTextures'
+  | 'reason'
 >;
 
 const SLICE_TEXTURE_MODES = new Set<string>([
@@ -90,13 +96,16 @@ const CANVAS_MODES = new Set<string>([
  * A binding drawn by an image mapper holds a 2D texture of the image of its
  * mapper. A binding drawn from a volume holds the 3D textures of that volume,
  * whose bytes `getVolumeTextureBytes` gives. A binding drawn on a 2D canvas
- * holds no texture. Returns the facts by display set id, and never throws.
+ * holds no texture. A viewport with a render plan also gives the reason of
+ * the render mode of each display set. Returns the facts by display set id,
+ * and never throws.
  */
 export function collectBindingFacts(
   viewport: DebugBindingsSource,
   getVolumeTextureBytes: (volumeId: string) => number
 ): Map<string, BindingFacts> {
   const factsById = new Map<string, BindingFacts>();
+  const reasonById = readRenderPlanReasons(viewport);
   let bindings: ReadonlyArray<DebugBinding> = [];
 
   try {
@@ -106,17 +115,38 @@ export function collectBindingFacts(
   }
 
   for (const binding of bindings) {
+    const reason = reasonById.get(binding.displaySetId);
+
     try {
-      factsById.set(
-        binding.displaySetId,
-        readBindingFacts(binding, getVolumeTextureBytes)
-      );
+      factsById.set(binding.displaySetId, {
+        ...readBindingFacts(binding, getVolumeTextureBytes),
+        ...(reason ? { reason } : {}),
+      });
     } catch {
-      factsById.set(binding.displaySetId, {});
+      factsById.set(binding.displaySetId, reason ? { reason } : {});
     }
   }
 
   return factsById;
+}
+
+/** The reason of each layer of the render plan of a viewport, by display set id. */
+function readRenderPlanReasons(
+  viewport: DebugBindingsSource
+): Map<string, string> {
+  const reasonById = new Map<string, string>();
+
+  try {
+    for (const layer of viewport.getRenderPlan?.() ?? []) {
+      if (layer.reason) {
+        reasonById.set(layer.dataId, layer.reason);
+      }
+    }
+  } catch {
+    return reasonById;
+  }
+
+  return reasonById;
 }
 
 /**

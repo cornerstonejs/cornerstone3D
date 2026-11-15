@@ -316,12 +316,28 @@ export function volumeTextureReductionFactors(
   volume: IImageVolume,
   gpuSettings: GpuSettings | undefined
 ): Point3 {
-  if (
-    !gpuSettings ||
-    !getLossyDownsampling().final ||
-    volume.isDynamicVolume?.() ||
-    componentsOf(volume) > 1
-  ) {
+  if (!gpuSettings || !getLossyDownsampling().final) {
+    return [1, 1, 1];
+  }
+
+  return gpuSettingsReductionFactors(volume, gpuSettings);
+}
+
+/**
+ * The reduction factors that some GPU settings give the full-extent texture
+ * of a volume, whether final downsampling is on or not: the factors that
+ * `volumeTextureReductionFactors` gives once an application turns it on. A
+ * dynamic volume and a volume of more than one component get factors of 1.
+ *
+ * @param volume - the volume to draw
+ * @param gpuSettings - the GPU settings that apply
+ * @returns the box size on each axis of the voxel grid
+ */
+export function gpuSettingsReductionFactors(
+  volume: IImageVolume,
+  gpuSettings: GpuSettings
+): Point3 {
+  if (volume.isDynamicVolume?.() || componentsOf(volume) > 1) {
     return [1, 1, 1];
   }
 

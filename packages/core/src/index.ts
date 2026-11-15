@@ -130,6 +130,9 @@ export type {
   PlanarViewPresentation,
   PlanarViewPresentationSelector,
   PlanarViewState,
+  RenderPlanChangedEventDetail,
+  RenderPlanLayer,
+  RenderPlanReason,
 } from './RenderingEngine/GenericViewport/Planar';
 export type {
   WSIProjectionPresentation,
@@ -217,6 +220,7 @@ import {
   getRenderBackend,
   setRenderBackend,
   setSliceFirst,
+  retryGpu,
   getEffectiveRenderBackend,
   getConfiguration,
   setConfiguration,
@@ -496,6 +500,7 @@ export {
   getRenderBackend,
   setRenderBackend,
   setSliceFirst,
+  retryGpu,
   getEffectiveRenderBackend,
   getRenderingCapabilities,
   detectRenderingCapabilities,

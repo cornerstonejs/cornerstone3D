@@ -1,18 +1,32 @@
 import { vec3 } from 'gl-matrix';
 import cache from '../../../cache/cache';
-import { BlendModes, OrientationAxis } from '../../../enums';
+import { BlendModes, OrientationAxis, RenderBackends } from '../../../enums';
 import { ActorRenderMode } from '../../../types/IActor';
 import type { RenderBackendValue } from '../../../enums';
-import { getConfiguration, getEffectiveRenderBackend } from '../../../init';
+import {
+  getConfiguration,
+  getEffectiveRenderBackend,
+  getLossyDownsampling,
+  hasLostContext,
+  hasVolumeTextureFailed,
+} from '../../../init';
 import * as metaData from '../../../metaData';
 import {
+  getRenderBackendDefinition,
   getRenderModeForBackend,
   getRenderSurfaceForRenderMode,
   getSampledVolumeRenderModeForBackend,
 } from '../../helpers/renderBackendRegistry';
 import resolveViewportVolumeId from '../../helpers/resolveViewportVolumeId';
-import { volumeTextureReductionFactors } from '../../helpers/volumeRenderStrategy';
-import { gpuSettingsForRender } from '../../../utilities/gpuSettingsPresets';
+import {
+  gpuSettingsReductionFactors,
+  volumeTextureReductionFactors,
+} from '../../helpers/volumeRenderStrategy';
+import {
+  getActiveGpuSettings,
+  gpuSettingsForRender,
+} from '../../../utilities/gpuSettingsPresets';
+import { deriveBoxAverageGrid } from '../../../utilities/voxelGrid';
 import type { EffectiveRenderBackend } from '../../../types/RenderBackendRegistry';
 import { isValidVolume } from '../../../utilities/isValidVolume';
 import { getRenderingCapabilities } from '../../../utilities/renderingCapabilities';
@@ -29,11 +43,17 @@ import type {
   PlanarEffectiveRenderMode,
   PlanarOrientation,
   PlanarRegisteredDataSet,
+  RenderPlanReason,
 } from './PlanarViewportTypes';
 
-export interface SelectedPlanarRenderPath {
-  acquisitionOrientation?: PlanarViewState['orientation'];
+/** A render mode and the reason of the decision that chose it. */
+export type PlanarRenderModeDecision = {
   renderMode: PlanarEffectiveRenderMode;
+  reason: RenderPlanReason;
+};
+
+export interface SelectedPlanarRenderPath extends PlanarRenderModeDecision {
+  acquisitionOrientation?: PlanarViewState['orientation'];
   volumeId: string;
 }
 
@@ -169,36 +189,161 @@ export function hasSlab(
 export type PlanarLayerFacts = {
   /** The array type of the voxels of the layer, such as 'Float32Array'. */
   arrayType?: string;
+  /** The edges of the 3D texture that the GPU volume path would make. */
+  textureDimensions?: Point3;
+  /**
+   * True when the GPU settings would reduce that texture and the application
+   * did not ask for reduced textures (`rendering.lossyDownsampling.final`).
+   */
+  wouldReduce?: boolean;
+  /** True when the 3D texture of the layer failed on this page. */
+  failed?: boolean;
 };
 
 /**
- * Whether the GPU volume path (`vtkVolumeSlice`) can draw a layer correctly
- * on this device. That path holds the voxels of the layer in a 3D texture of
- * their own type. A 32-bit float texture needs linear filtering, and a GPU
- * whose capability profile says `floatLinear` is false (Safari on iOS) reads
- * it as 0, so a float layer cannot go there; nearest filtering would draw
- * it, but not smoothed. Without a profile of a WebGL2 context the GPU path is
- * not limited here. Later device rules (texture size, memory) go here too.
+ * Why the GPU volume path (`vtkVolumeSlice`) cannot draw a layer exactly on
+ * this device, or undefined when it can. That path holds the voxels of the
+ * layer in a 3D texture of their own type. The rules, in this order:
+ * - `textureFailed`: the 3D texture of the layer failed on this page
+ *   (`recordVolumeTextureFailure`), and only `retryGpu` or a new page load
+ *   lets it try again;
+ * - `textureSize`: an edge of the texture is larger than the largest 3D
+ *   texture of the device (`max3DTextureSize`, not limited when unknown);
+ * - `textureReduced`: the GPU settings would reduce the texture, which shows
+ *   other pixels than the data; an application that turned on reduced
+ *   textures keeps them, so this fact is false then;
+ * - `floatFilter`: the texture is a 32-bit float texture
+ *   (`holdsFloatTexture`) and the capability profile says `floatLinear` is
+ *   false (Safari on iOS). Such a texture is drawn with nearest filtering,
+ *   with the right values but not smoothed.
+ *
+ * Without a profile of a WebGL2 context the GPU path is not limited here.
  *
  * @param layer - The facts of the layer
  * @param capabilities - The capability profile of the device
  */
-export function canDrawLayerOnGpuVolumePath(
+export function getGpuVolumePathLimit(
   layer: PlanarLayerFacts,
-  capabilities: Pick<RenderingCapabilities, 'webgl' | 'floatLinear'>
-): boolean {
+  capabilities: Pick<RenderingCapabilities, 'webgl' | 'floatLinear'> &
+    Partial<
+      Pick<
+        RenderingCapabilities,
+        'max3DTextureSize' | 'norm16' | 'norm16Linear'
+      >
+    >
+): RenderPlanReason | undefined {
   if (!capabilities.webgl) {
-    return true;
+    return undefined;
   }
 
-  return layer.arrayType !== 'Float32Array' || capabilities.floatLinear;
+  if (layer.failed) {
+    return 'textureFailed';
+  }
+
+  const max3DTextureSize = capabilities.max3DTextureSize ?? 0;
+
+  if (
+    max3DTextureSize > 0 &&
+    layer.textureDimensions?.some((edge) => edge > max3DTextureSize)
+  ) {
+    return 'textureSize';
+  }
+
+  if (layer.wouldReduce) {
+    return 'textureReduced';
+  }
+
+  if (
+    !capabilities.floatLinear &&
+    holdsFloatTexture(layer.arrayType, capabilities)
+  ) {
+    return 'floatFilter';
+  }
+
+  return undefined;
 }
 
-/** The facts of {@link PlanarLayerFacts} of a volume. */
+/**
+ * Whether the 3D texture of the GPU volume path holds the voxels of an array
+ * type as 32-bit floats. That path never uses half floats for its 3D texture,
+ * so float data and 32-bit integer data are 32-bit floats, and 16-bit data
+ * too unless the device draws norm16 textures (`norm16` and `norm16Linear`).
+ * 8-bit data is not.
+ */
+function holdsFloatTexture(
+  arrayType: string | undefined,
+  capabilities: Partial<Pick<RenderingCapabilities, 'norm16' | 'norm16Linear'>>
+): boolean {
+  switch (arrayType) {
+    case 'Float32Array':
+    case 'Float64Array':
+    case 'Int32Array':
+    case 'Uint32Array':
+      return true;
+    case 'Int16Array':
+    case 'Uint16Array':
+      return !(capabilities.norm16 && capabilities.norm16Linear);
+    default:
+      return false;
+  }
+}
+
+/**
+ * The facts of {@link PlanarLayerFacts} of a volume. The texture is the one
+ * that the GPU volume path would make: the full-resolution grid, or the
+ * reduced grid when the application turned on reduced textures and the
+ * active GPU settings reduce this volume.
+ */
 function getLayerFacts(volume: IImageVolume): PlanarLayerFacts {
+  const arrayType =
+    volume.voxelManager?.getConstructor?.()?.name ?? volume.dataType;
+  const grid = volume.voxelGrid;
+
+  if (!grid) {
+    return {
+      arrayType,
+      textureDimensions: volume.dimensions,
+      failed: hasVolumeTextureFailed(volume.volumeId),
+    };
+  }
+
+  const factors = gpuSettingsReductionFactors(volume, getActiveGpuSettings());
+  const reduces = factors.some((factor) => factor > 1);
+  const reducedByApplication = reduces && getLossyDownsampling().final;
+
   return {
-    arrayType: volume.voxelManager?.getConstructor?.()?.name ?? volume.dataType,
+    arrayType,
+    textureDimensions: reducedByApplication
+      ? deriveBoxAverageGrid(grid, { factors }).dimensions
+      : grid.dimensions,
+    wouldReduce: reduces && !reducedByApplication,
+    failed: hasVolumeTextureFailed(volume.volumeId),
   };
+}
+
+/**
+ * The reason of a decision that the backend makes alone, or undefined for
+ * the 'gpu' backend, whose decision depends on the view and the layer. A
+ * backend that draws on the CPU does so because the device has no WebGL2,
+ * because the WebGL context was lost and did not come back, or because the
+ * application pinned it. Any other backend is pinned by the application.
+ */
+function getBackendReason(
+  backend: EffectiveRenderBackend
+): RenderPlanReason | undefined {
+  if (backend === RenderBackends.GPU) {
+    return undefined;
+  }
+
+  if (getRenderBackendDefinition(backend)?.surface !== 'cpu') {
+    return 'pinned';
+  }
+
+  if (!getRenderingCapabilities().webgl) {
+    return 'noWebGL';
+  }
+
+  return hasLostContext() ? 'contextLost' : 'pinned';
 }
 
 type PlanarPathInputs = {
@@ -248,9 +393,9 @@ export class PlanarRenderPathDecisionService {
 
     return {
       acquisitionOrientation,
-      renderMode: useVolumePath
+      ...(useVolumePath
         ? this.selectVolumeRenderModeForDataSet(dataSet, options)
-        : this.selectImageRenderMode(options),
+        : this.selectImageRenderMode(options)),
       volumeId,
     };
   }
@@ -376,8 +521,13 @@ export class PlanarRenderPathDecisionService {
 
   private selectImageRenderMode(
     options: PlanarRenderPathDecisionOptions
-  ): PlanarEffectiveRenderMode {
-    return getRenderModeForBackend(this.resolveBackend(options), 'image');
+  ): PlanarRenderModeDecision {
+    const backend = this.resolveBackend(options);
+
+    return {
+      renderMode: getRenderModeForBackend(backend, 'image'),
+      reason: getBackendReason(backend) ?? 'frame',
+    };
   }
 
   private selectVolumeRenderMode(
@@ -387,57 +537,67 @@ export class PlanarRenderPathDecisionService {
   }
 
   /**
-   * The volume render mode of one data set: the sampled volume mode of the
-   * resolved backend when `canSampleSliceOnCpu` holds, the volume mode of the
-   * backend otherwise. So with slice first on and the 'gpu' backend, a plain
-   * slice is sampled and any slab is drawn by the GPU volume path, except the
-   * slab of a layer that this device cannot draw there
-   * (`canDrawLayerOnGpuVolumePath`), which is sampled too. A backend with no
-   * sampled volume mode (the 'cpu'
-   * backend, or an extension backend that declares none) keeps its volume
-   * mode. The viewport calls it again once the data provider has loaded a
-   * data set on the volume path, because the load may create the volume that
-   * the first decision did not find in the cache.
+   * The volume render mode of one data set and its reason: the sampled
+   * volume mode of the resolved backend when `decideSliceOnCpu` samples, the
+   * volume mode of the backend otherwise. So with slice first on and the
+   * 'gpu' backend, a plain slice is sampled and any slab is drawn by the GPU
+   * volume path, except the slab of a layer that this device cannot draw
+   * there exactly (`getGpuVolumePathLimit`), which is sampled too. A backend
+   * with no sampled volume mode (the 'cpu' backend, or an extension backend
+   * that declares none) keeps its volume mode. The viewport calls it again
+   * once the data provider has loaded a data set on the volume path, because
+   * the load may create the volume that the first decision did not find in
+   * the cache.
    */
   selectVolumeRenderModeForDataSet(
     dataSet: PlanarRegisteredDataSet,
     options: PlanarRenderPathDecisionOptions
-  ): PlanarEffectiveRenderMode {
+  ): PlanarRenderModeDecision {
     const backend = this.resolveBackend(options);
+    const volumeRenderMode = getRenderModeForBackend(backend, 'volume');
     const sampledVolumeRenderMode =
       getSampledVolumeRenderModeForBackend(backend);
+    const backendReason = getBackendReason(backend);
 
-    if (sampledVolumeRenderMode && this.canSampleSliceOnCpu(dataSet, options)) {
-      return sampledVolumeRenderMode;
+    if (!sampledVolumeRenderMode) {
+      return {
+        renderMode: volumeRenderMode,
+        reason: backendReason ?? 'sliceFirstOff',
+      };
     }
 
-    return getRenderModeForBackend(backend, 'volume');
+    const { sampled, reason } = this.decideSliceOnCpu(dataSet, options);
+
+    return {
+      renderMode: sampled ? sampledVolumeRenderMode : volumeRenderMode,
+      reason: backendReason ?? reason,
+    };
   }
 
   /**
-   * Whether a volume data set may draw its slice sampled on the CPU (slice
-   * first). All of these must hold: slice first is on for the data set (its
-   * own option, else the global configuration); the volume is in the cache,
-   * under the id that the data provider gives it (`resolveViewportVolumeId`),
-   * and holds one value per voxel (a colour volume keeps the GPU volume
-   * path); the data set is not a segmentation overlay; and the view has no
-   * slab (`hasSlab`), or the GPU volume path cannot draw this layer on this
-   * device (`canDrawLayerOnGpuVolumePath` with the capability profile), so
-   * its slab is sampled on the CPU whatever its thickness. The caller checks
-   * that the data set takes the volume path and that the backend has a
-   * sampled volume mode.
+   * Whether a volume data set draws its slice sampled on the CPU (slice
+   * first), and why. It samples when all of these hold: slice first is on
+   * for the data set (its own option, else the global configuration); the
+   * volume is in the cache, under the id that the data provider gives it
+   * (`resolveViewportVolumeId`), and holds one value per voxel (a colour
+   * volume keeps the GPU volume path); the data set is not a segmentation
+   * overlay; and the view has no slab (`hasSlab`), or the GPU volume path
+   * cannot draw this layer exactly on this device (`getGpuVolumePathLimit`
+   * with the capability profile), so its slab is sampled on the CPU whatever
+   * its thickness. The caller checks that the data set takes the volume path
+   * and that the backend has a sampled volume mode.
    */
-  private canSampleSliceOnCpu(
+  private decideSliceOnCpu(
     dataSet: PlanarRegisteredDataSet,
     options: PlanarRenderPathDecisionOptions
-  ): boolean {
+  ): { sampled: boolean; reason: RenderPlanReason } {
     const sliceFirst =
       options.sliceFirst ??
       getConfiguration().rendering?.planar?.sliceFirst ??
       false;
 
     if (!sliceFirst) {
-      return false;
+      return { sampled: false, reason: 'sliceFirstOff' };
     }
 
     if (
@@ -446,7 +606,7 @@ export class PlanarRenderPathDecisionService {
         role: options.role ?? 'overlay',
       })
     ) {
-      return false;
+      return { sampled: false, reason: 'notSampled' };
     }
 
     const volume = cache.getVolume(
@@ -458,16 +618,21 @@ export class PlanarRenderPathDecisionService {
       !volume.voxelManager ||
       (volume.voxelManager.numberOfComponents ?? 1) !== 1
     ) {
-      return false;
+      return { sampled: false, reason: 'notSampled' };
     }
 
-    return (
-      !hasSlab(volume, options.slabThickness) ||
-      !canDrawLayerOnGpuVolumePath(
-        getLayerFacts(volume),
-        getRenderingCapabilities()
-      )
+    if (!hasSlab(volume, options.slabThickness)) {
+      return { sampled: true, reason: 'slice' };
+    }
+
+    const limit = getGpuVolumePathLimit(
+      getLayerFacts(volume),
+      getRenderingCapabilities()
     );
+
+    return limit
+      ? { sampled: true, reason: limit }
+      : { sampled: false, reason: 'slab' };
   }
 
   /**

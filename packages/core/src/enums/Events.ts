@@ -378,6 +378,18 @@ enum Events {
    * overlays. Detail: `{ renderingEngineId, viewportId }`.
    */
   RENDERING_PIPELINE_CHANGED = 'CORNERSTONE_RENDERING_PIPELINE_CHANGED',
+
+  /**
+   * Triggers on the viewport element and on the eventTarget when the render
+   * plan of one layer of a planar next viewport changes
+   * (`PlanarViewport.getRenderPlan`): how its slice is made, what draws it,
+   * its render mode or the reason. It fires at most once for each layer in
+   * one pass of the render path decision, and also for a layer that was just
+   * added. Detail: `{ renderingEngineId, viewportId, dataId, previous,
+   * current, reason }`.
+   * @experimental
+   */
+  RENDER_PLAN_CHANGED = 'CORNERSTONE_RENDER_PLAN_CHANGED',
 }
 
 export default Events;

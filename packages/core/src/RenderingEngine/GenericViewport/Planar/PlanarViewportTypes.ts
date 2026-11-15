@@ -58,6 +58,82 @@ export type PlanarEffectiveRenderMode =
   | ActorRenderMode.VTK_SAMPLED_SLICE
   | ActorRenderMode.CPU_VOLUME
   | (string & {});
+/**
+ * Why a layer of a planar viewport is drawn the way it is, in one word:
+ * - `frame`: the view is the acquisition plane, so the acquired frame is the
+ *   image.
+ * - `slice`: the view is a plain slice, cut on the CPU (slice first).
+ * - `slab`: the view is a slab, drawn from the GPU volume texture.
+ * - `sliceFirstOff`: slice first is off for this layer.
+ * - `notSampled`: slice first is on, but the CPU sampler does not take this
+ *   layer (a segmentation overlay, colour data, or a volume not loaded yet).
+ * - `floatFilter`: the device cannot filter the 3D texture of this layer.
+ * - `textureSize`: the 3D texture is larger than the device allows.
+ * - `textureReduced`: the 3D texture would be reduced (GPU settings), and the
+ *   application did not ask for reduced textures.
+ * - `textureFailed`: the 3D texture of this layer failed on this page.
+ * - `slabTooLarge`: the CPU slab cannot be made exact within the work limit,
+ *   so the picture is not the slab yet.
+ * - `pinned`: the application pinned the render backend.
+ * - `noWebGL`: the device has no WebGL2, so the CPU draws.
+ * - `contextLost`: the WebGL context was lost and did not come back, so the
+ *   CPU draws.
+ *
+ * @experimental
+ */
+export type RenderPlanReason =
+  | 'frame'
+  | 'slice'
+  | 'slab'
+  | 'sliceFirstOff'
+  | 'notSampled'
+  | 'floatFilter'
+  | 'textureSize'
+  | 'textureReduced'
+  | 'textureFailed'
+  | 'slabTooLarge'
+  | 'pinned'
+  | 'noWebGL'
+  | 'contextLost';
+
+/**
+ * How one layer (display set) of a planar viewport is drawn
+ * (`PlanarViewport.getRenderPlan`).
+ *
+ * @experimental
+ */
+export type RenderPlanLayer = {
+  /** The display set id of the layer. */
+  dataId: string;
+  role: BindingRole;
+  /**
+   * How the slice is made: `frame` (the acquired frame is the image), `cpu`
+   * (the CPU sampler) or `gpuVolume` (the GPU volume texture).
+   */
+  slice: 'frame' | 'cpu' | 'gpuVolume';
+  /** What draws the slice: the GPU or the CPU (a 2D canvas). */
+  draw: 'gpu' | 'cpu';
+  /** The render mode behind the two. */
+  renderMode: PlanarEffectiveRenderMode;
+  reason: RenderPlanReason;
+};
+
+/**
+ * The detail of `Events.RENDER_PLAN_CHANGED`: the entry of one layer before
+ * and after the change. `previous` is undefined for a layer that was just
+ * added.
+ *
+ * @experimental
+ */
+export type RenderPlanChangedEventDetail = {
+  renderingEngineId: string;
+  viewportId: string;
+  dataId: string;
+  previous?: RenderPlanLayer;
+  current: RenderPlanLayer;
+  reason: RenderPlanReason;
+};
+
 export type PlanarOrientation =
   | OrientationAxis.ACQUISITION
   | OrientationAxis.AXIAL
@@ -227,6 +303,12 @@ export interface PlanarViewportRenderContext extends BaseViewportRenderContext {
      * acquisition plane.
      */
     canDrawAcquiredFrames?(dataId: string): boolean;
+    /**
+     * Reads the render plan entry of `dataId` again after its render path
+     * changed what the entry reads (`slabTooLarge`), and fires
+     * `RENDER_PLAN_CHANGED` when it changed.
+     */
+    refreshRenderPlan?(dataId: string): void;
   };
   renderPath: PlanarRenderPathRuntime;
   view: PlanarActiveViewRuntime;

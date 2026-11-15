@@ -86,6 +86,49 @@ export const MAX_PREFETCH_SLICE_SAMPLES = 1_000_000;
 const MAX_SPARE_PIXEL_ARRAYS = 2;
 
 /**
+ * The most voxel samples that a slab of a sampler that samples slabs in steps
+ * (`PlanarSliceSamplerOptions.sampleSlabsInSteps`) takes at once: 250
+ * thousand, about 6 to 15 ms at the 23 to 59 ns per slab sample measured. A
+ * larger slab is sampled in steps (`continueSampling`).
+ */
+export const MAX_SLAB_SAMPLES_AT_ONCE = 250_000;
+
+/**
+ * The most voxel samples that a slab sampled in steps may take: 200 million,
+ * about 5 to 12 seconds of work at the 23 to 59 ns per slab sample measured.
+ * A larger slab is not sampled; the sampler says so (`isSlabTooLarge`).
+ */
+export const MAX_CPU_SLAB_SAMPLES = 200_000_000;
+
+/**
+ * The rows of one step of a slab sampled in steps: rows that hold about this
+ * many voxel samples, at least one row.
+ */
+const SLAB_STEP_SAMPLES = 50_000;
+
+/**
+ * A slab that a sampler samples in steps: a band of rows at a time, each band
+ * sampled by `sampleVolumeSlice` on the part of the geometry that it covers,
+ * straight into its part of the pixel array. `fine` marks a slab of the screen
+ * grid (`sampleFiner`).
+ */
+type SlabSteps = {
+  geometry: VolumeSliceGeometry;
+  inputs: PlanarSampledSliceInputs;
+  generation: number;
+  fine: boolean;
+  insideVolume: boolean;
+  options: SampleVolumeSliceOptions;
+  pixelData: PixelDataTypedArray;
+  numberOfComponents: number;
+  rowsPerStep: number;
+  nextRow: number;
+  min: number;
+  max: number;
+  ms: number;
+};
+
+/**
  * The inputs of one sample, apart from the plane. A change of any of them
  * samples again. Zoom, pan, rotation in the plane, window level, colormap and
  * opacity are not inputs, so they never sample.
@@ -218,15 +261,27 @@ export type PlanarSliceSamplerOptions = {
    * screen grid at rest (see `needsScreenGridSample`). Default: it does.
    */
   canFilterFloatTextures?: () => boolean;
+  /**
+   * True to sample a slab of more than MAX_SLAB_SAMPLES_AT_ONCE voxel samples
+   * in steps (`continueSampling`), so that no request blocks the page for
+   * long: `sample` then shows the plain slice of the plane at once, and
+   * `sampleFiner` starts the steps of the screen grid. A slab of more than
+   * MAX_CPU_SLAB_SAMPLES is not sampled (`isSlabTooLarge`). Default false:
+   * every slab is sampled at once.
+   */
+  sampleSlabsInSteps?: boolean;
 };
 
 /**
  * Whether one sample per screen pixel can give another picture than the
  * voxel-size slice that the draw step enlarges. That is so for an oblique
- * view. It is also so for a view along a volume axis that shows a maximum or
- * a minimum slab: the GPU volume path takes the maximum of interpolated
- * samples for each screen pixel, which differs from the enlarged maximum of
- * the voxels. A plain slice and an average slab along a volume axis give the
+ * view. It is also so for a view along a volume axis that shows a linear
+ * maximum or minimum slab: the GPU volume path takes the maximum of
+ * interpolated samples for each screen pixel, which differs from the enlarged
+ * maximum of the voxels. A NEAREST maximum or minimum slab along a volume
+ * axis takes the same voxels for a screen pixel as for the voxel-size pixel
+ * that covers it, so it needs no screen grid. A plain slice and an average
+ * slab along a volume axis give the
  * same picture either way, unless the draw step enlarges colours and the
  * slice is linear (see `PlanarSliceSamplerOptions.enlargesColours`), or the
  * draw step cannot smooth the slice: a linear float slice that the GPU holds
@@ -266,8 +321,9 @@ export function needsScreenGridSample(
   const blendMode = inputs.slab?.blendMode;
 
   return (
-    blendMode === BlendModes.MAXIMUM_INTENSITY_BLEND ||
-    blendMode === BlendModes.MINIMUM_INTENSITY_BLEND
+    linear &&
+    (blendMode === BlendModes.MAXIMUM_INTENSITY_BLEND ||
+      blendMode === BlendModes.MINIMUM_INTENSITY_BLEND)
   );
 }
 
@@ -341,10 +397,14 @@ export class PlanarSliceSampler {
   private readonly keepFractions: boolean;
   private readonly maxSliceSize: number;
   private readonly canFilterFloatTextures: () => boolean;
+  private readonly sampleSlabsInSteps: boolean;
   private entries: CachedSlice[] = [];
   private current?: CachedSlice;
   private fine?: CachedSlice;
   private shown?: PlanarSampledSlice;
+  private steps?: SlabSteps;
+  private thin?: CachedSlice;
+  private slabTooLarge = false;
   private spareArrays: PixelDataTypedArray[] = [];
   private generation = 0;
   private statistics: Omit<PlanarSliceCacheStatistics, 'size'> = {
@@ -360,6 +420,7 @@ export class PlanarSliceSampler {
     this.maxSliceSize = options.maxSliceSize ?? MAX_SCREEN_SLICE_SIZE;
     this.canFilterFloatTextures =
       options.canFilterFloatTextures ?? filtersFloatTextures;
+    this.sampleSlabsInSteps = options.sampleSlabsInSteps ?? false;
   }
 
   /**
@@ -370,7 +431,9 @@ export class PlanarSliceSampler {
    * `getScreenSliceGeometry`), that slice is returned in its place, so a
    * change of the presentation keeps the finer picture. A view that moved
    * gets the voxel-size slice, which the GPU places for any pan, zoom and
-   * rotation.
+   * rotation. A sampler that samples slabs in steps returns the plain slice
+   * of the plane for a large slab that it does not keep yet, and starts the
+   * steps of that slab (`startSlabSteps`).
    */
   sample(
     volume: IImageVolume,
@@ -400,13 +463,21 @@ export class PlanarSliceSampler {
 
     const cached = this.find(geometry, inputs);
 
+    if (!cached && this.startSlabSteps(volume, geometry, inputs, screen)) {
+      return this.shown;
+    }
+
+    this.dropSlabSteps(geometry, inputs);
+
     if (cached) {
       if (cached !== this.current) {
         this.statistics.hits++;
+        this.slabTooLarge = false;
       }
 
       this.current = cached;
     } else {
+      this.slabTooLarge = false;
       this.statistics.misses++;
       this.current = this.store(volume, geometry, inputs, geometry);
     }
@@ -486,8 +557,32 @@ export class PlanarSliceSampler {
       ...screen,
       sliceIndex: current.geometry.sliceIndex,
     };
+    const sampleCount = getSampleCount(volume, geometry, inputs);
 
-    if (getSampleCount(volume, geometry, inputs) > MAX_CPU_SLICE_SAMPLES) {
+    if (this.sampleSlabsInSteps && inputs.slab) {
+      this.slabTooLarge = sampleCount > MAX_CPU_SLAB_SAMPLES;
+
+      if (this.slabTooLarge) {
+        return;
+      }
+
+      if (sampleCount > MAX_SLAB_SAMPLES_AT_ONCE) {
+        if (
+          !this.steps?.fine ||
+          !isSameScreenGrid(this.steps.geometry, geometry)
+        ) {
+          this.steps = this.createSlabSteps(
+            volume,
+            geometry,
+            inputs,
+            true,
+            false
+          );
+        }
+
+        return;
+      }
+    } else if (sampleCount > MAX_CPU_SLICE_SAMPLES) {
       return;
     }
 
@@ -554,6 +649,114 @@ export class PlanarSliceSampler {
     return true;
   }
 
+  /**
+   * Runs the steps of the slab that this sampler samples in steps until
+   * `deadline` (a `performance.now()` time) has passed, at least one band of
+   * rows. When the slab is done it is the slice on screen: a slab of the
+   * voxel size is kept in the cache like any sampled slice, a slab of the
+   * screen grid as the slice of the screen grid. Steps of a stale generation
+   * are dropped.
+   *
+   * @returns the slab when it is done, undefined otherwise
+   */
+  continueSampling(
+    volume: IImageVolume,
+    deadline: number
+  ): PlanarSampledSlice | undefined {
+    const { steps } = this;
+
+    if (!steps || steps.generation !== this.generation) {
+      this.steps = undefined;
+
+      return;
+    }
+
+    const start = performance.now();
+    const { geometry, numberOfComponents } = steps;
+    const rowLength = geometry.width * numberOfComponents;
+
+    do {
+      const rows = Math.min(steps.rowsPerStep, geometry.height - steps.nextRow);
+      const target = steps.pixelData.subarray(
+        steps.nextRow * rowLength,
+        (steps.nextRow + rows) * rowLength
+      ) as PixelDataTypedArray;
+      const band = sampleVolumeSlice({
+        ...steps.options,
+        geometry: getRowBand(geometry, steps.nextRow, rows),
+        pixelData: target,
+      });
+
+      if (band.pixelData !== target) {
+        target.set(band.pixelData);
+      }
+
+      steps.min = Math.min(steps.min, band.min);
+      steps.max = Math.max(steps.max, band.max);
+      steps.nextRow += rows;
+    } while (steps.nextRow < geometry.height && performance.now() < deadline);
+
+    steps.ms += performance.now() - start;
+
+    if (steps.nextRow < geometry.height) {
+      return;
+    }
+
+    this.steps = undefined;
+
+    const entry: CachedSlice = {
+      geometry,
+      generation: steps.generation,
+      slice: this.createSlice(
+        volume,
+        geometry,
+        steps.inputs,
+        steps.pixelData,
+        steps.min,
+        steps.max,
+        steps.insideVolume
+      ),
+    };
+
+    if (steps.fine) {
+      if (this.fine) {
+        this.addSpareArray(this.fine.slice.pixelData);
+      }
+
+      this.fine = entry;
+      this.statistics.lastFineSampleMs = steps.ms;
+      this.statistics.refined++;
+    } else {
+      this.keep(entry, geometry);
+      this.current = entry;
+      this.statistics.lastSampleMs = steps.ms;
+
+      if (this.thin) {
+        this.addSpareArray(this.thin.slice.pixelData);
+        this.thin = undefined;
+      }
+    }
+
+    this.shown = entry.slice;
+
+    return this.shown;
+  }
+
+  /** Whether a slab waits for its steps (`continueSampling`). */
+  hasPendingSteps(): boolean {
+    return !!this.steps && this.steps.generation === this.generation;
+  }
+
+  /**
+   * Whether the slab of the view needs more voxel samples than
+   * MAX_CPU_SLAB_SAMPLES, so that the picture on screen is not that slab:
+   * the plain slice, or a slab of the voxel size where the screen grid is
+   * needed (`needsScreenGridSample`).
+   */
+  isSlabTooLarge(): boolean {
+    return this.slabTooLarge;
+  }
+
   /** The slice on screen, or undefined. */
   getSlice(): PlanarSampledSlice | undefined {
     return this.shown;
@@ -584,6 +787,9 @@ export class PlanarSliceSampler {
     this.current = undefined;
     this.fine = undefined;
     this.shown = undefined;
+    this.steps = undefined;
+    this.thin = undefined;
+    this.slabTooLarge = false;
     this.spareArrays = [];
     this.generation++;
   }
@@ -658,22 +864,7 @@ export class PlanarSliceSampler {
     inputs: PlanarSampledSliceInputs,
     reference: VolumeSliceGeometry
   ): CachedSlice {
-    this.entries = this.entries.filter((entry) => {
-      const samePlane =
-        entry.generation === this.generation &&
-        isSameInputs(entry.slice.sampledFor, inputs) &&
-        isSamePlane(entry.geometry, geometry);
-
-      if (samePlane) {
-        this.addSpareArray(entry.slice.pixelData);
-      }
-
-      return !samePlane;
-    });
-
-    while (this.entries.length >= SAMPLED_SLICE_CACHE_SIZE) {
-      this.dropFarthest(reference);
-    }
+    this.makeRoom(geometry, inputs, reference);
 
     const start = performance.now();
     const entry = this.sampleEntry(
@@ -690,6 +881,187 @@ export class PlanarSliceSampler {
   }
 
   /**
+   * Drops a kept slice of the same plane and inputs, and the slices farthest
+   * from the plane of `reference` while the cache is full.
+   */
+  private makeRoom(
+    geometry: VolumeSliceGeometry,
+    inputs: PlanarSampledSliceInputs,
+    reference: VolumeSliceGeometry
+  ): void {
+    this.entries = this.entries.filter((entry) => {
+      const samePlane =
+        entry.generation === this.generation &&
+        isSameInputs(entry.slice.sampledFor, inputs) &&
+        isSamePlane(entry.geometry, geometry);
+
+      if (samePlane) {
+        this.addSpareArray(entry.slice.pixelData);
+      }
+
+      return !samePlane;
+    });
+
+    while (this.entries.length >= SAMPLED_SLICE_CACHE_SIZE) {
+      this.dropFarthest(reference);
+    }
+  }
+
+  /** Keeps a slab that its steps sampled, as `store` keeps a sampled slice. */
+  private keep(entry: CachedSlice, geometry: VolumeSliceGeometry): void {
+    this.makeRoom(geometry, entry.slice.sampledFor, geometry);
+    this.entries.push(entry);
+  }
+
+  /**
+   * For a sampler that samples slabs in steps, a slab of more than
+   * MAX_SLAB_SAMPLES_AT_ONCE voxel samples that the cache does not hold:
+   * shows the plain slice of the plane at once, sampled now, and starts the
+   * steps of the slab, unless the steps of that slab run already. A kept
+   * slab of the screen grid for the same plane, inputs and screen grid is
+   * shown in place of the plain slice. A slab of more than
+   * MAX_CPU_SLAB_SAMPLES gets no steps and is too large (`isSlabTooLarge`).
+   *
+   * @returns false when the slab is sampled at once, as by any sampler
+   */
+  private startSlabSteps(
+    volume: IImageVolume,
+    geometry: VolumeSliceGeometry,
+    inputs: PlanarSampledSliceInputs,
+    screen: VolumeSliceGeometry | undefined
+  ): boolean {
+    if (!this.sampleSlabsInSteps || !inputs.slab) {
+      return false;
+    }
+
+    const sampleCount = getSampleCount(volume, geometry, inputs);
+
+    if (sampleCount <= MAX_SLAB_SAMPLES_AT_ONCE) {
+      return false;
+    }
+
+    const insideVolume =
+      getExactSliceAxis(volume, geometry.zDirection) !== undefined;
+    const pending = this.steps;
+
+    this.current = undefined;
+    this.slabTooLarge = sampleCount > MAX_CPU_SLAB_SAMPLES;
+
+    if (this.slabTooLarge) {
+      this.steps = undefined;
+    } else if (
+      !pending ||
+      pending.fine ||
+      pending.generation !== this.generation ||
+      !isSameInputs(pending.inputs, inputs) ||
+      !isSamePlane(pending.geometry, geometry)
+    ) {
+      this.statistics.misses++;
+      this.steps = this.createSlabSteps(
+        volume,
+        geometry,
+        inputs,
+        false,
+        insideVolume
+      );
+    }
+
+    const thinInputs = { ...inputs, slab: undefined };
+
+    if (
+      !this.thin ||
+      this.thin.generation !== this.generation ||
+      !isSameInputs(this.thin.slice.sampledFor, thinInputs) ||
+      !isSamePlane(this.thin.geometry, geometry)
+    ) {
+      if (this.thin) {
+        this.addSpareArray(this.thin.slice.pixelData);
+      }
+
+      this.thin = this.sampleEntry(volume, geometry, thinInputs, insideVolume);
+    }
+
+    const { fine } = this;
+
+    this.shown =
+      fine &&
+      screen &&
+      isSameScreenGrid(fine.geometry, screen) &&
+      isSameCutPlane(fine.geometry, geometry)
+        ? fine.slice
+        : this.thin.slice;
+
+    return true;
+  }
+
+  /**
+   * Drops the steps of a slab that a request makes useless: steps of the
+   * screen grid, whose grid may have moved (`sampleFiner` starts them again
+   * at rest), and steps for another plane or other inputs. Drops the plain
+   * slice shown while they ran too.
+   */
+  private dropSlabSteps(
+    geometry: VolumeSliceGeometry,
+    inputs: PlanarSampledSliceInputs
+  ): void {
+    const { steps } = this;
+
+    if (
+      steps &&
+      (steps.fine ||
+        !isSameInputs(steps.inputs, inputs) ||
+        !isSamePlane(steps.geometry, geometry))
+    ) {
+      this.steps = undefined;
+    }
+
+    if (this.thin) {
+      this.addSpareArray(this.thin.slice.pixelData);
+      this.thin = undefined;
+    }
+  }
+
+  /** Prepares the steps of the slab of a geometry (`continueSampling`). */
+  private createSlabSteps(
+    volume: IImageVolume,
+    geometry: VolumeSliceGeometry,
+    inputs: PlanarSampledSliceInputs,
+    fine: boolean,
+    insideVolume: boolean
+  ): SlabSteps {
+    const options = this.getSampleOptions(volume, geometry, inputs);
+    const numberOfComponents = getNumberOfComponents(volume);
+    const ArrayType = getVolumeSliceArrayType(options);
+    const length = geometry.width * geometry.height * numberOfComponents;
+    const slabSamples = getSampleCount(
+      volume,
+      { ...geometry, width: 1, height: 1 },
+      inputs
+    );
+
+    return {
+      geometry,
+      inputs,
+      generation: this.generation,
+      fine,
+      insideVolume,
+      options,
+      pixelData:
+        this.takeSpareArray(ArrayType, length) ??
+        (new ArrayType(length) as PixelDataTypedArray),
+      numberOfComponents,
+      rowsPerStep: Math.max(
+        1,
+        Math.floor(SLAB_STEP_SAMPLES / (geometry.width * slabSamples))
+      ),
+      nextRow: 0,
+      min: Infinity,
+      max: -Infinity,
+      ms: 0,
+    };
+  }
+
+  /**
    * Samples the slice of a geometry into a new entry of this generation, into
    * a spare array of the size and array type that the sample gives.
    */
@@ -699,17 +1071,7 @@ export class PlanarSliceSampler {
     inputs: PlanarSampledSliceInputs,
     insideVolume: boolean
   ): CachedSlice {
-    const options: SampleVolumeSliceOptions = {
-      volume,
-      geometry,
-      interpolationType:
-        inputs.interpolationType === InterpolationType.NEAREST
-          ? InterpolationType.NEAREST
-          : InterpolationType.LINEAR,
-      outsideValue: getOutsideValue(volume),
-      slab: inputs.slab,
-      keepFractions: this.keepFractions,
-    };
+    const options = this.getSampleOptions(volume, geometry, inputs);
     const { pixelData, min, max } = sampleVolumeSlice({
       ...options,
       pixelData: this.takeSpareArray(
@@ -721,21 +1083,61 @@ export class PlanarSliceSampler {
     return {
       geometry,
       generation: this.generation,
-      slice: {
+      slice: this.createSlice(
+        volume,
+        geometry,
+        inputs,
         pixelData,
-        numberOfComponents: getNumberOfComponents(volume),
-        width: geometry.width,
-        height: geometry.height,
-        origin: geometry.origin,
-        xDirection: geometry.xDirection,
-        yDirection: geometry.yDirection,
-        zDirection: geometry.zDirection,
-        spacing: geometry.spacing,
         min,
         max,
-        insideVolume,
-        sampledFor: { ...inputs, sliceIndex: geometry.sliceIndex },
-      },
+        insideVolume
+      ),
+    };
+  }
+
+  /** The options of `sampleVolumeSlice` for a geometry and inputs. */
+  private getSampleOptions(
+    volume: IImageVolume,
+    geometry: VolumeSliceGeometry,
+    inputs: PlanarSampledSliceInputs
+  ): SampleVolumeSliceOptions {
+    return {
+      volume,
+      geometry,
+      interpolationType:
+        inputs.interpolationType === InterpolationType.NEAREST
+          ? InterpolationType.NEAREST
+          : InterpolationType.LINEAR,
+      outsideValue: getOutsideValue(volume),
+      slab: inputs.slab,
+      keepFractions: this.keepFractions,
+    };
+  }
+
+  /** The plain object of a slice sampled for a geometry and inputs. */
+  private createSlice(
+    volume: IImageVolume,
+    geometry: VolumeSliceGeometry,
+    inputs: PlanarSampledSliceInputs,
+    pixelData: PixelDataTypedArray,
+    min: number,
+    max: number,
+    insideVolume: boolean
+  ): PlanarSampledSlice {
+    return {
+      pixelData,
+      numberOfComponents: getNumberOfComponents(volume),
+      width: geometry.width,
+      height: geometry.height,
+      origin: geometry.origin,
+      xDirection: geometry.xDirection,
+      yDirection: geometry.yDirection,
+      zDirection: geometry.zDirection,
+      spacing: geometry.spacing,
+      min,
+      max,
+      insideVolume,
+      sampledFor: { ...inputs, sliceIndex: geometry.sliceIndex },
     };
   }
 
@@ -945,6 +1347,29 @@ function createVector(): vec3 {
 
 function toPoint3(vector: vec3): Point3 {
   return [vector[0], vector[1], vector[2]];
+}
+
+/**
+ * The part of a geometry that holds `rows` rows from row `firstRow` on: its
+ * first pixel moves along the rows, everything else stays, so every pixel
+ * keeps its world position.
+ */
+function getRowBand(
+  geometry: VolumeSliceGeometry,
+  firstRow: number,
+  rows: number
+): VolumeSliceGeometry {
+  const step = firstRow * geometry.spacing[1];
+
+  return {
+    ...geometry,
+    origin: [
+      geometry.origin[0] + geometry.yDirection[0] * step,
+      geometry.origin[1] + geometry.yDirection[1] * step,
+      geometry.origin[2] + geometry.yDirection[2] * step,
+    ],
+    height: rows,
+  };
 }
 
 /** The number of voxel samples that sampling a slice takes. */
