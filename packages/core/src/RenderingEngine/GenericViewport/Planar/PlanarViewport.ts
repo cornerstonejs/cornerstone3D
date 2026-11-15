@@ -493,8 +493,7 @@ class PlanarViewport extends GenericViewport<
           clearedRenderPassId: -1,
           renderPassId: 0,
         },
-        getBackground: () =>
-          this.options?.background ?? this.defaultOptions?.background,
+        getBackground: () => this.defaultOptions?.background,
         context: cpuCanvasContext,
       },
       vtk: {

@@ -29,6 +29,12 @@ const SLAB_THICKNESS = 10;
 const PIXEL_TOLERANCE = 8;
 const MAX_DIFFERING_FRACTION = 0.01;
 const MIN_CONTENT_FRACTION = 0.05;
+/**
+ * The part of the canvas whose stack image may differ by more than 1 level
+ * between `vtkImage` and `cpuImage`: the tolerance of
+ * `genericStackDrawParity.spec.ts` for an image that is not moved.
+ */
+const STACK_DIFFERING_FRACTION = 0.0002;
 const LOAD_TIMEOUT_MS = 180000;
 const SWITCH_TIMEOUT_MS = 30000;
 
@@ -298,6 +304,59 @@ function expectHealthyPicture(
     differing,
     `${label}: pixels that differ from the reference`
   ).toBeLessThanOrEqual(total * MAX_DIFFERING_FRACTION);
+}
+
+/**
+ * Keeps every WebGL2 context that the page makes, from before its scripts
+ * run, so that a test can lose them.
+ */
+async function recordWebGLContexts(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    const testWindow = window as TestWindow;
+    const getContext = HTMLCanvasElement.prototype.getContext;
+
+    testWindow.routerContexts = [];
+    HTMLCanvasElement.prototype.getContext = function (
+      type: string,
+      ...args: unknown[]
+    ) {
+      const context = getContext.call(this, type, ...args);
+
+      if (type === 'webgl2' && context) {
+        testWindow.routerContexts.push(context as WebGL2RenderingContext);
+      }
+
+      return context;
+    } as typeof HTMLCanvasElement.prototype.getContext;
+  });
+}
+
+/**
+ * Loses every recorded WebGL2 context that is not lost yet, with
+ * `WEBGL_lose_context`, and restores each after `restoreAfterMs`, or never.
+ *
+ * @returns the number of contexts lost
+ */
+function loseWebGLContexts(
+  page: Page,
+  restoreAfterMs?: number
+): Promise<number> {
+  return page.evaluate((restoreAfter) => {
+    const extensions = (window as TestWindow).routerContexts
+      .filter((context) => !context.isContextLost())
+      .map((context) => context.getExtension('WEBGL_lose_context'))
+      .filter(Boolean);
+
+    extensions.forEach((extension) => {
+      extension.loseContext();
+
+      if (restoreAfter !== undefined) {
+        setTimeout(() => extension.restoreContext(), restoreAfter);
+      }
+    });
+
+    return extensions.length;
+  }, restoreAfterMs);
 }
 
 let healthyPicture: ViewportPixels | undefined;
@@ -616,49 +675,14 @@ test.describe('Router: a layer leaves the GPU volume path when its 3D texture ca
     const gpuPlan = ['gpuVolume', 'gpu', 'vtkVolumeSlice', 'slab'];
     const cpuPlan = ['cpu', 'cpu', 'cpuVolume', 'contextLost'];
 
-    await page.addInitScript(() => {
-      const testWindow = window as TestWindow;
-      const getContext = HTMLCanvasElement.prototype.getContext;
-
-      testWindow.routerContexts = [];
-      HTMLCanvasElement.prototype.getContext = function (
-        type: string,
-        ...args: unknown[]
-      ) {
-        const context = getContext.call(this, type, ...args);
-
-        if (type === 'webgl2' && context) {
-          testWindow.routerContexts.push(context as WebGL2RenderingContext);
-        }
-
-        return context;
-      } as typeof HTMLCanvasElement.prototype.getContext;
-    });
+    await recordWebGLContexts(page);
     await openExample(page);
     await setCoronalSlab(page, SLAB_THICKNESS);
     await expectPlan(page, gpuPlan, gpuPlan);
     expectHealthyPicture(healthy, await readCoronal(page), 'before a loss');
 
-    const loseContexts = (restoreAfterMs?: number) =>
-      page.evaluate((restoreAfter) => {
-        const extensions = (window as TestWindow).routerContexts
-          .filter((context) => !context.isContextLost())
-          .map((context) => context.getExtension('WEBGL_lose_context'))
-          .filter(Boolean);
-
-        extensions.forEach((extension) => {
-          extension.loseContext();
-
-          if (restoreAfter !== undefined) {
-            setTimeout(() => extension.restoreContext(), restoreAfter);
-          }
-        });
-
-        return extensions.length;
-      }, restoreAfterMs);
-
     await takePlanEvents(page);
-    expect(await loseContexts(300)).toBeGreaterThan(0);
+    expect(await loseWebGLContexts(page, 300)).toBeGreaterThan(0);
     await page.waitForTimeout(3000);
     await expectPlan(page, gpuPlan, gpuPlan);
     expect(await takePlanEvents(page)).toEqual([]);
@@ -668,7 +692,7 @@ test.describe('Router: a layer leaves the GPU volume path when its 3D texture ca
       'after a context that came back'
     );
 
-    expect(await loseContexts()).toBeGreaterThan(0);
+    expect(await loseWebGLContexts(page)).toBeGreaterThan(0);
     await expectPlan(page, cpuPlan, cpuPlan);
 
     const events = await takePlanEvents(page);
@@ -683,5 +707,93 @@ test.describe('Router: a layer leaves the GPU volume path when its 3D texture ca
       'drawn on the CPU after a context that did not come back'
     );
     await expectStaysDown(page, CT_DATA_ID, cpuPlan, cpuPlan);
+  });
+  test('a stack image whose context does not come back is drawn by cpuImage with the GPU picture', async ({
+    page,
+  }) => {
+    const stackDataId = 'stack-api-next:primary';
+    const viewportId = 'CT_STACK_GENERIC';
+    const stackPlan = async () =>
+      (
+        await page.evaluate(
+          ({ engineId, viewportId }) =>
+            (window as TestWindow).cornerstone
+              .getRenderingEngine(engineId)
+              .getViewport(viewportId)
+              .getRenderPlan(),
+          { engineId: ENGINE_ID, viewportId }
+        )
+      ).map((layer) => [layer.dataId, layer.draw, layer.renderMode]);
+    const url = createExampleUrl('genericStackAPI.html');
+
+    url.searchParams.set('sliceFirst', '1');
+    await recordWebGLContexts(page);
+    await page.goto(url.toString());
+    await page.waitForFunction(
+      ({ engineId, viewportId }) =>
+        ((
+          (window as TestWindow).cornerstone
+            ?.getRenderingEngine(engineId)
+            ?.getViewport(viewportId) as unknown as {
+            getImageIds?: () => string[];
+          }
+        )?.getImageIds?.()?.length ?? 0) > 0,
+      { engineId: ENGINE_ID, viewportId },
+      { timeout: LOAD_TIMEOUT_MS }
+    );
+    await waitForRenderSettled(page, { quietMs: 800, timeout: 30000 });
+    await page.evaluate((viewportId) => {
+      const testWindow = window as TestWindow;
+      const { cornerstone } = testWindow;
+
+      testWindow.routerPlanEvents = [];
+      cornerstone.eventTarget.addEventListener(
+        cornerstone.Enums.Events.RENDER_PLAN_CHANGED,
+        (evt) => {
+          const detail = (evt as CustomEvent).detail;
+
+          if (detail.viewportId === viewportId) {
+            testWindow.routerPlanEvents.push(detail);
+          }
+        }
+      );
+    }, viewportId);
+    expect(await stackPlan()).toEqual([[stackDataId, 'gpu', 'vtkImage']]);
+
+    const gpu = await readViewportPixels(page, 0, { stableMs: 500 });
+
+    expect(await loseWebGLContexts(page)).toBeGreaterThan(0);
+    await expect
+      .poll(stackPlan, { timeout: SWITCH_TIMEOUT_MS })
+      .toEqual([[stackDataId, 'cpu', 'cpuImage']]);
+    await waitForRenderSettled(page, { quietMs: 800, timeout: 30000 });
+
+    const events = await takePlanEvents(page);
+    const cpu = await readViewportPixels(page, 0, { stableMs: 500 });
+    const total = gpu.width * gpu.height;
+    const overOne = countPixelsDifferingBy(gpu, cpu, 1);
+    const overEight = countPixelsDifferingBy(gpu, cpu, 8);
+
+    console.log(
+      `stack image after a lost context: ${overOne} of ${total} pixels differ by more than 1 level, ${overEight} by more than 8`
+    );
+    expect(
+      events.map((event) => [
+        event.dataId,
+        event.previous?.renderMode,
+        event.current.renderMode,
+        event.reason,
+      ])
+    ).toEqual([[stackDataId, 'vtkImage', 'cpuImage', 'contextLost']]);
+    expect(
+      countContentPixels(cpu),
+      'pixels that are not background'
+    ).toBeGreaterThanOrEqual(total * MIN_CONTENT_FRACTION);
+    expect(gpu.data.subarray(0, 3)).toEqual(cpu.data.subarray(0, 3));
+    expect(
+      overOne,
+      'pixels that differ by more than 1 level'
+    ).toBeLessThanOrEqual(total * STACK_DIFFERING_FRACTION);
+    expect(overEight, 'pixels that differ by more than 8 levels').toBe(0);
   });
 });

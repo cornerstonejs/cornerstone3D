@@ -39,7 +39,7 @@ import {
   canvasToWorldContextPool,
   worldToCanvasContextPool,
 } from './planarAdapterCoordinateTransforms';
-import { buildPlanarImageData } from './CpuImageSliceRenderPath';
+import { buildPlanarImageData } from './planarImageData';
 import {
   subscribeToBetterImageStages,
   triggerPlanarNewImage,

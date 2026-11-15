@@ -327,9 +327,10 @@ export interface PlanarViewportRenderContext extends BaseViewportRenderContext {
     };
     context: CanvasRenderingContext2D;
     /**
-     * The background colour of the viewport as red, green and blue from 0 to
-     * 1, or undefined for black. The CPU draw step clears its canvas to it,
-     * as the GPU draw step clears its renderer.
+     * The background colour the viewport was created with, as red, green and
+     * blue from 0 to 1, or undefined for black. It is the colour the
+     * rendering engine gives the renderer of the viewport, so the CPU draw
+     * step clears its canvas to what the GPU draw step clears to.
      */
     getBackground?(): ArrayLike<number> | undefined;
   };

@@ -7,7 +7,6 @@ import correctShift from '../../helpers/cpuFallback/rendering/correctShift';
 import getDefaultViewport from '../../helpers/cpuFallback/rendering/getDefaultViewport';
 import { getDefaultImageVOIRange } from '../../helpers/planarImageRendering';
 import fitToWindow from '../../helpers/cpuFallback/rendering/fitToWindow';
-import drawImageSync from '../../helpers/cpuFallback/drawImageSync';
 import { resolveCPUFallbackColormap } from '../../helpers/cpuFallback/colors';
 import {
   InterpolationType,
@@ -27,9 +26,11 @@ import type {
   CPUIImageData,
   CPUFallbackEnabledElement,
   IImage,
+  IImageVolume,
   Point2,
   Point3,
 } from '../../../types';
+import type { VolumeSliceGeometry } from '../../../utilities/volumeSliceGeometry';
 import type { IViewport } from '../../../types/IViewport';
 import type {
   DataAddOptions,
@@ -58,14 +59,73 @@ import {
 } from './planarImageEvents';
 import {
   canvasToWorldPlanarRenderPathProjection,
+  getPlanarRenderPathActiveSourceICamera,
   resolvePlanarRenderPathCurrentImageIdIndex,
   resolvePlanarRenderPathProjection,
   worldToCanvasPlanarRenderPathProjection,
 } from './planarRenderPathProjection';
+import type { PlanarRenderPathProjectionCamera } from './planarRenderPathProjection';
+import { PlanarSliceSampler } from './planarSampledSlice';
+import type {
+  PlanarSampledSlice,
+  PlanarSampledSliceInputs,
+} from './planarSampledSlice';
+import {
+  PlanarSampledSliceCanvas,
+  beginPlanarCanvasPass,
+  getSliceCanvasTransform,
+} from './planarSampledSliceCanvas';
+import {
+  getCanvasScreenSliceGeometry,
+  scheduleSampledSliceRestWork,
+} from './planarSampledSliceRest';
+import {
+  MAX_CPU_CANVAS_SLICE_SIZE,
+  isSameGeometry,
+} from './CpuVolumeSliceRenderPath';
+import { buildPlanarImageData } from './planarImageData';
 import { imageQualityStatusOf } from '../../helpers/fidelityIndicator/collectFidelityLines';
 import { isSegmentationOverlayData } from '../renderingFidelity';
 
-/** @internal */
+/** The parts of one mounted CPU image. */
+type CpuImageSliceMount = {
+  ctx: PlanarCpuImageAdapterContext;
+  rendering: PlanarCpuImageRendering;
+  sampler: PlanarSliceSampler;
+  draw: PlanarSampledSliceCanvas;
+  /**
+   * True for an overlay that is an image, which draws itself over the source
+   * as on the GPU image path. The labelmap of a segmentation is drawn by its
+   * actor in the pass of the source (`renderCompatibilityOverlayActors`).
+   */
+  overlayImage: boolean;
+  /** The image drawn last and that image as a volume of one slice. */
+  image?: IImage;
+  volume?: IImageVolume;
+  /** Cancels the pending work at rest. */
+  cancelRestWork?: () => void;
+  /** The slice drawn last and the screen grid it was drawn for. */
+  shownSlice?: PlanarSampledSlice;
+  shownScreen?: VolumeSliceGeometry;
+  /** The plane, screen grid and inputs of the last request to the sampler. */
+  sampledFor?: string;
+};
+
+/**
+ * The render path of `cpuImage`: one image of a stack drawn on the 2D canvas
+ * of the viewport.
+ *
+ * The image is drawn by the CPU draw step of the sampled slice
+ * (`PlanarSampledSliceCanvas`, presentation `image`), so that the picture is
+ * the one of the GPU image path (`VtkImageMapperRenderPath`): the same colour
+ * tables, the same blend with the background, the same placement. The image
+ * is handed to it as a volume of one slice (`createImageSliceVolume`): along
+ * its own normal the sampler copies the image unchanged. The canvas enlarges
+ * colours, not values, so a LINEAR image is sampled once more on the screen
+ * grid at rest (`scheduleSampledSliceRestWork`), as on the CPU volume path.
+ *
+ * @internal
+ */
 export class CpuImageSliceRenderPath
   implements RenderPath<PlanarCpuImageAdapterContext>
 {
@@ -130,6 +190,27 @@ export class CpuImageSliceRenderPath
           rendering.enabledElement.image?.imageQualityPending;
       },
     };
+    const volume = createImageSliceVolume(payload.image);
+    const mount: CpuImageSliceMount = {
+      ctx,
+      rendering,
+      image: payload.image,
+      volume,
+      overlayImage:
+        options.role === 'overlay' &&
+        !isSegmentationOverlayData(payload, options),
+      sampler: new PlanarSliceSampler({
+        enlargesColours: true,
+        keepFractions: true,
+        maxSliceSize: MAX_CPU_CANVAS_SLICE_SIZE,
+      }),
+      draw: new PlanarSampledSliceCanvas(
+        volume,
+        ctx.cpu.canvas.width,
+        ctx.cpu.canvas.height,
+        'image'
+      ),
+    };
     const unsubscribeStages = subscribeToBetterImageStages(
       rendering,
       () => rendering.enabledElement.image?.imageId,
@@ -173,14 +254,14 @@ export class CpuImageSliceRenderPath
         return this.getImageData(rendering);
       },
       render: () => {
-        this.render(ctx, rendering, data.id);
+        this.render(mount, data.id);
       },
       resize: () => {
         this.resize(ctx, rendering, data.id);
       },
       removeData: () => {
         unsubscribeStages();
-        this.removeData(ctx, rendering);
+        this.removeData(mount);
       },
     };
   }
@@ -309,16 +390,18 @@ export class CpuImageSliceRenderPath
     return buildPlanarImageData(image, this.getFrameOfReferenceUID(rendering));
   }
 
-  private render(
-    ctx: PlanarCpuImageAdapterContext,
-    rendering: PlanarCpuImageRendering,
-    dataId: string
-  ): void {
+  private render(mount: CpuImageSliceMount, dataId: string): void {
+    const { ctx } = mount;
+
     if (!ctx.viewport.isCurrentDataId(dataId)) {
+      if (mount.overlayImage) {
+        this.drawImage(mount);
+      }
+
       return;
     }
 
-    renderCPUImage(rendering);
+    this.drawImage(mount);
     renderCompatibilityOverlayActors(ctx);
     ctx.display.markRendered();
     triggerEvent(ctx.viewport.element, Events.IMAGE_RENDERED, {
@@ -368,11 +451,135 @@ export class CpuImageSliceRenderPath
     }
   }
 
-  private removeData(
-    ctx: PlanarCpuImageAdapterContext,
-    rendering: PlanarCpuImageRendering
-  ): void {
+  /**
+   * Draws the image over the background of the viewport. The slice comes
+   * from the sampler, which copies the image for a new image, plane or input
+   * and keeps it otherwise; a slice of the screen grid sampled at rest is
+   * kept for the same view. The canvas is left with the transform from the
+   * pixels of the image to the canvas, which the overlay actors of the
+   * viewport (a labelmap of the stack) draw with.
+   */
+  private drawImage(mount: CpuImageSliceMount): void {
+    const { ctx, draw, rendering, sampler } = mount;
     const { enabledElement } = rendering;
+    const { image } = enabledElement;
+
+    ctx.cpu.canvas.style.display = '';
+    ctx.cpu.canvas.style.opacity = '1';
+    beginPlanarCanvasPass(ctx.cpu);
+
+    if (!image || !ctx.cpu.canvas.width || !ctx.cpu.canvas.height) {
+      return;
+    }
+
+    if (image !== mount.image) {
+      mount.image = image;
+      mount.volume = createImageSliceVolume(image);
+      mount.sampledFor = undefined;
+      sampler.invalidate();
+      draw.setVolume(mount.volume);
+    }
+
+    const camera = getImagePlaneCamera(ctx, mount.volume);
+
+    if (!camera) {
+      return;
+    }
+
+    if (rendering.dataPresentation?.visible !== false) {
+      const screen = getCanvasScreenSliceGeometry(
+        ctx.cpu.canvas,
+        camera,
+        MAX_CPU_CANVAS_SLICE_SIZE
+      );
+      const inputs = getImageSliceInputs(rendering);
+      const request = JSON.stringify([
+        camera.focalPoint,
+        camera.viewPlaneNormal,
+        screen,
+        inputs,
+      ]);
+      const slice =
+        request === mount.sampledFor && mount.shownSlice
+          ? mount.shownSlice
+          : sampler.sample(mount.volume, camera, inputs, screen);
+
+      mount.sampledFor = request;
+
+      if (
+        slice &&
+        (slice !== mount.shownSlice ||
+          !isSameGeometry(mount.shownScreen, screen))
+      ) {
+        this.restartRestWork(mount);
+      }
+
+      mount.shownSlice = slice;
+      mount.shownScreen = screen;
+
+      if (slice) {
+        draw.setSlice(slice);
+        draw.draw({
+          target: ctx.cpu,
+          camera,
+          presentation: getImageSlicePresentation(rendering),
+          defaultVOIRange: rendering.defaultVOIRange,
+          invalidated: rendering.renderingInvalidated,
+        });
+      }
+    }
+
+    rendering.renderingInvalidated = false;
+    ctx.cpu.context.setTransform(
+      ...getSliceCanvasTransform(
+        getImageSliceGeometry(mount.volume),
+        camera,
+        ctx.cpu.canvas
+      )
+    );
+    ctx.cpu.context.imageSmoothingEnabled =
+      !enabledElement.viewport.pixelReplication;
+  }
+
+  /**
+   * Cancels the work at rest and starts it again for the view on screen: the
+   * sample of a LINEAR image on the screen grid, drawn with a render of the
+   * viewport. A stack has no neighbour slices to prefetch.
+   */
+  private restartRestWork(mount: CpuImageSliceMount): void {
+    const { ctx, rendering, sampler, volume } = mount;
+
+    mount.cancelRestWork?.();
+    mount.cancelRestWork = scheduleSampledSliceRestWork({
+      sampler,
+      volume,
+      getCamera: () => getImagePlaneCamera(ctx, volume),
+      getInputs: () => getImageSliceInputs(rendering),
+      getScreen: (camera) =>
+        getCanvasScreenSliceGeometry(
+          ctx.cpu.canvas,
+          camera,
+          MAX_CPU_CANVAS_SLICE_SIZE
+        ),
+      getNeighbours: () => [],
+      onFinerSlice: (slice) => {
+        mount.shownSlice = slice;
+        rendering.renderingInvalidated = true;
+        ctx.display.renderNow();
+      },
+    });
+  }
+
+  private removeData(mount: CpuImageSliceMount): void {
+    const { ctx, rendering } = mount;
+    const { enabledElement } = rendering;
+
+    mount.cancelRestWork?.();
+    mount.cancelRestWork = undefined;
+    mount.sampler.release();
+    mount.draw.release();
+    mount.shownSlice = undefined;
+    mount.sampledFor = undefined;
 
     ctx.cpu.context.setTransform(1, 0, 0, 1, 0, 0);
     ctx.cpu.context.clearRect(
@@ -428,11 +635,7 @@ function applyDataPresentation(
 ): void {
   const { enabledElement, defaultVOIRange } = rendering;
   const { viewport } = enabledElement;
-  const canvas = enabledElement.canvas as HTMLCanvasElement;
   const voiRange = props?.voiRange ?? defaultVOIRange;
-
-  canvas.style.display = props?.visible === false ? 'none' : '';
-  canvas.style.opacity = String(props?.opacity ?? 1);
 
   viewport.colormap = resolveCPUFallbackColormap(
     props?.colormap,
@@ -635,103 +838,131 @@ function getCPUFallbackViewportModality(image: IImage): string | undefined {
   );
 }
 
-export function buildPlanarImageData(
-  image: IImage,
-  frameOfReferenceUID?: string
-): CPUIImageData {
-  const metadata = getImageDataMetadata(image);
-  const { dimensions, direction, modality, origin, spacing } = metadata;
-  // getImageDataMetadata().calibration is the DICOM calibration module; the USER
-  // calibration (CalibrationLine -> calibratedPixelSpacing provider) is stored
-  // separately, so merge it on top — mirroring legacy StackViewport.getImageData()
-  // (`calibration: { ...csImage.calibration, ...this.calibration }`). Without this,
-  // native getImageData().calibration ignores user calibration and length tools never
-  // rescale after calibrateImageSpacing().
-  const userCalibration = metaData.get(
-    'calibratedPixelSpacing',
-    image.imageId
-  ) as Record<string, unknown> | undefined;
-  const calibration = userCalibration
-    ? { ...metadata.calibration, ...userCalibration }
-    : metadata.calibration;
-  const rowVector = direction.slice(0, 3) as Point3;
-  const columnVector = direction.slice(3, 6) as Point3;
-  const scalarData =
-    image.voxelManager?.getScalarData() || image.getPixelData?.();
+/**
+ * The image as a volume of one slice, for the sample and draw steps of the
+ * sampled slice: the pixel data of the image with its position, direction
+ * and spacing. The volume is one unit thick, and its image data maps any
+ * point onto the plane of the image.
+ *
+ * @internal
+ */
+export function createImageSliceVolume(image: IImage): IImageVolume {
+  const { dimensions, direction, origin, spacing, modality } =
+    getImageDataMetadata(image);
 
   return {
+    volumeId: image.imageId,
+    imageIds: [image.imageId],
     dimensions,
-    spacing,
-    origin,
     direction,
-    metadata: {
-      Modality: modality,
-      FrameOfReferenceUID: frameOfReferenceUID,
-    },
-    imageData: {
-      getDirection: () => direction,
-      getDimensions: () => dimensions,
-      getScalarData: () => scalarData,
-      getSpacing: () => spacing,
-      worldToIndex: (point: Point3) => {
-        const diff = vec3.subtract(
-          vec3.create(),
-          point as unknown as vec3,
-          origin as unknown as vec3
-        );
-
-        return [
-          vec3.dot(diff, rowVector as unknown as vec3) / spacing[0],
-          vec3.dot(diff, columnVector as unknown as vec3) / spacing[1],
-          0,
-        ] as Point3;
-      },
-      indexToWorld: (point: Point3) => {
-        const worldPoint = [...origin] as Point3;
-
-        vec3.scaleAndAdd(
-          worldPoint as unknown as vec3,
-          worldPoint as unknown as vec3,
-          rowVector as unknown as vec3,
-          point[0] * spacing[0]
-        );
-        vec3.scaleAndAdd(
-          worldPoint as unknown as vec3,
-          worldPoint as unknown as vec3,
-          columnVector as unknown as vec3,
-          point[1] * spacing[1]
-        );
-
-        return worldPoint;
-      },
-    },
-    scalarData,
-    scaling: image.scaling,
-    hasPixelSpacing: Boolean(image.rowPixelSpacing || image.columnPixelSpacing),
-    calibration,
-    preScale: image.preScale,
+    origin,
+    spacing: [spacing[0], spacing[1], 1],
+    imageData: buildPlanarImageData(image).imageData,
     voxelManager: image.voxelManager,
+    metadata: { Modality: modality },
+    isPreScaled: image.isPreScaled,
+    scaling: image.scaling,
+  } as unknown as IImageVolume;
+}
+
+/** The geometry of the pixels of an image that `createImageSliceVolume` made. */
+function getImageSliceGeometry(
+  volume: IImageVolume
+): Parameters<typeof getSliceCanvasTransform>[0] {
+  const { dimensions, direction, origin, spacing } = volume;
+
+  return {
+    origin,
+    xDirection: [direction[0], direction[1], direction[2]],
+    yDirection: [direction[3], direction[4], direction[5]],
+    spacing: [spacing[0], spacing[1]],
+    width: dimensions[0],
+    height: dimensions[1],
   };
 }
 
-function renderCPUImage(rendering: PlanarCpuImageRendering): void {
-  const { enabledElement, renderingInvalidated } = rendering;
+/**
+ * The camera of the source with its focal point moved along the normal of
+ * the image onto the plane of the image, so the image is drawn whatever
+ * plane the camera of the stack is on.
+ */
+function getImagePlaneCamera(
+  ctx: PlanarCpuImageAdapterContext,
+  volume: IImageVolume
+): PlanarRenderPathProjectionCamera | undefined {
+  const camera = getPlanarRenderPathActiveSourceICamera(ctx);
 
-  if (!enabledElement.image) {
+  if (!camera) {
     return;
   }
 
-  drawImageSync(enabledElement, renderingInvalidated);
-  rendering.renderingInvalidated = false;
+  const { direction, origin } = volume;
+  const normal = [direction[6], direction[7], direction[8]];
+  const distance = [0, 1, 2].reduce(
+    (sum, axis) =>
+      sum + (camera.focalPoint[axis] - origin[axis]) * normal[axis],
+    0
+  );
+
+  return {
+    ...camera,
+    focalPoint: [0, 1, 2].map(
+      (axis) => camera.focalPoint[axis] - normal[axis] * distance
+    ) as Point3,
+  };
 }
 
+/**
+ * The sampling inputs of an image: its interpolation, LINEAR unless the
+ * presentation asks for NEAREST, as on the GPU image path. An image has no
+ * slab and no time point.
+ */
+function getImageSliceInputs(
+  rendering: PlanarCpuImageRendering
+): PlanarSampledSliceInputs {
+  return {
+    interpolationType:
+      rendering.dataPresentation?.interpolationType ===
+      InterpolationType.NEAREST
+        ? InterpolationType.NEAREST
+        : InterpolationType.LINEAR,
+  };
+}
+
+/**
+ * The presentation that the GPU image path applies: LINEAR interpolation
+ * unless the presentation says otherwise, and the VOI LUT function of the
+ * image unless the presentation gives one.
+ */
+function getImageSlicePresentation(
+  rendering: PlanarCpuImageRendering
+): PlanarDataPresentation {
+  const { dataPresentation, enabledElement } = rendering;
+
+  return {
+    interpolationType: InterpolationType.LINEAR,
+    ...dataPresentation,
+    voiLUTFunction:
+      dataPresentation?.voiLUTFunction ?? enabledElement.image?.voiLUTFunction,
+  };
+}
+
+/**
+ * Draws the labelmap overlays of segmentations with their actors, in the
+ * pixel space of the source image that the canvas transform gives. An overlay
+ * image draws itself (`CpuImageSliceMount.overlayImage`).
+ */
 function renderCompatibilityOverlayActors(
   ctx: PlanarCpuImageAdapterContext
 ): void {
   const overlayActors = ctx.viewport.getOverlayActors();
 
   for (const actorEntry of overlayActors) {
-    if (actorEntry.actorMapper?.renderMode !== ActorRenderMode.CPU_IMAGE) {
+    if (
+      actorEntry.actorMapper?.renderMode !== ActorRenderMode.CPU_IMAGE ||
+      (actorEntry.reference as { kind?: string } | undefined)?.kind !==
+        'segmentation'
+    ) {
       continue;
     }
 

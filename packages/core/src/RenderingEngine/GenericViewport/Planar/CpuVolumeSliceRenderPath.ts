@@ -643,7 +643,7 @@ function refreshCpuVolumeFidelity(
 }
 
 /** Whether two slice geometries are the same, number for number. */
-function isSameGeometry(
+export function isSameGeometry(
   previous: VolumeSliceGeometry | undefined,
   next: VolumeSliceGeometry | undefined
 ): boolean {

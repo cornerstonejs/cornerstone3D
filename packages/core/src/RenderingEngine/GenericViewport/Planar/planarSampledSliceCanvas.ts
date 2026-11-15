@@ -15,6 +15,7 @@ import { createCanvas } from '../../helpers/getOrCreateCanvas';
 import drawImageSync from '../../helpers/cpuFallback/drawImageSync';
 import { resolveCPUFallbackColormap } from '../../helpers/cpuFallback/colors';
 import getDefaultViewport from '../../helpers/cpuFallback/rendering/getDefaultViewport';
+import { applyPlanarImagePresentation } from '../../helpers/planarImageRendering';
 import { worldToCanvasPlanarViewState } from './planarAdapterCoordinateTransforms';
 import type {
   PlanarDataPresentation,
@@ -55,12 +56,24 @@ const TEXEL_STEPS = 64;
 const NEAREST_TIE_SHIFT = 1 / 8192;
 
 /**
+ * The most distinct values of a slice of whole numbers that are coloured
+ * through a table of one colour per value (`colourWholeNumbers`).
+ */
+const MAX_VALUE_TABLE_SIZE = 65536;
+
+/**
  * The colour and opacity of one layer as the GPU draw step gives them, as
  * tables over the value of a pixel: `colours` holds the packed red, green and
  * blue of a step and `alphas` its alpha, 0 to 255. A value v reads the step
- * `v * scale + offset` of each table, clamped to the table.
+ * `v * scale + offset` of each table, clamped to the table. `colourTexels`
+ * and `opacityTexels` are the texels of the textures of the GPU draw step
+ * that the steps were made from.
+ *
+ * @internal
  */
-type PlanarSliceColourTables = {
+export type PlanarSliceColourTables = {
+  colourTexels: Uint8ClampedArray;
+  opacityTexels: Float32Array;
   colours: Uint32Array;
   colourScale: number;
   colourOffset: number;
@@ -73,6 +86,17 @@ type PlanarSliceColourTables = {
 
 /** The 2D canvas of a viewport and the state of its composition pass. */
 export type PlanarCanvasTarget = PlanarViewportRenderContext['cpu'];
+
+/**
+ * The GPU draw step whose picture a `PlanarSampledSliceCanvas` draws.
+ * `volume`, the default, is the slice of a volume drawn by
+ * `PlanarSampledSliceActor`, with the presentation of a volume slice. `image`
+ * is an acquired image of a stack drawn by `VtkImageMapperRenderPath`: the
+ * presentation of an image (`applyPlanarImagePresentation`), and a colour
+ * image whose red, green and blue each read the colour table, as the vtk.js
+ * image mapper reads an image of three dependent components.
+ */
+export type PlanarSliceCanvasPresentation = 'volume' | 'image';
 
 /**
  * A 2D affine transform from the pixel space of a slice image (pixel i, j
@@ -133,12 +157,26 @@ export class PlanarSampledSliceCanvas {
   private colouredTables?: PlanarSliceColourTables;
 
   constructor(
-    private readonly volume: IImageVolume,
+    private volume: IImageVolume,
     width: number,
-    height: number
+    height: number,
+    private readonly presentationOf: PlanarSliceCanvasPresentation = 'volume'
   ) {
     this.layerCanvas = createCanvas(null, width, height);
     this.sliceCanvas = createCanvas(null, 1, 1);
+  }
+
+  /**
+   * Sets the volume that the next slices come from, as for each image of a
+   * stack. The faces of that volume clip its slices.
+   */
+  setVolume(volume: IImageVolume): void {
+    if (volume === this.volume) {
+      return;
+    }
+
+    this.volume = volume;
+    this.clipPlanes = undefined;
   }
 
   /**
@@ -194,7 +232,10 @@ export class PlanarSampledSliceCanvas {
 
     resizeCanvas(this.sliceCanvas, slice.width, slice.height);
 
-    if (!canvasActor && (slice.numberOfComponents ?? 1) === 1) {
+    if (
+      !canvasActor &&
+      ((slice.numberOfComponents ?? 1) === 1 || this.presentationOf === 'image')
+    ) {
       this.drawWithTransferFunctions(args);
       return;
     }
@@ -302,7 +343,16 @@ export class PlanarSampledSliceCanvas {
 
       const pixels = new Uint32Array(this.sliceImageData.data.buffer);
 
-      colourSlice(slice.pixelData, pixels, tables);
+      if ((slice.numberOfComponents ?? 1) > 1) {
+        colourChannels(
+          slice.pixelData,
+          pixels,
+          tables,
+          slice.numberOfComponents
+        );
+      } else if (!colourWholeNumbers(slice, pixels, tables)) {
+        colourSlice(slice.pixelData, pixels, tables);
+      }
 
       if (!slice.insideVolume) {
         this.clipPlanes ||= getVolumeClipPlanes(this.volume);
@@ -332,7 +382,9 @@ export class PlanarSampledSliceCanvas {
    * The colour tables of the presentation. The presentation is applied to the
    * actor of the GPU draw step (`PlanarSampledSliceActor`), which is never
    * drawn here, only when it changed, as the GPU draw step applies it; the
-   * tables are then read from that actor.
+   * tables are then read from that actor. For the `image` presentation the
+   * presentation of an image is applied to that actor, as
+   * `VtkImageMapperRenderPath` applies it to its own.
    */
   private getColourTables(
     presentation: PlanarDataPresentation | undefined,
@@ -347,9 +399,22 @@ export class PlanarSampledSliceCanvas {
     this.presentationActor ||= new PlanarSampledSliceActor({
       voxelManager: this.volume.voxelManager,
     });
-    this.presentationActor.applyPresentation(presentation, defaultVOIRange);
+
+    if (this.presentationOf === 'image') {
+      applyPlanarImagePresentation({
+        actor: this.presentationActor.actor,
+        defaultVOIRange,
+        props: presentation,
+      });
+    } else {
+      this.presentationActor.applyPresentation(presentation, defaultVOIRange);
+    }
+
     this.presentationKey = key;
-    this.colourTables = getColourTables(this.presentationActor);
+    this.colourTables = getColourTables(
+      this.presentationActor,
+      this.colourTables
+    );
 
     return this.colourTables;
   }
@@ -640,9 +705,20 @@ export function getResolvedVOIRange(
  * A texture is read with linear filtering between texel centres and clamped
  * at its ends, or the nearest texel for NEAREST interpolation. The alpha is
  * the opacity of the table times the opacity of the property.
+ *
+ * The steps of a table are made again only when its texels changed. A change
+ * of the window of a linear or sigmoid VOI, and of a colormap, moves only
+ * the window and level of the tables: their texels stay the same, since the
+ * colour function is sampled over its own range. The steps of `previous` are
+ * then kept and only the mapping from value to step is new. A threshold or
+ * an opacity that changes moves the opacity texels, so only the alpha steps
+ * are made again.
+ *
+ * @internal
  */
-function getColourTables(
-  presentationActor: Pick<PlanarSampledSliceActor, 'actor' | 'mapper'>
+export function getColourTables(
+  presentationActor: Pick<PlanarSampledSliceActor, 'actor' | 'mapper'>,
+  previous?: PlanarSliceColourTables
 ): PlanarSliceColourTables {
   const property = presentationActor.actor.getProperty();
   const nearest =
@@ -716,16 +792,43 @@ function getColourTables(
     opacityLevel
   );
 
+  const sameFilter = previous?.nearest === nearest;
+
   return {
-    colours: getColourSteps(colourTexels, nearest),
+    colourTexels,
+    opacityTexels,
+    colours:
+      sameFilter && isSameArray(previous.colourTexels, colourTexels)
+        ? previous.colours
+        : getColourSteps(colourTexels, nearest),
     colourScale,
     colourOffset,
-    alphas: getAlphaSteps(opacityTexels, opacity, nearest),
+    alphas:
+      sameFilter &&
+      previous.opacity === opacity &&
+      isSameArray(previous.opacityTexels, opacityTexels)
+        ? previous.alphas
+        : getAlphaSteps(opacityTexels, opacity, nearest),
     alphaScale,
     alphaOffset,
     nearest,
     opacity,
   };
+}
+
+/** Whether two arrays hold the same values, one by one. */
+function isSameArray(a: ArrayLike<number>, b: ArrayLike<number>): boolean {
+  if (a.length !== b.length) {
+    return false;
+  }
+
+  for (let index = 0; index < a.length; index++) {
+    if (a[index] !== b[index]) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 /**
@@ -818,8 +921,10 @@ function getAlphaSteps(
 /**
  * Colours the values of a slice with the tables of `getColourTables` into
  * RGBA pixels, one 32-bit word per pixel in the byte order of ImageData.
+ *
+ * @internal
  */
-function colourSlice(
+export function colourSlice(
   pixelData: PixelDataTypedArray,
   pixels: Uint32Array,
   tables: PlanarSliceColourTables
@@ -846,6 +951,98 @@ function colourSlice(
       alphaStep > 0 ? (alphaStep < lastAlpha ? alphaStep : lastAlpha) : 0;
     pixels[index] =
       colours[(colourStep + 0.5) | 0] | (alphas[(alphaStep + 0.5) | 0] << 24);
+  }
+}
+
+/**
+ * Colours a slice of whole numbers in an integer array, of fewer distinct
+ * values than pixels and at most MAX_VALUE_TABLE_SIZE of them, through a table
+ * of the colour of each value from the lowest to the highest of the slice.
+ * The table is made by `colourSlice`, so each pixel gets the colour that
+ * `colourSlice` gives it, with one table read per pixel in place of the
+ * arithmetic of each pixel.
+ *
+ * It relies on `min` and `max` of the slice being the lowest and the highest
+ * value of its pixel data. A pixel with a value outside them has no entry in
+ * the table: the colouring then stops and returns false, so that the caller
+ * colours the whole slice with `colourSlice`.
+ *
+ * @returns false for any other slice, which it leaves uncoloured or partly
+ *   coloured
+ * @internal
+ */
+export function colourWholeNumbers(
+  slice: Pick<PlanarSampledSlice, 'pixelData' | 'min' | 'max'>,
+  pixels: Uint32Array,
+  tables: PlanarSliceColourTables
+): boolean {
+  const { pixelData, min, max } = slice;
+  const count = max - min + 1;
+
+  if (
+    pixelData instanceof Float32Array ||
+    pixelData instanceof Float64Array ||
+    !Number.isInteger(min) ||
+    !Number.isInteger(max) ||
+    !(count > 0 && count <= MAX_VALUE_TABLE_SIZE && count < pixels.length)
+  ) {
+    return false;
+  }
+
+  const values = new Int32Array(count);
+  const table = new Uint32Array(count);
+
+  for (let index = 0; index < count; index++) {
+    values[index] = min + index;
+  }
+
+  colourSlice(values, table, tables);
+
+  for (let index = 0; index < pixels.length; index++) {
+    const colour = table[pixelData[index] - min];
+
+    if (colour === undefined) {
+      return false;
+    }
+
+    pixels[index] = colour;
+  }
+
+  return true;
+}
+
+/**
+ * Colours the pixels of a colour slice as the vtk.js image mapper colours an
+ * image of three dependent components: red, green and blue each read the red
+ * of the colour table at their own value, and the alpha is the opacity of the
+ * property. A fourth component is left out, as vtk.js leaves it out of the
+ * texture of an image.
+ *
+ * @internal
+ */
+export function colourChannels(
+  pixelData: PixelDataTypedArray,
+  pixels: Uint32Array,
+  tables: PlanarSliceColourTables,
+  numberOfComponents: number
+): void {
+  const { colours, colourScale, colourOffset } = tables;
+  const lastColour = colours.length - 1;
+  const alpha = Math.round(255 * tables.opacity) << 24;
+
+  for (let index = 0; index < pixels.length; index++) {
+    let pixel = alpha;
+
+    for (let channel = 0; channel < 3; channel++) {
+      let step =
+        pixelData[index * numberOfComponents + channel] * colourScale +
+        colourOffset;
+
+      step = step > 0 ? (step < lastColour ? step : lastColour) : 0;
+      pixel |= (colours[(step + 0.5) | 0] & 0xff) << (channel * 8);
+    }
+
+    pixels[index] = pixel;
   }
 }
 
