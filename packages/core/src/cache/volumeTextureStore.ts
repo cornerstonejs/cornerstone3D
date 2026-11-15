@@ -138,6 +138,23 @@ class VolumeTextureStore {
     return found;
   }
 
+  /**
+   * Every texture of every set of every volume. A WebGL context that comes
+   * back after a loss holds none of their storage, and its owner reaches each
+   * texture through this list.
+   */
+  public textures<TextureType>(): TextureType[] {
+    const found: TextureType[] = [];
+
+    for (const stored of this.sets.values()) {
+      for (const slot of stored.set.members()) {
+        found.push(slot.texture as TextureType);
+      }
+    }
+
+    return found;
+  }
+
   /** One named set of one volume. */
   public getSet<TextureType>(
     volumeId: string,
@@ -327,6 +344,18 @@ class VolumeTextureStore {
   public evictVolume(volumeId: string): void {
     for (const stored of [...this.sets.values()]) {
       if (stored.volumeId === volumeId) {
+        this.evict(volumeId, stored.set.name);
+      }
+    }
+  }
+
+  /**
+   * Removes every set of one volume that no consumer holds, and keeps the sets
+   * that a render path or a legacy viewport still holds.
+   */
+  public evictUnheldSetsOfVolume(volumeId: string): void {
+    for (const stored of [...this.sets.values()]) {
+      if (stored.volumeId === volumeId && stored.set.references === 0) {
         this.evict(volumeId, stored.set.name);
       }
     }

@@ -108,8 +108,7 @@ function getSliceArray(
       (sliceIndex + 1) * sliceSize
     ) as PixelDataTypedArray;
   } else {
-    // A voxel manager without _getSliceView (a dynamic volume) is read
-    // through getAtIJK, which follows its current dimension group.
+    // A voxel manager without _getSliceView is read through getAtIJK.
     const scalarData = (
       volume.voxelManager as {
         _getSliceView?: (sliceIndex: number) => PixelDataTypedArray | undefined;
@@ -147,6 +146,31 @@ function finishSample(context: GridSamplingContext, sample: number): number {
 }
 
 /**
+ * Whether a continuous voxel index lies on a voxel of a volume with these
+ * dimensions: a voxel reaches half a voxel beyond its centre, and a point
+ * within SOURCE_SLICE_INDEX_TOLERANCE of that edge counts as on it.
+ * sampleVolumeGrid gives the outside value to a grid point exactly when this
+ * is false.
+ */
+function isIndexInsideVolume(
+  dimensions: ArrayLike<number>,
+  i: number,
+  j: number,
+  k: number
+): boolean {
+  const lowerBound = -0.5 - SOURCE_SLICE_INDEX_TOLERANCE;
+
+  return (
+    i >= lowerBound &&
+    i <= dimensions[0] - 0.5 + SOURCE_SLICE_INDEX_TOLERANCE &&
+    j >= lowerBound &&
+    j <= dimensions[1] - 0.5 + SOURCE_SLICE_INDEX_TOLERANCE &&
+    k >= lowerBound &&
+    k <= dimensions[2] - 0.5 + SOURCE_SLICE_INDEX_TOLERANCE
+  );
+}
+
+/**
  * Samples one grid point with every check: whether the point lies on a voxel,
  * the move of its index onto the range of the voxel centers, and the reading
  * of a slice that has no typed array. The fast loops of sampleVolumeGrid skip
@@ -160,18 +184,8 @@ function sampleCheckedPoint(
   k: number
 ): number {
   const { columns, rows, slices } = context;
-  const lowerBound = -0.5 - SOURCE_SLICE_INDEX_TOLERANCE;
 
-  if (
-    !(
-      i >= lowerBound &&
-      i <= columns - 0.5 + SOURCE_SLICE_INDEX_TOLERANCE &&
-      j >= lowerBound &&
-      j <= rows - 0.5 + SOURCE_SLICE_INDEX_TOLERANCE &&
-      k >= lowerBound &&
-      k <= slices - 0.5 + SOURCE_SLICE_INDEX_TOLERANCE
-    )
-  ) {
+  if (!isIndexInsideVolume([columns, rows, slices], i, j, k)) {
     return context.outsideValue;
   }
 
@@ -286,6 +300,293 @@ function narrowColumnSpan(
 }
 
 /**
+ * Returns the index axis along which a step moves, when it moves along one
+ * axis only and by a whole number of voxels. Returns undefined otherwise.
+ */
+function getWholeStepAxis(step: Point3): number | undefined {
+  let stepAxis: number | undefined;
+
+  for (let axis = 0; axis < 3; axis++) {
+    if (step[axis] === 0) {
+      continue;
+    }
+
+    if (stepAxis !== undefined || !Number.isInteger(step[axis])) {
+      return;
+    }
+
+    stepAxis = axis;
+  }
+
+  return stepAxis;
+}
+
+/**
+ * Returns the first and the last of the count positions start + n * step
+ * (n from 0 to count - 1) that lie between 0 and last, both whole numbers.
+ * The span is empty (first > last) when none does.
+ */
+function getWholeSpan(
+  start: number,
+  step: number,
+  last: number,
+  count: number
+): ColumnSpan {
+  const atLow = -start / step;
+  const atHigh = (last - start) / step;
+
+  return {
+    first: Math.max(0, Math.ceil(Math.min(atLow, atHigh))),
+    last: Math.min(count - 1, Math.floor(Math.max(atLow, atHigh))),
+  };
+}
+
+/**
+ * Returns whether a slice array holds floating point values.
+ */
+function isFloatArray(sliceArray: PixelDataTypedArray): boolean {
+  return (
+    sliceArray instanceof Float32Array || sliceArray instanceof Float64Array
+  );
+}
+
+/**
+ * Writes the outside value into the pixels from first to last, both included.
+ */
+function fillOutside(
+  pixelData: PixelDataTypedArray | number[],
+  first: number,
+  last: number,
+  outsideValue: number
+): void {
+  for (let pixelIndex = first; pixelIndex <= last; pixelIndex++) {
+    pixelData[pixelIndex] = outsideValue;
+  }
+}
+
+/**
+ * The short path of sampleVolumeGrid for a straight cut: the column step and
+ * the row step each move along one index axis by a whole number of voxels,
+ * along two different axes, and the start index is a whole number on those
+ * two axes. Every grid point then lies on a voxel center in the plane of the
+ * cut, and the third axis keeps one coordinate for the whole grid.
+ *
+ * When that coordinate is on a voxel center, or for a nearest sample, each
+ * pixel is a copy of one voxel: a row of the grid that is a run of one slice
+ * array is copied with TypedArray.set, any other row voxel by voxel. A linear
+ * sample between two voxel centers mixes the two planes of voxels around the
+ * coordinate with the weights and in the order of the general loop.
+ *
+ * It gives the same values and the same range as the general loop. Where it
+ * cannot promise that it returns undefined, and the general loop then samples
+ * the whole grid: a coordinate outside the volume on the third axis, a slice
+ * without a typed array, and a linear sample of a float volume (the general
+ * loop multiplies the neighbours of a voxel by a weight of zero, which turns
+ * an infinite neighbour into NaN).
+ */
+function sampleStraightCut(
+  context: GridSamplingContext,
+  options: SampleVolumeGridOptions
+): SampledValueRange | undefined {
+  const { pixelData, width, height, startIndex, columnStep, rowStep } = options;
+
+  if (!(width > 0) || !(height > 0)) {
+    return;
+  }
+
+  const columnAxis = getWholeStepAxis(columnStep);
+  const rowAxis = getWholeStepAxis(rowStep);
+
+  if (
+    columnAxis === undefined ||
+    rowAxis === undefined ||
+    columnAxis === rowAxis ||
+    !Number.isInteger(startIndex[columnAxis]) ||
+    !Number.isInteger(startIndex[rowAxis])
+  ) {
+    return;
+  }
+
+  const { columns, slices, useNearest, outsideValue, sliceArrays } = context;
+  const fixedAxis = 3 - columnAxis - rowAxis;
+  const dimensions = [columns, context.rows, slices];
+  const fixedLast = dimensions[fixedAxis] - 1;
+  const fixedCoordinate = startIndex[fixedAxis];
+
+  if (
+    !(fixedCoordinate >= -0.5 - SOURCE_SLICE_INDEX_TOLERANCE) ||
+    !(fixedCoordinate <= fixedLast + 0.5 + SOURCE_SLICE_INDEX_TOLERANCE)
+  ) {
+    return;
+  }
+
+  const clampedFixed =
+    fixedCoordinate < 0
+      ? 0
+      : fixedCoordinate > fixedLast
+        ? fixedLast
+        : fixedCoordinate;
+  const lowerPlane = useNearest
+    ? Math.floor(clampedFixed + 0.5 - NEAREST_VOXEL_TIE_EPSILON)
+    : Math.floor(clampedFixed);
+  const upperPlane = lowerPlane < fixedLast ? lowerPlane + 1 : fixedLast;
+  const weight = useNearest ? 0 : clampedFixed - lowerPlane;
+  const oneMinusWeight = 1 - weight;
+  const mix = weight > 0;
+  const offsetStrides = [1, columns, 0];
+  const sliceStrides = [0, 0, 1];
+  const columnOffsetStep = columnStep[columnAxis] * offsetStrides[columnAxis];
+  const columnSliceStep = columnStep[columnAxis] * sliceStrides[columnAxis];
+  const mixOffset = (upperPlane - lowerPlane) * offsetStrides[fixedAxis];
+  const mixSlice = (upperPlane - lowerPlane) * sliceStrides[fixedAxis];
+  const canSetRuns =
+    columnOffsetStep === 1 && !mix && ArrayBuffer.isView(pixelData);
+  const columnSpan = getWholeSpan(
+    startIndex[columnAxis],
+    columnStep[columnAxis],
+    dimensions[columnAxis] - 1,
+    width
+  );
+  const rowSpan = getWholeSpan(
+    startIndex[rowAxis],
+    rowStep[rowAxis],
+    dimensions[rowAxis] - 1,
+    height
+  );
+  const runLength = columnSpan.last - columnSpan.first + 1;
+  const coordinates = [0, 0, 0];
+  let min = Infinity;
+  let max = -Infinity;
+
+  if (runLength <= 0 || rowSpan.first > rowSpan.last) {
+    return;
+  }
+
+  for (let row = 0; row < height; row++) {
+    const rowStart = row * width;
+
+    if (row < rowSpan.first || row > rowSpan.last) {
+      fillOutside(pixelData, rowStart, rowStart + width - 1, outsideValue);
+      continue;
+    }
+
+    coordinates[fixedAxis] = lowerPlane;
+    coordinates[rowAxis] = startIndex[rowAxis] + row * rowStep[rowAxis];
+    coordinates[columnAxis] =
+      startIndex[columnAxis] + columnSpan.first * columnStep[columnAxis];
+
+    let offset = coordinates[1] * columns + coordinates[0];
+    let sliceIndex = coordinates[2];
+    let pixelIndex = rowStart + columnSpan.first;
+
+    fillOutside(pixelData, rowStart, pixelIndex - 1, outsideValue);
+
+    for (let column = 0; column < runLength; ) {
+      const lowerSlice =
+        sliceArrays[sliceIndex] ?? getSliceArray(context, sliceIndex);
+      const upperSlice = mix
+        ? (sliceArrays[sliceIndex + mixSlice] ??
+          getSliceArray(context, sliceIndex + mixSlice))
+        : lowerSlice;
+
+      if (!lowerSlice || !upperSlice) {
+        return;
+      }
+
+      const floatValues = isFloatArray(lowerSlice) || isFloatArray(upperSlice);
+
+      if (floatValues && !useNearest) {
+        return;
+      }
+
+      const finish =
+        context.limitValues || (context.round && (mix || floatValues));
+      const count = columnSliceStep === 0 ? runLength : 1;
+
+      const runEnd = offset + count * columnOffsetStep;
+
+      if (canSetRuns && !finish) {
+        (pixelData as PixelDataTypedArray).set(
+          lowerSlice.subarray(offset, runEnd),
+          pixelIndex
+        );
+
+        for (let read = offset; read < runEnd; read++) {
+          const value = lowerSlice[read];
+
+          if (value < min) {
+            min = value;
+          }
+
+          if (value > max) {
+            max = value;
+          }
+        }
+
+        pixelIndex += count;
+      } else if (!mix && !finish) {
+        for (let index = 0, read = offset; index < count; index++) {
+          const value = lowerSlice[read];
+
+          pixelData[pixelIndex++] = value;
+
+          if (value < min) {
+            min = value;
+          }
+
+          if (value > max) {
+            max = value;
+          }
+
+          read += columnOffsetStep;
+        }
+      } else {
+        for (let index = 0, read = offset; index < count; index++) {
+          let value = mix
+            ? lowerSlice[read] * oneMinusWeight +
+              upperSlice[read + mixOffset] * weight
+            : lowerSlice[read];
+
+          if (finish) {
+            value = finishSample(context, value);
+          }
+
+          pixelData[pixelIndex++] = value;
+
+          if (value < min) {
+            min = value;
+          }
+
+          if (value > max) {
+            max = value;
+          }
+
+          read += columnOffsetStep;
+        }
+      }
+
+      offset = runEnd;
+      column += count;
+      sliceIndex += columnSliceStep;
+    }
+
+    fillOutside(pixelData, pixelIndex, rowStart + width - 1, outsideValue);
+  }
+
+  if (runLength < width || rowSpan.first > 0 || rowSpan.last < height - 1) {
+    if (outsideValue < min) {
+      min = outsideValue;
+    }
+
+    if (outsideValue > max) {
+      max = outsideValue;
+    }
+  }
+
+  return { min, max };
+}
+
+/**
  * Samples a volume on a regular grid of points and writes one value per grid
  * point into pixelData. The grid is given in continuous voxel indices: a first
  * point, a step along a row and a step from one row to the next. A grid in a
@@ -340,6 +641,12 @@ function sampleVolumeGrid(options: SampleVolumeGridOptions): SampledValueRange {
     rangeMax: valueRange ? valueRange.max : 0,
     round,
   };
+  const straightCut = sampleStraightCut(context, options);
+
+  if (straightCut) {
+    return straightCut;
+  }
+
   const { sliceArrays } = context;
   const outerLow = -0.5 - SOURCE_SLICE_INDEX_TOLERANCE - SPAN_MARGIN;
   const outerHighOffset = -0.5 + SOURCE_SLICE_INDEX_TOLERANCE + SPAN_MARGIN;
@@ -543,5 +850,5 @@ function sampleVolumeGrid(options: SampleVolumeGridOptions): SampledValueRange {
   return { min, max };
 }
 
-export { sampleVolumeGrid as default, sampleVolumeGrid };
+export { sampleVolumeGrid as default, sampleVolumeGrid, isIndexInsideVolume };
 export type { SampleVolumeGridOptions, SampledValueRange };

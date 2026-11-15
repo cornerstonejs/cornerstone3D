@@ -264,7 +264,11 @@ function _stopClip(
 
   if (viewport instanceof VideoViewport) {
     (viewport as Types.IVideoViewport).pause();
-  } else if (stopDynamicCine && viewport instanceof BaseVolumeViewport) {
+  } else if (
+    stopDynamicCine &&
+    (viewport instanceof BaseVolumeViewport ||
+      csUtils.isGenericViewport(viewport))
+  ) {
     _stopDynamicVolumeCine(element);
   }
 }
@@ -275,8 +279,13 @@ function _stopClip(
  */
 function _stopDynamicVolumeCine(element: HTMLDivElement) {
   const { viewport } = getEnabledElement(element);
-  if (viewport instanceof VolumeViewport) {
-    const volume = _getVolumeFromViewport(viewport);
+  if (
+    viewport instanceof VolumeViewport ||
+    csUtils.isGenericViewport(viewport)
+  ) {
+    const volume = _getVolumeFromViewport(
+      viewport as Types.IBaseVolumeViewport
+    );
     if (volume?.isDynamicVolume()) {
       const dynamicCineElement = dynamicVolumesPlayingMap.get(volume.volumeId);
 
@@ -367,7 +376,7 @@ function _getVolumeFromViewport(
   viewport: Types.IBaseVolumeViewport
 ): Types.IImageVolume {
   if (!(viewport instanceof VolumeViewport)) {
-    return undefined;
+    return _getGenericViewportDynamicVolume(viewport);
   }
 
   const volumeIds = viewport.getAllVolumeIds();
@@ -383,6 +392,42 @@ function _getVolumeFromViewport(
   const volumeId = dynamicVolumeId ?? volumeIds[0];
 
   return cache.getVolume(volumeId);
+}
+
+/**
+ * Returns the 4D volume that a next viewport (`PlanarViewport` or
+ * `PlanarViewportLegacyAdapter`) shows in volume mode, whatever its render
+ * path. It looks at the volume ids of the viewport (`getAllVolumeIds` of the
+ * legacy adapter, the volume id of the source otherwise) and returns the first
+ * one that is a dynamic volume in the cache, or undefined when there is none.
+ */
+function _getGenericViewportDynamicVolume(
+  viewport: unknown
+): Types.IDynamicImageVolume | undefined {
+  if (
+    !csUtils.isGenericViewport(viewport) ||
+    !csUtils.viewportIsInVolumeMode(viewport)
+  ) {
+    return;
+  }
+
+  const volumeViewport = viewport as {
+    getAllVolumeIds?: () => string[];
+    getVolumeId?: () => string | undefined;
+  };
+  const volumeIds =
+    typeof volumeViewport.getAllVolumeIds === 'function'
+      ? volumeViewport.getAllVolumeIds()
+      : [volumeViewport.getVolumeId?.()];
+  const dynamicVolumeId = volumeIds?.find(
+    (volumeId) => volumeId && cache.getVolume(volumeId)?.isDynamicVolume?.()
+  );
+
+  if (!dynamicVolumeId) {
+    return;
+  }
+
+  return cache.getVolume(dynamicVolumeId) as Types.IDynamicImageVolume;
 }
 
 function _createStackViewportCinePlayContext(
@@ -610,6 +655,14 @@ function _createCinePlayContext(
   // Direct GenericViewport ("next") viewports report none of the legacy instanceof
   // types; route them by capability (stack/volume both scroll via getNumberOfSlices).
   if (csUtils.isGenericViewport(viewport)) {
+    const dynamicVolume = playClipOptions.dynamicCineEnabled
+      ? _getGenericViewportDynamicVolume(viewport)
+      : undefined;
+
+    if (dynamicVolume) {
+      return _createDynamicVolumeViewportCinePlayContext(dynamicVolume);
+    }
+
     return _createGenericViewportCinePlayContext(
       viewport,
       playClipOptions.waitForRendered ?? 30

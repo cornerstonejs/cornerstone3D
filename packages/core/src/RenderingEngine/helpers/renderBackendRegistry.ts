@@ -41,6 +41,14 @@ export interface RenderBackendRenderModes {
    * dataset then fails with a descriptive error.
    */
   volume?: RenderBackendRenderMode;
+  /**
+   * Optional second render mode for volume-backed mounts that cuts the visible
+   * slice on the CPU and draws it as a 2D image (no 3D texture). The planar
+   * render path decision selects it in place of `volume` when slice first is
+   * on and the view allows it. It counts as a volume render mode.
+   * @experimental
+   */
+  sampledVolume?: RenderBackendRenderMode;
 }
 
 export interface RenderBackendDefinition {
@@ -100,6 +108,7 @@ function registerCoreRenderBackends() {
     renderModes: {
       image: { id: ActorRenderMode.VTK_IMAGE },
       volume: { id: ActorRenderMode.VTK_VOLUME_SLICE },
+      sampledVolume: { id: ActorRenderMode.VTK_SAMPLED_SLICE },
     },
     surface: 'vtk',
   });
@@ -202,6 +211,19 @@ export function registerRenderBackend({
     modeEntries.push([renderModes.volume.id, 'volume']);
   }
 
+  if (renderModes.sampledVolume) {
+    modeEntries.push([renderModes.sampledVolume.id, 'volume']);
+  }
+
+  if (
+    new Set(modeEntries.map(([renderMode]) => renderMode)).size !==
+    modeEntries.length
+  ) {
+    throw new Error(
+      `Render backend "${backend}" must use distinct render modes for image and volume`
+    );
+  }
+
   for (const [renderMode] of modeEntries) {
     const existing = renderModeIndex.get(renderMode);
     if (existing && existing.backend !== backend) {
@@ -283,6 +305,18 @@ export function getRenderModeForBackend(
   return renderMode.id;
 }
 
+/**
+ * The sampled volume render mode of a backend (see
+ * `RenderBackendRenderModes.sampledVolume`), or undefined when the backend is
+ * unknown or has none.
+ * @experimental
+ */
+export function getSampledVolumeRenderModeForBackend(
+  backend: string
+): string | undefined {
+  return getRenderBackendDefinition(backend)?.renderModes.sampledVolume?.id;
+}
+
 /** Backend that provides `renderMode`, or undefined for unknown modes. */
 export function getRenderBackendForRenderMode(
   renderMode: string | undefined
@@ -327,8 +361,8 @@ export function createRegisteredPlanarRenderPaths(): RenderPathDefinition[] {
   const paths: RenderPathDefinition[] = [];
 
   for (const definition of backendDefinitions.values()) {
-    const { image, volume } = definition.renderModes;
-    for (const mode of [image, volume]) {
+    const { image, volume, sampledVolume } = definition.renderModes;
+    for (const mode of [image, volume, sampledVolume]) {
       if (mode?.createDefinition) {
         paths.push(mode.createDefinition());
       }

@@ -546,13 +546,15 @@ export function placeVolumeLabelmapImageMapperActors(args: {
 }
 
 /**
- * Returns the place of a labelmap slice actor among the image slice actors of
- * a planar viewport, in the order in which the viewport draws them. The core
- * uses the same number as the depth order of the image slices that it owns,
- * such as the PT layer of a fusion view. A labelmap slice that takes its own
- * number is therefore nearer to the camera than every slice drawn before it,
- * and shares its depth with none of them. An actor that the viewport does not
- * hold yet is drawn last.
+ * Returns the depth order of a labelmap slice actor on a planar viewport. The
+ * core gives the image slices that it owns (the source at 0, a fusion layer
+ * such as PT by its place among the image slices of the renderer) an order
+ * from 0 to one less than the number of image slices. A labelmap slice takes
+ * the number of image slices of the viewport plus its own place among them,
+ * so it is nearer to the camera than the source and every fusion layer, also
+ * after a live render path switch has moved a remounted layer to the end of
+ * the renderer, and it shares its depth with no other slice. An actor that
+ * the viewport does not hold yet is placed as if it were the last one.
  */
 function getPlanarOverlayOrder(
   viewport: PlanarSliceRenderingViewport,
@@ -566,5 +568,5 @@ function getPlanarOverlayOrder(
     );
   const order = sliceActors.indexOf(actor);
 
-  return order === -1 ? sliceActors.length : order;
+  return sliceActors.length + (order === -1 ? sliceActors.length : order);
 }

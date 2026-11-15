@@ -111,19 +111,34 @@ interface Cornerstone3DConfig {
        * reading `useCPURendering` and are not governed by this flag.
        */
       renderBackend?: RenderBackendValue;
+      /**
+       * Slice first: a volume-backed display set of a planar viewport cuts the
+       * visible slice on the CPU and draws it as a 2D image, so no 3D texture
+       * is made for it. It applies only on the 'gpu' backend, to a cached
+       * volume with one value per voxel, and while the slab is thin enough
+       * for the CPU. The per-display-set `sliceFirst` option wins over this
+       * value. Default false. Use setSliceFirst() to change it at runtime.
+       * @experimental
+       */
+      sliceFirst?: boolean;
       cpuVolume?: {
         /**
          * When true, LINEAR CPU volume slices are sampled into a viewport-sized
          * image even when an orthogonal source slice could be reused. This
          * improves GPU parity for reconstructed planes. Set to false to keep
          * the source-slice shortcut.
+         * @deprecated It has no effect: the CPU volume path samples the slice
+         * as the sampled slice path does, and samples an oblique slice on the
+         * screen grid at rest.
          */
         useViewportSamplingForLinear?: boolean;
         /**
          * Minimum delay between CPU volume re-renders triggered by
-         * progressive IMAGE_VOLUME_MODIFIED updates. Defaults to 50ms.
-         * A value of 0 disables throttling and preserves immediate rendering
-         * on every update.
+         * IMAGE_VOLUME_MODIFIED updates, from progressive loading or from
+         * edits of the voxels. Defaults to 5000 ms. The kept slices are
+         * dropped at once on each update, so any other render shows the new
+         * voxels. A value of 0 disables throttling and preserves immediate
+         * rendering on every update.
          */
         volumeModifiedThrottleMs?: number;
       };

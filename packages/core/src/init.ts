@@ -10,6 +10,7 @@ import {
   Events,
   RenderBackends,
   RenderingEngineModeEnum,
+  ViewportType,
   VoxelManagerEnum,
 } from './enums';
 import type { RenderBackendValue } from './enums';
@@ -50,6 +51,7 @@ const defaultConfig: Cornerstone3DConfig = {
        * the deprecated useCPURendering flag). See setRenderBackend().
        */
       renderBackend: RenderBackends.Auto,
+      sliceFirst: false,
       cpuVolume: {
         useViewportSamplingForLinear: true,
         volumeModifiedThrottleMs: 5000,
@@ -302,6 +304,35 @@ function setRenderBackend(backend: RenderBackendValue, reason?: string): void {
 }
 
 /**
+ * Turns slice first on or off for planar viewports (see
+ * `rendering.planar.sliceFirst`): a volume-backed display set cuts the visible
+ * slice on the CPU and draws it as a 2D image in place of a 3D texture. The
+ * mounted planar next viewports (`ViewportType.PLANAR_NEXT`, the legacy
+ * adapters among them) run their render path decision again, and display
+ * sets whose render mode changes are remounted in place. Legacy viewports are
+ * not touched, since slice first does not apply to them. A per-display-set
+ * `sliceFirst` option still wins. Like setRenderBackend, this does not mark the
+ * library initialized, so a later init(configuration) still runs.
+ *
+ * @param enabled - true to turn slice first on
+ * @experimental
+ * @category Initialization
+ */
+function setSliceFirst(enabled: boolean): void {
+  if ((config.rendering.planar?.sliceFirst ?? false) === enabled) {
+    return;
+  }
+
+  config.rendering.planar = {
+    ...config.rendering.planar,
+    sliceFirst: enabled,
+  };
+  _updateRenderingPipelinesForAllViewports(
+    (viewport) => viewport.type === ViewportType.PLANAR_NEXT
+  );
+}
+
+/**
  * Forces CPU rendering for legacy viewports. The 'auto' render backend also
  * honors this flag, so calling it affects GenericViewport-based viewports
  * unless they are pinned to 'gpu'/'cpu' via renderBackend.
@@ -416,12 +447,19 @@ function setConfiguration(c: Cornerstone3DConfig) {
  * Update rendering pipelines for all viewports in all rendering engines.
  * Viewport families that do not support a live pipeline swap simply omit the
  * hook.
+ * @param shouldUpdate - when given, only the viewports it accepts are updated
  * @returns {void}
  * @category Initialization
  */
-function _updateRenderingPipelinesForAllViewports(): void {
+function _updateRenderingPipelinesForAllViewports(
+  shouldUpdate?: (viewport: { type: string }) => boolean
+): void {
   getRenderingEngines().forEach((engine) => {
     engine.getViewports().forEach((viewport) => {
+      if (shouldUpdate && !shouldUpdate(viewport)) {
+        return;
+      }
+
       viewport.updateRenderingPipeline?.();
     });
   });
@@ -497,6 +535,7 @@ export {
   resetUseCPURendering,
   getRenderBackend,
   setRenderBackend,
+  setSliceFirst,
   getEffectiveRenderBackend,
   resolveAutoRenderBackend,
   getConfiguration,

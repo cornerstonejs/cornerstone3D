@@ -173,12 +173,14 @@ function getPlanarNextVolumeRenderMode(
 ):
   | Types.ActorRenderMode.CPU_VOLUME
   | Types.ActorRenderMode.VTK_VOLUME_SLICE
+  | Types.ActorRenderMode.VTK_SAMPLED_SLICE
   | undefined {
   const renderMode = viewport.getDefaultActor?.()?.actorMapper?.renderMode;
 
   if (
     renderMode === ActorRenderMode.CPU_VOLUME ||
-    renderMode === ActorRenderMode.VTK_VOLUME_SLICE
+    renderMode === ActorRenderMode.VTK_VOLUME_SLICE ||
+    renderMode === ActorRenderMode.VTK_SAMPLED_SLICE
   ) {
     return renderMode;
   }

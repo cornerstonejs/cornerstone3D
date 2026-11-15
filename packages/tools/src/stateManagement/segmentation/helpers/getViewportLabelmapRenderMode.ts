@@ -51,7 +51,8 @@ export default function getViewportLabelmapRenderMode(
 
   if (
     renderMode === ActorRenderMode.VTK_VOLUME ||
-    renderMode === ActorRenderMode.VTK_VOLUME_SLICE
+    renderMode === ActorRenderMode.VTK_VOLUME_SLICE ||
+    renderMode === ActorRenderMode.VTK_SAMPLED_SLICE
   ) {
     return 'volume';
   }

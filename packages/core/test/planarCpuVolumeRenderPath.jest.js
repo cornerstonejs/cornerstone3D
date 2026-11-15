@@ -3,16 +3,96 @@ jest.mock('../src/RenderingEngine/helpers/cpuFallback/drawImageSync', () => ({
   default: jest.fn(),
 }));
 
-import { Events, InterpolationType } from '../src/enums';
+import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
+import { BlendModes, Events, InterpolationType } from '../src/enums';
 import { ActorRenderMode } from '../src/types';
 import drawImageSync from '../src/RenderingEngine/helpers/cpuFallback/drawImageSync';
+import * as setDefaultVolumeVOIModule from '../src/RenderingEngine/helpers/setDefaultVolumeVOI';
 import { CpuVolumeSliceRenderPath } from '../src/RenderingEngine/GenericViewport/Planar/CpuVolumeSliceRenderPath';
-import PlanarCPUVolumeSampler from '../src/RenderingEngine/GenericViewport/Planar/PlanarCPUVolumeSampler';
+import {
+  PlanarSampledSliceCanvas,
+  getSliceCanvasTransform,
+} from '../src/RenderingEngine/GenericViewport/Planar/planarSampledSliceCanvas';
+import {
+  PlanarSliceSampler,
+  getScreenSliceGeometry,
+} from '../src/RenderingEngine/GenericViewport/Planar/planarSampledSlice';
+import { worldToCanvasPlanarViewState } from '../src/RenderingEngine/GenericViewport/Planar/planarAdapterCoordinateTransforms';
+import { SAMPLED_SLICE_REST_DELAY_MS } from '../src/RenderingEngine/GenericViewport/Planar/VtkSampledSliceRenderPath';
+import VoxelManager from '../src/utilities/VoxelManager';
 import eventTarget from '../src/eventTarget';
+import { getConfiguration } from '../src/init';
 import { shownStateOf } from '../src/RenderingEngine/helpers/fidelityIndicator/fidelityIndicatorState';
 import { fidelityLinesFromBindings } from '../src/RenderingEngine/helpers/fidelityIndicator/collectFidelityLines';
 
-function createCanvas(width = 256, height = 256) {
+/**
+ * The value of voxel (i, j, k) of the test volume: its three indices as the
+ * digits of one number, so a pixel tells which voxel it came from.
+ */
+function voxelValue(i, j, k) {
+  return i + j * 10 + k * 100;
+}
+
+/**
+ * A 4 x 4 x 4 volume with unit spacing at the origin, whose voxels hold
+ * `voxelValue` (plus `offset`), with a real voxel manager.
+ */
+function createTestVolume({
+  volumeId = 'cpu-volume',
+  ArrayType = Int16Array,
+  modality = 'CT',
+  offset = 0,
+  dynamic = false,
+} = {}) {
+  const dimensions = [4, 4, 4];
+  const scalarData = new ArrayType(64);
+  const fill = (add) => {
+    for (let k = 0; k < 4; k++) {
+      for (let j = 0; j < 4; j++) {
+        for (let i = 0; i < 4; i++) {
+          scalarData[i + j * 4 + k * 16] = voxelValue(i, j, k) + add;
+        }
+      }
+    }
+  };
+
+  fill(offset);
+
+  const imageData = vtkImageData.newInstance();
+
+  imageData.setDimensions(dimensions);
+  imageData.setSpacing([1, 1, 1]);
+  imageData.setOrigin([0, 0, 0]);
+  imageData.setDirection([1, 0, 0, 0, 1, 0, 0, 0, 1]);
+
+  const volume = {
+    volumeId,
+    imageIds: ['image-0', 'image-1', 'image-2', 'image-3'],
+    dimensions,
+    spacing: [1, 1, 1],
+    origin: [0, 0, 0],
+    direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
+    imageData,
+    metadata: { Modality: modality, FrameOfReferenceUID: 'cpu-frame' },
+    loadStatus: { loaded: true, loading: false },
+    load: jest.fn(),
+    voxelGrid: { dimensions, spacing: [1, 1, 1] },
+    getVoxelQuality: jest.fn(() => undefined),
+    isDynamicVolume: () => dynamic,
+    dimensionGroupNumber: 1,
+    voxelManager: VoxelManager.createScalarVolumeVoxelManager({
+      dimensions,
+      scalarData,
+    }),
+    refill: fill,
+  };
+
+  volume.voxelManager.invalidateCache = jest.fn();
+
+  return volume;
+}
+
+function createCanvas(width = 1, height = 1) {
   const canvas = document.createElement('canvas');
 
   canvas.width = width;
@@ -21,271 +101,462 @@ function createCanvas(width = 256, height = 256) {
   return canvas;
 }
 
-function createSampledImage() {
-  return {
-    imageId: 'sampled-image',
-    width: 64,
-    height: 64,
-    rows: 64,
-    columns: 64,
-    columnPixelSpacing: 1,
-    rowPixelSpacing: 1,
-    minPixelValue: 0,
-    maxPixelValue: 255,
-  };
-}
-
-function createSampledSliceState(image = createSampledImage()) {
-  return {
-    image,
-    samplingMode: 'source-slice',
-    focalPoint: [0, 0, 0],
-    translationReferenceFocalPoint: [0, 0, 0],
-    right: [1, 0, 0],
-    up: [0, 1, 0],
-    normal: [0, 0, 1],
-    spacingInNormalDirection: 1,
-    canvasWidth: 256,
-    canvasHeight: 256,
-    parallelScale: 32,
-    scaleRatio: 1,
-    interpolationType: InterpolationType.LINEAR,
-  };
-}
-
-function createContext(canvas = createCanvas()) {
-  return {
-    viewportId: 'viewport-1',
-    renderingEngineId: 'rendering-engine',
-    viewport: {
-      element: document.createElement('div'),
-      getViewState: jest.fn(() => ({})),
-    },
-    view: {
-      activeSourceICamera: {
-        focalPoint: [0, 0, 0],
-        parallelScale: 32,
-        viewPlaneNormal: [0, 0, 1],
-        viewUp: [0, 1, 0],
-      },
-    },
-    display: {
-      activateRenderMode: jest.fn(),
-      markRendered: jest.fn(),
-      renderNow: jest.fn(),
-      setNeedsRender: jest.fn(),
-    },
-    cpu: {
-      canvas,
-      context: canvas.getContext('2d'),
-      composition: {
-        clearedRenderPassId: -1,
-        renderPassId: 1,
-      },
-    },
-  };
-}
-
-function createRendering(sampledSliceState = createSampledSliceState()) {
-  return {
-    renderMode: ActorRenderMode.CPU_VOLUME,
-    actorEntryUID: 'actor-1',
-    compatibilityActor: {
-      getMapper: () => ({
-        getInputData: () => ({
-          setDerivedImage: jest.fn(),
-        }),
-      }),
-    },
-    enabledElement: {
-      canvas: createCanvas(),
-      image: sampledSliceState.image,
-      options: {},
-      renderingTools: {},
-      viewport: {},
-    },
-    imageVolume: {
-      loadStatus: {
-        loaded: true,
-      },
-      metadata: {},
-    },
-    imageIds: ['image-1'],
-    layerCanvas: createCanvas(),
-    currentImageIdIndex: 0,
-    maxImageIdIndex: 0,
-    renderingInvalidated: true,
-    sampledSliceState,
-  };
-}
-
-function createTestVolume() {
-  const dimensions = [4, 4, 4];
-
-  return {
-    volumeId: 'test-volume',
-    dimensions,
-    spacing: [1, 1, 1],
-    origin: [0, 0, 0],
-    direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
-    metadata: {},
-    voxelManager: {
-      numberOfComponents: 1,
-      getRange: () => [0, 333],
-      getAtIJK: (i, j, k) => i + j * 10 + k * 100,
-    },
-  };
-}
-
-function createScalarDataTestVolume() {
-  const dimensions = [4, 4, 4];
-  const scalarData = new Int16Array(
-    dimensions[0] * dimensions[1] * dimensions[2]
-  );
-
-  for (let k = 0; k < dimensions[2]; k++) {
-    for (let j = 0; j < dimensions[1]; j++) {
-      for (let i = 0; i < dimensions[0]; i++) {
-        scalarData[i + j * dimensions[0] + k * dimensions[0] * dimensions[1]] =
-          i + j * 10 + k * 100;
-      }
-    }
-  }
-
-  const getAtIJK = jest.fn(() => {
-    throw new Error('axis-aligned scalar viewport sampling should be direct');
-  });
-  const getCompleteScalarDataArray = jest.fn(() => scalarData);
-
-  return {
-    volume: {
-      volumeId: 'test-scalar-data-volume',
-      dimensions,
-      spacing: [1, 1, 1],
-      origin: [0, 0, 0],
-      direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
-      metadata: {},
-      voxelManager: {
-        numberOfComponents: 1,
-        getRange: () => [0, 333],
-        getAtIJK,
-        getCompleteScalarDataArray,
-      },
-    },
-    getAtIJK,
-    getCompleteScalarDataArray,
-  };
-}
-
-function createCoronalCamera(focalPoint) {
+function coronalCamera(focalPoint, parallelScale = 0.5) {
   return {
     focalPoint,
-    parallelScale: 0.5,
+    parallelScale,
     viewPlaneNormal: [0, 1, 0],
     viewUp: [0, 0, 1],
   };
 }
 
+function axialCamera(k, parallelScale = 2) {
+  return {
+    focalPoint: [1.5, 1.5, k],
+    parallelScale,
+    viewPlaneNormal: [0, 0, 1],
+    viewUp: [0, -1, 0],
+  };
+}
+
+function obliqueCamera() {
+  const normal = [Math.SQRT1_2, 0, Math.SQRT1_2];
+
+  return {
+    focalPoint: [1.5, 1.5, 1.5],
+    parallelScale: 2,
+    viewPlaneNormal: normal,
+    viewUp: [0, 1, 0],
+  };
+}
+
+/**
+ * The context of the CPU volume path. The display set is an overlay
+ * (`isCurrentDataId` is false), which follows the camera of the view and
+ * needs no resolved view of the viewport.
+ */
+function createContext(canvas, camera) {
+  const element = document.createElement('div');
+
+  return {
+    viewportId: 'viewport-1',
+    renderingEngineId: 'rendering-engine',
+    viewport: {
+      element,
+      getViewState: jest.fn(() => ({})),
+      isCurrentDataId: jest.fn(() => false),
+      invalidateResolvedView: jest.fn(),
+    },
+    view: { activeSourceICamera: camera },
+    display: {
+      activateRenderMode: jest.fn(),
+      markRendered: jest.fn(),
+      renderNow: jest.fn(),
+      setNeedsRender: jest.fn(),
+      requestRender: jest.fn(),
+    },
+    cpu: {
+      canvas,
+      context: canvas.getContext('2d'),
+      composition: { clearedRenderPassId: -1, renderPassId: 1 },
+    },
+  };
+}
+
+/**
+ * Mounts a volume on the CPU volume path and makes `renderNow` render it, as
+ * the viewport does.
+ */
+async function mount({
+  volume = createTestVolume(),
+  canvas = createCanvas(),
+  camera = coronalCamera([1.5, 1.5, 1.5]),
+  presentation,
+  reference,
+} = {}) {
+  const ctx = createContext(canvas, camera);
+  const path = new CpuVolumeSliceRenderPath();
+  const attachment = await path.addData(
+    ctx,
+    {
+      id: `${volume.volumeId}:data`,
+      type: 'image',
+      volumeId: volume.volumeId,
+      imageIds: volume.imageIds,
+      imageVolume: volume,
+      initialImageIdIndex: 0,
+      reference,
+    },
+    {}
+  );
+
+  ctx.display.renderNow.mockImplementation(() => attachment.render());
+
+  if (presentation) {
+    attachment.updateDataPresentation(presentation);
+  }
+
+  return { ctx, attachment, volume, rendering: attachment.rendering };
+}
+
+/** The image that the last call of drawImageSync drew. */
+function lastDrawnImage() {
+  const calls = drawImageSync.mock.calls;
+
+  return calls[calls.length - 1][0].image;
+}
+
+function lastDrawnPixels() {
+  return Array.from(lastDrawnImage().getPixelData());
+}
+
 describe('CpuVolumeSliceRenderPath', () => {
+  let voiSpy;
+
   beforeEach(() => {
+    jest.useFakeTimers();
     jest.clearAllMocks();
+    voiSpy = jest
+      .spyOn(setDefaultVolumeVOIModule, 'getDefaultVolumeVOIRange')
+      .mockResolvedValue({ lower: 0, upper: 400 });
   });
 
-  it('redraws an invalidated CPU volume slice without resampling when the cached plane is still valid', () => {
-    const sampledSliceState = createSampledSliceState();
-    const rendering = createRendering(sampledSliceState);
-    const path = new CpuVolumeSliceRenderPath();
-    const sampler = {
-      needsResample: jest.fn(() => false),
-      getResampleDecision: jest.fn(() => 'reuse'),
-      sampleSliceImage: jest.fn(() => {
-        throw new Error('sampleSliceImage should not be called');
-      }),
-      createOrUpdateEnabledElement: jest.fn(() => rendering.enabledElement),
-      updateCPUFallbackViewport: jest.fn(),
-      getResolvedVOIRange: jest.fn(() => ({ lower: 0, upper: 255 })),
-    };
+  afterEach(() => {
+    jest.clearAllTimers();
+    jest.useRealTimers();
+    voiSpy.mockRestore();
+  });
 
-    path.sampler = sampler;
+  it('samples once and redraws from the kept slice while the plane stays', async () => {
+    const { attachment, rendering } = await mount();
 
-    path.render(createContext(), rendering);
+    attachment.render();
+    attachment.render();
 
-    expect(sampler.getResampleDecision).toHaveBeenCalledTimes(1);
-    expect(sampler.sampleSliceImage).not.toHaveBeenCalled();
-    expect(drawImageSync).toHaveBeenCalledWith(rendering.enabledElement, true);
+    expect(rendering.getSliceCacheStatistics().misses).toBe(1);
+    expect(drawImageSync).toHaveBeenCalledTimes(2);
+    expect(drawImageSync.mock.calls[0][1]).toBe(true);
+    expect(drawImageSync.mock.calls[1][1]).toBe(false);
     expect(rendering.renderingInvalidated).toBe(false);
   });
 
-  it('still emits IMAGE_RENDERED when redrawing from the cached sampled slice', () => {
-    const element = document.createElement('div');
-    const ctx = createContext();
-    const rendering = createRendering();
-    const path = new CpuVolumeSliceRenderPath();
-
-    ctx.viewport.element = element;
-    path.sampler = {
-      needsResample: jest.fn(() => false),
-      getResampleDecision: jest.fn(() => 'reuse'),
-      sampleSliceImage: jest.fn(),
-      createOrUpdateEnabledElement: jest.fn(() => rendering.enabledElement),
-      updateCPUFallbackViewport: jest.fn(),
-      getResolvedVOIRange: jest.fn(() => ({ lower: 0, upper: 255 })),
-    };
-
+  it('emits IMAGE_RENDERED for each render, also from the kept slice', async () => {
+    const { attachment, ctx } = await mount();
     const listener = jest.fn();
 
-    element.addEventListener(Events.IMAGE_RENDERED, listener);
+    ctx.viewport.element.addEventListener(Events.IMAGE_RENDERED, listener);
+    attachment.render();
+    attachment.render();
 
-    path.render(ctx, rendering);
-
-    expect(listener).toHaveBeenCalledTimes(1);
+    expect(listener).toHaveBeenCalledTimes(2);
+    expect(ctx.display.markRendered).toHaveBeenCalledTimes(2);
   });
 
-  it('redraws cached viewport samples immediately and schedules a deferred high-quality resample', () => {
-    jest.useFakeTimers();
+  it('keeps the actor entry, the image data and the frame of reference of the volume', async () => {
+    const { attachment, rendering, volume } = await mount();
+    const entry = attachment.getActorEntry({
+      id: 'cpu-volume:data',
+      volumeId: volume.volumeId,
+      imageIds: volume.imageIds,
+    });
+    const imageData = attachment.getImageData();
 
-    const sampledSliceState = {
-      ...createSampledSliceState(),
-      samplingMode: 'viewport',
+    expect(entry.actorMapper.renderMode).toBe(ActorRenderMode.CPU_VOLUME);
+    expect(entry.actor).toBe(rendering.compatibilityActor);
+    expect(entry.actor.getClassName()).toBe('CanvasActor');
+    expect(imageData.dimensions).toEqual([4, 4, 4]);
+    expect(imageData.voxelManager).toBe(volume.voxelManager);
+    expect(attachment.getFrameOfReferenceUID()).toBe('cpu-frame');
+  });
+
+  it('draws a LINEAR straight cut of voxel size first, then the screen grid at rest', async () => {
+    const { attachment, rendering } = await mount();
+
+    attachment.render();
+
+    expect(lastDrawnImage().width).toBe(4);
+    expect(lastDrawnImage().height).toBe(4);
+
+    jest.advanceTimersByTime(SAMPLED_SLICE_REST_DELAY_MS);
+
+    expect(rendering.getSliceCacheStatistics().refined).toBe(1);
+    expect(lastDrawnImage().width).toBe(1);
+    expect(lastDrawnPixels()).toEqual([167]);
+  });
+
+  it('samples a linear plane through the half-voxel boundary of the volume', async () => {
+    const { attachment } = await mount({
+      camera: coronalCamera([1.5, -0.25, 1.5]),
+    });
+
+    attachment.render();
+    jest.advanceTimersByTime(SAMPLED_SLICE_REST_DELAY_MS);
+
+    expect(lastDrawnPixels()).toEqual([152]);
+  });
+
+  it('draws nothing for a plane outside the volume', async () => {
+    const { attachment, ctx } = await mount({
+      camera: coronalCamera([1.5, -0.75, 1.5]),
+    });
+
+    attachment.render();
+
+    expect(drawImageSync).not.toHaveBeenCalled();
+    expect(ctx.display.markRendered).not.toHaveBeenCalled();
+  });
+
+  it('keeps a NEAREST straight cut at voxel size, on the nearest slice, without smoothing', async () => {
+    const { attachment, rendering } = await mount({
+      presentation: { interpolationType: InterpolationType.NEAREST },
+    });
+
+    attachment.render();
+    jest.advanceTimersByTime(SAMPLED_SLICE_REST_DELAY_MS);
+
+    const enabledElement = drawImageSync.mock.calls.at(-1)[0];
+
+    expect(rendering.getSliceCacheStatistics().refined).toBe(0);
+    expect(lastDrawnImage().width).toBe(4);
+    expect(enabledElement.viewport.pixelReplication).toBe(true);
+    expect(
+      lastDrawnPixels().every((value) => Math.floor(value / 10) % 10 === 1)
+    ).toBe(true);
+  });
+
+  it('samples an oblique slice on the screen grid at rest', async () => {
+    const { attachment, rendering } = await mount({
+      canvas: createCanvas(20, 10),
+      camera: obliqueCamera(),
+      presentation: { interpolationType: InterpolationType.NEAREST },
+    });
+
+    attachment.render();
+
+    const voxelSize = lastDrawnImage();
+
+    jest.advanceTimersByTime(SAMPLED_SLICE_REST_DELAY_MS);
+
+    expect(voxelSize.width).not.toBe(20);
+    expect(rendering.getSliceCacheStatistics().refined).toBe(1);
+    expect(lastDrawnImage().width).toBe(20);
+    expect(lastDrawnImage().height).toBe(10);
+  });
+
+  it('does not sample again for zoom, pan or VOI', async () => {
+    const camera = axialCamera(1);
+    const { attachment, ctx, rendering } = await mount({
+      canvas: createCanvas(8, 8),
+      camera,
+      presentation: { interpolationType: InterpolationType.NEAREST },
+    });
+
+    attachment.render();
+    ctx.view.activeSourceICamera = { ...camera, parallelScale: 1 };
+    attachment.render();
+    ctx.view.activeSourceICamera = {
+      ...camera,
+      parallelScale: 1,
+      focalPoint: [1, 1, 1],
     };
-    const rendering = createRendering(sampledSliceState);
-    const path = new CpuVolumeSliceRenderPath();
-    const ctx = createContext();
-    const sampler = {
-      getResampleDecision: jest.fn(() => 'defer'),
-      sampleSliceImage: jest.fn(() => {
-        throw new Error('sampleSliceImage should be deferred');
-      }),
-      createOrUpdateEnabledElement: jest.fn(() => rendering.enabledElement),
-      updateCPUFallbackViewport: jest.fn(),
-      getResolvedVOIRange: jest.fn(() => ({ lower: 0, upper: 255 })),
-    };
+    attachment.render();
+    attachment.updateDataPresentation({
+      interpolationType: InterpolationType.NEAREST,
+      voiRange: { lower: 0, upper: 100 },
+    });
+    attachment.render();
 
-    path.sampler = sampler;
+    expect(rendering.getSliceCacheStatistics().misses).toBe(1);
+    expect(drawImageSync.mock.calls.at(-1)[1]).toBe(true);
+    expect(drawImageSync.mock.calls.at(-1)[0].viewport.voi).toMatchObject({
+      windowCenter: 50,
+      windowWidth: 100,
+    });
+  });
 
-    path.render(ctx, rendering);
+  it('finds a prefetched neighbour slice on a scroll', async () => {
+    const { attachment, ctx, rendering } = await mount({
+      canvas: createCanvas(8, 8),
+      camera: axialCamera(1),
+      presentation: { interpolationType: InterpolationType.NEAREST },
+    });
 
-    expect(sampler.sampleSliceImage).not.toHaveBeenCalled();
-    expect(drawImageSync).toHaveBeenCalledWith(rendering.enabledElement, true);
-    expect(ctx.display.renderNow).not.toHaveBeenCalled();
-
+    attachment.render();
+    ctx.view.activeSourceICamera = axialCamera(2);
+    attachment.render();
+    jest.advanceTimersByTime(SAMPLED_SLICE_REST_DELAY_MS);
     jest.runOnlyPendingTimers();
 
-    expect(rendering.forceHighQualityResample).toBe(true);
-    expect(rendering.renderingInvalidated).toBe(true);
-    expect(ctx.display.renderNow).toHaveBeenCalledTimes(1);
+    expect(rendering.getSliceCacheStatistics().prefetched).toBeGreaterThan(0);
 
-    jest.useRealTimers();
+    const misses = rendering.getSliceCacheStatistics().misses;
+
+    ctx.view.activeSourceICamera = axialCamera(3);
+    attachment.render();
+
+    expect(rendering.getSliceCacheStatistics().misses).toBe(misses);
+    expect(rendering.getSliceCacheStatistics().hits).toBe(1);
+    expect(
+      lastDrawnPixels().every((value) => Math.floor(value / 100) === 3)
+    ).toBe(true);
   });
 
-  it('records the volume quality and reports a deferred resample as interactive reduction', () => {
-    jest.useFakeTimers();
+  it('draws maximum, minimum and average slabs', async () => {
+    const pixelsOf = async (blendMode) => {
+      const { attachment } = await mount({
+        canvas: createCanvas(8, 8),
+        camera: axialCamera(1),
+        presentation: {
+          interpolationType: InterpolationType.NEAREST,
+          slabThickness: 2,
+          blendMode,
+        },
+      });
 
-    const sampledSliceState = {
-      ...createSampledSliceState(),
-      samplingMode: 'viewport',
+      attachment.render();
+
+      return lastDrawnPixels();
     };
-    const rendering = createRendering(sampledSliceState);
+    const maximum = await pixelsOf(BlendModes.MAXIMUM_INTENSITY_BLEND);
+    const minimum = await pixelsOf(BlendModes.MINIMUM_INTENSITY_BLEND);
+    const average = await pixelsOf(BlendModes.AVERAGE_INTENSITY_BLEND);
+
+    expect(maximum.every((value) => value >= 100)).toBe(true);
+    expect(minimum.every((value) => value < 100)).toBe(true);
+    expect(
+      average.every(
+        (value, index) => value > minimum[index] && value < maximum[index]
+      )
+    ).toBe(true);
+  });
+
+  it('draws the plain slice for a slab beyond the CPU work limit', async () => {
+    const { attachment } = await mount({
+      canvas: createCanvas(8, 8),
+      camera: axialCamera(1),
+      presentation: {
+        interpolationType: InterpolationType.NEAREST,
+        slabThickness: 2e5,
+        blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
+      },
+    });
+
+    attachment.render();
+
+    expect(
+      lastDrawnPixels().every((value) => Math.floor(value / 100) === 1)
+    ).toBe(true);
+  });
+
+  it('samples again and renders when the time point of a dynamic volume changes', async () => {
+    const volume = createTestVolume({ dynamic: true });
+    const { attachment, ctx, rendering } = await mount({
+      volume,
+      canvas: createCanvas(8, 8),
+      camera: axialCamera(1),
+      presentation: { interpolationType: InterpolationType.NEAREST },
+    });
+
+    attachment.render();
+    volume.dimensionGroupNumber = 2;
+    volume.refill(1000);
+    eventTarget.dispatchEvent(
+      new CustomEvent(Events.DYNAMIC_VOLUME_DIMENSION_GROUP_CHANGED, {
+        detail: { volumeId: volume.volumeId },
+      })
+    );
+
+    expect(ctx.display.renderNow).toHaveBeenCalledTimes(1);
+    expect(rendering.getSliceCacheStatistics().misses).toBe(2);
+    expect(lastDrawnPixels().every((value) => value >= 1100)).toBe(true);
+
+    attachment.removeData();
+  });
+
+  it('drops the kept slices at once on IMAGE_VOLUME_MODIFIED and renders at most once per throttle period', async () => {
+    const cpuVolume = getConfiguration().rendering.planar.cpuVolume;
+    const throttleMs = cpuVolume.volumeModifiedThrottleMs;
+
+    cpuVolume.volumeModifiedThrottleMs = 50;
+
+    const { attachment, ctx, rendering, volume } = await mount();
+    const modified = () =>
+      eventTarget.dispatchEvent(
+        new CustomEvent(Events.IMAGE_VOLUME_MODIFIED, {
+          detail: { volumeId: volume.volumeId },
+        })
+      );
+
+    attachment.render();
+    modified();
+    modified();
+
+    expect(ctx.display.renderNow).toHaveBeenCalledTimes(1);
+    expect(volume.voxelManager.invalidateCache).toHaveBeenCalledTimes(2);
+
+    attachment.render();
+
+    expect(rendering.getSliceCacheStatistics().misses).toBe(3);
+
+    jest.advanceTimersByTime(50);
+
+    expect(ctx.display.renderNow).toHaveBeenCalledTimes(2);
+
+    attachment.removeData();
+    cpuVolume.volumeModifiedThrottleMs = throttleMs;
+  });
+
+  it('clears the voxel cache again on the deferred loading-completed render', async () => {
+    let animationFrameCallback;
+    const requestAnimationFrame = jest
+      .spyOn(window, 'requestAnimationFrame')
+      .mockImplementation((callback) => {
+        animationFrameCallback = callback;
+
+        return 1;
+      });
+    const cancelAnimationFrame = jest
+      .spyOn(window, 'cancelAnimationFrame')
+      .mockImplementation(jest.fn());
+    const { attachment, ctx, volume } = await mount();
+
+    ctx.display.renderNow.mockImplementation(jest.fn());
+    eventTarget.dispatchEvent(
+      new CustomEvent(Events.IMAGE_VOLUME_LOADING_COMPLETED, {
+        detail: { volumeId: volume.volumeId },
+      })
+    );
+
+    expect(volume.voxelManager.invalidateCache).toHaveBeenCalledTimes(1);
+    expect(ctx.display.renderNow).toHaveBeenCalledTimes(1);
+
+    animationFrameCallback();
+
+    expect(volume.voxelManager.invalidateCache).toHaveBeenCalledTimes(2);
+    expect(ctx.display.renderNow).toHaveBeenCalledTimes(2);
+
+    attachment.removeData();
+    requestAnimationFrame.mockRestore();
+    cancelAnimationFrame.mockRestore();
+  });
+
+  it('starts the load of a volume with no voxels yet and draws nothing', async () => {
+    const volume = createTestVolume();
+
+    volume.loadStatus = { loaded: false, loading: false };
+
+    const { attachment, ctx } = await mount({ volume });
+
+    attachment.render();
+    attachment.render();
+
+    expect(volume.load).toHaveBeenCalledTimes(1);
+    expect(ctx.display.setNeedsRender).toHaveBeenCalled();
+    expect(drawImageSync).not.toHaveBeenCalled();
+  });
+
+  it('records the volume quality and never reports an interactive reduction', async () => {
+    const volume = createTestVolume();
     const record = {
       grid: { spacing: [1, 1, 1] },
       missing: 0,
@@ -293,7 +564,17 @@ describe('CpuVolumeSliceRenderPath', () => {
       lowest: 8,
       reduction: 'none',
     };
-    const shownState = () =>
+
+    volume.getVoxelQuality = jest.fn(() => record);
+
+    const { attachment, rendering } = await mount({ volume });
+
+    attachment.render();
+
+    expect(rendering.voxelQuality).toBe(record);
+    expect(rendering.fullGrid).toBe(volume.voxelGrid);
+    expect(rendering.interactiveReduction).toBe(false);
+    expect(
       shownStateOf(
         fidelityLinesFromBindings(undefined, [
           {
@@ -302,415 +583,171 @@ describe('CpuVolumeSliceRenderPath', () => {
             interactiveReduction: rendering.interactiveReduction,
           },
         ])
-      );
-    rendering.imageVolume.getVoxelQuality = jest.fn(() => record);
-    rendering.imageVolume.voxelGrid = { spacing: [1, 1, 1] };
-    const path = new CpuVolumeSliceRenderPath();
-    const ctx = createContext();
-    let decision = 'defer';
-
-    path.sampler = {
-      getResampleDecision: jest.fn(() => decision),
-      sampleSliceImage: jest.fn(() => sampledSliceState),
-      createOrUpdateEnabledElement: jest.fn(() => rendering.enabledElement),
-      updateCPUFallbackViewport: jest.fn(),
-      getResolvedVOIRange: jest.fn(() => ({ lower: 0, upper: 255 })),
-    };
-
-    path.render(ctx, rendering);
-
-    expect(rendering.voxelQuality).toBe(record);
-    expect(rendering.fullGrid).toBe(rendering.imageVolume.voxelGrid);
-    expect(rendering.interactiveReduction).toBe(true);
-    // The user sees the interactive state while the older sample shows.
-    expect(shownState()).toBe('lod');
-
-    decision = 'resample';
-    path.render(ctx, rendering);
-
-    expect(rendering.interactiveReduction).toBe(false);
-    expect(shownState()).toBe('done');
-
-    jest.useRealTimers();
+      )
+    ).toBe('done');
   });
 
-  it('clears cached CPU volume scalar data again on the deferred loading-completed render', async () => {
-    let animationFrameCallback;
-    const requestAnimationFrame = jest
-      .spyOn(window, 'requestAnimationFrame')
-      .mockImplementation((callback) => {
-        animationFrameCallback = callback;
-        return 1;
-      });
-    const cancelAnimationFrame = jest
-      .spyOn(window, 'cancelAnimationFrame')
+  it('colours a labelmap with its canvas actor and not with the VOI pipeline', async () => {
+    const { attachment, rendering } = await mount({
+      volume: createTestVolume({ ArrayType: Uint8Array }),
+      reference: { kind: 'segmentation' },
+      presentation: { interpolationType: InterpolationType.NEAREST },
+    });
+    const renderActor = jest
+      .spyOn(rendering.compatibilityActor, 'render')
       .mockImplementation(jest.fn());
-    const ctx = createContext();
-    const path = new CpuVolumeSliceRenderPath();
-    const voxelManager = {
-      invalidateCache: jest.fn(),
-    };
-    const clearCachedScalarRange = jest.fn();
 
-    path.sampler = {
-      clearCachedScalarRange,
-    };
+    attachment.render();
 
-    const attachment = await path.addData(
-      ctx,
-      {
-        id: 'volume-data-id',
-        volumeId: 'volume-1',
-        imageIds: [],
-        imageVolume: {
-          volumeId: 'volume-1',
-          imageIds: [],
-          metadata: {
-            voiLut: [{ windowWidth: 255, windowCenter: 128 }],
-          },
-          voxelManager,
-        },
-        initialImageIdIndex: 0,
-      },
-      {}
-    );
+    const actorImage = rendering.compatibilityActor.getImage();
 
-    eventTarget.dispatchEvent(
-      new CustomEvent(Events.IMAGE_VOLUME_LOADING_COMPLETED, {
-        detail: {
-          volumeId: 'volume-1',
-        },
-      })
-    );
-
-    expect(voxelManager.invalidateCache).toHaveBeenCalledTimes(1);
-    expect(clearCachedScalarRange).toHaveBeenCalledTimes(1);
-    expect(clearCachedScalarRange).toHaveBeenLastCalledWith(voxelManager);
-    expect(ctx.display.renderNow).toHaveBeenCalledTimes(1);
-
-    animationFrameCallback();
-
-    expect(voxelManager.invalidateCache).toHaveBeenCalledTimes(2);
-    expect(clearCachedScalarRange).toHaveBeenCalledTimes(2);
-    expect(clearCachedScalarRange).toHaveBeenLastCalledWith(voxelManager);
-    expect(ctx.display.renderNow).toHaveBeenCalledTimes(2);
-
-    attachment.removeData();
-    requestAnimationFrame.mockRestore();
-    cancelAnimationFrame.mockRestore();
+    expect(drawImageSync).not.toHaveBeenCalled();
+    expect(renderActor).toHaveBeenCalledTimes(1);
+    expect(actorImage.width).toBe(4);
+    expect(actorImage.getScalarData()).toBeInstanceOf(Uint8Array);
   });
 });
 
-describe('PlanarCPUVolumeSampler resampling decisions', () => {
-  it('reuses orthogonal source-slice samples across zoom changes', () => {
-    const sampler = new PlanarCPUVolumeSampler();
-    const sampledSliceState = {
-      ...createSampledSliceState(),
-      interpolationType: InterpolationType.NEAREST,
-    };
-
-    expect(
-      sampler.needsResample({
-        sampledSliceState,
-        width: 256,
-        height: 256,
-        camera: {
-          focalPoint: [0, 0, 0],
-          parallelScale: 16,
-          viewPlaneNormal: [0, 0, 1],
-          viewUp: [0, 1, 0],
-        },
-        dataPresentation: {
-          interpolationType: InterpolationType.NEAREST,
-        },
-      })
-    ).toBe(false);
+describe('PlanarSampledSliceCanvas', () => {
+  const slice = (pixelData, overrides = {}) => ({
+    pixelData,
+    width: 2,
+    height: 1,
+    origin: [0, 0, 0],
+    xDirection: [1, 0, 0],
+    yDirection: [0, 1, 0],
+    zDirection: [0, 0, 1],
+    spacing: [1, 1],
+    min: Math.min(...pixelData),
+    max: Math.max(...pixelData),
+    insideVolume: true,
+    sampledFor: { interpolationType: InterpolationType.LINEAR, sliceIndex: 0 },
+    ...overrides,
   });
 
-  it('resamples viewport samples synchronously by default across zoom changes', () => {
-    const sampler = new PlanarCPUVolumeSampler();
-    const sampledSliceState = {
-      ...createSampledSliceState(),
-      samplingMode: 'viewport',
-    };
-
-    const args = {
-      sampledSliceState,
-      width: 256,
-      height: 256,
-      camera: {
-        focalPoint: [0, 0, 0],
-        parallelScale: 16,
-        viewPlaneNormal: [0, 0, 1],
-        viewUp: [0, 1, 0],
-      },
-      dataPresentation: {
-        interpolationType: InterpolationType.LINEAR,
-      },
-    };
-
-    expect(sampler.getResampleDecision(args)).toBe('resample');
-    expect(sampler.needsResample(args)).toBe(true);
-  });
-
-  it('defers viewport sample refreshes across zoom changes when high-quality linear sampling is enabled', () => {
-    const sampler = new PlanarCPUVolumeSampler();
-    const sampledSliceState = {
-      ...createSampledSliceState(),
-      samplingMode: 'viewport',
-    };
-
-    expect(
-      sampler.getResampleDecision({
-        sampledSliceState,
-        width: 256,
-        height: 256,
-        camera: {
-          focalPoint: [0, 0, 0],
-          parallelScale: 16,
-          viewPlaneNormal: [0, 0, 1],
-          viewUp: [0, 1, 0],
-        },
-        dataPresentation: {
-          interpolationType: InterpolationType.LINEAR,
-        },
-        deferViewportResample: true,
-      })
-    ).toBe('defer');
-  });
-
-  it('uses viewport sampling for linear orthogonal planes between voxel centers', () => {
-    const sampler = new PlanarCPUVolumeSampler();
-    const sampledSliceState = sampler.sampleSliceImage({
-      volume: createTestVolume(),
-      width: 1,
-      height: 1,
-      camera: createCoronalCamera([1.5, 1.5, 1.5]),
-      dataPresentation: {
-        interpolationType: InterpolationType.LINEAR,
-      },
-    });
-
-    expect(sampledSliceState.samplingMode).toBe('viewport');
-    expect(sampledSliceState.image.width).toBe(1);
-    expect(sampledSliceState.image.height).toBe(1);
-    expect(Array.from(sampledSliceState.image.getPixelData())).toEqual([167]);
-  });
-
-  it('samples linear viewport planes through the half-voxel spatial boundary', () => {
-    const sampler = new PlanarCPUVolumeSampler();
-    const sampledSliceState = sampler.sampleSliceImage({
-      volume: createTestVolume(),
-      width: 1,
-      height: 1,
-      camera: createCoronalCamera([1.5, -0.25, 1.5]),
-      dataPresentation: {
-        interpolationType: InterpolationType.LINEAR,
-      },
-    });
-
-    expect(sampledSliceState.samplingMode).toBe('viewport');
-    expect(Array.from(sampledSliceState.image.getPixelData())).toEqual([152]);
-  });
-
-  it('keeps linear viewport samples outside the half-voxel boundary empty', () => {
-    const sampler = new PlanarCPUVolumeSampler();
-    const sampledSliceState = sampler.sampleSliceImage({
-      volume: createTestVolume(),
-      width: 1,
-      height: 1,
-      camera: createCoronalCamera([1.5, -0.75, 1.5]),
-      dataPresentation: {
-        interpolationType: InterpolationType.LINEAR,
-      },
-    });
-
-    expect(sampledSliceState.samplingMode).toBe('viewport');
-    expect(Array.from(sampledSliceState.image.getPixelData())).toEqual([0]);
-  });
-
-  it('reuses source slices for linear orthogonal planes on voxel centers when high-quality linear sampling is disabled', () => {
-    const sampler = new PlanarCPUVolumeSampler();
-    const sampledSliceState = sampler.sampleSliceImage({
-      volume: createTestVolume(),
-      width: 1,
-      height: 1,
-      camera: createCoronalCamera([1, 1, 1]),
-      dataPresentation: {
-        interpolationType: InterpolationType.LINEAR,
-      },
-      useViewportSamplingForLinear: false,
-    });
-
-    expect(sampledSliceState.samplingMode).toBe('source-slice');
-    expect(sampledSliceState.image.width).toBe(4);
-    expect(sampledSliceState.image.height).toBe(4);
-  });
-
-  it('uses viewport sampling for linear voxel-center planes by default', () => {
-    const sampler = new PlanarCPUVolumeSampler();
-    const sampledSliceState = sampler.sampleSliceImage({
-      volume: createTestVolume(),
-      width: 1,
-      height: 1,
-      camera: createCoronalCamera([1, 1, 1]),
-      dataPresentation: {
-        interpolationType: InterpolationType.LINEAR,
-      },
-    });
-
-    expect(sampledSliceState.samplingMode).toBe('viewport');
-    expect(sampledSliceState.image.width).toBe(1);
-    expect(sampledSliceState.image.height).toBe(1);
-  });
-
-  it('uses packed scalar data for axis-aligned high-quality viewport samples', () => {
-    const sampler = new PlanarCPUVolumeSampler();
-    const { volume, getAtIJK, getCompleteScalarDataArray } =
-      createScalarDataTestVolume();
-    const sampledSliceState = sampler.sampleSliceImage({
-      volume,
-      width: 1,
-      height: 1,
-      camera: createCoronalCamera([1.5, 1.5, 1.5]),
-      dataPresentation: {
-        interpolationType: InterpolationType.LINEAR,
-      },
-      useViewportSamplingForLinear: true,
-    });
-
-    expect(sampledSliceState.samplingMode).toBe('viewport');
-    expect(Array.from(sampledSliceState.image.getPixelData())).toEqual([167]);
-    expect(getCompleteScalarDataArray).toHaveBeenCalledTimes(1);
-    expect(getAtIJK).not.toHaveBeenCalled();
-  });
-
-  it('matches generic linear viewport sampling with the fixed-axis scalar path', () => {
-    const genericSampler = new PlanarCPUVolumeSampler();
-    const fastSampler = new PlanarCPUVolumeSampler();
-    const { volume, getAtIJK } = createScalarDataTestVolume();
-    const sampleArgs = {
-      width: 3,
-      height: 3,
-      camera: createCoronalCamera([1.5, 1.5, 1.5]),
-      dataPresentation: {
-        interpolationType: InterpolationType.LINEAR,
-      },
-      useViewportSamplingForLinear: true,
-    };
-    const genericSampledSliceState = genericSampler.sampleSliceImage({
-      volume: createTestVolume(),
-      ...sampleArgs,
-    });
-    const fastSampledSliceState = fastSampler.sampleSliceImage({
-      volume,
-      ...sampleArgs,
-    });
-
-    expect(Array.from(fastSampledSliceState.image.getPixelData())).toEqual(
-      Array.from(genericSampledSliceState.image.getPixelData())
+  it('rounds the float samples of a CT slice for the LUT and keeps those of a PT slice', () => {
+    const ct = new PlanarSampledSliceCanvas(
+      createTestVolume({ ArrayType: Float32Array }),
+      4,
+      4
     );
-    expect(getAtIJK).not.toHaveBeenCalled();
+    const pt = new PlanarSampledSliceCanvas(
+      createTestVolume({ ArrayType: Float32Array, modality: 'PT' }),
+      4,
+      4
+    );
+    const samples = new Float32Array([1.4, 2.6]);
+    const ctImage = ct.setSlice(slice(samples)).image;
+    const ptImage = pt.setSlice(slice(samples)).image;
+
+    expect(Array.from(ctImage.getPixelData())).toEqual([1, 3]);
+    expect(ctImage.minPixelValue).toBe(1);
+    expect(ctImage.maxPixelValue).toBe(3);
+    expect(ptImage.getPixelData()).toBe(samples);
+    expect(ptImage.minPixelValue).toBeCloseTo(1.4);
   });
 
-  it('reuses cached packed scalar data across high-quality viewport samples', () => {
-    const sampler = new PlanarCPUVolumeSampler();
-    const { volume, getAtIJK, getCompleteScalarDataArray } =
-      createScalarDataTestVolume();
+  it('makes the image again only for another slice', () => {
+    const canvas = new PlanarSampledSliceCanvas(createTestVolume(), 4, 4);
+    const first = slice(new Int16Array([1, 2]));
 
-    sampler.sampleSliceImage({
-      volume,
-      width: 1,
-      height: 1,
-      camera: createCoronalCamera([1.5, 1.5, 1.5]),
-      dataPresentation: {
-        interpolationType: InterpolationType.LINEAR,
-      },
-      useViewportSamplingForLinear: true,
-    });
-    sampler.sampleSliceImage({
-      volume,
-      width: 1,
-      height: 1,
-      camera: createCoronalCamera([1.5, -0.25, 1.5]),
-      dataPresentation: {
-        interpolationType: InterpolationType.LINEAR,
-      },
-      useViewportSamplingForLinear: true,
-    });
+    expect(canvas.setSlice(first).changed).toBe(true);
+    expect(canvas.setSlice(first).changed).toBe(false);
+    expect(canvas.setSlice(slice(new Int16Array([1, 2]))).changed).toBe(true);
+  });
+});
 
-    expect(getCompleteScalarDataArray).toHaveBeenCalledTimes(1);
-    expect(getAtIJK).not.toHaveBeenCalled();
+describe('getSliceCanvasTransform', () => {
+  const apply = (transform, [u, v]) => [
+    transform[0] * u + transform[2] * v + transform[4],
+    transform[1] * u + transform[3] * v + transform[5],
+  ];
+
+  it('puts each pixel centre where the world to canvas function puts its world position, for a rotated, flipped and zoomed camera', () => {
+    const canvas = { width: 40, height: 30 };
+    const camera = {
+      focalPoint: [1, 2, 0],
+      parallelScale: 7,
+      viewPlaneNormal: [0, 0, -1],
+      viewUp: [Math.sin(0.4), Math.cos(0.4), 0],
+    };
+    const slice = {
+      origin: [-3, -2, 0],
+      xDirection: [1, 0, 0],
+      yDirection: [0, 1, 0],
+      spacing: [0.5, 2],
+      width: 12,
+      height: 4,
+    };
+    const transform = getSliceCanvasTransform(slice, camera, canvas);
+
+    [
+      [0, 0],
+      [11, 0],
+      [0, 3],
+      [7, 2],
+    ].forEach(([column, row]) => {
+      const world = [
+        slice.origin[0] + column * slice.spacing[0],
+        slice.origin[1] + row * slice.spacing[1],
+        0,
+      ];
+      const expected = worldToCanvasPlanarViewState({
+        camera,
+        canvasWidth: canvas.width,
+        canvasHeight: canvas.height,
+        worldPos: world,
+      });
+      const actual = apply(transform, [column + 0.5, row + 0.5]);
+
+      expect(actual[0]).toBeCloseTo(expected[0], 3);
+      expect(actual[1]).toBeCloseTo(expected[1], 3);
+    });
   });
 
-  it('reuses released slice arrays for matching CPU volume sample shapes', () => {
-    const sampler = new PlanarCPUVolumeSampler();
+  it('maps a slice of the screen grid to the canvas one to one', () => {
+    const camera = {
+      focalPoint: [10, -4, 7],
+      parallelScale: 33,
+      viewPlaneNormal: [Math.SQRT1_2, 0, Math.SQRT1_2],
+      viewUp: [0, 1, 0],
+    };
+    const screen = getScreenSliceGeometry({
+      camera,
+      canvasWidth: 300,
+      canvasHeight: 200,
+    });
+
+    expect(
+      getSliceCanvasTransform(screen, camera, { width: 300, height: 200 })
+    ).toEqual([1, 0, 0, 1, 0, 0]);
+  });
+});
+
+describe('PlanarSliceSampler for a draw step that enlarges colours', () => {
+  it('samples a LINEAR straight cut on the screen grid at rest, a NEAREST one not', () => {
     const volume = createTestVolume();
-    const sampleArgs = {
-      volume,
-      width: 2,
-      height: 2,
-      camera: createCoronalCamera([1.5, 1.5, 1.5]),
-      dataPresentation: {
-        interpolationType: InterpolationType.LINEAR,
-      },
-    };
-    const firstSampledSliceState = sampler.sampleSliceImage(sampleArgs);
-    const firstScalarData = firstSampledSliceState.image.getPixelData();
-
-    sampler.releaseSampledSliceState(firstSampledSliceState);
-
-    const secondSampledSliceState = sampler.sampleSliceImage(sampleArgs);
-
-    expect(secondSampledSliceState.image.getPixelData()).toBe(firstScalarData);
-  });
-
-  it('reuses fixed-axis viewport geometry across normal-only slice changes', () => {
-    const sampler = new PlanarCPUVolumeSampler();
-    const { volume } = createScalarDataTestVolume();
-    const createPlan = jest.spyOn(
-      sampler.scalarViewportSampler,
-      'createAxisInterpolationPlan'
-    );
-    const sampleArgs = {
-      volume,
-      width: 3,
-      height: 3,
-      dataPresentation: {
-        interpolationType: InterpolationType.LINEAR,
-      },
-      useViewportSamplingForLinear: true,
-    };
-
-    sampler.sampleSliceImage({
-      ...sampleArgs,
-      camera: createCoronalCamera([1.5, 1.5, 1.5]),
+    const camera = axialCamera(1);
+    const screen = getScreenSliceGeometry({
+      camera,
+      canvasWidth: 8,
+      canvasHeight: 8,
     });
-    sampler.sampleSliceImage({
-      ...sampleArgs,
-      camera: createCoronalCamera([1.5, 2.5, 1.5]),
-    });
+    const colours = new PlanarSliceSampler({ enlargesColours: true });
+    const values = new PlanarSliceSampler();
+    const linear = { interpolationType: InterpolationType.LINEAR };
+    const nearest = { interpolationType: InterpolationType.NEAREST };
 
-    expect(createPlan).toHaveBeenCalledTimes(2);
+    colours.sample(volume, camera, linear, screen);
+    values.sample(volume, camera, linear, screen);
 
-    createPlan.mockRestore();
-  });
+    expect(colours.sampleFiner(volume, camera, linear, screen)).toBeDefined();
+    expect(values.sampleFiner(volume, camera, linear, screen)).toBeUndefined();
 
-  it('matches nearest-neighbor tie breaking for half-index source slices', () => {
-    const sampler = new PlanarCPUVolumeSampler();
-    const sampledSliceState = sampler.sampleSliceImage({
-      volume: createTestVolume(),
-      width: 1,
-      height: 1,
-      camera: createCoronalCamera([1.5, 1.5, 1.5]),
-      dataPresentation: {
-        interpolationType: InterpolationType.NEAREST,
-      },
-    });
+    colours.sample(volume, camera, nearest, screen);
 
-    expect(sampledSliceState.samplingMode).toBe('source-slice');
-    expect(sampledSliceState.image.width).toBe(4);
-    expect(sampledSliceState.image.height).toBe(4);
-    expect(sampledSliceState.image.getPixelData()[0]).toBe(313);
+    expect(
+      colours.sampleFiner(volume, camera, nearest, screen)
+    ).toBeUndefined();
   });
 });

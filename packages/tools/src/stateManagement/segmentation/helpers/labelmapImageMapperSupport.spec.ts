@@ -3,6 +3,7 @@ jest.mock('@cornerstonejs/core', () => {
   return {
     ActorRenderMode: {
       VTK_VOLUME_SLICE: 'VTK_VOLUME_SLICE',
+      VTK_SAMPLED_SLICE: 'VTK_SAMPLED_SLICE',
       CPU_VOLUME: 'CPU_VOLUME',
       VTK_IMAGE: 'VTK_IMAGE',
     },
@@ -33,6 +34,7 @@ jest.mock('../labelmapModel/labelmapLayerStore', () => ({
 import {
   canRenderVolumeViewportLabelmapAsImage,
   getVolumeViewportLabelmapImageMapperState,
+  isPlanarSampledSliceViewport,
   isSliceRenderingEnabled,
   shouldUseSliceRendering,
   LABELMAP_IMAGE_MAPPER_URL_PARAM,
@@ -86,13 +88,20 @@ function makePlanarNextViewport(opts: {
       blendMode: opts.blendMode,
       slabThickness: opts.slabThickness,
     }),
+    getDisplaySetPresentation: () => ({
+      blendMode: opts.blendMode,
+      slabThickness: opts.slabThickness,
+    }),
     getDefaultActor: () => ({
       actorMapper: {
         renderMode,
-        mapper: {
-          getBlendMode: () => opts.blendMode,
-          getSlabThickness: () => opts.slabThickness,
-        },
+        mapper:
+          renderMode === 'VTK_SAMPLED_SLICE'
+            ? {}
+            : {
+                getBlendMode: () => opts.blendMode,
+                getSlabThickness: () => opts.slabThickness,
+              },
       },
     }),
     getCurrentImageIdIndex: () => opts.sliceIndex ?? 0,
@@ -177,6 +186,58 @@ describe('shouldUseSliceRendering', () => {
     ).toBe(true);
   });
 
+  it('returns true on a viewport that samples its slice on the CPU, with no flag', () => {
+    const viewport = makePlanarNextViewport({
+      renderMode: 'VTK_SAMPLED_SLICE',
+    });
+
+    expect(
+      shouldUseSliceRendering(
+        { representationData: {} } as never,
+        undefined,
+        viewport as never
+      )
+    ).toBe(true);
+  });
+
+  it('keeps the flag on a viewport that samples a slab on the CPU, as on the GPU volume path', () => {
+    for (const renderMode of ['VTK_SAMPLED_SLICE', 'VTK_VOLUME_SLICE']) {
+      const viewport = makePlanarNextViewport({
+        renderMode,
+        slabThickness: 10,
+      });
+
+      expect(
+        shouldUseSliceRendering(
+          { representationData: {} } as never,
+          undefined,
+          viewport as never
+        )
+      ).toBe(false);
+      expect(
+        shouldUseSliceRendering(
+          { representationData: {} } as never,
+          { useSliceRendering: true },
+          viewport as never
+        )
+      ).toBe(true);
+    }
+  });
+
+  it('keeps the flag on a viewport on the GPU volume slice path', () => {
+    const viewport = makePlanarNextViewport({
+      renderMode: 'VTK_VOLUME_SLICE',
+    });
+
+    expect(
+      shouldUseSliceRendering(
+        { representationData: {} } as never,
+        undefined,
+        viewport as never
+      )
+    ).toBe(false);
+  });
+
   it('returns false when only one labelmap layer exists', () => {
     getLabelmaps.mockReturnValue([{ storageKind: 'stack' }]);
     expect(
@@ -243,6 +304,32 @@ describe('canRenderVolumeViewportLabelmapAsImage', () => {
     );
   });
 
+  it('accepts a planar-next viewport that samples its slice on the CPU, with no slab', () => {
+    for (const slabThickness of [undefined, 0, 0.1]) {
+      const viewport = makePlanarNextViewport({
+        renderMode: 'VTK_SAMPLED_SLICE',
+        slabThickness,
+      });
+
+      expect(canRenderVolumeViewportLabelmapAsImage(viewport as never)).toBe(
+        true
+      );
+    }
+  });
+
+  it('rejects a slab on a sampled slice as it does on the GPU volume slice path', () => {
+    for (const renderMode of ['VTK_SAMPLED_SLICE', 'VTK_VOLUME_SLICE']) {
+      const viewport = makePlanarNextViewport({
+        renderMode,
+        slabThickness: 10,
+      });
+
+      expect(canRenderVolumeViewportLabelmapAsImage(viewport as never)).toBe(
+        false
+      );
+    }
+  });
+
   it('rejects a planar-next viewport that is not in VTK_VOLUME_SLICE render mode', () => {
     const viewport = makePlanarNextViewport({ renderMode: 'CPU_VOLUME' });
     expect(canRenderVolumeViewportLabelmapAsImage(viewport as never)).toBe(
@@ -304,6 +391,36 @@ describe('getVolumeViewportLabelmapImageMapperState', () => {
     expect(keyFor([0.5, 0.866, 0]).key).toBe(aligned.key);
   });
 
+  it('supports a planar-next viewport that samples its slice on the CPU', () => {
+    const state = getVolumeViewportLabelmapImageMapperState(
+      makePlanarNextViewport({
+        renderMode: 'VTK_SAMPLED_SLICE',
+        slabThickness: 0.1,
+        sliceIndex: 12,
+        resolvedCamera: {
+          viewPlaneNormal: [0, 0.6, 0.8],
+          viewUp: [0, 0.8, -0.6],
+        },
+      }) as never
+    );
+
+    expect(state.supported).toBe(true);
+    expect(state.sliceIndex).toBe(12);
+    expect(state.key.endsWith(':12')).toBe(true);
+  });
+
+  it('marks a slab on a sampled slice as unsupported', () => {
+    const state = getVolumeViewportLabelmapImageMapperState(
+      makePlanarNextViewport({
+        renderMode: 'VTK_SAMPLED_SLICE',
+        slabThickness: 10,
+      }) as never
+    );
+
+    expect(state.supported).toBe(false);
+    expect(state.key.startsWith('unsupported:slab:10.000:')).toBe(true);
+  });
+
   it('marks unsupported blend mode with a distinct key', () => {
     const viewport = makeLegacyVolumeViewport({
       blendMode: Enums.BlendModes.LABELMAP_EDGE_PROJECTION_BLEND,
@@ -350,5 +467,26 @@ describe('getVolumeViewportLabelmapImageMapperState', () => {
     const state = getVolumeViewportLabelmapImageMapperState(viewport as never);
     expect(state.supported).toBe(true);
     expect(state.sliceIndex).toBe(7);
+  });
+});
+
+describe('isPlanarSampledSliceViewport', () => {
+  it('is true only for a planar-next viewport whose source is a sampled slice', () => {
+    expect(
+      isPlanarSampledSliceViewport(
+        makePlanarNextViewport({ renderMode: 'VTK_SAMPLED_SLICE' }) as never
+      )
+    ).toBe(true);
+    expect(
+      isPlanarSampledSliceViewport(
+        makePlanarNextViewport({ renderMode: 'VTK_VOLUME_SLICE' }) as never
+      )
+    ).toBe(false);
+    expect(
+      isPlanarSampledSliceViewport({
+        ...makePlanarNextViewport({ renderMode: 'VTK_SAMPLED_SLICE' }),
+        type: 'orthographic',
+      } as never)
+    ).toBe(false);
   });
 });

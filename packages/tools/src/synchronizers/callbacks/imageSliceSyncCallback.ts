@@ -44,7 +44,8 @@ function isVolumeSliceViewport(
 
   return (
     renderMode === ActorRenderMode.CPU_VOLUME ||
-    renderMode === ActorRenderMode.VTK_VOLUME_SLICE
+    renderMode === ActorRenderMode.VTK_VOLUME_SLICE ||
+    renderMode === ActorRenderMode.VTK_SAMPLED_SLICE
   );
 }
 

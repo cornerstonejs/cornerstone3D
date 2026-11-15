@@ -69,6 +69,7 @@ function isVolumeMountedActorEntry(actorEntry: Types.ActorEntry): boolean {
   return (
     renderMode === ActorRenderMode.VTK_VOLUME ||
     renderMode === ActorRenderMode.VTK_VOLUME_SLICE ||
+    renderMode === ActorRenderMode.VTK_SAMPLED_SLICE ||
     renderMode === ActorRenderMode.CPU_VOLUME
   );
 }

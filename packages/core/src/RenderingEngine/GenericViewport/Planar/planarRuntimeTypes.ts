@@ -16,19 +16,18 @@
  *   - `cpuImage`      -- CPU fallback for single-image display via CPUFallbackEnabledElement.
  *   - `cpuVolume`  -- CPU path for volume slicing (samples a slice from the volume on the CPU).
  *   - `vtkVolumeSlice` -- GPU path for volume slicing via vtkImageResliceMapper.
+ *   - `vtkSampledSlice` -- volume slice sampled on the CPU, drawn via vtkImageMapper.
  */
 import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type vtkImageMapper from '@kitware/vtk.js/Rendering/Core/ImageMapper';
 import type vtkImageResliceMapper from '@kitware/vtk.js/Rendering/Core/ImageResliceMapper';
 import type vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
-import type { InterpolationType } from '../../../enums';
 import type {
   CPUFallbackEnabledElement,
   ActorRenderMode,
   ICanvasActor,
   IImage,
   IImageVolume,
-  Point3,
   VOIRange,
 } from '../../../types';
 import type { MountedRendering } from '../ViewportArchitectureTypes';
@@ -37,6 +36,7 @@ import type {
   PlanarViewState,
   PlanarDataPresentation,
 } from './PlanarViewportTypes';
+import type { PlanarSliceCacheStatistics } from './planarSampledSlice';
 
 /**
  * Mounted rendering state for the GPU single-image path (`vtkImage`).
@@ -89,45 +89,34 @@ export type PlanarCpuImageRendering = MountedRendering<{
 /**
  * Mounted rendering state for the CPU volume-slice path (`cpuVolume`).
  *
- * Samples an arbitrary orthogonal slice from an IImageVolume on the CPU
- * using `PlanarCPUVolumeSampler`, then renders the resulting IImage through
- * the CPU fallback pipeline and `CanvasActor`. The `sampledSliceState` cache avoids
- * re-sampling when only presentation (VOI, colormap) changes.
+ * Cuts the slice of the view plane out of the volume on the CPU with
+ * `PlanarSliceSampler`, the sample step of the sampled slice path, and draws
+ * it on the 2D canvas with `PlanarSampledSliceCanvas`, which uses the CPU
+ * fallback pipeline for VOI, colormap and invert, and `CanvasActor` for a
+ * labelmap. The sampler keeps the slice on screen and its neighbours, so a
+ * change of the presentation, a pan or a zoom does not sample again.
  */
 export type PlanarCpuVolumeRendering = MountedRendering<{
   renderMode: ActorRenderMode.CPU_VOLUME;
   actorEntryUID: string;
   compatibilityActor: ICanvasActor;
-  enabledElement?: CPUFallbackEnabledElement;
   imageVolume: IImageVolume;
   imageIds: string[];
   acquisitionOrientation?: PlanarViewState['orientation'];
-  layerCanvas: HTMLCanvasElement;
   currentImageIdIndex: number;
   maxImageIdIndex: number;
   defaultVOIRange?: VOIRange;
   renderingInvalidated: boolean;
   dataPresentation?: PlanarDataPresentation;
   compositeActor?: boolean;
-  sampledSliceState?: {
-    image: IImage;
-    samplingMode: 'source-slice' | 'viewport';
-    focalPoint: Point3;
-    translationReferenceFocalPoint: Point3;
-    right: Point3;
-    up: Point3;
-    normal: Point3;
-    spacingInNormalDirection: number;
-    canvasWidth: number;
-    canvasHeight: number;
-    parallelScale: number;
-    scaleRatio: number;
-    interpolationType: InterpolationType;
-  };
   pendingVolumeLoadCallback?: boolean;
-  deferredResampleTimeoutId?: number;
-  forceHighQualityResample?: boolean;
   removeStreamingSubscriptions?: () => void;
+  /**
+   * The counts and timings of the sampler of this slice, for tests and
+   * example pages, as
+   * `viewport.bindings.get(dataId).rendering.getSliceCacheStatistics()`.
+   */
+  getSliceCacheStatistics(): PlanarSliceCacheStatistics;
 }>;
 
 /**
@@ -161,6 +150,36 @@ export type PlanarVolumeSliceRendering = MountedRendering<{
   VolumeStrategyState;
 
 /**
+ * Mounted rendering state for the sampled slice path (`vtkSampledSlice`).
+ *
+ * Cuts the slice of the view plane out of the volume on the CPU and draws it
+ * as a 2D image with a vtkImageMapper + vtkImageSlice actor. No 3D texture is
+ * made. The fields match `PlanarVolumeSliceRendering` apart from the mapper.
+ */
+export type PlanarSampledSliceRendering = MountedRendering<{
+  renderMode: ActorRenderMode.VTK_SAMPLED_SLICE;
+  actorEntryUID: string;
+  actor: vtkImageSlice;
+  overlayOrder: number;
+  imageVolume: IImageVolume;
+  imageIds: string[];
+  acquisitionOrientation?: PlanarViewState['orientation'];
+  mapper: vtkImageMapper;
+  currentImageIdIndex: number;
+  maxImageIdIndex: number;
+  defaultVOIRange?: VOIRange;
+  dataPresentation?: PlanarDataPresentation;
+  isSegmentationOverlay?: boolean;
+  removeStreamingSubscriptions?: () => void;
+  /**
+   * The counts and timings of the sampler of this slice, for tests and
+   * example pages, as
+   * `viewport.bindings.get(dataId).rendering.getSliceCacheStatistics()`.
+   */
+  getSliceCacheStatistics(): PlanarSliceCacheStatistics;
+}>;
+
+/**
  * Discriminated union of all planar rendering states.
  *
  * Discriminate on `renderMode` to narrow to a specific render path:
@@ -174,4 +193,5 @@ export type PlanarRendering =
   | PlanarImageMapperRendering
   | PlanarCpuImageRendering
   | PlanarCpuVolumeRendering
-  | PlanarVolumeSliceRendering;
+  | PlanarVolumeSliceRendering
+  | PlanarSampledSliceRendering;

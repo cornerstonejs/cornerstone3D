@@ -54,6 +54,8 @@ import {
 } from './planarAcquiredFrames';
 import { isSegmentationOverlayData } from '../renderingFidelity';
 import { gridWorldToIndex } from '../../../utilities/voxelGrid';
+import { getConfiguration } from '../../../init';
+import volumeTextureStore from '../../../cache/volumeTextureStore';
 
 const SLICE_OVERLAY_DEPTH_EPSILON = 1e-4;
 // Trailing delay before repainting a slab-projecting segmentation overlay
@@ -194,7 +196,7 @@ export class VtkVolumeSliceRenderPath
     const attachment: RenderPathAttachment<PlanarDataPresentation> = {
       rendering,
       updateDataPresentation: (props) => {
-        this.updateDataPresentation(ctx, rendering, props);
+        this.updateDataPresentation(ctx, rendering, props, data.id);
       },
       applyViewState: (camera) => {
         this.applyViewState(ctx, rendering, data.id, camera);
@@ -235,7 +237,8 @@ export class VtkVolumeSliceRenderPath
   private updateDataPresentation(
     ctx: PlanarVtkVolumeAdapterContext,
     rendering: PlanarVolumeSliceRendering,
-    props: unknown
+    props: unknown,
+    dataId: string
   ): void {
     rendering.dataPresentation = props as PlanarDataPresentation | undefined;
     // Segmentation overlays get their color/opacity transfer functions from
@@ -258,6 +261,11 @@ export class VtkVolumeSliceRenderPath
       actor: rendering.actor,
       activeSourceICamera,
     });
+    rendering.overlayOrder = getSliceActorDepthOrder(
+      ctx,
+      dataId,
+      rendering.actor
+    );
     updateVolumeSliceActorDepthOffset(
       rendering.actor,
       activeSourceICamera,
@@ -320,6 +328,11 @@ export class VtkVolumeSliceRenderPath
     }
 
     updateVolumeSlicePlane(rendering.mapper, projection.activeSourceICamera);
+    rendering.overlayOrder = getSliceActorDepthOrder(
+      ctx,
+      dataId,
+      rendering.actor
+    );
     updateVolumeSliceActorDepthOffset(
       rendering.actor,
       projection.activeSourceICamera,
@@ -413,6 +426,15 @@ export class VtkVolumeSliceRenderPath
     ctx.display.requestRender();
   }
 
+  /**
+   * Removes the actor and gives back the texture set that it drew. While slice
+   * first is on (the global `rendering.planar.sliceFirst`), the texture sets
+   * of the volume that no consumer holds any more are evicted as well: a
+   * display set that leaves this path for the sampled slice path needs no 3D
+   * texture, and a device that is short of GPU memory gets it back at once.
+   * A set that another viewport, render path or legacy actor still holds
+   * stays. With slice first off the store keeps its sets for a later mount.
+   */
   private removeData(
     ctx: PlanarVtkVolumeAdapterContext,
     rendering: PlanarVolumeSliceRendering
@@ -420,6 +442,12 @@ export class VtkVolumeSliceRenderPath
     lifecycle.releaseStrategies(rendering);
     rendering.removeStreamingSubscriptions?.();
     ctx.vtk.renderer.removeActor(rendering.actor);
+
+    if (getConfiguration().rendering?.planar?.sliceFirst) {
+      volumeTextureStore.evictUnheldSetsOfVolume(
+        rendering.imageVolume.volumeId
+      );
+    }
   }
 
   private provisionStrategies(
@@ -524,25 +552,74 @@ export function getImageSliceOverlayOrder(
   return Math.max(0, imageSliceActors.indexOf(actor));
 }
 
-function updateVolumeSliceActorDepthOffset(
+/**
+ * @internal The depth order of a slice actor at a camera sync. The source is
+ * 0. An overlay is 1 plus its place among the slice actors of the overlays,
+ * in the order of the renderer, so it lies in front of the source whatever
+ * the place of the source actor. A remount in place adds the new source actor
+ * last, behind the overlays, so the order is read again at each sync and
+ * never kept from `addData`. An actor that is not yet an overlay of the
+ * viewport takes its place among all slice actors, at least 1.
+ */
+export function getSliceActorDepthOrder(
+  ctx: Pick<PlanarVtkVolumeAdapterContext, 'viewport' | 'vtk'>,
+  dataId: string,
+  actor: PlanarVolumeSliceRendering['actor']
+): number {
+  if (ctx.viewport.isCurrentDataId(dataId)) {
+    return 0;
+  }
+
+  const overlayActors = new Set<unknown>(
+    ctx.viewport.getOverlayActors().map((entry) => entry.actor)
+  );
+  const overlaySliceActors = ctx.vtk.renderer
+    .getActors()
+    .filter(
+      (currentActor) =>
+        currentActor?.getClassName?.() === 'vtkImageSlice' &&
+        !acquiredFrameActors.has(currentActor) &&
+        overlayActors.has(currentActor)
+    );
+  const index = overlaySliceActors.indexOf(actor);
+
+  return index >= 0
+    ? index + 1
+    : Math.max(1, getImageSliceOverlayOrder(ctx.vtk.renderer, actor));
+}
+
+/**
+ * @internal Moves a slice actor along the view normal by its overlay order.
+ * `planeOffset` adds a move in world units, which a render path whose slice
+ * does not lie on the view plane uses to bring it onto that plane.
+ */
+export function updateVolumeSliceActorDepthOffset(
   actor: PlanarVolumeSliceRendering['actor'],
   activeSourceICamera?: Pick<PlanarResolvedICamera, 'viewPlaneNormal'>,
-  overlayOrder = 0
+  overlayOrder = 0,
+  planeOffset = 0
 ): void {
-  if (!activeSourceICamera?.viewPlaneNormal || overlayOrder <= 0) {
+  if (
+    !activeSourceICamera?.viewPlaneNormal ||
+    (overlayOrder <= 0 && planeOffset === 0)
+  ) {
     actor.setPosition(0, 0, 0);
     return;
   }
 
   const [x, y, z] = activeSourceICamera.viewPlaneNormal;
-  const offset = overlayOrder * SLICE_OVERLAY_DEPTH_EPSILON;
+  const offset =
+    Math.max(0, overlayOrder) * SLICE_OVERLAY_DEPTH_EPSILON + planeOffset;
 
   // Keep later slice actors microscopically closer to the camera to avoid
   // depth-buffer ties between coplanar fusion overlays.
   actor.setPosition(x * offset, y * offset, z * offset);
 }
 
-function buildPlanarVolumeImageData(imageVolume): IImageData | undefined {
+/** @internal The image data of a volume, as a volume render path returns it. */
+export function buildPlanarVolumeImageData(
+  imageVolume
+): IImageData | undefined {
   const vtkImageData = imageVolume.imageData;
 
   if (!vtkImageData) {

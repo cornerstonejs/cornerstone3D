@@ -87,6 +87,43 @@ function isPlanarGpuVolumeSliceViewport(
   );
 }
 
+/**
+ * Whether a planar next viewport draws its source as a slice of a volume
+ * sampled on the CPU (`vtkSampledSlice`). Such a viewport makes no 3D texture
+ * for its source, so while it shows no slab a labelmap on it is drawn as
+ * labelmap slice images with no flag needed. With a slab the labelmap takes
+ * the plan it takes on the GPU volume path with that slab.
+ */
+export function isPlanarSampledSliceViewport(
+  viewport: Types.IViewport
+): viewport is ViewportLabelmapImageMapperCompatibilityViewport {
+  const compatibilityViewport =
+    viewport as ViewportLabelmapImageMapperCompatibilityViewport;
+
+  if (compatibilityViewport.type !== Enums.ViewportType.PLANAR_NEXT) {
+    return false;
+  }
+
+  return (
+    getPlanarPrimaryRenderMode(compatibilityViewport) ===
+    ActorRenderMode.VTK_SAMPLED_SLICE
+  );
+}
+
+/**
+ * Whether a planar next viewport draws its source as a slice of a volume, on
+ * the GPU volume path or sampled on the CPU, so that a labelmap on it can be
+ * drawn as labelmap slice images.
+ */
+function isPlanarVolumeSliceViewport(
+  viewport: Types.IViewport
+): viewport is ViewportLabelmapImageMapperCompatibilityViewport {
+  return (
+    isPlanarGpuVolumeSliceViewport(viewport) ||
+    isPlanarSampledSliceViewport(viewport)
+  );
+}
+
 function getPlanarPrimaryRenderMode(
   viewport: ViewportLabelmapImageMapperCompatibilityViewport
 ): Types.ActorRenderMode | string | undefined {
@@ -142,11 +179,24 @@ function getPlanarPrimaryDataId(
     Object.entries(renderModes).find(
       ([dataId, renderMode]) =>
         viewport.getDisplaySetRole?.(dataId) === 'source' &&
-        renderMode === ActorRenderMode.VTK_VOLUME_SLICE
+        isVolumeSliceRenderMode(renderMode)
     )?.[0] ??
-    Object.entries(renderModes).find(
-      ([, renderMode]) => renderMode === ActorRenderMode.VTK_VOLUME_SLICE
+    Object.entries(renderModes).find(([, renderMode]) =>
+      isVolumeSliceRenderMode(renderMode)
     )?.[0]
+  );
+}
+
+/**
+ * Whether a render mode draws a slice of a volume as a `vtkImageSlice`: the GPU
+ * volume slice path or the slice sampled on the CPU.
+ */
+function isVolumeSliceRenderMode(
+  renderMode: Types.ActorRenderMode | string | undefined
+): boolean {
+  return (
+    renderMode === ActorRenderMode.VTK_VOLUME_SLICE ||
+    renderMode === ActorRenderMode.VTK_SAMPLED_SLICE
   );
 }
 
@@ -228,9 +278,21 @@ function getCompatibilityBlendMode(
   return Enums.BlendModes.AVERAGE_INTENSITY_BLEND;
 }
 
+/**
+ * The slab thickness that a viewport shows. A viewport that samples its slice
+ * on the CPU keeps the slab only in the presentation of its source, since its
+ * image mapper has no slab.
+ */
 function getCompatibilitySlabThickness(viewport: Types.IViewport): number {
   if (viewport instanceof VolumeViewport) {
     return viewport.getSlabThickness?.() ?? MINIMUM_SLAB_THICKNESS;
+  }
+
+  if (isPlanarSampledSliceViewport(viewport)) {
+    return (
+      getPlanarVolumeDataPresentation(viewport)?.slabThickness ??
+      MINIMUM_SLAB_THICKNESS
+    );
   }
 
   if (!isPlanarGpuVolumeSliceViewport(viewport)) {
@@ -282,13 +344,29 @@ export function isSliceRenderingEnabled(options?: {
   );
 }
 
+/**
+ * Whether a labelmap is drawn as labelmap slice images: when the
+ * `useSliceRendering` option or the URL flag asks for it, when the
+ * segmentation mixes stack and volume labelmap layers, and on a viewport that
+ * samples the slice of its source on the CPU (`isPlanarSampledSliceViewport`)
+ * while it shows no slab.
+ */
 export function shouldUseSliceRendering(
   segmentation?: Segmentation,
   options?: {
     useSliceRendering?: boolean;
-  }
+  },
+  viewport?: Types.IViewport
 ): boolean {
   if (isSliceRenderingEnabled(options)) {
+    return true;
+  }
+
+  if (
+    viewport &&
+    isPlanarSampledSliceViewport(viewport) &&
+    canRenderVolumeViewportLabelmapAsImage(viewport)
+  ) {
     return true;
   }
 
@@ -307,7 +385,7 @@ export function canRenderVolumeViewportLabelmapAsImage(
   viewport: Types.IViewport
 ): viewport is ViewportLabelmapImageMapperCompatibilityViewport {
   const isLegacyVolumeViewport = viewport instanceof VolumeViewport;
-  const isNextPlanarViewport = isPlanarGpuVolumeSliceViewport(viewport);
+  const isNextPlanarViewport = isPlanarVolumeSliceViewport(viewport);
 
   if (!isLegacyVolumeViewport && !isNextPlanarViewport) {
     return false;
@@ -343,7 +421,7 @@ export function getVolumeViewportLabelmapImageMapperState(
   const compatibilityViewport =
     viewport as ViewportLabelmapImageMapperCompatibilityViewport;
   const isLegacyVolumeViewport = viewport instanceof VolumeViewport;
-  const isNextPlanarViewport = isPlanarGpuVolumeSliceViewport(viewport);
+  const isNextPlanarViewport = isPlanarVolumeSliceViewport(viewport);
 
   if (!isLegacyVolumeViewport && !isNextPlanarViewport) {
     return {
@@ -425,8 +503,7 @@ export function getVolumeViewportLabelmapImageMapperState(
 
   if (
     isNextPlanarViewport &&
-    getPlanarPrimaryRenderMode(compatibilityViewport) !==
-      ActorRenderMode.VTK_VOLUME_SLICE
+    !isVolumeSliceRenderMode(getPlanarPrimaryRenderMode(compatibilityViewport))
   ) {
     return {
       key: `unsupported:renderMode:${orientationKey}`,

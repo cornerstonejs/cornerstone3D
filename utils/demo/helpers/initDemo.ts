@@ -18,6 +18,7 @@ import cornerstoneDICOMImageLoader from '@cornerstonejs/dicom-image-loader';
 import * as polySeg from '@cornerstonejs/polymorphic-segmentation';
 import {
   applyLossyDownsamplingOverride,
+  applySliceFirstOverride,
   applyUrlParameterOverridesToDemoConfig,
   applyViewportTypeOverride,
 } from './exampleParameters';
@@ -42,6 +43,7 @@ export default async function initDemo(config: any = {}) {
   let demoConfig = applyUrlParameterOverridesToDemoConfig(config);
   demoConfig = applyViewportTypeOverride(demoConfig);
   demoConfig = applyLossyDownsamplingOverride(demoConfig);
+  demoConfig = applySliceFirstOverride(demoConfig);
   const toolsConfig = demoConfig?.tools || {};
 
   initProviders();

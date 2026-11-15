@@ -30,6 +30,7 @@ import { triggerSegmentationDataModified } from '../../stateManagement/segmentat
 import { fillInsideCircle } from './strategies';
 import type { LabelmapToolOperationData } from '../../types/LabelmapToolOperationData';
 import getViewportLabelmapRenderMode from '../../stateManagement/segmentation/helpers/getViewportLabelmapRenderMode';
+import { isPlanarSampledSliceViewport } from '../../stateManagement/segmentation/helpers/labelmapImageMapperSupport';
 import {
   getOrCreateLabelmapVolume,
   resolveLabelmapForSegment,
@@ -735,10 +736,7 @@ export default class LabelmapBaseTool extends BaseTool {
 
     // Create an undo history for the operation
     // Iterate through the canvas space in canvas index coordinates
-    const imageData = viewport
-      .getDefaultActor()
-      .actor.getMapper()
-      .getInputData();
+    const imageData = getContourFillImageData(viewport);
 
     // The geometry that the voxel slab iterator walks. The labelmap is derived
     // from this image data, so the two share every index.
@@ -883,6 +881,24 @@ function createSegmentEditableLookup(
     cache[segmentIndex] = isEditable ? SEGMENT_EDITABLE : SEGMENT_BLOCKED;
     return isEditable;
   };
+}
+
+/**
+ * Returns the image data whose grid the contour fill walks: the input data of
+ * the default actor. A viewport that samples its slice on the CPU draws only
+ * the visible slice with that actor, so there it is the image data of the
+ * volume (`getDefaultImageData`).
+ */
+function getContourFillImageData(viewport: Types.IViewport) {
+  if (isPlanarSampledSliceViewport(viewport)) {
+    return (
+      viewport as unknown as {
+        getDefaultImageData: () => vtkImageData;
+      }
+    ).getDefaultImageData();
+  }
+
+  return viewport.getDefaultActor().actor.getMapper().getInputData();
 }
 
 /** Removes a consumed contour from the annotation state and from annotationUIDsMap. */

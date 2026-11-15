@@ -55,6 +55,7 @@ export type PlanarEffectiveRenderMode =
   | 'webgl2d'
   | ActorRenderMode.VTK_IMAGE
   | ActorRenderMode.VTK_VOLUME_SLICE
+  | ActorRenderMode.VTK_SAMPLED_SLICE
   | ActorRenderMode.CPU_VOLUME
   | (string & {});
 export type PlanarOrientation =
@@ -89,6 +90,13 @@ export interface PlanarSetDataOptions {
    */
   renderBackend?: RenderBackendValue;
   role?: BindingRole;
+  /**
+   * Slice first for this display set: cut the visible slice on the CPU and
+   * draw it as a 2D image in place of a 3D texture, where the render path
+   * decision allows it. Wins over the global `rendering.planar.sliceFirst`.
+   * @experimental
+   */
+  sliceFirst?: boolean;
 }
 
 /** @internal */

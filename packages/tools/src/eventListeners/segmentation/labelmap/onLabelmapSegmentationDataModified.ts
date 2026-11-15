@@ -54,7 +54,8 @@ const onLabelmapSegmentationDataModified = function (
     })[0] as { config?: { useSliceRendering?: boolean } } | undefined;
     const useSliceRendering = shouldUseSliceRendering(
       getSegmentation(segmentationId),
-      labelmapRepresentation?.config
+      labelmapRepresentation?.config,
+      viewport
     );
     const renderMode = getViewportLabelmapRenderMode(viewport, {
       useSliceRendering,

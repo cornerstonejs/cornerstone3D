@@ -72,11 +72,12 @@ export class VtkImageMapperRenderPath
 
     // 16-bit handling: this path uploads the image's native scalar type (e.g.
     // Int16/Uint16) through the stock vtk.js vtkImageMapper, which enables
-    // EXT_texture_norm16 itself and runs its own linear-filtering probe
-    // (vtk.js OpenGL ImageMapper/Texture), falling back to half-float/float
-    // when norm16 is unusable. Cornerstone's getCanUseNorm16Texture() gate
-    // (used by the streaming volume texture on the VTK_VOLUME_SLICE path) is
-    // intentionally not wired in here.
+    // EXT_texture_norm16 itself when the context lists it, and otherwise
+    // uploads float, or half float when float cannot be filtered and the
+    // values fit. The cornerstone render window hides EXT_texture_norm16 from
+    // its context when getCanUseNorm16Texture() is false
+    // (vtkClasses/norm16ExtensionGate), so this mapper follows the same
+    // texture probe as the streaming volume texture.
     const mapper = vtkImageMapper.newInstance();
     const actor = vtkImageSlice.newInstance();
     const imageData =

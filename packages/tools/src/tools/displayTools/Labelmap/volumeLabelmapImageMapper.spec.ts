@@ -425,7 +425,7 @@ describe('addVolumeLabelmapImageMapperActors', () => {
       newImageActor,
       sliceImageData,
       camera,
-      2
+      4
     );
   });
 
@@ -636,7 +636,51 @@ describe('updateVolumeLabelmapImageMapperActors', () => {
       labelmapEntry.actor,
       sliceImageData,
       camera,
-      2
+      5
+    );
+  });
+
+  it('places a planar slice in front of every image slice that the core numbers', () => {
+    canRenderVolumeViewportLabelmapAsImage.mockReturnValue(true);
+
+    const camera = { focalPoint: [0, 0, 10], viewPlaneNormal: [0, 0, 1] };
+    const labelmapEntry = makeLabelmapSliceEntry({
+      representationUID: 'seg-1-Labelmap-layer-a',
+      referencedId: 'layer-a',
+    });
+    const ct = makeImageSliceEntry('ct');
+    const pt = makeImageSliceEntry('pt');
+    const remountedCt = makeImageSliceEntry('ct-remounted');
+    const largestCoreOrder = 1;
+
+    getLabelmaps.mockReturnValue([{ labelmapId: 'layer-a' }]);
+    getOrCreateLabelmapVolume.mockReturnValue({ imageIds: ['v'] });
+    createPlanarSliceImageData.mockReturnValue({
+      imageData: {},
+      sliceIndex: 0,
+    });
+    getSliceRenderingCamera.mockReturnValue(camera);
+
+    const getLabelmapOrder = (rendererOrder: unknown[]) => {
+      applyPlanarOverlayDepthOffset.mockClear();
+
+      const viewport = makePlanarNextViewport();
+      viewport.getActors = jest.fn(() => rendererOrder) as never;
+
+      updateVolumeLabelmapImageMapperActors({
+        viewport: viewport as never,
+        segmentation: makeSegmentation(),
+        segmentationId: 'seg-1',
+      });
+
+      return applyPlanarOverlayDepthOffset.mock.calls[0][3];
+    };
+
+    expect(getLabelmapOrder([ct, pt, labelmapEntry])).toBeGreaterThan(
+      largestCoreOrder
+    );
+    expect(getLabelmapOrder([pt, labelmapEntry, remountedCt])).toBeGreaterThan(
+      largestCoreOrder
     );
   });
 });
@@ -688,7 +732,7 @@ describe('placeVolumeLabelmapImageMapperActors', () => {
       labelmapEntry.actor,
       heldImageData,
       camera,
-      3
+      7
     );
     expect(createPlanarSliceImageData).not.toHaveBeenCalled();
   });

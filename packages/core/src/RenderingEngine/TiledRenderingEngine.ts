@@ -8,7 +8,10 @@ import getOrCreateCanvas from './helpers/getOrCreateCanvas';
 import type IStackViewport from '../types/IStackViewport';
 import type IVolumeViewport from '../types/IVolumeViewport';
 import { vtkOffscreenMultiRenderWindow } from './vtkClasses';
-import { attachWebGLContextEvents } from './helpers/attachWebGLContextEvents';
+import {
+  attachWebGLContextEvents,
+  isWebGLContextLost,
+} from './helpers/attachWebGLContextEvents';
 import { setElementTouchActionNone } from './helpers/elementTouchAction';
 
 import type * as EventTypes from '../types/EventTypes';
@@ -63,6 +66,8 @@ interface ViewportDisplayCoords {
 const log = coreLog.getLogger('RenderingEngine', 'TiledRenderingEngine');
 
 class TiledRenderingEngine extends BaseRenderingEngine {
+  private detachWebGLContextEvents?: () => void;
+
   constructor(id?: string) {
     super(id);
 
@@ -79,8 +84,45 @@ class TiledRenderingEngine extends BaseRenderingEngine {
       this.offscreenMultiRenderWindow.setContainer(
         this.offScreenCanvasContainer
       );
-      attachWebGLContextEvents(this.offscreenMultiRenderWindow, this.id);
+      this.detachWebGLContextEvents = attachWebGLContextEvents(
+        this.offscreenMultiRenderWindow,
+        this.id,
+        0,
+        () => this._renderViewportsOfRestoredContext()
+      );
     }
+  }
+
+  /**
+   * Renders once more every viewport that vtk.js draws, after the browser
+   * restored the WebGL context of the offscreen canvas. The GL objects of that
+   * context were dropped before this runs, so the render builds them again
+   * from the data in memory. A destroyed engine renders nothing.
+   */
+  private _renderViewportsOfRestoredContext(): void {
+    if (this.hasBeenDestroyed) {
+      return;
+    }
+
+    const viewportIds = this._getViewportsAsArray()
+      .filter(
+        (viewport) => !viewportTypeUsesCustomRenderingPipeline(viewport.type)
+      )
+      .map((viewport) => viewport.id);
+
+    if (viewportIds.length) {
+      this.renderViewports(viewportIds);
+    }
+  }
+
+  /**
+   * Removes the WebGL context listeners of the offscreen canvas, then
+   * destroys the engine.
+   */
+  public destroy(): void {
+    this.detachWebGLContextEvents?.();
+    this.detachWebGLContextEvents = undefined;
+    super.destroy();
   }
   /**
    * Enables a viewport to be driven by the offscreen vtk.js rendering engine.
@@ -366,8 +408,9 @@ class TiledRenderingEngine extends BaseRenderingEngine {
   protected _renderFlaggedViewports = () => {
     this._throwIfDestroyed();
     const renderStart = performance.now();
+    const contextLost = isWebGLContextLost(this.offscreenMultiRenderWindow);
 
-    if (this.offscreenMultiRenderWindow) {
+    if (this.offscreenMultiRenderWindow && !contextLost) {
       this.performVtkDrawCall();
     }
 
@@ -377,7 +420,12 @@ class TiledRenderingEngine extends BaseRenderingEngine {
 
     for (let i = 0; i < viewports.length; i++) {
       const viewport = viewports[i];
-      if (this._needsRender.has(viewport.id)) {
+      if (
+        this._needsRender.has(viewport.id) &&
+        !(
+          contextLost && !viewportTypeUsesCustomRenderingPipeline(viewport.type)
+        )
+      ) {
         const eventDetail =
           this.renderViewportUsingCustomOrVtkPipeline(viewport);
 

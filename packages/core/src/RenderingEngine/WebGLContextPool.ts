@@ -15,6 +15,7 @@ class WebGLContextPool {
     new Map();
   private contextMaxSizes: Map<number, { width: number; height: number }> =
     new Map();
+  private detachContextEvents: Array<() => void> = [];
 
   /**
    * Creates a pool with the specified number of WebGL contexts
@@ -22,18 +23,27 @@ class WebGLContextPool {
    * @param renderingEngineId - Owning engine id, carried on the
    * WEBGL_CONTEXT_LOST / WEBGL_CONTEXT_RESTORED events emitted for these
    * contexts
+   * @param onContextRestored - Called with the index of a context after the
+   * browser restored it and its GL objects were dropped
    */
-  constructor(count: number, renderingEngineId = '') {
+  constructor(
+    count: number,
+    renderingEngineId = '',
+    onContextRestored?: (contextIndex: number) => void
+  ) {
     for (let i = 0; i < count; i++) {
       const offscreenMultiRenderWindow =
         vtkOffscreenMultiRenderWindow.newInstance();
       const container = document.createElement('div');
       offscreenMultiRenderWindow.setContainer(container);
 
-      attachWebGLContextEvents(
-        offscreenMultiRenderWindow,
-        renderingEngineId,
-        i
+      this.detachContextEvents.push(
+        attachWebGLContextEvents(
+          offscreenMultiRenderWindow,
+          renderingEngineId,
+          i,
+          () => onContextRestored?.(i)
+        )
       );
 
       this.contexts.push(offscreenMultiRenderWindow);
@@ -190,6 +200,8 @@ class WebGLContextPool {
    * Cleans up all contexts and releases resources
    */
   destroy(): void {
+    this.detachContextEvents.forEach((detach) => detach());
+    this.detachContextEvents = [];
     this.contexts.forEach((context: VtkOffscreenMultiRenderWindow) => {
       context.delete();
     });

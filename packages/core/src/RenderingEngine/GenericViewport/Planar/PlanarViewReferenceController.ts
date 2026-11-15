@@ -714,7 +714,8 @@ class PlanarViewReferenceController {
 
     if (
       rendering.renderMode !== ActorRenderMode.CPU_VOLUME &&
-      rendering.renderMode !== ActorRenderMode.VTK_VOLUME_SLICE
+      rendering.renderMode !== ActorRenderMode.VTK_VOLUME_SLICE &&
+      rendering.renderMode !== ActorRenderMode.VTK_SAMPLED_SLICE
     ) {
       return;
     }

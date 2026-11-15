@@ -1,4 +1,5 @@
 import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
+import type vtkImageMapper from '@kitware/vtk.js/Rendering/Core/ImageMapper';
 import type vtkImageResliceMapper from '@kitware/vtk.js/Rendering/Core/ImageResliceMapper';
 import type vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import type { ColormapPublic, VOIRange } from '../../../types';
@@ -9,9 +10,14 @@ import {
   resolveSlabThickness,
 } from './planarVolumeSliceBlendMode';
 
+/**
+ * Applies the presentation of a volume slice to its actor. With a
+ * vtkImageMapper, which draws a slice that was already cut, the slab and the
+ * blend mode are left out: the sampler applies them.
+ */
 export function applyPlanarVolumePresentation(args: {
   actor: vtkImageSlice;
-  mapper: vtkImageResliceMapper;
+  mapper: vtkImageResliceMapper | vtkImageMapper;
   defaultVOIRange?: VOIRange;
   props?: PlanarDataPresentation;
 }): void {
@@ -29,15 +35,17 @@ export function applyPlanarVolumePresentation(args: {
     );
   }
 
-  if (props?.blendMode !== undefined) {
-    const slabType = mapBlendModeToSlabType(props.blendMode);
+  if (isResliceMapper(mapper)) {
+    if (props?.blendMode !== undefined) {
+      const slabType = mapBlendModeToSlabType(props.blendMode);
 
-    if (slabType !== undefined) {
-      mapper.setSlabType(slabType);
+      if (slabType !== undefined) {
+        mapper.setSlabType(slabType);
+      }
     }
-  }
 
-  mapper.setSlabThickness(resolveSlabThickness(props?.slabThickness));
+    mapper.setSlabThickness(resolveSlabThickness(props?.slabThickness));
+  }
 
   if (props?.opacity !== undefined) {
     applyVolumeOpacity({
@@ -65,6 +73,14 @@ export function applyPlanarVolumePresentation(args: {
     colormap: props?.colormap,
     voiRange,
   });
+}
+
+function isResliceMapper(
+  mapper: vtkImageResliceMapper | vtkImageMapper
+): mapper is vtkImageResliceMapper {
+  return (
+    typeof (mapper as vtkImageResliceMapper).setSlabThickness === 'function'
+  );
 }
 
 function applyVolumeOpacity(args: {

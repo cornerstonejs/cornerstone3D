@@ -1808,6 +1808,14 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
       return voxelGroups[activeDimensionGroup].getMiddleSliceData();
     };
 
+    (voxelManager as VoxelManager<number | RGB>)._getSliceView = (
+      sliceIndex: number
+    ) => {
+      return (
+        voxelGroups[activeDimensionGroup] as VoxelManager<number | RGB>
+      )._getSliceView?.(sliceIndex);
+    };
+
     // Each group remembers a slice that had no image, so an arrival must reach
     // every group and not only the active one.
     voxelManager.invalidateSlice = (sliceIndex: number) => {

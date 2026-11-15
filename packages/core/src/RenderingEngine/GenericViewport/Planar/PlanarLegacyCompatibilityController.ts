@@ -1,7 +1,11 @@
 import cache from '../../../cache/cache';
 import type BlendModes from '../../../enums/BlendModes';
 import { Events } from '../../../enums';
-import { ActorRenderMode } from '../../../types';
+import {
+  getRenderBackendForRenderMode,
+  getSampledVolumeRenderModeForBackend,
+  isVolumeRenderMode,
+} from '../../helpers/renderBackendRegistry';
 import type { ActorEntry, ColormapPublic, IVolumeInput } from '../../../types';
 import triggerEvent from '../../../utilities/triggerEvent';
 import {
@@ -57,6 +61,7 @@ export type PlanarLegacyCompatibilityHost = {
   getFirstBoundDataId(): string | undefined;
   findDataIdByVolumeId(volumeId: string): string | undefined;
   getBindingActor(dataId: string): unknown;
+  getBindingRenderMode(dataId: string): string | undefined;
   getDefaultVOIRange(
     dataId: string
   ): { lower: number; upper: number } | undefined;
@@ -359,6 +364,10 @@ class PlanarLegacyCompatibilityController {
       return storedBlendMode;
     }
 
+    if (this.isSampledVolumeRendering(targetDataId)) {
+      return mapSlabTypeToBlendMode();
+    }
+
     const actor = this.host.getBindingActor(targetDataId) as
       | {
           getMapper?: () => {
@@ -617,11 +626,7 @@ class PlanarLegacyCompatibilityController {
   private getInitialVolumeImageIdIndex(imageCount: number): number {
     const rendering = this.host.getCurrentPlanarRendering();
 
-    if (
-      rendering &&
-      (rendering.renderMode === ActorRenderMode.CPU_VOLUME ||
-        rendering.renderMode === ActorRenderMode.VTK_VOLUME_SLICE)
-    ) {
+    if (rendering && isVolumeRenderMode(rendering.renderMode)) {
       return Math.min(
         Math.max(0, rendering.currentImageIdIndex),
         Math.max(imageCount - 1, 0)
@@ -804,9 +809,10 @@ class PlanarLegacyCompatibilityController {
     const transferFunction = actor?.getProperty?.().getRGBTransferFunction?.(0);
     const volumeColormap = this.buildVolumeColormap(dataId);
     const mapper = actor?.getMapper?.();
-    const blendMode =
-      mapper?.getBlendMode?.() ??
-      mapSlabTypeToBlendMode(mapper?.getSlabType?.());
+    const blendMode = this.isSampledVolumeRendering(dataId)
+      ? undefined
+      : (mapper?.getBlendMode?.() ??
+        mapSlabTypeToBlendMode(mapper?.getSlabType?.()));
     const range = transferFunction?.getRange?.();
     const volumePresentation: PlanarLegacyViewportProperties = {};
 
@@ -828,6 +834,22 @@ class PlanarLegacyCompatibilityController {
     return Object.keys(volumePresentation).length
       ? volumePresentation
       : undefined;
+  }
+
+  /**
+   * Whether the data id is drawn by the sampled volume render mode of its
+   * backend (slice first). That path keeps the slab and the blend mode in the
+   * presentation of the display set and draws a slice that was already cut,
+   * so its mapper holds no slab type or blend mode to read back.
+   */
+  private isSampledVolumeRendering(dataId: string): boolean {
+    const renderMode = this.host.getBindingRenderMode(dataId);
+    const backend = getRenderBackendForRenderMode(renderMode);
+
+    return (
+      backend !== undefined &&
+      getSampledVolumeRenderModeForBackend(backend) === renderMode
+    );
   }
 
   private resolveVolumeIdForDataId(dataId: string): string | undefined {

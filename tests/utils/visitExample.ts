@@ -1,5 +1,6 @@
 import type { Page } from '@playwright/test';
 import { validateCompatibilityRuntime } from './compatibilityMode';
+import { shouldForceSliceFirst } from './createExampleUrl';
 import { waitForViewportsRendered } from './waitForViewportsRendered';
 
 function shouldForceGenericViewport() {
@@ -108,12 +109,20 @@ export const visitExample = async (
       exampleUrl.searchParams.set('cpu', '1');
     }
 
+    if (shouldForceSliceFirst()) {
+      exampleUrl.searchParams.set('sliceFirst', '1');
+    }
+
     await page.goto(exampleUrl.toString());
   } else {
     const link = page.locator(`a:has-text("${title}")`).first();
     await link.click();
 
-    if (shouldForceGenericViewport() || shouldForceCpuRendering()) {
+    if (
+      shouldForceGenericViewport() ||
+      shouldForceCpuRendering() ||
+      shouldForceSliceFirst()
+    ) {
       const exampleUrl = new URL(page.url());
 
       if (shouldForceGenericViewport()) {
@@ -122,6 +131,10 @@ export const visitExample = async (
 
       if (shouldForceCpuRendering()) {
         exampleUrl.searchParams.set('cpu', '1');
+      }
+
+      if (shouldForceSliceFirst()) {
+        exampleUrl.searchParams.set('sliceFirst', '1');
       }
 
       await page.goto(exampleUrl.toString());

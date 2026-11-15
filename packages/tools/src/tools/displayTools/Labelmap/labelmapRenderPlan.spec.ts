@@ -1,7 +1,9 @@
 jest.mock('@cornerstonejs/core', () => ({
   ActorRenderMode: {
     CPU_VOLUME: 'CPU_VOLUME',
+    VTK_IMAGE: 'VTK_IMAGE',
     VTK_VOLUME_SLICE: 'VTK_VOLUME_SLICE',
+    VTK_SAMPLED_SLICE: 'VTK_SAMPLED_SLICE',
   },
   Enums: {
     BlendModes: {
@@ -139,7 +141,11 @@ import {
 import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents';
 import removeLabelmapRepresentationData from './removeLabelmapRepresentationData';
 import { syncStackLabelmapActors } from './syncStackLabelmapActors';
-import { removeVolumeLabelmapImageMapperActors } from './volumeLabelmapImageMapper';
+import {
+  addVolumeLabelmapImageMapperActors,
+  getVolumeLabelmapImageMapperRepresentationUIDs,
+  removeVolumeLabelmapImageMapperActors,
+} from './volumeLabelmapImageMapper';
 import { resolveLabelmapRenderPlan } from './labelmapRenderPlan';
 
 const getCurrentLabelmapImageIdsForViewportMock =
@@ -468,5 +474,103 @@ describe('labelmapRenderPlan', () => {
     expect(addVolumesAsIndependentComponents).not.toHaveBeenCalled();
     expect(addVolumesToViewports).toHaveBeenCalled();
     expect(utilities.logger.toolsLog.getLogger().warn).toHaveBeenCalledTimes(1);
+  });
+
+  it('draws the labelmap of a sampled slice source as slice images in place of a volume overlay', async () => {
+    const volumeOverlayEntry = {
+      referencedId: 'layer-id',
+      representationUID: 'segmentation-id-Labelmap-layer-id',
+      uid: 'volume-overlay-uid',
+      actorMapper: { renderMode: 'VTK_VOLUME_SLICE' },
+    };
+    const viewport = {
+      id: 'viewport-id',
+      type: 'planarNext',
+      removeActors: jest.fn(),
+    };
+    const segmentation = {
+      segmentationId: 'segmentation-id',
+      representationData: { Labelmap: {} },
+    };
+    const config = {};
+
+    shouldUseSliceRenderingMock.mockImplementation(
+      (_segmentation, _config, renderViewport) => renderViewport === viewport
+    );
+    canRenderVolumeViewportLabelmapAsImageMock.mockReturnValue(true);
+    (
+      getVolumeLabelmapImageMapperRepresentationUIDs as jest.Mock
+    ).mockReturnValue(['segmentation-id-Labelmap-layer-id']);
+    getLabelmapActorEntriesMock
+      .mockReturnValueOnce([volumeOverlayEntry])
+      .mockReturnValueOnce([]);
+
+    const renderPlan = resolveLabelmapRenderPlan({
+      viewport: viewport as never,
+      segmentation: segmentation as never,
+      representation: {
+        segmentationId: 'segmentation-id',
+        config: config as never,
+      },
+    });
+
+    expect(shouldUseSliceRenderingMock).toHaveBeenCalledWith(
+      segmentation,
+      config,
+      viewport
+    );
+    expect(renderPlan.kind).toBe('volume-slice-image-mapper');
+
+    await renderPlan.reconcile({
+      actorEntries: [volumeOverlayEntry] as never,
+      labelMapData: {} as never,
+    });
+
+    expect(viewport.removeActors).toHaveBeenCalledWith(['volume-overlay-uid']);
+    expect(addVolumeLabelmapImageMapperActors).toHaveBeenCalledWith({
+      viewport,
+      segmentation,
+      segmentationId: 'segmentation-id',
+    });
+  });
+
+  it('keeps the labelmap slice images of a sampled slice source', async () => {
+    const sliceEntry = {
+      referencedId: 'layer-id',
+      representationUID: 'segmentation-id-Labelmap-layer-id',
+      uid: 'slice-uid',
+      actorMapper: { renderMode: 'VTK_IMAGE' },
+    };
+    const viewport = {
+      id: 'viewport-id',
+      type: 'planarNext',
+      removeActors: jest.fn(),
+    };
+
+    shouldUseSliceRenderingMock.mockReturnValue(true);
+    canRenderVolumeViewportLabelmapAsImageMock.mockReturnValue(true);
+    (
+      getVolumeLabelmapImageMapperRepresentationUIDs as jest.Mock
+    ).mockReturnValue(['segmentation-id-Labelmap-layer-id']);
+    getLabelmapActorEntriesMock.mockReturnValue([sliceEntry]);
+
+    const renderPlan = resolveLabelmapRenderPlan({
+      viewport: viewport as never,
+      segmentation: {
+        segmentationId: 'segmentation-id',
+        representationData: { Labelmap: {} },
+      } as never,
+      representation: {
+        segmentationId: 'segmentation-id',
+        config: {} as never,
+      },
+    });
+
+    expect(renderPlan.needsRemount([sliceEntry] as never)).toBe(false);
+    expect(
+      renderPlan.needsRemount([
+        { ...sliceEntry, actorMapper: { renderMode: 'VTK_SAMPLED_SLICE' } },
+      ] as never)
+    ).toBe(true);
   });
 });

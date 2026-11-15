@@ -18,6 +18,12 @@ export enum ActorRenderMode {
   VTK_IMAGE = 'vtkImage',
   VTK_VOLUME = 'vtkVolume',
   VTK_VOLUME_SLICE = 'vtkVolumeSlice',
+  /**
+   * A slice of a volume, sampled on the CPU and drawn by a vtkImageMapper and
+   * a vtkImageSlice. No 3D texture is made for it.
+   * @experimental
+   */
+  VTK_SAMPLED_SLICE = 'vtkSampledSlice',
   CPU_IMAGE = 'cpuImage',
   CPU_VOLUME = 'cpuVolume',
 }
@@ -49,6 +55,11 @@ export type ActorMapperProxy =
       renderMode: ActorRenderMode.VTK_VOLUME_SLICE;
       actor: ImageActor;
       mapper: vtkImageResliceMapper;
+    }
+  | {
+      renderMode: ActorRenderMode.VTK_SAMPLED_SLICE;
+      actor: ImageActor;
+      mapper: vtkImageMapper;
     }
   | {
       renderMode: ActorRenderMode.CPU_IMAGE;

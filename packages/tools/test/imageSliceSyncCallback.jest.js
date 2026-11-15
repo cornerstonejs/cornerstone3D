@@ -6,6 +6,7 @@ jest.mock('@cornerstonejs/core', () => {
       CPU_IMAGE: 'cpuImage',
       CPU_VOLUME: 'cpuVolume',
       VTK_VOLUME_SLICE: 'vtkVolumeSlice',
+      VTK_SAMPLED_SLICE: 'vtkSampledSlice',
     },
     getRenderingEngine: jest.fn(),
     metaData: {
@@ -136,6 +137,27 @@ describe('imageSliceSyncCallback', () => {
     const targetViewport = createTargetViewport({
       currentImageIdIndex: 0,
       renderMode: 'cpuVolume',
+      volumeId: 'volume-id',
+    });
+
+    mockRenderingEngine(sourceViewport, targetViewport);
+
+    await imageSliceSyncCallback(
+      createSynchronizerInstance(),
+      { renderingEngineId: 'rendering-engine', viewportId: 'source' },
+      { renderingEngineId: 'rendering-engine', viewportId: 'target' }
+    );
+
+    expect(utilities.jumpToSlice).toHaveBeenCalledWith(targetViewport.element, {
+      imageIndex: 1,
+    });
+  });
+
+  it('reverses target indices for planar viewports that sample their slice on the CPU', async () => {
+    const sourceViewport = createSourceViewport('image:2');
+    const targetViewport = createTargetViewport({
+      currentImageIdIndex: 0,
+      renderMode: 'vtkSampledSlice',
       volumeId: 'volume-id',
     });
 

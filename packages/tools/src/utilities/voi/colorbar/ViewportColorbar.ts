@@ -1,5 +1,6 @@
 import type { Types } from '@cornerstonejs/core';
 import {
+  ActorRenderMode,
   eventTarget,
   VolumeViewport,
   StackViewport,
@@ -14,6 +15,23 @@ import { getVOIMultipliers } from '../../getVOIMultipliers';
 
 const { Events } = Enums;
 const defaultImageRange = { lower: -1000, upper: 1000 };
+
+/**
+ * Whether an image actor of a viewport draws a slice of a volume sampled on
+ * the CPU (`vtkSampledSlice`). The input data of its mapper holds only the
+ * visible slice, so the range of its scalars is not the range of the volume;
+ * the volume range comes from the voxel manager that the input data carries.
+ */
+function isSampledSliceActor(viewport, actor): boolean {
+  const actorEntries = viewport.getActors?.() ?? [];
+
+  return actorEntries.some(
+    (actorEntry) =>
+      actorEntry.actor === actor &&
+      actorEntry.actorMapper?.renderMode === ActorRenderMode.VTK_SAMPLED_SLICE
+  );
+}
+
 /**
  * A colorbar associated with a viewport that updates automatically when the
  * viewport VOI changes or when the stack/volume are updated..
@@ -98,7 +116,9 @@ class ViewportColorbar extends Colorbar {
 
     const imageData = actor.getMapper().getInputData();
 
-    const scalarData = imageData.getPointData().getScalars();
+    const scalarData = isSampledSliceActor(viewport, actor)
+      ? undefined
+      : imageData.getPointData().getScalars();
 
     let imageRange;
     if (!scalarData) {

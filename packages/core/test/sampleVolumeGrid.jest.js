@@ -166,6 +166,73 @@ function createRandomGrid(random) {
 }
 
 /**
+ * Builds a random straight cut of the test volume: the column step and the
+ * row step each move along one index axis by one or two voxels, and the start
+ * index is a whole number on those two axes. The coordinate on the third axis
+ * lies on a voxel center, half way between two centers, anywhere between them,
+ * or just outside the volume. Many cuts reach partly outside the volume.
+ */
+function createRandomStraightCut(random) {
+  const axes = [0, 1, 2].sort(() => random() - 0.5);
+  const [columnAxis, rowAxis, fixedAxis] = axes;
+  const wholeStep = () => (random() < 0.5 ? -1 : 1) * (random() < 0.8 ? 1 : 2);
+  const columnStep = [0, 0, 0];
+  const rowStep = [0, 0, 0];
+  const startIndex = [0, 0, 0];
+  const fixedSize = dimensions[fixedAxis];
+  const fixedChoices = [
+    () => Math.floor(random() * fixedSize),
+    () => Math.floor(random() * (fixedSize - 1)) + 0.5,
+    () => random() * (fixedSize - 1),
+    () => -0.5 + random() * 0.5,
+    () => fixedSize - 1 + random() * 0.5,
+    () => (random() < 0.5 ? -0.6 : fixedSize - 0.4),
+    () => Math.floor(random() * fixedSize) + 1e-7,
+  ];
+
+  columnStep[columnAxis] = wholeStep();
+  rowStep[rowAxis] = wholeStep();
+  startIndex[columnAxis] =
+    Math.floor(random() * (dimensions[columnAxis] + 6)) - 3;
+  startIndex[rowAxis] = Math.floor(random() * (dimensions[rowAxis] + 6)) - 3;
+  startIndex[fixedAxis] =
+    fixedChoices[Math.floor(random() * fixedChoices.length)]();
+
+  return {
+    width: 1 + Math.floor(random() * 12),
+    height: 1 + Math.floor(random() * 10),
+    startIndex,
+    columnStep,
+    rowStep,
+  };
+}
+
+/**
+ * Picks the outside value, the value range and the rounding of a test grid.
+ */
+function createRandomFinishOptions(random) {
+  const choice = Math.floor(random() * 4);
+
+  if (choice === 0) {
+    return {};
+  }
+
+  if (choice === 1) {
+    return { outsideValue: -1000, round: true };
+  }
+
+  if (choice === 2) {
+    return {
+      outsideValue: 3,
+      valueRange: { min: -400, max: 300 },
+      round: random() < 0.5,
+    };
+  }
+
+  return { outsideValue: 70000 };
+}
+
+/**
  * Samples the grid with sampleVolumeGrid into a plain array, so that the
  * values are compared before any typed array conversion.
  */
@@ -411,5 +478,163 @@ describe('sampleVolumeGrid', () => {
       min: Math.min(...expected),
       max: Math.max(...expected),
     });
+  });
+
+  describe.each([
+    ['slices', Int16Array],
+    ['volume', Int16Array],
+    ['slices', Float32Array],
+    ['volume', Float32Array],
+  ])('on a straight cut with voxel access "%s" and %p', (access, ArrayType) => {
+    it.each([
+      ['nearest', InterpolationType.NEAREST],
+      ['linear', InterpolationType.LINEAR],
+    ])(
+      'gives the values and the range of the general loop with %s sampling',
+      (_name, interpolationType) => {
+        const random = createRandom(interpolationType + 101);
+
+        for (let gridNumber = 0; gridNumber < 600; gridNumber++) {
+          const grid = createRandomStraightCut(random);
+          const options = {
+            ...grid,
+            interpolationType,
+            ...createRandomFinishOptions(random),
+          };
+          const { volume, getAtIJK } = createVolume({ ArrayType, access });
+          const sampled = sampleGrid(volume, options);
+          const general = sampleGrid(
+            createVolume({ ArrayType, access: 'hidden' }).volume,
+            options
+          );
+
+          expect({ gridNumber, ...sampled }).toEqual({
+            gridNumber,
+            ...general,
+          });
+          expect(getAtIJK).not.toHaveBeenCalled();
+        }
+      }
+    );
+
+    it.each([
+      ['nearest', InterpolationType.NEAREST],
+      ['linear', InterpolationType.LINEAR],
+    ])(
+      'writes the values of the general loop into a typed array with %s sampling',
+      (_name, interpolationType) => {
+        const random = createRandom(interpolationType + 202);
+
+        for (let gridNumber = 0; gridNumber < 300; gridNumber++) {
+          const grid = createRandomStraightCut(random);
+          const options = {
+            ...grid,
+            interpolationType,
+            ...createRandomFinishOptions(random),
+          };
+          const sampled = new ArrayType(grid.width * grid.height);
+          const general = new ArrayType(grid.width * grid.height);
+          const sampledRange = sampleVolumeGrid({
+            volume: createVolume({ ArrayType, access }).volume,
+            pixelData: sampled,
+            ...options,
+          });
+          const generalRange = sampleVolumeGrid({
+            volume: createVolume({ ArrayType, access: 'hidden' }).volume,
+            pixelData: general,
+            ...options,
+          });
+
+          expect({ gridNumber, values: Array.from(sampled) }).toEqual({
+            gridNumber,
+            values: Array.from(general),
+          });
+          expect(sampledRange).toEqual(generalRange);
+        }
+      }
+    );
+  });
+
+  it('copies the rows of a coronal cut with TypedArray.set', () => {
+    const { volume, volumeArray } = createVolume();
+    const pixelData = new Int16Array(dimensions[0] * dimensions[2]);
+    const setSpy = jest.spyOn(pixelData, 'set');
+    const row = 2;
+
+    sampleVolumeGrid({
+      volume,
+      pixelData,
+      width: dimensions[0],
+      height: dimensions[2],
+      startIndex: [0, row, 0],
+      columnStep: [1, 0, 0],
+      rowStep: [0, 0, 1],
+    });
+
+    const expected = [];
+
+    for (let k = 0; k < dimensions[2]; k++) {
+      const first = k * sliceSize + row * dimensions[0];
+
+      expected.push(...volumeArray.subarray(first, first + dimensions[0]));
+    }
+
+    expect(setSpy).toHaveBeenCalledTimes(dimensions[2]);
+    expect(Array.from(pixelData)).toEqual(expected);
+  });
+
+  it('mixes the two columns of voxels around a sagittal cut between them', () => {
+    const { volume, volumeArray } = createVolume();
+    const position = 2.25;
+    const sampled = sampleGrid(volume, {
+      width: dimensions[1],
+      height: dimensions[2],
+      startIndex: [position, 0, 0],
+      columnStep: [0, 1, 0],
+      rowStep: [0, 0, 1],
+      interpolationType: InterpolationType.LINEAR,
+      round: true,
+    });
+    const expected = [];
+
+    for (let k = 0; k < dimensions[2]; k++) {
+      for (let j = 0; j < dimensions[1]; j++) {
+        const lower = k * sliceSize + j * dimensions[0] + 2;
+
+        expected.push(
+          Math.round(volumeArray[lower] * 0.75 + volumeArray[lower + 1] * 0.25)
+        );
+      }
+    }
+
+    expect(sampled.values).toEqual(expected);
+  });
+
+  it('gives the values of the general loop for a float volume with values that are not finite', () => {
+    const random = createRandom(19);
+
+    for (let gridNumber = 0; gridNumber < 200; gridNumber++) {
+      const grid = createRandomStraightCut(random);
+      const interpolationType =
+        gridNumber % 2 ? InterpolationType.LINEAR : InterpolationType.NEAREST;
+      const options = { ...grid, interpolationType, outsideValue: -3 };
+      const withSpecialValues = (access) => {
+        const created = createVolume({ ArrayType: Float32Array, access });
+
+        created.volumeArray[3] = Infinity;
+        created.volumeArray[sliceSize + 9] = NaN;
+        created.volumeArray[2 * sliceSize + 20] = -Infinity;
+
+        return created.volume;
+      };
+
+      expect({
+        gridNumber,
+        ...sampleGrid(withSpecialValues('slices'), options),
+      }).toEqual({
+        gridNumber,
+        ...sampleGrid(withSpecialValues('hidden'), options),
+      });
+    }
   });
 });

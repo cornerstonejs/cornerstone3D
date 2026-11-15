@@ -5,6 +5,7 @@ import { CpuImageSlicePath } from './CpuImageSliceRenderPath';
 import { CpuVolumeSlicePath } from './CpuVolumeSliceRenderPath';
 import { VtkImageMapperPath } from './VtkImageMapperRenderPath';
 import { VtkVolumeSlicePath } from './VtkVolumeSliceRenderPath';
+import { VtkSampledSlicePath } from './VtkSampledSliceRenderPath';
 
 /**
  * The built-in planar render paths (the 'gpu' and 'cpu' backends' modes) plus
@@ -17,6 +18,7 @@ export function createDefaultPlanarRenderPaths(): RenderPathDefinition[] {
     new CpuVolumeSlicePath(),
     new VtkImageMapperPath(),
     new VtkVolumeSlicePath(),
+    new VtkSampledSlicePath(),
     ...createRegisteredPlanarRenderPaths(),
   ];
 }

@@ -3,15 +3,14 @@ import CanvasActor from '../../CanvasActor';
 import { Events, ViewportStatus, ViewportType } from '../../../enums';
 import eventTarget from '../../../eventTarget';
 import { ActorRenderMode } from '../../../types';
-import type { IImageData, Point2, Point3 } from '../../../types';
+import type { IImageVolume, Point3 } from '../../../types';
 import type { IViewport } from '../../../types/IViewport';
 import triggerEvent from '../../../utilities/triggerEvent';
-import { createCanvas } from '../../helpers/getOrCreateCanvas';
-import drawImageSync from '../../helpers/cpuFallback/drawImageSync';
-import setToPixelCoordinateSystem from '../../helpers/cpuFallback/rendering/setToPixelCoordinateSystem';
 import { getDefaultVolumeVOIRange } from '../../helpers/setDefaultVolumeVOI';
-import { getConfiguration, getLossyDownsampling } from '../../../init';
+import * as lifecycle from '../../helpers/volumeStrategyLifecycle';
+import { getConfiguration } from '../../../init';
 import uuidv4 from '../../../utilities/uuidv4';
+import type { VolumeSliceGeometry } from '../../../utilities/volumeSliceGeometry';
 import type {
   DataAddOptions,
   LoadedData,
@@ -24,30 +23,80 @@ import type {
   PlanarDataPresentation,
   PlanarCpuVolumeAdapterContext,
   PlanarPayload,
+  PlanarResolvedICamera,
   PlanarViewportRenderContext,
 } from './PlanarViewportTypes';
 import type { PlanarCpuVolumeRendering } from './planarRuntimeTypes';
-import PlanarCPUVolumeSampler from './PlanarCPUVolumeSampler';
 import { triggerPlanarVolumeNewImage } from './planarImageEvents';
 import {
-  canvasToWorldPlanarRenderPathProjection,
   getPlanarRenderPathActiveSourceICamera,
   resolvePlanarRenderPathProjection,
-  worldToCanvasPlanarRenderPathProjection,
 } from './planarRenderPathProjection';
+import {
+  PlanarSliceSampler,
+  getPlanarSampledSliceInputs,
+} from './planarSampledSlice';
+import type {
+  PlanarSampledSlice,
+  PlanarSampledSliceInputs,
+} from './planarSampledSlice';
+import {
+  PlanarSampledSliceCanvas,
+  beginPlanarCanvasPass,
+  getResolvedVOIRange,
+} from './planarSampledSliceCanvas';
+import {
+  getCanvasScreenSliceGeometry,
+  getNeighbourCameras,
+  recordPlaneMove,
+  scheduleSampledSliceRestWork,
+} from './planarSampledSliceRest';
+import type { PlanarSlicePlaneMoves } from './planarSampledSliceRest';
+import { canSampleSlabOnCpu } from './PlanarRenderPathDecisionService';
+import { buildPlanarVolumeImageData } from './VtkVolumeSliceRenderPath';
 import {
   isSegmentationOverlayData,
   isVolumeLoading,
 } from '../renderingFidelity';
 
-const DEFERRED_VIEWPORT_RESAMPLE_DELAY_MS = 80;
+/** The parts of one mounted CPU volume slice. */
+type CpuVolumeSliceMount = PlanarSlicePlaneMoves & {
+  ctx: PlanarCpuVolumeAdapterContext;
+  dataId: string;
+  rendering: PlanarCpuVolumeRendering;
+  sampler: PlanarSliceSampler;
+  draw: PlanarSampledSliceCanvas;
+  /** Cancels the pending work at rest: the rest timer or an idle prefetch. */
+  cancelRestWork?: () => void;
+  /** The slice drawn last and the screen grid it was drawn for. */
+  shownSlice?: PlanarSampledSlice;
+  shownScreen?: VolumeSliceGeometry;
+};
 
-/** @internal */
+/**
+ * The render path of `cpuVolume`: a volume-backed display set whose visible
+ * slice is cut out of the volume on the CPU and drawn on the 2D canvas of the
+ * viewport.
+ *
+ * It wires the same two steps as the sampled slice path of the GPU
+ * (`VtkSampledSliceRenderPath`): the sample step (`PlanarSliceSampler`, plain
+ * data, with its cache of neighbour slices, slabs and time points) and a draw
+ * step (`PlanarSampledSliceCanvas`, the only part that knows the canvas
+ * drawing). The slice is sampled when the viewport renders; a render with the
+ * same plane and inputs finds the kept slice. When the slice on screen or the
+ * screen grid changes, the work at rest starts again
+ * (`scheduleSampledSliceRestWork`): a slice that the canvas cannot enlarge
+ * exactly is sampled once more on the screen grid, and the neighbours are
+ * prefetched. The canvas enlarges colours, not values, so that is every
+ * LINEAR slice, an oblique NEAREST slice and a maximum or minimum slab
+ * (`PlanarSliceSamplerOptions.enlargesColours`); a NEAREST slice along a
+ * volume axis stays the voxel-size slice, enlarged without smoothing.
+ *
+ * @internal
+ */
 export class CpuVolumeSliceRenderPath
   implements RenderPath<PlanarCpuVolumeAdapterContext>
 {
-  private readonly sampler = new PlanarCPUVolumeSampler();
-
   async addData(
     ctx: PlanarCpuVolumeAdapterContext,
     data: LoadedData,
@@ -62,10 +111,15 @@ export class CpuVolumeSliceRenderPath
     }
 
     const defaultVOIRange = await getDefaultVolumeVOIRange(payload.imageVolume);
-    let rendering: PlanarCpuVolumeRendering;
+    const sampler = new PlanarSliceSampler({ enlargesColours: true });
+    const draw = new PlanarSampledSliceCanvas(
+      payload.imageVolume,
+      ctx.cpu.canvas.width,
+      ctx.cpu.canvas.height
+    );
     const compatibilityActor = new CanvasActor(
       {
-        getImageData: () => this.getImageData(rendering),
+        getImageData: () => buildPlanarVolumeImageData(payload.imageVolume),
       } as unknown as IViewport,
       payload.imageVolume.imageIds?.length
         ? { imageId: payload.imageVolume.imageIds[0] }
@@ -73,10 +127,9 @@ export class CpuVolumeSliceRenderPath
     );
 
     compatibilityActor.setVisibility(true);
-
     ctx.display.activateRenderMode(ActorRenderMode.CPU_VOLUME);
 
-    rendering = {
+    const rendering: PlanarCpuVolumeRendering = {
       renderMode: ActorRenderMode.CPU_VOLUME,
       actorEntryUID: uuidv4(),
       excludeFromFidelity: isSegmentationOverlayData(payload, options),
@@ -86,140 +139,25 @@ export class CpuVolumeSliceRenderPath
       imageVolume: payload.imageVolume,
       imageIds: payload.imageIds,
       acquisitionOrientation: payload.acquisitionOrientation,
-      layerCanvas: createCanvas(
-        null,
-        ctx.cpu.canvas.width,
-        ctx.cpu.canvas.height
-      ),
       currentImageIdIndex: payload.initialImageIdIndex ?? 0,
       maxImageIdIndex: payload.imageIds.length - 1,
       defaultVOIRange,
       renderingInvalidated: true,
       compositeActor: payload.reference?.kind === 'segmentation',
-      removeStreamingSubscriptions: (() => {
-        let isActive = true;
-        let pendingAnimationFrameId: number | undefined;
-        let pendingVolumeModifiedTimeoutId: number | undefined;
-        let lastVolumeModifiedRenderTime = -Infinity;
-        const volumeModifiedThrottleMs = getCpuVolumeModifiedThrottleMs();
-        const renderVolumeModified = () => {
-          if (!isActive) {
-            return;
-          }
-
-          lastVolumeModifiedRenderTime = performance.now();
-          ctx.display.renderNow();
-        };
-        const scheduleVolumeModifiedRender = () => {
-          if (volumeModifiedThrottleMs <= 0) {
-            renderVolumeModified();
-            return;
-          }
-
-          if (pendingVolumeModifiedTimeoutId !== undefined) {
-            return;
-          }
-
-          const remainingDelay = Math.max(
-            0,
-            volumeModifiedThrottleMs -
-              (performance.now() - lastVolumeModifiedRenderTime)
-          );
-
-          if (remainingDelay === 0) {
-            renderVolumeModified();
-            return;
-          }
-
-          pendingVolumeModifiedTimeoutId = window.setTimeout(() => {
-            pendingVolumeModifiedTimeoutId = undefined;
-            renderVolumeModified();
-          }, remainingDelay);
-        };
-        const unsubscribe = subscribeToVolumeEvents(
-          payload.volumeId,
-          (eventType) => {
-            if (!isActive) {
-              return;
-            }
-
-            const shouldResampleOnDeferredPass =
-              eventType === Events.IMAGE_VOLUME_LOADING_COMPLETED;
-
-            const voxelManager = payload.imageVolume.voxelManager;
-
-            voxelManager?.invalidateCache?.();
-            if (voxelManager) {
-              this.sampler.clearCachedScalarRange(voxelManager);
-            }
-            cancelDeferredViewportResample(rendering);
-            rendering.pendingVolumeLoadCallback = false;
-            this.releaseSampledSliceState(rendering);
-            rendering.renderingInvalidated = true;
-
-            if (eventType === Events.IMAGE_VOLUME_MODIFIED) {
-              scheduleVolumeModifiedRender();
-            } else {
-              if (pendingVolumeModifiedTimeoutId !== undefined) {
-                window.clearTimeout(pendingVolumeModifiedTimeoutId);
-                pendingVolumeModifiedTimeoutId = undefined;
-              }
-              ctx.display.renderNow();
-            }
-
-            if (!isActive) {
-              return;
-            }
-
-            if (!shouldResampleOnDeferredPass) {
-              return;
-            }
-
-            ctx.display.setNeedsRender();
-            pendingAnimationFrameId = window.requestAnimationFrame(() => {
-              pendingAnimationFrameId = undefined;
-
-              if (!isActive) {
-                return;
-              }
-
-              if (shouldResampleOnDeferredPass) {
-                // The completion event can arrive before the streamed voxel
-                // buffer is fully stable for CPU sampling. Retry one frame
-                // later with a fresh scalar cache, but keep progressive
-                // IMAGE_VOLUME_MODIFIED updates on their lighter redraw path.
-                voxelManager?.invalidateCache?.();
-                if (voxelManager) {
-                  this.sampler.clearCachedScalarRange(voxelManager);
-                }
-                this.releaseSampledSliceState(rendering);
-                rendering.renderingInvalidated = true;
-              }
-
-              ctx.display.renderNow();
-            });
-          }
-        );
-
-        return () => {
-          isActive = false;
-          rendering.pendingVolumeLoadCallback = false;
-          this.releaseSampledSliceState(rendering);
-
-          if (pendingAnimationFrameId !== undefined) {
-            window.cancelAnimationFrame(pendingAnimationFrameId);
-            pendingAnimationFrameId = undefined;
-          }
-
-          if (pendingVolumeModifiedTimeoutId !== undefined) {
-            window.clearTimeout(pendingVolumeModifiedTimeoutId);
-            pendingVolumeModifiedTimeoutId = undefined;
-          }
-
-          unsubscribe();
-        };
-      })(),
+      getSliceCacheStatistics: () => sampler.getStatistics(),
     };
+    const mount: CpuVolumeSliceMount = {
+      ctx,
+      dataId: data.id,
+      rendering,
+      sampler,
+      draw,
+    };
+
+    rendering.removeStreamingSubscriptions = this.subscribeToVolumeData(
+      mount,
+      payload.volumeId
+    );
 
     triggerPlanarVolumeNewImage(ctx, {
       camera: ctx.viewport.getViewState(),
@@ -232,13 +170,14 @@ export class CpuVolumeSliceRenderPath
     return {
       rendering,
       updateDataPresentation: (props) => {
-        this.updateDataPresentation(ctx, rendering, data.id, props);
+        this.updateDataPresentation(mount, props);
       },
       applyViewState: (camera) => {
-        this.applyViewState(ctx, rendering, data.id, camera);
+        ctx.display.activateRenderMode(ActorRenderMode.CPU_VOLUME);
+        this.syncRenderCamera(mount, camera as PlanarViewState | undefined);
       },
       getFrameOfReferenceUID: () => {
-        return this.getFrameOfReferenceUID(rendering);
+        return rendering.imageVolume.metadata?.FrameOfReferenceUID;
       },
       getActorEntry: (data) => {
         const planarData = data as LoadedData<PlanarPayload>;
@@ -251,282 +190,183 @@ export class CpuVolumeSliceRenderPath
         });
       },
       getImageData: () => {
-        return this.getImageData(rendering);
+        return buildPlanarVolumeImageData(rendering.imageVolume);
       },
       render: () => {
-        this.render(ctx, rendering);
+        this.render(mount);
       },
       resize: () => {
-        this.resize(ctx, rendering, data.id);
+        this.syncRenderCamera(mount, ctx.viewport.getViewState());
       },
       removeData: () => {
-        this.removeData(ctx, rendering);
+        this.removeData(mount);
       },
     };
   }
 
+  /**
+   * Listens for new voxel data of the volume and for a change of its active
+   * time point. Each makes the kept slices stale, so the next render samples
+   * again, and asks for a render. A progressive or edited update
+   * (`IMAGE_VOLUME_MODIFIED`) renders at most once per
+   * `rendering.planar.cpuVolume.volumeModifiedThrottleMs`; the end of the load
+   * renders at once and once more at the next animation frame, because the
+   * completion event can arrive before the streamed voxels are stable; a new
+   * time point renders at once.
+   *
+   * @returns the function that removes the listeners
+   */
+  private subscribeToVolumeData(
+    mount: CpuVolumeSliceMount,
+    volumeId: string
+  ): () => void {
+    const { ctx, rendering, sampler } = mount;
+    const voxelManager = rendering.imageVolume.voxelManager;
+    const throttleMs = getCpuVolumeModifiedThrottleMs();
+    let isActive = true;
+    let frameId: number | undefined;
+    let throttleTimeoutId: number | undefined;
+    let lastThrottledRenderTime = -Infinity;
+    const invalidate = () => {
+      voxelManager?.invalidateCache?.();
+      sampler.invalidate();
+      rendering.pendingVolumeLoadCallback = false;
+      rendering.renderingInvalidated = true;
+    };
+    const renderThrottled = () => {
+      lastThrottledRenderTime = performance.now();
+      ctx.display.renderNow();
+    };
+    const clearThrottle = () => {
+      if (throttleTimeoutId !== undefined) {
+        window.clearTimeout(throttleTimeoutId);
+        throttleTimeoutId = undefined;
+      }
+    };
+    const onVolumeModified = () => {
+      const remainingDelay = Math.max(
+        0,
+        throttleMs - (performance.now() - lastThrottledRenderTime)
+      );
+
+      if (throttleMs <= 0 || remainingDelay === 0) {
+        renderThrottled();
+        return;
+      }
+
+      if (throttleTimeoutId !== undefined) {
+        return;
+      }
+
+      throttleTimeoutId = window.setTimeout(() => {
+        throttleTimeoutId = undefined;
+
+        if (isActive) {
+          renderThrottled();
+        }
+      }, remainingDelay);
+    };
+    const onLoadingCompleted = () => {
+      clearThrottle();
+      ctx.display.renderNow();
+
+      if (!isActive) {
+        return;
+      }
+
+      ctx.display.setNeedsRender();
+      frameId = window.requestAnimationFrame(() => {
+        frameId = undefined;
+
+        if (!isActive) {
+          return;
+        }
+
+        invalidate();
+        ctx.display.renderNow();
+      });
+    };
+    const removeVolumeSubscriptions = lifecycle.subscribeToVolumeEvents(
+      volumeId,
+      (eventType) => {
+        if (!isActive || eventType === Events.VOLUME_TEXTURE_LIMITS_CHANGED) {
+          return;
+        }
+
+        invalidate();
+
+        if (eventType === Events.IMAGE_VOLUME_MODIFIED) {
+          onVolumeModified();
+          return;
+        }
+
+        onLoadingCompleted();
+      }
+    );
+    const onTimePointChanged = (evt: Event) => {
+      if (
+        !isActive ||
+        (evt as CustomEvent<{ volumeId?: string }>).detail?.volumeId !==
+          volumeId
+      ) {
+        return;
+      }
+
+      invalidate();
+      ctx.display.renderNow();
+    };
+
+    eventTarget.addEventListener(
+      Events.DYNAMIC_VOLUME_DIMENSION_GROUP_CHANGED,
+      onTimePointChanged
+    );
+
+    return () => {
+      isActive = false;
+      rendering.pendingVolumeLoadCallback = false;
+      clearThrottle();
+
+      if (frameId !== undefined) {
+        window.cancelAnimationFrame(frameId);
+        frameId = undefined;
+      }
+
+      removeVolumeSubscriptions();
+      eventTarget.removeEventListener(
+        Events.DYNAMIC_VOLUME_DIMENSION_GROUP_CHANGED,
+        onTimePointChanged
+      );
+    };
+  }
+
   private updateDataPresentation(
-    ctx: PlanarCpuVolumeAdapterContext,
-    rendering: PlanarCpuVolumeRendering,
-    dataId: string,
+    mount: CpuVolumeSliceMount,
     props: unknown
   ): void {
+    const { ctx, rendering } = mount;
     const previousInterpolationType =
       rendering.dataPresentation?.interpolationType;
-    const { slabThickness: _slabThickness, ...dataPresentation } =
+    const dataPresentation =
       (props as PlanarDataPresentation | undefined) || {};
 
     rendering.dataPresentation = Object.keys(dataPresentation).length
-      ? (dataPresentation as PlanarCpuVolumeRendering['dataPresentation'])
+      ? dataPresentation
       : undefined;
+    rendering.renderingInvalidated = true;
 
     if (
       previousInterpolationType !==
       rendering.dataPresentation?.interpolationType
     ) {
-      this.syncRenderCamera(
-        ctx,
-        rendering,
-        dataId,
-        ctx.viewport.getViewState()
-      );
-      return;
+      this.syncRenderCamera(mount, ctx.viewport.getViewState());
     }
-
-    rendering.renderingInvalidated = true;
-  }
-
-  private applyViewState(
-    ctx: PlanarCpuVolumeAdapterContext,
-    rendering: PlanarCpuVolumeRendering,
-    dataId: string,
-    cameraInput: unknown
-  ): void {
-    ctx.display.activateRenderMode(ActorRenderMode.CPU_VOLUME);
-    this.syncRenderCamera(
-      ctx,
-      rendering,
-      dataId,
-      cameraInput as PlanarViewState | undefined
-    );
-  }
-
-  private canvasToWorld(
-    ctx: PlanarCpuVolumeAdapterContext,
-    rendering: PlanarCpuVolumeRendering,
-    canvasPos: Point2
-  ): Point3 {
-    return canvasToWorldPlanarRenderPathProjection({
-      canvas: ctx.cpu.canvas,
-      canvasPos,
-      ctx,
-    });
-  }
-
-  private worldToCanvas(
-    ctx: PlanarCpuVolumeAdapterContext,
-    rendering: PlanarCpuVolumeRendering,
-    worldPos: Point3
-  ): Point2 {
-    return worldToCanvasPlanarRenderPathProjection({
-      canvas: ctx.cpu.canvas,
-      ctx,
-      worldPos,
-    });
-  }
-
-  private getFrameOfReferenceUID(
-    rendering: PlanarCpuVolumeRendering
-  ): string | undefined {
-    return rendering.imageVolume.metadata?.FrameOfReferenceUID;
-  }
-
-  private getImageData(
-    rendering: PlanarCpuVolumeRendering
-  ): IImageData | undefined {
-    return buildPlanarVolumeImageData(rendering.imageVolume);
-  }
-
-  private render(
-    ctx: PlanarCpuVolumeAdapterContext,
-    rendering: PlanarCpuVolumeRendering
-  ): void {
-    const runtime = rendering;
-
-    ctx.display.activateRenderMode(ActorRenderMode.CPU_VOLUME);
-    ctx.cpu.canvas.style.display = '';
-    ctx.cpu.canvas.style.opacity = '1';
-
-    if (runtime.dataPresentation?.visible === false) {
-      beginCompositePass(ctx);
-      return;
-    }
-
-    const loadStatus = (
-      runtime.imageVolume as { loadStatus?: { loaded?: boolean } }
-    ).loadStatus;
-    const hasStreamedFrameData = hasStreamedVolumeData(runtime.imageVolume);
-    const isVolumeReady =
-      loadStatus === undefined ||
-      loadStatus.loaded === true ||
-      hasStreamedFrameData;
-
-    if (!isVolumeReady) {
-      if (!runtime.pendingVolumeLoadCallback) {
-        runtime.pendingVolumeLoadCallback = true;
-        runtime.imageVolume.load();
-      }
-      ctx.display.setNeedsRender();
-      return;
-    }
-
-    runtime.pendingVolumeLoadCallback = false;
-
-    if (!ctx.cpu.canvas.width || !ctx.cpu.canvas.height) {
-      return;
-    }
-
-    const activeSourceICamera = getPlanarRenderPathActiveSourceICamera(ctx);
-
-    if (!activeSourceICamera) {
-      return;
-    }
-
-    beginCompositePass(ctx);
-
-    const layerCanvasWasResized = syncLayerCanvasSize(
-      runtime.layerCanvas,
-      ctx.cpu.canvas
-    );
-
-    if (layerCanvasWasResized) {
-      runtime.renderingInvalidated = true;
-    }
-    const useViewportSamplingForLinear =
-      getUseViewportSamplingForLinearCPUVolume();
-    const resampleDecision = runtime.forceHighQualityResample
-      ? 'resample'
-      : this.sampler.getResampleDecision({
-          sampledSliceState: runtime.sampledSliceState,
-          width: ctx.cpu.canvas.width,
-          height: ctx.cpu.canvas.height,
-          camera: activeSourceICamera,
-          dataPresentation: runtime.dataPresentation,
-          // A deferred resample shows the previous sample while the camera
-          // moves, which is an interactive downsampling.
-          deferViewportResample:
-            useViewportSamplingForLinear && getLossyDownsampling().interactive,
-        });
-    const shouldResample = resampleDecision === 'resample';
-
-    if (resampleDecision === 'defer') {
-      scheduleDeferredViewportResample(ctx, runtime);
-    } else {
-      cancelDeferredViewportResample(runtime);
-    }
-
-    // The sampler reads the full volume, so the record is the record of the
-    // full grid. A deferred resample shows the older sample, transformed to
-    // the new camera, until the high-quality resample (GENVIEW-FIDELITY-1).
-    runtime.voxelQuality = runtime.imageVolume.getVoxelQuality?.();
-    runtime.qualityPending = isVolumeLoading(runtime.imageVolume);
-    runtime.fullGrid = runtime.imageVolume.voxelGrid;
-    runtime.interactiveReduction =
-      resampleDecision === 'defer' && !!runtime.sampledSliceState;
-
-    let sampledSliceState = runtime.sampledSliceState;
-
-    if (shouldResample) {
-      this.releaseSampledSliceState(runtime);
-      runtime.forceHighQualityResample = false;
-      sampledSliceState = runtime.sampledSliceState =
-        this.sampler.sampleSliceImage({
-          volume: runtime.imageVolume,
-          width: ctx.cpu.canvas.width,
-          height: ctx.cpu.canvas.height,
-          camera: activeSourceICamera,
-          dataPresentation: runtime.dataPresentation,
-          useViewportSamplingForLinear,
-        });
-    }
-
-    if (!sampledSliceState) {
-      return;
-    }
-
-    if (shouldResample) {
-      runtime.renderingInvalidated = true;
-    }
-
-    runtime.enabledElement = this.sampler.createOrUpdateEnabledElement({
-      enabledElement: runtime.enabledElement,
-      canvas: runtime.layerCanvas,
-      image: sampledSliceState.image,
-      modality: runtime.imageVolume.metadata?.Modality,
-    });
-    this.sampler.updateCPUFallbackViewport({
-      enabledElement: runtime.enabledElement,
-      sampledSliceState,
-      camera: activeSourceICamera,
-      dataPresentation: runtime.dataPresentation,
-      defaultVOIRange: runtime.defaultVOIRange,
-    });
-    runtime.defaultVOIRange ||= this.sampler.getResolvedVOIRange(
-      runtime.dataPresentation?.voiRange,
-      sampledSliceState.image.minPixelValue ?? 0,
-      sampledSliceState.image.maxPixelValue ?? 1
-    );
-
-    if (shouldResample) {
-      runtime.compatibilityActor
-        .getMapper()
-        .getInputData()
-        .setDerivedImage(sampledSliceState.image);
-    }
-
-    if (runtime.compositeActor) {
-      renderCanvasActorLayer(runtime);
-    } else {
-      drawImageSync(runtime.enabledElement, runtime.renderingInvalidated);
-    }
-
-    runtime.renderingInvalidated = false;
-    compositeLayerCanvas(ctx, runtime);
-    ctx.display.markRendered();
-    triggerEvent(ctx.viewport.element, Events.IMAGE_RENDERED, {
-      element: ctx.viewport.element,
-      viewportId: ctx.viewportId,
-      renderingEngineId: ctx.renderingEngineId,
-      viewportStatus: ViewportStatus.RENDERED,
-    });
-  }
-
-  private resize(
-    ctx: PlanarCpuVolumeAdapterContext,
-    rendering: PlanarCpuVolumeRendering,
-    dataId: string
-  ): void {
-    this.syncRenderCamera(ctx, rendering, dataId, ctx.viewport.getViewState());
-  }
-
-  private removeData(
-    ctx: PlanarCpuVolumeAdapterContext,
-    rendering: PlanarCpuVolumeRendering
-  ): void {
-    const { removeStreamingSubscriptions } = rendering;
-
-    cancelDeferredViewportResample(rendering);
-    removeStreamingSubscriptions?.();
-    this.releaseSampledSliceState(rendering);
-    this.sampler.clearSliceArrayPool?.();
   }
 
   private syncRenderCamera(
-    ctx: PlanarCpuVolumeAdapterContext,
-    rendering: PlanarCpuVolumeRendering,
-    dataId: string,
+    mount: CpuVolumeSliceMount,
     camera: PlanarViewState | undefined
   ): void {
+    const { ctx, dataId, rendering } = mount;
     const projection = resolvePlanarRenderPathProjection({
       ctx,
       dataId,
@@ -563,60 +403,235 @@ export class CpuVolumeSliceRenderPath
     }
   }
 
-  private releaseSampledSliceState(rendering: PlanarCpuVolumeRendering): void {
-    this.sampler.releaseSampledSliceState?.(rendering.sampledSliceState);
-    rendering.sampledSliceState = undefined;
-  }
-}
+  /**
+   * Draws the slice of the camera plane. The slice comes from the sampler,
+   * which samples only when the plane, the inputs or the voxels changed. A
+   * volume that has no voxels yet starts its load and draws nothing.
+   */
+  private render(mount: CpuVolumeSliceMount): void {
+    const { ctx, draw, rendering, sampler } = mount;
 
-function subscribeToVolumeEvents(
-  volumeId: string,
-  onUpdate: (
-    eventType:
-      | Events.IMAGE_VOLUME_MODIFIED
-      | Events.IMAGE_VOLUME_LOADING_COMPLETED
-  ) => void
-): () => void {
-  const handleUpdate = (evt: Event) => {
-    const detail = (evt as CustomEvent<{ volumeId?: string }>).detail;
+    ctx.display.activateRenderMode(ActorRenderMode.CPU_VOLUME);
+    ctx.cpu.canvas.style.display = '';
+    ctx.cpu.canvas.style.opacity = '1';
 
-    if (detail?.volumeId !== volumeId) {
+    if (rendering.dataPresentation?.visible === false) {
+      beginPlanarCanvasPass(ctx.cpu);
       return;
     }
 
-    onUpdate(
-      evt.type as
-        | Events.IMAGE_VOLUME_MODIFIED
-        | Events.IMAGE_VOLUME_LOADING_COMPLETED
-    );
-  };
+    if (!isVolumeReady(rendering.imageVolume)) {
+      if (!rendering.pendingVolumeLoadCallback) {
+        rendering.pendingVolumeLoadCallback = true;
+        rendering.imageVolume.load();
+      }
+      ctx.display.setNeedsRender();
+      return;
+    }
 
-  eventTarget.addEventListener(Events.IMAGE_VOLUME_MODIFIED, handleUpdate);
-  eventTarget.addEventListener(
-    Events.IMAGE_VOLUME_LOADING_COMPLETED,
-    handleUpdate
-  );
+    rendering.pendingVolumeLoadCallback = false;
 
-  return () => {
-    eventTarget.removeEventListener(Events.IMAGE_VOLUME_MODIFIED, handleUpdate);
-    eventTarget.removeEventListener(
-      Events.IMAGE_VOLUME_LOADING_COMPLETED,
-      handleUpdate
+    if (!ctx.cpu.canvas.width || !ctx.cpu.canvas.height) {
+      return;
+    }
+
+    const camera = getPlanarRenderPathActiveSourceICamera(ctx);
+
+    if (!camera) {
+      return;
+    }
+
+    beginPlanarCanvasPass(ctx.cpu);
+    refreshCpuVolumeFidelity(rendering);
+    recordPlaneMove(mount, camera);
+
+    const screen = getCanvasScreenSliceGeometry(ctx.cpu.canvas, camera);
+    const slice = sampler.sample(
+      rendering.imageVolume,
+      camera,
+      getCpuSliceInputs(rendering, camera),
+      screen
     );
-  };
+
+    if (!slice) {
+      mount.shownSlice = undefined;
+      return;
+    }
+
+    if (
+      slice !== mount.shownSlice ||
+      !isSameGeometry(mount.shownScreen, screen)
+    ) {
+      this.restartRestWork(mount);
+    }
+
+    mount.shownSlice = slice;
+    mount.shownScreen = screen;
+
+    const { image, changed } = draw.setSlice(slice);
+
+    if (changed) {
+      rendering.renderingInvalidated = true;
+      rendering.compatibilityActor
+        .getMapper()
+        .getInputData()
+        .setDerivedImage(image);
+    }
+
+    draw.draw({
+      target: ctx.cpu,
+      camera,
+      presentation: rendering.dataPresentation,
+      defaultVOIRange: rendering.defaultVOIRange,
+      invalidated: rendering.renderingInvalidated,
+      canvasActor: rendering.compositeActor
+        ? rendering.compatibilityActor
+        : undefined,
+    });
+    rendering.defaultVOIRange ||= getResolvedVOIRange(
+      rendering.dataPresentation?.voiRange,
+      image.minPixelValue ?? 0,
+      image.maxPixelValue ?? 1
+    );
+    rendering.renderingInvalidated = false;
+    ctx.display.markRendered();
+    triggerEvent(ctx.viewport.element, Events.IMAGE_RENDERED, {
+      element: ctx.viewport.element,
+      viewportId: ctx.viewportId,
+      renderingEngineId: ctx.renderingEngineId,
+      viewportStatus: ViewportStatus.RENDERED,
+    });
+  }
+
+  /**
+   * Cancels the work at rest and starts it again for the view on screen. A
+   * slice of the screen grid sampled at rest is drawn with a render of the
+   * viewport, which finds it as the slice on screen and does not start the
+   * work again.
+   */
+  private restartRestWork(mount: CpuVolumeSliceMount): void {
+    const { ctx, dataId, rendering, sampler } = mount;
+
+    mount.cancelRestWork?.();
+    mount.cancelRestWork = scheduleSampledSliceRestWork({
+      sampler,
+      volume: rendering.imageVolume,
+      getCamera: () => getPlanarRenderPathActiveSourceICamera(ctx),
+      getInputs: () =>
+        getCpuSliceInputs(
+          rendering,
+          getPlanarRenderPathActiveSourceICamera(ctx)
+        ),
+      getScreen: (camera) =>
+        getCanvasScreenSliceGeometry(ctx.cpu.canvas, camera),
+      getNeighbours: (camera) =>
+        getNeighbourCameras({
+          ctx,
+          dataId,
+          rendering,
+          lastStep: mount.lastStep,
+          camera,
+        }),
+      onFinerSlice: (slice) => {
+        mount.shownSlice = slice;
+        rendering.renderingInvalidated = true;
+        ctx.display.renderNow();
+      },
+    });
+  }
+
+  private removeData(mount: CpuVolumeSliceMount): void {
+    mount.cancelRestWork?.();
+    mount.cancelRestWork = undefined;
+    mount.rendering.removeStreamingSubscriptions?.();
+    mount.sampler.release();
+    mount.draw.release();
+    mount.shownSlice = undefined;
+  }
 }
 
-function hasStreamedVolumeData(imageVolume: unknown): boolean {
-  const streamingState = imageVolume as {
+/**
+ * The sampling inputs of a CPU volume slice: those of the sampled slice path
+ * (`getPlanarSampledSliceInputs`), without the slab when the slab would take
+ * more work than `canSampleSlabOnCpu` allows for the view plane. The plain
+ * slice is then drawn, as this path did before it drew slabs.
+ */
+function getCpuSliceInputs(
+  rendering: PlanarCpuVolumeRendering,
+  camera: PlanarResolvedICamera | undefined
+): PlanarSampledSliceInputs {
+  const inputs = getPlanarSampledSliceInputs(
+    rendering.imageVolume,
+    rendering.dataPresentation
+  );
+
+  if (
+    inputs.slab &&
+    !canSampleSlabOnCpu(
+      rendering.imageVolume,
+      rendering.dataPresentation?.slabThickness,
+      camera?.viewPlaneNormal as Point3 | undefined
+    )
+  ) {
+    return { ...inputs, slab: undefined };
+  }
+
+  return inputs;
+}
+
+/**
+ * Whether a volume can be drawn: it is loaded, it has no load status, or some
+ * of its frames have arrived.
+ */
+function isVolumeReady(imageVolume: IImageVolume): boolean {
+  const streamingState = imageVolume as unknown as {
+    loadStatus?: { loaded?: boolean };
     framesLoaded?: number;
     framesProcessed?: number;
     framesUpdated?: number;
   };
 
-  return Boolean(
+  return (
+    streamingState.loadStatus === undefined ||
+    streamingState.loadStatus.loaded === true ||
     (streamingState.framesLoaded ?? 0) > 0 ||
-      (streamingState.framesProcessed ?? 0) > 0 ||
-      (streamingState.framesUpdated ?? 0) > 0
+    (streamingState.framesProcessed ?? 0) > 0 ||
+    (streamingState.framesUpdated ?? 0) > 0
+  );
+}
+
+/**
+ * Reads the fidelity of a CPU volume slice. The sampler reads the
+ * full-resolution voxels, so the record is the record of the full grid, and
+ * the slice on screen is never an interactive reduction.
+ */
+function refreshCpuVolumeFidelity(rendering: PlanarCpuVolumeRendering): void {
+  rendering.voxelQuality = rendering.imageVolume.getVoxelQuality?.();
+  rendering.qualityPending = isVolumeLoading(rendering.imageVolume);
+  rendering.fullGrid = rendering.imageVolume.voxelGrid;
+  rendering.interactiveReduction = false;
+}
+
+/** Whether two slice geometries are the same, number for number. */
+function isSameGeometry(
+  previous: VolumeSliceGeometry | undefined,
+  next: VolumeSliceGeometry | undefined
+): boolean {
+  if (!previous || !next) {
+    return previous === next;
+  }
+
+  return (
+    previous.width === next.width &&
+    previous.height === next.height &&
+    previous.spacing.every((value, index) => value === next.spacing[index]) &&
+    previous.origin.every((value, index) => value === next.origin[index]) &&
+    previous.xDirection.every(
+      (value, index) => value === next.xDirection[index]
+    ) &&
+    previous.yDirection.every(
+      (value, index) => value === next.yDirection[index]
+    )
   );
 }
 
@@ -629,39 +644,6 @@ function getCpuVolumeModifiedThrottleMs(): number {
   }
 
   return Math.max(0, Math.trunc(throttleMs));
-}
-
-function getUseViewportSamplingForLinearCPUVolume(): boolean {
-  return (
-    getConfiguration().rendering?.planar?.cpuVolume
-      ?.useViewportSamplingForLinear === true
-  );
-}
-
-function scheduleDeferredViewportResample(
-  ctx: PlanarCpuVolumeAdapterContext,
-  rendering: PlanarCpuVolumeRendering
-): void {
-  cancelDeferredViewportResample(rendering);
-  ctx.display.setNeedsRender();
-
-  rendering.deferredResampleTimeoutId = window.setTimeout(() => {
-    rendering.deferredResampleTimeoutId = undefined;
-    rendering.forceHighQualityResample = true;
-    rendering.renderingInvalidated = true;
-    ctx.display.renderNow();
-  }, DEFERRED_VIEWPORT_RESAMPLE_DELAY_MS);
-}
-
-function cancelDeferredViewportResample(
-  rendering: PlanarCpuVolumeRendering
-): void {
-  if (rendering.deferredResampleTimeoutId === undefined) {
-    return;
-  }
-
-  window.clearTimeout(rendering.deferredResampleTimeoutId);
-  rendering.deferredResampleTimeoutId = undefined;
 }
 
 /** @internal */
@@ -699,106 +681,4 @@ export class CpuVolumeSlicePath
       cpu: rootContext.cpu,
     };
   }
-}
-
-function renderCanvasActorLayer(rendering: PlanarCpuVolumeRendering): void {
-  const enabledElement = rendering.enabledElement;
-
-  if (!enabledElement) {
-    return;
-  }
-
-  const context = rendering.layerCanvas.getContext('2d');
-
-  if (!context) {
-    return;
-  }
-
-  context.setTransform(1, 0, 0, 1, 0, 0);
-  context.clearRect(
-    0,
-    0,
-    rendering.layerCanvas.width,
-    rendering.layerCanvas.height
-  );
-  context.imageSmoothingEnabled = !enabledElement.viewport.pixelReplication;
-  setToPixelCoordinateSystem(enabledElement, context);
-  rendering.compatibilityActor.render(undefined as never, context);
-}
-
-function clearToBackground(ctx: PlanarCpuVolumeAdapterContext): void {
-  ctx.cpu.context.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.cpu.context.clearRect(0, 0, ctx.cpu.canvas.width, ctx.cpu.canvas.height);
-  ctx.cpu.context.fillStyle = '#000';
-  ctx.cpu.context.fillRect(0, 0, ctx.cpu.canvas.width, ctx.cpu.canvas.height);
-}
-
-function beginCompositePass(ctx: PlanarCpuVolumeAdapterContext): void {
-  if (
-    ctx.cpu.composition.clearedRenderPassId === ctx.cpu.composition.renderPassId
-  ) {
-    return;
-  }
-
-  clearToBackground(ctx);
-  ctx.cpu.composition.clearedRenderPassId = ctx.cpu.composition.renderPassId;
-}
-
-function syncLayerCanvasSize(
-  layerCanvas: HTMLCanvasElement,
-  sharedCanvas: HTMLCanvasElement
-): boolean {
-  if (
-    layerCanvas.width === sharedCanvas.width &&
-    layerCanvas.height === sharedCanvas.height
-  ) {
-    return false;
-  }
-
-  layerCanvas.width = sharedCanvas.width;
-  layerCanvas.height = sharedCanvas.height;
-
-  return true;
-}
-
-function compositeLayerCanvas(
-  ctx: PlanarCpuVolumeAdapterContext,
-  rendering: PlanarCpuVolumeRendering
-): void {
-  const compositeOpacity = rendering.dataPresentation?.opacity ?? 1;
-
-  if (compositeOpacity <= 0) {
-    return;
-  }
-
-  ctx.cpu.context.save();
-  ctx.cpu.context.globalAlpha = compositeOpacity;
-  ctx.cpu.context.drawImage(rendering.layerCanvas, 0, 0);
-  ctx.cpu.context.restore();
-}
-
-function buildPlanarVolumeImageData(imageVolume): IImageData | undefined {
-  const vtkImageData = imageVolume.imageData;
-
-  if (!vtkImageData) {
-    return;
-  }
-
-  return {
-    dimensions: vtkImageData.getDimensions(),
-    spacing: vtkImageData.getSpacing(),
-    origin: vtkImageData.getOrigin(),
-    direction: vtkImageData.getDirection(),
-    imageData: vtkImageData,
-    metadata: {
-      Modality: imageVolume.metadata?.Modality,
-      FrameOfReferenceUID: imageVolume.metadata?.FrameOfReferenceUID,
-    },
-    get scalarData() {
-      return imageVolume.voxelManager?.getScalarData();
-    },
-    scaling: imageVolume.scaling,
-    hasPixelSpacing: imageVolume.hasPixelSpacing,
-    voxelManager: imageVolume.voxelManager,
-  };
 }

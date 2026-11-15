@@ -42,6 +42,13 @@ const enable = function (element: HTMLDivElement): void {
     );
   }
 
+  if (isPlanarViewport) {
+    element.addEventListener(
+      Enums.Events.IMAGE_RENDERED,
+      _labelmapImageMapperSupportListener as EventListener
+    );
+  }
+
   if (
     isVolumeViewport ||
     !canUseStackImageEvents ||
@@ -78,13 +85,62 @@ const disable = function (element: HTMLDivElement): void {
     Enums.Events.CAMERA_MODIFIED,
     _imageChangeEventListener as EventListener
   );
+  element.removeEventListener(
+    Enums.Events.IMAGE_RENDERED,
+    _labelmapImageMapperSupportListener as EventListener
+  );
 
   if (viewportId) {
     perViewportManualTriggers.delete(viewportId);
+    perViewportImageMapperSupport.delete(viewportId);
   }
 };
 
 const perViewportManualTriggers = new Map();
+const perViewportImageMapperSupport = new Map<string, boolean>();
+
+/**
+ * Renders the labelmaps of a planar next viewport again when the viewport
+ * starts or stops being able to draw them as labelmap slice images, so that
+ * the labelmap plan is chosen again. A slab change made through the
+ * presentation of a display set fires no camera event, and it fires no
+ * rendering pipeline event while the source stays on its render path (a
+ * sampled slice with a thin slab, or the GPU volume slice path), so this
+ * runs after each render of the viewport and costs one check of the
+ * viewport state.
+ */
+function _labelmapImageMapperSupportListener(evt) {
+  const { viewportId, renderingEngineId } = evt.detail;
+  const viewport = getEnabledElementByIds(viewportId, renderingEngineId)
+    ?.viewport as Types.IViewport | undefined;
+
+  if (!viewport) {
+    return;
+  }
+
+  const supported = canRenderVolumeViewportLabelmapAsImage(viewport);
+  const previousSupported = perViewportImageMapperSupport.get(viewportId);
+
+  perViewportImageMapperSupport.set(viewportId, supported);
+
+  if (previousSupported === undefined || previousSupported === supported) {
+    return;
+  }
+
+  const hasLabelmapRepresentation = getSegmentationRepresentations(
+    viewportId
+  )?.some(
+    (representation) =>
+      representation.type === SegmentationRepresentations.Labelmap
+  );
+
+  if (!hasLabelmapRepresentation) {
+    return;
+  }
+
+  perViewportManualTriggers.delete(viewportId);
+  triggerSegmentationRender(viewportId);
+}
 
 /**
  *  When the image is rendered, check what tools can be rendered for this element.
@@ -134,7 +190,8 @@ function _imageChangeEventListener(evt) {
             representation as {
               config?: { useSliceRendering?: boolean };
             }
-          ).config
+          ).config,
+          viewport
         )
       );
     }

@@ -297,6 +297,30 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     );
   };
 
+  /**
+   * Drops the GL texture of this texture when it lives in the given render
+   * window, after that window lost its WebGL context and got it back. The
+   * restored context holds none of the old storage, so the handle and the
+   * size go: the next build of a mapper allocates the storage again
+   * (`create3DFromRaw`), which marks every slice, and refills it from the
+   * voxels in memory. A texture of another window keeps its storage.
+   *
+   * @returns true when the texture dropped its storage
+   */
+  publicAPI.releaseLostContextResources = (openGLRenderWindow) => {
+    if (
+      !openGLRenderWindow ||
+      model._openGLRenderWindow !== openGLRenderWindow ||
+      !model.handle
+    ) {
+      return false;
+    }
+
+    publicAPI.releaseGraphicsResources(openGLRenderWindow);
+
+    return true;
+  };
+
   const superDelete = publicAPI.delete;
 
   publicAPI.delete = () => {

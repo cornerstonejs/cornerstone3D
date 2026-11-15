@@ -455,7 +455,8 @@ export function resolvePlanarViewportView(args: {
 
   if (
     rendering.renderMode === ActorRenderMode.CPU_VOLUME ||
-    rendering.renderMode === ActorRenderMode.VTK_VOLUME_SLICE
+    rendering.renderMode === ActorRenderMode.VTK_VOLUME_SLICE ||
+    rendering.renderMode === ActorRenderMode.VTK_SAMPLED_SLICE
   ) {
     const resolvedViewState =
       typeof sliceIndex === 'number'

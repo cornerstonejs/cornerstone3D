@@ -4,8 +4,10 @@ import { getSupportedTextureFormats } from './textureSupport';
 /**
  * Bump when the probes (or the meaning of any profile field) change so that
  * profiles cached by earlier versions are discarded.
+ * Version 2: the probes compare the values read back with the values
+ * uploaded, and norm16 needs both R16_SNORM and R16.
  */
-export const RENDERING_CAPABILITIES_PROBE_VERSION = 1;
+export const RENDERING_CAPABILITIES_PROBE_VERSION = 2;
 
 const STORAGE_KEY = 'cornerstone3D.renderingCapabilities';
 

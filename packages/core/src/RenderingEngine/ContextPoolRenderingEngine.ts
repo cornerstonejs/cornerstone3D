@@ -13,6 +13,7 @@ import getOrCreateCanvas, {
   updateCanvasSizeAndAspectRatio,
 } from './helpers/getOrCreateCanvas';
 import { setElementTouchActionNone } from './helpers/elementTouchAction';
+import { isWebGLContextLost } from './helpers/attachWebGLContextEvents';
 import type * as EventTypes from '../types/EventTypes';
 import type {
   ViewportInput,
@@ -51,10 +52,58 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
     if (!this.contextPool) {
       const { rendering } = getConfiguration();
       const { webGlContextCount } = rendering;
-      this.contextPool = new WebGLContextPool(webGlContextCount, this.id);
+      this.contextPool = new WebGLContextPool(
+        webGlContextCount,
+        this.id,
+        (contextIndex) => this._renderViewportsOfRestoredContext(contextIndex)
+      );
     }
 
     return this.contextPool;
+  }
+
+  /**
+   * Renders once more every viewport that draws through a context that the
+   * browser restored. The GL objects of that context were dropped before this
+   * runs, so the render builds them again from the data in memory. A
+   * destroyed engine renders nothing.
+   */
+  private _renderViewportsOfRestoredContext(contextIndex: number): void {
+    if (this.hasBeenDestroyed || !this.contextPool) {
+      return;
+    }
+
+    const viewportIds = this._getViewportsAsArray()
+      .filter(
+        (viewport) =>
+          !viewportUsesCustomRenderingPipeline(viewport) &&
+          this.contextPool.getContextIndexForViewport(viewport.id) ===
+            contextIndex
+      )
+      .map((viewport) => viewport.id);
+
+    if (viewportIds.length) {
+      this.renderViewports(viewportIds);
+    }
+  }
+
+  /**
+   * Whether the WebGL context that a viewport draws through is lost now. The
+   * engine then leaves the viewport flagged and its canvas as it is, and the
+   * restore of the context renders it again.
+   */
+  private _isViewportContextLost(viewport: IViewport): boolean {
+    if (!this.contextPool || viewportUsesCustomRenderingPipeline(viewport)) {
+      return false;
+    }
+
+    const contextIndex = this.contextPool.getContextIndexForViewport(
+      viewport.id
+    );
+
+    return isWebGLContextLost(
+      this.contextPool.getContextByIndex(contextIndex)?.context
+    );
   }
 
   /**
@@ -340,8 +389,8 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
     this._throwIfDestroyed();
 
     const viewports = this._getViewportsAsArray();
-    const viewportsToRender = viewports.filter((vp) =>
-      this._needsRender.has(vp.id)
+    const viewportsToRender = viewports.filter(
+      (vp) => this._needsRender.has(vp.id) && !this._isViewportContextLost(vp)
     );
 
     if (viewportsToRender.length === 0) {

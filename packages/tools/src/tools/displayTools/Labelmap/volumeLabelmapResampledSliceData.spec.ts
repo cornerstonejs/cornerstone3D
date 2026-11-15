@@ -12,11 +12,14 @@ jest.mock('@cornerstonejs/core', () => ({
     },
   },
   utilities: {
-    getEffectiveSpacingAlongDirection: jest.requireActual(
-      '@cornerstonejs/core/utilities/getEffectiveSpacingAlongDirection'
+    getExactSliceAxis: jest.requireActual(
+      '@cornerstonejs/core/utilities/volumeSliceGeometry'
+    ).getExactSliceAxis,
+    getVolumeSliceGeometry: jest.requireActual(
+      '@cornerstonejs/core/utilities/volumeSliceGeometry'
     ).default,
-    sampleVolumeGrid: jest.requireActual(
-      '@cornerstonejs/core/utilities/sampleVolumeGrid'
+    sampleVolumeSlice: jest.requireActual(
+      '@cornerstonejs/core/utilities/sampleVolumeSlice'
     ).default,
     transformIndexToWorld: jest.fn(
       (imageData: TestImageData, index: number[]) =>
@@ -144,6 +147,43 @@ function voxelValue(i: number, j: number, k: number): number {
 }
 
 /**
+ * The world position of a continuous voxel index, for the image data of the
+ * test volume that the core slice geometry reads.
+ */
+function imageIndexToWorld(imageData: TestImageData, index: number[]): Vector {
+  const { spacing, direction, origin } = imageData;
+
+  return [0, 1, 2].map(
+    (component) =>
+      origin[component] +
+      [0, 1, 2].reduce(
+        (sum, axis) =>
+          sum + index[axis] * spacing[axis] * direction[axis * 3 + component],
+        0
+      )
+  ) as Vector;
+}
+
+/**
+ * The continuous voxel index of a world position, for the image data of the
+ * test volume that the core slice geometry reads.
+ */
+function imageWorldToIndex(imageData: TestImageData, point: number[]): Vector {
+  const { spacing, direction, origin } = imageData;
+
+  return [0, 1, 2].map(
+    (axis) =>
+      [0, 1, 2].reduce(
+        (sum, component) =>
+          sum +
+          (point[component] - origin[component]) *
+            direction[axis * 3 + component],
+        0
+      ) / spacing[axis]
+  ) as Vector;
+}
+
+/**
  * Builds a test volume of one typed array per slice, exposed through
  * _getSliceView. The ways that the core sampler reads voxels are tested in
  * sampleVolumeGrid.jest.js.
@@ -168,11 +208,17 @@ function makeVolume(options: VolumeOptions = {}) {
     return data;
   });
 
+  const imageData = { spacing, direction, origin };
+
   return {
     dimensions,
     spacing,
     direction,
-    imageData: { spacing, direction, origin },
+    imageData: {
+      ...imageData,
+      indexToWorld: (index: number[]) => imageIndexToWorld(imageData, index),
+      worldToIndex: (point: number[]) => imageWorldToIndex(imageData, point),
+    },
     voxelManager: {
       getConstructor: () => Uint8Array,
       getAtIJK: jest.fn(

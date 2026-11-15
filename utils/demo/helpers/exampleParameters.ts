@@ -6,6 +6,7 @@ type DemoConfig = {
       useCPURendering?: boolean;
       planar?: {
         renderBackend?: 'auto' | 'gpu' | 'cpu';
+        sliceFirst?: boolean;
       };
       useGenericViewport?: boolean;
       lossyDownsampling?: {
@@ -103,6 +104,28 @@ export function applyLossyDownsamplingOverride(
     core: {
       rendering: {
         lossyDownsampling: { final: value === 'true' || value === '1' },
+      },
+    },
+  });
+}
+
+/**
+ * Reads `?sliceFirst=1|true|0|false`, which turns slice first on or off for
+ * planar next viewports. Without the parameter, the example keeps its own
+ * value, and an example that states none keeps the Cornerstone3D default,
+ * which is off.
+ */
+export function applySliceFirstOverride(config: DemoConfig = {}): DemoConfig {
+  const value = getUrlParam('sliceFirst');
+
+  if (value === null) {
+    return config;
+  }
+
+  return utilities.deepMerge(config, {
+    core: {
+      rendering: {
+        planar: { sliceFirst: value === 'true' || value === '1' },
       },
     },
   });

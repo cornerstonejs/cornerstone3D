@@ -191,6 +191,7 @@ class PlanarViewport extends GenericViewport<
   };
   private setDataRequestId = 0;
   private renderPipelineSwapId = 0;
+  private pendingRenderPipelineUpdate?: Promise<void>;
   // Last reported render-path error message per display set; a successful
   // render clears the entry so a genuine repeat failure after recovery is
   // reported again.
@@ -577,6 +578,12 @@ class PlanarViewport extends GenericViewport<
    * actor is mounted (e.g. CPU render paths).
    */
   getDefaultImageData() {
+    const rendering = this.getCurrentPlanarRendering();
+
+    if (rendering?.renderMode === ActorRenderMode.VTK_SAMPLED_SLICE) {
+      return rendering.imageVolume.imageData;
+    }
+
     return this.getImageActor()?.getMapper().getInputData();
   }
 
@@ -989,8 +996,72 @@ class PlanarViewport extends GenericViewport<
     dataId: string,
     props: PlanarDataPresentation
   ): void {
+    const previousProps = this.getDataPresentationState(dataId);
+
     this.clearResolvedViewCache();
     super.setDataPresentationState(dataId, props);
+    this.updateRenderPathForPresentation(dataId, previousProps, props);
+  }
+
+  /**
+   * Remounts a mounted volume display set whose render mode changes with its
+   * presentation: a slab that grows past what the CPU can sample moves a
+   * sampled slice to the GPU volume path, and back. Only a change of the slab
+   * thickness or the blend mode runs the decision, so a window level change
+   * costs nothing. The remount itself is `applyRenderingPipelineUpdate`.
+   * While a pass of it is pending, a change starts a new pass even when the
+   * mounted mode matches the decision, because the pending pass may mount
+   * the mode that an older presentation chose.
+   */
+  private updateRenderPathForPresentation(
+    dataId: string,
+    previousProps: PlanarDataPresentation | undefined,
+    props: PlanarDataPresentation | undefined
+  ): void {
+    if (
+      previousProps?.slabThickness === props?.slabThickness &&
+      previousProps?.blendMode === props?.blendMode
+    ) {
+      return;
+    }
+
+    const binding = this.bindings.get(dataId);
+    const dataSet = this.getDataSet(dataId);
+
+    if (
+      this.isDestroyed ||
+      !binding ||
+      !dataSet ||
+      !isVolumeRenderMode(binding.rendering.renderMode)
+    ) {
+      return;
+    }
+
+    const options = {
+      ...(this.mountOptionsByDataId.get(dataId) ?? {}),
+      role: binding.role,
+    };
+    let renderMode: PlanarEffectiveRenderMode;
+
+    try {
+      renderMode = selectPlanarRenderPath(
+        dataSet,
+        this.getRenderPathDecisionOptions(
+          dataId,
+          options,
+          this.resolveRequestedOrientation(options.orientation)
+        )
+      ).renderMode;
+    } catch {
+      return;
+    }
+
+    if (
+      renderMode !== binding.rendering.renderMode ||
+      this.pendingRenderPipelineUpdate
+    ) {
+      this.startRenderingPipelineUpdate();
+    }
   }
 
   /**
@@ -1788,7 +1859,26 @@ class PlanarViewport extends GenericViewport<
    * rebuild is async but the hook itself is fire-and-forget by contract.
    */
   override updateRenderingPipeline(): void {
-    void this.applyRenderingPipelineUpdate();
+    this.startRenderingPipelineUpdate();
+  }
+
+  /**
+   * Starts a pass of `applyRenderingPipelineUpdate` and keeps it as the
+   * pending pass (`pendingRenderPipelineUpdate`, the pass that has not settled
+   * yet) until it settles. A pass decides the render mode of a display
+   * set before it awaits the data and mounts after, so a presentation change
+   * while a pass is pending starts a new pass, which makes the pending one
+   * stale and decides again for the final presentation.
+   */
+  private startRenderingPipelineUpdate(): void {
+    const update = this.applyRenderingPipelineUpdate();
+
+    this.pendingRenderPipelineUpdate = update;
+    void update.finally(() => {
+      if (this.pendingRenderPipelineUpdate === update) {
+        this.pendingRenderPipelineUpdate = undefined;
+      }
+    });
   }
 
   private async applyRenderingPipelineUpdate(): Promise<void> {
@@ -1943,6 +2033,8 @@ class PlanarViewport extends GenericViewport<
         options.role === 'source' && this.prefersAcquiredFrames(),
       slabThickness: presentation?.slabThickness,
       blendMode: presentation?.blendMode,
+      sliceFirst: options.sliceFirst,
+      role: options.role,
     };
   }
 
@@ -2038,6 +2130,8 @@ class PlanarViewport extends GenericViewport<
       findDataIdByVolumeId: (volumeId) =>
         this.mountedData.findDataIdByVolumeId(volumeId),
       getBindingActor: (dataId) => this.mountedData.getBindingActor(dataId),
+      getBindingRenderMode: (dataId) =>
+        this.bindings.get(dataId)?.rendering.renderMode,
       getDefaultVOIRange: (dataId) => this.getDefaultVOIRange(dataId),
       getImageCount: () => this.getImageIds().length,
       getMaxImageIdIndex: () => this.getMaxImageIdIndex(),
@@ -2204,6 +2298,14 @@ class PlanarViewport extends GenericViewport<
     return dataSet;
   }
 
+  /**
+   * Decides the render path of a display set and loads its data. On the
+   * volume path the choice between the volume modes runs once more after the
+   * load: the data provider may create and cache the volume during the load,
+   * and slice first needs the cached volume to accept a data set. Both volume
+   * modes take the same payload, so only its render mode changes. With slice
+   * first off that second choice ends at the configuration check.
+   */
   private async loadPlanarData(
     dataId: string,
     options: PlanarSetDataOptions
@@ -2223,20 +2325,36 @@ class PlanarViewport extends GenericViewport<
     const resolvedOrientation = this.resolveRequestedOrientation(
       options.orientation
     );
-    const selectedPath = selectPlanarRenderPath(
-      dataSet,
-      this.getRenderPathDecisionOptions(dataId, options, resolvedOrientation)
+    const decisionOptions = this.getRenderPathDecisionOptions(
+      dataId,
+      options,
+      resolvedOrientation
     );
+    const selectedPath = selectPlanarRenderPath(dataSet, decisionOptions);
     const data = await (this.dataProvider as PlanarDataProvider).load(dataId, {
       acquisitionOrientation: selectedPath.acquisitionOrientation,
       orientation: resolvedOrientation,
       renderMode: selectedPath.renderMode,
       volumeId: selectedPath.volumeId,
     });
+    const renderMode = isVolumeRenderMode(selectedPath.renderMode)
+      ? defaultPlanarRenderPathDecisionService.selectVolumeRenderModeForDataSet(
+          dataSet,
+          decisionOptions
+        )
+      : selectedPath.renderMode;
+
+    if (renderMode === selectedPath.renderMode) {
+      return {
+        data,
+        selectedPath,
+        resolvedOrientation,
+      };
+    }
 
     return {
-      data,
-      selectedPath,
+      data: { ...data, renderMode },
+      selectedPath: { ...selectedPath, renderMode },
       resolvedOrientation,
     };
   }

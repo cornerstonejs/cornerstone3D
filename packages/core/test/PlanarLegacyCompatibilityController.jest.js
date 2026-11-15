@@ -26,6 +26,9 @@ jest.mock('../src/utilities/transferFunctionUtils', () => ({
 import cache from '../src/cache/cache';
 import metadataProvider from '../src/utilities/genericViewportDisplaySetMetadataProvider';
 import Events from '../src/enums/Events';
+import BlendModes from '../src/enums/BlendModes';
+import { ActorRenderMode } from '../src/types/IActor';
+import { SlabTypes } from '@kitware/vtk.js/Rendering/Core/ImageResliceMapper/Constants';
 import PlanarLegacyCompatibilityController from '../src/RenderingEngine/GenericViewport/Planar/PlanarLegacyCompatibilityController';
 
 function createHost(overrides = {}) {
@@ -50,6 +53,7 @@ function createHost(overrides = {}) {
     getFirstBoundDataId: jest.fn(() => '__planar_v2__:vp-1:stack'),
     findDataIdByVolumeId: jest.fn(() => undefined),
     getBindingActor: jest.fn(() => undefined),
+    getBindingRenderMode: jest.fn(() => undefined),
     getDefaultVOIRange: jest.fn(() => undefined),
     getImageCount: jest.fn(() => 0),
     getMaxImageIdIndex: jest.fn(() => -1),
@@ -395,6 +399,96 @@ describe('PlanarLegacyCompatibilityController', () => {
       controller.setBlendMode(2, [], true);
       expect(host.setDisplaySetPresentation).toHaveBeenCalledTimes(2);
       expect(host.render).toHaveBeenCalled();
+    });
+
+    const dataId = '__planar_v2__:vp-1:volume:vol-1';
+
+    /**
+     * A host whose binding draws through the given render mode, with an actor
+     * whose mapper reports the slab type MEAN, the default of vtkImageMapper.
+     * The host keeps the presentation as the viewport does: a display set
+     * presentation merges, a data presentation state replaces.
+     */
+    function createMappedHost(renderMode) {
+      const mapper = { getSlabType: () => SlabTypes.MEAN };
+      const actor = { getMapper: () => mapper };
+      const presentations = new Map();
+
+      return createHost({
+        getActiveDataId: jest.fn(() => dataId),
+        getBindingActor: jest.fn(() => actor),
+        getBindingRenderMode: jest.fn(() => renderMode),
+        setDisplaySetPresentation: jest.fn((id, props) =>
+          presentations.set(id, { ...presentations.get(id), ...props })
+        ),
+        setDataPresentationState: jest.fn((id, props) =>
+          presentations.set(id, props)
+        ),
+        getDisplaySetPresentation: jest.fn((id) => presentations.get(id)),
+      });
+    }
+
+    async function mountMip(host) {
+      cache.getVolume.mockReturnValue({ imageIds: ['v-0'] });
+
+      const controller = new PlanarLegacyCompatibilityController(host);
+
+      await controller.setVolumes([
+        {
+          volumeId: 'vol-1',
+          blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
+          callback: jest.fn(),
+        },
+      ]);
+
+      return controller;
+    }
+
+    it('keeps the blend mode of the presentation after a callback on a sampled slice', async () => {
+      const { host } = createMappedHost(ActorRenderMode.VTK_SAMPLED_SLICE);
+      const controller = await mountMip(host);
+
+      expect(host.getDisplaySetPresentation(dataId).blendMode).toBe(
+        BlendModes.MAXIMUM_INTENSITY_BLEND
+      );
+      expect(controller.getBlendMode()).toBe(
+        BlendModes.MAXIMUM_INTENSITY_BLEND
+      );
+    });
+
+    it('reads the blend mode back from the mapper after a callback on the GPU volume path', async () => {
+      const { host } = createMappedHost(ActorRenderMode.VTK_VOLUME_SLICE);
+
+      await mountMip(host);
+
+      expect(host.getDisplaySetPresentation(dataId).blendMode).toBe(
+        BlendModes.AVERAGE_INTENSITY_BLEND
+      );
+    });
+
+    it('gives the blend mode of the presentation of a sampled slice, else composite', () => {
+      const sampled = createMappedHost(ActorRenderMode.VTK_SAMPLED_SLICE).host;
+      const gpu = createMappedHost(ActorRenderMode.VTK_VOLUME_SLICE).host;
+      const sampledController = new PlanarLegacyCompatibilityController(
+        sampled
+      );
+      const gpuController = new PlanarLegacyCompatibilityController(gpu);
+
+      sampledController.volumeDataIds.set('vol-1', dataId);
+      gpuController.volumeDataIds.set('vol-1', dataId);
+
+      expect(sampledController.getBlendMode()).toBe(BlendModes.COMPOSITE);
+      expect(gpuController.getBlendMode()).toBe(
+        BlendModes.AVERAGE_INTENSITY_BLEND
+      );
+
+      sampled.setDisplaySetPresentation(dataId, {
+        blendMode: BlendModes.MINIMUM_INTENSITY_BLEND,
+      });
+
+      expect(sampledController.getBlendMode()).toBe(
+        BlendModes.MINIMUM_INTENSITY_BLEND
+      );
     });
   });
 

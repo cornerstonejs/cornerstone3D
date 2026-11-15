@@ -19,6 +19,10 @@ import getClosestImageId from './getClosestImageId';
 import getSpacingInNormalDirection from './getSpacingInNormalDirection';
 import getEffectiveSpacingAlongDirection from './getEffectiveSpacingAlongDirection';
 import sampleVolumeGrid from './sampleVolumeGrid';
+import getVolumeSliceGeometry, {
+  getExactSliceAxis,
+} from './volumeSliceGeometry';
+import sampleVolumeSlice from './sampleVolumeSlice';
 import getViewSlabDepth from './getViewSlabDepth';
 import getTargetVolumeAndSpacingInNormalDir from './getTargetVolumeAndSpacingInNormalDir';
 import getVolumeActorCorners from './getVolumeActorCorners';
@@ -133,6 +137,16 @@ import {
   mapMappedBandToRawRange,
 } from './viewportVoiIntensityMapping';
 export type { ViewportVoiMappingProps } from './viewportVoiIntensityMapping';
+export type {
+  VolumeSliceCamera,
+  VolumeSliceGeometry,
+  VolumeSliceGeometryOptions,
+} from './volumeSliceGeometry';
+export type {
+  SampleVolumeSliceOptions,
+  SampledVolumeSlice,
+  VolumeSliceSlab,
+} from './sampleVolumeSlice';
 export * from './getPixelSpacingInformation';
 export * from './getPlaneCubeIntersectionDimensions';
 export * from './rotateToViewCoordinates';
@@ -161,6 +175,19 @@ import {
 import resolveApplicationUrl, { getPublicUrl } from './resolveApplicationUrl';
 export { updatePlaneRestriction } from './updatePlaneRestriction';
 export { isAcquisitionPlaneNormal } from './isAcquisitionPlaneNormal';
+export { runDrawSelfTest } from './drawSelfTest';
+export type {
+  DrawSelfTestCase,
+  DrawSelfTestDataType,
+  DrawSelfTestDraw,
+  DrawSelfTestOptions,
+  DrawSelfTestResult,
+} from './drawSelfTest';
+export type {
+  ProbedTextureFormat,
+  TextureProbeReport,
+  TextureProbeResult,
+} from './textureSupport';
 const getViewportModality = (viewport: IViewport, volumeId?: string) =>
   _getViewportModality(viewport, volumeId, cache.getVolume);
 const getScalingDescriptor = (viewport: IViewport, targetId?: string) =>
@@ -198,6 +225,9 @@ export {
   getSpacingInNormalDirection,
   getEffectiveSpacingAlongDirection,
   sampleVolumeGrid,
+  getVolumeSliceGeometry,
+  getExactSliceAxis,
+  sampleVolumeSlice,
   getViewSlabDepth,
   getTargetVolumeAndSpacingInNormalDir,
   getVolumeActorCorners,

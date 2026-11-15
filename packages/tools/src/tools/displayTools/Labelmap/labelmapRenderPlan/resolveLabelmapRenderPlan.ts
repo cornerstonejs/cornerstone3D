@@ -25,7 +25,11 @@ function resolveLabelmapRenderPlan({
   representation: LabelmapRenderPlanRepresentation;
 }): LabelmapRenderPlan {
   const { segmentationId, config } = representation;
-  const useSliceRendering = shouldUseSliceRendering(segmentation, config);
+  const useSliceRendering = shouldUseSliceRendering(
+    segmentation,
+    config,
+    viewport
+  );
   const renderMode = getViewportLabelmapRenderMode(viewport, {
     useSliceRendering,
   });
