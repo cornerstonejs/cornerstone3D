@@ -468,8 +468,9 @@ export class VtkSampledSliceRenderPath
         ctx.display.requestRender();
       },
       onStateChange: () => {
-        reportSamplingState(mount);
-        ctx.display.requestRender();
+        if (reportSamplingState(mount)) {
+          ctx.display.requestRender();
+        }
       },
     });
   }
@@ -491,22 +492,29 @@ function cancelRestWork(mount: SampledSliceMount): void {
  * Keeps on the rendering whether the slab of the view is too large for the
  * CPU (`PlanarSliceSampler.isSlabTooLarge`), and lets the viewport update its
  * render plan when that changes.
+ *
+ * @returns true when it changed. The sampled slice path renders again after
+ * the work at rest only then: a finer slice renders by itself, and a render
+ * that changes no pixel would still fire `IMAGE_RENDERED` and restart the
+ * debounced work of the tools about 100 ms after every move of the view.
  */
 export function reportSamplingState(
   mount: Pick<SampledSliceMount, 'dataId' | 'sampler'> & {
     ctx: Pick<SampledSliceMount['ctx'], 'viewport'>;
     rendering: { slabTooLarge?: boolean };
   }
-): void {
+): boolean {
   const { ctx, dataId, rendering, sampler } = mount;
   const slabTooLarge = sampler.isSlabTooLarge();
 
   if (!!rendering.slabTooLarge === slabTooLarge) {
-    return;
+    return false;
   }
 
   rendering.slabTooLarge = slabTooLarge;
   ctx.viewport.refreshRenderPlan?.(dataId);
+
+  return true;
 }
 
 /** @internal */

@@ -566,9 +566,28 @@ export function getSliceCanvasTransform(
 }
 
 /**
- * Clears the canvas of a viewport to black once per render pass, before the
- * first display set of the pass draws, so every layer of the pass composes
- * on the same background.
+ * The background colour of a viewport as a canvas fill style. A viewport
+ * without a background colour is black.
+ */
+function getBackgroundFillStyle(target: PlanarCanvasTarget): string {
+  const background = target.getBackground?.();
+
+  if (!background || background.length < 3) {
+    return '#000';
+  }
+
+  const [red, green, blue] = [0, 1, 2].map((channel) =>
+    Math.round(Math.max(0, Math.min(1, Number(background[channel]) || 0)) * 255)
+  );
+
+  return `rgb(${red}, ${green}, ${blue})`;
+}
+
+/**
+ * Clears the canvas of a viewport to the background colour of the viewport
+ * once per render pass, before the first display set of the pass draws, so
+ * every layer of the pass composes on the same background, and the part of
+ * the canvas that no layer covers shows that colour as on the GPU draw step.
  */
 export function beginPlanarCanvasPass(target: PlanarCanvasTarget): void {
   const { canvas, composition, context } = target;
@@ -579,7 +598,7 @@ export function beginPlanarCanvasPass(target: PlanarCanvasTarget): void {
 
   context.setTransform(1, 0, 0, 1, 0, 0);
   context.clearRect(0, 0, canvas.width, canvas.height);
-  context.fillStyle = '#000';
+  context.fillStyle = getBackgroundFillStyle(target);
   context.fillRect(0, 0, canvas.width, canvas.height);
   composition.clearedRenderPassId = composition.renderPassId;
 }

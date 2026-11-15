@@ -389,6 +389,40 @@ describe('addVolumeLabelmapImageMapperActors', () => {
     expect(applyPlanarOverlayDepthOffset).toHaveBeenCalled();
   });
 
+  it('asks the planar slice mapper for the label outline at the faces of the volume', async () => {
+    canRenderVolumeViewportLabelmapAsImage.mockReturnValue(true);
+    const viewport = makePlanarNextViewport();
+    getLabelmaps.mockReturnValue([{ labelmapId: 'layer-1' }]);
+    getOrCreateLabelmapVolume.mockReturnValue({ imageIds: ['v-0'] });
+    createPlanarSliceImageData.mockReturnValue({
+      imageData: {},
+      sliceIndex: 0,
+    });
+    getSliceRenderingCamera.mockReturnValue(undefined);
+
+    await addVolumeLabelmapImageMapperActors({
+      viewport: viewport as never,
+      segmentation: makeSegmentation(),
+      segmentationId: 'seg-1',
+      outlineAtImageEdges: true,
+    });
+
+    const [stackInputs] = viewport.addImages.mock.calls[0];
+    const mapper = {
+      setInputData: jest.fn(),
+      modified: jest.fn(),
+      set: jest.fn(() => true),
+    };
+
+    stackInputs[0].callback({ imageActor: { getMapper: () => mapper } });
+
+    expect(mapper.set).toHaveBeenCalledWith(
+      { labelOutlineAtImageEdges: true },
+      true
+    );
+    expect(mapper.modified).toHaveBeenCalledTimes(2);
+  });
+
   it('places a new planar slice after the image slices that the viewport already draws', async () => {
     canRenderVolumeViewportLabelmapAsImage.mockReturnValue(true);
     const viewport = makePlanarNextViewport();

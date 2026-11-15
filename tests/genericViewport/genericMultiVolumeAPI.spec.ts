@@ -3,6 +3,7 @@ import {
   createExampleUrl,
   checkForCanvasSnapshot,
   expectGenericViewportRuntime,
+  getPlainVolumeSliceRenderMode,
   screenShotPaths,
 } from '../utils/index';
 
@@ -44,8 +45,8 @@ test.describe('Multi Volume API Next (GPU)', () => {
         constructorName: 'PlanarViewport',
         type: 'planarNext',
         renderModesByDataId: {
-          'multi-volume-api-next:ct': 'vtkVolumeSlice',
-          'multi-volume-api-next:pt': 'vtkVolumeSlice',
+          'multi-volume-api-next:ct': getPlainVolumeSliceRenderMode(),
+          'multi-volume-api-next:pt': getPlainVolumeSliceRenderMode(),
         },
       },
     ]);

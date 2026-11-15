@@ -1532,6 +1532,7 @@ export function getOutsideValue(volume: IImageVolume): number {
  * lies half a voxel outside the centres of the outer voxels, which is the
  * space that the voxels cover. Each normal is perpendicular to its face also
  * when the axes of the volume are not perpendicular.
+
  */
 export function getVolumeClipPlanes(
   volume: Pick<IImageVolume, 'dimensions' | 'direction' | 'origin' | 'spacing'>

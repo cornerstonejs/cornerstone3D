@@ -3,6 +3,7 @@ import {
   createExampleUrl,
   checkForCanvasSnapshot,
   expectGenericViewportRuntime,
+  getPlainVolumeSliceRenderMode,
   getVisibleViewportCanvas,
   screenShotPaths,
   simulateClicksOnElement,
@@ -248,7 +249,8 @@ test.describe('Labelmap Segmentation Tools - Next (GPU)', () => {
         constructorName: 'PlanarViewport',
         type: 'planarNext',
         renderModesByDataId: {
-          'labelmap-segmentation-tools-next:source': 'vtkVolumeSlice',
+          'labelmap-segmentation-tools-next:source':
+            getPlainVolumeSliceRenderMode(),
         },
       },
       {
@@ -257,7 +259,8 @@ test.describe('Labelmap Segmentation Tools - Next (GPU)', () => {
         constructorName: 'PlanarViewport',
         type: 'planarNext',
         renderModesByDataId: {
-          'labelmap-segmentation-tools-next:source': 'vtkVolumeSlice',
+          'labelmap-segmentation-tools-next:source':
+            getPlainVolumeSliceRenderMode(),
         },
       },
       {
@@ -266,7 +269,8 @@ test.describe('Labelmap Segmentation Tools - Next (GPU)', () => {
         constructorName: 'PlanarViewport',
         type: 'planarNext',
         renderModesByDataId: {
-          'labelmap-segmentation-tools-next:source': 'vtkVolumeSlice',
+          'labelmap-segmentation-tools-next:source':
+            getPlainVolumeSliceRenderMode(),
         },
       },
     ]);

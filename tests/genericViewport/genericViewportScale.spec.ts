@@ -3,6 +3,7 @@ import {
   createExampleUrl,
   checkForCanvasSnapshot,
   expectGenericViewportRuntime,
+  getPlainVolumeSliceRenderMode,
   screenShotPaths,
   setupRenderTracking,
   waitForRenderSettled,
@@ -58,7 +59,7 @@ test.describe('Generic viewport two-axis scale', () => {
         constructorName: 'PlanarViewport',
         type: 'planarNext',
         renderModesByDataId: {
-          [VOLUME_DATA_ID]: 'vtkVolumeSlice',
+          [VOLUME_DATA_ID]: getPlainVolumeSliceRenderMode(),
         },
       },
     ]);

@@ -3,6 +3,7 @@ import {
   createExampleUrl,
   checkForCanvasSnapshot,
   expectGenericViewportRuntime,
+  getPlainVolumeSliceRenderMode,
   screenShotPaths,
 } from '../utils/index';
 
@@ -75,7 +76,7 @@ test.describe('Labelmap Rendering - Next (GPU)', () => {
         constructorName: 'PlanarViewport',
         type: 'planarNext',
         renderModesByDataId: {
-          'labelmap-rendering-next:source': 'vtkVolumeSlice',
+          'labelmap-rendering-next:source': getPlainVolumeSliceRenderMode(),
         },
       },
       {
@@ -84,7 +85,7 @@ test.describe('Labelmap Rendering - Next (GPU)', () => {
         constructorName: 'PlanarViewport',
         type: 'planarNext',
         renderModesByDataId: {
-          'labelmap-rendering-next:source': 'vtkVolumeSlice',
+          'labelmap-rendering-next:source': getPlainVolumeSliceRenderMode(),
         },
       },
       {
@@ -93,7 +94,7 @@ test.describe('Labelmap Rendering - Next (GPU)', () => {
         constructorName: 'PlanarViewport',
         type: 'planarNext',
         renderModesByDataId: {
-          'labelmap-rendering-next:source': 'vtkVolumeSlice',
+          'labelmap-rendering-next:source': getPlainVolumeSliceRenderMode(),
         },
       },
     ]);

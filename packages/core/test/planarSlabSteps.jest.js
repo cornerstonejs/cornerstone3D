@@ -7,7 +7,10 @@ import {
   MAX_SLAB_SAMPLES_AT_ONCE,
   PlanarSliceSampler,
 } from '../src/RenderingEngine/GenericViewport/Planar/planarSampledSlice';
-import { VtkSampledSliceRenderPath } from '../src/RenderingEngine/GenericViewport/Planar/VtkSampledSliceRenderPath';
+import {
+  VtkSampledSliceRenderPath,
+  reportSamplingState,
+} from '../src/RenderingEngine/GenericViewport/Planar/VtkSampledSliceRenderPath';
 import {
   SAMPLED_SLICE_REST_DELAY_MS,
   scheduleSampledSliceRestWork,
@@ -345,5 +348,27 @@ describe('the sampled slice render path', () => {
       )
     ).rejects.toThrow('one value per voxel');
     expect(ctx.vtk.renderer.addActor).not.toHaveBeenCalled();
+  });
+});
+
+describe('reportSamplingState', () => {
+  it('says whether the state changed, so that the work at rest renders only then', () => {
+    let slabTooLarge = false;
+    const refreshRenderPlan = jest.fn();
+    const mount = {
+      dataId: 'ct',
+      sampler: { isSlabTooLarge: () => slabTooLarge },
+      ctx: { viewport: { refreshRenderPlan } },
+      rendering: {},
+    };
+
+    expect(reportSamplingState(mount)).toBe(false);
+    expect(refreshRenderPlan).not.toHaveBeenCalled();
+
+    slabTooLarge = true;
+
+    expect(reportSamplingState(mount)).toBe(true);
+    expect(refreshRenderPlan).toHaveBeenCalledWith('ct');
+    expect(reportSamplingState(mount)).toBe(false);
   });
 });

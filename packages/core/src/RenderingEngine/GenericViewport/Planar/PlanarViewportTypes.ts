@@ -326,6 +326,12 @@ export interface PlanarViewportRenderContext extends BaseViewportRenderContext {
       renderPassId: number;
     };
     context: CanvasRenderingContext2D;
+    /**
+     * The background colour of the viewport as red, green and blue from 0 to
+     * 1, or undefined for black. The CPU draw step clears its canvas to it,
+     * as the GPU draw step clears its renderer.
+     */
+    getBackground?(): ArrayLike<number> | undefined;
   };
   vtk: {
     renderer: vtkRenderer;

@@ -3,6 +3,7 @@ import {
   createExampleUrl,
   checkForCanvasSnapshot,
   expectGenericViewportRuntime,
+  getPlainVolumeSliceRenderMode,
   getVisibleViewportCanvas,
   getSegmentationActorClassNames,
   screenShotPaths,
@@ -116,7 +117,8 @@ test.describe('Labelmap Slice Rendering Tools - Next', () => {
         constructorName: 'PlanarViewport',
         type: 'planarNext',
         renderModesByDataId: {
-          'labelmap-slice-rendering-tools-next:source': 'vtkVolumeSlice',
+          'labelmap-slice-rendering-tools-next:source':
+            getPlainVolumeSliceRenderMode(),
         },
       },
       {
@@ -125,7 +127,8 @@ test.describe('Labelmap Slice Rendering Tools - Next', () => {
         constructorName: 'PlanarViewport',
         type: 'planarNext',
         renderModesByDataId: {
-          'labelmap-slice-rendering-tools-next:source': 'vtkVolumeSlice',
+          'labelmap-slice-rendering-tools-next:source':
+            getPlainVolumeSliceRenderMode(),
         },
       },
       {
@@ -134,7 +137,8 @@ test.describe('Labelmap Slice Rendering Tools - Next', () => {
         constructorName: 'PlanarViewport',
         type: 'planarNext',
         renderModesByDataId: {
-          'labelmap-slice-rendering-tools-next:source': 'vtkVolumeSlice',
+          'labelmap-slice-rendering-tools-next:source':
+            getPlainVolumeSliceRenderMode(),
         },
       },
     ]);

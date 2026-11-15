@@ -13,8 +13,16 @@ import {
 } from './createLabelmapRenderPlan';
 import type { LabelmapRenderPlan } from './types';
 
+/**
+ * The plan that draws a labelmap of a volume as labelmap slice images.
+ * `outlineAtImageEdges` is true when the slice images stand in for the volume
+ * plan only because the viewport samples its source on the CPU: the slices
+ * then draw the label outline at the faces of the volume, as the volume plan
+ * does, so that a move between the two plans does not change the picture.
+ */
 function createVolumeSliceImageMapperPlan({
   isVolumeImageMapper,
+  outlineAtImageEdges,
   renderMode,
   segmentation,
   segmentationId,
@@ -22,6 +30,7 @@ function createVolumeSliceImageMapperPlan({
   viewport,
 }: {
   isVolumeImageMapper: boolean;
+  outlineAtImageEdges: boolean;
   renderMode: ViewportLabelmapRenderMode;
   segmentation: Segmentation;
   segmentationId: string;
@@ -52,6 +61,7 @@ function createVolumeSliceImageMapperPlan({
         viewport,
         segmentation,
         segmentationId,
+        outlineAtImageEdges,
       }),
     update: ({ actorEntries }) =>
       updateVolumeLabelmapImageMapperActors({
@@ -59,6 +69,7 @@ function createVolumeSliceImageMapperPlan({
         segmentation,
         segmentationId,
         actorEntries,
+        outlineAtImageEdges,
       }),
   });
 }
@@ -78,15 +89,18 @@ async function mountVolumeLabelmapImageMapper({
   viewport,
   segmentation,
   segmentationId,
+  outlineAtImageEdges,
 }: {
   viewport: Types.IViewport;
   segmentation: Segmentation;
   segmentationId: string;
+  outlineAtImageEdges: boolean;
 }): Promise<void> {
   await addVolumeLabelmapImageMapperActors({
     viewport,
     segmentation,
     segmentationId,
+    outlineAtImageEdges,
   });
   triggerSegmentationDataModified(segmentationId);
 }

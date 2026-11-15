@@ -531,6 +531,48 @@ describe('labelmapRenderPlan', () => {
       viewport,
       segmentation,
       segmentationId: 'segmentation-id',
+      outlineAtImageEdges: true,
+    });
+  });
+
+  it('keeps the slice image outline when slice images were asked for on a sampled slice source', async () => {
+    const viewport = {
+      id: 'viewport-id',
+      type: 'planarNext',
+      removeActors: jest.fn(),
+    };
+    const segmentation = {
+      segmentationId: 'segmentation-id',
+      representationData: { Labelmap: {} },
+    };
+    const config = { useSliceRendering: true };
+
+    shouldUseSliceRenderingMock.mockReturnValue(true);
+    canRenderVolumeViewportLabelmapAsImageMock.mockReturnValue(true);
+    (
+      getVolumeLabelmapImageMapperRepresentationUIDs as jest.Mock
+    ).mockReturnValue(['segmentation-id-Labelmap-layer-id']);
+    getLabelmapActorEntriesMock.mockReturnValue([]);
+
+    const renderPlan = resolveLabelmapRenderPlan({
+      viewport: viewport as never,
+      segmentation: segmentation as never,
+      representation: {
+        segmentationId: 'segmentation-id',
+        config: config as never,
+      },
+    });
+
+    await renderPlan.reconcile({
+      actorEntries: [] as never,
+      labelMapData: {} as never,
+    });
+
+    expect(addVolumeLabelmapImageMapperActors).toHaveBeenCalledWith({
+      viewport,
+      segmentation,
+      segmentationId: 'segmentation-id',
+      outlineAtImageEdges: false,
     });
   });
 

@@ -159,6 +159,41 @@ function readTextureFacts(context, texture) {
 }
 
 /**
+ * The line of the label outline shader of vtk.js 36.4.1
+ * (`Rendering/OpenGL/ImageMapper.js`) that reads a neighbour of a pixel.
+ */
+const LABEL_OUTLINE_NEIGHBOR_READ =
+  'float value = texture2D(texture1, getSliceCoords(neighborPosIS, sliceAxis)).r;';
+
+/**
+ * The same read for an image whose edges are faces of a volume: a neighbour
+ * outside the image makes the pixel a border pixel, as the label outline of
+ * the vtk.js image reslice mapper does with a neighbour outside its 3D
+ * texture.
+ */
+const LABEL_OUTLINE_NEIGHBOR_READ_AT_IMAGE_EDGES = [
+  'vec2 neighborSliceCoords = getSliceCoords(neighborPosIS, sliceAxis);',
+  'if (any(greaterThan(neighborSliceCoords, vec2(1.0))) || any(lessThan(neighborSliceCoords, vec2(0.0)))) {',
+  '  pixelOnBorder = true;',
+  '  break;',
+  '}',
+  'float value = texture2D(texture1, neighborSliceCoords).r;',
+].join('\n');
+
+/**
+ * Whether an image mapper draws the label outline at the edges of its image
+ * (the field `labelOutlineAtImageEdges` of the vtkImageMapper, set with
+ * `mapper.set({ labelOutlineAtImageEdges: true }, true)`). Without it, vtk.js
+ * reads a neighbour outside the image from the nearest edge pixel, so a label
+ * that reaches the edge has no outline there.
+ *
+ * @param mapper - The vtkImageMapper (not its OpenGL node)
+ */
+export function drawsLabelOutlineAtImageEdges(mapper) {
+  return mapper?.getReferenceByName?.('labelOutlineAtImageEdges') === true;
+}
+
+/**
  * vtkStreamingOpenGLImageMapper - the vtk.js OpenGL image mapper with the
  * right shift and scale for 16-bit norm16 textures, and with float textures
  * that still draw on a device that cannot filter them linearly.
@@ -183,6 +218,10 @@ function readTextureFacts(context, texture) {
  * what it holds for the debug panel and the draw self-test (see
  * {@link getImageMapperTextureFacts}).
  *
+ * A mapper whose image is a labelmap slice of a volume can draw the label
+ * outline at the edges of its image, as the image reslice mapper draws it at
+ * the faces of the volume (see {@link drawsLabelOutlineAtImageEdges}).
+ *
  * @param {*} publicAPI The public API to extend
  * @param {*} model The private model to extend.
  */
@@ -199,6 +238,19 @@ function vtkStreamingOpenGLImageMapper(publicAPI, model) {
 
     if (model.renderable && facts) {
       imageTextureFacts.set(model.renderable, facts);
+    }
+  };
+
+  const superReplaceShaderValues = publicAPI.replaceShaderValues;
+
+  publicAPI.replaceShaderValues = (shaders, ren, actor) => {
+    superReplaceShaderValues(shaders, ren, actor);
+
+    if (drawsLabelOutlineAtImageEdges(model.renderable)) {
+      shaders.Fragment = shaders.Fragment.replace(
+        LABEL_OUTLINE_NEIGHBOR_READ,
+        LABEL_OUTLINE_NEIGHBOR_READ_AT_IMAGE_EDGES
+      );
     }
   };
 }

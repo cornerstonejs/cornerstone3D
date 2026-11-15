@@ -4,6 +4,7 @@ import {
   checkForCanvasSnapshot,
   expectAnnotationText,
   expectGenericViewportRuntime,
+  getPlainVolumeSliceRenderMode,
   getVisibleViewportCanvas,
   screenShotPaths,
 } from '../utils/index';
@@ -188,7 +189,8 @@ test.describe('Volume Annotation - Next (GPU)', () => {
         constructorName: 'PlanarViewport',
         type: 'planarNext',
         renderModesByDataId: {
-          'volume-annotation-tools-next:source': 'vtkVolumeSlice',
+          'volume-annotation-tools-next:source':
+            getPlainVolumeSliceRenderMode(),
         },
       },
       {
@@ -197,7 +199,8 @@ test.describe('Volume Annotation - Next (GPU)', () => {
         constructorName: 'PlanarViewport',
         type: 'planarNext',
         renderModesByDataId: {
-          'volume-annotation-tools-next:source': 'vtkVolumeSlice',
+          'volume-annotation-tools-next:source':
+            getPlainVolumeSliceRenderMode(),
         },
       },
       {
@@ -206,7 +209,8 @@ test.describe('Volume Annotation - Next (GPU)', () => {
         constructorName: 'PlanarViewport',
         type: 'planarNext',
         renderModesByDataId: {
-          'volume-annotation-tools-next:source': 'vtkVolumeSlice',
+          'volume-annotation-tools-next:source':
+            getPlainVolumeSliceRenderMode(),
         },
       },
     ]);

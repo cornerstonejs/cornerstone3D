@@ -92,6 +92,21 @@ function createActorEntry(args: {
   };
 }
 
+/**
+ * Sets whether a labelmap slice mapper draws the label outline at the edges of
+ * its image, which are faces of the labelmap volume. The OpenGL image mapper
+ * of core reads the field `labelOutlineAtImageEdges`. The mapper is marked
+ * modified only when the value changes, since a change builds a new shader.
+ */
+function setLabelOutlineAtImageEdges(
+  mapper: vtkImageMapper,
+  enabled: boolean
+): void {
+  if (mapper.set?.({ labelOutlineAtImageEdges: enabled }, true)) {
+    mapper.modified();
+  }
+}
+
 function getOverlayRendererId(viewportId: string): string {
   return `${viewportId}::${OVERLAY_RENDERER_SUFFIX}`;
 }
@@ -204,8 +219,9 @@ export async function addVolumeLabelmapImageMapperActors(args: {
   viewport: Types.IViewport;
   segmentation: Segmentation;
   segmentationId: string;
+  outlineAtImageEdges?: boolean;
 }): Promise<void> {
-  const { viewport, segmentation, segmentationId } = args;
+  const { viewport, segmentation, segmentationId, outlineAtImageEdges } = args;
 
   if (!canRenderVolumeViewportLabelmapAsImage(viewport)) {
     return;
@@ -216,6 +232,7 @@ export async function addVolumeLabelmapImageMapperActors(args: {
       viewport,
       segmentation,
       segmentationId,
+      outlineAtImageEdges,
     });
     return;
   }
@@ -252,8 +269,15 @@ export function updateVolumeLabelmapImageMapperActors(args: {
   segmentation: Segmentation;
   segmentationId: string;
   actorEntries?: Types.ActorEntry[];
+  outlineAtImageEdges?: boolean;
 }): void {
-  const { viewport, segmentation, segmentationId, actorEntries } = args;
+  const {
+    viewport,
+    segmentation,
+    segmentationId,
+    actorEntries,
+    outlineAtImageEdges,
+  } = args;
 
   if (!canRenderVolumeViewportLabelmapAsImage(viewport)) {
     return;
@@ -265,6 +289,7 @@ export function updateVolumeLabelmapImageMapperActors(args: {
       segmentation,
       segmentationId,
       actorEntries,
+      outlineAtImageEdges,
     });
     return;
   }
@@ -365,8 +390,9 @@ async function addPlanarLabelmapImageMapperActors(args: {
   viewport: PlanarSliceRenderingViewport;
   segmentation: Segmentation;
   segmentationId: string;
+  outlineAtImageEdges?: boolean;
 }): Promise<void> {
-  const { viewport, segmentation, segmentationId } = args;
+  const { viewport, segmentation, segmentationId, outlineAtImageEdges } = args;
   const camera = getSliceRenderingCamera(viewport);
 
   for (const layer of getLabelmaps(segmentation)) {
@@ -419,6 +445,7 @@ async function addPlanarLabelmapImageMapperActors(args: {
 
           mapper.setInputData(sliceData.imageData);
           mapper.modified();
+          setLabelOutlineAtImageEdges(mapper, !!outlineAtImageEdges);
           if (camera) {
             applyPlanarOverlayDepthOffset(
               imageActor,
@@ -440,8 +467,15 @@ function updatePlanarLabelmapImageMapperActors(args: {
   segmentation: Segmentation;
   segmentationId: string;
   actorEntries?: Types.ActorEntry[];
+  outlineAtImageEdges?: boolean;
 }): void {
-  const { viewport, segmentation, segmentationId, actorEntries } = args;
+  const {
+    viewport,
+    segmentation,
+    segmentationId,
+    actorEntries,
+    outlineAtImageEdges,
+  } = args;
   const actorEntriesByLabelmapId = new Map(
     (actorEntries ?? viewport.getActors())
       .filter((actorEntry) =>
@@ -477,6 +511,7 @@ function updatePlanarLabelmapImageMapperActors(args: {
 
     mapper.setInputData(sliceData.imageData);
     mapper.modified();
+    setLabelOutlineAtImageEdges(mapper, !!outlineAtImageEdges);
 
     if (camera) {
       applyPlanarOverlayDepthOffset(

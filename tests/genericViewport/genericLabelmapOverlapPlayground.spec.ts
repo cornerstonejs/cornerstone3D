@@ -3,6 +3,7 @@ import {
   createExampleUrl,
   checkForCanvasSnapshot,
   expectGenericViewportRuntime,
+  getPlainVolumeSliceRenderMode,
   getVisibleViewportCanvas,
   screenShotPaths,
   simulateDrawPath,
@@ -111,7 +112,7 @@ test.describe('Labelmap Overlap Playground - Next', () => {
         constructorName: 'PlanarViewport',
         type: 'planarNext',
         renderModesByDataId: {
-          'labelmap-overlap-next:volume': 'vtkVolumeSlice',
+          'labelmap-overlap-next:volume': getPlainVolumeSliceRenderMode(),
         },
       },
       {
@@ -120,7 +121,7 @@ test.describe('Labelmap Overlap Playground - Next', () => {
         constructorName: 'PlanarViewport',
         type: 'planarNext',
         renderModesByDataId: {
-          'labelmap-overlap-next:volume': 'vtkVolumeSlice',
+          'labelmap-overlap-next:volume': getPlainVolumeSliceRenderMode(),
         },
       },
       {
@@ -129,7 +130,7 @@ test.describe('Labelmap Overlap Playground - Next', () => {
         constructorName: 'PlanarViewport',
         type: 'planarNext',
         renderModesByDataId: {
-          'labelmap-overlap-next:volume': 'vtkVolumeSlice',
+          'labelmap-overlap-next:volume': getPlainVolumeSliceRenderMode(),
         },
       },
     ]);

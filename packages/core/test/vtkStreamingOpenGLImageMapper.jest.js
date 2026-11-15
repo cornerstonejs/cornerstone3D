@@ -1,6 +1,9 @@
 import { describe, it, expect } from '@jest/globals';
 import vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture';
+import vtkImageMapper from '@kitware/vtk.js/Rendering/Core/ImageMapper';
+import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import {
+  drawsLabelOutlineAtImageEdges,
   extend,
   getNorm16ShiftAndScale,
   newNorm16CorrectedTexture,
@@ -132,5 +135,56 @@ describe('vtkStreamingOpenGLImageMapper', () => {
       true
     );
     expect(model.openGLTexture.isA('vtkOpenGLTexture')).toBe(true);
+  });
+});
+
+describe('label outline at the edges of the image', () => {
+  /** Builds the fragment shader of a label outline image for a mapper. */
+  function buildLabelOutlineFragmentShader(mapper) {
+    const publicAPI = {};
+    const model = {};
+
+    extend(publicAPI, model);
+    model.renderable = mapper;
+    model.openGLTexture.set({ components: 1 }, true);
+
+    const actor = vtkImageSlice.newInstance();
+
+    actor.setMapper(mapper);
+    actor.getProperty().setUseLabelOutline(true);
+
+    const shaders = { Vertex: '', Fragment: '', Geometry: '' };
+
+    publicAPI.getShaderTemplate(shaders, undefined, actor);
+    publicAPI.replaceShaderValues(shaders, undefined, actor);
+
+    return shaders.Fragment;
+  }
+
+  it('reads a neighbour outside the image from the edge pixel by default', () => {
+    const fragment = buildLabelOutlineFragmentShader(
+      vtkImageMapper.newInstance()
+    );
+
+    expect(fragment).toContain(
+      'float value = texture2D(texture1, getSliceCoords(neighborPosIS, sliceAxis)).r;'
+    );
+    expect(fragment).not.toContain('neighborSliceCoords');
+  });
+
+  it('makes a pixel whose neighbour is outside the image a border pixel when asked', () => {
+    const mapper = vtkImageMapper.newInstance();
+
+    mapper.set({ labelOutlineAtImageEdges: true }, true);
+
+    const fragment = buildLabelOutlineFragmentShader(mapper);
+
+    expect(drawsLabelOutlineAtImageEdges(mapper)).toBe(true);
+    expect(fragment).toContain(
+      'if (any(greaterThan(neighborSliceCoords, vec2(1.0))) || any(lessThan(neighborSliceCoords, vec2(0.0)))) {'
+    );
+    expect(fragment).toContain(
+      'float value = texture2D(texture1, neighborSliceCoords).r;'
+    );
   });
 });

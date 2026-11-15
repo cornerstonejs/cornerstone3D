@@ -53,6 +53,7 @@ function resolveLabelmapRenderPlan({
   if (isVolumeImageMapper) {
     return createVolumeSliceImageMapperPlan({
       isVolumeImageMapper,
+      outlineAtImageEdges: !shouldUseSliceRendering(segmentation, config),
       renderMode,
       segmentation,
       segmentationId,
