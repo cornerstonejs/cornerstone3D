@@ -10,6 +10,7 @@ import {
 import vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture';
 import { getCanUseNorm16Texture } from '../../init';
 import takeBoundScalarTexture from './takeBoundScalarTexture';
+import { newFloatSafeTexture } from './floatLinearFilter';
 import actorsWaitingForStorage from '../helpers/actorsWaitingForStorage';
 
 const { vtkErrorMacro } = macro;
@@ -268,7 +269,7 @@ function vtkStreamingOpenGLImageResliceMapper(publicAPI, model) {
         !tex?.oglObject?.getHandle() || tex?.hash !== scalarsHash;
 
       if (reBuildTex && !hasUpdatedExtents) {
-        const newScalarTexture = vtkOpenGLTexture.newInstance();
+        const newScalarTexture = newFloatSafeTexture();
 
         newScalarTexture.setOpenGLRenderWindow(model._openGLRenderWindow);
         // This path builds the texture from the scalars of `imageData`, which
@@ -447,7 +448,7 @@ function vtkStreamingOpenGLImageResliceMapper(publicAPI, model) {
 
       const pwfSize = pwfWidth * textureHeight;
       const pwfTable = new Uint8ClampedArray(pwfSize);
-      const newOpacityTexture = vtkOpenGLTexture.newInstance();
+      const newOpacityTexture = newFloatSafeTexture();
       newOpacityTexture.setOpenGLRenderWindow(model._openGLRenderWindow);
 
       if (firstPwFunc) {

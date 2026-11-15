@@ -1,4 +1,6 @@
 import { ActorRenderMode } from '../../../types/IActor';
+import type { RenderingCapabilities } from '../../../utilities/renderingCapabilities';
+import { getImageMapperTextureFacts } from '../../vtkClasses/vtkStreamingOpenGLImageMapper';
 import type {
   RenderModePanelBinding,
   RenderModePanelEntry,
@@ -145,11 +147,14 @@ export function markSharedVolumeTextures(
 /**
  * Sums the GPU texture memory: the 3D textures of every volume as the
  * texture store counts them (each volume once, whoever draws it), and the
- * 2D textures of every binding that an image mapper draws.
+ * 2D textures of every binding that an image mapper draws. With a capability
+ * profile, the summary also names the limits of the device that change a
+ * render path decision (see {@link getDeviceLimits}).
  */
 export function summarizeTextureMemory(
   entries: RenderModePanelEntry[],
-  volumeTextureBytes: number
+  volumeTextureBytes: number,
+  capabilities?: Pick<RenderingCapabilities, 'webgl' | 'floatLinear'>
 ): RenderModePanelSummary {
   let sliceTextureBytes = 0;
   let sliceTexturesApproximate = false;
@@ -165,11 +170,27 @@ export function summarizeTextureMemory(
     }
   }
 
+  const deviceLimits = capabilities ? getDeviceLimits(capabilities) : [];
+
   return {
     volumeTextureBytes,
     sliceTextureBytes,
     sliceTexturesApproximate,
+    ...(deviceLimits.length ? { deviceLimits } : {}),
   };
+}
+
+/**
+ * The limits of the device, from its capability profile, that change a
+ * render path decision, in a few words each: a GPU that cannot filter float
+ * textures keeps float layers off the GPU volume path.
+ */
+export function getDeviceLimits(
+  capabilities: Pick<RenderingCapabilities, 'webgl' | 'floatLinear'>
+): string[] {
+  return capabilities.webgl && !capabilities.floatLinear
+    ? ['float textures: no linear filtering']
+    : [];
 }
 
 function volumeTexturesOf(
@@ -283,7 +304,10 @@ function readTexture(
  * Reads the 2D texture of an image mapper: width x height x the bytes of one
  * value of the uploaded array x its components. The GPU can keep another
  * format than the array (a 16-bit or float array can be held as 16 or 32 bit
- * floats), so only an 8-bit array gives an exact count.
+ * floats), so only an 8-bit array gives an exact count. When the device holds
+ * the slice in a way that is not the default, the texture also says how:
+ * a half float texture, or nearest filtering of a float texture that this
+ * device cannot filter.
  */
 function readSliceTexture(
   rendering: DebugRendering
@@ -308,7 +332,32 @@ function readSliceTexture(
     dimensions: [width, height],
     scalarType: scalars.getDataType?.(),
     approximate: bytesPerValue !== 1,
+    ...readDeviceTexture(rendering),
   };
+}
+
+/**
+ * The format and filter of the 2D texture of a rendering when they are not
+ * the default (see `getImageMapperTextureFacts`): a half float texture, or a
+ * float texture sampled with nearest filtering because the device cannot
+ * filter it. Empty otherwise.
+ */
+function readDeviceTexture(
+  rendering: DebugRendering
+): Pick<RenderModePanelTexture, 'textureFormat' | 'filter'> {
+  const facts = getImageMapperTextureFacts(
+    rendering.mapper ?? rendering.actor?.getMapper?.()
+  );
+
+  if (
+    !facts ||
+    (facts.textureFormat !== 'R16F' &&
+      !(facts.filter === 'nearest' && facts.nearestForFloat))
+  ) {
+    return {};
+  }
+
+  return { textureFormat: facts.textureFormat, filter: facts.filter };
 }
 
 function readImageData(rendering: DebugRendering): DebugImageData | undefined {

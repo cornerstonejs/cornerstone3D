@@ -15,6 +15,8 @@ import { volumeTextureReductionFactors } from '../../helpers/volumeRenderStrateg
 import { gpuSettingsForRender } from '../../../utilities/gpuSettingsPresets';
 import type { EffectiveRenderBackend } from '../../../types/RenderBackendRegistry';
 import { isValidVolume } from '../../../utilities/isValidVolume';
+import { getRenderingCapabilities } from '../../../utilities/renderingCapabilities';
+import type { RenderingCapabilities } from '../../../utilities/renderingCapabilities';
 import { getSlabSampleOffsets } from '../../../utilities/sampleVolumeSlice';
 import { getExactSliceAxis } from '../../../utilities/volumeSliceGeometry';
 import { getOrientationFromScanAxisNormal } from '../../helpers/getCameraVectors';
@@ -158,6 +160,45 @@ export function hasSlab(
       resolveSlabThickness(slabThickness)
     ).length > 1
   );
+}
+
+/**
+ * The facts of one layer (display set) that the device rules of the GPU
+ * volume path read.
+ */
+export type PlanarLayerFacts = {
+  /** The array type of the voxels of the layer, such as 'Float32Array'. */
+  arrayType?: string;
+};
+
+/**
+ * Whether the GPU volume path (`vtkVolumeSlice`) can draw a layer correctly
+ * on this device. That path holds the voxels of the layer in a 3D texture of
+ * their own type. A 32-bit float texture needs linear filtering, and a GPU
+ * whose capability profile says `floatLinear` is false (Safari on iOS) reads
+ * it as 0, so a float layer cannot go there; nearest filtering would draw
+ * it, but not smoothed. Without a profile of a WebGL2 context the GPU path is
+ * not limited here. Later device rules (texture size, memory) go here too.
+ *
+ * @param layer - The facts of the layer
+ * @param capabilities - The capability profile of the device
+ */
+export function canDrawLayerOnGpuVolumePath(
+  layer: PlanarLayerFacts,
+  capabilities: Pick<RenderingCapabilities, 'webgl' | 'floatLinear'>
+): boolean {
+  if (!capabilities.webgl) {
+    return true;
+  }
+
+  return layer.arrayType !== 'Float32Array' || capabilities.floatLinear;
+}
+
+/** The facts of {@link PlanarLayerFacts} of a volume. */
+function getLayerFacts(volume: IImageVolume): PlanarLayerFacts {
+  return {
+    arrayType: volume.voxelManager?.getConstructor?.()?.name ?? volume.dataType,
+  };
 }
 
 type PlanarPathInputs = {
@@ -349,7 +390,10 @@ export class PlanarRenderPathDecisionService {
    * The volume render mode of one data set: the sampled volume mode of the
    * resolved backend when `canSampleSliceOnCpu` holds, the volume mode of the
    * backend otherwise. So with slice first on and the 'gpu' backend, a plain
-   * slice is sampled and any slab is drawn by the GPU volume path. A backend with no sampled volume mode (the 'cpu'
+   * slice is sampled and any slab is drawn by the GPU volume path, except the
+   * slab of a layer that this device cannot draw there
+   * (`canDrawLayerOnGpuVolumePath`), which is sampled too. A backend with no
+   * sampled volume mode (the 'cpu'
    * backend, or an extension backend that declares none) keeps its volume
    * mode. The viewport calls it again once the data provider has loaded a
    * data set on the volume path, because the load may create the volume that
@@ -377,8 +421,11 @@ export class PlanarRenderPathDecisionService {
    * under the id that the data provider gives it (`resolveViewportVolumeId`),
    * and holds one value per voxel (a colour volume keeps the GPU volume
    * path); the data set is not a segmentation overlay; and the view has no
-   * slab (`hasSlab`). The caller checks that the data set takes the volume
-   * path and that the backend has a sampled volume mode.
+   * slab (`hasSlab`), or the GPU volume path cannot draw this layer on this
+   * device (`canDrawLayerOnGpuVolumePath` with the capability profile), so
+   * its slab is sampled on the CPU whatever its thickness. The caller checks
+   * that the data set takes the volume path and that the backend has a
+   * sampled volume mode.
    */
   private canSampleSliceOnCpu(
     dataSet: PlanarRegisteredDataSet,
@@ -414,7 +461,13 @@ export class PlanarRenderPathDecisionService {
       return false;
     }
 
-    return !hasSlab(volume, options.slabThickness);
+    return (
+      !hasSlab(volume, options.slabThickness) ||
+      !canDrawLayerOnGpuVolumePath(
+        getLayerFacts(volume),
+        getRenderingCapabilities()
+      )
+    );
   }
 
   /**

@@ -12,6 +12,7 @@ import type { Panel, StatsInstance, PerformanceWithMemory } from './types';
 import { PanelType } from './enums';
 import { STATS_CONFIG, PANEL_CONFIGS, CONVERSION } from './constants';
 import { coreLog } from '../../../utilities/logger';
+import { getRenderingCapabilities } from '../../../utilities/renderingCapabilities';
 import {
   collectBindingFacts,
   markSharedVolumeTextures,
@@ -479,7 +480,11 @@ export class StatsOverlay implements StatsInstance {
     markSharedVolumeTextures(entries);
     panel.setContent(
       entries,
-      summarizeTextureMemory(entries, readTotalVolumeTextureBytes())
+      summarizeTextureMemory(
+        entries,
+        readTotalVolumeTextureBytes(),
+        getRenderingCapabilities()
+      )
     );
   }
 

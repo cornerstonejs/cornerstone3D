@@ -152,6 +152,10 @@ export class RenderModesPanel implements Panel {
     if (summary) {
       appendField(this.summary, 'gpu memory', formatSummary(summary), 96);
     }
+
+    if (summary?.deviceLimits?.length) {
+      appendField(this.summary, 'device', summary.deviceLimits.join(', '), 96);
+    }
   }
 }
 
@@ -306,6 +310,13 @@ export type RenderModePanelTexture = {
   scalarType?: string;
   /** True when the GPU can hold the values in another format than the array. */
   approximate?: boolean;
+  /**
+   * The format of a 2D texture when the device holds it in a way that is not
+   * the default ('R16F', or 'R32F' with nearest filtering).
+   */
+  textureFormat?: string;
+  /** The filter of a 2D texture that has a `textureFormat`. */
+  filter?: string;
   volumeId?: string;
   /** The number of viewports that draw the same volume. */
   sharedBy?: number;
@@ -316,6 +327,8 @@ export type RenderModePanelSummary = {
   volumeTextureBytes: number;
   sliceTextureBytes: number;
   sliceTexturesApproximate?: boolean;
+  /** The limits of the device that change a render path decision. */
+  deviceLimits?: string[];
 };
 
 function orderBindings(
@@ -440,7 +453,7 @@ function createBindingRow(binding: RenderModePanelBinding): HTMLDivElement {
   appendSamplingFields(fields, binding);
 
   for (const texture of binding.gpuTextures ?? []) {
-    appendField(fields, 'gpu', formatTexture(texture), 64);
+    appendField(fields, 'gpu', formatTexture(texture), 80);
   }
 
   row.appendChild(fields);
@@ -666,10 +679,14 @@ function formatTexture(texture: RenderModePanelTexture): string {
       ? ` ${texture.scalarType.replace(/Array$/, '')}`
       : '';
 
+    const held = texture.textureFormat
+      ? `, held as ${texture.textureFormat} ${texture.filter ?? ''}`.trimEnd()
+      : '';
+
     return `2D slice ${width}x${height}${type}, ${formatMegabytes(
       texture.bytes,
       texture.approximate
-    )}`;
+    )}${held}`;
   }
 
   const shared =

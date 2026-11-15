@@ -1,6 +1,11 @@
 import macro from '@kitware/vtk.js/macros';
 import vtkOpenGLImageMapper from '@kitware/vtk.js/Rendering/OpenGL/ImageMapper';
 import vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture';
+import { Filter } from '@kitware/vtk.js/Rendering/OpenGL/Texture/Constants';
+import {
+  isUnfilterableFloatTexture,
+  sampleUnfilterableFloatNearest,
+} from './floatLinearFilter';
 
 /**
  * The shift and scale that turn a texel of a 2D texture back into the data
@@ -36,7 +41,9 @@ export function getNorm16ShiftAndScale(context, openGLDataType, shiftAndScale) {
 /**
  * The 2D texture of {@link vtkStreamingOpenGLImageMapper}: a vtk.js OpenGL
  * texture whose `getShiftAndScale` gives the right pair for norm16 textures
- * (see {@link getNorm16ShiftAndScale}).
+ * (see {@link getNorm16ShiftAndScale}), and that samples a 32-bit float
+ * format this device cannot filter with nearest filtering (see
+ * `sampleUnfilterableFloatNearest`).
  */
 function vtkNorm16CorrectedOpenGLTexture(publicAPI, model) {
   model.classHierarchy.push('vtkNorm16CorrectedOpenGLTexture');
@@ -55,6 +62,7 @@ function extendTexture(publicAPI, model, initialValues = {}) {
   vtkOpenGLTexture.extend(publicAPI, model, initialValues);
 
   vtkNorm16CorrectedOpenGLTexture(publicAPI, model);
+  sampleUnfilterableFloatNearest(publicAPI);
 }
 
 export const newNorm16CorrectedTexture = macro.newInstance(
@@ -63,8 +71,97 @@ export const newNorm16CorrectedTexture = macro.newInstance(
 );
 
 /**
+ * Gives a 32-bit float texture nearest filtering when this device cannot
+ * filter such textures linearly: the capability profile says `floatLinear`
+ * is false, as in Safari on iOS, which has no `OES_texture_float_linear`
+ * (see `isUnfilterableFloatTexture`). WebGL reads a float texture with a
+ * linear filter as black there, so a layer whose opacity table is such a
+ * texture is fully clear. With nearest filtering the values are right and
+ * the picture is not smoothed. A half float texture (R16F), which vtk.js
+ * fills from float data whose values fit, is left alone: WebGL2 can filter
+ * it. It sets the filters of the texture, so it suits a texture that vtk.js
+ * makes again whenever its content changes, such as the opacity table.
+ *
+ * @param context - The WebGL context of the texture
+ * @param texture - A vtk.js OpenGL texture, or nothing
+ * @returns Whether the filters of the texture were changed
+ */
+export function useNearestForUnfilterableFloat(context, texture) {
+  if (!context || !texture?.getHandle?.()) {
+    return false;
+  }
+
+  if (!isUnfilterableFloatTexture(texture)) {
+    return false;
+  }
+
+  if (
+    texture.getMinificationFilter() === Filter.NEAREST &&
+    texture.getMagnificationFilter() === Filter.NEAREST
+  ) {
+    return false;
+  }
+
+  texture.setMinificationFilter(Filter.NEAREST);
+  texture.setMagnificationFilter(Filter.NEAREST);
+
+  return true;
+}
+
+const TEXTURE_FORMAT_NAMES = {
+  0x8f98: 'R16_SNORM',
+  0x822a: 'R16',
+  0x822e: 'R32F',
+  0x822d: 'R16F',
+  0x8229: 'R8',
+};
+
+const imageTextureFacts = new WeakMap();
+
+/**
+ * Names the internal format of a single channel texture: 'R16_SNORM', 'R16',
+ * 'R32F', 'R16F', 'R8', or 'unknown'.
+ *
+ * @param internalFormat - The WebGL internal format
+ */
+export function getTextureFormatName(internalFormat) {
+  return TEXTURE_FORMAT_NAMES[internalFormat] ?? 'unknown';
+}
+
+/**
+ * What the GPU holds for the image of an image mapper after its last draw:
+ * the internal format of the 2D texture (see {@link getTextureFormatName}),
+ * the filter that WebGL samples it with ('linear' or 'nearest'), and
+ * `nearestForFloat`, true when that filter is nearest only because this
+ * device cannot filter float textures. Undefined before the first draw.
+ *
+ * @param mapper - The vtkImageMapper (not its OpenGL node)
+ */
+export function getImageMapperTextureFacts(mapper) {
+  return mapper ? imageTextureFacts.get(mapper) : undefined;
+}
+
+/** Reads the facts of {@link getImageMapperTextureFacts} from a texture. */
+function readTextureFacts(context, texture) {
+  if (!context || !texture?.getHandle?.()) {
+    return undefined;
+  }
+
+  const filter = texture.getOpenGLFilterMode(texture.getMagnificationFilter());
+
+  return {
+    textureFormat: getTextureFormatName(
+      texture.getReferenceByName('internalFormat')
+    ),
+    filter: filter === context.NEAREST ? 'nearest' : 'linear',
+    nearestForFloat: isUnfilterableFloatTexture(texture),
+  };
+}
+
+/**
  * vtkStreamingOpenGLImageMapper - the vtk.js OpenGL image mapper with the
- * right shift and scale for 16-bit norm16 textures.
+ * right shift and scale for 16-bit norm16 textures, and with float textures
+ * that still draw on a device that cannot filter them linearly.
  *
  * vtk.js 36.4.1 (`Rendering/OpenGL/Texture.js`, `getShiftAndScale`) gives
  * scale 32767.5, shift -0.5 for SHORT and scale 65536, shift 0 for
@@ -73,14 +170,37 @@ export const newNorm16CorrectedTexture = macro.newInstance(
  * Int16 value draws between 0 and 1 unit too low (`c / 65534 - 0.5`) and a
  * Uint16 value between 0 and 1 unit too high (`c / 65535`). This class only
  * gives its 2D texture the right pair; it changes nothing for a texture that
- * is not norm16 (float, half float, 8-bit). It can go when vtk.js fixes
- * `getShiftAndScale`.
+ * is not norm16 (float, half float, 8-bit). That part can go when vtk.js
+ * fixes `getShiftAndScale`.
+ *
+ * vtk.js also gives the image texture and the opacity table a linear filter
+ * whenever the image is interpolated, also when they are 32-bit float
+ * textures on a device that cannot filter those. This class samples such a
+ * texture with nearest filtering: its image texture always does that (see
+ * `sampleUnfilterableFloatNearest`), and the opacity table, which vtk.js
+ * makes again for each new opacity function, gets nearest filters after each
+ * build (see {@link useNearestForUnfilterableFloat}). It also keeps
+ * what it holds for the debug panel and the draw self-test (see
+ * {@link getImageMapperTextureFacts}).
  *
  * @param {*} publicAPI The public API to extend
  * @param {*} model The private model to extend.
  */
 function vtkStreamingOpenGLImageMapper(publicAPI, model) {
   model.classHierarchy.push('vtkStreamingOpenGLImageMapper');
+
+  const superBuildBufferObjects = publicAPI.buildBufferObjects;
+
+  publicAPI.buildBufferObjects = (ren, actor) => {
+    superBuildBufferObjects(ren, actor);
+    useNearestForUnfilterableFloat(model.context, model.pwfTexture);
+
+    const facts = readTextureFacts(model.context, model.openGLTexture);
+
+    if (model.renderable && facts) {
+      imageTextureFacts.set(model.renderable, facts);
+    }
+  };
 }
 
 const DEFAULT_VALUES = {};

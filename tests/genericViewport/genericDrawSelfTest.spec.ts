@@ -39,10 +39,18 @@ type SelfTestResult = {
     dataType: string;
     passed: boolean;
     textureFormat: string;
+    filter: string;
+    note?: string;
     formatUsable: boolean;
     maxError: number;
     pixelsOff: number;
     pixelsChecked: number;
+    draws: Array<{
+      name: string;
+      textureFormat: string;
+      filter: string;
+      pixelsOff: number;
+    }>;
     error?: string;
   }>;
   error?: string;
@@ -194,6 +202,25 @@ function runPreviousProbe(): FormatFlags | null {
   return result;
 }
 
+/** Stores a capability profile for the next load of the page. */
+async function storeProfile(
+  page: Page,
+  renderer: string,
+  formats: FormatFlags
+): Promise<void> {
+  await page.evaluate(
+    ({ key, value }) => window.localStorage.setItem(key, value),
+    {
+      key: STORAGE_KEY,
+      value: JSON.stringify({
+        probeVersion: PROBE_VERSION,
+        renderer,
+        formats,
+      }),
+    }
+  );
+}
+
 /** Checks that every data type drew within one grey level. */
 function expectDrawsPass(result: SelfTestResult): void {
   expect(result.error).toBeUndefined();
@@ -308,6 +335,66 @@ test.describe('Draw self-test', () => {
     if (formats.floatLinear) {
       expectDrawsPass(result);
     }
+
+    await page.evaluate(
+      (key) => window.localStorage.removeItem(key),
+      STORAGE_KEY
+    );
+  });
+
+  test('a profile without float linear filtering draws Float32 with right values, not smoothed', async ({
+    page,
+  }) => {
+    const first = await openAndWait(page);
+
+    await storeProfile(page, first.capabilities.renderer, {
+      ...first.probe.formats,
+      floatLinear: false,
+    });
+
+    const result = await openAndWait(page);
+    const float32 = result.cases.find(
+      (testCase) => testCase.dataType === 'Float32'
+    );
+
+    console.log(
+      'draw self-test without float linear filtering:',
+      JSON.stringify(
+        result.cases.map(({ dataType, textureFormat, filter, draws }) => ({
+          dataType,
+          textureFormat,
+          filter,
+          draws: draws.map((draw) => [
+            draw.name,
+            draw.textureFormat,
+            draw.filter,
+            draw.pixelsOff,
+          ]),
+        }))
+      )
+    );
+
+    expect(result.capabilities.floatLinear).toBe(false);
+    expect(float32.textureFormat).toBe('R32F');
+    expect(float32.filter).toBe('nearest');
+    expect(float32.formatUsable).toBe(true);
+    expect(float32.note).toBe(
+      'right values, not smoothed on this device, because it cannot filter float textures'
+    );
+    expect(
+      float32.draws.filter((draw) => draw.textureFormat === 'R32F').length
+    ).toBeGreaterThan(0);
+    float32.draws
+      .filter((draw) => draw.textureFormat === 'R32F')
+      .forEach((draw) => expect(draw.filter, draw.name).toBe('nearest'));
+    float32.draws
+      .filter((draw) => draw.textureFormat === 'R16F')
+      .forEach((draw) => expect(draw.filter, draw.name).toBe('linear'));
+    expectDrawsPass(result);
+    await expect(page.locator('#status')).toHaveText(/^PASS/);
+    await expect(page.locator('#results')).toContainText(
+      'Float32: right values, not smoothed on this device, because it cannot filter float textures'
+    );
 
     await page.evaluate(
       (key) => window.localStorage.removeItem(key),

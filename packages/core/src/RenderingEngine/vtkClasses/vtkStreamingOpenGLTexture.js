@@ -10,6 +10,7 @@ import VoxelStatistics from '../../enums/VoxelStatistics';
 import ImageQualityStatus from '../../enums/ImageQualityStatus';
 import autoLoad from '../../utilities/autoLoad';
 import { getConfiguration } from '../../init';
+import { sampleUnfilterableFloatNearest } from './floatLinearFilter';
 
 const DEFAULT_MAX_SLICES_PER_RENDER = 16;
 const DEFAULT_MAX_MILLISECONDS_PER_RENDER = 8;
@@ -67,6 +68,9 @@ function convertDataType(data, targetDataType) {
  * This class has methods to update the texture memory on the GPU slice by slice
  * in an efficient yet GPU-architecture friendly manner.
  *
+ * A float volume is held as a 32-bit float texture. On a device that cannot
+ * filter float textures, the texture is sampled with nearest filtering, so
+ * the values are right and not smoothed (see `sampleUnfilterableFloatNearest`).
  *
  * @param {*} publicAPI The public API to extend
  * @param {*} model The private model to extend.
@@ -1109,6 +1113,7 @@ export function extend(publicAPI, model, initialValues = {}) {
 
   // Object methods
   vtkStreamingOpenGLTexture(publicAPI, model);
+  sampleUnfilterableFloatNearest(publicAPI);
 }
 
 // ----------------------------------------------------------------------------

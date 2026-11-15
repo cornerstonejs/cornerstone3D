@@ -166,7 +166,8 @@ function buildSections(result: DrawSelfTestResult): ReportSection[] {
         {
           label: testCase.dataType,
           value:
-            `texture ${testCase.textureFormat}` +
+            (testCase.note ? `${testCase.note}. ` : '') +
+            `texture ${testCase.textureFormat} ${testCase.filter}` +
             (testCase.formatUsable ? '' : ' (profile says it does not work)') +
             `, largest error ${formatNumber(testCase.maxError)} grey levels, ` +
             `${testCase.pixelsOff} of ${testCase.pixelsChecked} pixels off` +
@@ -175,7 +176,7 @@ function buildSections(result: DrawSelfTestResult): ReportSection[] {
         },
         ...testCase.draws.map((draw) => ({
           label: `  ${testCase.dataType} ${draw.name}`,
-          value: `largest error ${formatNumber(draw.maxError)}, ${draw.pixelsOff} pixels off`,
+          value: `texture ${draw.textureFormat} ${draw.filter}, largest error ${formatNumber(draw.maxError)}, ${draw.pixelsOff} pixels off`,
           passed: draw.pixelsOff === 0,
         })),
       ]),

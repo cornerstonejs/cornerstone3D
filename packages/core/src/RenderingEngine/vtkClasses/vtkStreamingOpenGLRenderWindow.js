@@ -4,6 +4,7 @@ import vtkStreamingOpenGLViewNodeFactory, {
   registerOverride,
 } from './vtkStreamingOpenGLViewNodeFactory';
 import { applyNorm16ExtensionGate } from './norm16ExtensionGate';
+import { applyFloatLinearExtensionGate } from './floatLinearFilter';
 
 /**
  * vtkStreamingOpenGLRenderWindow - A derived class of the core vtkOpenGLRenderWindow class.
@@ -13,7 +14,9 @@ import { applyNorm16ExtensionGate } from './norm16ExtensionGate';
  * Its WebGL context follows the texture probe: when the probe says norm16
  * textures are not usable, the context reports no `EXT_texture_norm16`, so the
  * stock vtk.js image mapper, which turns norm16 on by itself, agrees with the
- * probe (see `norm16ExtensionGate`).
+ * probe (see `norm16ExtensionGate`). In the same way, when the profile says
+ * float textures cannot be filtered, the context reports no
+ * `OES_texture_float_linear` (see `applyFloatLinearExtensionGate`).
  *
  * @param {*} publicAPI The public API to extend
  * @param {*} model The private model to extend.
@@ -24,7 +27,9 @@ function vtkStreamingOpenGLRenderWindow(publicAPI, model) {
   const superGet3DContext = publicAPI.get3DContext;
 
   publicAPI.get3DContext = (options) =>
-    applyNorm16ExtensionGate(superGet3DContext(options));
+    applyFloatLinearExtensionGate(
+      applyNorm16ExtensionGate(superGet3DContext(options))
+    );
 }
 
 // ----------------------------------------------------------------------------

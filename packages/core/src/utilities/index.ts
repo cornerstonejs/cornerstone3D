@@ -180,6 +180,7 @@ export type {
   DrawSelfTestCase,
   DrawSelfTestDataType,
   DrawSelfTestDraw,
+  DrawSelfTestFilter,
   DrawSelfTestOptions,
   DrawSelfTestResult,
 } from './drawSelfTest';

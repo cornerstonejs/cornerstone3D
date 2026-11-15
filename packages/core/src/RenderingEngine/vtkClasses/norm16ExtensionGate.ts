@@ -15,13 +15,28 @@ let warned = false;
  * Every other property and method is the one of the context.
  */
 export function withoutNorm16Extension<T extends object>(context: T): T {
+  return withoutExtension(context, NORM16_EXTENSION_NAME);
+}
+
+/**
+ * Wraps a WebGL context so that it reports one extension as missing:
+ * `getExtension` gives null for it and `getSupportedExtensions` leaves it out.
+ * Every other property and method is the one of the context.
+ *
+ * @param context - The WebGL context, or a context wrapped before
+ * @param hiddenName - The name of the extension to hide
+ */
+export function withoutExtension<T extends object>(
+  context: T,
+  hiddenName: string
+): T {
   const boundMethods = new Map<PropertyKey, unknown>();
 
   return new Proxy(context, {
     get(target, property) {
       if (property === 'getExtension') {
         return (name: string) =>
-          name === NORM16_EXTENSION_NAME
+          name === hiddenName
             ? null
             : (target as unknown as WebGL2RenderingContext).getExtension(name);
       }
@@ -30,7 +45,7 @@ export function withoutNorm16Extension<T extends object>(context: T): T {
         return () =>
           (target as unknown as WebGL2RenderingContext)
             .getSupportedExtensions()
-            ?.filter((name) => name !== NORM16_EXTENSION_NAME) ?? null;
+            ?.filter((name) => name !== hiddenName) ?? null;
       }
 
       const value = Reflect.get(target, property);

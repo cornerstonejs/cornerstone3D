@@ -3,6 +3,7 @@ import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkImageMapper from '@kitware/vtk.js/Rendering/Core/ImageMapper';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import { vtkOffscreenMultiRenderWindow } from '../RenderingEngine/vtkClasses';
+import { getTextureFormatName } from '../RenderingEngine/vtkClasses/vtkStreamingOpenGLImageMapper';
 import copyWebGLCanvasToCanvas from '../RenderingEngine/helpers/copyWebGLCanvasToCanvas';
 import { applyPlanarVolumePresentation } from '../RenderingEngine/GenericViewport/Planar/planarVolumePresentation';
 import { InterpolationType } from '../enums';
@@ -16,12 +17,19 @@ import { probeTextureFormats } from './textureSupport';
 /** The array types the self-test draws. */
 export type DrawSelfTestDataType = 'Int16' | 'Uint16' | 'Float32';
 
+/** The filter that WebGL sampled a texture with. */
+export type DrawSelfTestFilter = 'linear' | 'nearest';
+
 /** One draw of a test image and what came back. */
 export interface DrawSelfTestDraw {
   name: string;
   voiRange: VOIRange;
   /** Screen pixels per image pixel: 1 for the ramp, more for the filter check. */
   zoom: number;
+  /** The texture format of this draw (see `DrawSelfTestCase.textureFormat`). */
+  textureFormat: string;
+  /** The filter that WebGL sampled the texture of this draw with. */
+  filter: DrawSelfTestFilter;
   /** Largest difference from the expected grey level, in grey levels of 255. */
   maxError: number;
   pixelsOff: number;
@@ -38,10 +46,19 @@ export interface DrawSelfTestCase {
    */
   textureFormat: string;
   /**
-   * What the stored capability profile says about that format with linear
-   * filtering. False means the GPU cannot draw this image correctly.
+   * What the stored capability profile says about that format with the
+   * filter that cornerstone uses for it on this device. False means the GPU
+   * cannot draw this image correctly.
    */
   formatUsable: boolean;
+  /**
+   * The filter that the image was drawn with. 'nearest' for a 32-bit float
+   * texture on a device that cannot filter float textures: cornerstone then
+   * promises the right values, not smoothed.
+   */
+  filter: DrawSelfTestFilter;
+  /** A plain sentence when the case was judged by another promise than usual. */
+  note?: string;
   maxError: number;
   pixelsOff: number;
   pixelsChecked: number;
@@ -148,11 +165,19 @@ const RAMP_BANDS: Record<DrawSelfTestDataType, RampBand[]> = {
   ],
 };
 
-/** The two values of the filter check: 255 apart, so one grey level per unit. */
-const FILTER_PAIRS: Record<DrawSelfTestDataType, [number, number]> = {
-  Int16: [-1024, -769],
-  Uint16: [1000, 1255],
-  Float32: [0, 2.55],
+/**
+ * The pairs of values of the filter checks: 255 units apart, so one grey
+ * level per unit. The second Float32 pair lies outside plus or minus 2048,
+ * so vtk.js cannot hold it in a half float texture: it checks a 32-bit float
+ * texture also on a device that holds the first pair as half float.
+ */
+const FILTER_PAIRS: Record<DrawSelfTestDataType, Array<[number, number]>> = {
+  Int16: [[-1024, -769]],
+  Uint16: [[1000, 1255]],
+  Float32: [
+    [0, 2.55],
+    [3000, 3002.55],
+  ],
 };
 
 const ARRAY_TYPES = {
@@ -161,13 +186,8 @@ const ARRAY_TYPES = {
   Float32: Float32Array,
 };
 
-const TEXTURE_FORMAT_NAMES: Record<number, string> = {
-  0x8f98: 'R16_SNORM',
-  0x822a: 'R16',
-  0x822e: 'R32F',
-  0x822d: 'R16F',
-  0x8229: 'R8',
-};
+const NEAREST_FLOAT_NOTE =
+  'right values, not smoothed on this device, because it cannot filter float textures';
 
 type TestImage = {
   imageData: vtkImageData;
@@ -257,6 +277,34 @@ export function getFilteredValue(
   const weight = Math.min(1, Math.max(0, (column + 0.5) / zoom - 0.5));
 
   return a + (b - a) * weight;
+}
+
+/**
+ * The value that nearest filtering must give at the centre of screen column
+ * `column` when two texels `a` and `b` side by side are drawn `zoom` times
+ * enlarged: `a` over the first texel, `b` over the second.
+ */
+export function getNearestValue(
+  a: number,
+  b: number,
+  column: number,
+  zoom: number
+): number {
+  return column < zoom ? a : b;
+}
+
+/**
+ * The filter that cornerstone promises for a texture format on a device:
+ * nearest for a 32-bit float texture when the device cannot filter float
+ * textures, linear for every other format.
+ */
+export function getPromisedFilter(
+  textureFormat: string,
+  capabilities: Pick<RenderingCapabilities, 'floatLinear'>
+): DrawSelfTestFilter {
+  return textureFormat === 'R32F' && !capabilities.floatLinear
+    ? 'nearest'
+    : 'linear';
 }
 
 /**
@@ -390,21 +438,34 @@ function drawAndRead(
     .getPixelData(0, 0, width - 1, height - 1);
 }
 
-/** Names the internal format of the texture that vtk.js made for the mapper. */
-function getMapperTextureFormat(
+/**
+ * Names the internal format of the texture that vtk.js made for the mapper,
+ * and the filter that WebGL samples it with.
+ */
+function getMapperTexture(
   selfTest: SelfTestRenderer,
   mapper: vtkImageMapper
-): string {
-  const openGLMapper = selfTest.offscreen
-    .getOpenGLRenderWindow()
-    .getViewNodeFor(mapper);
+): { textureFormat: string; filter: DrawSelfTestFilter } {
+  const openGLRenderWindow = selfTest.offscreen.getOpenGLRenderWindow();
+  const openGLMapper = openGLRenderWindow.getViewNodeFor(mapper);
   const texture = openGLMapper?.getReferenceByName?.('openGLTexture');
-  const internalFormat = texture?.getReferenceByName?.('internalFormat');
+  const context = openGLRenderWindow.getContext?.() as WebGL2RenderingContext;
+  const filter = texture?.getOpenGLFilterMode?.(
+    texture.getMagnificationFilter()
+  );
 
-  return TEXTURE_FORMAT_NAMES[internalFormat] ?? 'unknown';
+  return {
+    textureFormat: getTextureFormatName(
+      texture?.getReferenceByName?.('internalFormat')
+    ),
+    filter: context && filter === context.NEAREST ? 'nearest' : 'linear',
+  };
 }
 
-/** Whether the capability profile says a format works with linear filtering. */
+/**
+ * Whether the capability profile says a format works with the filter that
+ * cornerstone promises for it (see {@link getPromisedFilter}).
+ */
 function isFormatUsable(
   textureFormat: string,
   capabilities: RenderingCapabilities
@@ -414,7 +475,9 @@ function isFormatUsable(
     case 'R16':
       return capabilities.norm16Linear;
     case 'R32F':
-      return capabilities.floatLinear;
+      return getPromisedFilter(textureFormat, capabilities) === 'nearest'
+        ? capabilities.float
+        : capabilities.floatLinear;
     case 'R16F':
       return capabilities.halfFloatLinear;
     default:
@@ -429,8 +492,12 @@ function formatValue(value: number): string {
 
 /**
  * Runs the draws of one array type: the ramp 1:1 once per band, with the
- * window of that band, then two values side by side enlarged, which checks
- * the linear filter between them.
+ * window of that band, then each pair of `FILTER_PAIRS` side by side
+ * enlarged, which checks the filter between them. That filter must be the one that cornerstone
+ * promises for the texture of that draw on this device
+ * ({@link getPromisedFilter}): linear, or nearest for a 32-bit float texture
+ * on a device that cannot filter float textures. A wrong value fails either
+ * way.
  */
 function runSelfTestCase(
   selfTest: SelfTestRenderer,
@@ -442,9 +509,8 @@ function runSelfTestCase(
   const actor = vtkImageSlice.newInstance();
   const draws: DrawSelfTestDraw[] = [];
   const ramp = createRampImage(dataType);
-  const [a, b] = FILTER_PAIRS[dataType];
-  const pair = createTestImage(dataType, 2, 2, (x) => (x === 0 ? a : b));
   let textureFormat = 'unknown';
+  let filter: DrawSelfTestFilter = 'linear';
 
   actor.setMapper(mapper);
   selfTest.renderer.addActor(actor);
@@ -453,12 +519,15 @@ function runSelfTestCase(
     RAMP_BANDS[dataType].forEach(({ base, step }) => {
       const voiRange = { lower: base, upper: base + 255 * step };
       const pixels = drawAndRead(selfTest, actor, mapper, ramp, voiRange, 1);
+      const texture = getMapperTexture(selfTest, mapper);
 
-      textureFormat = getMapperTextureFormat(selfTest, mapper);
+      textureFormat = texture.textureFormat;
+      filter = texture.filter;
       draws.push({
         name: `1:1, window ${formatValue(voiRange.lower)} to ${formatValue(voiRange.upper)}`,
         voiRange,
         zoom: 1,
+        ...texture,
         ...compareGreyLevels(
           pixels,
           (column, row) =>
@@ -473,42 +542,85 @@ function runSelfTestCase(
       });
     });
 
-    const pairValues = [pair.values[0], pair.values[1]];
-    const voiRange = { lower: pairValues[0], upper: pairValues[1] };
-    const pixels = drawAndRead(
-      selfTest,
-      actor,
-      mapper,
-      pair,
-      voiRange,
-      FILTER_ZOOM
-    );
-
-    draws.push({
-      name: `linear filter between ${formatValue(pairValues[0])} and ${formatValue(pairValues[1])}, ${FILTER_ZOOM}x`,
-      voiRange,
-      zoom: FILTER_ZOOM,
-      ...compareGreyLevels(
-        pixels,
-        (column) =>
-          getExpectedGreyLevel(
-            getFilteredValue(pairValues[0], pairValues[1], column, FILTER_ZOOM),
-            voiRange
-          ),
-        pair.width * FILTER_ZOOM,
-        pair.height * FILTER_ZOOM,
-        maxGreyError
-      ),
+    FILTER_PAIRS[dataType].forEach(([a, b]) => {
+      draws.push(
+        runFilterDraw(selfTest, actor, mapper, dataType, [a, b], {
+          capabilities,
+          maxGreyError,
+        })
+      );
     });
   } catch (error) {
-    return summarizeCase(dataType, textureFormat, capabilities, draws, error);
+    return summarizeCase(
+      dataType,
+      { textureFormat, filter },
+      capabilities,
+      draws,
+      error
+    );
   } finally {
     selfTest.renderer.removeActor(actor);
     mapper.delete();
     actor.delete();
   }
 
-  return summarizeCase(dataType, textureFormat, capabilities, draws);
+  return summarizeCase(
+    dataType,
+    { textureFormat, filter },
+    capabilities,
+    draws
+  );
+}
+
+/**
+ * Draws two values side by side enlarged `FILTER_ZOOM` times and compares
+ * the pixels with the filter that cornerstone promises for the texture that
+ * vtk.js made for them (see {@link getPromisedFilter}).
+ */
+function runFilterDraw(
+  selfTest: SelfTestRenderer,
+  actor: vtkImageSlice,
+  mapper: vtkImageMapper,
+  dataType: DrawSelfTestDataType,
+  [a, b]: [number, number],
+  {
+    capabilities,
+    maxGreyError,
+  }: { capabilities: RenderingCapabilities; maxGreyError: number }
+): DrawSelfTestDraw {
+  const pair = createTestImage(dataType, 2, 2, (x) => (x === 0 ? a : b));
+  const pairValues = [pair.values[0], pair.values[1]];
+  const voiRange = { lower: pairValues[0], upper: pairValues[1] };
+  const pixels = drawAndRead(
+    selfTest,
+    actor,
+    mapper,
+    pair,
+    voiRange,
+    FILTER_ZOOM
+  );
+  const texture = getMapperTexture(selfTest, mapper);
+  const promisedFilter = getPromisedFilter(texture.textureFormat, capabilities);
+  const expectedValue =
+    promisedFilter === 'nearest' ? getNearestValue : getFilteredValue;
+
+  return {
+    name: `${promisedFilter} filter between ${formatValue(pairValues[0])} and ${formatValue(pairValues[1])}, ${FILTER_ZOOM}x`,
+    voiRange,
+    zoom: FILTER_ZOOM,
+    ...texture,
+    ...compareGreyLevels(
+      pixels,
+      (column) =>
+        getExpectedGreyLevel(
+          expectedValue(pairValues[0], pairValues[1], column, FILTER_ZOOM),
+          voiRange
+        ),
+      pair.width * FILTER_ZOOM,
+      pair.height * FILTER_ZOOM,
+      maxGreyError
+    ),
+  };
 }
 
 /**
@@ -584,20 +696,29 @@ function runScreenCopyCheck(
   }
 }
 
-/** Sums the draws of one array type into its result. */
+/**
+ * Sums the draws of one array type into its result. The texture is the one
+ * of the ramp draws.
+ */
 function summarizeCase(
   dataType: DrawSelfTestDataType,
-  textureFormat: string,
+  texture: { textureFormat: string; filter: DrawSelfTestFilter },
   capabilities: RenderingCapabilities,
   draws: DrawSelfTestDraw[],
   error?: unknown
 ): DrawSelfTestCase {
   const pixelsOff = draws.reduce((sum, draw) => sum + draw.pixelsOff, 0);
+  const { textureFormat, filter } = texture;
 
   return {
     dataType,
     passed: !error && draws.length > 0 && pixelsOff === 0,
     textureFormat,
+    filter,
+    note:
+      getPromisedFilter(textureFormat, capabilities) === 'nearest'
+        ? NEAREST_FLOAT_NOTE
+        : undefined,
     formatUsable: isFormatUsable(textureFormat, capabilities),
     maxError: draws.reduce((max, draw) => Math.max(max, draw.maxError), 0),
     pixelsOff,
@@ -616,7 +737,10 @@ function summarizeCase(
  *
  * For each array type it draws a ramp 1:1 (the full range, the extremes and
  * the CT or PT range, with windows that give one grey level per unit) and two
- * values enlarged, which checks linear filtering between them. It then checks
+ * values enlarged, which checks linear filtering between them. On a device
+ * that cannot filter float textures, a 32-bit float texture is checked for
+ * what cornerstone promises there: the right values, not smoothed (the case
+ * says so in `filter` and `note`). It then checks
  * the copy that puts a picture on screen (`screenCopy`), and it runs the
  * texture probe again and reports each probe.
  *

@@ -314,6 +314,11 @@ function setRenderBackend(backend: RenderBackendValue, reason?: string): void {
  * `sliceFirst` option still wins. Like setRenderBackend, this does not mark the
  * library initialized, so a later init(configuration) still runs.
  *
+ * Slice first also decides whether the loaders keep float data as floats on
+ * a GPU that cannot filter float textures (see `canRenderFloatTextures`). A
+ * volume keeps the array type it was created with, so turn slice first on
+ * before the volumes are created to get PT in SUV on such a device.
+ *
  * @param enabled - true to turn slice first on
  * @experimental
  * @category Initialization
@@ -359,17 +364,28 @@ function setPreferSizeOverAccuracy(status: boolean): void {
 }
 
 /**
- * Whether float (32-bit) textures can be linearly sampled, based on the
- * probed capability profile (OES_texture_float_linear draw + readback).
- * Historically this was a user-agent iOS check; environments where the probe
- * cannot run (no WebGL2 context, e.g. unit tests) keep the legacy user-agent
- * behavior so data-preparation code paths stay deterministic there.
+ * Whether float data can be drawn, so that the loaders keep values that are
+ * not whole numbers after scaling (PT in SUV) as 32-bit floats. That is true
+ * when the GPU can filter float textures linearly (`floatLinear` of the
+ * capability profile), and also when slice first is on
+ * (`rendering.planar.sliceFirst`): a planar viewport then cuts a slice on the
+ * CPU and draws it from a 2D texture that the device can draw, and a layer
+ * that would need a float 3D texture keeps its slab on the CPU too. A float
+ * volume that still ends in a 3D texture on such a device (a legacy or 3D
+ * viewport) is drawn with nearest filtering. When this is false, the loaders
+ * keep the stored integer values unscaled.
+ *
+ * Environments where the probe cannot run (no WebGL2 context, e.g. unit
+ * tests) keep the legacy user-agent behavior so data-preparation code paths
+ * stay deterministic there.
  */
 function canRenderFloatTextures(): boolean {
   const capabilities = getRenderingCapabilities();
 
   if (capabilities.webgl) {
-    return capabilities.floatLinear;
+    return (
+      capabilities.floatLinear || (config.rendering.planar?.sliceFirst ?? false)
+    );
   }
 
   return !isIOS();
