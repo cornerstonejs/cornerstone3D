@@ -117,6 +117,11 @@ export type PlanarCpuVolumeRendering = MountedRendering<{
    * `viewport.bindings.get(dataId).rendering.getSliceCacheStatistics()`.
    */
   getSliceCacheStatistics(): PlanarSliceCacheStatistics;
+  /**
+   * True when the slab of the view is too large for the CPU, so the picture
+   * is not that slab (the render plan reason `slabTooLarge`).
+   */
+  slabTooLarge?: boolean;
 }>;
 
 /**

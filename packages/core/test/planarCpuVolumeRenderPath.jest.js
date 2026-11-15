@@ -229,11 +229,17 @@ async function mount({
   return { ctx, attachment, volume, rendering: attachment.rendering };
 }
 
-/** The image that the last call of drawImageSync drew. */
-function lastDrawnImage() {
-  const calls = drawImageSync.mock.calls;
+let drawSpy;
+let putImageDataSpy;
 
-  return calls[calls.length - 1][0].image;
+/** The image of the slice that the draw step drew last. */
+function lastDrawnImage() {
+  return drawSpy.mock.contexts.at(-1).getImage();
+}
+
+/** The RGBA bytes of the slice that the draw step coloured last. */
+function lastColouredPixels() {
+  return Array.from(putImageDataSpy.mock.calls.at(-1)[0].data);
 }
 
 function lastDrawnPixels() {
@@ -249,12 +255,19 @@ describe('CpuVolumeSliceRenderPath', () => {
     voiSpy = jest
       .spyOn(setDefaultVolumeVOIModule, 'getDefaultVolumeVOIRange')
       .mockResolvedValue({ lower: 0, upper: 400 });
+    drawSpy = jest.spyOn(PlanarSampledSliceCanvas.prototype, 'draw');
+    putImageDataSpy = jest.spyOn(
+      CanvasRenderingContext2D.prototype,
+      'putImageData'
+    );
   });
 
   afterEach(() => {
     jest.clearAllTimers();
     jest.useRealTimers();
     voiSpy.mockRestore();
+    drawSpy.mockRestore();
+    putImageDataSpy.mockRestore();
   });
 
   it('samples once and redraws from the kept slice while the plane stays', async () => {
@@ -264,9 +277,10 @@ describe('CpuVolumeSliceRenderPath', () => {
     attachment.render();
 
     expect(rendering.getSliceCacheStatistics().misses).toBe(1);
-    expect(drawImageSync).toHaveBeenCalledTimes(2);
-    expect(drawImageSync.mock.calls[0][1]).toBe(true);
-    expect(drawImageSync.mock.calls[1][1]).toBe(false);
+    expect(drawSpy).toHaveBeenCalledTimes(2);
+    expect(drawSpy.mock.calls[0][0].invalidated).toBe(true);
+    expect(drawSpy.mock.calls[1][0].invalidated).toBe(false);
+    expect(putImageDataSpy).toHaveBeenCalledTimes(1);
     expect(rendering.renderingInvalidated).toBe(false);
   });
 
@@ -332,23 +346,25 @@ describe('CpuVolumeSliceRenderPath', () => {
 
     attachment.render();
 
-    expect(drawImageSync).not.toHaveBeenCalled();
+    expect(drawSpy).not.toHaveBeenCalled();
     expect(ctx.display.markRendered).not.toHaveBeenCalled();
   });
 
   it('keeps a NEAREST straight cut at voxel size, on the nearest slice, without smoothing', async () => {
-    const { attachment, rendering } = await mount({
+    const { attachment, ctx, rendering } = await mount({
       presentation: { interpolationType: InterpolationType.NEAREST },
     });
+    const smoothing = [];
 
+    jest.spyOn(ctx.cpu.context, 'drawImage').mockImplementation(function () {
+      smoothing.push(this.imageSmoothingEnabled);
+    });
     attachment.render();
     jest.advanceTimersByTime(SAMPLED_SLICE_REST_DELAY_MS);
 
-    const enabledElement = drawImageSync.mock.calls.at(-1)[0];
-
     expect(rendering.getSliceCacheStatistics().refined).toBe(0);
     expect(lastDrawnImage().width).toBe(4);
-    expect(enabledElement.viewport.pixelReplication).toBe(true);
+    expect(smoothing.at(-1)).toBe(false);
     expect(
       lastDrawnPixels().every((value) => Math.floor(value / 10) % 10 === 1)
     ).toBe(true);
@@ -397,11 +413,9 @@ describe('CpuVolumeSliceRenderPath', () => {
     attachment.render();
 
     expect(rendering.getSliceCacheStatistics().misses).toBe(1);
-    expect(drawImageSync.mock.calls.at(-1)[1]).toBe(true);
-    expect(drawImageSync.mock.calls.at(-1)[0].viewport.voi).toMatchObject({
-      windowCenter: 50,
-      windowWidth: 100,
-    });
+    expect(drawSpy.mock.calls.at(-1)[0].invalidated).toBe(true);
+    expect(lastDrawnImage().minPixelValue).toBeGreaterThanOrEqual(100);
+    expect(lastColouredPixels().every((value) => value === 255)).toBe(true);
   });
 
   it('finds a prefetched neighbour slice on a scroll', async () => {
@@ -460,8 +474,8 @@ describe('CpuVolumeSliceRenderPath', () => {
     ).toBe(true);
   });
 
-  it('draws the plain slice for a slab beyond the CPU work limit', async () => {
-    const { attachment } = await mount({
+  it('draws the plain slice for a slab beyond the CPU work limit, then the slab sampled in steps at rest', async () => {
+    const { attachment, rendering } = await mount({
       canvas: createCanvas(8, 8),
       camera: axialCamera(1),
       presentation: {
@@ -472,10 +486,21 @@ describe('CpuVolumeSliceRenderPath', () => {
     });
 
     attachment.render();
+    rendering.refreshFidelity();
 
     expect(
       lastDrawnPixels().every((value) => Math.floor(value / 100) === 1)
     ).toBe(true);
+    expect(rendering.qualityPending).toBe(true);
+
+    jest.advanceTimersByTime(SAMPLED_SLICE_REST_DELAY_MS);
+    jest.runAllTimers();
+    rendering.refreshFidelity();
+
+    expect(
+      lastDrawnPixels().every((value) => Math.floor(value / 100) === 3)
+    ).toBe(true);
+    expect(rendering.qualityPending).toBe(false);
   });
 
   it('samples again and renders when the time point of a dynamic volume changes', async () => {
@@ -582,7 +607,7 @@ describe('CpuVolumeSliceRenderPath', () => {
 
     expect(volume.load).toHaveBeenCalledTimes(1);
     expect(ctx.display.setNeedsRender).toHaveBeenCalled();
-    expect(drawImageSync).not.toHaveBeenCalled();
+    expect(drawSpy).not.toHaveBeenCalled();
   });
 
   it('records the volume quality and never reports an interactive reduction', async () => {
@@ -755,6 +780,124 @@ describe('PlanarSampledSliceCanvas', () => {
     expect(image.numberOfComponents).toBe(4);
     expect(image.getPixelData()).toBe(pixels);
     expect(image.voxelManager.getAtIndex(1)).toEqual([4, 5, 6]);
+  });
+
+  /**
+   * Draws a slice of float values with a presentation on a fresh target and
+   * returns the RGBA bytes of the coloured slice and the transform it was
+   * drawn with.
+   */
+  const drawSlice = (volume, sliceToDraw, presentation) => {
+    const canvas = new PlanarSampledSliceCanvas(volume, 4, 4);
+    const target = createCanvas(4, 4);
+    const context = target.getContext('2d');
+    const putImageData = jest.spyOn(
+      context.constructor.prototype,
+      'putImageData'
+    );
+    const setTransform = jest.spyOn(context, 'setTransform');
+
+    canvas.setSlice(sliceToDraw);
+    canvas.draw({
+      target: {
+        canvas: target,
+        context,
+        composition: { clearedRenderPassId: -1, renderPassId: 1 },
+      },
+      camera: {
+        focalPoint: [2, 0.5, 0],
+        parallelScale: 2,
+        viewPlaneNormal: [0, 0, -1],
+        viewUp: [0, -1, 0],
+      },
+      presentation,
+      invalidated: true,
+    });
+
+    const pixels = Array.from(putImageData.mock.calls.at(-1)[0].data);
+    const transform = setTransform.mock.calls.at(-1);
+
+    putImageData.mockRestore();
+
+    return { pixels, transform };
+  };
+  const channel = (pixels, offset) => pixels.filter((_, i) => i % 4 === offset);
+
+  it('colours a slice with the colour table of the GPU draw step, over the VOI and between whole values', () => {
+    const { pixels } = drawSlice(
+      createTestVolume(),
+      slice(new Float32Array([0, 100, 200.5, 400]), { width: 4 }),
+      { voiRange: { lower: 0, upper: 400 } }
+    );
+
+    channel(pixels, 0).forEach((red, index) => {
+      expect(
+        Math.abs(red - (255 * [0, 100, 200.5, 400][index]) / 400)
+      ).toBeLessThanOrEqual(1);
+    });
+    expect(channel(pixels, 0)).toEqual(channel(pixels, 1));
+    expect(channel(pixels, 3)).toEqual([255, 255, 255, 255]);
+  });
+
+  it('reads the values of a colormap opacity array as parts of the VOI range, as the GPU draw step does', () => {
+    const { pixels } = drawSlice(
+      createTestVolume({ ArrayType: Float32Array, modality: 'PT' }),
+      slice(new Float32Array([0, 1, 5, 10]), { width: 4 }),
+      {
+        voiRange: { lower: 0, upper: 10 },
+        colormap: {
+          name: 'hsv',
+          opacity: [
+            { value: 0, opacity: 0 },
+            { value: 1, opacity: 1 },
+          ],
+        },
+      }
+    );
+    const alphas = channel(pixels, 3);
+
+    [0, 25.5, 127.5, 255].forEach((alpha, index) => {
+      expect(Math.abs(alphas[index] - alpha)).toBeLessThanOrEqual(1);
+    });
+  });
+
+  it('multiplies the alpha by the opacity of the presentation', () => {
+    const { pixels } = drawSlice(
+      createTestVolume(),
+      slice(new Float32Array([0, 400])),
+      { voiRange: { lower: 0, upper: 400 }, opacity: 0.5 }
+    );
+
+    expect(channel(pixels, 3)).toEqual([128, 128]);
+  });
+
+  it('leaves the pixels outside the faces of the volume clear', () => {
+    const { pixels } = drawSlice(
+      createTestVolume(),
+      slice(new Float32Array([100, 100, 100, 100]), {
+        width: 4,
+        origin: [-1.25, 1, 1],
+        insideVolume: false,
+      }),
+      { voiRange: { lower: 0, upper: 400 } }
+    );
+
+    expect(channel(pixels, 3)).toEqual([0, 255, 255, 255]);
+  });
+
+  it('moves a NEAREST slice back by a small part of a pixel, so that a tie shows the next pixel as the GPU does', () => {
+    const presentation = { voiRange: { lower: 0, upper: 400 } };
+    const values = new Float32Array([0, 400]);
+    const linear = drawSlice(createTestVolume(), slice(values), presentation);
+    const nearest = drawSlice(createTestVolume(), slice(values), {
+      ...presentation,
+      interpolationType: InterpolationType.NEAREST,
+    });
+    const [a, b, c, d, e, f] = linear.transform;
+
+    expect(nearest.transform[4]).toBeCloseTo(e - (a + c) / 8192, 9);
+    expect(nearest.transform[5]).toBeCloseTo(f - (b + d) / 8192, 9);
+    expect(nearest.transform[4]).toBeLessThan(e);
   });
 
   it('makes the image again only for another slice', () => {

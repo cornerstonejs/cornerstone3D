@@ -492,7 +492,12 @@ function cancelRestWork(mount: SampledSliceMount): void {
  * CPU (`PlanarSliceSampler.isSlabTooLarge`), and lets the viewport update its
  * render plan when that changes.
  */
-function reportSamplingState(mount: SampledSliceMount): void {
+export function reportSamplingState(
+  mount: Pick<SampledSliceMount, 'dataId' | 'sampler'> & {
+    ctx: Pick<SampledSliceMount['ctx'], 'viewport'>;
+    rendering: { slabTooLarge?: boolean };
+  }
+): void {
   const { ctx, dataId, rendering, sampler } = mount;
   const slabTooLarge = sampler.isSlabTooLarge();
 
@@ -595,8 +600,11 @@ export async function getSampledSliceDefaultVOIRange(
  * picture that is not the slab of the view yet, because its steps still run
  * or because it is too large for the CPU, is pending as a loading picture is.
  */
-function refreshSampledSliceFidelity(
-  rendering: PlanarSampledSliceRendering,
+export function refreshSampledSliceFidelity(
+  rendering: Pick<
+    PlanarSampledSliceRendering,
+    'imageVolume' | 'voxelQuality' | 'qualityPending' | 'fullGrid'
+  >,
   sampler: PlanarSliceSampler
 ): void {
   rendering.voxelQuality = rendering.imageVolume.getVoxelQuality?.();

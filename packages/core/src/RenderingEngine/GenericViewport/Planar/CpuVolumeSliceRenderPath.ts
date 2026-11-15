@@ -3,10 +3,9 @@ import CanvasActor from '../../CanvasActor';
 import { Events, ViewportStatus, ViewportType } from '../../../enums';
 import eventTarget from '../../../eventTarget';
 import { ActorRenderMode } from '../../../types';
-import type { IImageVolume, Point3 } from '../../../types';
+import type { IImageVolume } from '../../../types';
 import type { IViewport } from '../../../types/IViewport';
 import triggerEvent from '../../../utilities/triggerEvent';
-import { getDefaultVolumeVOIRange } from '../../helpers/setDefaultVolumeVOI';
 import * as lifecycle from '../../helpers/volumeStrategyLifecycle';
 import { getConfiguration } from '../../../init';
 import uuidv4 from '../../../utilities/uuidv4';
@@ -23,7 +22,6 @@ import type {
   PlanarDataPresentation,
   PlanarCpuVolumeAdapterContext,
   PlanarPayload,
-  PlanarResolvedICamera,
   PlanarViewportRenderContext,
 } from './PlanarViewportTypes';
 import type { PlanarCpuVolumeRendering } from './planarRuntimeTypes';
@@ -52,12 +50,13 @@ import {
   scheduleSampledSliceRestWork,
 } from './planarSampledSliceRest';
 import type { PlanarSlicePlaneMoves } from './planarSampledSliceRest';
-import { canSampleSlabOnCpu } from './PlanarRenderPathDecisionService';
 import { buildPlanarVolumeImageData } from './VtkVolumeSliceRenderPath';
 import {
-  isSegmentationOverlayData,
-  isVolumeLoading,
-} from '../renderingFidelity';
+  getSampledSliceDefaultVOIRange,
+  refreshSampledSliceFidelity,
+  reportSamplingState,
+} from './VtkSampledSliceRenderPath';
+import { isSegmentationOverlayData } from '../renderingFidelity';
 
 /**
  * The largest width or height of a slice that this path draws: 16384, the
@@ -78,6 +77,13 @@ type CpuVolumeSliceMount = PlanarSlicePlaneMoves & {
   /** The slice drawn last and the screen grid it was drawn for. */
   shownSlice?: PlanarSampledSlice;
   shownScreen?: VolumeSliceGeometry;
+  /**
+   * The plane, screen grid and inputs of the last request to the sampler. A
+   * render for the same request draws the slice on screen and does not ask
+   * the sampler again, since a request is a move of the view to the sampler
+   * and would stop the work at rest of this view.
+   */
+  sampledFor?: string;
 };
 
 /**
@@ -97,7 +103,9 @@ type CpuVolumeSliceMount = PlanarSlicePlaneMoves & {
  * prefetched. The canvas enlarges colours, not values, so that is every
  * LINEAR slice, an oblique NEAREST slice and a maximum or minimum slab
  * (`PlanarSliceSamplerOptions.enlargesColours`); a NEAREST slice along a
- * volume axis stays the voxel-size slice, enlarged without smoothing.
+ * volume axis stays the voxel-size slice, enlarged without smoothing. A large
+ * slab is sampled in steps at rest, as on the sampled slice path, and the
+ * plain slice of the plane is shown until it is done.
  *
  * @internal
  */
@@ -117,10 +125,15 @@ export class CpuVolumeSliceRenderPath
       );
     }
 
-    const defaultVOIRange = await getDefaultVolumeVOIRange(payload.imageVolume);
+    const compositeActor = payload.reference?.kind === 'segmentation';
+    const defaultVOIRange = await getSampledSliceDefaultVOIRange(
+      payload.imageVolume
+    );
     const sampler = new PlanarSliceSampler({
       enlargesColours: true,
+      keepFractions: !compositeActor,
       maxSliceSize: MAX_CPU_CANVAS_SLICE_SIZE,
+      sampleSlabsInSteps: true,
     });
     const draw = new PlanarSampledSliceCanvas(
       payload.imageVolume,
@@ -153,7 +166,7 @@ export class CpuVolumeSliceRenderPath
       maxImageIdIndex: payload.imageIds.length - 1,
       defaultVOIRange,
       renderingInvalidated: true,
-      compositeActor: payload.reference?.kind === 'segmentation',
+      compositeActor,
       getSliceCacheStatistics: () => sampler.getStatistics(),
     };
     const mount: CpuVolumeSliceMount = {
@@ -164,6 +177,8 @@ export class CpuVolumeSliceRenderPath
       draw,
     };
 
+    rendering.refreshFidelity = () =>
+      refreshCpuVolumeFidelity(rendering, sampler);
     rendering.removeStreamingSubscriptions = this.subscribeToVolumeData(
       mount,
       payload.volumeId
@@ -240,6 +255,7 @@ export class CpuVolumeSliceRenderPath
     const invalidate = () => {
       voxelManager?.invalidateCache?.();
       sampler.invalidate();
+      mount.sampledFor = undefined;
       rendering.pendingVolumeLoadCallback = false;
       rendering.renderingInvalidated = true;
     };
@@ -452,7 +468,7 @@ export class CpuVolumeSliceRenderPath
     }
 
     beginPlanarCanvasPass(ctx.cpu);
-    refreshCpuVolumeFidelity(rendering);
+    refreshCpuVolumeFidelity(rendering, sampler);
     recordPlaneMove(mount, camera);
 
     const screen = getCanvasScreenSliceGeometry(
@@ -460,12 +476,19 @@ export class CpuVolumeSliceRenderPath
       camera,
       MAX_CPU_CANVAS_SLICE_SIZE
     );
-    const slice = sampler.sample(
-      rendering.imageVolume,
-      camera,
-      getCpuSliceInputs(rendering, camera),
-      screen
-    );
+    const inputs = getCpuSliceInputs(rendering);
+    const request = JSON.stringify([
+      camera.focalPoint,
+      camera.viewPlaneNormal,
+      screen,
+      inputs,
+    ]);
+    const slice =
+      request === mount.sampledFor && mount.shownSlice
+        ? mount.shownSlice
+        : sampler.sample(rendering.imageVolume, camera, inputs, screen);
+
+    mount.sampledFor = request;
 
     if (!slice) {
       mount.shownSlice = undefined;
@@ -531,11 +554,7 @@ export class CpuVolumeSliceRenderPath
       sampler,
       volume: rendering.imageVolume,
       getCamera: () => getPlanarRenderPathActiveSourceICamera(ctx),
-      getInputs: () =>
-        getCpuSliceInputs(
-          rendering,
-          getPlanarRenderPathActiveSourceICamera(ctx)
-        ),
+      getInputs: () => getCpuSliceInputs(rendering),
       getScreen: (camera) =>
         getCanvasScreenSliceGeometry(
           ctx.cpu.canvas,
@@ -555,6 +574,10 @@ export class CpuVolumeSliceRenderPath
         rendering.renderingInvalidated = true;
         ctx.display.renderNow();
       },
+      onStateChange: () => {
+        reportSamplingState(mount);
+        ctx.display.renderNow();
+      },
     });
   }
 
@@ -565,36 +588,23 @@ export class CpuVolumeSliceRenderPath
     mount.sampler.release();
     mount.draw.release();
     mount.shownSlice = undefined;
+    mount.sampledFor = undefined;
   }
 }
 
 /**
  * The sampling inputs of a CPU volume slice: those of the sampled slice path
- * (`getPlanarSampledSliceInputs`), without the slab when the slab would take
- * more work than `canSampleSlabOnCpu` allows for the view plane. The plain
- * slice is then drawn, as this path did before it drew slabs.
+ * (`getPlanarSampledSliceInputs`). The sampler samples a large slab in steps
+ * (`PlanarSliceSamplerOptions.sampleSlabsInSteps`), as for the sampled slice
+ * path, and shows the plain slice of the plane until the slab is done.
  */
 function getCpuSliceInputs(
-  rendering: PlanarCpuVolumeRendering,
-  camera: PlanarResolvedICamera | undefined
+  rendering: PlanarCpuVolumeRendering
 ): PlanarSampledSliceInputs {
-  const inputs = getPlanarSampledSliceInputs(
+  return getPlanarSampledSliceInputs(
     rendering.imageVolume,
     rendering.dataPresentation
   );
-
-  if (
-    inputs.slab &&
-    !canSampleSlabOnCpu(
-      rendering.imageVolume,
-      rendering.dataPresentation?.slabThickness,
-      camera?.viewPlaneNormal as Point3 | undefined
-    )
-  ) {
-    return { ...inputs, slab: undefined };
-  }
-
-  return inputs;
 }
 
 /**
@@ -619,14 +629,16 @@ function isVolumeReady(imageVolume: IImageVolume): boolean {
 }
 
 /**
- * Reads the fidelity of a CPU volume slice. The sampler reads the
- * full-resolution voxels, so the record is the record of the full grid, and
- * the slice on screen is never an interactive reduction.
+ * Reads the fidelity of a CPU volume slice as for a sampled slice
+ * (`refreshSampledSliceFidelity`): a slab whose steps still run, or that is
+ * too large for the CPU, is pending as a loading picture is. The slice on
+ * screen is never an interactive reduction.
  */
-function refreshCpuVolumeFidelity(rendering: PlanarCpuVolumeRendering): void {
-  rendering.voxelQuality = rendering.imageVolume.getVoxelQuality?.();
-  rendering.qualityPending = isVolumeLoading(rendering.imageVolume);
-  rendering.fullGrid = rendering.imageVolume.voxelGrid;
+function refreshCpuVolumeFidelity(
+  rendering: PlanarCpuVolumeRendering,
+  sampler: PlanarSliceSampler
+): void {
+  refreshSampledSliceFidelity(rendering, sampler);
   rendering.interactiveReduction = false;
 }
 

@@ -191,3 +191,33 @@ export function countContentPixels(
 
   return contentPixels;
 }
+
+/**
+ * Counts the pixels where R, G or B of two reads of the same size differ by
+ * more than `tolerance`. A pixel whose byte in `ignore` is not 0 is not
+ * counted.
+ */
+export function countPixelsDifferingBy(
+  first: ViewportPixels,
+  second: ViewportPixels,
+  tolerance: number,
+  ignore?: Uint8Array
+): number {
+  let pixels = 0;
+
+  for (let offset = 0; offset < first.data.length; offset += 4) {
+    if (ignore?.[offset / 4]) {
+      continue;
+    }
+
+    if (
+      Math.abs(first.data[offset] - second.data[offset]) > tolerance ||
+      Math.abs(first.data[offset + 1] - second.data[offset + 1]) > tolerance ||
+      Math.abs(first.data[offset + 2] - second.data[offset + 2]) > tolerance
+    ) {
+      pixels++;
+    }
+  }
+
+  return pixels;
+}

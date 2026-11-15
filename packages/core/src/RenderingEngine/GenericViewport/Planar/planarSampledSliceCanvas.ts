@@ -20,10 +20,13 @@ import type {
   PlanarDataPresentation,
   PlanarViewportRenderContext,
 } from './PlanarViewportTypes';
+import { getVolumeClipPlanes } from './planarSampledSlice';
 import type {
   PlanarSampledSlice,
   PlanarScreenCamera,
+  PlanarSliceClipPlane,
 } from './planarSampledSlice';
+import { PlanarSampledSliceActor } from './planarSampledSliceActor';
 
 /**
  * The largest distance, in device pixels, by which a transform may miss the
@@ -32,6 +35,41 @@ import type {
  * function, and is then copied without any filtering.
  */
 const IDENTITY_TOLERANCE = 1e-3;
+
+/**
+ * The steps of the colour and opacity tables between two texels of the
+ * tables of the GPU draw step. A step of 1/64 of a texel keeps the error of
+ * a table read below a tenth of a colour level for a colour table, whose
+ * neighbour texels differ by a few levels; only a jump of the opacity table,
+ * as at a threshold, can give more, for values within one texel of it.
+ */
+const TEXEL_STEPS = 64;
+
+/**
+ * The part of a slice pixel by which a slice drawn with nearest filtering is
+ * moved back along its rows and columns. A canvas pixel whose centre falls
+ * exactly on the edge between two slice pixels then shows the second one, as
+ * the nearest texel read of the GPU (`floor` of the texel coordinate) does;
+ * the canvas would show the first.
+ */
+const NEAREST_TIE_SHIFT = 1 / 8192;
+
+/**
+ * The colour and opacity of one layer as the GPU draw step gives them, as
+ * tables over the value of a pixel: `colours` holds the packed red, green and
+ * blue of a step and `alphas` its alpha, 0 to 255. A value v reads the step
+ * `v * scale + offset` of each table, clamped to the table.
+ */
+type PlanarSliceColourTables = {
+  colours: Uint32Array;
+  colourScale: number;
+  colourOffset: number;
+  alphas: Uint8ClampedArray;
+  alphaScale: number;
+  alphaOffset: number;
+  nearest: boolean;
+  opacity: number;
+};
 
 /** The 2D canvas of a viewport and the state of its composition pass. */
 export type PlanarCanvasTarget = PlanarViewportRenderContext['cpu'];
@@ -56,19 +94,26 @@ export type PlanarSliceCanvasTransform = [
  * knows the canvas drawing, the counterpart of `PlanarSampledSliceActor` on
  * the vtk.js path.
  *
- * The slice becomes an `IImage` that the CPU fallback pipeline
- * (`drawImageSync`) turns into colours one to one, on a canvas of the size of
- * the slice, with the VOI, the colormap and invert of the presentation. A
- * labelmap is coloured by its `CanvasActor` instead. That picture is then
- * drawn on the layer canvas of the display set with the transform from the
- * slice to the canvas (`getSliceCanvasTransform`), so any pan, zoom, rotation
- * and flip of the camera places it, and the layer is composed on the canvas
- * of the viewport with the opacity of the presentation.
+ * A slice of one value per pixel is coloured as the GPU draw step colours
+ * it, so that both draw steps give the same picture: the presentation is
+ * applied with `PlanarSampledSliceActor.applyPresentation` to an actor that
+ * is never drawn, and its colour and opacity functions become the tables of
+ * the vtk.js image mapper (`getColourTables`), read the way its shader reads
+ * them. The pixels outside the faces of the volume are left clear, as the
+ * clip planes of the GPU draw step leave them. The coloured slice is drawn
+ * over the layers below it with its alpha, as the GPU blends a layer.
  *
- * A slice of voxel size is enlarged by the canvas, with image smoothing
- * unless the presentation asks for NEAREST, as the CPU fallback pipeline
- * enlarges a stack image. A slice of the screen grid maps to the canvas one
- * to one and is copied unchanged.
+ * A labelmap is coloured by its `CanvasActor`, and a slice of a colour volume
+ * becomes an `IImage` that the CPU fallback pipeline (`drawImageSync`) turns
+ * into colours one to one. That picture is drawn on the layer canvas of the
+ * display set and composed on the canvas of the viewport with the opacity of
+ * the presentation.
+ *
+ * Either picture is placed with the transform from the slice to the canvas
+ * (`getSliceCanvasTransform`), so any pan, zoom, rotation and flip of the
+ * camera places it. A slice of voxel size is enlarged by the canvas, with
+ * image smoothing unless the presentation asks for NEAREST. A slice of the
+ * screen grid maps to the canvas one to one and is copied unchanged.
  */
 export class PlanarSampledSliceCanvas {
   /** The canvas of this display set, of the size of the viewport canvas. */
@@ -79,6 +124,13 @@ export class PlanarSampledSliceCanvas {
   private image?: IImage;
   private roundedPixelData?: Int32Array;
   private sequence = 0;
+  private presentationActor?: PlanarSampledSliceActor;
+  private presentationKey?: string;
+  private colourTables?: PlanarSliceColourTables;
+  private clipPlanes?: PlanarSliceClipPlane[];
+  private sliceImageData?: ImageData;
+  private colouredSlice?: PlanarSampledSlice;
+  private colouredTables?: PlanarSliceColourTables;
 
   constructor(
     private readonly volume: IImageVolume,
@@ -112,8 +164,10 @@ export class PlanarSampledSliceCanvas {
   }
 
   /**
-   * Draws the slice set last on the layer canvas and composes the layer on
-   * the canvas of the viewport.
+   * Draws the slice set last. A slice of one value per pixel is drawn over
+   * the canvas of the viewport with the colours of the GPU draw step
+   * (`drawWithTransferFunctions`); a labelmap or a colour slice is drawn on
+   * the layer canvas, which is composed on the canvas of the viewport.
    *
    * @param args.target - The canvas of the viewport.
    * @param args.camera - The camera of the view, which places the slice.
@@ -138,8 +192,14 @@ export class PlanarSampledSliceCanvas {
       return;
     }
 
-    resizeCanvas(this.layerCanvas, target.canvas.width, target.canvas.height);
     resizeCanvas(this.sliceCanvas, slice.width, slice.height);
+
+    if (!canvasActor && (slice.numberOfComponents ?? 1) === 1) {
+      this.drawWithTransferFunctions(args);
+      return;
+    }
+
+    resizeCanvas(this.layerCanvas, target.canvas.width, target.canvas.height);
 
     const enabledElement = this.updateEnabledElement(
       image,
@@ -193,6 +253,105 @@ export class PlanarSampledSliceCanvas {
     this.image = undefined;
     this.enabledElement = undefined;
     this.roundedPixelData = undefined;
+    this.presentationActor = undefined;
+    this.presentationKey = undefined;
+    this.colourTables = undefined;
+    this.sliceImageData = undefined;
+    this.colouredSlice = undefined;
+    this.colouredTables = undefined;
+  }
+
+  /**
+   * Draws a slice of one value per pixel with the colours of the GPU draw
+   * step. The slice is coloured again for a new slice, new tables or when the
+   * colours are invalidated; a move of the view only places it again.
+   */
+  private drawWithTransferFunctions(args: {
+    target: PlanarCanvasTarget;
+    camera: PlanarScreenCamera;
+    presentation?: PlanarDataPresentation;
+    defaultVOIRange?: VOIRange;
+    invalidated: boolean;
+  }): void {
+    const { target, camera } = args;
+    const { slice } = this;
+    const tables = this.getColourTables(
+      args.presentation,
+      args.defaultVOIRange
+    );
+    const sliceContext = this.sliceCanvas.getContext('2d');
+
+    if (!sliceContext || tables.opacity <= 0) {
+      return;
+    }
+
+    if (
+      args.invalidated ||
+      slice !== this.colouredSlice ||
+      tables !== this.colouredTables
+    ) {
+      if (
+        this.sliceImageData?.width !== slice.width ||
+        this.sliceImageData.height !== slice.height
+      ) {
+        this.sliceImageData = sliceContext.createImageData(
+          slice.width,
+          slice.height
+        );
+      }
+
+      const pixels = new Uint32Array(this.sliceImageData.data.buffer);
+
+      colourSlice(slice.pixelData, pixels, tables);
+
+      if (!slice.insideVolume) {
+        this.clipPlanes ||= getVolumeClipPlanes(this.volume);
+        clearOutsideVolume(slice, this.clipPlanes, pixels);
+      }
+
+      sliceContext.putImageData(this.sliceImageData, 0, 0);
+      this.colouredSlice = slice;
+      this.colouredTables = tables;
+    }
+
+    const transform = getSliceCanvasTransform(slice, camera, target.canvas);
+
+    if (tables.nearest) {
+      transform[4] -= (transform[0] + transform[2]) * NEAREST_TIE_SHIFT;
+      transform[5] -= (transform[1] + transform[3]) * NEAREST_TIE_SHIFT;
+    }
+
+    target.context.save();
+    target.context.imageSmoothingEnabled = !tables.nearest;
+    target.context.setTransform(...transform);
+    target.context.drawImage(this.sliceCanvas, 0, 0);
+    target.context.restore();
+  }
+
+  /**
+   * The colour tables of the presentation. The presentation is applied to the
+   * actor of the GPU draw step (`PlanarSampledSliceActor`), which is never
+   * drawn here, only when it changed, as the GPU draw step applies it; the
+   * tables are then read from that actor.
+   */
+  private getColourTables(
+    presentation: PlanarDataPresentation | undefined,
+    defaultVOIRange: VOIRange | undefined
+  ): PlanarSliceColourTables {
+    const key = JSON.stringify([presentation ?? null, defaultVOIRange ?? null]);
+
+    if (this.colourTables && key === this.presentationKey) {
+      return this.colourTables;
+    }
+
+    this.presentationActor ||= new PlanarSampledSliceActor({
+      voxelManager: this.volume.voxelManager,
+    });
+    this.presentationActor.applyPresentation(presentation, defaultVOIRange);
+    this.presentationKey = key;
+    this.colourTables = getColourTables(this.presentationActor);
+
+    return this.colourTables;
   }
 
   /**
@@ -448,6 +607,278 @@ export function getResolvedVOIRange(
   }
 
   return { lower: fallbackLower, upper: fallbackLower + 1 };
+}
+
+/**
+ * The colour and opacity tables of the vtk.js image mapper for the
+ * presentation of an actor, as `PlanarSliceColourTables`. They follow its
+ * OpenGL mapper: the colour function becomes a table of
+ * `colorTextureWidth` texels of 8-bit red, green and blue over its range, the
+ * opacity function a table of `opacityTextureWidth` float texels over its own
+ * range, and a value maps to the texture coordinate
+ * `(value - level) / window + 0.5`. Without a colour function the table is
+ * the grey ramp of vtk.js with the colour window and level of the property.
+ * A texture is read with linear filtering between texel centres and clamped
+ * at its ends, or the nearest texel for NEAREST interpolation. The alpha is
+ * the opacity of the table times the opacity of the property.
+ */
+function getColourTables(
+  presentationActor: Pick<PlanarSampledSliceActor, 'actor' | 'mapper'>
+): PlanarSliceColourTables {
+  const property = presentationActor.actor.getProperty();
+  const nearest =
+    property.getInterpolationType() ===
+    (InterpolationType.NEAREST as unknown as ReturnType<
+      typeof property.getInterpolationType
+    >);
+  const opacity = property.getOpacity();
+  const colourWidth = presentationActor.mapper.getColorTextureWidth();
+  const colourTexels = new Uint8ClampedArray(colourWidth * 3);
+  const colourFunction = property.getRGBTransferFunction(0);
+  let window = property.getColorWindow();
+  let level = property.getColorLevel();
+
+  if (colourFunction) {
+    const [lower, upper] = colourFunction.getRange();
+    const values = new Float32Array(colourWidth * 3);
+
+    (
+      colourFunction.getTable as unknown as (
+        xStart: number,
+        xEnd: number,
+        size: number,
+        table: Float32Array,
+        stride: number
+      ) => void
+    )(lower, upper, colourWidth, values, 1);
+
+    for (let index = 0; index < values.length; index++) {
+      colourTexels[index] = 255 * values[index];
+    }
+
+    if (
+      (
+        property as unknown as { getUseLookupTableScalarRange(): boolean }
+      ).getUseLookupTableScalarRange()
+    ) {
+      window = upper - lower;
+      level = 0.5 * (upper + lower);
+    }
+  } else {
+    for (let index = 0; index < colourWidth * 3; ++index) {
+      colourTexels[index] = (255 * index) / ((colourWidth - 1) * 3);
+      colourTexels[index + 1] = (255 * index) / ((colourWidth - 1) * 3);
+      colourTexels[index + 2] = (255 * index) / ((colourWidth - 1) * 3);
+    }
+  }
+
+  const opacityWidth = presentationActor.mapper.getOpacityTextureWidth();
+  const opacityTexels = new Float32Array(opacityWidth).fill(1);
+  const opacityFunction = property.getPiecewiseFunction(0);
+  let opacityWindow = 1;
+  let opacityLevel = 0.5;
+
+  if (opacityFunction) {
+    const [lower, upper] = opacityFunction.getRange();
+
+    opacityFunction.getTable(lower, upper, opacityWidth, opacityTexels, 1);
+    opacityWindow = upper - lower;
+    opacityLevel = 0.5 * (upper + lower);
+  }
+
+  const [colourScale, colourOffset] = getTableMapping(
+    colourWidth,
+    window,
+    level
+  );
+  const [alphaScale, alphaOffset] = getTableMapping(
+    opacityWidth,
+    opacityWindow,
+    opacityLevel
+  );
+
+  return {
+    colours: getColourSteps(colourTexels, nearest),
+    colourScale,
+    colourOffset,
+    alphas: getAlphaSteps(opacityTexels, opacity, nearest),
+    alphaScale,
+    alphaOffset,
+    nearest,
+    opacity,
+  };
+}
+
+/**
+ * The scale and offset that turn a value into a step of a table of `width`
+ * texels, TEXEL_STEPS steps per texel, for a texture coordinate of
+ * `(value - level) / window + 0.5`. Texel i has its centre at the step
+ * i * TEXEL_STEPS.
+ */
+function getTableMapping(
+  width: number,
+  window: number,
+  level: number
+): [number, number] {
+  return [
+    (width * TEXEL_STEPS) / window,
+    ((0.5 - level / window) * width - 0.5) * TEXEL_STEPS,
+  ];
+}
+
+/**
+ * The value that a texture read gives at each step of a table of texels,
+ * TEXEL_STEPS steps per texel, with linear filtering between texel centres or
+ * the nearest texel. The texels are every `stride`-th value of `texels` from
+ * `offset` on.
+ */
+function getTextureSteps(
+  texels: ArrayLike<number>,
+  stride: number,
+  offset: number,
+  nearest: boolean
+): Float32Array {
+  const width = texels.length / stride;
+  const steps = new Float32Array((width - 1) * TEXEL_STEPS + 1);
+
+  for (let texel = 0; texel < width - 1; texel++) {
+    const first = texels[texel * stride + offset];
+    const next = texels[(texel + 1) * stride + offset];
+    const start = texel * TEXEL_STEPS;
+
+    for (let step = 0; step < TEXEL_STEPS; step++) {
+      steps[start + step] = nearest
+        ? step < TEXEL_STEPS / 2
+          ? first
+          : next
+        : first + ((next - first) * step) / TEXEL_STEPS;
+    }
+  }
+
+  steps[steps.length - 1] = texels[(width - 1) * stride + offset];
+
+  return steps;
+}
+
+/** The packed red, green and blue of each step of a colour table. */
+function getColourSteps(
+  texels: Uint8ClampedArray,
+  nearest: boolean
+): Uint32Array {
+  const red = getTextureSteps(texels, 3, 0, nearest);
+  const green = getTextureSteps(texels, 3, 1, nearest);
+  const blue = getTextureSteps(texels, 3, 2, nearest);
+  const steps = new Uint32Array(red.length);
+
+  for (let step = 0; step < steps.length; step++) {
+    steps[step] =
+      Math.round(red[step]) |
+      (Math.round(green[step]) << 8) |
+      (Math.round(blue[step]) << 16);
+  }
+
+  return steps;
+}
+
+/** The alpha, 0 to 255, of each step of an opacity table. */
+function getAlphaSteps(
+  texels: Float32Array,
+  opacity: number,
+  nearest: boolean
+): Uint8ClampedArray {
+  const values = getTextureSteps(texels, 1, 0, nearest);
+  const steps = new Uint8ClampedArray(values.length);
+
+  for (let step = 0; step < steps.length; step++) {
+    steps[step] = 255 * opacity * values[step];
+  }
+
+  return steps;
+}
+
+/**
+ * Colours the values of a slice with the tables of `getColourTables` into
+ * RGBA pixels, one 32-bit word per pixel in the byte order of ImageData.
+ */
+function colourSlice(
+  pixelData: PixelDataTypedArray,
+  pixels: Uint32Array,
+  tables: PlanarSliceColourTables
+): void {
+  const {
+    colours,
+    colourScale,
+    colourOffset,
+    alphas,
+    alphaScale,
+    alphaOffset,
+  } = tables;
+  const lastColour = colours.length - 1;
+  const lastAlpha = alphas.length - 1;
+
+  for (let index = 0; index < pixels.length; index++) {
+    const value = pixelData[index];
+    let colourStep = value * colourScale + colourOffset;
+    let alphaStep = value * alphaScale + alphaOffset;
+
+    colourStep =
+      colourStep > 0 ? (colourStep < lastColour ? colourStep : lastColour) : 0;
+    alphaStep =
+      alphaStep > 0 ? (alphaStep < lastAlpha ? alphaStep : lastAlpha) : 0;
+    pixels[index] =
+      colours[(colourStep + 0.5) | 0] | (alphas[(alphaStep + 0.5) | 0] << 24);
+  }
+}
+
+/**
+ * Clears the pixels of a slice whose centre lies outside one of the faces of
+ * the volume, which is what the clip planes of the GPU draw step discard.
+ * Each row keeps one run of pixels, found from the distance of its first
+ * pixel to each plane and the change of that distance along the row.
+ */
+function clearOutsideVolume(
+  slice: PlanarSampledSlice,
+  planes: PlanarSliceClipPlane[],
+  pixels: Uint32Array
+): void {
+  const { width, height, origin, xDirection, yDirection, spacing } = slice;
+
+  for (let row = 0; row < height; row++) {
+    let first = 0;
+    let last = width - 1;
+
+    for (const plane of planes) {
+      let distance = 0;
+      let step = 0;
+
+      for (let axis = 0; axis < 3; axis++) {
+        distance +=
+          (origin[axis] +
+            yDirection[axis] * spacing[1] * row -
+            plane.origin[axis]) *
+          plane.normal[axis];
+        step += xDirection[axis] * spacing[0] * plane.normal[axis];
+      }
+
+      if (step > 0) {
+        first = Math.max(first, Math.ceil(-distance / step - 1e-6));
+      } else if (step < 0) {
+        last = Math.min(last, Math.floor(-distance / step + 1e-6));
+      } else if (distance < 0) {
+        first = width;
+      }
+    }
+
+    const rowStart = row * width;
+
+    if (first > last) {
+      pixels.fill(0, rowStart, rowStart + width);
+      continue;
+    }
+
+    pixels.fill(0, rowStart, rowStart + first);
+    pixels.fill(0, rowStart + last + 1, rowStart + width);
+  }
 }
 
 function composeLayer(

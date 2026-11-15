@@ -2,6 +2,7 @@ import { expect, test, type Browser, type Page } from '@playwright/test';
 import { createExampleUrl, waitForRenderSettled } from '../utils/index';
 import {
   countContentPixels,
+  countPixelsDifferingBy,
   readViewportPixels,
   type ViewportPixels,
 } from '../utils/viewportPixels';
@@ -272,27 +273,6 @@ function getTextureSetCount(page: Page, volumeId: string): Promise<number> {
   );
 }
 
-/** The number of pixels where R, G or B differ by more than `tolerance`. */
-function countPixelsDifferingBy(
-  first: ViewportPixels,
-  second: ViewportPixels,
-  tolerance: number
-): number {
-  let pixels = 0;
-
-  for (let offset = 0; offset < first.data.length; offset += 4) {
-    if (
-      Math.abs(first.data[offset] - second.data[offset]) > tolerance ||
-      Math.abs(first.data[offset + 1] - second.data[offset + 1]) > tolerance ||
-      Math.abs(first.data[offset + 2] - second.data[offset + 2]) > tolerance
-    ) {
-      pixels++;
-    }
-  }
-
-  return pixels;
-}
-
 /**
  * Checks that a picture shows content and matches the GPU slab of a healthy
  * page within the tolerance of the slab spec.
@@ -348,37 +328,6 @@ async function getHealthyPicture(browser: Browser): Promise<ViewportPixels> {
   }
 
   return healthyPicture;
-}
-
-let cpuPinnedPicture: ViewportPixels | undefined;
-
-/**
- * The coronal picture of the slab on a healthy page where the application
- * pinned the CPU backend: what the CPU draw step draws for this view. It is
- * read once per worker.
- */
-async function getCpuPinnedPicture(browser: Browser): Promise<ViewportPixels> {
-  if (cpuPinnedPicture) {
-    return cpuPinnedPicture;
-  }
-
-  const context = await browser.newContext();
-  const page = await context.newPage();
-  const pinnedPlan = ['cpu', 'cpu', 'cpuVolume', 'pinned'];
-
-  try {
-    await openExample(page);
-    await page.evaluate(() =>
-      (window as TestWindow).cornerstone.setRenderBackend('cpu')
-    );
-    await setCoronalSlab(page, SLAB_THICKNESS);
-    await expectPlan(page, pinnedPlan, pinnedPlan);
-    cpuPinnedPicture = await readCoronal(page);
-  } finally {
-    await context.close();
-  }
-
-  return cpuPinnedPicture;
 }
 
 /**
@@ -728,16 +677,10 @@ test.describe('Router: a layer leaves the GPU volume path when its 3D texture ca
       [CT_DATA_ID, 'contextLost'],
       [PT_DATA_ID, 'contextLost'],
     ]);
-    const cpuPicture = await readCoronal(page);
-    const total = cpuPicture.width * cpuPicture.height;
-
-    console.log(
-      `drawn on the CPU after a context that did not come back: ${countPixelsDifferingBy(healthy, cpuPicture, PIXEL_TOLERANCE)} of ${total} pixels differ by more than ${PIXEL_TOLERANCE} grey levels from the healthy GPU slab (the CPU draw step composes the PT colormap opacity differently)`
-    );
     expectHealthyPicture(
-      await getCpuPinnedPicture(browser),
-      cpuPicture,
-      'drawn on the CPU after a context that did not come back, against the CPU backend pinned on a healthy page'
+      healthy,
+      await readCoronal(page),
+      'drawn on the CPU after a context that did not come back'
     );
     await expectStaysDown(page, CT_DATA_ID, cpuPlan, cpuPlan);
   });
