@@ -931,6 +931,20 @@ describe('pixelMath', () => {
       bilinear(src, singleColumn);
       expect(singleColumn.pixelData).toEqual([0, 10, 20]);
     });
+
+    it('throws for a frame with more than one sample per pixel', () => {
+      // bilinear only interpolates one sample per pixel; a color frame must
+      // use replicate instead of silently mixing channels
+      const src = {
+        rows: 1,
+        columns: 2,
+        samplesPerPixel: 3,
+        pixelData: [10, 20, 30, 40, 50, 60],
+      };
+      const dest = { rows: 1, columns: 3, pixelData: new Array(9).fill(-1) };
+      expect(() => bilinear(src, dest)).toThrow(/samplesPerPixel/);
+      expect(dest.pixelData).toEqual(new Array(9).fill(-1));
+    });
   });
 
   // ---------------------------------------------------------------------

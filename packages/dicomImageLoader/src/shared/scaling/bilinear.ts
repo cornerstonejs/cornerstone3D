@@ -6,8 +6,19 @@
  * @returns destination data buffer
  */
 export default function bilinear(src, dest) {
-  const { rows: srcRows, columns: srcColumns, pixelData: srcData } = src;
+  const {
+    rows: srcRows,
+    columns: srcColumns,
+    pixelData: srcData,
+    samplesPerPixel = 1,
+  } = src;
   const { rows, columns, pixelData } = dest;
+
+  if (samplesPerPixel !== 1) {
+    throw new Error(
+      `bilinear scaling supports samplesPerPixel 1 only, got ${samplesPerPixel}; use replicate scaling for color frames`
+    );
+  }
 
   const xSrc1Off = [];
   const xSrc2Off = [];
