@@ -3,6 +3,7 @@ import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkImageMapper from '@kitware/vtk.js/Rendering/Core/ImageMapper';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import { vtkOffscreenMultiRenderWindow } from '../RenderingEngine/vtkClasses';
+import copyWebGLCanvasToCanvas from '../RenderingEngine/helpers/copyWebGLCanvasToCanvas';
 import { applyPlanarVolumePresentation } from '../RenderingEngine/GenericViewport/Planar/planarVolumePresentation';
 import { InterpolationType } from '../enums';
 import { getCanUseNorm16Texture } from '../init';
@@ -48,6 +49,25 @@ export interface DrawSelfTestCase {
   error?: string;
 }
 
+/**
+ * The check of the copy that puts a picture on screen: a rendering engine
+ * draws with WebGL on a canvas of its own and copies each viewport from
+ * there into the 2D canvas of that viewport.
+ */
+export interface DrawSelfTestScreenCopy {
+  /**
+   * 'drawImage' is the copy every browser is expected to do. 'readPixels' is
+   * the slower copy that replaces it when the capability profile measured
+   * that `drawImage` hands back an empty picture.
+   */
+  method: 'drawImage' | 'readPixels';
+  passed: boolean;
+  /** Largest difference between the copy and what WebGL drew, in grey levels. */
+  maxError: number;
+  pixelsOff: number;
+  pixelsChecked: number;
+}
+
 /** The result of {@link runDrawSelfTest}. */
 export interface DrawSelfTestResult {
   passed: boolean;
@@ -68,6 +88,8 @@ export interface DrawSelfTestResult {
   /** MAX_3D_TEXTURE_SIZE of the render window context, 0 when unknown. */
   max3DTextureSize: number;
   cases: DrawSelfTestCase[];
+  /** Null when the browser gives no 2D canvas to copy into. */
+  screenCopy: DrawSelfTestScreenCopy | null;
   error?: string;
 }
 
@@ -489,6 +511,79 @@ function runSelfTestCase(
   return summarizeCase(dataType, textureFormat, capabilities, draws);
 }
 
+/**
+ * Draws the first band of the Int16 ramp, copies the picture from the WebGL
+ * canvas into a 2D canvas the way a rendering engine puts a viewport on
+ * screen, and compares the copy with the pixels that WebGL drew. Returns
+ * null when the browser gives no 2D canvas to copy into.
+ */
+function runScreenCopyCheck(
+  selfTest: SelfTestRenderer,
+  capabilities: RenderingCapabilities,
+  maxGreyError: number
+): DrawSelfTestScreenCopy | null {
+  const target = document.createElement('canvas');
+  const context = target.getContext('2d');
+
+  if (!context) {
+    return null;
+  }
+
+  const mapper = vtkImageMapper.newInstance();
+  const actor = vtkImageSlice.newInstance();
+  const ramp = createRampImage('Int16');
+  const { base, step } = RAMP_BANDS.Int16[0];
+  const { width, height } = ramp;
+
+  actor.setMapper(mapper);
+  selfTest.renderer.addActor(actor);
+
+  try {
+    const drawn = drawAndRead(
+      selfTest,
+      actor,
+      mapper,
+      ramp,
+      { lower: base, upper: base + 255 * step },
+      1
+    );
+    const source = selfTest.offscreen.getOpenGLRenderWindow().getCanvas();
+
+    target.width = width;
+    target.height = height;
+    copyWebGLCanvasToCanvas(
+      context,
+      source,
+      0,
+      source.height - height,
+      width,
+      height,
+      0,
+      0,
+      width,
+      height
+    );
+
+    const comparison = compareGreyLevels(
+      context.getImageData(0, 0, width, height).data as unknown as Uint8Array,
+      (column, row) => drawn[((height - 1 - row) * width + column) * 4],
+      width,
+      height,
+      maxGreyError
+    );
+
+    return {
+      method: capabilities.webglCanvasCopy ? 'drawImage' : 'readPixels',
+      passed: comparison.pixelsOff === 0,
+      ...comparison,
+    };
+  } finally {
+    selfTest.renderer.removeActor(actor);
+    mapper.delete();
+    actor.delete();
+  }
+}
+
 /** Sums the draws of one array type into its result. */
 function summarizeCase(
   dataType: DrawSelfTestDataType,
@@ -521,8 +616,9 @@ function summarizeCase(
  *
  * For each array type it draws a ramp 1:1 (the full range, the extremes and
  * the CT or PT range, with windows that give one grey level per unit) and two
- * values enlarged, which checks linear filtering between them. It also runs
- * the texture probe again and reports each probe.
+ * values enlarged, which checks linear filtering between them. It then checks
+ * the copy that puts a picture on screen (`screenCopy`), and it runs the
+ * texture probe again and reports each probe.
  *
  * It runs only when called. It takes two WebGL contexts one after the other,
  * never at the same time: the probe context, then the render window, each
@@ -554,6 +650,7 @@ export async function runDrawSelfTest(
     maxTextureSize: 0,
     max3DTextureSize: 0,
     cases: [],
+    screenCopy: null,
   };
 
   if (!capabilities.webgl) {
@@ -573,6 +670,12 @@ export async function runDrawSelfTest(
         runSelfTestCase(selfTest, dataType, capabilities, maxGreyError)
       );
     }
+
+    result.screenCopy = runScreenCopyCheck(
+      selfTest,
+      capabilities,
+      maxGreyError
+    );
   } catch (error) {
     result.error = String((error as Error)?.message ?? error);
   } finally {
@@ -585,7 +688,8 @@ export async function runDrawSelfTest(
   result.passed =
     !result.error &&
     result.cases.length > 0 &&
-    result.cases.every((testCase) => testCase.passed);
+    result.cases.every((testCase) => testCase.passed) &&
+    (result.screenCopy?.passed ?? true);
   result.durationMs = performance.now() - start;
 
   return result;

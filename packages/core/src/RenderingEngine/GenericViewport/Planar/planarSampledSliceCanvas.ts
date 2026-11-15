@@ -262,9 +262,15 @@ export class PlanarSampledSliceCanvas {
    * Int32Array, apart from a PT volume, whose float SUV values the pipeline
    * maps with a function in place of a LUT. The lowest and highest values of
    * the image are whole numbers for the same reason.
+   *
+   * A slice of a colour volume (3 or 4 components per pixel) is a colour
+   * image, RGB or RGBA, which the pipeline draws with its colour LUT, as the
+   * CPU volume path drew colour volumes before it used the shared sampler.
    */
   private createSliceImage(slice: PlanarSampledSlice): IImage {
     const { volume } = this;
+    const numberOfComponents = slice.numberOfComponents ?? 1;
+    const color = numberOfComponents > 1;
     const keepFloats =
       volume.metadata?.Modality === 'PT' || !isFloatArray(slice.pixelData);
     const pixelData = keepFloats
@@ -293,8 +299,8 @@ export class PlanarSampledSliceCanvas {
       voiLUTFunction: VOILUTFunctionType.LINEAR,
       isPreScaled: volume.isPreScaled,
       scaling: volume.scaling,
-      color: false,
-      numberOfComponents: 1,
+      color,
+      numberOfComponents,
       dataType: pixelData.constructor.name as PixelDataTypedArrayString,
       slope: 1,
       minPixelValue,
@@ -304,18 +310,18 @@ export class PlanarSampledSliceCanvas {
       getCanvas: undefined,
       height,
       width,
-      rgba: false,
+      rgba: numberOfComponents === 4,
       columnPixelSpacing: slice.spacing[0],
       rowPixelSpacing: slice.spacing[1],
       FrameOfReferenceUID: volume.metadata?.FrameOfReferenceUID,
       invert: false,
-      photometricInterpretation: undefined,
+      photometricInterpretation: color ? 'RGB' : undefined,
       getPixelData: () => pixelData,
       voxelManager: VoxelManager.createImageVoxelManager({
         width,
         height,
         scalarData: pixelData,
-        numberOfComponents: 1,
+        numberOfComponents,
         id: imageId,
       }),
       sizeInBytes: pixelData.byteLength,

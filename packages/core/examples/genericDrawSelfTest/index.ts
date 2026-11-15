@@ -99,7 +99,6 @@ function buildSections(result: DrawSelfTestResult): ReportSection[] {
   const device: ReportSection = {
     title: 'Device',
     lines: [
-      { label: 'User agent', value: navigator.userAgent },
       {
         label: 'Device pixel ratio',
         value: String(window.devicePixelRatio || 1),
@@ -136,6 +135,12 @@ function buildSections(result: DrawSelfTestResult): ReportSection[] {
       {
         label: 'norm16 hidden from the viewports',
         value: result.norm16Hidden ? 'yes' : 'no',
+      },
+      {
+        label: 'drawImage copies a WebGL canvas',
+        value: capabilities.webglCanvasCopy
+          ? 'yes'
+          : 'no, the viewports are copied to the screen with readPixels, which is slower',
       },
     ],
   };
@@ -174,6 +179,14 @@ function buildSections(result: DrawSelfTestResult): ReportSection[] {
           passed: draw.pixelsOff === 0,
         })),
       ]),
+      {
+        label: 'Copy to the screen',
+        value: result.screenCopy
+          ? `with ${result.screenCopy.method}, largest error ${formatNumber(result.screenCopy.maxError)} grey levels, ` +
+            `${result.screenCopy.pixelsOff} of ${result.screenCopy.pixelsChecked} pixels off`
+          : 'could not be checked',
+        passed: result.screenCopy?.passed,
+      },
       {
         label: 'All',
         value:

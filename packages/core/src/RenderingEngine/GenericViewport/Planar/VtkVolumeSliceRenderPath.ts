@@ -556,9 +556,10 @@ export function getImageSliceOverlayOrder(
  * @internal The depth order of a slice actor at a camera sync. The source is
  * 0. An overlay is 1 plus its place among the slice actors of the overlays,
  * in the order of the renderer, so it lies in front of the source whatever
- * the place of the source actor. A remount in place adds the new source actor
- * last, behind the overlays, so the order is read again at each sync and
- * never kept from `addData`. An actor that is not yet an overlay of the
+ * the place of the source actor. A remount in place puts the new actor in the
+ * place of the old one in the renderer, and a labelmap or another actor may be
+ * added at any time, so the order is read again at each sync and never kept
+ * from `addData`. An actor that is not yet an overlay of the
  * viewport takes its place among all slice actors, at least 1.
  */
 export function getSliceActorDepthOrder(

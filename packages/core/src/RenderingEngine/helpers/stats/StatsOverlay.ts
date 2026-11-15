@@ -1,4 +1,5 @@
 import cache from '../../../cache/cache';
+import volumeTextureStore from '../../../cache/volumeTextureStore';
 import type { VoxelQualityRecord } from '../../../types';
 import renderingEngineCache from '../../renderingEngineCache';
 import {
@@ -11,6 +12,12 @@ import type { Panel, StatsInstance, PerformanceWithMemory } from './types';
 import { PanelType } from './enums';
 import { STATS_CONFIG, PANEL_CONFIGS, CONVERSION } from './constants';
 import { coreLog } from '../../../utilities/logger';
+import {
+  collectBindingFacts,
+  markSharedVolumeTextures,
+  summarizeTextureMemory,
+  type DebugBindingsSource,
+} from './collectBindingFacts';
 
 const log = coreLog.getLogger('RenderingEngine', 'StatsOverlay');
 
@@ -31,6 +38,8 @@ export class StatsOverlay implements StatsInstance {
   private bindingsColumn: HTMLDivElement | null = null;
   private animationFrameId: number | null = null;
   private isSetup = false;
+  private collapsed = false;
+  private collapseButton: HTMLButtonElement | null = null;
   private dragPointerId: number | null = null;
   private dragOffsetX = 0;
   private dragOffsetY = 0;
@@ -73,6 +82,7 @@ export class StatsOverlay implements StatsInstance {
       // Apply styles and add to DOM
       this.applyOverlayStyles();
       this.addCloseButton();
+      this.addCollapseButtonOnNarrowWindow();
       this.restorePosition();
       this.attachDragHandlers();
       document.body.appendChild(this.dom);
@@ -97,6 +107,8 @@ export class StatsOverlay implements StatsInstance {
     this.dom = null;
     this.metricsColumn = null;
     this.bindingsColumn = null;
+    this.collapseButton = null;
+    this.collapsed = false;
     this.panels.clear();
     this.isSetup = false;
   }
@@ -156,6 +168,112 @@ export class StatsOverlay implements StatsInstance {
     });
 
     this.dom.appendChild(close);
+  }
+
+  /**
+   * On a narrow window (a phone) the overlay would cover the page, so it
+   * starts collapsed to its buttons, with larger buttons for a finger, and a
+   * second button expands or collapses it. A wide window keeps the overlay as
+   * it was.
+   */
+  private addCollapseButtonOnNarrowWindow(): void {
+    if (!this.dom || window.innerWidth >= STATS_CONFIG.NARROW_WINDOW_WIDTH) {
+      return;
+    }
+
+    const size = `${STATS_CONFIG.NARROW_BUTTON_SIZE}px`;
+    const close = this.dom.querySelector<HTMLButtonElement>(
+      'button[aria-label="Close stats overlay"]'
+    );
+    const toggle = document.createElement('button');
+
+    toggle.type = 'button';
+    toggle.dataset.statsCollapse = 'true';
+    Object.assign(toggle.style, STATS_CONFIG.CLOSE_BUTTON_STYLES, {
+      right: `${STATS_CONFIG.NARROW_BUTTON_SIZE + 4}px`,
+    });
+
+    for (const button of [close, toggle]) {
+      if (button) {
+        Object.assign(button.style, {
+          width: size,
+          height: size,
+          lineHeight: size,
+          fontSize: '20px',
+        });
+      }
+    }
+
+    toggle.addEventListener('pointerdown', (event) => {
+      event.stopPropagation();
+      event.preventDefault();
+    });
+    toggle.addEventListener('click', (event) => {
+      event.stopPropagation();
+      event.preventDefault();
+      this.setCollapsed(!this.collapsed);
+    });
+
+    this.dom.style.paddingTop = `${STATS_CONFIG.NARROW_BUTTON_SIZE + 2}px`;
+    this.fitPanelsToNarrowWindow();
+    this.dom.appendChild(toggle);
+    this.collapseButton = toggle;
+    this.setCollapsed(true);
+  }
+
+  /**
+   * Stacks the graphs above the bindings panel and gives the bindings panel
+   * the width of the window, so nothing is cut off on a phone.
+   */
+  private fitPanelsToNarrowWindow(): void {
+    if (!this.dom || !this.metricsColumn || !this.bindingsColumn) {
+      return;
+    }
+
+    this.dom.style.flexDirection = 'column';
+    this.dom.style.alignItems = 'flex-end';
+    this.metricsColumn.style.flexDirection = 'row';
+    this.metricsColumn.style.maxWidth = 'calc(100vw - 8px)';
+    this.metricsColumn.style.overflowX = 'auto';
+
+    const bindingsPanel = this.panels.get(PanelType.RENDER_MODES);
+
+    if (bindingsPanel) {
+      Object.assign(bindingsPanel.dom.style, {
+        width: 'calc(100vw - 8px)',
+        maxHeight: 'calc(100vh - 160px)',
+      });
+    }
+  }
+
+  /** Hides or shows the panels, and keeps the buttons. */
+  private setCollapsed(collapsed: boolean): void {
+    this.collapsed = collapsed;
+
+    for (const column of [this.metricsColumn, this.bindingsColumn]) {
+      if (column) {
+        column.style.display = collapsed ? 'none' : 'flex';
+      }
+    }
+
+    if (this.dom) {
+      this.dom.style.minWidth = collapsed
+        ? `${2 * STATS_CONFIG.NARROW_BUTTON_SIZE + 4}px`
+        : '';
+    }
+
+    if (this.collapseButton) {
+      this.collapseButton.textContent = collapsed ? '+' : '−';
+      this.collapseButton.title = collapsed ? 'Show stats' : 'Hide stats';
+      this.collapseButton.setAttribute(
+        'aria-label',
+        collapsed ? 'Expand stats overlay' : 'Collapse stats overlay'
+      );
+    }
+
+    if (!collapsed) {
+      this.updateRenderModesPanel();
+    }
   }
 
   /**
@@ -284,7 +402,10 @@ export class StatsOverlay implements StatsInstance {
 
       // Update memory panel if available
       this.updateMemoryPanel();
-      this.updateRenderModesPanel();
+
+      if (!this.collapsed) {
+        this.updateRenderModesPanel();
+      }
     }
 
     return currentTime;
@@ -304,6 +425,14 @@ export class StatsOverlay implements StatsInstance {
     }
 
     const qualityByVolumeId = new Map<string, VoxelQualityRecord | undefined>();
+    const textureBytesByVolumeId = new Map<string, number>();
+    const getVolumeTextureBytes = (volumeId: string) => {
+      if (!textureBytesByVolumeId.has(volumeId)) {
+        textureBytesByVolumeId.set(volumeId, readVolumeTextureBytes(volumeId));
+      }
+
+      return textureBytesByVolumeId.get(volumeId);
+    };
     const entries: RenderModePanelEntry[] = [];
 
     for (const renderingEngine of renderingEngineCache.getAll()) {
@@ -326,6 +455,11 @@ export class StatsOverlay implements StatsInstance {
           };
         });
 
+        const factsById = collectBindingFacts(
+          debugViewport,
+          getVolumeTextureBytes
+        );
+
         entries.push({
           renderingEngineId: renderingEngine.id,
           viewportId: viewport.id,
@@ -333,13 +467,20 @@ export class StatsOverlay implements StatsInstance {
           bindings: this.getViewportBindingDebugEntries(
             debugViewport,
             (renderModes as Record<string, string> | undefined) ?? {}
-          ),
+          ).map((binding) => ({
+            ...binding,
+            ...factsById.get(binding.dataId),
+          })),
           volumes,
         });
       }
     }
 
-    panel.setContent(entries);
+    markSharedVolumeTextures(entries);
+    panel.setContent(
+      entries,
+      summarizeTextureMemory(entries, readTotalVolumeTextureBytes())
+    );
   }
 
   private getViewportBindingDebugEntries(
@@ -471,7 +612,9 @@ export class StatsOverlay implements StatsInstance {
     // Close control handles its own pointer events; do not start a drag.
     if (
       event.target instanceof Element &&
-      event.target.closest('button[aria-label="Close stats overlay"]')
+      event.target.closest(
+        'button[aria-label="Close stats overlay"], button[data-stats-collapse]'
+      )
     ) {
       return;
     }
@@ -630,7 +773,7 @@ type DebugScalarArray = {
   getRange?: (componentIndex?: number) => number[];
 };
 
-type DebugBindingsViewport = {
+type DebugBindingsViewport = DebugBindingsSource & {
   _debug?: {
     renderModes?: unknown;
   };
@@ -641,6 +784,26 @@ type DebugBindingsViewport = {
   getDefaultActor?: () => DebugActorEntry | undefined;
   getSourceDataId?: () => string | undefined;
 };
+
+/** The bytes of every 3D texture of one volume, or 0. Never throws. */
+function readVolumeTextureBytes(volumeId: string): number {
+  try {
+    return volumeTextureStore
+      .setsOfVolume(volumeId)
+      .reduce((total, set) => total + set.bytes, 0);
+  } catch {
+    return 0;
+  }
+}
+
+/** The bytes of every 3D texture of every volume, or 0. Never throws. */
+function readTotalVolumeTextureBytes(): number {
+  try {
+    return volumeTextureStore.bytesUsed;
+  } catch {
+    return 0;
+  }
+}
 
 function resolveBindingRole(
   viewport: DebugBindingsViewport,

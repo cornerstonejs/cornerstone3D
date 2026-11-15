@@ -52,10 +52,8 @@ import {
   getVolumeClipPlanes,
 } from '../src/RenderingEngine/GenericViewport/Planar/planarSampledSlice';
 import { PlanarSampledSliceActor } from '../src/RenderingEngine/GenericViewport/Planar/planarSampledSliceActor';
-import {
-  SAMPLED_SLICE_REST_DELAY_MS,
-  getSampledSliceDefaultVOIRange,
-} from '../src/RenderingEngine/GenericViewport/Planar/VtkSampledSliceRenderPath';
+import { getSampledSliceDefaultVOIRange } from '../src/RenderingEngine/GenericViewport/Planar/VtkSampledSliceRenderPath';
+import { SAMPLED_SLICE_REST_DELAY_MS } from '../src/RenderingEngine/GenericViewport/Planar/planarSampledSliceRest';
 import {
   VtkVolumeSlicePath,
   VtkVolumeSliceRenderPath,
@@ -318,7 +316,7 @@ describe('slice first decision', () => {
     ).toBe(ActorRenderMode.VTK_SAMPLED_SLICE);
   });
 
-  it('samples a thin slab on the CPU and leaves a thick one to the GPU', () => {
+  it('leaves every slab to the GPU volume path and samples a thickness of one sample on the CPU', () => {
     volume = createVolume({
       dimensions: [512, 512, 300],
       spacing: [1, 1, 1],
@@ -330,14 +328,21 @@ describe('slice first decision', () => {
         slabThickness: 10,
         blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
       }).renderMode
-    ).toBe(ActorRenderMode.VTK_SAMPLED_SLICE);
+    ).toBe(ActorRenderMode.VTK_VOLUME_SLICE);
     expect(
       service.select(dataSet, {
         sliceFirst: true,
-        slabThickness: 10.5,
-        blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
+        slabThickness: 2,
+        blendMode: BlendModes.AVERAGE_INTENSITY_BLEND,
       }).renderMode
     ).toBe(ActorRenderMode.VTK_VOLUME_SLICE);
+    expect(
+      service.select(dataSet, {
+        sliceFirst: true,
+        slabThickness: 1,
+        blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
+      }).renderMode
+    ).toBe(ActorRenderMode.VTK_SAMPLED_SLICE);
   });
 
   it('estimates the slab work from the slab samples and the largest slice', () => {
@@ -1525,11 +1530,11 @@ describe('PlanarViewport with slice first (render path)', () => {
     viewport.setDisplaySetPresentation(dataId, {
       voiRange: { lower: 0, upper: 80 },
     });
-    viewport.setDisplaySetPresentation(dataId, { slabThickness: 2 });
+    viewport.setDisplaySetPresentation(dataId, { slabThickness: 0.8 });
 
     expect(remount).not.toHaveBeenCalled();
 
-    viewport.setDisplaySetPresentation(dataId, { slabThickness: 1e6 });
+    viewport.setDisplaySetPresentation(dataId, { slabThickness: 2 });
 
     expect(remount).toHaveBeenCalledTimes(1);
   });

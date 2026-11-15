@@ -22,6 +22,7 @@ import type {
   IViewport,
 } from '../types/IViewport';
 import { getViewportClassForInput } from './helpers/viewportTypeToViewportClass';
+import copyWebGLCanvasToCanvas from './helpers/copyWebGLCanvasToCanvas';
 
 interface ViewportDisplayCoords {
   sxStartDisplayCoords: number;
@@ -569,7 +570,8 @@ class TiledRenderingEngine extends BaseRenderingEngine {
 
     const onScreenContext = canvas.getContext('2d');
 
-    onScreenContext.drawImage(
+    copyWebGLCanvasToCanvas(
+      onScreenContext,
       offScreenCanvas,
       sx,
       sy,

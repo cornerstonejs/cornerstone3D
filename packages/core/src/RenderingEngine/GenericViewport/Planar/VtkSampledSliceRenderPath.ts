@@ -1,4 +1,3 @@
-import { vec3 } from 'gl-matrix';
 import { buildPlanarActorEntry } from './buildPlanarActorEntry';
 import uuidv4 from '../../../utilities/uuidv4';
 import { Events, ViewportType } from '../../../enums';
@@ -6,12 +5,7 @@ import eventTarget from '../../../eventTarget';
 import { getDefaultVolumeVOIRange } from '../../helpers/setDefaultVolumeVOI';
 import * as lifecycle from '../../helpers/volumeStrategyLifecycle';
 import { ActorRenderMode } from '../../../types';
-import type {
-  IImageData,
-  IImageVolume,
-  Point3,
-  VOIRange,
-} from '../../../types';
+import type { IImageData, IImageVolume, VOIRange } from '../../../types';
 import type {
   DataAddOptions,
   LoadedData,
@@ -34,17 +28,19 @@ import {
   getPlanarRenderPathActiveSourceICamera,
   resolvePlanarRenderPathProjection,
 } from './planarRenderPathProjection';
-import type { PlanarRenderPathProjectionCamera } from './planarRenderPathProjection';
-import { resolvePlanarViewportView } from './PlanarResolvedView';
 import {
   PlanarSliceSampler,
-  SAMPLED_SLICE_PREFETCH_NEIGHBOURS,
   getPlanarSampledSliceInputs,
-  getScreenSliceGeometry,
   getVolumeClipPlanes,
 } from './planarSampledSlice';
 import type { PlanarSampledSlice } from './planarSampledSlice';
-import type { VolumeSliceGeometry } from '../../../utilities/volumeSliceGeometry';
+import {
+  getCanvasScreenSliceGeometry,
+  getNeighbourCameras,
+  recordPlaneMove,
+  scheduleSampledSliceRestWork,
+} from './planarSampledSliceRest';
+import type { PlanarSlicePlaneMoves } from './planarSampledSliceRest';
 import { PlanarSampledSliceActor } from './planarSampledSliceActor';
 import {
   buildPlanarVolumeImageData,
@@ -62,30 +58,8 @@ import {
  */
 export const SAMPLED_SLICE_LOADING_UPDATE_MS = 100;
 
-/**
- * The time without a change of the view after which the view counts as at
- * rest: 100 ms, a little more than the 80 ms of the CPU volume path, so that
- * a scroll or a zoom with a wheel, whose events come 15 to 50 ms apart, never
- * pays for a fine sample or a prefetch between two of its steps. At rest an
- * oblique slice is sampled once more per screen pixel, and the neighbours are
- * prefetched.
- */
-export const SAMPLED_SLICE_REST_DELAY_MS = 100;
-
-/**
- * The longest wait for an idle period before a prefetch runs anyway, so a
- * busy page still fills the neighbours.
- */
-export const SAMPLED_SLICE_IDLE_TIMEOUT_MS = 500;
-
-/**
- * The smallest move of the view plane along its normal that counts as a
- * scroll step, in world units.
- */
-const PLANE_MOVE_TOLERANCE = 1e-6;
-
 /** The parts of one mounted sampled slice. */
-type SampledSliceMount = {
+type SampledSliceMount = PlanarSlicePlaneMoves & {
   ctx: PlanarVtkVolumeAdapterContext;
   dataId: string;
   rendering: PlanarSampledSliceRendering;
@@ -93,10 +67,6 @@ type SampledSliceMount = {
   draw: PlanarSampledSliceActor;
   /** Cancels the pending work at rest: the rest timer or an idle prefetch. */
   cancelRestWork?: () => void;
-  /** The plane of the last slice request, to find the step of a scroll. */
-  lastPlane?: { normal: Point3; offset: number };
-  /** The signed move along the normal of the last scroll, in world units. */
-  lastStep?: number;
 };
 
 /**
@@ -396,7 +366,7 @@ export class VtkSampledSliceRenderPath
           rendering.imageVolume,
           rendering.dataPresentation
         ),
-        getScreenGeometry(mount, camera)
+        getCanvasScreenSliceGeometry(mount.ctx.vtk.canvas, camera)
       )
     );
     this.scheduleRestWork(mount);
@@ -419,68 +389,46 @@ export class VtkSampledSliceRenderPath
     draw.followCamera(camera, rendering.overlayOrder);
   }
 
-  /** Runs `onRest` once the view has not changed for SAMPLED_SLICE_REST_DELAY_MS. */
-  private scheduleRestWork(mount: SampledSliceMount): void {
-    const timeoutId = setTimeout(() => {
-      mount.cancelRestWork = undefined;
-      this.onRest(mount);
-    }, SAMPLED_SLICE_REST_DELAY_MS);
-
-    mount.cancelRestWork = () => clearTimeout(timeoutId);
-  }
-
   /**
-   * The work of a view at rest. First an oblique slice is sampled once more
-   * on the screen grid, one sample per device pixel, when the sampler wants
-   * that (`PlanarSliceSampler.sampleFiner`), and drawn. Then the neighbour
-   * slices are prefetched in idle time, one sample per idle callback, nearest
+   * Starts the work of a view at rest (`scheduleSampledSliceRestWork`): once
+   * the view has not changed for SAMPLED_SLICE_REST_DELAY_MS, an oblique
+   * slice is sampled once more on the screen grid, one sample per device
+   * pixel, when the sampler wants that (`PlanarSliceSampler.sampleFiner`), and
+   * drawn. Then the neighbour slices are prefetched in idle time, nearest
    * first and in the direction of the last scroll first. A change of the view
-   * stops it (`updateSlice`). Nothing is prefetched while the volume loads,
-   * since each new frame makes the kept slices stale.
+   * stops it (`updateSlice`).
    */
-  private onRest(mount: SampledSliceMount): void {
-    const { ctx, rendering, sampler } = mount;
-    const camera = getPlanarRenderPathActiveSourceICamera(ctx);
-    const inputs = getPlanarSampledSliceInputs(
-      rendering.imageVolume,
-      rendering.dataPresentation
-    );
-    const finer = sampler.sampleFiner(
-      rendering.imageVolume,
-      camera,
-      inputs,
-      getScreenGeometry(mount, camera)
-    );
+  private scheduleRestWork(mount: SampledSliceMount): void {
+    const { ctx, dataId, rendering, sampler } = mount;
 
-    if (finer) {
-      this.drawSlice(mount, camera, finer);
-      ctx.display.requestRender();
-    }
-
-    if (isVolumeLoading(rendering.imageVolume)) {
-      return;
-    }
-
-    const neighbours = getNeighbourCameras(mount, camera);
-    const prefetchNext = () => {
-      mount.cancelRestWork = undefined;
-
-      while (neighbours.length) {
-        if (
-          sampler.prefetch(rendering.imageVolume, neighbours.shift(), inputs)
-        ) {
-          break;
-        }
-      }
-
-      if (neighbours.length) {
-        mount.cancelRestWork = requestIdle(prefetchNext);
-      }
-    };
-
-    if (neighbours.length) {
-      mount.cancelRestWork = requestIdle(prefetchNext);
-    }
+    mount.cancelRestWork = scheduleSampledSliceRestWork({
+      sampler,
+      volume: rendering.imageVolume,
+      getCamera: () => getPlanarRenderPathActiveSourceICamera(ctx),
+      getInputs: () =>
+        getPlanarSampledSliceInputs(
+          rendering.imageVolume,
+          rendering.dataPresentation
+        ),
+      getScreen: (camera) =>
+        getCanvasScreenSliceGeometry(ctx.vtk.canvas, camera),
+      getNeighbours: (camera) =>
+        getNeighbourCameras({
+          ctx,
+          dataId,
+          rendering,
+          lastStep: mount.lastStep,
+          camera,
+        }),
+      onFinerSlice: (slice) => {
+        this.drawSlice(
+          mount,
+          getPlanarRenderPathActiveSourceICamera(ctx),
+          slice
+        );
+        ctx.display.requestRender();
+      },
+    });
   }
 
   private removeData(mount: SampledSliceMount): void {
@@ -494,148 +442,6 @@ export class VtkSampledSliceRenderPath
 function cancelRestWork(mount: SampledSliceMount): void {
   mount.cancelRestWork?.();
   mount.cancelRestWork = undefined;
-}
-
-/**
- * Runs a callback in idle time, with requestIdleCallback and a timeout of
- * SAMPLED_SLICE_IDLE_TIMEOUT_MS, or with setTimeout where the browser has no
- * requestIdleCallback (Safari).
- *
- * @returns the function that cancels the callback
- */
-function requestIdle(callback: () => void): () => void {
-  if (
-    typeof requestIdleCallback === 'function' &&
-    typeof cancelIdleCallback === 'function'
-  ) {
-    const cancelIdle = cancelIdleCallback;
-    const idleId = requestIdleCallback(callback, {
-      timeout: SAMPLED_SLICE_IDLE_TIMEOUT_MS,
-    });
-
-    return () => cancelIdle(idleId);
-  }
-
-  const timeoutId = setTimeout(callback, 0);
-
-  return () => clearTimeout(timeoutId);
-}
-
-/**
- * Keeps the plane of a slice request and, when the plane moved along the
- * same normal, the signed size of that move as the last scroll step.
- */
-function recordPlaneMove(
-  mount: SampledSliceMount,
-  camera: PlanarResolvedICamera | undefined
-): void {
-  if (!camera?.focalPoint || !camera.viewPlaneNormal) {
-    return;
-  }
-
-  const normal = camera.viewPlaneNormal as Point3;
-  const offset = vec3.dot(
-    camera.focalPoint as unknown as vec3,
-    normal as unknown as vec3
-  );
-  const { lastPlane } = mount;
-  const sameNormal =
-    !!lastPlane &&
-    vec3.equals(lastPlane.normal as unknown as vec3, normal as unknown as vec3);
-
-  if (!sameNormal) {
-    mount.lastStep = undefined;
-  } else if (Math.abs(offset - lastPlane.offset) > PLANE_MOVE_TOLERANCE) {
-    mount.lastStep = offset - lastPlane.offset;
-  }
-
-  mount.lastPlane = { normal: [...normal] as Point3, offset };
-}
-
-/**
- * The screen grid of the canvas of a mount for a camera, one sample per
- * device pixel (`getScreenSliceGeometry`), or undefined for a camera without
- * a parallel scale or view up.
- */
-function getScreenGeometry(
-  mount: SampledSliceMount,
-  camera: PlanarResolvedICamera | undefined
-): VolumeSliceGeometry | undefined {
-  const { canvas } = mount.ctx.vtk;
-
-  if (!camera?.viewUp || typeof camera.parallelScale !== 'number') {
-    return;
-  }
-
-  return getScreenSliceGeometry({
-    camera: camera as PlanarRenderPathProjectionCamera,
-    canvasWidth: canvas?.width,
-    canvasHeight: canvas?.height,
-  });
-}
-
-/**
- * The cameras of the neighbour planes that a scroll reaches, nearest first and
- * in the direction of the last scroll first: one step ahead, one step back,
- * two steps ahead, and so on up to SAMPLED_SLICE_PREFETCH_NEIGHBOURS.
- *
- * For the source the plane of each neighbour is resolved as a scroll resolves
- * it: the view state of the viewport with the image index of the neighbour
- * (`resolvePlanarViewportView` with `sliceIndex`), within the range of the
- * image indices. A prefetched slice is then exactly the slice of that scroll.
- * An overlay follows the camera of the source and knows neither its image
- * index nor its step, so it moves the plane by the last scroll step it saw,
- * and prefetches nothing before the first scroll.
- */
-function getNeighbourCameras(
-  mount: SampledSliceMount,
-  camera: PlanarRenderPathProjectionCamera | undefined
-): PlanarResolvedICamera[] {
-  const { ctx, dataId, lastStep, rendering } = mount;
-
-  if (!camera) {
-    return [];
-  }
-
-  const direction = lastStep < 0 ? -1 : 1;
-  const steps: number[] = [];
-
-  for (let step = 1; step <= SAMPLED_SLICE_PREFETCH_NEIGHBOURS; step++) {
-    steps.push(step * direction, -step * direction);
-  }
-
-  if (ctx.viewport.isCurrentDataId(dataId)) {
-    const viewState = ctx.viewport.getViewState();
-
-    return steps
-      .map((step) => rendering.currentImageIdIndex + step)
-      .filter((index) => index >= 0 && index <= rendering.maxImageIdIndex)
-      .map((sliceIndex) =>
-        resolvePlanarViewportView({
-          viewState,
-          rendering,
-          renderContext: ctx,
-          sliceIndex,
-        })?.toICamera()
-      )
-      .filter(Boolean);
-  }
-
-  if (!lastStep) {
-    return [];
-  }
-
-  const stepSize = Math.abs(lastStep);
-
-  return steps.map((step) => ({
-    ...camera,
-    focalPoint: vec3.scaleAndAdd(
-      [0, 0, 0] as unknown as vec3,
-      camera.focalPoint as unknown as vec3,
-      camera.viewPlaneNormal as unknown as vec3,
-      step * stepSize
-    ) as unknown as Point3,
-  }));
 }
 
 /** @internal */

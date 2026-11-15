@@ -4,7 +4,6 @@ import vtkOpenGLActor from '@kitware/vtk.js/Rendering/OpenGL/Actor';
 import vtkOpenGLActor2D from '@kitware/vtk.js/Rendering/OpenGL/Actor2D';
 import vtkOpenGLCamera from '@kitware/vtk.js/Rendering/OpenGL/Camera';
 import vtkOpenGLGlyph3DMapper from '@kitware/vtk.js/Rendering/OpenGL/Glyph3DMapper';
-import vtkOpenGLImageMapper from '@kitware/vtk.js/Rendering/OpenGL/ImageMapper';
 import vtkOpenGLImageCPRMapper from '@kitware/vtk.js/Rendering/OpenGL/ImageCPRMapper';
 import vtkOpenGLImageSlice from '@kitware/vtk.js/Rendering/OpenGL/ImageSlice';
 import vtkOpenGLImageResliceMapper from '@kitware/vtk.js/Rendering/OpenGL/ImageResliceMapper';
@@ -18,6 +17,7 @@ import vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture';
 import vtkOpenGLVolume from '@kitware/vtk.js/Rendering/OpenGL/Volume';
 import vtkOpenGLVolumeMapper from '@kitware/vtk.js/Rendering/OpenGL/VolumeMapper';
 import vtkViewNodeFactory from '@kitware/vtk.js/Rendering/SceneGraph/ViewNodeFactory';
+import vtkStreamingOpenGLImageMapper from './vtkStreamingOpenGLImageMapper';
 import vtkStreamingOpenGLImageResliceMapper from './vtkStreamingOpenGLImageResliceMapper';
 import vtkStreamingOpenGLVolumeMapper from './vtkStreamingOpenGLVolumeMapper';
 
@@ -123,7 +123,7 @@ export function extend(publicAPI, model, initialValues = {}) {
   registerOverride('vtkActor2D', vtkOpenGLActor2D.newInstance);
   registerOverride('vtkCamera', vtkOpenGLCamera.newInstance);
   registerOverride('vtkGlyph3DMapper', vtkOpenGLGlyph3DMapper.newInstance);
-  registerOverride('vtkImageMapper', vtkOpenGLImageMapper.newInstance);
+  registerOverride('vtkImageMapper', vtkStreamingOpenGLImageMapper.newInstance);
   registerOverride('vtkImageCPRMapper', vtkOpenGLImageCPRMapper.newInstance);
   registerOverride(
     'vtkImageResliceMapper',

@@ -1,12 +1,16 @@
 import cache from '../../../cache/cache';
-import type BlendModes from '../../../enums/BlendModes';
+import BlendModes from '../../../enums/BlendModes';
 import { Events } from '../../../enums';
 import {
   getRenderBackendForRenderMode,
   getSampledVolumeRenderModeForBackend,
   isVolumeRenderMode,
 } from '../../helpers/renderBackendRegistry';
+import RENDERING_DEFAULTS from '../../../constants/rendering';
+import { getConfiguration } from '../../../init';
+import Viewport from '../../Viewport';
 import type { ActorEntry, ColormapPublic, IVolumeInput } from '../../../types';
+import type { OpacityMapping } from '../../../types/Colormap';
 import triggerEvent from '../../../utilities/triggerEvent';
 import {
   findMatchingColormap,
@@ -413,6 +417,59 @@ class PlanarLegacyCompatibilityController {
     }
   }
 
+  /**
+   * The largest slab thickness of the volumes of the viewport, as the legacy
+   * volume viewport reports it, and at least the minimum slab thickness.
+   */
+  getSlabThickness(): number {
+    let slabThickness = RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS;
+
+    for (const dataId of new Set(this.volumeDataIds.values())) {
+      const presentationSlabThickness =
+        this.host.getDisplaySetPresentation(dataId)?.slabThickness;
+
+      if (
+        typeof presentationSlabThickness === 'number' &&
+        presentationSlabThickness > slabThickness
+      ) {
+        slabThickness = presentationSlabThickness;
+      }
+    }
+
+    return slabThickness;
+  }
+
+  /**
+   * Sets the slab thickness of the volumes whose actor UID is in the filter,
+   * or of every volume when the filter is empty. As on the legacy volume
+   * viewport, a thickness below 0.1 becomes the minimum slab thickness.
+   */
+  setSlabThickness(
+    slabThickness: number,
+    filterActorUIDs: string[] = []
+  ): void {
+    const nextSlabThickness =
+      slabThickness < 0.1
+        ? RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS
+        : slabThickness;
+
+    this.setVolumeSlabThickness(
+      this.getBlendModeTargetDataIds(filterActorUIDs),
+      nextSlabThickness
+    );
+  }
+
+  /**
+   * Removes the slab thickness of every volume, so that each one shows a
+   * plain slice again.
+   */
+  resetSlabThickness(): void {
+    this.setVolumeSlabThickness(
+      Array.from(new Set(this.volumeDataIds.values())),
+      undefined
+    );
+  }
+
   getNumberOfSlices(): number {
     return Math.max(
       this.host.getImageCount(),
@@ -560,40 +617,23 @@ class PlanarLegacyCompatibilityController {
       volumeInputArray.forEach((volumeInput, index) => {
         const dataId = dataIds[index];
 
-        if (volumeInput.visibility !== undefined) {
-          this.host.setDisplaySetPresentation(dataId, {
-            visible: volumeInput.visibility,
-          });
-        }
-
-        if (volumeInput.blendMode !== undefined) {
-          const nextProperties = mergePlanarLegacyProperties(
-            this.properties.get(dataId) || {},
-            { blendMode: volumeInput.blendMode }
-          );
-
-          this.properties.set(dataId, nextProperties);
-          this.host.setDisplaySetPresentation(dataId, {
-            blendMode: volumeInput.blendMode,
-          });
-        }
-
-        if (volumeInput.slabThickness !== undefined) {
-          this.host.setDisplaySetPresentation(dataId, {
-            slabThickness: volumeInput.slabThickness,
-          });
-        }
+        this.applyVolumeInputProperties(dataId, volumeInput);
 
         const actor = this.host.getBindingActor(dataId);
 
         if (actor && volumeInput.callback) {
+          const opacityBeforeCallback = readScalarOpacityStamp(actor);
+
           volumeInput.callback({
             volumeActor: actor as never,
             volumeId: volumeInput.volumeId,
           });
 
-          const volumePresentation =
-            this.buildVolumePresentationFromActor(dataId);
+          const volumePresentation = this.buildVolumePresentationFromActor(
+            dataId,
+            hasScalarOpacityChanged(actor, opacityBeforeCallback),
+            this.getLegacySliceOpacityExponent(volumeInput)
+          );
 
           if (volumePresentation) {
             this.applyVolumePresentation(dataId, volumePresentation);
@@ -621,6 +661,144 @@ class PlanarLegacyCompatibilityController {
 
       throw error;
     }
+  }
+
+  /**
+   * Keeps the visibility, blend mode and slab thickness of a volume input in
+   * the legacy properties of its data id and in its presentation. The
+   * presentation that a later property change or a callback builds comes from
+   * the legacy properties, so a value kept only in the presentation would be
+   * lost there.
+   */
+  private applyVolumeInputProperties(
+    dataId: string,
+    volumeInput: IVolumeInput
+  ): void {
+    const patch: PlanarLegacyViewportProperties = {};
+
+    if (volumeInput.visibility !== undefined) {
+      patch.visible = volumeInput.visibility;
+    }
+
+    if (volumeInput.blendMode !== undefined) {
+      patch.blendMode = volumeInput.blendMode;
+    }
+
+    if (volumeInput.slabThickness !== undefined) {
+      patch.slabThickness = volumeInput.slabThickness;
+    }
+
+    if (!Object.keys(patch).length) {
+      return;
+    }
+
+    this.properties.set(
+      dataId,
+      mergePlanarLegacyProperties(this.properties.get(dataId) || {}, patch)
+    );
+    this.host.setDisplaySetPresentation(dataId, patch);
+  }
+
+  private setVolumeSlabThickness(
+    dataIds: string[],
+    slabThickness: number | undefined
+  ): void {
+    dataIds.forEach((dataId) => {
+      this.properties.set(
+        dataId,
+        mergePlanarLegacyProperties(this.properties.get(dataId) || {}, {
+          slabThickness,
+        })
+      );
+      this.host.setDisplaySetPresentation(dataId, { slabThickness });
+    });
+  }
+
+  /**
+   * The exponent f with which a legacy volume viewport draws an opacity a of
+   * a composite volume on a plain slice: it draws 1 - (1 - a)^f.
+   *
+   * The legacy mapper corrects the opacity table per sample step and the
+   * fragment shader raises a ray shorter than one step to the power of its
+   * length in steps, so f is the length of the ray between the two slab
+   * clipping planes divided by the scalar opacity unit distance (1, the vtk.js
+   * default) and does not depend on the sample distance. The planes lie at
+   * the slab half thickness on each side of the focal point, at the camera
+   * distance (inset multiplier times the bounds radius of the volumes, as in
+   * `Viewport.resetCamera`). The shader measures both from the near plane of
+   * the camera clipping range (`MAXIMUM_RAY_DISTANCE`) in 32-bit floats, so
+   * the length is the difference of the two rounded distances.
+   *
+   * Undefined when the volume is not composite, has a slab of its own or has
+   * no bounds, which keeps the opacity function as the callback wrote it.
+   */
+  private getLegacySliceOpacityExponent(
+    volumeInput: IVolumeInput
+  ): number | undefined {
+    if (
+      volumeInput.blendMode !== undefined &&
+      volumeInput.blendMode !== BlendModes.COMPOSITE
+    ) {
+      return;
+    }
+
+    const halfThickness = RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS;
+
+    if (
+      volumeInput.slabThickness !== undefined &&
+      volumeInput.slabThickness > halfThickness
+    ) {
+      return;
+    }
+
+    const bounds = this.getVolumeBounds();
+
+    if (!bounds) {
+      return;
+    }
+
+    const insetImageMultiplier = getConfiguration().rendering
+      ?.useLegacyCameraFOV
+      ? 1.1
+      : 1;
+    const nearDistance =
+      RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE +
+      insetImageMultiplier * Viewport.boundsRadius(bounds);
+
+    return (
+      Math.fround(nearDistance + halfThickness) -
+      Math.fround(nearDistance - halfThickness)
+    );
+  }
+
+  /**
+   * The bounds that enclose every volume of the viewport, or undefined when
+   * no volume has bounds.
+   */
+  private getVolumeBounds(): number[] | undefined {
+    let bounds: number[] | undefined;
+
+    for (const volumeId of this.volumeDataIds.keys()) {
+      const volumeBounds = (
+        cache.getVolume(volumeId) as
+          | { imageData?: { getBounds?: () => number[] } }
+          | undefined
+      )?.imageData?.getBounds?.();
+
+      if (!volumeBounds) {
+        continue;
+      }
+
+      bounds = bounds
+        ? bounds.map((value, index) =>
+            index % 2
+              ? Math.max(value, volumeBounds[index])
+              : Math.min(value, volumeBounds[index])
+          )
+        : [...volumeBounds];
+    }
+
+    return bounds;
   }
 
   private getInitialVolumeImageIdIndex(imageCount: number): number {
@@ -789,8 +967,22 @@ class PlanarLegacyCompatibilityController {
     return Object.keys(matchedColormap).length ? matchedColormap : undefined;
   }
 
+  /**
+   * Reads back what a legacy volume callback wrote on the actor of a data id.
+   * The range of the colour function becomes the VOI range. When the callback
+   * wrote an opacity function, its points are absolute scalar values, so they
+   * are kept as the `opacityMapping` of the colormap, which the presentation
+   * draws at those values whatever the VOI range is, and the threshold and the
+   * opacity array that the read gives are left out. With a legacy slice
+   * opacity exponent, the points are first turned into the opacity that a
+   * legacy volume viewport draws on its slice (see
+   * `toLegacySliceOpacityMapping`), so that the image slice gives the same
+   * picture.
+   */
   private buildVolumePresentationFromActor(
-    dataId: string
+    dataId: string,
+    callbackWroteOpacity = false,
+    legacySliceOpacityExponent?: number
   ): PlanarLegacyViewportProperties | undefined {
     const actor = this.host.getBindingActor(dataId) as
       | {
@@ -807,7 +999,22 @@ class PlanarLegacyCompatibilityController {
       | undefined;
 
     const transferFunction = actor?.getProperty?.().getRGBTransferFunction?.(0);
-    const volumeColormap = this.buildVolumeColormap(dataId);
+    const actorOpacityMapping = callbackWroteOpacity
+      ? readScalarOpacityMapping(actor)
+      : undefined;
+    const opacityMapping =
+      actorOpacityMapping && legacySliceOpacityExponent !== undefined
+        ? toLegacySliceOpacityMapping(
+            actorOpacityMapping,
+            legacySliceOpacityExponent
+          )
+        : actorOpacityMapping;
+    const volumeColormap = opacityMapping
+      ? toOpacityMappingColormap(
+          this.buildVolumeColormap(dataId),
+          opacityMapping
+        )
+      : this.buildVolumeColormap(dataId);
     const mapper = actor?.getMapper?.();
     const blendMode = this.isSampledVolumeRendering(dataId)
       ? undefined
@@ -929,6 +1136,171 @@ class PlanarLegacyCompatibilityController {
       }
     }
   }
+}
+
+type ScalarOpacityFunction = {
+  getDataPointer?: () => ArrayLike<number> | null | undefined;
+  getMTime?: () => number;
+};
+
+type ScalarOpacityActor = {
+  getProperty?: () => {
+    getScalarOpacity?: (index: number) => ScalarOpacityFunction | undefined;
+  };
+};
+
+type ScalarOpacityStamp = {
+  opacityFunction?: ScalarOpacityFunction;
+  mtime?: number;
+};
+
+function getScalarOpacityFunction(
+  actor: unknown
+): ScalarOpacityFunction | undefined {
+  return (actor as ScalarOpacityActor | undefined)
+    ?.getProperty?.()
+    ?.getScalarOpacity?.(0);
+}
+
+/**
+ * The opacity function of an actor and its modified time, read before a
+ * legacy callback runs.
+ */
+function readScalarOpacityStamp(actor: unknown): ScalarOpacityStamp {
+  const opacityFunction = getScalarOpacityFunction(actor);
+
+  return { opacityFunction, mtime: opacityFunction?.getMTime?.() };
+}
+
+/**
+ * Whether the opacity function of the actor is another one, or was modified,
+ * since the stamp was read.
+ */
+function hasScalarOpacityChanged(
+  actor: unknown,
+  stamp: ScalarOpacityStamp
+): boolean {
+  const opacityFunction = getScalarOpacityFunction(actor);
+
+  if (!opacityFunction) {
+    return false;
+  }
+
+  return (
+    opacityFunction !== stamp.opacityFunction ||
+    opacityFunction.getMTime?.() !== stamp.mtime
+  );
+}
+
+/**
+ * The points of the opacity function of an actor as absolute scalar values,
+ * or undefined when it has none.
+ */
+function readScalarOpacityMapping(
+  actor: unknown
+): OpacityMapping[] | undefined {
+  const dataPointer = getScalarOpacityFunction(actor)?.getDataPointer?.();
+
+  if (!dataPointer?.length) {
+    return;
+  }
+
+  const mapping: OpacityMapping[] = [];
+
+  for (let i = 0; i + 1 < dataPointer.length; i += 2) {
+    mapping.push({ value: dataPointer[i], opacity: dataPointer[i + 1] });
+  }
+
+  return mapping;
+}
+
+/**
+ * The largest error, in opacity, of the piecewise linear function that
+ * `toLegacySliceOpacityMapping` makes: a quarter of one level of 255.
+ */
+const LEGACY_SLICE_OPACITY_TOLERANCE = 0.25 / 255;
+
+/**
+ * The narrowest interval, as a fraction of the value range of the mapping,
+ * that `toLegacySliceOpacityMapping` splits. The opacity table of the image
+ * mapper has at most 16384 entries over that range, so a finer point cannot
+ * be drawn.
+ */
+const LEGACY_SLICE_OPACITY_MIN_INTERVAL = 1 / 65536;
+
+/**
+ * Turns opacity points into the points of the opacity that a legacy volume
+ * viewport draws on a slice, 1 - (1 - a)^exponent between the points as well
+ * as at them. That curve is not linear in a, so each interval is split in
+ * halves until the straight line is within `LEGACY_SLICE_OPACITY_TOLERANCE`
+ * of the curve at its middle, or the interval is narrower than the table of
+ * the image mapper can show (near an opacity of 1 the curve is vertical).
+ */
+function toLegacySliceOpacityMapping(
+  mapping: OpacityMapping[],
+  exponent: number
+): OpacityMapping[] {
+  const sorted = [...mapping].sort((a, b) => a.value - b.value);
+  const drawnOpacity = (opacity: number) =>
+    1 - (1 - Math.max(0, Math.min(1, opacity))) ** exponent;
+  const minInterval =
+    (sorted[sorted.length - 1].value - sorted[0].value) *
+    LEGACY_SLICE_OPACITY_MIN_INTERVAL;
+  const result: OpacityMapping[] = [
+    { value: sorted[0].value, opacity: drawnOpacity(sorted[0].opacity) },
+  ];
+  const split = (start: OpacityMapping, end: OpacityMapping, depth: number) => {
+    const middle = {
+      value: (start.value + end.value) / 2,
+      opacity: (start.opacity + end.opacity) / 2,
+    };
+    const middleOpacity = drawnOpacity(middle.opacity);
+    const lineOpacity =
+      (drawnOpacity(start.opacity) + drawnOpacity(end.opacity)) / 2;
+
+    if (
+      depth >= 32 ||
+      end.value - start.value <= minInterval ||
+      Math.abs(middleOpacity - lineOpacity) <= LEGACY_SLICE_OPACITY_TOLERANCE
+    ) {
+      return;
+    }
+
+    split(start, middle, depth + 1);
+    result.push({ value: middle.value, opacity: middleOpacity });
+    split(middle, end, depth + 1);
+  };
+
+  for (let i = 1; i < sorted.length; i++) {
+    split(sorted[i - 1], sorted[i], 0);
+    result.push({
+      value: sorted[i].value,
+      opacity: drawnOpacity(sorted[i].opacity),
+    });
+  }
+
+  return result;
+}
+
+/**
+ * The colormap that keeps an opacity function read from an actor: the name
+ * of the matched colormap, an overall opacity of 1 and the points as its
+ * `opacityMapping`.
+ */
+function toOpacityMappingColormap(
+  colormap: ColormapPublic | undefined,
+  opacityMapping: OpacityMapping[]
+): ColormapPublic {
+  const opacityMappingColormap: ColormapPublic = {
+    opacity: 1,
+    opacityMapping,
+  };
+
+  if (colormap?.name !== undefined) {
+    opacityMappingColormap.name = colormap.name;
+  }
+
+  return opacityMappingColormap;
 }
 
 export default PlanarLegacyCompatibilityController;

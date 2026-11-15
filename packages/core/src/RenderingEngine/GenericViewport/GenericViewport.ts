@@ -13,6 +13,7 @@ import type {
   DisplaySetId,
   DataProvider,
   LoadedData,
+  MountedRendering,
   ViewportDataBinding,
   RenderPathResolver,
   ViewportController,
@@ -175,6 +176,31 @@ abstract class GenericViewport<
       ([displaySetId, binding]) => ({
         displaySetId,
         options: { role: binding.role },
+      })
+    );
+  }
+
+  /**
+   * Returns the role and the mounted renderings of every display set, in
+   * mount order, for the stats overlay. `rendering` defines the render mode,
+   * and `renderings` holds every rendering that the attachment keeps mounted.
+   * The renderings are the live state of the render paths: read them, never
+   * change them.
+   *
+   * @internal
+   */
+  getDebugBindings(): ReadonlyArray<{
+    displaySetId: DisplaySetId;
+    role: BindingRole;
+    rendering: Readonly<MountedRendering>;
+    renderings: ReadonlyArray<Readonly<MountedRendering>>;
+  }> {
+    return Array.from(this.bindings.entries()).map(
+      ([displaySetId, binding]) => ({
+        displaySetId,
+        role: binding.role,
+        rendering: binding.rendering,
+        renderings: binding.getRenderings?.() ?? [binding.rendering],
       })
     );
   }

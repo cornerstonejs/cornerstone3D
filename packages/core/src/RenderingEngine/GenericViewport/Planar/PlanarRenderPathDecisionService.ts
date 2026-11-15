@@ -19,7 +19,6 @@ import { getSlabSampleOffsets } from '../../../utilities/sampleVolumeSlice';
 import { getExactSliceAxis } from '../../../utilities/volumeSliceGeometry';
 import { getOrientationFromScanAxisNormal } from '../../helpers/getCameraVectors';
 import { resolveSlabThickness } from './planarVolumeSliceBlendMode';
-import { getPlanarViewStateVectors } from './planarOrientationVectors';
 import { isSegmentationOverlayData } from '../renderingFidelity';
 import type { BindingRole } from '../ViewportArchitectureTypes';
 import type { IImageVolume, Point3 } from '../../../types';
@@ -69,14 +68,14 @@ export interface PlanarRenderPathDecisionOptions {
 
 /**
  * The most voxel samples that one sampled slice may take on the CPU: 5 million,
- * about 50 ms at the 8 to 12 ns per sample measured for sampleVolumeGrid. A
- * slab that needs more work stays on the GPU volume path.
+ * about 50 ms at the 8 to 12 ns per sample measured for sampleVolumeGrid. The
+ * CPU volume path draws a slab only when it needs no more work than this.
  */
 export const MAX_CPU_SLICE_SAMPLES = 5_000_000;
 
 /**
- * Whether the CPU can sample the slab of a view in time. A view with no slab
- * always can. For a slab the estimated work is the number of samples that
+ * Whether the CPU can sample the slab of a view in time, for the CPU volume
+ * path. A view with no slab always can. For a slab the estimated work is the number of samples that
  * `sampleVolumeSlice` takes along the normal, which `getSlabSampleOffsets`
  * gives, times the number of pixels of the slice, and it must stay at or
  * under MAX_CPU_SLICE_SAMPLES.
@@ -141,6 +140,24 @@ function getSliceAreaEstimate(
   }
 
   return Math.max(...sliceAreas);
+}
+
+/**
+ * Whether a slab thickness gives a slab: more than one sample along the view
+ * plane normal (`getSlabSampleOffsets`), whatever the blend mode. The GPU
+ * volume path draws its default average slab for a thickness with a blend
+ * mode that has no slab type, so the blend mode does not count.
+ */
+export function hasSlab(
+  volume: Pick<IImageVolume, 'spacing'>,
+  slabThickness?: number
+): boolean {
+  return (
+    getSlabSampleOffsets(
+      volume as IImageVolume,
+      resolveSlabThickness(slabThickness)
+    ).length > 1
+  );
 }
 
 type PlanarPathInputs = {
@@ -331,7 +348,8 @@ export class PlanarRenderPathDecisionService {
   /**
    * The volume render mode of one data set: the sampled volume mode of the
    * resolved backend when `canSampleSliceOnCpu` holds, the volume mode of the
-   * backend otherwise. A backend with no sampled volume mode (the 'cpu'
+   * backend otherwise. So with slice first on and the 'gpu' backend, a plain
+   * slice is sampled and any slab is drawn by the GPU volume path. A backend with no sampled volume mode (the 'cpu'
    * backend, or an extension backend that declares none) keeps its volume
    * mode. The viewport calls it again once the data provider has loaded a
    * data set on the volume path, because the load may create the volume that
@@ -358,11 +376,9 @@ export class PlanarRenderPathDecisionService {
    * own option, else the global configuration); the volume is in the cache,
    * under the id that the data provider gives it (`resolveViewportVolumeId`),
    * and holds one value per voxel (a colour volume keeps the GPU volume
-   * path); the data set is not a segmentation overlay; and the view needs no
-   * slab, or a slab that `canSampleSlabOnCpu` accepts for the view plane
-   * normal of the requested orientation. The caller checks that
-   * the data set takes the volume path and that the backend has a sampled
-   * volume mode.
+   * path); the data set is not a segmentation overlay; and the view has no
+   * slab (`hasSlab`). The caller checks that the data set takes the volume
+   * path and that the backend has a sampled volume mode.
    */
   private canSampleSliceOnCpu(
     dataSet: PlanarRegisteredDataSet,
@@ -398,14 +414,7 @@ export class PlanarRenderPathDecisionService {
       return false;
     }
 
-    return canSampleSlabOnCpu(
-      volume,
-      options.slabThickness,
-      getPlanarViewStateVectors({
-        imageVolume: volume,
-        orientation: options.orientation,
-      })?.viewPlaneNormal
-    );
+    return !hasSlab(volume, options.slabThickness);
   }
 
   /**

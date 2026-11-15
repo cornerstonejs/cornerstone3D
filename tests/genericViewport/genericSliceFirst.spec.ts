@@ -282,6 +282,83 @@ function getTextureBytesUsed(page: Page): Promise<number> {
   );
 }
 
+const DEBUG_EXAMPLE = 'genericSliceFirst';
+const DEBUG_EXAMPLE_VIEWPORT_IDS = [
+  'CT_AXIAL',
+  'CT_SAGITTAL',
+  'FUSION_CORONAL',
+  'CT_OBLIQUE',
+];
+const DEBUG_EXAMPLE_VOLUME_IDS = [
+  'cornerstoneStreamingImageVolume:SLICE_FIRST_CT',
+  'cornerstoneStreamingImageVolume:SLICE_FIRST_PT',
+];
+const GPU_MEMORY_PATTERN =
+  /3D volumes ([\d.]+) MB, 2D slices (?:about )?([\d.]+) MB/;
+
+/**
+ * Opens the slice first example with the given extra address parameters and
+ * waits until both volumes have loaded.
+ */
+async function openDebugExample(
+  page: Page,
+  parameters: Record<string, string> = {}
+): Promise<void> {
+  const url = createExampleUrl(DEBUG_EXAMPLE + '.html');
+
+  for (const [name, value] of Object.entries(parameters)) {
+    url.searchParams.set(name, value);
+  }
+
+  await page.goto(url.toString());
+  await page.waitForSelector('.slice-first-viewport canvas', {
+    timeout: 30000,
+  });
+  await page.waitForFunction(
+    (volumeIds) =>
+      volumeIds.every(
+        (volumeId) =>
+          (window as TestWindow).cornerstone?.cache?.getVolume(volumeId)
+            ?.loadStatus?.loaded === true
+      ),
+    DEBUG_EXAMPLE_VOLUME_IDS,
+    { timeout: LOAD_TIMEOUT_MS }
+  );
+  await waitForRenderSettled(page, { quietMs: 500, timeout: 30000 });
+}
+
+/** Returns the render modes of every actor of every viewport of the slice first example. */
+function getDebugExampleRenderModes(page: Page): Promise<string[][]> {
+  return page.evaluate(
+    ({ engineId, viewportIds }) => {
+      const engine = (window as TestWindow).cornerstone.getRenderingEngine(
+        engineId
+      );
+
+      return viewportIds.map(
+        (viewportId) =>
+          engine
+            ?.getViewport(viewportId)
+            ?.getActors()
+            .map((entry) => entry.actorMapper?.renderMode ?? 'missing') ?? []
+      );
+    },
+    { engineId: ENGINE_ID, viewportIds: DEBUG_EXAMPLE_VIEWPORT_IDS }
+  );
+}
+
+/** Reads the 3D and 2D texture totals of the GPU memory line of the debug modal. */
+async function readGpuMemoryTotals(
+  page: Page
+): Promise<{ volumeMB: number; sliceMB: number } | undefined> {
+  const text = await page.locator('body').innerText();
+  const match = GPU_MEMORY_PATTERN.exec(text);
+
+  return match
+    ? { volumeMB: Number(match[1]), sliceMB: Number(match[2]) }
+    : undefined;
+}
+
 test.describe('Slice first', () => {
   test.setTimeout(240000);
 
@@ -334,5 +411,49 @@ test.describe('Slice first', () => {
         timeout: SWITCH_TIMEOUT_MS,
       })
       .toBe(SAMPLED_MODE);
+  });
+  test('shows the bindings of every viewport in the debug modal by default', async ({
+    page,
+  }) => {
+    await openDebugExample(page);
+
+    await expect
+      .poll(() => getDebugExampleRenderModes(page), {
+        timeout: SWITCH_TIMEOUT_MS,
+      })
+      .toEqual([
+        [SAMPLED_MODE],
+        [SAMPLED_MODE],
+        [SAMPLED_MODE, SAMPLED_MODE],
+        [SAMPLED_MODE],
+      ]);
+
+    await expect(page.getByText('VIEWPORT BINDINGS')).toBeVisible();
+
+    for (const viewportId of DEBUG_EXAMPLE_VIEWPORT_IDS) {
+      const section = page
+        .locator(`div[title="${ENGINE_ID}/${viewportId}"]`)
+        .locator('..');
+
+      await expect(section).toContainText(SAMPLED_MODE, {
+        timeout: SWITCH_TIMEOUT_MS,
+      });
+      await expect(section).toContainText('2D slice');
+    }
+
+    await expect
+      .poll(() => readGpuMemoryTotals(page), { timeout: SWITCH_TIMEOUT_MS })
+      .toMatchObject({ volumeMB: 0 });
+
+    const totals = await readGpuMemoryTotals(page);
+
+    expect(totals?.sliceMB).toBeGreaterThan(0);
+  });
+
+  test('hides the debug modal with debug=false', async ({ page }) => {
+    await openDebugExample(page, { debug: 'false' });
+
+    await page.waitForTimeout(1500);
+    await expect(page.getByText('VIEWPORT BINDINGS')).toHaveCount(0);
   });
 });

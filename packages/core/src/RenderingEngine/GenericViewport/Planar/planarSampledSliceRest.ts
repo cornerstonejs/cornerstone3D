@@ -18,11 +18,23 @@ import type {
   PlanarSampledSliceInputs,
   PlanarSliceSampler,
 } from './planarSampledSlice';
-import {
-  SAMPLED_SLICE_IDLE_TIMEOUT_MS,
-  SAMPLED_SLICE_REST_DELAY_MS,
-} from './VtkSampledSliceRenderPath';
 import { isVolumeLoading } from '../renderingFidelity';
+
+/**
+ * The time without a change of the view after which the view counts as at
+ * rest: 100 ms, a little more than the 80 ms of the CPU volume path, so that
+ * a scroll or a zoom with a wheel, whose events come 15 to 50 ms apart, never
+ * pays for a fine sample or a prefetch between two of its steps. At rest an
+ * oblique slice is sampled once more per screen pixel, and the neighbours are
+ * prefetched.
+ */
+export const SAMPLED_SLICE_REST_DELAY_MS = 100;
+
+/**
+ * The longest wait for an idle period before a prefetch runs anyway, so a
+ * busy page still fills the neighbours.
+ */
+export const SAMPLED_SLICE_IDLE_TIMEOUT_MS = 500;
 
 /**
  * The smallest move of the view plane along its normal that counts as a

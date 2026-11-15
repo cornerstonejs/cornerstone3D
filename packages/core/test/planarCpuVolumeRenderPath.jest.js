@@ -18,7 +18,7 @@ import {
   getScreenSliceGeometry,
 } from '../src/RenderingEngine/GenericViewport/Planar/planarSampledSlice';
 import { worldToCanvasPlanarViewState } from '../src/RenderingEngine/GenericViewport/Planar/planarAdapterCoordinateTransforms';
-import { SAMPLED_SLICE_REST_DELAY_MS } from '../src/RenderingEngine/GenericViewport/Planar/VtkSampledSliceRenderPath';
+import { SAMPLED_SLICE_REST_DELAY_MS } from '../src/RenderingEngine/GenericViewport/Planar/planarSampledSliceRest';
 import VoxelManager from '../src/utilities/VoxelManager';
 import eventTarget from '../src/eventTarget';
 import { getConfiguration } from '../src/init';
@@ -87,6 +87,36 @@ function createTestVolume({
     refill: fill,
   };
 
+  volume.voxelManager.invalidateCache = jest.fn();
+
+  return volume;
+}
+
+/**
+ * A 4 x 4 x 4 colour volume with unit spacing at the origin and a real voxel
+ * manager. Component c of voxel (i, j, k) is i + 4 j + 16 k + 64 c, so a
+ * pixel tells which voxel it came from and the components of one pixel
+ * differ by 64.
+ */
+function createColourVolume(numberOfComponents) {
+  const volume = createTestVolume({
+    volumeId: `colour-volume-${numberOfComponents}`,
+    ArrayType: Uint8Array,
+  });
+  const scalarData = new Uint8Array(64 * numberOfComponents);
+
+  for (let voxel = 0; voxel < 64; voxel++) {
+    for (let component = 0; component < numberOfComponents; component++) {
+      scalarData[voxel * numberOfComponents + component] =
+        voxel + 64 * component;
+    }
+  }
+
+  volume.voxelManager = VoxelManager.createScalarVolumeVoxelManager({
+    dimensions: volume.dimensions,
+    scalarData,
+    numberOfComponents,
+  });
   volume.voxelManager.invalidateCache = jest.fn();
 
   return volume;
@@ -587,6 +617,72 @@ describe('CpuVolumeSliceRenderPath', () => {
     ).toBe('done');
   });
 
+  it.each([
+    [3, false],
+    [4, true],
+  ])(
+    'draws a colour volume of %p components as a colour image',
+    async (numberOfComponents, rgba) => {
+      const { attachment } = await mount({
+        volume: createColourVolume(numberOfComponents),
+        canvas: createCanvas(8, 8),
+        camera: axialCamera(1),
+        presentation: { interpolationType: InterpolationType.NEAREST },
+      });
+
+      attachment.render();
+
+      const image = lastDrawnImage();
+      const pixels = lastDrawnPixels();
+
+      expect(image.color).toBe(true);
+      expect(image.rgba).toBe(rgba);
+      expect(image.numberOfComponents).toBe(numberOfComponents);
+      expect(image.getPixelData()).toBeInstanceOf(Uint8Array);
+      expect(pixels).toHaveLength(16 * numberOfComponents);
+
+      const voxels = [];
+
+      for (let pixel = 0; pixel < 16; pixel++) {
+        const first = pixels[pixel * numberOfComponents];
+
+        voxels.push(first);
+        expect(Math.floor(first / 16)).toBe(1);
+
+        for (let component = 1; component < numberOfComponents; component++) {
+          expect(pixels[pixel * numberOfComponents + component]).toBe(
+            first + 64 * component
+          );
+        }
+      }
+
+      expect(voxels.sort((a, b) => a - b)).toEqual(
+        Array.from({ length: 16 }, (_, index) => 16 + index)
+      );
+    }
+  );
+
+  it('draws a LINEAR oblique slice of a colour volume on the screen grid at rest', async () => {
+    const { attachment, rendering } = await mount({
+      volume: createColourVolume(3),
+      canvas: createCanvas(12, 10),
+      camera: obliqueCamera(),
+    });
+
+    attachment.render();
+    jest.advanceTimersByTime(SAMPLED_SLICE_REST_DELAY_MS);
+
+    const image = lastDrawnImage();
+    const pixels = lastDrawnPixels();
+
+    expect(rendering.getSliceCacheStatistics().refined).toBe(1);
+    expect(image.color).toBe(true);
+    expect(image.width).toBe(12);
+    expect(pixels).toHaveLength(12 * 10 * 3);
+    expect(pixels.some((value) => value > 0)).toBe(true);
+    expect(image.maxPixelValue).toBeLessThanOrEqual(255);
+  });
+
   it('colours a labelmap with its canvas actor and not with the VOI pipeline', async () => {
     const { attachment, rendering } = await mount({
       volume: createTestVolume({ ArrayType: Uint8Array }),
@@ -645,6 +741,20 @@ describe('PlanarSampledSliceCanvas', () => {
     expect(ctImage.maxPixelValue).toBe(3);
     expect(ptImage.getPixelData()).toBe(samples);
     expect(ptImage.minPixelValue).toBeCloseTo(1.4);
+  });
+
+  it('makes an RGBA image of a slice with 4 components', () => {
+    const canvas = new PlanarSampledSliceCanvas(createColourVolume(4), 4, 4);
+    const pixels = new Uint8Array([1, 2, 3, 255, 4, 5, 6, 255]);
+    const image = canvas.setSlice(
+      slice(pixels, { numberOfComponents: 4 })
+    ).image;
+
+    expect(image.color).toBe(true);
+    expect(image.rgba).toBe(true);
+    expect(image.numberOfComponents).toBe(4);
+    expect(image.getPixelData()).toBe(pixels);
+    expect(image.voxelManager.getAtIndex(1)).toEqual([4, 5, 6]);
   });
 
   it('makes the image again only for another slice', () => {

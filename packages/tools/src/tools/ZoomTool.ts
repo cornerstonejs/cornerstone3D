@@ -112,7 +112,7 @@ class ZoomTool extends BaseTool {
 
       if (!hasLegacyCameraPosition(camera)) {
         if (viewportHasZoom(viewport)) {
-          this._dragViewportZoom(evt, viewport);
+          this._dragViewportZoom(evt, viewport, true);
           viewport.render();
         }
 
@@ -426,21 +426,25 @@ class ZoomTool extends BaseTool {
     viewport.render();
   }
 
+  /**
+   * Zooms a viewport that has no legacy camera. A drag zooms by its vertical
+   * movement. A pinch zooms by the change of the distance between the two
+   * fingers, as the legacy camera path does.
+   */
   _dragViewportZoom(
     evt: EventTypes.InteractionEventType,
-    viewport: { getZoom(): number; setZoom(...args: unknown[]): void }
+    viewport: { getZoom(): number; setZoom(...args: unknown[]): void },
+    pinch = false
   ): void {
     const { element, deltaPoints, startPoints } = evt.detail;
     const canvasPoint = this.configuration.zoomToCenter
       ? undefined
       : startPoints?.canvas;
+    const deltaY = pinch
+      ? (evt as EventTypes.TouchDragEventType).detail.deltaDistance.canvas
+      : deltaPoints.canvas[1];
 
-    this._applyViewportZoomDelta(
-      viewport,
-      element,
-      deltaPoints.canvas[1],
-      canvasPoint
-    );
+    this._applyViewportZoomDelta(viewport, element, deltaY, canvasPoint);
   }
 
   _applyViewportZoomDelta(

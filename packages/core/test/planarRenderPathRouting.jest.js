@@ -18,9 +18,12 @@ import {
   MAX_CPU_SLICE_SAMPLES,
   PlanarRenderPathDecisionService,
   canSampleSlabOnCpu,
+  hasSlab,
 } from '../src/RenderingEngine/GenericViewport/Planar/PlanarRenderPathDecisionService';
 import { VtkVolumeSliceRenderPath } from '../src/RenderingEngine/GenericViewport/Planar/VtkVolumeSliceRenderPath';
-import PlanarViewport from '../src/RenderingEngine/GenericViewport/Planar/PlanarViewport';
+import PlanarViewport, {
+  getRemountedViewPropOrder,
+} from '../src/RenderingEngine/GenericViewport/Planar/PlanarViewport';
 import renderingEngineCache from '../src/RenderingEngine/renderingEngineCache';
 import genericViewportDisplaySetMetadataProvider from '../src/utilities/genericViewportDisplaySetMetadataProvider';
 
@@ -69,7 +72,7 @@ function createVolume({
   };
 }
 
-describe('slab estimate of the slice first decision', () => {
+describe('slab routing of the slice first decision', () => {
   const dataSet = {
     imageIds: Array.from({ length: 135 }, (_, i) => `ct:${i}`),
     volumeId: 'ct-volume',
@@ -95,7 +98,7 @@ describe('slab estimate of the slice first decision', () => {
     jest.restoreAllMocks();
   });
 
-  it('counts the pixels of the view for a normal that follows a volume axis', () => {
+  it('counts the pixels of the view of the CPU volume path for a normal that follows a volume axis', () => {
     const ct = { dimensions: [512, 512, 135], spacing: ctSpacing };
     const count = getSlabSampleOffsets(ct, 10).length;
 
@@ -111,62 +114,134 @@ describe('slab estimate of the slice first decision', () => {
     expect(canSampleSlabOnCpu(ct, 10, [0, 1, 0])).toBe(false);
   });
 
-  it('samples a 10 mm MIP of a coronal or sagittal view of a CT on the CPU', () => {
+  const orientations = [
+    OrientationAxis.AXIAL,
+    OrientationAxis.CORONAL,
+    OrientationAxis.SAGITTAL,
+    OrientationAxis.ACQUISITION,
+    {
+      viewPlaneNormal: [0, -Math.cos(0.3), Math.sin(0.3)],
+      viewUp: [0, Math.sin(0.3), Math.cos(0.3)],
+    },
+  ];
+  const blendModes = [
+    BlendModes.COMPOSITE,
+    BlendModes.MAXIMUM_INTENSITY_BLEND,
+    BlendModes.MINIMUM_INTENSITY_BLEND,
+    BlendModes.AVERAGE_INTENSITY_BLEND,
+  ];
+
+  function modeOf(options) {
+    return service.select(dataSet, options).renderMode;
+  }
+
+  it('draws a slab of any blend mode on the GPU volume path with slice first on', () => {
+    blendModes.forEach((blendMode) => {
+      [2, 10, 40, 300].forEach((slabThickness) => {
+        orientations.forEach((orientation) => {
+          expect(
+            modeOf({ sliceFirst: true, blendMode, slabThickness, orientation })
+          ).toBe(ActorRenderMode.VTK_VOLUME_SLICE);
+        });
+      });
+    });
+  });
+
+  it('samples a plain slice, and a thickness that gives one sample, on the CPU', () => {
+    expect(getSlabSampleOffsets(volume, 0.9).length).toBe(1);
+    expect(getSlabSampleOffsets(volume, 1).length).toBeGreaterThan(1);
+
+    blendModes.forEach((blendMode) => {
+      [undefined, 0, 0.9].forEach((slabThickness) => {
+        orientations.forEach((orientation) => {
+          expect(
+            modeOf({ sliceFirst: true, blendMode, slabThickness, orientation })
+          ).toBe(ActorRenderMode.VTK_SAMPLED_SLICE);
+        });
+      });
+      expect(
+        modeOf({
+          sliceFirst: true,
+          blendMode,
+          slabThickness: 1,
+          orientation: OrientationAxis.CORONAL,
+        })
+      ).toBe(ActorRenderMode.VTK_VOLUME_SLICE);
+    });
+  });
+
+  it('goes back to the sampled slice when the slab is turned off', () => {
+    const options = { ...mip, orientation: OrientationAxis.CORONAL };
+
+    expect(modeOf(options)).toBe(ActorRenderMode.VTK_VOLUME_SLICE);
+    expect(modeOf({ ...options, slabThickness: 0 })).toBe(
+      ActorRenderMode.VTK_SAMPLED_SLICE
+    );
     expect(
-      service.select(dataSet, { ...mip, orientation: OrientationAxis.CORONAL })
-        .renderMode
-    ).toBe(ActorRenderMode.VTK_SAMPLED_SLICE);
-    expect(
-      service.select(dataSet, {
-        ...mip,
-        orientation: OrientationAxis.SAGITTAL,
-      }).renderMode
+      modeOf({ ...options, slabThickness: 0, blendMode: BlendModes.COMPOSITE })
     ).toBe(ActorRenderMode.VTK_SAMPLED_SLICE);
   });
 
-  it('leaves the same slab of an axial, acquisition, oblique or unknown view to the GPU', () => {
-    [
-      OrientationAxis.AXIAL,
-      OrientationAxis.ACQUISITION,
-      {
-        viewPlaneNormal: [0, -Math.cos(0.3), Math.sin(0.3)],
-        viewUp: [0, Math.sin(0.3), Math.cos(0.3)],
-      },
-      undefined,
-    ].forEach((orientation) => {
-      expect(service.select(dataSet, { ...mip, orientation }).renderMode).toBe(
+  it('follows the global slice first setting when the data set has none', () => {
+    const options = { orientation: OrientationAxis.CORONAL };
+
+    expect(modeOf(options)).toBe(ActorRenderMode.VTK_VOLUME_SLICE);
+
+    setSliceFirst(true);
+
+    try {
+      expect(modeOf(options)).toBe(ActorRenderMode.VTK_SAMPLED_SLICE);
+      expect(
+        modeOf({
+          ...options,
+          slabThickness: 10,
+          blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
+        })
+      ).toBe(ActorRenderMode.VTK_VOLUME_SLICE);
+      expect(modeOf({ ...options, sliceFirst: false })).toBe(
         ActorRenderMode.VTK_VOLUME_SLICE
       );
+    } finally {
+      setSliceFirst(false);
+    }
+  });
+
+  it('does not change the GPU volume path with slice first off', () => {
+    blendModes.forEach((blendMode) => {
+      [undefined, 0, 10, 300].forEach((slabThickness) => {
+        orientations.forEach((orientation) => {
+          expect(
+            modeOf({ sliceFirst: false, blendMode, slabThickness, orientation })
+          ).toBe(ActorRenderMode.VTK_VOLUME_SLICE);
+        });
+      });
     });
   });
 
-  it('resolves the orientation against the direction of the volume', () => {
-    volume = createVolume({
-      dimensions: [512, 512, 135],
-      spacing: ctSpacing,
-      direction: [0, 1, 0, 0, 0, 1, 1, 0, 0],
+  it('does not change the CPU backend', () => {
+    blendModes.forEach((blendMode) => {
+      [undefined, 0, 10, 300].forEach((slabThickness) => {
+        [true, false].forEach((sliceFirst) => {
+          expect(
+            modeOf({
+              renderBackend: 'cpu',
+              sliceFirst,
+              blendMode,
+              slabThickness,
+              orientation: OrientationAxis.CORONAL,
+            })
+          ).toBe(ActorRenderMode.CPU_VOLUME);
+        });
+      });
     });
+  });
 
-    expect(
-      service.select(dataSet, { ...mip, orientation: OrientationAxis.AXIAL })
-        .renderMode
-    ).toBe(ActorRenderMode.VTK_SAMPLED_SLICE);
-    expect(
-      service.select(dataSet, { ...mip, orientation: OrientationAxis.CORONAL })
-        .renderMode
-    ).toBe(ActorRenderMode.VTK_SAMPLED_SLICE);
-    expect(
-      service.select(dataSet, {
-        ...mip,
-        orientation: OrientationAxis.SAGITTAL,
-      }).renderMode
-    ).toBe(ActorRenderMode.VTK_VOLUME_SLICE);
-    expect(
-      service.select(dataSet, {
-        ...mip,
-        orientation: OrientationAxis.ACQUISITION,
-      }).renderMode
-    ).toBe(ActorRenderMode.VTK_VOLUME_SLICE);
+  it('counts a slab by its samples along the normal, whatever the blend mode', () => {
+    expect(hasSlab(volume, undefined)).toBe(false);
+    expect(hasSlab(volume, 0)).toBe(false);
+    expect(hasSlab(volume, 0.9)).toBe(false);
+    expect(hasSlab(volume, 1)).toBe(true);
+    expect(hasSlab(volume, 300)).toBe(true);
   });
 });
 
@@ -180,24 +255,40 @@ describe('PlanarViewport remount after presentation changes', () => {
   let volume;
   let pendingLoads;
   let deferLoads;
+  let props;
+  let renderer;
+  let renderViewport;
+  let pendingAdds;
+  let deferAdds;
 
   const binding = () => viewport.bindings.get(dataId);
+  const overlayId = 'pt-display-set';
 
   beforeEach(() => {
     const camera = vtkCamera.newInstance();
-    const renderer = {
+    props = [];
+    renderer = {
       getActiveCamera: jest.fn(() => camera),
       addActor: jest.fn(),
       removeActor: jest.fn(),
       getActors: jest.fn(() => []),
       resetCameraClippingRange: jest.fn(),
+      getViewProps: () => props,
+      addViewProp: (prop) => {
+        if (!props.includes(prop)) {
+          props.push(prop);
+        }
+      },
+      removeViewProp: (prop) => {
+        props = props.filter((item) => item !== prop);
+      },
     };
 
     renderingEngineCache.set({
       id: engineId,
       getRenderer: jest.fn(() => renderer),
       getViewports: jest.fn(() => (viewport ? [viewport] : [])),
-      renderViewport: jest.fn(),
+      renderViewport: (renderViewport = jest.fn()),
     });
     viewport = new PlanarViewport({
       id: 'routing-viewport',
@@ -228,10 +319,12 @@ describe('PlanarViewport remount after presentation changes', () => {
       };
     };
     metaData.addProvider(provider, 10000);
-    genericViewportDisplaySetMetadataProvider.add(dataId, {
-      kind: 'planar',
-      imageIds,
-      volumeId,
+    [dataId, overlayId].forEach((id) => {
+      genericViewportDisplaySetMetadataProvider.add(id, {
+        kind: 'planar',
+        imageIds,
+        volumeId,
+      });
     });
     volume = createVolume({ imageIds });
     jest
@@ -239,6 +332,8 @@ describe('PlanarViewport remount after presentation changes', () => {
       .mockImplementation((id) => (id === volumeId ? volume : undefined));
     pendingLoads = [];
     deferLoads = false;
+    pendingAdds = [];
+    deferAdds = false;
     jest
       .spyOn(viewport.dataProvider, 'load')
       .mockImplementation((id, options) => {
@@ -262,19 +357,30 @@ describe('PlanarViewport remount after presentation changes', () => {
     viewport.renderPathResolver = {
       resolve: (_type, _data, options) => ({
         createRenderPath: () => ({
-          addData: async () => ({
-            rendering: {
-              renderMode: options.renderMode,
-              imageVolume: volume,
-              imageIds,
-              currentImageIdIndex: 0,
-              maxImageIdIndex: imageIds.length - 1,
-            },
-            updateDataPresentation: jest.fn(),
-            applyViewState: jest.fn(),
-            getFrameOfReferenceUID: () => 'routing-frame',
-            removeData: jest.fn(),
-          }),
+          addData: async (_ctx, data) => {
+            if (deferAdds) {
+              await new Promise((resolve) => pendingAdds.push(resolve));
+            }
+
+            const actor = { dataId: data.id, renderMode: options.renderMode };
+
+            renderer.addViewProp(actor);
+
+            return {
+              rendering: {
+                renderMode: options.renderMode,
+                imageVolume: volume,
+                imageIds,
+                currentImageIdIndex: 0,
+                maxImageIdIndex: imageIds.length - 1,
+              },
+              updateDataPresentation: jest.fn(),
+              applyViewState: jest.fn(),
+              getFrameOfReferenceUID: () => 'routing-frame',
+              getActorEntry: () => ({ uid: `${data.id}-actor`, actor }),
+              removeData: jest.fn(() => renderer.removeViewProp(actor)),
+            };
+          },
         }),
       }),
     };
@@ -340,6 +446,303 @@ describe('PlanarViewport remount after presentation changes', () => {
     expect(binding().rendering.renderMode).toBe(
       ActorRenderMode.VTK_VOLUME_SLICE
     );
+  });
+
+  /** Mounts the source and an overlay, both on the axial view. */
+  async function mountSourceAndOverlay(options = {}) {
+    await viewport.setDisplaySets(
+      {
+        displaySetId: dataId,
+        options: { orientation: OrientationAxis.AXIAL, ...options },
+      },
+      {
+        displaySetId: overlayId,
+        options: { orientation: OrientationAxis.AXIAL, ...options },
+      }
+    );
+    await flush();
+  }
+
+  const mip10 = {
+    slabThickness: 10,
+    blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
+  };
+
+  it('keeps a remounted source actor in front of the overlays in the draw order', async () => {
+    await mountSourceAndOverlay({ sliceFirst: true });
+
+    expect(props.map((actor) => actor.dataId)).toEqual([dataId, overlayId]);
+
+    viewport.setDisplaySetPresentation(dataId, mip10);
+    await flush();
+
+    expect(binding().rendering.renderMode).toBe(
+      ActorRenderMode.VTK_VOLUME_SLICE
+    );
+    expect(viewport.bindings.get(overlayId).rendering.renderMode).toBe(
+      ActorRenderMode.VTK_SAMPLED_SLICE
+    );
+    expect(props.map((actor) => [actor.dataId, actor.renderMode])).toEqual([
+      [dataId, ActorRenderMode.VTK_VOLUME_SLICE],
+      [overlayId, ActorRenderMode.VTK_SAMPLED_SLICE],
+    ]);
+
+    viewport.setDisplaySetPresentation(dataId, { slabThickness: 0 });
+    await flush();
+
+    expect(props.map((actor) => [actor.dataId, actor.renderMode])).toEqual([
+      [dataId, ActorRenderMode.VTK_SAMPLED_SLICE],
+      [overlayId, ActorRenderMode.VTK_SAMPLED_SLICE],
+    ]);
+  });
+
+  it('keeps the places of several bindings remounted in one pass', async () => {
+    await mountSourceAndOverlay();
+
+    const labelmap = { dataId: 'labelmap' };
+
+    renderer.addViewProp(labelmap);
+    setSliceFirst(true);
+    await flush();
+
+    expect(props.map((actor) => [actor.dataId, actor.renderMode])).toEqual([
+      [dataId, ActorRenderMode.VTK_SAMPLED_SLICE],
+      [overlayId, ActorRenderMode.VTK_SAMPLED_SLICE],
+      ['labelmap', undefined],
+    ]);
+  });
+
+  it('holds the renders between the remount of the source and of the overlay', async () => {
+    await mountSourceAndOverlay();
+
+    deferAdds = true;
+    setSliceFirst(true);
+    await flush();
+
+    const rendersBefore = renderViewport.mock.calls.length;
+
+    expect(pendingAdds.length).toBe(1);
+
+    pendingAdds.shift()();
+    await flush();
+
+    expect(binding().rendering.renderMode).toBe(
+      ActorRenderMode.VTK_SAMPLED_SLICE
+    );
+    expect(pendingAdds.length).toBe(1);
+
+    viewport.render();
+
+    expect(renderViewport.mock.calls.length).toBe(rendersBefore);
+
+    pendingAdds.shift()();
+    await flush();
+
+    expect(viewport.bindings.get(overlayId).rendering.renderMode).toBe(
+      ActorRenderMode.VTK_SAMPLED_SLICE
+    );
+    expect(renderViewport.mock.calls.length).toBeGreaterThan(rendersBefore);
+  });
+
+  it('holds the renders that a slab change asks for until its remount ends', async () => {
+    await mountSourceAndOverlay({ sliceFirst: true });
+
+    const rendersBefore = renderViewport.mock.calls.length;
+
+    deferLoads = true;
+    viewport.setDisplaySetPresentation(dataId, mip10);
+    viewport.setDisplaySetPresentation(overlayId, mip10);
+    viewport.render();
+    await flush();
+
+    expect(renderViewport.mock.calls.length).toBe(rendersBefore);
+
+    await resolvePendingLoads();
+
+    expect(binding().rendering.renderMode).toBe(
+      ActorRenderMode.VTK_VOLUME_SLICE
+    );
+    expect(viewport.bindings.get(overlayId).rendering.renderMode).toBe(
+      ActorRenderMode.VTK_VOLUME_SLICE
+    );
+    expect(renderViewport.mock.calls.length).toBeGreaterThan(rendersBefore);
+  });
+
+  it('keeps the draw order when the remount goes stale', async () => {
+    await mountSourceAndOverlay({ sliceFirst: true });
+
+    const propsBefore = [...props];
+
+    deferLoads = true;
+    viewport.setDisplaySetPresentation(dataId, mip10);
+    viewport.setDisplaySetPresentation(dataId, { slabThickness: 0 });
+    await resolvePendingLoads();
+
+    expect(props).toEqual(propsBefore);
+    expect(binding().rendering.renderMode).toBe(
+      ActorRenderMode.VTK_SAMPLED_SLICE
+    );
+  });
+
+  it('gives a slab that moves to another render mode to the remounted binding only', async () => {
+    await viewport.setDisplaySets({
+      displaySetId: dataId,
+      options: { orientation: OrientationAxis.AXIAL, sliceFirst: true },
+    });
+    await flush();
+
+    const mounted = binding();
+    const voiRange = { lower: 0, upper: 100 };
+
+    deferLoads = true;
+    viewport.setDisplaySetPresentation(dataId, { ...mip10, voiRange });
+
+    expect(mounted.updateDataPresentation).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        voiRange,
+        slabThickness: undefined,
+        blendMode: undefined,
+      })
+    );
+    expect(viewport.getDisplaySetPresentation(dataId)).toEqual(
+      expect.objectContaining({ ...mip10, voiRange })
+    );
+
+    viewport.setDisplaySetPresentation(dataId, { opacity: 0.5 });
+
+    expect(mounted.updateDataPresentation).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        voiRange,
+        opacity: 0.5,
+        slabThickness: undefined,
+        blendMode: undefined,
+      })
+    );
+
+    await resolvePendingLoads();
+
+    expect(binding()).not.toBe(mounted);
+    expect(binding().rendering.renderMode).toBe(
+      ActorRenderMode.VTK_VOLUME_SLICE
+    );
+    expect(binding().updateDataPresentation).toHaveBeenLastCalledWith(
+      expect.objectContaining({ ...mip10, voiRange, opacity: 0.5 })
+    );
+  });
+
+  it('gives the mounted binding a slab that keeps its render mode at once', async () => {
+    await viewport.setDisplaySets({
+      displaySetId: dataId,
+      options: { orientation: OrientationAxis.AXIAL, sliceFirst: true },
+    });
+    await flush();
+
+    const mounted = binding();
+
+    deferLoads = true;
+    viewport.setDisplaySetPresentation(dataId, mip10);
+    viewport.setDisplaySetPresentation(dataId, {
+      slabThickness: 0.9,
+      blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
+    });
+
+    expect(mounted.updateDataPresentation).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        slabThickness: 0.9,
+        blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
+      })
+    );
+
+    await resolvePendingLoads();
+
+    expect(binding()).toBe(mounted);
+  });
+
+  it('gives the whole presentation at once with slice first off', async () => {
+    await viewport.setDisplaySets({
+      displaySetId: dataId,
+      options: { orientation: OrientationAxis.AXIAL },
+    });
+    await flush();
+
+    const mounted = binding();
+
+    viewport.setDisplaySetPresentation(dataId, mip10);
+    await flush();
+
+    expect(binding()).toBe(mounted);
+    expect(mounted.updateDataPresentation).toHaveBeenLastCalledWith(
+      expect.objectContaining(mip10)
+    );
+  });
+});
+
+describe('order of the view props after a remount', () => {
+  const [source, overlay, labelmap, frame] = [
+    'source',
+    'overlay',
+    'labelmap',
+    'frame',
+  ];
+  const newSource = 'new source';
+
+  it('puts the new actor in the place of the actor it replaces', () => {
+    expect(
+      getRemountedViewPropOrder(
+        [source, overlay, labelmap],
+        [overlay, labelmap, newSource],
+        [newSource]
+      )
+    ).toEqual([newSource, overlay, labelmap]);
+  });
+
+  it('takes the place of the first removed actor when the old binding drew an acquired frame', () => {
+    expect(
+      getRemountedViewPropOrder(
+        [source, overlay, frame, labelmap],
+        [overlay, labelmap, newSource],
+        [newSource]
+      )
+    ).toEqual([newSource, overlay, labelmap]);
+    expect(
+      getRemountedViewPropOrder(
+        [source, overlay],
+        [overlay, newSource, frame],
+        [newSource, frame]
+      )
+    ).toEqual([newSource, frame, overlay]);
+  });
+
+  it('keeps the order when nothing was removed or nothing was added', () => {
+    expect(
+      getRemountedViewPropOrder([overlay], [overlay, newSource], [newSource])
+    ).toBeUndefined();
+    expect(
+      getRemountedViewPropOrder([source, overlay], [source, overlay], [source])
+    ).toBeUndefined();
+    expect(
+      getRemountedViewPropOrder([source, overlay], [overlay], [])
+    ).toBeUndefined();
+  });
+
+  it('leaves at the end a prop that something else added during the remount', () => {
+    expect(
+      getRemountedViewPropOrder(
+        [source, overlay],
+        [overlay, labelmap, newSource],
+        [newSource]
+      )
+    ).toEqual([newSource, overlay, labelmap]);
+  });
+
+  it('returns undefined when the new actor already has the place', () => {
+    expect(
+      getRemountedViewPropOrder(
+        [overlay, source],
+        [overlay, newSource],
+        [newSource]
+      )
+    ).toBeUndefined();
   });
 });
 

@@ -3,6 +3,7 @@ import {
   RenderingEngine,
   Enums,
   ImageVolume,
+  eventTarget,
   getConfiguration,
   getRenderingEngine,
   setSliceFirst,
@@ -126,17 +127,22 @@ const blendModesByName = {
 };
 
 let lastAutoScrollLines = ['not run yet'];
-let readoutScheduled = false;
+let captionsScheduled = false;
 let deviceLines: string[] | undefined;
+const debugModalShown =
+  new URLSearchParams(window.location.search).get('debug') !== 'false';
+/** Below this window width the debug modal starts collapsed. */
+const narrowWindowWidth = 700;
 
 setTitleAndDescription(
   'Slice first',
-  'Slice first cuts the slice you see out of the volume on the CPU and draws it as a flat image, ' +
-    'so the GPU holds a small picture in place of the whole volume. ' +
-    'The "Slice first" button switches between the two ways. ' +
+  'Slice first cuts the slice you see out of the volume on the CPU and draws it as a flat 2D image. ' +
+    'Volume texture puts the whole volume on the GPU as a 3D texture and cuts the slice there. ' +
+    'Press the Rendering button and watch, in the debug panel, the MODE of each binding and the GPU memory line. ' +
+    'A coronal slab always uses the volume texture, so that viewport shows vtkVolumeSlice and a 3D texture. ' +
     'Touch: one finger scrolls, two fingers zoom and move. ' +
     'Mouse: wheel scrolls, left drag sets window level, right drag zooms, middle drag moves. ' +
-    'Add ?sliceFirst=0 to start on the GPU volume path.'
+    'Add ?sliceFirst=0 to start with the volume texture, and ?debug=false to hide the debug panel.'
 );
 
 const style = document.createElement('style');
@@ -172,12 +178,24 @@ style.textContent = `
     flex-direction: column;
     min-width: 0;
   }
+  body.beside-debug-modal #demo-title,
+  body.beside-debug-modal #demo-description,
+  body.beside-debug-modal #demo-toolbar,
+  body.beside-debug-modal #content {
+    max-width: max(360px, calc(100vw - 820px));
+  }
   .slice-first-caption {
     font: 13px sans-serif;
     padding: 2px 0;
+  }
+  .slice-first-caption div {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+  .slice-first-modes {
+    font: 12px monospace;
+    color: #555;
   }
   .slice-first-viewport {
     width: 100%;
@@ -186,20 +204,17 @@ style.textContent = `
     touch-action: none;
     background: #000;
   }
-  .slice-first-readout {
-    white-space: pre-wrap;
-    word-break: break-word;
-    font: 13px/1.5 monospace;
-    padding: 10px;
-    margin: 8px 12px;
-    border: 1px solid #ccc;
-    background: #f8f8f8;
-    color: #111;
-  }
   .slice-first-status {
     font: 15px sans-serif;
     min-height: 1.5em;
     margin: 0 12px;
+    white-space: pre-line;
+  }
+  .slice-first-report {
+    width: calc(100% - 24px);
+    height: 12em;
+    margin: 8px 12px;
+    font: 12px monospace;
   }
 `;
 document.head.appendChild(style);
@@ -207,35 +222,41 @@ document.head.appendChild(style);
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
 viewportGrid.className = 'slice-first-grid';
+document.body.classList.toggle(
+  'beside-debug-modal',
+  debugModalShown && window.innerWidth >= narrowWindowWidth
+);
 content.appendChild(viewportGrid);
 
 const elementsByViewportId = new Map<string, HTMLDivElement>();
+const modeCaptionsByViewportId = new Map<string, HTMLDivElement>();
 
 viewportSpecs.forEach(({ viewportId, label }) => {
   const cell = document.createElement('div');
   const caption = document.createElement('div');
+  const labelLine = document.createElement('div');
+  const modesLine = document.createElement('div');
   const element = document.createElement('div');
 
   cell.className = 'slice-first-cell';
   caption.className = 'slice-first-caption';
-  caption.innerText = label;
+  labelLine.innerText = label;
+  modesLine.className = 'slice-first-modes';
+  modesLine.innerText = 'loading';
+  caption.appendChild(labelLine);
+  caption.appendChild(modesLine);
   element.className = 'slice-first-viewport';
   element.oncontextmenu = (evt) => evt.preventDefault();
   cell.appendChild(caption);
   cell.appendChild(element);
   viewportGrid.appendChild(cell);
   elementsByViewportId.set(viewportId, element);
+  modeCaptionsByViewportId.set(viewportId, modesLine);
 });
 
 const statusLine = document.createElement('div');
 statusLine.className = 'slice-first-status';
 content.appendChild(statusLine);
-
-const readout = document.createElement('pre');
-readout.id = 'slice-first-readout';
-readout.className = 'slice-first-readout';
-readout.innerText = 'Loading...';
-content.appendChild(readout);
 
 /** Returns the planar viewport with the given id, if it is mounted. */
 function getViewport(viewportId: string): PlanarViewport | undefined {
@@ -249,7 +270,7 @@ function getDataIds(spec: ViewportSpec): string[] {
   return spec.withPet ? [ctDataId, ptDataId] : [ctDataId];
 }
 
-/** Names a volume of this example for the readout. */
+/** Names a volume of this example for the captions and the report. */
 function getVolumeLabel(volumeId: string | undefined): string {
   if (volumeId === ctVolumeId) {
     return 'CT';
@@ -298,130 +319,186 @@ type SliceCacheStatistics = {
   hits: number;
   misses: number;
   prefetched: number;
+  size?: number;
   lastSampleMs?: number;
   lastFineSampleMs?: number;
 };
 
+type ImageDataLike = {
+  getDimensions?: () => number[];
+  getPointData?: () => {
+    getScalars?: () => {
+      getData?: () => { BYTES_PER_ELEMENT?: number };
+      getNumberOfComponents?: () => number;
+    } | null;
+  } | null;
+};
+
+type DebugBinding = {
+  displaySetId: string;
+  rendering?: {
+    renderMode?: string;
+    mapper?: { getInputData?: () => ImageDataLike | null };
+    getSliceCacheStatistics?: () => SliceCacheStatistics;
+  };
+};
+
 /**
- * Reads the slice cache statistics of one display set that is drawn as a
- * sampled slice. This reads internal state of the viewport (its `bindings`,
- * and `getSliceCacheStatistics` of a binding's rendering) that has no public
- * accessor, for this test page only. Returns undefined for a display set that
- * is not on the sampled path, and never throws.
+ * Reads the display sets of a viewport with their mounted renderings, from
+ * the internal accessor that the debug modal also reads. Returns an empty
+ * list when the viewport has none, and never throws.
  */
-function readSliceCacheStatistics(
-  viewport: PlanarViewport,
-  dataId: string
-): SliceCacheStatistics | undefined {
+function readDebugBindings(viewport: PlanarViewport): DebugBinding[] {
   try {
-    const { bindings } = viewport as unknown as {
-      bindings?: Map<
-        string,
-        {
-          rendering?: {
-            getSliceCacheStatistics?: () => SliceCacheStatistics;
-          };
-        }
-      >;
+    const { getDebugBindings } = viewport as unknown as {
+      getDebugBindings?: () => DebugBinding[];
     };
 
-    return bindings?.get(dataId)?.rendering?.getSliceCacheStatistics?.();
+    return getDebugBindings?.call(viewport) ?? [];
   } catch {
-    return undefined;
+    return [];
   }
 }
 
-/** Formats milliseconds for the readout. */
+/** Formats milliseconds for the report. */
 function formatMs(value: number | undefined): string {
   return typeof value === 'number' ? `${value.toFixed(1)} ms` : 'n/a';
 }
 
-/** Describes the sampling times and cache counts of one display set. */
-function describeSampling(viewport: PlanarViewport, dataId: string): string {
-  const label = dataId === ptDataId ? 'PT' : 'CT';
-  const statistics = readSliceCacheStatistics(viewport, dataId);
-
-  if (!statistics) {
-    return `${label} n/a`;
-  }
-
-  return (
-    `${label} sample ${formatMs(statistics.lastSampleMs)}, ` +
-    `fine ${formatMs(statistics.lastFineSampleMs)}, ` +
-    `hits ${statistics.hits}, misses ${statistics.misses}, ` +
-    `prefetched ${statistics.prefetched}`
-  );
+/** Formats bytes as MB with two decimals. */
+function formatMegabytes(bytes: number): string {
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 }
 
-/** Describes one viewport in one line: render mode of each display set, slice and canvas size. */
-function describeViewport(spec: ViewportSpec): string {
-  const viewport = getViewport(spec.viewportId);
-
-  if (!viewport) {
-    return `${spec.label}: not mounted`;
-  }
-
-  const modes = viewport
+/** Names the display sets of a viewport with their render mode, as "CT vtkSampledSlice". */
+function describeModes(viewport: PlanarViewport): string {
+  return viewport
     .getActors()
     .map(
       (entry) =>
-        `${getVolumeLabel(entry.referencedId)}=${entry.actorMapper?.renderMode ?? 'unknown'}`
+        `${getVolumeLabel(entry.referencedId)} ${entry.actorMapper?.renderMode ?? 'unknown'}`
     )
     .join(', ');
-  const canvas = viewport.getCanvas();
-  const slice = `${viewport.getSliceIndex() + 1}/${viewport.getNumberOfSlices()}`;
-
-  return `${spec.viewportId}: ${modes} | slice ${slice} | canvas ${canvas.width}x${canvas.height}`;
 }
 
-/** Describes the sampling of every display set of one viewport in one line. */
-function describeViewportSampling(spec: ViewportSpec): string {
+/**
+ * Returns the bytes of the 2D texture of a display set drawn by an image
+ * mapper: width x height x bytes of one value of the uploaded array, or 0.
+ */
+function getSliceTextureBytes(binding: DebugBinding): number {
+  const imageData = binding.rendering?.mapper?.getInputData?.();
+  const [width = 0, height = 0] = imageData?.getDimensions?.() ?? [];
+  const scalars = imageData?.getPointData?.()?.getScalars?.();
+  const bytesPerValue = scalars?.getData?.()?.BYTES_PER_ELEMENT ?? 0;
+
+  return (
+    width * height * bytesPerValue * (scalars?.getNumberOfComponents?.() ?? 1)
+  );
+}
+
+/** Describes one display set of a sampled viewport: slice size, sample times and cache counts. */
+function describeSampling(binding: DebugBinding): string | undefined {
+  const statistics = binding.rendering?.getSliceCacheStatistics?.();
+
+  if (!statistics) {
+    return undefined;
+  }
+
+  const label = binding.displaySetId === ptDataId ? 'PT' : 'CT';
+  const [width, height] =
+    binding.rendering?.mapper?.getInputData?.()?.getDimensions?.() ?? [];
+  const slice = width ? `slice ${width}x${height}, ` : '';
+
+  return (
+    `  ${label} ${slice}sample ${formatMs(statistics.lastSampleMs)}, ` +
+    `fine ${formatMs(statistics.lastFineSampleMs)}, ` +
+    `cache ${statistics.size ?? 0} held, ${statistics.hits} hits, ` +
+    `${statistics.misses} misses, ${statistics.prefetched} prefetched`
+  );
+}
+
+/** Describes one viewport: render modes, slice index, canvas size, then one line per sampled display set. */
+function describeViewport(spec: ViewportSpec): string[] {
   const viewport = getViewport(spec.viewportId);
 
   if (!viewport) {
-    return `${spec.viewportId} timings: not mounted`;
+    return [`${spec.viewportId}: not mounted`];
   }
 
-  const sampling = getDataIds(spec)
-    .map((dataId) => describeSampling(viewport, dataId))
-    .join('; ');
+  const canvas = viewport.getCanvas();
+  const slice = `${viewport.getSliceIndex() + 1}/${viewport.getNumberOfSlices()}`;
+  const sampling = readDebugBindings(viewport)
+    .map(describeSampling)
+    .filter(Boolean);
 
-  return `${spec.viewportId} timings: ${sampling}`;
+  return [
+    `${spec.viewportId}: ${describeModes(viewport)} | slice ${slice} | canvas ${canvas.width}x${canvas.height}`,
+    ...sampling,
+  ];
 }
 
-/** Builds the whole readout as plain text. */
-function buildReadout(): string {
+/** Sums the 2D slice textures of every display set of every viewport. */
+function getSliceTextureTotal(): number {
+  let total = 0;
+
+  for (const viewportId of viewportIds) {
+    const viewport = getViewport(viewportId);
+
+    if (viewport) {
+      for (const binding of readDebugBindings(viewport)) {
+        total += getSliceTextureBytes(binding);
+      }
+    }
+  }
+
+  return total;
+}
+
+/** Builds the report as plain text, for the clipboard. */
+function buildReport(): string {
   deviceLines ??= readDeviceLines();
 
   const sliceFirst = getConfiguration().rendering?.planar?.sliceFirst ?? false;
-  const textureMiB = (ImageVolume.textureBytesUsed / (1024 * 1024)).toFixed(1);
 
   return [
     `Slice first: ${sliceFirst ? 'on' : 'off'}`,
     `Coronal slab: ${slabState.blendMode} ${slabState.thickness} mm`,
-    ...viewportSpecs.map(describeViewport),
-    ...viewportSpecs.map(describeViewportSampling),
-    '',
-    `GPU volume texture memory: ${textureMiB} MiB`,
+    ...viewportSpecs.flatMap(describeViewport),
+    `GPU memory: 3D volume textures ${formatMegabytes(ImageVolume.textureBytesUsed)}, ` +
+      `2D slice textures about ${formatMegabytes(getSliceTextureTotal())}`,
     `Device pixel ratio: ${window.devicePixelRatio}`,
     `Window size: ${window.innerWidth}x${window.innerHeight}`,
+    ...deviceLines,
     'Auto scroll:',
     ...lastAutoScrollLines,
-    `User agent: ${navigator.userAgent}`,
-    ...deviceLines,
   ].join('\n');
 }
 
-/** Updates the readout on the next animation frame, at most once per frame. */
-function scheduleReadout(): void {
-  if (readoutScheduled) {
+/** Shows the render mode of the display sets of each viewport in its caption. */
+function updateCaptions(): void {
+  for (const viewportId of viewportIds) {
+    const viewport = getViewport(viewportId);
+    const caption = modeCaptionsByViewportId.get(viewportId);
+    const text = viewport
+      ? describeModes(viewport) || 'no data'
+      : 'not mounted';
+
+    if (caption && caption.innerText !== text) {
+      caption.innerText = text;
+    }
+  }
+}
+
+/** Updates the captions on the next animation frame, at most once per frame. */
+function scheduleCaptions(): void {
+  if (captionsScheduled) {
     return;
   }
 
-  readoutScheduled = true;
+  captionsScheduled = true;
   requestAnimationFrame(() => {
-    readoutScheduled = false;
-    readout.innerText = buildReadout();
+    captionsScheduled = false;
+    updateCaptions();
   });
 }
 
@@ -443,7 +520,7 @@ function applySlab(): void {
   }
 
   viewport.render();
-  scheduleReadout();
+  scheduleCaptions();
 }
 
 /** Shows the slab thickness in the label of the slider, or "off". */
@@ -503,7 +580,7 @@ function applyInterpolation(name: string): void {
     viewport.render();
   }
 
-  scheduleReadout();
+  scheduleCaptions();
 }
 
 /** Resolves on the next render of the element, or after a short wait. */
@@ -607,51 +684,90 @@ async function playAutoScroll(button: HTMLButtonElement): Promise<void> {
       `scroll step median ${formatMs(getMedian(stepMs))}, worst ${formatMs(worstMs)}`
     );
   });
-  statusLine.innerText = 'Done. The results are in the report below.';
+
+  const allStepMs = results.flatMap(({ stepMs }) => stepMs);
+  const framesPerSecond = results
+    .map(({ frames }) => (frames / seconds).toFixed(0))
+    .join(', ');
+
+  statusLine.innerText =
+    `Auto scroll: ${framesPerSecond} frames per second (${viewportIds.length} viewports).\n` +
+    `Scroll step median ${formatMs(getMedian(allStepMs))}, worst ${formatMs(
+      allStepMs.length ? Math.max(...allStepMs) : undefined
+    )}. Copy report for details.`;
   button.disabled = false;
-  scheduleReadout();
-}
-
-/** Selects the readout text so it can be copied by hand. */
-function selectReadout(): void {
-  const range = document.createRange();
-  const selection = window.getSelection();
-
-  range.selectNodeContents(readout);
-  selection?.removeAllRanges();
-  selection?.addRange(range);
+  scheduleCaptions();
 }
 
 /**
- * Puts the readout on the clipboard. The clipboard API needs a secure page,
- * which a phone on plain http is not, so the fallback selects the text and
- * tries the older copy command.
+ * Copies text with the older copy command, through a hidden text area.
+ * Returns false when the browser refuses.
  */
-async function copyReport(): Promise<void> {
-  const text = buildReadout();
+function copyWithTextArea(text: string): boolean {
+  const area = document.createElement('textarea');
 
-  readout.innerText = text;
+  area.value = text;
+  area.setAttribute('readonly', '');
+  area.style.position = 'fixed';
+  area.style.opacity = '0';
+  document.body.appendChild(area);
+  area.select();
 
   try {
-    await navigator.clipboard.writeText(text);
-    statusLine.innerText = 'Report copied. Paste it in your message.';
-
-    return;
+    return document.execCommand('copy');
   } catch {
-    selectReadout();
+    return false;
+  } finally {
+    area.remove();
+  }
+}
+
+/**
+ * Shows the report in a selected text area under the status line, for a
+ * browser that allows no copy, so it can be copied by hand.
+ */
+function showReportForHandCopy(text: string): void {
+  let area = document.getElementById(
+    'slice-first-report'
+  ) as HTMLTextAreaElement | null;
+
+  if (!area) {
+    area = document.createElement('textarea');
+    area.id = 'slice-first-report';
+    area.className = 'slice-first-report';
+    area.readOnly = true;
+    statusLine.after(area);
   }
 
+  area.value = text;
+  area.select();
+}
+
+/**
+ * Puts the report on the clipboard. The clipboard API needs a secure page,
+ * which a phone on plain http is not, so the fallback tries the older copy
+ * command, and then shows the report to copy by hand.
+ */
+async function copyReport(): Promise<void> {
+  const text = buildReport();
   let copied = false;
 
   try {
-    copied = document.execCommand('copy');
+    await navigator.clipboard.writeText(text);
+    copied = true;
   } catch {
-    copied = false;
+    copied = copyWithTextArea(text);
   }
 
-  statusLine.innerText = copied
-    ? 'Report copied. Paste it in your message.'
-    : 'The browser does not allow copying here. The report is selected: copy it by hand.';
+  if (copied) {
+    statusLine.innerText = 'Report copied. Paste it in your message.';
+
+    return;
+  }
+
+  showReportForHandCopy(text);
+  statusLine.innerText =
+    'The browser does not allow copying here. The report is selected below: copy it by hand.';
 }
 
 /** Adds the tools: touch and mouse bindings for scroll, window level, zoom and pan. */
@@ -686,18 +802,23 @@ function setupTools(): void {
   );
 }
 
+/** The title of the rendering button for slice first on or off. */
+function getRenderingTitle(sliceFirst: boolean): string {
+  return sliceFirst ? 'Rendering: slice first' : 'Rendering: volume texture';
+}
+
 /** Adds the controls, after init so that the slice first button shows the starting value. */
 function setupControls(): void {
   const sliceFirstOn =
     getConfiguration().rendering?.planar?.sliceFirst ?? false;
   const sliceFirstButton = addToggleButtonToToolbar({
     id: 'slice-first-toggle',
-    title: `Slice first: ${sliceFirstOn ? 'on' : 'off'}`,
+    title: getRenderingTitle(sliceFirstOn),
     defaultToggle: sliceFirstOn,
     onClick: (enabled) => {
       setSliceFirst(enabled);
-      sliceFirstButton.innerHTML = `Slice first: ${enabled ? 'on' : 'off'}`;
-      scheduleReadout();
+      sliceFirstButton.innerHTML = getRenderingTitle(enabled);
+      scheduleCaptions();
     },
   });
 
@@ -776,11 +897,17 @@ async function mountViewport(spec: ViewportSpec): Promise<void> {
 }
 
 /**
- * Starts the example: slice first is on unless the address says
- * `sliceFirst=0`, which initDemo applies after this config.
+ * Starts the example: slice first and the debug modal are on unless the
+ * address says `sliceFirst=0` or `debug=false`, which initDemo applies over
+ * this config.
  */
 async function run() {
-  await initDemo({ core: { rendering: { planar: { sliceFirst: true } } } });
+  await initDemo({
+    core: {
+      rendering: { planar: { sliceFirst: true } },
+      debug: { statsOverlay: true },
+    },
+  });
 
   setupControls();
 
@@ -837,16 +964,20 @@ async function run() {
   await Promise.all(viewportSpecs.map(mountViewport));
 
   elementsByViewportId.forEach((element) =>
-    element.addEventListener(Events.IMAGE_RENDERED, scheduleReadout)
+    element.addEventListener(Events.IMAGE_RENDERED, scheduleCaptions)
+  );
+  eventTarget.addEventListener(
+    Events.RENDERING_PIPELINE_CHANGED,
+    scheduleCaptions
   );
 
   new ResizeObserver(() => {
     renderingEngine.resize(true, false);
-    scheduleReadout();
+    scheduleCaptions();
   }).observe(viewportGrid);
 
   renderingEngine.renderViewports(viewportIds);
-  scheduleReadout();
+  scheduleCaptions();
 }
 
 run();

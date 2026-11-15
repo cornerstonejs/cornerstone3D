@@ -23,10 +23,25 @@ type ColumnSpan = {
 };
 
 type SampleVolumeGridOptions = {
-  /** The volume to read. It must hold one component per voxel. */
+  /**
+   * The volume to read. It holds one component per voxel, or the number of
+   * components that numberOfComponents gives.
+   */
   volume: SampledVolume;
-  /** The array that receives one value per grid point, row after row. */
+  /**
+   * The array that receives one value per grid point, row after row, or
+   * numberOfComponents values per grid point, one after the other.
+   */
   pixelData: PixelDataTypedArray | number[];
+  /**
+   * The number of components of one voxel, for example 3 for RGB. Each
+   * component is sampled as a volume of its own would be, with the same grid,
+   * border, interpolation, limit and rounding rules, and the values of one grid
+   * point are written one after the other. The default is 1.
+   *
+   * @experimental
+   */
+  numberOfComponents?: number;
   /** The number of grid points in one row. */
   width: number;
   /** The number of rows. */
@@ -377,12 +392,20 @@ function fillOutside(
  * sample between two voxel centers mixes the two planes of voxels around the
  * coordinate with the weights and in the order of the general loop.
  *
- * It gives the same values and the same range as the general loop. Where it
- * cannot promise that it returns undefined, and the general loop then samples
- * the whole grid: a coordinate outside the volume on the third axis, a slice
- * without a typed array, and a linear sample of a float volume (the general
- * loop multiplies the neighbours of a voxel by a weight of zero, which turns
- * an infinite neighbour into NaN).
+ * It gives the same values and the same range as the general loop for every
+ * volume of finite values, integer or float. Where it cannot promise that it
+ * returns undefined, and the general loop then samples the whole grid: a
+ * coordinate outside the volume on the third axis, and a slice without a
+ * typed array.
+ *
+ * A voxel that is not finite (NaN, Infinity or -Infinity) affects only the
+ * samples that really use it: the copy of that voxel, and a mix of two planes
+ * in which it has a weight above zero. The general loop multiplies each of
+ * the eight neighbours of a sample by its weight, also by a weight of zero,
+ * and 0 x Infinity and 0 x NaN are NaN, so there such a voxel also turns its
+ * neighbours into NaN. There is no GPU picture to match for such voxels: the
+ * result of a linear texture filter with a texel that is not finite is
+ * implementation defined.
  */
 function sampleStraightCut(
   context: GridSamplingContext,
@@ -494,11 +517,6 @@ function sampleStraightCut(
       }
 
       const floatValues = isFloatArray(lowerSlice) || isFloatArray(upperSlice);
-
-      if (floatValues && !useNearest) {
-        return;
-      }
-
       const finish =
         context.limitValues || (context.round && (mix || floatValues));
       const count = columnSliceStep === 0 ? runLength : 1;
@@ -527,6 +545,45 @@ function sampleStraightCut(
       } else if (!mix && !finish) {
         for (let index = 0, read = offset; index < count; index++) {
           const value = lowerSlice[read];
+
+          pixelData[pixelIndex++] = value;
+
+          if (value < min) {
+            min = value;
+          }
+
+          if (value > max) {
+            max = value;
+          }
+
+          read += columnOffsetStep;
+        }
+      } else if (!finish) {
+        for (let index = 0, read = offset; index < count; index++) {
+          const value =
+            lowerSlice[read] * oneMinusWeight +
+            upperSlice[read + mixOffset] * weight;
+
+          pixelData[pixelIndex++] = value;
+
+          if (value < min) {
+            min = value;
+          }
+
+          if (value > max) {
+            max = value;
+          }
+
+          read += columnOffsetStep;
+        }
+      } else if (!context.limitValues) {
+        for (let index = 0, read = offset; index < count; index++) {
+          const value = Math.round(
+            mix
+              ? lowerSlice[read] * oneMinusWeight +
+                  upperSlice[read + mixOffset] * weight
+              : lowerSlice[read]
+          );
 
           pixelData[pixelIndex++] = value;
 
@@ -587,6 +644,195 @@ function sampleStraightCut(
 }
 
 /**
+ * Reads the components of one voxel into values, from offset on. A volume
+ * whose voxel manager keeps every component of every voxel in one array is
+ * read from that array. Any other volume is read through getAtIJK, which
+ * gives the components of a voxel as an array; a component it does not give
+ * reads 0, and a single number is the value of every component.
+ */
+function readVoxelComponents(
+  volume: SampledVolume,
+  componentArray: PixelDataTypedArray | undefined,
+  numberOfComponents: number,
+  i: number,
+  j: number,
+  k: number,
+  values: Float64Array,
+  offset: number
+): void {
+  const [columns, rows] = volume.dimensions;
+
+  if (componentArray) {
+    const first = ((k * rows + j) * columns + i) * numberOfComponents;
+
+    for (let component = 0; component < numberOfComponents; component++) {
+      values[offset + component] = componentArray[first + component];
+    }
+
+    return;
+  }
+
+  const voxel = volume.voxelManager.getAtIJK(i, j, k) as unknown;
+
+  for (let component = 0; component < numberOfComponents; component++) {
+    values[offset + component] = Array.isArray(voxel)
+      ? Number(voxel[component] ?? 0)
+      : Number(voxel);
+  }
+}
+
+/**
+ * The sampling of sampleVolumeGrid for a volume of several components per
+ * voxel. It walks the grid as the general loop does, decides with
+ * isIndexInsideVolume whether a grid point lies on a voxel, moves the index
+ * onto the range of the voxel centers, and takes the nearest voxel or the
+ * trilinear mix of the eight voxels around the point, with the weights and in
+ * the order of sampleCheckedPoint, for each component. So each component gets
+ * the values that sampleVolumeGrid gives for a volume of that component alone,
+ * as long as the values are finite (the straight cut of a single component
+ * leaves out the neighbours with a weight of zero, this loop does not).
+ */
+function sampleComponentGrid(
+  context: GridSamplingContext,
+  options: SampleVolumeGridOptions,
+  numberOfComponents: number
+): SampledValueRange {
+  const { pixelData, width, height, startIndex, columnStep, rowStep } = options;
+  const { volume, columns, rows, slices, outsideValue, useNearest } = context;
+  const scalarData = volume.voxelManager.getWritableScalarData?.();
+  const componentArray =
+    scalarData?.length === columns * rows * slices * numberOfComponents
+      ? scalarData
+      : undefined;
+  const finishValues = context.limitValues || context.round;
+  const corners = new Float64Array(8 * numberOfComponents);
+  const lastI = columns - 1;
+  const lastJ = rows - 1;
+  const lastK = slices - 1;
+  const n = numberOfComponents;
+  let rowI = startIndex[0];
+  let rowJ = startIndex[1];
+  let rowK = startIndex[2];
+  let pixelIndex = 0;
+  let min = Infinity;
+  let max = -Infinity;
+
+  for (let row = 0; row < height; row++) {
+    let i = rowI;
+    let j = rowJ;
+    let k = rowK;
+
+    for (let column = 0; column < width; column++) {
+      if (!isIndexInsideVolume(volume.dimensions, i, j, k)) {
+        for (let component = 0; component < n; component++) {
+          pixelData[pixelIndex++] = outsideValue;
+        }
+
+        if (outsideValue < min) {
+          min = outsideValue;
+        }
+
+        if (outsideValue > max) {
+          max = outsideValue;
+        }
+
+        i += columnStep[0];
+        j += columnStep[1];
+        k += columnStep[2];
+        continue;
+      }
+
+      const clampedI = i < 0 ? 0 : i > lastI ? lastI : i;
+      const clampedJ = j < 0 ? 0 : j > lastJ ? lastJ : j;
+      const clampedK = k < 0 ? 0 : k > lastK ? lastK : k;
+
+      if (useNearest) {
+        readVoxelComponents(
+          volume,
+          componentArray,
+          n,
+          Math.floor(clampedI + 0.5 - NEAREST_VOXEL_TIE_EPSILON),
+          Math.floor(clampedJ + 0.5 - NEAREST_VOXEL_TIE_EPSILON),
+          Math.floor(clampedK + 0.5 - NEAREST_VOXEL_TIE_EPSILON),
+          corners,
+          0
+        );
+      } else {
+        const i0 = Math.floor(clampedI);
+        const j0 = Math.floor(clampedJ);
+        const k0 = Math.floor(clampedK);
+        const i1 = i0 < lastI ? i0 + 1 : lastI;
+        const j1 = j0 < lastJ ? j0 + 1 : lastJ;
+        const k1 = k0 < lastK ? k0 + 1 : lastK;
+        const di = clampedI - i0;
+        const dj = clampedJ - j0;
+        const dk = clampedK - k0;
+        const oneMinusDi = 1 - di;
+        const oneMinusDj = 1 - dj;
+        const oneMinusDk = 1 - dk;
+
+        for (let corner = 0; corner < 8; corner++) {
+          readVoxelComponents(
+            volume,
+            componentArray,
+            n,
+            corner & 1 ? i1 : i0,
+            corner & 2 ? j1 : j0,
+            corner & 4 ? k1 : k0,
+            corners,
+            corner * n
+          );
+        }
+
+        for (let component = 0; component < n; component++) {
+          const c00 =
+            corners[component] * oneMinusDi + corners[n + component] * di;
+          const c10 =
+            corners[2 * n + component] * oneMinusDi +
+            corners[3 * n + component] * di;
+          const c01 =
+            corners[4 * n + component] * oneMinusDi +
+            corners[5 * n + component] * di;
+          const c11 =
+            corners[6 * n + component] * oneMinusDi +
+            corners[7 * n + component] * di;
+          const c0 = c00 * oneMinusDj + c10 * dj;
+          const c1 = c01 * oneMinusDj + c11 * dj;
+
+          corners[component] = c0 * oneMinusDk + c1 * dk;
+        }
+      }
+
+      for (let component = 0; component < n; component++) {
+        const value = finishValues
+          ? finishSample(context, corners[component])
+          : corners[component];
+
+        pixelData[pixelIndex++] = value;
+
+        if (value < min) {
+          min = value;
+        }
+
+        if (value > max) {
+          max = value;
+        }
+      }
+
+      i += columnStep[0];
+      j += columnStep[1];
+      k += columnStep[2];
+    }
+
+    rowI += rowStep[0];
+    rowJ += rowStep[1];
+    rowK += rowStep[2];
+  }
+
+  return { min, max };
+}
+
+/**
  * Samples a volume on a regular grid of points and writes one value per grid
  * point into pixelData. The grid is given in continuous voxel indices: a first
  * point, a step along a row and a step from one row to the next. A grid in a
@@ -606,6 +852,11 @@ function sampleStraightCut(
  * outside get the outside value. Only the few columns near the border of the
  * volume go through sampleCheckedPoint.
  *
+ * A volume of several components per voxel (numberOfComponents above 1) is
+ * sampled point by point by sampleComponentGrid, which gives each component
+ * the values of this function for a volume of that component alone, for
+ * finite values.
+ *
  * @returns The lowest and the highest value written.
  */
 function sampleVolumeGrid(options: SampleVolumeGridOptions): SampledValueRange {
@@ -621,6 +872,7 @@ function sampleVolumeGrid(options: SampleVolumeGridOptions): SampledValueRange {
     outsideValue = 0,
     valueRange,
     round = false,
+    numberOfComponents = 1,
   } = options;
   const { voxelManager } = volume;
   const [columns, rows, slices] = volume.dimensions;
@@ -641,6 +893,11 @@ function sampleVolumeGrid(options: SampleVolumeGridOptions): SampledValueRange {
     rangeMax: valueRange ? valueRange.max : 0,
     round,
   };
+
+  if (numberOfComponents > 1) {
+    return sampleComponentGrid(context, options, numberOfComponents);
+  }
+
   const straightCut = sampleStraightCut(context, options);
 
   if (straightCut) {

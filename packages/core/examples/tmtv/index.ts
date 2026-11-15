@@ -160,7 +160,7 @@ const viewportColors = {};
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Multi-Monitor PET-CT',
-  'Three studies displayed with PET-CT fusion layout, each with separate tool groups but shared rendering engine'
+  'Three studies displayed with PET-CT fusion layout, each with separate tool groups but shared rendering engine. Mouse: left button the tool of the dropdown, shift + left window level, middle pan, right zoom, wheel scroll.'
 );
 
 const optionsValues = [
@@ -218,6 +218,14 @@ addDropdownToToolbar({
         const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
 
         toolGroup.setToolDisabled(WindowLevelTool.toolName);
+        toolGroup.setToolActive(WindowLevelTool.toolName, {
+          bindings: [
+            {
+              mouseButton: MouseBindings.Primary,
+              modifierKey: KeyboardBindings.Shift,
+            },
+          ],
+        });
         toolGroup.setToolDisabled(CrosshairsTool.toolName);
         toolGroup.setToolPassive(CircleROITool.toolName);
         toolGroup.setToolPassive(RectangleROITool.toolName);
@@ -424,12 +432,7 @@ function setUpToolGroupsForStudy(studyKey) {
   // Set active tools
   [ctToolGroup, ptToolGroup, fusionToolGroup].forEach((toolGroup) => {
     toolGroup.setToolActive(ZoomTool.toolName, {
-      bindings: [
-        {
-          mouseButton: MouseBindings.Auxiliary,
-          modifierKey: KeyboardBindings.Shift,
-        },
-      ],
+      bindings: [{ mouseButton: MouseBindings.Secondary }],
     });
     toolGroup.setToolActive(PanTool.toolName, {
       bindings: [{ mouseButton: MouseBindings.Auxiliary }],
@@ -438,7 +441,12 @@ function setUpToolGroupsForStudy(studyKey) {
       bindings: [{ mouseButton: MouseBindings.Primary }],
     });
     toolGroup.setToolActive(WindowLevelTool.toolName, {
-      bindings: [{ mouseButton: MouseBindings.Secondary }],
+      bindings: [
+        {
+          mouseButton: MouseBindings.Primary,
+          modifierKey: KeyboardBindings.Shift,
+        },
+      ],
     });
     toolGroup.setToolActive(StackScrollTool.toolName, {
       bindings: [{ mouseButton: MouseBindings.Wheel }],

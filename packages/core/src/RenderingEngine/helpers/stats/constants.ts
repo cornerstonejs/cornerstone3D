@@ -58,6 +58,10 @@ const STATS_CONFIG = {
     justifyContent: 'center',
   },
   POSITION_STORAGE_KEY: 'cornerstone-stats-overlay-position',
+  /** Below this window width in CSS pixels the overlay starts collapsed. */
+  NARROW_WINDOW_WIDTH: 700,
+  /** Size of the buttons of the overlay on a narrow window, for a finger. */
+  NARROW_BUTTON_SIZE: 32,
 } as const;
 
 /**

@@ -15,6 +15,7 @@ import {
 } from '../../../utilities/volumeSliceGeometry';
 import type { VolumeSliceGeometry } from '../../../utilities/volumeSliceGeometry';
 import {
+  getNumberOfComponents,
   getSlabSampleOffsets,
   sampleVolumeSlice,
 } from '../../../utilities/sampleVolumeSlice';
@@ -88,8 +89,13 @@ export type PlanarSampledSliceInputs = {
  * without a change to the sampling.
  */
 export type PlanarSampledSlice = {
-  /** The pixels, row by row, in the array type of the volume. */
+  /**
+   * The pixels, row by row, in the array type of the volume, with
+   * numberOfComponents values per pixel one after the other.
+   */
   pixelData: PixelDataTypedArray;
+  /** The values of one pixel: 1, or 3 or 4 for a colour volume. */
+  numberOfComponents: number;
   width: number;
   height: number;
   /** World position of the centre of the first pixel. */
@@ -383,7 +389,8 @@ export class PlanarSliceSampler {
       return;
     }
 
-    const length = geometry.width * geometry.height;
+    const length =
+      geometry.width * geometry.height * getNumberOfComponents(volume);
     const start = performance.now();
 
     if (fine) {
@@ -574,7 +581,10 @@ export class PlanarSliceSampler {
       volume,
       geometry,
       inputs,
-      this.takeSpareArray(volume, geometry.width * geometry.height),
+      this.takeSpareArray(
+        volume,
+        geometry.width * geometry.height * getNumberOfComponents(volume)
+      ),
       getExactSliceAxis(volume, geometry.zDirection) !== undefined
     );
 
@@ -609,6 +619,7 @@ export class PlanarSliceSampler {
       generation: this.generation,
       slice: {
         pixelData,
+        numberOfComponents: getNumberOfComponents(volume),
         width: geometry.width,
         height: geometry.height,
         origin: geometry.origin,
@@ -973,9 +984,14 @@ export function getActiveTimePoint(volume: IImageVolume): number | undefined {
 /**
  * The value of a pixel outside the volume: the lowest value of the volume, as
  * the voxel manager gives its range, or 0 when the volume has no range yet. The clipping planes hide those pixels; this value
- * is the second line of defence.
+ * is the second line of defence. Each component of a colour volume is 0
+ * (black) outside the volume.
  */
 export function getOutsideValue(volume: IImageVolume): number {
+  if (getNumberOfComponents(volume) > 1) {
+    return 0;
+  }
+
   const lowest = volume.voxelManager?.getRange?.()?.[0];
 
   return Number.isFinite(lowest) ? lowest : 0;

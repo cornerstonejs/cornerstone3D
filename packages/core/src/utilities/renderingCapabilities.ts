@@ -35,13 +35,25 @@ export interface RenderingCapabilities extends TextureFormatSupport {
   renderer: string;
   /** True when the renderer string identifies a software rasterizer. */
   softwareRasterizer: boolean;
+  /**
+   * True when `drawImage` copies what WebGL drew on a canvas into a 2D
+   * canvas. The rendering engines put each viewport on screen with that
+   * copy. When it is false they read the pixels back from the WebGL context
+   * instead, which gives the same picture and is slower. False without WebGL.
+   */
+  webglCanvasCopy: boolean;
 }
 
 interface WebGLContextInfo {
   webgl: boolean;
   maxTextureSize: number;
   renderer: string;
+  webglCanvasCopy: boolean;
 }
+
+const CANVAS_COPY_PROBE_SIZE = 2;
+const CANVAS_COPY_PROBE_COLOR = [64, 128, 192];
+const CANVAS_COPY_PROBE_TOLERANCE = 2;
 
 interface CachedCapabilities {
   probeVersion: number;
@@ -60,11 +72,56 @@ const NO_GPU_FORMATS: TextureFormatSupport = {
 
 let cachedCapabilities: RenderingCapabilities | null = null;
 
+/**
+ * Measures whether `drawImage` copies what WebGL drew on a canvas into a 2D
+ * canvas: the WebGL canvas is cleared to a known colour and the copy must
+ * hold that colour. Some graphics stacks draw correctly and hand an empty
+ * picture to `drawImage`. A browser in which the check itself cannot run
+ * counts as able to copy, because that is the path every browser takes today.
+ */
+function canCopyWebGLCanvas(
+  canvas: HTMLCanvasElement,
+  gl: WebGL2RenderingContext
+): boolean {
+  try {
+    const [red, green, blue] = CANVAS_COPY_PROBE_COLOR;
+    const target = document.createElement('canvas');
+
+    canvas.width = CANVAS_COPY_PROBE_SIZE;
+    canvas.height = CANVAS_COPY_PROBE_SIZE;
+    target.width = CANVAS_COPY_PROBE_SIZE;
+    target.height = CANVAS_COPY_PROBE_SIZE;
+
+    const context = target.getContext('2d');
+
+    if (!context) {
+      return true;
+    }
+
+    gl.clearColor(red / 255, green / 255, blue / 255, 1);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    context.drawImage(canvas, 0, 0);
+
+    const pixel = context.getImageData(0, 0, 1, 1).data;
+
+    return (
+      pixel[3] === 255 &&
+      CANVAS_COPY_PROBE_COLOR.every(
+        (value, channel) =>
+          Math.abs(pixel[channel] - value) <= CANVAS_COPY_PROBE_TOLERANCE
+      )
+    );
+  } catch {
+    return true;
+  }
+}
+
 function getWebGLContextInfo(): WebGLContextInfo {
   const info: WebGLContextInfo = {
     webgl: false,
     maxTextureSize: 0,
     renderer: '',
+    webglCanvasCopy: false,
   };
 
   if (typeof document === 'undefined') {
@@ -90,6 +147,7 @@ function getWebGLContextInfo(): WebGLContextInfo {
       : gl.getParameter(gl.RENDERER);
 
     info.renderer = typeof renderer === 'string' ? renderer : '';
+    info.webglCanvasCopy = canCopyWebGLCanvas(canvas, gl);
 
     const loseContext = gl.getExtension('WEBGL_lose_context');
     if (loseContext) {
@@ -147,7 +205,8 @@ function writeCachedFormats(
 
 /**
  * Runs the capability detection: one cheap context to gather renderer string,
- * WebGL2 availability and MAX_TEXTURE_SIZE, then the texture-format probes.
+ * WebGL2 availability, MAX_TEXTURE_SIZE and whether a WebGL canvas can be
+ * copied with `drawImage`, then the texture-format probes.
  *
  * Probe results are cached in localStorage keyed by renderer string and
  * probe version, so repeat page loads on the same GPU skip

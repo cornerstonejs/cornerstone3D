@@ -345,6 +345,19 @@ enum Events {
   /**
    * Triggers on the eventTarget when a previously lost WebGL context is
    * restored by the browser. Detail: `{ renderingEngineId, contextIndex }`.
+   *
+   * Before this event fires, cornerstone drops every GL object of that
+   * context (programs, buffers, 2D and 3D textures, framebuffers). Right after
+   * it, the rendering engine renders once every viewport that draws through
+   * that context, and that render builds the GL objects again from the images,
+   * volumes and actors in memory. An application no longer has to render,
+   * reload images or volumes, or recreate viewports to get the picture back.
+   *
+   * An application still has to restore what cornerstone does not own: GL
+   * objects it made itself in that context, and anything it changed when
+   * WEBGL_CONTEXT_LOST fired. Cornerstone does not change the render backend:
+   * if contexts keep getting lost, the application decides whether to call
+   * setRenderBackend('cpu').
    */
   WEBGL_CONTEXT_RESTORED = 'CORNERSTONE_WEBGL_CONTEXT_RESTORED',
 

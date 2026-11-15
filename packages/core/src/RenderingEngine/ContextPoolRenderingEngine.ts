@@ -28,6 +28,7 @@ import type {
   VtkOffscreenMultiRenderWindow,
 } from '../types';
 import { getViewportClassForInput } from './helpers/viewportTypeToViewportClass';
+import copyWebGLCanvasToCanvas from './helpers/copyWebGLCanvasToCanvas';
 import { isGenericViewport } from '../utilities/viewportCapabilities';
 
 /**
@@ -655,7 +656,8 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
 
     const sourceY = maxSize.height - dHeight;
 
-    onScreenContext.drawImage(
+    copyWebGLCanvasToCanvas(
+      onScreenContext,
       offScreenCanvas,
       0, // Source X
       sourceY, // Source Y (copy from where VTK rendered at bottom)

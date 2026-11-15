@@ -154,6 +154,123 @@ type PlanarResetViewStateOptions = {
 
 const log = coreLog.getLogger('RenderingEngine', 'PlanarViewport');
 
+type PlanarSlabPresentation = Pick<
+  PlanarDataPresentation,
+  'slabThickness' | 'blendMode'
+>;
+
+/**
+ * @internal The order of the view props of a renderer after a remount, in
+ * which the props that the new attachment added (`mountedProps` that are in
+ * `propsAfter` but not in `propsBefore`) take the place of the first prop that
+ * the remount removed (in `propsBefore`, not in `propsAfter`). Every other
+ * prop keeps its order, and a prop that something else added during the
+ * remount stays at the end. Returns undefined when the order does not change:
+ * nothing was removed (the old attachment drew no vtk actor, or the remount
+ * failed or went stale), or nothing was added.
+ */
+export function getRemountedViewPropOrder<T>(
+  propsBefore: readonly T[],
+  propsAfter: readonly T[],
+  mountedProps: readonly T[]
+): T[] | undefined {
+  const before = new Set(propsBefore);
+  const after = new Set(propsAfter);
+  const added = mountedProps.filter(
+    (prop) => after.has(prop) && !before.has(prop)
+  );
+  const addedSet = new Set(added);
+
+  if (!added.length || propsBefore.every((prop) => after.has(prop))) {
+    return;
+  }
+
+  const order: T[] = [];
+  let placed = false;
+
+  for (const prop of propsBefore) {
+    if (after.has(prop)) {
+      order.push(prop);
+    } else if (!placed) {
+      order.push(...added);
+      placed = true;
+    }
+  }
+
+  order.push(
+    ...propsAfter.filter((prop) => !before.has(prop) && !addedSet.has(prop))
+  );
+
+  return order.every((prop, index) => prop === propsAfter[index])
+    ? undefined
+    : order;
+}
+
+/**
+ * Puts the view props of a renderer in the given order. The props from the
+ * first one out of place on are removed and added again, which keeps their
+ * scene graph nodes. vtk.js 36.4.1 does not move an existing scene graph node
+ * when the props change order (the `enforceOrder` move of
+ * `vtkViewNode.addMissingNodes` passes the wrong arguments), and draws in the
+ * order of the nodes. So the nodes of the props that were added again are
+ * removed as well, and the next build pass makes them again, after the new
+ * props, in the order of the props. A volume texture lives outside the node
+ * and is not uploaded again.
+ */
+function applyViewPropOrder(
+  renderer: PlanarViewportRenderContext['vtk']['renderer'],
+  order: unknown[]
+): void {
+  const props = renderer.getViewProps() as unknown[];
+  const first = order.findIndex((prop, index) => props[index] !== prop);
+
+  if (first < 0) {
+    return;
+  }
+
+  const moved = order.slice(first) as ReturnType<typeof renderer.getViewProps>;
+  const rendererNode = renderer
+    .getVTKWindow?.()
+    ?.getViews?.()?.[0]
+    ?.getViewNodeFor?.(renderer);
+
+  moved.forEach((prop) => renderer.removeViewProp(prop));
+  moved.forEach((prop) => {
+    renderer.addViewProp(prop);
+
+    const node = rendererNode?.getViewNodeFor(prop);
+
+    if (node) {
+      rendererNode.removeNode(node);
+    }
+  });
+}
+
+/** The vtk actors of the actor entries of a binding. */
+function getBindingActors(
+  binding: ViewportDataBinding<PlanarDataPresentation> | undefined
+): unknown[] {
+  if (!binding) {
+    return [];
+  }
+
+  const entries =
+    binding.getActorEntries?.(binding.data) ??
+    [binding.getActorEntry?.(binding.data)].filter(Boolean);
+
+  return entries.map((entry) => entry.actor);
+}
+
+/** The slab thickness and the blend mode of a presentation. */
+function getSlabPresentation(
+  props: PlanarDataPresentation | undefined
+): PlanarSlabPresentation {
+  return {
+    slabThickness: props?.slabThickness,
+    blendMode: props?.blendMode,
+  };
+}
+
 class PlanarViewport extends GenericViewport<
   PlanarViewState,
   PlanarDataPresentation,
@@ -203,6 +320,18 @@ class PlanarViewport extends GenericViewport<
     string,
     PlanarSetDataOptions
   >();
+  /**
+   * The slab that a mounted binding draws while its display set waits for a
+   * remount to the render mode of a new slab (`setDataPresentationState`).
+   */
+  private readonly withheldSlabByBinding = new WeakMap<
+    object,
+    PlanarSlabPresentation
+  >();
+  /** The passes of `applyRenderingPipelineUpdate` that hold the renders. */
+  private remountRenderHolds = 0;
+  /** Set when a render was asked for while a remount held the renders. */
+  private renderHeldByRemount = false;
 
   // ── Static ───────────────────────────────────────────────────────────
 
@@ -992,32 +1121,81 @@ class PlanarViewport extends GenericViewport<
     super.setDisplaySetPresentation(displaySetIdOrProps);
   }
 
+  /**
+   * Stores the presentation of a display set and gives it to the mounted
+   * binding. When the new slab needs another render mode than the mounted one
+   * (`getRenderModeForPresentation`), the mounted binding keeps the slab
+   * thickness and the blend mode that it draws, so it does no work for a slab
+   * that is about to move, and gets every other field at once. The stored
+   * presentation is the new one, and the remounted binding gets it. When the
+   * change starts a remount, the render that it asks for is held with the
+   * renders of the remount (`applyRenderingPipelineUpdate`).
+   */
   protected override setDataPresentationState(
     dataId: string,
     props: PlanarDataPresentation
   ): void {
     const previousProps = this.getDataPresentationState(dataId);
+    const binding = this.bindings.get(dataId);
+    const renderMode = this.getRenderModeForPresentation(
+      dataId,
+      previousProps,
+      props
+    );
+    const movesAway =
+      !!binding &&
+      (renderMode === undefined
+        ? this.withheldSlabByBinding.has(binding)
+        : renderMode !== binding.rendering.renderMode);
+    const remounts =
+      renderMode !== undefined &&
+      (renderMode !== binding?.rendering.renderMode ||
+        !!this.pendingRenderPipelineUpdate);
 
     this.clearResolvedViewCache();
-    super.setDataPresentationState(dataId, props);
-    this.updateRenderPathForPresentation(dataId, previousProps, props);
+
+    if (remounts) {
+      this.remountRenderHolds += 1;
+    }
+
+    if (!movesAway || this.isDestroyed) {
+      if (binding) {
+        this.withheldSlabByBinding.delete(binding);
+      }
+
+      super.setDataPresentationState(dataId, props);
+    } else {
+      const mountedSlab =
+        this.withheldSlabByBinding.get(binding) ??
+        getSlabPresentation(previousProps);
+
+      this.withheldSlabByBinding.set(binding, mountedSlab);
+      this.dataPresentation.set(dataId, props);
+      binding.updateDataPresentation({ ...props, ...mountedSlab });
+      this.render();
+    }
+
+    if (remounts) {
+      this.startRenderingPipelineUpdate();
+      this.releaseRemountRenderHold();
+    }
   }
 
   /**
-   * Remounts a mounted volume display set whose render mode changes with its
-   * presentation: a slab that grows past what the CPU can sample moves a
-   * sampled slice to the GPU volume path, and back. Only a change of the slab
-   * thickness or the blend mode runs the decision, so a window level change
-   * costs nothing. The remount itself is `applyRenderingPipelineUpdate`.
-   * While a pass of it is pending, a change starts a new pass even when the
-   * mounted mode matches the decision, because the pending pass may mount
-   * the mode that an older presentation chose.
+   * The render mode that a mounted volume display set needs for a new
+   * presentation, when it may change: a slab moves a sampled slice to the
+   * GPU volume path, and back. Only a change of the slab thickness or the
+   * blend mode runs the decision, so a window level change costs nothing.
+   * Returns undefined when the decision does not run. The caller starts the
+   * remount (`applyRenderingPipelineUpdate`) when the mode differs from the
+   * mounted one, and also while a pass is pending, because the pending pass
+   * may mount the mode that an older presentation chose.
    */
-  private updateRenderPathForPresentation(
+  private getRenderModeForPresentation(
     dataId: string,
     previousProps: PlanarDataPresentation | undefined,
     props: PlanarDataPresentation | undefined
-  ): void {
+  ): PlanarEffectiveRenderMode | undefined {
     if (
       previousProps?.slabThickness === props?.slabThickness &&
       previousProps?.blendMode === props?.blendMode
@@ -1041,26 +1219,19 @@ class PlanarViewport extends GenericViewport<
       ...(this.mountOptionsByDataId.get(dataId) ?? {}),
       role: binding.role,
     };
-    let renderMode: PlanarEffectiveRenderMode;
 
     try {
-      renderMode = selectPlanarRenderPath(
+      return selectPlanarRenderPath(
         dataSet,
         this.getRenderPathDecisionOptions(
           dataId,
           options,
-          this.resolveRequestedOrientation(options.orientation)
+          this.resolveRequestedOrientation(options.orientation),
+          props
         )
       ).renderMode;
     } catch {
       return;
-    }
-
-    if (
-      renderMode !== binding.rendering.renderMode ||
-      this.pendingRenderPipelineUpdate
-    ) {
-      this.startRenderingPipelineUpdate();
     }
   }
 
@@ -1711,6 +1882,10 @@ class PlanarViewport extends GenericViewport<
       return;
     }
 
+    if (this.holdsRenderForRemount()) {
+      return;
+    }
+
     this.setNeedsRender();
     this.renderContext.cpu.composition.renderPassId += 1;
     this.drewOutsideEngine = false;
@@ -1881,12 +2056,58 @@ class PlanarViewport extends GenericViewport<
     });
   }
 
+  /**
+   * One pass of the live remount. The pass first decides and loads the data
+   * of every binding, then mounts the bindings whose render mode changes,
+   * one after the other. From its start to its end it holds the renders of
+   * this viewport (`holdsRenderForRemount`), so no frame shows the new source
+   * with the old overlays while a mount waits for its data. An overlay that
+   * has no backend of its own follows the backend of the render mode that the
+   * pass chose for the source, as it follows the mounted source otherwise.
+   * Each remounted binding keeps the place of the one it replaces in the draw
+   * order (`keepViewPropPlace`). A binding whose render mode stays gets the
+   * stored presentation when it drew a withheld slab.
+   */
   private async applyRenderingPipelineUpdate(): Promise<void> {
     if (this.isDestroyed) {
       return;
     }
 
     const swapId = ++this.renderPipelineSwapId;
+    let changed = false;
+
+    this.remountRenderHolds += 1;
+
+    try {
+      changed = await this.remountBindings(swapId);
+
+      if (changed) {
+        this.finishRemount();
+      }
+    } finally {
+      this.releaseRemountRenderHold();
+    }
+
+    if (!changed) {
+      return;
+    }
+
+    // The rebuilt render paths replaced this viewport's actors. Announce it so
+    // consumers that decorate actors (segmentation representations restyle
+    // their labelmap overlays through this) can re-reconcile against the new
+    // instances; the swap itself cannot know about them.
+    triggerEvent(eventTarget, Events.RENDERING_PIPELINE_CHANGED, {
+      renderingEngineId: this.renderingEngineId,
+      viewportId: this.id,
+    });
+  }
+
+  /**
+   * Decides, loads and mounts the bindings of one pass of
+   * `applyRenderingPipelineUpdate`. Returns whether the pass is still the
+   * current one and changed a binding.
+   */
+  private async remountBindings(swapId: number): Promise<boolean> {
     const isStale = () =>
       swapId !== this.renderPipelineSwapId || this.isDestroyed;
     let changed = false;
@@ -1902,10 +2123,17 @@ class PlanarViewport extends GenericViewport<
       ...bindingEntries.filter(([, binding]) => binding === sourceBinding),
       ...bindingEntries.filter(([, binding]) => binding !== sourceBinding),
     ];
+    const mounts: Array<{
+      dataId: string;
+      binding: ViewportDataBinding<PlanarDataPresentation>;
+      data: LoadedData<PlanarPayload>;
+      renderMode: PlanarEffectiveRenderMode;
+    }> = [];
+    let sourceRenderBackend: EffectiveRenderBackend | undefined;
 
     for (const [dataId, binding] of orderedEntries) {
       if (isStale()) {
-        return;
+        return false;
       }
 
       // Skip bindings that were removed or replaced (e.g. by a concurrent
@@ -1920,25 +2148,59 @@ class PlanarViewport extends GenericViewport<
         const { data, selectedPath } = await this.loadPlanarData(dataId, {
           ...options,
           role: binding.role,
+          renderBackend:
+            binding === sourceBinding
+              ? options.renderBackend
+              : (options.renderBackend ?? sourceRenderBackend),
         });
+
+        if (binding === sourceBinding) {
+          sourceRenderBackend = getRenderBackendForRenderMode(
+            selectedPath.renderMode
+          );
+        }
 
         if (isStale() || this.bindings.get(dataId) !== binding) {
           continue;
         }
 
         if (selectedPath.renderMode === binding.rendering.renderMode) {
+          this.releaseWithheldSlab(dataId, binding);
           continue;
         }
 
+        mounts.push({
+          dataId,
+          binding,
+          data,
+          renderMode: selectedPath.renderMode,
+        });
+      } catch (error) {
+        this.reportRenderPathError(error, dataId);
+      }
+    }
+
+    for (const { dataId, binding, data, renderMode } of mounts) {
+      if (isStale()) {
+        return false;
+      }
+
+      if (this.bindings.get(dataId) !== binding) {
+        continue;
+      }
+
+      try {
+        const propsBefore = this.getViewProps();
         const added = await this.addLoadedData(
           dataId,
           data,
-          {
-            renderMode: selectedPath.renderMode,
-            role: binding.role,
-          },
+          { renderMode, role: binding.role },
           () => isStale() || this.bindings.get(dataId) !== binding
         );
+
+        if (added) {
+          this.keepViewPropPlace(propsBefore, this.bindings.get(dataId));
+        }
 
         changed = changed || added;
       } catch (error) {
@@ -1946,10 +2208,14 @@ class PlanarViewport extends GenericViewport<
       }
     }
 
-    if (isStale() || !changed) {
-      return;
-    }
+    return changed && !isStale();
+  }
 
+  /**
+   * Brings the viewport up to date after a pass changed its bindings. The
+   * render that it asks for is held until the pass releases its hold.
+   */
+  private finishRemount(): void {
     // Re-assert the source binding's render mode: every remounted path
     // activated its own mode while mounting, so with mixed CPU/GPU bindings
     // the last mount, not the source, may have won the canvas-visibility
@@ -1963,15 +2229,88 @@ class PlanarViewport extends GenericViewport<
     this.clearResolvedViewCache();
     this.updateBindingsCameraState();
     this.render();
+  }
 
-    // The rebuilt render paths replaced this viewport's actors. Announce it so
-    // consumers that decorate actors (segmentation representations restyle
-    // their labelmap overlays through this) can re-reconcile against the new
-    // instances; the swap itself cannot know about them.
-    triggerEvent(eventTarget, Events.RENDERING_PIPELINE_CHANGED, {
-      renderingEngineId: this.renderingEngineId,
-      viewportId: this.id,
-    });
+  /**
+   * Gives a binding the stored presentation when it drew a withheld slab
+   * (`setDataPresentationState`) and keeps its render mode after all.
+   */
+  private releaseWithheldSlab(
+    dataId: string,
+    binding: ViewportDataBinding<PlanarDataPresentation>
+  ): void {
+    if (!this.withheldSlabByBinding.has(binding)) {
+      return;
+    }
+
+    this.withheldSlabByBinding.delete(binding);
+
+    const props = this.getDataPresentationState(dataId);
+
+    if (props !== undefined) {
+      binding.updateDataPresentation(props);
+      this.render();
+    }
+  }
+
+  /** The view props of the vtk renderer of this viewport, as a copy. */
+  private getViewProps(): unknown[] {
+    const renderer = this.renderContext.vtk.renderer;
+
+    return typeof renderer?.getViewProps === 'function'
+      ? [...renderer.getViewProps()]
+      : [];
+  }
+
+  /**
+   * Puts the vtk actors of a remounted binding in the place that the actors
+   * of the binding it replaced had in the renderer (`getRemountedViewPropOrder`).
+   * Without this the new actors are drawn last, and an overlay drawn before
+   * them hides them where it writes depth.
+   */
+  private keepViewPropPlace(
+    propsBefore: unknown[],
+    binding: ViewportDataBinding<PlanarDataPresentation> | undefined
+  ): void {
+    const order = getRemountedViewPropOrder(
+      propsBefore,
+      this.getViewProps(),
+      getBindingActors(binding)
+    );
+
+    if (order) {
+      applyViewPropOrder(this.renderContext.vtk.renderer, order);
+    }
+  }
+
+  /**
+   * Ends the render hold of one remount pass. The last pass to end renders
+   * once when a render was asked for meanwhile.
+   */
+  private releaseRemountRenderHold(): void {
+    this.remountRenderHolds = Math.max(0, this.remountRenderHolds - 1);
+
+    if (this.remountRenderHolds || !this.renderHeldByRemount) {
+      return;
+    }
+
+    this.renderHeldByRemount = false;
+    this.render();
+  }
+
+  /**
+   * Whether a remount pass holds the renders of this viewport. A render asked
+   * for meanwhile is marked and done when the hold ends.
+   */
+  private holdsRenderForRemount(): boolean {
+    if (!this.remountRenderHolds) {
+      return false;
+    }
+
+    this.renderHeldByRemount = true;
+    this.setNeedsRender();
+
+    return true;
   }
 
   /**
@@ -2010,17 +2349,17 @@ class PlanarViewport extends GenericViewport<
   }
 
   /**
-   * The inputs of the render-path decision for one display set.
+   * The inputs of the render-path decision for one display set, with the
+   * stored presentation of the display set, or the given one.
    *
    * Only the source may draw the acquired frames of a reduced volume.
    */
   private getRenderPathDecisionOptions(
     dataId: string,
     options: PlanarSetDataOptions,
-    orientation: PlanarViewState['orientation']
+    orientation: PlanarViewState['orientation'],
+    presentation = this.getDataPresentationState(dataId)
   ): PlanarRenderPathDecisionOptions {
-    const presentation = this.getDataPresentationState(dataId);
-
     return {
       orientation,
       // Per-mount backend pin/override. Overlays without an explicit pin
@@ -2065,6 +2404,10 @@ class PlanarViewport extends GenericViewport<
   }
 
   private requestRenderingEngineRender(): void {
+    if (this.holdsRenderForRemount()) {
+      return;
+    }
+
     const renderingEngine = renderingEngineCache.get(this.renderingEngineId);
 
     if (renderingEngine) {

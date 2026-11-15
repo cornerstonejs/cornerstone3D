@@ -1,5 +1,4 @@
 import cache from '../../../cache/cache';
-import RENDERING_DEFAULTS from '../../../constants/rendering';
 import { isVolumeRenderMode } from '../../helpers/renderBackendRegistry';
 import type {
   ActorEntry,
@@ -454,15 +453,27 @@ class PlanarViewportLegacyAdapter extends PlanarViewport {
   }
 
   getSlabThickness(): number {
-    let slabThickness = RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS;
+    return this.legacyCompatibility.getSlabThickness();
+  }
 
-    for (const actor of this.getActors()) {
-      if (actor.slabThickness > slabThickness) {
-        slabThickness = actor.slabThickness;
-      }
-    }
+  /**
+   * Compatibility wrapper for the slab thickness setter of the legacy volume
+   * viewport. The thickness is kept in the presentation of each volume.
+   *
+   * @experimental
+   */
+  setSlabThickness(slabThickness: number, filterActorUIDs?: string[]): void {
+    this.legacyCompatibility.setSlabThickness(slabThickness, filterActorUIDs);
+  }
 
-    return slabThickness;
+  /**
+   * Compatibility wrapper for the slab thickness reset of the legacy volume
+   * viewport.
+   *
+   * @experimental
+   */
+  resetSlabThickness(): void {
+    this.legacyCompatibility.resetSlabThickness();
   }
 
   getNumberOfSlices(): number {

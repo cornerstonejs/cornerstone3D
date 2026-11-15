@@ -210,6 +210,14 @@ function holdsIntegers(arrayType: unknown): boolean {
 }
 
 /**
+ * Returns the number of components of one voxel of a volume, 1 for a
+ * scalar volume and 3 or 4 for a colour volume.
+ */
+function getNumberOfComponents(volume: IImageVolume): number {
+  return Math.max(1, volume.voxelManager?.numberOfComponents ?? 1);
+}
+
+/**
  * Returns the lowest and the highest value of an array.
  */
 function getValueRange(pixelData: PixelDataTypedArray): {
@@ -235,26 +243,107 @@ function getValueRange(pixelData: PixelDataTypedArray): {
 }
 
 /**
- * Whether the pixel at a given position of a slice grid that starts at
- * startIndex lies on a voxel of the volume, by the rule of sampleVolumeGrid.
+ * Returns a mask of the pixels of a slice grid whose sample on the plane lies
+ * outside the volume, by the rule of sampleVolumeGrid, or undefined when no
+ * pixel does. Only a pixel whose first value on the plane is NaN can lie
+ * outside, since sampleVolumeGrid writes NaN there, so only those pixels are
+ * tested.
  */
-function isPixelInsideVolume(
+function getOutsidePixels(
   volume: IImageVolume,
   grid: SliceGrid,
   startIndex: Point3,
   width: number,
-  pixelIndex: number
-): boolean {
-  const column = pixelIndex % width;
-  const row = (pixelIndex - column) / width;
-  const [i, j, k] = [0, 1, 2].map(
-    (axis) =>
-      startIndex[axis] +
-      column * grid.columnStep[axis] +
-      row * grid.rowStep[axis]
-  );
+  height: number,
+  planeValues: Float64Array,
+  numberOfComponents: number
+): Uint8Array | undefined {
+  const { columnStep, rowStep } = grid;
+  let outside: Uint8Array | undefined;
 
-  return isIndexInsideVolume(volume.dimensions, i, j, k);
+  for (let row = 0; row < height; row++) {
+    for (let column = 0; column < width; column++) {
+      const pixelIndex = row * width + column;
+      const value = planeValues[pixelIndex * numberOfComponents];
+
+      if (
+        value === value ||
+        isIndexInsideVolume(
+          volume.dimensions,
+          startIndex[0] + column * columnStep[0] + row * rowStep[0],
+          startIndex[1] + column * columnStep[1] + row * rowStep[1],
+          startIndex[2] + column * columnStep[2] + row * rowStep[2]
+        )
+      ) {
+        continue;
+      }
+
+      outside ||= new Uint8Array(width * height);
+      outside[pixelIndex] = 1;
+    }
+  }
+
+  return outside;
+}
+
+/**
+ * Keeps in combined, value by value, the larger of combined and layer. A NaN
+ * in combined, a value without a sample yet, takes the value of the layer; a
+ * NaN in the layer changes nothing.
+ */
+function combineMaximum(combined: Float64Array, layer: Float64Array): void {
+  for (let index = 0; index < combined.length; index++) {
+    const value = layer[index];
+    const current = combined[index];
+
+    if (value > current || current !== current) {
+      combined[index] = value;
+    }
+  }
+}
+
+/**
+ * Keeps in combined, value by value, the smaller of combined and layer, with
+ * the NaN rules of combineMaximum.
+ */
+function combineMinimum(combined: Float64Array, layer: Float64Array): void {
+  for (let index = 0; index < combined.length; index++) {
+    const value = layer[index];
+    const current = combined[index];
+
+    if (value < current || current !== current) {
+      combined[index] = value;
+    }
+  }
+}
+
+/**
+ * Adds a layer to the sums, value by value. A NaN in the layer is not added
+ * and counts as a missing sample of that value. The array of missing samples
+ * is made at the first NaN, so a slab that lies inside a volume without NaN
+ * voxels never makes one.
+ *
+ * @returns the array of missing samples, or undefined while there is none
+ */
+function addToSums(
+  sums: Float64Array,
+  layer: Float64Array,
+  missing: Uint32Array | undefined
+): Uint32Array | undefined {
+  let counts = missing;
+
+  for (let index = 0; index < sums.length; index++) {
+    const value = layer[index];
+
+    if (value === value) {
+      sums[index] += value;
+    } else {
+      counts ||= new Uint32Array(sums.length);
+      counts[index]++;
+    }
+  }
+
+  return counts;
 }
 
 /**
@@ -270,6 +359,12 @@ function isPixelInsideVolume(
  * GLSL specification leaves undefined, so there is no GPU picture to match.
  * sampleVolumeGrid marks a sample outside the volume with NaN too, so a NaN
  * on the plane is told apart by the position of the pixel.
+ *
+ * Each layer is sampled into one array of doubles and combined with a loop of
+ * its own for the maximum, the minimum and the sum. The maximum and the
+ * minimum keep NaN for a value that has no sample yet, so they need no count.
+ * The average counts only the samples that are missing. A volume of several
+ * components combines each component on its own.
  */
 function sampleSlab(
   volume: IImageVolume,
@@ -280,18 +375,16 @@ function sampleSlab(
   interpolationType: InterpolationType,
   pixelData: PixelDataTypedArray,
   outsideValue: number,
-  round: boolean
+  round: boolean,
+  numberOfComponents: number
 ): void {
   const { width, height } = geometry;
-  const pixelCount = width * height;
-  const combined = new Float64Array(pixelCount);
-  const counts = new Uint32Array(pixelCount);
-  const planeValues = new Float64Array(pixelCount);
-  const isMean = slabType === SlabTypes.MEAN || slabType === SlabTypes.SUM;
+  const valueCount = width * height * numberOfComponents;
+  const combined = new Float64Array(valueCount);
+  const layer = new Float64Array(valueCount);
+  const isSum = slabType === SlabTypes.MEAN || slabType === SlabTypes.SUM;
   const isMax = slabType === SlabTypes.MAX;
-  const insideVolume = new Uint8Array(pixelCount);
-
-  offsets.forEach((offset, offsetIndex) => {
+  const sampleLayer = (offset: number, target: Float64Array): Point3 => {
     const startIndex = snapToWholeIndex([
       grid.startIndex[0] + offset * grid.normalStep[0],
       grid.startIndex[1] + offset * grid.normalStep[1],
@@ -300,7 +393,7 @@ function sampleSlab(
 
     sampleVolumeGrid({
       volume,
-      pixelData: planeValues,
+      pixelData: target,
       width,
       height,
       startIndex,
@@ -308,53 +401,56 @@ function sampleSlab(
       rowStep: grid.rowStep,
       interpolationType,
       outsideValue: NaN,
+      numberOfComponents,
     });
 
-    for (let index = 0; index < pixelCount; index++) {
-      const value = planeValues[index];
+    return startIndex;
+  };
+  const planeValues = isSum ? layer : combined;
+  const outside = getOutsidePixels(
+    volume,
+    grid,
+    sampleLayer(offsets[0], planeValues),
+    width,
+    height,
+    planeValues,
+    numberOfComponents
+  );
+  let missing = isSum ? addToSums(combined, layer, undefined) : undefined;
 
-      if (offsetIndex === 0) {
-        insideVolume[index] =
-          value === value ||
-          isPixelInsideVolume(volume, grid, startIndex, width, index)
-            ? 1
-            : 0;
-      }
+  for (let offsetIndex = 1; offsetIndex < offsets.length; offsetIndex++) {
+    sampleLayer(offsets[offsetIndex], layer);
 
-      if (value !== value || insideVolume[index] === 0) {
-        continue;
-      }
-
-      if (counts[index] === 0) {
-        combined[index] = value;
-      } else if (isMean) {
-        combined[index] += value;
-      } else if (isMax) {
-        if (value > combined[index]) {
-          combined[index] = value;
-        }
-      } else if (value < combined[index]) {
-        combined[index] = value;
-      }
-
-      counts[index]++;
+    if (isSum) {
+      missing = addToSums(combined, layer, missing);
+    } else if (isMax) {
+      combineMaximum(combined, layer);
+    } else {
+      combineMinimum(combined, layer);
     }
-  });
+  }
 
-  for (let index = 0; index < pixelCount; index++) {
-    const count = counts[index];
-    let value = insideVolume[index] === 1 ? NaN : outsideValue;
+  const layerCount = offsets.length;
+  const divide = slabType === SlabTypes.MEAN;
 
-    if (count > 0) {
-      value =
-        slabType === SlabTypes.MEAN ? combined[index] / count : combined[index];
+  for (let index = 0; index < valueCount; index++) {
+    const pixelIndex =
+      numberOfComponents === 1 ? index : Math.floor(index / numberOfComponents);
 
-      if (round) {
-        value = Math.round(value);
-      }
+    if (outside?.[pixelIndex] === 1) {
+      pixelData[index] = outsideValue;
+      continue;
     }
 
-    pixelData[index] = value;
+    let value = combined[index];
+
+    if (isSum) {
+      const count = missing ? layerCount - missing[index] : layerCount;
+
+      value = count === 0 ? NaN : divide ? value / count : value;
+    }
+
+    pixelData[index] = round ? Math.round(value) : value;
   }
 }
 
@@ -382,6 +478,10 @@ function sampleSlab(
  * A slab of zero thickness, or of a blend mode without a slab type, gives the
  * plain slice.
  *
+ * A volume of several components per voxel (an RGB or RGBA volume) gives as
+ * many values per pixel, one after the other, each component sampled and
+ * combined on its own.
+ *
  * @returns The pixels and their lowest and highest value.
  */
 function sampleVolumeSlice(
@@ -396,11 +496,13 @@ function sampleVolumeSlice(
   } = options;
   const { width, height } = geometry;
   const ArrayType = volume.voxelManager.getConstructor();
+  const numberOfComponents = getNumberOfComponents(volume);
+  const length = width * height * numberOfComponents;
   const pixelData =
     options.pixelData instanceof ArrayType &&
-    options.pixelData.length === width * height
+    options.pixelData.length === length
       ? options.pixelData
-      : (new ArrayType(width * height) as PixelDataTypedArray);
+      : (new ArrayType(length) as PixelDataTypedArray);
   const integers = holdsIntegers(ArrayType);
   const grid = getSliceGrid(volume, geometry);
   const slabType =
@@ -422,6 +524,7 @@ function sampleVolumeSlice(
       interpolationType,
       outsideValue,
       round: integers && interpolationType !== InterpolationType.NEAREST,
+      numberOfComponents,
     });
 
     return { pixelData, min, max };
@@ -436,7 +539,8 @@ function sampleVolumeSlice(
     interpolationType,
     pixelData,
     outsideValue,
-    integers
+    integers,
+    numberOfComponents
   );
 
   return { pixelData, ...getValueRange(pixelData) };
@@ -446,5 +550,6 @@ export {
   sampleVolumeSlice as default,
   sampleVolumeSlice,
   getSlabSampleOffsets,
+  getNumberOfComponents,
 };
 export type { SampleVolumeSliceOptions, SampledVolumeSlice, VolumeSliceSlab };

@@ -1,6 +1,8 @@
 import { InterpolationType } from '../src/enums';
 import { getSpatiallyClampedContinuousIndex } from '../src/RenderingEngine/GenericViewport/Planar/planarCPUVolumeSamplingUtils';
-import sampleVolumeGrid from '../src/utilities/sampleVolumeGrid';
+import sampleVolumeGrid, {
+  isIndexInsideVolume,
+} from '../src/utilities/sampleVolumeGrid';
 import VoxelManager from '../src/utilities/VoxelManager';
 
 const dimensions = [7, 6, 5];
@@ -610,31 +612,459 @@ describe('sampleVolumeGrid', () => {
     expect(sampled.values).toEqual(expected);
   });
 
-  it('gives the values of the general loop for a float volume with values that are not finite', () => {
+  describe.each([
+    ['slices', Float32Array],
+    ['volume', Float32Array],
+    ['slices', Float64Array],
+  ])(
+    'on a straight cut of a random float volume with voxel access "%s" and %p',
+    (access, ArrayType) => {
+      it.each([
+        ['on a voxel plane', true],
+        ['between two voxel planes', false],
+      ])(
+        'gives the values and the range of the general loop for every cut direction %s',
+        (_name, onPlane) => {
+          const random = createRandom(onPlane ? 31 : 37);
+
+          for (let volumeNumber = 0; volumeNumber < 20; volumeNumber++) {
+            const floatDimensions = [0, 1, 2].map(
+              () => 2 + Math.floor(random() * 7)
+            );
+            const values = Array.from(
+              {
+                length:
+                  floatDimensions[0] * floatDimensions[1] * floatDimensions[2],
+              },
+              () => (random() - 0.5) * 1e4
+            );
+
+            for (let fixedAxis = 0; fixedAxis < 3; fixedAxis++) {
+              const cut = createAxisCut(floatDimensions, fixedAxis, random);
+              const fixedLast = floatDimensions[fixedAxis] - 1;
+
+              cut.startIndex[fixedAxis] = onPlane
+                ? Math.floor(random() * (fixedLast + 1))
+                : Math.floor(random() * fixedLast) + 0.05 + random() * 0.9;
+
+              const options = {
+                ...cut,
+                interpolationType: InterpolationType.LINEAR,
+                outsideValue: -7,
+              };
+              const fast = createValuesVolume(
+                floatDimensions,
+                values,
+                ArrayType,
+                access
+              );
+              const general = createValuesVolume(
+                floatDimensions,
+                values,
+                ArrayType,
+                'hidden'
+              );
+              const sampled = sampleGrid(fast.volume, options);
+
+              expect({ volumeNumber, fixedAxis, ...sampled }).toEqual({
+                volumeNumber,
+                fixedAxis,
+                ...sampleGrid(general.volume, options),
+              });
+              expect(fast.getAtIJK).not.toHaveBeenCalled();
+
+              const typedSampled = new ArrayType(cut.width * cut.height);
+              const typedGeneral = new ArrayType(cut.width * cut.height);
+
+              expect(
+                sampleVolumeGrid({
+                  volume: fast.volume,
+                  pixelData: typedSampled,
+                  ...options,
+                })
+              ).toEqual(
+                sampleVolumeGrid({
+                  volume: general.volume,
+                  pixelData: typedGeneral,
+                  ...options,
+                })
+              );
+              expect(Array.from(typedSampled)).toEqual(
+                Array.from(typedGeneral)
+              );
+            }
+          }
+        }
+      );
+    }
+  );
+
+  it('copies the rows of a coronal cut of a float volume with TypedArray.set for a linear sample', () => {
+    const { volume, volumeArray } = createVolume({ ArrayType: Float32Array });
+    const pixelData = new Float32Array(dimensions[0] * dimensions[2]);
+    const setSpy = jest.spyOn(pixelData, 'set');
+    const row = 3;
+
+    sampleVolumeGrid({
+      volume,
+      pixelData,
+      width: dimensions[0],
+      height: dimensions[2],
+      startIndex: [0, row, 0],
+      columnStep: [1, 0, 0],
+      rowStep: [0, 0, 1],
+      interpolationType: InterpolationType.LINEAR,
+    });
+
+    const expected = [];
+
+    for (let k = 0; k < dimensions[2]; k++) {
+      const first = k * sliceSize + row * dimensions[0];
+
+      expected.push(...volumeArray.subarray(first, first + dimensions[0]));
+    }
+
+    expect(setSpy).toHaveBeenCalledTimes(dimensions[2]);
+    expect(Array.from(pixelData)).toEqual(expected);
+  });
+
+  it('lets a voxel that is not finite affect only the samples that use it on a straight cut', () => {
     const random = createRandom(19);
 
-    for (let gridNumber = 0; gridNumber < 200; gridNumber++) {
+    for (let gridNumber = 0; gridNumber < 400; gridNumber++) {
       const grid = createRandomStraightCut(random);
       const interpolationType =
         gridNumber % 2 ? InterpolationType.LINEAR : InterpolationType.NEAREST;
       const options = { ...grid, interpolationType, outsideValue: -3 };
-      const withSpecialValues = (access) => {
-        const created = createVolume({ ArrayType: Float32Array, access });
+      const { volume, volumeArray } = createVolume({ ArrayType: Float32Array });
 
-        created.volumeArray[3] = Infinity;
-        created.volumeArray[sliceSize + 9] = NaN;
-        created.volumeArray[2 * sliceSize + 20] = -Infinity;
+      volumeArray[3] = Infinity;
+      volumeArray[sliceSize + 9] = NaN;
+      volumeArray[2 * sliceSize + 20] = -Infinity;
+      volumeArray[3 * sliceSize + 20] = Infinity;
 
-        return created.volume;
-      };
-
-      expect({
+      expect({ gridNumber, ...sampleGrid(volume, options) }).toEqual({
         gridNumber,
-        ...sampleGrid(withSpecialValues('slices'), options),
-      }).toEqual({
-        gridNumber,
-        ...sampleGrid(withSpecialValues('hidden'), options),
+        ...sampleStraightCutReference(volumeArray, dimensions, options),
       });
     }
   });
+
+  it('keeps the neighbours of an infinite voxel finite on a straight cut, where the general loop gives NaN', () => {
+    const { volume, volumeArray } = createVolume({ ArrayType: Float32Array });
+    const hidden = createVolume({ ArrayType: Float32Array, access: 'hidden' });
+    const infiniteIndex = 2 * sliceSize + 2 * dimensions[0] + 3;
+
+    volumeArray[infiniteIndex] = Infinity;
+    hidden.volumeArray[infiniteIndex] = Infinity;
+
+    const onPlane = {
+      width: dimensions[0],
+      height: dimensions[1],
+      startIndex: [0, 0, 2],
+      columnStep: [1, 0, 0],
+      rowStep: [0, 1, 0],
+      interpolationType: InterpolationType.LINEAR,
+    };
+    const betweenPlanes = { ...onPlane, startIndex: [0, 0, 1.75] };
+    const pixel = 2 * dimensions[0] + 3;
+    const straight = sampleGrid(volume, onPlane).values;
+    const general = sampleGrid(hidden.volume, onPlane).values;
+    const mixed = sampleGrid(volume, betweenPlanes).values;
+
+    expect(straight[pixel]).toBe(Infinity);
+    expect(straight.filter((value) => !Number.isFinite(value))).toHaveLength(1);
+    expect(straight[pixel + 1]).toBe(volumeArray[infiniteIndex + 1]);
+    expect(general[pixel]).toBe(Infinity);
+    expect(general[pixel - 1]).toBeNaN();
+    expect(mixed[pixel]).toBe(Infinity);
+    expect(mixed.filter((value) => !Number.isFinite(value))).toHaveLength(1);
+    expect(mixed[pixel + 1]).toBe(
+      volumeArray[sliceSize + pixel + 1] * 0.25 +
+        volumeArray[2 * sliceSize + pixel + 1] * 0.75
+    );
+  });
 });
+
+describe('sampleVolumeGrid with several components per voxel', () => {
+  /**
+   * Builds a colour volume of the test dimensions with random 8 bit
+   * components, and one scalar volume per component with the same values.
+   * With access 'volume' the voxel manager keeps every component in one
+   * array; with 'voxels' it gives the components of a voxel as an array from
+   * getAtIJK, as the voxel manager of an image volume does.
+   */
+  function createColourVolume(numberOfComponents, access, seed) {
+    const random = createRandom(seed);
+    const voxelCount = sliceSize * dimensions[2];
+    const colourArray = new Uint8Array(voxelCount * numberOfComponents);
+
+    for (let index = 0; index < colourArray.length; index++) {
+      colourArray[index] = Math.floor(random() * 256);
+    }
+
+    const getAtIJK = jest.fn((i, j, k) => {
+      const first =
+        (k * sliceSize + j * dimensions[0] + i) * numberOfComponents;
+
+      return Array.from(
+        colourArray.subarray(first, first + numberOfComponents)
+      );
+    });
+    const componentVolumes = Array.from(
+      { length: numberOfComponents },
+      (_, component) => {
+        const values = new Uint8Array(voxelCount);
+
+        for (let index = 0; index < voxelCount; index++) {
+          values[index] = colourArray[index * numberOfComponents + component];
+        }
+
+        return createValuesVolume(dimensions, values, Uint8Array, 'slices')
+          .volume;
+      }
+    );
+
+    return {
+      getAtIJK,
+      componentVolumes,
+      volume: {
+        dimensions,
+        voxelManager: {
+          numberOfComponents,
+          getAtIJK,
+          _getSliceView: () => undefined,
+          getWritableScalarData: () =>
+            access === 'volume' ? colourArray : undefined,
+        },
+      },
+    };
+  }
+
+  describe.each([
+    [3, 'volume'],
+    [3, 'voxels'],
+    [4, 'volume'],
+    [4, 'voxels'],
+  ])(
+    'with %p components and voxel access "%s"',
+    (numberOfComponents, access) => {
+      it.each([
+        ['nearest', 'straight', InterpolationType.NEAREST, true],
+        ['linear', 'straight', InterpolationType.LINEAR, true],
+        ['nearest', 'oblique', InterpolationType.NEAREST, false],
+        ['linear', 'oblique', InterpolationType.LINEAR, false],
+      ])(
+        'gives each component the values of a volume of that component alone, %s on %s grids',
+        (_name, _grid, interpolationType, straight) => {
+          const random = createRandom(
+            numberOfComponents * 10 + interpolationType
+          );
+          const { volume, getAtIJK, componentVolumes } = createColourVolume(
+            numberOfComponents,
+            access,
+            numberOfComponents + interpolationType
+          );
+
+          for (let gridNumber = 0; gridNumber < 150; gridNumber++) {
+            const grid = straight
+              ? createRandomStraightCut(random)
+              : createRandomGrid(random);
+            const options = {
+              ...grid,
+              interpolationType,
+              ...createRandomFinishOptions(random),
+            };
+            const pixelCount = grid.width * grid.height;
+            const colour = new Array(pixelCount * numberOfComponents).fill(
+              null
+            );
+            const range = sampleVolumeGrid({
+              volume,
+              pixelData: colour,
+              numberOfComponents,
+              ...options,
+            });
+            const components = componentVolumes.map((componentVolume) =>
+              sampleGrid(componentVolume, options)
+            );
+            const expected = [];
+
+            for (let pixel = 0; pixel < pixelCount; pixel++) {
+              components.forEach(({ values }) => expected.push(values[pixel]));
+            }
+
+            expect({ gridNumber, colour }).toEqual({
+              gridNumber,
+              colour: expected,
+            });
+            expect(range).toEqual({
+              min: Math.min(...components.map(({ range }) => range.min)),
+              max: Math.max(...components.map(({ range }) => range.max)),
+            });
+          }
+
+          if (access === 'volume') {
+            expect(getAtIJK).not.toHaveBeenCalled();
+          }
+        }
+      );
+    }
+  );
+
+  it('reads a component that getAtIJK does not give as 0', () => {
+    const volume = {
+      dimensions: [2, 1, 1],
+      voxelManager: {
+        numberOfComponents: 4,
+        getAtIJK: (i) => (i === 0 ? [10, 20, 30] : [40, 50, 60]),
+        getWritableScalarData: () => undefined,
+      },
+    };
+    const pixelData = new Uint8Array(8);
+
+    sampleVolumeGrid({
+      volume,
+      pixelData,
+      numberOfComponents: 4,
+      width: 2,
+      height: 1,
+      startIndex: [0, 0, 0],
+      columnStep: [1, 0, 0],
+      rowStep: [0, 0, 0],
+    });
+
+    expect(Array.from(pixelData)).toEqual([10, 20, 30, 0, 40, 50, 60, 0]);
+  });
+});
+
+/**
+ * Builds a straight cut of a volume of the given dimensions whose normal
+ * follows fixedAxis: the column and the row step each move one voxel along
+ * one of the two other axes, in a random order and direction, and the grid
+ * starts at a random whole index that can lie outside the volume. The caller
+ * sets the coordinate on fixedAxis.
+ */
+function createAxisCut(volumeDimensions, fixedAxis, random) {
+  const [columnAxis, rowAxis] = [0, 1, 2]
+    .filter((axis) => axis !== fixedAxis)
+    .sort(() => random() - 0.5);
+  const columnStep = [0, 0, 0];
+  const rowStep = [0, 0, 0];
+  const startIndex = [0, 0, 0];
+
+  columnStep[columnAxis] = random() < 0.5 ? -1 : 1;
+  rowStep[rowAxis] = random() < 0.5 ? -1 : 1;
+  startIndex[columnAxis] =
+    Math.floor(random() * (volumeDimensions[columnAxis] + 4)) - 2;
+  startIndex[rowAxis] =
+    Math.floor(random() * (volumeDimensions[rowAxis] + 4)) - 2;
+
+  return {
+    width: 1 + Math.floor(random() * (volumeDimensions[columnAxis] + 3)),
+    height: 1 + Math.floor(random() * (volumeDimensions[rowAxis] + 3)),
+    startIndex,
+    columnStep,
+    rowStep,
+  };
+}
+
+/**
+ * Builds a volume of the given dimensions and values, one typed array per
+ * slice, with the voxel access of createVolume.
+ */
+function createValuesVolume(volumeDimensions, values, ArrayType, access) {
+  const [columns, rows, slices] = volumeDimensions;
+  const volumeArray = ArrayType.from(values);
+  const sliceArrays = Array.from({ length: slices }, (_, k) =>
+    volumeArray.subarray(k * columns * rows, (k + 1) * columns * rows)
+  );
+  const getAtIJK = jest.fn((i, j, k) => sliceArrays[k][j * columns + i]);
+
+  return {
+    getAtIJK,
+    volume: {
+      dimensions: volumeDimensions,
+      voxelManager: {
+        getAtIJK,
+        _getSliceView: (sliceIndex) =>
+          access === 'slices' ? sliceArrays[sliceIndex] : undefined,
+        getWritableScalarData: () =>
+          access === 'volume' ? volumeArray : undefined,
+      },
+    },
+  };
+}
+
+/**
+ * The documented values of a straight cut: a copy of the nearest voxel, or of
+ * the voxel on the plane, and the mix lower x (1 - w) + upper x w of the two
+ * planes around a linear sample between them. Only the voxels with a weight
+ * above zero are read, so a voxel that is not finite reaches only the samples
+ * that use it.
+ */
+function sampleStraightCutReference(volumeArray, volumeDimensions, options) {
+  const {
+    width,
+    height,
+    startIndex,
+    columnStep,
+    rowStep,
+    interpolationType,
+    outsideValue,
+  } = options;
+  const [columns, rows] = volumeDimensions;
+  const fixedAxis = [0, 1, 2].find(
+    (axis) => columnStep[axis] === 0 && rowStep[axis] === 0
+  );
+  const fixedLast = volumeDimensions[fixedAxis] - 1;
+  const read = (index) =>
+    volumeArray[index[2] * columns * rows + index[1] * columns + index[0]];
+  const values = [];
+  let min = Infinity;
+  let max = -Infinity;
+
+  for (let row = 0; row < height; row++) {
+    for (let column = 0; column < width; column++) {
+      const index = [0, 1, 2].map(
+        (axis) =>
+          startIndex[axis] + column * columnStep[axis] + row * rowStep[axis]
+      );
+      let value = outsideValue;
+
+      if (isIndexInsideVolume(volumeDimensions, ...index)) {
+        const fixed = Math.min(fixedLast, Math.max(0, index[fixedAxis]));
+        const lower = [...index];
+
+        if (interpolationType === InterpolationType.NEAREST) {
+          lower[fixedAxis] = Math.floor(fixed + 0.5 - 1e-6);
+          value = read(lower);
+        } else {
+          const upper = [...index];
+
+          lower[fixedAxis] = Math.floor(fixed);
+          upper[fixedAxis] = Math.min(lower[fixedAxis] + 1, fixedLast);
+
+          const weight = fixed - lower[fixedAxis];
+
+          value =
+            weight > 0
+              ? read(lower) * (1 - weight) + read(upper) * weight
+              : read(lower);
+        }
+      }
+
+      values.push(value);
+
+      if (value < min) {
+        min = value;
+      }
+
+      if (value > max) {
+        max = value;
+      }
+    }
+  }
+
+  return { values, range: { min, max } };
+}

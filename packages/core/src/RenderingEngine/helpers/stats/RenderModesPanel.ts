@@ -1,7 +1,7 @@
 import type { VoxelQualityRecord } from '../../../types';
 import ImageQualityStatus from '../../../enums/ImageQualityStatus';
 import type { Panel } from './types';
-import { PANEL_CONFIG, PANEL_CONFIGS } from './constants';
+import { CONVERSION, PANEL_CONFIG, PANEL_CONFIGS } from './constants';
 import { PanelType } from './enums';
 
 /**
@@ -11,6 +11,12 @@ import { PanelType } from './enums';
 export class RenderModesPanel implements Panel {
   public dom: HTMLDivElement;
   private readonly list: HTMLDivElement;
+  private readonly summary: HTMLDivElement;
+  private summarySignature = '';
+  private sections = new Map<
+    string,
+    { signature: string; element: HTMLDivElement }
+  >();
 
   constructor() {
     const config = PANEL_CONFIGS[PanelType.RENDER_MODES];
@@ -43,6 +49,14 @@ export class RenderModesPanel implements Panel {
     `;
     this.dom.appendChild(title);
 
+    this.summary = document.createElement('div');
+    this.summary.style.cssText = `
+      display:none;
+      margin-bottom:8px;
+      color:#fff3bf;
+    `;
+    this.dom.appendChild(this.summary);
+
     this.list = document.createElement('div');
     this.list.style.cssText = `
       display:flex;
@@ -63,107 +77,176 @@ export class RenderModesPanel implements Panel {
     // Content is pushed from StatsOverlay via setContent().
   }
 
-  public setContent(entries: RenderModePanelEntry[]): void {
-    this.list.replaceChildren();
+  /**
+   * Shows the entries, and the summary of the GPU texture memory above them
+   * when one is given. A viewport section whose entry did not change since
+   * the last call keeps its DOM, so a hover, a tooltip or a scroll position
+   * in it survives the refresh, and a refresh with 10 viewports rebuilds
+   * only the sections that changed.
+   */
+  public setContent(
+    entries: RenderModePanelEntry[],
+    summary?: RenderModePanelSummary
+  ): void {
+    this.setSummary(summary);
 
     if (!entries.length) {
-      this.list.appendChild(createEmptyState('(no viewports)'));
+      this.sections.clear();
+      this.list.replaceChildren(createEmptyState('(no viewports)'));
       return;
     }
 
-    for (const entry of entries) {
-      const bindings = orderBindings(entry.bindings);
-      const volumes = entry.volumes ?? [];
-      const section = document.createElement('div');
-      section.style.cssText = `
-        padding:7px;
-        background:rgba(0, 0, 0, 0.18);
-        border:1px solid rgba(255, 204, 0, 0.18);
-        border-radius:4px;
-      `;
+    const nextSections = new Map<
+      string,
+      { signature: string; element: HTMLDivElement }
+    >();
+    const elements: HTMLDivElement[] = [];
+    const replaced: Array<[HTMLDivElement, HTMLDivElement]> = [];
+    let sameLayout = this.sections.size === entries.length;
 
-      const viewportId = `${entry.renderingEngineId}/${entry.viewportId}`;
-      const heading = document.createElement('div');
-      heading.title = viewportId;
-      heading.style.cssText = `
-        display:flex;
-        align-items:center;
-        justify-content:space-between;
-        gap:8px;
-        margin-bottom:6px;
-        color:#ffd84d;
-        font-weight:700;
-      `;
+    entries.forEach((entry, index) => {
+      const key = `${entry.renderingEngineId}/${entry.viewportId}`;
+      const signature = getEntrySignature(entry);
+      const previous = this.sections.get(key);
+      const element =
+        previous?.signature === signature
+          ? previous.element
+          : createSection(entry);
 
-      const left = document.createElement('div');
-      left.style.cssText = `
-        display:flex;
-        align-items:center;
-        gap:6px;
-        min-width:0;
-      `;
-
-      const name = document.createElement('span');
-      name.textContent = truncate(viewportId, 72);
-      name.style.cssText = `
-        min-width:0;
-        overflow:hidden;
-        text-overflow:ellipsis;
-        white-space:nowrap;
-      `;
-      left.appendChild(name);
-
-      if (entry.viewportType) {
-        const type = document.createElement('span');
-        type.textContent = entry.viewportType;
-        type.title = entry.viewportType;
-        type.style.cssText = `
-          flex:0 0 auto;
-          padding:2px 6px;
-          background:rgba(255, 204, 0, 0.14);
-          border:1px solid rgba(255, 204, 0, 0.4);
-          border-radius:3px;
-          color:#ffe08a;
-          font-size:${PANEL_CONFIG.FONT_SIZE}px;
-          font-weight:700;
-          letter-spacing:0.03em;
-        `;
-        left.appendChild(type);
+      if (
+        !previous ||
+        this.list.children[index] !== previous.element ||
+        nextSections.has(key)
+      ) {
+        sameLayout = false;
+      } else if (previous.element !== element) {
+        replaced.push([previous.element, element]);
       }
 
-      heading.appendChild(left);
+      nextSections.set(key, { signature, element });
+      elements.push(element);
+    });
 
-      const count = document.createElement('span');
-      count.textContent = `${bindings.length} binding${
-        bindings.length === 1 ? '' : 's'
-      } · ${volumes.length} vol${volumes.length === 1 ? '' : 's'}`;
-      count.style.cssText = `
-        flex:0 0 auto;
-        color:#c9b05a;
-        font-size:${PANEL_CONFIG.FONT_SIZE}px;
-        font-weight:600;
-      `;
-      heading.appendChild(count);
-
-      section.appendChild(heading);
-
-      if (!bindings.length && !volumes.length) {
-        section.appendChild(createEmptyState('(no bindings)'));
-        this.list.appendChild(section);
-        continue;
+    if (sameLayout && this.list.children.length === elements.length) {
+      for (const [previous, next] of replaced) {
+        previous.replaceWith(next);
       }
+    } else {
+      this.list.replaceChildren(...elements);
+    }
 
-      for (const binding of bindings) {
-        section.appendChild(createBindingRow(binding));
-      }
+    this.sections = nextSections;
+  }
 
-      for (const volume of volumes) {
-        section.appendChild(createVoxelQualityRow(volume));
-      }
+  private setSummary(summary: RenderModePanelSummary | undefined): void {
+    const signature = summary ? JSON.stringify(summary) : '';
 
-      this.list.appendChild(section);
+    if (signature === this.summarySignature) {
+      return;
+    }
+
+    this.summarySignature = signature;
+    this.summary.replaceChildren();
+    this.summary.style.display = summary ? 'block' : 'none';
+
+    if (summary) {
+      appendField(this.summary, 'gpu memory', formatSummary(summary), 96);
     }
   }
+}
+
+/** Builds the DOM of one viewport section. */
+function createSection(entry: RenderModePanelEntry): HTMLDivElement {
+  const bindings = orderBindings(entry.bindings);
+  const volumes = entry.volumes ?? [];
+  const section = document.createElement('div');
+  section.style.cssText = `
+    padding:7px;
+    background:rgba(0, 0, 0, 0.18);
+    border:1px solid rgba(255, 204, 0, 0.18);
+    border-radius:4px;
+  `;
+
+  const viewportId = `${entry.renderingEngineId}/${entry.viewportId}`;
+  const heading = document.createElement('div');
+  heading.title = viewportId;
+  heading.style.cssText = `
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    margin-bottom:6px;
+    color:#ffd84d;
+    font-weight:700;
+  `;
+
+  const left = document.createElement('div');
+  left.style.cssText = `
+    display:flex;
+    align-items:center;
+    gap:6px;
+    min-width:0;
+  `;
+
+  const name = document.createElement('span');
+  name.textContent = truncate(viewportId, 72);
+  name.style.cssText = `
+    min-width:0;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  `;
+  left.appendChild(name);
+
+  if (entry.viewportType) {
+    const type = document.createElement('span');
+    type.textContent = entry.viewportType;
+    type.title = entry.viewportType;
+    type.style.cssText = `
+      flex:0 0 auto;
+      padding:2px 6px;
+      background:rgba(255, 204, 0, 0.14);
+      border:1px solid rgba(255, 204, 0, 0.4);
+      border-radius:3px;
+      color:#ffe08a;
+      font-size:${PANEL_CONFIG.FONT_SIZE}px;
+      font-weight:700;
+      letter-spacing:0.03em;
+    `;
+    left.appendChild(type);
+  }
+
+  heading.appendChild(left);
+
+  const count = document.createElement('span');
+  count.textContent = `${bindings.length} binding${
+    bindings.length === 1 ? '' : 's'
+  } · ${volumes.length} vol${volumes.length === 1 ? '' : 's'}`;
+  count.style.cssText = `
+    flex:0 0 auto;
+    color:#c9b05a;
+    font-size:${PANEL_CONFIG.FONT_SIZE}px;
+    font-weight:600;
+  `;
+  heading.appendChild(count);
+
+  section.appendChild(heading);
+
+  if (!bindings.length && !volumes.length) {
+    section.appendChild(createEmptyState('(no bindings)'));
+
+    return section;
+  }
+
+  for (const binding of bindings) {
+    section.appendChild(createBindingRow(binding));
+  }
+
+  for (const volume of volumes) {
+    section.appendChild(createVoxelQualityRow(volume));
+  }
+
+  return section;
 }
 
 export type RenderModePanelVolumeQuality = {
@@ -191,6 +274,48 @@ export type RenderModePanelBinding = {
   scalarRange?: [number, number];
   /** Number of components per voxel (1 for grayscale, 3 for RGB, ...). */
   numberOfComponents?: number;
+  /** Width and height of the sampled slice that is drawn. */
+  sliceSize?: [number, number];
+  /** Milliseconds of the last voxel-size sample of the slice. */
+  sampleMs?: number;
+  /** Milliseconds of the last sample of the slice on the screen grid. */
+  fineSampleMs?: number;
+  /** The counts of the cache of sampled slices of the binding. */
+  sliceCache?: {
+    size: number;
+    hits: number;
+    misses: number;
+    prefetched: number;
+  };
+  /** What the binding holds on the GPU to draw. */
+  gpuTextures?: RenderModePanelTexture[];
+};
+
+/**
+ * One texture that a binding draws from. `slice` is the 2D texture of an
+ * image mapper, `volume` the 3D textures of a volume (shared by every
+ * viewport that draws that volume), and `canvas` says that the binding is
+ * drawn on a 2D canvas and holds no texture.
+ */
+export type RenderModePanelTexture = {
+  kind: 'slice' | 'volume' | 'canvas';
+  bytes: number;
+  /** Width and height of a 2D texture. */
+  dimensions?: [number, number];
+  /** Array type of the uploaded values of a 2D texture. */
+  scalarType?: string;
+  /** True when the GPU can hold the values in another format than the array. */
+  approximate?: boolean;
+  volumeId?: string;
+  /** The number of viewports that draw the same volume. */
+  sharedBy?: number;
+};
+
+/** The GPU texture memory of every viewport, each texture counted once. */
+export type RenderModePanelSummary = {
+  volumeTextureBytes: number;
+  sliceTextureBytes: number;
+  sliceTexturesApproximate?: boolean;
 };
 
 function orderBindings(
@@ -310,6 +435,12 @@ function createBindingRow(binding: RenderModePanelBinding): HTMLDivElement {
 
   if (binding.scalarRange) {
     appendField(fields, 'range', formatScalarRange(binding.scalarRange), 56);
+  }
+
+  appendSamplingFields(fields, binding);
+
+  for (const texture of binding.gpuTextures ?? []) {
+    appendField(fields, 'gpu', formatTexture(texture), 64);
   }
 
   row.appendChild(fields);
@@ -474,6 +605,100 @@ function formatScalarValue(value: number): string {
   }
 
   return Number(value.toFixed(2)).toString();
+}
+
+/** Adds the slice size, the sample times and the slice cache counts. */
+function appendSamplingFields(
+  fields: HTMLDivElement,
+  binding: RenderModePanelBinding
+): void {
+  if (binding.sliceSize) {
+    appendField(
+      fields,
+      'slice',
+      `${binding.sliceSize[0]} x ${binding.sliceSize[1]}`,
+      40
+    );
+  }
+
+  if (binding.sampleMs !== undefined || binding.fineSampleMs !== undefined) {
+    appendField(
+      fields,
+      'sample',
+      `${formatMs(binding.sampleMs)}, fine ${formatMs(binding.fineSampleMs)}`,
+      48
+    );
+  }
+
+  if (binding.sliceCache) {
+    const { size, hits, misses, prefetched } = binding.sliceCache;
+
+    appendField(
+      fields,
+      'slice cache',
+      `${size} held, ${hits} hits, ${misses} misses, ${prefetched} prefetched`,
+      64
+    );
+  }
+}
+
+function formatMs(value: number | undefined): string {
+  return Number.isFinite(value) ? `${value.toFixed(1)} ms` : '-';
+}
+
+/** Formats bytes as MB with one decimal, as the MB panel counts them. */
+export function formatMegabytes(bytes: number, approximate = false): string {
+  const megabytes = (bytes / CONVERSION.BYTES_TO_MB).toFixed(
+    bytes > 0 && bytes < CONVERSION.BYTES_TO_MB ? 2 : 1
+  );
+
+  return `${approximate ? 'about ' : ''}${megabytes} MB`;
+}
+
+function formatTexture(texture: RenderModePanelTexture): string {
+  if (texture.kind === 'canvas') {
+    return 'none, drawn on a 2D canvas';
+  }
+
+  if (texture.kind === 'slice') {
+    const [width, height] = texture.dimensions ?? [0, 0];
+    const type = texture.scalarType
+      ? ` ${texture.scalarType.replace(/Array$/, '')}`
+      : '';
+
+    return `2D slice ${width}x${height}${type}, ${formatMegabytes(
+      texture.bytes,
+      texture.approximate
+    )}`;
+  }
+
+  const shared =
+    texture.sharedBy && texture.sharedBy > 1
+      ? `, shared by ${texture.sharedBy} viewports`
+      : '';
+
+  return `3D volume ${formatMegabytes(texture.bytes)}${shared}`;
+}
+
+function formatSummary(summary: RenderModePanelSummary): string {
+  return `3D volumes ${formatMegabytes(
+    summary.volumeTextureBytes
+  )}, 2D slices ${formatMegabytes(
+    summary.sliceTextureBytes,
+    summary.sliceTexturesApproximate
+  )}`;
+}
+
+/**
+ * A string that changes when anything the section of an entry shows
+ * changes. A section whose signature is the same keeps its DOM.
+ */
+function getEntrySignature(entry: RenderModePanelEntry): string {
+  try {
+    return JSON.stringify(entry);
+  } catch {
+    return String(Math.random());
+  }
 }
 
 function appendField(

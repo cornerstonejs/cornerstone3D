@@ -118,6 +118,19 @@ function applyColormapOpacity(args: {
     return;
   }
 
+  const opacityMappingPoints = buildOpacityMappingPoints(colormap);
+
+  if (opacityMappingPoints) {
+    const opacityFunction = vtkPiecewiseFunction.newInstance();
+
+    opacityMappingPoints.forEach(([value, opacity]) => {
+      opacityFunction.addPoint(value, opacity);
+    });
+    actor.getProperty().setScalarOpacity(0, opacityFunction);
+
+    return;
+  }
+
   if (colormap.opacity === undefined && colormap.threshold === undefined) {
     return;
   }
@@ -146,6 +159,51 @@ function applyColormapOpacity(args: {
   });
 
   actor.getProperty().setScalarOpacity(0, opacityFunction);
+}
+
+/**
+ * The opacity points of a colormap that gives an `opacityMapping` and no
+ * opacity array, or undefined otherwise. As on the legacy volume viewport
+ * (`applyOpacitySpec` in `utilities/colormap`), the values of the mapping are
+ * absolute scalar values, each opacity is scaled by a numeric `opacity`, and a
+ * threshold makes everything below it transparent. The points do not depend
+ * on the VOI range, so a window level change keeps them.
+ */
+function buildOpacityMappingPoints(
+  colormap: ColormapPublic
+): Array<[number, number]> | undefined {
+  const { opacityMapping } = colormap;
+
+  if (
+    !Array.isArray(opacityMapping) ||
+    !opacityMapping.length ||
+    Array.isArray(colormap.opacity)
+  ) {
+    return;
+  }
+
+  const overall =
+    typeof colormap.opacity === 'number' ? clampToUnit(colormap.opacity) : 1;
+  const sortedMapping = [...opacityMapping].sort((a, b) => a.value - b.value);
+  const scaledPoints = (minimumValue: number): Array<[number, number]> =>
+    sortedMapping
+      .filter(({ value }) => value >= minimumValue)
+      .map(({ value, opacity }) => [value, clampToUnit(opacity * overall)]);
+
+  if (typeof colormap.threshold !== 'number') {
+    return scaledPoints(-Infinity);
+  }
+
+  const span =
+    Math.abs(
+      sortedMapping[sortedMapping.length - 1].value - sortedMapping[0].value
+    ) || 1;
+
+  return [
+    [sortedMapping[0].value, 0],
+    [colormap.threshold - span * 0.001, 0],
+    ...scaledPoints(colormap.threshold),
+  ];
 }
 
 function buildColormapOpacityPoints(args: {

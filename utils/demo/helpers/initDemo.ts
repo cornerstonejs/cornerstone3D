@@ -35,9 +35,17 @@ window.cornerstoneTools = cornerstoneTools;
 // applications, so the page directory *is* the application root here.
 window.PUBLIC_URL ||= window.location.pathname.replace(/[^/]*$/, '');
 
+/**
+ * Initializes Cornerstone3D, the tools and the loaders for an example.
+ *
+ * `?debug=true` turns the stats overlay and the fidelity indicator debug on,
+ * and `?debug=false` turns them off. Without the parameter, an example that
+ * states `core.debug.statsOverlay` or `core.debug.fidelityIndicatorDebug` in
+ * its config keeps that value, and every other example starts with both off.
+ */
 export default async function initDemo(config: any = {}) {
   const urlParams = new URLSearchParams(window.location.search);
-  const debugEnabled = urlParams.get('debug') === 'true';
+  const debugParameter = urlParams.get('debug');
 
   // Apply URL parameter overrides (cpu thresholds, viewport V2 flag, etc.)
   let demoConfig = applyUrlParameterOverridesToDemoConfig(config);
@@ -45,6 +53,15 @@ export default async function initDemo(config: any = {}) {
   demoConfig = applyLossyDownsamplingOverride(demoConfig);
   demoConfig = applySliceFirstOverride(demoConfig);
   const toolsConfig = demoConfig?.tools || {};
+  const debugDefaults = demoConfig?.core?.debug || {};
+  const statsOverlay =
+    debugParameter === null
+      ? Boolean(debugDefaults.statsOverlay)
+      : debugParameter === 'true';
+  const fidelityIndicatorDebug =
+    debugParameter === null
+      ? Boolean(debugDefaults.fidelityIndicatorDebug)
+      : debugParameter === 'true';
 
   initProviders();
   cornerstoneDICOMImageLoader.init({
@@ -62,14 +79,14 @@ export default async function initDemo(config: any = {}) {
           ...demoConfig.core,
           debug: {
             ...(demoConfig.core.debug || {}),
-            statsOverlay: debugEnabled,
-            fidelityIndicatorDebug: debugEnabled,
+            statsOverlay,
+            fidelityIndicatorDebug,
           },
         }
       : {
           debug: {
-            statsOverlay: debugEnabled,
-            fidelityIndicatorDebug: debugEnabled,
+            statsOverlay,
+            fidelityIndicatorDebug,
           },
         }),
   });

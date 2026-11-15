@@ -1,8 +1,15 @@
 import { describe, it, expect } from '@jest/globals';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
+import { SlabTypes } from '@kitware/vtk.js/Rendering/Core/ImageResliceMapper/Constants';
 import { BlendModes, InterpolationType } from '../src/enums';
-import sampleVolumeSlice from '../src/utilities/sampleVolumeSlice';
+import sampleVolumeSlice, {
+  getSlabSampleOffsets,
+} from '../src/utilities/sampleVolumeSlice';
+import sampleVolumeGrid, {
+  isIndexInsideVolume,
+} from '../src/utilities/sampleVolumeGrid';
 import { getVolumeSliceGeometry } from '../src/utilities/volumeSliceGeometry';
+import { mapBlendModeToSlabType } from '../src/RenderingEngine/GenericViewport/Planar/planarVolumeSliceBlendMode';
 import VoxelManager from '../src/utilities/VoxelManager';
 
 const dimensions = [6, 5, 20];
@@ -121,7 +128,367 @@ function vtkSlabOffsets(thickness, smallestSpacing) {
   return offsets;
 }
 
+/**
+ * A small deterministic random number generator, so that a failing case can
+ * be reproduced from its seed.
+ */
+function createRandom(seed) {
+  let state = seed >>> 0;
+
+  return () => {
+    state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
+
+    return state / 4294967296;
+  };
+}
+
+/**
+ * Builds a volume of random dimensions, spacing and values of the given array
+ * type. A float volume gets a few NaN voxels when withNaN is true.
+ */
+function makeRandomVolume(random, ArrayType, withNaN) {
+  const volumeDimensions = [0, 1, 2].map(() => 3 + Math.floor(random() * 8));
+  const volumeSpacing = [0, 1, 2].map(
+    () => [0.5, 1, 1.5][Math.floor(random() * 3)]
+  );
+  const scalarData = new ArrayType(
+    volumeDimensions[0] * volumeDimensions[1] * volumeDimensions[2]
+  );
+
+  for (let index = 0; index < scalarData.length; index++) {
+    scalarData[index] =
+      ArrayType === Float32Array
+        ? (random() - 0.5) * 2000
+        : Math.floor(random() * 4000) - 2000;
+  }
+
+  if (withNaN) {
+    for (let count = 0; count < 3; count++) {
+      scalarData[Math.floor(random() * scalarData.length)] = NaN;
+    }
+  }
+
+  const imageData = vtkImageData.newInstance();
+
+  imageData.setDimensions(volumeDimensions);
+  imageData.setSpacing(volumeSpacing);
+  imageData.setOrigin([3, -4, 5]);
+  imageData.setDirection([1, 0, 0, 0, 1, 0, 0, 0, 1]);
+
+  return {
+    dimensions: volumeDimensions,
+    spacing: volumeSpacing,
+    direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
+    imageData,
+    voxelManager: VoxelManager.createScalarVolumeVoxelManager({
+      dimensions: volumeDimensions,
+      scalarData,
+    }),
+  };
+}
+
+function normalize(vector) {
+  const length = Math.hypot(...vector);
+
+  return vector.map((value) => value / length);
+}
+
+function cross(a, b) {
+  return [
+    a[1] * b[2] - a[2] * b[1],
+    a[2] * b[0] - a[0] * b[2],
+    a[0] * b[1] - a[1] * b[0],
+  ];
+}
+
+/**
+ * A random slice geometry of a volume. A straight one follows two volume
+ * axes, one voxel per pixel, on a voxel plane or between two; an oblique one
+ * has a random normal and pixel size. Both are often larger than the volume
+ * or placed so that the plane or the slab leaves the volume.
+ */
+function makeRandomGeometry(random, volume, straight) {
+  const { dimensions: volumeDimensions, spacing: volumeSpacing } = volume;
+
+  if (straight) {
+    const normalAxis = Math.floor(random() * 3);
+    const [columnAxis, rowAxis] = [0, 1, 2]
+      .filter((axis) => axis !== normalAxis)
+      .sort(() => random() - 0.5);
+    const unit = (axis, sign) => {
+      const vector = [0, 0, 0];
+
+      vector[axis] = sign;
+
+      return vector;
+    };
+    const columnSign = random() < 0.5 ? -1 : 1;
+    const rowSign = random() < 0.5 ? -1 : 1;
+    const startIndex = [0, 0, 0];
+    const width = volumeDimensions[columnAxis] + Math.floor(random() * 4) - 1;
+    const height = volumeDimensions[rowAxis] + Math.floor(random() * 4) - 1;
+
+    startIndex[columnAxis] =
+      (columnSign > 0 ? 0 : volumeDimensions[columnAxis] - 1) -
+      columnSign * Math.floor(random() * 3);
+    startIndex[rowAxis] =
+      (rowSign > 0 ? 0 : volumeDimensions[rowAxis] - 1) -
+      rowSign * Math.floor(random() * 3);
+    startIndex[normalAxis] =
+      random() < 0.5
+        ? Math.floor(random() * volumeDimensions[normalAxis])
+        : random() * (volumeDimensions[normalAxis] + 1) - 1;
+
+    return {
+      origin: volume.imageData.indexToWorld(startIndex),
+      xDirection: unit(columnAxis, columnSign),
+      yDirection: unit(rowAxis, rowSign),
+      zDirection: cross(unit(columnAxis, columnSign), unit(rowAxis, rowSign)),
+      spacing: [volumeSpacing[columnAxis], volumeSpacing[rowAxis]],
+      width: Math.max(1, width),
+      height: Math.max(1, height),
+      sliceIndex: 0,
+    };
+  }
+
+  const zDirection = normalize([
+    random() - 0.5,
+    random() - 0.5,
+    random() - 0.5,
+  ]);
+  const xDirection = normalize(
+    cross(zDirection, normalize([random() - 0.5, random() - 0.5, 1]))
+  );
+  const yDirection = cross(zDirection, xDirection);
+  const pixelSpacing = 0.4 + random();
+  const width = 4 + Math.floor(random() * 14);
+  const height = 4 + Math.floor(random() * 14);
+  const center = volume.imageData.indexToWorld(
+    volumeDimensions.map((size) => random() * (size + 2) - 1)
+  );
+
+  return {
+    origin: [0, 1, 2].map(
+      (axis) =>
+        center[axis] -
+        (xDirection[axis] * width + yDirection[axis] * height) *
+          pixelSpacing *
+          0.5
+    ),
+    xDirection,
+    yDirection,
+    zDirection,
+    spacing: [pixelSpacing, pixelSpacing],
+    width,
+    height,
+    sliceIndex: 0,
+  };
+}
+
+/**
+ * A copy of the slab sampling of sampleVolumeSlice before it was made
+ * faster: the slice grid of the geometry, one sampleVolumeGrid call per slab
+ * layer into an array of doubles, and one combine loop with a count per
+ * pixel. The faster code must give the same values.
+ */
+function sampleSlabReference(volume, geometry, options) {
+  const { interpolationType, outsideValue, slab } = options;
+  const wholeIndexEpsilon = 1e-9;
+  const sliceIndexTolerance = 1e-4;
+  const snapToWholeIndex = (index) =>
+    index.map((value) => {
+      const whole = Math.round(value);
+
+      return Math.abs(value - whole) < wholeIndexEpsilon ? whole : value;
+    });
+  const getStepAxis = (step) => {
+    const axes = [0, 1, 2].filter((axis) => step[axis] !== 0);
+
+    return axes.length === 1 ? axes[0] : -1;
+  };
+  const { imageData } = volume;
+  const { origin, xDirection, yDirection, zDirection } = geometry;
+  const startIndex = snapToWholeIndex(imageData.worldToIndex(origin));
+  const indexStep = (direction, distance) => {
+    const after = imageData.worldToIndex(
+      [0, 1, 2].map((axis) => origin[axis] + direction[axis] * distance)
+    );
+
+    return [0, 1, 2].map((axis) => after[axis] - startIndex[axis]);
+  };
+  const columnStep = snapToWholeIndex(
+    indexStep(xDirection, geometry.spacing[0])
+  );
+  const rowStep = snapToWholeIndex(indexStep(yDirection, geometry.spacing[1]));
+  const normalStep = indexStep(zDirection, 1);
+  const columnAxis = getStepAxis(columnStep);
+  const rowAxis = getStepAxis(rowStep);
+
+  if (columnAxis >= 0 && rowAxis >= 0 && columnAxis !== rowAxis) {
+    const fixedAxis = 3 - columnAxis - rowAxis;
+    const whole = Math.round(startIndex[fixedAxis]);
+
+    if (Math.abs(startIndex[fixedAxis] - whole) <= sliceIndexTolerance) {
+      startIndex[fixedAxis] = whole;
+    }
+  }
+
+  const { width, height } = geometry;
+  const pixelCount = width * height;
+  const ArrayType = volume.voxelManager.getConstructor();
+  const pixelData = new ArrayType(pixelCount);
+  const round = ArrayType !== Float32Array && ArrayType !== Float64Array;
+  const slabType = mapBlendModeToSlabType(slab.blendMode);
+  const offsets = getSlabSampleOffsets(volume, slab.thickness);
+  const combined = new Float64Array(pixelCount);
+  const counts = new Uint32Array(pixelCount);
+  const planeValues = new Float64Array(pixelCount);
+  const isMean = slabType === SlabTypes.MEAN || slabType === SlabTypes.SUM;
+  const isMax = slabType === SlabTypes.MAX;
+  const insideVolume = new Uint8Array(pixelCount);
+
+  offsets.forEach((offset, offsetIndex) => {
+    const layerStart = snapToWholeIndex(
+      [0, 1, 2].map((axis) => startIndex[axis] + offset * normalStep[axis])
+    );
+
+    sampleVolumeGrid({
+      volume,
+      pixelData: planeValues,
+      width,
+      height,
+      startIndex: layerStart,
+      columnStep,
+      rowStep,
+      interpolationType,
+      outsideValue: NaN,
+    });
+
+    for (let index = 0; index < pixelCount; index++) {
+      const value = planeValues[index];
+
+      if (offsetIndex === 0) {
+        const column = index % width;
+        const row = (index - column) / width;
+        const [i, j, k] = [0, 1, 2].map(
+          (axis) =>
+            layerStart[axis] + column * columnStep[axis] + row * rowStep[axis]
+        );
+
+        insideVolume[index] =
+          value === value || isIndexInsideVolume(volume.dimensions, i, j, k)
+            ? 1
+            : 0;
+      }
+
+      if (value !== value || insideVolume[index] === 0) {
+        continue;
+      }
+
+      if (counts[index] === 0) {
+        combined[index] = value;
+      } else if (isMean) {
+        combined[index] += value;
+      } else if (isMax) {
+        if (value > combined[index]) {
+          combined[index] = value;
+        }
+      } else if (value < combined[index]) {
+        combined[index] = value;
+      }
+
+      counts[index]++;
+    }
+  });
+
+  for (let index = 0; index < pixelCount; index++) {
+    const count = counts[index];
+    let value = insideVolume[index] === 1 ? NaN : outsideValue;
+
+    if (count > 0) {
+      value =
+        slabType === SlabTypes.MEAN ? combined[index] / count : combined[index];
+
+      if (round) {
+        value = Math.round(value);
+      }
+    }
+
+    pixelData[index] = value;
+  }
+
+  let min = Infinity;
+  let max = -Infinity;
+
+  pixelData.forEach((value) => {
+    if (value < min) {
+      min = value;
+    }
+
+    if (value > max) {
+      max = value;
+    }
+  });
+
+  return { pixelData: Array.from(pixelData), min, max };
+}
+
 describe('sampleVolumeSlice', () => {
+  describe.each([
+    ['an integer', Int16Array, false],
+    ['a float', Float32Array, false],
+    ['a float with NaN voxels', Float32Array, true],
+  ])('on %s volume', (_name, ArrayType, withNaN) => {
+    it.each([
+      ['straight', true],
+      ['oblique', false],
+    ])(
+      'gives the slab values of the reference for a %s slice of every slab type',
+      (_cut, straight) => {
+        const random = createRandom(straight ? 41 : 43);
+
+        for (let caseNumber = 0; caseNumber < 120; caseNumber++) {
+          const volume = makeRandomVolume(random, ArrayType, withNaN);
+          const geometry = makeRandomGeometry(random, volume, straight);
+          const thickness = 1.6 + random() * 9;
+          const interpolationType =
+            random() < 0.5
+              ? InterpolationType.NEAREST
+              : InterpolationType.LINEAR;
+
+          expect(
+            getSlabSampleOffsets(volume, thickness).length
+          ).toBeGreaterThan(1);
+
+          [
+            BlendModes.MAXIMUM_INTENSITY_BLEND,
+            BlendModes.MINIMUM_INTENSITY_BLEND,
+            BlendModes.AVERAGE_INTENSITY_BLEND,
+          ].forEach((blendMode) => {
+            const options = {
+              interpolationType,
+              outsideValue: -5000,
+              slab: { thickness, blendMode },
+            };
+            const sampled = sampleVolumeSlice({ volume, geometry, ...options });
+
+            expect({
+              caseNumber,
+              blendMode,
+              pixelData: Array.from(sampled.pixelData),
+              min: sampled.min,
+              max: sampled.max,
+            }).toEqual({
+              caseNumber,
+              blendMode,
+              ...sampleSlabReference(volume, geometry, options),
+            });
+          });
+        }
+      }
+    );
+  });
+
   it('copies a slice of voxels into an array of the volume type', () => {
     const volume = makeVolume();
     const geometry = axialGeometry(volume, 7.2);
@@ -433,4 +800,80 @@ describe('sampleVolumeSlice', () => {
       }
     }
   });
+
+  it.each([
+    [3, 'plain slice', undefined],
+    [4, 'plain slice', undefined],
+    [3, 'maximum slab', BlendModes.MAXIMUM_INTENSITY_BLEND],
+    [4, 'average slab', BlendModes.AVERAGE_INTENSITY_BLEND],
+  ])(
+    'samples each of %p components as a volume of its own for a %s',
+    (numberOfComponents, _name, blendMode) => {
+      const random = createRandom(numberOfComponents * 7 + (blendMode ?? 0));
+
+      for (let caseNumber = 0; caseNumber < 40; caseNumber++) {
+        const scalar = makeRandomVolume(random, Uint8Array, false);
+        const voxelCount =
+          scalar.dimensions[0] * scalar.dimensions[1] * scalar.dimensions[2];
+        const colourArray = new Uint8Array(voxelCount * numberOfComponents);
+
+        for (let index = 0; index < colourArray.length; index++) {
+          colourArray[index] = Math.floor(random() * 256);
+        }
+
+        const volumeOf = (scalarData, components) => ({
+          ...scalar,
+          voxelManager: VoxelManager.createScalarVolumeVoxelManager({
+            dimensions: scalar.dimensions,
+            scalarData,
+            numberOfComponents: components,
+          }),
+        });
+        const colour = volumeOf(colourArray, numberOfComponents);
+        const geometry = makeRandomGeometry(random, scalar, random() < 0.5);
+        const options = {
+          geometry,
+          interpolationType:
+            random() < 0.5
+              ? InterpolationType.NEAREST
+              : InterpolationType.LINEAR,
+          outsideValue: 0,
+          slab:
+            blendMode === undefined ? undefined : { thickness: 4, blendMode },
+        };
+        const sampled = sampleVolumeSlice({ volume: colour, ...options });
+        const components = Array.from(
+          { length: numberOfComponents },
+          (_, component) => {
+            const values = new Uint8Array(voxelCount);
+
+            for (let index = 0; index < voxelCount; index++) {
+              values[index] =
+                colourArray[index * numberOfComponents + component];
+            }
+
+            return sampleVolumeSlice({
+              volume: volumeOf(values, 1),
+              ...options,
+            });
+          }
+        );
+        const expected = [];
+
+        for (let pixel = 0; pixel < geometry.width * geometry.height; pixel++) {
+          components.forEach(({ pixelData }) =>
+            expected.push(pixelData[pixel])
+          );
+        }
+
+        expect(sampled.pixelData).toBeInstanceOf(Uint8Array);
+        expect({
+          caseNumber,
+          pixelData: Array.from(sampled.pixelData),
+        }).toEqual({ caseNumber, pixelData: expected });
+        expect(sampled.min).toBe(Math.min(...components.map(({ min }) => min)));
+        expect(sampled.max).toBe(Math.max(...components.map(({ max }) => max)));
+      }
+    }
+  );
 });

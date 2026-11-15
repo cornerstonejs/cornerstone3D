@@ -57,7 +57,11 @@ function mergePlanarColormap(
   }
 
   if (nextColormap.name !== undefined) {
-    return clonePlanarColormap(nextColormap);
+    return keepOpacityMapping(
+      clonePlanarColormap(nextColormap),
+      currentColormap,
+      nextColormap
+    );
   }
 
   const mergedColormap = clonePlanarColormap(currentColormap) || {};
@@ -67,7 +71,44 @@ function mergePlanarColormap(
     Object.assign(mergedColormap, nextClone);
   }
 
+  return keepOpacityMapping(mergedColormap, currentColormap, nextColormap);
+}
+
+/**
+ * Carries the `opacityMapping` of the current colormap into a merged colormap
+ * when the next colormap gives neither an `opacityMapping` nor an opacity
+ * array. An opacity array of the next colormap replaces the mapping.
+ */
+function keepOpacityMapping(
+  mergedColormap: ColormapPublic,
+  currentColormap: ColormapPublic | undefined,
+  nextColormap: ColormapPublic
+): ColormapPublic {
+  if (nextColormap.opacityMapping !== undefined) {
+    return mergedColormap;
+  }
+
+  if (Array.isArray(nextColormap.opacity)) {
+    delete mergedColormap.opacityMapping;
+
+    return mergedColormap;
+  }
+
+  const currentOpacityMapping = cloneOpacityMapping(
+    currentColormap?.opacityMapping
+  );
+
+  if (currentOpacityMapping) {
+    mergedColormap.opacityMapping = currentOpacityMapping;
+  }
+
   return mergedColormap;
+}
+
+function cloneOpacityMapping(
+  opacityMapping: ColormapPublic['opacityMapping']
+): ColormapPublic['opacityMapping'] {
+  return opacityMapping?.map(({ opacity, value }) => ({ opacity, value }));
 }
 
 export function isPlanarOrientationVectors(
@@ -150,6 +191,12 @@ export function clonePlanarColormap(
 
   if (opacity !== undefined) {
     clone.opacity = opacity;
+  }
+
+  const opacityMapping = cloneOpacityMapping(colormap.opacityMapping);
+
+  if (opacityMapping !== undefined) {
+    clone.opacityMapping = opacityMapping;
   }
 
   if (colormap.threshold !== undefined) {
