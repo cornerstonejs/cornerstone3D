@@ -47,13 +47,25 @@ import {
   MAX_SCREEN_SLICE_SIZE,
   PlanarSliceSampler,
   SAMPLED_SLICE_CACHE_SIZE,
+  drawsWithNearestFilter,
   getPlanarSampledSliceInputs,
   getScreenSliceGeometry,
   getVolumeClipPlanes,
+  needsScreenGridSample,
 } from '../src/RenderingEngine/GenericViewport/Planar/planarSampledSlice';
 import { PlanarSampledSliceActor } from '../src/RenderingEngine/GenericViewport/Planar/planarSampledSliceActor';
-import { getSampledSliceDefaultVOIRange } from '../src/RenderingEngine/GenericViewport/Planar/VtkSampledSliceRenderPath';
-import { SAMPLED_SLICE_REST_DELAY_MS } from '../src/RenderingEngine/GenericViewport/Planar/planarSampledSliceRest';
+import {
+  SAMPLED_SLICE_LOADING_UPDATE_MS,
+  getSampledSliceDefaultVOIRange,
+  getSampledSliceMaxSize,
+} from '../src/RenderingEngine/GenericViewport/Planar/VtkSampledSliceRenderPath';
+import { MAX_CPU_CANVAS_SLICE_SIZE } from '../src/RenderingEngine/GenericViewport/Planar/CpuVolumeSliceRenderPath';
+import {
+  SAMPLED_SLICE_REST_DELAY_MS,
+  scheduleSampledSliceRestWork,
+} from '../src/RenderingEngine/GenericViewport/Planar/planarSampledSliceRest';
+import * as renderingCapabilitiesModule from '../src/utilities/renderingCapabilities';
+import VoxelManager from '../src/utilities/VoxelManager';
 import {
   VtkVolumeSlicePath,
   VtkVolumeSliceRenderPath,
@@ -1015,19 +1027,50 @@ describe('screen grid', () => {
     expect(geometry.spacing[0]).toBeCloseTo((2 * 391) / 512, 6);
   });
 
-  it('spreads at most MAX_SCREEN_SLICE_SIZE samples over a larger canvas side', () => {
-    const geometry = getScreenSliceGeometry({
+  it('spreads at most the limit it is given over a larger canvas side, and one sample per device pixel below it', () => {
+    const limited = getScreenSliceGeometry({
       camera: camera(),
       canvasWidth: 3000,
       canvasHeight: 100,
+      maxSize: 2048,
     });
-    const step = 3000 / MAX_SCREEN_SLICE_SIZE;
+    const step = 3000 / 2048;
 
+    expect(limited.width).toBe(2048);
+    expect(limited.height).toBe(100);
+    expectPoint(limited.spacing, [step, 1]);
+    expectPoint(limited.origin, [10 - 1500 + step / 2, -29.5, 30]);
+
+    const full = getScreenSliceGeometry({
+      camera: camera(),
+      canvasWidth: 3000,
+      canvasHeight: 100,
+      maxSize: 16384,
+    });
+
+    expect(full.width).toBe(3000);
+    expectPoint(full.spacing, [1, 1]);
+    expectPoint(full.origin, [10 - 1499.5, -29.5, 30]);
     expect(MAX_SCREEN_SLICE_SIZE).toBe(2048);
-    expect(geometry.width).toBe(2048);
-    expect(geometry.height).toBe(100);
-    expectPoint(geometry.spacing, [step, 1]);
-    expectPoint(geometry.origin, [10 - 1500 + step / 2, -29.5, 30]);
+  });
+
+  it('takes the largest 2D texture of the device as the limit of the GPU draw step, and 16384 for the canvas', () => {
+    const spy = jest.spyOn(
+      renderingCapabilitiesModule,
+      'getRenderingCapabilities'
+    );
+
+    spy.mockReturnValue({ webgl: true, maxTextureSize: 16384 });
+    expect(getSampledSliceMaxSize()).toBe(16384);
+
+    spy.mockReturnValue({ webgl: true, maxTextureSize: 0 });
+    expect(getSampledSliceMaxSize()).toBe(2048);
+
+    spy.mockReturnValue({ webgl: false, maxTextureSize: 8192 });
+    expect(getSampledSliceMaxSize()).toBe(2048);
+
+    expect(MAX_CPU_CANVAS_SLICE_SIZE).toBe(16384);
+    spy.mockRestore();
   });
 
   it('gives no grid for an empty canvas or a camera without a parallel scale', () => {
@@ -1317,6 +1360,257 @@ describe('draw step', () => {
     draw.applyPresentation({ visible: false }, { lower: -100, upper: 300 });
 
     expect(draw.actor.getVisibility()).toBe(false);
+  });
+});
+
+describe('sample step: array types and size limits', () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  /**
+   * A volume with real voxels, i * 3 + j * 5 + k * 7, so that a sample
+   * between two slices has a fraction.
+   */
+  function createSampledVolume(ArrayType = Int16Array) {
+    const dimensions = [4, 3, 20];
+    const scalarData = new ArrayType(4 * 3 * 20);
+
+    for (let k = 0; k < 20; k++) {
+      for (let j = 0; j < 3; j++) {
+        for (let i = 0; i < 4; i++) {
+          scalarData[(k * 3 + j) * 4 + i] = i * 3 + j * 5 + k * 7;
+        }
+      }
+    }
+
+    return {
+      ...createVolume({ dimensions, spacing: [1, 1, 1] }),
+      voxelManager: VoxelManager.createScalarVolumeVoxelManager({
+        dimensions,
+        scalarData,
+      }),
+    };
+  }
+
+  const axial = (z) => ({
+    focalPoint: [1.5, 1, z],
+    viewPlaneNormal: [0, 0, 1],
+    viewUp: [0, -1, 0],
+  });
+  const linear = { interpolationType: InterpolationType.LINEAR };
+
+  it('keeps fractions only when asked, and reuses spare arrays of the type of each sample', () => {
+    const volume = createSampledVolume();
+    const spy = jest.spyOn(sampleVolumeSliceModule, 'sampleVolumeSlice');
+    const sampler = new PlanarSliceSampler({ keepFractions: true });
+    const slices = [];
+
+    for (let step = 0; step < 16; step++) {
+      slices.push(sampler.sample(volume, axial(step * 0.5), linear));
+
+      if (step === 1) {
+        expect(slices[1].pixelData[0]).toBe(13.5);
+      }
+    }
+
+    slices.forEach((slice, step) => {
+      expect(slice.pixelData.constructor).toBe(
+        step % 2 ? Float32Array : Int16Array
+      );
+    });
+    const given = spy.mock.calls
+      .map((call, index) => ({
+        given: call[0].pixelData,
+        returned: spy.mock.results[index].value.pixelData,
+      }))
+      .filter(({ given }) => given);
+
+    expect(given.length).toBeGreaterThan(4);
+    given.forEach(({ given, returned }) => {
+      expect(returned).toBe(given);
+    });
+    expect(new Set(given.map(({ given }) => given.constructor)).size).toBe(2);
+
+    const rounded = new PlanarSliceSampler().sample(volume, axial(0.5), linear);
+
+    expect(rounded.pixelData).toBeInstanceOf(Int16Array);
+    expect(rounded.pixelData[0]).toBe(14);
+  });
+
+  it('draws a slice whose array type changes from one slice to the next', () => {
+    const volume = createSampledVolume();
+    const sampler = new PlanarSliceSampler({ keepFractions: true });
+    const draw = new PlanarSampledSliceActor();
+    const scalarsOf = () =>
+      draw.mapper.getInputData().getPointData().getScalars();
+
+    [0, 0.5, 1, 1.5].forEach((z) => {
+      const slice = sampler.sample(volume, axial(z), linear);
+
+      draw.setSlice(slice);
+
+      expect(scalarsOf().getData().constructor).toBe(
+        slice.pixelData.constructor
+      );
+      expect(Array.from(scalarsOf().getData())).toEqual(
+        Array.from(slice.pixelData)
+      );
+      expect(scalarsOf().getDataType()).toBe(slice.pixelData.constructor.name);
+    });
+  });
+
+  it('gives an oblique slice the size limit of the sampler', () => {
+    const tall = createVolume({ dimensions: [8, 6, 3000], spacing: [1, 1, 1] });
+    const oblique = {
+      focalPoint: [3.5, 2.5, 1500],
+      viewPlaneNormal: [Math.cos(0.3), Math.sin(0.3), 0],
+      viewUp: [0, 0, 1],
+    };
+
+    mockSampler();
+
+    expect(new PlanarSliceSampler().sample(tall, oblique, linear).height).toBe(
+      2048
+    );
+    expect(
+      new PlanarSliceSampler({ maxSliceSize: 16384 }).sample(
+        tall,
+        oblique,
+        linear
+      ).height
+    ).toBeGreaterThan(2048);
+  });
+});
+
+describe('screen grid at rest on a device that cannot filter float textures', () => {
+  const axialNormal = [0, 0, 1];
+  const linear = { interpolationType: InterpolationType.LINEAR };
+  const nearest = { interpolationType: InterpolationType.NEAREST };
+  const slice = (pixelData, min, max) => ({ pixelData, min, max });
+  const cannot = () => false;
+  const can = () => true;
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it('knows which float slices vtk.js keeps out of a half float texture', () => {
+    expect(
+      drawsWithNearestFilter(slice(new Float32Array(1), -1000, 3000))
+    ).toBe(true);
+    expect(drawsWithNearestFilter(slice(new Float32Array(1), -3000, 10))).toBe(
+      true
+    );
+    expect(
+      drawsWithNearestFilter(slice(new Float32Array(1), -2048, 2048))
+    ).toBe(false);
+    expect(drawsWithNearestFilter(slice(new Int16Array(1), -1000, 3000))).toBe(
+      false
+    );
+  });
+
+  it('asks for the screen grid for a linear float slice beyond a half float only when float textures cannot be filtered', () => {
+    const volume = createVolume();
+    const wide = slice(new Float32Array(4), -1000, 3000);
+    const narrow = slice(new Float32Array(4), 0, 47);
+
+    expect(
+      needsScreenGridSample(volume, axialNormal, linear, false, wide, cannot)
+    ).toBe(true);
+    expect(
+      needsScreenGridSample(volume, axialNormal, linear, false, wide, can)
+    ).toBe(false);
+    expect(
+      needsScreenGridSample(volume, axialNormal, linear, false, narrow, cannot)
+    ).toBe(false);
+    expect(
+      needsScreenGridSample(volume, axialNormal, nearest, false, wide, cannot)
+    ).toBe(false);
+    expect(
+      needsScreenGridSample(
+        volume,
+        axialNormal,
+        linear,
+        false,
+        slice(new Int16Array(4), -1000, 3000),
+        cannot
+      )
+    ).toBe(false);
+    expect(needsScreenGridSample(volume, axialNormal, linear, false)).toBe(
+      false
+    );
+  });
+
+  it('samples an enlarged axis-aligned float slice once more on the screen grid at rest', () => {
+    const volume = createVolume();
+    const camera = {
+      focalPoint: [3.5, 2.5, 8.3],
+      viewPlaneNormal: axialNormal,
+      viewUp: [0, -1, 0],
+      parallelScale: 2,
+    };
+    const screen = getScreenSliceGeometry({
+      camera,
+      canvasWidth: 64,
+      canvasHeight: 48,
+    });
+
+    jest
+      .spyOn(sampleVolumeSliceModule, 'sampleVolumeSlice')
+      .mockImplementation(({ geometry }) => ({
+        pixelData: new Float32Array(geometry.width * geometry.height),
+        min: -1000,
+        max: 3000,
+      }));
+
+    const rest = (canFilterFloatTextures) => {
+      const sampler = new PlanarSliceSampler({ canFilterFloatTextures });
+
+      sampler.sample(volume, camera, linear, screen);
+
+      return sampler.sampleFiner(volume, camera, linear, screen);
+    };
+
+    expect(rest(can)).toBeUndefined();
+
+    const fine = rest(cannot);
+
+    expect(fine).toBeDefined();
+    expect(fine.width).toBe(64);
+    expect(fine.height).toBe(48);
+  });
+});
+
+describe('work at rest after a cancel', () => {
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it('schedules no prefetch when the finer slice cancels the work', () => {
+    jest.useFakeTimers();
+
+    const getNeighbours = jest.fn(() => [{}]);
+    let cancel;
+    const sampler = {
+      sampleFiner: jest.fn(() => ({ id: 'fine' })),
+      prefetch: jest.fn(() => true),
+    };
+
+    cancel = scheduleSampledSliceRestWork({
+      sampler,
+      volume: { loadStatus: { loaded: true } },
+      getCamera: () => undefined,
+      getInputs: () => ({}),
+      getScreen: () => undefined,
+      getNeighbours,
+      onFinerSlice: () => cancel(),
+    });
+    jest.advanceTimersByTime(10 * SAMPLED_SLICE_REST_DELAY_MS);
+
+    expect(sampler.sampleFiner).toHaveBeenCalledTimes(1);
+    expect(getNeighbours).not.toHaveBeenCalled();
+    expect(sampler.prefetch).not.toHaveBeenCalled();
   });
 });
 
@@ -1835,6 +2129,24 @@ describe('PlanarViewport with slice first (render path)', () => {
       refined: 3,
       size: SAMPLED_SLICE_CACHE_SIZE + 1,
     });
+  });
+
+  it('does nothing when the load callback of the volume comes after the display set was removed', async () => {
+    useFakeTimers();
+    await mount();
+
+    const onLoad = volume.load.mock.calls
+      .map((call) => call[0])
+      .find((callback) => typeof callback === 'function');
+
+    expect(onLoad).toBeDefined();
+
+    viewport.removeData(dataId);
+    sampleSpy.mockClear();
+    onLoad();
+    jest.advanceTimersByTime(10 * SAMPLED_SLICE_LOADING_UPDATE_MS);
+
+    expect(sampleSpy).not.toHaveBeenCalled();
   });
 
   it('cancels the work at rest when the display set is removed', async () => {

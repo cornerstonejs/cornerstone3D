@@ -17,9 +17,13 @@ import type { VolumeSliceGeometry } from '../../../utilities/volumeSliceGeometry
 import {
   getNumberOfComponents,
   getSlabSampleOffsets,
+  getVolumeSliceArrayType,
   sampleVolumeSlice,
 } from '../../../utilities/sampleVolumeSlice';
-import type { VolumeSliceSlab } from '../../../utilities/sampleVolumeSlice';
+import type {
+  SampleVolumeSliceOptions,
+  VolumeSliceSlab,
+} from '../../../utilities/sampleVolumeSlice';
 import type { PlanarDataPresentation } from './PlanarViewportTypes';
 import { resolveSlabThickness } from './planarVolumeSliceBlendMode';
 import { canvasToWorldPlanarViewState } from './planarAdapterCoordinateTransforms';
@@ -29,16 +33,28 @@ const POSITION_TOLERANCE = 1e-6;
 const DIRECTION_TOLERANCE = 1e-9;
 
 /**
- * The largest width or height of a slice of the screen grid, in samples. A
- * canvas side with more device pixels is sampled with this many samples, each
- * a little larger than a device pixel, and the GPU enlarges them.
+ * The largest width or height of a slice of the screen grid, in samples, when
+ * the caller gives no limit: 2048, a 2D texture size that every WebGL device
+ * can hold. A canvas side with more device pixels is sampled with this many
+ * samples, each a little larger than a device pixel, and the draw step
+ * enlarges them. The render paths pass the limit of their draw step instead
+ * (`PlanarSliceSamplerOptions.maxSliceSize`), so that a canvas is sampled at
+ * one sample per device pixel.
  */
 export const MAX_SCREEN_SLICE_SIZE = 2048;
 
 /**
+ * The largest value, in magnitude, that a half float texture holds exactly
+ * enough for vtk.js: vtk.js keeps a float slice in a half float texture only
+ * when its lowest and highest values lie within this bound (`hasExactHalfFloat`
+ * in its `Texture.js`).
+ */
+const HALF_FLOAT_EXACT_LIMIT = 2048;
+
+/**
  * Two screen grids whose samples lie closer than this fraction of a pixel are
  * the same grid. The spacing difference counts once per pixel, so over a
- * 2048 pixel row the samples still move less than 0.002 of a pixel.
+ * 16384 pixel row the samples still move less than 0.02 of a pixel.
  */
 const SCREEN_GRID_TOLERANCE = 1e-6;
 
@@ -90,8 +106,11 @@ export type PlanarSampledSliceInputs = {
  */
 export type PlanarSampledSlice = {
   /**
-   * The pixels, row by row, in the array type of the volume, with
-   * numberOfComponents values per pixel one after the other.
+   * The pixels, row by row, in the array type of the volume, or a
+   * Float32Array for a sample of an integer volume that keeps its fractions
+   * (`PlanarSliceSamplerOptions.keepFractions`), with numberOfComponents
+   * values per pixel one after the other. The array type can change from one
+   * slice to the next.
    */
   pixelData: PixelDataTypedArray;
   /** The values of one pixel: 1, or 3 or 4 for a colour volume. */
@@ -177,6 +196,28 @@ export type PlanarSliceSamplerOptions = {
    * a draw step that enlarges the values, as the vtk.js image mapper does.
    */
   enlargesColours?: boolean;
+  /**
+   * True to keep the fraction of a sample that mixes voxels of an integer
+   * volume (see `sampleVolumeSlice`, `keepFractions`): such a slice is a
+   * Float32Array. For a draw step that can filter float values as finely as
+   * the GPU volume path. False (the default) rounds it into the array type of
+   * the volume.
+   */
+  keepFractions?: boolean;
+  /**
+   * The largest width or height of a slice, in pixels: the largest 2D texture
+   * or canvas of the draw step. It limits an oblique slice of voxel size and
+   * the screen grid. Default 2048 (MAX_SCREEN_SLICE_SIZE). A slice along a
+   * volume axis always has the size of the volume across that axis.
+   */
+  maxSliceSize?: number;
+  /**
+   * Whether the draw step filters 32-bit float textures linearly. When it
+   * does not, a float slice whose values do not fit a half float texture is
+   * drawn with nearest filtering, so a linear slice of it is sampled on the
+   * screen grid at rest (see `needsScreenGridSample`). Default: it does.
+   */
+  canFilterFloatTextures?: () => boolean;
 };
 
 /**
@@ -187,23 +228,37 @@ export type PlanarSliceSamplerOptions = {
  * samples for each screen pixel, which differs from the enlarged maximum of
  * the voxels. A plain slice and an average slab along a volume axis give the
  * same picture either way, unless the draw step enlarges colours and the
- * slice is linear (see `PlanarSliceSamplerOptions.enlargesColours`). A
- * NEAREST slice along a volume axis, enlarged without smoothing, is the same
- * picture for both draw steps.
+ * slice is linear (see `PlanarSliceSamplerOptions.enlargesColours`), or the
+ * draw step cannot smooth the slice: a linear float slice that the GPU holds
+ * in a 32-bit float texture on a device that cannot filter such textures
+ * (see `drawsWithNearestFilter`). One sample per screen pixel then shows the
+ * linear picture through nearest filtering unchanged. A NEAREST slice along a
+ * volume axis, enlarged without smoothing, is the same picture for both draw
+ * steps.
  */
-function needsScreenGridSample(
+export function needsScreenGridSample(
   volume: IImageVolume,
   viewPlaneNormal: Point3,
   inputs: PlanarSampledSliceInputs,
-  enlargesColours: boolean
+  enlargesColours: boolean,
+  slice?: PlanarSampledSlice,
+  canFilterFloatTextures: () => boolean = filtersFloatTextures
 ): boolean {
   if (getExactSliceAxis(volume, viewPlaneNormal) === undefined) {
     return true;
   }
 
+  const linear = inputs.interpolationType !== InterpolationType.NEAREST;
+
+  if (linear && enlargesColours) {
+    return true;
+  }
+
   if (
-    enlargesColours &&
-    inputs.interpolationType !== InterpolationType.NEAREST
+    linear &&
+    slice &&
+    drawsWithNearestFilter(slice) &&
+    !canFilterFloatTextures()
   ) {
     return true;
   }
@@ -213,6 +268,38 @@ function needsScreenGridSample(
   return (
     blendMode === BlendModes.MAXIMUM_INTENSITY_BLEND ||
     blendMode === BlendModes.MINIMUM_INTENSITY_BLEND
+  );
+}
+
+/** The default of `PlanarSliceSamplerOptions.canFilterFloatTextures`. */
+function filtersFloatTextures(): boolean {
+  return true;
+}
+
+/**
+ * Whether the GPU holds a slice in a 32-bit float texture, which it filters
+ * only on a device that can filter float textures: a float slice whose lowest
+ * or highest value lies beyond HALF_FLOAT_EXACT_LIMIT, so that vtk.js does
+ * not keep it in a half float texture. A slice in another texture is smoothed
+ * on every device.
+ */
+export function drawsWithNearestFilter(
+  slice: Pick<PlanarSampledSlice, 'pixelData' | 'min' | 'max'>
+): boolean {
+  const { pixelData, min, max } = slice;
+
+  if (
+    !(pixelData instanceof Float32Array) &&
+    !(pixelData instanceof Float64Array)
+  ) {
+    return false;
+  }
+
+  return !(
+    min >= -HALF_FLOAT_EXACT_LIMIT &&
+    min <= HALF_FLOAT_EXACT_LIMIT &&
+    max >= -HALF_FLOAT_EXACT_LIMIT &&
+    max <= HALF_FLOAT_EXACT_LIMIT
   );
 }
 
@@ -239,8 +326,9 @@ type CachedSlice = {
  * is dropped.
  *
  * Each kept slice owns its pixel array. The arrays of dropped slices are
- * reused for new samples of the same size and type, so a scroll does not
- * allocate once the cache is warm.
+ * reused for new samples of the same size and of the array type that the
+ * sample gives (`getVolumeSliceArrayType`, which can differ from one slice to
+ * the next), so a scroll does not allocate once the cache is warm.
  *
  * A slice at rest that needs it is sampled once more on the screen grid (see
  * `sampleFiner`), which depends on how the draw step enlarges a slice
@@ -250,6 +338,9 @@ type CachedSlice = {
  */
 export class PlanarSliceSampler {
   private readonly enlargesColours: boolean;
+  private readonly keepFractions: boolean;
+  private readonly maxSliceSize: number;
+  private readonly canFilterFloatTextures: () => boolean;
   private entries: CachedSlice[] = [];
   private current?: CachedSlice;
   private fine?: CachedSlice;
@@ -265,6 +356,10 @@ export class PlanarSliceSampler {
 
   constructor(options: PlanarSliceSamplerOptions = {}) {
     this.enlargesColours = options.enlargesColours ?? false;
+    this.keepFractions = options.keepFractions ?? false;
+    this.maxSliceSize = options.maxSliceSize ?? MAX_SCREEN_SLICE_SIZE;
+    this.canFilterFloatTextures =
+      options.canFilterFloatTextures ?? filtersFloatTextures;
   }
 
   /**
@@ -287,7 +382,12 @@ export class PlanarSliceSampler {
       return this.shown;
     }
 
-    const geometry = getSliceGeometry(volume, camera, inputs);
+    const geometry = getSliceGeometry(
+      volume,
+      camera,
+      inputs,
+      this.maxSliceSize
+    );
 
     if (!geometry) {
       this.current = undefined;
@@ -341,8 +441,8 @@ export class PlanarSliceSampler {
    * would take more than MAX_CPU_SLICE_SAMPLES voxel samples (the pixels of
    * the screen grid times the slab samples of each pixel), the limit that the
    * render path decision uses for a slab; the coarse slice then stays on
-   * screen. A plain slice of the largest screen grid (2048 x 2048) is within
-   * that limit. The new slice replaces the kept one.
+   * screen. A plain slice of a canvas of up to 5 million device pixels
+   * (2236 x 2236) is within that limit. The new slice replaces the kept one.
    *
    * @returns the slice of the screen grid, or undefined when none was sampled
    */
@@ -364,7 +464,9 @@ export class PlanarSliceSampler {
         volume,
         camera.viewPlaneNormal,
         inputs,
-        this.enlargesColours
+        this.enlargesColours,
+        current.slice,
+        this.canFilterFloatTextures
       ) ||
       !isSameCutPlane(current.geometry, screen)
     ) {
@@ -389,21 +491,13 @@ export class PlanarSliceSampler {
       return;
     }
 
-    const length =
-      geometry.width * geometry.height * getNumberOfComponents(volume);
     const start = performance.now();
 
     if (fine) {
       this.addSpareArray(fine.slice.pixelData);
     }
 
-    this.fine = this.sampleEntry(
-      volume,
-      geometry,
-      inputs,
-      this.takeSpareArray(volume, length),
-      false
-    );
+    this.fine = this.sampleEntry(volume, geometry, inputs, false);
     this.statistics.lastFineSampleMs = performance.now() - start;
     this.statistics.refined++;
     this.shown = this.fine.slice;
@@ -438,7 +532,12 @@ export class PlanarSliceSampler {
       return false;
     }
 
-    const geometry = getSliceGeometry(volume, camera, inputs);
+    const geometry = getSliceGeometry(
+      volume,
+      camera,
+      inputs,
+      this.maxSliceSize
+    );
 
     if (
       !geometry ||
@@ -581,10 +680,6 @@ export class PlanarSliceSampler {
       volume,
       geometry,
       inputs,
-      this.takeSpareArray(
-        volume,
-        geometry.width * geometry.height * getNumberOfComponents(volume)
-      ),
       getExactSliceAxis(volume, geometry.zDirection) !== undefined
     );
 
@@ -594,24 +689,33 @@ export class PlanarSliceSampler {
     return entry;
   }
 
-  /** Samples the slice of a geometry into a new entry of this generation. */
+  /**
+   * Samples the slice of a geometry into a new entry of this generation, into
+   * a spare array of the size and array type that the sample gives.
+   */
   private sampleEntry(
     volume: IImageVolume,
     geometry: VolumeSliceGeometry,
     inputs: PlanarSampledSliceInputs,
-    spareArray: PixelDataTypedArray | undefined,
     insideVolume: boolean
   ): CachedSlice {
-    const { pixelData, min, max } = sampleVolumeSlice({
+    const options: SampleVolumeSliceOptions = {
       volume,
       geometry,
       interpolationType:
         inputs.interpolationType === InterpolationType.NEAREST
           ? InterpolationType.NEAREST
           : InterpolationType.LINEAR,
-      pixelData: spareArray,
       outsideValue: getOutsideValue(volume),
       slab: inputs.slab,
+      keepFractions: this.keepFractions,
+    };
+    const { pixelData, min, max } = sampleVolumeSlice({
+      ...options,
+      pixelData: this.takeSpareArray(
+        getVolumeSliceArrayType(options),
+        geometry.width * geometry.height * getNumberOfComponents(volume)
+      ),
     });
 
     return {
@@ -669,16 +773,14 @@ export class PlanarSliceSampler {
     }
   }
 
-  /** Takes a spare array of the given length and of the volume's array type. */
+  /** Takes a spare array of the given array type and length. */
   private takeSpareArray(
-    volume: IImageVolume,
+    ArrayType: new (length: number) => PixelDataTypedArray,
     length: number
   ): PixelDataTypedArray | undefined {
-    const ArrayType = volume.voxelManager?.getConstructor?.();
     const index = this.spareArrays.findIndex(
       (pixelData) =>
-        pixelData.length === length &&
-        (!ArrayType || pixelData instanceof ArrayType)
+        pixelData.length === length && pixelData.constructor === ArrayType
     );
 
     if (index < 0) {
@@ -697,10 +799,12 @@ export class PlanarSliceSampler {
 function getSliceGeometry(
   volume: IImageVolume,
   camera: SliceCamera,
-  inputs: PlanarSampledSliceInputs
+  inputs: PlanarSampledSliceInputs,
+  maxSize: number
 ): VolumeSliceGeometry | undefined {
   return getVolumeSliceGeometry(volume, camera, {
     snapToSlice: inputs.interpolationType === InterpolationType.NEAREST,
+    maxSize,
   });
 }
 
@@ -725,8 +829,9 @@ function getSliceGeometry(
  * that plane and the sampler can tell that they match.
  *
  * A canvas side of more than `maxSize` device pixels (default
- * MAX_SCREEN_SLICE_SIZE) gets `maxSize` samples, evenly spread over the whole
- * side, each a little larger than a device pixel, and the GPU enlarges them.
+ * MAX_SCREEN_SLICE_SIZE; the render paths pass the limit of their draw step)
+ * gets `maxSize` samples, evenly spread over the whole side, each a little
+ * larger than a device pixel, and the draw step enlarges them.
  * `sliceIndex` is 0; the sampler sets it from the slice of the plane.
  *
  * @param canvasWidth - The canvas width in device pixels (`canvas.width`).

@@ -726,6 +726,24 @@ abstract class BaseRenderingEngine {
     );
   }
 
+  /**
+   * Takes the viewports that hold their renders out of the frame that is
+   * about to be drawn. A next viewport holds its renders while it swaps the
+   * render paths of its layers, so that no frame shows a viewport that is
+   * half swapped. It renders once by itself when the hold ends.
+   */
+  protected _deferHeldViewports(): void {
+    this._needsRender.forEach((viewportId) => {
+      const viewport = this._viewports.get(viewportId) as
+        | { deferRenderWhileHeld?: () => boolean }
+        | undefined;
+
+      if (viewport?.deferRenderWhileHeld?.()) {
+        this._needsRender.delete(viewportId);
+      }
+    });
+  }
+
   private _setViewportsToBeRenderedNextFrame(viewportIds: string[]) {
     // Add the viewports to the set of flagged viewports
     viewportIds.forEach((viewportId) => {

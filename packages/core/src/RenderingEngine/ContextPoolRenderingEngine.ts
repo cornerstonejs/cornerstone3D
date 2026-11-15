@@ -388,6 +388,7 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
    */
   protected _renderFlaggedViewports = (): void => {
     this._throwIfDestroyed();
+    this._deferHeldViewports();
 
     const viewports = this._getViewportsAsArray();
     const viewportsToRender = viewports.filter(

@@ -59,6 +59,13 @@ import {
   isVolumeLoading,
 } from '../renderingFidelity';
 
+/**
+ * The largest width or height of a slice that this path draws: 16384, the
+ * side of the largest 2D canvas that browsers make. An oblique slice and the
+ * screen grid are sampled at full resolution up to that size.
+ */
+export const MAX_CPU_CANVAS_SLICE_SIZE = 16384;
+
 /** The parts of one mounted CPU volume slice. */
 type CpuVolumeSliceMount = PlanarSlicePlaneMoves & {
   ctx: PlanarCpuVolumeAdapterContext;
@@ -111,7 +118,10 @@ export class CpuVolumeSliceRenderPath
     }
 
     const defaultVOIRange = await getDefaultVolumeVOIRange(payload.imageVolume);
-    const sampler = new PlanarSliceSampler({ enlargesColours: true });
+    const sampler = new PlanarSliceSampler({
+      enlargesColours: true,
+      maxSliceSize: MAX_CPU_CANVAS_SLICE_SIZE,
+    });
     const draw = new PlanarSampledSliceCanvas(
       payload.imageVolume,
       ctx.cpu.canvas.width,
@@ -445,7 +455,11 @@ export class CpuVolumeSliceRenderPath
     refreshCpuVolumeFidelity(rendering);
     recordPlaneMove(mount, camera);
 
-    const screen = getCanvasScreenSliceGeometry(ctx.cpu.canvas, camera);
+    const screen = getCanvasScreenSliceGeometry(
+      ctx.cpu.canvas,
+      camera,
+      MAX_CPU_CANVAS_SLICE_SIZE
+    );
     const slice = sampler.sample(
       rendering.imageVolume,
       camera,
@@ -523,7 +537,11 @@ export class CpuVolumeSliceRenderPath
           getPlanarRenderPathActiveSourceICamera(ctx)
         ),
       getScreen: (camera) =>
-        getCanvasScreenSliceGeometry(ctx.cpu.canvas, camera),
+        getCanvasScreenSliceGeometry(
+          ctx.cpu.canvas,
+          camera,
+          MAX_CPU_CANVAS_SLICE_SIZE
+        ),
       getNeighbours: (camera) =>
         getNeighbourCameras({
           ctx,

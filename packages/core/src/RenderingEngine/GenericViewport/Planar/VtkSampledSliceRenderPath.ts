@@ -29,6 +29,7 @@ import {
   resolvePlanarRenderPathProjection,
 } from './planarRenderPathProjection';
 import {
+  MAX_SCREEN_SLICE_SIZE,
   PlanarSliceSampler,
   getPlanarSampledSliceInputs,
   getVolumeClipPlanes,
@@ -50,6 +51,8 @@ import {
   isSegmentationOverlayData,
   isVolumeLoading,
 } from '../renderingFidelity';
+import { getRenderingCapabilities } from '../../../utilities/renderingCapabilities';
+import { canFilterFloatTextures } from '../../vtkClasses/floatLinearFilter';
 
 /**
  * The shortest time between two samples of the visible slice while the volume
@@ -65,6 +68,8 @@ type SampledSliceMount = PlanarSlicePlaneMoves & {
   rendering: PlanarSampledSliceRendering;
   sampler: PlanarSliceSampler;
   draw: PlanarSampledSliceActor;
+  /** The largest width or height of a slice (`getSampledSliceMaxSize`). */
+  maxSliceSize: number;
   /** Cancels the pending work at rest: the rest timer or an idle prefetch. */
   cancelRestWork?: () => void;
 };
@@ -113,7 +118,12 @@ export class VtkSampledSliceRenderPath
     ctx.display.activateRenderMode(ActorRenderMode.VTK_SAMPLED_SLICE);
     ctx.vtk.renderer.addActor(draw.actor);
 
-    const sampler = new PlanarSliceSampler();
+    const maxSliceSize = getSampledSliceMaxSize();
+    const sampler = new PlanarSliceSampler({
+      keepFractions: canFilterFloatTextures(),
+      maxSliceSize,
+      canFilterFloatTextures: () => canFilterFloatTextures(),
+    });
     const rendering: PlanarSampledSliceRendering = {
       renderMode: ActorRenderMode.VTK_SAMPLED_SLICE,
       actorEntryUID: uuidv4(),
@@ -139,6 +149,7 @@ export class VtkSampledSliceRenderPath
       rendering,
       sampler,
       draw,
+      maxSliceSize,
     };
 
     rendering.refreshFidelity = () => refreshSampledSliceFidelity(rendering);
@@ -200,7 +211,9 @@ export class VtkSampledSliceRenderPath
    * volume loads, the samples are at least SAMPLED_SLICE_LOADING_UPDATE_MS
    * apart. Any other change (an edit of the voxels, the end of the load, a new
    * time point) samples at the next animation frame. A change of the texture
-   * limits does not concern this path, which holds no 3D texture.
+   * limits does not concern this path, which holds no 3D texture. The load
+   * callback of the volume can come after the listeners are removed; it then
+   * does nothing.
    *
    * @returns the function that removes the listeners
    */
@@ -252,11 +265,16 @@ export class VtkSampledSliceRenderPath
       Events.DYNAMIC_VOLUME_DIMENSION_GROUP_CHANGED,
       onTimePointChanged
     );
+    let active = true;
+
     rendering.imageVolume.load(() => {
-      updates.soon();
+      if (active) {
+        updates.soon();
+      }
     });
 
     return () => {
+      active = false;
       updates.cancel();
       removeVolumeSubscriptions();
       eventTarget.removeEventListener(
@@ -366,7 +384,11 @@ export class VtkSampledSliceRenderPath
           rendering.imageVolume,
           rendering.dataPresentation
         ),
-        getCanvasScreenSliceGeometry(mount.ctx.vtk.canvas, camera)
+        getCanvasScreenSliceGeometry(
+          mount.ctx.vtk.canvas,
+          camera,
+          mount.maxSliceSize
+        )
       )
     );
     this.scheduleRestWork(mount);
@@ -411,7 +433,11 @@ export class VtkSampledSliceRenderPath
           rendering.dataPresentation
         ),
       getScreen: (camera) =>
-        getCanvasScreenSliceGeometry(ctx.vtk.canvas, camera),
+        getCanvasScreenSliceGeometry(
+          ctx.vtk.canvas,
+          camera,
+          mount.maxSliceSize
+        ),
       getNeighbours: (camera) =>
         getNeighbourCameras({
           ctx,
@@ -480,6 +506,18 @@ export class VtkSampledSlicePath
       vtk: rootContext.vtk,
     };
   }
+}
+
+/**
+ * The largest width or height of a slice that this path draws: the largest 2D
+ * texture of the device (`maxTextureSize` of the capability profile), or
+ * MAX_SCREEN_SLICE_SIZE without a WebGL profile. An oblique slice and the
+ * screen grid are then sampled at full resolution up to what the GPU can hold.
+ */
+export function getSampledSliceMaxSize(): number {
+  const { webgl, maxTextureSize } = getRenderingCapabilities();
+
+  return webgl && maxTextureSize > 0 ? maxTextureSize : MAX_SCREEN_SLICE_SIZE;
 }
 
 /**

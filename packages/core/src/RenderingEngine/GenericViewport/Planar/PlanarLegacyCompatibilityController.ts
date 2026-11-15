@@ -1141,6 +1141,10 @@ class PlanarLegacyCompatibilityController {
 type ScalarOpacityFunction = {
   getDataPointer?: () => ArrayLike<number> | null | undefined;
   getMTime?: () => number;
+  getSize?: () => number;
+  getNodeValue?: (index: number, values: number[]) => number;
+  getValue?: (value: number) => number;
+  getClamping?: () => boolean;
 };
 
 type ScalarOpacityActor = {
@@ -1193,32 +1197,142 @@ function hasScalarOpacityChanged(
 }
 
 /**
- * The points of the opacity function of an actor as absolute scalar values,
- * or undefined when it has none.
+ * The largest error, in opacity, of the piecewise linear functions that
+ * `toLegacySliceOpacityMapping` and `readScalarOpacityMapping` make: a
+ * quarter of one level of 255.
+ */
+const LEGACY_SLICE_OPACITY_TOLERANCE = 0.25 / 255;
+
+/**
+ * The deepest split of one interval between two points of an opacity
+ * function. An interval is halved until straight lines follow the function,
+ * and a step in the function is then located to 1 part in 2^20 of it.
+ */
+const OPACITY_FUNCTION_MAX_SPLIT_DEPTH = 20;
+
+/** The midpoint and the sharpness of a point that vtk.js joins to the next with a straight line. */
+const LINEAR_NODE_MIDPOINT = 0.5;
+const LINEAR_NODE_SHARPNESS = 0;
+
+/**
+ * Whether every point of an opacity function is joined to the next with a
+ * straight line. A point added with a midpoint or a sharpness of its own
+ * (`addPointLong`) bends or steps the curve between two points.
+ */
+function hasOnlyLinearNodes(opacityFunction: ScalarOpacityFunction): boolean {
+  const size = opacityFunction.getSize?.() ?? 0;
+  const node = [0, 0, LINEAR_NODE_MIDPOINT, LINEAR_NODE_SHARPNESS];
+
+  if (!opacityFunction.getNodeValue) {
+    return true;
+  }
+
+  for (let index = 0; index < size; index++) {
+    opacityFunction.getNodeValue(index, node);
+
+    if (node[2] !== LINEAR_NODE_MIDPOINT || node[3] !== LINEAR_NODE_SHARPNESS) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+/**
+ * Adds the points between two points of an opacity function that straight
+ * lines need to follow it: the interval is halved until the function at the
+ * quarter points lies within `LEGACY_SLICE_OPACITY_TOLERANCE` of the line.
+ */
+function addCurvePoints(
+  mapping: OpacityMapping[],
+  opacityAt: (value: number) => number,
+  start: OpacityMapping,
+  end: OpacityMapping,
+  depth: number
+): void {
+  const middle = {
+    value: (start.value + end.value) / 2,
+    opacity: opacityAt((start.value + end.value) / 2),
+  };
+  const isOnLine = (fraction: number, opacity: number) =>
+    Math.abs(
+      opacity - (start.opacity + (end.opacity - start.opacity) * fraction)
+    ) <= LEGACY_SLICE_OPACITY_TOLERANCE;
+
+  if (
+    depth >= OPACITY_FUNCTION_MAX_SPLIT_DEPTH ||
+    !(middle.value > start.value) ||
+    !(middle.value < end.value) ||
+    (isOnLine(0.5, middle.opacity) &&
+      isOnLine(0.25, opacityAt(start.value + (end.value - start.value) / 4)) &&
+      isOnLine(
+        0.75,
+        opacityAt(start.value + ((end.value - start.value) * 3) / 4)
+      ))
+  ) {
+    return;
+  }
+
+  addCurvePoints(mapping, opacityAt, start, middle, depth + 1);
+  mapping.push(middle);
+  addCurvePoints(mapping, opacityAt, middle, end, depth + 1);
+}
+
+/**
+ * The opacity function of an actor as points with absolute scalar values
+ * that are joined with straight lines, or undefined when it has none.
+ *
+ * A function whose points are all joined with straight lines gives its own
+ * points. A function with a midpoint or a sharpness on a point is read
+ * through its values, with as many points between two of its own as the
+ * curve needs. A function that does not clamp is 0 outside its points, so it
+ * gets a point of opacity 0 right before its first and right after its last
+ * point.
  */
 function readScalarOpacityMapping(
   actor: unknown
 ): OpacityMapping[] | undefined {
-  const dataPointer = getScalarOpacityFunction(actor)?.getDataPointer?.();
+  const opacityFunction = getScalarOpacityFunction(actor);
+  const dataPointer = opacityFunction?.getDataPointer?.();
 
   if (!dataPointer?.length) {
     return;
   }
 
-  const mapping: OpacityMapping[] = [];
+  const nodes: OpacityMapping[] = [];
 
   for (let i = 0; i + 1 < dataPointer.length; i += 2) {
-    mapping.push({ value: dataPointer[i], opacity: dataPointer[i + 1] });
+    nodes.push({ value: dataPointer[i], opacity: dataPointer[i + 1] });
   }
 
-  return mapping;
-}
+  const opacityAt = opacityFunction.getValue;
+  let mapping = nodes;
 
-/**
- * The largest error, in opacity, of the piecewise linear function that
- * `toLegacySliceOpacityMapping` makes: a quarter of one level of 255.
- */
-const LEGACY_SLICE_OPACITY_TOLERANCE = 0.25 / 255;
+  if (opacityAt && !hasOnlyLinearNodes(opacityFunction)) {
+    mapping = [nodes[0]];
+
+    for (let index = 1; index < nodes.length; index++) {
+      addCurvePoints(mapping, opacityAt, nodes[index - 1], nodes[index], 0);
+      mapping.push(nodes[index]);
+    }
+  }
+
+  if (opacityFunction.getClamping?.() !== false) {
+    return mapping;
+  }
+
+  const first = mapping[0].value;
+  const last = mapping[mapping.length - 1].value;
+  const margin =
+    Math.max(Math.abs(first), Math.abs(last), last - first, 1) *
+    LEGACY_SLICE_OPACITY_MIN_INTERVAL;
+
+  return [
+    { value: first - margin, opacity: 0 },
+    ...mapping,
+    { value: last + margin, opacity: 0 },
+  ];
+}
 
 /**
  * The narrowest interval, as a fraction of the value range of the mapping,

@@ -112,12 +112,13 @@ export function requestIdle(callback: () => void): () => void {
 
 /**
  * The screen grid of a canvas for a camera, one sample per device pixel
- * (`getScreenSliceGeometry`), or undefined for a camera without a parallel
- * scale or view up.
+ * (`getScreenSliceGeometry`) up to `maxSize` samples along a side, or
+ * undefined for a camera without a parallel scale or view up.
  */
 export function getCanvasScreenSliceGeometry(
   canvas: Pick<HTMLCanvasElement, 'width' | 'height'> | undefined,
-  camera: PlanarResolvedICamera | undefined
+  camera: PlanarResolvedICamera | undefined,
+  maxSize?: number
 ): VolumeSliceGeometry | undefined {
   if (!camera?.viewUp || typeof camera.parallelScale !== 'number') {
     return;
@@ -127,6 +128,7 @@ export function getCanvasScreenSliceGeometry(
     camera: camera as PlanarRenderPathProjectionCamera,
     canvasWidth: canvas?.width,
     canvasHeight: canvas?.height,
+    maxSize,
   });
 }
 
@@ -208,7 +210,9 @@ export function getNeighbourCameras(args: {
  * neighbour slices are prefetched in idle time, one sample per idle callback,
  * in the order of `getNeighbours`. Nothing is prefetched while the volume
  * loads, since each new frame makes the kept slices stale. Each request reads
- * the camera, the inputs and the screen grid at the time it runs.
+ * the camera, the inputs and the screen grid at the time it runs. Once the
+ * work is cancelled, no part of it runs or schedules more, also when the
+ * cancel comes from `onFinerSlice`.
  *
  * @returns the function that cancels the pending work
  */
@@ -227,10 +231,15 @@ export function scheduleSampledSliceRestWork(args: {
 }): () => void {
   const { sampler, volume } = args;
   let cancelPending: () => void;
+  let cancelled = false;
   const prefetch = (
     neighbours: PlanarResolvedICamera[],
     inputs: PlanarSampledSliceInputs
   ) => {
+    if (cancelled) {
+      return;
+    }
+
     while (neighbours.length) {
       if (sampler.prefetch(volume, neighbours.shift(), inputs)) {
         break;
@@ -257,7 +266,7 @@ export function scheduleSampledSliceRestWork(args: {
       args.onFinerSlice(finer);
     }
 
-    if (isVolumeLoading(volume)) {
+    if (cancelled || isVolumeLoading(volume)) {
       return;
     }
 
@@ -271,5 +280,8 @@ export function scheduleSampledSliceRestWork(args: {
 
   cancelPending = () => clearTimeout(timeoutId);
 
-  return () => cancelPending();
+  return () => {
+    cancelled = true;
+    cancelPending();
+  };
 }

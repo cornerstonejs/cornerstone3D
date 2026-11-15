@@ -1,10 +1,12 @@
-import { describe, it, expect } from '@jest/globals';
+import { describe, it, expect, jest, afterEach } from '@jest/globals';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import { SlabTypes } from '@kitware/vtk.js/Rendering/Core/ImageResliceMapper/Constants';
 import { BlendModes, InterpolationType } from '../src/enums';
 import sampleVolumeSlice, {
   getSlabSampleOffsets,
+  getVolumeSliceArrayType,
 } from '../src/utilities/sampleVolumeSlice';
+import * as sampleVolumeGridModule from '../src/utilities/sampleVolumeGrid';
 import sampleVolumeGrid, {
   isIndexInsideVolume,
 } from '../src/utilities/sampleVolumeGrid';
@@ -286,13 +288,11 @@ function makeRandomGeometry(random, volume, straight) {
 }
 
 /**
- * A copy of the slab sampling of sampleVolumeSlice before it was made
- * faster: the slice grid of the geometry, one sampleVolumeGrid call per slab
- * layer into an array of doubles, and one combine loop with a count per
- * pixel. The faster code must give the same values.
+ * The slice grid of a geometry as sampleVolumeSlice makes it: the voxel index
+ * of the first pixel, the index steps along a row, a column and one
+ * millimetre of the normal, with the same snapping.
  */
-function sampleSlabReference(volume, geometry, options) {
-  const { interpolationType, outsideValue, slab } = options;
+function referenceGrid(volume, geometry) {
   const wholeIndexEpsilon = 1e-9;
   const sliceIndexTolerance = 1e-4;
   const snapToWholeIndex = (index) =>
@@ -333,6 +333,21 @@ function sampleSlabReference(volume, geometry, options) {
     }
   }
 
+  return { startIndex, columnStep, rowStep, normalStep, snapToWholeIndex };
+}
+
+/**
+ * A copy of the slab sampling of sampleVolumeSlice before it was made
+ * faster: the slice grid of the geometry, one sampleVolumeGrid call per slab
+ * layer into an array of doubles, and one combine loop with a count per
+ * pixel, with the fixed offsets of getSlabSampleOffsets for every cut. The
+ * faster code must give the same values for an oblique cut, and for a
+ * straight cut whose slab stays inside the volume.
+ */
+function sampleSlabReference(volume, geometry, options) {
+  const { interpolationType, outsideValue, slab } = options;
+  const { startIndex, columnStep, rowStep, normalStep, snapToWholeIndex } =
+    referenceGrid(volume, geometry);
   const { width, height } = geometry;
   const pixelCount = width * height;
   const ArrayType = volume.voxelManager.getConstructor();
@@ -433,6 +448,238 @@ function sampleSlabReference(volume, geometry, options) {
   return { pixelData: Array.from(pixelData), min, max };
 }
 
+/**
+ * The slab of the vtk.js image reslice mapper, run pixel by pixel as its
+ * shader loop does (vtk.js 36, getSlabSampleLoopLines, without trapezoid
+ * integration): a counter of samples that starts at 1, a distance that grows
+ * by half the smallest voxel spacing per turn, a pair of positions per turn
+ * at the counter of the start of the turn times that step, negative side
+ * first, and the last pair at half the thickness. Only a position inside the
+ * volume (voxel index from -0.5 to the size minus 0.5 on every axis, the
+ * texture coordinates 0 to 1) is sampled and counted. The loop stops when a
+ * position outside has been seen on both sides before the last pair.
+ *
+ * Each sample is read with sampleVolumeGrid at the point of the pixel in the
+ * layer, so only the loop is under test. A NaN voxel is left out of the
+ * combination, as sampleVolumeSlice does, but counts as a sample inside for
+ * the positions. An integer volume is rounded.
+ */
+function sampleSlabShaderReference(volume, geometry, options) {
+  const { interpolationType, outsideValue, slab } = options;
+  const { startIndex, columnStep, rowStep, normalStep, snapToWholeIndex } =
+    referenceGrid(volume, geometry);
+  const { width, height } = geometry;
+  const ArrayType = volume.voxelManager.getConstructor();
+  const round = ArrayType !== Float32Array && ArrayType !== Float64Array;
+  const slabType = mapBlendModeToSlabType(slab.blendMode);
+  const pixelData = new ArrayType(width * height);
+  const scaling = Math.min(...volume.spacing) * 0.5;
+  const halfThickness = slab.thickness * 0.5;
+  const isInside = (index) =>
+    index.every(
+      (value, axis) =>
+        value >= -0.5 - 1e-9 && value <= volume.dimensions[axis] - 0.5 + 1e-9
+    );
+  const sampleAt = (offset, column, row) => {
+    const layerStart = snapToWholeIndex(
+      [0, 1, 2].map((axis) => startIndex[axis] + offset * normalStep[axis])
+    );
+    const index = [0, 1, 2].map(
+      (axis) =>
+        layerStart[axis] + column * columnStep[axis] + row * rowStep[axis]
+    );
+    const value = [NaN];
+
+    sampleVolumeGrid({
+      volume,
+      pixelData: value,
+      width: 1,
+      height: 1,
+      startIndex: index,
+      columnStep,
+      rowStep,
+      interpolationType,
+      outsideValue: NaN,
+    });
+
+    return { index, value: value[0] };
+  };
+
+  for (let row = 0; row < height; row++) {
+    for (let column = 0; column < width; column++) {
+      const pixel = row * width + column;
+      const centre = sampleAt(0, column, row);
+
+      if (
+        centre.value !== centre.value &&
+        !isIndexInsideVolume(volume.dimensions, ...centre.index)
+      ) {
+        pixelData[pixel] = outsideValue;
+        continue;
+      }
+
+      const values = [centre.value];
+      let numSlices = 1;
+      let distTraveled = scaling;
+      let negExited = false;
+      let posExited = false;
+
+      while (distTraveled < halfThickness) {
+        distTraveled += scaling;
+
+        const fnumSlices = numSlices;
+        const atSlabBoundary = distTraveled > halfThickness;
+        const distance = atSlabBoundary ? halfThickness : fnumSlices * scaling;
+        const negative = sampleAt(-distance, column, row);
+
+        if (isInside(negative.index)) {
+          values.push(negative.value);
+          numSlices += 1;
+        } else if (!atSlabBoundary) {
+          negExited = true;
+        }
+
+        const positive = sampleAt(distance, column, row);
+
+        if (isInside(positive.index)) {
+          values.push(positive.value);
+          numSlices += 1;
+        } else if (!atSlabBoundary) {
+          posExited = true;
+        }
+
+        if (negExited && posExited) {
+          break;
+        }
+      }
+
+      const samples = values.filter((value) => value === value);
+      let value = NaN;
+
+      if (samples.length) {
+        if (slabType === SlabTypes.MAX) {
+          value = samples.reduce((a, b) => (b > a ? b : a));
+        } else if (slabType === SlabTypes.MIN) {
+          value = samples.reduce((a, b) => (b < a ? b : a));
+        } else {
+          let sum = 0;
+
+          samples.forEach((sample) => {
+            sum += sample;
+          });
+          value = slabType === SlabTypes.MEAN ? sum / samples.length : sum;
+        }
+
+        if (round) {
+          value = Math.round(value);
+        }
+      }
+
+      pixelData[pixel] = value;
+    }
+  }
+
+  let min = Infinity;
+  let max = -Infinity;
+
+  pixelData.forEach((value) => {
+    if (value < min) {
+      min = value;
+    }
+
+    if (value > max) {
+      max = value;
+    }
+  });
+
+  return { pixelData: Array.from(pixelData), min, max };
+}
+
+/**
+ * Whether every fixed slab offset of a straight cut lies inside the volume
+ * along the normal, so that the slab of each pixel inside stays inside.
+ */
+function isStraightSlabInside(volume, geometry, thickness) {
+  const { startIndex, normalStep } = referenceGrid(volume, geometry);
+
+  return getSlabSampleOffsets(volume, thickness).every((offset) =>
+    [0, 1, 2].every((axis) => {
+      const value = startIndex[axis] + offset * normalStep[axis];
+
+      return (
+        Math.abs(normalStep[axis]) < 1e-6 ||
+        (value >= -0.5 && value <= volume.dimensions[axis] - 0.5)
+      );
+    })
+  );
+}
+
+/**
+ * The geometry of a straight cut with the normal along one volume axis, at a
+ * continuous index on that axis, one pixel per voxel.
+ */
+function straightGeometry(volume, normalAxis, position) {
+  const [columnAxis, rowAxis] = [0, 1, 2].filter((axis) => axis !== normalAxis);
+  const unit = (axis) => [0, 1, 2].map((each) => (each === axis ? 1 : 0));
+  const startIndex = [0, 0, 0];
+
+  startIndex[normalAxis] = position;
+
+  return {
+    origin: volume.imageData.indexToWorld(startIndex),
+    xDirection: unit(columnAxis),
+    yDirection: unit(rowAxis),
+    zDirection: cross(unit(columnAxis), unit(rowAxis)),
+    spacing: [volume.spacing[columnAxis], volume.spacing[rowAxis]],
+    width: volume.dimensions[columnAxis],
+    height: volume.dimensions[rowAxis],
+    sliceIndex: 0,
+  };
+}
+
+/**
+ * Builds a volume of the given dimensions, spacing and array type whose
+ * voxels come from a function of their index.
+ */
+function makeVolumeOf(volumeDimensions, volumeSpacing, ArrayType, valueOf) {
+  const scalarData = new ArrayType(
+    volumeDimensions[0] * volumeDimensions[1] * volumeDimensions[2]
+  );
+
+  for (let k = 0; k < volumeDimensions[2]; k++) {
+    for (let j = 0; j < volumeDimensions[1]; j++) {
+      for (let i = 0; i < volumeDimensions[0]; i++) {
+        scalarData[(k * volumeDimensions[1] + j) * volumeDimensions[0] + i] =
+          valueOf(i, j, k);
+      }
+    }
+  }
+
+  const imageData = vtkImageData.newInstance();
+
+  imageData.setDimensions(volumeDimensions);
+  imageData.setSpacing(volumeSpacing);
+  imageData.setOrigin([3, -4, 5]);
+  imageData.setDirection([1, 0, 0, 0, 1, 0, 0, 0, 1]);
+
+  return {
+    dimensions: volumeDimensions,
+    spacing: volumeSpacing,
+    direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
+    imageData,
+    voxelManager: VoxelManager.createScalarVolumeVoxelManager({
+      dimensions: volumeDimensions,
+      scalarData,
+    }),
+  };
+}
+
+const slabBlendModes = [
+  BlendModes.MAXIMUM_INTENSITY_BLEND,
+  BlendModes.MINIMUM_INTENSITY_BLEND,
+  BlendModes.AVERAGE_INTENSITY_BLEND,
+];
+
 describe('sampleVolumeSlice', () => {
   describe.each([
     ['an integer', Int16Array, false],
@@ -471,18 +718,32 @@ describe('sampleVolumeSlice', () => {
               slab: { thickness, blendMode },
             };
             const sampled = sampleVolumeSlice({ volume, geometry, ...options });
-
-            expect({
+            const actual = {
               caseNumber,
               blendMode,
               pixelData: Array.from(sampled.pixelData),
               min: sampled.min,
               max: sampled.max,
-            }).toEqual({
-              caseNumber,
-              blendMode,
-              ...sampleSlabReference(volume, geometry, options),
-            });
+            };
+
+            if (
+              !straight ||
+              isStraightSlabInside(volume, geometry, thickness)
+            ) {
+              expect(actual).toEqual({
+                caseNumber,
+                blendMode,
+                ...sampleSlabReference(volume, geometry, options),
+              });
+            }
+
+            if (straight) {
+              expect(actual).toEqual({
+                caseNumber,
+                blendMode,
+                ...sampleSlabShaderReference(volume, geometry, options),
+              });
+            }
           });
         }
       }
@@ -656,24 +917,21 @@ describe('sampleVolumeSlice', () => {
     }
   );
 
-  it('leaves out the slab samples outside the volume', () => {
+  it('moves the slab samples of a straight cut near a face closer together, as the reslice shader does', () => {
     const volume = makeVolume(Float32Array);
     const k = 1;
     const geometry = axialGeometry(volume, k);
-    const offsets = vtkSlabOffsets(6, 1);
     const { pixelData } = sampleVolumeSlice({
       volume,
       geometry,
       slab: { thickness: 6, blendMode: BlendModes.AVERAGE_INTENSITY_BLEND },
     });
+    const sampleIndices = [1, 0.5, 1.5, -0.5, 2.5, 3.5, 4, 4.5];
     const expected = pixelVoxels(volume, geometry).map(([i, j]) => {
-      const samples = offsets
-        .filter((offset) => k + offset >= -0.5)
-        .map(
-          (offset) =>
-            voxelValue(i, j, Math.max(0, Math.floor(k + offset + 0.5 - 1e-6))) +
-            0.25
-        );
+      const samples = sampleIndices.map(
+        (index) =>
+          voxelValue(i, j, Math.max(0, Math.floor(index + 0.5 - 1e-6))) + 0.25
+      );
 
       return samples.reduce((sum, value) => sum + value, 0) / samples.length;
     });
@@ -681,6 +939,121 @@ describe('sampleVolumeSlice', () => {
     Array.from(pixelData).forEach((value, index) => {
       expect(value).toBeCloseTo(expected[index], 4);
     });
+  });
+
+  it('gives the slab of the review example: a maximum at the first slice reaches the bright slice', () => {
+    const along = [0, 0, 100, 0, 0, 0];
+    const volume = makeVolumeOf(
+      [2, 2, 6],
+      [1, 1, 1],
+      Int16Array,
+      (i, j, k) => along[k]
+    );
+    const geometry = straightGeometry(volume, 2, 0);
+    const sample = (blendMode, keepFractions) =>
+      Array.from(
+        sampleVolumeSlice({
+          volume,
+          geometry,
+          interpolationType: InterpolationType.LINEAR,
+          slab: { thickness: 6, blendMode },
+          keepFractions,
+        }).pixelData
+      );
+
+    expect(
+      getSlabSampleOffsets(volume, 6)
+        .filter((offset) => offset >= -0.5)
+        .map((offset) =>
+          offset <= 0 ? 0 : 100 * Math.max(0, 1 - Math.abs(offset - 2))
+        )
+        .reduce((a, b) => Math.max(a, b))
+    ).toBe(50);
+    expect(sample(BlendModes.MAXIMUM_INTENSITY_BLEND)).toEqual([
+      100, 100, 100, 100,
+    ]);
+    expect(sample(BlendModes.AVERAGE_INTENSITY_BLEND)).toEqual([
+      29, 29, 29, 29,
+    ]);
+    expect(sample(BlendModes.AVERAGE_INTENSITY_BLEND, true)).toEqual(
+      new Array(4).fill(Math.fround(200 / 7))
+    );
+  });
+
+  describe.each([
+    ['an integer', Int16Array],
+    ['a float', Float32Array],
+  ])('on %s volume', (_name, ArrayType) => {
+    it.each([
+      ['equal', [1, 1, 1]],
+      ['unequal', [0.8, 1, 1.25]],
+    ])(
+      'gives the slab of the reslice shader for straight cuts at every slice position, spacing %s',
+      (_spacingName, volumeSpacing) => {
+        const volume = makeVolumeOf(
+          [4, 3, 6],
+          volumeSpacing,
+          ArrayType,
+          (i, j, k) =>
+            voxelValue(i, j, k) * 7 + (ArrayType === Float32Array ? 0.375 : 0)
+        );
+
+        [0, 1, 2].forEach((normalAxis) => {
+          const size = volume.dimensions[normalAxis];
+          const positions = [];
+
+          for (let index = 0; index < size; index++) {
+            positions.push(index, index + 0.5);
+          }
+
+          positions.push(-0.5, size - 0.5);
+
+          positions.forEach((position) => {
+            [2.2, 3.5, 6, 9, 25].forEach((thickness) => {
+              [InterpolationType.NEAREST, InterpolationType.LINEAR].forEach(
+                (interpolationType) => {
+                  slabBlendModes.forEach((blendMode) => {
+                    const geometry = straightGeometry(
+                      volume,
+                      normalAxis,
+                      position
+                    );
+                    const options = {
+                      interpolationType,
+                      outsideValue: -5000,
+                      slab: { thickness, blendMode },
+                    };
+                    const sampled = sampleVolumeSlice({
+                      volume,
+                      geometry,
+                      ...options,
+                    });
+
+                    expect({
+                      normalAxis,
+                      position,
+                      thickness,
+                      interpolationType,
+                      blendMode,
+                      pixelData: Array.from(sampled.pixelData),
+                      min: sampled.min,
+                      max: sampled.max,
+                    }).toEqual({
+                      normalAxis,
+                      position,
+                      thickness,
+                      interpolationType,
+                      blendMode,
+                      ...sampleSlabShaderReference(volume, geometry, options),
+                    });
+                  });
+                }
+              );
+            });
+          });
+        });
+      }
+    );
   });
 
   it('leaves a NaN voxel out of the slab and keeps the outside value for a pixel outside the volume', () => {
@@ -876,4 +1249,241 @@ describe('sampleVolumeSlice', () => {
       }
     }
   );
+
+  describe('keepFractions', () => {
+    const sampleWith = (volume, geometry, options) => {
+      const sliceOptions = {
+        volume,
+        geometry,
+        keepFractions: true,
+        ...options,
+      };
+      const sampled = sampleVolumeSlice(sliceOptions);
+
+      expect(sampled.pixelData.constructor).toBe(
+        getVolumeSliceArrayType(sliceOptions)
+      );
+
+      return sampled;
+    };
+
+    it('keeps a linear sample between two slices of an integer volume as a Float32Array', () => {
+      const volume = makeVolume(Int16Array);
+      const geometry = axialGeometry(volume, 7.5, false);
+      const { pixelData, min, max } = sampleWith(volume, geometry, {
+        interpolationType: InterpolationType.LINEAR,
+      });
+      const expected = pixelVoxels(volume, geometry).map(
+        ([i, j]) => (voxelValue(i, j, 7) + voxelValue(i, j, 8)) / 2
+      );
+
+      expect(pixelData).toBeInstanceOf(Float32Array);
+      expect(Array.from(pixelData)).toEqual(expected);
+      expect(expected.some((value) => !Number.isInteger(value))).toBe(true);
+      expect(min).toBe(Math.min(...expected));
+      expect(max).toBe(Math.max(...expected));
+    });
+
+    it('gives 0.5 halfway between a voxel of 0 and a voxel of 1', () => {
+      const volume = makeVolumeOf(
+        [2, 2, 2],
+        [1, 1, 1],
+        Uint8Array,
+        (i, j, k) => k
+      );
+      const geometry = straightGeometry(volume, 2, 0.5);
+      const linear = { interpolationType: InterpolationType.LINEAR };
+
+      expect(
+        Array.from(sampleWith(volume, geometry, linear).pixelData)
+      ).toEqual([0.5, 0.5, 0.5, 0.5]);
+      expect(
+        Array.from(sampleVolumeSlice({ volume, geometry, ...linear }).pixelData)
+      ).toEqual([1, 1, 1, 1]);
+    });
+
+    it('keeps the volume type and copies a straight cut on a slice of voxels', () => {
+      const volume = makeVolume(Int16Array);
+      const onPlane = axialGeometry(volume, 7, false);
+      const expected = pixelVoxels(volume, onPlane).map(([i, j]) =>
+        voxelValue(i, j, 7)
+      );
+
+      [InterpolationType.NEAREST, InterpolationType.LINEAR].forEach(
+        (interpolationType) => {
+          const { pixelData } = sampleWith(volume, onPlane, {
+            interpolationType,
+          });
+
+          expect(pixelData).toBeInstanceOf(Int16Array);
+          expect(Array.from(pixelData)).toEqual(expected);
+        }
+      );
+
+      expect(
+        sampleWith(volume, axialGeometry(volume, 7.4), {}).pixelData
+      ).toBeInstanceOf(Int16Array);
+    });
+
+    it('chooses the array type of a slab by whether it mixes voxels', () => {
+      const volume = makeVolume(Int16Array);
+      const geometry = axialGeometry(volume, 10);
+      const typeOf = (interpolationType, blendMode) =>
+        sampleWith(volume, geometry, {
+          interpolationType,
+          slab: { thickness: 4.6, blendMode },
+        }).pixelData.constructor;
+
+      expect(
+        typeOf(InterpolationType.NEAREST, BlendModes.MAXIMUM_INTENSITY_BLEND)
+      ).toBe(Int16Array);
+      expect(
+        typeOf(InterpolationType.NEAREST, BlendModes.MINIMUM_INTENSITY_BLEND)
+      ).toBe(Int16Array);
+      expect(
+        typeOf(InterpolationType.NEAREST, BlendModes.AVERAGE_INTENSITY_BLEND)
+      ).toBe(Float32Array);
+      expect(
+        typeOf(InterpolationType.LINEAR, BlendModes.MAXIMUM_INTENSITY_BLEND)
+      ).toBe(Float32Array);
+    });
+
+    it('keeps the fraction of an average slab and of an oblique sample', () => {
+      const volume = makeVolume(Int16Array);
+      const geometry = axialGeometry(volume, 10);
+      const offsets = vtkSlabOffsets(4.6, 1);
+      const { pixelData } = sampleWith(volume, geometry, {
+        slab: { thickness: 4.6, blendMode: BlendModes.AVERAGE_INTENSITY_BLEND },
+      });
+      const expected = pixelVoxels(volume, geometry).map(([i, j]) => {
+        let sum = 0;
+
+        offsets.forEach((offset) => {
+          sum += voxelValue(i, j, Math.floor(10 + offset + 0.5 - 1e-6));
+        });
+
+        return Math.fround(sum / offsets.length);
+      });
+
+      expect(Array.from(pixelData)).toEqual(expected);
+
+      const oblique = getVolumeSliceGeometry(volume, {
+        focalPoint: volume.imageData.indexToWorld([2.3, 2.1, 9.7]),
+        viewPlaneNormal: [Math.SQRT1_2, 0, Math.SQRT1_2],
+        viewUp: [0, 1, 0],
+      });
+      const fractions = sampleWith(volume, oblique, {
+        interpolationType: InterpolationType.LINEAR,
+      }).pixelData;
+      const rounded = sampleVolumeSlice({
+        volume,
+        geometry: oblique,
+        interpolationType: InterpolationType.LINEAR,
+      }).pixelData;
+
+      expect(fractions).toBeInstanceOf(Float32Array);
+      expect(rounded).toBeInstanceOf(Int16Array);
+      Array.from(fractions).forEach((value, index) => {
+        expect(Math.abs(value - rounded[index])).toBeLessThanOrEqual(
+          0.5 + 1e-5
+        );
+      });
+      expect(
+        Array.from(fractions).some((value) => !Number.isInteger(value))
+      ).toBe(true);
+    });
+
+    it('changes nothing for a float volume and reuses a fitting Float32Array', () => {
+      const volume = makeVolume(Float32Array);
+      const geometry = axialGeometry(volume, 7.3, false);
+      const options = { interpolationType: InterpolationType.LINEAR };
+      const plain = sampleVolumeSlice({ volume, geometry, ...options });
+      const given = new Float32Array(geometry.width * geometry.height);
+      const kept = sampleWith(volume, geometry, {
+        ...options,
+        pixelData: given,
+      });
+
+      expect(kept.pixelData).toBe(given);
+      expect(Array.from(kept.pixelData)).toEqual(Array.from(plain.pixelData));
+
+      const integerVolume = makeVolume(Int16Array);
+      const integerGiven = new Float32Array(geometry.width * geometry.height);
+
+      expect(
+        sampleWith(integerVolume, geometry, {
+          ...options,
+          pixelData: integerGiven,
+        }).pixelData
+      ).toBe(integerGiven);
+    });
+  });
+
+  describe('a slab far thicker than the volume', () => {
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    it.each([
+      ['straight', true],
+      ['oblique', false],
+    ])(
+      'gives the pixels of a slab that just covers the volume, with a bounded number of layers, for a %s cut',
+      (_cut, straight) => {
+        const random = createRandom(straight ? 71 : 73);
+
+        for (let caseNumber = 0; caseNumber < 30; caseNumber++) {
+          const volume = makeRandomVolume(
+            random,
+            caseNumber % 2 ? Float32Array : Int16Array,
+            false
+          );
+          const geometry = makeRandomGeometry(random, volume, straight);
+          const diagonal = Math.hypot(
+            ...volume.dimensions.map(
+              (size, axis) => (size + 2) * volume.spacing[axis]
+            )
+          );
+          const interpolationType =
+            random() < 0.5
+              ? InterpolationType.NEAREST
+              : InterpolationType.LINEAR;
+
+          slabBlendModes.forEach((blendMode) => {
+            const spy = jest.spyOn(sampleVolumeGridModule, 'default');
+            const sample = (thickness) => {
+              spy.mockClear();
+
+              const sampled = sampleVolumeSlice({
+                volume,
+                geometry,
+                interpolationType,
+                outsideValue: -5000,
+                slab: { thickness, blendMode },
+              });
+
+              return {
+                pixelData: Array.from(sampled.pixelData),
+                min: sampled.min,
+                max: sampled.max,
+                calls: spy.mock.calls.length,
+              };
+            };
+            const covering = sample(4 * diagonal);
+            const huge = sample(50000);
+
+            expect({ caseNumber, blendMode, ...huge }).toEqual({
+              caseNumber,
+              blendMode,
+              ...covering,
+            });
+            expect(huge.calls).toBeLessThanOrEqual(
+              2 * Math.ceil(diagonal / (Math.min(...volume.spacing) / 2)) + 3
+            );
+            spy.mockRestore();
+          });
+        }
+      }
+    );
+  });
 });

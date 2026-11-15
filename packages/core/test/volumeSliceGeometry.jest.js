@@ -197,7 +197,44 @@ describe('getExactSliceAxis', () => {
     ).toBeUndefined();
   });
 
-  it('finds the slice axis of a volume whose axes are not orthogonal', () => {
+  it('finds the slice axis of a volume whose axes are not orthogonal from the plane of the two other axes', () => {
+    const length = Math.hypot(0.05, 1);
+    const sheared = [1, 0, 0, 0, 1, 0, 0.05 / length, 0, 1 / length];
+    const volume = makeVolume({
+      dimensions: [8, 8, 6],
+      spacing: [1, 1, 1],
+      direction: sheared,
+    });
+    const alongK = sheared.slice(6, 9);
+    const acrossIJ = [0, 0, 1];
+
+    expect(getExactSliceAxis(volume, alongK)).toBeUndefined();
+    expect(getExactSliceAxis(volume, acrossIJ)).toBe(2);
+    expect(getExactSliceAxis(volume, [0, 0, -2])).toBe(2);
+
+    const geometry = getVolumeSliceGeometry(volume, {
+      focalPoint: volume.imageData.indexToWorld([3.5, 3.5, 2]),
+      viewPlaneNormal: acrossIJ,
+      viewUp: [0, -1, 0],
+    });
+
+    expect(geometry).toMatchObject({ width: 8, height: 8, sliceIndex: 2 });
+
+    for (const [column, row] of [
+      [0, 0],
+      [7, 0],
+      [0, 7],
+      [7, 7],
+    ]) {
+      const index = volume.imageData.worldToIndex(
+        pixelToWorld(geometry, column, row)
+      );
+
+      expect(index[2]).toBeCloseTo(2, 9);
+    }
+  });
+
+  it('cuts a sheared volume along its k axis as an oblique plane', () => {
     const length = Math.hypot(0.05, 1);
     const sheared = [1, 0, 0, 0, 1, 0, 0.05 / length, 0, 1 / length];
     const volume = makeVolume({
@@ -206,15 +243,46 @@ describe('getExactSliceAxis', () => {
       direction: sheared,
     });
     const viewPlaneNormal = sheared.slice(6, 9);
-
-    expect(getExactSliceAxis(volume, viewPlaneNormal)).toBe(2);
-
+    const focalPoint = volume.imageData.indexToWorld([3.5, 3.5, 2]);
     const geometry = getVolumeSliceGeometry(volume, {
-      focalPoint: volume.imageData.indexToWorld([3.5, 3.5, 2]),
+      focalPoint,
       viewPlaneNormal,
       viewUp: [0, -1, 0],
     });
+    const values = [
+      ...geometry.origin,
+      ...geometry.xDirection,
+      ...geometry.yDirection,
+      ...geometry.spacing,
+    ];
 
-    expect(geometry).toMatchObject({ width: 8, height: 8, sliceIndex: 2 });
+    expect(values.every(Number.isFinite)).toBe(true);
+    expect(dot(geometry.xDirection, viewPlaneNormal)).toBeCloseTo(0, 9);
+    expect(dot(geometry.yDirection, viewPlaneNormal)).toBeCloseTo(0, 9);
+    expect(
+      dot(subtract(geometry.origin, focalPoint), viewPlaneNormal)
+    ).toBeCloseTo(0, 9);
+
+    const corners = [
+      volume.imageData.worldToIndex(pixelToWorld(geometry, 0, 0)),
+      volume.imageData.worldToIndex(
+        pixelToWorld(geometry, geometry.width - 1, 0)
+      ),
+    ];
+
+    expect(Math.abs(corners[0][2] - corners[1][2])).toBeGreaterThan(0.01);
+  });
+
+  it('gives the same axis as before for a volume whose axes are at right angles', () => {
+    const volume = makeVolume({ direction: turnedDirection });
+    const tilt = 1e-5;
+
+    expect(getExactSliceAxis(volume, [0, Math.sin(tilt), Math.cos(tilt)])).toBe(
+      2
+    );
+    expect(getExactSliceAxis(volume, turnedDirection.slice(3, 6))).toBe(1);
+    expect(
+      getExactSliceAxis(volume, [Math.sin(1e-3), 0, Math.cos(1e-3)])
+    ).toBeUndefined();
   });
 });

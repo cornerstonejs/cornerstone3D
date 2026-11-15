@@ -2299,6 +2299,23 @@ class PlanarViewport extends GenericViewport<
   }
 
   /**
+   * @internal Whether a remount pass holds the renders of this viewport. A
+   * rendering engine asks this before it draws a frame, because a frame it
+   * draws on its own (`renderViewports`, a resize) does not pass through
+   * `render`. A held viewport is left out of that frame and renders once by
+   * itself when the hold ends.
+   */
+  deferRenderWhileHeld(): boolean {
+    if (!this.remountRenderHolds) {
+      return false;
+    }
+
+    this.renderHeldByRemount = true;
+
+    return true;
+  }
+
+  /**
    * Whether a remount pass holds the renders of this viewport. A render asked
    * for meanwhile is marked and done when the hold ends.
    */

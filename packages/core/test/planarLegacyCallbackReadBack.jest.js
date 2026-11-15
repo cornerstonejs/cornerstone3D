@@ -449,6 +449,96 @@ describe('PlanarLegacyCompatibilityController legacy slice opacity', () => {
       expect(opacityPointsOf(getActor())).toEqual(written);
     }
   });
+
+  /**
+   * A callback that writes the given opacity function itself, with the hsv
+   * colours of the PET helper on the range 0 to 10.
+   */
+  function createFunctionCallback(opacityFunction) {
+    return ({ volumeActor }) => {
+      createColorCallback([0, 10], [0, 0, 10, 1])({ volumeActor });
+      volumeActor.getProperty().setScalarOpacity(0, opacityFunction);
+    };
+  }
+
+  it('follows a point with a sharpness of its own, which makes a step', async () => {
+    const source = vtkPiecewiseFunction.newInstance();
+
+    source.addPointLong(0, 0, 0.5, 1);
+    source.addPoint(10, 1);
+
+    const { getActor } = await mountWithCallback(
+      createFunctionCallback(source),
+      { slabThickness: 20 }
+    );
+    const points = opacityPointsOf(getActor());
+
+    expect(points.length).toBeGreaterThan(4);
+    expect(source.getValue(2.5)).toBe(0);
+    expect(interpolate(points, 2.5)).toBeCloseTo(0, 6);
+    expect(interpolate(points, 7.5)).toBeCloseTo(1, 6);
+
+    for (let value = 0.003; value < 10; value += 0.01) {
+      expect(
+        Math.abs(interpolate(points, value) - source.getValue(value))
+      ).toBeLessThanOrEqual(1 / 255);
+    }
+  });
+
+  it('follows a point with a midpoint of its own, which bends the curve', async () => {
+    const source = vtkPiecewiseFunction.newInstance();
+
+    source.addPointLong(0, 0, 0.2, 0.4);
+    source.addPointLong(4, 0.6, 0.8, 0);
+    source.addPoint(10, 1);
+
+    const { getActor } = await mountWithCallback(
+      createFunctionCallback(source),
+      { slabThickness: 20 }
+    );
+    const points = opacityPointsOf(getActor());
+
+    for (let value = 0; value <= 10; value += 0.01) {
+      expect(
+        Math.abs(interpolate(points, value) - source.getValue(value))
+      ).toBeLessThanOrEqual(1 / 255);
+    }
+  });
+
+  it('keeps the points of a function that is all straight lines', async () => {
+    const source = vtkPiecewiseFunction.newInstance();
+
+    source.addPoint(0, 0);
+    source.addPoint(2, 0.3);
+    source.addPoint(10, 1);
+
+    const { getActor } = await mountWithCallback(
+      createFunctionCallback(source),
+      { slabThickness: 20 }
+    );
+
+    expect(opacityPointsOf(getActor())).toEqual([0, 0, 2, 0.3, 10, 1]);
+  });
+
+  it('draws nothing outside the points of a function that does not clamp', async () => {
+    const source = vtkPiecewiseFunction.newInstance();
+
+    source.addPoint(2, 0.5);
+    source.addPoint(8, 1);
+    source.setClamping(false);
+
+    const { getActor } = await mountWithCallback(
+      createFunctionCallback(source),
+      { slabThickness: 20 }
+    );
+    const drawn = getActor().getProperty().getScalarOpacity(0);
+
+    expect(drawn.getValue(1)).toBe(0);
+    expect(drawn.getValue(9)).toBe(0);
+    expect(drawn.getValue(2)).toBeCloseTo(0.5, 6);
+    expect(drawn.getValue(5)).toBeCloseTo(0.75, 3);
+    expect(drawn.getValue(8)).toBeCloseTo(1, 6);
+  });
 });
 
 describe('PlanarLegacyCompatibilityController slab thickness', () => {

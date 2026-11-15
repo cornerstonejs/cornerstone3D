@@ -4,10 +4,24 @@ import getEffectiveSpacingAlongDirection from './getEffectiveSpacingAlongDirecti
 import transformIndexToWorld from './transformIndexToWorld';
 import { transformWorldToIndexContinuous } from './transformWorldToIndex';
 
+/**
+ * The largest width or height of an oblique slice when the caller gives no
+ * maxSize: 2048, a 2D texture size that every WebGL device can hold. A render
+ * path passes the real limit of its draw step, so that a slice is not made
+ * coarser than the voxels.
+ */
 const DEFAULT_MAX_SLICE_SIZE = 2048;
 const SLICE_INDEX_EPSILON = 1e-6;
 const MINIMUM_PLANE_INTERSECTION_POINTS = 3;
 const EXACT_SLICE_ALIGNMENT = 1 - 1e-8;
+
+/**
+ * The shortest cross product of the k axis and the view normal that still
+ * gives the row direction of an oblique slice. Any view that is not along k
+ * gives a far longer one, since a view within about 1e-4 radians of a slice of
+ * voxels is not oblique.
+ */
+const ROW_DIRECTION_EPSILON = 1e-6;
 
 type VolumeSliceCamera = Pick<
   ICamera,
@@ -40,7 +54,10 @@ type VolumeSliceGeometryOptions = {
   snapToSlice?: boolean;
   /** World size of a pixel of an oblique slice. Default: the voxel size along each direction. */
   pixelSpacing?: number;
-  /** Largest width or height in pixels. Default 2048. */
+  /**
+   * Largest width or height in pixels of an oblique slice. Default 2048 (see
+   * DEFAULT_MAX_SLICE_SIZE); a render path passes the limit of its draw step.
+   */
   maxSize?: number;
 };
 
@@ -79,9 +96,13 @@ function getVolumeAxes(volume: SliceVolume): Point3[] {
  * normal does not need to be a unit vector.
  *
  * The candidate is the axis with the largest absolute dot product with the
- * normal, and it is accepted when the normalized dot product of the two is at
- * least EXACT_SLICE_ALIGNMENT. The other axes are not tested, so a volume
- * whose axes are not orthogonal still has a slice axis.
+ * normal. A slice of voxels along that axis (one index on it) is the plane of
+ * the two other axes, whose normal is their cross product, which is the axis
+ * itself only when the axes are at right angles. So the candidate is accepted
+ * when the normalized dot product of the view normal and that cross product
+ * is at least EXACT_SLICE_ALIGNMENT, for either sign. For a volume whose axes
+ * are not orthogonal, a view along an axis is then not a slice of voxels, and
+ * a view across the two other axes is.
  */
 function getExactSliceAxis(
   volume: SliceVolume,
@@ -96,13 +117,22 @@ function getExactSliceAxis(
     Math.abs(vec3.dot(normal, axis as unknown as vec3))
   );
   const sliceAxis = dots.indexOf(Math.max(...dots));
-  const axisLength = vec3.length(axes[sliceAxis] as unknown as vec3);
+  const [firstOtherAxis, secondOtherAxis] = [0, 1, 2].filter(
+    (axis) => axis !== sliceAxis
+  );
+  const sliceNormal = vec3.cross(
+    createVector(),
+    axes[firstOtherAxis] as unknown as vec3,
+    axes[secondOtherAxis] as unknown as vec3
+  );
+  const sliceNormalLength = vec3.length(sliceNormal);
 
-  if (!(dots[sliceAxis] > 0) || !(axisLength > 0)) {
+  if (!(dots[sliceAxis] > 0) || !(sliceNormalLength > 0)) {
     return;
   }
 
-  return dots[sliceAxis] / axisLength >= EXACT_SLICE_ALIGNMENT
+  return Math.abs(vec3.dot(normal, sliceNormal)) / sliceNormalLength >=
+    EXACT_SLICE_ALIGNMENT
     ? sliceAxis
     : undefined;
 }
@@ -264,6 +294,33 @@ function getPixelCount(
 }
 
 /**
+ * Returns the direction of a row of an oblique slice: the line where the
+ * view plane meets a slice of the volume along k. A view normal along k
+ * itself, which is oblique only for a volume whose axes are not at right
+ * angles (see getExactSliceAxis), has no such line, and its rows follow the
+ * i axis of the volume, laid into the view plane.
+ */
+function getObliqueRowDirection(
+  volume: SliceVolume,
+  viewPlaneNormal: Point3
+): Point3 {
+  const axes = getVolumeAxes(volume);
+  const normal = viewPlaneNormal as unknown as vec3;
+  const row = vec3.cross(createVector(), axes[2] as unknown as vec3, normal);
+
+  if (!(vec3.length(row) > ROW_DIRECTION_EPSILON)) {
+    vec3.scaleAndAdd(
+      row,
+      axes[0] as unknown as vec3,
+      normal,
+      -vec3.dot(axes[0] as unknown as vec3, normal)
+    );
+  }
+
+  return vec3.normalize(createVector(), row) as Point3;
+}
+
+/**
  * Geometry of the slice when the view plane is oblique to the volume. The
  * slice covers the part of the view plane that cuts the volume, with a pixel
  * size close to pixelSpacing, or to the voxel size along each direction of the
@@ -281,15 +338,7 @@ function getObliqueSliceGeometry(
   maxSize: number
 ): VolumeSliceGeometry | undefined {
   const { dimensions, imageData } = volume;
-  const sliceAxisDirection = getVolumeAxes(volume)[2];
-  const xDirection = vec3.normalize(
-    createVector(),
-    vec3.cross(
-      createVector(),
-      sliceAxisDirection as unknown as vec3,
-      viewPlaneNormal as unknown as vec3
-    )
-  ) as Point3;
+  const xDirection = getObliqueRowDirection(volume, viewPlaneNormal);
   const yDirection = vec3.normalize(
     createVector(),
     vec3.cross(
