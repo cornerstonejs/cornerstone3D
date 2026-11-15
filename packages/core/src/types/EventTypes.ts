@@ -235,6 +235,16 @@ interface ImageCacheImageAddedEventDetail {
 }
 
 /**
+ * CACHE_SIZE_EXCEEDED Event's data
+ */
+interface CacheSizeExceededEventDetail {
+  /** the id of the image that did not fit */
+  imageId: string;
+  /** the size of the image in bytes */
+  sizeInBytes: number;
+}
+
+/**
  * VOLUME_CACHE_VOLUME_REMOVED Event's data
  */
 interface VolumeCacheVolumeRemovedEventDetail {
@@ -428,6 +438,11 @@ type ImageCacheImageAddedEvent =
   CustomEventType<ImageCacheImageAddedEventDetail>;
 
 /**
+ * CACHE_SIZE_EXCEEDED Event type
+ */
+type CacheSizeExceededEvent = CustomEventType<CacheSizeExceededEventDetail>;
+
+/**
  * IMAGE_CACHE_IMAGE_REMOVED Event type
  */
 type ImageCacheImageRemovedEvent =
@@ -530,6 +545,8 @@ export type {
   VolumeLoadedFailedEventDetail,
   ImageCacheImageAddedEvent,
   ImageCacheImageAddedEventDetail,
+  CacheSizeExceededEvent,
+  CacheSizeExceededEventDetail,
   ImageCacheImageRemovedEvent,
   ImageCacheImageRemovedEventDetail,
   VolumeCacheVolumeAddedEvent,
