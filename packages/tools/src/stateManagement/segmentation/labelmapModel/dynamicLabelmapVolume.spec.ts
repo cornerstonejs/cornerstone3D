@@ -271,4 +271,52 @@ describe('dynamic labelmap volume', () => {
     ]);
     expect(details[0].voxelsUnchanged).toBeUndefined();
   });
+
+  it('sends the time point for a 3D labelmap that has only a volume', () => {
+    const labelmapVolume = { referencedImageIds: ['ref:1:0'] };
+    const imageVolume = {
+      ...imageVolumeAt(1),
+      dimensionGroupNumber: 2,
+      getImageURIIndex: (uri) => (uri === 'ref:1:0' ? 0 : -1),
+    };
+    const getVolume = cache.getVolume.bind(cache);
+    jest.spyOn(cache, 'getVolume').mockImplementation((id) => {
+      if (id === 'image-4d') {
+        return imageVolume as never;
+      }
+      if (id === 'lm-volume') {
+        return labelmapVolume as never;
+      }
+      return getVolume(id);
+    });
+    addSegmentations([
+      {
+        segmentationId: 'seg-volume',
+        representation: {
+          type: 'Labelmap' as never,
+          data: { volumeId: 'lm-volume', referencedVolumeId: 'image-4d' },
+        },
+      },
+    ]);
+    const details = [];
+    const onModified = (evt) => details.push(evt.detail);
+    eventTarget.addEventListener(Events.SEGMENTATION_DATA_MODIFIED, onModified);
+
+    dynamicVolumeDimensionGroupChangedListener({
+      detail: { volumeId: 'image-4d' },
+    } as CustomEvent);
+
+    eventTarget.removeEventListener(
+      Events.SEGMENTATION_DATA_MODIFIED,
+      onModified
+    );
+    jest.restoreAllMocks();
+    expect(details).toEqual([
+      expect.objectContaining({
+        segmentationId: 'seg-volume',
+        dimensionGroupNumber: 2,
+        voxelsUnchanged: true,
+      }),
+    ]);
+  });
 });

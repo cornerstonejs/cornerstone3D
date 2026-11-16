@@ -43,9 +43,11 @@ const dynamicVolumeDimensionGroupChangedListener = function (
         return;
       }
 
-      const referencedImageId = cache.getImage(
-        layer.imageIds?.[0]
-      )?.referencedImageId;
+      // A layer registered with a volume has no imageIds; use its volume.
+      const firstImageId = layer.imageIds?.[0];
+      const referencedImageId =
+        (firstImageId && cache.getImage(firstImageId)?.referencedImageId) ??
+        labelmapVolume?.referencedImageIds?.[0];
       followsImageVolume ||=
         !!referencedImageId &&
         imageVolume.getImageURIIndex(
