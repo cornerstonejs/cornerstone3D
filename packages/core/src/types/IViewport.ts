@@ -138,6 +138,14 @@ export interface ReferenceCompatibleOptions {
    * To see if the reference could be overlaid (labelmap, fusion) on the viewport, set this to true.
    */
   asOverlay?: boolean;
+
+  /**
+   * The world points of the annotation that the reference belongs to. A
+   * viewport that shows a part of its world in several places, such as an ECG
+   * trace layout with several columns, uses them to check that one place
+   * shows the whole annotation.
+   */
+  points?: Point3[];
 }
 
 /**

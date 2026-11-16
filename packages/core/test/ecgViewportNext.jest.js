@@ -100,12 +100,13 @@ async function mountLegacy() {
   return viewport;
 }
 
-async function mountNext(viewState) {
+async function mountNext(viewState, defaultOptions) {
   const { element } = createElement();
   const viewport = new ECGViewport({
     id: 'ecgNext',
     element,
     renderingEngineId: 'renderingEngine',
+    defaultOptions,
   });
 
   await viewport.setDisplaySets({ displaySetId: ECG_ID });
@@ -209,32 +210,177 @@ describe('World coordinates of the legacy and the next ECG viewports', () => {
       );
     });
   });
+});
 
-  /**
-   * This pins the behaviour of today for the owner to decide on. A layout
-   * with several columns shows each lead for a part of the record only. A
-   * point of a lead outside that part is drawn in the cell of another lead,
-   * and the reference stays viewable.
-   */
-  it('draws a point outside the time window of its lead in the cell of another lead', async () => {
+/** The layout cell of the next viewport whose rectangle holds a canvas point. */
+function cellAt(viewport, canvasPoint) {
+  const resolvedView = viewport.getResolvedView();
+  const { effectiveRatio, xOffset, yOffset } = resolvedView.canvasTransform;
+  const x = (canvasPoint[0] - xOffset) / effectiveRatio;
+  const y = (canvasPoint[1] - yOffset) / effectiveRatio;
+
+  return resolvedView.channelLayouts.find(
+    (cell) =>
+      x >= cell.xOffset &&
+      x <= cell.xOffset + cell.width &&
+      y >= cell.yOffset - cell.itemHeight &&
+      y <= cell.yOffset
+  );
+}
+
+/** The canvas point at the middle of a layout cell of the next viewport. */
+function middleOfCell(viewport, cell) {
+  const { effectiveRatio, xOffset, yOffset } =
+    viewport.getResolvedView().canvasTransform;
+
+  return [
+    (cell.xOffset + cell.width / 2) * effectiveRatio + xOffset,
+    (cell.yOffset - cell.itemHeight / 2) * effectiveRatio + yOffset,
+  ];
+}
+
+/** Clicks the next viewport at a canvas point, as a user does. */
+function clickAt(viewport, canvasPoint) {
+  viewport.element.dispatchEvent(
+    new MouseEvent('pointerdown', {
+      bubbles: true,
+      clientX: canvasPoint[0],
+      clientY: canvasPoint[1],
+    })
+  );
+}
+
+/** The world point of a sample on the trace of a lead, at world Z `z`. */
+function tracePoint(z, sample) {
+  return [sample, DATA[z % 1000][sample], z];
+}
+
+function isDrawn(viewport, points) {
+  return viewport.isReferenceViewable(
+    viewport.getViewReference({ points: [points[0]] }),
+    { points }
+  );
+}
+
+describe('Annotations in a layout with several columns on the next ECG viewport', () => {
+  const cellsOfLead = (viewport, channelIndex) =>
+    viewport
+      .getResolvedView()
+      .channelLayouts.filter((cell) => cell.leadIndex % 1000 === channelIndex);
+
+  it('does not draw a point outside the time window of every cell of its lead', async () => {
     const legacy = await mountLegacy();
     const next = await mountNext();
     const [probe] = annotationPoints(legacy, 7, [1400]);
-    const v2 = (viewport) =>
-      viewport
-        .getResolvedView()
-        .channelLayouts.find((cell) => cell.leadIndex === 7);
+    const [v2] = cellsOfLead(next, 7);
 
-    expect([v2(next).startSample, v2(next).endSample]).toEqual([2500, 3750]);
-    expect(next.canvasToWorld(next.worldToCanvas(probe))[2]).toBe(4);
+    expect([v2.startSample, v2.endSample]).toEqual([2500, 3750]);
+    expect(isDrawn(next, [probe])).toBe(false);
 
     next.setViewState({ traceLayout: '6x2' });
 
-    expect([v2(next).startSample, v2(next).endSample]).toEqual([2500, 5000]);
-    expect(next.canvasToWorld(next.worldToCanvas(probe))[2]).toBe(1);
     expect(
-      next.isReferenceViewable(next.getViewReference({ points: [probe] }))
-    ).toBe(true);
+      cellsOfLead(next, 7).map((cell) => [cell.startSample, cell.endSample])
+    ).toEqual([[2500, 5000]]);
+    expect(isDrawn(next, [probe])).toBe(false);
+  });
+
+  it('draws a point in the cell of its lead that holds the sample, and reads it back', async () => {
+    const next = await mountNext();
+    const point = tracePoint(7, 3000);
+    const canvasPoint = next.worldToCanvas(point);
+
+    expect(isDrawn(next, [point])).toBe(true);
+    expect(cellAt(next, canvasPoint).leadIndex).toBe(7);
+    expectClose(next.canvasToWorld(canvasPoint), point);
+  });
+
+  it('draws a point of a lead outside its grid cell in the rhythm strip of the same lead', async () => {
+    const next = await mountNext();
+    const [grid, rhythm] = cellsOfLead(next, 1);
+    const point = tracePoint(1, 2000);
+    const canvasPoint = next.worldToCanvas(point);
+
+    expect([grid.startSample, grid.endSample]).toEqual([0, 1250]);
+    expect([rhythm.startSample, rhythm.endSample]).toEqual([0, 5000]);
+    expect(isDrawn(next, [point])).toBe(true);
+    expect(cellAt(next, canvasPoint).regionIndex).toBe(rhythm.regionIndex);
+    expectClose(next.canvasToWorld(canvasPoint), [
+      point[0],
+      point[1],
+      rhythm.leadIndex,
+    ]);
+  });
+
+  it('draws a point that two cells hold in the cell that the user last clicked in, else in the first', async () => {
+    const next = await mountNext();
+    const [grid, rhythm] = cellsOfLead(next, 1);
+    const point = tracePoint(1, 1000);
+    const cellOf = () => cellAt(next, next.worldToCanvas(point)).regionIndex;
+
+    expect(cellOf()).toBe(grid.regionIndex);
+    expectClose(next.canvasToWorld(next.worldToCanvas(point)), point);
+
+    clickAt(next, middleOfCell(next, rhythm));
+
+    expect(cellOf()).toBe(rhythm.regionIndex);
+
+    clickAt(next, middleOfCell(next, grid));
+
+    expect(cellOf()).toBe(grid.regionIndex);
+  });
+
+  it('draws an annotation with points in two windows where all of its points show', async () => {
+    const next = await mountNext();
+    const [grid, rhythm] = cellsOfLead(next, 1);
+    const length = [tracePoint(1, 500), tracePoint(1, 2000)];
+
+    clickAt(next, middleOfCell(next, grid));
+
+    expect(isDrawn(next, length)).toBe(true);
+    length.forEach((point) =>
+      expect(cellAt(next, next.worldToCanvas(point)).regionIndex).toBe(
+        rhythm.regionIndex
+      )
+    );
+
+    const inGrid = [tracePoint(1, 500), tracePoint(1, 1000)];
+
+    expect(isDrawn(next, inGrid)).toBe(true);
+    inGrid.forEach((point) =>
+      expect(cellAt(next, next.worldToCanvas(point)).regionIndex).toBe(
+        grid.regionIndex
+      )
+    );
+  });
+
+  it('does not draw an annotation that no one cell of its lead shows whole', async () => {
+    const next = await mountNext();
+
+    expect(isDrawn(next, [tracePoint(7, 1400), tracePoint(7, 3000)])).toBe(
+      false
+    );
+    expect(isDrawn(next, [tracePoint(7, 2600), tracePoint(7, 3000)])).toBe(
+      true
+    );
+  });
+
+  it('keeps the legacy layout 12x1 as the legacy viewport draws it', async () => {
+    const legacy = await mountLegacy();
+    const next = await mountNext({ traceLayout: '12x1' });
+
+    [
+      [1, [300, 4900]],
+      [7, [1400, 1800]],
+    ].forEach(([lead, samples]) => {
+      const points = annotationPoints(legacy, lead, samples);
+
+      expect(isDrawn(next, points)).toBe(true);
+      points.forEach((point) => {
+        expectClose(next.canvasToWorld(next.worldToCanvas(point)), point);
+        expect(cellAt(next, next.worldToCanvas(point)).leadIndex).toBe(lead);
+      });
+    });
   });
 });
 
@@ -280,5 +426,62 @@ describe('Annotations saved on a legacy ECG viewport', () => {
 
     expect(legacy.isReferenceViewable(reference)).toBe(false);
     expect(next.isReferenceViewable(reference)).toBe(false);
+  });
+});
+
+describe('Options of the next ECG viewport', () => {
+  const layoutOf = (viewport) =>
+    viewport
+      .getResolvedView()
+      .channelLayouts.map(({ leadIndex, startSample, endSample }) => [
+        leadIndex,
+        startSample,
+        endSample,
+      ]);
+
+  it('keeps a copy of the default options as the options, as the legacy viewport', async () => {
+    const legacy = await mountLegacy();
+    const next = await mountNext();
+
+    expect(next.defaultOptions).toEqual(legacy.defaultOptions);
+    expect(next.options).toEqual(legacy.options);
+    expect(next.options).not.toBe(next.defaultOptions);
+
+    legacy.setOptions({ traceLayout: '12x1' });
+    next.setOptions({ traceLayout: '12x1' });
+
+    expect(next.options).toEqual(legacy.options);
+
+    legacy.reset();
+    next.reset();
+
+    expect(next.options).toEqual(legacy.options);
+  });
+
+  it('shows the trace layout of setOptions as a viewport made with it, and the default one after reset', async () => {
+    const made = await mountNext(undefined, { traceLayout: '6x2' });
+    const changed = await mountNext();
+    const defaultLayout = layoutOf(changed);
+
+    expect(changed.getResolvedView().traceLayoutName).toBe('3x4+1');
+
+    changed.setOptions({ traceLayout: '6x2' });
+
+    expect(changed.getResolvedView().traceLayoutName).toBe('6x2');
+    expect(layoutOf(changed)).toEqual(layoutOf(made));
+
+    changed.reset();
+
+    expect(changed.getResolvedView().traceLayoutName).toBe('3x4+1');
+    expect(layoutOf(changed)).toEqual(defaultLayout);
+  });
+
+  it('keeps the trace layout of the view state when another option changes', async () => {
+    const next = await mountNext();
+
+    next.setViewState({ traceLayout: '12x1' });
+    next.setOptions({ background: [1, 0, 0] });
+
+    expect(next.getResolvedView().traceLayoutName).toBe('12x1');
   });
 });

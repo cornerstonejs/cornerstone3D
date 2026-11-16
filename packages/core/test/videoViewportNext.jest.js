@@ -190,3 +190,66 @@ describe('Next video viewport', () => {
     opened.element.remove();
   });
 });
+
+describe('Pan of the next video viewport', () => {
+  let viewport;
+  let element;
+
+  beforeEach(async () => {
+    ({ viewport, element } = await createViewport());
+  });
+
+  afterEach(() => {
+    viewport.destroy();
+    element.remove();
+  });
+
+  /**
+   * Moves the view as PanTool does on a viewport without a camera: it adds
+   * the canvas delta of the mouse to `getPan` and sets the sum.
+   */
+  function dragBy(delta) {
+    const pan = viewport.getPan();
+
+    viewport.setPan([pan[0] + delta[0], pan[1] + delta[1]]);
+  }
+
+  function expectMovedBy(world, before, delta) {
+    const after = viewport.worldToCanvas(world);
+
+    expect(after[0] - before[0]).toBeCloseTo(delta[0], 6);
+    expect(after[1] - before[1]).toBeCloseTo(delta[1], 6);
+  }
+
+  it('starts with no pan, as the planar viewport', () => {
+    expect(viewport.getPan()[0]).toBeCloseTo(0, 6);
+    expect(viewport.getPan()[1]).toBeCloseTo(0, 6);
+  });
+
+  it('moves the picture with the mouse at any rotation and zoom', () => {
+    const world = [50, 40, 0];
+    const delta = [12, -7];
+
+    [
+      { rotation: 0 },
+      { rotation: 90 },
+      { rotation: 30 },
+      { rotation: 270, scale: 1.5 },
+    ].forEach((viewState) => {
+      viewport.setViewState(viewState);
+
+      const before = viewport.worldToCanvas(world);
+
+      dragBy(delta);
+      expectMovedBy(world, before, delta);
+    });
+  });
+
+  it('gives back the pan that it was set to', () => {
+    viewport.setViewState({ rotation: 90, scale: 2 });
+    viewport.setPan([30, -20]);
+
+    expect(viewport.getPan()[0]).toBeCloseTo(30, 6);
+    expect(viewport.getPan()[1]).toBeCloseTo(-20, 6);
+  });
+});

@@ -9,10 +9,7 @@ import type {
   ViewPresentationSelector,
 } from '../../../types';
 import type { Point2 } from '../../../types';
-import type ViewportInputOptions from '../../../types/ViewportInputOptions';
 import { VideoEnums } from '../../../enums';
-import { deepClone } from '../../../utilities/deepClone';
-import { coreLog } from '../../../utilities/logger';
 import { viewportProjection } from '../viewportProjection';
 import type {
   VideoDataPresentation,
@@ -21,12 +18,7 @@ import type {
 } from './VideoViewportTypes';
 import VideoViewport from './VideoViewport';
 
-const log = coreLog.getLogger('RenderingEngine', 'VideoViewportLegacyAdapter');
-
 class VideoViewportLegacyAdapter extends VideoViewport {
-  /** The options that the viewport was made with. */
-  readonly defaultOptions: ViewportInputOptions;
-
   /** Whether the viewport fires no events, from the default options. */
   readonly suppressEvents: boolean;
 
@@ -36,19 +28,11 @@ class VideoViewportLegacyAdapter extends VideoViewport {
    */
   isDisabled = false;
 
-  /**
-   * The options of the viewport, as on the legacy viewport: a copy of the
-   * default options until `setOptions` or `reset` changes them.
-   */
-  options: ViewportInputOptions;
-
   /** The number of frames that one step of `scroll` moves. */
   private scrollSpeed = 1;
 
   constructor(args: VideoViewportInput) {
     super(args);
-    this.defaultOptions = deepClone(args.defaultOptions || {});
-    this.options = deepClone(this.defaultOptions);
     this.suppressEvents = Boolean(this.defaultOptions.suppressEvents);
   }
 
@@ -238,6 +222,23 @@ class VideoViewportLegacyAdapter extends VideoViewport {
     super.setZoom(zoom, Array.isArray(canvasPoint) ? canvasPoint : undefined);
   }
 
+  /**
+   * The pan of the legacy video viewport, in world units of the video: a
+   * world point shows at the canvas point `(world + pan) * ratio`.
+   */
+  getPan(): Point2 {
+    return this.getResolvedView()?.pan ?? [0, 0];
+  }
+
+  /** Sets the pan of the legacy video viewport, in world units of the video. */
+  setPan(pan: Point2): void {
+    const resolvedView = this.getResolvedView();
+
+    if (resolvedView) {
+      this.setViewState(resolvedView.withPan(pan).state.viewState);
+    }
+  }
+
   /** The rotation of the view state in degrees. */
   getRotation(): number {
     return this.getViewState().rotation ?? 0;
@@ -370,37 +371,6 @@ class VideoViewportLegacyAdapter extends VideoViewport {
     return undefined;
   }
 
-  /**
-   * Sets the options of the viewport and renders when `immediate` is set. A
-   * display area or an aspect ratio in the options is not applied, and the
-   * adapter logs a warning for them.
-   */
-  setOptions(options: ViewportInputOptions, immediate = false): void {
-    this.options = deepClone(options);
-
-    if (this.options?.displayArea || this.options?.aspectRatio) {
-      log.warn(
-        'A video viewport does not apply the display area or the aspect ratio of its options'
-      );
-    }
-
-    if (immediate) {
-      this.render();
-    }
-  }
-
-  /**
-   * Sets the options back to the default options, as on the legacy viewport,
-   * and renders when `immediate` is set.
-   */
-  reset(immediate = false): void {
-    this.options = deepClone(this.defaultOptions);
-
-    if (immediate) {
-      this.render();
-    }
-  }
-
   /** Always false, as on the legacy viewports: the view plane stays the same. */
   isOrientationChangeable(): boolean {
     return false;
@@ -408,7 +378,7 @@ class VideoViewportLegacyAdapter extends VideoViewport {
 
   /** The display area of the options, as on the legacy viewport. */
   getDisplayArea(): DisplayArea | undefined {
-    return this.options?.displayArea;
+    return this.options?.displayArea as DisplayArea | undefined;
   }
 }
 

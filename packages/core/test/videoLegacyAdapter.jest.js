@@ -171,6 +171,22 @@ describe('Video legacy adapter', () => {
     expect(viewport.worldToCanvas([30, 40, 0])[1]).toBeCloseTo(HEIGHT / 2);
   });
 
+  it('keeps the legacy pan in world units, where a canvas point is the world point plus the pan times the ratio', () => {
+    const ratio = Math.min(WIDTH / VIDEO_WIDTH, HEIGHT / VIDEO_HEIGHT);
+
+    expect(viewport.getPan()).toEqual([
+      (WIDTH / ratio - VIDEO_WIDTH) / 2,
+      (HEIGHT / ratio - VIDEO_HEIGHT) / 2,
+    ]);
+
+    viewport.setPan([10, 30]);
+
+    expect(viewport.getPan()[0]).toBeCloseTo(10);
+    expect(viewport.getPan()[1]).toBeCloseTo(30);
+    expect(viewport.worldToCanvas([5, 7, 0])[0]).toBeCloseTo((5 + 10) * ratio);
+    expect(viewport.worldToCanvas([5, 7, 0])[1]).toBeCloseTo((7 + 30) * ratio);
+  });
+
   it('takes a canvas point or the legacy flag as the second zoom argument', () => {
     viewport.setZoom(2, true);
 

@@ -1,4 +1,6 @@
-import GenericViewport from '../GenericViewport';
+import GenericViewport, {
+  type GenericViewportOptions,
+} from '../GenericViewport';
 import type {
   CPUIImageData,
   IImage,
@@ -81,9 +83,6 @@ class VideoViewport extends GenericViewport<
   /** The canvas under the video element, of the size of the viewport. */
   private readonly viewportCanvas: HTMLCanvasElement;
 
-  /** The background colour of the viewport, from the default options. */
-  private readonly background?: [number, number, number];
-
   /** Whether the frame or the view changed since the canvas was drawn. */
   private isCanvasStale = true;
 
@@ -99,9 +98,6 @@ class VideoViewport extends GenericViewport<
     super(args);
     this.renderingEngineId = args.renderingEngineId;
     this.viewportCanvas = args.canvas || getOrCreateCanvas(this.element);
-    this.background = args.defaultOptions?.background as
-      | [number, number, number]
-      | undefined;
     this.element.style.position = this.element.style.position || 'relative';
     this.element.style.overflow = 'hidden';
     this.element.style.background = this.element.style.background || '#000';
@@ -445,14 +441,18 @@ class VideoViewport extends GenericViewport<
   }
 
   /**
-   * Returns the current pan offset in canvas coordinates.
+   * Returns the pan in canvas pixels on the screen, as on the planar
+   * viewport: `[0, 0]` for the fitted view, and the move of the picture on
+   * the screen after that, at any rotation and zoom.
    */
   getPan(): Point2 {
-    return this.getResolvedView()?.pan ?? [0, 0];
+    return this.getResolvedView()?.canvasPan ?? [0, 0];
   }
 
   /**
-   * Sets the pan offset in canvas coordinates.
+   * Moves the picture so that `getPan` gives this pan. A canvas delta added
+   * to `getPan` moves the picture by that delta on the screen, as PanTool
+   * expects.
    */
   setPan(pan: Point2): void {
     const resolvedView = this.getResolvedView();
@@ -461,7 +461,9 @@ class VideoViewport extends GenericViewport<
       return;
     }
 
-    this.applyResolvedViewState(resolvedView.withPan(pan).state.viewState);
+    this.applyResolvedViewState(
+      resolvedView.withCanvasPan(pan).state.viewState
+    );
   }
 
   /**
@@ -1157,8 +1159,10 @@ class VideoViewport extends GenericViewport<
     context.globalAlpha = 1;
     context.filter = 'none';
 
-    if (this.background) {
-      const [red, green, blue] = this.background.map((value) =>
+    const { background } = this.options;
+
+    if (background) {
+      const [red, green, blue] = background.map((value) =>
         Math.round(value * 255)
       );
 
@@ -1237,6 +1241,24 @@ class VideoViewport extends GenericViewport<
     this.setViewState(nextViewState);
   }
 
+  /**
+   * Draws the canvas again on its next read, which fills it with the
+   * `background` of the options, as the viewport does with the background of
+   * the options that it was made with.
+   */
+  protected override applyOptions(
+    options: GenericViewportOptions,
+    previous: GenericViewportOptions
+  ): void {
+    super.applyOptions(options, previous);
+    this.isCanvasStale = true;
+  }
+
+  /**
+   * Shows the first frame of the range, paused, as the legacy viewport does:
+   * the video does not play, it only seeks to that frame when it shows
+   * another one, and waits until the frame is painted.
+   */
   private async primeInitialFrame(
     videoData: LoadedData<VideoStreamPayload>
   ): Promise<void> {
@@ -1253,15 +1275,9 @@ class VideoViewport extends GenericViewport<
         ? frameNumberToTimeSeconds(videoData.frameRange[0], videoData.fps)
         : 0;
 
-    try {
-      await element.play().catch(() => undefined);
-    } catch (_error) {
-      // Some environments reject the initial play request; seeking still helps.
-    }
-
-    await seekVideoElement(element, targetTimeSeconds);
-    await waitForVideoFramePaint(element);
     element.pause();
+    await seekVideoElement(element, targetTimeSeconds);
+    await new Promise((resolve) => requestAnimationFrame(resolve));
     this.syncCameraCurrentTimeFromElement();
   }
 }
@@ -1305,25 +1321,6 @@ async function seekVideoElement(
     element.addEventListener('seeked', onSeeked, { once: true });
     element.currentTime = timeSeconds;
   });
-}
-
-async function waitForVideoFramePaint(
-  element: HTMLVideoElement
-): Promise<void> {
-  const requestFrameCallback = (
-    element as HTMLVideoElement & {
-      requestVideoFrameCallback?: (callback: () => void) => number;
-    }
-  ).requestVideoFrameCallback;
-
-  if (requestFrameCallback) {
-    await new Promise<void>((resolve) => {
-      requestFrameCallback.call(element, () => resolve());
-    });
-    return;
-  }
-
-  await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 }
 
 function isVideoStreamData(

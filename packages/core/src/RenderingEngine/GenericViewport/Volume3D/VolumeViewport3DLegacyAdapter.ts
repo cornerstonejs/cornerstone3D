@@ -17,13 +17,10 @@ import type {
   VolumeViewportProperties,
 } from '../../../types';
 import type { PlaneRestriction } from '../../../types/IViewport';
-import type ViewportInputOptions from '../../../types/ViewportInputOptions';
 import { isImageActor } from '../../../utilities/actorCheck';
-import { deepClone } from '../../../utilities/deepClone';
 import getAcquisitionPlaneOrientation from '../../../utilities/getAcquisitionPlaneOrientation';
 import getVolumeViewportScrollInfo from '../../../utilities/getVolumeViewportScrollInfo';
 import isEqual, { isEqualNegative } from '../../../utilities/isEqual';
-import { coreLog } from '../../../utilities/logger';
 import snapFocalPointToSlice from '../../../utilities/snapFocalPointToSlice';
 import genericViewportDisplaySetMetadataProvider from '../../../utilities/genericViewportDisplaySetMetadataProvider';
 import { viewportProjection } from '../viewportProjection';
@@ -37,11 +34,6 @@ import type {
   Volume3DVolumeRendering,
   VolumeViewport3DInput,
 } from './viewport3DTypes';
-
-const log = coreLog.getLogger(
-  'RenderingEngine',
-  'VolumeViewport3DLegacyAdapter'
-);
 
 /**
  * Options of a camera reset on the adapter: the legacy reset options, and
@@ -87,12 +79,6 @@ class VolumeViewport3DLegacyAdapter extends VolumeViewport3D {
    * viewports. The engine sets it to true.
    */
   isDisabled = false;
-
-  /**
-   * The options of the viewport, as on the legacy viewport: a copy of the
-   * default options until `setOptions` or `reset` changes them.
-   */
-  options: ViewportInputOptions = deepClone(this.defaultOptions);
 
   /**
    * Makes the viewport and turns the camera to the orientation of the
@@ -620,38 +606,6 @@ class VolumeViewport3DLegacyAdapter extends VolumeViewport3D {
 
     vec3.normalize(planeNormal, planeNormal);
     this.setOrientation({ viewPlaneNormal: planeNormal as Point3 });
-  }
-
-  /**
-   * Sets the options of the viewport and renders when `immediate` is set. A
-   * display area or an aspect ratio in the options is not applied: the
-   * adapter has no `setDisplayArea` or `setAspectRatio`, and it logs a
-   * warning for them.
-   */
-  setOptions(options: ViewportInputOptions, immediate = false): void {
-    this.options = deepClone(options);
-
-    if (this.options?.displayArea || this.options?.aspectRatio) {
-      log.warn(
-        'A 3D viewport does not apply the display area or the aspect ratio of its options'
-      );
-    }
-
-    if (immediate) {
-      this.render();
-    }
-  }
-
-  /**
-   * Sets the options back to the default options, as on the legacy viewport,
-   * and renders when `immediate` is set.
-   */
-  reset(immediate = false): void {
-    this.options = deepClone(this.defaultOptions);
-
-    if (immediate) {
-      this.render();
-    }
   }
 
   /** Always false: a 3D viewport draws with vtk.js on the GPU. */

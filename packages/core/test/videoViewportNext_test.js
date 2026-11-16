@@ -488,6 +488,30 @@ describe('Direct next video viewport -- ', () => {
     });
   });
 
+  it('draws the background of setOptions into its canvas, and the default one after reset', async function () {
+    const backgroundPixel = () =>
+      Array.from(
+        next
+          .getCanvas()
+          .getContext('2d')
+          .getImageData(2, HEIGHT / 2, 1, 1).data
+      ).slice(0, 3);
+
+    expect(next.options).toEqual(legacy.options);
+    expect(backgroundPixel()).toEqual([255, 0, 255]);
+
+    next.setOptions({ ...next.options, background: [1, 0, 0] });
+    legacy.setOptions({ ...legacy.options, background: [1, 0, 0] });
+
+    expect(next.options).toEqual(legacy.options);
+    expect(backgroundPixel()).toEqual([255, 0, 0]);
+
+    next.reset();
+
+    expect(next.options).toEqual(next.defaultOptions);
+    expect(backgroundPixel()).toEqual([255, 0, 255]);
+  });
+
   it('draws the frame of a later seek into the canvas when it is read', async function () {
     const world = [30.5, 20.5, 0];
     const pixelAt = (canvas, point) =>
@@ -508,4 +532,86 @@ describe('Direct next video viewport -- ', () => {
 
     expect(laterPixel).not.toEqual(firstPixel);
   });
+});
+
+describe('Direct next video viewport at mount -- ', () => {
+  let renderingEngine;
+  let videoUrl;
+  let legacy;
+  let next;
+
+  beforeEach(function () {
+    const testEnv = testUtils.setupTestEnvironment({
+      renderingEngineId,
+      toolGroupIds: ['default'],
+    });
+
+    renderingEngine = testEnv.renderingEngine;
+    videoUrl = addTestVideoMetadata();
+    [legacy, next] = createViewports(renderingEngine);
+  });
+
+  afterEach(function () {
+    testUtils.cleanupTestEnvironment({
+      renderingEngineId,
+      toolGroupIds: ['default'],
+    });
+    URL.revokeObjectURL(videoUrl);
+  });
+
+  /** The frame on display, the time and the paused flag of a viewport. */
+  function frameState(viewport, video) {
+    return [viewport.getFrameNumber(), video.currentTime, video.paused];
+  }
+
+  it('opens on frame 1 on each of ten mounts, as the legacy viewport does', async function () {
+    await legacy.setVideo(TEST_VIDEO.imageId);
+    await animationFrames(3);
+
+    expect(frameState(legacy, legacyVideoElement(legacy))).toEqual([
+      1,
+      0,
+      true,
+    ]);
+
+    const states = [];
+
+    for (let mount = 0; mount < 10; mount++) {
+      await next.setDisplaySets({ displaySetId: TEST_VIDEO.imageId });
+      states.push(frameState(next, nextVideoElement(next)));
+      await animationFrames(3);
+      states.push(frameState(next, nextVideoElement(next)));
+    }
+
+    expect(states).toEqual(new Array(20).fill([1, 0, true]));
+  }, 30000);
+
+  it('opens on the frame number of the options on each of ten mounts, as the legacy viewport does', async function () {
+    const frameNumber = 5;
+    const time = (frameNumber - 1) / TEST_VIDEO.fps;
+
+    await legacy.setVideo(TEST_VIDEO.imageId, frameNumber);
+    await waitFor(() => !legacyVideoElement(legacy).seeking);
+
+    expect(frameState(legacy, legacyVideoElement(legacy))).toEqual([
+      frameNumber,
+      time,
+      true,
+    ]);
+
+    const states = [];
+
+    for (let mount = 0; mount < 10; mount++) {
+      await next.setDisplaySets({
+        displaySetId: TEST_VIDEO.imageId,
+        options: { frameNumber },
+      });
+      states.push(frameState(next, nextVideoElement(next)));
+      await waitFor(() => !nextVideoElement(next).seeking);
+      await animationFrames(3);
+      states.push(frameState(next, nextVideoElement(next)));
+    }
+
+    expect(states).toEqual(new Array(20).fill([frameNumber, time, true]));
+  }, 30000);
 });

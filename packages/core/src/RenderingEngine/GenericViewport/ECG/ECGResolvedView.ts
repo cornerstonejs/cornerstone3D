@@ -8,6 +8,7 @@ import {
   hasViewTimeRegion,
   resolveECGTraceCells,
   findECGLayoutForZ,
+  findECGLayoutsForLead,
   type ECGLeadGroup,
   resolveDefaultECGTraceLayout,
   resolveECGTraceLayout,
@@ -36,6 +37,16 @@ type ECGResolvedViewState = {
   dataPresentation?: ECGDataPresentation;
   frameOfReferenceUID: string;
   waveform: ECGWaveformPayload;
+  /**
+   * The region of the layout cell that the user last clicked in. A point
+   * that two cells of its lead hold is drawn in this cell.
+   */
+  preferredRegionIndex?: number;
+  /**
+   * The region of the cell that an annotation was given for each of its
+   * points; see {@link ECGResolvedView.findLayoutsForPoints}.
+   */
+  pointRegions?: WeakMap<Point3, number>;
 };
 
 /** Canvas transform that the render path applies before it draws. */
@@ -249,6 +260,70 @@ class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
   }
 
   /**
+   * The cell that draws a world point: the cell kept for the point in
+   * `pointRegions` while it still holds the sample, else a cell of the lead
+   * whose time window holds the sample (see {@link pickLayout}). With no such
+   * cell, the cell of world Z, as `findLayoutForZ` gives it.
+   */
+  findLayoutForPoint(
+    worldPos: Point3
+  ): ECGChannelLayout<ECGChannelData> | undefined {
+    const z = Math.round(worldPos[2]);
+    const holding = this.getLayoutsOfLead(z).filter((layout) =>
+      this.holdsSample(layout, worldPos[0])
+    );
+    const keptRegion = this.state.pointRegions?.get(worldPos);
+    const kept = holding.find((layout) => layout.regionIndex === keptRegion);
+
+    return kept ?? this.pickLayout(holding) ?? this.findLayoutForZ(z);
+  }
+
+  /**
+   * The cell for each point of an annotation, or undefined when the
+   * annotation does not show. The points of one lead all go to one cell of
+   * that lead whose time window holds every one of their samples (see
+   * {@link pickLayout}). When no cell of a lead holds them all, the
+   * annotation does not show.
+   */
+  findLayoutsForPoints(
+    points: Point3[]
+  ): Map<Point3, ECGChannelLayout<ECGChannelData>> | undefined {
+    const byLead = new Map<number, Point3[]>();
+
+    points.forEach((point) => {
+      const z = Math.round(point[2]);
+      byLead.set(z, [...(byLead.get(z) ?? []), point]);
+    });
+
+    const result = new Map<Point3, ECGChannelLayout<ECGChannelData>>();
+
+    for (const [z, leadPoints] of byLead) {
+      const layout = this.pickLayout(
+        this.getLayoutsOfLead(z).filter((item) =>
+          leadPoints.every((point) => this.holdsSample(item, point[0]))
+        )
+      );
+
+      if (!layout) {
+        return;
+      }
+      leadPoints.forEach((point) => result.set(point, layout));
+    }
+
+    return result;
+  }
+
+  /**
+   * The layout cell under a canvas point, else the nearest cell. Undefined
+   * when the layout has no cell.
+   */
+  findLayoutAtCanvasPoint(
+    canvasPos: Point2
+  ): ECGChannelLayout<ECGChannelData> | undefined {
+    return this.findLayoutAtSubCanvasPoint(this.toSubCanvas(canvasPos));
+  }
+
+  /**
    * Converts a canvas-space point into 3D world-space coordinates.
    * @param canvasPos - Point in canvas space [x, y].
    * @returns 3D world point `[sampleIndex, amplitude, leadIndex]`. The
@@ -270,39 +345,8 @@ class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
    * The camera uses it, so that `setCamera(getCamera())` keeps the pan.
    */
   private canvasToWorldUnclamped(canvasPos: Point2): Point3 {
-    const mapping = this.getCanvasMapping();
-    const channelLayouts = this.channelLayouts;
-    const subCanvasPos: Point2 = [
-      (canvasPos[0] - mapping.xOffset) / mapping.effectiveRatio,
-      (canvasPos[1] - mapping.yOffset) / mapping.effectiveRatio,
-    ];
-
-    // Find the layout cell containing the coordinates
-    let layout = channelLayouts.find((item) => {
-      const xStart = item.xOffset;
-      const xEnd = xStart + item.width;
-      // Row heights are stacked vertically; determine boundaries of this row
-      const yStart = item.yOffset - item.itemHeight;
-      const yEnd = item.yOffset;
-      return (
-        subCanvasPos[0] >= xStart &&
-        subCanvasPos[0] <= xEnd &&
-        subCanvasPos[1] >= yStart &&
-        subCanvasPos[1] <= yEnd
-      );
-    });
-
-    if (!layout && channelLayouts.length > 0) {
-      // The nearest cell by the distance to its rectangle, in both axes.
-      layout = channelLayouts.reduce(
-        (nearest, item) =>
-          this.getDistanceToCell(subCanvasPos, item) <
-          this.getDistanceToCell(subCanvasPos, nearest)
-            ? item
-            : nearest,
-        channelLayouts[0]
-      );
-    }
+    const subCanvasPos = this.toSubCanvas(canvasPos);
+    const layout = this.findLayoutAtSubCanvasPoint(subCanvasPos);
 
     if (!layout) {
       return [0, 0, 0];
@@ -322,12 +366,13 @@ class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
     ];
   }
 
+  /**
+   * Converts a world point to the canvas, in the cell that
+   * {@link findLayoutForPoint} gives for it.
+   */
   worldToCanvas(worldPos: Point3): Point2 {
     const mapping = this.getCanvasMapping();
-    const channelLayouts = this.channelLayouts;
-    const z = Math.round(worldPos[2]);
-
-    const layout = this.findLayoutForZ(z);
+    const layout = this.findLayoutForPoint(worldPos);
 
     if (!layout) {
       return [0, 0];
@@ -407,6 +452,81 @@ class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
         Math.max(mapping.effectiveRatio, 0.001),
       viewPlaneNormal: [0, 0, 1],
     };
+  }
+
+  /**
+   * The cells of the lead of world Z, the copy of Z first; see
+   * `findECGLayoutsForLead`.
+   */
+  private getLayoutsOfLead(z: number): ECGChannelLayout<ECGChannelData>[] {
+    return findECGLayoutsForLead(this.channelLayouts, z, this.leadGroup);
+  }
+
+  /**
+   * Picks one of the cells that can draw a point: the cell that the user
+   * last clicked in, else the first one, which is the copy of world Z when it
+   * is one of them.
+   */
+  private pickLayout(
+    layouts: ECGChannelLayout<ECGChannelData>[]
+  ): ECGChannelLayout<ECGChannelData> | undefined {
+    return (
+      layouts.find(
+        (layout) => layout.regionIndex === this.state.preferredRegionIndex
+      ) ?? layouts[0]
+    );
+  }
+
+  /**
+   * True when a cell can draw the sample: its time window holds the sample,
+   * ends included, or the cell follows the time window of the view, where a
+   * sample out of the window is only scrolled away, as by a pan.
+   */
+  private holdsSample(
+    layout: ECGChannelLayout<ECGChannelData>,
+    sample: number
+  ): boolean {
+    const time = this.traceLayout.regions[layout.regionIndex]?.time ?? 'view';
+
+    return (
+      time === 'view' ||
+      (sample >= layout.startSample && sample <= layout.endSample)
+    );
+  }
+
+  private toSubCanvas(canvasPos: Point2): Point2 {
+    const mapping = this.getCanvasMapping();
+
+    return [
+      (canvasPos[0] - mapping.xOffset) / mapping.effectiveRatio,
+      (canvasPos[1] - mapping.yOffset) / mapping.effectiveRatio,
+    ];
+  }
+
+  /**
+   * The layout cell whose rectangle holds a point in layout units, else the
+   * nearest cell by the distance to its rectangle in both axes.
+   */
+  private findLayoutAtSubCanvasPoint(
+    subCanvasPos: Point2
+  ): ECGChannelLayout<ECGChannelData> | undefined {
+    const channelLayouts = this.channelLayouts;
+    const layout = channelLayouts.find(
+      (item) => this.getDistanceToCell(subCanvasPos, item) === 0
+    );
+
+    if (layout || !channelLayouts.length) {
+      return layout;
+    }
+
+    return channelLayouts.reduce(
+      (nearest, item) =>
+        this.getDistanceToCell(subCanvasPos, item) <
+        this.getDistanceToCell(subCanvasPos, nearest)
+          ? item
+          : nearest,
+      channelLayouts[0]
+    );
   }
 
   private getCanvasMapping(): ECGCanvasMapping {

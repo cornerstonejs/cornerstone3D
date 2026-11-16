@@ -184,6 +184,32 @@ export function findECGLayoutForZ<T extends { leadIndex: number }>(
   return layouts.find((item) => item.leadIndex === baseZ);
 }
 
+/**
+ * Returns every layout of the lead of world Z in the group: the copy of Z
+ * first, then the other copies in the order of the layout. A Z of another
+ * group finds none.
+ */
+export function findECGLayoutsForLead<T extends { leadIndex: number }>(
+  layouts: T[],
+  z: number,
+  group: ECGLeadGroup = SINGLE_GROUP
+): T[] {
+  const k = Math.floor(z / ECG_LEAD_COPY_STRIDE);
+
+  if (k < 0 || k % group.count !== group.index) {
+    return [];
+  }
+  const channelIndex = z % ECG_LEAD_COPY_STRIDE;
+  const ofLead = layouts.filter(
+    (item) => item.leadIndex % ECG_LEAD_COPY_STRIDE === channelIndex
+  );
+
+  return [
+    ...ofLead.filter((item) => item.leadIndex === z),
+    ...ofLead.filter((item) => item.leadIndex !== z),
+  ];
+}
+
 /** One region of a layout, resolved to a channel and a sample range. */
 export interface ECGTraceCell<
   TChannel extends ECGChannelLike = ECGChannelLike,

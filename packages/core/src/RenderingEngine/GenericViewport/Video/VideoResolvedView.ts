@@ -37,6 +37,25 @@ class VideoResolvedView extends ResolvedViewportView<VideoResolvedViewState> {
       : [0, 0];
   }
 
+  /**
+   * The pan in canvas pixels on the screen, as on the planar viewport: where
+   * the centre of the video shows, less the centre of the canvas. It is
+   * `[0, 0]` for the fitted view, and a canvas delta added to it moves the
+   * picture by that delta at any rotation and zoom.
+   */
+  get canvasPan(): Point2 {
+    const [x, y] = this.worldToCanvas([
+      this.state.intrinsicWidth / 2,
+      this.state.intrinsicHeight / 2,
+      0,
+    ]);
+
+    return [
+      x - this.state.containerWidth / 2,
+      y - this.state.containerHeight / 2,
+    ];
+  }
+
   get rotation(): number {
     return this.state.viewState.rotation ?? 0;
   }
@@ -115,6 +134,27 @@ class VideoResolvedView extends ResolvedViewportView<VideoResolvedViewState> {
         this.getCanvasMapping()
       ),
     });
+  }
+
+  /**
+   * The view moved so that {@link canvasPan} gives this pan. The move on the
+   * screen is turned back by the rotation into the frame of the video, and
+   * the rotation keeps its pivot.
+   */
+  withCanvasPan(pan: Point2): VideoResolvedView {
+    const currentPan = this.canvasPan;
+    const radians = (-this.rotation * Math.PI) / 180;
+    const cos = Math.cos(radians);
+    const sin = Math.sin(radians);
+    const dx = pan[0] - currentPan[0];
+    const dy = pan[1] - currentPan[1];
+    const ratio = Math.max(this.worldToCanvasRatio, 0.000001);
+    const rawPan = this.pan;
+
+    return this.withPan([
+      rawPan[0] + (dx * cos - dy * sin) / ratio,
+      rawPan[1] + (dx * sin + dy * cos) / ratio,
+    ]);
   }
 
   protected buildICamera(): ICamera {

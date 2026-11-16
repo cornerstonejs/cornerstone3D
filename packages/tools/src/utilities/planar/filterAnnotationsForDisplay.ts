@@ -7,7 +7,9 @@ import type { Annotations } from '../../types';
 
 /**
  * Given the viewport and the annotations, it filters the annotations array and only
- * return those annotation that should be displayed on the viewport
+ * return those annotation that should be displayed on the viewport.
+ * A viewport that checks references by `isReferenceViewable` also gets the
+ * handle points of each annotation in the `points` option.
  * @param annotations - Annotations
  * @returns A filtered version of the annotations.
  */
@@ -72,6 +74,11 @@ export default function filterAnnotationsForDisplay(
     if (annotation.data.isCanvasAnnotation) {
       return true;
     }
-    return viewport.isReferenceViewable(annotation.metadata, filterOptions);
+    const points = annotation.data?.handles?.points;
+
+    return viewport.isReferenceViewable(
+      annotation.metadata,
+      points?.length ? { ...filterOptions, points } : filterOptions
+    );
   });
 }

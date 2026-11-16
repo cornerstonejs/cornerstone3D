@@ -500,6 +500,29 @@ describe('utilities/planar/filterAnnotationsForDisplay', () => {
   });
 });
 
+describe('utilities/planar/filterAnnotationsForDisplay with handle points', () => {
+  it('gives the handle points of the annotation to isReferenceViewable', () => {
+    const isReferenceViewable = jest.fn(() => true);
+    const viewport = { isReferenceViewable };
+    const points = [
+      [500, 10, 1],
+      [2000, 20, 1],
+    ];
+    const filterOptions = { withNavigation: true };
+    csUtils.getViewportContentMode.mockReturnValue('ecg');
+    const annotation = makeAnnotation({ points });
+
+    filterAnnotationsForDisplay(viewport, [annotation], filterOptions);
+
+    expect(isReferenceViewable).toHaveBeenCalledWith(annotation.metadata, {
+      withNavigation: true,
+      points,
+    });
+    expect(isReferenceViewable.mock.calls[0][1].points).toBe(points);
+    expect(filterOptions).toEqual({ withNavigation: true });
+  });
+});
+
 describe('utilities/planar/getWorldWidthAndHeightFromCorners', () => {
   // Axial-style basis: viewPlaneNormal = +Z, viewUp = +Y.
   // viewRight = cross(viewUp, viewPlaneNormal) = cross([0,1,0],[0,0,1]) = [1,0,0]

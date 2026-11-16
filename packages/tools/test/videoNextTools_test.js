@@ -319,3 +319,64 @@ describe('Tools on a direct next video viewport -- ', () => {
     expect(drawnContour(next.element)).toBeNull();
   }, 30000);
 });
+
+describe('PanTool on a turned direct next video viewport -- ', () => {
+  let renderingEngine;
+  let videoUrl;
+  let next;
+
+  beforeEach(async function () {
+    const setup = testUtils.setupTestEnvironment({
+      renderingEngineId,
+      toolGroupIds: [toolGroupId],
+      tools: [csTools3d.PanTool],
+      toolActivations: {
+        [csTools3d.PanTool.toolName]: { bindings: [{ mouseButton: 1 }] },
+      },
+    });
+
+    renderingEngine = setup.renderingEngine;
+    videoUrl = addTestVideoMetadata();
+    [, next] = createViewports(renderingEngine, setup.toolGroups[toolGroupId]);
+    await next.setDisplaySets({ displaySetId: TEST_VIDEO.imageId });
+    await animationFrames(3);
+  }, 15000);
+
+  afterEach(function () {
+    testUtils.cleanupTestEnvironment({
+      renderingEngineId,
+      toolGroupIds: [toolGroupId],
+    });
+    URL.revokeObjectURL(videoUrl);
+  });
+
+  /** Drags the mouse over the element from one canvas point to another. */
+  async function drag(element, from, to) {
+    element.dispatchEvent(mouseEventAt(element, 'mousedown', from));
+    document.dispatchEvent(mouseEventAt(element, 'mousemove', to));
+    document.dispatchEvent(mouseEventAt(element, 'mouseup', to));
+    await animationFrames(2);
+  }
+
+  it('moves the picture with the mouse at a rotation of 90 degrees', async function () {
+    for (const viewState of [
+      { rotation: 90 },
+      { rotation: 90, scale: 1.5 },
+      { rotation: 30 },
+    ]) {
+      next.setViewState(viewState);
+      await animationFrames(2);
+
+      const from = [150, 100];
+      const to = [170, 90];
+      const world = next.canvasToWorld(from);
+
+      await drag(next.element, from, to);
+
+      const moved = next.worldToCanvas(world);
+
+      expect(moved[0]).toBeCloseTo(to[0], 0);
+      expect(moved[1]).toBeCloseTo(to[1], 0);
+    }
+  }, 15000);
+});

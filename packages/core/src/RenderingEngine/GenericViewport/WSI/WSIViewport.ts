@@ -204,6 +204,11 @@ export default class WSIViewport extends GenericViewport<
     return this.getWSIData()?.imageURISet.has(imageURI) || false;
   }
 
+  /**
+   * Writes a patch of the view state to the map view. A patch with a
+   * resolution and no zoom drops the zoom, so that the map does not set the
+   * old zoom again over the new resolution.
+   */
   setViewState(cameraPatch: Partial<WSIViewState>): void {
     this.syncCameraFromView();
 
@@ -232,6 +237,10 @@ export default class WSIViewport extends GenericViewport<
 
     if (typeof cameraPatch.resolution === 'number') {
       nextPatch.resolution = Math.max(cameraPatch.resolution, 0.000001);
+
+      if (typeof cameraPatch.zoom !== 'number') {
+        nextPatch.zoom = undefined;
+      }
     }
 
     super.setViewState(nextPatch);
@@ -403,6 +412,11 @@ export default class WSIViewport extends GenericViewport<
     return indexToWorldWSIMetadata(this.getWSIData()?.metadata, point);
   }
 
+  /**
+   * Zooms as the legacy viewport does: each step scales the resolution by
+   * 1.1, so a positive delta zooms out and a negative one zooms in. The
+   * centre stays.
+   */
   scroll(delta: number): void {
     const resolution =
       this.getView()?.getResolution?.() ?? this.viewState.resolution ?? 1;

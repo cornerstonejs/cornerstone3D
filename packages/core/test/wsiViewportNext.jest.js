@@ -368,3 +368,37 @@ describe('Zoom at mount of the direct next whole slide viewport', () => {
     expect(next.viewport.getPan()).toEqual([0, 0]);
   });
 });
+
+describe('Scroll of the direct next whole slide viewport', () => {
+  it('zooms by the factor of the legacy viewport for one step', async () => {
+    const legacy = await track(mountLegacy(0.4));
+    const next = await track(mountNext(WSIViewport, 0.4));
+    const legacyCenter = legacy.view.getCenter();
+    const nextCenter = next.view.getCenter();
+
+    legacy.viewport.scroll(1);
+    next.viewport.scroll(1);
+
+    expect(legacy.view.getResolution()).toBeCloseTo(4.4, 6);
+    expect(next.view.getResolution()).toBeCloseTo(
+      legacy.view.getResolution(),
+      6
+    );
+    expectClose(legacy.view.getCenter(), legacyCenter);
+    expectClose(next.view.getCenter(), nextCenter);
+  });
+
+  it('zooms in for a step back and keeps the zoom of the map in step', async () => {
+    const legacy = await track(mountLegacy(0));
+    const next = await track(mountNext(WSIViewport, 0));
+
+    legacy.viewport.scroll(-2);
+    next.viewport.scroll(-2);
+
+    expect(next.view.getResolution()).toBeCloseTo(
+      legacy.view.getResolution(),
+      6
+    );
+    expect(next.viewport.getZoom()).toBeCloseTo(legacy.viewport.getZoom(), 6);
+  });
+});

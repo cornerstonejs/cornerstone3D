@@ -1,6 +1,8 @@
 import getOrCreateCanvas from '../../helpers/getOrCreateCanvas';
 import type { LoadedData } from '../ViewportArchitectureTypes';
-import GenericViewport from '../GenericViewport';
+import GenericViewport, {
+  type GenericViewportOptions,
+} from '../GenericViewport';
 import { ViewportType } from '../../../enums';
 import {
   ECG_AMPLITUDE_INDEX_SIZE,
@@ -53,6 +55,19 @@ class ECGViewport extends GenericViewport<
 
   protected renderContext: ECGCanvasRenderContext;
 
+  /**
+   * The region of the layout cell that the user last clicked in. A point
+   * that two cells of its lead hold is drawn in this cell.
+   */
+  private clickedRegionIndex?: number;
+
+  /**
+   * The region of the cell that each point of a shown annotation was given
+   * by `isReferenceViewable`, so that `worldToCanvas` draws the whole
+   * annotation in that one cell.
+   */
+  private pointRegions = new WeakMap<Point3, number>();
+
   static get useCustomRenderingPipeline(): boolean {
     return true;
   }
@@ -91,7 +106,44 @@ class ECGViewport extends GenericViewport<
       'data-rendering-engine-uid',
       this.renderingEngineId
     );
+    this.element.addEventListener('pointerdown', this.onPointerDown);
     this.resize();
+  }
+
+  /**
+   * Keeps the region of the layout cell under the pointer when the user
+   * clicks, for the cell choice of `worldToCanvas`.
+   */
+  private onPointerDown = (evt: PointerEvent): void => {
+    const rect = this.element.getBoundingClientRect();
+    const layout = this.getResolvedView()?.findLayoutAtCanvasPoint([
+      evt.clientX - rect.left,
+      evt.clientY - rect.top,
+    ]);
+
+    this.clickedRegionIndex = layout?.regionIndex;
+  };
+
+  /**
+   * Shows a changed `traceLayout` of the options, the one option that the
+   * viewport reads when it is made. A trace layout set through the view
+   * state stays while the option does not change.
+   */
+  protected override applyOptions(
+    options: GenericViewportOptions,
+    previous: GenericViewportOptions
+  ): void {
+    super.applyOptions(options, previous);
+
+    if (options.traceLayout !== previous.traceLayout) {
+      this.setViewState({ traceLayout: options.traceLayout });
+    }
+  }
+
+  protected override onDestroy(): void {
+    this.element.removeEventListener('pointerdown', this.onPointerDown);
+    this.clickedRegionIndex = undefined;
+    this.pointRegions = new WeakMap();
   }
 
   /**
@@ -231,6 +283,12 @@ class ECGViewport extends GenericViewport<
    * is a lead and not a place in space, so the view plane normal and the
    * plane restriction that a legacy ECG viewport puts in its references are
    * not checked, as the legacy viewport does not check them.
+   *
+   * With `options.points`, the points of the annotation, the reference shows
+   * only when, for each lead of the points, one cell of the layout holds the
+   * samples of all of them (see `ECGResolvedView.findLayoutsForPoints`). The
+   * viewport keeps that cell for each point, and `worldToCanvas` draws the
+   * point there.
    */
   isReferenceViewable(
     viewReference: ViewReference,
@@ -249,12 +307,27 @@ class ECGViewport extends GenericViewport<
     if (!super.isReferenceViewable(recordReference, options)) {
       return false;
     }
-    if (typeof sliceIndex !== 'number') {
-      return true;
-    }
     const resolvedView = this.getResolvedView();
 
-    return !resolvedView || !!resolvedView.findLayoutForZ(sliceIndex);
+    if (!resolvedView) {
+      return true;
+    }
+    if (
+      typeof sliceIndex === 'number' &&
+      !resolvedView.findLayoutForZ(sliceIndex)
+    ) {
+      return false;
+    }
+    if (!options.points?.length) {
+      return true;
+    }
+    const layouts = resolvedView.findLayoutsForPoints(options.points);
+
+    layouts?.forEach((layout, point) =>
+      this.pointRegions.set(point, layout.regionIndex)
+    );
+
+    return !!layouts;
   }
 
   /**
@@ -698,6 +771,8 @@ class ECGViewport extends GenericViewport<
       dataPresentation: this.getDisplaySetPresentation(waveform.id),
       frameOfReferenceUID: getECGFrameOfReferenceUID(this.getCurrentImageId()),
       waveform,
+      preferredRegionIndex: this.clickedRegionIndex,
+      pointRegions: this.pointRegions,
     });
   }
 

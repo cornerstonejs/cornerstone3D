@@ -212,6 +212,8 @@ layer of a fusion: the opacity is applied as given.
 - **The web client** of a slide falls back to the `WADO_WEB_CLIENT` metadata
   of its first image when the display set names none, as on the legacy
   viewport.
+- **`scroll()` zooms,** by a factor of 1.1 for each step, as on the legacy
+  viewport. In 5.x it did nothing on the next viewport.
 
 ## ECG viewports
 
@@ -219,6 +221,11 @@ layer of a fusion: the opacity is applied as given.
   a view plane normal and a plane restriction, which the next viewport of 5.x
   rejected.
 - **`getNumberOfSlices()`** exists and gives 1.
+- **An annotation is drawn on its own lead.** In a trace layout with several
+  columns each lead shows a part of the record, and some leads show twice. A
+  point is drawn in a cell of its own lead that shows its sample, and an
+  annotation is hidden when no cell shows all of its points. In 5.x such a
+  point was drawn in the cell of another lead.
 - **The default trace layout differs from the legacy viewport.** The legacy
   viewport draws twelve rows of one lead. The next viewport draws three rows
   of four leads and a rhythm strip for a record of eight leads or more and
@@ -291,11 +298,25 @@ layer of a fusion: the opacity is applied as given.
 - **`invert`** of the presentation is applied.
 - **`canvas` and `getCanvas()`** give a canvas of the size of the viewport with
   the frame on display. It is drawn when it is read.
+- **A video opens on its first frame,** or on `options.frameNumber`, and
+  does not play to get there. In 5.x it could open on the second frame.
+- **`getPan()` and `setPan()` are in canvas pixels on the screen,** `[0, 0]` at
+  the fit, as on the other next viewports, and a drag of the pan tool moves
+  the picture with the mouse at any rotation.
 - **A labelmap over a video** is not available. It is not available on the
   legacy viewport either: both throw. Contour segmentations show.
 
 ## Smaller changes
 
+- **`options`, `setOptions()` and `reset()`** are on every next viewport. A
+  changed option takes effect where the family honours it at creation: the
+  `background` on a video viewport, the `traceLayout` on an ECG viewport, and
+  the `background`, `parallelProjection`, `orientation` and `suppressEvents`
+  on a 3D viewport.
+- **`isReferenceViewable` takes the points of an annotation** in the option
+  `points`, and the annotation filter of the tools passes the handle points
+  of each annotation. A viewport that shows a part of its world in several
+  places uses them.
 - **16-bit textures:** a scale error of up to one grey level at a normal
   window is fixed on GPUs with 16-bit normalised textures.
 - **`AnnotationMultiSlice.setViewportFrameRange`** sets the range. It passed
