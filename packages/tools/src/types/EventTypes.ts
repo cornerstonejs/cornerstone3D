@@ -246,6 +246,12 @@ type SegmentationDataModifiedEventDetail = {
    * labelmap then skips its re-reduction and only renders.
    */
   voxelsUnchanged?: boolean;
+  /**
+   * For a segmentation of a 4D series: the time point (dimension group number,
+   * starting at 1) of the modified data, or of the image volume that the
+   * labelmap now follows. Undefined for a segmentation of a 3D series.
+   */
+  dimensionGroupNumber?: number;
 };
 
 /**

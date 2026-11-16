@@ -589,9 +589,9 @@ describe('VoxelManager', () => {
       expect(() => voxelManager.getRange()).toThrow(TypeError);
     });
 
-    // This factory is the reason that it returns an `IVoxelManager` and not an
-    // `IVolumeVoxelManager`.
-    it('createScalarDynamicVolumeVoxelManager installs two of the four', () => {
+    // Each member acts on the active dimension group; a 4D labelmap needs the
+    // write for interpolation.
+    it('createScalarDynamicVolumeVoxelManager installs all four', () => {
       const [width, height, depth] = [4, 4, 2];
       const imageIdGroups = [[], []];
 
@@ -622,10 +622,7 @@ describe('VoxelManager', () => {
         numberOfComponents: 1,
       });
 
-      expect(installedMembers(voxelManager)).toEqual([
-        'getRange',
-        'getCompleteScalarDataArray',
-      ]);
+      expect(installedMembers(voxelManager)).toEqual(FOUR_MEMBERS);
 
       imageIdGroups.flat().forEach((imageId) => {
         cache.removeImageLoadObject(imageId);

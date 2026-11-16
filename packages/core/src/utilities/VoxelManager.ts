@@ -1722,10 +1722,9 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
    * values of the active dimension group.
    *
    * The result is an `IVoxelManager` and not an `IVolumeVoxelManager`. This
-   * factory installs `getRange` and `getCompleteScalarDataArray`, and it
-   * installs neither `setCompleteScalarDataArray` nor `invalidateCache`, so a
-   * call to one of those two throws a TypeError. A caller must guard the call,
-   * or somebody must add the two delegations to this factory in later work.
+   * factory installs `getRange`, `getCompleteScalarDataArray`,
+   * `setCompleteScalarDataArray` and `invalidateCache`; each one acts on the
+   * active dimension group only.
    */
   public static createScalarDynamicVolumeVoxelManager({
     imageIdGroups,
@@ -1889,6 +1888,14 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
     // @ts-ignore
     voxelManager.getCompleteScalarDataArray = () => {
       return voxelGroups[activeDimensionGroup].getCompleteScalarDataArray();
+    };
+
+    voxelManager.setCompleteScalarDataArray = (scalarData) => {
+      voxelGroups[activeDimensionGroup].setCompleteScalarDataArray(scalarData);
+    };
+
+    voxelManager.invalidateCache = () => {
+      voxelGroups[activeDimensionGroup].invalidateCache?.();
     };
 
     // @ts-ignore

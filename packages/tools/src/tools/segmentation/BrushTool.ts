@@ -418,7 +418,7 @@ class BrushTool extends LabelmapBaseTool {
       strategy: activeStrategy,
     });
 
-    if (!operationData) {
+    if (!operationData || !strategyData) {
       return;
     }
 
