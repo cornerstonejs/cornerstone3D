@@ -804,10 +804,12 @@ every time point, and that volume had the wrong depth.
 `SEGMENTATION_DATA_MODIFIED` changes in three ways:
 
 1. The event detail has a new field, `dimensionGroupNumber`. For a
-   segmentation of a 4D series, the field gives the time point of the
-   modified data, from 1. An undo or a redo gives the time point of the
-   edit, which can be different from the time point on display. For a
-   segmentation of a 3D series, the field is not set.
+   segmentation of a 4D series that has a dynamic labelmap volume, the
+   field gives the time point of the modified data, from 1. An undo or a
+   redo gives the time point of the edit, which can be different from the
+   time point on display. For a segmentation of a 3D series, and for a 4D
+   segmentation with overlapping segments (one static volume), an edit does
+   not set the field.
 2. A change of time point (`DYNAMIC_VOLUME_DIMENSION_GROUP_CHANGED`) now fires
    `SEGMENTATION_DATA_MODIFIED` for each segmentation with a 4D labelmap, with
    the new `dimensionGroupNumber`.
@@ -839,13 +841,19 @@ Other changes:
   series, and an edit or an undo gives the index among the covered time
   points. The two numbers are equal when the labelmap covers every time point.
   [#3090](https://github.com/cornerstonejs/cornerstone3D/issues/3090) tracks
-  one number for both.
+  one number for both. Until that fix, do not use `dimensionGroupNumber` as
+  a key for the data of each time point of such a labelmap, because two time
+  points can give the same number.
 - A 4D labelmap with more than one labelmap image for one referenced image
   (overlapping segments) stays one static volume of every time point, as
   before this change.
-- `setCompleteScalarDataArray` and `invalidateCache` of a 4D labelmap act on
-  the time point on display, so labelmap interpolation edits only that time
-  point.
+- `getCompleteScalarDataArray`, `setCompleteScalarDataArray` and
+  `invalidateCache` of a 4D labelmap act on the active time point of the
+  labelmap. That is the time point on display, except when the labelmap does
+  not cover the time point on display: then it is the last covered time
+  point. Labelmap interpolation and grow cut edit only the active time point.
+  Grow cut discards its result when the time point changes during the
+  computation.
 
 ### Migration Guidance
 

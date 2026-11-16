@@ -143,6 +143,12 @@ async function runGrowCut(
 
   const labelmapData =
     labelmap.voxelManager.getCompleteScalarDataArray() as Types.PixelDataTypedArray;
+  // A 4D labelmap can change its time point during the GPU work below.
+  const getTimePoint = () =>
+    (
+      labelmap.voxelManager as { getCurrentDimensionGroupNumber?: () => number }
+    ).getCurrentDimensionGroupNumber?.();
+  const startTimePoint = getTimePoint();
 
   let volumePixelData =
     volume.voxelManager.getCompleteScalarDataArray() as Types.PixelDataTypedArray;
@@ -562,6 +568,11 @@ async function runGrowCut(
   const maxX = boundsResult[3];
   const maxY = boundsResult[4];
   const maxZ = boundsResult[5];
+
+  if (getTimePoint() !== startTimePoint) {
+    // The result belongs to a different time point; discard it.
+    return;
+  }
 
   // update the voxel manager with the new labelmap data
   labelmap.voxelManager.setCompleteScalarDataArray(labelmapData);
