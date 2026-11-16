@@ -11,10 +11,16 @@ jest.mock('@cornerstonejs/core', () => {
   };
 });
 
+jest.mock('./labelmapModel', () => ({
+  ...jest.requireActual('./labelmapModel'),
+  getOrCreateDynamicLabelmapVolume: jest.fn(),
+}));
+
 import {
   defaultSegmentationStateManager,
   internalConvertStackToVolumeLabelmap,
 } from './SegmentationStateManager';
+import { getOrCreateDynamicLabelmapVolume } from './labelmapModel';
 
 const { volumeLoader: mockVolumeLoader } = jest.requireMock(
   '@cornerstonejs/core'
@@ -146,6 +152,18 @@ describe('internalConvertStackToVolumeLabelmap', () => {
     expect(createAndCacheVolumeFromImagesMock).not.toHaveBeenCalled();
     expect(getPrimaryLayer().volumeId).toBeUndefined();
     expect('volumeId' in getLabelmapData()).toBe(false);
+  });
+
+  it('keeps a 4D labelmap stack-backed on its dynamic volume', async () => {
+    (getOrCreateDynamicLabelmapVolume as jest.Mock).mockReturnValueOnce({
+      volumeId: 'dynamic-volume',
+    });
+
+    await convert();
+
+    expect(createAndCacheVolumeFromImagesMock).not.toHaveBeenCalled();
+    expect(getPrimaryLayer().volumeId).toBeUndefined();
+    expect(getPrimaryLayer().storageKind).toBe('stack');
   });
 
   it('does nothing when the segmentation is removed during conversion', async () => {
