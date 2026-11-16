@@ -18,8 +18,10 @@ import {
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
   addButtonToToolbar,
+  addGpuSettingsPresetDropdown,
   ctVoiRange,
 } from '../../../../utils/demo/helpers';
+import { getBooleanUrlParam } from '../../../../utils/demo/helpers/exampleParameters';
 import {
   fillStackSegmentationWithMockData,
   fillVolumeLabelmapWithMockData,
@@ -549,6 +551,32 @@ addButtonToToolbar({
 addButtonToToolbar({
   title: 'Add Fake Bidirectionals',
   onClick: () => addFakeBidirectionalAnnotations(),
+});
+
+// The preset reduces the CT texture only with final downsampling on. Under
+// `low`, the MPR viewport draws the full-resolution voxel slice in sagittal
+// after the volume loads, and the reduced slice in an oblique plane.
+addGpuSettingsPresetDropdown({
+  onSelectedValueChange: () => {
+    getRenderingEngine(renderingEngineId)?.render();
+    setTimeout(updateStatusPanel, 100);
+  },
+});
+
+// The flag applies at init, so a change reloads the page with the URL
+// parameter that initDemo reads. The toolbar runs before initDemo.
+const finalDownsampling = getBooleanUrlParam('finalDownsampling');
+
+addButtonToToolbar({
+  title: finalDownsampling
+    ? 'Reload with final downsampling off'
+    : 'Reload with final downsampling on',
+  onClick: () => {
+    const url = new URL(window.location.href);
+
+    url.searchParams.set('finalDownsampling', String(!finalDownsampling));
+    window.location.href = url.toString();
+  },
 });
 
 async function run() {
