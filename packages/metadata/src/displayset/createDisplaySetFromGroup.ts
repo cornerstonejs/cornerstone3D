@@ -1,14 +1,9 @@
 import { BaseDisplaySet } from './BaseDisplaySet';
 import { ImageStackDisplaySet } from './ImageStackDisplaySet';
-import { isEcgInstance } from './isEcgInstance';
-import { isVideoInstance } from './isVideoInstance';
-import { isWsiInstance } from './isWsiInstance';
+import { isUnsafeKey } from '../safeFunctions/schema';
 import type { IDisplaySet } from './IDisplaySet';
-import type { InstanceGroup, ViewportTypeHint } from './types';
-import {
-  getPreferredViewportType,
-  getViewportTypesForGroup,
-} from './viewportTypes';
+import { isReconstructableInstances } from './isReconstructableInstances';
+import type { InstanceGroup } from './types';
 
 export type CreateDisplaySetFromGroupOptions = {
   displaySetId?: string;
@@ -30,6 +25,13 @@ const RESERVED_ATTRIBUTE_KEYS = new Set<string>([
   'underlyingImageIds',
   'instances',
   'displaySetId',
+  // The identity of the split: a rule must not rename it.
+  'splitKey',
+  'splitRuleId',
+  'splitGroupId',
+  // The handler decides these; an attribute must not contradict the class.
+  'handler',
+  'isDisplayable',
 ]);
 
 /**
@@ -52,25 +54,15 @@ function isAssignable(target: object, key: string): boolean {
   return true;
 }
 
-/**
- * Runs the matched rule's `customAttributes` (if any) and spreads the returned
- * attributes flat onto the display set (shared attributes are declared on
- * IDisplaySet). A `viewportTypes` key in the returned attributes overrides the
- * rule's default viewport types; `preferredViewportType` is kept in sync
- * afterwards. Reserved data fields (see {@link RESERVED_ATTRIBUTE_KEYS}) and
- * keys backed by a read-only accessor on the display set are skipped rather than
- * overridden.
- */
-function applyCustomAttributes(
-  displaySet: IDisplaySet,
+/** Runs the matched rule's `customAttributes` (if any). */
+function runCustomAttributes(
   group: InstanceGroup,
-  viewportTypes: readonly ViewportTypeHint[],
   options: CreateDisplaySetFromGroupOptions
-): void {
+): Record<string, unknown> | undefined {
   const { instances, matchedRule } = group;
   const first = instances[0];
   if (!matchedRule.customAttributes || !first) {
-    return;
+    return undefined;
   }
 
   const sopClassUids = [
@@ -78,49 +70,75 @@ function applyCustomAttributes(
   ];
   const isMultiFrame = Number(first.NumberOfFrames) > 1;
 
-  const attributes = matchedRule.customAttributes(
-    { instance: first, isMultiFrame, sopClassUids, viewportTypes },
-    {
-      instances,
-      splitNumber: options.splitNumber,
-      descriptionName: options.descriptionName,
-    }
+  return (
+    matchedRule.customAttributes(
+      { instance: first, isMultiFrame, sopClassUids },
+      {
+        instances,
+        splitNumber: options.splitNumber,
+        descriptionName: options.descriptionName,
+        // The values of the whole series, so that an attribute such as a
+        // slice spacing is the same for each display set of the series.
+        series: group.series,
+      }
+    ) ?? undefined
   );
+}
 
+/**
+ * Spreads the custom attributes flat onto the display set (shared attributes
+ * are declared on IDisplaySet). Reserved data fields (see
+ * {@link RESERVED_ATTRIBUTE_KEYS}) and keys backed by a read-only accessor on
+ * the display set are skipped rather than overridden.
+ */
+function applyCustomAttributes(
+  displaySet: IDisplaySet,
+  attributes: Record<string, unknown> | undefined
+): void {
   if (!attributes) {
     return;
   }
 
   for (const [key, value] of Object.entries(attributes)) {
-    if (RESERVED_ATTRIBUTE_KEYS.has(key)) {
+    // A `__proto__` key (a real own key from `JSON.parse` or `Object.fromEntries`)
+    // would replace the prototype of the display set.
+    if (RESERVED_ATTRIBUTE_KEYS.has(key) || isUnsafeKey(key)) {
       continue;
     }
     if (isAssignable(displaySet, key)) {
       (displaySet as unknown as Record<string, unknown>)[key] = value;
     }
   }
-
-  // Keep the preferred viewport attribute consistent if customAttributes
-  // overrode the allowed viewport types.
-  displaySet.preferredViewportType = getPreferredViewportType(
-    displaySet.viewportTypes
-  );
 }
 
 /**
  * Builds cornerstone display set metadata for an instance group.
+ *
+ * The `handler` of the matched rule decides the class and `isDisplayable`:
+ *
+ * - no handler, or `image`: an `ImageStackDisplaySet`;
+ * - `unsupported`: a `BaseDisplaySet` that is not displayable. `imageIds` is
+ *   empty, so code that ignores `isDisplayable` renders nothing, and
+ *   `underlyingImageIds` keeps the SOP-level ids, so the display set stays
+ *   resolvable from an imageId;
+ * - any other handler: a displayable `BaseDisplaySet`; the handler of the host
+ *   builds the rest.
+ *
+ * An image display set also gets `isReconstructable` (see {@link isReconstructableInstances}):
+ * the host opens it as a volume when it is true. The host chooses the viewport
+ * from `handler` and `isReconstructable`; a rule's `viewportTypes` is copied as data.
+ *
+ * The default `displaySetId` is the SeriesInstanceUID plus a non-zero
+ * `splitNumber`, so the display sets of one split series stay unique. Callers
+ * pass the same id to a viewport.
  */
 export function createDisplaySetFromGroup(
   group: InstanceGroup,
   options: CreateDisplaySetFromGroupOptions = {}
 ): IDisplaySet {
-  const viewportTypes = getViewportTypesForGroup(group);
+  const attributes = runCustomAttributes(group, options);
   const { instances } = group;
-  // A single series can split into multiple display sets (e.g. the DWI
-  // mixed-b-value split), so the default id folds in the 0-based `splitNumber`
-  // to stay unique within a series rather than collapsing every split to the
-  // bare SeriesInstanceUID. This is the same value callers pass to a viewport as
-  // `displaySetId` - the metadata id and the viewport/registry id are one.
+  // The default id holds the `splitNumber`, so each split of a series is unique.
   const baseDisplaySetId =
     instances[0]?.SeriesInstanceUID ??
     `display-set-${instances[0]?.imageId ?? 'unknown'}`;
@@ -131,29 +149,64 @@ export function createDisplaySetFromGroup(
       : baseDisplaySetId);
 
   const first = instances[0];
+  const { handler } = group.matchedRule;
+  const underlyingImageIds = instances
+    .map((i) => i.imageId)
+    .filter(Boolean) as string[];
   let displaySet: IDisplaySet;
 
-  if (
-    first &&
-    (isVideoInstance(first) || isEcgInstance(first) || isWsiInstance(first))
-  ) {
-    const imageIds = instances.map((i) => i.imageId).filter(Boolean);
+  if (handler === 'unsupported') {
+    // Nothing can render this: the base shape, with no frame-level imageIds.
     displaySet = new BaseDisplaySet({
       displaySetId,
-      viewportTypes,
       instances,
-      imageIds: options.imageIds ?? imageIds,
-      underlyingImageIds: imageIds,
+      imageIds: [],
+      underlyingImageIds,
+      isDisplayable: false,
+    });
+  } else if (handler !== undefined && handler !== 'image') {
+    // Not an image stack: the handler of the host builds the rest.
+    displaySet = new BaseDisplaySet({
+      displaySetId,
+      instances,
+      imageIds: options.imageIds ?? underlyingImageIds,
+      underlyingImageIds,
     });
   } else {
     displaySet = ImageStackDisplaySet.fromInstances(instances, {
       displaySetId,
-      viewportTypes,
       imageIds: options.imageIds,
     });
   }
 
-  applyCustomAttributes(displaySet, group, viewportTypes, options);
+  displaySet.splitKey = group.splitKey;
+  displaySet.splitRuleId = group.matchedRule.id;
+  displaySet.splitGroupId = group.matchedRule.groupId ?? group.matchedRule.id;
+  if (handler !== undefined) {
+    displaySet.handler = handler;
+  }
+  // Copied for the host; CS3D does not read it.
+  if (group.matchedRule.viewportTypes !== undefined) {
+    displaySet.viewportTypes = [...group.matchedRule.viewportTypes];
+  }
+  // Every display set carries these, so a rule does not ask for them.
+  displaySet.sopClassUids = [
+    ...new Set(instances.map((i) => i.SOPClassUID).filter(Boolean)),
+  ] as string[];
+  if (options.splitNumber !== undefined) {
+    displaySet.splitNumber = options.splitNumber;
+  }
+  displaySet.isMultiFrame ??= Number(first?.NumberOfFrames) > 1;
+  applyCustomAttributes(displaySet, attributes);
+  // An image display set says if it can open as a volume; a clip cannot.
+  // An attribute that sets isReconstructable wins.
+  if (
+    (handler === undefined || handler === 'image') &&
+    typeof displaySet.isReconstructable !== 'boolean'
+  ) {
+    displaySet.isReconstructable =
+      !displaySet.isClip && isReconstructableInstances(instances);
+  }
 
   return displaySet;
 }

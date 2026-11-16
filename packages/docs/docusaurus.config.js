@@ -12,6 +12,10 @@ module.exports = {
   baseUrl: '/',
   onBrokenLinks: 'log',
   onBrokenMarkdownLinks: 'warn',
+  markdown: {
+    mermaid: true,
+  },
+  themes: ['@docusaurus/theme-mermaid'],
   favicon: 'img/favicon.ico',
   organizationName: 'cornerstoneJS', // Usually your GitHub org/user name.
   projectName: 'cornerstone3D', // Usually your repo name.

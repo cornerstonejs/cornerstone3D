@@ -1,22 +1,22 @@
+import { isTrue } from '../safeFunctions/values';
+import type { DisplaySetContext } from './displaySetContext';
+import { getContextValue } from './metadataContext';
 import type { NaturalizedInstance } from './types';
 
-// VL Whole Slide Microscopy Image Storage.
-const WSI_SOP_CLASS_UIDS = new Set(['1.2.840.10008.5.1.4.1.1.77.1.6']);
-
 /**
- * Returns true when the instance is whole-slide microscopy imaging - either the
- * VL Whole Slide Microscopy Image Storage SOP class or modality `SM`. Heuristic
- * aligned with OHIF's whole-slide microscopy SOP class handler; the default
- * split rules use it to group all microscopy levels of a series into a single
- * whole-slide display set.
+ * Returns true when the instance is whole slide microscopy: by default, its
+ * SOP class is in `wholeSlideSopClassUids`, or its modality is `SM`.
+ *
+ * The test is the `isWsi` entry of `context`, else of the active metadata
+ * context (`setMetadataContext`), so a customized list or expression applies,
+ * and the answer is the same as in the rules.
  *
  * @param instance - the naturalized DICOM instance to classify.
- * @returns true if the instance is a whole-slide microscopy image.
+ * @param context - the metadata context; defaults to the active context.
  */
-export function isWsiInstance(instance: NaturalizedInstance): boolean {
-  if (WSI_SOP_CLASS_UIDS.has(instance.SOPClassUID ?? '')) {
-    return true;
-  }
-
-  return instance.Modality === 'SM';
+export function isWsiInstance(
+  instance: NaturalizedInstance,
+  context?: DisplaySetContext
+): boolean {
+  return isTrue(getContextValue('isWsi', instance, context));
 }

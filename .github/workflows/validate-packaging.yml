@@ -4,8 +4,8 @@ name: Validate ESM Packaging
 # from regressing: every published @cornerstonejs/* package must ship ESM that
 # resolves in bundlers AND native Node (correct `.js`/`.d.ts` extensions,
 # `type:module`, clean publint + @arethetypeswrong). Builds once on Node 24,
-# then validates on Node 24 and 25 — Node >=25 hard-fails on missing extensions,
-# so it is the canary for this class of bug.
+# then validates on Node 24 (the line the repo builds with) and 26 (the newest
+# LTS line) so the native-Node import check covers both.
 
 on:
   pull_request:
@@ -55,7 +55,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: ['24', '25']
+        node-version: ['24', '26']
     steps:
       - name: Checkout code
         uses: actions/checkout@v6.0.3
