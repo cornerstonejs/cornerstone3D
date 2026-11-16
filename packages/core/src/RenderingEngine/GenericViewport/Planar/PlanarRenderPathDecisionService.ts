@@ -168,9 +168,12 @@ export class PlanarRenderPathDecisionService {
   }
 
   /**
-   * Whether the volume slice path of a data set may draw the acquired frames
-   * in place of the reduced slice. The orientation is not an input: the render
-   * path draws a frame only while the view is in the acquisition plane.
+   * Whether the volume slice path of a data set may draw the full-resolution
+   * slices in place of the reduced slice: the acquired frames in the
+   * acquisition plane, and the voxel slices in the other planes of the volume
+   * axes. The orientation is not an input: the render path draws these slices
+   * only while the view follows a volume axis, and it checks the slab against
+   * the voxel spacing of that axis.
    *
    * All of these must hold: the caller prefers the acquired frames; the data
    * set names a cached, non-dynamic volume; the volume path of the resolved

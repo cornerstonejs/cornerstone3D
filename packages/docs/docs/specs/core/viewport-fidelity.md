@@ -139,10 +139,12 @@ states map to the states of this specification: transiently lossy is
   plane shows `lossy` at every zoom. When the volume slice path of a source draws the
   acquired frames (#3018), the acquisition plane shows `lossy` until the frame of the plane
   loads. When the frame shows, the indicator reports the quality of the frame, so a
-  full-resolution frame shows no indicator. Sagittal
-  and coronal show no indicator while the `k` extent uses no more device
-  pixels than half of the source slice count (`p ≥ 2S`). After more zoom,
-  sagittal and coronal show `lossy`.
+  full-resolution frame shows no indicator. On a generic `PlanarViewport`, sagittal
+  and coronal draw the full-resolution voxel slice after the volume loads, so
+  they show no indicator at any zoom. Before the load completes, and on a legacy
+  viewport, sagittal and coronal show no indicator while the `k` extent uses no
+  more device pixels than half of the source slice count (`p ≥ 2S`). After more
+  zoom, sagittal and coronal show `lossy`.
 
 - **FIDELITY-UI-2** The indicator sits in the top-right corner of the viewport.
   The user does not need to hover over the viewport, and the viewport does not

@@ -380,28 +380,42 @@ support, to resolve after the first merge.
 For both cases, the mapper does not refuse the allocation when the texture is larger than the GPU
 settings (`gridFitsGpuSettings`). It tries the upload, as in 4.x.
 
-## The frames of the acquisition plane
+## The full-resolution slices of the volume axes
 
 This section applies only when `rendering.lossyDownsampling.final` is on, and the final
 downsampling reduces the texture of a volume.
 
-**What a user sees.** A generic `PlanarViewport` shows the source volume in the acquisition plane.
-The source draws the loaded image of the nearest acquired frame in place of the reduced slice. The
-frame has full resolution, so the fidelity indicator reports the quality of the frame. Outside the
-acquisition plane, the viewport draws the reduced slice.
+**What a user sees.** A generic `PlanarViewport` shows the source volume at full resolution in the
+three planes of the volume axes, for example axial, sagittal and coronal of an axial acquisition:
+
+- In the acquisition plane, the source draws the loaded image of the nearest acquired frame in
+  place of the reduced slice.
+- In the other two planes, the source draws the nearest voxel slice of the volume in place of the
+  reduced slice. The voxel slice is a 2D texture of the exact voxels, so it has no limit of the 3D
+  texture size.
+
+The fidelity indicator reports the quality of the frame or of the voxels. In an oblique plane, the
+viewport draws the reduced slice.
 
 **The limits.**
 
-- The frame has no interpolation between frames. The viewport shows the nearest frame.
-- The reduced slice shows until the frame loads.
-- `viewport.getActors()` has one more entry for the frame. That entry has no `referencedId`, so a
-  measurement tool does not see a second target.
+- The frame and the voxel slice have no interpolation between slices. The viewport shows the
+  nearest slice.
+- A plane follows a volume axis when its tilt moves it by less than half a voxel across the volume
+  (`alignedVolumeAxis`). A larger tilt is an oblique plane.
+- The reduced slice shows until the frame loads. In the other two planes, the reduced slice shows
+  until the volume loads.
+- Each scroll in the other two planes copies one voxel slice from the voxel manager on the CPU.
+- `viewport.getActors()` has one more entry for the frame, and one more for the voxel slice. These
+  entries have no `referencedId`, so a measurement tool does not see a second target.
 - The legacy viewports (`StackViewport`, `VolumeViewport`) keep the reduced slice, as in 4.x.
-- The viewport does not draw the frame for a slab thicker than one acquired slice, for a blend mode
-  other than composite, for a dynamic volume, or for a CPU volume path.
+- The viewport does not draw a full-resolution slice for a slab thicker than one voxel along the
+  view normal, for a blend mode other than composite, for a dynamic volume, for a volume of more
+  than one component, or for a CPU volume path.
 
-`PlanarRenderPathDecisionService.canDrawAcquiredFrames` holds these conditions, and
-`planarAcquiredFrames.ts` draws the frame.
+`PlanarRenderPathDecisionService.canDrawAcquiredFrames` holds the conditions that do not depend on
+the plane. `planarAcquiredFrames.ts` draws the frame and the voxel slice, and `planarVoxelSlice.ts`
+builds the voxel slice.
 
 ## What a new render type defines
 

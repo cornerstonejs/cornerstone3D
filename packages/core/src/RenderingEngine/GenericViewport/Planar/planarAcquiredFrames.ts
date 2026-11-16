@@ -1,11 +1,17 @@
+import vtkImageMapper from '@kitware/vtk.js/Rendering/Core/ImageMapper';
+import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import { loadAndCacheImage } from '../../../loaders/imageLoader';
-import { isAcquisitionPlaneNormal } from '../../../utilities/isAcquisitionPlaneNormal';
-import { VOILUTFunctionType } from '../../../enums';
+import { Events, InterpolationType, VOILUTFunctionType } from '../../../enums';
 import { ActorRenderMode } from '../../../types';
 import type { ActorEntry, IImageVolume, Point3 } from '../../../types';
 import { coreLog } from '../../../utilities/logger';
+import uuidv4 from '../../../utilities/uuidv4';
+import { applyPlanarImagePresentation } from '../../helpers/planarImageRendering';
+import { subscribeToVolumeEvents } from '../../helpers/volumeStrategyLifecycle';
+import { isVolumeLoading, readBoundQuality } from '../renderingFidelity';
 import type {
   LoadedData,
+  MountedRendering,
   RenderPathAttachment,
 } from '../ViewportArchitectureTypes';
 import type {
@@ -19,42 +25,57 @@ import type {
 } from './planarRuntimeTypes';
 import { applyPlanarICameraToActor } from './planarRenderCamera';
 import { getPlanarRenderPathActiveSourceICamera } from './planarRenderPathProjection';
+import { resolveSlabThickness } from './planarVolumeSliceBlendMode';
+import { alignedVolumeAxis, voxelSliceImageData } from './planarVoxelSlice';
 import { VtkImageMapperRenderPath } from './VtkImageMapperRenderPath';
 
 const log = coreLog.getLogger('RenderingEngine', 'planarAcquiredFrames');
 
+/** The rendering of the voxel slice of a non-acquisition plane. */
+type VoxelSliceRendering = MountedRendering<{
+  renderMode: ActorRenderMode.VTK_IMAGE;
+  actorEntryUID: string;
+  actor: vtkImageSlice;
+  mapper: vtkImageMapper;
+}>;
+
 /**
- * The actors that draw acquired frames. The overlay order of a volume slice
- * skips them, so a frame actor sits at the depth of its source.
+ * The actors that draw acquired frames or voxel slices. The overlay order of
+ * a volume slice skips them, so such an actor sits at the depth of its source.
  */
 export const acquiredFrameActors = new WeakSet<object>();
 
-/** The volume index of a world point, with k rounded to the nearest voxel slice. */
+/**
+ * The volume index of a world point, with the index of `axis` rounded to the
+ * nearest voxel slice.
+ */
 function nearestSliceIndex(
   imageData: IImageVolume['imageData'],
-  point: Point3
+  point: Point3,
+  axis = 2
 ): Point3 {
   const index = imageData.worldToIndex([...point]) as Point3;
 
-  index[2] = Math.round(index[2]);
+  index[axis] = Math.round(index[axis]);
 
   return index;
 }
 
 /**
- * The translation that moves the frame of the nearest voxel slice onto the
- * plane of the focal point, so that an overlay at that plane stays in front.
- * Only the actor moves: the frame index, the events and the references keep
- * the nearest frame.
+ * The translation that moves the frame of the nearest voxel slice of `axis`
+ * onto the plane of the focal point, so that an overlay at that plane stays in
+ * front. Only the actor moves: the frame index, the events and the references
+ * keep the nearest frame.
  */
 function framePlaneOffset(
   imageVolume: IImageVolume,
   focalPoint: Point3,
-  viewPlaneNormal: Point3
+  viewPlaneNormal: Point3,
+  axis = 2
 ): Point3 {
   const { imageData } = imageVolume;
   const framePoint = imageData.indexToWorld(
-    nearestSliceIndex(imageData, focalPoint)
+    nearestSliceIndex(imageData, focalPoint, axis)
   );
   const distance =
     (focalPoint[0] - framePoint[0]) * viewPlaneNormal[0] +
@@ -107,17 +128,22 @@ export function acquiredFrameIndexOfVolumePoint(
 }
 
 /**
- * Adds the acquired frames to the volume slice attachment of a source.
+ * Adds the full-resolution slices to the volume slice attachment of a source.
  *
- * The binding keeps the volume slice render path for navigation, and keeps an
- * image path (`VtkImageMapperRenderPath`) mounted for the acquired frames. Both
- * actors stay in the renderer. The frame actor is visible only while the view
- * is in the acquisition plane, `canDrawAcquiredFrames` holds, and the frame of
- * the current plane has loaded; otherwise the volume slice actor is visible.
+ * The binding keeps the volume slice render path for navigation, and keeps two
+ * more actors in the renderer while `canDrawAcquiredFrames` holds:
  *
- * The frame uses the presentation of the volume, with the default VOI of the
- * volume. The hidden rendering is excluded from the fidelity, so the indicator
- * follows the visible path.
+ * - In the acquisition plane, an image path (`VtkImageMapperRenderPath`) draws
+ *   the acquired frame of the current plane, after the frame loads.
+ * - In the other two planes of the volume axes, a `vtkImageMapper` draws the
+ *   voxel slice of the current plane (`voxelSliceImageData`), after the volume
+ *   loads. The slice is not thicker than one voxel along the view normal.
+ *
+ * Otherwise the volume slice actor is visible, for example in an oblique plane.
+ *
+ * Each full-resolution slice uses the presentation of the volume, with the
+ * default VOI of the volume. The hidden renderings are excluded from the
+ * fidelity, so the indicator follows the visible path.
  */
 export function withAcquiredFrames(
   ctx: PlanarVtkVolumeAdapterContext,
@@ -130,6 +156,9 @@ export function withAcquiredFrames(
   let mounting = false;
   let removed = false;
   let wantedIndex: number | undefined;
+  let voxelSlice: { key: string; rendering: VoxelSliceRendering } | undefined;
+  let wantedVoxelSlice: { axis: number; key: string } | undefined;
+  let voxelSliceStale = false;
 
   const frameRendering = () =>
     frame?.rendering as PlanarImageMapperRendering | undefined;
@@ -164,41 +193,147 @@ export function withAcquiredFrames(
     const showsFrame =
       wantedIndex !== undefined &&
       rendering?.currentImageIdIndex === wantedIndex;
+    const showsVoxelSlice =
+      wantedVoxelSlice !== undefined &&
+      voxelSlice?.key === wantedVoxelSlice.key;
+    const showsFullResolution = showsFrame || showsVoxelSlice;
     const visible = volumeRendering.dataPresentation?.visible !== false;
 
-    volumeRendering.actor.setVisibility(visible && !showsFrame);
+    volumeRendering.actor.setVisibility(visible && !showsFullResolution);
 
     if (!volumeRendering.isSegmentationOverlay) {
       // A hidden volume ignores its data events; read the record again.
       volumeRendering.fidelityStale ||=
-        !showsFrame && volumeRendering.showsAcquiredFrame;
-      volumeRendering.excludeFromFidelity = showsFrame;
+        !showsFullResolution && volumeRendering.showsAcquiredFrame;
+      volumeRendering.excludeFromFidelity = showsFullResolution;
     }
 
-    volumeRendering.showsAcquiredFrame = showsFrame;
+    volumeRendering.showsAcquiredFrame = showsFullResolution;
 
-    if (!rendering) {
+    const camera = getPlanarRenderPathActiveSourceICamera(ctx);
+    const place = (
+      shown: VoxelSliceRendering | PlanarImageMapperRendering,
+      shows: boolean,
+      axis: number
+    ) => {
+      shown.actor.setVisibility(visible && shows);
+      shown.excludeFromFidelity = !shows;
+      applyPlanarICameraToActor({
+        actor: shown.actor,
+        activeSourceICamera: camera,
+      });
+
+      if (shows && camera) {
+        shown.actor.setPosition(
+          ...framePlaneOffset(
+            imageVolume,
+            camera.focalPoint,
+            camera.viewPlaneNormal,
+            axis
+          )
+        );
+      }
+    };
+
+    if (voxelSlice) {
+      place(voxelSlice.rendering, showsVoxelSlice, wantedVoxelSlice?.axis);
+    }
+
+    if (rendering) {
+      place(rendering, showsFrame, 2);
+    }
+  }
+
+  /** Applies the presentation of the volume to the voxel slice. */
+  function presentVoxelSlice(): void {
+    if (voxelSlice) {
+      applyPlanarImagePresentation({
+        actor: voxelSlice.rendering.actor,
+        props: {
+          interpolationType: InterpolationType.LINEAR,
+          ...framePresentation(),
+        },
+      });
+    }
+  }
+
+  /**
+   * The voxel slice of `axis` at the focal point, or `undefined` while the
+   * volume loads, for a slab thicker than one voxel of `axis`, or outside the
+   * volume.
+   */
+  function voxelSliceOf(axis: number, focalPoint: Point3) {
+    const slabThickness = resolveSlabThickness(
+      volumeRendering.dataPresentation?.slabThickness
+    );
+
+    if (
+      imageVolume.loadStatus?.loaded === false ||
+      isVolumeLoading(imageVolume) ||
+      slabThickness > imageVolume.spacing[axis]
+    ) {
       return;
     }
 
-    const camera = getPlanarRenderPathActiveSourceICamera(ctx);
+    const sliceIndex = nearestSliceIndex(
+      imageVolume.imageData,
+      focalPoint,
+      axis
+    )[axis];
 
-    rendering.actor.setVisibility(visible && showsFrame);
-    rendering.excludeFromFidelity = !showsFrame;
-    applyPlanarICameraToActor({
-      actor: rendering.actor,
-      activeSourceICamera: camera,
-    });
+    return sliceIndex >= 0 && sliceIndex < imageVolume.dimensions[axis]
+      ? { axis, sliceIndex, key: `${axis}:${sliceIndex}` }
+      : undefined;
+  }
 
-    if (showsFrame && camera) {
-      rendering.actor.setPosition(
-        ...framePlaneOffset(
-          imageVolume,
-          camera.focalPoint,
-          camera.viewPlaneNormal
-        )
-      );
+  function drawVoxelSlice(axis: number, sliceIndex: number, key: string) {
+    if (voxelSlice?.key === key && !voxelSliceStale) {
+      return;
     }
+
+    const imageData = voxelSliceImageData(
+      imageVolume,
+      axis,
+      sliceIndex,
+      voxelSlice?.rendering.mapper.getInputData()
+    );
+
+    if (!imageData) {
+      wantedVoxelSlice = undefined;
+      return;
+    }
+
+    if (!voxelSlice) {
+      const mapper = vtkImageMapper.newInstance();
+      const actor = vtkImageSlice.newInstance();
+      const rendering: VoxelSliceRendering = {
+        renderMode: ActorRenderMode.VTK_IMAGE,
+        actorEntryUID: uuidv4(),
+        actor,
+        mapper,
+        sampleDistanceLod: 1,
+        excludeFromFidelity: true,
+        // The slice reads the full-resolution voxels of the volume.
+        refreshFidelity: () => {
+          rendering.voxelQuality = readBoundQuality(imageVolume, undefined);
+          rendering.fullGrid = imageVolume.voxelGrid;
+          rendering.qualityPending = isVolumeLoading(imageVolume);
+        },
+      };
+
+      actor.setMapper(mapper);
+      ctx.vtk.renderer.addActor(actor);
+      acquiredFrameActors.add(actor);
+      voxelSlice = { key, rendering };
+      presentVoxelSlice();
+    }
+
+    if (voxelSlice.rendering.mapper.getInputData() !== imageData) {
+      voxelSlice.rendering.mapper.setInputData(imageData);
+    }
+
+    voxelSlice.key = key;
+    voxelSliceStale = false;
   }
 
   async function mountFrame(imageIdIndex: number): Promise<void> {
@@ -242,18 +377,30 @@ export function withAcquiredFrames(
     }
 
     const camera = getPlanarRenderPathActiveSourceICamera(ctx);
+    const axis =
+      camera && isSource() && ctx.viewport.canDrawAcquiredFrames?.(data.id)
+        ? alignedVolumeAxis(imageVolume, camera.viewPlaneNormal)
+        : undefined;
 
     wantedIndex =
-      camera &&
-      isSource() &&
-      ctx.viewport.canDrawAcquiredFrames?.(data.id) &&
-      isAcquisitionPlaneNormal(imageVolume, camera.viewPlaneNormal)
+      axis === 2
         ? acquiredFrameIndexOfVolumePoint(
             imageVolume,
             imageIds,
             camera.focalPoint
           )
         : undefined;
+
+    const voxel =
+      axis === 0 || axis === 1
+        ? voxelSliceOf(axis, camera.focalPoint)
+        : undefined;
+
+    wantedVoxelSlice = voxel;
+
+    if (voxel) {
+      drawVoxelSlice(voxel.axis, voxel.sliceIndex, voxel.key);
+    }
 
     if (wantedIndex !== undefined) {
       if (frame) {
@@ -269,28 +416,40 @@ export function withAcquiredFrames(
     updateVisibility();
   }
 
-  const frameActorEntry = (): ActorEntry | undefined => {
-    const rendering = frameRendering();
-
-    // No referencedId: a measurement tool must not see a second target.
-    return (
-      rendering && {
-        uid: rendering.actorEntryUID,
-        actor: rendering.actor,
-        actorMapper: {
-          actor: rendering.actor,
-          mapper: rendering.mapper,
-          renderMode: ActorRenderMode.VTK_IMAGE,
-        } as ActorEntry['actorMapper'],
+  // A completed load, or an edit of the voxels after it, changes the voxel
+  // slice. The reduced slice shows during the load, so its events do nothing.
+  const removeVolumeSubscription = subscribeToVolumeEvents(
+    data.volumeId,
+    (eventType) => {
+      if (isVolumeLoading(imageVolume)) {
+        return;
       }
-    );
-  };
+
+      voxelSliceStale ||= eventType === Events.IMAGE_VOLUME_MODIFIED;
+      sync();
+    }
+  );
+
+  const fullResolutionActorEntry = (
+    rendering: VoxelSliceRendering | PlanarImageMapperRendering | undefined
+  ): ActorEntry | undefined =>
+    // No referencedId: a measurement tool must not see a second target.
+    rendering && {
+      uid: rendering.actorEntryUID,
+      actor: rendering.actor,
+      actorMapper: {
+        actor: rendering.actor,
+        mapper: rendering.mapper,
+        renderMode: ActorRenderMode.VTK_IMAGE,
+      } as ActorEntry['actorMapper'],
+    };
 
   return {
     ...volume,
     updateDataPresentation: (props) => {
       volume.updateDataPresentation(props);
       frame?.updateDataPresentation(framePresentation());
+      presentVoxelSlice();
       sync();
     },
     applyViewState: (viewState) => {
@@ -302,12 +461,24 @@ export function withAcquiredFrames(
       sync();
     },
     getActorEntries: (loadedData) =>
-      [volume.getActorEntry?.(loadedData), frameActorEntry()].filter(Boolean),
+      [
+        volume.getActorEntry?.(loadedData),
+        fullResolutionActorEntry(frameRendering()),
+        fullResolutionActorEntry(voxelSlice?.rendering),
+      ].filter(Boolean),
     getRenderings: () =>
-      frame ? [volume.rendering, frame.rendering] : [volume.rendering],
+      [volume.rendering, frame?.rendering, voxelSlice?.rendering].filter(
+        Boolean
+      ),
     removeData: () => {
       removed = true;
+      removeVolumeSubscription();
       frame?.removeData();
+
+      if (voxelSlice) {
+        ctx.vtk.renderer.removeActor(voxelSlice.rendering.actor);
+      }
+
       volume.removeData();
     },
   };

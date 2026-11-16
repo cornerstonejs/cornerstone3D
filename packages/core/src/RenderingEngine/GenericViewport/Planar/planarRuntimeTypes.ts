@@ -153,8 +153,9 @@ export type PlanarVolumeSliceRendering = MountedRendering<{
   isSegmentationOverlay?: boolean;
   removeStreamingSubscriptions?: () => void;
   /**
-   * The internal render path state: true while the acquired frame shows in
-   * place of this slice (see `withAcquiredFrames`).
+   * The internal render path state: true while a full-resolution slice (the
+   * acquired frame or the voxel slice) shows in place of this slice (see
+   * `withAcquiredFrames`).
    */
   showsAcquiredFrame?: boolean;
 }> &

@@ -22,6 +22,10 @@ import {
   acquiredFrameIndexOfVolumePoint,
   withAcquiredFrames,
 } from '../src/RenderingEngine/GenericViewport/Planar/planarAcquiredFrames';
+import {
+  alignedVolumeAxis,
+  voxelSliceImageData,
+} from '../src/RenderingEngine/GenericViewport/Planar/planarVoxelSlice';
 import { getImageSliceOverlayOrder } from '../src/RenderingEngine/GenericViewport/Planar/VtkVolumeSliceRenderPath';
 import { triggerPlanarVolumeNewImage } from '../src/RenderingEngine/GenericViewport/Planar/planarImageEvents';
 import { resolvePlanarRenderPathProjection } from '../src/RenderingEngine/GenericViewport/Planar/planarRenderPathProjection';
@@ -140,6 +144,50 @@ describe('PlanarRenderPathDecisionService acquired frames (API)', () => {
     expect(
       service.canDrawAcquiredFrames(dataSet, { preferAcquiredFrames: true })
     ).toBe(false);
+  });
+});
+
+describe('planar voxel slices (API)', () => {
+  const dimensions = [3, 4, 5];
+  const spacing = [1, 2, 3];
+  const volume = {
+    ...createVolume({ volumeId: 'small', dimensions, spacing, imageIds: [] }),
+    voxelManager: utilities.VoxelManager.createScalarVolumeVoxelManager({
+      dimensions,
+      scalarData: Int16Array.from({ length: 60 }, (_, i) => i),
+    }),
+  };
+
+  it('finds the volume axis of an orthogonal plane, and none for a 5 degree tilt', () => {
+    const angle = (5 * Math.PI) / 180;
+
+    expect(alignedVolumeAxis(volume, [-1, 0, 0])).toBe(0);
+    expect(alignedVolumeAxis(volume, [0, 1, 0])).toBe(1);
+    expect(alignedVolumeAxis(volume, [0, 0, 1])).toBe(2);
+    expect(
+      alignedVolumeAxis(volume, [Math.cos(angle), Math.sin(angle), 0])
+    ).toBeUndefined();
+  });
+
+  it('copies the exact voxels of a sagittal slice, in world coordinates', () => {
+    const slice = voxelSliceImageData(volume, 0, 1);
+
+    expect(slice.getDimensions()).toEqual([4, 5, 1]);
+    // The value of voxel (1, j, k) is its index 1 + 3j + 12k.
+    expect(Array.from(slice.getPointData().getScalars().getData())).toEqual(
+      Array.from(
+        { length: 20 },
+        (_, n) => 1 + (n % 4) * 3 + Math.floor(n / 4) * 12
+      )
+    );
+    expect(Array.from(slice.getSpacing())).toEqual([2, 3, 1]);
+    expect(Array.from(slice.getOrigin())).toEqual([1, 0, 0]);
+    expect(Array.from(slice.getDirection())).toEqual([
+      0, 1, 0, 0, 0, 1, 1, 0, 0,
+    ]);
+    // The next slice of the axis writes into the same image (one texture).
+    expect(voxelSliceImageData(volume, 0, 2, slice)).toBe(slice);
+    expect(slice.getPointData().getScalars().getData()[0]).toBe(2);
   });
 });
 
@@ -478,6 +526,58 @@ describe('PlanarViewport acquired frames in the volume path (user experience)', 
     expect(frameRendering().currentImageIdIndex).toBe(frameIndex);
     expect(viewport.getViewState().scale).toEqual([2, 2]);
     expect(viewport.getViewState().anchorWorld).toEqual([100, 120, 10]);
+  });
+
+  it('draws the exact voxel slice in sagittal after the load, and the reduced slice in an oblique plane', async () => {
+    const getSliceData = jest.fn(() => new Int16Array(512 * sliceCount));
+    volume.voxelManager = { numberOfComponents: 1, getSliceData };
+    volume.loadStatus = { loaded: false, loading: true };
+    volume.getVoxelQuality = () => ({
+      ...sourceBinding().rendering.voxelQuality,
+      grid: fullGrid,
+    });
+    const shownRenderings = () =>
+      sourceBinding()
+        .getRenderings()
+        .filter((rendering) => rendering.actor.getVisibility());
+
+    await mount();
+    viewport.setOrientation(OrientationAxis.SAGITTAL);
+    await flush();
+
+    // The reduced slice shows while the volume loads.
+    expect(shownRenderings()).toEqual([sourceBinding().rendering]);
+    expect(getSliceData).not.toHaveBeenCalled();
+
+    volume.loadStatus = { loaded: true, loading: false };
+    triggerEvent(eventTarget, Events.IMAGE_VOLUME_LOADING_COMPLETED, {
+      volumeId,
+    });
+    await flush();
+
+    const [voxelSlice] = shownRenderings();
+    expect(voxelSlice).not.toBe(sourceBinding().rendering);
+    expect(getSliceData).toHaveBeenLastCalledWith({
+      sliceIndex: 256,
+      slicePlane: 0,
+    });
+    expect(viewport.getCurrentMode()).toBe('volume');
+    expect(viewport.getDefaultActor().uid).toBe(`${dataId}-volume`);
+    expect(viewport.getFidelityLines().map((line) => dataKindOf(line))).toEqual(
+      ['full']
+    );
+
+    // 5 degrees off sagittal is oblique: the reduced slice shows again.
+    const angle = (5 * Math.PI) / 180;
+    viewport.setViewState({
+      orientation: {
+        viewPlaneNormal: [Math.cos(angle), Math.sin(angle), 0],
+        viewUp: [0, 0, 1],
+      },
+    });
+    await flush();
+
+    expect(shownRenderings()).toEqual([sourceBinding().rendering]);
   });
 
   it('turns an axial viewport sagittal for a sagittal volume reference', async () => {
