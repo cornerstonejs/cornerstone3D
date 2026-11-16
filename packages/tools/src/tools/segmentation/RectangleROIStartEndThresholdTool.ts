@@ -384,7 +384,9 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
 
     const newProjectionPoints = [];
 
-    for (let dist = 0; dist < distance; dist += spacingInNormal) {
+    // Include the end slice (and the single slice when start === end); the
+    // epsilon absorbs floating point error in the accumulated distance.
+    for (let dist = 0; dist <= distance + 1e-6; dist += spacingInNormal) {
       newProjectionPoints.push(
         points.map((point) => {
           const newPoint = vec3.create();
