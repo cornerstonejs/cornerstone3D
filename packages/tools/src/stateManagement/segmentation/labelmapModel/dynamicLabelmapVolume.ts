@@ -200,6 +200,23 @@ function syncDynamicLabelmapVolumeToImageId(
 }
 
 /**
+ * True when the labelmap has a time point for the referenced image, or when
+ * the volume is not a dynamic labelmap volume. An edit must stop when this is
+ * false, because the labelmap still shows its last covered time point.
+ */
+function isDynamicLabelmapImageCovered(
+  labelmapVolume: Types.IImageVolume | undefined,
+  referencedImageId: string | undefined
+): boolean {
+  const dynamicLabelmap =
+    labelmapVolume && dynamicLabelmaps.get(labelmapVolume);
+  return (
+    !dynamicLabelmap ||
+    dynamicLabelmap.groupIndexByReferencedImageId.has(referencedImageId)
+  );
+}
+
+/**
  * Gets the time point that a dynamic labelmap volume shows, and a voxel
  * manager that stays on that time point.
  *
@@ -284,6 +301,7 @@ export {
   getDynamicLabelmapTimePoint,
   getDynamicLabelmapTimePointForSegmentation,
   getVoxelManagerTimePoint,
+  isDynamicLabelmapImageCovered,
   isDynamicLabelmapVolume,
   setDynamicLabelmapVolumeId,
   syncDynamicLabelmapVolume,

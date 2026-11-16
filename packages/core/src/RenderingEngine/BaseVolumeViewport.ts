@@ -909,7 +909,9 @@ abstract class BaseVolumeViewport extends Viewport {
     if (!super.isReferenceViewable(viewRef, options)) {
       return false;
     }
-    const dimensionGroupNumber = this._getDimensionGroupNumber();
+    const dimensionGroupNumber = this._getDimensionGroupNumber(
+      this.getVolumeId({ volumeId: viewRef.volumeId })
+    );
     if (
       !options?.withNavigation &&
       viewRef.dimensionGroupNumber &&
@@ -1069,13 +1071,19 @@ abstract class BaseVolumeViewport extends Viewport {
     } = viewRef;
     let { sliceIndex } = viewRef;
 
+    // The time point belongs to the referenced volume, for example the PET of a fusion.
+    const timePointVolumeId = this.getVolumeId({ volumeId: viewRef.volumeId });
+    const timePointVolume =
+      timePointVolumeId &&
+      this._getDimensionGroupNumber(timePointVolumeId) &&
+      (cache.getVolume(timePointVolumeId) as IDynamicImageVolume);
     if (
+      timePointVolume &&
       viewRef.dimensionGroupNumber &&
-      this._getDimensionGroupNumber(volumeId) &&
+      viewRef.dimensionGroupNumber <= timePointVolume.numDimensionGroups &&
       refFrameOfReference === this.getFrameOfReferenceUID()
     ) {
-      (cache.getVolume(volumeId) as IDynamicImageVolume).dimensionGroupNumber =
-        viewRef.dimensionGroupNumber;
+      timePointVolume.dimensionGroupNumber = viewRef.dimensionGroupNumber;
     }
 
     if (planeRestriction && !refViewPlaneNormal) {

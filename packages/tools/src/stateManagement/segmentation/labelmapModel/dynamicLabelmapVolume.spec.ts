@@ -3,6 +3,7 @@ import type { Types } from '@cornerstonejs/core';
 import {
   createDynamicLabelmapVolume,
   getDynamicLabelmapTimePoint,
+  isDynamicLabelmapImageCovered,
   syncDynamicLabelmapVolume,
 } from './dynamicLabelmapVolume';
 import { getOrCreateDynamicLabelmapVolume } from './labelmapLayerStore';
@@ -181,6 +182,47 @@ describe('dynamic labelmap volume', () => {
     expect(getOrCreateDynamicLabelmapVolume(segmentation)).toBeUndefined();
     expect(getOrCreateDynamicLabelmapVolume(segmentation)).toBeUndefined();
     expect(cache.getVolumes()).toHaveLength(0);
+  });
+
+  it('leaves overlapping labelmap images to the merged static volume', () => {
+    const segmentation = {
+      segmentationId: 'seg-overlap',
+      representationData: {
+        Labelmap: {
+          imageIds: [...ids('lm'), ...ids('lm2')],
+          referencedImageIds: ids('ref'),
+        },
+      },
+      segments: {},
+    } as unknown as Segmentation;
+
+    expect(getOrCreateDynamicLabelmapVolume(segmentation)).toBeUndefined();
+  });
+
+  it('reports an image of a time point that the labelmap does not cover', () => {
+    const volume = createDynamicLabelmapVolume('labelmap-4d', {
+      labelmapId: 'labelmap',
+      imageIds: ids('lm'),
+      referencedImageIds: ids('ref'),
+    });
+
+    expect(isDynamicLabelmapImageCovered(volume, 'ref:1:0')).toBe(true);
+    expect(isDynamicLabelmapImageCovered(volume, 'ref:2:0')).toBe(false);
+  });
+
+  it('writes a complete array to the time point on display', () => {
+    cacheLabelmapImages();
+    const volume = createDynamicLabelmapVolume('labelmap-4d', {
+      labelmapId: 'labelmap',
+      imageIds: ids('lm'),
+      referencedImageIds: ids('ref'),
+    });
+    syncDynamicLabelmapVolume(volume, imageVolumeAt(1));
+
+    volume.voxelManager.setCompleteScalarDataArray(new Uint8Array(12).fill(2));
+
+    expect(pixel('lm:1:0')).toBe(2);
+    expect(pixel('lm:0:0')).toBe(0);
   });
 
   it('sends the time point when the image volume changes time point', () => {

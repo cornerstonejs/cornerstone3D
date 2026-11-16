@@ -3,6 +3,7 @@ import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
 import getOrCreateSegmentationVolume from '../../../../utilities/segmentation/getOrCreateSegmentationVolume';
 import {
   getDynamicLabelmapTimePoint,
+  isDynamicLabelmapImageCovered,
   isDynamicLabelmapVolume,
   syncDynamicLabelmapVolumeToImageId,
 } from '../../../../stateManagement/segmentation/labelmapModel/dynamicLabelmapVolume';
@@ -17,10 +18,13 @@ export default {
     if (isDynamicLabelmapVolume(segVolume)) {
       // A 4D labelmap: edit the time point of the image on display.
       if (viewport) {
-        syncDynamicLabelmapVolumeToImageId(
-          segVolume,
-          viewport.getCurrentImageId()
-        );
+        const imageId = viewport.getCurrentImageId();
+        if (!isDynamicLabelmapImageCovered(segVolume, imageId)) {
+          // No labelmap time point for this image: getStrategyData stops the edit.
+          operationData.segmentationVoxelManager = undefined;
+          return;
+        }
+        syncDynamicLabelmapVolumeToImageId(segVolume, imageId);
       }
       operationData.segmentationVoxelManager =
         getDynamicLabelmapTimePoint(segVolume).voxelManager;

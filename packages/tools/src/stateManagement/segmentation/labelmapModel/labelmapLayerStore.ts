@@ -145,6 +145,8 @@ function getOrCreateDynamicLabelmapVolume(
       : undefined
     : layer.imageIds?.length &&
       !layer.volumeId &&
+      // shortcut: overlapping labelmap images use the merged static volume, as before 4D support
+      !hasDuplicateReferencedImageIds(layer) &&
       createDynamicLabelmapVolume(volumeId, layer);
 
   if (!volume) {

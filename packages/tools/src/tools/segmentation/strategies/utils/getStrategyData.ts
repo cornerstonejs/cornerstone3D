@@ -6,7 +6,10 @@ import type {
 } from '../../../../types';
 import { getCurrentLabelmapImageIdForViewport } from '../../../../stateManagement/segmentation/segmentationState';
 import { getLabelmapActorEntry } from '../../../../stateManagement/segmentation/helpers';
-import { getDynamicLabelmapTimePoint } from '../../../../stateManagement/segmentation/labelmapModel/dynamicLabelmapVolume';
+import {
+  getDynamicLabelmapTimePoint,
+  isDynamicLabelmapImageCovered,
+} from '../../../../stateManagement/segmentation/labelmapModel/dynamicLabelmapVolume';
 import { getReferenceVolumeForSegmentationVolume } from '../../../../utilities/segmentation/getReferenceVolumeForSegmentationVolume';
 
 /**
@@ -63,6 +66,17 @@ function getStrategyDataForVolumeViewport({
     return null;
   }
 
+  // The image shows a time point that the 4D labelmap does not cover.
+  const currentImageIds = (
+    imageVolume as { getCurrentDimensionGroupImageIds?: () => string[] }
+  ).getCurrentDimensionGroupImageIds?.();
+  if (
+    currentImageIds?.length &&
+    !isDynamicLabelmapImageCovered(segmentationVolume, currentImageIds[0])
+  ) {
+    return null;
+  }
+
   const { imageData: segmentationImageData } = segmentationVolume;
   // A 4D labelmap edits through the voxel manager of one time point, so that
   // the undo memo restores that time point.
@@ -109,6 +123,9 @@ function getStrategyDataForStackViewport({
     });
 
     segmentationVoxelManager = operationData.segmentationVoxelManager;
+    if (!segmentationVoxelManager) {
+      return null;
+    }
     segmentationImageData = operationData.segmentationImageData;
     getSegmentationScalarData = () => null;
   } else {

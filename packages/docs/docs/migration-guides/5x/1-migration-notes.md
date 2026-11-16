@@ -804,10 +804,10 @@ every time point, and that volume had the wrong depth.
 `SEGMENTATION_DATA_MODIFIED` changes in three ways:
 
 1. The event detail has a new field, `dimensionGroupNumber`. For a
-   segmentation of a 4D series, the field gives the time point (starting at
-   1. of the modified data. An undo or a redo gives the time point of the
-      edit, which can be different from the time point on display. For a
-      segmentation of a 3D series, the field is not set.
+   segmentation of a 4D series, the field gives the time point of the
+   modified data, from 1. An undo or a redo gives the time point of the
+   edit, which can be different from the time point on display. For a
+   segmentation of a 3D series, the field is not set.
 2. A change of time point (`DYNAMIC_VOLUME_DIMENSION_GROUP_CHANGED`) now fires
    `SEGMENTATION_DATA_MODIFIED` for each segmentation with a 4D labelmap, with
    the new `dimensionGroupNumber`.
@@ -827,6 +827,24 @@ Other changes:
   of the reference.
 - `convertStackToVolumeLabelmap` ignores `options.volumeId` for a 4D labelmap.
   `convertVolumeToStackLabelmap` keeps the labelmap images of every time
+  point.
+- A 4D labelmap can cover only some time points of the series. When the image
+  shows a time point that the labelmap does not cover, the labelmap keeps its
+  last covered time point, and a stack or volume overlay can show the labels
+  of that time point. An edit on an uncovered time point changes nothing. The
+  change of time point fires no `SEGMENTATION_DATA_MODIFIED` for that
+  labelmap.
+- For a 4D labelmap that covers only some time points, `dimensionGroupNumber`
+  is not consistent: a change of time point gives the time point of the
+  series, and an edit or an undo gives the index among the covered time
+  points. The two numbers are equal when the labelmap covers every time point.
+  [#3090](https://github.com/cornerstonejs/cornerstone3D/issues/3090) tracks
+  one number for both.
+- A 4D labelmap with more than one labelmap image for one referenced image
+  (overlapping segments) stays one static volume of every time point, as
+  before this change.
+- `setCompleteScalarDataArray` and `invalidateCache` of a 4D labelmap act on
+  the time point on display, so labelmap interpolation edits only that time
   point.
 
 ### Migration Guidance
