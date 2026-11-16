@@ -182,11 +182,8 @@ abstract class BaseRenderingEngine {
       return;
     }
 
-    // Drop Adaptive Target FPS state before destroying the viewport so a later
-    // enable with the same viewportId does not reuse stale budgets/mappers.
-    unregisterVolume3DTargetFps(viewportId);
-
     // 3. Reset the viewport to remove attributes, and reset the canvas
+    // (also unregisters Adaptive Target FPS state via _resetViewport)
     this._resetViewport(viewport);
 
     // 4. Remove the related renderer from the offScreenMultiRenderWindow
@@ -713,6 +710,11 @@ abstract class BaseRenderingEngine {
     const renderingEngineId = this.id;
 
     const { element, canvas, id: viewportId } = viewport;
+
+    // Drop Adaptive Target FPS state before destroying the viewport so a later
+    // enable with the same viewportId (via disableElement, setViewports, or
+    // destroy) does not reuse stale budgets/mappers.
+    unregisterVolume3DTargetFps(viewportId);
 
     const eventDetail: EventTypes.ElementDisabledEventDetail = {
       element,

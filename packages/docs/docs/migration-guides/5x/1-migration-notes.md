@@ -203,6 +203,39 @@ as `any` or fail to resolve. This is a **type-resolution** concern only —
 runtime behavior is unaffected — but if you see missing types, switch to
 `"bundler"`/`"node16"`/`"nodenext"`.
 
+## Volume3D interactive LOD: viewport policy owns sample distance during drag
+
+### What Changed
+
+Legacy `VolumeViewport3D` interactive quality during rotate/pan/zoom/crop is
+now owned by a **viewport policy**, not by each tool mutating the mapper
+directly. Tools call `armVolume3DInteraction`, which begins/ends interaction
+on the viewport.
+
+Two policies exist:
+
+- **`fixedSampleDistance` (default):** multiplies the baseline sample distance
+  during drag. `TrackballRotateTool` / `VolumeCroppingTool`
+  `configuration.rotateSampleDistanceFactor` still applies when it is a finite
+  number `> 0`; otherwise the default ×2 is used.
+- **`targetFps`:** opt in with `setVolume3DTargetFpsEnabled(viewportId, true)`
+  (and optionally `setVolume3DTargetFps`). LOD is steered toward a Target FPS;
+  tool `rotateSampleDistanceFactor` is **ignored** while this policy is active.
+
+### Why This Matters
+
+Existing tool configurations that set `rotateSampleDistanceFactor` keep working
+under the default policy. Applications that enable Target FPS must not expect
+that tool key to drive interactive LOD.
+
+### Migration Guidance
+
+- Leave tool `rotateSampleDistanceFactor` as-is if you stay on the default
+  fixed sample-distance policy.
+- To use adaptive Target FPS, call `setVolume3DTargetFps` /
+  `setVolume3DTargetFpsEnabled` on the legacy Volume3D viewport id; do not rely
+  on per-tool sample-distance factors for that mode.
+
 ## Viewport elements set `touch-action: none`
 
 ### What Changed
