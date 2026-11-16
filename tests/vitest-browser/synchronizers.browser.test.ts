@@ -358,19 +358,8 @@ describe('synchronizers', () => {
       expect(bRange).toEqual(aRange);
     });
 
-    // BUG (observed / root-cause traced in source): voiSyncCallback
-    // (packages/tools/src/synchronizers/callbacks/voiSyncCallback.ts) only
-    // copies `invert` onto the target when the VOI_MODIFIED event's
-    // `invertStateChanged` field is truthy. PlanarViewport's
-    // `notifyDataPresentationModified`
-    // (packages/core/src/RenderingEngine/GenericViewport/Planar/PlanarViewport.ts)
-    // never includes `invertStateChanged` in the VOI_MODIFIED detail it
-    // triggers (only `range`, `volumeId`, `VOILUTFunction`, `invert`,
-    // `colormap`) -- so this branch is permanently dead for GenericViewports:
-    // B's invert flag never updates, regardless of the (default-true)
-    // `syncInvertState` option.
-    test.fails(
-      'does NOT sync the invert flag even though syncInvertState defaults to true',
+    test(
+      'syncs the invert flag with syncInvertState on',
       async () => {
         const { a, b } = await setupPair('voi-invert');
         const syncId = trackSynchronizer(uniqueId('voi-invert-sync'));

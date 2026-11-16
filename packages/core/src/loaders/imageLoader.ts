@@ -224,7 +224,7 @@ export function loadAndCacheImage(
 
   // if not inside cache, store it
   if (!cache.getImageLoadObject(imageId)) {
-    cache.putImageLoadObject(imageId, imageLoadObject);
+    cache.putImageLoadObject(imageId, imageLoadObject).catch(() => undefined);
   }
 
   return imageLoadObject.promise;

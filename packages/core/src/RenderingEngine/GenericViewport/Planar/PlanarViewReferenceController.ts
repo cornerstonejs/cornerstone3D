@@ -16,6 +16,7 @@ import * as metaData from '../../../metaData';
 import { MetadataModules } from '../../../enums';
 import imageIdToURI from '../../../utilities/imageIdToURI';
 import isEqual from '../../../utilities/isEqual';
+import { isImageRenderMode } from '../../helpers/renderBackendRegistry';
 import {
   getDimensionGroupReferenceContext,
   type GenericViewportReferenceContext,
@@ -284,13 +285,35 @@ class PlanarViewReferenceController {
       dataIds: [referenceContext.data.id],
       frameOfReferenceUID: referenceContext.frameOfReferenceUID,
       imageIds: this.getImageIdsForReferenceContext(referenceContext),
-      currentImageIdIndex: referenceContext.rendering.currentImageIdIndex,
+      currentImageIdIndex: this.getReferenceImageIdIndex(referenceContext),
       volumeId,
       volumeIds: volumeId ? [volumeId] : undefined,
       cameraFocalPoint: resolvedView?.focalPoint,
       viewPlaneNormal: resolvedView?.viewPlaneNormal,
       ...getDimensionGroupReferenceContext(referenceContext.data.imageVolume),
     };
+  }
+
+  /**
+   * The image index that a reference is checked against. For the source of a
+   * stack it is the requested index of the view state, as the legacy stack
+   * viewport checks against the index of the last request; otherwise it is
+   * the index that the rendering shows.
+   */
+  private getReferenceImageIdIndex(
+    referenceContext: PlanarReferenceContext
+  ): number {
+    const { slice } = this.host.getViewState();
+
+    if (
+      slice?.kind === 'stackIndex' &&
+      referenceContext.dataId === this.host.getActiveDataId() &&
+      isImageRenderMode(referenceContext.rendering.renderMode)
+    ) {
+      return slice.imageIdIndex;
+    }
+
+    return referenceContext.rendering.currentImageIdIndex;
   }
 
   private findPlanarReferenceContextByVolumeId(

@@ -1,7 +1,7 @@
-import { loadAndCacheImage } from '../../../loaders/imageLoader';
 import { createAndCacheVolume } from '../../../loaders/volumeLoader';
 import { isVolumeRenderMode } from '../../helpers/renderBackendRegistry';
 import resolveViewportVolumeId from '../../helpers/resolveViewportVolumeId';
+import type { IImage } from '../../../types';
 import type { LoadedData } from '../ViewportArchitectureTypes';
 import { getGenericViewportPlanarDisplaySet } from '../genericViewportDisplaySetAccess';
 import { coreLog } from '../../../utilities/logger';
@@ -11,6 +11,7 @@ import type {
   PlanarPayload,
   PlanarRegisteredDataSet,
 } from './PlanarViewportTypes';
+import { loadPlanarStackImage } from './planarStackImageLoad';
 
 const log = coreLog.getLogger('RenderingEngine', 'DefaultPlanarDataProvider');
 
@@ -99,7 +100,7 @@ export class DefaultPlanarDataProvider implements PlanarDataProvider {
       dataSet.image &&
       dataSet.image.imageId === dataSet.imageIds[clampedImageIdIndex]
         ? dataSet.image
-        : await loadAndCacheImage(dataSet.imageIds[clampedImageIdIndex]);
+        : await loadFirstStackImage(dataSet.imageIds, clampedImageIdIndex);
 
     return {
       id: dataId,
@@ -146,4 +147,24 @@ function isPlanarRegisteredDataSet(
       typeof dataSet.initialImageIdIndex === 'number') &&
     (dataSet.volumeId === undefined || typeof dataSet.volumeId === 'string')
   );
+}
+
+/**
+ * Loads the first image of a stack as the legacy stack viewport loads it,
+ * through `loadPlanarStackImage`. It resolves with the first image that
+ * arrives, before the better stages of a progressive load, and rejects when
+ * the load fails.
+ */
+function loadFirstStackImage(
+  imageIds: string[],
+  imageIdIndex: number
+): Promise<IImage> {
+  return new Promise((resolve, reject) => {
+    void loadPlanarStackImage({
+      imageIds,
+      imageIdIndex,
+      onImage: resolve,
+      onError: reject,
+    });
+  });
 }

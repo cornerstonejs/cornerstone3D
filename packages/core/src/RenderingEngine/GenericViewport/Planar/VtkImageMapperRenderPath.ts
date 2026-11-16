@@ -7,7 +7,6 @@ import {
   MetadataModules,
   ViewportType,
 } from '../../../enums';
-import { loadAndCacheImage } from '../../../loaders/imageLoader';
 import { updateVTKImageDataWithCornerstoneImage } from '../../../utilities/updateVTKImageDataWithCornerstoneImage';
 import * as metaData from '../../../metaData';
 import { ActorRenderMode } from '../../../types';
@@ -55,6 +54,7 @@ import {
 } from './planarRenderPathProjection';
 import { imageQualityStatusOf } from '../../helpers/fidelityIndicator/collectFidelityLines';
 import { isSegmentationOverlayData } from '../renderingFidelity';
+import { loadPlanarStackImage } from './planarStackImageLoad';
 
 /** @internal */
 export class VtkImageMapperRenderPath
@@ -254,21 +254,31 @@ export class VtkImageMapperRenderPath
     }
 
     rendering.lastRequestedImageIdIndex = nextImageIdIndex;
+    rendering.failedImageIdIndex = undefined;
     const requestId = ++rendering.loadRequestId;
 
-    void loadAndCacheImage(imageIds[nextImageIdIndex]).then((image) => {
-      if (requestId !== rendering.loadRequestId) {
-        return;
-      }
+    rendering.imageLoad = loadPlanarStackImage({
+      imageIds,
+      imageIdIndex: nextImageIdIndex,
+      onImage: (image) => {
+        if (requestId !== rendering.loadRequestId) {
+          return;
+        }
 
-      void updateRenderedImage({
-        ctx,
-        dataId,
-        image,
-        rendering,
-        imageIdIndex: nextImageIdIndex,
-        dataPresentation: rendering.dataPresentation,
-      });
+        return updateRenderedImage({
+          ctx,
+          dataId,
+          image,
+          rendering,
+          imageIdIndex: nextImageIdIndex,
+          dataPresentation: rendering.dataPresentation,
+        });
+      },
+      onError: () => {
+        if (requestId === rendering.loadRequestId) {
+          rendering.failedImageIdIndex = nextImageIdIndex;
+        }
+      },
     });
   }
 

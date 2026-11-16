@@ -93,6 +93,43 @@ and thickens them. Together they are the crosshair for the next viewports.
   by the slab. `getCurrentImageIdIndex(undefined, true)` and
   `getNumberOfSlices(undefined, true)` count those steps.
 
+## Events and image loading of a planar viewport
+
+- **The events of the legacy viewports fire.** `VOLUME_VIEWPORT_NEW_VOLUME`
+  when a volume is shown and `VIEWPORT_NEW_IMAGE_SET` when a stack is shown,
+  on every `setDisplaySets`. `PRE_STACK_NEW_IMAGE` before the image of a stack
+  changes, and `STACK_VIEWPORT_SCROLL` on a scroll. In 5.x only the adapter
+  fired them.
+- **A failed image load is reported.** `IMAGE_LOAD_ERROR` fires with the image
+  id and its index, and the same index can be asked for again. In 5.x the
+  failure was an unhandled rejection and the index was never loaded again.
+  `loadAndCacheImage` no longer leaves an unhandled rejection either: its own
+  promise still rejects.
+- **`setImageIdIndex()` resolves when the image is shown,** as on the legacy
+  stack viewport, and `getCurrentImageIdIndex()` gives the requested index at
+  once. In 5.x the promise resolved before the load and the index lagged
+  behind until the image was drawn. `getCurrentImageId()` gives the image
+  that is drawn.
+- **A stack follows the image retrieve configuration.** Staged and
+  progressive loading that is registered for `'stack'` with
+  `imageRetrieveMetadataProvider` works with `setDisplaySets`. Without a
+  configuration an image is requested as on the legacy stack viewport: as an
+  interaction request with priority 5. In 5.x a next viewport requested it as
+  a prefetch.
+- **`VOI_MODIFIED` carries `invertStateChanged`,** so the VOI synchronizer
+  syncs an invert from a planar viewport. It also fires for a change of the
+  invert or of the VOI function when no window was set yet.
+- **`suppressEvents` in the options of a planar viewport is honoured.**
+- **`isReferenceViewable` honours `asOverlay` and `asNearbyProjection`,** so a
+  labelmap image that is not in the stack but lies on the geometry of the
+  image on display shows.
+- **`displayArea` and `aspectRatio` in the options are applied** at the mount
+  and again by `resetViewState()`. `setAspectRatio()` exists, and
+  `getAspectRatio()` gives the real ratio, with the vertical part as 1:
+  `[1, 2]` reads back as `[0.5, 1]`.
+- **`IMAGE_SPACING_CALIBRATED` fires when a newly shown image has another
+  calibration,** and its detail has `worldToIndex` and `scale`.
+
 ## Several volumes in one planar viewport
 
 - **The volume helpers answer for every volume shown.** `hasVolumeId`,

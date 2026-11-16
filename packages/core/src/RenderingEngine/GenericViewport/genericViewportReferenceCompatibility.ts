@@ -1,10 +1,15 @@
 import { vec3 } from 'gl-matrix';
+import type { mat3 } from 'gl-matrix';
 import type {
+  CPUIImageData,
   Point3,
   ReferenceCompatibleOptions,
   ViewReference,
 } from '../../types';
 import type { PlaneRestriction } from '../../types/IViewport';
+import { MetadataModules } from '../../enums';
+import * as metaData from '../../metaData';
+import getSpacingInNormalDirection from '../../utilities/getSpacingInNormalDirection';
 import imageIdToURI from '../../utilities/imageIdToURI';
 import isEqual from '../../utilities/isEqual';
 
@@ -250,6 +255,18 @@ function isReferencedImageCompatible(
   const currentImageURIEntry = imageURIEntries[currentImageIdIndex];
 
   if (imageURIEntryMatches(currentImageURIEntry, referencedImageURIs)) {
+    return true;
+  }
+
+  if (
+    options.asOverlay &&
+    viewRef.referencedImageId &&
+    context.imageIds?.[currentImageIdIndex] &&
+    isImageOnOverlayGeometry(
+      context.imageIds[currentImageIdIndex],
+      viewRef.referencedImageId
+    )
+  ) {
     return true;
   }
 
@@ -576,4 +593,82 @@ function toPositiveInteger(value: unknown): number | undefined {
   }
 
   return value;
+}
+
+/**
+ * Whether an overlay image, as a labelmap image, lies on the image shown, as
+ * the legacy stack viewport matches images for `asOverlay`: the same
+ * orientation, position, rows and columns in the image plane module, or the
+ * same rows and columns when either image has no orientation.
+ */
+export function isImageOnOverlayGeometry(
+  currentImageId: string,
+  overlayImageId: string
+): boolean {
+  const overlayPlane = metaData.get(
+    MetadataModules.IMAGE_PLANE,
+    overlayImageId
+  );
+  const currentPlane = metaData.get(
+    MetadataModules.IMAGE_PLANE,
+    currentImageId
+  );
+
+  if (!overlayPlane || !currentPlane) {
+    return false;
+  }
+
+  const sameSize =
+    overlayPlane.rows === currentPlane.rows &&
+    overlayPlane.columns === currentPlane.columns;
+
+  if (
+    !overlayPlane.imageOrientationPatient ||
+    !currentPlane.imageOrientationPatient
+  ) {
+    return sameSize;
+  }
+
+  return (
+    isEqual(
+      overlayPlane.imageOrientationPatient,
+      currentPlane.imageOrientationPatient
+    ) &&
+    Boolean(
+      overlayPlane.imagePositionPatient && currentPlane.imagePositionPatient
+    ) &&
+    isEqual(
+      overlayPlane.imagePositionPatient,
+      currentPlane.imagePositionPatient
+    ) &&
+    sameSize
+  );
+}
+
+/**
+ * Whether a point lies within half a slice spacing of the plane of an image,
+ * as the legacy stack viewport checks `asNearbyProjection`: the spacing is
+ * the spacing of the image data along its normal, the third column of its
+ * direction.
+ */
+export function isPointNearImagePlane(
+  point: Point3,
+  imageData: Pick<CPUIImageData, 'spacing' | 'direction' | 'origin'>
+): boolean {
+  const { spacing, direction, origin } = imageData;
+  const viewPlaneNormal = direction.slice(6, 9) as Point3;
+  const sliceThickness = getSpacingInNormalDirection(
+    { direction: direction as unknown as mat3, spacing },
+    viewPlaneNormal
+  );
+  const distanceToPlane = vec3.dot(
+    vec3.subtract(
+      vec3.create(),
+      point as unknown as vec3,
+      origin as unknown as vec3
+    ),
+    viewPlaneNormal as unknown as vec3
+  );
+
+  return Math.abs(distanceToPlane) <= sliceThickness / 2;
 }

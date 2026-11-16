@@ -19,6 +19,7 @@ import type { EffectiveRenderBackend } from '../../../types/RenderBackendRegistr
 import type {
   ActorEntry,
   CPUIImageData,
+  EventTypes,
   ICamera,
   IImage,
   IImageData,
@@ -67,12 +68,19 @@ import type {
   ViewportDataReference,
 } from '../ViewportArchitectureTypes';
 import GenericViewport from '../GenericViewport';
-import type { GenericViewportReferenceContext } from '../genericViewportReferenceCompatibility';
+import {
+  isPointNearImagePlane,
+  type GenericViewportReferenceContext,
+} from '../genericViewportReferenceCompatibility';
 import {
   getGenericViewportImageDisplaySet,
   isGenericViewportImageDisplaySet,
 } from '../genericViewportDisplaySetAccess';
 import { DefaultPlanarDataProvider } from './DefaultPlanarDataProvider';
+import {
+  buildPlanarImageData,
+  getPlanarWorldToIndexMatrix,
+} from './planarImageData';
 import { createPlanarRenderPathResolver } from './PlanarRenderPathResolver';
 import { defaultPlanarRenderPathDecisionService } from './PlanarRenderPathDecisionService';
 import type {
@@ -115,6 +123,7 @@ import {
 import {
   createPlanarCpuVolumeSliceBasis,
   createPlanarVolumeSliceBasis,
+  getFitParallelScaleFromWorldSize,
   getPlanarVolumeSliceRange,
   getVolumeImageIdIndexWorldPoint,
 } from './planarSliceBasis';
@@ -333,6 +342,14 @@ function getSlabPresentation(
   };
 }
 
+/** The fields of an image path rendering that track its image loads. */
+type PlanarStackImageLoads = {
+  loadRequestId?: number;
+  lastRequestedImageIdIndex?: number;
+  failedImageIdIndex?: number;
+  imageLoad?: Promise<void>;
+};
+
 class PlanarViewport extends GenericViewport<
   PlanarViewState,
   PlanarDataPresentation,
@@ -348,6 +365,10 @@ class PlanarViewport extends GenericViewport<
   suppressEvents = false;
   /** Set when a render path draws in `render()` instead of the engine. */
   private drewOutsideEngine = false;
+  /** The display set whose invert the presentation change in progress turns. */
+  private invertTurnedDataId?: string;
+  /** The user calibration of the stack image shown last. */
+  private shownCalibration?: unknown;
 
   protected renderContext: PlanarViewportRenderContext;
 
@@ -418,6 +439,7 @@ class PlanarViewport extends GenericViewport<
     this.sHeight = args.sHeight;
     this.defaultOptions = cloneViewportOptions(args.defaultOptions || {});
     this.options = cloneViewportOptions(this.defaultOptions);
+    this.suppressEvents = Boolean(this.defaultOptions.suppressEvents);
     this.dataProvider = args.dataProvider || new DefaultPlanarDataProvider();
     this.renderPathResolver =
       args.renderPathResolver || createPlanarRenderPathResolver();
@@ -564,6 +586,10 @@ class PlanarViewport extends GenericViewport<
       vtkCanvas
     );
 
+    this.element.addEventListener(
+      Events.STACK_NEW_IMAGE,
+      this.onStackNewImage as EventListener
+    );
     this.element.setAttribute('data-viewport-uid', this.id);
     this.element.setAttribute(
       'data-rendering-engine-uid',
@@ -587,6 +613,21 @@ class PlanarViewport extends GenericViewport<
   async setDisplaySets(
     ...entries: Array<{ displaySetId: string; options?: PlanarSetDataOptions }>
   ): Promise<void> {
+    await this.mountDisplaySets(entries, true);
+  }
+
+  /**
+   * Mounts display sets as `setDisplaySets` does. With `firesNewDataEvent`
+   * it then fires the event of new data that the legacy viewports fire:
+   * VOLUME_VIEWPORT_NEW_VOLUME when the new source is a volume, as
+   * `setVolumes`, and VIEWPORT_NEW_IMAGE_SET when it is a stack, as
+   * `setStack`. The legacy adapter mounts without it and fires the event
+   * itself once its legacy call is done.
+   */
+  private async mountDisplaySets(
+    entries: Array<{ displaySetId: string; options?: PlanarSetDataOptions }>,
+    firesNewDataEvent: boolean
+  ): Promise<void> {
     const requestId = ++this.setDataRequestId;
     const isStale = () => requestId !== this.setDataRequestId;
 
@@ -608,6 +649,91 @@ class PlanarViewport extends GenericViewport<
         isStale
       );
     }
+
+    if (firesNewDataEvent && !isStale()) {
+      this.triggerNewDataEvent(entries.map(({ displaySetId }) => displaySetId));
+    }
+  }
+
+  /**
+   * Fires the event of new data for display sets that were just mounted,
+   * when the source is one of them: VOLUME_VIEWPORT_NEW_VOLUME with the
+   * actor entries of the volumes among them, or VIEWPORT_NEW_IMAGE_SET with
+   * the image ids of the stack and its first index.
+   */
+  private triggerNewDataEvent(dataIds: string[]): void {
+    const sourceDataId = this.getSourceDataId();
+
+    if (!sourceDataId || !dataIds.includes(sourceDataId)) {
+      return;
+    }
+
+    const mode = this.getCurrentMode();
+
+    if (mode === 'volume') {
+      this.triggerNewVolumeEvent(
+        dataIds.flatMap((dataId) => {
+          const binding = this.getBinding(dataId);
+          const actorEntry = this.getDataSet(dataId)?.volumeId
+            ? binding?.getActorEntry?.(binding.data)
+            : undefined;
+
+          return actorEntry ? [actorEntry] : [];
+        })
+      );
+    } else if (mode === 'stack') {
+      this.triggerNewImageSetEvent(
+        this.getImageIds(),
+        this.getDataSet(sourceDataId)?.initialImageIdIndex ?? 0
+      );
+    }
+  }
+
+  /**
+   * Fires VOLUME_VIEWPORT_NEW_VOLUME with the detail of the legacy volume
+   * viewport: the viewport id and the actor entries of the new volumes.
+   */
+  private triggerNewVolumeEvent(volumeActors: ActorEntry[]): void {
+    triggerEvent(this.element, Events.VOLUME_VIEWPORT_NEW_VOLUME, {
+      viewportId: this.id,
+      volumeActors,
+    });
+  }
+
+  /**
+   * Fires VIEWPORT_NEW_IMAGE_SET with the detail of the legacy stack
+   * viewport, once the first image of a new stack is shown.
+   */
+  protected triggerNewImageSetEvent(
+    imageIds: string[],
+    currentImageIdIndex: number
+  ): void {
+    const eventDetail: EventTypes.StackViewportNewStackEventDetail = {
+      imageIds,
+      viewportId: this.id,
+      element: this.element,
+      currentImageIdIndex,
+    };
+
+    triggerEvent(this.element, Events.VIEWPORT_NEW_IMAGE_SET, eventDetail);
+  }
+
+  /**
+   * Fires PRE_STACK_NEW_IMAGE with the detail of the legacy stack viewport,
+   * before the image of a stack index loads.
+   */
+  protected triggerPreStackNewImage(
+    imageId: string,
+    imageIdIndex: number
+  ): void {
+    const eventDetail: EventTypes.PreStackNewImageEventDetail = {
+      imageId,
+      imageIdIndex,
+      viewportId: this.id,
+      renderingEngineId: this.renderingEngineId,
+    };
+
+    triggerEvent(this.element, Events.PRE_STACK_NEW_IMAGE, eventDetail);
   }
 
   /**
@@ -685,6 +811,7 @@ class PlanarViewport extends GenericViewport<
     }
 
     if (role === 'source') {
+      this.applyOptionsViewState();
       // Emit an initial CAMERA_MODIFIED for the source binding only, mirroring
       // legacy StackViewport's first-image triggerCameraEvent. Overlays and
       // orientation markers paint their first frame off this event. Trigger the
@@ -1125,7 +1252,10 @@ class PlanarViewport extends GenericViewport<
         : undefined);
 
     if (voiTouched) {
-      const range = props.voiRange ?? presentation?.voiRange;
+      const range =
+        props.voiRange ??
+        presentation?.voiRange ??
+        this.getDefaultVOIRange(displaySetId);
 
       if (range) {
         triggerEvent(this.element, Events.VOI_MODIFIED, {
@@ -1135,6 +1265,9 @@ class PlanarViewport extends GenericViewport<
           VOILUTFunction: props.voiLUTFunction ?? presentation?.voiLUTFunction,
           invert: props.invert ?? presentation?.invert,
           colormap: presentation?.colormap,
+          ...(this.invertTurnedDataId === displaySetId
+            ? { invertStateChanged: true }
+            : {}),
         });
       }
     }
@@ -1145,6 +1278,31 @@ class PlanarViewport extends GenericViewport<
         colormap: props.colormap,
         volumeId,
       });
+    }
+  }
+
+  /**
+   * Merges a presentation change as the base class does, and notes when the
+   * change turns the invert of the display set, so that VOI_MODIFIED carries
+   * `invertStateChanged` as on the legacy volume viewport.
+   */
+  protected override mergeDataPresentation(
+    displaySetId: string,
+    props: Partial<PlanarDataPresentation>
+  ): PlanarDataPresentation {
+    const isInverted = (presentation?: Partial<PlanarDataPresentation>) =>
+      Boolean(presentation?.invert ?? this.getDefaultInvert(displaySetId));
+    const turnsInvert =
+      'invert' in props &&
+      isInverted(props) !==
+        isInverted(this.getDisplaySetPresentation(displaySetId));
+
+    this.invertTurnedDataId = turnsInvert ? displaySetId : undefined;
+
+    try {
+      return super.mergeDataPresentation(displaySetId, props);
+    } finally {
+      this.invertTurnedDataId = undefined;
     }
   }
 
@@ -1273,10 +1431,12 @@ class PlanarViewport extends GenericViewport<
   public calibrateSpacing(imageId: string): void {
     this.render();
 
-    const cpuImageData = this.getImageData() as
-      | { calibration?: unknown; imageData?: unknown }
+    const cpuImageData = this.getImageData() as CPUIImageData | undefined;
+    const userCalibration = metaData.get('calibratedPixelSpacing', imageId) as
+      | { scale?: number }
       | undefined;
 
+    this.shownCalibration = userCalibration;
     triggerEvent(this.element, Events.IMAGE_SPACING_CALIBRATED, {
       element: this.element,
       viewportId: this.id,
@@ -1284,8 +1444,56 @@ class PlanarViewport extends GenericViewport<
       imageId,
       calibration: cpuImageData?.calibration,
       imageData: cpuImageData?.imageData,
+      worldToIndex: cpuImageData
+        ? getPlanarWorldToIndexMatrix(cpuImageData)
+        : undefined,
+      scale: userCalibration?.scale,
     });
   }
+
+  /**
+   * Fires IMAGE_SPACING_CALIBRATED when a newly shown stack image has a user
+   * calibration (`calibratedPixelSpacing`) other than the image shown before,
+   * as the legacy stack viewport does when it shows such an image. The
+   * detail is the legacy one: the user calibration, its scale, the image
+   * data and its world to index matrix.
+   */
+  private readonly onStackNewImage = (
+    evt: EventTypes.StackNewImageEvent
+  ): void => {
+    const { image, imageId } = evt.detail;
+
+    if (!image || !imageId) {
+      return;
+    }
+
+    const calibration = metaData.get('calibratedPixelSpacing', imageId) as
+      | { scale?: number }
+      | undefined;
+
+    if (calibration === this.shownCalibration) {
+      return;
+    }
+
+    this.shownCalibration = calibration;
+
+    if (!calibration || this.suppressEvents) {
+      return;
+    }
+
+    const imageData = buildPlanarImageData(image);
+
+    triggerEvent(this.element, Events.IMAGE_SPACING_CALIBRATED, {
+      element: this.element,
+      viewportId: this.id,
+      renderingEngineId: this.renderingEngineId,
+      imageId,
+      calibration,
+      scale: calibration.scale,
+      imageData: imageData.imageData,
+      worldToIndex: getPlanarWorldToIndexMatrix(imageData),
+    });
+  };
 
   // ====================================================================
   // Public API -- camera & navigation
@@ -1558,6 +1766,145 @@ class PlanarViewport extends GenericViewport<
         storeAsInitialCamera: nextDisplayArea.storeAsInitialCamera,
       });
     }
+  }
+
+  /**
+   * The stretch of the view as `[widthRatio, heightRatio]`, as the legacy
+   * `getAspectRatio`: the ratio of the horizontal to the vertical scale of
+   * the view state, so `[1, 1]` when the view is not stretched.
+   */
+  override getAspectRatio(): Point2 {
+    const [scaleX, scaleY] = this.getScale();
+
+    return scaleY ? [scaleX / scaleY, 1] : [1, 1];
+  }
+
+  /**
+   * Stretches the view by an aspect ratio `[widthRatio, heightRatio]`, as the
+   * legacy `setAspectRatio`: the horizontal scale stays, unless `fit` is set,
+   * which fits the stretched image into the canvas. `storeAsInitialCamera`
+   * keeps the aspect ratio in the options, so that `resetViewState` applies
+   * it again.
+   */
+  setAspectRatio(
+    aspectRatio: Point2,
+    options: { fit?: boolean; storeAsInitialCamera?: boolean } = {}
+  ): void {
+    const scale = this.getAspectRatioScale(aspectRatio, Boolean(options.fit));
+
+    if (!scale) {
+      return;
+    }
+
+    if (options.storeAsInitialCamera) {
+      this.options = {
+        ...this.options,
+        aspectRatio: [...aspectRatio] as Point2,
+      };
+    }
+
+    this.setViewState({ scale });
+  }
+
+  /**
+   * The scale of the view state for an aspect ratio: the horizontal scale is
+   * the vertical one times `widthRatio / heightRatio`. Without `fit` the
+   * horizontal scale of the view stays, as the legacy viewports keep it;
+   * with `fit` the scale fits the stretched image, as the legacy viewports
+   * fit an image with an aspect ratio.
+   */
+  private getAspectRatioScale(
+    aspectRatio: Point2,
+    fit: boolean
+  ): Point2 | undefined {
+    const [widthRatio, heightRatio] = aspectRatio ?? [];
+
+    if (!(widthRatio > 0 && heightRatio > 0)) {
+      return;
+    }
+
+    const stretch = widthRatio / heightRatio;
+
+    if (!fit) {
+      const [scaleX] = this.getScale();
+
+      return [scaleX, scaleX / stretch];
+    }
+
+    const scaleY = this.getStretchedFitScale(stretch);
+
+    return [scaleY * stretch, scaleY];
+  }
+
+  /**
+   * The vertical scale, against the fit of the image, at which the image
+   * stretched horizontally by `stretch` fits into the canvas.
+   */
+  private getStretchedFitScale(stretch: number): number {
+    const sliceBasis = this.getResolvedView()?.getSliceBasis();
+
+    if (!sliceBasis) {
+      return 1;
+    }
+
+    const { width, height } = this.getCurrentCanvasDimensions();
+    const getFit = (widthStretch: number) =>
+      getFitParallelScaleFromWorldSize({
+        canvasWidth: width,
+        canvasHeight: height,
+        widthWorld: sliceBasis.sliceWidthWorld * widthStretch,
+        heightWorld: sliceBasis.sliceHeightWorld,
+      });
+
+    return getFit(1) / getFit(stretch);
+  }
+
+  /**
+   * The view state of the `aspectRatio` and `displayArea` options, as the
+   * legacy `resetCamera` applies them: the fitted stretch of the aspect
+   * ratio, and with `withDisplayArea` the display area.
+   */
+  private getOptionsViewState(
+    withDisplayArea: boolean
+  ): Partial<PlanarViewState> {
+    const { aspectRatio, displayArea } = this.options;
+    const viewState: Partial<PlanarViewState> = {};
+    const scale = aspectRatio
+      ? this.getAspectRatioScale(aspectRatio, true)
+      : undefined;
+
+    if (withDisplayArea && displayArea) {
+      viewState.anchorCanvas = [0.5, 0.5];
+      viewState.anchorWorld = undefined;
+      viewState.displayArea = cloneDisplayArea(displayArea);
+      viewState.scale = scale ?? [1, 1];
+      viewState.scaleMode = displayArea.scaleMode ?? 'fit';
+    } else if (scale) {
+      viewState.scale = scale;
+    }
+
+    return viewState;
+  }
+
+  /**
+   * Puts the `aspectRatio` and `displayArea` options into the view state
+   * once the source is mounted, as the legacy viewports apply them when they
+   * show their first image. It fires no camera event: the mount fires one.
+   */
+  private applyOptionsViewState(): void {
+    const optionsViewState = this.getOptionsViewState(true);
+
+    if (!Object.keys(optionsViewState).length) {
+      return;
+    }
+
+    this.clearResolvedViewCache();
+    this.viewState = this.normalizeViewState({
+      ...this.viewState,
+      ...optionsViewState,
+    });
+    this.updateBindingsCameraState();
+    this.render();
   }
 
   /** @deprecated Legacy shim for `getZoom()`. */
@@ -2158,6 +2505,11 @@ class PlanarViewport extends GenericViewport<
    * Returns whether a view reference is spatially compatible with this
    * viewport.
    *
+   * As on the legacy stack viewport, `asOverlay` takes an image that is not
+   * in the stack but lies on the image shown as viewable, and on a stack
+   * `asNearbyProjection` takes a reference by a focal point only as viewable
+   * when the point lies within half a slice spacing of the image shown.
+   *
    * @param viewRef - View reference to test.
    * @param options - Optional compatibility flags for the spatial check.
    * @returns `true` when the reference can be viewed in this viewport state.
@@ -2166,11 +2518,36 @@ class PlanarViewport extends GenericViewport<
     viewRef: ViewReference,
     options: ReferenceCompatibleOptions = {}
   ): boolean {
-    return super.isReferenceViewable(viewRef, options);
+    const isViewable = super.isReferenceViewable(viewRef, options);
+
+    if (
+      !isViewable ||
+      !options.asNearbyProjection ||
+      !viewRef.cameraFocalPoint ||
+      viewRef.referencedImageId ||
+      viewRef.volumeId ||
+      viewRef.FrameOfReferenceUID ||
+      this.getCurrentMode() !== 'stack'
+    ) {
+      return isViewable;
+    }
+
+    const imageData = this.getImageData() as CPUIImageData | undefined;
+
+    return Boolean(
+      imageData && isPointNearImagePlane(viewRef.cameraFocalPoint, imageData)
+    );
   }
 
   /**
    * Sets the active image index and resolves the corresponding image id.
+   *
+   * On a stack it works as `setImageIdIndex` of the legacy stack viewport:
+   * PRE_STACK_NEW_IMAGE fires when the index changes, `getCurrentImageIdIndex`
+   * and `getTargetImageIdIndex` give the new index at once, and the promise
+   * resolves once the image is shown or its load failed. Asking for the
+   * index that is shown resolves at once. Asking again for an index whose
+   * image failed to load loads it again.
    *
    * @param imageIdIndex - Requested zero-based image index.
    * @returns The resolved image id after clamping.
@@ -2208,6 +2585,21 @@ class PlanarViewport extends GenericViewport<
       return Promise.resolve(resolvedImageId);
     }
 
+    const imageLoads = rendering as PlanarStackImageLoads | undefined;
+
+    if (this.getCurrentMode() === 'stack') {
+      if (clampedImageIdIndex !== this.getTargetImageIdIndex()) {
+        this.triggerPreStackNewImage(resolvedImageId, clampedImageIdIndex);
+      }
+
+      if (imageLoads?.failedImageIdIndex === clampedImageIdIndex) {
+        imageLoads.lastRequestedImageIdIndex = undefined;
+        imageLoads.failedImageIdIndex = undefined;
+      }
+    }
+
+    const loadRequestId = imageLoads?.loadRequestId;
+
     this.setViewState({
       slice: {
         kind: 'stackIndex',
@@ -2215,7 +2607,54 @@ class PlanarViewport extends GenericViewport<
       },
     });
 
+    if (imageLoads?.imageLoad && imageLoads.loadRequestId !== loadRequestId) {
+      return imageLoads.imageLoad.then(() => resolvedImageId);
+    }
+
     return Promise.resolve(resolvedImageId);
+  }
+
+  /**
+   * The image index that the viewport goes to. On a stack this is the index
+   * of the last request, as `getTargetImageIdIndex` of the legacy stack
+   * viewport. Otherwise it is the current image index.
+   */
+  getTargetImageIdIndex(): number {
+    return this.getActiveImageIdIndex();
+  }
+
+  /**
+   * Goes to an image index of a stack as a scroll of the legacy stack
+   * viewport: it fires STACK_VIEWPORT_SCROLL when the index changes.
+   *
+   * @param imageIdIndex - The index to go to.
+   * @param delta - The signed steps of the scroll, the `direction` of the
+   * event.
+   * @returns The resolved image id.
+   */
+  protected scrollToImageIdIndex(
+    imageIdIndex: number,
+    delta: number
+  ): Promise<string> {
+    const imageIds = this.getImageIds();
+    const currentImageIdIndex = this.getTargetImageIdIndex();
+    const nextImageIdIndex = Math.min(
+      Math.max(0, imageIdIndex),
+      this.getMaxImageIdIndex()
+    );
+    const imageIdPromise = this.setImageIdIndex(nextImageIdIndex);
+
+    if (imageIds.length && nextImageIdIndex !== currentImageIdIndex) {
+      const eventDetail: EventTypes.StackViewportScrollEventDetail = {
+        newImageIdIndex: nextImageIdIndex,
+        imageId: imageIds[nextImageIdIndex],
+        direction: delta,
+      };
+
+      triggerEvent(this.element, Events.STACK_VIEWPORT_SCROLL, eventDetail);
+    }
+
+    return imageIdPromise;
   }
 
   /**
@@ -2240,6 +2679,13 @@ class PlanarViewport extends GenericViewport<
     options: PlanarScrollOptions = {}
   ): Promise<string> {
     const steps = this.getVolumeSliceSteps(options);
+
+    if (!steps && this.getCurrentMode() === 'stack') {
+      return this.scrollToImageIdIndex(
+        this.getActiveImageIdIndex() + delta,
+        delta
+      );
+    }
 
     if (!steps) {
       return this.setImageIdIndex(this.getActiveImageIdIndex() + delta);
@@ -2404,6 +2850,15 @@ class PlanarViewport extends GenericViewport<
     }
 
     this.setViewState(nextCamera);
+
+    if (resetZoom) {
+      const optionsViewState = this.getOptionsViewState(resetPan);
+
+      if (Object.keys(optionsViewState).length) {
+        this.setViewState(optionsViewState);
+      }
+    }
+
     this.triggerCameraResetEvent();
 
     return true;
@@ -2590,6 +3045,10 @@ class PlanarViewport extends GenericViewport<
   }
 
   protected override onDestroy(): void {
+    this.element.removeEventListener(
+      Events.STACK_NEW_IMAGE,
+      this.onStackNewImage as EventListener
+    );
     this.clearResolvedViewCache();
     if (this.renderImageObjectDataId) {
       genericViewportDisplaySetMetadataProvider.remove(
@@ -3130,7 +3589,7 @@ class PlanarViewport extends GenericViewport<
           orientation: this.resolveRequestedOrientation(),
         });
       },
-      setDisplaySets: (...entries) => this.setDisplaySets(...entries),
+      setDisplaySets: (...entries) => this.mountDisplaySets(entries, false),
       addDisplaySet: (displaySetId, options) =>
         this.addDisplaySet(displaySetId, options),
       setImageIdIndex: (imageIdIndex) => this.setImageIdIndex(imageIdIndex),
@@ -3217,6 +3676,13 @@ class PlanarViewport extends GenericViewport<
       if (typeof resolvedImageIdIndex === 'number') {
         return resolvedImageIdIndex;
       }
+    }
+
+    if (
+      this.getCurrentMode() === 'stack' &&
+      this.viewState.slice?.kind === 'stackIndex'
+    ) {
+      return this.viewState.slice.imageIdIndex;
     }
 
     const currentImageIdIndex = (
@@ -3366,6 +3832,22 @@ class PlanarViewport extends GenericViewport<
       resolvedOrientation
     );
     const selectedPath = selectPlanarRenderPath(dataSet, decisionOptions);
+
+    if (
+      options.role === 'source' &&
+      isImageRenderMode(selectedPath.renderMode)
+    ) {
+      const imageIdIndex = Math.min(
+        Math.max(0, dataSet.initialImageIdIndex ?? 0),
+        dataSet.imageIds.length - 1
+      );
+
+      this.triggerPreStackNewImage(
+        dataSet.imageIds[imageIdIndex],
+        imageIdIndex
+      );
+    }
+
     const data = await (this.dataProvider as PlanarDataProvider).load(dataId, {
       acquisitionOrientation: selectedPath.acquisitionOrientation,
       orientation: resolvedOrientation,

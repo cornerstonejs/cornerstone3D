@@ -18,7 +18,6 @@ import {
   Events,
   ViewportStatus,
 } from '../../../enums';
-import { loadAndCacheImage } from '../../../loaders/imageLoader';
 import * as metaData from '../../../metaData';
 import { ActorRenderMode } from '../../../types';
 import { getImageDataMetadata } from '../../../utilities/getImageDataMetadata';
@@ -89,6 +88,7 @@ import {
 import { buildPlanarImageData } from './planarImageData';
 import { imageQualityStatusOf } from '../../helpers/fidelityIndicator/collectFidelityLines';
 import { isSegmentationOverlayData } from '../renderingFidelity';
+import { loadPlanarStackImage } from './planarStackImageLoad';
 
 /** The parts of one mounted CPU image. */
 type CpuImageSliceMount = {
@@ -327,21 +327,31 @@ export class CpuImageSliceRenderPath
     }
 
     rendering.lastRequestedImageIdIndex = nextImageIdIndex;
+    rendering.failedImageIdIndex = undefined;
     const requestId = ++rendering.loadRequestId;
 
-    void loadAndCacheImage(imageIds[nextImageIdIndex]).then((image) => {
-      if (requestId !== rendering.loadRequestId) {
-        return;
-      }
+    rendering.imageLoad = loadPlanarStackImage({
+      imageIds,
+      imageIdIndex: nextImageIdIndex,
+      onImage: (image) => {
+        if (requestId !== rendering.loadRequestId) {
+          return;
+        }
 
-      void updateRenderedImage({
-        ctx,
-        dataId,
-        image,
-        imageIdIndex: nextImageIdIndex,
-        props: rendering.dataPresentation,
-        rendering,
-      });
+        return updateRenderedImage({
+          ctx,
+          dataId,
+          image,
+          imageIdIndex: nextImageIdIndex,
+          props: rendering.dataPresentation,
+          rendering,
+        });
+      },
+      onError: () => {
+        if (requestId === rendering.loadRequestId) {
+          rendering.failedImageIdIndex = nextImageIdIndex;
+        }
+      },
     });
   }
 

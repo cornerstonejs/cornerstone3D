@@ -1,4 +1,4 @@
-import { vec3 } from 'gl-matrix';
+import { mat4, vec3 } from 'gl-matrix';
 import * as metaData from '../../../metaData';
 import type { CPUIImageData, IImage, Point3 } from '../../../types';
 import { getImageDataMetadata } from '../../../utilities/getImageDataMetadata';
@@ -84,4 +84,35 @@ export function buildPlanarImageData(
     preScale: image.preScale,
     voxelManager: image.voxelManager,
   };
+}
+
+/**
+ * The world to index matrix of the image data of a stack image, as
+ * `getWorldToIndex` of the vtkImageData of the legacy stack viewport gives
+ * it: the inverse of the matrix of the direction, spacing and origin.
+ */
+export function getPlanarWorldToIndexMatrix(
+  imageData: Pick<CPUIImageData, 'direction' | 'spacing' | 'origin'>
+): mat4 {
+  const { direction, spacing, origin } = imageData;
+  const indexToWorld = mat4.fromValues(
+    direction[0] * spacing[0],
+    direction[1] * spacing[0],
+    direction[2] * spacing[0],
+    0,
+    direction[3] * spacing[1],
+    direction[4] * spacing[1],
+    direction[5] * spacing[1],
+    0,
+    direction[6] * spacing[2],
+    direction[7] * spacing[2],
+    direction[8] * spacing[2],
+    0,
+    origin[0],
+    origin[1],
+    origin[2],
+    1
+  );
+
+  return mat4.invert(mat4.create(), indexToWorld);
 }

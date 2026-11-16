@@ -71,6 +71,13 @@ export type PlanarImageMapperRendering = MountedRendering<{
   // letting back-to-back navigation calls (e.g. Next then Previous) issue
   // a fresh load even while a previous load is still in flight.
   lastRequestedImageIdIndex?: number;
+  /**
+   * The load of the image of the last request: it resolves when the image
+   * is shown or its load failed.
+   */
+  imageLoad?: Promise<void>;
+  /** The index of the last request when its image failed to load. */
+  failedImageIdIndex?: number;
 }>;
 
 /**
@@ -95,6 +102,13 @@ export type PlanarCpuImageRendering = MountedRendering<{
   renderingInvalidated: boolean;
   // See PlanarImageMapperRendering.lastRequestedImageIdIndex.
   lastRequestedImageIdIndex?: number;
+  /**
+   * The load of the image of the last request: it resolves when the image
+   * is shown or its load failed.
+   */
+  imageLoad?: Promise<void>;
+  /** The index of the last request when its image failed to load. */
+  failedImageIdIndex?: number;
 }>;
 
 /**

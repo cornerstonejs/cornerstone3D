@@ -79,7 +79,11 @@ type VolumeSliceFitMetrics = {
   sliceHeightWorld: number;
 };
 
-function getFitParallelScaleFromWorldSize(args: {
+/**
+ * The parallel scale that fits a slice of a world width and height into a
+ * canvas.
+ */
+export function getFitParallelScaleFromWorldSize(args: {
   canvasWidth: number;
   canvasHeight: number;
   widthWorld: number;

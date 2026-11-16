@@ -5,7 +5,6 @@ import {
 } from '../../helpers/renderBackendRegistry';
 import type {
   ActorEntry,
-  EventTypes,
   ICamera,
   IImage,
   IVolumeInput,
@@ -15,7 +14,6 @@ import type {
   ViewReferenceSpecifier,
 } from '../../../types';
 import type BlendModes from '../../../enums/BlendModes';
-import Events from '../../../enums/Events';
 import InterpolationType from '../../../enums/InterpolationType';
 import MetadataModules from '../../../enums/MetadataModules';
 import { getShouldUseCPURendering } from '../../../init';
@@ -24,7 +22,6 @@ import { getValidVOILUTFunction } from '../../../utilities/buildMetadata';
 import clonePoint3 from '../../../utilities/clonePoint3';
 import hasOwn from '../../../utilities/hasOwn';
 import imageIdToURI from '../../../utilities/imageIdToURI';
-import triggerEvent from '../../../utilities/triggerEvent';
 import genericViewportDisplaySetMetadataProvider from '../../../utilities/genericViewportDisplaySetMetadataProvider';
 import { viewportProjection } from '../viewportProjection';
 import { type PlanarLegacyViewportProperties } from './planarLegacyCompatibility';
@@ -260,22 +257,6 @@ class PlanarViewportLegacyAdapter extends PlanarViewport {
   }
 
   /**
-   * The image index that the viewport goes to. In stack mode this is the
-   * index of the last request, which can be ahead of the image that is drawn
-   * while that image loads, as `getTargetImageIdIndex` of the legacy stack
-   * viewport. Otherwise it is the current image index.
-   */
-  getTargetImageIdIndex(): number {
-    const { slice } = this.getViewState();
-
-    if (this.getCurrentMode() === 'stack' && slice?.kind === 'stackIndex') {
-      return slice.imageIdIndex;
-    }
-
-    return super.getCurrentImageIdIndex();
-  }
-
-  /**
    * The index in the image ids of an image id, an image URI or the referenced
    * image of a view reference, as the legacy stack viewport finds it.
    * Undefined when the viewport does not have that image.
@@ -311,34 +292,12 @@ class PlanarViewportLegacyAdapter extends PlanarViewport {
   }
 
   /**
-   * Sets the image index as the next viewport does. In stack mode it first
-   * fires PRE_STACK_NEW_IMAGE when the index changes, as the legacy stack
-   * viewport does before it loads the image.
-   */
-  setImageIdIndex(imageIdIndex: number): Promise<string> {
-    const imageIds = this.getImageIds();
-
-    if (this.getCurrentMode() === 'stack' && imageIds.length) {
-      const index = Math.min(
-        Math.max(0, imageIdIndex),
-        this.getMaxImageIdIndex()
-      );
-
-      if (index !== this.getTargetImageIdIndex()) {
-        this.triggerPreStackNewImage(imageIds[index], index);
-      }
-    }
-
-    return super.setImageIdIndex(imageIdIndex);
-  }
-
-  /**
    * Scrolls by a number of slices.
    *
    * In stack mode it scrolls as the legacy stack viewport: from the target
-   * index, clamped to the stack or wrapped when `loop` is set, and it fires
-   * STACK_VIEWPORT_SCROLL when the index changes. The next viewport has no
-   * debounce, so the second argument has no effect.
+   * index, clamped to the stack or wrapped when `loop` is set, and the
+   * planar viewport fires STACK_VIEWPORT_SCROLL when the index changes. The
+   * next viewport has no debounce, so the second argument has no effect.
    *
    * In volume mode the planar viewport scrolls with the options, as the
    * legacy volume viewport. Without options, as a direct call of the legacy
@@ -368,20 +327,9 @@ class PlanarViewportLegacyAdapter extends PlanarViewport {
     const currentIndex = this.getTargetImageIdIndex();
     const nextIndex = loop
       ? (currentIndex + delta + imageIds.length) % imageIds.length
-      : Math.max(0, Math.min(imageIds.length - 1, currentIndex + delta));
-    const imageIdPromise = this.setImageIdIndex(nextIndex);
+      : currentIndex + delta;
 
-    if (nextIndex !== currentIndex) {
-      const eventDetail: EventTypes.StackViewportScrollEventDetail = {
-        newImageIdIndex: nextIndex,
-        imageId: imageIds[nextIndex],
-        direction: delta,
-      };
-
-      triggerEvent(this.element, Events.STACK_VIEWPORT_SCROLL, eventDetail);
-    }
-
-    return imageIdPromise;
+    return this.scrollToImageIdIndex(nextIndex, delta);
   }
 
   /**
@@ -394,17 +342,6 @@ class PlanarViewportLegacyAdapter extends PlanarViewport {
     useSlabThickness = true
   ): number {
     return super.getCurrentImageIdIndex(volumeId, useSlabThickness);
-  }
-
-  private triggerPreStackNewImage(imageId: string, imageIdIndex: number): void {
-    const eventDetail: EventTypes.PreStackNewImageEventDetail = {
-      imageId,
-      imageIdIndex,
-      viewportId: this.id,
-      renderingEngineId: this.renderingEngineId,
-    };
-
-    triggerEvent(this.element, Events.PRE_STACK_NEW_IMAGE, eventDetail);
   }
 
   private getLegacyImageId(): string | undefined {
@@ -619,31 +556,17 @@ class PlanarViewportLegacyAdapter extends PlanarViewport {
 
   /**
    * Shows a stack of images. As the legacy stack viewport, it fires
-   * PRE_STACK_NEW_IMAGE before the first image loads and
-   * VIEWPORT_NEW_IMAGE_SET once the first image is shown.
+   * PRE_STACK_NEW_IMAGE before the first image loads, through the mount of
+   * the planar viewport, and VIEWPORT_NEW_IMAGE_SET once the first image is
+   * shown.
    */
   async setStack(imageIds: string[], currentImageIdIndex = 0): Promise<string> {
-    if (imageIds.length) {
-      const index = Math.min(
-        Math.max(0, currentImageIdIndex),
-        imageIds.length - 1
-      );
-
-      this.triggerPreStackNewImage(imageIds[index], index);
-    }
-
     const imageId = await this.legacyCompatibility.setStack(
       imageIds,
       currentImageIdIndex
     );
-    const eventDetail: EventTypes.StackViewportNewStackEventDetail = {
-      imageIds,
-      viewportId: this.id,
-      element: this.element,
-      currentImageIdIndex,
-    };
 
-    triggerEvent(this.element, Events.VIEWPORT_NEW_IMAGE_SET, eventDetail);
+    this.triggerNewImageSetEvent(imageIds, currentImageIdIndex);
 
     return imageId;
   }
