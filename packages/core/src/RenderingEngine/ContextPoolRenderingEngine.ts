@@ -24,6 +24,7 @@ import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 import type {
   IStackViewport,
   IVolumeViewport,
+  OffscreenCanvasContainer,
   VtkOffscreenMultiRenderWindow,
 } from '../types';
 import { getViewportClassForInput } from './helpers/viewportTypeToViewportClass';
@@ -121,9 +122,7 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
 
     // Initialize the offscreen canvas size to the max size for this context
     const maxSize = contextPool.getMaxSizeForContext(contextIndex);
-    // @ts-expect-error
     container.width = maxSize.width;
-    // @ts-expect-error
     container.height = maxSize.height;
 
     offscreenMultiRenderWindow.resize();
@@ -419,7 +418,7 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
   private _renderViewportWithContext(
     viewport: IViewport,
     offscreenMultiRenderWindow: VtkOffscreenMultiRenderWindow,
-    offScreenCanvasContainer: HTMLDivElement
+    offScreenCanvasContainer: OffscreenCanvasContainer
   ): EventTypes.ImageRenderedEventDetail {
     if (
       viewport.canvas.clientWidth === 0 ||
@@ -540,7 +539,7 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
 
   private _resizeOffScreenCanvasForViewport(
     viewport: IViewport,
-    offScreenCanvasContainer: HTMLDivElement,
+    offScreenCanvasContainer: OffscreenCanvasContainer,
     offscreenMultiRenderWindow: VtkOffscreenMultiRenderWindow
   ): void {
     const contextIndex = this.contextPool.getContextIndexForViewport(
@@ -556,9 +555,7 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
       viewport.sHeight
     );
 
-    // Compare against the canvas itself rather than relying on the pool's
-    // max size having just changed: the max size can also go down when a
-    // viewport is removed, and the canvas must follow it either way.
+    // The max size can also shrink on removal: compare with the canvas.
     this._fitOffScreenCanvasToContext(
       contextIndex,
       offScreenCanvasContainer,
@@ -575,7 +572,7 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
    */
   private _fitOffScreenCanvasToContext(
     contextIndex: number,
-    offScreenCanvasContainer: HTMLDivElement,
+    offScreenCanvasContainer: OffscreenCanvasContainer,
     offscreenMultiRenderWindow: VtkOffscreenMultiRenderWindow
   ): void {
     const maxSize = this.contextPool.getMaxSizeForContext(contextIndex);
@@ -583,17 +580,13 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
     if (
       !maxSize?.width ||
       !maxSize?.height ||
-      // @ts-expect-error
       (offScreenCanvasContainer.width === maxSize.width &&
-        // @ts-expect-error
         offScreenCanvasContainer.height === maxSize.height)
     ) {
       return;
     }
 
-    // @ts-expect-error
     offScreenCanvasContainer.width = maxSize.width;
-    // @ts-expect-error
     offScreenCanvasContainer.height = maxSize.height;
 
     offscreenMultiRenderWindow.resize();
@@ -694,9 +687,7 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
         const { context: offscreenMultiRenderWindow, container } = contextData;
         const maxSize = this.contextPool.getMaxSizeForContext(contextIndex);
 
-        // @ts-expect-error
         container.width = maxSize.width;
-        // @ts-expect-error
         container.height = maxSize.height;
 
         offscreenMultiRenderWindow.resize();
