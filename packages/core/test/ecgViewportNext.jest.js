@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach, beforeEach } from '@jest/globals';
-import { MetadataModules, ViewportType } from '../src/enums';
+import { Events, MetadataModules, ViewportType } from '../src/enums';
 import * as metaData from '../src/metaData';
 import LegacyECGViewport from '../src/RenderingEngine/ECGViewport';
 import ECGViewport from '../src/RenderingEngine/GenericViewport/ECG/ECGViewport';
@@ -79,7 +79,7 @@ function createElement() {
 
 const mounted = [];
 
-async function mountLegacy() {
+async function mountLegacy(defaultOptions = {}) {
   const { element, canvas } = createElement();
   const viewport = new LegacyECGViewport({
     id: 'ecgLegacy',
@@ -91,7 +91,7 @@ async function mountLegacy() {
     sy: 0,
     sWidth: WIDTH,
     sHeight: HEIGHT,
-    defaultOptions: {},
+    defaultOptions,
   });
 
   await viewport.setEcg(ECG_ID);
@@ -483,5 +483,51 @@ describe('Options of the next ECG viewport', () => {
     next.setOptions({ background: [1, 0, 0] });
 
     expect(next.getResolvedView().traceLayoutName).toBe('12x1');
+  });
+});
+
+describe('suppressEvents on the direct next ECG viewport', () => {
+  /** Counts the camera events of a viewport. */
+  function countCameraEvents(viewport) {
+    const counts = { modified: 0, reset: 0 };
+
+    viewport.element.addEventListener(Events.CAMERA_MODIFIED, () => {
+      counts.modified++;
+    });
+    viewport.element.addEventListener(Events.CAMERA_RESET, () => {
+      counts.reset++;
+    });
+
+    return counts;
+  }
+
+  it('fires no camera event with suppressEvents in the options, as the legacy viewport fires none', async () => {
+    const defaultOptions = { suppressEvents: true };
+    const legacy = await mountLegacy(defaultOptions);
+    const next = await mountNext(undefined, defaultOptions);
+    const legacyCounts = countCameraEvents(legacy);
+    const nextCounts = countCameraEvents(next);
+
+    legacy.setCamera({ ...legacy.getCamera(), parallelScale: 10 });
+    legacy.resetCamera();
+    next.setPan([12, 5]);
+    next.setZoom(2);
+    next.resetViewState();
+
+    expect(next.suppressEvents).toBe(true);
+    expect(legacyCounts).toEqual({ modified: 0, reset: 0 });
+    expect(nextCounts).toEqual(legacyCounts);
+  });
+
+  it('still fires the camera events without suppressEvents', async () => {
+    const next = await mountNext();
+    const nextCounts = countCameraEvents(next);
+
+    next.setPan([12, 5]);
+    next.resetViewState();
+
+    expect(next.suppressEvents).toBe(false);
+    expect(nextCounts.modified).toBeGreaterThan(0);
+    expect(nextCounts.reset).toBe(1);
   });
 });

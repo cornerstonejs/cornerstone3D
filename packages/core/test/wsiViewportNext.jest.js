@@ -402,3 +402,69 @@ describe('Scroll of the direct next whole slide viewport', () => {
     expect(next.viewport.getZoom()).toBeCloseTo(legacy.viewport.getZoom(), 6);
   });
 });
+
+describe('suppressEvents on the direct next whole slide viewport', () => {
+  /** Counts the camera events of a viewport. */
+  function countCameraEvents(viewport) {
+    const counts = { modified: 0, reset: 0 };
+
+    viewport.element.addEventListener(Events.CAMERA_MODIFIED, () => {
+      counts.modified++;
+    });
+    viewport.element.addEventListener(Events.CAMERA_RESET, () => {
+      counts.reset++;
+    });
+
+    return counts;
+  }
+
+  it('fires no CAMERA_MODIFIED with suppressEvents in the options, as the legacy viewport', async () => {
+    const defaultOptions = { suppressEvents: true };
+    const legacy = await track(mountLegacy(0, { defaultOptions }));
+    const next = await track(mountNext(WSIViewport, 0, { defaultOptions }));
+    const legacyCounts = countCameraEvents(legacy.viewport);
+    const nextCounts = countCameraEvents(next.viewport);
+
+    legacy.viewport.setCamera({
+      parallelScale: legacy.viewport.getCamera().parallelScale / 2,
+    });
+    next.viewport.setZoom(2);
+    next.viewport.setPan([10, 10]);
+    next.viewport.resetViewState();
+
+    expect(next.viewport.suppressEvents).toBe(true);
+    expect(legacyCounts.modified).toBe(0);
+    expect(nextCounts).toEqual({ modified: 0, reset: 0 });
+  });
+
+  it('fires CAMERA_MODIFIED without suppressEvents, as the legacy viewport', async () => {
+    const legacy = await track(mountLegacy(0));
+    const next = await track(mountNext(WSIViewport, 0));
+    const legacyCounts = countCameraEvents(legacy.viewport);
+    const nextCounts = countCameraEvents(next.viewport);
+
+    legacy.viewport.setCamera({
+      parallelScale: legacy.viewport.getCamera().parallelScale / 2,
+    });
+    next.viewport.setZoom(2);
+
+    expect(next.viewport.suppressEvents).toBe(false);
+    expect(legacyCounts.modified).toBe(1);
+    expect(nextCounts.modified).toBe(1);
+  });
+
+  it('takes suppressEvents from setOptions and from reset', async () => {
+    const next = await track(mountNext(WSIViewport, 0));
+    const nextCounts = countCameraEvents(next.viewport);
+
+    next.viewport.setOptions({ suppressEvents: true });
+    next.viewport.setZoom(2);
+
+    expect(nextCounts.modified).toBe(0);
+
+    next.viewport.reset();
+    next.viewport.setZoom(3);
+
+    expect(nextCounts.modified).toBe(1);
+  });
+});

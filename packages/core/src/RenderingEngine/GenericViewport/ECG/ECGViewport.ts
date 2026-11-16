@@ -50,6 +50,11 @@ class ECGViewport extends GenericViewport<
 > {
   readonly type = ViewportType.ECG_NEXT;
   readonly renderingEngineId: string;
+  /**
+   * Whether the viewport fires no CAMERA_MODIFIED and no CAMERA_RESET, from
+   * the `suppressEvents` option, as on the legacy viewports.
+   */
+  suppressEvents = false;
   readonly canvas: HTMLCanvasElement;
   readonly canvasContext: CanvasRenderingContext2D;
 
@@ -79,6 +84,7 @@ class ECGViewport extends GenericViewport<
   constructor(args: ECGViewportInput) {
     super(args);
     this.renderingEngineId = args.renderingEngineId;
+    this.suppressEvents = Boolean(this.defaultOptions.suppressEvents);
     this.canvas = getOrCreateCanvas(this.element);
     this.canvasContext = this.canvas.getContext('2d');
     this.dataProvider = args.dataProvider || new DefaultECGDataProvider();
@@ -126,14 +132,16 @@ class ECGViewport extends GenericViewport<
 
   /**
    * Shows a changed `traceLayout` of the options, the one option that the
-   * viewport reads when it is made. A trace layout set through the view
-   * state stays while the option does not change.
+   * viewport reads when it is made, and takes `suppressEvents`. A trace
+   * layout set through the view state stays while the option does not
+   * change.
    */
   protected override applyOptions(
     options: GenericViewportOptions,
     previous: GenericViewportOptions
   ): void {
     super.applyOptions(options, previous);
+    this.suppressEvents = Boolean(options.suppressEvents);
 
     if (options.traceLayout !== previous.traceLayout) {
       this.setViewState({ traceLayout: options.traceLayout });

@@ -66,10 +66,14 @@ function nextAnimationFrame() {
 }
 
 /**
- * Makes a direct next video viewport on an element of a known size and
- * mounts the test video with the real HTML video render path.
+ * Makes a direct next video viewport on an element of a known size, with the
+ * default options given, and mounts the test video with the real HTML video
+ * render path.
  */
-async function createViewport(entry = { displaySetId: VIDEO_ID }) {
+async function createViewport(
+  entry = { displaySetId: VIDEO_ID },
+  defaultOptions = undefined
+) {
   const element = document.createElement('div');
 
   Object.defineProperty(element, 'clientWidth', { value: WIDTH });
@@ -80,6 +84,7 @@ async function createViewport(entry = { displaySetId: VIDEO_ID }) {
     id: 'video',
     element,
     renderingEngineId: 'renderingEngine',
+    defaultOptions,
     dataProvider: {
       load: async (id) => ({
         id,
@@ -251,5 +256,60 @@ describe('Pan of the next video viewport', () => {
 
     expect(viewport.getPan()[0]).toBeCloseTo(30, 6);
     expect(viewport.getPan()[1]).toBeCloseTo(-20, 6);
+  });
+});
+
+describe('suppressEvents on the direct next video viewport', () => {
+  /** Counts the camera events and the renders of a viewport. */
+  function countEvents(element) {
+    const counts = { modified: 0, reset: 0, rendered: 0 };
+
+    element.addEventListener(Enums.Events.CAMERA_MODIFIED, () => {
+      counts.modified++;
+    });
+    element.addEventListener(Enums.Events.CAMERA_RESET, () => {
+      counts.reset++;
+    });
+    element.addEventListener(Enums.Events.IMAGE_RENDERED, () => {
+      counts.rendered++;
+    });
+
+    return counts;
+  }
+
+  it('fires no camera event with suppressEvents in the options, as the legacy viewport fires none, and still renders', async () => {
+    const { viewport, element } = await createViewport(undefined, {
+      suppressEvents: true,
+    });
+    const counts = countEvents(element);
+
+    viewport.setPan([12, 5]);
+    viewport.setZoom(2);
+    viewport.resetViewState();
+    viewport.render();
+    await nextAnimationFrame();
+
+    expect(viewport.suppressEvents).toBe(true);
+    expect(counts.modified).toBe(0);
+    expect(counts.reset).toBe(0);
+    expect(counts.rendered).toBeGreaterThan(0);
+
+    viewport.destroy();
+    element.remove();
+  });
+
+  it('still fires the camera events without suppressEvents', async () => {
+    const { viewport, element } = await createViewport();
+    const counts = countEvents(element);
+
+    viewport.setPan([12, 5]);
+    viewport.resetViewState();
+
+    expect(viewport.suppressEvents).toBe(false);
+    expect(counts.modified).toBeGreaterThan(0);
+    expect(counts.reset).toBe(1);
+
+    viewport.destroy();
+    element.remove();
   });
 });

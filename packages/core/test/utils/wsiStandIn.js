@@ -181,7 +181,7 @@ async function withMicroscopyViewer(slideRotation, mountFn) {
 export async function mountNext(
   ViewportClass,
   slideRotation = 0,
-  { withWebClient = true, withCanvas = true } = {}
+  { withWebClient = true, withCanvas = true, defaultOptions } = {}
 ) {
   const { element, canvas } = createElement();
   const viewport = new ViewportClass({
@@ -189,6 +189,7 @@ export async function mountNext(
     element,
     canvas: withCanvas ? canvas : undefined,
     renderingEngineId: 'renderingEngine',
+    defaultOptions,
   });
 
   genericViewportDisplaySetMetadataProvider.add(IMAGE_ID, {
@@ -219,9 +220,13 @@ export function remountNext(viewport, slideRotation = 0) {
 
 /**
  * Mounts the slide on a legacy WSI viewport with `setWSI`, or with
- * `setDataIds` and no web client when `withDataIds` is set.
+ * `setDataIds` and no web client when `withDataIds` is set, with the
+ * default options given.
  */
-export async function mountLegacy(slideRotation = 0, { withDataIds } = {}) {
+export async function mountLegacy(
+  slideRotation = 0,
+  { withDataIds, defaultOptions = {} } = {}
+) {
   const { element, canvas } = createElement();
   const viewport = new LegacyWSIViewport({
     id: 'wsiLegacy',
@@ -233,7 +238,7 @@ export async function mountLegacy(slideRotation = 0, { withDataIds } = {}) {
     sy: 0,
     sWidth: WIDTH,
     sHeight: HEIGHT,
-    defaultOptions: {},
+    defaultOptions,
   });
 
   const view = await withMicroscopyViewer(slideRotation, () =>

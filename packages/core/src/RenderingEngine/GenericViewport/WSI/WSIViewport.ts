@@ -16,7 +16,9 @@ import type {
   ViewportDataBinding,
 } from '../ViewportArchitectureTypes';
 import getOrCreateCanvas from '../../helpers/getOrCreateCanvas';
-import GenericViewport from '../GenericViewport';
+import GenericViewport, {
+  type GenericViewportOptions,
+} from '../GenericViewport';
 import type { GenericViewportReferenceContext } from '../genericViewportReferenceCompatibility';
 import { DefaultWSIDataProvider } from './DefaultWSIDataProvider';
 import { createWSIRenderPathResolver } from './WSIRenderPathResolver';
@@ -44,6 +46,11 @@ export default class WSIViewport extends GenericViewport<
 > {
   readonly type = ViewportType.WHOLE_SLIDE_NEXT;
   readonly renderingEngineId: string;
+  /**
+   * Whether the viewport fires no CAMERA_MODIFIED and no CAMERA_RESET, from
+   * the `suppressEvents` option, as on the legacy viewports.
+   */
+  suppressEvents = false;
   modality = 'SM';
 
   /**
@@ -74,6 +81,7 @@ export default class WSIViewport extends GenericViewport<
   constructor(args: WSIViewportInput) {
     super(args);
     this.renderingEngineId = args.renderingEngineId;
+    this.suppressEvents = Boolean(this.defaultOptions.suppressEvents);
     this.canvas = args.canvas || getOrCreateCanvas(this.element);
     this.element.style.position = this.element.style.position || 'relative';
     this.element.style.overflow = 'hidden';
@@ -96,6 +104,15 @@ export default class WSIViewport extends GenericViewport<
       'data-rendering-engine-uid',
       this.renderingEngineId
     );
+  }
+
+  /** Takes `suppressEvents` from the options, as the legacy viewport. */
+  protected override applyOptions(
+    options: GenericViewportOptions,
+    previous: GenericViewportOptions
+  ): void {
+    super.applyOptions(options, previous);
+    this.suppressEvents = Boolean(options.suppressEvents);
   }
 
   /**

@@ -51,6 +51,7 @@ are temporary.
 | ------------------------------- | -------------------------- |
 | `ViewportType.STACK`            | `ViewportType.PLANAR`      |
 | `ViewportType.ORTHOGRAPHIC`     | `ViewportType.PLANAR`      |
+| `ViewportType.PERSPECTIVE`      | `ViewportType.VOLUME_3D`   |
 | `ViewportType.PLANAR_NEXT`      | `ViewportType.PLANAR`      |
 | `ViewportType.VOLUME_3D_NEXT`   | `ViewportType.VOLUME_3D`   |
 | `ViewportType.VIDEO_NEXT`       | `ViewportType.VIDEO`       |
@@ -60,6 +61,11 @@ are temporary.
 `VOLUME_3D`, `VIDEO`, `WHOLE_SLIDE` and `ECG` keep their names and now mean the
 next viewport of that family. The rename is the last step of the removal.
 Until it lands, the code on this page uses the `_NEXT` names.
+
+A `PERSPECTIVE` viewport becomes a 3D viewport with
+`parallelProjection: false` in its options. See
+[3D viewports](./2-rendering-changes.md#3d-viewports) for what the legacy type
+drew.
 
 ## One planar viewport for stacks and volumes
 
@@ -89,26 +95,27 @@ The pages under
 [Generic Viewport](../../concepts/cornerstone-core/generic-viewport/migration.md)
 show each of these with code before and after.
 
-| Legacy                                                             | Next                                                                                                                                       |
-| ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `ViewportType.STACK`, `ViewportType.ORTHOGRAPHIC`                  | `ViewportType.PLANAR_NEXT`                                                                                                                 |
-| `ViewportType.VOLUME_3D`, `VIDEO`, `WHOLE_SLIDE`, `ECG`            | `VOLUME_3D_NEXT`, `VIDEO_NEXT`, `WHOLE_SLIDE_NEXT`, `ECG_NEXT`                                                                             |
-| `viewport.setStack(imageIds, index)`                               | Register a display set with `imageIds` and `initialImageIdIndex`, then `viewport.setDisplaySets({ displaySetId })`                         |
-| `viewport.setVolumes([{ volumeId }])`, `setVolumesForViewports`    | Register a display set with `imageIds` and `volumeId`, then `viewport.setDisplaySets({ displaySetId, options: { orientation } })`          |
-| `viewport.addVolumes(...)`, a fusion                               | Several entries in `setDisplaySets(...)`, or `viewport.addDisplaySet(displaySetId, options)`                                               |
-| `viewport.setVideo(...)`, `setEcg(...)`, `setWSI(...)`             | Register a display set of kind `'video'`, `'ecg'` or `'wsi'`, then `viewport.setDisplaySets({ displaySetId })`                             |
-| `viewport.setProperties({ voiRange, colormap, invert })`           | `viewport.setDisplaySetPresentation(displaySetId, { voiRange, colormap, invert })`                                                         |
-| `viewport.getProperties()`                                         | `viewport.getDisplaySetPresentation(displaySetId)`                                                                                         |
-| A `callback` on a volume input that edits the actor                | `setDisplaySetPresentation` with `voiRange`, `colormap` and `opacity`                                                                      |
-| `viewport.setBlendMode(...)`, `viewport.setSlabThickness(...)`     | `setDisplaySetPresentation(displaySetId, { blendMode, slabThickness })`                                                                    |
-| `viewport.getCamera()`                                             | `viewport.getViewState()` for the state, `viewport.getResolvedView()?.toICamera()` for a camera in the old shape                           |
-| `viewport.setCamera({ ... })`                                      | `viewport.setViewState({ ... })` or `viewport.updateViewState(...)`. For a place in space: `viewport.setViewReference(...)`                |
-| `viewport.resetCamera()`                                           | `viewport.resetViewState()`                                                                                                                |
-| `viewport.getViewPresentation()`, `viewport.setViewPresentation()` | `viewportProjection.getPresentation(viewport, { selector })`, and `viewportProjection.withPresentation(viewport, ...)` with `setViewState` |
-| `viewport.flip(...)`, a rotation set through the camera            | `viewport.setViewState({ rotation, flipHorizontal, flipVertical })`                                                                        |
-| `rendering.useCPURendering`, `setUseCPURendering(true)`            | Nothing to set. The router picks the path for each layer. `viewport.getRenderPlan()` tells which one and why                               |
-| `Types.IStackViewport`, `Types.IVolumeViewport`                    | `PlanarViewport`, or `Types.IGenericViewport` where any next viewport will do                                                              |
-| `viewport instanceof StackViewport`, `viewport.type === STACK`     | `viewport.getCurrentMode() === 'stack'`, or `utilities.getViewportContentMode(viewport)`                                                   |
+| Legacy                                                              | Next                                                                                                                                       |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `ViewportType.STACK`, `ViewportType.ORTHOGRAPHIC`                   | `ViewportType.PLANAR_NEXT`                                                                                                                 |
+| `ViewportType.VOLUME_3D`, `VIDEO`, `WHOLE_SLIDE`, `ECG`             | `VOLUME_3D_NEXT`, `VIDEO_NEXT`, `WHOLE_SLIDE_NEXT`, `ECG_NEXT`                                                                             |
+| `viewport.setStack(imageIds, index)`                                | Register a display set with `imageIds` and `initialImageIdIndex`, then `viewport.setDisplaySets({ displaySetId })`                         |
+| `viewport.setVolumes([{ volumeId }])`, `setVolumesForViewports`     | Register a display set with `imageIds` and `volumeId`, then `viewport.setDisplaySets({ displaySetId, options: { orientation } })`          |
+| `viewport.addVolumes(...)`, a fusion                                | Several entries in `setDisplaySets(...)`, or `viewport.addDisplaySet(displaySetId, options)`                                               |
+| `viewport.setVideo(...)`, `setEcg(...)`, `setWSI(...)`              | Register a display set of kind `'video'`, `'ecg'` or `'wsi'`, then `viewport.setDisplaySets({ displaySetId })`                             |
+| `viewport.setProperties({ voiRange, colormap, invert })`            | `viewport.setDisplaySetPresentation(displaySetId, { voiRange, colormap, invert })`                                                         |
+| `viewport.getProperties()`                                          | `viewport.getDisplaySetPresentation(displaySetId)`                                                                                         |
+| A `callback` on a volume input that edits the actor                 | `setDisplaySetPresentation` with `voiRange`, `colormap`, `opacity`, `invert`, `blendMode` or `preset`                                      |
+| An `actorUID` on a volume input, then `viewport.getActor(actorUID)` | `viewport.getImageActor(displaySetId)`                                                                                                     |
+| `viewport.setBlendMode(...)`, `viewport.setSlabThickness(...)`      | `setDisplaySetPresentation(displaySetId, { blendMode, slabThickness })`                                                                    |
+| `viewport.getCamera()`                                              | `viewport.getViewState()` for the state, `viewport.getResolvedView()?.toICamera()` for a camera in the old shape                           |
+| `viewport.setCamera({ ... })`                                       | `viewport.setViewState({ ... })` or `viewport.updateViewState(...)`. For a place in space: `viewport.setViewReference(...)`                |
+| `viewport.resetCamera()`                                            | `viewport.resetViewState()`                                                                                                                |
+| `viewport.getViewPresentation()`, `viewport.setViewPresentation()`  | `viewportProjection.getPresentation(viewport, { selector })`, and `viewportProjection.withPresentation(viewport, ...)` with `setViewState` |
+| `viewport.flip(...)`, a rotation set through the camera             | `viewport.setViewState({ rotation, flipHorizontal, flipVertical })`                                                                        |
+| `rendering.useCPURendering`, `setUseCPURendering(true)`             | Nothing to set. The router picks the path for each layer. `viewport.getRenderPlan()` tells which one and why                               |
+| `Types.IStackViewport`, `Types.IVolumeViewport`                     | `PlanarViewport`, or `Types.IGenericViewport` where any next viewport will do                                                              |
+| `viewport instanceof StackViewport`, `viewport.type === STACK`      | `viewport.getCurrentMode() === 'stack'`, or `utilities.getViewportContentMode(viewport)`                                                   |
 
 These keep their names on a planar viewport: `getImageIds`,
 `getCurrentImageId`, `getCurrentImageIdIndex`, `setImageIdIndex`, `scroll`,
@@ -141,17 +148,25 @@ Leave `volumeId` out for a stack.
 ## No feature is lost
 
 Everything a legacy viewport can do comes to the next viewports before the
-legacy viewports are removed. These exist only on the legacy viewports in 5.x
-and are being added to the next ones:
+legacy viewports are removed. These existed only on the legacy viewports in
+5.x. The next viewports have them now:
 
-- the sharpening and smoothing of the stack and volume viewports;
-- a perspective camera for a volume viewport (`ViewportType.PERSPECTIVE`);
-- vtk.js actors and widgets of the application in a planar viewport
-  (`addActor`, `setActors`, `getRenderer`, `addWidget`);
-- `setAspectRatio`;
-- a labelmap over a video.
+- the sharpening and smoothing of the stack and volume viewports, as the
+  `sharpening` and `smoothing` keys of a presentation;
+- a perspective camera, on a 3D viewport with `parallelProjection: false`;
+- `setAspectRatio` and `setDisplayArea`, on a planar and on a 3D viewport;
+- vtk.js actors and widgets of the application in a 3D viewport (`addActor`,
+  `setActors`, `addWidget`).
 
-This page gets the next call for each one when it lands.
+[What draws differently](./2-rendering-changes.md) has the call for each one.
+
+Still to come before the legacy viewports go:
+
+- vtk.js actors of the application in a planar viewport (`addActor`,
+  `setActors`, `getRenderer`).
+
+A labelmap over a video is not available. The legacy video viewport did not
+have it either.
 
 ## Find the code to change
 

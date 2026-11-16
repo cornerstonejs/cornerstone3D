@@ -17,6 +17,7 @@ import type {
   WSIViewerLike,
 } from '../../../utilities/WSIUtilities';
 import type ICamera from '../../../types/ICamera';
+import type ViewportInputOptions from '../../../types/ViewportInputOptions';
 import type { VOIRange } from '../../../types';
 
 export interface WSIDataSetOptions {
@@ -77,6 +78,8 @@ export interface WSIViewportInput {
   canvas?: HTMLCanvasElement;
   dataProvider?: DataProvider;
   renderPathResolver?: RenderPathResolver;
+  /** `suppressEvents` turns the camera events off, as on the legacy viewport. */
+  defaultOptions?: Pick<ViewportInputOptions, 'suppressEvents'>;
 }
 
 export type WSIGenericViewportInput = WSIViewportInput;

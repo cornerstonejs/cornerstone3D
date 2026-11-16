@@ -30,9 +30,6 @@ const LEGACY_VIEW_STATE_PROPERTIES = [
  * with original ECGViewport API calls.
  */
 class ECGViewportLegacyAdapter extends ECGViewport {
-  /** Whether the viewport fires no events, from the default options. */
-  readonly suppressEvents: boolean;
-
   /**
    * False until the rendering engine disables the viewport, as on the legacy
    * viewports. The engine sets it to true.
@@ -43,7 +40,6 @@ class ECGViewportLegacyAdapter extends ECGViewport {
     args: ECGViewportInput & Partial<Pick<ViewportInput, 'defaultOptions'>>
   ) {
     super(args);
-    this.suppressEvents = Boolean(this.defaultOptions.suppressEvents);
   }
 
   /** The id of the viewport. The legacy ECG viewport never set it. */

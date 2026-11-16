@@ -267,6 +267,8 @@ layer of a fusion: the opacity is applied as given.
   viewport.
 - **`scroll()` zooms,** by a factor of 1.1 for each step, as on the legacy
   viewport. In 5.x it did nothing on the next viewport.
+- **`suppressEvents`** in the options silences `CAMERA_MODIFIED` and
+  `CAMERA_RESET`, as on the legacy viewport.
 
 ## ECG viewports
 
@@ -274,6 +276,8 @@ layer of a fusion: the opacity is applied as given.
   a view plane normal and a plane restriction, which the next viewport of 5.x
   rejected.
 - **`getNumberOfSlices()`** exists and gives 1.
+- **`suppressEvents`** in the options silences `CAMERA_MODIFIED` and
+  `CAMERA_RESET`.
 - **An annotation is drawn on its own lead.** In a trace layout with several
   columns each lead shows a part of the record, and some leads show twice. A
   point is drawn in a cell of its own lead that shows its sample, and an
@@ -318,6 +322,52 @@ layer of a fusion: the opacity is applied as given.
   viewport. Zoom 1 and pan `[0, 0]` are the fit of a reset.
 - **`suppressEvents`** in the options of a 3D viewport silences its camera
   and presentation events, as on the legacy viewport.
+- **The display area.** `setDisplayArea(displayArea)` and `getDisplayArea()`
+  are on the viewport, with the legacy meaning: the image area of the volume
+  fits the canvas and the image point lands on the canvas point. The
+  `displayArea` of the options is applied after the first mount and again by
+  `resetViewState()`. The view state carries `displayArea`, so
+  `setViewState({ displayArea })` moves the camera too.
+  `DISPLAY_AREA_MODIFIED` fires, then `CAMERA_MODIFIED`. Neither fires on a
+  viewport made with the `suppressEvents` option. The legacy viewport still
+  fired `DISPLAY_AREA_MODIFIED` then.
+- **The aspect ratio.** `setAspectRatio(value, { fit, storeAsInitialCamera })`
+  and `getAspectRatio()` are on the viewport, with the legacy meaning, and the
+  `aspectRatio` of the options is applied after the first mount and by
+  `resetViewState()`. The view state carries `aspectRatio`. Zoom 1 is the fit
+  of the stretched content.
+- **A view state copied from one 3D viewport to another carries both.**
+  `target.setViewState(source.getViewState())` moves the target to the display
+  area of the source and stretches it by the aspect ratio of the source. Leave
+  the two keys out of the patch to copy the camera alone.
+- **Perspective.** `ViewportType.PERSPECTIVE` is removed. A 3D viewport with
+  `parallelProjection: false` in its options draws the volume in perspective,
+  and `setViewState({ parallelProjection: false })` turns one to it. Zoom,
+  dolly, reset, `canvasToWorld` and `worldToCanvas` answer as on a legacy 3D
+  viewport made with that option. The legacy `PERSPECTIVE` type was a slice
+  viewport: it drew a thin slab from a camera that stood one bounding radius
+  away with a view angle of 90 degrees, and `setZoom` did nothing on it.
+  Nothing in the library used it.
+- **The actor of one display set.** `getImageActor(displaySetId)` gives the
+  vtk.js actor of a display set, on a 3D and on a planar viewport. It takes a
+  volume id too. A volume input of the legacy API could carry an `actorUID`
+  for `getActor(actorUID)`. A display set has no such option: ask with the
+  display set id.
+- **No `callback` on a display set.** A legacy volume input could carry a
+  `callback` that edited the actor. The presentation of the display set says
+  how the data looks. These give the picture of the callbacks that the
+  examples used:
+
+  | The callback set                                            | Presentation                                                                             |
+  | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+  | A CT window of -160 to 240                                  | `{ voiRange: { lower: -160, upper: 240 } }`                                              |
+  | A PET window of 0 to 5, inverted, as a MIP                  | `{ voiRange: { lower: 0, upper: 5 }, invert: true, blendMode: MAXIMUM_INTENSITY_BLEND }` |
+  | Colour and opacity points of its own, such as label colours | `{ preset, interpolationType }` with a preset object that holds the points               |
+
+  A preset object has the keys of the entries of `CONSTANTS.VIEWPORT_PRESETS`:
+  `colorTransfer` and `scalarOpacity` hold the points, and `shade: '0'` turns
+  the shading off.
+
 - **Small ones.** `hasImageURI` and `getIntensityFromWorld` are on the
   viewport. `getVolumeId`, `getImageIds` and `getImageData` answer for the
   volume that is asked for. `isOrientationChangeable()` is on every next
@@ -356,16 +406,19 @@ layer of a fusion: the opacity is applied as given.
 - **`getPan()` and `setPan()` are in canvas pixels on the screen,** `[0, 0]` at
   the fit, as on the other next viewports, and a drag of the pan tool moves
   the picture with the mouse at any rotation.
+- **`suppressEvents`** in the options silences `CAMERA_MODIFIED` and
+  `CAMERA_RESET`.
 - **A labelmap over a video** is not available. It is not available on the
   legacy viewport either: both throw. Contour segmentations show.
 
 ## Smaller changes
 
 - **`options`, `setOptions()` and `reset()`** are on every next viewport. A
-  changed option takes effect where the family honours it at creation: the
-  `background` on a video viewport, the `traceLayout` on an ECG viewport, and
-  the `background`, `parallelProjection`, `orientation` and `suppressEvents`
-  on a 3D viewport.
+  changed option takes effect where the family honours it at creation:
+  `suppressEvents` on every viewport, the `background` on a video viewport,
+  the `traceLayout` on an ECG viewport, and the `background`,
+  `parallelProjection`, `orientation`, `displayArea` and `aspectRatio` on a 3D
+  viewport.
 - **`isReferenceViewable` takes the points of an annotation** in the option
   `points`, and the annotation filter of the tools passes the handle points
   of each annotation. A viewport that shows a part of its world in several

@@ -24,9 +24,6 @@ import type {
 } from './WSIViewportTypes';
 
 class WSIViewportLegacyAdapter extends WSIViewport {
-  /** Whether the viewport fires no events, from the default options. */
-  readonly suppressEvents: boolean;
-
   /**
    * False until the rendering engine disables the viewport, as on the legacy
    * viewports. The engine sets it to true.
@@ -38,7 +35,6 @@ class WSIViewportLegacyAdapter extends WSIViewport {
       Partial<Pick<ViewportInput, 'canvas' | 'defaultOptions'>>
   ) {
     super(args);
-    this.suppressEvents = Boolean(this.defaultOptions.suppressEvents);
   }
 
   /** The id of the viewport. The legacy WSI viewport never set it. */

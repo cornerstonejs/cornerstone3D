@@ -175,8 +175,11 @@ export interface ECGViewportInput {
   renderingEngineId: string;
   dataProvider?: DataProvider;
   renderPathResolver?: RenderPathResolver;
-  /** `traceLayout` gives the trace layout before the first data load. */
-  defaultOptions?: Pick<ViewportInputOptions, 'traceLayout'>;
+  /**
+   * `traceLayout` gives the trace layout before the first data load, and
+   * `suppressEvents` turns the camera events off.
+   */
+  defaultOptions?: Pick<ViewportInputOptions, 'traceLayout' | 'suppressEvents'>;
 }
 
 export type ECGGenericViewportInput = ECGViewportInput;

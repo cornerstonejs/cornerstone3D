@@ -704,8 +704,8 @@ abstract class GenericViewport<
   /**
    * Applies the options that changed from `previous` and that the viewport
    * family reads when it is made. A family overrides it for its options. The
-   * base logs a warning for a display area or an aspect ratio, which no
-   * family but the planar one applies.
+   * base logs a warning for a display area or an aspect ratio, which only the
+   * planar and the 3D family apply.
    *
    * @param options - The new options.
    * @param _previous - The options before the change.

@@ -60,6 +60,11 @@ class VideoViewport extends GenericViewport<
 
   readonly type = ViewportType.VIDEO_NEXT;
   readonly renderingEngineId: string;
+  /**
+   * Whether the viewport fires no CAMERA_MODIFIED and no CAMERA_RESET, from
+   * the `suppressEvents` option, as on the legacy viewports.
+   */
+  suppressEvents = false;
 
   protected renderContext: VideoElementRenderContext;
   private trackedVideoElement?: HTMLVideoElement;
@@ -97,6 +102,7 @@ class VideoViewport extends GenericViewport<
   constructor(args: VideoViewportInput) {
     super(args);
     this.renderingEngineId = args.renderingEngineId;
+    this.suppressEvents = Boolean(this.defaultOptions.suppressEvents);
     this.viewportCanvas = args.canvas || getOrCreateCanvas(this.element);
     this.element.style.position = this.element.style.position || 'relative';
     this.element.style.overflow = 'hidden';
@@ -1244,13 +1250,14 @@ class VideoViewport extends GenericViewport<
   /**
    * Draws the canvas again on its next read, which fills it with the
    * `background` of the options, as the viewport does with the background of
-   * the options that it was made with.
+   * the options that it was made with, and takes `suppressEvents`.
    */
   protected override applyOptions(
     options: GenericViewportOptions,
     previous: GenericViewportOptions
   ): void {
     super.applyOptions(options, previous);
+    this.suppressEvents = Boolean(options.suppressEvents);
     this.isCanvasStale = true;
   }
 

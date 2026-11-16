@@ -14,14 +14,10 @@ import { viewportProjection } from '../viewportProjection';
 import type {
   VideoDataPresentation,
   VideoViewState,
-  VideoViewportInput,
 } from './VideoViewportTypes';
 import VideoViewport from './VideoViewport';
 
 class VideoViewportLegacyAdapter extends VideoViewport {
-  /** Whether the viewport fires no events, from the default options. */
-  readonly suppressEvents: boolean;
-
   /**
    * False until the rendering engine disables the viewport, as on the legacy
    * viewports. The engine sets it to true.
@@ -30,11 +26,6 @@ class VideoViewportLegacyAdapter extends VideoViewport {
 
   /** The number of frames that one step of `scroll` moves. */
   private scrollSpeed = 1;
-
-  constructor(args: VideoViewportInput) {
-    super(args);
-    this.suppressEvents = Boolean(this.defaultOptions.suppressEvents);
-  }
 
   /** The id of the viewport. The legacy video viewport never set it. */
   get uid(): string {

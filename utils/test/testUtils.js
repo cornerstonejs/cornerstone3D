@@ -365,6 +365,26 @@ function compareImages(
   return runResembleComparison(imageDataURL, baseline.default, outputName, testName);
 }
 
+/**
+ * Compares a rendered picture with an expected picture made in the same
+ * test, such as the picture of a legacy viewport, with the image compare of
+ * the suite. It reads no baseline file, so it is the same in every mode.
+ * @param {string} imageDataURL - The rendered imageDataURL
+ * @param {string} expectedDataURL - The expected imageDataURL
+ * @param {string} outputName - The name of the image for logging
+ * @returns A promise.
+ */
+function compareImagesToImage(imageDataURL, expectedDataURL, outputName) {
+  installKarmaSpecTracker();
+
+  return runResembleComparison(
+    imageDataURL,
+    expectedDataURL,
+    outputName,
+    getCurrentTestName()
+  );
+}
+
 function compareWithCompatBaseline(imageDataURL, outputName, mode, testName) {
   const baselineUrl = '/karma-baselines/' + mode + '/' + outputName + '.png';
 
@@ -553,6 +573,7 @@ export {
   fakeMetaDataProvider,
   fakeVolumeLoader,
   compareImages,
+  compareImagesToImage,
   createNormalizedMouseEvent,
   // utils
   colors,
