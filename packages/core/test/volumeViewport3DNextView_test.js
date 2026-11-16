@@ -804,3 +804,115 @@ describe('Presentations for the volume callbacks of the 3D examples -- ', () => 
     await expectSamePicture(next, legacy, 'next3D_callback_labels');
   });
 });
+
+/** The points of the colour transfer function of a viewport, as numbers. */
+function colourPointsOf(viewport) {
+  const transferFunction = viewport
+    .getActors()[0]
+    .actor.getProperty()
+    .getRGBTransferFunction(0);
+
+  return [
+    ...transferFunction.getRange(),
+    ...Array.from({ length: transferFunction.getSize() }, (_, index) => {
+      const node = [];
+
+      transferFunction.getNodeValue(index, node);
+
+      return node;
+    }).flat(),
+  ];
+}
+
+describe('Direct next 3D viewport, the default presentation -- ', () => {
+  let renderingEngine;
+
+  beforeEach(function () {
+    const testEnv = testUtils.setupTestEnvironment({
+      renderingEngineId,
+      toolGroupIds: ['default'],
+    });
+    renderingEngine = testEnv.renderingEngine;
+  });
+
+  afterEach(function () {
+    testUtils.cleanupTestEnvironment({
+      renderingEngineId,
+      toolGroupIds: ['default'],
+    });
+  });
+
+  it('goes back to a default window on reset, as the legacy viewport goes back to its default properties', async function () {
+    const [legacy, next] = createPair(renderingEngine);
+    const volumeId = await createVolume();
+    const displaySetId = await showOnBoth(legacy, next, volumeId);
+    const defaultRange = { lower: 20, upper: 180 };
+    const otherRange = { lower: 100, upper: 120 };
+
+    legacy.setDefaultProperties({ voiRange: defaultRange });
+    next.setDefaultDisplaySetPresentation(displaySetId, {
+      voiRange: defaultRange,
+    });
+    legacy.setProperties({ voiRange: otherRange });
+    next.setDisplaySetPresentation(displaySetId, { voiRange: otherRange });
+    expectPointsClose(colourPointsOf(next), colourPointsOf(legacy));
+
+    legacy.resetToDefaultProperties(volumeId);
+    next.resetDisplaySetPresentation(displaySetId);
+
+    expect(next.getDisplaySetPresentation(displaySetId).voiRange).toEqual(
+      defaultRange
+    );
+    expect(next.getDefaultDisplaySetPresentation(displaySetId)).toEqual({
+      voiRange: defaultRange,
+    });
+    expectPointsClose(colourPointsOf(next), colourPointsOf(legacy));
+    await expectSamePicture(next, legacy, 'next3D_default_window');
+  });
+
+  it('goes back to a default preset on reset, as the legacy viewport', async function () {
+    const [legacy, next] = createPair(renderingEngine);
+    const volumeId = await createVolume();
+    const displaySetId = await showOnBoth(legacy, next, volumeId);
+
+    legacy.setDefaultProperties({ preset: 'CT-Bone' });
+    next.setDefaultDisplaySetPresentation(displaySetId, { preset: 'CT-Bone' });
+    legacy.setProperties({ preset: 'CT-Chest-Vessels' });
+    next.setDisplaySetPresentation(displaySetId, {
+      preset: 'CT-Chest-Vessels',
+    });
+    expectPointsClose(colourPointsOf(next), colourPointsOf(legacy));
+
+    legacy.resetToDefaultProperties(volumeId);
+    next.resetDisplaySetPresentation(displaySetId);
+
+    expect(next.getDisplaySetPresentation(displaySetId).preset).toBe('CT-Bone');
+    expectPointsClose(colourPointsOf(next), colourPointsOf(legacy));
+    await expectSamePicture(next, legacy, 'next3D_default_preset');
+  });
+
+  it('goes back to the look of the mount after the default is cleared, as the legacy viewport', async function () {
+    const [legacy, next] = createPair(renderingEngine);
+    const volumeId = await createVolume();
+    const displaySetId = await showOnBoth(legacy, next, volumeId);
+    const mountedPoints = colourPointsOf(next);
+
+    legacy.setDefaultProperties({ voiRange: { lower: 20, upper: 180 } });
+    next.setDefaultDisplaySetPresentation(displaySetId, {
+      voiRange: { lower: 20, upper: 180 },
+    });
+    legacy.setProperties({ voiRange: { lower: 100, upper: 120 } });
+    next.setDisplaySetPresentation(displaySetId, {
+      voiRange: { lower: 100, upper: 120 },
+    });
+
+    legacy.clearDefaultProperties();
+    next.clearDefaultDisplaySetPresentation(displaySetId);
+    next.resetDisplaySetPresentation(displaySetId);
+
+    expect(next.getDefaultDisplaySetPresentation(displaySetId)).toBeUndefined();
+    expectPointsClose(colourPointsOf(next), mountedPoints);
+    expectPointsClose(colourPointsOf(next), colourPointsOf(legacy));
+    await expectSamePicture(next, legacy, 'next3D_default_cleared');
+  });
+});

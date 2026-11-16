@@ -312,7 +312,7 @@ describe('Direct next 3D viewport, colour and presets -- ', () => {
     await showOnBoth(legacy, next, volumeId);
 
     legacy.setProperties({ VOILUTFunction: 'SAMPLED_SIGMOID' });
-    next.setDisplaySetPresentation({ VOILUTFunction: 'SAMPLED_SIGMOID' });
+    next.setDisplaySetPresentation({ voiLUTFunction: 'SAMPLED_SIGMOID' });
     legacy.setProperties({ voiRange: { lower: 40, upper: 160 } });
     next.setDisplaySetPresentation({ voiRange: { lower: 40, upper: 160 } });
 

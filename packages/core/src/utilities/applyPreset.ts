@@ -4,16 +4,17 @@ import type { ViewportPreset } from '../types';
 import type { VolumeActor } from '../types/IActor';
 
 /**
- * Applies a preset to a volume actor.
+ * The colour and opacity functions of a preset, as `applyPreset` gives them
+ * to a volume actor. A slice viewport uses them on its image actor, which has
+ * no lighting.
  *
- * @param actor - The volume actor to apply the preset to.
- * @param preset - The preset to apply.
+ * @param preset - The preset.
+ * @returns The colour transfer function and the scalar opacity function.
  */
-export default function applyPreset(
-  actor: VolumeActor,
-  preset: ViewportPreset
-) {
-  // Create color transfer function
+export function createPresetTransferFunctions(preset: ViewportPreset): {
+  colorFunction: vtkColorTransferFunction;
+  opacityFunction: vtkPiecewiseFunction;
+} {
   const colorTransferArray = preset.colorTransfer
     .split(' ')
     .splice(1)
@@ -36,9 +37,6 @@ export default function applyPreset(
 
   applyPointsToRGBFunction(normColorTransferValuePoints, shiftRange, cfun);
 
-  actor.getProperty().setRGBTransferFunction(0, cfun);
-
-  // Create scalar opacity function
   const scalarOpacityArray = preset.scalarOpacity
     .split(' ')
     .splice(1)
@@ -56,6 +54,24 @@ export default function applyPreset(
   }
 
   applyPointsToPiecewiseFunction(normPoints, shiftRange, ofun);
+
+  return { colorFunction: cfun, opacityFunction: ofun };
+}
+
+/**
+ * Applies a preset to a volume actor.
+ *
+ * @param actor - The volume actor to apply the preset to.
+ * @param preset - The preset to apply.
+ */
+export default function applyPreset(
+  actor: VolumeActor,
+  preset: ViewportPreset
+) {
+  const { colorFunction: cfun, opacityFunction: ofun } =
+    createPresetTransferFunctions(preset);
+
+  actor.getProperty().setRGBTransferFunction(0, cfun);
 
   const property = actor.getProperty();
 

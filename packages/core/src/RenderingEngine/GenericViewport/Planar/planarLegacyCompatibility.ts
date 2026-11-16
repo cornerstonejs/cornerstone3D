@@ -236,6 +236,26 @@ export function clonePlanarLegacyProperties(
   return clone;
 }
 
+/**
+ * The legacy properties of a presentation, the reverse of
+ * `toPlanarDataPresentation`: the same keys, with `VOILUTFunction` in place
+ * of `voiLUTFunction`.
+ */
+export function toPlanarLegacyProperties(
+  presentation: Partial<PlanarDataPresentation> = {}
+): PlanarLegacyViewportProperties {
+  const { voiLUTFunction, ...rest } = presentation;
+  const properties = clonePlanarLegacyProperties(
+    rest as PlanarLegacyViewportProperties
+  );
+
+  if (voiLUTFunction !== undefined) {
+    properties.VOILUTFunction = voiLUTFunction;
+  }
+
+  return properties;
+}
+
 export function mergePlanarLegacyProperties(
   currentProperties: PlanarLegacyViewportProperties = {},
   nextProperties: PlanarLegacyViewportProperties = {}

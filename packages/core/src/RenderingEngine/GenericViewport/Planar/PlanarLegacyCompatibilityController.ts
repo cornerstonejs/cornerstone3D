@@ -348,7 +348,9 @@ class PlanarLegacyCompatibilityController {
     const merged: PlanarLegacyViewportProperties = {
       ...clonePlanarLegacyProperties(legacyProperties || {}),
       ...(dataPresentation
-        ? clonePlanarLegacyProperties(dataPresentation)
+        ? clonePlanarLegacyProperties(
+            dataPresentation as PlanarLegacyViewportProperties
+          )
         : {}),
       ...(this.host.getCameraOrientation()
         ? {
@@ -375,6 +377,17 @@ class PlanarLegacyCompatibilityController {
     }
 
     return merged;
+  }
+
+  /**
+   * Replaces the legacy properties kept for a display set, after its
+   * presentation was set elsewhere, so that `getProperties` reports it.
+   */
+  replaceProperties(
+    dataId: string,
+    properties: PlanarLegacyViewportProperties
+  ): void {
+    this.properties.set(dataId, clonePlanarLegacyProperties(properties));
   }
 
   resetProperties(volumeId?: string): void {
@@ -906,7 +919,11 @@ class PlanarLegacyCompatibilityController {
     });
   }
 
-  private resolveTargetDataId(volumeId?: string): string | undefined {
+  /**
+   * The display set that a legacy call means: the one of the volume id when
+   * it is mounted, else the active display set, else the first one bound.
+   */
+  resolveTargetDataId(volumeId?: string): string | undefined {
     if (volumeId) {
       const dataId =
         this.volumeDataIds.get(volumeId) ||

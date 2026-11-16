@@ -24,7 +24,11 @@ import hasOwn from '../../../utilities/hasOwn';
 import imageIdToURI from '../../../utilities/imageIdToURI';
 import genericViewportDisplaySetMetadataProvider from '../../../utilities/genericViewportDisplaySetMetadataProvider';
 import { viewportProjection } from '../viewportProjection';
-import { type PlanarLegacyViewportProperties } from './planarLegacyCompatibility';
+import {
+  type PlanarLegacyViewportProperties,
+  toPlanarDataPresentation,
+  toPlanarLegacyProperties,
+} from './planarLegacyCompatibility';
 import PlanarLegacyCompatibilityController from './PlanarLegacyCompatibilityController';
 import PlanarViewport, { type PlanarScrollOptions } from './PlanarViewport';
 import type { PlanarScaleInput } from './planarCameraScale';
@@ -605,6 +609,33 @@ class PlanarViewportLegacyAdapter extends PlanarViewport {
       volumeIdOrSuppressEvents,
       suppressEvents
     );
+    this.keepFirstPropertiesAsDefault(
+      properties,
+      typeof volumeIdOrSuppressEvents === 'string'
+        ? volumeIdOrSuppressEvents
+        : undefined
+    );
+  }
+
+  /**
+   * Keeps the properties as the default presentation of the display set
+   * where it has none for a key, as the legacy viewports keep the first
+   * properties that `setProperties` gets as their default properties.
+   */
+  private keepFirstPropertiesAsDefault(
+    properties: PlanarLegacyViewportProperties,
+    volumeId?: string
+  ): void {
+    const dataId = this.legacyCompatibility.resolveTargetDataId(volumeId);
+
+    if (!dataId) {
+      return;
+    }
+
+    this.setDefaultDisplaySetPresentation(dataId, {
+      ...toPlanarDataPresentation(properties),
+      ...this.getDefaultDisplaySetPresentation(dataId),
+    });
   }
 
   /**
@@ -637,19 +668,80 @@ class PlanarViewportLegacyAdapter extends PlanarViewport {
     this.legacyCompatibility.resetProperties(volumeId);
   }
 
+  /**
+   * Sets the default properties of the data that the viewport shows, or of
+   * one image of it, through `setDefaultDisplaySetPresentation`.
+   */
   setDefaultProperties(
     properties: PlanarLegacyViewportProperties = {},
     imageId?: string
   ): void {
-    this.legacyCompatibility.setDefaultProperties(properties, imageId);
+    const dataId = this.legacyCompatibility.resolveTargetDataId();
+
+    if (!dataId) {
+      return;
+    }
+
+    this.setDefaultDisplaySetPresentation(
+      dataId,
+      toPlanarDataPresentation(properties),
+      { imageId }
+    );
   }
 
+  /**
+   * The default properties of one image when it has its own, else of the
+   * data that the viewport shows, through `getDefaultDisplaySetPresentation`.
+   */
+  getDefaultProperties(imageId?: string): PlanarLegacyViewportProperties {
+    const dataId = this.legacyCompatibility.resolveTargetDataId();
+
+    if (!dataId) {
+      return {};
+    }
+
+    return toPlanarLegacyProperties(
+      (imageId !== undefined
+        ? this.getDefaultDisplaySetPresentation(dataId, { imageId })
+        : undefined) ?? this.getDefaultDisplaySetPresentation(dataId)
+    );
+  }
+
+  /**
+   * Removes the default properties through
+   * `clearDefaultDisplaySetPresentation`, then resets the properties as the
+   * legacy viewports do: to the data without an image id, else to the
+   * defaults that are left.
+   */
   clearDefaultProperties(imageId?: string): void {
-    this.legacyCompatibility.clearDefaultProperties(imageId);
+    const dataId = this.legacyCompatibility.resolveTargetDataId();
+
+    if (!dataId) {
+      return;
+    }
+
+    this.clearDefaultDisplaySetPresentation(dataId, { imageId });
+
+    if (imageId == null) {
+      this.resetProperties();
+    } else {
+      this.resetToDefaultProperties();
+    }
   }
 
+  /** Goes back to the default properties through `resetDisplaySetPresentation`. */
   resetToDefaultProperties(): void {
-    this.legacyCompatibility.resetToDefaultProperties();
+    const dataId = this.legacyCompatibility.resolveTargetDataId();
+
+    if (!dataId) {
+      return;
+    }
+
+    this.resetDisplaySetPresentation(dataId);
+    this.legacyCompatibility.replaceProperties(
+      dataId,
+      toPlanarLegacyProperties(this.getDisplaySetPresentation(dataId))
+    );
   }
 
   getBlendMode(filterActorUIDs?: string[]): BlendModes | undefined {

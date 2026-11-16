@@ -85,8 +85,12 @@ export interface Volume3DPresentationProps extends BasePresentationProps {
    * VOI range, invert or opacity keeps its colours.
    */
   preset?: string | ViewportPreset;
-  /** The VOI LUT function, LINEAR or SAMPLED_SIGMOID, as on legacy. */
-  VOILUTFunction?: VOILUTFunctionType;
+  /**
+   * The VOI LUT function, LINEAR or SAMPLED_SIGMOID, under the name it has
+   * on the planar presentation. The legacy properties call it
+   * `VOILUTFunction`.
+   */
+  voiLUTFunction?: VOILUTFunctionType;
   /**
    * A colormap by name, with an opacity, an opacity mapping or a threshold,
    * as the legacy `setProperties({ colormap })`. Each field that is given is

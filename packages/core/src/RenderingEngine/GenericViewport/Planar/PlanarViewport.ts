@@ -63,6 +63,7 @@ import {
 } from '../../helpers/getCameraVectors';
 import * as metaData from '../../../metaData';
 import type {
+  DefaultPresentationOptions,
   LoadedData,
   ViewportDataBinding,
   ViewportDataReference,
@@ -227,6 +228,12 @@ type PlanarResetViewStateOptions = {
 
 const log = coreLog.getLogger('RenderingEngine', 'PlanarViewport');
 
+/**
+ * The most default presentations of single images that a display set keeps,
+ * as the legacy compatibility controller keeps them.
+ */
+const PLANAR_IMAGE_DEFAULT_PRESENTATION_LIMIT = 2048;
+
 type PlanarSlabPresentation = Pick<
   PlanarDataPresentation,
   'slabThickness' | 'blendMode'
@@ -371,6 +378,18 @@ class PlanarViewport extends GenericViewport<
   private invertTurnedDataId?: string;
   /** The user calibration of the stack image shown last. */
   private shownCalibration?: unknown;
+  /**
+   * The default presentation of single images, for each display set and
+   * then each image id, set by `setDefaultDisplaySetPresentation` with an
+   * `imageId`. The oldest entries go beyond
+   * `PLANAR_IMAGE_DEFAULT_PRESENTATION_LIMIT`.
+   */
+  private readonly imageDefaultPresentations = new Map<
+    string,
+    Map<string, Partial<PlanarDataPresentation>>
+  >();
+  /** The display sets whose shown image applied a default of its own. */
+  private readonly imageDefaultShown = new Set<string>();
 
   protected renderContext: PlanarViewportRenderContext;
 
@@ -591,6 +610,10 @@ class PlanarViewport extends GenericViewport<
     this.element.addEventListener(
       Events.STACK_NEW_IMAGE,
       this.onStackNewImage as EventListener
+    );
+    this.element.addEventListener(
+      Events.STACK_NEW_IMAGE,
+      this.applyImageDefaultPresentation as EventListener
     );
     this.element.setAttribute('data-viewport-uid', this.id);
     this.element.setAttribute(
@@ -1269,8 +1292,9 @@ class PlanarViewport extends GenericViewport<
     const voiTouched =
       'voiRange' in props || 'invert' in props || 'voiLUTFunction' in props;
     const colormapTouched = 'colormap' in props;
+    const presetTouched = props.preset !== undefined;
 
-    if (!voiTouched && !colormapTouched) {
+    if (!voiTouched && !colormapTouched && !presetTouched) {
       return;
     }
 
@@ -1309,21 +1333,47 @@ class PlanarViewport extends GenericViewport<
     if (colormapTouched && props.colormap) {
       triggerEvent(this.element, Events.COLORMAP_MODIFIED, {
         viewportId: this.id,
-        colormap: props.colormap,
+        colormap: presentation?.colormap ?? props.colormap,
         volumeId,
+      });
+    }
+
+    if (presetTouched) {
+      const binding = this.getBinding(displaySetId);
+
+      triggerEvent(this.element, Events.PRESET_MODIFIED, {
+        viewportId: this.id,
+        volumeId,
+        actor: binding?.getActorEntry?.(binding.data)?.actor,
+        presetName:
+          typeof props.preset === 'string' ? props.preset : props.preset.name,
       });
     }
   }
 
   /**
-   * Merges a presentation change as the base class does, and notes when the
-   * change turns the invert of the display set, so that VOI_MODIFIED carries
+   * Merges a presentation change as the base class does, with `colormap`
+   * merged one level deep: a colormap that names only some of its fields
+   * keeps the stored others, as the legacy `setProperties` keeps the name
+   * when only the opacity changes. A preset without a window drops the
+   * stored window, so that the preset shows over its own range, and a
+   * colormap name without a preset drops the stored preset, as the last
+   * one set shows on the legacy viewport. It also notes when the change
+   * turns the invert of the display set, so that VOI_MODIFIED carries
    * `invertStateChanged` as on the legacy volume viewport.
    */
   protected override mergeDataPresentation(
     displaySetId: string,
-    props: Partial<PlanarDataPresentation>
+    changes: Partial<PlanarDataPresentation>
   ): PlanarDataPresentation {
+    this.dropReplacedLook(displaySetId, changes);
+
+    const storedColormap =
+      this.getDisplaySetPresentation(displaySetId)?.colormap;
+    const props =
+      changes.colormap && storedColormap
+        ? { ...changes, colormap: { ...storedColormap, ...changes.colormap } }
+        : changes;
     const isInverted = (presentation?: Partial<PlanarDataPresentation>) =>
       Boolean(presentation?.invert ?? this.getDefaultInvert(displaySetId));
     const turnsInvert =
@@ -1338,6 +1388,38 @@ class PlanarViewport extends GenericViewport<
     } finally {
       this.invertTurnedDataId = undefined;
     }
+  }
+
+  /**
+   * Removes from the stored presentation what a change replaces without
+   * naming it: the window for a new preset, the preset for a new colormap
+   * name. The change itself applies it.
+   */
+  private dropReplacedLook(
+    displaySetId: string,
+    changes: Partial<PlanarDataPresentation>
+  ): void {
+    const stored = this.dataPresentation.get(displaySetId);
+    const dropsWindow =
+      changes.preset !== undefined && !('voiRange' in changes);
+    const dropsPreset =
+      changes.colormap?.name !== undefined && !('preset' in changes);
+
+    if (!stored || !(dropsWindow || dropsPreset)) {
+      return;
+    }
+
+    const kept = { ...stored };
+
+    if (dropsWindow) {
+      delete kept.voiRange;
+    }
+
+    if (dropsPreset) {
+      delete kept.preset;
+    }
+
+    this.dataPresentation.set(displaySetId, kept);
   }
 
   getDefaultVOIRange(dataId?: string): VOIRange | undefined {
@@ -1527,6 +1609,44 @@ class PlanarViewport extends GenericViewport<
       imageData: imageData.imageData,
       worldToIndex: getPlanarWorldToIndexMatrix(imageData),
     });
+  };
+
+  /**
+   * Applies the default presentation of the image that shows, as the legacy
+   * stack viewport applies the default properties of an image. It acts only
+   * on the source display set, and only when some image of it has a default
+   * of its own. The image that shows gets its own default, else the default
+   * of the display set. When there is neither and the image before applied
+   * its own default, the display set goes back to the defaults of its data.
+   */
+  private readonly applyImageDefaultPresentation = (
+    evt: EventTypes.StackNewImageEvent
+  ): void => {
+    const dataId = this.getSourceDataId();
+    const imageDefaults = dataId
+      ? this.imageDefaultPresentations.get(dataId)
+      : undefined;
+
+    if (!dataId || !imageDefaults?.size) {
+      return;
+    }
+
+    const imageDefault = imageDefaults.get(evt.detail.imageId);
+    const showedImageDefault = this.imageDefaultShown.has(dataId);
+    const presentation =
+      imageDefault ?? this.defaultDataPresentation.get(dataId);
+
+    if (imageDefault) {
+      this.imageDefaultShown.add(dataId);
+    } else {
+      this.imageDefaultShown.delete(dataId);
+    }
+
+    if (presentation) {
+      this.mergeDataPresentation(dataId, deepClone(presentation));
+    } else if (showedImageDefault) {
+      this.resetDisplaySetPresentation(dataId);
+    }
   };
 
   // ====================================================================
@@ -2915,9 +3035,13 @@ class PlanarViewport extends GenericViewport<
    * `getDisplaySetPresentation`; the next viewport intentionally has no
    * get/set Properties, so it does not use the legacy `*Properties` naming.
    *
-   * Clearing the stored presentation override makes the render path fall back
-   * to its defaults on the next apply (default VOI, no colormap, no inversion).
-   * "Reset View" relies on it (view/camera state is reset separately by
+   * The presentation goes back to the default that
+   * `setDefaultDisplaySetPresentation` set: the one of the image that shows,
+   * else the one of the display set, as the legacy
+   * `resetToDefaultProperties`. Without a default the stored presentation is
+   * cleared, so the render path falls back to the defaults of its data on the
+   * next apply (default VOI, no colormap, no inversion). "Reset View" relies
+   * on it (view/camera state is reset separately by
    * `resetViewState`); without it, "Reset View" left the window level at the
    * user-modified value on direct generic viewports.
    *
@@ -2934,20 +3058,128 @@ class PlanarViewport extends GenericViewport<
       return;
     }
 
-    // Drop the stored override so the render path's `updateDataPresentation`
-    // reapplies its defaults (mirrors PlanarLegacyCompatibilityController).
-    this.setDataPresentationState(targetDataId, {} as PlanarDataPresentation);
+    const presentation = deepClone(
+      this.getResetPresentation(targetDataId)
+    ) as PlanarDataPresentation;
 
-    // `setDataPresentationState` does not emit (only the public merge path
-    // notifies), so surface the now-default VOI to OHIF's window-level readout,
-    // colorbar, sliders, and VOI synchronizers.
-    const defaultVOIRange = this.getDefaultVOIRange(targetDataId);
+    this.setDataPresentationState(targetDataId, presentation);
 
-    if (defaultVOIRange) {
+    const voiRange =
+      presentation.voiRange ?? this.getDefaultVOIRange(targetDataId);
+
+    if (voiRange) {
       this.notifyDataPresentationModified(targetDataId, {
-        voiRange: defaultVOIRange,
+        voiRange,
+        ...(presentation.colormap ? { colormap: presentation.colormap } : {}),
       });
     }
+  }
+
+  /**
+   * Sets the default presentation of a display set, or with `imageId` of one
+   * image of it, as the legacy `setDefaultProperties`. The default of an
+   * image applies when that image shows (now, when it shows now), as on the
+   * legacy stack viewport, and an image without one gets the default of the
+   * display set then. `resetDisplaySetPresentation` goes back to the default
+   * of the image that shows, else to the one of the display set.
+   *
+   * @param displaySetId - The display set.
+   * @param presentation - The default presentation; it replaces the one before.
+   * @param options - `imageId`: the image the default belongs to.
+   */
+  override setDefaultDisplaySetPresentation(
+    displaySetId: string,
+    presentation: Partial<PlanarDataPresentation>,
+    options: DefaultPresentationOptions = {}
+  ): void {
+    const { imageId } = options;
+
+    if (imageId === undefined) {
+      super.setDefaultDisplaySetPresentation(displaySetId, presentation);
+      return;
+    }
+
+    const imageDefaults =
+      this.imageDefaultPresentations.get(displaySetId) ??
+      new Map<string, Partial<PlanarDataPresentation>>();
+
+    imageDefaults.delete(imageId);
+    imageDefaults.set(imageId, deepClone(presentation));
+
+    while (imageDefaults.size > PLANAR_IMAGE_DEFAULT_PRESENTATION_LIMIT) {
+      imageDefaults.delete(imageDefaults.keys().next().value);
+    }
+
+    this.imageDefaultPresentations.set(displaySetId, imageDefaults);
+
+    if (
+      displaySetId === this.getSourceDataId() &&
+      this.getCurrentImageId() === imageId
+    ) {
+      this.imageDefaultShown.add(displaySetId);
+      this.mergeDataPresentation(displaySetId, deepClone(presentation));
+    }
+  }
+
+  /**
+   * The default presentation of a display set, or with `imageId` of one
+   * image of it, as the legacy `getDefaultProperties`; undefined when none
+   * was set.
+   *
+   * @param displaySetId - The display set.
+   * @param options - `imageId`: the image the default belongs to.
+   */
+  override getDefaultDisplaySetPresentation(
+    displaySetId: string,
+    options: DefaultPresentationOptions = {}
+  ): Partial<PlanarDataPresentation> | undefined {
+    if (options.imageId === undefined) {
+      return super.getDefaultDisplaySetPresentation(displaySetId);
+    }
+
+    const presentation = this.imageDefaultPresentations
+      .get(displaySetId)
+      ?.get(options.imageId);
+
+    return presentation ? deepClone(presentation) : undefined;
+  }
+
+  /**
+   * Removes the default presentation of a display set, or with `imageId` of
+   * one image of it. What the display set shows does not change until
+   * `resetDisplaySetPresentation`.
+   *
+   * @param displaySetId - The display set.
+   * @param options - `imageId`: the image the default belongs to.
+   */
+  override clearDefaultDisplaySetPresentation(
+    displaySetId: string,
+    options: DefaultPresentationOptions = {}
+  ): void {
+    if (options.imageId === undefined) {
+      super.clearDefaultDisplaySetPresentation(displaySetId);
+      return;
+    }
+
+    this.imageDefaultPresentations.get(displaySetId)?.delete(options.imageId);
+  }
+
+  /**
+   * The presentation that `resetDisplaySetPresentation` sets: the default of
+   * the image that shows, when the display set is the source and the image
+   * has one, else the default of the display set, else none, so that the
+   * display set shows the defaults of its data.
+   */
+  private getResetPresentation(
+    dataId: string
+  ): Partial<PlanarDataPresentation> {
+    const imageId =
+      dataId === this.getSourceDataId() ? this.getCurrentImageId() : undefined;
+    const imageDefault = imageId
+      ? this.imageDefaultPresentations.get(dataId)?.get(imageId)
+      : undefined;
+
+    return imageDefault ?? this.defaultDataPresentation.get(dataId) ?? {};
   }
 
   // ====================================================================
@@ -3102,6 +3334,12 @@ class PlanarViewport extends GenericViewport<
       Events.STACK_NEW_IMAGE,
       this.onStackNewImage as EventListener
     );
+    this.element.removeEventListener(
+      Events.STACK_NEW_IMAGE,
+      this.applyImageDefaultPresentation as EventListener
+    );
+    this.imageDefaultPresentations.clear();
+    this.imageDefaultShown.clear();
     this.clearResolvedViewCache();
     if (this.renderImageObjectDataId) {
       genericViewportDisplaySetMetadataProvider.remove(
@@ -3569,6 +3807,7 @@ class PlanarViewport extends GenericViewport<
         options.role === 'source' && this.prefersAcquiredFrames(),
       slabThickness: presentation?.slabThickness,
       blendMode: presentation?.blendMode,
+      hasPreset: presentation?.preset !== undefined,
       sliceFirst: options.sliceFirst,
       role: options.role,
     };

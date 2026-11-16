@@ -501,32 +501,48 @@ describe('PlanarViewport acquired frames in the volume path (user experience)', 
     expect(frameRendering().actor.getVisibility()).toBe(false);
   });
 
-  it('draws the frame with the volume VOI and its linear function', async () => {
+  it('draws the frame with the volume VOI and the VOI LUT function of the volume', async () => {
     await mount();
     await releaseFrames();
-    viewport.setDisplaySetPresentation(dataId, {
-      voiLUTFunction: VOILUTFunctionType.SAMPLED_SIGMOID,
-    });
 
-    const transferFunction = frameRendering()
-      .actor.getProperty()
-      .getRGBTransferFunction(0);
-
-    // The frame window (center 1000, width 50) does not apply, and a sigmoid
-    // does not apply because the volume slice draws a linear VOI.
-    expect(transferFunction.getRange()).toEqual([
-      volumeVOI.lower,
-      volumeVOI.upper,
-    ]);
+    const frameFunction = () =>
+      frameRendering().actor.getProperty().getRGBTransferFunction(0);
     const nodes = (tf) =>
       Array.from({ length: tf.getSize() }, (_, i) => {
         const node = [];
         tf.getNodeValue(i, node);
         return node;
       });
-    expect(nodes(transferFunction)).toEqual(
+
+    // The frame window (center 1000, width 50) does not apply.
+    expect(frameFunction().getRange()).toEqual([
+      volumeVOI.lower,
+      volumeVOI.upper,
+    ]);
+    expect(nodes(frameFunction())).toEqual(
       nodes(utilities.createLinearRGBTransferFunction(volumeVOI))
     );
+
+    viewport.setDisplaySetPresentation(dataId, {
+      voiLUTFunction: VOILUTFunctionType.SAMPLED_SIGMOID,
+    });
+
+    // The sigmoid of the volume applies, as on the volume slice.
+    expect(nodes(frameFunction())).toEqual(
+      nodes(utilities.createSigmoidRGBTransferFunction(volumeVOI))
+    );
+  });
+
+  it('draws the volume slice, not the frame, while a preset is set', async () => {
+    await mount();
+    await releaseFrames();
+    expect(frameRendering().actor.getVisibility()).toBe(true);
+
+    viewport.setDisplaySetPresentation(dataId, { preset: 'CT-Bone' });
+    await flush();
+
+    expect(volumeActor().getVisibility()).toBe(true);
+    expect(frameRendering().actor.getVisibility()).toBe(false);
   });
 
   it('moves the frame actor onto the focal plane between two frames', async () => {

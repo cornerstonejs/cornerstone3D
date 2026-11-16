@@ -98,10 +98,6 @@ class VolumeViewport3D extends GenericViewport<
 
   private primaryDataId?: string;
   /**
-   * The presentation of each display set after its mount, which
-   * `resetDisplaySetPresentation` goes back to.
-   */
-  /**
    * The camera of the fit of the first mount and of the last reset that
    * stored it. `getZoom` and `getPan` compare the camera with it, as on the
    * legacy viewport.
@@ -123,6 +119,10 @@ class VolumeViewport3D extends GenericViewport<
   private holdsCameraEvents = false;
   /** The vtk.js actors that the application added with `addActor`, by UID. */
   private readonly addedActors = new Map<string, ActorEntry>();
+  /**
+   * The presentation of each display set after its mount, which
+   * `resetDisplaySetPresentation` goes back to.
+   */
   private readonly mountedPresentations = new Map<
     string,
     Volume3DDataPresentation
@@ -384,9 +384,11 @@ class VolumeViewport3D extends GenericViewport<
   /**
    * Sets the presentation of a display set back to the one after its mount:
    * the default VOI range, and the preset, the colormap and the opacity that
-   * it was mounted with. The transfer functions are built anew. The camera
-   * stays: `resetViewState` resets it. Fires VOI_MODIFIED, as the legacy
-   * `resetProperties`.
+   * it was mounted with. The keys of the default presentation that
+   * `setDefaultDisplaySetPresentation` set go over it, as the legacy
+   * `resetToDefaultProperties` applies the default properties. The transfer
+   * functions are built anew. The camera stays: `resetViewState` resets it.
+   * Fires VOI_MODIFIED, as the legacy `resetProperties`.
    *
    * @param displaySetId - The display set; the current one when not given.
    */
@@ -413,6 +415,7 @@ class VolumeViewport3D extends GenericViewport<
         visible: true,
         opacity: 1,
       }),
+      ...this.getDefaultDisplaySetPresentation(targetId),
     });
 
     this.triggerVOIModified(targetId);
@@ -1528,7 +1531,7 @@ class VolumeViewport3D extends GenericViewport<
       triggerEvent(this.element, Events.COLORMAP_MODIFIED, colormapDetail);
     }
 
-    if ('voiRange' in props || 'VOILUTFunction' in props) {
+    if ('voiRange' in props || 'voiLUTFunction' in props) {
       triggerEvent(
         this.element,
         Events.VOI_MODIFIED,
@@ -1623,7 +1626,7 @@ class VolumeViewport3D extends GenericViewport<
       viewportId: this.id,
       range: { lower, upper },
       volumeId: rendering.imageVolume.volumeId,
-      VOILUTFunction: presentation?.VOILUTFunction,
+      VOILUTFunction: presentation?.voiLUTFunction,
       colormap: getVolume3DColormap(rendering.actor),
       invert: presentation?.invert,
     };

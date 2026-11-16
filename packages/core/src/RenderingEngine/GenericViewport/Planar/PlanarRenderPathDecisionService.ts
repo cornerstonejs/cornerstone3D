@@ -81,6 +81,11 @@ export interface PlanarRenderPathDecisionOptions {
   /** The blend mode of the data. */
   blendMode?: BlendModes;
   /**
+   * Whether the data draws with a preset. An acquired frame has no opacity
+   * table, so it cannot show one.
+   */
+  hasPreset?: boolean;
+  /**
    * Slice first for this data set (see `PlanarSetDataOptions.sliceFirst`).
    * When omitted, the global `rendering.planar.sliceFirst` decides.
    */
@@ -475,7 +480,8 @@ export class PlanarRenderPathDecisionService {
    * set names a cached, non-dynamic volume; the volume path of the resolved
    * backend draws from a GPU texture; final downsampling with the active GPU
    * settings reduces that texture on at least one axis; the slab is not thicker than
-   * one acquired slice; and the blend mode is composite.
+   * one acquired slice; the blend mode is composite; and the data draws with
+   * no preset.
    *
    * A CPU volume path reads the full-resolution voxels, so it never needs the
    * frames for this reason.
@@ -496,6 +502,10 @@ export class PlanarRenderPathDecisionService {
       options.blendMode !== undefined &&
       options.blendMode !== BlendModes.COMPOSITE
     ) {
+      return false;
+    }
+
+    if (options.hasPreset) {
       return false;
     }
 

@@ -105,6 +105,7 @@ show each of these with code before and after.
 | `viewport.setVideo(...)`, `setEcg(...)`, `setWSI(...)`              | Register a display set of kind `'video'`, `'ecg'` or `'wsi'`, then `viewport.setDisplaySets({ displaySetId })`                             |
 | `viewport.setProperties({ voiRange, colormap, invert })`            | `viewport.setDisplaySetPresentation(displaySetId, { voiRange, colormap, invert })`                                                         |
 | `viewport.getProperties()`                                          | `viewport.getDisplaySetPresentation(displaySetId)`                                                                                         |
+| `viewport.setDefaultProperties(...)`, `resetToDefaultProperties()`  | `viewport.setDefaultDisplaySetPresentation(displaySetId, ...)`, `viewport.resetDisplaySetPresentation(displaySetId)`                       |
 | A `callback` on a volume input that edits the actor                 | `setDisplaySetPresentation` with `voiRange`, `colormap`, `opacity`, `invert`, `blendMode` or `preset`                                      |
 | An `actorUID` on a volume input, then `viewport.getActor(actorUID)` | `viewport.getImageActor(displaySetId)`                                                                                                     |
 | `viewport.setBlendMode(...)`, `viewport.setSlabThickness(...)`      | `setDisplaySetPresentation(displaySetId, { blendMode, slabThickness })`                                                                    |

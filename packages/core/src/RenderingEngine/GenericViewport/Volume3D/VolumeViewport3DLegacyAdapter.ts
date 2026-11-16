@@ -978,7 +978,8 @@ export default VolumeViewport3DLegacyAdapter;
 
 /**
  * The keys of legacy properties that the presentation of the next 3D
- * viewport has, with the same names and meanings.
+ * viewport has, with the same names and meanings, and `VOILUTFunction` under
+ * its presentation name `voiLUTFunction`.
  */
 function getPresentationPatch(
   properties: VolumeViewportProperties
@@ -990,7 +991,6 @@ function getPresentationPatch(
     'sampleDistanceMultiplier',
     'preset',
     'colormap',
-    'VOILUTFunction',
     'sharpening',
     'smoothing',
   ] as const;
@@ -1001,6 +1001,10 @@ function getPresentationPatch(
       Object.assign(patch, { [key]: properties[key] });
     }
   });
+
+  if (properties.VOILUTFunction !== undefined) {
+    patch.voiLUTFunction = properties.VOILUTFunction;
+  }
 
   return patch;
 }

@@ -109,6 +109,63 @@ and thickens them. Together they are the crosshair for the next viewports.
   legacy viewports and on the next ones alike: that engine does not ask a
   viewport for its render passes.
 
+## The presentation of a display set
+
+- **A sigmoid window on a volume is drawn.**
+  `setDisplaySetPresentation(displaySetId, { voiLUTFunction })` with
+  `SAMPLED_SIGMOID` draws the sigmoid on every path of a planar viewport, on
+  the GPU and on the CPU. In 5.x a next planar viewport stored the key and drew
+  a linear window for a volume.
+- **The key is `voiLUTFunction`** on the planar and on the 3D presentation. The
+  legacy properties and the detail of `VOI_MODIFIED` spell it `VOILUTFunction`.
+- **A colormap update keeps what it does not name.**
+  `{ colormap: { opacity: 0.5 } }` keeps the stored name, opacity mapping and
+  threshold, and `{ colormap: { name } }` keeps the stored opacity, as the
+  legacy `setProperties`. In 5.x a next planar viewport replaced the whole
+  colormap, so the name was lost. `COLORMAP_MODIFIED` carries the whole
+  colormap.
+- **A list of opacities is read over the window.** A list in
+  `colormap.opacity` runs from 0 at the lower end of the window to 1 at its
+  upper end on a next planar viewport. The legacy volume viewport read the
+  values as values of the data. Give such a list as `colormap.opacityMapping`:
+  its values are values of the data, and a change of the window keeps them.
+- **A preset on a slice.**
+  `setDisplaySetPresentation(displaySetId, { preset: 'CT-Bone' })` on a planar
+  viewport that shows a volume draws the colours and the opacity of the preset
+  over the range of the preset, and fires `PRESET_MODIFIED`. A window set after
+  it rescales the colours. A colormap name set after it replaces it. The
+  opacity of a preset shows as given, so it looks stronger than on a legacy
+  volume viewport, which drew it through a thin slab.
+- **A default presentation.** `setDefaultDisplaySetPresentation`,
+  `getDefaultDisplaySetPresentation` and `clearDefaultDisplaySetPresentation`
+  are on every next viewport, and `resetDisplaySetPresentation(displaySetId)`
+  goes back to the default. They replace `setDefaultProperties`,
+  `getDefaultProperties`, `clearDefaultProperties` and
+  `resetToDefaultProperties`. On a planar viewport a default can belong to one
+  image, with the option `{ imageId }`: it applies when that image shows, and
+  an image without one gets the default of the display set.
+  - A reset shows the default and drops every other change. The legacy
+    `resetToDefaultProperties` applied the keys of the default over the
+    properties of the moment. For that, call
+    `setDisplaySetPresentation(displaySetId, getDefaultDisplaySetPresentation(displaySetId))`.
+  - `clearDefaultDisplaySetPresentation` does not change what shows. The legacy
+    `clearDefaultProperties` also reset the properties. Call
+    `resetDisplaySetPresentation` after it for that.
+  - A legacy viewport kept the first properties that `setProperties` got as
+    its default. A next viewport has a default only when one is set.
+- **No `callback` on a display set.** These presentations draw what the
+  callbacks of the examples drew on a slice viewport:
+
+  | The callback set                             | Presentation                                                               |
+  | -------------------------------------------- | -------------------------------------------------------------------------- |
+  | A CT window of -160 to 240                   | `{ voiRange: { lower: -160, upper: 240 } }`                                |
+  | A PET window of 0 to 5, inverted             | `{ voiRange: { lower: 0, upper: 5 }, invert: true }`                       |
+  | A PET colormap with opacities by SUV, fusion | `{ voiRange: { lower: 0, upper: 5 }, colormap: { name, opacityMapping } }` |
+
+  For the last one the opacities between 0 and 1 show as given. The legacy
+  viewport drew them weaker, see
+  [a labelmap fill is drawn with the configured alpha](#a-labelmap-fill-is-drawn-with-the-configured-alpha).
+
 ## Events and image loading of a planar viewport
 
 - **The events of the legacy viewports fire.** `VOLUME_VIEWPORT_NEW_VOLUME`
@@ -302,11 +359,14 @@ layer of a fusion: the opacity is applied as given.
   presentation update rebuilt a grey ramp, so a preset was lost at the next
   change of the window.
 - **The colour keys of the legacy `setProperties` are presentation keys:**
-  `VOILUTFunction`, `colormap` (with `name`, `opacityMapping` and
-  `threshold`), `blendMode`, `sharpening` and `smoothing`.
+  `voiLUTFunction` (the legacy `VOILUTFunction`), `colormap` (with `name`,
+  `opacityMapping` and `threshold`), `blendMode`, `sharpening` and
+  `smoothing`.
 - **`resetDisplaySetPresentation(displaySetId)`** goes back to what the volume
-  showed after its mount. It does not move the camera: `resetViewState()`
-  does.
+  showed after its mount, with the keys of its default presentation over it
+  when one is set (see
+  [the presentation of a display set](#the-presentation-of-a-display-set)). It
+  does not move the camera: `resetViewState()` does.
 - **Events.** `VOI_MODIFIED`, `COLORMAP_MODIFIED` and `PRESET_MODIFIED` fire
   from a 3D viewport, `VOI_MODIFIED` also when a volume is mounted, and
   `VOLUME_VIEWPORT_NEW_VOLUME` fires on a mount. None of them fired in 5.x.

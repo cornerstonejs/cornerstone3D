@@ -66,6 +66,17 @@ export interface BasePresentationProps {
   opacity?: number;
 }
 
+/**
+ * The options of a default presentation of a display set. With `imageId`
+ * the default belongs to that image of the display set only, and applies
+ * when that image shows, as the legacy `setDefaultProperties(props,
+ * imageId)` of a stack viewport. A family that has no images of its own
+ * ignores it.
+ */
+export interface DefaultPresentationOptions {
+  imageId?: string;
+}
+
 export type LoadedData<TData extends object = object> = {
   id: DisplaySetId;
   type: LogicalDataType;

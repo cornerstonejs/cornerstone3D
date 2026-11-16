@@ -15,6 +15,7 @@ import type {
   BaseViewportRenderContext,
   BindingRole,
   DataAddOptions,
+  DefaultPresentationOptions,
   DisplaySetId,
   DataProvider,
   LoadedData,
@@ -132,6 +133,15 @@ abstract class GenericViewport<
     ViewportDataBinding<TDataPresentation>
   >();
   protected dataPresentation = new Map<DisplaySetId, TDataPresentation>();
+  /**
+   * The default presentation of each display set, set by
+   * `setDefaultDisplaySetPresentation`. A family goes back to it in
+   * `resetDisplaySetPresentation`.
+   */
+  protected defaultDataPresentation = new Map<
+    DisplaySetId,
+    Partial<TDataPresentation>
+  >();
   protected viewState!: TViewState;
   protected isDestroyed = false;
   private readonly widgets = new Map<string, ViewportWidget>();
@@ -290,6 +300,57 @@ abstract class GenericViewport<
     }
 
     this.mergeDataPresentation(defaultId, displaySetIdOrProps);
+  }
+
+  /**
+   * Sets the default presentation of a display set, as the legacy
+   * `setDefaultProperties`: the presentation that
+   * `resetDisplaySetPresentation` goes back to. It does not change what the
+   * display set shows now. The base class keeps one default for each display
+   * set and ignores `options`; a family with images of its own keeps a
+   * default for each image too.
+   *
+   * @param displaySetId - The display set.
+   * @param presentation - The default presentation; it replaces the one before.
+   * @param options - The image the default belongs to, where the family has images.
+   */
+  setDefaultDisplaySetPresentation(
+    displaySetId: DisplaySetId,
+    presentation: Partial<TDataPresentation>,
+    _options: DefaultPresentationOptions = {}
+  ): void {
+    this.defaultDataPresentation.set(displaySetId, deepClone(presentation));
+  }
+
+  /**
+   * The default presentation of a display set, as the legacy
+   * `getDefaultProperties`, or undefined when none was set.
+   *
+   * @param displaySetId - The display set.
+   * @param options - The image the default belongs to, where the family has images.
+   */
+  getDefaultDisplaySetPresentation(
+    displaySetId: DisplaySetId,
+    _options: DefaultPresentationOptions = {}
+  ): Partial<TDataPresentation> | undefined {
+    const presentation = this.defaultDataPresentation.get(displaySetId);
+
+    return presentation ? deepClone(presentation) : undefined;
+  }
+
+  /**
+   * Removes the default presentation of a display set, as the legacy
+   * `clearDefaultProperties`. What the display set shows does not change
+   * until `resetDisplaySetPresentation`.
+   *
+   * @param displaySetId - The display set.
+   * @param options - The image the default belongs to, where the family has images.
+   */
+  clearDefaultDisplaySetPresentation(
+    displaySetId: DisplaySetId,
+    _options: DefaultPresentationOptions = {}
+  ): void {
+    this.defaultDataPresentation.delete(displaySetId);
   }
 
   /**
@@ -734,6 +795,7 @@ abstract class GenericViewport<
     this.onDestroy();
     this.bindings.clear();
     this.dataPresentation.clear();
+    this.defaultDataPresentation.clear();
 
     for (const key of Object.keys(this._debug.renderModes)) {
       delete this._debug.renderModes[key];

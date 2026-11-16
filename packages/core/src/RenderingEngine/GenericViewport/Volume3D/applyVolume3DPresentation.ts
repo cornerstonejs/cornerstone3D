@@ -142,7 +142,7 @@ function buildTransferFunctions(
 
   if (voiRange) {
     const transferFunction =
-      props.VOILUTFunction === VOILUTFunctionType.SAMPLED_SIGMOID
+      props.voiLUTFunction === VOILUTFunctionType.SAMPLED_SIGMOID
         ? createSigmoidRGBTransferFunction(voiRange)
         : createLinearRGBTransferFunction(voiRange);
 
@@ -176,13 +176,13 @@ function applyPresentationChanges(
 
   if (
     props.voiRange !== previous.voiRange ||
-    props.VOILUTFunction !== previous.VOILUTFunction
+    props.voiLUTFunction !== previous.voiLUTFunction
   ) {
     applyVOIRange(
       actor,
       props.voiRange ?? currentVOIRange(transferFunction, previous),
-      props.VOILUTFunction,
-      props.VOILUTFunction !== previous.VOILUTFunction
+      props.voiLUTFunction,
+      props.voiLUTFunction !== previous.voiLUTFunction
     );
   }
 
@@ -241,7 +241,7 @@ function currentVOIRange(
   previous: Volume3DDataPresentation
 ): VOIRange {
   const [lower, upper] =
-    previous.VOILUTFunction === VOILUTFunctionType.SAMPLED_SIGMOID
+    previous.voiLUTFunction === VOILUTFunctionType.SAMPLED_SIGMOID
       ? getVoiFromSigmoidRGBTransferFunction(transferFunction)
       : transferFunction.getRange();
 
