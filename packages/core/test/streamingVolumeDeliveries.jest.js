@@ -108,6 +108,39 @@ describe('StreamingImageVolume — the record of the deliveries', () => {
     volume.stopListeningForCachedImages();
   });
 
+  it('holds the last delivery when LOADING_COMPLETED fires', () => {
+    const { volume, imageIds } = makeVolume();
+    let lowestAtCompletion;
+    const onCompleted = () => {
+      lowestAtCompletion = recordOf(volume).lowest;
+    };
+
+    volume.totalNumFrames = imageIds.length;
+    // A replicate first, as a progressive load delivers it.
+    volume.updateTextureAndTriggerEvents(
+      3,
+      imageIds[3],
+      ImageQualityStatus.ADJACENT_REPLICATE
+    );
+    eventTarget.addEventListener(
+      Events.IMAGE_VOLUME_LOADING_COMPLETED,
+      onCompleted
+    );
+    imageIds.forEach((imageId, index) => {
+      volume.updateTextureAndTriggerEvents(
+        index,
+        imageId,
+        ImageQualityStatus.FULL_RESOLUTION
+      );
+    });
+    eventTarget.removeEventListener(
+      Events.IMAGE_VOLUME_LOADING_COMPLETED,
+      onCompleted
+    );
+
+    expect(lowestAtCompletion).toBe(ImageQualityStatus.FULL_RESOLUTION);
+  });
+
   it('records no quality when the volume is invalidated', () => {
     const { volume, imageIds } = makeVolume();
 

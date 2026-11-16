@@ -79,17 +79,18 @@ const polySegConverters = {
     }
 
     this.polySegInitializing = true;
-    this.polySegInitializingPromise = new Promise((resolve) => {
-      this.polySeg = new ICRPolySeg();
-      this.polySeg
-        .initialize({
-          updateProgress: progressCallback,
-        })
-        .then(() => {
-          this.polySegInitializing = false;
-          resolve();
-        });
-    });
+    // A failed initialize rejects every waiting task, and the next task tries again.
+    this.polySegInitializingPromise = (async () => {
+      try {
+        this.polySeg = new ICRPolySeg();
+        await this.polySeg.initialize({ updateProgress: progressCallback });
+      } catch (error) {
+        this.polySeg = null;
+        throw error;
+      } finally {
+        this.polySegInitializing = false;
+      }
+    })();
 
     await this.polySegInitializingPromise;
   },
@@ -128,14 +129,22 @@ const polySegConverters = {
     const [progressCallback] = callbacks;
     await this.initializePolySeg(progressCallback);
 
-    const results = this.polySeg.instance.convertLabelmapToSurface(
-      args.scalarData,
-      args.dimensions,
-      args.spacing,
-      args.direction,
-      args.origin,
-      [args.segmentIndex]
-    );
+    let results;
+    try {
+      results = this.polySeg.instance.convertLabelmapToSurface(
+        args.scalarData,
+        args.dimensions,
+        args.spacing,
+        args.direction,
+        args.origin,
+        [args.segmentIndex]
+      );
+    } catch (error) {
+      // An abort (for example out of heap) leaves the wasm module unusable, so
+      // the next call initializes a new one.
+      this.polySeg = null;
+      throw error;
+    }
     const rotationInfo = checkStandardBasis(args.direction);
     if (!rotationInfo.isStandard) {
       const rotatedPoints = rotatePoints(
