@@ -3,10 +3,24 @@ import {
   fakeImageLoader,
   fakeMetaDataProvider,
 } from '../../../utils/test/testUtilsImageLoader';
-import { describe, it, expect, afterEach, beforeEach } from '@jest/globals';
+import {
+  describe,
+  it,
+  expect,
+  afterEach,
+  beforeEach,
+  jest,
+} from '@jest/globals';
 import vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 import vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
+import PlanarViewport from '../src/RenderingEngine/GenericViewport/Planar/PlanarViewport';
 import PlanarViewportLegacyAdapter from '../src/RenderingEngine/GenericViewport/Planar/PlanarViewportLegacyAdapter';
+import { PlanarSampledSliceCanvas } from '../src/RenderingEngine/GenericViewport/Planar/planarSampledSliceCanvas';
+import {
+  getDefaultImageInvert,
+  getDefaultImageVOIRange,
+} from '../src/RenderingEngine/helpers/planarImageRendering';
+import genericViewportDisplaySetMetadataProvider from '../src/utilities/genericViewportDisplaySetMetadataProvider';
 import renderingEngineCache from '../src/RenderingEngine/renderingEngineCache';
 import getSliceRange from '../src/utilities/getSliceRange';
 import snapFocalPointToSlice from '../src/utilities/snapFocalPointToSlice';
@@ -648,5 +662,348 @@ describe('planar legacy adapter members', () => {
         project(viewport.getCamera().focalPoint, camera.viewPlaneNormal)
       ).toBeCloseTo(project(expected, camera.viewPlaneNormal), 6);
     });
+  });
+});
+
+/**
+ * Image ids of the fake image loader for 16 by 16 images with the given
+ * photometric interpretations, one per millimetre along z. A MONOCHROME1
+ * image is marked `invert` by the loader, as the DICOM image loader marks it.
+ */
+function createPhotometricImageIds(photometricInterpretations) {
+  return photometricInterpretations.map(
+    (photometricInterpretation, sliceIndex) =>
+      `fakeImageLoader:${encodeURIComponent(
+        JSON.stringify({
+          loader: 'fakeImageLoader',
+          name: 'imageURI',
+          rows: 16,
+          columns: 16,
+          barStart: 2,
+          barWidth: 4,
+          xSpacing: 1,
+          ySpacing: 1,
+          sliceIndex,
+          photometricInterpretation,
+        })
+      )}`
+  );
+}
+
+/**
+ * The invert flag that a CPU stack viewport draws with: the CPU fallback
+ * viewport of the legacy stack viewport, or the presentation that the CPU
+ * image path of a next planar viewport draws its slice with. The adapter
+ * draws a CPU render in the next animation frame.
+ */
+async function readDrawnInvert(viewport, drawSpy) {
+  if (!utilities.isGenericViewport(viewport)) {
+    return viewport._cpuFallbackEnabledElement.viewport.invert;
+  }
+
+  drawSpy.mockClear();
+  viewport.render();
+  await new Promise((resolve) => requestAnimationFrame(resolve));
+  await new Promise((resolve) => requestAnimationFrame(resolve));
+
+  const calls = drawSpy.mock.calls;
+
+  return calls[calls.length - 1][0].presentation.invert;
+}
+
+/**
+ * Shows an image of a stack and resolves when the viewport fired
+ * STACK_NEW_IMAGE for it.
+ */
+async function showImage(element, viewport, imageIdIndex) {
+  const newImage = waitForNewImage(element, imageIdIndex);
+  viewport.setImageIdIndex(imageIdIndex);
+  await newImage;
+}
+
+describe('planar legacy adapter and a MONOCHROME1 image', () => {
+  let renderingEngines = [];
+  let drawSpy;
+
+  beforeEach(() => {
+    drawSpy = jest.spyOn(PlanarSampledSliceCanvas.prototype, 'draw');
+  });
+
+  afterEach(() => {
+    drawSpy.mockRestore();
+    renderingEngines.forEach((renderingEngine) => renderingEngine.destroy());
+    renderingEngines = [];
+    cache.purgeCache();
+    metaData.removeAllProviders();
+    imageLoader.unregisterAllImageLoaders();
+    genericViewportDisplaySetMetadataProvider.clear();
+    setUseCPURendering(false);
+  });
+
+  /**
+   * Shows a MONOCHROME1 stack, a MONOCHROME2 stack and the MONOCHROME1 stack
+   * again on a CPU stack viewport and gives the invert flag drawn for each.
+   */
+  async function readNewStackInverts(useAdapter) {
+    const { renderingEngine, viewport } = createStackViewport(useAdapter);
+    renderingEngines.push(renderingEngine);
+    const inverts = [];
+
+    await viewport.setStack(
+      createPhotometricImageIds(['MONOCHROME1', 'MONOCHROME1']),
+      0
+    );
+    inverts.push(await readDrawnInvert(viewport, drawSpy));
+    await viewport.setStack(createPhotometricImageIds(['MONOCHROME2']), 0);
+    inverts.push(await readDrawnInvert(viewport, drawSpy));
+    await viewport.setStack(createPhotometricImageIds(['MONOCHROME1']), 0);
+    inverts.push(await readDrawnInvert(viewport, drawSpy));
+
+    return { inverts, viewport };
+  }
+
+  it('draws a new MONOCHROME1 stack inverted, as the legacy stack viewport', async () => {
+    const legacy = await readNewStackInverts(false);
+    const adapter = await readNewStackInverts(true);
+
+    expect(legacy.inverts).toEqual([true, false, true]);
+    expect(adapter.inverts).toEqual(legacy.inverts);
+    expect(adapter.viewport.getProperties().invert).toBe(true);
+  });
+
+  it('keeps an invert flag that the application set while it scrolls and drops it with a new stack', async () => {
+    const results = {};
+
+    for (const useAdapter of [false, true]) {
+      const { element, renderingEngine, viewport } =
+        createStackViewport(useAdapter);
+      renderingEngines.push(renderingEngine);
+      const steps = [];
+
+      await viewport.setStack(
+        createPhotometricImageIds(['MONOCHROME1', 'MONOCHROME1']),
+        0
+      );
+      viewport.setProperties({ invert: false });
+      steps.push(await readDrawnInvert(viewport, drawSpy));
+      await showImage(element, viewport, 1);
+      steps.push(await readDrawnInvert(viewport, drawSpy));
+      await viewport.setStack(createPhotometricImageIds(['MONOCHROME1']), 0);
+      steps.push(await readDrawnInvert(viewport, drawSpy));
+      results[useAdapter ? 'adapter' : 'legacy'] = steps;
+    }
+
+    expect(results.legacy).toEqual([false, false, true]);
+    expect(results.adapter).toEqual(results.legacy);
+  });
+
+  /**
+   * The legacy stack viewport on the CPU reports `invert: false` for a
+   * MONOCHROME1 image that it draws inverted and goes back to an image that
+   * is not inverted with `resetProperties`. The adapter gives the semantics
+   * of the legacy stack viewport on the GPU, its default, which the karma
+   * test of `stackViewport_gpu_render_test` checks against it: the property
+   * says what is drawn and a reset goes back to the image's own default.
+   */
+  it('reports the invert flag that it draws and resets to the default of the image', async () => {
+    const { element, renderingEngine, viewport } = createStackViewport(true);
+    renderingEngines.push(renderingEngine);
+
+    await viewport.setStack(
+      createPhotometricImageIds(['MONOCHROME1', 'MONOCHROME1']),
+      0
+    );
+
+    expect(viewport.getProperties().invert).toBe(true);
+
+    viewport.setProperties({ invert: false });
+
+    expect(viewport.getProperties().invert).toBe(false);
+
+    await showImage(element, viewport, 1);
+
+    expect(viewport.getProperties().invert).toBe(false);
+
+    viewport.resetProperties();
+
+    expect(viewport.getProperties().invert).toBe(true);
+    expect(await readDrawnInvert(viewport, drawSpy)).toBe(true);
+
+    await viewport.setStack(createPhotometricImageIds(['MONOCHROME2']), 0);
+
+    expect(viewport.getProperties().invert).toBe(false);
+    expect(await readDrawnInvert(viewport, drawSpy)).toBe(false);
+  });
+
+  /**
+   * A stack that mixes MONOCHROME1 and MONOCHROME2 images. The legacy stack
+   * viewport keeps the flag of the first image on the CPU, and on the GPU
+   * turns it on at the first MONOCHROME1 image and keeps it on, so a later
+   * MONOCHROME2 image shows inverted. The next viewport draws each image with
+   * its own default while the application has not set `invert`.
+   */
+  it('draws each image of a mixed stack with its own default', async () => {
+    const { element, renderingEngine, viewport } = createStackViewport(true);
+    renderingEngines.push(renderingEngine);
+    const steps = [];
+
+    await viewport.setStack(
+      createPhotometricImageIds(['MONOCHROME2', 'MONOCHROME1', 'MONOCHROME2']),
+      0
+    );
+    steps.push(await readDrawnInvert(viewport, drawSpy));
+
+    for (const imageIdIndex of [1, 2]) {
+      await showImage(element, viewport, imageIdIndex);
+      steps.push([
+        await readDrawnInvert(viewport, drawSpy),
+        viewport.getProperties().invert,
+      ]);
+    }
+
+    expect(steps).toEqual([false, [true, true], [false, false]]);
+  });
+
+  it('starts a display set of a direct planar viewport inverted and keeps what the application sets', async () => {
+    setUpCore();
+    const renderer = {
+      getActiveCamera: () => ({ setParallelProjection() {} }),
+    };
+    let viewport;
+    const renderingEngine = {
+      id: utilities.uuidv4(),
+      getRenderer: () => renderer,
+      getViewports: () => (viewport ? [viewport] : []),
+      renderViewport() {},
+      destroy() {
+        viewport.destroy();
+        renderingEngineCache.delete(renderingEngine.id);
+      },
+    };
+
+    renderingEngineCache.set(renderingEngine);
+    renderingEngines.push(renderingEngine);
+    viewport = new PlanarViewport({
+      id: 'direct',
+      element: document.getElementById('element'),
+      renderingEngineId: renderingEngine.id,
+      canvas: document.createElement('canvas'),
+      sWidth: 64,
+      sHeight: 64,
+      defaultOptions: {},
+    });
+    genericViewportDisplaySetMetadataProvider.add('xray', {
+      kind: 'planar',
+      imageIds: createPhotometricImageIds(['MONOCHROME1']),
+      initialImageIdIndex: 0,
+    });
+
+    await viewport.setDisplaySets({ displaySetId: 'xray' });
+
+    expect(viewport.getDisplaySetPresentation('xray').invert).toBeUndefined();
+    expect(viewport.getDefaultInvert('xray')).toBe(true);
+    expect(await readDrawnInvert(viewport, drawSpy)).toBe(true);
+
+    viewport.setDisplaySetPresentation('xray', { invert: false });
+
+    expect(await readDrawnInvert(viewport, drawSpy)).toBe(false);
+
+    viewport.resetDisplaySetPresentation('xray');
+
+    expect(viewport.getDisplaySetPresentation('xray').invert).toBeUndefined();
+    expect(await readDrawnInvert(viewport, drawSpy)).toBe(true);
+  });
+});
+
+describe('getDefaultImageInvert', () => {
+  afterEach(() => {
+    metaData.removeAllProviders();
+  });
+
+  it('reads the photometric interpretation of the metadata before image.invert', () => {
+    metaData.addProvider((type, imageId) => {
+      if (type !== 'imagePixelModule') {
+        return;
+      }
+
+      return { photometricInterpretation: imageId.split(':')[1] };
+    });
+
+    expect(getDefaultImageInvert({ imageId: 'pi:MONOCHROME1' })).toBe(true);
+    expect(
+      getDefaultImageInvert({ imageId: 'pi:MONOCHROME1', invert: false })
+    ).toBe(true);
+    expect(
+      getDefaultImageInvert({ imageId: 'pi:MONOCHROME2', invert: true })
+    ).toBe(false);
+    expect(getDefaultImageInvert({ imageId: 'pi:', invert: true })).toBe(true);
+    expect(getDefaultImageInvert({ imageId: 'pi:' })).toBe(false);
+  });
+});
+
+describe('getDefaultImageVOIRange', () => {
+  it('gives a grayscale image without a window the range of its pixel values, as the legacy stack viewport', () => {
+    expect(
+      getDefaultImageVOIRange({ minPixelValue: 100, maxPixelValue: 300 })
+    ).toEqual({ lower: 100, upper: 300 });
+    expect(
+      getDefaultImageVOIRange({
+        color: true,
+        minPixelValue: 0,
+        maxPixelValue: 255,
+      })
+    ).toBeUndefined();
+  });
+});
+
+describe('planar legacy adapter VOI LUT function', () => {
+  let renderingEngines = [];
+  let drawSpy;
+
+  beforeEach(() => {
+    drawSpy = jest.spyOn(PlanarSampledSliceCanvas.prototype, 'draw');
+  });
+
+  afterEach(() => {
+    drawSpy.mockRestore();
+    renderingEngines.forEach((renderingEngine) => renderingEngine.destroy());
+    renderingEngines = [];
+    cache.purgeCache();
+    metaData.removeAllProviders();
+    imageLoader.unregisterAllImageLoaders();
+    setUseCPURendering(false);
+  });
+
+  /**
+   * The legacy stack viewport reports the VOI LUT function of the image and
+   * draws with the one that `setProperties` sets on the GPU; on the CPU it
+   * throws for it.
+   */
+  it('reports the VOI LUT function of the image and draws the one that setProperties sets', async () => {
+    const { renderingEngine, viewport } = createStackViewport(true);
+    renderingEngines.push(renderingEngine);
+
+    await viewport.setStack(imageIds, 0);
+
+    expect(viewport.getProperties().VOILUTFunction).toBe(
+      Enums.VOILUTFunctionType.LINEAR
+    );
+
+    viewport.setProperties({
+      VOILUTFunction: Enums.VOILUTFunctionType.SAMPLED_SIGMOID,
+    });
+    drawSpy.mockClear();
+    viewport.render();
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+
+    const calls = drawSpy.mock.calls;
+
+    expect(viewport.getProperties().VOILUTFunction).toBe(
+      Enums.VOILUTFunctionType.SAMPLED_SIGMOID
+    );
+    expect(calls[calls.length - 1][0].presentation.voiLUTFunction).toBe(
+      Enums.VOILUTFunctionType.SAMPLED_SIGMOID
+    );
   });
 });

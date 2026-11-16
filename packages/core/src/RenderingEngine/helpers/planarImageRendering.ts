@@ -3,7 +3,12 @@ import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
-import { InterpolationType, VOILUTFunctionType } from '../../enums';
+import {
+  InterpolationType,
+  MetadataModules,
+  VOILUTFunctionType,
+} from '../../enums';
+import * as metaData from '../../metaData';
 import type { ColormapPublic, IImage, Point3, VOIRange } from '../../types';
 import createLinearRGBTransferFunction from '../../utilities/createLinearRGBTransferFunction';
 import createSigmoidRGBTransferFunction from '../../utilities/createSigmoidRGBTransferFunction';
@@ -134,11 +139,53 @@ export function getDefaultImageVOIRange(image: IImage): VOIRange | undefined {
     return { lower: 0, upper: 5 };
   }
 
-  return getVOIRangeFromWindowLevel(
-    image.windowWidth,
-    image.windowCenter,
-    image.voiLUTFunction
+  return (
+    getVOIRangeFromWindowLevel(
+      image.windowWidth,
+      image.windowCenter,
+      image.voiLUTFunction
+    ) ?? getImagePixelValueRange(image)
   );
+}
+
+/**
+ * The range of the pixel values of a grayscale image, for an image without a
+ * window. The legacy stack viewport shows such an image with the range of its
+ * pixel data. A colour image gets no range: its colours are drawn as they are.
+ */
+function getImagePixelValueRange(image: IImage): VOIRange | undefined {
+  const { color, minPixelValue, maxPixelValue } = image;
+
+  if (
+    color ||
+    !Number.isFinite(minPixelValue) ||
+    !Number.isFinite(maxPixelValue)
+  ) {
+    return;
+  }
+
+  return { lower: minPixelValue, upper: maxPixelValue };
+}
+
+/**
+ * Whether an image starts inverted. A MONOCHROME1 image does, as on the
+ * legacy stack viewport. The photometric interpretation in the image pixel
+ * module decides, as on the GPU path of the legacy stack viewport, its
+ * default path. `image.invert`, which the DICOM image loader sets from the
+ * same tag and the legacy CPU path reads, decides when the metadata has none.
+ */
+export function getDefaultImageInvert(image: IImage): boolean {
+  const imagePixelModule = metaData.get(
+    MetadataModules.IMAGE_PIXEL,
+    image.imageId
+  ) as { photometricInterpretation?: string } | undefined;
+  const photometricInterpretation = imagePixelModule?.photometricInterpretation;
+
+  if (photometricInterpretation) {
+    return photometricInterpretation === 'MONOCHROME1';
+  }
+
+  return image.invert === true;
 }
 
 export function getPlanarCameraState(renderer: vtkRenderer): PlanarCameraState {
@@ -157,9 +204,16 @@ export function applyPlanarImagePresentation(args: {
   actor: vtkImageSlice;
   defaultVOIRange?: VOIRange;
   defaultVOILUTFunction?: VOILUTFunctionType;
+  defaultInvert?: boolean;
   props?: PlanarImagePresentation;
 }): void {
-  const { actor, defaultVOIRange, defaultVOILUTFunction, props } = args;
+  const {
+    actor,
+    defaultVOIRange,
+    defaultVOILUTFunction,
+    defaultInvert,
+    props,
+  } = args;
   const property = actor.getProperty();
   const voiRange = props?.voiRange ?? defaultVOIRange;
 
@@ -185,7 +239,7 @@ export function applyPlanarImagePresentation(args: {
 
   const transferFunction = createPlanarRGBTransferFunction({
     colormap: props?.colormap,
-    invert: props?.invert,
+    invert: props?.invert ?? defaultInvert,
     voiRange,
     voiLUTFunction: props?.voiLUTFunction ?? defaultVOILUTFunction,
   });

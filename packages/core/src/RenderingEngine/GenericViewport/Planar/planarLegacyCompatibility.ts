@@ -270,6 +270,10 @@ export function toPlanarDataPresentation(
     presentation.invert = properties.invert;
   }
 
+  if (properties.VOILUTFunction !== undefined) {
+    presentation.voiLUTFunction = properties.VOILUTFunction;
+  }
+
   if (properties.blendMode !== undefined) {
     presentation.blendMode = properties.blendMode;
   }

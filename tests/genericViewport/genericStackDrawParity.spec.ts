@@ -120,6 +120,19 @@ const LOOK_CASES: StackCase[] = [
     tolerance: EXACT,
     presentation: { invert: true },
   },
+  { name: 'MONOCHROME1', image: 'ct16Monochrome1', tolerance: EXACT },
+  {
+    name: 'MONOCHROME1, invert set to false',
+    image: 'ct16Monochrome1',
+    tolerance: EXACT,
+    presentation: { invert: false },
+  },
+  {
+    name: 'MONOCHROME1, invert set to true',
+    image: 'ct16Monochrome1',
+    tolerance: EXACT,
+    presentation: { invert: true },
+  },
   {
     name: 'hsv colormap',
     image: 'ct16',
@@ -314,6 +327,7 @@ type ImageSpec = {
   ) => number | number[];
   window: [number, number];
   preScale?: Record<string, unknown>;
+  photometricInterpretation?: string;
 };
 
 type TestWindow = typeof window & {
@@ -421,6 +435,16 @@ async function openExample(page: Page): Promise<string> {
           modality: 'CT',
           fill: ctValue,
           window: [40, 400],
+        },
+        {
+          id: 'ct16Monochrome1',
+          size: [512, 512],
+          spacing: [0.7, 0.7],
+          ArrayType: Int16Array,
+          modality: 'CR',
+          fill: ctValue,
+          window: [40, 400],
+          photometricInterpretation: 'MONOCHROME1',
         },
         {
           id: 'ct16b',
@@ -535,7 +559,9 @@ async function openExample(page: Page): Promise<string> {
           id: imageId,
         });
         const color = components > 1;
-        const photometricInterpretation = color ? 'RGB' : 'MONOCHROME2';
+        const photometricInterpretation = color
+          ? 'RGB'
+          : (spec.photometricInterpretation ?? 'MONOCHROME2');
         const bits = spec.ArrayType.BYTES_PER_ELEMENT * 8;
 
         registry[imageId] = {
@@ -548,7 +574,7 @@ async function openExample(page: Page): Promise<string> {
             intercept: 0,
             slope: 1,
             voxelManager,
-            invert: false,
+            invert: photometricInterpretation === 'MONOCHROME1',
             windowCenter: spec.window[0],
             windowWidth: spec.window[1],
             minPixelValue: min,
@@ -881,6 +907,32 @@ async function expectSamePicture(
   ).toBeLessThanOrEqual(total * stackCase.tolerance.overEight);
 }
 
+/** Draws a case with the GPU draw step and gives its pixels. */
+async function readGpuPicture(
+  page: Page,
+  stackCase: StackCase,
+  exampleImageId: string
+) {
+  const viewportIndex = await page.evaluate(
+    ({ stackCase, imageIds }) =>
+      (window as TestWindow).stackParity.mount(stackCase, imageIds),
+    {
+      stackCase: { background: BACKGROUND, ...stackCase },
+      imageIds: { [EXAMPLE_CT]: exampleImageId },
+    }
+  );
+  await page.evaluate(() => (window as TestWindow).stackParity.pin('gpu'));
+  await waitForRenderSettled(page, { quietMs: 300, timeout: 30000 });
+
+  const pixels = await readViewportPixels(page, viewportIndex, {
+    stableMs: 500,
+  });
+
+  await page.evaluate(() => (window as TestWindow).stackParity.unmount());
+
+  return pixels;
+}
+
 /** Runs the cases of a group, one after the other, in one opened example. */
 function describeCases(title: string, cases: StackCase[]): void {
   test(title, async ({ page }) => {
@@ -900,4 +952,32 @@ test.describe('Stack draw parity: cpuImage draws the picture of vtkImage', () =>
   describeCases('window, VOI function, invert, colormap, opacity', LOOK_CASES);
   describeCases('interpolation and zoom', ZOOM_CASES);
   describeCases('a changed view and a second image', VIEW_CASES);
+
+  test('a MONOCHROME1 image starts inverted', async ({ page }) => {
+    const exampleImageId = await openExample(page);
+    const monochrome1 = await readGpuPicture(
+      page,
+      { name: 'MONOCHROME1', image: 'ct16Monochrome1', tolerance: EXACT },
+      exampleImageId
+    );
+    const inverted = await readGpuPicture(
+      page,
+      {
+        name: 'inverted',
+        image: 'ct16',
+        tolerance: EXACT,
+        presentation: { invert: true },
+      },
+      exampleImageId
+    );
+    const total = inverted.width * inverted.height;
+
+    expect(countContentPixels(monochrome1)).toBeGreaterThanOrEqual(
+      total * MIN_CONTENT_FRACTION
+    );
+    expect(
+      countPixelsDifferingBy(inverted, monochrome1, 1),
+      'pixels of the MONOCHROME1 image that differ from the inverted MONOCHROME2 image'
+    ).toBe(0);
+  });
 });

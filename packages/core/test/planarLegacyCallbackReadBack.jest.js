@@ -110,6 +110,7 @@ function createHost() {
     getBindingActor: jest.fn(() => actor),
     getBindingRenderMode: jest.fn(() => 'vtkVolumeSlice'),
     getDefaultVOIRange: jest.fn(() => undefined),
+    getDefaultInvert: jest.fn(() => undefined),
     getImageCount: jest.fn(() => 4),
     getMaxImageIdIndex: jest.fn(() => 3),
   };

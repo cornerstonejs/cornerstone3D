@@ -62,6 +62,8 @@ export type PlanarImageMapperRendering = MountedRendering<{
   useWorldCoordinateImageData?: boolean;
   currentImageIdIndex: number;
   defaultVOIRange?: VOIRange;
+  /** Whether the image shown starts inverted, as a MONOCHROME1 image does. */
+  defaultInvert?: boolean;
   dataPresentation?: PlanarDataPresentation;
   loadRequestId: number;
   // Target index of the most recent applyViewState request. Used by the
@@ -85,6 +87,8 @@ export type PlanarCpuImageRendering = MountedRendering<{
   compatibilityActor: ICanvasActor;
   currentImageIdIndex: number;
   defaultVOIRange?: VOIRange;
+  /** Whether the image shown starts inverted, as a MONOCHROME1 image does. */
+  defaultInvert?: boolean;
   dataPresentation?: PlanarDataPresentation;
   fitScale: number;
   loadRequestId: number;

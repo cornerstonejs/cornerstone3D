@@ -1082,6 +1082,17 @@ class PlanarViewport extends GenericViewport<
   }
 
   /**
+   * Whether the image of a display set is drawn inverted when its
+   * presentation does not set `invert`: true for a MONOCHROME1 image. It is
+   * undefined for data that has no such default, as a volume.
+   *
+   * @param dataId - Optional display set id; defaults to the active source.
+   */
+  getDefaultInvert(dataId?: string): boolean | undefined {
+    return this.mountedData.getDefaultInvert(dataId);
+  }
+
+  /**
    * Returns the current slice index for stack-like and slice-like workflows.
    *
    * @returns The current zero-based image index.
@@ -2646,6 +2657,7 @@ class PlanarViewport extends GenericViewport<
       getBindingRenderMode: (dataId) =>
         this.bindings.get(dataId)?.rendering.renderMode,
       getDefaultVOIRange: (dataId) => this.getDefaultVOIRange(dataId),
+      getDefaultInvert: (dataId) => this.getDefaultInvert(dataId),
       getImageCount: () => this.getImageIds().length,
       getMaxImageIdIndex: () => this.getMaxImageIdIndex(),
     };

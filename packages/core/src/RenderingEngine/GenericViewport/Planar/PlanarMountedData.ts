@@ -169,6 +169,22 @@ class PlanarMountedData {
     return defaultVOIRange ? { ...defaultVOIRange } : undefined;
   }
 
+  /**
+   * The invert flag that the image of a display set starts with, from its
+   * rendering, or undefined when the rendering has none.
+   */
+  getDefaultInvert(dataId?: string): boolean | undefined {
+    const targetDataId =
+      dataId ?? this.sourceDataId ?? this.getCurrentBinding()?.data.id;
+    const rendering = targetDataId
+      ? (this.host.getBinding(targetDataId)?.rendering as
+          | { defaultInvert?: boolean }
+          | undefined)
+      : undefined;
+
+    return rendering?.defaultInvert;
+  }
+
   private promoteFirstAvailableBindingToSource(): void {
     const firstBindingDataId = this.getFirstBoundDataId();
 

@@ -39,6 +39,53 @@ const AXIAL = 'AXIAL';
 const SAGITTAL = 'SAGITTAL';
 const CORONAL = 'CORONAL';
 
+/**
+ * Renders the viewport and resolves with the picture of its canvas at the
+ * next IMAGE_RENDERED event.
+ */
+function renderAndCapture(vp, element) {
+  return new Promise((resolve) => {
+    const onRendered = () => {
+      element.removeEventListener(Events.IMAGE_RENDERED, onRendered);
+      resolve(vp.getCanvas().toDataURL('image/png'));
+    };
+
+    element.addEventListener(Events.IMAGE_RENDERED, onRendered);
+    vp.render();
+  });
+}
+
+/**
+ * The image ids of a MONOCHROME2 and of a MONOCHROME1 image of the fake image
+ * loader with the same pixels.
+ */
+function getMonochromeImageIds() {
+  const imageInfo = {
+    loader: 'fakeImageLoader',
+    name: 'imageURI',
+    rows: 64,
+    columns: 64,
+    barStart: 20,
+    barWidth: 5,
+    xSpacing: 1,
+    ySpacing: 1,
+    sliceIndex: 0,
+  };
+
+  return {
+    monochrome2: encodeImageIdInfo(imageInfo),
+    monochrome1: encodeImageIdInfo({
+      ...imageInfo,
+      photometricInterpretation: 'MONOCHROME1',
+    }),
+    monochrome1Next: encodeImageIdInfo({
+      ...imageInfo,
+      sliceIndex: 1,
+      photometricInterpretation: 'MONOCHROME1',
+    }),
+  };
+}
+
 describe('renderingCore -- Stack', () => {
   let renderingEngine;
 
@@ -1132,6 +1179,76 @@ describe('renderingCore -- Stack', () => {
       } catch (e) {
         done.fail(e);
       }
+    });
+  });
+
+  describe('MONOCHROME1 images', function () {
+    it('Should render a MONOCHROME1 image inverted, as its MONOCHROME2 image with invert set', async function () {
+      const element = testUtils.createViewports(renderingEngine, {
+        viewportId,
+        orientation: Enums.OrientationAxis.AXIAL,
+      });
+      const vp = renderingEngine.getViewport(viewportId);
+      const { monochrome2, monochrome1 } = getMonochromeImageIds();
+
+      await vp.setStack([monochrome2], 0);
+      const notInverted = await renderAndCapture(vp, element);
+
+      expect(vp.getProperties().invert).toBe(false);
+
+      vp.setProperties({ invert: true });
+      const inverted = await renderAndCapture(vp, element);
+
+      expect(inverted).not.toEqual(notInverted);
+
+      await vp.setStack([monochrome1], 0);
+      const image = await renderAndCapture(vp, element);
+
+      expect(vp.getProperties().invert).toBe(true);
+      await compareImages(image, { default: inverted }, 'monochrome1_default');
+    });
+
+    it('Should keep an invert flag set on a MONOCHROME1 image and reset it to the default of the image', async function () {
+      const element = testUtils.createViewports(renderingEngine, {
+        viewportId,
+        orientation: Enums.OrientationAxis.AXIAL,
+      });
+      const vp = renderingEngine.getViewport(viewportId);
+      const { monochrome2, monochrome1, monochrome1Next } =
+        getMonochromeImageIds();
+
+      await vp.setStack([monochrome2], 0);
+      const notInverted = await renderAndCapture(vp, element);
+
+      await vp.setStack([monochrome1, monochrome1Next], 0);
+      vp.setProperties({ invert: false });
+      const setByHand = await renderAndCapture(vp, element);
+
+      expect(vp.getProperties().invert).toBe(false);
+      await compareImages(
+        setByHand,
+        { default: notInverted },
+        'monochrome1_invert_false'
+      );
+
+      await vp.setImageIdIndex(1);
+      const scrolled = await renderAndCapture(vp, element);
+
+      expect(vp.getProperties().invert).toBe(false);
+      await compareImages(
+        scrolled,
+        { default: notInverted },
+        'monochrome1_invert_false_scrolled'
+      );
+
+      vp.resetProperties();
+
+      expect(vp.getProperties().invert).toBe(true);
+
+      await vp.setStack([monochrome2], 0);
+      await renderAndCapture(vp, element);
+
+      expect(vp.getProperties().invert).toBe(false);
     });
   });
 });

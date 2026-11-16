@@ -78,6 +78,7 @@ export type PlanarLegacyCompatibilityHost = {
   getDefaultVOIRange(
     dataId: string
   ): { lower: number; upper: number } | undefined;
+  getDefaultInvert(dataId: string): boolean | undefined;
   getImageCount(): number;
   getMaxImageIdIndex(): number;
 };
@@ -361,6 +362,14 @@ class PlanarLegacyCompatibilityController {
       const defaultVOIRange = this.host.getDefaultVOIRange(targetDataId);
       if (defaultVOIRange) {
         merged.voiRange = { ...defaultVOIRange };
+      }
+    }
+
+    if (merged.invert === undefined && targetDataId) {
+      const defaultInvert = this.host.getDefaultInvert(targetDataId);
+
+      if (defaultInvert !== undefined) {
+        merged.invert = defaultInvert;
       }
     }
 

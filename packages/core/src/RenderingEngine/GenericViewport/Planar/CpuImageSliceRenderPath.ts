@@ -5,7 +5,10 @@ import calculateTransform from '../../helpers/cpuFallback/rendering/calculateTra
 import canvasToPixel from '../../helpers/cpuFallback/rendering/canvasToPixel';
 import correctShift from '../../helpers/cpuFallback/rendering/correctShift';
 import getDefaultViewport from '../../helpers/cpuFallback/rendering/getDefaultViewport';
-import { getDefaultImageVOIRange } from '../../helpers/planarImageRendering';
+import {
+  getDefaultImageInvert,
+  getDefaultImageVOIRange,
+} from '../../helpers/planarImageRendering';
 import fitToWindow from '../../helpers/cpuFallback/rendering/fitToWindow';
 import { resolveCPUFallbackColormap } from '../../helpers/cpuFallback/colors';
 import {
@@ -181,6 +184,7 @@ export class CpuImageSliceRenderPath
       compatibilityActor,
       currentImageIdIndex: payload.initialImageIdIndex ?? 0,
       defaultVOIRange: getDefaultImageVOIRange(payload.image),
+      defaultInvert: getDefaultImageInvert(payload.image),
       dataPresentation: undefined,
       fitScale: getCPUFallbackScalarScale(enabledElement.viewport.scale),
       loadRequestId: 0,
@@ -642,7 +646,7 @@ function applyDataPresentation(
     props?.colormap,
     enabledElement.image?.colormap
   );
-  viewport.invert = props?.invert ?? false;
+  viewport.invert = props?.invert ?? rendering.defaultInvert ?? false;
 
   if (voiRange) {
     const { windowCenter, windowWidth } = toWindowLevel(
@@ -932,8 +936,8 @@ function getImageSliceInputs(
 
 /**
  * The presentation that the GPU image path applies: LINEAR interpolation
- * unless the presentation says otherwise, and the VOI LUT function of the
- * image unless the presentation gives one.
+ * unless the presentation says otherwise, and the VOI LUT function and the
+ * invert flag of the image unless the presentation gives them.
  */
 function getImageSlicePresentation(
   rendering: PlanarCpuImageRendering
@@ -945,6 +949,7 @@ function getImageSlicePresentation(
     ...dataPresentation,
     voiLUTFunction:
       dataPresentation?.voiLUTFunction ?? enabledElement.image?.voiLUTFunction,
+    invert: dataPresentation?.invert ?? rendering.defaultInvert,
   };
 }
 
@@ -1010,6 +1015,7 @@ async function updateRenderedImage(args: {
 
   rendering.currentImageIdIndex = imageIdIndex;
   rendering.defaultVOIRange = getDefaultImageVOIRange(image);
+  rendering.defaultInvert = getDefaultImageInvert(image);
   rendering.fitScale = getCPUFallbackScalarScale(defaultViewport.scale);
   rendering.renderingInvalidated = true;
   ctx.viewport.invalidateResolvedView();

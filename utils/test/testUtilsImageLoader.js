@@ -36,6 +36,8 @@ function getBitsAllocated(dataType = 'Uint8Array') {
 /**
  * It creates an image based on the imageId name for testing purposes. It splits the imageId
  * based on "_" and deciphers each field of scheme, rows, columns, barStart, barWidth, x_spacing, y_spacing, rgb, and PT.
+ * An optional `photometricInterpretation` field, MONOCHROME1 for example, gives the
+ * photometric interpretation of the image; a MONOCHROME1 image is marked `invert`.
  * fakeLoader: myImage_64_64_10_20_1_1_0 will load a grayscale test image of size 64 by
  * 64 and with a vertical bar which starts at 10th pixel and span 20 pixels
  * width, with pixel spacing of 1 mm and 1 mm in x and y direction.
@@ -64,6 +66,7 @@ const fakeImageLoader = (imageId) => {
     rgb,
     id,
     dataType,
+    photometricInterpretation = rgb ? 'RGB' : 'MONOCHROME2',
   } = imageInfo;
 
   const numberOfComponents = rgb ? 3 : 1;
@@ -88,7 +91,7 @@ const fakeImageLoader = (imageId) => {
     intercept: 0,
     slope: 1,
     voxelManager: imageVoxelManager,
-    invert: false,
+    invert: photometricInterpretation === 'MONOCHROME1',
     windowCenter: 40,
     windowWidth: 400,
     maxPixelValue: 255,
@@ -99,7 +102,7 @@ const fakeImageLoader = (imageId) => {
     sizeInBytes: pixelData.byteLength,
     FrameOfReferenceUID: 'Stack_Frame_Of_Reference',
     imageFrame: {
-      photometricInterpretation: rgb ? 'RGB' : 'MONOCHROME2',
+      photometricInterpretation,
     },
   };
 
@@ -176,10 +179,10 @@ function fakeMetaDataProvider(type, imageId) {
     id,
     ipp = [0, 0, sliceIndex],
     dataType,
+    photometricInterpretation = rgb ? 'RGB' : 'MONOCHROME2',
   } = imageInfo;
 
   const modality = PT ? 'PT' : 'MR';
-  const photometricInterpretation = rgb ? 'RGB' : 'MONOCHROME2';
   const bitsAllocated = rgb ? 24 : getBitsAllocated(dataType);
 
   if (type === 'imagePixelModule') {

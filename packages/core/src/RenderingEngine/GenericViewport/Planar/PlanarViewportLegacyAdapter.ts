@@ -26,6 +26,7 @@ import InterpolationType from '../../../enums/InterpolationType';
 import MetadataModules from '../../../enums/MetadataModules';
 import { getShouldUseCPURendering } from '../../../init';
 import * as metaData from '../../../metaData';
+import { getValidVOILUTFunction } from '../../../utilities/buildMetadata';
 import clonePoint3 from '../../../utilities/clonePoint3';
 import getClosestImageId from '../../../utilities/getClosestImageId';
 import getTargetVolumeAndSpacingInNormalDir from '../../../utilities/getTargetVolumeAndSpacingInNormalDir';
@@ -882,9 +883,11 @@ class PlanarViewportLegacyAdapter extends PlanarViewport {
 
   /**
    * The properties of the data that the viewport shows. In stack mode the
-   * interpolation type and the invert flag are always given, LINEAR and false
-   * when nothing set them, as the legacy stack viewport gives them also after
-   * `resetProperties`. Those are the values that the image paths draw with.
+   * interpolation type, the invert flag and the VOI LUT function are always
+   * given, as the legacy stack viewport gives them also after
+   * `resetProperties`: LINEAR, the default invert flag of the image (true for
+   * a MONOCHROME1 image) and the VOI LUT function of the image when nothing
+   * set them. Those are the values that the image paths draw with.
    */
   getProperties(volumeId?: string): PlanarLegacyViewportProperties {
     const properties = this.legacyCompatibility.getProperties(volumeId);
@@ -898,6 +901,9 @@ class PlanarViewportLegacyAdapter extends PlanarViewport {
       interpolationType:
         properties.interpolationType ?? InterpolationType.LINEAR,
       invert: properties.invert ?? false,
+      VOILUTFunction:
+        properties.VOILUTFunction ??
+        getValidVOILUTFunction(this.getCornerstoneImage()?.voiLUTFunction),
     };
   }
 

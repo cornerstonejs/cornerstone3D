@@ -124,6 +124,7 @@ function createLegacyStackHarness({ deferSetData = false } = {}) {
     getBindingActor: jest.fn(),
     getBindingRenderMode: jest.fn(),
     getDefaultVOIRange: jest.fn(),
+    getDefaultInvert: jest.fn(),
     getImageCount: () => currentImageIds.length,
     getMaxImageIdIndex: () => Math.max(0, currentImageIds.length - 1),
   };

@@ -16,6 +16,7 @@ import type { Point2 } from '../../../types';
 import {
   applyPlanarImagePresentation,
   createVTKImageDataFromImage,
+  getDefaultImageInvert,
   getDefaultImageVOIRange,
   updateVTKImageDataGeometryFromImage,
 } from '../../helpers/planarImageRendering';
@@ -107,6 +108,7 @@ export class VtkImageMapperRenderPath
       useWorldCoordinateImageData: payload.useWorldCoordinateImageData,
       currentImageIdIndex: payload.initialImageIdIndex ?? 0,
       defaultVOIRange: getDefaultImageVOIRange(payload.image),
+      defaultInvert: getDefaultImageInvert(payload.image),
       dataPresentation: undefined,
       loadRequestId: 0,
       refreshFidelity: () => {
@@ -182,6 +184,7 @@ export class VtkImageMapperRenderPath
       actor: rendering.actor,
       defaultVOIRange: rendering.defaultVOIRange,
       defaultVOILUTFunction: rendering.currentImage?.voiLUTFunction,
+      defaultInvert: rendering.defaultInvert,
       props: {
         interpolationType: InterpolationType.LINEAR,
         ...dataPresentation,
@@ -440,6 +443,7 @@ async function updateRenderedImage(args: {
   rendering.newImageData = newImageData;
   rendering.currentImageIdIndex = imageIdIndex;
   rendering.defaultVOIRange = getDefaultImageVOIRange(image);
+  rendering.defaultInvert = getDefaultImageInvert(image);
   ctx.viewport.invalidateResolvedView();
 
   if (imageData.getPointData().getScalars().getNumberOfComponents() > 1) {
@@ -450,6 +454,7 @@ async function updateRenderedImage(args: {
     actor,
     defaultVOIRange: rendering.defaultVOIRange,
     defaultVOILUTFunction: image.voiLUTFunction,
+    defaultInvert: rendering.defaultInvert,
     props: {
       interpolationType:
         dataPresentation?.interpolationType ?? InterpolationType.LINEAR,
