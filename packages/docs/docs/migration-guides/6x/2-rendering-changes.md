@@ -219,6 +219,37 @@ layer of a fusion: the opacity is applied as given.
   than the first picture.
 - **`setViewReference()` moves the camera.** It did nothing, so a camera
   synchronizer between two 3D viewports did nothing.
+- **A preset is a key of the presentation, and it stays.**
+  `setDisplaySetPresentation(displaySetId, { preset: 'CT-Bone' })` applies a
+  preset and fires `PRESET_MODIFIED`. A later change of the window, of
+  `invert` or of the opacity rescales the colours that are there. In 5.x each
+  presentation update rebuilt a grey ramp, so a preset was lost at the next
+  change of the window.
+- **The colour keys of the legacy `setProperties` are presentation keys:**
+  `VOILUTFunction`, `colormap` (with `name`, `opacityMapping` and
+  `threshold`), `blendMode`, `sharpening` and `smoothing`.
+- **`resetDisplaySetPresentation(displaySetId)`** goes back to what the volume
+  showed after its mount. It does not move the camera: `resetViewState()`
+  does.
+- **Events.** `VOI_MODIFIED`, `COLORMAP_MODIFIED` and `PRESET_MODIFIED` fire
+  from a 3D viewport, `VOI_MODIFIED` also when a volume is mounted, and
+  `VOLUME_VIEWPORT_NEW_VOLUME` fires on a mount. None of them fired in 5.x.
+- **Actors of the application.** `addActor`, `addActors`, `setActors`,
+  `removeActors` and `getActor` are on the viewport, the actors are part of
+  the fit of a reset, and `ACTORS_CHANGED` fires. The Surface representation
+  and the sphere handles of the cropping tool need them and threw in 5.x.
+- **Widgets.** `addWidget`, `getWidget` and `getWidgets` are on every next
+  viewport, and the orientation marker shows on a 3D viewport.
+- **A labelmap shows in 3D.** In 5.x a Labelmap representation drew nothing
+  on a next 3D viewport.
+- **Zoom and pan.** `getZoom`, `setZoom`, `getPan` and `setPan` are on the
+  viewport. Zoom 1 and pan `[0, 0]` are the fit of a reset.
+- **`suppressEvents`** in the options of a 3D viewport silences its camera
+  and presentation events, as on the legacy viewport.
+- **Small ones.** `hasImageURI` and `getIntensityFromWorld` are on the
+  viewport. `getVolumeId`, `getImageIds` and `getImageData` answer for the
+  volume that is asked for. `isOrientationChangeable()` is on every next
+  viewport and is true on a 3D viewport.
 
 ## Video viewports
 

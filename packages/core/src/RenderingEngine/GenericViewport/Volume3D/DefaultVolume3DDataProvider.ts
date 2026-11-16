@@ -49,6 +49,7 @@ export class DefaultVolume3DDataProvider implements Volume3DDataProvider {
         imageVolume,
         renderMode: 'vtkVolume3d',
         volumeId,
+        ...(dataSet.reference ? { reference: dataSet.reference } : {}),
       };
     }
 

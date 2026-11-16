@@ -4,17 +4,23 @@ import type vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
 import type { GeometryOptions } from '../../../loaders/geometryLoader';
 import type {
   ActorEntry,
+  ColormapPublic,
   ICamera,
   IGeometry,
   IImageVolume,
   RGB,
   VOIRange,
   Point3,
+  ViewportPreset,
 } from '../../../types';
 import type { VolumeStrategyState } from '../../helpers/volumeStrategyLifecycle';
 import type { ViewportInput } from '../../../types/IViewport';
 import type ViewportInputOptions from '../../../types/ViewportInputOptions';
-import type { InterpolationType } from '../../../enums';
+import type {
+  BlendModes,
+  InterpolationType,
+  VOILUTFunctionType,
+} from '../../../enums';
 import type {
   BaseViewportRenderContext,
   BasePresentationProps,
@@ -23,6 +29,7 @@ import type {
   LoadedData,
   MountedRendering,
   RenderPathResolver,
+  ViewportDataReference,
 } from '../ViewportArchitectureTypes';
 import type { ViewportCameraBase } from '../ViewportCameraTypes';
 
@@ -36,6 +43,11 @@ export interface Volume3DRegisteredDataSet {
   geometryLoadOptions?: GeometryOptions;
   imageIds?: string[];
   volumeId?: string;
+  /**
+   * What the display set shows, such as the labelmap of a segmentation
+   * representation. Its actor entry then carries the representation UID.
+   */
+  reference?: ViewportDataReference;
 }
 
 export interface Volume3DSetDataOptions {
@@ -49,6 +61,7 @@ export interface Volume3DVolumePayload {
   imageVolume: IImageVolume;
   renderMode: 'vtkVolume3d';
   volumeId: string;
+  reference?: ViewportDataReference;
 }
 
 /** @internal */
@@ -65,6 +78,34 @@ export interface Volume3DPresentationProps extends BasePresentationProps {
   color?: RGB;
   invert?: boolean;
   voiRange?: VOIRange;
+  /**
+   * A volume rendering preset, by name (one of `CONSTANTS.VIEWPORT_PRESETS`)
+   * or as a preset object, as the legacy `setProperties({ preset })`. A later
+   * VOI range, invert or opacity keeps its colours.
+   */
+  preset?: string | ViewportPreset;
+  /** The VOI LUT function, LINEAR or SAMPLED_SIGMOID, as on legacy. */
+  VOILUTFunction?: VOILUTFunctionType;
+  /**
+   * A colormap by name, with an opacity, an opacity mapping or a threshold,
+   * as the legacy `setProperties({ colormap })`. Each field that is given is
+   * applied, the others stay.
+   */
+  colormap?: ColormapPublic;
+  /** The blend mode of the ray cast, as the `blendMode` of a legacy volume input. */
+  blendMode?: BlendModes;
+  /**
+   * The sharpening of the picture, as the legacy `setProperties({
+   * sharpening })`: a render pass of the viewport. 0 is none. Read from the
+   * current display set.
+   */
+  sharpening?: number;
+  /**
+   * The smoothing of the picture, as the legacy `setProperties({ smoothing
+   * })`: a render pass of the viewport. 0 is none. Read from the current
+   * display set.
+   */
+  smoothing?: number;
 }
 
 export interface Volume3DProperties {
@@ -128,6 +169,12 @@ export type Volume3DVolumeRendering = MountedRendering<{
   imageVolume: IImageVolume;
   mapper: vtkVolumeMapper;
   removeStreamingSubscriptions?: () => void;
+  /**
+   * The presentation that the actor shows now. A later presentation changes
+   * only what differs from it. Undefined before the first one, and after a
+   * reset, when the next presentation builds the transfer functions anew.
+   */
+  appliedPresentation?: Volume3DDataPresentation;
 }> &
   VolumeStrategyState;
 

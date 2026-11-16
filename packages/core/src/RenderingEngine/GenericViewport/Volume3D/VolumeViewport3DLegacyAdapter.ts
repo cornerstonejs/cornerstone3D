@@ -1,13 +1,8 @@
-import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
-import { vec2, vec3 } from 'gl-matrix';
+import { vec3 } from 'gl-matrix';
 import cache from '../../../cache/cache';
-import {
-  MPR_CAMERA_VALUES,
-  RENDERING_DEFAULTS,
-  VIEWPORT_PRESETS,
-} from '../../../constants';
-import { Events, OrientationAxis } from '../../../enums';
+import { MPR_CAMERA_VALUES, RENDERING_DEFAULTS } from '../../../constants';
+import { OrientationAxis } from '../../../enums';
 import type BlendModes from '../../../enums/BlendModes';
 import type {
   ActorEntry,
@@ -16,25 +11,20 @@ import type {
   ImageActor,
   IVolumeInput,
   OrientationVectors,
-  Point2,
   Point3,
   ResetCameraOptions,
   ViewReference,
   VolumeViewportProperties,
-  ViewportPreset,
 } from '../../../types';
 import type { PlaneRestriction } from '../../../types/IViewport';
 import type ViewportInputOptions from '../../../types/ViewportInputOptions';
-import { actorIsA, isImageActor } from '../../../utilities/actorCheck';
-import applyPreset from '../../../utilities/applyPreset';
+import { isImageActor } from '../../../utilities/actorCheck';
 import { deepClone } from '../../../utilities/deepClone';
 import getAcquisitionPlaneOrientation from '../../../utilities/getAcquisitionPlaneOrientation';
 import getVolumeViewportScrollInfo from '../../../utilities/getVolumeViewportScrollInfo';
 import isEqual, { isEqualNegative } from '../../../utilities/isEqual';
 import { coreLog } from '../../../utilities/logger';
 import snapFocalPointToSlice from '../../../utilities/snapFocalPointToSlice';
-import transformWorldToIndex from '../../../utilities/transformWorldToIndex';
-import triggerEvent from '../../../utilities/triggerEvent';
 import genericViewportDisplaySetMetadataProvider from '../../../utilities/genericViewportDisplaySetMetadataProvider';
 import { viewportProjection } from '../viewportProjection';
 import VolumeViewport3D from './viewport3D';
@@ -43,7 +33,6 @@ import { getOrientationVectors } from './vtkVolume3DInitialCamera';
 import type {
   Volume3DCamera,
   Volume3DDataPresentation,
-  Volume3DGeometryRendering,
   Volume3DRegisteredDataSet,
   Volume3DVolumeRendering,
   VolumeViewport3DInput,
@@ -75,6 +64,8 @@ class VolumeViewport3DLegacyAdapter extends VolumeViewport3D {
    */
   private readonly remountingDataIds = new Set<string>();
   private readonly volumeDataIds = new Map<string, string>();
+  /** The volume input of each display set while `setVolumes` mounts it. */
+  private readonly mountingVolumeInputs = new Map<string, IVolumeInput>();
   private readonly legacyProperties = new Map<
     string,
     VolumeViewportProperties
@@ -83,13 +74,6 @@ class VolumeViewport3DLegacyAdapter extends VolumeViewport3D {
     string,
     VolumeViewportProperties
   >();
-  /** The vtk.js actors that the application added with `addActor`, by UID. */
-  private readonly addedActors = new Map<string, ActorEntry>();
-  /**
-   * The camera of the last reset that stored it. `getZoom` and `getPan`
-   * compare the camera with it, as on the legacy viewport.
-   */
-  private initialCamera?: ICamera;
   /** The properties of `setDefaultProperties` without a volume id. */
   private globalDefaultProperties: VolumeViewportProperties = {};
   /** The properties of `setDefaultProperties` for one volume. */
@@ -196,30 +180,18 @@ class VolumeViewport3DLegacyAdapter extends VolumeViewport3D {
   }
 
   /**
-   * Fits the camera as the next 3D viewport fits it in `resetViewState`,
-   * which is the fit of the legacy 3D viewport. The camera is kept as the
-   * initial camera of `getZoom` and `getPan` unless `storeAsInitialCamera` is
-   * false. Fires CAMERA_MODIFIED and CAMERA_RESET unless `suppressEvents` is
-   * set.
+   * Fits the camera as the next 3D viewport does in `resetViewState`, which
+   * is the fit of the legacy 3D viewport. With `suppressEvents`, which the
+   * orientation change of `setOrientation` passes, no event fires.
    */
   resetViewState(options: Volume3DLegacyResetOptions = {}): boolean {
-    const { storeAsInitialCamera = true, suppressEvents = false } = options;
-    const previousCamera = this.getCameraForEvent();
+    let reset = true;
 
-    this.fitViewState(options);
+    this.withEventsSuppressed(Boolean(options.suppressEvents), () => {
+      reset = super.resetViewState(options);
+    });
 
-    if (storeAsInitialCamera) {
-      this.initialCamera = this.getCamera();
-    }
-
-    this.render();
-
-    if (!suppressEvents) {
-      this.triggerCameraModifiedEvent(previousCamera);
-      this.triggerCameraResetEvent();
-    }
-
-    return true;
+    return reset;
   }
 
   async setVolumes(
@@ -275,35 +247,11 @@ class VolumeViewport3DLegacyAdapter extends VolumeViewport3D {
 
     this.legacyProperties.set(targetDataId, nextProperties);
 
-    const presentationPatch: Partial<Volume3DDataPresentation> = {};
-
-    if (properties.voiRange !== undefined) {
-      presentationPatch.voiRange = properties.voiRange;
-    }
-
-    if (properties.invert !== undefined) {
-      presentationPatch.invert = properties.invert;
-    }
-
-    if (properties.interpolationType !== undefined) {
-      presentationPatch.interpolationType = properties.interpolationType;
-    }
-
-    if (properties.sampleDistanceMultiplier !== undefined) {
-      presentationPatch.sampleDistanceMultiplier =
-        properties.sampleDistanceMultiplier;
-    }
+    const presentationPatch = getPresentationPatch(properties);
 
     if (Object.keys(presentationPatch).length) {
-      this.setDisplaySetPresentation(targetDataId, presentationPatch);
-    }
-
-    if (properties.preset !== undefined) {
-      this.applyPresetToBinding(
-        targetDataId,
-        properties.preset,
-        volumeId,
-        suppressEvents
+      this.withEventsSuppressed(suppressEvents, () =>
+        this.setDisplaySetPresentation(targetDataId, presentationPatch)
       );
     }
 
@@ -320,6 +268,11 @@ class VolumeViewport3DLegacyAdapter extends VolumeViewport3D {
     return { ...(this.legacyProperties.get(targetDataId) || {}) };
   }
 
+  /**
+   * Sets the properties back as the legacy 3D viewport does: the default VOI
+   * range of the volume, then the first properties that were set when they
+   * hold a preset or a colormap, and fires VOI_MODIFIED. The camera stays.
+   */
   resetProperties(volumeId?: string): void {
     const targetDataId = this.resolveTargetDataId(volumeId);
 
@@ -328,19 +281,19 @@ class VolumeViewport3DLegacyAdapter extends VolumeViewport3D {
     }
 
     const defaults = this.defaultLegacyProperties.get(targetDataId) || {};
+
     this.legacyProperties.set(targetDataId, { ...defaults });
+    this.withEventsSuppressed(true, () => {
+      this.resetDisplaySetPresentation(targetDataId);
 
-    this.setDisplaySetPresentation(targetDataId, {
-      voiRange: defaults.voiRange,
-      invert: defaults.invert,
-      interpolationType: defaults.interpolationType,
-      sampleDistanceMultiplier: defaults.sampleDistanceMultiplier,
+      if (defaults.preset !== undefined || defaults.colormap) {
+        this.setDisplaySetPresentation(
+          targetDataId,
+          getPresentationPatch(defaults)
+        );
+      }
     });
-
-    if (defaults.preset !== undefined) {
-      this.applyPresetToBinding(targetDataId, defaults.preset, volumeId, false);
-    }
-
+    this.triggerVOIModified(targetDataId);
     this.render();
   }
 
@@ -409,23 +362,6 @@ class VolumeViewport3DLegacyAdapter extends VolumeViewport3D {
   }
 
   /**
-   * The actors of the volumes, then the vtk.js actors that the application
-   * added with `addActor`, as the legacy viewport lists its actors.
-   */
-  getActors(): ActorEntry[] {
-    return [...super.getActors(), ...this.addedActors.values()];
-  }
-
-  getDefaultActor(): ActorEntry | undefined {
-    return super.getDefaultActor();
-  }
-
-  /** The actor entry with this UID, as on the legacy viewport. */
-  getActor(actorUID: string): ActorEntry | undefined {
-    return this.getActors().find((actorEntry) => actorEntry.uid === actorUID);
-  }
-
-  /**
    * The vtk.js actor of a volume: of the first actor, or of the actor of the
    * given volume. Null when that actor is not an image actor, as on the
    * legacy viewport.
@@ -441,87 +377,6 @@ class VolumeViewport3DLegacyAdapter extends VolumeViewport3D {
     }
 
     return actorEntry.actor as ImageActor;
-  }
-
-  /**
-   * Puts a vtk.js actor of the application into the renderer, as the legacy
-   * viewport does: a surface, a sphere of the cropping tool or a line. It
-   * draws with the volumes and `getActors` lists it. An actor with the UID of
-   * an actor that the viewport has is not added, as on the legacy viewport.
-   */
-  addActor(actorEntry: ActorEntry): void {
-    const { uid, actor } = actorEntry;
-
-    if (!uid || !actor) {
-      throw new Error('Actors should have uid and vtk Actor properties');
-    }
-
-    if (this.getActor(uid)) {
-      log.warn(`Actor ${uid} already exists for this viewport`);
-
-      return;
-    }
-
-    this.getRenderer().addActor(actor as vtkActor);
-    this.addedActors.set(uid, { ...actorEntry });
-    this.getRenderer().resetCameraClippingRange();
-    this.triggerActorsChanged([], [actorEntry]);
-  }
-
-  /**
-   * Adds actors with `addActor`. With `resetCamera` the camera then fits what
-   * the viewport shows. Without it the view stays. The legacy viewport fits
-   * and then restores the view, which leaves the same view when the first
-   * actor is a volume.
-   */
-  addActors(
-    actors: ActorEntry[],
-    options: { resetCamera?: boolean } = {}
-  ): void {
-    actors.forEach((actorEntry) => this.addActor(actorEntry));
-
-    if (options.resetCamera) {
-      this.resetCamera();
-    }
-  }
-
-  /**
-   * Replaces what the viewport shows, volumes too, with these actors, and
-   * fits the camera to them, as `setActors` of the legacy viewport.
-   */
-  setActors(actors: ActorEntry[]): void {
-    const removedActors = this.getActors();
-
-    this.removeAllData();
-    this.removeAddedActors(Array.from(this.addedActors.keys()));
-    this.addActors(actors, { resetCamera: true });
-    this.triggerActorsChanged(removedActors, actors);
-  }
-
-  /**
-   * Removes actors by UID: an actor that the application added, or the actor
-   * of a volume, whose volume then leaves the viewport.
-   */
-  removeActors(actorUIDs: string[]): void {
-    const removedActors = this.getActors().filter((actorEntry) =>
-      actorUIDs.includes(actorEntry.uid)
-    );
-
-    removedActors.forEach(({ uid }) => {
-      if (this.addedActors.has(uid)) {
-        this.removeAddedActors([uid]);
-
-        return;
-      }
-
-      const dataId = this.findDataIdByActorUID(uid);
-
-      if (dataId) {
-        this.removeData(dataId);
-      }
-    });
-
-    this.triggerActorsChanged(removedActors, []);
   }
 
   /**
@@ -553,50 +408,6 @@ class VolumeViewport3DLegacyAdapter extends VolumeViewport3D {
    */
   getBounds(): number[] {
     return this.getRenderer().computeVisiblePropBounds();
-  }
-
-  /**
-   * The value of the volume at a world point: the voxel nearest the point in
-   * the volume of the first actor. Undefined when that actor is not a volume,
-   * as on the legacy viewport.
-   */
-  getIntensityFromWorld(point: Point3): number {
-    const actorEntry = this.getDefaultActor();
-
-    if (!actorEntry || !actorIsA(actorEntry, 'vtkVolume')) {
-      return;
-    }
-
-    const volume = this.getShownVolume();
-
-    if (!volume?.imageData) {
-      return;
-    }
-
-    const index = transformWorldToIndex(volume.imageData, point);
-
-    return volume.voxelManager.getAtIJKPoint(index) as number;
-  }
-
-  /**
-   * Whether a volume that the viewport shows holds this image, as on the
-   * legacy viewport.
-   */
-  hasImageURI(imageURI: string): boolean {
-    return this.getActors()
-      .filter((actorEntry) => actorIsA(actorEntry, 'vtkVolume'))
-      .some(({ uid, referencedId }) => {
-        const volume = cache.getVolume(referencedId || uid);
-
-        if (!volume?.getImageIdIndex) {
-          return false;
-        }
-
-        return (
-          volume.getImageIdIndex(imageURI) !== undefined ||
-          volume.getImageURIIndex(imageURI) !== undefined
-        );
-      });
   }
 
   /**
@@ -812,107 +623,6 @@ class VolumeViewport3DLegacyAdapter extends VolumeViewport3D {
   }
 
   /**
-   * The zoom against the initial camera, as on the legacy viewport: 1 after
-   * a reset, 2 at half the parallel scale. 1 without an initial camera.
-   */
-  getZoom(compareCamera: ICamera = this.initialCamera): number {
-    if (!compareCamera) {
-      return 1;
-    }
-
-    return compareCamera.parallelScale / this.getCamera().parallelScale;
-  }
-
-  /**
-   * Sets the zoom against the initial camera, as on the legacy viewport.
-   * With `storeAsInitialCamera` the camera then becomes the initial camera.
-   * Does nothing without an initial camera.
-   */
-  setZoom(
-    value: number,
-    storeAsInitialCamera = false,
-    compareCamera: ICamera = this.initialCamera
-  ): void {
-    const initialParallelScale = compareCamera?.parallelScale;
-
-    if (!initialParallelScale) {
-      return;
-    }
-
-    const parallelScale = initialParallelScale / value;
-
-    if (
-      this.getCamera().parallelScale !== parallelScale ||
-      storeAsInitialCamera
-    ) {
-      this.setCamera({ parallelScale });
-    }
-
-    if (storeAsInitialCamera) {
-      this.initialCamera = this.getCamera();
-    }
-  }
-
-  /**
-   * The pan in canvas pixels against the initial camera, computed as the
-   * legacy viewport computes it. [0, 0] without an initial camera.
-   */
-  getPan(initialCamera: ICamera = this.initialCamera): Point2 {
-    if (!initialCamera) {
-      return [0, 0];
-    }
-
-    const zero3 = this.canvasToWorld([0, 0]);
-    const initialCanvasFocal = this.worldToCanvas(
-      vec3.subtract(vec3.create(), initialCamera.focalPoint, zero3) as Point3
-    );
-    const currentCanvasFocal = this.worldToCanvas(
-      vec3.subtract(vec3.create(), this.getCamera().focalPoint, zero3) as Point3
-    );
-
-    return vec2.subtract(
-      vec2.create(),
-      initialCanvasFocal,
-      currentCanvasFocal
-    ) as Point2;
-  }
-
-  /**
-   * Pans to a canvas offset from the initial camera, as on the legacy
-   * viewport. A change under a pixel is ignored unless
-   * `storeAsInitialCamera` is set, which then makes the camera the initial
-   * camera.
-   */
-  setPan(pan: Point2, storeAsInitialCamera = false): void {
-    const { focalPoint, position } = this.getCamera();
-    const zero3 = this.canvasToWorld([0, 0]);
-    const delta2 = vec2.subtract(vec2.create(), pan, this.getPan());
-
-    if (
-      Math.abs(delta2[0]) < 1 &&
-      Math.abs(delta2[1]) < 1 &&
-      !storeAsInitialCamera
-    ) {
-      return;
-    }
-
-    const delta = vec3.subtract(
-      vec3.create(),
-      this.canvasToWorld([delta2[0], delta2[1]]),
-      zero3
-    );
-
-    this.setCamera({
-      focalPoint: vec3.subtract(vec3.create(), focalPoint, delta) as Point3,
-      position: vec3.subtract(vec3.create(), position, delta) as Point3,
-    });
-
-    if (storeAsInitialCamera) {
-      this.initialCamera = this.getCamera();
-    }
-  }
-
-  /**
    * Sets the options of the viewport and renders when `immediate` is set. A
    * display area or an aspect ratio in the options is not applied: the
    * adapter has no `setDisplayArea` or `setAspectRatio`, and it logs a
@@ -942,11 +652,6 @@ class VolumeViewport3DLegacyAdapter extends VolumeViewport3D {
     if (immediate) {
       this.render();
     }
-  }
-
-  /** Always true: a 3D viewport turns to any orientation. */
-  isOrientationChangeable(): boolean {
-    return true;
   }
 
   /** Always false: a 3D viewport draws with vtk.js on the GPU. */
@@ -1086,6 +791,7 @@ class VolumeViewport3DLegacyAdapter extends VolumeViewport3D {
         this.managedDataIds.add(dataId);
         this.remountingDataIds.add(dataId);
         this.volumeDataIds.set(volumeInput.volumeId, dataId);
+        this.mountingVolumeInputs.set(dataId, volumeInput);
         dataIds.push(dataId);
       }
 
@@ -1093,23 +799,25 @@ class VolumeViewport3DLegacyAdapter extends VolumeViewport3D {
         this.removeBindingsExcept(new Set(dataIds));
       }
 
-      if (addsToShown) {
-        for (const dataId of dataIds) {
-          if (!boundDataIds.has(dataId)) {
-            await this.addDisplaySet(dataId, {
-              renderMode: 'vtkVolume3d',
-              role: 'overlay',
-            });
+      await this.withEventsSuppressedAsync(suppressEvents, async () => {
+        if (addsToShown) {
+          for (const dataId of dataIds) {
+            if (!boundDataIds.has(dataId)) {
+              await this.addDisplaySet(dataId, {
+                renderMode: 'vtkVolume3d',
+                role: 'overlay',
+              });
+            }
           }
+        } else {
+          await this.setDisplaySets(
+            ...dataIds.map((dataId) => ({
+              displaySetId: dataId,
+              options: { renderMode: 'vtkVolume3d' as const },
+            }))
+          );
         }
-      } else {
-        await this.setDisplaySets(
-          ...dataIds.map((dataId) => ({
-            displaySetId: dataId,
-            options: { renderMode: 'vtkVolume3d' as const },
-          }))
-        );
-      }
+      });
 
       // The mount is done. A callback or a listener of the event below that
       // removes one of these data sets must really remove it.
@@ -1148,13 +856,6 @@ class VolumeViewport3DLegacyAdapter extends VolumeViewport3D {
         // runs after the mount, because before it there is no actor to fit.
         this.resetCamera();
       }
-
-      if (!suppressEvents) {
-        triggerEvent(this.element, Events.VOLUME_VIEWPORT_NEW_VOLUME, {
-          viewportId: this.id,
-          volumeActors: this.buildActorEntries(volumeInputArray, dataIds),
-        });
-      }
     } catch (error) {
       // The mount failed, so these data sets really do go away.
       dataIds
@@ -1166,78 +867,76 @@ class VolumeViewport3DLegacyAdapter extends VolumeViewport3D {
 
       throw error;
     } finally {
-      dataIds.forEach((dataId) => this.remountingDataIds.delete(dataId));
+      dataIds.forEach((dataId) => {
+        this.remountingDataIds.delete(dataId);
+        this.mountingVolumeInputs.delete(dataId);
+      });
     }
   }
 
   /**
    * The actor entries of mounted volumes for the VOLUME_VIEWPORT_NEW_VOLUME
-   * event, with the UID that `getActors` gives them: the `actorUID` of the
-   * volume input, else the UID of the rendering, as the legacy viewport.
+   * event of the class, with the fields of their volume inputs and the UID
+   * that `getActors` gives them, as the legacy viewport: the `actorUID` of
+   * the volume input, else the UID of the rendering.
    */
-  private buildActorEntries(
-    volumeInputArray: IVolumeInput[],
-    dataIds: string[]
+  protected override getNewVolumeActorEntries(
+    displaySetIds: string[]
   ): ActorEntry[] {
-    return volumeInputArray.flatMap((volumeInput, index) => {
-      const rendering = this.getBinding(dataIds[index])?.rendering as
-        | Partial<Volume3DVolumeRendering>
-        | undefined;
-      const actor = rendering?.actor;
+    return super
+      .getNewVolumeActorEntries(displaySetIds)
+      .map((actorEntry, index) => {
+        const volumeInput = this.mountingVolumeInputs.get(displaySetIds[index]);
 
-      if (!actor) {
-        return [];
-      }
+        if (!volumeInput) {
+          return actorEntry;
+        }
 
-      const {
-        actorUID: _actorUID,
-        slabThickness,
-        volumeId,
-        ...rest
-      } = volumeInput;
-
-      return [
-        {
-          uid: rendering.actorEntryUID,
-          actor: actor as ActorEntry['actor'],
+        const {
+          actorUID,
           slabThickness,
-          referencedId: volumeId,
+          volumeId: _volumeId,
+          ...rest
+        } = volumeInput;
+
+        return {
+          ...actorEntry,
+          uid: actorUID ?? actorEntry.uid,
+          slabThickness,
           ...rest,
-        },
-      ];
-    });
+        };
+      });
   }
 
-  private applyPresetToBinding(
-    dataId: string,
-    presetNameOrObj: string | ViewportPreset,
-    requestedVolumeId: string | undefined,
-    suppressEvents: boolean
-  ): void {
-    const preset =
-      typeof presetNameOrObj === 'string'
-        ? VIEWPORT_PRESETS.find((entry) => entry.name === presetNameOrObj)
-        : presetNameOrObj;
+  /** As `withEventsSuppressed`, for a change that waits. */
+  private async withEventsSuppressedAsync(
+    suppress: boolean,
+    change: () => Promise<void>
+  ): Promise<void> {
+    const suppressEvents = this.suppressEvents;
 
-    if (!preset) {
-      return;
+    this.suppressEvents = suppressEvents || suppress;
+
+    try {
+      await change();
+    } finally {
+      this.suppressEvents = suppressEvents;
     }
+  }
 
-    const actor = this.getBindingActor(dataId) as vtkVolume | undefined;
+  /**
+   * Runs a change with the events of the viewport suppressed when `suppress`
+   * is set, as the `suppressEvents` argument of the legacy calls asks.
+   */
+  private withEventsSuppressed(suppress: boolean, change: () => void): void {
+    const suppressEvents = this.suppressEvents;
 
-    if (!actor) {
-      return;
-    }
+    this.suppressEvents = suppressEvents || suppress;
 
-    applyPreset(actor as never, preset);
-
-    if (!suppressEvents) {
-      triggerEvent(this.element, Events.PRESET_MODIFIED, {
-        viewportId: this.id,
-        volumeId: requestedVolumeId ?? this.resolveVolumeIdForDataId(dataId),
-        actor,
-        presetName: preset.name,
-      });
+    try {
+      change();
+    } finally {
+      this.suppressEvents = suppressEvents;
     }
   }
 
@@ -1267,28 +966,6 @@ class VolumeViewport3DLegacyAdapter extends VolumeViewport3D {
       .filter((rendering) => rendering?.renderMode === 'vtkVolume3d');
   }
 
-  /**
-   * The data set whose rendering has the actor with this UID: a volume, or a
-   * geometry with several actors.
-   */
-  private findDataIdByActorUID(actorUID: string): string | undefined {
-    for (const [dataId, binding] of this.bindings.entries()) {
-      const volumeRendering =
-        binding.rendering as Partial<Volume3DVolumeRendering>;
-      const geometryRendering =
-        binding.rendering as Partial<Volume3DGeometryRendering>;
-
-      if (
-        volumeRendering?.actorEntryUID === actorUID ||
-        geometryRendering?.actors?.some(
-          (actorEntry) => actorEntry.uid === actorUID
-        )
-      ) {
-        return dataId;
-      }
-    }
-  }
-
   /** The actor UID of the volume with this id, when the viewport shows it. */
   private findActorUIDByVolumeId(volumeId: string): string | undefined {
     return this.getVolumeRenderings().find(
@@ -1314,14 +991,6 @@ class VolumeViewport3DLegacyAdapter extends VolumeViewport3D {
     }
 
     return this.bindings.keys().next().value;
-  }
-
-  private resolveVolumeIdForDataId(dataId: string): string | undefined {
-    for (const [volumeId, mappedDataId] of this.volumeDataIds.entries()) {
-      if (mappedDataId === dataId) {
-        return volumeId;
-      }
-    }
   }
 
   private removeBindingsExcept(keepDataIds: Set<string>): void {
@@ -1357,35 +1026,11 @@ class VolumeViewport3DLegacyAdapter extends VolumeViewport3D {
     }
   }
 
-  private removeAddedActors(actorUIDs: string[]): void {
-    actorUIDs.forEach((actorUID) => {
-      const actorEntry = this.addedActors.get(actorUID);
-
-      if (actorEntry) {
-        this.getRenderer().removeActor(actorEntry.actor as vtkActor);
-        this.addedActors.delete(actorUID);
-      }
-    });
-  }
-
-  private triggerActorsChanged(
-    removedActors: ActorEntry[],
-    addedActors: ActorEntry[]
-  ): void {
-    triggerEvent(this.element, Events.ACTORS_CHANGED, {
-      viewportId: this.id,
-      removedActors,
-      addedActors,
-      currentActors: this.getActors(),
-    });
-  }
-
   protected override onDestroy(): void {
     for (const dataId of Array.from(this.managedDataIds)) {
       genericViewportDisplaySetMetadataProvider.remove(dataId);
     }
 
-    this.removeAddedActors(Array.from(this.addedActors.keys()));
     this.managedDataIds.clear();
     this.volumeDataIds.clear();
     this.legacyProperties.clear();
@@ -1396,6 +1041,35 @@ class VolumeViewport3DLegacyAdapter extends VolumeViewport3D {
 }
 
 export default VolumeViewport3DLegacyAdapter;
+
+/**
+ * The keys of legacy properties that the presentation of the next 3D
+ * viewport has, with the same names and meanings.
+ */
+function getPresentationPatch(
+  properties: VolumeViewportProperties
+): Partial<Volume3DDataPresentation> {
+  const keys = [
+    'voiRange',
+    'invert',
+    'interpolationType',
+    'sampleDistanceMultiplier',
+    'preset',
+    'colormap',
+    'VOILUTFunction',
+    'sharpening',
+    'smoothing',
+  ] as const;
+  const patch: Partial<Volume3DDataPresentation> = {};
+
+  keys.forEach((key) => {
+    if (properties[key] !== undefined) {
+      Object.assign(patch, { [key]: properties[key] });
+    }
+  });
+
+  return patch;
+}
 
 function isVolume3DViewPresentation(
   viewPresentation: unknown

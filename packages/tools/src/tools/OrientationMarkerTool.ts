@@ -278,13 +278,17 @@ class OrientationMarkerTool extends BaseTool {
     viewports = filterViewportsWithToolEnabled(viewports, this.getToolName());
 
     viewports.forEach((viewport) => {
-      // The orientation marker relies on the legacy VTK offscreen-render pipeline
-      // (getWidget/addWidget/getRenderer/getOffscreenMultiRenderWindow), defined
-      // only on the legacy base Viewport. Native "next" viewports (GenericViewport
-      // family, e.g. PlanarViewport) do not implement getWidget, so skip them
-      // instead of crashing. This is the single choke point - addAxisActorInViewport
-      // is never reached for them, and resize()/cleanUpData() already self-guard.
-      if (typeof viewport.getWidget !== 'function') {
+      // The orientation marker relies on the VTK offscreen-render pipeline
+      // (getWidget/addWidget/getRenderer/getOffscreenMultiRenderWindow). The
+      // legacy viewports and the next 3D viewport have it; a next viewport
+      // without a vtk.js renderer (e.g. PlanarViewport) is skipped instead of
+      // crashing. This is the single choke point - addAxisActorInViewport is
+      // never reached for them, and resize()/cleanUpData() already self-guard.
+      if (
+        typeof viewport.getWidget !== 'function' ||
+        typeof (viewport as { getRenderer?: unknown }).getRenderer !==
+          'function'
+      ) {
         return;
       }
 

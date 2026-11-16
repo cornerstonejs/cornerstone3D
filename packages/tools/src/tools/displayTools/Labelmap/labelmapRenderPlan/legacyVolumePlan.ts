@@ -43,6 +43,10 @@ import type {
   LabelmapRenderPlan,
   LabelmapRenderPlanMountResult,
 } from './types';
+import {
+  addLabelmapToVolume3DNextViewport,
+  isVolume3DNextViewport,
+} from './volume3DNextLabelmap';
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
 
 const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
@@ -235,6 +239,18 @@ async function mountLegacyVolumeLabelmap({
   if (isPlanarNextVolumeViewport(viewport)) {
     return addLabelmapToPlanarGenericViewport({
       blendMode,
+      labelmapLayers,
+      segmentationId,
+      viewport,
+      visibility,
+    });
+  }
+
+  if (isVolume3DNextViewport(viewport)) {
+    return addLabelmapToVolume3DNextViewport({
+      blendMode: useIndependentComponents
+        ? Enums.BlendModes.MAXIMUM_INTENSITY_BLEND
+        : blendMode,
       labelmapLayers,
       segmentationId,
       viewport,

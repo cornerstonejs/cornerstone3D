@@ -1,0 +1,364 @@
+import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
+import type { BlendMode } from '@kitware/vtk.js/Rendering/Core/VolumeMapper/Constants';
+import { VIEWPORT_PRESETS } from '../../../constants';
+import { BlendModes, VOILUTFunctionType } from '../../../enums';
+import type {
+  ColormapPublic,
+  VOIRange,
+  ViewportPreset,
+  VolumeActor,
+} from '../../../types';
+import applyPreset from '../../../utilities/applyPreset';
+import {
+  findMatchingColormap,
+  getOpacityState,
+  resolveColormap,
+  updateOpacity,
+  updateOpacityMapping,
+  updateThreshold,
+} from '../../../utilities/colormap';
+import createLinearRGBTransferFunction from '../../../utilities/createLinearRGBTransferFunction';
+import createSigmoidRGBTransferFunction from '../../../utilities/createSigmoidRGBTransferFunction';
+import getVoiFromSigmoidRGBTransferFunction from '../../../utilities/getVoiFromSigmoidRGBTransferFunction';
+import invertRgbTransferFunction from '../../../utilities/invertRgbTransferFunction';
+import {
+  idleSampleDistanceMultiplierOf,
+  sampleDistanceOf,
+  setIdleSampleDistanceMultiplier,
+} from '../../helpers/createVolumeMapper';
+import { isInvalidNumber } from '../../helpers/isInvalidNumber';
+import type {
+  Volume3DDataPresentation,
+  Volume3DVolumeRendering,
+} from './viewport3DTypes';
+
+/**
+ * The lighting of a volume property that a preset sets. A reset of the
+ * presentation puts back the values that the actor had at its mount.
+ */
+interface Volume3DLook {
+  ambient: number;
+  diffuse: number;
+  shade: boolean;
+  specular: number;
+  specularPower: number;
+  useGradientOpacity: boolean;
+}
+
+const mountedLooks = new WeakMap<VolumeActor, Volume3DLook>();
+
+/**
+ * Applies a presentation to the volume of a 3D rendering, as the legacy
+ * `setProperties` applies it. The first presentation, and the first after a
+ * reset (`appliedPresentation` undefined), builds the transfer functions: a
+ * grey ramp over the VOI range (or the default VOI range), inverted when
+ * asked, a flat opacity, then the colormap and the preset. A later
+ * presentation changes only what differs from the one before, the way the
+ * legacy viewport does: a VOI range rescales the colour function that is
+ * there, invert inverts it, and an opacity scales the opacity function. So
+ * a preset or a colormap keeps its colours. The interpolation type, the
+ * sample distance and the blend mode are applied with or without a VOI range.
+ */
+export function applyVolume3DPresentation(
+  rendering: Volume3DVolumeRendering,
+  props: Volume3DDataPresentation = {}
+): void {
+  const { actor, mapper } = rendering;
+  const property = actor.getProperty();
+  const previous = rendering.appliedPresentation;
+
+  actor.setVisibility(props.visible !== false);
+
+  if (previous) {
+    applyPresentationChanges(rendering, props, previous);
+  } else {
+    buildTransferFunctions(rendering, props);
+  }
+
+  if (props.interpolationType !== undefined) {
+    property.setInterpolationType(
+      props.interpolationType as Parameters<
+        typeof property.setInterpolationType
+      >[0]
+    );
+  }
+
+  if (props.sampleDistanceMultiplier !== undefined) {
+    applySampleDistanceMultiplier(rendering, props.sampleDistanceMultiplier);
+  }
+
+  if (!previous || previous.blendMode !== props.blendMode) {
+    mapper.setBlendMode(
+      (props.blendMode ?? BlendModes.COMPOSITE) as unknown as BlendMode
+    );
+  }
+
+  rendering.appliedPresentation = { ...props };
+}
+
+/**
+ * The preset of a name or of a preset object; undefined for an unknown name.
+ */
+export function resolveVolume3DPreset(
+  preset: string | ViewportPreset | undefined
+): ViewportPreset | undefined {
+  if (typeof preset !== 'string') {
+    return preset;
+  }
+
+  return VIEWPORT_PRESETS.find((entry) => entry.name === preset);
+}
+
+/**
+ * The first presentation: transfer functions built from the presentation
+ * alone, with the lighting of the mount.
+ */
+function buildTransferFunctions(
+  rendering: Volume3DVolumeRendering,
+  props: Volume3DDataPresentation
+): void {
+  const { actor, defaultVOIRange } = rendering;
+  const property = actor.getProperty();
+  const voiRange = props.voiRange ?? defaultVOIRange;
+  const mountedLook = mountedLooks.get(actor);
+
+  if (mountedLook) {
+    property.setAmbient(mountedLook.ambient);
+    property.setDiffuse(mountedLook.diffuse);
+    property.setShade(mountedLook.shade);
+    property.setSpecular(mountedLook.specular);
+    property.setSpecularPower(mountedLook.specularPower);
+    property.setUseGradientOpacity(0, mountedLook.useGradientOpacity);
+  } else {
+    mountedLooks.set(actor, {
+      ambient: property.getAmbient(),
+      diffuse: property.getDiffuse(),
+      shade: property.getShade(),
+      specular: property.getSpecular(),
+      specularPower: property.getSpecularPower(),
+      useGradientOpacity: property.getUseGradientOpacity(0),
+    });
+  }
+
+  if (voiRange) {
+    const transferFunction =
+      props.VOILUTFunction === VOILUTFunctionType.SAMPLED_SIGMOID
+        ? createSigmoidRGBTransferFunction(voiRange)
+        : createLinearRGBTransferFunction(voiRange);
+
+    if (props.invert) {
+      invertRgbTransferFunction(transferFunction);
+    }
+
+    property.setRGBTransferFunction(0, transferFunction);
+  }
+
+  updateOpacityMapping(actor, undefined, props.opacity ?? 1);
+  updateThreshold(actor, null);
+  applyColormap(actor, props.colormap, undefined);
+  applyPresetOf(actor, props.preset);
+}
+
+/** A later presentation: only what differs from the one before. */
+function applyPresentationChanges(
+  rendering: Volume3DVolumeRendering,
+  props: Volume3DDataPresentation,
+  previous: Volume3DDataPresentation
+): void {
+  const { actor } = rendering;
+  const transferFunction = actor.getProperty().getRGBTransferFunction(0);
+
+  if (Boolean(props.invert) !== Boolean(previous.invert)) {
+    invertRgbTransferFunction(transferFunction);
+  }
+
+  applyColormap(actor, props.colormap, previous.colormap);
+
+  if (
+    props.voiRange !== previous.voiRange ||
+    props.VOILUTFunction !== previous.VOILUTFunction
+  ) {
+    applyVOIRange(
+      actor,
+      props.voiRange ?? currentVOIRange(transferFunction, previous),
+      props.VOILUTFunction,
+      props.VOILUTFunction !== previous.VOILUTFunction
+    );
+  }
+
+  if (props.preset !== previous.preset) {
+    applyPresetOf(actor, props.preset);
+  }
+
+  if (props.opacity !== undefined && props.opacity !== previous.opacity) {
+    updateOpacity(actor, props.opacity);
+  }
+}
+
+/**
+ * Sets the VOI range as the legacy `setVOI`: a sigmoid function for
+ * SAMPLED_SIGMOID, else the colour function that is there rescaled to the
+ * range. A change of the function to LINEAR builds a grey ramp.
+ */
+function applyVOIRange(
+  actor: VolumeActor,
+  voiRange: VOIRange | undefined,
+  voiLUTFunction: VOILUTFunctionType | undefined,
+  functionChanged: boolean
+): void {
+  if (!voiRange || [voiRange.lower, voiRange.upper].some(isInvalidNumber)) {
+    return;
+  }
+
+  const property = actor.getProperty();
+
+  if (voiLUTFunction === VOILUTFunctionType.SAMPLED_SIGMOID) {
+    property.setRGBTransferFunction(
+      0,
+      createSigmoidRGBTransferFunction(voiRange)
+    );
+
+    return;
+  }
+
+  if (functionChanged) {
+    property.setRGBTransferFunction(
+      0,
+      createLinearRGBTransferFunction(voiRange)
+    );
+
+    return;
+  }
+
+  property
+    .getRGBTransferFunction(0)
+    .setMappingRange(voiRange.lower, voiRange.upper);
+}
+
+/** The VOI range that the colour function shows now. */
+function currentVOIRange(
+  transferFunction: vtkColorTransferFunction,
+  previous: Volume3DDataPresentation
+): VOIRange {
+  const [lower, upper] =
+    previous.VOILUTFunction === VOILUTFunctionType.SAMPLED_SIGMOID
+      ? getVoiFromSigmoidRGBTransferFunction(transferFunction)
+      : transferFunction.getRange();
+
+  return { lower, upper };
+}
+
+/**
+ * Applies the fields of a colormap that differ from the colormap before, as
+ * the legacy `setColormap`, `setOpacity` and `setThreshold` apply them.
+ */
+function applyColormap(
+  actor: VolumeActor,
+  colormap: ColormapPublic | undefined,
+  previous: ColormapPublic | undefined
+): void {
+  if (!colormap || colormap === previous) {
+    return;
+  }
+
+  if (colormap.name && colormap.name !== previous?.name) {
+    const registration = resolveColormap(colormap.name);
+
+    if (!registration) {
+      throw new Error(`Colormap ${colormap.name} not found`);
+    }
+
+    const property = actor.getProperty();
+    const range = property.getRGBTransferFunction(0).getRange();
+    const transferFunction = vtkColorTransferFunction.newInstance();
+
+    transferFunction.applyColorMap(registration);
+    transferFunction.setMappingRange(range[0], range[1]);
+    property.setRGBTransferFunction(0, transferFunction);
+  }
+
+  const mapping = Array.isArray(colormap.opacityMapping)
+    ? colormap.opacityMapping
+    : Array.isArray(colormap.opacity)
+      ? colormap.opacity
+      : undefined;
+  const overall =
+    typeof colormap.opacity === 'number' ? colormap.opacity : undefined;
+
+  if (mapping !== undefined) {
+    updateOpacityMapping(actor, mapping, overall);
+  } else if (overall !== undefined) {
+    updateOpacity(actor, overall);
+  }
+
+  if (colormap.threshold != null) {
+    updateThreshold(actor, colormap.threshold);
+  }
+}
+
+/**
+ * Applies a preset with `utilities.applyPreset`, as the legacy viewport, and
+ * keeps the opacity of the preset as the opacity mapping of the actor, so
+ * that a later opacity scales it and does not flatten it.
+ */
+function applyPresetOf(
+  actor: VolumeActor,
+  presetNameOrObject: string | ViewportPreset | undefined
+): void {
+  const preset = resolveVolume3DPreset(presetNameOrObject);
+
+  if (!preset) {
+    return;
+  }
+
+  applyPreset(actor, preset);
+
+  const points = actor.getProperty().getScalarOpacity(0).getDataPointer();
+  const mapping = [];
+
+  for (let index = 0; index < points.length; index += 2) {
+    mapping.push({ value: points[index], opacity: points[index + 1] });
+  }
+
+  updateOpacityMapping(actor, mapping);
+}
+
+function applySampleDistanceMultiplier(
+  rendering: Volume3DVolumeRendering,
+  multiplier: number
+): void {
+  const { mapper } = rendering;
+  const imageData = mapper.getInputData?.();
+
+  if (!imageData) {
+    return;
+  }
+
+  setIdleSampleDistanceMultiplier(mapper, multiplier);
+
+  const texture = (
+    mapper as unknown as { getScalarTexture?: () => unknown }
+  ).getScalarTexture?.();
+
+  mapper.setSampleDistance(
+    sampleDistanceOf(imageData, texture, idleSampleDistanceMultiplierOf(mapper))
+  );
+}
+
+/**
+ * The colormap that a volume actor shows, as the legacy `getColormap` reads
+ * it: the registered colormap whose colours the colour function has, with
+ * the opacity, the opacity mapping and the threshold of the actor.
+ */
+export function getVolume3DColormap(actor: VolumeActor): ColormapPublic {
+  const { nodes } = (
+    actor.getProperty().getRGBTransferFunction(0) as unknown as {
+      getState(): { nodes: { x: number; r: number; g: number; b: number }[] };
+    }
+  ).getState();
+  const rgbPoints = nodes.flatMap(({ x, r, g, b }) => [x, r, g, b]);
+  const colormap: ColormapPublic = findMatchingColormap(rgbPoints, actor) || {};
+  const { opacity, opacityMapping, threshold } = getOpacityState(actor);
+
+  return { ...colormap, opacity, opacityMapping, threshold };
+}

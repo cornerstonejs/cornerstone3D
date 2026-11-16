@@ -3,6 +3,7 @@ import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
 import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
 import vtkCellArray from '@kitware/vtk.js/Common/Core/CellArray';
+import { resetViewportCamera } from '../../../utilities/setViewportCamera';
 import {
   getSurfaceActorEntry,
   getSurfaceRepresentationUID,
@@ -113,7 +114,7 @@ function addOrUpdateSurfaceToElement(
     representationUID,
   });
 
-  viewport.resetCamera();
+  resetViewportCamera(viewport);
   viewport.getRenderer().resetCameraClippingRange();
   viewport.render();
 }

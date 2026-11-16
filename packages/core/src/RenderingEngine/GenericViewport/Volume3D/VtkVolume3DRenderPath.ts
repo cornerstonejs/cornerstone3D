@@ -2,16 +2,12 @@ import '@kitware/vtk.js/Rendering/Profiles/Volume';
 import type vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
 import { ViewportType } from '../../../enums';
 import type { IImageData, IImageVolume, Point2, Point3 } from '../../../types';
-import createLinearRGBTransferFunction from '../../../utilities/createLinearRGBTransferFunction';
-import invertRgbTransferFunction from '../../../utilities/invertRgbTransferFunction';
-import { updateOpacity as updateVolumeOpacity } from '../../../utilities/colormap';
 import uuidv4 from '../../../utilities/uuidv4';
 import createVolumeActor from '../../helpers/createVolumeActor';
 import {
   idleSampleDistanceMultiplierOf,
   sampleDistanceOf,
   sampleDistanceRatiosOf,
-  setIdleSampleDistanceMultiplier,
 } from '../../helpers/createVolumeMapper';
 import {
   defaultVolumeStrategyProvider,
@@ -44,6 +40,7 @@ import type {
   Volume3DVtkVolumeAdapterContext,
 } from './viewport3DTypes';
 import applyVolume3DCamera from './applyVolume3DCamera';
+import { applyVolume3DPresentation } from './applyVolume3DPresentation';
 import { getInitialVolume3DCamera } from './vtkVolume3DInitialCamera';
 import { isSegmentationOverlayData } from '../renderingFidelity';
 import setVtkCameraClippingRange from '../setVtkCameraClippingRange';
@@ -164,7 +161,7 @@ export class VtkVolume3DRenderPath
     rendering: Volume3DVolumeRendering,
     props: unknown
   ): void {
-    applyDataPresentation(
+    applyVolume3DPresentation(
       rendering,
       props as Volume3DDataPresentation | undefined
     );
@@ -303,48 +300,6 @@ export class VtkVolume3DPath
   }
 }
 
-function applyDataPresentation(
-  rendering: Volume3DVolumeRendering,
-  props?: Volume3DDataPresentation
-): void {
-  const { actor, defaultVOIRange } = rendering;
-  const property = actor.getProperty();
-  const voiRange = props?.voiRange ?? defaultVOIRange;
-
-  actor.setVisibility(props?.visible === false ? false : true);
-
-  if (props?.opacity !== undefined) {
-    updateVolumeOpacity(actor, props.opacity);
-  }
-
-  if (!voiRange) {
-    return;
-  }
-
-  const transferFunction = createLinearRGBTransferFunction(voiRange);
-
-  if (props?.invert) {
-    invertRgbTransferFunction(transferFunction);
-  }
-
-  property.setRGBTransferFunction(0, transferFunction);
-
-  if (props?.interpolationType !== undefined) {
-    property.setInterpolationType(
-      props.interpolationType as Parameters<
-        typeof property.setInterpolationType
-      >[0]
-    );
-  }
-
-  if (props?.sampleDistanceMultiplier !== undefined) {
-    applySampleDistanceMultiplier(
-      rendering.mapper,
-      props.sampleDistanceMultiplier
-    );
-  }
-}
-
 function applyCamera(
   ctx: Volume3DVtkVolumeAdapterContext,
   camera?: Partial<Volume3DCamera>
@@ -354,27 +309,6 @@ function applyCamera(
   if (camera && camera.clippingRange === undefined) {
     setCameraClippingRange(ctx);
   }
-}
-
-function applySampleDistanceMultiplier(
-  mapper: vtkVolumeMapper,
-  multiplier: number
-): void {
-  const imageData = mapper.getInputData?.();
-
-  if (!imageData) {
-    return;
-  }
-
-  setIdleSampleDistanceMultiplier(mapper, multiplier);
-
-  const texture = (
-    mapper as unknown as { getScalarTexture?: () => unknown }
-  ).getScalarTexture?.();
-
-  mapper.setSampleDistance(
-    sampleDistanceOf(imageData, texture, idleSampleDistanceMultiplierOf(mapper))
-  );
 }
 
 function setCameraClippingRange(ctx: Volume3DVtkVolumeAdapterContext): void {
