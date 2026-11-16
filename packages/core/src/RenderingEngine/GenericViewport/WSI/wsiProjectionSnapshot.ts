@@ -98,6 +98,7 @@ export function getWSIProjectionSnapshot(
   const view = resolvedView?.state?.view;
   const zoom = Math.max(view?.getZoom?.() ?? viewState.zoom ?? 1, 0.001);
   const rotation = viewState.rotation ?? 0;
+  const rawPan = resolvedView?.pan ?? [0, 0];
   const frameOfReferenceUID =
     request.frameOfReferenceUID ??
     resolvedView?.getFrameOfReferenceUID() ??
@@ -116,6 +117,8 @@ export function getWSIProjectionSnapshot(
         worldPoint,
         canvasPoint: clonePoint2(canvasPoint),
       },
+      pan: clonePoint2(rawPan),
+      rawPan: clonePoint2(rawPan),
       rotation,
       scale: getScale({ canvasHeight, rendererCamera, zoom }),
       zoom,

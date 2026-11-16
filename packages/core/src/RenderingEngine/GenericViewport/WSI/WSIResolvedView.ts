@@ -19,6 +19,11 @@ type WSIResolvedViewState = {
   frameOfReferenceUID?: string | null;
   metadata?: WSIImageDataMetadata;
   view: WSIMapViewLike;
+  /**
+   * The slide point at the centre of the canvas when the slide was mounted,
+   * or when a pan was stored as the origin. The pan is measured from it.
+   */
+  panOrigin?: Point3;
 };
 
 class WSIResolvedView extends ResolvedViewportView<WSIResolvedViewState> {
@@ -56,6 +61,55 @@ class WSIResolvedView extends ResolvedViewportView<WSIResolvedViewState> {
       canvasWidth: this.state.canvasWidth,
       indexPos: [indexPoint[0], -indexPoint[1], 0],
       view: this.state.view,
+    });
+  }
+
+  /**
+   * The pan in canvas pixels: where the pan origin shows, less the centre of
+   * the canvas. It is `[0, 0]` without a pan origin.
+   */
+  get pan(): Point2 {
+    const { panOrigin } = this.state;
+
+    if (!panOrigin) {
+      return [0, 0];
+    }
+
+    const canvasPoint = this.worldToCanvas(panOrigin);
+
+    return [
+      canvasPoint[0] - this.state.canvasWidth / 2,
+      canvasPoint[1] - this.state.canvasHeight / 2,
+    ];
+  }
+
+  /**
+   * The view with the centre moved so that the pan origin shows at the given
+   * pan, at the zoom of this view state and the rotation of the map. The map
+   * applies the zoom after the resolution, so the zoom gives the resolution.
+   */
+  withPan(pan: Point2): WSIResolvedView {
+    const { panOrigin } = this.state;
+
+    if (!panOrigin) {
+      return this;
+    }
+
+    const originIndex = worldToIndexWSIMetadata(this.state.metadata, panOrigin);
+
+    return this.cloneWithViewState({
+      ...this.state.viewState,
+      centerIndex: this.getCenterIndexForCanvasPoint({
+        canvasPoint: [
+          this.state.canvasWidth / 2 + pan[0],
+          this.state.canvasHeight / 2 + pan[1],
+        ],
+        indexPoint: [originIndex[0], -originIndex[1]],
+        resolution:
+          typeof this.state.viewState.zoom === 'number'
+            ? this.getResolutionForZoom(this.state.viewState.zoom)
+            : this.getResolution(),
+      }),
     });
   }
 

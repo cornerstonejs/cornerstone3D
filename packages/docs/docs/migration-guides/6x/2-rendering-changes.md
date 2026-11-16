@@ -142,7 +142,40 @@ layer of a fusion: the opacity is applied as given.
   turned by a quarter against the legacy viewport. The rotation of the view
   state is now a rotation on top of the orientation of the slide: 0 shows the
   slide as the legacy viewport does. `resetViewState()` takes a rotation back
-  to 0 and keeps the zoom and the centre.
+  to 0, keeps the zoom and the centre, and fires `CAMERA_RESET`.
+- **The rotation is in degrees,** as on a planar viewport. It was in radians.
+  This holds for `setViewState({ rotation })`, for the `rotation` of a view
+  presentation and for `getRotation()`, which now gives the rotation of the
+  view state and no longer always 0.
+- **The slide starts at the view that the microscopy viewer fits to the
+  canvas,** as on the legacy viewport. The next viewport of 5.x wrote zoom 1,
+  one fixed level of the pyramid, which is another view on a slide that is not
+  square or on a canvas of another size. `getViewState().zoom` is undefined
+  until a slide is mounted. A slide mounted in place of another one starts at
+  its own fit and keeps the rotation.
+- **Pan.** `getPan()` and `setPan()` exist on the viewport, in canvas pixels
+  from the view at mount, and a view presentation carries `pan`.
+- **Annotations saved on a legacy whole slide viewport show.** Their
+  references carry a view plane normal and a plane restriction, which the next
+  viewport of 5.x rejected.
+- **`canvas` and `getCanvas()`** exist on the viewport, for code that reads
+  the size. The microscopy viewer draws the slide, so the canvas holds no
+  pixels of it.
+- **The web client** of a slide falls back to the `WADO_WEB_CLIENT` metadata
+  of its first image when the display set names none, as on the legacy
+  viewport.
+
+## ECG viewports
+
+- **Annotations saved on a legacy ECG viewport show.** Their references carry
+  a view plane normal and a plane restriction, which the next viewport of 5.x
+  rejected.
+- **`getNumberOfSlices()`** exists and gives 1.
+- **The default trace layout differs from the legacy viewport.** The legacy
+  viewport draws twelve rows of one lead. The next viewport draws three rows
+  of four leads and a rhythm strip for a record of eight leads or more and
+  five seconds or more. Set `traceLayout` in the options of the viewport or in
+  its view state for another one.
 
 ## 3D viewports
 

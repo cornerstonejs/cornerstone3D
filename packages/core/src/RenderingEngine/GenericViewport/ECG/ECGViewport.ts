@@ -227,7 +227,10 @@ class ECGViewport extends GenericViewport<
   /**
    * Checks the record as the base class does, and then rejects a reference
    * whose lead (`sliceIndex`, see {@link getViewReference}) the current trace
-   * layout does not show, so that a tool does not draw it.
+   * layout does not show, so that a tool does not draw it. World Z of an ECG
+   * is a lead and not a place in space, so the view plane normal and the
+   * plane restriction that a legacy ECG viewport puts in its references are
+   * not checked, as the legacy viewport does not check them.
    */
   isReferenceViewable(
     viewReference: ViewReference,
@@ -236,7 +239,12 @@ class ECGViewport extends GenericViewport<
     if (!viewReference) {
       return false;
     }
-    const { sliceIndex, ...recordReference } = viewReference;
+    const { sliceIndex } = viewReference;
+    const recordReference: ViewReference = { ...viewReference };
+
+    delete recordReference.sliceIndex;
+    delete recordReference.viewPlaneNormal;
+    delete recordReference.planeRestriction;
 
     if (!super.isReferenceViewable(recordReference, options)) {
       return false;
@@ -272,6 +280,11 @@ class ECGViewport extends GenericViewport<
    */
   getSliceIndex(): number {
     return 0;
+  }
+
+  /** An ECG is one record. `StackScrollTool` reads this value. */
+  getNumberOfSlices(): number {
+    return 1;
   }
 
   /**

@@ -48,9 +48,9 @@ export interface WSIViewState extends ViewportCameraBase<[number, number]> {
   resolution?: number;
   zoom?: number;
   /**
-   * The rotation of the view in radians, on top of the orientation that the
-   * microscopy viewer gives the slide. At 0 the slide shows as the viewer
-   * and the legacy WSI viewport show it.
+   * The rotation of the view in degrees, as on a planar viewport, on top of
+   * the orientation that the microscopy viewer gives the slide. At 0 the
+   * slide shows as the viewer and the legacy WSI viewport show it.
    */
   rotation?: number;
 }
@@ -73,6 +73,8 @@ export interface WSIViewportInput {
   id: string;
   element: HTMLDivElement;
   renderingEngineId: string;
+  /** The canvas of the element. Without one the viewport makes it. */
+  canvas?: HTMLCanvasElement;
   dataProvider?: DataProvider;
   renderPathResolver?: RenderPathResolver;
 }

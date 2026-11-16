@@ -201,6 +201,11 @@ function worldOfPixel(pixel) {
   ];
 }
 
+/** An angle in radians, in the degrees that the view state takes. */
+function degrees(radians) {
+  return (radians * 180) / Math.PI;
+}
+
 function expectClose(actual, expected, precision = 2) {
   expect(actual.length).toBe(expected.length);
   actual.forEach((value, index) =>
@@ -235,14 +240,14 @@ describe.each(SLIDE_ROTATIONS)(
     it('turns the view on top of the rotation of the slide and reads it back', () => {
       const { viewport, view } = made;
 
-      viewport.setViewState({ rotation: 0.3 });
+      viewport.setViewState({ rotation: degrees(0.3) });
 
       expect(view.getRotation()).toBeCloseTo(slideRotation + 0.3, 12);
-      expect(viewport.getViewState().rotation).toBeCloseTo(0.3, 12);
+      expect(viewport.getViewState().rotation).toBeCloseTo(degrees(0.3), 12);
 
       viewport.setViewState({ zoom: view.getZoom() + 1 });
 
-      expect(viewport.getViewState().rotation).toBeCloseTo(0.3, 12);
+      expect(viewport.getViewState().rotation).toBeCloseTo(degrees(0.3), 12);
       expect(view.getRotation()).toBeCloseTo(slideRotation + 0.3, 12);
     });
 
@@ -297,7 +302,7 @@ describe.each(SLIDE_ROTATIONS)(
       const { viewport, view } = made;
       const canvasPoint = [WIDTH / 2 - 80, HEIGHT / 2 + 45];
 
-      viewport.setViewState({ rotation: -slideRotation });
+      viewport.setViewState({ rotation: degrees(-slideRotation) });
 
       expect(view.getRotation()).toBeCloseTo(0, 12);
 
@@ -344,12 +349,12 @@ describe.each(SLIDE_ROTATIONS)(
     it('reads and sets a view presentation without moving the slide', () => {
       const { viewport, view } = made;
 
-      viewport.setViewState({ rotation: 0.25 });
+      viewport.setViewState({ rotation: degrees(0.25) });
 
       const before = readView(view);
       const presentation = viewportProjection.getPresentation(viewport);
 
-      expect(presentation.rotation).toBeCloseTo(0.25, 12);
+      expect(presentation.rotation).toBeCloseTo(degrees(0.25), 12);
 
       viewport.setViewState(
         viewportProjection.withPresentation(viewport, presentation)
@@ -439,7 +444,7 @@ describe.each(SLIDE_ROTATIONS)(
     it('goes back to the rotation of the slide on resetCamera', () => {
       const { viewport, view } = made;
 
-      viewport.setCamera({ rotation: 0.7 });
+      viewport.setCamera({ rotation: degrees(0.7) });
 
       expect(view.getRotation()).toBeCloseTo(slideRotation + 0.7, 12);
       expect(viewport.resetCamera()).toBe(true);

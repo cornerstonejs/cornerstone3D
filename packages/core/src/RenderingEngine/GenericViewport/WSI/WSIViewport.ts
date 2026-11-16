@@ -15,6 +15,7 @@ import type {
   LoadedData,
   ViewportDataBinding,
 } from '../ViewportArchitectureTypes';
+import getOrCreateCanvas from '../../helpers/getOrCreateCanvas';
 import GenericViewport from '../GenericViewport';
 import type { GenericViewportReferenceContext } from '../genericViewportReferenceCompatibility';
 import { DefaultWSIDataProvider } from './DefaultWSIDataProvider';
@@ -45,9 +46,22 @@ export default class WSIViewport extends GenericViewport<
   readonly renderingEngineId: string;
   modality = 'SM';
 
+  /**
+   * The canvas of the viewport element, as on the legacy viewport, for the
+   * tools that read its size. The microscopy viewer draws the slide, so this
+   * canvas holds no pixels of it.
+   */
+  readonly canvas: HTMLCanvasElement;
+
   protected renderContext: WSIViewportRenderContext;
 
   private activeDataId?: string;
+
+  /**
+   * The slide point at the centre of the canvas when the slide was mounted,
+   * or when a pan was stored as the origin. `getPan` is measured from it.
+   */
+  private panOrigin?: Point3;
 
   static get useCustomRenderingPipeline(): boolean {
     return true;
@@ -60,6 +74,7 @@ export default class WSIViewport extends GenericViewport<
   constructor(args: WSIViewportInput) {
     super(args);
     this.renderingEngineId = args.renderingEngineId;
+    this.canvas = args.canvas || getOrCreateCanvas(this.element);
     this.element.style.position = this.element.style.position || 'relative';
     this.element.style.overflow = 'hidden';
     this.element.style.background = this.element.style.background || '#000';
@@ -73,7 +88,6 @@ export default class WSIViewport extends GenericViewport<
       element: this.element,
     };
     this.viewState = {
-      zoom: 1,
       rotation: 0,
     };
 
@@ -84,10 +98,18 @@ export default class WSIViewport extends GenericViewport<
     );
   }
 
+  /**
+   * Clamps the zoom and the resolution. A view state without a zoom keeps
+   * none, so that a mount keeps the view that the microscopy viewer fits to
+   * the canvas, as the legacy viewport does.
+   */
   protected override normalizeViewState(camera: WSIViewState): WSIViewState {
     return {
       ...camera,
-      zoom: Math.max(camera.zoom ?? 1, 0.001),
+      zoom:
+        typeof camera.zoom === 'number'
+          ? Math.max(camera.zoom, 0.001)
+          : undefined,
       centerIndex: camera.centerIndex
         ? [camera.centerIndex[0], camera.centerIndex[1]]
         : camera.centerIndex,
@@ -99,10 +121,23 @@ export default class WSIViewport extends GenericViewport<
     };
   }
 
+  /**
+   * Mounts the slides. The microscopy viewer fits each slide to the canvas,
+   * as on the legacy viewport: a slide mounted in place of another one drops
+   * the zoom, the resolution and the centre of the view, and keeps the
+   * rotation.
+   */
   async setDisplaySets(
     ...entries: Array<{ displaySetId: string }>
   ): Promise<void> {
+    const hadSlide = Boolean(this.getWSIData());
+
     this.removeAllData();
+    this.panOrigin = undefined;
+
+    if (hadSlide) {
+      this.viewState = { rotation: this.viewState.rotation ?? 0 };
+    }
 
     for (const [index, { displaySetId }] of entries.entries()) {
       await this.addDisplaySet(displaySetId, {
@@ -119,6 +154,7 @@ export default class WSIViewport extends GenericViewport<
 
     this.syncCameraFromView();
     this.applyVOIToRendering();
+    this.panOrigin = this.getResolvedView()?.toICamera().focalPoint;
   }
 
   setDisplaySetPresentation(props: Partial<WSIDataPresentation>): void;
@@ -216,7 +252,47 @@ export default class WSIViewport extends GenericViewport<
       frameOfReferenceUID: data.frameOfReferenceUID,
       metadata: data.metadata,
       view,
+      panOrigin: this.panOrigin,
     });
+  }
+
+  /**
+   * The pan in canvas pixels, relative to the view when the slide was
+   * mounted: where the centre of that view now shows, less the centre of the
+   * canvas. It is `[0, 0]` until a slide is shown.
+   */
+  getPan(): Point2 {
+    return this.getResolvedView()?.pan ?? [0, 0];
+  }
+
+  /**
+   * Moves the view so that `getPan` gives this pan. A change under one
+   * canvas pixel is skipped, as on the legacy viewports. With
+   * `storeAsInitialCamera` the view after the move becomes the origin of
+   * `getPan`.
+   */
+  setPan(pan: Point2, storeAsInitialCamera = false): void {
+    const resolvedView = this.getResolvedView();
+
+    if (!resolvedView) {
+      return;
+    }
+
+    const currentPan = resolvedView.pan;
+
+    if (
+      Math.abs(pan[0] - currentPan[0]) >= 1 ||
+      Math.abs(pan[1] - currentPan[1]) >= 1 ||
+      storeAsInitialCamera
+    ) {
+      this.setViewState({
+        centerIndex: resolvedView.withPan(pan).state.viewState.centerIndex,
+      });
+    }
+
+    if (storeAsInitialCamera) {
+      this.panOrigin = this.getResolvedView()?.toICamera().focalPoint;
+    }
   }
 
   getCurrentImageId(): string | undefined {
@@ -248,7 +324,8 @@ export default class WSIViewport extends GenericViewport<
 
   /**
    * Turns the view back to the orientation that the microscopy viewer gives
-   * the slide. The zoom and the centre stay as they are.
+   * the slide and fires CAMERA_RESET. The zoom and the centre stay as they
+   * are.
    */
   resetViewState(): boolean {
     this.syncCameraFromView();
@@ -257,11 +334,18 @@ export default class WSIViewport extends GenericViewport<
       this.setViewState({ rotation: 0 });
     }
 
+    this.triggerCameraResetEvent();
+
     return true;
   }
 
   getNumberOfSlices(): number {
     return 1;
+  }
+
+  /** Returns the canvas of the viewport element. */
+  getCanvas(): HTMLCanvasElement {
+    return this.canvas;
   }
 
   resize(): void {
@@ -328,8 +412,14 @@ export default class WSIViewport extends GenericViewport<
     });
   }
 
+  /**
+   * The rotation of the view in degrees on top of the orientation of the
+   * slide, as the view state gives it. It is 0 until the view is turned.
+   */
   getRotation(): number {
-    return 0;
+    this.syncCameraFromView();
+
+    return this.viewState.rotation ?? 0;
   }
 
   getSliceIndex(): number {
@@ -426,6 +516,7 @@ export default class WSIViewport extends GenericViewport<
 
   protected override onDestroy(): void {
     this.activeDataId = undefined;
+    this.panOrigin = undefined;
   }
 
   customRenderViewportToCanvas(): void {
@@ -458,6 +549,12 @@ export default class WSIViewport extends GenericViewport<
     return this.activeDataId;
   }
 
+  /**
+   * The reference context of the slide. The focal point and the normal
+   * `[0, 0, 1]` of the legacy camera let a reference saved on a legacy WSI
+   * viewport, which carries a view plane normal and a plane restriction,
+   * show here.
+   */
   protected getReferenceViewContexts(): GenericViewportReferenceContext[] {
     const binding = this.getCurrentBinding();
     const data = this.getWSIData();
@@ -466,8 +563,12 @@ export default class WSIViewport extends GenericViewport<
       return super.getReferenceViewContexts();
     }
 
+    const camera = this.getResolvedView()?.toICamera();
+
     return [
       {
+        cameraFocalPoint: camera?.focalPoint,
+        viewPlaneNormal: camera?.viewPlaneNormal,
         dataId: binding.data.id,
         dataIds: [binding.data.id],
         frameOfReferenceUID: data.frameOfReferenceUID ?? undefined,
@@ -504,7 +605,7 @@ export default class WSIViewport extends GenericViewport<
 
   /**
    * Reads the view state back from the map view. The rotation is the one of
-   * the map less the rotation of the slide.
+   * the map less the rotation of the slide, in degrees.
    */
   private syncCameraFromView(): void {
     const view = this.getView();
@@ -519,7 +620,9 @@ export default class WSIViewport extends GenericViewport<
       ...this.viewState,
       zoom: view.getZoom(),
       rotation:
-        view.getRotation() - (this.getWSIRendering()?.slideRotation ?? 0),
+        ((view.getRotation() - (this.getWSIRendering()?.slideRotation ?? 0)) *
+          180) /
+        Math.PI,
       resolution: view.getResolution(),
       centerIndex: centerIndex ? [centerIndex[0], centerIndex[1]] : undefined,
     });

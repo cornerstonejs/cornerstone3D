@@ -17,11 +17,14 @@ export type WSIResolvedViewLike = {
     view?: WSIMapViewLike;
     viewState: WSIViewState;
   };
+  /** The pan in canvas pixels from the view at mount. */
+  pan?: Point2;
   canvasToWorld(canvasPos: Point2): Point3;
   worldToCanvas(worldPos: Point3): Point2;
   getFrameOfReferenceUID(): string | undefined;
   toICamera(): ICamera;
   withZoom(zoom: number, canvasPoint?: Point2): WSIResolvedViewLike;
+  withPan?(pan: Point2): WSIResolvedViewLike;
 };
 
 export type WSIProjectionViewport = {
@@ -33,7 +36,10 @@ export type WSIProjectionViewport = {
 };
 
 export interface WSIProjectionPresentation
-  extends ProjectionPresentation<never> {}
+  extends ProjectionPresentation<never> {
+  /** The pan in canvas pixels from the view at mount, not divided by the zoom. */
+  rawPan: Point2;
+}
 
 export interface WSIProjectionSnapshot
   extends ProjectionSnapshot<WSIViewState, WSIProjectionPresentation> {

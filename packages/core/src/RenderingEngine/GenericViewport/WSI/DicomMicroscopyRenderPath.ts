@@ -120,8 +120,9 @@ export class DicomMicroscopyRenderPath
   }
 
   /**
-   * Writes the view state to the map view. The rotation of the view state
-   * is on top of the rotation that the microscopy viewer gave the slide.
+   * Writes the view state to the map view. The rotation of the view state,
+   * in degrees, is on top of the rotation in radians that the microscopy
+   * viewer gave the slide.
    */
   private applyViewState(rendering: WSIRendering, camera: unknown): void {
     const wsiCamera = camera as WSIViewState;
@@ -142,7 +143,9 @@ export class DicomMicroscopyRenderPath
       view.setCenter(wsiCamera.centerIndex);
     }
     if (typeof wsiCamera.rotation === 'number') {
-      view.setRotation((rendering.slideRotation ?? 0) + wsiCamera.rotation);
+      view.setRotation(
+        (rendering.slideRotation ?? 0) + (wsiCamera.rotation * Math.PI) / 180
+      );
     }
   }
 
