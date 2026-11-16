@@ -1,6 +1,13 @@
 import type { RenderingEngineModeType } from '../types';
 import type { RenderBackendValue, VoxelManagerEnum } from '../enums';
 
+/** Which lossy downsampling the viewer may use. See `rendering.lossyDownsampling`. */
+interface LossyDownsampling {
+  final?: boolean;
+  interactive?: boolean;
+  interleavedLoading?: boolean;
+}
+
 interface Cornerstone3DConfig {
   /**
    * Whether the device is mobile or not.
@@ -96,6 +103,23 @@ interface Cornerstone3DConfig {
       sampleDistanceMultiplier?: number;
     };
     /**
+     * Which lossy downsampling the viewer may use. Each kind shows pixels that
+     * differ from the source data, so an application turns on a kind only
+     * when it also shows a fidelity indication.
+     *
+     * - `final` reduces a volume texture that exceeds the active GPU settings.
+     *   Off by default (unused on this branch until multi-resolution lands).
+     * - `interactive` lowers the detail while the user interacts, for example
+     *   a larger sample distance during a 3D rotation. The full detail
+     *   returns when the interaction ends. On by default. Honored by
+     *   `beginVolume3DInteraction` for legacy Volume3D.
+     * - `interleavedLoading` fills unloaded frames with nearby loaded frames
+     *   during load. On by default (unused until progressive multi-res lands).
+     *
+     * Read the merged value with `getLossyDownsampling`.
+     */
+    lossyDownsampling?: LossyDownsampling;
+    /**
      * When true, legacy viewport types (STACK, ORTHOGRAPHIC, VIDEO, ECG,
      * WHOLE_SLIDE) are internally backed by GenericViewport implementations
      * through legacy compatibility adapters at viewport creation time.
@@ -154,4 +178,4 @@ interface Cornerstone3DConfig {
   peerImport?: (moduleId: string) => Promise<any>;
 }
 
-export type { Cornerstone3DConfig as default };
+export type { Cornerstone3DConfig as default, LossyDownsampling };

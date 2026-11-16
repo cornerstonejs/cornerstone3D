@@ -48,6 +48,7 @@ class TrackballRotateTool extends BaseTool {
   preMouseDownCallback = (evt: EventTypes.InteractionEventType) => {
     const { element } = evt.detail;
     // Viewport policy owns interactive LOD; tool may supply fixed multiplier.
+    // lossyDownsampling.interactive is honored inside beginVolume3DInteraction.
     armVolume3DInteraction(element, {
       sampleDistanceFactor: this.configuration.rotateSampleDistanceFactor,
     });

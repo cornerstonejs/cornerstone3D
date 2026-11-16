@@ -1,7 +1,7 @@
 import { getRenderingEngines } from './RenderingEngine/getRenderingEngine';
 let csRenderInitialized = false;
 import deepMerge from './utilities/deepMerge';
-import type { Cornerstone3DConfig } from './types';
+import type { Cornerstone3DConfig, LossyDownsampling } from './types';
 import CentralizedWebWorkerManager from './webWorkerManager/webWorkerManager';
 import { getRenderingCapabilities } from './utilities/renderingCapabilities';
 import triggerEvent from './utilities/triggerEvent';
@@ -56,6 +56,11 @@ const defaultConfig: Cornerstone3DConfig = {
     volumeRendering: {
       /** Multiplier for the calculated sample distance */
       sampleDistanceMultiplier: 1,
+    },
+    lossyDownsampling: {
+      final: false,
+      interactive: true,
+      interleavedLoading: true,
     },
   },
 
@@ -406,6 +411,30 @@ function setConfiguration(c: Cornerstone3DConfig) {
 }
 
 /**
+ * The lossy downsampling that the viewer may use, with the defaults filled in.
+ * See `rendering.lossyDownsampling` of the configuration.
+ */
+function getLossyDownsampling(): Required<LossyDownsampling> {
+  return {
+    ...(defaultConfig.rendering
+      .lossyDownsampling as Required<LossyDownsampling>),
+    ...config.rendering?.lossyDownsampling,
+  };
+}
+
+/**
+ * Turns kinds of lossy downsampling on or off. A kind that `change` omits keeps
+ * its value. `interactive` is honored by `beginVolume3DInteraction` on this
+ * branch; `final` / `interleavedLoading` are reserved for multi-resolution.
+ */
+function setLossyDownsampling(change: LossyDownsampling): void {
+  config.rendering = {
+    ...config.rendering,
+    lossyDownsampling: { ...getLossyDownsampling(), ...change },
+  };
+}
+
+/**
  * Update rendering pipelines for all viewports in all rendering engines.
  * Viewport families that do not support a live pipeline swap simply omit the
  * hook.
@@ -469,6 +498,8 @@ export {
   resolveAutoRenderBackend,
   getConfiguration,
   setConfiguration,
+  getLossyDownsampling,
+  setLossyDownsampling,
   getWebWorkerManager,
   canRenderFloatTextures,
   peerImport,

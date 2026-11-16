@@ -454,6 +454,7 @@ class VolumeCroppingTool extends BaseTool {
     }
 
     // Rotate path: viewport policy owns interactive LOD; tool may supply fixed multiplier.
+    // lossyDownsampling.interactive is honored inside beginVolume3DInteraction.
     armVolume3DInteraction(element, {
       sampleDistanceFactor: this.configuration.rotateSampleDistanceFactor,
     });

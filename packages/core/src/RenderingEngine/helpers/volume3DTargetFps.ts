@@ -1,4 +1,5 @@
 import { getEnabledElementByViewportId } from '../../getEnabledElement';
+import { getLossyDownsampling } from '../../init';
 import ViewportType from '../../enums/ViewportType';
 import type { IViewport } from '../../types/IViewport';
 import type { ActorEntry } from '../../types/IActor';
@@ -242,7 +243,11 @@ function resolveSampleDistance(
       | { getMapper?: () => MapperSampleDistance['mapper'] }
       | undefined;
     const distance = actor?.getMapper?.()?.getSampleDistance?.();
-    if (typeof distance === 'number' && Number.isFinite(distance) && distance > 0) {
+    if (
+      typeof distance === 'number' &&
+      Number.isFinite(distance) &&
+      distance > 0
+    ) {
       return distance;
     }
   }
@@ -317,8 +322,15 @@ function rearmLearning(entry: Volume3DTargetFpsEntry) {
   entry.lastUpdateSettled = false;
 }
 
+function isInteractiveLodAllowed(): boolean {
+  return Boolean(getLossyDownsampling().interactive);
+}
+
 function isTargetFpsPolicyActive(entry: Volume3DTargetFpsEntry): boolean {
-  return entry.policy === 'targetFps' && entry.enabled;
+  // Honor the global interactive LOD kill-switch from lossyDownsampling.
+  return (
+    entry.policy === 'targetFps' && entry.enabled && isInteractiveLodAllowed()
+  );
 }
 
 function resolvePhase(entry: Volume3DTargetFpsEntry): Volume3DTargetFpsPhase {
@@ -343,10 +355,7 @@ function resolvePhase(entry: Volume3DTargetFpsEntry): Volume3DTargetFpsPhase {
  * Clamps to 1–60. Returns false when the viewport is not legacy Volume3D.
  * Does not enable targeting by itself — use setVolume3DTargetFpsEnabled.
  */
-export function setVolume3DTargetFps(
-  viewportId: string,
-  fps: number
-): boolean {
+export function setVolume3DTargetFps(viewportId: string, fps: number): boolean {
   const entry = ensureEntry(viewportId);
   if (!entry) {
     return false;
@@ -449,6 +458,8 @@ export function getVolume3DTargetFpsEnabled(
  * tool `rotateSampleDistanceFactor`) multiplies baseline sample distance when
  * it is a finite number > 0; otherwise the default ×2 is used.
  * Under `targetFps`, the factor is ignored.
+ * When `rendering.lossyDownsampling.interactive` is false, interactive LOD is
+ * disabled for the drag (fixed factor ×1; Target FPS does not steer).
  */
 export function beginVolume3DInteraction(
   viewportId: string,
@@ -490,8 +501,12 @@ export function beginVolume3DInteraction(
     entry.lastLod = computeLod(entry, viewport);
     applySampleDistanceForLod(entry, entry.lastLod);
   } else {
-    // fixedSampleDistance (default)
-    applyFixedSampleDistanceFactor(entry, options?.sampleDistanceFactor);
+    // fixedSampleDistance (default), or Target FPS with interactive LOD off.
+    // When lossyDownsampling.interactive is false, use ×1 (Bill's kill-switch).
+    applyFixedSampleDistanceFactor(
+      entry,
+      isInteractiveLodAllowed() ? options?.sampleDistanceFactor : 1
+    );
     entry.lastLod = {
       scale: 1,
       steps: INTERACTIVE_FULL_STEPS,

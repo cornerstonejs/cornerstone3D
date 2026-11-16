@@ -176,6 +176,8 @@ import {
   getEffectiveRenderBackend,
   getConfiguration,
   setConfiguration,
+  getLossyDownsampling,
+  setLossyDownsampling,
   getWebWorkerManager,
   canRenderFloatTextures,
   peerImport,
@@ -307,6 +309,8 @@ export {
   // configs
   getConfiguration,
   setConfiguration,
+  getLossyDownsampling,
+  setLossyDownsampling,
   getWebWorkerManager,
   canRenderFloatTextures,
   // enums
