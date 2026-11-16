@@ -1,4 +1,6 @@
 import vtkMath from '@kitware/vtk.js/Common/Core/Math';
+import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
+import { vec3 } from 'gl-matrix';
 import { MPR_CAMERA_VALUES } from '../../../constants';
 import { OrientationAxis } from '../../../enums';
 import { getConfiguration } from '../../../init';
@@ -30,22 +32,69 @@ export function getInitialVolume3DCamera(
     orientation: ctx.viewport.options.orientation,
   });
   const { viewPlaneNormal, viewUp } = orientation;
-  const bounds = imageData.getBounds();
-  const focalPoint = [0, 0, 0] as Point3;
-  const dimensions = imageData.getDimensions();
-  const middleIJK = getVolumeCenterIJK(
-    dimensions,
-    imageData.getDirection(),
-    viewPlaneNormal
-  ) as Point3;
+  const { focalPoint, parallelScale, position, radius, viewUpToUse } =
+    getVolume3DFitCamera(
+      ctx,
+      { imageData, bounds: imageData.getBounds() },
+      viewPlaneNormal,
+      viewUp
+    );
 
-  imageData.indexToWorld(middleIJK, focalPoint);
+  setVolume3DPhysicalCamera(ctx, radius, focalPoint);
 
-  const { widthWorld, heightWorld } = getCubeSizeInView(
-    imageData,
+  return {
+    focalPoint,
+    parallelProjection: ctx.viewport.options.parallelProjection ?? true,
+    parallelScale,
+    position,
+    viewAngle: 90,
     viewPlaneNormal,
-    viewUp
-  );
+    viewUp: viewUpToUse,
+  };
+}
+
+/**
+ * The camera that fits content in the canvas, as the legacy viewports fit it
+ * in `resetCamera`. The extent of the content along the view up and the view
+ * right fills the canvas, and the camera stands ten bounding radii away along
+ * the view plane normal. With image data the extent is that of the image cube
+ * and the focal point is its centre voxel. Without image data the extent and
+ * the centre are those of the bounds.
+ *
+ * @internal
+ */
+export function getVolume3DFitCamera(
+  ctx: Pick<Volume3DVtkVolumeAdapterContext, 'viewport' | 'vtk'>,
+  content: { imageData?: vtkImageData; bounds: number[] },
+  viewPlaneNormal: Point3,
+  viewUp: Point3
+): {
+  focalPoint: Point3;
+  parallelScale: number;
+  position: Point3;
+  radius: number;
+  viewUpToUse: Point3;
+} {
+  const { imageData, bounds } = content;
+  const focalPoint = [
+    (bounds[0] + bounds[1]) / 2,
+    (bounds[2] + bounds[3]) / 2,
+    (bounds[4] + bounds[5]) / 2,
+  ] as Point3;
+
+  if (imageData) {
+    const middleIJK = getVolumeCenterIJK(
+      imageData.getDimensions(),
+      imageData.getDirection(),
+      viewPlaneNormal
+    ) as Point3;
+
+    imageData.indexToWorld(middleIJK, focalPoint);
+  }
+
+  const { widthWorld, heightWorld } = imageData
+    ? getCubeSizeInView(imageData, viewPlaneNormal, viewUp)
+    : getBoundsSizeInView(bounds, viewPlaneNormal, viewUp);
 
   const canvasWidth =
     ctx.vtk.canvas.width || ctx.viewport.element.clientWidth || 1;
@@ -73,6 +122,22 @@ export function getInitialVolume3DCamera(
     focalPoint[2] + distance * viewPlaneNormal[2],
   ] as Point3;
 
+  return { focalPoint, parallelScale, position, radius, viewUpToUse };
+}
+
+/**
+ * Sets the physical scale and translation of the vtk.js camera to the radius
+ * and the focal point of a fit, as the legacy reset does.
+ *
+ * @internal
+ */
+export function setVolume3DPhysicalCamera(
+  ctx: Pick<Volume3DVtkVolumeAdapterContext, 'vtk'>,
+  radius: number,
+  focalPoint: Point3
+): void {
+  const vtkCamera = ctx.vtk.renderer.getActiveCamera();
+
   if ('setPhysicalScale' in vtkCamera) {
     (
       vtkCamera as typeof vtkCamera & {
@@ -87,22 +152,20 @@ export function getInitialVolume3DCamera(
       }
     ).setPhysicalTranslation(-focalPoint[0], -focalPoint[1], -focalPoint[2]);
   }
-
-  return {
-    focalPoint,
-    parallelProjection: ctx.viewport.options.parallelProjection ?? true,
-    parallelScale,
-    position,
-    viewAngle: 90,
-    viewPlaneNormal,
-    viewUp: viewUpToUse,
-  };
 }
 
-function getOrientationVectors(args: {
+/**
+ * The view plane normal and the view up of an orientation of the viewport
+ * options: a named axis, a reformat axis, the acquisition plane of the volume
+ * or orientation vectors. The fallback vectors answer when there is no
+ * orientation or it names none of these.
+ *
+ * @internal
+ */
+export function getOrientationVectors(args: {
   fallbackViewPlaneNormal: Point3;
   fallbackViewUp: Point3;
-  imageVolume: IImageVolume;
+  imageVolume?: IImageVolume;
   orientation: Volume3DVtkVolumeAdapterContext['viewport']['options']['orientation'];
 }): Pick<Volume3DCamera, 'viewPlaneNormal' | 'viewUp'> {
   const { fallbackViewPlaneNormal, fallbackViewUp, imageVolume, orientation } =
@@ -125,6 +188,13 @@ function getOrientationVectors(args: {
   }
 
   if (orientation === OrientationAxis.ACQUISITION) {
+    if (!imageVolume) {
+      return {
+        viewPlaneNormal: fallbackViewPlaneNormal,
+        viewUp: fallbackViewUp,
+      };
+    }
+
     const { direction } = imageVolume;
 
     return {
@@ -154,6 +224,38 @@ function getOrientationVectors(args: {
   return {
     viewPlaneNormal: [...cameraValues.viewPlaneNormal] as Point3,
     viewUp: [...cameraValues.viewUp] as Point3,
+  };
+}
+
+/**
+ * The width and the height of bounds in the view: their extent along the view
+ * right and the view up, as the legacy viewports measure content that is not
+ * an image.
+ */
+function getBoundsSizeInView(
+  bounds: number[],
+  viewPlaneNormal: Point3,
+  viewUp: Point3
+): { widthWorld: number; heightWorld: number } {
+  const viewRight = vec3.normalize(
+    vec3.create(),
+    vec3.cross(vec3.create(), viewUp, viewPlaneNormal)
+  );
+  const viewUpUnit = vec3.normalize(vec3.create(), viewUp);
+  const along = { right: [] as number[], up: [] as number[] };
+
+  for (const x of [bounds[0], bounds[1]]) {
+    for (const y of [bounds[2], bounds[3]]) {
+      for (const z of [bounds[4], bounds[5]]) {
+        along.right.push(vec3.dot([x, y, z], viewRight));
+        along.up.push(vec3.dot([x, y, z], viewUpUnit));
+      }
+    }
+  }
+
+  return {
+    widthWorld: Math.max(...along.right) - Math.min(...along.right),
+    heightWorld: Math.max(...along.up) - Math.min(...along.up),
   };
 }
 

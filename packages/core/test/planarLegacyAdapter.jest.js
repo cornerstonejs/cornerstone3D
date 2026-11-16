@@ -493,6 +493,24 @@ describe('planar legacy adapter members', () => {
     expect(adapter.viewport.isOrientationChangeable()).toBe(false);
   });
 
+  it('gives the image at a slice index from getCurrentImageId, as the legacy stack viewport', async () => {
+    const results = [];
+
+    for (const useAdapter of [false, true]) {
+      const { renderingEngine, viewport } = createStackViewport(useAdapter);
+      renderingEngines.push(renderingEngine);
+      await viewport.setStack(imageIds, 1);
+      results.push([
+        viewport.getCurrentImageId(),
+        viewport.getCurrentImageId(2),
+        viewport.getCurrentImageId(0),
+      ]);
+    }
+
+    expect(results[0]).toEqual([imageIds[1], imageIds[2], imageIds[0]]);
+    expect(results[1]).toEqual(results[0]);
+  });
+
   it('gives the PT scaling of the legacy stack viewport', async () => {
     const ptImageIds = createImageIds(true);
     const legacy = await readStackMembers(false, ptImageIds);
@@ -522,6 +540,17 @@ describe('planar legacy adapter members', () => {
       renderingEngines.push(renderingEngine);
       volume = createVolume('volume-a', [8, 8, 10], [1, 1, 1]);
       await viewport.setVolumes([{ volumeId: 'volume-a' }]);
+    });
+
+    it('ignores a slice index in getCurrentImageId, as the legacy volume viewport', () => {
+      const planarGetCurrentImageId = jest
+        .spyOn(PlanarViewport.prototype, 'getCurrentImageId')
+        .mockReturnValue('currentImageId');
+
+      expect(viewport.getCurrentImageId(0)).toBe('currentImageId');
+      expect(planarGetCurrentImageId).toHaveBeenCalledWith();
+
+      planarGetCurrentImageId.mockRestore();
     });
 
     it('gives the slice view info of the legacy volume viewport', () => {

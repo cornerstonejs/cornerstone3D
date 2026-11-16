@@ -18,6 +18,7 @@ import type {
   Scaling,
   ScrollOptions,
   ViewReference,
+  ViewReferenceSpecifier,
 } from '../../../types';
 import { ActorRenderMode } from '../../../types';
 import type BlendModes from '../../../enums/BlendModes';
@@ -296,6 +297,27 @@ class PlanarViewportLegacyAdapter extends PlanarViewport {
       rendering?.renderMode === ActorRenderMode.VTK_IMAGE &&
       rendering.newImageData
     );
+  }
+
+  /**
+   * The image id that the viewport shows, or the one of a view reference
+   * specifier. A number is a slice index, as the legacy viewports take it: in
+   * stack mode it gives the image id at that index, as the legacy stack
+   * viewport does, and in volume mode it is ignored, as the legacy volume
+   * viewport ignores it.
+   */
+  getCurrentImageId(
+    viewRefSpecifierOrIndex: ViewReferenceSpecifier | number = {}
+  ): string | undefined {
+    if (typeof viewRefSpecifierOrIndex !== 'number') {
+      return super.getCurrentImageId(viewRefSpecifierOrIndex);
+    }
+
+    if (this.getCurrentMode() === 'stack') {
+      return this.getImageIds()[viewRefSpecifierOrIndex];
+    }
+
+    return super.getCurrentImageId();
   }
 
   /**
