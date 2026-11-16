@@ -4,7 +4,8 @@ import type {
   ViewReference,
   ViewReferenceSpecifier,
 } from '../../../types';
-import { ViewportType } from '../../../enums';
+import { Events, ViewportType } from '../../../enums';
+import triggerEvent from '../../../utilities/triggerEvent';
 import {
   frameNumberToTimeSeconds,
   timeSecondsToFrameNumber,
@@ -46,6 +47,12 @@ class VideoViewport extends GenericViewport<
   private trackedVideoElement?: HTMLVideoElement;
   private cleanupTrackedVideoElement?: () => void;
 
+  /** Whether the check that follows the frames of playback is running. */
+  private isWatchingPlayback = false;
+
+  /** The frame number of the last frame event. */
+  private lastFrameEventNumber?: number;
+
   // ── Static ───────────────────────────────────────────────────────────
 
   static get useCustomRenderingPipeline(): boolean {
@@ -84,12 +91,16 @@ class VideoViewport extends GenericViewport<
 
   /**
    * Replaces all mounted video display sets with the provided ones using the
-   * HTML video render path. The first entry is mounted as the source binding.
+   * HTML video render path. The first entry is mounted as the source binding,
+   * and the video then shows the 1-based `frameNumber` of its options.
    *
    * @param entries - Video display sets to mount.
    */
   async setDisplaySets(
-    ...entries: Array<{ displaySetId: string }>
+    ...entries: Array<{
+      displaySetId: string;
+      options?: { frameNumber?: number };
+    }>
   ): Promise<void> {
     this.removeAllData();
 
@@ -134,6 +145,12 @@ class VideoViewport extends GenericViewport<
       this.trackVideoElement();
       await this.primeInitialFrame(videoData);
     }
+
+    const frameNumber = entries[0]?.options?.frameNumber;
+
+    if (typeof frameNumber === 'number') {
+      this.setFrameNumber(frameNumber);
+    }
   }
 
   /**
@@ -152,6 +169,11 @@ class VideoViewport extends GenericViewport<
     }
   }
 
+  /**
+   * The view reference of a frame, with the camera of the view: the focal
+   * point, the view plane normal and the view up. The area tools read the
+   * normal of an annotation to measure the frame.
+   */
   getViewReference(
     viewRefSpecifier: ViewReferenceSpecifier = {}
   ): ViewReference {
@@ -169,6 +191,7 @@ class VideoViewport extends GenericViewport<
         ? this.getCurrentImageId(sliceIndex)
         : this.getCurrentImageId();
     const dataId = this.getFirstBinding()?.data.id;
+    const camera = this.getResolvedView()?.toICamera();
 
     return {
       FrameOfReferenceUID: this.getFrameOfReferenceUID(),
@@ -176,6 +199,9 @@ class VideoViewport extends GenericViewport<
       dimensionGroupNumber: frameNumber,
       referencedImageId,
       sliceIndex,
+      cameraFocalPoint: camera?.focalPoint,
+      viewPlaneNormal: camera?.viewPlaneNormal,
+      viewUp: camera?.viewUp,
     };
   }
 
@@ -297,6 +323,11 @@ class VideoViewport extends GenericViewport<
     });
   }
 
+  /**
+   * The reference context of the video, with the focal point and the view
+   * plane normal of the view, so that a reference with a view plane normal
+   * is viewable here.
+   */
   protected getReferenceViewContexts(): GenericViewportReferenceContext[] {
     const binding = this.getFirstBinding();
     const videoData = this.getVideoData();
@@ -307,6 +338,7 @@ class VideoViewport extends GenericViewport<
 
     const sourceDataId = getGenericViewportSourceDataId(binding.data.id);
     const frameNumber = this.getFrameNumber();
+    const camera = this.getResolvedView()?.toICamera();
 
     return [
       {
@@ -317,6 +349,8 @@ class VideoViewport extends GenericViewport<
         currentImageIdIndex: frameNumber - 1,
         dimensionGroupNumber: frameNumber,
         numDimensionGroups: videoData.numberOfFrames,
+        cameraFocalPoint: camera?.focalPoint,
+        viewPlaneNormal: camera?.viewPlaneNormal,
       },
     ];
   }
@@ -326,7 +360,8 @@ class VideoViewport extends GenericViewport<
   // ====================================================================
 
   /**
-   * Starts playback on the active video element.
+   * Starts playback on the active video element. While it plays, each new
+   * frame fires STACK_NEW_IMAGE.
    *
    * @returns A promise that resolves after the play request settles.
    */
@@ -339,7 +374,7 @@ class VideoViewport extends GenericViewport<
 
     return element
       .play()
-      .then(() => undefined)
+      .then(() => this.watchPlayback())
       .catch(() => undefined);
   }
 
@@ -623,6 +658,42 @@ class VideoViewport extends GenericViewport<
     this.untrackVideoElement();
   }
 
+  /**
+   * Called on each animation frame while the video plays. Fires the frame
+   * event when the frame on display is not the one of the last event.
+   */
+  protected onPlaybackFrame(): void {
+    if (this.getFrameNumber() !== this.lastFrameEventNumber) {
+      this.triggerFrameEvents();
+    }
+  }
+
+  /**
+   * Fires STACK_NEW_IMAGE for the frame on display, as the next planar
+   * viewport fires it for a new image: the image id and the 0-based index of
+   * the frame, with the time and the duration of the video in seconds.
+   */
+  protected triggerFrameEvents(): void {
+    const element = this.getVideoElement();
+
+    if (this.isDestroyed || !element) {
+      return;
+    }
+
+    const imageIdIndex = this.getCurrentImageIdIndex();
+
+    this.lastFrameEventNumber = imageIdIndex + 1;
+    triggerEvent(this.element, Events.STACK_NEW_IMAGE, {
+      element: this.element,
+      imageId: this.getCurrentImageId(imageIdIndex),
+      imageIdIndex,
+      viewportId: this.id,
+      renderingEngineId: this.renderingEngineId,
+      time: element.currentTime,
+      duration: element.duration,
+    });
+  }
+
   // ====================================================================
   // Private
   // ====================================================================
@@ -692,15 +763,20 @@ class VideoViewport extends GenericViewport<
     const syncCurrentTime = () => {
       this.syncCameraCurrentTimeFromElement();
     };
+    const onSeeked = () => {
+      this.triggerFrameEvents();
+    };
 
     element.addEventListener('loadedmetadata', syncCurrentTime);
     element.addEventListener('seeked', syncCurrentTime);
+    element.addEventListener('seeked', onSeeked);
     element.addEventListener('timeupdate', syncCurrentTime);
 
     this.trackedVideoElement = element;
     this.cleanupTrackedVideoElement = () => {
       element.removeEventListener('loadedmetadata', syncCurrentTime);
       element.removeEventListener('seeked', syncCurrentTime);
+      element.removeEventListener('seeked', onSeeked);
       element.removeEventListener('timeupdate', syncCurrentTime);
     };
 
@@ -711,6 +787,32 @@ class VideoViewport extends GenericViewport<
     this.cleanupTrackedVideoElement?.();
     this.cleanupTrackedVideoElement = undefined;
     this.trackedVideoElement = undefined;
+  }
+
+  /**
+   * Checks the frame on every animation frame while the video plays, with
+   * `onPlaybackFrame`, until it pauses.
+   */
+  private watchPlayback(): void {
+    if (this.isWatchingPlayback) {
+      return;
+    }
+
+    const check = () => {
+      const element = this.getVideoElement();
+
+      if (this.isDestroyed || !element || element.paused) {
+        this.isWatchingPlayback = false;
+
+        return;
+      }
+
+      this.onPlaybackFrame();
+      requestAnimationFrame(check);
+    };
+
+    this.isWatchingPlayback = true;
+    check();
   }
 
   /**

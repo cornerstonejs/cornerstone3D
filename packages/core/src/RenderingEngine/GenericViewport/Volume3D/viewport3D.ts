@@ -1,3 +1,5 @@
+import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
+import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 import { vec3 } from 'gl-matrix';
 import { ViewportType } from '../../../enums';
 import type {
@@ -5,11 +7,14 @@ import type {
   ICamera,
   IImageData,
   Point3,
+  ResetCameraOptions,
   ViewReference,
   ViewReferenceSpecifier,
   ViewportContentMode,
 } from '../../../types';
 import type ViewportInputOptions from '../../../types/ViewportInputOptions';
+import { isImageActor } from '../../../utilities/actorCheck';
+import isEqual from '../../../utilities/isEqual';
 import renderingEngineCache from '../../renderingEngineCache';
 import type {
   DataAddOptions,
@@ -33,6 +38,11 @@ import {
   getVolume3DProjectionSnapshot,
   type Volume3DProjectionSnapshot,
 } from './volume3DProjectionAdapter';
+import {
+  getResetFocalPoint,
+  getVolume3DFitCamera,
+  setVolume3DPhysicalCamera,
+} from './vtkVolume3DInitialCamera';
 import type {
   Volume3DCamera,
   Volume3DPayload,
@@ -41,6 +51,7 @@ import type {
   Volume3DRendering,
   Volume3DSetDataOptions,
   Volume3DViewportRenderContext,
+  Volume3DVolumeRendering,
   VolumeViewport3DInput,
 } from './viewport3DTypes';
 
@@ -480,67 +491,96 @@ class VolumeViewport3D extends GenericViewport<
   }
 
   /**
-   * Resets the VTK-backed view state and clipping range.
-   *
-   * Mirrors the legacy `VolumeViewport3D.resetCamera` semantics for the
-   * options that 3D-camera tooling relies on:
-   * - `resetZoom: false` keeps the current parallel scale (zoom) instead of
-   *   refitting to bounds. (OrientationControllerTool animates orientation with
-   *   `resetZoom: false`; VolumeCroppingControlTool also forwards options.)
-   * - `resetPan: false` / `resetToCenter: false` keep the current focal point
-   *   and position rather than recentering on the bounds.
-   *
-   * `vtkRenderer.resetCamera()` preserves the current view direction
-   * (viewPlaneNormal) and viewUp - it only repositions the camera along the
-   * existing direction of projection and recomputes the parallel scale - so an
-   * orientation applied via `setViewState` immediately before this call is not
-   * clobbered.
+   * Fits the camera to what the viewport shows, as at the first mount and as
+   * the legacy 3D viewport fits it in `resetCamera`, renders, and fires
+   * CAMERA_MODIFIED and CAMERA_RESET. See `fitViewState` for the fit and the
+   * options.
    *
    * @param options - Reset options matching the legacy `resetCamera` contract.
    * @returns Always `true` for compatibility with legacy viewport contracts.
    */
-  resetViewState(options?: {
-    resetPan?: boolean;
-    resetZoom?: boolean;
-    resetToCenter?: boolean;
-  }): boolean {
-    const {
-      resetPan = true,
-      resetZoom = true,
-      resetToCenter = true,
-    } = options || {};
-
+  resetViewState(options?: ResetCameraOptions): boolean {
     const previousCamera = this.getCameraForEvent();
-    const renderer = this.getRenderer();
-    const camera = renderer.getActiveCamera();
 
-    const previousParallelScale = camera.getParallelScale();
-    const previousPosition = camera.getPosition();
-    const previousFocalPoint = camera.getFocalPoint();
-
-    renderer.resetCamera();
-    renderer.resetCameraClippingRange();
-
-    // resetCamera() always recomputes the parallel scale (zoom) to fit the
-    // bounds; restore the previous zoom when the caller opts out.
-    if (!resetZoom) {
-      camera.setParallelScale(previousParallelScale);
-    }
-
-    // resetCamera() recenters the focal point on the bounds; restore the
-    // previous pan/center when the caller opts out of recentering.
-    if (!resetPan || !resetToCenter) {
-      camera.setFocalPoint(...previousFocalPoint);
-      camera.setPosition(...previousPosition);
-      renderer.resetCameraClippingRange();
-    }
-
-    this.viewState = this.getViewState();
+    this.fitViewState(options);
     this.render();
     this.triggerCameraModifiedEvent(previousCamera);
     this.triggerCameraResetEvent();
 
     return true;
+  }
+
+  /**
+   * Moves the view to a view reference, as `getViewReference` describes the
+   * view. The camera turns about its focal point to the view plane normal
+   * and the view up of the reference, and the focal point then moves along
+   * the normal onto the plane of `cameraFocalPoint`. The zoom and the pan in
+   * that plane stay, as on the next planar viewport, whose view reference
+   * names a plane and not a pan. A plane restriction without a normal gives
+   * the normal of its in-plane vectors, its first vector as the view up and
+   * its point. A reference of another frame of reference is ignored.
+   *
+   * @param viewRef - The view reference to show.
+   */
+  setViewReference(viewRef: ViewReference): void {
+    if (
+      !viewRef ||
+      (viewRef.FrameOfReferenceUID &&
+        viewRef.FrameOfReferenceUID !== this.getFrameOfReferenceUID())
+    ) {
+      return;
+    }
+
+    const viewStatePatch = getViewReferenceCamera(this.getViewState(), viewRef);
+
+    if (viewStatePatch) {
+      this.setViewState(viewStatePatch);
+    }
+  }
+
+  /**
+   * Fits the camera as `resetViewState` does, without rendering and without
+   * events. The content is the volume of the default actor (its image cube,
+   * with the focal point on its centre voxel), else every visible prop (the
+   * extent of their bounds). The extent along the view up and the view right
+   * fills the canvas, the camera keeps its direction and stands ten bounding
+   * radii away. `resetZoom: false` keeps the parallel scale. `resetPan: false`
+   * keeps the focal point; `resetToCenter: false` with `resetPan` moves the
+   * centre of the content along the view plane normal onto the plane of the
+   * focal point.
+   */
+  protected fitViewState(options: ResetCameraOptions = {}): void {
+    const { resetPan = true, resetZoom = true, resetToCenter = true } = options;
+    const camera = this.getViewState();
+    const fit = getVolume3DFitCamera(
+      this.renderContext,
+      this.getFitContent(),
+      camera.viewPlaneNormal,
+      camera.viewUp
+    );
+    const focalPoint = getResetFocalPoint(fit.focalPoint, camera, {
+      resetPan,
+      resetToCenter,
+    });
+    const position = vec3.add(
+      vec3.create(),
+      focalPoint,
+      vec3.subtract(vec3.create(), fit.position, fit.focalPoint)
+    ) as Point3;
+
+    applyVolume3DCamera(
+      this.renderContext,
+      {
+        parallelScale: resetZoom ? fit.parallelScale : camera.parallelScale,
+        focalPoint,
+        position,
+        viewAngle: 90,
+        viewUp: fit.viewUpToUse,
+      },
+      { resetClippingRange: true }
+    );
+    setVolume3DPhysicalCamera(this.renderContext, fit.radius, focalPoint);
+    this.viewState = this.getViewState();
   }
 
   /**
@@ -747,9 +787,109 @@ class VolumeViewport3D extends GenericViewport<
 
     return [];
   }
+
+  /**
+   * What a reset fits: the image cube of the volume of the default actor
+   * when that actor is a volume, else the bounds of every visible prop.
+   */
+  private getFitContent(): { imageData?: vtkImageData; bounds: number[] } {
+    const actorEntry = this.getDefaultActor();
+
+    if (actorEntry && isImageActor(actorEntry)) {
+      const rendering = Array.from(this.bindings.values())
+        .map((binding) => binding.rendering as Volume3DVolumeRendering)
+        .find(
+          (volumeRendering) =>
+            volumeRendering?.renderMode === 'vtkVolume3d' &&
+            volumeRendering.actor === actorEntry.actor
+        );
+      const imageData =
+        rendering?.imageVolume?.imageData ??
+        (actorEntry.actor as vtkVolume).getMapper()?.getInputData();
+
+      if (imageData) {
+        return { imageData, bounds: imageData.getBounds() };
+      }
+    }
+
+    return { bounds: this.getRenderer().computeVisiblePropBounds() };
+  }
 }
 
 export default VolumeViewport3D;
+
+/**
+ * The camera of a view reference on a 3D viewport, from its camera now: the
+ * view plane normal of the reference, or the normal of the in-plane vectors
+ * of its plane restriction, with the view up of the reference made normal to
+ * it, and the focal point and the position moved along that normal onto the
+ * plane of the point of the reference. The distance of the camera stays.
+ * Undefined when the reference names neither a normal nor a point.
+ */
+function getViewReferenceCamera(
+  camera: ICamera,
+  viewRef: ViewReference
+): Partial<Volume3DCamera> | undefined {
+  const { planeRestriction } = viewRef;
+  const planeNormal =
+    planeRestriction?.inPlaneVector1 && planeRestriction.inPlaneVector2
+      ? vec3.cross(
+          vec3.create(),
+          planeRestriction.inPlaneVector2,
+          planeRestriction.inPlaneVector1
+        )
+      : undefined;
+  const referenceNormal =
+    viewRef.viewPlaneNormal ??
+    (planeNormal && vec3.length(planeNormal) > 0 ? planeNormal : undefined);
+  const point = viewRef.cameraFocalPoint ?? planeRestriction?.point;
+
+  if (!referenceNormal && !point) {
+    return;
+  }
+
+  const viewPlaneNormal = vec3.normalize(
+    vec3.create(),
+    referenceNormal ?? camera.viewPlaneNormal
+  );
+  const viewUp = [
+    viewRef.viewUp ?? planeRestriction?.inPlaneVector1,
+    camera.viewUp,
+    [0, 0, 1],
+    [0, 1, 0],
+  ]
+    .filter(Boolean)
+    .map((vector) =>
+      vec3.scaleAndAdd(
+        vec3.create(),
+        vector as Point3,
+        viewPlaneNormal,
+        -vec3.dot(vector as Point3, viewPlaneNormal)
+      )
+    )
+    .find((vector) => !isEqual(vec3.length(vector), 0));
+  const distance = vec3.distance(camera.position, camera.focalPoint);
+  const alongNormal = point
+    ? vec3.dot(
+        vec3.subtract(vec3.create(), point, camera.focalPoint),
+        viewPlaneNormal
+      )
+    : 0;
+  const focalPoint = vec3.scaleAndAdd(
+    vec3.create(),
+    camera.focalPoint,
+    viewPlaneNormal,
+    alongNormal
+  );
+
+  return {
+    focalPoint: [...focalPoint] as Point3,
+    position: [
+      ...vec3.scaleAndAdd(vec3.create(), focalPoint, viewPlaneNormal, distance),
+    ] as Point3,
+    viewUp: [...vec3.normalize(viewUp, viewUp)] as Point3,
+  };
+}
 
 function isVolume3DData(data: LoadedData): data is LoadedData<Volume3DPayload> {
   if (typeof data !== 'object' || data === null) {

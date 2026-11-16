@@ -4,8 +4,9 @@ import { vec3 } from 'gl-matrix';
 import { MPR_CAMERA_VALUES } from '../../../constants';
 import { OrientationAxis } from '../../../enums';
 import { getConfiguration } from '../../../init';
-import type { IImageVolume, Point3 } from '../../../types';
+import type { ICamera, IImageVolume, Point3 } from '../../../types';
 import { getCubeSizeInView } from '../../../utilities/getPlaneCubeIntersectionDimensions';
+import hasNaNValues from '../../../utilities/hasNaNValues';
 import { getVolumeCenterIJK } from '../../helpers/getVolumeCenterIJK';
 import type {
   Volume3DCamera,
@@ -123,6 +124,45 @@ export function getVolume3DFitCamera(
   ] as Point3;
 
   return { focalPoint, parallelScale, position, radius, viewUpToUse };
+}
+
+/**
+ * The focal point of a camera reset, as the legacy viewport chooses it: the
+ * centre of the content when it resets the pan and the centre; the focal
+ * point of the camera when it keeps the pan or both; with `resetToCenter`
+ * false and `resetPan` true, the centre moved along the view plane normal
+ * onto the plane of the focal point of the camera.
+ *
+ * @internal
+ */
+export function getResetFocalPoint(
+  centeredFocalPoint: Point3,
+  camera: Pick<ICamera, 'focalPoint' | 'viewPlaneNormal'>,
+  { resetPan, resetToCenter }: { resetPan: boolean; resetToCenter: boolean }
+): Point3 {
+  if (resetToCenter && resetPan) {
+    return centeredFocalPoint;
+  }
+
+  if (!resetPan) {
+    return hasNaNValues(camera.focalPoint)
+      ? centeredFocalPoint
+      : camera.focalPoint;
+  }
+
+  const distanceAlongNormal = vec3.dot(
+    vec3.subtract(vec3.create(), centeredFocalPoint, camera.focalPoint),
+    camera.viewPlaneNormal
+  );
+
+  return [
+    ...vec3.scaleAndAdd(
+      vec3.create(),
+      centeredFocalPoint,
+      camera.viewPlaneNormal,
+      -distanceAlongNormal
+    ),
+  ] as Point3;
 }
 
 /**

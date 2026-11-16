@@ -10,7 +10,6 @@ import type {
   VideoViewportProperties,
   ViewportInput,
   ViewReference,
-  ViewReferenceSpecifier,
   VOIRange,
   ViewPresentation,
   ViewPresentationSelector,
@@ -27,7 +26,6 @@ import type { VideoImageMetadata } from '../../../utilities/VideoUtilities';
 import VoxelManager from '../../../utilities/VoxelManager';
 import getOrCreateCanvas from '../../helpers/getOrCreateCanvas';
 import { getGenericViewportSourceDataId } from '../genericViewportDisplaySetAccess';
-import type { GenericViewportReferenceContext } from '../genericViewportReferenceCompatibility';
 import { viewportProjection } from '../viewportProjection';
 import type {
   VideoDataPresentation,
@@ -76,12 +74,6 @@ class VideoViewportLegacyAdapter extends VideoViewport {
   /** The number of frames that one step of `scroll` moves. */
   private scrollSpeed = 1;
 
-  /** Whether the check that follows the frames of playback is running. */
-  private isWatchingPlayback = false;
-
-  /** The frame number of the last frame event. */
-  private lastEventFrameNumber?: number;
-
   /** The pixels of the frame that `getImageData` read last. */
   private frameScalarData?: FrameScalarData;
 
@@ -108,8 +100,9 @@ class VideoViewportLegacyAdapter extends VideoViewport {
 
   /**
    * Mounts the first display set as the video, as the next viewport does,
-   * and then shows the frame that the options name: `frameNumber` (1-based)
-   * or `viewReference.sliceIndex` (0-based), as on the legacy viewport.
+   * which shows the 1-based `frameNumber` of the options. Without one it then
+   * shows the 0-based `viewReference.sliceIndex` of the options, as on the
+   * legacy viewport.
    */
   async setDisplaySets(
     ...entries: Array<{
@@ -125,19 +118,13 @@ class VideoViewportLegacyAdapter extends VideoViewport {
     await super.setDisplaySets(...entries);
 
     const { frameNumber, viewReference } = entries[0]?.options ?? {};
-    const initialFrameNumber =
-      frameNumber ??
-      (typeof viewReference?.sliceIndex === 'number'
-        ? viewReference.sliceIndex + 1
-        : undefined);
 
-    if (typeof initialFrameNumber === 'number') {
-      this.setFrameNumber(initialFrameNumber);
+    if (
+      frameNumber === undefined &&
+      typeof viewReference?.sliceIndex === 'number'
+    ) {
+      this.setFrameNumber(viewReference.sliceIndex + 1);
     }
-
-    this.getVideoElement()?.addEventListener('seeked', () =>
-      this.triggerFrameEvents()
-    );
   }
 
   setDataIds(imageIds: string[], options?: ImageSetOptions) {
@@ -257,29 +244,6 @@ class VideoViewportLegacyAdapter extends VideoViewport {
   }
 
   /**
-   * The view reference of the next viewport with the camera of the legacy
-   * video viewport: the focal point, the view plane normal and the view up.
-   * The area tools read the normal of an annotation to measure the frame.
-   */
-  getViewReference(
-    viewRefSpecifier: ViewReferenceSpecifier = {}
-  ): ViewReference {
-    const viewReference = super.getViewReference(viewRefSpecifier);
-    const camera = this.getResolvedView()?.toICamera();
-
-    if (!camera) {
-      return viewReference;
-    }
-
-    return {
-      ...viewReference,
-      cameraFocalPoint: camera.focalPoint,
-      viewPlaneNormal: camera.viewPlaneNormal,
-      viewUp: camera.viewUp,
-    };
-  }
-
-  /**
    * Applies a legacy camera. A `parallelScale` sets the zoom, and a
    * `focalPoint` moves the view so that this world point shows at the centre
    * of the canvas, as on the legacy video viewport. Without a focal point the
@@ -389,17 +353,6 @@ class VideoViewportLegacyAdapter extends VideoViewport {
     }
 
     this.setDisplaySetPresentation(dataId, { averageWhite });
-  }
-
-  /**
-   * Starts playback. While it plays, the playback stays in the frame range
-   * of `setFrameRange`, as on the legacy video viewport: a frame after the
-   * range goes back to its first frame. Each new frame fires the frame events
-   * of the legacy video viewport.
-   */
-  async play(): Promise<void> {
-    await super.play();
-    this.watchPlayback();
   }
 
   /** Plays a paused video and pauses a playing one; true when it now plays. */
@@ -638,67 +591,31 @@ class VideoViewportLegacyAdapter extends VideoViewport {
   }
 
   /**
-   * The reference contexts of the next viewport with the focal point and the
-   * view plane normal of the camera, as the generic viewport gives them, so
-   * that a reference with a view plane normal is viewable here.
+   * Keeps playback in the frame range of `setFrameRange`, as on the legacy
+   * video viewport: a frame out of the range goes back to its first frame.
+   * Another frame fires the frame events, as on the next viewport.
    */
-  protected getReferenceViewContexts(): GenericViewportReferenceContext[] {
-    const camera = this.getResolvedView()?.toICamera();
+  protected onPlaybackFrame(): void {
+    const frameNumber = this.getFrameNumber();
 
-    return super.getReferenceViewContexts().map((context) =>
-      camera
-        ? {
-            ...context,
-            cameraFocalPoint: camera.focalPoint,
-            viewPlaneNormal: camera.viewPlaneNormal,
-          }
-        : context
-    );
-  }
+    if (
+      this.frameRange &&
+      (frameNumber < this.frameRange[0] || frameNumber > this.frameRange[1])
+    ) {
+      this.setFrameNumber(this.frameRange[0]);
 
-  /**
-   * Checks the frame on every animation frame while the video plays. A frame
-   * out of the frame range goes back to the first frame of the range, and a
-   * new frame fires the frame events.
-   */
-  private watchPlayback(): void {
-    if (this.isWatchingPlayback) {
       return;
     }
 
-    const check = () => {
-      const element = this.getVideoElement();
-
-      if (this.isDestroyed || !element || element.paused) {
-        this.isWatchingPlayback = false;
-
-        return;
-      }
-
-      const frameNumber = this.getFrameNumber();
-
-      if (
-        this.frameRange &&
-        (frameNumber < this.frameRange[0] || frameNumber > this.frameRange[1])
-      ) {
-        this.setFrameNumber(this.frameRange[0]);
-      } else if (frameNumber !== this.lastEventFrameNumber) {
-        this.triggerFrameEvents();
-      }
-
-      requestAnimationFrame(check);
-    };
-
-    this.isWatchingPlayback = true;
-    check();
+    super.onPlaybackFrame();
   }
 
   /**
-   * Fires `STACK_NEW_IMAGE` and `IMAGE_RENDERED` with the time and the
-   * duration of the video, as the legacy video viewport does for each frame
-   * that it draws.
+   * Fires the STACK_NEW_IMAGE of the next viewport, then IMAGE_RENDERED with
+   * the time and the duration of the video, as the legacy video viewport
+   * does for each frame that it draws.
    */
-  private triggerFrameEvents(): void {
+  protected triggerFrameEvents(): void {
     const element = this.getVideoElement();
 
     if (this.isDestroyed || !element) {
@@ -707,15 +624,7 @@ class VideoViewportLegacyAdapter extends VideoViewport {
 
     const { currentTime: time, duration } = element;
 
-    this.lastEventFrameNumber = this.getFrameNumber();
-    triggerEvent(this.element, Events.STACK_NEW_IMAGE, {
-      element: this.element,
-      viewportId: this.id,
-      viewport: this,
-      renderingEngineId: this.renderingEngineId,
-      time,
-      duration,
-    });
+    super.triggerFrameEvents();
     triggerEvent(this.element, Events.IMAGE_RENDERED, {
       element: this.element,
       viewportId: this.id,

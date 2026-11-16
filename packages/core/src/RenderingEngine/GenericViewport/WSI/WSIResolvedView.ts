@@ -22,22 +22,39 @@ type WSIResolvedViewState = {
 };
 
 class WSIResolvedView extends ResolvedViewportView<WSIResolvedViewState> {
+  /**
+   * The slide point at a canvas point. The microscopy viewer puts the pixel
+   * of column x and row y of the total pixel matrix on the map point
+   * `[x, -y]`, so the y of the map point is negated to give the row before
+   * the image orientation and the origin of the metadata place it on the
+   * slide, as the legacy WSI viewport does.
+   */
   canvasToWorld(canvasPos: Point2): Point3 {
-    const indexPoint = canvasToIndexForWSI({
+    const mapPoint = canvasToIndexForWSI({
       canvasHeight: this.state.canvasHeight,
       canvasPos,
       canvasWidth: this.state.canvasWidth,
       view: this.state.view,
     });
 
-    return indexToWorldWSIMetadata(this.state.metadata, indexPoint);
+    return indexToWorldWSIMetadata(this.state.metadata, [
+      mapPoint[0],
+      -mapPoint[1],
+      0,
+    ]);
   }
 
+  /**
+   * The canvas point of a slide point: the inverse of `canvasToWorld`. The
+   * row of the pixel is negated to give the y of its map point.
+   */
   worldToCanvas(worldPos: Point3): Point2 {
+    const indexPoint = worldToIndexWSIMetadata(this.state.metadata, worldPos);
+
     return indexToCanvasForWSI({
       canvasHeight: this.state.canvasHeight,
       canvasWidth: this.state.canvasWidth,
-      indexPos: worldToIndexWSIMetadata(this.state.metadata, worldPos),
+      indexPos: [indexPoint[0], -indexPoint[1], 0],
       view: this.state.view,
     });
   }

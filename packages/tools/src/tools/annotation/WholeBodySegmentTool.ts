@@ -394,17 +394,22 @@ class WholeBodySegmentTool extends GrowCutBaseTool {
     return { topLeft, bottomRight };
   }
 
+  /**
+   * The volume that a viewport in volume mode shows: the first volume of
+   * `getAllVolumeIds` on a legacy volume viewport or an adapter, else the
+   * volume of `getVolumeId`, as on a direct next viewport.
+   */
   private _getViewportVolume(viewport: Types.IViewport) {
     const volumeViewport = viewport as Types.IBaseVolumeViewport;
+    const volumeId = csUtils.viewportIsInVolumeMode(viewport)
+      ? (volumeViewport.getAllVolumeIds?.()[0] ??
+        volumeViewport.getVolumeId?.())
+      : undefined;
 
-    if (
-      !csUtils.viewportIsInVolumeMode(viewport) ||
-      typeof volumeViewport.getAllVolumeIds !== 'function'
-    ) {
+    if (!volumeId) {
       throw new Error('Viewport is not a BaseVolumeViewport');
     }
 
-    const volumeId = volumeViewport.getAllVolumeIds()[0];
     return cache.getVolume(volumeId);
   }
 

@@ -128,10 +128,10 @@ export default class AnnotationMultiSlice {
    */
   public static setViewportFrameRange(viewport, specifier) {
     if (viewport.setFrameRange && specifier.multiSliceReference?.sliceIndex) {
-      viewport.setFrameRange(
+      viewport.setFrameRange([
         specifier.sliceIndex + 1,
-        specifier.multiSliceReference.sliceIndex + 1
-      );
+        specifier.multiSliceReference.sliceIndex + 1,
+      ]);
     }
   }
 }

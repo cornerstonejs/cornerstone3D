@@ -1,4 +1,3 @@
-import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 import { vec2, vec3 } from 'gl-matrix';
@@ -31,7 +30,6 @@ import applyPreset from '../../../utilities/applyPreset';
 import { deepClone } from '../../../utilities/deepClone';
 import getAcquisitionPlaneOrientation from '../../../utilities/getAcquisitionPlaneOrientation';
 import getVolumeViewportScrollInfo from '../../../utilities/getVolumeViewportScrollInfo';
-import hasNaNValues from '../../../utilities/hasNaNValues';
 import isEqual, { isEqualNegative } from '../../../utilities/isEqual';
 import { coreLog } from '../../../utilities/logger';
 import snapFocalPointToSlice from '../../../utilities/snapFocalPointToSlice';
@@ -41,11 +39,7 @@ import genericViewportDisplaySetMetadataProvider from '../../../utilities/generi
 import { viewportProjection } from '../viewportProjection';
 import VolumeViewport3D from './viewport3D';
 import applyVolume3DCamera from './applyVolume3DCamera';
-import {
-  getOrientationVectors,
-  getVolume3DFitCamera,
-  setVolume3DPhysicalCamera,
-} from './vtkVolume3DInitialCamera';
+import { getOrientationVectors } from './vtkVolume3DInitialCamera';
 import type {
   Volume3DCamera,
   Volume3DDataPresentation,
@@ -202,59 +196,17 @@ class VolumeViewport3DLegacyAdapter extends VolumeViewport3D {
   }
 
   /**
-   * Fits the camera as the legacy 3D viewport fits it in `resetCamera`, and
-   * not with the vtk.js reset, which fits the bounding sphere and shows the
-   * same data smaller.
-   *
-   * The content is the first actor when it is a volume (its image cube, with
-   * the focal point on its centre voxel), else every visible actor (the extent
-   * of their bounds). The extent along the view up and the view right fills
-   * the canvas, the camera keeps its direction, and it stands ten bounding
-   * radii away. `resetZoom: false` keeps the parallel scale; `resetPan` and
-   * `resetToCenter` choose the focal point as on the legacy viewport. The
-   * camera is kept as the initial camera of `getZoom` and `getPan` unless
-   * `storeAsInitialCamera` is false. Fires CAMERA_MODIFIED and CAMERA_RESET
-   * unless `suppressEvents` is set.
+   * Fits the camera as the next 3D viewport fits it in `resetViewState`,
+   * which is the fit of the legacy 3D viewport. The camera is kept as the
+   * initial camera of `getZoom` and `getPan` unless `storeAsInitialCamera` is
+   * false. Fires CAMERA_MODIFIED and CAMERA_RESET unless `suppressEvents` is
+   * set.
    */
   resetViewState(options: Volume3DLegacyResetOptions = {}): boolean {
-    const {
-      resetPan = true,
-      resetZoom = true,
-      resetToCenter = true,
-      storeAsInitialCamera = true,
-      suppressEvents = false,
-    } = options;
+    const { storeAsInitialCamera = true, suppressEvents = false } = options;
     const previousCamera = this.getCameraForEvent();
-    const camera = this.getCamera();
-    const fit = getVolume3DFitCamera(
-      this.renderContext,
-      this.getFitContent(),
-      camera.viewPlaneNormal,
-      camera.viewUp
-    );
-    const focalPoint = getResetFocalPoint(fit.focalPoint, camera, {
-      resetPan,
-      resetToCenter,
-    });
-    const position = vec3.add(
-      vec3.create(),
-      focalPoint,
-      vec3.subtract(vec3.create(), fit.position, fit.focalPoint)
-    ) as Point3;
 
-    applyVolume3DCamera(
-      this.renderContext,
-      {
-        parallelScale: resetZoom ? fit.parallelScale : camera.parallelScale,
-        focalPoint,
-        position,
-        viewAngle: 90,
-        viewUp: fit.viewUpToUse,
-      },
-      { resetClippingRange: true }
-    );
-    setVolume3DPhysicalCamera(this.renderContext, fit.radius, focalPoint);
-    this.viewState = this.getViewState();
+    this.fitViewState(options);
 
     if (storeAsInitialCamera) {
       this.initialCamera = this.getCamera();
@@ -1165,6 +1117,13 @@ class VolumeViewport3DLegacyAdapter extends VolumeViewport3D {
 
       volumeInputArray.forEach((volumeInput, index) => {
         const dataId = dataIds[index];
+        const rendering = this.getBinding(dataId)?.rendering as
+          | Volume3DVolumeRendering
+          | undefined;
+
+        if (volumeInput.actorUID && rendering?.renderMode === 'vtkVolume3d') {
+          rendering.actorEntryUID = volumeInput.actorUID;
+        }
 
         if (volumeInput.visibility !== undefined) {
           this.setDisplaySetPresentation(dataId, {
@@ -1211,22 +1170,35 @@ class VolumeViewport3DLegacyAdapter extends VolumeViewport3D {
     }
   }
 
+  /**
+   * The actor entries of mounted volumes for the VOLUME_VIEWPORT_NEW_VOLUME
+   * event, with the UID that `getActors` gives them: the `actorUID` of the
+   * volume input, else the UID of the rendering, as the legacy viewport.
+   */
   private buildActorEntries(
     volumeInputArray: IVolumeInput[],
     dataIds: string[]
   ): ActorEntry[] {
     return volumeInputArray.flatMap((volumeInput, index) => {
-      const actor = this.getBindingActor(dataIds[index]);
+      const rendering = this.getBinding(dataIds[index])?.rendering as
+        | Partial<Volume3DVolumeRendering>
+        | undefined;
+      const actor = rendering?.actor;
 
       if (!actor) {
         return [];
       }
 
-      const { actorUID, slabThickness, volumeId, ...rest } = volumeInput;
+      const {
+        actorUID: _actorUID,
+        slabThickness,
+        volumeId,
+        ...rest
+      } = volumeInput;
 
       return [
         {
-          uid: actorUID || volumeId,
+          uid: rendering.actorEntryUID,
           actor: actor as ActorEntry['actor'],
           slabThickness,
           referencedId: volumeId,
@@ -1322,30 +1294,6 @@ class VolumeViewport3DLegacyAdapter extends VolumeViewport3D {
     return this.getVolumeRenderings().find(
       (rendering) => rendering.imageVolume?.volumeId === volumeId
     )?.actorEntryUID;
-  }
-
-  /**
-   * What the legacy reset fits: the image cube of the first actor when it is
-   * a volume, else the bounds of every visible prop. A volume of the viewport
-   * gives the image data of its volume, as the first mount fits it.
-   */
-  private getFitContent(): { imageData?: vtkImageData; bounds: number[] } {
-    const actorEntry = this.getDefaultActor();
-
-    if (actorEntry && isImageActor(actorEntry)) {
-      const rendering = this.getVolumeRenderings().find(
-        (volumeRendering) => volumeRendering.actor === actorEntry.actor
-      );
-      const imageData =
-        rendering?.imageVolume?.imageData ??
-        (actorEntry.actor as vtkVolume).getMapper()?.getInputData();
-
-      if (imageData) {
-        return { imageData, bounds: imageData.getBounds() };
-      }
-    }
-
-    return { bounds: this.getRenderer().computeVisiblePropBounds() };
   }
 
   private resolveTargetDataId(volumeId?: string): string | undefined {
@@ -1457,43 +1405,6 @@ function isVolume3DViewPresentation(
     typeof viewPresentation === 'object' &&
     'camera' in viewPresentation
   );
-}
-
-/**
- * The focal point of a camera reset, as the legacy viewport chooses it: the
- * centre of the content when it resets the pan and the centre; the focal
- * point of the camera when it keeps the pan or both; with `resetToCenter`
- * false and `resetPan` true, the centre moved along the view plane normal
- * onto the plane of the focal point of the camera.
- */
-function getResetFocalPoint(
-  centeredFocalPoint: Point3,
-  camera: ICamera,
-  { resetPan, resetToCenter }: { resetPan: boolean; resetToCenter: boolean }
-): Point3 {
-  if (resetToCenter && resetPan) {
-    return centeredFocalPoint;
-  }
-
-  if (!resetPan) {
-    return hasNaNValues(camera.focalPoint)
-      ? centeredFocalPoint
-      : camera.focalPoint;
-  }
-
-  const distanceAlongNormal = vec3.dot(
-    vec3.subtract(vec3.create(), centeredFocalPoint, camera.focalPoint),
-    camera.viewPlaneNormal
-  );
-
-  return [
-    ...vec3.scaleAndAdd(
-      vec3.create(),
-      centeredFocalPoint,
-      camera.viewPlaneNormal,
-      -distanceAlongNormal
-    ),
-  ] as Point3;
 }
 
 /** Whether a vector lies in the plane of this normal, or there is none. */

@@ -165,6 +165,53 @@ describe('3D legacy adapter against the legacy 3D viewport -- ', () => {
     );
   });
 
+  it('gives the actor UID of the volume input to its actors and events, as the legacy viewport', async function () {
+    const [legacy, adapter] = createPair(renderingEngine);
+    const volumeId = await createVolume();
+    const eventUIDs = new Map();
+
+    for (const viewport of [legacy, adapter]) {
+      viewport.element.addEventListener(
+        Enums.Events.VOLUME_VIEWPORT_NEW_VOLUME,
+        (evt) =>
+          eventUIDs.set(
+            viewport,
+            evt.detail.volumeActors.map(({ uid }) => uid)
+          )
+      );
+      await viewport.setVolumes([{ volumeId, actorUID: 'ctActor' }]);
+    }
+
+    const actorUIDs = (viewport) => viewport.getActors().map(({ uid }) => uid);
+
+    expect(actorUIDs(adapter)).toEqual(actorUIDs(legacy));
+    expect(eventUIDs.get(adapter)).toEqual(eventUIDs.get(legacy));
+    expect(adapter.getActor('ctActor')?.referencedId).toBe(
+      legacy.getActor('ctActor').referencedId
+    );
+
+    adapter.removeVolumeActors(['ctActor']);
+
+    expect(adapter.getActors()).toEqual([]);
+  });
+
+  it('gives the same actor UID to its actors and its events without an actor UID', async function () {
+    const [, adapter] = createPair(renderingEngine);
+    const volumeId = await createVolume();
+    let eventUIDs;
+
+    adapter.element.addEventListener(
+      Enums.Events.VOLUME_VIEWPORT_NEW_VOLUME,
+      (evt) => {
+        eventUIDs = evt.detail.volumeActors.map(({ uid }) => uid);
+      }
+    );
+    await adapter.setVolumes([{ volumeId }]);
+
+    expect(adapter.getActors().map(({ uid }) => uid)).toEqual(eventUIDs);
+    expect(adapter.getActor(eventUIDs[0])?.referencedId).toBe(volumeId);
+  });
+
   it('keeps the resetCamera options as the legacy viewport', async function () {
     const [legacy, adapter] = createPair(renderingEngine);
     const volumeId = await createVolume();
