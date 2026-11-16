@@ -21,6 +21,7 @@ import {
   getConfiguration,
   isCornerstoneInitialized,
   resetInitialization,
+  setConfiguration,
   setRenderBackend,
   setSliceFirst,
 } from '../src/init';
@@ -238,7 +239,36 @@ describe('slice first decision', () => {
     jest.restoreAllMocks();
   });
 
-  it('keeps the GPU volume path while slice first is off (the default)', () => {
+  it('is on by default', () => {
+    jest.isolateModules(() => {
+      const freshInit = require('../src/init');
+
+      expect(freshInit.getConfiguration().rendering.planar.sliceFirst).toBe(
+        true
+      );
+    });
+  });
+
+  it('stays on for a configuration that does not name it', () => {
+    const configuration = getConfiguration();
+
+    setConfiguration({
+      ...configuration,
+      rendering: { ...configuration.rendering, planar: {} },
+    });
+
+    try {
+      expect(service.select(dataSet).renderMode).toBe(
+        ActorRenderMode.VTK_SAMPLED_SLICE
+      );
+    } finally {
+      setConfiguration(configuration);
+    }
+  });
+
+  it('keeps the GPU volume path while slice first is off', () => {
+    setSliceFirst(false);
+
     expect(getConfiguration().rendering.planar.sliceFirst).toBe(false);
     expect(service.select(dataSet).renderMode).toBe(
       ActorRenderMode.VTK_VOLUME_SLICE

@@ -51,7 +51,7 @@ const defaultConfig: Cornerstone3DConfig = {
        * the deprecated useCPURendering flag). See setRenderBackend().
        */
       renderBackend: RenderBackends.Auto,
-      sliceFirst: false,
+      sliceFirst: true,
       cpuVolume: {
         useViewportSamplingForLinear: true,
         volumeModifiedThrottleMs: 5000,
@@ -220,7 +220,16 @@ let lostContext = false;
  * changes with it off.
  */
 function drawsOnCpuAfterLostContext(): boolean {
-  return lostContext && (config.rendering.planar?.sliceFirst ?? false);
+  return lostContext && isSliceFirstOn();
+}
+
+/**
+ * Whether slice first is on (`rendering.planar.sliceFirst`). It is on unless
+ * the configuration turns it off, so a configuration that does not name it
+ * keeps the default.
+ */
+function isSliceFirstOn(): boolean {
+  return config.rendering?.planar?.sliceFirst !== false;
 }
 
 /**
@@ -366,7 +375,7 @@ function setRenderBackend(backend: RenderBackendValue, reason?: string): void {
  * @category Initialization
  */
 function setSliceFirst(enabled: boolean): void {
-  if ((config.rendering.planar?.sliceFirst ?? false) === enabled) {
+  if (isSliceFirstOn() === enabled) {
     return;
   }
 
@@ -481,9 +490,7 @@ function canRenderFloatTextures(): boolean {
   const capabilities = getRenderingCapabilities();
 
   if (capabilities.webgl) {
-    return (
-      capabilities.floatLinear || (config.rendering.planar?.sliceFirst ?? false)
-    );
+    return capabilities.floatLinear || isSliceFirstOn();
   }
 
   return !isIOS();

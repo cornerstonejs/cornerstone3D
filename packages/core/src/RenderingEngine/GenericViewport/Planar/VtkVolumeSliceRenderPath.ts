@@ -442,7 +442,7 @@ export class VtkVolumeSliceRenderPath
     rendering.removeStreamingSubscriptions?.();
     ctx.vtk.renderer.removeActor(rendering.actor);
 
-    if (getConfiguration().rendering?.planar?.sliceFirst) {
+    if (getConfiguration().rendering?.planar?.sliceFirst !== false) {
       volumeTextureStore.evictUnheldSetsOfVolume(
         rendering.imageVolume.volumeId
       );

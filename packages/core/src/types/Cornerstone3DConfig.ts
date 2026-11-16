@@ -117,7 +117,7 @@ interface Cornerstone3DConfig {
        * is made for it. It applies only on the 'gpu' backend, to a cached
        * volume with one value per voxel, and while the slab is thin enough
        * for the CPU. The per-display-set `sliceFirst` option wins over this
-       * value. Default false. Use setSliceFirst() to change it at runtime.
+       * value. Default true. Use setSliceFirst() to change it at runtime.
        * @experimental
        */
       sliceFirst?: boolean;

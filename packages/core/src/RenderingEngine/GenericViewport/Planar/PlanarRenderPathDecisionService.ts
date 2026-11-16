@@ -594,7 +594,7 @@ export class PlanarRenderPathDecisionService {
     const sliceFirst =
       options.sliceFirst ??
       getConfiguration().rendering?.planar?.sliceFirst ??
-      false;
+      true;
 
     if (!sliceFirst) {
       return { sampled: false, reason: 'sliceFirstOff' };

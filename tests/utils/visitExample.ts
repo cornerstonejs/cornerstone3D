@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test';
 import { validateCompatibilityRuntime } from './compatibilityMode';
-import { shouldForceSliceFirst } from './createExampleUrl';
+import { getForcedSliceFirst, setForcedSliceFirst } from './createExampleUrl';
 import { waitForViewportsRendered } from './waitForViewportsRendered';
 
 function shouldForceGenericViewport() {
@@ -109,9 +109,7 @@ export const visitExample = async (
       exampleUrl.searchParams.set('cpu', '1');
     }
 
-    if (shouldForceSliceFirst()) {
-      exampleUrl.searchParams.set('sliceFirst', '1');
-    }
+    setForcedSliceFirst(exampleUrl);
 
     await page.goto(exampleUrl.toString());
   } else {
@@ -121,7 +119,7 @@ export const visitExample = async (
     if (
       shouldForceGenericViewport() ||
       shouldForceCpuRendering() ||
-      shouldForceSliceFirst()
+      getForcedSliceFirst() !== undefined
     ) {
       const exampleUrl = new URL(page.url());
 
@@ -133,9 +131,7 @@ export const visitExample = async (
         exampleUrl.searchParams.set('cpu', '1');
       }
 
-      if (shouldForceSliceFirst()) {
-        exampleUrl.searchParams.set('sliceFirst', '1');
-      }
+      setForcedSliceFirst(exampleUrl);
 
       await page.goto(exampleUrl.toString());
     }

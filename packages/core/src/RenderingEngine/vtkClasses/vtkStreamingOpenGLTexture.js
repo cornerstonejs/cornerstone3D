@@ -63,7 +63,7 @@ const MAX_DRAINED_GL_ERRORS = 8;
  * allocation runs exactly as before.
  */
 function watchesAllocation() {
-  return !!getConfiguration()?.rendering?.planar?.sliceFirst;
+  return getConfiguration()?.rendering?.planar?.sliceFirst !== false;
 }
 
 /** Reads and drops the GL errors that are pending on a context. */

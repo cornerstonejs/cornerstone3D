@@ -185,6 +185,8 @@ describe('slab routing of the slice first decision', () => {
   it('follows the global slice first setting when the data set has none', () => {
     const options = { orientation: OrientationAxis.CORONAL };
 
+    setSliceFirst(false);
+
     expect(modeOf(options)).toBe(ActorRenderMode.VTK_VOLUME_SLICE);
 
     setSliceFirst(true);

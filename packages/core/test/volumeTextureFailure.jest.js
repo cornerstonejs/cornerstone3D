@@ -148,7 +148,7 @@ describe('the check of a 3D texture allocation', () => {
   it('checks nothing and reads no GL error with slice first off', () => {
     const { texture, gl } = createTexture();
 
-    mockConfig.rendering = {};
+    mockConfig.rendering = { planar: { sliceFirst: false } };
     mockAllocation.error = OUT_OF_MEMORY;
     allocate(texture);
 
@@ -158,5 +158,15 @@ describe('the check of a 3D texture allocation', () => {
     mockAllocation.throws = true;
 
     expect(() => allocate(texture)).toThrow('texStorage3D failed');
+  });
+
+  it('checks the allocation when the configuration does not name slice first', () => {
+    const { texture } = createTexture();
+
+    mockConfig.rendering = {};
+    mockAllocation.error = OUT_OF_MEMORY;
+    allocate(texture);
+
+    expect(mockRecordFailure).toHaveBeenCalledWith('ct');
   });
 });

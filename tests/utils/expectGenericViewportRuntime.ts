@@ -1,5 +1,5 @@
 import { expect, type Page } from '@playwright/test';
-import { shouldForceSliceFirst } from './createExampleUrl';
+import { getForcedSliceFirst } from './createExampleUrl';
 
 type RuntimeExpectation = {
   renderingEngineId: string;
@@ -74,10 +74,13 @@ export async function expectGenericViewportRuntime(
 
 /**
  * The render mode of a plain slice of a scalar volume on a next planar
- * viewport with the GPU backend: `vtkSampledSlice` when the run turns slice
- * first on for every example (`PLAYWRIGHT_SLICE_FIRST=1`), `vtkVolumeSlice`
- * otherwise. A test that is about the 3D texture itself pins its mode.
+ * viewport with the GPU backend: `vtkSampledSlice`, since slice first is on by
+ * default, and `vtkVolumeSlice` when the run turns slice first off for every
+ * example (`PLAYWRIGHT_SLICE_FIRST=0`). A test that is about the 3D texture
+ * itself pins its mode.
  */
 export function getPlainVolumeSliceRenderMode(): string {
-  return shouldForceSliceFirst() ? 'vtkSampledSlice' : 'vtkVolumeSlice';
+  return getForcedSliceFirst() === false
+    ? 'vtkVolumeSlice'
+    : 'vtkSampledSlice';
 }
