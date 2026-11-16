@@ -44,8 +44,10 @@ export function updateContoursOnCameraModified(
     viewport.render();
   }
 
-  const camera = viewport.getCamera();
-  currentViewportNormal.set(surfacesInfo[0].id, camera.viewPlaneNormal);
+  currentViewportNormal.set(
+    surfacesInfo[0].id,
+    viewport.getViewReference().viewPlaneNormal
+  );
 
   // Remove the existing event listener
   viewport.element.removeEventListener(

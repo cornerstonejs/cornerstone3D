@@ -93,6 +93,18 @@ and thickens them. Together they are the crosshair for the next viewports.
   by the slab. `getCurrentImageIdIndex(undefined, true)` and
   `getNumberOfSlices(undefined, true)` count those steps.
 
+## Several volumes in one planar viewport
+
+- **The volume helpers answer for every volume shown.** `hasVolumeId`,
+  `hasVolumeURI`, `hasImageURI` and `getAllVolumeIds` look at each volume of a
+  fusion. In 5.x a next viewport looked at the first one only.
+- **`getVolumeId({ volumeId })` gives undefined for a volume that is not
+  shown,** and `getImageIds(volumeId)` throws for one, as on the legacy
+  viewport. In 5.x both fell back to the first volume, which hid a wrong id.
+- **A surface shows as contours.** The conversion of a Surface representation
+  to contours did nothing on a next planar viewport, because the planes of its
+  slices were missing.
+
 ## The render plan
 
 Each layer of a planar viewport has a plan: how its slice is made, what draws

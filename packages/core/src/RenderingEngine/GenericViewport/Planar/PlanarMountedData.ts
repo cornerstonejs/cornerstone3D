@@ -156,6 +156,31 @@ class PlanarMountedData {
     }
   }
 
+  /**
+   * The volume ids of the mounted display sets that show a volume, the
+   * source first, then the overlays in the order they were mounted.
+   */
+  getVolumeIds(): string[] {
+    const volumeIds: string[] = [];
+
+    for (const role of ['source', 'overlay'] as BindingRole[]) {
+      for (const [, binding] of this.host.getBindings()) {
+        const volumeId = (binding.data as LoadedData<PlanarPayload> | undefined)
+          ?.volumeId;
+
+        if (
+          binding.role === role &&
+          volumeId &&
+          !volumeIds.includes(volumeId)
+        ) {
+          volumeIds.push(volumeId);
+        }
+      }
+    }
+
+    return volumeIds;
+  }
+
   getDefaultVOIRange(dataId?: string): VOIRange | undefined {
     const targetDataId =
       dataId ?? this.sourceDataId ?? this.getCurrentBinding()?.data.id;

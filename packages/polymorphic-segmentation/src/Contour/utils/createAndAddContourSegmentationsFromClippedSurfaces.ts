@@ -205,12 +205,11 @@ export function createAndAddContourSegmentationsFromClippedSurfaces(
     return;
   }
 
-  const camera = viewport.getCamera();
-  if (!camera) {
+  const planeNormal = viewport.getViewReference()?.viewPlaneNormal;
+  if (!planeNormal) {
     cs3dLogger.warn('Camera not available in viewport');
     return;
   }
-  const planeNormal = camera.viewPlaneNormal;
 
   for (const [segmentIndex, contoursData] of rawContourData) {
     for (const contourData of contoursData) {

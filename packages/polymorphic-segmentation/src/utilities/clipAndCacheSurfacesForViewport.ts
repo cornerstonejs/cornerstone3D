@@ -103,7 +103,7 @@ export async function clipAndCacheSurfacesForViewport(
     surfacesAABB.set(surface.id, surfacesAABBCache.get(surface.id));
   });
 
-  const camera = viewport.getCamera();
+  const { viewPlaneNormal } = viewport.getViewReference();
 
   await workerManager
     .executeTask(
@@ -126,7 +126,7 @@ export async function clipAndCacheSurfacesForViewport(
               const segmentIndexNumber = Number(segmentIndex);
               const cacheId = generateCacheId(
                 viewport,
-                camera.viewPlaneNormal,
+                viewPlaneNormal,
                 sliceIndex
               );
               updatePolyDataCache(segmentIndexNumber, cacheId, polyDataResult);

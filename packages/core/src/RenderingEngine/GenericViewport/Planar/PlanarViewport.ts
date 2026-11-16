@@ -18,15 +18,19 @@ import {
 import type { EffectiveRenderBackend } from '../../../types/RenderBackendRegistry';
 import type {
   ActorEntry,
+  CPUIImageData,
   ICamera,
   IImage,
+  IImageData,
+  IVolumeViewport,
+  PixelDataTypedArray,
+  Scaling,
   IStackInput,
   ImageActor,
   OrientationVectors,
   Point2,
   Point3,
   ActorSliceRange,
-  IVolumeViewport,
   ReferenceCompatibleOptions,
   ScrollOptions,
   VOIRange,
@@ -38,6 +42,8 @@ import { isImageActor } from '../../../utilities/actorCheck';
 import getTargetVolumeAndSpacingInNormalDir from '../../../utilities/getTargetVolumeAndSpacingInNormalDir';
 import { getVolumeId as getVolumeIdOfSpecifier } from '../../../utilities/getVolumeId';
 import snapFocalPointToSlice from '../../../utilities/snapFocalPointToSlice';
+import getClosestImageId from '../../../utilities/getClosestImageId';
+import transformWorldToIndex from '../../../utilities/transformWorldToIndex';
 import cache from '../../../cache/cache';
 import type { PlaneRestriction } from '../../../types/IViewport';
 import type ViewportInputOptions from '../../../types/ViewportInputOptions';
@@ -78,7 +84,12 @@ import {
   selectPlanarRenderPath,
 } from './planarRenderPathSelector';
 import type { SelectedPlanarRenderPath } from './planarRenderPathSelector';
-import { clonePlanarOrientation } from './planarLegacyCompatibility';
+import {
+  clonePlanarOrientation,
+  getPlanarLegacyScaling,
+  getPlanarLegacySliceViewInfo,
+} from './planarLegacyCompatibility';
+import { getPlanarVolumesBounds } from './planarVolumeBounds';
 import { normalizePlanarRotation } from './planarViewPresentation';
 import {
   cloneDisplayArea,
@@ -109,6 +120,11 @@ import {
 } from './planarSliceBasis';
 import { resolveSlabThickness } from './planarVolumeSliceBlendMode';
 import { resolvePlanarSetOrientationVectors } from './planarOrientationVectors';
+import {
+  getPlanarVolumeSliceNavigationState,
+  getPlanarVolumeSlicePoint,
+} from '../../helpers/planarVolumeRendering';
+import { RENDERING_DEFAULTS } from '../../../constants';
 import type {
   PlanarRendering,
   PlanarVolumeSliceRendering,
@@ -974,11 +990,21 @@ class PlanarViewport extends GenericViewport<
   // ====================================================================
 
   /**
-   * Returns the current image ids for the active planar dataset.
+   * Returns the current image ids for the active planar dataset. With a
+   * volume id it gives the image ids of that volume, which the viewport must
+   * show, and throws otherwise, as the legacy volume viewport does.
    *
    * @returns The image ids exposed by the active image or volume dataset.
    */
-  getImageIds(): string[] {
+  getImageIds(volumeId?: string): string[] {
+    if (volumeId) {
+      if (!this.getAllVolumeIds().includes(volumeId)) {
+        throw new Error(`No actor found for the given volumeId: ${volumeId}`);
+      }
+
+      return cache.getVolume(volumeId)?.imageIds ?? [];
+    }
+
     const planarData = this.getPlanarData();
 
     if (!planarData) {
@@ -990,12 +1016,21 @@ class PlanarViewport extends GenericViewport<
 
   /**
    * Returns the current volume id when the active dataset is volume-backed.
+   * With a `volumeId` in the specifier it gives that volume id when the
+   * viewport shows the volume and undefined when it does not, as the legacy
+   * volume viewport does.
    *
    * @returns The volume id for the active dataset, if one exists.
    */
   getVolumeId(
     viewRefSpecifier: ViewReferenceSpecifier = {}
   ): string | undefined {
+    if (viewRefSpecifier.volumeId) {
+      return this.getAllVolumeIds().includes(viewRefSpecifier.volumeId)
+        ? viewRefSpecifier.volumeId
+        : undefined;
+    }
+
     return (
       this.viewReferences.getVolumeId(viewRefSpecifier) ??
       this.getPlanarData()?.volumeId
@@ -1705,6 +1740,308 @@ class PlanarViewport extends GenericViewport<
     return this.getCurrentBinding()?.getImageData?.();
   }
 
+  /**
+   * The image that the viewport shows while it shows a stack, as the legacy
+   * stack viewport gives it: the image drawn last, which changes with each
+   * scroll once the new image is loaded. Undefined while it shows a volume,
+   * where the legacy volume viewport has no such member.
+   */
+  getCornerstoneImage(): IImage | undefined {
+    if (this.getCurrentMode() !== 'stack') {
+      return;
+    }
+
+    const rendering = this.getCurrentPlanarRendering();
+    const shownImage =
+      rendering?.renderMode === ActorRenderMode.VTK_IMAGE
+        ? rendering.currentImage
+        : rendering?.renderMode === ActorRenderMode.CPU_IMAGE
+          ? rendering.enabledElement?.image
+          : undefined;
+
+    return shownImage ?? this.getPlanarData()?.image;
+  }
+
+  /**
+   * The PT scaling of the image that the viewport shows, as the legacy stack
+   * viewport keeps it: for a PT image with a scaling module, the ratios from
+   * SUV body weight to SUV lean body mass and to SUV body surface area, and
+   * empty for any other image. The legacy viewport keeps the first PT scaling
+   * it sees for later stacks too; this reads the current image.
+   */
+  get scaling(): Scaling {
+    return getPlanarLegacyScaling(
+      this.getCurrentImageId() ?? this.getImageIds()[0]
+    );
+  }
+
+  /**
+   * Whether the image shown last needed new image data on the GPU image path,
+   * because it is the first image or its size, data type or number of
+   * components differs from the image before it, as `stackActorReInitialized`
+   * of the legacy stack viewport. A tool then makes again what it built for
+   * the old image data. False on the CPU path and on a volume, where the
+   * legacy viewports do not set it.
+   */
+  get stackActorReInitialized(): boolean {
+    const rendering = this.getCurrentPlanarRendering();
+
+    return (
+      rendering?.renderMode === ActorRenderMode.VTK_IMAGE &&
+      rendering.newImageData
+    );
+  }
+
+  /**
+   * Whether the orientation of the view can change: false while the viewport
+   * shows a stack, true while it shows a volume, as the legacy stack and
+   * volume viewports answer.
+   */
+  isOrientationChangeable(): boolean {
+    return this.getCurrentMode() === 'volume';
+  }
+
+  /**
+   * The volume ids of the volumes that the viewport shows, the source first,
+   * then the overlays. Empty while it shows a stack, also when a stack is
+   * drawn through a volume it makes of its images.
+   */
+  getAllVolumeIds(): string[] {
+    if (this.getCurrentMode() !== 'volume') {
+      return [];
+    }
+
+    return this.mountedData.getVolumeIds();
+  }
+
+  /**
+   * Shows the slice that holds a world point. On a stack it goes to the image
+   * closest to the point, as the legacy stack viewport does, and gives false
+   * when no image is in the view direction. On a volume it moves the slice to
+   * the plane through the point, clamped to the bounds of the volume, as the
+   * legacy volume viewport does, and keeps pan and zoom.
+   *
+   * @param worldPos - The world point to show.
+   * @returns Whether the viewport went to the point.
+   */
+  jumpToWorld(worldPos: Point3): boolean {
+    if (this.getCurrentMode() === 'volume') {
+      const bounds = (
+        this.getImageData() as IImageData | undefined
+      )?.imageData?.getBounds();
+      const sliceWorldPoint = bounds
+        ? ([
+            Math.max(bounds[0], Math.min(bounds[1], worldPos[0])),
+            Math.max(bounds[2], Math.min(bounds[3], worldPos[1])),
+            Math.max(bounds[4], Math.min(bounds[5], worldPos[2])),
+          ] as Point3)
+        : ([...worldPos] as Point3);
+
+      this.setViewState({ slice: { kind: 'volumePoint', sliceWorldPoint } });
+      this.render();
+
+      return true;
+    }
+
+    const imageIds = this.getImageIds();
+    const imageData = this.getImageData() as CPUIImageData | undefined;
+
+    if (!imageData) {
+      return false;
+    }
+
+    const imageId = getClosestImageId(
+      { direction: imageData.direction, spacing: imageData.spacing, imageIds },
+      worldPos,
+      this.getCameraForEvent().viewPlaneNormal,
+      { ignoreSpacing: true }
+    );
+    const index = imageIds.indexOf(imageId);
+
+    if (index === -1) {
+      return false;
+    }
+
+    this.setImageIdIndex(index);
+    this.render();
+
+    return true;
+  }
+
+  /**
+   * Whether the view looks along the acquisition direction. Always true on a
+   * stack, as on the legacy stack viewport. On a volume the view plane normal
+   * must lie within 0.99 of the slice direction of the volume, as on the
+   * legacy volume viewport.
+   */
+  isInAcquisitionPlane(): boolean {
+    if (this.getCurrentMode() === 'stack') {
+      return true;
+    }
+
+    const imageData = this.getImageData() as IImageData | undefined;
+
+    if (!imageData) {
+      return false;
+    }
+
+    const { direction } = imageData;
+    const { viewPlaneNormal } = this.getCameraForEvent();
+
+    return (
+      Math.abs(
+        vec3.dot(viewPlaneNormal, [direction[6], direction[7], direction[8]])
+      ) > 0.99
+    );
+  }
+
+  /**
+   * The value of the volume at a world point, as the legacy volume viewport
+   * reads it: the voxel nearest the point in the source volume. Undefined on
+   * a stack, where the legacy stack viewport has no such member.
+   *
+   * @param point - The world point.
+   */
+  getIntensityFromWorld(point: Point3): number | undefined {
+    const volume =
+      this.getCurrentMode() === 'volume'
+        ? cache.getVolume(this.getVolumeId())
+        : undefined;
+
+    if (!volume?.imageData) {
+      return;
+    }
+
+    const index = transformWorldToIndex(volume.imageData, point);
+
+    return volume.voxelManager.getAtIJKPoint(index) as number;
+  }
+
+  /**
+   * The world bounds that enclose every volume that the viewport shows, as
+   * `[xMin, xMax, yMin, yMax, zMin, zMax]`. The legacy volume viewport gives
+   * the bounds of the visible props of its renderer, which are its volumes.
+   * Undefined on a stack.
+   */
+  getBounds(): number[] | undefined {
+    return getPlanarVolumesBounds(this.getAllVolumeIds());
+  }
+
+  /**
+   * The slice that the viewport shows in the index space of its volume, as
+   * the legacy volume viewport gives it: the slice index, the width and
+   * height of the slice, the volume axis of the view plane normal and the
+   * matrices between slice and index space. Throws on a stack, as the legacy
+   * stack viewport does, and for an oblique view.
+   */
+  getSliceViewInfo(): ReturnType<IVolumeViewport['getSliceViewInfo']> {
+    if (this.getCurrentMode() !== 'volume') {
+      throw new Error('Method not implemented.');
+    }
+
+    return getPlanarLegacySliceViewInfo(
+      this as unknown as IVolumeViewport,
+      this.getCameraForEvent().viewPlaneNormal,
+      this.getSliceIndex()
+    );
+  }
+
+  /**
+   * The values of the volume on the slice that the viewport shows, as the
+   * legacy volume viewport gives them. Throws where `getSliceViewInfo` throws.
+   */
+  getCurrentSlicePixelData(): PixelDataTypedArray {
+    const sliceViewInfo = this.getSliceViewInfo();
+    const { voxelManager } = this.getImageData() as IImageData;
+
+    return voxelManager.getSliceData(sliceViewInfo) as PixelDataTypedArray;
+  }
+
+  /**
+   * A point on the plane of each slice of the volume along the view, with the
+   * index of the slice, as the legacy volume viewport gives them: the focal
+   * point moved by whole slices back and forward and snapped to the slices.
+   * Empty on a stack.
+   */
+  getSlicePlaneCoordinates(): { sliceIndex: number; point: Point3 }[] {
+    const imageVolume =
+      this.getCurrentMode() === 'volume'
+        ? cache.getVolume(this.getVolumeId())
+        : undefined;
+
+    if (!imageVolume) {
+      return [];
+    }
+
+    const { focalPoint, position, viewPlaneNormal } = this.getCameraForEvent();
+    const camera = { focalPoint, position, viewPlaneNormal };
+    const { currentSliceIndex, sliceRange, spacingInNormalDirection } =
+      getPlanarVolumeSliceNavigationState({
+        camera,
+        imageVolume,
+        sliceRange: getPlanarVolumeSliceRange(
+          imageVolume,
+          viewPlaneNormal,
+          focalPoint
+        ),
+      });
+    const numSlicesBackward = Math.round(
+      (sliceRange.current - sliceRange.min) / spacingInNormalDirection
+    );
+    const numSlicesForward = Math.round(
+      (sliceRange.max - sliceRange.current) / spacingInNormalDirection
+    );
+    const slicePoints: { sliceIndex: number; point: Point3 }[] = [];
+
+    for (let delta = -numSlicesBackward; delta <= numSlicesForward; delta++) {
+      const { newFocalPoint } = getPlanarVolumeSlicePoint({
+        camera,
+        delta,
+        sliceRange,
+        spacingInNormalDirection,
+      });
+
+      slicePoints.push({
+        sliceIndex: currentSliceIndex + delta,
+        point: newFocalPoint,
+      });
+    }
+
+    return slicePoints;
+  }
+
+  /**
+   * The two clipping planes of each slice of the volume along the view, as
+   * the legacy volume viewport gives them: one at the minimum slab half
+   * thickness before the slice plane and facing along the view, one at the
+   * same distance after it and facing back. Empty on a stack.
+   */
+  getSlicesClippingPlanes(): {
+    sliceIndex: number;
+    planes: { normal: Point3; origin: Point3 }[];
+  }[] {
+    const { viewPlaneNormal } = this.getCameraForEvent();
+    const offset = vec3.scale(
+      vec3.create(),
+      viewPlaneNormal,
+      RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS
+    );
+
+    return this.getSlicePlaneCoordinates().map(({ sliceIndex, point }) => ({
+      sliceIndex,
+      planes: [
+        {
+          normal: [...viewPlaneNormal] as Point3,
+          origin: vec3.sub(vec3.create(), point, offset) as Point3,
+        },
+        {
+          normal: vec3.negate(vec3.create(), viewPlaneNormal) as Point3,
+          origin: vec3.add(vec3.create(), point, offset) as Point3,
+        },
+      ],
+    }));
+  }
+
   // ====================================================================
   // Public API -- coordinate transforms
   // ====================================================================
@@ -1755,11 +2092,24 @@ class PlanarViewport extends GenericViewport<
 
   /**
    * Returns whether the active dataset contains an image with the given URI.
+   * On a volume it looks in every volume that the viewport shows, as the
+   * legacy volume viewport does.
    *
    * @param imageURI - URI form of the image id to look up.
    * @returns `true` when a matching image URI exists in the active dataset.
    */
   hasImageURI(imageURI: string): boolean {
+    if (this.getCurrentMode() === 'volume') {
+      return this.getAllVolumeIds().some((volumeId) => {
+        const volume = cache.getVolume(volumeId);
+
+        return (
+          volume?.getImageIdIndex?.(imageURI) !== undefined ||
+          volume?.getImageURIIndex?.(imageURI) !== undefined
+        );
+      });
+    }
+
     return this.getImageIds().some(
       (imageId) => imageIdToURI(imageId) === imageURI
     );
@@ -1776,15 +2126,17 @@ class PlanarViewport extends GenericViewport<
   }
 
   /**
-   * Returns whether the active dataset references a volume whose id contains
-   * the given URI fragment.
+   * Returns whether a volume that the viewport shows has an id that contains
+   * the given URI fragment, as the legacy volume viewport answers.
    *
-   * @param volumeURI - Volume URI substring to compare against the active
-   * dataset volume id.
-   * @returns `true` when the active dataset references the given volume URI.
+   * @param volumeURI - Volume URI substring to compare against the volume
+   * ids.
+   * @returns `true` when a shown volume matches the given volume URI.
    */
   hasVolumeURI(volumeURI: string): boolean {
-    return String(this.getVolumeId() || '').includes(volumeURI);
+    return this.getAllVolumeIds().some((volumeId) =>
+      volumeId.includes(volumeURI)
+    );
   }
 
   /**

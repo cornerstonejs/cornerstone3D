@@ -10,14 +10,21 @@ export interface PlanarVolumeSliceNavigationState {
   spacingInNormalDirection: number;
 }
 
+/**
+ * The slice range along the view, the spacing between slices and the index of
+ * the slice at the focal point. The range comes from `sliceRange` when given,
+ * otherwise from the bounds of the volume actor.
+ */
 export function getPlanarVolumeSliceNavigationState(args: {
-  actor: vtkVolume;
+  actor?: vtkVolume;
+  sliceRange?: ReturnType<typeof getSliceRange>;
   camera: Pick<ICamera, 'focalPoint' | 'position' | 'viewPlaneNormal'>;
   imageVolume: IImageVolume;
 }): PlanarVolumeSliceNavigationState {
   const { actor, camera, imageVolume } = args;
   const { focalPoint, viewPlaneNormal } = camera;
-  const sliceRange = getSliceRange(actor, viewPlaneNormal, focalPoint);
+  const sliceRange =
+    args.sliceRange ?? getSliceRange(actor, viewPlaneNormal, focalPoint);
   const spacingInNormalDirection = getSpacingInNormalDirection(
     imageVolume,
     viewPlaneNormal

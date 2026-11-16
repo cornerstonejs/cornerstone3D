@@ -7,25 +7,41 @@ const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
 );
 
 function extractWindowLevelRegionToolData(viewport: Types.IViewport) {
-  const legacyContentMode = csUtils.isGenericViewport(viewport)
-    ? undefined
-    : csUtils.getViewportContentMode(viewport);
+  const contentMode = csUtils.getViewportContentMode(viewport);
 
-  if (legacyContentMode === 'volume') {
-    return extractImageDataVolume(viewport as Types.IVolumeViewport);
+  if (contentMode === 'volume') {
+    const volumeViewport = viewport as Types.IVolumeViewport;
+
+    return csUtils.isGenericViewport(viewport)
+      ? extractImageDataGenericVolume(volumeViewport)
+      : extractImageDataVolume(volumeViewport);
   }
-  if (legacyContentMode === 'stack') {
-    return extractImageDataStack(viewport as Types.IStackViewport);
-  }
-  // Native ("next") generic viewports are neither a StackViewport nor a
-  // VolumeViewport. In stack / vtkImage mode (and axially aligned MPR) the
-  // displayed slice resolves to a cornerstone image, so read its pixel data
-  // from the cache and return the same shape the stack extractor returns.
   if (csUtils.isGenericViewport(viewport)) {
     return extractImageDataGeneric(viewport);
   }
+  if (contentMode === 'stack') {
+    return extractImageDataStack(viewport as Types.IStackViewport);
+  }
 
   throw new Error('Viewport not supported');
+}
+
+/**
+ * The slice of a next viewport that shows a volume, read as on a legacy
+ * volume viewport. An oblique slice has no such slice, so the region window
+ * level is skipped with a warning instead of a throw that would end the tool
+ * interaction.
+ */
+function extractImageDataGenericVolume(viewport: Types.IVolumeViewport) {
+  try {
+    return extractImageDataVolume(viewport);
+  } catch (error) {
+    cs3dLogger.warn(
+      'WindowLevelRegionTool: the current slice is oblique; skipping region window level.',
+      error
+    );
+    return undefined;
+  }
 }
 
 function extractImageDataVolume(viewport: Types.IVolumeViewport) {

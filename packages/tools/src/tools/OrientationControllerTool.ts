@@ -10,6 +10,7 @@ import { getToolGroup } from '../store/ToolGroupManager';
 import setViewportCamera, {
   resetViewportCamera,
 } from '../utilities/setViewportCamera';
+import getViewportICamera from '../utilities/getViewportICamera';
 import * as ToolsEnums from '../enums';
 import { vec3, mat4, quat } from 'gl-matrix';
 import { vtkOrientationControllerWidget } from '../utilities/vtkjs/OrientationControllerWidget';
@@ -603,16 +604,13 @@ class OrientationControllerTool extends BaseTool {
 
     const keepOrientationUp = this.configuration.keepOrientationUp !== false; // Default to true
 
-    // Get the VTK camera from the renderer
-    const renderer = viewport.getRenderer();
-    const camera = renderer.getActiveCamera();
-    const directionOfProjection = camera.getDirectionOfProjection();
-    const startViewUpArray = camera.getViewUp();
+    const { viewPlaneNormal: startViewPlaneNormal, viewUp: startViewUpArray } =
+      getViewportICamera(viewport);
 
     const startForward = vec3.fromValues(
-      -directionOfProjection[0],
-      -directionOfProjection[1],
-      -directionOfProjection[2]
+      startViewPlaneNormal[0],
+      startViewPlaneNormal[1],
+      startViewPlaneNormal[2]
     );
     const startUp = vec3.fromValues(
       startViewUpArray[0],

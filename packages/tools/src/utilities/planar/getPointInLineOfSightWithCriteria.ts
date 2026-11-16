@@ -1,5 +1,6 @@
 import { utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
+import getViewportICamera from '../getViewportICamera';
 /**
  * Returns a point based on some criteria (e.g., minimum or maximum intensity) in
  * the line of sight (on the line between the passed worldPosition and camera position).
@@ -54,7 +55,7 @@ export function getPointsInLineOfSight(
   worldPos: Types.Point3,
   { targetVolumeId, stepSize }: { targetVolumeId: string; stepSize: number }
 ): Types.Point3[] {
-  const camera = viewport.getCamera();
+  const camera = getViewportICamera(viewport) as Types.ICamera;
   const { viewPlaneNormal: normalDirection } = camera;
   const { spacingInNormalDirection } =
     csUtils.getTargetVolumeAndSpacingInNormalDir(

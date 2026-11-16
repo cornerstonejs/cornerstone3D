@@ -116,6 +116,13 @@ These keep their names on a planar viewport: `getImageIds`,
 `getViewReference`, `setViewReference`, `canvasToWorld`, `worldToCanvas`,
 `getFrameOfReferenceUID`, `getImageData` and `render`.
 
+So do these, which only the adapter had in 5.x: `jumpToWorld`,
+`isInAcquisitionPlane`, `getBounds`, `getIntensityFromWorld`,
+`getSliceViewInfo`, `getCurrentSlicePixelData`, `getSlicesClippingPlanes`,
+`getSlicePlaneCoordinates`, `getCornerstoneImage`, `scaling`,
+`stackActorReInitialized`, `isDisabled`, `isOrientationChangeable` and
+`getAllVolumeIds`.
+
 A display set is registered once, under an id that the application chooses:
 
 ```ts

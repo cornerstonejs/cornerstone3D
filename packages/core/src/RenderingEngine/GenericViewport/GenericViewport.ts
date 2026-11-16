@@ -1202,6 +1202,12 @@ abstract class GenericViewport<
   protected onDestroy(): void {
     // Subclasses can release viewport-local resources here.
   }
+
+  /**
+   * False until the rendering engine disables the viewport, as on the legacy
+   * viewports. The engine sets it to true.
+   */
+  isDisabled = false;
 }
 
 export default GenericViewport;
