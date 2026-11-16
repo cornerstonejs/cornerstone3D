@@ -73,6 +73,7 @@ import imageChangeEventListener from './imageChangeEventListener';
 import { getSegmentationRepresentations } from '../../stateManagement/segmentation/getSegmentationRepresentation';
 import { canRenderVolumeViewportLabelmapAsImage } from '../../stateManagement/segmentation/helpers/labelmapImageMapperSupport';
 import { triggerSegmentationRender } from '../../stateManagement/segmentation/SegmentationRenderingEngine';
+import getViewportLabelmapRenderMode from '../../stateManagement/segmentation/helpers/getViewportLabelmapRenderMode';
 
 const viewportId = 'viewport';
 const renderingEngineId = 'rendering-engine';
@@ -81,6 +82,7 @@ const mockedCanRender =
   canRenderVolumeViewportLabelmapAsImage as unknown as jest.Mock;
 const mockedRepresentations = getSegmentationRepresentations as jest.Mock;
 const mockedTriggerRender = triggerSegmentationRender as jest.Mock;
+const mockedRenderMode = getViewportLabelmapRenderMode as unknown as jest.Mock;
 
 /**
  * Fires IMAGE_RENDERED on the element the way a viewport render does.
@@ -157,5 +159,56 @@ describe('segmentation imageChangeEventListener on a slab change of a planar vie
     fireImageRendered(element);
 
     expect(mockedTriggerRender).not.toHaveBeenCalled();
+  });
+});
+
+describe('segmentation imageChangeEventListener on a planar viewport that shows a stack', () => {
+  let element: HTMLDivElement;
+  let addEventListener: jest.SpyInstance;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    element = document.createElement('div');
+    addEventListener = jest.spyOn(element, 'addEventListener');
+    mockedRenderMode.mockReturnValue('image');
+  });
+
+  afterEach(() => {
+    imageChangeEventListener.disable(element);
+    mockedRenderMode.mockReturnValue('volume');
+  });
+
+  it('follows the camera and not the stack image event, which a legacy adapter also fires', () => {
+    const viewport = {
+      id: viewportId,
+      type: Enums.ViewportType.PLANAR_NEXT,
+      element,
+      getCurrentImageId: () => 'imageId:1',
+    };
+
+    (getEnabledElement as jest.Mock).mockReturnValue({ viewport });
+    imageChangeEventListener.enable(element);
+
+    const events = addEventListener.mock.calls.map(([type]) => type);
+
+    expect(events).toContain(Enums.Events.CAMERA_MODIFIED);
+    expect(events).not.toContain(Enums.Events.PRE_STACK_NEW_IMAGE);
+  });
+
+  it('follows the stack image event on a legacy stack viewport', () => {
+    const viewport = {
+      id: viewportId,
+      type: 'stack',
+      element,
+      getCurrentImageId: () => 'imageId:1',
+    };
+
+    (getEnabledElement as jest.Mock).mockReturnValue({ viewport });
+    imageChangeEventListener.enable(element);
+
+    const events = addEventListener.mock.calls.map(([type]) => type);
+
+    expect(events).toContain(Enums.Events.PRE_STACK_NEW_IMAGE);
+    expect(events).not.toContain(Enums.Events.CAMERA_MODIFIED);
   });
 });

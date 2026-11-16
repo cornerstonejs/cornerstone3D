@@ -138,7 +138,7 @@ describe('legacy viewport utilities on legacy viewports and legacy adapters', ()
       expect(viewport.scroll).not.toHaveBeenCalled();
     });
 
-    it('scrolls a volume-mode adapter by index, as before', () => {
+    it('scrolls a volume-mode adapter through its scroll, with the volume options', () => {
       const viewport = useViewport(
         makeAdapter('volume', 'orthographic', {
           getCurrentImageIdIndex: () => 2,
@@ -150,7 +150,10 @@ describe('legacy viewport utilities on legacy viewports and legacy adapters', ()
       scroll(viewport, { delta: 1, volumeId: 'ct' });
 
       expect(getVolumeViewportScrollInfo).not.toHaveBeenCalled();
-      expect(viewport.scroll).toHaveBeenCalledWith(1, undefined, undefined);
+      expect(viewport.scroll).toHaveBeenCalledWith(1, undefined, undefined, {
+        volumeId: 'ct',
+        scrollSlabs: undefined,
+      });
     });
   });
 

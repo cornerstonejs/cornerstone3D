@@ -83,6 +83,16 @@ export default function scroll(
       triggerEvent(eventTarget, Events.STACK_SCROLL_OUT_OF_BOUNDS, eventData);
     }
 
+    if (getViewportContentMode(viewport) === 'volume') {
+      (viewport as ViewportWithScrollOptions).scroll(
+        delta,
+        options.debounceLoading,
+        options.loop,
+        { volumeId, scrollSlabs }
+      );
+      return;
+    }
+
     (viewport as IStackViewport).scroll(
       delta,
       options.debounceLoading,
@@ -90,6 +100,20 @@ export default function scroll(
     );
   }
 }
+
+/**
+ * A generic viewport in volume mode whose `scroll` also takes the volume
+ * options of a scroll. The planar legacy adapter reads them; other viewports
+ * ignore the fourth argument.
+ */
+type ViewportWithScrollOptions = {
+  scroll(
+    delta: number,
+    debounce?: boolean,
+    loop?: boolean,
+    options?: Pick<ScrollOptions, 'volumeId' | 'scrollSlabs'>
+  ): unknown;
+};
 
 export function scrollVolume(
   viewport: IVolumeViewport,

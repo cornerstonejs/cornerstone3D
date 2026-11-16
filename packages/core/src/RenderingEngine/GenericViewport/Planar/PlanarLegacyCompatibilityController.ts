@@ -775,7 +775,7 @@ class PlanarLegacyCompatibilityController {
    * The bounds that enclose every volume of the viewport, or undefined when
    * no volume has bounds.
    */
-  private getVolumeBounds(): number[] | undefined {
+  getVolumeBounds(): number[] | undefined {
     let bounds: number[] | undefined;
 
     for (const volumeId of this.volumeDataIds.keys()) {

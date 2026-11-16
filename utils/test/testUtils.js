@@ -45,6 +45,16 @@ function getForcedCompatFromKarma() {
   return window.__karma__?.config?.forceCompat === true;
 }
 
+/**
+ * Reads the FORCE_GENERIC_VIEWPORT karma switch. It turns on
+ * `rendering.useGenericViewport` for every test environment, so stack and
+ * orthographic viewports become legacy adapters, and keeps the usual
+ * baselines for the image comparisons.
+ */
+function getForcedGenericViewportFromKarma() {
+  return window.__karma__?.config?.forceGenericViewport === true;
+}
+
 function getForcedCpuRenderingFromKarma() {
   return window.__karma__?.config?.forceCpuRendering === true;
 }
@@ -82,7 +92,10 @@ function setupTestEnvironment({
   initCore();
 
   const renderingConfiguration = getConfiguration().rendering;
-  const resolvedUseGenericViewport = useGenericViewport || getForcedCompatFromKarma();
+  const resolvedUseGenericViewport =
+    useGenericViewport ||
+    getForcedCompatFromKarma() ||
+    getForcedGenericViewportFromKarma();
   const resolvedUseCpuRendering =
     getShouldUseCPURendering() || getForcedCpuRenderingFromKarma();
 

@@ -60,10 +60,12 @@ const enable = function (element: HTMLDivElement): void {
     return;
   }
 
-  element.addEventListener(
-    Enums.Events.PRE_STACK_NEW_IMAGE,
-    _imageChangeEventListener as EventListener
-  );
+  if (!isPlanarViewport) {
+    element.addEventListener(
+      Enums.Events.PRE_STACK_NEW_IMAGE,
+      _imageChangeEventListener as EventListener
+    );
+  }
   // this listener handles the segmentation modifications
   // we only listen to the image_rendered once and then remove it
   // the main event to listen here is the stack_new_image

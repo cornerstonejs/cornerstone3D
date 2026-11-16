@@ -18,7 +18,12 @@
  */
 import { vec3 } from 'gl-matrix';
 import { InterpolationType, OrientationAxis } from '../../../enums';
-import type { IImage, IImageVolume, Point3 } from '../../../types';
+import type {
+  ActorSliceRange,
+  IImage,
+  IImageVolume,
+  Point3,
+} from '../../../types';
 import { getImageDataMetadata } from '../../../utilities/getImageDataMetadata';
 import { getCubeSizeInView } from '../../../utilities/getPlaneCubeIntersectionDimensions';
 import getSpacingInNormalDirection from '../../../utilities/getSpacingInNormalDirection';
@@ -275,6 +280,43 @@ function buildImageVolumeCorners(imageVolume: IImageVolume): Point3[] {
   ] as Point3[];
 
   return cornersIdx.map((it) => imageData.indexToWorld(it)) as Point3[];
+}
+
+/**
+ * The range of a volume along a view plane normal, as `getSliceRange` gives
+ * it for the actor of the volume: the smallest and the largest projection of
+ * the corners of the volume onto the normal, and the projection of the focal
+ * point. It reads the volume, not an actor, so it does not depend on the
+ * render path that draws the volume.
+ *
+ * @internal
+ */
+export function getPlanarVolumeSliceRange(
+  imageVolume: IImageVolume,
+  viewPlaneNormal: Point3,
+  focalPoint: Point3
+): ActorSliceRange | undefined {
+  const corners = buildImageVolumeCorners(imageVolume);
+
+  if (!corners.length) {
+    return;
+  }
+
+  const projections = corners.map((corner) =>
+    vec3.dot(corner as unknown as vec3, viewPlaneNormal as unknown as vec3)
+  );
+
+  return {
+    actor: undefined,
+    viewPlaneNormal,
+    focalPoint,
+    min: Math.min(...projections),
+    max: Math.max(...projections),
+    current: vec3.dot(
+      focalPoint as unknown as vec3,
+      viewPlaneNormal as unknown as vec3
+    ),
+  };
 }
 
 /**
