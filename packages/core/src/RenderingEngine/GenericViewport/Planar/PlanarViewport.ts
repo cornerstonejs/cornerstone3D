@@ -1,5 +1,7 @@
+import { vec3 } from 'gl-matrix';
 import {
   Events,
+  MetadataModules,
   OrientationAxis,
   ViewportStatus,
   ViewportType,
@@ -23,13 +25,19 @@ import type {
   OrientationVectors,
   Point2,
   Point3,
+  ActorSliceRange,
+  IVolumeViewport,
   ReferenceCompatibleOptions,
+  ScrollOptions,
   VOIRange,
   ViewReference,
   ViewReferenceSpecifier,
   ViewportContentMode,
 } from '../../../types';
 import { isImageActor } from '../../../utilities/actorCheck';
+import getTargetVolumeAndSpacingInNormalDir from '../../../utilities/getTargetVolumeAndSpacingInNormalDir';
+import { getVolumeId as getVolumeIdOfSpecifier } from '../../../utilities/getVolumeId';
+import snapFocalPointToSlice from '../../../utilities/snapFocalPointToSlice';
 import cache from '../../../cache/cache';
 import type { PlaneRestriction } from '../../../types/IViewport';
 import type ViewportInputOptions from '../../../types/ViewportInputOptions';
@@ -41,7 +49,12 @@ import triggerEvent from '../../../utilities/triggerEvent';
 import eventTarget from '../../../eventTarget';
 import getMinMax from '../../../utilities/getMinMax';
 import renderingEngineCache from '../../renderingEngineCache';
-import { getCameraVectors } from '../../helpers/getCameraVectors';
+import {
+  calculateCameraPosition,
+  getCameraVectors,
+  getOrientationFromScanAxisNormal,
+} from '../../helpers/getCameraVectors';
+import * as metaData from '../../../metaData';
 import type {
   LoadedData,
   ViewportDataBinding,
@@ -91,8 +104,11 @@ import {
 import {
   createPlanarCpuVolumeSliceBasis,
   createPlanarVolumeSliceBasis,
+  getPlanarVolumeSliceRange,
   getVolumeImageIdIndexWorldPoint,
 } from './planarSliceBasis';
+import { resolveSlabThickness } from './planarVolumeSliceBlendMode';
+import { resolvePlanarSetOrientationVectors } from './planarOrientationVectors';
 import type {
   PlanarRendering,
   PlanarVolumeSliceRendering,
@@ -138,6 +154,26 @@ type PlanarSetOrientationInput =
   | OrientationAxis.CORONAL_REFORMAT
   | OrientationAxis.SAGITTAL_REFORMAT
   | OrientationVectors;
+
+/**
+ * The options of a volume scroll: `volumeId` names the volume whose spacing
+ * along the view gives the step, and `scrollSlabs` makes the step the slab
+ * thickness when the source has a slab.
+ */
+export type PlanarScrollOptions = Pick<
+  ScrollOptions,
+  'volumeId' | 'scrollSlabs'
+>;
+
+/**
+ * The steps of a volume scroll: the slice range of the target volume along
+ * the view, the step along the normal and the camera they were measured on.
+ */
+type PlanarVolumeSliceSteps = {
+  camera: ICamera;
+  sliceRange: ActorSliceRange;
+  spacingInNormalDirection: number;
+};
 
 type ResolvedPlanarViewportView = NonNullable<
   ReturnType<typeof resolvePlanarViewportView>
@@ -1095,10 +1131,24 @@ class PlanarViewport extends GenericViewport<
   /**
    * Returns the current slice index for stack-like and slice-like workflows.
    *
-   * @returns The current zero-based image index.
+   * On a volume, with a `volumeId` of another volume of the viewport or with
+   * `useSlabThickness` while the source has a slab, it counts the steps of
+   * `scroll` with the same options instead, as the legacy volume viewport
+   * counts them: the step of that volume, or the slab thickness.
+   *
+   * @param volumeId - The volume whose spacing gives the step.
+   * @param useSlabThickness - Counts steps of the slab thickness.
+   * @returns The current zero-based image index or step index.
    */
-  getCurrentImageIdIndex(): number {
-    return this.getActiveImageIdIndex();
+  getCurrentImageIdIndex(volumeId?: string, useSlabThickness = false): number {
+    const steps = this.getVolumeSliceSteps({
+      volumeId,
+      scrollSlabs: useSlabThickness,
+    });
+
+    return steps
+      ? countVolumeSliceSteps(steps).currentStepIndex
+      : this.getActiveImageIdIndex();
   }
 
   /**
@@ -1118,7 +1168,7 @@ class PlanarViewport extends GenericViewport<
    * @returns The current zero-based image index.
    */
   getSliceIndex(): number {
-    return this.getCurrentImageIdIndex();
+    return this.getActiveImageIdIndex();
   }
 
   /**
@@ -1131,9 +1181,23 @@ class PlanarViewport extends GenericViewport<
    * for a `PLANAR_NEXT` viewport (which is not a `StackViewport`, so it takes
    * the slice-count navigation branch).
    *
+   * With a `volumeId` or `useSlabThickness`, it gives the number of steps of
+   * `scroll` with the same options, as `getCurrentImageIdIndex` counts them.
+   *
+   * @param volumeId - The volume whose spacing gives the step.
+   * @param useSlabThickness - Counts steps of the slab thickness.
    * @returns The total slice count for the active source data.
    */
-  getNumberOfSlices(): number {
+  getNumberOfSlices(volumeId?: string, useSlabThickness = false): number {
+    const steps = this.getVolumeSliceSteps({
+      volumeId,
+      scrollSlabs: useSlabThickness,
+    });
+
+    if (steps) {
+      return countVolumeSliceSteps(steps).numScrollSteps + 1;
+    }
+
     const imageCount = this.getImageIds().length;
 
     // No source data mounted: report zero navigable slices. Without this guard
@@ -1803,13 +1867,103 @@ class PlanarViewport extends GenericViewport<
   }
 
   /**
-   * Scrolls by a signed image-index delta.
+   * Scrolls by a signed number of steps. A step is one image or one slice of
+   * the source.
    *
-   * @param delta - Signed number of images to move by.
+   * On a volume, as the legacy volume viewport scrolls: `options.volumeId`
+   * names another volume of the viewport whose spacing along the view gives
+   * the step, and `options.scrollSlabs` makes the step the slab thickness of
+   * the source presentation when it has a slab. The slice then snaps to the
+   * steps of that volume. The second and third arguments hold the place of
+   * the debounce and loop flags of the scroll utility and have no effect.
+   *
+   * @param delta - Signed number of steps to move by.
+   * @param options - The volume and slab options of the step.
    * @returns The resolved image id after scrolling.
    */
-  scroll(delta: number): Promise<string> {
-    return this.setImageIdIndex(this.getActiveImageIdIndex() + delta);
+  scroll(
+    delta: number,
+    _debounce?: boolean,
+    _loop?: boolean,
+    options: PlanarScrollOptions = {}
+  ): Promise<string> {
+    const steps = this.getVolumeSliceSteps(options);
+
+    if (!steps) {
+      return this.setImageIdIndex(this.getActiveImageIdIndex() + delta);
+    }
+
+    const { camera, sliceRange, spacingInNormalDirection } = steps;
+    const { newFocalPoint } = snapFocalPointToSlice(
+      camera.focalPoint,
+      camera.position,
+      sliceRange,
+      camera.viewPlaneNormal,
+      spacingInNormalDirection,
+      delta
+    );
+
+    this.setViewState({
+      slice: { kind: 'volumePoint', sliceWorldPoint: newFocalPoint },
+    });
+
+    return Promise.resolve(this.getCurrentImageId());
+  }
+
+  /**
+   * The steps of a volume scroll with the options, or undefined when the
+   * scroll steps by slices of the source: on stack content, without a
+   * `volumeId` of another volume and without a slab to step by.
+   */
+  private getVolumeSliceSteps({
+    volumeId,
+    scrollSlabs,
+  }: PlanarScrollOptions): PlanarVolumeSliceSteps | undefined {
+    if (this.getCurrentMode() !== 'volume') {
+      return;
+    }
+
+    const sourceDataId = this.getSourceDataId();
+    const slabThickness = resolveSlabThickness(
+      sourceDataId
+        ? this.getDisplaySetPresentation(sourceDataId)?.slabThickness
+        : undefined
+    );
+    const stepsBySlab = Boolean(scrollSlabs) && slabThickness > 0;
+    const otherVolume =
+      Boolean(volumeId) &&
+      getVolumeIdOfSpecifier(volumeId) !== this.getVolumeId();
+
+    if (!stepsBySlab && !otherVolume) {
+      return;
+    }
+
+    const camera = this.getCameraForEvent();
+    const { imageVolume, spacingInNormalDirection } =
+      getTargetVolumeAndSpacingInNormalDir(
+        this as unknown as IVolumeViewport,
+        camera,
+        otherVolume ? volumeId : undefined
+      );
+    const sliceRange = imageVolume
+      ? getPlanarVolumeSliceRange(
+          imageVolume,
+          camera.viewPlaneNormal,
+          camera.focalPoint
+        )
+      : undefined;
+
+    if (!sliceRange) {
+      return;
+    }
+
+    return {
+      camera,
+      sliceRange,
+      spacingInNormalDirection: stepsBySlab
+        ? slabThickness
+        : spacingInNormalDirection,
+    };
   }
 
   /**
@@ -1886,7 +2040,10 @@ class PlanarViewport extends GenericViewport<
     }
 
     if (resetOrientation) {
-      nextCamera.orientation = this.resolveRequestedOrientation();
+      nextCamera.orientation = this.resolveRequestedOrientation(
+        undefined,
+        this.getImageIds()
+      );
     }
 
     if (resetFlip) {
@@ -2848,7 +3005,8 @@ class PlanarViewport extends GenericViewport<
     }
 
     const resolvedOrientation = this.resolveRequestedOrientation(
-      options.orientation
+      options.orientation,
+      dataSet.imageIds
     );
     const decisionOptions = this.getRenderPathDecisionOptions(
       dataId,
@@ -2994,24 +3152,42 @@ class PlanarViewport extends GenericViewport<
     };
   }
 
+  /**
+   * The orientation that the data set options or the viewport options ask
+   * for, or the acquisition plane. With the images of the data, a reformat
+   * name becomes the view vectors that `setOrientation` gives for it.
+   */
   private resolveRequestedOrientation(
-    orientation?: PlanarSetDataOptions['orientation']
+    orientation?: PlanarSetDataOptions['orientation'],
+    imageIds?: string[]
   ): PlanarViewState['orientation'] {
-    return (
+    const requested =
       clonePlanarOrientation(
         (orientation ??
           (this.defaultOptions
             .orientation as PlanarViewState['orientation'])) ||
           OrientationAxis.ACQUISITION
-      ) || OrientationAxis.ACQUISITION
-    );
+      ) || OrientationAxis.ACQUISITION;
+
+    if (typeof requested !== 'string' || !isReformatOrientation(requested)) {
+      return requested;
+    }
+
+    return getReformatVectorsOfImages(requested, imageIds) ?? requested;
   }
 
   private resolveSetOrientation(
     orientation: PlanarSetOrientationInput
   ): PlanarViewState['orientation'] {
     if (typeof orientation !== 'string') {
-      return clonePlanarOrientation(orientation) || OrientationAxis.ACQUISITION;
+      return (
+        clonePlanarOrientation(
+          resolvePlanarSetOrientationVectors(
+            orientation,
+            this.getCameraForEvent()?.viewUp
+          )
+        ) || OrientationAxis.ACQUISITION
+      );
     }
 
     if (!isReformatOrientation(orientation)) {
@@ -3422,6 +3598,35 @@ type PlanarStackInputImageData = {
   };
 };
 
+/**
+ * The number of steps and the current step of a volume scroll, as the
+ * legacy `getVolumeViewportScrollInfo` counts them.
+ */
+function countVolumeSliceSteps({
+  sliceRange,
+  spacingInNormalDirection,
+}: PlanarVolumeSliceSteps): {
+  numScrollSteps: number;
+  currentStepIndex: number;
+} {
+  const { min, max, current } = sliceRange;
+  const range = max - min;
+
+  if (range === 0) {
+    return { numScrollSteps: 0, currentStepIndex: 0 };
+  }
+
+  const numScrollSteps = Math.round(range / spacingInNormalDirection);
+  const currentStepIndex = Math.round(
+    ((current - min) / range) * numScrollSteps
+  );
+
+  return {
+    numScrollSteps,
+    currentStepIndex: Number.isFinite(currentStepIndex) ? currentStepIndex : 0,
+  };
+}
+
 function cloneViewportOptions(
   options: PlanarViewportInputOptions = {}
 ): PlanarViewportInputOptions {
@@ -3445,6 +3650,47 @@ function getBaseReformatOrientation(
     default:
       return;
   }
+}
+
+/**
+ * The view vectors of a reformat name for a series of images, as the legacy
+ * volume viewport gives them: the axes of the acquisition matched to the base
+ * axis of the name, or to the axis closest to the acquisition for REFORMAT.
+ * Undefined when the first image has no image orientation.
+ */
+function getReformatVectorsOfImages(
+  orientation: PlanarSetOrientationInput,
+  imageIds: string[] | undefined
+): OrientationVectors | undefined {
+  const imageOrientationPatient = imageIds?.[0]
+    ? metaData.get(MetadataModules.IMAGE_PLANE, imageIds[0])
+        ?.imageOrientationPatient
+    : undefined;
+
+  if (!imageOrientationPatient || imageOrientationPatient.length !== 6) {
+    return;
+  }
+
+  const rowCosine = vec3.fromValues(
+    imageOrientationPatient[0],
+    imageOrientationPatient[1],
+    imageOrientationPatient[2]
+  );
+  const columnCosine = vec3.fromValues(
+    imageOrientationPatient[3],
+    imageOrientationPatient[4],
+    imageOrientationPatient[5]
+  );
+  const scanAxis = vec3.cross(vec3.create(), rowCosine, columnCosine);
+  const { viewPlaneNormal, viewUp } = calculateCameraPosition(
+    rowCosine,
+    columnCosine,
+    scanAxis,
+    getBaseReformatOrientation(orientation) ??
+      getOrientationFromScanAxisNormal(scanAxis)
+  );
+
+  return { viewPlaneNormal, viewUp };
 }
 
 function isReformatOrientation(

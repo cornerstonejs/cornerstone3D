@@ -16,7 +16,6 @@ import type {
   Point2,
   Point3,
   Scaling,
-  ScrollOptions,
   ViewReference,
   ViewReferenceSpecifier,
 } from '../../../types';
@@ -30,11 +29,8 @@ import * as metaData from '../../../metaData';
 import { getValidVOILUTFunction } from '../../../utilities/buildMetadata';
 import clonePoint3 from '../../../utilities/clonePoint3';
 import getClosestImageId from '../../../utilities/getClosestImageId';
-import getTargetVolumeAndSpacingInNormalDir from '../../../utilities/getTargetVolumeAndSpacingInNormalDir';
-import { getVolumeId } from '../../../utilities/getVolumeId';
 import hasOwn from '../../../utilities/hasOwn';
 import imageIdToURI from '../../../utilities/imageIdToURI';
-import snapFocalPointToSlice from '../../../utilities/snapFocalPointToSlice';
 import transformWorldToIndex from '../../../utilities/transformWorldToIndex';
 import triggerEvent from '../../../utilities/triggerEvent';
 import genericViewportDisplaySetMetadataProvider from '../../../utilities/genericViewportDisplaySetMetadataProvider';
@@ -45,9 +41,8 @@ import {
   type PlanarLegacyViewportProperties,
 } from './planarLegacyCompatibility';
 import PlanarLegacyCompatibilityController from './PlanarLegacyCompatibilityController';
-import PlanarViewport from './PlanarViewport';
+import PlanarViewport, { type PlanarScrollOptions } from './PlanarViewport';
 import type { PlanarScaleInput } from './planarCameraScale';
-import { getPlanarVolumeSliceRange } from './planarSliceBasis';
 import { cloneDisplayArea } from './planarViewState';
 import { coreLog } from '../../../utilities/logger';
 import type {
@@ -333,7 +328,7 @@ class PlanarViewportLegacyAdapter extends PlanarViewport {
       return slice.imageIdIndex;
     }
 
-    return this.getCurrentImageIdIndex();
+    return super.getCurrentImageIdIndex();
   }
 
   /**
@@ -525,22 +520,23 @@ class PlanarViewportLegacyAdapter extends PlanarViewport {
    * STACK_VIEWPORT_SCROLL when the index changes. The next viewport has no
    * debounce, so the second argument has no effect.
    *
-   * In volume mode, with a `volumeId` of another volume than the one shown or
-   * with `scrollSlabs`, it scrolls as the legacy `scrollVolume`: the step is
-   * the spacing of that volume along the view, or the slab thickness, and the
-   * slice snaps to the steps of that volume. Otherwise it scrolls by slices of
-   * the volume shown, which gives the same slices.
+   * In volume mode the planar viewport scrolls with the options, as the
+   * legacy volume viewport. Without options, as a direct call of the legacy
+   * `scroll` method, it steps by the slab thickness when a slab is set.
    */
   scroll(
     delta: number,
     _debounce = true,
     loop = false,
-    options: Pick<ScrollOptions, 'volumeId' | 'scrollSlabs'> = {}
+    options?: PlanarScrollOptions
   ): Promise<string> {
     const mode = this.getCurrentMode();
 
     if (mode === 'volume') {
-      return this.scrollVolume(delta, options);
+      return super.scroll(delta, _debounce, loop, {
+        scrollSlabs: true,
+        ...options,
+      });
     }
 
     const imageIds = this.getImageIds();
@@ -568,51 +564,16 @@ class PlanarViewportLegacyAdapter extends PlanarViewport {
     return imageIdPromise;
   }
 
-  private scrollVolume(
-    delta: number,
-    { volumeId, scrollSlabs }: Pick<ScrollOptions, 'volumeId' | 'scrollSlabs'>
-  ): Promise<string> {
-    if (
-      !scrollSlabs &&
-      (!volumeId || getVolumeId(volumeId) === this.getVolumeId())
-    ) {
-      return super.scroll(delta);
-    }
-
-    const camera = this.getCameraForEvent();
-    const { imageVolume, spacingInNormalDirection } =
-      getTargetVolumeAndSpacingInNormalDir(
-        this as unknown as IVolumeViewport,
-        camera,
-        volumeId,
-        scrollSlabs
-      );
-    const sliceRange = imageVolume
-      ? getPlanarVolumeSliceRange(
-          imageVolume,
-          camera.viewPlaneNormal,
-          camera.focalPoint
-        )
-      : undefined;
-
-    if (!sliceRange) {
-      return super.scroll(delta);
-    }
-
-    const { newFocalPoint } = snapFocalPointToSlice(
-      camera.focalPoint,
-      camera.position,
-      sliceRange,
-      camera.viewPlaneNormal,
-      spacingInNormalDirection,
-      delta
-    );
-
-    this.setViewState({
-      slice: { kind: 'volumePoint', sliceWorldPoint: newFocalPoint },
-    });
-
-    return Promise.resolve(this.getCurrentImageId());
+  /**
+   * The current image index, or in volume mode the step index of a scroll,
+   * which counts steps of the slab thickness by default when a slab is set,
+   * as the legacy volume viewport counts them.
+   */
+  override getCurrentImageIdIndex(
+    volumeId?: string,
+    useSlabThickness = true
+  ): number {
+    return super.getCurrentImageIdIndex(volumeId, useSlabThickness);
   }
 
   private triggerPreStackNewImage(imageId: string, imageIdIndex: number): void {
@@ -986,10 +947,6 @@ class PlanarViewportLegacyAdapter extends PlanarViewport {
    */
   resetSlabThickness(): void {
     this.legacyCompatibility.resetSlabThickness();
-  }
-
-  getNumberOfSlices(): number {
-    return this.legacyCompatibility.getNumberOfSlices();
   }
 
   /**

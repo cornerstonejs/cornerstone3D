@@ -11,6 +11,7 @@ import {
   hasVolumeTextureFailed,
 } from '../../../init';
 import * as metaData from '../../../metaData';
+import { MPR_CAMERA_VALUES } from '../../../constants';
 import {
   getRenderBackendDefinition,
   getRenderModeForBackend,
@@ -449,7 +450,8 @@ export class PlanarRenderPathDecisionService {
   ): PlanarPathInputs {
     const orientation = options.orientation || OrientationAxis.ACQUISITION;
     const acquisitionOrientation = getPlanarAcquisitionOrientation(
-      dataSet.imageIds
+      dataSet.imageIds,
+      !dataSet.useWorldCoordinateImageData && supportsVolumeRendering(dataSet)
     );
     const isAcquisitionPath =
       orientation === OrientationAxis.ACQUISITION ||
@@ -660,8 +662,19 @@ export function selectPlanarRenderPath(
   return defaultPlanarRenderPathDecisionService.select(dataSet, options);
 }
 
+/**
+ * The axis (axial, sagittal or coronal) that stands for the acquisition plane
+ * of the images, or undefined when none does.
+ *
+ * With `exact`, an axis stands for the acquisition only when its plane is a
+ * slice of the acquisition (`getExactSliceAxis`), so that a straight cut stays
+ * a plain copy, while a tilted series keeps the true axis apart, as the legacy
+ * volume viewport shows it. Without it, the closest axis stands for the
+ * acquisition, which suits images that cannot be reformatted.
+ */
 export function getPlanarAcquisitionOrientation(
-  imageIds: string[]
+  imageIds: string[],
+  exact = false
 ): PlanarViewState['orientation'] | undefined {
   const imageId = imageIds[0];
 
@@ -704,7 +717,39 @@ export function getPlanarAcquisitionOrientation(
     return;
   }
 
+  if (
+    exact &&
+    getExactSliceAxis(
+      {
+        direction: getImageDirection(imageOrientationPatient),
+      } as unknown as IImageVolume,
+      MPR_CAMERA_VALUES[orientation].viewPlaneNormal
+    ) !== 2
+  ) {
+    return;
+  }
+
   return orientation;
+}
+
+/**
+ * The direction of a volume of the images, in double precision: the row
+ * cosines, the column cosines and their cross product.
+ */
+function getImageDirection(imageOrientationPatient: number[]): number[] {
+  const [rx, ry, rz, cx, cy, cz] = imageOrientationPatient;
+
+  return [
+    rx,
+    ry,
+    rz,
+    cx,
+    cy,
+    cz,
+    ry * cz - rz * cy,
+    rz * cx - rx * cz,
+    rx * cy - ry * cx,
+  ];
 }
 
 function getVolumeId(dataSet: PlanarRegisteredDataSet): string {

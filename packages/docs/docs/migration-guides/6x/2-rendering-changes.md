@@ -57,6 +57,42 @@ the marker counts as off the slice only beyond half the slice spacing.
 and thickens them. Together they are the crosshair for the next viewports.
 `CrosshairsTool` keeps working, with its centre on a slice centre.
 
+## Orientation of a volume
+
+- **A requested axis is the true axis.** A viewport asked for `AXIAL`,
+  `SAGITTAL` or `CORONAL` shows that plane, also on a series that was acquired
+  tilted, as the legacy volume viewport does. `ACQUISITION` shows the plane of
+  the acquisition. The next viewport of 5.x opened a tilted series on its
+  acquisition plane when the closest axis was asked for. A series that is not
+  tilted is not affected: there the axis is a slice of the acquisition.
+- **The reformat names work in the options of a viewport.** `axial_reformat`,
+  `sagittal_reformat`, `coronal_reformat` and `reformat` given at creation
+  give what `setOrientation` gives for the same name.
+- **`setOrientation` with vectors follows the legacy viewport.** Without a
+  `viewUp` it keeps the current one when that is orthogonal to the new normal,
+  and otherwise takes `[0, 0, 1]` for a normal along x or y and `[0, -1, 0]`
+  for a normal along z. A `viewUp` that is not orthogonal to the normal is
+  made orthogonal. The next viewport of 5.x took the view up of the
+  acquisition in the first case and threw in the second.
+- **`setOrientation` keeps the point in view, the pan and the zoom.** The
+  legacy volume viewport resets its camera on `setOrientation` and shows the
+  middle of the volume. `resetViewState()` goes back to the orientation of the
+  viewport options.
+
+## Slabs
+
+- **A slab thickness draws the same slab as on a legacy volume viewport.**
+  Measured with a maximum intensity and an average slab: the same number
+  reaches as far on both.
+- **A slab with the composite blend mode draws as an average.** The legacy
+  volume viewport casts rays through the slab, so voxels in front hide what
+  lies behind them.
+- **Scrolling by slabs is an option.** `viewport.scroll(1)` on a legacy volume
+  viewport with a slab steps by the slab thickness. On a planar viewport it
+  steps by one slice. Pass `scrollSlabs: true` to `utilities.scroll` to step
+  by the slab. `getCurrentImageIdIndex(undefined, true)` and
+  `getNumberOfSlices(undefined, true)` count those steps.
+
 ## The render plan
 
 Each layer of a planar viewport has a plan: how its slice is made, what draws
