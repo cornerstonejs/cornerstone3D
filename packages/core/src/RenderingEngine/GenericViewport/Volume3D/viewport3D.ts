@@ -21,10 +21,7 @@ import { coreLog } from '../../../utilities/logger';
 import transformWorldToIndex from '../../../utilities/transformWorldToIndex';
 import triggerEvent from '../../../utilities/triggerEvent';
 import renderingEngineCache from '../../renderingEngineCache';
-import {
-  createSharpeningRenderPass,
-  createSmoothingRenderPass,
-} from '../../renderPasses';
+import { createSharpeningSmoothingRenderPasses } from '../../renderPasses';
 import type {
   DataAddOptions,
   LoadedData,
@@ -1009,27 +1006,18 @@ class VolumeViewport3D extends GenericViewport<
    *
    * @returns The render passes, or null.
    */
-  getRenderPasses(): ReturnType<typeof createSmoothingRenderPass>[] | null {
+  getRenderPasses(): ReturnType<typeof createSharpeningSmoothingRenderPasses> {
     const binding = this.getCurrentBinding();
-    const { sharpening = 0, smoothing = 0 } =
-      (binding && this.getDisplaySetPresentation(binding.data.id)) || {};
-    const renderPasses = [];
 
     try {
-      if (smoothing > 0) {
-        renderPasses.push(createSmoothingRenderPass(smoothing));
-      }
-
-      if (sharpening > 0) {
-        renderPasses.push(createSharpeningRenderPass(sharpening));
-      }
+      return createSharpeningSmoothingRenderPasses(
+        (binding && this.getDisplaySetPresentation(binding.data.id)) || {}
+      );
     } catch (error) {
       log.warn('Failed to create custom render passes:', error);
 
       return null;
     }
-
-    return renderPasses.length ? renderPasses : null;
   }
 
   /**

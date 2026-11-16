@@ -151,6 +151,8 @@ import {
   isSameRenderPlanLayer,
 } from './planarRenderPlan';
 import PlanarViewReferenceController from './PlanarViewReferenceController';
+import { applyCanvasSharpeningSmoothing } from './planarCanvasSharpeningSmoothing';
+import { createSharpeningSmoothingRenderPasses } from '../../renderPasses/createSharpeningSmoothingRenderPasses';
 export type { PlanarReferenceContext } from './PlanarViewReferenceController';
 import type {
   PlanarViewState,
@@ -1034,6 +1036,38 @@ class PlanarViewport extends GenericViewport<
         orientation: this.resolveRequestedOrientation(),
       },
     });
+  }
+
+  /**
+   * The render passes of the sharpening and the smoothing of the source
+   * display set, as the legacy viewport gives them for the same numbers. The
+   * rendering engine draws the frame through them while the source draws on
+   * the GPU. Null when both are 0, or while the source draws on the CPU,
+   * where `render` applies them to the canvas instead.
+   *
+   * @returns The render passes, or null.
+   */
+  getRenderPasses(): ReturnType<typeof createSharpeningSmoothingRenderPasses> {
+    const binding = this.getCurrentBinding();
+
+    if (
+      !binding ||
+      getRenderSurfaceForRenderMode(
+        this.getCurrentPlanarRendering()?.renderMode
+      ) === 'cpu'
+    ) {
+      return null;
+    }
+
+    try {
+      return createSharpeningSmoothingRenderPasses(
+        this.getDisplaySetPresentation(binding.data.id) || {}
+      );
+    } catch (error) {
+      log.warn('Failed to create custom render passes:', error);
+
+      return null;
+    }
   }
 
   /**
@@ -2990,6 +3024,7 @@ class PlanarViewport extends GenericViewport<
     // (FIDELITY-EVENT-7). A VTK path draws in the engine, which reports.
     if (this.drewOutsideEngine) {
       this.drewOutsideEngine = false;
+      this.applyCpuSharpeningSmoothing();
       this.notifyFidelityStateChanged();
     }
   }
@@ -2997,6 +3032,24 @@ class PlanarViewport extends GenericViewport<
   // ====================================================================
   // Protected & private
   // ====================================================================
+
+  /**
+   * Applies the sharpening or the smoothing of the source display set to the
+   * CPU canvas after the CPU draw step drew the frame with every layer, so
+   * the canvas shows what the render passes show on the GPU.
+   */
+  private applyCpuSharpeningSmoothing(): void {
+    const binding = this.getCurrentBinding();
+    const { canvas, context } = this.renderContext.cpu;
+
+    if (binding) {
+      applyCanvasSharpeningSmoothing(
+        canvas,
+        context,
+        this.getDisplaySetPresentation(binding.data.id)
+      );
+    }
+  }
 
   /**
    * Adds a line for each reduced labelmap while the acquired frame shows

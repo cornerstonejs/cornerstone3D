@@ -93,6 +93,22 @@ and thickens them. Together they are the crosshair for the next viewports.
   by the slab. `getCurrentImageIdIndex(undefined, true)` and
   `getNumberOfSlices(undefined, true)` count those steps.
 
+## Sharpening and smoothing
+
+- **`sharpening` and `smoothing` are keys of the presentation** of the source
+  display set of a planar or a 3D viewport, with the numbers that the legacy
+  `setProperties` takes:
+  `viewport.setDisplaySetPresentation(displaySetId, { sharpening: 1 })`. The
+  picture is the picture of the legacy viewport. In 5.x the next viewports had
+  neither.
+- **A viewport that draws on the CPU sharpens and smooths too.** The legacy CPU
+  path ignored both numbers.
+- **With both above 0 the picture shows the sharpening only,** as on the legacy
+  viewport: vtk.js draws each pass of a view on its own, and the last one wins.
+- **With the tiled rendering engine neither is drawn on the GPU,** on the
+  legacy viewports and on the next ones alike: that engine does not ask a
+  viewport for its render passes.
+
 ## Events and image loading of a planar viewport
 
 - **The events of the legacy viewports fire.** `VOLUME_VIEWPORT_NEW_VOLUME`

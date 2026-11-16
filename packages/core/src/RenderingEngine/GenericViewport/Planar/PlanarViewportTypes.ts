@@ -257,6 +257,19 @@ export interface PlanarProperties {
   blendMode?: BlendModes;
   interpolationType?: InterpolationType;
   slabThickness?: number;
+  /**
+   * The sharpening of the picture, as the legacy `setProperties({
+   * sharpening })`: a render pass of the viewport on the GPU, the same
+   * convolution of the canvas on the CPU. 0 is none. Read from the source
+   * display set.
+   */
+  sharpening?: number;
+  /**
+   * The smoothing of the picture, as the legacy `setProperties({ smoothing
+   * })`: a render pass of the viewport on the GPU, the same convolution of
+   * the canvas on the CPU. 0 is none. Read from the source display set.
+   */
+  smoothing?: number;
 }
 
 export type PlanarDataPresentation = PlanarPresentationProps & PlanarProperties;

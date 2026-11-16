@@ -25,7 +25,7 @@ function createSharpeningRenderPass(intensity: number) {
     // while edges are enhanced proportionally to the intensity parameter
 
     convolutionPass.setKernelDimension(3);
-    convolutionPass.setKernel([-k, -k, -k, -k, 1 + 8 * k, -k, -k, -k, -k]);
+    convolutionPass.setKernel(getSharpeningKernel(k));
 
     renderPass = convolutionPass;
   }
@@ -33,4 +33,15 @@ function createSharpeningRenderPass(intensity: number) {
   return renderPass;
 }
 
-export { createSharpeningRenderPass };
+/**
+ * The 3 x 3 kernel of the sharpening, in row order: `-k` around and
+ * `1 + 8k` in the middle, so that its sum is 1.
+ *
+ * @param k - The sharpening intensity, 0 or more.
+ * @returns The nine weights of the kernel.
+ */
+function getSharpeningKernel(k: number): number[] {
+  return [-k, -k, -k, -k, 1 + 8 * k, -k, -k, -k, -k];
+}
+
+export { createSharpeningRenderPass, getSharpeningKernel };

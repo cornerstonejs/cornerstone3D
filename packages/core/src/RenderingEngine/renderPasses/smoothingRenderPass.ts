@@ -1,6 +1,23 @@
 import vtkConvolution2DPass from '@kitware/vtk.js/Rendering/OpenGL/Convolution2DPass';
 import vtkForwardPass from '@kitware/vtk.js/Rendering/OpenGL/ForwardPass';
 
+/** The width and height of the Gaussian kernel of the smoothing. */
+const SMOOTHING_KERNEL_SIZE = 15;
+
+/** The standard deviation of the Gaussian kernel of the smoothing, in pixels. */
+const SMOOTHING_SIGMA = 5;
+
+/**
+ * The share of the Gaussian in the smoothing: the picture is mixed with its
+ * Gaussian blur by this share, `min(intensity / 10, 1)`.
+ *
+ * @param intensity - The smoothing intensity, above 0.
+ * @returns The share, from 0 to 1.
+ */
+function getSmoothingBlend(intensity: number): number {
+  return Math.min(Math.min(intensity, 1000) / 10, 1.0);
+}
+
 /**
  * Creates a GPU-based convolution pass for image smoothing.
  *
@@ -17,11 +34,9 @@ function createSmoothingRenderPass(intensity: number) {
   if (intensity > 0) {
     const convolutionPass = vtkConvolution2DPass.newInstance();
     convolutionPass.setDelegates([renderPass]);
-    const smoothStrength = Math.min(intensity, 1000);
-
     // Generate a 15x15 Gaussian blur kernel (σ ≈ 5.0)
-    const kernelSize = 15;
-    const sigma = 5.0;
+    const kernelSize = SMOOTHING_KERNEL_SIZE;
+    const sigma = SMOOTHING_SIGMA;
     const gaussianKernel = createGaussianKernel(kernelSize, sigma);
     const totalElements = kernelSize * kernelSize;
     const centerIndex = Math.floor(totalElements / 2);
@@ -29,7 +44,7 @@ function createSmoothingRenderPass(intensity: number) {
     identityKernel[centerIndex] = 1;
 
     // Blend strength
-    const alpha = Math.min(smoothStrength / 10, 1.0);
+    const alpha = getSmoothingBlend(intensity);
 
     // Blend between identity and Gaussian
     const kernel = gaussianKernel.map(
@@ -73,4 +88,9 @@ function createGaussianKernel(size: number, sigma: number): number[] {
   return kernel.map((v) => v / sum);
 }
 
-export { createSmoothingRenderPass };
+export {
+  createSmoothingRenderPass,
+  getSmoothingBlend,
+  SMOOTHING_KERNEL_SIZE,
+  SMOOTHING_SIGMA,
+};

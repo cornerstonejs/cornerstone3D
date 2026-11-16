@@ -294,6 +294,14 @@ export function toPlanarDataPresentation(
     presentation.visible = properties.visible;
   }
 
+  if (properties.sharpening !== undefined) {
+    presentation.sharpening = properties.sharpening;
+  }
+
+  if (properties.smoothing !== undefined) {
+    presentation.smoothing = properties.smoothing;
+  }
+
   return presentation;
 }
 
