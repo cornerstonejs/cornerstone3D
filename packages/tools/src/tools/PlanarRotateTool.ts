@@ -1,5 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
-import { BaseVolumeViewport, getEnabledElement } from '@cornerstonejs/core';
+import { getEnabledElement, utilities } from '@cornerstonejs/core';
 import { mat4, vec3 } from 'gl-matrix';
 import { BaseTool } from './base';
 import angleBetweenLines from '../utilities/math/angle/angleBetweenLines';
@@ -90,7 +90,10 @@ class PlanarRotateTool extends BaseTool {
       return;
     }
 
-    if (viewport instanceof BaseVolumeViewport) {
+    if (
+      utilities.viewportIsInVolumeMode(viewport) &&
+      !utilities.isGenericViewport(viewport)
+    ) {
       const rotAngle = (((angle + 360) % 360) * Math.PI) / 180;
       const rotMat = mat4.identity(new Float32Array(16));
       mat4.rotate(rotMat, rotMat, rotAngle, viewPlaneNormal);

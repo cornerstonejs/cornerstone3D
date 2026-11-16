@@ -7,7 +7,7 @@ import type {
 } from '../types';
 import scroll from './scroll';
 import getEnabledElement from '../getEnabledElement';
-import StackViewport from '../RenderingEngine/StackViewport';
+import { viewportIsInStackMode } from './viewportCapabilities';
 /**
  * It uses the imageIndex in the Options to scroll to the slice that is intended.
  * It works for both Stack and Volume viewports. In VolumeViewports, the imageIndex
@@ -46,12 +46,17 @@ function _getImageSliceData(
   viewport: IStackViewport | IVolumeViewport,
   debounceLoading?: boolean
 ): ImageSliceData {
-  if (viewport instanceof StackViewport) {
+  if (
+    viewportIsInStackMode(viewport) &&
+    typeof (viewport as IStackViewport).getTargetImageIdIndex === 'function'
+  ) {
+    const stackViewport = viewport as IStackViewport;
+
     return {
-      numberOfSlices: viewport.getImageIds().length,
+      numberOfSlices: stackViewport.getImageIds().length,
       imageIndex: debounceLoading
-        ? viewport.getTargetImageIdIndex()
-        : viewport.getCurrentImageIdIndex(),
+        ? stackViewport.getTargetImageIdIndex()
+        : stackViewport.getCurrentImageIdIndex(),
     };
   }
   return {

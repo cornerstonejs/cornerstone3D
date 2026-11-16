@@ -1,6 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
 import {
-  StackViewport,
   getEnabledElement,
   utilities as csUtils,
   utilities as coreUtils,
@@ -137,7 +136,10 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     const camera = viewport.getCamera();
     const { viewPlaneNormal, viewUp } = camera;
 
-    if (viewport instanceof StackViewport) {
+    if (
+      csUtils.viewportIsInStackMode(viewport) &&
+      !csUtils.isGenericViewport(viewport)
+    ) {
       throw new Error('Stack Viewport Not implemented');
     }
 

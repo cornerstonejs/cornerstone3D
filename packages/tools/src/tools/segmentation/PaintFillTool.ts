@@ -1,5 +1,4 @@
 import {
-  BaseVolumeViewport,
   cache,
   getEnabledElement,
   utilities as csUtils,
@@ -111,7 +110,8 @@ class PaintFillTool extends BaseTool {
 
     if (
       viewportRenderMode === 'volume' ||
-      viewport instanceof BaseVolumeViewport
+      (csUtils.viewportIsInVolumeMode(viewport) &&
+        !csUtils.isGenericViewport(viewport))
     ) {
       const layer = resolveLabelmapForSegment(
         getSegmentation(segmentationId),

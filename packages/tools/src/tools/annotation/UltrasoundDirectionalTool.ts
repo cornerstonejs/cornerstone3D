@@ -1,10 +1,5 @@
 import { ChangeTypes, Events } from '../../enums';
-import {
-  getEnabledElement,
-  utilities as csUtils,
-  StackViewport,
-  ECGViewport,
-} from '@cornerstonejs/core';
+import { getEnabledElement, utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import { AnnotationTool } from '../base';
@@ -123,8 +118,9 @@ class UltrasoundDirectionalTool extends AnnotationTool {
     const { viewport } = enabledElement;
 
     if (
-      !(viewport instanceof StackViewport) &&
-      !(viewport instanceof ECGViewport)
+      !csUtils.viewportIsInStackMode(viewport) &&
+      typeof (viewport as { getWaveformData?: unknown }).getWaveformData !==
+        'function'
     ) {
       throw new Error(
         'UltrasoundDirectionalTool can only be used on a StackViewport or ECGViewport'

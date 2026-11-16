@@ -1,3 +1,4 @@
+import ViewportType from '../enums/ViewportType';
 import type {
   ActorEntry,
   IGenericViewport,
@@ -112,9 +113,9 @@ export function viewportSupportsVolumeActors(
  *
  * Use this instead of `instanceof PlanarViewport` (or a `viewport.type` check)
  * when code needs the native-next API rather than the legacy stack/volume
- * method surface. A viewport created with a legacy compatibility adapter is
- * intentionally NOT matched: it exposes the legacy methods, not the direct
- * Generic surface.
+ * method surface. A legacy compatibility adapter is matched too: it extends
+ * the next class, so it has the next API as well as the legacy methods. A
+ * legacy viewport class is not matched.
  */
 export function isGenericViewport(
   viewport: unknown
@@ -174,21 +175,46 @@ export function viewportSupportsWaveform(
 }
 
 /**
- * Returns the content-true mode of the viewport's bound source data when the
- * viewport can classify it (i.e. exposes `getCurrentMode`), otherwise
- * `undefined`.
+ * The content mode that each legacy viewport type means. A legacy viewport
+ * class has no `getCurrentMode`, and it shows one kind of content from the
+ * start, so its type gives its mode.
+ */
+const legacyViewportTypeContentModes: Record<string, ViewportContentMode> = {
+  [ViewportType.STACK]: 'stack',
+  [ViewportType.ORTHOGRAPHIC]: 'volume',
+  [ViewportType.PERSPECTIVE]: 'volume',
+  [ViewportType.VOLUME_3D]: 'volume3d',
+  [ViewportType.VIDEO]: 'video',
+  [ViewportType.WHOLE_SLIDE]: 'wholeSlide',
+  [ViewportType.ECG]: 'ecg',
+};
+
+/**
+ * Returns the content-true mode of the viewport's bound source data.
+ *
+ * A viewport with `getCurrentMode` answers for itself. A legacy viewport
+ * without it gets the mode its legacy `type` means: `stack` for STACK,
+ * `volume` for ORTHOGRAPHIC and PERSPECTIVE, `volume3d` for VOLUME_3D,
+ * `video`, `wholeSlide` and `ecg` for VIDEO, WHOLE_SLIDE and ECG. Any other
+ * viewport gives `undefined`.
  *
  * Unlike the capability guards above (which test method presence), this reports
- * what the viewport is actually showing — the question a `PLANAR_NEXT` viewport
- * cannot answer through `viewportSupportsImageSlices` /
+ * what the viewport is actually showing. A `PLANAR_NEXT` viewport cannot
+ * answer that through `viewportSupportsImageSlices` /
  * `viewportSupportsVolumeId` alone, since it supports both regardless of
  * content. See {@link ViewportContentMode}.
  */
 export function getViewportContentMode(
   viewport: unknown
 ): ViewportContentMode | undefined {
-  return viewportHasMethod(viewport, 'getCurrentMode')
-    ? (viewport as IGenericViewport).getCurrentMode()
+  if (viewportHasMethod(viewport, 'getCurrentMode')) {
+    return (viewport as IGenericViewport).getCurrentMode();
+  }
+  const type = (viewport as { type?: unknown } | null | undefined)?.type;
+
+  return typeof type === 'string' &&
+    Object.prototype.hasOwnProperty.call(legacyViewportTypeContentModes, type)
+    ? legacyViewportTypeContentModes[type]
     : undefined;
 }
 

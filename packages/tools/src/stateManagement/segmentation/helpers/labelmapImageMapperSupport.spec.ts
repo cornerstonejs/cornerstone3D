@@ -1,5 +1,4 @@
 jest.mock('@cornerstonejs/core', () => {
-  class MockVolumeViewport {}
   return {
     ActorRenderMode: {
       VTK_VOLUME_SLICE: 'VTK_VOLUME_SLICE',
@@ -19,13 +18,11 @@ jest.mock('@cornerstonejs/core', () => {
         PLANAR_NEXT: 'planarNext',
       },
     },
-    VolumeViewport: MockVolumeViewport,
+    utilities: jest.requireActual(
+      '../../../../../core/src/utilities/viewportCapabilities'
+    ),
   };
 });
-
-const { VolumeViewport: MockVolumeViewport } = jest.requireMock(
-  '@cornerstonejs/core'
-);
 
 jest.mock('../labelmapModel/labelmapLayerStore', () => ({
   getLabelmaps: jest.fn(),
@@ -53,7 +50,7 @@ function makeLegacyVolumeViewport(opts: {
   obliqueThrows?: boolean;
   camera?: { viewPlaneNormal: number[]; viewUp: number[] };
 }) {
-  const viewport = new MockVolumeViewport();
+  const viewport: Record<string, unknown> = { type: 'orthographic' };
   viewport.getBlendMode = jest.fn(
     () => opts.blendMode ?? Enums.BlendModes.COMPOSITE
   );
@@ -330,6 +327,26 @@ describe('canRenderVolumeViewportLabelmapAsImage', () => {
     }
   });
 
+  it('treats a legacy adapter in volume mode as a planar viewport, not a legacy one', () => {
+    const getBlendMode = jest.fn(
+      () => Enums.BlendModes.MAXIMUM_INTENSITY_BLEND
+    );
+    const viewport = {
+      ...makePlanarNextViewport({ renderMode: 'VTK_VOLUME_SLICE' }),
+      requestedType: 'orthographic',
+      setDisplaySets: jest.fn(),
+      setDisplaySetPresentation: jest.fn(),
+      setViewState: jest.fn(),
+      getCurrentMode: () => 'volume',
+      getBlendMode,
+    };
+
+    expect(canRenderVolumeViewportLabelmapAsImage(viewport as never)).toBe(
+      true
+    );
+    expect(getBlendMode).not.toHaveBeenCalled();
+  });
+
   it('rejects a planar-next viewport that is not in VTK_VOLUME_SLICE render mode', () => {
     const viewport = makePlanarNextViewport({ renderMode: 'CPU_VOLUME' });
     expect(canRenderVolumeViewportLabelmapAsImage(viewport as never)).toBe(
@@ -349,7 +366,7 @@ describe('getVolumeViewportLabelmapImageMapperState', () => {
   });
 
   it('returns unsupported:camera when no camera is available', () => {
-    const viewport = new MockVolumeViewport();
+    const viewport: Record<string, unknown> = { type: 'orthographic' };
     // Strip getCamera to force the camera-missing branch
     (viewport as unknown as { getCamera?: () => unknown }).getCamera =
       undefined;

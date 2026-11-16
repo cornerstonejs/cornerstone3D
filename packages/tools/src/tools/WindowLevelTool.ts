@@ -1,10 +1,5 @@
 import { BaseTool } from './base';
-import {
-  getEnabledElement,
-  VolumeViewport,
-  cache,
-  utilities,
-} from '@cornerstonejs/core';
+import { getEnabledElement, cache, utilities } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import type { EventTypes } from '../types';
 
@@ -38,6 +33,9 @@ class WindowLevelTool extends BaseTool {
     const { element, deltaPoints } = evt.detail;
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
+    const isLegacyVolumeViewport =
+      utilities.getViewportContentMode(viewport) === 'volume' &&
+      !utilities.isGenericViewport(viewport);
 
     let volumeId,
       lower,
@@ -53,8 +51,8 @@ class WindowLevelTool extends BaseTool {
       throw new Error('Viewport is not a valid type');
     }
 
-    if (viewport instanceof VolumeViewport) {
-      volumeId = viewport.getVolumeId();
+    if (isLegacyVolumeViewport) {
+      volumeId = (viewport as Types.IVolumeViewport).getVolumeId();
 
       viewportsContainingVolumeUID =
         utilities.getViewportsWithVolumeId(volumeId);
@@ -117,7 +115,7 @@ class WindowLevelTool extends BaseTool {
 
     viewport.render();
 
-    if (viewport instanceof VolumeViewport) {
+    if (isLegacyVolumeViewport) {
       viewportsContainingVolumeUID.forEach((vp) => {
         if (viewport !== vp) {
           vp.render();

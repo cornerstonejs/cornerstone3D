@@ -1,6 +1,4 @@
 jest.mock('@cornerstonejs/core', () => {
-  class VolumeViewport {}
-
   return {
     ActorRenderMode: {
       CPU_IMAGE: 'cpuImage',
@@ -18,12 +16,10 @@ jest.mock('@cornerstonejs/core', () => {
       spatialRegistrationMetadataProvider: {
         get: jest.fn(),
       },
-      // These fixtures are plain stack/volume mocks, not native Generic
-      // viewports (no getCurrentMode), so volume detection falls through to the
-      // renderMode-based check below; mirror that by reporting non-volume mode.
-      viewportIsInVolumeMode: jest.fn(() => false),
+      viewportIsInVolumeMode: jest.requireActual(
+        '../../core/src/utilities/viewportCapabilities'
+      ).viewportIsInVolumeMode,
     },
-    VolumeViewport,
   };
 });
 
@@ -51,8 +47,12 @@ function createTargetViewport({
   currentImageIdIndex = 0,
   renderMode,
   volumeId,
+  type,
+  getCurrentMode,
 } = {}) {
   return {
+    type,
+    getCurrentMode,
     element: document.createElement('div'),
     getCurrentImageIdIndex: jest.fn(() => currentImageIdIndex),
     getDefaultActor:
@@ -171,6 +171,66 @@ describe('imageSliceSyncCallback', () => {
 
     expect(utilities.jumpToSlice).toHaveBeenCalledWith(targetViewport.element, {
       imageIndex: 1,
+    });
+  });
+
+  it('reverses target indices for a legacy volume viewport, from its type', async () => {
+    const sourceViewport = createSourceViewport('image:2');
+    const targetViewport = createTargetViewport({
+      currentImageIdIndex: 0,
+      type: 'orthographic',
+      volumeId: 'volume-id',
+    });
+
+    mockRenderingEngine(sourceViewport, targetViewport);
+
+    await imageSliceSyncCallback(
+      createSynchronizerInstance(),
+      { renderingEngineId: 'rendering-engine', viewportId: 'source' },
+      { renderingEngineId: 'rendering-engine', viewportId: 'target' }
+    );
+
+    expect(utilities.jumpToSlice).toHaveBeenCalledWith(targetViewport.element, {
+      imageIndex: 1,
+    });
+  });
+
+  it('reverses target indices for a legacy adapter in volume mode', async () => {
+    const sourceViewport = createSourceViewport('image:2');
+    const targetViewport = createTargetViewport({
+      currentImageIdIndex: 0,
+      type: 'planarNext',
+      getCurrentMode: () => 'volume',
+      volumeId: 'volume-id',
+    });
+
+    mockRenderingEngine(sourceViewport, targetViewport);
+
+    await imageSliceSyncCallback(
+      createSynchronizerInstance(),
+      { renderingEngineId: 'rendering-engine', viewportId: 'source' },
+      { renderingEngineId: 'rendering-engine', viewportId: 'target' }
+    );
+
+    expect(utilities.jumpToSlice).toHaveBeenCalledWith(targetViewport.element, {
+      imageIndex: 1,
+    });
+  });
+
+  it('keeps a legacy stack viewport in imageId index order, from its type', async () => {
+    const sourceViewport = createSourceViewport('image:2');
+    const targetViewport = createTargetViewport({ type: 'stack' });
+
+    mockRenderingEngine(sourceViewport, targetViewport);
+
+    await imageSliceSyncCallback(
+      createSynchronizerInstance(),
+      { renderingEngineId: 'rendering-engine', viewportId: 'source' },
+      { renderingEngineId: 'rendering-engine', viewportId: 'target' }
+    );
+
+    expect(utilities.jumpToSlice).toHaveBeenCalledWith(targetViewport.element, {
+      imageIndex: 2,
     });
   });
 

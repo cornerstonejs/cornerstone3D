@@ -1,4 +1,4 @@
-import { StackViewport, utilities as csUtils } from '@cornerstonejs/core';
+import { utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
 import getViewportICamera from '../../getViewportICamera';
@@ -34,9 +34,7 @@ const getSubPixelSpacingAndXYDirections = (
   // reads the camera through the getViewportICamera bridge (it has no native
   // getCamera, which previously threw and aborted the draw loop).
   const isGeneric = csUtils.isGenericViewport(viewport);
-  const isImageSlice =
-    viewport instanceof StackViewport ||
-    (isGeneric && csUtils.getViewportContentMode(viewport) === 'stack');
+  const isImageSlice = csUtils.viewportIsInStackMode(viewport);
 
   if (isImageSlice) {
     // Check XY directions

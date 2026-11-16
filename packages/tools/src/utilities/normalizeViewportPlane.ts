@@ -1,5 +1,6 @@
 import type { Types } from '@cornerstonejs/core';
-import { BaseVolumeViewport, utilities } from '@cornerstonejs/core';
+import { utilities } from '@cornerstonejs/core';
+import getViewportICamera from './getViewportICamera';
 
 const { isEqual } = utilities;
 
@@ -36,12 +37,12 @@ export default function normalizeViewportPlane(
   viewport: Types.IViewport,
   boundsIJK: Types.BoundsIJK
 ) {
-  if (!(viewport instanceof BaseVolumeViewport)) {
+  if (!utilities.viewportIsInVolumeMode(viewport)) {
     // This is the case for acquisition plane, which includes all non-volume viewports:
     return { ...acquisitionMapping, boundsIJKPrime: boundsIJK };
   }
 
-  const { viewPlaneNormal } = viewport.getCamera();
+  const { viewPlaneNormal } = getViewportICamera(viewport);
   // This doesn't really handle non-coplanar views, but it sort of works even for those, so leave it for now.
   const mapping =
     (isEqual(Math.abs(viewPlaneNormal[0]), 1) && jkMapping) ||

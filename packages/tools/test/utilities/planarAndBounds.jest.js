@@ -9,8 +9,7 @@
 const EPSILON = 1e-3;
 
 jest.mock('@cornerstonejs/core', () => {
-  class StackViewport {}
-  class VolumeViewport {}
+  const getViewportContentMode = jest.fn();
 
   return {
     CONSTANTS: { EPSILON: 1e-3 },
@@ -19,12 +18,22 @@ jest.mock('@cornerstonejs/core', () => {
       // Minimal re-implementation of the real isEqual (numbers only), see
       // packages/utils/src/utilities/math/isEqual.ts.
       isEqual: (v1, v2, tolerance = 1e-5) => Math.abs(v1 - v2) <= tolerance,
-      getViewportContentMode: jest.fn(),
+      getViewportContentMode,
+      isGenericViewport: (viewport) =>
+        typeof viewport?.setDisplaySets === 'function' &&
+        typeof viewport?.setDisplaySetPresentation === 'function' &&
+        typeof viewport?.setViewState === 'function',
+      viewportIsInStackMode: (viewport) =>
+        getViewportContentMode(viewport) === 'stack',
       getTargetVolumeAndSpacingInNormalDir: jest.fn(),
     },
-    StackViewport,
-    VolumeViewport,
   };
+});
+
+const nextViewportApi = () => ({
+  setDisplaySets: jest.fn(),
+  setDisplaySetPresentation: jest.fn(),
+  setViewState: jest.fn(),
 });
 
 // filterAnnotationsForDisplay's native-volume branch calls getViewportICamera
@@ -37,7 +46,6 @@ jest.mock('../../src/utilities/getViewportICamera', () => ({
 }));
 
 import { metaData, utilities as csUtils } from '@cornerstonejs/core';
-import { StackViewport, VolumeViewport } from '@cornerstonejs/core';
 import getViewportICamera from '../../src/utilities/getViewportICamera';
 
 import filterAnnotationsWithinSlice from '../../src/utilities/planar/filterAnnotationsWithinSlice';
@@ -360,9 +368,11 @@ describe('utilities/planar/filterAnnotationsForDisplay', () => {
       viewPlaneNormal: [0, 0, 1],
       points: [[0, 0, 5]],
     });
-    const viewport = Object.assign(Object.create(VolumeViewport.prototype), {
+    const viewport = {
+      type: 'orthographic',
       getCamera: jest.fn(() => camera),
-    });
+    };
+    csUtils.getViewportContentMode.mockReturnValue('volume');
     csUtils.getTargetVolumeAndSpacingInNormalDir.mockReturnValue({
       spacingInNormalDirection: 2,
     });
@@ -384,8 +394,8 @@ describe('utilities/planar/filterAnnotationsForDisplay', () => {
       viewPlaneNormal: [0, 0, 1],
       points: [[0, 0, 0.2]],
     });
-    // A viewport that is neither the mocked VolumeViewport nor StackViewport.
-    const viewport = {};
+    // A next viewport, or a legacy adapter, in volume mode.
+    const viewport = nextViewportApi();
 
     const result = filterAnnotationsForDisplay(viewport, [inSlice]);
 
@@ -394,9 +404,10 @@ describe('utilities/planar/filterAnnotationsForDisplay', () => {
   });
 
   it('StackViewport: returns [] when there is no current image id', () => {
-    const viewport = Object.assign(Object.create(StackViewport.prototype), {
+    const viewport = {
+      type: 'stack',
       getCurrentImageId: jest.fn(() => undefined),
-    });
+    };
     csUtils.getViewportContentMode.mockReturnValue('stack');
 
     const result = filterAnnotationsForDisplay(viewport, [makeAnnotation()]);
@@ -406,10 +417,11 @@ describe('utilities/planar/filterAnnotationsForDisplay', () => {
 
   it('StackViewport: strips the data-loader scheme and delegates to isReferenceViewable', () => {
     const isReferenceViewable = jest.fn(() => true);
-    const viewport = Object.assign(Object.create(StackViewport.prototype), {
+    const viewport = {
+      type: 'stack',
       getCurrentImageId: jest.fn(() => 'volumeLoader://1.2.3'),
       isReferenceViewable,
-    });
+    };
     csUtils.getViewportContentMode.mockReturnValue('stack');
     const annotation = makeAnnotation();
 
@@ -425,10 +437,11 @@ describe('utilities/planar/filterAnnotationsForDisplay', () => {
 
   it('StackViewport: excludes invisible annotations without calling isReferenceViewable', () => {
     const isReferenceViewable = jest.fn(() => true);
-    const viewport = Object.assign(Object.create(StackViewport.prototype), {
+    const viewport = {
+      type: 'stack',
       getCurrentImageId: jest.fn(() => 'stack://image1'),
       isReferenceViewable,
-    });
+    };
     csUtils.getViewportContentMode.mockReturnValue('stack');
     const annotation = makeAnnotation({ isVisible: false });
 
@@ -436,6 +449,26 @@ describe('utilities/planar/filterAnnotationsForDisplay', () => {
 
     expect(result).toEqual([]);
     expect(isReferenceViewable).not.toHaveBeenCalled();
+  });
+
+  it('legacy adapter in stack mode: keeps the next path, without an imageURI filter', () => {
+    const isReferenceViewable = jest.fn(() => true);
+    const getCurrentImageId = jest.fn(() => 'stack://image1');
+    const viewport = {
+      ...nextViewportApi(),
+      type: 'planarNext',
+      requestedType: 'stack',
+      getCurrentImageId,
+      isReferenceViewable,
+    };
+    csUtils.getViewportContentMode.mockReturnValue('stack');
+    const annotation = makeAnnotation();
+
+    const result = filterAnnotationsForDisplay(viewport, [annotation]);
+
+    expect(result).toEqual([annotation]);
+    expect(getCurrentImageId).not.toHaveBeenCalled();
+    expect(isReferenceViewable).toHaveBeenCalledWith(annotation.metadata, {});
   });
 
   it('generic viewport: always keeps canvas annotations without calling isReferenceViewable', () => {

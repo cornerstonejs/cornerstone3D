@@ -2,8 +2,6 @@ import type { Types } from '@cornerstonejs/core';
 import {
   ActorRenderMode,
   eventTarget,
-  VolumeViewport,
-  StackViewport,
   Enums,
   utilities,
   getEnabledElement,
@@ -76,17 +74,21 @@ class ViewportColorbar extends Colorbar {
     // instanceof branches exhaust to `never` before the generic check.
     const viewport: Types.IViewport = this.enabledElement.viewport;
 
-    if (viewport instanceof StackViewport) {
-      viewport.setProperties({
+    const legacyContentMode = utilities.isGenericViewport(viewport)
+      ? undefined
+      : utilities.getViewportContentMode(viewport);
+
+    if (legacyContentMode === 'stack') {
+      (viewport as Types.IStackViewport).setProperties({
         voiRange: voiRange,
       });
       viewport.render();
-    } else if (viewport instanceof VolumeViewport) {
+    } else if (legacyContentMode === 'volume') {
       const { _volumeId: volumeId } = this;
       const viewportsContainingVolumeUID =
         utilities.getViewportsWithVolumeId(volumeId);
 
-      viewport.setProperties({ voiRange }, volumeId);
+      (viewport as Types.IVolumeViewport).setProperties({ voiRange }, volumeId);
       viewportsContainingVolumeUID.forEach((vp) => vp.render());
     } else if (utilities.isGenericViewport(viewport)) {
       // Direct Generic ("next") viewports have no setProperties; VOI is applied

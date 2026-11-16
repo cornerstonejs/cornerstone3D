@@ -5,7 +5,6 @@ import {
   getRenderingEngine,
   metaData,
   utilities,
-  VolumeViewport,
 } from '@cornerstonejs/core';
 import type { Synchronizer } from '../../store';
 import areViewportsCoplanar from './areViewportsCoplanar';
@@ -20,13 +19,6 @@ const getSpatialRegistration = (targetId, sourceId) =>
 function isVolumeSliceViewport(
   viewport: Types.IStackViewport | Types.IVolumeViewport
 ): boolean {
-  if (viewport instanceof VolumeViewport) {
-    return true;
-  }
-
-  // Direct Generic ("next") planar viewports are not VolumeViewport instances;
-  // use their content-true mode to detect volume-backed slice rendering (so the
-  // stack-is-reversed index flip below is applied correctly).
   if (utilities.viewportIsInVolumeMode(viewport)) {
     return true;
   }

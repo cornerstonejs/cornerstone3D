@@ -1,6 +1,6 @@
 import type { Types } from '..';
-import StackViewport from '../RenderingEngine/StackViewport';
 import getEnabledElement from '../getEnabledElement';
+import { viewportIsInStackMode } from './viewportCapabilities';
 
 /**
  * Gets the IImage rendered by the given element. This is provided as a
@@ -18,13 +18,18 @@ function getImageLegacy(element: HTMLDivElement): Types.IImage | undefined {
 
   const { viewport } = enabledElement;
 
-  if (!(viewport instanceof StackViewport)) {
+  const stackViewport = viewport as Types.IStackViewport;
+
+  if (
+    !viewportIsInStackMode(viewport) ||
+    typeof stackViewport.getCornerstoneImage !== 'function'
+  ) {
     throw new Error(
       `An image can only be fetched for a stack viewport and not for a viewport of type: ${viewport.type}`
     );
   }
 
-  return viewport.getCornerstoneImage();
+  return stackViewport.getCornerstoneImage();
 }
 
 export default getImageLegacy;

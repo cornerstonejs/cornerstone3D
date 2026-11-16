@@ -4,7 +4,6 @@ import {
   utilities as csUtils,
   cache,
   getRenderingEngine,
-  BaseVolumeViewport,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
@@ -396,11 +395,16 @@ class WholeBodySegmentTool extends GrowCutBaseTool {
   }
 
   private _getViewportVolume(viewport: Types.IViewport) {
-    if (!(viewport instanceof BaseVolumeViewport)) {
+    const volumeViewport = viewport as Types.IBaseVolumeViewport;
+
+    if (
+      !csUtils.viewportIsInVolumeMode(viewport) ||
+      typeof volumeViewport.getAllVolumeIds !== 'function'
+    ) {
       throw new Error('Viewport is not a BaseVolumeViewport');
     }
 
-    const volumeId = viewport.getAllVolumeIds()[0];
+    const volumeId = volumeViewport.getAllVolumeIds()[0];
     return cache.getVolume(volumeId);
   }
 

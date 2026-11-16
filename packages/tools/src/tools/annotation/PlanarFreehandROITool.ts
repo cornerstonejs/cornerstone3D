@@ -1,7 +1,6 @@
 import {
   CONSTANTS,
   getEnabledElement,
-  VolumeViewport,
   utilities as csUtils,
   metaData,
 } from '@cornerstonejs/core';
@@ -451,11 +450,17 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
 
     let annotationsToDisplay;
 
-    if (viewport instanceof VolumeViewport) {
+    if (
+      csUtils.getViewportContentMode(viewport) === 'volume' &&
+      !csUtils.isGenericViewport(viewport)
+    ) {
       const camera = viewport.getCamera();
 
       const { spacingInNormalDirection } =
-        csUtils.getTargetVolumeAndSpacingInNormalDir(viewport, camera);
+        csUtils.getTargetVolumeAndSpacingInNormalDir(
+          viewport as Types.IVolumeViewport,
+          camera
+        );
 
       // Get data with same normal and within the same slice
       annotationsToDisplay = this.filterAnnotationsWithinSlice(

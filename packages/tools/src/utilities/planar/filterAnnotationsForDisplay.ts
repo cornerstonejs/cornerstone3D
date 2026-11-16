@@ -1,9 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
-import {
-  StackViewport,
-  VolumeViewport,
-  utilities as csUtils,
-} from '@cornerstonejs/core';
+import { utilities as csUtils } from '@cornerstonejs/core';
 
 import filterAnnotationsWithinSlice from './filterAnnotationsWithinSlice';
 import getViewportICamera from '../getViewportICamera';
@@ -30,21 +26,13 @@ export default function filterAnnotationsForDisplay(
   // volume's currentImageIdIndex, so the index check rejects it -- but the
   // world-space slice proximity still holds, so the geometric path renders it
   // across to MPR exactly as legacy did. (ohifohifnextapi-23b)
-  const isLegacyVolume = viewport instanceof VolumeViewport;
-  // Scope to volume-SLICE mode ('volume'), not 'volume3d': legacy's
-  // `instanceof VolumeViewport` is false for the 3D viewport (VolumeViewport3D
-  // is a sibling under BaseVolumeViewport), so legacy never routed 3D through
-  // the geometric path. Matching that keeps native 3D annotation handling on
-  // its existing isReferenceViewable path.
-  const isNativeVolume = csUtils.getViewportContentMode(viewport) === 'volume';
-
-  if (isLegacyVolume || isNativeVolume) {
+  if (csUtils.getViewportContentMode(viewport) === 'volume') {
     // Native PLANAR_NEXT viewports do not implement getCamera(); the ICamera
     // bridge derives the equivalent { viewPlaneNormal, focalPoint, ... } from the
     // resolved view / view reference. Legacy VolumeViewport returns its camera.
-    const camera = isLegacyVolume
-      ? viewport.getCamera()
-      : (getViewportICamera(viewport) as Types.ICamera);
+    const camera = csUtils.isGenericViewport(viewport)
+      ? (getViewportICamera(viewport) as Types.ICamera)
+      : viewport.getCamera();
 
     const { spacingInNormalDirection } =
       csUtils.getTargetVolumeAndSpacingInNormalDir(
@@ -59,9 +47,12 @@ export default function filterAnnotationsForDisplay(
       spacingInNormalDirection
     );
   }
-  if (viewport instanceof StackViewport) {
+  if (
+    csUtils.viewportIsInStackMode(viewport) &&
+    !csUtils.isGenericViewport(viewport)
+  ) {
     // 1. Get the currently displayed imageId from the StackViewport
-    const imageId = viewport.getCurrentImageId();
+    const imageId = (viewport as Types.IStackViewport).getCurrentImageId();
 
     if (!imageId) {
       return [];

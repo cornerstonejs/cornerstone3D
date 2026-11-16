@@ -4,7 +4,6 @@ import {
   utilities as csUtils,
   Enums,
   eventTarget,
-  BaseVolumeViewport,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
@@ -366,7 +365,8 @@ export default class LabelmapBaseTool extends BaseTool {
 
     if (
       viewportRenderMode === 'volume' ||
-      viewport instanceof BaseVolumeViewport
+      (csUtils.viewportIsInVolumeMode(viewport) &&
+        !csUtils.isGenericViewport(viewport))
     ) {
       const segmentationVolume = layerForEdit
         ? getOrCreateLabelmapVolume(layerForEdit)

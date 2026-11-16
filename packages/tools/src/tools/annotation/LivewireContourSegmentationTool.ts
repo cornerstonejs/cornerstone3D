@@ -48,7 +48,9 @@ class LivewireContourSegmentationTool extends LivewireContourTool {
       const { points } = annotation.data.handles;
 
       const { element } = enabledElement.viewport;
-      this.setupBaseEditData(points[0], element, annotation);
+      if (!this.setupBaseEditData(points[0], element, annotation)) {
+        return;
+      }
       const { length: count } = points;
       const { scissors } = this;
       const { nearestEdge, repeatInterpolation } =

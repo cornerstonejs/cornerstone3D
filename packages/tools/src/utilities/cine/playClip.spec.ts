@@ -1,8 +1,4 @@
 jest.mock('@cornerstonejs/core', () => {
-  class StackViewport {}
-  class VideoViewport {}
-  class BaseVolumeViewport {}
-  class VolumeViewport extends BaseVolumeViewport {}
   const logger = {
     debug: jest.fn(),
     info: jest.fn(),
@@ -11,41 +7,29 @@ jest.mock('@cornerstonejs/core', () => {
   };
 
   return {
-    BaseVolumeViewport,
     Enums: {
       ViewportStatus: { RENDERED: 'rendered' },
     },
-    StackViewport,
-    VideoViewport,
-    VolumeViewport,
     cache: {
       getVolume: jest.fn(),
     },
     getEnabledElement: jest.fn(),
     utilities: {
+      ...jest.requireActual(
+        '../../../../core/src/utilities/viewportCapabilities'
+      ),
       getVolumeViewportScrollInfo: jest.fn(() => ({
         numScrollSteps: 10,
         currentStepIndex: 0,
       })),
-      isGenericViewport: jest.fn(
-        (viewport) => typeof viewport?.setDisplaySets === 'function'
-      ),
       logger: { toolsLog: { getLogger: jest.fn(() => logger) } },
       scroll: jest.fn(),
       triggerEvent: jest.fn(),
-      viewportIsInVolumeMode: jest.fn(
-        (viewport) => viewport?.getCurrentMode?.() === 'volume'
-      ),
     },
   };
 });
 
-import {
-  VolumeViewport,
-  cache,
-  getEnabledElement,
-  utilities,
-} from '@cornerstonejs/core';
+import { cache, getEnabledElement, utilities } from '@cornerstonejs/core';
 import { playClip, stopClip } from './playClip';
 
 const getVolumeMock = cache.getVolume as jest.Mock;
@@ -245,11 +229,12 @@ describe('playClip on next viewports', () => {
 
   it('keeps playing the time points of a legacy volume viewport', () => {
     const volume = makeDynamicVolume('dynamic-volume');
-    const viewport = Object.assign(new VolumeViewport(), {
+    const viewport = {
+      type: 'orthographic',
       id: 'legacy-volume',
       element: document.createElement('div'),
       getAllVolumeIds: jest.fn(() => ['dynamic-volume']),
-    });
+    };
     const element = mountViewport(viewport as Record<string, unknown>);
 
     registerVolumes(volume);

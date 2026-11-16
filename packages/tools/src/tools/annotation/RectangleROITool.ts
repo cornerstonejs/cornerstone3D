@@ -1,7 +1,6 @@
 import { AnnotationTool, measurementTargetFilters } from '../base';
 import {
   getEnabledElement,
-  VolumeViewport,
   utilities as csUtils,
   getEnabledElementByViewportId,
 } from '@cornerstonejs/core';
@@ -675,7 +674,7 @@ class RectangleROITool extends AnnotationTool {
         // we re-render the correct tool position. This is due to stackViewport
         // which doesn't have the full volume at each time, and we are only working
         // on one slice at a time.
-        if (viewport instanceof VolumeViewport) {
+        if (csUtils.getViewportContentMode(viewport) === 'volume') {
           const { referencedImageId } = annotation.metadata;
 
           // invalidate all the relevant stackViewports if they are not

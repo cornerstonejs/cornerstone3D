@@ -1,10 +1,8 @@
 import {
-  BaseVolumeViewport,
   cache,
   getEnabledElement,
   metaData,
   utilities as csUtils,
-  StackViewport,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
@@ -922,17 +920,25 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
       finalViewPlaneNormal = undefined;
       finalViewUp = undefined;
     } else {
+      const legacyContentMode = csUtils.isGenericViewport(viewport)
+        ? undefined
+        : csUtils.getViewportContentMode(viewport);
+
       // Only calculate the referenced image ID if not provided in options
-      if (viewport instanceof StackViewport) {
+      if (legacyContentMode === 'stack') {
+        const stackViewport = viewport as Types.IStackViewport;
         const closestImageIndex = csUtils.getClosestStackImageIndexForPoint(
           points[0],
-          viewport
+          stackViewport
         );
 
         if (closestImageIndex !== undefined) {
-          referencedImageId = viewport.getImageIds()[closestImageIndex];
+          referencedImageId = stackViewport.getImageIds()[closestImageIndex];
         }
-      } else if (viewport instanceof BaseVolumeViewport) {
+      } else if (
+        legacyContentMode === 'volume' ||
+        legacyContentMode === 'volume3d'
+      ) {
         referencedImageId = instance.getReferencedImageId(
           viewport,
           points[0],

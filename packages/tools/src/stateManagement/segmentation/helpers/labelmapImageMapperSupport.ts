@@ -1,7 +1,7 @@
 import {
   ActorRenderMode,
   Enums,
-  VolumeViewport,
+  utilities,
   type Types,
 } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
@@ -61,6 +61,20 @@ type ViewportLabelmapImageMapperCompatibilityViewport = Types.IViewport & {
     | undefined;
   type?: string;
 };
+
+/**
+ * Returns true for a legacy volume viewport: it shows a volume slice and has
+ * no next viewport API. A next planar viewport or a legacy adapter is handled
+ * by the planar checks.
+ */
+function viewportIsLegacyVolume(
+  viewport: Types.IViewport
+): viewport is Types.IVolumeViewport {
+  return (
+    utilities.getViewportContentMode(viewport) === 'volume' &&
+    !utilities.isGenericViewport(viewport)
+  );
+}
 
 function isSupportedImageMapperBlendMode(
   blendMode: Enums.BlendModes | undefined
@@ -260,7 +274,7 @@ function getPlanarVolumeDataPresentation(
 function getCompatibilityBlendMode(
   viewport: Types.IViewport
 ): Enums.BlendModes | undefined {
-  if (viewport instanceof VolumeViewport) {
+  if (viewportIsLegacyVolume(viewport)) {
     return viewport.getBlendMode?.();
   }
 
@@ -284,7 +298,7 @@ function getCompatibilityBlendMode(
  * image mapper has no slab.
  */
 function getCompatibilitySlabThickness(viewport: Types.IViewport): number {
-  if (viewport instanceof VolumeViewport) {
+  if (viewportIsLegacyVolume(viewport)) {
     return viewport.getSlabThickness?.() ?? MINIMUM_SLAB_THICKNESS;
   }
 
@@ -384,7 +398,7 @@ export function shouldUseSliceRendering(
 export function canRenderVolumeViewportLabelmapAsImage(
   viewport: Types.IViewport
 ): viewport is ViewportLabelmapImageMapperCompatibilityViewport {
-  const isLegacyVolumeViewport = viewport instanceof VolumeViewport;
+  const isLegacyVolumeViewport = viewportIsLegacyVolume(viewport);
   const isNextPlanarViewport = isPlanarVolumeSliceViewport(viewport);
 
   if (!isLegacyVolumeViewport && !isNextPlanarViewport) {
@@ -420,7 +434,7 @@ export function getVolumeViewportLabelmapImageMapperState(
 ): VolumeViewportLabelmapImageMapperState {
   const compatibilityViewport =
     viewport as ViewportLabelmapImageMapperCompatibilityViewport;
-  const isLegacyVolumeViewport = viewport instanceof VolumeViewport;
+  const isLegacyVolumeViewport = viewportIsLegacyVolume(viewport);
   const isNextPlanarViewport = isPlanarVolumeSliceViewport(viewport);
 
   if (!isLegacyVolumeViewport && !isNextPlanarViewport) {

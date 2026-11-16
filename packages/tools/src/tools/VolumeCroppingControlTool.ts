@@ -1136,7 +1136,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
     const { element } = eventDetail;
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
-    if (viewport.type === Enums.ViewportType.VOLUME_3D) {
+    if (cornerstoneUtilities.getViewportContentMode(viewport) === 'volume3d') {
       return;
     }
     const annotations = this._getAnnotations(

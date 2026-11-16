@@ -1,11 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
-import {
-  utilities,
-  BaseVolumeViewport,
-  StackViewport,
-  cache,
-  metaData,
-} from '@cornerstonejs/core';
+import { utilities, cache, metaData } from '@cornerstonejs/core';
 import type { Annotation } from '../types';
 import { addAnnotation } from '../stateManagement/annotation/annotationState';
 import { vec3 } from 'gl-matrix';
@@ -56,13 +50,13 @@ function getReferencedImageId(
 ): string {
   let referencedImageId;
 
-  if (viewport instanceof StackViewport) {
+  if (utilities.viewportIsInStackMode(viewport)) {
     referencedImageId = getClosestImageIdForStackViewport(
-      viewport,
+      viewport as Types.IStackViewport,
       worldPos,
       viewPlaneNormal
     );
-  } else if (viewport instanceof BaseVolumeViewport) {
+  } else if (utilities.viewportIsInVolumeMode(viewport)) {
     const targetId = getTargetId(viewport);
     const volumeId = utilities.getVolumeId(targetId);
     const imageVolume = cache.getVolume(volumeId);
@@ -86,7 +80,7 @@ function getTargetId(viewport: Types.IViewport): string | undefined {
   if (targetId) {
     return targetId;
   }
-  if (viewport instanceof BaseVolumeViewport) {
+  if (utilities.viewportIsInVolumeMode(viewport)) {
     return `volumeId:${getTargetVolumeId(viewport)}`;
   }
   throw new Error('getTargetId: viewport must have a getTargetId method');
@@ -104,7 +98,7 @@ function getTargetVolumeId(viewport: Types.IViewport): string | undefined {
 }
 
 function getClosestImageIdForStackViewport(
-  viewport: StackViewport,
+  viewport: Types.IStackViewport,
   worldPos: Types.Point3,
   viewPlaneNormal: Types.Point3
 ): string {

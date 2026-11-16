@@ -1,6 +1,9 @@
-import VolumeViewport from '../RenderingEngine/VolumeViewport';
 import cache from '../cache/cache';
-import type { IViewport, IStackViewport } from '../types';
+import type { IViewport, IStackViewport, IVolumeViewport } from '../types';
+import {
+  getViewportContentMode,
+  isGenericViewport,
+} from './viewportCapabilities';
 
 /**
  * Retrieves the image IDs from the given viewport.
@@ -9,8 +12,11 @@ import type { IViewport, IStackViewport } from '../types';
  * @returns An array of image IDs.
  */
 function getViewportImageIds(viewport: IViewport) {
-  if (viewport instanceof VolumeViewport) {
-    const volume = cache.getVolume(viewport.getVolumeId());
+  if (
+    getViewportContentMode(viewport) === 'volume' &&
+    !isGenericViewport(viewport)
+  ) {
+    const volume = cache.getVolume((viewport as IVolumeViewport).getVolumeId());
     return volume.imageIds;
   } else if ((viewport as IStackViewport).getImageIds) {
     return (viewport as IStackViewport).getImageIds();

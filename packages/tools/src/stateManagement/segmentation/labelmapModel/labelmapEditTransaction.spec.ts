@@ -3,7 +3,6 @@ import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type { Segmentation } from '../../../types/SegmentationStateTypes';
 import type { LabelmapLayer } from '../../../types/LabelmapTypes';
 jest.mock('@cornerstonejs/core', () => ({
-  BaseVolumeViewport: class BaseVolumeViewport {},
   cache: {
     getImage: jest.fn(),
     getVolume: jest.fn(),
@@ -13,6 +12,9 @@ jest.mock('@cornerstonejs/core', () => ({
     createAndCacheDerivedImages: jest.fn(),
   },
   utilities: {
+    ...jest.requireActual(
+      '../../../../../core/src/utilities/viewportCapabilities'
+    ),
     uuidv4: jest.fn(() => 'uuid'),
   },
   volumeLoader: {

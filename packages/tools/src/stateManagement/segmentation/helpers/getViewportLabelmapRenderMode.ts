@@ -1,8 +1,7 @@
 import {
   ActorRenderMode,
-  BaseVolumeViewport,
-  StackViewport,
   Enums,
+  utilities,
   type Types,
 } from '@cornerstonejs/core';
 import {
@@ -30,11 +29,15 @@ export default function getViewportLabelmapRenderMode(
     return 'image';
   }
 
-  if (viewport instanceof BaseVolumeViewport) {
+  const legacyContentMode = utilities.isGenericViewport(viewport)
+    ? undefined
+    : utilities.getViewportContentMode(viewport);
+
+  if (legacyContentMode === 'volume' || legacyContentMode === 'volume3d') {
     return 'volume';
   }
 
-  if (viewport instanceof StackViewport) {
+  if (legacyContentMode === 'stack') {
     return 'image';
   }
 

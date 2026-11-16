@@ -2,11 +2,7 @@ import { glMatrix, vec3 } from 'gl-matrix';
 import {
   utilities as csUtils,
   getEnabledElement,
-  StackViewport,
-  VideoViewport,
-  VolumeViewport,
   cache,
-  BaseVolumeViewport,
   Enums,
 } from '@cornerstonejs/core';
 
@@ -262,11 +258,14 @@ function _stopClip(
     _stopClipWithData(toolState);
   }
 
-  if (viewport instanceof VideoViewport) {
-    (viewport as Types.IVideoViewport).pause();
+  if (
+    csUtils.getViewportContentMode(viewport) === 'video' &&
+    !csUtils.isGenericViewport(viewport)
+  ) {
+    (viewport as unknown as Types.IVideoViewport).pause();
   } else if (
     stopDynamicCine &&
-    (viewport instanceof BaseVolumeViewport ||
+    (csUtils.viewportIsInVolumeMode(viewport) ||
       csUtils.isGenericViewport(viewport))
   ) {
     _stopDynamicVolumeCine(element);
@@ -280,7 +279,7 @@ function _stopClip(
 function _stopDynamicVolumeCine(element: HTMLDivElement) {
   const { viewport } = getEnabledElement(element);
   if (
-    viewport instanceof VolumeViewport ||
+    csUtils.getViewportContentMode(viewport) === 'volume' ||
     csUtils.isGenericViewport(viewport)
   ) {
     const volume = _getVolumeFromViewport(
@@ -375,7 +374,10 @@ function _stopClipWithData(playClipData) {
 function _getVolumeFromViewport(
   viewport: Types.IBaseVolumeViewport
 ): Types.IImageVolume {
-  if (!(viewport instanceof VolumeViewport)) {
+  if (
+    csUtils.getViewportContentMode(viewport) !== 'volume' ||
+    csUtils.isGenericViewport(viewport)
+  ) {
     return _getGenericViewportDynamicVolume(viewport);
   }
 
@@ -431,7 +433,7 @@ function _getGenericViewportDynamicVolume(
 }
 
 function _createStackViewportCinePlayContext(
-  viewport: StackViewport,
+  viewport: Types.IStackViewport,
   waitForRendered: number
 ): CINETypes.CinePlayContext {
   const imageIds = viewport.getImageIds();
@@ -463,7 +465,7 @@ function _createStackViewportCinePlayContext(
 }
 
 function _createVideoViewportCinePlayContext(
-  viewport: VideoViewport,
+  viewport: Types.IVideoViewport,
   waitForRendered: number
 ): CINETypes.CinePlayContext {
   return {
@@ -502,7 +504,7 @@ function _createVideoViewportCinePlayContext(
 }
 
 function _createVolumeViewportCinePlayContext(
-  viewport: VolumeViewport,
+  viewport: Types.IVolumeViewport,
   volume: Types.IImageVolume
 ): CINETypes.CinePlayContext {
   const { volumeId } = volume;
@@ -626,14 +628,18 @@ function _createCinePlayContext(
   viewport,
   playClipOptions: CINETypes.PlayClipOptions
 ): CINETypes.CinePlayContext {
-  if (viewport instanceof StackViewport) {
+  const legacyContentMode = csUtils.isGenericViewport(viewport)
+    ? undefined
+    : csUtils.getViewportContentMode(viewport);
+
+  if (legacyContentMode === 'stack') {
     return _createStackViewportCinePlayContext(
       viewport,
       playClipOptions.waitForRendered ?? 30
     );
   }
 
-  if (viewport instanceof VolumeViewport) {
+  if (legacyContentMode === 'volume') {
     const volume = _getVolumeFromViewport(viewport);
 
     if (playClipOptions.dynamicCineEnabled && volume?.isDynamicVolume()) {
@@ -645,7 +651,7 @@ function _createCinePlayContext(
     return _createVolumeViewportCinePlayContext(viewport, volume);
   }
 
-  if (viewport instanceof VideoViewport) {
+  if (legacyContentMode === 'video') {
     return _createVideoViewportCinePlayContext(
       viewport,
       playClipOptions.waitForRendered ?? 30

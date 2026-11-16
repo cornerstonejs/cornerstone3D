@@ -1,8 +1,5 @@
 jest.mock('@cornerstonejs/core', () => {
-  class BaseVolumeViewport {}
-
   return {
-    BaseVolumeViewport,
     Enums: {
       Events: {
         CAMERA_MODIFIED: 'CORNERSTONE_CAMERA_MODIFIED',
@@ -15,6 +12,9 @@ jest.mock('@cornerstonejs/core', () => {
     },
     getEnabledElement: jest.fn(),
     getEnabledElementByIds: jest.fn(),
+    utilities: jest.requireActual(
+      '../../../../core/src/utilities/viewportCapabilities'
+    ),
   };
 });
 

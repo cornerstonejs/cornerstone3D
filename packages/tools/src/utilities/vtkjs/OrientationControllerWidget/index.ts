@@ -371,7 +371,9 @@ export class vtkOrientationControllerWidget {
     // We clamp the margin so the controller stays fully within the viewport
     // even when the size is large.
     const marginRatio =
-      viewport.type === Enums.ViewportType.VOLUME_3D ? 1.3 : 1.1;
+      (viewport.requestedType ?? viewport.type) === Enums.ViewportType.VOLUME_3D
+        ? 1.3
+        : 1.1;
     const marginPxRaw = marginRatio * screenSizePixels;
     const halfPx = screenSizePixels * 0.5;
 

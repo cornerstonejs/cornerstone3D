@@ -1,7 +1,5 @@
 import {
   getEnabledElement,
-  StackViewport,
-  VolumeViewport,
   utilities,
   getEnabledElementByIds,
 } from '@cornerstonejs/core';
@@ -474,19 +472,24 @@ class ReferenceCursors extends AnnotationDisplayTool {
       return;
     }
 
-    if (viewport instanceof StackViewport) {
+    const legacyContentMode = utilities.isGenericViewport(viewport)
+      ? undefined
+      : utilities.getViewportContentMode(viewport);
+
+    if (legacyContentMode === 'stack') {
+      const stackViewport = viewport as Types.IStackViewport;
       const closestIndex = utilities.getClosestStackImageIndexForPoint(
         currentMousePosition,
-        viewport
+        stackViewport
       );
 
       if (closestIndex === null) {
         return;
       }
-      if (closestIndex !== viewport.getCurrentImageIdIndex()) {
-        viewport.setImageIdIndex(closestIndex);
+      if (closestIndex !== stackViewport.getCurrentImageIdIndex()) {
+        stackViewport.setImageIdIndex(closestIndex);
       }
-    } else if (viewport instanceof VolumeViewport) {
+    } else if (legacyContentMode === 'volume') {
       const { focalPoint, viewPlaneNormal } = getViewportICamera(viewport);
       if (!focalPoint || !viewPlaneNormal) {
         return;

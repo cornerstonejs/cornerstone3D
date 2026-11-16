@@ -1,10 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
-import {
-  BaseVolumeViewport,
-  getRenderingEngine,
-  StackViewport,
-  utilities,
-} from '@cornerstonejs/core';
+import { getRenderingEngine, utilities } from '@cornerstonejs/core';
 
 /**
  * Synchronizer callback to synchronize the voi of volumeActors of identical volumes
@@ -51,15 +46,20 @@ export default function voiSyncCallback(
     tProperties.colormap = colormap;
   }
 
-  if (tViewport instanceof BaseVolumeViewport) {
-    const isFusion = tViewport._actors && tViewport._actors.size > 1;
+  const legacyContentMode = utilities.isGenericViewport(tViewport)
+    ? undefined
+    : utilities.getViewportContentMode(tViewport);
+
+  if (legacyContentMode === 'volume' || legacyContentMode === 'volume3d') {
+    const volumeViewport = tViewport as Types.IBaseVolumeViewport;
+    const isFusion = volumeViewport._actors && volumeViewport._actors.size > 1;
     if (isFusion) {
-      tViewport.setProperties(tProperties, volumeId);
+      volumeViewport.setProperties(tProperties, volumeId);
     } else {
-      tViewport.setProperties(tProperties);
+      volumeViewport.setProperties(tProperties);
     }
-  } else if (tViewport instanceof StackViewport) {
-    tViewport.setProperties(tProperties);
+  } else if (legacyContentMode === 'stack') {
+    (tViewport as Types.IStackViewport).setProperties(tProperties);
   } else if (utilities.isGenericViewport(tViewport)) {
     // Direct Generic ("next") viewports expose presentation per display set
     // rather than setProperties. Map the source change's volumeId to THIS

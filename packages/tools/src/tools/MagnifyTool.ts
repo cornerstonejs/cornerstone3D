@@ -3,7 +3,6 @@ import { Events } from '../enums';
 
 import {
   getEnabledElement,
-  StackViewport,
   Enums,
   utilities as csUtils,
 } from '@cornerstonejs/core';
@@ -57,7 +56,10 @@ class MagnifyTool extends BaseTool {
 
     let referencedImageId: string | undefined;
 
-    if (viewport instanceof StackViewport) {
+    if (
+      csUtils.viewportIsInStackMode(viewport) &&
+      !csUtils.isGenericViewport(viewport)
+    ) {
       referencedImageId = targetId.split('imageId:')[1];
     } else if (csUtils.isGenericViewport(viewport)) {
       // Native PLANAR_NEXT stack-mode viewport: the current image id directly.
@@ -74,7 +76,7 @@ class MagnifyTool extends BaseTool {
     const { viewport, renderingEngine } = enabledElement;
 
     if (
-      !(viewport instanceof StackViewport) &&
+      !csUtils.viewportIsInStackMode(viewport) &&
       !csUtils.isGenericViewport(viewport)
     ) {
       throw new Error(

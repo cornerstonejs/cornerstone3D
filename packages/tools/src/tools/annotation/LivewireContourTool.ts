@@ -2,7 +2,6 @@ import { vec3 } from 'gl-matrix';
 import {
   getEnabledElement,
   utilities as csUtils,
-  VolumeViewport,
   utilities,
   triggerEvent,
   eventTarget,
@@ -175,9 +174,21 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     annotation,
     nextPos?,
     contourHoleProcessingEnabled?
-  ) {
+  ): boolean {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
+    const isVolumeViewport =
+      csUtils.getViewportContentMode(viewport) === 'volume';
+
+    if (
+      isVolumeViewport &&
+      typeof (viewport as Types.IVolumeViewport).getSliceViewInfo !== 'function'
+    ) {
+      cs3dLogger.warn(
+        'LivewireContourTool: the viewport cannot give the pixels of its volume slice'
+      );
+      return false;
+    }
 
     this.isDrawing = true;
 
@@ -189,7 +200,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     let height;
     let scalarData;
 
-    if (!(viewport instanceof VolumeViewport)) {
+    if (!isVolumeViewport) {
       width = viewportImageData.dimensions[0];
       height = viewportImageData.dimensions[1];
 
@@ -209,8 +220,10 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       sliceToWorld = (point: Types.Point2) =>
         csUtils.transformIndexToWorld(vtkImageData, [point[0], point[1], 0]);
       scalarData = viewportImageData.scalarData;
-    } else if (viewport instanceof VolumeViewport) {
-      const sliceImageData = csUtils.getCurrentVolumeViewportSlice(viewport);
+    } else if (isVolumeViewport) {
+      const sliceImageData = csUtils.getCurrentVolumeViewportSlice(
+        viewport as Types.IVolumeViewport
+      );
       const { sliceToIndexMatrix, indexToSliceMatrix } = sliceImageData;
 
       worldToSlice = (point: Types.Point3) => {
@@ -315,6 +328,8 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       sliceToWorld,
       contourHoleProcessingEnabled,
     };
+
+    return true;
   }
 
   /**
@@ -336,13 +351,17 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       getMouseModifierKey(evt.detail.event) ===
       this.configuration.contourHoleAdditionModifierKey;
 
-    this.setupBaseEditData(
-      worldPos,
-      element,
-      annotation,
-      undefined,
-      contourHoleProcessingEnabled
-    );
+    if (
+      !this.setupBaseEditData(
+        worldPos,
+        element,
+        annotation,
+        undefined,
+        contourHoleProcessingEnabled
+      )
+    ) {
+      return null;
+    }
     this.addAnnotation(annotation, element);
 
     this._activateDraw(element);
@@ -760,7 +779,11 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     const nextHandle = handlePoints[(handleIndex + 1) % numHandles];
 
     if (!this.editData?.confirmedPathNext) {
-      this.setupBaseEditData(previousHandle, element, annotation, nextHandle);
+      if (
+        !this.setupBaseEditData(previousHandle, element, annotation, nextHandle)
+      ) {
+        return;
+      }
       const { polyline } = data.contour;
       const confirmedPath = new LivewirePath();
       const confirmedPathNext = new LivewirePath();

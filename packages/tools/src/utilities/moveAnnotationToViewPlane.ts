@@ -1,5 +1,5 @@
 import type { Annotation } from '../types';
-import { StackViewport, type Types } from '@cornerstonejs/core';
+import { utilities, type Types } from '@cornerstonejs/core';
 import * as vec3 from 'gl-matrix/vec3';
 
 /**
@@ -43,8 +43,10 @@ export function moveAnnotationToViewPlane(
 
   // we need to modify the metadata for referencedImageId if it is stack viewport
   // for volume viewport it will get taken care of by the viewport
-  if (viewport instanceof StackViewport) {
-    annotation.metadata.referencedImageId = viewport.getCurrentImageId();
+  if (utilities.viewportIsInStackMode(viewport)) {
+    annotation.metadata.referencedImageId = (
+      viewport as Types.IStackViewport
+    ).getCurrentImageId();
   }
 
   return annotation;

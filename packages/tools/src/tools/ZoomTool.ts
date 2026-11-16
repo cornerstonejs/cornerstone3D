@@ -6,7 +6,7 @@ import {
   viewportHasPan,
   viewportHasZoom,
 } from '@cornerstonejs/core';
-import { Enums, getEnabledElement } from '@cornerstonejs/core';
+import { getEnabledElement, utilities } from '@cornerstonejs/core';
 import { BaseTool } from './base';
 import type { EventTypes, PublicToolProps, ToolProps } from '../types';
 import { Events } from '../enums';
@@ -376,7 +376,7 @@ class ZoomTool extends BaseTool {
       },
     } as EventTypes.InteractionEventType;
 
-    if (viewport.type === Enums.ViewportType.STACK) {
+    if (utilities.viewportIsInStackMode(viewport)) {
       this.preMouseDownCallback(eventDetails);
     }
 

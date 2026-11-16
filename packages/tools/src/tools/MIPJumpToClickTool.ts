@@ -1,5 +1,5 @@
 import { BaseTool } from './base';
-import { getEnabledElement, VolumeViewport } from '@cornerstonejs/core';
+import { getEnabledElement } from '@cornerstonejs/core';
 import { type Types, utilities } from '@cornerstonejs/core';
 import { getPointInLineOfSightWithCriteria } from '../utilities/planar';
 import type { PublicToolProps, ToolProps } from '../types';
@@ -97,8 +97,13 @@ class MIPJumpToClickTool extends BaseTool {
     viewports.forEach((viewport) => {
       // Todo: current limitation is that we cannot jump in viewports
       // that don't belong to the renderingEngine of the source clicked viewport
-      if (viewport instanceof VolumeViewport) {
-        viewport.jumpToWorld(brightestPoint);
+      const volumeViewport = viewport as Types.IVolumeViewport;
+
+      if (
+        utilities.getViewportContentMode(viewport) === 'volume' &&
+        typeof volumeViewport.jumpToWorld === 'function'
+      ) {
+        volumeViewport.jumpToWorld(brightestPoint);
       } else {
         cs3dLogger.warn(
           'Cannot jump to specified world coordinates for a viewport that is not a VolumeViewport'

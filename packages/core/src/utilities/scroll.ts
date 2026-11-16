@@ -1,19 +1,22 @@
 import { Events } from '../enums';
-import StackViewport from '../RenderingEngine/StackViewport';
-import VolumeViewport from '../RenderingEngine/VolumeViewport';
 import type {
   ScrollOptions,
   EventTypes,
   IViewport,
   IVideoViewport,
   IStackViewport,
+  IVolumeViewport,
 } from '../types';
 import getVolumeViewportScrollInfo from './getVolumeViewportScrollInfo';
 import snapFocalPointToSlice from './snapFocalPointToSlice';
 import getEnabledElement from '../getEnabledElement';
 import triggerEvent from './triggerEvent';
 import eventTarget from '../eventTarget';
-import { getViewportContentMode } from './viewportCapabilities';
+import {
+  getViewportContentMode,
+  isGenericViewport,
+  viewportIsInStackMode,
+} from './viewportCapabilities';
 
 /**
  * It scrolls one slice in the Stack or Volume Viewport, it uses the options provided
@@ -36,16 +39,19 @@ export default function scroll(
   }
 
   if (
-    viewport instanceof StackViewport &&
-    viewport.getImageIds().length === 0
+    viewportIsInStackMode(viewport) &&
+    (viewport as IStackViewport).getImageIds().length === 0
   ) {
     throw new Error('Scroll::Stack Viewport has no images');
   }
 
   const { volumeId, delta, scrollSlabs } = options;
 
-  if (viewport instanceof VolumeViewport) {
-    scrollVolume(viewport, volumeId, delta, scrollSlabs);
+  if (
+    getViewportContentMode(viewport) === 'volume' &&
+    !isGenericViewport(viewport)
+  ) {
+    scrollVolume(viewport as IVolumeViewport, volumeId, delta, scrollSlabs);
   } else {
     // An ECG scrolls in time, and has no slice bounds.
     if (getViewportContentMode(viewport) === 'ecg') {
@@ -86,7 +92,7 @@ export default function scroll(
 }
 
 export function scrollVolume(
-  viewport: VolumeViewport,
+  viewport: IVolumeViewport,
   volumeId: string,
   delta: number,
   scrollSlabs = false

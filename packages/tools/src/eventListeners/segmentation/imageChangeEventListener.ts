@@ -1,8 +1,9 @@
-import { BaseVolumeViewport, type Types } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 import {
   getEnabledElement,
   Enums,
   getEnabledElementByIds,
+  utilities,
 } from '@cornerstonejs/core';
 import { triggerSegmentationRender } from '../../stateManagement/segmentation/SegmentationRenderingEngine';
 import { SegmentationRepresentations } from '../../enums';
@@ -29,7 +30,9 @@ const enable = function (element: HTMLDivElement): void {
   }
 
   const { viewport } = enabledElement;
-  const isVolumeViewport = viewport instanceof BaseVolumeViewport;
+  const isVolumeViewport =
+    utilities.viewportIsInVolumeMode(viewport) &&
+    !utilities.isGenericViewport(viewport);
   const isPlanarViewport = viewport.type === Enums.ViewportType.PLANAR_NEXT;
   const canUseStackImageEvents =
     typeof (viewport as { getCurrentImageId?: () => string })
@@ -165,7 +168,9 @@ function _imageChangeEventListener(evt) {
   }
 
   const { viewport } = enabledElement;
-  const isVolumeViewport = viewport instanceof BaseVolumeViewport;
+  const isVolumeViewport =
+    utilities.viewportIsInVolumeMode(viewport) &&
+    !utilities.isGenericViewport(viewport);
   const representations = getSegmentationRepresentations(viewportId);
 
   if (!representations?.length) {

@@ -1,4 +1,4 @@
-import { BaseVolumeViewport, cache, utilities } from '@cornerstonejs/core';
+import { cache, utilities } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { SegmentationRepresentations } from '../../enums';
 import {
@@ -89,7 +89,8 @@ export function getSegmentIndexAtWorldForLabelmap(
 
   if (
     viewportRenderMode === 'volume' ||
-    viewport instanceof BaseVolumeViewport
+    (utilities.viewportIsInVolumeMode(viewport) &&
+      !utilities.isGenericViewport(viewport))
   ) {
     for (const layer of getLabelmaps(segmentation)) {
       const segmentationVolume = getOrCreateLabelmapVolume(layer);

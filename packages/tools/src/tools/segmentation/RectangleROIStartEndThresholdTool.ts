@@ -1,8 +1,4 @@
-import {
-  getEnabledElement,
-  StackViewport,
-  utilities as csUtils,
-} from '@cornerstonejs/core';
+import { getEnabledElement, utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { getCalibratedLengthUnitsAndScale } from '../../utilities/getCalibratedUnits';
 import { vec3 } from 'gl-matrix';
@@ -157,7 +153,10 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     const camera = viewport.getCamera();
     const { viewPlaneNormal, viewUp } = camera;
 
-    if (viewport instanceof StackViewport) {
+    if (
+      csUtils.viewportIsInStackMode(viewport) &&
+      !csUtils.isGenericViewport(viewport)
+    ) {
       throw new Error('Stack Viewport Not implemented');
     }
 

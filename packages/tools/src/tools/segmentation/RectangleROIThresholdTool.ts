@@ -1,7 +1,6 @@
 import {
   getEnabledElement,
   cache,
-  StackViewport,
   utilities as csUtils,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
@@ -90,7 +89,7 @@ class RectangleROIThresholdTool extends RectangleROITool {
     const targetId = this.getTargetId(viewport);
     let referencedImageId, volumeId;
 
-    if (viewport instanceof StackViewport) {
+    if (csUtils.viewportIsInStackMode(viewport)) {
       referencedImageId = targetId.split('imageId:')[1];
     } else {
       volumeId = csUtils.getVolumeId(targetId);

@@ -1,7 +1,6 @@
 import {
   getEnabledElementByIds,
   volumeLoader,
-  VolumeViewport,
   utilities as csUtils,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
@@ -31,8 +30,8 @@ export default async function createLabelmapVolumeForViewport(input: {
     throw new Error('element disabled');
   }
 
-  const { viewport } = enabledElement;
-  if (!(viewport instanceof VolumeViewport)) {
+  const viewport = enabledElement.viewport as Types.IVolumeViewport;
+  if (csUtils.getViewportContentMode(viewport) !== 'volume') {
     throw new Error('Segmentation only supports VolumeViewport');
   }
 

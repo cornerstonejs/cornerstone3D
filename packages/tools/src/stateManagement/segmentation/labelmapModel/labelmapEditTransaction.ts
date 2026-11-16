@@ -1,4 +1,4 @@
-import { BaseVolumeViewport, cache } from '@cornerstonejs/core';
+import { cache, utilities } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type { Segmentation } from '../../../types/SegmentationStateTypes';
@@ -96,6 +96,18 @@ type EraseLabelmapEditTransactionOptions = {
    *  caller can record them for undo/redo. */
   crossLayerEraseCallback?: (record: CrossLayerEraseRecord) => void;
 };
+
+/**
+ * Returns true for a legacy volume viewport: it shows volume content and has
+ * no next viewport API. A next viewport or a legacy adapter in volume mode
+ * edits its labelmap layers through the stack path, as it did before.
+ */
+function isLegacyVolumeViewport(viewport?: Types.IViewport): boolean {
+  return (
+    utilities.viewportIsInVolumeMode(viewport) &&
+    !utilities.isGenericViewport(viewport)
+  );
+}
 
 function getProtectedSegmentIndicesForLayer(
   segmentation: Segmentation,
@@ -314,7 +326,7 @@ function getLockedVoxelsOnOtherLayers(
       : undefined;
   const isVolumeEdit =
     targetOptions.preferVolume ||
-    targetOptions.viewport instanceof BaseVolumeViewport;
+    isLegacyVolumeViewport(targetOptions.viewport);
 
   const lockedVoxels: LockedLabelmapVoxels[] = [];
   labelValuesByLayer.forEach((labelValues, lockedLabelmapId) => {
@@ -416,7 +428,7 @@ function resolveLabelmapLayerEditTarget(
   if (
     options.preferVolume ||
     layer.volumeId ||
-    options.viewport instanceof BaseVolumeViewport
+    isLegacyVolumeViewport(options.viewport)
   ) {
     const volume = getOrCreateLabelmapVolume(layer);
 
@@ -558,7 +570,7 @@ function eraseLabelmapEditTransactionOverwrites(
       return;
     }
 
-    if (options.viewport instanceof BaseVolumeViewport || layer.volumeId) {
+    if (isLegacyVolumeViewport(options.viewport) || layer.volumeId) {
       eraseVolumeLayer(layer, binding, options, modifiedSlices);
       return;
     }

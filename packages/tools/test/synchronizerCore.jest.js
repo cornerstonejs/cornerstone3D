@@ -1,6 +1,9 @@
 jest.mock('@cornerstonejs/core', () => {
-  class BaseVolumeViewport {}
-  class StackViewport {}
+  const legacyTypeModes = {
+    stack: 'stack',
+    orthographic: 'volume',
+    volume3d: 'volume3d',
+  };
 
   return {
     Enums: {
@@ -25,13 +28,14 @@ jest.mock('@cornerstonejs/core', () => {
         },
       },
       isGenericViewport: jest.fn(() => false),
+      getViewportContentMode: jest.fn(
+        (viewport) => legacyTypeModes[viewport?.type]
+      ),
     },
     viewportProjection: {
       getPresentation: jest.fn(() => undefined),
       withPresentation: jest.fn(() => undefined),
     },
-    BaseVolumeViewport,
-    StackViewport,
   };
 });
 
@@ -42,8 +46,6 @@ import {
   utilities,
   eventTarget,
   viewportProjection,
-  BaseVolumeViewport,
-  StackViewport,
 } from '@cornerstonejs/core';
 
 import Synchronizer from '../src/store/SynchronizerManager/Synchronizer';
@@ -577,13 +579,10 @@ describe('cameraSyncCallback', () => {
 
 describe('voiSyncCallback', () => {
   function makeVolumeViewport(overrides) {
-    return Object.assign(
-      Object.create(BaseVolumeViewport.prototype),
-      overrides
-    );
+    return { type: 'orthographic', ...overrides };
   }
   function makeStackViewport(overrides) {
-    return Object.assign(Object.create(StackViewport.prototype), overrides);
+    return { type: 'stack', ...overrides };
   }
 
   beforeEach(() => {

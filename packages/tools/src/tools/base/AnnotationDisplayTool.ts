@@ -1,9 +1,4 @@
-import {
-  utilities,
-  getEnabledElement,
-  cache,
-  BaseVolumeViewport,
-} from '@cornerstonejs/core';
+import { utilities, getEnabledElement, cache } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import BaseTool from './BaseTool';
@@ -230,7 +225,7 @@ abstract class AnnotationDisplayTool extends BaseTool {
 
     let referencedImageId = targetId.split(/^[a-zA-Z]+:/)[1];
 
-    if (viewport instanceof BaseVolumeViewport) {
+    if (utilities.viewportIsInVolumeMode(viewport)) {
       const volumeId = utilities.getVolumeId(targetId);
       const imageVolume = cache.getVolume(volumeId);
 

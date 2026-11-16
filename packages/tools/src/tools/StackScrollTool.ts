@@ -1,8 +1,7 @@
+import type { Types } from '@cornerstonejs/core';
 import {
   getEnabledElementByIds,
   getEnabledElement,
-  VolumeViewport,
-  BaseVolumeViewport,
   utilities,
 } from '@cornerstonejs/core';
 import { BaseTool } from './base';
@@ -53,8 +52,11 @@ class StackScrollTool extends BaseTool {
     const deltaPointY = deltaPoints.canvas[1];
 
     let volumeId;
-    if (viewport instanceof VolumeViewport) {
-      volumeId = viewport.getVolumeId();
+    if (
+      utilities.getViewportContentMode(viewport) === 'volume' &&
+      !utilities.isGenericViewport(viewport)
+    ) {
+      volumeId = (viewport as Types.IVolumeViewport).getVolumeId();
     }
 
     const pixelsPerImage = this._getPixelPerImage(viewport);
@@ -95,8 +97,9 @@ class StackScrollTool extends BaseTool {
       debounceLoading: this.configuration.debounceIfNotLoaded,
       loop: this.configuration.loop,
       volumeId:
-        viewport instanceof BaseVolumeViewport
-          ? viewport.getVolumeId()
+        utilities.viewportIsInVolumeMode(viewport) &&
+        !utilities.isGenericViewport(viewport)
+          ? (viewport as Types.IBaseVolumeViewport).getVolumeId()
           : undefined,
       scrollSlabs: this.configuration.scrollSlabs,
     });

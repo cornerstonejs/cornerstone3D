@@ -1,10 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
-import {
-  cache,
-  utilities as csUtils,
-  StackViewport,
-  VolumeViewport,
-} from '@cornerstonejs/core';
+import { cache, utilities as csUtils } from '@cornerstonejs/core';
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
 
 const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
@@ -12,11 +7,15 @@ const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
 );
 
 function extractWindowLevelRegionToolData(viewport: Types.IViewport) {
-  if (viewport instanceof VolumeViewport) {
-    return extractImageDataVolume(viewport);
+  const legacyContentMode = csUtils.isGenericViewport(viewport)
+    ? undefined
+    : csUtils.getViewportContentMode(viewport);
+
+  if (legacyContentMode === 'volume') {
+    return extractImageDataVolume(viewport as Types.IVolumeViewport);
   }
-  if (viewport instanceof StackViewport) {
-    return extractImageDataStack(viewport);
+  if (legacyContentMode === 'stack') {
+    return extractImageDataStack(viewport as Types.IStackViewport);
   }
   // Native ("next") generic viewports are neither a StackViewport nor a
   // VolumeViewport. In stack / vtkImage mode (and axially aligned MPR) the

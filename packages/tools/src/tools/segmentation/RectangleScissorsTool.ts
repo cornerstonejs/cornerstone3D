@@ -1,4 +1,4 @@
-import { BaseVolumeViewport, getEnabledElement } from '@cornerstonejs/core';
+import { getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import { BaseTool } from '../base';
@@ -198,7 +198,8 @@ class RectangleScissorsTool extends LabelmapBaseTool {
 
     if (
       viewportRenderMode === 'volume' ||
-      viewport instanceof BaseVolumeViewport
+      (cornerstoneUtilities.viewportIsInVolumeMode(viewport) &&
+        !cornerstoneUtilities.isGenericViewport(viewport))
     ) {
       const layer = resolveLabelmapForSegment(
         getSegmentation(segmentationId),
