@@ -253,9 +253,9 @@ export interface IVoxelManager<T> {
  * interface states that reason in the type system.
  *
  * Note on the dynamic volume. `VoxelManager.createScalarDynamicVolumeVoxelManager`
- * installs `getRange` and `getCompleteScalarDataArray`, and it installs neither
- * `setCompleteScalarDataArray` nor `invalidateCache`. That factory therefore
- * returns an `IVoxelManager` and not an `IVolumeVoxelManager`.
+ * installs all four properties, and each one acts on the active dimension group
+ * only. The factory still returns an `IVoxelManager`, so its signature did not
+ * change when it got the last two properties.
  *
  * Note on the compiler. `tsconfig.base.json` sets `strictNullChecks` to false,
  * so the compiler lets a caller call an optional property of `IVoxelManager`
