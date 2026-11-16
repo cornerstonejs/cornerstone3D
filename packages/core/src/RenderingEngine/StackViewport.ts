@@ -27,6 +27,7 @@ import type {
   IImageData,
   IImagesLoader,
   IStackInput,
+  IStackViewport,
   ImageLoadListener,
   Mat3,
   PTScaling,
@@ -40,12 +41,12 @@ import type {
   ViewReferenceSpecifier,
   ReferenceCompatibleOptions,
   ViewportInput,
-  ImagePixelModule,
   ImagePlaneModule,
   PixelDataTypedArray,
   ResetCameraOptions,
   SetAspectRatioOptions,
 } from '../types';
+import type { ImageDataMetaData } from '../types/IStackViewport';
 import { actorIsA, isImageActor } from '../utilities/actorCheck';
 import * as colormapUtils from '../utilities/colormap';
 import {
@@ -114,17 +115,7 @@ import {
   createSmoothingRenderPass,
 } from './renderPasses';
 
-export interface ImageDataMetaData {
-  bitsAllocated: number;
-  numberOfComponents: number;
-  origin: Point3;
-  direction: Mat3;
-  dimensions: Point3;
-  spacing: Point3;
-  numVoxels: number;
-  imagePlaneModule: ImagePlaneModule;
-  imagePixelModule: ImagePixelModule;
-}
+export type { ImageDataMetaData };
 // TODO This needs to be exposed as its published to consumers.
 interface CalibrationEvent {
   rowScale?: number;
@@ -149,7 +140,7 @@ const log = coreLog.getLogger('RenderingEngine', 'StackViewport');
  * is not available (or low performance). Read more about StackViewports in
  * the documentation section of this website.
  */
-class StackViewport extends Viewport {
+class StackViewport extends Viewport implements IStackViewport {
   private imageIds: string[] = [];
   /**
    * The imageKeyToIndexMap maps the imageId values to the position in the imageIds

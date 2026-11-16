@@ -4,7 +4,7 @@ import { OrientationAxis } from '../../../enums';
 import { getConfiguration } from '../../../init';
 import type { IImageVolume, Point3 } from '../../../types';
 import { getCubeSizeInView } from '../../../utilities/getPlaneCubeIntersectionDimensions';
-import { getVolumeCenterIJK } from '../../Viewport';
+import { getVolumeCenterIJK } from '../../helpers/getVolumeCenterIJK';
 import type {
   Volume3DCamera,
   Volume3DVtkVolumeAdapterContext,

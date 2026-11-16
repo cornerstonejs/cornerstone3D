@@ -17,6 +17,7 @@ import { getOrCreateCanvas } from './helpers';
 import { EPSILON } from '../constants';
 import triggerEvent from '../utilities/triggerEvent';
 import type { DataSetOptions } from '../types/IViewport';
+import type { ILegacyWSIViewport } from '../types/IWSIViewport';
 import eventTarget from '../eventTarget';
 import imageIdToURI from '../utilities/imageIdToURI';
 import { getGenericViewportWSIDisplaySet } from './GenericViewport/genericViewportDisplaySetAccess';
@@ -45,7 +46,7 @@ const ANNOTATION_REMOVED = 'CORNERSTONE_TOOLS_ANNOTATION_REMOVED';
  * example `initDemo.js` for one possible implementation, but the actual
  * implementation of this will depend on your platform.
  */
-class WSIViewport extends Viewport {
+class WSIViewport extends Viewport implements ILegacyWSIViewport {
   public modality;
   // Viewport Data
   protected imageIds: string[];

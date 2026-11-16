@@ -11,6 +11,7 @@ import type {
   ActorEntry,
   IImageVolume,
   IVolumeInput,
+  IVolumeViewport,
   OrientationVectors,
   Point3,
   EventTypes,
@@ -49,7 +50,7 @@ import {
  */
 const log = coreLog.getLogger('RenderingEngine', 'VolumeViewport');
 
-class VolumeViewport extends BaseVolumeViewport {
+class VolumeViewport extends BaseVolumeViewport implements IVolumeViewport {
   private _useAcquisitionPlaneForViewPlane = false;
   constructor(props: ViewportInput) {
     super(props);

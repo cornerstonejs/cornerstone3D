@@ -8,7 +8,7 @@ import {
 } from '../../helpers/renderBackendRegistry';
 import RENDERING_DEFAULTS from '../../../constants/rendering';
 import { getConfiguration } from '../../../init';
-import Viewport from '../../Viewport';
+import { boundsRadius } from '../../helpers/boundsRadius';
 import type { ActorEntry, ColormapPublic, IVolumeInput } from '../../../types';
 import type { OpacityMapping } from '../../../types/Colormap';
 import triggerEvent from '../../../utilities/triggerEvent';
@@ -763,7 +763,7 @@ class PlanarLegacyCompatibilityController {
       : 1;
     const nearDistance =
       RENDERING_DEFAULTS.MAXIMUM_RAY_DISTANCE +
-      insetImageMultiplier * Viewport.boundsRadius(bounds);
+      insetImageMultiplier * boundsRadius(bounds);
 
     return (
       Math.fround(nearDistance + halfThickness) -
@@ -814,7 +814,7 @@ class PlanarLegacyCompatibilityController {
     // Match legacy VolumeViewport startup behavior: resetCamera positions
     // the focal point at the center of the volume snapped to the nearest
     // integer voxel center along the slice axis. For even slice counts this
-    // leans up (Math.floor(d / 2)), matching getVolumeCenterIJK in Viewport.ts.
+    // leans up (Math.floor(d / 2)), matching getVolumeCenterIJK.
     return Math.floor(imageCount / 2);
   }
 

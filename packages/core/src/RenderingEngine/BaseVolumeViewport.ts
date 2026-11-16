@@ -37,6 +37,7 @@ import type {
   ReferenceCompatibleOptions,
   ViewReference,
   IVolumeViewport,
+  IBaseVolumeViewport,
   ICamera,
   ViewportPreset,
 } from '../types';
@@ -108,7 +109,10 @@ import {
  */
 const log = coreLog.getLogger('RenderingEngine', 'BaseVolumeViewport');
 
-abstract class BaseVolumeViewport extends Viewport {
+abstract class BaseVolumeViewport
+  extends Viewport
+  implements IBaseVolumeViewport
+{
   useCPURendering = false;
   private _FrameOfReferenceUID: string;
   private sharpening: number = 0;

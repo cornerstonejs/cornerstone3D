@@ -12,6 +12,7 @@ import type {
   ViewReference,
   ViewReferenceSpecifier,
   ViewportContentMode,
+  IECGViewport,
 } from '../types';
 import { Transform } from './helpers/cpuFallback/rendering/transform';
 import triggerEvent from '../utilities/triggerEvent';
@@ -49,7 +50,7 @@ type ChannelLayout = ECGChannelLayout<ECGChannel>;
  * (or `ViewportType.ECG_NEXT` with the canonical `GenericViewport/ECG/ECGViewport`) instead.
  * This legacy class will be removed in a future major release.
  */
-class ECGViewport extends Viewport {
+class ECGViewport extends Viewport implements IECGViewport {
   readonly uid: string;
   readonly renderingEngineId: string;
   readonly canvasContext: CanvasRenderingContext2D;

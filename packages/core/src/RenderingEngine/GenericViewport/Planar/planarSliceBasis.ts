@@ -24,7 +24,7 @@ import { getCubeSizeInView } from '../../../utilities/getPlaneCubeIntersectionDi
 import getSpacingInNormalDirection from '../../../utilities/getSpacingInNormalDirection';
 import getVoxelThicknessAlongNormal from '../../../utilities/voxelSlab/getVoxelThicknessAlongNormal';
 import { getConfiguration } from '../../../init';
-import { getVolumeCenterIJK } from '../../Viewport';
+import { getVolumeCenterIJK } from '../../helpers/getVolumeCenterIJK';
 import {
   getCpuEquivalentParallelScale,
   getOrthogonalVolumeSliceGeometry,

@@ -1,4 +1,4 @@
-import type { StackViewport, Types } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 import {
   cache,
   getEnabledElementByViewportId,
@@ -60,7 +60,7 @@ function removeRepresentation(
  * @param toolGroupConfig - This is the configuration object for the tool group
  */
 async function render(
-  viewport: StackViewport | Types.IVolumeViewport,
+  viewport: Types.IStackViewport | Types.IVolumeViewport,
   contourRepresentation: ContourRepresentation
 ): Promise<void> {
   const { segmentationId } = contourRepresentation;

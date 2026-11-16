@@ -18,6 +18,7 @@ import type {
   ReferenceCompatibleOptions,
   ImageSetOptions,
   IViewport,
+  IVideoViewport,
   IStackInput,
   ImageActor,
   CPUIImageData,
@@ -54,7 +55,7 @@ export type CanvasScalarData = Uint8ClampedArray & {
  */
 const log = coreLog.getLogger('RenderingEngine', 'VideoViewport');
 
-class VideoViewport extends Viewport {
+class VideoViewport extends Viewport implements IVideoViewport {
   public static frameRangeExtractor = /(\/frames\/|[&?]frameNumber=)([^/&?]*)/i;
 
   public modality;
