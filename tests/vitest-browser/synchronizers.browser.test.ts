@@ -60,7 +60,7 @@ import {
   type PlanarViewportContext,
 } from './harness';
 
-const { Events, OrientationAxis, RenderBackend, ViewportType } = Enums;
+const { Events, OrientationAxis, RenderBackends, ViewportType } = Enums;
 const { SynchronizerManager, synchronizers } = cornerstoneTools;
 const {
   createZoomPanSynchronizer,
@@ -125,7 +125,7 @@ async function attachSharedViewport(
     displaySetId: base.displaySetId,
     options: {
       orientation: OrientationAxis.AXIAL,
-      renderBackend: RenderBackend.GPU,
+      renderBackend: RenderBackends.GPU,
     },
   });
 

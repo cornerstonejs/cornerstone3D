@@ -11,6 +11,7 @@ import {
 
 const ALL_MODES: PlanarRenderMode[] = [
   'vtkImage',
+  'vtkSampledSlice',
   'vtkVolumeSlice',
   'cpuImage',
   'cpuVolume',
@@ -23,6 +24,7 @@ const BASELINE_MODE: PlanarRenderMode = 'vtkImage';
 // like the baseline (only the render backend differs) and matches exactly.
 const CLEAN_NON_BASELINE_MODES: PlanarRenderMode[] = ['cpuImage'];
 const VOLUME_BACKED_NON_BASELINE_MODES: PlanarRenderMode[] = [
+  'vtkSampledSlice',
   'vtkVolumeSlice',
   'cpuVolume',
 ];
@@ -178,6 +180,8 @@ describe('renderPathParity', () => {
             true
           );
         }
+
+        expect(viewport.getRenderPlan()[0].renderMode).toBe(mode);
       } finally {
         teardown(ctx);
       }

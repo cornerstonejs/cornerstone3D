@@ -20,7 +20,7 @@ import {
   type PlanarViewportContext,
 } from './harness';
 
-const { InterpolationType, OrientationAxis, RenderBackend, ViewportType } = Enums;
+const { InterpolationType, OrientationAxis, RenderBackends, ViewportType } = Enums;
 
 // Per shared-context rule 6: canvas-px comparisons use ~1e-2 epsilon (we use
 // 0.5px, matching the plan's explicit "within 0.5 canvas px" wording for the
@@ -362,7 +362,7 @@ describe('planarInvariants: cross-viewport reference (same frame of reference)',
       displaySetId: a.displaySetId,
       options: {
         orientation: OrientationAxis.AXIAL,
-        renderBackend: RenderBackend.GPU,
+        renderBackend: RenderBackends.GPU,
       },
     });
     await renderAndWait(elementB, viewportB);

@@ -25,11 +25,15 @@ import {
 
 const { Events, OrientationAxis, RenderBackends, ViewportType } = Enums;
 
-// vtkVolumeSliceFrames is vtkVolumeSlice with final downsampling on and the
-// `low` preset, so the reduced volume draws the acquired frames in the
-// acquisition plane. It needs a stack larger than the edge of `low` (256).
+// vtkSampledSlice is the default path of a plain volume slice: slice first
+// is on, the CPU cuts the slice and the GPU draws it. vtkVolumeSlice turns
+// slice first off for its display set, so the slice comes from the volume
+// texture. vtkVolumeSliceFrames is vtkVolumeSlice with final downsampling on
+// and the `low` preset, so the reduced volume draws the acquired frames in
+// the acquisition plane. It needs a stack larger than the edge of `low` (256).
 export type PlanarRenderMode =
   | 'vtkImage'
+  | 'vtkSampledSlice'
   | 'vtkVolumeSlice'
   | 'vtkVolumeSliceFrames'
   | 'cpuImage'
@@ -131,10 +135,12 @@ export async function createPlanarViewport(
   renderingConfig.useGenericViewport = true;
 
   const drawsAcquiredFrames = renderMode === 'vtkVolumeSliceFrames';
+  const drawsVolumeTexture =
+    renderMode === 'vtkVolumeSlice' || drawsAcquiredFrames;
   const isVolumeBacked =
-    renderMode === 'vtkVolumeSlice' ||
+    renderMode === 'vtkSampledSlice' ||
     renderMode === 'cpuVolume' ||
-    drawsAcquiredFrames;
+    drawsVolumeTexture;
   const isCpu = renderMode === 'cpuImage' || renderMode === 'cpuVolume';
 
   if (isVolumeBacked) {
@@ -223,6 +229,9 @@ export async function createPlanarViewport(
       options: {
         orientation,
         renderBackend: isCpu ? RenderBackends.CPU : RenderBackends.GPU,
+        ...(isVolumeBacked && !isCpu
+          ? { sliceFirst: !drawsVolumeTexture }
+          : {}),
       },
     });
   } catch (error) {

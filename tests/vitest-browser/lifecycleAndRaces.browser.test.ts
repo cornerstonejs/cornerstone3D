@@ -23,7 +23,7 @@ import {
   type PlanarViewportContext,
 } from './harness';
 
-const { Events, OrientationAxis, RenderBackend, ViewportStatus, ViewportType } =
+const { Events, OrientationAxis, RenderBackends, ViewportStatus, ViewportType } =
   Enums;
 
 // ----------------------------------------------------------------------------
@@ -142,7 +142,7 @@ test('enable -> disable -> re-enable the same element yields a live, distinct vi
     displaySetId,
     options: {
       orientation: OrientationAxis.AXIAL,
-      renderBackend: RenderBackend.GPU,
+      renderBackend: RenderBackends.GPU,
     },
   });
 
@@ -352,11 +352,11 @@ describe('setDisplaySets race: last call wins', () => {
 
       await viewport.setDisplaySets({
         displaySetId: race.idA,
-        options: { renderBackend: RenderBackend.GPU },
+        options: { renderBackend: RenderBackends.GPU },
       });
       await viewport.setDisplaySets({
         displaySetId: race.idB,
-        options: { renderBackend: RenderBackend.GPU },
+        options: { renderBackend: RenderBackends.GPU },
       });
       await renderAndWait(element, viewport);
 
@@ -379,11 +379,11 @@ describe('setDisplaySets race: last call wins', () => {
 
       const pA = viewport.setDisplaySets({
         displaySetId: race.idA,
-        options: { renderBackend: RenderBackend.GPU },
+        options: { renderBackend: RenderBackends.GPU },
       });
       const pB = viewport.setDisplaySets({
         displaySetId: race.idB,
-        options: { renderBackend: RenderBackend.GPU },
+        options: { renderBackend: RenderBackends.GPU },
       });
 
       await Promise.allSettled([pA, pB]);
@@ -412,11 +412,11 @@ describe('setDisplaySets race: last call wins', () => {
 
       const pB = viewport.setDisplaySets({
         displaySetId: race.idB,
-        options: { renderBackend: RenderBackend.GPU },
+        options: { renderBackend: RenderBackends.GPU },
       });
       const pA = viewport.setDisplaySets({
         displaySetId: race.idA,
-        options: { renderBackend: RenderBackend.GPU },
+        options: { renderBackend: RenderBackends.GPU },
       });
 
       await Promise.allSettled([pB, pA]);
@@ -454,7 +454,7 @@ test('scroll calls fired during an in-flight setDisplaySets reject cleanly and l
 
   const setDisplaySetsPromise = viewport.setDisplaySets({
     displaySetId,
-    options: { renderBackend: RenderBackend.GPU },
+    options: { renderBackend: RenderBackends.GPU },
   });
 
   // Fired without awaiting, immediately after setDisplaySets and before its
@@ -641,7 +641,7 @@ test('a 2x2 grid of viewports on one engine renders independently; disabling one
   for (const [index, viewport] of viewports.entries()) {
     await viewport.setDisplaySets({
       displaySetId: gridDisplaySetId,
-      options: { renderBackend: RenderBackend.GPU },
+      options: { renderBackend: RenderBackends.GPU },
     });
     await renderAndWait(elements[index], viewport);
   }
