@@ -142,12 +142,10 @@ class WSIResolvedView extends ResolvedViewportView<WSIResolvedViewState> {
     resolution: number;
   }): [number, number] {
     const { canvasPoint, indexPoint, resolution } = args;
-    const pixelRatio =
-      typeof window === 'undefined' ? 1 : window.devicePixelRatio || 1;
     const halfCanvasX = Math.max(this.state.canvasWidth, 1) / 2;
     const halfCanvasY = Math.max(this.state.canvasHeight, 1) / 2;
-    const deltaCanvasX = canvasPoint[0] * pixelRatio - halfCanvasX;
-    const deltaCanvasY = canvasPoint[1] * pixelRatio - halfCanvasY;
+    const deltaCanvasX = canvasPoint[0] - halfCanvasX;
+    const deltaCanvasY = canvasPoint[1] - halfCanvasY;
     const rotation =
       this.state.view.getRotation?.() || this.state.viewState.rotation || 0;
     const cos = Math.cos(rotation);

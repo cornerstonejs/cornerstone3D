@@ -384,37 +384,46 @@ describe('wsiTransformUtils', () => {
       expect(canvasPos[1]).toBeLessThan(canvasHeight / 2);
     });
 
-    it('divides the whole transformed point by an explicit devicePixelRatio argument rather than window.devicePixelRatio', () => {
-      Object.defineProperty(window, 'devicePixelRatio', {
-        configurable: true,
-        value: 3, // should be ignored because an explicit value is passed
-      });
-      const view = makeView({ resolution: 1, center: [0, 0] });
+    it('does not depend on the device pixel ratio: canvas points and the canvas size are CSS pixels', () => {
+      const view = makeView({ resolution: 4, center: [100, 50] });
       const canvasWidth = 200;
       const canvasHeight = 200;
+      const results = [1, 2, 3].map((devicePixelRatio) => {
+        Object.defineProperty(window, 'devicePixelRatio', {
+          configurable: true,
+          value: devicePixelRatio,
+        });
 
-      const canvasPosDpr1 = indexToCanvasForWSI({
-        indexPos: [20, 0, 0],
-        canvasWidth,
-        canvasHeight,
-        view,
-        devicePixelRatio: 1,
-      });
-      const canvasPosDpr2 = indexToCanvasForWSI({
-        indexPos: [20, 0, 0],
-        canvasWidth,
-        canvasHeight,
-        view,
-        devicePixelRatio: 2,
+        return {
+          centre: canvasToIndexForWSI({
+            canvasPos: [100, 100],
+            canvasWidth,
+            canvasHeight,
+            view,
+          }),
+          offCentre: canvasToIndexForWSI({
+            canvasPos: [130, 60],
+            canvasWidth,
+            canvasHeight,
+            view,
+          }),
+          canvas: indexToCanvasForWSI({
+            indexPos: [220, 210, 0],
+            canvasWidth,
+            canvasHeight,
+            view,
+          }),
+        };
       });
 
-      // getWSICanvasTransform builds its translation from the raw canvasWidth/
-      // canvasHeight (independent of devicePixelRatio); indexToCanvasForWSI then
-      // divides the entire resulting point -- center offset included -- by
-      // devicePixelRatio. So the whole point scales by 1/dpr, not just the
-      // displacement from the canvas center.
-      expect(canvasPosDpr2[0]).toBeCloseTo(canvasPosDpr1[0] / 2, 6);
-      expect(canvasPosDpr2[1]).toBeCloseTo(canvasPosDpr1[1] / 2, 6);
+      results.forEach(({ centre, offCentre, canvas }) => {
+        expect(centre[0]).toBeCloseTo(100, 6);
+        expect(centre[1]).toBeCloseTo(50, 6);
+        expect(offCentre[0]).toBeCloseTo(100 + 30 * 4, 6);
+        expect(offCentre[1]).toBeCloseTo(50 + 40 * 4, 6);
+        expect(canvas[0]).toBeCloseTo(130, 6);
+        expect(canvas[1]).toBeCloseTo(60, 6);
+      });
     });
   });
 });

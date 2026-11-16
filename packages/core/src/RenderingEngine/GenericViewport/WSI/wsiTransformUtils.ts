@@ -140,47 +140,46 @@ export function buildWSIColorTransform(
       </svg>#colour')`;
 }
 
+/**
+ * The map point of a canvas point. The canvas point and the canvas size are
+ * in CSS pixels, as the resolution of the map view is: map units for one CSS
+ * pixel. So the result does not depend on the device pixel ratio.
+ */
 export function canvasToIndexForWSI(args: {
   canvasPos: Point2;
   canvasWidth: number;
   canvasHeight: number;
   view: WSIMapViewLike;
-  devicePixelRatio?: number;
 }): Point3 {
   const transform = getWSICanvasTransform(args);
 
   transform.invert();
 
-  const indexPoint = transform.transformPoint(
-    args.canvasPos.map(
-      (value) => value * (args.devicePixelRatio || window.devicePixelRatio || 1)
-    ) as Point2
-  );
+  const indexPoint = transform.transformPoint(args.canvasPos);
 
   return [indexPoint[0], indexPoint[1], 0];
 }
 
+/**
+ * The canvas point of a map point, in CSS pixels: the inverse of
+ * `canvasToIndexForWSI`.
+ */
 export function indexToCanvasForWSI(args: {
   indexPos: Point3;
   canvasWidth: number;
   canvasHeight: number;
   view: WSIMapViewLike;
-  devicePixelRatio?: number;
 }): Point2 {
-  const transform = getWSICanvasTransform(args);
-
-  return transform
-    .transformPoint([args.indexPos[0], args.indexPos[1]])
-    .map(
-      (value) => value / (args.devicePixelRatio || window.devicePixelRatio || 1)
-    ) as Point2;
+  return getWSICanvasTransform(args).transformPoint([
+    args.indexPos[0],
+    args.indexPos[1],
+  ]);
 }
 
 function getWSICanvasTransform(args: {
   canvasWidth: number;
   canvasHeight: number;
   view: WSIMapViewLike;
-  devicePixelRatio?: number;
 }): Transform {
   const resolution = args.view.getResolution();
   const rotation = args.view.getRotation();

@@ -1,5 +1,6 @@
-import { describe, it, expect, afterEach } from '@jest/globals';
+import { describe, it, expect, afterEach, beforeEach } from '@jest/globals';
 import WSIViewport from '../src/RenderingEngine/GenericViewport/WSI/WSIViewport';
+import { canvasToIndexForWSI } from '../src/RenderingEngine/GenericViewport/WSI/wsiTransformUtils';
 
 const WIDTH = 400;
 const HEIGHT = 300;
@@ -212,5 +213,79 @@ describe('Next WSI viewport world coordinates', () => {
       viewport.worldToCanvas(viewport.canvasToWorld(canvasPoint)),
       canvasPoint
     );
+  });
+});
+
+describe('Next WSI viewport on a screen with device pixel ratio 2', () => {
+  const originalPixelRatio = window.devicePixelRatio;
+  let made;
+
+  beforeEach(() => {
+    Object.defineProperty(window, 'devicePixelRatio', {
+      configurable: true,
+      value: 2,
+    });
+  });
+
+  afterEach(() => {
+    made.viewport.destroy();
+    made.element.remove();
+    Object.defineProperty(window, 'devicePixelRatio', {
+      configurable: true,
+      value: originalPixelRatio,
+    });
+  });
+
+  it('maps canvas points to the same pixels of the slide as at pixel ratio 1', async () => {
+    made = await createViewport([10, 20, 0], [1, 0, 0, 0, 1, 0, 0, 0, 1]);
+
+    const { viewport } = made;
+    const { worldToIndex } = viewport.getImageData().imageData;
+
+    expectClose(worldToIndex(viewport.canvasToWorld([WIDTH / 2, HEIGHT / 2])), [
+      CENTER_COLUMN,
+      CENTER_ROW,
+      0,
+    ]);
+    expectClose(
+      worldToIndex(viewport.canvasToWorld([WIDTH / 2 + 20, HEIGHT / 2 + 50])),
+      [CENTER_COLUMN + 20 * RESOLUTION, CENTER_ROW + 50 * RESOLUTION, 0]
+    );
+    expectClose(
+      viewport.worldToCanvas(viewport.canvasToWorld([30, 40])),
+      [30, 40]
+    );
+  });
+
+  it('keeps the pixel under the cursor when it zooms at a canvas point', async () => {
+    made = await createViewport([10, 20, 0], [1, 0, 0, 0, 1, 0, 0, 0, 1]);
+
+    const { viewport } = made;
+    const canvasPoint = [WIDTH / 2 + 60, HEIGHT / 2 - 30];
+    const resolvedView = viewport.getResolvedView();
+    const { view } = resolvedView.state;
+    const before = canvasToIndexForWSI({
+      canvasPos: canvasPoint,
+      canvasWidth: WIDTH,
+      canvasHeight: HEIGHT,
+      view,
+    });
+    const { centerIndex, resolution } = resolvedView.withZoom(
+      view.getZoom() + 1,
+      canvasPoint
+    ).state.viewState;
+    const after = canvasToIndexForWSI({
+      canvasPos: canvasPoint,
+      canvasWidth: WIDTH,
+      canvasHeight: HEIGHT,
+      view: {
+        getCenter: () => centerIndex,
+        getResolution: () => resolution,
+        getRotation: () => 0,
+      },
+    });
+
+    expect(resolution).toBe(RESOLUTION / 2);
+    expectClose(after, before);
   });
 });
