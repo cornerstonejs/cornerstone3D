@@ -1,4 +1,8 @@
-import type { PlanarViewport, Types } from '@cornerstonejs/core';
+import type {
+  GpuSettingsPresetId,
+  PlanarViewport,
+  Types,
+} from '@cornerstonejs/core';
 import * as cornerstone from '@cornerstonejs/core';
 import {
   RenderingEngine,
@@ -21,7 +25,10 @@ import {
   addGpuSettingsPresetDropdown,
   ctVoiRange,
 } from '../../../../utils/demo/helpers';
-import { getBooleanUrlParam } from '../../../../utils/demo/helpers/exampleParameters';
+import {
+  getBooleanUrlParam,
+  getStringUrlParam,
+} from '../../../../utils/demo/helpers/exampleParameters';
 import {
   fillStackSegmentationWithMockData,
   fillVolumeLabelmapWithMockData,
@@ -553,14 +560,24 @@ addButtonToToolbar({
   onClick: () => addFakeBidirectionalAnnotations(),
 });
 
+/** Reloads the page with one URL parameter changed. */
+function reloadWith(name: string, value: string): void {
+  const url = new URL(window.location.href);
+
+  url.searchParams.set(name, value);
+  window.location.href = url.toString();
+}
+
 // The preset reduces the CT texture only with final downsampling on. Under
-// `low`, the MPR viewport draws the full-resolution voxel slice in sagittal
-// after the volume loads, and the reduced slice in an oblique plane.
+// `low`, the MPR viewport shows `Low Fidelity` while the volume loads and in
+// an oblique plane, and the full-resolution voxel slice in sagittal after the
+// load. A change reloads the page, so the preset applies from the first load.
 addGpuSettingsPresetDropdown({
-  onSelectedValueChange: () => {
-    getRenderingEngine(renderingEngineId)?.render();
-    setTimeout(updateStatusPanel, 100);
-  },
+  // An unknown name selects nothing, and the default preset applies.
+  defaultValue: (getStringUrlParam('gpuSettingsPreset') ??
+    undefined) as GpuSettingsPresetId,
+  onSelectedValueChange: (gpuSettings) =>
+    reloadWith('gpuSettingsPreset', gpuSettings.id),
 });
 
 // The flag applies at init, so a change reloads the page with the URL
@@ -571,11 +588,48 @@ addButtonToToolbar({
   title: finalDownsampling
     ? 'Reload with final downsampling off'
     : 'Reload with final downsampling on',
-  onClick: () => {
-    const url = new URL(window.location.href);
+  onClick: () => reloadWith('finalDownsampling', String(!finalDownsampling)),
+});
 
-    url.searchParams.set('finalDownsampling', String(!finalDownsampling));
-    window.location.href = url.toString();
+// An oblique plane has no full-resolution slice, so it shows the reduced
+// texture. The toggle tilts the MPR view by 5 degrees about its view up.
+let mprTilted = false;
+
+addButtonToToolbar({
+  title: 'Tilt MPR 5° / back',
+  onClick: () => {
+    const viewport = getViewport(mprViewportId);
+
+    if (!viewport) {
+      return;
+    }
+
+    if (mprTilted) {
+      viewport.setOrientation(OrientationAxis.SAGITTAL);
+    } else {
+      const { viewPlaneNormal: n, viewUp: u } = viewport
+        .getResolvedView()
+        .toICamera();
+      const right = [
+        n[1] * u[2] - n[2] * u[1],
+        n[2] * u[0] - n[0] * u[2],
+        n[0] * u[1] - n[1] * u[0],
+      ];
+      const angle = (5 * Math.PI) / 180;
+
+      viewport.setViewState({
+        orientation: {
+          viewPlaneNormal: n.map(
+            (value, i) => value * Math.cos(angle) + right[i] * Math.sin(angle)
+          ) as Types.Point3,
+          viewUp: u,
+        },
+      });
+    }
+
+    mprTilted = !mprTilted;
+    viewport.render();
+    setTimeout(updateStatusPanel, 100);
   },
 });
 
