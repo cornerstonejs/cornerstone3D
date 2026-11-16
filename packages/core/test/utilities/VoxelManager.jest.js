@@ -438,8 +438,7 @@ describe('VoxelManager', () => {
       slice[0] = 99;
       expect(volumeVoxelManager.getAtIJK(0, 0, 1)).toBe(2);
 
-      // A YZ slice reads one voxel of every image, so no image holds it
-      // together, and the generic path composes it.
+      // A YZ slice reads one voxel of every image.
       const across = volumeVoxelManager.getSliceData({
         sliceIndex: 0,
         slicePlane: 0,
@@ -448,6 +447,84 @@ describe('VoxelManager', () => {
       expect(Array.from(across.slice(0, height))).toEqual([1, 1, 1, 1]);
 
       imageIds.forEach((imageId) => cache.removeImageLoadObject(imageId));
+    });
+
+    // A sagittal or coronal MPR copies one such slice at each scroll step.
+    it('reads YZ and XZ slices from the arrays of the images, as voxel reads give them', () => {
+      const [width, height, depth] = [4, 3, 5];
+      const imageIds = [];
+
+      for (let k = 0; k < depth; k++) {
+        const imageId = `cross-slice-${k}`;
+        const scalarData = Int16Array.from(
+          { length: width * height },
+          (_, n) => n + k * width * height
+        );
+
+        imageIds.push(imageId);
+        cache.putImageSync(imageId, {
+          imageId,
+          width,
+          height,
+          voxelManager: VoxelManager.createImageVoxelManager({
+            width,
+            height,
+            scalarData,
+            numberOfComponents: 1,
+          }),
+          getPixelData: () => scalarData,
+          sizeInBytes: 5 * 1024,
+        });
+      }
+
+      const volume = VoxelManager.createImageVolumeVoxelManager({
+        dimensions: [width, height, depth],
+        imageIds,
+        numberOfComponents: 1,
+      });
+      const views = jest.spyOn(volume, '_getSliceView');
+      const voxelReads = (slicePlane, sliceIndex) => {
+        const values = [];
+
+        for (let k = 0; k < depth; k++) {
+          for (let a = 0; a < (slicePlane === 0 ? height : width); a++) {
+            values.push(
+              slicePlane === 0
+                ? volume.getAtIJK(sliceIndex, a, k)
+                : volume.getAtIJK(a, sliceIndex, k)
+            );
+          }
+        }
+
+        return values;
+      };
+
+      for (const [slicePlane, sliceIndex] of [
+        [0, 2],
+        [1, 1],
+      ]) {
+        const slice = volume.getSliceData({ sliceIndex, slicePlane });
+
+        expect(slice).toBeInstanceOf(Int16Array);
+        expect(Array.from(slice)).toEqual(voxelReads(slicePlane, sliceIndex));
+      }
+      expect(views).toHaveBeenCalled();
+
+      // A missing image gives no array; the voxel reads compose the slice,
+      // and the missing voxels read 0.
+      cache.removeImageLoadObject(imageIds[3]);
+      volume.invalidateSlice(3);
+      const partial = volume.getSliceData({ sliceIndex: 2, slicePlane: 0 });
+
+      expect(partial.length).toBe(height * depth);
+      expect(Array.from(partial.slice(3 * height, 4 * height))).toEqual([
+        0, 0, 0,
+      ]);
+      expect(Array.from(partial.slice(0, height))).toEqual([2, 6, 10]);
+
+      imageIds
+        .filter((_, k) => k !== 3)
+        .forEach((imageId) => cache.removeImageLoadObject(imageId));
     });
   });
 

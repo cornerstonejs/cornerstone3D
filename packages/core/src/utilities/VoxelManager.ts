@@ -1416,11 +1416,57 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
       }
     };
 
+    /**
+     * A YZ (plane 0) or an XZ (plane 1) slice, in the layout of `getSliceData`.
+     * It reads one column or one row of the array of each image, rather than
+     * one voxel at a time. It gives nothing when an image of a slice gives no
+     * array (`_getSliceView`), and the caller then composes the slice itself.
+     */
+    const getCrossSliceData = (
+      sliceIndex: number,
+      slicePlane: number
+    ): PixelDataTypedArray | undefined => {
+      const across = slicePlane === 0 ? height : width;
+
+      if (sliceIndex < 0 || sliceIndex >= (slicePlane === 0 ? width : height)) {
+        return undefined;
+      }
+
+      let slice: PixelDataTypedArray | undefined;
+
+      for (let k = 0; k < depth; k++) {
+        const view = voxelManager._getSliceView(k);
+
+        if (!view) {
+          return undefined;
+        }
+
+        slice ??= new (view.constructor as new (
+          length: number
+        ) => PixelDataTypedArray)(across * depth);
+        const offset = k * across;
+
+        if (slicePlane === 1) {
+          const row = sliceIndex * width;
+
+          slice.set(view.subarray(row, row + width), offset);
+        } else {
+          for (let j = 0; j < height; j++) {
+            slice[offset + j] = view[sliceIndex + j * width];
+          }
+        }
+      }
+
+      return slice;
+    };
+
     // One k slice is one cached image, so copy it in one call.
     voxelManager._getSliceData = ({ sliceIndex, slicePlane }) => {
+      if (slicePlane === 0 || slicePlane === 1) {
+        return getCrossSliceData(sliceIndex, slicePlane);
+      }
+
       if (slicePlane !== 2) {
-        // A YZ or an XZ slice reads one voxel of every image, so no image
-        // holds the values of that slice together.
         return undefined;
       }
 

@@ -1662,11 +1662,11 @@ class PlanarViewport extends GenericViewport<
   // ====================================================================
 
   /**
-   * Adds a line for each reduced labelmap while the acquired frame shows
-   * (FIDELITY-STATE-9). The frame draws the source at full resolution, and a
-   * labelmap with a reduced texture can then draw a contour of a nearby slice
-   * on it. Over the reduced volume slice, the source line already reports the
-   * reduction, so a labelmap adds no line there.
+   * Adds a line for each reduced labelmap while the acquired frame or the
+   * voxel slice shows (FIDELITY-STATE-9). Either draws the source at full
+   * resolution, and a labelmap with a reduced texture can then draw a contour
+   * of a nearby slice on it. Over the reduced volume slice, the source line
+   * already reports the reduction, so a labelmap adds no line there.
    */
   protected override collectFidelityLines(
     display?: FidelityDisplay
@@ -1682,7 +1682,11 @@ class PlanarViewport extends GenericViewport<
       );
     });
 
-    if (!renderings.some((rendering) => rendering.showsAcquiredFrame)) {
+    if (
+      !renderings.some(
+        (rendering) => rendering.showsAcquiredFrame || rendering.showsVoxelSlice
+      )
+    ) {
       return lines;
     }
 

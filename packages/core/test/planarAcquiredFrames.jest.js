@@ -623,6 +623,9 @@ describe('PlanarViewport acquired frames in the volume path (user experience)', 
 
     const [voxelSlice] = shownRenderings();
     expect(voxelSlice).not.toBe(sourceBinding().rendering);
+    // A voxel slice is not an acquired frame.
+    expect(sourceBinding().rendering.showsAcquiredFrame).toBe(false);
+    expect(sourceBinding().rendering.showsVoxelSlice).toBe(true);
     expect(getSliceData).toHaveBeenLastCalledWith({
       sliceIndex: 256,
       slicePlane: 0,

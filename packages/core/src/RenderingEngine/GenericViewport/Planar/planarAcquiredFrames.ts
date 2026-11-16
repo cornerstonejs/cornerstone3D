@@ -205,11 +205,13 @@ export function withAcquiredFrames(
     if (!volumeRendering.isSegmentationOverlay) {
       // A hidden volume ignores its data events; read the record again.
       volumeRendering.fidelityStale ||=
-        !showsFullResolution && volumeRendering.showsAcquiredFrame;
+        !showsFullResolution &&
+        (volumeRendering.showsAcquiredFrame || volumeRendering.showsVoxelSlice);
       volumeRendering.excludeFromFidelity = showsFullResolution;
     }
 
-    volumeRendering.showsAcquiredFrame = showsFullResolution;
+    volumeRendering.showsAcquiredFrame = showsFrame;
+    volumeRendering.showsVoxelSlice = showsVoxelSlice;
 
     const camera = getPlanarRenderPathActiveSourceICamera(ctx);
     const place = (
