@@ -3,11 +3,6 @@ import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import { vec3 } from 'gl-matrix';
 import type { IImageVolume, Point3 } from '../../../types';
 
-type VolumeGeometry = Pick<
-  IImageVolume,
-  'direction' | 'dimensions' | 'spacing'
->;
-
 /**
  * The two volume axes in the plane normal to `axis`, in the order of the
  * values of `voxelManager.getSliceData({ slicePlane: axis })`.
@@ -16,45 +11,12 @@ function inPlaneAxes(axis: number): [number, number] {
   return axis === 0 ? [1, 2] : axis === 1 ? [0, 2] : [0, 1];
 }
 
-function axisVector(direction: VolumeGeometry['direction'], axis: number) {
+function axisVector(direction: IImageVolume['direction'], axis: number) {
   return [
     direction[axis * 3],
     direction[axis * 3 + 1],
     direction[axis * 3 + 2],
   ] as Point3;
-}
-
-/**
- * The volume axis (0, 1 or 2) that a unit view plane normal follows, or
- * `undefined` for an oblique plane.
- *
- * The rule is the rule of `isAcquisitionPlaneNormal`, for each axis: the tilt
- * of the plane moves it by less than half a voxel along the axis across the
- * extent of the volume in the plane. A plane that follows an axis then crosses
- * one voxel slice of that axis everywhere in the volume.
- */
-export function alignedVolumeAxis(
-  volume: VolumeGeometry,
-  viewPlaneNormal: Point3
-): number | undefined {
-  const { direction, dimensions, spacing } = volume;
-
-  for (let axis = 0; axis < 3; axis++) {
-    const cos = Math.abs(
-      vec3.dot(
-        axisVector(direction, axis) as unknown as vec3,
-        viewPlaneNormal as unknown as vec3
-      )
-    );
-    const sin = Math.sqrt(Math.max(0, 1 - cos * cos));
-    const [a, b] = inPlaneAxes(axis);
-    const halfDiagonal =
-      Math.hypot(dimensions[a] * spacing[a], dimensions[b] * spacing[b]) / 2;
-
-    if (sin * halfDiagonal < spacing[axis] / 2) {
-      return axis;
-    }
-  }
 }
 
 /**

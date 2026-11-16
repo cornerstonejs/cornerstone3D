@@ -26,7 +26,8 @@ import type {
 import { applyPlanarICameraToActor } from './planarRenderCamera';
 import { getPlanarRenderPathActiveSourceICamera } from './planarRenderPathProjection';
 import { resolveSlabThickness } from './planarVolumeSliceBlendMode';
-import { alignedVolumeAxis, voxelSliceImageData } from './planarVoxelSlice';
+import { alignedVolumeAxis } from '../../../utilities/isAcquisitionPlaneNormal';
+import { voxelSliceImageData } from './planarVoxelSlice';
 import { VtkImageMapperRenderPath } from './VtkImageMapperRenderPath';
 
 const log = coreLog.getLogger('RenderingEngine', 'planarAcquiredFrames');
@@ -416,16 +417,21 @@ export function withAcquiredFrames(
     updateVisibility();
   }
 
-  // A completed load, or an edit of the voxels after it, changes the voxel
-  // slice. The reduced slice shows during the load, so its events do nothing.
+  // A change of the texture limits can allow or stop the full-resolution
+  // slices at any time. A completed load, or an edit of the voxels after it,
+  // changes the voxel slice. The frame events of a load do nothing, because
+  // the reduced slice shows during the load.
   const removeVolumeSubscription = subscribeToVolumeEvents(
     data.volumeId,
     (eventType) => {
-      if (isVolumeLoading(imageVolume)) {
-        return;
+      if (eventType !== Events.VOLUME_TEXTURE_LIMITS_CHANGED) {
+        if (isVolumeLoading(imageVolume)) {
+          return;
+        }
+
+        voxelSliceStale = true;
       }
 
-      voxelSliceStale ||= eventType === Events.IMAGE_VOLUME_MODIFIED;
       sync();
     }
   );

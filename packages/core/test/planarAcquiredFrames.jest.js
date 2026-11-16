@@ -22,10 +22,8 @@ import {
   acquiredFrameIndexOfVolumePoint,
   withAcquiredFrames,
 } from '../src/RenderingEngine/GenericViewport/Planar/planarAcquiredFrames';
-import {
-  alignedVolumeAxis,
-  voxelSliceImageData,
-} from '../src/RenderingEngine/GenericViewport/Planar/planarVoxelSlice';
+import { voxelSliceImageData } from '../src/RenderingEngine/GenericViewport/Planar/planarVoxelSlice';
+import { alignedVolumeAxis } from '../src/utilities/isAcquisitionPlaneNormal';
 import { getImageSliceOverlayOrder } from '../src/RenderingEngine/GenericViewport/Planar/VtkVolumeSliceRenderPath';
 import { triggerPlanarVolumeNewImage } from '../src/RenderingEngine/GenericViewport/Planar/planarImageEvents';
 import { resolvePlanarRenderPathProjection } from '../src/RenderingEngine/GenericViewport/Planar/planarRenderPathProjection';
@@ -53,9 +51,14 @@ const flush = async () => {
 
 // A volume whose texture the preset reduces. Only the fields that the
 // decision and the frame lookup read are present.
-function createVolume({ volumeId, dimensions, spacing, imageIds }) {
-  const origin = [0, 0, 0];
-  const direction = [1, 0, 0, 0, 1, 0, 0, 0, 1];
+function createVolume({
+  volumeId,
+  dimensions,
+  spacing,
+  imageIds,
+  origin = [0, 0, 0],
+  direction = [1, 0, 0, 0, 1, 0, 0, 0, 1],
+}) {
   const imageData = vtkImageData.newInstance({ spacing, origin, direction });
 
   imageData.setDimensions(dimensions);
@@ -188,6 +191,56 @@ describe('planar voxel slices (API)', () => {
     // The next slice of the axis writes into the same image (one texture).
     expect(voxelSliceImageData(volume, 0, 2, slice)).toBe(slice);
     expect(slice.getPointData().getScalars().getData()[0]).toBe(2);
+  });
+
+  it('copies a coronal slice with i along the rows and k along the columns', () => {
+    const slice = voxelSliceImageData(volume, 1, 2);
+
+    expect(slice.getDimensions()).toEqual([3, 5, 1]);
+    // The value of voxel (i, 2, k) is its index i + 6 + 12k.
+    expect(Array.from(slice.getPointData().getScalars().getData())).toEqual(
+      Array.from({ length: 15 }, (_, n) => (n % 3) + 6 + Math.floor(n / 3) * 12)
+    );
+    expect(Array.from(slice.getOrigin())).toEqual([0, 4, 0]);
+  });
+
+  // A wrong axis order or handedness draws a mirrored or transposed image.
+  it('puts each voxel of a rotated, moved volume at its world position, for each axis', () => {
+    // i points along +y, j along -x, k along +z.
+    const rotated = {
+      ...createVolume({
+        volumeId: 'rotated',
+        dimensions,
+        spacing,
+        imageIds: [],
+        origin: [10, 20, 30],
+        direction: [0, 1, 0, -1, 0, 0, 0, 0, 1],
+      }),
+      voxelManager: volume.voxelManager,
+    };
+
+    expect(alignedVolumeAxis(rotated, [1, 0, 0])).toBe(1);
+    expect(alignedVolumeAxis(rotated, [0, -1, 0])).toBe(0);
+
+    for (const [axis, sliceIndex] of [
+      [0, 1],
+      [1, 2],
+      [2, 3],
+    ]) {
+      const slice = voxelSliceImageData(rotated, axis, sliceIndex);
+      const [width, height] = slice.getDimensions();
+      const values = slice.getPointData().getScalars().getData();
+
+      for (let n = 0; n < width * height; n++) {
+        const world = slice.indexToWorld([n % width, Math.floor(n / width), 0]);
+        const [i, j, k] = rotated.imageData
+          .worldToIndex(world)
+          .map((value) => Math.round(value));
+
+        expect(values[n]).toBe(i + 3 * j + 12 * k);
+        expect(axis === 0 ? i : axis === 1 ? j : k).toBe(sliceIndex);
+      }
+    }
   });
 });
 
@@ -528,18 +581,35 @@ describe('PlanarViewport acquired frames in the volume path (user experience)', 
     expect(viewport.getViewState().anchorWorld).toEqual([100, 120, 10]);
   });
 
-  it('draws the exact voxel slice in sagittal after the load, and the reduced slice in an oblique plane', async () => {
+  // Gives the volume a voxel manager and a load that runs.
+  function withVoxels() {
     const getSliceData = jest.fn(() => new Int16Array(512 * sliceCount));
+
     volume.voxelManager = { numberOfComponents: 1, getSliceData };
     volume.loadStatus = { loaded: false, loading: true };
     volume.getVoxelQuality = () => ({
       ...sourceBinding().rendering.voxelQuality,
       grid: fullGrid,
     });
-    const shownRenderings = () =>
-      sourceBinding()
-        .getRenderings()
-        .filter((rendering) => rendering.actor.getVisibility());
+
+    return getSliceData;
+  }
+
+  async function completeLoad() {
+    volume.loadStatus = { loaded: true, loading: false };
+    triggerEvent(eventTarget, Events.IMAGE_VOLUME_LOADING_COMPLETED, {
+      volumeId,
+    });
+    await flush();
+  }
+
+  const shownRenderings = () =>
+    sourceBinding()
+      .getRenderings()
+      .filter((rendering) => rendering.actor.getVisibility());
+
+  it('draws the exact voxel slice in sagittal after the load, and the reduced slice in an oblique plane', async () => {
+    const getSliceData = withVoxels();
 
     await mount();
     viewport.setOrientation(OrientationAxis.SAGITTAL);
@@ -549,11 +619,7 @@ describe('PlanarViewport acquired frames in the volume path (user experience)', 
     expect(shownRenderings()).toEqual([sourceBinding().rendering]);
     expect(getSliceData).not.toHaveBeenCalled();
 
-    volume.loadStatus = { loaded: true, loading: false };
-    triggerEvent(eventTarget, Events.IMAGE_VOLUME_LOADING_COMPLETED, {
-      volumeId,
-    });
-    await flush();
+    await completeLoad();
 
     const [voxelSlice] = shownRenderings();
     expect(voxelSlice).not.toBe(sourceBinding().rendering);
@@ -578,6 +644,47 @@ describe('PlanarViewport acquired frames in the volume path (user experience)', 
     await flush();
 
     expect(shownRenderings()).toEqual([sourceBinding().rendering]);
+  });
+
+  it('copies the voxel slice again after an edit of the loaded volume', async () => {
+    const getSliceData = withVoxels();
+
+    await mount(OrientationAxis.SAGITTAL);
+    await completeLoad();
+    const copies = getSliceData.mock.calls.length;
+
+    triggerEvent(eventTarget, Events.IMAGE_VOLUME_MODIFIED, { volumeId });
+    await flush();
+
+    expect(getSliceData).toHaveBeenCalledTimes(copies + 1);
+    expect(shownRenderings()).not.toContain(sourceBinding().rendering);
+  });
+
+  it('shows the reduced slice in sagittal for a slab thicker than one sagittal voxel', async () => {
+    withVoxels();
+    await mount(OrientationAxis.SAGITTAL);
+    await completeLoad();
+
+    // 2 mm fits one acquired slice (k spacing 2 mm), not one i voxel (1 mm).
+    viewport.setDisplaySetPresentation(dataId, { slabThickness: 2 });
+    await flush();
+
+    expect(shownRenderings()).toEqual([sourceBinding().rendering]);
+  });
+
+  it('draws the acquired frame after a preset change during the load', async () => {
+    withVoxels();
+    // No reduction at the mount, so the frame is not wanted.
+    setGpuSettingsPreset('high-texture-4096');
+    await mount();
+    await releaseFrames();
+    expect(shownRenderings()).toEqual([sourceBinding().rendering]);
+
+    setGpuSettingsPreset('low');
+    await flush();
+
+    expect(frameRendering().actor.getVisibility()).toBe(true);
+    expect(volumeActor().getVisibility()).toBe(false);
   });
 
   it('turns an axial viewport sagittal for a sagittal volume reference', async () => {
