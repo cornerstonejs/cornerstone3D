@@ -6,8 +6,7 @@ export type FramesRange = [number, number] | number;
  * a range of frame values.
  */
 export default class FrameRange {
-  protected static frameRangeExtractor =
-    /(\/frames\/|[&?]frameNumber=)([^/&?]*)/i;
+  static frameRangeExtractor = /(\/frames\/|[&?]frameNumber=)([^/&?]*)/i;
 
   /**
    * This method will extract a single frame number or range of frame numbers

@@ -627,11 +627,11 @@ class VideoViewport extends GenericViewport<
   // Private
   // ====================================================================
 
-  private getVideoElement(): HTMLVideoElement | undefined {
+  protected getVideoElement(): HTMLVideoElement | undefined {
     return this.getVideoRendering()?.element;
   }
 
-  private getVideoData(): LoadedData<VideoStreamPayload> | undefined {
+  protected getVideoData(): LoadedData<VideoStreamPayload> | undefined {
     const binding = this.getCurrentBinding();
 
     if (!binding) {

@@ -1,17 +1,26 @@
 import type {
+  ActorEntry,
+  DisplayArea,
   ECGViewportProperties,
   ICamera,
   Point2,
   Point3,
+  ViewportInput,
   ViewPresentation,
   ViewPresentationSelector,
 } from '../../../types';
+import type ViewportInputOptions from '../../../types/ViewportInputOptions';
+import { deepClone } from '../../../utilities/deepClone';
+import { coreLog } from '../../../utilities/logger';
 import { viewportProjection } from '../viewportProjection';
 import type {
   ECGViewState,
   ECGResetViewStateOptions,
+  ECGViewportInput,
 } from './ECGViewportTypes';
 import ECGViewport from './ECGViewport';
+
+const log = coreLog.getLogger('RenderingEngine', 'ECGViewportLegacyAdapter');
 
 /** Legacy properties that move the trace, and so belong to the view state. */
 const LEGACY_VIEW_STATE_PROPERTIES = [
@@ -26,6 +35,38 @@ const LEGACY_VIEW_STATE_PROPERTIES = [
  * with original ECGViewport API calls.
  */
 class ECGViewportLegacyAdapter extends ECGViewport {
+  /** The options that the viewport was made with. */
+  readonly defaultOptions: ViewportInputOptions;
+
+  /** Whether the viewport fires no events, from the default options. */
+  readonly suppressEvents: boolean;
+
+  /**
+   * False until the rendering engine disables the viewport, as on the legacy
+   * viewports. The engine sets it to true.
+   */
+  isDisabled = false;
+
+  /**
+   * The options of the viewport, as on the legacy viewport: a copy of the
+   * default options until `setOptions` or `reset` changes them.
+   */
+  options: ViewportInputOptions;
+
+  constructor(
+    args: ECGViewportInput & Partial<Pick<ViewportInput, 'defaultOptions'>>
+  ) {
+    super(args);
+    this.defaultOptions = deepClone(args.defaultOptions || {});
+    this.options = deepClone(this.defaultOptions);
+    this.suppressEvents = Boolean(this.defaultOptions.suppressEvents);
+  }
+
+  /** The id of the viewport. The legacy ECG viewport never set it. */
+  get uid(): string {
+    return this.id;
+  }
+
   /**
    * Loads and displays an ECG dataset given its image ID.
    * @param imageId - Target image ID / display set ID.
@@ -228,6 +269,71 @@ class ECGViewportLegacyAdapter extends ECGViewport {
     if (cameraPatch.focalPoint) {
       this.setFocalPoint(cameraPatch.focalPoint);
     }
+  }
+
+  /**
+   * Sets the zoom. The second argument is a canvas point to zoom about, as on
+   * the next viewport. A boolean there is the `storeAsInitialCamera` flag of
+   * the legacy viewports, which the ECG viewport does not use.
+   */
+  setZoom(zoom: number, canvasPoint?: Point2 | boolean): void {
+    super.setZoom(zoom, Array.isArray(canvasPoint) ? canvasPoint : undefined);
+  }
+
+  /** No actors: the ECG draws on its canvas. */
+  getActors(): ActorEntry[] {
+    return [];
+  }
+
+  /** Undefined: an ECG viewport has no actors. */
+  getDefaultActor(): ActorEntry | undefined {
+    return undefined;
+  }
+
+  /** Undefined: an ECG viewport has no actors. */
+  getActor(_actorUID: string): ActorEntry | undefined {
+    return undefined;
+  }
+
+  /**
+   * Sets the options of the viewport and renders when `immediate` is set. A
+   * display area or an aspect ratio in the options is not applied, and the
+   * adapter logs a warning for them.
+   */
+  setOptions(options: ViewportInputOptions, immediate = false): void {
+    this.options = deepClone(options);
+
+    if (this.options?.displayArea || this.options?.aspectRatio) {
+      log.warn(
+        'An ECG viewport does not apply the display area or the aspect ratio of its options'
+      );
+    }
+
+    if (immediate) {
+      this.render();
+    }
+  }
+
+  /**
+   * Sets the options back to the default options, as on the legacy viewport,
+   * and renders when `immediate` is set.
+   */
+  reset(immediate = false): void {
+    this.options = deepClone(this.defaultOptions);
+
+    if (immediate) {
+      this.render();
+    }
+  }
+
+  /** Always false, as on the legacy viewports: the view plane stays the same. */
+  isOrientationChangeable(): boolean {
+    return false;
+  }
+
+  /** The display area of the options, as on the legacy viewport. */
+  getDisplayArea(): DisplayArea | undefined {
+    return this.options?.displayArea;
   }
 
   /**

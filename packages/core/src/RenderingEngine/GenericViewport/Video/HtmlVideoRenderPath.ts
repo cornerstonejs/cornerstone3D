@@ -17,6 +17,7 @@ import type {
 } from './VideoViewportTypes';
 import { normalizeVideoPlaybackInfo } from '../../../utilities/VideoUtilities';
 import { resolveVideoCanvasMapping } from './videoViewportCamera';
+import { buildWSIColorTransform } from '../WSI/wsiTransformUtils';
 
 /** @internal */
 export class HtmlVideoRenderPath
@@ -100,6 +101,9 @@ export class HtmlVideoRenderPath
     element.muted = videoProps?.muted ?? true;
     element.playbackRate = videoProps?.playbackRate ?? 1;
     element.style.objectFit = videoProps?.objectFit ?? 'contain';
+    element.style.filter =
+      buildWSIColorTransform(videoProps?.voiRange, videoProps?.averageWhite) ||
+      '';
   }
 
   private applyViewState(
