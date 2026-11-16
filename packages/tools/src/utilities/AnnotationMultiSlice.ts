@@ -37,7 +37,9 @@ export default class AnnotationMultiSlice {
 
   /**
    * Sets a range of images in the current viewport to be selected.
-   * This only works on stack and video viewports currently.
+   * This only works on stack and video viewports currently. An annotation
+   * with a dimension group gets the dimension group of the first image of
+   * the range, from the view reference of the viewport.
    */
   public static setRange(
     viewport,
@@ -69,6 +71,11 @@ export default class AnnotationMultiSlice {
       metadata.sliceIndex
     );
     metadata.referencedImageURI = undefined;
+    if (metadata.dimensionGroupNumber !== undefined) {
+      metadata.dimensionGroupNumber = viewport.getViewReference?.({
+        sliceIndex: metadata.sliceIndex,
+      })?.dimensionGroupNumber;
+    }
     if (endRange === metadata.sliceIndex) {
       metadata.multiSliceReference = undefined;
     } else if (endRange !== metadata.multiSliceReference?.sliceIndex) {

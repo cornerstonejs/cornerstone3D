@@ -258,6 +258,29 @@ layer of a fusion: the opacity is applied as given.
 - **`STACK_NEW_IMAGE` fires for each frame while the video plays.**
 - **`options.frameNumber` of `setDisplaySets` is honoured.**
 - **`voiRange` and `averageWhite` of the presentation are applied.**
+- **`IMAGE_RENDERED` fires.** A next video viewport fires it when what it shows
+  changes: a new frame, a seek, a pan, a zoom, a resize or a call of
+  `render()`, at most once for each animation frame. It never fired in 5.x, so
+  an annotation did not follow a pan or a zoom. The legacy viewport fires one
+  on every animation frame while a video plays.
+- **The pixels of the frame.** `getImageData()` gives the pixels of the frame
+  on display, as on the legacy viewport, so a probe and the ROI tools give
+  statistics. `modality`, `getImageDataMetadata()` and `hasImageURI()` are on
+  the viewport too.
+- **Frame range and playback.** `setFrameRange()`, `getFrameRange()` and
+  `togglePlayPause()` are on the viewport. Frame numbers start at 1.
+- **An annotation over a range of frames shows on every frame of the range.**
+  In 5.x it showed on its first frame only. `getViewReference()` gives a range
+  while a video plays inside a frame range.
+- **Rotation.** The video turns about the centre of the canvas, and
+  `canvasToWorld` and `worldToCanvas` follow the rotation. In 5.x the video
+  turned about its top left corner and the two transforms ignored the
+  rotation, so annotations landed beside the picture.
+- **`invert`** of the presentation is applied.
+- **`canvas` and `getCanvas()`** give a canvas of the size of the viewport with
+  the frame on display. It is drawn when it is read.
+- **A labelmap over a video** is not available. It is not available on the
+  legacy viewport either: both throw. Contour segmentations show.
 
 ## Smaller changes
 

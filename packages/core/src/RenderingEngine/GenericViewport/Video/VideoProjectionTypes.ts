@@ -20,6 +20,8 @@ export type VideoResolvedViewLike = {
   pan: Point2;
   rotation: number;
   zoom: number;
+  /** The canvas pixels of one media pixel, with the zoom of the view. */
+  worldToCanvasRatio?: number;
   canvasToWorld(canvasPos: Point2): Point3;
   worldToCanvas(worldPos: Point3): Point2;
   getFrameOfReferenceUID(): string | undefined;

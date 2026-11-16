@@ -22,10 +22,14 @@ function clonePoint2(point: Point2): Point2 {
 function getMediaPixelsPerCanvasPixel(
   resolvedView: NonNullable<VideoProjectionSnapshot['resolvedView']>
 ): number {
+  if (resolvedView.worldToCanvasRatio) {
+    return 1 / resolvedView.worldToCanvasRatio;
+  }
+
   const origin = resolvedView.canvasToWorld([0, 0]);
   const next = resolvedView.canvasToWorld([1, 0]);
 
-  return Math.abs(next[0] - origin[0]) || 1;
+  return Math.hypot(next[0] - origin[0], next[1] - origin[1]) || 1;
 }
 
 /**

@@ -4,6 +4,7 @@ import {
   getAnchorWorldForPan,
   getPanForVideoCanvasMapping,
   resolveVideoCanvasMapping,
+  rotateVideoCanvasPoint,
   type VideoCanvasMapping,
 } from './videoViewportCamera';
 import type {
@@ -40,23 +41,41 @@ class VideoResolvedView extends ResolvedViewportView<VideoResolvedViewState> {
     return this.state.viewState.rotation ?? 0;
   }
 
+  /** The canvas pixels of one media pixel, with the zoom of the view. */
+  get worldToCanvasRatio(): number {
+    return this.getCanvasMapping().worldToCanvasRatio;
+  }
+
+  /**
+   * The world point of a canvas point. The video turns by the rotation of the
+   * view state about the anchor canvas point, as the render path turns it.
+   */
   canvasToWorld(canvasPos: Point2): Point3 {
     const mapping = this.getCanvasMapping();
+    const [x, y] = rotateVideoCanvasPoint(canvasPos, mapping, -this.rotation);
 
     return [
-      (canvasPos[0] - mapping.left) / mapping.worldToCanvasRatio,
-      (canvasPos[1] - mapping.top) / mapping.worldToCanvasRatio,
+      (x - mapping.left) / mapping.worldToCanvasRatio,
+      (y - mapping.top) / mapping.worldToCanvasRatio,
       0,
     ];
   }
 
+  /**
+   * The canvas point of a world point, with the rotation of the view state
+   * about the anchor canvas point.
+   */
   worldToCanvas(worldPos: Point3): Point2 {
     const mapping = this.getCanvasMapping();
 
-    return [
-      mapping.left + worldPos[0] * mapping.worldToCanvasRatio,
-      mapping.top + worldPos[1] * mapping.worldToCanvasRatio,
-    ];
+    return rotateVideoCanvasPoint(
+      [
+        mapping.left + worldPos[0] * mapping.worldToCanvasRatio,
+        mapping.top + worldPos[1] * mapping.worldToCanvasRatio,
+      ],
+      mapping,
+      this.rotation
+    );
   }
 
   getFrameOfReferenceUID(): string | undefined {

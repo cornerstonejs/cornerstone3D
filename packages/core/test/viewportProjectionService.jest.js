@@ -227,8 +227,16 @@ describe('ViewportProjectionService', () => {
       renderer: true,
       world: true,
     });
-    expect(snapshot.transforms.canvasToWorld([20, 10])).toEqual([10, 5, 0]);
-    expect(snapshot.transforms.worldToCanvas([10, 5, 0])).toEqual([20, 10]);
+    const cos = Math.cos((15 * Math.PI) / 180);
+    const sin = Math.sin((15 * Math.PI) / 180);
+    const world = snapshot.transforms.canvasToWorld([20, 10]);
+    const canvas = snapshot.transforms.worldToCanvas([10, 5, 0]);
+
+    expect(world[0]).toBeCloseTo((100 - 80 * cos - 40 * sin) / 2, 6);
+    expect(world[1]).toBeCloseTo((50 + 80 * sin - 40 * cos) / 2, 6);
+    expect(world[2]).toBe(0);
+    expect(canvas[0]).toBeCloseTo(100 - 80 * cos + 40 * sin, 6);
+    expect(canvas[1]).toBeCloseTo(50 - 80 * sin - 40 * cos, 6);
     expect(presentation.zoom).toBeCloseTo(1, 5);
     expect(presentation.pan).toEqual([0, 0]);
     expect(presentation.rotation).toBe(15);

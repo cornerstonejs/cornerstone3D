@@ -139,6 +139,42 @@ export function resolveVideoCanvasMapping(
   };
 }
 
+/**
+ * The canvas point of the video after a turn by the rotation in degrees,
+ * clockwise on screen, about the anchor canvas point of the mapping.
+ */
+export function rotateVideoCanvasPoint(
+  canvasPoint: [number, number],
+  mapping: VideoCanvasMapping,
+  rotation: number
+): [number, number] {
+  if (!rotation) {
+    return [canvasPoint[0], canvasPoint[1]];
+  }
+
+  const [pivotX, pivotY] = getVideoRotationPivot(mapping);
+  const radians = (rotation * Math.PI) / 180;
+  const cos = Math.cos(radians);
+  const sin = Math.sin(radians);
+  const dx = canvasPoint[0] - pivotX;
+  const dy = canvasPoint[1] - pivotY;
+
+  return [pivotX + dx * cos - dy * sin, pivotY + dx * sin + dy * cos];
+}
+
+/**
+ * The canvas point that the video turns about: the anchor canvas point of
+ * the mapping, which stays on the anchor world point.
+ */
+export function getVideoRotationPivot(
+  mapping: VideoCanvasMapping
+): [number, number] {
+  return [
+    mapping.containerWidth * mapping.anchorCanvas[0],
+    mapping.containerHeight * mapping.anchorCanvas[1],
+  ];
+}
+
 export function getPanForVideoCanvasMapping(
   mapping: VideoCanvasMapping
 ): [number, number] {

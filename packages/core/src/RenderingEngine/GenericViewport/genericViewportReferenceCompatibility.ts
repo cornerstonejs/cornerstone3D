@@ -305,6 +305,20 @@ function isDimensionGroupCompatible(
     return true;
   }
 
+  const rangeEndDimensionGroupNumber = getRangeEndDimensionGroupNumber(
+    viewRef,
+    dimensionGroupNumber
+  );
+
+  if (
+    rangeEndDimensionGroupNumber !== undefined &&
+    typeof context.dimensionGroupNumber === 'number' &&
+    dimensionGroupNumber <= context.dimensionGroupNumber &&
+    context.dimensionGroupNumber <= rangeEndDimensionGroupNumber
+  ) {
+    return true;
+  }
+
   if (!options.withNavigation) {
     return false;
   }
@@ -350,11 +364,70 @@ function isSliceIndexCompatible(
     return true;
   }
 
+  const rangeEndSliceIndex = getRangeEndSliceIndex(viewRef);
+
+  if (
+    rangeEndSliceIndex !== undefined &&
+    typeof currentImageIdIndex === 'number' &&
+    sliceIndex <= currentImageIdIndex &&
+    currentImageIdIndex <= rangeEndSliceIndex
+  ) {
+    return true;
+  }
+
   if (!options.withNavigation) {
     return false;
   }
 
   return isIndexInImageRange(sliceIndex, context.imageIds);
+}
+
+/**
+ * The 0-based last slice of a reference over a range of slices: the slice
+ * index of its `multiSliceReference`, when it comes after the first slice.
+ */
+function getRangeEndSliceIndex(viewRef: ViewReference): number | undefined {
+  const rangeEndSliceIndex = viewRef.multiSliceReference?.sliceIndex;
+
+  if (
+    typeof viewRef.sliceIndex !== 'number' ||
+    typeof rangeEndSliceIndex !== 'number' ||
+    rangeEndSliceIndex <= viewRef.sliceIndex
+  ) {
+    return;
+  }
+
+  return rangeEndSliceIndex;
+}
+
+/**
+ * The last dimension group of a reference over a range: the dimension group
+ * of its `multiSliceReference`, or else the first dimension group moved by
+ * the number of slices of the range.
+ */
+function getRangeEndDimensionGroupNumber(
+  viewRef: ViewReference,
+  dimensionGroupNumber: number
+): number | undefined {
+  const rangeEndDimensionGroupNumber = toPositiveInteger(
+    viewRef.multiSliceReference?.dimensionGroupNumber
+  );
+
+  if (rangeEndDimensionGroupNumber) {
+    return rangeEndDimensionGroupNumber > dimensionGroupNumber
+      ? rangeEndDimensionGroupNumber
+      : undefined;
+  }
+
+  const rangeEndSliceIndex = getRangeEndSliceIndex(viewRef);
+
+  if (rangeEndSliceIndex === undefined) {
+    return;
+  }
+
+  return (
+    dimensionGroupNumber + rangeEndSliceIndex - (viewRef.sliceIndex as number)
+  );
 }
 
 function getReferencedImageURIs(viewRef: ViewReference): string[] {

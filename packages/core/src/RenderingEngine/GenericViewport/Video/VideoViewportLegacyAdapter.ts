@@ -1,31 +1,18 @@
 import type {
   ActorEntry,
-  CPUIImageData,
   DisplayArea,
   ICamera,
-  IImage,
   ImageSetOptions,
-  IVoxelManager,
-  RGB,
   VideoViewportProperties,
-  ViewportInput,
-  ViewReference,
   VOIRange,
   ViewPresentation,
   ViewPresentationSelector,
 } from '../../../types';
-import type { Point2, Point3 } from '../../../types';
+import type { Point2 } from '../../../types';
 import type ViewportInputOptions from '../../../types/ViewportInputOptions';
-import { Events, VideoEnums } from '../../../enums';
+import { VideoEnums } from '../../../enums';
 import { deepClone } from '../../../utilities/deepClone';
-import FrameRange from '../../../utilities/FrameRange';
 import { coreLog } from '../../../utilities/logger';
-import triggerEvent from '../../../utilities/triggerEvent';
-import { getVideoImageDataMetadata } from '../../../utilities/VideoUtilities';
-import type { VideoImageMetadata } from '../../../utilities/VideoUtilities';
-import VoxelManager from '../../../utilities/VoxelManager';
-import getOrCreateCanvas from '../../helpers/getOrCreateCanvas';
-import { getGenericViewportSourceDataId } from '../genericViewportDisplaySetAccess';
 import { viewportProjection } from '../viewportProjection';
 import type {
   VideoDataPresentation,
@@ -36,20 +23,7 @@ import VideoViewport from './VideoViewport';
 
 const log = coreLog.getLogger('RenderingEngine', 'VideoViewportLegacyAdapter');
 
-/** The RGBA pixels of one video frame, with the frame number they show. */
-type FrameScalarData = Uint8ClampedArray & {
-  frameNumber?: number;
-  getRange?: () => [number, number];
-};
-
 class VideoViewportLegacyAdapter extends VideoViewport {
-  /**
-   * The canvas of the viewport element, as on the legacy viewports. The next
-   * video viewport draws the frame with a video element, so this canvas
-   * holds no pixels of the video.
-   */
-  readonly canvas: HTMLCanvasElement;
-
   /** The options that the viewport was made with. */
   readonly defaultOptions: ViewportInputOptions;
 
@@ -68,21 +42,11 @@ class VideoViewportLegacyAdapter extends VideoViewport {
    */
   options: ViewportInputOptions;
 
-  /** The frames that playback stays in, or undefined for every frame. */
-  private frameRange?: [number, number];
-
   /** The number of frames that one step of `scroll` moves. */
   private scrollSpeed = 1;
 
-  /** The pixels of the frame that `getImageData` read last. */
-  private frameScalarData?: FrameScalarData;
-
-  constructor(
-    args: VideoViewportInput &
-      Partial<Pick<ViewportInput, 'canvas' | 'defaultOptions'>>
-  ) {
+  constructor(args: VideoViewportInput) {
     super(args);
-    this.canvas = args.canvas || getOrCreateCanvas(this.element);
     this.defaultOptions = deepClone(args.defaultOptions || {});
     this.options = deepClone(this.defaultOptions);
     this.suppressEvents = Boolean(this.defaultOptions.suppressEvents);
@@ -91,11 +55,6 @@ class VideoViewportLegacyAdapter extends VideoViewport {
   /** The id of the viewport. The legacy video viewport never set it. */
   get uid(): string {
     return this.id;
-  }
-
-  /** The modality of the video in the viewport, from its series metadata. */
-  get modality(): string | undefined {
-    return this.getVideoData()?.modality;
   }
 
   /**
@@ -113,8 +72,6 @@ class VideoViewportLegacyAdapter extends VideoViewport {
       };
     }>
   ): Promise<void> {
-    this.frameRange = undefined;
-    this.frameScalarData = undefined;
     await super.setDisplaySets(...entries);
 
     const { frameNumber, viewReference } = entries[0]?.options ?? {};
@@ -355,21 +312,6 @@ class VideoViewportLegacyAdapter extends VideoViewport {
     this.setDisplaySetPresentation(dataId, { averageWhite });
   }
 
-  /** Plays a paused video and pauses a playing one; true when it now plays. */
-  togglePlayPause(): boolean {
-    const element = this.getVideoElement();
-
-    if (element && !element.paused) {
-      this.pause();
-
-      return false;
-    }
-
-    this.play();
-
-    return true;
-  }
-
   /** Goes to the time in seconds. */
   async setTime(timeInSeconds: number): Promise<void> {
     this.seek(timeInSeconds);
@@ -413,122 +355,6 @@ class VideoViewportLegacyAdapter extends VideoViewport {
         : scrollSpeed;
   }
 
-  /**
-   * Sets the 1-based first and last frame that playback stays in. No range
-   * means every frame. A range that is not two different frames is ignored,
-   * as on the legacy video viewport.
-   */
-  setFrameRange(frameRange: number[]): void {
-    if (!frameRange) {
-      this.frameRange = undefined;
-
-      return;
-    }
-
-    if (frameRange.length !== 2 || frameRange[0] === frameRange[1]) {
-      return;
-    }
-
-    this.frameRange = [frameRange[0], frameRange[1]];
-  }
-
-  /** The 1-based first and last frame that playback stays in. */
-  getFrameRange(): [number, number] {
-    const frameRange = this.frameRange ??
-      this.getVideoData()?.frameRange ?? [0, 0];
-
-    return [frameRange[0], frameRange[1]];
-  }
-
-  /**
-   * The first frame number that an image id or a view reference names, as on
-   * the legacy video viewport.
-   */
-  getSliceIndexForImage(reference: string | ViewReference): number {
-    if (!reference) {
-      return;
-    }
-
-    if (typeof reference === 'string') {
-      return FrameRange.imageIdToFrameStart(reference);
-    }
-
-    if (reference.referencedImageId) {
-      return FrameRange.imageIdToFrameStart(reference.referencedImageId);
-    }
-  }
-
-  /**
-   * Whether the viewport shows the video of this image URI. A frame number or
-   * a frame range in the URI is ignored, as on the legacy video viewport.
-   */
-  hasImageURI(imageURI: string): boolean {
-    const dataId = this.getFirstBinding()?.data.id;
-
-    if (!dataId || !imageURI) {
-      return false;
-    }
-
-    const framesMatch = imageURI.match(FrameRange.frameRangeExtractor);
-    const testURI = framesMatch
-      ? imageURI.substring(0, framesMatch.index)
-      : imageURI;
-
-    return getGenericViewportSourceDataId(dataId).includes(testURI);
-  }
-
-  /** The geometry of a video image, from its image plane metadata. */
-  getImageDataMetadata(image: IImage | string): VideoImageMetadata {
-    return getVideoImageDataMetadata(
-      typeof image === 'string' ? image : image.imageId
-    );
-  }
-
-  /**
-   * The image data of the frame on display, as the legacy video viewport
-   * builds it: the geometry of the video, the RGBA pixels of the frame and a
-   * voxel manager over them. A world point of a video is its index point.
-   *
-   * @returns undefined while no video is mounted.
-   */
-  getImageData(): CPUIImageData {
-    const videoData = this.getVideoData();
-
-    if (!videoData) {
-      return;
-    }
-
-    const { metadata } = videoData;
-    const scalarData = this.getFrameScalarData();
-    const worldToIndex = (point: Point3): Point3 => [point[0], point[1], 0];
-
-    return {
-      dimensions: metadata.dimensions,
-      spacing: metadata.spacing,
-      origin: metadata.origin,
-      direction: metadata.direction as CPUIImageData['direction'],
-      metadata: {
-        Modality: videoData.modality,
-        FrameOfReferenceUID: this.getFrameOfReferenceUID(),
-      },
-      scalarData,
-      imageData: {
-        getDirection: () => metadata.direction as CPUIImageData['direction'],
-        getDimensions: () => metadata.dimensions,
-        getRange: () => [0, 255],
-        getScalarData: () => this.getFrameScalarData(),
-        getSpacing: () => metadata.spacing,
-        worldToIndex,
-        indexToWorld: worldToIndex,
-      },
-      voxelManager: this.getFrameVoxelManager(scalarData),
-      hasPixelSpacing: metadata.hasPixelSpacing,
-      preScale: {
-        scaled: false,
-      },
-    };
-  }
-
   /** No actors: the next video viewport draws with a video element. */
   getActors(): ActorEntry[] {
     return [];
@@ -542,11 +368,6 @@ class VideoViewportLegacyAdapter extends VideoViewport {
   /** Undefined: the next video viewport has no actors. */
   getActor(_actorUID: string): ActorEntry | undefined {
     return undefined;
-  }
-
-  /** Returns the canvas of the viewport element. */
-  getCanvas(): HTMLCanvasElement {
-    return this.canvas;
   }
 
   /**
@@ -588,120 +409,6 @@ class VideoViewportLegacyAdapter extends VideoViewport {
   /** The display area of the options, as on the legacy viewport. */
   getDisplayArea(): DisplayArea | undefined {
     return this.options?.displayArea;
-  }
-
-  /**
-   * Keeps playback in the frame range of `setFrameRange`, as on the legacy
-   * video viewport: a frame out of the range goes back to its first frame.
-   * Another frame fires the frame events, as on the next viewport.
-   */
-  protected onPlaybackFrame(): void {
-    const frameNumber = this.getFrameNumber();
-
-    if (
-      this.frameRange &&
-      (frameNumber < this.frameRange[0] || frameNumber > this.frameRange[1])
-    ) {
-      this.setFrameNumber(this.frameRange[0]);
-
-      return;
-    }
-
-    super.onPlaybackFrame();
-  }
-
-  /**
-   * Fires the STACK_NEW_IMAGE of the next viewport, then IMAGE_RENDERED with
-   * the time and the duration of the video, as the legacy video viewport
-   * does for each frame that it draws.
-   */
-  protected triggerFrameEvents(): void {
-    const element = this.getVideoElement();
-
-    if (this.isDestroyed || !element) {
-      return;
-    }
-
-    const { currentTime: time, duration } = element;
-
-    super.triggerFrameEvents();
-    triggerEvent(this.element, Events.IMAGE_RENDERED, {
-      element: this.element,
-      viewportId: this.id,
-      viewport: this,
-      imageIndex: this.getCurrentImageIdIndex(),
-      numberOfSlices: this.getNumberOfFrames(),
-      renderingEngineId: this.renderingEngineId,
-      time,
-      duration,
-    });
-  }
-
-  /**
-   * Reads the pixels of the frame on display through a canvas, once per
-   * frame number. Before the video has a frame the data is empty.
-   */
-  private getFrameScalarData(): FrameScalarData {
-    const frameNumber = this.getFrameNumber();
-
-    if (this.frameScalarData?.frameNumber === frameNumber) {
-      return this.frameScalarData;
-    }
-
-    const element = this.getVideoElement();
-
-    if (!element?.videoWidth || !element.videoHeight) {
-      const emptyData = new Uint8ClampedArray() as FrameScalarData;
-
-      emptyData.getRange = () => [0, 255];
-      emptyData.frameNumber = -1;
-
-      return emptyData;
-    }
-
-    const canvas = document.createElement('canvas');
-
-    canvas.width = element.videoWidth;
-    canvas.height = element.videoHeight;
-
-    const context = canvas.getContext('2d');
-
-    context.drawImage(element, 0, 0);
-
-    const scalarData = context.getImageData(0, 0, canvas.width, canvas.height)
-      .data as FrameScalarData;
-
-    scalarData.getRange = () => [0, 255];
-    scalarData.frameNumber = frameNumber;
-    this.frameScalarData = scalarData;
-
-    return scalarData;
-  }
-
-  /**
-   * A voxel manager over the RGBA pixels of the frame, whose value at a pixel
-   * is its `[r, g, b]` triple, as on the legacy video viewport.
-   *
-   * @returns undefined when the pixels do not fill the frame, so that the
-   * tools report no statistics and never a wrong value.
-   */
-  private getFrameVoxelManager(
-    scalarData: FrameScalarData
-  ): IVoxelManager<number> | IVoxelManager<RGB> | undefined {
-    const element = this.getVideoElement();
-    const width = element?.videoWidth;
-    const height = element?.videoHeight;
-
-    if (!width || !height || scalarData.length !== width * height * 4) {
-      return undefined;
-    }
-
-    return VoxelManager.createScalarVolumeVoxelManager({
-      dimensions: [width, height, 1],
-      scalarData,
-      numberOfComponents: 4,
-      id: `videoFrame:${this.id}:${scalarData.frameNumber}`,
-    });
   }
 }
 

@@ -8,6 +8,7 @@ import type {
 import type { ViewportCameraBase } from '../ViewportCameraTypes';
 import type { VideoImageMetadata } from '../../../utilities/VideoUtilities';
 import type { VOIRange } from '../../../types';
+import type ViewportInputOptions from '../../../types/ViewportInputOptions';
 
 /** @internal */
 export interface VideoStreamPayload {
@@ -44,6 +45,10 @@ export interface VideoViewportInput {
   renderingEngineId: string;
   dataProvider?: DataProvider;
   renderPathResolver?: RenderPathResolver;
+  /** The canvas of the viewport element. Made in the element when absent. */
+  canvas?: HTMLCanvasElement;
+  /** The options of the viewport. The canvas is filled with `background`. */
+  defaultOptions?: ViewportInputOptions;
 }
 
 export type VideoGenericViewportInput = VideoViewportInput;

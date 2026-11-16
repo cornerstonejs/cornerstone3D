@@ -16,7 +16,10 @@ import type {
   VideoStreamPayload,
 } from './VideoViewportTypes';
 import { normalizeVideoPlaybackInfo } from '../../../utilities/VideoUtilities';
-import { resolveVideoCanvasMapping } from './videoViewportCamera';
+import {
+  getVideoRotationPivot,
+  resolveVideoCanvasMapping,
+} from './videoViewportCamera';
 import { buildWSIColorTransform } from '../WSI/wsiTransformUtils';
 
 /** @internal */
@@ -101,9 +104,12 @@ export class HtmlVideoRenderPath
     element.muted = videoProps?.muted ?? true;
     element.playbackRate = videoProps?.playbackRate ?? 1;
     element.style.objectFit = videoProps?.objectFit ?? 'contain';
-    element.style.filter =
-      buildWSIColorTransform(videoProps?.voiRange, videoProps?.averageWhite) ||
-      '';
+    element.style.filter = [
+      buildWSIColorTransform(videoProps?.voiRange, videoProps?.averageWhite),
+      videoProps?.invert ? 'invert(1)' : undefined,
+    ]
+      .filter(Boolean)
+      .join(' ');
   }
 
   private applyViewState(
@@ -119,10 +125,13 @@ export class HtmlVideoRenderPath
     rendering.currentCamera = videoCamera;
 
     if (mapping) {
+      const [pivotX, pivotY] = getVideoRotationPivot(mapping);
+
       element.style.width = `${mapping.width}px`;
       element.style.height = `${mapping.height}px`;
       element.style.left = `${mapping.left}px`;
       element.style.top = `${mapping.top}px`;
+      element.style.transformOrigin = `${pivotX - mapping.left}px ${pivotY - mapping.top}px`;
     }
 
     element.style.transform = `rotate(${rotation}deg)`;
