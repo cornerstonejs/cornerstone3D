@@ -17,7 +17,7 @@ import type {
 import * as lifecycle from '../../helpers/volumeStrategyLifecycle';
 import type { VolumeStrategyHooks } from '../../helpers/volumeStrategyLifecycle';
 import { ActorRenderMode } from '../../../types';
-import type { IImageData, Point2, Point3 } from '../../../types';
+import type { IImageData, ImageActor, Point2, Point3 } from '../../../types';
 import type {
   DataAddOptions,
   LoadedData,
@@ -109,8 +109,7 @@ export class VtkVolumeSliceRenderPath
     ctx.display.activateRenderMode(ActorRenderMode.VTK_VOLUME_SLICE);
     ctx.vtk.renderer.addActor(actor);
 
-    const transferFunction = actor.getProperty().getRGBTransferFunction(0);
-    const defaultRange = transferFunction?.getRange?.();
+    const defaultRange = getVolumeSliceActorRange(actor);
 
     const rendering: PlanarVolumeSliceRendering = {
       renderMode: ActorRenderMode.VTK_VOLUME_SLICE,
@@ -502,6 +501,30 @@ export class VtkVolumeSlicePath
       vtk: rootContext.vtk,
     };
   }
+}
+
+/**
+ * The range of values that a new volume slice actor maps from black to
+ * white: the range of its colour function, or, when the volume gave no VOI,
+ * the window that `createVolumeSliceActor` set from the scalar range of the
+ * volume instead.
+ */
+function getVolumeSliceActorRange(
+  actor: ImageActor
+): [number, number] | undefined {
+  const property = actor.getProperty();
+  const transferFunctionRange = property
+    .getRGBTransferFunction(0)
+    ?.getRange?.();
+
+  if (transferFunctionRange) {
+    return transferFunctionRange as [number, number];
+  }
+
+  const window = property.getColorWindow();
+  const level = property.getColorLevel();
+
+  return [level - window / 2, level + window / 2];
 }
 
 function ensureSlicePlane(mapper: vtkImageResliceMapper): vtkPlane {

@@ -52,6 +52,13 @@ export type PlanarImageMapperRendering = MountedRendering<{
   currentImage: IImage;
   mapper: vtkImageMapper;
   imageData: vtkImageData;
+  /**
+   * True when the image shown last got a new vtkImageData, because it is the
+   * first image or its size, data type or number of components differs from
+   * the image before it. False when its pixels went into the vtkImageData
+   * that was there.
+   */
+  newImageData: boolean;
   useWorldCoordinateImageData?: boolean;
   currentImageIdIndex: number;
   defaultVOIRange?: VOIRange;

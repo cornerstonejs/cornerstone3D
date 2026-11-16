@@ -39,6 +39,7 @@ function createHost(overrides = {}) {
     getRequestedOrientation: () => undefined,
     prepareVolumeCompatibilityCamera: jest.fn(),
     setDisplaySets: jest.fn(async () => undefined),
+    addDisplaySet: jest.fn(async () => undefined),
     setImageIdIndex: jest.fn(async (idx) => `image-${idx}`),
     getCurrentImageId: jest.fn(() => 'image-0'),
     render: jest.fn(),
@@ -47,6 +48,8 @@ function createHost(overrides = {}) {
     setDataPresentationState: jest.fn(),
     setDisplaySetPresentation: jest.fn(),
     getDisplaySetPresentation: jest.fn(() => undefined),
+    notifyDataPresentationModified: jest.fn(),
+    triggerCameraReset: jest.fn(),
     getCameraOrientation: jest.fn(() => undefined),
     getCurrentPlanarRendering: jest.fn(() => undefined),
     getActiveDataId: jest.fn(() => undefined),
@@ -73,6 +76,19 @@ describe('PlanarLegacyCompatibilityController', () => {
       const controller = new PlanarLegacyCompatibilityController(host);
       await expect(controller.setStack([])).rejects.toThrow(
         /Cannot set an empty stack/
+      );
+    });
+
+    it('shows the stack in its acquisition plane whatever orientation the viewport options give, as the legacy stack viewport', async () => {
+      const { host } = createHost({
+        getRequestedOrientation: () => 'sagittal',
+      });
+      const controller = new PlanarLegacyCompatibilityController(host);
+
+      await controller.setStack(['image-0']);
+
+      expect(host.setDisplaySets.mock.calls[0][0].options.orientation).toBe(
+        'acquisition'
       );
     });
 
@@ -166,8 +182,81 @@ describe('PlanarLegacyCompatibilityController', () => {
       const controller = new PlanarLegacyCompatibilityController(host);
 
       await controller.addVolumes([{ volumeId: 'vol-extra' }]);
-      const callArgs = host.setDisplaySets.mock.calls[0];
-      expect(callArgs[0].options.role).toBe('overlay');
+      const callArgs = host.addDisplaySet.mock.calls[0];
+      expect(callArgs[0]).toBe('__planar_v2__:vp-1:volume:vol-extra');
+      expect(callArgs[1].role).toBe('overlay');
+    });
+
+    it('keeps the volume that the viewport shows on addVolumes, as a legacy volume viewport adds to its actors', async () => {
+      cache.getVolume.mockReturnValue({ imageIds: ['v-0', 'v-1'] });
+      const sourceDataId = '__planar_v2__:vp-1:volume:vol-1';
+      const { host } = createHost({
+        getActiveDataId: jest.fn(() => sourceDataId),
+        getCameraOrientation: jest.fn(() => 'sagittal'),
+      });
+      const controller = new PlanarLegacyCompatibilityController(host);
+
+      await controller.addVolumes([{ volumeId: 'vol-2' }]);
+
+      expect(host.setDisplaySets).not.toHaveBeenCalled();
+      expect(host.removeBindingsExcept).not.toHaveBeenCalled();
+      expect(host.prepareVolumeCompatibilityCamera).not.toHaveBeenCalled();
+      expect(metadataProvider.remove).not.toHaveBeenCalledWith(sourceDataId);
+      expect(host.addDisplaySet).toHaveBeenCalledTimes(1);
+      expect(host.addDisplaySet).toHaveBeenCalledWith(
+        '__planar_v2__:vp-1:volume:vol-2',
+        { orientation: 'sagittal', role: 'overlay' }
+      );
+    });
+
+    it('does not mount again a volume that addVolumes gets while the viewport shows it', async () => {
+      cache.getVolume.mockReturnValue({ imageIds: ['v-0', 'v-1'] });
+      const sourceDataId = '__planar_v2__:vp-1:volume:vol-1';
+      const { host } = createHost({
+        getActiveDataId: jest.fn(() => sourceDataId),
+        getBindingRenderMode: jest.fn((dataId) =>
+          dataId === sourceDataId ? ActorRenderMode.VTK_VOLUME_SLICE : undefined
+        ),
+      });
+      const controller = new PlanarLegacyCompatibilityController(host);
+
+      await controller.addVolumes([
+        { volumeId: 'vol-1' },
+        { volumeId: 'vol-2' },
+      ]);
+
+      expect(host.addDisplaySet).toHaveBeenCalledTimes(1);
+      expect(host.addDisplaySet.mock.calls[0][0]).toBe(
+        '__planar_v2__:vp-1:volume:vol-2'
+      );
+    });
+
+    it('mounts the first volume of addVolumes as the source when the viewport shows nothing', async () => {
+      cache.getVolume.mockReturnValue({ imageIds: ['v-0'] });
+      const { host } = createHost();
+      const controller = new PlanarLegacyCompatibilityController(host);
+
+      await controller.addVolumes([{ volumeId: 'vol-1' }]);
+
+      expect(host.addDisplaySet).not.toHaveBeenCalled();
+      expect(host.setDisplaySets.mock.calls[0][0].options.role).toBe('source');
+    });
+
+    it('fires CAMERA_RESET before VOLUME_VIEWPORT_NEW_VOLUME, as a legacy volume viewport resets its camera when it sets its actors', async () => {
+      cache.getVolume.mockReturnValue({ imageIds: ['v-0'] });
+      const order = [];
+      const { host, element } = createHost({
+        triggerCameraReset: jest.fn(() => order.push('reset')),
+        getBindingActor: jest.fn(() => ({})),
+      });
+      element.addEventListener(Events.VOLUME_VIEWPORT_NEW_VOLUME, () =>
+        order.push('newVolume')
+      );
+      const controller = new PlanarLegacyCompatibilityController(host);
+
+      await controller.setVolumes([{ volumeId: 'vol-1' }]);
+
+      expect(order).toEqual(['reset', 'newVolume']);
     });
 
     it('renders when immediate=true', async () => {
@@ -233,6 +322,38 @@ describe('PlanarLegacyCompatibilityController', () => {
       expect(host.setDataPresentationState).toHaveBeenCalledWith(
         'data-1',
         expect.any(Object)
+      );
+    });
+
+    it('fires VOI_MODIFIED when setProperties changes the VOI range, as the legacy viewports do', () => {
+      const { host } = createHost({
+        getActiveDataId: jest.fn(() => 'data-1'),
+      });
+      const controller = new PlanarLegacyCompatibilityController(host);
+
+      controller.setProperties({ voiRange: { lower: 0, upper: 100 } });
+      controller.setProperties({ voiRange: { lower: 0, upper: 50 } }, true);
+      controller.setProperties({ invert: true });
+
+      expect(host.notifyDataPresentationModified).toHaveBeenCalledTimes(1);
+      expect(host.notifyDataPresentationModified).toHaveBeenCalledWith(
+        'data-1',
+        { voiRange: { lower: 0, upper: 100 } }
+      );
+    });
+
+    it('fires VOI_MODIFIED for the invert flag of a volume only', () => {
+      const { host } = createHost({
+        getActiveDataId: jest.fn(() => 'data-1'),
+        getBindingRenderMode: jest.fn(() => ActorRenderMode.VTK_VOLUME_SLICE),
+      });
+      const controller = new PlanarLegacyCompatibilityController(host);
+
+      controller.setProperties({ invert: true });
+
+      expect(host.notifyDataPresentationModified).toHaveBeenCalledWith(
+        'data-1',
+        { invert: true }
       );
     });
 

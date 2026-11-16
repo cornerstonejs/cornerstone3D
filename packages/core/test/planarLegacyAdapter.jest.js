@@ -413,6 +413,32 @@ function project(point, normal) {
   return point[0] * normal[0] + point[1] * normal[1] + point[2] * normal[2];
 }
 
+describe('planar legacy adapter and the finer CPU image at rest', () => {
+  let renderingEngines = [];
+
+  afterEach(() => {
+    renderingEngines.forEach((renderingEngine) => renderingEngine.destroy());
+    renderingEngines = [];
+    setUseCPURendering(false);
+  });
+
+  it('draws the finer image at rest unless the legacy CPU switch is on', () => {
+    const { renderingEngine, viewport } = createAdapter(
+      document.createElement('div'),
+      'finer-at-rest'
+    );
+
+    renderingEngines.push(renderingEngine);
+    setUseCPURendering(false);
+
+    expect(viewport.prefersFinerImageAtRest()).toBe(true);
+
+    setUseCPURendering(true);
+
+    expect(viewport.prefersFinerImageAtRest()).toBe(false);
+  });
+});
+
 describe('planar legacy adapter members', () => {
   let renderingEngines = [];
 

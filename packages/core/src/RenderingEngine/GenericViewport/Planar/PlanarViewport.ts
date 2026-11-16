@@ -462,6 +462,7 @@ class PlanarViewport extends GenericViewport<
         getOverlayActors: () =>
           this.mountedData.getProjectedActorEntries('overlay'),
         canDrawAcquiredFrames: (dataId) => this.canDrawAcquiredFrames(dataId),
+        drawsFinerImageAtRest: () => this.prefersFinerImageAtRest(),
         refreshRenderPlan: (dataId) => this.updateRenderPlan(dataId),
       },
       renderPath: {
@@ -2477,6 +2478,16 @@ class PlanarViewport extends GenericViewport<
   }
 
   /**
+   * Whether the CPU image path samples a LINEAR image once more on the screen
+   * grid when the view rests, and draws it with one more render. The legacy
+   * adapter turns this off, so a legacy CPU stack viewport draws once for each
+   * change, as in 4.x.
+   */
+  protected prefersFinerImageAtRest(): boolean {
+    return true;
+  }
+
+  /**
    * Whether the volume slice path of `dataId` may draw the acquired frames
    * (`PlanarRenderPathDecisionService.canDrawAcquiredFrames`). The render path
    * reads this at each change of the view or the presentation.
@@ -2600,6 +2611,8 @@ class PlanarViewport extends GenericViewport<
         });
       },
       setDisplaySets: (...entries) => this.setDisplaySets(...entries),
+      addDisplaySet: (displaySetId, options) =>
+        this.addDisplaySet(displaySetId, options),
       setImageIdIndex: (imageIdIndex) => this.setImageIdIndex(imageIdIndex),
       getCurrentImageId: () => this.getCurrentImageId(),
       render: () => this.render(),
@@ -2620,7 +2633,10 @@ class PlanarViewport extends GenericViewport<
       },
       getDisplaySetPresentation: (dataId) =>
         this.getDisplaySetPresentation(dataId),
+      notifyDataPresentationModified: (dataId, presentation) =>
+        this.notifyDataPresentationModified(dataId, presentation),
       getCameraOrientation: () => this.viewState.orientation,
+      triggerCameraReset: () => this.triggerCameraResetEvent(),
       getCurrentPlanarRendering: () => this.getCurrentPlanarRendering(),
       getActiveDataId: () => this.mountedData.getActiveDataId(),
       getFirstBoundDataId: () => this.mountedData.getFirstBoundDataId(),

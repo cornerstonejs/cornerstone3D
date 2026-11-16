@@ -103,6 +103,7 @@ export class VtkImageMapperRenderPath
       excludeFromFidelity: isSegmentationOverlayData(payload, options),
       mapper,
       imageData,
+      newImageData: true,
       useWorldCoordinateImageData: payload.useWorldCoordinateImageData,
       currentImageIdIndex: payload.initialImageIdIndex ?? 0,
       defaultVOIRange: getDefaultImageVOIRange(payload.image),
@@ -416,8 +417,11 @@ async function updateRenderedImage(args: {
   // has uploaded - a one-frame black flash. Updating the scalars in place keeps
   // the same texture (re-uploaded within the same render), so there is no flash.
   let imageData = rendering.imageData;
+  const newImageData = !(
+    imageData && canReuseImageDataForImage(imageData, image)
+  );
 
-  if (imageData && canReuseImageDataForImage(imageData, image)) {
+  if (!newImageData) {
     updateVTKImageDataWithCornerstoneImage(imageData, image);
     // Reuse keeps the previous frame's geometry; refresh origin/direction/spacing
     // to the new frame's image plane. Multi-frame stacks (e.g. ultrasound cine)
@@ -433,6 +437,7 @@ async function updateRenderedImage(args: {
   rendering.currentImage = image;
   rendering.imageQualityStatus = imageQualityStatusOf(image);
   rendering.imageData = imageData;
+  rendering.newImageData = newImageData;
   rendering.currentImageIdIndex = imageIdIndex;
   rendering.defaultVOIRange = getDefaultImageVOIRange(image);
   ctx.viewport.invalidateResolvedView();

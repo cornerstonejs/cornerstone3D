@@ -1,5 +1,4 @@
 import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
-import { getOrCreateCanvas } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
 const { Events } = cornerstoneTools.Enums;
@@ -31,7 +30,7 @@ function createNormalizedMouseEvent(
   element,
   viewport
 ) {
-  const canvas = getOrCreateCanvas(element);
+  const canvas = viewport.getCanvas();
   const tempWorld1 = imageData.indexToWorld(index);
   const tempCanvasPoint1 = viewport.worldToCanvas(tempWorld1);
   const canvasPoint1 = tempCanvasPoint1.map((p) => Math.round(p));

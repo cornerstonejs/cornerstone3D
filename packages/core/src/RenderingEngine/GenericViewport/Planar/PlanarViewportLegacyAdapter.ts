@@ -19,9 +19,12 @@ import type {
   ScrollOptions,
   ViewReference,
 } from '../../../types';
+import { ActorRenderMode } from '../../../types';
 import type BlendModes from '../../../enums/BlendModes';
 import Events from '../../../enums/Events';
+import InterpolationType from '../../../enums/InterpolationType';
 import MetadataModules from '../../../enums/MetadataModules';
+import { getShouldUseCPURendering } from '../../../init';
 import * as metaData from '../../../metaData';
 import clonePoint3 from '../../../utilities/clonePoint3';
 import getClosestImageId from '../../../utilities/getClosestImageId';
@@ -66,9 +69,22 @@ class PlanarViewportLegacyAdapter extends PlanarViewport {
    */
   isDisabled = false;
 
+  /** The animation frame of the CPU draw that `render` asked for. */
+  private cpuRenderFrame: number | undefined;
+
   /** The legacy viewports keep their 4.x display, so no acquired frames. */
   protected override prefersAcquiredFrames(): boolean {
     return false;
+  }
+
+  /**
+   * With the legacy CPU switch on (`rendering.useCPURendering`) the adapter
+   * draws a LINEAR image once for each change, as the legacy CPU stack
+   * viewport does. Without the switch the CPU draws because the GPU cannot,
+   * so the image is drawn once more at rest and shows what the GPU draws.
+   */
+  protected override prefersFinerImageAtRest(): boolean {
+    return !getShouldUseCPURendering();
   }
 
   private cloneTuple<T extends ArrayLike<number> | undefined>(
@@ -261,6 +277,23 @@ class PlanarViewportLegacyAdapter extends PlanarViewport {
       getRenderSurfaceForRenderMode(
         this.getCurrentPlanarRendering()?.renderMode
       ) === 'cpu'
+    );
+  }
+
+  /**
+   * Whether the image shown last needed new image data on the GPU image path,
+   * because it is the first image or its size, data type or number of
+   * components differs from the image before it, as `stackActorReInitialized`
+   * of the legacy stack viewport. A tool then makes again what it built for
+   * the old image data. False on the CPU path and in volume mode, where the
+   * legacy viewports do not set it.
+   */
+  get stackActorReInitialized(): boolean {
+    const rendering = this.getCurrentPlanarRendering();
+
+    return (
+      rendering?.renderMode === ActorRenderMode.VTK_IMAGE &&
+      rendering.newImageData
     );
   }
 
@@ -847,8 +880,25 @@ class PlanarViewportLegacyAdapter extends PlanarViewport {
     );
   }
 
+  /**
+   * The properties of the data that the viewport shows. In stack mode the
+   * interpolation type and the invert flag are always given, LINEAR and false
+   * when nothing set them, as the legacy stack viewport gives them also after
+   * `resetProperties`. Those are the values that the image paths draw with.
+   */
   getProperties(volumeId?: string): PlanarLegacyViewportProperties {
-    return this.legacyCompatibility.getProperties(volumeId);
+    const properties = this.legacyCompatibility.getProperties(volumeId);
+
+    if (this.getCurrentMode() !== 'stack') {
+      return properties;
+    }
+
+    return {
+      ...properties,
+      interpolationType:
+        properties.interpolationType ?? InterpolationType.LINEAR,
+      invert: properties.invert ?? false,
+    };
   }
 
   resetProperties(volumeId?: string): void {
@@ -914,7 +964,37 @@ class PlanarViewportLegacyAdapter extends PlanarViewport {
     return this.legacyCompatibility.getNumberOfSlices();
   }
 
+  /**
+   * Renders as the legacy viewports do. A path that draws on the CPU canvas
+   * draws once in the next animation frame, however often a render is asked
+   * for before it, as the legacy CPU stack viewport draws in the frame of the
+   * rendering engine. So one change gives one IMAGE_RENDERED, also when the
+   * mount of a stack renders several times. A GPU path renders as on the
+   * next viewport, through the rendering engine.
+   */
+  render(): void {
+    if (!this.useCPURendering) {
+      super.render();
+
+      return;
+    }
+
+    if (this.cpuRenderFrame !== undefined) {
+      return;
+    }
+
+    this.cpuRenderFrame = requestAnimationFrame(() => {
+      this.cpuRenderFrame = undefined;
+      super.render();
+    });
+  }
+
   protected override onDestroy(): void {
+    if (this.cpuRenderFrame !== undefined) {
+      cancelAnimationFrame(this.cpuRenderFrame);
+      this.cpuRenderFrame = undefined;
+    }
+
     this.legacyCompatibility.destroy();
     super.onDestroy();
   }

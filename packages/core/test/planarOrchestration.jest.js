@@ -98,6 +98,7 @@ function createLegacyStackHarness({ deferSetData = false } = {}) {
         });
       });
     }),
+    addDisplaySet: jest.fn(async () => undefined),
     setImageIdIndex: jest.fn(async (imageIdIndex) => {
       return currentImageIds[imageIdIndex];
     }),
@@ -113,12 +114,15 @@ function createLegacyStackHarness({ deferSetData = false } = {}) {
     setDataPresentationState: jest.fn(),
     setDisplaySetPresentation: jest.fn(),
     getDisplaySetPresentation: jest.fn(),
+    notifyDataPresentationModified: jest.fn(),
+    triggerCameraReset: jest.fn(),
     getCameraOrientation: jest.fn(),
     getCurrentPlanarRendering: jest.fn(),
     getActiveDataId: () => (hasBinding ? dataId : undefined),
     getFirstBoundDataId: () => (hasBinding ? dataId : undefined),
     findDataIdByVolumeId: jest.fn(),
     getBindingActor: jest.fn(),
+    getBindingRenderMode: jest.fn(),
     getDefaultVOIRange: jest.fn(),
     getImageCount: () => currentImageIds.length,
     getMaxImageIdIndex: () => Math.max(0, currentImageIds.length - 1),

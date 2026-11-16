@@ -508,6 +508,7 @@ export class CpuImageSliceRenderPath
 
       if (
         slice &&
+        ctx.viewport.drawsFinerImageAtRest?.() !== false &&
         (slice !== mount.shownSlice ||
           !isSameGeometry(mount.shownScreen, screen))
       ) {

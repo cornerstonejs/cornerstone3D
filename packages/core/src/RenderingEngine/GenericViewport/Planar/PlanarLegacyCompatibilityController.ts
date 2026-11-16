@@ -1,6 +1,6 @@
 import cache from '../../../cache/cache';
 import BlendModes from '../../../enums/BlendModes';
-import { Events } from '../../../enums';
+import { Events, OrientationAxis } from '../../../enums';
 import {
   getRenderBackendForRenderMode,
   getSampledVolumeRenderModeForBackend,
@@ -45,6 +45,10 @@ export type PlanarLegacyCompatibilityHost = {
   setDisplaySets(
     ...entries: Array<{ displaySetId: string; options?: PlanarSetDataOptions }>
   ): Promise<void>;
+  addDisplaySet(
+    displaySetId: string,
+    options?: PlanarSetDataOptions
+  ): Promise<void>;
   setImageIdIndex(imageIdIndex: number): Promise<string>;
   getCurrentImageId(): string | undefined;
   render(): void;
@@ -59,7 +63,12 @@ export type PlanarLegacyCompatibilityHost = {
     presentation: Partial<PlanarDataPresentation>
   ): void;
   getDisplaySetPresentation(dataId: string): PlanarDataPresentation | undefined;
+  notifyDataPresentationModified(
+    dataId: string,
+    presentation: Partial<PlanarDataPresentation>
+  ): void;
   getCameraOrientation(): PlanarViewState['orientation'];
+  triggerCameraReset(): void;
   getCurrentPlanarRendering(): PlanarRendering | undefined;
   getActiveDataId(): string | undefined;
   getFirstBoundDataId(): string | undefined;
@@ -125,6 +134,11 @@ class PlanarLegacyCompatibilityController {
       .addEventListener(Events.STACK_NEW_IMAGE, this.onStackNewImage);
   }
 
+  /**
+   * Shows a stack of images. The images show in their acquisition plane,
+   * whatever orientation the viewport options give, as on the legacy stack
+   * viewport, which does not read that option.
+   */
   async setStack(imageIds: string[], currentImageIdIndex = 0): Promise<string> {
     if (!imageIds.length) {
       throw new Error('[PlanarViewport] Cannot set an empty stack');
@@ -149,7 +163,7 @@ class PlanarLegacyCompatibilityController {
       await this.host.setDisplaySets({
         displaySetId: dataId,
         options: {
-          orientation: this.host.getRequestedOrientation(),
+          orientation: OrientationAxis.ACQUISITION,
         },
       });
 
@@ -195,6 +209,12 @@ class PlanarLegacyCompatibilityController {
     }
   }
 
+  /**
+   * Sets the properties of a volume, or of the data that the viewport shows.
+   * The second argument is the volume id, as on the legacy volume viewport,
+   * or `suppressEvents`, as on the legacy stack viewport. VOI_MODIFIED is
+   * suppressed by either form.
+   */
   setProperties(
     properties: PlanarLegacyViewportProperties = {},
     volumeIdOrSuppressEvents?: string | boolean,
@@ -234,6 +254,10 @@ class PlanarLegacyCompatibilityController {
       targetDataId,
       toPlanarDataPresentation(nextProperties)
     );
+
+    if (volumeIdOrSuppressEvents !== true && !suppressEvents) {
+      this.emitVOIModified(targetDataId, properties);
+    }
 
     if (!suppressEvents && properties.colormap !== undefined) {
       this.emitColormapModified(targetDataId, volumeId);
@@ -546,6 +570,9 @@ class PlanarLegacyCompatibilityController {
     }
 
     const dataIds: string[] = [];
+    const addsToSource =
+      !replaceExisting && this.host.getActiveDataId() !== undefined;
+    const boundDataIds = new Set<string>();
 
     try {
       for (const volumeInput of volumeInputArray) {
@@ -558,6 +585,13 @@ class PlanarLegacyCompatibilityController {
         }
 
         const dataId = this.getLegacyVolumeDataId(volumeInput.volumeId);
+
+        if (
+          addsToSource &&
+          this.host.getBindingRenderMode(dataId) !== undefined
+        ) {
+          boundDataIds.add(dataId);
+        }
 
         this.registerDataSet(dataId, {
           imageIds: cachedVolume.imageIds,
@@ -578,40 +612,12 @@ class PlanarLegacyCompatibilityController {
         this.host.removeBindingsExcept(new Set(dataIds));
       }
 
-      this.host.prepareVolumeCompatibilityCamera();
-
-      const sharedOptions: PlanarSetDataOptions = {
-        orientation: this.host.getRequestedOrientation(),
-      };
-      const existingSourceDataId = this.host.getActiveDataId();
-
-      // setDisplaySets removes every binding that the viewport holds before it
-      // mounts the new bindings. A volume that this call mounts again is still
-      // bound at that moment, so the teardown must not remove the registration
-      // that the loop above wrote for that volume. removeData reads this set.
-      dataIds.forEach((dataId) => this.mountingDataIds.add(dataId));
-
-      try {
-        await this.host.setDisplaySets(
-          ...dataIds.map((dataId, index) => {
-            const shouldMountAsSource =
-              index === 0 && (replaceExisting || !existingSourceDataId);
-
-            return {
-              displaySetId: dataId,
-              options: {
-                ...sharedOptions,
-                role: shouldMountAsSource
-                  ? ('source' as const)
-                  : ('overlay' as const),
-              },
-            };
-          })
+      if (addsToSource) {
+        await this.addVolumesToSource(
+          dataIds.filter((dataId) => !boundDataIds.has(dataId))
         );
-      } finally {
-        // The catch of this method removes the data of a failed mount, so the
-        // set must be clear before that cleanup runs.
-        dataIds.forEach((dataId) => this.mountingDataIds.delete(dataId));
+      } else {
+        await this.setVolumeDisplaySets(dataIds, replaceExisting);
       }
 
       volumeInputArray.forEach((volumeInput, index) => {
@@ -641,6 +647,8 @@ class PlanarLegacyCompatibilityController {
         }
       });
 
+      this.host.triggerCameraReset();
+
       if (!suppressEvents) {
         triggerEvent(
           this.host.getElement(),
@@ -655,11 +663,78 @@ class PlanarLegacyCompatibilityController {
         );
       }
     } catch (error) {
-      dataIds.forEach((dataId) => {
-        this.removeData(dataId);
-      });
+      dataIds
+        .filter((dataId) => !boundDataIds.has(dataId))
+        .forEach((dataId) => {
+          this.removeData(dataId);
+        });
 
       throw error;
+    }
+  }
+
+  /**
+   * Mounts the volumes of `setVolumes`, or of `addVolumes` on a viewport that
+   * shows nothing yet. The first volume is the source when the call replaces
+   * what the viewport shows or when it shows nothing, and every other volume
+   * is an overlay.
+   */
+  private async setVolumeDisplaySets(
+    dataIds: string[],
+    replaceExisting: boolean
+  ): Promise<void> {
+    this.host.prepareVolumeCompatibilityCamera();
+
+    const sharedOptions: PlanarSetDataOptions = {
+      orientation: this.host.getRequestedOrientation(),
+    };
+    const existingSourceDataId = this.host.getActiveDataId();
+
+    // setDisplaySets removes every binding that the viewport holds before it
+    // mounts the new bindings. A volume that this call mounts again is still
+    // bound at that moment, so the teardown must not remove the registration
+    // that the loop above wrote for that volume. removeData reads this set.
+    dataIds.forEach((dataId) => this.mountingDataIds.add(dataId));
+
+    try {
+      await this.host.setDisplaySets(
+        ...dataIds.map((dataId, index) => {
+          const shouldMountAsSource =
+            index === 0 && (replaceExisting || !existingSourceDataId);
+
+          return {
+            displaySetId: dataId,
+            options: {
+              ...sharedOptions,
+              role: shouldMountAsSource
+                ? ('source' as const)
+                : ('overlay' as const),
+            },
+          };
+        })
+      );
+    } finally {
+      // The catch of this method removes the data of a failed mount, so the
+      // set must be clear before that cleanup runs.
+      dataIds.forEach((dataId) => this.mountingDataIds.delete(dataId));
+    }
+  }
+
+  /**
+   * Mounts the volumes of `addVolumes` as overlays next to what the viewport
+   * shows, as the legacy volume viewport adds actors to the ones it has. The
+   * source, the other overlays and the view stay as they are, and the new
+   * volumes take the orientation of the view.
+   */
+  private async addVolumesToSource(dataIds: string[]): Promise<void> {
+    const options: PlanarSetDataOptions = {
+      orientation:
+        this.host.getCameraOrientation() ?? this.host.getRequestedOrientation(),
+      role: 'overlay',
+    };
+
+    for (const dataId of dataIds) {
+      await this.host.addDisplaySet(dataId, options);
     }
   }
 
@@ -855,6 +930,34 @@ class PlanarLegacyCompatibilityController {
     }
 
     return this.host.getActiveDataId() || this.host.getFirstBoundDataId();
+  }
+
+  /**
+   * Fires VOI_MODIFIED when `setProperties` changes the VOI range, or the
+   * invert flag of a volume, as the legacy viewports do. The legacy stack
+   * viewport fires nothing for the invert flag alone.
+   */
+  private emitVOIModified(
+    dataId: string,
+    properties: PlanarLegacyViewportProperties
+  ): void {
+    const { voiRange, invert } = toPlanarDataPresentation(properties);
+    const presentation: Partial<PlanarDataPresentation> = {};
+
+    if (voiRange) {
+      presentation.voiRange = voiRange;
+    }
+
+    if (
+      invert !== undefined &&
+      isVolumeRenderMode(this.host.getBindingRenderMode(dataId))
+    ) {
+      presentation.invert = invert;
+    }
+
+    if (Object.keys(presentation).length) {
+      this.host.notifyDataPresentationModified(dataId, presentation);
+    }
   }
 
   private emitColormapModified(

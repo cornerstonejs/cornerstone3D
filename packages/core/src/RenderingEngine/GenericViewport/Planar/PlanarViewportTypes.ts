@@ -304,6 +304,11 @@ export interface PlanarViewportRenderContext extends BaseViewportRenderContext {
      */
     canDrawAcquiredFrames?(dataId: string): boolean;
     /**
+     * Whether the CPU image path samples a LINEAR image once more on the
+     * screen grid when the view rests, and draws it with one more render.
+     */
+    drawsFinerImageAtRest?(): boolean;
+    /**
      * Reads the render plan entry of `dataId` again after its render path
      * changed what the entry reads (`slabTooLarge`), and fires
      * `RENDER_PLAN_CHANGED` when it changed.

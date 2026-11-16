@@ -85,6 +85,7 @@ function createHost() {
       actor = createVolumeActor();
       apply();
     }),
+    addDisplaySet: jest.fn(async () => undefined),
     setImageIdIndex: jest.fn(async () => 'image-0'),
     getCurrentImageId: jest.fn(() => undefined),
     render: jest.fn(),
@@ -99,6 +100,8 @@ function createHost() {
       apply();
     }),
     getDisplaySetPresentation: jest.fn((id) => presentations.get(id)),
+    notifyDataPresentationModified: jest.fn(),
+    triggerCameraReset: jest.fn(),
     getCameraOrientation: jest.fn(() => undefined),
     getCurrentPlanarRendering: jest.fn(() => undefined),
     getActiveDataId: jest.fn(() => dataId),

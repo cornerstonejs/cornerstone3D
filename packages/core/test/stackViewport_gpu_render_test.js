@@ -1032,7 +1032,7 @@ describe('renderingCore -- Stack', () => {
             voiRange: { lower: -260, upper: 140 },
             invert: true,
           });
-          vp.setRotation(90);
+          vp.setViewPresentation({ rotation: 90 });
           vp.render();
         });
       } catch (e) {
@@ -1125,7 +1125,7 @@ describe('renderingCore -- Stack', () => {
             interpolationType: InterpolationType.NEAREST,
           });
 
-          vp.setRotation(90);
+          vp.setViewPresentation({ rotation: 90 });
           vp.setCamera({ flipVertical: true });
           vp.render();
         });

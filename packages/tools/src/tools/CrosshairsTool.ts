@@ -397,12 +397,18 @@ class CrosshairsTool extends AnnotationTool {
         // Native PLANAR_NEXT has no resetCamera/resetSlabThickness; resetViewState
         // resets pan/zoom/orientation/flip (slice/navigation is preserved and there
         // is no slab concept). Wrapped by the caller's _ignoreFiredEvents guard.
-        viewport.resetViewState({
-          resetPan,
-          resetZoom,
-          resetOrientation: resetRotation,
-          resetFlip: true,
-        });
+        const previousIgnoreFiredEvents = this._ignoreFiredEvents;
+        this._ignoreFiredEvents = true;
+        try {
+          viewport.resetViewState({
+            resetPan,
+            resetZoom,
+            resetOrientation: resetRotation,
+            resetFlip: true,
+          });
+        } finally {
+          this._ignoreFiredEvents = previousIgnoreFiredEvents;
+        }
       } else {
         viewport.resetCamera({
           resetPan,
@@ -784,7 +790,17 @@ class CrosshairsTool extends AnnotationTool {
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
   };
 
+  /**
+   * Resets the crosshairs when the camera of a viewport is reset. A next
+   * viewport fires CAMERA_RESET from the `resetViewState` that
+   * `resetCrosshairs` calls, where a legacy viewport resets without events, so
+   * a reset that the crosshairs make themselves is ignored.
+   */
   onResetCamera = (evt) => {
+    if (this._ignoreFiredEvents) {
+      return;
+    }
+
     this.resetCrosshairs();
   };
 
