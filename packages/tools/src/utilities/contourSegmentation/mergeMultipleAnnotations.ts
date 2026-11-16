@@ -21,6 +21,11 @@ import {
   BooleanOp,
   type PolygonWithHoles,
 } from './clipperBooleanOps';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'utilities.contourSegmentation.mergeMultipleAnnotations'
+);
 
 /**
  * Default tool name for contour segmentation operations.
@@ -78,7 +83,7 @@ function processMultipleIntersections(
 
   // Check if the necessary tool for creating new combined contours is registered.
   if (!hasToolByName(DEFAULT_CONTOUR_SEG_TOOL_NAME)) {
-    console.warn(
+    cs3dLogger.warn(
       `${DEFAULT_CONTOUR_SEG_TOOL_NAME} is not registered in cornerstone. Cannot process multiple intersections.`
     );
     return;

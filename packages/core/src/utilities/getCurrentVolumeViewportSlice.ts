@@ -49,7 +49,9 @@ function getCurrentVolumeViewportSlice(viewport: IVolumeViewport) {
   // Using glMatrix.equals() because the number may be not exactly equal to
   // 1 due to rounding issues
   if (!glMatrix.equals(1, maxIJKRowVec) || !glMatrix.equals(1, maxIJKColVec)) {
-    throw new Error('Livewire is not available for rotate/oblique viewports');
+    throw new Error(
+      'getCurrentVolumeViewportSlice is not available for rotate/oblique viewports'
+    );
   }
 
   const { voxelManager } = viewport.getImageData();

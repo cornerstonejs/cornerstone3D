@@ -13,6 +13,7 @@ export {
   getLabelmapForVolumeId,
   getLabelmapIds,
   getLabelmaps,
+  getOrCreateDynamicLabelmapVolume,
   getOrCreateLabelmapVolume,
   getScalarArrayLengthFromLabelmap,
   registerLabelmap,
@@ -24,6 +25,7 @@ export {
 } from './labelmapLegacyAdapter';
 export {
   getLabelmapForSegment,
+  getLabelToSegmentIndex,
   getLabelValueForSegment,
   getSegmentBinding,
   getSegmentIndexForLabelValue,
@@ -41,8 +43,8 @@ export {
   collectCrossLayerEraseBindings,
   eraseLabelmapEditTransactionOverwrites,
   getLabelmapLayerImageId,
+  getLockedVoxelsOnOtherLayers,
   getProtectedSegmentIndicesForLayer,
-  hasProtectedSegmentOverwrite,
   resolveLabelmapLayerEditTarget,
 } from './labelmapEditTransaction';
 export type {
@@ -50,6 +52,7 @@ export type {
   EraseLabelmapEditTransactionOptions,
   LabelmapEditTransaction,
   LabelmapLayerEditTarget,
+  LockedLabelmapVoxels,
   ResolveLabelmapLayerEditTargetOptions,
 } from './labelmapEditTransaction';
 export { default as LabelmapImageReferenceResolver } from './labelmapImageReferenceResolver';

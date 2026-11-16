@@ -16,6 +16,11 @@ import { getLabelmapActorEntries } from '../../../stateManagement/segmentation/h
 import getViewportLabelmapRenderMode from '../../../stateManagement/segmentation/helpers/getViewportLabelmapRenderMode';
 import { createLabelmapRepresentationUID } from './labelmapRepresentationUID';
 import removeLabelmapRepresentationData from './removeLabelmapRepresentationData';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.displayTools.Labelmap.syncStackLabelmapActors'
+);
 
 export function syncStackLabelmapActors(
   viewport: Types.IStackViewport,
@@ -107,7 +112,7 @@ export function syncStackLabelmapActors(
     const derivedImage = cache.getImage(derivedImageId);
 
     if (!derivedImage) {
-      console.warn(
+      cs3dLogger.warn(
         'No derived image found in the cache for segmentation representation',
         { segmentationId, derivedImageId }
       );
@@ -140,6 +145,8 @@ export function syncStackLabelmapActors(
               labelmapId: derivedImage.imageId,
             },
             representationUID,
+            // FIDELITY-STATE-9: labelmap overlay actors are out of fidelity scope.
+            excludeFromFidelity: true,
           },
         ]);
       } else {
@@ -175,6 +182,8 @@ export function syncStackLabelmapActors(
               labelmapId: derivedImage.imageId,
             },
             representationUID,
+            // FIDELITY-STATE-9: labelmap overlay actors are out of fidelity scope.
+            excludeFromFidelity: true,
             callback: ({ imageActor }) => {
               imageActor.getMapper().setInputData(imageData);
               applyInheritedLabelmapStyle(

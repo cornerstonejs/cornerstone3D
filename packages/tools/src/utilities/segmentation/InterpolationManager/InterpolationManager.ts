@@ -18,6 +18,11 @@ import type { InterpolationROIAnnotation } from '../../../types/ToolSpecificAnno
 import ChangeTypes from '../../../enums/ChangeTypes';
 import getViewportForAnnotation from '../../getViewportForAnnotation';
 import { addContourSegmentationAnnotation } from '../../contourSegmentation/addContourSegmentationAnnotation';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'utilities.segmentation.InterpolationManager.InterpolationManager'
+);
 
 const { uuidv4 } = csUtils;
 
@@ -131,7 +136,7 @@ export default class InterpolationManager {
 
     const viewport = getViewportForAnnotation(annotation);
     if (!viewport) {
-      console.warn('Unable to find viewport for', annotation);
+      cs3dLogger.warn('Unable to find viewport for', annotation);
       return;
     }
     const sliceData: Types.ImageSliceData = getSliceData(viewport);
@@ -217,7 +222,7 @@ export default class InterpolationManager {
     }
     const viewport = getViewportForAnnotation(annotation);
     if (!viewport) {
-      console.warn(
+      cs3dLogger.warn(
         'Unable to find matching viewport for annotation interpolation',
         annotation
       );
@@ -257,7 +262,7 @@ export default class InterpolationManager {
     const viewport = getViewportForAnnotation(annotation);
 
     if (!viewport) {
-      console.warn(
+      cs3dLogger.warn(
         "No viewport, can't delete interpolated results",
         annotation
       );

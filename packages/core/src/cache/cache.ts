@@ -18,7 +18,9 @@ import eventTarget from '../eventTarget';
 import Events from '../enums/Events';
 import { ImageQualityStatus } from '../enums';
 import fnv1aHash from '../utilities/fnv1aHash';
+import { coreLog } from '../utilities/logger';
 
+const log = coreLog.getLogger('cache');
 const ONE_GB = 1073741824;
 
 /**
@@ -43,6 +45,8 @@ class Cache {
   private readonly _geometryCache = new Map<string, ICachedGeometry>();
 
   private _imageCacheSize = 0;
+  /** Counts the images that reached the cache, so a remembered miss can expire. */
+  private _imageGeneration = 0;
   private _maxCacheSize = 3 * ONE_GB;
   private _geometryCacheSize = 0;
 
@@ -106,6 +110,10 @@ class Cache {
    */
   public isCacheable = (byteLength) => {
     const bytesAvailable = this.getBytesAvailable();
+    // Skip the scan of every cached image when the free space is enough.
+    if (bytesAvailable >= byteLength) {
+      return true;
+    }
 
     const purgableImageBytes = Array.from(this._imageCache.values()).reduce(
       (total, image) => {
@@ -218,14 +226,12 @@ class Cache {
       volumeLoadObject.cancelFn();
     }
 
-    // Remove shared cache keys for the volume's images
-    if (volume.imageIds) {
-      volume.imageIds.forEach((imageId) => {
-        const cachedImage = this._imageCache.get(imageId);
-        if (cachedImage && cachedImage.sharedCacheKey === volumeId) {
-          cachedImage.sharedCacheKey = undefined;
-        }
-      });
+    // Remove shared cache keys for the volume's images, the reduced slices that
+    // are not in volume.imageIds included
+    for (const cachedImage of this._imageCache.values()) {
+      if (cachedImage.sharedCacheKey === volumeId) {
+        cachedImage.sharedCacheKey = undefined;
+      }
     }
 
     this._volumeCache.delete(volumeId);
@@ -391,14 +397,14 @@ class Cache {
     cachedImage: ICachedImage
   ): void {
     if (!this._imageCache.has(imageId)) {
-      console.warn(
+      log.warn(
         'The image was purged from the cache before it completed loading.'
       );
       return;
     }
 
     if (!image) {
-      console.warn('Image is undefined');
+      log.warn('Image is undefined');
       return;
     }
 
@@ -422,6 +428,7 @@ class Cache {
     cachedImage.loaded = true;
 
     cachedImage.image = image;
+    this._imageGeneration++;
     cachedImage.sizeInBytes = image.sizeInBytes;
     this.incrementImageCacheSize(cachedImage.sizeInBytes);
     const eventDetails: EventTypes.ImageCacheImageAddedEventDetail = {
@@ -463,12 +470,12 @@ class Cache {
     imageLoadObject: IImageLoadObject
   ): Promise<void> {
     if (imageId === undefined) {
-      console.error('putImageLoadObject: imageId must not be undefined');
+      log.error('putImageLoadObject: imageId must not be undefined');
       throw new Error('putImageLoadObject: imageId must not be undefined');
     }
 
     if (imageLoadObject.promise === undefined) {
-      console.error(
+      log.error(
         'putImageLoadObject: imageLoadObject.promise must not be undefined'
       );
       throw new Error(
@@ -478,7 +485,7 @@ class Cache {
 
     const alreadyCached = this._imageCache.get(imageId);
     if (alreadyCached?.imageLoadObject) {
-      console.warn(`putImageLoadObject: imageId ${imageId} already in cache`);
+      log.warn(`putImageLoadObject: imageId ${imageId} already in cache`);
       throw new Error('putImageLoadObject: imageId already in cache');
     }
 
@@ -486,7 +493,7 @@ class Cache {
       imageLoadObject.cancelFn &&
       typeof imageLoadObject.cancelFn !== 'function'
     ) {
-      console.error(
+      log.error(
         'putImageLoadObject: imageLoadObject.cancel must be a function'
       );
       throw new Error(
@@ -514,15 +521,12 @@ class Cache {
         try {
           this._putImageCommon(imageId, image, cachedImage);
         } catch (error) {
-          console.debug(
-            `Error in _putImageCommon for image ${imageId}:`,
-            error
-          );
+          log.debug(`Error in _putImageCommon for image ${imageId}:`, error);
           throw error; // Re-throw the error to be caught in the .catch block
         }
       })
       .catch((error) => {
-        console.debug(`Error caching image ${imageId}:`, error);
+        log.debug(`Error caching image ${imageId}:`, error);
         this._imageCache.delete(imageId);
         throw error; // Re-throw the error to be caught by the caller
       });
@@ -622,14 +626,12 @@ class Cache {
     for (const volumeId of volumeIds) {
       const cachedVolume = this._volumeCache.get(volumeId);
 
-      if (!cachedVolume) {
-        return;
-      }
+      const volume = cachedVolume?.volume;
 
-      const { volume } = cachedVolume;
-
-      if (!volume.imageIds.length) {
-        return;
+      // A volume that holds no image ids, such as one built from a scalar
+      // array, cannot contain the image, and the search goes on.
+      if (!volume?.imageIds?.length) {
+        continue;
       }
 
       const imageIdIndex = volume.getImageURIIndex(imageIdToUse);
@@ -665,6 +667,22 @@ class Cache {
   }
 
   /**
+   * Gives a cached image to the volume that now uses it, so the image stays out
+   * of the eviction until that volume leaves the cache. The newest volume takes
+   * over the key, as `_putVolumeCommon` does for the frames of a volume.
+   *
+   * @param imageId - the image id of the cached image
+   * @param sharedCacheKey - the id of the volume that uses the image
+   */
+  public setImageSharedCacheKey(imageId: string, sharedCacheKey: string): void {
+    const cachedImage = this._imageCache.get(imageId);
+
+    if (cachedImage) {
+      cachedImage.sharedCacheKey = sharedCacheKey;
+    }
+  }
+
+  /**
    * Common logic for putting a volume into the cache
    *
    * @param volumeId - VolumeId for the volume
@@ -677,7 +695,7 @@ class Cache {
     cachedVolume: ICachedVolume
   ): void {
     if (!this._volumeCache.get(volumeId)) {
-      console.warn(
+      log.warn(
         'The volume was purged from the cache before it completed loading.'
       );
       return;
@@ -794,10 +812,7 @@ class Cache {
         try {
           this._putVolumeCommon(volumeId, volume, cachedVolume);
         } catch (error) {
-          console.error(
-            `Error in _putVolumeCommon for volume ${volumeId}:`,
-            error
-          );
+          log.error(`Error in _putVolumeCommon for volume ${volumeId}:`, error);
           this._volumeCache.delete(volumeId); // Clean up the cache if an error occurs
           throw error;
         }
@@ -846,14 +861,14 @@ class Cache {
     cachedGeometry: ICachedGeometry
   ): void {
     if (!this._geometryCache.get(geometryId)) {
-      console.warn(
+      log.warn(
         'The geometry was purged from the cache before it completed loading.'
       );
       return;
     }
 
     if (!geometry) {
-      console.warn('Geometry is undefined');
+      log.warn('Geometry is undefined');
       return;
     }
 
@@ -976,7 +991,7 @@ class Cache {
         try {
           this._putGeometryCommon(geometryId, geometry, cachedGeometry);
         } catch (error) {
-          console.debug(
+          log.debug(
             `Error in _putGeometryCommon for geometry ${geometryId}:`,
             error
           );
@@ -984,7 +999,7 @@ class Cache {
         }
       })
       .catch((error) => {
-        console.debug(`Error caching geometry ${geometryId}:`, error);
+        log.debug(`Error caching geometry ${geometryId}:`, error);
         this._geometryCache.delete(geometryId);
         throw error;
       });
@@ -1156,6 +1171,10 @@ class Cache {
     partialImage?: IImage,
     removeImageLoadObject = false
   ) {
+    if (partialImage) {
+      this._imageGeneration++;
+    }
+
     const cachedImage = this._imageCache.get(imageId);
     if (!cachedImage) {
       if (partialImage) {
@@ -1181,6 +1200,14 @@ class Cache {
       }
       cachedImage.image = partialImage || cachedImage.image;
     }
+  }
+
+  /**
+   * A number that changes whenever an image reaches the cache. A reader that
+   * remembers a missing image compares it to know the miss may be stale.
+   */
+  public getImageGeneration(): number {
+    return this._imageGeneration;
   }
 
   /** Gets the current image quality for the given image id */

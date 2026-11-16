@@ -1,0 +1,28 @@
+// Volumes: one display set for each acquisition.
+//
+// A CT, MR, PT or NM series that holds more than one AcquisitionNumber gives
+// one display set for each AcquisitionNumber, in AcquisitionNumber order, and
+// not in time order. The display set gets the attribute `acquisitionNumber`.
+//
+// The file changes the `groupBy` and the `attributes` of `volume3d`, and not
+// its `sortBy`, so it works together with `volumePositionOrder`, in either
+// order: one volume for each acquisition, with the slices in position order.
+// `volume3d` has no `attributes`, so the file uses `$set` there and not
+// `$merge`.
+//
+// A series with one AcquisitionNumber gives one display set, as without the
+// file.
+//
+// Some CT scanners give a new AcquisitionNumber to each rotation of an axial
+// (step) scan. Such a series gives one display set for each rotation.
+//
+// A 4D series that gives each time point its own AcquisitionNumber (for
+// example MR perfusion) gives one display set for each time point.
+{
+  "displaySetRules": {
+    "volume3d": {
+      "groupBy": { "$set": ["SeriesInstanceUID", "AcquisitionNumber"] },
+      "attributes": { "$set": { "acquisitionNumber": "AcquisitionNumber" } }
+    }
+  }
+}

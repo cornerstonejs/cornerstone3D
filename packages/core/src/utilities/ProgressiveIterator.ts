@@ -1,3 +1,7 @@
+import { coreLog } from './logger';
+
+const log = coreLog.getLogger('utilities', 'ProgressiveIterator');
+
 export class PromiseIterator<T> extends Promise<T> {
   iterator?: ProgressiveIterator<T>;
 }
@@ -87,7 +91,6 @@ export default class ProgressiveIterator<T> {
         throw this.rejectReason;
       }
       if (this.nextValue !== undefined) {
-        // console.log('Yielding on', this.name, this.nextValue);
         yield this.nextValue;
         if (this.done) {
           break;
@@ -100,10 +103,8 @@ export default class ProgressiveIterator<T> {
           this.waiting.reject = reject;
         });
       }
-      // console.log('Awaiting on', this.name);
       await this.waiting.promise;
     }
-    // console.log('Final yield on', this.name);
     yield this.nextValue;
   }
 
@@ -120,7 +121,7 @@ export default class ProgressiveIterator<T> {
           index++;
         } catch (e) {
           if (!done) {
-            console.warn('Caught exception in intermediate value', e);
+            log.warn('Caught exception in intermediate value', e);
             continue;
           }
           if (errorCallback) {
@@ -156,7 +157,7 @@ export default class ProgressiveIterator<T> {
         if (errorCallback) {
           errorCallback(reason);
         } else {
-          console.warn("Couldn't process because", reason);
+          log.warn("Couldn't process because", reason);
         }
       }
     );

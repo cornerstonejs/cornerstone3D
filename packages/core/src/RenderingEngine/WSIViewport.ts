@@ -770,9 +770,7 @@ class WSIViewport extends Viewport {
     });
   }
 
-  public customRenderViewportToCanvas = () => {
-    // console.log('TODO - custom render');
-  };
+  public customRenderViewportToCanvas = () => {};
 
   public getZoom() {
     return this.getView()?.getZoom();

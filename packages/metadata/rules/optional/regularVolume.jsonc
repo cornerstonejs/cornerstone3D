@@ -1,0 +1,51 @@
+// Volumes: the regular slices of a series become one volume.
+//
+// A CT, MR, PT or NM series can be a volume, except for some images that are
+// not on the regular slice spacing: an extra slice, a slice at another angle,
+// or a slice between two positions. The default `volume3d` rule puts all of
+// them in one display set, which is then not reconstructable.
+//
+// With this rule, the regular slices become one volume display set, in
+// position order. The other images stay with the default rules. A fully
+// regular series, and a series with no lattice, keep the default display sets.
+// Localizer images do not count as irregular images, so a regular series with
+// scouts keeps the default `volume3d` display set.
+//
+// The file puts the rule just before the default `localizer` rule, so it runs before the
+// other volume rules. A localizer is not a regular slice, so the `localizer`
+// rule still takes it.
+// `$spliceById` needs `spliceById` of @cornerstonejs/metadata, registered with
+// immutability-helper `extend`.
+{
+  // New rules for the registry.
+  "displaySetRules": {
+    "$merge": {
+      "regularVolume": {
+        "description": "Volume series with some irregular images: the regular slices become one volume display set.",
+        "context": {
+          // A series value: a complete regular lattice of 3 or more slices, and
+          // also other images. Remove `&& planeGeometry.complete` to accept a
+          // lattice with a missing slice.
+          "mixesIrregular": "planeGeometry.regularCount >= 3 && planeGeometry.irregularCount > series.instances.count(isLocalizer) && planeGeometry.complete",
+          "isRegularSlice": "sliceIndex != null"
+        },
+        "matches": {
+          "isImage": true,
+          "Modality": ["CT", "MR", "PT", "NM"],
+          "mixesIrregular": true,
+          "isRegularSlice": true
+        },
+        "groupBy": ["SeriesInstanceUID"],
+        "sortBy": ["displaySet.sliceDistance"],
+        "attributes": {
+          "SeriesDescription": {
+            "template": "{SeriesDescription} ({displaySet.sliceSpacing} mm)"
+          }
+        }
+      }
+    }
+  },
+  "displaySetRuleOrder": {
+    "$spliceById": [["localizer", 0, "regularVolume"]]
+  }
+}

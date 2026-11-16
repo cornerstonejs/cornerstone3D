@@ -163,29 +163,29 @@ describe('math/ellipse/getCanvasEllipseCorners', () => {
       left,
       right,
     ]);
-    // topLeft = [left.x, top.y] = [0, 0]
+    // topLeft = [minX, minY] = [0, 0]
     expect(topLeft).toEqual([0, 0]);
-    // bottomRight = [right.x, bottom.y] = [10, 10]
+    // bottomRight = [maxX, maxY] = [10, 10]
     expect(bottomRight).toEqual([10, 10]);
   });
 
-  it('does not normalize/re-order when the "corners" are inverted (pure field pick)', () => {
-    // If the caller passes points such that left.x > right.x, the function
-    // does not swap them - it purely extracts fields. This documents that
-    // callers are responsible for ordering, matching the source comment
-    // that this returns "top left and bottom right" assuming correct input.
-    const bottom = [5, 0]; // note: bottom.y (0) < top.y (10) here - inverted
-    const top = [5, 10];
-    const left = [8, 5]; // left.x (8) > right.x (2) - inverted
-    const right = [2, 5];
-    const [topLeft, bottomRight] = getCanvasEllipseCorners([
-      bottom,
-      top,
-      left,
-      right,
-    ]);
-    expect(topLeft).toEqual([8, 10]);
-    expect(bottomRight).toEqual([2, 0]);
+  it('returns the same bounding box regardless of the point order', () => {
+    // A freshly drawn ellipse stores its endpoints as [bottom, top, left, right],
+    // but an ellipse round-tripped through a DICOM SR arrives major-axis-first.
+    // The bounding box is derived from the extents of the points, so both orderings
+    // yield the same corners instead of collapsing onto the center.
+    const bottom = [5, 10];
+    const top = [5, 0];
+    const left = [0, 5];
+    const right = [10, 5];
+
+    const drawOrder = getCanvasEllipseCorners([bottom, top, left, right]);
+    // Major axis along the rows: the horizontal (left/right) endpoints come first.
+    const srOrder = getCanvasEllipseCorners([left, right, top, bottom]);
+
+    expect(drawOrder[0]).toEqual([0, 0]);
+    expect(drawOrder[1]).toEqual([10, 10]);
+    expect(srOrder).toEqual(drawOrder);
   });
 });
 

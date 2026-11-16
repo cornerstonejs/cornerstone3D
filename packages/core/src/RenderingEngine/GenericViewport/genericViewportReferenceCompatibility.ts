@@ -133,12 +133,14 @@ function isPlaneCompatible(
   context: GenericViewportReferenceContext,
   options: ReferenceCompatibleOptions
 ): boolean {
-  if (viewRef.planeRestriction) {
-    return isPlaneRestrictionViewable(
-      viewRef.planeRestriction,
-      context,
-      options
-    );
+  // The restriction and the top level orientation are two separate limits, and
+  // the code applies both. A restriction that pins no orientation, which is
+  // what one point gives, therefore does not make every view compatible.
+  if (
+    viewRef.planeRestriction &&
+    !isPlaneRestrictionViewable(viewRef.planeRestriction, context, options)
+  ) {
+    return false;
   }
 
   if (!viewRef.viewPlaneNormal) {

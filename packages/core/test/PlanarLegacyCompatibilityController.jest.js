@@ -174,6 +174,48 @@ describe('PlanarLegacyCompatibilityController', () => {
       await controller.setVolumes([{ volumeId: 'vol-1' }], true);
       expect(host.render).toHaveBeenCalled();
     });
+
+    it('keeps the registration of a volume that the viewport already holds', async () => {
+      // The viewport removes every binding that it holds before the viewport
+      // mounts the new bindings, so setDisplaySets calls removeData for the
+      // volume that this call mounts again. The registration has to survive
+      // that removal, because the mount reads the registration back.
+      cache.getVolume.mockReturnValue({ imageIds: ['v-0', 'v-1'] });
+      const dataId = '__planar_v2__:vp-1:volume:vol-1';
+      const { host } = createHost();
+      const controller = new PlanarLegacyCompatibilityController(host);
+
+      await controller.setVolumes([{ volumeId: 'vol-1' }]);
+
+      host.setDisplaySets.mockImplementationOnce(async () => {
+        controller.removeData(dataId);
+      });
+      metadataProvider.remove.mockClear();
+
+      await controller.setVolumes([{ volumeId: 'vol-1' }]);
+
+      expect(metadataProvider.remove).not.toHaveBeenCalledWith(dataId);
+      expect(metadataProvider.add).toHaveBeenLastCalledWith(
+        dataId,
+        expect.objectContaining({ volumeId: 'vol-1' })
+      );
+    });
+
+    it('removes the data of a volume when the mount of that volume fails', async () => {
+      cache.getVolume.mockReturnValue({ imageIds: ['v-0'] });
+      const dataId = '__planar_v2__:vp-1:volume:vol-1';
+      const { host } = createHost();
+      host.setDisplaySets.mockImplementationOnce(async () => {
+        throw new Error('mount failed');
+      });
+      const controller = new PlanarLegacyCompatibilityController(host);
+
+      await expect(
+        controller.setVolumes([{ volumeId: 'vol-1' }])
+      ).rejects.toThrow(/mount failed/);
+
+      expect(metadataProvider.remove).toHaveBeenCalledWith(dataId);
+    });
   });
 
   describe('property management', () => {

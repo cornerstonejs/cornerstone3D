@@ -13,6 +13,11 @@ import {
   removeContourStroke,
 } from '../../../utilities/contourSegmentation/applyContourStroke';
 import { Events } from '../../../enums';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'eventListeners.annotations.contourSegmentation.contourSegmentationCompleted'
+);
 
 const DEFAULT_CONTOUR_SEG_TOOL_NAME = 'PlanarFreehandContourSegmentationTool';
 
@@ -76,7 +81,7 @@ function isFreehandContourSegToolRegisteredForViewport(
   }
 
   if (errorMessage && !silent) {
-    console.warn(errorMessage);
+    cs3dLogger.warn(errorMessage);
   }
 
   return !errorMessage;

@@ -14,6 +14,7 @@ import {
 } from './utils/labelmapOverlap';
 import type { LabelmapEditTransaction } from '../../../stateManagement/segmentation/helpers/labelmapSegmentationState';
 import { shouldUseLazyLabelmapEditing } from '../utils/shouldUseLazyLabelmapEditing';
+import type { BrushVoxelSlabFill } from './utils/brushVoxelSlab';
 
 export type InitializedOperationData = LabelmapToolOperationDataAny & {
   // Allow initialization that is operation specific by keying on the name
@@ -31,6 +32,12 @@ export type InitializedOperationData = LabelmapToolOperationDataAny & {
   centerWorld: Types.Point3;
   isInObject: (point: Types.Point3) => boolean;
   isInObjectBoundsIJK: Types.BoundsIJK;
+  /**
+   * When set, {@link compositions.regionFill} takes the voxels from the shared
+   * voxel slab iterator, which walks the brush shape itself, instead of the
+   * axis-aligned IJK bounding box around it.
+   */
+  brushVoxelSlabFill?: BrushVoxelSlabFill;
   viewport: Types.IViewport;
   imageVoxelManager:
     | Types.IVoxelManager<number>
