@@ -246,7 +246,17 @@ export default class WSIViewport extends GenericViewport<
     // No-op for current whole-slide workflows.
   }
 
+  /**
+   * Turns the view back to the orientation that the microscopy viewer gives
+   * the slide. The zoom and the centre stay as they are.
+   */
   resetViewState(): boolean {
+    this.syncCameraFromView();
+
+    if (this.viewState.rotation) {
+      this.setViewState({ rotation: 0 });
+    }
+
     return true;
   }
 
@@ -492,6 +502,10 @@ export default class WSIViewport extends GenericViewport<
     });
   }
 
+  /**
+   * Reads the view state back from the map view. The rotation is the one of
+   * the map less the rotation of the slide.
+   */
   private syncCameraFromView(): void {
     const view = this.getView();
 
@@ -504,7 +518,8 @@ export default class WSIViewport extends GenericViewport<
     this.viewState = this.normalizeViewState({
       ...this.viewState,
       zoom: view.getZoom(),
-      rotation: view.getRotation(),
+      rotation:
+        view.getRotation() - (this.getWSIRendering()?.slideRotation ?? 0),
       resolution: view.getResolution(),
       centerIndex: centerIndex ? [centerIndex[0], centerIndex[1]] : undefined,
     });

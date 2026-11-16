@@ -89,6 +89,12 @@ class WSIResolvedView extends ResolvedViewportView<WSIResolvedViewState> {
     });
   }
 
+  /**
+   * The camera of the view, as the legacy WSI viewport gives it: the focal
+   * point at the centre of the canvas, a fixed view up and the canvas height
+   * in world units as the parallel scale. The rotation is the one of the
+   * view state, on top of the orientation of the slide.
+   */
   protected buildICamera(): ICamera {
     const focalPoint = this.canvasToWorld([
       this.state.canvasWidth / 2,
@@ -104,8 +110,7 @@ class WSIResolvedView extends ResolvedViewportView<WSIResolvedViewState> {
       viewUp: [0, -1, 0],
       parallelScale: this.state.canvasHeight * resolution * xSpacing,
       viewPlaneNormal: [0, 0, 1],
-      rotation:
-        this.state.view.getRotation?.() || this.state.viewState.rotation || 0,
+      rotation: this.state.viewState.rotation ?? 0,
     };
   }
 
@@ -146,8 +151,7 @@ class WSIResolvedView extends ResolvedViewportView<WSIResolvedViewState> {
     const halfCanvasY = Math.max(this.state.canvasHeight, 1) / 2;
     const deltaCanvasX = canvasPoint[0] - halfCanvasX;
     const deltaCanvasY = canvasPoint[1] - halfCanvasY;
-    const rotation =
-      this.state.view.getRotation?.() || this.state.viewState.rotation || 0;
+    const rotation = this.state.view.getRotation();
     const cos = Math.cos(rotation);
     const sin = Math.sin(rotation);
     const rotatedDeltaX = cos * deltaCanvasX + sin * deltaCanvasY;

@@ -97,7 +97,7 @@ export function getWSIProjectionSnapshot(
   const rendererCamera = resolvedView?.toICamera();
   const view = resolvedView?.state?.view;
   const zoom = Math.max(view?.getZoom?.() ?? viewState.zoom ?? 1, 0.001);
-  const rotation = view?.getRotation?.() ?? viewState.rotation ?? 0;
+  const rotation = viewState.rotation ?? 0;
   const frameOfReferenceUID =
     request.frameOfReferenceUID ??
     resolvedView?.getFrameOfReferenceUID() ??

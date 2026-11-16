@@ -47,6 +47,12 @@ export interface WSIViewState extends ViewportCameraBase<[number, number]> {
   centerIndex?: [number, number];
   resolution?: number;
   zoom?: number;
+  /**
+   * The rotation of the view in radians, on top of the orientation that the
+   * microscopy viewer gives the slide. At 0 the slide shows as the viewer
+   * and the legacy WSI viewport show it.
+   */
+  rotation?: number;
 }
 
 export type WSICamera = WSIViewState & ICamera;
@@ -87,4 +93,9 @@ export type WSIRendering = MountedRendering<{
   map: WSIMapLike;
   transformUtils?: WSITransformUtilitiesLike;
   postrenderHandler: () => void;
+  /**
+   * The rotation in radians that the microscopy viewer gives the map view of
+   * the slide. The rotation of the view state turns the map on top of it.
+   */
+  slideRotation?: number;
 }>;

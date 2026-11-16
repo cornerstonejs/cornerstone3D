@@ -52,6 +52,7 @@ export class DicomMicroscopyRenderPath
     viewer.deactivateDragPanInteraction();
 
     const map = viewer.getMap();
+    const slideRotation = map.getView()?.getRotation() ?? 0;
     const postrenderHandler = () => {
       triggerEvent(ctx.element, EVENTS.IMAGE_RENDERED, {
         element: ctx.element,
@@ -80,6 +81,7 @@ export class DicomMicroscopyRenderPath
       map,
       transformUtils: DicomMicroscopyViewer.utils,
       postrenderHandler,
+      slideRotation,
     };
 
     return {
@@ -117,6 +119,10 @@ export class DicomMicroscopyRenderPath
     microscopyElement.style.opacity = String(wsiProps?.opacity ?? 1);
   }
 
+  /**
+   * Writes the view state to the map view. The rotation of the view state
+   * is on top of the rotation that the microscopy viewer gave the slide.
+   */
   private applyViewState(rendering: WSIRendering, camera: unknown): void {
     const wsiCamera = camera as WSIViewState;
     const { map } = rendering;
@@ -136,7 +142,7 @@ export class DicomMicroscopyRenderPath
       view.setCenter(wsiCamera.centerIndex);
     }
     if (typeof wsiCamera.rotation === 'number') {
-      view.setRotation(wsiCamera.rotation);
+      view.setRotation((rendering.slideRotation ?? 0) + wsiCamera.rotation);
     }
   }
 
