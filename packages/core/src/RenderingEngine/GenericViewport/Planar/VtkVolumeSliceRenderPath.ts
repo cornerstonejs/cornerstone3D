@@ -4,8 +4,18 @@ import type vtkImageResliceMapper from '@kitware/vtk.js/Rendering/Core/ImageResl
 import { buildPlanarActorEntry } from './buildPlanarActorEntry';
 import uuidv4 from '../../../utilities/uuidv4';
 import { Events, ViewportType } from '../../../enums';
-import eventTarget from '../../../eventTarget';
 import createVolumeSliceActor from '../../helpers/createVolumeSliceActor';
+import {
+  defaultVolumeStrategyProvider,
+  selectFirstReadyStrategy,
+} from '../../helpers/volumeRenderStrategy';
+import type {
+  SelectVolumeStrategy,
+  VolumeStrategyProvider,
+  VolumeStrategyProvisionReason,
+} from '../../helpers/volumeRenderStrategy';
+import * as lifecycle from '../../helpers/volumeStrategyLifecycle';
+import type { VolumeStrategyHooks } from '../../helpers/volumeStrategyLifecycle';
 import { ActorRenderMode } from '../../../types';
 import type { IImageData, Point2, Point3 } from '../../../types';
 import type {
@@ -38,16 +48,39 @@ import {
   resolvePlanarRenderPathProjection,
 } from './planarRenderPathProjection';
 import { applyPlanarVolumePresentation } from './planarVolumePresentation';
+import {
+  acquiredFrameActors,
+  withAcquiredFrames,
+} from './planarAcquiredFrames';
+import { isSegmentationOverlayData } from '../renderingFidelity';
+import { gridWorldToIndex } from '../../../utilities/voxelGrid';
 
 const SLICE_OVERLAY_DEPTH_EPSILON = 1e-4;
 // Trailing delay before repainting a slab-projecting segmentation overlay
 // after its volume was modified (brush edits fire many events per second).
 const PROJECTING_OVERLAY_RENDER_DELAY_MS = 240;
-
 /** @internal */
 export class VtkVolumeSliceRenderPath
   implements RenderPath<PlanarVtkVolumeAdapterContext>
 {
+  /**
+   * The provider that builds the strategies of this render path, and the
+   * function that chooses the strategy of one render.
+   *
+   * A new render type defines its own provider, and that is how a new render
+   * type defines new texture sets. A render component that implements phases
+   * supplies its own selection, and that is where "reduced for the first
+   * render, full resolution for the lossless render" belongs.
+   */
+  private readonly hooks: VolumeStrategyHooks<PlanarVolumeSliceRendering>;
+
+  constructor(
+    provideStrategies: VolumeStrategyProvider = defaultVolumeStrategyProvider,
+    selectStrategy: SelectVolumeStrategy = selectFirstReadyStrategy
+  ) {
+    this.hooks = { provideStrategies, selectStrategy };
+  }
+
   async addData(
     ctx: PlanarVtkVolumeAdapterContext,
     data: LoadedData,
@@ -55,8 +88,7 @@ export class VtkVolumeSliceRenderPath
   ): Promise<RenderPathAttachment<PlanarDataPresentation>> {
     const payload: PlanarPayload = data as unknown as LoadedData<PlanarPayload>;
     const imageVolume = payload.imageVolume;
-    const isSegmentationOverlay =
-      options.role === 'overlay' && payload.reference?.kind === 'segmentation';
+    const isSegmentationOverlay = isSegmentationOverlayData(payload, options);
 
     if (!imageVolume) {
       throw new Error(
@@ -65,9 +97,7 @@ export class VtkVolumeSliceRenderPath
     }
 
     const { actor } = await createVolumeSliceActor(
-      {
-        volumeId: payload.volumeId,
-      },
+      { volumeId: payload.volumeId, ...this.hooks },
       ctx.viewport.element,
       ctx.viewportId,
       true
@@ -96,20 +126,29 @@ export class VtkVolumeSliceRenderPath
         : undefined,
       dataPresentation: undefined,
       isSegmentationOverlay,
+      viewportId: ctx.viewportId,
+      excludeFromFidelity: isSegmentationOverlay,
+      fullGrid: imageVolume.voxelGrid,
+      // A slice samples no ray, so it has no interactive sample reduction.
+      sampleDistanceLod: 1,
     };
+    rendering.refreshFidelity = () => lifecycle.refreshFidelity(rendering);
+
+    this.provisionStrategies(rendering, 'initial');
+    this.applyStrategy(rendering);
 
     let deferredProjectionRenderTimer: ReturnType<typeof setTimeout> | null =
       null;
-    const removeVolumeSubscriptions = subscribeToVolumeEvents(
+    const removeVolumeSubscriptions = lifecycle.subscribeToVolumeEvents(
       payload.volumeId,
       (eventType) => {
         if (eventType === Events.IMAGE_VOLUME_MODIFIED) {
-          // Volume writers (streaming loader, labelmap updates) mark the
-          // modified slices on the shared streaming texture themselves, so
-          // the next render only re-uploads those slices; the mapper just
-          // needs to know its buffers are stale.
-          mapper.modified();
+          // Volume writers mark the modified slices on the shared streaming
+          // texture themselves; the mapper only needs to know that its
+          // buffers are stale.
+          rendering.mapper.modified();
         }
+        lifecycle.onVolumeData(rendering, eventType, this.hooks);
 
         const isProjectingOverlay =
           rendering.isSegmentationOverlay &&
@@ -152,7 +191,7 @@ export class VtkVolumeSliceRenderPath
       maxImageIdIndex: rendering.maxImageIdIndex,
     });
 
-    return {
+    const attachment: RenderPathAttachment<PlanarDataPresentation> = {
       rendering,
       updateDataPresentation: (props) => {
         this.updateDataPresentation(ctx, rendering, props);
@@ -178,7 +217,7 @@ export class VtkVolumeSliceRenderPath
         return this.getImageData(rendering);
       },
       render: () => {
-        this.render(ctx);
+        this.render(ctx, rendering);
       },
       resize: () => {
         this.resize(ctx, rendering, data.id);
@@ -187,6 +226,10 @@ export class VtkVolumeSliceRenderPath
         this.removeData(ctx, rendering);
       },
     };
+
+    return isSegmentationOverlay
+      ? attachment
+      : withAcquiredFrames(ctx, data as LoadedData<PlanarPayload>, attachment);
   }
 
   private updateDataPresentation(
@@ -329,8 +372,34 @@ export class VtkVolumeSliceRenderPath
     return buildPlanarVolumeImageData(rendering.imageVolume);
   }
 
-  private render(ctx: PlanarVtkVolumeAdapterContext): void {
+  private render(
+    ctx: PlanarVtkVolumeAdapterContext,
+    rendering?: PlanarVolumeSliceRendering
+  ): void {
+    if (rendering) {
+      this.applyStrategy(rendering);
+      this.setFillHint(ctx, rendering);
+    }
+
     ctx.display.requestRender();
+  }
+
+  /**
+   * Starts the next budgeted fill of the bound texture at the slice of the
+   * focal point, so the slice that this view shows fills first.
+   */
+  private setFillHint(
+    ctx: PlanarVtkVolumeAdapterContext,
+    rendering: PlanarVolumeSliceRendering
+  ): void {
+    const focalPoint = getPlanarRenderPathActiveSourceICamera(ctx)?.focalPoint;
+    const grid = rendering.boundGrid?.grid;
+
+    if (focalPoint && grid) {
+      rendering.boundTexture?.setFillHint?.(
+        gridWorldToIndex(grid, focalPoint)[2]
+      );
+    }
   }
 
   private resize(
@@ -348,10 +417,24 @@ export class VtkVolumeSliceRenderPath
     ctx: PlanarVtkVolumeAdapterContext,
     rendering: PlanarVolumeSliceRendering
   ): void {
-    const { actor, removeStreamingSubscriptions } = rendering;
+    lifecycle.releaseStrategies(rendering);
+    rendering.removeStreamingSubscriptions?.();
+    ctx.vtk.renderer.removeActor(rendering.actor);
+  }
 
-    removeStreamingSubscriptions?.();
-    ctx.vtk.renderer.removeActor(actor);
+  private provisionStrategies(
+    rendering: PlanarVolumeSliceRendering,
+    reason: VolumeStrategyProvisionReason
+  ): void {
+    lifecycle.provisionStrategies(
+      rendering,
+      this.hooks.provideStrategies,
+      reason
+    );
+  }
+
+  private applyStrategy(rendering: PlanarVolumeSliceRendering): void {
+    lifecycle.applyStrategy(rendering, this.hooks);
   }
 }
 
@@ -393,46 +476,6 @@ export class VtkVolumeSlicePath
   }
 }
 
-function subscribeToVolumeEvents(
-  volumeId: string,
-  onProgress: (
-    eventType:
-      | Events.IMAGE_VOLUME_MODIFIED
-      | Events.IMAGE_VOLUME_LOADING_COMPLETED
-  ) => void
-): () => void {
-  const handleProgress = (evt: Event) => {
-    const detail = (evt as CustomEvent<{ volumeId?: string }>).detail;
-
-    if (detail?.volumeId !== volumeId) {
-      return;
-    }
-
-    onProgress(
-      evt.type as
-        | Events.IMAGE_VOLUME_MODIFIED
-        | Events.IMAGE_VOLUME_LOADING_COMPLETED
-    );
-  };
-
-  eventTarget.addEventListener(Events.IMAGE_VOLUME_MODIFIED, handleProgress);
-  eventTarget.addEventListener(
-    Events.IMAGE_VOLUME_LOADING_COMPLETED,
-    handleProgress
-  );
-
-  return () => {
-    eventTarget.removeEventListener(
-      Events.IMAGE_VOLUME_MODIFIED,
-      handleProgress
-    );
-    eventTarget.removeEventListener(
-      Events.IMAGE_VOLUME_LOADING_COMPLETED,
-      handleProgress
-    );
-  };
-}
-
 function ensureSlicePlane(mapper: vtkImageResliceMapper): vtkPlane {
   const existingSlicePlane = mapper.getSlicePlane?.();
 
@@ -465,14 +508,17 @@ function updateVolumeSlicePlane(
   slicePlane.setNormal(...activeSourceICamera.viewPlaneNormal);
 }
 
-function getImageSliceOverlayOrder(
+/** @internal The depth order of a slice actor; acquired frame actors do not count. */
+export function getImageSliceOverlayOrder(
   renderer: PlanarVtkVolumeAdapterContext['vtk']['renderer'],
   actor: PlanarVolumeSliceRendering['actor']
 ): number {
   const imageSliceActors = renderer
     .getActors()
     .filter(
-      (currentActor) => currentActor?.getClassName?.() === 'vtkImageSlice'
+      (currentActor) =>
+        currentActor?.getClassName?.() === 'vtkImageSlice' &&
+        !acquiredFrameActors.has(currentActor)
     );
 
   return Math.max(0, imageSliceActors.indexOf(actor));

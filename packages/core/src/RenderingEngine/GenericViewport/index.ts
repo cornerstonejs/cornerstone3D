@@ -74,8 +74,17 @@ export {
   createECGRenderPathResolver,
   DefaultECGDataProvider,
   ecgProjection,
+  registerECGTraceLayout,
+  getECGTraceLayout,
+  getECGTraceLayoutNames,
 } from './ECG';
 export type {
+  ECGTraceLayout,
+  ECGTraceLayoutContext,
+  ECGTraceLayoutDefinition,
+  ECGTraceLayoutFactory,
+  ECGTraceLayoutName,
+  ECGTraceRegion,
   ECGViewState,
   ECGDataPresentation,
   ECGChannelData,

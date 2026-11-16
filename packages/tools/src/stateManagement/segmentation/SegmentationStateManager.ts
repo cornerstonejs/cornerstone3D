@@ -15,7 +15,10 @@ import type {
   SegmentationRepresentation,
   SegmentationState,
 } from '../../types/SegmentationStateTypes';
-import type { LabelmapSegmentationDataStack } from '../../types/LabelmapTypes';
+import type {
+  LabelmapSegmentationDataStack,
+  LabelmapSegmentationDataVolume,
+} from '../../types/LabelmapTypes';
 import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
 import getViewportLabelmapRenderMode from './helpers/getViewportLabelmapRenderMode';
@@ -29,6 +32,7 @@ import { segmentationStyle } from './SegmentationStyle';
 import { triggerSegmentationAdded } from './events/triggerSegmentationAdded';
 import {
   ensureLabelmapState,
+  getOrCreateDynamicLabelmapVolume,
   hasMultipleLabelmapImagesPerReferencedImageId,
   LabelmapImageReferenceResolver,
   syncLegacyLabelmapData,
@@ -1047,6 +1051,17 @@ async function internalConvertStackToVolumeLabelmap({
 
   const data = sourceSegmentation.representationData
     .Labelmap as LabelmapSegmentationDataStack;
+
+  // A 4D labelmap already is one volume of the current time point. A volume of
+  // the images of every time point has the wrong depth. Its layer tracks that
+  // volume as geometryVolumeId and stays stack-backed, so the primary layer
+  // must not take it as volumeId below.
+  const dynamicVolume = getOrCreateDynamicLabelmapVolume(sourceSegmentation);
+  if (dynamicVolume) {
+    (data as unknown as LabelmapSegmentationDataVolume).volumeId =
+      dynamicVolume.volumeId;
+    return;
+  }
 
   const { volumeId } = await internalComputeVolumeLabelmapFromStack({
     imageIds: data.imageIds,

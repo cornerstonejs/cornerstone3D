@@ -1,6 +1,7 @@
 import { log, utilities, normalizers, derivations } from 'dcmjs';
 import ndarray from 'ndarray';
 import getDatasetsFromImages from '../helpers/getDatasetsFromImages';
+import { getWriterHeader } from '../../utilities/getWriterHeader';
 import {
   alignPixelDataWithSourceData,
   getValidOrientations,
@@ -193,10 +194,17 @@ function _getSegCount(seg, segments) {
  * @param  {Boolean} isMultiframe Whether the images are multiframe.
  * @returns {Object}              The Seg derived dataSet.
  */
-function _createSegFromImages(images, isMultiframe, options) {
+function _createSegFromImages(
+  images,
+  isMultiframe,
+  options = { includeSliceSpacing: true }
+) {
   const multiframe = getDatasetsFromImages(images, isMultiframe);
 
-  return new SegmentationDerivation([multiframe], options);
+  return new SegmentationDerivation([multiframe], {
+    ...options,
+    ...getWriterHeader(options),
+  });
 }
 
 /**

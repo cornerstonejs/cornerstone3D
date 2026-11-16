@@ -1,8 +1,10 @@
 import update, { extend } from 'immutability-helper';
+import { spliceById } from '@cornerstonejs/metadata';
 
 /**
  * The update function of OHIF's customization service: `immutability-helper`'s
- * `update` plus OHIF's `$filter` ({@link applyFilterCommand}). A value with no
+ * `update` plus OHIF's `$filter` ({@link applyFilterCommand}) and
+ * `$spliceById` (`spliceById` of `@cornerstonejs/metadata`). A value with no
  * command is the new value, as in OHIF's `hasDollarKey`. Only the examples
  * import it; `immutability-helper` is a root devDependency pinned to `3.1.1`
  * (the version of `@ohif/core`), so no published package gains a dependency.
@@ -136,6 +138,9 @@ export function applyFilterCommand(original: unknown, query: unknown): unknown {
 // OHIF's CustomizationService does at module scope. Registering the same name
 // twice is harmless — it is the same implementation.
 extend('$filter', (query, original) => applyFilterCommand(original, query));
+extend('$spliceById', (spec, original) =>
+  spliceById(original as unknown[], spec)
+);
 
 /**
  * Applies a customization spec to a value, returning a new value (the input is

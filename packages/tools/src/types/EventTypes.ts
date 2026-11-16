@@ -240,6 +240,18 @@ type SegmentationDataModifiedEventDetail = {
    * indices may also be modified as a side affect of the primary change.
    */
   segmentIndex?: number;
+  /**
+   * True when the event only announces a new view of the segmentation, such as
+   * a labelmap representation added to a viewport: no voxel changed. A volume
+   * labelmap then skips its re-reduction and only renders.
+   */
+  voxelsUnchanged?: boolean;
+  /**
+   * For a segmentation of a 4D series: the time point (dimension group number,
+   * starting at 1) of the modified data, or of the image volume that the
+   * labelmap now follows. Undefined for a segmentation of a 3D series.
+   */
+  dimensionGroupNumber?: number;
 };
 
 /**

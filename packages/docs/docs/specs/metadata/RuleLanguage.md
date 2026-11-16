@@ -52,7 +52,7 @@ Change rule:
 
 Out of scope:
 
-- The engine of the display set split (claims, split keys, priorities). The
+- The engine of the display set split (claims, split keys, the rule order). The
   engine stays as it is. This specification changes only the language that
   compiles onto the hooks of the engine.
 - The scoring and the layout of a hanging protocol. A hanging protocol uses the
@@ -1003,7 +1003,6 @@ packages/metadata/src/
 
   | Field                          | Holds                                                       | `SplitRule` hook   |
   | ------------------------------ | ----------------------------------------------------------- | ------------------ |
-  | `priority`                     | a finite number, or `null` to exclude the rule              | (rule set entry)   |
   | `id`, `groupId`, `description` | data                                                        | the same names     |
   | `viewportTypes`                | data that CS3D copies to the display set, and does not read | `viewportTypes`    |
   | `handler`                      | a string; any name compiles                                 | `handler`          |
@@ -1014,6 +1013,13 @@ packages/metadata/src/
   | `attributes`                   | a map of attribute values (`RL-CONS-2`)                     | `customAttributes` |
 
   Every compiled rule also has the `series` hook of `RL-CTXI-8`.
+
+  The place of a rule is not a field of the rule. The host keeps the rules in
+  a registry keyed by rule id, and the rule ids in an order list.
+  `materializeSplitRules(registry, order)` gives the rules in that order, and
+  `createDisplaySetSplitRules` compiles that array. Any other field is a
+  compile error (`unknown field`). `display-sets.md` gives the migration from
+  the earlier keyed rule sets.
 
 - **RL-CONS-2** An attribute value is one of:
   - a name. A tag keyword reads the first instance of the sorted display set.
@@ -1074,7 +1080,6 @@ packages/metadata/src/
 
 ```jsonc
 "usTimeClusters": {
-  "priority": -1,
   "context": { "timeClustersMaxGap": 20 },
   "matches": {
     "isImage": true,
@@ -1102,7 +1107,6 @@ packages/metadata/src/
 
 ```jsonc
 "usLongSweeps": {
-  "priority": -1,
   "context": { "timeClusters": "longTimeClusters" },
   "matches": { "isImage": true, "Modality": "US", "sweepCount": { "greaterThan": 1 } },
   "groupBy": ["SeriesInstanceUID", "sweepStart"],
@@ -1117,19 +1121,21 @@ packages/metadata/src/
 
 ### Example 3: `regularVolume`
 
-The module adds one series value to the global context. Both of its rules read
-the value. `irregularImages` is off (`priority: null`). A site turns it on with
-`"irregularImages": { "priority": { "$set": -1 } }`, and the rule then puts
-the other images of the series into one stack:
+Both rules of the module read one series value, so each rule has the value in
+its own `context`. The engine computes `planeGeometry`, which both values read,
+one time for each series (`RL-CTXI-7`). `irregularImages` is in the
+registry and not in the order, so it is off. A site turns it on with
+`"displaySetRuleOrder": { "$spliceById": [["volume3d", 0, "irregularImages"]] }`,
+and the rule then puts the other images of the series into one stack:
 
 ```jsonc
-"context": {
-  "mixesIrregular": "planeGeometry.regularCount >= 3 && planeGeometry.irregularCount > 0 && planeGeometry.complete"
-},
-"splitRules": {
+"displaySetRuleOrder": { "$spliceById": [["localizer", 0, "regularVolume"]] },
+"displaySetRules": {
   "$merge": {
     "regularVolume": {
-      "priority": -2,
+      "context": {
+        "mixesIrregular": "planeGeometry.regularCount >= 3 && planeGeometry.irregularCount > 0 && planeGeometry.complete"
+      },
       "matches": {
         "isImage": true,
         "Modality": ["CT", "MR", "PT", "NM"],
@@ -1141,7 +1147,9 @@ the other images of the series into one stack:
       "attributes": { "SeriesDescription": { "template": "{SeriesDescription} ({displaySet.sliceSpacing} mm)" } }
     },
     "irregularImages": {
-      "priority": null,
+      "context": {
+        "mixesIrregular": "planeGeometry.regularCount >= 3 && planeGeometry.irregularCount > 0 && planeGeometry.complete"
+      },
       "matches": {
         "isImage": true,
         "Modality": ["CT", "MR", "PT", "NM"],
@@ -1169,7 +1177,6 @@ the other images of the series into one stack:
 
 ```jsonc
 "volume3d": {
-  "priority": 7,
   "matches": {
     "isImage": true,
     "Modality": ["CT", "MR", "PT", "NM"],
@@ -1181,10 +1188,11 @@ the other images of the series into one stack:
 }
 ```
 
-- The rule replaces the default rule `volume3d` under its own id, so the rule
-  keeps the default priority 7 and the default `matches`. Only `sortBy` is new.
-  The OHIF default rules give `volume3d` the priority 4, so the OHIF module
-  `split/volumeProjectionOrder.jsonc` uses 4.
+- The rule replaces the default rule `volume3d` under its own id in the
+  registry, so the rule keeps its place in the order and the default
+  `matches`. Only `sortBy` is new. The optional file `volumePositionOrder`
+  makes the same change as a patch:
+  `"volume3d": { "sortBy": { "$set": ["displaySet.sliceDistance", "InstanceNumber"] } }`.
 - `displaySet.sliceDistance` runs `planeGeometry` over the display set (`RL-CTX-9`). This
   rule groups by `SeriesInstanceUID`, so the display set holds the full series.
   The origin is the lowest regular slice, so the order does not change with the
@@ -1195,15 +1203,25 @@ the other images of the series into one stack:
 
 ### Example 5: small DX / CR series, with a configured limit
 
+The limit is in the global context, so that one value serves all rules. The
+global context is not part of the patch over `{ displaySetRules,
+displaySetRuleOrder }`. A host gives it to `createDisplaySetSplitRules` as
+`options.context`, and OHIF reads it from the `metadataContext` customization:
+
 ```jsonc
-"context": {
+// The global context
+{
   "dxCrMaxImages": 9,
-  "isSmallSeries": "seriesInstanceCount <= dxCrMaxImages"
-},
-"splitRules": {
+  "isSmallSeries": "seriesInstanceCount <= dxCrMaxImages",
+}
+```
+
+```jsonc
+// The patch over { displaySetRules, displaySetRuleOrder }
+"displaySetRuleOrder": { "$spliceById": [["singleImageModality", 0, "dxCrSingleImages"]] },
+"displaySetRules": {
   "$merge": {
     "dxCrSingleImages": {
-      "priority": -1,
       "matches": { "Modality": ["DX", "CR"], "isImage": true, "isSmallSeries": true },
       "groupBy": ["SeriesInstanceUID", "SOPInstanceUID"]
     }
@@ -1265,7 +1283,7 @@ the other images of the series into one stack:
 ### Example 8: the code form
 
 ```ts
-createDisplaySetSplitRules(rules, {
+createDisplaySetSplitRules(materializeSplitRules(registry, order), {
   context: {
     // A code entry with the instance scope.
     mammoView: (instance) => readMammoView(instance),
@@ -1292,8 +1310,8 @@ createDisplaySetSplitRules(rules, {
 }
 ```
 
-A later `$merge` of `{ "priority": 2 }` from a JSON module changes only the
-priority, and keeps the function of `groupBy`.
+A later `$merge` of `{ "description": "..." }` from a JSON module changes only
+the description, and keeps the function of `groupBy`.
 
 ## Open questions
 

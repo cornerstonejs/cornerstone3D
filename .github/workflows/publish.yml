@@ -97,7 +97,7 @@ jobs:
         if: steps.tip.outputs.proceed == 'true'
         uses: actions/setup-node@v6.4.0
         with:
-          node-version: '24.15.0'
+          node-version: '24.22.2'
           cache: 'pnpm'
 
       # This npm exchanges the OIDC token for npm credentials, so the version is

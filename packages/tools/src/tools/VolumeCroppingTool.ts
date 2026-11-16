@@ -17,6 +17,7 @@ import {
   Enums,
   triggerEvent,
   eventTarget,
+  getLossyDownsampling,
 } from '@cornerstonejs/core';
 
 import { getToolGroup } from '../store/ToolGroupManager';
@@ -468,7 +469,10 @@ class VolumeCroppingTool extends BaseTool {
     const originalSampleDistance = mapper.getSampleDistance();
 
     if (!this._hasResolutionChanged) {
-      const { rotateSampleDistanceFactor } = this.configuration;
+      // A larger sample distance is an interactive downsampling.
+      const rotateSampleDistanceFactor = getLossyDownsampling().interactive
+        ? this.configuration.rotateSampleDistanceFactor
+        : 1;
       mapper.setSampleDistance(
         originalSampleDistance * rotateSampleDistanceFactor
       );

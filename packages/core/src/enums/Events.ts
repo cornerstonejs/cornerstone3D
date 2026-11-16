@@ -74,6 +74,16 @@ enum Events {
    */
   IMAGE_RENDERED = 'CORNERSTONE_IMAGE_RENDERED',
   /**
+   * Triggers on the HTML element when the derived viewport fidelity state
+   * changes (loading / lod / lossy / done / hidden). Fires only on a state
+   * change, not on every render (FIDELITY-EVENT-2..4).
+   *
+   * Make use of {@link EventTypes.ViewportFidelityChangedEvent | ViewportFidelityChanged Event Type }
+   * for typing your event listeners, and see what event detail is included in
+   * {@link EventTypes.ViewportFidelityChangedEventDetail | ViewportFidelityChanged Event Detail }.
+   */
+  VIEWPORT_FIDELITY_CHANGED = 'CORNERSTONE_VIEWPORT_FIDELITY_CHANGED',
+  /**
    * Triggers on the eventTarget when the image volume data is modified. This happens
    * in the streamingImageLoader when each frame is loaded and inserted into a volume.
    *
@@ -91,6 +101,11 @@ enum Events {
    * in {@link EventTypes.ImageVolumeLoadingCompletedEventDetail | ImageVolumeLoadingCompleted Event Detail }
    */
   IMAGE_VOLUME_LOADING_COMPLETED = 'CORNERSTONE_IMAGE_VOLUME_LOADING_COMPLETED',
+  /**
+   * Triggers on the eventTarget when a streaming volume cancels its load,
+   * while the volume is still in the cache. The detail holds `volumeId`.
+   */
+  IMAGE_VOLUME_LOADING_CANCELLED = 'CORNERSTONE_IMAGE_VOLUME_LOADING_CANCELLED',
   /**
    * Triggers on the eventTarget when the image has successfully loaded by imageLoaders.
    * This event may be fired multiple times for different statuses as the image data gets loaded.
@@ -161,6 +176,13 @@ enum Events {
    * and see what event detail is included in {@link EventTypes.VolumeCacheVolumeRemovedEventDetail | VolumeCacheRemoved Event Detail }
    */
   VOLUME_CACHE_VOLUME_REMOVED = 'CORNERSTONE_VOLUME_CACHE_VOLUME_REMOVED',
+  /**
+   * Internal. Triggers on the eventTarget when the settings that size a volume
+   * texture change: the GPU settings preset, the lossy downsampling or the
+   * texture budget. Each viewport that draws a volume chooses its texture
+   * again. The event has no detail.
+   */
+  VOLUME_TEXTURE_LIMITS_CHANGED = 'CORNERSTONE_VOLUME_TEXTURE_LIMITS_CHANGED',
   /**
    * Triggers on the element when a new image is set on the stackViewport
    *

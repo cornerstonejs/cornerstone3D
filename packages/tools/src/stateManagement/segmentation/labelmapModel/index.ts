@@ -13,6 +13,7 @@ export {
   getLabelmapForVolumeId,
   getLabelmapIds,
   getLabelmaps,
+  getOrCreateDynamicLabelmapVolume,
   getOrCreateLabelmapVolume,
   getScalarArrayLengthFromLabelmap,
   registerLabelmap,
