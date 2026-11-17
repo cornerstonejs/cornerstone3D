@@ -1,6 +1,5 @@
 import type { Segmentation } from '../../types/SegmentationStateTypes';
 import { defaultSegmentationStateManager } from './SegmentationStateManager';
-import { triggerSegmentationModified } from './triggerSegmentationEvents';
 
 /**
  * Updates multiple segmentations with new data.
@@ -29,11 +28,8 @@ export function updateSegmentations(
   segmentationUpdateArray.forEach((segmentationUpdate) => {
     segmentationStateManager.updateSegmentation(
       segmentationUpdate.segmentationId,
-      segmentationUpdate.payload
+      segmentationUpdate.payload,
+      suppressEvents
     );
-
-    if (!suppressEvents) {
-      triggerSegmentationModified(segmentationUpdate.segmentationId);
-    }
   });
 }
