@@ -17,7 +17,6 @@ import type {
   Point2,
   Point3,
   VOIRange,
-  ViewportPreset,
 } from '../../../types';
 import type { ViewportInput } from '../../../types/IViewport';
 import type ViewportInputOptions from '../../../types/ViewportInputOptions';
@@ -207,14 +206,6 @@ export interface PlanarPresentationProps extends BasePresentationProps {
   voiRange?: VOIRange;
   voiLUTFunction?: VOILUTFunctionType;
   invert?: boolean;
-  /**
-   * A preset of `VIEWPORT_PRESETS`, by name or as an object, for the slice
-   * of a volume, as the legacy `setProperties({ preset })`. Its colours and
-   * opacity draw the slice, over the range of the preset. A `voiRange` set
-   * after it rescales the colours to the window, as on the next 3D viewport.
-   * It goes before `colormap`.
-   */
-  preset?: string | ViewportPreset;
 }
 
 export type PlanarDisplayArea = Omit<DisplayArea, 'scale'> & {

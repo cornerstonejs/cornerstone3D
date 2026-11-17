@@ -2,12 +2,11 @@ import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 import { vec2, vec3 } from 'gl-matrix';
-import { Events, InterpolationType, ViewportType } from '../../../enums';
+import { Events, ViewportType } from '../../../enums';
 import type {
   ActorEntry,
   ICamera,
   IImageData,
-  ImageActor,
   Point2,
   Point3,
   ResetCameraOptions,
@@ -15,21 +14,14 @@ import type {
   ViewReferenceSpecifier,
   ViewportContentMode,
 } from '../../../types';
-import type DisplayArea from '../../../types/displayArea';
-import type { SetAspectRatioOptions } from '../../../types/ICamera';
-import type {
-  DisplayAreaModifiedEventDetail,
-  VoiModifiedEventDetail,
-} from '../../../types/EventTypes';
+import type { VoiModifiedEventDetail } from '../../../types/EventTypes';
 import { actorIsA, isImageActor } from '../../../utilities/actorCheck';
-import { getNormalizedAspectRatio } from '../../../utilities/getNormalizedAspectRatio';
 import isEqual from '../../../utilities/isEqual';
 import { coreLog } from '../../../utilities/logger';
 import transformWorldToIndex from '../../../utilities/transformWorldToIndex';
 import triggerEvent from '../../../utilities/triggerEvent';
 import renderingEngineCache from '../../renderingEngineCache';
 import { createSharpeningSmoothingRenderPasses } from '../../renderPasses';
-import extendedVtkCamera from '../../vtkClasses/extendedVtkCamera';
 import type {
   DataAddOptions,
   LoadedData,
@@ -58,10 +50,6 @@ import {
   getVolume3DProjectionSnapshot,
   type Volume3DProjectionSnapshot,
 } from './volume3DProjectionAdapter';
-import {
-  applyVolume3DDisplayArea,
-  toVolume3DDisplayArea,
-} from './volume3DDisplayArea';
 import {
   getOrientationVectors,
   getResetFocalPoint,
@@ -105,18 +93,6 @@ class VolumeViewport3D extends GenericViewport<
   private initialCamera?: ICamera;
   /** True while `setDisplaySets` mounts, which fires one event for all. */
   private mountsDisplaySets = false;
-  /**
-   * The camera of the last fit, as the fit to canvas camera of the legacy
-   * viewport: a display area is relative to it.
-   */
-  private fitCamera?: ICamera;
-  /**
-   * The display area that the camera shows, from `setDisplayArea`, the view
-   * state or the options, until the next fit.
-   */
-  private displayArea?: DisplayArea;
-  /** True while a display area moves the camera: its steps fire no event. */
-  private holdsCameraEvents = false;
   /** The vtk.js actors that the application added with `addActor`, by UID. */
   private readonly addedActors = new Map<string, ActorEntry>();
   /**
@@ -168,12 +144,9 @@ class VolumeViewport3D extends GenericViewport<
       );
     }
 
-    const camera = extendedVtkCamera.newInstance();
-
-    renderer.setActiveCamera(camera);
-    camera.setParallelProjection(
-      this.defaultOptions.parallelProjection ?? true
-    );
+    renderer
+      .getActiveCamera()
+      .setParallelProjection(this.defaultOptions.parallelProjection ?? true);
 
     this.renderContext = {
       viewportId: this.id,
@@ -228,10 +201,7 @@ class VolumeViewport3D extends GenericViewport<
     options: GenericViewportOptions,
     previous: GenericViewportOptions
   ): void {
-    super.applyOptions(
-      { ...options, displayArea: undefined, aspectRatio: undefined },
-      previous
-    );
+    super.applyOptions(options, previous);
     this.suppressEvents = Boolean(options.suppressEvents);
 
     if (
@@ -248,8 +218,6 @@ class VolumeViewport3D extends GenericViewport<
         parallelProjection: options.parallelProjection ?? true,
       });
     }
-
-    this.applyOptionsCamera(options);
 
     if (
       JSON.stringify(options.orientation) ===
@@ -363,7 +331,6 @@ class VolumeViewport3D extends GenericViewport<
 
     if (this.bindings.size === 1) {
       this.initialCamera = this.getViewState();
-      this.applyOptionsAtMount();
     }
 
     this.mountedPresentations.set(
@@ -384,11 +351,9 @@ class VolumeViewport3D extends GenericViewport<
   /**
    * Sets the presentation of a display set back to the one after its mount:
    * the default VOI range, and the preset, the colormap and the opacity that
-   * it was mounted with. The keys of the default presentation that
-   * `setDefaultDisplaySetPresentation` set go over it, as the legacy
-   * `resetToDefaultProperties` applies the default properties. The transfer
-   * functions are built anew. The camera stays: `resetViewState` resets it.
-   * Fires VOI_MODIFIED, as the legacy `resetProperties`.
+   * it was mounted with. The transfer functions are built anew. The camera
+   * stays: `resetViewState` resets it. Fires VOI_MODIFIED, as the legacy
+   * `resetProperties`.
    *
    * @param displaySetId - The display set; the current one when not given.
    */
@@ -415,7 +380,6 @@ class VolumeViewport3D extends GenericViewport<
         visible: true,
         opacity: 1,
       }),
-      ...this.getDefaultDisplaySetPresentation(targetId),
     });
 
     this.triggerVOIModified(targetId);
@@ -489,129 +453,18 @@ class VolumeViewport3D extends GenericViewport<
     return this.getRuntimeCamera();
   }
 
-  /**
-   * Changes the camera by a patch of the view state. A `displayArea` in the
-   * patch that differs from the one shown moves the camera to it after the
-   * other keys, as `setDisplayArea` does, without DISPLAY_AREA_MODIFIED; an
-   * undefined one forgets the display area and keeps the camera.
-   *
-   * @param viewStatePatch - The keys of the view state to change.
-   */
   setViewState(viewStatePatch: Partial<Volume3DCamera>): void {
     if (this.isDestroyed) {
       return;
     }
 
-    const { displayArea, ...cameraPatch } = viewStatePatch;
     const previousCamera = this.getCameraForEvent();
 
-    applyVolume3DCamera(this.renderContext, cameraPatch, {
+    applyVolume3DCamera(this.renderContext, viewStatePatch, {
       resetClippingRange: true,
     });
-
-    if (
-      'displayArea' in viewStatePatch &&
-      JSON.stringify(displayArea) !== JSON.stringify(this.displayArea)
-    ) {
-      if (displayArea) {
-        this.showDisplayArea(displayArea);
-      } else {
-        this.displayArea = undefined;
-      }
-    }
-
     this.viewState = this.getRuntimeCamera();
     this.modified(previousCamera);
-  }
-
-  /**
-   * The display area that the camera shows, else the one of the options, as
-   * the legacy `getDisplayArea` gives the one of the options.
-   */
-  getDisplayArea(): DisplayArea | undefined {
-    return this.displayArea ?? toVolume3DDisplayArea(this.options.displayArea);
-  }
-
-  /**
-   * Moves the camera to a display area, as the legacy `setDisplayArea`: from
-   * the camera of the last fit, the image area of the volume fits the canvas
-   * and the image point lands on the canvas point. A `SCALE` area shows one
-   * image pixel on `scale` canvas pixels with nearest interpolation. With
-   * `storeAsInitialCamera` the area goes into the options, which a reset
-   * applies again, and the camera becomes the initial camera. Fires
-   * DISPLAY_AREA_MODIFIED and CAMERA_MODIFIED, unless `suppressEvents` is
-   * given or set on the viewport.
-   *
-   * @param displayArea - The display area.
-   * @param suppressEvents - Fires no event.
-   */
-  setDisplayArea(displayArea: DisplayArea, suppressEvents = false): void {
-    if (!displayArea || this.isDestroyed) {
-      return;
-    }
-
-    const previousCamera = this.getCameraForEvent();
-
-    this.showDisplayArea(displayArea);
-    this.viewState = this.getRuntimeCamera();
-    this.render();
-
-    if (suppressEvents || this.suppressEvents) {
-      return;
-    }
-
-    const eventDetail: DisplayAreaModifiedEventDetail = {
-      viewportId: this.id,
-      displayArea,
-      storeAsInitialCamera: displayArea.storeAsInitialCamera,
-    };
-
-    triggerEvent(this.element, Events.DISPLAY_AREA_MODIFIED, eventDetail);
-    this.triggerCameraModifiedEvent(previousCamera);
-  }
-
-  /**
-   * The stretch of the projection as `[widthRatio, heightRatio]`, as the
-   * legacy `getAspectRatio`: the one of the camera, `[1, 1]` without one.
-   */
-  override getAspectRatio(): Point2 {
-    return (
-      this.getVtkActiveCamera().getAspectRatio?.() ??
-      this.options.aspectRatio ?? [1, 1]
-    );
-  }
-
-  /**
-   * Stretches the projection by an aspect ratio `[widthRatio, heightRatio]`,
-   * as the legacy `setAspectRatio`. The parallel scale stays unless `fit` is
-   * set, which fits the stretched content. `storeAsInitialCamera` keeps the
-   * aspect ratio in the options, which a reset applies again, and makes the
-   * camera the initial camera.
-   *
-   * @param value - The aspect ratio.
-   * @param options - `fit` and `storeAsInitialCamera`.
-   */
-  setAspectRatio(value: Point2, options: SetAspectRatioOptions = {}): void {
-    const { fit = false, storeAsInitialCamera = false } = options;
-    const viewStatePatch: Partial<Volume3DCamera> = { aspectRatio: value };
-
-    if (storeAsInitialCamera) {
-      this.options.aspectRatio = value;
-    }
-
-    if (fit) {
-      const parallelScale = this.getFitParallelScale(value);
-
-      if (parallelScale) {
-        viewStatePatch.parallelScale = parallelScale;
-      }
-    }
-
-    this.setViewState(viewStatePatch);
-
-    if (storeAsInitialCamera) {
-      this.initialCamera = this.getViewState();
-    }
   }
 
   protected getRuntimeCamera(): Volume3DCamera & ICamera {
@@ -627,8 +480,6 @@ class VolumeViewport3D extends GenericViewport<
       viewAngle: camera.getViewAngle(),
       viewPlaneNormal: camera.getViewPlaneNormal(),
       viewUp: camera.getViewUp(),
-      aspectRatio: camera.getAspectRatio?.(),
-      displayArea: this.displayArea,
     } as Volume3DCamera & ICamera;
   }
 
@@ -810,29 +661,6 @@ class VolumeViewport3D extends GenericViewport<
     return [...actors, ...this.addedActors.values()];
   }
 
-  /**
-   * The vtk.js actor of a display set or of a volume, as the planar viewport
-   * gives it: of the first actor without an id; else of the actor that
-   * references the volume id, else of the display set with that id. Null
-   * when that actor is not an image actor, as on the legacy viewport.
-   *
-   * @param id - A display set id or a volume id.
-   * @returns The actor, or null.
-   */
-  getImageActor(id?: string): ImageActor | null {
-    const actorEntries = this.getActors();
-    const actorEntry = id
-      ? (actorEntries.find((entry) => entry.referencedId === id) ??
-        this.getDisplaySetActorEntry(id))
-      : actorEntries[0];
-
-    if (!actorEntry || !isImageActor(actorEntry)) {
-      return null;
-    }
-
-    return actorEntry.actor as ImageActor;
-  }
-
   /** The actor entry with this UID, as on the legacy viewport. */
   getActor(actorUID: string): ActorEntry | undefined {
     return this.getActors().find((actorEntry) => actorEntry.uid === actorUID);
@@ -973,14 +801,6 @@ class VolumeViewport3D extends GenericViewport<
       this.initialCamera = this.getViewState();
     }
 
-    if (
-      options.resetZoom !== false &&
-      options.resetPan !== false &&
-      options.resetToCenter !== false
-    ) {
-      this.setOptionsDisplayArea();
-    }
-
     this.render();
     this.triggerCameraModifiedEvent(previousCamera);
     this.triggerCameraResetEvent();
@@ -1000,10 +820,7 @@ class VolumeViewport3D extends GenericViewport<
       return 1;
     }
 
-    return (
-      this.getComparableParallelScale(compareCamera) /
-      this.getViewState().parallelScale
-    );
+    return compareCamera.parallelScale / this.getViewState().parallelScale;
   }
 
   /**
@@ -1020,7 +837,7 @@ class VolumeViewport3D extends GenericViewport<
     storeAsInitialCamera = false,
     compareCamera: ICamera = this.initialCamera
   ): void {
-    const initialParallelScale = this.getComparableParallelScale(compareCamera);
+    const initialParallelScale = compareCamera?.parallelScale;
 
     if (!initialParallelScale) {
       return;
@@ -1148,22 +965,13 @@ class VolumeViewport3D extends GenericViewport<
    * focal point.
    */
   protected fitViewState(options: ResetCameraOptions = {}): void {
-    const {
-      resetPan = true,
-      resetZoom = true,
-      resetToCenter = true,
-      resetAspectRatio = true,
-    } = options;
+    const { resetPan = true, resetZoom = true, resetToCenter = true } = options;
     const camera = this.getViewState();
-    const aspectRatio = resetAspectRatio
-      ? (this.options.aspectRatio ?? ([1, 1] as Point2))
-      : this.getAspectRatio();
     const fit = getVolume3DFitCamera(
       this.renderContext,
       this.getFitContent(),
       camera.viewPlaneNormal,
-      camera.viewUp,
-      aspectRatio
+      camera.viewUp
     );
     const focalPoint = getResetFocalPoint(fit.focalPoint, camera, {
       resetPan,
@@ -1183,187 +991,11 @@ class VolumeViewport3D extends GenericViewport<
         position,
         viewAngle: 90,
         viewUp: fit.viewUpToUse,
-        aspectRatio,
       },
       { resetClippingRange: true }
     );
     setVolume3DPhysicalCamera(this.renderContext, fit.radius, focalPoint);
-    this.displayArea = undefined;
-    this.fitCamera = this.getViewState();
-    this.viewState = this.fitCamera;
-  }
-
-  /** Holds the camera events while a display area moves the camera. */
-  protected override areEventsSuppressed(): boolean {
-    return this.holdsCameraEvents || super.areEventsSuppressed();
-  }
-
-  /**
-   * Moves the camera to a display area without events, as the legacy
-   * `setDisplayArea` does before its events: from the fit camera, with the
-   * image data of the default actor. Keeps the area and, with
-   * `storeAsInitialCamera`, puts it into the options and makes the camera
-   * the initial camera.
-   */
-  private showDisplayArea(displayArea: DisplayArea): void {
-    const { imageData } = this.getFitContent();
-    const baseCamera = this.fitCamera ?? this.getViewState();
-
-    if (displayArea.storeAsInitialCamera) {
-      this.options.displayArea = displayArea;
-    }
-
-    this.holdsCameraEvents = true;
-
-    try {
-      applyVolume3DCamera(this.renderContext, baseCamera, {
-        resetClippingRange: true,
-      });
-
-      if (displayArea.type === 'SCALE') {
-        this.setNearestInterpolation();
-      }
-
-      if (imageData) {
-        applyVolume3DDisplayArea(this, imageData, displayArea, baseCamera);
-      }
-    } finally {
-      this.holdsCameraEvents = false;
-    }
-
-    this.displayArea = displayArea;
-
-    if (displayArea.storeAsInitialCamera) {
-      this.initialCamera = this.getViewState();
-    }
-  }
-
-  /** Nearest interpolation on the current volume, for a `SCALE` area. */
-  private setNearestInterpolation(): void {
-    const displaySetId = this.getCurrentBinding()?.data.id;
-
-    if (displaySetId && this.getVolumeRenderingOf(displaySetId)) {
-      this.setDisplaySetPresentation(displaySetId, {
-        interpolationType: InterpolationType.NEAREST,
-      });
-    }
-  }
-
-  /**
-   * Applies the display area of the options when a volume is shown, as the
-   * legacy `resetCamera` does after its fit.
-   */
-  private setOptionsDisplayArea(): void {
-    const displayArea = toVolume3DDisplayArea(this.options.displayArea);
-
-    if (displayArea && this.getFitContent().imageData) {
-      this.setDisplayArea(displayArea);
-    }
-  }
-
-  /**
-   * Applies the aspect ratio and the display area of the options after the
-   * first mount, as the legacy viewport applies them in the `resetCamera` of
-   * its first volume. The fit then stretches with the aspect ratio.
-   */
-  private applyOptionsAtMount(): void {
-    if (!this.options.aspectRatio && !this.options.displayArea) {
-      return;
-    }
-
-    this.fitViewState();
-    this.initialCamera = this.getViewState();
-    this.setOptionsDisplayArea();
-  }
-
-  /**
-   * Applies the display area and the aspect ratio of the options, as the
-   * legacy `setOptions`: the aspect ratio keeps the zoom. Nothing without a
-   * display set.
-   */
-  private applyOptionsCamera(options: GenericViewportOptions): void {
-    if (!this.getCurrentBinding()) {
-      return;
-    }
-
-    if (options.displayArea) {
-      this.setDisplayArea(toVolume3DDisplayArea(options.displayArea));
-    }
-
-    if (options.aspectRatio) {
-      const zoom = this.initialCamera?.parallelScale
-        ? this.getZoom()
-        : undefined;
-
-      this.setAspectRatio(options.aspectRatio);
-
-      if (zoom) {
-        this.setZoom(zoom);
-      }
-    }
-  }
-
-  /**
-   * The parallel scale that fits the content at an aspect ratio, as the
-   * legacy `getFitParallelScale`. Undefined without content.
-   */
-  private getFitParallelScale(aspectRatio: Point2): number | undefined {
-    const camera = this.getViewState();
-    const content = this.getFitContent();
-
-    if (!content.imageData && !(content.bounds[1] >= content.bounds[0])) {
-      return;
-    }
-
-    const { parallelScale } = getVolume3DFitCamera(
-      this.renderContext,
-      content,
-      camera.viewPlaneNormal,
-      camera.viewUp,
-      aspectRatio
-    );
-
-    return Number.isFinite(parallelScale) && parallelScale > 0
-      ? parallelScale
-      : undefined;
-  }
-
-  /**
-   * The parallel scale of a camera at the aspect ratio of the camera now, as
-   * the legacy `getComparableParallelScale`: the zoom of 1 fits the content
-   * at every aspect ratio.
-   */
-  private getComparableParallelScale(compareCamera: ICamera): number {
-    const { parallelScale } = compareCamera || {};
-
-    if (!parallelScale) {
-      return parallelScale;
-    }
-
-    const currentAspectRatio = this.getAspectRatio();
-    const compareAspectRatio = compareCamera.aspectRatio ?? currentAspectRatio;
-    const getStretchRatio = (value: Point2) => {
-      const [stretchX, stretchY] = getNormalizedAspectRatio(value);
-
-      return stretchX / stretchY;
-    };
-
-    if (
-      isEqual(
-        getStretchRatio(currentAspectRatio),
-        getStretchRatio(compareAspectRatio)
-      )
-    ) {
-      return parallelScale;
-    }
-
-    const currentFit = this.getFitParallelScale(currentAspectRatio);
-    const compareFit = this.getFitParallelScale(compareAspectRatio);
-    const ratioFactor = currentFit && compareFit ? currentFit / compareFit : 0;
-
-    return Number.isFinite(ratioFactor) && ratioFactor
-      ? parallelScale * ratioFactor
-      : parallelScale;
+    this.viewState = this.getViewState();
   }
 
   /**
@@ -1428,8 +1060,6 @@ class VolumeViewport3D extends GenericViewport<
   protected override onDestroy(): void {
     this.primaryDataId = undefined;
     this.initialCamera = undefined;
-    this.fitCamera = undefined;
-    this.displayArea = undefined;
     this.mountedPresentations.clear();
     this.removeAddedActors(Array.from(this.addedActors.keys()));
   }
@@ -1451,21 +1081,6 @@ class VolumeViewport3D extends GenericViewport<
         return dataId;
       }
     }
-  }
-
-  /** The first actor entry of a mounted display set. */
-  private getDisplaySetActorEntry(
-    displaySetId: string
-  ): ActorEntry | undefined {
-    const binding = this.getBinding(displaySetId);
-    const data = binding ? this.getVolume3DPayload(binding) : undefined;
-
-    return data
-      ? this.getActorEntriesForRendering(
-          this.getVolume3DRendering(binding),
-          data
-        )[0]
-      : undefined;
   }
 
   private removeAddedActors(actorUIDs: string[]): void {

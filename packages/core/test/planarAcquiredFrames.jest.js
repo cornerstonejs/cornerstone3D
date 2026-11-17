@@ -533,18 +533,6 @@ describe('PlanarViewport acquired frames in the volume path (user experience)', 
     );
   });
 
-  it('draws the volume slice, not the frame, while a preset is set', async () => {
-    await mount();
-    await releaseFrames();
-    expect(frameRendering().actor.getVisibility()).toBe(true);
-
-    viewport.setDisplaySetPresentation(dataId, { preset: 'CT-Bone' });
-    await flush();
-
-    expect(volumeActor().getVisibility()).toBe(true);
-    expect(frameRendering().actor.getVisibility()).toBe(false);
-  });
-
   it('moves the frame actor onto the focal plane between two frames', async () => {
     await mount();
     await releaseFrames();

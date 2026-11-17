@@ -42,7 +42,7 @@ change lands, and the marks are removed when 6.0 is released.
 | MONOCHROME1 images start inverted, images without a window start at their pixel range     | [Rendering changes](./2-rendering-changes.md)     | In the code                  |
 | Whole slide world coordinates follow the slide                                            | [Rendering changes](./2-rendering-changes.md)     | In the code                  |
 | 3D reset and `setViewReference`, video view references and frame events                   | [Rendering changes](./2-rendering-changes.md)     | In the code                  |
-| A presentation replaces the properties: defaults, presets, a list of opacities            | [Rendering changes](./2-rendering-changes.md)     | In the code                  |
+| A presentation replaces the properties. No default properties, no preset on a slice       | [Rendering changes](./2-rendering-changes.md)     | In the code                  |
 | `ViewportType.PERSPECTIVE` becomes a 3D viewport with `parallelProjection: false`         | [Rendering changes](./2-rendering-changes.md)     | Decided, not in the code yet |
 
 <DocCardList items={useCurrentSidebarCategory().items.filter(item => item.docId !== 'migration-guides/6x/index')}/>

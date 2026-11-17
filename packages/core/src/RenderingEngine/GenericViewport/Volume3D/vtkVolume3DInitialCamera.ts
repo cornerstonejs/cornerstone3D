@@ -4,8 +4,7 @@ import { vec3 } from 'gl-matrix';
 import { MPR_CAMERA_VALUES } from '../../../constants';
 import { OrientationAxis } from '../../../enums';
 import { getConfiguration } from '../../../init';
-import type { ICamera, IImageVolume, Point2, Point3 } from '../../../types';
-import { getNormalizedAspectRatio } from '../../../utilities/getNormalizedAspectRatio';
+import type { ICamera, IImageVolume, Point3 } from '../../../types';
 import { getCubeSizeInView } from '../../../utilities/getPlaneCubeIntersectionDimensions';
 import hasNaNValues from '../../../utilities/hasNaNValues';
 import { getVolumeCenterIJK } from '../../helpers/getVolumeCenterIJK';
@@ -61,8 +60,7 @@ export function getInitialVolume3DCamera(
  * right fills the canvas, and the camera stands ten bounding radii away along
  * the view plane normal. With image data the extent is that of the image cube
  * and the focal point is its centre voxel. Without image data the extent and
- * the centre are those of the bounds. With an aspect ratio the stretched
- * extent fits, as the legacy `getFitParallelScale` fits it.
+ * the centre are those of the bounds.
  *
  * @internal
  */
@@ -70,8 +68,7 @@ export function getVolume3DFitCamera(
   ctx: Pick<Volume3DVtkVolumeAdapterContext, 'viewport' | 'vtk'>,
   content: { imageData?: vtkImageData; bounds: number[] },
   viewPlaneNormal: Point3,
-  viewUp: Point3,
-  aspectRatio: Point2 = [1, 1]
+  viewUp: Point3
 ): {
   focalPoint: Point3;
   parallelScale: number;
@@ -104,18 +101,16 @@ export function getVolume3DFitCamera(
     ctx.vtk.canvas.width || ctx.viewport.element.clientWidth || 1;
   const canvasHeight =
     ctx.vtk.canvas.height || ctx.viewport.element.clientHeight || 1;
-  const [stretchX, stretchY] = getNormalizedAspectRatio(aspectRatio);
-  const stretchRatio = stretchX / stretchY;
-  const boundsAspectRatio = (widthWorld * stretchRatio) / heightWorld;
+  const boundsAspectRatio = widthWorld / heightWorld;
   const canvasAspectRatio = canvasWidth / canvasHeight;
   const scaleFactor = boundsAspectRatio / canvasAspectRatio;
-  const insetImageMultiplier = getVolume3DInsetImageMultiplier();
-  const fitParallelScale =
+  const insetImageMultiplier = getConfiguration().rendering?.useLegacyCameraFOV
+    ? 1.1
+    : 1;
+  const parallelScale =
     scaleFactor < 1
       ? (insetImageMultiplier * heightWorld) / 2
       : (insetImageMultiplier * heightWorld * scaleFactor) / 2;
-  const parallelScale =
-    stretchRatio < 1 ? fitParallelScale / stretchRatio : fitParallelScale;
   const radius = getBoundsRadius(bounds) * VOLUME_3D_RADIUS_MULTIPLIER;
   const distance = insetImageMultiplier * radius;
   const viewUpToUse =
@@ -129,16 +124,6 @@ export function getVolume3DFitCamera(
   ] as Point3;
 
   return { focalPoint, parallelScale, position, radius, viewUpToUse };
-}
-
-/**
- * The inset of the content in the canvas, as the `insetImageMultiplier` of
- * the legacy viewports: 1.1 with `useLegacyCameraFOV`, else 1.
- *
- * @internal
- */
-export function getVolume3DInsetImageMultiplier(): number {
-  return getConfiguration().rendering?.useLegacyCameraFOV ? 1.1 : 1;
 }
 
 /**

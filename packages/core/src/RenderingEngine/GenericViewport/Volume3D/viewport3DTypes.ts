@@ -15,7 +15,6 @@ import type {
 } from '../../../types';
 import type { VolumeStrategyState } from '../../helpers/volumeStrategyLifecycle';
 import type { ViewportInput } from '../../../types/IViewport';
-import type DisplayArea from '../../../types/displayArea';
 import type ViewportInputOptions from '../../../types/ViewportInputOptions';
 import type {
   BlendModes,
@@ -121,13 +120,7 @@ export interface Volume3DProperties {
 export type Volume3DDataPresentation = Volume3DPresentationProps &
   Volume3DProperties;
 
-export interface Volume3DCamera extends ICamera, ViewportCameraBase<Point3> {
-  /**
-   * The display area that the camera shows, as `setDisplayArea` sets it. A
-   * patch of the view state with another one moves the camera to it.
-   */
-  displayArea?: DisplayArea;
-}
+export interface Volume3DCamera extends ICamera, ViewportCameraBase<Point3> {}
 
 /** @internal */
 export interface Volume3DDataProvider extends DataProvider {

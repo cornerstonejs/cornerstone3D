@@ -129,30 +129,13 @@ and thickens them. Together they are the crosshair for the next viewports.
   upper end on a next planar viewport. The legacy volume viewport read the
   values as values of the data. Give such a list as `colormap.opacityMapping`:
   its values are values of the data, and a change of the window keeps them.
-- **A preset on a slice.**
-  `setDisplaySetPresentation(displaySetId, { preset: 'CT-Bone' })` on a planar
-  viewport that shows a volume draws the colours and the opacity of the preset
-  over the range of the preset, and fires `PRESET_MODIFIED`. A window set after
-  it rescales the colours. A colormap name set after it replaces it. The
-  opacity of a preset shows as given, so it looks stronger than on a legacy
-  volume viewport, which drew it through a thin slab.
-- **A default presentation.** `setDefaultDisplaySetPresentation`,
-  `getDefaultDisplaySetPresentation` and `clearDefaultDisplaySetPresentation`
-  are on every next viewport, and `resetDisplaySetPresentation(displaySetId)`
-  goes back to the default. They replace `setDefaultProperties`,
-  `getDefaultProperties`, `clearDefaultProperties` and
-  `resetToDefaultProperties`. On a planar viewport a default can belong to one
-  image, with the option `{ imageId }`: it applies when that image shows, and
-  an image without one gets the default of the display set.
-  - A reset shows the default and drops every other change. The legacy
-    `resetToDefaultProperties` applied the keys of the default over the
-    properties of the moment. For that, call
-    `setDisplaySetPresentation(displaySetId, getDefaultDisplaySetPresentation(displaySetId))`.
-  - `clearDefaultDisplaySetPresentation` does not change what shows. The legacy
-    `clearDefaultProperties` also reset the properties. Call
-    `resetDisplaySetPresentation` after it for that.
-  - A legacy viewport kept the first properties that `setProperties` got as
-    its default. A next viewport has a default only when one is set.
+- **No default properties.** `setDefaultProperties`, `getDefaultProperties`,
+  `clearDefaultProperties` and `resetToDefaultProperties` have no twin. An
+  application keeps its own default and sets it with
+  `setDisplaySetPresentation`. `resetDisplaySetPresentation(displaySetId)`
+  goes back to the look of the data.
+- **No preset on a slice.** A preset is a look of a 3D viewport. For a slice,
+  register a colormap and set `colormap: { name, opacityMapping }`.
 - **No `callback` on a display set.** These presentations draw what the
   callbacks of the examples drew on a slice viewport:
 
@@ -363,10 +346,8 @@ layer of a fusion: the opacity is applied as given.
   `opacityMapping` and `threshold`), `blendMode`, `sharpening` and
   `smoothing`.
 - **`resetDisplaySetPresentation(displaySetId)`** goes back to what the volume
-  showed after its mount, with the keys of its default presentation over it
-  when one is set (see
-  [the presentation of a display set](#the-presentation-of-a-display-set)). It
-  does not move the camera: `resetViewState()` does.
+  showed after its mount. It does not move the camera: `resetViewState()`
+  does.
 - **Events.** `VOI_MODIFIED`, `COLORMAP_MODIFIED` and `PRESET_MODIFIED` fire
   from a 3D viewport, `VOI_MODIFIED` also when a volume is mounted, and
   `VOLUME_VIEWPORT_NEW_VOLUME` fires on a mount. None of them fired in 5.x.
@@ -382,24 +363,10 @@ layer of a fusion: the opacity is applied as given.
   viewport. Zoom 1 and pan `[0, 0]` are the fit of a reset.
 - **`suppressEvents`** in the options of a 3D viewport silences its camera
   and presentation events, as on the legacy viewport.
-- **The display area.** `setDisplayArea(displayArea)` and `getDisplayArea()`
-  are on the viewport, with the legacy meaning: the image area of the volume
-  fits the canvas and the image point lands on the canvas point. The
-  `displayArea` of the options is applied after the first mount and again by
-  `resetViewState()`. The view state carries `displayArea`, so
-  `setViewState({ displayArea })` moves the camera too.
-  `DISPLAY_AREA_MODIFIED` fires, then `CAMERA_MODIFIED`. Neither fires on a
-  viewport made with the `suppressEvents` option. The legacy viewport still
-  fired `DISPLAY_AREA_MODIFIED` then.
-- **The aspect ratio.** `setAspectRatio(value, { fit, storeAsInitialCamera })`
-  and `getAspectRatio()` are on the viewport, with the legacy meaning, and the
-  `aspectRatio` of the options is applied after the first mount and by
-  `resetViewState()`. The view state carries `aspectRatio`. Zoom 1 is the fit
-  of the stretched content.
-- **A view state copied from one 3D viewport to another carries both.**
-  `target.setViewState(source.getViewState())` moves the target to the display
-  area of the source and stretches it by the aspect ratio of the source. Leave
-  the two keys out of the patch to copy the camera alone.
+- **No display area and no aspect ratio on a 3D viewport.** `setDisplayArea`,
+  `getDisplayArea`, `setAspectRatio` and the `displayArea` and `aspectRatio`
+  options are not carried over to the 3D viewport. Set the parallel scale and
+  the focal point through the view state.
 - **Perspective.** `ViewportType.PERSPECTIVE` is removed. A 3D viewport with
   `parallelProjection: false` in its options draws the volume in perspective,
   and `setViewState({ parallelProjection: false })` turns one to it. Zoom,
@@ -408,11 +375,10 @@ layer of a fusion: the opacity is applied as given.
   viewport: it drew a thin slab from a camera that stood one bounding radius
   away with a view angle of 90 degrees, and `setZoom` did nothing on it.
   Nothing in the library used it.
-- **The actor of one display set.** `getImageActor(displaySetId)` gives the
-  vtk.js actor of a display set, on a 3D and on a planar viewport. It takes a
-  volume id too. A volume input of the legacy API could carry an `actorUID`
-  for `getActor(actorUID)`. A display set has no such option: ask with the
-  display set id.
+- **The actor of one display set.** A volume input of the legacy API could
+  carry an `actorUID` for `getActor(actorUID)`. A display set has no such
+  option. `getActors()` gives the actor entries, and each one names its volume
+  in `referencedId`.
 - **No `callback` on a display set.** A legacy volume input could carry a
   `callback` that edited the actor. The presentation of the display set says
   how the data looks. These give the picture of the callbacks that the
@@ -477,8 +443,7 @@ layer of a fusion: the opacity is applied as given.
   changed option takes effect where the family honours it at creation:
   `suppressEvents` on every viewport, the `background` on a video viewport,
   the `traceLayout` on an ECG viewport, and the `background`,
-  `parallelProjection`, `orientation`, `displayArea` and `aspectRatio` on a 3D
-  viewport.
+  `parallelProjection` and `orientation` on a 3D viewport.
 - **`isReferenceViewable` takes the points of an annotation** in the option
   `points`, and the annotation filter of the tools passes the handle points
   of each annotation. A viewport that shows a part of its world in several

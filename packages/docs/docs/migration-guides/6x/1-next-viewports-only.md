@@ -105,9 +105,9 @@ show each of these with code before and after.
 | `viewport.setVideo(...)`, `setEcg(...)`, `setWSI(...)`              | Register a display set of kind `'video'`, `'ecg'` or `'wsi'`, then `viewport.setDisplaySets({ displaySetId })`                             |
 | `viewport.setProperties({ voiRange, colormap, invert })`            | `viewport.setDisplaySetPresentation(displaySetId, { voiRange, colormap, invert })`                                                         |
 | `viewport.getProperties()`                                          | `viewport.getDisplaySetPresentation(displaySetId)`                                                                                         |
-| `viewport.setDefaultProperties(...)`, `resetToDefaultProperties()`  | `viewport.setDefaultDisplaySetPresentation(displaySetId, ...)`, `viewport.resetDisplaySetPresentation(displaySetId)`                       |
+| `viewport.setDefaultProperties(...)`, `resetToDefaultProperties()`  | No twin. Keep the default in the application and set it with `setDisplaySetPresentation`                                                   |
 | A `callback` on a volume input that edits the actor                 | `setDisplaySetPresentation` with `voiRange`, `colormap`, `opacity`, `invert`, `blendMode` or `preset`                                      |
-| An `actorUID` on a volume input, then `viewport.getActor(actorUID)` | `viewport.getImageActor(displaySetId)`                                                                                                     |
+| An `actorUID` on a volume input, then `viewport.getActor(actorUID)` | `viewport.getActors()` and the `referencedId` of each entry                                                                                |
 | `viewport.setBlendMode(...)`, `viewport.setSlabThickness(...)`      | `setDisplaySetPresentation(displaySetId, { blendMode, slabThickness })`                                                                    |
 | `viewport.getCamera()`                                              | `viewport.getViewState()` for the state, `viewport.getResolvedView()?.toICamera()` for a camera in the old shape                           |
 | `viewport.setCamera({ ... })`                                       | `viewport.setViewState({ ... })` or `viewport.updateViewState(...)`. For a place in space: `viewport.setViewReference(...)`                |
@@ -146,28 +146,28 @@ await viewport.setDisplaySets({ displaySetId });
 
 Leave `volumeId` out for a stack.
 
-## No feature is lost
+## What comes over and what does not
 
-Everything a legacy viewport can do comes to the next viewports before the
-legacy viewports are removed. These existed only on the legacy viewports in
-5.x. The next viewports have them now:
+The new viewports do not rebuild the legacy API. A feature comes over when it
+fits the new shape: a key of a presentation or of the view state.
+
+Carried over, in the new shape:
 
 - the sharpening and smoothing of the stack and volume viewports, as the
   `sharpening` and `smoothing` keys of a presentation;
 - a perspective camera, on a 3D viewport with `parallelProjection: false`;
-- `setAspectRatio` and `setDisplayArea`, on a planar and on a 3D viewport;
-- vtk.js actors and widgets of the application in a 3D viewport (`addActor`,
-  `setActors`, `addWidget`).
+- vtk.js actors of the application in a 3D viewport.
+
+Not carried over:
+
+- default properties (`setDefaultProperties` and its family);
+- a preset on a slice viewport;
+- a display area and an aspect ratio on a 3D viewport;
+- vtk.js actors of the application in a slice viewport;
+- a labelmap over a video, which the legacy video viewport did not have
+  either.
 
 [What draws differently](./2-rendering-changes.md) has the call for each one.
-
-Still to come before the legacy viewports go:
-
-- vtk.js actors of the application in a planar viewport (`addActor`,
-  `setActors`, `getRenderer`).
-
-A labelmap over a video is not available. The legacy video viewport did not
-have it either.
 
 ## Find the code to change
 

@@ -8,6 +8,7 @@ import type {
   ActorEntry,
   ICamera,
   IImageVolume,
+  ImageActor,
   IVolumeInput,
   OrientationVectors,
   Point3,
@@ -16,6 +17,7 @@ import type {
   VolumeViewportProperties,
 } from '../../../types';
 import type { PlaneRestriction } from '../../../types/IViewport';
+import { isImageActor } from '../../../utilities/actorCheck';
 import getAcquisitionPlaneOrientation from '../../../utilities/getAcquisitionPlaneOrientation';
 import getVolumeViewportScrollInfo from '../../../utilities/getVolumeViewportScrollInfo';
 import isEqual, { isEqualNegative } from '../../../utilities/isEqual';
@@ -343,6 +345,24 @@ class VolumeViewport3DLegacyAdapter extends VolumeViewport3D {
   removeData(dataId: string): void {
     super.removeData(dataId);
     this.forgetData(dataId);
+  }
+
+  /**
+   * The vtk.js actor of a volume: of the first actor, or of the actor of the
+   * given volume. Null when that actor is not an image actor, as on the
+   * legacy viewport.
+   */
+  getImageActor(volumeId?: string): ImageActor | null {
+    const actorEntries = this.getActors();
+    const actorEntry = volumeId
+      ? actorEntries.find((entry) => entry.referencedId === volumeId)
+      : actorEntries[0];
+
+    if (!actorEntry || !isImageActor(actorEntry)) {
+      return null;
+    }
+
+    return actorEntry.actor as ImageActor;
   }
 
   /**

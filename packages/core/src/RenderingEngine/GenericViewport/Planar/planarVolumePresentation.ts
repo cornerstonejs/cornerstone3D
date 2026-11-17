@@ -3,10 +3,7 @@ import type vtkImageMapper from '@kitware/vtk.js/Rendering/Core/ImageMapper';
 import type vtkImageResliceMapper from '@kitware/vtk.js/Rendering/Core/ImageResliceMapper';
 import type vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import type { ColormapPublic, VOIRange } from '../../../types';
-import { createPresetTransferFunctions } from '../../../utilities/applyPreset';
-import invertRgbTransferFunction from '../../../utilities/invertRgbTransferFunction';
 import { createPlanarRGBTransferFunction } from '../../helpers/planarImageRendering';
-import { resolveVolume3DPreset } from '../Volume3D/applyVolume3DPresentation';
 import type { PlanarDataPresentation } from './PlanarViewportTypes';
 import {
   mapBlendModeToSlabType,
@@ -58,10 +55,6 @@ export function applyPlanarVolumePresentation(args: {
     });
   }
 
-  if (applyPresetOf(actor, props)) {
-    return;
-  }
-
   if (!voiRange) {
     return;
   }
@@ -81,44 +74,6 @@ export function applyPlanarVolumePresentation(args: {
     colormap: props?.colormap,
     voiRange,
   });
-}
-
-/**
- * Applies the preset of a presentation, when it names one: the colour and
- * opacity functions of the preset (`createPresetTransferFunctions`, as the
- * legacy volume viewport applies them with `applyPreset`), the colours
- * rescaled to the `voiRange` of the presentation when it has one, and
- * inverted when asked. The default VOI range does not rescale them.
- *
- * @returns Whether a preset was applied.
- */
-function applyPresetOf(
-  actor: vtkImageSlice,
-  props: PlanarDataPresentation | undefined
-): boolean {
-  const preset = resolveVolume3DPreset(props?.preset);
-
-  if (!preset) {
-    return false;
-  }
-
-  const { colorFunction, opacityFunction } =
-    createPresetTransferFunctions(preset);
-  const property = actor.getProperty();
-
-  if (props.voiRange) {
-    colorFunction.setMappingRange(props.voiRange.lower, props.voiRange.upper);
-  }
-
-  if (props.invert) {
-    invertRgbTransferFunction(colorFunction);
-  }
-
-  property.setUseLookupTableScalarRange(true);
-  property.setRGBTransferFunction(0, colorFunction);
-  property.setScalarOpacity(0, opacityFunction);
-
-  return true;
 }
 
 function isResliceMapper(

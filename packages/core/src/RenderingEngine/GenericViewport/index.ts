@@ -61,7 +61,6 @@ export type {
   ViewportController,
   ViewportId,
   ViewportRenderContextType,
-  DefaultPresentationOptions,
 } from './ViewportArchitectureTypes';
 export {
   viewportHasCanvasWorldTransform,

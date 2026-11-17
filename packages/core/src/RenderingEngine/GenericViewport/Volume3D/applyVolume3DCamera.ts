@@ -46,10 +46,6 @@ export default function applyVolume3DCamera(
     vtkCamera.setViewAngle(camera.viewAngle);
   }
 
-  if (camera.aspectRatio && 'setAspectRatio' in vtkCamera) {
-    vtkCamera.setAspectRatio(camera.aspectRatio);
-  }
-
   if (camera.clippingRange !== undefined) {
     vtkCamera.setClippingRange(...camera.clippingRange);
   } else if (options.resetClippingRange) {
