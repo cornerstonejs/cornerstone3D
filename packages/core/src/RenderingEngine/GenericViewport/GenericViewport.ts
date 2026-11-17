@@ -6,7 +6,6 @@ import ViewportStatus from '../../enums/ViewportStatus';
 import triggerEvent from '../../utilities/triggerEvent';
 import renderingEngineCache from '../renderingEngineCache';
 import { deepClone } from '../../utilities/deepClone';
-import { coreLog } from '../../utilities/logger';
 import type ViewportInputOptions from '../../types/ViewportInputOptions';
 import type DisplayArea from '../../types/displayArea';
 import type { PlanarDisplayArea } from './Planar/PlanarViewportTypes';
@@ -54,8 +53,6 @@ import {
   type BindingFidelitySource,
   fidelityLinesFromBindings,
 } from '../helpers/fidelityIndicator/collectFidelityLines';
-
-const log = coreLog.getLogger('RenderingEngine', 'GenericViewport');
 
 /**
  * The options of a next viewport: the legacy viewport input options, where
@@ -150,7 +147,6 @@ abstract class GenericViewport<
     this.id = args.id;
     this.element = args.element;
     this.defaultOptions = deepClone(args.defaultOptions || {});
-    this.options = deepClone(this.defaultOptions);
     // Tools take these off the viewport (`const { worldToCanvas } = viewport`),
     // as the legacy viewports allow, so they must keep `this`.
     this.canvasToWorld = this.canvasToWorld.bind(this);
@@ -658,68 +654,8 @@ abstract class GenericViewport<
     return false;
   }
 
-  /**
-   * The options that the viewport was made with, as on the legacy viewports.
-   * `reset` goes back to them.
-   */
+  /** The options that the viewport was made with. They do not change. */
   readonly defaultOptions: GenericViewportOptions;
-
-  /**
-   * The current options of the viewport, as on the legacy viewports: a copy
-   * of `defaultOptions` until `setOptions` or `reset` changes them.
-   */
-  options: GenericViewportOptions;
-
-  /**
-   * Sets the options of the viewport, as on the legacy viewports, and renders
-   * when `immediate` is set. An option that the viewport family reads when it
-   * is made takes effect as on a viewport made with it; see
-   * {@link applyOptions}.
-   *
-   * @param options - The new options. The viewport keeps a copy.
-   * @param immediate - Renders the viewport after the options are set.
-   */
-  setOptions(options: GenericViewportOptions, immediate = false): void {
-    const previous = this.options;
-
-    this.options = deepClone(options || {});
-    this.applyOptions(this.options, previous);
-
-    if (immediate) {
-      this.render();
-    }
-  }
-
-  /**
-   * Sets the options back to a copy of `defaultOptions`, as on the legacy
-   * viewports, applies them as `setOptions` does, and renders when
-   * `immediate` is set.
-   *
-   * @param immediate - Renders the viewport after the options are reset.
-   */
-  reset(immediate = false): void {
-    this.setOptions(this.defaultOptions, immediate);
-  }
-
-  /**
-   * Applies the options that changed from `previous` and that the viewport
-   * family reads when it is made. A family overrides it for its options. The
-   * base logs a warning for a display area or an aspect ratio, which only the
-   * planar and the 3D family apply.
-   *
-   * @param options - The new options.
-   * @param _previous - The options before the change.
-   */
-  protected applyOptions(
-    options: GenericViewportOptions,
-    _previous: GenericViewportOptions
-  ): void {
-    if (options.displayArea || options.aspectRatio) {
-      log.warn(
-        `[${this.type}] The viewport does not apply the display area or the aspect ratio of its options`
-      );
-    }
-  }
 
   /**
    * Releases mounted bindings and viewport-local resources.

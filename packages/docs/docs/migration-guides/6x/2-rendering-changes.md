@@ -434,11 +434,10 @@ layer of a fusion: the opacity is applied as given.
 
 ## Smaller changes
 
-- **`options`, `setOptions()` and `reset()`** are on every next viewport. A
-  changed option takes effect where the family honours it at creation:
-  `suppressEvents` on every viewport, the `background` on a video viewport,
-  the `traceLayout` on an ECG viewport, and the `background`,
-  `parallelProjection` and `orientation` on a 3D viewport.
+- **No `setOptions()` and no `reset()`** on the 3D, video, whole slide and ECG
+  viewports. The options that a viewport was made with are in
+  `defaultOptions`, and they do not change. Change the view through the view
+  state, and the look through the presentation.
 - **`isReferenceViewable` takes the points of an annotation** in the option
   `points`, and the annotation filter of the tools passes the handle points
   of each annotation. A viewport that shows a part of its world in several

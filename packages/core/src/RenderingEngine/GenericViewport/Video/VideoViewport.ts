@@ -1,6 +1,4 @@
-import GenericViewport, {
-  type GenericViewportOptions,
-} from '../GenericViewport';
+import GenericViewport from '../GenericViewport';
 import type {
   CPUIImageData,
   IImage,
@@ -1165,7 +1163,7 @@ class VideoViewport extends GenericViewport<
     context.globalAlpha = 1;
     context.filter = 'none';
 
-    const { background } = this.options;
+    const { background } = this.defaultOptions;
 
     if (background) {
       const [red, green, blue] = background.map((value) =>
@@ -1245,20 +1243,6 @@ class VideoViewport extends GenericViewport<
    */
   private applyResolvedViewState(nextViewState: VideoViewState): void {
     this.setViewState(nextViewState);
-  }
-
-  /**
-   * Draws the canvas again on its next read, which fills it with the
-   * `background` of the options, as the viewport does with the background of
-   * the options that it was made with, and takes `suppressEvents`.
-   */
-  protected override applyOptions(
-    options: GenericViewportOptions,
-    previous: GenericViewportOptions
-  ): void {
-    super.applyOptions(options, previous);
-    this.suppressEvents = Boolean(options.suppressEvents);
-    this.isCanvasStale = true;
   }
 
   /**

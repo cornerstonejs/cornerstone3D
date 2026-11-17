@@ -9,6 +9,9 @@ import type {
   ViewPresentation,
   ViewPresentationSelector,
 } from '../../../types';
+import type ViewportInputOptions from '../../../types/ViewportInputOptions';
+import { deepClone } from '../../../utilities/deepClone';
+import { coreLog } from '../../../utilities/logger';
 import { viewportProjection } from '../viewportProjection';
 import type {
   ECGViewState,
@@ -16,6 +19,8 @@ import type {
   ECGViewportInput,
 } from './ECGViewportTypes';
 import ECGViewport from './ECGViewport';
+
+const log = coreLog.getLogger('RenderingEngine', 'ECGViewportLegacyAdapter');
 
 /** Legacy properties that move the trace, and so belong to the view state. */
 const LEGACY_VIEW_STATE_PROPERTIES = [
@@ -36,10 +41,17 @@ class ECGViewportLegacyAdapter extends ECGViewport {
    */
   isDisabled = false;
 
+  /**
+   * The options of the viewport, as on the legacy viewport: a copy of the
+   * default options until `setOptions` or `reset` changes them.
+   */
+  options: ViewportInputOptions;
+
   constructor(
     args: ECGViewportInput & Partial<Pick<ViewportInput, 'defaultOptions'>>
   ) {
     super(args);
+    this.options = deepClone(this.defaultOptions) as ViewportInputOptions;
   }
 
   /** The id of the viewport. The legacy ECG viewport never set it. */
@@ -270,6 +282,37 @@ class ECGViewportLegacyAdapter extends ECGViewport {
     return undefined;
   }
 
+  /**
+   * Sets the options of the viewport and renders when `immediate` is set. A
+   * display area or an aspect ratio in the options is not applied, and the
+   * adapter logs a warning for them.
+   */
+  setOptions(options: ViewportInputOptions, immediate = false): void {
+    this.options = deepClone(options);
+
+    if (this.options?.displayArea || this.options?.aspectRatio) {
+      log.warn(
+        'An ECG viewport does not apply the display area or the aspect ratio of its options'
+      );
+    }
+
+    if (immediate) {
+      this.render();
+    }
+  }
+
+  /**
+   * Sets the options back to the default options, as on the legacy viewport,
+   * and renders when `immediate` is set.
+   */
+  reset(immediate = false): void {
+    this.options = deepClone(this.defaultOptions) as ViewportInputOptions;
+
+    if (immediate) {
+      this.render();
+    }
+  }
+
   /** Always false, as on the legacy viewports: the view plane stays the same. */
   isOrientationChangeable(): boolean {
     return false;
@@ -277,7 +320,7 @@ class ECGViewportLegacyAdapter extends ECGViewport {
 
   /** The display area of the options, as on the legacy viewport. */
   getDisplayArea(): DisplayArea | undefined {
-    return this.options?.displayArea as DisplayArea | undefined;
+    return this.options?.displayArea;
   }
 
   /**

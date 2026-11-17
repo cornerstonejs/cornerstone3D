@@ -488,30 +488,6 @@ describe('Direct next video viewport -- ', () => {
     });
   });
 
-  it('draws the background of setOptions into its canvas, and the default one after reset', async function () {
-    const backgroundPixel = () =>
-      Array.from(
-        next
-          .getCanvas()
-          .getContext('2d')
-          .getImageData(2, HEIGHT / 2, 1, 1).data
-      ).slice(0, 3);
-
-    expect(next.options).toEqual(legacy.options);
-    expect(backgroundPixel()).toEqual([255, 0, 255]);
-
-    next.setOptions({ ...next.options, background: [1, 0, 0] });
-    legacy.setOptions({ ...legacy.options, background: [1, 0, 0] });
-
-    expect(next.options).toEqual(legacy.options);
-    expect(backgroundPixel()).toEqual([255, 0, 0]);
-
-    next.reset();
-
-    expect(next.options).toEqual(next.defaultOptions);
-    expect(backgroundPixel()).toEqual([255, 0, 255]);
-  });
-
   it('draws the frame of a later seek into the canvas when it is read', async function () {
     const world = [30.5, 20.5, 0];
     const pixelAt = (canvas, point) =>

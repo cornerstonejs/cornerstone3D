@@ -10,6 +10,9 @@ import type {
 } from '../../../types';
 import type { Point2 } from '../../../types';
 import { VideoEnums } from '../../../enums';
+import type ViewportInputOptions from '../../../types/ViewportInputOptions';
+import { deepClone } from '../../../utilities/deepClone';
+import { coreLog } from '../../../utilities/logger';
 import { viewportProjection } from '../viewportProjection';
 import type {
   VideoDataPresentation,
@@ -17,12 +20,20 @@ import type {
 } from './VideoViewportTypes';
 import VideoViewport from './VideoViewport';
 
+const log = coreLog.getLogger('RenderingEngine', 'VideoViewportLegacyAdapter');
+
 class VideoViewportLegacyAdapter extends VideoViewport {
   /**
    * False until the rendering engine disables the viewport, as on the legacy
    * viewports. The engine sets it to true.
    */
   isDisabled = false;
+
+  /**
+   * The options of the viewport, as on the legacy viewport: a copy of the
+   * default options until `setOptions` or `reset` changes them.
+   */
+  options = deepClone(this.defaultOptions) as ViewportInputOptions;
 
   /** The number of frames that one step of `scroll` moves. */
   private scrollSpeed = 1;
@@ -360,6 +371,37 @@ class VideoViewportLegacyAdapter extends VideoViewport {
   /** Undefined: the next video viewport has no actors. */
   getActor(_actorUID: string): ActorEntry | undefined {
     return undefined;
+  }
+
+  /**
+   * Sets the options of the viewport and renders when `immediate` is set. A
+   * display area or an aspect ratio in the options is not applied, and the
+   * adapter logs a warning for them.
+   */
+  setOptions(options: ViewportInputOptions, immediate = false): void {
+    this.options = deepClone(options);
+
+    if (this.options?.displayArea || this.options?.aspectRatio) {
+      log.warn(
+        'A video viewport does not apply the display area or the aspect ratio of its options'
+      );
+    }
+
+    if (immediate) {
+      this.render();
+    }
+  }
+
+  /**
+   * Sets the options back to the default options, as on the legacy viewport,
+   * and renders when `immediate` is set.
+   */
+  reset(immediate = false): void {
+    this.options = deepClone(this.defaultOptions) as ViewportInputOptions;
+
+    if (immediate) {
+      this.render();
+    }
   }
 
   /** Always false, as on the legacy viewports: the view plane stays the same. */

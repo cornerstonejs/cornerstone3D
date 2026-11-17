@@ -246,7 +246,7 @@ describe('Direct next 3D viewport in perspective -- ', () => {
     await expectSamePicture(next, legacy, 'next3D_perspective_reset');
   });
 
-  it('turns to perspective with the option as the legacy viewport made with it', async function () {
+  it('turns to perspective through the view state, as the legacy viewport made with the option', async function () {
     const [legacy] = createPair(renderingEngine, {
       parallelProjection: false,
     });
@@ -269,7 +269,7 @@ describe('Direct next 3D viewport in perspective -- ', () => {
     const volumeId = await createVolume();
 
     await showOnBoth(legacy, changed, volumeId);
-    changed.setOptions({ ...changed.options, parallelProjection: false });
+    changed.setViewState({ parallelProjection: false });
     changed.resetViewState();
 
     expectSameCamera(changed, legacy);

@@ -1,8 +1,6 @@
 import getOrCreateCanvas from '../../helpers/getOrCreateCanvas';
 import type { LoadedData } from '../ViewportArchitectureTypes';
-import GenericViewport, {
-  type GenericViewportOptions,
-} from '../GenericViewport';
+import GenericViewport from '../GenericViewport';
 import { ViewportType } from '../../../enums';
 import {
   ECG_AMPLITUDE_INDEX_SIZE,
@@ -129,24 +127,6 @@ class ECGViewport extends GenericViewport<
 
     this.clickedRegionIndex = layout?.regionIndex;
   };
-
-  /**
-   * Shows a changed `traceLayout` of the options, the one option that the
-   * viewport reads when it is made, and takes `suppressEvents`. A trace
-   * layout set through the view state stays while the option does not
-   * change.
-   */
-  protected override applyOptions(
-    options: GenericViewportOptions,
-    previous: GenericViewportOptions
-  ): void {
-    super.applyOptions(options, previous);
-    this.suppressEvents = Boolean(options.suppressEvents);
-
-    if (options.traceLayout !== previous.traceLayout) {
-      this.setViewState({ traceLayout: options.traceLayout });
-    }
-  }
 
   protected override onDestroy(): void {
     this.element.removeEventListener('pointerdown', this.onPointerDown);

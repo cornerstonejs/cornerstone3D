@@ -452,19 +452,4 @@ describe('suppressEvents on the direct next whole slide viewport', () => {
     expect(legacyCounts.modified).toBe(1);
     expect(nextCounts.modified).toBe(1);
   });
-
-  it('takes suppressEvents from setOptions and from reset', async () => {
-    const next = await track(mountNext(WSIViewport, 0));
-    const nextCounts = countCameraEvents(next.viewport);
-
-    next.viewport.setOptions({ suppressEvents: true });
-    next.viewport.setZoom(2);
-
-    expect(nextCounts.modified).toBe(0);
-
-    next.viewport.reset();
-    next.viewport.setZoom(3);
-
-    expect(nextCounts.modified).toBe(1);
-  });
 });

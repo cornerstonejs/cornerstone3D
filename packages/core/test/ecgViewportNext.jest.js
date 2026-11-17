@@ -429,63 +429,6 @@ describe('Annotations saved on a legacy ECG viewport', () => {
   });
 });
 
-describe('Options of the next ECG viewport', () => {
-  const layoutOf = (viewport) =>
-    viewport
-      .getResolvedView()
-      .channelLayouts.map(({ leadIndex, startSample, endSample }) => [
-        leadIndex,
-        startSample,
-        endSample,
-      ]);
-
-  it('keeps a copy of the default options as the options, as the legacy viewport', async () => {
-    const legacy = await mountLegacy();
-    const next = await mountNext();
-
-    expect(next.defaultOptions).toEqual(legacy.defaultOptions);
-    expect(next.options).toEqual(legacy.options);
-    expect(next.options).not.toBe(next.defaultOptions);
-
-    legacy.setOptions({ traceLayout: '12x1' });
-    next.setOptions({ traceLayout: '12x1' });
-
-    expect(next.options).toEqual(legacy.options);
-
-    legacy.reset();
-    next.reset();
-
-    expect(next.options).toEqual(legacy.options);
-  });
-
-  it('shows the trace layout of setOptions as a viewport made with it, and the default one after reset', async () => {
-    const made = await mountNext(undefined, { traceLayout: '6x2' });
-    const changed = await mountNext();
-    const defaultLayout = layoutOf(changed);
-
-    expect(changed.getResolvedView().traceLayoutName).toBe('3x4+1');
-
-    changed.setOptions({ traceLayout: '6x2' });
-
-    expect(changed.getResolvedView().traceLayoutName).toBe('6x2');
-    expect(layoutOf(changed)).toEqual(layoutOf(made));
-
-    changed.reset();
-
-    expect(changed.getResolvedView().traceLayoutName).toBe('3x4+1');
-    expect(layoutOf(changed)).toEqual(defaultLayout);
-  });
-
-  it('keeps the trace layout of the view state when another option changes', async () => {
-    const next = await mountNext();
-
-    next.setViewState({ traceLayout: '12x1' });
-    next.setOptions({ background: [1, 0, 0] });
-
-    expect(next.getResolvedView().traceLayoutName).toBe('12x1');
-  });
-});
-
 describe('suppressEvents on the direct next ECG viewport', () => {
   /** Counts the camera events of a viewport. */
   function countCameraEvents(viewport) {

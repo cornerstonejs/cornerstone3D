@@ -27,9 +27,7 @@ import type {
   LoadedData,
   ViewportDataBinding,
 } from '../ViewportArchitectureTypes';
-import GenericViewport, {
-  type GenericViewportOptions,
-} from '../GenericViewport';
+import GenericViewport from '../GenericViewport';
 import {
   getDimensionGroupReferenceContext,
   type GenericViewportReferenceContext,
@@ -51,7 +49,6 @@ import {
   type Volume3DProjectionSnapshot,
 } from './volume3DProjectionAdapter';
 import {
-  getOrientationVectors,
   getResetFocalPoint,
   getVolume3DFitCamera,
   setVolume3DPhysicalCamera,
@@ -188,68 +185,6 @@ class VolumeViewport3D extends GenericViewport<
   /** Always true: a 3D viewport turns to any orientation. */
   override isOrientationChangeable(): boolean {
     return true;
-  }
-
-  /**
-   * Applies the options that the viewport reads when it is made and that
-   * changed: `suppressEvents`, the `background` of the renderer, the
-   * `parallelProjection` of the camera and the `orientation`. The orientation
-   * is the one of the next mount, and with a volume shown the camera turns to
-   * it and fits, as at a mount.
-   */
-  protected override applyOptions(
-    options: GenericViewportOptions,
-    previous: GenericViewportOptions
-  ): void {
-    super.applyOptions(options, previous);
-    this.suppressEvents = Boolean(options.suppressEvents);
-
-    if (
-      JSON.stringify(options.background) !== JSON.stringify(previous.background)
-    ) {
-      this.getRenderer().setBackground(options.background ?? [0, 0, 0]);
-    }
-
-    const viewportOptions = this.renderContext.viewport.options;
-
-    if (options.parallelProjection !== previous.parallelProjection) {
-      viewportOptions.parallelProjection = options.parallelProjection;
-      this.setViewState({
-        parallelProjection: options.parallelProjection ?? true,
-      });
-    }
-
-    if (
-      JSON.stringify(options.orientation) ===
-      JSON.stringify(previous.orientation)
-    ) {
-      return;
-    }
-
-    viewportOptions.orientation = options.orientation;
-
-    const imageVolume = Array.from(this.bindings.values())
-      .map((binding) => binding.rendering as Volume3DVolumeRendering)
-      .find(
-        (rendering) => rendering?.renderMode === 'vtkVolume3d'
-      )?.imageVolume;
-
-    if (!imageVolume) {
-      return;
-    }
-
-    const camera = this.getViewState();
-
-    applyVolume3DCamera(
-      this.renderContext,
-      getOrientationVectors({
-        fallbackViewPlaneNormal: camera.viewPlaneNormal,
-        fallbackViewUp: camera.viewUp,
-        imageVolume,
-        orientation: options.orientation,
-      })
-    );
-    this.resetViewState();
   }
 
   /** A 3D view: a rotation can bring any axis into the view plane. */

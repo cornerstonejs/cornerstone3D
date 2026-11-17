@@ -16,9 +16,7 @@ import type {
   ViewportDataBinding,
 } from '../ViewportArchitectureTypes';
 import getOrCreateCanvas from '../../helpers/getOrCreateCanvas';
-import GenericViewport, {
-  type GenericViewportOptions,
-} from '../GenericViewport';
+import GenericViewport from '../GenericViewport';
 import type { GenericViewportReferenceContext } from '../genericViewportReferenceCompatibility';
 import { DefaultWSIDataProvider } from './DefaultWSIDataProvider';
 import { createWSIRenderPathResolver } from './WSIRenderPathResolver';
@@ -104,15 +102,6 @@ export default class WSIViewport extends GenericViewport<
       'data-rendering-engine-uid',
       this.renderingEngineId
     );
-  }
-
-  /** Takes `suppressEvents` from the options, as the legacy viewport. */
-  protected override applyOptions(
-    options: GenericViewportOptions,
-    previous: GenericViewportOptions
-  ): void {
-    super.applyOptions(options, previous);
-    this.suppressEvents = Boolean(options.suppressEvents);
   }
 
   /**
