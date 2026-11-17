@@ -8,6 +8,7 @@ import type {
   RGB,
   ViewReference,
   ViewReferenceSpecifier,
+  ViewportContentMode,
 } from '../../../types';
 import { Events, ViewportType } from '../../../enums';
 import triggerEvent from '../../../utilities/triggerEvent';
@@ -197,6 +198,15 @@ class VideoViewport extends GenericViewport<
       this.untrackVideoElement();
       this.trackVideoElement();
     }
+  }
+
+  /**
+   * The content mode of the video family: `video` once a video is mounted,
+   * `empty` before. `utilities.getViewportContentMode` gives `video` for the
+   * legacy video viewport too.
+   */
+  getCurrentMode(): ViewportContentMode {
+    return this.getSourceBinding() ? 'video' : 'empty';
   }
 
   /**

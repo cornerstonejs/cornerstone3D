@@ -129,6 +129,7 @@ async function render(
   const colorLUT = getColorLUT(colorLUTIndex);
 
   const surfaces = [];
+  const surfacesShown: Promise<void>[] = [];
   geometryIds.forEach((geometryId) => {
     const geometry = cache.getGeometry(geometryId) as Types.IGeometry;
 
@@ -153,13 +154,17 @@ async function render(
     surface.visible = !isHidden;
 
     surfaces.push(surface);
-    addOrUpdateSurfaceToElement(
-      viewport as Types.IVolumeViewport,
-      surface as Types.ISurface,
-      segmentationId
+    surfacesShown.push(
+      addOrUpdateSurfaceToElement(
+        viewport as Types.IVolumeViewport,
+        surface as Types.ISurface,
+        segmentationId,
+        geometryId
+      )
     );
   });
 
+  await Promise.all(surfacesShown);
   viewport.render();
 }
 

@@ -5,6 +5,7 @@ import type {
   Point3,
   ViewReference,
   ViewReferenceSpecifier,
+  ViewportContentMode,
 } from '../../../types';
 import type {
   WSIMapLike,
@@ -258,6 +259,15 @@ export default class WSIViewport extends GenericViewport<
 
   getCurrentImageId(): string | undefined {
     return this.getWSIData()?.imageIds[0];
+  }
+
+  /**
+   * The content mode of the whole slide family: `wholeSlide` once a slide is
+   * mounted, `empty` before. `utilities.getViewportContentMode` gives
+   * `wholeSlide` for the legacy whole slide viewport too.
+   */
+  getCurrentMode(): ViewportContentMode {
+    return this.getSourceBinding() ? 'wholeSlide' : 'empty';
   }
 
   getViewReference(_specifier: ViewReferenceSpecifier = {}): ViewReference {

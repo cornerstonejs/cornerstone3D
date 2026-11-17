@@ -368,7 +368,7 @@ describe('Direct next 3D viewport, colour and presets -- ', () => {
     expect(mapper.getSampleDistance()).toBeGreaterThan(sampleDistance);
   });
 
-  it('fires VOI_MODIFIED with the legacy detail on a VOI change and on invert', async function () {
+  it('fires VOI_MODIFIED with the legacy detail on a VOI change and on invert, with the invert of the display set and no invertStateChanged', async function () {
     const [legacy, next] = createViewports(renderingEngine, {
       legacyId: 'legacy3D',
       nextIds: ['next3D'],
@@ -397,9 +397,11 @@ describe('Direct next 3D viewport, colour and presets -- ', () => {
         [legacyDetail.range.lower, legacyDetail.range.upper]
       );
       expect(Boolean(detail.invert)).toBe(Boolean(legacyDetail.invert));
-      expect(detail.invertStateChanged).toBe(legacyDetail.invertStateChanged);
+      expect(detail.invertStateChanged).toBeUndefined();
       expect(detail.colormap?.name).toBe(legacyDetail.colormap?.name);
     });
+    expect(nextDetails[1].invert).toBe(true);
+    expect(legacyDetails[1].invertStateChanged).toBe(true);
   });
 
   it('fires VOI_MODIFIED and COLORMAP_MODIFIED with the legacy detail on a colormap change', async function () {
@@ -524,7 +526,7 @@ describe('Direct next 3D viewport, the scene -- ', () => {
     });
   });
 
-  it('adds and removes actors of the application as the legacy viewport, with ACTORS_CHANGED', async function () {
+  it('has no registry of actors: a prop of the application goes to the renderer, and getActors lists the display sets only', async function () {
     const [legacy, next] = createViewports(renderingEngine, {
       legacyId: 'legacy3D',
       nextIds: ['next3D'],
@@ -533,29 +535,32 @@ describe('Direct next 3D viewport, the scene -- ', () => {
 
     await showOnBoth(legacy, next, volumeId);
 
-    const legacyDetails = recordEvents(legacy, Events.ACTORS_CHANGED);
-    const nextDetails = recordEvents(next, Events.ACTORS_CHANGED);
-    const legacySphere = createSphereActorEntry();
-    const nextSphere = createSphereActorEntry();
+    for (const member of [
+      'addActor',
+      'addActors',
+      'setActors',
+      'removeActors',
+      'getActor',
+    ]) {
+      expect(next[member]).toBeUndefined();
+      expect(typeof legacy[member]).toBe('function');
+    }
 
-    legacy.addActor(legacySphere);
-    next.addActor(nextSphere);
+    const details = recordEvents(next, Events.ACTORS_CHANGED);
+    const { actor } = createSphereActorEntry();
 
-    expect(next.getActors().length).toBe(legacy.getActors().length);
-    expect(next.getActor('spherePolyData').actor).toBe(nextSphere.actor);
-    expect(nextDetails.length).toBe(legacyDetails.length);
-    expect(nextDetails[0].addedActors[0].uid).toBe('spherePolyData');
-    expect(nextDetails[0].currentActors.length).toBe(
-      legacyDetails[0].currentActors.length
-    );
+    next.getRenderer().addActor(actor);
+    next.render();
 
-    legacy.removeActors(['spherePolyData']);
-    next.removeActors(['spherePolyData']);
+    expect(next.getRenderer().getActors()).toContain(actor);
+    expect(next.getActors().length).toBe(1);
+    expect(next.getActors()[0].referencedId).toBe(volumeId);
+    expect(next.getDefaultActor().actor).toBe(volumeActorOf(next));
 
-    expect(next.getActors().length).toBe(legacy.getActors().length);
-    expect(next.getActor('spherePolyData')).toBe(undefined);
-    expect(nextDetails.length).toBe(legacyDetails.length);
-    expect(nextDetails[1].removedActors[0].uid).toBe('spherePolyData');
+    next.getRenderer().removeActor(actor);
+
+    expect(next.getRenderer().getActors()).not.toContain(actor);
+    expect(details.length).toBe(0);
   });
 
   it('fires VOLUME_VIEWPORT_NEW_VOLUME once on a mount with the legacy detail', async function () {
@@ -585,14 +590,14 @@ describe('Direct next 3D viewport, the scene -- ', () => {
     expect(nextDetails[0].volumeActors[0].uid).toBe(next.getActors()[0].uid);
   });
 
-  it('fits the actors of setActors on resetViewState as the legacy viewport on resetCamera, from the same view direction', async function () {
+  it('fits a prop of the application in the renderer on resetViewState as the legacy viewport fits the actors of setActors on resetCamera, from the same view direction', async function () {
     const [legacy, next] = createViewports(renderingEngine, {
       legacyId: 'legacy3D',
       nextIds: ['next3D'],
     });
 
     legacy.setActors([createSphereActorEntry()]);
-    next.setActors([createSphereActorEntry()]);
+    next.getRenderer().addActor(createSphereActorEntry().actor);
 
     const { viewUp, focalPoint, position } = legacy.getCamera();
 
@@ -603,7 +608,8 @@ describe('Direct next 3D viewport, the scene -- ', () => {
     next.resetViewState();
 
     expectSameCamera(next.getViewState(), legacy.getCamera());
-    expect(next.getActors().length).toBe(1);
+    expect(next.getRenderer().getActors().length).toBe(1);
+    expect(next.getActors().length).toBe(0);
   });
 });
 
@@ -707,6 +713,13 @@ describe('Direct next 3D viewport, the camera -- ', () => {
 
     expect(zoomPan().zoom).toBeCloseTo(1, 6);
     expectPointsClose(zoomPan().pan, [0, 0]);
+  });
+
+  it('has no getProjectionSnapshot of its own, which nothing called', function () {
+    const [next] = createViewports(renderingEngine, { nextIds: ['next3D'] });
+
+    expect(next.getProjectionSnapshot).toBeUndefined();
+    expect(viewportProjection.getPresentation(next)).toBeDefined();
   });
 
   it('takes no storeAsInitialCamera in resetViewState: the zoom stays against the fit', async function () {

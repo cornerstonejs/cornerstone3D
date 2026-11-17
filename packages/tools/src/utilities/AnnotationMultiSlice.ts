@@ -1,7 +1,7 @@
 import {
-  Enums,
   triggerEvent,
   eventTarget,
+  utilities,
   type Types,
 } from '@cornerstonejs/core';
 import Events from '../enums/Events';
@@ -192,7 +192,7 @@ export default class AnnotationMultiSlice {
 
     if (viewport.setFrameRange) {
       viewport.setFrameRange(frameRange);
-    } else if (viewport.type === Enums.ViewportType.VIDEO_NEXT) {
+    } else if (utilities.getViewportContentMode(viewport) === 'video') {
       viewport.setViewState({ frameRange });
     }
   }

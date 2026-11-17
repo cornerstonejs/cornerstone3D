@@ -4,9 +4,12 @@ import vtkCellArray from '@kitware/vtk.js/Common/Core/CellArray';
 import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
 import type { Types } from '@cornerstonejs/core';
+import { addToolProp } from './toolProps';
 
 /**
- * Add a 3D line between two points in the viewport
+ * Add a 3D line between two points in the viewport. On a direct next 3D
+ * viewport the line goes to the vtk.js renderer and belongs to the caller,
+ * who keeps the returned actor and removes it from the renderer.
  * @param viewport - The viewport to add the line to
  * @param point1 - First point [x, y, z]
  * @param point2 - Second point [x, y, z]
@@ -53,6 +56,6 @@ export function addLine3DBetweenPoints(
   actor.getProperty().setDiffuse(0.0); // No diffuse
   actor.getProperty().setSpecular(0.0); // No specular
   actor.setVisibility(showHandles);
-  viewport.addActor({ actor, uid });
+  addToolProp(viewport, actor, uid);
   return { actor, source: polyData };
 }

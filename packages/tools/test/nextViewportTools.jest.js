@@ -10,9 +10,14 @@ jest.mock('@cornerstonejs/core', () => {
   };
 });
 
-import { cache, Enums } from '@cornerstonejs/core';
+import { cache, Enums, utilities } from '@cornerstonejs/core';
 import { moveAnnotationToViewPlane } from '../src/utilities/moveAnnotationToViewPlane';
 import AnnotationMultiSlice from '../src/utilities/AnnotationMultiSlice';
+import {
+  viewportSupportsImageSlices,
+  viewportSupportsStackCalibration,
+  viewportSupportsStackCompatibility,
+} from '../src/utilities/viewportCapabilities';
 import WholeBodySegmentTool from '../src/tools/annotation/WholeBodySegmentTool';
 
 /**
@@ -119,6 +124,7 @@ describe('AnnotationMultiSlice.setViewportFrameRange', () => {
   it('sets the frame range key of the view state on a direct next video viewport, which has no setFrameRange', () => {
     const viewport = {
       type: Enums.ViewportType.VIDEO_NEXT,
+      getCurrentMode: () => 'video',
       setViewState: jest.fn(),
     };
 
@@ -132,13 +138,31 @@ describe('AnnotationMultiSlice.setViewportFrameRange', () => {
     });
   });
 
+  it('asks the content mode of the viewport for a video, not its type', () => {
+    const video = { getCurrentMode: () => 'video', setViewState: jest.fn() };
+    const emptyVideo = {
+      type: Enums.ViewportType.VIDEO_NEXT,
+      getCurrentMode: () => 'empty',
+      setViewState: jest.fn(),
+    };
+    const range = { sliceIndex: 4, multiSliceReference: { sliceIndex: 9 } };
+
+    AnnotationMultiSlice.setViewportFrameRange(video, range);
+    AnnotationMultiSlice.setViewportFrameRange(emptyVideo, range);
+
+    expect(video.setViewState).toHaveBeenCalledWith({ frameRange: [5, 10] });
+    expect(emptyVideo.setViewState).not.toHaveBeenCalled();
+  });
+
   it('sets no frame range on a direct next planar viewport, and none without a range', () => {
     const planar = {
       type: Enums.ViewportType.PLANAR_NEXT,
+      getCurrentMode: () => 'stack',
       setViewState: jest.fn(),
     };
     const video = {
       type: Enums.ViewportType.VIDEO_NEXT,
+      getCurrentMode: () => 'video',
       setViewState: jest.fn(),
     };
 
@@ -150,5 +174,51 @@ describe('AnnotationMultiSlice.setViewportFrameRange', () => {
 
     expect(planar.setViewState).not.toHaveBeenCalled();
     expect(video.setViewState).not.toHaveBeenCalled();
+  });
+});
+
+describe('The image slice checks of the tools', () => {
+  /** The image slice members of a next video viewport: no `hasImageURI`. */
+  function makeImageSliceViewport(extra = {}) {
+    return {
+      getCurrentImageId: () => 'image:1',
+      getCurrentImageIdIndex: () => 0,
+      getImageIds: () => ['image:1'],
+      ...extra,
+    };
+  }
+
+  it('take a viewport without hasImageURI, as the checks of core do', () => {
+    const slices = makeImageSliceViewport();
+    const stack = makeImageSliceViewport({ setStack: jest.fn() });
+    const calibrated = makeImageSliceViewport({ calibrateSpacing: jest.fn() });
+
+    expect(viewportSupportsImageSlices(slices)).toBe(true);
+    expect(viewportSupportsStackCompatibility(stack)).toBe(true);
+    expect(viewportSupportsStackCalibration(calibrated)).toBe(true);
+
+    for (const viewport of [slices, stack, calibrated, {}, null]) {
+      expect(viewportSupportsImageSlices(viewport)).toBe(
+        utilities.viewportSupportsImageSlices(viewport)
+      );
+      expect(viewportSupportsStackCompatibility(viewport)).toBe(
+        utilities.viewportSupportsStackCompatibility(viewport)
+      );
+      expect(viewportSupportsStackCalibration(viewport)).toBe(
+        utilities.viewportSupportsStackCalibration(viewport)
+      );
+    }
+  });
+
+  it('still ask for the three image slice members', () => {
+    const { getImageIds: _getImageIds, ...noImageIds } = makeImageSliceViewport(
+      { setStack: jest.fn() }
+    );
+
+    expect(viewportSupportsImageSlices(noImageIds)).toBe(false);
+    expect(viewportSupportsStackCompatibility(noImageIds)).toBe(false);
+    expect(viewportSupportsStackCompatibility(makeImageSliceViewport())).toBe(
+      false
+    );
   });
 });

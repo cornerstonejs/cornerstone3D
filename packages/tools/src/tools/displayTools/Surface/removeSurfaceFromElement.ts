@@ -1,5 +1,9 @@
 import { getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
+import {
+  removeSurfaceDisplaySets,
+  showsSurfacesAsDisplaySets,
+} from './surfaceDisplaySet';
 
 /**
  * Remove the surface representation from the viewport's HTML Element.
@@ -17,6 +21,12 @@ function removeSurfaceFromElement(
   const enabledElement = getEnabledElement(element);
 
   const { viewport } = enabledElement;
+
+  if (showsSurfacesAsDisplaySets(viewport)) {
+    removeSurfaceDisplaySets(viewport, segmentationId);
+
+    return;
+  }
 
   const actorEntries = (viewport as Types.IVolumeViewport).getActors();
 

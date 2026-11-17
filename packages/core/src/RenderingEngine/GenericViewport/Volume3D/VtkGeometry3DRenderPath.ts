@@ -6,6 +6,7 @@ import vtkCellArray from '@kitware/vtk.js/Common/Core/CellArray';
 import { GeometryType, ViewportType } from '../../../enums';
 import uuidv4 from '../../../utilities/uuidv4';
 import type {
+  ActorEntry,
   IGeometry,
   IMesh,
   ISurface,
@@ -44,7 +45,7 @@ export class VtkGeometry3DRenderPath
   ): Promise<RenderPathAttachment<Volume3DDataPresentation>> {
     const payload: Volume3DGeometryPayload =
       data as unknown as LoadedData<Volume3DGeometryPayload>;
-    const actors = createActorEntries(payload.geometry);
+    const actors = createActorEntries(payload);
     const hadVisibleProps = hasVisibleProps(ctx);
 
     actors.forEach((actorEntry) => {
@@ -57,13 +58,15 @@ export class VtkGeometry3DRenderPath
 
     ctx.vtk.renderer.resetCameraClippingRange();
 
+    const surface = getSurface(payload.geometry);
     const rendering: Volume3DGeometryRendering = {
       renderMode: 'vtkGeometry3d',
       actors,
-      frameOfReferenceUID:
-        payload.geometry.type === GeometryType.SURFACE
-          ? (payload.geometry.data as ISurface).frameOfReferenceUID
-          : undefined,
+      frameOfReferenceUID: surface?.frameOfReferenceUID,
+      shownSurface: surface && {
+        points: surface.points,
+        polys: surface.polys,
+      },
     };
 
     return {
@@ -78,7 +81,7 @@ export class VtkGeometry3DRenderPath
         return this.getFrameOfReferenceUID(rendering);
       },
       render: () => {
-        this.render(ctx);
+        this.render(ctx, rendering, payload.geometry);
       },
       resize: () => {
         this.resize(ctx);
@@ -136,7 +139,35 @@ export class VtkGeometry3DRenderPath
     return rendering.frameOfReferenceUID;
   }
 
-  private render(ctx: Volume3DVtkGeometryAdapterContext): void {
+  /**
+   * Asks for a render. A surface is drawn as it is in its geometry now: when
+   * its points or its polys are other arrays than at the last render, the
+   * actor gets new poly data first, and keeps its place in the scene.
+   */
+  private render(
+    ctx: Volume3DVtkGeometryAdapterContext,
+    rendering: Volume3DGeometryRendering,
+    geometry: IGeometry
+  ): void {
+    const surface = getSurface(geometry);
+    const { shownSurface } = rendering;
+
+    if (
+      surface &&
+      shownSurface &&
+      (shownSurface.points !== surface.points ||
+        shownSurface.polys !== surface.polys)
+    ) {
+      (rendering.actors[0].actor as vtkActor)
+        .getMapper()
+        .setInputData(createSurfacePolyData(surface));
+      rendering.shownSurface = {
+        points: surface.points,
+        polys: surface.polys,
+      };
+      ctx.vtk.renderer.resetCameraClippingRange();
+    }
+
     ctx.display.requestRender();
   }
 
@@ -180,19 +211,43 @@ export class VtkGeometry3DPath
   }
 }
 
-function createActorEntries(geometry: IGeometry) {
-  if (geometry.type === GeometryType.SURFACE) {
-    const surface = geometry.data as ISurface;
-    const polyData = vtkPolyData.newInstance();
-    polyData.getPoints().setData(surface.points, 3);
-    polyData.setPolys(
-      vtkCellArray.newInstance({
-        values: Uint32Array.from(surface.polys),
-      })
-    );
+/** The surface of a geometry, when the geometry is a surface. */
+function getSurface(geometry: IGeometry): ISurface | undefined {
+  return geometry.type === GeometryType.SURFACE
+    ? (geometry.data as ISurface)
+    : undefined;
+}
 
+/** The poly data of the points and the polys of a surface. */
+function createSurfacePolyData(surface: ISurface): vtkPolyData {
+  const polyData = vtkPolyData.newInstance();
+
+  polyData.getPoints().setData(surface.points, 3);
+  polyData.setPolys(
+    vtkCellArray.newInstance({
+      values: Uint32Array.from(surface.polys),
+    })
+  );
+
+  return polyData;
+}
+
+/**
+ * The actor entries of a geometry: one actor for a surface, the actors of a
+ * mesh. Each names the geometry as its `referencedId`, and carries the
+ * representation UID when the geometry shows a segmentation representation.
+ */
+function createActorEntries(payload: Volume3DGeometryPayload): ActorEntry[] {
+  const { geometry, reference } = payload;
+  const surface = getSurface(geometry);
+  const representation =
+    reference?.kind === 'segmentation' && reference.representationUID
+      ? { representationUID: reference.representationUID }
+      : {};
+
+  if (surface) {
     const mapper = vtkMapper.newInstance();
-    mapper.setInputData(polyData);
+    mapper.setInputData(createSurfacePolyData(surface));
 
     const actor = vtkActor.newInstance();
     actor.setMapper(mapper);
@@ -210,6 +265,7 @@ function createActorEntries(geometry: IGeometry) {
         actor,
         referencedId: geometry.id,
         uid: uuidv4(),
+        ...representation,
       },
     ];
   }
@@ -222,6 +278,7 @@ function createActorEntries(geometry: IGeometry) {
         actor: sourceActor,
         referencedId: geometry.id,
         uid: uuidv4(),
+        ...representation,
       };
     });
   }

@@ -1,3 +1,4 @@
+import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 import { vec2, vec3 } from 'gl-matrix';
 import cache from '../../../cache/cache';
@@ -38,6 +39,7 @@ import type {
   Volume3DCamera,
   Volume3DDataPresentation,
   Volume3DRegisteredDataSet,
+  Volume3DRendering,
   Volume3DVolumeRendering,
   ViewportWidget,
   VolumeViewport3DInput,
@@ -69,6 +71,8 @@ class VolumeViewport3DLegacyAdapter extends VolumeViewport3D {
    */
   private readonly remountingDataIds = new Set<string>();
   private readonly volumeDataIds = new Map<string, string>();
+  /** The vtk.js actors that the application added with `addActor`, by UID. */
+  private readonly addedActors = new Map<string, ActorEntry>();
   /** The volume input of each display set while `setVolumes` mounts it. */
   private readonly mountingVolumeInputs = new Map<string, IVolumeInput>();
   private readonly legacyProperties = new Map<
@@ -487,6 +491,115 @@ class VolumeViewport3DLegacyAdapter extends VolumeViewport3D {
   removeData(dataId: string): void {
     super.removeData(dataId);
     this.forgetData(dataId);
+  }
+
+  /**
+   * The actors of the display sets, then the vtk.js actors that the
+   * application added with `addActor`, as the legacy viewport lists its
+   * actors.
+   *
+   * @returns Actor entries of the display sets and of the application.
+   */
+  getActors(): ActorEntry[] {
+    return [...super.getActors(), ...this.addedActors.values()];
+  }
+
+  /** The actor entry with this UID, as on the legacy viewport. */
+  getActor(actorUID: string): ActorEntry | undefined {
+    return this.getActors().find((actorEntry) => actorEntry.uid === actorUID);
+  }
+
+  /**
+   * Puts a vtk.js actor of the application into the renderer, as the legacy
+   * viewport does: a surface, a sphere of the cropping tool or a line. It
+   * draws with the display sets, `getActors` lists it, and a reset fits it
+   * when no volume is shown. An actor with the UID of an actor that the
+   * viewport has is not added. Fires ACTORS_CHANGED.
+   *
+   * @param actorEntry - The actor with its UID.
+   */
+  addActor(actorEntry: ActorEntry): void {
+    const { uid, actor } = actorEntry;
+
+    if (!uid || !actor) {
+      throw new Error('Actors should have uid and vtk Actor properties');
+    }
+
+    if (this.getActor(uid)) {
+      log.warn(`Actor ${uid} already exists for this viewport`);
+
+      return;
+    }
+
+    this.getRenderer().addActor(actor as vtkActor);
+    this.addedActors.set(uid, { ...actorEntry });
+    this.getRenderer().resetCameraClippingRange();
+    this.triggerActorsChanged([], [actorEntry]);
+  }
+
+  /**
+   * Adds actors with `addActor` and fires one more ACTORS_CHANGED for all of
+   * them, as the legacy viewport. With `resetCamera` the camera then fits
+   * what the viewport shows; without it the view stays.
+   *
+   * @param actors - The actors with their UIDs.
+   * @param options - `resetCamera` fits the camera after the add.
+   */
+  addActors(
+    actors: ActorEntry[],
+    options: { resetCamera?: boolean } = {}
+  ): void {
+    actors.forEach((actorEntry) => this.addActor(actorEntry));
+
+    if (options.resetCamera) {
+      this.resetViewState();
+    }
+
+    this.triggerActorsChanged([], actors);
+  }
+
+  /**
+   * Replaces what the viewport shows, display sets too, with these actors,
+   * and fits the camera to them, as `setActors` of the legacy viewport.
+   *
+   * @param actors - The actors with their UIDs.
+   */
+  setActors(actors: ActorEntry[]): void {
+    const removedActors = this.getActors();
+
+    this.removeAllData();
+    this.removeAddedActors(Array.from(this.addedActors.keys()));
+    this.addActors(actors, { resetCamera: true });
+    this.triggerActorsChanged(removedActors, actors);
+  }
+
+  /**
+   * Removes actors by UID: an actor that the application added, or an actor
+   * of a display set, whose display set then leaves the viewport. Fires
+   * ACTORS_CHANGED.
+   *
+   * @param actorUIDs - The UIDs of the actors.
+   */
+  removeActors(actorUIDs: string[]): void {
+    const removedActors = this.getActors().filter((actorEntry) =>
+      actorUIDs.includes(actorEntry.uid)
+    );
+
+    removedActors.forEach(({ uid }) => {
+      if (this.addedActors.has(uid)) {
+        this.removeAddedActors([uid]);
+
+        return;
+      }
+
+      const dataId = this.findDataIdByActorUID(uid);
+
+      if (dataId) {
+        this.removeData(dataId);
+      }
+    });
+
+    this.triggerActorsChanged(removedActors, []);
   }
 
   /**
@@ -1242,11 +1355,54 @@ class VolumeViewport3DLegacyAdapter extends VolumeViewport3D {
     }
   }
 
+  /**
+   * The display set whose rendering has the actor with this UID: a volume,
+   * or a geometry with several actors.
+   */
+  private findDataIdByActorUID(actorUID: string): string | undefined {
+    for (const [dataId, binding] of this.bindings.entries()) {
+      const rendering = binding.rendering as Volume3DRendering;
+
+      if (
+        (rendering?.renderMode === 'vtkVolume3d' &&
+          rendering.actorEntryUID === actorUID) ||
+        (rendering?.renderMode === 'vtkGeometry3d' &&
+          rendering.actors.some((actorEntry) => actorEntry.uid === actorUID))
+      ) {
+        return dataId;
+      }
+    }
+  }
+
+  private removeAddedActors(actorUIDs: string[]): void {
+    actorUIDs.forEach((actorUID) => {
+      const actorEntry = this.addedActors.get(actorUID);
+
+      if (actorEntry) {
+        this.getRenderer().removeActor(actorEntry.actor as vtkActor);
+        this.addedActors.delete(actorUID);
+      }
+    });
+  }
+
+  private triggerActorsChanged(
+    removedActors: ActorEntry[],
+    addedActors: ActorEntry[]
+  ): void {
+    triggerEvent(this.element, Events.ACTORS_CHANGED, {
+      viewportId: this.id,
+      removedActors,
+      addedActors,
+      currentActors: this.getActors(),
+    });
+  }
+
   protected override onDestroy(): void {
     for (const dataId of Array.from(this.managedDataIds)) {
       genericViewportDisplaySetMetadataProvider.remove(dataId);
     }
 
+    this.removeAddedActors(Array.from(this.addedActors.keys()));
     this.managedDataIds.clear();
     this.volumeDataIds.clear();
     this.legacyProperties.clear();

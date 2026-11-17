@@ -8,12 +8,39 @@ import {
   getSurfaceActorEntry,
   getSurfaceRepresentationUID,
 } from '../../../stateManagement/segmentation/helpers/getSegmentationActor';
+import {
+  addOrUpdateSurfaceDisplaySet,
+  showsSurfacesAsDisplaySets,
+} from './surfaceDisplaySet';
 
-function addOrUpdateSurfaceToElement(
+/**
+ * Shows a surface of a segmentation on a 3D viewport, or updates the one that
+ * the viewport shows. On a direct next 3D viewport the surface is a geometry
+ * display set, and the promise resolves when it is mounted. On a legacy 3D
+ * viewport and on a legacy adapter it is an actor of the application, added
+ * before the function returns.
+ *
+ * @param viewport - The 3D viewport.
+ * @param surface - The surface, with its colour and its visibility.
+ * @param segmentationId - The id of the segmentation of the surface.
+ * @param geometryId - The id of the cached geometry of the surface, which a
+ * next 3D viewport mounts. The id of the surface when not given.
+ */
+async function addOrUpdateSurfaceToElement(
   viewport: Types.IVolumeViewport,
   surface: Types.ISurface,
-  segmentationId: string
-): void {
+  segmentationId: string,
+  geometryId: string = surface.id
+): Promise<void> {
+  if (showsSurfacesAsDisplaySets(viewport)) {
+    return addOrUpdateSurfaceDisplaySet(
+      viewport,
+      geometryId,
+      surface,
+      segmentationId
+    );
+  }
+
   const surfaceActorEntry = getSurfaceActorEntry(
     viewport.id,
     segmentationId,

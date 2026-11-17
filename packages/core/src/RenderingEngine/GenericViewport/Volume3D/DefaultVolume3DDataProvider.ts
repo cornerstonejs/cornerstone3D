@@ -64,6 +64,7 @@ export class DefaultVolume3DDataProvider implements Volume3DDataProvider {
       geometry,
       geometryId,
       renderMode: 'vtkGeometry3d',
+      ...(dataSet?.reference ? { reference: dataSet.reference } : {}),
     };
   }
 

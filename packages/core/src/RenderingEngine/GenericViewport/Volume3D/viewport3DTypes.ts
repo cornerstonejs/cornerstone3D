@@ -8,6 +8,7 @@ import type {
   ICamera,
   IGeometry,
   IImageVolume,
+  ISurface,
   RGB,
   VOIRange,
   Point3,
@@ -69,6 +70,12 @@ export interface Volume3DGeometryPayload {
   geometry: IGeometry;
   geometryId: string;
   renderMode: 'vtkGeometry3d';
+  /**
+   * What the geometry shows, such as the surface of a segment of a
+   * segmentation representation. Its actor entries then carry the
+   * representation UID.
+   */
+  reference?: ViewportDataReference;
 }
 
 /** @internal */
@@ -199,6 +206,11 @@ export type Volume3DGeometryRendering = MountedRendering<{
   renderMode: 'vtkGeometry3d';
   actors: ActorEntry[];
   frameOfReferenceUID?: string;
+  /**
+   * The points and the polys of the surface that the actor draws. A render
+   * builds the poly data of the actor anew when the surface has other ones.
+   */
+  shownSurface?: Pick<ISurface, 'points' | 'polys'>;
 }>;
 
 /** @internal */

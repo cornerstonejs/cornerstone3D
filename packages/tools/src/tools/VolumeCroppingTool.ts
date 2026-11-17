@@ -42,6 +42,11 @@ import {
   addLine3DBetweenPoints,
   calculateAdaptiveSphereRadius,
 } from '../utilities/draw3D';
+import {
+  addToolProp,
+  removeToolProp,
+  toolOwnsProps,
+} from '../utilities/draw3D/toolProps';
 import { isDragOwnedBy } from '../utilities/interactionDragCoordinator';
 import {
   applyViewportPresentation,
@@ -331,6 +336,8 @@ class VolumeCroppingTool extends BaseTool {
     if (this.sphereStates && this.sphereStates.length === 0) {
       this.originalClippingPlanes = [];
       this._initialize3DViewports(viewportsInfo);
+    } else {
+      this._setHandlesInScene(true);
     }
 
     // Explicitly disable clipping planes and handles after initialization
@@ -367,6 +374,8 @@ class VolumeCroppingTool extends BaseTool {
   };
 
   onSetToolDisabled() {
+    this._setHandlesInScene(false);
+
     // Disconnect all resize observers
     this._resizeObservers.forEach((resizeObserver, viewportId) => {
       resizeObserver.disconnect();
@@ -1119,7 +1128,49 @@ class VolumeCroppingTool extends BaseTool {
 
     sphereActor.getProperty().setColor(color);
     sphereActor.setVisibility(this.configuration.showHandles);
-    viewport.addActor({ actor: sphereActor, uid: uid });
+    addToolProp(viewport, sphereActor, uid);
+  }
+
+  /**
+   * Puts the sphere handles and the edge lines into the scene of a direct
+   * next 3D viewport, or takes them out, and renders. They are props of the
+   * tool there: it takes them out when it is disabled or when the volume
+   * changes, and puts them back when it is active again. On a legacy 3D
+   * viewport and on a legacy adapter they are actors of the viewport, and
+   * nothing happens.
+   *
+   * @param inScene - True to put them into the scene, false to take them out.
+   */
+  _setHandlesInScene(inScene: boolean): void {
+    const viewport = this._getViewport();
+
+    if (!viewport || !toolOwnsProps(viewport)) {
+      return;
+    }
+
+    const handles: Array<{ actor: vtkActor; uid: string }> = [
+      ...this.sphereStates.map(({ sphereActor, uid }) => ({
+        actor: sphereActor,
+        uid,
+      })),
+      ...Object.entries(this.edgeLines).map(([uid, { actor }]) => ({
+        actor,
+        uid,
+      })),
+    ];
+
+    handles.forEach(({ actor, uid }) => {
+      if (!actor) {
+        return;
+      }
+
+      if (inScene) {
+        addToolProp(viewport, actor, uid);
+      } else {
+        removeToolProp(viewport, actor);
+      }
+    });
+    viewport.render();
   }
 
   /**
@@ -1749,6 +1800,7 @@ class VolumeCroppingTool extends BaseTool {
 
   _onNewVolume = () => {
     const viewportsInfo = this._getViewportsInfo();
+    this._setHandlesInScene(false);
     this.originalClippingPlanes = [];
     this.sphereStates = [];
     this.edgeLines = {};

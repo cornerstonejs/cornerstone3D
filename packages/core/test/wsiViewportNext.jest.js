@@ -4,6 +4,8 @@ import WSIViewportLegacyAdapter from '../src/RenderingEngine/GenericViewport/WSI
 import { viewportProjection } from '../src/RenderingEngine/GenericViewport/viewportProjection';
 import { Events, MetadataModules } from '../src/enums';
 import * as metaData from '../src/metaData';
+import { isInAcquisitionPlane } from '../src/utilities/isInAcquisitionPlane';
+import { getViewportContentMode } from '../src/utilities/viewportCapabilities';
 import {
   COLUMNS,
   HEIGHT,
@@ -332,6 +334,23 @@ describe('Events of the direct next whole slide viewport', () => {
 });
 
 describe('Small members of the direct next whole slide viewport', () => {
+  it('says wholeSlide as its content mode, the mode that getViewportContentMode gives for the legacy viewport, and empty with nothing mounted', async () => {
+    const legacy = await track(mountLegacy(0.4));
+    const next = await track(mountNext(WSIViewport, 0.4));
+    const empty = new WSIViewport({
+      id: 'wsiEmpty',
+      element: document.createElement('div'),
+      renderingEngineId: 'renderingEngine',
+    });
+
+    expect(next.viewport.getCurrentMode()).toBe('wholeSlide');
+    expect(getViewportContentMode(next.viewport)).toBe(
+      getViewportContentMode(legacy.viewport)
+    );
+    expect(isInAcquisitionPlane(next.viewport)).toBe(true);
+    expect(empty.getCurrentMode()).toBe('empty');
+  });
+
   it('gives the calibration that the legacy viewport gives in the image data', async () => {
     const legacy = await track(mountLegacy(0.4));
     const next = await track(mountNext(WSIViewport, 0.4));

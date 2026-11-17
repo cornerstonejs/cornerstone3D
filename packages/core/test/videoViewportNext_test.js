@@ -509,6 +509,29 @@ describe('Direct next video viewport -- ', () => {
     expect(data.every((value, index) => value === data[index % 4])).toBe(true);
   });
 
+  it('says video as its content mode, the mode that getViewportContentMode gives for the legacy video viewport, and empty with nothing mounted', function () {
+    testUtils.createViewports(renderingEngine, {
+      width: WIDTH,
+      height: HEIGHT,
+      useEnableElement: true,
+      orientation: null,
+      viewportId: 'emptyNextVideo',
+      viewportType: ViewportType.VIDEO_NEXT,
+    });
+
+    expect(next.getCurrentMode()).toBe('video');
+    expect(utilities.getViewportContentMode(next)).toBe(
+      utilities.getViewportContentMode(legacy)
+    );
+    expect(utilities.isInAcquisitionPlane(next)).toBe(true);
+    expect(utilities.isInAcquisitionPlane(next)).toBe(
+      utilities.isInAcquisitionPlane(legacy)
+    );
+    expect(renderingEngine.getViewport('emptyNextVideo').getCurrentMode()).toBe(
+      'empty'
+    );
+  });
+
   it('has none of the old members of the legacy video viewport', function () {
     for (const member of [
       'togglePlayPause',

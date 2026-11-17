@@ -4,9 +4,15 @@ import * as testUtils from '../../../utils/test/testUtils';
 import addOrUpdateSurfaceToElement from '../src/tools/displayTools/Surface/addOrUpdateSurfaceToElement';
 import removeSurfaceFromElement from '../src/tools/displayTools/Surface/removeSurfaceFromElement';
 
-const { utilities, Enums, volumeLoader, cache, getConfiguration } =
-  cornerstone3D;
-const { ViewportType, OrientationAxis } = Enums;
+const {
+  utilities,
+  Enums,
+  volumeLoader,
+  geometryLoader,
+  cache,
+  getConfiguration,
+} = cornerstone3D;
+const { ViewportType, OrientationAxis, GeometryType } = Enums;
 const {
   OrientationMarkerTool,
   OrientationControllerTool,
@@ -59,16 +65,30 @@ function createViewports(renderingEngine) {
 
 /**
  * A surface of one triangle fan around the volume of the tests: four points
- * and two triangles, in the shape that the Surface representation draws.
+ * and two triangles, in the shape that the Surface representation draws. It
+ * is the surface of a cached geometry, which a next 3D viewport mounts as a
+ * display set.
  */
 function createSurface() {
-  return {
-    points: [0, 0, 0, 30, 0, 0, 30, 20, 10, 0, 20, 10],
-    polys: [3, 0, 1, 2, 3, 0, 2, 3],
-    color: [255, 0, 0],
-    segmentIndex: 1,
-    visible: true,
-  };
+  if (cache.getGeometry('next3DSurface')) {
+    cache.removeGeometryLoadObject('next3DSurface');
+  }
+
+  const surface = geometryLoader.createAndCacheGeometry('next3DSurface', {
+    type: GeometryType.SURFACE,
+    geometryData: {
+      id: 'next3DSurface',
+      frameOfReferenceUID: 'surfaceFrameOfReference',
+      points: [0, 0, 0, 30, 0, 0, 30, 20, 10, 0, 20, 10],
+      polys: [3, 0, 1, 2, 3, 0, 2, 3],
+      color: [255, 0, 0],
+      segmentIndex: 1,
+    },
+  }).data;
+
+  surface.visible = true;
+
+  return surface;
 }
 
 /** The actors that are not volumes, as `[uid, ...]` sorted. */
@@ -78,6 +98,62 @@ function surfaceActorUIDsOf(viewport) {
     .filter(({ actor }) => actor.getClassName() !== 'vtkVolume')
     .map(({ uid }) => uid)
     .sort();
+}
+
+/** The sphere handles and the edge lines that a cropping tool keeps. */
+function handleActorsOf(tool) {
+  return [
+    ...tool.sphereStates.map(({ sphereActor }) => sphereActor),
+    ...Object.values(tool.edgeLines).map(({ actor }) => actor),
+  ].filter(Boolean);
+}
+
+/** The UIDs of the handles and the edge lines of a cropping tool, sorted. */
+function handleUIDsOf(tool) {
+  return [
+    ...tool.sphereStates.map(({ uid }) => uid),
+    ...Object.keys(tool.edgeLines),
+  ].sort();
+}
+
+/** The actors that the vtk.js renderer of a viewport draws. */
+function sceneActorsOf(viewport) {
+  return viewport.getRenderer().getActors();
+}
+
+/**
+ * Shows the volume on both viewports and makes the cropping tool active on
+ * each, in a tool group of its own, with its handles and its clipping planes
+ * visible. Gives the tool of the legacy and of the next viewport.
+ */
+async function startCropping(legacy, next) {
+  const toolName = VolumeCroppingTool.toolName;
+
+  csTools3d.addTool(VolumeCroppingTool);
+
+  const legacyGroup = ToolGroupManager.createToolGroup('legacyCropping');
+  const nextGroup = ToolGroupManager.createToolGroup('nextCropping');
+  const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+
+  toolGroup.removeViewports(renderingEngineId, 'legacy3D');
+  toolGroup.removeViewports(renderingEngineId, 'next3D');
+  await showVolume(legacy, next);
+
+  return [
+    [legacyGroup, 'legacy3D'],
+    [nextGroup, 'next3D'],
+  ].map(([group, viewportId]) => {
+    group.addTool(toolName);
+    group.addViewport(viewportId, renderingEngineId);
+    group.setToolActive(toolName, { bindings: [{ mouseButton: 1 }] });
+
+    const tool = group.getToolInstance(toolName);
+
+    tool.setHandlesVisible(true);
+    tool.setClippingPlanesVisible(true);
+
+    return tool;
+  });
 }
 
 /** Makes a volume and shows it on the legacy and on the next viewport. */
@@ -250,8 +326,11 @@ describe('Tools on a direct next 3D viewport -- ', () => {
     const [legacy, next] = createViewports(renderingEngine);
 
     await showVolume(legacy, next);
-    addOrUpdateSurfaceToElement(legacy, createSurface(), 'surfaceSegmentation');
-    addOrUpdateSurfaceToElement(next, createSurface(), 'surfaceSegmentation');
+
+    const surface = createSurface();
+
+    addOrUpdateSurfaceToElement(legacy, surface, 'surfaceSegmentation');
+    await addOrUpdateSurfaceToElement(next, surface, 'surfaceSegmentation');
 
     const [surfaceEntry] = next
       .getActors()
@@ -275,39 +354,18 @@ describe('Tools on a direct next 3D viewport -- ', () => {
 
   it('crops a direct next 3D viewport with its sphere handles as the legacy 3D viewport', async function () {
     const [legacy, next] = createViewports(renderingEngine);
-    const toolName = VolumeCroppingTool.toolName;
-    csTools3d.addTool(VolumeCroppingTool);
-
-    const legacyGroup = ToolGroupManager.createToolGroup('legacyCropping');
-    const nextGroup = ToolGroupManager.createToolGroup('nextCropping');
-    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
-
-    toolGroup.removeViewports(renderingEngineId, 'legacy3D');
-    toolGroup.removeViewports(renderingEngineId, 'next3D');
-    await showVolume(legacy, next);
-
-    const tools = [
-      [legacyGroup, 'legacy3D'],
-      [nextGroup, 'next3D'],
-    ].map(([group, viewportId]) => {
-      group.addTool(toolName);
-      group.addViewport(viewportId, renderingEngineId);
-      group.setToolActive(toolName, { bindings: [{ mouseButton: 1 }] });
-
-      const tool = group.getToolInstance(toolName);
-
-      tool.setHandlesVisible(true);
-      tool.setClippingPlanesVisible(true);
-
-      return tool;
-    });
+    const tools = await startCropping(legacy, next);
 
     const clippingPlanesOf = (viewport) =>
       viewport.getActors()[0].actor.getMapper().getClippingPlanes();
 
     expect(tools[1].sphereStates.length).toBeGreaterThan(0);
     expect(tools[1].sphereStates.length).toBe(tools[0].sphereStates.length);
-    expect(surfaceActorUIDsOf(next)).toEqual(surfaceActorUIDsOf(legacy));
+    expect(handleUIDsOf(tools[1])).toEqual(surfaceActorUIDsOf(legacy));
+    expect(sceneActorsOf(next).length).toBe(sceneActorsOf(legacy).length);
+    handleActorsOf(tools[1]).forEach((actor) =>
+      expect(sceneActorsOf(next)).toContain(actor)
+    );
     expect(clippingPlanesOf(next).length).toBe(6);
     expect(clippingPlanesOf(next).length).toBe(clippingPlanesOf(legacy).length);
     clippingPlanesOf(next).forEach((plane, index) => {
@@ -324,6 +382,61 @@ describe('Tools on a direct next 3D viewport -- ', () => {
     });
 
     expect(clippingPlanesOf(next).length).toBe(6);
+
+    ToolGroupManager.destroyToolGroup('legacyCropping');
+    ToolGroupManager.destroyToolGroup('nextCropping');
+  });
+
+  it('keeps the handles of the cropping tool as props of the tool: a direct next 3D viewport lists only its display sets', async function () {
+    const [legacy, next] = createViewports(renderingEngine);
+    const [, tool] = await startCropping(legacy, next);
+    const handles = handleActorsOf(tool);
+
+    expect(handles.length).toBe(26);
+    expect(next.getActors().length).toBe(1);
+    expect(surfaceActorUIDsOf(next)).toEqual([]);
+    expect(sceneActorsOf(next).length).toBe(26);
+    handles.forEach((actor) => expect(sceneActorsOf(next)).toContain(actor));
+
+    await next.setDisplaySets({
+      displaySetId: 'next3DVolume',
+      options: { renderMode: 'vtkVolume3d' },
+    });
+
+    const newHandles = handleActorsOf(tool);
+
+    expect(newHandles.length).toBe(26);
+    expect(sceneActorsOf(next).length).toBe(26);
+    newHandles.forEach((actor) => {
+      expect(handles).not.toContain(actor);
+      expect(sceneActorsOf(next)).toContain(actor);
+    });
+
+    ToolGroupManager.destroyToolGroup('legacyCropping');
+    ToolGroupManager.destroyToolGroup('nextCropping');
+  });
+
+  it('takes the handles of the cropping tool out of the scene of a direct next 3D viewport at disable, renders, and puts them back when active again', async function () {
+    const [legacy, next] = createViewports(renderingEngine);
+    const [, tool] = await startCropping(legacy, next);
+    const toolName = VolumeCroppingTool.toolName;
+    const nextGroup = ToolGroupManager.getToolGroup('nextCropping');
+    const handles = handleActorsOf(tool);
+    const croppedPoint = [...tool.sphereStates[0].point];
+
+    spyOn(next, 'render').and.callThrough();
+    nextGroup.setToolDisabled(toolName);
+
+    expect(sceneActorsOf(next).length).toBe(0);
+    expect(next.render).toHaveBeenCalled();
+    expect(handleActorsOf(tool)).toEqual(handles);
+
+    nextGroup.setToolActive(toolName, { bindings: [{ mouseButton: 1 }] });
+
+    expect(handleActorsOf(tool)).toEqual(handles);
+    expect(tool.sphereStates[0].point).toEqual(croppedPoint);
+    expect(sceneActorsOf(next).length).toBe(26);
+    handles.forEach((actor) => expect(sceneActorsOf(next)).toContain(actor));
 
     ToolGroupManager.destroyToolGroup('legacyCropping');
     ToolGroupManager.destroyToolGroup('nextCropping');

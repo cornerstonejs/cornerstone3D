@@ -4,7 +4,6 @@ export type ImageSliceViewport = Types.IViewport & {
   getCurrentImageId(): string | undefined;
   getCurrentImageIdIndex(): number;
   getImageIds(): string[];
-  hasImageURI(imageURI: string): boolean;
 };
 
 export type StackCompatibilityViewport = ImageSliceViewport & {
@@ -34,8 +33,7 @@ export function viewportSupportsImageSlices(
   return (
     viewportHasMethod(viewport, 'getCurrentImageId') &&
     viewportHasMethod(viewport, 'getCurrentImageIdIndex') &&
-    viewportHasMethod(viewport, 'getImageIds') &&
-    viewportHasMethod(viewport, 'hasImageURI')
+    viewportHasMethod(viewport, 'getImageIds')
   );
 }
 

@@ -39,10 +39,6 @@ import { createVolume3DRenderPathResolver } from './Volume3DRenderPathResolver';
 import Volume3DResolvedView from './Volume3DResolvedView';
 import applyVolume3DCamera from './applyVolume3DCamera';
 import { getVolume3DColormap } from './applyVolume3DPresentation';
-import {
-  getVolume3DProjectionSnapshot,
-  type Volume3DProjectionSnapshot,
-} from './volume3DProjectionAdapter';
 import type { Volume3DProjectionFit } from './Volume3DProjectionTypes';
 import {
   VOLUME_3D_FIT_VIEW_ANGLE,
@@ -82,8 +78,6 @@ class VolumeViewport3D extends GenericViewport<
   private primaryDataId?: string;
   /** True while `setDisplaySets` mounts, which fires one event for all. */
   private mountsDisplaySets = false;
-  /** The vtk.js actors that the application added with `addActor`, by UID. */
-  private readonly addedActors = new Map<string, ActorEntry>();
   /**
    * The presentation of each display set after its mount, which
    * `resetDisplaySetPresentation` goes back to.
@@ -550,11 +544,11 @@ class VolumeViewport3D extends GenericViewport<
   }
 
   /**
-   * The actors of the display sets, then the vtk.js actors that the
-   * application added with `addActor`, as the legacy viewport lists its
-   * actors.
+   * The actors of the display sets, in mount order. The `referencedId` of an
+   * entry is the volume id of a volume and the geometry id of a geometry. A
+   * prop that a tool or the application gave to the renderer is not listed.
    *
-   * @returns Actor entries of the display sets and of the application.
+   * @returns Actor entries of the display sets.
    */
   getActors(): ActorEntry[] {
     const actors: ActorEntry[] = [];
@@ -574,105 +568,7 @@ class VolumeViewport3D extends GenericViewport<
       );
     }
 
-    return [...actors, ...this.addedActors.values()];
-  }
-
-  /** The actor entry with this UID, as on the legacy viewport. */
-  getActor(actorUID: string): ActorEntry | undefined {
-    return this.getActors().find((actorEntry) => actorEntry.uid === actorUID);
-  }
-
-  /**
-   * Puts a vtk.js actor of the application into the renderer, as the legacy
-   * viewport does: a surface, a sphere of the cropping tool or a line. It
-   * draws with the display sets, `getActors` lists it, and a reset fits it
-   * when no volume is shown. An actor with the UID of an actor that the
-   * viewport has is not added. Fires ACTORS_CHANGED.
-   *
-   * @param actorEntry - The actor with its UID.
-   */
-  addActor(actorEntry: ActorEntry): void {
-    const { uid, actor } = actorEntry;
-
-    if (!uid || !actor) {
-      throw new Error('Actors should have uid and vtk Actor properties');
-    }
-
-    if (this.getActor(uid)) {
-      log.warn(`Actor ${uid} already exists for this viewport`);
-
-      return;
-    }
-
-    this.getRenderer().addActor(actor as vtkActor);
-    this.addedActors.set(uid, { ...actorEntry });
-    this.getRenderer().resetCameraClippingRange();
-    this.triggerActorsChanged([], [actorEntry]);
-  }
-
-  /**
-   * Adds actors with `addActor` and fires one more ACTORS_CHANGED for all of
-   * them, as the legacy viewport. With `resetCamera` the camera then fits
-   * what the viewport shows; without it the view stays.
-   *
-   * @param actors - The actors with their UIDs.
-   * @param options - `resetCamera` fits the camera after the add.
-   */
-  addActors(
-    actors: ActorEntry[],
-    options: { resetCamera?: boolean } = {}
-  ): void {
-    actors.forEach((actorEntry) => this.addActor(actorEntry));
-
-    if (options.resetCamera) {
-      this.resetViewState();
-    }
-
-    this.triggerActorsChanged([], actors);
-  }
-
-  /**
-   * Replaces what the viewport shows, display sets too, with these actors,
-   * and fits the camera to them, as `setActors` of the legacy viewport.
-   *
-   * @param actors - The actors with their UIDs.
-   */
-  setActors(actors: ActorEntry[]): void {
-    const removedActors = this.getActors();
-
-    this.removeAllData();
-    this.removeAddedActors(Array.from(this.addedActors.keys()));
-    this.addActors(actors, { resetCamera: true });
-    this.triggerActorsChanged(removedActors, actors);
-  }
-
-  /**
-   * Removes actors by UID: an actor that the application added, or an actor
-   * of a display set, whose display set then leaves the viewport. Fires
-   * ACTORS_CHANGED.
-   *
-   * @param actorUIDs - The UIDs of the actors.
-   */
-  removeActors(actorUIDs: string[]): void {
-    const removedActors = this.getActors().filter((actorEntry) =>
-      actorUIDs.includes(actorEntry.uid)
-    );
-
-    removedActors.forEach(({ uid }) => {
-      if (this.addedActors.has(uid)) {
-        this.removeAddedActors([uid]);
-
-        return;
-      }
-
-      const dataId = this.findDataIdByActorUID(uid);
-
-      if (dataId) {
-        this.removeData(dataId);
-      }
-    });
-
-    this.triggerActorsChanged(removedActors, []);
+    return actors;
   }
 
   /**
@@ -888,57 +784,16 @@ class VolumeViewport3D extends GenericViewport<
   protected override onDestroy(): void {
     this.primaryDataId = undefined;
     this.mountedPresentations.clear();
-    this.removeAddedActors(Array.from(this.addedActors.keys()));
-  }
-
-  /**
-   * The display set whose rendering has the actor with this UID: a volume,
-   * or a geometry with several actors.
-   */
-  private findDataIdByActorUID(actorUID: string): string | undefined {
-    for (const [dataId, binding] of this.bindings.entries()) {
-      const rendering = binding.rendering as Volume3DRendering;
-
-      if (
-        (rendering?.renderMode === 'vtkVolume3d' &&
-          rendering.actorEntryUID === actorUID) ||
-        (rendering?.renderMode === 'vtkGeometry3d' &&
-          rendering.actors.some((actorEntry) => actorEntry.uid === actorUID))
-      ) {
-        return dataId;
-      }
-    }
-  }
-
-  private removeAddedActors(actorUIDs: string[]): void {
-    actorUIDs.forEach((actorUID) => {
-      const actorEntry = this.addedActors.get(actorUID);
-
-      if (actorEntry) {
-        this.getRenderer().removeActor(actorEntry.actor as vtkActor);
-        this.addedActors.delete(actorUID);
-      }
-    });
-  }
-
-  private triggerActorsChanged(
-    removedActors: ActorEntry[],
-    addedActors: ActorEntry[]
-  ): void {
-    triggerEvent(this.element, Events.ACTORS_CHANGED, {
-      viewportId: this.id,
-      removedActors,
-      addedActors,
-      currentActors: this.getActors(),
-    });
   }
 
   /**
    * Fires the events of a presentation change with the detail of the legacy
    * viewport: COLORMAP_MODIFIED for a colormap, with VOI_MODIFIED too for a
-   * colormap name; VOI_MODIFIED for invert (with `invertStateChanged`), a VOI
-   * range or a VOI LUT function. Nothing fires with `suppressEvents` set, or
-   * for a display set that is not a volume. A preset fires no event.
+   * colormap name; VOI_MODIFIED for invert, a VOI range or a VOI LUT
+   * function. The detail carries the invert of the display set in `invert`,
+   * and no `invertStateChanged`, as on the next planar viewport. Nothing
+   * fires with `suppressEvents` set, or for a display set that is not a
+   * volume. A preset fires no event.
    */
   protected override notifyDataPresentationModified(
     displaySetId: string,
@@ -953,10 +808,11 @@ class VolumeViewport3D extends GenericViewport<
     const volumeId = rendering.imageVolume.volumeId;
 
     if ('invert' in props) {
-      triggerEvent(this.element, Events.VOI_MODIFIED, {
-        ...this.getVOIModifiedEventDetail(displaySetId, rendering),
-        invertStateChanged: true,
-      });
+      triggerEvent(
+        this.element,
+        Events.VOI_MODIFIED,
+        this.getVOIModifiedEventDetail(displaySetId, rendering)
+      );
     }
 
     if (props.colormap) {
@@ -1120,29 +976,6 @@ class VolumeViewport3D extends GenericViewport<
     return rendering?.renderMode === 'vtkVolume3d' ? rendering : undefined;
   }
 
-  /**
-   * Resolves the current VTK-backed 3D camera through the projection adapter
-   * without making the adapter responsible for mutating the viewport.
-   */
-  private getProjectionSnapshot(): Volume3DProjectionSnapshot {
-    const snapshot = getVolume3DProjectionSnapshot({
-      viewport: this,
-      canvasHeight: this.canvas.clientHeight || this.element.clientHeight,
-      canvasWidth: this.canvas.clientWidth || this.element.clientWidth,
-      camera: this.getViewState(),
-      frameOfReferenceUID: this.resolveFrameOfReferenceUID(),
-      resolvedView: this.getResolvedView(),
-    });
-
-    if (!snapshot) {
-      throw new Error(
-        '[VolumeViewport3D] Unable to resolve projection snapshot'
-      );
-    }
-
-    return snapshot;
-  }
-
   protected getCurrentBinding() {
     if (this.primaryDataId) {
       return this.getBinding(this.primaryDataId) ?? this.getFirstBinding();
@@ -1291,7 +1124,9 @@ class VolumeViewport3D extends GenericViewport<
 
   /**
    * What a reset fits: the image cube of the volume of the default actor
-   * when that actor is a volume, else the bounds of every visible prop.
+   * when that actor is a volume, else the bounds of every visible prop. A
+   * visible geometry display set that reaches outside the image cube is
+   * content too: the fit is then the bounds of the cube and of the geometry.
    */
   private getFitContent(): { imageData?: vtkImageData; bounds: number[] } {
     const actorEntry = this.getDefaultActor();
@@ -1309,11 +1144,53 @@ class VolumeViewport3D extends GenericViewport<
         (actorEntry.actor as vtkVolume).getMapper()?.getInputData();
 
       if (imageData) {
-        return { imageData, bounds: imageData.getBounds() };
+        const imageBounds = imageData.getBounds();
+        const bounds = this.getBoundsWithGeometry(imageBounds);
+
+        return isEqual(bounds, imageBounds)
+          ? { imageData, bounds }
+          : { bounds };
       }
     }
 
     return { bounds: this.getRenderer().computeVisiblePropBounds() };
+  }
+
+  /**
+   * The bounds grown to hold every visible actor of the geometry display
+   * sets. A prop that a tool gave to the renderer is not counted.
+   */
+  private getBoundsWithGeometry(bounds: number[]): number[] {
+    const grown = [...bounds];
+
+    for (const binding of this.bindings.values()) {
+      const rendering = binding.rendering as Volume3DRendering;
+
+      if (rendering.renderMode !== 'vtkGeometry3d') {
+        continue;
+      }
+
+      for (const { actor } of rendering.actors) {
+        const actorBounds = (actor as vtkActor).getBounds();
+
+        if (
+          !(actor as vtkActor).getVisibility() ||
+          actorBounds[0] > actorBounds[1]
+        ) {
+          continue;
+        }
+
+        for (let axis = 0; axis < 3; axis++) {
+          grown[2 * axis] = Math.min(grown[2 * axis], actorBounds[2 * axis]);
+          grown[2 * axis + 1] = Math.max(
+            grown[2 * axis + 1],
+            actorBounds[2 * axis + 1]
+          );
+        }
+      }
+    }
+
+    return grown;
   }
 }
 
