@@ -41,8 +41,9 @@ export default function containsPoint(
     }
   }
 
-  // Test intersection against [end, start] line segment if it should be closed
-  const shouldClose = !(closed === undefined ? isClosed(polyline) : closed);
+  // Test the [end, start] segment unless the caller says the polyline is open;
+  // by default, only when the last point does not already repeat the first
+  const shouldClose = closed ?? !isClosed(polyline);
   const maxSegmentIndex = polyline.length - (shouldClose ? 1 : 2);
 
   for (let i = 0; i <= maxSegmentIndex; i++) {
