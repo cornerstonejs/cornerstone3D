@@ -3,6 +3,7 @@ import MeasurementReport from './MeasurementReport';
 import BaseAdapter3D from './BaseAdapter3D';
 import { toScoord } from '../helpers';
 import { extractAllNUMGroups, restoreAdditionalMetrics } from './metricHandler';
+import { mapUnitToUCUM } from './unitMapper';
 
 const { Circle: TID300Circle } = utilities.TID300;
 
@@ -96,7 +97,7 @@ class CircleROI extends BaseAdapter3D {
       area,
       areaUnit,
       perimeter,
-      modalityUnit,
+      modalityUnit: mapUnitToUCUM(modalityUnit),
       radiusUnit,
       radius,
       max,
