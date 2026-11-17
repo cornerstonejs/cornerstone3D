@@ -141,7 +141,9 @@ export function buildMetadata(image: IImage): BuildMetadataResult {
 
   const { windowWidth, windowCenter, voiLUTFunction } = image;
 
-  const { modality } = metaData.get(MetadataModules.GENERAL_SERIES, imageId);
+  // Locally created images (e.g. createAndCacheLocalImage) have no general series module
+  const { modality } =
+    metaData.get(MetadataModules.GENERAL_SERIES, imageId) || {};
   const imageIdScalingFactor = metaData.get(MetadataModules.SCALING, imageId);
   const calibration = metaData.get(MetadataModules.CALIBRATION, imageId);
 
