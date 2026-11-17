@@ -367,6 +367,14 @@ export interface PlanarViewportRenderContext extends BaseViewportRenderContext {
      */
     namesVolumeImageBySliceIndex?(): boolean;
     /**
+     * Whether a volume fires its new image events as the legacy adapter fires
+     * them: once as it is attached, before its first slice is placed, and
+     * then for each change of the slice index of any rendering. Without it a
+     * volume fires them for the source only, once when the first slice of a
+     * mount is placed and then for each change of its slice index.
+     */
+    firesLegacyVolumeNewImageEvents?(): boolean;
+    /**
      * Reads the render plan entry of `dataId` again after its render path
      * changed what the entry reads (`slabTooLarge`), and fires
      * `RENDER_PLAN_CHANGED` when it changed.

@@ -45,16 +45,20 @@ function hasOwn<T extends object, K extends PropertyKey>(
 }
 
 /**
- * Preserves explicit display-area clears after normalization, because
- * `setViewState` merges patches and therefore needs an own undefined property.
+ * Keeps what a patch clears as own undefined properties after the
+ * normalization, because `setViewState` merges patches: the display area
+ * that the patch takes away, and the world anchor that a display area of the
+ * patch replaces.
  */
-function preserveDisplayAreaClear(
+function preserveClears(
   viewState: PlanarViewState,
-  shouldPreserveClear: boolean
+  clears: { displayArea?: boolean; anchorWorld?: boolean }
 ): PlanarViewState {
-  return shouldPreserveClear
-    ? { ...viewState, displayArea: undefined }
-    : viewState;
+  return {
+    ...viewState,
+    ...(clears.displayArea ? { displayArea: undefined } : {}),
+    ...(clears.anchorWorld ? { anchorWorld: undefined } : {}),
+  };
 }
 
 /**
@@ -161,6 +165,17 @@ export function getPlanarProjectionPresentation(
  * world point under that canvas point under it, in one view state. A pan or
  * a display area in the patch decides where the picture is, so the anchor is
  * not used then, and not for a view that shows no data.
+ *
+ * A display area in the view state decides the zoom and the pan while it is
+ * there. A patch with a pan, a zoom or a scale and no display area takes it
+ * away, and starts from the picture that it gave: a pan moves the picture at
+ * the scale that the display area resolved to, and a zoom or a scale grows it
+ * from that scale, about the anchor or, with no anchor, about the centre of
+ * the canvas. The display area is cleared as an own undefined property,
+ * because `setViewState` merges patches.
+ *
+ * A display area in the patch replaces a world anchor of the view state,
+ * which is cleared as an own undefined property too.
  */
 export function withPlanarProjectionPresentation(
   snapshot: PlanarProjectionSnapshot,
@@ -177,6 +192,10 @@ export function withPlanarProjectionPresentation(
   const hasZoom = hasOwn(presentation, 'zoom');
   const hasScale = hasOwn(presentation, 'scale');
   const hasDisplayArea = hasOwn(presentation, 'displayArea');
+  const dropsDisplayArea =
+    !hasDisplayArea &&
+    Boolean(viewState.displayArea) &&
+    (Boolean(pan) || hasZoom || hasScale);
   const currentScale = snapshot.presentation.scaleVector;
   const nextScale = hasScale
     ? normalizePlanarScale(presentation.scale)
@@ -197,9 +216,18 @@ export function withPlanarProjectionPresentation(
     nextCamera.displayArea = displayArea;
     nextCamera.scale = hasZoom || hasScale ? nextScale : [1, 1];
     nextCamera.scaleMode = displayArea?.scaleMode ?? 'fit';
-  } else if (hasZoom || hasScale || !viewState.displayArea) {
+  } else if (
+    hasZoom ||
+    hasScale ||
+    dropsDisplayArea ||
+    !viewState.displayArea
+  ) {
     nextCamera.scale = nextScale;
     nextCamera.scaleMode = 'fit';
+  }
+
+  if (dropsDisplayArea) {
+    nextCamera.displayArea = undefined;
   }
 
   if (pan) {
@@ -226,31 +254,45 @@ export function withPlanarProjectionPresentation(
         snapshot.canvasHeight
       );
 
-    return preserveDisplayAreaClear(
-      nextViewState,
-      hasDisplayArea && presentation.displayArea === undefined
-    );
-  }
-
-  const anchoredView =
-    options.anchorCanvas && !hasDisplayArea && (hasZoom || hasScale)
-      ? snapshot.resolvedView?.withScale?.(nextScale, options.anchorCanvas)
-      : undefined;
-
-  if (anchoredView) {
-    return normalizePlanarViewState({
-      ...anchoredView.state.viewState,
-      flipHorizontal,
-      flipVertical,
-      rotation,
+    return preserveClears(nextViewState, {
+      displayArea:
+        dropsDisplayArea ||
+        (hasDisplayArea && presentation.displayArea === undefined),
     });
   }
 
-  return preserveDisplayAreaClear(
+  const anchorCanvas =
+    options.anchorCanvas ??
+    (dropsDisplayArea
+      ? ([snapshot.canvasWidth / 2, snapshot.canvasHeight / 2] as Point2)
+      : undefined);
+  const anchoredView =
+    anchorCanvas && !hasDisplayArea && (hasZoom || hasScale)
+      ? snapshot.resolvedView?.withScale?.(nextScale, anchorCanvas)
+      : undefined;
+
+  if (anchoredView) {
+    return preserveClears(
+      normalizePlanarViewState({
+        ...anchoredView.state.viewState,
+        flipHorizontal,
+        flipVertical,
+        rotation,
+      }),
+      { displayArea: dropsDisplayArea }
+    );
+  }
+
+  return preserveClears(
     normalizePlanarViewState({
       ...viewState,
       ...nextCamera,
     }),
-    hasDisplayArea && presentation.displayArea === undefined
+    {
+      displayArea:
+        dropsDisplayArea ||
+        (hasDisplayArea && presentation.displayArea === undefined),
+      anchorWorld: hasDisplayArea,
+    }
   );
 }

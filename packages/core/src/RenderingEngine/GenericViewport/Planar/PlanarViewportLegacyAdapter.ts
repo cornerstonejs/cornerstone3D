@@ -115,6 +115,14 @@ class PlanarViewportLegacyAdapter extends PlanarViewport {
   }
 
   /**
+   * A volume keeps the new image events that the adapter fired before: at
+   * the attach, and for each change of the slice index of any display set.
+   */
+  protected override firesLegacyVolumeNewImageEvents(): boolean {
+    return true;
+  }
+
+  /**
    * With the legacy CPU switch on (`rendering.useCPURendering`) the adapter
    * draws a LINEAR image once for each change, as the legacy CPU stack
    * viewport does. Without the switch the CPU draws because the GPU cannot,

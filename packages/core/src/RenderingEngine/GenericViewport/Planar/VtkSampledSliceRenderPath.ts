@@ -22,7 +22,11 @@ import type {
   PlanarVtkVolumeAdapterContext,
 } from './PlanarViewportTypes';
 import type { PlanarSampledSliceRendering } from './planarRuntimeTypes';
-import { triggerPlanarVolumeNewImage } from './planarImageEvents';
+import {
+  firesPlanarVolumeNewImage,
+  triggerPlanarVolumeNewImage,
+  triggerPlanarVolumeNewImageAtAttach,
+} from './planarImageEvents';
 import { applyPlanarICameraToRenderer } from './planarRenderCamera';
 import {
   getPlanarRenderPathActiveSourceICamera,
@@ -171,7 +175,7 @@ export class VtkSampledSliceRenderPath
       payload.volumeId
     );
 
-    triggerPlanarVolumeNewImage(ctx, {
+    triggerPlanarVolumeNewImageAtAttach(ctx, {
       camera: ctx.viewport.getViewState(),
       acquisitionOrientation: rendering.acquisitionOrientation,
       imageIds: rendering.imageIds,
@@ -360,7 +364,14 @@ export class VtkSampledSliceRenderPath
     this.updateSlice(mount, projection.activeSourceICamera);
     ctx.vtk.renderer.resetCameraClippingRange();
 
-    if (triggerImageEvent && imageIdIndexChanged) {
+    if (
+      triggerImageEvent &&
+      firesPlanarVolumeNewImage(ctx, {
+        rendering,
+        isSourceBinding: projection.isSourceBinding,
+        imageIdIndexChanged,
+      })
+    ) {
       triggerPlanarVolumeNewImage(ctx, {
         camera,
         acquisitionOrientation: rendering.acquisitionOrientation,

@@ -6,6 +6,7 @@ import {
   createSeries,
   showStack,
   showVolume,
+  worldOfVoxel,
 } from '../../core/test/utils/planarSeriesBothModes';
 
 const { Enums, utilities, viewportProjection } = cornerstone3D;
@@ -123,6 +124,49 @@ function shiftOf(viewport, worldPoint) {
   const canvasPoint = viewport.worldToCanvas(worldPoint);
 
   return [canvasPoint[0] - CENTRE[0], canvasPoint[1] - CENTRE[1]];
+}
+
+/**
+ * A display area that fits a part of the image and puts an image point that
+ * is not its centre at the centre of the canvas: a zoom of 1.25 and a pan.
+ */
+const DISPLAY_AREA = {
+  imageArea: [0.8, 0.8],
+  imageCanvasPoint: { imagePoint: [0.4, 0.6], canvasPoint: [0.5, 0.5] },
+};
+
+/**
+ * Where the picture of slice 2 is on the canvas: the canvas point of one of
+ * its voxels, and the distance in canvas pixels between two of them, which
+ * is the size of the picture.
+ */
+function pictureOf(viewport, series) {
+  const a = viewport.worldToCanvas(worldOfVoxel(series, [8, 6, 2]));
+  const b = viewport.worldToCanvas(worldOfVoxel(series, [24, 18, 2]));
+
+  return { a, size: Math.hypot(b[0] - a[0], b[1] - a[1]) };
+}
+
+/**
+ * Checks that the zoom and the pan of the projection service are the ones on
+ * the screen: the picture is `zoom` times its fitted size, and `pan * scale`
+ * canvas pixels from its fitted place.
+ */
+function expectPresentationOnScreen(viewport, series, fit) {
+  const { zoom, pan, scale } = viewportProjection.getPresentation(viewport, {
+    selector: { zoom: true, pan: true, scale: true },
+  });
+  const { a, size } = pictureOf(viewport, series);
+
+  expect(size / fit.size).toBeCloseTo(zoom, 3);
+  expect(a[0]).toBeCloseTo(
+    CENTRE[0] + (fit.a[0] - CENTRE[0]) * scale[0] + pan[0] * scale[0],
+    2
+  );
+  expect(a[1]).toBeCloseTo(
+    CENTRE[1] + (fit.a[1] - CENTRE[1]) * scale[1] + pan[1] * scale[1],
+    2
+  );
 }
 
 /** The zoom and the pan of a next viewport from the projection service. */
@@ -415,6 +459,77 @@ describe('Zoom and pan tools on a direct next planar viewport -- ', () => {
         expect(zoomPanOf(next).zoom).toBeGreaterThan(1.01);
         expect(shown[0]).toBeCloseTo(mouse[0], 3);
         expect(shown[1]).toBeCloseTo(mouse[1], 3);
+      }, 15000);
+    }
+
+    for (const [backend, options, renderModes] of [
+      ['GPU', {}, ['vtkImage', 'vtkSampledSlice']],
+      ['CPU', { renderBackend: 'cpu' }, ['cpuImage', 'cpuVolume']],
+    ]) {
+      it(`moves the picture of a view with a display area with the mouse of the pan tool, at the size that the display area gave, in ${mode} mode on the ${backend}`, async function () {
+        await show(next, series, 2, options);
+
+        const fit = pictureOf(next, series);
+
+        next.setViewState({ displayArea: DISPLAY_AREA });
+        await frames();
+        activatePan(toolGroup);
+
+        const area = pictureOf(next, series);
+        const from = [150, 120];
+        const to = [185, 95];
+        const world = next.canvasToWorld(from);
+
+        expect(next.getCurrentMode()).toBe(mode);
+        expect(renderModes).toContain(next.getRenderPlan()[0].renderMode);
+        expect(zoomPanOf(next).zoom).toBeCloseTo(1.25, 4);
+        expect(area.size / fit.size).toBeCloseTo(1.25, 3);
+        expectPresentationOnScreen(next, series, fit);
+
+        await drag(next.element, from, to);
+
+        const moved = next.worldToCanvas(world);
+        const dragged = pictureOf(next, series);
+
+        expect(moved[0]).toBeCloseTo(to[0], 0);
+        expect(moved[1]).toBeCloseTo(to[1], 0);
+        expect(dragged.a[0] - area.a[0]).toBeCloseTo(to[0] - from[0], 0);
+        expect(dragged.a[1] - area.a[1]).toBeCloseTo(to[1] - from[1], 0);
+        expect(dragged.size).toBeCloseTo(area.size, 3);
+        expect(next.getViewState().displayArea).toBeUndefined();
+        expect(zoomPanOf(next).zoom).toBeCloseTo(1.25, 4);
+        expectPresentationOnScreen(next, series, fit);
+      }, 15000);
+
+      it(`grows the picture of a view with a display area by one wheel step of the zoom tool, and the point under the mouse stays, in ${mode} mode on the ${backend}`, async function () {
+        await show(next, series, 2, options);
+
+        const fit = pictureOf(next, series);
+
+        next.setViewState({ displayArea: DISPLAY_AREA });
+        await frames();
+        activateZoom(toolGroup);
+
+        const area = pictureOf(next, series);
+        const mouse = [260, 110];
+        const underMouse = next.canvasToWorld(mouse);
+        const step = 12 / 11;
+
+        expect(next.getCurrentMode()).toBe(mode);
+        expect(renderModes).toContain(next.getRenderPlan()[0].renderMode);
+        expect(area.size / fit.size).toBeCloseTo(1.25, 3);
+
+        await wheel(next.element, mouse, 1);
+
+        const shown = next.worldToCanvas(underMouse);
+        const grown = pictureOf(next, series);
+
+        expect(grown.size / area.size).toBeCloseTo(step, 3);
+        expect(shown[0]).toBeCloseTo(mouse[0], 2);
+        expect(shown[1]).toBeCloseTo(mouse[1], 2);
+        expect(next.getViewState().displayArea).toBeUndefined();
+        expect(zoomPanOf(next).zoom).toBeCloseTo(1.25 * step, 4);
+        expectPresentationOnScreen(next, series, fit);
       }, 15000);
     }
 

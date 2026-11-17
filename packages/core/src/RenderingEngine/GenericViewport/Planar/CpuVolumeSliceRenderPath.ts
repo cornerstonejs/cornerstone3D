@@ -25,7 +25,11 @@ import type {
   PlanarViewportRenderContext,
 } from './PlanarViewportTypes';
 import type { PlanarCpuVolumeRendering } from './planarRuntimeTypes';
-import { triggerPlanarVolumeNewImage } from './planarImageEvents';
+import {
+  firesPlanarVolumeNewImage,
+  triggerPlanarVolumeNewImage,
+  triggerPlanarVolumeNewImageAtAttach,
+} from './planarImageEvents';
 import {
   getPlanarRenderPathActiveSourceICamera,
   resolvePlanarRenderPathProjection,
@@ -184,7 +188,7 @@ export class CpuVolumeSliceRenderPath
       payload.volumeId
     );
 
-    triggerPlanarVolumeNewImage(ctx, {
+    triggerPlanarVolumeNewImageAtAttach(ctx, {
       camera: ctx.viewport.getViewState(),
       acquisitionOrientation: rendering.acquisitionOrientation,
       imageIds: rendering.imageIds,
@@ -419,7 +423,13 @@ export class CpuVolumeSliceRenderPath
       ctx.viewport.invalidateResolvedView();
     }
 
-    if (imageIdIndexChanged) {
+    if (
+      firesPlanarVolumeNewImage(ctx, {
+        rendering,
+        isSourceBinding: projection.isSourceBinding,
+        imageIdIndexChanged,
+      })
+    ) {
       triggerPlanarVolumeNewImage(ctx, {
         camera,
         acquisitionOrientation: rendering.acquisitionOrientation,

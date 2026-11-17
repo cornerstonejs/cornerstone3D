@@ -477,6 +477,8 @@ class PlanarViewport extends GenericViewport<
         drawsFinerImageAtRest: () => this.prefersFinerImageAtRest(),
         onStackImageLoadError: (failure) => this.onStackImageLoadError(failure),
         namesVolumeImageBySliceIndex: () => this.namesVolumeImageBySliceIndex(),
+        firesLegacyVolumeNewImageEvents: () =>
+          this.firesLegacyVolumeNewImageEvents(),
         refreshRenderPlan: (dataId) => this.updateRenderPlan(dataId),
       },
       renderPath: {
@@ -1643,6 +1645,18 @@ class PlanarViewport extends GenericViewport<
    * `getCurrentImageId()` answers.
    */
   protected namesVolumeImageBySliceIndex(): boolean {
+    return false;
+  }
+
+  /**
+   * A hook of the legacy adapter, which answers true: a volume fires
+   * STACK_NEW_IMAGE and VOLUME_NEW_IMAGE as it did before, once as it is
+   * attached, before its first slice is placed, and then for each change of
+   * the slice index of any of its display sets. A next viewport fires them
+   * for its source only: once when the first slice of a mount is placed, for
+   * that slice, and then for each change of its slice index.
+   */
+  protected firesLegacyVolumeNewImageEvents(): boolean {
     return false;
   }
 

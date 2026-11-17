@@ -215,6 +215,19 @@ nothing, and it does not pan a viewport to keep the centre in view.
 - **A display area of `type: 'SCALE'` reads its `scale` against the fit.** A
   scale of 1 is the fit of the picture. On a legacy viewport 1 meant one
   image pixel on one screen pixel.
+- **A pan or a zoom through `viewportProjection` takes the display area
+  away.** `viewport.setViewState(viewportProjection.withPresentation(viewport, { pan }))`,
+  and the same with `zoom` or `scale`, starts from the picture that the
+  display area gave and moves or grows it. A zoom with no `anchorCanvas` is
+  about the centre of the canvas. After it `viewport.getViewState().displayArea`
+  is undefined. The pan tool, the zoom tool and a zoom and pan synchronizer
+  work this way, in stack mode and in volume mode. Before this change the
+  display area stayed: a pan did nothing and a zoom was multiplied by the
+  zoom of the display area. To set a display area again, call
+  `viewport.setDisplayArea(displayArea)`.
+- **`setViewState({ displayArea })` merges.** A scale that the view state
+  already has stays and multiplies the display area.
+  `setDisplayArea(displayArea)` resets the scale first.
 - **No `storeAsInitialCamera`.** Zoom 1 and pan `[0, 0]` are always the fit.
   A display area does not change the interpolation either.
 - **A stretch is the scale pair of the view state.**
@@ -242,6 +255,15 @@ nothing, and it does not pan a viewport to keep the centre in view.
   that `viewport.getCurrentImageId()` gives, and it is undefined for a cut
   that shows no single image. Its `imageIdIndex` is the slice index of the
   view, which can run against the order of the image ids.
+- **A volume fires its new image events once at a mount.** `STACK_NEW_IMAGE`
+  and `VOLUME_NEW_IMAGE` fire once for the slice that the mount shows, and
+  once for each change of the slice of the source. A display set that is
+  mounted over the source, such as the second volume of a fusion, fires
+  none. Before this change a next viewport fired them twice at a mount, the
+  first time for a slice that it never showed, and once more for each
+  display set over the source at a mount and at every scroll. A listener
+  that waited for the second event of a mount, or that counted events,
+  changes.
 - **`CAMERA_MODIFIED` fires on each change of the view state,** a scroll
   included, and once after the source mounts. `CAMERA_RESET` fires from
   `resetViewState()` only, also in stack mode, where the legacy viewport

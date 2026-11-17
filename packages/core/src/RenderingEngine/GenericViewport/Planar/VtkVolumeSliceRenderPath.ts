@@ -38,7 +38,11 @@ import {
   canvasToWorldContextPool,
   worldToCanvasContextPool,
 } from './planarAdapterCoordinateTransforms';
-import { triggerPlanarVolumeNewImage } from './planarImageEvents';
+import {
+  firesPlanarVolumeNewImage,
+  triggerPlanarVolumeNewImage,
+  triggerPlanarVolumeNewImageAtAttach,
+} from './planarImageEvents';
 import {
   applyPlanarICameraToActor,
   applyPlanarICameraToRenderer,
@@ -184,7 +188,7 @@ export class VtkVolumeSliceRenderPath
       ctx.display.requestRender();
     });
 
-    triggerPlanarVolumeNewImage(ctx, {
+    triggerPlanarVolumeNewImageAtAttach(ctx, {
       camera: ctx.viewport.getViewState(),
       acquisitionOrientation: rendering.acquisitionOrientation,
       imageIds: rendering.imageIds,
@@ -340,7 +344,14 @@ export class VtkVolumeSliceRenderPath
     );
     ctx.vtk.renderer.resetCameraClippingRange();
 
-    if (triggerImageEvent && imageIdIndexChanged) {
+    if (
+      triggerImageEvent &&
+      firesPlanarVolumeNewImage(ctx, {
+        rendering,
+        isSourceBinding: projection.isSourceBinding,
+        imageIdIndexChanged,
+      })
+    ) {
       triggerPlanarVolumeNewImage(ctx, {
         camera,
         acquisitionOrientation: rendering.acquisitionOrientation,
