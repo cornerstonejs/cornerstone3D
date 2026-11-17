@@ -176,8 +176,8 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
 
   /**
    * A function that returns the number of annotations for a given tool in the
-   * specific group (default FrameOfReferenceUID) IF no groupKey (FrameOfReferenceUID) is provided,
-   * it will return the number of annotations for the tool in all groups (FrameOfReferenceUIDs)
+   * specific group (default FrameOfReferenceUID). If no toolName is provided,
+   * it returns the number of annotations of every tool in the group.
    *
    * @param groupKey - The annotation group key to retrieve annotations for (in default manager it is FrameOfReferenceUID).
    * @param toolName - The name of the tool to retrieve data for.
@@ -185,20 +185,20 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
    * @returns The number of annotations for a given tool in the state
    */
   getNumberOfAnnotations = (groupKey: string, toolName?: string): number => {
-    const annotations = this.getAnnotations(groupKey, toolName);
-
-    if (!annotations.length) {
-      return 0;
-    }
-
     if (toolName) {
-      return (annotations as Annotations).length;
+      return (this.getAnnotations(groupKey, toolName) as Annotations).length;
     }
 
+    // Without a toolName, getAnnotations returns the map of tool name to
+    // annotations, or [] for a missing group. Neither has a usable length, so
+    // sum the length of each tool's annotations.
+    const groupAnnotations = this.getAnnotations(
+      groupKey
+    ) as GroupSpecificAnnotations;
     let total = 0;
 
-    for (const toolName in annotations) {
-      total += annotations[toolName].length;
+    for (const toolName in groupAnnotations) {
+      total += groupAnnotations[toolName].length;
     }
 
     return total;
