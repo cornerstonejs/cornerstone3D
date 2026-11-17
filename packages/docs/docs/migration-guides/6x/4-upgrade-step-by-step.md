@@ -194,11 +194,13 @@ are the work list of steps 3 to 8.
   `utilities.viewportSupportsVolumeId` and the like test which members a
   viewport has. A planar viewport has them all in both modes, so they do not
   tell a stack from a volume.
-- In TypeScript a variable typed as `PlanarViewport` is not accepted where a
-  function of the library takes a `Types.IViewport`, such as
-  `utilities.scroll`. Pass `viewport as unknown as Types.IViewport`.
-  [Calls that TypeScript does not accept yet](./3-api-map.md#calls-that-typescript-does-not-accept-yet)
-  has the list. The samples of this page have these casts.
+- A function of the library that works on a next viewport, such as
+  `utilities.scroll`, takes a variable typed as `PlanarViewport`, as the
+  class of another next family or as `Types.IGenericViewport`. No cast is
+  needed. `getEnabledElement(element).viewport` is still typed as a legacy
+  viewport:
+  [Types that still describe a legacy viewport](./3-api-map.md#types-that-still-describe-a-legacy-viewport)
+  says what to write.
 
 ## Step 3. The data
 
@@ -457,10 +459,7 @@ tools have one call for both modes:
 ```ts
 import { utilities as csToolsUtilities } from '@cornerstonejs/tools';
 
-csToolsUtilities.navigatePlanarViewportToPoint(
-  viewport as unknown as Types.IViewport,
-  point
-);
+csToolsUtilities.navigatePlanarViewportToPoint(viewport, point);
 ```
 
 These calls keep their names and work in both modes:
@@ -520,19 +519,15 @@ const image = viewport.getCornerstoneImage();
 After:
 
 ```ts
-const { imageData, voxelManager } = viewport.getImageData() as Types.IImageData;
+const { imageData, voxelManager } = viewport.getImageData();
 const bounds = imageData.getBounds();
 const value = voxelManager?.getAtIJKPoint(
   utilities.transformWorldToIndex(imageData, point)
 );
-const inPlane = utilities.isInAcquisitionPlane(
-  viewport as unknown as Types.IViewport
-);
+const inPlane = utilities.isInAcquisitionPlane(viewport);
 const imageId = viewport.getCurrentImageId();
 const image = imageId ? cache.getImage(imageId) : undefined;
 ```
-
-The two casts are for TypeScript only.
 
 **Check.** Show the same series once as a stack and once as a volume in its
 acquisition orientation, on the same slice. Both give the same value at a

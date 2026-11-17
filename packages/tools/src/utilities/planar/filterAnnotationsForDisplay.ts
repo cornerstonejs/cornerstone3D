@@ -14,7 +14,7 @@ import type { Annotations } from '../../types';
  * @returns A filtered version of the annotations.
  */
 export default function filterAnnotationsForDisplay(
-  viewport: Types.IViewport,
+  viewport: Types.IViewport | Types.IGenericViewport,
   annotations: Annotations,
   filterOptions: Types.ReferenceCompatibleOptions = {}
 ): Annotations {

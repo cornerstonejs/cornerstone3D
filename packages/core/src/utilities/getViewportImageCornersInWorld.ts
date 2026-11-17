@@ -5,6 +5,7 @@ import type {
   Point2,
   Point3,
 } from '../types';
+import type PlanarViewport from '../RenderingEngine/GenericViewport/Planar/PlanarViewport';
 
 /**
  * Given a viewport, return the corners of the image in the viewport in world coordinates.
@@ -16,7 +17,7 @@ import type {
  * @returns The corners of the image in the viewport in world coordinates.
  */
 export default function getViewportImageCornersInWorld(
-  viewport: IStackViewport | IVolumeViewport
+  viewport: IStackViewport | IVolumeViewport | PlanarViewport
 ): Point3[] {
   const { imageData, dimensions } =
     (viewport.getImageData() as IImageData) || {};

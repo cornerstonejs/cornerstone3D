@@ -1,4 +1,4 @@
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import { cache, utilities as csUtils } from '@cornerstonejs/core';
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
 
@@ -6,7 +6,9 @@ const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
   'utilities.voi.windowlevel.extractWindowLevelRegionToolData'
 );
 
-function extractWindowLevelRegionToolData(viewport: Types.IViewport) {
+function extractWindowLevelRegionToolData(
+  viewport: Types.IViewport | Types.IGenericViewport
+) {
   const contentMode = csUtils.getViewportContentMode(viewport);
 
   if (contentMode === 'volume') {
@@ -83,7 +85,7 @@ function extractImageDataStack(viewport: Types.IStackViewport) {
 }
 
 function extractImageDataGeneric(viewport: Types.IGenericViewport) {
-  const imageId = viewport.getCurrentImageId();
+  const imageId = (viewport as PlanarViewport).getCurrentImageId();
 
   if (!imageId) {
     // A volume-mode native viewport on a reformatted (sagittal / coronal /

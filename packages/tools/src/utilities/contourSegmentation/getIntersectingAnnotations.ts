@@ -14,7 +14,7 @@ import * as math from '../math';
  *          and a boolean `isContourHole` indicating if the source polyline is inside the target.
  */
 function findAllIntersectingContours(
-  viewport: Types.IViewport,
+  viewport: Types.IViewport | Types.IGenericViewport,
   sourcePolyline: Types.Point2[],
   contourSegmentationAnnotations: ContourSegmentationAnnotation[]
 ): Array<{
@@ -75,7 +75,7 @@ function findAllIntersectingContours(
  */
 function convertContourPolylineToCanvasSpace(
   polyline: Types.Point3[],
-  viewport: Types.IViewport
+  viewport: Types.IViewport | Types.IGenericViewport
 ): Types.Point2[] {
   const numPoints = polyline.length;
   const projectedPolyline = new Array(numPoints);

@@ -9,7 +9,10 @@ import { utilities } from '@cornerstonejs/core';
  * scaling concept.
  */
 function isViewportPreScaled(
-  viewport: Types.IStackViewport | Types.IVolumeViewport,
+  viewport:
+    | Types.IStackViewport
+    | Types.IVolumeViewport
+    | Types.IGenericViewport,
   targetId: string
 ): boolean {
   return !!utilities.getScalingDescriptor(viewport, targetId)?.isPreScaled;

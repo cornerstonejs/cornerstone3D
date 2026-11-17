@@ -19,7 +19,7 @@ import type { Types } from '@cornerstonejs/core';
  * Returns true when the camera was rotated.
  */
 export default function rotateViewportAroundWorldPoint(
-  viewport: Types.IViewport,
+  viewport: Types.IViewport | Types.IGenericViewport,
   pivot: Types.Point3,
   axis: Types.Point3,
   angle: number

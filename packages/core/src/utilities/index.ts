@@ -102,6 +102,7 @@ import * as colormap from './colormap';
 import * as transferFunctionUtils from './transferFunctionUtils';
 import * as color from './color';
 import { deepEqual } from './deepEqual';
+import type IGenericViewport from '../types/IGenericViewport';
 import type { IViewport } from '../types/IViewport';
 import FrameRange from './FrameRange';
 import fnv1aHash from './fnv1aHash';
@@ -191,10 +192,14 @@ export type {
   TextureProbeReport,
   TextureProbeResult,
 } from './textureSupport';
-const getViewportModality = (viewport: IViewport, volumeId?: string) =>
-  _getViewportModality(viewport, volumeId, cache.getVolume);
-const getScalingDescriptor = (viewport: IViewport, targetId?: string) =>
-  _getScalingDescriptor(viewport, targetId, cache.getVolume);
+const getViewportModality = (
+  viewport: IViewport | IGenericViewport,
+  volumeId?: string
+) => _getViewportModality(viewport, volumeId, cache.getVolume);
+const getScalingDescriptor = (
+  viewport: IViewport | IGenericViewport,
+  targetId?: string
+) => _getScalingDescriptor(viewport, targetId, cache.getVolume);
 
 export * from './isEqual';
 

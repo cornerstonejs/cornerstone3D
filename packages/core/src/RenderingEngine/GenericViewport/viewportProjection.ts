@@ -6,7 +6,7 @@ import type {
   ViewportProjectionAdapter,
 } from './ViewportProjectionTypes';
 import { ViewportType } from '../../enums';
-import type { ViewPresentation } from '../../types';
+import type { ViewPresentation, ViewPresentationSelector } from '../../types';
 import { planarProjectionAdapter } from './Planar/planarProjectionAdapter';
 import type {
   PlanarProjectionRequest,
@@ -140,13 +140,39 @@ type ProjectionForViewport<TViewport> = TViewport extends {
     : never
   : never;
 
+/**
+ * The request for a family that is named by `kind`. Its selector takes the
+ * keys of the legacy selector and one boolean for every other key of the
+ * presentation of the family, such as `scale` of the planar viewport.
+ */
 type ProjectionRequestForKind<TKind extends BuiltInViewportProjectionKind> =
-  Omit<BuiltInViewportProjectionByKind[TKind]['request'], 'viewport'> & {
+  Omit<
+    BuiltInViewportProjectionByKind[TKind]['request'],
+    'viewport' | 'selector'
+  > & {
     kind: TKind;
+    selector?: ViewPresentationSelector & {
+      [TKey in Exclude<
+        keyof BuiltInViewportProjectionByKind[TKind]['presentation'],
+        keyof ViewPresentationSelector
+      >]?: boolean;
+    };
   };
 
+/**
+ * The request for the family of a viewport, taken from its `type`. Its
+ * selector takes the keys of the legacy selector and one boolean for every
+ * other key of the presentation of the family.
+ */
 type ProjectionRequestForViewport<TViewport extends BuiltInProjectionViewport> =
-  Omit<ProjectionForViewport<TViewport>['request'], 'viewport'>;
+  Omit<ProjectionForViewport<TViewport>['request'], 'viewport' | 'selector'> & {
+    selector?: ViewPresentationSelector & {
+      [TKey in Exclude<
+        keyof ProjectionForViewport<TViewport>['presentation'],
+        keyof ViewPresentationSelector
+      >]?: boolean;
+    };
+  };
 
 export type ProjectionSnapshotForViewport<
   TViewport extends BuiltInProjectionViewport,

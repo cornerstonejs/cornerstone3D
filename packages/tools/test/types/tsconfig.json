@@ -1,0 +1,17 @@
+{
+  "extends": "../../../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "declaration": false,
+    "baseUrl": "../../../..",
+    "paths": {
+      "@cornerstonejs/core": ["packages/core/src/index.ts"],
+      "@cornerstonejs/core/*": ["packages/core/src/*"],
+      "@cornerstonejs/utils": ["packages/utils/src/index.ts"],
+      "@cornerstonejs/utils/*": ["packages/utils/src/*"],
+      "@cornerstonejs/metadata": ["packages/metadata/src/index.ts"],
+      "@cornerstonejs/metadata/*": ["packages/metadata/src/*"]
+    }
+  },
+  "files": ["./nextViewportCalls.ts"]
+}

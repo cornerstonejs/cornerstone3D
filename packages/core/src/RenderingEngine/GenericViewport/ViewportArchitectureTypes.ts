@@ -1,6 +1,8 @@
 import type {
   ActorEntry,
+  CPUIImageData,
   ICamera,
+  IImageData,
   Point2,
   Point3,
   ViewportFidelityCause,
@@ -139,7 +141,11 @@ export interface RenderPathAttachment<TPresentation = unknown> {
    * rendering that defines the navigation and the render mode.
    */
   getRenderings?(): MountedRendering[];
-  getImageData?(): unknown;
+  /**
+   * The image data that the attachment draws, as the legacy viewports give
+   * it: the vtk.js image data on the GPU, the CPU image data on the CPU.
+   */
+  getImageData?(): IImageData | CPUIImageData | undefined;
   render?(): void;
   resize?(): void;
   removeData(): void;

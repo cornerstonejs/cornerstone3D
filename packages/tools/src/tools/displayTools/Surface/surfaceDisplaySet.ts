@@ -1,4 +1,5 @@
 import { Enums, utilities, type Types } from '@cornerstonejs/core';
+import type { GenericVolumeViewport3D } from '@cornerstonejs/core';
 import SegmentationRepresentations from '../../../enums/SegmentationRepresentations';
 import {
   getSurfaceActorEntry,
@@ -12,8 +13,8 @@ import { resetViewportCamera } from '../../../utilities/setViewportCamera';
  * and keep a surface as an actor of the application.
  */
 function showsSurfacesAsDisplaySets(
-  viewport: Types.IViewport
-): viewport is Types.IGenericViewport {
+  viewport: Types.IViewport | Types.IGenericViewport
+): viewport is GenericVolumeViewport3D {
   return (
     viewport.type === Enums.ViewportType.VOLUME_3D_NEXT &&
     utilities.isGenericViewport(viewport) &&
@@ -36,7 +37,7 @@ function showsSurfacesAsDisplaySets(
  * @param segmentationId - The id of the segmentation of the surface.
  */
 async function addOrUpdateSurfaceDisplaySet(
-  viewport: Types.IGenericViewport,
+  viewport: GenericVolumeViewport3D,
   geometryId: string,
   surface: Types.ISurface,
   segmentationId: string
@@ -80,7 +81,7 @@ async function addOrUpdateSurfaceDisplaySet(
  * @param segmentationId - The id of the segmentation.
  */
 function removeSurfaceDisplaySets(
-  viewport: Types.IGenericViewport,
+  viewport: GenericVolumeViewport3D,
   segmentationId: string
 ): void {
   const prefix = `${segmentationId}-${SegmentationRepresentations.Surface}-`;

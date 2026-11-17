@@ -3,6 +3,7 @@ import * as planar from './planar';
 import * as metaData from '../metaData';
 import { MetadataModules } from '../enums';
 import type { IStackViewport, Point3 } from '../types';
+import type PlanarViewport from '../RenderingEngine/GenericViewport/Planar/PlanarViewport';
 
 /**
  * Given a point in 3D space and a viewport it returns the index of the closest imageId, it assumes that stack images are sorted according to their sliceLocation
@@ -13,7 +14,7 @@ import type { IStackViewport, Point3 } from '../types';
  */
 export default function getClosestStackImageIndexForPoint(
   point: Point3,
-  viewport: IStackViewport
+  viewport: IStackViewport | PlanarViewport
 ): number | null {
   const minimalDistance = calculateMinimalDistanceForStackViewport(
     point,
@@ -25,7 +26,7 @@ export default function getClosestStackImageIndexForPoint(
 //assumes that imageIds are sorted by slice location
 export function calculateMinimalDistanceForStackViewport(
   point: Point3,
-  viewport: IStackViewport
+  viewport: IStackViewport | PlanarViewport
 ): { distance: number; index: number } | null {
   const imageIds = viewport.getImageIds();
   const currentImageIdIndex = viewport.getCurrentImageIdIndex();

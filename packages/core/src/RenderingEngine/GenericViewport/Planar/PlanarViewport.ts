@@ -22,6 +22,7 @@ import type {
   EventTypes,
   ICamera,
   IImage,
+  IImageData,
   IStackInput,
   ImageActor,
   OrientationVectors,
@@ -1827,7 +1828,7 @@ class PlanarViewport extends GenericViewport<
    * per-target consumers (eg annotation statistics) work on both.
    * @returns The image-data object, if exposed by the render path.
    */
-  getImageData(volumeId?: string) {
+  getImageData(volumeId?: string): IImageData | CPUIImageData | undefined {
     if (volumeId) {
       const dataId = this.findDataIdByVolumeId(volumeId);
       const binding = dataId ? this.getBinding(dataId) : undefined;

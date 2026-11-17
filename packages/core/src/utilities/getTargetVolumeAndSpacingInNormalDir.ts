@@ -1,6 +1,7 @@
 import cache from '../cache/cache';
 import { EPSILON } from '../constants';
 import type { ICamera, IImageVolume, IVolumeViewport, Point3 } from '../types';
+import type PlanarViewport from '../RenderingEngine/GenericViewport/Planar/PlanarViewport';
 import getSpacingInNormalDirection from './getSpacingInNormalDirection';
 import getVoxelThicknessAlongNormal from './voxelSlab/getVoxelThicknessAlongNormal';
 import { getConfiguration } from '../init';
@@ -50,8 +51,8 @@ const isPrimaryVolume = (volume): boolean =>
  *
  */
 export default function getTargetVolumeAndSpacingInNormalDir(
-  viewport: IVolumeViewport,
-  camera: ICamera,
+  viewport: IVolumeViewport | PlanarViewport,
+  camera: ICamera<unknown>,
   targetId?: string,
   useSlabThickness = false
 ): {
@@ -149,7 +150,7 @@ export default function getTargetVolumeAndSpacingInNormalDir(
 function getSpacingInNormal(
   imageVolume: IImageVolume,
   viewPlaneNormal: Point3,
-  viewport: IVolumeViewport,
+  viewport: IVolumeViewport | PlanarViewport,
   useSlabThickness = false
 ): number {
   // Native PLANAR_NEXT (generic) volume-mode viewports route through here too

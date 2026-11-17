@@ -4,6 +4,7 @@ import type {
   ScrollOptions,
   EventTypes,
   ICamera,
+  IGenericViewport,
   IViewport,
   IVideoViewport,
   IStackViewport,
@@ -40,7 +41,7 @@ import {
  * @returns
  */
 export default function scroll(
-  viewport: IViewport | IVideoViewport,
+  viewport: IViewport | IVideoViewport | IGenericViewport,
   options: ScrollOptions
 ): void {
   // check if viewport is disabled then throw error
@@ -86,7 +87,7 @@ export default function scroll(
       return;
     }
 
-    const imageIdIndex = viewport.getCurrentImageIdIndex();
+    const imageIdIndex = (viewport as IStackViewport).getCurrentImageIdIndex();
 
     if (
       imageIdIndex + delta >

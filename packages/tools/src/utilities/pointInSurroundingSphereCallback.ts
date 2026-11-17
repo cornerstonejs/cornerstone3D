@@ -33,7 +33,7 @@ export function pointInSurroundingSphereCallback(
     pointIJK: Types.Point3;
     pointLPS: Types.Point3;
   }) => void,
-  viewport?: Types.IVolumeViewport
+  viewport?: Types.IVolumeViewport | Types.IGenericViewport
 ): void {
   const { boundsIJK, centerWorld, radiusWorld } = _getBounds(
     circlePoints,

@@ -1,5 +1,10 @@
 import cache from '../cache/cache';
-import type { IViewport, IStackViewport, IVolumeViewport } from '../types';
+import type {
+  IGenericViewport,
+  IViewport,
+  IStackViewport,
+  IVolumeViewport,
+} from '../types';
 import {
   getViewportContentMode,
   isGenericViewport,
@@ -11,7 +16,7 @@ import {
  * @param viewport - The viewport to retrieve the image IDs from.
  * @returns An array of image IDs.
  */
-function getViewportImageIds(viewport: IViewport) {
+function getViewportImageIds(viewport: IViewport | IGenericViewport) {
   if (
     getViewportContentMode(viewport) === 'volume' &&
     !isGenericViewport(viewport)

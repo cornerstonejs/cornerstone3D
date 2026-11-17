@@ -149,10 +149,14 @@ export function isGenericViewport(
  * ECG / 3D), so they are gated by a focused guard rather than declared on
  * `IGenericViewport` — narrowing to this lets the VOI-region / livewire tools
  * read the bound dataId and its default VOI without an inline cast.
+ *
+ * `getCurrentImageId` is a member of the planar family too. The guard does
+ * not test for it.
  */
 export type DisplaySetPresentationViewport = IGenericViewport & {
   getSourceDataId(): string | undefined;
   getDefaultVOIRange(dataId?: string): VOIRange | undefined;
+  getCurrentImageId(): string | undefined;
 };
 
 export function viewportSupportsDisplaySetPresentation(

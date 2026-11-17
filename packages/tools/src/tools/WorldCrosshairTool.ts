@@ -1195,7 +1195,7 @@ class WorldCrosshairTool extends AnnotationTool {
    * native-next only.
    */
   private _isPlanarViewport(
-    viewport: Types.IViewport
+    viewport: Types.IViewport | Types.IGenericViewport
   ): viewport is Types.IGenericViewport {
     return (
       viewport?.type === ViewportType.PLANAR_NEXT &&

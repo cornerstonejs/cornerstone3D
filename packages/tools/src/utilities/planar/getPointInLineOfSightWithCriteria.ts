@@ -1,5 +1,5 @@
 import { utilities as csUtils } from '@cornerstonejs/core';
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import getViewportICamera from '../getViewportICamera';
 /**
  * Returns a point based on some criteria (e.g., minimum or maximum intensity) in
@@ -22,7 +22,7 @@ import getViewportICamera from '../getViewportICamera';
  * @returns the World pos of the point that passes the criteriaFunction
  */
 export function getPointInLineOfSightWithCriteria(
-  viewport: Types.IVolumeViewport,
+  viewport: Types.IVolumeViewport | PlanarViewport,
   worldPos: Types.Point3,
   targetVolumeId: string,
   criteriaFunction: (intensity: number, point: Types.Point3) => Types.Point3,
@@ -57,7 +57,7 @@ export function getPointInLineOfSightWithCriteria(
  * @returns An array of points in the line of sight.
  */
 export function getPointsInLineOfSight(
-  viewport: Types.IVolumeViewport,
+  viewport: Types.IVolumeViewport | PlanarViewport,
   worldPos: Types.Point3,
   { targetVolumeId, stepSize }: { targetVolumeId: string; stepSize: number }
 ): Types.Point3[] {
@@ -103,7 +103,7 @@ export function getPointsInLineOfSight(
  * the viewport has no image data.
  */
 function getIntensityAtPoint(
-  viewport: Types.IVolumeViewport,
+  viewport: Types.IVolumeViewport | PlanarViewport,
   point: Types.Point3,
   targetVolumeId: string
 ): number {
@@ -131,7 +131,7 @@ function getIntensityAtPoint(
  * Undefined when the viewport has no image data.
  */
 function getLineOfSightBounds(
-  viewport: Types.IVolumeViewport,
+  viewport: Types.IVolumeViewport | PlanarViewport,
   targetVolumeId: string
 ): number[] {
   if (!csUtils.isGenericViewport(viewport)) {

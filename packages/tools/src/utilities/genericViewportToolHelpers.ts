@@ -35,7 +35,7 @@ export function getSlabThicknessOrDefault(viewport: Types.IViewport): number {
  * `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
  */
 export function getViewSlabDepthOfViewport(
-  viewport: Types.IViewport
+  viewport: Types.IViewport | Types.IGenericViewport
 ): number | undefined {
   // Stack viewports have no slab API at all, so keep the call optional.
   const slabThickness = (
@@ -57,7 +57,7 @@ export function getViewSlabDepthOfViewport(
  * nearest slice along the view-plane normal.
  */
 export function jumpToFocalPoint(
-  viewport: Types.IViewport,
+  viewport: Types.IViewport | Types.IGenericViewport,
   cameraFocalPoint: Types.Point3
 ): void {
   if (csUtils.isGenericViewport(viewport)) {
@@ -84,7 +84,7 @@ export function jumpToFocalPoint(
  * with nothing mounted give false.
  */
 export function navigatePlanarViewportToPoint(
-  viewport: Types.IViewport,
+  viewport: Types.IViewport | Types.IGenericViewport,
   worldPoint: Types.Point3
 ): boolean {
   if (
@@ -150,7 +150,7 @@ export interface NativeSourceProperties {
  * getProperties/getViewPresentation/getCamera APIs.
  */
 export function getNativeSourceProperties(
-  viewport: Types.IViewport
+  viewport: Types.IViewport | Types.IGenericViewport
 ): NativeSourceProperties {
   if (!csUtils.viewportSupportsDisplaySetPresentation(viewport)) {
     return { properties: {} };

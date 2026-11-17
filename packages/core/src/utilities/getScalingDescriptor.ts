@@ -1,3 +1,4 @@
+import type IGenericViewport from '../types/IGenericViewport';
 import type { IViewport } from '../types/IViewport';
 import type IStackViewport from '../types/IStackViewport';
 import type IVolumeViewport from '../types/IVolumeViewport';
@@ -37,7 +38,7 @@ type VolumeLike =
  * utilities index, which supplies it.
  */
 function _getScalingDescriptor(
-  viewport: IViewport,
+  viewport: IViewport | IGenericViewport,
   targetId?: string,
   getVolume?: (volumeId: string) => VolumeLike
 ): ScalingDescriptor | undefined {

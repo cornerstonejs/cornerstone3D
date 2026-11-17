@@ -6,6 +6,7 @@ import type {
   PixelDataTypedArray,
   Point3,
 } from '../types';
+import type PlanarViewport from '../RenderingEngine/GenericViewport/Planar/PlanarViewport';
 import { getStackSliceViewInfo } from './getStackSliceViewInfo';
 import {
   getVolumeSliceViewInfo,
@@ -52,7 +53,7 @@ function getSliceViewInfo(viewport: IViewport): SliceViewInfo {
  * the view looks against the axis of the volume.
  */
 function getSliceScalarData(
-  viewport: IViewport,
+  viewport: IViewport | PlanarViewport,
   { slicePlane, sliceToIndexMatrix }: SliceViewInfo
 ): PixelDataTypedArray {
   const viewportImageData = viewport.getImageData();
@@ -88,10 +89,10 @@ function getSliceScalarData(
  * @returns Slice image data and  matrices to convert from volume
  *   to slice and vice-versa
  */
-function getCurrentVolumeViewportSlice(viewport: IViewport) {
+function getCurrentVolumeViewportSlice(viewport: IViewport | PlanarViewport) {
   const { width: canvasWidth, height: canvasHeight } = viewport.getCanvas();
 
-  const sliceViewInfo = getSliceViewInfo(viewport);
+  const sliceViewInfo = getSliceViewInfo(viewport as IViewport);
   const { sliceToIndexMatrix, indexToSliceMatrix } = sliceViewInfo;
   // Get three points from the canvas to help us identify the orientation of
   // the slice. Using canvas width/height to get point far away for each other

@@ -88,7 +88,7 @@ function removeSurfaceActors(
 
   actorEntries.forEach(({ referencedId }) => {
     utilities.genericViewportDisplaySetMetadataProvider.remove(referencedId);
-    (viewport as Types.IGenericViewport).removeData(referencedId);
+    (viewport as unknown as Types.IGenericViewport).removeData(referencedId);
   });
 }
 

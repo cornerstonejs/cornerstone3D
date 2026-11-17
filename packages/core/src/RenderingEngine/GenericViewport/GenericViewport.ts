@@ -1,6 +1,11 @@
 import type * as EventTypes from '../../types/EventTypes';
 import type ICamera from '../../types/ICamera';
-import type { Point2, Point3, ViewportContentMode } from '../../types';
+import type {
+  IGenericViewport,
+  Point2,
+  Point3,
+  ViewportContentMode,
+} from '../../types';
 import Events from '../../enums/Events';
 import ViewportStatus from '../../enums/ViewportStatus';
 import triggerEvent from '../../utilities/triggerEvent';
@@ -95,6 +100,7 @@ abstract class GenericViewport<
     TContext extends BaseViewportRenderContext = BaseViewportRenderContext,
   >
   implements
+    IGenericViewport<TViewState, TDataPresentation>,
     ViewportController<TViewState, TDataPresentation>,
     IViewportFidelity
 {

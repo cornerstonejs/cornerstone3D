@@ -36,7 +36,7 @@ type PresentationWithSlab = {
  * thickness, or null when intensity picking does not apply.
  */
 export function getSlabIntensityPickContext(
-  viewport: Types.IViewport
+  viewport: Types.IViewport | Types.IGenericViewport
 ): { mode: SlabIntensityPickMode; slabThicknessMm: number } | null {
   if (!csUtils.isGenericViewport(viewport)) {
     return null;
@@ -107,7 +107,7 @@ export function getSlabIntensityPickContext(
  * slab, or when no volume/plane/finite sample is available.
  */
 export default function pickIntensityPointInSlab(
-  viewport: Types.IViewport,
+  viewport: Types.IViewport | Types.IGenericViewport,
   worldPoint: Types.Point3
 ): Types.Point3 | null {
   const context = getSlabIntensityPickContext(viewport);

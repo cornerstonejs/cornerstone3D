@@ -1,11 +1,11 @@
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import { utilities, cache, metaData } from '@cornerstonejs/core';
 import type { Annotation } from '../types';
 import { addAnnotation } from '../stateManagement/annotation/annotationState';
 import { vec3 } from 'gl-matrix';
 
 function annotationHydration(
-  viewport: Types.IViewport,
+  viewport: Types.IViewport | Types.IGenericViewport,
   toolName: string,
   worldPoints: Types.Point3[],
   options?: {
@@ -44,7 +44,7 @@ function annotationHydration(
 }
 
 function getReferencedImageId(
-  viewport: Types.IViewport,
+  viewport: Types.IViewport | Types.IGenericViewport,
   worldPos: Types.Point3,
   viewPlaneNormal: Types.Point3
 ): string {
@@ -75,13 +75,15 @@ function getReferencedImageId(
   return referencedImageId;
 }
 
-function getTargetId(viewport: Types.IViewport): string | undefined {
+function getTargetId(
+  viewport: Types.IViewport | Types.IGenericViewport
+): string | undefined {
   const targetId = viewport.getViewReferenceId?.();
   if (targetId) {
     return targetId;
   }
   if (utilities.viewportIsInVolumeMode(viewport)) {
-    return `volumeId:${getTargetVolumeId(viewport)}`;
+    return `volumeId:${getTargetVolumeId(viewport as Types.IViewport)}`;
   }
   throw new Error('getTargetId: viewport must have a getTargetId method');
 }
@@ -98,7 +100,7 @@ function getTargetVolumeId(viewport: Types.IViewport): string | undefined {
 }
 
 function getClosestImageIdForStackViewport(
-  viewport: Types.IStackViewport,
+  viewport: Types.IStackViewport | PlanarViewport,
   worldPos: Types.Point3,
   viewPlaneNormal: Types.Point3
 ): string {

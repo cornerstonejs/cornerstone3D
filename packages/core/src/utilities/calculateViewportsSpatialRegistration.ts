@@ -1,5 +1,6 @@
 import { vec3, mat4 } from 'gl-matrix';
 import type { IStackViewport, IVolumeViewport } from '../types';
+import type PlanarViewport from '../RenderingEngine/GenericViewport/Planar/PlanarViewport';
 import spatialRegistrationMetadataProvider from './spatialRegistrationMetadataProvider';
 import { get } from '../metaData';
 import { coreLog } from './logger';
@@ -30,8 +31,8 @@ const ALLOWED_DELTA = 0.05;
  * @param viewport2 - The second stack viewport
  */
 function calculateViewportsSpatialRegistration(
-  viewport1: IStackViewport | IVolumeViewport,
-  viewport2: IStackViewport | IVolumeViewport
+  viewport1: IStackViewport | IVolumeViewport | PlanarViewport,
+  viewport2: IStackViewport | IVolumeViewport | PlanarViewport
 ): void {
   const imageId1 = viewport1.getSliceIndex();
   const imageId2 = viewport2.getSliceIndex();

@@ -1,5 +1,5 @@
 import { utilities as csUtils } from '@cornerstonejs/core';
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
 import getViewportICamera from '../../getViewportICamera';
 
@@ -20,7 +20,7 @@ const EPSILON = 1e-3;
  * x and y directions.
  */
 const getSubPixelSpacingAndXYDirections = (
-  viewport: Types.IStackViewport | Types.IVolumeViewport,
+  viewport: Types.IStackViewport | Types.IVolumeViewport | PlanarViewport,
   subPixelResolution: number
 ): { spacing: Types.Point2; xDir: Types.Point3; yDir: Types.Point3 } => {
   let spacing;

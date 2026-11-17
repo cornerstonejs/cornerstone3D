@@ -1680,7 +1680,7 @@ class SliceIntersectionTool extends AnnotationTool {
       );
       const newViewUp = vec3.transformMat4(vec3.create(), viewUp, rotation);
 
-      (member as Types.IGenericViewport).setViewReference({
+      member.setViewReference({
         viewPlaneNormal: [
           newViewPlaneNormal[0],
           newViewPlaneNormal[1],
@@ -1747,7 +1747,7 @@ class SliceIntersectionTool extends AnnotationTool {
    * display-set presentation. Returns true when a change was applied.
    */
   private _setViewportSlabThickness(
-    viewport: Types.IViewport,
+    viewport: Types.IViewport | Types.IGenericViewport,
     slabThickness: number
   ): boolean {
     if (!this._isVolumeModeViewport(viewport)) {
@@ -1784,7 +1784,7 @@ class SliceIntersectionTool extends AnnotationTool {
    * native-next only.
    */
   private _isPlanarViewport(
-    viewport: Types.IViewport
+    viewport: Types.IViewport | Types.IGenericViewport
   ): viewport is Types.IGenericViewport {
     return (
       viewport?.type === ViewportType.PLANAR_NEXT &&
@@ -1797,7 +1797,9 @@ class SliceIntersectionTool extends AnnotationTool {
    * content (as opposed to an image stack), which is required for slab
    * thickness and plane rotation.
    */
-  private _isVolumeModeViewport(viewport: Types.IViewport): boolean {
+  private _isVolumeModeViewport(
+    viewport: Types.IViewport | Types.IGenericViewport
+  ): boolean {
     if (!viewport || !this._isPlanarViewport(viewport)) {
       return false;
     }
@@ -1809,7 +1811,9 @@ class SliceIntersectionTool extends AnnotationTool {
     }
   }
 
-  private _getSourceDataId(viewport: Types.IViewport): string | undefined {
+  private _getSourceDataId(
+    viewport: Types.IViewport | Types.IGenericViewport
+  ): string | undefined {
     if (!csUtils.viewportSupportsDisplaySetPresentation(viewport)) {
       return undefined;
     }
@@ -1820,7 +1824,9 @@ class SliceIntersectionTool extends AnnotationTool {
    * Reads the viewport slab thickness from its display-set presentation;
    * defaults to the minimum slab thickness.
    */
-  private _getSourceSlabThickness(viewport: Types.IViewport): number {
+  private _getSourceSlabThickness(
+    viewport: Types.IViewport | Types.IGenericViewport
+  ): number {
     const dataId = this._getSourceDataId(viewport);
     if (!dataId) {
       return RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS;
