@@ -47,7 +47,9 @@ are temporary.
   `utilities.viewportSupportsStackCompatibility` and
   `utilities.viewportSupportsVolumeCompatibility`.
 - **The legacy types:** `Types.IStackViewport`, `Types.IVolumeViewport` and
-  `Types.IBaseVolumeViewport`. `Types.IViewport` describes a next viewport.
+  `Types.IBaseVolumeViewport`. The interface of a next viewport is
+  `Types.IGenericViewport`. `Types.IViewport` describes a legacy viewport
+  today, and it is not decided whether the name stays.
 - **Settings that only the legacy viewports read:**
   `rendering.useCPURendering` with `setUseCPURendering`,
   `resetUseCPURendering` and `getShouldUseCPURendering`, and
@@ -89,8 +91,11 @@ viewport.getCurrentMode();
 ```
 
 `getCurrentMode()` returns `'stack'`, `'volume'` or `'empty'` for a planar
-viewport. `utilities.getViewportContentMode(viewport)` gives the same answer
-for any viewport. Use them where the code asked
+viewport. A 3D viewport says `'volume3d'`, a video viewport `'video'`, a
+whole slide viewport `'wholeSlide'` and an ECG viewport `'ecg'`, and each
+says `'empty'` with nothing mounted.
+`utilities.getViewportContentMode(viewport)` gives the same answer for any
+viewport. Use them where the code asked
 `viewport instanceof StackViewport` or `viewport.type === ViewportType.STACK`.
 
 Every call of the API answers in both modes. Where the answer differs between
@@ -123,13 +128,14 @@ await viewport.setDisplaySets({ displaySetId });
 
 What is registered for each family:
 
-| Viewport    | Registered display set                                                             |
-| ----------- | ---------------------------------------------------------------------------------- |
-| Planar      | `{ kind: 'planar', imageIds, initialImageIdIndex, volumeId }`                      |
-| 3D          | `{ imageIds, volumeId }`                                                           |
-| Video       | `{ kind: 'video', sourceDataId: imageId }`, or pass the image id as `displaySetId` |
-| ECG         | `{ kind: 'ecg', sourceDataId: imageId }`, or pass the image id as `displaySetId`   |
-| Whole slide | `{ kind: 'wsi', imageIds, options: { webClient } }`                                |
+| Viewport      | Registered display set                                                                                     |
+| ------------- | ---------------------------------------------------------------------------------------------------------- |
+| Planar        | `{ kind: 'planar', imageIds, initialImageIdIndex, volumeId }`                                              |
+| 3D            | `{ imageIds, volumeId }`                                                                                   |
+| 3D, a surface | Nothing. The `displaySetId` is the id of a geometry of the cache, shown with `renderMode: 'vtkGeometry3d'` |
+| Video         | `{ kind: 'video', sourceDataId: imageId }`, or pass the image id as `displaySetId`                         |
+| ECG           | `{ kind: 'ecg', sourceDataId: imageId }`, or pass the image id as `displaySetId`                           |
+| Whole slide   | `{ kind: 'wsi', imageIds, options: { webClient } }`                                                        |
 
 The first entry of `setDisplaySets` is the source. The others are overlays:
 
@@ -163,10 +169,8 @@ A next viewport holds four things. Each legacy call maps to one of them.
 | View references | `getViewReference`, `setViewReference`, `isReferenceViewable`                           | A camera focal point that was set to move through slices |
 
 Zoom and pan are read and written through `viewportProjection`, in one form
-for every family. For a 3D viewport this is **Decided, not in the code yet**,
-see [3D viewports](./2-rendering-changes.md#3d-viewports). A question that the
-state and the data can answer is a function of `utilities`, not a member of
-the viewport.
+for every family. A question that the state and the data can answer is a
+function of `utilities`, not a member of the viewport.
 
 ## What comes over and what does not
 
@@ -180,12 +184,10 @@ Carried over, in the new shape:
 - a preset, a colormap and a blend mode of a 3D viewport, as keys of its
   presentation;
 - a perspective camera, on a 3D viewport with `parallelProjection: false`;
-- a surface in a 3D viewport, as a display set (**Decided, not in the code
-  yet**);
+- a surface in a 3D viewport, as a display set;
 - a stretched picture, as the scale pair of the view state of a planar
   viewport;
-- the frame range of a video, as a key of its view state (**Decided, not in
-  the code yet**).
+- the frame range of a video, as a key of its view state.
 
 Not carried over:
 
