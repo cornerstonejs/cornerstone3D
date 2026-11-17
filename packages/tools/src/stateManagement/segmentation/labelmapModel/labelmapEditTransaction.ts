@@ -63,6 +63,9 @@ type LabelmapEditTransaction = {
   /** The locked segments on layers other than the edited layer. The edit
    *  skips a voxel that one of these layers holds. */
   lockedVoxelsOnOtherLayers?: LockedLabelmapVoxels[];
+  /** The edit indexes one image slice, decided once before a segment move
+   *  can swap the voxel manager. */
+  imageSliceEdit?: boolean;
 };
 
 /** The voxels of the locked segments on one layer. */
@@ -76,6 +79,10 @@ type ResolveLabelmapLayerEditTargetOptions = {
   imageId?: string;
   sourceLayer?: LabelmapLayer;
   preferVolume?: boolean;
+  /** The edit indexes one image slice (a 2D brush in a stack viewport), not a
+   *  volume. A layer with a `volumeId` then resolves to its image for that
+   *  slice, because the 2D index into the whole volume reads slice 0. */
+  imageSliceEdit?: boolean;
 };
 
 type LabelmapLayerEditTarget = {
@@ -92,6 +99,8 @@ type EraseLabelmapEditTransactionOptions = {
   isInObject: (point: Types.Point3) => boolean;
   isInObjectBoundsIJK?: Types.BoundsIJK;
   imageId?: string;
+  /** See `ResolveLabelmapLayerEditTargetOptions.imageSliceEdit`. */
+  imageSliceEdit?: boolean;
   /** When provided, receives the erased voxels of each touched layer so the
    *  caller can record them for undo/redo. */
   crossLayerEraseCallback?: (record: CrossLayerEraseRecord) => void;
@@ -323,6 +332,19 @@ function getLockedVoxelsOnOtherLayers(
       return;
     }
 
+    if (isVolumeLayerSliceEdit(layer, targetOptions)) {
+      // A 2D edit reads the image of the edited slice. Without one, nothing
+      // of this layer is locked on the slice: the volume would read slice 0.
+      const sliceTarget = resolveVolumeLayerSliceTarget(layer, targetOptions);
+      if (sliceTarget) {
+        lockedVoxels.push({
+          voxelManager: sliceTarget.voxelManager,
+          labelValues,
+        });
+      }
+      return;
+    }
+
     let layerTargetOptions = targetOptions;
     if (
       !isVolumeEdit &&
@@ -407,10 +429,122 @@ function getLabelmapLayerImageId(
   return targetIndex >= 0 ? layer.imageIds?.[targetIndex] : layer.imageIds?.[0];
 }
 
+function isVolumeLayerSliceEdit(
+  layer: LabelmapLayer,
+  options: ResolveLabelmapLayerEditTargetOptions
+): boolean {
+  return (
+    !!layer.volumeId &&
+    !!options.imageSliceEdit &&
+    !options.preferVolume &&
+    !(options.viewport instanceof BaseVolumeViewport)
+  );
+}
+
+/**
+ * The referenced (source) image of the edited image. A layer without
+ * `referencedImageIds` (for example the primary layer of a segmentation added
+ * with only a `volumeId`) lists labelmap image ids only, so the cached
+ * labelmap image gives the referenced image. A viewport image id is its own
+ * referenced image.
+ */
+function getEditedReferencedImageId(
+  imageId: string,
+  sourceLayer?: LabelmapLayer
+): string | undefined {
+  const sourceImageIndex = sourceLayer?.imageIds?.indexOf(imageId) ?? -1;
+  if (sourceImageIndex >= 0 && sourceLayer.referencedImageIds?.length) {
+    return getReferencedImageIdForImageIndex(sourceLayer, sourceImageIndex);
+  }
+
+  return cache.getImage(imageId)?.referencedImageId ?? imageId;
+}
+
+/**
+ * Finds the image of a volume layer for the slice of `options.imageId`. The
+ * image is matched by its referenced image, because the edited layer and the
+ * volume layer can list their images in another order.
+ *
+ * With several labelmap images for one referenced image (one per time point
+ * of a 4D layer) this takes the first one, as the stack lookup of
+ * `getLockedVoxelsOnOtherLayers` does.
+ */
+function getVolumeLayerSliceImageId(
+  layer: LabelmapLayer,
+  options: ResolveLabelmapLayerEditTargetOptions
+): string | undefined {
+  const { imageId, sourceLayer } = options;
+  if (!imageId) {
+    return;
+  }
+
+  // The primary layer of a segmentation added with only a volumeId does not
+  // list its images; the images of its volume are the slices.
+  const layerImageIds = layer.imageIds?.length
+    ? layer.imageIds
+    : (cache.getVolume(layer.volumeId) as Types.IImageVolume | undefined)
+        ?.imageIds;
+
+  if (layerImageIds?.includes(imageId)) {
+    return imageId;
+  }
+
+  const referencedImageId = getEditedReferencedImageId(imageId, sourceLayer);
+  if (!referencedImageId) {
+    return;
+  }
+
+  const [mappedImageId] = layer.referencedImageIds?.length
+    ? getLabelmapImageIdsForReferencedImageId(layer, referencedImageId)
+    : [];
+
+  // The cached images of a labelmap volume also know their referenced image,
+  // for a layer without `referencedImageIds` or with ones of another kind.
+  return (
+    mappedImageId ??
+    layerImageIds?.find(
+      (candidateImageId) =>
+        cache.getImage(candidateImageId)?.referencedImageId ===
+        referencedImageId
+    )
+  );
+}
+
+/**
+ * The image of a volume layer for the edited slice of a 2D edit, or undefined
+ * when the layer has no cached image for that slice. The images of a labelmap
+ * volume share their voxels with the volume, so an edit of the image is an
+ * edit of the volume.
+ */
+function resolveVolumeLayerSliceTarget(
+  layer: LabelmapLayer,
+  options: ResolveLabelmapLayerEditTargetOptions
+): LabelmapLayerEditTarget | undefined {
+  const sliceImageId = getVolumeLayerSliceImageId(layer, options);
+  const sliceImage = sliceImageId ? cache.getImage(sliceImageId) : undefined;
+  if (!sliceImage?.voxelManager) {
+    return;
+  }
+
+  return {
+    imageId: sliceImageId,
+    voxelManager: sliceImage.voxelManager as Types.IVoxelManager<number>,
+    image: sliceImage,
+  };
+}
+
 function resolveLabelmapLayerEditTarget(
   layer: LabelmapLayer,
   options: ResolveLabelmapLayerEditTargetOptions = {}
 ): LabelmapLayerEditTarget {
+  if (isVolumeLayerSliceEdit(layer, options)) {
+    const sliceTarget = resolveVolumeLayerSliceTarget(layer, options);
+    if (sliceTarget) {
+      return sliceTarget;
+    }
+    // Without a slice image the edit keeps the volume, as before.
+  }
+
   const imageId = getLabelmapLayerImageId(layer, options);
 
   if (
@@ -489,15 +623,18 @@ function eraseStackLayer(
   layer: LabelmapLayer,
   binding: SegmentLabelmapBindingState,
   options: EraseLabelmapEditTransactionOptions,
-  modifiedSlices: Set<number>
+  modifiedSlices: Set<number>,
+  target?: LabelmapLayerEditTarget
 ): void {
   const stackViewport = options.viewport as Types.IStackViewport;
   const currentImageId =
     getCurrentViewportImageId(options.viewport) ?? options.imageId;
-  const { image, voxelManager } = resolveLabelmapLayerEditTarget(layer, {
-    viewport: options.viewport,
-    imageId: currentImageId,
-  });
+  const { image, voxelManager } =
+    target ??
+    resolveLabelmapLayerEditTarget(layer, {
+      viewport: options.viewport,
+      imageId: currentImageId,
+    });
 
   if (!image || !voxelManager) {
     return;
@@ -555,6 +692,20 @@ function eraseLabelmapEditTransactionOverwrites(
     const layer = getLabelmap(segmentation, binding.labelmapId);
 
     if (!layer) {
+      return;
+    }
+
+    // A 2D edit of a volume layer erases the image of the edited slice: the
+    // IJK bounds of the edit are bounds in that image, not in the volume.
+    if (isVolumeLayerSliceEdit(layer, options)) {
+      const sliceTarget = resolveVolumeLayerSliceTarget(layer, {
+        viewport: options.viewport,
+        imageId: options.imageId,
+        sourceLayer: transaction.activeLayer,
+      });
+      if (sliceTarget) {
+        eraseStackLayer(layer, binding, options, modifiedSlices, sliceTarget);
+      }
       return;
     }
 
