@@ -419,6 +419,11 @@ class Cache {
 
     // check if there is enough space in unallocated + image Cache
     if (!this.isCacheable(image.sizeInBytes)) {
+      const eventDetails: EventTypes.CacheSizeExceededEventDetail = {
+        imageId,
+        sizeInBytes: image.sizeInBytes,
+      };
+      triggerEvent(eventTarget, Events.CACHE_SIZE_EXCEEDED, eventDetails);
       throw new Error(Events.CACHE_SIZE_EXCEEDED);
     }
 
@@ -461,6 +466,9 @@ class Cache {
    *
    * fires Events.IMAGE_CACHE_IMAGE_ADDED
    * fires Events.CACHE_SIZE_EXCEEDED if the cache size exceeds the maximum
+   *
+   * The returned promise rejects only for invalid arguments. Load errors reach
+   * callers through imageLoadObject.promise, and caching errors are logged.
    *
    * @param imageId - ImageId for the image
    * @param imageLoadObject - The object that is loading or loaded the image
@@ -521,15 +529,29 @@ class Cache {
         try {
           this._putImageCommon(imageId, image, cachedImage);
         } catch (error) {
-          log.debug(`Error in _putImageCommon for image ${imageId}:`, error);
-          throw error; // Re-throw the error to be caught in the .catch block
+          // Callers do not await this promise, so log instead of re-throwing.
+          log.warn(`Error in _putImageCommon for image ${imageId}:`, error);
+          this._removeImageEntryIfCurrent(imageId, cachedImage);
         }
       })
       .catch((error) => {
+        // Callers already get load errors from imageLoadObject.promise.
         log.debug(`Error caching image ${imageId}:`, error);
-        this._imageCache.delete(imageId);
-        throw error; // Re-throw the error to be caught by the caller
+        this._removeImageEntryIfCurrent(imageId, cachedImage);
       });
+  }
+
+  /**
+   * Removes the entry for imageId only if it is still cachedImage. A
+   * CACHE_SIZE_EXCEEDED listener or a newer load may have replaced it.
+   */
+  private _removeImageEntryIfCurrent(
+    imageId: string,
+    cachedImage: ICachedImage
+  ): void {
+    if (this._imageCache.get(imageId) === cachedImage) {
+      this._imageCache.delete(imageId);
+    }
   }
 
   /**
@@ -563,7 +585,7 @@ class Cache {
     try {
       this._putImageCommon(imageId, image, cachedImage);
     } catch (error) {
-      this._imageCache.delete(imageId);
+      this._removeImageEntryIfCurrent(imageId, cachedImage);
       throw error;
     }
   }
@@ -768,6 +790,9 @@ class Cache {
    *
    * fires Events.VOLUME_CACHE_VOLUME_ADDED
    *
+   * The returned promise rejects only for invalid arguments. Load errors reach
+   * callers through volumeLoadObject.promise.
+   *
    * @param volumeId - volumeId of the volume
    * @param volumeLoadObject - The object that is loading or loaded the volume
    */
@@ -814,12 +839,11 @@ class Cache {
         } catch (error) {
           log.error(`Error in _putVolumeCommon for volume ${volumeId}:`, error);
           this._volumeCache.delete(volumeId); // Clean up the cache if an error occurs
-          throw error;
         }
       })
-      .catch((error) => {
+      .catch(() => {
+        // Callers already get load errors from volumeLoadObject.promise.
         this._volumeCache.delete(volumeId);
-        throw error;
       });
   }
 
