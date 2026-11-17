@@ -3,8 +3,7 @@ import * as csTools3d from '../../tools/src/index';
 import * as testUtils from '../../../utils/test/testUtils';
 import { clipAndCacheSurfacesForViewport } from '../../polymorphic-segmentation/src/utilities/clipAndCacheSurfacesForViewport';
 
-const { Enums, volumeLoader, utilities, getConfiguration, cache, metaData } =
-  cornerstone3D;
+const { Enums, volumeLoader, utilities, cache, metaData } = cornerstone3D;
 const { ViewportType, OrientationAxis, Events } = Enums;
 
 const renderingEngineId = utilities.uuidv4();
@@ -15,18 +14,14 @@ const OBLIQUE = {
 };
 
 /**
- * Makes a legacy viewport of `legacyType` with the id `legacy` and a direct
- * next planar viewport with the id `next`, of one size and orientation, in
- * one rendering engine. The switch of the generic viewports is off for the
- * legacy one, so it is the legacy class with or without
- * FORCE_GENERIC_VIEWPORT.
+ * Makes the viewport of `legacyType`, which is its legacy adapter, with the
+ * id `legacy` and a direct next planar viewport with the id `next`, of one
+ * size and orientation, in one rendering engine.
  */
 function createPair(
   renderingEngine,
   { legacyType, orientation, legacyId = 'legacy', nextId = 'next' }
 ) {
-  const rendering = getConfiguration().rendering;
-  const useGenericViewport = rendering.useGenericViewport;
   const viewportOptions = {
     orientation,
     width: 400,
@@ -34,13 +29,11 @@ function createPair(
     useEnableElement: true,
   };
 
-  rendering.useGenericViewport = false;
   testUtils.createViewports(renderingEngine, {
     ...viewportOptions,
     viewportId: legacyId,
     viewportType: legacyType,
   });
-  rendering.useGenericViewport = useGenericViewport;
   testUtils.createViewports(renderingEngine, {
     ...viewportOptions,
     viewportId: nextId,
@@ -212,10 +205,6 @@ async function showStackPair(renderingEngine, imageIds) {
  * shows the stack on it.
  */
 async function showAdapterStack(renderingEngine, imageIds) {
-  const rendering = getConfiguration().rendering;
-  const useGenericViewport = rendering.useGenericViewport;
-
-  rendering.useGenericViewport = true;
   testUtils.createViewports(renderingEngine, {
     viewportId: 'adapter',
     viewportType: ViewportType.STACK,
@@ -224,7 +213,6 @@ async function showAdapterStack(renderingEngine, imageIds) {
     height: 300,
     useEnableElement: true,
   });
-  rendering.useGenericViewport = useGenericViewport;
 
   const adapter = renderingEngine.getViewport('adapter');
 
@@ -320,6 +308,59 @@ const VOLUME_ORIENTATIONS = [
   ['sagittal', OrientationAxis.SAGITTAL],
   ['oblique', OBLIQUE],
 ];
+
+/**
+ * The planes that `getSlicesClippingPlanes` of the legacy volume viewport
+ * class of 5.x gave for the volume of the tests in each view: the number of
+ * slices, the two planes of slice 0, and the step of both origins from one
+ * slice to the next. The values were read from that class before it was
+ * deleted.
+ */
+const LEGACY_SLICE_PLANES = {
+  axial: {
+    slices: 12,
+    planes: [
+      { normal: [0, 0, -1], origin: [14.5, 19.5, 11.05] },
+      { normal: [0, 0, 1], origin: [14.5, 19.5, 10.95] },
+    ],
+    step: [0, 0, -1],
+  },
+  sagittal: {
+    slices: 30,
+    planes: [
+      { normal: [1, 0, 0], origin: [-0.05, 19.5, 5.5] },
+      { normal: [-1, 0, 0], origin: [0.05, 19.5, 5.5] },
+    ],
+    step: [1, 0, 0],
+  },
+  oblique: {
+    slices: 29,
+    planes: [
+      {
+        normal: [Math.SQRT1_2, 0, Math.SQRT1_2],
+        origin: [4.565149893751647, 19.5, -4.434850106248353],
+      },
+      {
+        normal: [-Math.SQRT1_2, 0, -Math.SQRT1_2],
+        origin: [4.635860571870301, 19.5, -4.364139428129699],
+      },
+    ],
+    step: [Math.SQRT1_2, 0, Math.SQRT1_2],
+  },
+};
+
+/** The legacy planes of each slice of a view of `LEGACY_SLICE_PLANES`. */
+function legacySlicePlanes(name) {
+  const { slices, planes, step } = LEGACY_SLICE_PLANES[name];
+
+  return Array.from({ length: slices }, (_, sliceIndex) => ({
+    sliceIndex,
+    planes: planes.map(({ normal, origin }) => ({
+      normal,
+      origin: origin.map((value, axis) => value + sliceIndex * step[axis]),
+    })),
+  }));
+}
 
 describe('Direct next planar viewport against the legacy viewports -- ', () => {
   let renderingEngine;
@@ -425,13 +466,11 @@ describe('Direct next planar viewport against the legacy viewports -- ', () => {
     VOLUME_ORIENTATIONS.forEach(([name, orientation]) => {
       it(`give the legacy plane of each slice in the ${name} view, within 1e-3 mm, 5e-3 mm when oblique`, async function () {
         const volumeId = await createVolume();
-        const [legacy, next] = await showVolumePair(
-          renderingEngine,
-          orientation,
-          [volumeId]
-        );
+        const [, next] = await showVolumePair(renderingEngine, orientation, [
+          volumeId,
+        ]);
         const precision = typeof orientation === 'object' ? 2 : 3;
-        const legacyPlanes = legacy.getSlicesClippingPlanes();
+        const legacyPlanes = legacySlicePlanes(name);
         const nextPlanes = utilities.getSlicesClippingPlanes(next);
 
         expect(legacyPlanes.length).toBeGreaterThan(0);

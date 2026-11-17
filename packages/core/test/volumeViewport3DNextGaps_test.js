@@ -4,29 +4,18 @@ import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import vtkSphereSource from '@kitware/vtk.js/Filters/Sources/SphereSource';
 import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
 
-const {
-  Enums,
-  volumeLoader,
-  utilities,
-  getConfiguration,
-  cache,
-  CONSTANTS,
-  viewportProjection,
-} = cornerstone3D;
+const { Enums, volumeLoader, utilities, cache, CONSTANTS, viewportProjection } =
+  cornerstone3D;
 const { ViewportType, OrientationAxis, Events, BlendModes } = Enums;
 
 const renderingEngineId = utilities.uuidv4();
 
 /**
- * Makes viewports of one size and orientation in one rendering engine: a
- * legacy 3D viewport when `legacyId` is given, then a direct next 3D viewport
- * for each of `nextIds`. The switch of the generic viewports is off for the
- * legacy one, so it is the legacy class with or without
- * FORCE_GENERIC_VIEWPORT.
+ * Makes viewports of one size and orientation in one rendering engine: the
+ * viewport of the legacy 3D type, which is the 3D legacy adapter, when
+ * `legacyId` is given, then a direct next 3D viewport for each of `nextIds`.
  */
 function createViewports(renderingEngine, { legacyId, nextIds }) {
-  const rendering = getConfiguration().rendering;
-  const useGenericViewport = rendering.useGenericViewport;
   const viewportOptions = {
     orientation: OrientationAxis.SAGITTAL,
     width: 400,
@@ -35,13 +24,11 @@ function createViewports(renderingEngine, { legacyId, nextIds }) {
   };
 
   if (legacyId) {
-    rendering.useGenericViewport = false;
     testUtils.createViewports(renderingEngine, {
       ...viewportOptions,
       viewportId: legacyId,
       viewportType: ViewportType.VOLUME_3D,
     });
-    rendering.useGenericViewport = useGenericViewport;
   }
 
   nextIds.forEach((viewportId) =>
@@ -339,9 +326,6 @@ describe('Direct next 3D viewport, colour and presets -- ', () => {
     });
 
     expect(volumeActorOf(next).getMapper().getBlendMode()).toBe(
-      volumeActorOf(legacy).getMapper().getBlendMode()
-    );
-    expect(volumeActorOf(next).getMapper().getBlendMode()).toBe(
       BlendModes.MAXIMUM_INTENSITY_BLEND
     );
   });
@@ -401,7 +385,6 @@ describe('Direct next 3D viewport, colour and presets -- ', () => {
       expect(detail.colormap?.name).toBe(legacyDetail.colormap?.name);
     });
     expect(nextDetails[1].invert).toBe(true);
-    expect(legacyDetails[1].invertStateChanged).toBe(true);
   });
 
   it('fires VOI_MODIFIED and COLORMAP_MODIFIED with the legacy detail on a colormap change', async function () {
@@ -614,23 +597,19 @@ describe('Direct next 3D viewport, the scene -- ', () => {
 });
 
 /**
- * Makes a legacy and a direct next 3D viewport with `suppressEvents` in
- * their default options.
+ * Makes the viewport of the legacy 3D type and a direct next 3D viewport with
+ * `suppressEvents` in their default options.
  */
 function createSuppressedViewports(renderingEngine) {
-  const rendering = getConfiguration().rendering;
-  const useGenericViewport = rendering.useGenericViewport;
-
   return [
-    ['legacy3D', ViewportType.VOLUME_3D, false],
-    ['next3D', ViewportType.VOLUME_3D_NEXT, useGenericViewport],
-  ].map(([viewportId, type, useGeneric]) => {
+    ['legacy3D', ViewportType.VOLUME_3D],
+    ['next3D', ViewportType.VOLUME_3D_NEXT],
+  ].map(([viewportId, type]) => {
     const element = document.createElement('div');
 
     element.style.width = '400px';
     element.style.height = '300px';
     document.body.appendChild(element);
-    rendering.useGenericViewport = useGeneric;
     renderingEngine.enableElement({
       viewportId,
       type,
@@ -640,7 +619,6 @@ function createSuppressedViewports(renderingEngine) {
         suppressEvents: true,
       },
     });
-    rendering.useGenericViewport = useGenericViewport;
 
     return renderingEngine.getViewport(viewportId);
   });

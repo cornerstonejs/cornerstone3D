@@ -50,6 +50,34 @@ const volumeId = testUtils.encodeVolumeIdInfo({
   ySpacing: 1,
 });
 
+/**
+ * A world point moved along the view normal of each viewport to the centre
+ * of the nearest slice of the volume, in steps of the spacing of the volume
+ * along that normal. A next viewport shows a volume slice on a slice centre,
+ * so the centre of the crosshairs lies on a slice centre of every viewport.
+ * The first voxel of the volume, at its origin, is a slice centre.
+ */
+function moveToSliceCentres(worldPoint, volume, viewports) {
+  return viewports.reduce(
+    (point, viewport) => {
+      const { viewPlaneNormal } = viewport.getCamera();
+      const spacing = utilities.getSpacingInNormalDirection(
+        volume,
+        viewPlaneNormal
+      );
+      const distance = point.reduce(
+        (sum, value, axis) =>
+          sum + (value - volume.origin[axis]) * viewPlaneNormal[axis],
+        0
+      );
+      const step = Math.round(distance / spacing) * spacing - distance;
+
+      return point.map((value, axis) => value + step * viewPlaneNormal[axis]);
+    },
+    [...worldPoint]
+  );
+}
+
 describe('Cornerstone Tools: ', () => {
   let renderingEngine;
 
@@ -411,6 +439,11 @@ describe('Cornerstone Tools: ', () => {
         elements[0],
         vp1
       );
+      const expectedCenter = moveToSliceCentres(
+        worldCoord2,
+        cache.getVolume(volumeId),
+        viewportIds.map((viewportId) => renderingEngine.getViewport(viewportId))
+      );
 
       let evt = new MouseEvent('mousedown', {
         target: elements[0],
@@ -443,7 +476,7 @@ describe('Cornerstone Tools: ', () => {
         crosshairAnnotationsAfter.forEach((crosshairAnnotation) => {
           expect(crosshairAnnotation.metadata.cameraFocalPoint).toBeDefined();
           crosshairAnnotation.data.handles.toolCenter.forEach((p, i) => {
-            expect(p).toBeCloseTo(worldCoord2[i], 3);
+            expect(p).toBeCloseTo(expectedCenter[i], 3);
             annotation.state.removeAnnotation(
               crosshairAnnotation.annotationUID
             );

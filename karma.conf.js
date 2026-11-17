@@ -53,8 +53,6 @@ if (!process.env.CHROME_BIN) {
 const outputPath =
   path.join(os.tmpdir(), '_karma_webpack_') +
   Math.floor(Math.random() * 1000000);
-const forceCompat = process.env.FORCE_COMPAT === 'true';
-const forceGenericViewport = process.env.FORCE_GENERIC_VIEWPORT === 'true';
 const forceCpuRendering = process.env.FORCE_CPU_RENDERING === 'true';
 const grepPattern = process.env.KARMA_GREP;
 
@@ -64,8 +62,6 @@ module.exports = function (config) {
     reporters: ['junit', 'coverage', 'spec'],
     client: {
       forceCpuRendering,
-      forceCompat,
-      forceGenericViewport,
       args: grepPattern ? ['--grep', grepPattern] : [],
       jasmine: {
         random: false, // don't randomize the order of tests
@@ -130,7 +126,7 @@ module.exports = function (config) {
         included: false,
         served: true,
       },
-      // Compat-mode baselines for dynamic comparison
+      // CPU-mode baselines for dynamic comparison
       {
         pattern: 'karma-baselines/**/*.png',
         watched: false,

@@ -715,25 +715,11 @@ async function run() {
     );
   }
 
-  // ?cpu=1 only sets useCPURendering, and the legacy volume viewport refuses
-  // to render at all under it ("Volume viewports cannot be rendered whilst cpu
-  // rendering is true"). The V2 (GenericViewport) volume path does support a
-  // CPU backend - that is what the helper's planar.renderBackend: 'cpu' is
-  // for - so opt into V2 automatically rather than making the CPU comparison
-  // require remembering to add ?type=next as well.
-  const cpuRendering = getBooleanUrlParam('cpu');
-  if (cpuRendering) {
-    console.log(
-      'diag ?cpu=1 - enabling useGenericViewport so the volume viewport has a CPU path'
-    );
-  }
-
   await initDemo({
     core: {
       isMobile,
       rendering: {
         ...(preferSizeOverAccuracy ? { preferSizeOverAccuracy: true } : {}),
-        ...(cpuRendering ? { useGenericViewport: true } : {}),
       },
     },
   });

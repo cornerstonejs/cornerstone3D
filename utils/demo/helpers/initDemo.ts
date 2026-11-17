@@ -20,7 +20,6 @@ import {
   applyLossyDownsamplingOverride,
   applySliceFirstOverride,
   applyUrlParameterOverridesToDemoConfig,
-  applyViewportTypeOverride,
 } from './exampleParameters';
 
 window.cornerstone = cornerstone;
@@ -47,9 +46,8 @@ export default async function initDemo(config: any = {}) {
   const urlParams = new URLSearchParams(window.location.search);
   const debugParameter = urlParams.get('debug');
 
-  // Apply URL parameter overrides (cpu thresholds, viewport V2 flag, etc.)
+  // Apply URL parameter overrides (cpu thresholds, etc.)
   let demoConfig = applyUrlParameterOverridesToDemoConfig(config);
-  demoConfig = applyViewportTypeOverride(demoConfig);
   demoConfig = applyLossyDownsamplingOverride(demoConfig);
   demoConfig = applySliceFirstOverride(demoConfig);
   const toolsConfig = demoConfig?.tools || {};

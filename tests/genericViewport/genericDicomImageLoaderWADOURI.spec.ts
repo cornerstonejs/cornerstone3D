@@ -11,8 +11,8 @@ import { dicomDimensions } from '../../packages/dicomImageLoader/examples/dicomI
 
 // This spec exists so `scripts/run-playwright.sh --next` picks up the WADOURI
 // scenario under the GenericViewport code path. It re-runs the same 45 image
-// comparisons as the legacy spec but loads each example with `?type=next` so
-// the GenericViewport implementation is exercised end-to-end.
+// comparisons as the legacy spec. The example asks for a legacy viewport
+// type, which gives a GenericViewport with its legacy adapter.
 //
 // The 45 baselines are dcm2jpg-derived (DICOM ground truth) and live under
 // `tests/screenshots/<project>/dicomImageLoaderWADOURI.spec.ts/`. We point at
@@ -96,7 +96,6 @@ test.beforeEach(async ({ page }) => {
   // with backoff so a single dropped response doesn't fail the image load.
   await retryRemoteFixtures(page);
   const url = createExampleUrl(EXAMPLE + '.html');
-  url.searchParams.set('type', 'next');
   await page.goto(url.toString());
   await page.waitForLoadState('domcontentloaded');
   await page.waitForSelector('#imageSelector', { timeout: 30000 });

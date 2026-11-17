@@ -523,17 +523,6 @@ function getShouldUseCPURendering(): boolean {
 }
 
 /**
- * Returns whether GenericViewport compatibility adapters are enabled.
- * When true, legacy viewport types are internally routed to GenericViewport-backed
- * implementations while preserving the legacy public API surface for rollout.
- * @returns true if viewport Next remapping is enabled.
- * @category Initialization
- */
-function getUseGenericViewport(): boolean {
-  return config.rendering.useGenericViewport === true;
-}
-
-/**
  *
  * Returns whether or not cornerstone-core has been initialized.
  * @returns true if the cornerstone render has been initialized.
@@ -649,7 +638,6 @@ async function peerImport(moduleId: string) {
 export {
   init,
   getShouldUseCPURendering,
-  getUseGenericViewport,
   isCornerstoneInitialized,
   setUseCPURendering,
   setPreferSizeOverAccuracy,

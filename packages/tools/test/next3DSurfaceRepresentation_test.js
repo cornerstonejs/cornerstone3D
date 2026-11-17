@@ -3,14 +3,7 @@ import * as csTools3d from '../src/index';
 import * as testUtils from '../../../utils/test/testUtils';
 import { getConfig, setConfig } from '../src/config';
 
-const {
-  utilities,
-  Enums,
-  volumeLoader,
-  geometryLoader,
-  cache,
-  getConfiguration,
-} = cornerstone3D;
+const { utilities, Enums, volumeLoader, geometryLoader, cache } = cornerstone3D;
 const { ViewportType, OrientationAxis, GeometryType } = Enums;
 const { ToolGroupManager, segmentation, Enums: csToolsEnums } = csTools3d;
 const { Surface } = csToolsEnums.SegmentationRepresentations;
@@ -24,8 +17,6 @@ const segmentationId = 'surfaceSegmentation';
  * and orientation in one rendering engine, and adds both to the tool group.
  */
 function createViewports(renderingEngine) {
-  const rendering = getConfiguration().rendering;
-  const useGenericViewport = rendering.useGenericViewport;
   const viewportOptions = {
     orientation: OrientationAxis.SAGITTAL,
     width: 400,
@@ -33,13 +24,11 @@ function createViewports(renderingEngine) {
     useEnableElement: true,
   };
 
-  rendering.useGenericViewport = false;
   testUtils.createViewports(renderingEngine, {
     ...viewportOptions,
     viewportId: 'legacy3D',
     viewportType: ViewportType.VOLUME_3D,
   });
-  rendering.useGenericViewport = useGenericViewport;
   testUtils.createViewports(renderingEngine, {
     ...viewportOptions,
     viewportId: 'next3D',
@@ -291,10 +280,7 @@ describe('A Surface representation on a direct next 3D viewport -- ', () => {
 
   it('keeps the surfaces as actors of the application on a legacy adapter', async function () {
     const [legacy, next] = createViewports(renderingEngine);
-    const rendering = getConfiguration().rendering;
-    const useGenericViewport = rendering.useGenericViewport;
 
-    rendering.useGenericViewport = true;
     testUtils.createViewports(renderingEngine, {
       orientation: OrientationAxis.SAGITTAL,
       width: 400,
@@ -303,7 +289,6 @@ describe('A Surface representation on a direct next 3D viewport -- ', () => {
       viewportId: 'adapter3D',
       viewportType: ViewportType.VOLUME_3D,
     });
-    rendering.useGenericViewport = useGenericViewport;
     ToolGroupManager.getToolGroup(toolGroupId).addViewport(
       'adapter3D',
       renderingEngineId

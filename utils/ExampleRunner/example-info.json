@@ -425,7 +425,7 @@
       },
       "labelmapOverlapPlayground": {
         "name": "Labelmap Overlap Playground",
-        "description": "Minimal overlap demo with brush and eraser variants, segment selection, and an Allow Overlap toggle for legacy, cpu=true, and type=next."
+        "description": "Minimal overlap demo with brush and eraser variants, segment selection, and an Allow Overlap toggle, with or without cpu=true."
       },
       "labelmapOverlapPetCt": {
         "name": "Labelmap Overlap PET-CT",

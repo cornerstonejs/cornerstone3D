@@ -7,7 +7,7 @@ import {
   waitFor,
 } from '../../../utils/test/testUtilsVideo';
 
-const { Enums, utilities, getConfiguration } = cornerstone3D;
+const { Enums, utilities } = cornerstone3D;
 const { ViewportType, Events } = Enums;
 
 const renderingEngineId = utilities.uuidv4();
@@ -15,14 +15,11 @@ const WIDTH = 320;
 const HEIGHT = 200;
 
 /**
- * Makes a legacy video viewport and a direct next video viewport of one size
- * in one rendering engine. The switch of the generic viewports is off for
- * the legacy one, so it is the legacy class with or without
- * FORCE_GENERIC_VIEWPORT.
+ * Makes the viewport of the legacy `VIDEO` type, which is the legacy adapter
+ * of the video viewport, and a direct next video viewport of one size in one
+ * rendering engine.
  */
 function createViewports(renderingEngine) {
-  const rendering = getConfiguration().rendering;
-  const useGenericViewport = rendering.useGenericViewport;
   const viewportOptions = {
     width: WIDTH,
     height: HEIGHT,
@@ -30,13 +27,11 @@ function createViewports(renderingEngine) {
     orientation: null,
   };
 
-  rendering.useGenericViewport = false;
   testUtils.createViewports(renderingEngine, {
     ...viewportOptions,
     viewportId: 'legacyVideo',
     viewportType: ViewportType.VIDEO,
   });
-  rendering.useGenericViewport = useGenericViewport;
   testUtils.createViewports(renderingEngine, {
     ...viewportOptions,
     viewportId: 'nextVideo',
@@ -49,9 +44,9 @@ function createViewports(renderingEngine) {
   ];
 }
 
-/** The legacy video element of a legacy video viewport. */
+/** The video element that the viewport of the legacy type shows. */
 function legacyVideoElement(legacy) {
-  return legacy.videoElement;
+  return legacy.element.querySelector('video');
 }
 
 /** The video element that a direct next video viewport shows. */

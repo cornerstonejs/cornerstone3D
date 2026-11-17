@@ -1,8 +1,4 @@
-import type {
-  BaseVolumeViewport,
-  LegacyVolumeViewport3D,
-  Types,
-} from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
@@ -498,7 +494,7 @@ async function run() {
   // Render the image
   const viewport = renderingEngine.getViewport(
     viewportId4
-  ) as LegacyVolumeViewport3D;
+  ) as Types.IVolumeViewport;
   renderingEngine.renderViewports(viewportIds);
   await setVolumesForViewports(
     renderingEngine,
@@ -528,7 +524,7 @@ async function run() {
       const renderingEngine = getRenderingEngine(renderingEngineId);
       const viewport = renderingEngine.getViewport(
         viewportId4
-      ) as LegacyVolumeViewport3D;
+      ) as Types.IVolumeViewport;
 
       // Get canvas coordinates relative to the element
       const rect = element4.getBoundingClientRect();
@@ -565,7 +561,7 @@ eventTarget.addEventListener(
     const renderingEngine = getRenderingEngine(renderingEngineId);
     const viewport = renderingEngine.getViewport(
       viewportId4
-    ) as LegacyVolumeViewport3D;
+    ) as Types.IVolumeViewport;
     if (sphereActor) {
       addSphere(viewport, toolCenter);
     }
@@ -580,7 +576,7 @@ eventTarget.addEventListener(
  * @param viewport
  * @returns
  */
-function prepareImageDataForPicking(viewport: BaseVolumeViewport) {
+function prepareImageDataForPicking(viewport: Types.IVolumeViewport) {
   const volumeActor = viewport.getDefaultActor()?.actor;
   if (!volumeActor) {
     return;

@@ -414,7 +414,7 @@ describe('A direct next planar viewport in stack mode and in volume mode -- ', (
       });
     });
 
-    it('gives the pixels of the slice on display of a legacy volume viewport that looks against the slice axis, where its own member reads the mirror slice', async function () {
+    it('gives the pixels of the slice on display of a legacy volume viewport that looks against the slice axis', async function () {
       const series = await createSeries();
       const legacy = createLegacyViewport(
         renderingEngine,
@@ -450,9 +450,6 @@ describe('A direct next planar viewport in stack mode and in volume mode -- ', (
       expect(indexOfSlicePixel(slice, [5, 7])).toEqual([5, 7, 2]);
       expect(Array.from(slice.scalarData)).toEqual(
         storedSlicePixels(series, 2)
-      );
-      expect(Array.from(legacy.getCurrentSlicePixelData())).toEqual(
-        storedSlicePixels(series, 5)
       );
     });
   });
@@ -515,7 +512,7 @@ describe('A direct next planar viewport in stack mode and in volume mode -- ', (
       expect(utilities.getSlicesClippingPlanes(empty)).toEqual([]);
     });
 
-    it('gives the planes of a legacy volume viewport by its own member, and those of a legacy stack viewport and of the legacy adapters as a next viewport', async function () {
+    it('gives the planes of the legacy adapters as a next viewport', async function () {
       const series = await createSeries();
       const stack = createNextViewport(renderingEngine, 'stack');
       const volume = createNextViewport(renderingEngine, 'volume');
@@ -567,9 +564,6 @@ describe('A direct next planar viewport in stack mode and in volume mode -- ', (
       );
       expect(utilities.getSlicesClippingPlanes(adapterStack)).toEqual(
         stackPlanes
-      );
-      expect(legacyVolumePlanes).toEqual(
-        legacyVolume.getSlicesClippingPlanes()
       );
       expect(legacyVolumePlanes.length).toBe(8);
       expect(adapterVolumePlanes.length).toBe(8);

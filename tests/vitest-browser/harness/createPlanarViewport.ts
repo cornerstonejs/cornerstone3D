@@ -6,7 +6,6 @@ import {
   cache,
   cornerstoneStreamingImageVolumeLoader,
   Enums,
-  getConfiguration,
   getRenderingEngine,
   imageLoader as csImageLoader,
   init,
@@ -130,10 +129,6 @@ export async function createPlanarViewport(
 
   init();
 
-  const renderingConfig = getConfiguration().rendering;
-  const previousUseGenericViewport = renderingConfig.useGenericViewport;
-  renderingConfig.useGenericViewport = true;
-
   const drawsAcquiredFrames = renderMode === 'vtkVolumeSliceFrames';
   const drawsVolumeTexture =
     renderMode === 'vtkVolumeSlice' || drawsAcquiredFrames;
@@ -194,11 +189,6 @@ export async function createPlanarViewport(
     if (drawsAcquiredFrames) {
       setLossyDownsampling({ final: false });
       resetGpuSettingsPreset();
-    }
-
-    if (previousUseGenericViewport !== undefined) {
-      getConfiguration().rendering.useGenericViewport =
-        previousUseGenericViewport;
     }
   };
 

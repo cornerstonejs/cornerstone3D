@@ -17,8 +17,7 @@
  * So we mock only `getEnabledElement` below, keeping every other real
  * `@cornerstonejs/core` export (this is safe/fast - confirmed empirically
  * that importing the real package in jsdom works fine for the pure-math
- * helpers used elsewhere in this file, e.g. `utilities.isEqual` and the
- * `StackViewport` class reference used for `instanceof` checks).
+ * helpers used elsewhere in this file, e.g. `utilities.isEqual`).
  */
 jest.mock('@cornerstonejs/core', () => {
   const actual = jest.requireActual('@cornerstonejs/core');
@@ -29,7 +28,7 @@ jest.mock('@cornerstonejs/core', () => {
 });
 
 import { describe, it, expect } from '@jest/globals';
-import { StackViewport, getEnabledElement } from '@cornerstonejs/core';
+import { getEnabledElement } from '@cornerstonejs/core';
 
 import containsPoint from '../../src/utilities/math/polyline/containsPoint';
 import containsPoints from '../../src/utilities/math/polyline/containsPoints';
@@ -650,18 +649,18 @@ describe('getSubPixelSpacingAndXYDirections', () => {
   // mock `@cornerstonejs/core` for this function specifically.
 
   it('reads spacing/direction straight off the image data for a stack (image-slice) viewport', () => {
-    const viewport = Object.create(StackViewport.prototype);
-    viewport.type = 'stack';
-    viewport.getImageData = () => ({
-      // direction is a 9-element row-major 3x3 matrix: rows are iVector,
-      // jVector, kVector.
-      direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
-      spacing: [0.5, 0.25],
-    });
+    const viewport = {
+      type: 'stack',
+      getImageData: () => ({
+        // direction is a 9-element row-major 3x3 matrix: rows are iVector,
+        // jVector, kVector.
+        direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
+        spacing: [0.5, 0.25],
+      }),
+    };
 
     const result = getSubPixelSpacingAndXYDirections(viewport, 10);
 
-    expect(viewport instanceof StackViewport).toBe(true);
     expect(result.xDir).toEqual([1, 0, 0]);
     expect(result.yDir).toEqual([0, 1, 0]);
     // subPixelResolution divides the native spacing: 0.5/10 and 0.25/10.

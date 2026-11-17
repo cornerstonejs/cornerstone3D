@@ -1,8 +1,7 @@
 import * as cornerstone3D from '../src/index';
 import * as testUtils from '../../../utils/test/testUtils';
 
-const { Enums, volumeLoader, utilities, getConfiguration, cache } =
-  cornerstone3D;
+const { Enums, volumeLoader, utilities, cache } = cornerstone3D;
 const { ViewportType, OrientationAxis, Events, BlendModes } = Enums;
 
 const renderingEngineId = utilities.uuidv4();
@@ -49,8 +48,6 @@ async function createPlaneVolume() {
  * planar viewport, all axial and of one size, in one rendering engine.
  */
 function createViewports(renderingEngine) {
-  const rendering = getConfiguration().rendering;
-  const useGenericViewport = rendering.useGenericViewport;
   const options = {
     orientation: OrientationAxis.AXIAL,
     width: SIZE,
@@ -59,19 +56,16 @@ function createViewports(renderingEngine) {
     useEnableElement: true,
   };
 
-  rendering.useGenericViewport = false;
   testUtils.createViewports(renderingEngine, {
     ...options,
     viewportId: 'legacy',
     viewportType: ViewportType.ORTHOGRAPHIC,
   });
-  rendering.useGenericViewport = true;
   testUtils.createViewports(renderingEngine, {
     ...options,
     viewportId: 'adapter',
     viewportType: ViewportType.ORTHOGRAPHIC,
   });
-  rendering.useGenericViewport = useGenericViewport;
   testUtils.createViewports(renderingEngine, {
     ...options,
     viewportId: 'next',

@@ -4,21 +4,15 @@ import {
   fakeMetaDataProvider,
 } from '../../../utils/test/testUtilsImageLoader';
 
+import { createPlanarAdapterOnStandInEngine } from './utils/planarAdapterOnStandInEngine';
+
 import { describe, it, expect } from '@jest/globals';
 import { render } from 'react-dom';
 
-const {
-  utilities,
-  setUseCPURendering,
-  RenderingEngine,
-  Enums,
-  imageLoader,
-  metaData,
-  init,
-} = cornerstone3D;
-const { ViewportType, Events } = Enums;
+const { utilities, setUseCPURendering, Enums, imageLoader, metaData, init } =
+  cornerstone3D;
+const { Events } = Enums;
 
-const renderingEngineId = utilities.uuidv4();
 const viewportId = 'VIEWPORT';
 
 function encodeImageIdInfo(info) {
@@ -62,14 +56,13 @@ function initCore() {
         <canvas id="cornerstone-canvas" class="cornerstone-canvas" width="128" height="128"/>
       </div>
     </div>`;
-  const renderingEngine = new RenderingEngine(renderingEngineId);
   const element = document.getElementById('elementId');
   setSize(element, 100, 100);
   const viewportElement = document.getElementById('viewport-element');
   setSize(viewportElement, 100, 100);
   const canvasElement = document.getElementById('cornerstone-canvas');
   setSize(canvasElement, 100, 100);
-  return { renderingEngine, element };
+  return { element, canvasElement };
 }
 
 describe('stackViewport_node_render', function () {
@@ -81,19 +74,17 @@ describe('stackViewport_node_render', function () {
 
     const initData = initCore();
     element = initData.element;
-    renderingEngine = initData.renderingEngine;
 
-    const viewportInput = {
-      viewportId,
-      type: ViewportType.STACK,
+    ({ renderingEngine, viewport } = createPlanarAdapterOnStandInEngine(
       element,
-      defaultOptions: {
-        background: [0.2, 0, 0.2],
-      },
-    };
-
-    renderingEngine.enableElement(viewportInput);
-    viewport = renderingEngine.getViewport(viewportId);
+      viewportId,
+      {
+        canvas: initData.canvasElement,
+        defaultOptions: {
+          background: [0.2, 0, 0.2],
+        },
+      }
+    ));
   });
 
   it('Basic Viewport Creation', () => {

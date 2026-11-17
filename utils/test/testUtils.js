@@ -32,7 +32,6 @@ import {
   Enums as csToolsEnums,
 } from '@cornerstonejs/tools';
 
-const genericViewportConfigurationStack = [];
 const cpuRenderingConfigurationStack = [];
 const KARMA_CURRENT_SPEC_FULL_NAME = '__karmaCurrentSpecFullName';
 const KARMA_LAST_SPEC_FULL_NAME = '__karmaLastSpecFullName';
@@ -41,29 +40,12 @@ const KARMA_SPEC_REPORTER_INSTALLED = '__karmaSpecReporterInstalled';
 
 installKarmaSpecTracker();
 
-function getForcedCompatFromKarma() {
-  return window.__karma__?.config?.forceCompat === true;
-}
-
-/**
- * Reads the FORCE_GENERIC_VIEWPORT karma switch. It turns on
- * `rendering.useGenericViewport` for every test environment, so stack and
- * orthographic viewports become legacy adapters, and keeps the usual
- * baselines for the image comparisons.
- */
-function getForcedGenericViewportFromKarma() {
-  return window.__karma__?.config?.forceGenericViewport === true;
-}
-
 function getForcedCpuRenderingFromKarma() {
   return window.__karma__?.config?.forceCpuRendering === true;
 }
 
 function getCompatModeString() {
-  const compat = getForcedCompatFromKarma();
   const cpu = getForcedCpuRenderingFromKarma();
-  if (compat && cpu) return 'compat-cpu';
-  if (compat) return 'compat';
   if (cpu) return 'cpu';
   return null;
 }
@@ -84,7 +66,6 @@ function setupTestEnvironment({
   toolActivations = {},
   viewportIds = [],
   options = {},
-  useGenericViewport = false,
 } = {}) {
   // Initialize csTools3d and add specified tools
   window.devicePixelRatio = 1;
@@ -92,16 +73,10 @@ function setupTestEnvironment({
   initCore();
 
   const renderingConfiguration = getConfiguration().rendering;
-  const resolvedUseGenericViewport =
-    useGenericViewport ||
-    getForcedCompatFromKarma() ||
-    getForcedGenericViewportFromKarma();
   const resolvedUseCpuRendering =
     getShouldUseCPURendering() || getForcedCpuRenderingFromKarma();
 
-  genericViewportConfigurationStack.push(renderingConfiguration.useGenericViewport);
   cpuRenderingConfigurationStack.push(renderingConfiguration.useCPURendering);
-  renderingConfiguration.useGenericViewport = resolvedUseGenericViewport;
   setUseCPURendering(resolvedUseCpuRendering, false);
   initTools();
   tools.forEach((tool) => addTool(tool));
@@ -223,12 +198,7 @@ function cleanupTestEnvironment(options = {}) {
 
   cache.setMaxCacheSize(ONE_GB);
 
-  const previousUseGenericViewport = genericViewportConfigurationStack.pop();
   const previousUseCpuRendering = cpuRenderingConfigurationStack.pop();
-
-  if (previousUseGenericViewport !== undefined) {
-    getConfiguration().rendering.useGenericViewport = previousUseGenericViewport;
-  }
 
   if (previousUseCpuRendering !== undefined) {
     setUseCPURendering(previousUseCpuRendering, false);

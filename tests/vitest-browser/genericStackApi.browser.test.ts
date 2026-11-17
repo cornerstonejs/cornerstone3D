@@ -3,7 +3,6 @@ import { page } from 'vitest/browser';
 import {
   cache,
   Enums,
-  getConfiguration,
   getRenderingEngine,
   imageLoader,
   init,
@@ -33,8 +32,6 @@ const imageInfo = {
   ySpacing: 1,
   sliceIndex: 0,
 };
-
-let previousUseGenericViewport: boolean | undefined;
 
 function encodeImageIdInfo(info: typeof imageInfo) {
   return `fakeImageLoader:${encodeURIComponent(JSON.stringify(info))}`;
@@ -191,10 +188,6 @@ function waitForImageRendered(element: HTMLDivElement) {
 async function renderNextStackViewport() {
   init();
 
-  const renderingConfig = getConfiguration().rendering;
-  previousUseGenericViewport = renderingConfig.useGenericViewport;
-  renderingConfig.useGenericViewport = true;
-
   imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader);
   metaData.addProvider(fakeMetaDataProvider, 10000);
 
@@ -250,10 +243,6 @@ afterEach(() => {
   imageLoader.unregisterAllImageLoaders();
   utilities.genericViewportDisplaySetMetadataProvider.clear?.();
 
-  if (previousUseGenericViewport !== undefined) {
-    getConfiguration().rendering.useGenericViewport = previousUseGenericViewport;
-  }
-
   document.body.innerHTML = '';
 });
 
@@ -261,7 +250,6 @@ test('renders a fake-image stack with the Next stack API and matches the screens
   const { viewport } = await renderNextStackViewport();
   const canvas = viewport.getCanvas();
 
-  expect(getConfiguration().rendering.useGenericViewport).toBe(true);
   expect(viewport.type).toBe(ViewportType.PLANAR_NEXT);
   expect(viewport.constructor.name).toBe('PlanarViewport');
 

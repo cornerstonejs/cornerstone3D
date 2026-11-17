@@ -10,8 +10,7 @@ import {
 } from '../../../utils/demo/helpers/volumePresentationRecipes';
 import perfusionColorMap from '../../tools/examples/rectangleROIThreshold/preset';
 
-const { Enums, volumeLoader, utilities, getConfiguration, cache, eventTarget } =
-  cornerstone3D;
+const { Enums, volumeLoader, utilities, cache, eventTarget } = cornerstone3D;
 const { ViewportType, OrientationAxis, Events, VOILUTFunctionType } = Enums;
 
 const renderingEngineId = utilities.uuidv4();
@@ -76,8 +75,6 @@ async function createRampVolume(name = 'presentationRamp') {
  * `nextIds`, all axial and of one size, in one rendering engine.
  */
 function createViewports(renderingEngine, nextIds) {
-  const rendering = getConfiguration().rendering;
-  const useGenericViewport = rendering.useGenericViewport;
   const options = {
     orientation: OrientationAxis.AXIAL,
     width: SIZE,
@@ -86,13 +83,11 @@ function createViewports(renderingEngine, nextIds) {
     useEnableElement: true,
   };
 
-  rendering.useGenericViewport = false;
   testUtils.createViewports(renderingEngine, {
     ...options,
     viewportId: 'legacy',
     viewportType: ViewportType.ORTHOGRAPHIC,
   });
-  rendering.useGenericViewport = useGenericViewport;
   nextIds.forEach((viewportId) =>
     testUtils.createViewports(renderingEngine, {
       ...options,
@@ -391,6 +386,15 @@ const OPACITY_LIST = [
 ];
 
 /**
+ * The points of the scalar opacity function that the legacy volume viewport
+ * class of 5.x made for a colormap with `OPACITY_LIST` as its opacity: value
+ * and opacity of each point. The values were read from that class before it
+ * was deleted. The planar legacy adapter measures the list in the window, as
+ * a direct next viewport does: its points are 0, 0, 25.2 and 0.8.
+ */
+const LEGACY_OPACITY_LIST_POINTS = [0, 0, 0.1, 0.8];
+
+/**
  * Makes and caches a volume of 64 by 64 by 9 voxels of 1 mm that holds one
  * value everywhere.
  */
@@ -491,7 +495,7 @@ describe('Planar presentation, a list of opacities in a colormap -- ', () => {
         largestToMapping,
       })}`
     );
-    expect(opacityPointsOf(mapped)).toEqual(opacityPointsOf(legacy));
+    expect(opacityPointsOf(mapped)).toEqual(LEGACY_OPACITY_LIST_POINTS);
     expect(largestToMapping).toBeGreaterThan(1);
   }, 60000);
 });
@@ -522,8 +526,6 @@ async function createSuvStepVolume(name) {
  * next planar viewport, both axial and of one size.
  */
 function createAdapterAndNext(renderingEngine) {
-  const rendering = getConfiguration().rendering;
-  const useGenericViewport = rendering.useGenericViewport;
   const options = {
     orientation: OrientationAxis.AXIAL,
     width: SIZE,
@@ -532,13 +534,11 @@ function createAdapterAndNext(renderingEngine) {
     useEnableElement: true,
   };
 
-  rendering.useGenericViewport = true;
   testUtils.createViewports(renderingEngine, {
     ...options,
     viewportId: 'adapter',
     viewportType: ViewportType.ORTHOGRAPHIC,
   });
-  rendering.useGenericViewport = useGenericViewport;
   testUtils.createViewports(renderingEngine, {
     ...options,
     viewportId: 'next',

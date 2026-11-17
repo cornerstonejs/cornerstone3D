@@ -312,27 +312,14 @@ describe('Tools on a direct next planar viewport in stack mode and in volume mod
       ).toBe(7);
     });
 
-    it('gives false and does not throw for a viewport with nothing mounted and for a legacy viewport', async function () {
+    it('gives false and does not throw for a viewport with nothing mounted', async function () {
       const series = await createSeries();
       const empty = createNextViewport(renderingEngine, 'empty');
-      const legacy = createLegacyViewport(
-        renderingEngine,
-        'legacy',
-        ViewportType.STACK
-      );
-
-      await legacy.setStack(series.imageIds, 1);
-      await renderAndWait(legacy);
-
       const point = worldOfVoxel(series, [10, 8, 5]);
 
       expect(toolsUtilities.navigatePlanarViewportToPoint(empty, point)).toBe(
         false
       );
-      expect(toolsUtilities.navigatePlanarViewportToPoint(legacy, point)).toBe(
-        false
-      );
-      expect(legacy.getCurrentImageId()).toBe(series.imageIds[1]);
     });
   });
 });

@@ -490,10 +490,9 @@ const configHtj2kMixed = {
  */
 async function run() {
   // Init Cornerstone and related libraries
-  // The reduction that the GPU settings preset forces is visible on a legacy viewport and
-  // on a generic viewport, because the choice of a strategy lives in the actor
-  // helpers that both of them use. Add `?type=next` to the address to draw
-  // through the generic viewports and their render paths.
+  // The reduction that the GPU settings preset forces is drawn through the
+  // generic viewports and their render paths: a legacy viewport type gives a
+  // generic viewport.
   // This example turns on final downsampling, so that the GPU settings preset
   // reduces a volume. ?finalDownsampling=false turns it off.
   await initDemo({

@@ -5,33 +5,27 @@ import setCtTransferFunctionForVolumeActor, {
 } from '../../../utils/demo/helpers/setCtTransferFunctionForVolumeActor';
 import setPetTransferFunctionForVolumeActor from '../../../utils/demo/helpers/setPetTransferFunctionForVolumeActor';
 
-const { Enums, volumeLoader, utilities, getConfiguration, cache } =
-  cornerstone3D;
+const { Enums, volumeLoader, utilities, cache } = cornerstone3D;
 const { ViewportType, OrientationAxis, Events, BlendModes, InterpolationType } =
   Enums;
 
 const renderingEngineId = utilities.uuidv4();
 
 /**
- * Makes a legacy 3D viewport and a direct next 3D viewport of the same size
- * and orientation, with the same options, in one rendering engine. The
- * switch of the generic viewports is off for the legacy one, so it is the
- * legacy class with or without FORCE_GENERIC_VIEWPORT.
+ * Makes the viewport of the legacy 3D type, which is the 3D legacy adapter,
+ * and a direct next 3D viewport of the same size and orientation, with the
+ * same options, in one rendering engine.
  */
 function createPair(renderingEngine, options = {}) {
-  const rendering = getConfiguration().rendering;
-  const useGenericViewport = rendering.useGenericViewport;
-
   return [
-    ['legacy3D', ViewportType.VOLUME_3D, false],
-    ['next3D', ViewportType.VOLUME_3D_NEXT, useGenericViewport],
-  ].map(([viewportId, type, useGeneric]) => {
+    ['legacy3D', ViewportType.VOLUME_3D],
+    ['next3D', ViewportType.VOLUME_3D_NEXT],
+  ].map(([viewportId, type]) => {
     const element = document.createElement('div');
 
     element.style.width = '400px';
     element.style.height = '300px';
     document.body.appendChild(element);
-    rendering.useGenericViewport = useGeneric;
     renderingEngine.enableElement({
       viewportId,
       type,
@@ -42,7 +36,6 @@ function createPair(renderingEngine, options = {}) {
         ...options,
       },
     });
-    rendering.useGenericViewport = useGenericViewport;
 
     return renderingEngine.getViewport(viewportId);
   });

@@ -4,14 +4,7 @@ import * as testUtils from '../../../utils/test/testUtils';
 import addOrUpdateSurfaceToElement from '../src/tools/displayTools/Surface/addOrUpdateSurfaceToElement';
 import removeSurfaceFromElement from '../src/tools/displayTools/Surface/removeSurfaceFromElement';
 
-const {
-  utilities,
-  Enums,
-  volumeLoader,
-  geometryLoader,
-  cache,
-  getConfiguration,
-} = cornerstone3D;
+const { utilities, Enums, volumeLoader, geometryLoader, cache } = cornerstone3D;
 const { ViewportType, OrientationAxis, GeometryType } = Enums;
 const {
   OrientationMarkerTool,
@@ -30,8 +23,6 @@ const toolGroupId = 'next3DTools';
  * and orientation in one rendering engine, and adds both to the tool group.
  */
 function createViewports(renderingEngine) {
-  const rendering = getConfiguration().rendering;
-  const useGenericViewport = rendering.useGenericViewport;
   const viewportOptions = {
     orientation: OrientationAxis.SAGITTAL,
     width: 400,
@@ -39,13 +30,11 @@ function createViewports(renderingEngine) {
     useEnableElement: true,
   };
 
-  rendering.useGenericViewport = false;
   testUtils.createViewports(renderingEngine, {
     ...viewportOptions,
     viewportId: 'legacy3D',
     viewportType: ViewportType.VOLUME_3D,
   });
-  rendering.useGenericViewport = useGenericViewport;
   testUtils.createViewports(renderingEngine, {
     ...viewportOptions,
     viewportId: 'next3D',
@@ -260,21 +249,16 @@ describe('Tools on a direct next 3D viewport -- ', () => {
       expect(viewport.getWidgets()).toEqual([widget]);
       expect(widget.getEnabled()).toBe(true);
 
-      const rendering = getConfiguration().rendering;
-      const useGenericViewport = rendering.useGenericViewport;
-
       renderingEngine.disableElement(id);
 
       expect(widget.getEnabled()).toBe(false);
 
-      rendering.useGenericViewport = false;
       renderingEngine.enableElement({
         viewportId: id,
         type,
         element,
         defaultOptions: { orientation: OrientationAxis.SAGITTAL },
       });
-      rendering.useGenericViewport = useGenericViewport;
       toolGroup.addViewport(id, renderingEngineId);
 
       const enabledAgain = renderingEngine.getViewport(id);
@@ -444,10 +428,7 @@ describe('Tools on a direct next 3D viewport -- ', () => {
 
   it('shows a labelmap of a Labelmap representation as on the legacy 3D viewport', async function () {
     const [legacy, next] = createViewports(renderingEngine);
-    const rendering = getConfiguration().rendering;
-    const useGenericViewport = rendering.useGenericViewport;
 
-    rendering.useGenericViewport = true;
     testUtils.createViewports(renderingEngine, {
       orientation: OrientationAxis.SAGITTAL,
       width: 400,
@@ -456,7 +437,6 @@ describe('Tools on a direct next 3D viewport -- ', () => {
       viewportId: 'adapter3D',
       viewportType: ViewportType.VOLUME_3D,
     });
-    rendering.useGenericViewport = useGenericViewport;
 
     const adapter = renderingEngine.getViewport('adapter3D');
 

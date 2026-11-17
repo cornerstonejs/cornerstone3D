@@ -28,7 +28,6 @@ import snapFocalPointToSlice from '../src/utilities/snapFocalPointToSlice';
 const {
   utilities,
   setUseCPURendering,
-  RenderingEngine,
   Enums,
   imageLoader,
   metaData,
@@ -36,7 +35,7 @@ const {
   cache,
   volumeLoader,
 } = cornerstone3D;
-const { ViewportType, Events, OrientationAxis } = Enums;
+const { Events, OrientationAxis } = Enums;
 
 const recordedEvents = [
   Events.PRE_STACK_NEW_IMAGE,
@@ -134,27 +133,14 @@ function createAdapter(element, viewportId, defaultOptions = {}) {
 }
 
 /**
- * Makes a CPU stack viewport and records the stack events it fires as
- * `name:index`. The legacy stack viewport comes from a rendering engine. The
- * planar legacy adapter needs WebGL in a rendering engine, so it is made on a
- * stand-in engine, as the planar viewport tests make their viewports.
+ * Makes a CPU stack viewport, the planar legacy adapter that a legacy `STACK`
+ * type gives, and records the stack events it fires as `name:index`. The
+ * adapter needs WebGL in a rendering engine, so it is made on a stand-in
+ * engine, as the planar viewport tests make their viewports.
  */
-function createStackViewport(useAdapter) {
+function createStackViewport() {
   const element = setUpCore();
-  let renderingEngine;
-  let viewport;
-
-  if (useAdapter) {
-    ({ renderingEngine, viewport } = createAdapter(element, 'stack'));
-  } else {
-    renderingEngine = new RenderingEngine(utilities.uuidv4());
-    renderingEngine.enableElement({
-      viewportId: 'stack',
-      type: ViewportType.STACK,
-      element,
-    });
-    viewport = renderingEngine.getViewport('stack');
-  }
+  const { renderingEngine, viewport } = createAdapter(element, 'stack');
 
   const events = [];
 
@@ -192,9 +178,8 @@ function waitForNewImage(element, imageIdIndex) {
  * Runs setStack, setImageIdIndex and a scroll on a stack viewport and gives
  * the events of each step.
  */
-async function recordStackEvents(useGenericViewport) {
-  const { element, events, renderingEngine, viewport } =
-    createStackViewport(useGenericViewport);
+async function recordStackEvents() {
+  const { element, events, renderingEngine, viewport } = createStackViewport();
   const steps = {};
 
   await viewport.setStack(imageIds, 1);
@@ -232,14 +217,11 @@ describe('planar legacy adapter stack events', () => {
   });
 
   it('fires the stack events in the order of the legacy stack viewport', async () => {
-    const legacy = await recordStackEvents(false);
-    renderingEngines.push(legacy.renderingEngine);
-    const adapter = await recordStackEvents(true);
+    const adapter = await recordStackEvents();
     renderingEngines.push(adapter.renderingEngine);
 
-    expect(utilities.isGenericViewport(legacy.viewport)).toBe(false);
     expect(utilities.isGenericViewport(adapter.viewport)).toBe(true);
-    expect(legacy.steps).toEqual({
+    expect(adapter.steps).toEqual({
       setStack: [
         `${Events.PRE_STACK_NEW_IMAGE}:1`,
         `${Events.STACK_NEW_IMAGE}:1`,
@@ -260,11 +242,10 @@ describe('planar legacy adapter stack events', () => {
         `${Events.STACK_VIEWPORT_SCROLL}:3`,
       ],
     });
-    expect(adapter.steps).toEqual(legacy.steps);
   });
 
   it('gives the detail fields of the legacy events', async () => {
-    const { element, renderingEngine, viewport } = createStackViewport(true);
+    const { element, renderingEngine, viewport } = createStackViewport();
     const details = {};
     renderingEngines.push(renderingEngine);
 
@@ -301,9 +282,8 @@ describe('planar legacy adapter stack events', () => {
  * Reads the legacy stack members of a stack viewport after setStack, a
  * change of image and a jump to a world point.
  */
-async function readStackMembers(useAdapter, ids) {
-  const { element, renderingEngine, viewport } =
-    createStackViewport(useAdapter);
+async function readStackMembers(ids) {
+  const { element, renderingEngine, viewport } = createStackViewport();
 
   await viewport.setStack(ids, 0);
 
@@ -466,12 +446,10 @@ describe('planar legacy adapter members', () => {
   });
 
   it('gives the stack members of the legacy stack viewport', async () => {
-    const legacy = await readStackMembers(false, imageIds);
-    renderingEngines.push(legacy.renderingEngine);
-    const adapter = await readStackMembers(true, imageIds);
+    const adapter = await readStackMembers(imageIds);
     renderingEngines.push(adapter.renderingEngine);
 
-    expect(legacy.members).toEqual({
+    expect(adapter.members).toEqual({
       modality: 'MR',
       scaling: {},
       isDisabled: false,
@@ -487,69 +465,51 @@ describe('planar legacy adapter members', () => {
       isInAcquisitionPlane: true,
       sliceViewInfoError: 'Method not implemented.',
     });
-    expect(adapter.members).toEqual(legacy.members);
     expect(adapter.viewport.getIntensityFromWorld([1, 1, 1])).toBeUndefined();
     expect(adapter.viewport.getBounds()).toBeUndefined();
     expect(adapter.viewport.isOrientationChangeable()).toBe(false);
   });
 
   it('gives the image at a slice index from getCurrentImageId, as the legacy stack viewport', async () => {
-    const results = [];
+    const { renderingEngine, viewport } = createStackViewport();
+    renderingEngines.push(renderingEngine);
+    await viewport.setStack(imageIds, 1);
 
-    for (const useAdapter of [false, true]) {
-      const { renderingEngine, viewport } = createStackViewport(useAdapter);
-      renderingEngines.push(renderingEngine);
-      await viewport.setStack(imageIds, 1);
-      results.push([
-        viewport.getCurrentImageId(),
-        viewport.getCurrentImageId(2),
-        viewport.getCurrentImageId(0),
-      ]);
-    }
-
-    expect(results[0]).toEqual([imageIds[1], imageIds[2], imageIds[0]]);
-    expect(results[1]).toEqual(results[0]);
+    expect([
+      viewport.getCurrentImageId(),
+      viewport.getCurrentImageId(2),
+      viewport.getCurrentImageId(0),
+    ]).toEqual([imageIds[1], imageIds[2], imageIds[0]]);
   });
 
   it('takes a point within half a slice spacing of the image shown as viewable with asNearbyProjection, as the legacy stack viewport', async () => {
-    const answers = [];
+    const { renderingEngine, viewport } = createStackViewport();
+    renderingEngines.push(renderingEngine);
+    await viewport.setStack(imageIds, 1);
 
-    for (const useAdapter of [false, true]) {
-      const { renderingEngine, viewport } = createStackViewport(useAdapter);
-      renderingEngines.push(renderingEngine);
-      await viewport.setStack(imageIds, 1);
+    const answers = [
+      [3, 4, 1.0004],
+      [3, 4, 0.9996],
+      [3, 4, 1.002],
+    ].map((cameraFocalPoint) =>
+      viewport.isReferenceViewable(
+        { cameraFocalPoint },
+        { asNearbyProjection: true }
+      )
+    );
 
-      answers.push(
-        [
-          [3, 4, 1.0004],
-          [3, 4, 0.9996],
-          [3, 4, 1.002],
-        ].map((cameraFocalPoint) =>
-          viewport.isReferenceViewable(
-            { cameraFocalPoint },
-            { asNearbyProjection: true }
-          )
-        )
-      );
-    }
-
-    expect(answers[0]).toEqual([true, true, false]);
-    expect(answers[1]).toEqual(answers[0]);
+    expect(answers).toEqual([true, true, false]);
   });
 
   it('gives the PT scaling of the legacy stack viewport', async () => {
     const ptImageIds = createImageIds(true);
-    const legacy = await readStackMembers(false, ptImageIds);
-    renderingEngines.push(legacy.renderingEngine);
-    const adapter = await readStackMembers(true, ptImageIds);
+    const adapter = await readStackMembers(ptImageIds);
     renderingEngines.push(adapter.renderingEngine);
 
-    expect(legacy.members.modality).toBe('PT');
-    expect(legacy.members.scaling).toEqual({
+    expect(adapter.members.modality).toBe('PT');
+    expect(adapter.members.scaling).toEqual({
       PT: { suvbwToSuvlbm: 1, suvbwToSuvbsa: 1 },
     });
-    expect(adapter.members.modality).toBe(legacy.members.modality);
-    expect(adapter.members.scaling).toEqual(legacy.members.scaling);
   });
 
   describe('in volume mode', () => {
@@ -746,16 +706,11 @@ function createPhotometricImageIds(photometricInterpretations) {
 }
 
 /**
- * The invert flag that a CPU stack viewport draws with: the CPU fallback
- * viewport of the legacy stack viewport, or the presentation that the CPU
- * image path of a next planar viewport draws its slice with. The adapter
- * draws a CPU render in the next animation frame.
+ * The invert flag that a CPU stack viewport draws with: the presentation
+ * that the CPU image path of a next planar viewport draws its slice with.
+ * The adapter draws a CPU render in the next animation frame.
  */
 async function readDrawnInvert(viewport, drawSpy) {
-  if (!utilities.isGenericViewport(viewport)) {
-    return viewport._cpuFallbackEnabledElement.viewport.invert;
-  }
-
   drawSpy.mockClear();
   viewport.render();
   await new Promise((resolve) => requestAnimationFrame(resolve));
@@ -799,8 +754,8 @@ describe('planar legacy adapter and a MONOCHROME1 image', () => {
    * Shows a MONOCHROME1 stack, a MONOCHROME2 stack and the MONOCHROME1 stack
    * again on a CPU stack viewport and gives the invert flag drawn for each.
    */
-  async function readNewStackInverts(useAdapter) {
-    const { renderingEngine, viewport } = createStackViewport(useAdapter);
+  async function readNewStackInverts() {
+    const { renderingEngine, viewport } = createStackViewport();
     renderingEngines.push(renderingEngine);
     const inverts = [];
 
@@ -818,38 +773,29 @@ describe('planar legacy adapter and a MONOCHROME1 image', () => {
   }
 
   it('draws a new MONOCHROME1 stack inverted, as the legacy stack viewport', async () => {
-    const legacy = await readNewStackInverts(false);
-    const adapter = await readNewStackInverts(true);
+    const adapter = await readNewStackInverts();
 
-    expect(legacy.inverts).toEqual([true, false, true]);
-    expect(adapter.inverts).toEqual(legacy.inverts);
+    expect(adapter.inverts).toEqual([true, false, true]);
     expect(adapter.viewport.getProperties().invert).toBe(true);
   });
 
   it('keeps an invert flag that the application set while it scrolls and drops it with a new stack', async () => {
-    const results = {};
+    const { element, renderingEngine, viewport } = createStackViewport();
+    renderingEngines.push(renderingEngine);
+    const steps = [];
 
-    for (const useAdapter of [false, true]) {
-      const { element, renderingEngine, viewport } =
-        createStackViewport(useAdapter);
-      renderingEngines.push(renderingEngine);
-      const steps = [];
+    await viewport.setStack(
+      createPhotometricImageIds(['MONOCHROME1', 'MONOCHROME1']),
+      0
+    );
+    viewport.setProperties({ invert: false });
+    steps.push(await readDrawnInvert(viewport, drawSpy));
+    await showImage(element, viewport, 1);
+    steps.push(await readDrawnInvert(viewport, drawSpy));
+    await viewport.setStack(createPhotometricImageIds(['MONOCHROME1']), 0);
+    steps.push(await readDrawnInvert(viewport, drawSpy));
 
-      await viewport.setStack(
-        createPhotometricImageIds(['MONOCHROME1', 'MONOCHROME1']),
-        0
-      );
-      viewport.setProperties({ invert: false });
-      steps.push(await readDrawnInvert(viewport, drawSpy));
-      await showImage(element, viewport, 1);
-      steps.push(await readDrawnInvert(viewport, drawSpy));
-      await viewport.setStack(createPhotometricImageIds(['MONOCHROME1']), 0);
-      steps.push(await readDrawnInvert(viewport, drawSpy));
-      results[useAdapter ? 'adapter' : 'legacy'] = steps;
-    }
-
-    expect(results.legacy).toEqual([false, false, true]);
-    expect(results.adapter).toEqual(results.legacy);
+    expect(steps).toEqual([false, false, true]);
   });
 
   /**
@@ -861,7 +807,7 @@ describe('planar legacy adapter and a MONOCHROME1 image', () => {
    * says what is drawn and a reset goes back to the image's own default.
    */
   it('reports the invert flag that it draws and resets to the default of the image', async () => {
-    const { element, renderingEngine, viewport } = createStackViewport(true);
+    const { element, renderingEngine, viewport } = createStackViewport();
     renderingEngines.push(renderingEngine);
 
     await viewport.setStack(
@@ -898,7 +844,7 @@ describe('planar legacy adapter and a MONOCHROME1 image', () => {
    * its own default while the application has not set `invert`.
    */
   it('draws each image of a mixed stack with its own default', async () => {
-    const { element, renderingEngine, viewport } = createStackViewport(true);
+    const { element, renderingEngine, viewport } = createStackViewport();
     renderingEngines.push(renderingEngine);
     const steps = [];
 
@@ -1035,7 +981,7 @@ describe('planar legacy adapter VOI LUT function', () => {
    * throws for it.
    */
   it('reports the VOI LUT function of the image and draws the one that setProperties sets', async () => {
-    const { renderingEngine, viewport } = createStackViewport(true);
+    const { renderingEngine, viewport } = createStackViewport();
     renderingEngines.push(renderingEngine);
 
     await viewport.setStack(imageIds, 0);

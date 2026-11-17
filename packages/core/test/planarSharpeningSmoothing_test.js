@@ -17,8 +17,7 @@ import * as fusionSmoothing3 from './groundTruth/planarSharpening_fusion_smoothi
 import * as fusionSmoothing10 from './groundTruth/planarSharpening_fusion_smoothing_10.png';
 import * as fusionBoth from './groundTruth/planarSharpening_fusion_sharpening_1_and_smoothing_5.png';
 
-const { Enums, volumeLoader, imageLoader, utilities, getConfiguration } =
-  cornerstone3D;
+const { Enums, volumeLoader, imageLoader, utilities } = cornerstone3D;
 const { ViewportType, OrientationAxis, Events } = Enums;
 
 const renderingEngineId = utilities.uuidv4();
@@ -195,21 +194,10 @@ async function createSceneVolumes(fusion) {
 }
 
 /**
- * Makes a viewport of the size of the picture on a black background. The
- * switch of the generic viewports is set for the time of the call: off for
- * a legacy viewport, on for a legacy adapter.
+ * Makes a viewport of the size of the picture on a black background. A
+ * legacy type gives its legacy adapter.
  */
-function createViewport(
-  renderingEngine,
-  viewportId,
-  type,
-  orientation,
-  useGenericViewport = false
-) {
-  const rendering = getConfiguration().rendering;
-  const previous = rendering.useGenericViewport;
-
-  rendering.useGenericViewport = useGenericViewport;
+function createViewport(renderingEngine, viewportId, type, orientation) {
   testUtils.createViewports(renderingEngine, {
     viewportId,
     viewportType: type,
@@ -219,7 +207,6 @@ function createViewport(
     background: [0, 0, 0],
     useEnableElement: true,
   });
-  rendering.useGenericViewport = previous;
 
   return renderingEngine.getViewport(viewportId);
 }

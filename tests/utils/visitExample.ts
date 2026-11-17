@@ -3,10 +3,6 @@ import { validateCompatibilityRuntime } from './compatibilityMode';
 import { getForcedSliceFirst, setForcedSliceFirst } from './createExampleUrl';
 import { waitForViewportsRendered } from './waitForViewportsRendered';
 
-function shouldForceGenericViewport() {
-  return process.env.PLAYWRIGHT_FORCE_COMPAT === 'true';
-}
-
 function shouldForceCpuRendering() {
   return process.env.PLAYWRIGHT_FORCE_CPU_RENDERING === 'true';
 }
@@ -101,10 +97,6 @@ export const visitExample = async (
   if (href) {
     const exampleUrl = new URL(href, page.url());
 
-    if (shouldForceGenericViewport()) {
-      exampleUrl.searchParams.set('type', 'next');
-    }
-
     if (shouldForceCpuRendering()) {
       exampleUrl.searchParams.set('cpu', '1');
     }
@@ -116,16 +108,8 @@ export const visitExample = async (
     const link = page.locator(`a:has-text("${title}")`).first();
     await link.click();
 
-    if (
-      shouldForceGenericViewport() ||
-      shouldForceCpuRendering() ||
-      getForcedSliceFirst() !== undefined
-    ) {
+    if (shouldForceCpuRendering() || getForcedSliceFirst() !== undefined) {
       const exampleUrl = new URL(page.url());
-
-      if (shouldForceGenericViewport()) {
-        exampleUrl.searchParams.set('type', 'next');
-      }
 
       if (shouldForceCpuRendering()) {
         exampleUrl.searchParams.set('cpu', '1');

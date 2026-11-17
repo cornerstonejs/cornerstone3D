@@ -140,10 +140,6 @@ jobs:
             run_args: '--project=chromium'
             collect_coverage: true
           - node-version: 24.22.2
-            mode: compatibility
-            run_args: '--compat --project=chromium'
-            collect_coverage: false
-          - node-version: 24.22.2
             mode: next
             run_args: '--next --project=chromium'
             collect_coverage: false
@@ -195,7 +191,7 @@ jobs:
         run: |
           export NODE_OPTIONS="--max_old_space_size=10192"
           # $RUN_ARGS is deliberately unquoted: it carries several flags
-          # (e.g. `--compat --project=chromium`) that must word-split.
+          # (e.g. `--next --project=chromium`) that must word-split.
           if [ "$COLLECT_COVERAGE" = "true" ]; then
             bash scripts/ci/with-nashua-lock.sh pnpm exec nyc --reporter=html ./scripts/run-playwright.sh $RUN_ARGS
           else

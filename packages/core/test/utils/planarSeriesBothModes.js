@@ -6,14 +6,7 @@
 import * as cornerstone3D from '../../src/index';
 import * as testUtils from '../../../../utils/test/testUtils';
 
-const {
-  Enums,
-  volumeLoader,
-  imageLoader,
-  utilities,
-  getConfiguration,
-  metaData,
-} = cornerstone3D;
+const { Enums, volumeLoader, imageLoader, utilities, metaData } = cornerstone3D;
 const { ViewportType, OrientationAxis, Events } = Enums;
 
 /** The default size of a test series: 32 columns, 24 rows and 8 slices. */
@@ -175,19 +168,16 @@ export function createNextViewport(renderingEngine, viewportId) {
 }
 
 /**
- * Makes a legacy viewport of 400 by 300 pixels, or the legacy adapter of
- * that type when `adapter` is set, with or without FORCE_GENERIC_VIEWPORT.
+ * Makes the viewport that a legacy type gives, its legacy adapter, of 400 by
+ * 300 pixels. Some callers still pass `adapter`: it changes nothing, because
+ * the legacy classes are gone.
  */
 export function createLegacyViewport(
   renderingEngine,
   viewportId,
   viewportType,
-  { adapter = false, orientation = OrientationAxis.ACQUISITION } = {}
+  { orientation = OrientationAxis.ACQUISITION } = {}
 ) {
-  const rendering = getConfiguration().rendering;
-  const useGenericViewport = rendering.useGenericViewport;
-
-  rendering.useGenericViewport = adapter;
   testUtils.createViewports(renderingEngine, {
     viewportId,
     viewportType,
@@ -196,7 +186,6 @@ export function createLegacyViewport(
     height: 300,
     useEnableElement: true,
   });
-  rendering.useGenericViewport = useGenericViewport;
 
   return renderingEngine.getViewport(viewportId);
 }

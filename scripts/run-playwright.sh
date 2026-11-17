@@ -8,7 +8,6 @@ TIMESTAMP="$(date '+%Y%m%d-%H%M%S')"
 DEFAULT_REBUILD_PACKAGES="core,tools,dicomImageLoader"
 DEFAULT_BUILD_NODE_OPTIONS="--max_old_space_size=32896"
 SUITE="legacy"
-FORCE_COMPAT="false"
 FORCE_CPU_RENDERING="false"
 FORCE_REBUILD="false"
 USE_ALL_PROJECTS="false"
@@ -19,9 +18,6 @@ for arg in "$@"; do
   case "$arg" in
     --next)
       SUITE="next"
-      ;;
-    --compat)
-      FORCE_COMPAT="true"
       ;;
     --cpu)
       FORCE_CPU_RENDERING="true"
@@ -125,7 +121,7 @@ if [[ "$RUN_ALL_MODES" == "true" ]]; then
   fi
   PASSTHROUGH_ARGS+=("${PLAYWRIGHT_ARGS[@]+"${PLAYWRIGHT_ARGS[@]}"}")
 
-  declare -a MODES=("legacy" "compat" "next")
+  declare -a MODES=("legacy" "next")
   declare -a MODE_EXIT_CODES=()
   declare -a MODE_DURATIONS=()
   declare -a MODE_LOG_FILES=()
@@ -206,7 +202,6 @@ if [[ "$RUN_ALL_MODES" == "true" ]]; then
 
     declare -a MODE_ARGS=()
     case "$mode" in
-      compat) MODE_ARGS+=("--compat") ;;
       next)   MODE_ARGS+=("--next") ;;
     esac
 
@@ -284,7 +279,6 @@ fi
 
 # Next mode manages its own viewport/cpu settings via per-test query params
 if [[ "$SUITE" == "next" ]]; then
-  FORCE_COMPAT="false"
   FORCE_CPU_RENDERING="false"
 fi
 
@@ -292,8 +286,6 @@ VIEWPORT_MODE="legacy"
 
 if [[ "$SUITE" == "next" ]]; then
   VIEWPORT_MODE="next"
-elif [[ "$FORCE_COMPAT" == "true" ]]; then
-  VIEWPORT_MODE="compat"
 fi
 
 CPU_MODE_SUFFIX=""
@@ -355,7 +347,6 @@ PLAYWRIGHT_SKIP_REBUILD_VALUE="true"
 
 set +e
 PLAYWRIGHT_USE_BUNDLED_CHROMIUM=true \
-PLAYWRIGHT_FORCE_COMPAT="$FORCE_COMPAT" \
 PLAYWRIGHT_FORCE_CPU_RENDERING="$FORCE_CPU_RENDERING" \
 PLAYWRIGHT_SKIP_REBUILD="$PLAYWRIGHT_SKIP_REBUILD_VALUE" \
 PLAYWRIGHT_HTML_OUTPUT_DIR="$HTML_REPORT_DIR" \
@@ -368,7 +359,6 @@ PLAYWRIGHT_EXIT_CODE=${PIPESTATUS[0]}
 set -e
 
 echo
-echo "Compat mode forced: $FORCE_COMPAT"
 echo "CPU rendering forced: $FORCE_CPU_RENDERING"
 echo "Force rebuild: $FORCE_REBUILD"
 echo "Run directory: $RUN_DIR"

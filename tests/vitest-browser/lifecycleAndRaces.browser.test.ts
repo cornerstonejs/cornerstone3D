@@ -6,7 +6,6 @@ import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 import {
   cache,
   Enums,
-  getConfiguration,
   getRenderingEngine,
   imageLoader,
   init,
@@ -576,10 +575,6 @@ test('resize keeps the fit-mode anchor world point centered after the canvas dim
 test('a 2x2 grid of viewports on one engine renders independently; disabling one leaves the others untouched', async () => {
   init();
 
-  const renderingConfig = getConfiguration().rendering;
-  const previousUseGenericViewport = renderingConfig.useGenericViewport;
-  renderingConfig.useGenericViewport = true;
-
   const stack = registerFakeImageStack({
     name: 'grid-independence',
     sliceCount: 5,
@@ -609,10 +604,6 @@ test('a 2x2 grid of viewports on one engine renders independently; disabling one
       element.parentNode?.removeChild(element);
     }
 
-    if (previousUseGenericViewport !== undefined) {
-      getConfiguration().rendering.useGenericViewport =
-        previousUseGenericViewport;
-    }
   };
 
   activeCleanups.push(cleanupGrid);

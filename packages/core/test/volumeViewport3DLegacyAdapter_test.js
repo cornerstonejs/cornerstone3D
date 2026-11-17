@@ -4,22 +4,18 @@ import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import vtkSphereSource from '@kitware/vtk.js/Filters/Sources/SphereSource';
 import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
 
-const { Enums, volumeLoader, utilities, getConfiguration } = cornerstone3D;
+const { Enums, volumeLoader, utilities } = cornerstone3D;
 const { ViewportType, OrientationAxis } = Enums;
 
 const renderingEngineId = utilities.uuidv4();
 
 /**
- * Makes a legacy 3D viewport and a 3D legacy adapter of the same size and
- * orientation in one rendering engine. The switch of the generic viewports
- * is set for each, so the pair is the same with or without
- * FORCE_GENERIC_VIEWPORT.
+ * Makes two viewports of the legacy 3D type, of the same size and
+ * orientation, in one rendering engine. Both are 3D legacy adapters since
+ * the legacy 3D class is gone: the first one, `legacy3D`, was the legacy
+ * class.
  */
 function createPair(renderingEngine, orientation = OrientationAxis.SAGITTAL) {
-  const rendering = getConfiguration().rendering;
-  const useGenericViewport = rendering.useGenericViewport;
-
-  rendering.useGenericViewport = false;
   testUtils.createViewports(renderingEngine, {
     viewportId: 'legacy3D',
     viewportType: ViewportType.VOLUME_3D,
@@ -28,7 +24,6 @@ function createPair(renderingEngine, orientation = OrientationAxis.SAGITTAL) {
     height: 300,
     useEnableElement: true,
   });
-  rendering.useGenericViewport = true;
   testUtils.createViewports(renderingEngine, {
     viewportId: 'adapter3D',
     viewportType: ViewportType.VOLUME_3D,
@@ -37,7 +32,6 @@ function createPair(renderingEngine, orientation = OrientationAxis.SAGITTAL) {
     height: 300,
     useEnableElement: true,
   });
-  rendering.useGenericViewport = useGenericViewport;
 
   return [
     renderingEngine.getViewport('legacy3D'),
@@ -127,10 +121,10 @@ describe('3D legacy adapter against the legacy 3D viewport -- ', () => {
     });
   });
 
-  it('makes one legacy viewport and one adapter', function () {
+  it('makes a legacy adapter for the legacy 3D type', function () {
     const [legacy, adapter] = createPair(renderingEngine);
 
-    expect(utilities.isGenericViewport(legacy)).toBe(false);
+    expect(utilities.isGenericViewport(legacy)).toBe(true);
     expect(utilities.isGenericViewport(adapter)).toBe(true);
   });
 

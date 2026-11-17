@@ -3,7 +3,6 @@ import type { Page } from 'playwright';
 import * as fs from 'fs';
 import * as path from 'path';
 import { PNG } from 'pngjs';
-import { isCompatibilityMode } from './compatibilityMode';
 
 /** Inline per-pixel comparison matching the spirit of playwright's threshold:
  *  count a pixel as different when any channel diverges by more than
@@ -496,42 +495,11 @@ const checkForCanvasSnapshot = async (
     return;
   }
 
-  const effectiveScreenshotPath = resolveCompatScreenshotPath(screenshotPath);
-
-  await expect(buffer).toMatchSnapshot(effectiveScreenshotPath, {
+  await expect(buffer).toMatchSnapshot(screenshotPath, {
     maxDiffPixelRatio,
     threshold,
   });
 };
-
-/**
- * In compatibility mode, segmentation-heavy tests render with subtly different
- * edge anti-aliasing than the legacy path, so we keep a sibling `compat-<name>`
- * baseline next to the legacy one. If that compat baseline already exists we
- * use it; otherwise compat falls back to the legacy baseline so tests that
- * don't visibly diverge keep sharing one source of truth.
- *
- * Compat baselines are only created on demand: run with
- * `--update-snapshots=all` and a `-g` filter that selects the tests you want
- * to fork. Plain `--update-snapshots` (Playwright's default `missing` mode)
- * does NOT auto-create compat baselines — that would silently fork every
- * compat-mode test instead of only the segmentation ones.
- */
-function resolveCompatScreenshotPath(screenshotPath: string): string {
-  if (!isCompatibilityMode()) return screenshotPath;
-  const baseName = path.basename(screenshotPath);
-  if (baseName.startsWith('compat-')) return screenshotPath;
-  const compatName = `compat-${baseName}`;
-  const info = testApi.info();
-  const compatFullPath = info.snapshotPath(compatName);
-  if (fs.existsSync(compatFullPath)) {
-    return compatName;
-  }
-  if (info.config.updateSnapshots === 'all') {
-    return compatName;
-  }
-  return screenshotPath;
-}
 
 /**
  * Compares an in-memory PNG buffer against a baseline owned by a sibling

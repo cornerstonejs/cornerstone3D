@@ -12,7 +12,6 @@ import renderingEngineCache from '../src/RenderingEngine/renderingEngineCache';
 const {
   utilities,
   setUseCPURendering,
-  RenderingEngine,
   Enums,
   imageLoader,
   metaData,
@@ -20,7 +19,7 @@ const {
   cache,
   eventTarget,
 } = cornerstone3D;
-const { ViewportType, Events } = Enums;
+const { Events } = Enums;
 
 const recordedEvents = [
   Events.PRE_STACK_NEW_IMAGE,
@@ -115,18 +114,17 @@ function setUpCore() {
   return element;
 }
 
-/** Makes a legacy CPU stack viewport in a rendering engine. */
+/**
+ * Makes the CPU stack viewport that a legacy `STACK` type gives: the legacy
+ * adapter of the planar viewport, with the id `legacy`.
+ */
 function createLegacy(element, defaultOptions = {}) {
-  const renderingEngine = new RenderingEngine(utilities.uuidv4());
-
-  renderingEngine.enableElement({
-    viewportId: 'legacy',
-    type: ViewportType.STACK,
+  return createNext(
     element,
     defaultOptions,
-  });
-
-  return { renderingEngine, viewport: renderingEngine.getViewport('legacy') };
+    PlanarViewportLegacyAdapter,
+    'legacy'
+  );
 }
 
 /**
@@ -138,7 +136,8 @@ function createLegacy(element, defaultOptions = {}) {
 function createNext(
   element,
   defaultOptions = {},
-  ViewportClass = PlanarViewport
+  ViewportClass = PlanarViewport,
+  id = 'next'
 ) {
   const renderer = { getActiveCamera: () => ({ setParallelProjection() {} }) };
   let viewport;
@@ -155,7 +154,7 @@ function createNext(
 
   renderingEngineCache.set(renderingEngine);
   viewport = new ViewportClass({
-    id: 'next',
+    id,
     element,
     renderingEngineId: renderingEngine.id,
     canvas: document.createElement('canvas'),
@@ -167,9 +166,9 @@ function createNext(
   return { renderingEngine, viewport };
 }
 
-/** Shows a stack on a legacy viewport or on a direct next viewport. */
+/** Shows a stack on a legacy adapter or on a direct next viewport. */
 async function showStack(viewport, imageIds, imageIdIndex = 0) {
-  if (!utilities.isGenericViewport(viewport)) {
+  if (viewport instanceof PlanarViewportLegacyAdapter) {
     return viewport.setStack(imageIds, imageIdIndex);
   }
 
@@ -204,12 +203,12 @@ function recordEvents(element) {
 
 /**
  * The image index that a viewport goes to: the target index of a legacy
- * stack viewport, the current index of a direct next viewport.
+ * adapter, the current index of a direct next viewport.
  */
 function getRequestedImageIdIndex(viewport) {
-  return utilities.isGenericViewport(viewport)
-    ? viewport.getCurrentImageIdIndex()
-    : viewport.getTargetImageIdIndex();
+  return viewport instanceof PlanarViewportLegacyAdapter
+    ? viewport.getTargetImageIdIndex()
+    : viewport.getCurrentImageIdIndex();
 }
 
 /** Resolves when the element fires STACK_NEW_IMAGE for an image index. */

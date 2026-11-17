@@ -10,8 +10,7 @@ import {
   waitFor,
 } from './utils/planarSeriesBothModes';
 
-const { Enums, volumeLoader, utilities, getConfiguration, cache, eventTarget } =
-  cornerstone3D;
+const { Enums, volumeLoader, utilities, cache, eventTarget } = cornerstone3D;
 const { ViewportType, OrientationAxis, Events } = Enums;
 const { CrosshairsTool, ToolGroupManager, synchronizers } = csTools3d;
 
@@ -19,44 +18,25 @@ const renderingEngineId = utilities.uuidv4();
 
 /**
  * Enables a viewport of a type with the default options, through the
- * rendering engine. With `legacy` the switch of the generic viewports is off
- * while it is made, so it is the legacy class with or without
- * FORCE_GENERIC_VIEWPORT. With `adapter` the switch is on, so a legacy type
- * gives its legacy adapter.
+ * rendering engine. A legacy type gives its legacy adapter. The callers
+ * still say `legacy` or `adapter` for a legacy type: both give the adapter.
  */
 function enableViewport(
   renderingEngine,
-  {
-    viewportId,
-    type,
-    orientation,
-    defaultOptions = {},
-    legacy = false,
-    adapter = false,
-  }
+  { viewportId, type, orientation, defaultOptions = {} }
 ) {
-  const rendering = getConfiguration().rendering;
-  const useGenericViewport = rendering.useGenericViewport;
   const element = document.createElement('div');
 
   element.style.width = '400px';
   element.style.height = '300px';
   document.body.appendChild(element);
 
-  if (legacy || adapter) {
-    rendering.useGenericViewport = adapter;
-  }
-
-  try {
-    renderingEngine.enableElement({
-      viewportId,
-      type,
-      element,
-      defaultOptions: { background: [1, 0, 1], orientation, ...defaultOptions },
-    });
-  } finally {
-    rendering.useGenericViewport = useGenericViewport;
-  }
+  renderingEngine.enableElement({
+    viewportId,
+    type,
+    element,
+    defaultOptions: { background: [1, 0, 1], orientation, ...defaultOptions },
+  });
 
   return renderingEngine.getViewport(viewportId);
 }

@@ -340,7 +340,6 @@ function copyDebugCommand() {
   var item = filteredItems[currentIndex];
   if (!item) return;
   var envParts = [];
-  if (KARMA_MODE.compat) envParts.push("FORCE_COMPAT=true");
   if (KARMA_MODE.cpu) envParts.push("FORCE_CPU_RENDERING=true");
   var grep = item.testName;
   if (grep) envParts.push("KARMA_GREP=" + JSON.stringify(grep));

@@ -2,8 +2,7 @@ import * as cornerstone3D from '@cornerstonejs/core';
 import * as csTools3d from '../src/index';
 import * as testUtils from '../../../utils/test/testUtils';
 
-const { Enums, volumeLoader, utilities, getConfiguration, cache } =
-  cornerstone3D;
+const { Enums, volumeLoader, utilities, cache } = cornerstone3D;
 const { ViewportType, OrientationAxis, Events } = Enums;
 const { AnnotationMultiSlice } = csTools3d.utilities;
 const { filterAnnotationsForDisplay } = csTools3d.utilities.planar;
@@ -12,12 +11,8 @@ const { ProbeTool } = csTools3d;
 const renderingEngineId = utilities.uuidv4();
 const SLICES = 12;
 
-/** Enables one viewport of a type, as the legacy class or as a next class. */
-function enableViewport(renderingEngine, viewportId, viewportType, generic) {
-  const rendering = getConfiguration().rendering;
-  const useGenericViewport = rendering.useGenericViewport;
-
-  rendering.useGenericViewport = generic;
+/** Enables one viewport of a type. A legacy type gives its legacy adapter. */
+function enableViewport(renderingEngine, viewportId, viewportType) {
   testUtils.createViewports(renderingEngine, {
     viewportId,
     viewportType,
@@ -26,7 +21,6 @@ function enableViewport(renderingEngine, viewportId, viewportType, generic) {
     height: 300,
     useEnableElement: true,
   });
-  rendering.useGenericViewport = useGenericViewport;
 
   return renderingEngine.getViewport(viewportId);
 }

@@ -1,7 +1,5 @@
 import {
-  RenderingEngine,
   utilities,
-  Enums,
   cache,
   volumeLoader,
   setUseCPURendering,
@@ -15,15 +13,14 @@ import {
   beforeAll,
 } from '@jest/globals';
 import IslandRemoval from '../../../src/utilities/segmentation/islandRemoval';
+import { createPlanarAdapterOnStandInEngine } from '../../../../core/test/utils/planarAdapterOnStandInEngine';
 
-const { OrientationAxis, ViewportType } = Enums;
 const { VoxelManager } = utilities;
 
 const dimensions = [32, 32, 5];
 const [width, height, depth] = dimensions;
 const imageSize = width * height * depth;
 const viewportId = 'viewportId';
-const renderingEngineId = 'renderingEngineId';
 const volumeId = 'volumeId';
 
 describe('IslandRemove', function () {
@@ -50,9 +47,7 @@ describe('IslandRemove', function () {
 
     segmentationVoxels = volume.voxelManager;
 
-    renderingEngine = new RenderingEngine(renderingEngineId);
-    createViewport(renderingEngine, OrientationAxis.ACQUISITION, width, height);
-    viewport = renderingEngine.getViewport(viewportId);
+    ({ renderingEngine, viewport } = createViewport(width, height));
     previewVoxels =
       VoxelManager.createRLEHistoryVoxelManager(segmentationVoxels);
   });
@@ -179,22 +174,21 @@ function createBox(voxels, segmentIndex, x = 10, y = 10, z = 2, w = 5, h = 5) {
   }
 }
 
-function createViewport(renderingEngine, _orientation, width, height) {
+/**
+ * Makes the viewport that a legacy `STACK` type gives. It is made on a
+ * stand-in rendering engine, because a planar viewport in a real rendering
+ * engine needs WebGL, which jsdom lacks.
+ */
+function createViewport(width, height) {
   const element = document.createElement('div');
 
   element.style.width = `${width}px`;
   element.style.height = `${height}px`;
   document.body.appendChild(element);
 
-  renderingEngine.setViewports([
-    {
-      viewportId: viewportId,
-      type: ViewportType.STACK,
-      element,
-      defaultOptions: {
-        background: [1, 0, 1], // pinkish background
-      },
+  return createPlanarAdapterOnStandInEngine(element, viewportId, {
+    defaultOptions: {
+      background: [1, 0, 1],
     },
-  ]);
-  return element;
+  });
 }

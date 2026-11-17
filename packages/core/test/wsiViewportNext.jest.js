@@ -8,6 +8,7 @@ import { isInAcquisitionPlane } from '../src/utilities/isInAcquisitionPlane';
 import { getViewportContentMode } from '../src/utilities/viewportCapabilities';
 import {
   COLUMNS,
+  FRAME_OF_REFERENCE_UID,
   HEIGHT,
   IMAGE_ID,
   ROWS,
@@ -242,23 +243,50 @@ describe('Rotation of the direct next whole slide viewport', () => {
 
 describe('Annotations saved on a legacy whole slide viewport', () => {
   /**
-   * The references that the tools store for a probe and for a rectangle on
-   * the legacy viewport: the view reference with the points of the
-   * annotation, and the image id the tools add.
+   * The references that the tools stored for a probe and for a rectangle on
+   * the legacy whole slide viewport class of 5.x, for the slide of the
+   * stand-in at a slide rotation of 0.4: the view reference with the points
+   * of the annotation, and the image id the tools add. The probe was at the
+   * canvas point [120, 80] and the corners at [60, 40] and [180, 140]. The
+   * values were read from that class before it was deleted.
    */
-  function legacyReferences(legacyViewport) {
-    const probe = legacyViewport.canvasToWorld([120, 80]);
-    const corners = [
-      legacyViewport.canvasToWorld([60, 40]),
-      legacyViewport.canvasToWorld([180, 140]),
-    ];
+  function legacyReferences() {
+    const reference = {
+      FrameOfReferenceUID: FRAME_OF_REFERENCE_UID,
+      cameraFocalPoint: [260, 520, 0],
+      viewPlaneNormal: [0, 0, 1],
+      viewUp: [0, -1, 0],
+      sliceIndex: 0,
+    };
 
     return [
-      legacyViewport.getViewReference(),
-      legacyViewport.getViewReference({ points: [probe] }),
       {
-        ...legacyViewport.getViewReference({ points: corners }),
-        referencedImageId: legacyViewport.getCurrentImageId(),
+        ...reference,
+        planeRestriction: {
+          FrameOfReferenceUID: FRAME_OF_REFERENCE_UID,
+          point: [260, 520, 0],
+          inPlaneVector1: [0, -1, 0],
+          inPlaneVector2: [-1, 0, 0],
+        },
+      },
+      {
+        ...reference,
+        planeRestriction: {
+          FrameOfReferenceUID: FRAME_OF_REFERENCE_UID,
+          point: [159.0558319091797, 486.67919921875, 0],
+          inPlaneVector1: null,
+          inPlaneVector2: null,
+        },
+      },
+      {
+        ...reference,
+        planeRestriction: {
+          FrameOfReferenceUID: FRAME_OF_REFERENCE_UID,
+          point: [88.21544647216797, 473.2018737792969, 0],
+          inPlaneVector1: [-0.9568782448768616, -0.2904893457889557, 0],
+          inPlaneVector2: null,
+        },
+        referencedImageId: IMAGE_ID,
       },
     ];
   }
@@ -267,7 +295,7 @@ describe('Annotations saved on a legacy whole slide viewport', () => {
     const legacy = await track(mountLegacy(0.4));
     const next = await track(mountNext(WSIViewport, 0.4));
 
-    legacyReferences(legacy.viewport).forEach((reference) => {
+    legacyReferences().forEach((reference) => {
       expect(reference.viewPlaneNormal).toEqual([0, 0, 1]);
       expect(reference.planeRestriction).toBeDefined();
       expect(legacy.viewport.isReferenceViewable(reference)).toBe(true);
@@ -283,7 +311,7 @@ describe('Annotations saved on a legacy whole slide viewport', () => {
     next.viewport.setZoom(next.viewport.getZoom() + 2, [30, 50]);
     next.viewport.setViewState({ rotation: 70 });
 
-    legacyReferences(legacy.viewport).forEach((reference) =>
+    legacyReferences().forEach((reference) =>
       expect(next.viewport.isReferenceViewable(reference)).toBe(true)
     );
   });
@@ -291,7 +319,7 @@ describe('Annotations saved on a legacy whole slide viewport', () => {
   it('rejects them on another frame of reference or another slide plane', async () => {
     const legacy = await track(mountLegacy(0.4));
     const next = await track(mountNext(WSIViewport, 0.4));
-    const [reference] = legacyReferences(legacy.viewport);
+    const [reference] = legacyReferences();
     const otherFrame = {
       ...reference,
       FrameOfReferenceUID: '9.9.9',

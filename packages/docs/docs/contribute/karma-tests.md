@@ -27,7 +27,6 @@ For local review, use the repository wrapper instead of reading terminal output 
 
 ```bash
 ./scripts/run-karma.sh
-./scripts/run-karma.sh --compat
 ./scripts/run-karma.sh --cpu
 ./scripts/run-karma.sh --next
 ```
@@ -39,15 +38,13 @@ Examples:
 ```bash
 reports/legacy-karma/<timestamp>/legacy-karma.log
 reports/legacy-karma-<timestamp>/index.html
-reports/compat-karma/<timestamp>/compat-karma.log
-reports/compat-cpu-karma/<timestamp>/compat-cpu-karma.log
+reports/legacy-cpu-karma/<timestamp>/legacy-cpu-karma.log
 ```
 
 Supported wrapper flags:
 
-- `--compat`: force compatibility mode for the Karma run.
 - `--cpu`: force CPU rendering for the Karma run.
-- `--next`: convenience mode that runs two passes, `--compat` and then `--compat --cpu`.
+- `--next`: convenience mode that runs two passes, the plain run and then `--cpu`.
 
 Any other arguments are passed directly to `karma start`, so you can keep using normal Karma CLI options:
 
@@ -60,14 +57,14 @@ Useful environment variables:
 
 - `KARMA_GREP="<pattern>"`: filter tests via Karma client args.
 - `KARMA_PACKAGE=core|tools`: load only the selected package's Karma tests.
-- `FORCE_COMPAT=true` and `FORCE_CPU_RENDERING=true`: direct overrides when running `karma start` without the wrapper.
+- `FORCE_CPU_RENDERING=true`: direct override when running `karma start` without the wrapper.
 
 Examples:
 
 ```bash
 ./scripts/run-karma.sh
-./scripts/run-karma.sh --compat
-./scripts/run-karma.sh --compat --browsers Chrome --no-single-run
+./scripts/run-karma.sh --cpu
+./scripts/run-karma.sh --cpu --browsers Chrome --no-single-run
 KARMA_GREP="flip a stack viewport vertically" ./scripts/run-karma.sh --browsers Chrome --no-single-run
 KARMA_PACKAGE=core ./scripts/run-karma.sh
 ```

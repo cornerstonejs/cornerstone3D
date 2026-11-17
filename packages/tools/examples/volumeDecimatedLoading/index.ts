@@ -33,7 +33,7 @@
  * Some codecs can decode to partial resolution.
  */
 
-import type { LegacyVolumeViewport3D, Types } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
@@ -423,7 +423,7 @@ async function run() {
       try {
         const vrtViewport = renderingEngine.getViewport(
           viewportId4
-        ) as LegacyVolumeViewport3D;
+        ) as Types.IVolumeViewport;
         if (
           vrtViewport &&
           volume.voxelManager &&
@@ -477,7 +477,7 @@ async function run() {
 
     const vrtViewport = renderingEngine.getViewport(
       viewportId4
-    ) as LegacyVolumeViewport3D;
+    ) as Types.IVolumeViewport;
     vrtViewport.setProperties({
       preset: 'CT-Bone',
       interpolationType: Enums.InterpolationType.NEAREST,

@@ -152,7 +152,6 @@ After you have wrote your tests, you can run them by using the following command
 
 ```bash
 ./scripts/run-playwright.sh
-./scripts/run-playwright.sh --compat
 ./scripts/run-playwright.sh --cpu
 ./scripts/run-playwright.sh --next
 ```
@@ -163,18 +162,16 @@ Examples:
 
 ```bash
 reports/legacy-playwright/<timestamp>/
-reports/compat-playwright/<timestamp>/
-reports/compat-cpu-playwright/<timestamp>/
+reports/legacy-cpu-playwright/<timestamp>/
 reports/generic-viewport-playwright/<timestamp>/
 ```
 
 Supported wrapper flags:
 
-- `--compat`: open example pages with `?type=next`.
 - `--cpu`: open example pages with `?cpu=1`.
 - `--next`: run only `tests/genericViewport/**/*.spec.ts`.
 
-`--next` on Playwright is different from `--next` on Karma. Playwright uses it to select the `tests/genericViewport` suite only. Karma uses it as a convenience mode that runs compatibility and CPU passes.
+`--next` on Playwright is different from `--next` on Karma. Playwright uses it to select the `tests/genericViewport` suite only. Karma uses it as a convenience mode that runs the plain pass and the CPU pass.
 
 Any other arguments are passed directly to `playwright test`, so you can still use the normal Playwright CLI:
 
@@ -188,13 +185,13 @@ Any other arguments are passed directly to `playwright test`, so you can still u
 Useful environment variables:
 
 - `PLAYWRIGHT_REUSE_EXISTING_SERVER=true|false`: control reuse of the configured local example server.
-- The wrapper sets `PLAYWRIGHT_FORCE_COMPAT`, `PLAYWRIGHT_FORCE_CPU_RENDERING`, `PLAYWRIGHT_HTML_OUTPUT_DIR`, and `PLAYWRIGHT_HTML_OPEN=never` internally.
+- The wrapper sets `PLAYWRIGHT_FORCE_CPU_RENDERING`, `PLAYWRIGHT_HTML_OUTPUT_DIR`, and `PLAYWRIGHT_HTML_OPEN=never` internally.
 
 Examples:
 
 ```bash
 ./scripts/run-playwright.sh
-./scripts/run-playwright.sh --compat
+./scripts/run-playwright.sh --cpu
 ./scripts/run-playwright.sh --project chromium --headed
 ./scripts/run-playwright.sh -g "stack viewport"
 PLAYWRIGHT_REUSE_EXISTING_SERVER=true ./scripts/run-playwright.sh --project chromium

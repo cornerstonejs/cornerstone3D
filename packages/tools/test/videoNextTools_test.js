@@ -9,7 +9,7 @@ import {
   waitFor,
 } from '../../../utils/test/testUtilsVideo';
 
-const { Enums, utilities, getConfiguration } = cornerstone3D;
+const { Enums, utilities } = cornerstone3D;
 const { ViewportType } = Enums;
 const {
   ProbeTool,
@@ -27,12 +27,11 @@ const WIDTH = 320;
 const HEIGHT = 200;
 
 /**
- * Makes a legacy video viewport and a direct next video viewport of one size
- * in one rendering engine and adds both to the tool group.
+ * Makes the viewport of the legacy `VIDEO` type, which is the legacy adapter
+ * of the video viewport, and a direct next video viewport of one size in one
+ * rendering engine and adds both to the tool group.
  */
 function createViewports(renderingEngine, toolGroup) {
-  const rendering = getConfiguration().rendering;
-  const useGenericViewport = rendering.useGenericViewport;
   const viewportOptions = {
     width: WIDTH,
     height: HEIGHT,
@@ -40,13 +39,11 @@ function createViewports(renderingEngine, toolGroup) {
     orientation: null,
   };
 
-  rendering.useGenericViewport = false;
   testUtils.createViewports(renderingEngine, {
     ...viewportOptions,
     viewportId: 'legacyVideo',
     viewportType: ViewportType.VIDEO,
   });
-  rendering.useGenericViewport = useGenericViewport;
   testUtils.createViewports(renderingEngine, {
     ...viewportOptions,
     viewportId: 'nextVideo',
@@ -68,8 +65,8 @@ async function showVideo(legacy, next, frameNumber) {
   next.setFrameNumber(frameNumber);
   await waitFor(
     () =>
-      legacy.videoElement.paused &&
-      !legacy.videoElement.seeking &&
+      legacy.element.querySelector('video').paused &&
+      !legacy.element.querySelector('video').seeking &&
       legacy.getFrameNumber() === frameNumber &&
       !next.element.querySelector('video').seeking &&
       next.getFrameNumber() === frameNumber

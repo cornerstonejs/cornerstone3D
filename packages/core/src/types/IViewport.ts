@@ -498,9 +498,9 @@ interface IViewport {
   /** Type of viewport */
   readonly type: ViewportType;
   /**
-   * The viewport type originally requested by the caller, before any internal
-   * compatibility remap (e.g. STACK/ORTHOGRAPHIC requested as PLANAR_NEXT when
-   * `rendering.useGenericViewport` is enabled). Equals `type` when not remapped.
+   * The viewport type originally requested by the caller, before the internal
+   * compatibility remap (a STACK or ORTHOGRAPHIC request gives PLANAR_NEXT).
+   * Equals `type` when not remapped.
    * Set by the rendering engine at creation. Use this when branching on the
    * legacy viewport type so the branch is transparent across compat adapters.
    */

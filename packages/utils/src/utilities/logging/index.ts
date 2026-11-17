@@ -15,12 +15,12 @@
  * - `<FILEORAREA>` is the file, or the area of the code when the messages come
  *   from more than one file.
  *
- * For example, `cs3d.core.RenderingEngine.StackViewport` comes from
- * `packages/core/src/RenderingEngine/StackViewport.ts`. To make this name, get
+ * For example, `cs3d.core.RenderingEngine.BaseRenderingEngine` comes from
+ * `packages/core/src/RenderingEngine/BaseRenderingEngine.ts`. To make this name, get
  * the logger of the package and give the other parts as separate arguments:
  *
  * ```ts
- * const log = coreLog.getLogger('RenderingEngine', 'StackViewport');
+ * const log = coreLog.getLogger('RenderingEngine', 'BaseRenderingEngine');
  * ```
  *
  * The applications set the levels with the loglevel interface, not with the

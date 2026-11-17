@@ -16,7 +16,6 @@ import {
 } from './helpers/elementTouchAction';
 import {
   getShouldUseCPURendering,
-  getUseGenericViewport,
   isCornerstoneInitialized,
   getConfiguration,
 } from '../init';
@@ -490,16 +489,9 @@ abstract class BaseRenderingEngine {
     viewportInputEntry: PublicViewportInput
   ) {
     const requestedType = viewportInputEntry.type;
-    let { type } = viewportInputEntry;
     const { defaultOptions } = viewportInputEntry;
-
-    // Remap legacy types to Next when the flag is set
-    if (getUseGenericViewport()) {
-      const remapped = BaseRenderingEngine.NEXT_TYPE_REMAP[type];
-      if (remapped) {
-        type = remapped;
-      }
-    }
+    const type =
+      BaseRenderingEngine.NEXT_TYPE_REMAP[requestedType] ?? requestedType;
 
     let options = defaultOptions;
 
@@ -520,10 +512,7 @@ abstract class BaseRenderingEngine {
 
     return {
       ...viewportInputEntry,
-      requestedType:
-        requestedType !== type || getUseGenericViewport()
-          ? requestedType
-          : undefined,
+      requestedType,
       type,
       defaultOptions: options,
     };

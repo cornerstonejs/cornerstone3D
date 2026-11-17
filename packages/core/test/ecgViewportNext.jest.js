@@ -1,8 +1,8 @@
 import { describe, it, expect, afterEach, beforeEach } from '@jest/globals';
 import { Events, MetadataModules, ViewportType } from '../src/enums';
 import * as metaData from '../src/metaData';
-import LegacyECGViewport from '../src/RenderingEngine/ECGViewport';
 import ECGViewport from '../src/RenderingEngine/GenericViewport/ECG/ECGViewport';
+import ECGViewportLegacyAdapter from '../src/RenderingEngine/GenericViewport/ECG/ECGViewportLegacyAdapter';
 import { viewportProjection } from '../src/RenderingEngine/GenericViewport/viewportProjection';
 import { ECG_PX_PER_MM } from '../src/RenderingEngine/GenericViewport/ECG/ecgWaveform';
 
@@ -82,7 +82,7 @@ const mounted = [];
 
 async function mountLegacy(defaultOptions = {}) {
   const { element, canvas } = createElement();
-  const viewport = new LegacyECGViewport({
+  const viewport = new ECGViewportLegacyAdapter({
     id: 'ecgLegacy',
     element,
     canvas,
@@ -150,8 +150,7 @@ afterEach(() => {
 });
 
 describe('World coordinates of the legacy and the next ECG viewports', () => {
-  it('measure the time axis in samples and the amplitude in raw units on both', async () => {
-    const legacy = await mountLegacy();
+  it('measure the time axis in samples and the amplitude in raw units on next', async () => {
     const next = await mountNext({ traceLayout: '12x1' });
 
     [
@@ -161,18 +160,15 @@ describe('World coordinates of the legacy and the next ECG viewports', () => {
     ].forEach(([lead, sample]) => {
       const expected = [sample, DATA[lead][sample], lead];
 
-      expectClose(annotationPoints(legacy, lead, [sample])[0], expected);
       expectClose(annotationPoints(next, lead, [sample])[0], expected);
     });
   });
 
-  it('use 150 layout units for one second on legacy and the sweep speed times 3.779 on next', async () => {
-    const legacy = await mountLegacy();
+  it('use the sweep speed times 3.779 layout units for one second on next', async () => {
     const next = await mountNext({ traceLayout: '12x1' });
     const seconds = SAMPLES / SAMPLING_FREQUENCY;
 
     expect(ECG_PX_PER_MM).toBe(3.779);
-    expect(legacy.getContentDimensions().width).toBe(150 * seconds);
     expect(next.getContentDimensions().width / seconds).toBeCloseTo(
       25 * ECG_PX_PER_MM,
       1
@@ -270,9 +266,8 @@ describe('Annotations in a layout with several columns on the next ECG viewport'
       .channelLayouts.filter((cell) => cell.leadIndex % 1000 === channelIndex);
 
   it('does not draw a point outside the time window of every cell of its lead', async () => {
-    const legacy = await mountLegacy();
     const next = await mountNext();
-    const [probe] = annotationPoints(legacy, 7, [1400]);
+    const probe = tracePoint(7, 1400);
     const [v2] = cellsOfLead(next, 7);
 
     expect([v2.startSample, v2.endSample]).toEqual([2500, 3750]);
@@ -367,14 +362,13 @@ describe('Annotations in a layout with several columns on the next ECG viewport'
   });
 
   it('keeps the legacy layout 12x1 as the legacy viewport draws it', async () => {
-    const legacy = await mountLegacy();
     const next = await mountNext({ traceLayout: '12x1' });
 
     [
       [1, [300, 4900]],
       [7, [1400, 1800]],
     ].forEach(([lead, samples]) => {
-      const points = annotationPoints(legacy, lead, samples);
+      const points = samples.map((sample) => tracePoint(lead, sample));
 
       expect(isDrawn(next, points)).toBe(true);
       points.forEach((point) => {
@@ -397,18 +391,52 @@ describe('Slices of the next ECG viewport', () => {
 });
 
 describe('Annotations saved on a legacy ECG viewport', () => {
+  /**
+   * The references that the tools stored on the legacy ECG viewport class of
+   * 5.x for the record of the tests: the view reference, the reference of a
+   * probe on sample 500 of the lead with index 2, and that one with the image
+   * id the tools add. The values were read from that class before it was
+   * deleted.
+   */
+  function legacyReferences() {
+    const FrameOfReferenceUID = `ecg:${ECG_ID}`;
+    const reference = {
+      FrameOfReferenceUID,
+      cameraFocalPoint: [2500, -800, 5],
+      viewPlaneNormal: [0, 0, 1],
+      viewUp: [0, -1, 0],
+    };
+    const probeReference = {
+      ...reference,
+      sliceIndex: 2,
+      planeRestriction: {
+        FrameOfReferenceUID,
+        point: tracePoint(2, 500),
+        inPlaneVector1: null,
+        inPlaneVector2: null,
+      },
+    };
+
+    return [
+      {
+        ...reference,
+        sliceIndex: 0,
+        planeRestriction: {
+          FrameOfReferenceUID,
+          point: [2500, -800, 5],
+          inPlaneVector1: [0, -1, 0],
+          inPlaneVector2: [-1, 0, 0],
+        },
+      },
+      probeReference,
+      { ...probeReference, referencedImageId: ECG_ID },
+    ];
+  }
+
   it('show on the next viewport, as on the legacy viewport', async () => {
     const legacy = await mountLegacy();
     const next = await mountNext({ traceLayout: '12x1' });
-    const [probe] = annotationPoints(legacy, 2, [500]);
-    const references = [
-      legacy.getViewReference(),
-      legacy.getViewReference({ points: [probe] }),
-      {
-        ...legacy.getViewReference({ points: [probe] }),
-        referencedImageId: legacy.getCurrentImageId(),
-      },
-    ];
+    const references = legacyReferences();
 
     references.forEach((reference) => {
       expect(reference.viewPlaneNormal).toBeDefined();

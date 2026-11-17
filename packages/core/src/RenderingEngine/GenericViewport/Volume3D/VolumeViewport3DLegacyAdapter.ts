@@ -1126,6 +1126,12 @@ class VolumeViewport3DLegacyAdapter extends VolumeViewport3D {
           });
         }
 
+        if (volumeInput.blendMode !== undefined) {
+          this.setDisplaySetPresentation(dataId, {
+            blendMode: volumeInput.blendMode,
+          });
+        }
+
         if (volumeInput.callback) {
           const actor = this.getBindingActor(dataId) as vtkVolume | undefined;
 

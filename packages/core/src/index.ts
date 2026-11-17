@@ -17,13 +17,6 @@ export {
   detachFidelityIndicator,
   canReportFidelity,
 } from './RenderingEngine/helpers/fidelityIndicator';
-import VolumeViewport from './RenderingEngine/VolumeViewport';
-import VolumeViewport3D from './RenderingEngine/VolumeViewport3D';
-import BaseVolumeViewport from './RenderingEngine/BaseVolumeViewport';
-import StackViewport from './RenderingEngine/StackViewport';
-import VideoViewport from './RenderingEngine/VideoViewport';
-import WSIViewport from './RenderingEngine/WSIViewport';
-import ECGViewport from './RenderingEngine/ECGViewport';
 import {
   defaultRenderPathResolver,
   DefaultRenderPathResolver,
@@ -146,7 +139,6 @@ export type {
   Volume3DProjectionRequest,
   Volume3DProjectionSnapshot,
 } from './RenderingEngine/GenericViewport/Volume3D';
-import Viewport from './RenderingEngine/Viewport';
 import eventTarget from './eventTarget';
 import { version } from './version';
 
@@ -212,7 +204,6 @@ import * as metaData from './metaData';
 import {
   init,
   getShouldUseCPURendering,
-  getUseGenericViewport,
   isCornerstoneInitialized,
   setUseCPURendering,
   setPreferSizeOverAccuracy,
@@ -353,8 +344,6 @@ const renderingEngineExportsV2 = {
   wsiProjection,
 };
 
-const LegacyVolumeViewport3D = VolumeViewport3D;
-
 // Add new types here so that they can be imported singly as required.
 export type {
   Types,
@@ -393,16 +382,7 @@ export {
   //
   Settings,
   // Rendering Engine
-  BaseVolumeViewport,
-  VolumeViewport,
-  LegacyVolumeViewport3D,
-  VolumeViewport3D,
   GenericVolumeViewport3D,
-  Viewport,
-  StackViewport,
-  VideoViewport,
-  WSIViewport,
-  ECGViewport,
   ECGGenericViewport,
   GenericViewport,
   ViewportProjectionService,
@@ -504,8 +484,6 @@ export {
   getEffectiveRenderBackend,
   getRenderingCapabilities,
   detectRenderingCapabilities,
-  // GenericViewport
-  getUseGenericViewport,
   // Geometry Loader
   geometryLoader,
   cornerstoneMeshLoader,

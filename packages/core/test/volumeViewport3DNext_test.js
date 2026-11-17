@@ -1,22 +1,17 @@
 import * as cornerstone3D from '../src/index';
 import * as testUtils from '../../../utils/test/testUtils';
 
-const { Enums, volumeLoader, utilities, getConfiguration, cache } =
-  cornerstone3D;
+const { Enums, volumeLoader, utilities, cache } = cornerstone3D;
 const { ViewportType, OrientationAxis } = Enums;
 
 const renderingEngineId = utilities.uuidv4();
 
 /**
- * Makes viewports of one size and orientation in one rendering engine: a
- * legacy 3D viewport when `legacyId` is given, then a direct next 3D viewport
- * for each of `nextIds`. The switch of the generic viewports is off for the
- * legacy one, so it is the legacy class with or without
- * FORCE_GENERIC_VIEWPORT.
+ * Makes viewports of one size and orientation in one rendering engine: the
+ * viewport of the legacy 3D type, which is the 3D legacy adapter, when
+ * `legacyId` is given, then a direct next 3D viewport for each of `nextIds`.
  */
 function createViewports(renderingEngine, { legacyId, nextIds }) {
-  const rendering = getConfiguration().rendering;
-  const useGenericViewport = rendering.useGenericViewport;
   const viewportOptions = {
     orientation: OrientationAxis.SAGITTAL,
     width: 400,
@@ -25,13 +20,11 @@ function createViewports(renderingEngine, { legacyId, nextIds }) {
   };
 
   if (legacyId) {
-    rendering.useGenericViewport = false;
     testUtils.createViewports(renderingEngine, {
       ...viewportOptions,
       viewportId: legacyId,
       viewportType: ViewportType.VOLUME_3D,
     });
-    rendering.useGenericViewport = useGenericViewport;
   }
 
   nextIds.forEach((viewportId) =>

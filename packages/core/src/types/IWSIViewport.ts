@@ -9,8 +9,8 @@ import type CPUIImageData from './CPUIImageData';
 import type { WSIClientLike, WSIMapViewLike } from '../utilities/WSIUtilities';
 
 /**
- * Public interface of the legacy whole slide viewport, the `WSIViewport` class
- * of `RenderingEngine/WSIViewport.ts`.
+ * Public interface of the legacy whole slide viewport. Its class is gone: a
+ * `WHOLE_SLIDE` type gives the legacy adapter of the next whole slide viewport.
  */
 export interface ILegacyWSIViewport extends IViewport {
   modality: string;

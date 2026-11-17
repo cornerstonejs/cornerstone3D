@@ -1,4 +1,4 @@
-import type { LegacyVolumeViewport3D, Types } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
@@ -677,7 +677,7 @@ async function run(numViewports = getNumViewportsFromUrl()) {
 
   const viewport = renderingEngine.getViewport(
     viewportId4
-  ) as LegacyVolumeViewport3D;
+  ) as Types.IVolumeViewport;
 
   await setVolumesForViewports(
     renderingEngine,

@@ -10,7 +10,6 @@ const {
   volumeLoader,
   geometryLoader,
   utilities,
-  getConfiguration,
   cache,
   viewportProjection,
 } = cornerstone3D;
@@ -21,14 +20,32 @@ const CANVAS_WIDTH = 400;
 const CANVAS_HEIGHT = 300;
 
 /**
- * Makes a legacy 3D viewport and a direct next 3D viewport of one size and
- * orientation in one rendering engine. The switch of the generic viewports is
- * off for the legacy one, so it is the legacy class with or without
- * FORCE_GENERIC_VIEWPORT.
+ * The camera of the legacy 3D viewport class of 5.x in the sagittal
+ * orientation with one added actor and no volume, before a reset. The values
+ * were read from that class before it was deleted.
+ */
+const LEGACY_ACTOR_ONLY_CAMERA = {
+  viewUp: [0, 0, 1],
+  focalPoint: [0, 0, 0],
+  position: [17.32050807568877, 0, 0],
+};
+
+/**
+ * What `resetCamera` of the legacy 3D viewport class of 5.x fitted from
+ * `LEGACY_ACTOR_ONLY_CAMERA` for an added box actor from [-50, 10, 0] to
+ * [150, 60, 300]. The values were read from that class before it was deleted.
+ */
+const LEGACY_ACTOR_ONLY_FIT = {
+  parallelScale: 150,
+  focalPoint: [50, 35, 150],
+};
+
+/**
+ * Makes the viewport of the legacy 3D type, which is the 3D legacy adapter,
+ * and a direct next 3D viewport of one size and orientation in one rendering
+ * engine.
  */
 function createViewports(renderingEngine) {
-  const rendering = getConfiguration().rendering;
-  const useGenericViewport = rendering.useGenericViewport;
   const viewportOptions = {
     orientation: OrientationAxis.SAGITTAL,
     width: CANVAS_WIDTH,
@@ -36,13 +53,11 @@ function createViewports(renderingEngine) {
     useEnableElement: true,
   };
 
-  rendering.useGenericViewport = false;
   testUtils.createViewports(renderingEngine, {
     ...viewportOptions,
     viewportId: 'legacy3D',
     viewportType: ViewportType.VOLUME_3D,
   });
-  rendering.useGenericViewport = useGenericViewport;
   testUtils.createViewports(renderingEngine, {
     ...viewportOptions,
     viewportId: 'next3D',
@@ -348,23 +363,21 @@ describe('Direct next 3D viewport, a geometry display set -- ', () => {
   });
 
   it('fits a surface that is mounted alone on resetViewState, as the legacy viewport fits an added actor', async function () {
-    const [legacy, next] = createViewports(renderingEngine);
+    const [, next] = createViewports(renderingEngine);
     const min = [-50, 10, 0];
     const max = [150, 60, 300];
 
     createSurfaceGeometry('surface1', min, max);
     await next.addDisplaySet('surface1', { renderMode: 'vtkGeometry3d' });
-    legacy.addActor({ uid: 'box', actor: createBoxActor(min, max) });
 
-    const { viewUp, focalPoint, position } = legacy.getCamera();
+    const { viewUp, focalPoint, position } = LEGACY_ACTOR_ONLY_CAMERA;
 
     next.setViewState({ viewUp, focalPoint, position });
     next.setViewState({ parallelScale: 5 });
-    legacy.resetCamera();
     next.resetViewState();
 
     const nextCamera = next.getViewState();
-    const legacyCamera = legacy.getCamera();
+    const legacyCamera = LEGACY_ACTOR_ONLY_FIT;
 
     expect(nextCamera.parallelScale).toBeCloseTo(legacyCamera.parallelScale, 4);
     expectPointsClose(nextCamera.focalPoint, legacyCamera.focalPoint);

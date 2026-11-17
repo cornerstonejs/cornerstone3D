@@ -355,7 +355,6 @@ function buildHtmlReport({
   const itemsJson = JSON.stringify(items);
   const totalsJson = JSON.stringify(totals || {});
   const karmaModeJson = JSON.stringify({
-    compat: rName.includes('compat'),
     cpu: rName.includes('-cpu'),
   });
 

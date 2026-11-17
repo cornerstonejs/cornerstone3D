@@ -1,6 +1,6 @@
 import { getConfiguration } from '../../src/init';
 import { ViewportType } from '../../src/enums';
-import LegacyWSIViewport from '../../src/RenderingEngine/WSIViewport';
+import WSIViewportLegacyAdapter from '../../src/RenderingEngine/GenericViewport/WSI/WSIViewportLegacyAdapter';
 import genericViewportDisplaySetMetadataProvider from '../../src/utilities/genericViewportDisplaySetMetadataProvider';
 
 export const WIDTH = 400;
@@ -219,7 +219,8 @@ export function remountNext(viewport, slideRotation = 0) {
 }
 
 /**
- * Mounts the slide on a legacy WSI viewport with `setWSI`, or with
+ * Mounts the slide on the viewport that a legacy `WHOLE_SLIDE` type gives,
+ * the legacy adapter of the whole slide viewport, with `setWSI`, or with
  * `setDataIds` and no web client when `withDataIds` is set, with the
  * default options given.
  */
@@ -228,7 +229,7 @@ export async function mountLegacy(
   { withDataIds, defaultOptions = {} } = {}
 ) {
   const { element, canvas } = createElement();
-  const viewport = new LegacyWSIViewport({
+  const viewport = new WSIViewportLegacyAdapter({
     id: 'wsiLegacy',
     element,
     canvas,

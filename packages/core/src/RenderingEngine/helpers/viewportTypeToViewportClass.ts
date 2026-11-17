@@ -1,14 +1,8 @@
-import StackViewport from '../StackViewport';
-import VolumeViewport from '../VolumeViewport';
 import ViewportType from '../../enums/ViewportType';
 import ViewportTypes, {
   registerViewportTypesConstant,
 } from '../../enums/ViewportTypes';
 import type { ViewportType as ViewportTypeWire } from '../../types/ViewportTypeRegistry';
-import LegacyVolumeViewport3D from '../VolumeViewport3D';
-import VideoViewport from '../VideoViewport';
-import WSIViewport from '../WSIViewport';
-import LegacyECGViewport from '../ECGViewport';
 import ECGViewport from '../GenericViewport/ECG/ECGViewport';
 import PlanarViewport from '../GenericViewport/Planar/PlanarViewport';
 import PlanarViewportLegacyAdapter from '../GenericViewport/Planar/PlanarViewportLegacyAdapter';
@@ -75,6 +69,14 @@ const resolvers: ViewportClassResolver[] = [];
 const registeredViewportTypes = new Set<string>();
 let hasRegisteredCoreViewportTypes = false;
 
+/**
+ * Registers the viewport types of the library. A legacy type has the legacy
+ * adapter of its next viewport as its class. The rendering engine remaps a
+ * legacy type to its next type before it makes the viewport, and the
+ * `resolveClass` of that next type then gives the same adapter.
+ * `ViewportType.PERSPECTIVE` has no class: its only class was the legacy
+ * volume viewport.
+ */
 function registerCoreViewportTypes() {
   if (hasRegisteredCoreViewportTypes) {
     return;
@@ -83,31 +85,30 @@ function registerCoreViewportTypes() {
 
   registerViewportType({
     type: ViewportType.ORTHOGRAPHIC,
-    ViewportClass: VolumeViewport,
-  });
-  registerViewportType({
-    type: ViewportType.PERSPECTIVE,
-    ViewportClass: VolumeViewport,
+    ViewportClass:
+      PlanarViewportLegacyAdapter as unknown as ViewportConstructor,
   });
   registerViewportType({
     type: ViewportType.STACK,
-    ViewportClass: StackViewport,
+    ViewportClass:
+      PlanarViewportLegacyAdapter as unknown as ViewportConstructor,
   });
   registerViewportType({
     type: ViewportType.VOLUME_3D,
-    ViewportClass: LegacyVolumeViewport3D,
+    ViewportClass:
+      VolumeViewport3DLegacyAdapter as unknown as ViewportConstructor,
   });
   registerViewportType({
     type: ViewportType.WHOLE_SLIDE,
-    ViewportClass: WSIViewport,
+    ViewportClass: WSIViewportLegacyAdapter as unknown as ViewportConstructor,
   });
   registerViewportType({
     type: ViewportType.ECG,
-    ViewportClass: LegacyECGViewport,
+    ViewportClass: ECGViewportLegacyAdapter as unknown as ViewportConstructor,
   });
   registerViewportType({
     type: ViewportType.VIDEO,
-    ViewportClass: VideoViewport,
+    ViewportClass: VideoViewportLegacyAdapter as unknown as ViewportConstructor,
   });
 
   // next viewports below

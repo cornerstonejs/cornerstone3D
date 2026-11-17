@@ -169,7 +169,6 @@ describe('RenderingEngineAPI -- ', () => {
     beforeEach(function () {
       const testEnv = setupTestEnvironment({
         renderingEngineId,
-        useGenericViewport: true,
       });
       renderingEngine = testEnv.renderingEngine;
     });

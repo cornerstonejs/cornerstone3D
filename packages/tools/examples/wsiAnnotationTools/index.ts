@@ -1,10 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
-import {
-  RenderingEngine,
-  Enums,
-  WSIViewport,
-  utilities,
-} from '@cornerstonejs/core';
+import { RenderingEngine, Enums, utilities } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import dicomImageLoader from '@cornerstonejs/dicom-image-loader';
 import { api } from 'dicomweb-client';

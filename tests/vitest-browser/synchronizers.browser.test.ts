@@ -13,8 +13,7 @@
 //
 // Two (or three) independent PlanarViewport contexts are used per test: `a`
 // comes from the frozen harness's `createPlanarViewport()` (owns the fake
-// image loader + metadata provider + `useGenericViewport` config flag and
-// their teardown); `b`/`c` are attached via the local `attachSharedViewport`
+// image loader + metadata provider and their teardown); `b`/`c` are attached via the local `attachSharedViewport`
 // helper below, which mounts the SAME `displaySetId` (and therefore the same
 // imageIds / FrameOfReferenceUID) that `a` already registered, mirroring the
 // proven "cross-viewport reference" pattern in
@@ -95,8 +94,8 @@ function toViewportId(ctx: PlanarViewportContext): Types.IViewportId {
  * renderingEngineId without registering a second fake stack or a second
  * engine. Mirrors the construction inlined in planarInvariants.browser.test.ts's
  * "cross-viewport reference" test, generalized to reuse the engine too.
- * Deliberately does NOT touch the fake image loader, metadata provider, or
- * `useGenericViewport` config flag -- `base`'s own harness cleanup owns those.
+ * Deliberately does NOT touch the fake image loader or the metadata
+ * provider -- `base`'s own harness cleanup owns those.
  */
 async function attachSharedViewport(
   base: PlanarViewportContext,

@@ -95,9 +95,8 @@ export type ViewportFidelityState = {
 /**
  * Fidelity reporting surface of a viewport (FIDELITY-EVENT, GENVIEW-FIDELITY-8).
  *
- * `IViewport` is the legacy {@link Viewport} class, which implements this
- * surface. {@link GenericViewport} implements it as well. Rendering engines
- * call {@link notifyFidelityStateChanged} after each draw without a cast.
+ * {@link GenericViewport} implements this surface. Rendering engines call
+ * {@link notifyFidelityStateChanged} after each draw without a cast.
  */
 export interface IViewportFidelity {
   /** Whether this viewport can report fidelity (GENVIEW-FIDELITY-8). */

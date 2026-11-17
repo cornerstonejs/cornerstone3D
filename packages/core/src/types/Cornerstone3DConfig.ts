@@ -178,12 +178,6 @@ interface Cornerstone3DConfig {
      * the next texture that a viewport provisions and to the next load.
      */
     lossyDownsampling?: LossyDownsampling;
-    /**
-     * When true, legacy viewport types (STACK, ORTHOGRAPHIC, VIDEO, ECG,
-     * WHOLE_SLIDE) are internally backed by GenericViewport implementations
-     * through legacy compatibility adapters at viewport creation time.
-     */
-    useGenericViewport?: boolean;
   };
 
   /**

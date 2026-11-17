@@ -317,25 +317,22 @@ describe('The new image events of a mount on a planar viewport -- ', () => {
   }
 
   /**
-   * What the legacy viewports and their adapters fire for the same series.
-   * A legacy volume viewport fires VOLUME_NEW_IMAGE once and no
-   * STACK_NEW_IMAGE. Its adapter fires both twice: first as the volume is
-   * attached, for the index of its middle image, then for the slice that the
-   * mount shows. The legacy stack viewport and its adapter fire
-   * STACK_NEW_IMAGE once.
+   * What the legacy adapters fire for a series. The legacy volume viewport
+   * class of 5.x fired VOLUME_NEW_IMAGE once, for image index 3 of 8 slices,
+   * and no STACK_NEW_IMAGE. Its adapter fires both twice: first as the volume
+   * is attached, for the index of its middle image, then for the slice that
+   * the mount shows. The legacy stack viewport class fired STACK_NEW_IMAGE
+   * once, as its adapter does.
    */
-  it('keeps what the legacy adapters fire at a mount, beside the legacy volume viewport and the legacy stack viewport', async function () {
+  it('keeps what the legacy adapters fire at a mount', async function () {
     const series = await createSeries({ id: 'mount-legacy' });
     const fired = {};
 
-    for (const [id, type, adapter] of [
-      ['legacyVolume', ViewportType.ORTHOGRAPHIC, false],
-      ['adapterVolume', ViewportType.ORTHOGRAPHIC, true],
-      ['legacyStack', ViewportType.STACK, false],
-      ['adapterStack', ViewportType.STACK, true],
+    for (const [id, type] of [
+      ['adapterVolume', ViewportType.ORTHOGRAPHIC],
+      ['adapterStack', ViewportType.STACK],
     ]) {
       const viewport = createLegacyViewport(renderingEngine, id, type, {
-        adapter,
         orientation: OrientationAxis.AXIAL,
       });
       const events = recordNewImageEvents(viewport.element);
@@ -361,12 +358,6 @@ describe('The new image events of a mount on a planar viewport -- ', () => {
       };
     }
 
-    expect(fired.legacyVolume).toEqual({
-      stack: [],
-      volume: [{ imageIndex: 3, numberOfSlices: 8 }],
-      sliceIndex: 3,
-      imageOnDisplay: 4,
-    });
     expect(fired.adapterVolume).toEqual({
       stack: [
         { image: 4, imageIdIndex: 4 },
@@ -379,12 +370,11 @@ describe('The new image events of a mount on a planar viewport -- ', () => {
       sliceIndex: 3,
       imageOnDisplay: 4,
     });
-    expect(fired.legacyStack).toEqual({
+    expect(fired.adapterStack).toEqual({
       stack: [{ image: 0, imageIdIndex: 0 }],
       volume: [],
       sliceIndex: 0,
       imageOnDisplay: 0,
     });
-    expect(fired.adapterStack).toEqual(fired.legacyStack);
   });
 });
