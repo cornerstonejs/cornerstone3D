@@ -167,7 +167,7 @@ export function restoreAdditionalMetrics(numGroups): AdditionalMetrics {
  * @returns Formatted unit string or empty string if unitless
  */
 
-function resolveUnit(
+export function resolveUnit(
   codeMeaning: string,
   unitCode?: {
     CodeValue: string;
