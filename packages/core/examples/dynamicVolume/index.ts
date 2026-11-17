@@ -1,9 +1,10 @@
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
   volumeLoader,
   getRenderingEngine,
+  utilities,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -22,6 +23,7 @@ console.warn(
 const { ViewportType } = Enums;
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'PT_4D_VOLUME';
+const displaySetId = 'dynamicVolume:pt';
 const orientations = [
   Enums.OrientationAxis.AXIAL,
   Enums.OrientationAxis.SAGITTAL,
@@ -55,9 +57,7 @@ addDropdownToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the volume viewport
-    const viewport = renderingEngine.getViewport(
-      viewportId
-    ) as Types.IVolumeViewport;
+    const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
     viewport.setOrientation(selectedValue as Enums.OrientationAxis);
     viewport.render();
@@ -96,7 +96,7 @@ async function run() {
   // Create a stack viewport
   const viewportInput = {
     viewportId,
-    type: ViewportType.ORTHOGRAPHIC,
+    type: ViewportType.PLANAR_NEXT,
     element,
     defaultOptions: {
       orientation: Enums.OrientationAxis.ACQUISITION,
@@ -107,9 +107,7 @@ async function run() {
   renderingEngine.enableElement(viewportInput);
 
   // Get the volume viewport that was created
-  const viewport = renderingEngine.getViewport(
-    viewportId
-  ) as Types.IVolumeViewport;
+  const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
   // Define a unique id for the volume
   const volumeName = 'PT_VOLUME_ID'; // Id of the volume less loader prefix
@@ -127,7 +125,13 @@ async function run() {
   addDimensionGroupSlider(volume);
 
   // Set the volume on the viewport
-  viewport.setVolumes([{ volumeId }]);
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    kind: 'planar',
+    imageIds,
+    volumeId,
+  });
+
+  await viewport.setDisplaySets({ displaySetId });
 
   // Render the image
   viewport.render();

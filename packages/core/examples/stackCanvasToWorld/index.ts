@@ -1,4 +1,4 @@
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import { RenderingEngine, Enums, utilities } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -14,6 +14,7 @@ console.warn(
 
 const { ViewportType } = Enums;
 const { worldToImageCoords } = utilities;
+const displaySetId = 'stackCanvasToWorld:ct';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -71,7 +72,7 @@ async function run() {
   const viewportId = 'CT_STACK';
   const viewportInput = {
     viewportId,
-    type: ViewportType.STACK,
+    type: ViewportType.PLANAR_NEXT,
     element,
     defaultOptions: {
       background: [0.2, 0, 0.2] as Types.Point3,
@@ -81,18 +82,22 @@ async function run() {
   renderingEngine.enableElement(viewportInput);
 
   // Get the stack viewport that was created
-  const viewport = renderingEngine.getViewport(
-    viewportId
-  ) as Types.IStackViewport;
+  const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
   // Define a stack containing a single image
   const stack = [imageIds[0]];
 
   // Set the stack on the viewport
-  await viewport.setStack(stack);
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    kind: 'planar',
+    imageIds: stack,
+    initialImageIdIndex: 0,
+  });
+
+  await viewport.setDisplaySets({ displaySetId });
 
   // Set the VOI of the stack
-  viewport.setProperties({ voiRange: ctVoiRange });
+  viewport.setDisplaySetPresentation(displaySetId, { voiRange: ctVoiRange });
 
   // Render the image
   viewport.render();

@@ -1,9 +1,10 @@
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
   volumeLoader,
   getRenderingEngine,
+  utilities,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -31,6 +32,7 @@ console.warn(
 );
 
 const { ViewportType } = Enums;
+const displaySetId = 'volumeVoiSigmoid:ct';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -45,12 +47,12 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the volume viewport
-    const viewport = renderingEngine.getViewport(
-      viewportId
-    ) as Types.IVolumeViewport;
+    const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
     // Set a range to highlight bones
-    viewport.setProperties({ VOILUTFunction: Enums.VOILUTFunctionType.LINEAR });
+    viewport.setDisplaySetPresentation(displaySetId, {
+      voiLUTFunction: Enums.VOILUTFunctionType.LINEAR,
+    });
 
     viewport.render();
   },
@@ -63,13 +65,11 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the volume viewport
-    const viewport = renderingEngine.getViewport(
-      viewportId
-    ) as Types.IVolumeViewport;
+    const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
     // Set a range to highlight bones
-    viewport.setProperties({
-      VOILUTFunction: Enums.VOILUTFunctionType.SAMPLED_SIGMOID,
+    viewport.setDisplaySetPresentation(displaySetId, {
+      voiLUTFunction: Enums.VOILUTFunctionType.SAMPLED_SIGMOID,
     });
 
     viewport.render();
@@ -126,7 +126,7 @@ async function run() {
   // Create a stack viewport
   const viewportInput = {
     viewportId,
-    type: ViewportType.ORTHOGRAPHIC,
+    type: ViewportType.PLANAR_NEXT,
     element,
     defaultOptions: {
       orientation: Enums.OrientationAxis.SAGITTAL,
@@ -138,9 +138,7 @@ async function run() {
   toolGroup.addViewport(viewportId, renderingEngineId);
 
   // Get the stack viewport that was created
-  const viewport = renderingEngine.getViewport(
-    viewportId
-  ) as Types.IVolumeViewport;
+  const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
   // Define a unique id for the volume
   const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
@@ -156,7 +154,13 @@ async function run() {
   volume.load();
 
   // Set the volume on the viewport
-  viewport.setVolumes([{ volumeId }]);
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    kind: 'planar',
+    imageIds,
+    volumeId,
+  });
+
+  await viewport.setDisplaySets({ displaySetId });
 
   // Render the image
   viewport.render();

@@ -1,10 +1,11 @@
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
   volumeLoader,
   getRenderingEngine,
   eventTarget,
+  utilities,
 } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
@@ -13,11 +14,9 @@ import {
   setTitleAndDescription,
   addButtonToToolbar,
   addDropdownToToolbar,
-  setCtTransferFunctionForVolumeActor,
-  setPetColorMapTransferFunctionForVolumeActor,
   addSliderToToolbar,
 } from '../../../../utils/demo/helpers';
-import { getBooleanUrlParam } from '../../../../utils/demo/helpers/exampleParameters';
+import { petColorMapPresentation } from '../../../../utils/demo/helpers/volumePresentationRecipes';
 
 const {
   PanTool,
@@ -46,7 +45,9 @@ const ctVolumeId = `${volumeLoaderScheme}:${ctVolumeName}`; // VolumeId with loa
 // Define a unique id for the volume
 const ptVolumeName = 'PT_VOLUME_ID';
 const ptVolumeId = `${volumeLoaderScheme}:${ptVolumeName}`;
-const PET_DEFAULT_OPACITY = getDefaultPetOpacity();
+const ctDisplaySetId = 'multiVolumeAPI:ct';
+const ptDisplaySetId = 'multiVolumeAPI:pt';
+const PET_DEFAULT_OPACITY = 0.4;
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -84,14 +85,11 @@ addSliderToToolbar({
   defaultValue: PET_DEFAULT_OPACITY,
   onSelectedValueChange: (value) => {
     const renderingEngine = getRenderingEngine(renderingEngineId);
-    const viewport = renderingEngine.getViewport(
-      viewportId
-    ) as Types.IBaseVolumeViewport;
+    const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
-    viewport.setProperties(
-      { colormap: { opacity: Number(value) } },
-      ptVolumeId
-    );
+    viewport.setDisplaySetPresentation(ptDisplaySetId, {
+      colormap: { opacity: Number(value) },
+    });
     viewport.render();
   },
 });
@@ -104,15 +102,13 @@ addSliderToToolbar({
   defaultValue: 0,
   onSelectedValueChange: (value) => {
     const renderingEngine = getRenderingEngine(renderingEngineId);
-    const viewport = renderingEngine.getViewport(
-      viewportId
-    ) as Types.IBaseVolumeViewport;
+    const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
     const threshold = Number(value);
 
-    viewport.setProperties(
-      threshold > 0 ? { colormap: { threshold } } : { colormap: {} },
-      ptVolumeId
+    viewport.setDisplaySetPresentation(
+      ptDisplaySetId,
+      threshold > 0 ? { colormap: { threshold } } : { colormap: {} }
     );
     viewport.render();
   },
@@ -126,11 +122,11 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the stack viewport
-    const viewport = renderingEngine.getViewport(
-      viewportId
-    ) as Types.IVolumeViewport;
+    const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
-    viewport.setProperties({ voiRange: { lower: -1500, upper: 2500 } });
+    viewport.setDisplaySetPresentation(ctDisplaySetId, {
+      voiRange: { lower: -1500, upper: 2500 },
+    });
     viewport.render();
   },
 });
@@ -142,12 +138,10 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the volume viewport
-    const viewport = renderingEngine.getViewport(
-      viewportId
-    ) as Types.IVolumeViewport;
+    const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
     // Resets the viewport's camera
-    viewport.resetCamera();
+    viewport.resetViewState();
 
     viewport.render();
   },
@@ -157,23 +151,19 @@ const fused = false;
 
 addButtonToToolbar({
   title: 'toggle PET',
-  onClick: () => {
+  onClick: async () => {
     // Get the rendering engine
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the volume viewport
-    const viewport = renderingEngine.getViewport(
-      viewportId
-    ) as Types.IVolumeViewport;
-    viewport.addVolumes(
-      [
-        {
-          volumeId: ptVolumeId,
-          callback: setPetColorMapTransferFunctionForVolumeActor,
-        },
-      ],
-      true
+    const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
+    await viewport.addDisplaySet(ptDisplaySetId, { role: 'overlay' });
+    viewport.resetDisplaySetPresentation(ptDisplaySetId);
+    viewport.setDisplaySetPresentation(
+      ptDisplaySetId,
+      petColorMapPresentation()
     );
+    viewport.render();
   },
 });
 
@@ -194,9 +184,7 @@ addDropdownToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the volume viewport
-    const viewport = renderingEngine.getViewport(
-      viewportId
-    ) as Types.IVolumeViewport;
+    const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
     let viewUp;
     let viewPlaneNormal;
@@ -221,8 +209,8 @@ addDropdownToToolbar({
           -0.5962687530844388, 0.5453181550345819, -0.5891448751239446,
         ];
 
-        viewport.setCamera({ viewUp, viewPlaneNormal });
-        viewport.resetCamera();
+        viewport.setViewState({ orientation: { viewPlaneNormal, viewUp } });
+        viewport.resetViewState();
         break;
     }
 
@@ -291,7 +279,7 @@ async function run() {
   // Create a stack viewport
   const viewportInput = {
     viewportId,
-    type: ViewportType.ORTHOGRAPHIC,
+    type: ViewportType.PLANAR_NEXT,
     element,
     defaultOptions: {
       orientation: Enums.OrientationAxis.SAGITTAL,
@@ -302,9 +290,7 @@ async function run() {
   renderingEngine.enableElement(viewportInput);
 
   // Get the stack viewport that was created
-  const viewport = renderingEngine.getViewport(
-    viewportId
-  ) as Types.IVolumeViewport;
+  const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
   // Set up interaction tools
   cornerstoneTools.addTool(StackScrollTool);
@@ -358,33 +344,30 @@ async function run() {
   await ptVolume.load();
 
   // Set the volume on the viewport
-  await viewport.setVolumes([
-    { volumeId: ctVolumeId },
-    {
-      volumeId: ptVolumeId,
-      callback: setPetColorMapTransferFunctionForVolumeActor,
-    },
-  ]);
+  utilities.genericViewportDisplaySetMetadataProvider.add(ctDisplaySetId, {
+    kind: 'planar',
+    imageIds: ctImageIds,
+    volumeId: ctVolumeId,
+  });
+  utilities.genericViewportDisplaySetMetadataProvider.add(ptDisplaySetId, {
+    kind: 'planar',
+    imageIds: ptImageIds,
+    volumeId: ptVolumeId,
+  });
 
-  viewport.setProperties(
-    {
-      colormap: {
-        name: 'hsv',
-        opacity: PET_DEFAULT_OPACITY,
-      },
-    },
-    ptVolumeId
+  await viewport.setDisplaySets(
+    { displaySetId: ctDisplaySetId },
+    { displaySetId: ptDisplaySetId }
   );
+  viewport.setDisplaySetPresentation(ptDisplaySetId, petColorMapPresentation());
+  viewport.setDisplaySetPresentation(ptDisplaySetId, {
+    colormap: {
+      name: 'hsv',
+      opacity: PET_DEFAULT_OPACITY,
+    },
+  });
 
   viewport.render();
 }
 
 run();
-
-function getDefaultPetOpacity(): number {
-  const isCpu = getBooleanUrlParam('cpu');
-  const isNext =
-    new URLSearchParams(window.location.search).get('type') === 'next';
-
-  return isCpu || isNext ? 0.4 : 0.85;
-}

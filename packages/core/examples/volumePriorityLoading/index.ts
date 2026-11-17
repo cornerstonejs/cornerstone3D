@@ -1,18 +1,21 @@
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
   volumeLoader,
   imageLoadPoolManager,
+  utilities,
   CONSTANTS,
 } from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
-  setPetColorMapTransferFunctionForVolumeActor,
-  setCtTransferFunctionForVolumeActor,
 } from '../../../../utils/demo/helpers';
+import {
+  ctPresentation,
+  petColorMapPresentation,
+} from '../../../../utils/demo/helpers/volumePresentationRecipes';
 
 // This is for debugging purposes
 console.warn(
@@ -29,6 +32,8 @@ const ctVolumeId = `${volumeLoaderScheme}:${ctVolumeName}`; // VolumeId with loa
 // Define a unique id for the volume
 const ptVolumeName = 'PT_VOLUME_ID';
 const ptVolumeId = `${volumeLoaderScheme}:${ptVolumeName}`;
+const ctDisplaySetId = 'volumePriorityLoading:ct';
+const ptDisplaySetId = 'volumePriorityLoading:pt';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -120,7 +125,7 @@ async function run() {
   const viewportId = 'CT_SAGITTAL_STACK';
   const viewportInput = {
     viewportId,
-    type: ViewportType.ORTHOGRAPHIC,
+    type: ViewportType.PLANAR_NEXT,
     element,
     defaultOptions: {
       orientation: Enums.OrientationAxis.SAGITTAL,
@@ -131,9 +136,7 @@ async function run() {
   renderingEngine.enableElement(viewportInput);
 
   // Get the stack viewport that was created
-  const viewport = renderingEngine.getViewport(
-    viewportId
-  ) as Types.IVolumeViewport;
+  const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
   // Define a volume in memory
   const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeId, {
@@ -146,13 +149,23 @@ async function run() {
   });
 
   // Set the volume on the viewport
-  viewport.setVolumes([
-    { volumeId: ctVolumeId, callback: setCtTransferFunctionForVolumeActor },
-    {
-      volumeId: ptVolumeId,
-      callback: setPetColorMapTransferFunctionForVolumeActor,
-    },
-  ]);
+  utilities.genericViewportDisplaySetMetadataProvider.add(ctDisplaySetId, {
+    kind: 'planar',
+    imageIds: ctImageIds,
+    volumeId: ctVolumeId,
+  });
+  utilities.genericViewportDisplaySetMetadataProvider.add(ptDisplaySetId, {
+    kind: 'planar',
+    imageIds: ptImageIds,
+    volumeId: ptVolumeId,
+  });
+
+  await viewport.setDisplaySets(
+    { displaySetId: ctDisplaySetId },
+    { displaySetId: ptDisplaySetId }
+  );
+  viewport.setDisplaySetPresentation(ctDisplaySetId, ctPresentation());
+  viewport.setDisplaySetPresentation(ptDisplaySetId, petColorMapPresentation());
 
   const ctRequests = ctVolume.getImageLoadRequests();
   const ptRequests = ptVolume.getImageLoadRequests();

@@ -1,9 +1,10 @@
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
   getRenderingEngine,
   init as csRenderInit,
+  utilities,
 } from '@cornerstonejs/core';
 
 import { init as initLoader } from '@cornerstonejs/dicom-image-loader';
@@ -39,6 +40,8 @@ content.appendChild(element);
 // Instantiate a rendering engine
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'CT_STACK';
+const ctDisplaySetId = 'wadouri:ct';
+const ptDisplaySetId = 'wadouri:pt';
 
 addButtonToToolbar({
   title: 'Load CT Image',
@@ -47,11 +50,9 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the stack viewport
-    const viewport = renderingEngine.getViewport(
-      viewportId
-    ) as Types.IStackViewport;
+    const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
-    viewport.setStack(ctImageIds);
+    viewport.setDisplaySets({ displaySetId: ctDisplaySetId });
   },
 });
 
@@ -62,11 +63,9 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the stack viewport
-    const viewport = renderingEngine.getViewport(
-      viewportId
-    ) as Types.IStackViewport;
+    const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
-    viewport.setStack(ptImageIds);
+    viewport.setDisplaySets({ displaySetId: ptDisplaySetId });
   },
 });
 /**
@@ -91,25 +90,31 @@ async function run() {
   // Create a stack viewport
   const viewportInput = {
     viewportId,
-    type: ViewportType.STACK,
+    type: ViewportType.PLANAR_NEXT,
     element,
   };
 
   renderingEngine.enableElement(viewportInput);
 
   // Get the stack viewport that was created
-  const viewport = renderingEngine.getViewport(
-    viewportId
-  ) as Types.IStackViewport;
+  const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
-  // Define a stack containing a single image
-  const stack = ctImageIds;
+  utilities.genericViewportDisplaySetMetadataProvider.add(ctDisplaySetId, {
+    kind: 'planar',
+    imageIds: ctImageIds,
+    initialImageIdIndex: 0,
+  });
+  utilities.genericViewportDisplaySetMetadataProvider.add(ptDisplaySetId, {
+    kind: 'planar',
+    imageIds: ptImageIds,
+    initialImageIdIndex: 0,
+  });
 
   // Set the stack on the viewport
-  await viewport.setStack(stack);
+  await viewport.setDisplaySets({ displaySetId: ctDisplaySetId });
 
   // Set the VOI of the stack
-  viewport.setProperties({ voiRange: ctVoiRange });
+  viewport.setDisplaySetPresentation(ctDisplaySetId, { voiRange: ctVoiRange });
 
   // Render the image
   viewport.render();

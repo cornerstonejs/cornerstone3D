@@ -1,8 +1,9 @@
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
   getRenderingEngine,
+  utilities,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -27,6 +28,7 @@ console.warn(
 );
 
 const { ViewportType } = Enums;
+const displaySetId = 'stackVoiSigmoid:ct';
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'STACK_VP';
 
@@ -52,12 +54,12 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the stack viewport
-    const viewport = renderingEngine.getViewport(
-      viewportId
-    ) as Types.IStackViewport;
+    const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
     // Set a range to highlight bones
-    viewport.setProperties({ VOILUTFunction: Enums.VOILUTFunctionType.LINEAR });
+    viewport.setDisplaySetPresentation(displaySetId, {
+      voiLUTFunction: Enums.VOILUTFunctionType.LINEAR,
+    });
 
     viewport.render();
   },
@@ -70,13 +72,11 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the stack viewport
-    const viewport = renderingEngine.getViewport(
-      viewportId
-    ) as Types.IStackViewport;
+    const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
     // Set a range to highlight bones
-    viewport.setProperties({
-      VOILUTFunction: Enums.VOILUTFunctionType.SAMPLED_SIGMOID,
+    viewport.setDisplaySetPresentation(displaySetId, {
+      voiLUTFunction: Enums.VOILUTFunctionType.SAMPLED_SIGMOID,
     });
 
     viewport.render();
@@ -127,7 +127,7 @@ async function run() {
   // Create a stack viewport
   const viewportInput = {
     viewportId,
-    type: ViewportType.STACK,
+    type: ViewportType.PLANAR_NEXT,
     element,
     defaultOptions: {
       background: [0.2, 0, 0.2] as Types.Point3,
@@ -137,15 +137,19 @@ async function run() {
   renderingEngine.enableElement(viewportInput);
 
   // Get the stack viewport that was created
-  const viewport = renderingEngine.getViewport(
-    viewportId
-  ) as Types.IStackViewport;
+  const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
   // Define a stack containing a single image
   const stack = [imageIds[0]];
 
   // Set the stack on the viewport
-  await viewport.setStack(stack);
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    kind: 'planar',
+    imageIds: stack,
+    initialImageIdIndex: 0,
+  });
+
+  await viewport.setDisplaySets({ displaySetId });
 
   // Render the image
   viewport.render();

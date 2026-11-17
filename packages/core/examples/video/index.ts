@@ -1,8 +1,9 @@
-import type { Types } from '@cornerstonejs/core';
+import type { Types, VideoGenericViewport } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
   getRenderingEngine,
+  viewportProjection,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -10,7 +11,6 @@ import {
   addButtonToToolbar,
   createDisplaySets,
   getLocalUrl,
-  getViewportTypeForDisplaySet,
 } from '../../../../utils/demo/helpers';
 
 // This is for debugging purposes
@@ -43,31 +43,24 @@ content.appendChild(info);
 const rotationInfo = document.createElement('div');
 info.appendChild(rotationInfo);
 
-const flipHorizontalInfo = document.createElement('div');
-info.appendChild(flipHorizontalInfo);
-
-const flipVerticalInfo = document.createElement('div');
-info.appendChild(flipVerticalInfo);
-
 element.addEventListener(Events.CAMERA_MODIFIED, (_) => {
   // Get the rendering engine
   const renderingEngine = getRenderingEngine(renderingEngineId);
 
   // Get the stack viewport
-  const viewport = renderingEngine.getViewport(
-    viewportId
-  ) as Types.IStackViewport;
+  const viewport =
+    renderingEngine.getViewport<VideoGenericViewport>(viewportId);
 
   if (!viewport) {
     return;
   }
 
-  const { flipHorizontal, flipVertical } = viewport.getCamera();
-  const { rotation } = viewport.getViewPresentation();
+  const { rotation = 0 } =
+    viewportProjection.getPresentation(viewport, {
+      selector: { rotation: true },
+    }) ?? {};
 
   rotationInfo.innerText = `Rotation: ${Math.round(rotation)}`;
-  flipHorizontalInfo.innerText = `Flip horizontal: ${flipHorizontal}`;
-  flipVerticalInfo.innerText = `Flip vertical: ${flipVertical}`;
 });
 
 addButtonToToolbar({
@@ -77,9 +70,8 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the stack viewport
-    const viewport = renderingEngine.getViewport(
-      viewportId
-    ) as Types.IVideoViewport;
+    const viewport =
+      renderingEngine.getViewport<VideoGenericViewport>(viewportId);
 
     // Set a range to highlight bones
     viewport.play();
@@ -93,9 +85,8 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the stack viewport
-    const viewport = renderingEngine.getViewport(
-      viewportId
-    ) as Types.IVideoViewport;
+    const viewport =
+      renderingEngine.getViewport<VideoGenericViewport>(viewportId);
 
     // Set a range to highlight bones
     viewport.pause();
@@ -125,9 +116,7 @@ async function run() {
   // This is a mixed series (single-frame secondary captures + one multi-frame
   // video), so pick the display set whose split rule flagged it as video rather
   // than blindly taking the first one.
-  const displaySet = displaySets.find(
-    (ds) => getViewportTypeForDisplaySet(ds) === Enums.ViewportType.VIDEO
-  );
+  const displaySet = displaySets.find((ds) => ds.handler === 'video');
 
   // This example only supports video series, so bail clearly if the series did
   // not contain a video display set.
@@ -139,7 +128,7 @@ async function run() {
     );
   }
 
-  const viewportType = Enums.ViewportType.VIDEO;
+  const viewportType = Enums.ViewportType.VIDEO_NEXT;
 
   // Instantiate a rendering engine
   const renderingEngine = new RenderingEngine(renderingEngineId);
@@ -157,17 +146,13 @@ async function run() {
   renderingEngine.enableElement(viewportInput);
 
   // Get the viewport that was created
-  const viewport = renderingEngine.getViewport(
-    viewportId
-  ) as Types.IVideoViewport;
+  const viewport =
+    renderingEngine.getViewport<VideoGenericViewport>(viewportId);
 
   // Drive the viewport from the display set (displaySetId is the source imageId).
   await viewport.setDisplaySets({
     displaySetId: displaySet.instances[0].imageId,
   });
-
-  // Set the VOI of the stack
-  // viewport.setProperties({ voiRange: ctVoiRange });
 
   // Render the image
   // viewport.play();

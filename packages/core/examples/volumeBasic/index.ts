@@ -1,16 +1,17 @@
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
   volumeLoader,
+  utilities,
   CONSTANTS,
 } from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
-  setCtTransferFunctionForVolumeActor,
 } from '../../../../utils/demo/helpers';
+import { ctPresentation } from '../../../../utils/demo/helpers/volumePresentationRecipes';
 
 // This is for debugging purposes
 console.warn(
@@ -18,6 +19,7 @@ console.warn(
 );
 
 const { ViewportType } = Enums;
+const displaySetId = 'volumeBasic:ct';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -61,7 +63,7 @@ async function run() {
   const viewportId = 'CT_SAGITTAL_STACK';
   const viewportInput = {
     viewportId,
-    type: ViewportType.ORTHOGRAPHIC,
+    type: ViewportType.PLANAR_NEXT,
     element,
     defaultOptions: {
       orientation: Enums.OrientationAxis.SAGITTAL,
@@ -72,9 +74,7 @@ async function run() {
   renderingEngine.enableElement(viewportInput);
 
   // Get the stack viewport that was created
-  const viewport = renderingEngine.getViewport(
-    viewportId
-  ) as Types.IVolumeViewport;
+  const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
   // Define a unique id for the volume
   const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
@@ -90,9 +90,14 @@ async function run() {
   volume.load();
 
   // Set the volume on the viewport
-  viewport.setVolumes([
-    { volumeId, callback: setCtTransferFunctionForVolumeActor },
-  ]);
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    kind: 'planar',
+    imageIds,
+    volumeId,
+  });
+
+  await viewport.setDisplaySets({ displaySetId });
+  viewport.setDisplaySetPresentation(displaySetId, ctPresentation());
 
   // Render the image
   viewport.render();

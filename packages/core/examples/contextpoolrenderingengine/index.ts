@@ -1,8 +1,9 @@
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import {
   Enums,
   getRenderingEngine,
   RenderingEngine,
+  utilities,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -122,7 +123,7 @@ async function run() {
   for (let i = 0; i < count; i++) {
     viewportInputArray.push({
       viewportId: viewportIds[i],
-      type: ViewportType.STACK,
+      type: ViewportType.PLANAR_NEXT,
       element: elements[i],
       defaultOptions: {
         background: [0.1, 0.1, 0.1] as Types.Point3,
@@ -140,19 +141,26 @@ async function run() {
 
   // Set stack and render for each viewport
   for (let i = 0; i < count; i++) {
-    const viewport = renderingEngine.getViewport(
+    const viewport = renderingEngine.getViewport<PlanarViewport>(
       viewportIds[i]
-    ) as Types.IStackViewport;
+    );
+    const displaySetId = `contextpoolrenderingengine:${viewportIds[i]}`;
 
     // Calculate which image to show
     const imageIndex = Math.min(i * imagesPerViewport, numImages - 1);
     const stack = [imageIds[imageIndex]];
 
     // Set the stack on the viewport
-    await viewport.setStack(stack);
+    utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+      kind: 'planar',
+      imageIds: stack,
+      initialImageIdIndex: 0,
+    });
+
+    await viewport.setDisplaySets({ displaySetId });
 
     // Set the VOI of the stack
-    viewport.setProperties({ voiRange: ctVoiRange });
+    viewport.setDisplaySetPresentation(displaySetId, { voiRange: ctVoiRange });
   }
 
   // Render all viewports

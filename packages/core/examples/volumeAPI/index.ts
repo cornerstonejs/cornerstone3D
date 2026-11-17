@@ -1,9 +1,11 @@
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
   volumeLoader,
   getRenderingEngine,
+  utilities,
+  viewportProjection,
 } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
@@ -14,8 +16,8 @@ import {
   addDropdownToToolbar,
   addSliderToToolbar,
   camera as cameraHelpers,
-  setCtTransferFunctionForVolumeActor,
 } from '../../../../utils/demo/helpers';
+import { ctPresentation } from '../../../../utils/demo/helpers/volumePresentationRecipes';
 
 const {
   PanTool,
@@ -35,6 +37,7 @@ const { ViewportType } = Enums;
 
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'CT_SAGITTAL_STACK';
+const displaySetId = 'volumeAPI:ct';
 const toolGroupId = 'volumeAPIToolGroup';
 
 // Define a unique id for the volume
@@ -67,11 +70,11 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the stack viewport
-    const viewport = renderingEngine.getViewport(
-      viewportId
-    ) as Types.IVolumeViewport;
+    const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
-    viewport.setProperties({ voiRange: { lower: -1500, upper: 2500 } });
+    viewport.setDisplaySetPresentation(displaySetId, {
+      voiRange: { lower: -1500, upper: 2500 },
+    });
     viewport.render();
   },
 });
@@ -82,13 +85,11 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the volume viewport
-    const viewport = renderingEngine.getViewport(
-      viewportId
-    ) as Types.IVolumeViewport;
+    const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
     // Flip the viewport horizontally
-    const { flipHorizontal } = viewport.getCamera();
-    viewport.setCamera({ flipHorizontal: !flipHorizontal });
+    const { flipHorizontal = false } = viewport.getViewState();
+    viewport.setViewState({ flipHorizontal: !flipHorizontal });
 
     viewport.render();
   },
@@ -101,14 +102,12 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the volume viewport
-    const viewport = renderingEngine.getViewport(
-      viewportId
-    ) as Types.IVolumeViewport;
+    const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
     // Flip the viewport vertically
-    const { flipVertical } = viewport.getCamera();
+    const { flipVertical = false } = viewport.getViewState();
 
-    viewport.setCamera({ flipVertical: !flipVertical });
+    viewport.setViewState({ flipVertical: !flipVertical });
 
     viewport.render();
   },
@@ -121,13 +120,14 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the volume viewport
-    const viewport = renderingEngine.getViewport(
-      viewportId
-    ) as Types.IVolumeViewport;
+    const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
-    const { invert } = viewport.getProperties();
+    const invert =
+      viewport.getDisplaySetPresentation(displaySetId)?.invert ??
+      viewport.getDefaultInvert(displaySetId) ??
+      false;
 
-    viewport.setProperties({ invert: !invert }, volumeId);
+    viewport.setDisplaySetPresentation(displaySetId, { invert: !invert });
 
     viewport.render();
   },
@@ -140,25 +140,23 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the stack viewport
-    const viewport = renderingEngine.getViewport(
-      viewportId
-    ) as Types.IVolumeViewport;
+    const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
     // Reset the camera so that we can set some pan and zoom relative to the
     // defaults for this demo. Note that changes could be relative instead.
-    viewport.resetCamera();
+    viewport.resetViewState();
 
-    // Get the current camera properties
-    const camera = viewport.getCamera();
+    const presentation = cameraHelpers.getRandomZoomAndPanPresentation(
+      viewport,
+      50
+    );
+    const viewState =
+      presentation &&
+      viewportProjection.withPresentation(viewport, presentation);
 
-    const { parallelScale, position, focalPoint } =
-      cameraHelpers.getRandomlyTranslatedAndZoomedCameraProperties(camera, 50);
-
-    viewport.setCamera({
-      parallelScale,
-      position: position as Types.Point3,
-      focalPoint: focalPoint as Types.Point3,
-    });
+    if (viewState) {
+      viewport.setViewState(viewState);
+    }
     viewport.render();
   },
 });
@@ -170,12 +168,16 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the volume viewport
-    const viewport = renderingEngine.getViewport(
-      viewportId
-    ) as Types.IVolumeViewport;
+    const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
     // Apply the rotation to the camera of the viewport
-    viewport.setViewPresentation({ rotation: Math.random() * 360 });
+    const viewState = viewportProjection.withPresentation(viewport, {
+      rotation: Math.random() * 360,
+    });
+
+    if (viewState) {
+      viewport.setViewState(viewState);
+    }
     viewport.render();
   },
 });
@@ -187,12 +189,12 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the volume viewport
-    const viewport = renderingEngine.getViewport(
-      viewportId
-    ) as Types.IVolumeViewport;
+    const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
     // Apply the colormap to the viewport
-    viewport.setProperties({ colormap: { name: 'hsv' } });
+    viewport.setDisplaySetPresentation(displaySetId, {
+      colormap: { name: 'hsv' },
+    });
 
     viewport.render();
   },
@@ -205,11 +207,9 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the volume viewport
-    const viewport = renderingEngine.getViewport(
-      viewportId
-    ) as Types.IVolumeViewport;
+    const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
-    viewport.resetProperties();
+    viewport.resetDisplaySetPresentation(displaySetId);
     viewport.render();
   },
 });
@@ -231,9 +231,7 @@ addDropdownToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the volume viewport
-    const viewport = renderingEngine.getViewport(
-      viewportId
-    ) as Types.IVolumeViewport;
+    const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
     let viewUp;
     let viewPlaneNormal;
@@ -257,8 +255,8 @@ addDropdownToToolbar({
           -0.5962687530844388, 0.5453181550345819, -0.5891448751239446,
         ];
 
-        viewport.setCamera({ viewUp, viewPlaneNormal });
-        viewport.resetCamera();
+        viewport.setViewState({ orientation: { viewPlaneNormal, viewUp } });
+        viewport.resetViewState();
 
         break;
       default:
@@ -283,12 +281,12 @@ addSliderToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the volume viewport
-    const viewport = renderingEngine.getViewport(
-      viewportId
-    ) as Types.IVolumeViewport;
+    const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
-    viewport.setBlendMode(Enums.BlendModes.MAXIMUM_INTENSITY_BLEND);
-    viewport.setProperties({ slabThickness: valueAsNumber });
+    viewport.setDisplaySetPresentation(displaySetId, {
+      blendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND,
+      slabThickness: valueAsNumber,
+    });
     viewport.render();
   },
 });
@@ -317,7 +315,7 @@ async function run() {
   // Create a stack viewport
   const viewportInput = {
     viewportId,
-    type: ViewportType.ORTHOGRAPHIC,
+    type: ViewportType.PLANAR_NEXT,
     element,
     defaultOptions: {
       // orientation: Enums.OrientationAxis.SAGITTAL,
@@ -328,9 +326,7 @@ async function run() {
   renderingEngine.enableElement(viewportInput);
 
   // Get the stack viewport that was created
-  const viewport = renderingEngine.getViewport(
-    viewportId
-  ) as Types.IVolumeViewport;
+  const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
   cornerstoneTools.addTool(StackScrollTool);
   cornerstoneTools.addTool(PanTool);
@@ -367,16 +363,20 @@ async function run() {
   volume.load();
 
   // Set the volume on the viewport and it's default properties
-  viewport
-    .setVolumes([{ volumeId, callback: setCtTransferFunctionForVolumeActor }])
-    .then(() => {
-      viewport.setProperties({
-        voiRange: { lower: -160, upper: 240 },
-        VOILUTFunction: Enums.VOILUTFunctionType.LINEAR,
-        colormap: { name: 'Grayscale' },
-        slabThickness: 0.1,
-      });
-    });
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    kind: 'planar',
+    imageIds,
+    volumeId,
+  });
+
+  await viewport.setDisplaySets({ displaySetId });
+  viewport.setDisplaySetPresentation(displaySetId, ctPresentation());
+  viewport.setDisplaySetPresentation(displaySetId, {
+    voiRange: { lower: -160, upper: 240 },
+    voiLUTFunction: Enums.VOILUTFunctionType.LINEAR,
+    colormap: { name: 'Grayscale' },
+    slabThickness: 0.1,
+  });
 
   // Render the image
   viewport.render();

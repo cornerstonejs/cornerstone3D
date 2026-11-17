@@ -1,17 +1,19 @@
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   getRenderingEngine,
   Enums,
+  utilities,
+  viewportProjection,
 } from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
   addButtonToToolbar,
+  camera as cameraHelpers,
   ctVoiRange,
 } from '../../../../utils/demo/helpers';
-import { vec3 } from 'gl-matrix';
 
 // This is for debugging purposes
 console.warn(
@@ -19,6 +21,7 @@ console.warn(
 );
 
 const { ViewportType } = Enums;
+const displaySetId = 'stackEvents:ct';
 
 // ======== Constants ======= //
 const renderingEngineId = 'myRenderingEngine';
@@ -104,12 +107,12 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the stack viewport
-    const viewport = renderingEngine.getViewport(
-      viewportId
-    ) as Types.IStackViewport;
+    const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
     // Set a range to highlight bones
-    viewport.setProperties({ voiRange: { upper: 2500, lower: -1500 } });
+    viewport.setDisplaySetPresentation(displaySetId, {
+      voiRange: { upper: 2500, lower: -1500 },
+    });
 
     viewport.render();
   },
@@ -122,9 +125,7 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the stack viewport
-    const viewport = renderingEngine.getViewport(
-      viewportId
-    ) as Types.IStackViewport;
+    const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
     // Get the current index of the image displayed
     const currentImageIdIndex = viewport.getCurrentImageIdIndex();
@@ -147,9 +148,7 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the stack viewport
-    const viewport = renderingEngine.getViewport(
-      viewportId
-    ) as Types.IStackViewport;
+    const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
     // Get the current index of the image displayed
     const currentImageIdIndex = viewport.getCurrentImageIdIndex();
@@ -171,54 +170,23 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the stack viewport
-    const viewport = renderingEngine.getViewport(viewportId);
+    const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
     // Reset the camera so that we can set some pan and zoom relative to the
     // defaults for this demo. Note that changes could be relative instead.
-    viewport.resetCamera();
+    viewport.resetViewState();
 
-    // Get the current camera properties
-    const camera = viewport.getCamera();
-    const { viewUp, viewPlaneNormal, parallelScale, position, focalPoint } =
-      camera;
+    const presentation = cameraHelpers.getRandomZoomAndPanPresentation(
+      viewport,
+      50
+    );
+    const viewState =
+      presentation &&
+      viewportProjection.withPresentation(viewport, presentation);
 
-    // Modify the zoom by some factor
-    const randomModifier = 0.5 + Math.random() - 0.5;
-    const newParallelScale = parallelScale * randomModifier;
-
-    // Move the camera in plane by some random number
-    const viewRight = vec3.create(); // Get the X direction of the viewport
-
-    vec3.cross(viewRight, viewUp as vec3, viewPlaneNormal as vec3);
-
-    const randomPanX = 50 * (2.0 * Math.random() - 1);
-    const randomPanY = 50 * (2.0 * Math.random() - 1);
-
-    const diff = [0, 0, 0];
-
-    // Pan X
-    for (let i = 0; i <= 2; i++) {
-      diff[i] += viewRight[i] * randomPanX;
+    if (viewState) {
+      viewport.setViewState(viewState);
     }
-
-    // Pan Y
-    for (let i = 0; i <= 2; i++) {
-      diff[i] += viewUp[i] * randomPanY;
-    }
-
-    const newPosition = [];
-    const newFocalPoint = [];
-
-    for (let i = 0; i <= 2; i++) {
-      newPosition[i] = position[i] + diff[i];
-      newFocalPoint[i] = focalPoint[i] + diff[i];
-    }
-
-    viewport.setCamera({
-      parallelScale: newParallelScale,
-      position: newPosition as Types.Point3,
-      focalPoint: newFocalPoint as Types.Point3,
-    });
     viewport.render();
   },
 });
@@ -230,12 +198,12 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the stack viewport
-    const viewport = renderingEngine.getViewport(viewportId);
+    const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
     // Resets the viewport's camera
-    viewport.resetCamera();
+    viewport.resetViewState();
     // Resets the viewport's properties
-    viewport.resetProperties();
+    viewport.resetDisplaySetPresentation(displaySetId);
     viewport.render();
   },
 });
@@ -263,7 +231,7 @@ async function run() {
 
   const viewportInput = {
     viewportId,
-    type: ViewportType.STACK,
+    type: ViewportType.PLANAR_NEXT,
     element,
     defaultOptions: {
       background: [0.2, 0, 0.2] as Types.Point3,
@@ -273,18 +241,22 @@ async function run() {
   renderingEngine.enableElement(viewportInput);
 
   // Get the stack viewport that was created
-  const viewport = renderingEngine.getViewport(
-    viewportId
-  ) as Types.IStackViewport;
+  const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
   // Define a stack containing a single image
   const stack = [imageIds[0], imageIds[1], imageIds[2]];
 
   // Set the stack on the viewport
-  await viewport.setStack(stack);
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    kind: 'planar',
+    imageIds: stack,
+    initialImageIdIndex: 0,
+  });
+
+  await viewport.setDisplaySets({ displaySetId });
 
   // Set the VOI of the stack
-  viewport.setProperties({ voiRange: ctVoiRange });
+  viewport.setDisplaySetPresentation(displaySetId, { voiRange: ctVoiRange });
 
   // Render the image
   viewport.render();

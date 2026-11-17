@@ -1,8 +1,9 @@
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
   getRenderingEngine,
+  utilities,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -22,6 +23,33 @@ const { ViewportType, Events } = Enums;
 // ======== Constants ======= //
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'CT_STACK';
+const displaySetId = 'stackProperties:ct';
+
+/**
+ * The look that the example gives the stack after its mount. A next viewport
+ * keeps no default properties, so the example keeps its own.
+ */
+const defaultPresentation = {
+  voiRange: { upper: 200, lower: -300 },
+  colormap: { name: 'Grayscale' },
+};
+
+/**
+ * The looks that the example gave to single images, by image id.
+ */
+const imagePresentations = new Map<string, typeof defaultPresentation>();
+
+/**
+ * Replaces the look of the stack with the look of the image on display, or
+ * with the default of the example when that image has none.
+ */
+function showDefaultPresentation(viewport: PlanarViewport) {
+  viewport.resetDisplaySetPresentation(displaySetId);
+  viewport.setDisplaySetPresentation(
+    displaySetId,
+    imagePresentations.get(viewport.getCurrentImageId()) ?? defaultPresentation
+  );
+}
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -45,9 +73,7 @@ element.addEventListener(Events.CAMERA_MODIFIED, (_) => {
   const renderingEngine = getRenderingEngine(renderingEngineId);
 
   // Get the stack viewport
-  const viewport = renderingEngine.getViewport(
-    viewportId
-  ) as Types.IStackViewport;
+  const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
   if (!viewport) {
     return;
@@ -61,9 +87,7 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the stack viewport
-    const viewport = renderingEngine.getViewport(
-      viewportId
-    ) as Types.IStackViewport;
+    const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
     // Get the current index of the image displayed
     const currentImageIdIndex = viewport.getCurrentImageIdIndex();
@@ -86,9 +110,7 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the stack viewport
-    const viewport = renderingEngine.getViewport(
-      viewportId
-    ) as Types.IStackViewport;
+    const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
     // Get the current index of the image displayed
     const currentImageIdIndex = viewport.getCurrentImageIdIndex();
@@ -110,15 +132,16 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the stack viewport
-    const viewport = renderingEngine.getViewport(
-      viewportId
-    ) as Types.IStackViewport;
+    const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
     // Set a range to highlight bones
-    viewport.setDefaultProperties(
-      { voiRange: { upper: 2500, lower: -1500 }, colormap: { name: 'hsv' } },
-      viewport.getCurrentImageId()
-    );
+    const presentation = {
+      voiRange: { upper: 2500, lower: -1500 },
+      colormap: { name: 'hsv' },
+    };
+
+    imagePresentations.set(viewport.getCurrentImageId(), presentation);
+    viewport.setDisplaySetPresentation(displaySetId, presentation);
   },
 });
 
@@ -129,11 +152,10 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the stack viewport
-    const viewport = renderingEngine.getViewport(
-      viewportId
-    ) as Types.IStackViewport;
+    const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
-    viewport.clearDefaultProperties(viewport.getCurrentImageId());
+    imagePresentations.delete(viewport.getCurrentImageId());
+    showDefaultPresentation(viewport);
   },
 });
 
@@ -144,14 +166,12 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the stack viewport
-    const viewport = renderingEngine.getViewport(
-      viewportId
-    ) as Types.IStackViewport;
+    const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
     // Resets the viewport's camera
-    viewport.resetCamera();
+    viewport.resetViewState();
     // Resets the viewport's to its default properties
-    viewport.resetToDefaultProperties();
+    showDefaultPresentation(viewport);
     viewport.render();
   },
 });
@@ -163,14 +183,12 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the stack viewport
-    const viewport = renderingEngine.getViewport(
-      viewportId
-    ) as Types.IStackViewport;
+    const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
     // Resets the viewport's camera
-    viewport.resetCamera();
+    viewport.resetViewState();
     // Resets the viewport's properties to image metadata
-    viewport.resetProperties();
+    viewport.resetDisplaySetPresentation(displaySetId);
     viewport.render();
   },
 });
@@ -198,7 +216,7 @@ async function run() {
 
   const viewportInput = {
     viewportId,
-    type: ViewportType.STACK,
+    type: ViewportType.PLANAR_NEXT,
     element,
     defaultOptions: {
       background: [0.2, 0, 0.2] as Types.Point3,
@@ -208,20 +226,33 @@ async function run() {
   renderingEngine.enableElement(viewportInput);
 
   // Get the stack viewport that was created
-  const viewport = renderingEngine.getViewport(
-    viewportId
-  ) as Types.IStackViewport;
+  const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
   // Define a stack containing a few images
   const stack = [image1[0], image1[1], image1[2], image1[3], image1[4]];
 
   // Set the stack on the viewport
-  await viewport.setStack(stack);
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    kind: 'planar',
+    imageIds: stack,
+    initialImageIdIndex: 0,
+  });
+
+  await viewport.setDisplaySets({ displaySetId });
 
   // Set the default properties of the viewport
-  viewport.setProperties({
-    voiRange: { upper: 200, lower: -300 },
-    colormap: { name: 'Grayscale' },
+  viewport.setDisplaySetPresentation(displaySetId, defaultPresentation);
+
+  element.addEventListener(Events.STACK_NEW_IMAGE, () => {
+    if (imagePresentations.size === 0) {
+      return;
+    }
+
+    viewport.setDisplaySetPresentation(
+      displaySetId,
+      imagePresentations.get(viewport.getCurrentImageId()) ??
+        defaultPresentation
+    );
   });
 
   // Render the image

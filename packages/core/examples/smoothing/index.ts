@@ -1,9 +1,10 @@
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
   getRenderingEngine,
   volumeLoader,
+  utilities,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -12,8 +13,8 @@ import {
   addButtonToToolbar,
   addSliderToToolbar,
   ctVoiRange,
-  setCtTransferFunctionForVolumeActor,
 } from '../../../../utils/demo/helpers';
+import { ctPresentation } from '../../../../utils/demo/helpers/volumePresentationRecipes';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
 // This is for debugging purposes
@@ -28,6 +29,10 @@ const renderingEngineId = 'myRenderingEngine';
 const stackViewportId = 'CT_STACK';
 const stackViewportId2 = 'CT_STACK_2';
 const stackViewportId3 = 'CT_STACK_3';
+const stackDisplaySetId = 'smoothing:stack';
+const stackDisplaySetId2 = 'smoothing:stack2';
+const stackDisplaySetId3 = 'smoothing:stack3';
+const volumeDisplaySetId = 'smoothing:volume';
 const volumeViewportId = 'CT_VOLUME';
 const toolGroupId = 'myToolGroup';
 
@@ -154,48 +159,44 @@ addSliderToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Update stack viewport 1
-    const stackViewport = renderingEngine.getViewport(
-      stackViewportId
-    ) as Types.IStackViewport;
+    const stackViewport =
+      renderingEngine.getViewport<PlanarViewport>(stackViewportId);
 
     if (stackViewport) {
-      stackViewport.setProperties({
+      stackViewport.setDisplaySetPresentation(stackDisplaySetId, {
         smoothing: value / 100, // Convert percentage to decimal
       });
       stackViewport.render();
     }
 
     // Update stack viewport 2
-    const stackViewport2 = renderingEngine.getViewport(
-      stackViewportId2
-    ) as Types.IStackViewport;
+    const stackViewport2 =
+      renderingEngine.getViewport<PlanarViewport>(stackViewportId2);
 
     if (stackViewport2) {
-      stackViewport2.setProperties({
+      stackViewport2.setDisplaySetPresentation(stackDisplaySetId2, {
         smoothing: value / 100, // Convert percentage to decimal
       });
       stackViewport2.render();
     }
 
     // Update stack viewport 3
-    const stackViewport3 = renderingEngine.getViewport(
-      stackViewportId3
-    ) as Types.IStackViewport;
+    const stackViewport3 =
+      renderingEngine.getViewport<PlanarViewport>(stackViewportId3);
 
     if (stackViewport3) {
-      stackViewport3.setProperties({
+      stackViewport3.setDisplaySetPresentation(stackDisplaySetId3, {
         smoothing: value / 100, // Convert percentage to decimal
       });
       stackViewport3.render();
     }
 
     // Update volume viewport
-    const volumeViewport = renderingEngine.getViewport(
-      volumeViewportId
-    ) as Types.IVolumeViewport;
+    const volumeViewport =
+      renderingEngine.getViewport<PlanarViewport>(volumeViewportId);
 
     if (volumeViewport) {
-      volumeViewport.setProperties({
+      volumeViewport.setDisplaySetPresentation(volumeDisplaySetId, {
         smoothing: value / 100, // Convert percentage to decimal
       });
       volumeViewport.render();
@@ -220,54 +221,50 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Reset stack viewport 1
-    const stackViewport = renderingEngine.getViewport(
-      stackViewportId
-    ) as Types.IStackViewport;
+    const stackViewport =
+      renderingEngine.getViewport<PlanarViewport>(stackViewportId);
 
     if (stackViewport) {
-      stackViewport.setProperties({
+      stackViewport.setDisplaySetPresentation(stackDisplaySetId, {
         smoothing: 0,
       });
-      stackViewport.resetProperties();
+      stackViewport.resetDisplaySetPresentation(stackDisplaySetId);
       stackViewport.render();
     }
 
     // Reset stack viewport 2
-    const stackViewport2 = renderingEngine.getViewport(
-      stackViewportId2
-    ) as Types.IStackViewport;
+    const stackViewport2 =
+      renderingEngine.getViewport<PlanarViewport>(stackViewportId2);
 
     if (stackViewport2) {
-      stackViewport2.setProperties({
+      stackViewport2.setDisplaySetPresentation(stackDisplaySetId2, {
         smoothing: 0,
       });
-      stackViewport2.resetProperties();
+      stackViewport2.resetDisplaySetPresentation(stackDisplaySetId2);
       stackViewport2.render();
     }
 
     // Reset stack viewport 3
-    const stackViewport3 = renderingEngine.getViewport(
-      stackViewportId3
-    ) as Types.IStackViewport;
+    const stackViewport3 =
+      renderingEngine.getViewport<PlanarViewport>(stackViewportId3);
 
     if (stackViewport3) {
-      stackViewport3.setProperties({
+      stackViewport3.setDisplaySetPresentation(stackDisplaySetId3, {
         smoothing: 0,
       });
-      stackViewport3.resetProperties();
+      stackViewport3.resetDisplaySetPresentation(stackDisplaySetId3);
       stackViewport3.render();
     }
 
     // Reset volume viewport
-    const volumeViewport = renderingEngine.getViewport(
-      volumeViewportId
-    ) as Types.IVolumeViewport;
+    const volumeViewport =
+      renderingEngine.getViewport<PlanarViewport>(volumeViewportId);
 
     if (volumeViewport) {
-      volumeViewport.setProperties({
+      volumeViewport.setDisplaySetPresentation(volumeDisplaySetId, {
         smoothing: 0,
       });
-      volumeViewport.resetProperties();
+      volumeViewport.resetDisplaySetPresentation(volumeDisplaySetId);
       volumeViewport.render();
     }
 
@@ -325,7 +322,7 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: stackViewportId,
-      type: ViewportType.STACK,
+      type: ViewportType.PLANAR_NEXT,
       element: stackElement,
       defaultOptions: {
         background: [0.2, 0, 0.2] as Types.Point3,
@@ -333,7 +330,7 @@ async function run() {
     },
     {
       viewportId: stackViewportId2,
-      type: ViewportType.STACK,
+      type: ViewportType.PLANAR_NEXT,
       element: stackElement2,
       defaultOptions: {
         background: [0.2, 0, 0.2] as Types.Point3,
@@ -341,7 +338,7 @@ async function run() {
     },
     {
       viewportId: stackViewportId3,
-      type: ViewportType.STACK,
+      type: ViewportType.PLANAR_NEXT,
       element: stackElement3,
       defaultOptions: {
         background: [0.2, 0, 0.2] as Types.Point3,
@@ -349,7 +346,7 @@ async function run() {
     },
     {
       viewportId: volumeViewportId,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: volumeElement,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -361,29 +358,41 @@ async function run() {
   renderingEngine.setViewports(viewportInputArray);
 
   // Get the stack viewport
-  const stackViewport = renderingEngine.getViewport(
-    stackViewportId
-  ) as Types.IStackViewport;
+  const stackViewport =
+    renderingEngine.getViewport<PlanarViewport>(stackViewportId);
 
   // Set the stack on the viewport
-  await stackViewport.setStack(imageIds);
+  utilities.genericViewportDisplaySetMetadataProvider.add(stackDisplaySetId, {
+    kind: 'planar',
+    imageIds,
+    initialImageIdIndex: 0,
+  });
+
+  await stackViewport.setDisplaySets({ displaySetId: stackDisplaySetId });
 
   // Set the VOI range
-  stackViewport.setProperties({ voiRange: ctVoiRange });
+  stackViewport.setDisplaySetPresentation(stackDisplaySetId, {
+    voiRange: ctVoiRange,
+  });
 
   // Render the stack viewport
   stackViewport.render();
 
   // Get the second stack viewport
-  const stackViewport2 = renderingEngine.getViewport(
-    stackViewportId2
-  ) as Types.IStackViewport;
+  const stackViewport2 =
+    renderingEngine.getViewport<PlanarViewport>(stackViewportId2);
 
   // Set the stack on the second viewport
-  await stackViewport2.setStack(imageIds2);
+  utilities.genericViewportDisplaySetMetadataProvider.add(stackDisplaySetId2, {
+    kind: 'planar',
+    imageIds: imageIds2,
+    initialImageIdIndex: 0,
+  });
+
+  await stackViewport2.setDisplaySets({ displaySetId: stackDisplaySetId2 });
 
   // Set the VOI range with custom window/level for this viewport
-  stackViewport2.setProperties({
+  stackViewport2.setDisplaySetPresentation(stackDisplaySetId2, {
     voiRange: {
       lower: 2000 - 4100 / 2, // Level - Window/2
       upper: 2000 + 4100 / 2, // Level + Window/2
@@ -394,15 +403,20 @@ async function run() {
   stackViewport2.render();
 
   // Get the third stack viewport
-  const stackViewport3 = renderingEngine.getViewport(
-    stackViewportId3
-  ) as Types.IStackViewport;
+  const stackViewport3 =
+    renderingEngine.getViewport<PlanarViewport>(stackViewportId3);
 
   // Set the stack on the third viewport
-  await stackViewport3.setStack(imageIds3);
+  utilities.genericViewportDisplaySetMetadataProvider.add(stackDisplaySetId3, {
+    kind: 'planar',
+    imageIds: imageIds3,
+    initialImageIdIndex: 0,
+  });
+
+  await stackViewport3.setDisplaySets({ displaySetId: stackDisplaySetId3 });
 
   // Set the VOI range with custom window/level for this viewport
-  stackViewport3.setProperties({
+  stackViewport3.setDisplaySetPresentation(stackDisplaySetId3, {
     voiRange: {
       lower: 5393 - 1751 / 2, // Level - Window/2
       upper: 5393 + 1751 / 2, // Level + Window/2
@@ -413,9 +427,8 @@ async function run() {
   stackViewport3.render();
 
   // Get the volume viewport
-  const volumeViewport = renderingEngine.getViewport(
-    volumeViewportId
-  ) as Types.IVolumeViewport;
+  const volumeViewport =
+    renderingEngine.getViewport<PlanarViewport>(volumeViewportId);
 
   // Define a unique id for the volume
   const volumeName = 'CT_VOLUME_ID';
@@ -431,9 +444,17 @@ async function run() {
   volume.load();
 
   // Set the volume on the viewport
-  volumeViewport.setVolumes([
-    { volumeId, callback: setCtTransferFunctionForVolumeActor },
-  ]);
+  utilities.genericViewportDisplaySetMetadataProvider.add(volumeDisplaySetId, {
+    kind: 'planar',
+    imageIds,
+    volumeId,
+  });
+
+  await volumeViewport.setDisplaySets({ displaySetId: volumeDisplaySetId });
+  volumeViewport.setDisplaySetPresentation(
+    volumeDisplaySetId,
+    ctPresentation()
+  );
 
   // Render the volume viewport
   volumeViewport.render();

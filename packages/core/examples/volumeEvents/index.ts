@@ -1,10 +1,12 @@
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   getRenderingEngine,
   volumeLoader,
   Enums,
   CONSTANTS,
+  utilities,
+  viewportProjection,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -12,8 +14,8 @@ import {
   setTitleAndDescription,
   addButtonToToolbar,
   camera as cameraHelpers,
-  setCtTransferFunctionForVolumeActor,
 } from '../../../../utils/demo/helpers';
+import { ctPresentation } from '../../../../utils/demo/helpers/volumePresentationRecipes';
 
 // This is for debugging purposes
 console.warn(
@@ -24,6 +26,7 @@ const { ViewportType } = Enums;
 
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'CT_SAGITTAL_STACK';
+const displaySetId = 'volumeEvents:ct';
 
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
@@ -113,11 +116,11 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the stack viewport
-    const viewport = renderingEngine.getViewport(
-      viewportId
-    ) as Types.IVolumeViewport;
+    const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
-    viewport.setProperties({ voiRange: { lower: -1500, upper: 2500 } });
+    viewport.setDisplaySetPresentation(displaySetId, {
+      voiRange: { lower: -1500, upper: 2500 },
+    });
     viewport.render();
   },
 });
@@ -129,25 +132,23 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the stack viewport
-    const viewport = renderingEngine.getViewport(
-      viewportId
-    ) as Types.IVolumeViewport;
+    const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
     // Reset the camera so that we can set some pan and zoom relative to the
     // defaults for this demo. Note that changes could be relative instead.
-    viewport.resetCamera();
+    viewport.resetViewState();
 
-    // Get the current camera properties
-    const camera = viewport.getCamera();
+    const presentation = cameraHelpers.getRandomZoomAndPanPresentation(
+      viewport,
+      50
+    );
+    const viewState =
+      presentation &&
+      viewportProjection.withPresentation(viewport, presentation);
 
-    const { parallelScale, position, focalPoint } =
-      cameraHelpers.getRandomlyTranslatedAndZoomedCameraProperties(camera, 50);
-
-    viewport.setCamera({
-      parallelScale,
-      position: position as Types.Point3,
-      focalPoint: focalPoint as Types.Point3,
-    });
+    if (viewState) {
+      viewport.setViewState(viewState);
+    }
     viewport.render();
   },
 });
@@ -159,12 +160,10 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the volume viewport
-    const viewport = renderingEngine.getViewport(
-      viewportId
-    ) as Types.IVolumeViewport;
+    const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
     // Resets the viewport's camera
-    viewport.resetCamera();
+    viewport.resetViewState();
     // TODO reset the viewport properties, we don't have API for this.
 
     viewport.render();
@@ -193,7 +192,7 @@ async function run() {
   // Create a stack viewport
   const viewportInput = {
     viewportId,
-    type: ViewportType.ORTHOGRAPHIC,
+    type: ViewportType.PLANAR_NEXT,
     element,
     defaultOptions: {
       orientation: Enums.OrientationAxis.SAGITTAL,
@@ -204,9 +203,7 @@ async function run() {
   renderingEngine.enableElement(viewportInput);
 
   // Get the stack viewport that was created
-  const viewport = renderingEngine.getViewport(
-    viewportId
-  ) as Types.IVolumeViewport;
+  const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
   // Define a volume in memory
   const volume = await volumeLoader.createAndCacheVolume(volumeId, {
@@ -217,9 +214,14 @@ async function run() {
   volume.load();
 
   // Set the volume on the viewport
-  viewport.setVolumes([
-    { volumeId, callback: setCtTransferFunctionForVolumeActor },
-  ]);
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    kind: 'planar',
+    imageIds,
+    volumeId,
+  });
+
+  await viewport.setDisplaySets({ displaySetId });
+  viewport.setDisplaySetPresentation(displaySetId, ctPresentation());
 
   // Render the image
   viewport.render();

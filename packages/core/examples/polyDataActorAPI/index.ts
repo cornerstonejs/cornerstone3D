@@ -1,7 +1,8 @@
-import type { Types } from '@cornerstonejs/core';
+import type { GenericVolumeViewport3D, Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
+  CONSTANTS,
   init as csRenderInit,
 } from '@cornerstonejs/core';
 import { setTitleAndDescription } from '../../../../utils/demo/helpers';
@@ -86,7 +87,7 @@ async function run() {
   // Create a stack viewport
   const viewportInput = {
     viewportId,
-    type: ViewportType.VOLUME_3D,
+    type: ViewportType.VOLUME_3D_NEXT,
     element,
     defaultOptions: {
       orientation: Enums.OrientationAxis.SAGITTAL,
@@ -97,9 +98,8 @@ async function run() {
   renderingEngine.enableElement(viewportInput);
 
   // Get the stack viewport that was created
-  const viewport = renderingEngine.getViewport(
-    viewportId
-  ) as Types.IVolumeViewport;
+  const viewport =
+    renderingEngine.getViewport<GenericVolumeViewport3D>(viewportId);
 
   const actor = getSphereActor({
     center: [0, 0, 0],
@@ -110,7 +110,11 @@ async function run() {
     edgeVisibility: true,
   });
 
-  viewport.setActors([{ uid: 'spherePolyData', actor }]);
+  const { viewPlaneNormal, viewUp } = CONSTANTS.MPR_CAMERA_VALUES.sagittal;
+
+  viewport.getRenderer().addActor(actor);
+  viewport.setViewState({ viewPlaneNormal, viewUp });
+  viewport.resetViewState();
 
   // Render the image
   viewport.render();

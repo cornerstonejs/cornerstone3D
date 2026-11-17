@@ -1,4 +1,4 @@
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
@@ -6,15 +6,16 @@ import {
   setConfiguration,
   getConfiguration,
   cache,
+  utilities,
 } from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
-  setCtTransferFunctionForVolumeActor,
   addButtonToToolbar,
   addToggleButtonToToolbar,
 } from '../../../../utils/demo/helpers';
+import { ctPresentation } from '../../../../utils/demo/helpers/volumePresentationRecipes';
 
 // This is for debugging purposes
 console.warn(
@@ -35,7 +36,11 @@ const volumeName16 = 'LargeVolume_Float16'; // Id of hte volume using Float16
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 const volumeId16 = `${volumeLoaderScheme}:${volumeName16}`;
-let imageIds, viewport, renderingEngine;
+const displaySetId = 'volumeLarge:float32';
+const displaySetId16 = 'volumeLarge:float16';
+let imageIds: string[],
+  viewport: PlanarViewport,
+  renderingEngine: RenderingEngine;
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'CT_SAGITTAL_STACK';
 // 16 gb cache size
@@ -69,7 +74,7 @@ async function loadImage32Float() {
 
   const viewportInput = {
     viewportId,
-    type: ViewportType.ORTHOGRAPHIC,
+    type: ViewportType.PLANAR_NEXT,
     element,
     defaultOptions: {
       orientation: Enums.OrientationAxis.SAGITTAL,
@@ -79,14 +84,13 @@ async function loadImage32Float() {
   renderingEngine.enableElement(viewportInput);
 
   // Get the volume viewport that was created
-  viewport = renderingEngine.getViewport(viewportId) as Types.IVolumeViewport;
+  viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
   setTimeout(async () => {
     const volume = cache.getVolume(volumeId);
     // Set the volume on the viewport
-    viewport.setVolumes([
-      { volumeId, callback: setCtTransferFunctionForVolumeActor },
-    ]);
+    await viewport.setDisplaySets({ displaySetId });
+    viewport.setDisplaySetPresentation(displaySetId, ctPresentation());
 
     console.log('And now rendering');
     // Render the image
@@ -100,7 +104,7 @@ async function loadImage16Float() {
 
   const viewportInput = {
     viewportId,
-    type: ViewportType.ORTHOGRAPHIC,
+    type: ViewportType.PLANAR_NEXT,
     element,
     defaultOptions: {
       orientation: Enums.OrientationAxis.SAGITTAL,
@@ -110,7 +114,7 @@ async function loadImage16Float() {
   renderingEngine.enableElement(viewportInput);
 
   // Get the volume viewport that was created
-  viewport = renderingEngine.getViewport(viewportId) as Types.IVolumeViewport;
+  viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
   setTimeout(async () => {
     cache.setMaxCacheSize(LargeCacheSize);
@@ -133,9 +137,8 @@ async function loadImage16Float() {
     volume.load();
 
     // Set the volume on the viewport
-    viewport.setVolumes([
-      { volumeId: volumeId16, callback: setCtTransferFunctionForVolumeActor },
-    ]);
+    await viewport.setDisplaySets({ displaySetId: displaySetId16 });
+    viewport.setDisplaySetPresentation(displaySetId16, ctPresentation());
 
     // Render the image
     viewport.render();
@@ -163,7 +166,7 @@ async function run() {
   // Create a volume viewport
   const viewportInput = {
     viewportId,
-    type: ViewportType.ORTHOGRAPHIC,
+    type: ViewportType.PLANAR_NEXT,
     element,
     defaultOptions: {
       orientation: Enums.OrientationAxis.SAGITTAL,
@@ -174,7 +177,7 @@ async function run() {
   renderingEngine.enableElement(viewportInput);
 
   // Get the stack viewport that was created
-  viewport = renderingEngine.getViewport(viewportId) as Types.IVolumeViewport;
+  viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
   // Define a volume in memory
   const volume = await volumeLoader.createAndCacheVolume(volumeId, {
@@ -185,9 +188,19 @@ async function run() {
   volume.load();
 
   // Set the volume on the viewport
-  viewport.setVolumes([
-    { volumeId, callback: setCtTransferFunctionForVolumeActor },
-  ]);
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    kind: 'planar',
+    imageIds,
+    volumeId,
+  });
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId16, {
+    kind: 'planar',
+    imageIds,
+    volumeId: volumeId16,
+  });
+
+  await viewport.setDisplaySets({ displaySetId });
+  viewport.setDisplaySetPresentation(displaySetId, ctPresentation());
 
   // Render the image
   viewport.render();

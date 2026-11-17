@@ -1,9 +1,10 @@
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
   volumeLoader,
   getRenderingEngine,
+  utilities,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -11,8 +12,8 @@ import {
   setTitleAndDescription,
   addButtonToToolbar,
   ctVoiRange,
-  setCtTransferFunctionForVolumeActor,
 } from '../../../../utils/demo/helpers';
+import { ctPresentation } from '../../../../utils/demo/helpers/volumePresentationRecipes';
 
 // This is for debugging purposes
 console.warn(
@@ -24,6 +25,8 @@ const { ViewportType } = Enums;
 // ======== Constants ======= //
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'CT_VIEWPORT';
+const stackDisplaySetId = 'stacktovolume:stack';
+const volumeDisplaySetId = 'stacktovolume:volume';
 
 // Define a unique id for the volume
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
@@ -65,15 +68,17 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the viewport
-    const viewport = renderingEngine.getViewport(viewportId);
+    const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
     if (!viewport) {
       return;
     }
 
-    viewport.resetProperties?.();
+    viewport.resetDisplaySetPresentation(
+      isVolumeViewport ? volumeDisplaySetId : stackDisplaySetId
+    );
 
-    viewport.resetCamera();
+    viewport.resetViewState();
     viewport.render();
   },
 });
@@ -95,7 +100,7 @@ const convertButton = addButtonToToolbar({
     // Create a volume viewport
     const viewportInput = {
       viewportId,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
@@ -106,9 +111,7 @@ const convertButton = addButtonToToolbar({
     renderingEngine.enableElement(viewportInput);
 
     // Get the volume viewport that was created
-    const viewport = renderingEngine.getViewport(
-      viewportId
-    ) as Types.IVolumeViewport;
+    const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
     // Create and load the volume
     const volume = await volumeLoader.createAndCacheVolume(volumeId, {
@@ -119,12 +122,21 @@ const convertButton = addButtonToToolbar({
     volume.load();
 
     // Set the volume on the viewport
-    await viewport.setVolumes([
-      { volumeId, callback: setCtTransferFunctionForVolumeActor },
-    ]);
+    utilities.genericViewportDisplaySetMetadataProvider.add(
+      volumeDisplaySetId,
+      {
+        kind: 'planar',
+        imageIds,
+        volumeId,
+      }
+    );
 
+    await viewport.setDisplaySets({ displaySetId: volumeDisplaySetId });
+    viewport.setDisplaySetPresentation(volumeDisplaySetId, ctPresentation());
     // Set the VOI range
-    viewport.setProperties({ voiRange: ctVoiRange });
+    viewport.setDisplaySetPresentation(volumeDisplaySetId, {
+      voiRange: ctVoiRange,
+    });
 
     // Render the image
     viewport.render();
@@ -162,7 +174,7 @@ async function run() {
   // Create a stack viewport initially
   const viewportInput = {
     viewportId,
-    type: ViewportType.STACK,
+    type: ViewportType.PLANAR_NEXT,
     element,
     defaultOptions: {
       background: [0.2, 0, 0.2] as Types.Point3,
@@ -172,15 +184,20 @@ async function run() {
   renderingEngine.enableElement(viewportInput);
 
   // Get the stack viewport that was created
-  const viewport = renderingEngine.getViewport(
-    viewportId
-  ) as Types.IStackViewport;
+  const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
   // Set the stack on the viewport
-  viewport.setStack(imageIds);
+  utilities.genericViewportDisplaySetMetadataProvider.add(stackDisplaySetId, {
+    kind: 'planar',
+    imageIds,
+    initialImageIdIndex: 0,
+  });
 
+  await viewport.setDisplaySets({ displaySetId: stackDisplaySetId });
   // Set the VOI of the stack
-  viewport.setProperties({ voiRange: ctVoiRange });
+  viewport.setDisplaySetPresentation(stackDisplaySetId, {
+    voiRange: ctVoiRange,
+  });
 
   // Render the image
   viewport.render();

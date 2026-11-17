@@ -1,10 +1,11 @@
-import type { Types } from '@cornerstonejs/core';
+import type { GenericVolumeViewport3D, Types } from '@cornerstonejs/core';
 import {
   CONSTANTS,
   Enums,
   getRenderingEngine,
   RenderingEngine,
-  setVolumesForViewports,
+  utilities,
+  viewportProjection,
   volumeLoader,
 } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
@@ -28,12 +29,13 @@ const { ViewportType } = Enums;
 const { MouseBindings } = csToolsEnums;
 
 // Define a unique id for the volume
-let renderingEngine;
+let renderingEngine: RenderingEngine;
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = '3D_VIEWPORT';
+const displaySetId = 'volumeViewport3D:ct';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -72,12 +74,17 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the volume viewport
-    const viewport = renderingEngine.getViewport(
-      viewportId
-    ) as Types.IVolumeViewport;
+    const viewport =
+      renderingEngine.getViewport<GenericVolumeViewport3D>(viewportId);
 
     // Apply the rotation to the camera of the viewport
-    viewport.setViewPresentation({ rotation: Math.random() * 360 });
+    const viewState = viewportProjection.withPresentation(viewport, {
+      rotation: Math.random() * 360,
+    });
+
+    if (viewState) {
+      viewport.setViewState(viewState);
+    }
     viewport.render();
   },
 });
@@ -88,8 +95,11 @@ addDropdownToToolbar({
   },
   onSelectedValueChange: (presetName) => {
     const renderingEngine = getRenderingEngine(renderingEngineId);
-    const viewport = renderingEngine.getViewport(viewportId);
-    viewport.setProperties({ preset: presetName as string });
+    const viewport =
+      renderingEngine.getViewport<GenericVolumeViewport3D>(viewportId);
+    viewport.setDisplaySetPresentation(displaySetId, {
+      preset: presetName as string,
+    });
     viewport.render();
   },
 });
@@ -101,8 +111,9 @@ addDropdownToToolbar({
   },
   onSelectedValueChange: (sampleDistanceMultiplier) => {
     const renderingEngine = getRenderingEngine(renderingEngineId);
-    const viewport = renderingEngine.getViewport(viewportId);
-    viewport.setProperties({
+    const viewport =
+      renderingEngine.getViewport<GenericVolumeViewport3D>(viewportId);
+    viewport.setDisplaySetPresentation(displaySetId, {
       sampleDistanceMultiplier: Number(sampleDistanceMultiplier),
     });
     viewport.render();
@@ -146,7 +157,7 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: viewportId,
-      type: ViewportType.VOLUME_3D,
+      type: ViewportType.VOLUME_3D_NEXT,
       element: element1,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
@@ -167,18 +178,19 @@ async function run() {
 
   // Set the volume to load
   volume.load();
-  viewport = renderingEngine.getViewport(viewportId);
+  const viewport =
+    renderingEngine.getViewport<GenericVolumeViewport3D>(viewportId);
 
-  await setVolumesForViewports(
-    renderingEngine,
-    [{ volumeId }],
-    [viewportId]
-  ).then(() => {
-    viewport.setProperties({
-      preset: 'CT-Bone',
-    });
-    viewport.render();
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    imageIds,
+    volumeId,
   });
+
+  await viewport.setDisplaySets({ displaySetId });
+  viewport.setDisplaySetPresentation(displaySetId, {
+    preset: 'CT-Bone',
+  });
+  viewport.render();
 }
 
 run();

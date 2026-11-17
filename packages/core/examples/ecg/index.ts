@@ -1,4 +1,4 @@
-import type { Types } from '@cornerstonejs/core';
+import type { ECGGenericViewport, Types } from '@cornerstonejs/core';
 import { RenderingEngine, Enums } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import { addDicomPart10Instance } from '@cornerstonejs/metadata/utilities/metadataProvider';
@@ -126,7 +126,7 @@ async function run() {
 
   const viewportInput = {
     viewportId,
-    type: ViewportType.ECG,
+    type: ViewportType.ECG_NEXT,
     element,
     defaultOptions: {
       background: [0.2, 0, 0.2] as Types.Point3,
@@ -138,12 +138,10 @@ async function run() {
   // Bind tool group to this viewport
   toolGroup.addViewport(viewportId, renderingEngineId);
 
-  const viewport = renderingEngine.getViewport(
-    viewportId
-  ) as Types.IECGViewport;
+  const viewport = renderingEngine.getViewport<ECGGenericViewport>(viewportId);
 
   // Load ECG data into the viewport (calibration is resolved via metadata provider in ECGViewport)
-  await viewport.setEcg(ecgImageId);
+  await viewport.setDisplaySets({ displaySetId: ecgImageId });
 
   // Resize element to match ECG content dimensions
   const { width: ecgWidth, height: ecgHeight } =
@@ -185,7 +183,7 @@ async function run() {
   addButtonToToolbar({
     title: 'Reset View',
     onClick: () => {
-      viewport.resetCamera();
+      viewport.resetViewState();
     },
   });
 
@@ -203,7 +201,7 @@ async function run() {
           const arrayBuffer = await file.arrayBuffer();
           const imageId = `ecg:local:${file.name}`;
           await addDicomPart10Instance(imageId, arrayBuffer);
-          await viewport.setEcg(imageId);
+          await viewport.setDisplaySets({ displaySetId: imageId });
           const { width: ecgWidth, height: ecgHeight } =
             viewport.getContentDimensions();
           element.style.width = `${ecgWidth}px`;
@@ -227,7 +225,15 @@ async function run() {
       title: channel.name,
       checked: channel.visible,
       onChange: (checked: boolean) => {
-        viewport.setChannelVisibility(index, checked);
+        const visibleChannels = viewport
+          .getVisibleChannels()
+          .flatMap((visibleChannel, channelIndex) =>
+            (channelIndex === index ? checked : visibleChannel.visible)
+              ? [channelIndex]
+              : []
+          );
+
+        viewport.setViewState({ visibleChannels });
       },
     });
   });

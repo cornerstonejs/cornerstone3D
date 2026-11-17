@@ -48,7 +48,7 @@ export function petPresentation() {
  * the `preset` that some examples give the callback, is registered under its
  * name first.
  *
- * @param colormapRegistration - The colormap of the callback's `preset`, if any.
+ * @param [colormapRegistration] - The colormap of the callback's `preset`, if any.
  * @returns The presentation for `setDisplaySetPresentation`.
  */
 export function petColorMapPresentation(colormapRegistration) {

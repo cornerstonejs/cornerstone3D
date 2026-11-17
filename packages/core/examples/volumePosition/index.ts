@@ -1,9 +1,11 @@
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
   getRenderingEngine,
   volumeLoader,
+  utilities,
+  viewportProjection,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -11,8 +13,8 @@ import {
   setTitleAndDescription,
   addButtonToToolbar,
   addDropdownToToolbar,
-  setCtTransferFunctionForVolumeActor,
 } from '../../../../utils/demo/helpers';
+import { ctPresentation } from '../../../../utils/demo/helpers/volumePresentationRecipes';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
   PanTool,
@@ -30,12 +32,13 @@ const { MouseBindings } = csToolsEnums;
 
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'CT_SAGITTAL_VOLUME';
+const displaySetId = 'volumePosition:ct';
 const toolGroupId = 'VOLUME_POSITION_TOOL_GROUP';
 const volumeName = 'CT_VOLUME_POSITION_ID';
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume';
 const volumeId = `${volumeLoaderScheme}:${volumeName}`;
 
-let viewport: Types.IVolumeViewport;
+let viewport: PlanarViewport;
 let displayArea: unknown = 'none';
 
 setTitleAndDescription(
@@ -65,16 +68,17 @@ info.appendChild(flipHorizontalInfo);
 
 element.addEventListener(Events.CAMERA_MODIFIED, () => {
   const renderingEngine = getRenderingEngine(renderingEngineId);
-  const viewport = renderingEngine.getViewport(
-    viewportId
-  ) as Types.IVolumeViewport;
+  const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
   if (!viewport) {
     return;
   }
 
-  const { flipHorizontal } = viewport.getCamera();
-  const { rotation } = viewport.getViewPresentation();
+  const { flipHorizontal = false } = viewport.getViewState();
+  const { rotation = 0 } =
+    viewportProjection.getPresentation(viewport, {
+      selector: { rotation: true },
+    }) ?? {};
 
   rotationInfo.innerText = `Rotation: ${Math.round(rotation)}`;
   flipHorizontalInfo.innerText = `Flip horizontal: ${flipHorizontal}`;
@@ -154,15 +158,27 @@ addDropdownToToolbar({
   },
   onSelectedValueChange: (name) => {
     displayArea = displayAreas.get(name);
-    const { flipHorizontal, rotation } = displayArea as {
+    const {
+      flipHorizontal,
+      rotation,
+      displayArea: area,
+    } = displayArea as {
       flipHorizontal: boolean;
       rotation: number;
+      displayArea: Types.DisplayArea;
     };
 
-    viewport.setOptions(displayArea);
-    viewport.setProperties(displayArea);
-    viewport.setCamera({ flipHorizontal });
-    viewport.setViewPresentation({ rotation });
+    viewport.setDisplayArea(area);
+    viewport.setViewState({ flipHorizontal });
+
+    const viewState = viewportProjection.withPresentation(viewport, {
+      rotation,
+    });
+
+    if (viewState) {
+      viewport.setViewState(viewState);
+    }
+
     viewport.render();
   },
 });
@@ -171,12 +187,10 @@ addButtonToToolbar({
   title: 'Flip H',
   onClick: () => {
     const renderingEngine = getRenderingEngine(renderingEngineId);
-    const viewport = renderingEngine.getViewport(
-      viewportId
-    ) as Types.IVolumeViewport;
-    const { flipHorizontal } = viewport.getCamera();
+    const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
+    const { flipHorizontal = false } = viewport.getViewState();
 
-    viewport.setCamera({ flipHorizontal: !flipHorizontal });
+    viewport.setViewState({ flipHorizontal: !flipHorizontal });
     viewport.render();
   },
 });
@@ -185,12 +199,18 @@ addButtonToToolbar({
   title: 'Rotate Delta 30',
   onClick: () => {
     const renderingEngine = getRenderingEngine(renderingEngineId);
-    const viewport = renderingEngine.getViewport(
-      viewportId
-    ) as Types.IVolumeViewport;
-    const { rotation } = viewport.getViewPresentation();
+    const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
+    const { rotation = 0 } =
+      viewportProjection.getPresentation(viewport, {
+        selector: { rotation: true },
+      }) ?? {};
+    const viewState = viewportProjection.withPresentation(viewport, {
+      rotation: rotation + 30,
+    });
 
-    viewport.setViewPresentation({ rotation: rotation + 30 });
+    if (viewState) {
+      viewport.setViewState(viewState);
+    }
     viewport.render();
   },
 });
@@ -199,12 +219,10 @@ addButtonToToolbar({
   title: 'Reset Viewport',
   onClick: () => {
     const renderingEngine = getRenderingEngine(renderingEngineId);
-    const viewport = renderingEngine.getViewport(
-      viewportId
-    ) as Types.IVolumeViewport;
+    const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
-    viewport.resetCamera();
-    viewport.resetProperties();
+    viewport.resetViewState();
+    viewport.resetDisplaySetPresentation(displaySetId);
     viewport.setOrientation(Enums.OrientationAxis.SAGITTAL);
     viewport.render();
   },
@@ -274,7 +292,7 @@ async function run() {
 
   renderingEngine.enableElement({
     viewportId,
-    type: ViewportType.ORTHOGRAPHIC,
+    type: ViewportType.PLANAR_NEXT,
     element,
     defaultOptions: {
       orientation: Enums.OrientationAxis.SAGITTAL,
@@ -282,7 +300,7 @@ async function run() {
     },
   });
 
-  viewport = renderingEngine.getViewport(viewportId) as Types.IVolumeViewport;
+  viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
   const volume = await volumeLoader.createAndCacheVolume(volumeId, {
     imageIds,
@@ -290,14 +308,19 @@ async function run() {
 
   volume.load();
 
-  await viewport.setVolumes([
-    { volumeId, callback: setCtTransferFunctionForVolumeActor },
-  ]);
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    kind: 'planar',
+    imageIds,
+    volumeId,
+  });
+
+  await viewport.setDisplaySets({ displaySetId });
+  viewport.setDisplaySetPresentation(displaySetId, ctPresentation());
 
   viewport.setOrientation(Enums.OrientationAxis.SAGITTAL);
-  viewport.setProperties({
+  viewport.setDisplaySetPresentation(displaySetId, {
     voiRange: { lower: -160, upper: 240 },
-    VOILUTFunction: Enums.VOILUTFunctionType.LINEAR,
+    voiLUTFunction: Enums.VOILUTFunctionType.LINEAR,
     colormap: { name: 'Grayscale' },
     slabThickness: 0.1,
   });

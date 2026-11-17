@@ -1,4 +1,4 @@
-import type { Types } from '@cornerstonejs/core';
+import type { GenericVolumeViewport3D, Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
@@ -157,7 +157,7 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: viewportId1,
-      type: ViewportType.VOLUME_3D,
+      type: ViewportType.VOLUME_3D_NEXT,
       element: element1,
       defaultOptions: {
         background: <Types.RGB>[0.2, 0, 0.2],
@@ -165,7 +165,7 @@ async function run() {
     },
     {
       viewportId: viewportId2,
-      type: ViewportType.VOLUME_3D,
+      type: ViewportType.VOLUME_3D_NEXT,
       element: element2,
       defaultOptions: {
         background: <Types.RGB>[0.2, 0.2, 0],
@@ -173,7 +173,7 @@ async function run() {
     },
     {
       viewportId: viewportId3,
-      type: ViewportType.VOLUME_3D,
+      type: ViewportType.VOLUME_3D_NEXT,
       element: element3,
       defaultOptions: {
         background: <Types.RGB>[0.2, 0.2, 0.2],
@@ -181,7 +181,7 @@ async function run() {
     },
     {
       viewportId: viewportId4,
-      type: ViewportType.VOLUME_3D,
+      type: ViewportType.VOLUME_3D_NEXT,
       element: element4,
       defaultOptions: {
         background: <Types.RGB>[0.4, 0.4, 0.4],
@@ -201,85 +201,83 @@ async function run() {
     console.log('Geometry Loaded', e);
   });
 
-  const mesh1 = await geometryLoader.loadAndCacheGeometry(
-    'mesh:https://data.kitware.com/api/v1/file/5afd92e18d777f15ebe1ad73/download',
-    {
-      type: Enums.GeometryType.MESH,
-      geometryData: {
-        id: 'mesh1',
-        format: Enums.MeshType.PLY,
-      } as Types.MeshData,
-    }
-  );
+  const meshId1 =
+    'mesh:https://data.kitware.com/api/v1/file/5afd92e18d777f15ebe1ad73/download';
 
-  const viewport1 = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(viewportId1)
-  );
-  viewport1.setActors([
-    { uid: mesh1.id, actor: (mesh1.data as Types.IMesh).defaultActor },
-  ]);
+  await geometryLoader.loadAndCacheGeometry(meshId1, {
+    type: Enums.GeometryType.MESH,
+    geometryData: {
+      id: 'mesh1',
+      format: Enums.MeshType.PLY,
+    } as Types.MeshData,
+  });
 
-  const mesh2 = await geometryLoader.loadAndCacheGeometry(
-    'mesh:https://data.kitware.com/api/v1/file/5afd93238d777f15ebe1b113/download',
-    {
-      type: Enums.GeometryType.MESH,
-      geometryData: {
-        id: 'mesh2',
-        format: Enums.MeshType.STL,
-      } as Types.MeshData,
-    }
-  );
+  const viewport1 =
+    renderingEngine.getViewport<GenericVolumeViewport3D>(viewportId1);
+  await viewport1.addDisplaySet(meshId1, {
+    renderMode: 'vtkGeometry3d',
+  });
+  viewport1.resetViewState();
+  viewport1.render();
 
-  const viewport2 = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(viewportId2)
-  );
+  const meshId2 =
+    'mesh:https://data.kitware.com/api/v1/file/5afd93238d777f15ebe1b113/download';
 
-  viewport2.setActors([
-    { uid: mesh2.id, actor: (mesh2.data as Types.IMesh).defaultActor },
-  ]);
-  viewport2.resetCamera();
+  await geometryLoader.loadAndCacheGeometry(meshId2, {
+    type: Enums.GeometryType.MESH,
+    geometryData: {
+      id: 'mesh2',
+      format: Enums.MeshType.STL,
+    } as Types.MeshData,
+  });
+
+  const viewport2 =
+    renderingEngine.getViewport<GenericVolumeViewport3D>(viewportId2);
+
+  await viewport2.addDisplaySet(meshId2, {
+    renderMode: 'vtkGeometry3d',
+  });
+  viewport2.resetViewState();
   viewport2.render();
 
-  const mesh3 = await geometryLoader.loadAndCacheGeometry(
-    'mesh:https://data.kitware.com/api/v1/file/5c3c7daf8d777f072b02eaae/download',
-    {
-      type: Enums.GeometryType.MESH,
-      geometryData: {
-        id: 'mesh3',
-        format: Enums.MeshType.OBJ,
-      } as Types.MeshData,
-    }
-  );
+  const meshId3 =
+    'mesh:https://data.kitware.com/api/v1/file/5c3c7daf8d777f072b02eaae/download';
 
-  const viewport3 = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(viewportId3)
-  );
+  await geometryLoader.loadAndCacheGeometry(meshId3, {
+    type: Enums.GeometryType.MESH,
+    geometryData: {
+      id: 'mesh3',
+      format: Enums.MeshType.OBJ,
+    } as Types.MeshData,
+  });
 
-  viewport3.setActors([
-    { uid: mesh3.id, actor: (mesh3.data as Types.IMesh).defaultActor },
-  ]);
-  viewport3.resetCamera();
+  const viewport3 =
+    renderingEngine.getViewport<GenericVolumeViewport3D>(viewportId3);
+
+  await viewport3.addDisplaySet(meshId3, {
+    renderMode: 'vtkGeometry3d',
+  });
+  viewport3.resetViewState();
   viewport3.render();
 
-  const mesh4 = await geometryLoader.loadAndCacheGeometry(
-    'mesh:https://data.kitware.com/api/v1/file/59de9de58d777f31ac641dc6/download',
-    {
-      type: Enums.GeometryType.MESH,
-      geometryData: {
-        id: 'mesh4',
-        format: Enums.MeshType.VTP,
-      } as Types.MeshData,
-    }
-  );
+  const meshId4 =
+    'mesh:https://data.kitware.com/api/v1/file/59de9de58d777f31ac641dc6/download';
 
-  const viewport4 = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(viewportId4)
-  );
+  await geometryLoader.loadAndCacheGeometry(meshId4, {
+    type: Enums.GeometryType.MESH,
+    geometryData: {
+      id: 'mesh4',
+      format: Enums.MeshType.VTP,
+    } as Types.MeshData,
+  });
 
-  viewport4.setActors([
-    { uid: mesh4.id, actor: (mesh4.data as Types.IMesh).defaultActor },
-  ]);
-  viewport4.resetCamera();
+  const viewport4 =
+    renderingEngine.getViewport<GenericVolumeViewport3D>(viewportId4);
+
+  await viewport4.addDisplaySet(meshId4, {
+    renderMode: 'vtkGeometry3d',
+  });
+  viewport4.resetViewState();
   viewport4.render();
 }
 
