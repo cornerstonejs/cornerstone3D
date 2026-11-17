@@ -10,7 +10,7 @@ async function decodeLittleEndian(
   let offset = pixelData.byteOffset;
   const length = pixelData.length;
 
-  if (imageFrame.bitsAllocated === 16) {
+  if (imageFrame.bitsAllocated === 16 || imageFrame.bitsAllocated === 12) {
     // if pixel data is not aligned on even boundary, shift it so we can create the 16 bit array
     // buffers on it
     if (offset % 2) {
