@@ -545,6 +545,35 @@ describe('wadouri dataSet-layer', () => {
         );
         expect(result.frameTime).toBeCloseTo(33.33);
       });
+
+      it('returns cineRate and numberOfFrames like the wadors provider', () => {
+        const dataSet = fakeDataSet({
+          x00180040: '30',
+          x00280008: '120',
+          x00181063: '33.33',
+        });
+        const result = metadataForDataset(
+          'cineModule',
+          'imageId',
+          dataSet as any
+        );
+        expect(result.cineRate).toBe(30);
+        expect(result.numberOfFrames).toBe(120);
+        expect(result.frameTime).toBeCloseTo(33.33);
+      });
+
+      it('returns undefined fields when the cine tags are absent', () => {
+        const result = metadataForDataset(
+          'cineModule',
+          'imageId',
+          fakeDataSet() as any
+        );
+        expect(result).toStrictEqual({
+          cineRate: undefined,
+          numberOfFrames: undefined,
+          frameTime: undefined,
+        });
+      });
     });
 
     describe('NM_MULTIFRAME_GEOMETRY module', () => {

@@ -200,7 +200,10 @@ export function metadataForDataset(
   }
 
   if (type === MetadataModules.CINE) {
+    // Same fields as the wadors provider's getCineModule, plus frameTime
     return {
+      cineRate: dataSet.intString('x00180040'),
+      numberOfFrames: dataSet.intString('x00280008'),
       frameTime: dataSet.floatString('x00181063'),
     };
   }
