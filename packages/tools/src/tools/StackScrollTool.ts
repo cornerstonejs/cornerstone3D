@@ -105,9 +105,14 @@ class StackScrollTool extends BaseTool {
     });
   }
 
+  /**
+   * The length of a drag, in canvas pixels, that scrolls one step. A viewport
+   * that has no `getNumberOfSlices`, as a next ECG viewport, counts as one
+   * slice.
+   */
   _getPixelPerImage(viewport) {
     const { element } = viewport;
-    const numberOfSlices = viewport.getNumberOfSlices();
+    const numberOfSlices = viewport.getNumberOfSlices?.() ?? 1;
 
     // The Math.max here makes it easier to mouseDrag-scroll small or really large image stacks
     return Math.max(2, element.offsetHeight / Math.max(numberOfSlices, 8));

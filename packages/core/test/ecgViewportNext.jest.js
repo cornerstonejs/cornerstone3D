@@ -386,12 +386,13 @@ describe('Annotations in a layout with several columns on the next ECG viewport'
 });
 
 describe('Slices of the next ECG viewport', () => {
-  it('gives one slice, as the legacy viewport and the adapter do', async () => {
+  it('has no getNumberOfSlices on the direct next class, where the legacy viewport gives one slice', async () => {
     const legacy = await mountLegacy();
     const next = await mountNext();
 
-    expect(next.getNumberOfSlices()).toBe(legacy.getNumberOfSlices());
-    expect(next.getNumberOfSlices()).toBe(1);
+    expect(legacy.getNumberOfSlices()).toBe(1);
+    expect(next.getNumberOfSlices).toBeUndefined();
+    expect(next.getSliceIndex()).toBe(0);
   });
 });
 

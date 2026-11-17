@@ -295,6 +295,34 @@ export function getPlanarViewReferenceId(args: {
 }
 
 /**
+ * The reference that the viewable check of a planar viewport reads.
+ *
+ * The plane restriction of a reference pins the plane of its first slice. A
+ * reference over a range of slices (`multiSliceReference`) also shows on the
+ * other slices of the range, so its range decides and its plane restriction
+ * is left out, as the legacy stack viewport decides by the images of a
+ * range. Any other reference is given back as it is.
+ */
+export function getPlanarReferenceForViewableCheck(
+  viewRef: ViewReference
+): ViewReference {
+  const rangeEnd = viewRef?.multiSliceReference;
+  const hasRange =
+    rangeEnd &&
+    (rangeEnd.referencedImageId ||
+      rangeEnd.referencedImageURI ||
+      typeof rangeEnd.sliceIndex === 'number');
+
+  if (!hasRange || !viewRef.planeRestriction) {
+    return viewRef;
+  }
+
+  const { planeRestriction: _planeRestriction, ...reference } = viewRef;
+
+  return reference;
+}
+
+/**
  * Tests whether a given plane (defined by a PlaneRestriction) is viewable
  * in this viewport's current orientation.
  *

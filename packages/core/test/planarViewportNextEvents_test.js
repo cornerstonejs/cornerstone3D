@@ -803,6 +803,126 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
       expect(detailsOf(events, Events.PRE_STACK_NEW_IMAGE)).toEqual([]);
       expect(detailsOf(events, Events.STACK_VIEWPORT_SCROLL)).toEqual([]);
     });
+
+    /** Scrolls one slice and gives the STACK_NEW_IMAGE detail of the scroll. */
+    async function scrollOneSlice(viewport, events) {
+      const before = detailsOf(events, Events.STACK_NEW_IMAGE).length;
+
+      await viewport.scroll(1);
+      await waitFor(
+        () => detailsOf(events, Events.STACK_NEW_IMAGE).length > before
+      );
+      await renderAndWait(viewport);
+
+      return detailsOf(events, Events.STACK_NEW_IMAGE)[before];
+    }
+
+    for (const [path, options, renderMode] of [
+      ['on the GPU', {}, 'vtkImage'],
+      ['on the CPU', { renderBackend: 'cpu' }, 'cpuImage'],
+    ]) {
+      it(`names the image on display in STACK_NEW_IMAGE in stack mode ${path}`, async function () {
+        const series = await createSeries();
+        const viewport = createNextViewport(renderingEngine, 'next');
+
+        await showSeriesStack(viewport, series, 2, options);
+
+        const events = recordSliceEvents(viewport.element);
+        const detail = await scrollOneSlice(viewport, events);
+
+        expect(viewport.getCurrentMode()).toBe('stack');
+        expect(viewport.getRenderPlan()[0].renderMode).toBe(renderMode);
+        expect(detail.imageId).toBe(series.imageIds[3]);
+        expect(detail.imageId).toBe(viewport.getCurrentImageId());
+        expect(detail.image.imageId).toBe(series.imageIds[3]);
+        expect(detail.imageIdIndex).toBe(viewport.getCurrentImageIdIndex());
+      });
+    }
+
+    for (const [path, options, renderMode] of [
+      ['on the sampled slice path', {}, 'vtkSampledSlice'],
+      ['on the volume slice path', { sliceFirst: false }, 'vtkVolumeSlice'],
+      ['on the CPU', { renderBackend: 'cpu' }, 'cpuVolume'],
+    ]) {
+      it(`names the image on display in STACK_NEW_IMAGE in volume mode ${path}, at the mount and after a scroll, where the slice index runs against the order of the images`, async function () {
+        const series = await createSeries();
+        const viewport = createNextViewport(renderingEngine, 'next');
+        const events = recordSliceEvents(viewport.element);
+        const displaySetId = 'volume:next';
+
+        utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+          imageIds: series.imageIds,
+          volumeId: series.volumeId,
+        });
+        await viewport.setDisplaySets({
+          displaySetId,
+          options: { orientation: OrientationAxis.ACQUISITION, ...options },
+        });
+        await renderAndWait(viewport);
+
+        const mountDetails = detailsOf(events, Events.STACK_NEW_IMAGE);
+
+        expect(viewport.getCurrentMode()).toBe('volume');
+        expect(viewport.getRenderPlan()[0].renderMode).toBe(renderMode);
+        expect(mountDetails.length).toBeGreaterThan(0);
+        mountDetails.forEach((mountDetail) => {
+          expect(mountDetail.imageId).toBe(viewport.getCurrentImageId());
+        });
+        expect(mountDetails.at(-1).imageIdIndex).toBe(
+          viewport.getCurrentImageIdIndex()
+        );
+
+        const detail = await scrollOneSlice(viewport, events);
+
+        expect(series.imageIds).toContain(detail.imageId);
+        expect(detail.imageId).toBe(viewport.getCurrentImageId());
+        expect(detail.imageIdIndex).toBe(viewport.getCurrentImageIdIndex());
+        expect(series.imageIds.indexOf(detail.imageId)).toBe(
+          series.size.slices - 1 - detail.imageIdIndex
+        );
+        expect(detail.image).toBeUndefined();
+      });
+    }
+
+    it('gives no image id in STACK_NEW_IMAGE in volume mode when the view cuts across the images', async function () {
+      const series = await createSeries();
+      const viewport = createNextViewport(renderingEngine, 'next');
+
+      await showSeriesVolume(viewport, series, 2, {
+        orientation: OrientationAxis.SAGITTAL,
+      });
+
+      const events = recordSliceEvents(viewport.element);
+      const detail = await scrollOneSlice(viewport, events);
+
+      expect(viewport.getCurrentMode()).toBe('volume');
+      expect(viewport.getCurrentImageId()).toBeUndefined();
+      expect(detail.imageId).toBeUndefined();
+      expect(detail.image).toBeUndefined();
+    });
+
+    it('keeps imageIds[imageIdIndex] in STACK_NEW_IMAGE of the legacy adapter in volume mode', async function () {
+      const series = await createSeries();
+      const adapter = enableViewport(renderingEngine, {
+        viewportId: 'adapter',
+        type: ViewportType.ORTHOGRAPHIC,
+        orientation: OrientationAxis.AXIAL,
+        adapter: true,
+      });
+      const events = recordSliceEvents(adapter.element);
+
+      await adapter.setVolumes([{ volumeId: series.volumeId }]);
+      await renderAndWait(adapter);
+      await scrollOneSlice(adapter, events);
+
+      const details = detailsOf(events, Events.STACK_NEW_IMAGE);
+
+      expect(details.length).toBeGreaterThan(1);
+      details.forEach((detail) => {
+        expect(typeof detail.imageIdIndex).toBe('number');
+        expect(detail.imageId).toBe(series.imageIds[detail.imageIdIndex]);
+      });
+    });
   });
 
   describe('staged loading of a stack', () => {

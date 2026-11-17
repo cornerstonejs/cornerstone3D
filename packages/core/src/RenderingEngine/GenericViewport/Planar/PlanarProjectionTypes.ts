@@ -5,6 +5,7 @@ import type {
   ProjectionRequest,
   ProjectionSnapshot,
 } from '../ViewportProjectionTypes';
+import type { PlanarScaleInput } from './planarCameraScale';
 import type {
   PlanarDisplayArea,
   PlanarResolvedICamera,
@@ -29,6 +30,14 @@ export type PlanarResolvedViewLike = {
   getFrameOfReferenceUID(): string | undefined;
   toICamera(): PlanarResolvedICamera;
   withPan(pan: Point2): { state: { viewState: PlanarViewState } };
+  /**
+   * The view at another scale. With a canvas point, the world point under it
+   * stays under it.
+   */
+  withScale?(
+    scale: PlanarScaleInput,
+    canvasPoint?: Point2
+  ): { state: { viewState: PlanarViewState } };
 };
 
 export type PlanarProjectionViewport = {

@@ -54,6 +54,8 @@ async function jumpToSlice(
  * ahead of the image that is drawn while that image loads. A legacy stack
  * viewport and a stack-mode legacy adapter give their target index when
  * `debounceLoading` is set. A legacy volume viewport gives its slice index.
+ * A viewport that has no `getNumberOfSlices`, as a next ECG viewport, has one
+ * slice: a jump on it moves nothing.
  */
 function _getImageSliceData(
   viewport: IStackViewport | IVolumeViewport,
@@ -87,7 +89,7 @@ function _getImageSliceData(
   }
 
   return {
-    numberOfSlices: viewport.getNumberOfSlices(),
+    numberOfSlices: viewport.getNumberOfSlices?.() ?? 1,
     imageIndex: viewport.getSliceIndex(),
   };
 }

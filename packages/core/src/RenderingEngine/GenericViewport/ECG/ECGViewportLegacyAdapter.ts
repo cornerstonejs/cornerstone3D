@@ -74,6 +74,11 @@ class ECGViewportLegacyAdapter extends ECGViewport {
     await this.setDisplaySets({ displaySetId: imageId });
   }
 
+  /** An ECG is one record. `StackScrollTool` reads this value. */
+  getNumberOfSlices(): number {
+    return 1;
+  }
+
   /** Returns the canvas that the ECG draws on. */
   getCanvas(): HTMLCanvasElement {
     return this.canvas;

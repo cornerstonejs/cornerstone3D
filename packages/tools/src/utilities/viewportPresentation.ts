@@ -143,9 +143,8 @@ export function panViewportByCanvasDelta(
 
 /**
  * Sets the zoom of a next viewport of any family through the projection
- * service. With a canvas point, the world point under it stays under it:
- * the projection is asked to keep it, and a projection that does not is
- * followed by a pan that puts the point back.
+ * service, as one change of the view state. With a canvas point, the
+ * projection keeps the world point under it under it.
  *
  * @returns False when the viewport has no zoom and pan there.
  */
@@ -158,31 +157,9 @@ export function zoomViewportAtCanvasPoint(
     return false;
   }
 
-  const worldPoint = canvasPoint
-    ? viewport.canvasToWorld(canvasPoint)
-    : undefined;
-
-  if (
-    !applyViewportPresentation(
-      viewport,
-      { zoom },
-      { anchorCanvas: canvasPoint }
-    )
-  ) {
-    return false;
-  }
-
-  if (worldPoint) {
-    const shown = viewport.worldToCanvas(worldPoint);
-    const delta: Types.Point2 = [
-      canvasPoint[0] - shown[0],
-      canvasPoint[1] - shown[1],
-    ];
-
-    if (Math.hypot(delta[0], delta[1]) > 0.01) {
-      panViewportByCanvasDelta(viewport, delta);
-    }
-  }
-
-  return true;
+  return applyViewportPresentation(
+    viewport,
+    { zoom },
+    { anchorCanvas: canvasPoint }
+  );
 }

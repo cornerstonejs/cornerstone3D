@@ -446,37 +446,47 @@ describe('Zoom at mount of the direct next whole slide viewport', () => {
   });
 });
 
-describe('Scroll of the direct next whole slide viewport', () => {
-  it('zooms by the factor of the legacy viewport for one step', async () => {
-    const legacy = await track(mountLegacy(0.4));
+describe('Scroll of a whole slide viewport', () => {
+  it('has no scroll on the direct next class, which the adapter keeps', async () => {
     const next = await track(mountNext(WSIViewport, 0.4));
+
+    expect(next.viewport.scroll).toBeUndefined();
+    expect(typeof WSIViewportLegacyAdapter.prototype.scroll).toBe('function');
+  });
+
+  it('zooms the adapter by the factor of the legacy viewport for one step', async () => {
+    const legacy = await track(mountLegacy(0.4));
+    const adapter = await track(mountNext(WSIViewportLegacyAdapter, 0.4));
     const legacyCenter = legacy.view.getCenter();
-    const nextCenter = next.view.getCenter();
+    const adapterCenter = adapter.view.getCenter();
 
     legacy.viewport.scroll(1);
-    next.viewport.scroll(1);
+    adapter.viewport.scroll(1);
 
     expect(legacy.view.getResolution()).toBeCloseTo(4.4, 6);
-    expect(next.view.getResolution()).toBeCloseTo(
+    expect(adapter.view.getResolution()).toBeCloseTo(
       legacy.view.getResolution(),
       6
     );
     expectClose(legacy.view.getCenter(), legacyCenter);
-    expectClose(next.view.getCenter(), nextCenter);
+    expectClose(adapter.view.getCenter(), adapterCenter);
   });
 
-  it('zooms in for a step back and keeps the zoom of the map in step', async () => {
+  it('zooms the adapter in for a step back and keeps the zoom of the map in step', async () => {
     const legacy = await track(mountLegacy(0));
-    const next = await track(mountNext(WSIViewport, 0));
+    const adapter = await track(mountNext(WSIViewportLegacyAdapter, 0));
 
     legacy.viewport.scroll(-2);
-    next.viewport.scroll(-2);
+    adapter.viewport.scroll(-2);
 
-    expect(next.view.getResolution()).toBeCloseTo(
+    expect(adapter.view.getResolution()).toBeCloseTo(
       legacy.view.getResolution(),
       6
     );
-    expect(next.viewport.getZoom()).toBeCloseTo(legacy.viewport.getZoom(), 6);
+    expect(adapter.viewport.getZoom()).toBeCloseTo(
+      legacy.viewport.getZoom(),
+      6
+    );
   });
 });
 

@@ -45,6 +45,12 @@ async function makeViewport(defaultOptions) {
 }
 
 describe('ECG legacy adapter', () => {
+  it('gives one slice, as the legacy viewport', async () => {
+    const viewport = await makeViewport();
+
+    expect(viewport.getNumberOfSlices()).toBe(1);
+  });
+
   it('has the legacy options and actor members', async () => {
     const viewport = await makeViewport({
       background: [0, 0, 0],

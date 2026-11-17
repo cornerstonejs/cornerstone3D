@@ -107,6 +107,14 @@ class PlanarViewportLegacyAdapter extends PlanarViewport {
   }
 
   /**
+   * STACK_NEW_IMAGE of a volume keeps the image id that the adapter fired
+   * before: `imageIds[imageIdIndex]`.
+   */
+  protected override namesVolumeImageBySliceIndex(): boolean {
+    return true;
+  }
+
+  /**
    * With the legacy CPU switch on (`rendering.useCPURendering`) the adapter
    * draws a LINEAR image once for each change, as the legacy CPU stack
    * viewport does. Without the switch the CPU draws because the GPU cannot,

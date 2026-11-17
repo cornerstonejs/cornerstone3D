@@ -190,6 +190,7 @@ export class CpuVolumeSliceRenderPath
       imageIds: rendering.imageIds,
       imageIdIndex: rendering.currentImageIdIndex,
       maxImageIdIndex: rendering.maxImageIdIndex,
+      rendering,
     });
 
     return {
@@ -425,6 +426,7 @@ export class CpuVolumeSliceRenderPath
         imageIds: rendering.imageIds,
         imageIdIndex: rendering.currentImageIdIndex,
         maxImageIdIndex: rendering.maxImageIdIndex,
+        rendering,
       });
     }
   }

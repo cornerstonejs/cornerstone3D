@@ -337,11 +337,6 @@ class ECGViewport extends GenericViewport<
     return 0;
   }
 
-  /** An ECG is one record. `StackScrollTool` reads this value. */
-  getNumberOfSlices(): number {
-    return 1;
-  }
-
   /**
    * Returns the current zoom level of the viewport.
    * @returns Zoom level factor.

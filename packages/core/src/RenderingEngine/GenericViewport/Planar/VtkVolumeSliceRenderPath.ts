@@ -190,6 +190,7 @@ export class VtkVolumeSliceRenderPath
       imageIds: rendering.imageIds,
       imageIdIndex: rendering.currentImageIdIndex,
       maxImageIdIndex: rendering.maxImageIdIndex,
+      rendering,
     });
 
     const attachment: RenderPathAttachment<PlanarDataPresentation> = {
@@ -346,6 +347,7 @@ export class VtkVolumeSliceRenderPath
         imageIds: rendering.imageIds,
         imageIdIndex: rendering.currentImageIdIndex,
         maxImageIdIndex: rendering.maxImageIdIndex,
+        rendering,
       });
     }
   }

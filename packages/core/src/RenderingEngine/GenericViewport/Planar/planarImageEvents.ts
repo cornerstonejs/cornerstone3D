@@ -3,8 +3,15 @@ import type ImageQualityStatus from '../../../enums/ImageQualityStatus';
 import eventTarget from '../../../eventTarget';
 import triggerEvent from '../../../utilities/triggerEvent';
 import type { IImage } from '../../../types';
+import getClosestImageId from '../../../utilities/getClosestImageId';
 import { imageQualityStatusOf } from '../../helpers/fidelityIndicator/collectFidelityLines';
+import { resolvePlanarViewportView } from './PlanarResolvedView';
 import type { PlanarViewState } from './PlanarViewportTypes';
+import type {
+  PlanarCpuVolumeRendering,
+  PlanarSampledSliceRendering,
+  PlanarVolumeSliceRendering,
+} from './planarRuntimeTypes';
 
 /**
  * Calls `onBetterStage` when a progressive load delivers a better stage of the
@@ -45,8 +52,21 @@ export function subscribeToBetterImageStages(
 interface PlanarImageEventContext {
   viewportId: string;
   renderingEngineId: string;
-  viewport: { element: HTMLDivElement };
+  viewport: {
+    element: HTMLDivElement;
+    /**
+     * True on the legacy adapter, whose STACK_NEW_IMAGE of a volume names
+     * `imageIds[imageIdIndex]`.
+     */
+    namesVolumeImageBySliceIndex?(): boolean;
+  };
 }
+
+/** The rendering of a volume on any of its three draw paths. */
+type PlanarVolumeEventRendering =
+  | PlanarCpuVolumeRendering
+  | PlanarVolumeSliceRendering
+  | PlanarSampledSliceRendering;
 
 interface PlanarNewImageArgs {
   image?: IImage;
@@ -67,6 +87,54 @@ export function triggerPlanarNewImage(
   });
 }
 
+/**
+ * The image id of the slice of a volume that a view state shows, which is
+ * what `viewport.getCurrentImageId()` answers: the source image whose plane
+ * the view cuts along. Undefined when the view shows no single source image,
+ * as an oblique cut or a reformat. The size of the canvas has no part in it,
+ * so none is read.
+ */
+function getShownVolumeImageId(
+  rendering: PlanarVolumeEventRendering,
+  viewState: PlanarViewState | undefined
+): string | undefined {
+  const camera = resolvePlanarViewportView({
+    viewState: viewState ?? {},
+    rendering,
+    renderContext: {},
+    canvasDimensions: { canvasHeight: 1, canvasWidth: 1 },
+  })?.toICamera();
+
+  if (!camera?.focalPoint || !camera.viewPlaneNormal) {
+    return;
+  }
+
+  return getClosestImageId(
+    rendering.imageVolume,
+    camera.focalPoint,
+    camera.viewPlaneNormal
+  );
+}
+
+/**
+ * Fires STACK_NEW_IMAGE and VOLUME_NEW_IMAGE for the slice of a volume that
+ * the view state `camera` shows.
+ *
+ * The detail of STACK_NEW_IMAGE of a next viewport:
+ * - `imageId` is the image of the slice on display, which is what
+ *   `viewport.getCurrentImageId()` answers. It is read from `rendering`. It
+ *   is undefined when the view shows no single source image, as an oblique
+ *   cut or a reformat.
+ * - `imageIdIndex` is the slice index of the view, which is what
+ *   `viewport.getCurrentImageIdIndex()` answers, when the view is in the
+ *   acquisition orientation, and undefined otherwise. It counts along the
+ *   view, which can run against the order of the image ids, so it is not the
+ *   place of `imageId` in the image ids.
+ * - `image` is undefined: a volume has no image object for a slice.
+ *
+ * The legacy adapter keeps the image id it fired before,
+ * `imageIds[imageIdIndex]`.
+ */
 export function triggerPlanarVolumeNewImage(
   ctx: PlanarImageEventContext,
   params: {
@@ -75,6 +143,7 @@ export function triggerPlanarVolumeNewImage(
     imageIds: string[];
     imageIdIndex: number | undefined;
     maxImageIdIndex: number;
+    rendering?: PlanarVolumeEventRendering;
   }
 ): void {
   const orientation = params.camera?.orientation;
@@ -83,18 +152,26 @@ export function triggerPlanarVolumeNewImage(
     orientation === OrientationAxis.ACQUISITION ||
     (params.acquisitionOrientation !== undefined &&
       orientation === params.acquisitionOrientation);
-
-  if (
+  const imageIdIndex =
     isAcquisitionAligned &&
     typeof params.imageIdIndex === 'number' &&
     params.imageIds[params.imageIdIndex]
-  ) {
+      ? params.imageIdIndex
+      : undefined;
+
+  if (ctx.viewport.namesVolumeImageBySliceIndex?.()) {
     triggerPlanarNewImage(ctx, {
-      imageId: params.imageIds[params.imageIdIndex],
-      imageIdIndex: params.imageIdIndex,
+      imageId:
+        imageIdIndex === undefined ? undefined : params.imageIds[imageIdIndex],
+      imageIdIndex,
     });
   } else {
-    triggerPlanarNewImage(ctx);
+    triggerPlanarNewImage(ctx, {
+      imageId: params.rendering
+        ? getShownVolumeImageId(params.rendering, params.camera)
+        : undefined,
+      imageIdIndex,
+    });
   }
 
   // A volume-backed slice change must also emit VOLUME_NEW_IMAGE so that

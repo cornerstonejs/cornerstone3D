@@ -370,20 +370,6 @@ export default class WSIViewport extends GenericViewport<
   }
 
   /**
-   * Zooms as the legacy viewport does: each step scales the resolution by
-   * 1.1, so a positive delta zooms out and a negative one zooms in. The
-   * centre stays.
-   */
-  scroll(delta: number): void {
-    const resolution =
-      this.getView()?.getResolution?.() ?? this.viewState.resolution ?? 1;
-
-    this.setViewState({
-      resolution: Math.max(resolution * (1 + 0.1 * delta), 0.000001),
-    });
-  }
-
-  /**
    * The rotation of the view in degrees on top of the orientation of the
    * slide, as the view state gives it. It is 0 until the view is turned.
    */

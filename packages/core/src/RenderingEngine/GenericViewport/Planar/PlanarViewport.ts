@@ -119,6 +119,7 @@ import {
   isSameRenderPlanLayer,
 } from './planarRenderPlan';
 import PlanarViewReferenceController from './PlanarViewReferenceController';
+import { getPlanarReferenceForViewableCheck } from './planarViewReference';
 import { applyCanvasSharpeningSmoothing } from './planarCanvasSharpeningSmoothing';
 import { createSharpeningSmoothingRenderPasses } from '../../renderPasses/createSharpeningSmoothingRenderPasses';
 export type { PlanarReferenceContext } from './PlanarViewReferenceController';
@@ -474,6 +475,7 @@ class PlanarViewport extends GenericViewport<
         canDrawAcquiredFrames: (dataId) => this.canDrawAcquiredFrames(dataId),
         drawsFinerImageAtRest: () => this.prefersFinerImageAtRest(),
         onStackImageLoadError: (failure) => this.onStackImageLoadError(failure),
+        namesVolumeImageBySliceIndex: () => this.namesVolumeImageBySliceIndex(),
         refreshRenderPlan: (dataId) => this.updateRenderPlan(dataId),
       },
       renderPath: {
@@ -1634,6 +1636,16 @@ class PlanarViewport extends GenericViewport<
   ): void {}
 
   /**
+   * A hook of the legacy adapter, which answers true: its STACK_NEW_IMAGE of
+   * a volume names `imageIds[imageIdIndex]`, as it did before. A next
+   * viewport names the image of the slice on display, which is what
+   * `getCurrentImageId()` answers.
+   */
+  protected namesVolumeImageBySliceIndex(): boolean {
+    return false;
+  }
+
+  /**
    * A hook of the legacy adapter, which puts its `aspectRatio` and
    * `displayArea` options into the view state here. It runs once the source
    * display set is mounted, and in a reset with the flags of that reset, each
@@ -1928,6 +1940,11 @@ class PlanarViewport extends GenericViewport<
    * `asOverlay` takes an image that is not in the stack but lies on the image
    * shown as viewable.
    *
+   * A reference over a range of slices (`multiSliceReference`) is viewable on
+   * every slice of the range, in stack mode and in volume mode in the
+   * orientation of the images. Its plane restriction, which pins its first
+   * slice, is not asked then.
+   *
    * @param viewRef - View reference to test.
    * @param options - Optional compatibility flags for the spatial check.
    * @returns `true` when the reference can be viewed in this viewport state.
@@ -1936,7 +1953,10 @@ class PlanarViewport extends GenericViewport<
     viewRef: ViewReference,
     options: ReferenceCompatibleOptions = {}
   ): boolean {
-    return super.isReferenceViewable(viewRef, options);
+    return super.isReferenceViewable(
+      getPlanarReferenceForViewableCheck(viewRef),
+      options
+    );
   }
 
   /**

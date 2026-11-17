@@ -9,7 +9,7 @@ import {
 } from '../../core/test/utils/planarSeriesBothModes';
 
 const { Enums, utilities, viewportProjection } = cornerstone3D;
-const { ViewportType, OrientationAxis } = Enums;
+const { ViewportType, OrientationAxis, Events } = Enums;
 const {
   PanTool,
   ZoomTool,
@@ -387,6 +387,91 @@ describe('Zoom and pan tools on a direct next planar viewport -- ', () => {
       expect(zoomPanOf(next).zoom).toBeGreaterThan(1.1);
       expect(shown[0]).toBeCloseTo(mouse[0], 0);
       expect(shown[1]).toBeCloseTo(mouse[1], 0);
+    }, 15000);
+
+    for (const [backend, options, renderModes] of [
+      ['GPU', {}, ['vtkImage', 'vtkSampledSlice']],
+      ['CPU', { renderBackend: 'cpu' }, ['cpuImage', 'cpuVolume']],
+    ]) {
+      it(`changes the view once for one wheel step at the mouse in ${mode} mode on the ${backend}, and the point under the mouse stays`, async function () {
+        await show(next, series, 2, options);
+        activateZoom(toolGroup);
+
+        const mouse = [260, 110];
+        const underMouse = next.canvasToWorld(mouse);
+        let cameraEvents = 0;
+
+        next.element.addEventListener(Events.CAMERA_MODIFIED, () => {
+          cameraEvents++;
+        });
+
+        await wheel(next.element, mouse, 1);
+
+        const shown = next.worldToCanvas(underMouse);
+
+        expect(next.getCurrentMode()).toBe(mode);
+        expect(renderModes).toContain(next.getRenderPlan()[0].renderMode);
+        expect(cameraEvents).toBe(1);
+        expect(zoomPanOf(next).zoom).toBeGreaterThan(1.01);
+        expect(shown[0]).toBeCloseTo(mouse[0], 3);
+        expect(shown[1]).toBeCloseTo(mouse[1], 3);
+      }, 15000);
+    }
+
+    it(`moves the picture with the mouse of the pan tool after a zoom at the mouse of the zoom tool in ${mode} mode`, async function () {
+      await show(next, series, 2);
+      toolGroup.setToolActive(ZoomTool.toolName, {
+        bindings: [{ mouseButton: MouseBindings.Wheel }],
+      });
+      activatePan(toolGroup);
+
+      await wheel(next.element, [260, 110], 3);
+
+      const from = [150, 120];
+      const to = [185, 95];
+      const world = next.canvasToWorld(from);
+
+      await drag(next.element, from, to);
+
+      const moved = next.worldToCanvas(world);
+
+      expect(zoomPanOf(next).zoom).toBeGreaterThan(1.1);
+      expect(moved[0]).toBeCloseTo(to[0], 0);
+      expect(moved[1]).toBeCloseTo(to[1], 0);
+    }, 15000);
+
+    it(`keeps a stretch of the view through the wheel, a drag and the limits of the zoom tool in ${mode} mode`, async function () {
+      await show(next, series, 2);
+      next.setViewState({ scale: [1.5, 1] });
+      activateZoom(toolGroup);
+
+      const mouse = [260, 110];
+      const underMouse = next.canvasToWorld(mouse);
+      const scaleOf = () => viewportProjection.getPresentation(next).scale;
+
+      await wheel(next.element, mouse, 2);
+
+      const shown = next.worldToCanvas(underMouse);
+
+      expect(next.getCurrentMode()).toBe(mode);
+      expect(scaleOf()[1]).toBeGreaterThan(1.01);
+      expect(scaleOf()[0] / scaleOf()[1]).toBeCloseTo(1.5, 6);
+      expect(shown[0]).toBeCloseTo(mouse[0], 3);
+      expect(shown[1]).toBeCloseTo(mouse[1], 3);
+
+      await drag(next.element, [200, 150], [200, 160]);
+
+      expect(scaleOf()[0] / scaleOf()[1]).toBeCloseTo(1.5, 6);
+
+      await wheel(next.element, CENTRE, 20);
+
+      expect(scaleOf()[0]).toBeCloseTo(3, 4);
+      expect(scaleOf()[1]).toBeCloseTo(2, 4);
+
+      await wheel(next.element, CENTRE, 40, false);
+
+      expect(scaleOf()[0]).toBeCloseTo(0.75, 4);
+      expect(scaleOf()[1]).toBeCloseTo(0.5, 4);
     }, 15000);
 
     it(`moves the picture with the mouse of the pan tool in ${mode} mode, also after a zoom and a rotation`, async function () {

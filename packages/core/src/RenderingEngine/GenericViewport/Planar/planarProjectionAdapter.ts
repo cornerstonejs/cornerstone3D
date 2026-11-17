@@ -72,8 +72,8 @@ export const planarProjectionAdapter: ViewportProjectionAdapter<
   withPresentation: (
     snapshot,
     presentation: Partial<PlanarProjectionAdapterPresentation>,
-    _options?: ProjectionWriteOptions
-  ) => withPlanarProjectionPresentation(snapshot, presentation),
+    options?: ProjectionWriteOptions
+  ) => withPlanarProjectionPresentation(snapshot, presentation, options),
   applyToRenderer: (snapshot, target) => {
     if (!isVtkRenderer(target)) {
       return;

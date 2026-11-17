@@ -461,9 +461,7 @@ export default class ONNXSegmentationController {
     desiredImage.imageId =
       viewport.getCurrentImageId?.() || viewport.getViewReferenceId();
     if (desiredImage.imageId.startsWith('volumeId:')) {
-      desiredImage.sampleImageId = viewport.getImageIds(
-        viewport.getVolumeId()
-      )[0];
+      desiredImage.sampleImageId = this.getVolumeSampleImageId(viewport);
     } else {
       desiredImage.sampleImageId = desiredImage.imageId;
     }
@@ -685,6 +683,19 @@ export default class ONNXSegmentationController {
   }
 
   /**
+   * The first image id of the volume that the viewport shows: the sample
+   * image for a view of a volume that names no single image. The image ids
+   * come from the volume of the cache, so `getImageIds` gets no argument,
+   * which a next viewport does not take. A viewport whose volume is not in
+   * the cache gives its own first image id.
+   */
+  protected getVolumeSampleImageId(viewport): string | undefined {
+    const volume = cache.getVolume(viewport.getVolumeId?.());
+
+    return volume?.imageIds?.[0] ?? viewport.getImageIds()[0];
+  }
+
+  /**
    * A listener for viewport being rendered that tried loading/encoding the
    * new image if it is different from the previous image.  Will return before
    * the image is encoded.  Can be called without binding as it is already
@@ -706,9 +717,7 @@ export default class ONNXSegmentationController {
       return;
     }
     if (desiredImage.imageId.startsWith('volumeId:')) {
-      desiredImage.sampleImageId = viewport.getImageIds(
-        viewport.getVolumeId()
-      )[0];
+      desiredImage.sampleImageId = this.getVolumeSampleImageId(viewport);
     } else {
       desiredImage.sampleImageId = desiredImage.imageId;
     }

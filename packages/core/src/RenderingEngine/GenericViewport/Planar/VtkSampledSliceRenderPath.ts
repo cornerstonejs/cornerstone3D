@@ -177,6 +177,7 @@ export class VtkSampledSliceRenderPath
       imageIds: rendering.imageIds,
       imageIdIndex: rendering.currentImageIdIndex,
       maxImageIdIndex: rendering.maxImageIdIndex,
+      rendering,
     });
 
     return {
@@ -366,6 +367,7 @@ export class VtkSampledSliceRenderPath
         imageIds: rendering.imageIds,
         imageIdIndex: rendering.currentImageIdIndex,
         maxImageIdIndex: rendering.maxImageIdIndex,
+        rendering,
       });
     }
   }

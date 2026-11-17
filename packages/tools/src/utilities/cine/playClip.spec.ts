@@ -227,6 +227,22 @@ describe('playClip on next viewports', () => {
     expect(scrollMock).toHaveBeenCalled();
   });
 
+  it('plays a next viewport that has no getNumberOfSlices as one step, and does not throw', () => {
+    const viewport = makeNextViewport({ id: 'ecg', mode: 'ecg' });
+
+    delete viewport.getNumberOfSlices;
+    viewport.getSliceIndex = jest.fn(() => 0);
+
+    const element = mountViewport(viewport);
+
+    expect(() => {
+      playClip(element, { framesPerSecond: 10, loop: true });
+      jest.advanceTimersByTime(300);
+      stopClip(element);
+    }).not.toThrow();
+    expect(scrollMock).not.toHaveBeenCalled();
+  });
+
   it('keeps playing the time points of a legacy volume viewport', () => {
     const volume = makeDynamicVolume('dynamic-volume');
     const viewport = {

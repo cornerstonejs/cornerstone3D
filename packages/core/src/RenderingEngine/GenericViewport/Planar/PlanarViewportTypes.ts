@@ -361,6 +361,12 @@ export interface PlanarViewportRenderContext extends BaseViewportRenderContext {
     /** Called when the load of an image of a stack fails for good. */
     onStackImageLoadError?(failure: PlanarStackImageLoadFailure): void;
     /**
+     * Whether STACK_NEW_IMAGE of a volume names `imageIds[imageIdIndex]`, as
+     * the legacy adapter fires it. Without it the event names the image of
+     * the slice on display.
+     */
+    namesVolumeImageBySliceIndex?(): boolean;
+    /**
      * Reads the render plan entry of `dataId` again after its render path
      * changed what the entry reads (`slabTooLarge`), and fires
      * `RENDER_PLAN_CHANGED` when it changed.

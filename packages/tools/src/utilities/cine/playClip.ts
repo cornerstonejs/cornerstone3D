@@ -587,7 +587,8 @@ function _createDynamicVolumeViewportCinePlayContext(
  * volume-mode generic viewports advance through frames/slices via the semantic
  * getNumberOfSlices/getSliceIndex API and csUtils.scroll. Frame-time-vector
  * playback applies only in stack mode (acquired multi-frame); volume reformat
- * cine uses a fixed frame rate.
+ * cine uses a fixed frame rate. A viewport that has no `getNumberOfSlices`,
+ * as a next ECG viewport, has one step, so a clip on it scrolls nothing.
  */
 function _createGenericViewportCinePlayContext(
   viewport,
@@ -595,7 +596,7 @@ function _createGenericViewportCinePlayContext(
 ): CINETypes.CinePlayContext {
   return {
     get numScrollSteps(): number {
-      return viewport.getNumberOfSlices();
+      return viewport.getNumberOfSlices?.() ?? 1;
     },
     get currentStepIndex(): number {
       return viewport.getSliceIndex();

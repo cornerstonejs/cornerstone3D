@@ -142,6 +142,20 @@ class WSIViewportLegacyAdapter extends WSIViewport {
     return undefined;
   }
 
+  /**
+   * Zooms as the legacy viewport does: each step scales the resolution by
+   * 1.1, so a positive delta zooms out and a negative one zooms in. The
+   * centre stays. A next whole slide viewport has no slices and no scroll.
+   */
+  scroll(delta: number): void {
+    const resolution =
+      this.getView()?.getResolution?.() ?? this.viewState.resolution ?? 1;
+
+    this.setViewState({
+      resolution: Math.max(resolution * (1 + 0.1 * delta), 0.000001),
+    });
+  }
+
   /** Returns the canvas of the viewport element. */
   getCanvas(): HTMLCanvasElement {
     return this.canvas;

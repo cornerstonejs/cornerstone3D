@@ -41,6 +41,9 @@ import type {
 /** The tolerance of `VolumeViewport.isInAcquisitionPlane`. */
 const PARALLEL_COSINE = 0.99;
 
+/** The image ids of a volume in the reverse order, one list for each. */
+const reversedImageIds = new WeakMap<string[], string[]>();
+
 export type PlanarReferenceContext = {
   dataId: string;
   data: LoadedData<PlanarPayload>;
@@ -284,7 +287,7 @@ class PlanarViewReferenceController {
       dataId: referenceContext.dataId,
       dataIds: [referenceContext.data.id],
       frameOfReferenceUID: referenceContext.frameOfReferenceUID,
-      imageIds: this.getImageIdsForReferenceContext(referenceContext),
+      imageIds: this.getImageIdsBySliceIndex(referenceContext),
       currentImageIdIndex: this.getReferenceImageIdIndex(referenceContext),
       volumeId,
       volumeIds: volumeId ? [volumeId] : undefined,
@@ -292,6 +295,64 @@ class PlanarViewReferenceController {
       viewPlaneNormal: resolvedView?.viewPlaneNormal,
       ...getDimensionGroupReferenceContext(referenceContext.data.imageVolume),
     };
+  }
+
+  /**
+   * The image ids that a reference is checked against, by slice index: the
+   * check reads `imageIds[currentImageIdIndex]` as the image on display. The
+   * image ids of a stack are in that order. The slices of a view of a volume
+   * along its images can run against the order of the image ids, and the
+   * image ids are then given in the reverse order. A view that cuts across
+   * the images has no image for a slice, and gets the image ids as they are.
+   */
+  private getImageIdsBySliceIndex(
+    referenceContext: PlanarReferenceContext
+  ): string[] {
+    const imageIds = this.getImageIdsForReferenceContext(referenceContext);
+    const { data, rendering } = referenceContext;
+    const direction = data.imageVolume?.direction;
+
+    if (
+      !direction ||
+      imageIds.length < 2 ||
+      isImageRenderMode(rendering.renderMode)
+    ) {
+      return imageIds;
+    }
+
+    const [first, last] = [0, imageIds.length - 1].map((sliceIndex) =>
+      resolvePlanarViewportView({
+        viewState: this.host.getViewState(),
+        data,
+        rendering,
+        renderContext: this.host.getRenderContext(),
+        sliceIndex,
+      })?.getSliceBasis()
+    );
+    const scanAxis = direction.slice(6, 9) as Point3;
+
+    if (
+      !first ||
+      !last ||
+      Math.abs(vec3.dot(first.viewPlaneNormal, scanAxis)) < PARALLEL_COSINE
+    ) {
+      return imageIds;
+    }
+
+    const alongScanAxis = vec3.dot(
+      vec3.sub(vec3.create(), last.sliceCenterWorld, first.sliceCenterWorld),
+      scanAxis
+    );
+
+    if (alongScanAxis >= 0) {
+      return imageIds;
+    }
+
+    if (!reversedImageIds.has(imageIds)) {
+      reversedImageIds.set(imageIds, [...imageIds].reverse());
+    }
+
+    return reversedImageIds.get(imageIds);
   }
 
   /**

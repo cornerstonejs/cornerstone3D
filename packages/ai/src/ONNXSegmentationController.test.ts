@@ -1,3 +1,4 @@
+import { cache } from '@cornerstonejs/core';
 import ONNXSegmentationController from './ONNXSegmentationController';
 
 jest.mock('onnxruntime-web/webgpu', () => ({
@@ -88,5 +89,82 @@ describe('ONNXSegmentationController auto segment mode', () => {
     controller.initViewport(viewportWithoutSegmentation);
 
     expect(internals.randomPoints).toEqual([]);
+  });
+});
+
+/**
+ * A view of a volume that shows no single image has a view reference id that
+ * starts with `volumeId:`. The controller then takes the first image of the
+ * volume as its sample image. A next planar viewport takes no argument in
+ * `getImageIds`, so the image ids come from the volume of the cache.
+ */
+describe('ONNXSegmentationController sample image of a volume view', () => {
+  const volumeImageIds = ['volume:0', 'volume:1'];
+  let controller: ONNXSegmentationController;
+  let internals: {
+    viewport: unknown;
+    desiredImage: { imageId?: string; sampleImageId?: string };
+    viewportRenderedListener: (event?: unknown) => void;
+  };
+  let getImageIds: jest.Mock;
+  let viewport: Record<string, unknown>;
+
+  beforeEach(() => {
+    controller = new ONNXSegmentationController({ autoSegmentMode: true });
+    controller.enabled = true;
+    internals = controller as unknown as typeof internals;
+    getImageIds = jest.fn(() => ['source:0', 'source:1']);
+    viewport = {
+      id: 'volume-view',
+      element: document.createElement('div'),
+      getCurrentImageId: () => undefined,
+      getViewReferenceId: () =>
+        'volumeId:volume-1?sliceIndex=3&viewPlaneNormal=1.000,0.000,0.000',
+      getCurrentImageIdIndex: () => 3,
+      getVolumeId: () => 'volume-1',
+      getImageIds,
+    };
+    jest.spyOn(controller, 'tryLoad').mockImplementation(() => undefined);
+    jest
+      .spyOn(HTMLCanvasElement.prototype, 'getContext')
+      .mockReturnValue({ clearRect: jest.fn() } as never);
+  });
+
+  afterEach(() => {
+    if (internals.viewport) {
+      controller.disconnectViewport(internals.viewport);
+    }
+    jest.restoreAllMocks();
+  });
+
+  it('takes the first image of the volume of the cache, and gives getImageIds no argument', () => {
+    const getVolume = jest
+      .spyOn(cache, 'getVolume')
+      .mockReturnValue({ imageIds: volumeImageIds } as never);
+
+    controller.initViewport(viewport);
+
+    expect(internals.desiredImage.sampleImageId).toBe('volume:0');
+
+    internals.desiredImage.sampleImageId = undefined;
+    internals.viewportRenderedListener();
+
+    expect(internals.desiredImage.sampleImageId).toBe('volume:0');
+    expect(getVolume).toHaveBeenCalledWith('volume-1');
+    expect(getImageIds.mock.calls.every((args) => args.length === 0)).toBe(
+      true
+    );
+  });
+
+  it('takes the first image id of the viewport when the volume is not in the cache', () => {
+    jest.spyOn(cache, 'getVolume').mockReturnValue(undefined as never);
+
+    controller.initViewport(viewport);
+    internals.viewportRenderedListener();
+
+    expect(internals.desiredImage.sampleImageId).toBe('source:0');
+    expect(getImageIds.mock.calls.every((args) => args.length === 0)).toBe(
+      true
+    );
   });
 });
