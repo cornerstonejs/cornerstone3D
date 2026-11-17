@@ -184,10 +184,32 @@ function extractSliceThicknessFromDataset(dataSet: DataSet) {
   return sliceThickness;
 }
 
+/**
+ * Extract the spacingBetweenSlices information. If exists, extracts this
+ * information from Pixel Measures Sequence
+ * @param {*} dataSet
+ * @returns
+ */
+function extractSpacingBetweenSlicesFromDataset(dataSet: DataSet) {
+  let spacingBetweenSlices: number | undefined;
+
+  if (dataSet.elements.x00180088) {
+    spacingBetweenSlices = dataSet.floatString('x00180088');
+  } else if (
+    dataSet.elements.x00289110?.items?.[0]?.dataSet?.elements.x00180088
+  ) {
+    spacingBetweenSlices =
+      dataSet.elements.x00289110.items[0].dataSet.floatString('x00180088');
+  }
+
+  return spacingBetweenSlices;
+}
+
 export {
   extractOrientationFromDataset,
   extractPositionFromDataset,
   extractSliceThicknessFromDataset,
+  extractSpacingBetweenSlicesFromDataset,
   extractSpacingFromDataset,
   getImageTypeSubItemFromDataset,
 };
