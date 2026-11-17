@@ -82,7 +82,12 @@ function deselectAnnotation(annotationUID?: string): void {
     if (selectedAnnotationUIDs.delete(annotationUID)) {
       detail.removed.push(annotationUID);
       const annotation = getAnnotation(annotationUID);
-      annotation.isSelected = false;
+
+      // The UID can outlive its annotation, for example an ArrowAnnotate
+      // annotation that was cancelled while selected.
+      if (annotation) {
+        annotation.isSelected = false;
+      }
     }
   } else {
     clearSelectionSet(selectedAnnotationUIDs, detail);
