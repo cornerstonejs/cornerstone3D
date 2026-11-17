@@ -14,5 +14,6 @@ export {
   isNumber,
   DEFAULT_EPSILON,
   areNumbersEqualWithTolerance,
+  isSameScaleRatio,
 } from './math';
 export type { Logger } from './logging';
