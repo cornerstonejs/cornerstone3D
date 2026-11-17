@@ -1,9 +1,10 @@
 import { BaseTool } from './base';
-import { getEnabledElement, VolumeViewport } from '@cornerstonejs/core';
-import { type Types, utilities } from '@cornerstonejs/core';
+import { Enums, getEnabledElement, VolumeViewport } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 import { getPointInLineOfSightWithCriteria } from '../utilities/planar';
 import type { PublicToolProps, ToolProps } from '../types';
 import { getToolGroupForViewport } from '../store/ToolGroupManager';
+import { navigatePlanarViewportToPoint } from '../utilities/genericViewportToolHelpers';
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
 
 const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
@@ -45,13 +46,14 @@ class MIPJumpToClickTool extends BaseTool {
 
     // 1. Getting the enabled element
     const enabledElement = getEnabledElement(element);
+
     const { viewport, renderingEngine } = enabledElement as {
-      viewport: Types.IVolumeViewport;
+      viewport: Types.IViewport & { getVolumeId?: () => string };
       renderingEngine: Types.IRenderingEngine;
     };
 
     // 2. Getting the target volume that is clicked on
-    const volumeId = viewport.getVolumeId();
+    const volumeId = viewport.getVolumeId?.();
 
     if (!volumeId) {
       throw new Error(
@@ -70,7 +72,7 @@ class MIPJumpToClickTool extends BaseTool {
 
     // 4. Search for the brightest point location in the line of sight
     const brightestPoint = getPointInLineOfSightWithCriteria(
-      viewport as Types.IVolumeViewport,
+      viewport,
       currentPoints.world,
       volumeId,
       maxFn
@@ -99,9 +101,14 @@ class MIPJumpToClickTool extends BaseTool {
       // that don't belong to the renderingEngine of the source clicked viewport
       if (viewport instanceof VolumeViewport) {
         viewport.jumpToWorld(brightestPoint);
+      } else if (
+        viewport.type === Enums.ViewportType.PLANAR_NEXT &&
+        navigatePlanarViewportToPoint(viewport, brightestPoint)
+      ) {
+        viewport.render();
       } else {
         cs3dLogger.warn(
-          'Cannot jump to specified world coordinates for a viewport that is not a VolumeViewport'
+          'Cannot jump to specified world coordinates for a viewport that is neither a VolumeViewport nor a native planar viewport'
         );
       }
     });
