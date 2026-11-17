@@ -278,7 +278,52 @@ type VolumeScrollOutOfBoundsEventDetail = {
 };
 
 /**
+ * NEW_IMAGE Event's data. A viewport fires the event when it shows another
+ * image: a planar viewport for another image of a stack and for another slice
+ * of a volume, a video viewport for another frame. The detail has the same
+ * keys in every mode.
+ */
+interface NewImageEventDetail {
+  /** unique id for the viewport */
+  viewportId: string;
+  /** unique id for the renderingEngine */
+  renderingEngineId: string;
+  /**
+   * The index of what is on display, which is what
+   * `viewport.getCurrentImageIdIndex()` gives. In stack mode it is the index
+   * of the image in the stack. In volume mode it is the slice index of the
+   * view, in any orientation: it counts along the view, which can run against
+   * the order of the image ids, so it is not the place of `imageId` in the
+   * image ids. On a video it is the 0-based index of the frame.
+   */
+  imageIdIndex: number;
+  /**
+   * How many there are along the view, which is what
+   * `viewport.getNumberOfSlices()` gives. In stack mode it is the number of
+   * images of the stack. In volume mode it is the number of slices of the
+   * volume along the view. On a video it is the number of frames.
+   */
+  numberOfSlices: number;
+  /**
+   * The image on display, which is what `viewport.getCurrentImageId()` gives.
+   * In stack mode it is the image id of the image. In volume mode it is the
+   * image id of the slice, and undefined for a cut that shows no single
+   * image, as an oblique cut or a reformat. On a video it is the image id of
+   * the frame.
+   */
+  imageId?: string;
+  /**
+   * The image object, when the viewport shows one image that is in the cache:
+   * the image of a stack. Undefined in volume mode and on a video.
+   */
+  image?: IImage;
+}
+
+/**
  * STACK_NEW_IMAGE Event's data
+ *
+ * Fired by the legacy adapters only, and removed in 6.0. Use
+ * `NewImageEventDetail` of NEW_IMAGE.
  */
 interface StackNewImageEventDetail {
   /** the new image set on the stack viewport */
@@ -295,6 +340,9 @@ interface StackNewImageEventDetail {
 
 /**
  * VOLUME_NEW_IMAGE Event's data
+ *
+ * Fired by the legacy adapters only, and removed in 6.0. Use
+ * `NewImageEventDetail` of NEW_IMAGE.
  */
 interface VolumeNewImageEventDetail {
   /** image index */
@@ -446,12 +494,21 @@ type VolumeCacheVolumeRemovedEvent =
   CustomEventType<VolumeCacheVolumeRemovedEventDetail>;
 
 /**
+ * NEW_IMAGE
+ */
+type NewImageEvent = CustomEventType<NewImageEventDetail>;
+
+/**
  * START_NEW_IMAGE
+ *
+ * Fired by the legacy adapters only, and removed in 6.0. Use `NewImageEvent`.
  */
 type StackNewImageEvent = CustomEventType<StackNewImageEventDetail>;
 
 /**
  * VOLUME_NEW_IMAGE
+ *
+ * Fired by the legacy adapters only, and removed in 6.0. Use `NewImageEvent`.
  */
 type VolumeNewImageEvent = CustomEventType<VolumeNewImageEventDetail>;
 
@@ -536,6 +593,8 @@ export type {
   VolumeCacheVolumeAddedEventDetail,
   VolumeCacheVolumeRemovedEvent,
   VolumeCacheVolumeRemovedEventDetail,
+  NewImageEvent,
+  NewImageEventDetail,
   StackNewImageEvent,
   StackNewImageEventDetail,
   PreStackNewImageEvent,

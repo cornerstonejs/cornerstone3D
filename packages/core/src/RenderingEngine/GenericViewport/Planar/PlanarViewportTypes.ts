@@ -361,17 +361,10 @@ export interface PlanarViewportRenderContext extends BaseViewportRenderContext {
     /** Called when the load of an image of a stack fails for good. */
     onStackImageLoadError?(failure: PlanarStackImageLoadFailure): void;
     /**
-     * Whether STACK_NEW_IMAGE of a volume names `imageIds[imageIdIndex]`, as
-     * the legacy adapter fires it. Without it the event names the image of
-     * the slice on display.
-     */
-    namesVolumeImageBySliceIndex?(): boolean;
-    /**
-     * Whether a volume fires its new image events as the legacy adapter fires
-     * them: once as it is attached, before its first slice is placed, and
-     * then for each change of the slice index of any rendering. Without it a
-     * volume fires them for the source only, once when the first slice of a
-     * mount is placed and then for each change of its slice index.
+     * Whether a volume also fires STACK_NEW_IMAGE and VOLUME_NEW_IMAGE, as
+     * the legacy adapter fires them: once as it is attached, before its first
+     * slice is placed, and then for each change of the slice index of any
+     * rendering. Without it a volume fires NEW_IMAGE only.
      */
     firesLegacyVolumeNewImageEvents?(): boolean;
     /**

@@ -392,52 +392,24 @@ describe('synchronizers', () => {
   // 3. ImageSlice synchronizer
   // -------------------------------------------------------------------------
   describe('ImageSlice synchronizer', () => {
-    // BUG (observed / root-cause traced in source): imageSliceSyncCallback
-    // (packages/tools/src/synchronizers/callbacks/imageSliceSyncCallback.ts)
-    // calls `areViewportsCoplanar(sViewport, tViewport)`
-    // (packages/tools/src/synchronizers/callbacks/areViewportsCoplanar.ts),
-    // which calls `viewport.getCamera()` on both viewports.
-    // GenericViewport/PlanarViewport
-    // (packages/core/src/RenderingEngine/GenericViewport/Planar/PlanarViewport.ts)
-    // has no public `getCamera()` method (only a protected
-    // `getCameraForEvent()`), so this throws
-    // "TypeError: sViewport.getCamera is not a function" inside the callback.
-    // This is the SAME root-cause class as the CircleROITool /
-    // getEllipseWorldCoordinates bug documented in
-    // annotationToolsMatrix.browser.test.ts, but the failure mode here is
-    // silent rather than an uncaught error: imageSliceSyncCallback is an
-    // `async function`, so the synchronous throw becomes a REJECTED Promise
-    // instead of a thrown exception; `Synchronizer.fireEvent`
-    // (packages/tools/src/store/SynchronizerManager/Synchronizer.ts) collects
-    // that promise and awaits it via `Promise.allSettled`, which fully
-    // swallows the rejection. STACK_NEW_IMAGE itself DOES fire correctly on
-    // the GenericViewport element (planarImageEvents.ts) -- the event wiring
-    // this synchronizer depends on is fine; only its own callback is broken
-    // for this viewport family.
-    test.fails(
-      'does NOT follow the source slice change (silently swallowed callback error)',
-      async () => {
-        const { a, b } = await setupPair('slice');
-        const syncId = trackSynchronizer(uniqueId('image-slice-sync'));
-        const sync = createImageSliceSynchronizer(syncId);
-        sync.add(toViewportId(a));
-        sync.add(toViewportId(b));
+    test('follows the source slice change', async () => {
+      const { a, b } = await setupPair('slice');
+      const syncId = trackSynchronizer(uniqueId('image-slice-sync'));
+      const sync = createImageSliceSynchronizer(syncId);
+      sync.add(toViewportId(a));
+      sync.add(toViewportId(b));
 
-        expect(a.viewport.getSliceIndex()).toBe(0);
-        expect(b.viewport.getSliceIndex()).toBe(0);
+      expect(a.viewport.getSliceIndex()).toBe(0);
+      expect(b.viewport.getSliceIndex()).toBe(0);
 
-        const stackNewImageOnA = waitForEventOn(a.element, Events.STACK_NEW_IMAGE);
-        await a.viewport.setImageIdIndex(3);
-        await stackNewImageOnA;
+      const newImageOnA = waitForEventOn(a.element, Events.NEW_IMAGE);
+      const newImageOnB = waitForEventOn(b.element, Events.NEW_IMAGE);
+      await a.viewport.setImageIdIndex(3);
+      await newImageOnA;
+      await newImageOnB;
 
-        // No event to wait on for a definitive negative result (the failure
-        // is a swallowed promise rejection, not an observable event) -- give
-        // the async callback a bounded window to (not) run.
-        await wait(NO_PROPAGATION_WAIT_MS);
-
-        expect(b.viewport.getSliceIndex()).toBe(3);
-      }
-    );
+      expect(b.viewport.getSliceIndex()).toBe(3);
+    });
   });
 
   // -------------------------------------------------------------------------

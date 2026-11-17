@@ -151,9 +151,11 @@ describe('Next video viewport', () => {
     ).toBe(false);
   });
 
-  it('fires STACK_NEW_IMAGE for each new frame while it plays', async () => {
+  it('fires NEW_IMAGE for each new frame while it plays, and no STACK_NEW_IMAGE', async () => {
+    const newImage = jest.fn();
     const stackNewImage = jest.fn();
 
+    element.addEventListener(Enums.Events.NEW_IMAGE, newImage);
     element.addEventListener(Enums.Events.STACK_NEW_IMAGE, stackNewImage);
 
     await viewport.play();
@@ -162,26 +164,40 @@ describe('Next video viewport', () => {
     await nextAnimationFrame();
     viewport.pause();
 
-    expect(stackNewImage).toHaveBeenCalled();
-    expect(stackNewImage.mock.calls.at(-1)[0].detail).toMatchObject({
+    expect(newImage).toHaveBeenCalled();
+    expect(newImage.mock.calls.at(-1)[0].detail).toEqual({
       viewportId: 'video',
       renderingEngineId: 'renderingEngine',
       imageIdIndex: 15,
-      imageId: viewport.getCurrentImageId(15),
-      time: 1.5,
-      duration: FRAMES / FPS,
+      numberOfSlices: FRAMES,
+      imageId: viewport.getCurrentImageId(),
+      image: undefined,
     });
+    expect(viewport.getCurrentImageIdIndex()).toBe(15);
+    expect(viewport.getNumberOfSlices()).toBe(FRAMES);
+    expect(typeof viewport.getCurrentImageId()).toBe('string');
+    expect(stackNewImage).not.toHaveBeenCalled();
   });
 
-  it('fires STACK_NEW_IMAGE after a seek', () => {
+  it('fires NEW_IMAGE once after a seek, and no STACK_NEW_IMAGE', () => {
+    const newImage = jest.fn();
     const stackNewImage = jest.fn();
 
+    element.addEventListener(Enums.Events.NEW_IMAGE, newImage);
     element.addEventListener(Enums.Events.STACK_NEW_IMAGE, stackNewImage);
     video.currentTime = 2;
     video.dispatchEvent(new Event('seeked'));
 
-    expect(stackNewImage).toHaveBeenCalledTimes(1);
-    expect(stackNewImage.mock.calls[0][0].detail.imageIdIndex).toBe(20);
+    expect(newImage).toHaveBeenCalledTimes(1);
+    expect(newImage.mock.calls[0][0].detail).toEqual({
+      viewportId: 'video',
+      renderingEngineId: 'renderingEngine',
+      imageIdIndex: 20,
+      numberOfSlices: FRAMES,
+      imageId: viewport.getCurrentImageId(),
+      image: undefined,
+    });
+    expect(stackNewImage).not.toHaveBeenCalled();
   });
 
   it('opens on the frame number of the display set options', async () => {

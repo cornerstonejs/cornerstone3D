@@ -453,7 +453,7 @@ describe('PlanarLegacyCompatibilityController', () => {
     });
   });
 
-  describe('STACK_NEW_IMAGE listener', () => {
+  describe('NEW_IMAGE listener', () => {
     it('applies per-image default properties when the event fires', () => {
       const { host, element } = createHost({
         getActiveDataId: jest.fn(() => 'data-1'),
@@ -468,7 +468,7 @@ describe('PlanarLegacyCompatibilityController', () => {
       host.setDataPresentationState.mockClear();
 
       element.dispatchEvent(
-        new CustomEvent(Events.STACK_NEW_IMAGE, {
+        new CustomEvent(Events.NEW_IMAGE, {
           detail: { imageId: 'event-image' },
         })
       );
@@ -490,7 +490,7 @@ describe('PlanarLegacyCompatibilityController', () => {
       host.setDataPresentationState.mockClear();
 
       element.dispatchEvent(
-        new CustomEvent(Events.STACK_NEW_IMAGE, {
+        new CustomEvent(Events.NEW_IMAGE, {
           detail: { imageId: 'image-x' },
         })
       );

@@ -11,9 +11,10 @@ import type {
   ViewPresentationSelector,
 } from '../../../types';
 import type { Point2 } from '../../../types';
-import { VideoEnums } from '../../../enums';
+import { Events, VideoEnums } from '../../../enums';
 import type ViewportInputOptions from '../../../types/ViewportInputOptions';
 import { deepClone } from '../../../utilities/deepClone';
+import triggerEvent from '../../../utilities/triggerEvent';
 import FrameRange from '../../../utilities/FrameRange';
 import { coreLog } from '../../../utilities/logger';
 import { getVideoImageDataMetadata } from '../../../utilities/VideoUtilities';
@@ -518,6 +519,34 @@ class VideoViewportLegacyAdapter extends VideoViewport {
   /** The display area of the options, as on the legacy viewport. */
   getDisplayArea(): DisplayArea | undefined {
     return this.options?.displayArea as DisplayArea | undefined;
+  }
+
+  /**
+   * Fires NEW_IMAGE for the frame on display as the next viewport does, and
+   * then STACK_NEW_IMAGE as the legacy video viewport fired it for a frame:
+   * the image id and the 0-based index of the frame, with the time and the
+   * duration of the video in seconds.
+   */
+  protected override triggerFrameEvents(): void {
+    super.triggerFrameEvents();
+
+    const element = this.getVideoElement();
+
+    if (this.isDestroyed || !element) {
+      return;
+    }
+
+    const imageIdIndex = this.getCurrentImageIdIndex();
+
+    triggerEvent(this.element, Events.STACK_NEW_IMAGE, {
+      element: this.element,
+      imageId: this.getCurrentImageId(imageIdIndex),
+      imageIdIndex,
+      viewportId: this.id,
+      renderingEngineId: this.renderingEngineId,
+      time: element.currentTime,
+      duration: element.duration,
+    });
   }
 }
 

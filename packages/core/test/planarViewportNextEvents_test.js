@@ -660,6 +660,7 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
   describe('the events of a slice change on a direct next viewport', () => {
     const sliceEvents = [
       Events.CAMERA_MODIFIED,
+      Events.NEW_IMAGE,
       Events.STACK_NEW_IMAGE,
       Events.VOLUME_NEW_IMAGE,
       Events.PRE_STACK_NEW_IMAGE,
@@ -697,7 +698,7 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
       );
     }
 
-    it('fires CAMERA_MODIFIED and STACK_NEW_IMAGE in stack mode, and none of the legacy stack events', async function () {
+    it('fires CAMERA_MODIFIED and NEW_IMAGE in stack mode, and none of the legacy stack events', async function () {
       const series = await createSeries();
       const viewport = createNextViewport(renderingEngine, 'next');
 
@@ -706,20 +707,21 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
       const events = recordSliceEvents(viewport.element);
 
       await viewport.scroll(1);
-      await waitFor(() => detailsOf(events, Events.STACK_NEW_IMAGE).length > 0);
+      await waitFor(() => detailsOf(events, Events.NEW_IMAGE).length > 0);
       await renderAndWait(viewport);
 
       const [cameraDetail] = detailsOf(events, Events.CAMERA_MODIFIED);
 
       expect(viewport.getCurrentMode()).toBe('stack');
       expect(viewport.getCurrentImageIdIndex()).toBe(3);
-      expect(detailsOf(events, Events.STACK_NEW_IMAGE)).toEqual([
+      expect(detailsOf(events, Events.NEW_IMAGE)).toEqual([
         {
-          image: jasmine.objectContaining({ imageId: series.imageIds[3] }),
-          imageId: series.imageIds[3],
-          imageIdIndex: 3,
           viewportId: 'next',
           renderingEngineId,
+          imageIdIndex: 3,
+          numberOfSlices: series.size.slices,
+          imageId: series.imageIds[3],
+          image: jasmine.objectContaining({ imageId: series.imageIds[3] }),
         },
       ]);
       expect(cameraDetail).toEqual(
@@ -729,12 +731,13 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
           renderingEngineId,
         })
       );
+      expect(detailsOf(events, Events.STACK_NEW_IMAGE)).toEqual([]);
       expect(detailsOf(events, Events.VOLUME_NEW_IMAGE)).toEqual([]);
       expect(detailsOf(events, Events.PRE_STACK_NEW_IMAGE)).toEqual([]);
       expect(detailsOf(events, Events.STACK_VIEWPORT_SCROLL)).toEqual([]);
     });
 
-    it('fires CAMERA_MODIFIED, VOLUME_NEW_IMAGE and STACK_NEW_IMAGE in volume mode, and none of the legacy stack events', async function () {
+    it('fires CAMERA_MODIFIED and NEW_IMAGE in volume mode, and none of the legacy events', async function () {
       const series = await createSeries();
       const viewport = createNextViewport(renderingEngine, 'next');
 
@@ -744,32 +747,26 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
       const indexBefore = viewport.getCurrentImageIdIndex();
 
       await viewport.scroll(1);
-      await waitFor(
-        () => detailsOf(events, Events.VOLUME_NEW_IMAGE).length > 0
-      );
+      await waitFor(() => detailsOf(events, Events.NEW_IMAGE).length > 0);
       await renderAndWait(viewport);
 
       const [cameraDetail] = detailsOf(events, Events.CAMERA_MODIFIED);
 
       expect(viewport.getCurrentMode()).toBe('volume');
       expect(viewport.getCurrentImageIdIndex()).toBe(indexBefore + 1);
-      expect(detailsOf(events, Events.VOLUME_NEW_IMAGE)).toEqual([
+      expect(detailsOf(events, Events.NEW_IMAGE)).toEqual([
         {
-          imageIndex: indexBefore + 1,
-          numberOfSlices: series.size.slices,
           viewportId: 'next',
           renderingEngineId,
-        },
-      ]);
-      expect(detailsOf(events, Events.STACK_NEW_IMAGE)).toEqual([
-        {
-          image: undefined,
-          imageId: jasmine.any(String),
           imageIdIndex: indexBefore + 1,
-          viewportId: 'next',
-          renderingEngineId,
+          numberOfSlices: series.size.slices,
+          imageId: viewport.getCurrentImageId(),
+          image: undefined,
         },
       ]);
+      expect(series.imageIds).toContain(viewport.getCurrentImageId());
+      expect(detailsOf(events, Events.STACK_NEW_IMAGE)).toEqual([]);
+      expect(detailsOf(events, Events.VOLUME_NEW_IMAGE)).toEqual([]);
       expect(cameraDetail).toEqual(
         jasmine.objectContaining({
           element: viewport.element,
@@ -784,24 +781,25 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
       expect(detailsOf(events, Events.STACK_VIEWPORT_SCROLL)).toEqual([]);
     });
 
-    /** Scrolls one slice and gives the STACK_NEW_IMAGE detail of the scroll. */
-    async function scrollOneSlice(viewport, events) {
-      const before = detailsOf(events, Events.STACK_NEW_IMAGE).length;
+    /**
+     * Scrolls one slice and gives the detail of the event `name` that the
+     * scroll fired.
+     */
+    async function scrollOneSlice(viewport, events, name = Events.NEW_IMAGE) {
+      const before = detailsOf(events, name).length;
 
       await viewport.scroll(1);
-      await waitFor(
-        () => detailsOf(events, Events.STACK_NEW_IMAGE).length > before
-      );
+      await waitFor(() => detailsOf(events, name).length > before);
       await renderAndWait(viewport);
 
-      return detailsOf(events, Events.STACK_NEW_IMAGE)[before];
+      return detailsOf(events, name)[before];
     }
 
     for (const [path, options, renderMode] of [
       ['on the GPU', {}, 'vtkImage'],
       ['on the CPU', { renderBackend: 'cpu' }, 'cpuImage'],
     ]) {
-      it(`names the image on display in STACK_NEW_IMAGE in stack mode ${path}`, async function () {
+      it(`names the image on display in NEW_IMAGE in stack mode ${path}`, async function () {
         const series = await createSeries();
         const viewport = createNextViewport(renderingEngine, 'next');
 
@@ -816,6 +814,8 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
         expect(detail.imageId).toBe(viewport.getCurrentImageId());
         expect(detail.image.imageId).toBe(series.imageIds[3]);
         expect(detail.imageIdIndex).toBe(viewport.getCurrentImageIdIndex());
+        expect(detail.numberOfSlices).toBe(viewport.getNumberOfSlices());
+        expect(detailsOf(events, Events.STACK_NEW_IMAGE)).toEqual([]);
       });
     }
 
@@ -824,7 +824,7 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
       ['on the volume slice path', { sliceFirst: false }, 'vtkVolumeSlice'],
       ['on the CPU', { renderBackend: 'cpu' }, 'cpuVolume'],
     ]) {
-      it(`names the image on display in STACK_NEW_IMAGE in volume mode ${path}, at the mount and after a scroll, where the slice index runs against the order of the images`, async function () {
+      it(`names the image on display in NEW_IMAGE in volume mode ${path}, at the mount and after a scroll, where the slice index runs against the order of the images`, async function () {
         const series = await createSeries();
         const viewport = createNextViewport(renderingEngine, 'next');
         const events = recordSliceEvents(viewport.element);
@@ -840,7 +840,7 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
         });
         await renderAndWait(viewport);
 
-        const mountDetails = detailsOf(events, Events.STACK_NEW_IMAGE);
+        const mountDetails = detailsOf(events, Events.NEW_IMAGE);
 
         expect(viewport.getCurrentMode()).toBe('volume');
         expect(viewport.getRenderPlan()[0].renderMode).toBe(renderMode);
@@ -860,11 +860,14 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
         expect(series.imageIds.indexOf(detail.imageId)).toBe(
           series.size.slices - 1 - detail.imageIdIndex
         );
+        expect(detail.numberOfSlices).toBe(viewport.getNumberOfSlices());
         expect(detail.image).toBeUndefined();
+        expect(detailsOf(events, Events.STACK_NEW_IMAGE)).toEqual([]);
+        expect(detailsOf(events, Events.VOLUME_NEW_IMAGE)).toEqual([]);
       });
     }
 
-    it('gives no image id in STACK_NEW_IMAGE in volume mode when the view cuts across the images', async function () {
+    it('gives no image id in NEW_IMAGE in volume mode when the view cuts across the images, and the slice index and the number of slices of the view', async function () {
       const series = await createSeries();
       const viewport = createNextViewport(renderingEngine, 'next');
 
@@ -879,9 +882,12 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
       expect(viewport.getCurrentImageId()).toBeUndefined();
       expect(detail.imageId).toBeUndefined();
       expect(detail.image).toBeUndefined();
+      expect(detail.imageIdIndex).toBe(viewport.getCurrentImageIdIndex());
+      expect(detail.numberOfSlices).toBe(viewport.getNumberOfSlices());
+      expect(detail.numberOfSlices).toBeGreaterThan(series.size.slices);
     });
 
-    it('keeps imageIds[imageIdIndex] in STACK_NEW_IMAGE of the legacy adapter in volume mode', async function () {
+    it('keeps imageIds[imageIdIndex] in STACK_NEW_IMAGE of the legacy adapter in volume mode, and names the image on display in its NEW_IMAGE', async function () {
       const series = await createSeries();
       const adapter = enableViewport(renderingEngine, {
         viewportId: 'adapter',
@@ -893,8 +899,9 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
 
       await adapter.setVolumes([{ volumeId: series.volumeId }]);
       await renderAndWait(adapter);
-      await scrollOneSlice(adapter, events);
 
+      const newImagesOfMount = detailsOf(events, Events.NEW_IMAGE).length;
+      const newImage = await scrollOneSlice(adapter, events);
       const details = detailsOf(events, Events.STACK_NEW_IMAGE);
 
       expect(details.length).toBeGreaterThan(1);
@@ -902,6 +909,20 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
         expect(typeof detail.imageIdIndex).toBe('number');
         expect(detail.imageId).toBe(series.imageIds[detail.imageIdIndex]);
       });
+      expect(detailsOf(events, Events.VOLUME_NEW_IMAGE).length).toBe(
+        details.length
+      );
+      expect(newImagesOfMount).toBe(1);
+      expect(detailsOf(events, Events.NEW_IMAGE).length).toBe(2);
+      expect(newImage).toEqual({
+        viewportId: 'adapter',
+        renderingEngineId,
+        imageIdIndex: adapter.getCurrentImageIdIndex(),
+        numberOfSlices: series.size.slices,
+        imageId: adapter.getCurrentImageId(),
+        image: undefined,
+      });
+      expect(series.imageIds).toContain(newImage.imageId);
     });
   });
 
@@ -942,12 +963,21 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
       return requests;
     }
 
-    /** Shows image 1 of a stack and gives its loads and drawn stages. */
+    /**
+     * Shows image 1 of a stack and gives its loads and drawn stages. The
+     * stages are those of STACK_NEW_IMAGE on the legacy adapter and of
+     * NEW_IMAGE on a direct next viewport.
+     */
     async function loadImageOne(viewport, requests) {
       const imageIds = createStackImageIds(`${viewport.id}StagedURI`);
       const stages = [];
 
-      viewport.element.addEventListener(Events.STACK_NEW_IMAGE, (evt) => {
+      const newImageEvent =
+        typeof viewport.setStack === 'function'
+          ? Events.STACK_NEW_IMAGE
+          : Events.NEW_IMAGE;
+
+      viewport.element.addEventListener(newImageEvent, (evt) => {
         if (evt.detail.imageId === imageIds[1]) {
           stages.push(evt.detail.image?.imageQualityStatus);
         }

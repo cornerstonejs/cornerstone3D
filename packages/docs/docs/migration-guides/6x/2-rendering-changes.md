@@ -246,32 +246,47 @@ nothing, and it does not pan a viewport to keep the centre in view.
 - **The events of new data fire.** `VOLUME_VIEWPORT_NEW_VOLUME` when a volume
   is shown and `VIEWPORT_NEW_IMAGE_SET` when a stack is shown, on every
   `setDisplaySets`. In 5.x only the adapter fired them.
-- **`STACK_NEW_IMAGE` fires for a volume too.** It fires after another image
-  of a stack shows, and after another slice of a volume shows.
-  `VOLUME_NEW_IMAGE` fires for a volume as before. A legacy volume viewport
-  never fired `STACK_NEW_IMAGE`, so a listener for stacks now also runs on
-  volumes: check `viewport.getCurrentMode()` in it. In volume mode the detail
-  has no `image`. Its `imageId` is the image of the slice on display, the one
-  that `viewport.getCurrentImageId()` gives, and it is undefined for a cut
-  that shows no single image. Its `imageIdIndex` is the slice index of the
-  view, which can run against the order of the image ids.
-- **A volume fires its new image events once at a mount.** `STACK_NEW_IMAGE`
-  and `VOLUME_NEW_IMAGE` fire once for the slice that the mount shows, and
-  once for each change of the slice of the source. A display set that is
+- **One event for a new image: `NEW_IMAGE`.** It replaces `STACK_NEW_IMAGE`
+  and `VOLUME_NEW_IMAGE`. No next viewport fires those two. `NEW_IMAGE` fires
+  after another image of a stack shows, after another slice of a volume
+  shows, and for each frame of a video. A listener for stacks and a listener
+  for volumes become one listener. `detail.imageIndex` of `VOLUME_NEW_IMAGE`
+  is `detail.imageIdIndex` now. A listener that came from `STACK_NEW_IMAGE`
+  and reads `detail.image` also runs for a volume, where there is no image:
+  check `detail.image`, or `viewport.getCurrentMode()`. The detail has the
+  same keys in every mode:
+  - `viewportId` and `renderingEngineId`.
+  - `imageIdIndex` is the index of what is on display, which is what
+    `viewport.getCurrentImageIdIndex()` gives: the index of the image in a
+    stack, the slice index of the view of a volume, the index of the frame
+    of a video. The slice index of a volume counts along the view, in any
+    orientation, and can run against the order of the image ids.
+  - `numberOfSlices` is how many there are along the view, which is what
+    `viewport.getNumberOfSlices()` gives.
+  - `imageId` is the image on display, which is what
+    `viewport.getCurrentImageId()` gives. It is undefined for a cut of a
+    volume that shows no single image.
+  - `image` is the image object in stack mode. It is undefined in volume
+    mode and on a video.
+- **`NEW_IMAGE` fires once at a mount and once for each change.** At a mount
+  it fires once, for what the mount shows: the image of a stack, or the slice
+  of a volume. Then it fires once for each change of the image or of the
+  slice of the source. A better stage of a progressive load of the image on
+  display fires it again, with the better image. A display set that is
   mounted over the source, such as the second volume of a fusion, fires
-  none. Before this change a next viewport fired them twice at a mount, the
-  first time for a slice that it never showed, and once more for each
-  display set over the source at a mount and at every scroll. A listener
-  that waited for the second event of a mount, or that counted events,
-  changes.
+  none. In 5.x a next viewport fired the old pair twice at the mount of a
+  volume, the first time for a slice that it never showed, and once more for
+  each display set over the source at a mount and at every scroll. A
+  listener that waited for the second event of a mount, or that counted
+  events, changes.
 - **`CAMERA_MODIFIED` fires on each change of the view state,** a scroll
   included, and once after the source mounts. `CAMERA_RESET` fires from
   `resetViewState()` only, also in stack mode, where the legacy viewport
   never fired it.
 - **No `PRE_STACK_NEW_IMAGE` and no `STACK_VIEWPORT_SCROLL`.** A scroll is a
   view state change like any other. `CAMERA_MODIFIED` fires at once when an
-  index is asked for, before the image loads. `STACK_NEW_IMAGE` fires when
-  the image shows, and `VOLUME_NEW_IMAGE` for a volume.
+  index is asked for, before the image loads. `NEW_IMAGE` fires when the
+  image or the slice shows.
 - **No `VOLUME_VIEWPORT_SCROLL` and no
   `VOLUME_VIEWPORT_SCROLL_OUT_OF_BOUNDS`.** `utilities.scroll` fired them for
   a legacy volume viewport only. On a next viewport it fires
@@ -595,7 +610,16 @@ layer of a fusion: the opacity is applied as given.
 
 - **View references carry the view plane normal and the camera,** so
   annotations on a video get their statistics.
-- **`STACK_NEW_IMAGE` fires for each frame while the video plays.**
+- **`NEW_IMAGE` fires for each frame while the video plays,** and for the
+  frame of a seek. A mount fires it only when it seeks, as with
+  `options.frameNumber`: a video that opens on its first frame fires none
+  until it plays or seeks. Its detail has the keys that a planar viewport
+  gives: `imageIdIndex` is the 0-based index of the frame, `numberOfSlices`
+  the number of frames and `imageId` the image id of the frame. `image` is
+  undefined. The detail has no `time` and no `duration`, which the legacy
+  video viewport put into `STACK_NEW_IMAGE`: read
+  `viewport.getCurrentTime()`, and divide `viewport.getNumberOfFrames()` by
+  `viewport.getFrameRate()` for the duration.
 - **`options.frameNumber` of `setDisplaySets` is honoured.**
 - **`voiRange` and `averageWhite` of the presentation are applied.**
 - **`IMAGE_RENDERED` fires.** A next video viewport fires it when what it shows
@@ -657,7 +681,7 @@ layer of a fusion: the opacity is applied as given.
   viewport. Use `cache.getImage(viewport.getCurrentImageId())`.
 - **`AdvancedMagnifyTool` resets on a stack of images of several sizes.** It
   compares the rows, the columns and the number of components of the image
-  of `STACK_NEW_IMAGE` with the image before.
+  of `NEW_IMAGE` with the image before.
 - **`MIPJumpToClickTool` works in volume mode.** On a stack it finds no
   point, and it does not throw.
 - **A brush on a stretched view fills a shape that looks round on the

@@ -74,6 +74,23 @@ async function showVideo(legacy, next) {
   await animationFrames(3);
 }
 
+/**
+ * Records the new image events of an element from now on: NEW_IMAGE, and
+ * STACK_NEW_IMAGE that only a legacy adapter fires.
+ */
+function recordNewImageEvents(element) {
+  const events = { newImage: [], stack: [] };
+
+  element.addEventListener(Events.NEW_IMAGE, (evt) => {
+    events.newImage.push(evt.detail);
+  });
+  element.addEventListener(Events.STACK_NEW_IMAGE, (evt) => {
+    events.stack.push(evt.detail);
+  });
+
+  return events;
+}
+
 /** Counts the IMAGE_RENDERED events of an element. */
 function countImageRendered(element) {
   const counter = { count: 0, details: [] };
@@ -166,6 +183,84 @@ describe('Direct next video viewport -- ', () => {
     expect(legacyRendered.details.at(-1).imageIndex).toBe(5);
     expect(nextRendered.details.at(-1).imageIndex).toBe(5);
     expect(nextRendered.count).toBeLessThanOrEqual(2);
+  });
+
+  it('fires NEW_IMAGE once for the frame of a seek, with the frame index, the number of frames and the image id, and no STACK_NEW_IMAGE', async function () {
+    const events = recordNewImageEvents(next.element);
+
+    next.setFrameNumber(6);
+    await waitFor(() => events.newImage.length > 0);
+    await animationFrames(3);
+
+    expect(next.getCurrentImageIdIndex()).toBe(5);
+    expect(next.getNumberOfSlices()).toBe(TEST_VIDEO.numberOfFrames);
+    expect(events.newImage).toEqual([
+      {
+        viewportId: 'nextVideo',
+        renderingEngineId,
+        imageIdIndex: 5,
+        numberOfSlices: TEST_VIDEO.numberOfFrames,
+        imageId: next.getCurrentImageId(),
+        image: undefined,
+      },
+    ]);
+    expect(typeof events.newImage[0].imageId).toBe('string');
+    expect(events.stack).toEqual([]);
+  });
+
+  it('fires NEW_IMAGE for each new frame while it plays, and no STACK_NEW_IMAGE', async function () {
+    const events = recordNewImageEvents(next.element);
+
+    await next.play();
+    await waitFor(() => events.newImage.length >= 3);
+    next.pause();
+    await animationFrames(3);
+
+    const indices = events.newImage.map(({ imageIdIndex }) => imageIdIndex);
+
+    expect(new Set(indices).size).toBe(indices.length);
+    expect(indices).toEqual([...indices].sort((a, b) => a - b));
+    events.newImage.forEach((detail) => {
+      expect(detail).toEqual({
+        viewportId: 'nextVideo',
+        renderingEngineId,
+        imageIdIndex: detail.imageIdIndex,
+        numberOfSlices: TEST_VIDEO.numberOfFrames,
+        imageId: next.getImageIds()[detail.imageIdIndex],
+        image: undefined,
+      });
+    });
+    expect(events.stack).toEqual([]);
+  });
+
+  it('keeps STACK_NEW_IMAGE of the legacy adapter for the frame of a seek, with the time and the duration, and fires NEW_IMAGE too', async function () {
+    const events = recordNewImageEvents(legacy.element);
+
+    legacy.setFrameNumber(6);
+    await waitFor(() => events.stack.length > 0 && events.newImage.length > 0);
+    await animationFrames(3);
+
+    expect(events.stack).toEqual([
+      {
+        element: legacy.element,
+        imageId: events.newImage[0].imageId,
+        imageIdIndex: 5,
+        viewportId: 'legacyVideo',
+        renderingEngineId,
+        time: legacyVideoElement(legacy).currentTime,
+        duration: legacyVideoElement(legacy).duration,
+      },
+    ]);
+    expect(events.newImage).toEqual([
+      {
+        viewportId: 'legacyVideo',
+        renderingEngineId,
+        imageIdIndex: 5,
+        numberOfSlices: TEST_VIDEO.numberOfFrames,
+        imageId: jasmine.any(String),
+        image: undefined,
+      },
+    ]);
   });
 
   it('fires IMAGE_RENDERED while it plays, not more often than the legacy viewport', async function () {

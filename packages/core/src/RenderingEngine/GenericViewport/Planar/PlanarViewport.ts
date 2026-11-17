@@ -476,7 +476,6 @@ class PlanarViewport extends GenericViewport<
         canDrawAcquiredFrames: (dataId) => this.canDrawAcquiredFrames(dataId),
         drawsFinerImageAtRest: () => this.prefersFinerImageAtRest(),
         onStackImageLoadError: (failure) => this.onStackImageLoadError(failure),
-        namesVolumeImageBySliceIndex: () => this.namesVolumeImageBySliceIndex(),
         firesLegacyVolumeNewImageEvents: () =>
           this.firesLegacyVolumeNewImageEvents(),
         refreshRenderPlan: (dataId) => this.updateRenderPlan(dataId),
@@ -1639,22 +1638,12 @@ class PlanarViewport extends GenericViewport<
   ): void {}
 
   /**
-   * A hook of the legacy adapter, which answers true: its STACK_NEW_IMAGE of
-   * a volume names `imageIds[imageIdIndex]`, as it did before. A next
-   * viewport names the image of the slice on display, which is what
-   * `getCurrentImageId()` answers.
-   */
-  protected namesVolumeImageBySliceIndex(): boolean {
-    return false;
-  }
-
-  /**
-   * A hook of the legacy adapter, which answers true: a volume fires
+   * A hook of the legacy adapter, which answers true: a volume also fires
    * STACK_NEW_IMAGE and VOLUME_NEW_IMAGE as it did before, once as it is
    * attached, before its first slice is placed, and then for each change of
-   * the slice index of any of its display sets. A next viewport fires them
-   * for its source only: once when the first slice of a mount is placed, for
-   * that slice, and then for each change of its slice index.
+   * the slice index of any of its display sets. A next viewport fires
+   * NEW_IMAGE only, for its source: once when the first slice of a mount is
+   * placed, for that slice, and then for each change of its slice index.
    */
   protected firesLegacyVolumeNewImageEvents(): boolean {
     return false;

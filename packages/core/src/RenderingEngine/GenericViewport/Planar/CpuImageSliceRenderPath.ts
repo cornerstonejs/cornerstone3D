@@ -224,6 +224,7 @@ export class CpuImageSliceRenderPath
           dataId: data.id,
           image,
           imageIdIndex: rendering.currentImageIdIndex,
+          numberOfSlices: payload.imageIds.length,
           props: rendering.dataPresentation,
           rendering,
         })
@@ -232,6 +233,7 @@ export class CpuImageSliceRenderPath
     triggerPlanarNewImage(ctx, {
       image: payload.image,
       imageIdIndex: payload.initialImageIdIndex ?? 0,
+      numberOfSlices: payload.imageIds.length,
     });
 
     return {
@@ -343,6 +345,7 @@ export class CpuImageSliceRenderPath
           dataId,
           image,
           imageIdIndex: nextImageIdIndex,
+          numberOfSlices: imageIds.length,
           props: rendering.dataPresentation,
           rendering,
         });
@@ -996,10 +999,12 @@ async function updateRenderedImage(args: {
   dataId: string;
   image: IImage;
   imageIdIndex: number;
+  numberOfSlices: number;
   props?: PlanarDataPresentation;
   rendering: PlanarCpuImageRendering;
 }): Promise<void> {
-  const { ctx, dataId, image, imageIdIndex, props, rendering } = args;
+  const { ctx, dataId, image, imageIdIndex, numberOfSlices, props, rendering } =
+    args;
   const enabledElement = rendering.enabledElement;
   markCpuImagePreScaled(image);
   const camera = ctx.viewport.getViewState();
@@ -1052,7 +1057,7 @@ async function updateRenderedImage(args: {
     );
   }
 
-  triggerPlanarNewImage(ctx, { image, imageIdIndex });
+  triggerPlanarNewImage(ctx, { image, imageIdIndex, numberOfSlices });
   // cpuImage is drawn by the Planar viewport itself, not by the rendering
   // engine's VTK pass. The image swap therefore needs an immediate viewport
   // render or the visible canvas stays stale until another direct render.

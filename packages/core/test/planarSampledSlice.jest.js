@@ -1853,14 +1853,18 @@ describe('PlanarViewport with slice first (render path)', () => {
 
     const events = [];
 
-    viewport.element.addEventListener(Events.VOLUME_NEW_IMAGE, () =>
-      events.push(Events.VOLUME_NEW_IMAGE)
-    );
+    for (const type of [
+      Events.NEW_IMAGE,
+      Events.STACK_NEW_IMAGE,
+      Events.VOLUME_NEW_IMAGE,
+    ]) {
+      viewport.element.addEventListener(type, () => events.push(type));
+    }
     await viewport.scroll(1);
     await flush();
 
     expect(sampleSpy).toHaveBeenCalledTimes(1);
-    expect(events).toEqual([Events.VOLUME_NEW_IMAGE]);
+    expect(events).toEqual([Events.NEW_IMAGE]);
   });
 
   it('remounts only when a slab change moves the display set to another render mode', async () => {

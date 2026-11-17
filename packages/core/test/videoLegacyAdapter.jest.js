@@ -265,11 +265,13 @@ describe('Video legacy adapter', () => {
     viewport.pause();
   });
 
-  it('fires the legacy frame events for a new frame and a seek', async () => {
+  it('fires the legacy frame events for a new frame and a seek, and NEW_IMAGE too', async () => {
     const stackNewImage = jest.fn();
+    const newImage = jest.fn();
     const imageRendered = jest.fn();
 
     element.addEventListener(Enums.Events.STACK_NEW_IMAGE, stackNewImage);
+    element.addEventListener(Enums.Events.NEW_IMAGE, newImage);
     element.addEventListener(Enums.Events.IMAGE_RENDERED, imageRendered);
 
     await viewport.play();
@@ -289,11 +291,22 @@ describe('Video legacy adapter', () => {
       numberOfSlices: FRAMES,
     });
 
+    expect(newImage.mock.calls.length).toBe(stackNewImage.mock.calls.length);
+    expect(newImage.mock.calls.at(-1)[0].detail).toEqual({
+      viewportId: 'video',
+      renderingEngineId: expect.any(String),
+      imageIdIndex: 15,
+      numberOfSlices: FRAMES,
+      imageId: stackNewImage.mock.calls.at(-1)[0].detail.imageId,
+      image: undefined,
+    });
+
     const calls = stackNewImage.mock.calls.length;
 
     video.dispatchEvent(new Event('seeked'));
 
     expect(stackNewImage.mock.calls.length).toBe(calls + 1);
+    expect(newImage.mock.calls.length).toBe(calls + 1);
   });
 
   it('scrolls by the scroll speed', async () => {

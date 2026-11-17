@@ -184,7 +184,22 @@ enum Events {
    */
   VOLUME_TEXTURE_LIMITS_CHANGED = 'CORNERSTONE_VOLUME_TEXTURE_LIMITS_CHANGED',
   /**
+   * Triggers on the element when a viewport shows another image: another
+   * image of a stack, another slice of a volume or another frame of a video.
+   * A planar viewport fires it once at a mount, for what the mount shows, and
+   * once for each change of what is on display. A video viewport fires it for
+   * each frame while it plays and for the frame of a seek. The detail has the
+   * same keys in every mode.
+   *
+   * Make use of {@link EventTypes.NewImageEvent | NewImage Event Type } for typing your event listeners for NEW_IMAGE event,
+   * and see what event detail is included in {@link EventTypes.NewImageEventDetail | NewImage Event Detail }
+   */
+  NEW_IMAGE = 'CORNERSTONE_NEW_IMAGE',
+
+  /**
    * Triggers on the element when a new image is set on the stackViewport
+   *
+   * Fired by the legacy adapters only, and removed in 6.0. Use `NEW_IMAGE`.
    *
    * Make use of {@link EventTypes.StackNewImageEvent | StackNewImage Event Type } for typing your event listeners for STACK_NEW_IMAGE event,
    * and see what event detail is included in {@link EventTypes.StackNewImageEventDetail | StackNewImage Event Detail }
@@ -194,6 +209,8 @@ enum Events {
   /**
    * Triggers on the element when a new image is set on the volumeViewport, this can be due to scrolling or other
    * tools that change the camera position or focal point.
+   *
+   * Fired by the legacy adapters only, and removed in 6.0. Use `NEW_IMAGE`.
    *
    * Make use of {@link EventTypes.VolumeNewImageEvent | VolumeNewImage Event Type } for typing your event listeners for VOLUME_NEW_IMAGE event,
    * and see what event detail is included in {@link EventTypes.VolumeNewImageEventDetail | VolumeNewImage Event Detail }

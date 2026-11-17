@@ -68,7 +68,7 @@ function updateLastEvents(number, eventName, detail) {
 
 let eventNumber = 1;
 
-const { IMAGE_RENDERED, CAMERA_MODIFIED, STACK_NEW_IMAGE } = Enums.Events;
+const { IMAGE_RENDERED, CAMERA_MODIFIED, NEW_IMAGE } = Enums.Events;
 
 element.addEventListener(IMAGE_RENDERED, ((
   evt: Types.EventTypes.ImageRenderedEvent
@@ -84,9 +84,7 @@ element.addEventListener(CAMERA_MODIFIED, ((
   eventNumber++;
 }) as EventListener);
 
-element.addEventListener(STACK_NEW_IMAGE, ((
-  evt: Types.EventTypes.StackNewImageEvent
-) => {
+element.addEventListener(NEW_IMAGE, ((evt: Types.EventTypes.NewImageEvent) => {
   // Remove the image since then we serialize a bunch of pixelData to the screen.
   const { imageId, renderingEngineId, viewportId } = evt.detail;
   const detail = {
@@ -96,7 +94,7 @@ element.addEventListener(STACK_NEW_IMAGE, ((
     image: 'cornerstoneImageObject',
   };
 
-  updateLastEvents(eventNumber, STACK_NEW_IMAGE, JSON.stringify(detail));
+  updateLastEvents(eventNumber, NEW_IMAGE, JSON.stringify(detail));
   eventNumber++;
 }) as EventListener);
 

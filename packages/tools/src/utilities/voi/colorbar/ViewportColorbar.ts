@@ -192,7 +192,7 @@ class ViewportColorbar extends Colorbar {
     this.autoHideTicks();
   }
 
-  private _stackNewImageCallback = () => {
+  private _newImageCallback = () => {
     this.imageRange = ViewportColorbar._getImageRange(this._element);
   };
 
@@ -247,10 +247,7 @@ class ViewportColorbar extends Colorbar {
       this._imageVolumeModifiedCallback
     );
 
-    element.addEventListener(
-      Events.STACK_NEW_IMAGE,
-      this._stackNewImageCallback
-    );
+    element.addEventListener(Events.NEW_IMAGE, this._newImageCallback);
 
     element.addEventListener(
       Events.VOI_MODIFIED,
@@ -272,10 +269,7 @@ class ViewportColorbar extends Colorbar {
       this._imageVolumeModifiedCallback
     );
 
-    element.removeEventListener(
-      Events.STACK_NEW_IMAGE,
-      this._stackNewImageCallback
-    );
+    element.removeEventListener(Events.NEW_IMAGE, this._newImageCallback);
 
     element.removeEventListener(
       Events.VOI_MODIFIED,

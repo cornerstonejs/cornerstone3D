@@ -243,7 +243,7 @@ async function run() {
   // Set the default properties of the viewport
   viewport.setDisplaySetPresentation(displaySetId, defaultPresentation);
 
-  element.addEventListener(Events.STACK_NEW_IMAGE, () => {
+  element.addEventListener(Events.NEW_IMAGE, () => {
     if (imagePresentations.size === 0) {
       return;
     }

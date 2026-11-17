@@ -1,6 +1,7 @@
 import GenericViewport from '../GenericViewport';
 import type {
   CPUIImageData,
+  EventTypes,
   IVoxelManager,
   Point2,
   Point3,
@@ -487,7 +488,7 @@ class VideoViewport extends GenericViewport<
 
   /**
    * Starts playback on the active video element. While it plays, each new
-   * frame fires STACK_NEW_IMAGE.
+   * frame fires NEW_IMAGE.
    *
    * @returns A promise that resolves after the play request settles.
    */
@@ -831,10 +832,10 @@ class VideoViewport extends GenericViewport<
   }
 
   /**
-   * Fires STACK_NEW_IMAGE for the frame on display, as the next planar
-   * viewport fires it for a new image: the image id and the 0-based index of
-   * the frame, with the time and the duration of the video in seconds. Then
-   * asks for the IMAGE_RENDERED of the frame.
+   * Fires NEW_IMAGE for the frame on display, as the next planar viewport
+   * fires it for a new image: the 0-based index of the frame, the number of
+   * frames and the image id of the frame. A video has no image object for a
+   * frame. Then asks for the IMAGE_RENDERED of the frame.
    */
   protected triggerFrameEvents(): void {
     const element = this.getVideoElement();
@@ -844,17 +845,17 @@ class VideoViewport extends GenericViewport<
     }
 
     const imageIdIndex = this.getCurrentImageIdIndex();
-
-    this.lastFrameEventNumber = imageIdIndex + 1;
-    triggerEvent(this.element, Events.STACK_NEW_IMAGE, {
-      element: this.element,
-      imageId: this.getCurrentImageId(imageIdIndex),
-      imageIdIndex,
+    const detail: EventTypes.NewImageEventDetail = {
       viewportId: this.id,
       renderingEngineId: this.renderingEngineId,
-      time: element.currentTime,
-      duration: element.duration,
-    });
+      imageIdIndex,
+      numberOfSlices: this.getNumberOfFrames(),
+      imageId: this.getCurrentImageId(imageIdIndex),
+      image: undefined,
+    };
+
+    this.lastFrameEventNumber = imageIdIndex + 1;
+    triggerEvent(this.element, Events.NEW_IMAGE, detail);
     this.render();
   }
 

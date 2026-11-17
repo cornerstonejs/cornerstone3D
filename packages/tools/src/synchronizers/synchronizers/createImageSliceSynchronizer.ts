@@ -3,11 +3,12 @@ import { Enums } from '@cornerstonejs/core';
 import imageSliceSyncCallback from '../callbacks/imageSliceSyncCallback';
 import type Synchronizer from '../../store/SynchronizerManager/Synchronizer';
 
-const { STACK_NEW_IMAGE, VOLUME_NEW_IMAGE } = Enums.Events;
+const { NEW_IMAGE } = Enums.Events;
 
 /**
- * A helper that creates a new `Synchronizer` which listens to the `STACK_NEW_IMAGE`
- * rendering event and calls the `ImageSliceSyncCallback`.
+ * A helper that creates a new `Synchronizer` which listens to the `NEW_IMAGE`
+ * rendering event and calls the `ImageSliceSyncCallback`. A viewport fires the
+ * event for another image of a stack and for another slice of a volume.
  *
  * @param synchronizerName - The name of the synchronizer.
  * @returns A new `Synchronizer` instance.
@@ -15,18 +16,11 @@ const { STACK_NEW_IMAGE, VOLUME_NEW_IMAGE } = Enums.Events;
 export default function createImageSliceSynchronizer(
   synchronizerName: string
 ): Synchronizer {
-  const stackImageSynchronizer = createSynchronizer(
+  const imageSliceSynchronizer = createSynchronizer(
     synchronizerName,
-    STACK_NEW_IMAGE,
-    imageSliceSyncCallback,
-    {
-      auxiliaryEvents: [
-        {
-          name: 'VOLUME_NEW_IMAGE',
-        },
-      ],
-    }
+    NEW_IMAGE,
+    imageSliceSyncCallback
   );
 
-  return stackImageSynchronizer;
+  return imageSliceSynchronizer;
 }

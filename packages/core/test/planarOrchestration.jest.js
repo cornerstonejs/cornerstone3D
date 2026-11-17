@@ -199,7 +199,7 @@ describe('Planar legacy stack compatibility', () => {
 
     host.setDataPresentationState.mockClear();
     element.dispatchEvent(
-      new CustomEvent(Events.STACK_NEW_IMAGE, {
+      new CustomEvent(Events.NEW_IMAGE, {
         detail: {
           imageId: 'image:0',
         },
@@ -209,7 +209,7 @@ describe('Planar legacy stack compatibility', () => {
     expect(host.setDataPresentationState).not.toHaveBeenCalled();
 
     element.dispatchEvent(
-      new CustomEvent(Events.STACK_NEW_IMAGE, {
+      new CustomEvent(Events.NEW_IMAGE, {
         detail: {
           imageId: `image:${PLANAR_LEGACY_PER_IMAGE_DEFAULT_PROPERTIES_LIMIT}`,
         },
@@ -228,7 +228,7 @@ describe('Planar legacy stack compatibility', () => {
 
     host.setDataPresentationState.mockClear();
     element.dispatchEvent(
-      new CustomEvent(Events.STACK_NEW_IMAGE, {
+      new CustomEvent(Events.NEW_IMAGE, {
         detail: {
           imageId: 'image:old',
         },

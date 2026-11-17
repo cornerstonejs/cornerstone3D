@@ -125,11 +125,12 @@ export class VtkImageMapperRenderPath
           image,
           rendering,
           imageIdIndex: rendering.currentImageIdIndex,
+          numberOfSlices: payload.imageIds.length,
           dataPresentation: rendering.dataPresentation,
         })
     );
 
-    // STACK_NEW_IMAGE drives the source slice scrollbar/thumb. Only the source
+    // NEW_IMAGE drives the source slice scrollbar/thumb. Only the source
     // binding represents a displayed-slice change; overlays (e.g. a segmentation
     // labelmap) must not fire it, otherwise adding/replacing the overlay snaps
     // the scrollbar to the overlay's own index (0) instead of the current slice.
@@ -137,6 +138,7 @@ export class VtkImageMapperRenderPath
       triggerPlanarNewImage(ctx, {
         image: payload.image,
         imageIdIndex: payload.initialImageIdIndex ?? 0,
+        numberOfSlices: payload.imageIds.length,
       });
     }
 
@@ -271,6 +273,7 @@ export class VtkImageMapperRenderPath
           image,
           rendering,
           imageIdIndex: nextImageIdIndex,
+          numberOfSlices: imageIds.length,
           dataPresentation: rendering.dataPresentation,
         });
       },
@@ -417,10 +420,18 @@ async function updateRenderedImage(args: {
   image: IImage;
   rendering: PlanarImageMapperRendering;
   imageIdIndex: number;
+  numberOfSlices: number;
   dataPresentation?: PlanarDataPresentation;
 }): Promise<void> {
-  const { ctx, dataId, image, rendering, imageIdIndex, dataPresentation } =
-    args;
+  const {
+    ctx,
+    dataId,
+    image,
+    rendering,
+    imageIdIndex,
+    numberOfSlices,
+    dataPresentation,
+  } = args;
   const camera = ctx.viewport.getViewState();
   const { actor, mapper } = rendering;
 
@@ -493,9 +504,9 @@ async function updateRenderedImage(args: {
   }
 
   // Only the source binding's slice change should drive the slice scrollbar; an
-  // overlay (segmentation) slice update must not emit STACK_NEW_IMAGE.
+  // overlay (segmentation) slice update must not emit NEW_IMAGE.
   if (projection?.isSourceBinding) {
-    triggerPlanarNewImage(ctx, { image, imageIdIndex });
+    triggerPlanarNewImage(ctx, { image, imageIdIndex, numberOfSlices });
   }
   ctx.display.requestRender();
 }

@@ -289,8 +289,8 @@ function enable(element) {
 
   prefetch(element);
 
-  element.removeEventListener(Enums.Events.STACK_NEW_IMAGE, onImageUpdated);
-  element.addEventListener(Enums.Events.STACK_NEW_IMAGE, onImageUpdated);
+  element.removeEventListener(Enums.Events.NEW_IMAGE, onImageUpdated);
+  element.addEventListener(Enums.Events.NEW_IMAGE, onImageUpdated);
 
   const promiseRemovedHandler = getPromiseRemovedHandler(element);
 
@@ -322,7 +322,7 @@ function removeLoadingCancelledHandler(element: HTMLDivElement) {
 
 function disable(element) {
   clearTimeout(resetPrefetchTimeout);
-  element.removeEventListener(Enums.Events.STACK_NEW_IMAGE, onImageUpdated);
+  element.removeEventListener(Enums.Events.NEW_IMAGE, onImageUpdated);
 
   const promiseRemovedHandler = getPromiseRemovedHandler(element);
 

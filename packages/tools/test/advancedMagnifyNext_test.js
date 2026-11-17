@@ -93,10 +93,12 @@ async function showVolume(viewport, name) {
   await renderAndWait(viewport);
 }
 
-/** Goes to an image index and resolves when the element fires `eventName`. */
-function showImage(viewport, imageIdIndex, eventName = Events.STACK_NEW_IMAGE) {
+/** Goes to an image index and resolves when the element fires NEW_IMAGE. */
+function showImage(viewport, imageIdIndex) {
   return new Promise((resolve) => {
-    viewport.element.addEventListener(eventName, resolve, { once: true });
+    viewport.element.addEventListener(Events.NEW_IMAGE, resolve, {
+      once: true,
+    });
     viewport.setImageIdIndex(imageIdIndex);
   });
 }
@@ -115,6 +117,14 @@ async function waitForGlass(renderingEngine, glassId) {
   }
 
   await new Promise((resolve) => setTimeout(resolve, 60));
+}
+
+/** The annotation of the magnifying glass that was added to a viewport. */
+function getGlassAnnotation(viewport) {
+  return csTools3d.annotation.state.getAnnotations(
+    AdvancedMagnifyTool.toolName,
+    viewport.element
+  )[0];
 }
 
 /**
@@ -151,13 +161,8 @@ describe('AdvancedMagnifyTool on a direct next planar viewport -- ', () => {
   }
 
   /** Shows an image of the source and waits until the glass followed. */
-  async function showImageWithGlass(
-    viewport,
-    glassId,
-    imageIdIndex,
-    eventName
-  ) {
-    await showImage(viewport, imageIdIndex, eventName);
+  async function showImageWithGlass(viewport, glassId, imageIdIndex) {
+    await showImage(viewport, imageIdIndex);
     await waitForGlass(renderingEngine, glassId);
   }
 
@@ -194,11 +199,21 @@ describe('AdvancedMagnifyTool on a direct next planar viewport -- ', () => {
 
     const glassId = await addGlass(viewport);
     const first = manager.getViewport(glassId);
+    const annotation = getGlassAnnotation(viewport);
+    const pointBefore = [...annotation.data.handles.points[0]];
 
     await showImageWithGlass(viewport, glassId, 2);
 
     expect(viewport.getCurrentMode()).toBe('stack');
     expect(manager.getViewport(glassId)).toBe(first);
+    expect(annotation.metadata.referencedImageId).toBe(imageIds[2]);
+    expect(
+      Math.hypot(
+        ...annotation.data.handles.points[0].map(
+          (value, axis) => value - pointBefore[axis]
+        )
+      )
+    ).toBeCloseTo(1, 4);
 
     await showImageWithGlass(viewport, glassId, 3);
 
@@ -244,15 +259,30 @@ describe('AdvancedMagnifyTool on a direct next planar viewport -- ', () => {
     const glassId = await addGlass(viewport);
     const first = manager.getViewport(glassId);
 
+    const annotation = getGlassAnnotation(viewport);
+    const pointBefore = [...annotation.data.handles.points[0]];
+    const normal = viewport.getViewReference().viewPlaneNormal;
+
     await showImageWithGlass(
       viewport,
       glassId,
-      viewport.getCurrentImageIdIndex() + 2,
-      Events.VOLUME_NEW_IMAGE
+      viewport.getCurrentImageIdIndex() + 2
+    );
+
+    const pointAfter = annotation.data.handles.points[0];
+    const moved = pointAfter.map((value, axis) => value - pointBefore[axis]);
+    const movedAlongNormal = moved.reduce(
+      (sum, value, axis) => sum + value * normal[axis],
+      0
     );
 
     expect(viewport.getCurrentMode()).toBe('volume');
     expect(manager.getViewport(glassId)).toBe(first);
+    expect(Math.abs(movedAlongNormal)).toBeCloseTo(2, 4);
+    expect(Math.hypot(...moved)).toBeCloseTo(2, 4);
+    expect(annotation.metadata.referencedImageId).toBe(
+      viewport.getCurrentImageId()
+    );
 
     await showVolume(viewport, 'magnifyVolumeB');
     await waitForGlass(renderingEngine, glassId);

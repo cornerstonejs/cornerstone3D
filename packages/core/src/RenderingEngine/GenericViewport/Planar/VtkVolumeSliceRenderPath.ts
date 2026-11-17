@@ -39,9 +39,8 @@ import {
   worldToCanvasContextPool,
 } from './planarAdapterCoordinateTransforms';
 import {
-  firesPlanarVolumeNewImage,
-  triggerPlanarVolumeNewImage,
   triggerPlanarVolumeNewImageAtAttach,
+  triggerPlanarVolumeNewImageOfPlacedSlice,
 } from './planarImageEvents';
 import {
   applyPlanarICameraToActor,
@@ -188,14 +187,11 @@ export class VtkVolumeSliceRenderPath
       ctx.display.requestRender();
     });
 
-    triggerPlanarVolumeNewImageAtAttach(ctx, {
-      camera: ctx.viewport.getViewState(),
-      acquisitionOrientation: rendering.acquisitionOrientation,
-      imageIds: rendering.imageIds,
-      imageIdIndex: rendering.currentImageIdIndex,
-      maxImageIdIndex: rendering.maxImageIdIndex,
+    triggerPlanarVolumeNewImageAtAttach(
+      ctx,
       rendering,
-    });
+      ctx.viewport.getViewState()
+    );
 
     const attachment: RenderPathAttachment<PlanarDataPresentation> = {
       rendering,
@@ -344,21 +340,12 @@ export class VtkVolumeSliceRenderPath
     );
     ctx.vtk.renderer.resetCameraClippingRange();
 
-    if (
-      triggerImageEvent &&
-      firesPlanarVolumeNewImage(ctx, {
+    if (triggerImageEvent) {
+      triggerPlanarVolumeNewImageOfPlacedSlice(ctx, {
         rendering,
+        viewState: camera,
         isSourceBinding: projection.isSourceBinding,
         imageIdIndexChanged,
-      })
-    ) {
-      triggerPlanarVolumeNewImage(ctx, {
-        camera,
-        acquisitionOrientation: rendering.acquisitionOrientation,
-        imageIds: rendering.imageIds,
-        imageIdIndex: rendering.currentImageIdIndex,
-        maxImageIdIndex: rendering.maxImageIdIndex,
-        rendering,
       });
     }
   }

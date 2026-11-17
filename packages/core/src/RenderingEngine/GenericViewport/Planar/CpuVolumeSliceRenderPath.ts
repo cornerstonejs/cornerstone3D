@@ -26,9 +26,8 @@ import type {
 } from './PlanarViewportTypes';
 import type { PlanarCpuVolumeRendering } from './planarRuntimeTypes';
 import {
-  firesPlanarVolumeNewImage,
-  triggerPlanarVolumeNewImage,
   triggerPlanarVolumeNewImageAtAttach,
+  triggerPlanarVolumeNewImageOfPlacedSlice,
 } from './planarImageEvents';
 import {
   getPlanarRenderPathActiveSourceICamera,
@@ -188,14 +187,11 @@ export class CpuVolumeSliceRenderPath
       payload.volumeId
     );
 
-    triggerPlanarVolumeNewImageAtAttach(ctx, {
-      camera: ctx.viewport.getViewState(),
-      acquisitionOrientation: rendering.acquisitionOrientation,
-      imageIds: rendering.imageIds,
-      imageIdIndex: rendering.currentImageIdIndex,
-      maxImageIdIndex: rendering.maxImageIdIndex,
+    triggerPlanarVolumeNewImageAtAttach(
+      ctx,
       rendering,
-    });
+      ctx.viewport.getViewState()
+    );
 
     return {
       rendering,
@@ -423,22 +419,12 @@ export class CpuVolumeSliceRenderPath
       ctx.viewport.invalidateResolvedView();
     }
 
-    if (
-      firesPlanarVolumeNewImage(ctx, {
-        rendering,
-        isSourceBinding: projection.isSourceBinding,
-        imageIdIndexChanged,
-      })
-    ) {
-      triggerPlanarVolumeNewImage(ctx, {
-        camera,
-        acquisitionOrientation: rendering.acquisitionOrientation,
-        imageIds: rendering.imageIds,
-        imageIdIndex: rendering.currentImageIdIndex,
-        maxImageIdIndex: rendering.maxImageIdIndex,
-        rendering,
-      });
-    }
+    triggerPlanarVolumeNewImageOfPlacedSlice(ctx, {
+      rendering,
+      viewState: camera,
+      isSourceBinding: projection.isSourceBinding,
+      imageIdIndexChanged,
+    });
   }
 
   /**

@@ -480,8 +480,8 @@ These calls keep their names and work in both modes:
 `utilities.jumpToSlice(element, { imageIndex })`.
 
 **Check.** `viewport.getCurrentImageIdIndex()` gives the new index.
-`STACK_NEW_IMAGE` fires after another image or slice shows, and
-`VOLUME_NEW_IMAGE` for a volume.
+`NEW_IMAGE` fires after another image or slice shows, with that index in
+`detail.imageIdIndex`.
 
 **What can go wrong**
 
@@ -643,8 +643,8 @@ is its geometry id.
 **Search**
 
 ```sh
-rg -n "PRE_STACK_NEW_IMAGE|STACK_VIEWPORT_SCROLL|VOLUME_VIEWPORT_SCROLL|IMAGE_LOAD_ERROR|PRESET_MODIFIED|ACTORS_CHANGED|CLIPPING_PLANES_UPDATED" src
-rg -n "STACK_NEW_IMAGE|VOLUME_NEW_IMAGE|CAMERA_MODIFIED|CAMERA_RESET|VOI_MODIFIED|IMAGE_SPACING_CALIBRATED|STACK_SCROLL_OUT_OF_BOUNDS" src
+rg -n "STACK_NEW_IMAGE|VOLUME_NEW_IMAGE|PRE_STACK_NEW_IMAGE|STACK_VIEWPORT_SCROLL|VOLUME_VIEWPORT_SCROLL|IMAGE_LOAD_ERROR|PRESET_MODIFIED|ACTORS_CHANGED|CLIPPING_PLANES_UPDATED" src
+rg -n "CAMERA_MODIFIED|CAMERA_RESET|VOI_MODIFIED|IMAGE_SPACING_CALIBRATED|STACK_SCROLL_OUT_OF_BOUNDS" src
 rg -n "invertStateChanged|previousCamera" src
 ```
 
@@ -653,21 +653,32 @@ fire. [Events](./3-api-map.md#events) names the event to listen to in place
 of each. The second command finds events that stay and fire at other times.
 Read each listener.
 
+`STACK_NEW_IMAGE` and `VOLUME_NEW_IMAGE` are one event now, `NEW_IMAGE`,
+with one detail for a stack, a volume and a video. A listener for stacks and
+a listener for volumes become one listener. Its event type is
+`Types.EventTypes.NewImageEvent`, and the type of the detail is
+`Types.EventTypes.NewImageEventDetail`:
+
+| Old detail                           | Detail of `NEW_IMAGE`   | What it is                                                                      |
+| ------------------------------------ | ----------------------- | ------------------------------------------------------------------------------- |
+| `imageIdIndex` of the stack event    | `detail.imageIdIndex`   | The index of the image in a stack, the slice index of the view of a volume      |
+| `imageIndex` of the volume event     | `detail.imageIdIndex`   | The same key in both modes. `viewport.getCurrentImageIdIndex()` gives the value |
+| `numberOfSlices` of the volume event | `detail.numberOfSlices` | Now in stack mode too. `viewport.getNumberOfSlices()` gives the value           |
+| `imageId` of the stack event         | `detail.imageId`        | `viewport.getCurrentImageId()`. Undefined for a cut that shows no single image  |
+| `image` of the stack event           | `detail.image`          | The image object in stack mode. Undefined in volume mode and on a video         |
+
 Before:
 
 ```ts
 element.addEventListener(Enums.Events.STACK_NEW_IMAGE, onNewImage);
+element.addEventListener(Enums.Events.VOLUME_NEW_IMAGE, onNewImage);
 eventTarget.addEventListener(Enums.Events.IMAGE_LOAD_ERROR, onLoadError);
 ```
 
 After:
 
 ```ts
-element.addEventListener(Enums.Events.STACK_NEW_IMAGE, (evt) => {
-  if (viewport.getCurrentMode() === 'stack') {
-    onNewImage(evt);
-  }
-});
+element.addEventListener(Enums.Events.NEW_IMAGE, onNewImage);
 
 eventTarget.addEventListener(Enums.Events.IMAGE_LOAD_FAILED, (evt) => {
   const { imageId, error } = evt.detail;
@@ -681,8 +692,11 @@ a volume: scroll, change the window, reset. Compare with the table.
 
 **What can go wrong**
 
-- `STACK_NEW_IMAGE` fires for a volume too, on each slice change. A listener
-  for stacks now also runs on volumes.
+- A listener of `STACK_NEW_IMAGE` or `VOLUME_NEW_IMAGE` never runs on a next
+  viewport: both names still compile. Listen to `NEW_IMAGE`.
+- `NEW_IMAGE` fires in both modes. A listener that came from
+  `STACK_NEW_IMAGE` now also runs for each slice of a volume, where
+  `detail.image` is undefined.
 - `CAMERA_MODIFIED` fires on each new image of a stack and once after the
   source mounts. `detail.previousCamera` can be undefined.
 - `CAMERA_RESET` fires in stack mode too, and only from `resetViewState()`.
@@ -695,8 +709,11 @@ a volume: scroll, change the window, reset. Compare with the table.
   prefetch that fails.
 - The names `PRE_STACK_NEW_IMAGE`, `STACK_VIEWPORT_SCROLL`, `PRESET_MODIFIED`
   and `ACTORS_CHANGED` still compile, and a listener for them never runs.
-- In volume mode the detail of `STACK_NEW_IMAGE` has no `image`, and its
-  `imageIdIndex` is the slice index of the view.
+- In volume mode `detail.imageIdIndex` of `NEW_IMAGE` is the slice index of
+  the view. It can run against the order of the image ids, so it is not the
+  place of `detail.imageId` in `viewport.getImageIds()`.
+- On a video the detail of `NEW_IMAGE` has no `time` and no `duration`. Read
+  `viewport.getCurrentTime()`.
 - `IMAGE_SPACING_CALIBRATED` fires from `viewport.calibrateSpacing(imageId)`
   only, not when a calibrated image shows.
 
@@ -878,10 +895,10 @@ decides. A coding agent stops here and asks.
 | A scroll with a slab                                 | `viewport.scroll(1)` steps by one slice. The legacy volume viewport stepped by the slab thickness                                                                                | Step by slices, or pass `scrollSlabs: true` to `utilities.scroll`                                                                                       |
 | A scroll with `loop`                                 | `utilities.scroll` and `StackScrollTool` with `loop: true` wrap a volume at both ends. The legacy volume viewport ignored `loop`                                                 | Keep the wrap on volumes, or set `loop` only where the application wants it                                                                             |
 | `setOrientation` with a normal and no view up        | The view takes the view up of the acquisition. The legacy viewport kept the current view up when it was orthogonal to the normal, and otherwise took `[0, 0, 1]` or `[0, -1, 0]` | Which `viewUp` the application passes                                                                                                                   |
-| Default properties                                   | `setDefaultProperties` and its family have no twin                                                                                                                               | Where the application keeps its default, and when it sets it: for each display set, or for each image in a listener of `STACK_NEW_IMAGE`                |
+| Default properties                                   | `setDefaultProperties` and its family have no twin                                                                                                                               | Where the application keeps its default, and when it sets it: for each display set, or for each image in a listener of `NEW_IMAGE`                      |
 | Image defaults                                       | A MONOCHROME1 image starts inverted. An image without a window starts at its pixel range, not at 0 to 255                                                                        | Whether the application sets its own window or invert on top. See [Image defaults](./2-rendering-changes.md#image-defaults)                             |
 | A display area of `type: 'SCALE'`                    | A scale of 1 is the fit of the picture. On a legacy viewport 1 meant one image pixel on one screen pixel                                                                         | The scale that gives the size the application wants                                                                                                     |
-| Listeners of `STACK_NEW_IMAGE` and `CAMERA_MODIFIED` | `STACK_NEW_IMAGE` fires for volumes too, without an `image` in its detail. `CAMERA_MODIFIED` fires on each new image of a stack. A slab change fires no camera event             | What each listener does in each mode                                                                                                                    |
+| Listeners of a new image and of `CAMERA_MODIFIED`    | `NEW_IMAGE` replaces `STACK_NEW_IMAGE` and `VOLUME_NEW_IMAGE` and has no `image` for a volume. `CAMERA_MODIFIED` fires on each new image of a stack, and not on a slab change    | Whether one listener serves stacks and volumes, and what each listener does in each mode                                                                |
 | A viewport on the CPU                                | The VOI lookup table and the modality lookup table of an image are not applied, as on the GPU. The area around the image has the background colour                               | Whether the application relied on the lookup tables on the CPU. See [the section](./2-rendering-changes.md#a-viewport-on-the-cpu-shows-the-gpu-picture) |
 | The crosshair                                        | The rotation handles and the slab handles of `CrosshairsTool` do nothing on a next viewport                                                                                      | Move to `WorldCrosshairTool` with `SliceIntersectionTool`, or keep `CrosshairsTool` without the handles                                                 |
 | vtk.js actors of the application in a slice viewport | A planar viewport has no `addActor` and no `getRenderer`                                                                                                                         | Show the data as a display set or as a segmentation, draw it as an annotation, or show it in a 3D viewport                                              |

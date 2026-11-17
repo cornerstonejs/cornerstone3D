@@ -103,7 +103,7 @@ class PlanarLegacyCompatibilityController {
     PlanarLegacyViewportProperties
   >();
 
-  private readonly onStackNewImage = (event: Event) => {
+  private readonly onNewImage = (event: Event) => {
     if (this.perImageIdDefaultProperties.size === 0) {
       return;
     }
@@ -130,9 +130,7 @@ class PlanarLegacyCompatibilityController {
   };
 
   constructor(private readonly host: PlanarLegacyCompatibilityHost) {
-    host
-      .getElement()
-      .addEventListener(Events.STACK_NEW_IMAGE, this.onStackNewImage);
+    host.getElement().addEventListener(Events.NEW_IMAGE, this.onNewImage);
   }
 
   /**
@@ -532,7 +530,7 @@ class PlanarLegacyCompatibilityController {
 
     this.host
       .getElement()
-      .removeEventListener(Events.STACK_NEW_IMAGE, this.onStackNewImage);
+      .removeEventListener(Events.NEW_IMAGE, this.onNewImage);
 
     for (const dataId of Array.from(this.managedDataIds)) {
       try {

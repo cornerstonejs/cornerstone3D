@@ -24,6 +24,7 @@ const { Events } = Enums;
 const recordedEvents = [
   Events.PRE_STACK_NEW_IMAGE,
   Events.STACK_NEW_IMAGE,
+  Events.NEW_IMAGE,
   Events.VIEWPORT_NEW_IMAGE_SET,
   Events.STACK_VIEWPORT_SCROLL,
 ];
@@ -211,17 +212,20 @@ function getRequestedImageIdIndex(viewport) {
     : viewport.getCurrentImageIdIndex();
 }
 
-/** Resolves when the element fires STACK_NEW_IMAGE for an image index. */
+/**
+ * Resolves when the element fires NEW_IMAGE for an image index. A direct next
+ * viewport and a legacy adapter both fire it.
+ */
 function waitForNewImage(element, imageIdIndex) {
   return new Promise((resolve) => {
     const listener = (evt) => {
       if (evt.detail.imageIdIndex === imageIdIndex) {
-        element.removeEventListener(Events.STACK_NEW_IMAGE, listener);
+        element.removeEventListener(Events.NEW_IMAGE, listener);
         resolve();
       }
     };
 
-    element.addEventListener(Events.STACK_NEW_IMAGE, listener);
+    element.addEventListener(Events.NEW_IMAGE, listener);
   });
 }
 
@@ -261,7 +265,7 @@ describe('Direct next planar viewport events and image loads against the legacy 
   });
 
   describe('new data', () => {
-    it('fires STACK_NEW_IMAGE and VIEWPORT_NEW_IMAGE_SET when a stack is shown, and not the PRE_STACK_NEW_IMAGE of the legacy setStack', async () => {
+    it('fires NEW_IMAGE and VIEWPORT_NEW_IMAGE_SET when a stack is shown, and neither the PRE_STACK_NEW_IMAGE nor the STACK_NEW_IMAGE of the legacy setStack', async () => {
       const imageIds = createImageIds();
       const recorded = [];
 
@@ -277,16 +281,30 @@ describe('Direct next planar viewport events and image loads against the legacy 
       expect(legacy.events).toEqual([
         `${Events.PRE_STACK_NEW_IMAGE}:1`,
         `${Events.STACK_NEW_IMAGE}:1`,
+        `${Events.NEW_IMAGE}:1`,
         `${Events.VIEWPORT_NEW_IMAGE_SET}:1`,
       ]);
       expect(next.events).toEqual([
-        `${Events.STACK_NEW_IMAGE}:1`,
+        `${Events.NEW_IMAGE}:1`,
         `${Events.VIEWPORT_NEW_IMAGE_SET}:1`,
       ]);
-      expect(next.details[Events.STACK_NEW_IMAGE]).toEqual({
+      expect(legacy.details[Events.STACK_NEW_IMAGE]).toEqual({
+        image: expect.objectContaining({ imageId: imageIds[1] }),
+        imageId: imageIds[1],
+        imageIdIndex: 1,
+        viewportId: 'legacy',
+        renderingEngineId: expect.any(String),
+      });
+      expect(next.details[Events.NEW_IMAGE]).toEqual({
         ...legacy.details[Events.STACK_NEW_IMAGE],
+        numberOfSlices: imageIds.length,
         image: expect.objectContaining({ imageId: imageIds[1] }),
         viewportId: 'next',
+        renderingEngineId: expect.any(String),
+      });
+      expect(legacy.details[Events.NEW_IMAGE]).toEqual({
+        ...next.details[Events.NEW_IMAGE],
+        viewportId: 'legacy',
         renderingEngineId: expect.any(String),
       });
       expect(next.details[Events.VIEWPORT_NEW_IMAGE_SET]).toEqual({
@@ -301,7 +319,7 @@ describe('Direct next planar viewport events and image loads against the legacy 
   });
 
   describe('stack events', () => {
-    it('fires CAMERA_MODIFIED and STACK_NEW_IMAGE when the image changes, and neither PRE_STACK_NEW_IMAGE nor STACK_VIEWPORT_SCROLL of the legacy stack viewport', async () => {
+    it('fires CAMERA_MODIFIED and NEW_IMAGE when the image changes, and none of PRE_STACK_NEW_IMAGE, STACK_NEW_IMAGE and STACK_VIEWPORT_SCROLL of the legacy stack viewport', async () => {
       const imageIds = createImageIds();
       const recorded = [];
 
@@ -343,17 +361,19 @@ describe('Direct next planar viewport events and image loads against the legacy 
       expect(legacy.setImageIdIndex).toEqual([
         `${Events.PRE_STACK_NEW_IMAGE}:3`,
         `${Events.STACK_NEW_IMAGE}:3`,
+        `${Events.NEW_IMAGE}:3`,
       ]);
       expect(legacy.scroll).toEqual([
         `${Events.PRE_STACK_NEW_IMAGE}:2`,
         `${Events.STACK_VIEWPORT_SCROLL}:2`,
         `${Events.STACK_NEW_IMAGE}:2`,
+        `${Events.NEW_IMAGE}:2`,
       ]);
       expect(next).toEqual({
-        setImageIdIndex: [`${Events.STACK_NEW_IMAGE}:3`],
+        setImageIdIndex: [`${Events.NEW_IMAGE}:3`],
         setImageIdIndexCameraEvents: 1,
         sameIndex: [],
-        scroll: [`${Events.STACK_NEW_IMAGE}:2`],
+        scroll: [`${Events.NEW_IMAGE}:2`],
         scrollCameraEvents: 1,
         scrollPastEnd: [],
         index: 3,
@@ -514,7 +534,7 @@ describe('Direct next planar viewport events and image loads against the legacy 
         let shownAtResolve;
 
         await showStack(viewport, imageIds, 0);
-        element.addEventListener(Events.STACK_NEW_IMAGE, (evt) => {
+        element.addEventListener(Events.NEW_IMAGE, (evt) => {
           shown ||= evt.detail.imageIdIndex === 2;
         });
 

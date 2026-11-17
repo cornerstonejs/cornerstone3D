@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test';
 
-const STACK_NEW_IMAGE = 'CORNERSTONE_STACK_NEW_IMAGE';
+const NEW_IMAGE = 'CORNERSTONE_NEW_IMAGE';
 const IMAGE_RENDERED = 'CORNERSTONE_IMAGE_RENDERED';
 
 interface WaitForImageRenderedOptions {
@@ -25,7 +25,7 @@ export async function waitForImageRendered(
     .slice(2)}`;
 
   await page.evaluate(
-    ({ selector, expectedImageId, stateKey, STACK_NEW_IMAGE, IMAGE_RENDERED }) => {
+    ({ selector, expectedImageId, stateKey, NEW_IMAGE, IMAGE_RENDERED }) => {
       const element = document.querySelector(selector) as HTMLDivElement | null;
       if (!element) {
         throw new Error(`waitForImageRendered: element not found: ${selector}`);
@@ -37,7 +37,7 @@ export async function waitForImageRendered(
       } = { matched: !expectedImageId, rendered: false };
       (window as unknown as Record<string, unknown>)[stateKey] = state;
 
-      const onStackNewImage = (event: Event) => {
+      const onNewImage = (event: Event) => {
         const detail = (event as CustomEvent<{ imageId?: string }>).detail;
         if (expectedImageId && detail?.imageId === expectedImageId) {
           state.matched = true;
@@ -47,19 +47,19 @@ export async function waitForImageRendered(
       const onImageRendered = () => {
         if (state.matched) {
           state.rendered = true;
-          element.removeEventListener(STACK_NEW_IMAGE, onStackNewImage);
+          element.removeEventListener(NEW_IMAGE, onNewImage);
           element.removeEventListener(IMAGE_RENDERED, onImageRendered);
         }
       };
 
-      element.addEventListener(STACK_NEW_IMAGE, onStackNewImage);
+      element.addEventListener(NEW_IMAGE, onNewImage);
       element.addEventListener(IMAGE_RENDERED, onImageRendered);
     },
     {
       selector: elementSelector,
       expectedImageId,
       stateKey,
-      STACK_NEW_IMAGE,
+      NEW_IMAGE,
       IMAGE_RENDERED,
     }
   );

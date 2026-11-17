@@ -21,7 +21,7 @@
 //   `GenericViewport.modified()` every time `setViewState`/the Planar
 //   zoom/pan/scale legacy shims run, as long as a previous camera snapshot
 //   was resolvable.
-// - STACK_NEW_IMAGE is triggered by `triggerPlanarNewImage` in
+// - NEW_IMAGE is triggered by `triggerPlanarNewImage` in
 //   planarImageEvents.ts, on the viewport element, only for the source
 //   binding, only when the render path actually swaps to a new image alone
 //   (`resolvePlanarRenderPathCurrentImageIdIndex` dedups against the last
@@ -131,6 +131,7 @@ const ALL_TRACKED_EVENTS = [
   Events.VOI_MODIFIED,
   Events.COLORMAP_MODIFIED,
   Events.DISPLAY_AREA_MODIFIED,
+  Events.NEW_IMAGE,
   Events.STACK_NEW_IMAGE,
   Events.VOLUME_NEW_IMAGE,
 ];
@@ -145,10 +146,11 @@ interface CameraModifiedDetail {
   renderingEngineId?: string;
 }
 
-interface StackNewImageDetail {
+interface NewImageDetail {
   viewportId?: string;
   imageId?: string;
   imageIdIndex?: number;
+  numberOfSlices?: number;
 }
 
 interface VoiModifiedDetail {
@@ -349,7 +351,7 @@ test('golden event sequence for load -> scroll -> zoom', async () => {
   // Golden contract, pinned from an actual run (verified stable across
   // repeated runs of this file). No collapsing of consecutive duplicates
   // was needed -- none occurred. Ordering, per step:
-  //   load:   STACK_NEW_IMAGE fires first (the vtkImage mount fires the
+  //   load:   NEW_IMAGE fires first (the vtkImage mount fires the
   //           initial slice synchronously while building the binding),
   //           then VOI_MODIFIED (addDisplaySetInternal mirrors legacy
   //           StackViewport by emitting the resolved default VOI right
@@ -359,18 +361,18 @@ test('golden event sequence for load -> scroll -> zoom', async () => {
   //           callback fires after the mount's render() request).
   //   scroll: CAMERA_MODIFIED fires synchronously inside setViewState's
   //           modified() before the image-loader microtask resolves;
-  //           STACK_NEW_IMAGE then fires once the new slice's image
+  //           NEW_IMAGE then fires once the new slice's image
   //           promise resolves and swaps the actor; IMAGE_RENDERED follows
   //           on the next animation frame.
   //   zoom:   CAMERA_MODIFIED (synchronous) then IMAGE_RENDERED (next
   //           frame).
   const golden = [
-    Events.STACK_NEW_IMAGE,
+    Events.NEW_IMAGE,
     Events.VOI_MODIFIED,
     Events.CAMERA_MODIFIED,
     Events.IMAGE_RENDERED,
     Events.CAMERA_MODIFIED,
-    Events.STACK_NEW_IMAGE,
+    Events.NEW_IMAGE,
     Events.IMAGE_RENDERED,
     Events.CAMERA_MODIFIED,
     Events.IMAGE_RENDERED,
@@ -409,21 +411,23 @@ test('scroll fires exactly one new-image event whose imageId matches the resolve
   recorder.clear();
 
   const resolvedImageId = await viewport.scroll(1);
-  await recorder.waitFor(Events.STACK_NEW_IMAGE);
+  await recorder.waitFor(Events.NEW_IMAGE);
   await waitForQuiescence(recorder);
 
-  expect(recorder.count(Events.STACK_NEW_IMAGE)).toBe(1);
+  expect(recorder.count(Events.NEW_IMAGE)).toBe(1);
+  expect(recorder.count(Events.STACK_NEW_IMAGE)).toBe(0);
   expect(recorder.count(Events.VOLUME_NEW_IMAGE)).toBe(0);
 
   const newImageEvent = recorder.events.find(
-    (event) => event.type === Events.STACK_NEW_IMAGE
+    (event) => event.type === Events.NEW_IMAGE
   );
-  const detail = newImageEvent?.detail as StackNewImageDetail | undefined;
+  const detail = newImageEvent?.detail as NewImageDetail | undefined;
 
   expect(resolvedImageId).toBe(imageIds[1]);
   expect(viewport.getCurrentImageId()).toBe(imageIds[1]);
   expect(detail?.imageId).toBe(viewport.getCurrentImageId());
   expect(detail?.imageIdIndex).toBe(1);
+  expect(detail?.numberOfSlices).toBe(imageIds.length);
   expect(detail?.viewportId).toBe(ctx.viewportId);
 });
 

@@ -23,7 +23,7 @@ import {
   withAcquiredFrames,
 } from '../src/RenderingEngine/GenericViewport/Planar/planarAcquiredFrames';
 import { getImageSliceOverlayOrder } from '../src/RenderingEngine/GenericViewport/Planar/VtkVolumeSliceRenderPath';
-import { triggerPlanarVolumeNewImage } from '../src/RenderingEngine/GenericViewport/Planar/planarImageEvents';
+import { triggerPlanarVolumeNewImageOfPlacedSlice } from '../src/RenderingEngine/GenericViewport/Planar/planarImageEvents';
 import { resolvePlanarRenderPathProjection } from '../src/RenderingEngine/GenericViewport/Planar/planarRenderPathProjection';
 import renderingEngineCache from '../src/RenderingEngine/renderingEngineCache';
 import genericViewportDisplaySetMetadataProvider from '../src/utilities/genericViewportDisplaySetMetadataProvider';
@@ -223,11 +223,11 @@ describe('PlanarViewport acquired frames in the volume path (user experience)', 
         ) {
           rendering.currentImageIdIndex = projection.currentImageIdIndex;
           // As the volume slice path does on a change of slice.
-          triggerPlanarVolumeNewImage(ctx, {
-            camera: viewState,
-            imageIds: rendering.imageIds,
-            imageIdIndex: rendering.currentImageIdIndex,
-            maxImageIdIndex: rendering.maxImageIdIndex,
+          triggerPlanarVolumeNewImageOfPlacedSlice(ctx, {
+            rendering,
+            viewState,
+            isSourceBinding: projection.isSourceBinding,
+            imageIdIndexChanged: true,
           });
         }
       },
@@ -440,18 +440,20 @@ describe('PlanarViewport acquired frames in the volume path (user experience)', 
     expect(volumeActor().getVisibility()).toBe(false);
     expect(viewport.getCurrentMode()).toBe('volume');
 
-    // A scroll sends one VOLUME_NEW_IMAGE (the OHIF scroll bar of a volume)
-    // and one STACK_NEW_IMAGE, also while the frame shows.
+    // A scroll sends one NEW_IMAGE (the scroll bar of a volume listens to
+    // it), also while the frame shows, and neither event of the old pair.
     const events = [];
-    for (const type of [Events.STACK_NEW_IMAGE, Events.VOLUME_NEW_IMAGE]) {
+    for (const type of [
+      Events.NEW_IMAGE,
+      Events.STACK_NEW_IMAGE,
+      Events.VOLUME_NEW_IMAGE,
+    ]) {
       viewport.element.addEventListener(type, () => events.push(type));
     }
     await viewport.scroll(1);
     await flush();
 
-    expect(events.sort()).toEqual(
-      [Events.STACK_NEW_IMAGE, Events.VOLUME_NEW_IMAGE].sort()
-    );
+    expect(events).toEqual([Events.NEW_IMAGE]);
     expect(frameRendering().actor.getVisibility()).toBe(true);
   });
 

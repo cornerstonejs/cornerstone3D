@@ -6,6 +6,7 @@ import {
   createSeries,
   renderAndWait,
   SERIES_SIZE,
+  waitFor,
 } from './utils/planarSeriesBothModes';
 
 const { Enums, utilities } = cornerstone3D;
@@ -33,10 +34,16 @@ async function frames(count = 4) {
   }
 }
 
-/** Records the new image events of an element from now on. */
+/**
+ * Records the new image events of an element from now on: NEW_IMAGE, and the
+ * old pair that only a legacy adapter fires.
+ */
 function recordNewImageEvents(element) {
-  const events = { stack: [], volume: [] };
+  const events = { newImage: [], stack: [], volume: [] };
 
+  element.addEventListener(Events.NEW_IMAGE, (evt) => {
+    events.newImage.push(evt.detail);
+  });
   element.addEventListener(Events.STACK_NEW_IMAGE, (evt) => {
     events.stack.push(evt.detail);
   });
@@ -79,32 +86,50 @@ function addStackDisplaySet(viewport, series, initialImageIdIndex) {
   return displaySetId;
 }
 
-/** The one STACK_NEW_IMAGE that the mount of a volume fires. */
-function stackEventOfSlice(viewport, { imageId, imageIdIndex }) {
+/** The one NEW_IMAGE that a volume fires for a slice. */
+function newImageOfSlice(viewport, { imageId, imageIdIndex, numberOfSlices }) {
   return [
     {
-      image: undefined,
-      imageId,
+      viewportId: viewport.id,
+      renderingEngineId,
       imageIdIndex,
-      viewportId: viewport.id,
-      renderingEngineId,
+      numberOfSlices,
+      imageId,
+      image: undefined,
     },
   ];
 }
 
-/** The one VOLUME_NEW_IMAGE that the mount of a volume fires. */
-function volumeEventOfSlice(viewport, imageIndex, numberOfSlices) {
+/** The one NEW_IMAGE that a stack fires for an image. */
+function newImageOfStack(viewport, series, imageIdIndex) {
   return [
     {
-      imageIndex,
-      numberOfSlices,
       viewportId: viewport.id,
       renderingEngineId,
+      imageIdIndex,
+      numberOfSlices: series.imageIds.length,
+      imageId: series.imageIds[imageIdIndex],
+      image: jasmine.objectContaining({
+        imageId: series.imageIds[imageIdIndex],
+      }),
     },
   ];
 }
 
-describe('The new image events of a mount on a planar viewport -- ', () => {
+/** Expects that the element fired neither event of the old pair. */
+function expectNoOldPair(events) {
+  expect(events.stack).toEqual([]);
+  expect(events.volume).toEqual([]);
+}
+
+/** Forgets the events recorded so far. */
+function clearEvents(events) {
+  events.newImage.length = 0;
+  events.stack.length = 0;
+  events.volume.length = 0;
+}
+
+describe('The new image event of a mount and of a scroll on a planar viewport -- ', () => {
   let renderingEngine;
 
   beforeEach(function () {
@@ -122,7 +147,7 @@ describe('The new image events of a mount on a planar viewport -- ', () => {
   });
 
   for (const [path, pathOptions, renderMode] of VOLUME_PATHS) {
-    it(`fires STACK_NEW_IMAGE and VOLUME_NEW_IMAGE once for the slice that the mount of a volume shows ${path}`, async function () {
+    it(`fires NEW_IMAGE once for the slice that the mount of a volume shows, and not the old pair ${path}`, async function () {
       const series = await createSeries({ id: `mount-${renderMode}` });
       const viewport = createNextViewport(renderingEngine, 'nextMount');
       const events = recordNewImageEvents(viewport.element);
@@ -140,15 +165,18 @@ describe('The new image events of a mount on a planar viewport -- ', () => {
       expect(viewport.getRenderPlan()[0].renderMode).toBe(renderMode);
       expect(imageIdIndex).toBeGreaterThan(0);
       expect(series.imageIds).toContain(imageId);
-      expect(events.stack).toEqual(
-        stackEventOfSlice(viewport, { imageId, imageIdIndex })
+      expect(viewport.getNumberOfSlices()).toBe(series.size.slices);
+      expect(events.newImage).toEqual(
+        newImageOfSlice(viewport, {
+          imageId,
+          imageIdIndex,
+          numberOfSlices: series.size.slices,
+        })
       );
-      expect(events.volume).toEqual(
-        volumeEventOfSlice(viewport, imageIdIndex, series.size.slices)
-      );
+      expectNoOldPair(events);
     });
 
-    it(`fires the new image events once for the slice of the first image index of a volume ${path}`, async function () {
+    it(`fires NEW_IMAGE once for the slice of the first image index of a volume ${path}`, async function () {
       const series = await createSeries({ id: `mount-first-${renderMode}` });
       const viewport = createNextViewport(renderingEngine, 'nextMount');
       const events = recordNewImageEvents(viewport.element);
@@ -165,18 +193,17 @@ describe('The new image events of a mount on a planar viewport -- ', () => {
 
       expect(viewport.getCurrentImageId()).toBe(series.imageIds[6]);
       expect(imageIdIndex).toBe(series.size.slices - 1 - 6);
-      expect(events.stack).toEqual(
-        stackEventOfSlice(viewport, {
+      expect(events.newImage).toEqual(
+        newImageOfSlice(viewport, {
           imageId: series.imageIds[6],
           imageIdIndex,
+          numberOfSlices: series.size.slices,
         })
       );
-      expect(events.volume).toEqual(
-        volumeEventOfSlice(viewport, imageIdIndex, series.size.slices)
-      );
+      expectNoOldPair(events);
     });
 
-    it(`fires the new image events once when the first slice has the index that the rendering starts with ${path}`, async function () {
+    it(`fires NEW_IMAGE once when the first slice has the index that the rendering starts with ${path}`, async function () {
       const series = await createSeries({
         id: `mount-same-${renderMode}`,
         size: { ...SERIES_SIZE, slices: 7 },
@@ -194,16 +221,17 @@ describe('The new image events of a mount on a planar viewport -- ', () => {
 
       expect(viewport.getCurrentImageId()).toBe(series.imageIds[3]);
       expect(viewport.getCurrentImageIdIndex()).toBe(3);
-      expect(events.stack).toEqual(
-        stackEventOfSlice(viewport, {
+      expect(events.newImage).toEqual(
+        newImageOfSlice(viewport, {
           imageId: series.imageIds[3],
           imageIdIndex: 3,
+          numberOfSlices: 7,
         })
       );
-      expect(events.volume).toEqual(volumeEventOfSlice(viewport, 3, 7));
+      expectNoOldPair(events);
     });
 
-    it(`fires the new image events once for a volume that is cut across its images ${path}`, async function () {
+    it(`fires NEW_IMAGE once, with the slice index of the view and no image id, for a volume that is cut across its images ${path}`, async function () {
       const series = await createSeries({ id: `mount-across-${renderMode}` });
       const viewport = createNextViewport(renderingEngine, 'nextMount');
       const events = recordNewImageEvents(viewport.element);
@@ -215,21 +243,36 @@ describe('The new image events of a mount on a planar viewport -- ', () => {
       await firstRenderDone(viewport);
 
       const imageIdIndex = viewport.getCurrentImageIdIndex();
+      const numberOfSlices = viewport.getNumberOfSlices();
 
       expect(viewport.getCurrentImageId()).toBeUndefined();
       expect(imageIdIndex).toBeGreaterThan(0);
-      expect(events.stack).toEqual(
-        stackEventOfSlice(viewport, {
+      expect(numberOfSlices).toBeGreaterThan(series.size.slices);
+      expect(events.newImage).toEqual(
+        newImageOfSlice(viewport, {
           imageId: undefined,
-          imageIdIndex: undefined,
+          imageIdIndex,
+          numberOfSlices,
         })
       );
-      expect(events.volume).toEqual(
-        volumeEventOfSlice(viewport, imageIdIndex, viewport.getNumberOfSlices())
+      expectNoOldPair(events);
+
+      clearEvents(events);
+      await viewport.scroll(1);
+      await firstRenderDone(viewport);
+
+      expect(viewport.getCurrentImageIdIndex()).toBe(imageIdIndex + 1);
+      expect(events.newImage).toEqual(
+        newImageOfSlice(viewport, {
+          imageId: undefined,
+          imageIdIndex: imageIdIndex + 1,
+          numberOfSlices,
+        })
       );
+      expectNoOldPair(events);
     });
 
-    it(`fires the new image events once for the source when a second volume is mounted over it ${path}`, async function () {
+    it(`fires NEW_IMAGE once for the source when a second volume is mounted over it ${path}`, async function () {
       const series = await createSeries({ id: `mount-source-${renderMode}` });
       const over = await createSeries({ id: `mount-over-${renderMode}` });
       const viewport = createNextViewport(renderingEngine, 'nextMount');
@@ -260,33 +303,69 @@ describe('The new image events of a mount on a planar viewport -- ', () => {
         [renderMode, renderMode]
       );
       expect(series.imageIds).toContain(imageId);
-      expect(events.stack).toEqual(
-        stackEventOfSlice(viewport, { imageId, imageIdIndex })
-      );
-      expect(events.volume).toEqual(
-        volumeEventOfSlice(viewport, imageIdIndex, series.size.slices)
+      expect(events.newImage).toEqual(
+        newImageOfSlice(viewport, {
+          imageId,
+          imageIdIndex,
+          numberOfSlices: series.size.slices,
+        })
       );
 
-      events.stack.length = 0;
-      events.volume.length = 0;
+      clearEvents(events);
       await viewport.scroll(1);
       await firstRenderDone(viewport);
 
-      expect(events.stack).toEqual(
-        stackEventOfSlice(viewport, {
+      expect(events.newImage).toEqual(
+        newImageOfSlice(viewport, {
           imageId: viewport.getCurrentImageId(),
           imageIdIndex: imageIdIndex + 1,
+          numberOfSlices: series.size.slices,
         })
       );
-      expect(events.volume).toEqual(
-        volumeEventOfSlice(viewport, imageIdIndex + 1, series.size.slices)
-      );
+      expectNoOldPair(events);
+    });
+
+    it(`fires NEW_IMAGE once for each scroll of a volume, and not the old pair ${path}`, async function () {
+      const series = await createSeries({ id: `scroll-${renderMode}` });
+      const viewport = createNextViewport(renderingEngine, 'nextMount');
+      const events = recordNewImageEvents(viewport.element);
+
+      await viewport.setDisplaySets({
+        displaySetId: addVolumeDisplaySet(viewport, series, {
+          initialImageIdIndex: 6,
+        }),
+        options: { orientation: OrientationAxis.ACQUISITION, ...pathOptions },
+      });
+      await firstRenderDone(viewport);
+
+      const imageIdIndex = viewport.getCurrentImageIdIndex();
+      const expected = [];
+
+      clearEvents(events);
+
+      for (const step of [1, 2, 3]) {
+        await viewport.scroll(1);
+        await firstRenderDone(viewport);
+
+        expect(viewport.getCurrentImageIdIndex()).toBe(imageIdIndex + step);
+        expect(viewport.getCurrentImageId()).toBe(series.imageIds[6 - step]);
+        expected.push(
+          ...newImageOfSlice(viewport, {
+            imageId: series.imageIds[6 - step],
+            imageIdIndex: imageIdIndex + step,
+            numberOfSlices: series.size.slices,
+          })
+        );
+      }
+
+      expect(events.newImage).toEqual(expected);
+      expectNoOldPair(events);
     });
   }
 
   for (const [path, pathOptions, renderMode] of STACK_PATHS) {
     for (const first of [0, 5]) {
-      it(`fires STACK_NEW_IMAGE once and no VOLUME_NEW_IMAGE for the mount of a stack at its image ${first} ${path}`, async function () {
+      it(`fires NEW_IMAGE once, and not the old pair, for the mount of a stack at its image ${first} ${path}`, async function () {
         const series = await createSeries({ id: `mount-${renderMode}` });
         const viewport = createNextViewport(renderingEngine, 'nextMount');
         const events = recordNewImageEvents(viewport.element);
@@ -300,20 +379,44 @@ describe('The new image events of a mount on a planar viewport -- ', () => {
         expect(viewport.getCurrentMode()).toBe('stack');
         expect(viewport.getRenderPlan()[0].renderMode).toBe(renderMode);
         expect(viewport.getCurrentImageId()).toBe(series.imageIds[first]);
-        expect(events.stack).toEqual([
-          {
-            image: jasmine.objectContaining({
-              imageId: series.imageIds[first],
-            }),
-            imageId: series.imageIds[first],
-            imageIdIndex: first,
-            viewportId: viewport.id,
-            renderingEngineId,
-          },
-        ]);
-        expect(events.volume).toEqual([]);
+        expect(viewport.getCurrentImageIdIndex()).toBe(first);
+        expect(viewport.getNumberOfSlices()).toBe(series.size.slices);
+        expect(events.newImage).toEqual(
+          newImageOfStack(viewport, series, first)
+        );
+        expectNoOldPair(events);
       });
     }
+
+    it(`fires NEW_IMAGE once for each scroll of a stack, and not the old pair ${path}`, async function () {
+      const series = await createSeries({ id: `scroll-${renderMode}` });
+      const viewport = createNextViewport(renderingEngine, 'nextMount');
+      const events = recordNewImageEvents(viewport.element);
+
+      await viewport.setDisplaySets({
+        displaySetId: addStackDisplaySet(viewport, series, 2),
+        options: { orientation: OrientationAxis.ACQUISITION, ...pathOptions },
+      });
+      await firstRenderDone(viewport);
+      clearEvents(events);
+
+      const expected = [];
+
+      for (const imageIdIndex of [3, 4, 5]) {
+        await viewport.scroll(1);
+        await waitFor(() => events.newImage.length === expected.length + 1);
+        await firstRenderDone(viewport);
+
+        expect(viewport.getCurrentImageIdIndex()).toBe(imageIdIndex);
+        expect(viewport.getCurrentImageId()).toBe(
+          series.imageIds[imageIdIndex]
+        );
+        expected.push(...newImageOfStack(viewport, series, imageIdIndex));
+      }
+
+      expect(events.newImage).toEqual(expected);
+      expectNoOldPair(events);
+    });
   }
 
   /**
@@ -322,9 +425,10 @@ describe('The new image events of a mount on a planar viewport -- ', () => {
    * and no STACK_NEW_IMAGE. Its adapter fires both twice: first as the volume
    * is attached, for the index of its middle image, then for the slice that
    * the mount shows. The legacy stack viewport class fired STACK_NEW_IMAGE
-   * once, as its adapter does.
+   * once, as its adapter does. An adapter is a next viewport too, so it also
+   * fires NEW_IMAGE, once for what the mount shows.
    */
-  it('keeps what the legacy adapters fire at a mount', async function () {
+  it('keeps the old pair that the legacy adapters fire at a mount, and fires NEW_IMAGE once too', async function () {
     const series = await createSeries({ id: 'mount-legacy' });
     const fired = {};
 
@@ -353,6 +457,14 @@ describe('The new image events of a mount on a planar viewport -- ', () => {
           imageIndex,
           numberOfSlices,
         })),
+        newImage: events.newImage.map(
+          ({ imageId, imageIdIndex, numberOfSlices, image }) => ({
+            image: series.imageIds.indexOf(imageId),
+            imageIdIndex,
+            numberOfSlices,
+            hasImage: image !== undefined,
+          })
+        ),
         sliceIndex: viewport.getCurrentImageIdIndex(),
         imageOnDisplay: series.imageIds.indexOf(viewport.getCurrentImageId()),
       };
@@ -367,12 +479,18 @@ describe('The new image events of a mount on a planar viewport -- ', () => {
         { imageIndex: 4, numberOfSlices: 8 },
         { imageIndex: 3, numberOfSlices: 8 },
       ],
+      newImage: [
+        { image: 4, imageIdIndex: 3, numberOfSlices: 8, hasImage: false },
+      ],
       sliceIndex: 3,
       imageOnDisplay: 4,
     });
     expect(fired.adapterStack).toEqual({
       stack: [{ image: 0, imageIdIndex: 0 }],
       volume: [],
+      newImage: [
+        { image: 0, imageIdIndex: 0, numberOfSlices: 8, hasImage: true },
+      ],
       sliceIndex: 0,
       imageOnDisplay: 0,
     });

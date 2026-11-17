@@ -26,6 +26,7 @@ const INTERESTING_DETAIL_KEYS = [
   'renderingEngineId',
   'imageId',
   'imageIdIndex',
+  'numberOfSlices',
   'newImageIdIndex',
   'previousImageIdIndex',
   'volumeId',

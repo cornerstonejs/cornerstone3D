@@ -73,7 +73,7 @@ describe('What a caller uses in place of cut planar members, in stack mode and i
       expect(viewport.getCurrentImageId()).toBeUndefined();
     });
 
-    it('carries the image in the detail of STACK_NEW_IMAGE in stack mode, and no image in volume mode', async function () {
+    it('carries the image in the detail of NEW_IMAGE in stack mode, and no image in volume mode', async function () {
       const series = await createSeries();
       const { stack, volume } = await showBothModes(renderingEngine, series);
       const details = {};
@@ -81,7 +81,7 @@ describe('What a caller uses in place of cut planar members, in stack mode and i
       for (const viewport of [stack, volume]) {
         const shown = new Promise((resolve) => {
           viewport.element.addEventListener(
-            Events.STACK_NEW_IMAGE,
+            Events.NEW_IMAGE,
             (evt) => resolve(evt.detail),
             { once: true }
           );
@@ -96,8 +96,12 @@ describe('What a caller uses in place of cut planar members, in stack mode and i
         cache.getImage(stack.getCurrentImageId())
       );
       expect(details.stack.imageId).toBe(stack.getCurrentImageId());
+      expect(details.stack.imageIdIndex).toBe(stack.getCurrentImageIdIndex());
+      expect(details.stack.numberOfSlices).toBe(stack.getNumberOfSlices());
       expect(details.volume.image).toBeUndefined();
+      expect(details.volume.imageId).toBe(volume.getCurrentImageId());
       expect(details.volume.imageIdIndex).toBe(volume.getCurrentImageIdIndex());
+      expect(details.volume.numberOfSlices).toBe(volume.getNumberOfSlices());
     });
   });
 

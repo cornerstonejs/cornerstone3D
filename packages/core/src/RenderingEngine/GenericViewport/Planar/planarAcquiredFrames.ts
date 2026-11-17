@@ -135,7 +135,7 @@ export function withAcquiredFrames(
   const isSource = () => ctx.viewport.isCurrentDataId(data.id);
   // The image path follows the volume camera, so it never drives the
   // renderer camera or the render mode of the viewport. As an overlay it sends
-  // no STACK_NEW_IMAGE: the volume path sends the slice events of a scroll.
+  // no NEW_IMAGE: the volume path sends the slice events of a scroll.
   const frameCtx = {
     ...ctx,
     viewport: { ...ctx.viewport, isCurrentDataId: () => false },

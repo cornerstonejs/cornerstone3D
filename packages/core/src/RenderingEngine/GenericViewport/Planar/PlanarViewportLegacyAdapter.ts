@@ -96,8 +96,8 @@ class PlanarViewportLegacyAdapter extends PlanarViewport {
   constructor(args: PlanarViewportInput) {
     super(args);
     this.element.addEventListener(
-      Events.STACK_NEW_IMAGE,
-      this.onStackNewImage as EventListener
+      Events.NEW_IMAGE,
+      this.onNewImage as EventListener
     );
   }
 
@@ -107,16 +107,9 @@ class PlanarViewportLegacyAdapter extends PlanarViewport {
   }
 
   /**
-   * STACK_NEW_IMAGE of a volume keeps the image id that the adapter fired
-   * before: `imageIds[imageIdIndex]`.
-   */
-  protected override namesVolumeImageBySliceIndex(): boolean {
-    return true;
-  }
-
-  /**
-   * A volume keeps the new image events that the adapter fired before: at
-   * the attach, and for each change of the slice index of any display set.
+   * A volume keeps STACK_NEW_IMAGE and VOLUME_NEW_IMAGE that the adapter
+   * fired before: at the attach, and for each change of the slice index of
+   * any display set.
    */
   protected override firesLegacyVolumeNewImageEvents(): boolean {
     return true;
@@ -909,21 +902,40 @@ class PlanarViewportLegacyAdapter extends PlanarViewport {
   }
 
   /**
+   * Runs for each NEW_IMAGE of the adapter that has an image, which is an
+   * image of a stack. It fires what the legacy stack viewport fired for such
+   * an image: IMAGE_SPACING_CALIBRATED when the image has a new user
+   * calibration, and then STACK_NEW_IMAGE with the image, its image id and
+   * its index in the stack.
+   */
+  private readonly onNewImage = (evt: EventTypes.NewImageEvent): void => {
+    const { image, imageId, imageIdIndex } = evt.detail;
+
+    if (!image || !imageId) {
+      return;
+    }
+
+    this.triggerImageSpacingCalibrated(image, imageId);
+
+    const detail: EventTypes.StackNewImageEventDetail = {
+      image,
+      imageId,
+      imageIdIndex,
+      viewportId: this.id,
+      renderingEngineId: this.renderingEngineId,
+    };
+
+    triggerEvent(this.element, Events.STACK_NEW_IMAGE, detail);
+  };
+
+  /**
    * Fires IMAGE_SPACING_CALIBRATED when a newly shown stack image has a user
    * calibration (`calibratedPixelSpacing`) other than the image shown before,
    * as the legacy stack viewport does when it shows such an image. The
    * detail is the legacy one: the user calibration, its scale, the image
    * data and its world to index matrix.
    */
-  private readonly onStackNewImage = (
-    evt: EventTypes.StackNewImageEvent
-  ): void => {
-    const { image, imageId } = evt.detail;
-
-    if (!image || !imageId) {
-      return;
-    }
-
+  private triggerImageSpacingCalibrated(image: IImage, imageId: string): void {
     const calibration = metaData.get('calibratedPixelSpacing', imageId) as
       | { scale?: number }
       | undefined;
@@ -950,7 +962,7 @@ class PlanarViewportLegacyAdapter extends PlanarViewport {
       imageData: imageData.imageData,
       worldToIndex: getPlanarWorldToIndexMatrix(imageData),
     });
-  };
+  }
 
   private getLegacyImageId(): string | undefined {
     return this.getCurrentImageId() ?? this.getImageIds()[0];
@@ -1340,8 +1352,8 @@ class PlanarViewportLegacyAdapter extends PlanarViewport {
     }
 
     this.element.removeEventListener(
-      Events.STACK_NEW_IMAGE,
-      this.onStackNewImage as EventListener
+      Events.NEW_IMAGE,
+      this.onNewImage as EventListener
     );
     this.legacyCompatibility.destroy();
     super.onDestroy();

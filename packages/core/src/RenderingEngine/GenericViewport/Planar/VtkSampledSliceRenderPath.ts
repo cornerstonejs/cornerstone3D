@@ -23,9 +23,8 @@ import type {
 } from './PlanarViewportTypes';
 import type { PlanarSampledSliceRendering } from './planarRuntimeTypes';
 import {
-  firesPlanarVolumeNewImage,
-  triggerPlanarVolumeNewImage,
   triggerPlanarVolumeNewImageAtAttach,
+  triggerPlanarVolumeNewImageOfPlacedSlice,
 } from './planarImageEvents';
 import { applyPlanarICameraToRenderer } from './planarRenderCamera';
 import {
@@ -175,14 +174,11 @@ export class VtkSampledSliceRenderPath
       payload.volumeId
     );
 
-    triggerPlanarVolumeNewImageAtAttach(ctx, {
-      camera: ctx.viewport.getViewState(),
-      acquisitionOrientation: rendering.acquisitionOrientation,
-      imageIds: rendering.imageIds,
-      imageIdIndex: rendering.currentImageIdIndex,
-      maxImageIdIndex: rendering.maxImageIdIndex,
+    triggerPlanarVolumeNewImageAtAttach(
+      ctx,
       rendering,
-    });
+      ctx.viewport.getViewState()
+    );
 
     return {
       rendering,
@@ -364,21 +360,12 @@ export class VtkSampledSliceRenderPath
     this.updateSlice(mount, projection.activeSourceICamera);
     ctx.vtk.renderer.resetCameraClippingRange();
 
-    if (
-      triggerImageEvent &&
-      firesPlanarVolumeNewImage(ctx, {
+    if (triggerImageEvent) {
+      triggerPlanarVolumeNewImageOfPlacedSlice(ctx, {
         rendering,
+        viewState: camera,
         isSourceBinding: projection.isSourceBinding,
         imageIdIndexChanged,
-      })
-    ) {
-      triggerPlanarVolumeNewImage(ctx, {
-        camera,
-        acquisitionOrientation: rendering.acquisitionOrientation,
-        imageIds: rendering.imageIds,
-        imageIdIndex: rendering.currentImageIdIndex,
-        maxImageIdIndex: rendering.maxImageIdIndex,
-        rendering,
       });
     }
   }

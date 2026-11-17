@@ -20,7 +20,7 @@
 //     recording on both targets simultaneously.
 //   - VOI_MODIFIED fires on the viewport `element` (PlanarViewport's
 //     `notifyDataPresentationModified` calls `triggerEvent(this.element, ...)`).
-//   - IMAGE_RENDERED / STACK_NEW_IMAGE fire on the viewport `element`.
+//   - IMAGE_RENDERED / NEW_IMAGE fire on the viewport `element`.
 import { afterEach, describe, expect, test } from 'vitest';
 import { Enums, eventTarget, utilities } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';

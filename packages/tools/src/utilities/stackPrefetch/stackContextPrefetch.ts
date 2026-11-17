@@ -46,7 +46,7 @@ const priorities = {};
 /**
  * Call this to enable stack context sensitive prefetch.  Should be called
  * before stack data is set in order to start prefetch after load first image.
- * This will add a STACK_NEW_IMAGE to detect when a new image is displayed, and then
+ * This will add a NEW_IMAGE to detect when a new image is displayed, and then
  * update the prefetch stack.  The context sensitive prefetch reacts to the
  * initial display, or significant moves, the already loaded images, the
  * cache size and the direction of navigation.  The behaviour is:
@@ -90,8 +90,8 @@ const enable = (element, priority = 0): void => {
 
   prefetch(element, priority);
 
-  element.removeEventListener(Enums.Events.STACK_NEW_IMAGE, onImageUpdated);
-  element.addEventListener(Enums.Events.STACK_NEW_IMAGE, onImageUpdated);
+  element.removeEventListener(Enums.Events.NEW_IMAGE, onImageUpdated);
+  element.addEventListener(Enums.Events.NEW_IMAGE, onImageUpdated);
 
   const promiseRemovedHandler = getPromiseRemovedHandler(element);
 
@@ -373,7 +373,7 @@ const updateToolState = (element, usage?: number) => {
 
 function disable(element) {
   clearTimeout(resetPrefetchTimeout);
-  element.removeEventListener(Enums.Events.STACK_NEW_IMAGE, onImageUpdated);
+  element.removeEventListener(Enums.Events.NEW_IMAGE, onImageUpdated);
 
   const promiseRemovedHandler = getPromiseRemovedHandler(element);
 
