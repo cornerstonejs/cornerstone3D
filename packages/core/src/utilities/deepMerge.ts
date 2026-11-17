@@ -30,12 +30,14 @@ const defaultArrayMerge = (target, source, optionsArgument) => {
       destination[i] = cloneIfNecessary(e, optionsArgument);
     } else if (isMergeableObject(e)) {
       destination[i] = deepMerge(target[i], e, optionsArgument);
-    } else if (target.indexOf(e) === -1) {
+    } else {
       // IMPORTANT: WE SHOULD NOT PUSH NEW ELEMENTS TO THE ARRAY
       // INSTEAD WE SHOULD REPLACE THE ELEMENT, this will result
       // in unexpected behaviors if the initial tool parameters
       // are desired to override the default tool parameters that are
-      // arrays
+      // arrays. The element is replaced even when its value appears at
+      // another index of the target, so a source [0, 1, 1] merged into a
+      // target [1, 1, 0] gives [0, 1, 1] and not the target unchanged.
       destination[i] = cloneIfNecessary(e, optionsArgument);
     }
   });
