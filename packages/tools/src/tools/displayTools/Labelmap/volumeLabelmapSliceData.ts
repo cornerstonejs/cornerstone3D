@@ -37,21 +37,39 @@ type SliceRenderingViewport = Types.IViewport & {
     | undefined;
 };
 
+/**
+ * Moves a labelmap slice actor of a planar viewport along the view normal:
+ * onto the view plane, and then one small step nearer to the camera for each
+ * slice actor that the viewport draws before it.
+ *
+ * The slice image lies at the centre of its own slice of voxels. That centre
+ * is in front of or behind the view plane when the labelmap and the image
+ * under it have different grids, and a slice behind the image fails the depth
+ * test and is not drawn. The view is a parallel projection, so the move
+ * changes the depth of the slice and not its place on the screen.
+ */
 function applyPlanarOverlayDepthOffset(
   actor: vtkImageSlice,
-  viewPlaneNormal: Types.Point3,
+  imageData: vtkImageData,
+  camera: Pick<Types.ICamera, 'focalPoint' | 'viewPlaneNormal'>,
   overlayOrder: number
 ): void {
-  if (overlayOrder <= 0) {
-    actor.setPosition(0, 0, 0);
-    return;
-  }
-
-  const [x, y, z] = vec3.normalize(
-    vec3.create(),
-    viewPlaneNormal as unknown as vec3
-  ) as Types.Point3;
-  const offset = overlayOrder * PLANAR_OVERLAY_DEPTH_EPSILON;
+  const { focalPoint, viewPlaneNormal } = camera;
+  const normalLength = Math.hypot(
+    viewPlaneNormal[0],
+    viewPlaneNormal[1],
+    viewPlaneNormal[2]
+  );
+  const x = viewPlaneNormal[0] / normalLength;
+  const y = viewPlaneNormal[1] / normalLength;
+  const z = viewPlaneNormal[2] / normalLength;
+  const center = imageData.getCenter();
+  const distanceFromViewPlane =
+    (center[0] - focalPoint[0]) * x +
+    (center[1] - focalPoint[1]) * y +
+    (center[2] - focalPoint[2]) * z;
+  const offset =
+    overlayOrder * PLANAR_OVERLAY_DEPTH_EPSILON - distanceFromViewPlane;
 
   actor.setPosition(x * offset, y * offset, z * offset);
 }
