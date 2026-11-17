@@ -966,6 +966,68 @@ describe('renderingCore -- Stack', () => {
         .catch(done.fail);
     });
 
+    it('Should keep a MONOCHROME1 image inverted after resetProperties', function (done) {
+      testUtils.createViewports(renderingEngine, {
+        viewportId,
+        orientation: Enums.OrientationAxis.AXIAL,
+      });
+
+      const imageId = testUtils.encodeImageIdInfo({
+        loader: 'fakeImageLoader',
+        name: 'imageURI',
+        rows: 64,
+        columns: 64,
+        barStart: 20,
+        barWidth: 5,
+        xSpacing: 1,
+        ySpacing: 1,
+        sliceIndex: 0,
+      });
+
+      // The fake loader only describes MONOCHROME2 images
+      metaData.addProvider((type, id) => {
+        if (type === 'imagePixelModule' && id === imageId) {
+          return {
+            ...fakeMetaDataProvider(type, id),
+            photometricInterpretation: 'MONOCHROME1',
+          };
+        }
+      }, 20000);
+
+      const vp = renderingEngine.getViewport(viewportId);
+      // Displayed color, 0-255, of the window edges: MONOCHROME1 shows low values white
+      const getWindowEdgeColors = () => {
+        const { lower, upper } = vp.getProperties().voiRange;
+        const transferFunction = vp
+          .getDefaultActor()
+          .actor.getProperty()
+          .getRGBTransferFunction(0);
+
+        return [lower, upper].map((value) => {
+          const rgb = [];
+          transferFunction.getColor(value, rgb);
+          return rgb.map((channel) => Math.round(channel * 255));
+        });
+      };
+      const inverted = [
+        [255, 255, 255],
+        [0, 0, 0],
+      ];
+
+      vp.setStack([imageId], 0)
+        .then(() => {
+          expect(vp.getProperties().invert).withContext('loaded').toBe(true);
+          expect(getWindowEdgeColors()).withContext('loaded').toEqual(inverted);
+
+          vp.resetProperties();
+
+          expect(vp.getProperties().invert).withContext('reset').toBe(true);
+          expect(getWindowEdgeColors()).withContext('reset').toEqual(inverted);
+        })
+        .then(done)
+        .catch(done.fail);
+    });
+
     it('Should be able to resetProperties API', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,

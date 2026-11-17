@@ -32,6 +32,16 @@ const { fakeImageLoader, fakeMetaDataProvider, compareImages } = testUtils;
 const renderingEngineId = utilities.uuidv4();
 const viewportId = 'VIEWPORT';
 
+// The DICOM image loader marks MONOCHROME1 images as inverted
+function registerMonochrome1ImageLoader() {
+  imageLoader.registerImageLoader('fakeImageLoader', (imageId) => ({
+    promise: fakeImageLoader(imageId).promise.then((image) => ({
+      ...image,
+      invert: true,
+    })),
+  }));
+}
+
 describe('StackViewport CPU -- ', () => {
   let renderingEngine;
 
@@ -507,6 +517,81 @@ describe('StackViewport CPU -- ', () => {
       } catch (e) {
         done.fail(e);
       }
+    });
+
+    it('Should keep a MONOCHROME1 image inverted after resetProperties', function (done) {
+      const element = testUtils.createViewports(renderingEngine, {
+        viewportId,
+      });
+
+      const imageId = testUtils.encodeImageIdInfo({
+        loader: 'fakeImageLoader',
+        name: 'imageURI',
+        rows: 64,
+        columns: 64,
+        barStart: 20,
+        barWidth: 5,
+        xSpacing: 1,
+        ySpacing: 1,
+        sliceIndex: 0,
+      });
+
+      registerMonochrome1ImageLoader();
+
+      const vp = renderingEngine.getViewport(viewportId);
+      let wasReset = false;
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
+        if (!wasReset) {
+          expect(vp.getProperties().invert).withContext('loaded').toBe(true);
+          wasReset = true;
+          vp.resetProperties();
+          return;
+        }
+
+        expect(vp.getProperties().invert).withContext('reset').toBe(true);
+        const image = vp.getCanvas().toDataURL('image/png');
+        testUtils
+          .compareImages(
+            image,
+            cpu_imageURI_256_256_50_10_1_1_0_invert,
+            'cpu_imageURI_256_256_50_10_1_1_0_invert'
+          )
+          .then(done, done.fail);
+      });
+
+      vp.setStack([imageId], 0).catch(done.fail);
+    });
+
+    it('Should keep the invert set by the user when scrolling a MONOCHROME1 stack', function (done) {
+      testUtils.createViewports(renderingEngine, {
+        viewportId,
+      });
+
+      const imageIds = [0, 1].map((sliceIndex) =>
+        testUtils.encodeImageIdInfo({
+          loader: 'fakeImageLoader',
+          name: 'imageURI',
+          rows: 64,
+          columns: 64,
+          barStart: 20,
+          barWidth: 5,
+          xSpacing: 1,
+          ySpacing: 1,
+          sliceIndex,
+        })
+      );
+      registerMonochrome1ImageLoader();
+
+      const vp = renderingEngine.getViewport(viewportId);
+      vp.setStack(imageIds, 0)
+        .then(() => {
+          vp.setProperties({ invert: false });
+          return vp.setImageIdIndex(1);
+        })
+        .then(() => {
+          expect(vp.getProperties().invert).withContext('scrolled').toBe(false);
+        })
+        .then(done, done.fail);
     });
 
     it('Should render one cpu stack viewport with rotation', function (done) {
