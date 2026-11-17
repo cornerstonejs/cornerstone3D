@@ -1,12 +1,14 @@
 ---
 id: next-viewports-only
 title: Next viewports only
-summary: 6.0 removes the legacy viewport classes, the compatibility adapters and the legacy viewport API. This page lists what is removed and what replaces each call
+summary: 6.0 removes the legacy viewport classes, the compatibility adapters and the legacy viewport API. This page says what is removed, how a next viewport is made and filled, and what comes over
 ---
 
 # Next viewports only
 
-**State: decided, not in the code yet.**
+**State: decided, not in the code yet.** The next viewports and their API are
+in the code. The legacy classes, the adapters and the legacy names are still
+there too, and they are deleted in a later step.
 
 5.x has two families of viewports. The legacy ones (`StackViewport`,
 `VolumeViewport`, `VolumeViewport3D`, and the legacy video, whole slide and ECG
@@ -16,6 +18,11 @@ adapters. The [5.x guide](../5x/2-generic-viewport.md) says that those adapters
 are temporary.
 
 6.0 keeps the next viewports and their API, and nothing else.
+
+- For the call that replaces one legacy call, see
+  [Every legacy call and what replaces it](./3-api-map.md).
+- For the order of the work, see
+  [The upgrade, step by step](./4-upgrade-step-by-step.md).
 
 ## What is removed
 
@@ -32,7 +39,8 @@ are temporary.
 - **The legacy viewport API:** `setStack`, `setVolumes`, `addVolumes`,
   `setProperties`, `getProperties`, `getCamera`, `setCamera`, `resetCamera`,
   `getViewPresentation`, `setViewPresentation`, and the actor methods of the
-  legacy planar viewports. The table below gives the replacement of each.
+  legacy planar viewports. [The map](./3-api-map.md) gives the replacement of
+  each member.
 - **Helpers that exist for the legacy API:** `setVolumesForViewports`,
   `addVolumesToViewports`, `utilities.convertStackToVolumeViewport`,
   `utilities.convertVolumeToStackViewport`, and the guards
@@ -43,24 +51,19 @@ are temporary.
 - **Settings that only the legacy viewports read:**
   `rendering.useCPURendering` with `setUseCPURendering`,
   `resetUseCPURendering` and `getShouldUseCPURendering`, and
-  `rendering.useLegacyCameraFOV`.
+  `rendering.useLegacyCameraFOV`. To pin the planar viewports to the CPU, set
+  `rendering.planar.renderBackend` to `'cpu'`.
 
 ## The viewport types
 
-| 5.x                             | 6.0                        |
-| ------------------------------- | -------------------------- |
-| `ViewportType.STACK`            | `ViewportType.PLANAR`      |
-| `ViewportType.ORTHOGRAPHIC`     | `ViewportType.PLANAR`      |
-| `ViewportType.PERSPECTIVE`      | `ViewportType.VOLUME_3D`   |
-| `ViewportType.PLANAR_NEXT`      | `ViewportType.PLANAR`      |
-| `ViewportType.VOLUME_3D_NEXT`   | `ViewportType.VOLUME_3D`   |
-| `ViewportType.VIDEO_NEXT`       | `ViewportType.VIDEO`       |
-| `ViewportType.WHOLE_SLIDE_NEXT` | `ViewportType.WHOLE_SLIDE` |
-| `ViewportType.ECG_NEXT`         | `ViewportType.ECG`         |
+A stack viewport and an orthographic viewport become the planar type. The
+other families keep one type each.
+[Viewport types](./3-api-map.md#viewport-types) has the table from each 5.x
+type to its 6.0 type.
 
 `VOLUME_3D`, `VIDEO`, `WHOLE_SLIDE` and `ECG` keep their names and now mean the
 next viewport of that family. The rename is the last step of the removal.
-Until it lands, the code on this page uses the `_NEXT` names.
+Until it lands, the code of these pages uses the `_NEXT` names.
 
 A `PERSPECTIVE` viewport becomes a 3D viewport with
 `parallelProjection: false` in its options. See
@@ -77,6 +80,7 @@ renderingEngine.enableElement({
   viewportId,
   element,
   type: Enums.ViewportType.PLANAR_NEXT,
+  defaultOptions: { orientation: Enums.OrientationAxis.AXIAL },
 });
 
 const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
@@ -89,58 +93,17 @@ viewport. `utilities.getViewportContentMode(viewport)` gives the same answer
 for any viewport. Use them where the code asked
 `viewport instanceof StackViewport` or `viewport.type === ViewportType.STACK`.
 
-## From each legacy call to the next API
+Every call of the API answers in both modes. Where the answer differs between
+a stack and a volume, [the map](./3-api-map.md) says so in its last column.
 
-The pages under
-[Generic Viewport](../../concepts/cornerstone-core/generic-viewport/migration.md)
-show each of these with code before and after.
+Pass the orientation for a volume. A legacy `ORTHOGRAPHIC` viewport without
+options opened in `AXIAL`. A planar viewport without an orientation opens a
+volume in its acquisition plane. For a stack, leave the orientation out.
 
-| Legacy                                                              | Next                                                                                                                                       |
-| ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `ViewportType.STACK`, `ViewportType.ORTHOGRAPHIC`                   | `ViewportType.PLANAR_NEXT`                                                                                                                 |
-| `ViewportType.VOLUME_3D`, `VIDEO`, `WHOLE_SLIDE`, `ECG`             | `VOLUME_3D_NEXT`, `VIDEO_NEXT`, `WHOLE_SLIDE_NEXT`, `ECG_NEXT`                                                                             |
-| `viewport.setStack(imageIds, index)`                                | Register a display set with `imageIds` and `initialImageIdIndex`, then `viewport.setDisplaySets({ displaySetId })`                         |
-| `viewport.setVolumes([{ volumeId }])`, `setVolumesForViewports`     | Register a display set with `imageIds` and `volumeId`, then `viewport.setDisplaySets({ displaySetId, options: { orientation } })`          |
-| `viewport.addVolumes(...)`, a fusion                                | Several entries in `setDisplaySets(...)`, or `viewport.addDisplaySet(displaySetId, options)`                                               |
-| `viewport.setVideo(...)`, `setEcg(...)`, `setWSI(...)`              | Register a display set of kind `'video'`, `'ecg'` or `'wsi'`, then `viewport.setDisplaySets({ displaySetId })`                             |
-| `viewport.setProperties({ voiRange, colormap, invert })`            | `viewport.setDisplaySetPresentation(displaySetId, { voiRange, colormap, invert })`                                                         |
-| `viewport.getProperties()`                                          | `viewport.getDisplaySetPresentation(displaySetId)`                                                                                         |
-| `viewport.setDefaultProperties(...)`, `resetToDefaultProperties()`  | No twin. Keep the default in the application and set it with `setDisplaySetPresentation`                                                   |
-| A `callback` on a volume input that edits the actor                 | `setDisplaySetPresentation` with `voiRange`, `colormap`, `opacity`, `invert`, `blendMode` or `preset`                                      |
-| An `actorUID` on a volume input, then `viewport.getActor(actorUID)` | `viewport.getActors()` and the `referencedId` of each entry                                                                                |
-| `viewport.setBlendMode(...)`, `viewport.setSlabThickness(...)`      | `setDisplaySetPresentation(displaySetId, { blendMode, slabThickness })`                                                                    |
-| `viewport.getCamera()`                                              | `viewport.getViewState()` for the state, `viewport.getResolvedView()?.toICamera()` for a camera in the old shape                           |
-| `viewport.setCamera({ ... })`                                       | `viewport.setViewState({ ... })` or `viewport.updateViewState(...)`. For a place in space: `viewport.setViewReference(...)`                |
-| `viewport.resetCamera()`                                            | `viewport.resetViewState()`                                                                                                                |
-| `viewport.getViewPresentation()`, `viewport.setViewPresentation()`  | `viewportProjection.getPresentation(viewport, { selector })`, and `viewportProjection.withPresentation(viewport, ...)` with `setViewState` |
-| `viewport.flip(...)`, a rotation set through the camera             | `viewport.setViewState({ rotation, flipHorizontal, flipVertical })`                                                                        |
-| `rendering.useCPURendering`, `setUseCPURendering(true)`             | Nothing to set. The router picks the path for each layer. `viewport.getRenderPlan()` tells which one and why                               |
-| `Types.IStackViewport`, `Types.IVolumeViewport`                     | `PlanarViewport`, or `Types.IGenericViewport` where any next viewport will do                                                              |
-| `viewport instanceof StackViewport`, `viewport.type === STACK`      | `viewport.getCurrentMode() === 'stack'`, or `utilities.getViewportContentMode(viewport)`                                                   |
+## A display set is registered once
 
-These keep their names on a planar viewport: `getImageIds`,
-`getCurrentImageId`, `getCurrentImageIdIndex`, `setImageIdIndex`, `scroll`,
-`setOrientation`, `getZoom`, `setZoom`, `getPan`, `setPan`,
-`getViewReference`, `setViewReference`, `canvasToWorld`, `worldToCanvas`,
-`getFrameOfReferenceUID`, `getImageData` and `render`.
-
-These members of the legacy viewports have no twin on a planar viewport. The
-same answer comes from the next API or from a function:
-
-| Legacy member                                      | Use                                                                                                       |
-| -------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| `jumpToWorld(point)`                               | `viewport.setViewReference({ cameraFocalPoint: point })`                                                  |
-| `getBounds()`                                      | `cache.getVolume(volumeId).imageData.getBounds()`                                                         |
-| `getIntensityFromWorld(point)`                     | `volume.voxelManager.getAtIJKPoint(utilities.transformWorldToIndex(volume.imageData, point))`             |
-| `getSliceViewInfo()`, `getCurrentSlicePixelData()` | `utilities.getCurrentVolumeViewportSlice(viewport)`                                                       |
-| `getSlicesClippingPlanes()`                        | `utilities.getVolumeSlicesClippingPlanes(volume, camera)`                                                 |
-| `isInAcquisitionPlane()`                           | `utilities.isAcquisitionPlaneNormal(volume, viewPlaneNormal)`. A stack is always in its acquisition plane |
-| `getCornerstoneImage()`                            | `cache.getImage(viewport.getCurrentImageId())`                                                            |
-| `getAllVolumeIds()`                                | `viewport.getVolumeId()` for the source volume                                                            |
-| `isOrientationChangeable()`                        | `viewport.getCurrentMode() === 'volume'`                                                                  |
-| `scaling`, `stackActorReInitialized`               | No twin                                                                                                   |
-
-A display set is registered once, under an id that the application chooses:
+A next viewport shows display sets. A display set is registered once, under
+an id that the application chooses, and then shown by its id:
 
 ```ts
 utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
@@ -153,7 +116,55 @@ utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
 await viewport.setDisplaySets({ displaySetId });
 ```
 
-Leave `volumeId` out for a stack.
+- **With a `volumeId`** the display set shows as a volume, in every
+  orientation.
+- **Without a `volumeId`** it shows as a stack, in its acquisition plane. Leave
+  `volumeId` out for a stack.
+
+What is registered for each family:
+
+| Viewport    | Registered display set                                                             |
+| ----------- | ---------------------------------------------------------------------------------- |
+| Planar      | `{ kind: 'planar', imageIds, initialImageIdIndex, volumeId }`                      |
+| 3D          | `{ imageIds, volumeId }`                                                           |
+| Video       | `{ kind: 'video', sourceDataId: imageId }`, or pass the image id as `displaySetId` |
+| ECG         | `{ kind: 'ecg', sourceDataId: imageId }`, or pass the image id as `displaySetId`   |
+| Whole slide | `{ kind: 'wsi', imageIds, options: { webClient } }`                                |
+
+The first entry of `setDisplaySets` is the source. The others are overlays:
+
+```ts
+await viewport.setDisplaySets(
+  { displaySetId: ctId, options: { orientation } },
+  { displaySetId: ptId }
+);
+
+viewport.setDisplaySetPresentation(ptId, {
+  colormap: { name: 'hsv', opacity: 0.4 },
+});
+```
+
+`viewport.addDisplaySet(displaySetId, { role: 'overlay' })` adds one overlay,
+and `viewport.removeData(displaySetId)` removes a display set.
+
+The pages under
+[Generic Viewport](../../concepts/cornerstone-core/generic-viewport/migration.md)
+show these with code before and after.
+
+## Four things on a viewport
+
+A next viewport holds four things. Each legacy call maps to one of them.
+
+| What            | Calls                                                                                   | Replaces                                                 |
+| --------------- | --------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| Display sets    | `setDisplaySets`, `addDisplaySet`, `removeData`, `getDisplaySets`                       | `setStack`, `setVolumes`, `addVolumes`, `setVideo`       |
+| A presentation  | `setDisplaySetPresentation`, `getDisplaySetPresentation`, `resetDisplaySetPresentation` | `setProperties`, `getProperties`, `resetProperties`      |
+| A view state    | `setViewState`, `updateViewState`, `getViewState`, `resetViewState`                     | `setCamera`, `getCamera`, `resetCamera`, `flip`          |
+| View references | `getViewReference`, `setViewReference`, `isReferenceViewable`                           | A camera focal point that was set to move through slices |
+
+Zoom and pan are read and written through `viewportProjection`, in one form
+for every family. A question that the state and the data can answer is a
+function of `utilities`, not a member of the viewport.
 
 ## What comes over and what does not
 
@@ -164,26 +175,25 @@ Carried over, in the new shape:
 
 - the sharpening and smoothing of the stack and volume viewports, as the
   `sharpening` and `smoothing` keys of a presentation;
+- a preset, a colormap and a blend mode of a 3D viewport, as keys of its
+  presentation;
 - a perspective camera, on a 3D viewport with `parallelProjection: false`;
-- vtk.js actors of the application in a 3D viewport.
+- a surface in a 3D viewport, as a display set;
+- a stretched picture, as the scale pair of the view state of a planar
+  viewport;
+- the frame range of a video, as a key of its view state.
 
 Not carried over:
 
 - default properties (`setDefaultProperties` and its family);
+- a `callback` and an `actorUID` on a volume or stack input;
 - a preset on a slice viewport;
 - a display area and an aspect ratio on a 3D viewport;
 - vtk.js actors of the application in a slice viewport;
+- options that change after creation (`setOptions`, `reset`) on the 3D, video,
+  whole slide and ECG viewports;
+- a stored initial camera (`storeAsInitialCamera`);
 - a labelmap over a video, which the legacy video viewport did not have
   either.
 
-[What draws differently](./2-rendering-changes.md) has the call for each one.
-
-## Find the code to change
-
-```sh
-rg "ViewportType\.(STACK|ORTHOGRAPHIC|PERSPECTIVE)"
-rg "\.(setStack|setVolumes|addVolumes|setProperties|getProperties)\("
-rg "\.(getCamera|setCamera|resetCamera|getViewPresentation|setViewPresentation)\("
-rg "setVolumesForViewports|addVolumesToViewports|useGenericViewport|useCPURendering"
-rg "IStackViewport|IVolumeViewport|IBaseVolumeViewport"
-```
+[Rendering changes](./2-rendering-changes.md) has the call for each one.

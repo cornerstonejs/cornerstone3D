@@ -1,13 +1,18 @@
 ---
 id: rendering-changes
 title: Rendering changes
-summary: What a 6.0 viewport draws differently from 5.x - slice first, the render plan, the CPU picture, labelmap fill, image defaults, and the whole slide, 3D and video viewports
+summary: What a 6.0 viewport draws and answers differently from 5.x - slice first, the render plan, the CPU picture, orientation, slabs, presentation, events, labelmap fill, image defaults, and the whole slide, ECG, 3D and video viewports
 ---
 
 # Rendering changes
 
-**State: in the code.** Everything on this page is about the Generic ("next")
-viewports, which are the only viewports of 6.0.
+**State: in the code**, except the items marked **Decided, not in the code
+yet**. Such an item says what 6.0 will do, and what the code does today.
+Everything on this page is about the Generic ("next") viewports, which are the
+only viewports of 6.0.
+
+This page says what differs. For the call that replaces a legacy call, see
+[Every legacy call and what replaces it](./3-api-map.md).
 
 ## Slice first is on by default
 
@@ -55,7 +60,10 @@ group, which no camera owns. Each linked viewport shows its closest slice, and
 the marker counts as off the slice only beyond half the slice spacing.
 `SliceIntersectionTool` draws the lines of the other planes, and moves, turns
 and thickens them. Together they are the crosshair for the next viewports.
-`CrosshairsTool` keeps working, with its centre on a slice centre.
+
+`CrosshairsTool` still moves through the slices, with its centre on a slice
+centre. On a next viewport its rotation handles and its slab handles do
+nothing, and it does not pan a viewport to keep the centre in view.
 
 ## Orientation of a volume
 
@@ -65,19 +73,36 @@ and thickens them. Together they are the crosshair for the next viewports.
   the acquisition. The next viewport of 5.x opened a tilted series on its
   acquisition plane when the closest axis was asked for. A series that is not
   tilted is not affected: there the axis is a slice of the acquisition.
+- **A planar viewport without an orientation opens a volume in its
+  acquisition plane.** A legacy `ORTHOGRAPHIC` viewport without options opened
+  in `AXIAL`. Pass the orientation in `defaultOptions` or in the options of
+  `setDisplaySets`.
 - **The reformat names work in the options of a viewport.** `axial_reformat`,
   `sagittal_reformat`, `coronal_reformat` and `reformat` given at creation
-  give what `setOrientation` gives for the same name.
-- **`setOrientation` with vectors follows the legacy viewport.** Without a
-  `viewUp` it keeps the current one when that is orthogonal to the new normal,
-  and otherwise takes `[0, 0, 1]` for a normal along x or y and `[0, -1, 0]`
-  for a normal along z. A `viewUp` that is not orthogonal to the normal is
-  made orthogonal. The next viewport of 5.x took the view up of the
-  acquisition in the first case and threw in the second.
+  give what `setOrientation` gives for the same name. **Decided, not in the
+  code yet:** `setViewState({ orientation })` takes the names too, so the
+  three ways give the same view.
+- **Give both vectors to `setOrientation`.** **Decided, not in the code yet:**
+  `setOrientation({ viewPlaneNormal, viewUp })` and
+  `setViewState({ orientation: { viewPlaneNormal, viewUp } })` give the same
+  view for the same input, and no rule fills in or corrects a view up. Today
+  `setOrientation` follows the legacy viewport: without a `viewUp` it keeps
+  the current one when that is orthogonal to the new normal, and otherwise
+  takes `[0, 0, 1]` for a normal along x or y and `[0, -1, 0]` for a normal
+  along z, and it makes a `viewUp` orthogonal to the normal.
 - **`setOrientation` keeps the point in view, the pan and the zoom.** The
   legacy volume viewport resets its camera on `setOrientation` and shows the
   middle of the volume. `resetViewState()` goes back to the orientation of the
   viewport options.
+- **A stack has one orientation.** A display set without a `volumeId` shows
+  as a stack in its acquisition plane. Asked for another orientation, the
+  viewport shows the images as a volume when they form one, and the mount
+  throws when they do not. `canRenderOrientation(orientation)` tells before
+  the call.
+- **A flip is a flag of the view state.** The legacy volume viewport flipped
+  by moving its camera to the other side of the slice, so its view plane
+  normal turned around. A next viewport keeps `flipHorizontal` and
+  `flipVertical` in the view state and mirrors the picture.
 
 ## Slabs
 
@@ -90,8 +115,17 @@ and thickens them. Together they are the crosshair for the next viewports.
 - **Scrolling by slabs is an option.** `viewport.scroll(1)` on a legacy volume
   viewport with a slab steps by the slab thickness. On a planar viewport it
   steps by one slice. Pass `scrollSlabs: true` to `utilities.scroll` to step
-  by the slab. `getCurrentImageIdIndex(undefined, true)` and
-  `getNumberOfSlices(undefined, true)` count those steps.
+  by the slab. **Decided, not in the code yet:** `getCurrentImageIdIndex()`
+  and `getNumberOfSlices()` take no arguments and count slices. Today
+  `getCurrentImageIdIndex(undefined, true)` and
+  `getNumberOfSlices(undefined, true)` count the slab steps.
+- **A slab is set for each display set.** `slabThickness` and `blendMode` are
+  keys of the presentation of one display set. The legacy `setSlabThickness`
+  set all actors and fired `CAMERA_MODIFIED`. A presentation change fires no
+  camera event.
+- **`loop` wraps a volume too.** **Decided, not in the code yet:**
+  `utilities.scroll(viewport, { delta, loop: true })` wraps at both ends in
+  stack mode and in volume mode. The legacy volume viewport ignored `loop`.
 
 ## Sharpening and smoothing
 
@@ -134,6 +168,16 @@ and thickens them. Together they are the crosshair for the next viewports.
   application keeps its own default and sets it with
   `setDisplaySetPresentation`. `resetDisplaySetPresentation(displaySetId)`
   goes back to the look of the data.
+- **A presentation is what was set.** `getDisplaySetPresentation(displaySetId)`
+  gives the stored keys. A key that was never set is undefined, where the
+  legacy `getProperties()` read the value back from the actor.
+  `getDefaultVOIRange(displaySetId)` gives the window that the data starts
+  with.
+- **A reset of the presentation does not move the camera.**
+  `resetDisplaySetPresentation(displaySetId)` also clears the slab, the blend
+  mode, the opacity and the visibility. `resetViewState()` resets the view.
+- **An edit of an actor does not last.** The next presentation update writes
+  the look of the actor again. Set the look through the presentation.
 - **No preset on a slice.** A preset is a look of a 3D viewport. For a slice,
   register a colormap and set `colormap: { name, opacityMapping }`.
 - **No `callback` on a display set.** These presentations draw what the
@@ -149,18 +193,58 @@ and thickens them. Together they are the crosshair for the next viewports.
   viewport drew them weaker, see
   [a labelmap fill is drawn with the configured alpha](#a-labelmap-fill-is-drawn-with-the-configured-alpha).
 
+## Display area and stretch
+
+- **The display area is a key of the view state.**
+  `viewport.setViewState({ displayArea })` sets it after the mount.
+  `setDisplayArea(displayArea)` does the same and fires
+  `DISPLAY_AREA_MODIFIED`. **Decided, not in the code yet:** a `displayArea`
+  in the options of a viewport is not applied by itself. Today it is applied
+  at the mount and again by `resetViewState()`.
+- **A display area of `type: 'SCALE'` reads its `scale` against the fit.** A
+  scale of 1 is the fit of the picture. On a legacy viewport 1 meant one
+  image pixel on one screen pixel.
+- **No `storeAsInitialCamera`.** Zoom 1 and pan `[0, 0]` are always the fit.
+  A display area does not change the interpolation either.
+- **A stretch is the scale pair of the view state.** **Decided, not in the
+  code yet:** `viewport.setViewState({ scale: [x, y] })` stretches the
+  picture, in stack mode and in volume mode, and
+  `viewportProjection.getPresentation(viewport, { selector: { scale: true } })`
+  reads the pair back. `setAspectRatio()`, `getAspectRatio()` and the
+  `aspectRatio` option leave. A fit of the stretched picture into the canvas
+  is not built. Today a planar viewport has both members and applies the
+  option at the mount.
+
 ## Events and image loading of a planar viewport
 
-- **The events of the legacy viewports fire.** `VOLUME_VIEWPORT_NEW_VOLUME`
-  when a volume is shown and `VIEWPORT_NEW_IMAGE_SET` when a stack is shown,
-  on every `setDisplaySets`. `PRE_STACK_NEW_IMAGE` before the image of a stack
-  changes, and `STACK_VIEWPORT_SCROLL` on a scroll. In 5.x only the adapter
-  fired them.
-- **A failed image load is reported.** `IMAGE_LOAD_ERROR` fires with the image
-  id and its index, and the same index can be asked for again. In 5.x the
-  failure was an unhandled rejection and the index was never loaded again.
-  `loadAndCacheImage` no longer leaves an unhandled rejection either: its own
-  promise still rejects.
+- **The events of new data fire.** `VOLUME_VIEWPORT_NEW_VOLUME` when a volume
+  is shown and `VIEWPORT_NEW_IMAGE_SET` when a stack is shown, on every
+  `setDisplaySets`. In 5.x only the adapter fired them.
+- **`STACK_NEW_IMAGE` fires for a volume too.** It fires after another image
+  of a stack shows, and after another slice of a volume shows, with the image
+  id only in the acquisition orientation. `VOLUME_NEW_IMAGE` fires for a
+  volume as before. A legacy volume viewport never fired `STACK_NEW_IMAGE`,
+  so a listener for stacks now also runs on volumes: check
+  `viewport.getCurrentMode()` in it.
+- **`CAMERA_MODIFIED` fires on each change of the view state,** a scroll
+  included, and once after the source mounts. `CAMERA_RESET` fires from
+  `resetViewState()` only, also in stack mode, where the legacy viewport
+  never fired it.
+- **No `PRE_STACK_NEW_IMAGE` and no `STACK_VIEWPORT_SCROLL`.** **Decided, not
+  in the code yet.** Listen to `STACK_NEW_IMAGE`, `VOLUME_NEW_IMAGE` or
+  `CAMERA_MODIFIED`. Today a planar viewport fires both on a stack.
+- **No `VOLUME_VIEWPORT_SCROLL` and no
+  `VOLUME_VIEWPORT_SCROLL_OUT_OF_BOUNDS`.** `utilities.scroll` fired them for
+  a legacy volume viewport only. On a next viewport it fires
+  `STACK_SCROLL_OUT_OF_BOUNDS` at the ends, in both modes.
+- **A failed image load is reported, and the index can be asked for again.**
+  The image loader fires `IMAGE_LOAD_FAILED` on the `eventTarget` with the
+  image id and the error. In 5.x the failure was an unhandled rejection on a
+  next viewport and the index was never loaded again. `loadAndCacheImage` no
+  longer leaves an unhandled rejection either: its own promise still rejects.
+  **Decided, not in the code yet:** a planar viewport does not fire the
+  legacy `IMAGE_LOAD_ERROR`. Today it fires it too, with the image id and its
+  index.
 - **`setImageIdIndex()` resolves when the image is shown,** as on the legacy
   stack viewport, and `getCurrentImageIdIndex()` gives the requested index at
   once. In 5.x the promise resolved before the load and the index lagged
@@ -172,26 +256,40 @@ and thickens them. Together they are the crosshair for the next viewports.
   configuration an image is requested as on the legacy stack viewport: as an
   interaction request with priority 5. In 5.x a next viewport requested it as
   a prefetch.
-- **`VOI_MODIFIED` carries `invertStateChanged`,** so the VOI synchronizer
-  syncs an invert from a planar viewport. It also fires for a change of the
-  invert or of the VOI function when no window was set yet.
-- **`suppressEvents` in the options of a planar viewport is honoured.**
-- **`isReferenceViewable` honours `asOverlay` and `asNearbyProjection`,** so a
-  labelmap image that is not in the stack but lies on the geometry of the
-  image on display shows.
-- **`displayArea` and `aspectRatio` in the options are applied** at the mount
-  and again by `resetViewState()`. `setAspectRatio()` exists, and
-  `getAspectRatio()` gives the real ratio, with the vertical part as 1:
-  `[1, 2]` reads back as `[0.5, 1]`.
-- **`IMAGE_SPACING_CALIBRATED` fires when a newly shown image has another
-  calibration,** and its detail has `worldToIndex` and `scale`.
+- **`VOI_MODIFIED` carries `invert`,** so the VOI synchronizer syncs an invert
+  from a planar viewport. The event also fires for a change of the invert or
+  of the VOI function when no window was set yet, and at the mount.
+  **Decided, not in the code yet:** the detail has no `invertStateChanged`. A
+  listener compares `detail.invert` with the last value. Today the detail
+  has it.
+- **`suppressEvents` in the options of a planar viewport is honoured.** No
+  call takes a `suppressEvents` argument.
+- **`isReferenceViewable` honours `asOverlay`,** so a labelmap image that is
+  not in the stack but lies on the geometry of the image on display shows.
+  **Decided, not in the code yet:** `asNearbyProjection` leaves, nothing
+  calls it. Today a planar viewport honours it on a stack.
+- **`IMAGE_SPACING_CALIBRATED` fires from `calibrateSpacing(imageId)`,** and
+  its detail has `worldToIndex` and `scale`. **Decided, not in the code
+  yet:** it does not fire by itself when a newly shown image has another
+  calibration. Today it does.
+- **`getFrameOfReferenceUID()` always returns a string.** Without a frame of
+  reference it is a name made of the type and the id of the viewport, where
+  the legacy viewport returned undefined. It takes no slice index.
+- **`getImageData()` of a stack gives a plain object as `imageData`,** not a
+  vtk.js image data. It has `getDirection`, `getDimensions`, `getSpacing`,
+  `worldToIndex` and `indexToWorld`. **Decided, not in the code yet:** it
+  also has `getBounds`.
 
 ## Surfaces in a planar viewport
 
 - **A surface shows as contours.** The conversion of a Surface representation
   to contours did nothing on a next planar viewport, because the planes of its
-  slices were missing. `utilities.getVolumeSlicesClippingPlanes` gives them
-  from the volume and the camera.
+  slices were missing. **Decided, not in the code yet:**
+  `utilities.getSlicesClippingPlanes(viewport)` gives them, for a volume and
+  for a stack. Today `utilities.getVolumeSlicesClippingPlanes(volume, camera)`
+  gives them for a volume.
+- **No vtk.js actors of the application in a slice viewport.** A planar
+  viewport has no `addActor` and no `getRenderer`, in either mode.
 
 ## The render plan
 
@@ -289,19 +387,27 @@ layer of a fusion: the opacity is applied as given.
   square or on a canvas of another size. `getViewState().zoom` is undefined
   until a slide is mounted. A slide mounted in place of another one starts at
   its own fit and keeps the rotation.
-- **Pan.** `getPan()` and `setPan()` exist on the viewport, in canvas pixels
-  from the view at mount, and a view presentation carries `pan`.
+- **Pan.** A view presentation carries `pan`:
+  `viewportProjection.withPresentation(viewport, { pan })` returns the view
+  state for a new pan, and `setViewState({ centerIndex })` moves the view in
+  pixels of the slide. **Decided, not in the code yet:** the viewport has no
+  `getPan()` and no `setPan()`. Today it has both, in canvas pixels from the
+  view at mount.
 - **Annotations saved on a legacy whole slide viewport show.** Their
   references carry a view plane normal and a plane restriction, which the next
   viewport of 5.x rejected.
-- **`canvas` and `getCanvas()`** exist on the viewport, for code that reads
-  the size. The microscopy viewer draws the slide, so the canvas holds no
-  pixels of it.
+- **`canvas`** is on the viewport, for code that reads the size. The
+  microscopy viewer draws the slide, so the canvas holds no pixels of it.
+  **Decided, not in the code yet:** `getCanvas()` leaves. Today the viewport
+  has it.
 - **The web client** of a slide falls back to the `WADO_WEB_CLIENT` metadata
   of its first image when the display set names none, as on the legacy
   viewport.
-- **`scroll()` zooms,** by a factor of 1.1 for each step, as on the legacy
-  viewport. In 5.x it did nothing on the next viewport.
+- **No `scroll()`.** **Decided, not in the code yet:** a slide has no slices,
+  and a zoom is `setViewState({ zoom })`. `utilities.scroll` and the stack
+  scroll tool do nothing on a whole slide viewport and do not throw. Today
+  `scroll()` zooms by a factor of 1.1 for each step, as on the legacy
+  viewport.
 - **`suppressEvents`** in the options silences `CAMERA_MODIFIED` and
   `CAMERA_RESET`, as on the legacy viewport.
 
@@ -310,7 +416,9 @@ layer of a fusion: the opacity is applied as given.
 - **Annotations saved on a legacy ECG viewport show.** Their references carry
   a view plane normal and a plane restriction, which the next viewport of 5.x
   rejected.
-- **`getNumberOfSlices()`** exists and gives 1.
+- **No `getNumberOfSlices()`.** **Decided, not in the code yet:** an ECG has
+  no slices. Today the member gives 1. `scroll()` moves the time window, as
+  in 5.x on the next viewport. The legacy `scroll()` did nothing.
 - **`suppressEvents`** in the options silences `CAMERA_MODIFIED` and
   `CAMERA_RESET`.
 - **An annotation is drawn on its own lead.** In a trace layout with several
@@ -343,19 +451,34 @@ layer of a fusion: the opacity is applied as given.
 - **`resetDisplaySetPresentation(displaySetId)`** goes back to what the volume
   showed after its mount. It does not move the camera: `resetViewState()`
   does.
-- **Events.** `VOI_MODIFIED`, `COLORMAP_MODIFIED` and `PRESET_MODIFIED` fire
-  from a 3D viewport, `VOI_MODIFIED` also when a volume is mounted, and
+- **Events.** `VOI_MODIFIED` and `COLORMAP_MODIFIED` fire from a 3D viewport,
+  `VOI_MODIFIED` also when a volume is mounted, and
   `VOLUME_VIEWPORT_NEW_VOLUME` fires on a mount. None of them fired in 5.x.
-- **Actors of the application.** `addActor`, `addActors`, `setActors`,
-  `removeActors` and `getActor` are on the viewport, the actors are part of
-  the fit of a reset, and `ACTORS_CHANGED` fires. The Surface representation
-  and the sphere handles of the cropping tool need them and threw in 5.x.
-- **Widgets.** `addWidget`, `getWidget` and `getWidgets` are on every next
-  viewport, and the orientation marker shows on a 3D viewport.
+  **Decided, not in the code yet:** `PRESET_MODIFIED` does not fire, nothing
+  listens to it. Read the preset with
+  `getDisplaySetPresentation(displaySetId)?.preset`. Today a 3D viewport
+  fires it.
+- **A surface is a display set.** **Decided, not in the code yet:**
+  `viewport.addDisplaySet(geometryId, { renderMode: 'vtkGeometry3d' })` mounts
+  a surface, `viewport.removeData(geometryId)` removes it, and its colour,
+  opacity and visibility are its presentation. A mounted surface is part of
+  the fit of a reset. `addActor`, `addActors`, `setActors`, `removeActors`,
+  `getActor` and `ACTORS_CHANGED` leave. `getActors()` stays and gives the
+  actors of the display sets. Today a surface goes through `addActor`.
+- **A prop of a tool belongs to the tool.** A handle or a line goes into the
+  scene with `viewport.getRenderer().addActor(actor)`. The tool keeps the
+  actor and removes it itself.
+- **Widgets.** The orientation marker shows on a 3D viewport. **Decided, not
+  in the code yet:** `addWidget` and `getWidgets` are on the 3D viewport
+  only, because a widget needs a vtk.js renderer, and `getWidget` leaves.
+  Today the three are on every next viewport.
 - **A labelmap shows in 3D.** In 5.x a Labelmap representation drew nothing
   on a next 3D viewport.
-- **Zoom and pan.** `getZoom`, `setZoom`, `getPan` and `setPan` are on the
-  viewport. Zoom 1 and pan `[0, 0]` are the fit of a reset.
+- **Zoom and pan.** Zoom 1 and pan `[0, 0]` are the fit of a reset.
+  **Decided, not in the code yet:** they are read and written through
+  `viewportProjection`, as on every next viewport, and `getZoom`, `setZoom`,
+  `getPan` and `setPan` leave. Today the four are on the viewport and the
+  projection service does nothing for a 3D viewport.
 - **`suppressEvents`** in the options of a 3D viewport silences its camera
   and presentation events, as on the legacy viewport.
 - **No display area and no aspect ratio on a 3D viewport.** `setDisplayArea`,
@@ -389,10 +512,13 @@ layer of a fusion: the opacity is applied as given.
   `colorTransfer` and `scalarOpacity` hold the points, and `shade: '0'` turns
   the shading off.
 
-- **Small ones.** `hasImageURI` and `getIntensityFromWorld` are on the
-  viewport. `getVolumeId`, `getImageIds` and `getImageData` answer for the
-  volume that is asked for. `isOrientationChangeable()` is on every next
-  viewport and is true on a 3D viewport.
+- **Small ones.** `getVolumeId`, `getImageIds` and `getImageData` answer for
+  the volume that is asked for. **Decided, not in the code yet:**
+  `hasImageURI`, `getIntensityFromWorld` and `isOrientationChangeable` leave
+  the viewport. [The 3D viewport](./3-api-map.md#the-3d-viewport) has the
+  calls that replace them. Today the three are on the viewport.
+- **`getFrameOfReferenceUID()` always returns a string,** as on a planar
+  viewport.
 
 ## Video viewports
 
@@ -408,10 +534,18 @@ layer of a fusion: the opacity is applied as given.
   on every animation frame while a video plays.
 - **The pixels of the frame.** `getImageData()` gives the pixels of the frame
   on display, as on the legacy viewport, so a probe and the ROI tools give
-  statistics. `modality`, `getImageDataMetadata()` and `hasImageURI()` are on
-  the viewport too.
-- **Frame range and playback.** `setFrameRange()`, `getFrameRange()` and
-  `togglePlayPause()` are on the viewport. Frame numbers start at 1.
+  statistics. **Decided, not in the code yet:** `modality`,
+  `getImageDataMetadata()`, `hasImageURI()` and `getSliceIndexForImage()`
+  leave the viewport. [The video viewport](./3-api-map.md#the-video-viewport)
+  has the calls that replace them. Today the four are on the viewport.
+- **Frame range and playback.** Frame numbers start at 1. `play()` and
+  `pause()` are on the viewport. **Decided, not in the code yet:** the frame
+  range is the view state key `frameRange`:
+  `viewport.setViewState({ frameRange: [5, 10] })`. Playback stays in the
+  range, and a reset clears it. `setFrameRange()`, `getFrameRange()` and
+  `togglePlayPause()` leave. Today the three are on the viewport.
+- **`setPlaybackRate()` sets the rate only.** On the legacy viewport it also
+  started playback, and paused below a rate of 0.0625.
 - **An annotation over a range of frames shows on every frame of the range.**
   In 5.x it showed on its first frame only. `getViewReference()` gives a range
   while a video plays inside a frame range.
@@ -420,8 +554,10 @@ layer of a fusion: the opacity is applied as given.
   turned about its top left corner and the two transforms ignored the
   rotation, so annotations landed beside the picture.
 - **`invert`** of the presentation is applied.
-- **`canvas` and `getCanvas()`** give a canvas of the size of the viewport with
-  the frame on display. It is drawn when it is read.
+- **`canvas`** is a canvas of the size of the viewport. **Decided, not in the
+  code yet:** it is a plain field that holds no pixels of the frame, and
+  `getCanvas()` leaves. The pixels of the frame come from `getImageData()`.
+  Today the canvas is drawn with the frame on display when it is read.
 - **A video opens on its first frame,** or on `options.frameNumber`, and
   does not play to get there. In 5.x it could open on the second frame.
 - **`getPan()` and `setPan()` are in canvas pixels on the screen,** `[0, 0]` at
@@ -432,12 +568,36 @@ layer of a fusion: the opacity is applied as given.
 - **A labelmap over a video** is not available. It is not available on the
   legacy viewport either: both throw. Contour segmentations show.
 
+## Tools on the next viewports
+
+- **The slab thickness synchronizer does nothing.** It reads
+  `getSlabThickness` of the source viewport, which a next viewport does not
+  have. Set `slabThickness` in the presentation of each viewport.
+- **The camera position synchronizer copies a view reference.** On a next
+  target it sets the view reference of the source, and its zoom and pan.
+- **`utilities.getImageLegacy(element)` of the core throws** for a next
+  viewport. Use `cache.getImage(viewport.getCurrentImageId())`.
+- **Zoom and pan tools on a 3D viewport.** **Decided, not in the code yet:**
+  the zoom limits of the zoom tool apply on a next 3D viewport, the zoom and
+  pan synchronizer moves a 3D target, and the VOI synchronizer reaches a 3D
+  target when the event names a volume.
+
 ## Smaller changes
 
 - **No `setOptions()` and no `reset()`** on the 3D, video, whole slide and ECG
   viewports. The options that a viewport was made with are in
   `defaultOptions`, and they do not change. Change the view through the view
-  state, and the look through the presentation.
+  state, and the look through the presentation. A planar viewport still has
+  `options`, `setOptions()` and `reset()` from 5.x. Do not use them in new
+  code.
+- **`isDestroyed` in place of `isDisabled`.** **Decided, not in the code
+  yet:** `viewport.isDestroyed` is true after `disableElement`, and a next
+  viewport has no `isDisabled`. Today it has `isDisabled`, and `isDestroyed`
+  is protected.
+- **`suppressEvents` is an option.** `viewport.defaultOptions.suppressEvents`
+  holds it. A planar and a 3D viewport also keep the field.
+- **A resize keeps the view** of a video and an ECG viewport. The legacy
+  viewports fitted the picture again.
 - **`isReferenceViewable` takes the points of an annotation** in the option
   `points`, and the annotation filter of the tools passes the handle points
   of each annotation. A viewport that shows a part of its world in several
