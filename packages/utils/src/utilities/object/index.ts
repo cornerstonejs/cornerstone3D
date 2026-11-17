@@ -1,2 +1,2 @@
-export { asArray } from './asArray';
+export { asArray, asArrayFirst } from './asArray';
 export { default as asArrayDefault } from './asArray';

@@ -36,6 +36,11 @@ import getViewportICamera from '../../utilities/getViewportICamera';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
 import BidirectionalTool from '../annotation/BidirectionalTool';
 import { getSegmentIndexColor } from '../../stateManagement/segmentation/config/segmentationColor';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.segmentation.SegmentBidirectionalTool'
+);
 
 class SegmentBidirectionalTool extends BidirectionalTool {
   static toolName = 'SegmentBidirectional';
@@ -342,7 +347,7 @@ class SegmentBidirectionalTool extends BidirectionalTool {
 
       // If rendering engine has been destroyed while rendering
       if (!viewport.getRenderingEngine()) {
-        console.warn('Rendering Engine has been destroyed');
+        cs3dLogger.warn('Rendering Engine has been destroyed');
         return renderStatus;
       }
 

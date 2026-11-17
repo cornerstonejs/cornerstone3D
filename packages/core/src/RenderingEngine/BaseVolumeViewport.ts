@@ -4,6 +4,7 @@ import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransf
 import { vec2, vec3 } from 'gl-matrix';
 import type { mat4 } from 'gl-matrix';
 import cache from '../cache/cache';
+import { coreLog } from '../utilities/logger';
 import {
   MPR_CAMERA_VALUES,
   RENDERING_DEFAULTS,
@@ -21,6 +22,7 @@ import ViewportType from '../enums/ViewportType';
 import eventTarget from '../eventTarget';
 import { getShouldUseCPURendering } from '../init';
 import type {
+  IDynamicImageVolume,
   ActorEntry,
   ColormapPublic,
   FlipDirection,
@@ -72,6 +74,7 @@ import Viewport from './Viewport';
 import type { vtkSlabCamera as vtkSlabCameraType } from './vtkClasses/vtkSlabCamera';
 import vtkSlabCamera from './vtkClasses/vtkSlabCamera';
 import getVolumeViewportScrollInfo from '../utilities/getVolumeViewportScrollInfo';
+import getViewSlabDepth from '../utilities/getViewSlabDepth';
 import { actorIsA, isImageActor } from '../utilities/actorCheck';
 import type { ImageActor } from '../types/IActor';
 import snapFocalPointToSlice from '../utilities/snapFocalPointToSlice';
@@ -90,6 +93,11 @@ import {
   createSharpeningRenderPass,
   createSmoothingRenderPass,
 } from './renderPasses';
+import type { FidelityLine } from './helpers/fidelityIndicator/fidelityIndicatorState';
+import {
+  type CachedRecord,
+  fidelityLinesFromVolumeActors,
+} from './helpers/fidelityIndicator/collectFidelityLines';
 /**
  * Abstract base class for volume viewports. VolumeViewports are used to render
  * 3D volumes from which various orientations can be viewed. Since VolumeViewports
@@ -99,6 +107,8 @@ import {
  * For setting volumes on viewports you need to use addVolumesToViewports
  * which will add volumes to the specified viewports.
  */
+const log = coreLog.getLogger('RenderingEngine', 'BaseVolumeViewport');
+
 abstract class BaseVolumeViewport extends Viewport {
   useCPURendering = false;
   private _FrameOfReferenceUID: string;
@@ -116,6 +126,100 @@ abstract class BaseVolumeViewport extends Viewport {
   protected initialViewUp: Point3;
   protected viewportProperties: VolumeViewportProperties = {};
   private volumeIds = new Set<string>();
+  /** Quality-record cache for fidelity lines; cleared on volume data events. */
+  private _fidelityRecords = new Map<string, CachedRecord>();
+  private _fidelityRecordListenersAttached = false;
+  /** Set on ELEMENT_DISABLED of this element; the listeners never return. */
+  private _fidelityRecordsDisposed = false;
+  /** The pending animation frame of a coalesced fidelity notification. */
+  private _fidelityNotifyFrame = 0;
+
+  public canReportFidelity(): boolean {
+    return true;
+  }
+
+  protected collectFidelityLines(): FidelityLine[] {
+    this.ensureFidelityRecordInvalidation();
+    return fidelityLinesFromVolumeActors(this, this._fidelityRecords);
+  }
+
+  /**
+   * Adds the global listeners that clear the record cache on volume data
+   * events and fire `VIEWPORT_FIDELITY_CHANGED` when the state changed. The
+   * listeners are removed on ELEMENT_DISABLED of this element, so
+   * a disabled viewport does not stay in memory. `_reset` fires that event
+   * without `isDisabled`, so a disposed flag stops a later attach.
+   *
+   * A streaming load fires `IMAGE_VOLUME_MODIFIED` once for each image, and
+   * each state computation reads the quality record of the volume. The
+   * notification of that event therefore runs at most once for each animation
+   * frame, after the last event of the frame, so no update is lost.
+   * `IMAGE_VOLUME_LOADING_COMPLETED` notifies at once, and a render notifies
+   * through the rendering engine, so a user interaction is not delayed.
+   */
+  private ensureFidelityRecordInvalidation(): void {
+    if (
+      this._fidelityRecordListenersAttached ||
+      this._fidelityRecordsDisposed ||
+      this.isDisabled
+    ) {
+      return;
+    }
+    this._fidelityRecordListenersAttached = true;
+
+    const cancelFrame = () => {
+      cancelAnimationFrame(this._fidelityNotifyFrame);
+      this._fidelityNotifyFrame = 0;
+    };
+
+    const invalidate = (evt: Event) => {
+      const { volumeId } = (evt as CustomEvent<{ volumeId?: string }>).detail;
+      if (volumeId) {
+        this._fidelityRecords.delete(volumeId);
+      } else {
+        this._fidelityRecords.clear();
+      }
+      // A volume event can change the state with no render after it.
+      if (evt.type !== Events.IMAGE_VOLUME_MODIFIED) {
+        cancelFrame();
+        this.notifyFidelityStateChanged();
+      } else if (!this._fidelityNotifyFrame) {
+        this._fidelityNotifyFrame = requestAnimationFrame(() => {
+          this._fidelityNotifyFrame = 0;
+          if (!this._fidelityRecordsDisposed && !this.isDisabled) {
+            this.notifyFidelityStateChanged();
+          }
+        });
+      }
+    };
+
+    const cleanUp = (evt: Event) => {
+      // Match the element: a viewport of another engine can share the id.
+      if (
+        (evt as EventTypes.ElementDisabledEvent).detail?.element !==
+        this.element
+      ) {
+        return;
+      }
+
+      eventTarget.removeEventListener(Events.IMAGE_VOLUME_MODIFIED, invalidate);
+      eventTarget.removeEventListener(
+        Events.IMAGE_VOLUME_LOADING_COMPLETED,
+        invalidate
+      );
+      eventTarget.removeEventListener(Events.ELEMENT_DISABLED, cleanUp);
+      cancelFrame();
+      this._fidelityRecords.clear();
+      this._fidelityRecordsDisposed = true;
+    };
+
+    eventTarget.addEventListener(Events.IMAGE_VOLUME_MODIFIED, invalidate);
+    eventTarget.addEventListener(
+      Events.IMAGE_VOLUME_LOADING_COMPLETED,
+      invalidate
+    );
+    eventTarget.addEventListener(Events.ELEMENT_DISABLED, cleanUp);
+  }
 
   constructor(props: ViewportInput) {
     super(props);
@@ -150,6 +254,7 @@ abstract class BaseVolumeViewport extends Viewport {
     }
 
     this.initializeVolumeNewImageEventDispatcher();
+    this.initializeVolumeModifiedRenderDispatcher();
   }
 
   static get useCustomRenderingPipeline(): boolean {
@@ -254,6 +359,80 @@ abstract class BaseVolumeViewport extends Viewport {
       Events.ELEMENT_DISABLED,
       volumeNewImageCleanUpBound
     );
+  }
+
+  /**
+   * Requests a render when a streaming volume that this viewport holds
+   * receives new frames. Legacy VolumeViewports otherwise never hear
+   * IMAGE_VOLUME_MODIFIED (GenericViewport paths do), so dirties piled up and
+   * rare paints uploaded hundreds of texture slices at once.
+   *
+   * While the volume loads, the loader renders every 2% of its frames
+   * (`autoRenderOnLoad`), and this dispatcher stays out of the way. It renders
+   * for a change after the load, such as a labelmap edit.
+   */
+  private initializeVolumeModifiedRenderDispatcher(): void {
+    const handleVolumeModified = (evt: Event) => {
+      const detail = (evt as CustomEvent<{ volumeId?: string }>).detail;
+      const volumeId = detail?.volumeId;
+
+      if (!volumeId || !this.volumeIds.has(volumeId) || this.isDisabled) {
+        return;
+      }
+
+      // A volume that is still loading renders through the throttle of its
+      // loader, so a 3D viewport does not ray cast on every frame.
+      if (cache.getVolume(volumeId)?.loadStatus?.loading) {
+        return;
+      }
+
+      this.renderVolumeModified(volumeId);
+    };
+
+    eventTarget.addEventListener(
+      Events.IMAGE_VOLUME_MODIFIED,
+      handleVolumeModified
+    );
+
+    const cleanUp = (evt: Event) => {
+      // Match the element: a viewport of another engine can share the id.
+      if (
+        (evt as EventTypes.ElementDisabledEvent).detail?.element !==
+        this.element
+      ) {
+        return;
+      }
+
+      eventTarget.removeEventListener(
+        Events.IMAGE_VOLUME_MODIFIED,
+        handleVolumeModified
+      );
+      eventTarget.removeEventListener(Events.ELEMENT_DISABLED, cleanUp);
+    };
+
+    eventTarget.addEventListener(Events.ELEMENT_DISABLED, cleanUp);
+  }
+
+  private renderVolumeModified(volumeId: string): void {
+    if (this.isDisabled) {
+      return;
+    }
+
+    const actors = this.getActors();
+
+    for (const entry of actors) {
+      const referencedId = entry.referencedId ?? entry.uid;
+
+      if (referencedId !== volumeId && entry.uid !== volumeId) {
+        continue;
+      }
+
+      const mapper = entry.actor?.getMapper?.();
+
+      mapper?.modified?.();
+    }
+
+    this.render();
   }
 
   /**
@@ -545,7 +724,7 @@ abstract class BaseVolumeViewport extends Viewport {
     }
 
     if ([voiRangeToUse.lower, voiRangeToUse.upper].some(isInvalidNumber)) {
-      console.warn(
+      log.warn(
         'VOI range contains invalid values, ignoring setVOI request',
         voiRangeToUse
       );
@@ -682,6 +861,10 @@ abstract class BaseVolumeViewport extends Viewport {
     if (viewRefSpecifier?.forFrameOfReference !== true) {
       target.volumeId = volumeId;
     }
+    const dimensionGroupNumber = this._getDimensionGroupNumber(volumeId);
+    if (dimensionGroupNumber) {
+      target.dimensionGroupNumber = dimensionGroupNumber;
+    }
     if (typeof viewRefSpecifier?.sliceIndex !== 'number') {
       return target;
     }
@@ -724,6 +907,17 @@ abstract class BaseVolumeViewport extends Viewport {
       return false;
     }
     if (!super.isReferenceViewable(viewRef, options)) {
+      return false;
+    }
+    const dimensionGroupNumber = this._getDimensionGroupNumber(
+      this.getVolumeId({ volumeId: viewRef.volumeId })
+    );
+    if (
+      !options?.withNavigation &&
+      viewRef.dimensionGroupNumber &&
+      dimensionGroupNumber &&
+      viewRef.dimensionGroupNumber !== dimensionGroupNumber
+    ) {
       return false;
     }
     if (options?.withNavigation) {
@@ -876,6 +1070,21 @@ abstract class BaseVolumeViewport extends Viewport {
       viewUp,
     } = viewRef;
     let { sliceIndex } = viewRef;
+
+    // The time point belongs to the referenced volume, for example the PET of a fusion.
+    const timePointVolumeId = this.getVolumeId({ volumeId: viewRef.volumeId });
+    const timePointVolume =
+      timePointVolumeId &&
+      this._getDimensionGroupNumber(timePointVolumeId) &&
+      (cache.getVolume(timePointVolumeId) as IDynamicImageVolume);
+    if (
+      timePointVolume &&
+      viewRef.dimensionGroupNumber &&
+      viewRef.dimensionGroupNumber <= timePointVolume.numDimensionGroups &&
+      refFrameOfReference === this.getFrameOfReferenceUID()
+    ) {
+      timePointVolume.dimensionGroupNumber = viewRef.dimensionGroupNumber;
+    }
 
     if (planeRestriction && !refViewPlaneNormal) {
       return this.setViewPlane(planeRestriction);
@@ -1175,7 +1384,7 @@ abstract class BaseVolumeViewport extends Viewport {
 
       return renderPasses.length ? renderPasses : null;
     } catch (e) {
-      console.warn('Failed to create custom render passes:', e);
+      log.warn('Failed to create custom render passes:', e);
       return null;
     }
   };
@@ -1301,7 +1510,7 @@ abstract class BaseVolumeViewport extends Viewport {
     }
   }
 
-  public setSampleDistanceMultiplier(multiplier: number): void {}
+  public setSampleDistanceMultiplier(_multiplier: number): void {}
 
   /**
    * Retrieve the viewport default properties
@@ -1657,7 +1866,7 @@ abstract class BaseVolumeViewport extends Viewport {
     _immediate = true,
     _suppressEvents = false
   ): void {
-    console.warn('Method "setOrientation" needs implementation');
+    log.warn('Method "setOrientation" needs implementation');
   }
 
   /**
@@ -1997,7 +2206,7 @@ abstract class BaseVolumeViewport extends Viewport {
 
     const renderer = this.getRenderer();
     const devicePixelRatio = window.devicePixelRatio || 1;
-    const { width, height } = this.canvas;
+    const { width, height } = this.getRenderedCanvasSize();
     const aspectRatio = width / height;
 
     // Get the actual renderer viewport bounds
@@ -2078,7 +2287,7 @@ abstract class BaseVolumeViewport extends Viewport {
     ];
 
     const renderer = this.getRenderer();
-    const { width, height } = this.canvas;
+    const { width, height } = this.getRenderedCanvasSize();
 
     // Get the actual renderer viewport bounds
     const [xMin, yMin, xMax, yMax] =
@@ -2190,7 +2399,7 @@ abstract class BaseVolumeViewport extends Viewport {
     vtkCamera.setIsPerformingCoordinateTransformation?.(true);
 
     const renderer = this.getRenderer();
-    const { width, height } = this.canvas;
+    const { width, height } = this.getRenderedCanvasSize();
     const aspectRatio = width / height;
 
     // Get the actual renderer viewport bounds
@@ -2414,6 +2623,19 @@ abstract class BaseVolumeViewport extends Viewport {
 
     return slabThickness;
   }
+
+  /**
+   * Get the geometric thickness in mm that an annotation applies to.
+   *
+   * This method does NOT return the slab thickness. `getSlabThickness` returns
+   * a half thickness on this render path, so this method doubles that value,
+   * and it maps the rendering minimum to undefined. See
+   * `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
+   */
+  protected getReferencePlaneThickness(): number | undefined {
+    return getViewSlabDepth(this.getSlabThickness() * 2);
+  }
+
   /**
    * Given a point in world coordinates, return the intensity at that point
    * @param point - The point in world coordinates to get the intensity
@@ -2501,7 +2723,7 @@ abstract class BaseVolumeViewport extends Viewport {
    * allow using it as a parameter key.
    */
   public getViewReferenceId(specifier: ViewReferenceSpecifier = {}): string {
-    let { volumeId, sliceIndex: sliceIndex } = specifier;
+    let { volumeId, sliceIndex } = specifier;
     if (!volumeId) {
       const actorEntries = this.getActors();
       if (!actorEntries) {
@@ -2525,6 +2747,17 @@ abstract class BaseVolumeViewport extends Viewport {
       viewPlaneNormal,
       volumeId,
     });
+  }
+
+  /** The time point of a dynamic volume, or undefined for a 3D volume. */
+  private _getDimensionGroupNumber(
+    volumeId = this.getVolumeId()
+  ): number | undefined {
+    const volume =
+      volumeId && (cache.getVolume(volumeId) as IDynamicImageVolume);
+    return volume?.isDynamicVolume?.()
+      ? volume.dimensionGroupNumber
+      : undefined;
   }
 
   private _addVolumeId(volumeId: string): void {

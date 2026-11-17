@@ -1,5 +1,10 @@
 import getInterpolationData from './getInterpolationData';
 import type { InterpolationViewportData, Annotation } from '../../../types';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'utilities.contours.interpolation.findAnnotationForInterpolation'
+);
 
 /**
  * A pair of slice indices for contours, typically indicating the
@@ -31,7 +36,7 @@ function findAnnotationsForInterpolation(
   ]);
   const rangeToInterpolate = getRangeToInterpolate(interpolationData);
   if (!rangeToInterpolate) {
-    console.warn('No annotations found to interpolate', interpolationData);
+    cs3dLogger.warn('No annotations found to interpolate', interpolationData);
     return;
   }
   const sliceEdited = _getSlicePositionOfToolData(

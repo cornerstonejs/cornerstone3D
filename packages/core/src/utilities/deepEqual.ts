@@ -1,3 +1,7 @@
+import { coreLog } from './logger';
+
+const log = coreLog.getLogger('utilities', 'deepEqual');
+
 /**
  * Deeply compares two objects to determine if they are equal.
  * @param obj1 - The first object to compare.
@@ -21,7 +25,7 @@ export function deepEqual(obj1: unknown, obj2: unknown): boolean {
   } catch (error) {
     // If JSON.stringify throws an error (e.g., for circular references),
     // fall back to a simple comparison
-    console.debug('Error in JSON.stringify during deep comparison:', error);
+    log.debug('Error in JSON.stringify during deep comparison:', error);
     return obj1 === obj2;
   }
 }

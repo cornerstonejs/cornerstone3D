@@ -34,6 +34,11 @@ import type { Annotation, EventTypes, SVGDrawingHelper } from '../../types';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
 import getWorldWidthAndHeightFromTwoPoints from '../../utilities/planar/getWorldWidthAndHeightFromTwoPoints';
 import type { VideoRedactionAnnotation } from '../../types/ToolSpecificAnnotationTypes';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.annotation.VideoRedactionTool'
+);
 
 class VideoRedactionTool extends AnnotationTool {
   static toolName = 'VideoRedaction';
@@ -490,7 +495,7 @@ class VideoRedactionTool extends AnnotationTool {
       const color = this.getStyle('color', styleSpecifier, annotation);
       // If rendering engine has been destroyed while rendering
       if (!viewport.getRenderingEngine()) {
-        console.warn('Rendering Engine has been destroyed');
+        cs3dLogger.warn('Rendering Engine has been destroyed');
         return;
       }
 

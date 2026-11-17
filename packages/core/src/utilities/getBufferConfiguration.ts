@@ -1,4 +1,7 @@
 import type { PixelDataTypedArray, PixelDataTypedArrayString } from '../types';
+import { coreLog } from './logger';
+
+const log = coreLog.getLogger('utilities', 'getBufferConfiguration');
 
 /**
  * Gets the appropriate TypedArray constructor based on the provided buffer type.
@@ -24,7 +27,7 @@ function getConstructorFromType(
       if (!isVolumeBuffer) {
         return bufferType === 'Uint16Array' ? Uint16Array : Int16Array;
       } else {
-        console.debug(
+        log.debug(
           `${bufferType} is not supported for volume rendering, switching back to Float32Array`
         );
         return Float32Array;
@@ -69,4 +72,24 @@ function getBufferConfiguration(
   return { numBytes, TypedArrayConstructor };
 }
 
-export { getBufferConfiguration, getConstructorFromType };
+/**
+ * The bytes of a volume texture of this many voxels: the type of the volume
+ * buffer, which is the type that the texture really holds, times the
+ * components of one voxel. Without a type, the count of values.
+ */
+function volumeTextureBytes(
+  voxelCount: number,
+  dataType?: PixelDataTypedArrayString,
+  numberOfComponents = 1
+): number {
+  const values = voxelCount * Math.max(numberOfComponents || 1, 1);
+
+  if (!dataType) {
+    return values;
+  }
+
+  return getBufferConfiguration(dataType, values, { isVolumeBuffer: true })
+    .numBytes;
+}
+
+export { getBufferConfiguration, getConstructorFromType, volumeTextureBytes };

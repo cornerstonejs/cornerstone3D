@@ -11,7 +11,7 @@ Cornerstone is a set of JavaScript libraries that can be used to build web-based
 
 ## Local Setup
 
-This repository is pinned to pnpm 11.5.2 via `packageManager`. Use Corepack to
+This repository is pinned to pnpm 12.8.1 via `packageManager`. Use Corepack to
 run the pinned version:
 
 ```bash
@@ -195,14 +195,14 @@ Read our guide on [How-to Contribute](https://cornerstonejs.org/docs/category/co
 The repository has three browser-level test paths:
 
 - [`scripts/run-karma.sh`](./scripts/run-karma.sh) for legacy and compatibility rendering/tool tests.
-- [`scripts/run-playright.sh`](./scripts/run-playright.sh) for end-to-end example coverage, including the Generic viewport suite.
+- [`scripts/run-playwright.sh`](./scripts/run-playwright.sh) for end-to-end example coverage, including the Generic viewport suite.
 - [`vitest.browser.config.ts`](./vitest.browser.config.ts) for low-level browser-mode rendering tests.
 
 Start with:
 
 ```bash
 ./scripts/run-karma.sh
-./scripts/run-playright.sh
+./scripts/run-playwright.sh
 yarn test:vitest:browser
 ```
 

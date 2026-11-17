@@ -19,6 +19,7 @@ import PlanarLegacyCompatibilityController from './PlanarLegacyCompatibilityCont
 import PlanarViewport from './PlanarViewport';
 import type { PlanarScaleInput } from './planarCameraScale';
 import { cloneDisplayArea } from './planarViewState';
+import { coreLog } from '../../../utilities/logger';
 import type {
   PlanarResolvedICamera,
   PlanarViewPresentation,
@@ -26,11 +27,18 @@ import type {
   PlanarViewState,
 } from './PlanarViewportTypes';
 
+const log = coreLog.getLogger('RenderingEngine', 'PlanarViewportLegacyAdapter');
+
 class PlanarViewportLegacyAdapter extends PlanarViewport {
   private readonly legacyCompatibility =
     new PlanarLegacyCompatibilityController(
       this.createLegacyCompatibilityHost()
     );
+
+  /** The legacy viewports keep their 4.x display, so no acquired frames. */
+  protected override prefersAcquiredFrames(): boolean {
+    return false;
+  }
 
   private cloneTuple<T extends ArrayLike<number> | undefined>(
     tuple: T
@@ -321,7 +329,7 @@ class PlanarViewportLegacyAdapter extends PlanarViewport {
       return;
     }
 
-    console.warn(
+    log.warn(
       '[PlanarViewportLegacyAdapter] Position-only planar camera patches are unsupported. Use focalPoint, parallelScale, or view state APIs.'
     );
   }

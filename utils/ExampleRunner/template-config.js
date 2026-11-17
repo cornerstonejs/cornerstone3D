@@ -35,7 +35,12 @@ module.exports = function buildConfig(name, destPath, root, exampleBasePath) {
 const path = require('path')
 
 const rules = require('./rules-examples.js');
-const modules = [path.resolve('../node_modules/'), path.resolve('../../../node_modules/')];
+// 'node_modules' is the plain entry that makes the resolver walk up from the importing file,
+// and it comes first so a package's own dependency wins over the hoisted copy at the root.
+// Without it the two absolute paths are the whole search: an import from
+// packages/dicomImageLoader/src never reaches packages/dicomImageLoader/node_modules, so a
+// codec the root hoists for another package is bundled in place of the pinned version.
+const modules = ['node_modules', path.resolve('../node_modules/'), path.resolve('../../../node_modules/')];
 
 const rspack = require('@rspack/core');
 

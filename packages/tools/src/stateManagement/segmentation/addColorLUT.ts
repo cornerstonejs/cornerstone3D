@@ -2,6 +2,11 @@ import { type Types, utilities } from '@cornerstonejs/core';
 import { defaultSegmentationStateManager } from './SegmentationStateManager';
 import { getNextColorLUTIndex } from './getNextColorLUTIndex';
 import CORNERSTONE_COLOR_LUT from '../../constants/COLOR_LUT';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'stateManagement.segmentation.addColorLUT'
+);
 
 const PREVIEW_COLOR_INDEX = 255;
 const MINIMUM_COLOR_LUT_ENTRIES = PREVIEW_COLOR_INDEX + 1;
@@ -23,7 +28,7 @@ export function addColorLUT(colorLUT: Types.ColorLUT, index?: number): number {
 
   // Make sure the colorLUT always starts with [0, 0, 0, 0] for the background color
   if (!utilities.isEqual(colorLUTToUse[0], [0, 0, 0, 0])) {
-    console.warn(
+    cs3dLogger.warn(
       'addColorLUT: [0, 0, 0, 0] color is not provided for the background color (segmentIndex =0), automatically adding it'
     );
     colorLUTToUse = [[0, 0, 0, 0], ...colorLUTToUse];

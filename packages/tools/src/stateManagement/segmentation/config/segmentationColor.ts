@@ -3,6 +3,11 @@ import { addColorLUT as _addColorLUT } from '../addColorLUT';
 import { getColorLUT as _getColorLUT } from '../getColorLUT';
 import { getSegmentationRepresentations } from '../getSegmentationRepresentation';
 import { triggerSegmentationRepresentationModified } from '../triggerSegmentationEvents';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'stateManagement.segmentation.config.segmentationColor'
+);
 
 /**
  * addColorLUT - Adds a new color LUT to the state at the given colorLUTIndex.
@@ -87,7 +92,7 @@ function getSegmentIndexColor(
   let colorValue = colorLUT[segmentIndex];
   if (!colorValue) {
     if (typeof segmentIndex !== 'number') {
-      console.warn(`Can't create colour for LUT index ${segmentIndex}`);
+      cs3dLogger.warn(`Can't create colour for LUT index ${segmentIndex}`);
       return null;
     }
     colorValue = colorLUT[segmentIndex] = [0, 0, 0, 0];

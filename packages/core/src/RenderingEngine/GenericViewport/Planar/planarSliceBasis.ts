@@ -22,6 +22,8 @@ import type { IImage, IImageVolume, Point3 } from '../../../types';
 import { getImageDataMetadata } from '../../../utilities/getImageDataMetadata';
 import { getCubeSizeInView } from '../../../utilities/getPlaneCubeIntersectionDimensions';
 import getSpacingInNormalDirection from '../../../utilities/getSpacingInNormalDirection';
+import getVoxelThicknessAlongNormal from '../../../utilities/voxelSlab/getVoxelThicknessAlongNormal';
+import { getConfiguration } from '../../../init';
 import { getVolumeCenterIJK } from '../../Viewport';
 import {
   getCpuEquivalentParallelScale,
@@ -381,8 +383,15 @@ function getSliceMetrics(args: {
 }) {
   const { imageVolume, viewPlaneNormal } = args;
   const corners = buildImageVolumeCorners(imageVolume);
+
+  // See Cornerstone3DConfig.rendering.sliceStepMeasure.
+  const measure =
+    getConfiguration().rendering?.sliceStepMeasure === 'l1'
+      ? getVoxelThicknessAlongNormal
+      : getSpacingInNormalDirection;
+
   const spacingInNormalDirection = Math.max(
-    getSpacingInNormalDirection(imageVolume, viewPlaneNormal),
+    measure(imageVolume, viewPlaneNormal),
     MIN_SLICE_SPACING
   );
 

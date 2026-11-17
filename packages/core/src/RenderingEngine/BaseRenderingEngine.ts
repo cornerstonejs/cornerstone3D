@@ -3,11 +3,13 @@ import renderingEngineCache from './renderingEngineCache';
 import eventTarget from '../eventTarget';
 import uuidv4 from '../utilities/uuidv4';
 import triggerEvent from '../utilities/triggerEvent';
+import { coreLog } from '../utilities/logger';
 import ViewportType from '../enums/ViewportType';
 import viewportTypeUsesCustomRenderingPipeline, {
   viewportUsesCustomRenderingPipeline,
 } from './helpers/viewportTypeUsesCustomRenderingPipeline';
 import getOrCreateCanvas from './helpers/getOrCreateCanvas';
+import { skippedDrawSince } from './helpers/actorsWaitingForStorage';
 import {
   setElementTouchActionNone,
   restoreElementTouchAction,
@@ -31,8 +33,15 @@ import type {
   IViewport,
 } from '../types/IViewport';
 import { OrientationAxis } from '../enums';
-import type { VtkOffscreenMultiRenderWindow } from '../types';
+import type {
+  OffscreenCanvasContainer,
+  VtkOffscreenMultiRenderWindow,
+} from '../types';
 import { StatsOverlay } from './helpers/stats';
+import {
+  detachFidelityIndicator,
+  maybeAttachFidelityIndicator,
+} from './helpers/fidelityIndicator';
 import { convertColorArrayToRgbString } from '../utilities/convertColorArrayToRgbString';
 
 // Rendering engines seem to not like rendering things less than 2 pixels per side
@@ -45,6 +54,8 @@ export const VIEWPORT_MIN_SIZE = 2;
  *
  * @abstract
  */
+const log = coreLog.getLogger('RenderingEngine', 'BaseRenderingEngine');
+
 abstract class BaseRenderingEngine {
   /** Unique identifier for renderingEngine */
   readonly id: string;
@@ -52,7 +63,7 @@ abstract class BaseRenderingEngine {
   public hasBeenDestroyed: boolean;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public offscreenMultiRenderWindow: VtkOffscreenMultiRenderWindow;
-  public offScreenCanvasContainer: HTMLDivElement;
+  public offScreenCanvasContainer: OffscreenCanvasContainer;
   protected _viewports: Map<string, IViewport>;
   protected _needsRender = new Set<string>();
   protected _animationFrameSet = false;
@@ -151,6 +162,12 @@ abstract class BaseRenderingEngine {
     const canvas = getOrCreateCanvas(element);
     const { background } = viewportInput.defaultOptions;
     this.fillCanvasWithBackgroundColor(canvas, background);
+
+    // 6. Product fidelity indicator for a viewport that can report fidelity (unless disabled)
+    const enabledViewport = this.getViewport(viewportId);
+    if (enabledViewport) {
+      maybeAttachFidelityIndicator(enabledViewport);
+    }
   }
 
   /**
@@ -174,7 +191,7 @@ abstract class BaseRenderingEngine {
 
     // 2 To throw if there is no viewport stored in rendering engine
     if (!viewport) {
-      console.warn(`viewport ${viewportId} does not exist`);
+      log.warn(`viewport ${viewportId} does not exist`);
       return;
     }
 
@@ -282,6 +299,10 @@ abstract class BaseRenderingEngine {
       const canvas = getOrCreateCanvas(vp.element);
       const { background } = vp.defaultOptions;
       this.fillCanvasWithBackgroundColor(canvas, background);
+    });
+
+    this._getViewportsAsArray().forEach((viewport) => {
+      maybeAttachFidelityIndicator(viewport);
     });
   }
 
@@ -551,7 +572,7 @@ abstract class BaseRenderingEngine {
     // 1. Get the viewport
     const viewport = this.getViewport(viewportId);
     if (!viewport) {
-      console.warn(`viewport ${viewportId} does not exist`);
+      log.warn(`viewport ${viewportId} does not exist`);
       return;
     }
 
@@ -665,6 +686,49 @@ abstract class BaseRenderingEngine {
     return Array.from(this._viewports.values());
   }
 
+  /**
+   * Fires the fidelity event of each rendered viewport, after
+   * `IMAGE_RENDERED` (FIDELITY-EVENT-2..4). An `IMAGE_RENDERED` listener can
+   * disable a viewport or destroy this engine, so a viewport that this engine
+   * no longer holds is skipped: it has no renderer and no camera.
+   */
+  protected _notifyFidelityOfRenderedViewports(viewports: IViewport[]): void {
+    viewports.forEach((viewport) => {
+      if (
+        this.hasBeenDestroyed ||
+        this._viewports.get(viewport.id) !== viewport
+      ) {
+        return;
+      }
+
+      viewport.notifyFidelityStateChanged();
+    });
+  }
+
+  /**
+   * Whether the render of this viewport that started at `renderStart`
+   * (`performance.now()`) drew no actor, because every actor waits for its
+   * texture storage (see `actorsWaitingForStorage`). The engine then fires no
+   * `IMAGE_RENDERED` and no fidelity event for that empty frame. When any actor
+   * drew, for example a small PET over a waiting CT, the engine fires the
+   * events, so the annotations follow the camera of the frame that shows.
+   */
+  protected _waitsForStorage(
+    viewport: IViewport,
+    renderStart: number
+  ): boolean {
+    const actors = viewport.getActors?.();
+
+    // A CPU viewport does not return an array.
+    return (
+      Array.isArray(actors) &&
+      actors.length > 0 &&
+      actors.every(
+        (entry) => entry?.actor && skippedDrawSince(entry.actor, renderStart)
+      )
+    );
+  }
+
   private _setViewportsToBeRenderedNextFrame(viewportIds: string[]) {
     // Add the viewports to the set of flagged viewports
     viewportIds.forEach((viewportId) => {
@@ -712,6 +776,7 @@ abstract class BaseRenderingEngine {
       renderingEngineId,
     };
 
+    detachFidelityIndicator(viewport);
     viewport.removeWidgets();
 
     // Trigger first before removing the data attributes, as we need the enabled
