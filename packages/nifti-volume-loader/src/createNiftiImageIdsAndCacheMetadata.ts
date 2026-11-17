@@ -296,14 +296,15 @@ async function fetchAndAllocateNiftiVolume(url) {
     ];
 
     const precision = 6;
+    // Slices are spacing[2] apart along the k axis, direction[6..8].
     const imagePositionPatient = [
       parseFloat(
-        (origin[0] + imageIdIndex * direction[6] * spacing[0]).toFixed(
+        (origin[0] + imageIdIndex * direction[6] * spacing[2]).toFixed(
           precision
         )
       ),
       parseFloat(
-        (origin[1] + imageIdIndex * direction[7] * spacing[1]).toFixed(
+        (origin[1] + imageIdIndex * direction[7] * spacing[2]).toFixed(
           precision
         )
       ),
