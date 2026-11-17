@@ -83,6 +83,7 @@ export type {
   DisplaySetRules,
   DisplaySetRuleOrder,
   CreateDisplaySetSplitRulesOptions,
+  DisplaySetStoreState,
 } from './displayset';
 export {
   BaseDisplaySet,
@@ -93,6 +94,7 @@ export {
   splitImageIdsBySplitRules,
   registerDisplaySetMetadata,
   registerDisplaySetProviders,
+  displaySetStore,
   compiledDisplaySetRules,
   defaultDisplaySetSplitRules,
   orderInstancesForRule,

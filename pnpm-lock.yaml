@@ -856,6 +856,9 @@ importers:
       gl-matrix:
         specifier: 3.4.3
         version: 3.4.3
+      zustand:
+        specifier: 4.5.5
+        version: 4.5.5(@types/react@17.0.83)(immer@9.0.21)(react@18.3.1)
 
   packages/nifti-volume-loader:
     dependencies:
@@ -17910,6 +17913,14 @@ packages:
       file-loader:
         optional: true
 
+  use-sync-external-store@1.2.2:
+    resolution:
+      {
+        integrity: sha512-PElTlVMwpblvbNqQ82d2n6RjStvdSoNe9FG28kNfz3WiXilJm4DdNkEzRhCZuIDwY8U08WVihhGR5iRqAwfDiw==,
+      }
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0
+
   utif@3.1.0:
     resolution:
       {
@@ -18718,6 +18729,24 @@ packages:
       {
         integrity: sha512-oyPnDa1X5c13+Y7mA/FDMNJrn4S8UNBe0KCqtDmor40Re7ALrPN6npFwyYVRRh+PqozZQdeg23QtbcamZnG5rA==,
       }
+
+  zustand@4.5.5:
+    resolution:
+      {
+        integrity: sha512-+0PALYNJNgK6hldkgDq2vLrw5f6g/jCInz52n9RTpropGgeAf/ioFUCdtsjCqu4gNhW9D01rUQBROoRjdzyn2Q==,
+      }
+    engines: { node: '>=12.7.0' }
+    peerDependencies:
+      '@types/react': '>=16.8'
+      immer: '>=9.0.6'
+      react: '>=16.8'
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+      immer:
+        optional: true
+      react:
+        optional: true
 
   zwitch@2.0.4:
     resolution:
@@ -32043,6 +32072,10 @@ snapshots:
     optionalDependencies:
       file-loader: 6.2.0(webpack@5.105.0)
 
+  use-sync-external-store@1.2.2(react@18.3.1):
+    dependencies:
+      react: 18.3.1
+
   utif@3.1.0:
     dependencies:
       pako: 1.0.11
@@ -32651,5 +32684,13 @@ snapshots:
       numcodecs: 0.3.2
 
   zstddec@0.2.0: {}
+
+  zustand@4.5.5(@types/react@17.0.83)(immer@9.0.21)(react@18.3.1):
+    dependencies:
+      use-sync-external-store: 1.2.2(react@18.3.1)
+    optionalDependencies:
+      '@types/react': 17.0.83
+      immer: 9.0.21
+      react: 18.3.1
 
   zwitch@2.0.4: {}

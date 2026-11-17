@@ -210,6 +210,26 @@ ds?.numImageFrames; // attributes such as isClip / numImageFrames / splitNumber
 was registered, not a narrowed projection, so the cached shape and the typed
 read never drift apart.
 
+### The display set store
+
+`displaySetStore` is a vanilla [zustand](https://github.com/pmndrs/zustand)
+store (no React) that holds the display sets of the application, keyed by the
+host's unique id of each display set (in OHIF, the `displaySetInstanceUID`).
+The host writes to the store and clears it:
+
+```js
+import { displaySetStore } from '@cornerstonejs/metadata';
+
+displaySetStore.getState().setDisplaySet(uid, displaySet);
+displaySetStore.getState().displaySets.get(uid); // or getTyped(DISPLAY_SET, uid)
+displaySetStore.getState().removeDisplaySet(uid);
+displaySetStore.getState().clear();
+```
+
+Each write replaces the `displaySets` map, so `displaySetStore.subscribe` and
+zustand selectors see every change. `clearCacheData()` does not clear the
+store; the host clears it, for example when a viewer mode exits.
+
 ## Split rules
 
 Split rules decide how a series' instances are grouped into display sets, and
