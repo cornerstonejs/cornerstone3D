@@ -1,7 +1,6 @@
 import type { Types } from '@cornerstonejs/core';
 import {
   Enums,
-  cache,
   getWebWorkerManager,
   eventTarget,
   triggerEvent,
@@ -57,40 +56,25 @@ const triggerWorkerProgress = (eventTarget, progress) => {
 };
 
 /**
- * The clipping planes of each slice of a viewport. A legacy viewport gives
- * them itself. For a next viewport that shows a volume they come from the
- * volume and the resolved view, and a next viewport that shows a stack has
- * none.
+ * The clipping planes of each slice of a viewport, by
+ * `utilities.getSlicesClippingPlanes` of the core: for a viewport that shows
+ * a volume, and for a next viewport or an adapter that shows a stack, where
+ * each image is a slice. A legacy viewport without its own
+ * `getSlicesClippingPlanes` (a legacy stack viewport) has none, as before.
  */
 function getSlicesClippingPlanes(viewport: Types.IVolumeViewport) {
   const legacyViewport = viewport as {
     getSlicesClippingPlanes?: Types.IVolumeViewport['getSlicesClippingPlanes'];
   };
 
-  if (typeof legacyViewport.getSlicesClippingPlanes === 'function') {
-    return legacyViewport.getSlicesClippingPlanes();
-  }
-
-  if (!cornerstoneUtilities.isGenericViewport(viewport)) {
+  if (
+    !cornerstoneUtilities.isGenericViewport(viewport) &&
+    typeof legacyViewport.getSlicesClippingPlanes !== 'function'
+  ) {
     return;
   }
 
-  const nextViewport = viewport as unknown as {
-    getVolumeId?: () => string | undefined;
-    getResolvedView?: () => { toICamera(): Types.ICamera } | undefined;
-  };
-  const volume = cache.getVolume(nextViewport.getVolumeId?.());
-  const camera = nextViewport.getResolvedView?.()?.toICamera();
-
-  if (!volume || !camera?.viewPlaneNormal) {
-    return [];
-  }
-
-  return cornerstoneUtilities.getVolumeSlicesClippingPlanes(volume, {
-    focalPoint: camera.focalPoint,
-    position: camera.position,
-    viewPlaneNormal: camera.viewPlaneNormal,
-  });
+  return cornerstoneUtilities.getSlicesClippingPlanes(viewport);
 }
 
 /**

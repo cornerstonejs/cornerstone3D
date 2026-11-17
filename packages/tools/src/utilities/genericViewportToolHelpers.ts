@@ -76,7 +76,12 @@ export function jumpToFocalPoint(
  *   so the closest image index to the point is resolved from the per-image
  *   plane metadata and navigated by `sliceIndex`.
  *
- * Returns true when a navigation was issued.
+ * Only the distance of the point along the view counts, so a point beside the
+ * data goes to the slice of its plane. A point before the first or past the
+ * last slice goes to the first or the last slice, in both modes.
+ *
+ * Returns true when a navigation was issued. A legacy viewport and a viewport
+ * with nothing mounted give false.
  */
 export function navigatePlanarViewportToPoint(
   viewport: Types.IViewport,
@@ -89,9 +94,13 @@ export function navigatePlanarViewportToPoint(
     return false;
   }
 
-  const isStackContent = viewport.getCurrentMode?.() === 'stack';
+  const contentMode = viewport.getCurrentMode?.();
 
-  if (isStackContent) {
+  if (contentMode === 'empty') {
+    return false;
+  }
+
+  if (contentMode === 'stack') {
     const stackViewport = viewport as unknown as Types.IStackViewport;
     if (
       typeof stackViewport.getImageIds !== 'function' ||

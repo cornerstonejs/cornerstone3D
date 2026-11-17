@@ -58,6 +58,40 @@ function getVolumeSlicePoints(
   return slicePoints;
 }
 
+/** The pair of clipping planes around one slice, with the index of the slice. */
+type SliceClippingPlanes = {
+  sliceIndex: number;
+  planes: { normal: Point3; origin: Point3 }[];
+};
+
+/**
+ * The pair of clipping planes around the slice through a point: one plane
+ * behind the point with the view plane normal, one in front of it with the
+ * opposite normal, each `RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS` from the
+ * point, as the legacy volume viewport places them.
+ */
+function getSliceClippingPlanePair(
+  point: Point3,
+  viewPlaneNormal: Point3
+): SliceClippingPlanes['planes'] {
+  const offset = vec3.scale(
+    vec3.create(),
+    viewPlaneNormal,
+    RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS
+  );
+
+  return [
+    {
+      normal: [...viewPlaneNormal] as Point3,
+      origin: vec3.sub(vec3.create(), point, offset) as Point3,
+    },
+    {
+      normal: vec3.negate(vec3.create(), viewPlaneNormal) as Point3,
+      origin: vec3.add(vec3.create(), point, offset) as Point3,
+    },
+  ];
+}
+
 /**
  * The pair of clipping planes around each slice of a volume along the view
  * normal of a camera, as the legacy volume viewport gives them in
@@ -71,35 +105,14 @@ function getVolumeSlicePoints(
 function getVolumeSlicesClippingPlanes(
   imageVolume: IImageVolume,
   camera: SliceCamera
-): {
-  sliceIndex: number;
-  planes: { normal: Point3; origin: Point3 }[];
-}[] {
-  const { viewPlaneNormal } = camera;
-  const offset = vec3.scale(
-    vec3.create(),
-    viewPlaneNormal,
-    RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS
-  );
-
+): SliceClippingPlanes[] {
   return getVolumeSlicePoints(imageVolume, camera).map(
     ({ sliceIndex, point }) => ({
       sliceIndex,
-      planes: [
-        {
-          normal: [...viewPlaneNormal] as Point3,
-          origin: vec3.sub(vec3.create(), point, offset) as Point3,
-        },
-        {
-          normal: vec3.negate(vec3.create(), viewPlaneNormal) as Point3,
-          origin: vec3.add(vec3.create(), point, offset) as Point3,
-        },
-      ],
+      planes: getSliceClippingPlanePair(point, camera.viewPlaneNormal),
     })
   );
 }
 
-export {
-  getVolumeSlicesClippingPlanes as default,
-  getVolumeSlicesClippingPlanes,
-};
+export { getSliceClippingPlanePair, getVolumeSlicesClippingPlanes };
+export type { SliceClippingPlanes };

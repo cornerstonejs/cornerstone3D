@@ -175,7 +175,8 @@ import {
 import resolveApplicationUrl, { getPublicUrl } from './resolveApplicationUrl';
 export { updatePlaneRestriction } from './updatePlaneRestriction';
 export { isAcquisitionPlaneNormal } from './isAcquisitionPlaneNormal';
-export { getVolumeSlicesClippingPlanes } from './getVolumeSlicesClippingPlanes';
+export { isInAcquisitionPlane } from './isInAcquisitionPlane';
+export { getSlicesClippingPlanes } from './getSlicesClippingPlanes';
 export { runDrawSelfTest } from './drawSelfTest';
 export type {
   DrawSelfTestCase,

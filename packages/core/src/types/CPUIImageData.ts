@@ -19,6 +19,8 @@ interface CPUImageData {
   /** Last index is always 1 */
   getDimensions?: () => Point3;
   getRange?: () => [number, number];
+  /** The world bounds of the image: xMin, xMax, yMin, yMax, zMin, zMax */
+  getBounds?: () => [number, number, number, number, number, number];
 }
 
 interface CPUIImageData {

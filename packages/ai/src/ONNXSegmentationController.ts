@@ -111,28 +111,6 @@ export enum Loggers {
 type LogListener = (message: string, ...args: unknown[]) => void;
 
 /**
- * Whether a viewport shows its acquisition plane. A viewport that has the
- * legacy member answers itself. A next viewport that shows a stack always
- * does, and one that shows a volume is asked by the rule of the render path.
- */
-function isInAcquisitionPlane(viewport): boolean {
-  if (typeof viewport.isInAcquisitionPlane === 'function') {
-    return viewport.isInAcquisitionPlane();
-  }
-
-  if (utilities.getViewportContentMode(viewport) !== 'volume') {
-    return true;
-  }
-
-  const volume = cache.getVolume(viewport.getVolumeId?.());
-  const viewPlaneNormal = viewport.getViewReference?.()?.viewPlaneNormal;
-
-  return volume && viewPlaneNormal
-    ? utilities.isAcquisitionPlaneNormal(volume, viewPlaneNormal)
-    : true;
-}
-
-/**
  * The ONNXController handles the interaction between CS3D viewports and ONNX segmentation
  * models to allow segmentation of volume and stack viewports using browser local
  * data models.  The process is that a particular view of the viewport is rendered
@@ -744,7 +722,7 @@ export default class ONNXSegmentationController {
     }
 
     if (segmentation && this._enabled && this._autoSegmentMode) {
-      if (!isInAcquisitionPlane(viewport)) {
+      if (!utilities.isInAcquisitionPlane(viewport)) {
         cs3dLogger.warn(
           'Non acquisition plane viewports and auto segment mode is not yet supported'
         );

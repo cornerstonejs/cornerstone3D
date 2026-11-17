@@ -65,6 +65,7 @@ import getOrCreateImageVolume from './segmentation/getOrCreateImageVolume';
 import * as usFanExtraction from '../tools/annotation/UltrasoundPleuraBLineTool/utils/fanExtraction';
 import {
   jumpToFocalPoint,
+  navigatePlanarViewportToPoint,
   getViewSlabDepthOfViewport,
 } from './genericViewportToolHelpers';
 import pickIntensityPointInSlab, {
@@ -128,6 +129,7 @@ export {
   safeStructuredClone,
   getOrCreateImageVolume,
   jumpToFocalPoint,
+  navigatePlanarViewportToPoint,
   getViewSlabDepthOfViewport,
   pickIntensityPointInSlab,
   getSlabIntensityPickContext,

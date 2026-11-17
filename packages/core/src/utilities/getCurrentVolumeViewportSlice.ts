@@ -1,15 +1,32 @@
 import { glMatrix, vec3 } from 'gl-matrix';
-import type { IVolumeViewport, Point3 } from '../types';
-import { getVolumeSliceViewInfo } from './getVolumeSliceViewInfo';
+import type {
+  IStackViewport,
+  IViewport,
+  IVolumeViewport,
+  PixelDataTypedArray,
+  Point3,
+} from '../types';
+import { getStackSliceViewInfo } from './getStackSliceViewInfo';
+import {
+  getVolumeSliceViewInfo,
+  type SliceViewInfo,
+} from './getVolumeSliceViewInfo';
 import { transformCanvasToIJK } from './transformCanvasToIJK';
+import { getViewportContentMode } from './viewportCapabilities';
 
 /**
- * The slice view info of a viewport: its own answer on a legacy viewport,
- * else computed from the resolved view of a next viewport.
+ * The slice view info of a viewport. A viewport that shows a stack gets the
+ * info of its image on display, whether it is a next viewport, a legacy
+ * adapter or a legacy stack viewport, whose own member throws. A viewport
+ * that shows a volume answers with its own member when it has one (a legacy
+ * viewport, an adapter), else the info comes from the resolved view of the
+ * next viewport.
  */
-function getSliceViewInfo(
-  viewport: IVolumeViewport
-): ReturnType<IVolumeViewport['getSliceViewInfo']> {
+function getSliceViewInfo(viewport: IViewport): SliceViewInfo {
+  if (getViewportContentMode(viewport) === 'stack') {
+    return getStackSliceViewInfo(viewport as IStackViewport);
+  }
+
   if (typeof viewport.getSliceViewInfo === 'function') {
     return viewport.getSliceViewInfo();
   }
@@ -20,21 +37,58 @@ function getSliceViewInfo(
   };
 
   return getVolumeSliceViewInfo(
-    viewport,
+    viewport as IVolumeViewport,
     nextViewport.getResolvedView().toICamera().viewPlaneNormal,
     nextViewport.getSliceIndex()
   );
 }
 
 /**
+ * The pixels of the slice on display, in the order of the image data. For a
+ * stack they are the pixel data of the image itself, not a copy. For a
+ * volume they are a copy of the slice that the slice to index matrix names,
+ * along the slice plane. This is not `sliceIndex` of the slice view info,
+ * which counts along the view direction and is the mirror of that slice when
+ * the view looks against the axis of the volume.
+ */
+function getSliceScalarData(
+  viewport: IViewport,
+  { slicePlane, sliceToIndexMatrix }: SliceViewInfo
+): PixelDataTypedArray {
+  const viewportImageData = viewport.getImageData();
+
+  if (getViewportContentMode(viewport) === 'stack') {
+    return viewportImageData.scalarData;
+  }
+
+  const { voxelManager, dimensions } = viewportImageData;
+
+  return voxelManager.getSliceData({
+    sliceIndex: Math.min(
+      Math.max(0, Math.round(sliceToIndexMatrix[12 + slicePlane])),
+      dimensions[slicePlane] - 1
+    ),
+    slicePlane,
+  });
+}
+
+/**
  * Get the image data for the current slice rendered on the viewport. The image
  * data returned is the full slice and not only the region that is visible on
  * the viewport. It does not work for oblique views.
- * @param viewport - Volume viewport
+ *
+ * It answers for a viewport that shows a volume and for one that shows a
+ * stack, where the slice is the image on display. The pixels are in the
+ * order of the image data. A slice pixel `[x, y, 0]` times
+ * `sliceToIndexMatrix` is its index in the image data of the viewport, as
+ * long as the view is not flipped and not rotated: the matrices follow the
+ * view, the pixels do not.
+ *
+ * @param viewport - A viewport that shows a volume or a stack
  * @returns Slice image data and  matrices to convert from volume
  *   to slice and vice-versa
  */
-function getCurrentVolumeViewportSlice(viewport: IVolumeViewport) {
+function getCurrentVolumeViewportSlice(viewport: IViewport) {
   const { width: canvasWidth, height: canvasHeight } = viewport.getCanvas();
 
   const sliceViewInfo = getSliceViewInfo(viewport);
@@ -78,14 +132,10 @@ function getCurrentVolumeViewportSlice(viewport: IVolumeViewport) {
     );
   }
 
-  const { voxelManager } = viewport.getImageData();
-
-  const scalarData = voxelManager.getSliceData(sliceViewInfo);
-
   return {
     width: sliceViewInfo.width,
     height: sliceViewInfo.height,
-    scalarData,
+    scalarData: getSliceScalarData(viewport, sliceViewInfo),
     sliceToIndexMatrix,
     indexToSliceMatrix,
   };

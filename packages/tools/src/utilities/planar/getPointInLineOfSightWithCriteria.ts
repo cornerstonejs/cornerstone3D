@@ -1,10 +1,14 @@
-import { cache, utilities as csUtils } from '@cornerstonejs/core';
+import { utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import getViewportICamera from '../getViewportICamera';
 /**
  * Returns a point based on some criteria (e.g., minimum or maximum intensity) in
  * the line of sight (on the line between the passed worldPosition and camera position).
  * It iterated over the points with a step size on the line.
+ *
+ * A viewport that shows a stack has one image on display, thinner than the
+ * margin that the search keeps from the bounds, so no point is found there
+ * and the result is undefined.
  *
  * @param viewport - Volume viewport
  * @param worldPos - World coordinates of the clicked location
@@ -44,6 +48,8 @@ export function getPointInLineOfSightWithCriteria(
 
 /**
  * Calculates and returns an array of points in the line of sight between the camera and a target volume.
+ * The list is empty for a viewport that shows a stack, and for a viewport
+ * without image data.
  * @param viewport - The volume viewport.
  * @param worldPos - The world position of the camera.
  * @param targetVolumeId - The ID of the target volume.
@@ -91,8 +97,10 @@ export function getPointsInLineOfSight(
 }
 
 /**
- * The intensity of the target volume at a world point. A legacy viewport
- * answers with its own member.
+ * The intensity at a world point. A legacy viewport answers with its own
+ * member. A next viewport answers from its image data: that of the target
+ * volume, or of the image on display when it shows a stack. Undefined when
+ * the viewport has no image data.
  */
 function getIntensityAtPoint(
   viewport: Types.IVolumeViewport,
@@ -103,15 +111,24 @@ function getIntensityAtPoint(
     return viewport.getIntensityFromWorld(point);
   }
 
-  const volume = cache.getVolume(targetVolumeId);
-  const index = csUtils.transformWorldToIndex(volume.imageData, point);
+  const viewportImageData = viewport.getImageData(targetVolumeId);
 
-  return volume.voxelManager.getAtIJKPoint(index) as number;
+  if (!viewportImageData?.voxelManager) {
+    return;
+  }
+
+  const { imageData, voxelManager } = viewportImageData;
+
+  return voxelManager.getAtIJKPoint(
+    csUtils.transformWorldToIndex(imageData, point)
+  ) as number;
 }
 
 /**
- * The bounds that a line of sight stays in: those of the target volume. A
- * legacy viewport answers with its own member.
+ * The bounds that a line of sight stays in. A legacy viewport answers with
+ * its own member. A next viewport answers from its image data: the bounds of
+ * the target volume, or of the image on display when it shows a stack.
+ * Undefined when the viewport has no image data.
  */
 function getLineOfSightBounds(
   viewport: Types.IVolumeViewport,
@@ -121,7 +138,7 @@ function getLineOfSightBounds(
     return viewport.getBounds();
   }
 
-  return cache.getVolume(targetVolumeId).imageData.getBounds();
+  return viewport.getImageData(targetVolumeId)?.imageData.getBounds();
 }
 
 /**
@@ -133,6 +150,10 @@ const _inBounds = function (
   point: Types.Point3,
   bounds: Array<number>
 ): boolean {
+  if (!bounds) {
+    return false;
+  }
+
   const [xMin, xMax, yMin, yMax, zMin, zMax] = bounds;
   const padding = 10;
   return (

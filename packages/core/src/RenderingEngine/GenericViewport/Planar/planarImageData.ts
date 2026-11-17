@@ -1,3 +1,5 @@
+import vtkBoundingBox from '@kitware/vtk.js/Common/DataModel/BoundingBox';
+import type { Bounds } from '@kitware/vtk.js/types';
 import { mat4, vec3 } from 'gl-matrix';
 import * as metaData from '../../../metaData';
 import type { CPUIImageData, IImage, Point3 } from '../../../types';
@@ -45,6 +47,7 @@ export function buildPlanarImageData(
       getDimensions: () => dimensions,
       getScalarData: () => scalarData,
       getSpacing: () => spacing,
+      getBounds: () => getPlanarImageBounds(metadata),
       worldToIndex: (point: Point3) => {
         const diff = vec3.subtract(
           vec3.create(),
@@ -87,15 +90,16 @@ export function buildPlanarImageData(
 }
 
 /**
- * The world to index matrix of the image data of a stack image, as
- * `getWorldToIndex` of the vtkImageData of the legacy stack viewport gives
- * it: the inverse of the matrix of the direction, spacing and origin.
+ * The index to world matrix of the image data of a stack image, as
+ * `getIndexToWorld` of the vtkImageData of the legacy stack viewport gives
+ * it: the matrix of the direction, spacing and origin.
  */
-export function getPlanarWorldToIndexMatrix(
+function getPlanarIndexToWorldMatrix(
   imageData: Pick<CPUIImageData, 'direction' | 'spacing' | 'origin'>
 ): mat4 {
   const { direction, spacing, origin } = imageData;
-  const indexToWorld = mat4.fromValues(
+
+  return mat4.fromValues(
     direction[0] * spacing[0],
     direction[1] * spacing[0],
     direction[2] * spacing[0],
@@ -113,6 +117,37 @@ export function getPlanarWorldToIndexMatrix(
     origin[2],
     1
   );
+}
 
-  return mat4.invert(mat4.create(), indexToWorld);
+/**
+ * The world to index matrix of the image data of a stack image, as
+ * `getWorldToIndex` of the vtkImageData of the legacy stack viewport gives
+ * it: the inverse of the matrix of the direction, spacing and origin.
+ */
+export function getPlanarWorldToIndexMatrix(
+  imageData: Pick<CPUIImageData, 'direction' | 'spacing' | 'origin'>
+): mat4 {
+  return mat4.invert(mat4.create(), getPlanarIndexToWorldMatrix(imageData));
+}
+
+/**
+ * The world bounds `[xMin, xMax, yMin, yMax, zMin, zMax]` of the image data
+ * of a stack image, as `getBounds` of the vtkImageData of the legacy stack
+ * viewport gives them: the box around the voxels of the image, half a voxel
+ * past the centre of the outer ones, from the origin, direction, spacing and
+ * dimensions.
+ */
+function getPlanarImageBounds(
+  imageData: Pick<
+    CPUIImageData,
+    'dimensions' | 'direction' | 'spacing' | 'origin'
+  >
+): Bounds {
+  const [columns, rows, slices] = imageData.dimensions;
+
+  return vtkBoundingBox.transformBounds(
+    [-0.5, columns - 0.5, -0.5, rows - 0.5, -0.5, slices - 0.5],
+    getPlanarIndexToWorldMatrix(imageData),
+    [...vtkBoundingBox.INIT_BOUNDS]
+  );
 }

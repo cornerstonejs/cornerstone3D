@@ -432,10 +432,7 @@ describe('Direct next planar viewport against the legacy viewports -- ', () => {
         );
         const precision = typeof orientation === 'object' ? 2 : 3;
         const legacyPlanes = legacy.getSlicesClippingPlanes();
-        const nextPlanes = utilities.getVolumeSlicesClippingPlanes(
-          cache.getVolume(volumeId),
-          next.getResolvedView().toICamera()
-        );
+        const nextPlanes = utilities.getSlicesClippingPlanes(next);
 
         expect(legacyPlanes.length).toBeGreaterThan(0);
         expect(nextPlanes.length).toBe(legacyPlanes.length);

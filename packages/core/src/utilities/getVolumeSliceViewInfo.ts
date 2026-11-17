@@ -1,23 +1,25 @@
 import { mat4, vec3 } from 'gl-matrix';
 import { EPSILON } from '../constants';
-import type { IVolumeViewport, Point2, Point3 } from '../types';
+import type { IStackViewport, IVolumeViewport, Point2, Point3 } from '../types';
 import { transformCanvasToIJK } from './transformCanvasToIJK';
 import { transformIJKToCanvas } from './transformIJKToCanvas';
 
+/** The slice view info that `getSliceViewInfo` of a viewport gives. */
+export type SliceViewInfo = ReturnType<IVolumeViewport['getSliceViewInfo']>;
+
 /**
- * The slice view info of a viewport that shows a volume, from its public
- * transforms and its image data, as the legacy volume viewport computes it in
- * `getSliceViewInfo`. The row, column and slice
- * directions in index space come from three canvas points. The top left of
- * the slice is the corner of the box around the volume corners on the
- * canvas. The slice plane is the axis of the view plane normal. Throws for an
- * oblique view, as the legacy viewport does.
+ * The size and the matrices of the slice that a viewport shows, from its
+ * public transforms and its image data, for a volume and for a stack image.
+ * The row, column and slice directions in index space come from three canvas
+ * points. The top left of the slice is the corner of the box around the
+ * corners of the image data on the canvas.
  */
-export function getVolumeSliceViewInfo(
-  viewport: IVolumeViewport,
-  viewPlaneNormal: Point3,
-  sliceIndex: number
-): ReturnType<IVolumeViewport['getSliceViewInfo']> {
+export function getSliceViewGeometry(
+  viewport: IVolumeViewport | IStackViewport
+): Pick<
+  SliceViewInfo,
+  'width' | 'height' | 'sliceToIndexMatrix' | 'indexToSliceMatrix'
+> {
   const { width: canvasWidth, height: canvasHeight } = viewport.getCanvas();
   const ijkOriginPoint = transformCanvasToIJK(viewport, [0, 0]);
   const ijkRowPoint = transformCanvasToIJK(viewport, [canvasWidth - 1, 0]);
@@ -66,7 +68,28 @@ export function getVolumeSliceViewInfo(
     ijkTopLeft[2],
     1
   );
-  const indexToSliceMatrix = mat4.invert(mat4.create(), sliceToIndexMatrix);
+
+  return {
+    width: vec3.dot(ijkRowVec, ijkDiagonal) + 1,
+    height: vec3.dot(ijkColVec, ijkDiagonal) + 1,
+    sliceToIndexMatrix,
+    indexToSliceMatrix: mat4.invert(mat4.create(), sliceToIndexMatrix),
+  };
+}
+
+/**
+ * The slice view info of a viewport that shows a volume, from its public
+ * transforms and its image data, as the legacy volume viewport computes it in
+ * `getSliceViewInfo` (see `getSliceViewGeometry`). The slice plane is the
+ * axis of the view plane normal. Throws for an oblique view, as the legacy
+ * viewport does.
+ */
+export function getVolumeSliceViewInfo(
+  viewport: IVolumeViewport,
+  viewPlaneNormal: Point3,
+  sliceIndex: number
+): SliceViewInfo {
+  const geometry = getSliceViewGeometry(viewport);
 
   if (
     viewPlaneNormal.filter((component) => Math.abs(component) > EPSILON)
@@ -85,10 +108,7 @@ export function getVolumeSliceViewInfo(
 
   return {
     sliceIndex,
-    width: vec3.dot(ijkRowVec, ijkDiagonal) + 1,
-    height: vec3.dot(ijkColVec, ijkDiagonal) + 1,
     slicePlane,
-    sliceToIndexMatrix,
-    indexToSliceMatrix,
+    ...geometry,
   };
 }
