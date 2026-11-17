@@ -182,7 +182,10 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
 
     if (
       isVolumeViewport &&
-      typeof (viewport as Types.IVolumeViewport).getSliceViewInfo !== 'function'
+      typeof (viewport as Types.IVolumeViewport).getSliceViewInfo !==
+        'function' &&
+      typeof (viewport as { getResolvedView?: unknown }).getResolvedView !==
+        'function'
     ) {
       cs3dLogger.warn(
         'LivewireContourTool: the viewport cannot give the pixels of its volume slice'

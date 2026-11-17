@@ -1,4 +1,4 @@
-import { utilities as csUtils } from '@cornerstonejs/core';
+import { cache, utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import getViewportICamera from '../getViewportICamera';
 /**
@@ -32,7 +32,7 @@ export function getPointInLineOfSightWithCriteria(
   let pickedPoint;
 
   for (const point of points) {
-    const intensity = viewport.getIntensityFromWorld(point);
+    const intensity = getIntensityAtPoint(viewport, point, targetVolumeId);
     const pointToPick = criteriaFunction(intensity, point);
     if (pointToPick) {
       pickedPoint = pointToPick;
@@ -65,7 +65,7 @@ export function getPointsInLineOfSight(
     );
 
   const step = spacingInNormalDirection * stepSize || 1;
-  const bounds = viewport.getBounds();
+  const bounds = getLineOfSightBounds(viewport, targetVolumeId);
 
   const points: Types.Point3[] = [];
 
@@ -88,6 +88,40 @@ export function getPointsInLineOfSight(
   }
 
   return points;
+}
+
+/**
+ * The intensity of the target volume at a world point. A legacy viewport
+ * answers with its own member.
+ */
+function getIntensityAtPoint(
+  viewport: Types.IVolumeViewport,
+  point: Types.Point3,
+  targetVolumeId: string
+): number {
+  if (!csUtils.isGenericViewport(viewport)) {
+    return viewport.getIntensityFromWorld(point);
+  }
+
+  const volume = cache.getVolume(targetVolumeId);
+  const index = csUtils.transformWorldToIndex(volume.imageData, point);
+
+  return volume.voxelManager.getAtIJKPoint(index) as number;
+}
+
+/**
+ * The bounds that a line of sight stays in: those of the target volume. A
+ * legacy viewport answers with its own member.
+ */
+function getLineOfSightBounds(
+  viewport: Types.IVolumeViewport,
+  targetVolumeId: string
+): number[] {
+  if (!csUtils.isGenericViewport(viewport)) {
+    return viewport.getBounds();
+  }
+
+  return cache.getVolume(targetVolumeId).imageData.getBounds();
 }
 
 /**

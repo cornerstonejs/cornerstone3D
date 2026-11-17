@@ -1,3 +1,4 @@
+import { vec3 } from 'gl-matrix';
 import cache from '../../../cache/cache';
 import {
   getRenderSurfaceForRenderMode,
@@ -5,14 +6,19 @@ import {
 } from '../../helpers/renderBackendRegistry';
 import type {
   ActorEntry,
+  CPUIImageData,
   ICamera,
   IImage,
+  IImageData,
   IVolumeInput,
+  IVolumeViewport,
   Point2,
   Point3,
+  Scaling,
   ViewReference,
   ViewReferenceSpecifier,
 } from '../../../types';
+import { ActorRenderMode } from '../../../types';
 import type BlendModes from '../../../enums/BlendModes';
 import InterpolationType from '../../../enums/InterpolationType';
 import MetadataModules from '../../../enums/MetadataModules';
@@ -20,11 +26,17 @@ import { getShouldUseCPURendering } from '../../../init';
 import * as metaData from '../../../metaData';
 import { getValidVOILUTFunction } from '../../../utilities/buildMetadata';
 import clonePoint3 from '../../../utilities/clonePoint3';
+import getClosestImageId from '../../../utilities/getClosestImageId';
 import hasOwn from '../../../utilities/hasOwn';
 import imageIdToURI from '../../../utilities/imageIdToURI';
+import transformWorldToIndex from '../../../utilities/transformWorldToIndex';
 import genericViewportDisplaySetMetadataProvider from '../../../utilities/genericViewportDisplaySetMetadataProvider';
 import { viewportProjection } from '../viewportProjection';
-import { type PlanarLegacyViewportProperties } from './planarLegacyCompatibility';
+import {
+  getPlanarLegacyScaling,
+  getPlanarLegacySliceViewInfo,
+  type PlanarLegacyViewportProperties,
+} from './planarLegacyCompatibility';
 import PlanarLegacyCompatibilityController from './PlanarLegacyCompatibilityController';
 import PlanarViewport, { type PlanarScrollOptions } from './PlanarViewport';
 import type { PlanarScaleInput } from './planarCameraScale';
@@ -44,6 +56,12 @@ class PlanarViewportLegacyAdapter extends PlanarViewport {
     new PlanarLegacyCompatibilityController(
       this.createLegacyCompatibilityHost()
     );
+
+  /**
+   * False until the rendering engine disables the viewport, as on the legacy
+   * viewports. The engine sets it to true.
+   */
+  isDisabled = false;
 
   /** The animation frame of the CPU draw that `render` asked for. */
   private cpuRenderFrame: number | undefined;
@@ -206,6 +224,18 @@ class PlanarViewportLegacyAdapter extends PlanarViewport {
     return this.getCornerstoneImage();
   }
 
+  getCornerstoneImage(): IImage | undefined {
+    const planarData = this.getCurrentBinding()?.data as
+      | { image?: IImage }
+      | undefined;
+
+    return planarData?.image;
+  }
+
+  getAllVolumeIds(): string[] {
+    return Array.from(this.volumeIds);
+  }
+
   /**
    * The modality of the image that the viewport shows, from the general
    * series module of that image, as the legacy stack viewport keeps it. In
@@ -223,6 +253,15 @@ class PlanarViewportLegacyAdapter extends PlanarViewport {
   }
 
   /**
+   * The PT scaling of the image that the viewport shows, as the legacy stack
+   * viewport keeps it. The legacy viewport keeps the first PT scaling it sees
+   * for later stacks too; the adapter reads the current image.
+   */
+  get scaling(): Scaling {
+    return getPlanarLegacyScaling(this.getLegacyImageId());
+  }
+
+  /**
    * Whether the viewport draws its current data on the CPU canvas. The legacy
    * viewports fix this when they are made; the next viewport chooses the
    * render path per display set, so the adapter reads the path that draws.
@@ -232,6 +271,23 @@ class PlanarViewportLegacyAdapter extends PlanarViewport {
       getRenderSurfaceForRenderMode(
         this.getCurrentPlanarRendering()?.renderMode
       ) === 'cpu'
+    );
+  }
+
+  /**
+   * Whether the image shown last needed new image data on the GPU image path,
+   * because it is the first image or its size, data type or number of
+   * components differs from the image before it, as `stackActorReInitialized`
+   * of the legacy stack viewport. A tool then makes again what it built for
+   * the old image data. False on the CPU path and in volume mode, where the
+   * legacy viewports do not set it.
+   */
+  get stackActorReInitialized(): boolean {
+    const rendering = this.getCurrentPlanarRendering();
+
+    return (
+      rendering?.renderMode === ActorRenderMode.VTK_IMAGE &&
+      rendering.newImageData
     );
   }
 
@@ -282,6 +338,84 @@ class PlanarViewportLegacyAdapter extends PlanarViewport {
   }
 
   /**
+   * Shows the slice that holds a world point. In stack mode it goes to the
+   * image closest to the point, as the legacy stack viewport does, and gives
+   * false when no image is in the view direction. In volume mode it moves the
+   * slice to the plane through the point, clamped to the bounds of the
+   * volume, as the legacy volume viewport does, and keeps pan and zoom.
+   */
+  jumpToWorld(worldPos: Point3): boolean {
+    if (this.getCurrentMode() === 'volume') {
+      const bounds = (
+        this.getImageData() as IImageData | undefined
+      )?.imageData?.getBounds();
+      const sliceWorldPoint = bounds
+        ? ([
+            Math.max(bounds[0], Math.min(bounds[1], worldPos[0])),
+            Math.max(bounds[2], Math.min(bounds[3], worldPos[1])),
+            Math.max(bounds[4], Math.min(bounds[5], worldPos[2])),
+          ] as Point3)
+        : ([...worldPos] as Point3);
+
+      this.setViewState({ slice: { kind: 'volumePoint', sliceWorldPoint } });
+      this.render();
+
+      return true;
+    }
+
+    const imageIds = this.getImageIds();
+    const imageData = this.getImageData() as CPUIImageData | undefined;
+
+    if (!imageData) {
+      return false;
+    }
+
+    const imageId = getClosestImageId(
+      { direction: imageData.direction, spacing: imageData.spacing, imageIds },
+      worldPos,
+      this.getCameraForEvent().viewPlaneNormal,
+      { ignoreSpacing: true }
+    );
+    const index = imageIds.indexOf(imageId);
+
+    if (index === -1) {
+      return false;
+    }
+
+    this.setImageIdIndex(index);
+    this.render();
+
+    return true;
+  }
+
+  /**
+   * Whether the view looks along the acquisition direction. Always true in
+   * stack mode, as on the legacy stack viewport. In volume mode the view
+   * plane normal must lie within 0.99 of the slice direction of the volume,
+   * as on the legacy volume viewport.
+   */
+  isInAcquisitionPlane(): boolean {
+    if (this.getCurrentMode() === 'stack') {
+      return true;
+    }
+
+    const imageData = this.getImageData() as IImageData | undefined;
+
+    if (!imageData) {
+      return false;
+    }
+
+    const { direction } = imageData;
+    const { viewPlaneNormal } = this.getCameraForEvent();
+
+    return (
+      Math.abs(
+        vec3.dot(viewPlaneNormal, [direction[6], direction[7], direction[8]])
+      ) > 0.99
+    );
+  }
+
+  /**
    * False. The orientation marker tool, the one caller, puts its own vtk.js
    * actors into the renderer and turns the vtk.js camera, which the adapter
    * does not give (`getRenderer`). A volume-mode adapter changes orientation
@@ -289,6 +423,52 @@ class PlanarViewportLegacyAdapter extends PlanarViewport {
    */
   isOrientationChangeable(): boolean {
     return false;
+  }
+
+  /**
+   * The value of the volume at a world point, as the legacy volume viewport
+   * reads it: the voxel nearest the point in the volume that the viewport
+   * shows. Undefined in stack mode.
+   */
+  getIntensityFromWorld(point: Point3): number {
+    const volume =
+      this.getCurrentMode() === 'volume'
+        ? cache.getVolume(this.getVolumeId())
+        : undefined;
+
+    if (!volume?.imageData) {
+      return;
+    }
+
+    const index = transformWorldToIndex(volume.imageData, point);
+
+    return volume.voxelManager.getAtIJKPoint(index) as number;
+  }
+
+  /**
+   * The world bounds of the volumes of the viewport. The legacy volume
+   * viewport gives the bounds of every visible prop of its renderer, which
+   * for a volume viewport are its volumes. Undefined in stack mode.
+   */
+  getBounds(): number[] {
+    return this.legacyCompatibility.getVolumeBounds();
+  }
+
+  /**
+   * The slice view info of a volume-mode viewport, as the legacy volume
+   * viewport gives it (see `getPlanarLegacySliceViewInfo`). Throws in stack
+   * mode, as the legacy stack viewport does, and for an oblique view.
+   */
+  getSliceViewInfo(): ReturnType<IVolumeViewport['getSliceViewInfo']> {
+    if (this.getCurrentMode() !== 'volume') {
+      throw new Error('Method not implemented.');
+    }
+
+    return getPlanarLegacySliceViewInfo(
+      this as unknown as IVolumeViewport,
+      this.getCameraForEvent().viewPlaneNormal,
+      this.getSliceIndex()
+    );
   }
 
   /**

@@ -4,6 +4,7 @@ import { type Types, utilities } from '@cornerstonejs/core';
 import { getPointInLineOfSightWithCriteria } from '../utilities/planar';
 import type { PublicToolProps, ToolProps } from '../types';
 import { getToolGroupForViewport } from '../store/ToolGroupManager';
+import { navigatePlanarViewportToPoint } from '../utilities/genericViewportToolHelpers';
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
 
 const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
@@ -99,8 +100,16 @@ class MIPJumpToClickTool extends BaseTool {
       // that don't belong to the renderingEngine of the source clicked viewport
       const volumeViewport = viewport as Types.IVolumeViewport;
 
+      const showsVolume =
+        utilities.getViewportContentMode(viewport) === 'volume';
+
       if (
-        utilities.getViewportContentMode(viewport) === 'volume' &&
+        showsVolume &&
+        navigatePlanarViewportToPoint(viewport, brightestPoint)
+      ) {
+        viewport.render();
+      } else if (
+        showsVolume &&
         typeof volumeViewport.jumpToWorld === 'function'
       ) {
         volumeViewport.jumpToWorld(brightestPoint);

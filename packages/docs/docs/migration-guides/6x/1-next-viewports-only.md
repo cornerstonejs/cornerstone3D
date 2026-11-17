@@ -124,12 +124,21 @@ These keep their names on a planar viewport: `getImageIds`,
 `getViewReference`, `setViewReference`, `canvasToWorld`, `worldToCanvas`,
 `getFrameOfReferenceUID`, `getImageData` and `render`.
 
-So do these, which only the adapter had in 5.x: `jumpToWorld`,
-`isInAcquisitionPlane`, `getBounds`, `getIntensityFromWorld`,
-`getSliceViewInfo`, `getCurrentSlicePixelData`, `getSlicesClippingPlanes`,
-`getSlicePlaneCoordinates`, `getCornerstoneImage`, `scaling`,
-`stackActorReInitialized`, `isDisabled`, `isOrientationChangeable` and
-`getAllVolumeIds`.
+These members of the legacy viewports have no twin on a planar viewport. The
+same answer comes from the next API or from a function:
+
+| Legacy member                                      | Use                                                                                                       |
+| -------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `jumpToWorld(point)`                               | `viewport.setViewReference({ cameraFocalPoint: point })`                                                  |
+| `getBounds()`                                      | `cache.getVolume(volumeId).imageData.getBounds()`                                                         |
+| `getIntensityFromWorld(point)`                     | `volume.voxelManager.getAtIJKPoint(utilities.transformWorldToIndex(volume.imageData, point))`             |
+| `getSliceViewInfo()`, `getCurrentSlicePixelData()` | `utilities.getCurrentVolumeViewportSlice(viewport)`                                                       |
+| `getSlicesClippingPlanes()`                        | `utilities.getVolumeSlicesClippingPlanes(volume, camera)`                                                 |
+| `isInAcquisitionPlane()`                           | `utilities.isAcquisitionPlaneNormal(volume, viewPlaneNormal)`. A stack is always in its acquisition plane |
+| `getCornerstoneImage()`                            | `cache.getImage(viewport.getCurrentImageId())`                                                            |
+| `getAllVolumeIds()`                                | `viewport.getVolumeId()` for the source volume                                                            |
+| `isOrientationChangeable()`                        | `viewport.getCurrentMode() === 'volume'`                                                                  |
+| `scaling`, `stackActorReInitialized`               | No twin                                                                                                   |
 
 A display set is registered once, under an id that the application chooses:
 

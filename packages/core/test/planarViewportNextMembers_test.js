@@ -321,7 +321,7 @@ const VOLUME_ORIENTATIONS = [
   ['oblique', OBLIQUE],
 ];
 
-describe('Direct next planar viewport members against the legacy viewports -- ', () => {
+describe('Direct next planar viewport against the legacy viewports -- ', () => {
   let renderingEngine;
 
   beforeEach(function () {
@@ -340,124 +340,7 @@ describe('Direct next planar viewport members against the legacy viewports -- ',
     utilities.genericViewportDisplaySetMetadataProvider.clear?.();
   });
 
-  describe('jumpToWorld', () => {
-    it('goes to the image closest to a point on a stack, as the legacy stack viewport', async function () {
-      const imageIds = createStackImageIds();
-      const [legacy, next] = await showStackPair(renderingEngine, imageIds);
-      const point = [20, 20, 6.2];
-
-      expect(next.jumpToWorld(point)).toBe(legacy.jumpToWorld(point));
-      await waitFor(
-        () => next.getCurrentImageIdIndex() === legacy.getCurrentImageIdIndex()
-      );
-      expect(legacy.getCurrentImageIdIndex()).toBe(6);
-      expect(next.getCurrentImageIdIndex()).toBe(6);
-    });
-
-    VOLUME_ORIENTATIONS.forEach(([name, orientation]) => {
-      it(`moves the slice to a point of a volume in the ${name} view, as the legacy volume viewport`, async function () {
-        const volumeId = await createVolume();
-        const [legacy, next] = await showVolumePair(
-          renderingEngine,
-          orientation,
-          [volumeId]
-        );
-        const point = [12.3, 17.6, 8.4];
-
-        expect(next.jumpToWorld(point)).toBe(legacy.jumpToWorld(point));
-
-        const legacyCamera = legacy.getCamera();
-        const camera = nextCamera(next);
-
-        expectPointsClose(camera.viewPlaneNormal, legacyCamera.viewPlaneNormal);
-        expect(dot(camera.focalPoint, camera.viewPlaneNormal)).toBeCloseTo(
-          dot(legacyCamera.focalPoint, legacyCamera.viewPlaneNormal),
-          3
-        );
-
-        if (typeof orientation !== 'object') {
-          legacy.jumpToWorld([12, 17, 8]);
-          next.jumpToWorld([12, 17, 8]);
-          expect(next.getSliceIndex()).toBe(legacy.getSliceIndex());
-        }
-      });
-    });
-  });
-
-  describe('isInAcquisitionPlane', () => {
-    it('is true on a stack, as on the legacy stack viewport', async function () {
-      const [legacy, next] = await showStackPair(
-        renderingEngine,
-        createStackImageIds()
-      );
-
-      expect(legacy.isInAcquisitionPlane()).toBe(true);
-      expect(next.isInAcquisitionPlane()).toBe(true);
-    });
-
-    VOLUME_ORIENTATIONS.forEach(([name, orientation]) => {
-      it(`answers as the legacy volume viewport in the ${name} view`, async function () {
-        const volumeId = await createVolume();
-        const [legacy, next] = await showVolumePair(
-          renderingEngine,
-          orientation,
-          [volumeId]
-        );
-
-        expect(next.isInAcquisitionPlane()).toBe(legacy.isInAcquisitionPlane());
-      });
-    });
-  });
-
-  describe('getBounds and getIntensityFromWorld', () => {
-    VOLUME_ORIENTATIONS.forEach(([name, orientation]) => {
-      it(`give the legacy bounds and values in the ${name} view`, async function () {
-        const volumeId = await createVolume();
-        const [legacy, next] = await showVolumePair(
-          renderingEngine,
-          orientation,
-          [volumeId]
-        );
-
-        expectPointsClose(next.getBounds(), legacy.getBounds());
-        [
-          [0, 0, 0],
-          [3, 7, 2],
-          [10.4, 20.2, 5.6],
-          [29, 39, 11],
-        ].forEach((point) => {
-          expect(next.getIntensityFromWorld(point)).toBe(
-            legacy.getIntensityFromWorld(point)
-          );
-        });
-      });
-    });
-
-    it('give the bounds of every volume of a fusion, as the legacy volume viewport', async function () {
-      const volumeId = await createVolume();
-      const otherVolumeId = testUtils.encodeVolumeIdInfo({
-        loader: 'fakeVolumeLoader',
-        name: 'largerVolume',
-        id: 'largerVolume',
-        rows: 50,
-        columns: 20,
-        slices: 16,
-        xSpacing: 1,
-        ySpacing: 1,
-        zSpacing: 1,
-      });
-
-      await volumeLoader.createAndCacheVolume(otherVolumeId, { imageIds: [] });
-
-      const [legacy, next] = await showVolumePair(
-        renderingEngine,
-        OrientationAxis.AXIAL,
-        [volumeId, otherVolumeId]
-      );
-
-      expectPointsClose(next.getBounds(), legacy.getBounds());
-    });
-
+  describe('a point in the line of sight', () => {
     it('let MIPJumpToClickTool move a direct next viewport as a legacy one', async function () {
       const volumeId = await createVolume();
       const [legacy, next] = await showVolumePair(
@@ -499,7 +382,7 @@ describe('Direct next planar viewport members against the legacy viewports -- ',
     });
   });
 
-  describe('getSliceViewInfo and getCurrentSlicePixelData', () => {
+  describe('the slice of the view', () => {
     [
       ['axial', OrientationAxis.AXIAL],
       ['sagittal', OrientationAxis.SAGITTAL],
@@ -518,25 +401,6 @@ describe('Direct next planar viewport members against the legacy viewports -- ',
         await renderAndWait(legacy);
         await renderAndWait(next);
 
-        const legacyInfo = legacy.getSliceViewInfo();
-        const nextInfo = next.getSliceViewInfo();
-
-        expect(nextInfo.sliceIndex).toBe(legacyInfo.sliceIndex);
-        expect(nextInfo.slicePlane).toBe(legacyInfo.slicePlane);
-        expect(nextInfo.width).toBeCloseTo(legacyInfo.width, 4);
-        expect(nextInfo.height).toBeCloseTo(legacyInfo.height, 4);
-        expectPointsClose(
-          nextInfo.sliceToIndexMatrix,
-          legacyInfo.sliceToIndexMatrix
-        );
-        expectPointsClose(
-          nextInfo.indexToSliceMatrix,
-          legacyInfo.indexToSliceMatrix
-        );
-        expect(Array.from(next.getCurrentSlicePixelData())).toEqual(
-          Array.from(legacy.getCurrentSlicePixelData())
-        );
-
         const legacySlice = utilities.getCurrentVolumeViewportSlice(legacy);
         const nextSlice = utilities.getCurrentVolumeViewportSlice(next);
 
@@ -545,25 +409,19 @@ describe('Direct next planar viewport members against the legacy viewports -- ',
         expect(Array.from(nextSlice.scalarData)).toEqual(
           Array.from(legacySlice.scalarData)
         );
+        expectPointsClose(
+          nextSlice.sliceToIndexMatrix,
+          legacySlice.sliceToIndexMatrix
+        );
+        expectPointsClose(
+          nextSlice.indexToSliceMatrix,
+          legacySlice.indexToSliceMatrix
+        );
       });
-    });
-
-    it('throw on a stack, as the legacy stack viewport', async function () {
-      const [legacy, next] = await showStackPair(
-        renderingEngine,
-        createStackImageIds()
-      );
-
-      expect(() => legacy.getSliceViewInfo()).toThrowError(
-        'Method not implemented.'
-      );
-      expect(() => next.getSliceViewInfo()).toThrowError(
-        'Method not implemented.'
-      );
     });
   });
 
-  describe('getSlicesClippingPlanes and getSlicePlaneCoordinates', () => {
+  describe('the clipping planes of each slice', () => {
     VOLUME_ORIENTATIONS.forEach(([name, orientation]) => {
       it(`give the legacy plane of each slice in the ${name} view, within 1e-3 mm, 5e-3 mm when oblique`, async function () {
         const volumeId = await createVolume();
@@ -572,20 +430,14 @@ describe('Direct next planar viewport members against the legacy viewports -- ',
           orientation,
           [volumeId]
         );
-        const legacyPoints = legacy.getSlicePlaneCoordinates();
-        const nextPoints = next.getSlicePlaneCoordinates();
         const precision = typeof orientation === 'object' ? 2 : 3;
-
-        expect(legacyPoints.length).toBeGreaterThan(0);
-        expect(nextPoints.length).toBe(legacyPoints.length);
-        nextPoints.forEach(({ sliceIndex, point }, index) => {
-          expect(sliceIndex).toBe(legacyPoints[index].sliceIndex);
-          expectPointsClose(point, legacyPoints[index].point, precision);
-        });
-
         const legacyPlanes = legacy.getSlicesClippingPlanes();
-        const nextPlanes = next.getSlicesClippingPlanes();
+        const nextPlanes = utilities.getVolumeSlicesClippingPlanes(
+          cache.getVolume(volumeId),
+          next.getResolvedView().toICamera()
+        );
 
+        expect(legacyPlanes.length).toBeGreaterThan(0);
         expect(nextPlanes.length).toBe(legacyPlanes.length);
         nextPlanes.forEach(({ sliceIndex, planes }, index) => {
           expect(sliceIndex).toBe(legacyPlanes[index].sliceIndex);
@@ -622,123 +474,6 @@ describe('Direct next planar viewport members against the legacy viewports -- ',
     });
   });
 
-  describe('getCornerstoneImage', () => {
-    it('gives the image on display after a scroll on the adapter, as the legacy stack viewport', async function () {
-      const imageIds = createStackImageIds();
-      const [legacy] = await showStackPair(renderingEngine, imageIds);
-      const adapter = await showAdapterStack(renderingEngine, imageIds);
-
-      await showImage(legacy, 3);
-      await showImage(adapter, 3);
-
-      expect(legacy.getCornerstoneImage().imageId).toBe(imageIds[3]);
-      expect(adapter.getCornerstoneImage().imageId).toBe(imageIds[3]);
-    });
-
-    it('gives the image on display on a direct next viewport, as the legacy stack viewport', async function () {
-      const imageIds = createStackImageIds();
-      const [legacy, next] = await showStackPair(renderingEngine, imageIds);
-
-      expect(next.getCornerstoneImage().imageId).toBe(
-        legacy.getCornerstoneImage().imageId
-      );
-
-      await showImage(legacy, 4);
-      await showImage(next, 4);
-
-      expect(next.getCornerstoneImage().imageId).toBe(imageIds[4]);
-      expect(utilities.getImageLegacy(next.element).imageId).toBe(
-        utilities.getImageLegacy(legacy.element).imageId
-      );
-    });
-
-    it('gives no image on a volume, where the legacy volume viewport has none', async function () {
-      const volumeId = await createVolume();
-      const [legacy, next] = await showVolumePair(
-        renderingEngine,
-        OrientationAxis.AXIAL,
-        [volumeId]
-      );
-
-      expect(legacy.getCornerstoneImage).toBeUndefined();
-      expect(next.getCornerstoneImage()).toBeUndefined();
-    });
-  });
-
-  describe('scaling', () => {
-    const ptScaling = { suvbw: 2, suvlbm: 3, suvbsa: 5 };
-    const scalingProvider = (type, imageId) =>
-      type === 'scalingModule' && imageId.includes('ptImages')
-        ? ptScaling
-        : undefined;
-
-    beforeEach(function () {
-      metaData.addProvider(scalingProvider, 100000);
-    });
-
-    afterEach(function () {
-      metaData.removeProvider(scalingProvider);
-    });
-
-    it('gives the PT ratios of a PT stack, as the legacy stack viewport', async function () {
-      const imageIds = createStackImageIds({ id: 'ptImages', PT: true });
-      const [legacy, next] = await showStackPair(renderingEngine, imageIds);
-
-      expect(legacy.scaling.PT.suvbwToSuvlbm).toBeCloseTo(1.5, 6);
-      expect(next.scaling).toEqual(legacy.scaling);
-    });
-
-    it('gives no PT ratios for a stack of another modality, as the legacy stack viewport', async function () {
-      const imageIds = createStackImageIds();
-      const [legacy, next] = await showStackPair(renderingEngine, imageIds);
-
-      expect(legacy.scaling).toEqual({});
-      expect(next.scaling).toEqual({});
-    });
-  });
-
-  describe('stackActorReInitialized', () => {
-    it('tells when an image needed new image data, as the legacy stack viewport', async function () {
-      const imageIds = [
-        ...createStackImageIds().slice(0, 3),
-        ...createStackImageIds({ rows: 32, columns: 48 }).slice(3, 6),
-      ];
-      const [legacy, next] = await showStackPair(renderingEngine, imageIds);
-      const states = [];
-
-      for (const imageIdIndex of [1, 3, 4, 0]) {
-        await showImage(legacy, imageIdIndex);
-        await showImage(next, imageIdIndex);
-        states.push([
-          legacy.stackActorReInitialized,
-          next.stackActorReInitialized,
-        ]);
-      }
-
-      expect(states.map(([legacyState]) => legacyState)).toEqual([
-        false,
-        true,
-        false,
-        true,
-      ]);
-      states.forEach(([legacyState, nextState]) => {
-        expect(nextState).toBe(legacyState);
-      });
-    });
-
-    it('is false on a volume, where the legacy volume viewport does not set it', async function () {
-      const volumeId = await createVolume();
-      const [legacy, next] = await showVolumePair(
-        renderingEngine,
-        OrientationAxis.AXIAL,
-        [volumeId]
-      );
-
-      expect(Boolean(legacy.stackActorReInitialized)).toBe(false);
-      expect(next.stackActorReInitialized).toBe(false);
-    });
-  });
-
   describe('isDisabled', () => {
     it('is false while enabled and true once the engine disables the viewport, as on the legacy viewport', async function () {
       const [legacy, next] = await showStackPair(
@@ -757,29 +492,7 @@ describe('Direct next planar viewport members against the legacy viewports -- ',
     });
   });
 
-  describe('isOrientationChangeable', () => {
-    it('is false on a stack, as on the legacy stack viewport', async function () {
-      const [legacy, next] = await showStackPair(
-        renderingEngine,
-        createStackImageIds()
-      );
-
-      expect(legacy.isOrientationChangeable()).toBe(false);
-      expect(next.isOrientationChangeable()).toBe(false);
-    });
-
-    it('is true on a volume, as on the legacy volume viewport', async function () {
-      const volumeId = await createVolume();
-      const [legacy, next] = await showVolumePair(
-        renderingEngine,
-        OrientationAxis.SAGITTAL,
-        [volumeId]
-      );
-
-      expect(legacy.isOrientationChangeable()).toBe(true);
-      expect(next.isOrientationChangeable()).toBe(true);
-    });
-
+  describe('a change of orientation', () => {
     it('lets OrientationControllerTool add and remove its marker on a direct next viewport', async function () {
       const volumeId = await createVolume();
       const [, next] = await showVolumePair(
@@ -802,73 +515,6 @@ describe('Direct next planar viewport members against the legacy viewports -- ',
           },
         })
       ).not.toThrow();
-    });
-  });
-
-  describe('volumes of a fusion', () => {
-    async function showFusionPair() {
-      const volumeId = await createVolume('sourceVolume');
-      const overlayVolumeId = await createVolume('overlayVolume');
-      const hiddenVolumeId = await createVolume('hiddenVolume');
-      const [legacy, next] = await showVolumePair(
-        renderingEngine,
-        OrientationAxis.AXIAL,
-        [volumeId, overlayVolumeId]
-      );
-
-      return { legacy, next, volumeId, overlayVolumeId, hiddenVolumeId };
-    }
-
-    it('give no volume on a stack, as a legacy stack viewport has none', async function () {
-      const [, next] = await showStackPair(
-        renderingEngine,
-        createStackImageIds()
-      );
-
-      expect(next.getAllVolumeIds()).toEqual([]);
-      expect(next.getBounds()).toBeUndefined();
-      expect(next.hasVolumeURI('stackImages')).toBe(false);
-    });
-
-    it('give no volume id for a volume that is not shown, as the legacy volume viewport', async function () {
-      const { legacy, next, overlayVolumeId, hiddenVolumeId } =
-        await showFusionPair();
-
-      expect(legacy.getVolumeId({ volumeId: hiddenVolumeId })).toBeUndefined();
-      expect(next.getVolumeId({ volumeId: hiddenVolumeId })).toBeUndefined();
-      expect(next.getVolumeId({ volumeId: overlayVolumeId })).toBe(
-        legacy.getVolumeId({ volumeId: overlayVolumeId })
-      );
-      expect(next.getVolumeId()).toBe(legacy.getVolumeId());
-    });
-
-    it('answer for every volume shown, as the legacy volume viewport', async function () {
-      const { legacy, next, volumeId, overlayVolumeId, hiddenVolumeId } =
-        await showFusionPair();
-      const overlayImageId = cache.getVolume(overlayVolumeId).imageIds[2];
-      const hiddenImageId = cache.getVolume(hiddenVolumeId).imageIds[2];
-
-      [volumeId, overlayVolumeId, hiddenVolumeId].forEach((id) => {
-        expect(next.hasVolumeId(id)).toBe(legacy.hasVolumeId(id));
-      });
-      ['overlayVolume', 'hiddenVolume'].forEach((uri) => {
-        expect(next.hasVolumeURI(uri)).toBe(legacy.hasVolumeURI(uri));
-      });
-      [overlayImageId, hiddenImageId].forEach((imageId) => {
-        const imageURI = utilities.imageIdToURI(imageId);
-
-        expect(next.hasImageURI(imageURI)).toBe(legacy.hasImageURI(imageURI));
-      });
-      expect(legacy.hasVolumeURI('overlayVolume')).toBe(true);
-      expect(next.getImageIds(overlayVolumeId)).toEqual(
-        legacy.getImageIds(overlayVolumeId)
-      );
-      expect(next.getImageIds()).toEqual(legacy.getImageIds());
-      expect(() => legacy.getImageIds(hiddenVolumeId)).toThrow();
-      expect(() => next.getImageIds(hiddenVolumeId)).toThrow();
-      expect(next.getAllVolumeIds().sort()).toEqual(
-        legacy.getAllVolumeIds().sort()
-      );
     });
   });
 });

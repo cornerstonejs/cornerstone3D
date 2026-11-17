@@ -28,7 +28,6 @@ import {
   toPlanarDataPresentation,
 } from './planarLegacyCompatibility';
 import { mapSlabTypeToBlendMode } from './planarVolumeSliceBlendMode';
-import { getPlanarVolumesBounds } from './planarVolumeBounds';
 import type {
   PlanarViewState,
   PlanarDataPresentation,
@@ -861,7 +860,29 @@ class PlanarLegacyCompatibilityController {
    * no volume has bounds.
    */
   getVolumeBounds(): number[] | undefined {
-    return getPlanarVolumesBounds(this.volumeDataIds.keys());
+    let bounds: number[] | undefined;
+
+    for (const volumeId of this.volumeDataIds.keys()) {
+      const volumeBounds = (
+        cache.getVolume(volumeId) as
+          | { imageData?: { getBounds?: () => number[] } }
+          | undefined
+      )?.imageData?.getBounds?.();
+
+      if (!volumeBounds) {
+        continue;
+      }
+
+      bounds = bounds
+        ? bounds.map((value, index) =>
+            index % 2
+              ? Math.max(value, volumeBounds[index])
+              : Math.min(value, volumeBounds[index])
+          )
+        : [...volumeBounds];
+    }
+
+    return bounds;
   }
 
   private getInitialVolumeImageIdIndex(imageCount: number): number {

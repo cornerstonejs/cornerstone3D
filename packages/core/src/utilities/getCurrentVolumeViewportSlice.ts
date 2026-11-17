@@ -1,6 +1,30 @@
 import { glMatrix, vec3 } from 'gl-matrix';
-import type { IVolumeViewport } from '../types';
+import type { IVolumeViewport, Point3 } from '../types';
+import { getVolumeSliceViewInfo } from './getVolumeSliceViewInfo';
 import { transformCanvasToIJK } from './transformCanvasToIJK';
+
+/**
+ * The slice view info of a viewport: its own answer on a legacy viewport,
+ * else computed from the resolved view of a next viewport.
+ */
+function getSliceViewInfo(
+  viewport: IVolumeViewport
+): ReturnType<IVolumeViewport['getSliceViewInfo']> {
+  if (typeof viewport.getSliceViewInfo === 'function') {
+    return viewport.getSliceViewInfo();
+  }
+
+  const nextViewport = viewport as unknown as {
+    getResolvedView(): { toICamera(): { viewPlaneNormal: Point3 } };
+    getSliceIndex(): number;
+  };
+
+  return getVolumeSliceViewInfo(
+    viewport,
+    nextViewport.getResolvedView().toICamera().viewPlaneNormal,
+    nextViewport.getSliceIndex()
+  );
+}
 
 /**
  * Get the image data for the current slice rendered on the viewport. The image
@@ -13,8 +37,8 @@ import { transformCanvasToIJK } from './transformCanvasToIJK';
 function getCurrentVolumeViewportSlice(viewport: IVolumeViewport) {
   const { width: canvasWidth, height: canvasHeight } = viewport.getCanvas();
 
-  const { sliceToIndexMatrix, indexToSliceMatrix } =
-    viewport.getSliceViewInfo();
+  const sliceViewInfo = getSliceViewInfo(viewport);
+  const { sliceToIndexMatrix, indexToSliceMatrix } = sliceViewInfo;
   // Get three points from the canvas to help us identify the orientation of
   // the slice. Using canvas width/height to get point far away for each other
   // because points such as (0,0), (1,0) and (0,1) may be converted to the same
@@ -56,7 +80,6 @@ function getCurrentVolumeViewportSlice(viewport: IVolumeViewport) {
 
   const { voxelManager } = viewport.getImageData();
 
-  const sliceViewInfo = viewport.getSliceViewInfo();
   const scalarData = voxelManager.getSliceData(sliceViewInfo);
 
   return {

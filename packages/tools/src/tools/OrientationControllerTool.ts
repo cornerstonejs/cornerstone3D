@@ -116,6 +116,21 @@ const ANIMATE_RESET_CAMERA_OPTIONS = {
   resetToCenter: true,
 } as const;
 
+/**
+ * Whether the orientation of a viewport can change: a 3D viewport, and a
+ * viewport that shows a volume. A legacy viewport answers itself.
+ */
+function canChangeOrientation(viewport: Types.IViewport): boolean {
+  if (!cornerstoneUtilities.isGenericViewport(viewport)) {
+    return viewport.isOrientationChangeable();
+  }
+
+  return (
+    viewport.type === Enums.ViewportType.VOLUME_3D_NEXT ||
+    cornerstoneUtilities.viewportIsInVolumeMode(viewport)
+  );
+}
+
 class OrientationControllerTool extends BaseTool {
   static toolName = 'OrientationControllerTool';
 
@@ -274,7 +289,7 @@ class OrientationControllerTool extends BaseTool {
 
     if (enabledElement) {
       const { viewport } = enabledElement;
-      if ((viewport as Types.IViewport).isOrientationChangeable()) {
+      if (canChangeOrientation(viewport as Types.IViewport)) {
         this.widget.removeActorsFromViewport(
           viewportId,
           viewport as Types.IVolumeViewport
@@ -310,7 +325,7 @@ class OrientationControllerTool extends BaseTool {
 
       if (enabledElement) {
         const { viewport } = enabledElement;
-        if ((viewport as Types.IViewport).isOrientationChangeable()) {
+        if (canChangeOrientation(viewport as Types.IViewport)) {
           this.widget.removeActorsFromViewport(
             viewportId,
             viewport as Types.IVolumeViewport
@@ -358,7 +373,7 @@ class OrientationControllerTool extends BaseTool {
 
       const { viewport } = enabledElement;
 
-      if (!(viewport as Types.IViewport).isOrientationChangeable()) {
+      if (!canChangeOrientation(viewport as Types.IViewport)) {
         return;
       }
 
@@ -412,7 +427,7 @@ class OrientationControllerTool extends BaseTool {
 
     const { viewport } = enabledElement;
 
-    if (!(viewport as Types.IViewport).isOrientationChangeable()) {
+    if (!canChangeOrientation(viewport as Types.IViewport)) {
       cs3dLogger.warn(
         'OrientationControllerTool: Viewport does not support orientation changes'
       );
@@ -538,7 +553,7 @@ class OrientationControllerTool extends BaseTool {
     }
 
     const { viewport } = enabledElement;
-    if (!(viewport as Types.IViewport).isOrientationChangeable()) {
+    if (!canChangeOrientation(viewport as Types.IViewport)) {
       return;
     }
 
@@ -572,7 +587,7 @@ class OrientationControllerTool extends BaseTool {
     }
 
     const { viewport } = enabledElement;
-    if (!(viewport as Types.IViewport).isOrientationChangeable()) {
+    if (!canChangeOrientation(viewport as Types.IViewport)) {
       return;
     }
 

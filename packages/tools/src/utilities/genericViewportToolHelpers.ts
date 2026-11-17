@@ -82,7 +82,10 @@ export function navigatePlanarViewportToPoint(
   viewport: Types.IViewport,
   worldPoint: Types.Point3
 ): boolean {
-  if (!csUtils.isGenericViewport(viewport)) {
+  if (
+    !csUtils.isGenericViewport(viewport) ||
+    typeof viewport.setViewReference !== 'function'
+  ) {
     return false;
   }
 

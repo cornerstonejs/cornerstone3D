@@ -186,17 +186,12 @@ and thickens them. Together they are the crosshair for the next viewports.
 - **`IMAGE_SPACING_CALIBRATED` fires when a newly shown image has another
   calibration,** and its detail has `worldToIndex` and `scale`.
 
-## Several volumes in one planar viewport
+## Surfaces in a planar viewport
 
-- **The volume helpers answer for every volume shown.** `hasVolumeId`,
-  `hasVolumeURI`, `hasImageURI` and `getAllVolumeIds` look at each volume of a
-  fusion. In 5.x a next viewport looked at the first one only.
-- **`getVolumeId({ volumeId })` gives undefined for a volume that is not
-  shown,** and `getImageIds(volumeId)` throws for one, as on the legacy
-  viewport. In 5.x both fell back to the first volume, which hid a wrong id.
 - **A surface shows as contours.** The conversion of a Surface representation
   to contours did nothing on a next planar viewport, because the planes of its
-  slices were missing.
+  slices were missing. `utilities.getVolumeSlicesClippingPlanes` gives them
+  from the volume and the camera.
 
 ## The render plan
 

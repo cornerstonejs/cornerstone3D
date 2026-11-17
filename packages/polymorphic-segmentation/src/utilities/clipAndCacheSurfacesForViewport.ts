@@ -1,6 +1,7 @@
 import type { Types } from '@cornerstonejs/core';
 import {
   Enums,
+  cache,
   getWebWorkerManager,
   eventTarget,
   triggerEvent,
@@ -56,6 +57,43 @@ const triggerWorkerProgress = (eventTarget, progress) => {
 };
 
 /**
+ * The clipping planes of each slice of a viewport. A legacy viewport gives
+ * them itself. For a next viewport that shows a volume they come from the
+ * volume and the resolved view, and a next viewport that shows a stack has
+ * none.
+ */
+function getSlicesClippingPlanes(viewport: Types.IVolumeViewport) {
+  const legacyViewport = viewport as {
+    getSlicesClippingPlanes?: Types.IVolumeViewport['getSlicesClippingPlanes'];
+  };
+
+  if (typeof legacyViewport.getSlicesClippingPlanes === 'function') {
+    return legacyViewport.getSlicesClippingPlanes();
+  }
+
+  if (!cornerstoneUtilities.isGenericViewport(viewport)) {
+    return;
+  }
+
+  const nextViewport = viewport as unknown as {
+    getVolumeId?: () => string | undefined;
+    getResolvedView?: () => { toICamera(): Types.ICamera } | undefined;
+  };
+  const volume = cache.getVolume(nextViewport.getVolumeId?.());
+  const camera = nextViewport.getResolvedView?.()?.toICamera();
+
+  if (!volume || !camera?.viewPlaneNormal) {
+    return [];
+  }
+
+  return cornerstoneUtilities.getVolumeSlicesClippingPlanes(volume, {
+    focalPoint: camera.focalPoint,
+    position: camera.position,
+    viewPlaneNormal: camera.viewPlaneNormal,
+  });
+}
+
+/**
  * Clips and caches surfaces for a specific viewport.
  *
  * @param surfacesInfo - An array of surfaces information.
@@ -71,9 +109,7 @@ export async function clipAndCacheSurfacesForViewport(
   // All planes is an array of planes pairs for each slice, so we should loop over them and
   // add the planes to the clipping filter and cache the results for that slice
 
-  // Fix these ts ignores
-  // @ts-ignore
-  const planesInfo = viewport.getSlicesClippingPlanes?.();
+  const planesInfo = getSlicesClippingPlanes(viewport);
 
   if (!planesInfo) {
     // this means it is probably the stack viewport not being ready

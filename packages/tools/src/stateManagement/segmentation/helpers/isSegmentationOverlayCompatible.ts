@@ -142,12 +142,17 @@ function stackViewportReferencesImages(
 
 /**
  * Whether a `PlanarViewport` currently shows a volume. That class serves both a
- * stack and a volume, and it reports an empty list when it shows a stack.
- * Reading it is safe on that class, unlike `getImageIds` on a volume viewport.
+ * stack and a volume, and its mode says which. A viewport without a mode is
+ * asked for its volume ids, which are empty while it shows a stack.
  */
 function mountsAVolume(viewport: {
+  getCurrentMode?: () => string;
   getAllVolumeIds?: () => string[];
 }): boolean {
+  if (typeof viewport.getCurrentMode === 'function') {
+    return viewport.getCurrentMode() === 'volume';
+  }
+
   try {
     return (viewport.getAllVolumeIds?.() ?? []).length > 0;
   } catch (error) {
@@ -204,25 +209,18 @@ export function isSegmentationOverlayCompatible(
 
   const layers = getLabelmaps(segmentation);
 
-  // `BaseVolumeViewport` is not the only class that exposes `getAllVolumeIds`
-  // any more, so the method alone no longer discriminates. A `PlanarViewport`
-  // exposes it whether the viewport shows a stack or a volume, and it returns
-  // an empty list for a stack. A stack-backed `PlanarViewport` therefore took
-  // the volume rule, where the viewport reports a synthetic frame of reference
-  // (`planarNext-viewport-<id>`) that no labelmap can match, and every
-  // representation was dropped.
-  //
-  // A `PlanarViewport` is asked which of the two it currently shows. Every
-  // other class keeps the old test, because a `BaseVolumeViewport` is a volume
+  // A `PlanarViewport` shows a stack or a volume, so it is asked which of the
+  // two it currently shows: a stack-backed one that took the volume rule
+  // reports a synthetic frame of reference (`planarNext-viewport-<id>`) that
+  // no labelmap can match, and every representation was dropped. Every other
+  // class keeps the old test, because a `BaseVolumeViewport` is a volume
   // viewport even before `setVolumes`, and `getImageIds` throws on one until an
   // actor exists.
-  const exposesVolumeApi =
-    typeof (viewport as { getAllVolumeIds?: () => string[] })
-      .getAllVolumeIds === 'function';
   const isVolumeViewport =
-    exposesVolumeApi &&
-    (viewport.type !== Enums.ViewportType.PLANAR_NEXT ||
-      mountsAVolume(viewport as { getAllVolumeIds?: () => string[] }));
+    viewport.type === Enums.ViewportType.PLANAR_NEXT
+      ? mountsAVolume(viewport as Parameters<typeof mountsAVolume>[0])
+      : typeof (viewport as { getAllVolumeIds?: () => string[] })
+          .getAllVolumeIds === 'function';
 
   return isVolumeViewport
     ? volumeViewportSharesFrameOfReference(viewport, layers)
