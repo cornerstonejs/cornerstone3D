@@ -129,6 +129,10 @@ function _determineDataType(
 
   switch (BitsAllocated) {
     case 8:
+      // Fall back to Float32 for non-integer scaling, like the 16-bit case. See #2706.
+      if (canRenderFloat && floatAfterScale) {
+        return 'Float32Array';
+      }
       return 'Uint8Array';
 
     case 16:
