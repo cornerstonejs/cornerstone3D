@@ -96,6 +96,9 @@ class CircleROI extends BaseAdapter3D {
       area,
       areaUnit,
       perimeter,
+      // The perimeter is in the unit of the radius. Without a unit dcmjs
+      // writes "mm", whatever the radius was measured in.
+      unit: radiusUnit,
       modalityUnit,
       radiusUnit,
       radius,
