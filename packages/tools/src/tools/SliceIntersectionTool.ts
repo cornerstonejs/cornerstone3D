@@ -433,7 +433,9 @@ class SliceIntersectionTool extends AnnotationTool {
         this.getToolName(),
         enabledElement.viewport.element
       );
-      annotations?.forEach((annotation) => {
+      // getAnnotations returns the manager's live array, which
+      // removeAnnotation splices, so iterate over a copy.
+      [...(annotations ?? [])].forEach((annotation) => {
         removeAnnotation(annotation.annotationUID);
       });
     });
