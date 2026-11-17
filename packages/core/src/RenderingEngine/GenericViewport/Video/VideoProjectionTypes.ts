@@ -18,6 +18,12 @@ export type VideoResolvedViewLike = {
     viewState: VideoViewState;
   };
   pan: Point2;
+  /**
+   * The pan in canvas pixels on the screen: `[0, 0]` for the fitted view,
+   * and a canvas delta added to it moves the picture by that delta at any
+   * rotation and zoom.
+   */
+  canvasPan?: Point2;
   rotation: number;
   zoom: number;
   /** The canvas pixels of one media pixel, with the zoom of the view. */
@@ -27,6 +33,8 @@ export type VideoResolvedViewLike = {
   getFrameOfReferenceUID(): string | undefined;
   toICamera(): ICamera;
   withPan(pan: Point2): VideoResolvedViewLike;
+  /** The view moved so that `canvasPan` gives this pan. */
+  withCanvasPan?(pan: Point2): VideoResolvedViewLike;
   withZoom(zoom: number, canvasPoint?: Point2): VideoResolvedViewLike;
 };
 
@@ -40,6 +48,7 @@ export type VideoProjectionViewport = {
 
 export interface VideoProjectionPresentation
   extends ProjectionPresentation<never> {
+  /** The pan in canvas pixels on the screen, not divided by the zoom. */
   rawPan: Point2;
 }
 

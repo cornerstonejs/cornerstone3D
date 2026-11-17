@@ -54,7 +54,6 @@ import type { EllipticalROIAnnotation } from '../../types/ToolSpecificAnnotation
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
 import { getPixelValueUnits } from '../../utilities/getPixelValueUnits';
-import { viewportSupportsImageSlices } from '../../utilities/viewportCapabilities';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
 import { vec2, vec3 } from 'gl-matrix';
@@ -843,20 +842,19 @@ class EllipticalROITool extends AnnotationTool {
           // at the referencedImageId
           for (const targetId in data.cachedStats) {
             if (targetId.startsWith('imageId')) {
-              const viewports = renderingEngine
-                .getViewports()
-                .filter(viewportSupportsImageSlices);
+              const referencedImageURI =
+                csUtils.imageIdToURI(referencedImageId);
+              const viewports = csUtils
+                .getViewportsWithImageURI(referencedImageURI)
+                .filter((vp) => vp.renderingEngineId === renderingEngine.id);
 
               const invalidatedStack = viewports.find((vp) => {
                 // The stack viewport that contains the imageId but is not
                 // showing it currently
-                const referencedImageURI =
-                  csUtils.imageIdToURI(referencedImageId);
-                const hasImageURI = vp.hasImageURI(referencedImageURI);
                 const currentImageURI = csUtils.imageIdToURI(
                   vp.getCurrentImageId()
                 );
-                return hasImageURI && currentImageURI !== referencedImageURI;
+                return currentImageURI !== referencedImageURI;
               });
 
               if (invalidatedStack) {

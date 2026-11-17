@@ -209,7 +209,7 @@ describe('Direct next 3D viewport in perspective -- ', () => {
     await expectSamePicture(next, legacy, 'next3D_perspective');
   });
 
-  it('zooms, dollies and resets as a legacy 3D viewport in perspective', async function () {
+  it('takes a parallel scale, dollies and resets as a legacy 3D viewport in perspective', async function () {
     const [legacy, next] = createPair(renderingEngine, {
       parallelProjection: false,
     });
@@ -218,10 +218,11 @@ describe('Direct next 3D viewport in perspective -- ', () => {
     await showOnBoth(legacy, next, volumeId);
 
     legacy.setZoom(2);
-    next.setZoom(2);
+    next.setViewState({
+      parallelScale: next.getViewState().parallelScale / 2,
+    });
 
     expectSameCamera(next, legacy);
-    expect(next.getZoom()).toBeCloseTo(legacy.getZoom(), 6);
     expectSameTransforms(next, legacy, volumeId);
 
     const { focalPoint, position } = legacy.getCamera();

@@ -15,6 +15,14 @@ import type {
 
 const VOLUME_3D_RADIUS_MULTIPLIER = 10;
 
+/**
+ * The view angle in degrees of the fit of a 3D viewport, at a mount and at a
+ * reset.
+ *
+ * @internal
+ */
+export const VOLUME_3D_FIT_VIEW_ANGLE = 90;
+
 export function getInitialVolume3DCamera(
   ctx: Volume3DVtkVolumeAdapterContext,
   imageVolume: IImageVolume
@@ -48,7 +56,7 @@ export function getInitialVolume3DCamera(
     parallelProjection: ctx.viewport.options.parallelProjection ?? true,
     parallelScale,
     position,
-    viewAngle: 90,
+    viewAngle: VOLUME_3D_FIT_VIEW_ANGLE,
     viewPlaneNormal,
     viewUp: viewUpToUse,
   };

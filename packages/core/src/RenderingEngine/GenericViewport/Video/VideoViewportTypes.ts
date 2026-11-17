@@ -25,6 +25,13 @@ export interface VideoPresentationProps extends BasePresentationProps {}
 
 export interface VideoViewState extends ViewportCameraBase<[number, number]> {
   currentTimeSeconds?: number;
+  /**
+   * The first and the last frame that playback stays in, as 1-based frame
+   * numbers. Undefined for the whole video. A range that is not two
+   * different frame numbers is dropped. A reset of the view state and a
+   * mount of a video clear it.
+   */
+  frameRange?: [number, number];
 }
 
 export interface VideoProperties {

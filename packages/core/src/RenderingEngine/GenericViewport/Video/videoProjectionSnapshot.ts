@@ -100,7 +100,7 @@ export function getVideoProjectionSnapshot(
   const canvasPoint = getCenterCanvasPoint(canvasWidth, canvasHeight);
   const mediaPoint = getCenterMediaPoint(resolvedView, canvasPoint, viewState);
   const zoom = resolvedView?.zoom ?? Math.max(viewState.scale ?? 1, 0.001);
-  const rawPan = resolvedView?.pan ?? [0, 0];
+  const rawPan = resolvedView?.canvasPan ?? resolvedView?.pan ?? [0, 0];
   const rendererCamera = resolvedView?.toICamera();
   const frameOfReferenceUID =
     request.frameOfReferenceUID ??

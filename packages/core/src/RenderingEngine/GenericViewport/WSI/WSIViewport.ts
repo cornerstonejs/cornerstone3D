@@ -57,12 +57,6 @@ export default class WSIViewport extends GenericViewport<
 
   private activeDataId?: string;
 
-  /**
-   * The slide point at the centre of the canvas when the slide was mounted,
-   * or when a pan was stored as the origin. `getPan` is measured from it.
-   */
-  private panOrigin?: Point3;
-
   static get useCustomRenderingPipeline(): boolean {
     return true;
   }
@@ -133,7 +127,6 @@ export default class WSIViewport extends GenericViewport<
     const hadSlide = Boolean(this.getWSIData());
 
     this.removeAllData();
-    this.panOrigin = undefined;
 
     if (hadSlide) {
       this.viewState = { rotation: this.viewState.rotation ?? 0 };
@@ -154,7 +147,6 @@ export default class WSIViewport extends GenericViewport<
 
     this.syncCameraFromView();
     this.applyVOIToRendering();
-    this.panOrigin = this.getResolvedView()?.toICamera().focalPoint;
   }
 
   setDisplaySetPresentation(props: Partial<WSIDataPresentation>): void;
@@ -261,47 +253,7 @@ export default class WSIViewport extends GenericViewport<
       frameOfReferenceUID: data.frameOfReferenceUID,
       metadata: data.metadata,
       view,
-      panOrigin: this.panOrigin,
     });
-  }
-
-  /**
-   * The pan in canvas pixels, relative to the view when the slide was
-   * mounted: where the centre of that view now shows, less the centre of the
-   * canvas. It is `[0, 0]` until a slide is shown.
-   */
-  getPan(): Point2 {
-    return this.getResolvedView()?.pan ?? [0, 0];
-  }
-
-  /**
-   * Moves the view so that `getPan` gives this pan. A change under one
-   * canvas pixel is skipped, as on the legacy viewports. With
-   * `storeAsInitialCamera` the view after the move becomes the origin of
-   * `getPan`.
-   */
-  setPan(pan: Point2, storeAsInitialCamera = false): void {
-    const resolvedView = this.getResolvedView();
-
-    if (!resolvedView) {
-      return;
-    }
-
-    const currentPan = resolvedView.pan;
-
-    if (
-      Math.abs(pan[0] - currentPan[0]) >= 1 ||
-      Math.abs(pan[1] - currentPan[1]) >= 1 ||
-      storeAsInitialCamera
-    ) {
-      this.setViewState({
-        centerIndex: resolvedView.withPan(pan).state.viewState.centerIndex,
-      });
-    }
-
-    if (storeAsInitialCamera) {
-      this.panOrigin = this.getResolvedView()?.toICamera().focalPoint;
-    }
   }
 
   getCurrentImageId(): string | undefined {
@@ -350,11 +302,6 @@ export default class WSIViewport extends GenericViewport<
 
   getNumberOfSlices(): number {
     return 1;
-  }
-
-  /** Returns the canvas of the viewport element. */
-  getCanvas(): HTMLCanvasElement {
-    return this.canvas;
   }
 
   resize(): void {
@@ -530,7 +477,6 @@ export default class WSIViewport extends GenericViewport<
 
   protected override onDestroy(): void {
     this.activeDataId = undefined;
-    this.panOrigin = undefined;
   }
 
   customRenderViewportToCanvas(): void {

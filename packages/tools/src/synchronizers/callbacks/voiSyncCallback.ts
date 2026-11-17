@@ -22,6 +22,25 @@ function givesInvert(
 }
 
 /**
+ * The display set of a next viewport that shows this volume, found through
+ * its display sets and its view references, for a viewport without
+ * `findDataIdByVolumeId` such as the 3D viewport.
+ */
+function getDisplaySetIdOfVolume(
+  viewport: Types.IViewport & {
+    getDisplaySets(): Array<{ displaySetId: string }>;
+  },
+  volumeId: string
+): string | undefined {
+  return viewport
+    .getDisplaySets()
+    .map(({ displaySetId }) => displaySetId)
+    .find((displaySetId) =>
+      viewport.isReferenceViewable({ dataId: displaySetId, volumeId })
+    );
+}
+
+/**
  * Synchronizer callback to synchronize the voi of volumeActors of identical volumes
  * in different viewports.
  *
@@ -90,14 +109,17 @@ export default function voiSyncCallback(
     // viewport has no matching binding (single-volume viewports).
     const genericViewport = tViewport as typeof tViewport & {
       findDataIdByVolumeId?: (volumeId: string) => string | undefined;
+      getDisplaySets(): Array<{ displaySetId: string }>;
       setDisplaySetPresentation: (
         dataIdOrProps: string | typeof tProperties,
         props?: typeof tProperties
       ) => void;
     };
-    const dataId = volumeId
-      ? genericViewport.findDataIdByVolumeId?.(volumeId)
-      : undefined;
+    const dataId = !volumeId
+      ? undefined
+      : typeof genericViewport.findDataIdByVolumeId === 'function'
+        ? genericViewport.findDataIdByVolumeId(volumeId)
+        : getDisplaySetIdOfVolume(genericViewport, volumeId);
 
     if (dataId) {
       genericViewport.setDisplaySetPresentation(dataId, tProperties);

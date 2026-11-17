@@ -15,6 +15,10 @@ import {
   TOUCH_TAP_TOLERANCE_MS,
 } from '../../utilities/touch/constants';
 import measurementTargetFilters from './measurementTargetFilters';
+import {
+  applyViewportPresentation,
+  getViewportZoomPan,
+} from '../../utilities/viewportPresentation';
 import type StrategyCallbacks from '../../enums/StrategyCallbacks';
 import type {
   EventTypes,
@@ -363,7 +367,7 @@ abstract class BaseTool {
       return (viewports[0] as Types.IVolumeViewport).getImageData(volumeId);
     } else if (targetId.startsWith('videoId:')) {
       // Video id can be multi-valued for the frame information
-      const imageURI = csUtils.imageIdToURI(targetId);
+      const imageURI = csUtils.imageIdToURI(targetId.split('videoId:')[1]);
       const viewports = csUtils.getViewportsWithImageURI(imageURI);
 
       if (!viewports || !viewports.length) {
@@ -721,9 +725,30 @@ abstract class BaseTool {
 
   /**
    * Creates a zoom/pan memo that remembers the original zoom/pan position for
-   * the given viewport.
+   * the given viewport. A next viewport of any family is read and restored
+   * through the projection service, a legacy viewport through its members.
    */
   public static createZoomPanMemo(viewport) {
+    const zoomPan = getViewportZoomPan(viewport);
+
+    if (zoomPan) {
+      const state = { pan: zoomPan.pan, zoom: zoomPan.zoom };
+      const zoomPanMemo = {
+        restoreMemo: () => {
+          const { pan, zoom } = getViewportZoomPan(viewport);
+
+          applyViewportPresentation(viewport, state);
+          viewport.render?.();
+          state.pan = pan;
+          state.zoom = zoom;
+        },
+      };
+
+      DefaultHistoryMemo.push(zoomPanMemo);
+
+      return zoomPanMemo;
+    }
+
     if (!viewportHasPan(viewport) || !viewportHasZoom(viewport)) {
       return;
     }

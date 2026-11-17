@@ -4,8 +4,15 @@ import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import vtkSphereSource from '@kitware/vtk.js/Filters/Sources/SphereSource';
 import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
 
-const { Enums, volumeLoader, utilities, getConfiguration, cache, CONSTANTS } =
-  cornerstone3D;
+const {
+  Enums,
+  volumeLoader,
+  utilities,
+  getConfiguration,
+  cache,
+  CONSTANTS,
+  viewportProjection,
+} = cornerstone3D;
 const { ViewportType, OrientationAxis, Events, BlendModes } = Enums;
 
 const renderingEngineId = utilities.uuidv4();
@@ -234,7 +241,7 @@ describe('Direct next 3D viewport, colour and presets -- ', () => {
     expectSameTransferFunctions(next, legacy);
   });
 
-  it('fires PRESET_MODIFIED with the legacy detail', async function () {
+  it('applies a preset without PRESET_MODIFIED, where the legacy viewport fires it', async function () {
     const [legacy, next] = createViewports(renderingEngine, {
       legacyId: 'legacy3D',
       nextIds: ['next3D'],
@@ -249,12 +256,9 @@ describe('Direct next 3D viewport, colour and presets -- ', () => {
     legacy.setProperties({ preset: 'CT-Bone' });
     next.setDisplaySetPresentation({ preset: 'CT-Bone' });
 
-    expect(nextDetails.length).toBe(1);
-    expect(nextDetails.length).toBe(legacyDetails.length);
-    expect(nextDetails[0].viewportId).toBe(next.id);
-    expect(nextDetails[0].volumeId).toBe(legacyDetails[0].volumeId);
-    expect(nextDetails[0].presetName).toBe(legacyDetails[0].presetName);
-    expect(nextDetails[0].actor).toBe(volumeActorOf(next));
+    expect(legacyDetails.length).toBe(1);
+    expect(nextDetails.length).toBe(0);
+    expectSameTransferFunctions(next, legacy);
   });
 
   it('applies a colormap name as the legacy viewport, and keeps it on a VOI change', async function () {
@@ -654,31 +658,45 @@ describe('Direct next 3D viewport, the camera -- ', () => {
     });
   });
 
-  it('gives and sets the zoom and the pan as the legacy viewport, from the fit of the mount and of a reset', async function () {
+  it('gives and sets the zoom and the pan through viewportProjection with the result of the legacy members, from the fit of the mount and of a reset', async function () {
     const [legacy, next] = createViewports(renderingEngine, {
       legacyId: 'legacy3D',
       nextIds: ['next3D'],
     });
     const volumeId = await createVolume();
+    const zoomPan = () => viewportProjection.getPresentation(next);
+    const present = (presentation) =>
+      next.setViewState(
+        viewportProjection.withPresentation(next, presentation)
+      );
 
     await showOnBoth(legacy, next, volumeId);
 
-    expect(next.getZoom()).toBeCloseTo(1, 6);
-    expectPointsClose(next.getPan(), [0, 0]);
+    for (const member of ['getZoom', 'setZoom', 'getPan', 'setPan']) {
+      expect(next[member]).toBeUndefined();
+      expect(typeof legacy[member]).toBe('function');
+    }
+
+    expect(zoomPan().zoom).toBeCloseTo(1, 6);
+    expectPointsClose(zoomPan().pan, [0, 0]);
 
     legacy.setZoom(2);
-    next.setZoom(2);
+    present({ zoom: 2 });
 
-    expect(next.getZoom()).toBeCloseTo(legacy.getZoom(), 6);
+    expect(zoomPan().zoom).toBeCloseTo(legacy.getZoom(), 6);
     expect(next.getViewState().parallelScale).toBeCloseTo(
       legacy.getCamera().parallelScale,
       4
     );
 
     legacy.setPan([20, -10]);
-    next.setPan([20, -10]);
+    present({ pan: [10, -5] });
 
-    expectPointsClose(next.getPan(), legacy.getPan(), 3);
+    expectPointsClose(
+      zoomPan().pan.map((value) => value * zoomPan().zoom),
+      legacy.getPan(),
+      3
+    );
     expectPointsClose(
       next.getViewState().focalPoint,
       legacy.getCamera().focalPoint
@@ -687,8 +705,22 @@ describe('Direct next 3D viewport, the camera -- ', () => {
     legacy.resetCamera();
     next.resetViewState();
 
-    expect(next.getZoom()).toBeCloseTo(1, 6);
-    expectPointsClose(next.getPan(), [0, 0]);
+    expect(zoomPan().zoom).toBeCloseTo(1, 6);
+    expectPointsClose(zoomPan().pan, [0, 0]);
+  });
+
+  it('takes no storeAsInitialCamera in resetViewState: the zoom stays against the fit', async function () {
+    const [next] = createViewports(renderingEngine, { nextIds: ['next3D'] });
+    const volumeId = await createVolume();
+
+    await showVolume(next, volumeId);
+    next.setViewState({
+      parallelScale: next.getViewState().parallelScale / 2,
+    });
+    next.resetViewState({ resetZoom: false, storeAsInitialCamera: true });
+
+    expect(viewportProjection.getPresentation(next).zoom).toBeCloseTo(2, 6);
+    expect('initialCamera' in next).toBe(false);
   });
 
   it('fires no CAMERA_MODIFIED with suppressEvents in the options, as the legacy viewport', async function () {
@@ -728,7 +760,7 @@ describe('Direct next 3D viewport, volume members -- ', () => {
     });
   });
 
-  it('answers hasImageURI and getIntensityFromWorld as the legacy viewport', async function () {
+  it('answers for an image URI through isReferenceViewable, where the legacy viewport has hasImageURI', async function () {
     const [legacy, next] = createViewports(renderingEngine, {
       legacyId: 'legacy3D',
       nextIds: ['next3D'],
@@ -744,17 +776,39 @@ describe('Direct next 3D viewport, volume members -- ', () => {
     const otherURI = utilities.imageIdToURI(
       cache.getVolume(otherVolumeId).imageIds[3]
     );
+    const holds = (referencedImageURI) =>
+      next.isReferenceViewable(
+        { referencedImageURI },
+        { withNavigation: true }
+      );
 
-    expect(next.hasImageURI(imageURI)).toBe(legacy.hasImageURI(imageURI));
-    expect(next.hasImageURI(imageURI)).toBe(true);
-    expect(next.hasImageURI(otherURI)).toBe(legacy.hasImageURI(otherURI));
+    expect(next.hasImageURI).toBeUndefined();
+    expect(holds(imageURI)).toBe(legacy.hasImageURI(imageURI));
+    expect(holds(imageURI)).toBe(true);
+    expect(holds(otherURI)).toBe(legacy.hasImageURI(otherURI));
+    expect(holds(otherURI)).toBe(false);
+  });
+
+  it('gives the value at a world point through getImageData, where the legacy viewport has getIntensityFromWorld', async function () {
+    const [legacy, next] = createViewports(renderingEngine, {
+      legacyId: 'legacy3D',
+      nextIds: ['next3D'],
+    });
+    const volumeId = await createVolume();
+
+    await showOnBoth(legacy, next, volumeId);
 
     const { focalPoint } = legacy.getCamera();
+    const { imageData, voxelManager } = next.getImageData();
 
+    expect(next.getIntensityFromWorld).toBeUndefined();
     [focalPoint, [2, 3, 4], [10, 12, 6]].forEach((point) => {
-      expect(next.getIntensityFromWorld(point)).toBe(
-        legacy.getIntensityFromWorld(point)
+      const value = voxelManager.getAtIJKPoint(
+        utilities.transformWorldToIndex(imageData, point)
       );
+
+      expect(typeof value).toBe('number');
+      expect(value).toBe(legacy.getIntensityFromWorld(point));
     });
   });
 

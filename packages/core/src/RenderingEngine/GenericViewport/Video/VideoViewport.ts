@@ -81,9 +81,6 @@ class VideoViewport extends GenericViewport<
   /** The pixels of the frame that `getImageData` read last. */
   private frameScalarData?: FrameScalarData;
 
-  /** The frames that playback stays in, or undefined for every frame. */
-  private frameRange?: [number, number];
-
   // ── Static ───────────────────────────────────────────────────────────
 
   static get useCustomRenderingPipeline(): boolean {
@@ -136,7 +133,6 @@ class VideoViewport extends GenericViewport<
   ): Promise<void> {
     this.removeAllData();
     this.frameScalarData = undefined;
-    this.frameRange = undefined;
 
     for (const [index, { displaySetId }] of entries.entries()) {
       await this.addDisplaySet(displaySetId, {
@@ -207,8 +203,9 @@ class VideoViewport extends GenericViewport<
    * The view reference of a frame, with the camera of the view: the focal
    * point, the view plane normal and the view up. The area tools read the
    * normal of an annotation to measure the frame. A `rangeEndSliceIndex`, or
-   * the frame range while the video plays, gives a reference over a range of
-   * frames, with the last frame in `multiSliceReference`.
+   * the frame range of the view state while the video plays, gives a
+   * reference over a range of frames, with the last frame in
+   * `multiSliceReference`.
    */
   getViewReference(
     viewRefSpecifier: ViewReferenceSpecifier = {}
@@ -217,7 +214,7 @@ class VideoViewport extends GenericViewport<
       viewRefSpecifier.sliceIndex === undefined &&
       viewRefSpecifier.frameNumber === undefined &&
       this.getVideoElement()?.paused === false;
-    const frameRange = this.getFrameRange();
+    const frameRange = this.getPlaybackFrameRange();
     const frameNumber = isPlayingRange
       ? frameRange[0]
       : (viewRefSpecifier.frameNumber ??
@@ -506,27 +503,11 @@ class VideoViewport extends GenericViewport<
   }
 
   /**
-   * Sets the 1-based first and last frame that playback stays in. No range
-   * means every frame. A range that is not two different frames is ignored,
-   * as on the legacy video viewport.
+   * The 1-based first and last frame that playback stays in: the frame range
+   * of the view state, or else every frame of the video.
    */
-  setFrameRange(frameRange: number[]): void {
-    if (!frameRange) {
-      this.frameRange = undefined;
-
-      return;
-    }
-
-    if (frameRange.length !== 2 || frameRange[0] === frameRange[1]) {
-      return;
-    }
-
-    this.frameRange = [frameRange[0], frameRange[1]];
-  }
-
-  /** The 1-based first and last frame that playback stays in. */
-  getFrameRange(): [number, number] {
-    const frameRange = this.frameRange ??
+  protected getPlaybackFrameRange(): [number, number] {
+    const frameRange = this.viewState.frameRange ??
       this.getVideoData()?.frameRange ?? [0, 0];
 
     return [frameRange[0], frameRange[1]];
@@ -817,18 +798,19 @@ class VideoViewport extends GenericViewport<
 
   /**
    * Called on each animation frame while the video plays. Keeps playback in
-   * the frame range of `setFrameRange`, as on the legacy video viewport: a
-   * frame out of the range goes back to its first frame. Another frame fires
-   * the frame events.
+   * the frame range of the view state, as the legacy video viewport keeps
+   * it in the range of `setFrameRange`: a frame out of the range goes back
+   * to its first frame. Another frame fires the frame events.
    */
   protected onPlaybackFrame(): void {
     const frameNumber = this.getFrameNumber();
+    const { frameRange } = this.viewState;
 
     if (
-      this.frameRange &&
-      (frameNumber < this.frameRange[0] || frameNumber > this.frameRange[1])
+      frameRange &&
+      (frameNumber < frameRange[0] || frameNumber > frameRange[1])
     ) {
-      this.setFrameNumber(this.frameRange[0]);
+      this.setFrameNumber(frameRange[0]);
 
       return;
     }

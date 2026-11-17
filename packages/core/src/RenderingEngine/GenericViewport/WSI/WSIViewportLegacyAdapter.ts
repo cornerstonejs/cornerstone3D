@@ -47,6 +47,12 @@ class WSIViewportLegacyAdapter extends WSIViewport {
    */
   readonly suppressEvents: boolean;
 
+  /**
+   * The focal point of the view when the slide was mounted, or when a pan
+   * was stored as the initial camera. `getPan` is relative to it.
+   */
+  private initialFocalPoint?: Point3;
+
   constructor(
     args: WSIViewportInput &
       Partial<Pick<ViewportInput, 'canvas' | 'defaultOptions'>>
@@ -59,6 +65,66 @@ class WSIViewportLegacyAdapter extends WSIViewport {
   /** The id of the viewport. The legacy WSI viewport never set it. */
   get uid(): string {
     return this.id;
+  }
+
+  /**
+   * Mounts the slides as the next viewport does, and keeps the focal point
+   * of the first view as the origin of `getPan`.
+   */
+  async setDisplaySets(
+    ...entries: Array<{ displaySetId: string }>
+  ): Promise<void> {
+    this.initialFocalPoint = undefined;
+    await super.setDisplaySets(...entries);
+    this.initialFocalPoint = this.getResolvedView()?.toICamera().focalPoint;
+  }
+
+  /**
+   * The canvas offset of the view from the view at mount time, in canvas
+   * pixels: where the focal point of that first view now shows, less the
+   * centre of the canvas. It is `[0, 0]` until a slide is shown.
+   */
+  getPan(): Point2 {
+    const resolvedView = this.getResolvedView();
+
+    if (!resolvedView || !this.initialFocalPoint) {
+      return [0, 0];
+    }
+
+    const initialCanvas = resolvedView.worldToCanvas(this.initialFocalPoint);
+
+    return [
+      initialCanvas[0] - this.element.clientWidth / 2,
+      initialCanvas[1] - this.element.clientHeight / 2,
+    ];
+  }
+
+  /**
+   * Moves the view so that `getPan` gives this pan. A change under one
+   * canvas pixel is skipped, as on the legacy viewports. With
+   * `storeAsInitialCamera` the view after the move becomes the origin of
+   * `getPan`.
+   */
+  setPan(pan: Point2, storeAsInitialCamera = false): void {
+    const currentPan = this.getPan();
+    const delta = [pan[0] - currentPan[0], pan[1] - currentPan[1]];
+
+    if (
+      Math.abs(delta[0]) >= 1 ||
+      Math.abs(delta[1]) >= 1 ||
+      storeAsInitialCamera
+    ) {
+      this.setCamera({
+        focalPoint: this.canvasToWorld([
+          this.element.clientWidth / 2 - delta[0],
+          this.element.clientHeight / 2 - delta[1],
+        ]),
+      });
+    }
+
+    if (storeAsInitialCamera) {
+      this.initialFocalPoint = this.getResolvedView()?.toICamera().focalPoint;
+    }
   }
 
   /** No actors: the microscopy viewer draws the slide. */
@@ -74,6 +140,11 @@ class WSIViewportLegacyAdapter extends WSIViewport {
   /** Undefined: a WSI viewport has no actors. */
   getActor(_actorUID: string): ActorEntry | undefined {
     return undefined;
+  }
+
+  /** Returns the canvas of the viewport element. */
+  getCanvas(): HTMLCanvasElement {
+    return this.canvas;
   }
 
   /**

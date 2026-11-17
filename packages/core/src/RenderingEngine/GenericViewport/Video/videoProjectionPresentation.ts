@@ -25,6 +25,9 @@ function hasOwn<T extends object, K extends PropertyKey>(
 
 /**
  * Converts a Video projection snapshot to the public view-presentation shape.
+ * The pan is the pan of `getPan` of the viewport divided by the zoom: canvas
+ * pixels on the screen at zoom 1, `[0, 0]` for the fitted view, at any
+ * rotation.
  */
 export function getVideoProjectionPresentation(
   snapshot: VideoProjectionSnapshot,
@@ -53,6 +56,7 @@ export function getVideoProjectionPresentation(
 
 /**
  * Converts a Video view-presentation patch back into semantic Video view state.
+ * The zoom applies first, and the pan then at the new zoom, on the screen.
  */
 export function withVideoProjectionPresentation(
   snapshot: VideoProjectionSnapshot,
@@ -96,8 +100,12 @@ export function withVideoProjectionPresentation(
     ];
 
     if (resolvedView) {
+      const pannedView =
+        resolvedView.withCanvasPan?.(targetPan) ??
+        resolvedView.withPan(targetPan);
+
       nextViewState = normalizeVideoViewState({
-        ...resolvedView.withPan(targetPan).state?.viewState,
+        ...pannedView.state?.viewState,
         ...(hasRotation ? { rotation: presentation.rotation ?? 0 } : {}),
       });
     }

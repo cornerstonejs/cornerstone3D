@@ -45,7 +45,6 @@ import type {
 import type { ProbeAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
 import { getPixelValueUnits } from '../../utilities/getPixelValueUnits';
-import { viewportSupportsImageSlices } from '../../utilities/viewportCapabilities';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
 
@@ -561,20 +560,19 @@ class ProbeTool extends AnnotationTool {
           if (referencedImageId) {
             for (const targetId in data.cachedStats) {
               if (targetId.startsWith('imageId')) {
-                const viewports = renderingEngine
-                  .getViewports()
-                  .filter(viewportSupportsImageSlices);
+                const referencedImageURI =
+                  csUtils.imageIdToURI(referencedImageId);
+                const viewports = csUtils
+                  .getViewportsWithImageURI(referencedImageURI)
+                  .filter((vp) => vp.renderingEngineId === renderingEngine.id);
 
                 const invalidatedStack = viewports.find((vp) => {
                   const currentImageId = vp.getCurrentImageId();
                   if (!currentImageId) return false;
                   // The stack viewport that contains the imageId but is not
                   // showing it currently
-                  const referencedImageURI =
-                    csUtils.imageIdToURI(referencedImageId);
-                  const hasImageURI = vp.hasImageURI(referencedImageURI);
                   const currentImageURI = csUtils.imageIdToURI(currentImageId);
-                  return hasImageURI && currentImageURI !== referencedImageURI;
+                  return currentImageURI !== referencedImageURI;
                 });
 
                 if (invalidatedStack) {

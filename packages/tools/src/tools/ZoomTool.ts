@@ -1,15 +1,15 @@
 import { vec3 } from 'gl-matrix';
 import vtkMath from '@kitware/vtk.js/Common/Core/Math';
-import {
-  getConfiguration,
-  type Types,
-  viewportHasPan,
-  viewportHasZoom,
-} from '@cornerstonejs/core';
+import { getConfiguration, type Types } from '@cornerstonejs/core';
 import { getEnabledElement, utilities } from '@cornerstonejs/core';
 import { BaseTool } from './base';
 import type { EventTypes, PublicToolProps, ToolProps } from '../types';
 import { Events } from '../enums';
+import {
+  getViewportZoomPan,
+  panViewportByCanvasDelta,
+  zoomViewportAtCanvasPoint,
+} from '../utilities/viewportPresentation';
 
 /**
  * ZoomTool tool manipulates the camera zoom applied to a viewport. It
@@ -111,8 +111,7 @@ class ZoomTool extends BaseTool {
       const worldPos = currentPoints.world;
 
       if (!hasLegacyCameraPosition(camera)) {
-        if (viewportHasZoom(viewport)) {
-          this._dragViewportZoom(evt, viewport, true);
+        if (this._dragViewportZoom(evt, viewport, true)) {
           viewport.render();
         }
 
@@ -157,11 +156,9 @@ class ZoomTool extends BaseTool {
     const camera = getLegacyCamera(viewport);
 
     if (!hasLegacyParallelCamera(camera)) {
-      if (!viewportHasZoom(viewport)) {
+      if (!this._dragViewportZoom(evt, viewport)) {
         return;
       }
-
-      this._dragViewportZoom(evt, viewport);
     } else if (camera.parallelProjection) {
       this._dragParallelProjection(evt, viewport, camera);
     } else {
@@ -338,21 +335,21 @@ class ZoomTool extends BaseTool {
     const direction = wheelData.direction;
 
     if (!hasLegacyParallelCamera(camera)) {
-      if (!viewportHasZoom(viewport)) {
-        return;
-      }
-
       const canvasPoint = this.configuration.zoomToCenter
         ? undefined
         : (points.canvas as Types.Point2);
 
-      this._applyViewportZoomDelta(
-        viewport,
-        element,
-        -direction * 5,
-        canvasPoint
-      );
-      viewport.render();
+      if (
+        this._applyViewportZoomDelta(
+          viewport,
+          element,
+          -direction * 5,
+          canvasPoint
+        )
+      ) {
+        viewport.render();
+      }
+
       return;
     }
 
@@ -392,16 +389,10 @@ class ZoomTool extends BaseTool {
     const camera = getLegacyCamera(viewport);
 
     if (!hasLegacyCameraPosition(camera)) {
-      if (!viewportHasPan(viewport)) {
-        return;
+      if (panViewportByCanvasDelta(viewport, deltaPoints.canvas)) {
+        viewport.render();
       }
 
-      const pan = viewport.getPan();
-      viewport.setPan([
-        pan[0] + deltaPoints.canvas[0],
-        pan[1] + deltaPoints.canvas[1],
-      ]);
-      viewport.render();
       return;
     }
 
@@ -427,15 +418,18 @@ class ZoomTool extends BaseTool {
   }
 
   /**
-   * Zooms a viewport that has no legacy camera. A drag zooms by its vertical
-   * movement. A pinch zooms by the change of the distance between the two
-   * fingers, as the legacy camera path does.
+   * Zooms a next viewport of any family, which has no legacy camera, through
+   * the projection service. A drag zooms by its vertical movement. A pinch
+   * zooms by the change of the distance between the two fingers, as the
+   * legacy camera path does.
+   *
+   * @returns False when the viewport has no zoom in the projection service.
    */
   _dragViewportZoom(
     evt: EventTypes.InteractionEventType,
-    viewport: { getZoom(): number; setZoom(...args: unknown[]): void },
+    viewport: Types.IViewport,
     pinch = false
-  ): void {
+  ): boolean {
     const { element, deltaPoints, startPoints } = evt.detail;
     const canvasPoint = this.configuration.zoomToCenter
       ? undefined
@@ -444,16 +438,29 @@ class ZoomTool extends BaseTool {
       ? (evt as EventTypes.TouchDragEventType).detail.deltaDistance.canvas
       : deltaPoints.canvas[1];
 
-    this._applyViewportZoomDelta(viewport, element, deltaY, canvasPoint);
+    return this._applyViewportZoomDelta(viewport, element, deltaY, canvasPoint);
   }
 
+  /**
+   * Changes the zoom of a next viewport by a vertical movement in canvas
+   * pixels, inside `minZoomScale` and `maxZoomScale` of the configuration.
+   * The zoom is the one of the projection service: 1 is the fit of the
+   * viewport. With a canvas point the picture stays under it.
+   *
+   * @returns False when the viewport has no zoom in the projection service.
+   */
   _applyViewportZoomDelta(
-    viewport: { getZoom(): number; setZoom(...args: unknown[]): void },
+    viewport: Types.IViewport,
     element: HTMLDivElement,
     deltaY: number,
     canvasPoint?: Types.Point2
-  ): void {
-    const currentZoom = viewport.getZoom();
+  ): boolean {
+    const currentZoom = getViewportZoomPan(viewport)?.zoom;
+
+    if (currentZoom === undefined) {
+      return false;
+    }
+
     const zoomScale = 5 / Math.max(element.clientHeight, 1);
     const k = deltaY * zoomScale * (this.configuration.invert ? -1 : 1);
     const denominator = Math.max(1 - k, 0.01);
@@ -463,7 +470,7 @@ class ZoomTool extends BaseTool {
       this.configuration.maxZoomScale
     );
 
-    viewport.setZoom(zoom, canvasPoint);
+    return zoomViewportAtCanvasPoint(viewport, zoom, canvasPoint);
   }
 }
 

@@ -391,6 +391,31 @@ class VideoViewportLegacyAdapter extends VideoViewport {
   }
 
   /**
+   * Sets the 1-based first and last frame that playback stays in, which is
+   * the frame range of the view state. No range means every frame. A range
+   * that is not two different frames is ignored, and no event fires, as on
+   * the legacy video viewport.
+   */
+  setFrameRange(frameRange: number[]): void {
+    if (
+      frameRange &&
+      (frameRange.length !== 2 || frameRange[0] === frameRange[1])
+    ) {
+      return;
+    }
+
+    this.viewState = this.normalizeViewState({
+      ...this.viewState,
+      frameRange: frameRange ? [frameRange[0], frameRange[1]] : undefined,
+    });
+  }
+
+  /** The 1-based first and last frame that playback stays in. */
+  getFrameRange(): [number, number] {
+    return this.getPlaybackFrameRange();
+  }
+
+  /**
    * The first frame number that an image id or a view reference names, as on
    * the legacy video viewport.
    */

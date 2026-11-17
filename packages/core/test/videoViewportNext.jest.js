@@ -7,7 +7,7 @@ import {
   jest,
 } from '@jest/globals';
 import VideoViewport from '../src/RenderingEngine/GenericViewport/Video/VideoViewport';
-import { Enums } from '../src/index';
+import { Enums, viewportProjection } from '../src/index';
 
 const WIDTH = 400;
 const HEIGHT = 300;
@@ -256,6 +256,70 @@ describe('Pan of the next video viewport', () => {
 
     expect(viewport.getPan()[0]).toBeCloseTo(30, 6);
     expect(viewport.getPan()[1]).toBeCloseTo(-20, 6);
+  });
+
+  /** The zoom and the pan of the viewport from the projection service. */
+  function zoomPan() {
+    return viewportProjection.getPresentation(viewport, {
+      selector: { zoom: true, pan: true },
+    });
+  }
+
+  it('starts with no pan in the projection service', () => {
+    expect(zoomPan().zoom).toBeCloseTo(1, 6);
+    expect(zoomPan().pan[0]).toBeCloseTo(0, 6);
+    expect(zoomPan().pan[1]).toBeCloseTo(0, 6);
+  });
+
+  it('gives the pan of the members in the projection service, divided by the zoom', () => {
+    viewport.setViewState({ rotation: 90, scale: 2 });
+    viewport.setPan([30, -20]);
+
+    expect(zoomPan().zoom).toBeCloseTo(2, 6);
+    expect(zoomPan().pan[0]).toBeCloseTo(15, 6);
+    expect(zoomPan().pan[1]).toBeCloseTo(-10, 6);
+  });
+
+  it('moves the picture by a pan of the projection service at any rotation and zoom, and the members follow', () => {
+    const world = [50, 40, 0];
+    const delta = [12, -7];
+
+    [
+      { rotation: 0 },
+      { rotation: 90 },
+      { rotation: 30 },
+      { rotation: 270, scale: 1.5 },
+    ].forEach((viewState) => {
+      viewport.setViewState(viewState);
+
+      const before = viewport.worldToCanvas(world);
+      const { pan, zoom } = zoomPan();
+      const memberPan = viewport.getPan();
+
+      viewport.setViewState(
+        viewportProjection.withPresentation(viewport, {
+          pan: [pan[0] + delta[0] / zoom, pan[1] + delta[1] / zoom],
+        })
+      );
+
+      expectMovedBy(world, before, delta);
+      expect(viewport.getPan()[0]).toBeCloseTo(memberPan[0] + delta[0], 6);
+      expect(viewport.getPan()[1]).toBeCloseTo(memberPan[1] + delta[1], 6);
+      expect(viewport.getViewState().rotation).toBe(viewState.rotation);
+    });
+  });
+
+  it('sets a zoom and a pan of the projection service in one patch', () => {
+    viewport.setViewState({ rotation: 30 });
+    viewport.setViewState(
+      viewportProjection.withPresentation(viewport, { zoom: 2, pan: [8, -4] })
+    );
+
+    expect(zoomPan().zoom).toBeCloseTo(2, 6);
+    expect(zoomPan().pan[0]).toBeCloseTo(8, 6);
+    expect(zoomPan().pan[1]).toBeCloseTo(-4, 6);
+    expect(viewport.getPan()[0]).toBeCloseTo(16, 6);
+    expect(viewport.getPan()[1]).toBeCloseTo(-8, 6);
   });
 });
 

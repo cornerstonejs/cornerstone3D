@@ -17,7 +17,7 @@ export type WSIResolvedViewLike = {
     view?: WSIMapViewLike;
     viewState: WSIViewState;
   };
-  /** The pan in canvas pixels from the view at mount. */
+  /** The pan in canvas pixels: the centre of the slide from the centre of the canvas. */
   pan?: Point2;
   canvasToWorld(canvasPos: Point2): Point3;
   worldToCanvas(worldPos: Point3): Point2;
@@ -37,7 +37,10 @@ export type WSIProjectionViewport = {
 
 export interface WSIProjectionPresentation
   extends ProjectionPresentation<never> {
-  /** The pan in canvas pixels from the view at mount, not divided by the zoom. */
+  /**
+   * The pan in canvas pixels on the screen, not divided by the zoom: where
+   * the centre of the slide shows, less the centre of the canvas.
+   */
   rawPan: Point2;
 }
 

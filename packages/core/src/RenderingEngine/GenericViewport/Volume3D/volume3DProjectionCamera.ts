@@ -1,5 +1,7 @@
+import { vec3 } from 'gl-matrix';
 import type { ICamera, Point2, Point3 } from '../../../types';
 import type { ProjectionScale } from '../ViewportProjectionTypes';
+import type { Volume3DProjectionFit } from './Volume3DProjectionTypes';
 import type { Volume3DCamera } from './viewport3DTypes';
 
 function clonePoint2(point?: Point2): Point2 | undefined {
@@ -57,5 +59,177 @@ export function getVolume3DProjectionPosition(
   return {
     kind: 'focalPoint' as const,
     worldPoint: clonePoint3(camera.focalPoint) as Point3,
+  };
+}
+
+/** The tangent of half an angle in degrees. */
+function tanOfHalf(degrees: number): number {
+  return Math.tan((degrees * Math.PI) / 360);
+}
+
+/**
+ * Half the height of the view at the focal point, in world units: the
+ * parallel scale of a parallel camera, and for a perspective camera the
+ * distance of the camera times the tangent of half its view angle.
+ */
+function getViewHalfHeight(camera: Volume3DCamera & ICamera): number {
+  if (camera.parallelProjection !== false) {
+    return camera.parallelScale;
+  }
+
+  return (
+    vec3.distance(camera.position, camera.focalPoint) *
+    tanOfHalf(camera.viewAngle)
+  );
+}
+
+/** Half the height of the view at the focal point in the fit. */
+function getFitHalfHeight(
+  camera: Volume3DCamera & ICamera,
+  fit: Volume3DProjectionFit
+): number {
+  return camera.parallelProjection !== false
+    ? fit.parallelScale
+    : fit.distance * tanOfHalf(fit.viewAngle);
+}
+
+/**
+ * The world vectors of the canvas axes: the view right, along the canvas x,
+ * and the view down, along the canvas y.
+ */
+function getCanvasAxes(camera: Volume3DCamera & ICamera): {
+  right: vec3;
+  down: vec3;
+} {
+  const right = vec3.normalize(
+    vec3.create(),
+    vec3.cross(vec3.create(), camera.viewUp, camera.viewPlaneNormal)
+  );
+  const down = vec3.cross(vec3.create(), right, camera.viewPlaneNormal);
+
+  return { right, down: vec3.normalize(down, down) };
+}
+
+/**
+ * The zoom of a 3D camera against its fit: 1 for the fit, 2 when the picture
+ * is twice as large. See `Volume3DProjectionPresentation`.
+ */
+export function getVolume3DProjectionZoom(
+  camera: Volume3DCamera & ICamera,
+  fit: Volume3DProjectionFit
+): number {
+  return getFitHalfHeight(camera, fit) / getViewHalfHeight(camera);
+}
+
+/**
+ * The pan of a 3D camera against its fit in canvas pixels on the screen:
+ * where the focal point of the fit shows, less the centre of the canvas.
+ */
+export function getVolume3DProjectionPan(
+  camera: Volume3DCamera & ICamera,
+  fit: Volume3DProjectionFit,
+  canvasHeight: number
+): Point2 {
+  const { right, down } = getCanvasAxes(camera);
+  const pixelsPerWorldUnit = canvasHeight / (2 * getViewHalfHeight(camera));
+  const offset = vec3.subtract(
+    vec3.create(),
+    fit.focalPoint,
+    camera.focalPoint
+  );
+
+  return [
+    vec3.dot(offset, right) * pixelsPerWorldUnit,
+    vec3.dot(offset, down) * pixelsPerWorldUnit,
+  ];
+}
+
+/**
+ * The camera with a zoom and a pan against its fit. A parallel camera gets
+ * the parallel scale of the zoom. A perspective camera moves along its view
+ * plane normal to the distance of the zoom, and keeps its focal point and
+ * its view angle. The pan then moves the focal point and the position in the
+ * plane of the view. Without a pan, a zoom keeps the world point of
+ * `anchorCanvas` under that canvas point, and without either the focal point.
+ *
+ * @param camera - The camera now.
+ * @param fit - The fit of the viewport.
+ * @param canvas - The size of the canvas in canvas pixels.
+ * @param change - The zoom, the pan in canvas pixels at zoom 1, and the
+ *   canvas point that a zoom keeps.
+ * @returns The camera fields that change.
+ */
+export function withVolume3DProjectionZoomPan(
+  camera: Volume3DCamera & ICamera,
+  fit: Volume3DProjectionFit,
+  canvas: { width: number; height: number },
+  change: { zoom?: number; pan?: Point2; anchorCanvas?: Point2 }
+): Pick<Volume3DCamera, 'focalPoint' | 'parallelScale' | 'position'> {
+  const { right, down } = getCanvasAxes(camera);
+  const zoom = Math.max(
+    change.zoom ?? getVolume3DProjectionZoom(camera, fit),
+    0.000001
+  );
+  const halfHeight = getViewHalfHeight(camera);
+  const nextHalfHeight = getFitHalfHeight(camera, fit) / zoom;
+  const worldUnitsPerPixel = (2 * halfHeight) / canvas.height;
+  const nextWorldUnitsPerPixel = (2 * nextHalfHeight) / canvas.height;
+  const inPlane = (canvasOffset: Point2, scale: number): vec3 =>
+    vec3.scaleAndAdd(
+      vec3.create(),
+      vec3.scale(vec3.create(), right, canvasOffset[0] * scale),
+      down,
+      canvasOffset[1] * scale
+    );
+  const focalPoint = vec3.clone(camera.focalPoint);
+
+  if (change.pan) {
+    const depth = vec3.dot(
+      vec3.subtract(vec3.create(), camera.focalPoint, fit.focalPoint),
+      camera.viewPlaneNormal
+    );
+
+    vec3.subtract(
+      focalPoint,
+      fit.focalPoint,
+      inPlane(
+        [change.pan[0] * zoom, change.pan[1] * zoom],
+        nextWorldUnitsPerPixel
+      )
+    );
+    vec3.scaleAndAdd(focalPoint, focalPoint, camera.viewPlaneNormal, depth);
+  } else if (change.anchorCanvas) {
+    const fromCentre: Point2 = [
+      change.anchorCanvas[0] - canvas.width / 2,
+      change.anchorCanvas[1] - canvas.height / 2,
+    ];
+
+    vec3.add(focalPoint, focalPoint, inPlane(fromCentre, worldUnitsPerPixel));
+    vec3.subtract(
+      focalPoint,
+      focalPoint,
+      inPlane(fromCentre, nextWorldUnitsPerPixel)
+    );
+  }
+
+  const distance =
+    camera.parallelProjection !== false
+      ? vec3.distance(camera.position, camera.focalPoint)
+      : nextHalfHeight / tanOfHalf(camera.viewAngle);
+
+  return {
+    focalPoint: [focalPoint[0], focalPoint[1], focalPoint[2]],
+    parallelScale:
+      camera.parallelProjection !== false
+        ? nextHalfHeight
+        : camera.parallelScale,
+    position: [
+      ...vec3.scaleAndAdd(
+        vec3.create(),
+        focalPoint,
+        camera.viewPlaneNormal,
+        distance
+      ),
+    ] as Point3,
   };
 }

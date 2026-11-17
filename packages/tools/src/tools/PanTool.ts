@@ -1,12 +1,9 @@
 import { BaseTool } from './base';
-import {
-  getEnabledElement,
-  utilities as csUtils,
-  viewportHasPan,
-} from '@cornerstonejs/core';
+import { getEnabledElement, utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import type { EventTypes, PublicToolProps, ToolProps } from '../types';
+import { panViewportByCanvasDelta } from '../utilities/viewportPresentation';
 
 /**
  * Tool that pans the camera in the plane defined by the viewPlaneNormal and the viewUp.
@@ -136,16 +133,10 @@ class PanTool extends BaseTool {
     const camera = getLegacyCamera(viewport);
 
     if (!hasLegacyCameraPosition(camera)) {
-      if (!viewportHasPan(viewport)) {
-        return;
+      if (panViewportByCanvasDelta(viewport, deltaPointsCanvas)) {
+        viewport.render();
       }
 
-      const pan = viewport.getPan();
-      viewport.setPan([
-        pan[0] + deltaPointsCanvas[0],
-        pan[1] + deltaPointsCanvas[1],
-      ]);
-      viewport.render();
       return;
     }
 

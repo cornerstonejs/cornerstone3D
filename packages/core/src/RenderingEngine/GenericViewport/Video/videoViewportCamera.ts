@@ -33,12 +33,31 @@ export function createDefaultVideoViewState(): VideoViewState {
   };
 }
 
+/**
+ * Whether a value is a frame range of a video view state: two different
+ * frame numbers.
+ */
+function isVideoFrameRange(
+  frameRange: unknown
+): frameRange is [number, number] {
+  return (
+    Array.isArray(frameRange) &&
+    frameRange.length === 2 &&
+    typeof frameRange[0] === 'number' &&
+    typeof frameRange[1] === 'number' &&
+    frameRange[0] !== frameRange[1]
+  );
+}
+
 export function normalizeVideoViewState(
   camera: VideoViewState
 ): VideoViewState {
   return {
     ...(camera.currentTimeSeconds !== undefined
       ? { currentTimeSeconds: Math.max(0, camera.currentTimeSeconds) }
+      : {}),
+    ...(isVideoFrameRange(camera.frameRange)
+      ? { frameRange: [camera.frameRange[0], camera.frameRange[1]] }
       : {}),
     anchorCanvas: cloneAnchorCanvas(camera.anchorCanvas ?? [0.5, 0.5]),
     scale: Math.max(camera.scale ?? 1, 0.001),

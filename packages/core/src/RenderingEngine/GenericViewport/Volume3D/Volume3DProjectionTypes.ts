@@ -12,7 +12,25 @@ import type {
 
 export const VOLUME3D_PROJECTION_ID = 'volume3d';
 
+/**
+ * The fit of a 3D viewport: the camera that `resetViewState` would give for
+ * the content and the direction of the camera now. It is the reference of
+ * the zoom and the pan of the projection, and it is computed, not stored.
+ */
+export type Volume3DProjectionFit = {
+  /** The focal point of the fit: the centre of the content. */
+  focalPoint: Point3;
+  /** The parallel scale of the fit, for a parallel camera. */
+  parallelScale: number;
+  /** The distance of the camera from its focal point in the fit. */
+  distance: number;
+  /** The view angle of the fit in degrees, for a perspective camera. */
+  viewAngle: number;
+};
+
 export type Volume3DResolvedViewLike = {
+  /** The fit of the viewport, when it shows something to fit. */
+  fit?: Volume3DProjectionFit;
   canvasToWorld(canvasPos: Point2): Point3;
   worldToCanvas(worldPos: Point3): Point2;
   getFrameOfReferenceUID(): string | undefined;
@@ -30,14 +48,34 @@ export type Volume3DProjectionViewport = {
 
 export type Volume3DRenderTarget = Pick<Volume3DViewportRenderContext, 'vtk'>;
 
+/**
+ * The presentation of a 3D viewport. `zoom` and `pan` have the meaning of the
+ * planar viewport, measured against the fit that `resetViewState` gives for
+ * the direction of the camera now:
+ *
+ * - `zoom` is 1 for the fit and 2 when the picture is twice as large. For a
+ *   parallel camera it is the parallel scale of the fit over the parallel
+ *   scale. For a perspective camera (`parallelProjection: false`) it is the
+ *   size of what lies at the focal point: the height of the view at the
+ *   focal point in the fit over that height now, which the distance of the
+ *   camera and its view angle give.
+ * - `pan` is the shift of the picture on the canvas, in canvas pixels at
+ *   zoom 1: the centre of the fit shows `pan * zoom` pixels from the centre
+ *   of the canvas. It is `[0, 0]` for the fit.
+ *
+ * Both are missing when the viewport shows nothing to fit.
+ */
 export interface Volume3DProjectionPresentation extends ProjectionPresentation {
   camera: Volume3DCamera & ICamera;
+  /** The pan in canvas pixels on the screen, not divided by the zoom. */
+  rawPan?: Point2;
 }
 
 export interface Volume3DProjectionSnapshot
   extends ProjectionSnapshot<Volume3DCamera, Volume3DProjectionPresentation> {
   canvasHeight: number;
   canvasWidth: number;
+  fit?: Volume3DProjectionFit;
   resolvedView?: Volume3DResolvedViewLike;
 }
 
@@ -46,6 +84,7 @@ export interface Volume3DProjectionRequest
   camera?: Volume3DCamera & ICamera;
   canvasHeight?: number;
   canvasWidth?: number;
+  fit?: Volume3DProjectionFit;
   frameOfReferenceUID?: string;
   resolvedView?: Volume3DResolvedViewLike;
 }

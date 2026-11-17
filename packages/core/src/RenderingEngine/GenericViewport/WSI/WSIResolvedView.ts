@@ -19,11 +19,6 @@ type WSIResolvedViewState = {
   frameOfReferenceUID?: string | null;
   metadata?: WSIImageDataMetadata;
   view: WSIMapViewLike;
-  /**
-   * The slide point at the centre of the canvas when the slide was mounted,
-   * or when a pan was stored as the origin. The pan is measured from it.
-   */
-  panOrigin?: Point3;
 };
 
 class WSIResolvedView extends ResolvedViewportView<WSIResolvedViewState> {
@@ -65,17 +60,24 @@ class WSIResolvedView extends ResolvedViewportView<WSIResolvedViewState> {
   }
 
   /**
-   * The pan in canvas pixels: where the pan origin shows, less the centre of
-   * the canvas. It is `[0, 0]` without a pan origin.
+   * The pan in canvas pixels on the screen: where the centre of the slide
+   * shows, less the centre of the canvas. It is `[0, 0]` for a slide that is
+   * centred on the canvas, as the microscopy viewer fits it, and without
+   * the size of the slide.
    */
   get pan(): Point2 {
-    const { panOrigin } = this.state;
+    const centre = this.getSlideCentre();
 
-    if (!panOrigin) {
+    if (!centre) {
       return [0, 0];
     }
 
-    const canvasPoint = this.worldToCanvas(panOrigin);
+    const canvasPoint = indexToCanvasForWSI({
+      canvasHeight: this.state.canvasHeight,
+      canvasWidth: this.state.canvasWidth,
+      indexPos: [centre[0], centre[1], 0],
+      view: this.state.view,
+    });
 
     return [
       canvasPoint[0] - this.state.canvasWidth / 2,
@@ -84,18 +86,17 @@ class WSIResolvedView extends ResolvedViewportView<WSIResolvedViewState> {
   }
 
   /**
-   * The view with the centre moved so that the pan origin shows at the given
-   * pan, at the zoom of this view state and the rotation of the map. The map
-   * applies the zoom after the resolution, so the zoom gives the resolution.
+   * The view with the centre moved so that the centre of the slide shows at
+   * the given pan, at the zoom of this view state and the rotation of the
+   * map. The map applies the zoom after the resolution, so the zoom gives
+   * the resolution.
    */
   withPan(pan: Point2): WSIResolvedView {
-    const { panOrigin } = this.state;
+    const centre = this.getSlideCentre();
 
-    if (!panOrigin) {
+    if (!centre) {
       return this;
     }
-
-    const originIndex = worldToIndexWSIMetadata(this.state.metadata, panOrigin);
 
     return this.cloneWithViewState({
       ...this.state.viewState,
@@ -104,7 +105,7 @@ class WSIResolvedView extends ResolvedViewportView<WSIResolvedViewState> {
           this.state.canvasWidth / 2 + pan[0],
           this.state.canvasHeight / 2 + pan[1],
         ],
-        indexPoint: [originIndex[0], -originIndex[1]],
+        indexPoint: centre,
         resolution:
           typeof this.state.viewState.zoom === 'number'
             ? this.getResolutionForZoom(this.state.viewState.zoom)
@@ -166,6 +167,17 @@ class WSIResolvedView extends ResolvedViewportView<WSIResolvedViewState> {
       viewPlaneNormal: [0, 0, 1],
       rotation: this.state.viewState.rotation ?? 0,
     };
+  }
+
+  /**
+   * The centre of the slide as a point of the map, where the pixel of column
+   * x and row y is `[x, -y]`. It is the origin of the pan. Undefined without
+   * the size of the slide.
+   */
+  private getSlideCentre(): Point2 | undefined {
+    const dimensions = this.state.metadata?.dimensions;
+
+    return dimensions ? [dimensions[0] / 2, -dimensions[1] / 2] : undefined;
   }
 
   private canvasToIndex(canvasPos: Point2): Point2 {

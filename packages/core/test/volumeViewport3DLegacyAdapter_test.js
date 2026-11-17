@@ -340,6 +340,35 @@ describe('3D legacy adapter against the legacy 3D viewport -- ', () => {
     );
   });
 
+  it('fires PRESET_MODIFIED for a preset with the detail of the legacy viewport', async function () {
+    const [legacy, adapter] = createPair(renderingEngine);
+    const volumeId = await createVolume();
+    const details = { legacy: [], adapter: [] };
+
+    await legacy.setVolumes([{ volumeId }]);
+    await adapter.setVolumes([{ volumeId }]);
+    legacy.element.addEventListener(Enums.Events.PRESET_MODIFIED, (evt) =>
+      details.legacy.push(evt.detail)
+    );
+    adapter.element.addEventListener(Enums.Events.PRESET_MODIFIED, (evt) =>
+      details.adapter.push(evt.detail)
+    );
+
+    legacy.setProperties({ preset: 'CT-Bone' });
+    adapter.setProperties({ preset: 'CT-Bone' });
+
+    expect(details.legacy.length).toBe(1);
+    expect(details.adapter.length).toBe(1);
+    expect(details.adapter[0].viewportId).toBe(adapter.id);
+    expect(details.adapter[0].volumeId).toBe(details.legacy[0].volumeId);
+    expect(details.adapter[0].presetName).toBe(details.legacy[0].presetName);
+    expect(details.adapter[0].actor).toBe(adapter.getActors()[0].actor);
+
+    adapter.setProperties({ preset: 'CT-Bone' }, undefined, true);
+
+    expect(details.adapter.length).toBe(1);
+  });
+
   it('fires no camera event for a call that asks for suppressEvents, and fires them for the next call', async function () {
     const [, adapter] = createPair(renderingEngine);
     const volumeId = await createVolume();

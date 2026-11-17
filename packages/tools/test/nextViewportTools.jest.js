@@ -10,7 +10,7 @@ jest.mock('@cornerstonejs/core', () => {
   };
 });
 
-import { cache } from '@cornerstonejs/core';
+import { cache, Enums } from '@cornerstonejs/core';
 import { moveAnnotationToViewPlane } from '../src/utilities/moveAnnotationToViewPlane';
 import AnnotationMultiSlice from '../src/utilities/AnnotationMultiSlice';
 import WholeBodySegmentTool from '../src/tools/annotation/WholeBodySegmentTool';
@@ -114,5 +114,41 @@ describe('AnnotationMultiSlice.setViewportFrameRange', () => {
     });
 
     expect(viewport.setFrameRange).toHaveBeenCalledWith([5, 10]);
+  });
+
+  it('sets the frame range key of the view state on a direct next video viewport, which has no setFrameRange', () => {
+    const viewport = {
+      type: Enums.ViewportType.VIDEO_NEXT,
+      setViewState: jest.fn(),
+    };
+
+    AnnotationMultiSlice.setViewportFrameRange(viewport, {
+      sliceIndex: 4,
+      multiSliceReference: { sliceIndex: 9 },
+    });
+
+    expect(viewport.setViewState).toHaveBeenCalledWith({
+      frameRange: [5, 10],
+    });
+  });
+
+  it('sets no frame range on a direct next planar viewport, and none without a range', () => {
+    const planar = {
+      type: Enums.ViewportType.PLANAR_NEXT,
+      setViewState: jest.fn(),
+    };
+    const video = {
+      type: Enums.ViewportType.VIDEO_NEXT,
+      setViewState: jest.fn(),
+    };
+
+    AnnotationMultiSlice.setViewportFrameRange(planar, {
+      sliceIndex: 4,
+      multiSliceReference: { sliceIndex: 9 },
+    });
+    AnnotationMultiSlice.setViewportFrameRange(video, { sliceIndex: 4 });
+
+    expect(planar.setViewState).not.toHaveBeenCalled();
+    expect(video.setViewState).not.toHaveBeenCalled();
   });
 });

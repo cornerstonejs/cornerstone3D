@@ -1,13 +1,12 @@
 import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
-import { vec2, vec3 } from 'gl-matrix';
+import { vec3 } from 'gl-matrix';
 import { Events, ViewportType } from '../../../enums';
 import type {
   ActorEntry,
   ICamera,
   IImageData,
-  Point2,
   Point3,
   ResetCameraOptions,
   ViewReference,
@@ -15,10 +14,9 @@ import type {
   ViewportContentMode,
 } from '../../../types';
 import type { VoiModifiedEventDetail } from '../../../types/EventTypes';
-import { actorIsA, isImageActor } from '../../../utilities/actorCheck';
+import { isImageActor } from '../../../utilities/actorCheck';
 import isEqual from '../../../utilities/isEqual';
 import { coreLog } from '../../../utilities/logger';
-import transformWorldToIndex from '../../../utilities/transformWorldToIndex';
 import triggerEvent from '../../../utilities/triggerEvent';
 import renderingEngineCache from '../../renderingEngineCache';
 import { createSharpeningSmoothingRenderPasses } from '../../renderPasses';
@@ -40,15 +38,14 @@ import { DefaultVolume3DDataProvider } from './DefaultVolume3DDataProvider';
 import { createVolume3DRenderPathResolver } from './Volume3DRenderPathResolver';
 import Volume3DResolvedView from './Volume3DResolvedView';
 import applyVolume3DCamera from './applyVolume3DCamera';
-import {
-  getVolume3DColormap,
-  resolveVolume3DPreset,
-} from './applyVolume3DPresentation';
+import { getVolume3DColormap } from './applyVolume3DPresentation';
 import {
   getVolume3DProjectionSnapshot,
   type Volume3DProjectionSnapshot,
 } from './volume3DProjectionAdapter';
+import type { Volume3DProjectionFit } from './Volume3DProjectionTypes';
 import {
+  VOLUME_3D_FIT_VIEW_ANGLE,
   getResetFocalPoint,
   getVolume3DFitCamera,
   setVolume3DPhysicalCamera,
@@ -83,12 +80,6 @@ class VolumeViewport3D extends GenericViewport<
   protected renderContext: Volume3DViewportRenderContext;
 
   private primaryDataId?: string;
-  /**
-   * The camera of the fit of the first mount and of the last reset that
-   * stored it. `getZoom` and `getPan` compare the camera with it, as on the
-   * legacy viewport.
-   */
-  private initialCamera?: ICamera;
   /** True while `setDisplaySets` mounts, which fires one event for all. */
   private mountsDisplaySets = false;
   /** The vtk.js actors that the application added with `addActor`, by UID. */
@@ -260,10 +251,6 @@ class VolumeViewport3D extends GenericViewport<
 
     if (renderMode === 'vtkVolume3d' && volumeOptions.role === 'source') {
       this.primaryDataId = displaySetId;
-    }
-
-    if (this.bindings.size === 1) {
-      this.initialCamera = this.getViewState();
     }
 
     this.mountedPresentations.set(
@@ -458,6 +445,7 @@ class VolumeViewport3D extends GenericViewport<
       canvas: this.canvas,
       frameOfReferenceUID: this.resolveFrameOfReferenceUID(),
       renderer: this.getRenderer(),
+      getFit: () => this.getProjectionFit(),
     });
   }
 
@@ -559,47 +547,6 @@ class VolumeViewport3D extends GenericViewport<
       : this.getCurrentBinding();
 
     return binding?.getImageData?.() as IImageData | undefined;
-  }
-
-  /**
-   * The value of the current volume at a world point: the voxel nearest the
-   * point, as on the legacy viewport. Undefined when the default actor is
-   * not a volume.
-   *
-   * @param point - The world point.
-   * @returns The voxel value.
-   */
-  getIntensityFromWorld(point: Point3): number {
-    const actorEntry = this.getDefaultActor();
-    const volume = this.getVolumeRenderingOf(
-      this.getVolumeBinding()?.data.id
-    )?.imageVolume;
-
-    if (!actorEntry || !actorIsA(actorEntry, 'vtkVolume') || !volume) {
-      return;
-    }
-
-    const index = transformWorldToIndex(volume.imageData, point);
-
-    return volume.voxelManager.getAtIJKPoint(index) as number;
-  }
-
-  /**
-   * Whether a volume that the viewport shows holds this image, as on the
-   * legacy viewport.
-   *
-   * @param imageURI - The URI of an image.
-   * @returns True when a shown volume holds the image.
-   */
-  hasImageURI(imageURI: string): boolean {
-    return Array.from(this.bindings.keys()).some((displaySetId) => {
-      const volume = this.getVolumeRenderingOf(displaySetId)?.imageVolume;
-
-      return (
-        volume?.getImageIdIndex?.(imageURI) !== undefined ||
-        volume?.getImageURIIndex?.(imageURI) !== undefined
-      );
-    });
   }
 
   /**
@@ -765,133 +712,11 @@ class VolumeViewport3D extends GenericViewport<
     const previousCamera = this.getCameraForEvent();
 
     this.fitViewState(options);
-
-    if (options.storeAsInitialCamera !== false) {
-      this.initialCamera = this.getViewState();
-    }
-
     this.render();
     this.triggerCameraModifiedEvent(previousCamera);
     this.triggerCameraResetEvent();
 
     return true;
-  }
-
-  /**
-   * The zoom against the initial camera, as on the legacy viewport: 1 after
-   * the fit of a mount or a reset, 2 at half its parallel scale. 1 without
-   * an initial camera.
-   *
-   * @param compareCamera - The camera to compare with.
-   */
-  getZoom(compareCamera: ICamera = this.initialCamera): number {
-    if (!compareCamera) {
-      return 1;
-    }
-
-    return compareCamera.parallelScale / this.getViewState().parallelScale;
-  }
-
-  /**
-   * Sets the zoom against the initial camera, as on the legacy viewport.
-   * With `storeAsInitialCamera` the camera then becomes the initial camera.
-   * Does nothing without an initial camera.
-   *
-   * @param value - The zoom; 2 shows half the extent of the fit.
-   * @param storeAsInitialCamera - Makes the zoomed camera the initial one.
-   * @param compareCamera - The camera that has zoom 1.
-   */
-  setZoom(
-    value: number,
-    storeAsInitialCamera = false,
-    compareCamera: ICamera = this.initialCamera
-  ): void {
-    const initialParallelScale = compareCamera?.parallelScale;
-
-    if (!initialParallelScale) {
-      return;
-    }
-
-    const parallelScale = initialParallelScale / value;
-
-    if (
-      this.getViewState().parallelScale !== parallelScale ||
-      storeAsInitialCamera
-    ) {
-      this.setViewState({ parallelScale });
-    }
-
-    if (storeAsInitialCamera) {
-      this.initialCamera = this.getViewState();
-    }
-  }
-
-  /**
-   * The pan in canvas pixels against the initial camera, computed as the
-   * legacy viewport computes it. [0, 0] without an initial camera.
-   *
-   * @param initialCamera - The camera that has pan [0, 0].
-   */
-  getPan(initialCamera: ICamera = this.initialCamera): Point2 {
-    if (!initialCamera) {
-      return [0, 0];
-    }
-
-    const zero3 = this.canvasToWorld([0, 0]);
-    const initialCanvasFocal = this.worldToCanvas(
-      vec3.subtract(vec3.create(), initialCamera.focalPoint, zero3) as Point3
-    );
-    const currentCanvasFocal = this.worldToCanvas(
-      vec3.subtract(
-        vec3.create(),
-        this.getViewState().focalPoint,
-        zero3
-      ) as Point3
-    );
-
-    return vec2.subtract(
-      vec2.create(),
-      initialCanvasFocal,
-      currentCanvasFocal
-    ) as Point2;
-  }
-
-  /**
-   * Pans to a canvas offset from the initial camera, as on the legacy
-   * viewport. A change under a pixel is ignored unless
-   * `storeAsInitialCamera` is set, which then makes the camera the initial
-   * camera.
-   *
-   * @param pan - The offset in canvas pixels.
-   * @param storeAsInitialCamera - Makes the panned camera the initial one.
-   */
-  setPan(pan: Point2, storeAsInitialCamera = false): void {
-    const { focalPoint, position } = this.getViewState();
-    const zero3 = this.canvasToWorld([0, 0]);
-    const delta2 = vec2.subtract(vec2.create(), pan, this.getPan());
-
-    if (
-      Math.abs(delta2[0]) < 1 &&
-      Math.abs(delta2[1]) < 1 &&
-      !storeAsInitialCamera
-    ) {
-      return;
-    }
-
-    const delta = vec3.subtract(
-      vec3.create(),
-      this.canvasToWorld([delta2[0], delta2[1]]),
-      zero3
-    );
-
-    this.setViewState({
-      focalPoint: vec3.subtract(vec3.create(), focalPoint, delta) as Point3,
-      position: vec3.subtract(vec3.create(), position, delta) as Point3,
-    });
-
-    if (storeAsInitialCamera) {
-      this.initialCamera = this.getViewState();
-    }
   }
 
   /**
@@ -958,13 +783,47 @@ class VolumeViewport3D extends GenericViewport<
         parallelScale: resetZoom ? fit.parallelScale : camera.parallelScale,
         focalPoint,
         position,
-        viewAngle: 90,
+        viewAngle: VOLUME_3D_FIT_VIEW_ANGLE,
         viewUp: fit.viewUpToUse,
       },
       { resetClippingRange: true }
     );
     setVolume3DPhysicalCamera(this.renderContext, fit.radius, focalPoint);
     this.viewState = this.getViewState();
+  }
+
+  /**
+   * The fit that `resetViewState` would give now, for the zoom and the pan
+   * of the projection service: its focal point, its parallel scale, and the
+   * distance and the view angle of its camera. Undefined when the viewport
+   * shows nothing to fit.
+   */
+  private getProjectionFit(): Volume3DProjectionFit | undefined {
+    const content = this.getFitContent();
+    const { bounds } = content;
+
+    if (
+      bounds[0] > bounds[1] ||
+      bounds[2] > bounds[3] ||
+      bounds[4] > bounds[5]
+    ) {
+      return;
+    }
+
+    const camera = this.getViewState();
+    const fit = getVolume3DFitCamera(
+      this.renderContext,
+      content,
+      camera.viewPlaneNormal,
+      camera.viewUp
+    );
+
+    return {
+      focalPoint: fit.focalPoint,
+      parallelScale: fit.parallelScale,
+      distance: vec3.distance(fit.position, fit.focalPoint),
+      viewAngle: VOLUME_3D_FIT_VIEW_ANGLE,
+    };
   }
 
   /**
@@ -1028,7 +887,6 @@ class VolumeViewport3D extends GenericViewport<
 
   protected override onDestroy(): void {
     this.primaryDataId = undefined;
-    this.initialCamera = undefined;
     this.mountedPresentations.clear();
     this.removeAddedActors(Array.from(this.addedActors.keys()));
   }
@@ -1079,8 +937,8 @@ class VolumeViewport3D extends GenericViewport<
    * Fires the events of a presentation change with the detail of the legacy
    * viewport: COLORMAP_MODIFIED for a colormap, with VOI_MODIFIED too for a
    * colormap name; VOI_MODIFIED for invert (with `invertStateChanged`), a VOI
-   * range or a VOI LUT function; PRESET_MODIFIED for a preset. Nothing fires
-   * with `suppressEvents` set, or for a display set that is not a volume.
+   * range or a VOI LUT function. Nothing fires with `suppressEvents` set, or
+   * for a display set that is not a volume. A preset fires no event.
    */
   protected override notifyDataPresentationModified(
     displaySetId: string,
@@ -1121,17 +979,6 @@ class VolumeViewport3D extends GenericViewport<
         Events.VOI_MODIFIED,
         this.getVOIModifiedEventDetail(displaySetId, rendering)
       );
-    }
-
-    const preset = resolveVolume3DPreset(props.preset);
-
-    if (preset) {
-      triggerEvent(this.element, Events.PRESET_MODIFIED, {
-        viewportId: this.id,
-        volumeId,
-        actor: rendering.actor,
-        presetName: preset.name,
-      });
     }
   }
 

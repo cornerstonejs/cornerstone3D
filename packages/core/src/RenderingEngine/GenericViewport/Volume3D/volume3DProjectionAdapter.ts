@@ -58,8 +58,8 @@ export const volume3DProjectionAdapter: ViewportProjectionAdapter<
   withPresentation: (
     snapshot,
     presentation: Partial<Volume3DProjectionPresentation>,
-    _options?: ProjectionWriteOptions
-  ) => withVolume3DProjectionPresentation(snapshot, presentation),
+    options?: ProjectionWriteOptions
+  ) => withVolume3DProjectionPresentation(snapshot, presentation, options),
   applyToRenderer: (snapshot, target) => {
     if (!isVolume3DRenderTarget(target)) {
       return;

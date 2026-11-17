@@ -1,4 +1,9 @@
-import { triggerEvent, eventTarget, type Types } from '@cornerstonejs/core';
+import {
+  Enums,
+  triggerEvent,
+  eventTarget,
+  type Types,
+} from '@cornerstonejs/core';
 import Events from '../enums/Events';
 import type { Annotation } from '../types';
 import { ChangeTypes } from '../enums';
@@ -171,14 +176,24 @@ export default class AnnotationMultiSlice {
 
   /**
    * This sets the viewport frame range if it has a frame range.  This is the
-   * playback range for display.
+   * playback range for display. A legacy viewport and a legacy adapter take
+   * it with `setFrameRange`, a next video viewport as the `frameRange` key
+   * of its view state.
    */
   public static setViewportFrameRange(viewport, specifier) {
-    if (viewport.setFrameRange && specifier.multiSliceReference?.sliceIndex) {
-      viewport.setFrameRange([
-        specifier.sliceIndex + 1,
-        specifier.multiSliceReference.sliceIndex + 1,
-      ]);
+    if (!specifier.multiSliceReference?.sliceIndex) {
+      return;
+    }
+
+    const frameRange = [
+      specifier.sliceIndex + 1,
+      specifier.multiSliceReference.sliceIndex + 1,
+    ];
+
+    if (viewport.setFrameRange) {
+      viewport.setFrameRange(frameRange);
+    } else if (viewport.type === Enums.ViewportType.VIDEO_NEXT) {
+      viewport.setViewState({ frameRange });
     }
   }
 }

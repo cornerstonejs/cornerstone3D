@@ -274,31 +274,47 @@ describe('Direct next video viewport -- ', () => {
     expect(shows(`${uri}/frames/1`)).toBe(false);
   });
 
-  it('keeps the frame range of setFrameRange as the legacy viewport does', function () {
-    expect(next.getFrameRange()).toEqual(legacy.getFrameRange());
-    expect(next.getFrameRange()).toEqual([1, TEST_VIDEO.numberOfFrames]);
+  it('keeps the frame range in the view state, where the legacy viewport has setFrameRange', function () {
+    expect(next.setFrameRange).toBeUndefined();
+    expect(next.getFrameRange).toBeUndefined();
+    expect(next.getViewState().frameRange).toBeUndefined();
+    expect(legacy.getFrameRange()).toEqual([1, TEST_VIDEO.numberOfFrames]);
 
-    [
-      [5, 10],
-      [7, 7],
-      [1, 2, 3],
-    ].forEach((frameRange) => {
-      legacy.setFrameRange(frameRange);
-      next.setFrameRange(frameRange);
-      expect(next.getFrameRange()).toEqual(legacy.getFrameRange());
+    legacy.setFrameRange([5, 10]);
+    next.setViewState({ frameRange: [5, 10] });
+
+    expect(next.getViewState().frameRange).toEqual(legacy.getFrameRange());
+    expect(next.getViewState().frameRange).toEqual([5, 10]);
+
+    next.setViewState({ rotation: 90 });
+
+    expect(next.getViewState().frameRange).toEqual([5, 10]);
+
+    [[7, 7], [1, 2, 3], undefined].forEach((frameRange) => {
+      next.setViewState({ frameRange: [5, 10] });
+      next.setViewState({ frameRange });
+
+      expect(next.getViewState().frameRange).toBeUndefined();
     });
-    expect(next.getFrameRange()).toEqual([5, 10]);
 
-    legacy.setFrameRange(null);
-    next.setFrameRange(null);
-    expect(next.getFrameRange()).toEqual(legacy.getFrameRange());
+    next.setViewState({ frameRange: [5, 10] });
+    next.resetViewState();
+
+    expect(next.getViewState().frameRange).toBeUndefined();
+  });
+
+  it('drops the frame range of the view state when another video is mounted', async function () {
+    next.setViewState({ frameRange: [5, 10] });
+    await next.setDisplaySets({ displaySetId: TEST_VIDEO.imageId });
+
+    expect(next.getViewState().frameRange).toBeUndefined();
   });
 
   it('plays inside the frame range as the legacy viewport does', async function () {
     const samples = { legacy: [], next: [] };
 
     legacy.setFrameRange([5, 10]);
-    next.setFrameRange([5, 10]);
+    next.setViewState({ frameRange: [5, 10] });
     expect(legacy.togglePlayPause()).toBe(true);
     next.play();
     await new Promise((resolve) => setTimeout(resolve, 300));
@@ -380,7 +396,7 @@ describe('Direct next video viewport -- ', () => {
 
   it('gives a range reference while it plays a frame range', async function () {
     legacy.setFrameRange([3, 9]);
-    next.setFrameRange([3, 9]);
+    next.setViewState({ frameRange: [3, 9] });
     await Promise.all([legacy.play(), next.play()]);
     await animationFrames(3);
 
@@ -500,6 +516,8 @@ describe('Direct next video viewport -- ', () => {
       'getCanvas',
       'getSliceIndexForImage',
       'hasImageURI',
+      'setFrameRange',
+      'getFrameRange',
     ]) {
       expect(next[member]).toBeUndefined();
       expect(typeof legacy[member]).toBe('function');

@@ -222,7 +222,7 @@ describe('Tools on a direct next video viewport -- ', () => {
     AnnotationMultiSlice.setRange(next, nextProbe, 2, 8);
 
     expect(AnnotationMultiSlice.getFrameRange(nextProbe)).toEqual([3, 9]);
-    expect(next.getFrameRange()).toEqual(legacy.getFrameRange());
+    expect(next.getViewState().frameRange).toEqual(legacy.getFrameRange());
 
     for (const [frameNumber, viewable] of [
       [3, true],
@@ -255,7 +255,7 @@ describe('Tools on a direct next video viewport -- ', () => {
 
     expect(next.getSliceIndexForImage).toBeUndefined();
     expect(AnnotationMultiSlice.getFrameRange(nextProbe)).toEqual([5, 9]);
-    expect(next.getFrameRange()).toEqual([5, 9]);
+    expect(next.getViewState().frameRange).toEqual([5, 9]);
     expect(AnnotationMultiSlice.getFrameRange(legacyAnnotation)).toEqual([
       5, 10,
     ]);
@@ -410,6 +410,97 @@ describe('PanTool on a turned direct next video viewport -- ', () => {
 
       expect(moved[0]).toBeCloseTo(to[0], 0);
       expect(moved[1]).toBeCloseTo(to[1], 0);
+    }
+  }, 15000);
+});
+
+describe('ZoomTool on a direct next video viewport -- ', () => {
+  let renderingEngine;
+  let videoUrl;
+  let next;
+
+  beforeEach(async function () {
+    const setup = testUtils.setupTestEnvironment({
+      renderingEngineId,
+      toolGroupIds: [toolGroupId],
+      tools: [csTools3d.ZoomTool],
+      toolActivations: {
+        [csTools3d.ZoomTool.toolName]: {
+          bindings: [{ mouseButton: csToolsEnums.MouseBindings.Wheel }],
+        },
+      },
+    });
+
+    setup.toolGroups[toolGroupId].setToolConfiguration(
+      csTools3d.ZoomTool.toolName,
+      { minZoomScale: 0.5, maxZoomScale: 2 }
+    );
+    renderingEngine = setup.renderingEngine;
+    videoUrl = addTestVideoMetadata();
+    [, next] = createViewports(renderingEngine, setup.toolGroups[toolGroupId]);
+    await next.setDisplaySets({ displaySetId: TEST_VIDEO.imageId });
+    await animationFrames(3);
+  }, 15000);
+
+  afterEach(function () {
+    testUtils.cleanupTestEnvironment({
+      renderingEngineId,
+      toolGroupIds: [toolGroupId],
+    });
+    URL.revokeObjectURL(videoUrl);
+  });
+
+  /** Turns the wheel over a canvas point of the element, down to zoom in. */
+  async function wheel(element, canvasPoint, steps, zoomIn = true) {
+    const rect = element.getBoundingClientRect();
+
+    for (let step = 0; step < steps; step++) {
+      element.dispatchEvent(
+        new WheelEvent('wheel', {
+          clientX: Math.round(rect.left + canvasPoint[0]),
+          clientY: Math.round(rect.top + canvasPoint[1]),
+          deltaY: zoomIn ? 100 : -100,
+          bubbles: true,
+          cancelable: true,
+        })
+      );
+    }
+
+    await animationFrames(2);
+  }
+
+  /** The zoom of the viewport from the projection service. */
+  function zoomOf(viewport) {
+    return cornerstone3D.viewportProjection.getPresentation(viewport, {
+      selector: { zoom: true },
+    }).zoom;
+  }
+
+  it('keeps the zoom of the wheel inside the limits of the zoom tool, about the mouse, also on a turned video', async function () {
+    for (const rotation of [0, 90]) {
+      next.resetViewState();
+      next.setViewState({ rotation });
+      await animationFrames(2);
+
+      const mouse = [230, 70];
+      const underMouse = next.canvasToWorld(mouse);
+
+      await wheel(next.element, mouse, 3);
+
+      const shown = next.worldToCanvas(underMouse);
+
+      expect(zoomOf(next)).toBeGreaterThan(1.1);
+      expect(zoomOf(next)).toBeLessThan(2);
+      expect(shown[0]).toBeCloseTo(mouse[0], 0);
+      expect(shown[1]).toBeCloseTo(mouse[1], 0);
+
+      await wheel(next.element, mouse, 20);
+
+      expect(zoomOf(next)).toBeCloseTo(2, 4);
+
+      await wheel(next.element, mouse, 40, false);
+
+      expect(zoomOf(next)).toBeCloseTo(0.5, 4);
     }
   }, 15000);
 });

@@ -5,6 +5,7 @@ import {
   worldToCanvasContextPool,
 } from '../../helpers/vtkCanvasCoordinateTransforms';
 import ResolvedViewportView from '../ResolvedViewportView';
+import type { Volume3DProjectionFit } from './Volume3DProjectionTypes';
 import type { Volume3DCamera } from './viewport3DTypes';
 
 type Volume3DResolvedViewState = {
@@ -12,9 +13,22 @@ type Volume3DResolvedViewState = {
   canvas: HTMLCanvasElement;
   frameOfReferenceUID?: string;
   renderer: vtkRenderer;
+  /**
+   * Computes the fit of the viewport: the camera that `resetViewState` would
+   * give now. Undefined when the viewport shows nothing to fit.
+   */
+  getFit?: () => Volume3DProjectionFit | undefined;
 };
 
 class Volume3DResolvedView extends ResolvedViewportView<Volume3DResolvedViewState> {
+  /**
+   * The fit of the viewport, the reference of the zoom and the pan of the
+   * projection. It is computed when it is read.
+   */
+  get fit(): Volume3DProjectionFit | undefined {
+    return this.state.getFit?.();
+  }
+
   canvasToWorld(canvasPos: Point2): Point3 {
     return canvasToWorldContextPool({
       canvas: this.state.canvas,

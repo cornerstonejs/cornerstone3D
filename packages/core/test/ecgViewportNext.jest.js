@@ -3,6 +3,7 @@ import { Events, MetadataModules, ViewportType } from '../src/enums';
 import * as metaData from '../src/metaData';
 import LegacyECGViewport from '../src/RenderingEngine/ECGViewport';
 import ECGViewport from '../src/RenderingEngine/GenericViewport/ECG/ECGViewport';
+import { viewportProjection } from '../src/RenderingEngine/GenericViewport/viewportProjection';
 import { ECG_PX_PER_MM } from '../src/RenderingEngine/GenericViewport/ECG/ecgWaveform';
 
 const ECG_ID = 'ecg:legacyNext';
@@ -426,6 +427,42 @@ describe('Annotations saved on a legacy ECG viewport', () => {
 
     expect(legacy.isReferenceViewable(reference)).toBe(false);
     expect(next.isReferenceViewable(reference)).toBe(false);
+  });
+});
+
+describe('Zoom and pan of the next ECG viewport in the projection service', () => {
+  it('gives the zoom and the pan of the members, and moves the view as the members do, which is how the tools move it', async () => {
+    const byMembers = await mountNext();
+    const byService = await mountNext();
+    const anchorCanvas = [50, 40];
+
+    byMembers.setZoom(2, anchorCanvas);
+    byService.setViewState(
+      viewportProjection.withPresentation(byService, { zoom: 2 }, undefined, {
+        anchorCanvas,
+      })
+    );
+
+    const { pan, zoom } = viewportProjection.getPresentation(byService, {
+      selector: { zoom: true, pan: true },
+    });
+
+    expect(zoom).toBeCloseTo(byMembers.getZoom(), 9);
+    expectClose([pan[0] * zoom, pan[1] * zoom], byMembers.getPan(), 6);
+
+    byMembers.setPan([byMembers.getPan()[0] + 12, byMembers.getPan()[1] - 7]);
+    byService.setViewState(
+      viewportProjection.withPresentation(byService, {
+        pan: [pan[0] + 12 / zoom, pan[1] - 7 / zoom],
+      })
+    );
+
+    expectClose(byService.getPan(), byMembers.getPan(), 6);
+    expectClose(
+      byService.canvasToWorld([120, 80]),
+      byMembers.canvasToWorld([120, 80]),
+      6
+    );
   });
 });
 

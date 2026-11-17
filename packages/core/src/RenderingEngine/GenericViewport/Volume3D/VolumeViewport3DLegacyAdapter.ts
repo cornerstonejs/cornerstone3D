@@ -1,8 +1,8 @@
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
-import { vec3 } from 'gl-matrix';
+import { vec2, vec3 } from 'gl-matrix';
 import cache from '../../../cache/cache';
 import { MPR_CAMERA_VALUES, RENDERING_DEFAULTS } from '../../../constants';
-import { OrientationAxis } from '../../../enums';
+import { Events, OrientationAxis } from '../../../enums';
 import type BlendModes from '../../../enums/BlendModes';
 import type {
   ActorEntry,
@@ -11,6 +11,7 @@ import type {
   ImageActor,
   IVolumeInput,
   OrientationVectors,
+  Point2,
   Point3,
   ResetCameraOptions,
   ViewReference,
@@ -18,17 +19,20 @@ import type {
 } from '../../../types';
 import type { PlaneRestriction } from '../../../types/IViewport';
 import type ViewportInputOptions from '../../../types/ViewportInputOptions';
-import { isImageActor } from '../../../utilities/actorCheck';
+import { actorIsA, isImageActor } from '../../../utilities/actorCheck';
 import { deepClone } from '../../../utilities/deepClone';
 import getAcquisitionPlaneOrientation from '../../../utilities/getAcquisitionPlaneOrientation';
 import getVolumeViewportScrollInfo from '../../../utilities/getVolumeViewportScrollInfo';
 import isEqual, { isEqualNegative } from '../../../utilities/isEqual';
 import { coreLog } from '../../../utilities/logger';
 import snapFocalPointToSlice from '../../../utilities/snapFocalPointToSlice';
+import transformWorldToIndex from '../../../utilities/transformWorldToIndex';
+import triggerEvent from '../../../utilities/triggerEvent';
 import genericViewportDisplaySetMetadataProvider from '../../../utilities/genericViewportDisplaySetMetadataProvider';
 import { viewportProjection } from '../viewportProjection';
 import VolumeViewport3D from './viewport3D';
 import applyVolume3DCamera from './applyVolume3DCamera';
+import { resolveVolume3DPreset } from './applyVolume3DPresentation';
 import { getOrientationVectors } from './vtkVolume3DInitialCamera';
 import type {
   Volume3DCamera,
@@ -75,6 +79,11 @@ class VolumeViewport3DLegacyAdapter extends VolumeViewport3D {
     string,
     VolumeViewportProperties
   >();
+  /**
+   * The camera of the last reset that stored it. `getZoom` and `getPan`
+   * compare the camera with it, as on the legacy viewport.
+   */
+  private initialCamera?: ICamera;
   /** The properties of `setDefaultProperties` without a volume id. */
   private globalDefaultProperties: VolumeViewportProperties = {};
   /** The properties of `setDefaultProperties` for one volume. */
@@ -195,6 +204,122 @@ class VolumeViewport3DLegacyAdapter extends VolumeViewport3D {
     });
 
     return reset;
+  }
+
+  /**
+   * Fits the camera as the class does, and keeps it as the initial camera of
+   * `getZoom` and `getPan` unless `storeAsInitialCamera` is false, before
+   * the events of the reset fire, as on the legacy viewport.
+   */
+  protected override fitViewState(options: ResetCameraOptions = {}): void {
+    super.fitViewState(options);
+
+    if (options.storeAsInitialCamera !== false) {
+      this.initialCamera = this.getCamera();
+    }
+  }
+
+  /**
+   * The zoom against the initial camera, as on the legacy viewport: 1 after
+   * a reset, 2 at half the parallel scale. 1 without an initial camera. It
+   * is the zoom of the projection service as long as the initial camera is
+   * the fit.
+   */
+  getZoom(compareCamera: ICamera = this.initialCamera): number {
+    if (!compareCamera) {
+      return 1;
+    }
+
+    return compareCamera.parallelScale / this.getCamera().parallelScale;
+  }
+
+  /**
+   * Sets the zoom against the initial camera, as on the legacy viewport.
+   * With `storeAsInitialCamera` the camera then becomes the initial camera.
+   * Does nothing without an initial camera.
+   */
+  setZoom(
+    value: number,
+    storeAsInitialCamera = false,
+    compareCamera: ICamera = this.initialCamera
+  ): void {
+    const initialParallelScale = compareCamera?.parallelScale;
+
+    if (!initialParallelScale) {
+      return;
+    }
+
+    const parallelScale = initialParallelScale / value;
+
+    if (
+      this.getCamera().parallelScale !== parallelScale ||
+      storeAsInitialCamera
+    ) {
+      this.setCamera({ parallelScale });
+    }
+
+    if (storeAsInitialCamera) {
+      this.initialCamera = this.getCamera();
+    }
+  }
+
+  /**
+   * The pan in canvas pixels against the initial camera, computed as the
+   * legacy viewport computes it. [0, 0] without an initial camera.
+   */
+  getPan(initialCamera: ICamera = this.initialCamera): Point2 {
+    if (!initialCamera) {
+      return [0, 0];
+    }
+
+    const zero3 = this.canvasToWorld([0, 0]);
+    const initialCanvasFocal = this.worldToCanvas(
+      vec3.subtract(vec3.create(), initialCamera.focalPoint, zero3) as Point3
+    );
+    const currentCanvasFocal = this.worldToCanvas(
+      vec3.subtract(vec3.create(), this.getCamera().focalPoint, zero3) as Point3
+    );
+
+    return vec2.subtract(
+      vec2.create(),
+      initialCanvasFocal,
+      currentCanvasFocal
+    ) as Point2;
+  }
+
+  /**
+   * Pans to a canvas offset from the initial camera, as on the legacy
+   * viewport. A change under a pixel is ignored unless
+   * `storeAsInitialCamera` is set, which then makes the camera the initial
+   * camera.
+   */
+  setPan(pan: Point2, storeAsInitialCamera = false): void {
+    const { focalPoint, position } = this.getCamera();
+    const zero3 = this.canvasToWorld([0, 0]);
+    const delta2 = vec2.subtract(vec2.create(), pan, this.getPan());
+
+    if (
+      Math.abs(delta2[0]) < 1 &&
+      Math.abs(delta2[1]) < 1 &&
+      !storeAsInitialCamera
+    ) {
+      return;
+    }
+
+    const delta = vec3.subtract(
+      vec3.create(),
+      this.canvasToWorld([delta2[0], delta2[1]]),
+      zero3
+    );
+
+    this.setCamera({
+      focalPoint: vec3.subtract(vec3.create(), focalPoint, delta) as Point3,
+      position: vec3.subtract(vec3.create(), position, delta) as Point3,
+    });
+
+    if (storeAsInitialCamera) {
+      this.initialCamera = this.getCamera();
+    }
   }
 
   async setVolumes(
@@ -406,6 +531,42 @@ class VolumeViewport3DLegacyAdapter extends VolumeViewport3D {
     if (immediate) {
       this.render();
     }
+  }
+
+  /**
+   * The value of the volume at a world point: the voxel nearest the point in
+   * the volume of the first actor. Undefined when that actor is not a volume,
+   * as on the legacy viewport.
+   */
+  getIntensityFromWorld(point: Point3): number {
+    const actorEntry = this.getDefaultActor();
+
+    if (!actorEntry || !actorIsA(actorEntry, 'vtkVolume')) {
+      return;
+    }
+
+    const volume = this.getShownVolume();
+
+    if (!volume?.imageData) {
+      return;
+    }
+
+    const index = transformWorldToIndex(volume.imageData, point);
+
+    return volume.voxelManager.getAtIJKPoint(index) as number;
+  }
+
+  /**
+   * Whether a volume that the viewport shows holds this image, as on the
+   * legacy viewport.
+   */
+  hasImageURI(imageURI: string): boolean {
+    return this.getVolumeRenderings().some(({ imageVolume }) => {
+      return (
+        imageVolume?.getImageIdIndex?.(imageURI) !== undefined ||
+        imageVolume?.getImageURIIndex?.(imageURI) !== undefined
+      );
+    });
   }
 
   /** The ids of the volumes that the viewport shows. */
@@ -919,6 +1080,39 @@ class VolumeViewport3DLegacyAdapter extends VolumeViewport3D {
           ...rest,
         };
       });
+  }
+
+  /**
+   * Fires the events of the class for a presentation change, then
+   * PRESET_MODIFIED for a preset, with the detail of the legacy viewport.
+   * Nothing fires with `suppressEvents` set, or for a display set that is
+   * not a volume.
+   */
+  protected override notifyDataPresentationModified(
+    displaySetId: string,
+    props: Partial<Volume3DDataPresentation>
+  ): void {
+    super.notifyDataPresentationModified(displaySetId, props);
+
+    const rendering = this.getBinding(displaySetId)?.rendering as
+      | Partial<Volume3DVolumeRendering>
+      | undefined;
+    const preset = resolveVolume3DPreset(props.preset);
+
+    if (
+      this.suppressEvents ||
+      rendering?.renderMode !== 'vtkVolume3d' ||
+      !preset
+    ) {
+      return;
+    }
+
+    triggerEvent(this.element, Events.PRESET_MODIFIED, {
+      viewportId: this.id,
+      volumeId: rendering.imageVolume.volumeId,
+      actor: rendering.actor,
+      presetName: preset.name,
+    });
   }
 
   /**

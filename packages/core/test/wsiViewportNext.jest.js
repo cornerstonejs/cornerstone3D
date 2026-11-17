@@ -5,8 +5,10 @@ import { viewportProjection } from '../src/RenderingEngine/GenericViewport/viewp
 import { Events, MetadataModules } from '../src/enums';
 import * as metaData from '../src/metaData';
 import {
+  COLUMNS,
   HEIGHT,
   IMAGE_ID,
+  ROWS,
   WIDTH,
   createClient,
   mountLegacy,
@@ -19,6 +21,22 @@ function expectClose(actual, expected, precision = 3) {
   expect(actual.length).toBe(expected.length);
   actual.forEach((value, index) =>
     expect(value).toBeCloseTo(expected[index], precision)
+  );
+}
+
+/**
+ * Moves the picture of a next viewport by a delta in canvas pixels on the
+ * screen, through the projection service.
+ */
+function panByCanvasDelta(viewport, delta) {
+  const { pan, zoom } = viewportProjection.getPresentation(viewport, {
+    selector: { zoom: true, pan: true },
+  });
+
+  viewport.setViewState(
+    viewportProjection.withPresentation(viewport, {
+      pan: [pan[0] + delta[0] / zoom, pan[1] + delta[1] / zoom],
+    })
   );
 }
 
@@ -56,83 +74,112 @@ describe('Whole slide stand-in', () => {
 });
 
 describe('Pan on the direct next whole slide viewport', () => {
-  it('starts with no pan', async () => {
-    const { viewport } = await track(mountNext(WSIViewport, 0.4));
+  /** The zoom and the pan of a viewport from the projection service. */
+  function zoomPanOf(viewport) {
+    return viewportProjection.getPresentation(viewport, {
+      selector: { zoom: true, pan: true },
+    });
+  }
 
-    expect(viewport.getPan()).toEqual([0, 0]);
+  /** Applies a presentation patch through the projection service. */
+  function present(viewport, presentation) {
+    viewport.setViewState(
+      viewportProjection.withPresentation(viewport, presentation)
+    );
+  }
+
+  it('has no getPan and no setPan, which the adapter keeps', async () => {
+    const next = await track(mountNext(WSIViewport, 0.4));
+    const adapter = await track(mountNext(WSIViewportLegacyAdapter, 0.4));
+
+    expect(next.viewport.getPan).toBeUndefined();
+    expect(next.viewport.setPan).toBeUndefined();
+    expect(adapter.viewport.getPan()).toEqual([0, 0]);
+    expect(typeof adapter.viewport.setPan).toBe('function');
   });
 
-  it('pans in canvas pixels relative to the view at mount, as the adapter does', async () => {
+  it('gives pan [0, 0] in the projection service when the centre of the slide is at the centre of the canvas, with no state of its own', async () => {
+    const { viewport, view } = await track(mountNext(WSIViewport, 0.4));
+    const atMount = zoomPanOf(viewport).pan;
+
+    view.setCenter([COLUMNS / 2, -ROWS / 2]);
+
+    expectClose(zoomPanOf(viewport).pan, [0, 0]);
+    expect(Math.hypot(...atMount)).toBeGreaterThan(1);
+    expect('panOrigin' in viewport).toBe(false);
+
+    view.setCenter([COLUMNS / 2 - 80 * view.getResolution(), -ROWS / 2]);
+
+    expect(Math.hypot(...zoomPanOf(viewport).pan)).toBeCloseTo(
+      80 / view.getZoom(),
+      6
+    );
+  });
+
+  it('moves the picture by a pan of the projection service times the zoom, as the adapter does with setPan', async () => {
     const next = await track(mountNext(WSIViewport, 0.4));
     const adapter = await track(mountNext(WSIViewportLegacyAdapter, 0.4));
     const focalPoint = next.viewport.canvasToWorld([WIDTH / 2, HEIGHT / 2]);
+    const { pan, zoom } = zoomPanOf(next.viewport);
 
-    next.viewport.setPan([40, -20]);
+    present(next.viewport, { pan: [pan[0] + 40 / zoom, pan[1] - 20 / zoom] });
     adapter.viewport.setPan([40, -20]);
 
-    expectClose(next.viewport.getPan(), [40, -20]);
     expectClose(next.viewport.worldToCanvas(focalPoint), [
       WIDTH / 2 + 40,
       HEIGHT / 2 - 20,
     ]);
     expectClose(next.view.getCenter(), adapter.view.getCenter());
-    expectClose(next.viewport.getPan(), adapter.viewport.getPan());
-
-    next.viewport.setZoom(next.viewport.getZoom() + 1, [50, 60]);
-    adapter.viewport.setZoom(adapter.viewport.getZoom() + 1, [50, 60]);
-
-    expectClose(next.viewport.getPan(), adapter.viewport.getPan());
-  });
-
-  it('skips a pan under one pixel and stores the view as the origin of the pan', async () => {
-    const { viewport, view } = await track(mountNext(WSIViewport, 0.4));
-    const center = view.getCenter();
-
-    viewport.setPan([0.5, 0.5]);
-
-    expect(view.getCenter()).toEqual(center);
-
-    viewport.setPan([30, 30], true);
-
-    expectClose(viewport.getPan(), [0, 0]);
-    expect(view.getCenter()).not.toEqual(center);
+    expectClose(zoomPanOf(next.viewport).pan, [
+      pan[0] + 40 / zoom,
+      pan[1] - 20 / zoom,
+    ]);
   });
 
   it('reads the pan in the presentation and sets it again', async () => {
     const { viewport, view } = await track(mountNext(WSIViewport, 0.4));
+    const atMount = zoomPanOf(viewport);
 
-    viewport.setPan([40, -20]);
+    present(viewport, {
+      pan: [
+        atMount.pan[0] + 40 / atMount.zoom,
+        atMount.pan[1] - 20 / atMount.zoom,
+      ],
+    });
 
     const presentation = viewportProjection.getPresentation(viewport);
     const center = view.getCenter();
 
-    expectClose(presentation.pan, [40 / view.getZoom(), -20 / view.getZoom()]);
+    expectClose(presentation.pan, [
+      atMount.pan[0] + 40 / view.getZoom(),
+      atMount.pan[1] - 20 / view.getZoom(),
+    ]);
 
-    viewport.setPan([-70, 15]);
-    viewport.setViewState(
-      viewportProjection.withPresentation(viewport, presentation)
-    );
+    present(viewport, { pan: [atMount.pan[0] - 7, atMount.pan[1] + 3] });
 
-    expectClose(viewport.getPan(), [40, -20]);
+    expect(view.getCenter()).not.toEqual(center);
+
+    present(viewport, presentation);
+
+    expectClose(zoomPanOf(viewport).pan, presentation.pan);
     expectClose(view.getCenter(), center);
   });
 
   it('sets a pan and a zoom of a presentation together', async () => {
     const source = await track(mountNext(WSIViewport, 0.4));
     const target = await track(mountNext(WSIViewport, 0.4));
+    const { pan } = zoomPanOf(source.viewport);
 
     source.viewport.setZoom(source.viewport.getZoom() + 1, [50, 60]);
-    source.viewport.setPan([25, 35]);
+    present(source.viewport, { pan: [pan[0] + 5, pan[1] + 7] });
 
-    target.viewport.setViewState(
-      viewportProjection.withPresentation(
-        target.viewport,
-        viewportProjection.getPresentation(source.viewport)
-      )
+    present(
+      target.viewport,
+      viewportProjection.getPresentation(source.viewport)
     );
 
     expect(target.view.getZoom()).toBeCloseTo(source.view.getZoom(), 9);
-    expectClose(target.viewport.getPan(), [25, 35]);
+    expectClose(zoomPanOf(target.viewport).pan, zoomPanOf(source.viewport).pan);
     expectClose(target.view.getCenter(), source.view.getCenter());
   });
 });
@@ -230,7 +277,7 @@ describe('Annotations saved on a legacy whole slide viewport', () => {
     const legacy = await track(mountLegacy(0.4));
     const next = await track(mountNext(WSIViewport, 0.4));
 
-    next.viewport.setPan([80, -40]);
+    panByCanvasDelta(next.viewport, [80, -40]);
     next.viewport.setZoom(next.viewport.getZoom() + 2, [30, 50]);
     next.viewport.setViewState({ rotation: 70 });
 
@@ -318,19 +365,28 @@ describe('Small members of the direct next whole slide viewport', () => {
     }
   });
 
-  it('has a canvas with the size of the viewport, as the legacy viewport has', async () => {
+  it('has a canvas with the size of the viewport, as the legacy viewport has, and no getCanvas', async () => {
     const legacy = await track(mountLegacy(0.4));
     const next = await track(
       mountNext(WSIViewport, 0.4, { withCanvas: false })
     );
-    const canvas = next.viewport.getCanvas();
+    const { canvas } = next.viewport;
 
     expect(legacy.viewport.getCanvas()).toBe(legacy.viewport.canvas);
+    expect(next.viewport.getCanvas).toBeUndefined();
     expect(canvas).toBeInstanceOf(HTMLCanvasElement);
-    expect(next.viewport.canvas).toBe(canvas);
     expect(next.element.contains(canvas)).toBe(true);
     expect(canvas.style.width).toBe('100%');
     expect(canvas.style.height).toBe('100%');
+  });
+
+  it('keeps getCanvas on the legacy adapter, as on the legacy viewport', async () => {
+    const adapter = await track(
+      mountNext(WSIViewportLegacyAdapter, 0.4, { withCanvas: false })
+    );
+
+    expect(adapter.viewport.getCanvas()).toBe(adapter.viewport.canvas);
+    expect(adapter.element.contains(adapter.viewport.canvas)).toBe(true);
   });
 });
 
@@ -359,13 +415,15 @@ describe('Zoom at mount of the direct next whole slide viewport', () => {
   it('fits a slide mounted again, as the legacy viewport fits each slide', async () => {
     const next = await track(mountNext(WSIViewport, 0.4));
     const fitResolution = next.view.getResolution();
+    const fitPan = viewportProjection.getPresentation(next.viewport).pan;
 
     next.viewport.setZoom(next.viewport.getZoom() + 2, [30, 40]);
+    panByCanvasDelta(next.viewport, [25, 10]);
     const view = await remountNext(next.viewport, 0.4);
 
     expect(view).not.toBe(next.view);
     expect(view.getResolution()).toBeCloseTo(fitResolution, 12);
-    expect(next.viewport.getPan()).toEqual([0, 0]);
+    expectClose(viewportProjection.getPresentation(next.viewport).pan, fitPan);
   });
 });
 
@@ -429,7 +487,7 @@ describe('suppressEvents on the direct next whole slide viewport', () => {
       parallelScale: legacy.viewport.getCamera().parallelScale / 2,
     });
     next.viewport.setZoom(2);
-    next.viewport.setPan([10, 10]);
+    panByCanvasDelta(next.viewport, [10, 10]);
     next.viewport.resetViewState();
 
     expect(next.viewport.defaultOptions.suppressEvents).toBe(true);
