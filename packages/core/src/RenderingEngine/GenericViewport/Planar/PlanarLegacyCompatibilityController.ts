@@ -226,7 +226,16 @@ class PlanarLegacyCompatibilityController {
       toPlanarDataPresentation(nextProperties)
     );
 
-    if (!suppressEvents && properties.colormap !== undefined) {
+    // Stack callers pass suppressEvents second, volume callers third.
+    if (suppressEvents || volumeIdOrSuppressEvents === true) {
+      return;
+    }
+
+    if (properties.voiRange !== undefined || properties.invert !== undefined) {
+      this.emitVOIModified(targetDataId, volumeId);
+    }
+
+    if (properties.colormap !== undefined) {
       this.emitColormapModified(targetDataId, volumeId);
     }
   }
@@ -672,6 +681,22 @@ class PlanarLegacyCompatibilityController {
     }
 
     return this.host.getActiveDataId() || this.host.getFirstBoundDataId();
+  }
+
+  private emitVOIModified(dataId: string, requestedVolumeId?: string): void {
+    const properties = this.properties.get(dataId);
+    const range = properties?.voiRange ?? this.host.getDefaultVOIRange(dataId);
+
+    if (!range) {
+      return;
+    }
+
+    triggerEvent(this.host.getElement(), Events.VOI_MODIFIED, {
+      viewportId: this.host.getViewportId(),
+      volumeId: requestedVolumeId || this.resolveVolumeIdForDataId(dataId),
+      range,
+      invert: properties?.invert,
+    });
   }
 
   private emitColormapModified(

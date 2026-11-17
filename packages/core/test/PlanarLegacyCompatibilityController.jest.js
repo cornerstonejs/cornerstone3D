@@ -283,6 +283,65 @@ describe('PlanarLegacyCompatibilityController', () => {
       controller.setProperties({ colormap: { name: 'hot' } }, undefined, true);
       expect(listener).not.toHaveBeenCalled();
     });
+
+    it('emits VOI_MODIFIED when voiRange is set and not suppressed', () => {
+      const { host, element } = createHost({
+        getActiveDataId: jest.fn(() => 'data-1'),
+      });
+      const controller = new PlanarLegacyCompatibilityController(host);
+      const listener = jest.fn();
+      element.addEventListener(Events.VOI_MODIFIED, listener);
+
+      controller.setProperties({ voiRange: { lower: 10, upper: 20 } });
+      expect(listener).toHaveBeenCalledTimes(1);
+      expect(listener.mock.calls[0][0].detail).toMatchObject({
+        viewportId: 'vp-1',
+        range: { lower: 10, upper: 20 },
+      });
+    });
+
+    it('emits VOI_MODIFIED with the default range when only invert is set', () => {
+      const range = { lower: 0, upper: 100 };
+      const { host, element } = createHost({
+        getActiveDataId: jest.fn(() => 'data-1'),
+        getDefaultVOIRange: jest.fn(() => range),
+      });
+      const controller = new PlanarLegacyCompatibilityController(host);
+      const listener = jest.fn();
+      element.addEventListener(Events.VOI_MODIFIED, listener);
+
+      controller.setProperties({ invert: true });
+      expect(listener.mock.calls[0][0].detail).toMatchObject({
+        range,
+        invert: true,
+      });
+    });
+
+    it('does not emit VOI_MODIFIED when the VOI is untouched', () => {
+      const { host, element } = createHost({
+        getActiveDataId: jest.fn(() => 'data-1'),
+      });
+      const controller = new PlanarLegacyCompatibilityController(host);
+      const listener = jest.fn();
+      element.addEventListener(Events.VOI_MODIFIED, listener);
+
+      controller.setProperties({ colormap: { name: 'hot' } });
+      expect(listener).not.toHaveBeenCalled();
+    });
+
+    it('honours suppressEvents in either the stack or the volume position', () => {
+      const { host, element } = createHost({
+        getActiveDataId: jest.fn(() => 'data-1'),
+      });
+      const controller = new PlanarLegacyCompatibilityController(host);
+      const listener = jest.fn();
+      element.addEventListener(Events.VOI_MODIFIED, listener);
+
+      const voiRange = { lower: 10, upper: 20 };
+      controller.setProperties({ voiRange }, true);
+      controller.setProperties({ voiRange }, undefined, true);
+      expect(listener).not.toHaveBeenCalled();
+    });
   });
 
   describe('default properties', () => {
