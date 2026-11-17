@@ -51,6 +51,7 @@ function createViewport(ViewportClass, element, viewportId) {
   const renderingEngine = {
     id: utilities.uuidv4(),
     getRenderer: () => renderer,
+    getViewport: () => viewport,
     getViewports: () => (viewport ? [viewport] : []),
     renderViewport() {},
     destroy() {
@@ -168,11 +169,11 @@ describe('scrolling a slab on a planar viewport', () => {
       });
     });
 
-    it('steps by the slab thickness with scrollSlabs, as the legacy volume viewport', async () => {
+    it('steps by the slab thickness with scrollSlabs of utilities.scroll, as the legacy volume viewport', () => {
       const camera = viewport.getCameraForEvent();
       const expected = getLegacyScrollFocalPoint(camera, volume, SLAB, 1);
 
-      await viewport.scroll(1, false, false, { scrollSlabs: true });
+      utilities.scroll(viewport, { delta: 1, scrollSlabs: true });
 
       expect(
         project(viewport.getCameraForEvent().focalPoint, camera.viewPlaneNormal)
@@ -183,6 +184,22 @@ describe('scrolling a slab on a planar viewport', () => {
       const camera = viewport.getCameraForEvent();
 
       await viewport.scroll(1);
+      utilities.scroll(viewport, { delta: 1 });
+
+      expect(
+        Math.abs(
+          project(
+            viewport.getCameraForEvent().focalPoint,
+            camera.viewPlaneNormal
+          ) - project(camera.focalPoint, camera.viewPlaneNormal)
+        )
+      ).toBeCloseTo(2, 6);
+    });
+
+    it('steps by one slice in its own scroll, whatever follows the delta', async () => {
+      const camera = viewport.getCameraForEvent();
+
+      await viewport.scroll(1, false, false, { scrollSlabs: true });
 
       expect(
         Math.abs(
@@ -194,21 +211,16 @@ describe('scrolling a slab on a planar viewport', () => {
       ).toBeCloseTo(1, 6);
     });
 
-    it('counts slab steps in getCurrentImageIdIndex and getNumberOfSlices, as the legacy volume viewport', async () => {
-      const before = viewport.getCurrentImageIdIndex(undefined, true);
+    it('counts slices of the source in getCurrentImageIdIndex and getNumberOfSlices, not slab steps', () => {
+      const before = viewport.getCurrentImageIdIndex();
 
-      expect(before).toBe(
-        getLegacySteps(viewport.getCameraForEvent(), volume, SLAB)
-          .currentStepIndex
-      );
-      expect(viewport.getNumberOfSlices(undefined, true)).toBe(
-        getLegacySteps(viewport.getCameraForEvent(), volume, SLAB).numberOfSteps
-      );
       expect(viewport.getNumberOfSlices()).toBe(30);
+      expect(viewport.getNumberOfSlices(undefined, true)).toBe(30);
+      expect(viewport.getCurrentImageIdIndex(undefined, true)).toBe(before);
 
-      await viewport.scroll(1, false, false, { scrollSlabs: true });
+      utilities.scroll(viewport, { delta: 1 });
 
-      expect(viewport.getCurrentImageIdIndex(undefined, true)).toBe(before + 1);
+      expect(viewport.getCurrentImageIdIndex()).toBe(before + 1);
     });
   });
 
@@ -239,6 +251,24 @@ describe('scrolling a slab on a planar viewport', () => {
       expect(viewport.getCurrentImageIdIndex()).toBe(
         getLegacySteps(viewport.getCamera(), volume, SLAB).currentStepIndex
       );
+    });
+
+    it('counts slab steps in getNumberOfSlices with useSlabThickness, and slices without it', () => {
+      expect(viewport.getNumberOfSlices(undefined, true)).toBe(
+        getLegacySteps(viewport.getCamera(), volume, SLAB).numberOfSteps
+      );
+      expect(viewport.getNumberOfSlices()).toBe(30);
+    });
+
+    it('steps by the slab thickness with scrollSlabs of utilities.scroll, as the legacy volume viewport', () => {
+      const camera = viewport.getCamera();
+      const expected = getLegacyScrollFocalPoint(camera, volume, SLAB, 1);
+
+      utilities.scroll(viewport, { delta: 1, scrollSlabs: true });
+
+      expect(
+        project(viewport.getCamera().focalPoint, camera.viewPlaneNormal)
+      ).toBeCloseTo(project(expected, camera.viewPlaneNormal), 6);
     });
   });
 });

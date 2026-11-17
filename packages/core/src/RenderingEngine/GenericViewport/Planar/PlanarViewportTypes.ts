@@ -134,11 +134,34 @@ export type RenderPlanChangedEventDetail = {
   reason: RenderPlanReason;
 };
 
+/**
+ * An orientation of a planar view, as the orientation option of a display
+ * set, `setOrientation` and `setViewState({ orientation })` take it:
+ * - ACQUISITION: the plane of the images.
+ * - AXIAL, CORONAL, SAGITTAL: the plane of that patient axis.
+ * - AXIAL_REFORMAT, CORONAL_REFORMAT, SAGITTAL_REFORMAT: the axes of the
+ *   images, matched to that patient axis. For images that are tilted against
+ *   the patient axes the view follows the images.
+ * - REFORMAT: the same, for the patient axis closest to the view on display,
+ *   or closest to the acquisition when nothing is on display.
+ * - View vectors: `viewPlaneNormal` and `viewUp`, orthogonal to each other.
+ *   Without a `viewUp` the view takes the one of the acquisition.
+ *
+ * The view state keeps a reformat name as the view vectors that it stands
+ * for, so `getViewState().orientation` never gives one.
+ *
+ * A stack shows its images in their acquisition plane: in stack mode the
+ * orientation of the view state cannot change.
+ */
 export type PlanarOrientation =
   | OrientationAxis.ACQUISITION
   | OrientationAxis.AXIAL
   | OrientationAxis.CORONAL
   | OrientationAxis.SAGITTAL
+  | OrientationAxis.REFORMAT
+  | OrientationAxis.AXIAL_REFORMAT
+  | OrientationAxis.CORONAL_REFORMAT
+  | OrientationAxis.SAGITTAL_REFORMAT
   | OrientationVectors;
 
 /** @internal */
@@ -175,12 +198,26 @@ export interface PlanarSetDataOptions {
   sliceFirst?: boolean;
 }
 
+/**
+ * A load of an image of a stack that failed for good: the error, and the
+ * image by its id and its index in the stack.
+ *
+ * @internal
+ */
+export interface PlanarStackImageLoadFailure {
+  error: unknown;
+  imageIdIndex: number;
+  imageId: string;
+}
+
 /** @internal */
 export interface PlanarDataLoadOptions {
   acquisitionOrientation?: PlanarViewState['orientation'];
   orientation: PlanarOrientation;
   renderMode: PlanarEffectiveRenderMode;
   volumeId: string;
+  /** Called when the load of the first image of a stack fails for good. */
+  onStackImageLoadError?(failure: PlanarStackImageLoadFailure): void;
 }
 
 /** @internal */
@@ -321,6 +358,8 @@ export interface PlanarViewportRenderContext extends BaseViewportRenderContext {
      * screen grid when the view rests, and draws it with one more render.
      */
     drawsFinerImageAtRest?(): boolean;
+    /** Called when the load of an image of a stack fails for good. */
+    onStackImageLoadError?(failure: PlanarStackImageLoadFailure): void;
     /**
      * Reads the render plan entry of `dataId` again after its render path
      * changed what the entry reads (`slabTooLarge`), and fires

@@ -1,5 +1,4 @@
-import { Events, MetadataModules, RequestType } from '../../../enums';
-import eventTarget from '../../../eventTarget';
+import { MetadataModules, RequestType } from '../../../enums';
 import { loadAndCacheImage } from '../../../loaders/imageLoader';
 import type { ImageLoaderOptions } from '../../../loaders/imageLoader';
 import { createProgressive } from '../../../loaders/ProgressiveRetrieveImages';
@@ -12,7 +11,7 @@ import type {
 } from '../../../types';
 import imageRetrieveMetadataProvider from '../../../utilities/imageRetrieveMetadataProvider';
 import { coreLog } from '../../../utilities/logger';
-import triggerEvent from '../../../utilities/triggerEvent';
+import type { PlanarStackImageLoadFailure } from './PlanarViewportTypes';
 
 const log = coreLog.getLogger('RenderingEngine', 'planarStackImageLoad');
 
@@ -23,7 +22,7 @@ export type PlanarStackImageLoadArgs = {
   /** Gets the first image that arrives for the index. */
   onImage: (image: IImage) => unknown;
   /** Called once when the load of the image fails for good. */
-  onError?: (error: unknown) => void;
+  onError?: (failure: PlanarStackImageLoadFailure) => void;
 };
 
 /**
@@ -82,9 +81,9 @@ export function getPlanarStackLoaderImageOptions(
  * one, else with `loadAndCacheImage` and the options of
  * `getPlanarStackLoaderImageOptions`. `onImage` gets the first image that
  * arrives; the better stages of a progressive load come after it as
- * IMAGE_LOADED events. A load that fails for good fires IMAGE_LOAD_ERROR on
- * the event target with the legacy detail `{ error, imageIdIndex, imageId }`
- * and calls `onError`.
+ * IMAGE_LOADED events. A load that fails for good calls `onError` with the
+ * error, the image id and its index. The image loader fires IMAGE_LOAD_FAILED
+ * for the image by itself.
  *
  * @returns a promise that resolves when the load and `onImage` are done. It
  * resolves also when the load fails.
@@ -119,12 +118,7 @@ export function loadPlanarStackImage({
       }
 
       failed = true;
-      triggerEvent(eventTarget, Events.IMAGE_LOAD_ERROR, {
-        error,
-        imageIdIndex,
-        imageId,
-      });
-      onError?.(error);
+      onError?.({ error, imageIdIndex, imageId });
     },
     getLoaderImageOptions: (loadImageId) => ({
       ...getPlanarStackLoaderImageOptions(imageIds, loadImageId),

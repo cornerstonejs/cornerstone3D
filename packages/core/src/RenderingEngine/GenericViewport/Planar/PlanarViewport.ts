@@ -27,19 +27,13 @@ import type {
   OrientationVectors,
   Point2,
   Point3,
-  ActorSliceRange,
-  IVolumeViewport,
   ReferenceCompatibleOptions,
-  ScrollOptions,
   VOIRange,
   ViewReference,
   ViewReferenceSpecifier,
   ViewportContentMode,
 } from '../../../types';
 import { isImageActor } from '../../../utilities/actorCheck';
-import getTargetVolumeAndSpacingInNormalDir from '../../../utilities/getTargetVolumeAndSpacingInNormalDir';
-import { getVolumeId as getVolumeIdOfSpecifier } from '../../../utilities/getVolumeId';
-import snapFocalPointToSlice from '../../../utilities/snapFocalPointToSlice';
 import cache from '../../../cache/cache';
 import type { PlaneRestriction } from '../../../types/IViewport';
 import type ViewportInputOptions from '../../../types/ViewportInputOptions';
@@ -53,7 +47,6 @@ import getMinMax from '../../../utilities/getMinMax';
 import renderingEngineCache from '../../renderingEngineCache';
 import {
   calculateCameraPosition,
-  getCameraVectors,
   getOrientationFromScanAxisNormal,
 } from '../../helpers/getCameraVectors';
 import * as metaData from '../../../metaData';
@@ -69,10 +62,7 @@ import {
   isGenericViewportImageDisplaySet,
 } from '../genericViewportDisplaySetAccess';
 import { DefaultPlanarDataProvider } from './DefaultPlanarDataProvider';
-import {
-  buildPlanarImageData,
-  getPlanarWorldToIndexMatrix,
-} from './planarImageData';
+import { getPlanarWorldToIndexMatrix } from './planarImageData';
 import { createPlanarRenderPathResolver } from './PlanarRenderPathResolver';
 import { defaultPlanarRenderPathDecisionService } from './PlanarRenderPathDecisionService';
 import type {
@@ -110,11 +100,8 @@ import {
 import {
   createPlanarCpuVolumeSliceBasis,
   createPlanarVolumeSliceBasis,
-  getPlanarVolumeSliceRange,
   getVolumeImageIdIndexWorldPoint,
 } from './planarSliceBasis';
-import { resolveSlabThickness } from './planarVolumeSliceBlendMode';
-import { resolvePlanarSetOrientationVectors } from './planarOrientationVectors';
 import type {
   PlanarRendering,
   PlanarVolumeSliceRendering,
@@ -141,9 +128,11 @@ import type {
   PlanarDataProvider,
   PlanarDisplayArea,
   PlanarEffectiveRenderMode,
+  PlanarOrientation,
   PlanarPayload,
   PlanarRegisteredDataSet,
   PlanarSetDataOptions,
+  PlanarStackImageLoadFailure,
   PlanarViewportRenderContext,
   PlanarViewportInput,
   PlanarViewportInputOptions,
@@ -151,37 +140,6 @@ import type {
   RenderPlanLayer,
   RenderPlanReason,
 } from './PlanarViewportTypes';
-
-type PlanarSetOrientationInput =
-  | OrientationAxis.ACQUISITION
-  | OrientationAxis.AXIAL
-  | OrientationAxis.CORONAL
-  | OrientationAxis.SAGITTAL
-  | OrientationAxis.REFORMAT
-  | OrientationAxis.AXIAL_REFORMAT
-  | OrientationAxis.CORONAL_REFORMAT
-  | OrientationAxis.SAGITTAL_REFORMAT
-  | OrientationVectors;
-
-/**
- * The options of a volume scroll: `volumeId` names the volume whose spacing
- * along the view gives the step, and `scrollSlabs` makes the step the slab
- * thickness when the source has a slab.
- */
-export type PlanarScrollOptions = Pick<
-  ScrollOptions,
-  'volumeId' | 'scrollSlabs'
->;
-
-/**
- * The steps of a volume scroll: the slice range of the target volume along
- * the view, the step along the normal and the camera they were measured on.
- */
-type PlanarVolumeSliceSteps = {
-  camera: ICamera;
-  sliceRange: ActorSliceRange;
-  spacingInNormalDirection: number;
-};
 
 type ResolvedPlanarViewportView = NonNullable<
   ReturnType<typeof resolvePlanarViewportView>
@@ -348,9 +306,6 @@ class PlanarViewport extends GenericViewport<
   suppressEvents = false;
   /** Set when a render path draws in `render()` instead of the engine. */
   private drewOutsideEngine = false;
-  /** The user calibration of the stack image shown last. */
-  private shownCalibration?: unknown;
-
   protected renderContext: PlanarViewportRenderContext;
 
   private readonly mountedData: PlanarMountedData;
@@ -518,6 +473,7 @@ class PlanarViewport extends GenericViewport<
           this.mountedData.getProjectedActorEntries('overlay'),
         canDrawAcquiredFrames: (dataId) => this.canDrawAcquiredFrames(dataId),
         drawsFinerImageAtRest: () => this.prefersFinerImageAtRest(),
+        onStackImageLoadError: (failure) => this.onStackImageLoadError(failure),
         refreshRenderPlan: (dataId) => this.updateRenderPlan(dataId),
       },
       renderPath: {
@@ -567,10 +523,6 @@ class PlanarViewport extends GenericViewport<
       vtkCanvas
     );
 
-    this.element.addEventListener(
-      Events.STACK_NEW_IMAGE,
-      this.onStackNewImage as EventListener
-    );
     this.element.setAttribute('data-viewport-uid', this.id);
     this.element.setAttribute(
       'data-rendering-engine-uid',
@@ -697,24 +649,6 @@ class PlanarViewport extends GenericViewport<
     };
 
     triggerEvent(this.element, Events.VIEWPORT_NEW_IMAGE_SET, eventDetail);
-  }
-
-  /**
-   * Fires PRE_STACK_NEW_IMAGE with the detail of the legacy stack viewport,
-   * before the image of a stack index loads.
-   */
-  protected triggerPreStackNewImage(
-    imageId: string,
-    imageIdIndex: number
-  ): void {
-    const eventDetail: EventTypes.PreStackNewImageEventDetail = {
-      imageId,
-      imageIdIndex,
-      viewportId: this.id,
-      renderingEngineId: this.renderingEngineId,
-    };
-
-    triggerEvent(this.element, Events.PRE_STACK_NEW_IMAGE, eventDetail);
   }
 
   /**
@@ -1310,24 +1244,10 @@ class PlanarViewport extends GenericViewport<
   /**
    * Returns the current slice index for stack-like and slice-like workflows.
    *
-   * On a volume, with a `volumeId` of another volume of the viewport or with
-   * `useSlabThickness` while the source has a slab, it counts the steps of
-   * `scroll` with the same options instead, as the legacy volume viewport
-   * counts them: the step of that volume, or the slab thickness.
-   *
-   * @param volumeId - The volume whose spacing gives the step.
-   * @param useSlabThickness - Counts steps of the slab thickness.
-   * @returns The current zero-based image index or step index.
+   * @returns The current zero-based image index.
    */
-  getCurrentImageIdIndex(volumeId?: string, useSlabThickness = false): number {
-    const steps = this.getVolumeSliceSteps({
-      volumeId,
-      scrollSlabs: useSlabThickness,
-    });
-
-    return steps
-      ? countVolumeSliceSteps(steps).currentStepIndex
-      : this.getActiveImageIdIndex();
+  getCurrentImageIdIndex(): number {
+    return this.getActiveImageIdIndex();
   }
 
   /**
@@ -1360,23 +1280,9 @@ class PlanarViewport extends GenericViewport<
    * for a `PLANAR_NEXT` viewport (which is not a `StackViewport`, so it takes
    * the slice-count navigation branch).
    *
-   * With a `volumeId` or `useSlabThickness`, it gives the number of steps of
-   * `scroll` with the same options, as `getCurrentImageIdIndex` counts them.
-   *
-   * @param volumeId - The volume whose spacing gives the step.
-   * @param useSlabThickness - Counts steps of the slab thickness.
    * @returns The total slice count for the active source data.
    */
-  getNumberOfSlices(volumeId?: string, useSlabThickness = false): number {
-    const steps = this.getVolumeSliceSteps({
-      volumeId,
-      scrollSlabs: useSlabThickness,
-    });
-
-    if (steps) {
-      return countVolumeSliceSteps(steps).numScrollSteps + 1;
-    }
-
+  getNumberOfSlices(): number {
     const imageCount = this.getImageIds().length;
 
     // No source data mounted: report zero navigable slices. Without this guard
@@ -1422,7 +1328,6 @@ class PlanarViewport extends GenericViewport<
       | { scale?: number }
       | undefined;
 
-    this.shownCalibration = userCalibration;
     triggerEvent(this.element, Events.IMAGE_SPACING_CALIBRATED, {
       element: this.element,
       viewportId: this.id,
@@ -1436,50 +1341,6 @@ class PlanarViewport extends GenericViewport<
       scale: userCalibration?.scale,
     });
   }
-
-  /**
-   * Fires IMAGE_SPACING_CALIBRATED when a newly shown stack image has a user
-   * calibration (`calibratedPixelSpacing`) other than the image shown before,
-   * as the legacy stack viewport does when it shows such an image. The
-   * detail is the legacy one: the user calibration, its scale, the image
-   * data and its world to index matrix.
-   */
-  private readonly onStackNewImage = (
-    evt: EventTypes.StackNewImageEvent
-  ): void => {
-    const { image, imageId } = evt.detail;
-
-    if (!image || !imageId) {
-      return;
-    }
-
-    const calibration = metaData.get('calibratedPixelSpacing', imageId) as
-      | { scale?: number }
-      | undefined;
-
-    if (calibration === this.shownCalibration) {
-      return;
-    }
-
-    this.shownCalibration = calibration;
-
-    if (!calibration || this.suppressEvents) {
-      return;
-    }
-
-    const imageData = buildPlanarImageData(image);
-
-    triggerEvent(this.element, Events.IMAGE_SPACING_CALIBRATED, {
-      element: this.element,
-      viewportId: this.id,
-      renderingEngineId: this.renderingEngineId,
-      imageId,
-      calibration,
-      scale: calibration.scale,
-      imageData: imageData.imageData,
-      worldToIndex: getPlanarWorldToIndexMatrix(imageData),
-    });
-  };
 
   // ====================================================================
   // Public API -- camera & navigation
@@ -1510,6 +1371,12 @@ class PlanarViewport extends GenericViewport<
       ...this.viewState,
       ...viewStatePatch,
     };
+
+    if (Object.prototype.hasOwnProperty.call(viewStatePatch, 'orientation')) {
+      next.orientation = this.resolveNextOrientation(
+        viewStatePatch.orientation
+      );
+    }
 
     this.clearResolvedViewCache();
     this.viewState = this.normalizeViewState(next);
@@ -1644,7 +1511,10 @@ class PlanarViewport extends GenericViewport<
         this.getRenderPathDecisionOptions(
           dataId,
           options,
-          this.resolveRequestedOrientation(options.orientation),
+          this.resolveRequestedOrientation(
+            options.orientation,
+            dataSet.imageIds
+          ),
           props
         )
       );
@@ -1753,6 +1623,15 @@ class PlanarViewport extends GenericViewport<
       });
     }
   }
+
+  /**
+   * A hook of the legacy adapter, which fires IMAGE_LOAD_ERROR here. It runs
+   * when the load of an image of a stack fails for good. A next viewport does
+   * nothing here: the image loader fires IMAGE_LOAD_FAILED for the image.
+   */
+  protected onStackImageLoadError(
+    _failure: PlanarStackImageLoadFailure
+  ): void {}
 
   /**
    * A hook of the legacy adapter, which puts its `aspectRatio` and
@@ -2063,11 +1942,9 @@ class PlanarViewport extends GenericViewport<
   /**
    * Sets the active image index and resolves the corresponding image id.
    *
-   * On a stack it works as `setImageIdIndex` of the legacy stack viewport:
-   * PRE_STACK_NEW_IMAGE fires when the index changes, `getCurrentImageIdIndex`
-   * gives the new index at once, and the promise resolves once the image is
-   * shown or its load failed. Asking for the
-   * index that is shown resolves at once. Asking again for an index whose
+   * On a stack `getCurrentImageIdIndex` gives the new index at once, and the
+   * promise resolves once the image is shown or its load failed. Asking for
+   * the index that is shown resolves at once. Asking again for an index whose
    * image failed to load loads it again.
    *
    * @param imageIdIndex - Requested zero-based image index.
@@ -2108,15 +1985,12 @@ class PlanarViewport extends GenericViewport<
 
     const imageLoads = rendering as PlanarStackImageLoads | undefined;
 
-    if (this.getCurrentMode() === 'stack') {
-      if (clampedImageIdIndex !== this.getActiveImageIdIndex()) {
-        this.triggerPreStackNewImage(resolvedImageId, clampedImageIdIndex);
-      }
-
-      if (imageLoads?.failedImageIdIndex === clampedImageIdIndex) {
-        imageLoads.lastRequestedImageIdIndex = undefined;
-        imageLoads.failedImageIdIndex = undefined;
-      }
+    if (
+      this.getCurrentMode() === 'stack' &&
+      imageLoads?.failedImageIdIndex === clampedImageIdIndex
+    ) {
+      imageLoads.lastRequestedImageIdIndex = undefined;
+      imageLoads.failedImageIdIndex = undefined;
     }
 
     const loadRequestId = imageLoads?.loadRequestId;
@@ -2136,153 +2010,30 @@ class PlanarViewport extends GenericViewport<
   }
 
   /**
-   * Goes to an image index of a stack as a scroll of the legacy stack
-   * viewport: it fires STACK_VIEWPORT_SCROLL when the index changes.
-   *
-   * @param imageIdIndex - The index to go to.
-   * @param delta - The signed steps of the scroll, the `direction` of the
-   * event.
-   * @returns The resolved image id.
-   */
-  protected scrollToImageIdIndex(
-    imageIdIndex: number,
-    delta: number
-  ): Promise<string> {
-    const imageIds = this.getImageIds();
-    const currentImageIdIndex = this.getActiveImageIdIndex();
-    const nextImageIdIndex = Math.min(
-      Math.max(0, imageIdIndex),
-      this.getMaxImageIdIndex()
-    );
-    const imageIdPromise = this.setImageIdIndex(nextImageIdIndex);
-
-    if (imageIds.length && nextImageIdIndex !== currentImageIdIndex) {
-      const eventDetail: EventTypes.StackViewportScrollEventDetail = {
-        newImageIdIndex: nextImageIdIndex,
-        imageId: imageIds[nextImageIdIndex],
-        direction: delta,
-      };
-
-      triggerEvent(this.element, Events.STACK_VIEWPORT_SCROLL, eventDetail);
-    }
-
-    return imageIdPromise;
-  }
-
-  /**
-   * Scrolls by a signed number of steps. A step is one image or one slice of
-   * the source.
-   *
-   * On a volume, as the legacy volume viewport scrolls: `options.volumeId`
-   * names another volume of the viewport whose spacing along the view gives
-   * the step, and `options.scrollSlabs` makes the step the slab thickness of
-   * the source presentation when it has a slab. The slice then snaps to the
-   * steps of that volume. The second and third arguments hold the place of
-   * the debounce and loop flags of the scroll utility and have no effect.
+   * Scrolls by a signed number of steps. A step is one image of a stack or
+   * one slice of the source volume, and the scroll stops at the first and at
+   * the last one. `utilities.scroll` has the options of a scroll: a loop, a
+   * step of the slab thickness and a step of another volume.
    *
    * @param delta - Signed number of steps to move by.
-   * @param options - The volume and slab options of the step.
    * @returns The resolved image id after scrolling.
    */
-  scroll(
-    delta: number,
-    _debounce?: boolean,
-    _loop?: boolean,
-    options: PlanarScrollOptions = {}
-  ): Promise<string> {
-    const steps = this.getVolumeSliceSteps(options);
-
-    if (!steps && this.getCurrentMode() === 'stack') {
-      return this.scrollToImageIdIndex(
-        this.getActiveImageIdIndex() + delta,
-        delta
-      );
-    }
-
-    if (!steps) {
-      return this.setImageIdIndex(this.getActiveImageIdIndex() + delta);
-    }
-
-    const { camera, sliceRange, spacingInNormalDirection } = steps;
-    const { newFocalPoint } = snapFocalPointToSlice(
-      camera.focalPoint,
-      camera.position,
-      sliceRange,
-      camera.viewPlaneNormal,
-      spacingInNormalDirection,
-      delta
-    );
-
-    this.setViewState({
-      slice: { kind: 'volumePoint', sliceWorldPoint: newFocalPoint },
-    });
-
-    return Promise.resolve(this.getCurrentImageId());
+  scroll(delta: number): Promise<string> {
+    return this.setImageIdIndex(this.getActiveImageIdIndex() + delta);
   }
 
   /**
-   * The steps of a volume scroll with the options, or undefined when the
-   * scroll steps by slices of the source: on stack content, without a
-   * `volumeId` of another volume and without a slab to step by.
-   */
-  private getVolumeSliceSteps({
-    volumeId,
-    scrollSlabs,
-  }: PlanarScrollOptions): PlanarVolumeSliceSteps | undefined {
-    if (this.getCurrentMode() !== 'volume') {
-      return;
-    }
-
-    const sourceDataId = this.getSourceDataId();
-    const slabThickness = resolveSlabThickness(
-      sourceDataId
-        ? this.getDisplaySetPresentation(sourceDataId)?.slabThickness
-        : undefined
-    );
-    const stepsBySlab = Boolean(scrollSlabs) && slabThickness > 0;
-    const otherVolume =
-      Boolean(volumeId) &&
-      getVolumeIdOfSpecifier(volumeId) !== this.getVolumeId();
-
-    if (!stepsBySlab && !otherVolume) {
-      return;
-    }
-
-    const camera = this.getCameraForEvent();
-    const { imageVolume, spacingInNormalDirection } =
-      getTargetVolumeAndSpacingInNormalDir(
-        this as unknown as IVolumeViewport,
-        camera,
-        otherVolume ? volumeId : undefined
-      );
-    const sliceRange = imageVolume
-      ? getPlanarVolumeSliceRange(
-          imageVolume,
-          camera.viewPlaneNormal,
-          camera.focalPoint
-        )
-      : undefined;
-
-    if (!sliceRange) {
-      return;
-    }
-
-    return {
-      camera,
-      sliceRange,
-      spacingInNormalDirection: stepsBySlab
-        ? slabThickness
-        : spacingInNormalDirection,
-    };
-  }
-
-  /**
-   * Sets the planar orientation for volume-backed render modes.
+   * Sets the orientation of the view. It is `setViewState({ orientation })`:
+   * the same input gives the same view by either call.
    *
-   * @param orientation - Target acquisition-aligned orientation.
+   * In stack mode an orientation cannot change: a stack shows its images in
+   * their acquisition plane. The call then does nothing and does not throw.
+   * `canRenderOrientation` says beforehand whether the view can take one.
+   *
+   * @param orientation - The orientation of the view (see `PlanarOrientation`).
    */
-  setOrientation(orientation: PlanarSetOrientationInput): void {
-    this.setViewState({ orientation: this.resolveSetOrientation(orientation) });
+  setOrientation(orientation: PlanarOrientation): void {
+    this.setViewState({ orientation });
   }
 
   /**
@@ -2295,12 +2046,17 @@ class PlanarViewport extends GenericViewport<
    * (for example to enable/disable an MPR control) instead of relying on the
    * render-path decision service throwing on an unsupported request.
    *
+   * For a display set that is mounted in stack mode the answer is false for
+   * every orientation but the one of its images: a stack cannot change its
+   * orientation. For a display set that is not mounted it says whether a
+   * mount with that orientation would render.
+   *
    * @param orientation - The orientation to test.
    * @param dataId - Optional display set id; defaults to the active source.
    * @returns `true` when the orientation can be rendered for the data.
    */
   canRenderOrientation(
-    orientation: PlanarSetOrientationInput,
+    orientation: PlanarOrientation,
     dataId?: string
   ): boolean {
     const targetDataId = dataId ?? this.getSourceDataId();
@@ -2315,9 +2071,18 @@ class PlanarViewport extends GenericViewport<
       return false;
     }
 
-    return defaultPlanarRenderPathDecisionService.canRender(dataSet, {
-      orientation: this.resolveSetOrientation(orientation),
-    });
+    try {
+      return this.canShowOrientation(
+        targetDataId,
+        this.resolveOrientation(
+          orientation,
+          dataSet.imageIds,
+          this.getResolvedCameraForEvent()?.viewPlaneNormal
+        )
+      );
+    } catch {
+      return false;
+    }
   }
 
   /**
@@ -2568,10 +2333,6 @@ class PlanarViewport extends GenericViewport<
   }
 
   protected override onDestroy(): void {
-    this.element.removeEventListener(
-      Events.STACK_NEW_IMAGE,
-      this.onStackNewImage as EventListener
-    );
     this.clearResolvedViewCache();
     if (this.renderImageObjectDataId) {
       genericViewportDisplaySetMetadataProvider.remove(
@@ -3121,11 +2882,7 @@ class PlanarViewport extends GenericViewport<
       removeBindingsExcept: (keepDataIds) =>
         this.removeBindingsExcept(keepDataIds),
       setCameraOrientation: (orientation) => {
-        this.setViewState({
-          orientation: this.resolveSetOrientation(
-            orientation as PlanarSetOrientationInput
-          ),
-        });
+        this.setOrientation(orientation);
       },
       setDataPresentationState: (dataId, presentation) => {
         this.setDataPresentationState(dataId, presentation);
@@ -3355,27 +3112,12 @@ class PlanarViewport extends GenericViewport<
       resolvedOrientation
     );
     const selectedPath = selectPlanarRenderPath(dataSet, decisionOptions);
-
-    if (
-      options.role === 'source' &&
-      isImageRenderMode(selectedPath.renderMode)
-    ) {
-      const imageIdIndex = Math.min(
-        Math.max(0, dataSet.initialImageIdIndex ?? 0),
-        dataSet.imageIds.length - 1
-      );
-
-      this.triggerPreStackNewImage(
-        dataSet.imageIds[imageIdIndex],
-        imageIdIndex
-      );
-    }
-
     const data = await (this.dataProvider as PlanarDataProvider).load(dataId, {
       acquisitionOrientation: selectedPath.acquisitionOrientation,
       orientation: resolvedOrientation,
       renderMode: selectedPath.renderMode,
       volumeId: selectedPath.volumeId,
+      onStackImageLoadError: (failure) => this.onStackImageLoadError(failure),
     });
     const { renderMode, reason } = isVolumeRenderMode(selectedPath.renderMode)
       ? defaultPlanarRenderPathDecisionService.selectVolumeRenderModeForDataSet(
@@ -3511,69 +3253,125 @@ class PlanarViewport extends GenericViewport<
 
   /**
    * The orientation that the data set options or the viewport options ask
-   * for, or the acquisition plane. With the images of the data, a reformat
-   * name becomes the view vectors that `setOrientation` gives for it.
+   * for, or the acquisition plane, by the one rule of `resolveOrientation`.
+   * With the images of the data, a reformat name becomes their view vectors.
    */
   private resolveRequestedOrientation(
     orientation?: PlanarSetDataOptions['orientation'],
     imageIds?: string[]
   ): PlanarViewState['orientation'] {
-    const requested =
-      clonePlanarOrientation(
-        (orientation ??
-          (this.defaultOptions
-            .orientation as PlanarViewState['orientation'])) ||
-          OrientationAxis.ACQUISITION
-      ) || OrientationAxis.ACQUISITION;
-
-    if (typeof requested !== 'string' || !isReformatOrientation(requested)) {
-      return requested;
-    }
-
-    return getReformatVectorsOfImages(requested, imageIds) ?? requested;
+    return this.resolveOrientation(
+      (orientation ?? (this.defaultOptions.orientation as PlanarOrientation)) ||
+        OrientationAxis.ACQUISITION,
+      imageIds
+    );
   }
 
-  private resolveSetOrientation(
-    orientation: PlanarSetOrientationInput
+  /**
+   * The orientation that the view state keeps for an orientation that a
+   * caller asks for. It is the one rule for the orientation option of a
+   * display set and of the viewport, for `setOrientation` and for
+   * `setViewState({ orientation })`.
+   *
+   * ACQUISITION, AXIAL, CORONAL, SAGITTAL and view vectors stay as given. A
+   * reformat name becomes the view vectors of the images: their axes matched
+   * to the patient axis of the name. REFORMAT takes the patient axis closest
+   * to `viewPlaneNormal`, the view on display, and without one the axis
+   * closest to the acquisition. For images without an image orientation a
+   * name becomes its patient axis, and REFORMAT the acquisition plane.
+   */
+  private resolveOrientation(
+    orientation: PlanarOrientation | undefined,
+    imageIds?: string[],
+    viewPlaneNormal?: Point3
   ): PlanarViewState['orientation'] {
-    if (typeof orientation !== 'string') {
-      return (
-        clonePlanarOrientation(
-          resolvePlanarSetOrientationVectors(
-            orientation,
-            this.getCameraForEvent()?.viewUp
-          )
-        ) || OrientationAxis.ACQUISITION
-      );
+    if (
+      typeof orientation !== 'string' ||
+      !isReformatOrientation(orientation)
+    ) {
+      return clonePlanarOrientation(orientation) || OrientationAxis.ACQUISITION;
     }
 
-    if (!isReformatOrientation(orientation)) {
-      return orientation as PlanarViewState['orientation'];
-    }
+    return (
+      getReformatVectorsOfImages(orientation, imageIds, viewPlaneNormal) ??
+      getBaseReformatOrientation(orientation) ??
+      OrientationAxis.ACQUISITION
+    );
+  }
 
-    const baseOrientation = getBaseReformatOrientation(orientation);
-    const cameraVectors = getCameraVectors(
-      {
-        getActors: () => this.getActors(),
-        getCamera: () => this.getCameraForEvent(),
-        getCurrentImageId: () => this.getCurrentImageId(),
-        getImageIds: () => this.getImageIds(),
-        type: ViewportType.ORTHOGRAPHIC,
-      },
-      {
-        useViewportNormal: true,
-        ...(baseOrientation ? { orientation: baseOrientation } : {}),
-      }
+  /**
+   * The orientation of the view state after `setViewState` or
+   * `setOrientation` gave one. In stack mode an orientation that the stack
+   * cannot show changes nothing: the state keeps the orientation that it
+   * has. Otherwise it is the orientation by the rule of
+   * `resolveOrientation`, with the view on display for REFORMAT.
+   */
+  private resolveNextOrientation(
+    orientation: PlanarOrientation | undefined
+  ): PlanarViewState['orientation'] {
+    const sourceDataId = this.getSourceDataId();
+    const resolved = this.resolveOrientation(
+      orientation,
+      this.getImageIds(),
+      this.getResolvedCameraForEvent()?.viewPlaneNormal
     );
 
-    if (cameraVectors) {
-      return {
-        viewPlaneNormal: cameraVectors.viewPlaneNormal,
-        viewUp: cameraVectors.viewUp,
-      };
+    if (
+      sourceDataId &&
+      resolved !== OrientationAxis.ACQUISITION &&
+      this.getCurrentMode() === 'stack' &&
+      !this.canShowOrientation(sourceDataId, resolved)
+    ) {
+      return this.viewState.orientation;
     }
 
-    return baseOrientation || this.viewState.orientation;
+    return resolved;
+  }
+
+  /**
+   * Whether a display set can show an orientation as it is mounted. A volume
+   * shows every orientation that its data can render. A stack shows its
+   * images in their acquisition plane, so it shows an orientation only when
+   * that keeps the image path that draws it. A display set that is not
+   * mounted answers for a mount with that orientation.
+   */
+  private canShowOrientation(
+    dataId: string,
+    orientation: PlanarViewState['orientation']
+  ): boolean {
+    const dataSet = this.getDataSet(dataId);
+    const binding = this.getBinding(dataId);
+
+    if (
+      !dataSet ||
+      !defaultPlanarRenderPathDecisionService.canRender(dataSet, {
+        orientation,
+      })
+    ) {
+      return false;
+    }
+
+    if (!binding || !isImageRenderMode(binding.rendering.renderMode)) {
+      return true;
+    }
+
+    try {
+      return isImageRenderMode(
+        selectPlanarRenderPath(
+          dataSet,
+          this.getRenderPathDecisionOptions(
+            dataId,
+            {
+              ...(this.mountOptionsByDataId.get(dataId) ?? {}),
+              role: binding.role,
+            },
+            orientation
+          )
+        ).renderMode
+      );
+    } catch {
+      return false;
+    }
   }
 
   protected removeBindingsExcept(keepDataIds: Set<string>): void {
@@ -3955,35 +3753,6 @@ type PlanarStackInputImageData = {
   };
 };
 
-/**
- * The number of steps and the current step of a volume scroll, as the
- * legacy `getVolumeViewportScrollInfo` counts them.
- */
-function countVolumeSliceSteps({
-  sliceRange,
-  spacingInNormalDirection,
-}: PlanarVolumeSliceSteps): {
-  numScrollSteps: number;
-  currentStepIndex: number;
-} {
-  const { min, max, current } = sliceRange;
-  const range = max - min;
-
-  if (range === 0) {
-    return { numScrollSteps: 0, currentStepIndex: 0 };
-  }
-
-  const numScrollSteps = Math.round(range / spacingInNormalDirection);
-  const currentStepIndex = Math.round(
-    ((current - min) / range) * numScrollSteps
-  );
-
-  return {
-    numScrollSteps,
-    currentStepIndex: Number.isFinite(currentStepIndex) ? currentStepIndex : 0,
-  };
-}
-
 function cloneViewportOptions(
   options: PlanarViewportInputOptions = {}
 ): PlanarViewportInputOptions {
@@ -3991,7 +3760,7 @@ function cloneViewportOptions(
 }
 
 function getBaseReformatOrientation(
-  orientation: PlanarSetOrientationInput
+  orientation: PlanarOrientation
 ):
   | OrientationAxis.AXIAL
   | OrientationAxis.CORONAL
@@ -4012,12 +3781,14 @@ function getBaseReformatOrientation(
 /**
  * The view vectors of a reformat name for a series of images, as the legacy
  * volume viewport gives them: the axes of the acquisition matched to the base
- * axis of the name, or to the axis closest to the acquisition for REFORMAT.
- * Undefined when the first image has no image orientation.
+ * axis of the name. REFORMAT takes the axis closest to `viewPlaneNormal`, or
+ * to the acquisition without one. Undefined when the first image has no image
+ * orientation.
  */
 function getReformatVectorsOfImages(
-  orientation: PlanarSetOrientationInput,
-  imageIds: string[] | undefined
+  orientation: PlanarOrientation,
+  imageIds: string[] | undefined,
+  viewPlaneNormal?: Point3
 ): OrientationVectors | undefined {
   const imageOrientationPatient = imageIds?.[0]
     ? metaData.get(MetadataModules.IMAGE_PLANE, imageIds[0])
@@ -4039,20 +3810,23 @@ function getReformatVectorsOfImages(
     imageOrientationPatient[5]
   );
   const scanAxis = vec3.cross(vec3.create(), rowCosine, columnCosine);
-  const { viewPlaneNormal, viewUp } = calculateCameraPosition(
+  const cameraVectors = calculateCameraPosition(
     rowCosine,
     columnCosine,
     scanAxis,
     getBaseReformatOrientation(orientation) ??
-      getOrientationFromScanAxisNormal(scanAxis)
+      getOrientationFromScanAxisNormal(
+        viewPlaneNormal ? vec3.clone(viewPlaneNormal as vec3) : scanAxis
+      )
   );
 
-  return { viewPlaneNormal, viewUp };
+  return {
+    viewPlaneNormal: cameraVectors.viewPlaneNormal,
+    viewUp: cameraVectors.viewUp,
+  };
 }
 
-function isReformatOrientation(
-  orientation: PlanarSetOrientationInput
-): boolean {
+function isReformatOrientation(orientation: PlanarOrientation): boolean {
   return (
     orientation === OrientationAxis.REFORMAT ||
     orientation === OrientationAxis.AXIAL_REFORMAT ||

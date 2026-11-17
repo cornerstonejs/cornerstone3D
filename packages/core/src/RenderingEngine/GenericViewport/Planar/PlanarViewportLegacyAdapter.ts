@@ -7,6 +7,7 @@ import {
 import type {
   ActorEntry,
   CPUIImageData,
+  EventTypes,
   ICamera,
   IImage,
   IImageData,
@@ -16,13 +17,16 @@ import type {
   Point3,
   ReferenceCompatibleOptions,
   Scaling,
+  ScrollOptions,
   ViewReference,
   ViewReferenceSpecifier,
 } from '../../../types';
 import { ActorRenderMode } from '../../../types';
 import type BlendModes from '../../../enums/BlendModes';
+import Events from '../../../enums/Events';
 import InterpolationType from '../../../enums/InterpolationType';
 import MetadataModules from '../../../enums/MetadataModules';
+import eventTarget from '../../../eventTarget';
 import { getShouldUseCPURendering } from '../../../init';
 import * as metaData from '../../../metaData';
 import { getValidVOILUTFunction } from '../../../utilities/buildMetadata';
@@ -30,19 +34,29 @@ import clonePoint3 from '../../../utilities/clonePoint3';
 import getClosestImageId from '../../../utilities/getClosestImageId';
 import hasOwn from '../../../utilities/hasOwn';
 import imageIdToURI from '../../../utilities/imageIdToURI';
+import {
+  countPlanarVolumeScrollSteps,
+  getPlanarVolumeScrollSteps,
+  scrollPlanarVolumeSteps,
+} from '../../../utilities/scroll';
 import transformWorldToIndex from '../../../utilities/transformWorldToIndex';
+import triggerEvent from '../../../utilities/triggerEvent';
 import genericViewportDisplaySetMetadataProvider from '../../../utilities/genericViewportDisplaySetMetadataProvider';
 import { viewportProjection } from '../viewportProjection';
 import { isPointNearImagePlane } from '../genericViewportReferenceCompatibility';
+import {
+  buildPlanarImageData,
+  getPlanarWorldToIndexMatrix,
+} from './planarImageData';
 import {
   getPlanarLegacyScaling,
   getPlanarLegacySliceViewInfo,
   type PlanarLegacyViewportProperties,
 } from './planarLegacyCompatibility';
 import PlanarLegacyCompatibilityController from './PlanarLegacyCompatibilityController';
+import { resolvePlanarSetOrientationVectors } from './planarOrientationVectors';
 import PlanarViewport, {
   type PlanarResetViewStateOptions,
-  type PlanarScrollOptions,
 } from './PlanarViewport';
 import type { PlanarScaleInput } from './planarCameraScale';
 import { getPlanarViewStateCanvasDimensions } from './PlanarResolvedView';
@@ -50,10 +64,13 @@ import { getFitParallelScaleFromWorldSize } from './planarSliceBasis';
 import { cloneDisplayArea } from './planarViewState';
 import { coreLog } from '../../../utilities/logger';
 import type {
+  PlanarOrientation,
   PlanarResolvedICamera,
+  PlanarStackImageLoadFailure,
   PlanarViewPresentation,
   PlanarViewPresentationSelector,
   PlanarViewState,
+  PlanarViewportInput,
 } from './PlanarViewportTypes';
 
 const log = coreLog.getLogger('RenderingEngine', 'PlanarViewportLegacyAdapter');
@@ -72,6 +89,17 @@ class PlanarViewportLegacyAdapter extends PlanarViewport {
 
   /** The animation frame of the CPU draw that `render` asked for. */
   private cpuRenderFrame: number | undefined;
+
+  /** The user calibration of the stack image shown last. */
+  private shownCalibration?: unknown;
+
+  constructor(args: PlanarViewportInput) {
+    super(args);
+    this.element.addEventListener(
+      Events.STACK_NEW_IMAGE,
+      this.onStackNewImage as EventListener
+    );
+  }
 
   /** The legacy viewports keep their 4.x display, so no acquired frames. */
   protected override prefersAcquiredFrames(): boolean {
@@ -153,6 +181,25 @@ class PlanarViewportLegacyAdapter extends PlanarViewport {
     }
 
     this.setViewState(viewStatePatch);
+  }
+
+  /**
+   * Sets the orientation of the view. View vectors are taken as the legacy
+   * volume viewport takes them: a given view up becomes orthogonal to the
+   * normal, and without one the current view up stays when it is orthogonal
+   * to the normal, a normal along x or y takes [0, 0, 1], a normal along z
+   * takes [0, -1, 0], and any other normal takes the current view up made
+   * orthogonal to it. A name is taken as the next viewport takes it.
+   */
+  override setOrientation(orientation: PlanarOrientation): void {
+    super.setOrientation(
+      typeof orientation === 'string'
+        ? orientation
+        : resolvePlanarSetOrientationVectors(
+            orientation,
+            this.getCameraForEvent()?.viewUp
+          )
+    );
   }
 
   /**
@@ -494,6 +541,28 @@ class PlanarViewportLegacyAdapter extends PlanarViewport {
   }
 
   /**
+   * Sets the image index as the next viewport does. In stack mode it first
+   * fires PRE_STACK_NEW_IMAGE when the index changes, as the legacy stack
+   * viewport does before it loads the image.
+   */
+  setImageIdIndex(imageIdIndex: number): Promise<string> {
+    const imageIds = this.getImageIds();
+
+    if (this.getCurrentMode() === 'stack' && imageIds.length) {
+      const index = Math.min(
+        Math.max(0, imageIdIndex),
+        this.getMaxImageIdIndex()
+      );
+
+      if (index !== this.getTargetImageIdIndex()) {
+        this.triggerPreStackNewImage(imageIds[index], index);
+      }
+    }
+
+    return super.setImageIdIndex(imageIdIndex);
+  }
+
+  /**
    * Whether a view reference can be shown, as the next viewport answers. In
    * stack mode `asNearbyProjection` takes a reference by a focal point only
    * as viewable when the point lies within half a slice spacing of the image
@@ -687,27 +756,39 @@ class PlanarViewportLegacyAdapter extends PlanarViewport {
    * Scrolls by a number of slices.
    *
    * In stack mode it scrolls as the legacy stack viewport: from the target
-   * index, clamped to the stack or wrapped when `loop` is set, and the
-   * planar viewport fires STACK_VIEWPORT_SCROLL when the index changes. The
-   * next viewport has no debounce, so the second argument has no effect.
+   * index, clamped to the stack or wrapped when `loop` is set, and it fires
+   * STACK_VIEWPORT_SCROLL when the index changes. The next viewport has no
+   * debounce, so the second argument has no effect.
    *
-   * In volume mode the planar viewport scrolls with the options, as the
-   * legacy volume viewport. Without options, as a direct call of the legacy
-   * `scroll` method, it steps by the slab thickness when a slab is set.
+   * In volume mode it scrolls with the options, as the legacy volume
+   * viewport: `volumeId` names another volume of the viewport whose spacing
+   * along the view gives the step, and `scrollSlabs` makes the step the slab
+   * thickness when a slab is set. The slice then snaps to those steps.
+   * Without options, as a direct call of the legacy `scroll` method, it
+   * steps by the slab thickness when a slab is set. It does not loop, as the
+   * legacy volume viewport does not.
    */
   scroll(
     delta: number,
     _debounce = true,
     loop = false,
-    options?: PlanarScrollOptions
+    options?: Pick<ScrollOptions, 'volumeId' | 'scrollSlabs'>
   ): Promise<string> {
     const mode = this.getCurrentMode();
 
     if (mode === 'volume') {
-      return super.scroll(delta, _debounce, loop, {
+      const steps = getPlanarVolumeScrollSteps(this, {
         scrollSlabs: true,
         ...options,
       });
+
+      if (!steps) {
+        return super.scroll(delta);
+      }
+
+      scrollPlanarVolumeSteps(this, steps, delta);
+
+      return Promise.resolve(this.getCurrentImageId());
     }
 
     const imageIds = this.getImageIds();
@@ -719,22 +800,141 @@ class PlanarViewportLegacyAdapter extends PlanarViewport {
     const currentIndex = this.getTargetImageIdIndex();
     const nextIndex = loop
       ? (currentIndex + delta + imageIds.length) % imageIds.length
-      : currentIndex + delta;
+      : Math.max(0, Math.min(imageIds.length - 1, currentIndex + delta));
+    const imageIdPromise = this.setImageIdIndex(nextIndex);
 
-    return this.scrollToImageIdIndex(nextIndex, delta);
+    if (nextIndex !== currentIndex) {
+      const eventDetail: EventTypes.StackViewportScrollEventDetail = {
+        newImageIdIndex: nextIndex,
+        imageId: imageIds[nextIndex],
+        direction: delta,
+      };
+
+      triggerEvent(this.element, Events.STACK_VIEWPORT_SCROLL, eventDetail);
+    }
+
+    return imageIdPromise;
   }
 
   /**
    * The current image index, or in volume mode the step index of a scroll,
    * which counts steps of the slab thickness by default when a slab is set,
-   * as the legacy volume viewport counts them.
+   * as the legacy volume viewport counts them. A `volumeId` of another
+   * volume of the viewport counts the steps of that volume.
    */
   override getCurrentImageIdIndex(
     volumeId?: string,
     useSlabThickness = true
   ): number {
-    return super.getCurrentImageIdIndex(volumeId, useSlabThickness);
+    const steps = getPlanarVolumeScrollSteps(this, {
+      volumeId,
+      scrollSlabs: useSlabThickness,
+    });
+
+    return steps
+      ? countPlanarVolumeScrollSteps(steps).currentStepIndex
+      : super.getCurrentImageIdIndex();
   }
+
+  /**
+   * The number of slices of the view. In volume mode, with a `volumeId` of
+   * another volume of the viewport or with `useSlabThickness` while a slab is
+   * set, it is the number of steps of a scroll with the same options, as
+   * `getCurrentImageIdIndex` counts them.
+   */
+  override getNumberOfSlices(
+    volumeId?: string,
+    useSlabThickness = false
+  ): number {
+    const steps = getPlanarVolumeScrollSteps(this, {
+      volumeId,
+      scrollSlabs: useSlabThickness,
+    });
+
+    return steps
+      ? countPlanarVolumeScrollSteps(steps).numScrollSteps + 1
+      : super.getNumberOfSlices();
+  }
+
+  private triggerPreStackNewImage(imageId: string, imageIdIndex: number): void {
+    const eventDetail: EventTypes.PreStackNewImageEventDetail = {
+      imageId,
+      imageIdIndex,
+      viewportId: this.id,
+      renderingEngineId: this.renderingEngineId,
+    };
+
+    triggerEvent(this.element, Events.PRE_STACK_NEW_IMAGE, eventDetail);
+  }
+
+  /**
+   * Fires IMAGE_LOAD_ERROR on the event target when the load of an image of
+   * the stack fails for good, with the detail of the legacy stack viewport:
+   * the error, the image id and its index.
+   */
+  protected override onStackImageLoadError(
+    failure: PlanarStackImageLoadFailure
+  ): void {
+    triggerEvent(eventTarget, Events.IMAGE_LOAD_ERROR, {
+      error: failure.error,
+      imageIdIndex: failure.imageIdIndex,
+      imageId: failure.imageId,
+    });
+  }
+
+  /**
+   * Applies the calibration of an image as the next viewport does, and keeps
+   * it as the calibration shown, so that the image fires no second
+   * IMAGE_SPACING_CALIBRATED when it shows.
+   */
+  override calibrateSpacing(imageId: string): void {
+    this.shownCalibration = metaData.get('calibratedPixelSpacing', imageId);
+    super.calibrateSpacing(imageId);
+  }
+
+  /**
+   * Fires IMAGE_SPACING_CALIBRATED when a newly shown stack image has a user
+   * calibration (`calibratedPixelSpacing`) other than the image shown before,
+   * as the legacy stack viewport does when it shows such an image. The
+   * detail is the legacy one: the user calibration, its scale, the image
+   * data and its world to index matrix.
+   */
+  private readonly onStackNewImage = (
+    evt: EventTypes.StackNewImageEvent
+  ): void => {
+    const { image, imageId } = evt.detail;
+
+    if (!image || !imageId) {
+      return;
+    }
+
+    const calibration = metaData.get('calibratedPixelSpacing', imageId) as
+      | { scale?: number }
+      | undefined;
+
+    if (calibration === this.shownCalibration) {
+      return;
+    }
+
+    this.shownCalibration = calibration;
+
+    if (!calibration || this.suppressEvents) {
+      return;
+    }
+
+    const imageData = buildPlanarImageData(image);
+
+    triggerEvent(this.element, Events.IMAGE_SPACING_CALIBRATED, {
+      element: this.element,
+      viewportId: this.id,
+      renderingEngineId: this.renderingEngineId,
+      imageId,
+      calibration,
+      scale: calibration.scale,
+      imageData: imageData.imageData,
+      worldToIndex: getPlanarWorldToIndexMatrix(imageData),
+    });
+  };
 
   private getLegacyImageId(): string | undefined {
     return this.getCurrentImageId() ?? this.getImageIds()[0];
@@ -948,11 +1148,19 @@ class PlanarViewportLegacyAdapter extends PlanarViewport {
 
   /**
    * Shows a stack of images. As the legacy stack viewport, it fires
-   * PRE_STACK_NEW_IMAGE before the first image loads, through the mount of
-   * the planar viewport, and VIEWPORT_NEW_IMAGE_SET once the first image is
-   * shown.
+   * PRE_STACK_NEW_IMAGE before the first image loads and
+   * VIEWPORT_NEW_IMAGE_SET once the first image is shown.
    */
   async setStack(imageIds: string[], currentImageIdIndex = 0): Promise<string> {
+    if (imageIds.length) {
+      const index = Math.min(
+        Math.max(0, currentImageIdIndex),
+        imageIds.length - 1
+      );
+
+      this.triggerPreStackNewImage(imageIds[index], index);
+    }
+
     const imageId = await this.legacyCompatibility.setStack(
       imageIds,
       currentImageIdIndex
@@ -1115,6 +1323,10 @@ class PlanarViewportLegacyAdapter extends PlanarViewport {
       this.cpuRenderFrame = undefined;
     }
 
+    this.element.removeEventListener(
+      Events.STACK_NEW_IMAGE,
+      this.onStackNewImage as EventListener
+    );
     this.legacyCompatibility.destroy();
     super.onDestroy();
   }

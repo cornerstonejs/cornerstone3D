@@ -1,6 +1,14 @@
 import * as cornerstone3D from '../src/index';
 import * as csTools3d from '../../tools/src/index';
 import * as testUtils from '../../../utils/test/testUtils';
+import {
+  createNextViewport,
+  createSeries,
+  showStack as showSeriesStack,
+  showVolume as showSeriesVolume,
+  sliceNormal,
+  waitFor,
+} from './utils/planarSeriesBothModes';
 
 const { Enums, volumeLoader, utilities, getConfiguration, cache, eventTarget } =
   cornerstone3D;
@@ -555,58 +563,66 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
   });
 
   describe('calibration', () => {
-    it('fires IMAGE_SPACING_CALIBRATED when a newly shown image has a new calibration, as the legacy stack viewport', async function () {
+    /** The image ids of 3 images, of which the second has a user calibration. */
+    function createCalibratedImageIds(viewport) {
+      const imageIds = [64, 32, 64].map((columns, sliceIndex) =>
+        testUtils.encodeImageIdInfo({
+          loader: 'fakeImageLoader',
+          name: `${viewport.id}CalibrationURI`,
+          rows: 32,
+          columns,
+          barStart: 10,
+          barWidth: 5,
+          xSpacing: 1,
+          ySpacing: 1,
+          sliceIndex,
+        })
+      );
+
+      utilities.calibratedPixelSpacingMetadataProvider.add(imageIds[1], {
+        rowPixelSpacing: 0.5,
+        columnPixelSpacing: 0.5,
+        scale: 2,
+        type: Enums.CalibrationTypes.USER,
+      });
+
+      return imageIds;
+    }
+
+    /** Records what IMAGE_SPACING_CALIBRATED gives for the images. */
+    function recordCalibrationEvents(viewport, imageIds) {
+      const events = [];
+
+      viewport.element.addEventListener(
+        Events.IMAGE_SPACING_CALIBRATED,
+        (evt) => {
+          const { worldToIndex } = evt.detail;
+
+          events.push({
+            imageIdIndex: imageIds.indexOf(evt.detail.imageId),
+            viewportId: evt.detail.viewportId,
+            scale: evt.detail.scale,
+            calibrationScale: evt.detail.calibration?.scale,
+            hasImageData: Boolean(evt.detail.imageData),
+            worldToIndexOfPoint: worldToIndex
+              ? [
+                  worldToIndex[0] * 10 + worldToIndex[4] * 4 + worldToIndex[12],
+                  worldToIndex[1] * 10 + worldToIndex[5] * 4 + worldToIndex[13],
+                ].map((value) => Math.round(value * 1000) / 1000)
+              : undefined,
+          });
+        }
+      );
+
+      return events;
+    }
+
+    it('fires IMAGE_SPACING_CALIBRATED on the legacy adapter when a newly shown image has a new calibration, as the legacy stack viewport', async function () {
       const results = [];
 
-      for (const viewport of createPair(renderingEngine, {
-        legacyType: ViewportType.STACK,
-        orientation: OrientationAxis.ACQUISITION,
-      })) {
-        const imageIds = [64, 32, 64].map((columns, sliceIndex) =>
-          testUtils.encodeImageIdInfo({
-            loader: 'fakeImageLoader',
-            name: `${viewport.id}CalibrationURI`,
-            rows: 32,
-            columns,
-            barStart: 10,
-            barWidth: 5,
-            xSpacing: 1,
-            ySpacing: 1,
-            sliceIndex,
-          })
-        );
-        const events = [];
-
-        utilities.calibratedPixelSpacingMetadataProvider.add(imageIds[1], {
-          rowPixelSpacing: 0.5,
-          columnPixelSpacing: 0.5,
-          scale: 2,
-          type: Enums.CalibrationTypes.USER,
-        });
-        viewport.element.addEventListener(
-          Events.IMAGE_SPACING_CALIBRATED,
-          (evt) => {
-            const { worldToIndex } = evt.detail;
-
-            events.push({
-              imageIdIndex: imageIds.indexOf(evt.detail.imageId),
-              viewportId: evt.detail.viewportId,
-              scale: evt.detail.scale,
-              calibrationScale: evt.detail.calibration?.scale,
-              hasImageData: Boolean(evt.detail.imageData),
-              worldToIndexOfPoint: worldToIndex
-                ? [
-                    worldToIndex[0] * 10 +
-                      worldToIndex[4] * 4 +
-                      worldToIndex[12],
-                    worldToIndex[1] * 10 +
-                      worldToIndex[5] * 4 +
-                      worldToIndex[13],
-                  ].map((value) => Math.round(value * 1000) / 1000)
-                : undefined,
-            });
-          }
-        );
+      for (const viewport of createStackAdapterPair(renderingEngine)) {
+        const imageIds = createCalibratedImageIds(viewport);
+        const events = recordCalibrationEvents(viewport, imageIds);
 
         await showStack(viewport, imageIds);
 
@@ -618,13 +634,174 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
         results.push(events);
       }
 
-      const [legacy, next] = results;
+      const [legacy, adapter] = results;
 
       expect(legacy.map(({ imageIdIndex }) => imageIdIndex)).toEqual([1]);
       expect(legacy[0].scale).toBe(2);
-      expect(next).toEqual(
-        legacy.map((event) => ({ ...event, viewportId: 'next' }))
+      expect(adapter).toEqual(
+        legacy.map((event) => ({ ...event, viewportId: 'adapter' }))
       );
+    });
+
+    it('fires IMAGE_SPACING_CALIBRATED on a direct next viewport from calibrateSpacing, and not when an image shows', async function () {
+      const viewport = enableViewport(renderingEngine, {
+        viewportId: 'next',
+        type: ViewportType.PLANAR_NEXT,
+        orientation: OrientationAxis.ACQUISITION,
+      });
+      const imageIds = createCalibratedImageIds(viewport);
+      const events = recordCalibrationEvents(viewport, imageIds);
+
+      await showStack(viewport, imageIds);
+
+      for (const imageIdIndex of [1, 2, 1]) {
+        await viewport.setImageIdIndex(imageIdIndex);
+        await renderAndWait(viewport);
+      }
+
+      expect(events).toEqual([]);
+      expect(viewport.getImageData().calibration.scale).toBe(2);
+
+      viewport.calibrateSpacing(imageIds[1]);
+
+      expect(events).toEqual([
+        {
+          imageIdIndex: 1,
+          viewportId: 'next',
+          scale: 2,
+          calibrationScale: 2,
+          hasImageData: true,
+          worldToIndexOfPoint: [10, 4],
+        },
+      ]);
+    });
+  });
+
+  describe('the events of a slice change on a direct next viewport', () => {
+    const sliceEvents = [
+      Events.CAMERA_MODIFIED,
+      Events.STACK_NEW_IMAGE,
+      Events.VOLUME_NEW_IMAGE,
+      Events.PRE_STACK_NEW_IMAGE,
+      Events.STACK_VIEWPORT_SCROLL,
+    ];
+
+    /** Records the slice events of an element, each with its detail. */
+    function recordSliceEvents(element) {
+      const events = [];
+
+      sliceEvents.forEach((name) => {
+        element.addEventListener(name, (evt) => {
+          events.push({ name, detail: evt.detail });
+        });
+      });
+
+      return events;
+    }
+
+    /** The details that the recorded events of one name gave. */
+    function detailsOf(events, name) {
+      return events
+        .filter((event) => event.name === name)
+        .map(({ detail }) => detail);
+    }
+
+    /** How far the camera of a CAMERA_MODIFIED detail moved along a normal. */
+    function cameraStepAlong(detail, normal) {
+      const { camera, previousCamera } = detail;
+
+      return camera.focalPoint.reduce(
+        (sum, value, axis) =>
+          sum + (value - previousCamera.focalPoint[axis]) * normal[axis],
+        0
+      );
+    }
+
+    it('fires CAMERA_MODIFIED and STACK_NEW_IMAGE in stack mode, and none of the legacy stack events', async function () {
+      const series = await createSeries();
+      const viewport = createNextViewport(renderingEngine, 'next');
+
+      await showSeriesStack(viewport, series, 2);
+
+      const events = recordSliceEvents(viewport.element);
+
+      await viewport.scroll(1);
+      await waitFor(() => detailsOf(events, Events.STACK_NEW_IMAGE).length > 0);
+      await renderAndWait(viewport);
+
+      const [cameraDetail] = detailsOf(events, Events.CAMERA_MODIFIED);
+
+      expect(viewport.getCurrentMode()).toBe('stack');
+      expect(viewport.getCurrentImageIdIndex()).toBe(3);
+      expect(detailsOf(events, Events.STACK_NEW_IMAGE)).toEqual([
+        {
+          image: jasmine.objectContaining({ imageId: series.imageIds[3] }),
+          imageId: series.imageIds[3],
+          imageIdIndex: 3,
+          viewportId: 'next',
+          renderingEngineId,
+        },
+      ]);
+      expect(cameraDetail).toEqual(
+        jasmine.objectContaining({
+          element: viewport.element,
+          viewportId: 'next',
+          renderingEngineId,
+        })
+      );
+      expect(detailsOf(events, Events.VOLUME_NEW_IMAGE)).toEqual([]);
+      expect(detailsOf(events, Events.PRE_STACK_NEW_IMAGE)).toEqual([]);
+      expect(detailsOf(events, Events.STACK_VIEWPORT_SCROLL)).toEqual([]);
+    });
+
+    it('fires CAMERA_MODIFIED, VOLUME_NEW_IMAGE and STACK_NEW_IMAGE in volume mode, and none of the legacy stack events', async function () {
+      const series = await createSeries();
+      const viewport = createNextViewport(renderingEngine, 'next');
+
+      await showSeriesVolume(viewport, series, 2);
+
+      const events = recordSliceEvents(viewport.element);
+      const indexBefore = viewport.getCurrentImageIdIndex();
+
+      await viewport.scroll(1);
+      await waitFor(
+        () => detailsOf(events, Events.VOLUME_NEW_IMAGE).length > 0
+      );
+      await renderAndWait(viewport);
+
+      const [cameraDetail] = detailsOf(events, Events.CAMERA_MODIFIED);
+
+      expect(viewport.getCurrentMode()).toBe('volume');
+      expect(viewport.getCurrentImageIdIndex()).toBe(indexBefore + 1);
+      expect(detailsOf(events, Events.VOLUME_NEW_IMAGE)).toEqual([
+        {
+          imageIndex: indexBefore + 1,
+          numberOfSlices: series.size.slices,
+          viewportId: 'next',
+          renderingEngineId,
+        },
+      ]);
+      expect(detailsOf(events, Events.STACK_NEW_IMAGE)).toEqual([
+        {
+          image: undefined,
+          imageId: jasmine.any(String),
+          imageIdIndex: indexBefore + 1,
+          viewportId: 'next',
+          renderingEngineId,
+        },
+      ]);
+      expect(cameraDetail).toEqual(
+        jasmine.objectContaining({
+          element: viewport.element,
+          viewportId: 'next',
+          renderingEngineId,
+        })
+      );
+      expect(
+        Math.abs(cameraStepAlong(cameraDetail, sliceNormal(series)))
+      ).toBeCloseTo(series.size.sliceSpacing, 4);
+      expect(detailsOf(events, Events.PRE_STACK_NEW_IMAGE)).toEqual([]);
+      expect(detailsOf(events, Events.STACK_VIEWPORT_SCROLL)).toEqual([]);
     });
   });
 

@@ -4,10 +4,14 @@ import { mat4, vec3 } from 'gl-matrix';
 import * as metaData from '../../../metaData';
 import type { CPUIImageData, IImage, Point3 } from '../../../types';
 import { getImageDataMetadata } from '../../../utilities/getImageDataMetadata';
+import { getPlanarLegacyScaling } from './planarLegacyCompatibility';
 
 /**
  * The image data of a stack image as the planar viewports give it from
  * `getImageData`, for the GPU and the CPU image paths.
+ *
+ * `scaling` is the scaling of the image, or for a PT image without one the
+ * PT scaling of its scaling module, as a volume of the same series gives it.
  */
 export function buildPlanarImageData(
   image: IImage,
@@ -81,7 +85,9 @@ export function buildPlanarImageData(
       },
     },
     scalarData,
-    scaling: image.scaling,
+    scaling:
+      image.scaling ??
+      (modality === 'PT' ? getPlanarLegacyScaling(image.imageId) : undefined),
     hasPixelSpacing: Boolean(image.rowPixelSpacing || image.columnPixelSpacing),
     calibration,
     preScale: image.preScale,

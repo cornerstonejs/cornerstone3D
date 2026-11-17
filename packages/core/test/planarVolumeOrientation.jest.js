@@ -1,4 +1,8 @@
 import * as cornerstone3D from '../src/index';
+import {
+  fakeImageLoader,
+  fakeMetaDataProvider,
+} from '../../../utils/test/testUtilsImageLoader';
 import { describe, it, expect, afterEach } from '@jest/globals';
 import PlanarViewport from '../src/RenderingEngine/GenericViewport/Planar/PlanarViewport';
 import genericViewportDisplaySetMetadataProvider from '../src/utilities/genericViewportDisplaySetMetadataProvider';
@@ -13,6 +17,7 @@ const {
   cache,
   volumeLoader,
   metaData,
+  imageLoader,
 } = cornerstone3D;
 const { OrientationAxis } = Enums;
 
@@ -266,4 +271,265 @@ describe('reformat names in the options of a direct next planar viewport', () =>
       expectSameDirection(camera.viewUp, expected.viewUp);
     });
   }
+});
+
+describe('one rule for the orientation of a direct next planar viewport', () => {
+  let renderingEngine;
+
+  afterEach(() => {
+    renderingEngine?.destroy();
+    renderingEngine = undefined;
+    setUseCPURendering(false);
+    cache.purgeCache();
+    metaData.removeAllProviders();
+    imageLoader.unregisterAllImageLoaders();
+  });
+
+  /** The three ways to give an orientation to a viewport that shows a volume. */
+  const ways = {
+    'the option of the display set': async (viewport, volume, orientation) => {
+      await showVolume(viewport, volume, { orientation });
+    },
+    setOrientation: async (viewport, volume, orientation) => {
+      await showVolume(viewport, volume, {
+        orientation: OrientationAxis.ACQUISITION,
+      });
+      viewport.setOrientation(orientation);
+    },
+    'setViewState({ orientation })': async (viewport, volume, orientation) => {
+      await showVolume(viewport, volume, {
+        orientation: OrientationAxis.ACQUISITION,
+      });
+      viewport.setViewState({ orientation });
+    },
+  };
+
+  /**
+   * Gives a tilted volume the orientation in one of the three ways, on a new
+   * viewport, and gives the view vectors and the orientation of the state.
+   */
+  async function getView(way, orientation, volumeId) {
+    const created = createViewport({
+      orientation: OrientationAxis.ACQUISITION,
+    });
+
+    await ways[way](
+      created.viewport,
+      createVolume(volumeId, TILT),
+      orientation
+    );
+
+    const { viewPlaneNormal, viewUp } = created.viewport.getCameraForEvent();
+    const state = created.viewport.getViewState().orientation;
+
+    created.renderingEngine.destroy();
+    cache.purgeCache();
+    metaData.removeAllProviders();
+
+    return { viewPlaneNormal, viewUp, state };
+  }
+
+  for (const name of [
+    OrientationAxis.AXIAL_REFORMAT,
+    OrientationAxis.CORONAL_REFORMAT,
+    OrientationAxis.SAGITTAL_REFORMAT,
+    OrientationAxis.REFORMAT,
+  ]) {
+    it(`gives the same view for ${name} in volume mode by the option, by setOrientation and by setViewState`, async () => {
+      const views = [];
+
+      for (const way of Object.keys(ways)) {
+        views.push(await getView(way, name, `${name}-${views.length}`));
+      }
+
+      const [byOption, bySetOrientation, bySetViewState] = views;
+
+      expect(typeof byOption.state).toBe('object');
+      expectSameDirection(
+        byOption.state.viewPlaneNormal,
+        byOption.viewPlaneNormal
+      );
+
+      for (const view of [bySetOrientation, bySetViewState]) {
+        expect(typeof view.state).toBe('object');
+        expectSameDirection(view.viewPlaneNormal, byOption.viewPlaneNormal);
+        expectSameDirection(view.viewUp, byOption.viewUp);
+      }
+    });
+  }
+
+  it('takes for REFORMAT the axis closest to the view on display, by setOrientation and by setViewState', async () => {
+    const expected = await getView(
+      'setOrientation',
+      OrientationAxis.SAGITTAL_REFORMAT,
+      'closest-expected'
+    );
+
+    for (const set of ['setOrientation', 'setViewState']) {
+      let viewport;
+
+      ({ renderingEngine, viewport } = createViewport());
+      await showVolume(viewport, createVolume(`closest-${set}`, TILT));
+      viewport.setOrientation(OrientationAxis.SAGITTAL);
+
+      if (set === 'setOrientation') {
+        viewport.setOrientation(OrientationAxis.REFORMAT);
+      } else {
+        viewport.setViewState({ orientation: OrientationAxis.REFORMAT });
+      }
+
+      const camera = viewport.getCameraForEvent();
+
+      expectSameDirection(camera.viewPlaneNormal, expected.viewPlaneNormal);
+      expectSameDirection(camera.viewUp, expected.viewUp);
+      renderingEngine.destroy();
+      renderingEngine = undefined;
+      cache.purgeCache();
+      metaData.removeAllProviders();
+    }
+  });
+
+  const SQRT_HALF = Math.sqrt(0.5);
+  const vectorInputs = {
+    'a normal and a view up': {
+      viewPlaneNormal: [SQRT_HALF, SQRT_HALF, 0],
+      viewUp: [0, 0, 1],
+    },
+    'a normal without a view up': { viewPlaneNormal: [0, 0, -1] },
+  };
+
+  Object.entries(vectorInputs).forEach(([name, orientation]) => {
+    it(`gives the same view for ${name} in volume mode by setOrientation and by setViewState`, async () => {
+      const bySetOrientation = await getView(
+        'setOrientation',
+        orientation,
+        'vectors-set-orientation'
+      );
+      const bySetViewState = await getView(
+        'setViewState({ orientation })',
+        orientation,
+        'vectors-set-view-state'
+      );
+
+      expectSameDirection(
+        bySetOrientation.viewPlaneNormal,
+        orientation.viewPlaneNormal
+      );
+      expectSameDirection(
+        bySetOrientation.viewPlaneNormal,
+        bySetViewState.viewPlaneNormal
+      );
+      expectSameDirection(bySetOrientation.viewUp, bySetViewState.viewUp);
+      expect(bySetOrientation.state).toEqual(bySetViewState.state);
+    });
+  });
+
+  it('takes a view up that is not orthogonal to the normal the same way by setOrientation and by setViewState: both throw', async () => {
+    const orientation = { viewPlaneNormal: [0, 0, -1], viewUp: [0, -1, 0.5] };
+    let viewport;
+
+    ({ renderingEngine, viewport } = createViewport());
+    await showVolume(viewport, createVolume('not-orthogonal', TILT));
+
+    const before = viewport.getViewState().orientation;
+
+    expect(() => viewport.setOrientation(orientation)).toThrow(
+      /must be orthogonal/
+    );
+    expect(() => viewport.setViewState({ orientation })).toThrow(
+      /must be orthogonal/
+    );
+    expect(viewport.getViewState().orientation).toEqual(before);
+  });
+
+  /** Shows a stack of four images of the fake image loader on the viewport. */
+  async function showStack(viewport) {
+    const imageIds = [0, 1, 2, 3].map(
+      (sliceIndex) =>
+        `fakeImageLoader:${encodeURIComponent(
+          JSON.stringify({
+            loader: 'fakeImageLoader',
+            name: 'orientationStack',
+            rows: 16,
+            columns: 16,
+            barStart: 2,
+            barWidth: 4,
+            xSpacing: 1,
+            ySpacing: 1,
+            sliceIndex,
+          })
+        )}`
+    );
+
+    imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader);
+    metaData.addProvider(fakeMetaDataProvider, 10000);
+    genericViewportDisplaySetMetadataProvider.add('orientation:stack', {
+      kind: 'planar',
+      imageIds,
+      initialImageIdIndex: 1,
+    });
+    await viewport.setDisplaySets({ displaySetId: 'orientation:stack' });
+
+    return imageIds;
+  }
+
+  it('leaves the view of a stack as it is for every orientation, without a throw, and says that a stack renders its acquisition only', async () => {
+    let viewport;
+
+    ({ renderingEngine, viewport } = createViewport());
+
+    const imageIds = await showStack(viewport);
+    const before = viewport.getCameraForEvent();
+    const orientations = [
+      OrientationAxis.SAGITTAL,
+      OrientationAxis.CORONAL,
+      OrientationAxis.SAGITTAL_REFORMAT,
+      OrientationAxis.REFORMAT,
+      { viewPlaneNormal: [1, 0, 0], viewUp: [0, 0, 1] },
+    ];
+
+    expect(viewport.getCurrentMode()).toBe('stack');
+
+    for (const orientation of orientations) {
+      for (const set of [
+        () => viewport.setOrientation(orientation),
+        () => viewport.setViewState({ orientation }),
+      ]) {
+        expect(set).not.toThrow();
+
+        const camera = viewport.getCameraForEvent();
+
+        expect(viewport.getCurrentMode()).toBe('stack');
+        expect(viewport.getCurrentImageId()).toBe(imageIds[1]);
+        expect(viewport.getViewState().orientation).toBe(
+          OrientationAxis.ACQUISITION
+        );
+        expectSameDirection(camera.viewPlaneNormal, before.viewPlaneNormal);
+        expectSameDirection(camera.viewUp, before.viewUp);
+      }
+
+      expect(viewport.canRenderOrientation(orientation)).toBe(false);
+    }
+
+    expect(viewport.canRenderOrientation(OrientationAxis.ACQUISITION)).toBe(
+      true
+    );
+  });
+
+  it('says for a volume which orientations it can render', async () => {
+    let viewport;
+
+    ({ renderingEngine, viewport } = createViewport());
+    await showVolume(viewport, createVolume('can-render', TILT));
+
+    for (const orientation of [
+      OrientationAxis.ACQUISITION,
+      OrientationAxis.SAGITTAL,
+      OrientationAxis.CORONAL_REFORMAT,
+      OrientationAxis.REFORMAT,
+      { viewPlaneNormal: [1, 0, 0], viewUp: [0, 0, 1] },
+    ]) {
+      expect(viewport.canRenderOrientation(orientation)).toBe(true);
+    }
+  });
 });

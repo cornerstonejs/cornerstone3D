@@ -347,10 +347,12 @@ export class CpuImageSliceRenderPath
           rendering,
         });
       },
-      onError: () => {
+      onError: (failure) => {
         if (requestId === rendering.loadRequestId) {
           rendering.failedImageIdIndex = nextImageIdIndex;
         }
+
+        ctx.viewport.onStackImageLoadError?.(failure);
       },
     });
   }

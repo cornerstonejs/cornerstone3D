@@ -10,6 +10,7 @@ import type {
   PlanarDataLoadOptions,
   PlanarPayload,
   PlanarRegisteredDataSet,
+  PlanarStackImageLoadFailure,
 } from './PlanarViewportTypes';
 import { loadPlanarStackImage } from './planarStackImageLoad';
 
@@ -100,7 +101,11 @@ export class DefaultPlanarDataProvider implements PlanarDataProvider {
       dataSet.image &&
       dataSet.image.imageId === dataSet.imageIds[clampedImageIdIndex]
         ? dataSet.image
-        : await loadFirstStackImage(dataSet.imageIds, clampedImageIdIndex);
+        : await loadFirstStackImage(
+            dataSet.imageIds,
+            clampedImageIdIndex,
+            options.onStackImageLoadError
+          );
 
     return {
       id: dataId,
@@ -153,18 +158,22 @@ function isPlanarRegisteredDataSet(
  * Loads the first image of a stack as the legacy stack viewport loads it,
  * through `loadPlanarStackImage`. It resolves with the first image that
  * arrives, before the better stages of a progressive load, and rejects when
- * the load fails.
+ * the load fails. `onError` then gets the failure first.
  */
 function loadFirstStackImage(
   imageIds: string[],
-  imageIdIndex: number
+  imageIdIndex: number,
+  onError?: (failure: PlanarStackImageLoadFailure) => void
 ): Promise<IImage> {
   return new Promise((resolve, reject) => {
     void loadPlanarStackImage({
       imageIds,
       imageIdIndex,
       onImage: resolve,
-      onError: reject,
+      onError: (failure) => {
+        onError?.(failure);
+        reject(failure.error);
+      },
     });
   });
 }

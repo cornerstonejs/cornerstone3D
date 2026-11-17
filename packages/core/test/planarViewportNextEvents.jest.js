@@ -5,6 +5,7 @@ import {
 } from '../../../utils/test/testUtilsImageLoader';
 import { describe, it, expect, afterEach } from '@jest/globals';
 import PlanarViewport from '../src/RenderingEngine/GenericViewport/Planar/PlanarViewport';
+import PlanarViewportLegacyAdapter from '../src/RenderingEngine/GenericViewport/Planar/PlanarViewportLegacyAdapter';
 import genericViewportDisplaySetMetadataProvider from '../src/utilities/genericViewportDisplaySetMetadataProvider';
 import renderingEngineCache from '../src/RenderingEngine/renderingEngineCache';
 
@@ -131,9 +132,14 @@ function createLegacy(element, defaultOptions = {}) {
 /**
  * Makes a direct next planar viewport on a stand-in rendering engine. A real
  * rendering engine needs WebGL for a planar viewport, which jsdom lacks; the
- * CPU render paths draw without it.
+ * CPU render paths draw without it. `ViewportClass` makes the legacy adapter
+ * of the planar viewport the same way.
  */
-function createNext(element, defaultOptions = {}) {
+function createNext(
+  element,
+  defaultOptions = {},
+  ViewportClass = PlanarViewport
+) {
   const renderer = { getActiveCamera: () => ({ setParallelProjection() {} }) };
   let viewport;
   const renderingEngine = {
@@ -148,7 +154,7 @@ function createNext(element, defaultOptions = {}) {
   };
 
   renderingEngineCache.set(renderingEngine);
-  viewport = new PlanarViewport({
+  viewport = new ViewportClass({
     id: 'next',
     element,
     renderingEngineId: renderingEngine.id,
@@ -256,7 +262,7 @@ describe('Direct next planar viewport events and image loads against the legacy 
   });
 
   describe('new data', () => {
-    it('fires PRE_STACK_NEW_IMAGE, STACK_NEW_IMAGE and VIEWPORT_NEW_IMAGE_SET when a stack is shown, as the legacy setStack', async () => {
+    it('fires STACK_NEW_IMAGE and VIEWPORT_NEW_IMAGE_SET when a stack is shown, and not the PRE_STACK_NEW_IMAGE of the legacy setStack', async () => {
       const imageIds = createImageIds();
       const recorded = [];
 
@@ -274,9 +280,13 @@ describe('Direct next planar viewport events and image loads against the legacy 
         `${Events.STACK_NEW_IMAGE}:1`,
         `${Events.VIEWPORT_NEW_IMAGE_SET}:1`,
       ]);
-      expect(next.events).toEqual(legacy.events);
-      expect(next.details[Events.PRE_STACK_NEW_IMAGE]).toEqual({
-        ...legacy.details[Events.PRE_STACK_NEW_IMAGE],
+      expect(next.events).toEqual([
+        `${Events.STACK_NEW_IMAGE}:1`,
+        `${Events.VIEWPORT_NEW_IMAGE_SET}:1`,
+      ]);
+      expect(next.details[Events.STACK_NEW_IMAGE]).toEqual({
+        ...legacy.details[Events.STACK_NEW_IMAGE],
+        image: expect.objectContaining({ imageId: imageIds[1] }),
         viewportId: 'next',
         renderingEngineId: expect.any(String),
       });
@@ -292,7 +302,7 @@ describe('Direct next planar viewport events and image loads against the legacy 
   });
 
   describe('stack events', () => {
-    it('fires PRE_STACK_NEW_IMAGE before an image changes and STACK_VIEWPORT_SCROLL on a scroll, as the legacy stack viewport', async () => {
+    it('fires CAMERA_MODIFIED and STACK_NEW_IMAGE when the image changes, and neither PRE_STACK_NEW_IMAGE nor STACK_VIEWPORT_SCROLL of the legacy stack viewport', async () => {
       const imageIds = createImageIds();
       const recorded = [];
 
@@ -300,28 +310,32 @@ describe('Direct next planar viewport events and image loads against the legacy 
         const { element } = viewport;
         const record = recordEvents(element);
         const steps = {};
+        let cameraEvents = 0;
 
         await showStack(viewport, imageIds, 1);
         record.events.splice(0);
+        element.addEventListener(Events.CAMERA_MODIFIED, () => cameraEvents++);
 
         const setIndexImage = waitForNewImage(element, 3);
         await viewport.setImageIdIndex(3);
         await setIndexImage;
         steps.setImageIdIndex = record.events.splice(0);
+        steps.setImageIdIndexCameraEvents = cameraEvents;
 
         await viewport.setImageIdIndex(3);
         steps.sameIndex = record.events.splice(0);
+        cameraEvents = 0;
 
         const scrollImage = waitForNewImage(element, 2);
         viewport.scroll(-1, false);
         await scrollImage;
         steps.scroll = record.events.splice(0);
-        steps.scrollDetail = record.details[Events.STACK_VIEWPORT_SCROLL];
-        steps.preDetail = record.details[Events.PRE_STACK_NEW_IMAGE];
+        steps.scrollCameraEvents = cameraEvents;
 
         viewport.scroll(5, false);
         steps.scrollPastEnd = record.events.splice(0);
         await settle();
+        steps.index = viewport.getCurrentImageIdIndex();
         recorded.push(steps);
       }
 
@@ -337,41 +351,114 @@ describe('Direct next planar viewport events and image loads against the legacy 
         `${Events.STACK_NEW_IMAGE}:2`,
       ]);
       expect(next).toEqual({
-        ...legacy,
-        preDetail: {
-          ...legacy.preDetail,
-          viewportId: 'next',
-          renderingEngineId: next.preDetail?.renderingEngineId,
-        },
+        setImageIdIndex: [`${Events.STACK_NEW_IMAGE}:3`],
+        setImageIdIndexCameraEvents: 1,
+        sameIndex: [],
+        scroll: [`${Events.STACK_NEW_IMAGE}:2`],
+        scrollCameraEvents: 1,
+        scrollPastEnd: [],
+        index: 3,
       });
+      expect(legacy.index).toBe(3);
     });
   });
 
   describe('a failed image load', () => {
-    it('fires IMAGE_LOAD_ERROR with the legacy detail', async () => {
+    it('fires IMAGE_LOAD_FAILED of the image loader, and not the IMAGE_LOAD_ERROR of the legacy stack viewport', async () => {
       const imageIds = createImageIds({ fail: [2] });
-      const details = [];
-      const listener = (evt) => details.push(evt.detail);
+      const recorded = [];
 
-      eventTarget.addEventListener(Events.IMAGE_LOAD_ERROR, listener);
+      for (const viewport of createPair()) {
+        const events = [];
+        const onFailed = (evt) =>
+          events.push({ name: Events.IMAGE_LOAD_FAILED, detail: evt.detail });
+        const onError = (evt) =>
+          events.push({ name: Events.IMAGE_LOAD_ERROR, detail: evt.detail });
 
-      try {
-        for (const viewport of createPair()) {
+        eventTarget.addEventListener(Events.IMAGE_LOAD_FAILED, onFailed);
+        eventTarget.addEventListener(Events.IMAGE_LOAD_ERROR, onError);
+
+        try {
           await showStack(viewport, imageIds, 0);
           await viewport.setImageIdIndex(2).catch(() => undefined);
           await settle();
+        } finally {
+          eventTarget.removeEventListener(Events.IMAGE_LOAD_FAILED, onFailed);
+          eventTarget.removeEventListener(Events.IMAGE_LOAD_ERROR, onError);
         }
-      } finally {
-        eventTarget.removeEventListener(Events.IMAGE_LOAD_ERROR, listener);
+
+        recorded.push(events);
+        cache.purgeCache();
       }
 
-      expect(details.length).toBe(2);
-      expect(details[1]).toEqual(details[0]);
-      expect(details[0]).toEqual({
-        error: expect.any(Error),
-        imageIdIndex: 2,
-        imageId: imageIds[2],
-      });
+      const [legacy, next] = recorded;
+      const failed = {
+        name: Events.IMAGE_LOAD_FAILED,
+        detail: { imageId: imageIds[2], error: expect.any(Error) },
+      };
+
+      expect(legacy).toEqual(
+        expect.arrayContaining([
+          failed,
+          {
+            name: Events.IMAGE_LOAD_ERROR,
+            detail: {
+              error: expect.any(Error),
+              imageIdIndex: 2,
+              imageId: imageIds[2],
+            },
+          },
+        ])
+      );
+      expect(next).toEqual([failed]);
+    });
+
+    it('fires IMAGE_LOAD_ERROR on the legacy adapter, with the detail of the legacy stack viewport', async () => {
+      const recorded = [];
+
+      for (const useAdapter of [false, true]) {
+        const element = setUpCore();
+        const { renderingEngine, viewport } = useAdapter
+          ? createNext(element, {}, PlanarViewportLegacyAdapter)
+          : createLegacy(element);
+        const details = [];
+        const listener = (evt) => details.push(evt.detail);
+
+        renderingEngines.push(renderingEngine);
+        eventTarget.addEventListener(Events.IMAGE_LOAD_ERROR, listener);
+
+        try {
+          await viewport.setStack(createImageIds({ fail: [2] }), 0);
+          await viewport.setImageIdIndex(2).catch(() => undefined);
+          await settle();
+          cache.purgeCache();
+          await viewport
+            .setStack(createImageIds({ name: 'firstURI', fail: [1] }), 1)
+            .catch(() => undefined);
+          await settle();
+        } finally {
+          eventTarget.removeEventListener(Events.IMAGE_LOAD_ERROR, listener);
+        }
+
+        recorded.push(details);
+        cache.purgeCache();
+      }
+
+      const [legacy, adapter] = recorded;
+
+      expect(legacy).toEqual([
+        {
+          error: expect.any(Error),
+          imageIdIndex: 2,
+          imageId: createImageIds({ fail: [2] })[2],
+        },
+        {
+          error: expect.any(Error),
+          imageIdIndex: 1,
+          imageId: createImageIds({ name: 'firstURI', fail: [1] })[1],
+        },
+      ]);
+      expect(adapter).toEqual(legacy);
     });
 
     it('leaves no unhandled rejection', async () => {

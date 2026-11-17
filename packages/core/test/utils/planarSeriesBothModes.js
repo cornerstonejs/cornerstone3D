@@ -111,12 +111,14 @@ function seriesMetaDataProvider(type, imageId) {
  * Loads one series of images whose voxel values differ along each axis, and
  * makes a volume of the same images. Call it after the test environment is
  * set up. Gives the image ids in the order of the slices of the volume, the
- * volume id, the plane and the size.
+ * volume id, the plane and the size. `info` adds fields to the image ids of
+ * the fake image loader, `PT: true` for a PT series.
  */
 export async function createSeries({
   plane = STRAIGHT_PLANE,
   id = 'bothModes',
   size = SERIES_SIZE,
+  info = {},
 } = {}) {
   metaData.addProvider(seriesMetaDataProvider, 20000);
 
@@ -134,6 +136,7 @@ export async function createSeries({
       sliceIndex,
       plane,
       size,
+      ...info,
     })
   );
   const images = await Promise.all(
