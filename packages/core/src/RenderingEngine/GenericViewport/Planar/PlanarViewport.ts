@@ -63,10 +63,7 @@ import type {
   ViewportDataReference,
 } from '../ViewportArchitectureTypes';
 import GenericViewport from '../GenericViewport';
-import {
-  isPointNearImagePlane,
-  type GenericViewportReferenceContext,
-} from '../genericViewportReferenceCompatibility';
+import type { GenericViewportReferenceContext } from '../genericViewportReferenceCompatibility';
 import {
   getGenericViewportImageDisplaySet,
   isGenericViewportImageDisplaySet,
@@ -113,7 +110,6 @@ import {
 import {
   createPlanarCpuVolumeSliceBasis,
   createPlanarVolumeSliceBasis,
-  getFitParallelScaleFromWorldSize,
   getPlanarVolumeSliceRange,
   getVolumeImageIdIndexWorldPoint,
 } from './planarSliceBasis';
@@ -203,7 +199,7 @@ type ResolvedViewCache = {
   viewState: PlanarViewState;
 };
 
-type PlanarResetViewStateOptions = {
+export type PlanarResetViewStateOptions = {
   resetPan?: boolean;
   resetZoom?: boolean;
   resetOrientation?: boolean;
@@ -352,8 +348,6 @@ class PlanarViewport extends GenericViewport<
   suppressEvents = false;
   /** Set when a render path draws in `render()` instead of the engine. */
   private drewOutsideEngine = false;
-  /** The display set whose invert the presentation change in progress turns. */
-  private invertTurnedDataId?: string;
   /** The user calibration of the stack image shown last. */
   private shownCalibration?: unknown;
 
@@ -798,7 +792,7 @@ class PlanarViewport extends GenericViewport<
     }
 
     if (role === 'source') {
-      this.applyOptionsViewState();
+      this.applyLegacyOptionsViewState();
       // Emit an initial CAMERA_MODIFIED for the source binding only, mirroring
       // legacy StackViewport's first-image triggerCameraEvent. Overlays and
       // orientation markers paint their first frame off this event. Trigger the
@@ -1265,9 +1259,6 @@ class PlanarViewport extends GenericViewport<
           VOILUTFunction: props.voiLUTFunction ?? presentation?.voiLUTFunction,
           invert: props.invert ?? presentation?.invert,
           colormap: presentation?.colormap,
-          ...(this.invertTurnedDataId === displaySetId
-            ? { invertStateChanged: true }
-            : {}),
         });
       }
     }
@@ -1285,9 +1276,7 @@ class PlanarViewport extends GenericViewport<
    * Merges a presentation change as the base class does, with `colormap`
    * merged one level deep: a colormap that names only some of its fields
    * keeps the stored others, so the name stays when only the opacity
-   * changes. It also notes when the change turns the invert of the display
-   * set, so that VOI_MODIFIED carries `invertStateChanged` as on the legacy
-   * volume viewport.
+   * changes.
    */
   protected override mergeDataPresentation(
     displaySetId: string,
@@ -1299,20 +1288,8 @@ class PlanarViewport extends GenericViewport<
       changes.colormap && storedColormap
         ? { ...changes, colormap: { ...storedColormap, ...changes.colormap } }
         : changes;
-    const isInverted = (presentation?: Partial<PlanarDataPresentation>) =>
-      Boolean(presentation?.invert ?? this.getDefaultInvert(displaySetId));
-    const turnsInvert =
-      'invert' in props &&
-      isInverted(props) !==
-        isInverted(this.getDisplaySetPresentation(displaySetId));
 
-    this.invertTurnedDataId = turnsInvert ? displaySetId : undefined;
-
-    try {
-      return super.mergeDataPresentation(displaySetId, props);
-    } finally {
-      this.invertTurnedDataId = undefined;
-    }
+    return super.mergeDataPresentation(displaySetId, props);
   }
 
   getDefaultVOIRange(dataId?: string): VOIRange | undefined {
@@ -1778,143 +1755,15 @@ class PlanarViewport extends GenericViewport<
   }
 
   /**
-   * The stretch of the view as `[widthRatio, heightRatio]`, as the legacy
-   * `getAspectRatio`: the ratio of the horizontal to the vertical scale of
-   * the view state, so `[1, 1]` when the view is not stretched.
+   * A hook of the legacy adapter, which puts its `aspectRatio` and
+   * `displayArea` options into the view state here. It runs once the source
+   * display set is mounted, and in a reset with the flags of that reset, each
+   * time before the camera event. A next viewport does nothing here: its
+   * view state is what the application sets.
    */
-  override getAspectRatio(): Point2 {
-    const [scaleX, scaleY] = this.getScale();
-
-    return scaleY ? [scaleX / scaleY, 1] : [1, 1];
-  }
-
-  /**
-   * Stretches the view by an aspect ratio `[widthRatio, heightRatio]`, as the
-   * legacy `setAspectRatio`: the horizontal scale stays, unless `fit` is set,
-   * which fits the stretched image into the canvas. `storeAsInitialCamera`
-   * keeps the aspect ratio in the options, so that `resetViewState` applies
-   * it again.
-   */
-  setAspectRatio(
-    aspectRatio: Point2,
-    options: { fit?: boolean; storeAsInitialCamera?: boolean } = {}
-  ): void {
-    const scale = this.getAspectRatioScale(aspectRatio, Boolean(options.fit));
-
-    if (!scale) {
-      return;
-    }
-
-    if (options.storeAsInitialCamera) {
-      this.options = {
-        ...this.options,
-        aspectRatio: [...aspectRatio] as Point2,
-      };
-    }
-
-    this.setViewState({ scale });
-  }
-
-  /**
-   * The scale of the view state for an aspect ratio: the horizontal scale is
-   * the vertical one times `widthRatio / heightRatio`. Without `fit` the
-   * horizontal scale of the view stays, as the legacy viewports keep it;
-   * with `fit` the scale fits the stretched image, as the legacy viewports
-   * fit an image with an aspect ratio.
-   */
-  private getAspectRatioScale(
-    aspectRatio: Point2,
-    fit: boolean
-  ): Point2 | undefined {
-    const [widthRatio, heightRatio] = aspectRatio ?? [];
-
-    if (!(widthRatio > 0 && heightRatio > 0)) {
-      return;
-    }
-
-    const stretch = widthRatio / heightRatio;
-
-    if (!fit) {
-      const [scaleX] = this.getScale();
-
-      return [scaleX, scaleX / stretch];
-    }
-
-    const scaleY = this.getStretchedFitScale(stretch);
-
-    return [scaleY * stretch, scaleY];
-  }
-
-  /**
-   * The vertical scale, against the fit of the image, at which the image
-   * stretched horizontally by `stretch` fits into the canvas.
-   */
-  private getStretchedFitScale(stretch: number): number {
-    const sliceBasis = this.getResolvedView()?.getSliceBasis();
-
-    if (!sliceBasis) {
-      return 1;
-    }
-
-    const { width, height } = this.getCurrentCanvasDimensions();
-    const getFit = (widthStretch: number) =>
-      getFitParallelScaleFromWorldSize({
-        canvasWidth: width,
-        canvasHeight: height,
-        widthWorld: sliceBasis.sliceWidthWorld * widthStretch,
-        heightWorld: sliceBasis.sliceHeightWorld,
-      });
-
-    return getFit(1) / getFit(stretch);
-  }
-
-  /**
-   * The view state of the `aspectRatio` and `displayArea` options, as the
-   * legacy `resetCamera` applies them: the fitted stretch of the aspect
-   * ratio, and with `withDisplayArea` the display area.
-   */
-  private getOptionsViewState(
-    withDisplayArea: boolean
-  ): Partial<PlanarViewState> {
-    const { aspectRatio, displayArea } = this.options;
-    const viewState: Partial<PlanarViewState> = {};
-    const scale = aspectRatio
-      ? this.getAspectRatioScale(aspectRatio, true)
-      : undefined;
-
-    if (withDisplayArea && displayArea) {
-      viewState.anchorCanvas = [0.5, 0.5];
-      viewState.anchorWorld = undefined;
-      viewState.displayArea = cloneDisplayArea(displayArea);
-      viewState.scale = scale ?? [1, 1];
-      viewState.scaleMode = displayArea.scaleMode ?? 'fit';
-    } else if (scale) {
-      viewState.scale = scale;
-    }
-
-    return viewState;
-  }
-
-  /**
-   * Puts the `aspectRatio` and `displayArea` options into the view state
-   * once the source is mounted, as the legacy viewports apply them when they
-   * show their first image. It fires no camera event: the mount fires one.
-   */
-  private applyOptionsViewState(): void {
-    const optionsViewState = this.getOptionsViewState(true);
-
-    if (!Object.keys(optionsViewState).length) {
-      return;
-    }
-
-    this.clearResolvedViewCache();
-    this.viewState = this.normalizeViewState({
-      ...this.viewState,
-      ...optionsViewState,
-    });
-    this.updateBindingsCameraState();
-    this.render();
-  }
+  protected applyLegacyOptionsViewState(
+    _reset?: PlanarResetViewStateOptions
+  ): void {}
 
   /** @deprecated Legacy shim for `getZoom()`. */
   getZoom(): number {
@@ -2197,10 +2046,8 @@ class PlanarViewport extends GenericViewport<
    * Returns whether a view reference is spatially compatible with this
    * viewport.
    *
-   * As on the legacy stack viewport, `asOverlay` takes an image that is not
-   * in the stack but lies on the image shown as viewable, and on a stack
-   * `asNearbyProjection` takes a reference by a focal point only as viewable
-   * when the point lies within half a slice spacing of the image shown.
+   * `asOverlay` takes an image that is not in the stack but lies on the image
+   * shown as viewable.
    *
    * @param viewRef - View reference to test.
    * @param options - Optional compatibility flags for the spatial check.
@@ -2210,25 +2057,7 @@ class PlanarViewport extends GenericViewport<
     viewRef: ViewReference,
     options: ReferenceCompatibleOptions = {}
   ): boolean {
-    const isViewable = super.isReferenceViewable(viewRef, options);
-
-    if (
-      !isViewable ||
-      !options.asNearbyProjection ||
-      !viewRef.cameraFocalPoint ||
-      viewRef.referencedImageId ||
-      viewRef.volumeId ||
-      viewRef.FrameOfReferenceUID ||
-      this.getCurrentMode() !== 'stack'
-    ) {
-      return isViewable;
-    }
-
-    const imageData = this.getImageData() as CPUIImageData | undefined;
-
-    return Boolean(
-      imageData && isPointNearImagePlane(viewRef.cameraFocalPoint, imageData)
-    );
+    return super.isReferenceViewable(viewRef, options);
   }
 
   /**
@@ -2236,8 +2065,8 @@ class PlanarViewport extends GenericViewport<
    *
    * On a stack it works as `setImageIdIndex` of the legacy stack viewport:
    * PRE_STACK_NEW_IMAGE fires when the index changes, `getCurrentImageIdIndex`
-   * and `getTargetImageIdIndex` give the new index at once, and the promise
-   * resolves once the image is shown or its load failed. Asking for the
+   * gives the new index at once, and the promise resolves once the image is
+   * shown or its load failed. Asking for the
    * index that is shown resolves at once. Asking again for an index whose
    * image failed to load loads it again.
    *
@@ -2280,7 +2109,7 @@ class PlanarViewport extends GenericViewport<
     const imageLoads = rendering as PlanarStackImageLoads | undefined;
 
     if (this.getCurrentMode() === 'stack') {
-      if (clampedImageIdIndex !== this.getTargetImageIdIndex()) {
+      if (clampedImageIdIndex !== this.getActiveImageIdIndex()) {
         this.triggerPreStackNewImage(resolvedImageId, clampedImageIdIndex);
       }
 
@@ -2307,15 +2136,6 @@ class PlanarViewport extends GenericViewport<
   }
 
   /**
-   * The image index that the viewport goes to. On a stack this is the index
-   * of the last request, as `getTargetImageIdIndex` of the legacy stack
-   * viewport. Otherwise it is the current image index.
-   */
-  getTargetImageIdIndex(): number {
-    return this.getActiveImageIdIndex();
-  }
-
-  /**
    * Goes to an image index of a stack as a scroll of the legacy stack
    * viewport: it fires STACK_VIEWPORT_SCROLL when the index changes.
    *
@@ -2329,7 +2149,7 @@ class PlanarViewport extends GenericViewport<
     delta: number
   ): Promise<string> {
     const imageIds = this.getImageIds();
-    const currentImageIdIndex = this.getTargetImageIdIndex();
+    const currentImageIdIndex = this.getActiveImageIdIndex();
     const nextImageIdIndex = Math.min(
       Math.max(0, imageIdIndex),
       this.getMaxImageIdIndex()
@@ -2542,15 +2362,7 @@ class PlanarViewport extends GenericViewport<
     }
 
     this.setViewState(nextCamera);
-
-    if (resetZoom) {
-      const optionsViewState = this.getOptionsViewState(resetPan);
-
-      if (Object.keys(optionsViewState).length) {
-        this.setViewState(optionsViewState);
-      }
-    }
-
+    this.applyLegacyOptionsViewState({ resetPan, resetZoom });
     this.triggerCameraResetEvent();
 
     return true;

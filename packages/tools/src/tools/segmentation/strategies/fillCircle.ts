@@ -13,13 +13,9 @@ import compositions from './compositions';
 import { pointInSphere } from '../../../utilities/math/sphere';
 import { applyBrushFill, createCircleBrushFill } from './utils/brushVoxelSlab';
 import { getViewSlabDepthOfViewport } from '../../../utilities/genericViewportToolHelpers';
+import { getViewStretch } from './utils/getViewStretch';
 
-const {
-  transformWorldToIndex,
-  transformIndexToWorld,
-  isEqual,
-  getNormalizedAspectRatio,
-} = csUtils;
+const { transformWorldToIndex, transformIndexToWorld, isEqual } = csUtils;
 
 /**
  * Returns the corners of an ellipse in canvas coordinates.
@@ -203,7 +199,7 @@ const initializeCircle = {
     );
 
     // Get your aspect ratio values
-    const aspectRatio = getNormalizedAspectRatio(viewport.getAspectRatio());
+    const aspectRatio = getViewStretch(viewport);
 
     const yRadius =
       points.length >= 2

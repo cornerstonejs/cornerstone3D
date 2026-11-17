@@ -511,6 +511,32 @@ describe('planar legacy adapter members', () => {
     expect(results[1]).toEqual(results[0]);
   });
 
+  it('takes a point within half a slice spacing of the image shown as viewable with asNearbyProjection, as the legacy stack viewport', async () => {
+    const answers = [];
+
+    for (const useAdapter of [false, true]) {
+      const { renderingEngine, viewport } = createStackViewport(useAdapter);
+      renderingEngines.push(renderingEngine);
+      await viewport.setStack(imageIds, 1);
+
+      answers.push(
+        [
+          [3, 4, 1.0004],
+          [3, 4, 0.9996],
+          [3, 4, 1.002],
+        ].map((cameraFocalPoint) =>
+          viewport.isReferenceViewable(
+            { cameraFocalPoint },
+            { asNearbyProjection: true }
+          )
+        )
+      );
+    }
+
+    expect(answers[0]).toEqual([true, true, false]);
+    expect(answers[1]).toEqual(answers[0]);
+  });
+
   it('gives the PT scaling of the legacy stack viewport', async () => {
     const ptImageIds = createImageIds(true);
     const legacy = await readStackMembers(false, ptImageIds);

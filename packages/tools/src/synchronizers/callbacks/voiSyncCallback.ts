@@ -2,6 +2,26 @@ import type { Types } from '@cornerstonejs/core';
 import { getRenderingEngine, utilities } from '@cornerstonejs/core';
 
 /**
+ * Whether a VOI_MODIFIED event gives the targets an invert to take. The
+ * event of a next viewport carries the invert of its display set in
+ * `invert`, in stack mode and in volume mode, and the targets take it when
+ * it is set. A legacy viewport says with `invertStateChanged` that its
+ * invert changed.
+ */
+function givesInvert(
+  sourceViewport: Types.IViewportId,
+  eventDetail: Types.EventTypes.VoiModifiedEventDetail
+): boolean {
+  const viewport = getRenderingEngine(
+    sourceViewport.renderingEngineId
+  )?.getViewport(sourceViewport.viewportId);
+
+  return utilities.isGenericViewport(viewport)
+    ? eventDetail.invert !== undefined
+    : Boolean(eventDetail.invertStateChanged);
+}
+
+/**
  * Synchronizer callback to synchronize the voi of volumeActors of identical volumes
  * in different viewports.
  *
@@ -19,7 +39,7 @@ export default function voiSyncCallback(
   options?: { syncInvertState?: boolean; syncColormap?: boolean }
 ): void {
   const eventDetail = modifiedEvent.detail;
-  const { volumeId, range, invertStateChanged, invert, colormap } = eventDetail;
+  const { volumeId, range, invert, colormap } = eventDetail;
 
   const renderingEngine = getRenderingEngine(targetViewport.renderingEngineId);
   if (!renderingEngine) {
@@ -35,7 +55,7 @@ export default function voiSyncCallback(
     voiRange: range,
   };
 
-  if (options?.syncInvertState && invertStateChanged) {
+  if (options?.syncInvertState && givesInvert(sourceViewport, eventDetail)) {
     tProperties.invert = invert;
   }
   if (options?.syncColormap && colormap) {

@@ -13,11 +13,19 @@ const renderingEngineId = utilities.uuidv4();
  * Enables a viewport of a type with the default options, through the
  * rendering engine. With `legacy` the switch of the generic viewports is off
  * while it is made, so it is the legacy class with or without
- * FORCE_GENERIC_VIEWPORT.
+ * FORCE_GENERIC_VIEWPORT. With `adapter` the switch is on, so a legacy type
+ * gives its legacy adapter.
  */
 function enableViewport(
   renderingEngine,
-  { viewportId, type, orientation, defaultOptions = {}, legacy = false }
+  {
+    viewportId,
+    type,
+    orientation,
+    defaultOptions = {},
+    legacy = false,
+    adapter = false,
+  }
 ) {
   const rendering = getConfiguration().rendering;
   const useGenericViewport = rendering.useGenericViewport;
@@ -27,8 +35,8 @@ function enableViewport(
   element.style.height = '300px';
   document.body.appendChild(element);
 
-  if (legacy) {
-    rendering.useGenericViewport = false;
+  if (legacy || adapter) {
+    rendering.useGenericViewport = adapter;
   }
 
   try {
@@ -68,6 +76,23 @@ function createPair(
       defaultOptions,
     }),
   ];
+}
+
+/**
+ * Makes a legacy stack viewport with the id `legacy` and its legacy adapter
+ * with the id `adapter`, of one size and options.
+ */
+function createStackAdapterPair(renderingEngine, defaultOptions) {
+  return ['legacy', 'adapter'].map((viewportId) =>
+    enableViewport(renderingEngine, {
+      viewportId,
+      type: ViewportType.STACK,
+      orientation: OrientationAxis.ACQUISITION,
+      defaultOptions,
+      legacy: viewportId === 'legacy',
+      adapter: viewportId === 'adapter',
+    })
+  );
 }
 
 /** Makes and caches a volume of the fake volume loader. */
@@ -170,9 +195,12 @@ function createStackImageIds(name = 'imageURI') {
   );
 }
 
-/** Shows a stack on a legacy stack viewport or a direct next viewport. */
+/**
+ * Shows a stack on a legacy stack viewport or its adapter with `setStack`,
+ * and on a direct next viewport through a display set.
+ */
 async function showStack(viewport, imageIds) {
-  if (utilities.isGenericViewport(viewport)) {
+  if (typeof viewport.setStack !== 'function') {
     const displaySetId = `stack:${viewport.id}`;
 
     utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
@@ -188,14 +216,9 @@ async function showStack(viewport, imageIds) {
   await renderAndWait(viewport);
 }
 
-/** Resets the view of a legacy viewport or of a direct next viewport. */
+/** Resets the view of a legacy stack viewport or of its adapter. */
 async function resetView(viewport) {
-  if (utilities.isGenericViewport(viewport)) {
-    viewport.resetViewState();
-  } else {
-    viewport.resetCamera();
-  }
-
+  viewport.resetCamera();
   await renderAndWait(viewport);
 }
 
@@ -339,36 +362,6 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
   });
 
   describe('VOI_MODIFIED', () => {
-    it('carries invertStateChanged when the invert changes, as on the legacy volume viewport', async function () {
-      const volumeId = await createVolume();
-      const results = [];
-
-      for (const viewport of createPair(renderingEngine, {
-        legacyType: ViewportType.ORTHOGRAPHIC,
-        orientation: OrientationAxis.AXIAL,
-      })) {
-        const details = [];
-
-        await showVolume(viewport, volumeId, OrientationAxis.AXIAL);
-        viewport.element.addEventListener(Events.VOI_MODIFIED, (evt) =>
-          details.push(evt.detail)
-        );
-        setInvert(viewport, true);
-        setInvert(viewport, true);
-        results.push(
-          details.map((detail) => [detail.invert, detail.invertStateChanged])
-        );
-      }
-
-      expect(results[0]).toEqual([[true, true]]);
-      expect(results[1][0]).toEqual(results[0][0]);
-      expect(
-        results[1]
-          .slice(1)
-          .filter(([, invertStateChanged]) => invertStateChanged)
-      ).toEqual([]);
-    });
-
     it('lets the VOI synchroniser sync an invert from a direct next viewport, as from a legacy one', async function () {
       const volumeId = await createVolume();
       const results = {};
@@ -475,7 +468,7 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
     });
   });
 
-  describe('display area and aspect ratio from the options', () => {
+  describe('display area and aspect ratio from the options of a legacy adapter', () => {
     const OPTIONS = {
       aspectRatio: { aspectRatio: [2, 1] },
       displayArea: {
@@ -493,11 +486,10 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
       it(`applies ${name} at mount and again at a reset, as the legacy stack viewport applies it at a reset`, async function () {
         const results = [];
 
-        for (const viewport of createPair(renderingEngine, {
-          legacyType: ViewportType.STACK,
-          orientation: OrientationAxis.ACQUISITION,
-          defaultOptions,
-        })) {
+        for (const viewport of createStackAdapterPair(
+          renderingEngine,
+          defaultOptions
+        )) {
           await showStack(viewport, createStackImageIds(`${viewport.id}URI`));
 
           const atMount = getImageCornersOnCanvas(viewport);
@@ -513,21 +505,18 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
           });
         }
 
-        const [legacy, next] = results;
+        const [legacy, adapter] = results;
 
-        expectCornersClose(next.atMount, legacy.afterReset);
-        expectCornersClose(next.afterReset, legacy.afterReset);
-        expect(next.aspectRatio).toEqual(legacy.aspectRatio);
+        expectCornersClose(adapter.atMount, legacy.afterReset);
+        expectCornersClose(adapter.afterReset, legacy.afterReset);
+        expect(adapter.aspectRatio).toEqual(legacy.aspectRatio);
       });
     });
 
     it('stretches the image with setAspectRatio and reads it back, as the legacy stack viewport', async function () {
       const results = [];
 
-      for (const viewport of createPair(renderingEngine, {
-        legacyType: ViewportType.STACK,
-        orientation: OrientationAxis.ACQUISITION,
-      })) {
+      for (const viewport of createStackAdapterPair(renderingEngine)) {
         await showStack(viewport, createStackImageIds(`${viewport.id}URI`));
         viewport.setAspectRatio([1, 2]);
         await renderAndWait(viewport);
@@ -543,11 +532,25 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
         });
       }
 
-      const [legacy, next] = results;
+      const [legacy, adapter] = results;
 
-      expectCornersClose(next.kept, legacy.kept);
-      expectCornersClose(next.fit, legacy.fit);
-      expect(next.aspectRatio).toEqual(legacy.aspectRatio);
+      expectCornersClose(adapter.kept, legacy.kept);
+      expectCornersClose(adapter.fit, legacy.fit);
+      expect(adapter.aspectRatio).toEqual(legacy.aspectRatio);
+    });
+
+    it('leaves the options to the application on a direct next viewport', async function () {
+      const viewport = enableViewport(renderingEngine, {
+        viewportId: 'next',
+        type: ViewportType.PLANAR_NEXT,
+        orientation: OrientationAxis.ACQUISITION,
+        defaultOptions: { ...OPTIONS.aspectRatio, ...OPTIONS.displayArea },
+      });
+
+      await showStack(viewport, createStackImageIds('nextURI'));
+
+      expect(viewport.getViewState().scale).toEqual([1, 1]);
+      expect(viewport.getViewState().displayArea).toBeUndefined();
     });
   });
 

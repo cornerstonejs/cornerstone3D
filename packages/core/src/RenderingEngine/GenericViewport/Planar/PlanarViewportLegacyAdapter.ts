@@ -14,6 +14,7 @@ import type {
   IVolumeViewport,
   Point2,
   Point3,
+  ReferenceCompatibleOptions,
   Scaling,
   ViewReference,
   ViewReferenceSpecifier,
@@ -32,14 +33,20 @@ import imageIdToURI from '../../../utilities/imageIdToURI';
 import transformWorldToIndex from '../../../utilities/transformWorldToIndex';
 import genericViewportDisplaySetMetadataProvider from '../../../utilities/genericViewportDisplaySetMetadataProvider';
 import { viewportProjection } from '../viewportProjection';
+import { isPointNearImagePlane } from '../genericViewportReferenceCompatibility';
 import {
   getPlanarLegacyScaling,
   getPlanarLegacySliceViewInfo,
   type PlanarLegacyViewportProperties,
 } from './planarLegacyCompatibility';
 import PlanarLegacyCompatibilityController from './PlanarLegacyCompatibilityController';
-import PlanarViewport, { type PlanarScrollOptions } from './PlanarViewport';
+import PlanarViewport, {
+  type PlanarResetViewStateOptions,
+  type PlanarScrollOptions,
+} from './PlanarViewport';
 import type { PlanarScaleInput } from './planarCameraScale';
+import { getPlanarViewStateCanvasDimensions } from './PlanarResolvedView';
+import { getFitParallelScaleFromWorldSize } from './planarSliceBasis';
 import { cloneDisplayArea } from './planarViewState';
 import { coreLog } from '../../../utilities/logger';
 import type {
@@ -204,6 +211,164 @@ class PlanarViewportLegacyAdapter extends PlanarViewport {
     return this.resetViewStateForResize();
   }
 
+  /**
+   * The stretch of the view as `[widthRatio, heightRatio]`, as the legacy
+   * `getAspectRatio`: the ratio of the horizontal to the vertical scale of
+   * the view state, so `[1, 1]` when the view is not stretched.
+   */
+  override getAspectRatio(): Point2 {
+    const [scaleX, scaleY] = this.getScale();
+
+    return scaleY ? [scaleX / scaleY, 1] : [1, 1];
+  }
+
+  /**
+   * Stretches the view by an aspect ratio `[widthRatio, heightRatio]`, as the
+   * legacy `setAspectRatio`: the horizontal scale stays, unless `fit` is set,
+   * which fits the stretched image into the canvas. `storeAsInitialCamera`
+   * keeps the aspect ratio in the options, so that a reset applies it again.
+   */
+  setAspectRatio(
+    aspectRatio: Point2,
+    options: { fit?: boolean; storeAsInitialCamera?: boolean } = {}
+  ): void {
+    const scale = this.getAspectRatioScale(aspectRatio, Boolean(options.fit));
+
+    if (!scale) {
+      return;
+    }
+
+    if (options.storeAsInitialCamera) {
+      this.options = {
+        ...this.options,
+        aspectRatio: [...aspectRatio] as Point2,
+      };
+    }
+
+    this.setViewState({ scale });
+  }
+
+  /**
+   * The scale of the view state for an aspect ratio: the horizontal scale is
+   * the vertical one times `widthRatio / heightRatio`. Without `fit` the
+   * horizontal scale of the view stays, as the legacy viewports keep it;
+   * with `fit` the scale fits the stretched image, as the legacy viewports
+   * fit an image with an aspect ratio.
+   */
+  private getAspectRatioScale(
+    aspectRatio: Point2,
+    fit: boolean
+  ): Point2 | undefined {
+    const [widthRatio, heightRatio] = aspectRatio ?? [];
+
+    if (!(widthRatio > 0 && heightRatio > 0)) {
+      return;
+    }
+
+    const stretch = widthRatio / heightRatio;
+
+    if (!fit) {
+      const [scaleX] = this.getScale();
+
+      return [scaleX, scaleX / stretch];
+    }
+
+    const scaleY = this.getStretchedFitScale(stretch);
+
+    return [scaleY * stretch, scaleY];
+  }
+
+  /**
+   * The vertical scale, against the fit of the image, at which the image
+   * stretched horizontally by `stretch` fits into the canvas.
+   */
+  private getStretchedFitScale(stretch: number): number {
+    const sliceBasis = this.getResolvedView()?.getSliceBasis();
+
+    if (!sliceBasis) {
+      return 1;
+    }
+
+    const rendering = this.getCurrentPlanarRendering();
+    const { canvasWidth, canvasHeight } = rendering
+      ? getPlanarViewStateCanvasDimensions({
+          renderContext: this.renderContext,
+          rendering,
+        })
+      : { canvasWidth: 0, canvasHeight: 0 };
+    const getFit = (widthStretch: number) =>
+      getFitParallelScaleFromWorldSize({
+        canvasWidth: canvasWidth || this.element.clientWidth,
+        canvasHeight: canvasHeight || this.element.clientHeight,
+        widthWorld: sliceBasis.sliceWidthWorld * widthStretch,
+        heightWorld: sliceBasis.sliceHeightWorld,
+      });
+
+    return getFit(1) / getFit(stretch);
+  }
+
+  /**
+   * The view state of the `aspectRatio` and `displayArea` options, as the
+   * legacy `resetCamera` applies them: the fitted stretch of the aspect
+   * ratio, and with `withDisplayArea` the display area.
+   */
+  private getOptionsViewState(
+    withDisplayArea: boolean
+  ): Partial<PlanarViewState> {
+    const { aspectRatio, displayArea } = this.options;
+    const viewState: Partial<PlanarViewState> = {};
+    const scale = aspectRatio
+      ? this.getAspectRatioScale(aspectRatio, true)
+      : undefined;
+
+    if (withDisplayArea && displayArea) {
+      viewState.anchorCanvas = [0.5, 0.5];
+      viewState.anchorWorld = undefined;
+      viewState.displayArea = cloneDisplayArea(displayArea);
+      viewState.scale = scale ?? [1, 1];
+      viewState.scaleMode = displayArea.scaleMode ?? 'fit';
+    } else if (scale) {
+      viewState.scale = scale;
+    }
+
+    return viewState;
+  }
+
+  /**
+   * Puts the `aspectRatio` and `displayArea` options into the view state, as
+   * the legacy viewports apply them when they show their first image and
+   * again at a reset of the zoom. Once the source is mounted it fires no
+   * camera event: the mount fires one. A reset that keeps the pan leaves the
+   * display area out.
+   */
+  protected override applyLegacyOptionsViewState(
+    reset?: PlanarResetViewStateOptions
+  ): void {
+    if (reset && !reset.resetZoom) {
+      return;
+    }
+
+    const optionsViewState = this.getOptionsViewState(
+      reset ? reset.resetPan : true
+    );
+
+    if (!Object.keys(optionsViewState).length) {
+      return;
+    }
+
+    if (reset) {
+      this.setViewState(optionsViewState);
+
+      return;
+    }
+
+    this.viewState = this.normalizeViewState({
+      ...this.viewState,
+      ...optionsViewState,
+    });
+    this.modified();
+  }
+
   get volumeIds(): Set<string> {
     const ids = new Set<string>();
 
@@ -310,6 +475,53 @@ class PlanarViewportLegacyAdapter extends PlanarViewport {
     }
 
     return super.getCurrentImageId();
+  }
+
+  /**
+   * The image index that the viewport goes to. In stack mode this is the
+   * index of the last request, which can be ahead of the image that is drawn
+   * while that image loads, as `getTargetImageIdIndex` of the legacy stack
+   * viewport. Otherwise it is the current image index.
+   */
+  getTargetImageIdIndex(): number {
+    const { slice } = this.getViewState();
+
+    if (this.getCurrentMode() === 'stack' && slice?.kind === 'stackIndex') {
+      return slice.imageIdIndex;
+    }
+
+    return super.getCurrentImageIdIndex();
+  }
+
+  /**
+   * Whether a view reference can be shown, as the next viewport answers. In
+   * stack mode `asNearbyProjection` takes a reference by a focal point only
+   * as viewable when the point lies within half a slice spacing of the image
+   * shown, as the legacy stack viewport does.
+   */
+  isReferenceViewable(
+    viewRef: ViewReference,
+    options: ReferenceCompatibleOptions = {}
+  ): boolean {
+    const isViewable = super.isReferenceViewable(viewRef, options);
+
+    if (
+      !isViewable ||
+      !options.asNearbyProjection ||
+      !viewRef.cameraFocalPoint ||
+      viewRef.referencedImageId ||
+      viewRef.volumeId ||
+      viewRef.FrameOfReferenceUID ||
+      this.getCurrentMode() !== 'stack'
+    ) {
+      return isViewable;
+    }
+
+    const imageData = this.getImageData() as CPUIImageData | undefined;
+
+    return Boolean(
+      imageData && isPointNearImagePlane(viewRef.cameraFocalPoint, imageData)
+    );
   }
 
   /**

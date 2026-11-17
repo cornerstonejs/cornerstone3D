@@ -719,6 +719,59 @@ describe('voiSyncCallback', () => {
     });
   });
 
+  it('gives the target the invert of a next source viewport, which sets no invertStateChanged', () => {
+    utilities.isGenericViewport.mockReturnValue(true);
+    const tViewport = {
+      setDisplaySetPresentation: jest.fn(),
+      render: jest.fn(),
+    };
+    getRenderingEngine.mockReturnValue({
+      getViewport: jest.fn(() => tViewport),
+    });
+
+    voiSyncCallback(
+      {},
+      { renderingEngineId: 're', viewportId: 'source' },
+      { renderingEngineId: 're', viewportId: 'target' },
+      { detail: { range: { lower: 0, upper: 1 }, invert: false } },
+      { syncInvertState: true }
+    );
+    voiSyncCallback(
+      {},
+      { renderingEngineId: 're', viewportId: 'source' },
+      { renderingEngineId: 're', viewportId: 'target' },
+      { detail: { range: { lower: 0, upper: 1 } } },
+      { syncInvertState: true }
+    );
+
+    expect(tViewport.setDisplaySetPresentation.mock.calls).toEqual([
+      [{ voiRange: { lower: 0, upper: 1 }, invert: false }],
+      [{ voiRange: { lower: 0, upper: 1 } }],
+    ]);
+  });
+
+  it('keeps the invert of a legacy source viewport to itself until invertStateChanged is set', () => {
+    const tViewport = makeStackViewport({
+      setProperties: jest.fn(),
+      render: jest.fn(),
+    });
+    getRenderingEngine.mockReturnValue({
+      getViewport: jest.fn(() => tViewport),
+    });
+
+    voiSyncCallback(
+      {},
+      { renderingEngineId: 're', viewportId: 'source' },
+      { renderingEngineId: 're', viewportId: 'target' },
+      { detail: { range: { lower: 0, upper: 1 }, invert: true } },
+      { syncInvertState: true }
+    );
+
+    expect(tViewport.setProperties).toHaveBeenCalledWith({
+      voiRange: { lower: 0, upper: 1 },
+    });
+  });
+
   it('routes to the matching display-set binding on Generic viewports', () => {
     utilities.isGenericViewport.mockReturnValue(true);
     const tViewport = {

@@ -1,6 +1,7 @@
 import { AnnotationTool } from './base';
 
 import {
+  cache,
   getEnabledElement,
   utilities as csUtils,
   eventTarget,
@@ -129,11 +130,30 @@ export type MagnifyViewportInfo = {
   };
 };
 
+/** The fields of an image that tell whether it needs new image data. */
+type SourceImageSize = Pick<
+  Types.IImage,
+  'rows' | 'columns' | 'numberOfComponents'
+>;
+
 type MagnifyViewportsMapEntry = {
   annotation: AdvancedMagnifyAnnotation;
   magnifyViewport: AdvancedMagnifyViewport;
   magnifyViewportInfo: MagnifyViewportInfo;
+  /** The size of the image that the source viewport showed last. */
+  sourceImageSize?: SourceImageSize;
 };
+
+/** The size of an image, or undefined without an image. */
+function getSourceImageSize(image?: Types.IImage): SourceImageSize | undefined {
+  if (!image) {
+    return;
+  }
+
+  const { rows, columns, numberOfComponents } = image;
+
+  return { rows, columns, numberOfComponents };
+}
 
 // New abstraction layer
 interface MagnifyViewportManager {
@@ -1049,6 +1069,11 @@ class AdvancedMagnifyViewportManager {
       annotation,
       magnifyViewport,
       magnifyViewportInfo: viewportInfo,
+      sourceImageSize: getSourceImageSize(
+        cache.getImage(
+          (sourceViewport as Types.IStackViewport).getCurrentImageId?.()
+        )
+      ),
     });
 
     return magnifyViewport;
@@ -1118,10 +1143,52 @@ class AdvancedMagnifyViewportManager {
     });
   }
 
+  /**
+   * Whether the image that a source viewport now shows needs its magnifying
+   * glasses to be made again. A legacy viewport and a legacy adapter say so
+   * themselves (`stackActorReInitialized`). For a next viewport it is true
+   * when the rows, the columns or the number of components differ from those
+   * of the image that it showed before. An event without an image, as a new
+   * slice of a volume, changes nothing.
+   */
+  private _showsImageOfNewSize(
+    viewport: Types.IViewport,
+    image: Types.IImage | undefined,
+    magnifyViewportsMapEntries: MagnifyViewportsMapEntry[]
+  ): boolean {
+    const { stackActorReInitialized } =
+      viewport as Partial<Types.IStackViewport>;
+
+    if (typeof stackActorReInitialized === 'boolean') {
+      return stackActorReInitialized;
+    }
+
+    const size = getSourceImageSize(image);
+
+    if (!size) {
+      return false;
+    }
+
+    let differs = false;
+
+    magnifyViewportsMapEntries.forEach((entry) => {
+      const previous = entry.sourceImageSize;
+
+      differs ||=
+        !!previous &&
+        (previous.rows !== size.rows ||
+          previous.columns !== size.columns ||
+          previous.numberOfComponents !== size.numberOfComponents);
+      entry.sourceImageSize = size;
+    });
+
+    return differs;
+  }
+
   private _newStackImageCallback = (
     evt: Types.EventTypes.StackNewImageEvent
   ) => {
-    const { viewportId: sourceViewportId, imageId } = evt.detail;
+    const { viewportId: sourceViewportId, imageId, image } = evt.detail;
     const magnifyViewportsMapEntries =
       this._getMagnifyViewportsMapEntriesBySourceViewportId(sourceViewportId);
 
@@ -1130,7 +1197,9 @@ class AdvancedMagnifyViewportManager {
     // if the viewport was new in terms of image, we need to destroy the magnify
     // viewports and recreate them, the new image might have different dimensions
     // or orientation etc.
-    if ((viewport as Types.IStackViewport).stackActorReInitialized) {
+    if (
+      this._showsImageOfNewSize(viewport, image, magnifyViewportsMapEntries)
+    ) {
       // we should invalidate the viewport as well
       // this will trigger the magnify viewport to be updated
       this._reset(sourceViewportId);
@@ -1153,6 +1222,10 @@ class AdvancedMagnifyViewportManager {
       csUtils.isGenericViewport(sourceViewport)
         ? getViewportICamera(sourceViewport)
         : sourceViewport.getCamera();
+
+    if (!currentViewPlaneNormal) {
+      return;
+    }
 
     const magnifyViewportsMapEntries =
       this._getMagnifyViewportsMapEntriesBySourceViewportId(sourceViewportId);

@@ -7,7 +7,11 @@ import type {
 } from '../types';
 import scroll from './scroll';
 import getEnabledElement from '../getEnabledElement';
-import { viewportIsInStackMode } from './viewportCapabilities';
+import {
+  getViewportContentMode,
+  isGenericViewport,
+  viewportIsInStackMode,
+} from './viewportCapabilities';
 /**
  * It uses the imageIndex in the Options to scroll to the slice that is intended.
  * It works for both Stack and Volume viewports. In VolumeViewports, the imageIndex
@@ -42,14 +46,23 @@ async function jumpToSlice(
   scroll(viewport, { delta, debounceLoading, volumeId });
 }
 
+/**
+ * The number of slices of a viewport and the index of the slice it shows.
+ *
+ * A next planar viewport gives its current image index, in stack mode and
+ * in volume mode: the index of the last request, which on a stack can be
+ * ahead of the image that is drawn while that image loads. A legacy stack
+ * viewport and a stack-mode legacy adapter give their target index when
+ * `debounceLoading` is set. A legacy volume viewport gives its slice index.
+ */
 function _getImageSliceData(
   viewport: IStackViewport | IVolumeViewport,
   debounceLoading?: boolean
 ): ImageSliceData {
-  if (
-    viewportIsInStackMode(viewport) &&
-    typeof (viewport as IStackViewport).getTargetImageIdIndex === 'function'
-  ) {
+  const hasTargetImageIdIndex =
+    typeof (viewport as IStackViewport).getTargetImageIdIndex === 'function';
+
+  if (viewportIsInStackMode(viewport) && hasTargetImageIdIndex) {
     const stackViewport = viewport as IStackViewport;
 
     return {
@@ -59,6 +72,20 @@ function _getImageSliceData(
         : stackViewport.getCurrentImageIdIndex(),
     };
   }
+
+  const mode = getViewportContentMode(viewport);
+
+  if (
+    isGenericViewport(viewport) &&
+    !hasTargetImageIdIndex &&
+    (mode === 'stack' || mode === 'volume')
+  ) {
+    return {
+      numberOfSlices: viewport.getNumberOfSlices(),
+      imageIndex: viewport.getCurrentImageIdIndex(),
+    };
+  }
+
   return {
     numberOfSlices: viewport.getNumberOfSlices(),
     imageIndex: viewport.getSliceIndex(),

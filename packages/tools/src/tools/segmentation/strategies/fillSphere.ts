@@ -11,8 +11,9 @@ import {
   getEllipseCornersFromCanvasCoordinates,
 } from './fillCircle';
 import { applyBrushFill, createSphereBrushFill } from './utils/brushVoxelSlab';
-const { transformWorldToIndex, getNormalizedAspectRatio } = csUtils;
+const { transformWorldToIndex } = csUtils;
 import { getSphereBoundsInfoFromViewport } from '../../../utilities/getSphereBoundsInfo';
+import { getViewStretch } from './utils/getViewStretch';
 import type { CanvasCoordinates } from '../../../types';
 
 const sphereComposition = {
@@ -51,7 +52,7 @@ const sphereComposition = {
       viewport.canvasToWorld(corner)
     );
 
-    const aspectRatio = getNormalizedAspectRatio(viewport.getAspectRatio());
+    const aspectRatio = getViewStretch(viewport);
 
     const yRadius =
       points.length >= 2

@@ -196,6 +196,16 @@ function recordEvents(element) {
   return { events, details };
 }
 
+/**
+ * The image index that a viewport goes to: the target index of a legacy
+ * stack viewport, the current index of a direct next viewport.
+ */
+function getRequestedImageIdIndex(viewport) {
+  return utilities.isGenericViewport(viewport)
+    ? viewport.getCurrentImageIdIndex()
+    : viewport.getTargetImageIdIndex();
+}
+
 /** Resolves when the element fires STACK_NEW_IMAGE for an image index. */
 function waitForNewImage(element, imageIdIndex) {
   return new Promise((resolve) => {
@@ -424,7 +434,7 @@ describe('Direct next planar viewport events and image loads against the legacy 
 
         const before = [
           viewport.getCurrentImageIdIndex(),
-          viewport.getTargetImageIdIndex(),
+          getRequestedImageIdIndex(viewport),
         ];
 
         loads.held = true;
@@ -436,7 +446,7 @@ describe('Direct next planar viewport events and image loads against the legacy 
         });
         const afterRequest = [
           viewport.getCurrentImageIdIndex(),
-          viewport.getTargetImageIdIndex(),
+          getRequestedImageIdIndex(viewport),
         ];
 
         await settle();
@@ -448,7 +458,7 @@ describe('Direct next planar viewport events and image loads against the legacy 
         const imageId = await promise;
         const afterLoad = [
           viewport.getCurrentImageIdIndex(),
-          viewport.getTargetImageIdIndex(),
+          getRequestedImageIdIndex(viewport),
         ];
 
         measured.push({
@@ -500,31 +510,6 @@ describe('Direct next planar viewport events and image loads against the legacy 
       }
 
       expect(answers[0]).toEqual([true, false, false]);
-      expect(answers[1]).toEqual(answers[0]);
-    });
-
-    it('takes a point within half a slice spacing of the image shown as viewable with asNearbyProjection, as the legacy stack viewport', async () => {
-      const imageIds = createImageIds();
-      const answers = [];
-
-      for (const viewport of createPair()) {
-        await showStack(viewport, imageIds, 1);
-
-        answers.push(
-          [
-            [3, 4, 1.0004],
-            [3, 4, 0.9996],
-            [3, 4, 1.002],
-          ].map((cameraFocalPoint) =>
-            viewport.isReferenceViewable(
-              { cameraFocalPoint },
-              { asNearbyProjection: true }
-            )
-          )
-        );
-      }
-
-      expect(answers[0]).toEqual([true, true, false]);
       expect(answers[1]).toEqual(answers[0]);
     });
   });

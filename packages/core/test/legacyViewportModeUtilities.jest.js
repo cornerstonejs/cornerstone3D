@@ -194,5 +194,25 @@ describe('legacy viewport utilities on legacy viewports and legacy adapters', ()
 
       expect(viewport.scroll).toHaveBeenCalledWith(1, true, undefined);
     });
+
+    ['stack', 'volume'].forEach((mode) => {
+      it(`reads the current image index of a direct next viewport in ${mode} mode`, async () => {
+        const viewport = useViewport(
+          makeAdapter(mode, 'planarNext', {
+            getImageIds: () => ['a', 'b', 'c', 'd'],
+            getNumberOfSlices: () => 4,
+            getCurrentImageIdIndex: () => 3,
+            scroll: jest.fn(),
+          })
+        );
+
+        await jumpToSlice(viewport.element, {
+          imageIndex: 1,
+          debounceLoading: true,
+        });
+
+        expect(viewport.scroll.mock.calls[0][0]).toBe(-2);
+      });
+    });
   });
 });
