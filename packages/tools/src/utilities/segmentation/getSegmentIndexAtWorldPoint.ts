@@ -94,7 +94,7 @@ export function getSegmentIndexAtWorldForLabelmap(
     for (const layer of getLabelmaps(segmentation)) {
       const segmentationVolume = getOrCreateLabelmapVolume(layer);
 
-      if (!segmentationVolume) {
+      if (!segmentationVolume?.voxelManager) {
         continue;
       }
 
@@ -103,8 +103,20 @@ export function getSegmentIndexAtWorldForLabelmap(
       const indexIJK = utilities.transformWorldToIndex(
         segmentationVolume.imageData,
         worldPoint
-      );
-      const labelValue = voxelManager.getAtIJKPoint(indexIJK as Types.Point3);
+      ) as Types.Point3;
+
+      // getAtIJKPoint does not check the bounds: an i or j outside the volume
+      // reads a voxel of the next or previous row.
+      if (
+        !utilities.indexWithinDimensions(
+          indexIJK,
+          segmentationVolume.dimensions
+        )
+      ) {
+        continue;
+      }
+
+      const labelValue = voxelManager.getAtIJKPoint(indexIJK);
 
       if (!labelValue) {
         continue;
@@ -121,6 +133,10 @@ export function getSegmentIndexAtWorldForLabelmap(
   }
 
   // stack segmentation case
+  if (!viewport) {
+    return;
+  }
+
   const segmentationImageIds = getCurrentLabelmapImageIdsForViewport(
     viewport.id,
     segmentation.segmentationId
@@ -142,17 +158,42 @@ export function getSegmentIndexAtWorldForLabelmap(
       segmentation.segmentationId,
       segmentationImageId
     );
-    const imageData = segmentationActorEntry?.actor.getMapper().getInputData();
-    const indexIJK = utilities.transformWorldToIndex(imageData, worldPoint);
+    const imageData = segmentationActorEntry?.actor
+      ?.getMapper()
+      ?.getInputData();
 
-    const dimensions = imageData.getDimensions();
-    const voxelManager = (imageData.voxelManager ||
-      utilities.VoxelManager.createScalarVolumeVoxelManager({
+    // The actor of this labelmap image may not exist yet, for example while
+    // the viewport is still adding the segmentation representation.
+    if (!imageData) {
+      continue;
+    }
+
+    const indexIJK = utilities.transformWorldToIndex(
+      imageData,
+      worldPoint
+    ) as Types.Point3;
+    const dimensions = imageData.getDimensions() as Types.Point3;
+
+    if (!utilities.indexWithinDimensions(indexIJK, dimensions)) {
+      continue;
+    }
+
+    let voxelManager = imageData.voxelManager as Types.IVoxelManager<number>;
+
+    if (!voxelManager) {
+      const scalars = imageData.getPointData()?.getScalars();
+
+      if (!scalars) {
+        continue;
+      }
+
+      voxelManager = utilities.VoxelManager.createScalarVolumeVoxelManager({
         dimensions,
-        scalarData: imageData.getPointData().getScalars().getData(),
-      })) as Types.IVoxelManager<number>;
+        scalarData: scalars.getData(),
+      }) as Types.IVoxelManager<number>;
+    }
 
-    const labelValue = voxelManager.getAtIJKPoint(indexIJK as Types.Point3);
+    const labelValue = voxelManager.getAtIJKPoint(indexIJK);
 
     if (!labelValue) {
       continue;
