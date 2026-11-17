@@ -16,12 +16,16 @@ describe('RectangleROIStartEndThresholdTool projection points', () => {
     },
   };
 
-  function createAnnotation(startCoordinate, endCoordinate) {
+  function createAnnotation(
+    startCoordinate,
+    endCoordinate,
+    spacingInNormal = sliceSpacing
+  ) {
     // The handles are drawn on the start slice.
     return {
       metadata: {
         viewPlaneNormal: [0, 0, 1],
-        spacingInNormal: sliceSpacing,
+        spacingInNormal,
       },
       data: {
         startCoordinate,
@@ -65,5 +69,19 @@ describe('RectangleROIStartEndThresholdTool projection points', () => {
 
   it('keeps one projected rectangle when the start and end slices match', () => {
     expect(getSliceCoordinates(createAnnotation(10, 10))).toEqual([10]);
+  });
+
+  it('includes the end slice when float32 rounding shortens the distance', () => {
+    // _getEndCoordinate builds the end position in a float32 vec3, so an end
+    // coordinate of 1001.3 is stored as 1001.2999877929688, about 1.2e-5 short
+    // of one 1.3 mm step from 1000.
+    for (const endCoordinate of [1001.3, Math.fround(1001.3)]) {
+      const slices = getSliceCoordinates(
+        createAnnotation(1000, endCoordinate, 1.3)
+      );
+      expect(slices).toHaveLength(2);
+      expect(slices[0]).toBe(1000);
+      expect(slices[1]).toBeCloseTo(1001.3, 3);
+    }
   });
 });

@@ -377,16 +377,22 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     const direction = vec3.create();
     vec3.subtract(direction, endWorld, startWorld);
 
-    const distance = vec3.length(direction);
+    // startWorld and endWorld differ only on the projection axis. Take the
+    // distance from the double precision coordinates rather than from the
+    // float32 vectors.
+    const distance = Math.abs(endCoordinate - startCoordinate);
 
     // Normalize the direction vector to get a unit vector for scaling.
     vec3.normalize(direction, direction);
 
     const newProjectionPoints = [];
 
-    // Include the end slice (and the single slice when start === end); the
-    // epsilon absorbs floating point error in the accumulated distance.
-    for (let dist = 0; dist <= distance + 1e-6; dist += spacingInNormal) {
+    // Include the end slice (and the single slice when start === end). The
+    // coordinates can come from float32 vectors (see _getEndCoordinate), so
+    // the tolerance scales with the slice spacing instead of being a fixed
+    // epsilon.
+    const tolerance = spacingInNormal * 1e-3;
+    for (let dist = 0; dist <= distance + tolerance; dist += spacingInNormal) {
       newProjectionPoints.push(
         points.map((point) => {
           const newPoint = vec3.create();
