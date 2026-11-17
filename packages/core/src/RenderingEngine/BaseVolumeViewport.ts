@@ -1538,11 +1538,16 @@ abstract class BaseVolumeViewport extends Viewport {
   /**
    * Retrieve the viewport properties
    * @param volumeId - The volume id to get the properties for (if undefined, the first volume)
-   * @returns viewport properties including voi, interpolation type: TODO: slabThickness, invert
+   * @returns viewport properties including voi, interpolation type: TODO: slabThickness, invert.
+   * Returns `undefined` (or `null` if the volume is not cached) when no volume
+   * actor is loaded yet.
+   *
+   * The declared return type is kept as `VolumeViewportProperties` so that
+   * volume viewports stay assignable to the base `Viewport` type
+   * (`getProperties: () => ViewportProperties`) for consumers compiling with
+   * `strictNullChecks` (see #2753).
    */
-  public getProperties = (
-    volumeId?: string
-  ): VolumeViewportProperties | undefined | null => {
+  public getProperties = (volumeId?: string): VolumeViewportProperties => {
     const applicableVolumeActorInfo = this._getApplicableVolumeActor(volumeId);
     if (!applicableVolumeActorInfo) {
       return;
