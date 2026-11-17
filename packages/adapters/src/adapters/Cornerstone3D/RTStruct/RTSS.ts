@@ -127,9 +127,13 @@ export async function generateRTSSFromLabelmap(
         });
       });
 
-      const segLabel = contourSet.label || `Segment ${segIndex + 1}`;
+      // The contour sets skip empty segments, so the array position is not
+      // the segment index; use the segmentIndex the contour set carries.
+      const segmentIndex = contourSet.segmentIndex ?? segIndex + 1;
+      const segLabel = contourSet.label || `Segment ${segmentIndex}`;
 
       const ROIContour = {
+        segmentIndex,
         name: segLabel,
         description: segLabel,
         contourSequence,
@@ -148,13 +152,18 @@ export async function generateRTSSFromLabelmap(
   );
 
   roiContours.forEach((contour, index) => {
+    const { segmentIndex } = contour;
+    const segment = segmentations.segments[segmentIndex] || {
+      segmentIndex,
+      label: contour.name,
+    };
     const roiContour = {
       ROIDisplayColor: contour.color || [255, 0, 0],
       ContourSequence: contour.contourSequence,
-      ReferencedROINumber: index + 1,
+      // Must match the ROINumber written by getStructureSetModule
+      ReferencedROINumber: segment.segmentIndex,
     };
 
-    const segment = segmentations.segments[index + 1];
     dataset.StructureSetROISequence.push(
       getStructureSetModule(contour, segment)
     );
