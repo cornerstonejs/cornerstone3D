@@ -35,6 +35,7 @@ import type {
   Volume3DDataPresentation,
   Volume3DRegisteredDataSet,
   Volume3DVolumeRendering,
+  ViewportWidget,
   VolumeViewport3DInput,
 } from './viewport3DTypes';
 
@@ -379,6 +380,16 @@ class VolumeViewport3DLegacyAdapter extends VolumeViewport3D {
     }
 
     return actorEntry.actor as ImageActor;
+  }
+
+  /** Always true: a 3D viewport turns to any orientation. */
+  isOrientationChangeable(): boolean {
+    return true;
+  }
+
+  /** The widget kept under this id, if any, as on the legacy viewport. */
+  getWidget(widgetId: string): ViewportWidget | undefined {
+    return this.widgets.get(widgetId);
   }
 
   /**
@@ -908,6 +919,15 @@ class VolumeViewport3DLegacyAdapter extends VolumeViewport3D {
           ...rest,
         };
       });
+  }
+
+  /**
+   * Follows the `suppressEvents` member, which `withEventsSuppressed` sets
+   * for the length of one call, and not only the option that the viewport
+   * was made with.
+   */
+  protected override areEventsSuppressed(): boolean {
+    return Boolean(this.suppressEvents);
   }
 
   /** As `withEventsSuppressed`, for a change that waits. */

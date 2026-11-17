@@ -22,6 +22,11 @@ export type GenericViewportReferenceContext = {
   dimensionGroupNumber?: number;
   frameOfReferenceUID?: string;
   imageIds?: string[];
+  /**
+   * Image URIs that name the data as a whole and not one of its slices: the
+   * images of a whole slide, or a video without a frame number. A reference
+   * to one of them shows on every slice.
+   */
   imageURIs?: string[];
   numDimensionGroups?: number;
   viewPlaneNormal?: Point3;
@@ -245,7 +250,17 @@ function isReferencedImageCompatible(
     return true;
   }
 
-  const imageURIEntries = getContextImageURIEntries(context);
+  if (
+    context.imageURIs?.some((imageURI) =>
+      referencedImageURIs.includes(imageURI)
+    )
+  ) {
+    return true;
+  }
+
+  const imageURIEntries = context.imageIds?.length
+    ? getImageIdsURIEntries(context.imageIds)
+    : [];
 
   if (!imageURIEntries.length) {
     return false;
@@ -498,41 +513,6 @@ function getImageIdsURIEntries(imageIds: string[]): string[][] {
   }
 
   return entries;
-}
-
-function getContextImageURIEntries(
-  context: GenericViewportReferenceContext
-): string[][] {
-  const baseEntries = context.imageIds?.length
-    ? getImageIdsURIEntries(context.imageIds)
-    : [];
-  const extraImageURIs = context.imageURIs;
-
-  if (!extraImageURIs?.length) {
-    // Common path. Callers only read the entries, so returning the cached
-    // array directly is safe and avoids any per-call allocation.
-    return baseEntries;
-  }
-
-  // Rare path: merge standalone imageURIs not already covered by the cached
-  // imageId-derived entries. Copy first so the cached array is never mutated.
-  const imageURIEntries = baseEntries.slice();
-  const knownImageURIs = new Set<string>();
-
-  for (const imageURIEntry of baseEntries) {
-    for (const imageURI of imageURIEntry) {
-      knownImageURIs.add(imageURI);
-    }
-  }
-
-  for (const imageURI of extraImageURIs) {
-    if (!knownImageURIs.has(imageURI)) {
-      imageURIEntries.push([imageURI]);
-      knownImageURIs.add(imageURI);
-    }
-  }
-
-  return imageURIEntries;
 }
 
 function getImageIdCompatibleURIs(imageId: string): string[] {

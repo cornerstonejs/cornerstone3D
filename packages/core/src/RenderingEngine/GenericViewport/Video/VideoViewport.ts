@@ -1,10 +1,10 @@
 import GenericViewport from '../GenericViewport';
 import type {
   CPUIImageData,
-  IImage,
   IVoxelManager,
   Point2,
   Point3,
+  ReferenceCompatibleOptions,
   RGB,
   ViewReference,
   ViewReferenceSpecifier,
@@ -13,14 +13,13 @@ import { Events, ViewportType } from '../../../enums';
 import triggerEvent from '../../../utilities/triggerEvent';
 import {
   frameNumberToTimeSeconds,
-  getVideoImageDataMetadata,
   timeSecondsToFrameNumber,
 } from '../../../utilities/VideoUtilities';
-import type { VideoImageMetadata } from '../../../utilities/VideoUtilities';
 import FrameRange from '../../../utilities/FrameRange';
 import VoxelManager from '../../../utilities/VoxelManager';
 import getOrCreateCanvas from '../../helpers/getOrCreateCanvas';
 import { generateFrameImageId } from '../../../utilities/splitImageIdsBy4DTags';
+import imageIdToURI from '../../../utilities/imageIdToURI';
 import { DefaultVideoDataProvider } from './DefaultVideoDataProvider';
 import type {
   LoadedData,
@@ -58,11 +57,13 @@ class VideoViewport extends GenericViewport<
 
   readonly type = ViewportType.VIDEO_NEXT;
   readonly renderingEngineId: string;
+
   /**
-   * Whether the viewport fires no CAMERA_MODIFIED and no CAMERA_RESET, from
-   * the `suppressEvents` option, as on the legacy viewports.
+   * The canvas of the viewport element, for the rendering engine and for the
+   * tools that read its size. The video element draws the frame, so this
+   * canvas holds no pixels of the video.
    */
-  suppressEvents = false;
+  readonly canvas: HTMLCanvasElement;
 
   protected renderContext: VideoElementRenderContext;
   private trackedVideoElement?: HTMLVideoElement;
@@ -83,12 +84,6 @@ class VideoViewport extends GenericViewport<
   /** The frames that playback stays in, or undefined for every frame. */
   private frameRange?: [number, number];
 
-  /** The canvas under the video element, of the size of the viewport. */
-  private readonly viewportCanvas: HTMLCanvasElement;
-
-  /** Whether the frame or the view changed since the canvas was drawn. */
-  private isCanvasStale = true;
-
   // ── Static ───────────────────────────────────────────────────────────
 
   static get useCustomRenderingPipeline(): boolean {
@@ -100,8 +95,7 @@ class VideoViewport extends GenericViewport<
   constructor(args: VideoViewportInput) {
     super(args);
     this.renderingEngineId = args.renderingEngineId;
-    this.suppressEvents = Boolean(this.defaultOptions.suppressEvents);
-    this.viewportCanvas = args.canvas || getOrCreateCanvas(this.element);
+    this.canvas = args.canvas || getOrCreateCanvas(this.element);
     this.element.style.position = this.element.style.position || 'relative';
     this.element.style.overflow = 'hidden';
     this.element.style.background = this.element.style.background || '#000';
@@ -123,31 +117,9 @@ class VideoViewport extends GenericViewport<
     );
   }
 
-  /**
-   * The canvas of the viewport, of the size of the viewport. Reading it draws
-   * the frame on display into it, as the video element shows it, when the
-   * frame or the view changed since the last read. Nothing is drawn while no
-   * one reads it. The canvas lies under the video element.
-   */
-  get canvas(): HTMLCanvasElement {
-    this.drawFrameToCanvas();
-
-    return this.viewportCanvas;
-  }
-
-  /** The canvas of the viewport, with the frame on display. */
-  getCanvas(): HTMLCanvasElement {
-    return this.canvas;
-  }
-
   // ====================================================================
   // Public API -- data
   // ====================================================================
-
-  /** The modality of the video in the viewport, from its series metadata. */
-  get modality(): string | undefined {
-    return this.getVideoData()?.modality;
-  }
 
   /**
    * Replaces all mounted video display sets with the provided ones using the
@@ -298,24 +270,6 @@ class VideoViewport extends GenericViewport<
     return generateFrameImageId(sourceDataId, index + 1);
   }
 
-  /**
-   * The first frame number that an image id or a view reference names, as on
-   * the legacy video viewport.
-   */
-  getSliceIndexForImage(reference: string | ViewReference): number {
-    if (!reference) {
-      return;
-    }
-
-    if (typeof reference === 'string') {
-      return FrameRange.imageIdToFrameStart(reference);
-    }
-
-    if (reference.referencedImageId) {
-      return FrameRange.imageIdToFrameStart(reference.referencedImageId);
-    }
-  }
-
   getViewReferenceId(specifier: ViewReferenceSpecifier = {}): string {
     const sliceIndex = specifier.sliceIndex;
 
@@ -342,29 +296,17 @@ class VideoViewport extends GenericViewport<
   }
 
   /**
-   * Whether the viewport shows the video of this image URI. A frame number or
-   * a frame range in the URI is ignored, as on the legacy video viewport.
+   * Whether the viewport shows a reference. A reference to an image of one
+   * frame shows on that frame. A reference whose image names a range of
+   * frames (`.../frames/3-9`) shows on each frame of the range. A reference
+   * to the video without a frame shows on every frame. With `withNavigation`
+   * the answer is whether the video has the frame at all.
    */
-  hasImageURI(imageURI: string): boolean {
-    const dataId = this.getFirstBinding()?.data.id;
-
-    if (!dataId || !imageURI) {
-      return false;
-    }
-
-    const framesMatch = imageURI.match(FrameRange.frameRangeExtractor);
-    const testURI = framesMatch
-      ? imageURI.substring(0, framesMatch.index)
-      : imageURI;
-
-    return getGenericViewportSourceDataId(dataId).includes(testURI);
-  }
-
-  /** The geometry of a video image, from its image plane metadata. */
-  getImageDataMetadata(image: IImage | string): VideoImageMetadata {
-    return getVideoImageDataMetadata(
-      typeof image === 'string' ? image : image.imageId
-    );
+  override isReferenceViewable(
+    viewRef: ViewReference,
+    options: ReferenceCompatibleOptions = {}
+  ): boolean {
+    return super.isReferenceViewable(asFrameRangeReference(viewRef), options);
   }
 
   /**
@@ -522,6 +464,7 @@ class VideoViewport extends GenericViewport<
         dataIds: [binding.data.id, sourceDataId],
         frameOfReferenceUID: this.getFrameOfReferenceUID(),
         imageIds: this.getImageIds(),
+        imageURIs: [withoutFrames(imageIdToURI(sourceDataId))],
         currentImageIdIndex: frameNumber - 1,
         dimensionGroupNumber: frameNumber,
         numDimensionGroups: videoData.numberOfFrames,
@@ -560,21 +503,6 @@ class VideoViewport extends GenericViewport<
   pause(): void {
     this.getVideoElement()?.pause();
     this.syncCameraCurrentTimeFromElement();
-  }
-
-  /** Plays a paused video and pauses a playing one; true when it now plays. */
-  togglePlayPause(): boolean {
-    const element = this.getVideoElement();
-
-    if (element && !element.paused) {
-      this.pause();
-
-      return false;
-    }
-
-    this.play();
-
-    return true;
   }
 
   /**
@@ -805,8 +733,6 @@ class VideoViewport extends GenericViewport<
    * the frame on display.
    */
   render(): void {
-    this.isCanvasStale = true;
-
     if (this.isDestroyed || this.imageRenderedFrame !== undefined) {
       return;
     }
@@ -1128,91 +1054,6 @@ class VideoViewport extends GenericViewport<
   }
 
   /**
-   * Draws the frame on display into the canvas of the viewport, over the
-   * background colour, with the pan, the zoom and the rotation of the view,
-   * the opacity of the presentation and the filter of the video element.
-   * Draws only when the frame or the view changed since the last draw.
-   */
-  private drawFrameToCanvas(): void {
-    const canvas = this.viewportCanvas;
-
-    if (this.isDestroyed || !this.isCanvasStale) {
-      return;
-    }
-
-    const context = canvas.getContext('2d');
-
-    if (!context) {
-      return;
-    }
-
-    const { clientWidth, clientHeight } = this.element;
-
-    this.isCanvasStale = false;
-
-    if (
-      clientWidth &&
-      clientHeight &&
-      (canvas.width !== clientWidth || canvas.height !== clientHeight)
-    ) {
-      canvas.width = clientWidth;
-      canvas.height = clientHeight;
-    }
-
-    context.resetTransform();
-    context.globalAlpha = 1;
-    context.filter = 'none';
-
-    const { background } = this.defaultOptions;
-
-    if (background) {
-      const [red, green, blue] = background.map((value) =>
-        Math.round(value * 255)
-      );
-
-      context.fillStyle = `rgb(${red}, ${green}, ${blue})`;
-      context.fillRect(0, 0, canvas.width, canvas.height);
-    } else {
-      context.clearRect(0, 0, canvas.width, canvas.height);
-    }
-
-    const element = this.getVideoElement();
-    const resolvedView = this.getResolvedView();
-    const dataId = this.getFirstBinding()?.data.id;
-    const presentation = dataId
-      ? this.getDisplaySetPresentation(dataId)
-      : undefined;
-
-    if (
-      !element?.videoWidth ||
-      !element.videoHeight ||
-      !resolvedView ||
-      presentation?.visible === false
-    ) {
-      return;
-    }
-
-    const origin = resolvedView.worldToCanvas([0, 0, 0]);
-    const xAxis = resolvedView.worldToCanvas([1, 0, 0]);
-    const yAxis = resolvedView.worldToCanvas([0, 1, 0]);
-
-    context.setTransform(
-      xAxis[0] - origin[0],
-      xAxis[1] - origin[1],
-      yAxis[0] - origin[0],
-      yAxis[1] - origin[1],
-      origin[0],
-      origin[1]
-    );
-    context.globalAlpha = presentation?.opacity ?? 1;
-    context.filter = element.style.filter || 'none';
-    context.drawImage(element, 0, 0, element.videoWidth, element.videoHeight);
-    context.resetTransform();
-    context.globalAlpha = 1;
-    context.filter = 'none';
-  }
-
-  /**
    * Checks the frame on every animation frame while the video plays, with
    * `onPlaybackFrame`, until it pauses.
    */
@@ -1274,6 +1115,50 @@ class VideoViewport extends GenericViewport<
 }
 
 export default VideoViewport;
+
+/** An image id or an image URI of a video without its frame part. */
+function withoutFrames(image: string): string {
+  const framesMatch = image.match(FrameRange.frameRangeExtractor);
+
+  return framesMatch ? image.substring(0, framesMatch.index) : image;
+}
+
+/**
+ * Gives a reference whose image names a range of frames (`.../frames/3-9`)
+ * as a reference to the first frame with the last frame in
+ * `multiSliceReference`, which is how the reference check reads a range.
+ * Any other reference comes back as it is.
+ */
+function asFrameRangeReference(viewRef: ViewReference): ViewReference {
+  const image = viewRef?.referencedImageURI ?? viewRef?.referencedImageId;
+
+  if (!image || viewRef.multiSliceReference) {
+    return viewRef;
+  }
+
+  const firstFrame = FrameRange.imageIdToFrameStart(image);
+  const lastFrame = FrameRange.imageIdToFrameEnd(image);
+
+  if (!(lastFrame > firstFrame)) {
+    return viewRef;
+  }
+
+  const atFrame = (value: string | undefined, frame: number) =>
+    value?.replace(
+      FrameRange.frameRangeExtractor,
+      (_match, prefix: string) => `${prefix}${frame}`
+    );
+
+  return {
+    ...viewRef,
+    referencedImageId: atFrame(viewRef.referencedImageId, firstFrame),
+    referencedImageURI: atFrame(viewRef.referencedImageURI, firstFrame),
+    multiSliceReference: {
+      referencedImageId: atFrame(viewRef.referencedImageId ?? image, lastFrame),
+      referencedImageURI: atFrame(viewRef.referencedImageURI, lastFrame),
+    },
+  };
+}
 
 async function waitForVideoReady(element: HTMLVideoElement): Promise<void> {
   if (element.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {

@@ -12,10 +12,7 @@ import type {
 export type ImageSliceViewport = IViewport &
   Pick<
     IStackViewport,
-    | 'getCurrentImageId'
-    | 'getCurrentImageIdIndex'
-    | 'getImageIds'
-    | 'hasImageURI'
+    'getCurrentImageId' | 'getCurrentImageIdIndex' | 'getImageIds'
   >;
 
 export type StackCompatibilityViewport = ImageSliceViewport &
@@ -53,8 +50,27 @@ export function viewportSupportsImageSlices(
   return (
     viewportHasMethod(viewport, 'getCurrentImageId') &&
     viewportHasMethod(viewport, 'getCurrentImageIdIndex') &&
-    viewportHasMethod(viewport, 'getImageIds') &&
-    viewportHasMethod(viewport, 'hasImageURI')
+    viewportHasMethod(viewport, 'getImageIds')
+  );
+}
+
+/**
+ * Whether the viewport has the image of this URI, on the slice that it shows
+ * or on another one. A legacy viewport and a legacy adapter answer with
+ * `hasImageURI`. A next viewport without that member answers through its
+ * view references: the image is viewable after navigation.
+ */
+export function viewportHasImageURI(
+  viewport: IViewport,
+  imageURI: string
+): boolean {
+  if (viewportHasMethod(viewport, 'hasImageURI')) {
+    return Boolean(viewport.hasImageURI(imageURI));
+  }
+
+  return viewport.isReferenceViewable(
+    { referencedImageURI: imageURI },
+    { withNavigation: true }
   );
 }
 

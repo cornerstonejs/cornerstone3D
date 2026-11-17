@@ -432,7 +432,8 @@ describe('suppressEvents on the direct next whole slide viewport', () => {
     next.viewport.setPan([10, 10]);
     next.viewport.resetViewState();
 
-    expect(next.viewport.suppressEvents).toBe(true);
+    expect(next.viewport.defaultOptions.suppressEvents).toBe(true);
+    expect('suppressEvents' in next.viewport).toBe(false);
     expect(legacyCounts.modified).toBe(0);
     expect(nextCounts).toEqual({ modified: 0, reset: 0 });
   });
@@ -448,7 +449,8 @@ describe('suppressEvents on the direct next whole slide viewport', () => {
     });
     next.viewport.setZoom(2);
 
-    expect(next.viewport.suppressEvents).toBe(false);
+    expect(next.viewport.defaultOptions.suppressEvents).toBeUndefined();
+    expect('suppressEvents' in next.viewport).toBe(false);
     expect(legacyCounts.modified).toBe(1);
     expect(nextCounts.modified).toBe(1);
   });

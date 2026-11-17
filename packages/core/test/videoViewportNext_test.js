@@ -226,21 +226,52 @@ describe('Direct next video viewport -- ', () => {
         legacyData.voxelManager.getAtIJKPoint(point)
       );
     });
-    expect(next.modality).toBe(legacy.modality);
-    expect(next.getImageDataMetadata(TEST_VIDEO.imageId)).toEqual(
-      legacy.getImageDataMetadata(TEST_VIDEO.imageId)
-    );
+    expect(nextData.metadata.Modality).toBe(legacy.modality);
+    expect(
+      utilities.VideoUtilities.getVideoImageDataMetadata(TEST_VIDEO.imageId)
+    ).toEqual(legacy.getImageDataMetadata(TEST_VIDEO.imageId));
   });
 
-  it('finds its video by image URI as the legacy viewport does', function () {
+  it('answers for an image URI of its video through isReferenceViewable, where the legacy viewport has hasImageURI', async function () {
     const uri = 'https://test.video/studies/1/series/2/instances/3';
+    const otherURI = 'https://test.video/studies/1/series/9';
+    const holds = (imageURI) =>
+      next.isReferenceViewable(
+        { referencedImageURI: imageURI },
+        { withNavigation: true }
+      );
+    const shows = (imageURI) =>
+      next.isReferenceViewable({ referencedImageURI: imageURI });
 
-    [`${uri}/frames/7`, uri, 'https://test.video/studies/1/series/9'].forEach(
+    expect(next.hasImageURI).toBeUndefined();
+    [`${uri}/frames/7`, uri, `${uri}/frames/3-9`, otherURI].forEach(
       (imageURI) => {
-        expect(next.hasImageURI(imageURI)).toBe(legacy.hasImageURI(imageURI));
+        expect(holds(imageURI)).toBe(legacy.hasImageURI(imageURI));
+        expect(
+          utilities.getViewportsWithImageURI(imageURI).includes(next)
+        ).toBe(utilities.getViewportsWithImageURI(imageURI).includes(legacy));
       }
     );
-    expect(next.hasImageURI(uri)).toBe(true);
+    expect(holds(uri)).toBe(true);
+    expect(holds(otherURI)).toBe(false);
+    expect(utilities.getViewportsWithImageURI(uri)).toContain(next);
+
+    expect(next.getFrameNumber()).toBe(1);
+    expect(shows(uri)).toBe(true);
+    expect(shows(`${uri}/frames/1`)).toBe(true);
+    expect(shows(`${uri}/frames/7`)).toBe(false);
+    expect(shows(`${uri}/frames/3-9`)).toBe(false);
+    expect(shows(otherURI)).toBe(false);
+
+    next.setFrameNumber(5);
+    await waitFor(
+      () => next.getFrameNumber() === 5 && !nextVideoElement(next).seeking
+    );
+
+    expect(shows(uri)).toBe(true);
+    expect(shows(`${uri}/frames/3-9`)).toBe(true);
+    expect(shows(`${uri}/frames/7`)).toBe(false);
+    expect(shows(`${uri}/frames/1`)).toBe(false);
   });
 
   it('keeps the frame range of setFrameRange as the legacy viewport does', function () {
@@ -269,8 +300,9 @@ describe('Direct next video viewport -- ', () => {
     legacy.setFrameRange([5, 10]);
     next.setFrameRange([5, 10]);
     expect(legacy.togglePlayPause()).toBe(true);
-    expect(next.togglePlayPause()).toBe(true);
+    next.play();
     await new Promise((resolve) => setTimeout(resolve, 300));
+    expect(nextVideoElement(next).paused).toBe(false);
 
     const start = performance.now();
 
@@ -282,7 +314,7 @@ describe('Direct next video viewport -- ', () => {
     }, 3000);
 
     expect(legacy.togglePlayPause()).toBe(false);
-    expect(next.togglePlayPause()).toBe(false);
+    next.pause();
     expect(nextVideoElement(next).paused).toBe(true);
 
     [samples.legacy, samples.next].forEach((frames) => {
@@ -444,69 +476,37 @@ describe('Direct next video viewport -- ', () => {
     );
   });
 
-  it('gives a canvas of the viewport size with the frame on display', async function () {
-    legacy.setFrameNumber(6);
-    next.setFrameNumber(6);
-    await waitFor(
-      () =>
-        legacy.getFrameNumber() === 6 &&
-        next.getFrameNumber() === 6 &&
-        !legacyVideoElement(legacy).seeking &&
-        !nextVideoElement(next).seeking
-    );
-    next.setZoom(1.5);
-    legacy.setCamera({ parallelScale: legacy.getCamera().parallelScale / 1.5 });
+  it('keeps the canvas of its element, of the viewport size, and draws no frame into it', async function () {
+    const { canvas } = next;
+
     await animationFrames(3);
 
-    const nextCanvas = next.getCanvas();
+    const { data } = canvas
+      .getContext('2d')
+      .getImageData(0, 0, canvas.width, canvas.height);
 
-    expect(next.canvas).toBe(nextCanvas);
-    expect(nextCanvas.width).toBe(legacy.canvas.width);
-    expect(nextCanvas.height).toBe(legacy.canvas.height);
-    expect(nextCanvas.clientWidth).toBe(WIDTH);
-    expect(nextCanvas.clientHeight).toBe(HEIGHT);
-    expect(nextCanvas.toDataURL('image/png')).toMatch(/^data:image\/png/);
-
-    const pixelAt = (canvas, point) =>
-      Array.from(
-        canvas
-          .getContext('2d')
-          .getImageData(Math.round(point[0]), Math.round(point[1]), 1, 1).data
-      );
-
-    [
-      [10.5, 20.5, 0],
-      [40.5, 10.5, 0],
-      [55.5, 40.5, 0],
-    ].forEach((world) => {
-      const legacyPixel = pixelAt(legacy.canvas, legacy.worldToCanvas(world));
-      const nextPixel = pixelAt(nextCanvas, next.worldToCanvas(world));
-
-      nextPixel.forEach((value, channel) =>
-        expect(Math.abs(value - legacyPixel[channel])).toBeLessThanOrEqual(8)
-      );
-    });
+    expect(canvas).toBe(next.element.querySelector('canvas'));
+    expect(next.canvas).toBe(canvas);
+    expect(canvas.clientWidth).toBe(WIDTH);
+    expect(canvas.clientHeight).toBe(HEIGHT);
+    expect(data.length).toBeGreaterThan(0);
+    expect(data.every((value, index) => value === data[index % 4])).toBe(true);
   });
 
-  it('draws the frame of a later seek into the canvas when it is read', async function () {
-    const world = [30.5, 20.5, 0];
-    const pixelAt = (canvas, point) =>
-      Array.from(
-        canvas
-          .getContext('2d')
-          .getImageData(Math.round(point[0]), Math.round(point[1]), 1, 1).data
-      );
-    const firstPixel = pixelAt(next.canvas, next.worldToCanvas(world));
+  it('has none of the old members of the legacy video viewport', function () {
+    for (const member of [
+      'togglePlayPause',
+      'getImageDataMetadata',
+      'getCanvas',
+      'getSliceIndexForImage',
+      'hasImageURI',
+    ]) {
+      expect(next[member]).toBeUndefined();
+      expect(typeof legacy[member]).toBe('function');
+    }
 
-    next.setFrameNumber(15);
-    await waitFor(
-      () => next.getFrameNumber() === 15 && !nextVideoElement(next).seeking
-    );
-    await animationFrames(3);
-
-    const laterPixel = pixelAt(next.canvas, next.worldToCanvas(world));
-
-    expect(laterPixel).not.toEqual(firstPixel);
+    expect('modality' in next).toBe(false);
+    expect(legacy.modality).toBeDefined();
   });
 });
 

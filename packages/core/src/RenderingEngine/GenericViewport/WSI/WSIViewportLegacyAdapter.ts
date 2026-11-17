@@ -41,12 +41,19 @@ class WSIViewportLegacyAdapter extends WSIViewport {
    */
   options: ViewportInputOptions;
 
+  /**
+   * Whether the viewport was made with the `suppressEvents` option, as on the
+   * legacy viewport. It then fires no CAMERA_MODIFIED and no CAMERA_RESET.
+   */
+  readonly suppressEvents: boolean;
+
   constructor(
     args: WSIViewportInput &
       Partial<Pick<ViewportInput, 'canvas' | 'defaultOptions'>>
   ) {
     super(args);
     this.options = deepClone(this.defaultOptions) as ViewportInputOptions;
+    this.suppressEvents = Boolean(this.defaultOptions.suppressEvents);
   }
 
   /** The id of the viewport. The legacy WSI viewport never set it. */

@@ -43,6 +43,35 @@ describe('GenericViewport reference compatibility', () => {
     ).toBe(true);
   });
 
+  it('shows a reference to an image URI of the whole data on every slice', () => {
+    const context = { ...baseContext, imageURIs: ['whole-data'] };
+
+    for (const currentImageIdIndex of [0, 1, 2]) {
+      expect(
+        isGenericViewportReferenceViewable(
+          { referencedImageURI: 'whole-data' },
+          [{ ...context, currentImageIdIndex }]
+        )
+      ).toBe(true);
+    }
+
+    expect(
+      isGenericViewportReferenceViewable({ referencedImageURI: 'image-3' }, [
+        context,
+      ])
+    ).toBe(false);
+    expect(
+      isGenericViewportReferenceViewable({ referencedImageURI: 'other-data' }, [
+        context,
+      ])
+    ).toBe(false);
+    expect(
+      isGenericViewportReferenceViewable({ referencedImageURI: 'whole-data' }, [
+        baseContext,
+      ])
+    ).toBe(false);
+  });
+
   it('matches image references by current image or navigable image', () => {
     expect(
       isGenericViewportReferenceViewable(

@@ -1,5 +1,6 @@
 import { getRenderingEngines } from '../RenderingEngine/getRenderingEngine';
 import {
+  viewportHasImageURI,
   viewportSupportsImageSlices,
   type ImageSliceViewport,
 } from './viewportCapabilities';
@@ -25,7 +26,7 @@ export default function getViewportsWithImageURI(
       .filter(viewportSupportsImageSlices);
 
     viewportsForRenderingEngine.forEach((viewport) => {
-      if (viewport.hasImageURI(imageURI)) {
+      if (viewportHasImageURI(viewport, imageURI)) {
         viewports.push(viewport);
       }
     });

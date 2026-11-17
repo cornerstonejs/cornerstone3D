@@ -12,6 +12,7 @@ import {
   eventTarget,
   getEnabledElementByIds,
   getRenderingEngines,
+  type Types,
 } from '@cornerstonejs/core';
 import { filterViewportsWithToolEnabled } from '../utilities/viewportFilters';
 import { getToolGroup } from '../store/ToolGroupManager';
@@ -279,25 +280,41 @@ class OrientationMarkerTool extends BaseTool {
 
     viewports.forEach((viewport) => {
       // The orientation marker relies on the VTK offscreen-render pipeline
-      // (getWidget/addWidget/getRenderer/getOffscreenMultiRenderWindow). The
-      // legacy viewports and the next 3D viewport have it; a next viewport
-      // without a vtk.js renderer (e.g. PlanarViewport) is skipped instead of
-      // crashing. This is the single choke point - addAxisActorInViewport is
-      // never reached for them, and resize()/cleanUpData() already self-guard.
+      // (addWidget/getRenderer/getOffscreenMultiRenderWindow). The legacy
+      // viewports and the next 3D viewport have it; a next viewport without a
+      // vtk.js renderer (e.g. PlanarViewport) is skipped instead of crashing.
+      // This is the single choke point - addAxisActorInViewport is never
+      // reached for them, and resize()/cleanUpData() already self-guard.
       if (
-        typeof viewport.getWidget !== 'function' ||
+        typeof viewport.addWidget !== 'function' ||
         typeof (viewport as { getRenderer?: unknown }).getRenderer !==
           'function'
       ) {
         return;
       }
 
-      const widget = viewport.getWidget(this.getToolName());
-      // testing if widget has been deleted
-      if (!widget || widget.isDeleted()) {
+      if (!this.hasOrientationMarker(viewport)) {
         this.addAxisActorInViewport(viewport);
       }
     });
+  }
+
+  /**
+   * Whether the tool has a live orientation marker for this viewport. The
+   * tool keeps its markers by viewport id, so the marker of a viewport that
+   * was disabled does not count for a viewport that is enabled again under
+   * the same id: its widget has the renderer of the disabled viewport.
+   */
+  private hasOrientationMarker(
+    viewport: Types.IViewport & { getRenderer?: () => unknown }
+  ): boolean {
+    const widget = this.orientationMarkers[viewport.id]?.orientationWidget;
+
+    return Boolean(
+      widget &&
+        !widget.isDeleted() &&
+        widget.getParentRenderer() === viewport.getRenderer?.()
+    );
   }
 
   async addAxisActorInViewport(viewport) {

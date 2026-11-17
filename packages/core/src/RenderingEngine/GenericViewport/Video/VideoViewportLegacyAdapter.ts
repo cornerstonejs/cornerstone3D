@@ -2,8 +2,10 @@ import type {
   ActorEntry,
   DisplayArea,
   ICamera,
+  IImage,
   ImageSetOptions,
   VideoViewportProperties,
+  ViewReference,
   VOIRange,
   ViewPresentation,
   ViewPresentationSelector,
@@ -12,7 +14,11 @@ import type { Point2 } from '../../../types';
 import { VideoEnums } from '../../../enums';
 import type ViewportInputOptions from '../../../types/ViewportInputOptions';
 import { deepClone } from '../../../utilities/deepClone';
+import FrameRange from '../../../utilities/FrameRange';
 import { coreLog } from '../../../utilities/logger';
+import { getVideoImageDataMetadata } from '../../../utilities/VideoUtilities';
+import type { VideoImageMetadata } from '../../../utilities/VideoUtilities';
+import { getGenericViewportSourceDataId } from '../genericViewportDisplaySetAccess';
 import { viewportProjection } from '../viewportProjection';
 import type {
   VideoDataPresentation,
@@ -35,12 +41,23 @@ class VideoViewportLegacyAdapter extends VideoViewport {
    */
   options = deepClone(this.defaultOptions) as ViewportInputOptions;
 
+  /**
+   * Whether the viewport was made with the `suppressEvents` option, as on the
+   * legacy viewport. It then fires no CAMERA_MODIFIED and no CAMERA_RESET.
+   */
+  readonly suppressEvents = Boolean(this.defaultOptions.suppressEvents);
+
   /** The number of frames that one step of `scroll` moves. */
   private scrollSpeed = 1;
 
   /** The id of the viewport. The legacy video viewport never set it. */
   get uid(): string {
     return this.id;
+  }
+
+  /** The modality of the video in the viewport, from its series metadata. */
+  get modality(): string | undefined {
+    return this.getVideoData()?.modality;
   }
 
   /**
@@ -315,6 +332,21 @@ class VideoViewportLegacyAdapter extends VideoViewport {
     this.setDisplaySetPresentation(dataId, { averageWhite });
   }
 
+  /** Plays a paused video and pauses a playing one; true when it now plays. */
+  togglePlayPause(): boolean {
+    const element = this.getVideoElement();
+
+    if (element && !element.paused) {
+      this.pause();
+
+      return false;
+    }
+
+    this.play();
+
+    return true;
+  }
+
   /** Goes to the time in seconds. */
   async setTime(timeInSeconds: number): Promise<void> {
     this.seek(timeInSeconds);
@@ -358,6 +390,50 @@ class VideoViewportLegacyAdapter extends VideoViewport {
         : scrollSpeed;
   }
 
+  /**
+   * The first frame number that an image id or a view reference names, as on
+   * the legacy video viewport.
+   */
+  getSliceIndexForImage(reference: string | ViewReference): number {
+    if (!reference) {
+      return;
+    }
+
+    if (typeof reference === 'string') {
+      return FrameRange.imageIdToFrameStart(reference);
+    }
+
+    if (reference.referencedImageId) {
+      return FrameRange.imageIdToFrameStart(reference.referencedImageId);
+    }
+  }
+
+  /**
+   * Whether the viewport shows the video of this image URI. A frame number or
+   * a frame range in the URI is ignored, as on the legacy video viewport.
+   */
+  hasImageURI(imageURI: string): boolean {
+    const dataId = this.getFirstBinding()?.data.id;
+
+    if (!dataId || !imageURI) {
+      return false;
+    }
+
+    const framesMatch = imageURI.match(FrameRange.frameRangeExtractor);
+    const testURI = framesMatch
+      ? imageURI.substring(0, framesMatch.index)
+      : imageURI;
+
+    return getGenericViewportSourceDataId(dataId).includes(testURI);
+  }
+
+  /** The geometry of a video image, from its image plane metadata. */
+  getImageDataMetadata(image: IImage | string): VideoImageMetadata {
+    return getVideoImageDataMetadata(
+      typeof image === 'string' ? image : image.imageId
+    );
+  }
+
   /** No actors: the next video viewport draws with a video element. */
   getActors(): ActorEntry[] {
     return [];
@@ -371,6 +447,11 @@ class VideoViewportLegacyAdapter extends VideoViewport {
   /** Undefined: the next video viewport has no actors. */
   getActor(_actorUID: string): ActorEntry | undefined {
     return undefined;
+  }
+
+  /** Returns the canvas of the viewport element. */
+  getCanvas(): HTMLCanvasElement {
+    return this.canvas;
   }
 
   /**

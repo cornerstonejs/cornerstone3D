@@ -289,7 +289,8 @@ describe('suppressEvents on the direct next video viewport', () => {
     viewport.render();
     await nextAnimationFrame();
 
-    expect(viewport.suppressEvents).toBe(true);
+    expect(viewport.defaultOptions.suppressEvents).toBe(true);
+    expect('suppressEvents' in viewport).toBe(false);
     expect(counts.modified).toBe(0);
     expect(counts.reset).toBe(0);
     expect(counts.rendered).toBeGreaterThan(0);
@@ -305,7 +306,8 @@ describe('suppressEvents on the direct next video viewport', () => {
     viewport.setPan([12, 5]);
     viewport.resetViewState();
 
-    expect(viewport.suppressEvents).toBe(false);
+    expect(viewport.defaultOptions.suppressEvents).toBeUndefined();
+    expect('suppressEvents' in viewport).toBe(false);
     expect(counts.modified).toBeGreaterThan(0);
     expect(counts.reset).toBe(1);
 

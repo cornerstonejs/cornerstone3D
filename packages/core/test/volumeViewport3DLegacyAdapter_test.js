@@ -339,4 +339,28 @@ describe('3D legacy adapter against the legacy 3D viewport -- ', () => {
       legacy.isOrientationChangeable()
     );
   });
+
+  it('fires no camera event for a call that asks for suppressEvents, and fires them for the next call', async function () {
+    const [, adapter] = createPair(renderingEngine);
+    const volumeId = await createVolume();
+    const counts = { modified: 0, reset: 0 };
+
+    await adapter.setVolumes([{ volumeId }]);
+    adapter.element.addEventListener(Enums.Events.CAMERA_MODIFIED, () => {
+      counts.modified++;
+    });
+    adapter.element.addEventListener(Enums.Events.CAMERA_RESET, () => {
+      counts.reset++;
+    });
+
+    adapter.setOrientation(OrientationAxis.AXIAL, true, true);
+
+    expect(counts).toEqual({ modified: 0, reset: 0 });
+    expect(adapter.suppressEvents).toBe(false);
+
+    adapter.resetCamera();
+
+    expect(counts.modified).toBeGreaterThan(0);
+    expect(counts.reset).toBe(1);
+  });
 });

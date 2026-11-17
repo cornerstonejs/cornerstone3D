@@ -457,7 +457,8 @@ describe('suppressEvents on the direct next ECG viewport', () => {
     next.setZoom(2);
     next.resetViewState();
 
-    expect(next.suppressEvents).toBe(true);
+    expect(next.defaultOptions.suppressEvents).toBe(true);
+    expect('suppressEvents' in next).toBe(false);
     expect(legacyCounts).toEqual({ modified: 0, reset: 0 });
     expect(nextCounts).toEqual(legacyCounts);
   });
@@ -469,7 +470,8 @@ describe('suppressEvents on the direct next ECG viewport', () => {
     next.setPan([12, 5]);
     next.resetViewState();
 
-    expect(next.suppressEvents).toBe(false);
+    expect(next.defaultOptions.suppressEvents).toBeUndefined();
+    expect('suppressEvents' in next).toBe(false);
     expect(nextCounts.modified).toBeGreaterThan(0);
     expect(nextCounts.reset).toBe(1);
   });

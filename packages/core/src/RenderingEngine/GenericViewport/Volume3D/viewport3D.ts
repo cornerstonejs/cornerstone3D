@@ -62,6 +62,7 @@ import type {
   Volume3DSetDataOptions,
   Volume3DViewportRenderContext,
   Volume3DVolumeRendering,
+  ViewportWidget,
   VolumeViewport3DInput,
 } from './viewport3DTypes';
 
@@ -100,6 +101,8 @@ class VolumeViewport3D extends GenericViewport<
     string,
     Volume3DDataPresentation
   >();
+  /** The widgets that tools keep on the viewport, by id. */
+  protected readonly widgets = new Map<string, ViewportWidget>();
 
   static get useCustomRenderingPipeline(): boolean {
     return false;
@@ -179,11 +182,6 @@ class VolumeViewport3D extends GenericViewport<
 
   /** The 3D family can show reduced volume data (GENVIEW-FIDELITY-8). */
   override canReportFidelity(): boolean {
-    return true;
-  }
-
-  /** Always true: a 3D viewport turns to any orientation. */
-  override isOrientationChangeable(): boolean {
     return true;
   }
 
@@ -368,6 +366,42 @@ class VolumeViewport3D extends GenericViewport<
    */
   getCanvas(): HTMLCanvasElement {
     return this.canvas;
+  }
+
+  /**
+   * Keeps a widget of a tool under an id: the OrientationMarkerTool keeps its
+   * vtk.js orientation marker widget here. The rendering engine draws the
+   * renderer of each widget with the viewport.
+   *
+   * @param widgetId - The id of the widget, the tool name for a tool.
+   * @param widget - The widget.
+   */
+  addWidget(widgetId: string, widget: ViewportWidget): void {
+    this.widgets.set(widgetId, widget);
+  }
+
+  /** Every widget that the viewport keeps. The rendering engine reads it. */
+  getWidgets(): ViewportWidget[] {
+    return Array.from(this.widgets.values());
+  }
+
+  /**
+   * Disables every widget and takes the actor of a widget out of its
+   * renderer. The rendering engine calls it when it disables the viewport.
+   */
+  override removeWidgets(): void {
+    this.getWidgets().forEach((widget) => {
+      if (widget.getEnabled?.()) {
+        widget.setEnabled(false);
+      }
+
+      const actor = widget.getActor?.();
+      const renderer = widget.getRenderer?.();
+
+      if (actor && renderer) {
+        renderer.removeActor(actor);
+      }
+    });
   }
 
   /**

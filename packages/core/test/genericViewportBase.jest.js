@@ -405,17 +405,16 @@ describe('GenericViewport', () => {
       expect(viewport.renderCount).toBe(renderCountBefore);
     });
 
-    it('does not trigger a render when the viewport has already been marked destroyed', async () => {
+    it('does not trigger a render when the viewport is destroyed, which removes its display sets', async () => {
       const { viewport } = createHarness();
 
       await mountDisplaySet(viewport, 'ds-1');
       const attachment = viewport.bindings.get('ds-1');
-
-      viewport.isDestroyed = true;
       const renderCountBefore = viewport.renderCount;
 
-      viewport.removeData('ds-1');
+      viewport.destroy();
 
+      expect(viewport.isDestroyed).toBe(true);
       expect(attachment.removeData).toHaveBeenCalledTimes(1);
       expect(viewport.renderCount).toBe(renderCountBefore);
     });
@@ -662,6 +661,17 @@ describe('GenericViewport', () => {
 
       expect(viewport.isDestroyed).toBe(true);
       expect(viewport.onDestroySpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('isDestroyed is false until destroy, and cannot be set from outside', () => {
+      const { viewport } = createHarness();
+
+      expect(viewport.isDestroyed).toBe(false);
+      expect(() => {
+        viewport.isDestroyed = true;
+      }).toThrow();
+      expect(viewport.isDestroyed).toBe(false);
+      expect('isDisabled' in viewport).toBe(false);
     });
   });
 

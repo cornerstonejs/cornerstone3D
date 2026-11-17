@@ -471,21 +471,22 @@ describe('Direct next planar viewport against the legacy viewports -- ', () => {
     });
   });
 
-  describe('isDisabled', () => {
-    it('is false while enabled and true once the engine disables the viewport, as on the legacy viewport', async function () {
+  describe('isDestroyed', () => {
+    it('is false while enabled and true once the engine disables the viewport, where the legacy viewport says isDisabled', async function () {
       const [legacy, next] = await showStackPair(
         renderingEngine,
         createStackImageIds()
       );
 
       expect(legacy.isDisabled).toBe(false);
-      expect(next.isDisabled).toBe(false);
+      expect(next.isDestroyed).toBe(false);
 
       renderingEngine.disableElement('legacy');
       renderingEngine.disableElement('next');
 
       expect(legacy.isDisabled).toBe(true);
-      expect(next.isDisabled).toBe(true);
+      expect(next.isDestroyed).toBe(true);
+      expect('isDisabled' in next).toBe(false);
     });
   });
 

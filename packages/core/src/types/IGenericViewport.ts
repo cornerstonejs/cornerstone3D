@@ -47,6 +47,11 @@ export type ViewportContentMode =
  * generics on the concrete class when the family is known.
  */
 export interface IGenericViewport extends IViewport {
+  /**
+   * True once the viewport is destroyed, which the rendering engine does when
+   * it disables the element. Read only.
+   */
+  readonly isDestroyed: boolean;
   setDisplaySets(
     ...entries: Array<{ displaySetId: string; options?: unknown }>
   ): Promise<void>;

@@ -1,9 +1,50 @@
-import { triggerEvent, eventTarget } from '@cornerstonejs/core';
+import { triggerEvent, eventTarget, type Types } from '@cornerstonejs/core';
 import Events from '../enums/Events';
 import type { Annotation } from '../types';
 import { ChangeTypes } from '../enums';
 
 export type FramesRange = [number, number] | number;
+
+/**
+ * Whether the viewport has the old slice members of the legacy stack and
+ * video viewports (`getSliceIndexForImage`, `getCurrentImageId(index)`): a
+ * legacy viewport or a legacy adapter. A next viewport answers through its
+ * view reference.
+ */
+function hasLegacySliceMembers(viewport): boolean {
+  return typeof viewport.getSliceIndexForImage === 'function';
+}
+
+/**
+ * The image id of a slice of the viewport, by its 0-based index. On a next
+ * viewport it is the referenced image of the view reference of that slice,
+ * for a stack, a video and a volume in its acquisition orientation. A volume
+ * in another orientation has no image for a slice, and gives undefined.
+ */
+function getSliceImageId(viewport, sliceIndex: number): string | undefined {
+  if (hasLegacySliceMembers(viewport)) {
+    return viewport.getCurrentImageId(sliceIndex);
+  }
+
+  return viewport.getViewReference({ sliceIndex })?.referencedImageId;
+}
+
+/**
+ * The slice index of the last image of the range that an annotation has
+ * now, or undefined when it has no range. A legacy viewport and a legacy
+ * adapter find it from the image of the range end. On a next viewport it is
+ * the 0-based slice index that the range end holds.
+ */
+function getRangeEndSliceIndex(
+  viewport,
+  multiSliceReference?: Types.ViewReference
+): number | undefined {
+  if (hasLegacySliceMembers(viewport)) {
+    return viewport.getSliceIndexForImage(multiSliceReference);
+  }
+
+  return multiSliceReference?.sliceIndex;
+}
 
 /**
  * This class handles the annotation multiple slice view references.
@@ -55,7 +96,8 @@ export default class AnnotationMultiSlice {
         endRange = viewport.getNumberOfSlices() - 1;
       }
     }
-    const rangeEndSliceIndex = viewport.getSliceIndexForImage(
+    const rangeEndSliceIndex = getRangeEndSliceIndex(
+      viewport,
       metadata.multiSliceReference
     );
 
@@ -67,9 +109,7 @@ export default class AnnotationMultiSlice {
     }
     endRange = Math.max(startRange, endRange);
     metadata.sliceIndex = Math.min(startRange, endRange);
-    metadata.referencedImageId = viewport.getCurrentImageId(
-      metadata.sliceIndex
-    );
+    metadata.referencedImageId = getSliceImageId(viewport, metadata.sliceIndex);
     metadata.referencedImageURI = undefined;
     if (metadata.dimensionGroupNumber !== undefined) {
       metadata.dimensionGroupNumber = viewport.getViewReference?.({
@@ -80,7 +120,7 @@ export default class AnnotationMultiSlice {
       metadata.multiSliceReference = undefined;
     } else if (endRange !== metadata.multiSliceReference?.sliceIndex) {
       metadata.multiSliceReference = {
-        referencedImageId: viewport.getCurrentImageId(endRange),
+        referencedImageId: getSliceImageId(viewport, endRange),
         sliceIndex: endRange,
       };
     }

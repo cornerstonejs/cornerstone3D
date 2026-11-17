@@ -237,6 +237,39 @@ describe('Tools on a direct next video viewport -- ', () => {
     }
   }, 60000);
 
+  it('keeps the last frame of a range when AnnotationMultiSlice moves its first frame, where the legacy viewport moves it one frame on', async function () {
+    const legacyProbe = await clickProbe(
+      legacy,
+      legacy.worldToCanvas([10, 20, 0])
+    );
+    const legacyAnnotation = { metadata: { ...legacyProbe.metadata } };
+
+    annotation.state.removeAllAnnotations();
+
+    const nextProbe = await clickProbe(next, next.worldToCanvas([10, 20, 0]));
+
+    AnnotationMultiSlice.setRange(legacy, legacyAnnotation, 2, 8);
+    AnnotationMultiSlice.setRange(next, nextProbe, 2, 8);
+    AnnotationMultiSlice.setStartRange(legacy, legacyAnnotation, 4);
+    AnnotationMultiSlice.setStartRange(next, nextProbe, 4);
+
+    expect(next.getSliceIndexForImage).toBeUndefined();
+    expect(AnnotationMultiSlice.getFrameRange(nextProbe)).toEqual([5, 9]);
+    expect(next.getFrameRange()).toEqual([5, 9]);
+    expect(AnnotationMultiSlice.getFrameRange(legacyAnnotation)).toEqual([
+      5, 10,
+    ]);
+
+    AnnotationMultiSlice.setEndRange(next, nextProbe, 6);
+
+    expect(AnnotationMultiSlice.getFrameRange(nextProbe)).toEqual([5, 7]);
+
+    AnnotationMultiSlice.setSingle(next, nextProbe, 6);
+
+    expect(AnnotationMultiSlice.getFrameRange(nextProbe)).toBe(7);
+    expect(nextProbe.metadata.multiSliceReference).toBeUndefined();
+  }, 30000);
+
   it('draws a contour segmentation on its frame as the legacy viewport does', async function () {
     const segmentationId = 'videoContours';
     const reference = next.getViewReference();

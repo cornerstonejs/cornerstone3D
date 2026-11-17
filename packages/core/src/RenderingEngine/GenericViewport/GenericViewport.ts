@@ -67,18 +67,6 @@ export type GenericViewportOptions = Omit<
 };
 
 /**
- * A widget that a tool keeps on a viewport, such as a vtk.js orientation
- * marker widget. The members are those that the viewport and the rendering
- * engines call.
- */
-export interface ViewportWidget {
-  getEnabled?(): boolean;
-  setEnabled?(enabled: boolean): void;
-  getActor?(): unknown;
-  getRenderer?(): { removeActor(actor: unknown): void } | null;
-}
-
-/**
  * Generic GenericViewport controller.
  *
  * The base class owns only shared viewport state and binding orchestration:
@@ -130,8 +118,7 @@ abstract class GenericViewport<
   >();
   protected dataPresentation = new Map<DisplaySetId, TDataPresentation>();
   protected viewState!: TViewState;
-  protected isDestroyed = false;
-  private readonly widgets = new Map<string, ViewportWidget>();
+  private destroyed = false;
 
   // ── Debug ────────────────────────────────────────────────────────────
 
@@ -604,58 +591,22 @@ abstract class GenericViewport<
   // ====================================================================
 
   /**
-   * Keeps a widget of a tool under an id, as the legacy viewport: the
-   * OrientationMarkerTool keeps its vtk.js orientation marker widget here, and
-   * the rendering engine draws the renderers of the widgets.
-   *
-   * @param widgetId - The id of the widget, the tool name for a tool.
-   * @param widget - The widget.
+   * Does nothing: only a viewport with a vtk.js renderer keeps widgets, which
+   * is the 3D viewport. The rendering engine calls it for every viewport that
+   * it disables.
    */
-  addWidget(widgetId: string, widget: ViewportWidget): void {
-    this.widgets.set(widgetId, widget);
-  }
-
-  /** The widget kept under this id, if any. */
-  getWidget(widgetId: string): ViewportWidget | undefined {
-    return this.widgets.get(widgetId);
-  }
-
-  /** Every widget that the viewport keeps. */
-  getWidgets(): ViewportWidget[] {
-    return Array.from(this.widgets.values());
-  }
-
-  /**
-   * Disables every widget and takes the actor of a widget out of its
-   * renderer, as the legacy viewport. The rendering engine calls it when it
-   * disables the viewport.
-   */
-  removeWidgets(): void {
-    this.getWidgets().forEach((widget) => {
-      if (widget.getEnabled?.()) {
-        widget.setEnabled(false);
-      }
-
-      const actor = widget.getActor?.();
-      const renderer = widget.getRenderer?.();
-
-      if (actor && renderer) {
-        renderer.removeActor(actor);
-      }
-    });
-  }
-
-  /**
-   * Whether the viewport can turn to any orientation. False on a viewport
-   * family that does not turn, as on the legacy viewports; the 3D family
-   * returns true.
-   */
-  isOrientationChangeable(): boolean {
-    return false;
-  }
+  removeWidgets(): void {}
 
   /** The options that the viewport was made with. They do not change. */
   readonly defaultOptions: GenericViewportOptions;
+
+  /**
+   * True once `destroy` ran. The rendering engine destroys a viewport when it
+   * disables its element. Read only: only `destroy` sets it.
+   */
+  get isDestroyed(): boolean {
+    return this.destroyed;
+  }
 
   /**
    * Releases mounted bindings and viewport-local resources.
@@ -665,7 +616,7 @@ abstract class GenericViewport<
       return;
     }
 
-    this.isDestroyed = true;
+    this.destroyed = true;
     this.destroyBindings();
     this.onDestroy();
     this.bindings.clear();
@@ -1011,12 +962,11 @@ abstract class GenericViewport<
   }
 
   /**
-   * Whether the viewport has `suppressEvents` set, the member that the
-   * families and their adapters define from the `suppressEvents` option, as
-   * on the legacy viewports.
+   * Whether the viewport was made with the `suppressEvents` option. It then
+   * fires no CAMERA_MODIFIED and no CAMERA_RESET.
    */
   protected areEventsSuppressed(): boolean {
-    return Boolean((this as { suppressEvents?: boolean }).suppressEvents);
+    return Boolean(this.defaultOptions.suppressEvents);
   }
 
   /**
@@ -1226,12 +1176,6 @@ abstract class GenericViewport<
   protected onDestroy(): void {
     // Subclasses can release viewport-local resources here.
   }
-
-  /**
-   * False until the rendering engine disables the viewport, as on the legacy
-   * viewports. The engine sets it to true.
-   */
-  isDisabled = false;
 }
 
 export default GenericViewport;

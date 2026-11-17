@@ -135,18 +135,22 @@ describe('Tools on a direct next 3D viewport -- ', () => {
   it('shows the orientation marker as on the legacy 3D viewport', async function () {
     const [legacy, next] = createViewports(renderingEngine);
     const toolName = OrientationMarkerTool.toolName;
+    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
 
     await showVolume(legacy, next);
-    ToolGroupManager.getToolGroup(toolGroupId).setToolEnabled(toolName);
+    toolGroup.setToolEnabled(toolName);
     await waitFor(
       () =>
-        Boolean(legacy.getWidget(toolName)) &&
-        Boolean(next.getWidget?.(toolName))
+        Boolean(legacy.getWidget(toolName)) && next.getWidgets().length === 1
     );
 
-    const widget = next.getWidget(toolName);
+    const [widget] = next.getWidgets();
+    const marker =
+      toolGroup.getToolInstance(toolName).orientationMarkers[next.id];
 
+    expect(next.getWidget).toBeUndefined();
     expect(widget).toBeDefined();
+    expect(widget).toBe(marker.orientationWidget);
     expect(widget.getEnabled()).toBe(true);
     expect(widget.getRenderer()).toBeTruthy();
     expect(next.getWidgets().length).toBe(legacy.getWidgets().length);
@@ -156,18 +160,90 @@ describe('Tools on a direct next 3D viewport -- ', () => {
     expect(widget.getEnabled()).toBe(false);
   });
 
+  it('keeps one orientation marker for a viewport, and makes a new one for a viewport that is enabled again under the same id', async function () {
+    const viewports = createViewports(renderingEngine);
+    const toolName = OrientationMarkerTool.toolName;
+    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+
+    await showVolume(...viewports);
+    toolGroup.setToolEnabled(toolName);
+    await waitFor(() =>
+      viewports.every((viewport) => viewport.getWidgets().length === 1)
+    );
+
+    for (const viewport of viewports) {
+      const { id, type, element } = viewport;
+      const [widget] = viewport.getWidgets();
+
+      cornerstone3D.triggerEvent(
+        element,
+        Enums.Events.VOLUME_VIEWPORT_NEW_VOLUME,
+        { viewportId: id, volumeActors: [] }
+      );
+
+      expect(viewport.getWidgets()).toEqual([widget]);
+      expect(widget.getEnabled()).toBe(true);
+
+      const rendering = getConfiguration().rendering;
+      const useGenericViewport = rendering.useGenericViewport;
+
+      renderingEngine.disableElement(id);
+
+      expect(widget.getEnabled()).toBe(false);
+
+      rendering.useGenericViewport = false;
+      renderingEngine.enableElement({
+        viewportId: id,
+        type,
+        element,
+        defaultOptions: { orientation: OrientationAxis.SAGITTAL },
+      });
+      rendering.useGenericViewport = useGenericViewport;
+      toolGroup.addViewport(id, renderingEngineId);
+
+      const enabledAgain = renderingEngine.getViewport(id);
+
+      await waitFor(() => enabledAgain.getWidgets().length === 1);
+
+      const [newWidget] = enabledAgain.getWidgets();
+
+      expect(enabledAgain).not.toBe(viewport);
+      expect(enabledAgain.type).toBe(type);
+      expect(newWidget).toBeDefined();
+      expect(newWidget).not.toBe(widget);
+      expect(newWidget.getEnabled()).toBe(true);
+      expect(newWidget.getParentRenderer()).toBe(enabledAgain.getRenderer());
+    }
+  });
+
   it('turns a direct next 3D viewport with the orientation controller, as the legacy viewport', async function () {
     const [legacy, next] = createViewports(renderingEngine);
 
+    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+
     await showVolume(legacy, next);
+    testUtils.createViewports(renderingEngine, {
+      viewportId: 'nextVideo',
+      viewportType: ViewportType.VIDEO_NEXT,
+      useEnableElement: true,
+    });
 
     expect(legacy.isOrientationChangeable()).toBe(true);
-    expect(next.isOrientationChangeable()).toBe(true);
+    expect(next.isOrientationChangeable).toBeUndefined();
+    expect(utilities.viewportIsInVolumeMode(next)).toBe(true);
     expect(() =>
-      ToolGroupManager.getToolGroup(toolGroupId).setToolEnabled(
-        OrientationControllerTool.toolName
-      )
+      toolGroup.setToolEnabled(OrientationControllerTool.toolName)
     ).not.toThrow();
+
+    const tool = toolGroup.getToolInstance(OrientationControllerTool.toolName);
+
+    for (const viewportId of [legacy.id, next.id, 'nextVideo']) {
+      tool.addMarkerToViewport(viewportId, renderingEngineId);
+    }
+
+    expect(tool.widget.getActors(legacy.id)).toBeDefined();
+    expect(tool.widget.getActors(next.id)).toBeDefined();
+    expect(tool.widget.getActors('nextVideo')).toBeUndefined();
   });
 
   it('shows a surface of a Surface representation as on the legacy 3D viewport', async function () {

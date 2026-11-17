@@ -47,11 +47,18 @@ class ECGViewportLegacyAdapter extends ECGViewport {
    */
   options: ViewportInputOptions;
 
+  /**
+   * Whether the viewport was made with the `suppressEvents` option, as on the
+   * legacy viewport. It then fires no CAMERA_MODIFIED and no CAMERA_RESET.
+   */
+  readonly suppressEvents: boolean;
+
   constructor(
     args: ECGViewportInput & Partial<Pick<ViewportInput, 'defaultOptions'>>
   ) {
     super(args);
     this.options = deepClone(this.defaultOptions) as ViewportInputOptions;
+    this.suppressEvents = Boolean(this.defaultOptions.suppressEvents);
   }
 
   /** The id of the viewport. The legacy ECG viewport never set it. */

@@ -154,6 +154,18 @@ export interface Volume3DViewportRenderContext
   };
 }
 
+/**
+ * A widget that a tool keeps on a 3D viewport, such as a vtk.js orientation
+ * marker widget. The members are those that the viewport and the rendering
+ * engines call.
+ */
+export interface ViewportWidget {
+  getEnabled?(): boolean;
+  setEnabled?(enabled: boolean): void;
+  getActor?(): unknown;
+  getRenderer?(): { removeActor(actor: unknown): void } | null;
+}
+
 type Volume3DContextBase = Pick<
   Volume3DViewportRenderContext,
   'display' | 'type' | 'viewport' | 'viewportId' | 'vtk'
