@@ -163,8 +163,10 @@ A next viewport holds four things. Each legacy call maps to one of them.
 | View references | `getViewReference`, `setViewReference`, `isReferenceViewable`                           | A camera focal point that was set to move through slices |
 
 Zoom and pan are read and written through `viewportProjection`, in one form
-for every family. A question that the state and the data can answer is a
-function of `utilities`, not a member of the viewport.
+for every family. For a 3D viewport this is **Decided, not in the code yet**,
+see [3D viewports](./2-rendering-changes.md#3d-viewports). A question that the
+state and the data can answer is a function of `utilities`, not a member of
+the viewport.
 
 ## What comes over and what does not
 
@@ -178,10 +180,12 @@ Carried over, in the new shape:
 - a preset, a colormap and a blend mode of a 3D viewport, as keys of its
   presentation;
 - a perspective camera, on a 3D viewport with `parallelProjection: false`;
-- a surface in a 3D viewport, as a display set;
+- a surface in a 3D viewport, as a display set (**Decided, not in the code
+  yet**);
 - a stretched picture, as the scale pair of the view state of a planar
   viewport;
-- the frame range of a video, as a key of its view state.
+- the frame range of a video, as a key of its view state (**Decided, not in
+  the code yet**).
 
 Not carried over:
 
