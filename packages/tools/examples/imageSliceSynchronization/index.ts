@@ -1,9 +1,9 @@
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
   volumeLoader,
-  setVolumesForViewports,
+  utilities,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -11,7 +11,6 @@ import {
   setTitleAndDescription,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-import { viewportSupportsStackCompatibility } from '../../src/utilities/viewportCapabilities';
 
 // This is for debugging purposes
 console.warn(
@@ -41,6 +40,8 @@ const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader 
 
 const imageSliceSync = 'IMAGE_SLICE_SYNCHRONIZER_ID';
 const renderingEngineId = 'myRenderingEngine';
+const stackDisplaySetId = 'imageSliceSynchronization:stack';
+const volumeDisplaySetId = 'imageSliceSynchronization:volume';
 const viewportIds = [
   'CT_SAGITTAL_STACK_1',
   'CT_SAGITTAL_STACK_2',
@@ -166,17 +167,17 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: viewportIds[0],
-      type: ViewportType.STACK,
+      type: ViewportType.PLANAR_NEXT,
       element: element1,
     },
     {
       viewportId: viewportIds[1],
-      type: ViewportType.STACK,
+      type: ViewportType.PLANAR_NEXT,
       element: element2,
     },
     {
       viewportId: viewportIds[2],
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element3,
       defaultOptions: {
         orientation: Enums.OrientationAxis.ACQUISITION,
@@ -192,18 +193,18 @@ async function run() {
     toolGroup.addViewport(viewportId, renderingEngineId)
   );
 
-  const vp1 = renderingEngine.getViewport(viewportIds[0]);
-  const vp2 = renderingEngine.getViewport(viewportIds[1]);
+  const vp1 = renderingEngine.getViewport<PlanarViewport>(viewportIds[0]);
+  const vp2 = renderingEngine.getViewport<PlanarViewport>(viewportIds[1]);
 
-  if (
-    !viewportSupportsStackCompatibility(vp1) ||
-    !viewportSupportsStackCompatibility(vp2)
-  ) {
-    throw new Error('Image slice sync requires stack-compatible viewports');
-  }
+  utilities.genericViewportDisplaySetMetadataProvider.add(stackDisplaySetId, {
+    kind: 'planar',
+    imageIds,
+    initialImageIdIndex: 0,
+  });
 
-  await vp1.setStack(imageIds);
-  await vp2.setStack(imageIds, 50);
+  await vp1.setDisplaySets({ displaySetId: stackDisplaySetId });
+  await vp2.setDisplaySets({ displaySetId: stackDisplaySetId });
+  await vp2.setImageIdIndex(50);
 
   cornerstoneTools.utilities.stackPrefetch.enable(vp1.element);
   cornerstoneTools.utilities.stackPrefetch.enable(vp2.element);
@@ -216,7 +217,15 @@ async function run() {
   // Set the volume to load
   volume.load();
 
-  setVolumesForViewports(renderingEngine, [{ volumeId }], [viewportIds[2]]);
+  utilities.genericViewportDisplaySetMetadataProvider.add(volumeDisplaySetId, {
+    kind: 'planar',
+    imageIds,
+    volumeId,
+  });
+
+  await renderingEngine
+    .getViewport<PlanarViewport>(viewportIds[2])
+    .setDisplaySets({ displaySetId: volumeDisplaySetId });
 
   // Render the image
   renderingEngine.renderViewports(viewportIds);

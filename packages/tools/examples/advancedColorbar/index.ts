@@ -1,21 +1,24 @@
 import vtkColormaps from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
   cache,
   volumeLoader,
   getRenderingEngine,
+  utilities,
 } from '@cornerstonejs/core';
 import { utilities as cstUtils } from '@cornerstonejs/tools';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
-  setCtTransferFunctionForVolumeActor,
-  setPetColorMapTransferFunctionForVolumeActor,
   setTitleAndDescription,
   addDropdownToToolbar,
 } from '../../../../utils/demo/helpers';
+import {
+  ctPresentation,
+  petColorMapPresentation,
+} from '../../../../utils/demo/helpers/volumePresentationRecipes';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
 const { ViewportColorbar } = cstUtils.voi.colorbar;
@@ -54,6 +57,16 @@ const ctVolumeId = `${volumeLoaderScheme}:${ctVolumeName}`; // VolumeId with loa
 const ptVolumeName = 'PT_VOLUME_ID';
 const ptVolumeId = `${volumeLoaderScheme}:${ptVolumeName}`;
 
+const ctStackDisplaySetId = 'advancedColorbar:ct-stack';
+
+/**
+ * A volume is registered under the id of its volume. The colorbar names its
+ * data by one id: it sets the window of the display set with that id, and it
+ * follows the window and colormap events of the volume with that id.
+ */
+const ctVolumeDisplaySetId = ctVolumeId;
+const ptVolumeDisplaySetId = ptVolumeId;
+
 // Convert all VTK colormaps to the one supported by the colorbar which actualy
 // have almost the same properties.
 const colormaps = vtkColormaps.rgbPresetNames.map((presetName) =>
@@ -67,6 +80,7 @@ const colormapDropdownLabels = ['CT', 'PT'];
 // Info about all the three viewports (stack, volume sagittal and volume coronal)
 const viewportsInfo = [
   {
+    displaySetIds: [ctStackDisplaySetId],
     toolGroupId: 'STACK_TOOLGROUP_ID',
     fusion: false,
     colorbar: {
@@ -75,7 +89,7 @@ const viewportsInfo = [
     },
     viewportInput: {
       viewportId: 'CT_STACK_AXIAL',
-      type: ViewportType.STACK,
+      type: ViewportType.PLANAR_NEXT,
       element: null,
       defaultOptions: {
         background: <Types.Point3>[0.2, 0, 0.2],
@@ -84,6 +98,7 @@ const viewportsInfo = [
   },
   {
     volumeIds: [ctVolumeId, ptVolumeId],
+    displaySetIds: [ctVolumeDisplaySetId, ptVolumeDisplaySetId],
     toolGroupId: 'VOLUME_TOOLGROUP_ID',
     fusion: true,
     colorbar: {
@@ -92,7 +107,7 @@ const viewportsInfo = [
     },
     viewportInput: {
       viewportId: 'CT_VOLUME_SAGITTAL',
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: null,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -102,6 +117,7 @@ const viewportsInfo = [
   },
   {
     volumeIds: [ctVolumeId, ptVolumeId],
+    displaySetIds: [ctVolumeDisplaySetId, ptVolumeDisplaySetId],
     toolGroupId: 'VOLUME_TOOLGROUP_ID',
     fusion: true,
     colorbar: {
@@ -110,7 +126,7 @@ const viewportsInfo = [
     },
     viewportInput: {
       viewportId: 'CT_VOLUME_CORONAL',
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: null,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
@@ -162,16 +178,16 @@ addInstruction('- Click and drag on the color bar to change VOI');
 
 // =============================================================================
 
-function setViewportColormap(viewportId, volumeId, colormapName) {
+function setViewportColormap(viewportId, displaySetId, colormapName) {
   // Get the rendering engine
   const renderingEngine = getRenderingEngine(renderingEngineId);
 
   // Get the volume viewport
-  const viewport = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(viewportId)
-  );
+  const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
-  viewport.setProperties({ colormap: { name: colormapName } }, volumeId);
+  viewport.setDisplaySetPresentation(displaySetId, {
+    colormap: { name: colormapName },
+  });
   viewport.render();
 }
 
@@ -190,18 +206,19 @@ async function createAndCacheVolume(volumeId, imageIds) {
 
 async function initializeVolumeViewport(
   viewportInfo,
-  viewport: Types.IVolumeViewport
+  viewport: PlanarViewport
 ) {
   const { fusion } = viewportInfo;
-  const volumes = [];
+  const displaySets = [];
   const ctImageIds = await getCTImageIds();
 
   await createAndCacheVolume(ctVolumeId, ctImageIds);
 
-  volumes.push({
-    volumeId: ctVolumeId,
-    callback: setCtTransferFunctionForVolumeActor,
-  });
+  utilities.genericViewportDisplaySetMetadataProvider.add(
+    ctVolumeDisplaySetId,
+    { kind: 'planar', imageIds: ctImageIds, volumeId: ctVolumeId }
+  );
+  displaySets.push({ displaySetId: ctVolumeDisplaySetId });
 
   // Add PT volume on fusion viewports
   if (fusion) {
@@ -209,21 +226,35 @@ async function initializeVolumeViewport(
 
     await createAndCacheVolume(ptVolumeId, ptImageIds);
 
-    volumes.push({
-      volumeId: ptVolumeId,
-      callback: setPetColorMapTransferFunctionForVolumeActor,
-    });
+    utilities.genericViewportDisplaySetMetadataProvider.add(
+      ptVolumeDisplaySetId,
+      { kind: 'planar', imageIds: ptImageIds, volumeId: ptVolumeId }
+    );
+    displaySets.push({ displaySetId: ptVolumeDisplaySetId });
   }
 
   // Set the volume on the viewport
-  await viewport.setVolumes(volumes);
+  await viewport.setDisplaySets(...displaySets);
+  viewport.setDisplaySetPresentation(ctVolumeDisplaySetId, ctPresentation());
 
   // Apply initial CT colormap
-  setViewportColormap(viewport.id, ctVolumeId, initialColormapNames[0]);
+  setViewportColormap(
+    viewport.id,
+    ctVolumeDisplaySetId,
+    initialColormapNames[0]
+  );
 
   // Apply initial PT colormap on fusion viewports
   if (fusion) {
-    setViewportColormap(viewport.id, ptVolumeId, initialColormapNames[1]);
+    viewport.setDisplaySetPresentation(
+      ptVolumeDisplaySetId,
+      petColorMapPresentation()
+    );
+    setViewportColormap(
+      viewport.id,
+      ptVolumeDisplaySetId,
+      initialColormapNames[1]
+    );
   }
 }
 
@@ -298,7 +329,8 @@ function initializeColorbarContainers(viewportInfo, viewportContainer) {
 
 // Create instaces of the color bars for CT or PT/CT viewports and add them to the DOM
 function initializeColorbars(viewportInfo, colorbarContainers) {
-  const { fusion, volumeIds, colorbar, viewportInput } = viewportInfo;
+  const { fusion, volumeIds, displaySetIds, colorbar, viewportInput } =
+    viewportInfo;
   const { element } = viewportInput;
 
   // Volume viewport has one or two volumeIds while stack viewport does not have
@@ -327,7 +359,7 @@ function initializeColorbars(viewportInfo, colorbarContainers) {
 
   // Colorbars on volume viewports must have a volumeId
   if (isVolumeViewport) {
-    ctColorbarProps.volumeId = volumeIds[0];
+    ctColorbarProps.volumeId = displaySetIds[0];
   }
 
   const ctColorbar = new ViewportColorbar(ctColorbarProps);
@@ -339,7 +371,7 @@ function initializeColorbars(viewportInfo, colorbarContainers) {
       id: 'ptColorbar',
       element,
       container: colorbarContainers[1],
-      volumeId: volumeIds[1],
+      volumeId: displaySetIds[1],
       colormaps,
       activeColormapName: initialColormapNames[1],
       ticks: {
@@ -354,7 +386,7 @@ function initializeColorbars(viewportInfo, colorbarContainers) {
 
 function initializeViewportToolbar(container, viewportInfo) {
   const numColorbars = viewportInfo.fusion ? 2 : 1;
-  const { volumeIds, viewportInput } = viewportInfo;
+  const { displaySetIds, viewportInput } = viewportInfo;
   const { viewportId } = viewportInput;
 
   // The grid have one line per colorbar/colormap and each line
@@ -390,12 +422,11 @@ function initializeViewportToolbar(container, viewportInfo) {
         const colorbar = viewportInfo.colorbar.instances[i];
         colorbar.activeColormapName = selectedValue;
 
-        // Volume viewports have volumeIds but stack viewports do not
-        if (volumeIds) {
-          setViewportColormap(viewportId, volumeIds[i], <string>selectedValue);
-        } else {
-          setViewportColormap(viewportId, undefined, <string>selectedValue);
-        }
+        setViewportColormap(
+          viewportId,
+          displaySetIds[i],
+          <string>selectedValue
+        );
       },
     });
   }
@@ -501,20 +532,24 @@ async function initializeViewport(renderingEngine, toolGroup, viewportInfo) {
   initializeColorbars(viewportInfo, colorbarContainers);
 
   const ctImageIds = await getCTImageIds();
-  const viewport = <Types.IViewport>renderingEngine.getViewport(viewportId);
+  const viewport: PlanarViewport = renderingEngine.getViewport(viewportId);
 
-  if (viewportInput.type === ViewportType.STACK) {
-    await (<Types.IStackViewport>viewport).setStack(ctImageIds);
+  if (viewportInfo.volumeIds) {
+    await initializeVolumeViewport(viewportInfo, viewport);
+  } else {
+    utilities.genericViewportDisplaySetMetadataProvider.add(
+      ctStackDisplaySetId,
+      { kind: 'planar', imageIds: ctImageIds, initialImageIdIndex: 0 }
+    );
+
+    await viewport.setDisplaySets({ displaySetId: ctStackDisplaySetId });
 
     // Apply initial CT colormap
-    setViewportColormap(viewport.id, undefined, initialColormapNames[0]);
-  } else if (viewportInput.type === ViewportType.ORTHOGRAPHIC) {
-    await initializeVolumeViewport(
-      viewportInfo,
-      viewport as Types.IVolumeViewport
+    setViewportColormap(
+      viewport.id,
+      ctStackDisplaySetId,
+      initialColormapNames[0]
     );
-  } else {
-    throw new Error('Invalid viewport type');
   }
 }
 

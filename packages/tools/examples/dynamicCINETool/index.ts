@@ -1,9 +1,9 @@
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
   volumeLoader,
-  setVolumesForViewports,
+  utilities,
   cache,
 } from '@cornerstonejs/core';
 import {
@@ -11,8 +11,8 @@ import {
   createImageIdsAndCacheMetaData,
   get4DVolumeImageIds,
   setTitleAndDescription,
-  setPetTransferFunctionForVolumeActor,
 } from '../../../../utils/demo/helpers';
+import { petPresentation } from '../../../../utils/demo/helpers/volumePresentationRecipes';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import createSecondStageLayout from './createSecondStageLayout';
 import createFirstStageLayout from './createFirstStageLayout';
@@ -41,6 +41,7 @@ const { ViewportType } = Enums;
 const { MouseBindings } = csToolsEnums;
 
 const renderingEngineId = 'myRenderingEngine';
+const displaySetId = 'dynamicCINETool:pt';
 const viewportIds = [
   'PT_AXIAL_VOLUME',
   'PT_CORONAL_VOLUME',
@@ -159,23 +160,24 @@ function initViewportLayout() {
   return elements;
 }
 
-function initViewports(volume, elements) {
+async function initViewports(volume, elements) {
   // Instantiate a rendering engine
   const renderingEngine = new RenderingEngine(renderingEngineId);
-  const { volumeId } = volume;
+  const { volumeId, imageIds } = volume;
 
   const viewportInputArray = [
     {
       viewportId: viewportIds[0],
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: elements[0],
       defaultOptions: {
+        orientation: Enums.OrientationAxis.AXIAL,
         background: <Types.Point3>[0.2, 0, 0.2],
       },
     },
     {
       viewportId: viewportIds[1],
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: elements[1],
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
@@ -184,7 +186,7 @@ function initViewports(volume, elements) {
     },
     {
       viewportId: viewportIds[2],
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: elements[2],
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -193,7 +195,7 @@ function initViewports(volume, elements) {
     },
     {
       viewportId: viewportIds[3],
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: elements[3],
       defaultOptions: {
         orientation: {
@@ -213,10 +215,19 @@ function initViewports(volume, elements) {
   renderingEngine.setViewports(viewportInputArray);
 
   // Set volumes on the viewports
-  setVolumesForViewports(
-    renderingEngine,
-    [{ volumeId, callback: setPetTransferFunctionForVolumeActor }],
-    viewportIds
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    kind: 'planar',
+    imageIds,
+    volumeId,
+  });
+
+  await Promise.all(
+    viewportIds.map(async (viewportId) => {
+      const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
+
+      await viewport.setDisplaySets({ displaySetId });
+      viewport.setDisplaySetPresentation(displaySetId, petPresentation());
+    })
   );
 
   // Render the image
@@ -358,7 +369,7 @@ async function loadDimensionGroups(numDimensionGroups: number): Promise<void> {
   const volume = await createVolume(numDimensionGroups);
 
   // Initialize cornerstone viewports
-  initViewports(volume, elements);
+  await initViewports(volume, elements);
 
   const { mprToolGroup, obliqueToolGroup } = createToolGroups();
 

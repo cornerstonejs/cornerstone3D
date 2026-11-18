@@ -1,3 +1,4 @@
+import type { PlanarViewport } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
@@ -55,10 +56,11 @@ const SERIES_INSTANCE_UID =
 const renderingEngineId = 'clickSegmentRenderingEngine';
 const viewportId = 'ONE_CLICK_PT';
 const segmentationId = 'ONE_CLICK_SEGMENT_PT';
+const displaySetId = 'clickSegment:pt';
 const toolGroupId = 'ONE_CLICK_SEGMENT_TOOL_GROUP';
 
 let toolGroup;
-let viewport;
+let viewport: PlanarViewport;
 let renderingEngine;
 
 setTitleAndDescription(
@@ -223,7 +225,7 @@ async function run() {
   renderingEngine.setViewports([
     {
       viewportId,
-      type: ViewportType.STACK,
+      type: ViewportType.PLANAR_NEXT,
       element,
     },
   ]);
@@ -351,7 +353,13 @@ async function run() {
     0,
     Math.min(Math.floor(sortedImageIds.length / 2), sortedImageIds.length - 1)
   );
-  await viewport.setStack(sortedImageIds, mid);
+  csUtils.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    kind: 'planar',
+    imageIds: sortedImageIds,
+    initialImageIdIndex: mid,
+  });
+
+  await viewport.setDisplaySets({ displaySetId });
   cornerstoneTools.utilities.stackContextPrefetch.enable(element);
 
   await segmentation.addSegmentationRepresentations(viewportId, [
@@ -366,10 +374,7 @@ async function run() {
   );
   segmentation.segmentIndex.setActiveSegmentIndex(segmentationId, 1);
 
-  element.addEventListener(
-    csCoreEvents.STACK_NEW_IMAGE,
-    updateStackStatusLabel
-  );
+  element.addEventListener(csCoreEvents.NEW_IMAGE, updateStackStatusLabel);
 
   renderingEngine.render();
   updateStackStatusLabel();

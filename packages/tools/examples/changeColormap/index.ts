@@ -1,14 +1,19 @@
-import type { Types } from '@cornerstonejs/core';
-import { Enums, RenderingEngine, volumeLoader } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
+import {
+  Enums,
+  RenderingEngine,
+  utilities,
+  volumeLoader,
+} from '@cornerstonejs/core';
 import {
   addButtonToToolbar,
   addDropdownToToolbar,
   addSliderToToolbar,
   createImageIdsAndCacheMetaData,
   initDemo,
-  setCtTransferFunctionForVolumeActor,
   setTitleAndDescription,
 } from '../../../../utils/demo/helpers';
+import { ctPresentation } from '../../../../utils/demo/helpers/volumePresentationRecipes';
 import vtkColorMaps from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
 
 // This is for debugging purposes
@@ -28,6 +33,9 @@ const ctVolumeId = `${volumeLoaderScheme}:${ctVolumeName}`; // VolumeId with loa
 // Define a unique id for the volume
 const ptVolumeName = 'PT_VOLUME_ID';
 const ptVolumeId = `${volumeLoaderScheme}:${ptVolumeName}`;
+
+const ctDisplaySetId = 'changeColormap:ct';
+const ptDisplaySetId = 'changeColormap:pt';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -49,37 +57,29 @@ content.appendChild(element);
 let fused = false;
 let opacity = 0;
 let renderingEngine;
-let viewport;
+let viewport: PlanarViewport;
 addButtonToToolbar({
   title: 'toggle PET',
   onClick: async () => {
     if (fused) {
-      viewport.removeVolumeActors([ptVolumeId], true);
+      viewport.removeData(ptDisplaySetId);
+      viewport.render();
 
       fused = false;
     } else {
-      await viewport.addVolumes(
-        [
-          {
-            volumeId: ptVolumeId,
-          },
-        ],
-        true
-      );
+      await viewport.addDisplaySet(ptDisplaySetId, { role: 'overlay' });
 
-      viewport.setProperties(
-        {
-          colormap: {
-            name: 'hsv',
-            opacity: opacity,
-          },
-          voiRange: {
-            upper: 5,
-            lower: 0,
-          },
+      viewport.setDisplaySetPresentation(ptDisplaySetId, {
+        colormap: {
+          name: 'hsv',
+          opacity: opacity,
         },
-        ptVolumeId
-      );
+        voiRange: {
+          upper: 5,
+          lower: 0,
+        },
+      });
+      viewport.render();
       fused = true;
     }
   },
@@ -95,14 +95,11 @@ addButtonToToolbar({
     const colormapName = vtkColorMaps.rgbPresetNames[randomIndex];
 
     // Set the colormap of the fusion viewport by specifying the desired colormap name using the 'name' property inside the 'colormap' object.
-    viewport.setProperties(
-      {
-        colormap: {
-          name: colormapName,
-        },
+    viewport.setDisplaySetPresentation(ptDisplaySetId, {
+      colormap: {
+        name: colormapName,
       },
-      ptVolumeId
-    );
+    });
     viewport.render();
   },
 });
@@ -115,14 +112,11 @@ addSliderToToolbar({
     opacity = Number(value) / 255;
 
     // Adjust the opacity of the colormap by specifying the desired opacity value and passing it inside the 'colormap' object.
-    viewport.setProperties(
-      {
-        colormap: {
-          opacity: opacity,
-        },
+    viewport.setDisplaySetPresentation(ptDisplaySetId, {
+      colormap: {
+        opacity: opacity,
       },
-      ptVolumeId
-    );
+    });
     viewport.render();
   },
 });
@@ -169,7 +163,7 @@ async function run() {
 
   const viewportInput = {
     viewportId,
-    type: ViewportType.ORTHOGRAPHIC,
+    type: ViewportType.PLANAR_NEXT,
     element,
     defaultOptions: {
       orientation: Enums.OrientationAxis.AXIAL,
@@ -181,7 +175,7 @@ async function run() {
 
   renderingEngine.enableElement(viewportInput);
 
-  viewport = <Types.IVolumeViewport>renderingEngine.getViewport(viewportId);
+  viewport = renderingEngine.getViewport(viewportId);
 
   // Define a volume in memory
   const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeId, {
@@ -192,9 +186,19 @@ async function run() {
   ctVolume.load();
 
   // Set the volume on the viewport
-  viewport.setVolumes([
-    { volumeId: ctVolumeId, callback: setCtTransferFunctionForVolumeActor },
-  ]);
+  utilities.genericViewportDisplaySetMetadataProvider.add(ctDisplaySetId, {
+    kind: 'planar',
+    imageIds: ctImageIds,
+    volumeId: ctVolumeId,
+  });
+  utilities.genericViewportDisplaySetMetadataProvider.add(ptDisplaySetId, {
+    kind: 'planar',
+    imageIds: ptImageIds,
+    volumeId: ptVolumeId,
+  });
+
+  await viewport.setDisplaySets({ displaySetId: ctDisplaySetId });
+  viewport.setDisplaySetPresentation(ctDisplaySetId, ctPresentation());
 
   // Render the image
   renderingEngine.render();

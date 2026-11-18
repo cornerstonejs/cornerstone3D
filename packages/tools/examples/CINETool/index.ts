@@ -1,10 +1,9 @@
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
   utilities as csUtils,
   volumeLoader,
-  setVolumesForViewports,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -31,6 +30,8 @@ const {
 
 const { ViewportType } = Enums;
 const { MouseBindings } = csToolsEnums;
+const stackDisplaySetId = 'CINETool:stack';
+const volumeDisplaySetId = 'CINETool:volume';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -221,7 +222,7 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: viewportIds[0],
-      type: ViewportType.STACK,
+      type: ViewportType.PLANAR_NEXT,
       element: elements[0],
       defaultOptions: {
         background: <Types.Point3>[0.2, 0, 0.2],
@@ -229,7 +230,7 @@ async function run() {
     },
     {
       viewportId: viewportIds[1],
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: elements[1],
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
@@ -238,7 +239,7 @@ async function run() {
     },
     {
       viewportId: viewportIds[2],
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: elements[2],
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -247,7 +248,7 @@ async function run() {
     },
     {
       viewportId: viewportIds[3],
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: elements[3],
       defaultOptions: {
         orientation: {
@@ -283,25 +284,30 @@ async function run() {
 
   volume.load();
 
-  const volumeViewportsIds = [];
+  csUtils.genericViewportDisplaySetMetadataProvider.add(stackDisplaySetId, {
+    kind: 'planar',
+    imageIds,
+    initialImageIdIndex: 0,
+  });
+  csUtils.genericViewportDisplaySetMetadataProvider.add(volumeDisplaySetId, {
+    kind: 'planar',
+    imageIds,
+    volumeId,
+  });
 
-  for (const viewportInput of viewportInputArray) {
-    const { viewportId, type } = viewportInput;
+  const [stackViewportId, ...volumeViewportsIds] = viewportIds;
 
-    if (type === ViewportType.STACK) {
-      const viewport = <Types.IStackViewport>(
-        renderingEngine.getViewport(viewportId)
-      );
-      viewport.setStack(imageIds);
-      viewport.render();
-    } else if (type === ViewportType.ORTHOGRAPHIC) {
-      volumeViewportsIds.push(viewportId);
-    }
-  }
+  await renderingEngine
+    .getViewport<PlanarViewport>(stackViewportId)
+    .setDisplaySets({ displaySetId: stackDisplaySetId });
 
-  if (volumeViewportsIds.length) {
-    setVolumesForViewports(renderingEngine, [{ volumeId }], volumeViewportsIds);
-  }
+  await Promise.all(
+    volumeViewportsIds.map((viewportId) =>
+      renderingEngine
+        .getViewport<PlanarViewport>(viewportId)
+        .setDisplaySets({ displaySetId: volumeDisplaySetId })
+    )
+  );
 
   // Render the image
   renderingEngine.renderViewports(viewportIds);

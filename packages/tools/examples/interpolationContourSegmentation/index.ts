@@ -1,5 +1,10 @@
-import type { Types } from '@cornerstonejs/core';
-import { RenderingEngine, Enums, volumeLoader } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
+import {
+  RenderingEngine,
+  Enums,
+  utilities,
+  volumeLoader,
+} from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
@@ -35,6 +40,8 @@ const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 const renderingEngineId = 'myRenderingEngine';
+const stackDisplaySetId = 'interpolationContourSegmentation:stack';
+const volumeDisplaySetId = 'interpolationContourSegmentation:volume';
 let renderingEngine;
 const viewportIds = ['CT_STACK', 'CT_VOLUME_SAGITTAL'];
 const viewports = [];
@@ -339,7 +346,7 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: viewportIds[0],
-      type: ViewportType.STACK,
+      type: ViewportType.PLANAR_NEXT,
       element: element1,
       defaultOptions: {
         background: <Types.Point3>[0.2, 0, 0.2],
@@ -347,7 +354,7 @@ async function run() {
     },
     {
       viewportId: viewportIds[1],
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element2,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -378,27 +385,40 @@ async function run() {
   });
 
   // Get the viewports that were just created
-  const stackViewport = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportIds[0])
+  const stackViewport: PlanarViewport = renderingEngine.getViewport(
+    viewportIds[0]
   );
-  const volumeViewport = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(viewportIds[1])
+  const volumeViewport: PlanarViewport = renderingEngine.getViewport(
+    viewportIds[1]
   );
 
   // Set the stack on the viewport
-  await stackViewport.setStack(stackImageIds);
+  utilities.genericViewportDisplaySetMetadataProvider.add(stackDisplaySetId, {
+    kind: 'planar',
+    imageIds: stackImageIds,
+    initialImageIdIndex: 0,
+  });
+
+  await stackViewport.setDisplaySets({ displaySetId: stackDisplaySetId });
   viewports.push(stackViewport);
   stackViewport.setDisplayArea({
     imageArea: [0.9, 0.9],
-    storeAsInitialCamera: true,
   });
-  stackViewport.setProperties({ interpolationType: InterpolationType.NEAREST });
+  stackViewport.setDisplaySetPresentation(stackDisplaySetId, {
+    interpolationType: InterpolationType.NEAREST,
+  });
 
   // Set the volume to load
   volume.load();
 
   // Set the volume on the viewport
-  volumeViewport.setVolumes([{ volumeId }]);
+  utilities.genericViewportDisplaySetMetadataProvider.add(volumeDisplaySetId, {
+    kind: 'planar',
+    imageIds: volumeImageIds,
+    volumeId,
+  });
+
+  await volumeViewport.setDisplaySets({ displaySetId: volumeDisplaySetId });
   viewports.push(volumeViewport);
 
   // Render the image

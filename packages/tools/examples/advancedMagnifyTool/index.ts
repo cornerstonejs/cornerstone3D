@@ -1,18 +1,19 @@
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
   cache,
+  utilities,
   volumeLoader,
 } from '@cornerstonejs/core';
 import * as cornerstone from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
-  setCtTransferFunctionForVolumeActor,
   setTitleAndDescription,
   addDropdownToToolbar,
 } from '../../../../utils/demo/helpers';
+import { ctPresentation } from '../../../../utils/demo/helpers/volumePresentationRecipes';
 import { fillVolumeLabelmapWithMockData } from '../../../../utils/test/testUtils';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -48,14 +49,17 @@ const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 const toolGroupIds = new Set<string>();
+const stackDisplaySetId = 'advancedMagnifyTool:stack';
+const volumeDisplaySetId = 'advancedMagnifyTool:volume';
 
 const viewportsInfo = [
   {
     toolGroupId: 'STACK_TOOLGROUP_ID',
     segmentationEnabled: false,
+    showsStack: true,
     viewportInput: {
       viewportId: 'CT_STACK_AXIAL',
-      type: ViewportType.STACK,
+      type: ViewportType.PLANAR_NEXT,
       element: null,
       defaultOptions: {
         background: <Types.Point3>[0.2, 0, 0.2],
@@ -66,7 +70,7 @@ const viewportsInfo = [
     toolGroupId: 'VOLUME_TOOLGROUP_ID',
     viewportInput: {
       viewportId: 'CT_VOLUME_SAGITTAL',
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: null,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -78,7 +82,7 @@ const viewportsInfo = [
     toolGroupId: 'VOLUME_TOOLGROUP_ID',
     viewportInput: {
       viewportId: 'CT_VOLUME_CORONAL',
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: null,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
@@ -205,7 +209,7 @@ async function addSegmentationsToState(volumeId: string) {
 }
 
 async function initializeVolumeViewport(
-  viewport: Types.IVolumeViewport,
+  viewport: PlanarViewport,
   volumeId: string,
   imageIds: string[]
 ) {
@@ -221,12 +225,16 @@ async function initializeVolumeViewport(
 
     // Add some segmentations based on the source data volume
     await addSegmentationsToState(volumeId);
+
+    utilities.genericViewportDisplaySetMetadataProvider.add(
+      volumeDisplaySetId,
+      { kind: 'planar', imageIds, volumeId }
+    );
   }
 
   // Set the volume on the viewport
-  await viewport.setVolumes([
-    { volumeId, callback: setCtTransferFunctionForVolumeActor },
-  ]);
+  await viewport.setDisplaySets({ displaySetId: volumeDisplaySetId });
+  viewport.setDisplaySetPresentation(volumeDisplaySetId, ctPresentation());
 
   return volume;
 }
@@ -258,17 +266,19 @@ async function initializeViewport(
   toolGroup.addViewport(viewportId, renderingEngineId);
 
   // Get the stack viewport that was created
-  const viewport = <Types.IViewport>renderingEngine.getViewport(viewportId);
+  const viewport: PlanarViewport = renderingEngine.getViewport(viewportId);
 
-  if (viewportInput.type === ViewportType.STACK) {
+  if (viewportInfo.showsStack) {
     // Set the stack on the viewport
-    (<Types.IStackViewport>viewport).setStack(imageIds);
-  } else if (viewportInput.type === ViewportType.ORTHOGRAPHIC) {
-    await initializeVolumeViewport(
-      viewport as Types.IVolumeViewport,
-      volumeId,
-      imageIds
-    );
+    utilities.genericViewportDisplaySetMetadataProvider.add(stackDisplaySetId, {
+      kind: 'planar',
+      imageIds,
+      initialImageIdIndex: 0,
+    });
+
+    await viewport.setDisplaySets({ displaySetId: stackDisplaySetId });
+  } else {
+    await initializeVolumeViewport(viewport, volumeId, imageIds);
 
     // Add the segmentation representations to toolgroup1
     await segmentation.addSegmentationRepresentations(viewport.id, [
@@ -277,8 +287,6 @@ async function initializeViewport(
         type: csToolsEnums.SegmentationRepresentations.Labelmap,
       },
     ]);
-  } else {
-    throw new Error('Invalid viewport type');
   }
 }
 

@@ -1,9 +1,10 @@
 import vtkColormaps from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
   getRenderingEngine,
+  utilities,
 } from '@cornerstonejs/core';
 import { utilities as cstUtils } from '@cornerstonejs/tools';
 import {
@@ -36,6 +37,7 @@ const { MouseBindings } = csToolsEnums;
 const renderingEngineId = 'myRenderingEngine';
 const toolGroupId = 'STACK_TOOLGROUP_ID';
 const viewportId = 'CT_STACK_AXIAL';
+const displaySetId = 'colorbar:ct';
 const colorbarWidth = 20; // px
 let ctColorbar = null;
 
@@ -125,11 +127,11 @@ function setViewportColormap(colormapName: string) {
   const renderingEngine = getRenderingEngine(renderingEngineId);
 
   // Get the volume viewport
-  const viewport = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(viewportId)
-  );
+  const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
-  viewport.setProperties({ colormap: { name: colormapName } });
+  viewport.setDisplaySetPresentation(displaySetId, {
+    colormap: { name: colormapName },
+  });
   viewport.render();
 }
 
@@ -320,7 +322,7 @@ async function run() {
   // Enable the viewport
   renderingEngine.enableElement({
     viewportId: 'CT_STACK_AXIAL',
-    type: ViewportType.STACK,
+    type: ViewportType.PLANAR_NEXT,
     element,
     defaultOptions: {
       background: <Types.Point3>[0.2, 0, 0.2],
@@ -340,12 +342,16 @@ async function run() {
   });
 
   // A reference for the new stack viewport created
-  const viewport = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportId)
-  );
+  const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
   // Load the stack
-  viewport.setStack(imageIds);
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    kind: 'planar',
+    imageIds,
+    initialImageIdIndex: 0,
+  });
+
+  await viewport.setDisplaySets({ displaySetId });
 
   // Initial position of colorbar is 'right' (matching the dropdown default)
   updateColorbarPosition('right');

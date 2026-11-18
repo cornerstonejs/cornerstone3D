@@ -1,9 +1,10 @@
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
   volumeLoader,
   getRenderingEngine,
+  utilities,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -109,9 +110,7 @@ addDropdownToToolbar({
       return;
     }
     // Get the volume viewport
-    const viewport = <Types.IVolumeViewport>(
-      renderingEngine.getViewport(viewportId1)
-    );
+    const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId1);
     viewport.setOrientation(<Enums.OrientationAxis>selectedValue);
     viewport.render();
   },
@@ -162,9 +161,11 @@ const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader 
 const computedVolumeName = 'PT_VOLUME_ID';
 const computedVolumeId = `cornerstoneStreamingImageVolume:${computedVolumeName}`; // VolumeId with loader id + volume id
 const toolGroupId = 'MY_TOOLGROUP_ID';
+const displaySetId = 'generateImageFromTimeData:pt';
+const computedDisplaySetId = 'generateImageFromTimeData:computed';
 let renderingEngine;
-let viewport;
-let viewport2;
+let viewport: PlanarViewport;
+let viewport2: PlanarViewport;
 let computedVolume;
 
 async function createVolumeFromTimeData(dataInTime) {
@@ -184,11 +185,7 @@ async function createVolumeFromTimeData(dataInTime) {
   imageData.modified();
 
   // Set computed volume to second viewport
-  viewport2.setVolumes([
-    {
-      volumeId: computedVolumeId,
-    },
-  ]);
+  await viewport2.setDisplaySets({ displaySetId: computedDisplaySetId });
 
   viewport2.render();
 }
@@ -244,7 +241,7 @@ async function run() {
   // Create a viewport
   const viewportInput1 = {
     viewportId: viewportId1,
-    type: ViewportType.ORTHOGRAPHIC,
+    type: ViewportType.PLANAR_NEXT,
     element: element1,
     defaultOptions: {
       orientation: Enums.OrientationAxis.ACQUISITION,
@@ -253,7 +250,7 @@ async function run() {
   };
   const viewportInput2 = {
     viewportId: viewportId2,
-    type: ViewportType.ORTHOGRAPHIC,
+    type: ViewportType.PLANAR_NEXT,
     element: element2,
     defaultOptions: {
       orientation: Enums.OrientationAxis.ACQUISITION,
@@ -267,8 +264,8 @@ async function run() {
   toolGroup.addViewport(viewportId1, renderingEngineId);
 
   // Get the stack viewport that was created
-  viewport = <Types.IVolumeViewport>renderingEngine.getViewport(viewportId1);
-  viewport2 = <Types.IVolumeViewport>renderingEngine.getViewport(viewportId2);
+  viewport = renderingEngine.getViewport(viewportId1);
+  viewport2 = renderingEngine.getViewport(viewportId2);
 
   // Define a volume in memory
   const volume = await volumeLoader.createAndCacheVolume(volumeId, {
@@ -287,7 +284,21 @@ async function run() {
   addDimensionGroupSlider(volume);
 
   // Set the volume on the viewport
-  viewport.setVolumes([{ volumeId }]);
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    kind: 'planar',
+    imageIds,
+    volumeId,
+  });
+  utilities.genericViewportDisplaySetMetadataProvider.add(
+    computedDisplaySetId,
+    {
+      kind: 'planar',
+      imageIds: computedVolume.imageIds,
+      volumeId: computedVolumeId,
+    }
+  );
+
+  await viewport.setDisplaySets({ displaySetId });
 
   // Render the image
   viewport.render();
