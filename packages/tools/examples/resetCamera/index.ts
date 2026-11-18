@@ -1,9 +1,10 @@
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
   volumeLoader,
   getRenderingEngine,
+  utilities,
 } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -13,9 +14,9 @@ import {
   setTitleAndDescription,
   addButtonToToolbar,
   addDropdownToToolbar,
-  setCtTransferFunctionForVolumeActor,
   addToggleButtonToToolbar,
 } from '../../../../utils/demo/helpers';
+import { ctPresentation } from '../../../../utils/demo/helpers/volumePresentationRecipes';
 
 const {
   PanTool,
@@ -42,6 +43,8 @@ const viewportIdVolume = 'CT_VOLUME';
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
+const stackDisplaySetId = 'resetCamera:stack';
+const volumeDisplaySetId = 'resetCamera:volume';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -70,7 +73,6 @@ content.appendChild(element2);
 let selectedViewportId = viewportIdStack;
 let resetPan = true;
 let resetZoom = true;
-let resetToCenter;
 
 addDropdownToToolbar({
   options: {
@@ -89,11 +91,10 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the stack viewport
-    const viewport = <Types.IVolumeViewport>(
-      renderingEngine.getViewport(selectedViewportId)
-    );
+    const viewport =
+      renderingEngine.getViewport<PlanarViewport>(selectedViewportId);
 
-    viewport.resetCamera({ resetPan, resetZoom, resetToCenter });
+    viewport.resetViewState({ resetPan, resetZoom });
 
     renderingEngine.render();
   },
@@ -111,14 +112,6 @@ addToggleButtonToToolbar({
   title: 'toggle reset pan',
   onClick: (toggle) => {
     resetPan = toggle;
-  },
-  defaultToggle: true,
-});
-
-addToggleButtonToToolbar({
-  title: 'toggle reset to center',
-  onClick: (toggle) => {
-    resetToCenter = toggle;
   },
   defaultToggle: true,
 });
@@ -196,7 +189,7 @@ async function run() {
   const viewportInputs = [
     {
       viewportId: viewportIdStack,
-      type: ViewportType.STACK,
+      type: ViewportType.PLANAR_NEXT,
       element: element1,
       defaultOptions: {
         background: <Types.Point3>[1, 0.5, 0.2],
@@ -204,7 +197,7 @@ async function run() {
     },
     {
       viewportId: viewportIdVolume,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element2,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -216,15 +209,19 @@ async function run() {
   renderingEngine.setViewports(viewportInputs);
 
   // Get the stack viewport that was created
-  const stackViewport = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportIdStack)
-  );
+  const stackViewport =
+    renderingEngine.getViewport<PlanarViewport>(viewportIdStack);
 
-  stackViewport.setStack(stackImageIds, 10);
+  utilities.genericViewportDisplaySetMetadataProvider.add(stackDisplaySetId, {
+    kind: 'planar',
+    imageIds: stackImageIds,
+    initialImageIdIndex: 10,
+  });
 
-  const volumeViewport = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(viewportIdVolume)
-  );
+  await stackViewport.setDisplaySets({ displaySetId: stackDisplaySetId });
+
+  const volumeViewport =
+    renderingEngine.getViewport<PlanarViewport>(viewportIdVolume);
 
   // Define a volume in memory
   const volume = await volumeLoader.createAndCacheVolume(volumeId, {
@@ -235,9 +232,17 @@ async function run() {
   volume.load();
 
   // Set the volume on the viewport
-  volumeViewport.setVolumes([
-    { volumeId, callback: setCtTransferFunctionForVolumeActor },
-  ]);
+  utilities.genericViewportDisplaySetMetadataProvider.add(volumeDisplaySetId, {
+    kind: 'planar',
+    imageIds,
+    volumeId,
+  });
+
+  await volumeViewport.setDisplaySets({ displaySetId: volumeDisplaySetId });
+  volumeViewport.setDisplaySetPresentation(
+    volumeDisplaySetId,
+    ctPresentation()
+  );
 
   toolGroup.addViewport(viewportIdVolume, renderingEngineId);
   toolGroup.addViewport(viewportIdStack, renderingEngineId);

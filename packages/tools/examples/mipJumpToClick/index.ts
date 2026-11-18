@@ -1,16 +1,16 @@
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   volumeLoader,
   Enums,
-  setVolumesForViewports,
+  utilities,
 } from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
-  setPetTransferFunctionForVolumeActor,
 } from '../../../../utils/demo/helpers';
+import { petPresentation } from '../../../../utils/demo/helpers/volumePresentationRecipes';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
 // This is for debugging purposes
@@ -35,6 +35,8 @@ const ctVolumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
 const ctVolumeId = `${volumeLoaderScheme}:${ctVolumeName}`; // VolumeId with loader id + volume id
 const ptVolumeName = 'PT_VOLUME_ID';
 const ptVolumeId = `${volumeLoaderScheme}:${ptVolumeName}`;
+const ctDisplaySetId = 'mipJumpToClick:ct';
+const ptDisplaySetId = 'mipJumpToClick:pt';
 
 const viewportIds = ['CT_AXIAL_STACK', 'CT_SAGITTAL_STACK', 'CT_OBLIQUE_STACK'];
 
@@ -149,7 +151,7 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: viewportIds[0],
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element1,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -158,7 +160,7 @@ async function run() {
     },
     {
       viewportId: viewportIds[1],
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element2,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
@@ -167,7 +169,7 @@ async function run() {
     },
     {
       viewportId: viewportIds[2],
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element3,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -203,29 +205,38 @@ async function run() {
       ptVolumeDimensions[2] * ptVolumeDimensions[2]
   );
 
-  await setVolumesForViewports(
-    renderingEngine,
-    [{ volumeId: ctVolumeId }],
-    [viewportIds[0]]
+  utilities.genericViewportDisplaySetMetadataProvider.add(ctDisplaySetId, {
+    kind: 'planar',
+    imageIds: ctImageIds,
+    volumeId: ctVolumeId,
+  });
+  utilities.genericViewportDisplaySetMetadataProvider.add(ptDisplaySetId, {
+    kind: 'planar',
+    imageIds: ptImageIds,
+    volumeId: ptVolumeId,
+  });
+
+  const ctViewport = renderingEngine.getViewport<PlanarViewport>(
+    viewportIds[0]
   );
-  await setVolumesForViewports(
-    renderingEngine,
-    [{ volumeId: ptVolumeId, callback: setPetTransferFunctionForVolumeActor }],
-    [viewportIds[1]]
+  const ptViewport = renderingEngine.getViewport<PlanarViewport>(
+    viewportIds[1]
+  );
+  const mipViewport = renderingEngine.getViewport<PlanarViewport>(
+    viewportIds[2]
   );
 
-  await setVolumesForViewports(
-    renderingEngine,
-    [
-      {
-        volumeId: ptVolumeId,
-        callback: setPetTransferFunctionForVolumeActor,
-        blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
-        slabThickness,
-      },
-    ],
-    [viewportIds[2]]
-  );
+  await ctViewport.setDisplaySets({ displaySetId: ctDisplaySetId });
+
+  await ptViewport.setDisplaySets({ displaySetId: ptDisplaySetId });
+  ptViewport.setDisplaySetPresentation(ptDisplaySetId, petPresentation());
+
+  await mipViewport.setDisplaySets({ displaySetId: ptDisplaySetId });
+  mipViewport.setDisplaySetPresentation(ptDisplaySetId, {
+    ...petPresentation(),
+    blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
+    slabThickness,
+  });
 
   // Render the image
   renderingEngine.renderViewports(viewportIds);

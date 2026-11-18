@@ -1,24 +1,24 @@
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
-  setVolumesForViewports,
   volumeLoader,
   getRenderingEngine,
   getEnabledElement,
-  Viewport,
+  utilities,
+  viewportProjection,
 } from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
-  setCtTransferFunctionForVolumeActor,
   addDropdownToToolbar,
   addManipulationBindings,
   getLocalUrl,
   addToggleButtonToToolbar,
   addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
+import { ctPresentation } from '../../../../utils/demo/helpers/volumePresentationRecipes';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
 // This is for debugging purposes
@@ -50,12 +50,19 @@ const viewportIds = [
   viewportId5,
 ];
 
-let viewport;
-const viewports = [];
+let viewport: PlanarViewport;
+const viewports: PlanarViewport[] = [];
 const renderingEngineId = 'myRenderingEngine';
 const synchronizerId = 'SLAB_THICKNESS_SYNCHRONIZER_ID';
-const synchronizerOptions = {
-  ...Viewport.CameraViewPresentation,
+const volumeDisplaySetId = 'resize:ct:volume';
+const ctStackDisplaySetId = 'resize:ct:stack';
+const testStackDisplaySetId = 'resize:test:stack';
+const synchronizerOptions: Types.ViewPresentationSelector = {
+  rotation: true,
+  pan: true,
+  zoom: true,
+  aspectRatio: true,
+  displayArea: true,
 };
 
 // ======== Set up page ======== //
@@ -88,8 +95,13 @@ elements.forEach((element) => {
   element.oncontextmenu = (e) => e.preventDefault();
   viewportGrid.appendChild(element);
   element.onclick = (evt) => {
-    const clickViewport = getEnabledElement(element)?.viewport;
-    viewport = clickViewport;
+    const enabledElement = getEnabledElement(element);
+
+    if (enabledElement) {
+      viewport = getRenderingEngine(
+        renderingEngineId
+      ).getViewport<PlanarViewport>(enabledElement.viewportId);
+    }
     return false;
   };
 });
@@ -105,7 +117,6 @@ instructions.innerText = `
 content.append(instructions);
 
 const leftTopDisplayArea = {
-  storeAsInitialCamera: true,
   imageArea: [1.1, 1.1],
   imageCanvasPoint: {
     imagePoint: [0, 0],
@@ -114,7 +125,6 @@ const leftTopDisplayArea = {
 };
 
 const leftDisplayArea = {
-  storeAsInitialCamera: true,
   imageArea: [1.1, 1.1],
   imageCanvasPoint: {
     imagePoint: [0, 0.5],
@@ -123,7 +133,6 @@ const leftDisplayArea = {
 };
 
 const rightDisplayArea = {
-  storeAsInitialCamera: true,
   imageArea: [1.1, 1.1],
   imageCanvasPoint: {
     imagePoint: [1, 1],
@@ -132,7 +141,6 @@ const rightDisplayArea = {
 };
 
 const centerDisplayArea = {
-  storeAsInitialCamera: true,
   imageArea: [1, 1],
   imageCanvasPoint: {
     imagePoint: [0.5, 0.5],
@@ -141,7 +149,6 @@ const centerDisplayArea = {
 };
 
 const defaultDisplayArea = {
-  storeAsInitialCamera: true,
   // imageArea: [1, 1],
   // imageCanvasPoint: {
   //   imagePoint: [0.5, 0.5],
@@ -150,7 +157,6 @@ const defaultDisplayArea = {
 };
 
 const centerSmallDisplayArea = {
-  storeAsInitialCamera: true,
   imageArea: [1.1, 1.1],
   imageCanvasPoint: {
     imagePoint: [0.5, 0.5],
@@ -159,7 +165,6 @@ const centerSmallDisplayArea = {
 };
 
 const centerHeight = {
-  storeAsInitialCamera: true,
   imageArea: [0.1, 1],
   imageCanvasPoint: {
     imagePoint: [0.5, 0.5],
@@ -168,7 +173,6 @@ const centerHeight = {
 };
 
 const centerWidth = {
-  storeAsInitialCamera: true,
   imageArea: [1, 0.1],
   imageCanvasPoint: {
     imagePoint: [0.5, 0.5],
@@ -178,7 +182,6 @@ const centerWidth = {
 
 const scale1 = {
   type: 'SCALE',
-  storeAsInitialCamera: true,
   scale: 1.0,
   imageCanvasPoint: {
     imagePoint: [0.5, 0.5],
@@ -188,7 +191,6 @@ const scale1 = {
 
 const scale15 = {
   type: 'SCALE',
-  storeAsInitialCamera: true,
   scale: 15.0,
   imageCanvasPoint: {
     imagePoint: [0.5, 0.5],
@@ -198,7 +200,6 @@ const scale15 = {
 
 const scaleLeftTop = {
   type: 'SCALE',
-  storeAsInitialCamera: true,
   scale: 1.0,
   imageCanvasPoint: {
     imagePoint: [0, 0],
@@ -207,7 +208,6 @@ const scaleLeftTop = {
 
 const scaleLeft = {
   type: 'SCALE',
-  storeAsInitialCamera: true,
   scale: 1.0,
   imageCanvasPoint: {
     imagePoint: [0, 0.5],
@@ -216,7 +216,6 @@ const scaleLeft = {
 
 const scaleRightBottom = {
   type: 'SCALE',
-  storeAsInitialCamera: true,
   scale: 1.0,
   imageCanvasPoint: {
     imagePoint: [1, 1],
@@ -240,16 +239,6 @@ displayAreaOptions.set('Scale Left', scaleLeft);
 displayAreaOptions.set('Scale Left 2', scaleLeft);
 displayAreaOptions.set('Scale Right Bottom', scaleRightBottom);
 
-let storeAsInitialCamera = true;
-addToggleButtonToToolbar({
-  id: 'storeAsInitialCameraToggle',
-  title: 'Store Display Area',
-  defaultToggle: storeAsInitialCamera,
-  onClick: (toggle) => {
-    storeAsInitialCamera = toggle;
-  },
-});
-
 addDropdownToToolbar({
   id: 'displayArea',
   options: {
@@ -258,7 +247,6 @@ addDropdownToToolbar({
   },
   onSelectedValueChange: (value) => {
     const displayArea = displayAreaOptions.get(value);
-    displayArea.storeAsInitialCamera = storeAsInitialCamera;
     viewport.setDisplayArea(displayArea);
     viewport.render();
   },
@@ -267,7 +255,7 @@ addDropdownToToolbar({
 addButtonToToolbar({
   title: 'Reset Camera',
   onClick: () => {
-    viewport.resetCamera();
+    viewport.resetViewState();
   },
 });
 
@@ -279,7 +267,14 @@ addDropdownToToolbar({
     defaultValue: rotations[0],
   },
   onSelectedValueChange: (value) => {
-    viewport.setViewPresentation({ rotation: value });
+    const viewState = viewportProjection.withPresentation(viewport, {
+      rotation: Number(value),
+    });
+
+    if (viewState) {
+      viewport.setViewState(viewState);
+    }
+
     viewport.render();
   },
 });
@@ -293,7 +288,13 @@ addDropdownToToolbar({
   },
   onSelectedValueChange: (value) => {
     const aspect = (value as string).split(':').map((it) => Number(it));
-    viewport.setAspectRatio(aspect, { storeAsInitialCamera });
+    const [scaleX] = viewportProjection.getPresentation(viewport, {
+      selector: { scale: true },
+    })?.scale ?? [1, 1];
+
+    viewport.setViewState({
+      scale: [scaleX, (scaleX * aspect[1]) / aspect[0]],
+    });
     viewport.render();
   },
 });
@@ -406,11 +407,18 @@ function resize() {
 
   if (renderingEngine) {
     const presentations = viewports.map((viewport) =>
-      viewport.getViewPresentation()
+      viewportProjection.getPresentation(viewport)
     );
     renderingEngine.resize(true, false);
     viewports.forEach((viewport, idx) => {
-      viewport.setViewPresentation(presentations[idx]);
+      const viewState = viewportProjection.withPresentation(
+        viewport,
+        presentations[idx]
+      );
+
+      if (viewState) {
+        viewport.setViewState(viewState);
+      }
     });
   }
 }
@@ -450,7 +458,7 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: viewportId1,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element1,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
@@ -459,7 +467,7 @@ async function run() {
     },
     {
       viewportId: viewportId2,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element2,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -468,7 +476,7 @@ async function run() {
     },
     {
       viewportId: viewportId3,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element3,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
@@ -477,7 +485,7 @@ async function run() {
     },
     {
       viewportId: viewportId4,
-      type: ViewportType.STACK,
+      type: ViewportType.PLANAR_NEXT,
       element: element4,
       defaultOptions: {
         background: <Types.Point3>[0, 0.5, 0.5],
@@ -485,7 +493,7 @@ async function run() {
     },
     {
       viewportId: viewportId5,
-      type: ViewportType.STACK,
+      type: ViewportType.PLANAR_NEXT,
       element: element5,
       defaultOptions: {
         background: <Types.Point3>[0, 0, 0.5],
@@ -499,29 +507,48 @@ async function run() {
   volume.load();
 
   // Set volumes on the viewports
-  await setVolumesForViewports(
-    renderingEngine,
-    [
-      {
-        volumeId,
-        callback: setCtTransferFunctionForVolumeActor,
-      },
-    ],
-    [viewportId1, viewportId2, viewportId3]
+  utilities.genericViewportDisplaySetMetadataProvider.add(volumeDisplaySetId, {
+    kind: 'planar',
+    imageIds,
+    volumeId,
+  });
+  utilities.genericViewportDisplaySetMetadataProvider.add(ctStackDisplaySetId, {
+    kind: 'planar',
+    imageIds,
+    initialImageIdIndex: 0,
+  });
+  utilities.genericViewportDisplaySetMetadataProvider.add(
+    testStackDisplaySetId,
+    {
+      kind: 'planar',
+      imageIds: stackImageIds,
+      initialImageIdIndex: 0,
+    }
   );
 
-  const stackViewport5 = renderingEngine.getViewport(
-    viewportId5
-  ) as Types.IStackViewport;
-  await stackViewport5.setStack(stackImageIds);
+  await Promise.all(
+    [viewportId1, viewportId2, viewportId3].map(async (viewportId) => {
+      const volumeViewport =
+        renderingEngine.getViewport<PlanarViewport>(viewportId);
+
+      await volumeViewport.setDisplaySets({ displaySetId: volumeDisplaySetId });
+      volumeViewport.setDisplaySetPresentation(
+        volumeDisplaySetId,
+        ctPresentation()
+      );
+    })
+  );
+
+  const stackViewport5 =
+    renderingEngine.getViewport<PlanarViewport>(viewportId5);
+  await stackViewport5.setDisplaySets({ displaySetId: testStackDisplaySetId });
   // stackViewport5.setProperties({
   //   interpolationType: Enums.InterpolationType.NEAREST,
   // });
 
-  const stackViewport4 = renderingEngine.getViewport(
-    viewportId4
-  ) as Types.IStackViewport;
-  await stackViewport4.setStack(imageIds);
+  const stackViewport4 =
+    renderingEngine.getViewport<PlanarViewport>(viewportId4);
+  await stackViewport4.setDisplaySets({ displaySetId: ctStackDisplaySetId });
   // Assign the initial viewport
   viewport = stackViewport4;
 
@@ -549,7 +576,9 @@ async function run() {
 
   // Render the image
   renderingEngine.renderViewports(viewportIds);
-  viewportIds.forEach((id) => viewports.push(renderingEngine.getViewport(id)));
+  viewportIds.forEach((id) =>
+    viewports.push(renderingEngine.getViewport<PlanarViewport>(id))
+  );
   resizeObserver.observe(viewportGrid);
 }
 

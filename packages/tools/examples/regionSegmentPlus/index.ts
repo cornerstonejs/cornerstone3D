@@ -1,8 +1,10 @@
+import type { PlanarViewport } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
   imageLoader,
   cache,
+  utilities,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -35,11 +37,13 @@ const renderingEngineId = 'myRenderingEngine';
 const viewportId1 = 'PT_STACK_VIEWPORT_1';
 const viewportId2 = 'PT_STACK_VIEWPORT_2';
 const segmentationId1 = 'MY_SEGMENTATION_ID_1';
+const displaySetId1 = 'regionSegmentPlus:1';
+const displaySetId2 = 'regionSegmentPlus:2';
 const segmentationId2 = 'MY_SEGMENTATION_ID_2';
 const toolGroupId = 'STACK_TOOL_GROUP_ID';
 let toolGroup;
-let viewport1;
-let viewport2;
+let viewport1: PlanarViewport;
+let viewport2: PlanarViewport;
 
 setTitleAndDescription(
   'Region Segment Plus Tool with Stack Viewport',
@@ -260,23 +264,34 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: viewportId1,
-      type: ViewportType.STACK,
+      type: ViewportType.PLANAR_NEXT,
       element: element1,
     },
     {
       viewportId: viewportId2,
-      type: ViewportType.STACK,
+      type: ViewportType.PLANAR_NEXT,
       element: element2,
     },
   ];
 
   renderingEngine.setViewports(viewportInputArray);
 
-  viewport1 = renderingEngine.getViewport(viewportId1);
-  viewport2 = renderingEngine.getViewport(viewportId2);
+  viewport1 = renderingEngine.getViewport<PlanarViewport>(viewportId1);
+  viewport2 = renderingEngine.getViewport<PlanarViewport>(viewportId2);
 
-  await viewport1.setStack(imageIds1, 80);
-  await viewport2.setStack(imageIds2, 80);
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId1, {
+    kind: 'planar',
+    imageIds: imageIds1,
+    initialImageIdIndex: 80,
+  });
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId2, {
+    kind: 'planar',
+    imageIds: imageIds2,
+    initialImageIdIndex: 80,
+  });
+
+  await viewport1.setDisplaySets({ displaySetId: displaySetId1 });
+  await viewport2.setDisplaySets({ displaySetId: displaySetId2 });
 
   cornerstoneTools.utilities.stackContextPrefetch.enable(element1);
   cornerstoneTools.utilities.stackContextPrefetch.enable(element2);

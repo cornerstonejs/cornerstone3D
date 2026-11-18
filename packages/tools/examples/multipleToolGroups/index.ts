@@ -1,5 +1,5 @@
-import type { Types } from '@cornerstonejs/core';
-import { RenderingEngine, Enums } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
+import { RenderingEngine, Enums, utilities } from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
@@ -22,6 +22,8 @@ const {
 
 const { ViewportType } = Enums;
 const { MouseBindings } = csToolsEnums;
+const ctDisplaySetId = 'multipleToolGroups:ct';
+const ptDisplaySetId = 'multipleToolGroups:pt';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -150,7 +152,7 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: viewportIds[0],
-      type: ViewportType.STACK,
+      type: ViewportType.PLANAR_NEXT,
       element: element1,
       defaultOptions: {
         background: <Types.Point3>[0.2, 0, 0.2],
@@ -158,7 +160,7 @@ async function run() {
     },
     {
       viewportId: viewportIds[1],
-      type: ViewportType.STACK,
+      type: ViewportType.PLANAR_NEXT,
       element: element2,
       defaultOptions: {
         background: <Types.Point3>[0.2, 0, 0.2],
@@ -166,7 +168,7 @@ async function run() {
     },
     {
       viewportId: viewportIds[2],
-      type: ViewportType.STACK,
+      type: ViewportType.PLANAR_NEXT,
       element: element3,
       defaultOptions: {
         background: <Types.Point3>[0.2, 0, 0.2],
@@ -177,24 +179,31 @@ async function run() {
   renderingEngine.setViewports(viewportInputArray);
 
   // Get the stack viewport that was created
-  const viewport1 = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportIds[0])
-  );
-  const viewport2 = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportIds[1])
-  );
-  const viewport3 = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportIds[2])
-  );
+  const viewport1 = renderingEngine.getViewport<PlanarViewport>(viewportIds[0]);
+  const viewport2 = renderingEngine.getViewport<PlanarViewport>(viewportIds[1]);
+  const viewport3 = renderingEngine.getViewport<PlanarViewport>(viewportIds[2]);
 
   // Define a stack containing a single image
   const ctStack = [ctImageIds[0], ctImageIds[1], ctImageIds[2]];
   const ptStack = [ptImageIds[0], ptImageIds[1], ptImageIds[2]];
 
   // Set the stack on the viewports
-  viewport1.setStack(ctStack);
-  viewport2.setStack(ctStack);
-  viewport3.setStack(ptStack);
+  utilities.genericViewportDisplaySetMetadataProvider.add(ctDisplaySetId, {
+    kind: 'planar',
+    imageIds: ctStack,
+    initialImageIdIndex: 0,
+  });
+  utilities.genericViewportDisplaySetMetadataProvider.add(ptDisplaySetId, {
+    kind: 'planar',
+    imageIds: ptStack,
+    initialImageIdIndex: 0,
+  });
+
+  await Promise.all([
+    viewport1.setDisplaySets({ displaySetId: ctDisplaySetId }),
+    viewport2.setDisplaySets({ displaySetId: ctDisplaySetId }),
+    viewport3.setDisplaySets({ displaySetId: ptDisplaySetId }),
+  ]);
 
   // Set viewport 1 to toolgroup 1
   toolGroup1.addViewport(viewportIds[0], renderingEngineId);

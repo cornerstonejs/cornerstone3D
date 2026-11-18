@@ -1,10 +1,10 @@
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
   cache,
   volumeLoader,
-  setVolumesForViewports,
+  utilities,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -41,6 +41,7 @@ const viewportIdCoronal = 'CT_VOLUME_CORONAL';
 const viewportIdSagittal = 'CT_VOLUME_SAGITTAL';
 const segmentationId = 'MY_SEGMENTATION_ID';
 const toolGroupId = 'STACK_TOOL_GROUP_ID';
+const displaySetId = 'regionSegment:pt';
 let toolGroup = null;
 
 // ======== Set up page ======== //
@@ -243,7 +244,7 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: viewportIdAxial,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: elementAxial,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
@@ -252,7 +253,7 @@ async function run() {
     },
     {
       viewportId: viewportIdCoronal,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: elementCoronal,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
@@ -261,7 +262,7 @@ async function run() {
     },
     {
       viewportId: viewportIdSagittal,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: elementSagittal,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -274,14 +275,18 @@ async function run() {
 
   volume.load();
 
-  await setVolumesForViewports(
-    renderingEngine,
-    [
-      {
-        volumeId: volumeId,
-      },
-    ],
-    [viewportIdAxial, viewportIdCoronal, viewportIdSagittal]
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    kind: 'planar',
+    imageIds,
+    volumeId,
+  });
+
+  await Promise.all(
+    [viewportIdAxial, viewportIdCoronal, viewportIdSagittal].map((viewportId) =>
+      renderingEngine
+        .getViewport<PlanarViewport>(viewportId)
+        .setDisplaySets({ displaySetId })
+    )
   );
 
   // Set the tool group on the viewport
@@ -291,8 +296,8 @@ async function run() {
 
   [viewportIdAxial, viewportIdCoronal, viewportIdSagittal].forEach(
     (viewportId) => {
-      const viewport = renderingEngine.getViewport(viewportId);
-      viewport.setProperties({
+      const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
+      viewport.setDisplaySetPresentation(displaySetId, {
         interpolationType: InterpolationType.NEAREST,
       });
     }

@@ -1,9 +1,9 @@
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
   volumeLoader,
-  setVolumesForViewports,
+  utilities,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -28,6 +28,9 @@ const {
 
 const { MouseBindings } = csToolsEnums;
 const { ViewportType } = Enums;
+const ctStackDisplaySetId = 'overlayGrid:ct:stack';
+const ctVolumeDisplaySetId = 'overlayGrid:ct:volume';
+const ptVolumeDisplaySetId = 'overlayGrid:pt:volume';
 
 const toolGroupId = 'MY_TOOLGROUP_ID';
 
@@ -93,13 +96,13 @@ async function run() {
   const viewportInputArray: Types.PublicViewportInput[] = [
     {
       viewportId: viewportIds[0],
-      type: ViewportType.STACK,
+      type: ViewportType.PLANAR_NEXT,
       element: elements[0],
       defaultOptions: {},
     },
     {
       viewportId: viewportIds[1],
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: elements[1],
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -107,7 +110,7 @@ async function run() {
     },
     {
       viewportId: viewportIds[2],
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: elements[2],
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
@@ -134,11 +137,17 @@ async function run() {
   // Define tool groups to add the segmentation display tool to
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
 
-  const stackViewport = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportIds[0])
+  const stackViewport = renderingEngine.getViewport<PlanarViewport>(
+    viewportIds[0]
   );
 
-  stackViewport.setStack(ctStacks);
+  utilities.genericViewportDisplaySetMetadataProvider.add(ctStackDisplaySetId, {
+    kind: 'planar',
+    imageIds: ctStacks,
+    initialImageIdIndex: 0,
+  });
+
+  await stackViewport.setDisplaySets({ displaySetId: ctStackDisplaySetId });
 
   const ptVolumeId = 'myVolume-pt';
   const ctVolumeId = 'myVolume-ct';
@@ -156,17 +165,30 @@ async function run() {
   ctVolume.load();
 
   // set on the other two viewports
-  await setVolumesForViewports(
-    renderingEngine,
-    [{ volumeId: ctVolumeId }],
-    [viewportIds[1]]
+  utilities.genericViewportDisplaySetMetadataProvider.add(
+    ctVolumeDisplaySetId,
+    {
+      kind: 'planar',
+      imageIds: ctStacks,
+      volumeId: ctVolumeId,
+    }
+  );
+  utilities.genericViewportDisplaySetMetadataProvider.add(
+    ptVolumeDisplaySetId,
+    {
+      kind: 'planar',
+      imageIds: ptStacks,
+      volumeId: ptVolumeId,
+    }
   );
 
-  await setVolumesForViewports(
-    renderingEngine,
-    [{ volumeId: ptVolumeId }],
-    [viewportIds[2]]
-  );
+  await renderingEngine
+    .getViewport<PlanarViewport>(viewportIds[1])
+    .setDisplaySets({ displaySetId: ctVolumeDisplaySetId });
+
+  await renderingEngine
+    .getViewport<PlanarViewport>(viewportIds[2])
+    .setDisplaySets({ displaySetId: ptVolumeDisplaySetId });
 
   toolGroup.addViewport(viewportIds[0], renderingEngine.id);
   toolGroup.addViewport(viewportIds[1], renderingEngine.id);

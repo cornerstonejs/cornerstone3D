@@ -1,12 +1,13 @@
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
-  setUseCPURendering,
-  getShouldUseCPURendering,
+  setRenderBackend,
+  getEffectiveRenderBackend,
   cache,
   resetInitialization,
   getRenderingEngines,
+  utilities,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -32,6 +33,7 @@ const { ViewportType } = Enums;
 const { MouseBindings } = csToolsEnums;
 
 const toolGroupId = 'STACK_TOOL_GROUP_ID';
+const displaySetId = 'renderingPipelinesCPU:ct';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -89,8 +91,8 @@ addDropdownToToolbar({
 async function handleRenderingOptionChange(selectedValue) {
   const useCPU = selectedValue === 'CPU Rendering';
 
-  if (getShouldUseCPURendering() !== useCPU) {
-    setUseCPURendering(useCPU);
+  if ((getEffectiveRenderBackend() === 'cpu') !== useCPU) {
+    setRenderBackend(useCPU ? 'cpu' : 'auto');
 
     // Destroy and reinitialize
     const renderingEngine = getRenderingEngines()[0];
@@ -121,7 +123,7 @@ async function run() {
   const viewportId = 'CT_STACK';
   const viewportInput = {
     viewportId,
-    type: ViewportType.STACK,
+    type: ViewportType.PLANAR_NEXT,
     element,
     defaultOptions: {
       background: <Types.Point3>[0.2, 0, 0.2],
@@ -132,11 +134,15 @@ async function run() {
 
   toolGroup.addViewport(viewportId, renderingEngineId);
 
-  const viewport = renderingEngine.getViewport(
-    viewportId
-  ) as Types.IStackViewport;
+  const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
-  viewport.setStack(imageIds);
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    kind: 'planar',
+    imageIds,
+    initialImageIdIndex: 0,
+  });
+
+  await viewport.setDisplaySets({ displaySetId });
 
   viewport.render();
 }

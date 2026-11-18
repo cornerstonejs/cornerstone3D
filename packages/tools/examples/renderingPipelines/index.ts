@@ -1,12 +1,12 @@
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
-  setVolumesForViewports,
   volumeLoader,
   getRenderingEngines,
   cache,
   resetInitialization,
+  utilities,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -35,6 +35,7 @@ const { MouseBindings } = csToolsEnums;
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
+const displaySetId = 'renderingPipelines:ct';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -173,7 +174,7 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: viewportIds[0],
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element1,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
@@ -182,7 +183,7 @@ async function run() {
     },
     {
       viewportId: viewportIds[1],
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element2,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -206,7 +207,19 @@ async function run() {
   // Set the volume to load
   volume.load();
 
-  setVolumesForViewports(renderingEngine, [{ volumeId }], viewportIds);
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    kind: 'planar',
+    imageIds,
+    volumeId,
+  });
+
+  await Promise.all(
+    viewportIds.map((viewportId) =>
+      renderingEngine
+        .getViewport<PlanarViewport>(viewportId)
+        .setDisplaySets({ displaySetId })
+    )
+  );
 
   // Render the image
   renderingEngine.renderViewports(viewportIds);
