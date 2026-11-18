@@ -1,9 +1,12 @@
-import type { Types } from '@cornerstonejs/core';
+import type {
+  GenericVolumeViewport3D,
+  PlanarViewport,
+  Types,
+} from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
   volumeLoader,
-  setVolumesForViewports,
   cache,
   eventTarget,
   utilities,
@@ -649,7 +652,7 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: viewportIds[0],
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element1,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -658,7 +661,7 @@ async function run() {
     },
     {
       viewportId: viewportIds[1],
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element2,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
@@ -667,7 +670,7 @@ async function run() {
     },
     {
       viewportId: viewportIds[2],
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element3,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
@@ -676,7 +679,7 @@ async function run() {
     },
     {
       viewportId: viewportId3D,
-      type: ViewportType.VOLUME_3D,
+      type: ViewportType.VOLUME_3D_NEXT,
       element: element4,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
@@ -685,7 +688,7 @@ async function run() {
     },
     {
       viewportId: viewportId3DSeg,
-      type: ViewportType.VOLUME_3D,
+      type: ViewportType.VOLUME_3D_NEXT,
       element: element5,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
@@ -757,7 +760,19 @@ async function run() {
       } ms for ${text} with ${imageIds.length} items`;
     });
 
-    await setVolumesForViewports(renderingEngine, [{ volumeId }], viewportIds);
+    utilities.genericViewportDisplaySetMetadataProvider.add(volumeId, {
+      kind: 'planar',
+      imageIds,
+      volumeId,
+    });
+
+    await Promise.all(
+      viewportIds.map((viewportId) =>
+        renderingEngine
+          .getViewport<PlanarViewport | GenericVolumeViewport3D>(viewportId)
+          .setDisplaySets({ displaySetId: volumeId })
+      )
+    );
 
     // After the viewports hold their actors, and not before: the resize below
     // fits each camera to the data, and a viewport with no actor has no bounds
@@ -765,9 +780,10 @@ async function run() {
     sizeViewportsToVolume(volume.dimensions, volume.spacing);
 
     // The 3D viewport shows nothing without a transfer function.
-    const viewport3D = renderingEngine.getViewport(viewportId3D);
+    const viewport3D =
+      renderingEngine.getViewport<GenericVolumeViewport3D>(viewportId3D);
 
-    viewport3D?.setProperties?.({ preset: 'CT-Bone' });
+    viewport3D?.setDisplaySetPresentation(volumeId, { preset: 'CT-Bone' });
 
     // Render the image
     renderingEngine.renderViewports(viewportIds);
@@ -992,6 +1008,11 @@ async function run() {
    *
    * The volume reads the labelmap images of the cache and copies nothing. It
    * reduces by foreground majority, so a reduced texture keeps real labels.
+   *
+   * A label is a name, so a sample must not blend two labels: the
+   * presentation has nearest interpolation, and a preset made from the
+   * segment colours, without shading, that gives each segment its colour and
+   * makes the background clear.
    */
   async function showSegmentation3D(labelmapImageIds: string[]) {
     const segVolume = volumeLoader.createAndCacheVolumeFromImagesSync(
@@ -1007,44 +1028,47 @@ async function run() {
       .map(Number)
       .filter((index) => index > 0);
 
-    await setVolumesForViewports(
-      renderingEngine,
-      [
-        {
-          volumeId: segVolumeId,
-          callback: ({ volumeActor }) => {
-            const property = volumeActor.getProperty();
-            const colors = property.getRGBTransferFunction(0);
-            const opacity = property.getScalarOpacity(0);
+    const colorTransfer = [0, 0, 0, 0];
+    const scalarOpacity = [0, 0];
 
-            // A label is a name, so a sample must not blend two labels.
-            property.setInterpolationTypeToNearest();
-            property.setShade(false);
-            colors.removeAllPoints();
-            opacity.removeAllPoints();
-            colors.addRGBPoint(0, 0, 0, 0);
-            opacity.addPoint(0, 0);
+    for (const segmentIndex of segmentIndices) {
+      const [r, g, b] = csToolsSegmentation.config.color.getSegmentIndexColor(
+        viewportIds[2],
+        segmentationId,
+        segmentIndex
+      );
 
-            for (const segmentIndex of segmentIndices) {
-              const [r, g, b] =
-                csToolsSegmentation.config.color.getSegmentIndexColor(
-                  viewportIds[2],
-                  segmentationId,
-                  segmentIndex
-                );
+      colorTransfer.push(segmentIndex, r / 255, g / 255, b / 255);
+      scalarOpacity.push(segmentIndex, 1);
+    }
 
-              colors.addRGBPoint(segmentIndex, r / 255, g / 255, b / 255);
-              opacity.addPoint(segmentIndex, 1);
-            }
-          },
-        },
-      ],
-      [viewportId3DSeg]
-    );
+    utilities.genericViewportDisplaySetMetadataProvider.add(segVolumeId, {
+      imageIds: labelmapImageIds,
+      volumeId: segVolumeId,
+    });
 
-    const viewport = renderingEngine.getViewport(viewportId3DSeg);
+    const viewport =
+      renderingEngine.getViewport<GenericVolumeViewport3D>(viewportId3DSeg);
 
-    viewport.resetCamera();
+    await viewport.setDisplaySets({ displaySetId: segVolumeId });
+
+    viewport.setDisplaySetPresentation(segVolumeId, {
+      interpolationType: Enums.InterpolationType.NEAREST,
+      preset: {
+        name: 'segmentLabels',
+        colorTransfer: [colorTransfer.length, ...colorTransfer].join(' '),
+        scalarOpacity: [scalarOpacity.length, ...scalarOpacity].join(' '),
+        gradientOpacity: '4 0 1 255 1',
+        interpolation: '0',
+        shade: '0',
+        ambient: '0.2',
+        diffuse: '1',
+        specular: '0',
+        specularPower: '1',
+      },
+    });
+
+    viewport.resetViewState();
     viewport.render();
   }
 

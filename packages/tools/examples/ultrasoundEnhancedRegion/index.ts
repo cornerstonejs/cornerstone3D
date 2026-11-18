@@ -1,5 +1,5 @@
-import type { Types } from '@cornerstonejs/core';
-import { RenderingEngine, Enums } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
+import { RenderingEngine, Enums, utilities } from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
@@ -30,6 +30,8 @@ const { MouseBindings, KeyboardBindings } = csToolsEnums;
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'CT_STACK';
 const viewportId2 = 'CT_STACK2';
+const displaySetId = 'ultrasoundEnhancedRegion:us1';
+const displaySetId2 = 'ultrasoundEnhancedRegion:us2';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -184,7 +186,7 @@ async function run() {
   const viewportInputs = [
     {
       viewportId,
-      type: ViewportType.STACK,
+      type: ViewportType.PLANAR_NEXT,
       element: element1,
       defaultOptions: {
         background: <Types.Point3>[0.2, 0, 0.2],
@@ -192,7 +194,7 @@ async function run() {
     },
     {
       viewportId: viewportId2,
-      type: ViewportType.STACK,
+      type: ViewportType.PLANAR_NEXT,
       element: element2,
       defaultOptions: {
         background: <Types.Point3>[0.2, 0, 0.2],
@@ -207,19 +209,25 @@ async function run() {
   toolGroup.addViewport(viewportId2, renderingEngineId);
 
   // Get the stack viewport that was created
-  const viewport = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportId)
-  );
+  const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
   const stack = [imageIds[0]];
-  viewport.setStack(stack);
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    kind: 'planar',
+    imageIds: stack,
+    initialImageIdIndex: 0,
+  });
+  await viewport.setDisplaySets({ displaySetId });
 
-  const viewport2 = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportId2)
-  );
+  const viewport2 = renderingEngine.getViewport<PlanarViewport>(viewportId2);
 
   const stack2 = [imageIds2[0]];
-  viewport2.setStack(stack2);
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId2, {
+    kind: 'planar',
+    imageIds: stack2,
+    initialImageIdIndex: 0,
+  });
+  await viewport2.setDisplaySets({ displaySetId: displaySetId2 });
 
   // // Render the image
   viewport.render();

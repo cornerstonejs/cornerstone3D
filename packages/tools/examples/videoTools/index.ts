@@ -1,4 +1,4 @@
-import type { Types } from '@cornerstonejs/core';
+import type { Types, VideoGenericViewport } from '@cornerstonejs/core';
 import { RenderingEngine, Enums, eventTarget } from '@cornerstonejs/core';
 import {
   addButtonToToolbar,
@@ -69,7 +69,8 @@ content.append(instructions);
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'videoViewportId';
 
-let viewport;
+let viewport: VideoGenericViewport;
+let playing = false;
 
 addToggleButtonToToolbar({
   id: 'play',
@@ -85,12 +86,16 @@ addDropdownToToolbar({
 
 function togglePlay(toggle = undefined) {
   if (toggle === undefined) {
-    toggle = viewport.togglePlayPause();
-  } else if (toggle === true) {
+    toggle = !playing;
+  }
+
+  if (toggle === true) {
     viewport.play();
   } else {
     viewport.pause();
   }
+
+  playing = toggle;
 }
 
 addButtonToToolbar({
@@ -219,7 +224,7 @@ async function run() {
   renderingEngine.enableElement(viewportInput);
 
   // Get the stack viewport that was created
-  viewport = <Types.IVideoViewport>renderingEngine.getViewport(viewportId);
+  viewport = renderingEngine.getViewport<VideoGenericViewport>(viewportId);
 
   toolGroup.addViewport(viewport.id, renderingEngineId);
 

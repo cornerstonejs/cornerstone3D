@@ -1,4 +1,4 @@
-import type { Types } from '@cornerstonejs/core';
+import type { Types, VideoGenericViewport } from '@cornerstonejs/core';
 import { RenderingEngine, Enums, eventTarget } from '@cornerstonejs/core';
 import {
   addButtonToToolbar,
@@ -80,10 +80,10 @@ rangeDiv.innerHTML =
 content.appendChild(rangeDiv);
 const rangeElement = document.getElementById('range') as HTMLInputElement;
 rangeElement.onchange = () => {
-  viewport.setTime(Number(rangeElement.value));
+  viewport.seek(Number(rangeElement.value));
 };
 rangeElement.oninput = () => {
-  viewport.setTime(Number(rangeElement.value));
+  viewport.seek(Number(rangeElement.value));
 };
 
 const instructions = document.createElement('p');
@@ -107,7 +107,8 @@ const baseEventDetail = {
   renderingEngineId,
 };
 
-let viewport;
+let viewport: VideoGenericViewport;
+let playing = false;
 
 const playButton = addButtonToToolbar({
   id: 'play',
@@ -119,7 +120,7 @@ addButtonToToolbar({
   id: 'Clear',
   title: 'Clear Frame Range',
   onClick() {
-    viewport.setFrameRange(null);
+    viewport.setViewState({ frameRange: undefined });
     viewport.play();
   },
 });
@@ -155,12 +156,15 @@ const groupButton = addButtonToToolbar({
 
 function togglePlay(toggle = undefined) {
   if (toggle === undefined) {
-    toggle = viewport.togglePlayPause();
-  } else if (toggle === true) {
+    toggle = !playing;
+  }
+
+  if (toggle === true) {
     viewport.play();
   } else {
     viewport.pause();
   }
+  playing = toggle;
   playButton.innerText = toggle ? 'Play' : 'Pause';
 }
 
@@ -174,7 +178,7 @@ addButtonToToolbar({
       const frame = viewport.getFrameNumber();
       const range = Array.isArray(rangeSelection)
         ? rangeSelection
-        : [rangeSelection, viewport.numberOfFrames];
+        : [rangeSelection, viewport.getNumberOfFrames()];
       range[0] = frame;
       range[1] = Math.max(frame, range[1]);
       AnnotationMultiSlice.setFrameRange(
@@ -182,7 +186,7 @@ addButtonToToolbar({
         range as [number, number],
         baseEventDetail
       );
-      viewport.setFrameRange(range);
+      viewport.setViewState({ frameRange: range as [number, number] });
       viewport.render();
     }
   },
@@ -223,7 +227,7 @@ addButtonToToolbar({
         range as [number, number],
         baseEventDetail
       );
-      viewport.setFrameRange(range);
+      viewport.setViewState({ frameRange: range as [number, number] });
       viewport.render();
     }
   },
@@ -253,7 +257,7 @@ function updateAnnotationDiv(uid) {
   const { toolName } = metadata;
   const range = AnnotationMultiSlice.getFrameRange(annotation);
   const rangeArr = Array.isArray(range) ? range : [range];
-  const { fps } = viewport;
+  const fps = viewport.getFrameRate();
   selectionDiv.innerHTML = `
     <b>${toolName} Annotation UID:</b>${uid} <b>Label:</b>${
       data.label || data.text
@@ -306,11 +310,11 @@ function selectNextAnnotation(direction) {
   }
   const range = AnnotationMultiSlice.getFrameRange(annotation);
   if (Array.isArray(range)) {
-    viewport.setFrameRange(range);
+    viewport.setViewState({ frameRange: range });
     togglePlay(true);
     viewport.setFrameNumber(range[0]);
   } else {
-    viewport.setFrameRange(null);
+    viewport.setViewState({ frameRange: undefined });
     togglePlay(false);
     viewport.setFrameNumber(range);
   }
@@ -465,7 +469,7 @@ async function run() {
   renderingEngine.enableElement(viewportInput);
 
   // Get the stack viewport that was created
-  viewport = <Types.IVideoViewport>renderingEngine.getViewport(viewportId);
+  viewport = renderingEngine.getViewport<VideoGenericViewport>(viewportId);
 
   toolGroup.addViewport(viewport.id, renderingEngineId);
 
@@ -478,6 +482,7 @@ async function run() {
   });
 
   viewport.play();
+  playing = true;
 
   const seconds = (time) => `${Math.round(time * 10) / 10} s`;
 

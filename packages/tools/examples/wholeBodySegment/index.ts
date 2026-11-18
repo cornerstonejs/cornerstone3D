@@ -1,20 +1,20 @@
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
-  setVolumesForViewports,
   volumeLoader,
   getRenderingEngine,
   cache,
+  utilities,
 } from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
-  setPetTransferFunctionForVolumeActor,
   addButtonToToolbar,
   createInfoSection,
 } from '../../../../utils/demo/helpers';
+import { petPresentation } from '../../../../utils/demo/helpers/volumePresentationRecipes';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
 const {
@@ -40,6 +40,8 @@ const ctVolumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
 const ctVolumeId = `${volumeLoaderScheme}:${ctVolumeName}`; // VolumeId with loader id + volume id
 const ptVolumeName = 'PT_VOLUME_ID';
 const ptVolumeId = `${volumeLoaderScheme}:${ptVolumeName}`;
+const ctDisplaySetId = 'wholeBodySegment:ct';
+const ptDisplaySetId = 'wholeBodySegment:pt';
 const ctToolGroupId = 'CT_TOOLGROUP_ID';
 const ptToolGroupId = 'PT_TOOLGROUP_ID';
 let ctImageIds;
@@ -213,7 +215,7 @@ async function setUpDisplay() {
   const viewportInputArray = [
     {
       viewportId: viewportIds.CT.AXIAL,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element1_1,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
@@ -221,7 +223,7 @@ async function setUpDisplay() {
     },
     {
       viewportId: viewportIds.CT.SAGITTAL,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element1_2,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -229,7 +231,7 @@ async function setUpDisplay() {
     },
     {
       viewportId: viewportIds.PT.AXIAL,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element2_1,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
@@ -238,7 +240,7 @@ async function setUpDisplay() {
     },
     {
       viewportId: viewportIds.PT.SAGITTAL,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element2_2,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -254,25 +256,37 @@ async function setUpDisplay() {
   ctVolume.load();
 
   // Set volumes on the viewports
-  await setVolumesForViewports(
-    renderingEngine,
-    [
-      {
-        volumeId: ctVolumeId,
-      },
-    ],
-    [viewportIds.CT.AXIAL, viewportIds.CT.SAGITTAL]
+  utilities.genericViewportDisplaySetMetadataProvider.add(ctDisplaySetId, {
+    kind: 'planar',
+    imageIds: ctImageIds,
+    volumeId: ctVolumeId,
+  });
+  utilities.genericViewportDisplaySetMetadataProvider.add(ptDisplaySetId, {
+    kind: 'planar',
+    imageIds: ptImageIds,
+    volumeId: ptVolumeId,
+  });
+
+  const ctViewports: PlanarViewport[] = [
+    viewportIds.CT.AXIAL,
+    viewportIds.CT.SAGITTAL,
+  ].map((viewportId) => renderingEngine.getViewport(viewportId));
+  const ptViewports: PlanarViewport[] = [
+    viewportIds.PT.AXIAL,
+    viewportIds.PT.SAGITTAL,
+  ].map((viewportId) => renderingEngine.getViewport(viewportId));
+
+  await Promise.all(
+    ctViewports.map((viewport) =>
+      viewport.setDisplaySets({ displaySetId: ctDisplaySetId })
+    )
   );
 
-  await setVolumesForViewports(
-    renderingEngine,
-    [
-      {
-        volumeId: ptVolumeId,
-        callback: setPetTransferFunctionForVolumeActor,
-      },
-    ],
-    [viewportIds.PT.AXIAL, viewportIds.PT.SAGITTAL]
+  await Promise.all(
+    ptViewports.map(async (viewport) => {
+      await viewport.setDisplaySets({ displaySetId: ptDisplaySetId });
+      viewport.setDisplaySetPresentation(ptDisplaySetId, petPresentation());
+    })
   );
 
   // Render the viewports

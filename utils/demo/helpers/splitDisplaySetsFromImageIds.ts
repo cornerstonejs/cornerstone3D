@@ -28,9 +28,9 @@ const { MetadataModules } = metadataEnums;
 
 /** Maps a display set's handler (a non-image object) to a ViewportType. */
 const VIEWPORT_TYPE_BY_HANDLER: Record<string, Enums.ViewportType> = {
-  video: ViewportType.VIDEO,
-  wholeSlide: ViewportType.WHOLE_SLIDE,
-  ecg: ViewportType.ECG,
+  video: ViewportType.VIDEO_NEXT,
+  wholeSlide: ViewportType.WHOLE_SLIDE_NEXT,
+  ecg: ViewportType.ECG_NEXT,
 };
 
 /** True for an image display set that opens as a volume (`isReconstructable`). */
@@ -40,14 +40,16 @@ export function isVolumeDisplaySet(displaySet: IDisplaySet): boolean {
 
 /**
  * Resolves the cornerstone {@link Enums.ViewportType} to enable for a display
- * set: from its handler for a non-image object, else a stack viewport. (A demo
- * that wants a volume checks {@link isVolumeDisplaySet}.)
+ * set: from its handler for a non-image object, else a planar viewport. All
+ * are the next viewport types. (A demo that wants a volume checks
+ * {@link isVolumeDisplaySet}.)
  */
 export function getViewportTypeForDisplaySet(
   displaySet: IDisplaySet
 ): Enums.ViewportType {
   return (
-    VIEWPORT_TYPE_BY_HANDLER[displaySet.handler ?? ''] ?? ViewportType.STACK
+    VIEWPORT_TYPE_BY_HANDLER[displaySet.handler ?? ''] ??
+    ViewportType.PLANAR_NEXT
   );
 }
 

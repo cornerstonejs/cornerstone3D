@@ -1,3 +1,4 @@
+import type { PlanarViewport } from '@cornerstonejs/core';
 import { Enums, RenderingEngine, imageLoader } from '@cornerstonejs/core';
 import * as cornerstone from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
@@ -33,6 +34,8 @@ const renderingEngineId = 'myRenderingEngine';
 const viewportId1 = 'VOLUME_VIEWPORT';
 const viewportId2 = 'STACK_VIEWPORT';
 const toolGroupId = 'TOOL_GROUP_ID';
+const ctDisplaySetId = 'volumeAndVolumeLabelmap:ct';
+const ptDisplaySetId = 'volumeAndVolumeLabelmap:pt';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -101,7 +104,7 @@ addDropdownToToolbar({
   labelText: 'Tools: ',
 });
 
-let viewport1;
+let viewport1: PlanarViewport;
 
 const segmentationId = 'SEGMENTATION';
 
@@ -162,7 +165,7 @@ async function run() {
     {
       viewportId: viewportId1,
       element: element1,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       defaultOptions: {
         orientation: 'sagittal',
       },
@@ -170,7 +173,10 @@ async function run() {
     {
       viewportId: viewportId2,
       element: element2,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
+      defaultOptions: {
+        orientation: Enums.OrientationAxis.AXIAL,
+      },
     },
   ];
   renderingEngine.setViewports(viewportInputArray);
@@ -179,7 +185,7 @@ async function run() {
   toolGroup.addViewport(viewportId2);
 
   viewport1 = renderingEngine.getViewport(viewportId1);
-  const viewport2 = renderingEngine.getViewport(viewportId2);
+  const viewport2: PlanarViewport = renderingEngine.getViewport(viewportId2);
 
   const volumeId = 'VOLUME_ID';
   const volume = await cornerstone.volumeLoader.createAndCacheVolume(volumeId, {
@@ -197,8 +203,19 @@ async function run() {
   volume.load();
   ptVolume.load();
 
-  viewport1.setVolumes([{ volumeId }]);
-  viewport2.setVolumes([{ volumeId: ptVolumeId }]);
+  cornerstone.utilities.genericViewportDisplaySetMetadataProvider.add(
+    ctDisplaySetId,
+    { kind: 'planar', imageIds: ctImageIds, volumeId }
+  );
+  cornerstone.utilities.genericViewportDisplaySetMetadataProvider.add(
+    ptDisplaySetId,
+    { kind: 'planar', imageIds: ptImageIds, volumeId: ptVolumeId }
+  );
+
+  await Promise.all([
+    viewport1.setDisplaySets({ displaySetId: ctDisplaySetId }),
+    viewport2.setDisplaySets({ displaySetId: ptDisplaySetId }),
+  ]);
   renderingEngine.render();
 
   const segmentationVolumeId = 'SEGMENTATION_VOLUME_ID';

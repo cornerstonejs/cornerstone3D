@@ -1,4 +1,4 @@
-import type { Types } from '@cornerstonejs/core';
+import type { Types, VideoGenericViewport } from '@cornerstonejs/core';
 import { RenderingEngine, Enums } from '@cornerstonejs/core';
 import {
   addButtonToToolbar,
@@ -53,10 +53,10 @@ rangeDiv.innerHTML =
 content.appendChild(rangeDiv);
 const rangeElement = document.getElementById('range') as HTMLInputElement;
 rangeElement.onchange = () => {
-  viewport.setTime(Number(rangeElement.value));
+  viewport.seek(Number(rangeElement.value));
 };
 rangeElement.oninput = () => {
-  viewport.setTime(Number(rangeElement.value));
+  viewport.seek(Number(rangeElement.value));
 };
 
 const instructions = document.createElement('p');
@@ -74,13 +74,31 @@ content.append(instructions);
 
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'videoViewportId';
-let viewport;
+let viewport: VideoGenericViewport;
+let playing = false;
+let scrollSpeed = 1;
+let scrollUnit = Enums.VideoEnums.SpeedUnit.FRAME;
+
+/**
+ * The number of frames that one step of the next and previous buttons
+ * moves: the scroll distance of the dropdown, in frames.
+ */
+function getFramesPerStep() {
+  return scrollUnit === Enums.VideoEnums.SpeedUnit.SECOND
+    ? scrollSpeed * viewport.getFrameRate()
+    : scrollSpeed;
+}
 
 addButtonToToolbar({
   id: 'play',
   title: 'pause',
   onClick() {
-    viewport.togglePlayPause();
+    if (playing) {
+      viewport.pause();
+    } else {
+      viewport.play();
+    }
+    playing = !playing;
 
     // toggle the title
     const button = document.getElementById('play');
@@ -96,7 +114,7 @@ addButtonToToolbar({
   id: 'previous',
   title: 'previous',
   onClick() {
-    viewport.scroll(-1);
+    viewport.scroll(-getFramesPerStep());
   },
 });
 
@@ -104,7 +122,7 @@ addButtonToToolbar({
   id: 'next',
   title: 'next',
   onClick() {
-    viewport.scroll(1);
+    viewport.scroll(getFramesPerStep());
   },
 });
 
@@ -112,7 +130,7 @@ addButtonToToolbar({
   id: 'jump',
   title: 'jump to 50',
   onClick() {
-    viewport.setTime(50);
+    viewport.seek(50);
   },
 });
 
@@ -156,7 +174,8 @@ addDropdownToToolbar({
     value = value.toString();
     const unit = value[value.length - 1];
     const newScrollSpeed = Number(value.substring(0, value.length - 2));
-    viewport.setScrollSpeed(newScrollSpeed, unit);
+    scrollSpeed = newScrollSpeed;
+    scrollUnit = unit as Enums.VideoEnums.SpeedUnit;
   },
 });
 
@@ -237,7 +256,7 @@ async function run() {
   const renderingEngine = new RenderingEngine(renderingEngineId);
 
   // Create the viewport using the display set's preferred viewport type
-  // instead of hard-coding ViewportType.VIDEO.
+  // instead of hard-coding ViewportType.VIDEO_NEXT.
   const viewportInput = {
     viewportId,
     type: getViewportTypeForDisplaySet(displaySet),
@@ -250,13 +269,12 @@ async function run() {
   renderingEngine.enableElement(viewportInput);
 
   // Get the stack viewport that was created
-  viewport = <Types.IVideoViewport>renderingEngine.getViewport(viewportId);
+  viewport = renderingEngine.getViewport<VideoGenericViewport>(viewportId);
 
   toolGroup.addViewport(viewport.id, renderingEngineId);
 
   // Drive the viewport from the display set, mirroring the GenericViewport
-  // setDisplaySets API. The displaySetId is the video instance's imageId
-  // (equivalent to the previous viewport.setVideo(videoId, 25) call); the
+  // setDisplaySets API. The displaySetId is the video instance's imageId; the
   // initial frame is forwarded through options.frameNumber.
   await viewport.setDisplaySets({
     displaySetId: displaySet.instances[0].imageId,
@@ -264,6 +282,7 @@ async function run() {
   });
 
   viewport.play();
+  playing = true;
 
   const seconds = (time) => `${Math.round(time * 10) / 10} s`;
 

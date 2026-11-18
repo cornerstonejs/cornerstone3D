@@ -1,4 +1,4 @@
-import type { Types } from '@cornerstonejs/core';
+import type { Types, VideoGenericViewport } from '@cornerstonejs/core';
 import { RenderingEngine, Enums } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -309,9 +309,8 @@ async function run() {
   toolGroup.addViewport(viewportId, renderingEngineId);
 
   // Get the stack viewport that was created
-  const viewport = <Types.IVideoViewport>(
-    renderingEngine.getViewport(viewportId)
-  );
+  const viewport =
+    renderingEngine.getViewport<VideoGenericViewport>(viewportId);
 
   // Set the stack on the viewport
   await viewport.setDisplaySets({

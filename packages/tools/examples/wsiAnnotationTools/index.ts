@@ -1,4 +1,4 @@
-import type { Types } from '@cornerstonejs/core';
+import type { Types, WSIGenericViewport } from '@cornerstonejs/core';
 import { RenderingEngine, Enums, utilities } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import dicomImageLoader from '@cornerstonejs/dicom-image-loader';
@@ -167,7 +167,7 @@ async function run() {
 
   const viewportInput = {
     viewportId,
-    type: ViewportType.WHOLE_SLIDE,
+    type: ViewportType.WHOLE_SLIDE_NEXT,
     element,
     defaultOptions: {
       background: <Types.Point3>[0.1, 0.1, 0.1],
@@ -177,13 +177,14 @@ async function run() {
   renderingEngine.enableElement(viewportInput);
 
   // Get the stack viewport that was created
-  const viewport = <Types.IWSIViewport>renderingEngine.getViewport(viewportId);
+  const viewport = renderingEngine.getViewport<WSIGenericViewport>(viewportId);
 
   client.getDICOMwebMetadata = (imageId) => wadors.metaDataManager.get(imageId);
 
   // Register WSI data and set it on the viewport
   const dataId = `wsi:${imageIds[0]}`;
   utilities.genericViewportDisplaySetMetadataProvider.add(dataId, {
+    kind: 'wsi',
     imageIds,
     options: { webClient: client },
   });

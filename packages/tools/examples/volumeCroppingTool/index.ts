@@ -1,15 +1,19 @@
-import type { Types } from '@cornerstonejs/core';
+import type {
+  GenericVolumeViewport3D,
+  PlanarViewport,
+  Types,
+} from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
-  setVolumesForViewports,
   volumeLoader,
+  utilities,
+  viewportProjection,
 } from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
-  setCtTransferFunctionForVolumeActor,
   addDropdownToToolbar,
   getLocalUrl,
   addToggleButtonToToolbar,
@@ -17,6 +21,7 @@ import {
 } from '../../../../utils/demo/helpers';
 
 import * as cornerstoneTools from '@cornerstonejs/tools';
+import { ctPresentation } from '../../../../utils/demo/helpers/volumePresentationRecipes';
 
 // This is for debugging purposes
 console.warn(
@@ -44,6 +49,7 @@ const { ViewportType } = Enums;
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
+const displaySetId = 'volumeCroppingTool:ct';
 const toolGroupId = 'MY_TOOLGROUP_ID';
 const toolGroupIdVRT = 'MY_TOOLGROUP_VRT_ID';
 
@@ -356,7 +362,7 @@ async function run(numViewports = getNumViewportsFromUrl()) {
   const orthographicViewports = [
     {
       viewportId: viewportId1,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element1,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
@@ -365,7 +371,7 @@ async function run(numViewports = getNumViewportsFromUrl()) {
     },
     {
       viewportId: viewportId2,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element2,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
@@ -374,7 +380,7 @@ async function run(numViewports = getNumViewportsFromUrl()) {
     },
     {
       viewportId: viewportId3,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element3,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -398,7 +404,7 @@ async function run(numViewports = getNumViewportsFromUrl()) {
     ...orthographicViewports,
     {
       viewportId: viewportId4,
-      type: ViewportType.VOLUME_3D,
+      type: ViewportType.VOLUME_3D_NEXT,
       element: element4,
       defaultOptions: {
         background: <Types.Point3>[0, 0, 0],
@@ -416,16 +422,22 @@ async function run(numViewports = getNumViewportsFromUrl()) {
     ...orthographicViewports.map((vp) => vp.viewportId),
     viewportId4,
   ];
-  await setVolumesForViewports(
-    renderingEngine,
-    [
-      {
-        volumeId,
-        callback: setCtTransferFunctionForVolumeActor,
-      },
-    ],
-    activeViewportIds
-  );
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    kind: 'planar',
+    imageIds,
+    volumeId,
+  });
+
+  await Promise.all([
+    ...orthographicViewports.map(async ({ viewportId }) => {
+      const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
+      await viewport.setDisplaySets({ displaySetId });
+      viewport.setDisplaySetPresentation(displaySetId, ctPresentation());
+    }),
+    renderingEngine
+      .getViewport<GenericVolumeViewport3D>(viewportId4)
+      .setDisplaySets({ displaySetId }),
+  ]);
 
   // Tool group for orthographic viewports
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
@@ -675,25 +687,23 @@ async function run(numViewports = getNumViewportsFromUrl()) {
     },
   });
 
-  const viewport = renderingEngine.getViewport(
-    viewportId4
-  ) as Types.IVolumeViewport;
+  const viewport =
+    renderingEngine.getViewport<GenericVolumeViewport3D>(viewportId4);
 
-  await setVolumesForViewports(
-    renderingEngine,
-    [{ volumeId }],
-    [viewportId4],
-    true
-  );
-
-  viewport.setProperties({
+  viewport.setDisplaySetPresentation(displaySetId, {
     preset: 'CT-Bone',
   });
 
   toolGroupVRT.addViewport(viewportId4, renderingEngineId);
 
-  viewport.resetCamera();
-  viewport.setZoom(1.2);
+  viewport.resetViewState();
+  const zoomedViewState = viewportProjection.withPresentation(viewport, {
+    zoom: 1.2,
+  });
+
+  if (zoomedViewState) {
+    viewport.setViewState(zoomedViewState);
+  }
 
   // Force VTK pipeline to size and render (workaround for volume not showing until interaction)
   renderingEngine.resize(true, true);

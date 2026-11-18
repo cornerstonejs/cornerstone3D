@@ -1,3 +1,4 @@
+import type { VideoGenericViewport } from '@cornerstonejs/core';
 import {
   Enums,
   RenderingEngine,
@@ -95,7 +96,7 @@ const brushValues = [
 
 const optionsValues = [...brushValues];
 
-let viewport;
+let viewport: VideoGenericViewport;
 
 const segmentationId = 'VIDEO_SEGMENTATION';
 

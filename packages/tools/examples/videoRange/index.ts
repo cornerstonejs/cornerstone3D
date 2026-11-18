@@ -1,4 +1,4 @@
-import type { Types } from '@cornerstonejs/core';
+import type { Types, VideoGenericViewport } from '@cornerstonejs/core';
 import { RenderingEngine, Enums, eventTarget } from '@cornerstonejs/core';
 import {
   addButtonToToolbar,
@@ -77,7 +77,8 @@ const baseEventDetail = {
   renderingEngineId,
 };
 
-let viewport;
+let viewport: VideoGenericViewport;
+let playing = false;
 
 addToggleButtonToToolbar({
   id: 'play',
@@ -100,7 +101,7 @@ addButtonToToolbar({
   id: 'Clear',
   title: 'Clear Frame Range',
   onClick() {
-    viewport.setFrameRange(null);
+    viewport.setViewState({ frameRange: undefined });
     viewport.play();
   },
 });
@@ -148,12 +149,16 @@ addButtonToToolbar({
 
 function togglePlay(toggle = undefined) {
   if (toggle === undefined) {
-    toggle = viewport.togglePlayPause();
-  } else if (toggle) {
+    toggle = !playing;
+  }
+
+  if (toggle) {
     viewport.play();
   } else {
     viewport.pause();
   }
+
+  playing = toggle;
 }
 
 addButtonToToolbar({
@@ -231,7 +236,7 @@ function updateAnnotationDiv(uid) {
   const range = AnnotationMultiSlice.getFrameRange(annotation);
   const rangeArr = Array.isArray(range) ? range : [range];
   console.log('rangeArr=', range, rangeArr);
-  const { fps } = viewport;
+  const fps = viewport.getFrameRate();
   selectionDiv.innerHTML = `
     <b>${toolName} Annotation UID:</b>${uid} <b>Label:</b>${
       data.label || data.text
@@ -282,11 +287,11 @@ function selectNextAnnotation(direction) {
   }
   const range = AnnotationMultiSlice.getFrameRange(annotation);
   if (Array.isArray(range)) {
-    viewport.setFrameRange(range);
+    viewport.setViewState({ frameRange: range });
     togglePlay(true);
     viewport.setFrameNumber(range[0]);
   } else {
-    viewport.setFrameRange(null);
+    viewport.setViewState({ frameRange: undefined });
     togglePlay(false);
     viewport.setFrameNumber(range);
   }
@@ -365,7 +370,7 @@ async function run() {
   renderingEngine.enableElement(viewportInput);
 
   // Get the stack viewport that was created
-  viewport = <Types.IVideoViewport>renderingEngine.getViewport(viewportId);
+  viewport = renderingEngine.getViewport<VideoGenericViewport>(viewportId);
 
   toolGroup.addViewport(viewport.id, renderingEngineId);
 

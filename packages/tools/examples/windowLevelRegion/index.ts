@@ -1,18 +1,19 @@
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
   cache,
   volumeLoader,
+  utilities,
 } from '@cornerstonejs/core';
 
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
-  setCtTransferFunctionForVolumeActor,
   setTitleAndDescription,
   addDropdownToToolbar,
 } from '../../../../utils/demo/helpers';
+import { ctPresentation } from '../../../../utils/demo/helpers/volumePresentationRecipes';
 
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -34,15 +35,18 @@ const renderingEngineId = 'myRenderingEngine';
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
+const stackDisplaySetId = 'windowLevelRegion:stack';
+const volumeDisplaySetId = 'windowLevelRegion:volume';
 const toolGroupIds = new Set<string>();
 
 const viewportsInfo = [
   {
     toolGroupId: 'STACK_TOOLGROUP_ID',
     segmentationEnabled: false,
+    displaySetId: stackDisplaySetId,
     viewportInput: {
       viewportId: 'CT_STACK_AXIAL',
-      type: ViewportType.STACK,
+      type: ViewportType.PLANAR_NEXT,
       element: null,
       defaultOptions: {
         background: <Types.Point3>[0.2, 0, 0.2],
@@ -51,9 +55,10 @@ const viewportsInfo = [
   },
   {
     toolGroupId: 'VOLUME_TOOLGROUP_ID',
+    displaySetId: volumeDisplaySetId,
     viewportInput: {
       viewportId: 'CT_VOLUME_AXIAL',
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: null,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
@@ -123,7 +128,7 @@ addDropdownToToolbar({
 });
 
 async function initializeVolumeViewport(
-  viewport: Types.IVolumeViewport,
+  viewport: PlanarViewport,
   volumeId: string,
   imageIds: string[]
 ) {
@@ -139,9 +144,8 @@ async function initializeVolumeViewport(
   }
 
   // Set the volume on the viewport
-  await viewport.setVolumes([
-    { volumeId, callback: setCtTransferFunctionForVolumeActor },
-  ]);
+  await viewport.setDisplaySets({ displaySetId: volumeDisplaySetId });
+  viewport.setDisplaySetPresentation(volumeDisplaySetId, ctPresentation());
 
   return volume;
 }
@@ -152,7 +156,7 @@ async function initializeViewport(
   viewportInfo,
   imageIds
 ) {
-  const { viewportInput } = viewportInfo;
+  const { viewportInput, displaySetId } = viewportInfo;
   const element = document.createElement('div');
 
   // Disable right click context menu so we can have right click tools
@@ -173,17 +177,13 @@ async function initializeViewport(
   toolGroup.addViewport(viewportId, renderingEngineId);
 
   // Get the stack viewport that was created
-  const viewport = <Types.IViewport>renderingEngine.getViewport(viewportId);
+  const viewport: PlanarViewport = renderingEngine.getViewport(viewportId);
 
-  if (viewportInput.type === ViewportType.STACK) {
+  if (displaySetId === stackDisplaySetId) {
     // Set the stack on the viewport
-    (<Types.IStackViewport>viewport).setStack(imageIds);
-  } else if (viewportInput.type === ViewportType.ORTHOGRAPHIC) {
-    await initializeVolumeViewport(
-      viewport as Types.IVolumeViewport,
-      volumeId,
-      imageIds
-    );
+    await viewport.setDisplaySets({ displaySetId });
+  } else if (displaySetId === volumeDisplaySetId) {
+    await initializeVolumeViewport(viewport, volumeId, imageIds);
   } else {
     throw new Error('Invalid viewport type');
   }
@@ -243,6 +243,17 @@ async function run() {
     SeriesInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.226151125820845824875394858561',
     wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
+  });
+
+  utilities.genericViewportDisplaySetMetadataProvider.add(stackDisplaySetId, {
+    kind: 'planar',
+    imageIds,
+    initialImageIdIndex: 0,
+  });
+  utilities.genericViewportDisplaySetMetadataProvider.add(volumeDisplaySetId, {
+    kind: 'planar',
+    imageIds,
+    volumeId,
   });
 
   // Instantiate a rendering engine

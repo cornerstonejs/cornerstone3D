@@ -33,11 +33,14 @@
  * Some codecs can decode to partial resolution.
  */
 
-import type { Types } from '@cornerstonejs/core';
+import type {
+  GenericVolumeViewport3D,
+  PlanarViewport,
+  Types,
+} from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
-  setVolumesForViewports,
   volumeLoader,
   cache,
   utilities,
@@ -49,13 +52,13 @@ import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
-  setCtTransferFunctionForVolumeActor,
   addDropdownToToolbar,
   getLocalUrl,
   addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
 
 import * as cornerstoneTools from '@cornerstonejs/tools';
+import { ctPresentation } from '../../../../utils/demo/helpers/volumePresentationRecipes';
 
 // This is for debugging purposes
 console.warn(
@@ -314,7 +317,7 @@ async function run() {
   const orthographicViewports = [
     {
       viewportId: viewportId1,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element1,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
@@ -323,7 +326,7 @@ async function run() {
     },
     {
       viewportId: viewportId2,
-      type: ViewportType.STACK,
+      type: ViewportType.PLANAR_NEXT,
       element: element2,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
@@ -332,7 +335,7 @@ async function run() {
     },
     {
       viewportId: viewportId3,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element3,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -344,7 +347,7 @@ async function run() {
     ...orthographicViewports,
     {
       viewportId: viewportId4,
-      type: ViewportType.VOLUME_3D,
+      type: ViewportType.VOLUME_3D_NEXT,
       element: element4,
       defaultOptions: {
         background: <Types.Point3>[0, 0, 0],
@@ -421,9 +424,8 @@ async function run() {
 
       // Reset camera for 3D viewport now that volume data is loaded
       try {
-        const vrtViewport = renderingEngine.getViewport(
-          viewportId4
-        ) as Types.IVolumeViewport;
+        const vrtViewport =
+          renderingEngine.getViewport<GenericVolumeViewport3D>(viewportId4);
         if (
           vrtViewport &&
           volume.voxelManager &&
@@ -432,7 +434,7 @@ async function run() {
           console.log(
             '🔄 Resetting 3D viewport camera after volume load completion'
           );
-          vrtViewport.resetCamera();
+          vrtViewport.resetViewState();
         }
       } catch (error) {
         console.warn('⚠️ Failed to reset 3D viewport camera:', error);
@@ -457,28 +459,40 @@ async function run() {
 
     // Set volumes for orthographic and 3D viewports (excluding stack viewport)
     const volumeViewportIds = viewportIds.filter((id) => id !== viewportId2);
-    await setVolumesForViewports(
-      renderingEngine,
-      [
-        {
-          volumeId: currentVolumeId,
-          callback: setCtTransferFunctionForVolumeActor,
-        },
-      ],
-      volumeViewportIds
+    utilities.genericViewportDisplaySetMetadataProvider.add(currentVolumeId, {
+      kind: 'planar',
+      imageIds: volume.imageIds,
+      volumeId: currentVolumeId,
+    });
+    const planarViewports = volumeViewportIds
+      .filter((id) => id !== viewportId4)
+      .map((id) => renderingEngine.getViewport<PlanarViewport>(id));
+    const vrtViewport =
+      renderingEngine.getViewport<GenericVolumeViewport3D>(viewportId4);
+    await Promise.all([
+      ...planarViewports.map((viewport) =>
+        viewport.setDisplaySets({ displaySetId: currentVolumeId })
+      ),
+      vrtViewport.setDisplaySets({ displaySetId: currentVolumeId }),
+    ]);
+    planarViewports.forEach((viewport) =>
+      viewport.setDisplaySetPresentation(currentVolumeId, ctPresentation())
     );
+    vrtViewport.setDisplaySetPresentation(currentVolumeId, ctPresentation());
 
     // Set up the stack viewport separately with axial images
-    const stackViewport = renderingEngine.getViewport(
-      viewportId2
-    ) as Types.IStackViewport;
+    const stackViewport =
+      renderingEngine.getViewport<PlanarViewport>(viewportId2);
     const centerSliceIndex = Math.floor(imageIds.length / 2);
-    await stackViewport.setStack(imageIds, centerSliceIndex); // Start at center slice
+    const stackDisplaySetId = `${currentVolumeId}:stack`;
+    utilities.genericViewportDisplaySetMetadataProvider.add(stackDisplaySetId, {
+      kind: 'planar',
+      imageIds,
+      initialImageIdIndex: centerSliceIndex,
+    });
+    await stackViewport.setDisplaySets({ displaySetId: stackDisplaySetId }); // Start at center slice
 
-    const vrtViewport = renderingEngine.getViewport(
-      viewportId4
-    ) as Types.IVolumeViewport;
-    vrtViewport.setProperties({
+    vrtViewport.setDisplaySetPresentation(currentVolumeId, {
       preset: 'CT-Bone',
       interpolationType: Enums.InterpolationType.NEAREST,
       // Not seeing a difference between LINEAR and NEAREST.
@@ -541,7 +555,7 @@ async function run() {
     Events.IMAGE_CACHE_IMAGE_ADDED,
     volumeCacheImageAdded
   );
-  eventTarget.addEventListener(Events.STACK_NEW_IMAGE, stackNewImage);
+  eventTarget.addEventListener(Events.NEW_IMAGE, stackNewImage);
 
   // Tool group for orthographic viewports
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);

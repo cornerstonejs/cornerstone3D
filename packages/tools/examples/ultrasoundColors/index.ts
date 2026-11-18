@@ -1,5 +1,5 @@
-import type { Types } from '@cornerstonejs/core';
-import { RenderingEngine, Enums } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
+import { RenderingEngine, Enums, utilities } from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
@@ -58,6 +58,7 @@ content.append(instructions);
 // ============================= //
 let renderingEngine;
 const viewportId = 'CT_STACK';
+const displaySetId = 'ultrasoundColors:us';
 
 addDropdownToToolbar({
   options: {
@@ -226,7 +227,7 @@ async function run() {
 
   const viewportInput = {
     viewportId,
-    type: ViewportType.STACK,
+    type: ViewportType.PLANAR_NEXT,
     element,
     defaultOptions: {
       background: <Types.Point3>[0.2, 0, 0.2],
@@ -239,12 +240,15 @@ async function run() {
   toolGroup.addViewport(viewportId, renderingEngineId);
 
   // Get the stack viewport that was created
-  const viewport = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportId)
-  );
+  const viewport: PlanarViewport = renderingEngine.getViewport(viewportId);
 
   // Set the stack on the viewport
-  viewport.setStack(imageIds);
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    kind: 'planar',
+    imageIds,
+    initialImageIdIndex: 0,
+  });
+  await viewport.setDisplaySets({ displaySetId });
 
   cornerstoneTools.utilities.stackPrefetch.enable(viewport.element);
 

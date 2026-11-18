@@ -1,4 +1,4 @@
-import type { Types } from '@cornerstonejs/core';
+import type { Types, VideoGenericViewport } from '@cornerstonejs/core';
 import { RenderingEngine, Enums } from '@cornerstonejs/core';
 import {
   addButtonToToolbar,
@@ -53,10 +53,10 @@ rangeDiv.innerHTML =
 content.appendChild(rangeDiv);
 const rangeElement = document.getElementById('range') as HTMLInputElement;
 rangeElement.onchange = () => {
-  viewport.setTime(Number(rangeElement.value));
+  viewport.seek(Number(rangeElement.value));
 };
 rangeElement.oninput = () => {
-  viewport.setTime(Number(rangeElement.value));
+  viewport.seek(Number(rangeElement.value));
 };
 
 const instructions = document.createElement('p');
@@ -74,13 +74,20 @@ content.append(instructions);
 
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'videoViewportId';
-let viewport;
+let viewport: VideoGenericViewport;
+let videoId: string;
+let playing = false;
 
 addButtonToToolbar({
   id: 'play',
   title: 'pause',
   onClick() {
-    viewport.togglePlayPause();
+    if (playing) {
+      viewport.pause();
+    } else {
+      viewport.play();
+    }
+    playing = !playing;
 
     // toggle the title
     const button = document.getElementById('play');
@@ -92,7 +99,7 @@ addButtonToToolbar({
   },
 });
 
-const whiteValues = [
+const whiteValues: Types.Point3[] = [
   [255, 255, 255],
   [180, 255, 255],
   [255, 180, 255],
@@ -109,7 +116,7 @@ addButtonToToolbar({
   onClick() {
     currentWhite = (1 + currentWhite) % whiteValues.length;
     const white = whiteValues[currentWhite];
-    viewport.setAverageWhite(white);
+    viewport.setDisplaySetPresentation(videoId, { averageWhite: white });
     document.getElementById('Color Correct').innerText = `Color: ${white.join(
       ','
     )}`;
@@ -121,7 +128,7 @@ addButtonToToolbar({
  * to get average white information.
  */
 function getAverageWhite(scalarData) {
-  const maxValues = [0, 0, 0];
+  const maxValues: Types.Point3 = [0, 0, 0];
   for (let i = 0; i < scalarData.length; i += 4) {
     const r = scalarData[i];
     const g = scalarData[i + 1];
@@ -141,7 +148,7 @@ addButtonToToolbar({
       viewport.getImageData().imageData.getScalarData()
     );
     console.log('White=', white);
-    viewport.setAverageWhite(white);
+    viewport.setDisplaySetPresentation(videoId, { averageWhite: white });
     document.getElementById('Color Correct').innerText =
       `Avg Color: ${white.join(',')}`;
     currentWhite = -1;
@@ -170,7 +177,12 @@ addDropdownToToolbar({
   onSelectedValueChange: (newWLText) => {
     const index = windowLevelNames.indexOf(newWLText) % windowLevels.length;
     const newWL = windowLevels[index];
-    viewport.setWindowLevel(newWL.windowWidth, newWL.windowCenter);
+    viewport.setDisplaySetPresentation(videoId, {
+      voiRange: {
+        lower: newWL.windowCenter - newWL.windowWidth / 2,
+        upper: newWL.windowCenter + newWL.windowWidth / 2 - 1,
+      },
+    });
   },
 });
 
@@ -194,7 +206,7 @@ async function run() {
   if (!displaySet) {
     throw new Error('No display set found in series');
   }
-  const videoId = displaySet.instances[0].imageId;
+  videoId = displaySet.instances[0].imageId;
 
   // Add tools to Cornerstone3D
   cornerstoneTools.addTool(PanTool);
@@ -265,7 +277,7 @@ async function run() {
   renderingEngine.enableElement(viewportInput);
 
   // Get the stack viewport that was created
-  viewport = <Types.IVideoViewport>renderingEngine.getViewport(viewportId);
+  viewport = renderingEngine.getViewport<VideoGenericViewport>(viewportId);
 
   toolGroup.addViewport(viewport.id, renderingEngineId);
 
@@ -278,6 +290,7 @@ async function run() {
   });
 
   viewport.play();
+  playing = true;
 
   const seconds = (time) => `${Math.round(time * 10) / 10} s`;
 

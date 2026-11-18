@@ -1,5 +1,5 @@
-import type { Types } from '@cornerstonejs/core';
-import { RenderingEngine, Enums } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
+import { RenderingEngine, Enums, utilities } from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
@@ -65,6 +65,7 @@ content.append(percentageLabel);
 // ============================= //
 let renderingEngine;
 const viewportId = 'US_STACK';
+const displaySetId = 'ultrasoundPleuraBLineAnnotation:us';
 
 addButtonToToolbar({
   onClick: () => {
@@ -95,9 +96,7 @@ addButtonToToolbar({
 addButtonToToolbar({
   onClick: () => {
     // Get the stack viewport that was created
-    const viewport = <Types.IStackViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
+    const viewport: PlanarViewport = renderingEngine.getViewport(viewportId);
     usAnnotation.deleteLastAnnotationType(
       viewport.element,
       UltrasoundPleuraBLineTool.USPleuraBLineAnnotationType.PLEURA
@@ -111,9 +110,7 @@ addButtonToToolbar({
 addButtonToToolbar({
   onClick: () => {
     // Get the stack viewport that was created
-    const viewport = <Types.IStackViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
+    const viewport: PlanarViewport = renderingEngine.getViewport(viewportId);
     usAnnotation.deleteLastAnnotationType(
       viewport.element,
       UltrasoundPleuraBLineTool.USPleuraBLineAnnotationType.BLINE
@@ -126,9 +123,7 @@ addButtonToToolbar({
 
 addButtonToToolbar({
   onClick: () => {
-    const viewport = <Types.IStackViewport>(
-      renderingEngine.getViewport(viewportId)
-    );
+    const viewport: PlanarViewport = renderingEngine.getViewport(viewportId);
     const imageId = viewport.getCurrentImageId();
     downloadFanJpeg(imageId);
   },
@@ -206,7 +201,7 @@ async function run() {
 
   const viewportInput = {
     viewportId,
-    type: ViewportType.STACK,
+    type: ViewportType.PLANAR_NEXT,
     element,
     defaultOptions: {
       background: <Types.Point3>[0.2, 0, 0.2],
@@ -219,12 +214,15 @@ async function run() {
   toolGroup.addViewport(viewportId, renderingEngineId);
 
   // Get the stack viewport that was created
-  const viewport = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportId)
-  );
+  const viewport: PlanarViewport = renderingEngine.getViewport(viewportId);
 
   // Set the stack on the viewport
-  viewport.setStack(imageIds);
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    kind: 'planar',
+    imageIds,
+    initialImageIdIndex: 0,
+  });
+  await viewport.setDisplaySets({ displaySetId });
   usAnnotation = toolGroup.getToolInstance(UltrasoundPleuraBLineTool.toolName);
   // Define the callback function to update the percentage label
   function updatePercentageCallback(percentage) {
