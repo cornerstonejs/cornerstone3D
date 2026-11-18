@@ -59,6 +59,8 @@ class ReferenceCursors extends AnnotationDisplayTool {
   _currentCanvasPosition: null | Types.Point2 = null;
   //need to keep track if this was enabled when tool was enabled because we need to know if we should reset cursors
   _disableCursorEnabled = false;
+  /** The cursor position that each viewport element was last moved to. */
+  private _syncedCursorPositions = new WeakMap<HTMLDivElement, Types.Point3>();
 
   constructor(
     toolProps: PublicToolProps = {},
@@ -465,6 +467,14 @@ class ReferenceCursors extends AnnotationDisplayTool {
     return renderStatus;
   };
 
+  /**
+   * Moves the slice of a viewport that does not have the cursor to the cursor,
+   * along the normal of its view, through its view reference. The viewport
+   * snaps to its nearest slice and clamps to its data, so the slice can stay
+   * away from the cursor; and a navigation renders the viewport, which renders
+   * its annotations and calls this again. So a viewport is moved once for each
+   * position of the cursor, and the render of the navigation is the only one.
+   */
   updateViewportImage(viewport: Types.IViewport): void {
     const currentMousePosition = this._currentCursorWorldPosition;
 
@@ -472,98 +482,42 @@ class ReferenceCursors extends AnnotationDisplayTool {
       return;
     }
 
-    const legacyContentMode = utilities.isGenericViewport(viewport)
-      ? undefined
-      : utilities.getViewportContentMode(viewport);
-
-    if (legacyContentMode === 'stack') {
-      const stackViewport = viewport as Types.IStackViewport;
-      const closestIndex = utilities.getClosestStackImageIndexForPoint(
-        currentMousePosition,
-        stackViewport
-      );
-
-      if (closestIndex === null) {
-        return;
-      }
-      if (closestIndex !== stackViewport.getCurrentImageIdIndex()) {
-        stackViewport.setImageIdIndex(closestIndex);
-      }
-    } else if (legacyContentMode === 'volume') {
-      const { focalPoint, viewPlaneNormal } = getViewportICamera(viewport);
-      if (!focalPoint || !viewPlaneNormal) {
-        return;
-      }
-      const plane = utilities.planar.planeEquation(viewPlaneNormal, focalPoint);
-      const currentDistance = utilities.planar.planeDistanceToPoint(
-        plane,
-        currentMousePosition,
-        true
-      );
-
-      if (Math.abs(currentDistance) < 0.5) {
-        return;
-      }
-      const normalizedViewPlane = vec3.normalize(
-        vec3.create(),
-        vec3.fromValues(...viewPlaneNormal)
-      );
-      const scaledPlaneNormal = vec3.scale(
-        vec3.create(),
-        normalizedViewPlane,
-        currentDistance
-      );
-      const newFocalPoint = vec3.add(
-        vec3.create(),
-        vec3.fromValues(...focalPoint),
-        scaledPlaneNormal
-      ) as Types.Point3;
-      //TODO: make check if new focal point is within bounds of volume
-      const isInBounds = true;
-      if (isInBounds) {
-        viewport.setCamera({ focalPoint: newFocalPoint });
-        const renderingEngine = viewport.getRenderingEngine();
-        if (renderingEngine) {
-          renderingEngine.renderViewport(viewport.id);
-        }
-      }
-    } else if (utilities.isGenericViewport(viewport)) {
-      // Native PLANAR_NEXT (stack or volume mode) is neither StackViewport nor
-      // VolumeViewport. Move the rendering plane to the cursor along the view-plane
-      // normal via the view reference (snaps to the nearest slice); it has no setCamera.
-      const { focalPoint, viewPlaneNormal } = getViewportICamera(viewport);
-      if (!focalPoint || !viewPlaneNormal) {
-        return;
-      }
-      const plane = utilities.planar.planeEquation(viewPlaneNormal, focalPoint);
-      const currentDistance = utilities.planar.planeDistanceToPoint(
-        plane,
-        currentMousePosition,
-        true
-      );
-      if (Math.abs(currentDistance) < 0.5) {
-        return;
-      }
-      const normalizedViewPlane = vec3.normalize(
-        vec3.create(),
-        vec3.fromValues(...viewPlaneNormal)
-      );
-      const scaledPlaneNormal = vec3.scale(
-        vec3.create(),
-        normalizedViewPlane,
-        currentDistance
-      );
-      const newFocalPoint = vec3.add(
-        vec3.create(),
-        vec3.fromValues(...focalPoint),
-        scaledPlaneNormal
-      ) as Types.Point3;
-      jumpToFocalPoint(viewport, newFocalPoint);
-      const renderingEngine = viewport.getRenderingEngine();
-      if (renderingEngine) {
-        renderingEngine.renderViewport(viewport.id);
-      }
+    if (
+      this._syncedCursorPositions.get(viewport.element) === currentMousePosition
+    ) {
+      return;
     }
+
+    const { focalPoint, viewPlaneNormal } = getViewportICamera(viewport);
+    if (!focalPoint || !viewPlaneNormal) {
+      return;
+    }
+    const plane = utilities.planar.planeEquation(viewPlaneNormal, focalPoint);
+    const currentDistance = utilities.planar.planeDistanceToPoint(
+      plane,
+      currentMousePosition,
+      true
+    );
+    if (Math.abs(currentDistance) < 0.5) {
+      return;
+    }
+    const normalizedViewPlane = vec3.normalize(
+      vec3.create(),
+      vec3.fromValues(...viewPlaneNormal)
+    );
+    const scaledPlaneNormal = vec3.scale(
+      vec3.create(),
+      normalizedViewPlane,
+      currentDistance
+    );
+    const newFocalPoint = vec3.add(
+      vec3.create(),
+      vec3.fromValues(...focalPoint),
+      scaledPlaneNormal
+    ) as Types.Point3;
+
+    this._syncedCursorPositions.set(viewport.element, currentMousePosition);
+    jumpToFocalPoint(viewport, newFocalPoint);
   }
 }
 

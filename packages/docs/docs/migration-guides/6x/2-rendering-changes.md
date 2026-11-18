@@ -452,10 +452,13 @@ layer of a fusion: the opacity is applied as given.
   pan is measured from the centre of the slide: it is `[0, 0]` when the
   centre of the slide is at the centre of the canvas. The legacy viewport
   measured it from the view at mount.
-- **Zoom.** The zoom of a whole slide viewport is the zoom level of the map
-  of the microscopy viewer, in `getZoom()`, in the view state and in
-  `viewportProjection`. It is not a factor against the fit, so a zoom that
-  is copied from a viewport of another family means another size.
+- **Zoom.** In `viewportProjection` the zoom of a whole slide viewport is a
+  factor against the fit, as on every family: 1 is the view at which the
+  microscopy viewer fits the slide to the canvas at mount, and 2 shows the
+  slide twice as large. `getZoom()`, `setZoom()` and `zoom` of the view
+  state are the zoom level of the map of the microscopy viewer, which is
+  another number: copy a zoom to a viewport of another family through
+  `viewportProjection`.
 - **Annotations saved on a legacy whole slide viewport show.** Their
   references carry a view plane normal and a plane restriction, which the next
   viewport of 5.x rejected.
@@ -698,7 +701,8 @@ layer of a fusion: the opacity is applied as given.
   viewport. On a 3D viewport the zoom limits of the zoom tool apply and the
   zoom goes to the mouse, the zoom and pan synchronizer moves a 3D target,
   and the VOI synchronizer reaches a 3D target when the event names a
-  volume. On a whole slide viewport the limits are zoom levels of the map.
+  volume. On a whole slide viewport the limits are factors against the fit
+  too.
 - **A zoom keeps a stretch.** On a planar viewport with a scale pair, the
   zoom tool, the zoom and pan synchronizer and the undo of a zoom multiply
   both axes.

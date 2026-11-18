@@ -40,6 +40,12 @@ export interface WSIClientLike {
 
 export interface WSIMapViewLike {
   getCenter(): [number, number];
+  /**
+   * The resolution that the view allows nearest to a resolution, as the
+   * OpenLayers view gives it: towards a larger resolution for a direction of
+   * 1. `View.fit` snaps its resolution with it.
+   */
+  getConstrainedResolution?(resolution: number, direction?: number): number;
   getExtent?(): number[];
   getProjection(): {
     getExtent(): number[];

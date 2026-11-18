@@ -378,6 +378,19 @@ class CrosshairsTool extends AnnotationTool {
   }
 
   resetCrosshairs = () => {
+    this._resetViewsAndCrosshairs();
+  };
+
+  /**
+   * Resets the view of each viewport of the tool group, then puts the
+   * crosshairs back at the centre of the views. A viewport whose element is
+   * given has just reset itself, and the crosshairs answer its CAMERA_RESET:
+   * its view is not reset again, so it keeps what its caller asked to keep,
+   * such as its orientation with `resetOrientation: false`.
+   *
+   * @param resetElement - The element of a viewport that has reset itself.
+   */
+  private _resetViewsAndCrosshairs(resetElement?: HTMLDivElement): void {
     const viewportsInfo = this._getViewportsInfo();
     for (const viewportInfo of viewportsInfo) {
       const { viewportId, renderingEngineId } = viewportInfo;
@@ -390,7 +403,10 @@ class CrosshairsTool extends AnnotationTool {
       }
       const { viewport } = enabledElement;
 
-      if (csUtils.isGenericViewport(viewport)) {
+      if (
+        csUtils.isGenericViewport(viewport) &&
+        viewport.element !== resetElement
+      ) {
         const previousIgnoreFiredEvents = this._ignoreFiredEvents;
 
         this._ignoreFiredEvents = true;
@@ -418,7 +434,7 @@ class CrosshairsTool extends AnnotationTool {
     }
 
     this._computeToolCenter(viewportsInfo);
-  };
+  }
 
   computeToolCenter = () => {
     const viewportsInfo = this._getViewportsInfo();
@@ -765,14 +781,15 @@ class CrosshairsTool extends AnnotationTool {
    * Resets the crosshairs when the camera of a viewport is reset. A next
    * viewport fires CAMERA_RESET from the `resetViewState` that
    * `resetCrosshairs` calls, where a legacy viewport resets without events, so
-   * a reset that the crosshairs make themselves is ignored.
+   * a reset that the crosshairs make themselves is ignored. The viewport that
+   * fired the event has reset itself and is not reset again.
    */
   onResetCamera = (evt) => {
     if (this._ignoreFiredEvents) {
       return;
     }
 
-    this.resetCrosshairs();
+    this._resetViewsAndCrosshairs(evt.detail?.element);
   };
 
   mouseMoveCallback = (

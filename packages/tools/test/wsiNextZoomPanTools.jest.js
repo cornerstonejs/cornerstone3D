@@ -11,7 +11,9 @@ import { afterEach, beforeEach, describe, expect, it } from '@jest/globals';
 import { getEnabledElement, viewportProjection } from '@cornerstonejs/core';
 import WSIViewport from '../../core/src/RenderingEngine/GenericViewport/WSI/WSIViewport';
 import {
+  COLUMNS,
   HEIGHT,
+  ROWS,
   WIDTH,
   mountNext,
   unmount,
@@ -19,6 +21,16 @@ import {
 import PanTool from '../src/tools/PanTool';
 import ZoomTool from '../src/tools/ZoomTool';
 import BaseTool from '../src/tools/base/BaseTool';
+
+/**
+ * The map resolution at which the microscopy viewer fits the slide of the
+ * stand-in, turned by 0.4, to the canvas of 400 by 300 pixels: the larger
+ * ratio of the turned extent of 40000 by 30000 pixels to the canvas.
+ */
+const FIT_RESOLUTION = Math.max(
+  (COLUMNS * Math.cos(0.4) + ROWS * Math.sin(0.4)) / WIDTH,
+  (COLUMNS * Math.sin(0.4) + ROWS * Math.cos(0.4)) / HEIGHT
+);
 
 /** The zoom and the pan of the viewport from the projection service. */
 function zoomPanOf(viewport) {
@@ -69,7 +81,10 @@ describe('Zoom and pan tools on a direct next whole slide viewport', () => {
     expect(viewport.getCamera).toBeUndefined();
     expect(viewport.getPan).toBeUndefined();
     expect(viewport.setPan).toBeUndefined();
-    expect(zoomPanOf(viewport).zoom).toBeCloseTo(viewport.getZoom(), 6);
+    expect(zoomPanOf(viewport).zoom).toBeCloseTo(
+      FIT_RESOLUTION / mounted.view.getResolution(),
+      6
+    );
     expect(zoomPanOf(viewport).pan.length).toBe(2);
   });
 
@@ -101,8 +116,8 @@ describe('Zoom and pan tools on a direct next whole slide viewport', () => {
     const zoomAtMount = zoomPanOf(viewport).zoom;
     const tool = new ZoomTool({
       configuration: {
-        minZoomScale: zoomAtMount - 0.5,
-        maxZoomScale: zoomAtMount + 0.5,
+        minZoomScale: zoomAtMount / Math.SQRT2,
+        maxZoomScale: zoomAtMount * Math.SQRT2,
       },
     });
     const mouse = [310, 80];
@@ -111,21 +126,21 @@ describe('Zoom and pan tools on a direct next whole slide viewport', () => {
     wheel(tool, mouse);
 
     expect(zoomPanOf(viewport).zoom).toBeGreaterThan(zoomAtMount);
-    expect(zoomPanOf(viewport).zoom).toBeLessThan(zoomAtMount + 0.5);
+    expect(zoomPanOf(viewport).zoom).toBeLessThan(zoomAtMount * Math.SQRT2);
     expectClose(viewport.worldToCanvas(underMouse), mouse);
 
     for (let step = 0; step < 10; step++) {
       wheel(tool, mouse);
     }
 
-    expect(zoomPanOf(viewport).zoom).toBeCloseTo(zoomAtMount + 0.5, 6);
+    expect(zoomPanOf(viewport).zoom).toBeCloseTo(zoomAtMount * Math.SQRT2, 6);
     expectClose(viewport.worldToCanvas(underMouse), mouse);
 
     for (let step = 0; step < 20; step++) {
       wheel(tool, mouse, false);
     }
 
-    expect(zoomPanOf(viewport).zoom).toBeCloseTo(zoomAtMount - 0.5, 6);
+    expect(zoomPanOf(viewport).zoom).toBeCloseTo(zoomAtMount / Math.SQRT2, 6);
     expectClose(viewport.worldToCanvas(underMouse), mouse);
   });
 
@@ -143,7 +158,7 @@ describe('Zoom and pan tools on a direct next whole slide viewport', () => {
 
   it('zooms by a drag and by a pinch, and pans with the pinch', () => {
     const tool = new ZoomTool({
-      configuration: { minZoomScale: 0.5, maxZoomScale: 20 },
+      configuration: { minZoomScale: 0.5, maxZoomScale: 2000 },
     });
     const start = [200, 150];
     const zoomAtMount = zoomPanOf(viewport).zoom;
@@ -178,6 +193,36 @@ describe('Zoom and pan tools on a direct next whole slide viewport', () => {
       6
     );
     expectClose(viewport.worldToCanvas(world), [start[0] + 10, start[1] - 4]);
+  });
+
+  it('changes the size of the slide by the same factor for each step as on every family, and as the legacy adapter does', () => {
+    const tool = new ZoomTool();
+    const { view } = mounted;
+    const mouse = [310, 80];
+    const underMouse = viewport.canvasToWorld(mouse);
+
+    expect(view.getResolution()).toBeCloseTo(4, 9);
+
+    [4.8, 5.76].forEach((resolution) => {
+      tool.mouseDragCallback({
+        detail: {
+          element,
+          deltaPoints: { world: [1, 1, 0], canvas: [0, -12] },
+          startPoints: { canvas: mouse },
+        },
+      });
+
+      expect(view.getResolution()).toBeCloseTo(resolution, 6);
+      expectClose(viewport.worldToCanvas(underMouse), mouse);
+    });
+
+    view.setResolution(4);
+
+    [(4 * 11) / 12, (4 * 11 * 11) / 144].forEach((resolution) => {
+      wheel(tool, mouse);
+
+      expect(view.getResolution()).toBeCloseTo(resolution, 6);
+    });
   });
 
   it('restores the zoom and the pan of a zoom and pan memo, and brings the change back on a second restore', () => {

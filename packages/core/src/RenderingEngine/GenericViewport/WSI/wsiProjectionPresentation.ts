@@ -24,7 +24,8 @@ function hasOwn<T extends object, K extends PropertyKey>(
 
 /**
  * Converts a WSI projection snapshot to the public view-presentation shape.
- * The pan is in canvas pixels divided by the zoom, as on the other families.
+ * The zoom is a factor against the fit of the microscopy viewer, and the pan
+ * is in canvas pixels divided by the zoom, as on the other families.
  */
 export function getWSIProjectionPresentation(
   snapshot: WSIProjectionSnapshot,
@@ -53,7 +54,10 @@ export function getWSIProjectionPresentation(
 
 /**
  * Converts a WSI view-presentation patch back into semantic WSI view state.
- * The zoom applies first, and the pan then at the new zoom.
+ * The zoom applies first, and the pan then at the new zoom. A zoom is a
+ * factor against the fit: the map gets the resolution of the fit divided by
+ * the zoom, about `options.anchorCanvas` when given. A zoom does nothing
+ * when the viewport shows nothing to fit.
  */
 export function withWSIProjectionPresentation(
   snapshot: WSIProjectionSnapshot,
@@ -64,10 +68,7 @@ export function withWSIProjectionPresentation(
   const hasRotation = hasOwn(presentation, 'rotation');
   const hasPan = hasOwn(presentation, 'pan');
   const nextZoom = Math.max(
-    presentation.zoom ??
-      snapshot.presentation.zoom ??
-      snapshot.viewState.zoom ??
-      1,
+    presentation.zoom ?? snapshot.presentation.zoom ?? 1,
     0.001
   );
   let nextViewState: WSIViewState = {
@@ -78,14 +79,14 @@ export function withWSIProjectionPresentation(
   };
 
   let resolvedView = snapshot.resolvedView;
+  const fitResolution = resolvedView?.state?.fitResolution;
 
-  if (hasZoom) {
-    if (resolvedView) {
-      resolvedView = resolvedView.withZoom(nextZoom, options.anchorCanvas);
-      nextViewState = { ...resolvedView.state.viewState };
-    } else {
-      nextViewState.zoom = nextZoom;
-    }
+  if (hasZoom && fitResolution && resolvedView?.withResolution) {
+    resolvedView = resolvedView.withResolution(
+      fitResolution / nextZoom,
+      options.anchorCanvas
+    );
+    nextViewState = { ...resolvedView.state.viewState };
   }
 
   if (hasPan && presentation.pan && resolvedView?.withPan) {

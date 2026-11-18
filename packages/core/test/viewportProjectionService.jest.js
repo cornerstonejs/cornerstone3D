@@ -92,7 +92,9 @@ function createWSIResolvedView(viewState) {
     state: {
       canvasHeight: 100,
       canvasWidth: 200,
+      fitResolution: 1,
       view: {
+        getResolution: () => viewState.resolution,
         getZoom: () => viewState.zoom,
         getRotation: () => viewState.rotation,
       },
@@ -114,6 +116,13 @@ function createWSIResolvedView(viewState) {
         ...viewState,
         resolution: 0.5,
         zoom,
+      })
+    ),
+    withResolution: jest.fn((resolution) =>
+      createWSIResolvedView({
+        ...viewState,
+        resolution,
+        zoom: undefined,
       })
     ),
     worldToCanvas: jest.fn(([x, y]) => [x * 100, y * 25]),
@@ -409,7 +418,8 @@ describe('ViewportProjectionService', () => {
     expect(presentation.zoom).toBe(1);
     expect(presentation.rotation).toBe(0.25);
     expect(viewState.zoom).toBe(1);
-    expect(nextViewState.zoom).toBe(2);
+    expect(nextViewState.resolution).toBe(0.5);
+    expect(nextViewState.zoom).toBeUndefined();
     expect(nextViewState.rotation).toBe(0.5);
   });
 

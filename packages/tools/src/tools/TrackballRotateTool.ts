@@ -60,12 +60,14 @@ class TrackballRotateTool extends BaseTool {
     const { element } = eventDetail;
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
-    const actorEntry = viewport.getDefaultActor();
-    const actor = actorEntry.actor as Types.VolumeActor;
-    const mapper = actor.getMapper();
+    const actor = viewport.getDefaultActor()?.actor as
+      | Types.VolumeActor
+      | undefined;
+    const mapper = actor?.getMapper();
 
     const hasSampleDistance =
-      'getSampleDistance' in mapper || 'getCurrentSampleDistance' in mapper;
+      !!mapper &&
+      ('getSampleDistance' in mapper || 'getCurrentSampleDistance' in mapper);
 
     if (!hasSampleDistance) {
       return true;

@@ -16,6 +16,8 @@ export type WSIResolvedViewLike = {
     canvasWidth?: number;
     view?: WSIMapViewLike;
     viewState: WSIViewState;
+    /** The map resolution at which the microscopy viewer fits the slide. */
+    fitResolution?: number;
   };
   /** The pan in canvas pixels: the centre of the slide from the centre of the canvas. */
   pan?: Point2;
@@ -24,6 +26,10 @@ export type WSIResolvedViewLike = {
   getFrameOfReferenceUID(): string | undefined;
   toICamera(): ICamera;
   withZoom(zoom: number, canvasPoint?: Point2): WSIResolvedViewLike;
+  withResolution?(
+    resolution: number,
+    canvasPoint?: Point2
+  ): WSIResolvedViewLike;
   withPan?(pan: Point2): WSIResolvedViewLike;
 };
 

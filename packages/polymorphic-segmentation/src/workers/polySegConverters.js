@@ -572,19 +572,25 @@ const polySegConverters = {
   /**
    * Cuts the surfaces into planes.
    *
+   * The callbacks are proxies, each with its own message channel, so the
+   * result of the task can reach the caller before the last cache updates.
+   * The task therefore resolves only when every cache update has run, and
+   * the caller then finds the contours of every slice in its cache.
+   *
    * @param {Object} options - The options object.
    * @param {Array} options.planesInfo - The information about the planes.
    * @param {Array} options.surfacesInfo - The information about the surfaces.
    * @param {Function} progressCallback - The callback function for progress updates.
    * @param {Function} updateCacheCallback - The callback function for updating the cache.
    */
-  cutSurfacesIntoPlanes(
+  async cutSurfacesIntoPlanes(
     { planesInfo, surfacesInfo, surfacesAABB = new Map() },
     progressCallback,
     updateCacheCallback
   ) {
     const numberOfPlanes = planesInfo.length;
     const cutter = vtkCutter.newInstance();
+    const cacheUpdates = [];
 
     const plane1 = vtkPlane.newInstance();
 
@@ -685,7 +691,7 @@ const polySegConverters = {
 
         progressCallback({ progress: (index + 1) / numberOfPlanes });
 
-        updateCacheCallback({ sliceIndex, polyDataResults });
+        cacheUpdates.push(updateCacheCallback({ sliceIndex, polyDataResults }));
       }
     } catch (e) {
       cs3dLogger.warn('Error during processing', e);
@@ -694,6 +700,8 @@ const polySegConverters = {
       surfacesInfo = null;
       plane1.delete();
     }
+
+    await Promise.allSettled(cacheUpdates);
   },
 };
 

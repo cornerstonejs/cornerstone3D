@@ -19,6 +19,12 @@ type WSIResolvedViewState = {
   frameOfReferenceUID?: string | null;
   metadata?: WSIImageDataMetadata;
   view: WSIMapViewLike;
+  /**
+   * The map resolution at which the microscopy viewer fits the slide to the
+   * canvas. The zoom of the projection is this over the resolution of the
+   * map: 1 at the fit, 2 when the slide shows twice as large.
+   */
+  fitResolution?: number;
 };
 
 class WSIResolvedView extends ResolvedViewportView<WSIResolvedViewState> {
@@ -89,7 +95,8 @@ class WSIResolvedView extends ResolvedViewportView<WSIResolvedViewState> {
    * The view with the centre moved so that the centre of the slide shows at
    * the given pan, at the zoom of this view state and the rotation of the
    * map. The map applies the zoom after the resolution, so the zoom gives
-   * the resolution.
+   * the resolution; a view state without a zoom, as `withResolution` gives
+   * it, has its resolution.
    */
   withPan(pan: Point2): WSIResolvedView {
     const centre = this.getSlideCentre();
@@ -97,6 +104,8 @@ class WSIResolvedView extends ResolvedViewportView<WSIResolvedViewState> {
     if (!centre) {
       return this;
     }
+
+    const { resolution, zoom } = this.state.viewState;
 
     return this.cloneWithViewState({
       ...this.state.viewState,
@@ -107,9 +116,9 @@ class WSIResolvedView extends ResolvedViewportView<WSIResolvedViewState> {
         ],
         indexPoint: centre,
         resolution:
-          typeof this.state.viewState.zoom === 'number'
-            ? this.getResolutionForZoom(this.state.viewState.zoom)
-            : this.getResolution(),
+          typeof zoom === 'number'
+            ? this.getResolutionForZoom(zoom)
+            : (resolution ?? this.getResolution()),
       }),
     });
   }
@@ -118,15 +127,47 @@ class WSIResolvedView extends ResolvedViewportView<WSIResolvedViewState> {
     return this.state.frameOfReferenceUID || undefined;
   }
 
+  /**
+   * The view at a zoom level of the map, about a canvas point when one is
+   * given: the slide point under it stays there.
+   */
   withZoom(zoom: number, canvasPoint?: Point2): WSIResolvedView {
     const nextZoom = Math.max(zoom, 0.001);
-    const nextResolution = this.getResolutionForZoom(nextZoom);
 
+    return this.withMapResolution(
+      this.getResolutionForZoom(nextZoom),
+      nextZoom,
+      canvasPoint
+    );
+  }
+
+  /**
+   * The view at a resolution of the map, about a canvas point when one is
+   * given: the slide point under it stays there. The view state has the
+   * resolution and no zoom level, so the map takes the resolution as it is.
+   */
+  withResolution(resolution: number, canvasPoint?: Point2): WSIResolvedView {
+    return this.withMapResolution(
+      Math.max(resolution, 0.000001),
+      undefined,
+      canvasPoint
+    );
+  }
+
+  /**
+   * The view at a resolution and a zoom level of the map, about a canvas
+   * point when one is given.
+   */
+  private withMapResolution(
+    resolution: number,
+    zoom: number | undefined,
+    canvasPoint?: Point2
+  ): WSIResolvedView {
     if (!canvasPoint) {
       return this.cloneWithViewState({
         ...this.state.viewState,
-        resolution: nextResolution,
-        zoom: nextZoom,
+        resolution,
+        zoom,
       });
     }
 
@@ -137,10 +178,10 @@ class WSIResolvedView extends ResolvedViewportView<WSIResolvedViewState> {
       centerIndex: this.getCenterIndexForCanvasPoint({
         canvasPoint,
         indexPoint,
-        resolution: nextResolution,
+        resolution,
       }),
-      resolution: nextResolution,
-      zoom: nextZoom,
+      resolution,
+      zoom,
     });
   }
 

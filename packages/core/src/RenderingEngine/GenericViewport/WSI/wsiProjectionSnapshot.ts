@@ -4,6 +4,7 @@ import {
   WSI_PROJECTION_ID,
   type WSIProjectionRequest,
   type WSIProjectionSnapshot,
+  type WSIResolvedViewLike,
 } from './WSIProjectionTypes';
 import type { WSIViewState } from './WSIViewportTypes';
 
@@ -68,7 +69,29 @@ function getScale(args: {
 }
 
 /**
- * Builds the WSI projection snapshot for a viewport-like object.
+ * The zoom of the view against the fit, as on every family: the resolution
+ * at which the microscopy viewer fits the slide over the resolution of the
+ * map, 1 at the fit and 2 when the slide shows twice as large. Undefined
+ * without a fit.
+ */
+function getZoomAgainstFit(
+  resolvedView: WSIResolvedViewLike | undefined,
+  viewState: WSIViewState
+): number | undefined {
+  const fitResolution = resolvedView?.state?.fitResolution;
+  const resolution =
+    resolvedView?.state?.view?.getResolution?.() ?? viewState.resolution;
+
+  if (!fitResolution || !resolution) {
+    return;
+  }
+
+  return fitResolution / resolution;
+}
+
+/**
+ * Builds the WSI projection snapshot for a viewport-like object. The zoom of
+ * its presentation is a factor against the fit, see `getZoomAgainstFit`.
  */
 export function getWSIProjectionSnapshot(
   request: WSIProjectionRequest
@@ -95,8 +118,7 @@ export function getWSIProjectionSnapshot(
   const canvasPoint = getCenterCanvasPoint(canvasWidth, canvasHeight);
   const worldPoint = resolvedView?.canvasToWorld(canvasPoint);
   const rendererCamera = resolvedView?.toICamera();
-  const view = resolvedView?.state?.view;
-  const zoom = Math.max(view?.getZoom?.() ?? viewState.zoom ?? 1, 0.001);
+  const zoom = getZoomAgainstFit(resolvedView, viewState);
   const rotation = viewState.rotation ?? 0;
   const rawPan = resolvedView?.pan ?? [0, 0];
   const frameOfReferenceUID =
@@ -120,7 +142,7 @@ export function getWSIProjectionSnapshot(
       pan: clonePoint2(rawPan),
       rawPan: clonePoint2(rawPan),
       rotation,
-      scale: getScale({ canvasHeight, rendererCamera, zoom }),
+      scale: getScale({ canvasHeight, rendererCamera, zoom: zoom ?? 1 }),
       zoom,
     },
     rendererCamera,

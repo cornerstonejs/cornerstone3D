@@ -254,7 +254,42 @@ export default class WSIViewport extends GenericViewport<
       frameOfReferenceUID: data.frameOfReferenceUID,
       metadata: data.metadata,
       view,
+      fitResolution: this.getFitResolution(view),
     });
+  }
+
+  /**
+   * The map resolution at which the microscopy viewer fits the slide to the
+   * canvas when it mounts it, as `View.fit` computes it: the extent of the
+   * map projection, turned by the rotation that the viewer gives the slide,
+   * fills the canvas, and a view that snaps resolutions snaps it towards the
+   * larger one. It is computed, not kept from the mount: the viewer fits the
+   * view again after the mount, when its map has a size. The rotation of the
+   * view state does not change it.
+   *
+   * @param view - The map view.
+   * @returns The resolution, or undefined without a canvas or an extent.
+   */
+  private getFitResolution(view: WSIMapViewLike): number | undefined {
+    const extent = view.getProjection?.()?.getExtent?.();
+    const canvasWidth = this.element.clientWidth;
+    const canvasHeight = this.element.clientHeight;
+
+    if (!extent || !canvasWidth || !canvasHeight) {
+      return;
+    }
+
+    const slideRotation = this.getWSIRendering()?.slideRotation ?? 0;
+    const cos = Math.abs(Math.cos(slideRotation));
+    const sin = Math.abs(Math.sin(slideRotation));
+    const width = extent[2] - extent[0];
+    const height = extent[3] - extent[1];
+    const resolution = Math.max(
+      (width * cos + height * sin) / canvasWidth,
+      (width * sin + height * cos) / canvasHeight
+    );
+
+    return view.getConstrainedResolution?.(resolution, 1) ?? resolution;
   }
 
   getCurrentImageId(): string | undefined {

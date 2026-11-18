@@ -403,16 +403,31 @@ class VolumeViewport3D extends GenericViewport<
     return this.getRuntimeCamera();
   }
 
+  /**
+   * Writes a patch of the camera, renders, and fires CAMERA_MODIFIED.
+   *
+   * A viewport that shows no display set has no clipping range of its own:
+   * every write fits the clipping range to the props of its renderer, so a
+   * prop that the application added stays in view when the camera moves, and
+   * a `clippingRange` of the patch, as the camera read before a zoom or a pan
+   * gives it, is not applied.
+   *
+   * @param viewStatePatch - The camera fields to change.
+   */
   setViewState(viewStatePatch: Partial<Volume3DCamera>): void {
     if (this.isDestroyed) {
       return;
     }
 
     const previousCamera = this.getCameraForEvent();
+    const { clippingRange: _clippingRange, ...patchWithoutClippingRange } =
+      viewStatePatch;
 
-    applyVolume3DCamera(this.renderContext, viewStatePatch, {
-      resetClippingRange: true,
-    });
+    applyVolume3DCamera(
+      this.renderContext,
+      this.bindings.size ? viewStatePatch : patchWithoutClippingRange,
+      { resetClippingRange: true }
+    );
     this.viewState = this.getRuntimeCamera();
     this.modified(previousCamera);
   }

@@ -1,4 +1,4 @@
-import { utilities, type Types } from '@cornerstonejs/core';
+import { CONSTANTS, utilities, type Types } from '@cornerstonejs/core';
 import {
   PlanarFreehandContourSegmentationTool,
   annotation,
@@ -186,9 +186,70 @@ function isPolylineParallelToPlane(
   }
 }
 
+type SliceClippingPlanes = ReturnType<
+  typeof utilities.getSlicesClippingPlanes
+>[number];
+
+/**
+ * The slice of a viewport whose slab holds a point: the point lies on or
+ * between the two clipping planes of the slice, to `CONSTANTS.EPSILON`. The
+ * worker cuts a surface with the first plane of each slice, so the contour of
+ * a slice lies on that plane.
+ *
+ * @param slicesClippingPlanes - The planes of each slice of the viewport, by
+ * `utilities.getSlicesClippingPlanes`.
+ * @param point - A world point of a contour.
+ * @returns The slice, or undefined for a point on no slice.
+ */
+function getSliceOfPoint(
+  slicesClippingPlanes: SliceClippingPlanes[],
+  point: Types.Point3
+): SliceClippingPlanes | undefined {
+  const fromOrigin = vec3.create();
+
+  return slicesClippingPlanes.find(({ planes }) =>
+    planes.every(
+      ({ normal, origin }) =>
+        vec3.dot(vec3.sub(fromOrigin, point, origin), normal) >=
+        -CONSTANTS.EPSILON
+    )
+  );
+}
+
+/**
+ * The points of a contour moved along the normal of its slice onto the plane
+ * of the slice, midway between its two clipping planes. The view reference of
+ * a slice holds points on that plane, where a stack viewport looks for them.
+ *
+ * @param slice - The slice of the contour, by `getSliceOfPoint`.
+ * @param polyline - The points of the contour.
+ * @returns The points on the plane of the slice.
+ */
+function movePolylineOntoSlice(
+  { planes }: SliceClippingPlanes,
+  polyline: Types.Point3[]
+): Types.Point3[] {
+  const [{ normal, origin }, { origin: otherOrigin }] = planes;
+  const sliceCenter = vec3.lerp(vec3.create(), origin, otherOrigin, 0.5);
+  const offset = vec3.dot(
+    vec3.sub(vec3.create(), polyline[0], sliceCenter),
+    normal
+  );
+
+  return polyline.map(
+    (point) =>
+      vec3.scaleAndAdd(vec3.create(), point, normal, -offset) as Types.Point3
+  );
+}
+
 const { addAnnotation } = annotation.state;
 /**
  * Creates and adds contour segmentations from a clipped surface.
+ *
+ * Each contour gets the view reference of the slice of the viewport that it
+ * lies on, so that the viewport shows it on that slice only. A contour that
+ * lies on no slice of the viewport, such as one that was cut for another
+ * viewport, is not added.
  *
  * @param rawContourData - The raw contour data.
  * @param viewport - The viewport.
@@ -211,10 +272,22 @@ export function createAndAddContourSegmentationsFromClippedSurfaces(
     return;
   }
 
+  const slicesClippingPlanes = utilities.getSlicesClippingPlanes(viewport);
+
   for (const [segmentIndex, contoursData] of rawContourData) {
     for (const contourData of contoursData) {
       const { points, lines } = contourData;
       if (!isPolylineParallelToPlane(lines, points, planeNormal)) {
+        continue;
+      }
+
+      const slice = getSliceOfPoint(slicesClippingPlanes, [
+        points[0],
+        points[1],
+        points[2],
+      ]);
+
+      if (!slice) {
         continue;
       }
 
@@ -263,7 +336,10 @@ export function createAndAddContourSegmentationsFromClippedSurfaces(
           isVisible: true,
           metadata: {
             toolName: PlanarFreehandContourSegmentationTool.toolName,
-            ...viewport.getViewReference(),
+            ...viewport.getViewReference({
+              sliceIndex: slice.sliceIndex,
+              points: movePolylineOntoSlice(slice, polyline),
+            }),
           },
         };
 

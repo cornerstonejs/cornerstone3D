@@ -159,7 +159,7 @@ describe('Pan on the direct next whole slide viewport', () => {
     view.setCenter([COLUMNS / 2 - 80 * view.getResolution(), -ROWS / 2]);
 
     expect(Math.hypot(...zoomPanOf(viewport).pan)).toBeCloseTo(
-      80 / view.getZoom(),
+      80 / zoomPanOf(viewport).zoom,
       6
     );
   });
@@ -197,8 +197,8 @@ describe('Pan on the direct next whole slide viewport', () => {
     const center = view.getCenter();
 
     expectClose(presentation.pan, [
-      atMount.pan[0] + 40 / view.getZoom(),
-      atMount.pan[1] - 20 / view.getZoom(),
+      atMount.pan[0] + 40 / atMount.zoom,
+      atMount.pan[1] - 20 / atMount.zoom,
     ]);
 
     present(viewport, { pan: [atMount.pan[0] - 7, atMount.pan[1] + 3] });

@@ -428,8 +428,9 @@ the presentation gives zoom 1 and pan `[0, 0]`.
   `getPan()` gave canvas pixels on the screen, which is `pan * zoom`. So a
   value that went to `setPan` is divided by the zoom.
 - The zoom of a 3D viewport is measured against the fit for the direction of
-  the camera now. The zoom of a whole slide viewport is the zoom level of
-  the map.
+  the camera now. The zoom of a whole slide viewport in `viewportProjection`
+  is a factor against the fit too; its `getZoom()` and `setZoom()` keep the
+  zoom level of the map.
 - `resetViewState()` keeps the slice. It takes
   `{ resetPan, resetZoom, resetOrientation, resetFlip }`, and each defaults
   to true.
