@@ -1,5 +1,10 @@
-import type { Types } from '@cornerstonejs/core';
-import { RenderingEngine, Enums, eventTarget } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
+import {
+  RenderingEngine,
+  Enums,
+  eventTarget,
+  utilities,
+} from '@cornerstonejs/core';
 import {
   addButtonToToolbar,
   addDropdownToToolbar,
@@ -72,6 +77,7 @@ content.append(instructions);
 
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'viewportId';
+const displaySetId = 'stackRange:ct';
 
 let viewport;
 
@@ -329,7 +335,7 @@ async function run() {
 
   const viewportInput = {
     viewportId,
-    type: ViewportType.STACK,
+    type: ViewportType.PLANAR_NEXT,
     element,
     defaultOptions: {
       background: <Types.Point3>[0.2, 0, 0.2],
@@ -339,14 +345,20 @@ async function run() {
   renderingEngine.enableElement(viewportInput);
 
   // Get the stack viewport that was created
-  viewport = <Types.IStackViewport>renderingEngine.getViewport(viewportId);
+  viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
   toolGroup.addViewport(viewport.id, renderingEngineId);
 
   // Set the video on the viewport
   // Will be `<dicomwebRoot>/studies/<studyUID>/series/<seriesUID>/instances/<instanceUID>/rendered?accept=video/mp4`
   // on a compliant DICOMweb endpoint
-  viewport.setStack(imageIds, 1);
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    kind: 'planar',
+    imageIds,
+    initialImageIdIndex: 1,
+  });
+
+  await viewport.setDisplaySets({ displaySetId });
 }
 
 run();

@@ -1,5 +1,5 @@
-import type { Types } from '@cornerstonejs/core';
-import { RenderingEngine, Enums } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
+import { RenderingEngine, Enums, utilities } from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
@@ -29,6 +29,7 @@ const { ViewportType } = Enums;
 const { MouseBindings } = csToolsEnums;
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'CT_STACK';
+const displaySetId = 'splineROITools:ct';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -284,7 +285,7 @@ async function run() {
   // Create a stack viewport
   const viewportInput = {
     viewportId,
-    type: ViewportType.STACK,
+    type: ViewportType.PLANAR_NEXT,
     element,
     defaultOptions: {
       background: <Types.Point3>[0.2, 0, 0.2],
@@ -297,15 +298,19 @@ async function run() {
   toolGroup.addViewport(viewportId, renderingEngineId);
 
   // Get the stack viewport that was created
-  const viewport = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportId)
-  );
+  const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
   // Define a stack containing a single image
   const stack = [imageIds[0]];
 
   // Set the stack on the viewport
-  viewport.setStack(stack);
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    kind: 'planar',
+    imageIds: stack,
+    initialImageIdIndex: 0,
+  });
+
+  await viewport.setDisplaySets({ displaySetId });
 
   // Render the image
   viewport.render();

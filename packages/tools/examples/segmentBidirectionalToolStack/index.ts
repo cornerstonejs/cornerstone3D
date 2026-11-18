@@ -1,5 +1,10 @@
-import type { Types } from '@cornerstonejs/core';
-import { RenderingEngine, Enums, imageLoader } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
+import {
+  RenderingEngine,
+  Enums,
+  imageLoader,
+  utilities,
+} from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
 import {
@@ -38,6 +43,7 @@ const viewportId1 = 'STACK_VIEWPORT';
 
 // Define a unique id for the segmentation
 const segmentationId = 'STACK_SEGMENTATION';
+const displaySetId = 'segmentBidirectionalToolStack:ct';
 const toolGroupId = 'TOOL_GROUP_ID';
 
 const actionConfiguration = {
@@ -392,7 +398,7 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: viewportId1,
-      type: ViewportType.STACK,
+      type: ViewportType.PLANAR_NEXT,
       element: element1,
       defaultOptions: {
         background: <Types.Point3>[255, 0, 0],
@@ -407,8 +413,15 @@ async function run() {
   // Add the viewport to the toolgroup
   toolGroup.addViewport(viewportId1, renderingEngineId);
 
-  const viewport = renderingEngine.getViewport(viewportId1);
-  await viewport.setStack(imageIds, 0);
+  const viewport: PlanarViewport = renderingEngine.getViewport(viewportId1);
+
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    kind: 'planar',
+    imageIds,
+    initialImageIdIndex: 0,
+  });
+
+  await viewport.setDisplaySets({ displaySetId });
 
   // Add some segmentations based on the source data
   await addSegmentationsToState(imageIds);

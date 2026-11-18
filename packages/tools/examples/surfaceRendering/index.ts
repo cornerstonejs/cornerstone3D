@@ -1,11 +1,9 @@
-import type { Types } from '@cornerstonejs/core';
+import type { GenericVolumeViewport3D, Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
-  setVolumesForViewports,
   volumeLoader,
   utilities,
-  CONSTANTS,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -39,6 +37,7 @@ const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 const toolGroupId3d = 'MY_TOOLGROUP_ID_3d';
 const segmentationId = 'MY_SEGMENTATION_ID';
+const displaySetId = 'surfaceRendering:ct';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -152,7 +151,7 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: viewportId2,
-      type: ViewportType.VOLUME_3D,
+      type: ViewportType.VOLUME_3D_NEXT,
       element: element2,
       defaultOptions: {
         background: <Types.Point3>[0.2, 0, 0.2],
@@ -168,25 +167,24 @@ async function run() {
   volume.load();
 
   // Set volumes on the viewports
-  setVolumesForViewports(renderingEngine, [{ volumeId }], [viewportId2]).then(
-    () => {
-      const viewport3d = renderingEngine.getViewport(viewportId2);
-      const volumeActor = viewport3d.getDefaultActor()
-        .actor as Types.VolumeActor;
-      utilities.applyPreset(
-        volumeActor,
-        CONSTANTS.VIEWPORT_PRESETS.find(
-          (preset) => preset.name === 'CT-Chest-Contrast-Enhanced'
-        )
-      );
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    imageIds,
+    volumeId,
+  });
 
-      const renderer = viewport3d.getRenderer();
-      renderer.getActiveCamera().elevation(-70);
-      viewport3d.setCamera({ parallelScale: 600 });
+  const viewport3d: GenericVolumeViewport3D =
+    renderingEngine.getViewport(viewportId2);
 
-      viewport3d.render();
-    }
-  );
+  await viewport3d.setDisplaySets({ displaySetId });
+  viewport3d.setDisplaySetPresentation(displaySetId, {
+    preset: 'CT-Chest-Contrast-Enhanced',
+  });
+
+  const renderer = viewport3d.getRenderer();
+  renderer.getActiveCamera().elevation(-70);
+  viewport3d.setViewState({ parallelScale: 600 });
+
+  viewport3d.render();
 
   await segmentation.addSurfaceRepresentationToViewport(viewportId2, [
     {

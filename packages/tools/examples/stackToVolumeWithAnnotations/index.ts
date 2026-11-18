@@ -1,5 +1,5 @@
 import * as cornerstone from '@cornerstonejs/core';
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
 import {
@@ -22,6 +22,7 @@ const {
   RenderingEngine,
   getRenderingEngine,
   utilities: csUtilities,
+  viewportProjection,
 } = cornerstone;
 const { ViewportType } = csEnums;
 
@@ -43,6 +44,8 @@ const viewportIds = ['CT_VIEWPORT'];
 let imageIds;
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume';
 const volumeId = volumeLoaderScheme + ':myVolume';
+const stackDisplaySetId = 'stackToVolumeWithAnnotations:stack';
+const volumeDisplaySetId = 'stackToVolumeWithAnnotations:volume';
 
 const toolsNames = [LengthTool.toolName];
 let selectedToolName = toolsNames[0];
@@ -114,24 +117,20 @@ addButtonToToolbar({
     // Get the rendering engine
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
-    const viewport = renderingEngine.getViewport(viewportIds[0]);
+    const viewport = renderingEngine.getViewport<PlanarViewport>(
+      viewportIds[0]
+    );
 
     let newViewport;
 
-    if (viewport.type === ViewportType.STACK) {
-      newViewport = await csUtilities.convertStackToVolumeViewport({
-        viewport: viewport as Types.IStackViewport,
-        options: {
-          background: <Types.Point3>[0, 0.4, 0],
-          volumeId: volumeId,
-        },
+    if (viewport.getCurrentMode() === 'stack') {
+      newViewport = await showDisplaySetInPlace(viewport, volumeDisplaySetId, {
+        background: [0, 0.4, 0],
+        keepPresentation: true,
       });
     } else {
-      newViewport = await csUtilities.convertVolumeToStackViewport({
-        viewport: viewport as Types.IVolumeViewport,
-        options: {
-          background: <Types.Point3>[0.4, 0.0, 0.4],
-        },
+      newViewport = await showDisplaySetInPlace(viewport, stackDisplaySetId, {
+        background: [0.4, 0.0, 0.4],
       });
     }
 
@@ -144,6 +143,50 @@ addButtonToToolbar({
 });
 
 // ============================= //
+
+/**
+ * Shows a display set in place of what a viewport shows, on the same slice.
+ * A display set with a volume id shows as a volume, one without as a stack.
+ * The background is an option of a viewport, so the element is enabled again
+ * with the new colour. With `keepPresentation` the zoom, the pan and the
+ * rotation stay too.
+ */
+async function showDisplaySetInPlace(
+  viewport: PlanarViewport,
+  displaySetId: string,
+  options: { background: Types.Point3; keepPresentation?: boolean }
+): Promise<PlanarViewport> {
+  const { id: viewportId, element } = viewport;
+  const renderingEngine = getRenderingEngine(renderingEngineId);
+  const viewReference = viewport.getViewReference();
+  const viewPresentation = options.keepPresentation
+    ? viewportProjection.getPresentation(viewport)
+    : undefined;
+
+  renderingEngine.enableElement({
+    viewportId,
+    type: ViewportType.PLANAR_NEXT,
+    element,
+    defaultOptions: { background: options.background },
+  });
+
+  const newViewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
+
+  await newViewport.setDisplaySets({ displaySetId });
+
+  const viewState =
+    viewPresentation &&
+    viewportProjection.withPresentation(newViewport, viewPresentation);
+
+  if (viewState) {
+    newViewport.setViewState(viewState);
+  }
+
+  newViewport.setViewReference(viewReference);
+  newViewport.render();
+
+  return newViewport;
+}
 
 /**
  * Runs the demo
@@ -187,7 +230,7 @@ async function run() {
   // Create a stack viewport
   const viewportInput = {
     viewportId: viewportIds[0],
-    type: ViewportType.STACK,
+    type: ViewportType.PLANAR_NEXT,
 
     element: element1,
     defaultOptions: {
@@ -201,12 +244,24 @@ async function run() {
   toolGroup.addViewport(viewportIds[0], renderingEngineId);
 
   // Get the stack viewport that was created
-  const viewport = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportIds[0])
+  const viewport: PlanarViewport = renderingEngine.getViewport(viewportIds[0]);
+
+  csUtilities.genericViewportDisplaySetMetadataProvider.add(stackDisplaySetId, {
+    kind: 'planar',
+    imageIds,
+    initialImageIdIndex: 80,
+  });
+  csUtilities.genericViewportDisplaySetMetadataProvider.add(
+    volumeDisplaySetId,
+    {
+      kind: 'planar',
+      imageIds,
+      volumeId,
+    }
   );
 
   // Set the stack on the viewport
-  viewport.setStack(imageIds, 80);
+  await viewport.setDisplaySets({ displaySetId: stackDisplaySetId });
 
   csToolsUtilities.stackContextPrefetch.enable(viewport.element);
 
@@ -220,11 +275,7 @@ async function run() {
 
   // volume.load();
 
-  // viewport.setVolumes([
-  //   {
-  //     volumeId,
-  //   },
-  // ]);
+  // viewport.setDisplaySets({ displaySetId: volumeDisplaySetId });
 
   renderingEngine.render();
 }

@@ -1,8 +1,9 @@
+import type { PlanarViewport } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Types,
   Enums,
-  setVolumesForViewports,
+  utilities,
   volumeLoader,
 } from '@cornerstonejs/core';
 import {
@@ -44,6 +45,7 @@ element.style.height = '512px';
 content.appendChild(element);
 
 const renderingEngineId = 'myRenderingEngine';
+const displaySetId = 'tutorial:ct';
 
 async function run() {
   // Init Cornerstone and related libraries
@@ -54,7 +56,7 @@ async function run() {
   const viewportInput = {
     viewportId,
     element,
-    type: ViewportType.STACK,
+    type: ViewportType.PLANAR_NEXT,
   };
 
   renderingEngine.enableElement(viewportInput);
@@ -67,9 +69,15 @@ async function run() {
     wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
-  const viewport = renderingEngine.getViewport(viewportId);
+  const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
-  viewport.setStack(imageIds, 60);
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    kind: 'planar',
+    imageIds,
+    initialImageIdIndex: 60,
+  });
+
+  await viewport.setDisplaySets({ displaySetId });
 
   viewport.render();
 }

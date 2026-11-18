@@ -1,5 +1,10 @@
-import type { Types } from '@cornerstonejs/core';
-import { RenderingEngine, volumeLoader, Enums } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
+import {
+  RenderingEngine,
+  volumeLoader,
+  Enums,
+  utilities,
+} from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
@@ -26,6 +31,8 @@ const { MouseBindings } = csToolsEnums;
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
+const volumeDisplaySetId = 'sharedToolState:volume';
+const stackDisplaySetId = 'sharedToolState:stack';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -126,7 +133,7 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: viewportIds[0],
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element1,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
@@ -135,7 +142,7 @@ async function run() {
     },
     {
       viewportId: viewportIds[1],
-      type: ViewportType.STACK,
+      type: ViewportType.PLANAR_NEXT,
       element: element2,
       defaultOptions: {
         background: <Types.Point3>[0.2, 0, 0.2],
@@ -155,21 +162,32 @@ async function run() {
     imageIds: smallVolumeImageIds,
   });
 
-  const volumeViewport = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(viewportIds[0])
+  const volumeViewport = renderingEngine.getViewport<PlanarViewport>(
+    viewportIds[0]
   );
-  const stackViewport = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportIds[1])
+  const stackViewport = renderingEngine.getViewport<PlanarViewport>(
+    viewportIds[1]
   );
 
+  utilities.genericViewportDisplaySetMetadataProvider.add(stackDisplaySetId, {
+    kind: 'planar',
+    imageIds: smallStackImageIds,
+    initialImageIdIndex: 0,
+  });
+  utilities.genericViewportDisplaySetMetadataProvider.add(volumeDisplaySetId, {
+    kind: 'planar',
+    imageIds: smallVolumeImageIds,
+    volumeId,
+  });
+
   // Set the stack on the stackViewport
-  stackViewport.setStack(smallStackImageIds);
+  await stackViewport.setDisplaySets({ displaySetId: stackDisplaySetId });
 
   // Set the volume to load
   volume.load();
 
   // Set the volume on the viewport
-  volumeViewport.setVolumes([{ volumeId }]);
+  await volumeViewport.setDisplaySets({ displaySetId: volumeDisplaySetId });
 
   // Render the image
   renderingEngine.renderViewports(viewportIds);

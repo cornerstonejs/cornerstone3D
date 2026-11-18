@@ -1,11 +1,13 @@
-import type { Types } from '@cornerstonejs/core';
+import type {
+  GenericVolumeViewport3D,
+  PlanarViewport,
+  Types,
+} from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
-  setVolumesForViewports,
   volumeLoader,
   utilities,
-  CONSTANTS,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -40,6 +42,7 @@ const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader 
 const toolGroupId2D = 'MY_TOOLGROUP_ID_2D';
 const toolGroupId3D = 'MY_TOOLGROUP_ID_3D';
 const segmentationId = 'MY_SEGMENTATION_ID';
+const displaySetId = 'surfaceContourRendering:ct';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -258,7 +261,7 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: viewportIdAxial,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: elementAxial,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
@@ -267,7 +270,7 @@ async function run() {
     },
     {
       viewportId: viewportIdCoronal,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: elementCoronal,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
@@ -276,7 +279,7 @@ async function run() {
     },
     {
       viewportId: viewportIdSagittal,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: elementSagittal,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -285,7 +288,7 @@ async function run() {
     },
     {
       viewportId: viewportId3D,
-      type: ViewportType.VOLUME_3D,
+      type: ViewportType.VOLUME_3D_NEXT,
       element: element3D,
       defaultOptions: {
         background: <Types.Point3>[0.2, 0, 0.2],
@@ -312,27 +315,35 @@ async function run() {
     viewportId3D,
   ];
 
-  setVolumesForViewports(renderingEngine, [{ volumeId }], allViewportIds).then(
-    () => {
-      // Configure 3D viewport
-      const viewport3D = renderingEngine.getViewport(viewportId3D);
-      const volumeActor = viewport3D.getDefaultActor()
-        .actor as Types.VolumeActor;
-      utilities.applyPreset(
-        volumeActor,
-        CONSTANTS.VIEWPORT_PRESETS.find(
-          (preset) => preset.name === 'CT-Chest-Contrast-Enhanced'
-        )
-      );
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    kind: 'planar',
+    imageIds,
+    volumeId,
+  });
 
-      const renderer = viewport3D.getRenderer();
-      renderer.getActiveCamera().elevation(-70);
-      viewport3D.setCamera({ parallelScale: 600 });
+  await Promise.all(
+    allViewportIds.map((viewportId) => {
+      const viewport: PlanarViewport | GenericVolumeViewport3D =
+        renderingEngine.getViewport(viewportId);
 
-      // Render all viewports
-      renderingEngine.render();
-    }
+      return viewport.setDisplaySets({ displaySetId });
+    })
   );
+
+  // Configure 3D viewport
+  const viewport3D: GenericVolumeViewport3D =
+    renderingEngine.getViewport(viewportId3D);
+
+  viewport3D.setDisplaySetPresentation(displaySetId, {
+    preset: 'CT-Chest-Contrast-Enhanced',
+  });
+
+  const renderer = viewport3D.getRenderer();
+  renderer.getActiveCamera().elevation(-70);
+  viewport3D.setViewState({ parallelScale: 600 });
+
+  // Render all viewports
+  renderingEngine.render();
 
   // Add surface representation to 3D viewport
   await segmentation.addSurfaceRepresentationToViewport(viewportId3D, [

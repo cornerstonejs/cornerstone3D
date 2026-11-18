@@ -1,8 +1,8 @@
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
-  setVolumesForViewports,
+  utilities,
   volumeLoader,
 } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
@@ -13,10 +13,10 @@ import {
   setTitleAndDescription,
   addDropdownToToolbar,
   addSliderToToolbar,
-  setCtTransferFunctionForVolumeActor,
   addButtonToToolbar,
   addManipulationBindings,
 } from '../../../../utils/demo/helpers';
+import { ctPresentation } from '../../../../utils/demo/helpers/volumePresentationRecipes';
 
 // This is for debugging purposes
 console.warn(
@@ -47,6 +47,7 @@ const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
 const segmentationId = 'volumeSegmentationId';
+const displaySetId = 'segmentBidirectionalTool:ct';
 const toolGroupId = 'toolgroupIdVolume';
 
 const actionConfiguration = {
@@ -390,7 +391,7 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: viewportId1,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element1,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
@@ -409,11 +410,16 @@ async function run() {
   volume.load();
 
   // Set volumes on the viewports
-  await setVolumesForViewports(
-    renderingEngine,
-    [{ volumeId, callback: setCtTransferFunctionForVolumeActor }],
-    [viewportId1]
-  );
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    kind: 'planar',
+    imageIds,
+    volumeId,
+  });
+
+  const viewport: PlanarViewport = renderingEngine.getViewport(viewportId1);
+
+  await viewport.setDisplaySets({ displaySetId });
+  viewport.setDisplaySetPresentation(displaySetId, ctPresentation());
 
   // Add some segmentations based on the source data volume
   await addSegmentationsToState();

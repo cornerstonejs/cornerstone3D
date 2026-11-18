@@ -1,5 +1,5 @@
-import type { Types } from '@cornerstonejs/core';
-import { Enums, RenderingEngine } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
+import { Enums, RenderingEngine, utilities } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
   addButtonToToolbar,
@@ -34,6 +34,7 @@ const { ViewportType } = Enums;
 const toolGroupId = 'STACK_TOOLGROUP_ID';
 
 const segmentationId = `SEGMENTATION_ID`;
+const displaySetId = 'splineContourSegmentationTools:ct';
 const segmentIndexes = [1, 2, 3, 4, 5];
 const segmentVisibilityMap = new Map();
 let activeSegmentIndex = 0;
@@ -313,7 +314,7 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: viewportId,
-      type: ViewportType.STACK,
+      type: ViewportType.PLANAR_NEXT,
       element: element,
       defaultOptions: {
         background: <Types.Point3>[0.2, 0, 0.2],
@@ -325,12 +326,16 @@ async function run() {
   toolGroup.addViewport(viewportId, renderingEngineId);
 
   // Get the stack viewport that was created
-  const stackViewport = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportId)
-  );
+  const stackViewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
   // Set the stack on the viewport
-  stackViewport.setStack(imageIds.slice(0, 10));
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    kind: 'planar',
+    imageIds: imageIds.slice(0, 10),
+    initialImageIdIndex: 0,
+  });
+
+  await stackViewport.setDisplaySets({ displaySetId });
 
   // Render the image
   renderingEngine.render();

@@ -1,9 +1,10 @@
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
   getRenderingEngine,
   utilities as csUtils,
+  viewportProjection,
 } from '@cornerstonejs/core';
 import * as cornerstone from '@cornerstonejs/core';
 import {
@@ -61,6 +62,9 @@ content.append(instructions);
 
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'CT_VIEWPORT';
+const stackDisplaySetId = 'stackToVolumeWithSegmentations:stack';
+const volumeDisplaySetId = 'stackToVolumeWithSegmentations:volume';
+const volumeId = 'cornerstoneStreamingImageVolume:myVolume';
 
 const segmentationId = 'SegId';
 const segmentationVolumeId = 'SegVolumeId';
@@ -82,16 +86,13 @@ addButtonToToolbar({
     // Get the rendering engine
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
-    const viewport = renderingEngine.getViewport(viewportId);
+    const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
     let newViewport;
-    if (viewport.type === ViewportType.STACK) {
-      newViewport = await csUtils.convertStackToVolumeViewport({
-        viewport: viewport as Types.IStackViewport,
-        options: {
-          background: <Types.Point3>[0, 0.4, 0],
-          volumeId: `cornerstoneStreamingImageVolume:myVolume`,
-        },
+    if (viewport.getCurrentMode() === 'stack') {
+      newViewport = await showDisplaySetInPlace(viewport, volumeDisplaySetId, {
+        background: [0, 0.4, 0],
+        keepPresentation: true,
       });
 
       if (volumeToolGroup) {
@@ -111,11 +112,8 @@ addButtonToToolbar({
         });
       }
     } else {
-      newViewport = await csUtils.convertVolumeToStackViewport({
-        viewport: viewport as Types.IVolumeViewport,
-        options: {
-          background: <Types.Point3>[0.4, 0, 0.4],
-        },
+      newViewport = await showDisplaySetInPlace(viewport, stackDisplaySetId, {
+        background: [0.4, 0, 0.4],
       });
 
       // Set the tool group on the viewport
@@ -137,12 +135,56 @@ addButtonToToolbar({
   },
 });
 
+/**
+ * Shows a display set in place of what a viewport shows, on the same slice.
+ * A display set with a volume id shows as a volume, one without as a stack.
+ * The background is an option of a viewport, so the element is enabled again
+ * with the new colour. With `keepPresentation` the zoom, the pan and the
+ * rotation stay too.
+ */
+async function showDisplaySetInPlace(
+  viewport: PlanarViewport,
+  displaySetId: string,
+  options: { background: Types.Point3; keepPresentation?: boolean }
+): Promise<PlanarViewport> {
+  const { element } = viewport;
+  const renderingEngine = getRenderingEngine(renderingEngineId);
+  const viewReference = viewport.getViewReference();
+  const viewPresentation = options.keepPresentation
+    ? viewportProjection.getPresentation(viewport)
+    : undefined;
+
+  renderingEngine.enableElement({
+    viewportId,
+    type: ViewportType.PLANAR_NEXT,
+    element,
+    defaultOptions: { background: options.background },
+  });
+
+  const newViewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
+
+  await newViewport.setDisplaySets({ displaySetId });
+
+  const viewState =
+    viewPresentation &&
+    viewportProjection.withPresentation(newViewport, viewPresentation);
+
+  if (viewState) {
+    newViewport.setViewState(viewState);
+  }
+
+  newViewport.setViewReference(viewReference);
+  newViewport.render();
+
+  return newViewport;
+}
+
 function addOrientationDropdownIfVolumeViewport() {
   const renderingEngine = getRenderingEngine(renderingEngineId);
-  const viewport = renderingEngine.getViewport(viewportId);
+  const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
-  // Check if the current viewport is a VolumeViewport
-  if (viewport.type === ViewportType.ORTHOGRAPHIC) {
+  // Check if the current viewport shows a volume
+  if (viewport.getCurrentMode() === 'volume') {
     addDropdownToToolbar({
       id: 'orientationDropdown',
       options: {
@@ -154,9 +196,8 @@ function addOrientationDropdownIfVolumeViewport() {
         const renderingEngine = getRenderingEngine(renderingEngineId);
 
         // Get the volume viewport
-        const viewport = <Types.IVolumeViewport>(
-          renderingEngine.getViewport(viewportId)
-        );
+        const viewport =
+          renderingEngine.getViewport<PlanarViewport>(viewportId);
 
         switch (selectedValue) {
           case orientationOptions.axial:
@@ -277,7 +318,7 @@ async function _startFromVolume(
 
   const viewportInput = {
     viewportId,
-    type: ViewportType.ORTHOGRAPHIC,
+    type: ViewportType.PLANAR_NEXT,
     element,
     defaultOptions: {
       orientation: Enums.OrientationAxis.SAGITTAL,
@@ -290,10 +331,6 @@ async function _startFromVolume(
   // Set the tool group on the viewport
   volumeToolGroup.addViewport(viewportId, renderingEngineId);
 
-  // Define a stack containing a single image
-  const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
-  const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
-  const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
   // Define a volume in memory
   const volume = await cornerstone.volumeLoader.createAndCacheVolume(volumeId, {
     imageIds,
@@ -301,11 +338,10 @@ async function _startFromVolume(
 
   // Set the volume to load
   volume.load();
-  await cornerstone.setVolumesForViewports(
-    renderingEngine,
-    [{ volumeId }],
-    [viewportId]
-  );
+  registerDisplaySets(imageIds);
+  await renderingEngine
+    .getViewport<PlanarViewport>(viewportId)
+    .setDisplaySets({ displaySetId: volumeDisplaySetId });
 
   renderingEngine.render();
 
@@ -333,6 +369,22 @@ async function _startFromVolume(
   ]);
 }
 
+/**
+ * Registers the series twice: as a stack, and with a volume id as a volume.
+ */
+function registerDisplaySets(imageIds: string[]) {
+  csUtils.genericViewportDisplaySetMetadataProvider.add(stackDisplaySetId, {
+    kind: 'planar',
+    imageIds,
+    initialImageIdIndex: 0,
+  });
+  csUtils.genericViewportDisplaySetMetadataProvider.add(volumeDisplaySetId, {
+    kind: 'planar',
+    imageIds,
+    volumeId,
+  });
+}
+
 async function _startFromStack(
   imageIds: string[],
   renderingEngine: RenderingEngine
@@ -346,7 +398,7 @@ async function _startFromStack(
   // Create a stack viewport
   const viewportInput = {
     viewportId,
-    type: ViewportType.STACK,
+    type: ViewportType.PLANAR_NEXT,
     element,
     defaultOptions: {
       background: <Types.Point3>[0.4, 0, 0.4],
@@ -359,16 +411,13 @@ async function _startFromStack(
   stackToolGroup.addViewport(viewportId, renderingEngineId);
 
   // Get the stack viewport that was created
-  const viewport = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportId)
-  );
+  const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
-  // Define a stack containing a single image
-  const stack = imageIds;
+  registerDisplaySets(imageIds);
 
   // It is really important to await here, since the segmentation
   // data later on depends on the stack being set on the viewport
-  await viewport.setStack(stack, 0);
+  await viewport.setDisplaySets({ displaySetId: stackDisplaySetId });
 
   utilities.stackContextPrefetch.enable(viewport.element);
 

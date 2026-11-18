@@ -1,5 +1,5 @@
-import type { Types } from '@cornerstonejs/core';
-import { Enums, RenderingEngine } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
+import { Enums, RenderingEngine, utilities } from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
@@ -25,6 +25,8 @@ const {
 
 const { ViewportType } = Enums;
 const { MouseBindings } = csToolsEnums;
+const displaySetId = 'scaleOverlayTool:stack1';
+const displaySetId2 = 'scaleOverlayTool:stack2';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -139,8 +141,6 @@ async function run() {
     bindings: [{ mouseButton: MouseBindings.Wheel }],
   });
 
-  toolGroup.setToolEnabled(ScaleOverlayTool.toolName);
-
   // Get Cornerstone imageIds and fetch metadata into RAM
   const imageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID,
@@ -163,7 +163,7 @@ async function run() {
 
   const viewportInput = {
     viewportId,
-    type: ViewportType.STACK,
+    type: ViewportType.PLANAR_NEXT,
     element,
     defaultOptions: {
       background: <Types.Point3>[0.2, 0, 0.2],
@@ -171,7 +171,7 @@ async function run() {
   };
   const viewportInput2 = {
     viewportId: viewportId2,
-    type: ViewportType.STACK,
+    type: ViewportType.PLANAR_NEXT,
     element: element2,
     defaultOptions: {
       background: <Types.Point3>[0.2, 0, 0.2],
@@ -186,20 +186,31 @@ async function run() {
   toolGroup.addViewport(viewportId2, renderingEngineId);
 
   // Get the stack viewport that was created
-  const viewport = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportId)
-  );
-  const viewport2 = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportId2)
-  );
+  const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
+  const viewport2 = renderingEngine.getViewport<PlanarViewport>(viewportId2);
 
   // Define a stack containing a single image
   const stack = [imageIds[0], imageIds[1], imageIds[2]];
   const stack2 = [imageIds2[0], imageIds2[1], imageIds2[2]];
 
   // Set the stack on the viewport
-  viewport.setStack(stack);
-  viewport2.setStack(stack2);
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    kind: 'planar',
+    imageIds: stack,
+    initialImageIdIndex: 0,
+  });
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId2, {
+    kind: 'planar',
+    imageIds: stack2,
+    initialImageIdIndex: 0,
+  });
+
+  await Promise.all([
+    viewport.setDisplaySets({ displaySetId }),
+    viewport2.setDisplaySets({ displaySetId: displaySetId2 }),
+  ]);
+
+  toolGroup.setToolEnabled(ScaleOverlayTool.toolName);
 
   // Render the image
   viewport.render();

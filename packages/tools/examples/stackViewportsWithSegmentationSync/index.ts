@@ -1,12 +1,16 @@
-import type { Types } from '@cornerstonejs/core';
-import { RenderingEngine, Enums, imageLoader } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
+import {
+  RenderingEngine,
+  Enums,
+  imageLoader,
+  utilities,
+} from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-import { viewportSupportsStackCompatibility } from '../../src/utilities/viewportCapabilities';
 
 // This is for debugging purposes
 console.warn(
@@ -39,6 +43,7 @@ const viewportIds = ['STACK_VIEWPORT_1', 'STACK_VIEWPORT_2'];
 const toolGroupId1 = 'TOOL_GROUP_ID_1'; // Tool group for left viewport (with segmentation)
 const toolGroupId2 = 'TOOL_GROUP_ID_2'; // Tool group for right viewport (without segmentation)
 const segmentationId = 'MY_SEGMENTATION_ID';
+const displaySetId = 'stackViewportsWithSegmentationSync:ct';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -192,7 +197,7 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: viewportIds[0],
-      type: ViewportType.STACK,
+      type: ViewportType.PLANAR_NEXT,
       element: element1,
       defaultOptions: {
         background: <Types.Point3>[0.2, 0, 0.2],
@@ -200,7 +205,7 @@ async function run() {
     },
     {
       viewportId: viewportIds[1],
-      type: ViewportType.STACK,
+      type: ViewportType.PLANAR_NEXT,
       element: element2,
       defaultOptions: {
         background: <Types.Point3>[0.2, 0, 0.2],
@@ -214,13 +219,19 @@ async function run() {
   toolGroup1.addViewport(viewportIds[0], renderingEngineId); // Left viewport with segmentation
   toolGroup2.addViewport(viewportIds[1], renderingEngineId); // Right viewport without segmentation
 
-  const stackViewports = viewportIds
-    .map((viewportId) => renderingEngine.getViewport(viewportId))
-    .filter(viewportSupportsStackCompatibility);
+  const stackViewports = viewportIds.map((viewportId) =>
+    renderingEngine.getViewport<PlanarViewport>(viewportId)
+  );
 
-  // Set the stack on each stack-compatible viewport
-  await stackViewports[0].setStack(imageIds);
-  await stackViewports[1].setStack(imageIds);
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    kind: 'planar',
+    imageIds,
+    initialImageIdIndex: 0,
+  });
+
+  // Set the stack on each viewport
+  await stackViewports[0].setDisplaySets({ displaySetId });
+  await stackViewports[1].setDisplaySets({ displaySetId });
 
   // Enable stack prefetch for both viewports
   cornerstoneTools.utilities.stackPrefetch.enable(stackViewports[0].element);
