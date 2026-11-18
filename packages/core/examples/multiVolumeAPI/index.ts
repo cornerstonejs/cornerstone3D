@@ -47,7 +47,19 @@ const ptVolumeName = 'PT_VOLUME_ID';
 const ptVolumeId = `${volumeLoaderScheme}:${ptVolumeName}`;
 const ctDisplaySetId = 'multiVolumeAPI:ct';
 const ptDisplaySetId = 'multiVolumeAPI:pt';
-const PET_DEFAULT_OPACITY = 0.4;
+
+/**
+ * The opacity of the PET layer at the start. The legacy example set 0.85,
+ * which a legacy volume viewport drew on a slice as 1 - (1 - 0.85) ** 0.125,
+ * about 0.21. A next viewport draws an opacity as given.
+ */
+const PET_DEFAULT_OPACITY = 0.2;
+
+/**
+ * The SUV below which the PET layer is clear at the start: the first value
+ * that the PET callback of the legacy example gave an opacity.
+ */
+const PET_DEFAULT_THRESHOLD = 0.1;
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -204,13 +216,15 @@ addDropdownToToolbar({
         break;
       case orientationOptions.oblique:
         // Some random oblique value for this dataset
-        viewUp = [-0.5962687530844388, 0.5453181550345819, -0.5891448751239446];
+        viewUp = [
+          -0.43474846290129526, 0.39759962008252653, 0.8080274228732535,
+        ];
         viewPlaneNormal = [
           -0.5962687530844388, 0.5453181550345819, -0.5891448751239446,
         ];
 
         viewport.setViewState({ orientation: { viewPlaneNormal, viewUp } });
-        viewport.resetViewState();
+        viewport.resetViewState({ resetOrientation: false });
         break;
     }
 
@@ -359,11 +373,12 @@ async function run() {
     { displaySetId: ctDisplaySetId },
     { displaySetId: ptDisplaySetId }
   );
-  viewport.setDisplaySetPresentation(ptDisplaySetId, petColorMapPresentation());
   viewport.setDisplaySetPresentation(ptDisplaySetId, {
+    voiRange: petColorMapPresentation().voiRange,
     colormap: {
       name: 'hsv',
       opacity: PET_DEFAULT_OPACITY,
+      threshold: PET_DEFAULT_THRESHOLD,
     },
   });
 

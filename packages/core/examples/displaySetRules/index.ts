@@ -4,7 +4,9 @@ import {
   imageLoader,
   metaData,
   utilities,
+  type PlanarViewport,
   type Types,
+  type VideoGenericViewport,
 } from '@cornerstonejs/core';
 import dicomImageLoader from '@cornerstonejs/dicom-image-loader';
 import {
@@ -26,13 +28,13 @@ import {
   setTitleAndDescription,
   createImageIdsAndCacheMetaData,
   splitDisplaySetsFromImageIds,
-  setCtTransferFunctionForVolumeActor,
   getLocalUrl,
   addManipulationBindings,
   applyCustomizationUpdate,
   hasUpdateCommand,
 } from '../../../../utils/demo/helpers';
 import { convertMultiframeImageIds } from '../../../../utils/demo/helpers/convertMultiframeImageIds';
+import { ctPresentation } from '../../../../utils/demo/helpers/volumePresentationRecipes';
 
 // This is for debugging purposes
 console.warn(
@@ -88,19 +90,19 @@ function isVolumeCapable(displaySet: IDisplaySet): boolean {
 
 /** The 2x2 MPR + 3D layout, as [label, viewport type, orientation] slots. */
 const MPR_3D_SLOTS: [string, Enums.ViewportType, Enums.OrientationAxis?][] = [
-  ['Axial', ViewportType.ORTHOGRAPHIC, OrientationAxis.AXIAL],
-  ['Sagittal', ViewportType.ORTHOGRAPHIC, OrientationAxis.SAGITTAL],
-  ['Coronal', ViewportType.ORTHOGRAPHIC, OrientationAxis.CORONAL],
-  ['3D', ViewportType.VOLUME_3D, undefined],
+  ['Axial', ViewportType.PLANAR_NEXT, OrientationAxis.AXIAL],
+  ['Sagittal', ViewportType.PLANAR_NEXT, OrientationAxis.SAGITTAL],
+  ['Coronal', ViewportType.PLANAR_NEXT, OrientationAxis.CORONAL],
+  ['3D', ViewportType.VOLUME_3D_NEXT, undefined],
 ];
 
 const HINT_TO_VIEWPORT_TYPE: Record<string, Enums.ViewportType> = {
-  stack: ViewportType.STACK,
-  volume: ViewportType.ORTHOGRAPHIC,
-  volume3d: ViewportType.VOLUME_3D,
-  video: ViewportType.VIDEO,
-  ecg: ViewportType.ECG,
-  wholeslide: ViewportType.WHOLE_SLIDE,
+  stack: ViewportType.PLANAR_NEXT,
+  volume: ViewportType.PLANAR_NEXT,
+  volume3d: ViewportType.VOLUME_3D_NEXT,
+  video: ViewportType.VIDEO_NEXT,
+  ecg: ViewportType.ECG_NEXT,
+  wholeslide: ViewportType.WHOLE_SLIDE_NEXT,
 };
 
 const MPR_3D_LAYOUT = '2x2 MPR + 3D';
@@ -1260,7 +1262,7 @@ function addFrameControls(
     const button = document.createElement('button');
     button.textContent = label;
     button.onclick = () => {
-      const viewport = renderingEngine.getViewport(viewportId);
+      const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
       if (!viewport) {
         return;
       }
@@ -1288,15 +1290,13 @@ function addFrameControls(
    * set, so the readout reports what is actually mounted — if a rule produced
    * four imageIds and only one reached the viewport, this is where that shows.
    *
-   * Driven by IMAGE_RENDERED rather than STACK_NEW_IMAGE because it should
+   * Driven by IMAGE_RENDERED rather than NEW_IMAGE because it should
    * track what the viewport is *showing*. A stack whose index advances but
    * whose image never renders is exactly the case worth seeing as a stuck
    * readout, and a readout fed by the index would hide it.
    */
   const refresh = () => {
-    const viewport = renderingEngine.getViewport(
-      viewportId
-    ) as Types.IStackViewport;
+    const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
     const count = viewport?.getImageIds?.().length ?? 0;
     const index = viewport?.getCurrentImageIdIndex?.() ?? 0;
 
@@ -1326,10 +1326,10 @@ function addFrameControls(
  * would attach bindings that cannot act on it.
  */
 function toolGroupIdFor(viewportType: Enums.ViewportType): string | undefined {
-  if (viewportType === ViewportType.VOLUME_3D) {
+  if (viewportType === ViewportType.VOLUME_3D_NEXT) {
     return toolGroupId3d;
   }
-  if (viewportType === ViewportType.ECG) {
+  if (viewportType === ViewportType.ECG_NEXT) {
     return undefined;
   }
   return toolGroupId2d;
@@ -1365,22 +1365,26 @@ async function mountViewport(
     );
   }
 
-  const viewport = renderingEngine.getViewport(viewportId);
-  const options =
-    viewportType === ViewportType.ORTHOGRAPHIC
-      ? { callback: setCtTransferFunctionForVolumeActor }
-      : undefined;
+  const viewport =
+    renderingEngine.getViewport<Types.IGenericViewport>(viewportId);
 
   await viewport.setDisplaySets({
     displaySetId: displaySet.displaySetId,
-    options,
   });
 
-  if (viewportType === ViewportType.VOLUME_3D) {
-    (viewport as Types.IVolumeViewport).setProperties({ preset: 'CT-Bone' });
+  if (viewportType === ViewportType.PLANAR_NEXT && orientation) {
+    viewport.setDisplaySetPresentation(
+      displaySet.displaySetId,
+      ctPresentation()
+    );
   }
-  if (viewportType === ViewportType.VIDEO) {
-    (viewport as Types.IVideoViewport).play();
+  if (viewportType === ViewportType.VOLUME_3D_NEXT) {
+    viewport.setDisplaySetPresentation(displaySet.displaySetId, {
+      preset: 'CT-Bone',
+    });
+  }
+  if (viewportType === ViewportType.VIDEO_NEXT) {
+    renderingEngine.getViewport<VideoGenericViewport>(viewportId).play();
   }
 
   viewport.render();
@@ -1515,7 +1519,8 @@ async function buildCell(displaySet: IDisplaySet, index: number) {
       const element = viewportElement(320);
       body.appendChild(element);
       const viewportId = `dsr-${index}-0`;
-      const viewportType = HINT_TO_VIEWPORT_TYPE[layout] ?? ViewportType.STACK;
+      const viewportType =
+        HINT_TO_VIEWPORT_TYPE[layout] ?? ViewportType.PLANAR_NEXT;
       await mountViewport(
         displaySet,
         element,
@@ -1524,7 +1529,7 @@ async function buildCell(displaySet: IDisplaySet, index: number) {
         layout === 'volume' ? OrientationAxis.AXIAL : undefined
       );
 
-      if (viewportType === ViewportType.STACK) {
+      if (viewportType === ViewportType.PLANAR_NEXT && layout !== 'volume') {
         addFrameControls(body, element, viewportId);
       }
     }

@@ -1,4 +1,10 @@
-import { RenderingEngine, Enums, imageLoader } from '@cornerstonejs/core';
+import type { PlanarViewport } from '@cornerstonejs/core';
+import {
+  RenderingEngine,
+  Enums,
+  imageLoader,
+  utilities,
+} from '@cornerstonejs/core';
 import {
   cornerstoneNiftiImageLoader,
   createNiftiImageIdsAndCacheMetadata,
@@ -35,18 +41,10 @@ viewportGrid.appendChild(element3);
 content.appendChild(viewportGrid);
 
 const viewportId1 = 'CT_NIFTI_AXIAL';
+const displaySetId = 'niftiBasic:ct';
 
 const niftiURL =
   'https://ohif-assets-new.s3.us-east-1.amazonaws.com/nifti/CTACardio.nii.gz';
-
-function viewportSupportsStackCompatibility(viewport: unknown): viewport is {
-  setStack(imageIds: string[], currentImageIdIndex?: number): Promise<string>;
-} {
-  return (
-    typeof (viewport as { setStack?: unknown } | undefined)?.setStack ===
-    'function'
-  );
-}
 
 async function setup() {
   await initDemo();
@@ -61,20 +59,21 @@ async function setup() {
   const viewportInputArray = [
     {
       viewportId: viewportId1,
-      type: Enums.ViewportType.STACK,
+      type: Enums.ViewportType.PLANAR_NEXT,
       element: element1,
     },
   ];
 
   renderingEngine.setViewports(viewportInputArray);
 
-  const viewport = renderingEngine.getViewport(viewportId1);
+  const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId1);
 
-  if (!viewportSupportsStackCompatibility(viewport)) {
-    throw new Error(`Viewport ${viewportId1} does not implement setStack`);
-  }
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    kind: 'planar',
+    imageIds,
+  });
 
-  viewport.setStack(imageIds);
+  viewport.setDisplaySets({ displaySetId });
 
   renderingEngine.render();
 }

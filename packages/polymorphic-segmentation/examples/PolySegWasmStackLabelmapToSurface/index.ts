@@ -1,9 +1,11 @@
+import type { PlanarViewport } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
   CONSTANTS,
   imageLoader,
   eventTarget,
+  utilities,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -38,6 +40,7 @@ setTitleAndDescription(
 const { MouseBindings } = csToolsEnums;
 const { ViewportType } = Enums;
 
+const displaySetId = 'PolySegWasmStackLabelmapToSurface:stack';
 const segmentationId = 'MY_SEGMENTATION_ID';
 
 // ======== Set up page ======== //
@@ -202,12 +205,12 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: viewportId1,
-      type: ViewportType.STACK,
+      type: ViewportType.PLANAR_NEXT,
       element: element1,
     },
     {
       viewportId: viewportId2,
-      type: ViewportType.VOLUME_3D,
+      type: ViewportType.VOLUME_3D_NEXT,
       element: element2,
       defaultOptions: {
         background: CONSTANTS.BACKGROUND_COLORS.slicer3D,
@@ -220,8 +223,14 @@ async function run() {
   toolGroup1.addViewport(viewportId1, renderingEngineId);
   toolGroup2.addViewport(viewportId2, renderingEngineId);
 
-  const viewport1 = renderingEngine.getViewport(viewportId1);
-  await viewport1.setStack(imageIds, 0);
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    kind: 'planar',
+    imageIds,
+    initialImageIdIndex: 0,
+  });
+
+  const viewport1: PlanarViewport = renderingEngine.getViewport(viewportId1);
+  await viewport1.setDisplaySets({ displaySetId });
 
   cornerstoneTools.utilities.stackContextPrefetch.enable(element1);
 

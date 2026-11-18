@@ -1,12 +1,12 @@
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
   imageLoader,
   metaData,
   getRenderingEngine,
-  setVolumesForViewports,
   volumeLoader,
+  utilities,
 } from '@cornerstonejs/core';
 import { LengthTool, ToolGroupManager } from '@cornerstonejs/tools';
 import {
@@ -18,7 +18,6 @@ import {
 } from '../../../../utils/demo/helpers';
 import hardcodedMetaDataProvider from './hardcodedMetaDataProvider';
 import registerWebImageLoader from './registerWebImageLoader';
-import { viewportSupportsStackCompatibility } from '../../src/utilities/viewportCapabilities';
 
 // This is for debugging purposes
 console.warn(
@@ -80,6 +79,8 @@ element4.oncontextmenu = (e) => e.preventDefault();
 
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'COLOR_STACK';
+const stackDisplaySetId = 'webLoader:stack';
+const volumeDisplaySetId = 'webLoader:volume';
 
 // png images hosted on web (s3 with cors enabled) from the visible human project
 // https://www.nlm.nih.gov/research/visible/visible_human.html
@@ -114,9 +115,7 @@ addSliderToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the volume viewport
-    const viewport = renderingEngine.getViewport(
-      viewportId
-    ) as Types.IStackViewport;
+    const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
     viewport.setImageIdIndex(valueAsNumber);
     viewport.render();
@@ -130,13 +129,14 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the volume viewport
-    const viewport = renderingEngine.getViewport(
-      viewportId
-    ) as Types.IVolumeViewport;
+    const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
-    const { invert } = viewport.getProperties();
+    const invert =
+      viewport.getDisplaySetPresentation(stackDisplaySetId)?.invert ??
+      viewport.getDefaultInvert(stackDisplaySetId) ??
+      false;
 
-    viewport.setProperties({ invert: !invert });
+    viewport.setDisplaySetPresentation(stackDisplaySetId, { invert: !invert });
 
     viewport.render();
   },
@@ -164,17 +164,20 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: 'COLOR_STACK',
-      type: ViewportType.STACK,
+      type: ViewportType.PLANAR_NEXT,
       element: element1,
     },
     {
       viewportId: 'COLOR_VOLUME_1',
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element2,
+      defaultOptions: {
+        orientation: Enums.OrientationAxis.AXIAL,
+      },
     },
     {
       viewportId: 'COLOR_VOLUME_2',
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element3,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
@@ -182,7 +185,7 @@ async function run() {
     },
     {
       viewportId: 'COLOR_VOLUME_3',
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element4,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -203,19 +206,29 @@ async function run() {
 
   renderingEngine.setViewports(viewportInputArray);
 
-  const stackViewport = renderingEngine.getViewport('COLOR_STACK');
+  utilities.genericViewportDisplaySetMetadataProvider.add(stackDisplaySetId, {
+    kind: 'planar',
+    imageIds,
+  });
+  utilities.genericViewportDisplaySetMetadataProvider.add(volumeDisplaySetId, {
+    kind: 'planar',
+    imageIds,
+    volumeId,
+  });
 
-  if (!viewportSupportsStackCompatibility(stackViewport)) {
-    throw new Error('Viewport COLOR_STACK does not implement setStack');
-  }
+  const stackViewport =
+    renderingEngine.getViewport<PlanarViewport>('COLOR_STACK');
 
   // render stack-compatible viewport
-  stackViewport.setStack(imageIds);
+  stackViewport.setDisplaySets({ displaySetId: stackDisplaySetId });
 
-  await setVolumesForViewports(
-    renderingEngine,
-    [{ volumeId }],
-    ['COLOR_VOLUME_1', 'COLOR_VOLUME_2', 'COLOR_VOLUME_3']
+  await Promise.all(
+    ['COLOR_VOLUME_1', 'COLOR_VOLUME_2', 'COLOR_VOLUME_3'].map(
+      (volumeViewportId) =>
+        renderingEngine
+          .getViewport<PlanarViewport>(volumeViewportId)
+          .setDisplaySets({ displaySetId: volumeDisplaySetId })
+    )
   );
 
   await volume.load();

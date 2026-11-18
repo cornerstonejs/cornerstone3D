@@ -1,13 +1,14 @@
 import htmlStr from './layout';
 import { dicomDimensions } from './dicomDimensions';
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
-  setUseCPURendering,
+  setRenderBackend,
   setPreferSizeOverAccuracy,
   cache,
   metaData,
+  utilities,
 } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import uids from '../uids';
@@ -47,7 +48,7 @@ addToggleButtonToToolbar({
   title: 'Toggle CPU Rendering',
   defaultToggle: false,
   onClick(toggle) {
-    toggle ? setUseCPURendering(true) : setUseCPURendering(false);
+    toggle ? setRenderBackend('cpu') : setRenderBackend('auto');
     cache.purgeCache();
   },
 });
@@ -67,8 +68,8 @@ const element = document.querySelector(
 ) as HTMLDivElement;
 
 const toolGroupId = 'myToolGroup';
-let viewport;
-let renderingEngine;
+let viewport: PlanarViewport;
+let renderingEngine: RenderingEngine;
 let loadRequestId = 0;
 
 function applyCanvasSize(imagePath: string) {
@@ -154,14 +155,14 @@ async function run() {
   const viewportId = 'CT_STACK';
   const viewportInput = {
     viewportId,
-    type: ViewportType.STACK,
+    type: ViewportType.PLANAR_NEXT,
     element,
   };
 
   renderingEngine.enableElement(viewportInput);
 
   // Get the stack viewport that was created
-  viewport = <Types.IStackViewport>renderingEngine.getViewport(viewportId);
+  viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
   toolGroup.addViewport(viewportId, renderingEngineId);
 }
@@ -171,21 +172,26 @@ async function loadAndViewImage(imageId) {
   const start = new Date().getTime();
   const requestId = ++loadRequestId;
 
-  viewport.setStack([imageId]).then(
+  const displaySetId = `dicomImageLoaderWADOURI:${imageId}`;
+
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    kind: 'planar',
+    imageIds: [imageId],
+  });
+
+  viewport.setDisplaySets({ displaySetId }).then(
     () => {
       if (requestId !== loadRequestId) {
         return;
       }
 
       // Set the VOI of the stack
-      // viewport.setProperties({ voiRange: ctVoiRange });
+      // viewport.setDisplaySetPresentation(displaySetId, { voiRange: ctVoiRange });
       // Render the image
       viewport.render();
 
-      const image =
-        typeof viewport.getCornerstoneImage === 'function'
-          ? viewport.getCornerstoneImage()
-          : viewport.csImage;
+      const currentImageId = viewport.getCurrentImageId();
+      const image = currentImageId ? cache.getImage(currentImageId) : undefined;
       if (!image) {
         console.error('Image failed to load');
         return;
@@ -265,10 +271,12 @@ async function loadAndViewImage(imageId) {
         imagePixelMeta?.columns ?? '';
       document.getElementById('pixelSpacing').textContent =
         generalImageMeta?.pixelSpacing ?? '';
-      document.getElementById('rowPixelSpacing').textContent =
-        image.rowPixelSpacing ?? '';
-      document.getElementById('columnPixelSpacing').textContent =
-        image.columnPixelSpacing ?? '';
+      document.getElementById('rowPixelSpacing').textContent = String(
+        image.rowPixelSpacing ?? ''
+      );
+      document.getElementById('columnPixelSpacing').textContent = String(
+        image.columnPixelSpacing ?? ''
+      );
       document.getElementById('bitsAllocated').textContent =
         imagePixelMeta?.bitsAllocated ?? '';
       document.getElementById('bitsStored').textContent =
@@ -288,10 +296,12 @@ async function loadAndViewImage(imageId) {
       document.getElementById('basicOffsetTable').textContent =
         basicOffsetTableText;
       document.getElementById('fragments').textContent = fragmentsText;
-      document.getElementById('minStoredPixelValue').textContent =
-        image.minPixelValue ?? '';
-      document.getElementById('maxStoredPixelValue').textContent =
-        image.maxPixelValue ?? '';
+      document.getElementById('minStoredPixelValue').textContent = String(
+        image.minPixelValue ?? ''
+      );
+      document.getElementById('maxStoredPixelValue').textContent = String(
+        image.maxPixelValue ?? ''
+      );
       const end = new Date().getTime();
       const time = end - start;
       document.getElementById('totalTime').textContent = time + 'ms';

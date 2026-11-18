@@ -1,4 +1,4 @@
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
@@ -15,6 +15,7 @@ import {
 } from '../../../../utils/demo/helpers';
 
 const { imageRetrieveMetadataProvider } = utilities;
+const displaySetId = 'htj2kStackBasic:de';
 const { singleRetrieveStages, sequentialRetrieveStages } =
   ProgressiveRetrieveImages;
 
@@ -77,7 +78,7 @@ async function newImageFunction(evt) {
   } = image;
   const complete = status === ImageQualityStatus.FULL_RESOLUTION;
   if (complete) {
-    element.removeEventListener(Enums.Events.STACK_NEW_IMAGE, newImageFunction);
+    element.removeEventListener(Enums.Events.NEW_IMAGE, newImageFunction);
   }
   const completeText = statusNames[status] || `other ${status}`;
   const totalTime = Date.now() - startTime;
@@ -86,7 +87,7 @@ async function newImageFunction(evt) {
 
 async function showStack(
   stack: string[],
-  viewport,
+  viewport: PlanarViewport,
   retrieveConfiguration,
   name: string
 ) {
@@ -97,10 +98,10 @@ async function showStack(
   }
   timingInfo.innerHTML = `<p id="loading" style="margin:0">Loading ${name}</p>`;
   startTime = Date.now();
-  element.addEventListener(Enums.Events.STACK_NEW_IMAGE, newImageFunction);
+  element.addEventListener(Enums.Events.NEW_IMAGE, newImageFunction);
   const start = Date.now();
   // Set the stack on the viewport
-  await viewport.setStack(stack, 0, retrieveConfiguration);
+  await viewport.setDisplaySets({ displaySetId });
 
   // Render the image
   viewport.render();
@@ -223,7 +224,7 @@ async function run() {
   const viewportId = 'stackViewport';
   const viewportInput = {
     viewportId,
-    type: ViewportType.STACK,
+    type: ViewportType.PLANAR_NEXT,
     element,
     defaultOptions: {
       background: <Types.Point3>[0.2, 0, 0.2],
@@ -233,9 +234,13 @@ async function run() {
   renderingEngine.enableElement(viewportInput);
 
   // Get the stack viewport that was created
-  const viewport = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportId)
-  );
+  const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
+
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    kind: 'planar',
+    imageIds,
+    initialImageIdIndex: 0,
+  });
 
   const createButton = (text, action) => {
     const button = document.createElement('button');

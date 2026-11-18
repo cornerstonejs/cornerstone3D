@@ -5,8 +5,9 @@ import {
   utilities,
   RenderingEngine,
   metaData,
+  type PlanarViewport,
   type Types,
-  setUseCPURendering,
+  setRenderBackend,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -24,6 +25,8 @@ console.warn(
 );
 
 const { ViewportType, ImageQualityStatus } = Enums;
+const displaySetId = 'stackProgressive:de';
+const ctDisplaySetId = 'stackProgressive:ct';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -93,7 +96,7 @@ async function newImageFunction(evt) {
   } = image;
   const complete = status === ImageQualityStatus.FULL_RESOLUTION;
   if (complete) {
-    element.removeEventListener(Events.STACK_NEW_IMAGE, newImageFunction);
+    element.removeEventListener(Events.NEW_IMAGE, newImageFunction);
   }
   const completeText = statusNames[status] || `other ${status}`;
   const totalTime = Date.now() - startTime;
@@ -101,8 +104,8 @@ async function newImageFunction(evt) {
 }
 
 async function showStack(
-  stack: string[],
-  viewport,
+  stackDisplaySetId: string,
+  viewport: PlanarViewport,
   retrieveConfiguration,
   name: string
 ) {
@@ -113,15 +116,18 @@ async function showStack(
   }
   timingInfo.innerHTML = `<p id="loading" style="margin:0">Loading ${name}</p>`;
   startTime = Date.now();
-  element.addEventListener(Events.STACK_NEW_IMAGE, newImageFunction);
+  element.addEventListener(Events.NEW_IMAGE, newImageFunction);
   const start = Date.now();
   // Set the stack on the viewport
-  await viewport.setStack(stack, 0, retrieveConfiguration);
+  await viewport.setDisplaySets({ displaySetId: stackDisplaySetId });
 
   // Render the image
   viewport.render();
   const end = Date.now();
-  const { transferSyntaxUID } = metaData.get('transferSyntax', stack[0]);
+  const { transferSyntaxUID } = metaData.get(
+    'transferSyntax',
+    viewport.getImageIds()[0]
+  );
   document.getElementById('loading').innerText = `Stack render took ${
     end - start
   } using ${transferSyntaxUID}`;
@@ -311,7 +317,7 @@ async function run() {
   const viewportId = 'stackViewport';
   const viewportInput = {
     viewportId,
-    type: ViewportType.STACK,
+    type: ViewportType.PLANAR_NEXT,
     element,
     defaultOptions: {
       background: [0.2, 0, 0.2] as Types.Point3,
@@ -321,9 +327,18 @@ async function run() {
   renderingEngine.enableElement(viewportInput);
 
   // Get the stack viewport that was created
-  const viewport = renderingEngine.getViewport(
-    viewportId
-  ) as Types.IStackViewport;
+  const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
+
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    kind: 'planar',
+    imageIds,
+    initialImageIdIndex: 0,
+  });
+  utilities.genericViewportDisplaySetMetadataProvider.add(ctDisplaySetId, {
+    kind: 'planar',
+    imageIds: imageIdsCt,
+    initialImageIdIndex: 0,
+  });
 
   const createButton = (text, action) => {
     const button = document.createElement('button');
@@ -334,32 +349,37 @@ async function run() {
     return button;
   };
 
-  const loadButton = (text, imageIds, retrieveConfiguration) => {
+  const loadButton = (text, stackDisplaySetId, retrieveConfiguration) => {
     return createButton(
       text,
-      showStack.bind(null, imageIds, viewport, retrieveConfiguration, text)
+      showStack.bind(
+        null,
+        stackDisplaySetId,
+        viewport,
+        retrieveConfiguration,
+        text
+      )
     );
   };
 
-  loadButton('JLS', imageIds, jlsRetrieveOptions);
+  loadButton('JLS', displaySetId, jlsRetrieveOptions);
 
-  loadButton('JLS Thumbnail', imageIds, jlsThumbnailOptions);
-  loadButton('JLS Mixed', imageIds, jlsMixedOptions);
+  loadButton('JLS Thumbnail', displaySetId, jlsThumbnailOptions);
+  loadButton('JLS Mixed', displaySetId, jlsMixedOptions);
 
-  loadButton('HTJ2K Non Progressive', imageIds, undefined);
-  loadButton('HTJ2K', imageIds, htj2kProgressiveOptions);
-  loadButton('HTJ2K 32k First', imageIds, htj2kInitial32kOptions);
-  loadButton('HTJ2K Lossy', imageIds, htj2kLossyOptions);
-  loadButton('HTJ2K Bytes', imageIds, htj2kMixedOptions);
+  loadButton('HTJ2K Non Progressive', displaySetId, undefined);
+  loadButton('HTJ2K', displaySetId, htj2kProgressiveOptions);
+  loadButton('HTJ2K 32k First', displaySetId, htj2kInitial32kOptions);
+  loadButton('HTJ2K Lossy', displaySetId, htj2kLossyOptions);
+  loadButton('HTJ2K Bytes', displaySetId, htj2kMixedOptions);
 
-  loadButton('CT JLS Mixed', imageIdsCt, jlsMixedOptions);
-  loadButton('CT HTJ2K Bytes', imageIdsCt, htj2kMixedOptions);
+  loadButton('CT JLS Mixed', ctDisplaySetId, jlsMixedOptions);
+  loadButton('CT HTJ2K Bytes', ctDisplaySetId, htj2kMixedOptions);
 
   createButton('Set CPU', (onclick) => {
     const button = document.getElementById('Set CPU');
     const cpuValue = button.innerText === 'Set CPU';
-    setUseCPURendering(cpuValue);
-    viewport.setUseCPURendering(cpuValue);
+    setRenderBackend(cpuValue ? 'cpu' : 'auto');
     button.innerText = cpuValue ? 'Set GPU' : 'Set CPU';
   });
 }

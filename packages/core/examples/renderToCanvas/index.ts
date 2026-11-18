@@ -1,9 +1,9 @@
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
   utilities,
-  setUseCPURendering,
+  setRenderBackend,
   volumeLoader,
 } from '@cornerstonejs/core';
 import * as csTools from '@cornerstonejs/tools';
@@ -37,6 +37,8 @@ const viewportGrid = document.createElement('div');
 const volumeId = 'volumeId';
 let viewport;
 const viewportId = 'viewportId';
+const stackDisplaySetId = 'renderToCanvas:stack';
+const volumeDisplaySetId = 'renderToCanvas:volume';
 
 viewportGrid.style.display = 'flex';
 viewportGrid.style.flexDirection = 'row';
@@ -50,7 +52,7 @@ element1.style.background = 'green';
 
 const viewportInput = {
   viewportId,
-  type: ViewportType.ORTHOGRAPHIC,
+  type: ViewportType.PLANAR_NEXT,
   element: element1,
   defaultOptions: {
     background: [0.2, 0, 0.2] as Types.Point3,
@@ -59,10 +61,10 @@ const viewportInput = {
 
 let viewportType = {
   sliceIndex: null,
+  showsStack: true,
   viewportInputArray: [
     {
       ...viewportInput,
-      type: ViewportType.STACK,
     },
   ],
 };
@@ -137,10 +139,10 @@ addToggleButtonToToolbar({
   defaultToggle: false,
   onClick: (toggle) => {
     if (toggle) {
-      setUseCPURendering(true);
+      setRenderBackend('cpu');
       useCPURendering = true;
     } else {
-      setUseCPURendering(false);
+      setRenderBackend('auto');
       useCPURendering = false;
     }
   },
@@ -186,6 +188,17 @@ async function run() {
     imageIds,
   });
 
+  utilities.genericViewportDisplaySetMetadataProvider.add(stackDisplaySetId, {
+    kind: 'planar',
+    imageIds: [imageIds[100]],
+    initialImageIdIndex: 0,
+  });
+  utilities.genericViewportDisplaySetMetadataProvider.add(volumeDisplaySetId, {
+    kind: 'planar',
+    imageIds,
+    volumeId,
+  });
+
   // Create a stack viewport
 
   load = async () => {
@@ -194,14 +207,13 @@ async function run() {
       viewport = null;
       canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
     }
-    const { viewportInputArray, sliceIndex } = viewportType;
+    const { viewportInputArray, sliceIndex, showsStack } = viewportType;
     renderingEngine.setViewports(viewportInputArray);
 
     const [viewportInputData] = viewportInputArray;
-    const { viewportId, type } = viewportInputData;
-    const isStack = type === ViewportType.STACK;
+    const { viewportId } = viewportInputData;
 
-    if (isStack) {
+    if (showsStack) {
       const imageId = imageIds[100];
 
       utilities.loadImageToCanvas({
@@ -215,17 +227,16 @@ async function run() {
       // mechanisms are different for the two viewports
       setTimeout(async () => {
         // Get the stack viewport that was created
-        const viewport = renderingEngine.getViewport(viewportId);
-        await (viewport as Types.IStackViewport).setStack([imageId], 0);
-        viewport.resetCamera();
+        const viewport =
+          renderingEngine.getViewport<PlanarViewport>(viewportId);
+        await viewport.setDisplaySets({ displaySetId: stackDisplaySetId });
+        viewport.resetViewState();
         viewport.render();
       }, 200);
     } else {
       // Get the stack viewport that was created
-      const viewport = renderingEngine.getViewport(
-        viewportId
-      ) as Types.IVolumeViewport;
-      await viewport.setVolumes([{ volumeId }]);
+      const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
+      await viewport.setDisplaySets({ displaySetId: volumeDisplaySetId });
       if (sliceIndex !== undefined) {
         await utilities.jumpToSlice(viewport.element, {
           imageIndex: sliceIndex,

@@ -1,10 +1,11 @@
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
   imageLoader,
   metaData,
   volumeLoader,
+  utilities,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -67,19 +68,21 @@ imageLoader.registerImageLoader(
 
 let sliderRemoveFn = () => {};
 let renderingEngine: RenderingEngine;
+let showAsVolume = false;
 
 function resetViewports(volume: boolean) {
   const viewportInputArray: Types.PublicViewportInput[] = [];
+  showAsVolume = volume;
   if (!volume) {
     viewportInputArray.push({
       viewportId,
-      type: ViewportType.STACK,
+      type: ViewportType.PLANAR_NEXT,
       element: element,
     });
   } else {
     viewportInputArray.push({
       viewportId,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
@@ -97,12 +100,16 @@ async function renderImages() {
     return;
   }
 
-  const viewport = renderingEngine.getViewport(viewportId) as
-    | Types.IStackViewport
-    | Types.IVolumeViewport;
-  if ('setStack' in viewport) {
-    viewport.setStack(imageIds);
-  } else if ('setVolumes' in viewport) {
+  const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
+  if (!showAsVolume) {
+    const displaySetId = `dicomLoader:stack:${imageIds[0]}`;
+
+    utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+      kind: 'planar',
+      imageIds,
+    });
+    viewport.setDisplaySets({ displaySetId });
+  } else {
     // TODO: https://github.com/cornerstonejs/cornerstone3D/issues/889
     for (let i = 0; i < imageIds.length; ++i) {
       await imageLoader.loadImage(imageIds[i]);
@@ -116,7 +123,17 @@ async function renderImages() {
     // Set the volume to load
     volume.load();
 
-    viewport.setVolumes([{ volumeId }]);
+    const displaySetId = `dicomLoader:volume:${imageIds[0]}`;
+
+    utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+      kind: 'planar',
+      imageIds,
+      volumeId,
+    });
+    viewport.setDisplaySets({
+      displaySetId,
+      options: { orientation: Enums.OrientationAxis.AXIAL },
+    });
   }
 
   sliderRemoveFn();
@@ -128,9 +145,7 @@ async function renderImages() {
       container: toolbar,
       onSelectedValueChange: (value) => {
         const valueAsNumber = Number(value);
-        if ('setImageIdIndex' in viewport) {
-          viewport.setImageIdIndex(valueAsNumber);
-        }
+        viewport.setImageIdIndex(valueAsNumber);
         viewport.render();
       },
     });

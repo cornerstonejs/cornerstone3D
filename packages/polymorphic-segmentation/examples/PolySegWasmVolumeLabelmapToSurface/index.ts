@@ -1,8 +1,10 @@
-import type { Types } from '@cornerstonejs/core';
+import type {
+  GenericVolumeViewport3D,
+  PlanarViewport,
+} from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
-  setVolumesForViewports,
   volumeLoader,
   CONSTANTS,
   utilities,
@@ -12,7 +14,6 @@ import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
-  setCtTransferFunctionForVolumeActor,
   addButtonToToolbar,
   addDropdownToToolbar,
   addToggleButtonToToolbar,
@@ -21,6 +22,7 @@ import {
   addSegmentIndexDropdown,
   addLabelToToolbar,
 } from '../../../../utils/demo/helpers';
+import { ctPresentation } from '../../../../utils/demo/helpers/volumePresentationRecipes';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
 // This is for debugging purposes
@@ -47,6 +49,7 @@ const { ViewportType } = Enums;
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
+const displaySetId = 'PolySegWasmVolumeLabelmapToSurface:ct';
 const segmentationId = 'MY_SEGMENTATION_ID';
 
 // ======== Set up page ======== //
@@ -155,15 +158,15 @@ addToggleButtonToToolbar({
   title: 'Show 3D Anatomy',
   defaultToggle: false,
   onClick: async (toggle) => {
-    const viewport3 = renderingEngine.getViewport(viewportId3);
-    const volumeActor = viewport3.getDefaultActor().actor as Types.VolumeActor;
+    const viewport3: GenericVolumeViewport3D =
+      renderingEngine.getViewport(viewportId3);
 
     const visibility = toggle;
-    volumeActor.setVisibility(visibility);
+    viewport3.setDisplaySetPresentation(displaySetId, { visible: visibility });
 
     // seems like we should reset camera, most likely this is clipping planes
     // not critical but we should fix it later
-    viewport3.resetCamera();
+    viewport3.resetViewState();
     viewport3.render();
   },
 });
@@ -239,7 +242,7 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: viewportId1,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element1,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
@@ -247,7 +250,7 @@ async function run() {
     },
     {
       viewportId: viewportId2,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element2,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -255,7 +258,7 @@ async function run() {
     },
     {
       viewportId: viewportId3,
-      type: ViewportType.VOLUME_3D,
+      type: ViewportType.VOLUME_3D_NEXT,
       element: element3,
       defaultOptions: {
         background: CONSTANTS.BACKGROUND_COLORS.slicer3D,
@@ -273,20 +276,31 @@ async function run() {
   volume.load();
 
   // Set volumes on the viewports
-  await setVolumesForViewports(
-    renderingEngine,
-    [{ volumeId, callback: setCtTransferFunctionForVolumeActor }],
-    [viewportId1, viewportId2, viewportId3]
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    kind: 'planar',
+    imageIds,
+    volumeId,
+  });
+
+  await Promise.all(
+    [viewportId1, viewportId2].map(async (viewportId) => {
+      const viewport: PlanarViewport = renderingEngine.getViewport(viewportId);
+
+      await viewport.setDisplaySets({ displaySetId });
+      viewport.setDisplaySetPresentation(displaySetId, ctPresentation());
+    })
   );
 
+  const viewport3: GenericVolumeViewport3D =
+    renderingEngine.getViewport(viewportId3);
+
+  await viewport3.setDisplaySets({ displaySetId });
+
   // set the anatomy at first invisible
-  const volumeActor = renderingEngine.getViewport(viewportId3).getDefaultActor()
-    .actor as Types.VolumeActor;
-  utilities.applyPreset(
-    volumeActor,
-    CONSTANTS.VIEWPORT_PRESETS.find((preset) => preset.name === 'CT-Bone')
-  );
-  volumeActor.setVisibility(false);
+  viewport3.setDisplaySetPresentation(displaySetId, {
+    preset: 'CT-Bone',
+    visible: false,
+  });
 
   // Add some segmentations based on the source data volume
   // Create a segmentation of the same resolution as the source data

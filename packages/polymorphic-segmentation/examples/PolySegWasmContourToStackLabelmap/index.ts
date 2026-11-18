@@ -1,4 +1,10 @@
-import { RenderingEngine, Enums, eventTarget } from '@cornerstonejs/core';
+import type { PlanarViewport } from '@cornerstonejs/core';
+import {
+  RenderingEngine,
+  Enums,
+  eventTarget,
+  utilities,
+} from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
@@ -32,6 +38,7 @@ const { MouseBindings, KeyboardBindings } = csToolsEnums;
 const { ViewportType } = Enums;
 
 // Define a unique id for the volume
+const displaySetId = 'PolySegWasmContourToStackLabelmap:stack';
 const segmentationId = 'MY_SEGMENTATION_ID';
 
 // ======== Set up page ======== //
@@ -182,12 +189,12 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: viewportId1,
-      type: ViewportType.STACK,
+      type: ViewportType.PLANAR_NEXT,
       element: element1,
     },
     {
       viewportId: viewportId2,
-      type: ViewportType.STACK,
+      type: ViewportType.PLANAR_NEXT,
       element: element2,
     },
   ];
@@ -197,11 +204,17 @@ async function run() {
   toolGroup1.addViewport(viewportId1, renderingEngineId);
   toolGroup2.addViewport(viewportId2, renderingEngineId);
 
-  const viewport1 = renderingEngine.getViewport(viewportId1);
-  await viewport1.setStack(imageIds, 0);
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    kind: 'planar',
+    imageIds,
+    initialImageIdIndex: 0,
+  });
 
-  const viewport2 = renderingEngine.getViewport(viewportId2);
-  await viewport2.setStack(imageIds, 0);
+  const viewport1: PlanarViewport = renderingEngine.getViewport(viewportId1);
+  await viewport1.setDisplaySets({ displaySetId });
+
+  const viewport2: PlanarViewport = renderingEngine.getViewport(viewportId2);
+  await viewport2.setDisplaySets({ displaySetId });
 
   cornerstoneTools.utilities.stackContextPrefetch.enable(element1);
   // Add the segmentations to state

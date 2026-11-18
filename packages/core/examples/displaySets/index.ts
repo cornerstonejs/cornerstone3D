@@ -1,4 +1,4 @@
-import type { Types } from '@cornerstonejs/core';
+import type { Types, VideoGenericViewport } from '@cornerstonejs/core';
 import { RenderingEngine, Enums, utilities } from '@cornerstonejs/core';
 import dicomImageLoader from '@cornerstonejs/dicom-image-loader';
 import { api } from 'dicomweb-client';
@@ -7,9 +7,9 @@ import {
   setTitleAndDescription,
   createImageIdsAndCacheMetaData,
   splitDisplaySetsFromImageIds,
-  setCtTransferFunctionForVolumeActor,
   getLocalUrl,
 } from '../../../../utils/demo/helpers';
+import { ctPresentation } from '../../../../utils/demo/helpers/volumePresentationRecipes';
 
 // This is for debugging purposes
 console.warn(
@@ -28,12 +28,12 @@ type DisplaySet = ReturnType<typeof splitDisplaySetsFromImageIds>[number];
 // Maps a display set's viewport-type hint to the cornerstone viewport type to
 // enable for it.
 const HINT_TO_VIEWPORT_TYPE: Record<string, Enums.ViewportType> = {
-  stack: ViewportType.STACK,
-  volume: ViewportType.ORTHOGRAPHIC,
-  volume3d: ViewportType.VOLUME_3D,
-  video: ViewportType.VIDEO,
-  wholeslide: ViewportType.WHOLE_SLIDE,
-  ecg: ViewportType.ECG,
+  stack: ViewportType.PLANAR_NEXT,
+  volume: ViewportType.PLANAR_NEXT,
+  volume3d: ViewportType.VOLUME_3D_NEXT,
+  video: ViewportType.VIDEO_NEXT,
+  wholeslide: ViewportType.WHOLE_SLIDE_NEXT,
+  ecg: ViewportType.ECG_NEXT,
 };
 
 const BACKGROUND_BY_HINT: Record<string, Types.Point3> = {
@@ -172,8 +172,15 @@ function registerDisplaySetData(row: Row) {
         initialImageIdIndex: Math.floor(imageIds.length / 2),
       });
       break;
+    case 'volume':
+      provider.add(displaySetId, {
+        imageIds,
+        kind: 'planar',
+        volumeId: `cornerstoneStreamingImageVolume:${displaySetId}`,
+      });
+      break;
     default:
-      // volume / volume3d
+      // volume3d
       provider.add(displaySetId, {
         imageIds,
         volumeId: `cornerstoneStreamingImageVolume:${displaySetId}`,
@@ -181,7 +188,11 @@ function registerDisplaySetData(row: Row) {
   }
 }
 
-function renderDetails(row: Row, viewport: Types.IViewport, status: string) {
+function renderDetails(
+  row: Row,
+  viewport: Types.IGenericViewport,
+  status: string
+) {
   const ds = row.displaySet;
   const recorded = viewport
     .getDisplaySets()
@@ -218,7 +229,8 @@ function renderDetails(row: Row, viewport: Types.IViewport, status: string) {
 }
 
 async function mountRow(row: Row) {
-  const viewportType = HINT_TO_VIEWPORT_TYPE[row.hint] ?? ViewportType.STACK;
+  const viewportType =
+    HINT_TO_VIEWPORT_TYPE[row.hint] ?? ViewportType.PLANAR_NEXT;
 
   try {
     registerDisplaySetData(row);
@@ -236,29 +248,38 @@ async function mountRow(row: Row) {
       },
     });
 
-    const viewport = renderingEngine.getViewport(row.viewportId);
+    const viewport = renderingEngine.getViewport<Types.IGenericViewport>(
+      row.viewportId
+    );
 
     const options =
       row.hint === 'volume'
-        ? { callback: setCtTransferFunctionForVolumeActor }
+        ? { orientation: Enums.OrientationAxis.AXIAL }
         : undefined;
 
     // The unified entry point: resolves the displaySetId through the registry,
     // loads the type-specific data, and records the mounted display set.
     await viewport.setDisplaySets({ displaySetId: row.displaySetId, options });
 
+    if (row.hint === 'volume') {
+      viewport.setDisplaySetPresentation(row.displaySetId, ctPresentation());
+    }
     if (row.hint === 'volume3d') {
       // 3D needs a preset to be visible; setDisplaySets already loaded the volume.
-      (viewport as Types.IVolumeViewport).setProperties({ preset: 'CT-Bone' });
+      viewport.setDisplaySetPresentation(row.displaySetId, {
+        preset: 'CT-Bone',
+      });
     }
     if (row.hint === 'video') {
-      (viewport as Types.IVideoViewport).play();
+      renderingEngine.getViewport<VideoGenericViewport>(row.viewportId).play();
     }
 
     viewport.render();
     renderDetails(row, viewport, '');
   } catch (err) {
-    const viewport = renderingEngine.getViewport(row.viewportId);
+    const viewport = renderingEngine.getViewport<Types.IGenericViewport>(
+      row.viewportId
+    );
     const message = err instanceof Error ? err.message : String(err);
     if (viewport) {
       renderDetails(row, viewport, `Error: ${message}`);

@@ -152,10 +152,25 @@ async function loadDicom() {
   toolGroup.addViewport(viewportIds[2], renderingEngineId);
 
   await volume.load();
-  await cornerstone.setVolumesForViewports(
-    renderingEngine,
-    [{ volumeId: state.volumeId }],
-    viewportIds
+
+  const displaySetId = `segmentationVolume:${state.volumeId}`;
+
+  cornerstone.utilities.genericViewportDisplaySetMetadataProvider.add(
+    displaySetId,
+    {
+      kind: 'planar',
+      imageIds: state.referenceImageIds,
+      volumeId: state.volumeId,
+    }
+  );
+
+  await Promise.all(
+    viewportIds.map((viewportId) => {
+      const viewport: cornerstone.PlanarViewport =
+        renderingEngine.getViewport(viewportId);
+
+      return viewport.setDisplaySets({ displaySetId });
+    })
   );
 
   renderingEngine.render();
@@ -343,7 +358,7 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: state.viewportIds[0],
-      type: cornerstone.Enums.ViewportType.ORTHOGRAPHIC,
+      type: cornerstone.Enums.ViewportType.PLANAR_NEXT,
       element: element1,
       defaultOptions: {
         orientation: cornerstone.Enums.OrientationAxis.AXIAL,
@@ -352,7 +367,7 @@ async function run() {
     },
     {
       viewportId: state.viewportIds[1],
-      type: cornerstone.Enums.ViewportType.ORTHOGRAPHIC,
+      type: cornerstone.Enums.ViewportType.PLANAR_NEXT,
       element: element2,
       defaultOptions: {
         orientation: cornerstone.Enums.OrientationAxis.SAGITTAL,
@@ -361,7 +376,7 @@ async function run() {
     },
     {
       viewportId: state.viewportIds[2],
-      type: cornerstone.Enums.ViewportType.ORTHOGRAPHIC,
+      type: cornerstone.Enums.ViewportType.PLANAR_NEXT,
       element: element3,
       defaultOptions: {
         orientation: cornerstone.Enums.OrientationAxis.CORONAL,

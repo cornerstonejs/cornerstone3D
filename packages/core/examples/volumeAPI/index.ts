@@ -250,13 +250,15 @@ addDropdownToToolbar({
         break;
       case orientationOptions.oblique:
         // Some random oblique value for this dataset
-        viewUp = [-0.5962687530844388, 0.5453181550345819, -0.5891448751239446];
+        viewUp = [
+          -0.38790845665744467, -0.8382291511213861, -0.38327394832411943,
+        ];
         viewPlaneNormal = [
           -0.5962687530844388, 0.5453181550345819, -0.5891448751239446,
         ];
 
         viewport.setViewState({ orientation: { viewPlaneNormal, viewUp } });
-        viewport.resetViewState();
+        viewport.resetViewState({ resetOrientation: false });
 
         break;
       default:

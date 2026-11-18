@@ -1,11 +1,12 @@
+import type { PlanarViewport } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
   init as csInit,
   volumeLoader,
-  setVolumesForViewports,
   eventTarget,
   imageLoader,
+  utilities,
 } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
@@ -85,6 +86,7 @@ const viewportId2 = 'CT_NIFTI_SAGITTAL';
 const viewportId3 = 'CT_NIFTI_CORONAL';
 
 const viewportIds = [viewportId1, viewportId2, viewportId3];
+const displaySetId = 'niftiWithTools:ct';
 
 const toolsNames = [
   WindowLevelTool.toolName,
@@ -225,7 +227,7 @@ async function setup() {
   const viewportInputArray = [
     {
       viewportId: viewportId1,
-      type: Enums.ViewportType.ORTHOGRAPHIC,
+      type: Enums.ViewportType.PLANAR_NEXT,
       element: element1,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
@@ -233,7 +235,7 @@ async function setup() {
     },
     {
       viewportId: viewportId2,
-      type: Enums.ViewportType.ORTHOGRAPHIC,
+      type: Enums.ViewportType.PLANAR_NEXT,
       element: element2,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -241,7 +243,7 @@ async function setup() {
     },
     {
       viewportId: viewportId3,
-      type: Enums.ViewportType.ORTHOGRAPHIC,
+      type: Enums.ViewportType.PLANAR_NEXT,
       element: element3,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
@@ -287,10 +289,18 @@ async function setup() {
 
   await volume.load();
 
-  setVolumesForViewports(
-    renderingEngine,
-    [{ volumeId }],
-    viewportInputArray.map((v) => v.viewportId)
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    kind: 'planar',
+    imageIds,
+    volumeId,
+  });
+
+  await Promise.all(
+    viewportInputArray.map((v) =>
+      renderingEngine
+        .getViewport<PlanarViewport>(v.viewportId)
+        .setDisplaySets({ displaySetId })
+    )
   );
 
   renderingEngine.render();

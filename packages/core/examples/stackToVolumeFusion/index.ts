@@ -1,18 +1,22 @@
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
   getRenderingEngine,
   volumeLoader,
+  utilities,
+  viewportProjection,
 } from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
   addButtonToToolbar,
-  setCtTransferFunctionForVolumeActor,
-  setPetColorMapTransferFunctionForVolumeActor,
 } from '../../../../utils/demo/helpers';
+import {
+  ctPresentation,
+  petColorMapPresentation,
+} from '../../../../utils/demo/helpers/volumePresentationRecipes';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
 // This is for debugging purposes
@@ -35,6 +39,9 @@ const ctVolumeId = `${volumeLoaderScheme}:${ctVolumeName}`; // VolumeId with loa
 // Define a unique id for the volume
 const ptVolumeName = 'PT_VOLUME_ID';
 const ptVolumeId = `${volumeLoaderScheme}:${ptVolumeName}`;
+const stackDisplaySetId = 'stackToVolumeFusion:stack';
+const ctDisplaySetId = 'stackToVolumeFusion:ct';
+const ptDisplaySetId = 'stackToVolumeFusion:pt';
 
 // Segmentation ID
 const segmentationId = 'MY_SEGMENTATION_ID';
@@ -66,17 +73,17 @@ element.style.width = '512px';
 element.style.height = '512px';
 
 content.appendChild(element);
-let viewport: Types.IViewport;
+let viewport: PlanarViewport;
 let renderingEngine: RenderingEngine;
 let ctImageIds, ptImageIds;
 addButtonToToolbar({
   title: 'Stack to Volume',
   onClick: async () => {
-    const viewPresentation = viewport.getViewPresentation();
+    const viewPresentation = viewportProjection.getPresentation(viewport);
     const viewReference = viewport.getViewReference();
 
     await convertStackToFusionVolume();
-    viewport = renderingEngine.getViewport(viewportId);
+    viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
     // viewport.render();
 
@@ -85,7 +92,16 @@ addButtonToToolbar({
       viewPresentation,
       viewReference
     );
-    viewport.setViewPresentation(viewPresentation);
+
+    const viewState = viewportProjection.withPresentation(
+      viewport,
+      viewPresentation
+    );
+
+    if (viewState) {
+      viewport.setViewState(viewState);
+    }
+
     viewport.setViewReference(viewReference);
     viewport.render();
   },
@@ -97,7 +113,7 @@ addButtonToToolbar({
     const viewReference = viewport.getViewReference();
 
     await convertStackToVolumeWithLabelmap();
-    viewport = renderingEngine.getViewport(viewportId);
+    viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
     viewport.setViewReference(viewReference);
     viewport.render();
@@ -131,9 +147,24 @@ async function run() {
   renderingEngine = new RenderingEngine(renderingEngineId);
 
   // Create a stack viewport
+  utilities.genericViewportDisplaySetMetadataProvider.add(stackDisplaySetId, {
+    kind: 'planar',
+    imageIds: ctImageIds,
+  });
+  utilities.genericViewportDisplaySetMetadataProvider.add(ctDisplaySetId, {
+    kind: 'planar',
+    imageIds: ctImageIds,
+    volumeId: ctVolumeId,
+  });
+  utilities.genericViewportDisplaySetMetadataProvider.add(ptDisplaySetId, {
+    kind: 'planar',
+    imageIds: ptImageIds,
+    volumeId: ptVolumeId,
+  });
+
   const viewportInput = {
     viewportId,
-    type: ViewportType.STACK,
+    type: ViewportType.PLANAR_NEXT,
     element,
     defaultOptions: {
       background: [0.2, 0, 0.2] as Types.Point3,
@@ -143,11 +174,10 @@ async function run() {
   renderingEngine.enableElement(viewportInput);
 
   // Get the stack viewport that was created
-  viewport = renderingEngine.getViewport(viewportId);
-  const stackViewport = viewport as Types.IStackViewport;
+  viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
   // Set the stack on the viewport
-  await stackViewport.setStack(ctImageIds);
+  await viewport.setDisplaySets({ displaySetId: stackDisplaySetId });
 
   // Create and cache both volumes
   const ctVolume = await volumeLoader.createAndCacheVolume(ctVolumeId, {
@@ -169,14 +199,22 @@ async function run() {
 
   // Render the image - note the offset/zoom is specifically set to to be re-rendered after the viewport is updated
   viewport.render();
-  viewport.setZoom(2.4);
-  viewport.setPan([-100, -100]);
+
+  const zoom = 2.4;
+  const viewState = viewportProjection.withPresentation(viewport, {
+    zoom,
+    pan: [-100 / zoom, -100 / zoom],
+  });
+
+  if (viewState) {
+    viewport.setViewState(viewState);
+  }
 }
 
 /**
  * Converts stack viewport to volume viewport with fusion
  */
-function convertStackToFusionVolume() {
+async function convertStackToFusionVolume() {
   // Disable the current viewport
   const renderingEngine = getRenderingEngine(renderingEngineId);
   renderingEngine.disableElement(viewportId);
@@ -184,7 +222,7 @@ function convertStackToFusionVolume() {
   // Create new volume viewport
   const viewportInput = {
     viewportId,
-    type: ViewportType.ORTHOGRAPHIC,
+    type: ViewportType.PLANAR_NEXT,
     element,
     defaultOptions: {
       orientation: Enums.OrientationAxis.AXIAL,
@@ -195,20 +233,15 @@ function convertStackToFusionVolume() {
   // Enable the volume viewport
   renderingEngine.enableElement(viewportInput);
 
-  viewport = renderingEngine.getViewport(viewportId);
-  const volumeViewport = viewport as Types.IVolumeViewport;
+  viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
   // Set both volumes on the viewport with fusion
-  return volumeViewport.setVolumes([
-    {
-      volumeId: ctVolumeId,
-      callback: setCtTransferFunctionForVolumeActor,
-    },
-    {
-      volumeId: ptVolumeId,
-      callback: setPetColorMapTransferFunctionForVolumeActor,
-    },
-  ]);
+  await viewport.setDisplaySets(
+    { displaySetId: ctDisplaySetId },
+    { displaySetId: ptDisplaySetId }
+  );
+  viewport.setDisplaySetPresentation(ctDisplaySetId, ctPresentation());
+  viewport.setDisplaySetPresentation(ptDisplaySetId, petColorMapPresentation());
 }
 
 /**
@@ -222,7 +255,7 @@ async function convertStackToVolumeWithLabelmap() {
   // Create new volume viewport
   const viewportInput = {
     viewportId,
-    type: ViewportType.ORTHOGRAPHIC,
+    type: ViewportType.PLANAR_NEXT,
     element,
     defaultOptions: {
       orientation: Enums.OrientationAxis.AXIAL,
@@ -233,7 +266,7 @@ async function convertStackToVolumeWithLabelmap() {
   // Enable the volume viewport
   renderingEngine.enableElement(viewportInput);
 
-  viewport = renderingEngine.getViewport(viewportId) as Types.IVolumeViewport;
+  viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
   // Add the segmentation to state
   await segmentation.addSegmentations([
@@ -248,14 +281,9 @@ async function convertStackToVolumeWithLabelmap() {
     },
   ]);
 
-  const volumeViewport = viewport as Types.IVolumeViewport;
   // Set the volume on the viewport
-  await volumeViewport.setVolumes([
-    {
-      volumeId: ctVolumeId,
-      callback: setCtTransferFunctionForVolumeActor,
-    },
-  ]);
+  await viewport.setDisplaySets({ displaySetId: ctDisplaySetId });
+  viewport.setDisplaySetPresentation(ctDisplaySetId, ctPresentation());
 
   // Add the segmentation representation to the viewport
   const segmentationRepresentation = {

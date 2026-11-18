@@ -46,15 +46,6 @@ setTitleAndDescription(
 const size = '512px';
 const skipOverlapping = false;
 
-function viewportSupportsStackCompatibility(viewport: unknown): viewport is {
-  setStack(imageIds: string[], currentImageIdIndex?: number): Promise<string>;
-} {
-  return (
-    typeof (viewport as { setStack?: unknown } | undefined)?.setStack ===
-    'function'
-  );
-}
-
 const demoToolbar = document.getElementById('demo-toolbar');
 
 const group1 = document.createElement('div');
@@ -130,15 +121,18 @@ function loadDicom() {
 
   toolGroup.addViewport(viewportIds[0], renderingEngineId);
 
-  const viewport = state.renderingEngine.getViewport(viewportIds[0]);
+  const viewport: cornerstone.PlanarViewport =
+    state.renderingEngine.getViewport(viewportIds[0]);
+  const displaySetId = `segmentationStack:${state.referenceImageIds[0]}`;
 
-  if (!viewportSupportsStackCompatibility(viewport)) {
-    throw new Error(
-      `Viewport ${viewportIds[0]} does not implement the stack compatibility API`
-    );
-  }
-
-  viewport.setStack(state.referenceImageIds);
+  cornerstone.utilities.genericViewportDisplaySetMetadataProvider.add(
+    displaySetId,
+    {
+      kind: 'planar',
+      imageIds: state.referenceImageIds,
+    }
+  );
+  viewport.setDisplaySets({ displaySetId });
   cornerstoneTools.utilities.stackContextPrefetch.enable(element1);
 
   renderingEngine.render();
@@ -305,7 +299,7 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: state.viewportIds[0],
-      type: cornerstone.Enums.ViewportType.STACK,
+      type: cornerstone.Enums.ViewportType.PLANAR_NEXT,
       element: element1,
     },
   ];

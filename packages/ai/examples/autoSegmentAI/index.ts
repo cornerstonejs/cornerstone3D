@@ -2,9 +2,10 @@ import {
   Enums,
   RenderingEngine,
   imageLoader,
-  setVolumesForViewports,
+  utilities,
   volumeLoader,
 } from '@cornerstonejs/core';
+import type { PlanarViewport } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
   createImageIdsAndCacheMetaData,
@@ -23,7 +24,7 @@ const { ViewportType, OrientationAxis } = Enums;
 
 const { segmentation } = cornerstoneTools;
 const { segmentation: segmentationUtils } = cornerstoneTools.utilities;
-const currentViewportType = ViewportType.STACK;
+const currentViewportMode = 'stack' as 'stack' | 'volume';
 
 setTitleAndDescription(
   'Segment Assistant',
@@ -57,9 +58,11 @@ addToggleButtonToToolbar({
 const toolGroupId = 'DEFAULT_TOOLGROUP_ID';
 const renderingEngineId = 'myRenderingEngine';
 const volumeId = 'volumeId';
+const stackDisplaySetId = 'autoSegmentAI:stack';
+const volumeDisplaySetId = 'autoSegmentAI:volume';
 
-let renderingEngine;
-let viewport;
+let renderingEngine: RenderingEngine;
+let viewport: PlanarViewport;
 let activeViewport;
 
 // Add the base tools we need
@@ -158,11 +161,11 @@ async function updateViewport() {
   const viewportInput = {
     viewportId,
     element: viewportContainer,
-    type: currentViewportType,
+    type: ViewportType.PLANAR_NEXT,
     defaultOptions: {},
   };
 
-  if (currentViewportType === ViewportType.ORTHOGRAPHIC) {
+  if (currentViewportMode === 'volume') {
     viewportInput.defaultOptions.orientation = OrientationAxis.SAGITTAL;
   }
 
@@ -171,9 +174,13 @@ async function updateViewport() {
 
   const imageIds = await createAndLoadData();
 
-  if (currentViewportType === ViewportType.STACK) {
-    viewport = renderingEngine.getViewport(viewportId);
-    await viewport.setStack(imageIds.reverse().slice(50, 190));
+  if (currentViewportMode === 'stack') {
+    utilities.genericViewportDisplaySetMetadataProvider.add(stackDisplaySetId, {
+      kind: 'planar',
+      imageIds: imageIds.reverse().slice(50, 190),
+    });
+    viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
+    await viewport.setDisplaySets({ displaySetId: stackDisplaySetId });
 
     cornerstoneTools.utilities.stackContextPrefetch.enable(viewportContainer);
     viewport.render();
@@ -183,8 +190,16 @@ async function updateViewport() {
       imageIds,
     });
     volume.load();
-    await setVolumesForViewports(renderingEngine, [{ volumeId }], [viewportId]);
-    viewport = renderingEngine.getViewport(viewportId);
+    utilities.genericViewportDisplaySetMetadataProvider.add(
+      volumeDisplaySetId,
+      {
+        kind: 'planar',
+        imageIds,
+        volumeId,
+      }
+    );
+    viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
+    await viewport.setDisplaySets({ displaySetId: volumeDisplaySetId });
     viewport.render();
   }
 

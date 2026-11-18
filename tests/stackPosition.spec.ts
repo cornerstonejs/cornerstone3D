@@ -144,7 +144,9 @@ type StackPositionViewport = {
   sHeight: number;
   setDisplayArea: (displayArea: unknown) => void;
   render: () => void;
-  getCamera: () => { focalPoint: number[] };
+  getResolvedView: () =>
+    | { toICamera: () => { focalPoint: number[] } }
+    | undefined;
   getImageData: () => {
     imageData: {
       getDimensions: () => number[];
@@ -236,7 +238,7 @@ test.describe('Stack Position stored display area', () => {
 
         return {
           focalPointOnCanvas: viewport.worldToCanvas(
-            viewport.getCamera().focalPoint
+            viewport.getResolvedView()?.toICamera().focalPoint
           ),
           canvasCentre: [element.clientWidth / 2, element.clientHeight / 2],
         };

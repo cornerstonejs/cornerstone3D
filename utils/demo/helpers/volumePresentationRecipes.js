@@ -7,13 +7,71 @@ import { ctVoiRange } from './setCtTransferFunctionForVolumeActor';
 const petVoiRange = { lower: 0, upper: 5 };
 
 /**
- * The opacities of `setPetColorMapTransferFunctionForVolumeActor`, as values
- * of the data (SUV): clear at 0, 0.9 from 0.1 SUV, 1 at 5 SUV.
+ * The opacities that draw the PET layer of a fusion as a legacy volume
+ * viewport drew it with `setPetColorMapTransferFunctionForVolumeActor`, as
+ * pairs of a value of the data (SUV) and an opacity.
+ *
+ * The callback sets three points: clear at 0, 0.9 from 0.1 SUV, 1 at 5 SUV.
+ * A legacy volume viewport drew an opacity `a` of a plain slice as
+ * `1 - (1 - a) ** 0.125`, so 0.9 looked like 0.25. A next viewport draws an
+ * opacity as given. These points lie on that curve, close enough that the
+ * straight lines between them stay within a quarter of one level of 255 of
+ * it. They are the points that the legacy adapter made from the callback
+ * for the PET and CT series of the examples (`toLegacySliceOpacityMapping`
+ * in `PlanarLegacyCompatibilityController.ts` of the core).
  */
 const petColorMapOpacity = [
-  { value: 0, opacity: 0 },
-  { value: 0.1, opacity: 0.9 },
-  { value: 5, opacity: 1 },
+  [0, 0],
+  [0.025, 0.0314],
+  [0.0375, 0.0502],
+  [0.05, 0.072],
+  [0.0625, 0.0982],
+  [0.06875, 0.1136],
+  [0.075, 0.1311],
+  [0.08125, 0.1515],
+  [0.0875, 0.176],
+  [0.090625, 0.1905],
+  [0.09375, 0.2071],
+  [0.096875, 0.2265],
+  [0.1, 0.2501],
+  [1.325, 0.2766],
+  [1.9375, 0.2929],
+  [2.55, 0.3123],
+  [3.1625, 0.3366],
+  [3.46875, 0.3516],
+  [3.775, 0.3694],
+  [4.08125, 0.3917],
+  [4.234375, 0.4054],
+  [4.3875, 0.4218],
+  [4.540625, 0.4422],
+  [4.6171875, 0.4547],
+  [4.69375, 0.4697],
+  [4.7703125, 0.4885],
+  [4.8085938, 0.5],
+  [4.846875, 0.5138],
+  [4.8851562, 0.5309],
+  [4.9042969, 0.5415],
+  [4.9234375, 0.5541],
+  [4.9425781, 0.5699],
+  [4.9617188, 0.5911],
+  [4.9712891, 0.6056],
+  [4.9808594, 0.6251],
+  [4.9856445, 0.6383],
+  [4.9904297, 0.6562],
+  [4.9928223, 0.6683],
+  [4.9952148, 0.6847],
+  [4.9964111, 0.6958],
+  [4.9976074, 0.7109],
+  [4.9982056, 0.7211],
+  [4.9988037, 0.7349],
+  [4.9991028, 0.7442],
+  [4.9994019, 0.7569],
+  [4.9995514, 0.7655],
+  [4.9997009, 0.7771],
+  [4.9997757, 0.7849],
+  [4.9998505, 0.7956],
+  [4.9999252, 0.8125],
+  [5, 1],
 ];
 
 /**
@@ -40,13 +98,15 @@ export function petPresentation() {
 
 /**
  * The presentation that draws what the callback
- * `setPetColorMapTransferFunctionForVolumeActor` draws: a colormap over SUV
- * 0 to 5 with the opacities of the callback. They go in `opacityMapping`,
- * whose values are values of the data, as in the callback; a list in
- * `opacity` is read as parts of the window on a next viewport. Without a
- * registration the colormap is hsv, as in the callback. A registration, as
- * the `preset` that some examples give the callback, is registered under its
- * name first.
+ * `setPetColorMapTransferFunctionForVolumeActor` drew on a legacy volume
+ * viewport: a colormap over SUV 0 to 5 with the opacities of
+ * `petColorMapOpacity`, which are weaker than the numbers of the callback.
+ * They go in `opacityMapping`, whose values are values of the data, as in
+ * the callback; a list in `opacity` is read as parts of the window on a next
+ * viewport. The overall `opacity` is 1, so that `COLORMAP_MODIFIED` carries a
+ * number as it did on a legacy viewport. Without a registration the colormap
+ * is hsv, as in the callback. A registration, as the `preset` that some
+ * examples give the callback, is registered under its name first.
  *
  * @param [colormapRegistration] - The colormap of the callback's `preset`, if any.
  * @returns The presentation for `setDisplaySetPresentation`.
@@ -63,7 +123,11 @@ export function petColorMapPresentation(colormapRegistration) {
     voiRange: { ...petVoiRange },
     colormap: {
       name,
-      opacityMapping: petColorMapOpacity.map((point) => ({ ...point })),
+      opacity: 1,
+      opacityMapping: petColorMapOpacity.map(([value, opacity]) => ({
+        value,
+        opacity,
+      })),
     },
   };
 }

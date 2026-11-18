@@ -2,9 +2,10 @@ import {
   Enums,
   RenderingEngine,
   imageLoader,
-  setVolumesForViewports,
+  utilities,
   volumeLoader,
 } from '@cornerstonejs/core';
+import type { PlanarViewport } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
   createImageIdsAndCacheMetaData,
@@ -75,11 +76,13 @@ ai.enabled = true;
 const toolGroupId = 'DEFAULT_TOOLGROUP_ID';
 const renderingEngineId = 'myRenderingEngine';
 const volumeId = 'volumeId';
+const stackDisplaySetId = 'SAMClientSide:stack';
+const volumeDisplaySetId = 'SAMClientSide:volume';
 
-let renderingEngine;
+let renderingEngine: RenderingEngine;
 let viewport;
 let activeViewport;
-const currentViewportType = ViewportType.STACK;
+const currentViewportMode = 'stack' as 'stack' | 'volume';
 
 // Tools to include: MarkerInclude, MarkerExclude, BoxPrompt, plus pan/zoom/scroll
 const MarkerIncludeToolName = ONNXSegmentationController.MarkerInclude;
@@ -250,11 +253,11 @@ async function updateViewport() {
   const viewportInput = {
     viewportId,
     element: viewportContainer,
-    type: currentViewportType,
+    type: ViewportType.PLANAR_NEXT,
     defaultOptions: {},
   };
 
-  if (currentViewportType === ViewportType.ORTHOGRAPHIC) {
+  if (currentViewportMode === 'volume') {
     viewportInput.defaultOptions.orientation = OrientationAxis.AXIAL;
   }
 
@@ -263,9 +266,13 @@ async function updateViewport() {
 
   const imageIds = await createAndLoadData();
 
-  if (currentViewportType === ViewportType.STACK) {
-    viewport = renderingEngine.getViewport(viewportId);
-    await viewport.setStack(imageIds);
+  if (currentViewportMode === 'stack') {
+    utilities.genericViewportDisplaySetMetadataProvider.add(stackDisplaySetId, {
+      kind: 'planar',
+      imageIds,
+    });
+    viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
+    await viewport.setDisplaySets({ displaySetId: stackDisplaySetId });
     viewport.render();
   } else {
     // For sagittal, create volume and set it
@@ -273,8 +280,16 @@ async function updateViewport() {
       imageIds,
     });
     volume.load();
-    await setVolumesForViewports(renderingEngine, [{ volumeId }], [viewportId]);
-    viewport = renderingEngine.getViewport(viewportId);
+    utilities.genericViewportDisplaySetMetadataProvider.add(
+      volumeDisplaySetId,
+      {
+        kind: 'planar',
+        imageIds,
+        volumeId,
+      }
+    );
+    viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
+    await viewport.setDisplaySets({ displaySetId: volumeDisplaySetId });
     viewport.render();
   }
 

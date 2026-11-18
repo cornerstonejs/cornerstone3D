@@ -1,9 +1,8 @@
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
   volumeLoader,
-  setVolumesForViewports,
   cache,
   eventTarget,
   utilities,
@@ -261,7 +260,7 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: viewportIds[0],
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element1,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -270,7 +269,7 @@ async function run() {
     },
     {
       viewportId: viewportIds[1],
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element2,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
@@ -279,7 +278,7 @@ async function run() {
     },
     {
       viewportId: viewportIds[2],
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element3,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
@@ -329,7 +328,18 @@ async function run() {
       } ms for ${text} with ${imageIds.length} items`;
     });
 
-    setVolumesForViewports(renderingEngine, [{ volumeId }], viewportIds);
+    const displaySetId = `htj2kVolumeBasic:${volumeId}`;
+
+    utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+      kind: 'planar',
+      imageIds,
+      volumeId,
+    });
+    viewportIds.forEach((viewportId) => {
+      renderingEngine
+        .getViewport<PlanarViewport>(viewportId)
+        .setDisplaySets({ displaySetId });
+    });
 
     // Render the image
     renderingEngine.renderViewports(viewportIds);
