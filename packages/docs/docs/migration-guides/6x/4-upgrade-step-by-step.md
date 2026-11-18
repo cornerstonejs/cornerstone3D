@@ -701,8 +701,9 @@ a volume: scroll, change the window, reset. Compare with the table.
 - `CAMERA_MODIFIED` fires on each new image of a stack and once after the
   source mounts. `detail.previousCamera` can be undefined.
 - `CAMERA_RESET` fires in stack mode too, and only from `resetViewState()`.
-- A change of the slab fires no `CAMERA_MODIFIED`. Code that listened to it
-  to follow the slab reads the presentation.
+- A change of `slabThickness` in the presentation of a planar viewport
+  fires `CAMERA_MODIFIED`, as a slab change of the legacy volume viewport
+  did. Read the slab from the presentation.
 - `detail.invertStateChanged` of `VOI_MODIFIED` is not set by a next
   viewport. Compare `detail.invert` with the last value.
 - `IMAGE_LOAD_FAILED` fires on the `eventTarget`, as `IMAGE_LOAD_ERROR` did.
@@ -805,11 +806,16 @@ tools to a tool group needs no change.
 has the rows. Four need work:
 
 - **Crosshairs.** `WorldCrosshairTool` with `SliceIntersectionTool` is the
-  crosshair for the next viewports. `CrosshairsTool` still moves through the
-  slices, and its rotation handles and its slab handles do nothing on a next
-  viewport.
-- **The slab thickness synchronizer** does nothing on next viewports. Set
-  `slabThickness` in the presentation of each viewport.
+  crosshair for the next viewports. `CrosshairsTool` still works on a planar
+  viewport in volume mode: it moves through the slices, its rotation handles
+  turn the planes, its slab handles set the slab thickness, and `autoPan`
+  pans. It sets no blend mode: set `blendMode` in the presentation of each
+  display set, for example `Enums.BlendModes.MAXIMUM_INTENSITY_BLEND` for a
+  MIP slab. See
+  [the crosshair](./2-rendering-changes.md#a-volume-slice-sits-on-a-slice-centre).
+- **The slab thickness synchronizer** copies `slabThickness` from the
+  presentation of the source display set of the source viewport to every
+  display set of each target.
 - **The fill of a labelmap** is drawn with the configured alpha, so it looks
   stronger than on a legacy volume viewport.
 - **The stack scroll tool** does nothing on a whole slide viewport, where
@@ -899,9 +905,9 @@ decides. A coding agent stops here and asks.
 | Default properties                                   | `setDefaultProperties` and its family have no twin                                                                                                                               | Where the application keeps its default, and when it sets it: for each display set, or for each image in a listener of `NEW_IMAGE`                      |
 | Image defaults                                       | A MONOCHROME1 image starts inverted. An image without a window starts at its pixel range, not at 0 to 255                                                                        | Whether the application sets its own window or invert on top. See [Image defaults](./2-rendering-changes.md#image-defaults)                             |
 | A display area of `type: 'SCALE'`                    | A scale of 1 is the fit of the picture. On a legacy viewport 1 meant one image pixel on one screen pixel                                                                         | The scale that gives the size the application wants                                                                                                     |
-| Listeners of a new image and of `CAMERA_MODIFIED`    | `NEW_IMAGE` replaces `STACK_NEW_IMAGE` and `VOLUME_NEW_IMAGE` and has no `image` for a volume. `CAMERA_MODIFIED` fires on each new image of a stack, and not on a slab change    | Whether one listener serves stacks and volumes, and what each listener does in each mode                                                                |
+| Listeners of a new image and of `CAMERA_MODIFIED`    | `NEW_IMAGE` replaces `STACK_NEW_IMAGE` and `VOLUME_NEW_IMAGE` and has no `image` for a volume. `CAMERA_MODIFIED` fires on each new image of a stack                              | Whether one listener serves stacks and volumes, and what each listener does in each mode                                                                |
 | A viewport on the CPU                                | The VOI lookup table and the modality lookup table of an image are not applied, as on the GPU. The area around the image has the background colour                               | Whether the application relied on the lookup tables on the CPU. See [the section](./2-rendering-changes.md#a-viewport-on-the-cpu-shows-the-gpu-picture) |
-| The crosshair                                        | The rotation handles and the slab handles of `CrosshairsTool` do nothing on a next viewport                                                                                      | Move to `WorldCrosshairTool` with `SliceIntersectionTool`, or keep `CrosshairsTool` without the handles                                                 |
+| The crosshair                                        | `CrosshairsTool` sets no blend mode for its slab                                                                                                                                 | Set `blendMode` in the presentation. Or use `WorldCrosshairTool` with `SliceIntersectionTool`                                                           |
 | vtk.js actors of the application in a slice viewport | A planar viewport has no `addActor` and no `getRenderer`                                                                                                                         | Show the data as a display set or as a segmentation, draw it as an annotation, or show it in a 3D viewport                                              |
 | `ViewportType.PERSPECTIVE`                           | The legacy type drew a thin slab of the volume. A 3D viewport with `parallelProjection: false` draws the volume in 3D                                                            | What the screen shows                                                                                                                                   |
 | The zoom and the pan of a video and an ECG viewport  | `getPan()` gives canvas pixels from the fit. The legacy viewport gave world units                                                                                                | What code that stores a pan does with stored values                                                                                                     |

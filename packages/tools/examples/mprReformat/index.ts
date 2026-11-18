@@ -1,8 +1,7 @@
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
-  setVolumesForViewports,
   volumeLoader,
   getRenderingEngine,
   metaData,
@@ -12,7 +11,6 @@ import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
-  setCtTransferFunctionForVolumeActor,
   addManipulationBindings,
   getLocalUrl,
   addButtonToToolbar,
@@ -47,6 +45,14 @@ const viewportId3 = 'CT_CORONAL';
 const viewportIds = [viewportId1, viewportId2, viewportId3];
 const renderingEngineId = 'myRenderingEngine';
 const synchronizerId = 'SLAB_THICKNESS_SYNCHRONIZER_ID';
+const displaySetId = 'CT_DISPLAY_SET_ID';
+
+/**
+ * The blend mode of the MIP slab that the square handles set. The crosshairs
+ * set the slab thickness and not the blend mode, so the example sets it on the
+ * display set of each viewport.
+ */
+const slabBlendMode = Enums.BlendModes.MAXIMUM_INTENSITY_BLEND;
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -111,9 +117,10 @@ addButtonToToolbar({
     };
 
     viewportIds.forEach((viewportId) => {
-      const viewport = getRenderingEngine(renderingEngineId).getViewport(
-        viewportId
-      ) as Types.IVolumeViewport;
+      const viewport =
+        getRenderingEngine(renderingEngineId).getViewport<PlanarViewport>(
+          viewportId
+        );
       viewport.setOrientation(viewportOrientationMap[viewportId]);
     });
     getRenderingEngine(renderingEngineId).render();
@@ -131,9 +138,10 @@ addButtonToToolbar({
     };
 
     viewportIds.forEach((viewportId) => {
-      const viewport = getRenderingEngine(renderingEngineId).getViewport(
-        viewportId
-      ) as Types.IVolumeViewport;
+      const viewport =
+        getRenderingEngine(renderingEngineId).getViewport<PlanarViewport>(
+          viewportId
+        );
       viewport.setOrientation(viewportReformatMap[viewportId]);
     });
     getRenderingEngine(renderingEngineId).render();
@@ -145,9 +153,10 @@ addButtonToToolbar({
   onClick: () => {
     // Set all viewports to acquisition orientation
     viewportIds.forEach((viewportId) => {
-      const viewport = getRenderingEngine(renderingEngineId).getViewport(
-        viewportId
-      ) as Types.IVolumeViewport;
+      const viewport =
+        getRenderingEngine(renderingEngineId).getViewport<PlanarViewport>(
+          viewportId
+        );
       viewport.setOrientation(Enums.OrientationAxis.ACQUISITION);
     });
     getRenderingEngine(renderingEngineId).render();
@@ -232,7 +241,7 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: viewportId1,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element1,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
@@ -241,7 +250,7 @@ async function run() {
     },
     {
       viewportId: viewportId2,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element2,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -250,7 +259,7 @@ async function run() {
     },
     {
       viewportId: viewportId3,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element3,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
@@ -264,16 +273,19 @@ async function run() {
   // Set the volume to load
   volume.load();
 
-  // Set volumes on the viewports
-  await setVolumesForViewports(
-    renderingEngine,
-    [
-      {
-        volumeId,
-        callback: setCtTransferFunctionForVolumeActor,
-      },
-    ],
-    [viewportId1, viewportId2, viewportId3]
+  // Set the display set on the viewports
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    kind: 'planar',
+    imageIds,
+    volumeId,
+  });
+
+  await Promise.all(
+    viewportIds.map((viewportId) =>
+      renderingEngine
+        .getViewport<PlanarViewport>(viewportId)
+        .setDisplaySets({ displaySetId })
+    )
   ).then(() => {
     const voi = metaData.get('voiLutModule', imageIds[0]);
     const voiRange = utilities.windowLevel.toLowHighRange(
@@ -282,10 +294,14 @@ async function run() {
       voi.voiLUTFunction
     );
     viewportIds.forEach((viewportId) => {
-      const viewport = getRenderingEngine(renderingEngineId).getViewport(
-        viewportId
-      ) as Types.IVolumeViewport;
-      viewport.setProperties({ voiRange });
+      const viewport =
+        getRenderingEngine(renderingEngineId).getViewport<PlanarViewport>(
+          viewportId
+        );
+      viewport.setDisplaySetPresentation(displaySetId, {
+        voiRange,
+        blendMode: slabBlendMode,
+      });
     });
     renderingEngine.render();
   });

@@ -61,9 +61,28 @@ the marker counts as off the slice only beyond half the slice spacing.
 `SliceIntersectionTool` draws the lines of the other planes, and moves, turns
 and thickens them. Together they are the crosshair for the next viewports.
 
-`CrosshairsTool` still moves through the slices, with its centre on a slice
-centre. On a next viewport its rotation handles and its slab handles do
-nothing, and it does not pan a viewport to keep the centre in view.
+`CrosshairsTool` still works on a next planar viewport in volume mode. It moves
+through the slices, with its centre on a slice centre. Its rotation handles
+turn the planes of the other viewports about the centre, through the
+orientation of the view state, and a pixel keeps its size in mm. Its slab
+handles set `slabThickness` in the presentation of the other viewports, and
+the slab lines show it. With `autoPan` it pans a viewport whose centre would
+leave the canvas. Against the legacy volume viewport:
+
+- The tool sets no blend mode. Set `blendMode` in the presentation of each
+  display set, for example `Enums.BlendModes.MAXIMUM_INTENSITY_BLEND` for a
+  MIP slab. The configuration `slabThicknessBlendMode` is gone.
+- A slab handle writes the number that the legacy tool gave
+  `setSlabThickness`, and the slab on the screen is the same (see
+  [Slabs and scrolling](#slabs-and-scrolling)).
+- By default every display set of the viewport gets the slab, as every volume
+  did. `filterActorUIDsToSetSlabThickness` limits it to the display sets it
+  names, by display set id or by volume id.
+- After a turn the centre is worked out from the view references, and a view
+  reference puts a turned plane on its closest slice. So the centre can move
+  by up to half a slice spacing.
+- `resetCrosshairs` resets the views and takes the slabs back to none, as
+  before.
 
 ## Orientation of a volume
 
@@ -128,8 +147,8 @@ nothing, and it does not pan a viewport to keep the centre in view.
   count slices. No member counts the slab steps.
 - **A slab is set for each display set.** `slabThickness` and `blendMode` are
   keys of the presentation of one display set. The legacy `setSlabThickness`
-  set all actors and fired `CAMERA_MODIFIED`. A presentation change fires no
-  camera event.
+  set all actors. A change of `slabThickness` fires `CAMERA_MODIFIED`, as the
+  legacy member did. Other presentation changes fire no camera event.
 - **`loop` wraps a volume too.**
   `utilities.scroll(viewport, { delta, loop: true })` wraps at both ends in
   stack mode and in volume mode. The legacy volume viewport ignored `loop`.
@@ -675,9 +694,11 @@ layer of a fusion: the opacity is applied as given.
 
 ## Tools on the next viewports
 
-- **The slab thickness synchronizer does nothing.** It reads
-  `getSlabThickness` of the source viewport, which a next viewport does not
-  have. Set `slabThickness` in the presentation of each viewport.
+- **The slab thickness synchronizer reads the presentation.** A change of
+  `slabThickness` in the presentation of a next planar viewport fires
+  `CAMERA_MODIFIED`, as a slab change of the legacy volume viewport did. The
+  synchronizer then gives the slab of the source display set of the source
+  viewport to every display set of each target.
 - **The camera position synchronizer copies a view reference.** On a next
   target it sets the view reference of the source, and its zoom and pan.
 - **`utilities.getImageLegacy(element)` of the core throws** for a next

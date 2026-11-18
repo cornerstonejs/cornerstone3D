@@ -1,22 +1,22 @@
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import type { Types as csToolsTypes } from '@cornerstonejs/tools';
 import {
   RenderingEngine,
   Enums,
-  setVolumesForViewports,
   volumeLoader,
   getRenderingEngine,
+  utilities,
 } from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
-  setCtTransferFunctionForVolumeActor,
   addCheckboxToToolbar,
   addManipulationBindings,
   getLocalUrl,
   addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
+import { ctPresentation } from '../../../../utils/demo/helpers/volumePresentationRecipes';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
 console.warn(
@@ -37,6 +37,14 @@ const { ViewportType } = Enums;
 const volumeName = 'CT_VOLUME_ID';
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume';
 const volumeId = `${volumeLoaderScheme}:${volumeName}`;
+const displaySetId = 'CT_DISPLAY_SET_ID';
+
+/**
+ * The blend mode of the slab that the square handles set. The crosshairs set
+ * the slab thickness and not the blend mode, so the example sets it on the
+ * display set of each viewport.
+ */
+const slabBlendMode = Enums.BlendModes.MAXIMUM_INTENSITY_BLEND;
 const toolGroupId = 'CROSSHAIRS_BINDINGS_TOOLGROUP_ID';
 const viewportId1 = 'CROSSHAIRS_BINDINGS_AXIAL';
 const viewportId2 = 'CROSSHAIRS_BINDINGS_SAGITTAL';
@@ -136,18 +144,12 @@ updateInstructions(usePrimaryClickForCrosshairs);
 addButtonToToolbar({
   title: 'Reset Camera',
   onClick: () => {
-    const viewport = getRenderingEngine(renderingEngineId).getViewport(
-      viewportId1
-    ) as Types.IVolumeViewport;
+    const viewport =
+      getRenderingEngine(renderingEngineId).getViewport<PlanarViewport>(
+        viewportId1
+      );
 
-    viewport.resetCamera({
-      resetPan: true,
-      resetZoom: true,
-      resetToCenter: true,
-      resetRotation: true,
-    });
-
-    viewport.render();
+    viewport.resetViewState();
   },
 });
 
@@ -210,12 +212,18 @@ async function run() {
     imageIds,
   });
 
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    kind: 'planar',
+    imageIds,
+    volumeId,
+  });
+
   const renderingEngine = new RenderingEngine(renderingEngineId);
 
   renderingEngine.setViewports([
     {
       viewportId: viewportId1,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element1,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
@@ -224,7 +232,7 @@ async function run() {
     },
     {
       viewportId: viewportId2,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element2,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -233,7 +241,7 @@ async function run() {
     },
     {
       viewportId: viewportId3,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element3,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
@@ -244,15 +252,16 @@ async function run() {
 
   volume.load();
 
-  await setVolumesForViewports(
-    renderingEngine,
-    [
-      {
-        volumeId,
-        callback: setCtTransferFunctionForVolumeActor,
-      },
-    ],
-    viewportIds
+  await Promise.all(
+    viewportIds.map(async (viewportId) => {
+      const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
+
+      await viewport.setDisplaySets({ displaySetId });
+      viewport.setDisplaySetPresentation(displaySetId, {
+        ...ctPresentation(),
+        blendMode: slabBlendMode,
+      });
+    })
   );
 
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);

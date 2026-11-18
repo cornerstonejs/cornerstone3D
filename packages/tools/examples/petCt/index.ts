@@ -1,21 +1,24 @@
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
-  setVolumesForViewports,
   volumeLoader,
   getRenderingEngine,
+  utilities,
+  viewportProjection,
 } from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
-  setPetColorMapTransferFunctionForVolumeActor,
-  setPetTransferFunctionForVolumeActor,
-  setCtTransferFunctionForVolumeActor,
   addDropdownToToolbar,
   addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
+import {
+  ctPresentation,
+  petPresentation,
+  petColorMapPresentation,
+} from '../../../../utils/demo/helpers/volumePresentationRecipes';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
 const {
@@ -44,7 +47,7 @@ const { ViewportType, BlendModes } = Enums;
 const { createCameraPositionSynchronizer, createVOISynchronizer } =
   synchronizers;
 
-let renderingEngine;
+let renderingEngine: RenderingEngine;
 const wadoRsRoot = 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb';
 const StudyInstanceUID =
   '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463';
@@ -54,6 +57,15 @@ const ctVolumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
 const ctVolumeId = `${volumeLoaderScheme}:${ctVolumeName}`; // VolumeId with loader id + volume id
 const ptVolumeName = 'PT_VOLUME_ID';
 const ptVolumeId = `${volumeLoaderScheme}:${ptVolumeName}`;
+const ctDisplaySetId = 'PET_CT_CT_DISPLAY_SET_ID';
+const ptDisplaySetId = 'PET_CT_PT_DISPLAY_SET_ID';
+
+/**
+ * The blend mode of the MIP slab that the square handles of the crosshairs
+ * set on the CT and the PT. The crosshairs set the slab thickness and not the
+ * blend mode, so the example sets it on the display sets of the slices.
+ */
+const slabBlendMode = Enums.BlendModes.MAXIMUM_INTENSITY_BLEND;
 const ctToolGroupId = 'CT_TOOLGROUP_ID';
 const ptToolGroupId = 'PT_TOOLGROUP_ID';
 const fusionToolGroupId = 'FUSION_TOOLGROUP_ID';
@@ -616,7 +628,7 @@ async function setUpDisplay() {
   const viewportInputArray = [
     {
       viewportId: viewportIds.CT.AXIAL,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element1_1,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
@@ -624,7 +636,7 @@ async function setUpDisplay() {
     },
     {
       viewportId: viewportIds.CT.SAGITTAL,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element1_2,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -632,7 +644,7 @@ async function setUpDisplay() {
     },
     {
       viewportId: viewportIds.CT.CORONAL,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element1_3,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
@@ -640,7 +652,7 @@ async function setUpDisplay() {
     },
     {
       viewportId: viewportIds.PT.AXIAL,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element2_1,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
@@ -649,7 +661,7 @@ async function setUpDisplay() {
     },
     {
       viewportId: viewportIds.PT.SAGITTAL,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element2_2,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -658,7 +670,7 @@ async function setUpDisplay() {
     },
     {
       viewportId: viewportIds.PT.CORONAL,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element2_3,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
@@ -667,7 +679,7 @@ async function setUpDisplay() {
     },
     {
       viewportId: viewportIds.FUSION.AXIAL,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element3_1,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
@@ -675,7 +687,7 @@ async function setUpDisplay() {
     },
     {
       viewportId: viewportIds.FUSION.SAGITTAL,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element3_2,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -683,7 +695,7 @@ async function setUpDisplay() {
     },
     {
       viewportId: viewportIds.FUSION.CORONAL,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element3_3,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
@@ -691,7 +703,7 @@ async function setUpDisplay() {
     },
     {
       viewportId: viewportIds.PETMIP.CORONAL,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element_mip,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
@@ -706,39 +718,36 @@ async function setUpDisplay() {
   ptVolume.load();
   ctVolume.load();
 
-  // Set volumes on the viewports
-  await setVolumesForViewports(
-    renderingEngine,
+  // Set the display sets on the viewports
+  await showDisplaySets(
     [
       {
-        volumeId: ctVolumeId,
-        callback: setCtTransferFunctionForVolumeActor,
+        displaySetId: ctDisplaySetId,
+        presentation: { ...ctPresentation(), blendMode: slabBlendMode },
       },
     ],
     [viewportIds.CT.AXIAL, viewportIds.CT.SAGITTAL, viewportIds.CT.CORONAL]
   );
 
-  await setVolumesForViewports(
-    renderingEngine,
+  await showDisplaySets(
     [
       {
-        volumeId: ptVolumeId,
-        callback: setPetTransferFunctionForVolumeActor,
+        displaySetId: ptDisplaySetId,
+        presentation: { ...petPresentation(), blendMode: slabBlendMode },
       },
     ],
     [viewportIds.PT.AXIAL, viewportIds.PT.SAGITTAL, viewportIds.PT.CORONAL]
   );
 
-  await setVolumesForViewports(
-    renderingEngine,
+  await showDisplaySets(
     [
       {
-        volumeId: ctVolumeId,
-        callback: setCtTransferFunctionForVolumeActor,
+        displaySetId: ctDisplaySetId,
+        presentation: { ...ctPresentation(), blendMode: slabBlendMode },
       },
       {
-        volumeId: ptVolumeId,
-        callback: setPetColorMapTransferFunctionForVolumeActor,
+        displaySetId: ptDisplaySetId,
+        presentation: petColorMapPresentation(),
       },
     ],
     [
@@ -758,14 +767,15 @@ async function setUpDisplay() {
       ptVolumeDimensions[2] * ptVolumeDimensions[2]
   );
 
-  setVolumesForViewports(
-    renderingEngine,
+  await showDisplaySets(
     [
       {
-        volumeId: ptVolumeId,
-        callback: setPetTransferFunctionForVolumeActor,
-        blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
-        slabThickness,
+        displaySetId: ptDisplaySetId,
+        presentation: {
+          ...petPresentation(),
+          blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
+          slabThickness,
+        },
       },
     ],
     [viewportIds.PETMIP.CORONAL]
@@ -782,7 +792,7 @@ addButtonToToolbar({
   onClick: async () => {
     const viewportInput = {
       viewportId: viewportIds.PETMIP.CORONAL,
-      type: ViewportType.VOLUME_3D,
+      type: ViewportType.VOLUME_3D_NEXT,
       element: element_mip,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
@@ -790,7 +800,7 @@ addButtonToToolbar({
       },
     };
     const volume3dToolGroup = mipToolGroup;
-    toggleVolume(viewportInput);
+    await toggleVolume(viewportInput);
     setupVolume3dSynchronizer(viewportInput);
     setUpVolume3dToolGroup(volume3dToolGroup);
 
@@ -798,30 +808,25 @@ addButtonToToolbar({
   },
 });
 
-function toggleVolume(viewportInput) {
+/**
+ * Shows the PET in the MIP place as a volume rendering of its maximum
+ * intensity. A 3D viewport draws the whole volume, so it takes no slab.
+ */
+async function toggleVolume(viewportInput) {
   renderingEngine.enableElement(viewportInput);
 
-  const viewport = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(viewportIds.PETMIP.CORONAL)
+  await showDisplaySets(
+    [
+      {
+        displaySetId: ptDisplaySetId,
+        presentation: {
+          ...petPresentation(),
+          blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
+        },
+      },
+    ],
+    [viewportIds.PETMIP.CORONAL]
   );
-
-  const ptVolumeDimensions = ptVolume.dimensions;
-
-  // Only make the MIP as large as it needs to be.
-  const slabThickness = Math.sqrt(
-    ptVolumeDimensions[0] * ptVolumeDimensions[0] +
-      ptVolumeDimensions[1] * ptVolumeDimensions[1] +
-      ptVolumeDimensions[2] * ptVolumeDimensions[2]
-  );
-
-  viewport.setVolumes([
-    {
-      volumeId: ptVolumeId,
-      callback: setPetTransferFunctionForVolumeActor,
-      slabThickness: slabThickness,
-      blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
-    },
-  ]);
 }
 function setupVolume3dSynchronizer(viewportInput) {
   ptVoiSynchronizer.addTarget({
@@ -849,30 +854,38 @@ function setUpVolume3dToolGroup(toolGroup) {
   });
   toolGroup.addViewport(viewportIds.PETMIP.CORONAL, renderingEngineId);
 }
-function initializeCameraSync(renderingEngine) {
+function initializeCameraSync(renderingEngine: RenderingEngine) {
   // The fusion scene is the target as it is scaled to both volumes.
   // TODO -> We should have a more generic way to do this,
   // So that when all data is added we can synchronize zoom/position before interaction.
 
-  const axialCtViewport = renderingEngine.getViewport(viewportIds.CT.AXIAL);
-  const sagittalCtViewport = renderingEngine.getViewport(
+  const axialCtViewport = renderingEngine.getViewport<PlanarViewport>(
+    viewportIds.CT.AXIAL
+  );
+  const sagittalCtViewport = renderingEngine.getViewport<PlanarViewport>(
     viewportIds.CT.SAGITTAL
   );
-  const coronalCtViewport = renderingEngine.getViewport(viewportIds.CT.CORONAL);
+  const coronalCtViewport = renderingEngine.getViewport<PlanarViewport>(
+    viewportIds.CT.CORONAL
+  );
 
-  const axialPtViewport = renderingEngine.getViewport(viewportIds.PT.AXIAL);
-  const sagittalPtViewport = renderingEngine.getViewport(
+  const axialPtViewport = renderingEngine.getViewport<PlanarViewport>(
+    viewportIds.PT.AXIAL
+  );
+  const sagittalPtViewport = renderingEngine.getViewport<PlanarViewport>(
     viewportIds.PT.SAGITTAL
   );
-  const coronalPtViewport = renderingEngine.getViewport(viewportIds.PT.CORONAL);
+  const coronalPtViewport = renderingEngine.getViewport<PlanarViewport>(
+    viewportIds.PT.CORONAL
+  );
 
-  const axialFusionViewport = renderingEngine.getViewport(
+  const axialFusionViewport = renderingEngine.getViewport<PlanarViewport>(
     viewportIds.FUSION.AXIAL
   );
-  const sagittalFusionViewport = renderingEngine.getViewport(
+  const sagittalFusionViewport = renderingEngine.getViewport<PlanarViewport>(
     viewportIds.FUSION.SAGITTAL
   );
-  const coronalFusionViewport = renderingEngine.getViewport(
+  const coronalFusionViewport = renderingEngine.getViewport<PlanarViewport>(
     viewportIds.FUSION.CORONAL
   );
 
@@ -888,13 +901,78 @@ function initializeCameraSync(renderingEngine) {
   renderingEngine.render();
 }
 
-function initCameraSynchronization(sViewport, tViewport) {
-  // Initialise the sync as they viewports will have
-  // Different initial zoom levels for viewports of different sizes.
+/**
+ * Shows in the target viewport what the source viewport shows: the same
+ * slice, the same world point at the centre of the canvas, and the same size.
+ * Zoom 1 is the fit of each viewport, and the PT volume has another fit than
+ * the CT volume, so the zoom of the target is its own zoom times the ratio of
+ * the two parallel scales. The pan then moves the focal point of the source
+ * to the centre of the target canvas.
+ */
+function initCameraSynchronization(
+  sViewport: PlanarViewport,
+  tViewport: PlanarViewport
+) {
+  tViewport.setViewReference(sViewport.getViewReference());
 
-  const camera = sViewport.getCamera();
+  const sourceCamera = sViewport.getResolvedView()?.toICamera();
+  const targetCamera = tViewport.getResolvedView()?.toICamera();
 
-  tViewport.setCamera(camera);
+  if (!sourceCamera || !targetCamera) {
+    return;
+  }
+
+  const { zoom = 1 } =
+    viewportProjection.getPresentation(tViewport, {
+      selector: { zoom: true },
+    }) ?? {};
+  const zoomed = viewportProjection.withPresentation(tViewport, {
+    zoom: (zoom * targetCamera.parallelScale) / sourceCamera.parallelScale,
+  });
+
+  if (zoomed) {
+    tViewport.setViewState(zoomed);
+  }
+
+  const { pan = [0, 0], zoom: targetZoom = 1 } =
+    viewportProjection.getPresentation(tViewport, {
+      selector: { zoom: true, pan: true },
+    }) ?? {};
+  const [x, y] = tViewport.worldToCanvas(sourceCamera.focalPoint);
+  const { clientWidth, clientHeight } = tViewport.canvas;
+  const panned = viewportProjection.withPresentation(tViewport, {
+    pan: [
+      pan[0] + (clientWidth / 2 - x) / targetZoom,
+      pan[1] + (clientHeight / 2 - y) / targetZoom,
+    ],
+  });
+
+  if (panned) {
+    tViewport.setViewState(panned);
+  }
+}
+
+/**
+ * Shows display sets in each of the viewports, the first as the source, and
+ * sets the presentation of each.
+ */
+async function showDisplaySets(
+  entries: Array<{ displaySetId: string; presentation: object }>,
+  targetViewportIds: string[]
+) {
+  await Promise.all(
+    targetViewportIds.map(async (viewportId) => {
+      const viewport =
+        renderingEngine.getViewport<Types.IGenericViewport>(viewportId);
+
+      await viewport.setDisplaySets(
+        ...entries.map(({ displaySetId }) => ({ displaySetId }))
+      );
+      entries.forEach(({ displaySetId, presentation }) => {
+        viewport.setDisplaySetPresentation(displaySetId, presentation);
+      });
+    })
+  );
 }
 
 /**
@@ -918,6 +996,17 @@ async function run() {
   // Define a volume in memory
   ptVolume = await volumeLoader.createAndCacheVolume(ptVolumeId, {
     imageIds: ptImageIds,
+  });
+
+  utilities.genericViewportDisplaySetMetadataProvider.add(ctDisplaySetId, {
+    kind: 'planar',
+    imageIds: ctImageIds,
+    volumeId: ctVolumeId,
+  });
+  utilities.genericViewportDisplaySetMetadataProvider.add(ptDisplaySetId, {
+    kind: 'planar',
+    imageIds: ptImageIds,
+    volumeId: ptVolumeId,
   });
 
   // Display needs to be set up first so that we have viewport to reference for tools and synchronizers.

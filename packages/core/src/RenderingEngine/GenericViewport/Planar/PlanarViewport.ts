@@ -1155,6 +1155,10 @@ class PlanarViewport extends GenericViewport<
    * own path (which applies presentation via `setDataPresentationState`
    * directly, not through `mergeDataPresentation`), so this hook does not
    * double-fire for compatibility viewports.
+   *
+   * A change of the slab thickness fires `CAMERA_MODIFIED`, with the camera
+   * as the previous camera, as the legacy volume viewport did when its slab
+   * changed. The slab thickness synchronizer listens to it.
    */
   protected notifyDataPresentationModified(
     displaySetId: string,
@@ -1162,6 +1166,10 @@ class PlanarViewport extends GenericViewport<
   ): void {
     if (this.suppressEvents) {
       return;
+    }
+
+    if ('slabThickness' in props) {
+      this.triggerCameraModifiedEvent(this.getCameraForEvent());
     }
 
     const voiTouched =

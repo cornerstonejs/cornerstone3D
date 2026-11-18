@@ -1,10 +1,14 @@
-import { vec2, vec3 } from 'gl-matrix';
+import { mat3, vec2, vec3, type mat4 } from 'gl-matrix';
 import vtkMath from '@kitware/vtk.js/Common/Core/Math';
 import vtkMatrixBuilder from '@kitware/vtk.js/Common/Core/MatrixBuilder';
 
 import { AnnotationTool } from './base';
 
-import { getRenderingEngine, type Types } from '@cornerstonejs/core';
+import {
+  getRenderingEngine,
+  type PlanarViewState,
+  type Types,
+} from '@cornerstonejs/core';
 import {
   getEnabledElementByIds,
   getEnabledElement,
@@ -40,11 +44,13 @@ import {
   hideElementCursor,
 } from '../cursors/elementCursor';
 import liangBarksyClip from '../utilities/math/vec2/liangBarksyClip';
-import {
-  getSlabThicknessOrDefault,
-  jumpToFocalPoint,
-} from '../utilities/genericViewportToolHelpers';
+import { jumpToFocalPoint } from '../utilities/genericViewportToolHelpers';
 import { isMobile } from '../utilities/touch';
+import {
+  applyViewportPresentation,
+  getViewportZoomPan,
+  panViewportByCanvasDelta,
+} from '../utilities/viewportPresentation';
 
 import * as lineSegment from '../utilities/math/line';
 import type {
@@ -210,11 +216,9 @@ class CrosshairsTool extends AnnotationTool {
           enabled: false,
           lineLengthInPx: 40,
         },
-        // actorUIDs for slabThickness application, if not defined, the slab thickness
-        // will be applied to all actors of the viewport
+        // display set ids or volume ids of the display sets whose slab the slab
+        // handles set; if empty, every display set of the viewport gets it
         filterActorUIDsToSetSlabThickness: [],
-        // blend mode for slabThickness modifications
-        slabThicknessBlendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND,
         centerPoint: {
           enabled: false,
           color: 'rgba(255, 255, 0, 0.5)',
@@ -382,11 +386,12 @@ class CrosshairsTool extends AnnotationTool {
   };
 
   /**
-   * Resets the view of each viewport of the tool group, then puts the
-   * crosshairs back at the centre of the views. A viewport whose element is
-   * given has just reset itself, and the crosshairs answer its CAMERA_RESET:
-   * its view is not reset again, so it keeps what its caller asked to keep,
-   * such as its orientation with `resetOrientation: false`.
+   * Resets the view of each viewport of the tool group and takes its slab
+   * back to none, as the legacy tool did, then puts the crosshairs back at the
+   * centre of the views. A viewport whose element is given has just reset
+   * itself, and the crosshairs answer its CAMERA_RESET: its view is not reset
+   * again, so it keeps what its caller asked to keep, such as its orientation
+   * with `resetOrientation: false`.
    *
    * @param resetElement - The element of a viewport that has reset itself.
    */
@@ -403,20 +408,20 @@ class CrosshairsTool extends AnnotationTool {
       }
       const { viewport } = enabledElement;
 
-      if (
-        csUtils.isGenericViewport(viewport) &&
-        viewport.element !== resetElement
-      ) {
+      if (csUtils.isGenericViewport(viewport)) {
         const previousIgnoreFiredEvents = this._ignoreFiredEvents;
 
         this._ignoreFiredEvents = true;
         try {
-          viewport.resetViewState({
-            resetPan: true,
-            resetZoom: true,
-            resetOrientation: true,
-            resetFlip: true,
-          });
+          if (viewport.element !== resetElement) {
+            viewport.resetViewState({
+              resetPan: true,
+              resetZoom: true,
+              resetOrientation: true,
+              resetFlip: true,
+            });
+          }
+          this._resetSlabThickness(viewport);
         } finally {
           this._ignoreFiredEvents = previousIgnoreFiredEvents;
         }
@@ -1158,7 +1163,7 @@ class CrosshairsTool extends AnnotationTool {
         matrix
       );
 
-      const slabThicknessValue = getSlabThicknessOrDefault(otherViewport);
+      const slabThicknessValue = this._getSlabThickness(otherViewport);
       const worldOrthoVectorFromCenter: Types.Point3 = [
         ...worldUnitOrthoVectorFromCenter,
       ];
@@ -1546,7 +1551,7 @@ class CrosshairsTool extends AnnotationTool {
             }
           );
         }
-        const slabThicknessValue = getSlabThicknessOrDefault(otherViewport);
+        const slabThicknessValue = this._getSlabThickness(otherViewport);
         if (slabThicknessValue > 0.5 && viewportSlabThicknessControlsOn) {
           // draw slab thickness reference lines
           lineUID = `${lineIndex}STOne`;
@@ -1693,12 +1698,6 @@ class CrosshairsTool extends AnnotationTool {
     // 2. If it is outside, pan the viewport to fit in the toolCenter
 
     const viewport = renderingEngine.getViewport(viewportId);
-    // Auto-pan is an in-plane world-space focal-point shift (setCamera), which native
-    // PLANAR_NEXT cannot express (setViewReference snaps to slice). Skip on native;
-    // it is a comfort feature, not correctness. TODO(next): port via setViewState anchorWorld.
-    if (csUtils.isGenericViewport(viewport)) {
-      return;
-    }
     const { clientWidth, clientHeight } = getDisplayedCanvasSize(viewport);
 
     const toolCenterCanvas = viewport.worldToCanvas(this.toolCenter);
@@ -1731,36 +1730,13 @@ class CrosshairsTool extends AnnotationTool {
       return;
     }
 
-    const visiblePointWorld = viewport.canvasToWorld(visiblePointCanvas);
-
-    const deltaPointsWorld = [
-      visiblePointWorld[0] - this.toolCenter[0],
-      visiblePointWorld[1] - this.toolCenter[1],
-      visiblePointWorld[2] - this.toolCenter[2],
-    ];
-
-    const camera = getViewportICamera(viewport);
-    const { focalPoint, position } = camera;
-
-    const updatedPosition = <Types.Point3>[
-      position[0] - deltaPointsWorld[0],
-      position[1] - deltaPointsWorld[1],
-      position[2] - deltaPointsWorld[2],
-    ];
-
-    const updatedFocalPoint = <Types.Point3>[
-      focalPoint[0] - deltaPointsWorld[0],
-      focalPoint[1] - deltaPointsWorld[1],
-      focalPoint[2] - deltaPointsWorld[2],
-    ];
-
     const previousIgnoreFiredEvents = this._ignoreFiredEvents;
     this._ignoreFiredEvents = true;
     try {
-      viewport.setCamera({
-        focalPoint: updatedFocalPoint,
-        position: updatedPosition,
-      });
+      panViewportByCanvasDelta(viewport, [
+        visiblePointCanvas[0] - toolCenterCanvas[0],
+        visiblePointCanvas[1] - toolCenterCanvas[1],
+      ]);
     } finally {
       this._ignoreFiredEvents = previousIgnoreFiredEvents;
     }
@@ -2278,13 +2254,6 @@ class CrosshairsTool extends AnnotationTool {
       });
     } else if (handles.activeOperation === OPERATION.ROTATE) {
       // ROTATION
-      // Native PLANAR_NEXT has no setCamera and no validated free-oblique orientation
-      // write, so crosshairs rotation cannot be applied; skip it on native (the rotate
-      // handles are inert rather than throwing). TODO(next): oblique reformat via a
-      // setViewReference orientation write once cornerstone supports it.
-      if (csUtils.isGenericViewport(enabledElement.viewport)) {
-        return;
-      }
       const otherViewportAnnotations =
         this._getAnnotationsForViewportsWithDifferentCameras(
           enabledElement,
@@ -2363,27 +2332,10 @@ class CrosshairsTool extends AnnotationTool {
           data.handles.toolCenter = center;
 
           const otherViewport = renderingEngine.getViewport(data.viewportId);
-          const camera = getViewportICamera(otherViewport);
-          const { viewUp, position, focalPoint } = camera;
 
-          viewUp[0] += position[0];
-          viewUp[1] += position[1];
-          viewUp[2] += position[2];
-
-          vec3.transformMat4(focalPoint, focalPoint, matrix);
-          vec3.transformMat4(position, position, matrix);
-          vec3.transformMat4(viewUp, viewUp, matrix);
-
-          viewUp[0] -= position[0];
-          viewUp[1] -= position[1];
-          viewUp[2] -= position[2];
-
-          otherViewport.setCamera({
-            position,
-            viewUp,
-            focalPoint,
-          });
-          otherViewportsIds.push(otherViewport.id);
+          if (this._rotateViewportAboutCenter(otherViewport, matrix)) {
+            otherViewportsIds.push(otherViewport.id);
+          }
         });
       } finally {
         this._ignoreFiredEvents = previousIgnoreFiredEvents;
@@ -2395,11 +2347,6 @@ class CrosshairsTool extends AnnotationTool {
       });
     } else if (handles.activeOperation === OPERATION.SLAB) {
       // SLAB THICKNESS
-      // Native PLANAR_NEXT has no slab-thickness API (setSlabThickness/
-      // resetSlabThickness); skip the slab operation on native rather than throwing.
-      if (csUtils.isGenericViewport(enabledElement.viewport)) {
-        return;
-      }
       // this should be just the active one under the mouse,
       const otherViewportAnnotations =
         this._getAnnotationsForViewportsWithDifferentCameras(
@@ -2519,7 +2466,7 @@ class CrosshairsTool extends AnnotationTool {
             ];
             vec3.normalize(normalizedProjectedDelta, normalizedProjectedDelta);
 
-            let slabThicknessValue = getSlabThicknessOrDefault(otherViewport);
+            let slabThicknessValue = this._getSlabThickness(otherViewport);
             if (
               csUtils.isOpposite(
                 normalizedProjectedDirection,
@@ -2590,29 +2537,195 @@ class CrosshairsTool extends AnnotationTool {
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
   };
 
-  setSlabThickness(viewport, slabThickness) {
-    // Native PLANAR_NEXT has no slab API (setBlendMode/setSlabThickness). The SLAB
-    // drag operation is already gated off on native; guard here too for safety.
-    if (csUtils.isGenericViewport(viewport)) {
+  /**
+   * Sets the slab of the viewport of a line, as the slab handles do: each
+   * display set of `_getSlabDisplaySetIds` gets the value as the slab
+   * thickness of its presentation. A next planar viewport draws a slab
+   * thickness as far from the plane as the legacy volume viewport drew the
+   * same number, and the slab lines are drawn at that distance. The blend
+   * mode is not changed.
+   *
+   * @param viewport - The viewport of the line.
+   * @param slabThickness - The slab thickness, in mm.
+   */
+  setSlabThickness(
+    viewport: Types.IViewport | Types.IGenericViewport,
+    slabThickness: number
+  ): void {
+    if (!csUtils.viewportSupportsDisplaySetPresentation(viewport)) {
       return;
     }
-    let actorUIDs;
-    const { filterActorUIDsToSetSlabThickness } = this.configuration;
+
+    this._getSlabDisplaySetIds(viewport).forEach((displaySetId) => {
+      viewport.setDisplaySetPresentation(displaySetId, {
+        slabThickness,
+      });
+    });
+  }
+
+  /**
+   * The slab thickness of a viewport, in mm, which is the distance of its slab
+   * lines from its line: the largest slab of the display sets of
+   * `_getSlabDisplaySetIds`, and the minimum slab thickness when there is no
+   * slab, as the legacy volume viewport gave it.
+   *
+   * @param viewport - The viewport of the line.
+   */
+  private _getSlabThickness(
+    viewport: Types.IViewport | Types.IGenericViewport
+  ): number {
+    if (!csUtils.viewportSupportsDisplaySetPresentation(viewport)) {
+      return RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS;
+    }
+
+    return this._getSlabDisplaySetIds(viewport).reduce(
+      (slabThickness, displaySetId) => {
+        const presentation = viewport.getDisplaySetPresentation(
+          displaySetId
+        ) as { slabThickness?: number } | undefined;
+        const presentationSlabThickness = presentation?.slabThickness;
+
+        return Number.isFinite(presentationSlabThickness) &&
+          presentationSlabThickness > slabThickness
+          ? presentationSlabThickness
+          : slabThickness;
+      },
+      RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS
+    );
+  }
+
+  /**
+   * Takes the slab of a viewport back to none, as `resetCrosshairs` did with
+   * `resetSlabThickness` on the legacy volume viewport.
+   *
+   * @param viewport - The viewport.
+   */
+  private _resetSlabThickness(
+    viewport: Types.IViewport | Types.IGenericViewport
+  ): void {
+    if (!csUtils.viewportSupportsDisplaySetPresentation(viewport)) {
+      return;
+    }
+
+    this._getSlabDisplaySetIds(viewport).forEach((displaySetId) => {
+      const presentation = viewport.getDisplaySetPresentation(displaySetId) as
+        | { slabThickness?: number }
+        | undefined;
+
+      if (presentation?.slabThickness !== undefined) {
+        viewport.setDisplaySetPresentation(displaySetId, {
+          slabThickness: undefined,
+        });
+      }
+    });
+  }
+
+  /**
+   * The display sets of a viewport that the slab handles set: every display
+   * set of the viewport, as the legacy tool set every volume, or, with
+   * `filterActorUIDsToSetSlabThickness`, each display set of the viewport
+   * whose display set id or volume id is in that list.
+   *
+   * @param viewport - A viewport with display set presentations.
+   */
+  private _getSlabDisplaySetIds(viewport: Types.IGenericViewport): string[] {
+    const filter: string[] =
+      this.configuration.filterActorUIDsToSetSlabThickness ?? [];
+
+    if (!filter.length) {
+      return viewport.getDisplaySets().map(({ displaySetId }) => displaySetId);
+    }
+
+    const volumeViewport = viewport as typeof viewport & {
+      findDataIdByVolumeId?(volumeId: string): string | undefined;
+    };
+    const filteredIds = new Set(
+      filter.map((uid) => volumeViewport.findDataIdByVolumeId?.(uid) ?? uid)
+    );
+
+    return viewport
+      .getDisplaySets()
+      .map(({ displaySetId }) => displaySetId)
+      .filter((displaySetId) => filteredIds.has(displaySetId));
+  }
+
+  /**
+   * Turns the view of a next planar viewport in volume mode with a rotation
+   * about the centre of the crosshairs, as the legacy tool turned the camera
+   * of a volume viewport: the plane, the view up and the world point at the
+   * middle of the canvas turn, and a canvas pixel keeps its size in world
+   * units. The in-plane rotation and the flips of the view state become part
+   * of the turned orientation. A viewport in stack mode does not turn.
+   *
+   * @param viewport - The viewport to turn.
+   * @param matrix - The rotation about the centre, as a 4 by 4 matrix.
+   * @returns True when the view was turned.
+   */
+  private _rotateViewportAboutCenter(
+    viewport: Types.IViewport | Types.IGenericViewport,
+    matrix: mat4
+  ): boolean {
     if (
-      filterActorUIDsToSetSlabThickness &&
-      filterActorUIDsToSetSlabThickness.length > 0
+      !csUtils.isGenericViewport(viewport) ||
+      viewport.getCurrentMode() !== 'volume'
     ) {
-      actorUIDs = filterActorUIDsToSetSlabThickness;
+      return false;
     }
 
-    let blendModeToUse = this.configuration.slabThicknessBlendMode;
-    if (slabThickness === RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS) {
-      blendModeToUse = Enums.BlendModes.COMPOSITE;
+    const camera = viewport.getResolvedView()?.toICamera();
+
+    if (!camera?.viewPlaneNormal || !camera.viewUp || !camera.focalPoint) {
+      return false;
     }
 
-    const immediate = false;
-    viewport.setBlendMode(blendModeToUse, actorUIDs, immediate);
-    viewport.setSlabThickness(slabThickness, actorUIDs);
+    const rotation = mat3.fromMat4(mat3.create(), matrix);
+    const viewPlaneNormal = vec3.transformMat3(
+      vec3.create(),
+      camera.viewPlaneNormal,
+      rotation
+    );
+    const viewUp = vec3.transformMat3(vec3.create(), camera.viewUp, rotation);
+    const focalPoint = vec3.transformMat4(
+      vec3.create(),
+      camera.focalPoint,
+      matrix
+    );
+    const viewStatePatch: Partial<PlanarViewState> = {
+      orientation: {
+        viewPlaneNormal: [...viewPlaneNormal] as Types.Point3,
+        viewUp: [...viewUp] as Types.Point3,
+      },
+      slice: {
+        kind: 'volumePoint',
+        sliceWorldPoint: [...focalPoint] as Types.Point3,
+      },
+      anchorWorld: [...focalPoint] as Types.Point3,
+      anchorCanvas: [0.5, 0.5],
+      rotation: 0,
+      flipHorizontal: false,
+      flipVertical: false,
+    };
+
+    viewport.setViewState(viewStatePatch);
+
+    const zoomPan = getViewportZoomPan(viewport);
+    const turnedParallelScale = viewport
+      .getResolvedView()
+      ?.toICamera().parallelScale;
+
+    if (
+      zoomPan &&
+      camera.parallelScale > 0 &&
+      turnedParallelScale > 0 &&
+      Math.abs(turnedParallelScale - camera.parallelScale) >
+        camera.parallelScale * 1e-9
+    ) {
+      applyViewportPresentation(viewport, {
+        zoom: (zoomPan.zoom * turnedParallelScale) / camera.parallelScale,
+      });
+    }
+
+    return true;
   }
 
   _isClockWise(a, b, c) {

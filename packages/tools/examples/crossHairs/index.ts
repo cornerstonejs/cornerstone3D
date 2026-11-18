@@ -1,22 +1,22 @@
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
-  setVolumesForViewports,
   volumeLoader,
   getRenderingEngine,
+  utilities,
 } from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
-  setCtTransferFunctionForVolumeActor,
   addDropdownToToolbar,
   addManipulationBindings,
   getLocalUrl,
   addToggleButtonToToolbar,
   addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
+import { ctPresentation } from '../../../../utils/demo/helpers/volumePresentationRecipes';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
 // This is for debugging purposes
@@ -40,6 +40,7 @@ const { ViewportType } = Enums;
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
+const displaySetId = 'CT_DISPLAY_SET_ID';
 const toolGroupId = 'MY_TOOLGROUP_ID';
 const viewportId1 = 'CT_AXIAL';
 const viewportId2 = 'CT_SAGITTAL';
@@ -100,21 +101,12 @@ content.append(instructions);
 addButtonToToolbar({
   title: 'Reset Camera',
   onClick: () => {
-    const viewport1 = getRenderingEngine(renderingEngineId).getViewport(
-      viewportId1
-    ) as Types.IVolumeViewport;
-    const resetPan = true;
-    const resetZoom = true;
-    const resetToCenter = true;
-    const resetRotation = true;
-    viewport1.resetCamera({
-      resetPan,
-      resetZoom,
-      resetToCenter,
-      resetRotation,
-    });
+    const viewport1 =
+      getRenderingEngine(renderingEngineId).getViewport<PlanarViewport>(
+        viewportId1
+      );
 
-    viewport1.render();
+    viewport1.resetViewState();
   },
 });
 
@@ -166,6 +158,13 @@ function getReferenceLineSlabThicknessControlsOn(viewportId) {
   return index !== -1;
 }
 
+/**
+ * The blend mode that a slab of the viewports is drawn with. The crosshairs
+ * set the slab thickness and not the blend mode, so the example sets it on
+ * the display set of each viewport.
+ */
+let slabBlendMode = Enums.BlendModes.MAXIMUM_INTENSITY_BLEND;
+
 const blendModeOptions = {
   MIP: 'Maximum Intensity Projection',
   MINIP: 'Minimum Intensity Projection',
@@ -197,26 +196,18 @@ addDropdownToToolbar({
         throw new Error('undefined orientation option');
     }
 
+    slabBlendMode = blendModeToUse;
+
+    // Update the blendMode of the display sets to instantly reflect the change
     const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
 
-    const crosshairsInstance = toolGroup.getToolInstance(
-      CrosshairsTool.toolName
-    );
-    const oldConfiguration = crosshairsInstance.configuration;
-
-    crosshairsInstance.configuration = {
-      ...oldConfiguration,
-      slabThicknessBlendMode: blendModeToUse,
-    };
-
-    // Update the blendMode for actors to instantly reflect the change
     toolGroup.viewportsInfo.forEach(({ viewportId, renderingEngineId }) => {
       const renderingEngine = getRenderingEngine(renderingEngineId);
-      const viewport = renderingEngine.getViewport(
-        viewportId
-      ) as Types.IVolumeViewport;
+      const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
-      viewport.setBlendMode(blendModeToUse);
+      viewport.setDisplaySetPresentation(displaySetId, {
+        blendMode: slabBlendMode,
+      });
       viewport.render();
     });
   },
@@ -333,6 +324,12 @@ async function run() {
     imageIds,
   });
 
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    kind: 'planar',
+    imageIds,
+    volumeId,
+  });
+
   // Instantiate a rendering engine
   const renderingEngine = new RenderingEngine(renderingEngineId);
 
@@ -340,7 +337,7 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: viewportId1,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element1,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
@@ -349,7 +346,7 @@ async function run() {
     },
     {
       viewportId: viewportId2,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element2,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -358,7 +355,7 @@ async function run() {
     },
     {
       viewportId: viewportId3,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element3,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
@@ -372,16 +369,17 @@ async function run() {
   // Set the volume to load
   volume.load();
 
-  // Set volumes on the viewports
-  await setVolumesForViewports(
-    renderingEngine,
-    [
-      {
-        volumeId,
-        callback: setCtTransferFunctionForVolumeActor,
-      },
-    ],
-    [viewportId1, viewportId2, viewportId3]
+  // Set the display set on the viewports
+  await Promise.all(
+    viewportIds.map(async (viewportId) => {
+      const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
+
+      await viewport.setDisplaySets({ displaySetId });
+      viewport.setDisplaySetPresentation(displaySetId, {
+        ...ctPresentation(),
+        blendMode: slabBlendMode,
+      });
+    })
   );
 
   // Define tool groups to add the segmentation display tool to

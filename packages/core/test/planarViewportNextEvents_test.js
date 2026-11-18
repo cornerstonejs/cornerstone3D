@@ -68,6 +68,26 @@ const LEGACY_CROSSHAIRS_NEW_VOLUME_CALLS = 1;
 const LEGACY_SYNCED_INVERT = true;
 
 /**
+ * The CAMERA_MODIFIED events that a legacy volume viewport fired for
+ * `setSlabThickness(5)`: one, with the camera as the previous camera.
+ */
+const LEGACY_SLAB_CAMERA_EVENTS = 1;
+
+/**
+ * The slab of the target of the slab thickness synchroniser against the slab
+ * of the source, both legacy volume viewports: the source had 5 and the
+ * target got 5.
+ */
+const LEGACY_SYNCED_SLAB_RATIO = 1;
+
+/**
+ * The volumes of a target that showed two volumes that got the slab of the
+ * slab thickness synchroniser, both legacy volume viewports: the target's
+ * `setSlabThickness` gave it to every `vtkVolume` actor.
+ */
+const LEGACY_SYNCED_SLAB_VOLUMES = 2;
+
+/**
  * What the legacy stack viewport with `suppressEvents` in its default
  * options gave for `suppressEvents`, and the CAMERA_MODIFIED events that it
  * fired for `setZoom(2)`.
@@ -397,6 +417,134 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
       csTools3d.SynchronizerManager.destroySynchronizer('voi:next');
 
       expect(invert).toBe(LEGACY_SYNCED_INVERT);
+    });
+  });
+
+  describe('CAMERA_MODIFIED for a slab', () => {
+    it('fires once when the slab of the presentation changes, as the legacy volume viewport did when its slab changed, and not for a window level', async function () {
+      const volumeId = await createVolume();
+      const viewport = createNextPlanarViewport(renderingEngine, {
+        orientation: OrientationAxis.AXIAL,
+      });
+
+      await showVolume(viewport, volumeId, OrientationAxis.AXIAL);
+
+      const details = [];
+
+      viewport.element.addEventListener(Events.CAMERA_MODIFIED, (evt) =>
+        details.push(evt.detail)
+      );
+      viewport.setDisplaySetPresentation(getVolumeDisplaySetId(viewport), {
+        voiRange: { lower: 0, upper: 100 },
+      });
+
+      expect(details.length).toBe(0);
+
+      viewport.setDisplaySetPresentation(getVolumeDisplaySetId(viewport), {
+        slabThickness: 10,
+      });
+
+      expect(details.length).toBe(LEGACY_SLAB_CAMERA_EVENTS);
+      expect(details[0].viewportId).toBe(viewport.id);
+      expect(details[0].camera.focalPoint).toEqual(
+        details[0].previousCamera.focalPoint
+      );
+      expect(details[0].camera.viewPlaneNormal).toEqual(
+        details[0].previousCamera.viewPlaneNormal
+      );
+    });
+
+    it('lets the slab thickness synchroniser sync a slab from a direct next viewport, as from a legacy one', async function () {
+      const volumeId = await createVolume();
+      const [source, target] = [0, 1].map((index) =>
+        enableViewport(renderingEngine, {
+          viewportId: `next${index}`,
+          type: ViewportType.PLANAR_NEXT,
+          orientation: OrientationAxis.AXIAL,
+        })
+      );
+
+      await showVolume(source, volumeId, OrientationAxis.AXIAL);
+      await showVolume(target, volumeId, OrientationAxis.CORONAL);
+
+      const synchronizer =
+        synchronizers.createSlabThicknessSynchronizer('slab:next');
+
+      synchronizer.addSource({
+        renderingEngineId: renderingEngine.id,
+        viewportId: source.id,
+      });
+      synchronizer.addTarget({
+        renderingEngineId: renderingEngine.id,
+        viewportId: target.id,
+      });
+      source.setDisplaySetPresentation(getVolumeDisplaySetId(source), {
+        slabThickness: 10,
+      });
+      await frames();
+
+      const slabThickness = target.getDisplaySetPresentation(
+        getVolumeDisplaySetId(target)
+      )?.slabThickness;
+
+      csTools3d.SynchronizerManager.destroySynchronizer('slab:next');
+
+      expect(slabThickness).toBe(10 * LEGACY_SYNCED_SLAB_RATIO);
+    });
+
+    it('lets the slab thickness synchroniser give the slab to every volume of a target that shows two, as the legacy one did', async function () {
+      const volumeId = await createVolume();
+      const secondVolumeId = await createVolume('secondVolumeURI');
+      const [source, target] = [0, 1].map((index) =>
+        enableViewport(renderingEngine, {
+          viewportId: `next${index}`,
+          type: ViewportType.PLANAR_NEXT,
+          orientation: OrientationAxis.AXIAL,
+        })
+      );
+
+      await showVolume(source, volumeId, OrientationAxis.AXIAL);
+      [volumeId, secondVolumeId].forEach((id) => {
+        utilities.genericViewportDisplaySetMetadataProvider.add(
+          `volume:${target.id}:${id}`,
+          { imageIds: cache.getVolume(id).imageIds, volumeId: id }
+        );
+      });
+      await target.setDisplaySets(
+        ...[volumeId, secondVolumeId].map((id) => ({
+          displaySetId: `volume:${target.id}:${id}`,
+          options: { orientation: OrientationAxis.CORONAL },
+        }))
+      );
+      await renderAndWait(target);
+
+      const synchronizer =
+        synchronizers.createSlabThicknessSynchronizer('slab:fusion');
+
+      synchronizer.addSource({
+        renderingEngineId: renderingEngine.id,
+        viewportId: source.id,
+      });
+      synchronizer.addTarget({
+        renderingEngineId: renderingEngine.id,
+        viewportId: target.id,
+      });
+      source.setDisplaySetPresentation(getVolumeDisplaySetId(source), {
+        slabThickness: 10,
+      });
+      await frames();
+
+      const slabbed = target
+        .getDisplaySets()
+        .filter(
+          ({ displaySetId }) =>
+            target.getDisplaySetPresentation(displaySetId)?.slabThickness === 10
+        ).length;
+
+      csTools3d.SynchronizerManager.destroySynchronizer('slab:fusion');
+
+      expect(target.getDisplaySets().length).toBe(2);
+      expect(slabbed).toBe(LEGACY_SYNCED_SLAB_VOLUMES);
     });
   });
 
