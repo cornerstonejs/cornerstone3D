@@ -60,7 +60,7 @@ import PlanarViewport, {
 } from './PlanarViewport';
 import type { PlanarScaleInput } from './planarCameraScale';
 import { getPlanarViewStateCanvasDimensions } from './PlanarResolvedView';
-import { getFitParallelScaleFromWorldSize } from './planarSliceBasis';
+import { getStretchedFitRatio } from './planarSliceBasis';
 import { cloneDisplayArea } from './planarViewState';
 import { coreLog } from '../../../utilities/logger';
 import type {
@@ -301,7 +301,7 @@ class PlanarViewportLegacyAdapter extends PlanarViewport {
       };
     }
 
-    this.setViewState({ scale });
+    this.setViewState({ scale, scaleMode: 'fit' });
   }
 
   /**
@@ -352,15 +352,14 @@ class PlanarViewportLegacyAdapter extends PlanarViewport {
           rendering,
         })
       : { canvasWidth: 0, canvasHeight: 0 };
-    const getFit = (widthStretch: number) =>
-      getFitParallelScaleFromWorldSize({
-        canvasWidth: canvasWidth || this.element.clientWidth,
-        canvasHeight: canvasHeight || this.element.clientHeight,
-        widthWorld: sliceBasis.sliceWidthWorld * widthStretch,
-        heightWorld: sliceBasis.sliceHeightWorld,
-      });
 
-    return getFit(1) / getFit(stretch);
+    return getStretchedFitRatio({
+      canvasWidth: canvasWidth || this.element.clientWidth,
+      canvasHeight: canvasHeight || this.element.clientHeight,
+      widthWorld: sliceBasis.sliceWidthWorld,
+      heightWorld: sliceBasis.sliceHeightWorld,
+      stretch,
+    });
   }
 
   /**

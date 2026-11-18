@@ -37,7 +37,10 @@ import type {
   PlanarViewState,
   PlanarResolvedICamera,
 } from './PlanarViewportTypes';
-import type { PlanarSliceBasis } from './planarSliceBasis';
+import {
+  getStretchedFitRatio,
+  type PlanarSliceBasis,
+} from './planarSliceBasis';
 import setVtkCameraClippingRange from '../setVtkCameraClippingRange';
 import {
   MIN_PLANAR_SCALE,
@@ -166,6 +169,50 @@ function deriveDisplayAreaPresentation(args: {
 }
 
 /**
+ * Whether the scale pair of a view state is against the fit of the stretched
+ * slice: `scaleMode: 'fitAspect'` with no display area. A display area has a
+ * scale mode of its own.
+ */
+function fitsStretchedSlice(camera?: PlanarViewState): boolean {
+  return (
+    !camera?.displayArea &&
+    normalizePlanarScaleMode(camera?.scaleMode) === 'fitAspect'
+  );
+}
+
+/**
+ * The scale pair of a view state against the plain fit of the slice. With
+ * `scaleMode: 'fitAspect'` the pair of the view state is against the fit of
+ * the slice stretched horizontally by `scale[0] / scale[1]`, so the
+ * stretched picture fits the canvas at `scale[1] === 1`, as the legacy
+ * `setAspectRatio(aspectRatio, { fit: true })` fitted it. The fit is worked
+ * out for the canvas of the call, so it follows a resize.
+ */
+function resolveViewStateScale(args: {
+  sliceBasis: PlanarSliceBasis;
+  camera?: PlanarViewState;
+  canvasWidth: number;
+  canvasHeight: number;
+}): PlanarScale {
+  const { camera, canvasHeight, canvasWidth, sliceBasis } = args;
+  const scale = normalizePlanarScale(camera?.scale);
+
+  if (!fitsStretchedSlice(camera)) {
+    return scale;
+  }
+
+  const fitRatio = getStretchedFitRatio({
+    canvasWidth,
+    canvasHeight,
+    widthWorld: sliceBasis.sliceWidthWorld,
+    heightWorld: sliceBasis.sliceHeightWorld,
+    stretch: scale[0] / scale[1],
+  });
+
+  return [scale[0] * fitRatio, scale[1] * fitRatio];
+}
+
+/**
  * Projects a 3-D anchor point onto the current viewing plane so that
  * zoom-to-point works correctly when the anchor was placed on a different
  * slice. Without this projection, an anchor from slice N would shift the
@@ -224,7 +271,7 @@ export function derivePlanarPresentation(args: {
   canvasHeight: number;
 }): DerivedPlanarPresentation {
   const { sliceBasis, camera, canvasHeight, canvasWidth } = args;
-  const scale = normalizePlanarScale(camera?.scale);
+  const scale = resolveViewStateScale(args);
   const rotation = normalizePlanarRotation(camera?.rotation ?? 0);
   const anchorCanvas = vec2.clone(
     (camera?.anchorCanvas ?? [0.5, 0.5]) as unknown as vec2
@@ -468,7 +515,9 @@ export function resolvePlanarICamera(args: {
     parallelScale,
     presentationScale,
     scale: presentation.scale,
-    scaleMode: normalizePlanarScaleMode(camera?.scaleMode),
+    scaleMode: fitsStretchedSlice(camera)
+      ? 'fit'
+      : normalizePlanarScaleMode(camera?.scaleMode),
     position: vec3.scaleAndAdd(
       vec3.create(),
       focalPoint as unknown as vec3,

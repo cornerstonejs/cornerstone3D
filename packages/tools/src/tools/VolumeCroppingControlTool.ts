@@ -185,6 +185,11 @@ class VolumeCroppingControlTool extends AnnotationTool {
   clippingPlanes: ClippingPlane[] = [];
   _getReferenceLineColor?: (viewportId: string) => string;
   _getReferenceLineControllable?: (viewportId: string) => boolean;
+  /**
+   * True while the tool resets the views of its viewports. Each of those
+   * resets fires CAMERA_RESET, which must not start another reset.
+   */
+  private _isResettingViews = false;
   constructor(
     toolProps: PublicToolProps = {},
     defaultToolProps: ToolProps = {
@@ -291,7 +296,12 @@ class VolumeCroppingControlTool extends AnnotationTool {
     }
 
     const { element } = viewport;
-    const { position, focalPoint } = getViewportICamera(viewport);
+    const { position, focalPoint, viewPlaneNormal } =
+      getViewportICamera(viewport);
+
+    if (!position || !focalPoint || !viewPlaneNormal) {
+      return;
+    }
 
     // Check if there is already annotation for this viewport
     let annotations = this._getAnnotations(enabledElement);
@@ -306,9 +316,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
     }
 
     // Determine orientation from camera normal, fallback to viewportId string
-    const orientation = getOrientationFromNormal(
-      getViewportICamera(viewport).viewPlaneNormal
-    );
+    const orientation = getOrientationFromNormal(viewPlaneNormal);
 
     const annotation = {
       highlighted: false,
@@ -429,38 +437,53 @@ class VolumeCroppingControlTool extends AnnotationTool {
     });
   }
 
+  /**
+   * Resets the view of each viewport of the tool group and makes the
+   * annotation of each again. The reset of a view fires CAMERA_RESET, so
+   * `onResetCamera` does nothing while this runs.
+   */
   resetCroppingSpheres = () => {
     const viewportsInfo = this._getViewportsInfo();
-    for (const viewportInfo of viewportsInfo) {
-      const { viewportId, renderingEngineId } = viewportInfo;
-      const enabledElement = getEnabledElementByIds(
-        viewportId,
-        renderingEngineId
-      );
-      const viewport = enabledElement.viewport as Types.IVolumeViewport;
-      const resetPan = true;
-      const resetZoom = true;
-      const resetToCenter = true;
-      const resetRotation = true;
-      const suppressEvents = true;
-      resetViewportCamera(viewport, {
-        resetPan,
-        resetZoom,
-        resetToCenter,
-        resetRotation,
-        suppressEvents,
-      });
-      (viewport as Types.IVolumeViewport).resetSlabThickness();
-      const { element } = viewport;
-      let annotations = this._getAnnotations(enabledElement);
-      annotations = this.filterInteractableAnnotationsForElement(
-        element,
-        annotations
-      );
-      if (annotations.length) {
-        removeAnnotation(annotations[0].annotationUID);
+
+    this._isResettingViews = true;
+    try {
+      for (const viewportInfo of viewportsInfo) {
+        const { viewportId, renderingEngineId } = viewportInfo;
+        const enabledElement = getEnabledElementByIds(
+          viewportId,
+          renderingEngineId
+        );
+
+        if (!enabledElement) {
+          continue;
+        }
+
+        const viewport = enabledElement.viewport as Types.IVolumeViewport;
+        const resetPan = true;
+        const resetZoom = true;
+        const resetToCenter = true;
+        const resetRotation = true;
+        const suppressEvents = true;
+        resetViewportCamera(viewport, {
+          resetPan,
+          resetZoom,
+          resetToCenter,
+          resetRotation,
+          suppressEvents,
+        });
+        const { element } = viewport;
+        let annotations = this._getAnnotations(enabledElement);
+        annotations = this.filterInteractableAnnotationsForElement(
+          element,
+          annotations
+        );
+        if (annotations.length) {
+          removeAnnotation(annotations[0].annotationUID);
+        }
+        viewport.render();
       }
-      viewport.render();
+    } finally {
+      this._isResettingViews = false;
     }
 
     this._initializeViewports(viewportsInfo);
@@ -634,6 +657,10 @@ class VolumeCroppingControlTool extends AnnotationTool {
   }
 
   onResetCamera = (evt) => {
+    if (this._isResettingViews) {
+      return;
+    }
+
     this.resetCroppingSpheres();
   };
 

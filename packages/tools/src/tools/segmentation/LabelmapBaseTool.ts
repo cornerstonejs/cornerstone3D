@@ -750,7 +750,7 @@ export default class LabelmapBaseTool extends BaseTool {
 
     for (const annotation of viewAnnotations) {
       const { polyline } = annotation.data.contour;
-      const camera = viewport.getCamera();
+      const camera = getViewportICamera(viewport);
       const viewPlaneNormal = asUnitNormal(
         annotation.metadata?.viewPlaneNormal ?? camera.viewPlaneNormal
       );

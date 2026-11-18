@@ -103,6 +103,30 @@ export function getFitParallelScaleFromWorldSize(args: {
     : (safeHeightWorld * scaleFactor) / 2;
 }
 
+/**
+ * The vertical scale, against the plain fit of a slice, at which the slice
+ * stretched horizontally by `stretch` fits into a canvas. It is 1 for a
+ * stretch of 1.
+ */
+export function getStretchedFitRatio(args: {
+  canvasWidth: number;
+  canvasHeight: number;
+  widthWorld: number;
+  heightWorld: number;
+  stretch: number;
+}): number {
+  const { canvasHeight, canvasWidth, heightWorld, stretch, widthWorld } = args;
+  const getFit = (widthStretch: number) =>
+    getFitParallelScaleFromWorldSize({
+      canvasWidth,
+      canvasHeight,
+      widthWorld: widthWorld * widthStretch,
+      heightWorld,
+    });
+
+  return getFit(1) / getFit(stretch);
+}
+
 function createFallbackVolumeSliceFitMetrics(): VolumeSliceFitMetrics {
   return {
     fitParallelScale: MIN_CAMERA_DISTANCE,

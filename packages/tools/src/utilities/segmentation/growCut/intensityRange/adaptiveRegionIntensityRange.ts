@@ -9,6 +9,7 @@ import type { GetFloodFillIntensityRange } from '../floodFillIntensityRangeTypes
 import { getViewportVoiMappingForVolume } from '../getViewportVoiMappingForVolume';
 import type { ViewportVoiMappingForTool } from '../getViewportVoiMappingForVolume';
 import { DEFAULT_POSITIVE_STD_DEV_MULTIPLIER } from '../constants';
+import getViewportICamera from '../../../getViewportICamera';
 
 type NumberVoxelManager = VoxelManager<number>;
 
@@ -792,7 +793,7 @@ export function resolveInPlaneAxes(
     return [0, 1];
   }
   try {
-    const camera = viewport.getCamera();
+    const camera = getViewportICamera(viewport);
     const { ijkVecSliceDir } = getVolumeDirectionVectors(
       referencedVolume.imageData,
       camera

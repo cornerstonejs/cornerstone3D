@@ -21,6 +21,7 @@ import {
   segmentIndex as segmentIndexController,
 } from '../../stateManagement/segmentation';
 import floodFill from '../../utilities/segmentation/floodFill';
+import getViewportICamera from '../../utilities/getViewportICamera';
 import {
   getCurrentLabelmapImageIdForViewport,
   getSegmentation,
@@ -81,8 +82,7 @@ class PaintFillTool extends BaseTool {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
 
-    const camera = viewport.getCamera();
-    const { viewPlaneNormal } = camera;
+    const { viewPlaneNormal } = getViewportICamera(viewport);
 
     const activeSegmentationRepresentation =
       activeSegmentation.getActiveSegmentation(viewport.id);
@@ -108,11 +108,7 @@ class PaintFillTool extends BaseTool {
 
     const viewportRenderMode = getViewportLabelmapRenderMode(viewport);
 
-    if (
-      viewportRenderMode === 'volume' ||
-      (csUtils.viewportIsInVolumeMode(viewport) &&
-        !csUtils.isGenericViewport(viewport))
-    ) {
+    if (viewportRenderMode === 'volume') {
       const layer = resolveLabelmapForSegment(
         getSegmentation(segmentationId),
         segmentIndex

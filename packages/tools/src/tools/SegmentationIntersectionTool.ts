@@ -242,10 +242,19 @@ function calculateSurfaceSegmentationIntersectionsForViewport(
   });
 }
 
-function getCacheId(viewport) {
-  const { viewPlaneNormal } = viewport.getCamera();
-  const imageIndex = viewport.getCurrentImageIdIndex();
-  return `${viewport.id}-${pointToString(viewPlaneNormal)}-${imageIndex}`;
+/**
+ * The key under which the outlines of a viewport are kept: its id, its view
+ * plane normal and its slice, from its view reference. A 3D viewport has no
+ * slice. A viewport that shows nothing has no view, and no key.
+ */
+function getCacheId(viewport): string | undefined {
+  const { viewPlaneNormal, sliceIndex } = viewport.getViewReference();
+
+  if (!viewPlaneNormal) {
+    return;
+  }
+
+  return `${viewport.id}-${pointToString(viewPlaneNormal)}-${sliceIndex}`;
 }
 
 /**

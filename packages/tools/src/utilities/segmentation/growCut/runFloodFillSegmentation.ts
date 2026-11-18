@@ -158,28 +158,17 @@ function getDisplayVoiSnapshot(
   windowWidth: number;
   windowCenter: number;
 } | null {
-  const getProps = (
-    viewport as Types.IViewport & {
-      getProperties?: (volumeId?: string) => {
-        voiRange?: { lower: number; upper: number };
-      };
-    }
-  ).getProperties;
-  if (typeof getProps !== 'function') {
+  const voiMapping = getViewportVoiMappingForVolume(
+    viewport,
+    referencedVolumeId
+  );
+
+  if (!voiMapping) {
     return null;
   }
-  const props = referencedVolumeId
-    ? getProps.call(viewport, referencedVolumeId)
-    : getProps.call(viewport);
-  const voiRange = props?.voiRange;
-  if (
-    !voiRange ||
-    typeof voiRange.lower !== 'number' ||
-    typeof voiRange.upper !== 'number'
-  ) {
-    return null;
-  }
-  const { lower, upper } = voiRange;
+
+  const { lower, upper } = voiMapping.voiRange;
+
   return {
     lower,
     upper,

@@ -1,13 +1,14 @@
 import vtkMath from '@kitware/vtk.js/Common/Core/Math';
 import { Events } from '../enums';
 import {
+  Enums,
   eventTarget,
   getEnabledElement,
   getEnabledElementByIds,
   utilities as csUtils,
   getLossyDownsampling,
 } from '@cornerstonejs/core';
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import { mat4, vec3 } from 'gl-matrix';
 import type { EventTypes, PublicToolProps, ToolProps } from '../types';
 import { BaseTool } from './base';
@@ -20,6 +21,14 @@ import {
   applyViewportPresentation,
   getViewportPresentation,
 } from '../utilities/viewportPresentation';
+
+/**
+ * The reset of the resize of an element. A legacy `resetCamera()` kept the
+ * orientation that the tool had turned to, and so does a 3D viewport. The
+ * reset of a planar viewport goes back to the first orientation unless it
+ * is told to keep it.
+ */
+const KEEP_ORIENTATION = { resetOrientation: false };
 
 class TrackballRotateTool extends BaseTool {
   static toolName;
@@ -134,7 +143,7 @@ class TrackballRotateTool extends BaseTool {
 
             const viewPresentation = getViewportPresentation(viewport);
 
-            resetViewportCamera(viewport);
+            resetViewportCamera(viewport, KEEP_ORIENTATION);
 
             applyViewportPresentation(viewport, viewPresentation);
             viewport.render();
@@ -177,6 +186,12 @@ class TrackballRotateTool extends BaseTool {
   };
 
   rotateCamera = (viewport, centerWorld, axis, angle) => {
+    if (viewport.type === Enums.ViewportType.PLANAR_NEXT) {
+      this._rotatePlanarView(viewport, centerWorld, axis, angle);
+
+      return;
+    }
+
     const vtkCamera = viewport.getVtkActiveCamera();
     const viewUp = vtkCamera.getViewUp();
     const focalPoint = vtkCamera.getFocalPoint();
@@ -207,6 +222,64 @@ class TrackballRotateTool extends BaseTool {
       focalPoint: newFocalPoint,
     });
   };
+
+  /**
+   * Turns the view of a planar viewport that shows a volume by an angle about
+   * an axis through a world point, as the camera of a legacy volume viewport
+   * turned about its focal point. The orientation of the view state turns,
+   * the cut goes through the point, the point stays at the centre of the
+   * canvas, and the size of the picture stays: a fit to the new cut would
+   * change it. A viewport that shows a stack has one orientation, so nothing
+   * changes there.
+   */
+  private _rotatePlanarView(
+    viewport: PlanarViewport,
+    centerWorld: Types.Point3,
+    axis: Types.Point3,
+    angle: number
+  ): void {
+    const { viewPlaneNormal, viewUp } = getViewportICamera(viewport);
+
+    if (!csUtils.viewportIsInVolumeMode(viewport) || !viewPlaneNormal) {
+      return;
+    }
+
+    const rotation = mat4.fromRotation(mat4.create(), angle, axis);
+    const parallelScale = viewport.getResolvedView()?.toICamera().parallelScale;
+
+    viewport.setViewState({
+      orientation: {
+        viewPlaneNormal: vec3.transformMat4(
+          vec3.create(),
+          viewPlaneNormal,
+          rotation
+        ) as Types.Point3,
+        viewUp: vec3.transformMat4(
+          vec3.create(),
+          viewUp,
+          rotation
+        ) as Types.Point3,
+      },
+      slice: { kind: 'volumePoint', sliceWorldPoint: centerWorld },
+      anchorWorld: centerWorld,
+      anchorCanvas: [0.5, 0.5],
+    });
+
+    const fittedParallelScale = viewport
+      .getResolvedView()
+      ?.toICamera().parallelScale;
+
+    if (
+      parallelScale &&
+      fittedParallelScale &&
+      fittedParallelScale !== parallelScale
+    ) {
+      const [scaleX, scaleY] = viewport.getScale();
+      const fitRatio = fittedParallelScale / parallelScale;
+
+      viewport.setScale([scaleX * fitRatio, scaleY * fitRatio]);
+    }
+  }
 
   _dragCallback(evt: EventTypes.InteractionEventType): void {
     const { element, currentPoints, lastPoints } = evt.detail;

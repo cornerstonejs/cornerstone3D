@@ -15,6 +15,7 @@ import {
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import { hideElementCursor } from '../../cursors/elementCursor';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
+import getViewportICamera from '../../utilities/getViewportICamera';
 import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
 import { triggerAnnotationModified } from '../../stateManagement/annotation/helpers/state';
 import type {
@@ -83,8 +84,9 @@ class RectangleROIThresholdTool extends RectangleROITool {
 
     this.isDrawing = true;
 
-    const camera = viewport.getCamera();
-    const { viewPlaneNormal, viewUp } = camera;
+    const { viewPlaneNormal, viewUp } = viewport.getCamera
+      ? viewport.getCamera()
+      : getViewportICamera(viewport);
 
     const targetId = this.getTargetId(viewport);
     let referencedImageId, volumeId;
