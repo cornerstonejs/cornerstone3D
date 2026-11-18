@@ -8,6 +8,14 @@ const renderingEngineId = utilities.uuidv4();
 const viewportId = 'fitAspectNext';
 const PIXEL_TOLERANCE = 2;
 
+/**
+ * What `setAspectRatio([1, 4], { fit: true })` gives on a legacy adapter of
+ * 400 by 400 pixels that shows the image of the tests as a stack: the size
+ * of the picture on the canvas, and the scale.
+ */
+const LEGACY_ADAPTER_FIT_SIZE = [200, 400];
+const LEGACY_ADAPTER_FIT_SCALE = [0.5, 2];
+
 /** Renders the viewport and resolves at its next IMAGE_RENDERED event. */
 function renderAndWait(viewport) {
   return new Promise((resolve) => {
@@ -224,17 +232,6 @@ describe("The fit of a stretched picture, scaleMode 'fitAspect', on a direct nex
   });
 
   it('gives the picture and the scale that setAspectRatio with fit gives on a legacy adapter, and half that scale gives half the picture', async function () {
-    const adapter = createViewport(renderingEngine, ViewportType.STACK);
-
-    await adapter.setStack([createImageId()], 0);
-    adapter.setAspectRatio([1, 4], { fit: true });
-    await renderAndWait(adapter);
-
-    const adapterSize = getDrawnSize(adapter);
-    const adapterScale = adapter.getScale();
-
-    renderingEngine.disableElement(viewportId);
-
     const viewport = createViewport(renderingEngine, ViewportType.PLANAR_NEXT);
 
     await showOnNextViewport(viewport, 'stack', 'gpu');
@@ -243,10 +240,10 @@ describe("The fit of a stretched picture, scaleMode 'fitAspect', on a direct nex
       scaleMode: 'fitAspect',
     });
 
-    expectDrawnSize(viewport, adapterSize);
+    expectDrawnSize(viewport, LEGACY_ADAPTER_FIT_SIZE);
     expectDrawnSize(viewport, [200, 400]);
     viewport.getScale().forEach((value, axis) => {
-      expect(value).toBeCloseTo(adapterScale[axis], 5);
+      expect(value).toBeCloseTo(LEGACY_ADAPTER_FIT_SCALE[axis], 5);
     });
 
     viewport.setScale(viewport.getScale().map((value) => value / 2));

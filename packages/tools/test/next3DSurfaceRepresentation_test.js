@@ -13,41 +13,89 @@ const toolGroupId = 'next3DSurface';
 const segmentationId = 'surfaceSegmentation';
 
 /**
- * Makes a legacy 3D viewport and a direct next 3D viewport of the same size
- * and orientation in one rendering engine, and adds both to the tool group.
+ * The actors of the legacy 3D viewport with the volume and the surfaces of
+ * the two segments, and with the volume alone.
  */
-function createViewports(renderingEngine) {
-  const viewportOptions = {
-    orientation: OrientationAxis.SAGITTAL,
-    width: 400,
-    height: 300,
-    useEnableElement: true,
-  };
+const LEGACY_ACTOR_COUNT_WITH_SURFACES = 3;
+const LEGACY_ACTOR_COUNT_OF_VOLUME = 1;
 
-  testUtils.createViewports(renderingEngine, {
-    ...viewportOptions,
-    viewportId: 'legacy3D',
-    viewportType: ViewportType.VOLUME_3D,
-  });
+/**
+ * The colour of the surface actor of each segment on the legacy 3D viewport:
+ * the colour of the segment, 221, 84, 84 and 77, 228, 121, over 255.
+ */
+const LEGACY_SURFACE_COLORS = {
+  1: [0.8666666666666667, 0.32941176470588235, 0.32941176470588235],
+  2: [0.30196078431372547, 0.8941176470588236, 0.4745098039215686],
+};
+
+/**
+ * The bounds of the surface actor of a segment on the legacy 3D viewport:
+ * those of the points of `addSurfaceSegmentation`.
+ */
+function legacySurfaceBounds(segmentIndex) {
+  const z = segmentIndex * 6;
+
+  return [0, 30, 0, 20, z, z];
+}
+
+/**
+ * The bounds of the surface actor of segment 1 on the legacy 3D viewport
+ * after the surface got a fifth point at 15, 10, 20.
+ */
+const LEGACY_SURFACE_BOUNDS_WITH_NEW_DATA = [0, 30, 0, 20, 6, 20];
+
+const viewportOptions = {
+  orientation: OrientationAxis.SAGITTAL,
+  width: 400,
+  height: 300,
+  useEnableElement: true,
+};
+
+/**
+ * Makes a direct next 3D viewport in the rendering engine and adds it to the
+ * tool group.
+ */
+function createNextViewport(renderingEngine) {
   testUtils.createViewports(renderingEngine, {
     ...viewportOptions,
     viewportId: 'next3D',
     viewportType: ViewportType.VOLUME_3D_NEXT,
   });
+  ToolGroupManager.getToolGroup(toolGroupId).addViewport(
+    'next3D',
+    renderingEngineId
+  );
 
-  const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+  return renderingEngine.getViewport('next3D');
+}
 
-  toolGroup.addViewport('legacy3D', renderingEngineId);
-  toolGroup.addViewport('next3D', renderingEngineId);
+/**
+ * Makes a viewport of the legacy 3D type, which is the 3D legacy adapter,
+ * and a direct next 3D viewport of the same size and orientation in one
+ * rendering engine, and adds both to the tool group.
+ */
+function createViewports(renderingEngine) {
+  testUtils.createViewports(renderingEngine, {
+    ...viewportOptions,
+    viewportId: 'legacy3D',
+    viewportType: ViewportType.VOLUME_3D,
+  });
+  ToolGroupManager.getToolGroup(toolGroupId).addViewport(
+    'legacy3D',
+    renderingEngineId
+  );
 
   return [
     renderingEngine.getViewport('legacy3D'),
-    renderingEngine.getViewport('next3D'),
+    createNextViewport(renderingEngine),
   ];
 }
 
-/** Makes a volume and shows it on the legacy and on the next viewport. */
-async function showVolume(legacy, next) {
+/**
+ * Makes a volume and shows it on the next viewport, and on the viewport of
+ * the legacy type when one is given.
+ */
+async function showVolume(next, legacy) {
   const volumeId = testUtils.encodeVolumeIdInfo({
     loader: 'fakeVolumeLoader',
     name: 'volumeURI',
@@ -61,7 +109,9 @@ async function showVolume(legacy, next) {
   });
 
   await volumeLoader.createAndCacheVolume(volumeId, { imageIds: [] });
-  await legacy.setVolumes([{ volumeId }]);
+  if (legacy) {
+    await legacy.setVolumes([{ volumeId }]);
+  }
   utilities.genericViewportDisplaySetMetadataProvider.add('next3DVolume', {
     imageIds: cache.getVolume(volumeId).imageIds,
     volumeId,
@@ -212,35 +262,34 @@ describe('A Surface representation on a direct next 3D viewport -- ', () => {
   });
 
   it('shows the surface of each segment as the legacy 3D viewport', async function () {
-    const [legacy, next] = createViewports(renderingEngine);
+    const next = createNextViewport(renderingEngine);
 
-    await showVolume(legacy, next);
+    await showVolume(next);
     addSurfaceSegmentation();
-    await showSurfaces([legacy, next]);
+    await showSurfaces([next]);
 
     expect(
       surfaceEntriesOf(next).map(({ representationUID }) => representationUID)
     ).toEqual([`${segmentationId}-Surface-1`, `${segmentationId}-Surface-2`]);
-    expect(next.getActors().length).toBe(legacy.getActors().length);
+    expect(next.getActors().length).toBe(LEGACY_ACTOR_COUNT_WITH_SURFACES);
 
     [1, 2].forEach((segmentIndex) => {
       const actor = surfaceActorOf(next, segmentIndex);
-      const legacyActor = surfaceActorOf(legacy, segmentIndex);
 
       expect(isInScene(next, actor)).toBe(true);
       expect(actor.getVisibility()).toBe(true);
       expect(pointCountOf(actor)).toBe(4);
       expect(actor.getProperty().getColor()).toEqual(
-        legacyActor.getProperty().getColor()
+        LEGACY_SURFACE_COLORS[segmentIndex]
       );
-      expect(actor.getBounds()).toEqual(legacyActor.getBounds());
+      expect(actor.getBounds()).toEqual(legacySurfaceBounds(segmentIndex));
     });
   });
 
   it('mounts the surface of each segment as a geometry display set with its colour and visibility as presentation', async function () {
-    const [legacy, next] = createViewports(renderingEngine);
+    const next = createNextViewport(renderingEngine);
 
-    await showVolume(legacy, next);
+    await showVolume(next);
     addSurfaceSegmentation();
     await showSurfaces([next]);
     segmentation.config.visibility.setSegmentIndexVisibility(
@@ -296,7 +345,7 @@ describe('A Surface representation on a direct next 3D viewport -- ', () => {
 
     const adapter = renderingEngine.getViewport('adapter3D');
 
-    await showVolume(legacy, next);
+    await showVolume(next, legacy);
     await adapter.setVolumes([{ volumeId: legacy.getVolumeId() }]);
     addSurfaceSegmentation();
     await showSurfaces([legacy, adapter]);
@@ -320,9 +369,9 @@ describe('A Surface representation on a direct next 3D viewport -- ', () => {
   });
 
   it('shows a new colour of a segment', async function () {
-    const [legacy, next] = createViewports(renderingEngine);
+    const next = createNextViewport(renderingEngine);
 
-    await showVolume(legacy, next);
+    await showVolume(next);
     addSurfaceSegmentation();
     await showSurfaces([next]);
 
@@ -344,44 +393,40 @@ describe('A Surface representation on a direct next 3D viewport -- ', () => {
     );
   });
 
-  it('hides and shows a segment as the legacy 3D viewport', async function () {
-    const [legacy, next] = createViewports(renderingEngine);
+  it('hides and shows a segment', async function () {
+    const next = createNextViewport(renderingEngine);
 
-    await showVolume(legacy, next);
+    await showVolume(next);
     addSurfaceSegmentation();
-    await showSurfaces([legacy, next]);
+    await showSurfaces([next]);
 
     const setVisible = (visible) =>
-      [legacy, next].forEach((viewport) =>
-        segmentation.config.visibility.setSegmentIndexVisibility(
-          viewport.id,
-          { segmentationId, type: Surface },
-          1,
-          visible
-        )
+      segmentation.config.visibility.setSegmentIndexVisibility(
+        next.id,
+        { segmentationId, type: Surface },
+        1,
+        visible
       );
     const isShown = (viewport) => surfaceActorOf(viewport, 1).getVisibility();
 
     setVisible(false);
-    await waitFor(() => !isShown(legacy) && !isShown(next));
+    await waitFor(() => !isShown(next));
 
     expect(isShown(next)).toBe(false);
-    expect(isShown(legacy)).toBe(false);
     expect(surfaceActorOf(next, 2).getVisibility()).toBe(true);
 
     setVisible(true);
-    await waitFor(() => isShown(legacy) && isShown(next));
+    await waitFor(() => isShown(next));
 
     expect(isShown(next)).toBe(true);
-    expect(isShown(legacy)).toBe(true);
   });
 
   it('shows new surface data of a segment as the legacy 3D viewport', async function () {
-    const [legacy, next] = createViewports(renderingEngine);
+    const next = createNextViewport(renderingEngine);
 
-    await showVolume(legacy, next);
+    await showVolume(next);
     addSurfaceSegmentation();
-    await showSurfaces([legacy, next]);
+    await showSurfaces([next]);
 
     const actor = surfaceActorOf(next, 1);
     const surface = cache.getGeometry(geometryIdOf(1)).data;
@@ -391,42 +436,35 @@ describe('A Surface representation on a direct next 3D viewport -- ', () => {
     segmentation.triggerSegmentationEvents.triggerSegmentationModified(
       segmentationId
     );
-    await waitFor(
-      () =>
-        pointCountOf(surfaceActorOf(legacy, 1)) === 5 &&
-        pointCountOf(surfaceActorOf(next, 1)) === 5
-    );
+    await waitFor(() => pointCountOf(surfaceActorOf(next, 1)) === 5);
 
     expect(surfaceActorOf(next, 1)).toBe(actor);
     expect(isInScene(next, actor)).toBe(true);
     expect(pointCountOf(actor)).toBe(5);
-    expect(actor.getBounds()).toEqual(surfaceActorOf(legacy, 1).getBounds());
+    expect(actor.getBounds()).toEqual(LEGACY_SURFACE_BOUNDS_WITH_NEW_DATA);
     expect(actor.getBounds()[5]).toBe(20);
     expect(pointCountOf(surfaceActorOf(next, 2))).toBe(4);
   });
 
   it('takes the surfaces of a removed representation out of the scene as the legacy 3D viewport', async function () {
-    const [legacy, next] = createViewports(renderingEngine);
+    const next = createNextViewport(renderingEngine);
 
-    await showVolume(legacy, next);
+    await showVolume(next);
     addSurfaceSegmentation();
-    await showSurfaces([legacy, next]);
+    await showSurfaces([next]);
 
     const actors = [1, 2].map((segmentIndex) =>
       surfaceActorOf(next, segmentIndex)
     );
 
-    [legacy, next].forEach((viewport) =>
-      segmentation.removeSegmentationRepresentations(viewport.id, {
-        segmentationId,
-        type: Surface,
-      })
-    );
+    segmentation.removeSegmentationRepresentations(next.id, {
+      segmentationId,
+      type: Surface,
+    });
 
     expect(surfaceEntriesOf(next).length).toBe(0);
-    expect(surfaceEntriesOf(legacy).length).toBe(0);
     expect(next.getActors().length).toBe(1);
-    expect(next.getActors().length).toBe(legacy.getActors().length);
+    expect(next.getActors().length).toBe(LEGACY_ACTOR_COUNT_OF_VOLUME);
     actors.forEach((actor) => expect(isInScene(next, actor)).toBe(false));
     expect(displaySetIdsOf(next)).toEqual(['next3DVolume']);
     expect(registeredDisplaySetOf(geometryIdOf(1))).toBeUndefined();

@@ -44,37 +44,63 @@ async function createPlaneVolume() {
 }
 
 /**
- * Makes a legacy volume viewport, a planar legacy adapter and a direct next
- * planar viewport, all axial and of one size, in one rendering engine.
+ * The red value of the middle pixel that the legacy volume viewport drew for
+ * a slab of each thickness around the middle slice, with the maximum
+ * intensity blend and with the average intensity blend.
  */
-function createViewports(renderingEngine) {
-  const options = {
+const LEGACY_MIDDLE_PIXELS = {
+  [BlendModes.MAXIMUM_INTENSITY_BLEND]: {
+    4: 0,
+    6: 0,
+    6.5: 127,
+    7: 255,
+    7.5: 174,
+    8: 208,
+    10: 208,
+    12: 208,
+    14: 208,
+    16: 208,
+    20: 208,
+  },
+  [BlendModes.AVERAGE_INTENSITY_BLEND]: {
+    4: 0,
+    6: 0,
+    6.5: 5,
+    7: 11,
+    7.5: 11,
+    8: 13,
+    10: 13,
+    12: 10,
+    14: 9,
+    16: 8,
+    20: 6,
+  },
+};
+
+/**
+ * The grey of every pixel of the picture that the legacy volume viewport
+ * drew for a slab of 20 with the composite blend, which showed the middle
+ * slice alone, and with the average intensity blend.
+ */
+const LEGACY_COMPOSITE_SLAB_GREY = 0;
+const LEGACY_AVERAGE_SLAB_GREY = 6;
+
+/**
+ * Makes a viewport of a type, axial and of the size of the tests, in the
+ * rendering engine. The legacy volume type gives the planar legacy adapter.
+ */
+function createViewport(renderingEngine, viewportId, viewportType) {
+  testUtils.createViewports(renderingEngine, {
     orientation: OrientationAxis.AXIAL,
     width: SIZE,
     height: SIZE,
     background: [0, 0, 0],
     useEnableElement: true,
-  };
-
-  testUtils.createViewports(renderingEngine, {
-    ...options,
-    viewportId: 'legacy',
-    viewportType: ViewportType.ORTHOGRAPHIC,
-  });
-  testUtils.createViewports(renderingEngine, {
-    ...options,
-    viewportId: 'adapter',
-    viewportType: ViewportType.ORTHOGRAPHIC,
-  });
-  testUtils.createViewports(renderingEngine, {
-    ...options,
-    viewportId: 'next',
-    viewportType: ViewportType.PLANAR_NEXT,
+    viewportId,
+    viewportType,
   });
 
-  return ['legacy', 'adapter', 'next'].map((id) =>
-    renderingEngine.getViewport(id)
-  );
+  return renderingEngine.getViewport(viewportId);
 }
 
 /** Shows the volume on a direct next planar viewport through a display set. */
@@ -134,6 +160,11 @@ function readMiddlePixel(viewport) {
   return data[middle * 4];
 }
 
+/** A picture of the size of `picture` with one grey in every pixel. */
+function createGreyPicture(picture, grey) {
+  return { data: new Uint8ClampedArray(picture.data.length).fill(grey) };
+}
+
 /** The largest difference of one colour value between two pictures. */
 function getLargestDifference(first, second) {
   let largest = 0;
@@ -151,8 +182,8 @@ function getLargestDifference(first, second) {
 }
 
 /**
- * Sets a slab of the blend mode and thickness on a legacy viewport or an
- * adapter through the legacy API, renders it and reads the middle pixel.
+ * Sets a slab of the blend mode and thickness on a legacy adapter through
+ * the legacy API, renders it and reads the middle pixel.
  */
 async function drawLegacySlab(viewport, blendMode, slabThickness) {
   viewport.setBlendMode(blendMode);
@@ -179,8 +210,7 @@ async function drawNextSlab(viewport, displaySetId, blendMode, slabThickness) {
 
 describe('Planar slab thickness against the legacy volume viewport -- ', () => {
   let renderingEngine;
-  let legacy;
-  let adapter;
+  let volumeId;
   let next;
   let displaySetId;
 
@@ -190,15 +220,8 @@ describe('Planar slab thickness against the legacy volume viewport -- ', () => {
       toolGroupIds: ['default'],
     });
     renderingEngine = testEnv.renderingEngine;
-    [legacy, adapter, next] = createViewports(renderingEngine);
-
-    const volumeId = await createPlaneVolume();
-
-    for (const viewport of [legacy, adapter]) {
-      await viewport.setVolumes([{ volumeId }]);
-      viewport.setProperties({ voiRange: VOI_RANGE });
-    }
-
+    next = createViewport(renderingEngine, 'next', ViewportType.PLANAR_NEXT);
+    volumeId = await createPlaneVolume();
     displaySetId = await showVolumeOnNext(next, volumeId);
   });
 
@@ -221,8 +244,7 @@ describe('Planar slab thickness against the legacy volume viewport -- ', () => {
         rows.push({
           blendMode,
           slabThickness,
-          legacy: await drawLegacySlab(legacy, blendMode, slabThickness),
-          adapter: await drawLegacySlab(adapter, blendMode, slabThickness),
+          legacy: LEGACY_MIDDLE_PIXELS[blendMode][slabThickness],
           next: await drawNextSlab(
             next,
             displaySetId,
@@ -237,12 +259,11 @@ describe('Planar slab thickness against the legacy volume viewport -- ', () => {
     expect(rows.length).toBe(thicknesses.length * 2);
   }, 240000);
 
-  it('reaches as far on the adapter and on a direct next viewport as on the legacy viewport for the same number', async function () {
+  it('reaches as far on a direct next viewport as on the legacy viewport for the same number', async function () {
     for (const slabThickness of [6, 8]) {
       const blendMode = BlendModes.MAXIMUM_INTENSITY_BLEND;
       const shows = [
-        await drawLegacySlab(legacy, blendMode, slabThickness),
-        await drawLegacySlab(adapter, blendMode, slabThickness),
+        LEGACY_MIDDLE_PIXELS[blendMode][slabThickness],
         await drawNextSlab(next, displaySetId, blendMode, slabThickness),
       ].map((value) => value > 64);
 
@@ -251,16 +272,7 @@ describe('Planar slab thickness against the legacy volume viewport -- ', () => {
 
     for (const slabThickness of [10, 20]) {
       const blendMode = BlendModes.AVERAGE_INTENSITY_BLEND;
-      const legacyValue = await drawLegacySlab(
-        legacy,
-        blendMode,
-        slabThickness
-      );
-      const adapterValue = await drawLegacySlab(
-        adapter,
-        blendMode,
-        slabThickness
-      );
+      const legacyValue = LEGACY_MIDDLE_PIXELS[blendMode][slabThickness];
       const nextValue = await drawNextSlab(
         next,
         displaySetId,
@@ -268,41 +280,67 @@ describe('Planar slab thickness against the legacy volume viewport -- ', () => {
         slabThickness
       );
 
-      expect(Math.abs(adapterValue - legacyValue)).toBeLessThanOrEqual(2);
       expect(Math.abs(nextValue - legacyValue)).toBeLessThanOrEqual(2);
+    }
+  }, 60000);
+
+  it('reaches as far on the adapter as on the legacy viewport for the same number', async function () {
+    const adapter = createViewport(
+      renderingEngine,
+      'adapter',
+      ViewportType.ORTHOGRAPHIC
+    );
+
+    await adapter.setVolumes([{ volumeId }]);
+    adapter.setProperties({ voiRange: VOI_RANGE });
+
+    for (const slabThickness of [6, 8]) {
+      const blendMode = BlendModes.MAXIMUM_INTENSITY_BLEND;
+      const shows = [
+        LEGACY_MIDDLE_PIXELS[blendMode][slabThickness],
+        await drawLegacySlab(adapter, blendMode, slabThickness),
+      ].map((value) => value > 64);
+
+      expect(shows).toEqual(shows.map(() => slabThickness > PLANE_DISTANCE));
+    }
+
+    for (const slabThickness of [10, 20]) {
+      const blendMode = BlendModes.AVERAGE_INTENSITY_BLEND;
+      const legacyValue = LEGACY_MIDDLE_PIXELS[blendMode][slabThickness];
+      const adapterValue = await drawLegacySlab(
+        adapter,
+        blendMode,
+        slabThickness
+      );
+
+      expect(Math.abs(adapterValue - legacyValue)).toBeLessThanOrEqual(2);
       expect(adapter.getSlabThickness()).toBe(slabThickness);
       expect(adapter.getProperties().slabThickness).toBe(slabThickness);
     }
   }, 60000);
 
   it('measures a composite slab of 20 against the legacy viewport', async function () {
-    const legacyValue = await drawLegacySlab(legacy, BlendModes.COMPOSITE, 20);
     const nextValue = await drawNextSlab(
       next,
       displaySetId,
       BlendModes.COMPOSITE,
       20
     );
-    const averageValue = await drawLegacySlab(
-      legacy,
-      BlendModes.AVERAGE_INTENSITY_BLEND,
-      20
+    const nextPicture = readPixels(next);
+    const largest = getLargestDifference(
+      createGreyPicture(nextPicture, LEGACY_COMPOSITE_SLAB_GREY),
+      nextPicture
     );
-    const legacyAverage = readPixels(legacy);
-
-    await drawLegacySlab(legacy, BlendModes.COMPOSITE, 20);
-
-    const largest = getLargestDifference(readPixels(legacy), readPixels(next));
 
     console.log(
       `[PLANAR_SLAB_COMPOSITE]${JSON.stringify({
-        legacyComposite: legacyValue,
+        legacyComposite: LEGACY_COMPOSITE_SLAB_GREY,
         nextComposite: nextValue,
-        legacyAverage: averageValue,
+        legacyAverage: LEGACY_AVERAGE_SLAB_GREY,
         largestDifference: largest,
         largestDifferenceToLegacyAverage: getLargestDifference(
-          legacyAverage,
-          readPixels(next)
+          createGreyPicture(nextPicture, LEGACY_AVERAGE_SLAB_GREY),
+          nextPicture
         ),
       })}`
     );

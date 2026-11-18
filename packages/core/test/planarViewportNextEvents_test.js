@@ -41,30 +41,80 @@ function enableViewport(
   return renderingEngine.getViewport(viewportId);
 }
 
-/**
- * Makes a legacy viewport with the id `legacy` and a direct next planar
- * viewport with the id `next`, of one size, orientation and options.
- */
-function createPair(
+/** Makes a direct next planar viewport with the id `next`. */
+function createNextPlanarViewport(
   renderingEngine,
-  { legacyType, orientation, defaultOptions, ids = ['legacy', 'next'] }
+  { orientation, defaultOptions }
 ) {
-  return [
-    enableViewport(renderingEngine, {
-      viewportId: ids[0],
-      type: legacyType,
-      orientation,
-      defaultOptions,
-      legacy: true,
-    }),
-    enableViewport(renderingEngine, {
-      viewportId: ids[1],
-      type: ViewportType.PLANAR_NEXT,
-      orientation,
-      defaultOptions,
-    }),
-  ];
+  return enableViewport(renderingEngine, {
+    viewportId: 'next',
+    type: ViewportType.PLANAR_NEXT,
+    orientation,
+    defaultOptions,
+  });
 }
+
+/**
+ * How many times CrosshairsTool handled VOLUME_VIEWPORT_NEW_VOLUME when a
+ * new volume was shown on one of two legacy volume viewports of its tool
+ * group.
+ */
+const LEGACY_CROSSHAIRS_NEW_VOLUME_CALLS = 1;
+
+/**
+ * The invert that the target of the VOI synchroniser showed when the source
+ * was inverted, both legacy volume viewports.
+ */
+const LEGACY_SYNCED_INVERT = true;
+
+/**
+ * What the legacy stack viewport with `suppressEvents` in its default
+ * options gave for `suppressEvents`, and the CAMERA_MODIFIED events that it
+ * fired for `setZoom(2)`.
+ */
+const LEGACY_SUPPRESSED_ZOOM = { suppressEvents: true, cameraEvents: 0 };
+
+/**
+ * The loads of image 1 of a stack on the legacy stack viewport, with the
+ * image retrieve configuration of a lossy and a final stage, and the image
+ * quality of each STACK_NEW_IMAGE of that image.
+ */
+const LEGACY_STAGED_LOADS = {
+  requests: [
+    {
+      retrieveType: 'lossy',
+      priority: 5,
+      requestType: Enums.RequestType.Interaction,
+      useRGBA: false,
+    },
+    {
+      retrieveType: 'final',
+      priority: 5,
+      requestType: Enums.RequestType.Interaction,
+      useRGBA: false,
+    },
+  ],
+  stages: [
+    Enums.ImageQualityStatus.LOSSY,
+    Enums.ImageQualityStatus.FULL_RESOLUTION,
+  ],
+};
+
+/**
+ * The load of image 1 of a stack on the legacy stack viewport with no image
+ * retrieve configuration, and the image quality of its STACK_NEW_IMAGE.
+ */
+const LEGACY_PLAIN_LOADS = {
+  requests: [
+    {
+      retrieveType: undefined,
+      priority: 5,
+      requestType: Enums.RequestType.Interaction,
+      useRGBA: false,
+    },
+  ],
+  stages: [Enums.ImageQualityStatus.FULL_RESOLUTION],
+};
 
 /**
  * Makes a legacy stack viewport with the id `legacy` and its legacy adapter
@@ -119,15 +169,8 @@ async function frames(count = 3) {
   }
 }
 
-/** Shows a volume on a legacy volume viewport or a direct next viewport. */
+/** Shows a volume on a direct next viewport. */
 async function showVolume(viewport, volumeId, orientation) {
-  if (!utilities.isGenericViewport(viewport)) {
-    await viewport.setVolumes([{ volumeId }]);
-    await renderAndWait(viewport);
-
-    return;
-  }
-
   const displaySetId = `volume:${viewport.id}:${volumeId}`;
 
   utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
@@ -143,27 +186,18 @@ function getVolumeDisplaySetId(viewport) {
   return viewport.getSourceDataId?.();
 }
 
-/** Sets the invert of a legacy viewport or of a direct next viewport. */
+/** Sets the invert of a direct next viewport. */
 function setInvert(viewport, invert) {
-  if (utilities.isGenericViewport(viewport)) {
-    viewport.setDisplaySetPresentation(getVolumeDisplaySetId(viewport), {
-      invert,
-    });
-  } else {
-    viewport.setProperties({ invert });
-  }
+  viewport.setDisplaySetPresentation(getVolumeDisplaySetId(viewport), {
+    invert,
+  });
 }
 
-/** The invert that a legacy viewport or a direct next viewport shows. */
+/** The invert that a direct next viewport shows. */
 function getInvert(viewport) {
-  if (utilities.isGenericViewport(viewport)) {
-    return Boolean(
-      viewport.getDisplaySetPresentation(getVolumeDisplaySetId(viewport))
-        ?.invert
-    );
-  }
-
-  return Boolean(viewport.getProperties().invert);
+  return Boolean(
+    viewport.getDisplaySetPresentation(getVolumeDisplaySetId(viewport))?.invert
+  );
 }
 
 /** The image ids of a stack of 3 images of 64 by 32 pixels, 1 mm apart. */
@@ -255,140 +289,114 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
   describe('new data', () => {
     it('fires VOLUME_VIEWPORT_NEW_VOLUME once when a volume is shown, as the legacy setVolumes', async function () {
       const volumeId = await createVolume();
-      const results = [];
-
-      for (const viewport of createPair(renderingEngine, {
-        legacyType: ViewportType.ORTHOGRAPHIC,
+      const viewport = createNextPlanarViewport(renderingEngine, {
         orientation: OrientationAxis.AXIAL,
-      })) {
-        const details = [];
+      });
+      const details = [];
 
-        viewport.element.addEventListener(
-          Events.VOLUME_VIEWPORT_NEW_VOLUME,
-          (evt) => details.push(evt.detail)
-        );
-        await showVolume(viewport, volumeId, OrientationAxis.AXIAL);
-        await frames();
+      viewport.element.addEventListener(
+        Events.VOLUME_VIEWPORT_NEW_VOLUME,
+        (evt) => details.push(evt.detail)
+      );
+      await showVolume(viewport, volumeId, OrientationAxis.AXIAL);
+      await frames();
 
-        results.push(
-          details.map(({ viewportId, volumeActors }) => ({
-            viewportId,
-            volumeIds: volumeActors.map((entry) => entry.referencedId),
-            actorClasses: volumeActors.map((entry) =>
-              entry.actor.getClassName()
-            ),
-          }))
-        );
-      }
+      const next = details.map(({ viewportId, volumeActors }) => ({
+        viewportId,
+        volumeIds: volumeActors.map((entry) => entry.referencedId),
+        actorClasses: volumeActors.map((entry) => entry.actor.getClassName()),
+      }));
 
-      const [legacy, next] = results;
-
-      expect(legacy.length).toBe(1);
       expect(next.length).toBe(1);
       expect(next[0].viewportId).toBe('next');
-      expect(next[0].volumeIds).toEqual(legacy[0].volumeIds);
+      expect(next[0].volumeIds).toEqual([volumeId]);
       expect(next[0].actorClasses.length).toBe(1);
     });
 
     it('lets CrosshairsTool follow a new volume on direct next viewports as on legacy ones', async function () {
       const volumeId = await createVolume();
       const otherVolumeId = await createVolume('otherVolumeURI');
-      const calls = {};
+      const viewports = [OrientationAxis.AXIAL, OrientationAxis.SAGITTAL].map(
+        (orientation, index) =>
+          enableViewport(renderingEngine, {
+            viewportId: `next${index}`,
+            type: ViewportType.PLANAR_NEXT,
+            orientation,
+          })
+      );
 
-      for (const legacy of [true, false]) {
-        const prefix = legacy ? 'legacy' : 'next';
-        const viewports = [OrientationAxis.AXIAL, OrientationAxis.SAGITTAL].map(
-          (orientation, index) =>
-            enableViewport(renderingEngine, {
-              viewportId: `${prefix}${index}`,
-              type: legacy
-                ? ViewportType.ORTHOGRAPHIC
-                : ViewportType.PLANAR_NEXT,
-              orientation,
-              legacy,
-            })
+      for (const [index, viewport] of viewports.entries()) {
+        await showVolume(
+          viewport,
+          volumeId,
+          index ? OrientationAxis.SAGITTAL : OrientationAxis.AXIAL
         );
-
-        for (const [index, viewport] of viewports.entries()) {
-          await showVolume(
-            viewport,
-            volumeId,
-            index ? OrientationAxis.SAGITTAL : OrientationAxis.AXIAL
-          );
-        }
-
-        ToolGroupManager.destroyToolGroup('crosshairs');
-
-        const toolGroup = ToolGroupManager.createToolGroup('crosshairs');
-
-        toolGroup.addTool(CrosshairsTool.toolName);
-        viewports.forEach((viewport) =>
-          toolGroup.addViewport(viewport.id, renderingEngine.id)
-        );
-        toolGroup.setToolActive(CrosshairsTool.toolName, {
-          bindings: [{ mouseButton: 1 }],
-        });
-        await frames();
-
-        const tool = toolGroup.getToolInstance(CrosshairsTool.toolName);
-        let count = 0;
-        const onNewVolume = tool._onNewVolume;
-
-        tool._onNewVolume = (evt) => {
-          count++;
-          onNewVolume(evt);
-        };
-
-        await showVolume(viewports[0], otherVolumeId, OrientationAxis.AXIAL);
-        await frames();
-        calls[prefix] = count;
       }
 
-      expect(calls.legacy).toBe(1);
-      expect(calls.next).toBe(calls.legacy);
+      ToolGroupManager.destroyToolGroup('crosshairs');
+
+      const toolGroup = ToolGroupManager.createToolGroup('crosshairs');
+
+      toolGroup.addTool(CrosshairsTool.toolName);
+      viewports.forEach((viewport) =>
+        toolGroup.addViewport(viewport.id, renderingEngine.id)
+      );
+      toolGroup.setToolActive(CrosshairsTool.toolName, {
+        bindings: [{ mouseButton: 1 }],
+      });
+      await frames();
+
+      const tool = toolGroup.getToolInstance(CrosshairsTool.toolName);
+      let count = 0;
+      const onNewVolume = tool._onNewVolume;
+
+      tool._onNewVolume = (evt) => {
+        count++;
+        onNewVolume(evt);
+      };
+
+      await showVolume(viewports[0], otherVolumeId, OrientationAxis.AXIAL);
+      await frames();
+
+      expect(count).toBe(LEGACY_CROSSHAIRS_NEW_VOLUME_CALLS);
     });
   });
 
   describe('VOI_MODIFIED', () => {
     it('lets the VOI synchroniser sync an invert from a direct next viewport, as from a legacy one', async function () {
       const volumeId = await createVolume();
-      const results = {};
+      const [source, target] = [0, 1].map((index) =>
+        enableViewport(renderingEngine, {
+          viewportId: `next${index}`,
+          type: ViewportType.PLANAR_NEXT,
+          orientation: OrientationAxis.AXIAL,
+        })
+      );
 
-      for (const legacy of [true, false]) {
-        const prefix = legacy ? 'legacy' : 'next';
-        const [source, target] = [0, 1].map((index) =>
-          enableViewport(renderingEngine, {
-            viewportId: `${prefix}${index}`,
-            type: legacy ? ViewportType.ORTHOGRAPHIC : ViewportType.PLANAR_NEXT,
-            orientation: OrientationAxis.AXIAL,
-            legacy,
-          })
-        );
+      await showVolume(source, volumeId, OrientationAxis.AXIAL);
+      await showVolume(target, volumeId, OrientationAxis.AXIAL);
 
-        await showVolume(source, volumeId, OrientationAxis.AXIAL);
-        await showVolume(target, volumeId, OrientationAxis.AXIAL);
+      const synchronizer = synchronizers.createVOISynchronizer('voi:next', {
+        syncInvertState: true,
+        syncColormap: false,
+      });
 
-        const synchronizer = synchronizers.createVOISynchronizer(
-          `voi:${prefix}`,
-          { syncInvertState: true, syncColormap: false }
-        );
+      synchronizer.addSource({
+        renderingEngineId: renderingEngine.id,
+        viewportId: source.id,
+      });
+      synchronizer.addTarget({
+        renderingEngineId: renderingEngine.id,
+        viewportId: target.id,
+      });
+      setInvert(source, true);
+      await frames();
 
-        synchronizer.addSource({
-          renderingEngineId: renderingEngine.id,
-          viewportId: source.id,
-        });
-        synchronizer.addTarget({
-          renderingEngineId: renderingEngine.id,
-          viewportId: target.id,
-        });
-        setInvert(source, true);
-        await frames();
-        results[prefix] = getInvert(target);
-        csTools3d.SynchronizerManager.destroySynchronizer(`voi:${prefix}`);
-      }
+      const invert = getInvert(target);
 
-      expect(results.legacy).toBe(true);
-      expect(results.next).toBe(results.legacy);
+      csTools3d.SynchronizerManager.destroySynchronizer('voi:next');
+
+      expect(invert).toBe(LEGACY_SYNCED_INVERT);
     });
   });
 
@@ -407,51 +415,43 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
           sliceIndex,
         })
       );
-      const results = [];
       const enabled = [];
       const onEnabled = (evt) => enabled.push(evt.detail.viewportId);
+      let result;
 
       eventTarget.addEventListener(Events.ELEMENT_ENABLED, onEnabled);
 
       try {
-        for (const viewport of createPair(renderingEngine, {
-          legacyType: ViewportType.STACK,
+        const viewport = createNextPlanarViewport(renderingEngine, {
           orientation: OrientationAxis.ACQUISITION,
           defaultOptions: { suppressEvents: true },
-        })) {
-          const cameraEvents = [];
+        });
+        const cameraEvents = [];
 
-          viewport.element.addEventListener(Events.CAMERA_MODIFIED, () =>
-            cameraEvents.push(1)
-          );
+        viewport.element.addEventListener(Events.CAMERA_MODIFIED, () =>
+          cameraEvents.push(1)
+        );
 
-          if (utilities.isGenericViewport(viewport)) {
-            utilities.genericViewportDisplaySetMetadataProvider.add('stack', {
-              kind: 'planar',
-              imageIds,
-              initialImageIdIndex: 0,
-            });
-            await viewport.setDisplaySets({ displaySetId: 'stack' });
-          } else {
-            await viewport.setStack(imageIds, 0);
-          }
-
-          await renderAndWait(viewport);
-          await frames();
-          cameraEvents.splice(0);
-          viewport.setZoom(2);
-          await frames();
-          results.push({
-            suppressEvents: viewport.suppressEvents,
-            cameraEvents: cameraEvents.length,
-          });
-        }
+        utilities.genericViewportDisplaySetMetadataProvider.add('stack', {
+          kind: 'planar',
+          imageIds,
+          initialImageIdIndex: 0,
+        });
+        await viewport.setDisplaySets({ displaySetId: 'stack' });
+        await renderAndWait(viewport);
+        await frames();
+        cameraEvents.splice(0);
+        viewport.setZoom(2);
+        await frames();
+        result = {
+          suppressEvents: viewport.suppressEvents,
+          cameraEvents: cameraEvents.length,
+        };
       } finally {
         eventTarget.removeEventListener(Events.ELEMENT_ENABLED, onEnabled);
       }
 
-      expect(results[0]).toEqual({ suppressEvents: true, cameraEvents: 0 });
-      expect(results[1]).toEqual(results[0]);
+      expect(result).toEqual(LEGACY_SUPPRESSED_ZOOM);
       expect(enabled).toEqual([]);
     });
   });
@@ -964,20 +964,14 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
     }
 
     /**
-     * Shows image 1 of a stack and gives its loads and drawn stages. The
-     * stages are those of STACK_NEW_IMAGE on the legacy adapter and of
-     * NEW_IMAGE on a direct next viewport.
+     * Shows image 1 of a stack on a direct next viewport and gives its loads
+     * and the stages that NEW_IMAGE drew.
      */
     async function loadImageOne(viewport, requests) {
       const imageIds = createStackImageIds(`${viewport.id}StagedURI`);
       const stages = [];
 
-      const newImageEvent =
-        typeof viewport.setStack === 'function'
-          ? Events.STACK_NEW_IMAGE
-          : Events.NEW_IMAGE;
-
-      viewport.element.addEventListener(newImageEvent, (evt) => {
+      viewport.element.addEventListener(Events.NEW_IMAGE, (evt) => {
         if (evt.detail.imageId === imageIds[1]) {
           stages.push(evt.detail.image?.imageQualityStatus);
         }
@@ -1016,49 +1010,21 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
         },
       });
 
-      const results = [];
-
-      for (const viewport of createPair(renderingEngine, {
-        legacyType: ViewportType.STACK,
+      const viewport = createNextPlanarViewport(renderingEngine, {
         orientation: OrientationAxis.ACQUISITION,
-      })) {
-        results.push(await loadImageOne(viewport, recordLoads()));
-      }
+      });
+      const next = await loadImageOne(viewport, recordLoads());
 
-      const [legacy, next] = results;
-
-      expect(legacy.requests.map(({ retrieveType }) => retrieveType)).toEqual([
-        'lossy',
-        'final',
-      ]);
-      expect(legacy.stages).toEqual([
-        Enums.ImageQualityStatus.LOSSY,
-        Enums.ImageQualityStatus.FULL_RESOLUTION,
-      ]);
-      expect(next).toEqual(legacy);
+      expect(next).toEqual(LEGACY_STAGED_LOADS);
     });
 
     it('loads an image with the request options of the legacy stack viewport when there is no configuration', async function () {
-      const results = [];
-
-      for (const viewport of createPair(renderingEngine, {
-        legacyType: ViewportType.STACK,
+      const viewport = createNextPlanarViewport(renderingEngine, {
         orientation: OrientationAxis.ACQUISITION,
-      })) {
-        results.push(await loadImageOne(viewport, recordLoads()));
-      }
+      });
+      const next = await loadImageOne(viewport, recordLoads());
 
-      const [legacy, next] = results;
-
-      expect(legacy.requests).toEqual([
-        {
-          retrieveType: undefined,
-          priority: 5,
-          requestType: Enums.RequestType.Interaction,
-          useRGBA: false,
-        },
-      ]);
-      expect(next).toEqual(legacy);
+      expect(next).toEqual(LEGACY_PLAIN_LOADS);
     });
   });
 });

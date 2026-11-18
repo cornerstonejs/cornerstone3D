@@ -16,36 +16,20 @@ const renderingEngineId = utilities.uuidv4();
 const SQRT_HALF = Math.sqrt(0.5);
 
 /**
- * Makes a legacy volume viewport, its legacy adapter and a direct next
- * planar viewport, all axial and of one size, in one rendering engine.
+ * Makes a viewport of a type, axial and of the size of the tests, in the
+ * rendering engine. The legacy volume type gives the planar legacy adapter.
  */
-function createViewports(renderingEngine) {
-  const options = {
+function createViewport(renderingEngine, viewportId, viewportType) {
+  testUtils.createViewports(renderingEngine, {
     orientation: OrientationAxis.AXIAL,
     width: 120,
     height: 120,
     useEnableElement: true,
-  };
-
-  testUtils.createViewports(renderingEngine, {
-    ...options,
-    viewportId: 'legacy',
-    viewportType: ViewportType.ORTHOGRAPHIC,
-  });
-  testUtils.createViewports(renderingEngine, {
-    ...options,
-    viewportId: 'adapter',
-    viewportType: ViewportType.ORTHOGRAPHIC,
-  });
-  testUtils.createViewports(renderingEngine, {
-    ...options,
-    viewportId: 'next',
-    viewportType: ViewportType.PLANAR_NEXT,
+    viewportId,
+    viewportType,
   });
 
-  return ['legacy', 'adapter', 'next'].map((id) =>
-    renderingEngine.getViewport(id)
-  );
+  return renderingEngine.getViewport(viewportId);
 }
 
 async function createVolume() {
@@ -108,6 +92,7 @@ function expectClose(actual, expected) {
 
 describe('setOrientation with vectors against the legacy volume viewport -- ', () => {
   let renderingEngine;
+  let volumeId;
   let legacy;
   let adapter;
   let next;
@@ -118,14 +103,29 @@ describe('setOrientation with vectors against the legacy volume viewport -- ', (
       toolGroupIds: ['default'],
     });
     renderingEngine = testEnv.renderingEngine;
-    [legacy, adapter, next] = createViewports(renderingEngine);
-
-    const volumeId = await createVolume();
-
-    await legacy.setVolumes([{ volumeId }]);
-    await adapter.setVolumes([{ volumeId }]);
+    next = createViewport(renderingEngine, 'next', ViewportType.PLANAR_NEXT);
+    volumeId = await createVolume();
     await showVolumeOnNext(next, volumeId);
   });
+
+  /**
+   * Makes two viewports of the legacy volume type, `legacy` and `adapter`,
+   * and shows the volume on both.
+   */
+  async function showVolumeOnLegacyViewports() {
+    legacy = createViewport(
+      renderingEngine,
+      'legacy',
+      ViewportType.ORTHOGRAPHIC
+    );
+    adapter = createViewport(
+      renderingEngine,
+      'adapter',
+      ViewportType.ORTHOGRAPHIC
+    );
+    await legacy.setVolumes([{ volumeId }]);
+    await adapter.setVolumes([{ volumeId }]);
+  }
 
   afterEach(function () {
     testUtils.cleanupTestEnvironment({
@@ -159,7 +159,8 @@ describe('setOrientation with vectors against the legacy volume viewport -- ', (
   ];
 
   cases.forEach(({ name, before, orientation }) => {
-    it(`draws the view of the legacy viewport on the legacy adapter for ${name}`, function () {
+    it(`draws the view of the legacy viewport on the legacy adapter for ${name}`, async function () {
+      await showVolumeOnLegacyViewports();
       legacy.setOrientation(before);
       adapter.setOrientation(before);
       legacy.setOrientation(orientation);

@@ -1,8 +1,7 @@
 import { describe, it, expect, afterEach, beforeEach } from '@jest/globals';
-import { Events, MetadataModules, ViewportType } from '../src/enums';
+import { Events, MetadataModules } from '../src/enums';
 import * as metaData from '../src/metaData';
 import ECGViewport from '../src/RenderingEngine/GenericViewport/ECG/ECGViewport';
-import ECGViewportLegacyAdapter from '../src/RenderingEngine/GenericViewport/ECG/ECGViewportLegacyAdapter';
 import { viewportProjection } from '../src/RenderingEngine/GenericViewport/viewportProjection';
 import { ECG_PX_PER_MM } from '../src/RenderingEngine/GenericViewport/ECG/ecgWaveform';
 
@@ -78,28 +77,13 @@ function createElement() {
   return { element, canvas };
 }
 
+/**
+ * The camera events that the legacy ECG viewport with `suppressEvents` in
+ * its default options fired for `setCamera` and `resetCamera`.
+ */
+const LEGACY_SUPPRESSED_CAMERA_EVENTS = { modified: 0, reset: 0 };
+
 const mounted = [];
-
-async function mountLegacy(defaultOptions = {}) {
-  const { element, canvas } = createElement();
-  const viewport = new ECGViewportLegacyAdapter({
-    id: 'ecgLegacy',
-    element,
-    canvas,
-    renderingEngineId: 'renderingEngine',
-    type: ViewportType.ECG,
-    sx: 0,
-    sy: 0,
-    sWidth: WIDTH,
-    sHeight: HEIGHT,
-    defaultOptions,
-  });
-
-  await viewport.setEcg(ECG_ID);
-  mounted.push(element);
-
-  return viewport;
-}
 
 async function mountNext(viewState, defaultOptions) {
   const { element } = createElement();
@@ -176,14 +160,13 @@ describe('World coordinates of the legacy and the next ECG viewports', () => {
   });
 
   it('show a legacy probe and a legacy length on the same samples on next in the legacy layout', async () => {
-    const legacy = await mountLegacy();
     const next = await mountNext({ traceLayout: '12x1' });
 
     [
       [1, [300, 900]],
       [7, [1400, 1800]],
     ].forEach(([lead, samples]) => {
-      const points = annotationPoints(legacy, lead, samples);
+      const points = samples.map((sample) => tracePoint(lead, sample));
       const onNext = points.map((point) =>
         next.canvasToWorld(next.worldToCanvas(point))
       );
@@ -380,11 +363,9 @@ describe('Annotations in a layout with several columns on the next ECG viewport'
 });
 
 describe('Slices of the next ECG viewport', () => {
-  it('has no getNumberOfSlices on the direct next class, where the legacy viewport gives one slice', async () => {
-    const legacy = await mountLegacy();
+  it('has no getNumberOfSlices on the direct next class', async () => {
     const next = await mountNext();
 
-    expect(legacy.getNumberOfSlices()).toBe(1);
     expect(next.getNumberOfSlices).toBeUndefined();
     expect(next.getSliceIndex()).toBe(0);
   });
@@ -433,28 +414,25 @@ describe('Annotations saved on a legacy ECG viewport', () => {
     ];
   }
 
-  it('show on the next viewport, as on the legacy viewport', async () => {
-    const legacy = await mountLegacy();
+  it('show on the next viewport', async () => {
     const next = await mountNext({ traceLayout: '12x1' });
     const references = legacyReferences();
 
     references.forEach((reference) => {
       expect(reference.viewPlaneNormal).toBeDefined();
       expect(reference.planeRestriction).toBeDefined();
-      expect(legacy.isReferenceViewable(reference)).toBe(true);
       expect(next.isReferenceViewable(reference)).toBe(true);
     });
   });
 
   it('do not show on another record', async () => {
-    const legacy = await mountLegacy();
     const next = await mountNext({ traceLayout: '12x1' });
+    const [viewReference] = legacyReferences();
     const reference = {
-      ...legacy.getViewReference(),
+      ...viewReference,
       FrameOfReferenceUID: 'ecg:other',
     };
 
-    expect(legacy.isReferenceViewable(reference)).toBe(false);
     expect(next.isReferenceViewable(reference)).toBe(false);
   });
 });
@@ -512,21 +490,16 @@ describe('suppressEvents on the direct next ECG viewport', () => {
 
   it('fires no camera event with suppressEvents in the options, as the legacy viewport fires none', async () => {
     const defaultOptions = { suppressEvents: true };
-    const legacy = await mountLegacy(defaultOptions);
     const next = await mountNext(undefined, defaultOptions);
-    const legacyCounts = countCameraEvents(legacy);
     const nextCounts = countCameraEvents(next);
 
-    legacy.setCamera({ ...legacy.getCamera(), parallelScale: 10 });
-    legacy.resetCamera();
     next.setPan([12, 5]);
     next.setZoom(2);
     next.resetViewState();
 
     expect(next.defaultOptions.suppressEvents).toBe(true);
     expect('suppressEvents' in next).toBe(false);
-    expect(legacyCounts).toEqual({ modified: 0, reset: 0 });
-    expect(nextCounts).toEqual(legacyCounts);
+    expect(nextCounts).toEqual(LEGACY_SUPPRESSED_CAMERA_EVENTS);
   });
 
   it('still fires the camera events without suppressEvents', async () => {

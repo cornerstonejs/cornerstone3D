@@ -6,6 +6,8 @@ import {
   animationFrames,
   waitFor,
 } from '../../../utils/test/testUtilsVideo';
+import { readStoredPicture } from './utils/storedPicture';
+import * as legacyVideoFrame6 from './groundTruth/legacyVideo_frame_6.png';
 
 const { Enums, utilities } = cornerstone3D;
 const { ViewportType, Events } = Enums;
@@ -15,33 +17,88 @@ const WIDTH = 320;
 const HEIGHT = 200;
 
 /**
- * Makes the viewport of the legacy `VIDEO` type, which is the legacy adapter
- * of the video viewport, and a direct next video viewport of one size in one
- * rendering engine.
+ * The IMAGE_RENDERED events that the legacy video viewport fired while it
+ * played for 700 ms: one for each animation frame. A direct next viewport
+ * fires one for each new frame of the video.
  */
-function createViewports(renderingEngine) {
-  const viewportOptions = {
+const LEGACY_RENDERED_WHILE_PLAYING = 43;
+
+/**
+ * What `getImageData` of the legacy video viewport gave on frame 6 of the
+ * test video: the volume of one slice of the size of the video, its modality,
+ * and the pixels of the frame as the stored picture.
+ */
+const LEGACY_FRAME_6 = {
+  dimensions: [TEST_VIDEO.width, TEST_VIDEO.height, 1],
+  spacing: [1, 1, 1],
+  origin: [0, 0, 0],
+  direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
+  modality: 'XC',
+  picture: legacyVideoFrame6.default,
+};
+
+/**
+ * What `getImageDataMetadata` of the legacy video viewport gave for the
+ * image id of the test video.
+ */
+const LEGACY_IMAGE_DATA_METADATA = {
+  bitsAllocated: 8,
+  numberOfComponents: 3,
+  origin: [0, 0, 0],
+  rows: 48,
+  columns: 64,
+  direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
+  dimensions: [64, 48, 1],
+  spacing: [1, 1, 1],
+  hasPixelSpacing: false,
+  numVoxels: 3072,
+  imagePlaneModule: {
+    rows: 48,
+    columns: 64,
+    rowCosines: [1, 0, 0],
+    columnCosines: [0, 1, 0],
+    imagePositionPatient: [0, 0, 0],
+  },
+};
+
+/**
+ * What `hasImageURI` of the legacy video viewport answered for the URI of a
+ * frame of its video, of the video, of a frame range of it, and of another
+ * series. `getViewportsWithImageURI` listed the viewport for the same three.
+ */
+const LEGACY_HAS_IMAGE_URI = [true, true, true, false];
+
+/** The frame range of the legacy video viewport after `setFrameRange([5, 10])`. */
+const LEGACY_FRAME_RANGE = [5, 10];
+
+/**
+ * The image that the range end of the view reference of the legacy video
+ * viewport named while it played the frame range 3 to 9: frame 9.
+ */
+const LEGACY_RANGE_END_IMAGE_ID = TEST_VIDEO.imageId.replace(
+  /\/frames\/1$/,
+  '/frames/9'
+);
+
+/**
+ * The content mode that `getViewportContentMode` gave for the legacy video
+ * viewport, and the answer of `isInAcquisitionPlane` for it.
+ */
+const LEGACY_CONTENT_MODE = 'video';
+const LEGACY_IS_IN_ACQUISITION_PLANE = true;
+
+/** Makes a viewport of a video type of the size of the tests. */
+function createViewport(renderingEngine, viewportId, viewportType) {
+  testUtils.createViewports(renderingEngine, {
     width: WIDTH,
     height: HEIGHT,
     useEnableElement: true,
     orientation: null,
-  };
-
-  testUtils.createViewports(renderingEngine, {
-    ...viewportOptions,
-    viewportId: 'legacyVideo',
-    viewportType: ViewportType.VIDEO,
-  });
-  testUtils.createViewports(renderingEngine, {
-    ...viewportOptions,
-    viewportId: 'nextVideo',
-    viewportType: ViewportType.VIDEO_NEXT,
+    viewportId,
+    viewportType,
   });
 
-  return [
-    renderingEngine.getViewport('legacyVideo'),
-    renderingEngine.getViewport('nextVideo'),
-  ];
+  return renderingEngine.getViewport(viewportId);
 }
 
 /** The video element that the viewport of the legacy type shows. */
@@ -55,23 +112,43 @@ function nextVideoElement(next) {
 }
 
 /**
- * Shows the test video on both viewports, on the first frame, paused, and
- * waits until both show that frame.
+ * Shows the test video on the next viewport, on the first frame, paused,
+ * and waits until it shows that frame.
  */
-async function showVideo(legacy, next) {
-  await legacy.setVideo(TEST_VIDEO.imageId, 1);
+async function showVideo(next) {
   await next.setDisplaySets({ displaySetId: TEST_VIDEO.imageId });
   next.setFrameNumber(1);
   await waitFor(
     () =>
-      legacyVideoElement(legacy).paused &&
-      legacyVideoElement(legacy).readyState >= 2 &&
-      legacyVideoElement(legacy).currentTime === 0 &&
       nextVideoElement(next).readyState >= 2 &&
       nextVideoElement(next).currentTime === 0 &&
       !nextVideoElement(next).seeking
   );
   await animationFrames(3);
+}
+
+/**
+ * Makes the viewport of the legacy `VIDEO` type, which is the legacy adapter
+ * of the video viewport, and shows the test video on it, on the first frame,
+ * paused.
+ */
+async function showVideoOnAdapter(renderingEngine) {
+  const legacy = createViewport(
+    renderingEngine,
+    'legacyVideo',
+    ViewportType.VIDEO
+  );
+
+  await legacy.setVideo(TEST_VIDEO.imageId, 1);
+  await waitFor(
+    () =>
+      legacyVideoElement(legacy).paused &&
+      legacyVideoElement(legacy).readyState >= 2 &&
+      legacyVideoElement(legacy).currentTime === 0
+  );
+  await animationFrames(3);
+
+  return legacy;
 }
 
 /**
@@ -106,7 +183,6 @@ function countImageRendered(element) {
 describe('Direct next video viewport -- ', () => {
   let renderingEngine;
   let videoUrl;
-  let legacy;
   let next;
 
   beforeEach(async function () {
@@ -117,8 +193,12 @@ describe('Direct next video viewport -- ', () => {
 
     renderingEngine = testEnv.renderingEngine;
     videoUrl = addTestVideoMetadata();
-    [legacy, next] = createViewports(renderingEngine);
-    await showVideo(legacy, next);
+    next = createViewport(
+      renderingEngine,
+      'nextVideo',
+      ViewportType.VIDEO_NEXT
+    );
+    await showVideo(next);
   }, 15000);
 
   afterEach(function () {
@@ -129,15 +209,12 @@ describe('Direct next video viewport -- ', () => {
     URL.revokeObjectURL(videoUrl);
   });
 
-  it('fires IMAGE_RENDERED once after a pan, as the legacy viewport does after a camera move', async function () {
-    const legacyRendered = countImageRendered(legacy.element);
+  it('fires IMAGE_RENDERED once after a pan', async function () {
     const nextRendered = countImageRendered(next.element);
 
-    legacy.setCamera({ focalPoint: [20, 20, 0] });
     next.setPan([12, 6]);
     await animationFrames(3);
 
-    expect(legacyRendered.count).toBe(1);
     expect(nextRendered.count).toBe(1);
     expect(nextRendered.details[0]).toEqual(
       jasmine.objectContaining({
@@ -168,19 +245,14 @@ describe('Direct next video viewport -- ', () => {
   });
 
   it('fires IMAGE_RENDERED for a frame of a seek', async function () {
-    const legacyRendered = countImageRendered(legacy.element);
     const nextRendered = countImageRendered(next.element);
 
-    legacy.setFrameNumber(6);
     next.setFrameNumber(6);
-    await waitFor(
-      () =>
-        legacyRendered.count > 0 &&
-        nextRendered.details.some((detail) => detail.imageIndex === 5)
+    await waitFor(() =>
+      nextRendered.details.some((detail) => detail.imageIndex === 5)
     );
     await animationFrames(3);
 
-    expect(legacyRendered.details.at(-1).imageIndex).toBe(5);
     expect(nextRendered.details.at(-1).imageIndex).toBe(5);
     expect(nextRendered.count).toBeLessThanOrEqual(2);
   });
@@ -234,6 +306,7 @@ describe('Direct next video viewport -- ', () => {
   });
 
   it('keeps STACK_NEW_IMAGE of the legacy adapter for the frame of a seek, with the time and the duration, and fires NEW_IMAGE too', async function () {
+    const legacy = await showVideoOnAdapter(renderingEngine);
     const events = recordNewImageEvents(legacy.element);
 
     legacy.setFrameNumber(6);
@@ -264,31 +337,27 @@ describe('Direct next video viewport -- ', () => {
   });
 
   it('fires IMAGE_RENDERED while it plays, not more often than the legacy viewport', async function () {
-    const legacyRendered = countImageRendered(legacy.element);
     const nextRendered = countImageRendered(next.element);
 
-    await Promise.all([legacy.play(), next.play()]);
+    await next.play();
     await new Promise((resolve) => setTimeout(resolve, 700));
-    legacy.pause();
     next.pause();
 
     expect(nextRendered.count).toBeGreaterThan(0);
-    expect(nextRendered.count).toBeLessThanOrEqual(legacyRendered.count);
+    expect(nextRendered.count).toBeLessThanOrEqual(
+      LEGACY_RENDERED_WHILE_PLAYING
+    );
   });
 
   it('gives the pixels of the frame on display as the legacy viewport does', async function () {
-    legacy.setFrameNumber(6);
     next.setFrameNumber(6);
     await waitFor(
-      () =>
-        legacy.getFrameNumber() === 6 &&
-        next.getFrameNumber() === 6 &&
-        !legacyVideoElement(legacy).seeking &&
-        !nextVideoElement(next).seeking
+      () => next.getFrameNumber() === 6 && !nextVideoElement(next).seeking
     );
     await animationFrames(3);
 
-    const legacyData = legacy.getImageData();
+    const legacyData = LEGACY_FRAME_6;
+    const legacyPixels = (await readStoredPicture(legacyData.picture)).data;
     const nextData = next.getImageData();
 
     expect(nextData.dimensions).toEqual(legacyData.dimensions);
@@ -297,29 +366,27 @@ describe('Direct next video viewport -- ', () => {
     expect(nextData.direction).toEqual(legacyData.direction);
     expect(nextData.hasPixelSpacing).toBe(false);
     expect(nextData.metadata.Modality).toBe('XC');
-    expect(nextData.metadata.Modality).toBe(legacyData.metadata.Modality);
+    expect(nextData.metadata.Modality).toBe(legacyData.modality);
     expect(nextData.scalarData.length).toBe(
       TEST_VIDEO.width * TEST_VIDEO.height * 4
     );
-    expect(Array.from(nextData.scalarData)).toEqual(
-      Array.from(legacyData.scalarData)
-    );
+    expect(Array.from(nextData.scalarData)).toEqual(Array.from(legacyPixels));
     [
       [0, 0, 0],
       [10, 20, 0],
       [63, 47, 0],
     ].forEach((point) => {
-      expect(nextData.imageData.worldToIndex(point)).toEqual(
-        legacyData.imageData.worldToIndex(point).map(Math.round)
-      );
+      const offset = (point[1] * TEST_VIDEO.width + point[0]) * 4;
+
+      expect(nextData.imageData.worldToIndex(point)).toEqual(point);
       expect(nextData.voxelManager.getAtIJKPoint(point)).toEqual(
-        legacyData.voxelManager.getAtIJKPoint(point)
+        Array.from(legacyPixels.slice(offset, offset + 3))
       );
     });
-    expect(nextData.metadata.Modality).toBe(legacy.modality);
+    expect(nextData.metadata.Modality).toBe(legacyData.modality);
     expect(
       utilities.VideoUtilities.getVideoImageDataMetadata(TEST_VIDEO.imageId)
-    ).toEqual(legacy.getImageDataMetadata(TEST_VIDEO.imageId));
+    ).toEqual(LEGACY_IMAGE_DATA_METADATA);
   });
 
   it('answers for an image URI of its video through isReferenceViewable, where the legacy viewport has hasImageURI', async function () {
@@ -335,11 +402,11 @@ describe('Direct next video viewport -- ', () => {
 
     expect(next.hasImageURI).toBeUndefined();
     [`${uri}/frames/7`, uri, `${uri}/frames/3-9`, otherURI].forEach(
-      (imageURI) => {
-        expect(holds(imageURI)).toBe(legacy.hasImageURI(imageURI));
+      (imageURI, index) => {
+        expect(holds(imageURI)).toBe(LEGACY_HAS_IMAGE_URI[index]);
         expect(
           utilities.getViewportsWithImageURI(imageURI).includes(next)
-        ).toBe(utilities.getViewportsWithImageURI(imageURI).includes(legacy));
+        ).toBe(LEGACY_HAS_IMAGE_URI[index]);
       }
     );
     expect(holds(uri)).toBe(true);
@@ -368,12 +435,10 @@ describe('Direct next video viewport -- ', () => {
     expect(next.setFrameRange).toBeUndefined();
     expect(next.getFrameRange).toBeUndefined();
     expect(next.getViewState().frameRange).toBeUndefined();
-    expect(legacy.getFrameRange()).toEqual([1, TEST_VIDEO.numberOfFrames]);
 
-    legacy.setFrameRange([5, 10]);
     next.setViewState({ frameRange: [5, 10] });
 
-    expect(next.getViewState().frameRange).toEqual(legacy.getFrameRange());
+    expect(next.getViewState().frameRange).toEqual(LEGACY_FRAME_RANGE);
     expect(next.getViewState().frameRange).toEqual([5, 10]);
 
     next.setViewState({ rotation: 90 });
@@ -400,12 +465,10 @@ describe('Direct next video viewport -- ', () => {
     expect(next.getViewState().frameRange).toBeUndefined();
   });
 
-  it('plays inside the frame range as the legacy viewport does', async function () {
-    const samples = { legacy: [], next: [] };
+  it('plays inside the frame range', async function () {
+    const samples = { next: [] };
 
-    legacy.setFrameRange([5, 10]);
     next.setViewState({ frameRange: [5, 10] });
-    expect(legacy.togglePlayPause()).toBe(true);
     next.play();
     await new Promise((resolve) => setTimeout(resolve, 300));
     expect(nextVideoElement(next).paused).toBe(false);
@@ -413,17 +476,15 @@ describe('Direct next video viewport -- ', () => {
     const start = performance.now();
 
     await waitFor(() => {
-      samples.legacy.push(legacy.getFrameNumber());
       samples.next.push(next.getFrameNumber());
 
       return performance.now() - start > 1500;
     }, 3000);
 
-    expect(legacy.togglePlayPause()).toBe(false);
     next.pause();
     expect(nextVideoElement(next).paused).toBe(true);
 
-    [samples.legacy, samples.next].forEach((frames) => {
+    [samples.next].forEach((frames) => {
       expect(Math.min(...frames)).toBeGreaterThanOrEqual(5);
       expect(Math.max(...frames)).toBeLessThanOrEqual(11);
       expect(Math.max(...frames)).toBeGreaterThanOrEqual(9);
@@ -433,7 +494,7 @@ describe('Direct next video viewport -- ', () => {
     });
   }, 10000);
 
-  it('shows an annotation over a range of frames as the legacy viewport does', async function () {
+  it('shows an annotation over a range of frames', async function () {
     const base = TEST_VIDEO.imageId.replace(/\/frames\/1$/, '');
     const referenceOf = (viewport) => ({
       FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
@@ -445,14 +506,8 @@ describe('Direct next video viewport -- ', () => {
       },
     });
     const goTo = async (frameNumber) => {
-      legacy.setFrameNumber(frameNumber);
       next.setFrameNumber(frameNumber);
-      await waitFor(
-        () =>
-          legacy.getFrameNumber() === frameNumber &&
-          next.getFrameNumber() === frameNumber,
-        10000
-      );
+      await waitFor(() => next.getFrameNumber() === frameNumber, 10000);
     };
 
     for (const [frameNumber, viewable] of [
@@ -463,7 +518,6 @@ describe('Direct next video viewport -- ', () => {
       [11, false],
     ]) {
       await goTo(frameNumber);
-      expect(legacy.isReferenceViewable(referenceOf(legacy))).toBe(viewable);
       expect(next.isReferenceViewable(referenceOf(next))).toBe(viewable);
     }
 
@@ -485,22 +539,18 @@ describe('Direct next video viewport -- ', () => {
   }, 60000);
 
   it('gives a range reference while it plays a frame range', async function () {
-    legacy.setFrameRange([3, 9]);
     next.setViewState({ frameRange: [3, 9] });
-    await Promise.all([legacy.play(), next.play()]);
+    await next.play();
     await animationFrames(3);
 
-    const legacyReference = legacy.getViewReference();
     const nextReference = next.getViewReference();
 
-    legacy.pause();
     next.pause();
 
-    expect(legacyReference.multiSliceReference.sliceIndex).toBe(8);
     expect(nextReference.multiSliceReference.sliceIndex).toBe(8);
     expect(nextReference.sliceIndex).toBe(2);
     expect(nextReference.multiSliceReference.referencedImageId).toBe(
-      legacyReference.multiSliceReference.referencedImageId
+      LEGACY_RANGE_END_IMAGE_ID
     );
 
     await waitFor(() => nextVideoElement(next).paused);
@@ -610,12 +660,10 @@ describe('Direct next video viewport -- ', () => {
     });
 
     expect(next.getCurrentMode()).toBe('video');
-    expect(utilities.getViewportContentMode(next)).toBe(
-      utilities.getViewportContentMode(legacy)
-    );
+    expect(utilities.getViewportContentMode(next)).toBe(LEGACY_CONTENT_MODE);
     expect(utilities.isInAcquisitionPlane(next)).toBe(true);
     expect(utilities.isInAcquisitionPlane(next)).toBe(
-      utilities.isInAcquisitionPlane(legacy)
+      LEGACY_IS_IN_ACQUISITION_PLANE
     );
     expect(renderingEngine.getViewport('emptyNextVideo').getCurrentMode()).toBe(
       'empty'
@@ -633,18 +681,15 @@ describe('Direct next video viewport -- ', () => {
       'getFrameRange',
     ]) {
       expect(next[member]).toBeUndefined();
-      expect(typeof legacy[member]).toBe('function');
     }
 
     expect('modality' in next).toBe(false);
-    expect(legacy.modality).toBeDefined();
   });
 });
 
 describe('Direct next video viewport at mount -- ', () => {
   let renderingEngine;
   let videoUrl;
-  let legacy;
   let next;
 
   beforeEach(function () {
@@ -655,7 +700,11 @@ describe('Direct next video viewport at mount -- ', () => {
 
     renderingEngine = testEnv.renderingEngine;
     videoUrl = addTestVideoMetadata();
-    [legacy, next] = createViewports(renderingEngine);
+    next = createViewport(
+      renderingEngine,
+      'nextVideo',
+      ViewportType.VIDEO_NEXT
+    );
   });
 
   afterEach(function () {
@@ -671,16 +720,7 @@ describe('Direct next video viewport at mount -- ', () => {
     return [viewport.getFrameNumber(), video.currentTime, video.paused];
   }
 
-  it('opens on frame 1 on each of ten mounts, as the legacy viewport does', async function () {
-    await legacy.setVideo(TEST_VIDEO.imageId);
-    await animationFrames(3);
-
-    expect(frameState(legacy, legacyVideoElement(legacy))).toEqual([
-      1,
-      0,
-      true,
-    ]);
-
+  it('opens on frame 1 on each of ten mounts', async function () {
     const states = [];
 
     for (let mount = 0; mount < 10; mount++) {
@@ -693,19 +733,9 @@ describe('Direct next video viewport at mount -- ', () => {
     expect(states).toEqual(new Array(20).fill([1, 0, true]));
   }, 30000);
 
-  it('opens on the frame number of the options on each of ten mounts, as the legacy viewport does', async function () {
+  it('opens on the frame number of the options on each of ten mounts', async function () {
     const frameNumber = 5;
     const time = (frameNumber - 1) / TEST_VIDEO.fps;
-
-    await legacy.setVideo(TEST_VIDEO.imageId, frameNumber);
-    await waitFor(() => !legacyVideoElement(legacy).seeking);
-
-    expect(frameState(legacy, legacyVideoElement(legacy))).toEqual([
-      frameNumber,
-      time,
-      true,
-    ]);
-
     const states = [];
 
     for (let mount = 0; mount < 10; mount++) {

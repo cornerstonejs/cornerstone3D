@@ -43,6 +43,56 @@ function panByCanvasDelta(viewport, delta) {
   );
 }
 
+/**
+ * The world points that the legacy whole slide viewport gave from
+ * `canvasToWorld` at the canvas points [0, 0], [200, 150] and [383, 233],
+ * for the slide of the stand-in at a slide rotation of 0.4 and the map
+ * resolution of its fit.
+ */
+const LEGACY_SLIDE_POINTS = [
+  [17.375049591064453, 459.7245178222656, 0],
+  [260, 520, 0],
+  [460.8758850097656, 525.1845092773438, 0],
+];
+
+/**
+ * The centre of the map of the legacy whole slide viewport after
+ * `setPan([40, -20])` from its fit, for the slide of the stand-in at a slide
+ * rotation of 0.4.
+ */
+const LEGACY_SET_PAN_CENTER = [883.78369140625, -2135.99169921875];
+
+/**
+ * What `getRotation` of the legacy whole slide viewport gave at mount, for
+ * the slide of the stand-in at a slide rotation of 0.4.
+ */
+const LEGACY_ROTATION_AT_MOUNT = 0;
+
+/** What `getViewportContentMode` gave for the legacy whole slide viewport. */
+const LEGACY_CONTENT_MODE = 'wholeSlide';
+
+/**
+ * The calibration in the image data of the legacy whole slide viewport: it
+ * had none.
+ */
+const LEGACY_CALIBRATION = undefined;
+
+/**
+ * The view of the legacy whole slide viewport at mount, for the slide of the
+ * stand-in at a slide rotation of 0.4: the resolution and the centre of the
+ * map, the zoom, and the world points of the canvas corners [0, 0] and
+ * [400, 300].
+ */
+const LEGACY_FIT_VIEW = {
+  resolution: 4,
+  center: [1000, -2000],
+  zoom: 3,
+  corners: [
+    [17.375049591064453, 459.7245178222656, 0],
+    [502.62493896484375, 580.2754516601562, 0],
+  ],
+};
+
 const mounted = [];
 
 async function track(promise) {
@@ -59,18 +109,16 @@ afterEach(() => {
 
 describe('Whole slide stand-in', () => {
   it('shows the same slide points on a legacy and a next viewport at one map zoom', async () => {
-    const legacy = await track(mountLegacy(0.4));
     const next = await track(mountNext(WSIViewport, 0.4));
 
-    legacy.view.setResolution(next.view.getResolution());
     [
       [0, 0],
       [WIDTH / 2, HEIGHT / 2],
       [WIDTH - 17, 233],
-    ].forEach((canvasPoint) =>
+    ].forEach((canvasPoint, index) =>
       expectClose(
         next.viewport.canvasToWorld(canvasPoint),
-        legacy.viewport.canvasToWorld(canvasPoint)
+        LEGACY_SLIDE_POINTS[index]
       )
     );
   });
@@ -91,14 +139,11 @@ describe('Pan on the direct next whole slide viewport', () => {
     );
   }
 
-  it('has no getPan and no setPan, which the adapter keeps', async () => {
+  it('has no getPan and no setPan', async () => {
     const next = await track(mountNext(WSIViewport, 0.4));
-    const adapter = await track(mountNext(WSIViewportLegacyAdapter, 0.4));
 
     expect(next.viewport.getPan).toBeUndefined();
     expect(next.viewport.setPan).toBeUndefined();
-    expect(adapter.viewport.getPan()).toEqual([0, 0]);
-    expect(typeof adapter.viewport.setPan).toBe('function');
   });
 
   it('gives pan [0, 0] in the projection service when the centre of the slide is at the centre of the canvas, with no state of its own', async () => {
@@ -121,18 +166,16 @@ describe('Pan on the direct next whole slide viewport', () => {
 
   it('moves the picture by a pan of the projection service times the zoom, as the adapter does with setPan', async () => {
     const next = await track(mountNext(WSIViewport, 0.4));
-    const adapter = await track(mountNext(WSIViewportLegacyAdapter, 0.4));
     const focalPoint = next.viewport.canvasToWorld([WIDTH / 2, HEIGHT / 2]);
     const { pan, zoom } = zoomPanOf(next.viewport);
 
     present(next.viewport, { pan: [pan[0] + 40 / zoom, pan[1] - 20 / zoom] });
-    adapter.viewport.setPan([40, -20]);
 
     expectClose(next.viewport.worldToCanvas(focalPoint), [
       WIDTH / 2 + 40,
       HEIGHT / 2 - 20,
     ]);
-    expectClose(next.view.getCenter(), adapter.view.getCenter());
+    expectClose(next.view.getCenter(), LEGACY_SET_PAN_CENTER);
     expectClose(zoomPanOf(next.viewport).pan, [
       pan[0] + 40 / zoom,
       pan[1] - 20 / zoom,
@@ -203,10 +246,9 @@ describe('Rotation of the direct next whole slide viewport', () => {
   });
 
   it('gives the rotation of the map less the slide rotation in degrees', async () => {
-    const legacy = await track(mountLegacy(0.4));
     const next = await track(mountNext(WSIViewport, 0.4));
 
-    expect(next.viewport.getRotation()).toBe(legacy.viewport.getRotation());
+    expect(next.viewport.getRotation()).toBe(LEGACY_ROTATION_AT_MOUNT);
 
     next.view.setRotation(0.4 + Math.PI / 6);
 
@@ -291,20 +333,17 @@ describe('Annotations saved on a legacy whole slide viewport', () => {
     ];
   }
 
-  it('shows them on the next viewport, as the legacy viewport does', async () => {
-    const legacy = await track(mountLegacy(0.4));
+  it('shows them on the next viewport', async () => {
     const next = await track(mountNext(WSIViewport, 0.4));
 
     legacyReferences().forEach((reference) => {
       expect(reference.viewPlaneNormal).toEqual([0, 0, 1]);
       expect(reference.planeRestriction).toBeDefined();
-      expect(legacy.viewport.isReferenceViewable(reference)).toBe(true);
       expect(next.viewport.isReferenceViewable(reference)).toBe(true);
     });
   });
 
   it('keeps showing them after a pan, a zoom and a rotation', async () => {
-    const legacy = await track(mountLegacy(0.4));
     const next = await track(mountNext(WSIViewport, 0.4));
 
     panByCanvasDelta(next.viewport, [80, -40]);
@@ -317,7 +356,6 @@ describe('Annotations saved on a legacy whole slide viewport', () => {
   });
 
   it('rejects them on another frame of reference or another slide plane', async () => {
-    const legacy = await track(mountLegacy(0.4));
     const next = await track(mountNext(WSIViewport, 0.4));
     const [reference] = legacyReferences();
     const otherFrame = {
@@ -338,7 +376,6 @@ describe('Annotations saved on a legacy whole slide viewport', () => {
     };
 
     [otherFrame, otherPlane].forEach((ref) => {
-      expect(legacy.viewport.isReferenceViewable(ref)).toBe(false);
       expect(next.viewport.isReferenceViewable(ref)).toBe(false);
     });
   });
@@ -363,7 +400,6 @@ describe('Events of the direct next whole slide viewport', () => {
 
 describe('Small members of the direct next whole slide viewport', () => {
   it('says wholeSlide as its content mode, the mode that getViewportContentMode gives for the legacy viewport, and empty with nothing mounted', async () => {
-    const legacy = await track(mountLegacy(0.4));
     const next = await track(mountNext(WSIViewport, 0.4));
     const empty = new WSIViewport({
       id: 'wsiEmpty',
@@ -372,19 +408,16 @@ describe('Small members of the direct next whole slide viewport', () => {
     });
 
     expect(next.viewport.getCurrentMode()).toBe('wholeSlide');
-    expect(getViewportContentMode(next.viewport)).toBe(
-      getViewportContentMode(legacy.viewport)
-    );
+    expect(getViewportContentMode(next.viewport)).toBe(LEGACY_CONTENT_MODE);
     expect(isInAcquisitionPlane(next.viewport)).toBe(true);
     expect(empty.getCurrentMode()).toBe('empty');
   });
 
   it('gives the calibration that the legacy viewport gives in the image data', async () => {
-    const legacy = await track(mountLegacy(0.4));
     const next = await track(mountNext(WSIViewport, 0.4));
 
     expect(next.viewport.getImageData().calibration).toEqual(
-      legacy.viewport.getImageData().calibration
+      LEGACY_CALIBRATION
     );
   });
 
@@ -398,28 +431,25 @@ describe('Small members of the direct next whole slide viewport', () => {
     metaData.addProvider(provider, 100000);
 
     try {
-      const legacy = await track(mountLegacy(0.4, { withDataIds: true }));
       const next = await track(
         mountNext(WSIViewport, 0.4, { withWebClient: false })
       );
 
       expect(next.viewport.getCurrentImageId()).toBe(IMAGE_ID);
       expect(next.viewport.getFrameOfReferenceUID()).toBe(
-        legacy.viewport.getFrameOfReferenceUID()
+        FRAME_OF_REFERENCE_UID
       );
     } finally {
       metaData.removeProvider(provider);
     }
   });
 
-  it('has a canvas with the size of the viewport, as the legacy viewport has, and no getCanvas', async () => {
-    const legacy = await track(mountLegacy(0.4));
+  it('has a canvas with the size of the viewport, and no getCanvas', async () => {
     const next = await track(
       mountNext(WSIViewport, 0.4, { withCanvas: false })
     );
     const { canvas } = next.viewport;
 
-    expect(legacy.viewport.getCanvas()).toBe(legacy.viewport.canvas);
     expect(next.viewport.getCanvas).toBeUndefined();
     expect(canvas).toBeInstanceOf(HTMLCanvasElement);
     expect(next.element.contains(canvas)).toBe(true);
@@ -439,22 +469,21 @@ describe('Small members of the direct next whole slide viewport', () => {
 
 describe('Zoom at mount of the direct next whole slide viewport', () => {
   it('keeps the view that the microscopy viewer fits to the canvas, as the legacy viewport does', async () => {
-    const legacy = await track(mountLegacy(0.4));
     const next = await track(mountNext(WSIViewport, 0.4));
 
     expect(next.view.getResolution()).toBeCloseTo(
-      legacy.view.getResolution(),
+      LEGACY_FIT_VIEW.resolution,
       12
     );
-    expectClose(next.view.getCenter(), legacy.view.getCenter());
-    expect(next.viewport.getZoom()).toBeCloseTo(legacy.viewport.getZoom(), 12);
+    expectClose(next.view.getCenter(), LEGACY_FIT_VIEW.center);
+    expect(next.viewport.getZoom()).toBeCloseTo(LEGACY_FIT_VIEW.zoom, 12);
     [
       [0, 0],
       [WIDTH, HEIGHT],
-    ].forEach((canvasPoint) =>
+    ].forEach((canvasPoint, index) =>
       expectClose(
         next.viewport.canvasToWorld(canvasPoint),
-        legacy.viewport.canvasToWorld(canvasPoint)
+        LEGACY_FIT_VIEW.corners[index]
       )
     );
   });
@@ -533,40 +562,28 @@ describe('suppressEvents on the direct next whole slide viewport', () => {
     return counts;
   }
 
-  it('fires no CAMERA_MODIFIED with suppressEvents in the options, as the legacy viewport', async () => {
+  it('fires no CAMERA_MODIFIED with suppressEvents in the options', async () => {
     const defaultOptions = { suppressEvents: true };
-    const legacy = await track(mountLegacy(0, { defaultOptions }));
     const next = await track(mountNext(WSIViewport, 0, { defaultOptions }));
-    const legacyCounts = countCameraEvents(legacy.viewport);
     const nextCounts = countCameraEvents(next.viewport);
 
-    legacy.viewport.setCamera({
-      parallelScale: legacy.viewport.getCamera().parallelScale / 2,
-    });
     next.viewport.setZoom(2);
     panByCanvasDelta(next.viewport, [10, 10]);
     next.viewport.resetViewState();
 
     expect(next.viewport.defaultOptions.suppressEvents).toBe(true);
     expect('suppressEvents' in next.viewport).toBe(false);
-    expect(legacyCounts.modified).toBe(0);
     expect(nextCounts).toEqual({ modified: 0, reset: 0 });
   });
 
-  it('fires CAMERA_MODIFIED without suppressEvents, as the legacy viewport', async () => {
-    const legacy = await track(mountLegacy(0));
+  it('fires CAMERA_MODIFIED without suppressEvents', async () => {
     const next = await track(mountNext(WSIViewport, 0));
-    const legacyCounts = countCameraEvents(legacy.viewport);
     const nextCounts = countCameraEvents(next.viewport);
 
-    legacy.viewport.setCamera({
-      parallelScale: legacy.viewport.getCamera().parallelScale / 2,
-    });
     next.viewport.setZoom(2);
 
     expect(next.viewport.defaultOptions.suppressEvents).toBeUndefined();
     expect('suppressEvents' in next.viewport).toBe(false);
-    expect(legacyCounts.modified).toBe(1);
     expect(nextCounts.modified).toBe(1);
   });
 });

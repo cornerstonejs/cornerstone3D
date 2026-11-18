@@ -18,38 +18,105 @@ const {
 const renderingEngineId = utilities.uuidv4();
 const toolGroupId = 'next3DTools';
 
+/** The widgets of the legacy 3D viewport with the orientation marker. */
+const LEGACY_WIDGET_COUNT = 1;
+
 /**
- * Makes a legacy 3D viewport and a direct next 3D viewport of the same size
- * and orientation in one rendering engine, and adds both to the tool group.
+ * The actors of the legacy 3D viewport with a volume and one surface, and
+ * with the volume alone.
  */
-function createViewports(renderingEngine) {
-  const viewportOptions = {
+const LEGACY_ACTOR_COUNT_WITH_SURFACE = 2;
+const LEGACY_ACTOR_COUNT_OF_VOLUME = 1;
+
+/** The parallel scale of the legacy 3D viewport after the surface was added. */
+const LEGACY_PARALLEL_SCALE_WITH_SURFACE = 15;
+
+/** The sphere handles of the cropping tool on the legacy 3D viewport. */
+const LEGACY_CROPPING_SPHERE_COUNT = 14;
+
+/**
+ * The UIDs of the actors that the cropping tool added to the legacy 3D
+ * viewport, sorted: 8 corners, 12 edges and 6 faces. They were also all the
+ * actors of its vtk.js renderer.
+ */
+const LEGACY_CROPPING_ACTOR_UIDS = [
+  'corner_XMAX_YMAX_ZMAX',
+  'corner_XMAX_YMAX_ZMIN',
+  'corner_XMAX_YMIN_ZMAX',
+  'corner_XMAX_YMIN_ZMIN',
+  'corner_XMIN_YMAX_ZMAX',
+  'corner_XMIN_YMAX_ZMIN',
+  'corner_XMIN_YMIN_ZMAX',
+  'corner_XMIN_YMIN_ZMIN',
+  'edge_XMAX_YMAX_ZMIN_XMAX_YMAX_ZMAX',
+  'edge_XMAX_YMIN_ZMAX_XMAX_YMAX_ZMAX',
+  'edge_XMAX_YMIN_ZMIN_XMAX_YMAX_ZMIN',
+  'edge_XMAX_YMIN_ZMIN_XMAX_YMIN_ZMAX',
+  'edge_XMIN_YMAX_ZMAX_XMAX_YMAX_ZMAX',
+  'edge_XMIN_YMAX_ZMIN_XMAX_YMAX_ZMIN',
+  'edge_XMIN_YMAX_ZMIN_XMIN_YMAX_ZMAX',
+  'edge_XMIN_YMIN_ZMAX_XMAX_YMIN_ZMAX',
+  'edge_XMIN_YMIN_ZMAX_XMIN_YMAX_ZMAX',
+  'edge_XMIN_YMIN_ZMIN_XMAX_YMIN_ZMIN',
+  'edge_XMIN_YMIN_ZMIN_XMIN_YMAX_ZMIN',
+  'edge_XMIN_YMIN_ZMIN_XMIN_YMIN_ZMAX',
+  'x_max',
+  'x_min',
+  'y_max',
+  'y_min',
+  'z_max',
+  'z_min',
+];
+const LEGACY_CROPPING_SCENE_ACTOR_COUNT = 26;
+
+/**
+ * The origins of the six clipping planes of the volume mapper of the legacy
+ * 3D viewport with the cropping tool active on the volume of the tests.
+ */
+const LEGACY_CLIPPING_PLANE_ORIGINS = [
+  [2.4, 20, 6],
+  [27.6, 20, 6],
+  [15, 3.2, 6],
+  [15, 36.8, 6],
+  [15, 20, 0.96],
+  [15, 20, 11.04],
+];
+
+/**
+ * The look of the labelmap actor of the legacy 3D viewport for the values 0,
+ * 1 and 2: red, green, blue and opacity.
+ */
+const LEGACY_LABELMAP_LOOKS = [
+  [0, 0, 0, 0],
+  [0.8666666666666667, 0.32941176470588235, 0.32941176470588235, 0.5],
+  [0.30196078431372547, 0.8941176470588236, 0.4745098039215686, 0.5],
+];
+
+/**
+ * The blend mode of the mapper of the labelmap actor of the legacy 3D
+ * viewport: the maximum intensity blend.
+ */
+const LEGACY_LABELMAP_BLEND_MODE = 1;
+
+/**
+ * Makes a direct next 3D viewport in the rendering engine and adds it to the
+ * tool group.
+ */
+function createNextViewport(renderingEngine) {
+  testUtils.createViewports(renderingEngine, {
     orientation: OrientationAxis.SAGITTAL,
     width: 400,
     height: 300,
     useEnableElement: true,
-  };
-
-  testUtils.createViewports(renderingEngine, {
-    ...viewportOptions,
-    viewportId: 'legacy3D',
-    viewportType: ViewportType.VOLUME_3D,
-  });
-  testUtils.createViewports(renderingEngine, {
-    ...viewportOptions,
     viewportId: 'next3D',
     viewportType: ViewportType.VOLUME_3D_NEXT,
   });
+  ToolGroupManager.getToolGroup(toolGroupId).addViewport(
+    'next3D',
+    renderingEngineId
+  );
 
-  const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
-
-  toolGroup.addViewport('legacy3D', renderingEngineId);
-  toolGroup.addViewport('next3D', renderingEngineId);
-
-  return [
-    renderingEngine.getViewport('legacy3D'),
-    renderingEngine.getViewport('next3D'),
-  ];
+  return renderingEngine.getViewport('next3D');
 }
 
 /**
@@ -111,42 +178,34 @@ function sceneActorsOf(viewport) {
 }
 
 /**
- * Shows the volume on both viewports and makes the cropping tool active on
- * each, in a tool group of its own, with its handles and its clipping planes
- * visible. Gives the tool of the legacy and of the next viewport.
+ * Shows the volume on the next viewport and makes the cropping tool active
+ * on it, in a tool group of its own, with its handles and its clipping
+ * planes visible. Gives the tool of the next viewport.
  */
-async function startCropping(legacy, next) {
+async function startCropping(next) {
   const toolName = VolumeCroppingTool.toolName;
 
   csTools3d.addTool(VolumeCroppingTool);
 
-  const legacyGroup = ToolGroupManager.createToolGroup('legacyCropping');
   const nextGroup = ToolGroupManager.createToolGroup('nextCropping');
   const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
 
-  toolGroup.removeViewports(renderingEngineId, 'legacy3D');
   toolGroup.removeViewports(renderingEngineId, 'next3D');
-  await showVolume(legacy, next);
+  await showVolume(next);
+  nextGroup.addTool(toolName);
+  nextGroup.addViewport('next3D', renderingEngineId);
+  nextGroup.setToolActive(toolName, { bindings: [{ mouseButton: 1 }] });
 
-  return [
-    [legacyGroup, 'legacy3D'],
-    [nextGroup, 'next3D'],
-  ].map(([group, viewportId]) => {
-    group.addTool(toolName);
-    group.addViewport(viewportId, renderingEngineId);
-    group.setToolActive(toolName, { bindings: [{ mouseButton: 1 }] });
+  const tool = nextGroup.getToolInstance(toolName);
 
-    const tool = group.getToolInstance(toolName);
+  tool.setHandlesVisible(true);
+  tool.setClippingPlanesVisible(true);
 
-    tool.setHandlesVisible(true);
-    tool.setClippingPlanesVisible(true);
-
-    return tool;
-  });
+  return tool;
 }
 
-/** Makes a volume and shows it on the legacy and on the next viewport. */
-async function showVolume(legacy, next) {
+/** Makes and caches the volume of the tests and gives its id. */
+async function createVolume() {
   const volumeId = testUtils.encodeVolumeIdInfo({
     loader: 'fakeVolumeLoader',
     name: 'volumeURI',
@@ -160,7 +219,14 @@ async function showVolume(legacy, next) {
   });
 
   await volumeLoader.createAndCacheVolume(volumeId, { imageIds: [] });
-  await legacy.setVolumes([{ volumeId }]);
+
+  return volumeId;
+}
+
+/** Makes the volume, shows it on the next viewport and gives its id. */
+async function showVolume(next) {
+  const volumeId = await createVolume();
+
   utilities.genericViewportDisplaySetMetadataProvider.add('next3DVolume', {
     imageIds: cache.getVolume(volumeId).imageIds,
     volumeId,
@@ -169,6 +235,8 @@ async function showVolume(legacy, next) {
     displaySetId: 'next3DVolume',
     options: { renderMode: 'vtkVolume3d' },
   });
+
+  return volumeId;
 }
 
 /** Waits until the condition holds, for at most two seconds. */
@@ -176,6 +244,58 @@ async function waitFor(condition) {
   for (let attempt = 0; attempt < 100 && !condition(); attempt++) {
     await new Promise((resolve) => setTimeout(resolve, 20));
   }
+}
+
+/** The actors of the labelmap of the tests that the viewport lists. */
+function labelmapActorsOf(viewport) {
+  return viewport
+    .getActors()
+    .filter(({ representationUID }) =>
+      String(representationUID ?? '').startsWith('labelmap3D')
+    );
+}
+
+/**
+ * The look of the labelmap actor of the viewport for the values 0, 1 and 2:
+ * red, green, blue and opacity.
+ */
+function looksOf(viewport) {
+  const { actor } = labelmapActorsOf(viewport)[0];
+  const property = actor.getProperty();
+
+  return [0, 1, 2].map((value) => {
+    const rgb = [];
+
+    property.getRGBTransferFunction(0).getColor(value, rgb);
+
+    return [...rgb, property.getScalarOpacity(0).getValue(value)];
+  });
+}
+
+/**
+ * Makes a labelmap of the volume, adds it as a segmentation and shows its
+ * Labelmap representation on the viewport. Waits for the labelmap actor.
+ */
+async function showLabelmap(volumeId, viewport) {
+  await volumeLoader.createAndCacheDerivedLabelmapVolume(volumeId, {
+    volumeId: 'labelmap3D',
+  });
+  segmentation.addSegmentations([
+    {
+      segmentationId: 'labelmap3D',
+      representation: {
+        type: csToolsEnums.SegmentationRepresentations.Labelmap,
+        data: { volumeId: 'labelmap3D' },
+      },
+    },
+  ]);
+  segmentation.addSegmentationRepresentations(viewport.id, [
+    {
+      segmentationId: 'labelmap3D',
+      type: csToolsEnums.SegmentationRepresentations.Labelmap,
+    },
+  ]);
+  await waitFor(() => labelmapActorsOf(viewport).length > 0);
 }
 
 describe('Tools on a direct next 3D viewport -- ', () => {
@@ -198,16 +318,13 @@ describe('Tools on a direct next 3D viewport -- ', () => {
   });
 
   it('shows the orientation marker as on the legacy 3D viewport', async function () {
-    const [legacy, next] = createViewports(renderingEngine);
+    const next = createNextViewport(renderingEngine);
     const toolName = OrientationMarkerTool.toolName;
     const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
 
-    await showVolume(legacy, next);
+    await showVolume(next);
     toolGroup.setToolEnabled(toolName);
-    await waitFor(
-      () =>
-        Boolean(legacy.getWidget(toolName)) && next.getWidgets().length === 1
-    );
+    await waitFor(() => next.getWidgets().length === 1);
 
     const [widget] = next.getWidgets();
     const marker =
@@ -218,7 +335,7 @@ describe('Tools on a direct next 3D viewport -- ', () => {
     expect(widget).toBe(marker.orientationWidget);
     expect(widget.getEnabled()).toBe(true);
     expect(widget.getRenderer()).toBeTruthy();
-    expect(next.getWidgets().length).toBe(legacy.getWidgets().length);
+    expect(next.getWidgets().length).toBe(LEGACY_WIDGET_COUNT);
 
     next.removeWidgets();
 
@@ -226,7 +343,7 @@ describe('Tools on a direct next 3D viewport -- ', () => {
   });
 
   it('keeps one orientation marker for a viewport, and makes a new one for a viewport that is enabled again under the same id', async function () {
-    const viewports = createViewports(renderingEngine);
+    const viewports = [createNextViewport(renderingEngine)];
     const toolName = OrientationMarkerTool.toolName;
     const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
 
@@ -276,19 +393,18 @@ describe('Tools on a direct next 3D viewport -- ', () => {
     }
   });
 
-  it('turns a direct next 3D viewport with the orientation controller, as the legacy viewport', async function () {
-    const [legacy, next] = createViewports(renderingEngine);
+  it('turns a direct next 3D viewport with the orientation controller', async function () {
+    const next = createNextViewport(renderingEngine);
 
     const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
 
-    await showVolume(legacy, next);
+    await showVolume(next);
     testUtils.createViewports(renderingEngine, {
       viewportId: 'nextVideo',
       viewportType: ViewportType.VIDEO_NEXT,
       useEnableElement: true,
     });
 
-    expect(legacy.isOrientationChangeable()).toBe(true);
     expect(next.isOrientationChangeable).toBeUndefined();
     expect(utilities.viewportIsInVolumeMode(next)).toBe(true);
     expect(() =>
@@ -297,23 +413,21 @@ describe('Tools on a direct next 3D viewport -- ', () => {
 
     const tool = toolGroup.getToolInstance(OrientationControllerTool.toolName);
 
-    for (const viewportId of [legacy.id, next.id, 'nextVideo']) {
+    for (const viewportId of [next.id, 'nextVideo']) {
       tool.addMarkerToViewport(viewportId, renderingEngineId);
     }
 
-    expect(tool.widget.getActors(legacy.id)).toBeDefined();
     expect(tool.widget.getActors(next.id)).toBeDefined();
     expect(tool.widget.getActors('nextVideo')).toBeUndefined();
   });
 
   it('shows a surface of a Surface representation as on the legacy 3D viewport', async function () {
-    const [legacy, next] = createViewports(renderingEngine);
+    const next = createNextViewport(renderingEngine);
 
-    await showVolume(legacy, next);
+    await showVolume(next);
 
     const surface = createSurface();
 
-    addOrUpdateSurfaceToElement(legacy, surface, 'surfaceSegmentation');
     await addOrUpdateSurfaceToElement(next, surface, 'surfaceSegmentation');
 
     const [surfaceEntry] = next
@@ -323,40 +437,41 @@ describe('Tools on a direct next 3D viewport -- ', () => {
     expect(surfaceEntry.representationUID).toBe(
       'surfaceSegmentation-Surface-1'
     );
-    expect(next.getActors().length).toBe(legacy.getActors().length);
+    expect(next.getActors().length).toBe(LEGACY_ACTOR_COUNT_WITH_SURFACE);
     expect(next.getViewState().parallelScale).toBeCloseTo(
-      legacy.getCamera().parallelScale,
+      LEGACY_PARALLEL_SCALE_WITH_SURFACE,
       4
     );
 
-    removeSurfaceFromElement(legacy.element, 'surfaceSegmentation');
     removeSurfaceFromElement(next.element, 'surfaceSegmentation');
 
     expect(next.getActors().length).toBe(1);
-    expect(next.getActors().length).toBe(legacy.getActors().length);
+    expect(next.getActors().length).toBe(LEGACY_ACTOR_COUNT_OF_VOLUME);
   });
 
   it('crops a direct next 3D viewport with its sphere handles as the legacy 3D viewport', async function () {
-    const [legacy, next] = createViewports(renderingEngine);
-    const tools = await startCropping(legacy, next);
+    const next = createNextViewport(renderingEngine);
+    const tool = await startCropping(next);
 
     const clippingPlanesOf = (viewport) =>
       viewport.getActors()[0].actor.getMapper().getClippingPlanes();
 
-    expect(tools[1].sphereStates.length).toBeGreaterThan(0);
-    expect(tools[1].sphereStates.length).toBe(tools[0].sphereStates.length);
-    expect(handleUIDsOf(tools[1])).toEqual(surfaceActorUIDsOf(legacy));
-    expect(sceneActorsOf(next).length).toBe(sceneActorsOf(legacy).length);
-    handleActorsOf(tools[1]).forEach((actor) =>
+    expect(tool.sphereStates.length).toBeGreaterThan(0);
+    expect(tool.sphereStates.length).toBe(LEGACY_CROPPING_SPHERE_COUNT);
+    expect(handleUIDsOf(tool)).toEqual(LEGACY_CROPPING_ACTOR_UIDS);
+    expect(sceneActorsOf(next).length).toBe(LEGACY_CROPPING_SCENE_ACTOR_COUNT);
+    handleActorsOf(tool).forEach((actor) =>
       expect(sceneActorsOf(next)).toContain(actor)
     );
     expect(clippingPlanesOf(next).length).toBe(6);
-    expect(clippingPlanesOf(next).length).toBe(clippingPlanesOf(legacy).length);
+    expect(clippingPlanesOf(next).length).toBe(
+      LEGACY_CLIPPING_PLANE_ORIGINS.length
+    );
     clippingPlanesOf(next).forEach((plane, index) => {
-      const legacyPlane = clippingPlanesOf(legacy)[index];
+      const legacyOrigin = LEGACY_CLIPPING_PLANE_ORIGINS[index];
 
       plane.getOrigin().forEach((value, axis) => {
-        expect(value).toBeCloseTo(legacyPlane.getOrigin()[axis], 4);
+        expect(value).toBeCloseTo(legacyOrigin[axis], 4);
       });
     });
 
@@ -367,13 +482,12 @@ describe('Tools on a direct next 3D viewport -- ', () => {
 
     expect(clippingPlanesOf(next).length).toBe(6);
 
-    ToolGroupManager.destroyToolGroup('legacyCropping');
     ToolGroupManager.destroyToolGroup('nextCropping');
   });
 
   it('keeps the handles of the cropping tool as props of the tool: a direct next 3D viewport lists only its display sets', async function () {
-    const [legacy, next] = createViewports(renderingEngine);
-    const [, tool] = await startCropping(legacy, next);
+    const next = createNextViewport(renderingEngine);
+    const tool = await startCropping(next);
     const handles = handleActorsOf(tool);
 
     expect(handles.length).toBe(26);
@@ -396,13 +510,12 @@ describe('Tools on a direct next 3D viewport -- ', () => {
       expect(sceneActorsOf(next)).toContain(actor);
     });
 
-    ToolGroupManager.destroyToolGroup('legacyCropping');
     ToolGroupManager.destroyToolGroup('nextCropping');
   });
 
   it('takes the handles of the cropping tool out of the scene of a direct next 3D viewport at disable, renders, and puts them back when active again', async function () {
-    const [legacy, next] = createViewports(renderingEngine);
-    const [, tool] = await startCropping(legacy, next);
+    const next = createNextViewport(renderingEngine);
+    const tool = await startCropping(next);
     const toolName = VolumeCroppingTool.toolName;
     const nextGroup = ToolGroupManager.getToolGroup('nextCropping');
     const handles = handleActorsOf(tool);
@@ -422,13 +535,34 @@ describe('Tools on a direct next 3D viewport -- ', () => {
     expect(sceneActorsOf(next).length).toBe(26);
     handles.forEach((actor) => expect(sceneActorsOf(next)).toContain(actor));
 
-    ToolGroupManager.destroyToolGroup('legacyCropping');
     ToolGroupManager.destroyToolGroup('nextCropping');
   });
 
   it('shows a labelmap of a Labelmap representation as on the legacy 3D viewport', async function () {
-    const [legacy, next] = createViewports(renderingEngine);
+    const next = createNextViewport(renderingEngine);
+    const volumeId = await showVolume(next);
 
+    await showLabelmap(volumeId, next);
+
+    expect(labelmapActorsOf(next).length).toBe(1);
+    expect(labelmapActorsOf(next)[0].actor.getClassName()).toBe('vtkVolume');
+    expect(labelmapActorsOf(next)[0].actor.getVisibility()).toBe(true);
+
+    await waitFor(() => looksOf(next)[1][3] === LEGACY_LABELMAP_LOOKS[1][3]);
+
+    expect(looksOf(next)).toEqual(LEGACY_LABELMAP_LOOKS);
+    expect(labelmapActorsOf(next)[0].actor.getMapper().getBlendMode()).toBe(
+      LEGACY_LABELMAP_BLEND_MODE
+    );
+
+    segmentation.removeSegmentationRepresentations(next.id, {
+      segmentationId: 'labelmap3D',
+    });
+
+    expect(labelmapActorsOf(next).length).toBe(0);
+  });
+
+  it('shows a labelmap of a Labelmap representation on a legacy adapter as on the legacy 3D viewport', async function () {
     testUtils.createViewports(renderingEngine, {
       orientation: OrientationAxis.SAGITTAL,
       width: 400,
@@ -439,76 +573,15 @@ describe('Tools on a direct next 3D viewport -- ', () => {
     });
 
     const adapter = renderingEngine.getViewport('adapter3D');
+    const volumeId = await createVolume();
 
-    await showVolume(legacy, next);
-    await adapter.setVolumes([{ volumeId: legacy.getVolumeId() }]);
-    await volumeLoader.createAndCacheDerivedLabelmapVolume(
-      legacy.getVolumeId(),
-      { volumeId: 'labelmap3D' }
-    );
-    segmentation.addSegmentations([
-      {
-        segmentationId: 'labelmap3D',
-        representation: {
-          type: csToolsEnums.SegmentationRepresentations.Labelmap,
-          data: { volumeId: 'labelmap3D' },
-        },
-      },
-    ]);
+    await adapter.setVolumes([{ volumeId }]);
+    await showLabelmap(volumeId, adapter);
 
-    const labelmapActorsOf = (viewport) =>
-      viewport
-        .getActors()
-        .filter(({ representationUID }) =>
-          String(representationUID ?? '').startsWith('labelmap3D')
-        );
-
-    for (const viewport of [legacy, adapter, next]) {
-      segmentation.addSegmentationRepresentations(viewport.id, [
-        {
-          segmentationId: 'labelmap3D',
-          type: csToolsEnums.SegmentationRepresentations.Labelmap,
-        },
-      ]);
-    }
-
-    await waitFor(() =>
-      [legacy, adapter, next].every(
-        (viewport) => labelmapActorsOf(viewport).length > 0
-      )
-    );
-
-    expect(labelmapActorsOf(legacy).length).toBe(1);
     expect(labelmapActorsOf(adapter).length).toBe(1);
-    expect(labelmapActorsOf(next).length).toBe(1);
-    expect(labelmapActorsOf(next)[0].actor.getClassName()).toBe('vtkVolume');
-    expect(labelmapActorsOf(next)[0].actor.getVisibility()).toBe(true);
 
-    const looksOf = (viewport) => {
-      const { actor } = labelmapActorsOf(viewport)[0];
-      const property = actor.getProperty();
+    await waitFor(() => looksOf(adapter)[1][3] === LEGACY_LABELMAP_LOOKS[1][3]);
 
-      return [0, 1, 2].map((value) => {
-        const rgb = [];
-
-        property.getRGBTransferFunction(0).getColor(value, rgb);
-
-        return [...rgb, property.getScalarOpacity(0).getValue(value)];
-      });
-    };
-
-    await waitFor(() => looksOf(next)[1][3] === looksOf(legacy)[1][3]);
-
-    expect(looksOf(next)).toEqual(looksOf(legacy));
-    expect(looksOf(adapter)).toEqual(looksOf(legacy));
-    expect(labelmapActorsOf(next)[0].actor.getMapper().getBlendMode()).toBe(
-      labelmapActorsOf(legacy)[0].actor.getMapper().getBlendMode()
-    );
-
-    segmentation.removeSegmentationRepresentations(next.id, {
-      segmentationId: 'labelmap3D',
-    });
-
-    expect(labelmapActorsOf(next).length).toBe(0);
+    expect(looksOf(adapter)).toEqual(LEGACY_LABELMAP_LOOKS);
   });
 });

@@ -1,9 +1,11 @@
 import * as cornerstone3D from '../src/index';
 import * as testUtils from '../../../utils/test/testUtils';
-import setCtTransferFunctionForVolumeActor, {
-  ctVoiRange,
-} from '../../../utils/demo/helpers/setCtTransferFunctionForVolumeActor';
-import setPetTransferFunctionForVolumeActor from '../../../utils/demo/helpers/setPetTransferFunctionForVolumeActor';
+import { ctVoiRange } from '../../../utils/demo/helpers/setCtTransferFunctionForVolumeActor';
+import * as legacy3D_perspective from './groundTruth/legacy3D_perspective.png';
+import * as legacy3D_perspective_dolly from './groundTruth/legacy3D_perspective_dolly.png';
+import * as legacy3D_callback_ct from './groundTruth/legacy3D_callback_ct.png';
+import * as legacy3D_callback_pet_mip from './groundTruth/legacy3D_callback_pet_mip.png';
+import * as legacy3D_callback_labels from './groundTruth/legacy3D_callback_labels.png';
 
 const { Enums, volumeLoader, utilities, cache } = cornerstone3D;
 const { ViewportType, OrientationAxis, Events, BlendModes, InterpolationType } =
@@ -12,33 +14,98 @@ const { ViewportType, OrientationAxis, Events, BlendModes, InterpolationType } =
 const renderingEngineId = utilities.uuidv4();
 
 /**
- * Makes the viewport of the legacy 3D type, which is the 3D legacy adapter,
- * and a direct next 3D viewport of the same size and orientation, with the
- * same options, in one rendering engine.
+ * The camera of the legacy 3D viewport of 400 by 300 pixels, sagittal, made
+ * with `parallelProjection: false`, with the volume of the tests: after
+ * `setVolumes`, and again after `resetCamera`.
  */
-function createPair(renderingEngine, options = {}) {
-  return [
-    ['legacy3D', ViewportType.VOLUME_3D],
-    ['next3D', ViewportType.VOLUME_3D_NEXT],
-  ].map(([viewportId, type]) => {
-    const element = document.createElement('div');
+const LEGACY_PERSPECTIVE_CAMERA = {
+  parallelProjection: false,
+  parallelScale: 15,
+  viewAngle: 90,
+  focalPoint: [15, 19.5, 5.5],
+  position: [272.0992026436488, 19.5, 5.5],
+  viewPlaneNormal: [1, 0, 0],
+  viewUp: [0, 0, 1],
+};
 
-    element.style.width = '400px';
-    element.style.height = '300px';
-    document.body.appendChild(element);
-    renderingEngine.enableElement({
-      viewportId,
-      type,
-      element,
-      defaultOptions: {
-        orientation: OrientationAxis.SAGITTAL,
-        background: [1, 0, 1],
-        ...options,
-      },
-    });
+/**
+ * What the legacy 3D viewport gave with `LEGACY_PERSPECTIVE_CAMERA` for each
+ * point of `knownPointsOf`: `worldToCanvas` of the point, and `canvasToWorld`
+ * of that canvas point.
+ */
+const LEGACY_PERSPECTIVE_TRANSFORMS = [
+  {
+    canvasPoint: [189.250244, 153.031982],
+    worldPoint: [14.999984, 1.074974, 0.303198],
+  },
+  {
+    canvasPoint: [187.967875, 153.393676],
+    worldPoint: [14.999984, -1.123, -0.316743],
+  },
+  {
+    canvasPoint: [210.749756, 146.968018],
+    worldPoint: [14.999984, 37.925026, 10.696802],
+  },
+  {
+    canvasPoint: [212.032125, 146.606324],
+    worldPoint: [14.999984, 40.123, 11.316743],
+  },
+  { canvasPoint: [200, 150], worldPoint: [14.999984, 19.5, 5.5] },
+];
 
-    return renderingEngine.getViewport(viewportId);
+/**
+ * The same for the legacy 3D viewport after the dolly of the tests: its
+ * position a quarter of the way from the focal point.
+ */
+const LEGACY_PERSPECTIVE_DOLLY_TRANSFORMS = [
+  {
+    canvasPoint: [163.103029, 160.406838],
+    worldPoint: [14.999998, 3.689696, 1.040684],
+  },
+  {
+    canvasPoint: [141.819759, 166.409811],
+    worldPoint: [14.999998, -5.430157, -1.531583],
+  },
+  {
+    canvasPoint: [236.896971, 139.593162],
+    worldPoint: [14.999998, 35.310304, 9.959316],
+  },
+  {
+    canvasPoint: [258.180241, 133.590189],
+    worldPoint: [14.999998, 44.430157, 12.531583],
+  },
+  { canvasPoint: [200, 150], worldPoint: [14.999998, 19.5, 5.5] },
+];
+
+/**
+ * The pictures that the legacy 3D viewport drew: in perspective with
+ * `LEGACY_PERSPECTIVE_CAMERA`, and after the dolly of the tests.
+ */
+const LEGACY_PERSPECTIVE_PICTURE = legacy3D_perspective.default;
+const LEGACY_PERSPECTIVE_DOLLY_PICTURE = legacy3D_perspective_dolly.default;
+
+/**
+ * Makes a direct next 3D viewport of 400 by 300 pixels, sagittal, with the
+ * magenta background of the tests, in the rendering engine.
+ */
+function createNextViewport(renderingEngine, options = {}) {
+  const element = document.createElement('div');
+
+  element.style.width = '400px';
+  element.style.height = '300px';
+  document.body.appendChild(element);
+  renderingEngine.enableElement({
+    viewportId: 'next3D',
+    type: ViewportType.VOLUME_3D_NEXT,
+    element,
+    defaultOptions: {
+      orientation: OrientationAxis.SAGITTAL,
+      background: [1, 0, 1],
+      ...options,
+    },
   });
+
+  return renderingEngine.getViewport('next3D');
 }
 
 /**
@@ -79,11 +146,10 @@ async function createVolume(
   return volumeId;
 }
 
-/** Shows the volume on the legacy viewport and on the next viewport. */
-async function showOnBoth(legacy, next, volumeId) {
+/** Shows the volume on the next viewport through a display set. */
+async function showVolume(next, volumeId) {
   const displaySetId = `next3D:${next.id}`;
 
-  await legacy.setVolumes([{ volumeId }]);
   utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
     imageIds: cache.getVolume(volumeId).imageIds,
     volumeId,
@@ -104,9 +170,8 @@ function expectPointsClose(actual, expected, precision = 4) {
 }
 
 /** Expects the camera of the next viewport to be the legacy camera. */
-function expectSameCamera(next, legacy) {
+function expectSameCamera(next, legacyCamera) {
   const nextCamera = next.getViewState();
-  const legacyCamera = legacy.getCamera();
 
   expect(nextCamera.parallelProjection).toBe(legacyCamera.parallelProjection);
   expect(nextCamera.parallelScale).toBeCloseTo(legacyCamera.parallelScale, 4);
@@ -133,18 +198,14 @@ function knownPointsOf(volumeId) {
 
 /**
  * Expects `worldToCanvas` of the known points and `canvasToWorld` back of
- * their canvas points to be the same on both viewports.
+ * their canvas points to be what the legacy viewport gave.
  */
-function expectSameTransforms(next, legacy, volumeId) {
-  knownPointsOf(volumeId).forEach((point) => {
-    const canvasPoint = legacy.worldToCanvas(point);
+function expectSameTransforms(next, legacyTransforms, volumeId) {
+  knownPointsOf(volumeId).forEach((point, index) => {
+    const { canvasPoint, worldPoint } = legacyTransforms[index];
 
     expectPointsClose(next.worldToCanvas(point), canvasPoint, 3);
-    expectPointsClose(
-      next.canvasToWorld(canvasPoint),
-      legacy.canvasToWorld(canvasPoint),
-      3
-    );
+    expectPointsClose(next.canvasToWorld(canvasPoint), worldPoint, 3);
   });
 }
 
@@ -163,8 +224,7 @@ async function pictureOf(viewport) {
 }
 
 /** Expects the picture of the next viewport to be the legacy picture. */
-async function expectSamePicture(next, legacy, outputName) {
-  const legacyPicture = await pictureOf(legacy);
+async function expectSamePicture(next, legacyPicture, outputName) {
   const nextPicture = await pictureOf(next);
 
   await testUtils.compareImagesToImage(nextPicture, legacyPicture, outputName);
@@ -189,61 +249,71 @@ describe('Direct next 3D viewport in perspective -- ', () => {
   });
 
   it('draws a volume and maps points as a legacy 3D viewport in perspective', async function () {
-    const [legacy, next] = createPair(renderingEngine, {
+    const next = createNextViewport(renderingEngine, {
       parallelProjection: false,
     });
     const volumeId = await createVolume();
 
-    await showOnBoth(legacy, next, volumeId);
+    await showVolume(next, volumeId);
 
-    expect(legacy.getCamera().parallelProjection).toBe(false);
-    expectSameCamera(next, legacy);
-    expectSameTransforms(next, legacy, volumeId);
-    await expectSamePicture(next, legacy, 'next3D_perspective');
+    expectSameCamera(next, LEGACY_PERSPECTIVE_CAMERA);
+    expectSameTransforms(next, LEGACY_PERSPECTIVE_TRANSFORMS, volumeId);
+    await expectSamePicture(
+      next,
+      LEGACY_PERSPECTIVE_PICTURE,
+      'next3D_perspective'
+    );
   });
 
   it('takes a parallel scale, dollies and resets as a legacy 3D viewport in perspective', async function () {
-    const [legacy, next] = createPair(renderingEngine, {
+    const next = createNextViewport(renderingEngine, {
       parallelProjection: false,
     });
     const volumeId = await createVolume();
 
-    await showOnBoth(legacy, next, volumeId);
+    await showVolume(next, volumeId);
 
-    legacy.setZoom(2);
+    const legacyZoomed = {
+      ...LEGACY_PERSPECTIVE_CAMERA,
+      parallelScale: LEGACY_PERSPECTIVE_CAMERA.parallelScale / 2,
+    };
+
     next.setViewState({
       parallelScale: next.getViewState().parallelScale / 2,
     });
 
-    expectSameCamera(next, legacy);
-    expectSameTransforms(next, legacy, volumeId);
+    expectSameCamera(next, legacyZoomed);
+    expectSameTransforms(next, LEGACY_PERSPECTIVE_TRANSFORMS, volumeId);
 
-    const { focalPoint, position } = legacy.getCamera();
+    const { focalPoint, position } = legacyZoomed;
     const dolly = {
       position: position.map(
         (value, index) => focalPoint[index] + (value - focalPoint[index]) / 4
       ),
     };
 
-    legacy.setCamera(dolly);
     next.setViewState(dolly);
 
-    expectSameCamera(next, legacy);
-    expectSameTransforms(next, legacy, volumeId);
-    await expectSamePicture(next, legacy, 'next3D_perspective_dolly');
+    expectSameCamera(next, { ...legacyZoomed, ...dolly });
+    expectSameTransforms(next, LEGACY_PERSPECTIVE_DOLLY_TRANSFORMS, volumeId);
+    await expectSamePicture(
+      next,
+      LEGACY_PERSPECTIVE_DOLLY_PICTURE,
+      'next3D_perspective_dolly'
+    );
 
-    legacy.resetCamera();
     next.resetViewState();
 
-    expectSameCamera(next, legacy);
-    expectSameTransforms(next, legacy, volumeId);
-    await expectSamePicture(next, legacy, 'next3D_perspective_reset');
+    expectSameCamera(next, LEGACY_PERSPECTIVE_CAMERA);
+    expectSameTransforms(next, LEGACY_PERSPECTIVE_TRANSFORMS, volumeId);
+    await expectSamePicture(
+      next,
+      LEGACY_PERSPECTIVE_PICTURE,
+      'next3D_perspective_reset'
+    );
   });
 
   it('turns to perspective through the view state, as the legacy viewport made with the option', async function () {
-    const [legacy] = createPair(renderingEngine, {
-      parallelProjection: false,
-    });
     const element = document.createElement('div');
 
     element.style.width = '400px';
@@ -262,12 +332,16 @@ describe('Direct next 3D viewport in perspective -- ', () => {
     const changed = renderingEngine.getViewport('changed3D');
     const volumeId = await createVolume();
 
-    await showOnBoth(legacy, changed, volumeId);
+    await showVolume(changed, volumeId);
     changed.setViewState({ parallelProjection: false });
     changed.resetViewState();
 
-    expectSameCamera(changed, legacy);
-    await expectSamePicture(changed, legacy, 'next3D_perspective_option');
+    expectSameCamera(changed, LEGACY_PERSPECTIVE_CAMERA);
+    await expectSamePicture(
+      changed,
+      LEGACY_PERSPECTIVE_PICTURE,
+      'next3D_perspective_option'
+    );
   });
 });
 
@@ -343,31 +417,10 @@ const SEGMENT_COLORS = [
 ];
 
 /**
- * The callback of the label volume of the volumeProgressive example: nearest
- * interpolation, no shade, black and transparent at 0, and the colour of each
- * segment, opaque, at its index.
- */
-function labelCallback({ volumeActor }) {
-  const property = volumeActor.getProperty();
-  const colors = property.getRGBTransferFunction(0);
-  const opacity = property.getScalarOpacity(0);
-
-  property.setInterpolationTypeToNearest();
-  property.setShade(false);
-  colors.removeAllPoints();
-  opacity.removeAllPoints();
-  colors.addRGBPoint(0, 0, 0, 0);
-  opacity.addPoint(0, 0);
-  SEGMENT_COLORS.slice(1).forEach(([r, g, b], segmentIndex) => {
-    colors.addRGBPoint(segmentIndex + 1, r / 255, g / 255, b / 255);
-    opacity.addPoint(segmentIndex + 1, 1);
-  });
-}
-
-/**
- * The preset that gives the picture of the label callback: the colour
- * points and the opacity points of the callback, no shade, and an opacity
- * that the gradient does not change.
+ * The preset that gives the picture of the label callback of the
+ * volumeProgressive example: nearest interpolation, no shade, black and
+ * transparent at 0, the colour of each segment, opaque, at its index, and an
+ * opacity that the gradient does not change.
  */
 const LABEL_PRESET = {
   name: 'labels',
@@ -413,18 +466,67 @@ function opacitiesAt(viewport, values) {
 }
 
 /**
- * Shows a volume on a legacy viewport through `setVolumes` with a volume
- * input, and on a direct next viewport with a presentation.
+ * What the legacy 3D viewport showed for the volume input
+ * `{ callback: setCtTransferFunctionForVolumeActor }`: the colour and the
+ * scalar opacity at -200, -160, 0, 40, 100, 200, 240 and 300, and its picture.
  */
-async function showWithPresentation(
-  legacy,
-  next,
-  volumeId,
-  volumeInput,
-  presentation
-) {
-  await legacy.setVolumes([{ volumeId, ...volumeInput }]);
+const LEGACY_CT_CALLBACK = {
+  colours: [
+    [0, 0, 0],
+    [0, 0, 0],
+    [0.4, 0.4, 0.4],
+    [0.5, 0.5, 0.5],
+    [0.65, 0.65, 0.65],
+    [0.9, 0.9, 0.9],
+    [1, 1, 1],
+    [1, 1, 1],
+  ],
+  opacities: [1, 1, 1, 1, 1, 1, 1, 1],
+  picture: legacy3D_callback_ct.default,
+};
 
+/**
+ * What the legacy 3D viewport showed for the volume input
+ * `{ callback: setPetTransferFunctionForVolumeActor, blendMode: MAXIMUM_INTENSITY_BLEND }`:
+ * the colour at 0, 1, 2.5, 4, 5 and 6, the blend mode of its mapper, and its
+ * picture.
+ */
+const LEGACY_PET_MIP_CALLBACK = {
+  colours: [
+    [1, 1, 1],
+    [0.8, 0.8, 0.8],
+    [0.5, 0.5, 0.5],
+    [0.2, 0.2, 0.2],
+    [0, 0, 0],
+    [0, 0, 0],
+  ],
+  blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
+  picture: legacy3D_callback_pet_mip.default,
+};
+
+/**
+ * What the legacy 3D viewport showed for the label callback of the
+ * volumeProgressive example: the colour and the scalar opacity at 0, 0.5, 1,
+ * 1.5, 2 and 3, the interpolation type (nearest) and the shade of its
+ * property, and its picture.
+ */
+const LEGACY_LABEL_CALLBACK = {
+  colours: [
+    [0, 0, 0],
+    [0.43333333333333335, 0.16470588235294117, 0.16470588235294117],
+    [0.8666666666666667, 0.32941176470588235, 0.32941176470588235],
+    [0.5843137254901961, 0.611764705882353, 0.4019607843137255],
+    [0.30196078431372547, 0.8941176470588236, 0.4745098039215686],
+    [0.6509803921568628, 0.27450980392156865, 0.9215686274509803],
+  ],
+  opacities: [0, 0.5, 1, 1, 1, 1],
+  interpolationType: 0,
+  shade: false,
+  picture: legacy3D_callback_labels.default,
+};
+
+/** Shows a volume on a direct next viewport with a presentation. */
+async function showWithPresentation(next, volumeId, presentation) {
   const displaySetId = addVolumeDisplaySet(`next3D:${next.id}`, volumeId);
 
   await next.setDisplaySets({
@@ -453,80 +555,76 @@ describe('Presentations for the volume callbacks of the 3D examples -- ', () => 
   });
 
   it('draws the CT transfer function callback with the voiRange of the presentation', async function () {
-    const [legacy, next] = createPair(renderingEngine);
+    const next = createNextViewport(renderingEngine);
     const volumeId = await createVolume();
     const values = [-200, -160, 0, 40, 100, 200, 240, 300];
 
-    await showWithPresentation(
-      legacy,
-      next,
-      volumeId,
-      { callback: setCtTransferFunctionForVolumeActor },
-      { voiRange: ctVoiRange }
-    );
+    await showWithPresentation(next, volumeId, { voiRange: ctVoiRange });
 
     coloursAt(next, values).forEach((rgb, index) =>
-      expectPointsClose(rgb, coloursAt(legacy, values)[index])
+      expectPointsClose(rgb, LEGACY_CT_CALLBACK.colours[index])
     );
-    expectPointsClose(opacitiesAt(next, values), opacitiesAt(legacy, values));
-    await expectSamePicture(next, legacy, 'next3D_callback_ct');
+    expectPointsClose(opacitiesAt(next, values), LEGACY_CT_CALLBACK.opacities);
+    await expectSamePicture(
+      next,
+      LEGACY_CT_CALLBACK.picture,
+      'next3D_callback_ct'
+    );
   });
 
   it('draws the PET transfer function callback with a MIP blend mode as voiRange, invert and blendMode of the presentation', async function () {
-    const [legacy, next] = createPair(renderingEngine);
+    const next = createNextViewport(renderingEngine);
     const volumeId = await createVolume('pet', (i, j, k) => (i + j + k) % 7);
     const values = [0, 1, 2.5, 4, 5, 6];
 
-    await showWithPresentation(
-      legacy,
-      next,
-      volumeId,
-      {
-        callback: setPetTransferFunctionForVolumeActor,
-        blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
-      },
-      {
-        voiRange: { lower: 0, upper: 5 },
-        invert: true,
-        blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
-      }
-    );
+    await showWithPresentation(next, volumeId, {
+      voiRange: { lower: 0, upper: 5 },
+      invert: true,
+      blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
+    });
 
     coloursAt(next, values).forEach((rgb, index) =>
-      expectPointsClose(rgb, coloursAt(legacy, values)[index])
+      expectPointsClose(rgb, LEGACY_PET_MIP_CALLBACK.colours[index])
     );
     expect(next.getActors()[0].actor.getMapper().getBlendMode()).toBe(
-      legacy.getActors()[0].actor.getMapper().getBlendMode()
+      LEGACY_PET_MIP_CALLBACK.blendMode
     );
-    await expectSamePicture(next, legacy, 'next3D_callback_pet_mip');
+    await expectSamePicture(
+      next,
+      LEGACY_PET_MIP_CALLBACK.picture,
+      'next3D_callback_pet_mip'
+    );
   });
 
   it('draws the label callback with a preset object and the interpolation type of the presentation', async function () {
-    const [legacy, next] = createPair(renderingEngine);
+    const next = createNextViewport(renderingEngine);
     const volumeId = await createVolume('labels', (i, j, k) =>
       i < 10 ? 0 : 1 + ((Math.floor(i / 10) + j + k) % 3)
     );
     const values = [0, 0.5, 1, 1.5, 2, 3];
 
-    await showWithPresentation(
-      legacy,
-      next,
-      volumeId,
-      { callback: labelCallback },
-      { preset: LABEL_PRESET, interpolationType: InterpolationType.NEAREST }
-    );
+    await showWithPresentation(next, volumeId, {
+      preset: LABEL_PRESET,
+      interpolationType: InterpolationType.NEAREST,
+    });
 
-    const legacyProperty = legacy.getActors()[0].actor.getProperty();
     const nextProperty = next.getActors()[0].actor.getProperty();
 
     coloursAt(next, values).forEach((rgb, index) =>
-      expectPointsClose(rgb, coloursAt(legacy, values)[index])
+      expectPointsClose(rgb, LEGACY_LABEL_CALLBACK.colours[index])
     );
-    expectPointsClose(opacitiesAt(next, values), opacitiesAt(legacy, values));
+    expectPointsClose(
+      opacitiesAt(next, values),
+      LEGACY_LABEL_CALLBACK.opacities
+    );
     expect(nextProperty.getInterpolationType()).toBe(
-      legacyProperty.getInterpolationType()
+      LEGACY_LABEL_CALLBACK.interpolationType
     );
-    expect(nextProperty.getShade()).toBe(legacyProperty.getShade());
-    await expectSamePicture(next, legacy, 'next3D_callback_labels');
+    expect(nextProperty.getShade()).toBe(LEGACY_LABEL_CALLBACK.shade);
+    await expectSamePicture(
+      next,
+      LEGACY_LABEL_CALLBACK.picture,
+      'next3D_callback_labels'
+    );
   });
 });

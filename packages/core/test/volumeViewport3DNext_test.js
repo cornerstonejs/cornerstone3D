@@ -7,25 +7,28 @@ const { ViewportType, OrientationAxis } = Enums;
 const renderingEngineId = utilities.uuidv4();
 
 /**
- * Makes viewports of one size and orientation in one rendering engine: the
- * viewport of the legacy 3D type, which is the 3D legacy adapter, when
- * `legacyId` is given, then a direct next 3D viewport for each of `nextIds`.
+ * The camera of the legacy 3D viewport of 400 by 300 pixels, sagittal, with
+ * the volume of the tests: after `setVolumes`, and again after `resetCamera`.
  */
-function createViewports(renderingEngine, { legacyId, nextIds }) {
+const LEGACY_FIT_CAMERA = {
+  parallelScale: 15,
+  focalPoint: [15, 19.5, 5.5],
+  position: [272.0992026436488, 19.5, 5.5],
+  viewPlaneNormal: [1, 0, 0],
+  viewUp: [0, 0, 1],
+};
+
+/**
+ * Makes direct next 3D viewports of one size and orientation in one
+ * rendering engine, one for each of `nextIds`.
+ */
+function createViewports(renderingEngine, { nextIds }) {
   const viewportOptions = {
     orientation: OrientationAxis.SAGITTAL,
     width: 400,
     height: 300,
     useEnableElement: true,
   };
-
-  if (legacyId) {
-    testUtils.createViewports(renderingEngine, {
-      ...viewportOptions,
-      viewportId: legacyId,
-      viewportType: ViewportType.VOLUME_3D,
-    });
-  }
 
   nextIds.forEach((viewportId) =>
     testUtils.createViewports(renderingEngine, {
@@ -35,9 +38,7 @@ function createViewports(renderingEngine, { legacyId, nextIds }) {
     })
   );
 
-  return [legacyId, ...nextIds]
-    .filter(Boolean)
-    .map((viewportId) => renderingEngine.getViewport(viewportId));
+  return nextIds.map((viewportId) => renderingEngine.getViewport(viewportId));
 }
 
 /**
@@ -110,50 +111,41 @@ describe('Direct next 3D viewport -- ', () => {
   });
 
   it('fits again on resetViewState as the legacy viewport fits on resetCamera', async function () {
-    const [legacy, next] = createViewports(renderingEngine, {
-      legacyId: 'legacy3D',
-      nextIds: ['next3D'],
-    });
+    const [next] = createViewports(renderingEngine, { nextIds: ['next3D'] });
     const volumeId = await createVolume();
 
-    await legacy.setVolumes([{ volumeId }]);
     await showVolume(next, volumeId);
 
-    expectSameCamera(next.getViewState(), legacy.getCamera());
+    expectSameCamera(next.getViewState(), LEGACY_FIT_CAMERA);
 
-    const { focalPoint, position, parallelScale } = legacy.getCamera();
+    const { focalPoint, position, parallelScale } = LEGACY_FIT_CAMERA;
     const zoomedCamera = {
       parallelScale: parallelScale / 3,
       focalPoint: [focalPoint[0], focalPoint[1] + 6, focalPoint[2] - 4],
       position: [position[0], position[1] + 6, position[2] - 4],
     };
 
-    legacy.setCamera(zoomedCamera);
     next.setViewState(zoomedCamera);
-    legacy.resetCamera();
     next.resetViewState();
 
-    expectSameCamera(next.getViewState(), legacy.getCamera());
+    expectSameCamera(next.getViewState(), LEGACY_FIT_CAMERA);
   });
 
   it('keeps the zoom on resetViewState with resetZoom false, as the legacy viewport', async function () {
-    const [legacy, next] = createViewports(renderingEngine, {
-      legacyId: 'legacy3D',
-      nextIds: ['next3D'],
-    });
+    const [next] = createViewports(renderingEngine, { nextIds: ['next3D'] });
     const volumeId = await createVolume();
 
-    await legacy.setVolumes([{ volumeId }]);
     await showVolume(next, volumeId);
 
-    const parallelScale = legacy.getCamera().parallelScale / 2;
+    const parallelScale = LEGACY_FIT_CAMERA.parallelScale / 2;
 
-    legacy.setCamera({ parallelScale });
     next.setViewState({ parallelScale });
-    legacy.resetCamera({ resetZoom: false });
     next.resetViewState({ resetZoom: false });
 
-    expectSameCamera(next.getViewState(), legacy.getCamera());
+    expectSameCamera(next.getViewState(), {
+      ...LEGACY_FIT_CAMERA,
+      parallelScale,
+    });
   });
 
   it('turns to the view of a view reference of another next 3D viewport', async function () {

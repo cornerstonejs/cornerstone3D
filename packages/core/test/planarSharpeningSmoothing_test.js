@@ -16,6 +16,11 @@ import * as fusionSharpening2 from './groundTruth/planarSharpening_fusion_sharpe
 import * as fusionSmoothing3 from './groundTruth/planarSharpening_fusion_smoothing_3.png';
 import * as fusionSmoothing10 from './groundTruth/planarSharpening_fusion_smoothing_10.png';
 import * as fusionBoth from './groundTruth/planarSharpening_fusion_sharpening_1_and_smoothing_5.png';
+import * as stackPlain from './groundTruth/planarSharpening_stack_plain.png';
+import * as volumePlain from './groundTruth/planarSharpening_volume_plain.png';
+import * as fusionPlain from './groundTruth/planarSharpening_fusion_plain.png';
+import legacyRenderPasses from './fixtures/legacySharpeningRenderPasses.json';
+import { readStoredPicture } from './utils/storedPicture';
 
 const { Enums, volumeLoader, imageLoader, utilities } = cornerstone3D;
 const { ViewportType, OrientationAxis, Events } = Enums;
@@ -72,6 +77,22 @@ const EXPECTED = {
     fusionBoth,
   ],
 };
+
+/**
+ * The picture of each legacy scene with no sharpening and no smoothing: the
+ * legacy picture.
+ */
+const LEGACY_PLAIN = {
+  stack: stackPlain,
+  volume: volumePlain,
+  fusion: fusionPlain,
+};
+
+/**
+ * What `describeRenderPasses` gave for a legacy viewport with each setting
+ * of `CASES`, the same for the stack, the volume and the fusion.
+ */
+const LEGACY_RENDER_PASSES = legacyRenderPasses;
 
 /** The colormap of the second layer of the fusion. */
 const FUSION_COLORMAP = {
@@ -419,12 +440,14 @@ const LEGACY_SCENES = {
 };
 
 /**
- * The reference of a direct next viewport: a legacy scene, whose pictures
- * are the expected pictures, or for the fusion the next viewport on the GPU.
- * The plain fusion of the next viewport differs from the legacy one before
- * any sharpening (the colormap with an opacity mapping draws brighter), so a
- * fusion on the CPU is compared with the fusion of the next viewport on the
- * GPU, and a fusion on the GPU only by its render passes.
+ * The reference of a direct next viewport: what a legacy scene drew, whose
+ * pictures are the expected pictures and the plain picture, with the render
+ * passes of the legacy viewport, or for the fusion the next viewport on the
+ * GPU. The plain fusion of the next viewport differs from the legacy one
+ * before any sharpening (the colormap with an opacity mapping draws
+ * brighter), so a fusion on the CPU is compared with the fusion of the next
+ * viewport on the GPU, and a fusion on the GPU only by its render passes.
+ * `apply` takes a setting of `CASES`, or the setting with both at 0.
  */
 async function showReference(renderingEngine, referenceName) {
   if (referenceName === 'nextFusion') {
@@ -436,20 +459,31 @@ async function showReference(renderingEngine, referenceName) {
     );
 
     return {
-      viewport,
       apply: (properties) =>
         viewport.setDisplaySetPresentation(displaySetId, properties),
+      render: () => renderAndWait(viewport),
+      readPixels: () => readPixels(viewport),
+      describeRenderPasses: () => describeRenderPasses(viewport),
     };
   }
 
-  const viewport = await LEGACY_SCENES[referenceName](renderingEngine);
-  const volumeId = viewport.getVolumeId?.();
+  const plain = await readStoredPicture(LEGACY_PLAIN[referenceName].default);
+  const pictures = await Promise.all(
+    EXPECTED[referenceName].map((picture) => readStoredPicture(picture.default))
+  );
+  let caseIndex = -1;
 
   return {
-    viewport,
     expected: EXPECTED[referenceName],
     sceneName: referenceName,
-    apply: (properties) => viewport.setProperties(properties, volumeId),
+    apply: (properties) => {
+      caseIndex = CASES.findIndex(
+        ([, caseProperties]) => caseProperties === properties
+      );
+    },
+    render: () => Promise.resolve(),
+    readPixels: () => (caseIndex < 0 ? plain : pictures[caseIndex]).data,
+    describeRenderPasses: () => LEGACY_RENDER_PASSES[caseIndex],
   };
 }
 
@@ -582,7 +616,7 @@ describe('Sharpening and smoothing of the planar viewports -- ', () => {
           await showNext(renderingEngine);
         const drawsOnCpu = renderMode.startsWith('cpu');
         const plainNext = readPixels(next);
-        const plain = compareInside(readPixels(reference.viewport), plainNext);
+        const plain = compareInside(reference.readPixels(), plainNext);
 
         expect(next.getRenderPlan()[0].renderMode).toBe(renderMode);
 
@@ -595,7 +629,7 @@ describe('Sharpening and smoothing of the planar viewports -- ', () => {
         for (const [index, [caseName, properties]] of CASES.entries()) {
           reference.apply(properties);
           next.setDisplaySetPresentation(displaySetId, properties);
-          await renderAndWait(reference.viewport);
+          await reference.render();
           await renderAndWait(next);
 
           expect(next.getDisplaySetPresentation(displaySetId)).toEqual(
@@ -606,12 +640,12 @@ describe('Sharpening and smoothing of the planar viewports -- ', () => {
             expect(next.getRenderPasses()).toBe(null);
           } else {
             expect(describeRenderPasses(next)).toEqual(
-              describeRenderPasses(reference.viewport)
+              reference.describeRenderPasses()
             );
           }
 
           const pixels = readPixels(next);
-          const result = compareInside(readPixels(reference.viewport), pixels);
+          const result = compareInside(reference.readPixels(), pixels);
 
           console.log(
             `[SHARPENING] ${name} ${caseName}: plain ${plain.max}, max ${result.max}, over ${result.over}`

@@ -3,6 +3,7 @@ import * as testUtils from '../../../utils/test/testUtils';
 import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import vtkSphereSource from '@kitware/vtk.js/Filters/Sources/SphereSource';
 import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
+import legacyValues from './fixtures/legacy3DViewportGaps.json';
 
 const { Enums, volumeLoader, utilities, cache, CONSTANTS, viewportProjection } =
   cornerstone3D;
@@ -11,25 +12,54 @@ const { ViewportType, OrientationAxis, Events, BlendModes } = Enums;
 const renderingEngineId = utilities.uuidv4();
 
 /**
- * Makes viewports of one size and orientation in one rendering engine: the
- * viewport of the legacy 3D type, which is the 3D legacy adapter, when
- * `legacyId` is given, then a direct next 3D viewport for each of `nextIds`.
+ * The colours and the opacities, sampled as `sampledColoursOf` and
+ * `sampledOpacitiesOf` sample them, of the legacy 3D viewport with the
+ * volume of the tests after `setProperties` with: the preset `CT-Bone`; then
+ * a VOI range of 20 to 200; then invert; the colormap `hsv`; then a VOI
+ * range of 50 to 150; the opacity mapping of the tests; then the threshold
+ * 120; the sampled sigmoid VOI LUT function with a VOI range of 40 to 160.
  */
-function createViewports(renderingEngine, { legacyId, nextIds }) {
+const LEGACY_TRANSFER_FUNCTIONS = legacyValues.transferFunctions;
+
+/**
+ * The render passes of the legacy 3D viewport, as `renderPassesOf` gives
+ * them, with sharpening 0.5 and smoothing 2, and with the sharpening alone.
+ * It had none before.
+ */
+const LEGACY_RENDER_PASSES = legacyValues.renderPasses;
+
+/**
+ * The camera of the legacy 3D viewport of 400 by 300 pixels, sagittal, with
+ * the volume of the tests after `setVolumes`.
+ */
+const LEGACY_FIT_CAMERA = {
+  parallelScale: 15,
+  focalPoint: [15, 19.5, 5.5],
+};
+
+/**
+ * The camera of the legacy 3D viewport with the sphere of the tests as its
+ * only actor, after `setActors` and again after `resetCamera`.
+ */
+const LEGACY_SPHERE_CAMERA = {
+  parallelScale: 100,
+  focalPoint: [0, 0, 0],
+  position: [1687.329395574948, 0, 0],
+  viewPlaneNormal: [1, 0, 0],
+  viewUp: [0, 0, 1],
+};
+
+/**
+ * Makes direct next 3D viewports of one size and orientation in one
+ * rendering engine, one for each of `nextIds`.
+ */
+function createViewports(renderingEngine, { nextIds }) {
   const viewportOptions = {
     orientation: OrientationAxis.SAGITTAL,
     width: 400,
     height: 300,
     useEnableElement: true,
   };
-
-  if (legacyId) {
-    testUtils.createViewports(renderingEngine, {
-      ...viewportOptions,
-      viewportId: legacyId,
-      viewportType: ViewportType.VOLUME_3D,
-    });
-  }
 
   nextIds.forEach((viewportId) =>
     testUtils.createViewports(renderingEngine, {
@@ -39,9 +69,7 @@ function createViewports(renderingEngine, { legacyId, nextIds }) {
     })
   );
 
-  return [legacyId, ...nextIds]
-    .filter(Boolean)
-    .map((viewportId) => renderingEngine.getViewport(viewportId));
+  return nextIds.map((viewportId) => renderingEngine.getViewport(viewportId));
 }
 
 /**
@@ -86,13 +114,6 @@ async function showVolume(viewport, volumeId) {
   });
 
   return displaySetId;
-}
-
-/** Shows the volume on the legacy and on the next viewport. */
-async function showOnBoth(legacy, next, volumeId) {
-  await legacy.setVolumes([{ volumeId }]);
-
-  return showVolume(next, volumeId);
 }
 
 /** The vtk.js volume actor of the first actor entry of a viewport. */
@@ -144,13 +165,100 @@ function sampledOpacitiesOf(viewport) {
 }
 
 /**
- * Expects the same colours and the same opacities on both viewports, sampled
- * over values: the nodes may sit elsewhere for the same picture.
+ * Expects the colours and the opacities of the next viewport to be those of
+ * the legacy viewport, sampled over values: the nodes may sit elsewhere for
+ * the same picture.
  */
 function expectSameTransferFunctions(next, legacy) {
-  expectPointsClose(sampledColoursOf(next), sampledColoursOf(legacy));
-  expectPointsClose(sampledOpacitiesOf(next), sampledOpacitiesOf(legacy));
+  expectPointsClose(sampledColoursOf(next), legacy.colours);
+  expectPointsClose(sampledOpacitiesOf(next), legacy.opacities);
 }
+
+/**
+ * What the two VOI_MODIFIED events of the legacy 3D viewport carried for
+ * `setProperties` with a VOI range of 30 to 90 and then with invert.
+ */
+function legacyVoiModifiedDetails(volumeId) {
+  return [
+    {
+      volumeId,
+      range: { lower: 30, upper: 90 },
+      invert: false,
+      colormap: { name: 'Grayscale' },
+    },
+    {
+      volumeId,
+      range: { lower: 30, upper: 90 },
+      invert: true,
+      colormap: { name: 'Inverted-Grayscale' },
+    },
+  ];
+}
+
+/**
+ * How many VOI_MODIFIED events the legacy 3D viewport fired for
+ * `setProperties` with the colormap `hsv` and then with the colormap
+ * threshold 100.
+ */
+const LEGACY_VOI_MODIFIED_COUNT_ON_COLORMAP = 1;
+
+/**
+ * The details of the two COLORMAP_MODIFIED events that the legacy 3D viewport
+ * fired for `setProperties` with the colormap `hsv` and then with the
+ * colormap threshold 100.
+ */
+const LEGACY_COLORMAP_MODIFIED_DETAILS = [
+  { colormap: { name: 'hsv', threshold: null } },
+  { colormap: { name: 'hsv', threshold: 100 } },
+];
+
+/**
+ * The detail of the one VOLUME_VIEWPORT_NEW_VOLUME event of the legacy 3D
+ * viewport at `setVolumes`: one volume actor, which names the volume.
+ */
+function legacyNewVolumeDetails(volumeId) {
+  return [{ volumeActors: [{ referencedId: volumeId }] }];
+}
+
+/**
+ * What the legacy 3D viewport gave after `setZoom(2)` and then
+ * `setPan([20, -10])` from the fit of the volume: its zoom, its parallel
+ * scale, its pan and its focal point.
+ */
+const LEGACY_ZOOM_AND_PAN = {
+  zoom: 2,
+  parallelScale: 7.5,
+  pan: [20, -10],
+  focalPoint: [15, 18.5, 5],
+};
+
+/**
+ * The answers of `hasImageURI` of the legacy 3D viewport for the URI of an
+ * image of its volume and of an image of another volume.
+ */
+const LEGACY_HAS_IMAGE_URI = { ownVolume: true, otherVolume: false };
+
+/**
+ * What `getIntensityFromWorld` of the legacy 3D viewport gave at its focal
+ * point, at 2, 3, 4 and at 10, 12, 6.
+ */
+const LEGACY_INTENSITIES = [0, 0, 0];
+
+/**
+ * What the legacy 3D viewport with the volume of the tests and a second
+ * volume of 20 by 24 by 6 voxels answered: no volume id for a volume that it
+ * does not show, and the dimensions, the spacing and the origin of the image
+ * data of each volume.
+ */
+const LEGACY_VOLUME_MEMBERS = {
+  missingVolumeId: undefined,
+  otherImageData: {
+    dimensions: [20, 24, 6],
+    spacing: [1, 1, 1],
+    origin: [0, 0, 0],
+  },
+  dimensions: [30, 40, 12],
+};
 
 /** Collects the details of an event fired on the element of a viewport. */
 function recordEvents(viewport, eventName) {
@@ -181,98 +289,85 @@ describe('Direct next 3D viewport, colour and presets -- ', () => {
   });
 
   it('keeps a preset applied to its actor when the VOI range changes, as the legacy viewport', async function () {
-    const [legacy, next] = createViewports(renderingEngine, {
-      legacyId: 'legacy3D',
-      nextIds: ['next3D'],
-    });
+    const [next] = createViewports(renderingEngine, { nextIds: ['next3D'] });
     const volumeId = await createVolume();
 
-    await showOnBoth(legacy, next, volumeId);
+    await showVolume(next, volumeId);
 
     const preset = CONSTANTS.VIEWPORT_PRESETS.find(
       ({ name }) => name === 'CT-Bone'
     );
 
-    legacy.setProperties({ preset: 'CT-Bone' });
     utilities.applyPreset(volumeActorOf(next), preset);
-    legacy.setProperties({ voiRange: { lower: 20, upper: 200 } });
     next.setDisplaySetPresentation({ voiRange: { lower: 20, upper: 200 } });
 
-    expectSameTransferFunctions(next, legacy);
+    expectSameTransferFunctions(
+      next,
+      LEGACY_TRANSFER_FUNCTIONS.presetCtBoneVoiRange
+    );
   });
 
   it('applies the preset key of the presentation and keeps it on a VOI change and on invert', async function () {
-    const [legacy, next] = createViewports(renderingEngine, {
-      legacyId: 'legacy3D',
-      nextIds: ['next3D'],
-    });
+    const [next] = createViewports(renderingEngine, { nextIds: ['next3D'] });
     const volumeId = await createVolume();
-    const displaySetId = await showOnBoth(legacy, next, volumeId);
+    const displaySetId = await showVolume(next, volumeId);
 
-    legacy.setProperties({ preset: 'CT-Bone' });
     next.setDisplaySetPresentation(displaySetId, { preset: 'CT-Bone' });
 
-    expectSameTransferFunctions(next, legacy);
+    expectSameTransferFunctions(next, LEGACY_TRANSFER_FUNCTIONS.presetCtBone);
     expect(next.getDisplaySetPresentation(displaySetId).preset).toBe('CT-Bone');
 
-    legacy.setProperties({ voiRange: { lower: 20, upper: 200 } });
     next.setDisplaySetPresentation(displaySetId, {
       voiRange: { lower: 20, upper: 200 },
     });
 
-    expectSameTransferFunctions(next, legacy);
+    expectSameTransferFunctions(
+      next,
+      LEGACY_TRANSFER_FUNCTIONS.presetCtBoneVoiRange
+    );
 
-    legacy.setProperties({ invert: true });
     next.setDisplaySetPresentation(displaySetId, { invert: true });
 
-    expectSameTransferFunctions(next, legacy);
+    expectSameTransferFunctions(
+      next,
+      LEGACY_TRANSFER_FUNCTIONS.presetCtBoneVoiRangeInverted
+    );
   });
 
-  it('applies a preset without PRESET_MODIFIED, where the legacy viewport fires it', async function () {
-    const [legacy, next] = createViewports(renderingEngine, {
-      legacyId: 'legacy3D',
-      nextIds: ['next3D'],
-    });
+  it('applies a preset without PRESET_MODIFIED', async function () {
+    const [next] = createViewports(renderingEngine, { nextIds: ['next3D'] });
     const volumeId = await createVolume();
 
-    await showOnBoth(legacy, next, volumeId);
+    await showVolume(next, volumeId);
 
-    const legacyDetails = recordEvents(legacy, Events.PRESET_MODIFIED);
     const nextDetails = recordEvents(next, Events.PRESET_MODIFIED);
 
-    legacy.setProperties({ preset: 'CT-Bone' });
     next.setDisplaySetPresentation({ preset: 'CT-Bone' });
 
-    expect(legacyDetails.length).toBe(1);
     expect(nextDetails.length).toBe(0);
-    expectSameTransferFunctions(next, legacy);
+    expectSameTransferFunctions(next, LEGACY_TRANSFER_FUNCTIONS.presetCtBone);
   });
 
   it('applies a colormap name as the legacy viewport, and keeps it on a VOI change', async function () {
-    const [legacy, next] = createViewports(renderingEngine, {
-      legacyId: 'legacy3D',
-      nextIds: ['next3D'],
-    });
+    const [next] = createViewports(renderingEngine, { nextIds: ['next3D'] });
     const volumeId = await createVolume();
 
-    await showOnBoth(legacy, next, volumeId);
+    await showVolume(next, volumeId);
 
-    legacy.setProperties({ colormap: { name: 'hsv' } });
     next.setDisplaySetPresentation({ colormap: { name: 'hsv' } });
 
-    expectSameTransferFunctions(next, legacy);
+    expectSameTransferFunctions(next, LEGACY_TRANSFER_FUNCTIONS.colormapHsv);
 
-    legacy.setProperties({ voiRange: { lower: 50, upper: 150 } });
     next.setDisplaySetPresentation({ voiRange: { lower: 50, upper: 150 } });
 
-    expectSameTransferFunctions(next, legacy);
+    expectSameTransferFunctions(
+      next,
+      LEGACY_TRANSFER_FUNCTIONS.colormapHsvVoiRange
+    );
   });
 
   it('applies an opacity mapping and a threshold of the colormap as the legacy viewport', async function () {
-    const [legacy, next] = createViewports(renderingEngine, {
-      legacyId: 'legacy3D',
-      nextIds: ['next3D'],
-    });
+    const [next] = createViewports(renderingEngine, { nextIds: ['next3D'] });
     const volumeId = await createVolume();
     const opacityMapping = [
       { value: 0, opacity: 0 },
@@ -280,46 +375,36 @@ describe('Direct next 3D viewport, colour and presets -- ', () => {
       { value: 255, opacity: 0.9 },
     ];
 
-    await showOnBoth(legacy, next, volumeId);
+    await showVolume(next, volumeId);
 
-    legacy.setProperties({ colormap: { opacityMapping } });
     next.setDisplaySetPresentation({ colormap: { opacityMapping } });
 
-    expectSameTransferFunctions(next, legacy);
+    expectSameTransferFunctions(next, LEGACY_TRANSFER_FUNCTIONS.opacityMapping);
 
-    legacy.setProperties({ colormap: { threshold: 120 } });
     next.setDisplaySetPresentation({ colormap: { threshold: 120 } });
 
-    expectSameTransferFunctions(next, legacy);
+    expectSameTransferFunctions(
+      next,
+      LEGACY_TRANSFER_FUNCTIONS.opacityMappingThreshold
+    );
   });
 
   it('applies the sampled sigmoid VOI LUT function as the legacy viewport', async function () {
-    const [legacy, next] = createViewports(renderingEngine, {
-      legacyId: 'legacy3D',
-      nextIds: ['next3D'],
-    });
+    const [next] = createViewports(renderingEngine, { nextIds: ['next3D'] });
     const volumeId = await createVolume();
 
-    await showOnBoth(legacy, next, volumeId);
+    await showVolume(next, volumeId);
 
-    legacy.setProperties({ VOILUTFunction: 'SAMPLED_SIGMOID' });
     next.setDisplaySetPresentation({ voiLUTFunction: 'SAMPLED_SIGMOID' });
-    legacy.setProperties({ voiRange: { lower: 40, upper: 160 } });
     next.setDisplaySetPresentation({ voiRange: { lower: 40, upper: 160 } });
 
-    expectSameTransferFunctions(next, legacy);
+    expectSameTransferFunctions(next, LEGACY_TRANSFER_FUNCTIONS.sampledSigmoid);
   });
 
   it('applies the blend mode of the presentation as the blend mode of the legacy volume input', async function () {
-    const [legacy, next] = createViewports(renderingEngine, {
-      legacyId: 'legacy3D',
-      nextIds: ['next3D'],
-    });
+    const [next] = createViewports(renderingEngine, { nextIds: ['next3D'] });
     const volumeId = await createVolume();
 
-    await legacy.setVolumes([
-      { volumeId, blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND },
-    ]);
     await showVolume(next, volumeId);
     next.setDisplaySetPresentation({
       blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
@@ -353,20 +438,15 @@ describe('Direct next 3D viewport, colour and presets -- ', () => {
   });
 
   it('fires VOI_MODIFIED with the legacy detail on a VOI change and on invert, with the invert of the display set and no invertStateChanged', async function () {
-    const [legacy, next] = createViewports(renderingEngine, {
-      legacyId: 'legacy3D',
-      nextIds: ['next3D'],
-    });
+    const [next] = createViewports(renderingEngine, { nextIds: ['next3D'] });
     const volumeId = await createVolume();
 
-    await showOnBoth(legacy, next, volumeId);
+    await showVolume(next, volumeId);
 
-    const legacyDetails = recordEvents(legacy, Events.VOI_MODIFIED);
+    const legacyDetails = legacyVoiModifiedDetails(volumeId);
     const nextDetails = recordEvents(next, Events.VOI_MODIFIED);
 
-    legacy.setProperties({ voiRange: { lower: 30, upper: 90 } });
     next.setDisplaySetPresentation({ voiRange: { lower: 30, upper: 90 } });
-    legacy.setProperties({ invert: true });
     next.setDisplaySetPresentation({ invert: true });
 
     expect(nextDetails.length).toBe(2);
@@ -388,25 +468,19 @@ describe('Direct next 3D viewport, colour and presets -- ', () => {
   });
 
   it('fires VOI_MODIFIED and COLORMAP_MODIFIED with the legacy detail on a colormap change', async function () {
-    const [legacy, next] = createViewports(renderingEngine, {
-      legacyId: 'legacy3D',
-      nextIds: ['next3D'],
-    });
+    const [next] = createViewports(renderingEngine, { nextIds: ['next3D'] });
     const volumeId = await createVolume();
 
-    await showOnBoth(legacy, next, volumeId);
+    await showVolume(next, volumeId);
 
-    const legacyVOI = recordEvents(legacy, Events.VOI_MODIFIED);
     const nextVOI = recordEvents(next, Events.VOI_MODIFIED);
-    const legacyColormap = recordEvents(legacy, Events.COLORMAP_MODIFIED);
+    const legacyColormap = LEGACY_COLORMAP_MODIFIED_DETAILS;
     const nextColormap = recordEvents(next, Events.COLORMAP_MODIFIED);
 
-    legacy.setProperties({ colormap: { name: 'hsv' } });
     next.setDisplaySetPresentation({ colormap: { name: 'hsv' } });
-    legacy.setProperties({ colormap: { threshold: 100 } });
     next.setDisplaySetPresentation({ colormap: { threshold: 100 } });
 
-    expect(nextVOI.length).toBe(legacyVOI.length);
+    expect(nextVOI.length).toBe(LEGACY_VOI_MODIFIED_COUNT_ON_COLORMAP);
     expect(nextColormap.length).toBe(2);
     expect(nextColormap.length).toBe(legacyColormap.length);
     nextColormap.forEach((detail, index) => {
@@ -510,13 +584,10 @@ describe('Direct next 3D viewport, the scene -- ', () => {
   });
 
   it('has no registry of actors: a prop of the application goes to the renderer, and getActors lists the display sets only', async function () {
-    const [legacy, next] = createViewports(renderingEngine, {
-      legacyId: 'legacy3D',
-      nextIds: ['next3D'],
-    });
+    const [next] = createViewports(renderingEngine, { nextIds: ['next3D'] });
     const volumeId = await createVolume();
 
-    await showOnBoth(legacy, next, volumeId);
+    await showVolume(next, volumeId);
 
     for (const member of [
       'addActor',
@@ -526,7 +597,6 @@ describe('Direct next 3D viewport, the scene -- ', () => {
       'getActor',
     ]) {
       expect(next[member]).toBeUndefined();
-      expect(typeof legacy[member]).toBe('function');
     }
 
     const details = recordEvents(next, Events.ACTORS_CHANGED);
@@ -547,18 +617,12 @@ describe('Direct next 3D viewport, the scene -- ', () => {
   });
 
   it('fires VOLUME_VIEWPORT_NEW_VOLUME once on a mount with the legacy detail', async function () {
-    const [legacy, next] = createViewports(renderingEngine, {
-      legacyId: 'legacy3D',
-      nextIds: ['next3D'],
-    });
+    const [next] = createViewports(renderingEngine, { nextIds: ['next3D'] });
     const volumeId = await createVolume();
-    const legacyDetails = recordEvents(
-      legacy,
-      Events.VOLUME_VIEWPORT_NEW_VOLUME
-    );
+    const legacyDetails = legacyNewVolumeDetails(volumeId);
     const nextDetails = recordEvents(next, Events.VOLUME_VIEWPORT_NEW_VOLUME);
 
-    await showOnBoth(legacy, next, volumeId);
+    await showVolume(next, volumeId);
 
     expect(nextDetails.length).toBe(1);
     expect(nextDetails.length).toBe(legacyDetails.length);
@@ -574,54 +638,49 @@ describe('Direct next 3D viewport, the scene -- ', () => {
   });
 
   it('fits a prop of the application in the renderer on resetViewState as the legacy viewport fits the actors of setActors on resetCamera, from the same view direction', async function () {
-    const [legacy, next] = createViewports(renderingEngine, {
-      legacyId: 'legacy3D',
-      nextIds: ['next3D'],
-    });
+    const [next] = createViewports(renderingEngine, { nextIds: ['next3D'] });
 
-    legacy.setActors([createSphereActorEntry()]);
     next.getRenderer().addActor(createSphereActorEntry().actor);
 
-    const { viewUp, focalPoint, position } = legacy.getCamera();
+    const { viewUp, focalPoint, position } = LEGACY_SPHERE_CAMERA;
 
     next.setViewState({ viewUp, focalPoint, position });
-    legacy.setCamera({ parallelScale: legacy.getCamera().parallelScale / 2 });
     next.setViewState({ parallelScale: next.getViewState().parallelScale / 2 });
-    legacy.resetCamera();
     next.resetViewState();
 
-    expectSameCamera(next.getViewState(), legacy.getCamera());
+    expectSameCamera(next.getViewState(), LEGACY_SPHERE_CAMERA);
     expect(next.getRenderer().getActors().length).toBe(1);
     expect(next.getActors().length).toBe(0);
   });
 });
 
 /**
- * Makes the viewport of the legacy 3D type and a direct next 3D viewport with
- * `suppressEvents` in their default options.
+ * The CAMERA_MODIFIED events that the legacy 3D viewport fired for
+ * `setCamera` with `suppressEvents` in its default options.
  */
-function createSuppressedViewports(renderingEngine) {
-  return [
-    ['legacy3D', ViewportType.VOLUME_3D],
-    ['next3D', ViewportType.VOLUME_3D_NEXT],
-  ].map(([viewportId, type]) => {
-    const element = document.createElement('div');
+const LEGACY_SUPPRESSED_CAMERA_EVENT_COUNT = 0;
 
-    element.style.width = '400px';
-    element.style.height = '300px';
-    document.body.appendChild(element);
-    renderingEngine.enableElement({
-      viewportId,
-      type,
-      element,
-      defaultOptions: {
-        orientation: OrientationAxis.SAGITTAL,
-        suppressEvents: true,
-      },
-    });
+/**
+ * Makes a direct next 3D viewport with `suppressEvents` in its default
+ * options.
+ */
+function createSuppressedViewport(renderingEngine) {
+  const element = document.createElement('div');
 
-    return renderingEngine.getViewport(viewportId);
+  element.style.width = '400px';
+  element.style.height = '300px';
+  document.body.appendChild(element);
+  renderingEngine.enableElement({
+    viewportId: 'next3D',
+    type: ViewportType.VOLUME_3D_NEXT,
+    element,
+    defaultOptions: {
+      orientation: OrientationAxis.SAGITTAL,
+      suppressEvents: true,
+    },
   });
+
+  return renderingEngine.getViewport('next3D');
 }
 
 describe('Direct next 3D viewport, the camera -- ', () => {
@@ -643,10 +702,7 @@ describe('Direct next 3D viewport, the camera -- ', () => {
   });
 
   it('gives and sets the zoom and the pan through viewportProjection with the result of the legacy members, from the fit of the mount and of a reset', async function () {
-    const [legacy, next] = createViewports(renderingEngine, {
-      legacyId: 'legacy3D',
-      nextIds: ['next3D'],
-    });
+    const [next] = createViewports(renderingEngine, { nextIds: ['next3D'] });
     const volumeId = await createVolume();
     const zoomPan = () => viewportProjection.getPresentation(next);
     const present = (presentation) =>
@@ -654,39 +710,35 @@ describe('Direct next 3D viewport, the camera -- ', () => {
         viewportProjection.withPresentation(next, presentation)
       );
 
-    await showOnBoth(legacy, next, volumeId);
+    await showVolume(next, volumeId);
 
     for (const member of ['getZoom', 'setZoom', 'getPan', 'setPan']) {
       expect(next[member]).toBeUndefined();
-      expect(typeof legacy[member]).toBe('function');
     }
 
     expect(zoomPan().zoom).toBeCloseTo(1, 6);
     expectPointsClose(zoomPan().pan, [0, 0]);
 
-    legacy.setZoom(2);
     present({ zoom: 2 });
 
-    expect(zoomPan().zoom).toBeCloseTo(legacy.getZoom(), 6);
+    expect(zoomPan().zoom).toBeCloseTo(LEGACY_ZOOM_AND_PAN.zoom, 6);
     expect(next.getViewState().parallelScale).toBeCloseTo(
-      legacy.getCamera().parallelScale,
+      LEGACY_ZOOM_AND_PAN.parallelScale,
       4
     );
 
-    legacy.setPan([20, -10]);
     present({ pan: [10, -5] });
 
     expectPointsClose(
       zoomPan().pan.map((value) => value * zoomPan().zoom),
-      legacy.getPan(),
+      LEGACY_ZOOM_AND_PAN.pan,
       3
     );
     expectPointsClose(
       next.getViewState().focalPoint,
-      legacy.getCamera().focalPoint
+      LEGACY_ZOOM_AND_PAN.focalPoint
     );
 
-    legacy.resetCamera();
     next.resetViewState();
 
     expect(zoomPan().zoom).toBeCloseTo(1, 6);
@@ -715,20 +767,18 @@ describe('Direct next 3D viewport, the camera -- ', () => {
   });
 
   it('fires no CAMERA_MODIFIED with suppressEvents in the options, as the legacy viewport', async function () {
-    const [legacy, next] = createSuppressedViewports(renderingEngine);
+    const next = createSuppressedViewport(renderingEngine);
     const volumeId = await createVolume();
 
-    await showOnBoth(legacy, next, volumeId);
+    await showVolume(next, volumeId);
 
-    const legacyDetails = recordEvents(legacy, Events.CAMERA_MODIFIED);
     const nextDetails = recordEvents(next, Events.CAMERA_MODIFIED);
-    const parallelScale = legacy.getCamera().parallelScale / 2;
+    const parallelScale = LEGACY_FIT_CAMERA.parallelScale / 2;
 
-    legacy.setCamera({ parallelScale });
     next.setViewState({ parallelScale });
 
     expect(next.suppressEvents).toBe(true);
-    expect(nextDetails.length).toBe(legacyDetails.length);
+    expect(nextDetails.length).toBe(LEGACY_SUPPRESSED_CAMERA_EVENT_COUNT);
     expect(nextDetails.length).toBe(0);
   });
 });
@@ -752,14 +802,11 @@ describe('Direct next 3D viewport, volume members -- ', () => {
   });
 
   it('answers for an image URI through isReferenceViewable, where the legacy viewport has hasImageURI', async function () {
-    const [legacy, next] = createViewports(renderingEngine, {
-      legacyId: 'legacy3D',
-      nextIds: ['next3D'],
-    });
+    const [next] = createViewports(renderingEngine, { nextIds: ['next3D'] });
     const volumeId = await createVolume();
     const otherVolumeId = await createVolume('otherVolume');
 
-    await showOnBoth(legacy, next, volumeId);
+    await showVolume(next, volumeId);
 
     const imageURI = utilities.imageIdToURI(
       cache.getVolume(volumeId).imageIds[3]
@@ -774,40 +821,34 @@ describe('Direct next 3D viewport, volume members -- ', () => {
       );
 
     expect(next.hasImageURI).toBeUndefined();
-    expect(holds(imageURI)).toBe(legacy.hasImageURI(imageURI));
+    expect(holds(imageURI)).toBe(LEGACY_HAS_IMAGE_URI.ownVolume);
     expect(holds(imageURI)).toBe(true);
-    expect(holds(otherURI)).toBe(legacy.hasImageURI(otherURI));
+    expect(holds(otherURI)).toBe(LEGACY_HAS_IMAGE_URI.otherVolume);
     expect(holds(otherURI)).toBe(false);
   });
 
   it('gives the value at a world point through getImageData, where the legacy viewport has getIntensityFromWorld', async function () {
-    const [legacy, next] = createViewports(renderingEngine, {
-      legacyId: 'legacy3D',
-      nextIds: ['next3D'],
-    });
+    const [next] = createViewports(renderingEngine, { nextIds: ['next3D'] });
     const volumeId = await createVolume();
 
-    await showOnBoth(legacy, next, volumeId);
+    await showVolume(next, volumeId);
 
-    const { focalPoint } = legacy.getCamera();
+    const { focalPoint } = LEGACY_FIT_CAMERA;
     const { imageData, voxelManager } = next.getImageData();
 
     expect(next.getIntensityFromWorld).toBeUndefined();
-    [focalPoint, [2, 3, 4], [10, 12, 6]].forEach((point) => {
+    [focalPoint, [2, 3, 4], [10, 12, 6]].forEach((point, index) => {
       const value = voxelManager.getAtIJKPoint(
         utilities.transformWorldToIndex(imageData, point)
       );
 
       expect(typeof value).toBe('number');
-      expect(value).toBe(legacy.getIntensityFromWorld(point));
+      expect(value).toBe(LEGACY_INTENSITIES[index]);
     });
   });
 
   it('answers getVolumeId, getImageIds and getImageData for the volume asked for, as the legacy viewport', async function () {
-    const [legacy, next] = createViewports(renderingEngine, {
-      legacyId: 'legacy3D',
-      nextIds: ['next3D'],
-    });
+    const [next] = createViewports(renderingEngine, { nextIds: ['next3D'] });
     const volumeId = await createVolume();
     const otherVolumeId = testUtils.encodeVolumeIdInfo({
       loader: 'fakeVolumeLoader',
@@ -822,7 +863,6 @@ describe('Direct next 3D viewport, volume members -- ', () => {
     });
 
     await volumeLoader.createAndCacheVolume(otherVolumeId, { imageIds: [] });
-    await legacy.setVolumes([{ volumeId }, { volumeId: otherVolumeId }]);
     await next.setDisplaySets(
       {
         displaySetId: addVolumeDisplaySet('next3D:first', volumeId),
@@ -835,26 +875,24 @@ describe('Direct next 3D viewport, volume members -- ', () => {
     );
 
     expect(next.getVolumeId({ volumeId: otherVolumeId })).toBe(otherVolumeId);
-    expect(next.getVolumeId({ volumeId: otherVolumeId })).toBe(
-      legacy.getVolumeId({ volumeId: otherVolumeId })
-    );
+    expect(next.getVolumeId({ volumeId: otherVolumeId })).toBe(otherVolumeId);
     expect(next.getVolumeId({ volumeId: 'missing' })).toBe(
-      legacy.getVolumeId({ volumeId: 'missing' })
+      LEGACY_VOLUME_MEMBERS.missingVolumeId
     );
-    expect(next.getVolumeId()).toBe(legacy.getVolumeId());
+    expect(next.getVolumeId()).toBe(volumeId);
     expect(next.getImageIds(otherVolumeId)).toEqual(
-      legacy.getImageIds(otherVolumeId)
+      cache.getVolume(otherVolumeId).imageIds
     );
-    expect(next.getImageIds()).toEqual(legacy.getImageIds());
+    expect(next.getImageIds()).toEqual(cache.getVolume(volumeId).imageIds);
 
     const nextImageData = next.getImageData(otherVolumeId);
-    const legacyImageData = legacy.getImageData(otherVolumeId);
+    const legacyImageData = LEGACY_VOLUME_MEMBERS.otherImageData;
 
     expect(nextImageData.dimensions).toEqual(legacyImageData.dimensions);
     expectPointsClose(nextImageData.spacing, legacyImageData.spacing);
     expectPointsClose(nextImageData.origin, legacyImageData.origin);
     expect(next.getImageData().dimensions).toEqual(
-      legacy.getImageData().dimensions
+      LEGACY_VOLUME_MEMBERS.dimensions
     );
   });
 });
@@ -892,29 +930,26 @@ describe('Direct next 3D viewport, sharpening and smoothing -- ', () => {
   });
 
   it('gives the render passes of the legacy viewport for the sharpening and the smoothing of the presentation', async function () {
-    const [legacy, next] = createViewports(renderingEngine, {
-      legacyId: 'legacy3D',
-      nextIds: ['next3D'],
-    });
+    const [next] = createViewports(renderingEngine, { nextIds: ['next3D'] });
     const volumeId = await createVolume();
-    const displaySetId = await showOnBoth(legacy, next, volumeId);
+    const displaySetId = await showVolume(next, volumeId);
 
-    expect(renderPassesOf(next)).toEqual(renderPassesOf(legacy));
+    expect(renderPassesOf(next)).toEqual(null);
     expect(renderPassesOf(next)).toBe(null);
 
-    legacy.setProperties({ sharpening: 0.5, smoothing: 2 });
     next.setDisplaySetPresentation(displaySetId, {
       sharpening: 0.5,
       smoothing: 2,
     });
 
     expect(renderPassesOf(next).length).toBe(2);
-    expect(renderPassesOf(next)).toEqual(renderPassesOf(legacy));
+    expect(renderPassesOf(next)).toEqual(
+      LEGACY_RENDER_PASSES.sharpeningAndSmoothing
+    );
     expect(next.getDisplaySetPresentation(displaySetId).sharpening).toBe(0.5);
 
-    legacy.setProperties({ smoothing: 0 });
     next.setDisplaySetPresentation(displaySetId, { smoothing: 0 });
 
-    expect(renderPassesOf(next)).toEqual(renderPassesOf(legacy));
+    expect(renderPassesOf(next)).toEqual(LEGACY_RENDER_PASSES.sharpening);
   });
 });

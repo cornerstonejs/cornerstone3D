@@ -186,6 +186,37 @@ async function rangeOfToolAnnotation(viewport) {
   return result;
 }
 
+/**
+ * What `setRanges` gave on the legacy stack viewport for a stack of these
+ * images: the image of slice 2 and the image of slice 8, the ranges as frame
+ * numbers from 1.
+ */
+function legacyStackRanges(imageIds) {
+  return {
+    range: [3, 9],
+    sliceIndex: 2,
+    rangeEndSliceIndex: 8,
+    referencedImageId: imageIds[2],
+    rangeEndImageId: imageIds[8],
+    viewable: { 1: false, 2: true, 5: true, 8: true, 9: false },
+    afterStart: [5, 9],
+    afterEnd: [5, 7],
+    single: 7,
+    singleReference: undefined,
+  };
+}
+
+/**
+ * What `rangeOfToolAnnotation` gave on the legacy stack viewport: the
+ * annotation of the tool has a plane restriction, and the viewport calls it
+ * viewable and the tools draw it on the slices 2 to 8.
+ */
+const LEGACY_STACK_TOOL_ANNOTATION_RANGE = {
+  hasPlaneRestriction: true,
+  viewable: { 1: false, 2: true, 5: true, 8: true, 9: false },
+  drawn: { 1: false, 2: true, 5: true, 8: true, 9: false },
+};
+
 describe('AnnotationMultiSlice on a direct next planar viewport -- ', () => {
   let renderingEngine;
   let series;
@@ -207,20 +238,8 @@ describe('AnnotationMultiSlice on a direct next planar viewport -- ', () => {
     });
   });
 
-  it('sets a range of images of a stack, as on the legacy stack viewport and on its adapter', async function () {
+  it('sets a range of images of a stack, as on the legacy stack viewport', async function () {
     const { imageIds } = series;
-    const legacy = enableViewport(
-      renderingEngine,
-      'legacyStack',
-      ViewportType.STACK,
-      false
-    );
-    const adapter = enableViewport(
-      renderingEngine,
-      'adapterStack',
-      ViewportType.STACK,
-      true
-    );
     const next = enableViewport(
       renderingEngine,
       'nextStack',
@@ -228,17 +247,11 @@ describe('AnnotationMultiSlice on a direct next planar viewport -- ', () => {
       true
     );
 
-    await legacy.setStack(imageIds, 0);
-    await renderAndWait(legacy);
-    await adapter.setStack(imageIds, 0);
-    await renderAndWait(adapter);
     await showNextStack(next, imageIds);
 
     expect(next.getCurrentMode()).toBe('stack');
     expect(next.getSliceIndexForImage).toBeUndefined();
 
-    const legacyResult = await setRanges(legacy);
-    const adapterResult = await setRanges(adapter);
     const nextResult = await setRanges(next);
 
     expect(nextResult).toEqual({
@@ -253,8 +266,24 @@ describe('AnnotationMultiSlice on a direct next planar viewport -- ', () => {
       single: 7,
       singleReference: undefined,
     });
-    expect(nextResult).toEqual(legacyResult);
-    expect(adapterResult).toEqual(legacyResult);
+    expect(nextResult).toEqual(legacyStackRanges(imageIds));
+  });
+
+  it('sets a range of images of a stack on the legacy adapter, as on the legacy stack viewport', async function () {
+    const { imageIds } = series;
+    const adapter = enableViewport(
+      renderingEngine,
+      'adapterStack',
+      ViewportType.STACK,
+      true
+    );
+
+    await adapter.setStack(imageIds, 0);
+    await renderAndWait(adapter);
+
+    const adapterResult = await setRanges(adapter);
+
+    expect(adapterResult).toEqual(legacyStackRanges(imageIds));
   });
 
   it('sets a range of slices of a volume in its acquisition orientation, with the ranges of the same series as a stack', async function () {
@@ -321,18 +350,6 @@ describe('AnnotationMultiSlice on a direct next planar viewport -- ', () => {
 
   it('shows the annotation of a tool, which has a plane restriction, on its range of images in stack mode, as the legacy stack viewport', async function () {
     const { imageIds } = series;
-    const legacy = enableViewport(
-      renderingEngine,
-      'legacyStack',
-      ViewportType.STACK,
-      false
-    );
-    const adapter = enableViewport(
-      renderingEngine,
-      'adapterStack',
-      ViewportType.STACK,
-      true
-    );
     const next = enableViewport(
       renderingEngine,
       'nextStack',
@@ -340,14 +357,8 @@ describe('AnnotationMultiSlice on a direct next planar viewport -- ', () => {
       true
     );
 
-    await legacy.setStack(imageIds, 0);
-    await renderAndWait(legacy);
-    await adapter.setStack(imageIds, 0);
-    await renderAndWait(adapter);
     await showNextStack(next, imageIds);
 
-    const legacyResult = await rangeOfToolAnnotation(legacy);
-    const adapterResult = await rangeOfToolAnnotation(adapter);
     const nextResult = await rangeOfToolAnnotation(next);
     const onTheRange = { 1: false, 2: true, 5: true, 8: true, 9: false };
 
@@ -357,8 +368,24 @@ describe('AnnotationMultiSlice on a direct next planar viewport -- ', () => {
       viewable: onTheRange,
       drawn: onTheRange,
     });
-    expect(legacyResult).toEqual(nextResult);
-    expect(adapterResult).toEqual(nextResult);
+    expect(LEGACY_STACK_TOOL_ANNOTATION_RANGE).toEqual(nextResult);
+  });
+
+  it('shows the annotation of a tool, which has a plane restriction, on its range of images on the legacy adapter, as the legacy stack viewport', async function () {
+    const { imageIds } = series;
+    const adapter = enableViewport(
+      renderingEngine,
+      'adapterStack',
+      ViewportType.STACK,
+      true
+    );
+
+    await adapter.setStack(imageIds, 0);
+    await renderAndWait(adapter);
+
+    const adapterResult = await rangeOfToolAnnotation(adapter);
+
+    expect(adapterResult).toEqual(LEGACY_STACK_TOOL_ANNOTATION_RANGE);
   });
 
   it('calls the reference of a tool annotation with a plane restriction viewable on its range of slices in volume mode, as the same series does as a stack', async function () {

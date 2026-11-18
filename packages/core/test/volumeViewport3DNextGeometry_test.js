@@ -1,9 +1,5 @@
 import * as cornerstone3D from '../src/index';
 import * as testUtils from '../../../utils/test/testUtils';
-import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
-import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
-import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
-import vtkCellArray from '@kitware/vtk.js/Common/Core/CellArray';
 
 const {
   Enums,
@@ -41,40 +37,34 @@ const LEGACY_ACTOR_ONLY_FIT = {
 };
 
 /**
- * Makes the viewport of the legacy 3D type, which is the 3D legacy adapter,
- * and a direct next 3D viewport of one size and orientation in one rendering
- * engine.
+ * What `resetCamera` of the legacy 3D viewport class of 5.x fitted with the
+ * volume of the tests and an added box actor from [2, 2, 2] to [20, 15, 10]
+ * inside it: the fit of the volume alone.
  */
-function createViewports(renderingEngine) {
-  const viewportOptions = {
+const LEGACY_VOLUME_AND_ACTOR_FIT = {
+  parallelScale: 15,
+  focalPoint: [15, 19.5, 5.5],
+};
+
+/** Makes a direct next 3D viewport, sagittal, in the rendering engine. */
+function createNextViewport(renderingEngine) {
+  testUtils.createViewports(renderingEngine, {
     orientation: OrientationAxis.SAGITTAL,
     width: CANVAS_WIDTH,
     height: CANVAS_HEIGHT,
     useEnableElement: true,
-  };
-
-  testUtils.createViewports(renderingEngine, {
-    ...viewportOptions,
-    viewportId: 'legacy3D',
-    viewportType: ViewportType.VOLUME_3D,
-  });
-  testUtils.createViewports(renderingEngine, {
-    ...viewportOptions,
     viewportId: 'next3D',
     viewportType: ViewportType.VOLUME_3D_NEXT,
   });
 
-  return [
-    renderingEngine.getViewport('legacy3D'),
-    renderingEngine.getViewport('next3D'),
-  ];
+  return renderingEngine.getViewport('next3D');
 }
 
 /**
  * Makes a volume of the fake volume loader, 40 columns, 30 rows and 12 slices
- * 2 mm apart, and shows it on the legacy and on the next viewport.
+ * 2 mm apart, and shows it on the next viewport.
  */
-async function showVolume(legacy, next) {
+async function showVolume(next) {
   const volumeId = testUtils.encodeVolumeIdInfo({
     loader: 'fakeVolumeLoader',
     name: 'volumeURI',
@@ -88,7 +78,6 @@ async function showVolume(legacy, next) {
   });
 
   await volumeLoader.createAndCacheVolume(volumeId, { imageIds: [] });
-  await legacy.setVolumes([{ volumeId }]);
   utilities.genericViewportDisplaySetMetadataProvider.add('next3DVolume', {
     imageIds: cache.getVolume(volumeId).imageIds,
     volumeId,
@@ -129,23 +118,6 @@ function createSurfaceGeometry(geometryId, min, max) {
       ...createBoxSurfaceData(min, max),
     },
   });
-}
-
-/** A vtk.js actor of the same box, for the legacy `addActor`. */
-function createBoxActor(min, max) {
-  const { points, polys } = createBoxSurfaceData(min, max);
-  const polyData = vtkPolyData.newInstance();
-  const mapper = vtkMapper.newInstance();
-  const actor = vtkActor.newInstance();
-
-  polyData.getPoints().setData(points, 3);
-  polyData.setPolys(
-    vtkCellArray.newInstance({ values: Uint32Array.from(polys) })
-  );
-  mapper.setInputData(polyData);
-  actor.setMapper(mapper);
-
-  return actor;
 }
 
 /** Takes a geometry out of the cache, which a purge of the cache keeps. */
@@ -211,9 +183,9 @@ describe('Direct next 3D viewport, a geometry display set -- ', () => {
   });
 
   it('mounts a surface with addDisplaySet and takes it out of the scene with removeData', async function () {
-    const [legacy, next] = createViewports(renderingEngine);
+    const next = createNextViewport(renderingEngine);
 
-    await showVolume(legacy, next);
+    await showVolume(next);
     createSurfaceGeometry('surface1', [0, 0, 0], [30, 20, 10]);
     await next.addDisplaySet('surface1', { renderMode: 'vtkGeometry3d' });
 
@@ -240,9 +212,9 @@ describe('Direct next 3D viewport, a geometry display set -- ', () => {
   });
 
   it('gives the actor entry the representation UID of the reference of the registered display set', async function () {
-    const [legacy, next] = createViewports(renderingEngine);
+    const next = createNextViewport(renderingEngine);
 
-    await showVolume(legacy, next);
+    await showVolume(next);
     createSurfaceGeometry('surface1', [0, 0, 0], [30, 20, 10]);
     utilities.genericViewportDisplaySetMetadataProvider.add('surface1', {
       imageIds: [],
@@ -262,9 +234,9 @@ describe('Direct next 3D viewport, a geometry display set -- ', () => {
   });
 
   it('shows colour, opacity and visibility of the presentation of the display set', async function () {
-    const [legacy, next] = createViewports(renderingEngine);
+    const next = createNextViewport(renderingEngine);
 
-    await showVolume(legacy, next);
+    await showVolume(next);
     createSurfaceGeometry('surface1', [0, 0, 0], [30, 20, 10]);
     next.setDisplaySetPresentation('surface1', { color: [0, 0, 255] });
     await next.addDisplaySet('surface1', { renderMode: 'vtkGeometry3d' });
@@ -297,9 +269,9 @@ describe('Direct next 3D viewport, a geometry display set -- ', () => {
   });
 
   it('draws new points and polys of the surface at the next render, with the same actor', async function () {
-    const [legacy, next] = createViewports(renderingEngine);
+    const next = createNextViewport(renderingEngine);
 
-    await showVolume(legacy, next);
+    await showVolume(next);
 
     const surface = createSurfaceGeometry(
       'surface1',
@@ -330,9 +302,9 @@ describe('Direct next 3D viewport, a geometry display set -- ', () => {
   });
 
   it('draws a surface that was emptied as nothing, and fits the volume then', async function () {
-    const [legacy, next] = createViewports(renderingEngine);
+    const next = createNextViewport(renderingEngine);
 
-    await showVolume(legacy, next);
+    await showVolume(next);
     next.resetViewState();
 
     const volumeFit = next.getViewState();
@@ -363,7 +335,7 @@ describe('Direct next 3D viewport, a geometry display set -- ', () => {
   });
 
   it('fits a surface that is mounted alone on resetViewState, as the legacy viewport fits an added actor', async function () {
-    const [, next] = createViewports(renderingEngine);
+    const next = createNextViewport(renderingEngine);
     const min = [-50, 10, 0];
     const max = [150, 60, 300];
 
@@ -387,31 +359,26 @@ describe('Direct next 3D viewport, a geometry display set -- ', () => {
   });
 
   it('keeps the fit of the volume for a surface inside the volume, as the legacy viewport', async function () {
-    const [legacy, next] = createViewports(renderingEngine);
+    const next = createNextViewport(renderingEngine);
 
-    await showVolume(legacy, next);
+    await showVolume(next);
     createSurfaceGeometry('surface1', [2, 2, 2], [20, 15, 10]);
     await next.addDisplaySet('surface1', { renderMode: 'vtkGeometry3d' });
-    legacy.addActor({
-      uid: 'box',
-      actor: createBoxActor([2, 2, 2], [20, 15, 10]),
-    });
-    legacy.resetCamera();
     next.resetViewState();
 
     const nextCamera = next.getViewState();
-    const legacyCamera = legacy.getCamera();
+    const legacyCamera = LEGACY_VOLUME_AND_ACTOR_FIT;
 
     expect(nextCamera.parallelScale).toBeCloseTo(legacyCamera.parallelScale, 4);
     expectPointsClose(nextCamera.focalPoint, legacyCamera.focalPoint);
   });
 
   it('fits a surface that reaches outside the volume on resetViewState, and leaves a hidden one out', async function () {
-    const [legacy, next] = createViewports(renderingEngine);
+    const next = createNextViewport(renderingEngine);
     const min = [-100, -80, -60];
     const max = [200, 150, 120];
 
-    await showVolume(legacy, next);
+    await showVolume(next);
     next.resetViewState();
 
     const volumeFit = next.getViewState();

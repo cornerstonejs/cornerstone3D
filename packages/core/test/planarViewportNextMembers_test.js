@@ -2,6 +2,7 @@ import * as cornerstone3D from '../src/index';
 import * as csTools3d from '../../tools/src/index';
 import * as testUtils from '../../../utils/test/testUtils';
 import { clipAndCacheSurfacesForViewport } from '../../polymorphic-segmentation/src/utilities/clipAndCacheSurfacesForViewport';
+import legacyValues from './fixtures/legacyVolumeViewportSlices.json';
 
 const { Enums, volumeLoader, utilities, cache, metaData } = cornerstone3D;
 const { ViewportType, OrientationAxis, Events } = Enums;
@@ -14,36 +15,40 @@ const OBLIQUE = {
 };
 
 /**
- * Makes the viewport of `legacyType`, which is its legacy adapter, with the
- * id `legacy` and a direct next planar viewport with the id `next`, of one
- * size and orientation, in one rendering engine.
+ * What `MIPJumpToClickTool` did on the legacy volume viewports for a click
+ * at the world point 14, 9.5, 6 of a sagittal viewport: the slice index of
+ * its axial target, and the focal point of the target along z.
  */
-function createPair(
-  renderingEngine,
-  { legacyType, orientation, legacyId = 'legacy', nextId = 'next' }
-) {
-  const viewportOptions = {
+const LEGACY_MIP_JUMP_TARGET = { sliceIndex: 5, focalPointZ: 6 };
+
+/**
+ * What `getCurrentVolumeViewportSlice` gave for the legacy volume viewport
+ * of the tests in each view after `scroll(2)`: the size, the pixels and the
+ * two matrices of the slice.
+ */
+const LEGACY_SLICES = legacyValues.slices;
+
+/**
+ * The contours that `getCachedContours` gave for the legacy volume viewport,
+ * sagittal, for the box surface of the tests.
+ */
+const LEGACY_SURFACE_CONTOURS = legacyValues.surfaceContours;
+
+/**
+ * Makes a direct next planar viewport with the id `next`, of 400 by 300
+ * pixels, in the rendering engine.
+ */
+function createNextViewport(renderingEngine, { orientation, nextId = 'next' }) {
+  testUtils.createViewports(renderingEngine, {
     orientation,
     width: 400,
     height: 300,
     useEnableElement: true,
-  };
-
-  testUtils.createViewports(renderingEngine, {
-    ...viewportOptions,
-    viewportId: legacyId,
-    viewportType: legacyType,
-  });
-  testUtils.createViewports(renderingEngine, {
-    ...viewportOptions,
     viewportId: nextId,
     viewportType: ViewportType.PLANAR_NEXT,
   });
 
-  return [
-    renderingEngine.getViewport(legacyId),
-    renderingEngine.getViewport(nextId),
-  ];
+  return renderingEngine.getViewport(nextId);
 }
 
 /** The image ids of a stack of 10 images 1 mm apart along z. */
@@ -155,27 +160,12 @@ async function showNextVolumes(viewport, volumeIds, orientation) {
   await renderAndWait(viewport);
 }
 
-/** Shows volumes on the legacy volume viewport in an orientation. */
-async function showLegacyVolumes(viewport, volumeIds, orientation) {
-  await viewport.setVolumes(volumeIds.map((volumeId) => ({ volumeId })));
-
-  if (typeof orientation === 'object') {
-    viewport.setOrientation(orientation);
-  }
-
-  await renderAndWait(viewport);
-}
-
-/** Shows one volume on both viewports of a pair in an orientation. */
-async function showVolumePair(renderingEngine, orientation, volumeIds) {
+/** Makes a direct next viewport and shows volumes on it in an orientation. */
+async function showVolume(renderingEngine, orientation, volumeIds) {
   const axis =
     typeof orientation === 'object' ? OrientationAxis.AXIAL : orientation;
-  const [legacy, next] = createPair(renderingEngine, {
-    legacyType: ViewportType.ORTHOGRAPHIC,
-    orientation: axis,
-  });
+  const next = createNextViewport(renderingEngine, { orientation: axis });
 
-  await showLegacyVolumes(legacy, volumeIds, orientation);
   await showNextVolumes(next, volumeIds, axis);
 
   if (typeof orientation === 'object') {
@@ -183,21 +173,7 @@ async function showVolumePair(renderingEngine, orientation, volumeIds) {
     await renderAndWait(next);
   }
 
-  return [legacy, next];
-}
-
-/** Shows one stack on both viewports of a pair. */
-async function showStackPair(renderingEngine, imageIds) {
-  const [legacy, next] = createPair(renderingEngine, {
-    legacyType: ViewportType.STACK,
-    orientation: OrientationAxis.ACQUISITION,
-  });
-
-  await legacy.setStack(imageIds, 0);
-  await renderAndWait(legacy);
-  await showNextStack(next, imageIds);
-
-  return [legacy, next];
+  return next;
 }
 
 /**
@@ -384,19 +360,14 @@ describe('Direct next planar viewport against the legacy viewports -- ', () => {
   describe('a point in the line of sight', () => {
     it('let MIPJumpToClickTool move a direct next viewport as a legacy one', async function () {
       const volumeId = await createVolume();
-      const [legacy, next] = await showVolumePair(
-        renderingEngine,
-        OrientationAxis.SAGITTAL,
-        [volumeId]
-      );
-      const [legacyTarget, nextTarget] = createPair(renderingEngine, {
-        legacyType: ViewportType.ORTHOGRAPHIC,
+      const next = await showVolume(renderingEngine, OrientationAxis.SAGITTAL, [
+        volumeId,
+      ]);
+      const nextTarget = createNextViewport(renderingEngine, {
         orientation: OrientationAxis.AXIAL,
-        legacyId: 'legacyTarget',
         nextId: 'nextTarget',
       });
 
-      await showLegacyVolumes(legacyTarget, [volumeId]);
       await showNextVolumes(nextTarget, [volumeId], OrientationAxis.AXIAL);
 
       const click = (viewport, targetViewportId) => {
@@ -412,12 +383,13 @@ describe('Direct next planar viewport against the legacy viewports -- ', () => {
         });
       };
 
-      click(legacy, 'legacyTarget');
       click(next, 'nextTarget');
 
-      expect(nextTarget.getSliceIndex()).toBe(legacyTarget.getSliceIndex());
+      expect(nextTarget.getSliceIndex()).toBe(
+        LEGACY_MIP_JUMP_TARGET.sliceIndex
+      );
       expect(dot(nextCamera(nextTarget).focalPoint, [0, 0, 1])).toBeCloseTo(
-        dot(legacyTarget.getCamera().focalPoint, [0, 0, 1]),
+        LEGACY_MIP_JUMP_TARGET.focalPointZ,
         3
       );
     });
@@ -431,18 +403,12 @@ describe('Direct next planar viewport against the legacy viewports -- ', () => {
     ].forEach(([name, orientation]) => {
       it(`give the legacy slice in the ${name} view`, async function () {
         const volumeId = await createVolume();
-        const [legacy, next] = await showVolumePair(
-          renderingEngine,
-          orientation,
-          [volumeId]
-        );
+        const next = await showVolume(renderingEngine, orientation, [volumeId]);
 
-        await legacy.scroll(2);
         await next.scroll(2);
-        await renderAndWait(legacy);
         await renderAndWait(next);
 
-        const legacySlice = utilities.getCurrentVolumeViewportSlice(legacy);
+        const legacySlice = LEGACY_SLICES[name];
         const nextSlice = utilities.getCurrentVolumeViewportSlice(next);
 
         expect(nextSlice.width).toBe(legacySlice.width);
@@ -466,9 +432,7 @@ describe('Direct next planar viewport against the legacy viewports -- ', () => {
     VOLUME_ORIENTATIONS.forEach(([name, orientation]) => {
       it(`give the legacy plane of each slice in the ${name} view, within 1e-3 mm, 5e-3 mm when oblique`, async function () {
         const volumeId = await createVolume();
-        const [, next] = await showVolumePair(renderingEngine, orientation, [
-          volumeId,
-        ]);
+        const next = await showVolume(renderingEngine, orientation, [volumeId]);
         const precision = typeof orientation === 'object' ? 2 : 3;
         const legacyPlanes = legacySlicePlanes(name);
         const nextPlanes = utilities.getSlicesClippingPlanes(next);
@@ -490,20 +454,15 @@ describe('Direct next planar viewport against the legacy viewports -- ', () => {
 
     it('let a surface be cut into the contours of each slice as on a legacy viewport', async function () {
       const volumeId = await createVolume();
-      const [legacy, next] = await showVolumePair(
-        renderingEngine,
-        OrientationAxis.SAGITTAL,
-        [volumeId]
-      );
+      const next = await showVolume(renderingEngine, OrientationAxis.SAGITTAL, [
+        volumeId,
+      ]);
       const surfacesInfo = [createBoxSurfaceInfo()];
-
-      await clipAndCacheSurfacesForViewport(surfacesInfo, legacy);
-
       const polyDataCache = await clipAndCacheSurfacesForViewport(
         surfacesInfo,
         next
       );
-      const legacyContours = getCachedContours(polyDataCache, legacy.id);
+      const legacyContours = LEGACY_SURFACE_CONTOURS;
 
       expect(legacyContours.length).toBeGreaterThan(0);
       expect(getCachedContours(polyDataCache, next.id)).toEqual(legacyContours);
@@ -511,19 +470,17 @@ describe('Direct next planar viewport against the legacy viewports -- ', () => {
   });
 
   describe('isDestroyed', () => {
-    it('is false while enabled and true once the engine disables the viewport, where the legacy viewport says isDisabled', async function () {
-      const [legacy, next] = await showStackPair(
-        renderingEngine,
-        createStackImageIds()
-      );
+    it('is false while enabled and true once the engine disables the viewport', async function () {
+      const next = createNextViewport(renderingEngine, {
+        orientation: OrientationAxis.ACQUISITION,
+      });
 
-      expect(legacy.isDisabled).toBe(false);
+      await showNextStack(next, createStackImageIds());
+
       expect(next.isDestroyed).toBe(false);
 
-      renderingEngine.disableElement('legacy');
       renderingEngine.disableElement('next');
 
-      expect(legacy.isDisabled).toBe(true);
       expect(next.isDestroyed).toBe(true);
       expect('isDisabled' in next).toBe(false);
     });
@@ -532,11 +489,9 @@ describe('Direct next planar viewport against the legacy viewports -- ', () => {
   describe('a change of orientation', () => {
     it('lets OrientationControllerTool add and remove its marker on a direct next viewport', async function () {
       const volumeId = await createVolume();
-      const [, next] = await showVolumePair(
-        renderingEngine,
-        OrientationAxis.SAGITTAL,
-        [volumeId]
-      );
+      const next = await showVolume(renderingEngine, OrientationAxis.SAGITTAL, [
+        volumeId,
+      ]);
       const tool = new csTools3d.OrientationControllerTool();
 
       expect(() =>

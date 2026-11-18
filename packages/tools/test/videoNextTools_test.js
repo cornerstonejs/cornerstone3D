@@ -27,47 +27,48 @@ const WIDTH = 320;
 const HEIGHT = 200;
 
 /**
- * Makes the viewport of the legacy `VIDEO` type, which is the legacy adapter
- * of the video viewport, and a direct next video viewport of one size in one
- * rendering engine and adds both to the tool group.
+ * The point of the probe that a click at the world point 10, 20, 0 made on
+ * the legacy video viewport: the world point of the canvas pixel of the
+ * click.
  */
-function createViewports(renderingEngine, toolGroup) {
-  const viewportOptions = {
+const LEGACY_PROBE_POINT = [10.08, 19.92, 0];
+
+/**
+ * The statistics of that probe on the legacy video viewport on frame 6 of
+ * the test video: the colour of the pixel and its index.
+ */
+const LEGACY_PROBE_STATS = { value: [68, 0, 110], index: [10, 20, 0] };
+
+/**
+ * The frame range of the legacy video viewport after AnnotationMultiSlice
+ * set the range of the frames 2 to 8 from 0, as frame numbers from 1.
+ */
+const LEGACY_FRAME_RANGE = [3, 9];
+
+/**
+ * Makes a direct next video viewport in the rendering engine and adds it to
+ * the tool group.
+ */
+function createNextViewport(renderingEngine, toolGroup) {
+  testUtils.createViewports(renderingEngine, {
     width: WIDTH,
     height: HEIGHT,
     useEnableElement: true,
     orientation: null,
-  };
-
-  testUtils.createViewports(renderingEngine, {
-    ...viewportOptions,
-    viewportId: 'legacyVideo',
-    viewportType: ViewportType.VIDEO,
-  });
-  testUtils.createViewports(renderingEngine, {
-    ...viewportOptions,
     viewportId: 'nextVideo',
     viewportType: ViewportType.VIDEO_NEXT,
   });
-  toolGroup.addViewport('legacyVideo', renderingEngineId);
   toolGroup.addViewport('nextVideo', renderingEngineId);
 
-  return [
-    renderingEngine.getViewport('legacyVideo'),
-    renderingEngine.getViewport('nextVideo'),
-  ];
+  return renderingEngine.getViewport('nextVideo');
 }
 
-/** Shows the test video on both viewports on one frame, paused. */
-async function showVideo(legacy, next, frameNumber) {
-  await legacy.setVideo(TEST_VIDEO.imageId, frameNumber);
+/** Shows the test video on the next viewport on one frame, paused. */
+async function showVideo(next, frameNumber) {
   await next.setDisplaySets({ displaySetId: TEST_VIDEO.imageId });
   next.setFrameNumber(frameNumber);
   await waitFor(
     () =>
-      legacy.element.querySelector('video').paused &&
-      !legacy.element.querySelector('video').seeking &&
-      legacy.getFrameNumber() === frameNumber &&
       !next.element.querySelector('video').seeking &&
       next.getFrameNumber() === frameNumber
   );
@@ -127,7 +128,6 @@ function drawnProbeCentre(element) {
 describe('Tools on a direct next video viewport -- ', () => {
   let renderingEngine;
   let videoUrl;
-  let legacy;
   let next;
 
   beforeEach(async function () {
@@ -142,11 +142,8 @@ describe('Tools on a direct next video viewport -- ', () => {
 
     renderingEngine = setup.renderingEngine;
     videoUrl = addTestVideoMetadata();
-    [legacy, next] = createViewports(
-      renderingEngine,
-      setup.toolGroups[toolGroupId]
-    );
-    await showVideo(legacy, next, 6);
+    next = createNextViewport(renderingEngine, setup.toolGroups[toolGroupId]);
+    await showVideo(next, 6);
   }, 15000);
 
   afterEach(function () {
@@ -159,24 +156,15 @@ describe('Tools on a direct next video viewport -- ', () => {
 
   it('measures a probe on the frame as the legacy viewport does', async function () {
     const world = [10, 20, 0];
-    const legacyProbe = await clickProbe(legacy, legacy.worldToCanvas(world));
-    const legacyPoint = [...legacyProbe.data.handles.points[0]];
-    const legacyStats = {
-      ...Object.values(legacyProbe.data.cachedStats)[0],
-    };
-
-    annotation.state.removeAllAnnotations();
-    renderingEngine.disableElement('legacyVideo');
-
     const nextProbe = await clickProbe(next, next.worldToCanvas(world));
     const nextStats = Object.values(nextProbe.data.cachedStats)[0];
 
     nextProbe.data.handles.points[0].forEach((value, axis) =>
-      expect(value).toBeCloseTo(legacyPoint[axis], 0)
+      expect(value).toBeCloseTo(LEGACY_PROBE_POINT[axis], 0)
     );
-    expect(legacyStats.value).toBeDefined();
-    expect(nextStats.value).toEqual(legacyStats.value);
-    expect(nextStats.index).toEqual(legacyStats.index);
+    expect(LEGACY_PROBE_STATS.value).toBeDefined();
+    expect(nextStats.value).toEqual(LEGACY_PROBE_STATS.value);
+    expect(nextStats.index).toEqual(LEGACY_PROBE_STATS.index);
   }, 15000);
 
   it('draws the probe where its point is after a pan', async function () {
@@ -196,30 +184,15 @@ describe('Tools on a direct next video viewport -- ', () => {
 
   it('shows a probe over the frame range of AnnotationMultiSlice as the legacy viewport does', async function () {
     const goTo = async (frameNumber) => {
-      legacy.setFrameNumber(frameNumber);
       next.setFrameNumber(frameNumber);
-      await waitFor(
-        () =>
-          legacy.getFrameNumber() === frameNumber &&
-          next.getFrameNumber() === frameNumber,
-        10000
-      );
+      await waitFor(() => next.getFrameNumber() === frameNumber, 10000);
     };
-    const legacyProbe = await clickProbe(
-      legacy,
-      legacy.worldToCanvas([10, 20, 0])
-    );
-    const legacyMetadata = { ...legacyProbe.metadata };
-
-    annotation.state.removeAllAnnotations();
-
     const nextProbe = await clickProbe(next, next.worldToCanvas([10, 20, 0]));
 
-    AnnotationMultiSlice.setRange(legacy, { metadata: legacyMetadata }, 2, 8);
     AnnotationMultiSlice.setRange(next, nextProbe, 2, 8);
 
     expect(AnnotationMultiSlice.getFrameRange(nextProbe)).toEqual([3, 9]);
-    expect(next.getViewState().frameRange).toEqual(legacy.getFrameRange());
+    expect(next.getViewState().frameRange).toEqual(LEGACY_FRAME_RANGE);
 
     for (const [frameNumber, viewable] of [
       [3, true],
@@ -229,33 +202,19 @@ describe('Tools on a direct next video viewport -- ', () => {
       [11, false],
     ]) {
       await goTo(frameNumber);
-      expect(legacy.isReferenceViewable(legacyMetadata)).toBe(viewable);
       expect(next.isReferenceViewable(nextProbe.metadata)).toBe(viewable);
     }
   }, 60000);
 
-  it('keeps the last frame of a range when AnnotationMultiSlice moves its first frame, where the legacy viewport moves it one frame on', async function () {
-    const legacyProbe = await clickProbe(
-      legacy,
-      legacy.worldToCanvas([10, 20, 0])
-    );
-    const legacyAnnotation = { metadata: { ...legacyProbe.metadata } };
-
-    annotation.state.removeAllAnnotations();
-
+  it('keeps the last frame of a range when AnnotationMultiSlice moves its first frame', async function () {
     const nextProbe = await clickProbe(next, next.worldToCanvas([10, 20, 0]));
 
-    AnnotationMultiSlice.setRange(legacy, legacyAnnotation, 2, 8);
     AnnotationMultiSlice.setRange(next, nextProbe, 2, 8);
-    AnnotationMultiSlice.setStartRange(legacy, legacyAnnotation, 4);
     AnnotationMultiSlice.setStartRange(next, nextProbe, 4);
 
     expect(next.getSliceIndexForImage).toBeUndefined();
     expect(AnnotationMultiSlice.getFrameRange(nextProbe)).toEqual([5, 9]);
     expect(next.getViewState().frameRange).toEqual([5, 9]);
-    expect(AnnotationMultiSlice.getFrameRange(legacyAnnotation)).toEqual([
-      5, 10,
-    ]);
 
     AnnotationMultiSlice.setEndRange(next, nextProbe, 6);
 
@@ -267,7 +226,7 @@ describe('Tools on a direct next video viewport -- ', () => {
     expect(nextProbe.metadata.multiSliceReference).toBeUndefined();
   }, 30000);
 
-  it('draws a contour segmentation on its frame as the legacy viewport does', async function () {
+  it('draws a contour segmentation on its frame', async function () {
     const segmentationId = 'videoContours';
     const reference = next.getViewReference();
     const polyline = [
@@ -311,26 +270,19 @@ describe('Tools on a direct next video viewport -- ', () => {
       contourAnnotation
     );
 
-    for (const viewport of [legacy, next]) {
-      await segmentation.addSegmentationRepresentations(viewport.id, [
-        {
-          segmentationId,
-          type: csToolsEnums.SegmentationRepresentations.Contour,
-        },
-      ]);
-    }
+    await segmentation.addSegmentationRepresentations(next.id, [
+      {
+        segmentationId,
+        type: csToolsEnums.SegmentationRepresentations.Contour,
+      },
+    ]);
 
     const drawnContour = (element) =>
       element.querySelector('svg polyline, svg path, svg polygon');
 
-    legacy.render();
     next.render();
-    await waitFor(
-      () => drawnContour(legacy.element) && drawnContour(next.element),
-      5000
-    );
+    await waitFor(() => drawnContour(next.element), 5000);
 
-    expect(drawnContour(legacy.element)).not.toBeNull();
     expect(drawnContour(next.element)).not.toBeNull();
 
     const box = drawnContour(next.element).getBBox();
@@ -367,7 +319,7 @@ describe('PanTool on a turned direct next video viewport -- ', () => {
 
     renderingEngine = setup.renderingEngine;
     videoUrl = addTestVideoMetadata();
-    [, next] = createViewports(renderingEngine, setup.toolGroups[toolGroupId]);
+    next = createNextViewport(renderingEngine, setup.toolGroups[toolGroupId]);
     await next.setDisplaySets({ displaySetId: TEST_VIDEO.imageId });
     await animationFrames(3);
   }, 15000);
@@ -434,7 +386,7 @@ describe('ZoomTool on a direct next video viewport -- ', () => {
     );
     renderingEngine = setup.renderingEngine;
     videoUrl = addTestVideoMetadata();
-    [, next] = createViewports(renderingEngine, setup.toolGroups[toolGroupId]);
+    next = createNextViewport(renderingEngine, setup.toolGroups[toolGroupId]);
     await next.setDisplaySets({ displaySetId: TEST_VIDEO.imageId });
     await animationFrames(3);
   }, 15000);

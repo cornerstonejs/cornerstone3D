@@ -1,14 +1,17 @@
 import * as cornerstone3D from '../src/index';
 import * as testUtils from '../../../utils/test/testUtils';
-import setCtTransferFunctionForVolumeActor from '../../../utils/demo/helpers/setCtTransferFunctionForVolumeActor';
-import setPetTransferFunctionForVolumeActor from '../../../utils/demo/helpers/setPetTransferFunctionForVolumeActor';
-import setPetColorMapTransferFunctionForVolumeActor from '../../../utils/demo/helpers/setPetColorMapTransferFunctionForVolumeActor';
 import {
   ctPresentation,
   petColorMapPresentation,
   petPresentation,
 } from '../../../utils/demo/helpers/volumePresentationRecipes';
 import perfusionColorMap from '../../tools/examples/rectangleROIThreshold/preset';
+import { readStoredPicture } from './utils/storedPicture';
+import * as legacySigmoidPicture from './groundTruth/planarPresentation_legacy_sigmoid.png';
+import * as adapterCtCallbackPicture from './groundTruth/planarPresentation_adapter_callback_ct.png';
+import * as adapterPetCallbackPicture from './groundTruth/planarPresentation_adapter_callback_pet.png';
+import * as adapterPetColorMapCallbackPicture from './groundTruth/planarPresentation_adapter_callback_petColorMap.png';
+import * as adapterPetColorMapPresetCallbackPicture from './groundTruth/planarPresentation_adapter_callback_petColorMapPreset.png';
 
 const { Enums, volumeLoader, utilities, cache, eventTarget } = cornerstone3D;
 const { ViewportType, OrientationAxis, Events, VOILUTFunctionType } = Enums;
@@ -71,8 +74,8 @@ async function createRampVolume(name = 'presentationRamp') {
 }
 
 /**
- * Makes a legacy volume viewport and the direct next planar viewports of
- * `nextIds`, all axial and of one size, in one rendering engine.
+ * Makes the direct next planar viewports of `nextIds`, all axial and of one
+ * size, in one rendering engine.
  */
 function createViewports(renderingEngine, nextIds) {
   const options = {
@@ -83,11 +86,6 @@ function createViewports(renderingEngine, nextIds) {
     useEnableElement: true,
   };
 
-  testUtils.createViewports(renderingEngine, {
-    ...options,
-    viewportId: 'legacy',
-    viewportType: ViewportType.ORTHOGRAPHIC,
-  });
   nextIds.forEach((viewportId) =>
     testUtils.createViewports(renderingEngine, {
       ...options,
@@ -96,7 +94,7 @@ function createViewports(renderingEngine, nextIds) {
     })
   );
 
-  return ['legacy', ...nextIds].map((id) => renderingEngine.getViewport(id));
+  return nextIds.map((id) => renderingEngine.getViewport(id));
 }
 
 /** Shows the volume on a direct next planar viewport through a display set. */
@@ -195,6 +193,12 @@ function cleanupEngine() {
   });
 }
 
+/**
+ * The picture that the legacy volume viewport drew of the ramp volume with
+ * the window of the tests and the sampled sigmoid VOI LUT function.
+ */
+const LEGACY_SIGMOID_PICTURE = legacySigmoidPicture.default;
+
 describe('Planar presentation, a sigmoid window on a volume -- ', () => {
   let renderingEngine;
 
@@ -207,21 +211,12 @@ describe('Planar presentation, a sigmoid window on a volume -- ', () => {
   });
 
   it('draws the sigmoid as the legacy volume viewport on every next draw path', async function () {
-    const [legacy, ...nexts] = createViewports(
+    const nexts = createViewports(
       renderingEngine,
       NEXT_PATHS.map(({ viewportId }) => viewportId)
     );
     const volumeId = await createRampVolume();
-
-    await legacy.setVolumes([{ volumeId }]);
-    legacy.setProperties({
-      voiRange: VOI_RANGE,
-      VOILUTFunction: VOILUTFunctionType.SAMPLED_SIGMOID,
-    });
-    legacy.setProperties({ voiRange: VOI_RANGE });
-    await renderAndWait(legacy);
-
-    const legacyPicture = readPixels(legacy);
+    const legacyPicture = await readStoredPicture(LEGACY_SIGMOID_PICTURE);
     const rows = [];
 
     for (let index = 0; index < nexts.length; index++) {
@@ -282,9 +277,15 @@ function collectColormapEvents(viewport) {
   return colormaps;
 }
 
+/**
+ * The colormap of the last COLORMAP_MODIFIED event of the legacy volume
+ * viewport after `setProperties` with the colormap name `hsv` and then with
+ * the colormap opacity 0.5 alone.
+ */
+const LEGACY_LAST_COLORMAP = { name: 'hsv', opacity: 0.5 };
+
 describe('Planar presentation, a colormap update keeps what it does not name -- ', () => {
   let renderingEngine;
-  let legacy;
   let stepwise;
   let atOnce;
   let volumeId;
@@ -293,13 +294,11 @@ describe('Planar presentation, a colormap update keeps what it does not name -- 
 
   beforeEach(async function () {
     renderingEngine = setupEngine();
-    [legacy, stepwise, atOnce] = createViewports(renderingEngine, [
+    [stepwise, atOnce] = createViewports(renderingEngine, [
       'stepwise',
       'atOnce',
     ]);
     volumeId = await createRampVolume();
-    await legacy.setVolumes([{ volumeId }]);
-    legacy.setProperties({ voiRange: VOI_RANGE });
     stepwiseId = await showVolumeOnNext(stepwise, volumeId);
     atOnceId = await showVolumeOnNext(atOnce, volumeId);
     stepwise.setDisplaySetPresentation(stepwiseId, { voiRange: VOI_RANGE });
@@ -311,11 +310,8 @@ describe('Planar presentation, a colormap update keeps what it does not name -- 
   });
 
   it('keeps the name when only the opacity changes, and sends the whole colormap', async function () {
-    const legacyEvents = collectColormapEvents(legacy);
     const nextEvents = collectColormapEvents(stepwise);
 
-    legacy.setProperties({ colormap: { name: 'hsv' } });
-    legacy.setProperties({ colormap: { opacity: 0.5 } });
     stepwise.setDisplaySetPresentation(stepwiseId, {
       colormap: { name: 'hsv' },
     });
@@ -332,7 +328,7 @@ describe('Planar presentation, a colormap update keeps what it does not name -- 
       readPixels(stepwise),
       readPixels(atOnce)
     );
-    const legacyLast = legacyEvents[legacyEvents.length - 1];
+    const legacyLast = LEGACY_LAST_COLORMAP;
     const nextLast = nextEvents[nextEvents.length - 1];
 
     console.log(
@@ -347,7 +343,6 @@ describe('Planar presentation, a colormap update keeps what it does not name -- 
       name: 'hsv',
       opacity: 0.5,
     });
-    expect(legacyLast.name).toBe('hsv');
     expect(nextLast.name).toBe(legacyLast.name);
     expect(nextLast.opacity).toBe(0.5);
   }, 60000);
@@ -395,6 +390,15 @@ const OPACITY_LIST = [
 const LEGACY_OPACITY_LIST_POINTS = [0, 0, 0.1, 0.8];
 
 /**
+ * Every fourth red value of the middle row of the picture that the legacy
+ * volume viewport class drew with that colormap on the ramp overlay.
+ */
+const LEGACY_OPACITY_LIST_MIDDLE_ROW = [
+  0, 1, 1, 2, 3, 4, 5, 5, 6, 7, 8, 8, 9, 10, 11, 11, 12, 13, 14, 15, 15, 16, 17,
+  18, 18, 19, 20, 21, 22, 22, 23, 24,
+];
+
+/**
  * Makes and caches a volume of 64 by 64 by 9 voxels of 1 mm that holds one
  * value everywhere.
  */
@@ -427,10 +431,7 @@ describe('Planar presentation, a list of opacities in a colormap -- ', () => {
   });
 
   it('reads an opacityMapping as the legacy volume viewport reads a list of opacities, and measures a list in opacity', async function () {
-    const [legacy, next, mapped] = createViewports(renderingEngine, [
-      'next',
-      'mapped',
-    ]);
+    const [next, mapped] = createViewports(renderingEngine, ['next', 'mapped']);
     const sourceId = await createFlatVolume('opacityListSource', 0);
     const overlayId = await createRampVolume('opacityListOverlay');
     const overlayColormap = () => ({
@@ -438,13 +439,6 @@ describe('Planar presentation, a list of opacities in a colormap -- ', () => {
       opacity: OPACITY_LIST.map((point) => ({ ...point })),
     });
     const overlayWindow = { lower: 0, upper: 252 };
-
-    await legacy.setVolumes([{ volumeId: sourceId }, { volumeId: overlayId }]);
-    legacy.setProperties({ voiRange: { lower: 0, upper: 252 } }, sourceId);
-    legacy.setProperties(
-      { colormap: overlayColormap(), voiRange: overlayWindow },
-      overlayId
-    );
 
     for (const [viewport, colormap] of [
       [next, overlayColormap()],
@@ -467,7 +461,7 @@ describe('Planar presentation, a list of opacities in a colormap -- ', () => {
       });
     }
 
-    for (const viewport of [legacy, next, mapped]) {
+    for (const viewport of [next, mapped]) {
       await renderAndWait(viewport);
     }
 
@@ -486,10 +480,10 @@ describe('Planar presentation, a list of opacities in a colormap -- ', () => {
 
     console.log(
       `[PLANAR_OPACITY_LIST]${JSON.stringify({
-        legacy: middleRow(readPixels(legacy)).filter((_, x) => x % 4 === 0),
+        legacy: LEGACY_OPACITY_LIST_MIDDLE_ROW,
         next: middleRow(readPixels(next)).filter((_, x) => x % 4 === 0),
         mapped: middleRow(readPixels(mapped)).filter((_, x) => x % 4 === 0),
-        legacyPoints: opacityPointsOf(legacy),
+        legacyPoints: LEGACY_OPACITY_LIST_POINTS,
         nextPoints: opacityPointsOf(next),
         mappedPoints: opacityPointsOf(mapped),
         largestToMapping,
@@ -522,33 +516,6 @@ async function createSuvStepVolume(name) {
 }
 
 /**
- * Makes a planar legacy adapter of an orthographic viewport and a direct
- * next planar viewport, both axial and of one size.
- */
-function createAdapterAndNext(renderingEngine) {
-  const options = {
-    orientation: OrientationAxis.AXIAL,
-    width: SIZE,
-    height: SIZE,
-    background: [0, 0, 0],
-    useEnableElement: true,
-  };
-
-  testUtils.createViewports(renderingEngine, {
-    ...options,
-    viewportId: 'adapter',
-    viewportType: ViewportType.ORTHOGRAPHIC,
-  });
-  testUtils.createViewports(renderingEngine, {
-    ...options,
-    viewportId: 'next',
-    viewportType: ViewportType.PLANAR_NEXT,
-  });
-
-  return ['adapter', 'next'].map((id) => renderingEngine.getViewport(id));
-}
-
-/**
  * The largest difference of one colour value between two pictures over the
  * columns from `from` to `to` (not included), away from the top and bottom.
  */
@@ -577,28 +544,33 @@ function getLargestDifferenceInColumns(first, second, from, to) {
  * and the columns where the pictures must agree: all of them, or for a
  * callback that writes an opacity function only the columns of SUV 0 and of
  * SUV 5 and more, where the opacity is 0 or 1. The adapter draws the other
- * opacities weaker, as the legacy thin slab does. The recipe is made before
- * the adapter runs the callback, so that a colormap of the recipe is
- * registered and the adapter can name it when it reads the callback back.
+ * opacities weaker, as the legacy thin slab does. `adapterPicture` is the
+ * picture that a planar legacy adapter drew for `setVolumes` with the
+ * callback, and `adapterColormapName` the colormap name that it then gave
+ * in `getProperties`. For the last case the callback had the perfusion
+ * preset.
  */
 const CALLBACK_CASES = [
   {
     name: 'setCtTransferFunctionForVolumeActor',
-    callback: setCtTransferFunctionForVolumeActor,
+    adapterPicture: adapterCtCallbackPicture.default,
+    adapterColormapName: 'Grayscale',
     presentation: () => ctPresentation(),
     volume: 'ramp',
     columns: [[4, SIZE - 4]],
   },
   {
     name: 'setPetTransferFunctionForVolumeActor',
-    callback: setPetTransferFunctionForVolumeActor,
+    adapterPicture: adapterPetCallbackPicture.default,
+    adapterColormapName: 'Inverted-Grayscale',
     presentation: () => petPresentation(),
     volume: 'suv',
     columns: [[4, SIZE - 4]],
   },
   {
     name: 'setPetColorMapTransferFunctionForVolumeActor',
-    callback: setPetColorMapTransferFunctionForVolumeActor,
+    adapterPicture: adapterPetColorMapCallbackPicture.default,
+    adapterColormapName: 'hsv',
     presentation: () => petColorMapPresentation(),
     volume: 'suv',
     columns: [
@@ -608,11 +580,8 @@ const CALLBACK_CASES = [
   },
   {
     name: 'setPetColorMapTransferFunctionForVolumeActor with a preset',
-    callback: ({ volumeActor }) =>
-      setPetColorMapTransferFunctionForVolumeActor({
-        volumeActor,
-        preset: perfusionColorMap,
-      }),
+    adapterPicture: adapterPetColorMapPresetCallbackPicture.default,
+    adapterColormapName: 'perfusion',
     presentation: () => petColorMapPresentation(perfusionColorMap),
     volume: 'suv',
     columns: [
@@ -635,23 +604,21 @@ describe('Planar presentation, the callbacks of the examples as presentations --
 
   CALLBACK_CASES.forEach((callbackCase, index) => {
     it(`draws the recipe of ${callbackCase.name} as the adapter draws the callback`, async function () {
-      const [adapter, next] = createAdapterAndNext(renderingEngine);
+      const [next] = createViewports(renderingEngine, ['next']);
       const volumeId =
         callbackCase.volume === 'ramp'
           ? await createRampVolume(`callbackRamp${index}`)
           : await createSuvStepVolume(`callbackSuv${index}`);
 
       const presentation = callbackCase.presentation();
-
-      await adapter.setVolumes([{ volumeId, callback: callbackCase.callback }]);
-
       const displaySetId = await showVolumeOnNext(next, volumeId);
 
       next.setDisplaySetPresentation(displaySetId, presentation);
-      await renderAndWait(adapter);
       await renderAndWait(next);
 
-      const adapterPicture = readPixels(adapter);
+      const adapterPicture = await readStoredPicture(
+        callbackCase.adapterPicture
+      );
       const nextPicture = readPixels(next);
       const differences = callbackCase.columns.map(([from, to]) =>
         getLargestDifferenceInColumns(adapterPicture, nextPicture, from, to)
@@ -664,7 +631,7 @@ describe('Planar presentation, the callbacks of the examples as presentations --
           everywhere: getLargestDifference(adapterPicture, nextPicture),
           adapter: middleRow(adapterPicture).filter((_, x) => x % 8 === 0),
           next: middleRow(nextPicture).filter((_, x) => x % 8 === 0),
-          adapterColormapName: adapter.getProperties().colormap?.name,
+          adapterColormapName: callbackCase.adapterColormapName,
         })}`
       );
       differences.forEach((difference) => {

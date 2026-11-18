@@ -68,6 +68,26 @@ async function settle(viewport) {
   await renderAndWait(viewport);
 }
 
+/**
+ * Jumps to each image of `JUMP_ORDER` by a view reference that names the
+ * image alone, and gives the image that the viewport shows after each jump.
+ */
+async function jumpByImageIdAlone(viewport, series) {
+  const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
+  const landedOn = [];
+
+  for (const k of JUMP_ORDER) {
+    viewport.setViewReference({
+      FrameOfReferenceUID,
+      referencedImageId: series.imageIds[k],
+    });
+    await settle(viewport);
+    landedOn.push(series.imageIds.indexOf(viewport.getCurrentImageId()));
+  }
+
+  return landedOn;
+}
+
 /** One canvas for every read of a pixel: a read makes no canvas of its own. */
 const pixelReader = document.createElement('canvas');
 
@@ -302,50 +322,32 @@ describe('A jump to an image by a view reference on a direct next planar viewpor
   }
 
   for (const [order, orientation] of VOLUMES) {
-    it(`lands on the image as a legacy volume viewport and its adapter do, for a volume whose slices run ${order}`, async function () {
+    it(`lands on the image, for a volume whose slices run ${order}`, async function () {
       const series = await createSeries({ id: 'jump-legacy' });
-      const legacy = createLegacyViewport(
-        renderingEngine,
-        'legacyJump',
-        ViewportType.ORTHOGRAPHIC,
-        { orientation }
-      );
+      const next = createNextViewport(renderingEngine, 'nextJump');
+
+      await showVolume(next, series, 2, { orientation });
+
+      const landedOn = await jumpByImageIdAlone(next, series);
+
+      expect(landedOn).toEqual(JUMP_ORDER);
+    });
+
+    it(`lands on the image on a legacy adapter of the volume viewport, for a volume whose slices run ${order}`, async function () {
+      const series = await createSeries({ id: 'jump-legacy' });
       const adapter = createLegacyViewport(
         renderingEngine,
         'adapterJump',
         ViewportType.ORTHOGRAPHIC,
         { adapter: true, orientation }
       );
-      const next = createNextViewport(renderingEngine, 'nextJump');
 
-      await legacy.setVolumes([{ volumeId: series.volumeId }]);
-      await renderAndWait(legacy);
       await adapter.setVolumes([{ volumeId: series.volumeId }]);
       await renderAndWait(adapter);
-      await showVolume(next, series, 2, { orientation });
 
-      const landedOn = {};
+      const landedOn = await jumpByImageIdAlone(adapter, series);
 
-      for (const viewport of [legacy, adapter, next]) {
-        const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
-
-        landedOn[viewport.id] = [];
-
-        for (const k of JUMP_ORDER) {
-          viewport.setViewReference({
-            FrameOfReferenceUID,
-            referencedImageId: series.imageIds[k],
-          });
-          await settle(viewport);
-          landedOn[viewport.id].push(
-            series.imageIds.indexOf(viewport.getCurrentImageId())
-          );
-        }
-      }
-
-      expect(landedOn.nextJump).toEqual(JUMP_ORDER);
-      expect(landedOn.legacyJump).toEqual(JUMP_ORDER);
-      expect(landedOn.adapterJump).toEqual(JUMP_ORDER);
+      expect(landedOn).toEqual(JUMP_ORDER);
     });
   }
 });
