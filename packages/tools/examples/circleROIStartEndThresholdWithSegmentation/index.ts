@@ -1,9 +1,9 @@
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import {
   cache,
   RenderingEngine,
   Enums,
-  setVolumesForViewports,
+  utilities,
   volumeLoader,
 } from '@cornerstonejs/core';
 import {
@@ -11,9 +11,9 @@ import {
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
   addButtonToToolbar,
-  setCtTransferFunctionForVolumeActor,
   getLocalUrl,
 } from '../../../../utils/demo/helpers';
+import { ctPresentation } from '../../../../utils/demo/helpers/volumePresentationRecipes';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
 // This is for debugging purposes
@@ -43,6 +43,7 @@ const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader 
 
 const segmentationId = 'MY_SEGMENTATION_ID';
 const toolGroupId = 'MY_TOOLGROUP_ID';
+const displaySetId = 'circleROIStartEndThresholdWithSegmentation:ct';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -114,10 +115,13 @@ addButtonToToolbar({
       return;
     }
 
-    const viewport = annotation.metadata.enabledElement.viewport;
+    const { renderingEngine, viewportId } = annotation.metadata.enabledElement;
+    const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
     // get the current focalpoint
-    const focalPointToStart = viewport.getCamera().focalPoint;
+    const focalPointToStart = viewport
+      .getResolvedView()
+      ?.toICamera().focalPoint;
     annotation.data.startCoordinate = focalPointToStart;
 
     // IMPORTANT: invalidate the toolData for the cached stat to get updated
@@ -147,10 +151,11 @@ addButtonToToolbar({
       return;
     }
 
-    const viewport = annotation.metadata.enabledElement.viewport;
+    const { renderingEngine, viewportId } = annotation.metadata.enabledElement;
+    const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
     // get the current focalpoint
-    const focalPointToEnd = viewport.getCamera().focalPoint;
+    const focalPointToEnd = viewport.getResolvedView()?.toICamera().focalPoint;
     annotation.data.endCoordinate = focalPointToEnd;
 
     // IMPORTANT: invalidate the toolData for the cached stat to get updated
@@ -302,7 +307,7 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: viewportId1,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element1,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
@@ -311,7 +316,7 @@ async function run() {
     },
     {
       viewportId: viewportId2,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element2,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -320,7 +325,7 @@ async function run() {
     },
     {
       viewportId: viewportId3,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element3,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
@@ -340,10 +345,19 @@ async function run() {
 
   const viewportIds = [viewportId1, viewportId2, viewportId3];
 
-  await setVolumesForViewports(
-    renderingEngine,
-    [{ volumeId, callback: setCtTransferFunctionForVolumeActor }],
-    viewportIds
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    kind: 'planar',
+    imageIds,
+    volumeId,
+  });
+
+  await Promise.all(
+    viewportIds.map(async (viewportId) => {
+      const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
+
+      await viewport.setDisplaySets({ displaySetId });
+      viewport.setDisplaySetPresentation(displaySetId, ctPresentation());
+    })
   );
 
   viewportIds.map(async (viewportId) => {

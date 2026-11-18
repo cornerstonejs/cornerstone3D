@@ -201,4 +201,127 @@ describe('Circle Start End Tool: ', () => {
       done.fail(e);
     }
   });
+
+  it('takes the focal point of the resolved view, a typed array, as its start and end slice', function (done) {
+    const element = testUtils.createViewports(renderingEngine, {
+      viewportId,
+      viewportType: ViewportType.PLANAR_NEXT,
+      width: 512,
+      height: 128,
+    });
+
+    const volumeId = testUtils.encodeVolumeIdInfo({
+      loader: 'fakeVolumeLoader',
+      name: 'volumeURI',
+      rows: 100,
+      columns: 100,
+      slices: 10,
+      xSpacing: 1,
+      ySpacing: 1,
+      zSpacing: 1,
+    });
+
+    const vp = renderingEngine.getViewport(viewportId);
+    let drawn = false;
+    let finished = false;
+    let focalPoint;
+
+    const checkAnnotation = () => {
+      const [circleAnnotation] = annotation.state.getAnnotations(
+        CircleROIStartEndThresholdTool.toolName,
+        element
+      );
+
+      if (finished || !circleAnnotation || circleAnnotation.invalidated) {
+        return;
+      }
+
+      if (!focalPoint) {
+        focalPoint = Float32Array.from(
+          vp.getResolvedView().toICamera().focalPoint
+        );
+        circleAnnotation.data.startCoordinate = focalPoint;
+        circleAnnotation.data.endCoordinate = Float32Array.from(focalPoint);
+        circleAnnotation.invalidated = true;
+        vp.render();
+        return;
+      }
+
+      const { startCoordinate, endCoordinate } = circleAnnotation.data;
+
+      finished = true;
+      eventTarget.removeEventListener(
+        csToolsEvents.ANNOTATION_MODIFIED,
+        checkAnnotation
+      );
+
+      expect(typeof startCoordinate).toBe('number');
+      expect(typeof endCoordinate).toBe('number');
+      expect(startCoordinate).toBeCloseTo(focalPoint[2]);
+      expect(endCoordinate).toBeCloseTo(focalPoint[2]);
+
+      annotation.state.removeAnnotation(circleAnnotation.annotationUID);
+      done();
+    };
+
+    element.addEventListener(
+      csToolsEvents.ANNOTATION_RENDERED,
+      checkAnnotation
+    );
+    eventTarget.addEventListener(
+      csToolsEvents.ANNOTATION_MODIFIED,
+      checkAnnotation
+    );
+
+    element.addEventListener(Events.IMAGE_RENDERED, () => {
+      if (drawn || !vp.getImageData()) {
+        return;
+      }
+
+      drawn = true;
+
+      const { imageData } = vp.getImageData();
+      const first = testUtils.createNormalizedMouseEvent(
+        imageData,
+        [12, 30, 0],
+        element,
+        vp
+      );
+      const second = testUtils.createNormalizedMouseEvent(
+        imageData,
+        [14, 30, 0],
+        element,
+        vp
+      );
+
+      element.dispatchEvent(
+        new MouseEvent('mousedown', {
+          target: element,
+          buttons: 1,
+          clientX: first.clientX,
+          clientY: first.clientY,
+          pageX: first.pageX,
+          pageY: first.pageY,
+        })
+      );
+      document.dispatchEvent(
+        new MouseEvent('mousemove', {
+          target: element,
+          buttons: 1,
+          clientX: second.clientX,
+          clientY: second.clientY,
+          pageX: second.pageX,
+          pageY: second.pageY,
+        })
+      );
+      document.dispatchEvent(new MouseEvent('mouseup'));
+    });
+
+    createAndCacheVolume(volumeId, { imageIds: [] })
+      .then(() => {
+        testUtils.setVolumesOnNextViewport(vp, [volumeId]);
+        vp.render();
+      })
+      .catch(done.fail);
+  });
 });

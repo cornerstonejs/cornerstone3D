@@ -389,14 +389,14 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
 
       let tempStartCoordinate: number | vec3 = startCoordinate;
       let tempEndCoordinate: number | vec3 = endCoordinate;
-      if (Array.isArray(startCoordinate)) {
+      if (this._isCoordinateTuple(startCoordinate)) {
         tempStartCoordinate = this._getCoordinateForViewplaneNormal(
           tempStartCoordinate,
           viewplaneNormal
         );
         data.startCoordinate = tempStartCoordinate;
       }
-      if (Array.isArray(endCoordinate)) {
+      if (this._isCoordinateTuple(endCoordinate)) {
         tempEndCoordinate = this._getCoordinateForViewplaneNormal(
           tempEndCoordinate,
           viewplaneNormal
@@ -916,6 +916,19 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     const indexOfDirection =
       this._getIndexOfCoordinatesForViewplaneNormal(viewPlaneNormal);
     return pos[indexOfDirection];
+  }
+
+  /**
+   * Whether a start or end coordinate is a point rather than a coordinate
+   * along the view plane normal: an array, or a typed array such as the focal
+   * point of `getResolvedView().toICamera()`.
+   *
+   * @param value - The start or end coordinate of the annotation.
+   */
+  private _isCoordinateTuple(
+    value: unknown
+  ): value is Types.Point3 | vec3 | Float32Array | Float64Array {
+    return Array.isArray(value) || ArrayBuffer.isView(value);
   }
 }
 
