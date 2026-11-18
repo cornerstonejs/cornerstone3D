@@ -69,26 +69,22 @@ const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
 const { RENDERING_DEFAULTS } = CONSTANTS;
 
 /**
- * Displayed canvas size for crosshairs geometry. Native ("next") viewports render to
- * a separate visible canvas (e.g. the CPU canvas); their `viewport.canvas` is the
- * hidden cornerstone-canvas (display:none -> clientWidth/clientHeight === 0), which
- * would collapse the reference-line extents. worldToCanvas already returns coordinates
- * in the element's displayed space, so use the element size for native; legacy keeps
- * the canvas size (byte-identical).
+ * Displayed canvas size for crosshairs geometry. A viewport can draw on a
+ * separate visible canvas (the CPU canvas, for example), and then its
+ * `viewport.canvas` is hidden and has no size, which would collapse the
+ * reference-line extents. worldToCanvas returns coordinates in the displayed
+ * space of the element, so the size of the element is used.
  */
 function getDisplayedCanvasSize(viewport): {
   clientWidth: number;
   clientHeight: number;
 } {
-  if (csUtils.isGenericViewport(viewport)) {
-    const { element } = viewport;
-    return {
-      clientWidth: element.clientWidth,
-      clientHeight: element.clientHeight,
-    };
-  }
-  const { clientWidth, clientHeight } = viewport.canvas;
-  return { clientWidth, clientHeight };
+  const { element } = viewport;
+
+  return {
+    clientWidth: element.clientWidth,
+    clientHeight: element.clientHeight,
+  };
 }
 
 export type CrosshairsAnnotationData = AnnotationData & {
@@ -252,7 +248,8 @@ class CrosshairsTool extends AnnotationTool {
   /**
    * Gets the camera from the viewport, and adds crosshairs annotation for the viewport
    * to the annotationManager. If any annotation is found in the annotationManager, it
-   * overwrites it.
+   * overwrites it. A viewport that shows nothing yet has no camera, and gets
+   * no annotation.
    * @param viewportInfo - The viewportInfo for the viewport to add the crosshairs
    * @returns viewPlaneNormal and center of viewport canvas in world space
    */
@@ -274,6 +271,10 @@ class CrosshairsTool extends AnnotationTool {
     const { element } = viewport;
     const { position, focalPoint, viewPlaneNormal } =
       getViewportICamera(viewport);
+
+    if (!position || !focalPoint || !viewPlaneNormal) {
+      return;
+    }
 
     // Check if there is already annotation for this viewport
     let annotations = this._getAnnotations(enabledElement);
@@ -387,37 +388,22 @@ class CrosshairsTool extends AnnotationTool {
       if (!enabledElement) {
         continue;
       }
-      const viewport = enabledElement.viewport as Types.IVolumeViewport;
-      const resetPan = true;
-      const resetZoom = true;
-      const resetToCenter = true;
-      const resetRotation = true;
-      const suppressEvents = true;
+      const { viewport } = enabledElement;
+
       if (csUtils.isGenericViewport(viewport)) {
-        // Native PLANAR_NEXT has no resetCamera/resetSlabThickness; resetViewState
-        // resets pan/zoom/orientation/flip (slice/navigation is preserved and there
-        // is no slab concept). Wrapped by the caller's _ignoreFiredEvents guard.
         const previousIgnoreFiredEvents = this._ignoreFiredEvents;
+
         this._ignoreFiredEvents = true;
         try {
           viewport.resetViewState({
-            resetPan,
-            resetZoom,
-            resetOrientation: resetRotation,
+            resetPan: true,
+            resetZoom: true,
+            resetOrientation: true,
             resetFlip: true,
           });
         } finally {
           this._ignoreFiredEvents = previousIgnoreFiredEvents;
         }
-      } else {
-        viewport.resetCamera({
-          resetPan,
-          resetZoom,
-          resetToCenter,
-          resetRotation,
-          suppressEvents,
-        });
-        (viewport as Types.IVolumeViewport).resetSlabThickness();
       }
       const { element } = viewport;
       let annotations = this._getAnnotations(enabledElement);
@@ -483,7 +469,7 @@ class CrosshairsTool extends AnnotationTool {
         }
 
         const camera = getViewportICamera(viewport);
-        const { focalPoint, position, viewPlaneNormal } = camera;
+        const { focalPoint, viewPlaneNormal } = camera;
 
         // Calculate the delta between the current camera focal point and the new tool center
         const delta = [
@@ -505,28 +491,13 @@ class CrosshairsTool extends AnnotationTool {
           scroll * viewPlaneNormal[2],
         ];
 
-        // Apply this "scroll" to the position and focal point of the camera.
         const newFocalPoint: Types.Point3 = [
           focalPoint[0] + scrollDelta[0],
           focalPoint[1] + scrollDelta[1],
           focalPoint[2] + scrollDelta[2],
         ];
-        const newPosition: Types.Point3 = [
-          position[0] + scrollDelta[0],
-          position[1] + scrollDelta[1],
-          position[2] + scrollDelta[2],
-        ];
 
-        if (csUtils.isGenericViewport(viewport)) {
-          // Native PLANAR_NEXT has no setCamera; the move is purely along the view
-          // plane normal (a scroll), so navigate by view reference (snaps to slice).
-          jumpToFocalPoint(viewport, newFocalPoint);
-        } else {
-          viewport.setCamera({
-            focalPoint: newFocalPoint,
-            position: newPosition,
-          });
-        }
+        jumpToFocalPoint(viewport, newFocalPoint);
 
         viewport.render();
       });
@@ -1667,12 +1638,16 @@ class CrosshairsTool extends AnnotationTool {
     return toolGroupAnnotations;
   };
 
+  /**
+   * Starts the crosshairs when a viewport of the tool group shows a new
+   * volume: each viewport that shows data gets its annotation, and the centre
+   * is worked out from the views. A next viewport fires no CAMERA_RESET at a
+   * mount, so the crosshairs of a tool that was active before the data came
+   * start here.
+   */
   _onNewVolume = (_evt?: Event) => {
     this._syncVolumeListenersWithToolGroup();
-    this._recomputeToolCenterFromAbsoluteCameras({
-      emitEvent: true,
-      updateViewportCameras: false,
-    });
+    this._computeToolCenter(this._getViewportsInfo());
   };
 
   /**
@@ -2676,24 +2651,13 @@ class CrosshairsTool extends AnnotationTool {
       Math.abs(projectedDelta[2]) > 1e-3
     ) {
       const newFocalPoint: Types.Point3 = [0, 0, 0];
-      const newPosition: Types.Point3 = [0, 0, 0];
 
       vtkMath.add(camera.focalPoint, projectedDelta, newFocalPoint);
-      vtkMath.add(camera.position, projectedDelta, newPosition);
 
       const previousIgnoreFiredEvents = this._ignoreFiredEvents;
       this._ignoreFiredEvents = true;
       try {
-        if (csUtils.isGenericViewport(viewport)) {
-          // Pure along-normal scroll; native has no setCamera, so navigate by view
-          // reference (snaps to nearest slice).
-          jumpToFocalPoint(viewport, newFocalPoint);
-        } else {
-          viewport.setCamera({
-            focalPoint: newFocalPoint,
-            position: newPosition,
-          });
-        }
+        jumpToFocalPoint(viewport, newFocalPoint);
       } finally {
         this._ignoreFiredEvents = previousIgnoreFiredEvents;
       }
@@ -3203,6 +3167,10 @@ class CrosshairsTool extends AnnotationTool {
       }
 
       const camera = getViewportICamera(enabledElement.viewport);
+
+      if (!camera.viewPlaneNormal || !camera.focalPoint) {
+        return;
+      }
 
       const normal = [...camera.viewPlaneNormal] as Types.Point3;
       const point = [...camera.focalPoint] as Types.Point3;

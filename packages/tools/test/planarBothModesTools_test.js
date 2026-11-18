@@ -4,7 +4,6 @@ import * as testUtils from '../../../utils/test/testUtils';
 import { clipAndCacheSurfacesForViewport } from '../../polymorphic-segmentation/src/utilities/clipAndCacheSurfacesForViewport';
 import {
   TILTED_PLANE,
-  createLegacyViewport,
   createNextViewport,
   createSeries,
   dot,
@@ -18,8 +17,7 @@ import {
   worldOfVoxel,
 } from '../../core/test/utils/planarSeriesBothModes';
 
-const { Enums, utilities } = cornerstone3D;
-const { ViewportType } = Enums;
+const { utilities } = cornerstone3D;
 const { utilities: toolsUtilities } = csTools3d;
 
 const renderingEngineId = utilities.uuidv4();
@@ -144,14 +142,10 @@ describe('Tools on a direct next planar viewport in stack mode and in volume mod
     it('finds the brightest point of a volume in the line of sight, as on a legacy volume viewport', async function () {
       const series = await createSeries({ size: THICK_SIZE });
       const next = createNextViewport(renderingEngine, 'next');
-      const legacy = createLegacyViewport(
-        renderingEngine,
-        'legacy',
-        ViewportType.ORTHOGRAPHIC
-      );
+      const legacy = createNextViewport(renderingEngine, 'legacy');
 
       await showVolume(next, series, 15);
-      await legacy.setVolumes([{ volumeId: series.volumeId }]);
+      await testUtils.setVolumesOnNextViewport(legacy, [series.volumeId]);
       await renderAndWait(legacy);
 
       const clicked = worldOfVoxel(series, [24, 20, 15]);

@@ -10,7 +10,6 @@ const {
   metaData,
   Enums,
   volumeLoader,
-  setVolumesForViewports,
   imageLoader,
   getEnabledElement,
 } = cornerstone3D;
@@ -60,7 +59,7 @@ const volumeId = testUtils.encodeVolumeIdInfo({
 function moveToSliceCentres(worldPoint, volume, viewports) {
   return viewports.reduce(
     (point, viewport) => {
-      const { viewPlaneNormal } = viewport.getCamera();
+      const { viewPlaneNormal } = viewport.getResolvedView().toICamera();
       const spacing = utilities.getSpacingInNormalDirection(
         volume,
         viewPlaneNormal
@@ -110,7 +109,7 @@ describe('Cornerstone Tools: ', () => {
       renderingEngine,
       [
         {
-          viewportType: ViewportType.ORTHOGRAPHIC,
+          viewportType: ViewportType.PLANAR_NEXT,
           width: 512,
           height: 128,
           viewportId: viewportIds[0],
@@ -118,7 +117,7 @@ describe('Cornerstone Tools: ', () => {
           orientation: Enums.OrientationAxis.AXIAL,
         },
         {
-          viewportType: ViewportType.ORTHOGRAPHIC,
+          viewportType: ViewportType.PLANAR_NEXT,
           width: 512,
           height: 128,
           viewportId: viewportIds[1],
@@ -126,7 +125,7 @@ describe('Cornerstone Tools: ', () => {
           orientation: Enums.OrientationAxis.SAGITTAL,
         },
         {
-          viewportType: ViewportType.ORTHOGRAPHIC,
+          viewportType: ViewportType.PLANAR_NEXT,
           width: 512,
           height: 128,
           viewportId: viewportIds[2],
@@ -196,9 +195,9 @@ describe('Cornerstone Tools: ', () => {
 
     try {
       createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-        setVolumesForViewports(
+        testUtils.setVolumesOnNextViewports(
           renderingEngine,
-          [{ volumeId: volumeId }],
+          [volumeId],
           viewportIds
         );
         renderingEngine.render();
@@ -357,7 +356,7 @@ describe('Cornerstone Tools: ', () => {
       renderingEngine,
       [
         {
-          viewportType: ViewportType.ORTHOGRAPHIC,
+          viewportType: ViewportType.PLANAR_NEXT,
           width: 512,
           height: 128,
           viewportId: viewportIds[0],
@@ -365,7 +364,7 @@ describe('Cornerstone Tools: ', () => {
           orientation: Enums.OrientationAxis.AXIAL,
         },
         {
-          viewportType: ViewportType.ORTHOGRAPHIC,
+          viewportType: ViewportType.PLANAR_NEXT,
           width: 512,
           height: 128,
           viewportId: viewportIds[1],
@@ -373,7 +372,7 @@ describe('Cornerstone Tools: ', () => {
           orientation: Enums.OrientationAxis.SAGITTAL,
         },
         {
-          viewportType: ViewportType.ORTHOGRAPHIC,
+          viewportType: ViewportType.PLANAR_NEXT,
           width: 512,
           height: 128,
           viewportId: viewportIds[2],
@@ -507,9 +506,9 @@ describe('Cornerstone Tools: ', () => {
 
     try {
       createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-        setVolumesForViewports(
+        testUtils.setVolumesOnNextViewports(
           renderingEngine,
-          [{ volumeId: volumeId }],
+          [volumeId],
           viewportIds
         );
         renderingEngine.render();

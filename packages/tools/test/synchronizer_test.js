@@ -33,12 +33,12 @@ describe('Synchronizer:', () => {
   it('Should successfully remove event handlers on viewport removal', function () {
     const [element1, _] = testUtils.createViewports(renderingEngine, [
       {
-        viewportType: ViewportType.ORTHOGRAPHIC,
+        viewportType: ViewportType.PLANAR_NEXT,
         orientation: Enums.OrientationAxis.AXIAL,
         viewportId: viewportId1,
       },
       {
-        viewportType: ViewportType.ORTHOGRAPHIC,
+        viewportType: ViewportType.PLANAR_NEXT,
         orientation: Enums.OrientationAxis.AXIAL,
         viewportId: viewportId2,
       },
@@ -77,12 +77,12 @@ describe('Synchronizer:', () => {
   it('Should successfully remove auxilary event handlers on viewport removal', function () {
     const [element1, _] = testUtils.createViewports(renderingEngine, [
       {
-        viewportType: ViewportType.ORTHOGRAPHIC,
+        viewportType: ViewportType.PLANAR_NEXT,
         orientation: Enums.OrientationAxis.AXIAL,
         viewportId: viewportId1,
       },
       {
-        viewportType: ViewportType.ORTHOGRAPHIC,
+        viewportType: ViewportType.PLANAR_NEXT,
         orientation: Enums.OrientationAxis.AXIAL,
         viewportId: viewportId2,
       },

@@ -1,4 +1,3 @@
-import type { Types } from '@cornerstonejs/core';
 import {
   getEnabledElementByIds,
   getEnabledElement,
@@ -51,14 +50,6 @@ class StackScrollTool extends BaseTool {
     const { debounceIfNotLoaded, invert, loop } = this.configuration;
     const deltaPointY = deltaPoints.canvas[1];
 
-    let volumeId;
-    if (
-      utilities.getViewportContentMode(viewport) === 'volume' &&
-      !utilities.isGenericViewport(viewport)
-    ) {
-      volumeId = (viewport as Types.IVolumeViewport).getVolumeId();
-    }
-
     const pixelsPerImage = this._getPixelPerImage(viewport);
     const deltaY = deltaPointY + this.deltaY;
 
@@ -71,7 +62,6 @@ class StackScrollTool extends BaseTool {
 
       utilities.scroll(viewport, {
         delta: invert ? -imageIdIndexOffset : imageIdIndexOffset,
-        volumeId,
         debounceLoading: debounceIfNotLoaded,
         loop: loop,
       });
@@ -96,11 +86,6 @@ class StackScrollTool extends BaseTool {
       delta,
       debounceLoading: this.configuration.debounceIfNotLoaded,
       loop: this.configuration.loop,
-      volumeId:
-        utilities.viewportIsInVolumeMode(viewport) &&
-        !utilities.isGenericViewport(viewport)
-          ? (viewport as Types.IBaseVolumeViewport).getVolumeId()
-          : undefined,
       scrollSlabs: this.configuration.scrollSlabs,
     });
   }

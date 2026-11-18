@@ -4,15 +4,8 @@ import * as csTools3d from '../src/index';
 
 import * as volumeURI_100_100_10_1_1_1_0_SEG_activeInactive from './groundTruth/volumeURI_100_100_10_1_1_1_0_SEG_activeInactive.png';
 
-const {
-  cache,
-  RenderingEngine,
-  metaData,
-  volumeLoader,
-  Enums,
-  setVolumesForViewports,
-  eventTarget,
-} = cornerstone3D;
+const { cache, RenderingEngine, metaData, volumeLoader, Enums, eventTarget } =
+  cornerstone3D;
 
 const { registerVolumeLoader, createAndCacheVolume } = volumeLoader;
 const { ViewportType } = Enums;
@@ -68,7 +61,7 @@ describe('Segmentation Controller:', () => {
 
   xit('should be able to load two segmentations on the toolGroup', function (done) {
     const element = testUtils.createViewports(renderingEngine, {
-      viewportType: ViewportType.ORTHOGRAPHIC,
+      viewportType: ViewportType.PLANAR_NEXT,
       orientation: Enums.OrientationAxis.AXIAL,
       viewportId: viewportId1,
     });
@@ -140,11 +133,7 @@ describe('Segmentation Controller:', () => {
       createAndCacheVolume(seg1VolumeID, { imageIds: [] }).then(() => {
         createAndCacheVolume(seg2VolumeID, { imageIds: [] }).then(() => {
           createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-            setVolumesForViewports(
-              renderingEngine,
-              [{ volumeId: volumeId }],
-              [viewportId1]
-            ).then(() => {
+            testUtils.setVolumesOnNextViewport(vp1, [volumeId]).then(() => {
               vp1.render();
 
               // add two volumes on the segmentation

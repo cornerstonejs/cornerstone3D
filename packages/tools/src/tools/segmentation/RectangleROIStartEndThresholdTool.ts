@@ -1,6 +1,7 @@
 import { getEnabledElement, utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { getCalibratedLengthUnitsAndScale } from '../../utilities/getCalibratedUnits';
+import getViewportICamera from '../../utilities/getViewportICamera';
 import { vec3 } from 'gl-matrix';
 import {
   addAnnotation,
@@ -150,15 +151,8 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     const enabledElement = getEnabledElement(element);
     const { viewport, renderingEngine } = enabledElement;
 
-    const camera = viewport.getCamera();
+    const camera = getViewportICamera(viewport);
     const { viewPlaneNormal, viewUp } = camera;
-
-    if (
-      csUtils.viewportIsInStackMode(viewport) &&
-      !csUtils.isGenericViewport(viewport)
-    ) {
-      throw new Error('Stack Viewport Not implemented');
-    }
 
     // Resolve the target before any drawing state is set, so that a viewport
     // with nothing to measure leaves the tool untouched rather than stuck
@@ -597,10 +591,9 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
       return renderStatus;
     }
 
-    annotations = filterAnnotationsWithinSamePlane(
-      annotations,
-      viewport.getCamera()
-    );
+    const camera = getViewportICamera(viewport);
+
+    annotations = filterAnnotationsWithinSamePlane(annotations, camera);
 
     const styleSpecifier: StyleSpecifier = {
       toolGroupId: this.toolGroupId,
@@ -624,8 +617,8 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
       const lineWidth = this.getStyle('lineWidth', styleSpecifier, annotation);
       const lineDash = this.getStyle('lineDash', styleSpecifier, annotation);
       const color = this.getStyle('color', styleSpecifier, annotation);
-      const focalPoint = viewport.getCamera().focalPoint;
-      const viewplaneNormal = viewport.getCamera().viewPlaneNormal;
+      const focalPoint = camera.focalPoint;
+      const viewplaneNormal = camera.viewPlaneNormal;
 
       let startCoord: number = this._resolveViewPlaneCoordinate(
         startCoordinate as number | Types.Point3,

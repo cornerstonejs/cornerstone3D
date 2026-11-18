@@ -363,11 +363,7 @@ export default class LabelmapBaseTool extends BaseTool {
       ? resolveLabelmapForSegment(segmentation, activeSegmentIndex)
       : undefined;
 
-    if (
-      viewportRenderMode === 'volume' ||
-      (csUtils.viewportIsInVolumeMode(viewport) &&
-        !csUtils.isGenericViewport(viewport))
-    ) {
+    if (viewportRenderMode === 'volume') {
       const segmentationVolume = layerForEdit
         ? getOrCreateLabelmapVolume(layerForEdit)
         : undefined;

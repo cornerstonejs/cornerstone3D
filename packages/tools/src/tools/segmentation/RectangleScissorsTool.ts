@@ -196,11 +196,7 @@ class RectangleScissorsTool extends LabelmapBaseTool {
 
     const viewportRenderMode = getViewportLabelmapRenderMode(viewport);
 
-    if (
-      viewportRenderMode === 'volume' ||
-      (cornerstoneUtilities.viewportIsInVolumeMode(viewport) &&
-        !cornerstoneUtilities.isGenericViewport(viewport))
-    ) {
+    if (viewportRenderMode === 'volume') {
       const layer = resolveLabelmapForSegment(
         getSegmentation(segmentationId),
         segmentIndex

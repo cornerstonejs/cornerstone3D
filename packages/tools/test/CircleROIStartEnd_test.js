@@ -11,7 +11,6 @@ const {
   metaData,
   eventTarget,
   volumeLoader,
-  setVolumesForViewports,
   getEnabledElement,
 } = cornerstone3D;
 
@@ -88,7 +87,7 @@ describe('Circle Start End Tool: ', () => {
   it('Should successfully create a circle start end tool on a canvas with mouse drag - 512 x 128', function (done) {
     const element = testUtils.createViewports(renderingEngine, {
       viewportId,
-      viewportType: ViewportType.ORTHOGRAPHIC,
+      viewportType: ViewportType.PLANAR_NEXT,
       width: 512,
       height: 128,
     });
@@ -195,11 +194,7 @@ describe('Circle Start End Tool: ', () => {
 
     try {
       createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-        setVolumesForViewports(
-          renderingEngine,
-          [{ volumeId: volumeId }],
-          [viewportId]
-        );
+        testUtils.setVolumesOnNextViewport(vp, [volumeId]);
         vp.render();
       });
     } catch (e) {

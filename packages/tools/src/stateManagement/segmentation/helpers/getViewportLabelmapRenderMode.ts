@@ -1,9 +1,4 @@
-import {
-  ActorRenderMode,
-  Enums,
-  utilities,
-  type Types,
-} from '@cornerstonejs/core';
+import { ActorRenderMode, Enums, type Types } from '@cornerstonejs/core';
 import {
   canRenderVolumeViewportLabelmapAsImage,
   isSliceRenderingEnabled,
@@ -26,18 +21,6 @@ export default function getViewportLabelmapRenderMode(
   const useSliceRendering = isSliceRenderingEnabled(options);
 
   if (useSliceRendering && canRenderVolumeViewportLabelmapAsImage(viewport)) {
-    return 'image';
-  }
-
-  const legacyContentMode = utilities.isGenericViewport(viewport)
-    ? undefined
-    : utilities.getViewportContentMode(viewport);
-
-  if (legacyContentMode === 'volume' || legacyContentMode === 'volume3d') {
-    return 'volume';
-  }
-
-  if (legacyContentMode === 'stack') {
     return 'image';
   }
 

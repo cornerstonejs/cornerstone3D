@@ -2,18 +2,11 @@ import * as cornerstone3D from '@cornerstonejs/core';
 import * as testUtils from '../../../utils/test/testUtils';
 import * as csTools3d from '../src/index';
 
-const {
-  cache,
-  RenderingEngine,
-  Enums,
-  metaData,
-  volumeLoader,
-  setVolumesForViewports,
-  eventTarget,
-} = cornerstone3D;
+const { cache, RenderingEngine, Enums, metaData, volumeLoader, eventTarget } =
+  cornerstone3D;
 
 const { registerVolumeLoader, createAndCacheVolume } = volumeLoader;
-const { ViewportType } = Enums;
+const { ViewportType, InterpolationType } = Enums;
 
 const {
   ToolGroupManager,
@@ -66,7 +59,7 @@ describe('Segmentation State:', () => {
   // Refactor this once the new state shape is documented.
   xit('should successfully create a state when segmentation is added', function (done) {
     const element = testUtils.createViewports(renderingEngine, {
-      viewportType: ViewportType.ORTHOGRAPHIC,
+      viewportType: ViewportType.PLANAR_NEXT,
       orientation: Enums.OrientationAxis.AXIAL,
       viewportId: viewportId,
     });
@@ -134,16 +127,13 @@ describe('Segmentation State:', () => {
       done();
     });
 
-    const callback = ({ volumeActor }) =>
-      volumeActor.getProperty().setInterpolationTypeToNearest();
-
     try {
       createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-        setVolumesForViewports(
-          renderingEngine,
-          [{ volumeId: volumeId, callback }],
-          [viewportId]
-        );
+        testUtils.setVolumesOnNextViewport(vp, [volumeId]).then(() => {
+          vp.setDisplaySetPresentation({
+            interpolationType: InterpolationType.NEAREST,
+          });
+        });
         vp.render();
         createAndCacheVolume(segVolumeId, { imageIds: [] }).then(() => {
           addSegmentations([
@@ -173,7 +163,7 @@ describe('Segmentation State:', () => {
 
   it('should successfully create a global default representation configuration', function (done) {
     const element = testUtils.createViewports(renderingEngine, {
-      viewportType: ViewportType.ORTHOGRAPHIC,
+      viewportType: ViewportType.PLANAR_NEXT,
       orientation: Enums.OrientationAxis.AXIAL,
       viewportId: viewportId,
     });
@@ -215,16 +205,13 @@ describe('Segmentation State:', () => {
       done();
     });
 
-    const callback = ({ volumeActor }) =>
-      volumeActor.getProperty().setInterpolationTypeToNearest();
-
     try {
       createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-        setVolumesForViewports(
-          renderingEngine,
-          [{ volumeId: volumeId, callback }],
-          [viewportId]
-        );
+        testUtils.setVolumesOnNextViewport(vp, [volumeId]).then(() => {
+          vp.setDisplaySetPresentation({
+            interpolationType: InterpolationType.NEAREST,
+          });
+        });
         vp.render();
         createAndCacheVolume(segVolumeId, { imageIds: [] }).then(() => {
           addSegmentations([

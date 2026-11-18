@@ -22,13 +22,14 @@ export function getSlabThicknessOrDefault(viewport: Types.IViewport): number {
  * The full depth in mm that a viewport's slab shows, or undefined when the
  * viewport shows no slab of its own.
  *
- * `getSlabThickness` does **not** return a depth on every render path, and the
- * two paths differ:
+ * The two kinds of viewport keep the slab differently:
  *
- * - A volume viewport stores a half thickness, because the clipping planes sit
- *   at `focalPoint ± slabThickness`. This function doubles that value.
- * - A generic planar viewport uses `vtkImageResliceMapper`, where the field is
- *   already a full thickness. This function passes that value through.
+ * - A next planar viewport keeps it in the presentation of its source
+ *   display set, as a full thickness. This function passes that value
+ *   through. A stack has no slab.
+ * - A legacy volume viewport stores a half thickness in `getSlabThickness`,
+ *   because the clipping planes sit at `focalPoint ± slabThickness`. This
+ *   function doubles that value.
  *
  * A caller that needs a depth, such as a brush fill, must use this function
  * and not the raw value. See
@@ -37,6 +38,17 @@ export function getSlabThicknessOrDefault(viewport: Types.IViewport): number {
 export function getViewSlabDepthOfViewport(
   viewport: Types.IViewport | Types.IGenericViewport
 ): number | undefined {
+  if (csUtils.viewportSupportsDisplaySetPresentation(viewport)) {
+    const sourceDataId = viewport.getSourceDataId();
+    const presentation = sourceDataId
+      ? (viewport.getDisplaySetPresentation(sourceDataId) as
+          | { slabThickness?: number }
+          | undefined)
+      : undefined;
+
+    return csUtils.getViewSlabDepth(presentation?.slabThickness);
+  }
+
   // Stack viewports have no slab API at all, so keep the call optional.
   const slabThickness = (
     viewport as Types.IVolumeViewport
@@ -46,9 +58,7 @@ export function getViewSlabDepthOfViewport(
     return undefined;
   }
 
-  return csUtils.getViewSlabDepth(
-    csUtils.isGenericViewport(viewport) ? slabThickness : slabThickness * 2
-  );
+  return csUtils.getViewSlabDepth(slabThickness * 2);
 }
 
 /**

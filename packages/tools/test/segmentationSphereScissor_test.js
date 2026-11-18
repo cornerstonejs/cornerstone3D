@@ -6,15 +6,8 @@ import * as volumeURI_100_100_10_1_1_1_0_SEG_SphereScissor_AX from './groundTrut
 import * as volumeURI_100_100_10_1_1_1_0_SEG_SphereScissor_SAG from './groundTruth/volumeURI_100_100_10_1_1_1_0_SEG_SphereScissor_SAG.png';
 import * as volumeURI_100_100_10_1_1_1_0_SEG_SphereScissor_COR from './groundTruth/volumeURI_100_100_10_1_1_1_0_SEG_SphereScissor_COR.png';
 
-const {
-  cache,
-  RenderingEngine,
-  Enums,
-  metaData,
-  volumeLoader,
-  setVolumesForViewports,
-  eventTarget,
-} = cornerstone3D;
+const { cache, RenderingEngine, Enums, metaData, volumeLoader, eventTarget } =
+  cornerstone3D;
 
 const { registerVolumeLoader, createAndCacheVolume } = volumeLoader;
 const { ViewportType } = Enums;
@@ -36,6 +29,7 @@ const {
   fakeMetaDataProvider,
   createNormalizedMouseEvent,
   compareImages,
+  setVolumesOnNextViewports,
 } = testUtils;
 
 const renderingEngineId = 'renderingEngineId-segmentationSphereScissor_test';
@@ -78,17 +72,17 @@ describe('Segmentation Tools:', () => {
   it('should be able to edit the segmentation data with the sphere scissor', function (done) {
     const elements = testUtils.createViewports(renderingEngine, [
       {
-        viewportType: ViewportType.ORTHOGRAPHIC,
+        viewportType: ViewportType.PLANAR_NEXT,
         orientation: Enums.OrientationAxis.AXIAL,
         viewportId: viewportId1,
       },
       {
-        viewportType: ViewportType.ORTHOGRAPHIC,
+        viewportType: ViewportType.PLANAR_NEXT,
         orientation: Enums.OrientationAxis.SAGITTAL,
         viewportId: viewportId2,
       },
       {
-        viewportType: ViewportType.ORTHOGRAPHIC,
+        viewportType: ViewportType.PLANAR_NEXT,
         orientation: Enums.OrientationAxis.CORONAL,
         viewportId: viewportId3,
       },
@@ -228,9 +222,9 @@ describe('Segmentation Tools:', () => {
 
     try {
       createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-        setVolumesForViewports(
+        setVolumesOnNextViewports(
           renderingEngine,
-          [{ volumeId: volumeId }],
+          [volumeId],
           [viewportId1, viewportId2, viewportId3]
         ).then(() => {
           vp1.render();

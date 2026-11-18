@@ -63,7 +63,7 @@ describe('Stack Segmentation Rendering:', () => {
 
   it('should successfully render a segmentation on a stack viewport', function (done) {
     const element = testUtils.createViewports(renderingEngine, {
-      viewportType: ViewportType.STACK,
+      viewportType: ViewportType.PLANAR_NEXT,
       viewportId: viewportId1,
     });
 
@@ -102,7 +102,7 @@ describe('Stack Segmentation Rendering:', () => {
     );
 
     try {
-      vp.setStack([imageId1], 0).then(() => {
+      testUtils.setStackOnNextViewport(vp, [imageId1], 0).then(() => {
         const segImage =
           imageLoader.createAndCacheDerivedLabelmapImage(imageId1);
         segmentation.addSegmentations([
@@ -139,7 +139,7 @@ describe('Stack Segmentation Rendering:', () => {
 
   it('should successfully render two segmentations on a stack viewport', function (done) {
     const element = testUtils.createViewports(renderingEngine, {
-      viewportType: ViewportType.STACK,
+      viewportType: ViewportType.PLANAR_NEXT,
       viewportId: viewportId1,
     });
 
@@ -185,7 +185,7 @@ describe('Stack Segmentation Rendering:', () => {
     );
 
     try {
-      vp.setStack([imageId1], 0).then(() => {
+      testUtils.setStackOnNextViewport(vp, [imageId1], 0).then(() => {
         const segImage1 =
           imageLoader.createAndCacheDerivedLabelmapImage(imageId1);
         const segImage2 =
@@ -250,7 +250,7 @@ describe('Stack Segmentation Rendering:', () => {
 
   it('should successfully render a segmentation on a stack viewport and use brush to edit it', function (done) {
     const element = testUtils.createViewports(renderingEngine, {
-      viewportType: ViewportType.STACK,
+      viewportType: ViewportType.PLANAR_NEXT,
       viewportId: viewportId1,
     });
 
@@ -356,7 +356,7 @@ describe('Stack Segmentation Rendering:', () => {
     );
 
     try {
-      vp.setStack([imageId1], 0).then(() => {
+      testUtils.setStackOnNextViewport(vp, [imageId1], 0).then(() => {
         const segImage1 =
           imageLoader.createAndCacheDerivedLabelmapImage(imageId1);
         segmentation.addSegmentations([

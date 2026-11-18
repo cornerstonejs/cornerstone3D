@@ -16,7 +16,6 @@ const {
   eventTarget,
   metaData,
   volumeLoader,
-  setVolumesForViewports,
 } = cornerstone3D;
 
 const { Events, ViewportType } = Enums;
@@ -56,10 +55,6 @@ describe('Rectangle ROI StartEnd Tool:', () => {
   let testEnv;
   let renderingEngine;
 
-  beforeAll(() => {
-    cornerstone3D.setUseCPURendering(false);
-  });
-
   beforeEach(function () {
     testEnv = testUtils.setupTestEnvironment({
       renderingEngineId: renderingEngineId,
@@ -86,7 +81,7 @@ describe('Rectangle ROI StartEnd Tool:', () => {
 
   it('Should successfully create a rectangle tool on a canvas with mouse drag in a Volume viewport - 512 x 128', function (done) {
     const element = createViewports(renderingEngine, {
-      viewportType: ViewportType.ORTHOGRAPHIC,
+      viewportType: ViewportType.PLANAR_NEXT,
       width: 512,
       height: 128,
       viewportId: viewportId,
@@ -177,11 +172,7 @@ describe('Rectangle ROI StartEnd Tool:', () => {
 
     try {
       volumeLoader.createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-        setVolumesForViewports(
-          renderingEngine,
-          [{ volumeId: volumeId }],
-          [viewportId]
-        );
+        testUtils.setVolumesOnNextViewport(vp, [volumeId]);
         vp.render();
       });
     } catch (e) {

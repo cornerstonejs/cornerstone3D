@@ -10,7 +10,6 @@ const {
   utilities,
   metaData,
   Enums,
-  setVolumesForViewports,
   volumeLoader,
   imageLoader,
 } = cornerstone3D;
@@ -97,12 +96,12 @@ describe('Synchronizer Manager:', () => {
   it('Should successfully synchronize viewports for Camera sync', function (done) {
     const [element1, element2] = testUtils.createViewports(renderingEngine, [
       {
-        viewportType: ViewportType.ORTHOGRAPHIC,
+        viewportType: ViewportType.PLANAR_NEXT,
         orientation: Enums.OrientationAxis.AXIAL,
         viewportId: viewportId1,
       },
       {
-        viewportType: ViewportType.ORTHOGRAPHIC,
+        viewportType: ViewportType.PLANAR_NEXT,
         orientation: Enums.OrientationAxis.AXIAL,
         viewportId: viewportId2,
       },
@@ -158,17 +157,15 @@ describe('Synchronizer Manager:', () => {
       });
 
       createAndCacheVolume(ctVolumeId, { imageIds: [] }).then(() => {
-        setVolumesForViewports(
-          renderingEngine,
-          [{ volumeId: ctVolumeId }],
-          [viewportId1]
+        testUtils.setVolumesOnNextViewport(
+          renderingEngine.getViewport(viewportId1),
+          [ctVolumeId]
         );
       });
       createAndCacheVolume(ptVolumeId, { imageIds: [] }).then(() => {
-        setVolumesForViewports(
-          renderingEngine,
-          [{ volumeId: ptVolumeId }],
-          [viewportId2]
+        testUtils.setVolumesOnNextViewport(
+          renderingEngine.getViewport(viewportId2),
+          [ptVolumeId]
         );
       });
 
@@ -181,12 +178,12 @@ describe('Synchronizer Manager:', () => {
   it('Should successfully synchronize viewports for VOI Synchronizer', function (done) {
     const [element1, element2] = testUtils.createViewports(renderingEngine, [
       {
-        viewportType: ViewportType.ORTHOGRAPHIC,
+        viewportType: ViewportType.PLANAR_NEXT,
         orientation: Enums.OrientationAxis.AXIAL,
         viewportId: viewportId1,
       },
       {
-        viewportType: ViewportType.ORTHOGRAPHIC,
+        viewportType: ViewportType.PLANAR_NEXT,
         orientation: Enums.OrientationAxis.AXIAL,
         viewportId: viewportId2,
       },
@@ -268,9 +265,9 @@ describe('Synchronizer Manager:', () => {
       });
 
       createAndCacheVolume(ctVolumeId, { imageIds: [] }).then(() => {
-        setVolumesForViewports(
+        testUtils.setVolumesOnNextViewports(
           renderingEngine,
-          [{ volumeId: ctVolumeId }],
+          [ctVolumeId],
           [viewportId1, viewportId2]
         );
         renderingEngine.render();

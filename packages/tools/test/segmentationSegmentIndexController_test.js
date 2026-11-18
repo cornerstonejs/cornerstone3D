@@ -4,8 +4,7 @@ import * as testUtils from '../../../utils/test/testUtils';
 
 import * as volumeURI_100_100_10_1_1_1_0_SEG_controller_1 from './groundTruth/volumeURI_100_100_10_1_1_1_0_SEG_controller_1.png';
 
-const { Enums, volumeLoader, setVolumesForViewports, eventTarget } =
-  cornerstone3D;
+const { Enums, volumeLoader, eventTarget } = cornerstone3D;
 
 const { createAndCacheVolume } = volumeLoader;
 const { ViewportType } = Enums;
@@ -54,7 +53,7 @@ describe('Segmentation Index Controller:', () => {
 
   it('should be able to segment different indices using rectangle scissor', function (done) {
     const element = testUtils.createViewports(renderingEngine, {
-      viewportType: ViewportType.ORTHOGRAPHIC,
+      viewportType: ViewportType.PLANAR_NEXT,
       orientation: Enums.OrientationAxis.AXIAL,
       viewportId: viewportId1,
     });
@@ -158,11 +157,7 @@ describe('Segmentation Index Controller:', () => {
 
     try {
       createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-        setVolumesForViewports(
-          renderingEngine,
-          [{ volumeId: volumeId }],
-          [viewportId1]
-        ).then(() => {
+        testUtils.setVolumesOnNextViewport(vp1, [volumeId]).then(() => {
           vp1.render();
 
           csTools3d.utilities.segmentation

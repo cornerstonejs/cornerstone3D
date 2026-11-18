@@ -5,15 +5,8 @@ import * as testUtils from '../../../utils/test/testUtils';
 import * as volumeURI_100_100_10_1_1_1_0_SEG_RectangleScissor from './groundTruth/volumeURI_100_100_10_1_1_1_0_SEG_RectangleScissor.png';
 import * as volumeURI_100_100_10_1_1_1_0_SEG_SAG_RectangleScissor from './groundTruth/volumeURI_100_100_10_1_1_1_0_SEG_SAG_RectangleScissor.png';
 
-const {
-  cache,
-  RenderingEngine,
-  Enums,
-  metaData,
-  volumeLoader,
-  setVolumesForViewports,
-  eventTarget,
-} = cornerstone3D;
+const { cache, RenderingEngine, Enums, metaData, volumeLoader, eventTarget } =
+  cornerstone3D;
 
 const { registerVolumeLoader, createAndCacheVolume } = volumeLoader;
 const { ViewportType } = Enums;
@@ -35,6 +28,7 @@ const {
   fakeMetaDataProvider,
   createNormalizedMouseEvent,
   compareImages,
+  setVolumesOnNextViewports,
 } = testUtils;
 
 const toolGroupId = 'toolGroupId-segmentationRectangleScissor_test';
@@ -70,7 +64,7 @@ describe('Segmentation Tools:', () => {
 
   it('should be able to create a new segmentation from a viewport', function (done) {
     const element = testUtils.createViewports(renderingEngine, {
-      viewportType: ViewportType.ORTHOGRAPHIC,
+      viewportType: ViewportType.PLANAR_NEXT,
       orientation: Enums.OrientationAxis.AXIAL,
       viewportId: viewportId1,
     });
@@ -93,9 +87,9 @@ describe('Segmentation Tools:', () => {
 
     try {
       createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-        setVolumesForViewports(
+        setVolumesOnNextViewports(
           renderingEngine,
-          [{ volumeId: volumeId }],
+          [volumeId],
           [viewportId1]
         ).then(() => {
           vp.render();
@@ -134,7 +128,7 @@ describe('Segmentation Tools:', () => {
 
   it('should be able to edit the segmentation data with the rectangle scissor', function (done) {
     const element = testUtils.createViewports(renderingEngine, {
-      viewportType: ViewportType.ORTHOGRAPHIC,
+      viewportType: ViewportType.PLANAR_NEXT,
       orientation: Enums.OrientationAxis.AXIAL,
       viewportId: viewportId1,
     });
@@ -232,9 +226,9 @@ describe('Segmentation Tools:', () => {
 
     try {
       createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-        setVolumesForViewports(
+        setVolumesOnNextViewports(
           renderingEngine,
-          [{ volumeId: volumeId }],
+          [volumeId],
           [viewportId1]
         ).then(() => {
           vp.render();
@@ -276,12 +270,12 @@ describe('Segmentation Tools:', () => {
       renderingEngine,
       [
         {
-          viewportType: ViewportType.ORTHOGRAPHIC,
+          viewportType: ViewportType.PLANAR_NEXT,
           orientation: Enums.OrientationAxis.AXIAL,
           viewportId: viewportId1,
         },
         {
-          viewportType: ViewportType.ORTHOGRAPHIC,
+          viewportType: ViewportType.PLANAR_NEXT,
           orientation: Enums.OrientationAxis.SAGITTAL,
           viewportId: viewportId2,
         },
@@ -410,9 +404,9 @@ describe('Segmentation Tools:', () => {
 
     try {
       createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-        setVolumesForViewports(
+        setVolumesOnNextViewports(
           renderingEngine,
-          [{ volumeId: volumeId }],
+          [volumeId],
           [viewportId1, viewportId2]
         ).then(() => {
           vp1.render();

@@ -339,6 +339,33 @@ function setVolumesOnNextViewport(viewport, volumeIds, options = {}) {
 }
 
 /**
+ * Shows the same volumes of the cache on several direct next planar
+ * viewports of a rendering engine, each in the orientation of its viewport
+ * options. It takes the place of `setVolumesForViewports`.
+ * @param {object} renderingEngine - The rendering engine of the viewports
+ * @param {string[]} volumeIds - The ids of volumes that are in the cache
+ * @param {string[]} viewportIds - The ids of direct next planar viewports
+ * @param {object} options - Options of each display set
+ * @returns A promise that resolves when every viewport shows the volumes.
+ */
+function setVolumesOnNextViewports(
+  renderingEngine,
+  volumeIds,
+  viewportIds,
+  options = {}
+) {
+  return Promise.all(
+    viewportIds.map((viewportId) =>
+      setVolumesOnNextViewport(
+        renderingEngine.getViewport(viewportId),
+        volumeIds,
+        options
+      )
+    )
+  );
+}
+
+/**
  * Checks that a direct next planar viewport draws every layer on the CPU, by
  * its render plan. Call it after the display set is shown.
  * @param {object} viewport - A direct next planar viewport
@@ -636,5 +663,6 @@ export {
   cleanupTestEnvironment,
   setStackOnNextViewport,
   setVolumesOnNextViewport,
+  setVolumesOnNextViewports,
   expectNextViewportToDrawOnCPU,
 };

@@ -7,7 +7,7 @@ import * as imageURI_64_64_0_20_1_1_0_scrolled from './groundTruth/imageURI_64_6
 import * as imageURI_64_64_10_5_3_2_0 from './groundTruth/imageURI_64_64_10_5_3_2_0.png';
 import { MouseBindings } from '../src/enums';
 
-const { Enums, volumeLoader, setVolumesForViewports } = cornerstone3D;
+const { Enums, volumeLoader } = cornerstone3D;
 
 const { Events, ViewportType, InterpolationType } = Enums;
 
@@ -63,7 +63,7 @@ describe('Cornerstone Tools Scroll Wheel:', () => {
 
   it('Should successfully scroll through a volume', function (done) {
     const element = testUtils.createViewports(renderingEngine, {
-      viewportType: ViewportType.ORTHOGRAPHIC,
+      viewportType: ViewportType.PLANAR_NEXT,
       viewportId: viewportId,
       width: 512,
       height: 128,
@@ -126,11 +126,7 @@ describe('Cornerstone Tools Scroll Wheel:', () => {
 
     try {
       volumeLoader.createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-        setVolumesForViewports(
-          renderingEngine,
-          [{ volumeId: volumeId }],
-          [viewportId]
-        );
+        testUtils.setVolumesOnNextViewport(vp, [volumeId]);
         vp.render();
       });
     } catch (e) {
@@ -140,7 +136,7 @@ describe('Cornerstone Tools Scroll Wheel:', () => {
 
   it('Should successfully scroll through stack of images', function (done) {
     const element = testUtils.createViewports(renderingEngine, {
-      viewportType: ViewportType.STACK,
+      viewportType: ViewportType.PLANAR_NEXT,
       viewportId: viewportId,
       width: 256,
       height: 256,
@@ -226,8 +222,10 @@ describe('Cornerstone Tools Scroll Wheel:', () => {
     element.addEventListener(Events.IMAGE_RENDERED, renderEventHandler);
 
     try {
-      vp.setStack([imageId1, imageId2], 0).then(() => {
-        vp.setProperties({ interpolationType: InterpolationType.NEAREST });
+      testUtils.setStackOnNextViewport(vp, [imageId1, imageId2], 0).then(() => {
+        vp.setDisplaySetPresentation({
+          interpolationType: InterpolationType.NEAREST,
+        });
         vp.render();
       });
     } catch (e) {
@@ -237,7 +235,7 @@ describe('Cornerstone Tools Scroll Wheel:', () => {
 
   it('Should successfully scroll through stack of images and then go back', function (done) {
     const element = testUtils.createViewports(renderingEngine, {
-      viewportType: ViewportType.STACK,
+      viewportType: ViewportType.PLANAR_NEXT,
       viewportId: viewportId,
       width: 256,
       height: 256,
@@ -397,8 +395,10 @@ describe('Cornerstone Tools Scroll Wheel:', () => {
     element.addEventListener(Events.IMAGE_RENDERED, renderEventHandler);
 
     try {
-      vp.setStack([imageId1, imageId2], 0).then(() => {
-        vp.setProperties({ interpolationType: InterpolationType.NEAREST });
+      testUtils.setStackOnNextViewport(vp, [imageId1, imageId2], 0).then(() => {
+        vp.setDisplaySetPresentation({
+          interpolationType: InterpolationType.NEAREST,
+        });
         vp.render();
       });
     } catch (e) {

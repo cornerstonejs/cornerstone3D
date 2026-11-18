@@ -33,16 +33,8 @@ class WindowLevelTool extends BaseTool {
     const { element, deltaPoints } = evt.detail;
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
-    const isLegacyVolumeViewport =
-      utilities.getViewportContentMode(viewport) === 'volume' &&
-      !utilities.isGenericViewport(viewport);
 
-    let volumeId,
-      lower,
-      upper,
-      modality,
-      newRange,
-      viewportsContainingVolumeUID;
+    let modality, newRange;
     let isPreScaled = false;
 
     const properties = getViewportVOIProperties(viewport);
@@ -51,20 +43,7 @@ class WindowLevelTool extends BaseTool {
       throw new Error('Viewport is not a valid type');
     }
 
-    if (isLegacyVolumeViewport) {
-      volumeId = (viewport as Types.IVolumeViewport).getVolumeId();
-
-      viewportsContainingVolumeUID =
-        utilities.getViewportsWithVolumeId(volumeId);
-      ({ lower, upper } = properties.voiRange);
-      if (!cache.getVolume(volumeId)) {
-        throw new Error('Volume not found ' + volumeId);
-      }
-    } else if (properties.voiRange) {
-      ({ lower, upper } = properties.voiRange);
-    } else {
-      throw new Error('Viewport is not a valid type');
-    }
+    const { lower, upper } = properties.voiRange;
 
     // Resolve modality + pre-scaled state through the single family-aware
     // descriptor instead of re-deriving them inline. The native ("next")
@@ -72,9 +51,9 @@ class WindowLevelTool extends BaseTool {
     // nor the VolumeViewport `.setVolumes` API; the descriptor reads each family
     // from its own source of truth so a prescaled PT viewport still takes the
     // gentle fixed-width PT path (5/clientHeight) instead of the aggressive
-    // dynamic-range multiplier. `volumeId` is undefined for the stack/next
-    // branch, where the descriptor falls back to the bound default actor.
-    const descriptor = utilities.getScalingDescriptor(viewport, volumeId);
+    // dynamic-range multiplier. No volume id is given, so the descriptor
+    // falls back to the bound default actor.
+    const descriptor = utilities.getScalingDescriptor(viewport);
     modality = descriptor?.modality;
     isPreScaled = !!descriptor?.isPreScaled;
 
@@ -91,16 +70,16 @@ class WindowLevelTool extends BaseTool {
         clientHeight: element.clientHeight,
         isPreScaled,
         viewport,
-        volumeId,
+        volumeId: undefined,
       });
     } else {
       newRange = this.getNewRange({
         viewport,
         deltaPointsCanvas: deltaPoints.canvas,
-        volumeId,
+        volumeId: undefined,
         lower,
         upper,
-        voiLutFunction: properties.VOILUTFunction,
+        voiLutFunction: properties.voiLUTFunction,
       });
     }
 
@@ -114,15 +93,6 @@ class WindowLevelTool extends BaseTool {
     });
 
     viewport.render();
-
-    if (isLegacyVolumeViewport) {
-      viewportsContainingVolumeUID.forEach((vp) => {
-        if (viewport !== vp) {
-          vp.render();
-        }
-      });
-      return;
-    }
   }
 
   getPTScaledNewRange({
@@ -320,12 +290,7 @@ export default WindowLevelTool;
 
 type ViewportVOIProperties = {
   voiRange?: Types.VOIRange;
-  VOILUTFunction?: unknown;
-};
-
-type ViewportWithLegacyVOIProperties = {
-  getProperties?: () => ViewportVOIProperties;
-  setProperties?: (props: ViewportVOIProperties) => void;
+  voiLUTFunction?: unknown;
 };
 
 type ViewportWithDataPresentation = {
@@ -341,12 +306,6 @@ type ViewportWithDataPresentation = {
 };
 
 function getViewportVOIProperties(viewport): ViewportVOIProperties | undefined {
-  const legacyViewport = viewport as ViewportWithLegacyVOIProperties;
-
-  if (typeof legacyViewport.getProperties === 'function') {
-    return legacyViewport.getProperties();
-  }
-
   const target = getDataPresentationTarget(viewport);
 
   if (!target) {
@@ -368,13 +327,6 @@ function setViewportVOIProperties(
   viewport,
   props: ViewportVOIProperties
 ): void {
-  const legacyViewport = viewport as ViewportWithLegacyVOIProperties;
-
-  if (typeof legacyViewport.setProperties === 'function') {
-    legacyViewport.setProperties(props);
-    return;
-  }
-
   const target = getDataPresentationTarget(viewport);
 
   if (!target) {

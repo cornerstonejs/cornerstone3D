@@ -28,7 +28,7 @@ describe('stackContextPrefetch:', () => {
 
   it('can be disabled without error', function (done) {
     const element = testUtils.createViewports(testEnv.renderingEngine, {
-      viewportType: ViewportType.STACK,
+      viewportType: ViewportType.PLANAR_NEXT,
       orientation: Enums.OrientationAxis.AXIAL,
       viewportId: viewportId,
       width: 128,
@@ -50,7 +50,7 @@ describe('stackContextPrefetch:', () => {
     });
 
     try {
-      vp.setStack([imageId1]).then(() => {
+      testUtils.setStackOnNextViewport(vp, [imageId1]).then(() => {
         csTools3d.utilities.stackContextPrefetch.enable(element);
         csTools3d.utilities.stackContextPrefetch.disable(element);
         done();

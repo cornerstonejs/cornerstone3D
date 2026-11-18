@@ -17,6 +17,7 @@ import {
   drawHandles as drawHandlesSvg,
 } from '../../drawingSvg';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
+import getViewportICamera from '../../utilities/getViewportICamera';
 import getWorldWidthAndHeightFromTwoPoints from '../../utilities/planar/getWorldWidthAndHeightFromTwoPoints';
 import throttle from '../../utilities/throttle';
 import debounce from '../../utilities/debounce';
@@ -133,15 +134,8 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
 
-    const camera = viewport.getCamera();
+    const camera = getViewportICamera(viewport);
     const { viewPlaneNormal, viewUp } = camera;
-
-    if (
-      csUtils.viewportIsInStackMode(viewport) &&
-      !csUtils.isGenericViewport(viewport)
-    ) {
-      throw new Error('Stack Viewport Not implemented');
-    }
 
     // Resolve the target before any drawing state is set, so that a viewport
     // with nothing to measure leaves the tool untouched rather than stuck
@@ -349,10 +343,9 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       return renderStatus;
     }
 
-    annotations = filterAnnotationsWithinSamePlane(
-      annotations,
-      viewport.getCamera()
-    );
+    const camera = getViewportICamera(viewport);
+
+    annotations = filterAnnotationsWithinSamePlane(annotations, camera);
 
     const styleSpecifier: StyleSpecifier = {
       toolGroupId: this.toolGroupId,
@@ -391,8 +384,8 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
       // range of slices to render based on the start and end slice, like
       // np.arange
 
-      const focalPoint = viewport.getCamera().focalPoint;
-      const viewplaneNormal = viewport.getCamera().viewPlaneNormal;
+      const focalPoint = camera.focalPoint;
+      const viewplaneNormal = camera.viewPlaneNormal;
 
       let tempStartCoordinate: number | vec3 = startCoordinate;
       let tempEndCoordinate: number | vec3 = endCoordinate;
