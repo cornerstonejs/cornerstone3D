@@ -15,7 +15,6 @@ const {
   metaData,
   eventTarget,
   volumeLoader,
-  setVolumesForViewports,
   getEnabledElement,
 } = cornerstone3D;
 
@@ -55,10 +54,6 @@ const volumeId = testUtils.encodeVolumeIdInfo({
 });
 
 describe('Ellipse Tool: ', () => {
-  beforeAll(() => {
-    cornerstone3D.setUseCPURendering(false);
-  });
-
   describe('Ellipse Tool: ', () => {
     let testEnv;
     let renderingEngine;
@@ -89,7 +84,7 @@ describe('Ellipse Tool: ', () => {
 
     it('Should successfully create a ellipse tool on a canvas with mouse drag - 512 x 128', function (done) {
       const element = createViewports(renderingEngine, {
-        viewportType: ViewportType.STACK,
+        viewportType: ViewportType.PLANAR_NEXT,
         width: 512,
         height: 128,
         viewportId: viewportId,
@@ -193,7 +188,7 @@ describe('Ellipse Tool: ', () => {
       });
 
       try {
-        vp.setStack([imageId1], 0);
+        testUtils.setStackOnNextViewport(vp, [imageId1], 0);
         renderingEngine.render();
       } catch (e) {
         done.fail(e);
@@ -338,7 +333,7 @@ describe('Ellipse Tool: ', () => {
 
     it('Should cancel drawing of a EllipseTool annotation', function (done) {
       const element = createViewports(renderingEngine, {
-        viewportType: ViewportType.STACK,
+        viewportType: ViewportType.PLANAR_NEXT,
         width: 512,
         height: 128,
         viewportId: viewportId,
@@ -458,7 +453,7 @@ describe('Ellipse Tool: ', () => {
       element.addEventListener(csToolsEvents.KEY_DOWN, cancelToolDrawing);
 
       try {
-        vp.setStack([imageId1], 0);
+        testUtils.setStackOnNextViewport(vp, [imageId1], 0);
         renderingEngine.render();
       } catch (e) {
         done.fail(e);

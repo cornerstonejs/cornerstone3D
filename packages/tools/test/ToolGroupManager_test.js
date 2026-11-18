@@ -36,10 +36,6 @@ describe('ToolGroup Manager:', () => {
   let renderingEngine;
   let toolGroup;
 
-  beforeAll(() => {
-    cornerstone3D.setUseCPURendering(false);
-  });
-
   beforeEach(function () {
     testEnv = testUtils.setupTestEnvironment({
       renderingEngineId: renderingEngineId,
@@ -67,12 +63,12 @@ describe('ToolGroup Manager:', () => {
   it('Should successfully creates tool groups', function () {
     const [element1, element2] = testUtils.createViewports(renderingEngine, [
       {
-        viewportType: ViewportType.ORTHOGRAPHIC,
+        viewportType: ViewportType.PLANAR_NEXT,
         orientation: Enums.OrientationAxis.AXIAL,
         viewportId: viewportId1,
       },
       {
-        viewportType: ViewportType.ORTHOGRAPHIC,
+        viewportType: ViewportType.PLANAR_NEXT,
         orientation: Enums.OrientationAxis.AXIAL,
         viewportId: viewportId2,
       },
@@ -85,12 +81,12 @@ describe('ToolGroup Manager:', () => {
   it('Should successfully make a tool enabled/disabled/active/passive', function () {
     const [element1, element2] = testUtils.createViewports(renderingEngine, [
       {
-        viewportType: ViewportType.ORTHOGRAPHIC,
+        viewportType: ViewportType.PLANAR_NEXT,
         orientation: Enums.OrientationAxis.AXIAL,
         viewportId: viewportId1,
       },
       {
-        viewportType: ViewportType.ORTHOGRAPHIC,
+        viewportType: ViewportType.PLANAR_NEXT,
         orientation: Enums.OrientationAxis.AXIAL,
         viewportId: viewportId2,
       },
@@ -107,12 +103,12 @@ describe('ToolGroup Manager:', () => {
   it('Should successfully setTool status', function () {
     const [element1, element2] = testUtils.createViewports(renderingEngine, [
       {
-        viewportType: ViewportType.ORTHOGRAPHIC,
+        viewportType: ViewportType.PLANAR_NEXT,
         orientation: Enums.OrientationAxis.AXIAL,
         viewportId: viewportId1,
       },
       {
-        viewportType: ViewportType.ORTHOGRAPHIC,
+        viewportType: ViewportType.PLANAR_NEXT,
         orientation: Enums.OrientationAxis.AXIAL,
         viewportId: viewportId2,
       },

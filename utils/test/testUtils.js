@@ -277,6 +277,82 @@ function createViewports(renderingEngine, options = {}, count = 1) {
 }
 
 /**
+ * Shows images as a stack on a direct next planar viewport, at the image
+ * `imageIdIndex`. It takes the place of `viewport.setStack(imageIds,
+ * imageIdIndex)`. The images are registered as a display set under an id of
+ * the viewport, and they show in their acquisition plane, whatever
+ * orientation the viewport options give. `options` are options of the display
+ * set: `{ renderBackend: 'cpu' }` pins it to the CPU.
+ * @param {object} viewport - A direct next planar viewport
+ * @param {string[]} imageIds - The images of the stack
+ * @param {number} imageIdIndex - The index of the image to show first
+ * @param {object} options - Options of the display set
+ * @returns The promise of `setDisplaySets`. It resolves when the first image
+ * is shown.
+ */
+function setStackOnNextViewport(
+  viewport,
+  imageIds,
+  imageIdIndex = 0,
+  options = {}
+) {
+  const displaySetId = `stack:${viewport.id}`;
+
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    kind: 'planar',
+    imageIds,
+    initialImageIdIndex: imageIdIndex,
+  });
+
+  return viewport.setDisplaySets({
+    displaySetId,
+    options: { orientation: Enums.OrientationAxis.ACQUISITION, ...options },
+  });
+}
+
+/**
+ * Shows volumes of the cache on a direct next planar viewport: the first as
+ * the source and the others over it, as in a fusion. It takes the place of
+ * `viewport.setVolumes` and of `setVolumesForViewports`. Each volume is
+ * registered as a display set under an id of the viewport and the volume.
+ * The orientation is that of the viewport options, unless `options` name
+ * one. `options` are options of each display set.
+ * @param {object} viewport - A direct next planar viewport
+ * @param {string[]} volumeIds - The ids of volumes that are in the cache
+ * @param {object} options - Options of each display set
+ * @returns The promise of `setDisplaySets`.
+ */
+function setVolumesOnNextViewport(viewport, volumeIds, options = {}) {
+  const entries = volumeIds.map((volumeId) => {
+    const displaySetId = `volume:${viewport.id}:${volumeId}`;
+
+    utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+      kind: 'planar',
+      imageIds: cache.getVolume(volumeId).imageIds,
+      volumeId,
+    });
+
+    return { displaySetId, options };
+  });
+
+  return viewport.setDisplaySets(...entries);
+}
+
+/**
+ * Checks that a direct next planar viewport draws every layer on the CPU, by
+ * its render plan. Call it after the display set is shown.
+ * @param {object} viewport - A direct next planar viewport
+ */
+function expectNextViewportToDrawOnCPU(viewport) {
+  const renderPlan = viewport.getRenderPlan();
+
+  expect(renderPlan.length).toBeGreaterThan(0);
+  renderPlan.forEach((layer) => {
+    expect(layer.draw).toBe('cpu');
+  });
+}
+
+/**
  * TestUtils: used for colorizing the image and comparing it to a baseline,
  * should not be used for development.
  */
@@ -558,4 +634,7 @@ export {
   createViewports,
   setupTestEnvironment,
   cleanupTestEnvironment,
+  setStackOnNextViewport,
+  setVolumesOnNextViewport,
+  expectNextViewportToDrawOnCPU,
 };

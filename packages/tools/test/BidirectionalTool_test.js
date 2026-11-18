@@ -12,7 +12,6 @@ const {
   volumeLoader,
   metaData,
   eventTarget,
-  setVolumesForViewports,
 } = cornerstone3D;
 
 const { Events, ViewportType } = Enums;
@@ -84,7 +83,7 @@ describe('Cornerstone Tools: ', () => {
   it('Should successfully create a Bidirectional tool on a canvas with mouse drag - 512 x 128', function (done) {
     const element = testUtils.createViewports(renderingEngine, {
       viewportId,
-      viewportType: ViewportType.STACK,
+      viewportType: ViewportType.PLANAR_NEXT,
       width: 512,
       height: 128,
     });
@@ -201,7 +200,7 @@ describe('Cornerstone Tools: ', () => {
     });
 
     try {
-      vp.setStack([imageId1], 0);
+      testUtils.setStackOnNextViewport(vp, [imageId1], 0);
       renderingEngine.render();
     } catch (e) {
       done.fail(e);
@@ -211,7 +210,7 @@ describe('Cornerstone Tools: ', () => {
   it('Should successfully create a bidirectional tool on a canvas with mouse drag Volume viewport - 512 x 128', function (done) {
     const element = testUtils.createViewports(renderingEngine, {
       viewportId,
-      viewportType: ViewportType.ORTHOGRAPHIC,
+      viewportType: ViewportType.PLANAR_NEXT,
       width: 512,
       height: 128,
     });
@@ -315,11 +314,7 @@ describe('Cornerstone Tools: ', () => {
 
     try {
       volumeLoader.createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-        setVolumesForViewports(
-          renderingEngine,
-          [{ volumeId: volumeId }],
-          [viewportId]
-        );
+        testUtils.setVolumesOnNextViewport(vp, [volumeId]);
         vp.render();
       });
     } catch (e) {
@@ -330,7 +325,7 @@ describe('Cornerstone Tools: ', () => {
   it('Should successfully create a bidirectional tool and modify its handle', function (done) {
     const element = testUtils.createViewports(renderingEngine, {
       viewportId,
-      viewportType: ViewportType.STACK,
+      viewportType: ViewportType.PLANAR_NEXT,
       width: 256,
       height: 256,
     });
@@ -489,7 +484,7 @@ describe('Cornerstone Tools: ', () => {
     });
 
     try {
-      vp.setStack([imageId1], 0);
+      testUtils.setStackOnNextViewport(vp, [imageId1], 0);
       renderingEngine.render();
     } catch (e) {
       done.fail(e);
@@ -499,7 +494,7 @@ describe('Cornerstone Tools: ', () => {
   it('Should successfully create a bidirectional tool and select but not move it', function (done) {
     const element = testUtils.createViewports(renderingEngine, {
       viewportId,
-      viewportType: ViewportType.STACK,
+      viewportType: ViewportType.PLANAR_NEXT,
       width: 256,
       height: 256,
     });
@@ -653,7 +648,7 @@ describe('Cornerstone Tools: ', () => {
     });
 
     try {
-      vp.setStack([imageId1], 0);
+      testUtils.setStackOnNextViewport(vp, [imageId1], 0);
       renderingEngine.render();
     } catch (e) {
       done.fail(e);
@@ -663,7 +658,7 @@ describe('Cornerstone Tools: ', () => {
   it('Should successfully create a bidirectional tool and select AND move it', function (done) {
     const element = testUtils.createViewports(renderingEngine, {
       viewportId,
-      viewportType: ViewportType.STACK,
+      viewportType: ViewportType.PLANAR_NEXT,
       width: 256,
       height: 256,
     });
@@ -868,7 +863,7 @@ describe('Cornerstone Tools: ', () => {
     });
 
     try {
-      vp.setStack([imageId1], 0);
+      testUtils.setStackOnNextViewport(vp, [imageId1], 0);
       renderingEngine.render();
     } catch (e) {
       done.fail(e);
@@ -878,7 +873,7 @@ describe('Cornerstone Tools: ', () => {
   it('Should successfully cancel drawing of a BidirectionalTool', function (done) {
     const element = testUtils.createViewports(renderingEngine, {
       viewportId,
-      viewportType: ViewportType.STACK,
+      viewportType: ViewportType.PLANAR_NEXT,
       width: 256,
       height: 256,
     });
@@ -997,7 +992,7 @@ describe('Cornerstone Tools: ', () => {
     element.addEventListener(csToolsEvents.KEY_DOWN, cancelToolDrawing);
 
     try {
-      vp.setStack([imageId1], 0);
+      testUtils.setStackOnNextViewport(vp, [imageId1], 0);
       renderingEngine.render();
     } catch (e) {
       done.fail(e);

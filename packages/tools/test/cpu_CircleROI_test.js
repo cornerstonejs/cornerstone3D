@@ -18,8 +18,6 @@ const {
   metaData,
   eventTarget,
   volumeLoader,
-  setUseCPURendering,
-  resetUseCPURendering,
 } = cornerstone3D;
 
 const { Events, ViewportType } = Enums;
@@ -57,14 +55,6 @@ describe('CircleROITool (CPU):', () => {
   let renderingEngine;
   let stackToolGroup;
 
-  beforeAll(() => {
-    setUseCPURendering(true);
-  });
-
-  afterAll(() => {
-    resetUseCPURendering();
-  });
-
   beforeEach(() => {
     const tools = [CircleROITool];
     const toolConfigurations = {
@@ -97,7 +87,12 @@ describe('CircleROITool (CPU):', () => {
   it('Should successfully create a circle tool on a cpu stack viewport with mouse drag - 512 x 128', (done) => {
     const element = createViewports(
       renderingEngine,
-      { viewportType: ViewportType.STACK, width: 512, height: 128, viewportId },
+      {
+        viewportType: ViewportType.PLANAR_NEXT,
+        width: 512,
+        height: 128,
+        viewportId,
+      },
       1
     );
 
@@ -139,7 +134,9 @@ describe('CircleROITool (CPU):', () => {
       });
     };
 
-    element.addEventListener(Events.IMAGE_RENDERED, () => {
+    element.addEventListener(Events.VIEWPORT_NEW_IMAGE_SET, () => {
+      testUtils.expectNextViewportToDrawOnCPU(vp);
+
       const index1 = [12, 30, 0];
       const index2 = [14, 32, 0];
 
@@ -187,7 +184,9 @@ describe('CircleROITool (CPU):', () => {
     const vp = renderingEngine.getViewport(viewportId);
 
     try {
-      vp.setStack([imageId1], 0);
+      testUtils.setStackOnNextViewport(vp, [imageId1], 0, {
+        renderBackend: 'cpu',
+      });
       renderingEngine.render();
     } catch (e) {
       done.fail(e);
@@ -197,7 +196,12 @@ describe('CircleROITool (CPU):', () => {
   it('Should cancel drawing of a CircleTool annotation on a cpu stack viewport', (done) => {
     const element = createViewports(
       renderingEngine,
-      { viewportType: ViewportType.STACK, width: 512, height: 128, viewportId },
+      {
+        viewportType: ViewportType.PLANAR_NEXT,
+        width: 512,
+        height: 128,
+        viewportId,
+      },
       1
     );
 
@@ -216,7 +220,7 @@ describe('CircleROITool (CPU):', () => {
     const imageId1 = encodeImageIdInfo(imageInfo1);
     const vp = renderingEngine.getViewport(viewportId);
 
-    element.addEventListener(Events.IMAGE_RENDERED, () => {
+    element.addEventListener(Events.VIEWPORT_NEW_IMAGE_SET, () => {
       const index1 = [12, 30, 0];
       const index2 = [14, 30, 0];
 
@@ -301,7 +305,9 @@ describe('CircleROITool (CPU):', () => {
     element.addEventListener(csToolsEvents.KEY_DOWN, cancelToolDrawing);
 
     try {
-      vp.setStack([imageId1], 0);
+      testUtils.setStackOnNextViewport(vp, [imageId1], 0, {
+        renderBackend: 'cpu',
+      });
       renderingEngine.render();
     } catch (e) {
       done.fail(e);

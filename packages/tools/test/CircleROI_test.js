@@ -11,7 +11,6 @@ const {
   metaData,
   eventTarget,
   volumeLoader,
-  setVolumesForViewports,
   getEnabledElement,
 } = cornerstone3D;
 
@@ -86,7 +85,7 @@ describe('Circle Tool: ', () => {
   it('Should successfully create a circle tool on a canvas with mouse drag - 512 x 128', function (done) {
     const element = testUtils.createViewports(renderingEngine, {
       viewportId,
-      viewportType: ViewportType.STACK,
+      viewportType: ViewportType.PLANAR_NEXT,
       width: 512,
       height: 128,
     });
@@ -185,7 +184,7 @@ describe('Circle Tool: ', () => {
     });
 
     try {
-      vp.setStack([imageId1], 0);
+      testUtils.setStackOnNextViewport(vp, [imageId1], 0);
       renderingEngine.render();
     } catch (e) {
       done.fail(e);
@@ -195,7 +194,7 @@ describe('Circle Tool: ', () => {
   it('Should successfully create a circle tool on a canvas with mouse drag in a Volume viewport - 512 x 128', function (done) {
     const element = testUtils.createViewports(renderingEngine, {
       viewportId,
-      viewportType: ViewportType.ORTHOGRAPHIC,
+      viewportType: ViewportType.PLANAR_NEXT,
       width: 512,
       height: 128,
     });
@@ -279,11 +278,7 @@ describe('Circle Tool: ', () => {
 
     try {
       volumeLoader.createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-        setVolumesForViewports(
-          renderingEngine,
-          [{ volumeId: volumeId }],
-          [viewportId]
-        );
+        testUtils.setVolumesOnNextViewport(vp, [volumeId]);
         vp.render();
       });
     } catch (e) {
@@ -294,7 +289,7 @@ describe('Circle Tool: ', () => {
   it('Should compute statistics for every volume of a fusion viewport', function (done) {
     const element = testUtils.createViewports(renderingEngine, {
       viewportId,
-      viewportType: ViewportType.ORTHOGRAPHIC,
+      viewportType: ViewportType.PLANAR_NEXT,
       width: 512,
       height: 128,
     });
@@ -418,11 +413,10 @@ describe('Circle Tool: ', () => {
         volumeLoader.createAndCacheVolume(overlayVolumeId, { imageIds: [] }),
       ])
         .then(() => {
-          setVolumesForViewports(
-            renderingEngine,
-            [{ volumeId: baseVolumeId }, { volumeId: overlayVolumeId }],
-            [viewportId]
-          );
+          testUtils.setVolumesOnNextViewport(vp, [
+            baseVolumeId,
+            overlayVolumeId,
+          ]);
           vp.render();
         })
         .catch(done.fail);
@@ -434,7 +428,7 @@ describe('Circle Tool: ', () => {
   it('Should cancel drawing of a CircleTool annotation', function (done) {
     const element = testUtils.createViewports(renderingEngine, {
       viewportId,
-      viewportType: ViewportType.STACK,
+      viewportType: ViewportType.PLANAR_NEXT,
       width: 512,
       height: 128,
     });
@@ -546,7 +540,7 @@ describe('Circle Tool: ', () => {
     element.addEventListener(csToolsEvents.KEY_DOWN, cancelToolDrawing);
 
     try {
-      vp.setStack([imageId1], 0);
+      testUtils.setStackOnNextViewport(vp, [imageId1], 0);
       renderingEngine.render();
     } catch (e) {
       done.fail(e);

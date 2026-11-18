@@ -15,7 +15,6 @@ const {
   imageLoader,
   metaData,
   volumeLoader,
-  setVolumesForViewports,
   getEnabledElement,
 } = cornerstone3D;
 
@@ -84,7 +83,7 @@ describe('Probe Tool:', () => {
 
   it('Should successfully click to put a probe tool on a canvas - 512 x 128', function (done) {
     const element = createViewports(renderingEngine, {
-      viewportType: ViewportType.STACK,
+      viewportType: ViewportType.PLANAR_NEXT,
       width: 512,
       height: 128,
       viewportId: viewportId,
@@ -168,7 +167,7 @@ describe('Probe Tool:', () => {
     });
 
     try {
-      vp.setStack([imageId1], 0);
+      testUtils.setStackOnNextViewport(vp, [imageId1], 0);
       renderingEngine.render();
     } catch (e) {
       done.fail(e);
@@ -177,7 +176,7 @@ describe('Probe Tool:', () => {
 
   it('Should successfully click to put two probe tools on a canvas - 256 x 256', function (done) {
     const element = createViewports(renderingEngine, {
-      viewportType: ViewportType.STACK,
+      viewportType: ViewportType.PLANAR_NEXT,
       width: 256,
       height: 256,
       viewportId: viewportId,
@@ -301,7 +300,7 @@ describe('Probe Tool:', () => {
     });
 
     try {
-      vp.setStack([imageId1], 0);
+      testUtils.setStackOnNextViewport(vp, [imageId1], 0);
       renderingEngine.render();
     } catch (e) {
       done.fail(e);
@@ -310,7 +309,7 @@ describe('Probe Tool:', () => {
 
   it('Should successfully click to put a probe tool on a canvas - 256 x 512', function (done) {
     const element = createViewports(renderingEngine, {
-      viewportType: ViewportType.STACK,
+      viewportType: ViewportType.PLANAR_NEXT,
       width: 256,
       height: 512,
       viewportId: viewportId,
@@ -393,7 +392,7 @@ describe('Probe Tool:', () => {
     });
 
     try {
-      vp.setStack([imageId1], 0);
+      testUtils.setStackOnNextViewport(vp, [imageId1], 0);
       renderingEngine.render();
     } catch (e) {
       done.fail(e);
@@ -402,7 +401,7 @@ describe('Probe Tool:', () => {
 
   it('Should successfully click to put a probe tool on a canvas - 256 x 512', function (done) {
     const element = createViewports(renderingEngine, {
-      viewportType: ViewportType.STACK,
+      viewportType: ViewportType.PLANAR_NEXT,
       width: 256,
       height: 512,
       viewportId: viewportId,
@@ -487,7 +486,7 @@ describe('Probe Tool:', () => {
     });
 
     try {
-      vp.setStack([imageId1], 0);
+      testUtils.setStackOnNextViewport(vp, [imageId1], 0);
       renderingEngine.render();
     } catch (e) {
       done.fail(e);
@@ -496,7 +495,7 @@ describe('Probe Tool:', () => {
 
   it('Should successfully create a prob tool on a canvas with mouse drag in a Volume viewport - 512 x 128', function (done) {
     const element = createViewports(renderingEngine, {
-      viewportType: ViewportType.ORTHOGRAPHIC,
+      viewportType: ViewportType.PLANAR_NEXT,
       width: 512,
       height: 128,
       viewportId: viewportId,
@@ -565,11 +564,7 @@ describe('Probe Tool:', () => {
 
     try {
       volumeLoader.createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-        setVolumesForViewports(
-          renderingEngine,
-          [{ volumeId: volumeId }],
-          [viewportId]
-        );
+        testUtils.setVolumesOnNextViewport(vp, [volumeId]);
         vp.render();
       });
     } catch (e) {
@@ -579,7 +574,7 @@ describe('Probe Tool:', () => {
 
   it('Should successfully create a Probe tool and select AND move it', function (done) {
     const element = createViewports(renderingEngine, {
-      viewportType: ViewportType.STACK,
+      viewportType: ViewportType.PLANAR_NEXT,
       width: 256,
       height: 256,
       viewportId: viewportId,
@@ -700,7 +695,7 @@ describe('Probe Tool:', () => {
     });
 
     try {
-      vp.setStack([imageId1], 0);
+      testUtils.setStackOnNextViewport(vp, [imageId1], 0);
       renderingEngine.render();
     } catch (e) {
       done.fail(e);

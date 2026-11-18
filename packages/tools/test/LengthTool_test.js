@@ -16,7 +16,6 @@ const {
   imageLoader,
   metaData,
   volumeLoader,
-  setVolumesForViewports,
   getEnabledElement,
 } = cornerstone3D;
 
@@ -93,7 +92,7 @@ describe('LengthTool:', () => {
 
   it('Should successfully create a length tool on a canvas with mouse drag in a Volume viewport - 512 x 128', function (done) {
     const element = createViewports(renderingEngine, {
-      viewportType: ViewportType.ORTHOGRAPHIC,
+      viewportType: ViewportType.PLANAR_NEXT,
       width: 512,
       height: 128,
       viewportId: viewportId,
@@ -184,11 +183,7 @@ describe('LengthTool:', () => {
 
     try {
       volumeLoader.createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-        setVolumesForViewports(
-          renderingEngine,
-          [{ volumeId: volumeId }],
-          [viewportId]
-        );
+        testUtils.setVolumesOnNextViewport(vp, [volumeId]);
         vp.render();
       });
     } catch (e) {
@@ -198,7 +193,7 @@ describe('LengthTool:', () => {
 
   it('Should successfully create a length tool and modify its handle', function (done) {
     const element = createViewports(renderingEngine, {
-      viewportType: ViewportType.STACK,
+      viewportType: ViewportType.PLANAR_NEXT,
       width: 256,
       height: 256,
       viewportId: viewportId,
@@ -337,7 +332,7 @@ describe('LengthTool:', () => {
     });
 
     try {
-      vp.setStack([imageId1], 0);
+      testUtils.setStackOnNextViewport(vp, [imageId1], 0);
       renderingEngine.render();
     } catch (e) {
       done.fail(e);
@@ -346,7 +341,7 @@ describe('LengthTool:', () => {
 
   it('Should successfully create a length tool and select but not move it', function (done) {
     const element = createViewports(renderingEngine, {
-      viewportType: ViewportType.STACK,
+      viewportType: ViewportType.PLANAR_NEXT,
       width: 256,
       height: 256,
       viewportId: viewportId,
@@ -481,7 +476,7 @@ describe('LengthTool:', () => {
     });
 
     try {
-      vp.setStack([imageId1], 0);
+      testUtils.setStackOnNextViewport(vp, [imageId1], 0);
       renderingEngine.render();
     } catch (e) {
       done.fail(e);
@@ -490,7 +485,7 @@ describe('LengthTool:', () => {
 
   it('Should successfully create a length tool and select AND move it', function (done) {
     const element = createViewports(renderingEngine, {
-      viewportType: ViewportType.STACK,
+      viewportType: ViewportType.PLANAR_NEXT,
       width: 256,
       height: 256,
       viewportId: viewportId,
@@ -680,7 +675,7 @@ describe('LengthTool:', () => {
     });
 
     try {
-      vp.setStack([imageId1], 0);
+      testUtils.setStackOnNextViewport(vp, [imageId1], 0);
       renderingEngine.render();
     } catch (e) {
       done.fail(e);
@@ -689,7 +684,7 @@ describe('LengthTool:', () => {
 
   it('Should successfully create a length tool on a canvas and remove it after', function (done) {
     const element = createViewports(renderingEngine, {
-      viewportType: ViewportType.STACK,
+      viewportType: ViewportType.PLANAR_NEXT,
       width: 512,
       height: 128,
       viewportId: viewportId,
@@ -803,7 +798,7 @@ describe('LengthTool:', () => {
     });
 
     try {
-      vp.setStack([imageId1], 0);
+      testUtils.setStackOnNextViewport(vp, [imageId1], 0);
       renderingEngine.render();
     } catch (e) {
       done.fail(e);
@@ -962,7 +957,7 @@ describe('LengthTool:', () => {
     ).getToolInstance(LengthTool.toolName);
     tool.configuration.preventHandleOutsideImage = true;
     const element = createViewports(renderingEngine, {
-      viewportType: ViewportType.STACK,
+      viewportType: ViewportType.PLANAR_NEXT,
       width: 512,
       height: 128,
       viewportId: viewportId,
@@ -1086,7 +1081,7 @@ describe('LengthTool:', () => {
     });
 
     try {
-      vp.setStack([imageId1], 0);
+      testUtils.setStackOnNextViewport(vp, [imageId1], 0);
       renderingEngine.render();
     } catch (e) {
       done.fail(e);

@@ -16,7 +16,6 @@ const {
   imageLoader,
   metaData,
   volumeLoader,
-  setVolumesForViewports,
 } = cornerstone3D;
 
 const { Events, ViewportType } = Enums;
@@ -88,7 +87,7 @@ describe('CobbAngleTool:', () => {
   it('Should successfully create a Cobb angle tool with angle less than 90 degrees on a canvas with mouse drag - 512 x 128', function (done) {
     const element = testUtils.createViewports(renderingEngine, {
       viewportId,
-      viewportType: ViewportType.ORTHOGRAPHIC,
+      viewportType: ViewportType.PLANAR_NEXT,
       width: 512,
       height: 128,
     });
@@ -229,11 +228,7 @@ describe('CobbAngleTool:', () => {
 
     try {
       volumeLoader.createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-        setVolumesForViewports(
-          renderingEngine,
-          [{ volumeId: volumeId }],
-          [viewportId]
-        ).then(() => {
+        testUtils.setVolumesOnNextViewport(vp, [volumeId]).then(() => {
           vp.render();
         });
       });
@@ -245,7 +240,7 @@ describe('CobbAngleTool:', () => {
   it('Should successfully create a Cobb Angle tool with angle greater than 90 degrees on a canvas with mouse clicks in a Volume viewport - 512 x 128', function (done) {
     const element = testUtils.createViewports(renderingEngine, {
       viewportId,
-      viewportType: ViewportType.ORTHOGRAPHIC,
+      viewportType: ViewportType.PLANAR_NEXT,
       width: 512,
       height: 128,
     });
@@ -388,11 +383,7 @@ describe('CobbAngleTool:', () => {
 
     try {
       volumeLoader.createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-        setVolumesForViewports(
-          renderingEngine,
-          [{ volumeId: volumeId }],
-          [viewportId]
-        ).then(() => {
+        testUtils.setVolumesOnNextViewport(vp, [volumeId]).then(() => {
           vp.render();
         });
       });
@@ -404,7 +395,7 @@ describe('CobbAngleTool:', () => {
   it('Should successfully create a Cobb Angle tool with combined clicks and drag and modify its handle', function (done) {
     const element = testUtils.createViewports(renderingEngine, {
       viewportId,
-      viewportType: ViewportType.ORTHOGRAPHIC,
+      viewportType: ViewportType.PLANAR_NEXT,
       width: 256,
       height: 256,
     });
@@ -587,11 +578,7 @@ describe('CobbAngleTool:', () => {
 
     try {
       volumeLoader.createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-        setVolumesForViewports(
-          renderingEngine,
-          [{ volumeId: volumeId }],
-          [viewportId]
-        ).then(() => {
+        testUtils.setVolumesOnNextViewport(vp, [volumeId]).then(() => {
           vp.render();
         });
       });
@@ -603,7 +590,7 @@ describe('CobbAngleTool:', () => {
   it('Should successfully create a Cobb angle tool with combined clicks and drags and select but not move it', function (done) {
     const element = testUtils.createViewports(renderingEngine, {
       viewportId,
-      viewportType: ViewportType.ORTHOGRAPHIC,
+      viewportType: ViewportType.PLANAR_NEXT,
       width: 256,
       height: 256,
     });
@@ -782,11 +769,7 @@ describe('CobbAngleTool:', () => {
 
     try {
       volumeLoader.createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
-        setVolumesForViewports(
-          renderingEngine,
-          [{ volumeId: volumeId }],
-          [viewportId]
-        ).then(() => {
+        testUtils.setVolumesOnNextViewport(vp, [volumeId]).then(() => {
           vp.render();
         });
       });

@@ -16,8 +16,6 @@ const {
   metaData,
   eventTarget,
   volumeLoader,
-  setUseCPURendering,
-  resetUseCPURendering,
 } = cornerstone3D;
 
 const { Events, ViewportType } = Enums;
@@ -65,14 +63,6 @@ describe('Bidirectional Tool (CPU): ', () => {
   let renderingEngine;
   let toolGroup;
 
-  beforeAll(() => {
-    setUseCPURendering(true);
-  });
-
-  afterAll(() => {
-    resetUseCPURendering();
-  });
-
   beforeEach(function () {
     const testEnv = testUtils.setupTestEnvironment({
       renderingEngineId,
@@ -103,7 +93,7 @@ describe('Bidirectional Tool (CPU): ', () => {
   it('Should successfully create a Bidirectional tool on a cpu stack viewport with mouse drag - 512 x 128', function (done) {
     const element = testUtils.createViewports(renderingEngine, {
       viewportId,
-      viewportType: ViewportType.STACK,
+      viewportType: ViewportType.PLANAR_NEXT,
       width: 512,
       height: 128,
     });
@@ -153,7 +143,9 @@ describe('Bidirectional Tool (CPU): ', () => {
       });
     };
 
-    element.addEventListener(Events.IMAGE_RENDERED, () => {
+    element.addEventListener(Events.VIEWPORT_NEW_IMAGE_SET, () => {
+      testUtils.expectNextViewportToDrawOnCPU(vp);
+
       const index1 = [32, 32, 0];
       const index2 = [10, 1, 0];
 
@@ -207,7 +199,9 @@ describe('Bidirectional Tool (CPU): ', () => {
     });
 
     try {
-      vp.setStack([imageId], 0);
+      testUtils.setStackOnNextViewport(vp, [imageId], 0, {
+        renderBackend: 'cpu',
+      });
       vp.render();
     } catch (e) {
       done.fail(e);
@@ -217,7 +211,7 @@ describe('Bidirectional Tool (CPU): ', () => {
   it('Should successfully create a bidirectional tool on a cpu stack viewport and modify its handle', function (done) {
     const element = testUtils.createViewports(renderingEngine, {
       viewportId,
-      viewportType: ViewportType.STACK,
+      viewportType: ViewportType.PLANAR_NEXT,
       width: 256,
       height: 256,
     });
@@ -270,7 +264,7 @@ describe('Bidirectional Tool (CPU): ', () => {
       });
     };
 
-    element.addEventListener(Events.IMAGE_RENDERED, () => {
+    element.addEventListener(Events.VIEWPORT_NEW_IMAGE_SET, () => {
       // Not not to move the handle too much since the length become width and it would fail
       const index1 = [50, 50, 0];
       const index2 = [5, 5, 0];
@@ -359,7 +353,9 @@ describe('Bidirectional Tool (CPU): ', () => {
     });
 
     try {
-      vp.setStack([imageId], 0);
+      testUtils.setStackOnNextViewport(vp, [imageId], 0, {
+        renderBackend: 'cpu',
+      });
       renderingEngine.render();
     } catch (e) {
       done.fail(e);
@@ -369,7 +365,7 @@ describe('Bidirectional Tool (CPU): ', () => {
   it('Should successfully create a bidirectional tool on a cpu stack viewport and select but not move it', function (done) {
     const element = testUtils.createViewports(renderingEngine, {
       viewportId,
-      viewportType: ViewportType.STACK,
+      viewportType: ViewportType.PLANAR_NEXT,
       width: 256,
       height: 256,
     });
@@ -422,7 +418,7 @@ describe('Bidirectional Tool (CPU): ', () => {
       });
     };
 
-    element.addEventListener(Events.IMAGE_RENDERED, () => {
+    element.addEventListener(Events.VIEWPORT_NEW_IMAGE_SET, () => {
       const index1 = [20, 20, 0];
       const index2 = [20, 30, 0];
 
@@ -506,7 +502,9 @@ describe('Bidirectional Tool (CPU): ', () => {
     });
 
     try {
-      vp.setStack([imageId], 0);
+      testUtils.setStackOnNextViewport(vp, [imageId], 0, {
+        renderBackend: 'cpu',
+      });
       renderingEngine.render();
     } catch (e) {
       done.fail(e);
@@ -516,7 +514,7 @@ describe('Bidirectional Tool (CPU): ', () => {
   it('Should successfully create a bidirectional tool on a cpu stack viewport and select AND move it', function (done) {
     const element = testUtils.createViewports(renderingEngine, {
       viewportId,
-      viewportType: ViewportType.STACK,
+      viewportType: ViewportType.PLANAR_NEXT,
       width: 256,
       height: 256,
     });
@@ -606,7 +604,7 @@ describe('Bidirectional Tool (CPU): ', () => {
       });
     };
 
-    element.addEventListener(Events.IMAGE_RENDERED, () => {
+    element.addEventListener(Events.VIEWPORT_NEW_IMAGE_SET, () => {
       const index1 = [20, 20, 0];
       const index2 = [20, 30, 0];
 
@@ -708,7 +706,9 @@ describe('Bidirectional Tool (CPU): ', () => {
     });
 
     try {
-      vp.setStack([imageId], 0);
+      testUtils.setStackOnNextViewport(vp, [imageId], 0, {
+        renderBackend: 'cpu',
+      });
       renderingEngine.render();
     } catch (e) {
       done.fail(e);
@@ -718,7 +718,7 @@ describe('Bidirectional Tool (CPU): ', () => {
   it('Should successfully cancel drawing of a bidirectional on a cpu stack viewport', function (done) {
     const element = testUtils.createViewports(renderingEngine, {
       viewportId,
-      viewportType: ViewportType.STACK,
+      viewportType: ViewportType.PLANAR_NEXT,
       width: 256,
       height: 256,
     });
@@ -739,7 +739,7 @@ describe('Bidirectional Tool (CPU): ', () => {
 
     let p1, p2;
 
-    element.addEventListener(Events.IMAGE_RENDERED, () => {
+    element.addEventListener(Events.VIEWPORT_NEW_IMAGE_SET, () => {
       const index1 = [32, 32, 4];
       const index2 = [10, 1, 4];
 
@@ -840,7 +840,9 @@ describe('Bidirectional Tool (CPU): ', () => {
     element.addEventListener(csToolsEvents.KEY_DOWN, cancelToolDrawing);
 
     try {
-      vp.setStack([imageId], 0);
+      testUtils.setStackOnNextViewport(vp, [imageId], 0, {
+        renderBackend: 'cpu',
+      });
       renderingEngine.render();
     } catch (e) {
       done.fail(e);

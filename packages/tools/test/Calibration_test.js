@@ -7,7 +7,6 @@ const {
   RenderingEngine,
   Enums,
   utilities,
-  setVolumesForViewports,
   getEnabledElement,
   metaData,
 } = cornerstone3D;
@@ -73,7 +72,7 @@ describe('Calibration ', () => {
   it('Should be able to calibrate an image and update the tool', function (done) {
     const element = testUtils.createViewports(renderingEngine, {
       viewportId,
-      viewportType: ViewportType.STACK,
+      viewportType: ViewportType.PLANAR_NEXT,
       width: 256,
       height: 256,
     });
@@ -181,7 +180,7 @@ describe('Calibration ', () => {
     element.addEventListener(Events.IMAGE_RENDERED, firstCallback);
 
     try {
-      vp.setStack([imageId1], 0);
+      testUtils.setStackOnNextViewport(vp, [imageId1], 0);
       renderingEngine.render();
     } catch (e) {
       console.warn('Calibrate failed:', e);

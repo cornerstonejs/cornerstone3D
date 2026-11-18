@@ -33,10 +33,6 @@ const renderingEngineId = utilities.uuidv4();
 const viewportId = 'VIEWPORT';
 
 describe('EraserTool:', () => {
-  beforeAll(() => {
-    cornerstone3D.setUseCPURendering(false);
-  });
-
   describe('Cornerstone Tools: -- Eraser', () => {
     let testEnv;
     let renderingEngine;
@@ -72,7 +68,7 @@ describe('EraserTool:', () => {
 
     it('Should successfully delete a length annotation on a canvas with mouse down - 512 x 128', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
-        viewportType: ViewportType.STACK,
+        viewportType: ViewportType.PLANAR_NEXT,
         width: 512,
         height: 128,
         viewportId: viewportId,
@@ -123,7 +119,7 @@ describe('EraserTool:', () => {
           vp
         );
 
-        const camera = vp.getCamera();
+        const camera = vp.getResolvedView().toICamera();
         const { viewPlaneNormal, viewUp } = camera;
 
         const lengthAnnotation = {
@@ -172,7 +168,7 @@ describe('EraserTool:', () => {
       });
 
       try {
-        vp.setStack([imageId1], 0);
+        testUtils.setStackOnNextViewport(vp, [imageId1], 0);
         renderingEngine.render();
       } catch (e) {
         done.fail(e);

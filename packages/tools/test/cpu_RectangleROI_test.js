@@ -17,8 +17,6 @@ const {
   imageLoader,
   metaData,
   volumeLoader,
-  setUseCPURendering,
-  resetUseCPURendering,
 } = cornerstone3D;
 
 const { Events, ViewportType } = Enums;
@@ -57,14 +55,6 @@ describe('RectangleROITool (CPU):', () => {
   let renderingEngine;
   let stackToolGroup;
 
-  beforeAll(() => {
-    setUseCPURendering(true);
-  });
-
-  afterAll(() => {
-    resetUseCPURendering();
-  });
-
   beforeEach(() => {
     const tools = [RectangleROITool];
     const toolConfigurations = {
@@ -97,7 +87,12 @@ describe('RectangleROITool (CPU):', () => {
   it('Should successfully create a rectangle tool on a cpu stack viewport with mouse drag - 512 x 128', (done) => {
     const element = createViewports(
       renderingEngine,
-      { viewportType: ViewportType.STACK, width: 512, height: 128, viewportId },
+      {
+        viewportType: ViewportType.PLANAR_NEXT,
+        width: 512,
+        height: 128,
+        viewportId,
+      },
       1
     );
 
@@ -142,7 +137,9 @@ describe('RectangleROITool (CPU):', () => {
       });
     };
 
-    element.addEventListener(Events.IMAGE_RENDERED, () => {
+    element.addEventListener(Events.VIEWPORT_NEW_IMAGE_SET, () => {
+      testUtils.expectNextViewportToDrawOnCPU(vp);
+
       const index1 = [11, 5, 0];
       const index2 = [14, 10, 0];
 
@@ -193,7 +190,9 @@ describe('RectangleROITool (CPU):', () => {
     });
 
     try {
-      vp.setStack([imageId1], 0);
+      testUtils.setStackOnNextViewport(vp, [imageId1], 0, {
+        renderBackend: 'cpu',
+      });
       renderingEngine.render();
     } catch (e) {
       done.fail(e);
@@ -203,7 +202,12 @@ describe('RectangleROITool (CPU):', () => {
   it('Should successfully create a rectangle tool on a cpu stack viewport and modify its handle', (done) => {
     const element = createViewports(
       renderingEngine,
-      { viewportType: ViewportType.STACK, width: 256, height: 256, viewportId },
+      {
+        viewportType: ViewportType.PLANAR_NEXT,
+        width: 256,
+        height: 256,
+        viewportId,
+      },
       1
     );
 
@@ -249,7 +253,7 @@ describe('RectangleROITool (CPU):', () => {
       });
     };
 
-    element.addEventListener(Events.IMAGE_RENDERED, () => {
+    element.addEventListener(Events.VIEWPORT_NEW_IMAGE_SET, () => {
       const index1 = [11, 5, 0];
       const index2 = [14, 10, 0];
       const index3 = [11, 30, 0];
@@ -335,7 +339,9 @@ describe('RectangleROITool (CPU):', () => {
     });
 
     try {
-      vp.setStack([imageId1], 0);
+      testUtils.setStackOnNextViewport(vp, [imageId1], 0, {
+        renderBackend: 'cpu',
+      });
       renderingEngine.render();
     } catch (e) {
       done.fail(e);
@@ -345,7 +351,12 @@ describe('RectangleROITool (CPU):', () => {
   it('Should successfully create a rectangle tool on a cpu stack viewport and select but not move it', (done) => {
     const element = createViewports(
       renderingEngine,
-      { viewportType: ViewportType.STACK, width: 512, height: 256, viewportId },
+      {
+        viewportType: ViewportType.PLANAR_NEXT,
+        width: 512,
+        height: 256,
+        viewportId,
+      },
       1
     );
 
@@ -391,7 +402,7 @@ describe('RectangleROITool (CPU):', () => {
       });
     };
 
-    element.addEventListener(Events.IMAGE_RENDERED, () => {
+    element.addEventListener(Events.VIEWPORT_NEW_IMAGE_SET, () => {
       const index1 = [11, 5, 0];
       const index2 = [14, 30, 0];
       const index3 = [11, 20, 0];
@@ -472,7 +483,9 @@ describe('RectangleROITool (CPU):', () => {
     });
 
     try {
-      vp.setStack([imageId1], 0);
+      testUtils.setStackOnNextViewport(vp, [imageId1], 0, {
+        renderBackend: 'cpu',
+      });
       renderingEngine.render();
     } catch (e) {
       done.fail(e);
@@ -482,7 +495,12 @@ describe('RectangleROITool (CPU):', () => {
   it('Should successfully create a rectangle tool on a cpu stack viewport and select AND move it', (done) => {
     const element = createViewports(
       renderingEngine,
-      { viewportType: ViewportType.STACK, width: 512, height: 128, viewportId },
+      {
+        viewportType: ViewportType.PLANAR_NEXT,
+        width: 512,
+        height: 128,
+        viewportId,
+      },
       1
     );
 
@@ -565,7 +583,7 @@ describe('RectangleROITool (CPU):', () => {
       });
     };
 
-    element.addEventListener(Events.IMAGE_RENDERED, () => {
+    element.addEventListener(Events.VIEWPORT_NEW_IMAGE_SET, () => {
       const index1 = [11, 5, 0];
       const index2 = [14, 30, 0];
       const index3 = [11, 25, 0];
@@ -663,7 +681,9 @@ describe('RectangleROITool (CPU):', () => {
     });
 
     try {
-      vp.setStack([imageId1], 0);
+      testUtils.setStackOnNextViewport(vp, [imageId1], 0, {
+        renderBackend: 'cpu',
+      });
       renderingEngine.render();
     } catch (e) {
       done.fail(e);

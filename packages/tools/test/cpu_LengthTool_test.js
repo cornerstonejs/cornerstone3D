@@ -18,8 +18,6 @@ const {
   imageLoader,
   metaData,
   volumeLoader,
-  setUseCPURendering,
-  resetUseCPURendering,
 } = cornerstone3D;
 
 const { Events, ViewportType } = Enums;
@@ -66,14 +64,6 @@ describe('Length Tool (CPU):', () => {
   let stackToolGroup;
   let element;
 
-  beforeAll(() => {
-    setUseCPURendering(true);
-  });
-
-  afterAll(() => {
-    resetUseCPURendering();
-  });
-
   beforeEach(() => {
     const tools = [LengthTool];
     const toolConfigurations = {
@@ -110,7 +100,12 @@ describe('Length Tool (CPU):', () => {
   it('Should successfully create a length tool on a cpu stack viewport with mouse drag - 512 x 128', (done) => {
     const element = createViewports(
       renderingEngine,
-      { viewportType: ViewportType.STACK, width: 256, height: 256, viewportId },
+      {
+        viewportType: ViewportType.PLANAR_NEXT,
+        width: 256,
+        height: 256,
+        viewportId,
+      },
       1
     );
 
@@ -155,7 +150,9 @@ describe('Length Tool (CPU):', () => {
       });
     };
 
-    element.addEventListener(Events.IMAGE_RENDERED, () => {
+    element.addEventListener(Events.VIEWPORT_NEW_IMAGE_SET, () => {
+      testUtils.expectNextViewportToDrawOnCPU(vp);
+
       const index1 = [30, 30, 0];
       const index2 = [60, 60, 0];
 
@@ -205,7 +202,9 @@ describe('Length Tool (CPU):', () => {
     });
 
     try {
-      vp.setStack([imageId1], 0);
+      testUtils.setStackOnNextViewport(vp, [imageId1], 0, {
+        renderBackend: 'cpu',
+      });
       renderingEngine.render();
     } catch (e) {
       done.fail(e);
@@ -215,7 +214,12 @@ describe('Length Tool (CPU):', () => {
   it('Should successfully create a length tool on a cpu stack viewport and select AND move it', (done) => {
     const element = createViewports(
       renderingEngine,
-      { viewportType: ViewportType.STACK, width: 256, height: 256, viewportId },
+      {
+        viewportType: ViewportType.PLANAR_NEXT,
+        width: 256,
+        height: 256,
+        viewportId,
+      },
       1
     );
 
@@ -296,7 +300,7 @@ describe('Length Tool (CPU):', () => {
       });
     };
 
-    element.addEventListener(Events.IMAGE_RENDERED, () => {
+    element.addEventListener(Events.VIEWPORT_NEW_IMAGE_SET, () => {
       const index1 = [20, 20, 0];
       const index2 = [20, 30, 0];
       const index3 = [20, 25, 0];
@@ -389,7 +393,9 @@ describe('Length Tool (CPU):', () => {
     });
 
     try {
-      vp.setStack([imageId1], 0);
+      testUtils.setStackOnNextViewport(vp, [imageId1], 0, {
+        renderBackend: 'cpu',
+      });
       renderingEngine.render();
     } catch (e) {
       done.fail(e);

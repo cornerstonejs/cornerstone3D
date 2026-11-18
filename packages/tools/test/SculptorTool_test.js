@@ -15,7 +15,6 @@ const {
   eventTarget,
   metaData,
   volumeLoader,
-  setVolumesForViewports,
   triggerEvent,
 } = cornerstone3D;
 
@@ -150,7 +149,7 @@ describe('Sculptor Tool:', () => {
     };
 
     const element = createViewports(renderingEngine, {
-      viewportType: ViewportType.STACK,
+      viewportType: ViewportType.PLANAR_NEXT,
       width: 512,
       height: 128,
       viewportId: viewportId,
@@ -271,7 +270,7 @@ describe('Sculptor Tool:', () => {
     });
 
     try {
-      vp.setStack([imageId1], 0);
+      testUtils.setStackOnNextViewport(vp, [imageId1], 0);
       renderingEngine.render();
     } catch (e) {
       done.fail(e);

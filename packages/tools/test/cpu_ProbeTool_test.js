@@ -18,8 +18,6 @@ const {
   metaData,
   eventTarget,
   volumeLoader,
-  setUseCPURendering,
-  resetUseCPURendering,
 } = cornerstone3D;
 
 const { Events, ViewportType } = Enums;
@@ -58,14 +56,6 @@ describe('ProbeTool (CPU):', () => {
   let renderingEngine;
   let stackToolGroup;
 
-  beforeAll(() => {
-    setUseCPURendering(true);
-  });
-
-  afterAll(() => {
-    resetUseCPURendering();
-  });
-
   beforeEach(() => {
     const tools = [ProbeTool];
     const toolConfigurations = {
@@ -98,7 +88,12 @@ describe('ProbeTool (CPU):', () => {
   it('Should successfully click to put a probe tool on a cpu stack viewport - 512 x 128', (done) => {
     const element = createViewports(
       renderingEngine,
-      { viewportType: ViewportType.STACK, width: 512, height: 128, viewportId },
+      {
+        viewportType: ViewportType.PLANAR_NEXT,
+        width: 512,
+        height: 128,
+        viewportId,
+      },
       1
     );
 
@@ -141,7 +136,9 @@ describe('ProbeTool (CPU):', () => {
       });
     };
 
-    element.addEventListener(Events.IMAGE_RENDERED, () => {
+    element.addEventListener(Events.VIEWPORT_NEW_IMAGE_SET, () => {
+      testUtils.expectNextViewportToDrawOnCPU(vp);
+
       const index1 = [11, 20, 0];
 
       const { imageData } = vp.getImageData();
@@ -174,7 +171,9 @@ describe('ProbeTool (CPU):', () => {
     });
 
     try {
-      vp.setStack([imageId1], 0);
+      testUtils.setStackOnNextViewport(vp, [imageId1], 0, {
+        renderBackend: 'cpu',
+      });
       vp.render();
     } catch (e) {
       done.fail(e);
@@ -184,7 +183,12 @@ describe('ProbeTool (CPU):', () => {
   it('Should successfully cancel drawing of a ProbeTool on a cpu stack viewport', (done) => {
     const element = createViewports(
       renderingEngine,
-      { viewportType: ViewportType.STACK, width: 256, height: 256, viewportId },
+      {
+        viewportType: ViewportType.PLANAR_NEXT,
+        width: 256,
+        height: 256,
+        viewportId,
+      },
       1
     );
 
@@ -205,7 +209,7 @@ describe('ProbeTool (CPU):', () => {
 
     let p2;
 
-    element.addEventListener(Events.IMAGE_RENDERED, () => {
+    element.addEventListener(Events.VIEWPORT_NEW_IMAGE_SET, () => {
       const index1 = [11, 20, 0];
       const index2 = [40, 40, 0];
 
@@ -301,7 +305,9 @@ describe('ProbeTool (CPU):', () => {
     element.addEventListener(csToolsEvents.KEY_DOWN, cancelToolDrawing);
 
     try {
-      vp.setStack([imageId1], 0);
+      testUtils.setStackOnNextViewport(vp, [imageId1], 0, {
+        renderBackend: 'cpu',
+      });
       renderingEngine.render();
     } catch (e) {
       done.fail(e);
