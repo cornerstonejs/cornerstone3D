@@ -1,5 +1,5 @@
-import type { Types } from '@cornerstonejs/core';
-import { RenderingEngine, Enums } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
+import { RenderingEngine, Enums, utilities } from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
@@ -53,6 +53,7 @@ instructions.innerText = `
 content.append(instructions);
 
 const toolGroupId = 'STACK_TOOL_GROUP_ID';
+const displaySetId = 'leftClickRightClickTools:stack';
 
 const cancelToolDrawing = (evt) => {
   const { element, key } = evt.detail;
@@ -159,7 +160,7 @@ async function run() {
   const viewportId = 'CT_STACK';
   const viewportInput = {
     viewportId,
-    type: ViewportType.STACK,
+    type: ViewportType.PLANAR_NEXT,
     element,
     defaultOptions: {
       background: <Types.Point3>[0.2, 0, 0.2],
@@ -172,12 +173,15 @@ async function run() {
   toolGroup.addViewport(viewportId, renderingEngineId);
 
   // Get the stack viewport that was created
-  const viewport = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportId)
-  );
+  const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
   // Set the stack on the viewport
-  viewport.setStack(imageIds);
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    kind: 'planar',
+    imageIds,
+  });
+
+  await viewport.setDisplaySets({ displaySetId });
 
   // Render the image
   viewport.render();

@@ -1,8 +1,10 @@
+import type { PlanarViewport } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
   imageLoader,
   eventTarget,
+  utilities,
 } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
@@ -41,6 +43,7 @@ const { segmentation: segmentationUtils, roundNumber } = cstUtils;
 let renderingEngine;
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'STACK_VIEWPORT';
+const displaySetId = 'labelmapStatistics:stack';
 const toolGroupId = 'TOOL_GROUP_ID';
 
 // ======== Set up page ======== //
@@ -284,14 +287,20 @@ async function run() {
   // Create the viewport
   const viewportInput = {
     viewportId,
-    type: ViewportType.STACK,
+    type: ViewportType.PLANAR_NEXT,
     element,
   };
 
   renderingEngine.setViewports([viewportInput]);
 
-  const viewport = renderingEngine.getViewport(viewportId);
-  await viewport.setStack(imageIdsArray, 0);
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    kind: 'planar',
+    imageIds: imageIdsArray,
+    initialImageIdIndex: 0,
+  });
+
+  const viewport: PlanarViewport = renderingEngine.getViewport(viewportId);
+  await viewport.setDisplaySets({ displaySetId });
 
   // Add the viewport to the toolgroup
   toolGroup.addViewport(viewportId, renderingEngineId);

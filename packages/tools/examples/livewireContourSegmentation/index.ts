@@ -1,5 +1,10 @@
-import type { Types } from '@cornerstonejs/core';
-import { RenderingEngine, Enums, volumeLoader } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
+import {
+  RenderingEngine,
+  Enums,
+  utilities,
+  volumeLoader,
+} from '@cornerstonejs/core';
 import {
   initDemo,
   addButtonToToolbar,
@@ -9,9 +14,9 @@ import {
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
   createInfoSection,
-  setCtTransferFunctionForVolumeActor,
   addManipulationBindings,
 } from '../../../../utils/demo/helpers';
+import { ctPresentation } from '../../../../utils/demo/helpers/volumePresentationRecipes';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import type { Types as cstTypes } from '@cornerstonejs/tools';
 
@@ -47,6 +52,8 @@ const renderingEngineId = 'myRenderingEngine';
 const stackViewportId = 'CT_STACK';
 const volumeCoronalViewportId = 'CT_CORONAL';
 const volumeSagittalViewportId = 'CT_SAGITTAL';
+const stackDisplaySetId = 'livewireContourSegmentation:stack';
+const volumeDisplaySetId = 'livewireContourSegmentation:ct';
 
 const viewportIds = [
   stackViewportId,
@@ -335,7 +342,7 @@ async function run() {
   // Create a stack viewport
   const stackViewportInput = {
     viewportId: stackViewportId,
-    type: ViewportType.STACK,
+    type: ViewportType.PLANAR_NEXT,
     element: stackViewportElement,
     defaultOptions: {
       background: <Types.Point3>[0.2, 0, 0.2],
@@ -348,15 +355,19 @@ async function run() {
   toolGroup.addViewport(stackViewportId, renderingEngineId);
 
   // Get the stack viewport that was created
-  const stackViewport = <Types.IStackViewport>(
-    renderingEngine.getViewport(stackViewportId)
-  );
+  const stackViewport =
+    renderingEngine.getViewport<PlanarViewport>(stackViewportId);
 
   // Define a stack containing a few images
   const stackImageIds = imageIds.slice(0, 5);
 
   // Set the stack on the viewport
-  await stackViewport.setStack(stackImageIds);
+  utilities.genericViewportDisplaySetMetadataProvider.add(stackDisplaySetId, {
+    kind: 'planar',
+    imageIds: stackImageIds,
+  });
+
+  await stackViewport.setDisplaySets({ displaySetId: stackDisplaySetId });
 
   // Render the image
   stackViewport.render();
@@ -374,10 +385,16 @@ async function run() {
   // Set the volume to load
   volume.load();
 
+  utilities.genericViewportDisplaySetMetadataProvider.add(volumeDisplaySetId, {
+    kind: 'planar',
+    imageIds,
+    volumeId,
+  });
+
   // Create a volume viewport (Coronal)
   const volumeCoronalViewportInput = {
     viewportId: volumeCoronalViewportId,
-    type: ViewportType.ORTHOGRAPHIC,
+    type: ViewportType.PLANAR_NEXT,
     element: volumeCoronalViewportElement,
     defaultOptions: {
       orientation: Enums.OrientationAxis.CORONAL,
@@ -391,14 +408,18 @@ async function run() {
   toolGroup.addViewport(volumeCoronalViewportId, renderingEngineId);
 
   // Get the volume viewport that was created
-  const volumeCoronalViewport = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(volumeCoronalViewportId)
+  const volumeCoronalViewport = renderingEngine.getViewport<PlanarViewport>(
+    volumeCoronalViewportId
   );
 
   // Set the volume on the viewport
-  await volumeCoronalViewport.setVolumes([
-    { volumeId, callback: setCtTransferFunctionForVolumeActor },
-  ]);
+  await volumeCoronalViewport.setDisplaySets({
+    displaySetId: volumeDisplaySetId,
+  });
+  volumeCoronalViewport.setDisplaySetPresentation(
+    volumeDisplaySetId,
+    ctPresentation()
+  );
 
   // Render the image
   volumeCoronalViewport.render();
@@ -406,7 +427,7 @@ async function run() {
   // Create a volume viewport (Coronal)
   const volumeSagittalViewportInput = {
     viewportId: volumeSagittalViewportId,
-    type: ViewportType.ORTHOGRAPHIC,
+    type: ViewportType.PLANAR_NEXT,
     element: volumeSagittalViewportElement,
     defaultOptions: {
       orientation: Enums.OrientationAxis.SAGITTAL,
@@ -420,14 +441,18 @@ async function run() {
   toolGroup.addViewport(volumeSagittalViewportId, renderingEngineId);
 
   // Get the volume viewport that was created
-  const volumeSagittalViewport = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(volumeSagittalViewportId)
+  const volumeSagittalViewport = renderingEngine.getViewport<PlanarViewport>(
+    volumeSagittalViewportId
   );
 
   // Set the volume on the viewport
-  await volumeSagittalViewport.setVolumes([
-    { volumeId, callback: setCtTransferFunctionForVolumeActor },
-  ]);
+  await volumeSagittalViewport.setDisplaySets({
+    displaySetId: volumeDisplaySetId,
+  });
+  volumeSagittalViewport.setDisplaySetPresentation(
+    volumeDisplaySetId,
+    ctPresentation()
+  );
 
   // Render the image
   volumeSagittalViewport.render();

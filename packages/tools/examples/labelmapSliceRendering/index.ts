@@ -1,8 +1,8 @@
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
-  setVolumesForViewports,
+  utilities,
   volumeLoader,
 } from '@cornerstonejs/core';
 import * as cornerstone from '@cornerstonejs/core';
@@ -31,6 +31,7 @@ const { ViewportType } = Enums;
 const volumeName = 'CT_VOLUME_ID';
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume';
 const volumeId = `${volumeLoaderScheme}:${volumeName}`;
+const displaySetId = 'labelmapSliceRendering:ct';
 const segmentationId = 'MY_SEGMENTATION_ID';
 const toolGroupId = 'MY_TOOLGROUP_ID';
 
@@ -89,7 +90,7 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: viewportId1,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element1,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
@@ -98,7 +99,7 @@ async function run() {
     },
     {
       viewportId: viewportId2,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element2,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -107,7 +108,7 @@ async function run() {
     },
     {
       viewportId: viewportId3,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element3,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
@@ -126,7 +127,19 @@ async function run() {
 
   const viewportIds = [viewportId1, viewportId2, viewportId3];
 
-  await setVolumesForViewports(renderingEngine, [{ volumeId }], viewportIds);
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    kind: 'planar',
+    imageIds,
+    volumeId,
+  });
+
+  await Promise.all(
+    viewportIds.map((viewportId) =>
+      renderingEngine
+        .getViewport<PlanarViewport>(viewportId)
+        .setDisplaySets({ displaySetId })
+    )
+  );
 
   renderingEngine.renderViewports(viewportIds);
 

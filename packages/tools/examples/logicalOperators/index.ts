@@ -1,9 +1,10 @@
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import type { Types as csToolTypes } from '@cornerstonejs/tools';
 import {
   Enums,
   getRenderingEngine,
   RenderingEngine,
+  utilities,
 } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
@@ -46,6 +47,7 @@ const toolGroupId = 'STACK_TOOLGROUP_ID';
 // Define a unique id for the volume
 const renderingEngineId = 'myRenderingEngine';
 const viewportIds = ['CT_STACK'];
+const displaySetId = 'logicalOperators:stack';
 const segmentationId = `SEGMENTATION_ID`;
 let selectedOperation = LogicalOperation.Union;
 
@@ -419,7 +421,7 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: viewportIds[0],
-      type: ViewportType.STACK,
+      type: ViewportType.PLANAR_NEXT,
       element: elements[0],
       defaultOptions: {
         background: <Types.Point3>[0.2, 0, 0.2],
@@ -435,12 +437,17 @@ async function run() {
   );
 
   // Get the viewports that were just created
-  const stackViewport = <Types.IStackViewport>(
-    renderingEngine.getViewport(viewportIds[0])
+  const stackViewport = renderingEngine.getViewport<PlanarViewport>(
+    viewportIds[0]
   );
 
   // Set the stack on the viewport
-  stackViewport.setStack(smallStackImageIds);
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    kind: 'planar',
+    imageIds: smallStackImageIds,
+  });
+
+  await stackViewport.setDisplaySets({ displaySetId });
 
   // Render the image
   renderingEngine.renderViewports(viewportIds);

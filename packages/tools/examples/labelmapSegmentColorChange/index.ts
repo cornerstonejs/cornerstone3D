@@ -1,8 +1,8 @@
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
-  setVolumesForViewports,
+  utilities,
   volumeLoader,
 } from '@cornerstonejs/core';
 import * as cornerstone from '@cornerstonejs/core';
@@ -32,6 +32,7 @@ const { ViewportType } = Enums;
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
+const displaySetId = 'labelmapSegmentColorChange:ct';
 const segmentationId1 = 'SEGMENTATION_ID_1';
 const toolGroupId1 = 'MY_TOOL_GROUP_ID_1';
 const toolGroupId2 = 'MY_TOOL_GROUP_ID_2';
@@ -181,7 +182,7 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: viewportId1,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element1,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
@@ -190,7 +191,7 @@ async function run() {
     },
     {
       viewportId: viewportId2,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element2,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
@@ -208,10 +209,18 @@ async function run() {
   volume.load();
 
   // Set volumes on the viewports
-  await setVolumesForViewports(
-    renderingEngine,
-    [{ volumeId }],
-    [viewportId1, viewportId2]
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    kind: 'planar',
+    imageIds: smallVolumeImageIds,
+    volumeId,
+  });
+
+  await Promise.all(
+    [viewportId1, viewportId2].map((viewportId) =>
+      renderingEngine
+        .getViewport<PlanarViewport>(viewportId)
+        .setDisplaySets({ displaySetId })
+    )
   );
 
   // // Add the segmentation representations to toolgroup1

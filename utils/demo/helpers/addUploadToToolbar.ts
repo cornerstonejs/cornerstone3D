@@ -1,4 +1,10 @@
-import { getRenderingEngine, imageLoader, metaData } from '@cornerstonejs/core';
+import type { PlanarViewport } from '@cornerstonejs/core';
+import {
+  getRenderingEngine,
+  imageLoader,
+  metaData,
+  utilities,
+} from '@cornerstonejs/core';
 import dicomImageLoader from '@cornerstonejs/dicom-image-loader';
 import { utilities as metadataUtilities } from '@cornerstonejs/metadata';
 
@@ -92,7 +98,7 @@ export function getViewport(viewportInfo?) {
   );
 
   // Get the volume viewport
-  const viewport = renderingEngine.getViewport(
+  const viewport = renderingEngine.getViewport<PlanarViewport>(
     viewportInfo?.viewportId || viewportId
   );
   return viewport;
@@ -125,10 +131,16 @@ export function loadAndViewImagesSingle(imageIds, viewportInfo?) {
   setImageIds(imageIds);
 
   const viewport = getViewport(viewportInfo);
+  const displaySetId = `upload:stack:${imageIds[0]}`;
 
-  viewport.setStack(imageIds).then(() => {
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    kind: 'planar',
+    imageIds,
+  });
+
+  viewport.setDisplaySets({ displaySetId }).then(() => {
     // Set the VOI of the stack
-    // viewport.setProperties({ voiRange: ctVoiRange });
+    // viewport.setDisplaySetPresentation(displaySetId, { voiRange: ctVoiRange });
     // Render the image
     viewport.render();
 

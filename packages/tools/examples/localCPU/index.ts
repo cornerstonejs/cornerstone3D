@@ -1,9 +1,11 @@
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
+  init as csRenderInit,
   metaData,
-  setUseCPURendering,
+  setRenderBackend,
+  utilities,
 } from '@cornerstonejs/core';
 import cornerstoneDICOMImageLoader from '@cornerstonejs/dicom-image-loader';
 import * as cornerstoneTools from '@cornerstonejs/tools';
@@ -70,7 +72,8 @@ async function run() {
   cornerstoneDICOMImageLoader.init();
   await initProviders();
 
-  setUseCPURendering(true);
+  await csRenderInit();
+  setRenderBackend('cpu');
 
   cornerstoneTools.addTool(PanTool);
   cornerstoneTools.addTool(WindowLevelTool);
@@ -126,7 +129,7 @@ async function run() {
   const viewportId = 'CT_STACK';
   const viewportInput = {
     viewportId,
-    type: ViewportType.STACK,
+    type: ViewportType.PLANAR_NEXT,
     element,
     defaultOptions: {
       background: <Types.Point3>[0.2, 0, 0.2],
@@ -136,7 +139,7 @@ async function run() {
   renderingEngine.enableElement(viewportInput);
 
   // Get the stack viewport that was created
-  viewport = <Types.IStackViewport>renderingEngine.getViewport(viewportId);
+  viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
   toolGroup.addViewport(viewportId, renderingEngineId);
 }
@@ -163,10 +166,17 @@ function handleDragOver(evt) {
 
 function loadAndViewImage(imageId) {
   const stack = [imageId];
+  const displaySetId = `localCPU:stack:${imageId}`;
+
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    kind: 'planar',
+    imageIds: stack,
+  });
+
   // Set the stack on the viewport
-  viewport.setStack(stack).then(() => {
+  viewport.setDisplaySets({ displaySetId }).then(() => {
     // Set the VOI of the stack
-    // viewport.setProperties({ voiRange: ctVoiRange });
+    // viewport.setDisplaySetPresentation(displaySetId, { voiRange: ctVoiRange });
     // Render the image
     viewport.render();
 

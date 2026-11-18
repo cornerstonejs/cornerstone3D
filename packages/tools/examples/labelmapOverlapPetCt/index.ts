@@ -1,9 +1,9 @@
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import {
   Enums,
   RenderingEngine,
   imageLoader,
-  setVolumesForViewports,
+  utilities,
   volumeLoader,
 } from '@cornerstonejs/core';
 import {
@@ -13,9 +13,11 @@ import {
   createImageIdsAndCacheMetaData,
   initDemo,
   setTitleAndDescription,
-  setCtTransferFunctionForVolumeActor,
-  setPetTransferFunctionForVolumeActor,
 } from '../../../../utils/demo/helpers';
+import {
+  ctPresentation,
+  petPresentation,
+} from '../../../../utils/demo/helpers/volumePresentationRecipes';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
   getConfig as getToolsConfig,
@@ -46,6 +48,8 @@ const segmentationId = 'PET_CT_OVERLAP_SEGMENTATION';
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume';
 const ctVolumeId = `${volumeLoaderScheme}:CT_VOLUME`;
 const ptVolumeId = `${volumeLoaderScheme}:PT_VOLUME`;
+const ctDisplaySetId = 'labelmapOverlapPetCt:ct';
+const ptDisplaySetId = 'labelmapOverlapPetCt:pt';
 
 const wadoRsRoot = 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb';
 const StudyInstanceUID =
@@ -321,13 +325,13 @@ async function run() {
   renderingEngine.setViewports([
     {
       viewportId: viewportIds.CT_AXIAL,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: ctAxialEl,
       defaultOptions: { orientation: Enums.OrientationAxis.AXIAL, background },
     },
     {
       viewportId: viewportIds.CT_SAGITTAL,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: ctSagittalEl,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -336,7 +340,7 @@ async function run() {
     },
     {
       viewportId: viewportIds.CT_CORONAL,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: ctCoronalEl,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
@@ -345,13 +349,13 @@ async function run() {
     },
     {
       viewportId: viewportIds.PT_AXIAL,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: ptAxialEl,
       defaultOptions: { orientation: Enums.OrientationAxis.AXIAL, background },
     },
     {
       viewportId: viewportIds.PT_SAGITTAL,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: ptSagittalEl,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -360,7 +364,7 @@ async function run() {
     },
     {
       viewportId: viewportIds.PT_CORONAL,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: ptCoronalEl,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
@@ -380,10 +384,19 @@ async function run() {
     viewportIds.CT_SAGITTAL,
     viewportIds.CT_CORONAL,
   ];
-  await setVolumesForViewports(
-    renderingEngine,
-    [{ volumeId: ctVolumeId, callback: setCtTransferFunctionForVolumeActor }],
-    ctViewportIds
+  utilities.genericViewportDisplaySetMetadataProvider.add(ctDisplaySetId, {
+    kind: 'planar',
+    imageIds: ctImageIds,
+    volumeId: ctVolumeId,
+  });
+
+  await Promise.all(
+    ctViewportIds.map(async (viewportId) => {
+      const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
+
+      await viewport.setDisplaySets({ displaySetId: ctDisplaySetId });
+      viewport.setDisplaySetPresentation(ctDisplaySetId, ctPresentation());
+    })
   );
 
   // PET row: PET volume only
@@ -392,10 +405,19 @@ async function run() {
     viewportIds.PT_SAGITTAL,
     viewportIds.PT_CORONAL,
   ];
-  await setVolumesForViewports(
-    renderingEngine,
-    [{ volumeId: ptVolumeId, callback: setPetTransferFunctionForVolumeActor }],
-    ptViewportIds
+  utilities.genericViewportDisplaySetMetadataProvider.add(ptDisplaySetId, {
+    kind: 'planar',
+    imageIds: ptImageIds,
+    volumeId: ptVolumeId,
+  });
+
+  await Promise.all(
+    ptViewportIds.map(async (viewportId) => {
+      const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
+
+      await viewport.setDisplaySets({ displaySetId: ptDisplaySetId });
+      viewport.setDisplaySetPresentation(ptDisplaySetId, petPresentation());
+    })
   );
 
   // Add segmentation to all viewports (CT and PET)

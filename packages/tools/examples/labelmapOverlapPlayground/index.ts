@@ -1,9 +1,9 @@
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import {
   Enums,
   RenderingEngine,
   imageLoader,
-  setVolumesForViewports,
+  utilities,
   volumeLoader,
 } from '@cornerstonejs/core';
 import {
@@ -44,6 +44,8 @@ const segmentationId = 'LABELMAP_OVERLAP_PLAYGROUND_SEGMENTATION';
 const volumeName = 'LABELMAP_OVERLAP_PLAYGROUND_VOLUME';
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume';
 const volumeId = `${volumeLoaderScheme}:${volumeName}`;
+const stackDisplaySetId = 'labelmapOverlapPlayground:stack';
+const volumeDisplaySetId = 'labelmapOverlapPlayground:ct';
 const viewportIds = {
   STACK: 'OVERLAP_STACK',
   AXIAL: 'OVERLAP_AXIAL',
@@ -329,7 +331,7 @@ async function run() {
   renderingEngine.setViewports([
     {
       viewportId: viewportIds.STACK,
-      type: ViewportType.STACK,
+      type: ViewportType.PLANAR_NEXT,
       element: stackElement,
       defaultOptions: {
         background: [0.2, 0, 0.2] as Types.Point3,
@@ -337,7 +339,7 @@ async function run() {
     },
     {
       viewportId: viewportIds.AXIAL,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: axialElement,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
@@ -346,7 +348,7 @@ async function run() {
     },
     {
       viewportId: viewportIds.SAGITTAL,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: sagittalElement,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -355,7 +357,7 @@ async function run() {
     },
     {
       viewportId: viewportIds.CORONAL,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: coronalElement,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
@@ -368,20 +370,33 @@ async function run() {
     toolGroup.addViewport(viewportId, renderingEngineId);
   });
 
-  const stackViewport = renderingEngine.getViewport(
+  utilities.genericViewportDisplaySetMetadataProvider.add(stackDisplaySetId, {
+    kind: 'planar',
+    imageIds,
+    initialImageIdIndex: Math.floor(imageIds.length / 2),
+  });
+  utilities.genericViewportDisplaySetMetadataProvider.add(volumeDisplaySetId, {
+    kind: 'planar',
+    imageIds,
+    volumeId,
+  });
+
+  const stackViewport = renderingEngine.getViewport<PlanarViewport>(
     viewportIds.STACK
-  ) as Types.IStackViewport;
-  await stackViewport.setStack(imageIds, Math.floor(imageIds.length / 2));
+  );
+  await stackViewport.setDisplaySets({ displaySetId: stackDisplaySetId });
 
   const volumeViewportIds = [
     viewportIds.AXIAL,
     viewportIds.SAGITTAL,
     viewportIds.CORONAL,
   ];
-  await setVolumesForViewports(
-    renderingEngine,
-    [{ volumeId }],
-    volumeViewportIds
+  await Promise.all(
+    volumeViewportIds.map((viewportId) =>
+      renderingEngine
+        .getViewport<PlanarViewport>(viewportId)
+        .setDisplaySets({ displaySetId: volumeDisplaySetId })
+    )
   );
 
   await segmentation.addLabelmapRepresentationToViewportMap({
