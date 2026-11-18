@@ -200,7 +200,13 @@ describe('annotationHydration', () => {
 describe('moveAnnotationToViewPlane', () => {
   it('updates the referenced image of a legacy adapter in stack mode', () => {
     const viewport = makeAdapter('stack', 'stack', {
-      getCamera: () => ({ focalPoint: [0, 0, 2], viewPlaneNormal: [0, 0, 1] }),
+      getViewReference: () => ({}),
+      getResolvedView: () => ({
+        toICamera: () => ({
+          focalPoint: [0, 0, 2],
+          viewPlaneNormal: [0, 0, 1],
+        }),
+      }),
       getCurrentImageId: () => 'image-2',
     });
     const annotation = {
@@ -215,8 +221,14 @@ describe('moveAnnotationToViewPlane', () => {
   });
 
   it('leaves the referenced image of a volume viewport alone', () => {
-    const viewport = makeLegacy('orthographic', {
-      getCamera: () => ({ focalPoint: [0, 0, 2], viewPlaneNormal: [0, 0, 1] }),
+    const viewport = makeAdapter('volume', 'planarNext', {
+      getViewReference: () => ({}),
+      getResolvedView: () => ({
+        toICamera: () => ({
+          focalPoint: [0, 0, 2],
+          viewPlaneNormal: [0, 0, 1],
+        }),
+      }),
       getCurrentImageId: () => 'image-2',
     });
     const annotation = {
@@ -274,21 +286,11 @@ describe('WholeBodySegmentTool volume of the viewport', () => {
     cache.getVolume.mockReturnValue(volume);
     const viewport = makeAdapter('volume', 'orthographic', {
       getAllVolumeIds: () => ['ct'],
+      getVolumeId: () => 'ct',
     });
 
     expect(tool._getViewportVolume(viewport)).toBe(volume);
     expect(cache.getVolume).toHaveBeenCalledWith('ct');
-  });
-
-  it('reads the volume of a legacy volume viewport', () => {
-    const tool = new WholeBodySegmentTool();
-    const volume = { volumeId: 'ct' };
-    cache.getVolume.mockReturnValue(volume);
-    const viewport = makeLegacy('orthographic', {
-      getAllVolumeIds: () => ['ct'],
-    });
-
-    expect(tool._getViewportVolume(viewport)).toBe(volume);
   });
 
   it('still throws for a stack viewport', () => {
@@ -363,19 +365,6 @@ describe('LivewireContourTool edit data', () => {
     expect(utilities.getCurrentVolumeViewportSlice).not.toHaveBeenCalled();
   });
 
-  it('takes the volume slice branch on a legacy volume viewport', () => {
-    const tool = new LivewireContourTool();
-    const viewport = makeLegacy('orthographic', {
-      getImageData: () => ({ imageData: {} }),
-      getSliceViewInfo: jest.fn(),
-    });
-    getEnabledElement.mockReturnValue({ viewport });
-
-    expect(() =>
-      tool.setupBaseEditData([0, 0, 0], viewport.element, {})
-    ).toThrow('volume slice branch');
-  });
-
   it('does not add an annotation when the edit data cannot be set up', () => {
     const tool = new LivewireContourTool();
     const viewport = makeAdapter('volume', 'orthographic', {
@@ -414,15 +403,6 @@ describe('MIPJumpToClickTool', () => {
       },
     });
   }
-
-  it('jumps a legacy volume viewport to the brightest point', () => {
-    const jumpToWorld = jest.fn();
-    const target = makeLegacy('orthographic', { id: 'target', jumpToWorld });
-
-    clickOn(makeLegacy('orthographic', { getVolumeId: () => 'ct' }), target);
-
-    expect(jumpToWorld).toHaveBeenCalledWith([1, 2, 3]);
-  });
 
   it('stops without an error on a legacy adapter, which has no jumpToWorld', () => {
     const target = makeAdapter('volume', 'orthographic', { id: 'target' });
@@ -491,7 +471,10 @@ describe('RectangleROIThresholdTool new annotation', () => {
     const tool = new RectangleROIThresholdTool();
     tool.getTargetId = () => 'imageId:wadors:image-7';
     const viewport = makeAdapter('stack', 'stack', {
-      getCamera: () => ({ viewPlaneNormal: [0, 0, 1], viewUp: [0, -1, 0] }),
+      getViewReference: () => ({}),
+      getResolvedView: () => ({
+        toICamera: () => ({ viewPlaneNormal: [0, 0, 1], viewUp: [0, -1, 0] }),
+      }),
       getFrameOfReferenceUID: () => 'for',
     });
     getEnabledElement.mockReturnValue({ viewport, renderingEngine: {} });

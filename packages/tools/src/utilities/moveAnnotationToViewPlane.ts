@@ -22,9 +22,7 @@ export function moveAnnotationToViewPlane(
   const { data } = annotation;
   const { points } = data.handles;
 
-  const { focalPoint, viewPlaneNormal } = viewport.getCamera
-    ? viewport.getCamera()
-    : getViewportICamera(viewport);
+  const { focalPoint, viewPlaneNormal } = getViewportICamera(viewport);
 
   // projected distance from the focal point to the point
   const projectedDistance = vec3.dot(

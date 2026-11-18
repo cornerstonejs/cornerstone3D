@@ -28,6 +28,7 @@ jest.mock('@cornerstonejs/core', () => {
         },
       },
       isGenericViewport: jest.fn(() => false),
+      clonePoint3: jest.fn((point) => (point ? [...point] : undefined)),
       getViewportContentMode: jest.fn(
         (viewport) => legacyTypeModes[viewport?.type]
       ),
@@ -487,24 +488,6 @@ describe('cameraSyncCallback', () => {
     utilities.isGenericViewport.mockReturnValue(false);
   });
 
-  it('copies the camera onto a legacy (non-Generic) target and renders it', () => {
-    const camera = { position: [0, 0, 1] };
-    const targetViewport = { setCamera: jest.fn(), render: jest.fn() };
-    getRenderingEngine.mockReturnValue({
-      getViewport: jest.fn(() => targetViewport),
-    });
-
-    cameraSyncCallback(
-      {},
-      { renderingEngineId: 're1', viewportId: 'source' },
-      { renderingEngineId: 're1', viewportId: 'target' },
-      { detail: { camera } }
-    );
-
-    expect(targetViewport.setCamera).toHaveBeenCalledWith(camera);
-    expect(targetViewport.render).toHaveBeenCalledTimes(1);
-  });
-
   it('throws when there is no rendering engine for the target', () => {
     getRenderingEngine.mockReturnValue(undefined);
 
@@ -578,93 +561,17 @@ describe('cameraSyncCallback', () => {
 });
 
 describe('voiSyncCallback', () => {
-  function makeVolumeViewport(overrides) {
-    return { type: 'orthographic', ...overrides };
-  }
-  function makeStackViewport(overrides) {
-    return { type: 'stack', ...overrides };
-  }
-
   beforeEach(() => {
     jest.clearAllMocks();
     utilities.isGenericViewport.mockReturnValue(false);
   });
 
-  it('applies voiRange to a non-fusion volume viewport (no volumeId argument)', () => {
-    const tViewport = makeVolumeViewport({
-      _actors: new Map([['v1', {}]]),
-      setProperties: jest.fn(),
+  it('propagates invert and colormap to a next viewport only when the matching sync options are enabled', () => {
+    utilities.isGenericViewport.mockReturnValue(true);
+    const tViewport = {
+      setDisplaySetPresentation: jest.fn(),
       render: jest.fn(),
-    });
-    getRenderingEngine.mockReturnValue({
-      getViewport: jest.fn(() => tViewport),
-    });
-
-    voiSyncCallback(
-      {},
-      { renderingEngineId: 're', viewportId: 'source' },
-      { renderingEngineId: 're', viewportId: 'target' },
-      { detail: { volumeId: 'v1', range: { lower: 0, upper: 100 } } }
-    );
-
-    expect(tViewport.setProperties).toHaveBeenCalledWith({
-      voiRange: { lower: 0, upper: 100 },
-    });
-    expect(tViewport.render).toHaveBeenCalledTimes(1);
-  });
-
-  it('scopes voiRange to the volumeId for fusion volume viewports (multiple actors)', () => {
-    const tViewport = makeVolumeViewport({
-      _actors: new Map([
-        ['v1', {}],
-        ['v2', {}],
-      ]),
-      setProperties: jest.fn(),
-      render: jest.fn(),
-    });
-    getRenderingEngine.mockReturnValue({
-      getViewport: jest.fn(() => tViewport),
-    });
-
-    voiSyncCallback(
-      {},
-      { renderingEngineId: 're', viewportId: 'source' },
-      { renderingEngineId: 're', viewportId: 'target' },
-      { detail: { volumeId: 'v2', range: { lower: 1, upper: 2 } } }
-    );
-
-    expect(tViewport.setProperties).toHaveBeenCalledWith(
-      { voiRange: { lower: 1, upper: 2 } },
-      'v2'
-    );
-  });
-
-  it('applies voiRange to a stack viewport', () => {
-    const tViewport = makeStackViewport({
-      setProperties: jest.fn(),
-      render: jest.fn(),
-    });
-    getRenderingEngine.mockReturnValue({
-      getViewport: jest.fn(() => tViewport),
-    });
-
-    voiSyncCallback(
-      {},
-      { renderingEngineId: 're', viewportId: 'source' },
-      { renderingEngineId: 're', viewportId: 'target' },
-      { detail: { range: { lower: 5, upper: 6 } } }
-    );
-
-    expect(tViewport.setProperties).toHaveBeenCalledWith({
-      voiRange: { lower: 5, upper: 6 },
-    });
-  });
-
-  it('propagates invert and colormap only when the matching sync options are enabled', () => {
-    const tViewport = makeStackViewport({
-      setProperties: jest.fn(),
-      render: jest.fn(),
-    });
+    };
     getRenderingEngine.mockReturnValue({
       getViewport: jest.fn(() => tViewport),
     });
@@ -676,7 +583,6 @@ describe('voiSyncCallback', () => {
       {
         detail: {
           range: { lower: 0, upper: 1 },
-          invertStateChanged: true,
           invert: true,
           colormap: { name: 'hot' },
         },
@@ -684,18 +590,19 @@ describe('voiSyncCallback', () => {
       { syncInvertState: true, syncColormap: true }
     );
 
-    expect(tViewport.setProperties).toHaveBeenCalledWith({
+    expect(tViewport.setDisplaySetPresentation).toHaveBeenCalledWith({
       voiRange: { lower: 0, upper: 1 },
       invert: true,
       colormap: { name: 'hot' },
     });
   });
 
-  it('does not propagate invert or colormap without the matching options', () => {
-    const tViewport = makeStackViewport({
-      setProperties: jest.fn(),
+  it('does not propagate invert or colormap to a next viewport without the matching options', () => {
+    utilities.isGenericViewport.mockReturnValue(true);
+    const tViewport = {
+      setDisplaySetPresentation: jest.fn(),
       render: jest.fn(),
-    });
+    };
     getRenderingEngine.mockReturnValue({
       getViewport: jest.fn(() => tViewport),
     });
@@ -707,14 +614,13 @@ describe('voiSyncCallback', () => {
       {
         detail: {
           range: { lower: 0, upper: 1 },
-          invertStateChanged: true,
           invert: true,
           colormap: { name: 'hot' },
         },
       }
     );
 
-    expect(tViewport.setProperties).toHaveBeenCalledWith({
+    expect(tViewport.setDisplaySetPresentation).toHaveBeenCalledWith({
       voiRange: { lower: 0, upper: 1 },
     });
   });
@@ -748,28 +654,6 @@ describe('voiSyncCallback', () => {
       [{ voiRange: { lower: 0, upper: 1 }, invert: false }],
       [{ voiRange: { lower: 0, upper: 1 } }],
     ]);
-  });
-
-  it('keeps the invert of a legacy source viewport to itself until invertStateChanged is set', () => {
-    const tViewport = makeStackViewport({
-      setProperties: jest.fn(),
-      render: jest.fn(),
-    });
-    getRenderingEngine.mockReturnValue({
-      getViewport: jest.fn(() => tViewport),
-    });
-
-    voiSyncCallback(
-      {},
-      { renderingEngineId: 're', viewportId: 'source' },
-      { renderingEngineId: 're', viewportId: 'target' },
-      { detail: { range: { lower: 0, upper: 1 }, invert: true } },
-      { syncInvertState: true }
-    );
-
-    expect(tViewport.setProperties).toHaveBeenCalledWith({
-      voiRange: { lower: 0, upper: 1 },
-    });
   });
 
   it('routes to the matching display-set binding on Generic viewports', () => {
@@ -1067,7 +951,12 @@ describe('presentationViewSyncCallback', () => {
 
 describe('areViewportsCoplanar', () => {
   const makeViewport = (viewPlaneNormal) => ({
-    getCamera: () => ({ viewPlaneNormal }),
+    getViewReference: () => ({ viewPlaneNormal }),
+    getResolvedView: () => ({ toICamera: () => ({ viewPlaneNormal }) }),
+  });
+
+  beforeEach(() => {
+    utilities.isGenericViewport.mockReturnValue(true);
   });
 
   it('returns true for viewports with the same normal', () => {

@@ -1,6 +1,6 @@
 import type { Types } from '@cornerstonejs/core';
-import { getEnabledElement, utilities } from '@cornerstonejs/core';
-import { mat4, vec3 } from 'gl-matrix';
+import { getEnabledElement } from '@cornerstonejs/core';
+import { vec3 } from 'gl-matrix';
 import { BaseTool } from './base';
 import angleBetweenLines from '../utilities/math/angle/angleBetweenLines';
 import type { PublicToolProps, ToolProps, EventTypes } from '../types';
@@ -90,32 +90,21 @@ class PlanarRotateTool extends BaseTool {
       return;
     }
 
-    if (
-      utilities.viewportIsInVolumeMode(viewport) &&
-      !utilities.isGenericViewport(viewport)
-    ) {
-      const rotAngle = (((angle + 360) % 360) * Math.PI) / 180;
-      const rotMat = mat4.identity(new Float32Array(16));
-      mat4.rotate(rotMat, rotMat, rotAngle, viewPlaneNormal);
-      const rotatedViewUp = vec3.transformMat4(vec3.create(), viewUp, rotMat);
-      viewport.setCamera({ viewUp: rotatedViewUp as Types.Point3 });
-    } else {
-      const presentation = getViewportPresentation(viewport) as
-        | { rotation?: number }
-        | undefined;
+    const presentation = getViewportPresentation(viewport) as
+      | { rotation?: number }
+      | undefined;
 
-      if (!presentation) {
-        return;
-      }
+    if (!presentation) {
+      return;
+    }
 
-      const { rotation = 0 } = presentation;
-      const didApply = applyViewportPresentation(viewport, {
-        rotation: (rotation + angle + 360) % 360,
-      });
+    const { rotation = 0 } = presentation;
+    const didApply = applyViewportPresentation(viewport, {
+      rotation: (rotation + angle + 360) % 360,
+    });
 
-      if (!didApply) {
-        return;
-      }
+    if (!didApply) {
+      return;
     }
 
     viewport.render();

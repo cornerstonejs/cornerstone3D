@@ -3,7 +3,6 @@ import {
   getEnabledElement,
   Enums,
   getEnabledElementByIds,
-  utilities,
 } from '@cornerstonejs/core';
 import { triggerSegmentationRender } from '../../stateManagement/segmentation/SegmentationRenderingEngine';
 import { SegmentationRepresentations } from '../../enums';
@@ -30,22 +29,16 @@ const enable = function (element: HTMLDivElement): void {
   }
 
   const { viewport } = enabledElement;
-  const isVolumeViewport =
-    utilities.viewportIsInVolumeMode(viewport) &&
-    !utilities.isGenericViewport(viewport);
   const isPlanarViewport = viewport.type === Enums.ViewportType.PLANAR_NEXT;
   const canUseStackImageEvents =
     typeof (viewport as { getCurrentImageId?: () => string })
       .getCurrentImageId === 'function';
 
-  if (isVolumeViewport || isPlanarViewport) {
+  if (isPlanarViewport) {
     element.addEventListener(
       Enums.Events.CAMERA_MODIFIED,
       _imageChangeEventListener as EventListener
     );
-  }
-
-  if (isPlanarViewport) {
     element.addEventListener(
       Enums.Events.IMAGE_RENDERED,
       _labelmapImageMapperSupportListener as EventListener
@@ -53,7 +46,6 @@ const enable = function (element: HTMLDivElement): void {
   }
 
   if (
-    isVolumeViewport ||
     !canUseStackImageEvents ||
     getViewportLabelmapRenderMode(viewport) !== 'image'
   ) {
@@ -170,9 +162,6 @@ function _imageChangeEventListener(evt) {
   }
 
   const { viewport } = enabledElement;
-  const isVolumeViewport =
-    utilities.viewportIsInVolumeMode(viewport) &&
-    !utilities.isGenericViewport(viewport);
   const representations = getSegmentationRepresentations(viewportId);
 
   if (!representations?.length) {

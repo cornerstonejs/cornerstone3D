@@ -98,8 +98,6 @@ class MIPJumpToClickTool extends BaseTool {
     viewports.forEach((viewport) => {
       // Todo: current limitation is that we cannot jump in viewports
       // that don't belong to the renderingEngine of the source clicked viewport
-      const volumeViewport = viewport as Types.IVolumeViewport;
-
       const showsVolume =
         utilities.getViewportContentMode(viewport) === 'volume';
 
@@ -108,11 +106,6 @@ class MIPJumpToClickTool extends BaseTool {
         navigatePlanarViewportToPoint(viewport, brightestPoint)
       ) {
         viewport.render();
-      } else if (
-        showsVolume &&
-        typeof volumeViewport.jumpToWorld === 'function'
-      ) {
-        volumeViewport.jumpToWorld(brightestPoint);
       } else {
         cs3dLogger.warn(
           'Cannot jump to specified world coordinates for a viewport that is not a VolumeViewport'

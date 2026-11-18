@@ -2076,24 +2076,11 @@ class CrosshairsTool extends AnnotationTool {
     // Native PLANAR_NEXT has no getAllVolumeIds; two native viewports render the same
     // scene when they are bound to the same dataset (view-reference dataId), which is
     // the MPR case (axial/sagittal/coronal of one volume share a dataId).
-    if (
-      csUtils.isGenericViewport(viewport) ||
-      csUtils.isGenericViewport(otherViewport)
-    ) {
-      const ref = viewport.getViewReference?.();
-      const otherRef = otherViewport.getViewReference?.();
-      const a = ref?.dataId ?? ref?.FrameOfReferenceUID;
-      const b = otherRef?.dataId ?? otherRef?.FrameOfReferenceUID;
-      return !!a && a === b;
-    }
-
-    const volumeIds = viewport.getAllVolumeIds();
-    const otherVolumeIds = otherViewport.getAllVolumeIds();
-
-    return (
-      volumeIds.length === otherVolumeIds.length &&
-      volumeIds.every((id) => otherVolumeIds.includes(id))
-    );
+    const ref = viewport.getViewReference?.();
+    const otherRef = otherViewport.getViewReference?.();
+    const a = ref?.dataId ?? ref?.FrameOfReferenceUID;
+    const b = otherRef?.dataId ?? otherRef?.FrameOfReferenceUID;
+    return !!a && a === b;
   };
 
   _jump = (enabledElement, jumpWorld) => {

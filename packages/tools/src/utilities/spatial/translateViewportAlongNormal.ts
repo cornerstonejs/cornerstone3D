@@ -1,5 +1,4 @@
 import { vec3 } from 'gl-matrix';
-import { utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import getViewportICamera from '../getViewportICamera';
 import { navigatePlanarViewportToPoint } from '../genericViewportToolHelpers';
@@ -9,8 +8,8 @@ import { navigatePlanarViewportToPoint } from '../genericViewportToolHelpers';
  * normal by the given signed distance in world units. Pan, zoom and
  * orientation are untouched.
  *
- * Native (generic) viewports have no free camera write; they are navigated by
- * view reference instead, which snaps to the nearest slice.
+ * A next viewport has no free camera write; it is navigated by view
+ * reference, which snaps to the nearest slice.
  *
  * Returns true when the camera was moved.
  */
@@ -46,25 +45,9 @@ export default function translateViewportAlongNormal(
     viewPlaneNormal,
     distance
   );
-  const newPosition = vec3.scaleAndAdd(
-    vec3.create(),
-    position,
-    viewPlaneNormal,
-    distance
-  );
-
-  if (csUtils.isGenericViewport(viewport)) {
-    return navigatePlanarViewportToPoint(viewport, [
-      newFocalPoint[0],
-      newFocalPoint[1],
-      newFocalPoint[2],
-    ]);
-  }
-
-  viewport.setCamera({
-    focalPoint: [newFocalPoint[0], newFocalPoint[1], newFocalPoint[2]],
-    position: [newPosition[0], newPosition[1], newPosition[2]],
-  });
-
-  return true;
+  return navigatePlanarViewportToPoint(viewport, [
+    newFocalPoint[0],
+    newFocalPoint[1],
+    newFocalPoint[2],
+  ]);
 }

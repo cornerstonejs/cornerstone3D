@@ -1,4 +1,3 @@
-import { glMatrix, vec3 } from 'gl-matrix';
 import {
   utilities as csUtils,
   getEnabledElement,
@@ -172,9 +171,7 @@ function playClip(
   };
 
   if (isDynamicCinePlaying) {
-    const volume = _getVolumeFromViewport(
-      viewport as Types.IBaseVolumeViewport
-    );
+    const volume = _getGenericViewportDynamicVolume(viewport);
 
     if (volume) {
       dynamicVolumesPlayingMap.set(volume.volumeId, element);
@@ -258,16 +255,7 @@ function _stopClip(
     _stopClipWithData(toolState);
   }
 
-  if (
-    csUtils.getViewportContentMode(viewport) === 'video' &&
-    !csUtils.isGenericViewport(viewport)
-  ) {
-    (viewport as unknown as Types.IVideoViewport).pause();
-  } else if (
-    stopDynamicCine &&
-    (csUtils.viewportIsInVolumeMode(viewport) ||
-      csUtils.isGenericViewport(viewport))
-  ) {
+  if (stopDynamicCine && csUtils.isGenericViewport(viewport)) {
     _stopDynamicVolumeCine(element);
   }
 }
@@ -278,21 +266,15 @@ function _stopClip(
  */
 function _stopDynamicVolumeCine(element: HTMLDivElement) {
   const { viewport } = getEnabledElement(element);
-  if (
-    csUtils.getViewportContentMode(viewport) === 'volume' ||
-    csUtils.isGenericViewport(viewport)
-  ) {
-    const volume = _getVolumeFromViewport(
-      viewport as Types.IBaseVolumeViewport
-    );
-    if (volume?.isDynamicVolume()) {
-      const dynamicCineElement = dynamicVolumesPlayingMap.get(volume.volumeId);
+  const volume = _getGenericViewportDynamicVolume(viewport);
 
-      dynamicVolumesPlayingMap.delete(volume.volumeId);
+  if (volume?.isDynamicVolume()) {
+    const dynamicCineElement = dynamicVolumesPlayingMap.get(volume.volumeId);
 
-      if (dynamicCineElement && dynamicCineElement !== element) {
-        stopClip(<HTMLDivElement>dynamicCineElement);
-      }
+    dynamicVolumesPlayingMap.delete(volume.volumeId);
+
+    if (dynamicCineElement && dynamicCineElement !== element) {
+      stopClip(<HTMLDivElement>dynamicCineElement);
     }
   }
 
@@ -371,37 +353,10 @@ function _stopClipWithData(playClipData) {
   }
 }
 
-function _getVolumeFromViewport(
-  viewport: Types.IBaseVolumeViewport
-): Types.IImageVolume {
-  if (
-    csUtils.getViewportContentMode(viewport) !== 'volume' ||
-    csUtils.isGenericViewport(viewport)
-  ) {
-    return _getGenericViewportDynamicVolume(viewport);
-  }
-
-  const volumeIds = viewport.getAllVolumeIds();
-
-  if (!volumeIds?.length) {
-    return undefined;
-  }
-
-  const dynamicVolumeId = volumeIds.find((volumeId) =>
-    cache.getVolume(volumeId)?.isDynamicVolume()
-  );
-
-  const volumeId = dynamicVolumeId ?? volumeIds[0];
-
-  return cache.getVolume(volumeId);
-}
-
 /**
- * Returns the 4D volume that a next viewport (`PlanarViewport` or
- * `PlanarViewportLegacyAdapter`) shows in volume mode, whatever its render
- * path. It looks at the volume ids of the viewport (`getAllVolumeIds` of the
- * legacy adapter, the volume id of the source otherwise) and returns the first
- * one that is a dynamic volume in the cache, or undefined when there is none.
+ * Returns the 4D volume that a next viewport shows in volume mode, whatever
+ * its render path: the volume of its source when that is a dynamic volume in
+ * the cache, or undefined.
  */
 function _getGenericViewportDynamicVolume(
   viewport: unknown
@@ -413,151 +368,16 @@ function _getGenericViewportDynamicVolume(
     return;
   }
 
-  const volumeViewport = viewport as {
-    getAllVolumeIds?: () => string[];
-    getVolumeId?: () => string | undefined;
-  };
-  const volumeIds =
-    typeof volumeViewport.getAllVolumeIds === 'function'
-      ? volumeViewport.getAllVolumeIds()
-      : [volumeViewport.getVolumeId?.()];
-  const dynamicVolumeId = volumeIds?.find(
-    (volumeId) => volumeId && cache.getVolume(volumeId)?.isDynamicVolume?.()
-  );
+  const volumeId = (
+    viewport as { getVolumeId?: () => string | undefined }
+  ).getVolumeId?.();
+  const volume = volumeId ? cache.getVolume(volumeId) : undefined;
 
-  if (!dynamicVolumeId) {
+  if (!volume?.isDynamicVolume?.()) {
     return;
   }
 
-  return cache.getVolume(dynamicVolumeId) as Types.IDynamicImageVolume;
-}
-
-function _createStackViewportCinePlayContext(
-  viewport: Types.IStackViewport,
-  waitForRendered: number
-): CINETypes.CinePlayContext {
-  const imageIds = viewport.getImageIds();
-
-  return {
-    get numScrollSteps(): number {
-      return imageIds.length;
-    },
-    get currentStepIndex(): number {
-      return viewport.getTargetImageIdIndex();
-    },
-    get frameTimeVectorEnabled(): boolean {
-      // It is always in acquired orientation
-      return true;
-    },
-    waitForRenderedCount: 0,
-    scroll(delta: number): void {
-      if (
-        this.waitForRenderedCount <= waitForRendered &&
-        viewport.viewportStatus !== ViewportStatus.RENDERED
-      ) {
-        this.waitForRenderedCount++;
-        return;
-      }
-      this.waitForRenderedCount = 0;
-      csUtils.scroll(viewport, { delta, debounceLoading: debounced });
-    },
-  };
-}
-
-function _createVideoViewportCinePlayContext(
-  viewport: Types.IVideoViewport,
-  waitForRendered: number
-): CINETypes.CinePlayContext {
-  return {
-    get numScrollSteps(): number {
-      return viewport.getNumberOfSlices();
-    },
-    get currentStepIndex(): number {
-      return viewport.getSliceIndex();
-    },
-    get frameTimeVectorEnabled(): boolean {
-      // It is always in acquired orientation
-      return true;
-    },
-    waitForRenderedCount: 0,
-    scroll(delta: number): void {
-      if (
-        this.waitForRenderedCount <= waitForRendered &&
-        viewport.viewportStatus !== ViewportStatus.RENDERED
-      ) {
-        this.waitForRenderedCount++;
-        return;
-      }
-      this.waitForRenderedCount = 0;
-      csUtils.scroll(viewport, { delta, debounceLoading: debounced });
-    },
-    play(fps?: number): number {
-      if (fps) {
-        // This is a bit of a kludge to correspond to playback rates
-        // for other viewports
-        viewport.setPlaybackRate(fps / 24);
-      }
-      viewport.play();
-      return viewport.getFrameRate();
-    },
-  };
-}
-
-function _createVolumeViewportCinePlayContext(
-  viewport: Types.IVolumeViewport,
-  volume: Types.IImageVolume
-): CINETypes.CinePlayContext {
-  const { volumeId } = volume;
-  const cachedScrollInfo = {
-    viewPlaneNormal: vec3.create(),
-    scrollInfo: null,
-  };
-
-  const getScrollInfo = () => {
-    const camera = viewport.getCamera();
-    const updateCache =
-      !cachedScrollInfo.scrollInfo ||
-      !vec3.equals(camera.viewPlaneNormal, cachedScrollInfo.viewPlaneNormal);
-
-    // Number of steps would change only after rotating the volume so it
-    // caches the result and recomputes only when necessary. Until it is
-    // rotated the current frame is updated locally
-    if (updateCache) {
-      const scrollInfo = csUtils.getVolumeViewportScrollInfo(
-        viewport,
-        volumeId
-      );
-
-      cachedScrollInfo.viewPlaneNormal = camera.viewPlaneNormal;
-      cachedScrollInfo.scrollInfo = scrollInfo;
-    }
-
-    return cachedScrollInfo.scrollInfo;
-  };
-
-  return {
-    get numScrollSteps(): number {
-      return getScrollInfo().numScrollSteps;
-    },
-    get currentStepIndex(): number {
-      return getScrollInfo().currentStepIndex;
-    },
-    get frameTimeVectorEnabled(): boolean {
-      const camera = viewport.getCamera();
-      const volumeViewPlaneNormal = volume.direction
-        .slice(6, 9)
-        .map((x) => -x) as Types.Point3;
-      const dot = vec3.dot(volumeViewPlaneNormal, camera.viewPlaneNormal);
-
-      // Check if the volume is in acquired orientation
-      // it may be flipped or rotated in plane
-      return glMatrix.equals(dot, 1);
-    },
-    scroll(delta: number): void {
-      getScrollInfo().currentStepIndex += delta;
-      csUtils.scroll(viewport, { delta });
-    },
-  };
+  return volume as Types.IDynamicImageVolume;
 }
 
 function _createDynamicVolumeViewportCinePlayContext(
@@ -629,36 +449,6 @@ function _createCinePlayContext(
   viewport,
   playClipOptions: CINETypes.PlayClipOptions
 ): CINETypes.CinePlayContext {
-  const legacyContentMode = csUtils.isGenericViewport(viewport)
-    ? undefined
-    : csUtils.getViewportContentMode(viewport);
-
-  if (legacyContentMode === 'stack') {
-    return _createStackViewportCinePlayContext(
-      viewport,
-      playClipOptions.waitForRendered ?? 30
-    );
-  }
-
-  if (legacyContentMode === 'volume') {
-    const volume = _getVolumeFromViewport(viewport);
-
-    if (playClipOptions.dynamicCineEnabled && volume?.isDynamicVolume()) {
-      return _createDynamicVolumeViewportCinePlayContext(
-        <Types.IDynamicImageVolume>volume
-      );
-    }
-
-    return _createVolumeViewportCinePlayContext(viewport, volume);
-  }
-
-  if (legacyContentMode === 'video') {
-    return _createVideoViewportCinePlayContext(
-      viewport,
-      playClipOptions.waitForRendered ?? 30
-    );
-  }
-
   // Direct GenericViewport ("next") viewports report none of the legacy instanceof
   // types; route them by capability (stack/volume both scroll via getNumberOfSlices).
   if (csUtils.isGenericViewport(viewport)) {

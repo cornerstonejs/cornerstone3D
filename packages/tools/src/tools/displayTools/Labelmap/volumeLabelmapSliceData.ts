@@ -115,14 +115,7 @@ function getSliceRenderingCamera(
   const normalizedResolvedCamera =
     normalizeSliceRenderingCamera(resolvedCamera);
 
-  if (normalizedResolvedCamera) {
-    return normalizedResolvedCamera;
-  }
-
-  const legacyCamera = viewport.getCamera?.();
-  const normalizedLegacyCamera = normalizeSliceRenderingCamera(legacyCamera);
-
-  return normalizedLegacyCamera;
+  return normalizedResolvedCamera;
 }
 
 function normalizeSliceRenderingCamera(

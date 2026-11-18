@@ -18,18 +18,13 @@ import { getViewportContentMode } from './viewportCapabilities';
 /**
  * The slice view info of a viewport. A viewport that shows a stack gets the
  * info of its image on display, whether it is a next viewport, a legacy
- * adapter or a legacy stack viewport, whose own member throws. A viewport
- * that shows a volume answers with its own member when it has one (a legacy
- * viewport, an adapter), else the info comes from the resolved view of the
+ * adapter or a legacy stack viewport, whose own member throws. For a
+ * viewport that shows a volume the info comes from the resolved view of the
  * next viewport.
  */
 function getSliceViewInfo(viewport: IViewport): SliceViewInfo {
   if (getViewportContentMode(viewport) === 'stack') {
     return getStackSliceViewInfo(viewport as IStackViewport);
-  }
-
-  if (typeof viewport.getSliceViewInfo === 'function') {
-    return viewport.getSliceViewInfo();
   }
 
   const nextViewport = viewport as unknown as {

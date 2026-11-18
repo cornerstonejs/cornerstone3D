@@ -84,9 +84,7 @@ class RectangleROIThresholdTool extends RectangleROITool {
 
     this.isDrawing = true;
 
-    const { viewPlaneNormal, viewUp } = viewport.getCamera
-      ? viewport.getCamera()
-      : getViewportICamera(viewport);
+    const { viewPlaneNormal, viewUp } = getViewportICamera(viewport);
 
     const targetId = this.getTargetId(viewport);
     let referencedImageId, volumeId;

@@ -672,13 +672,20 @@ describe('getSubPixelSpacingAndXYDirections', () => {
     // Identity direction matrix (i=x, j=y, k=z), spacing [1,1,2] (mm per
     // voxel along i,j,k). Axial view: normal along +k, up along -y.
     const viewport = {
+      setDisplaySets: () => undefined,
+      setDisplaySetPresentation: () => undefined,
+      setViewState: () => undefined,
+      getCurrentMode: () => 'volume',
       getImageData: () => ({
         direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
         spacing: [1, 1, 2],
       }),
-      getCamera: () => ({
-        viewPlaneNormal: [0, 0, 1],
-        viewUp: [0, -1, 0],
+      getViewReference: () => ({}),
+      getResolvedView: () => ({
+        toICamera: () => ({
+          viewPlaneNormal: [0, 0, 1],
+          viewUp: [0, -1, 0],
+        }),
       }),
     };
 

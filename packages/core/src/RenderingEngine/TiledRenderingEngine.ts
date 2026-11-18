@@ -364,37 +364,8 @@ class TiledRenderingEngine extends BaseRenderingEngine {
       );
     }
 
-    // 3. Reset viewport cameras
-    vtkDrivenViewports.forEach((vp: IStackViewport | IVolumeViewport) => {
-      const prevCamera = vp.getCamera();
-      const rotation = vp.getRotation();
-      const { flipHorizontal } = prevCamera;
-      const resizeResetViewport = vp as (IStackViewport | IVolumeViewport) & {
-        resetViewStateForResize?: () => boolean;
-      };
-
-      if (resizeResetViewport.resetViewStateForResize) {
-        resizeResetViewport.resetViewStateForResize();
-      } else {
-        resizeResetViewport.resetCameraForResize();
-      }
-
-      const displayArea = vp.getDisplayArea();
-
-      // TODO - make this use get/set Presentation or in some way preserve the
-      // basic presentation info on this viewport, rather than preserving camera
-      if (keepCamera) {
-        if (displayArea) {
-          if (flipHorizontal) {
-            vp.setCamera({ flipHorizontal });
-          }
-          if (rotation) {
-            vp.setViewPresentation({ rotation });
-          }
-        } else {
-          vp.setCamera(prevCamera);
-        }
-      }
+    vtkDrivenViewports.forEach((vp) => {
+      vp.resize?.();
     });
 
     // 4. If render is immediate: Render all

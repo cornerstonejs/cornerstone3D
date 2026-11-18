@@ -1,9 +1,4 @@
-import {
-  ActorRenderMode,
-  Enums,
-  utilities,
-  type Types,
-} from '@cornerstonejs/core';
+import { ActorRenderMode, Enums, type Types } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
 import type { Segmentation } from '../../../types/SegmentationStateTypes';
 import { getLabelmaps } from '../labelmapModel/labelmapLayerStore';
@@ -20,7 +15,6 @@ export type VolumeViewportLabelmapImageMapperState = {
 };
 
 type ViewportLabelmapImageMapperCompatibilityViewport = Types.IViewport & {
-  getCamera?: () => Pick<Types.ICamera, 'viewPlaneNormal' | 'viewUp'>;
   getCurrentImageIdIndex?: () => number;
   getDisplaySetRenderMode?: (
     displaySetId: string
@@ -49,9 +43,6 @@ type ViewportLabelmapImageMapperCompatibilityViewport = Types.IViewport & {
         };
       })
     | undefined;
-  getSliceViewInfo?: () => {
-    sliceIndex: number;
-  };
   getSourceDataId?: () => string | undefined;
   getVolumeId?: () => string | undefined;
   getResolvedView?: () =>
@@ -61,29 +52,6 @@ type ViewportLabelmapImageMapperCompatibilityViewport = Types.IViewport & {
     | undefined;
   type?: string;
 };
-
-/**
- * Returns true for a legacy volume viewport: it shows a volume slice and has
- * no next viewport API. A next planar viewport or a legacy adapter is handled
- * by the planar checks.
- */
-function viewportIsLegacyVolume(
-  viewport: Types.IViewport
-): viewport is Types.IVolumeViewport {
-  return (
-    utilities.getViewportContentMode(viewport) === 'volume' &&
-    !utilities.isGenericViewport(viewport)
-  );
-}
-
-function isSupportedImageMapperBlendMode(
-  blendMode: Enums.BlendModes | undefined
-): boolean {
-  return (
-    blendMode === Enums.BlendModes.COMPOSITE ||
-    blendMode === Enums.BlendModes.AVERAGE_INTENSITY_BLEND
-  );
-}
 
 function isPlanarGpuVolumeSliceViewport(
   viewport: Types.IViewport
@@ -223,13 +191,9 @@ function getLabelmapImageMapperCamera(
     .getResolvedView?.()
     ?.toICamera?.();
 
-  if (isLabelmapImageMapperCamera(resolvedCamera)) {
-    return resolvedCamera;
-  }
-
-  const legacyCamera = compatibilityViewport.getCamera?.();
-
-  return isLabelmapImageMapperCamera(legacyCamera) ? legacyCamera : undefined;
+  return isLabelmapImageMapperCamera(resolvedCamera)
+    ? resolvedCamera
+    : undefined;
 }
 
 function isLabelmapImageMapperCamera(
@@ -271,37 +235,12 @@ function getPlanarVolumeDataPresentation(
     : undefined;
 }
 
-function getCompatibilityBlendMode(
-  viewport: Types.IViewport
-): Enums.BlendModes | undefined {
-  if (viewportIsLegacyVolume(viewport)) {
-    return viewport.getBlendMode?.();
-  }
-
-  if (!isPlanarGpuVolumeSliceViewport(viewport)) {
-    return;
-  }
-
-  const presentationBlendMode =
-    getPlanarVolumeDataPresentation(viewport)?.blendMode;
-
-  if (presentationBlendMode !== undefined) {
-    return presentationBlendMode;
-  }
-
-  return Enums.BlendModes.AVERAGE_INTENSITY_BLEND;
-}
-
 /**
  * The slab thickness that a viewport shows. A viewport that samples its slice
  * on the CPU keeps the slab only in the presentation of its source, since its
  * image mapper has no slab.
  */
 function getCompatibilitySlabThickness(viewport: Types.IViewport): number {
-  if (viewportIsLegacyVolume(viewport)) {
-    return viewport.getSlabThickness?.() ?? MINIMUM_SLAB_THICKNESS;
-  }
-
   if (isPlanarSampledSliceViewport(viewport)) {
     return (
       getPlanarVolumeDataPresentation(viewport)?.slabThickness ??
@@ -398,35 +337,13 @@ export function shouldUseSliceRendering(
 export function canRenderVolumeViewportLabelmapAsImage(
   viewport: Types.IViewport
 ): viewport is ViewportLabelmapImageMapperCompatibilityViewport {
-  const isLegacyVolumeViewport = viewportIsLegacyVolume(viewport);
-  const isNextPlanarViewport = isPlanarVolumeSliceViewport(viewport);
-
-  if (!isLegacyVolumeViewport && !isNextPlanarViewport) {
-    return false;
-  }
-
-  const blendMode = getCompatibilityBlendMode(viewport);
-
-  if (isLegacyVolumeViewport && !isSupportedImageMapperBlendMode(blendMode)) {
+  if (!isPlanarVolumeSliceViewport(viewport)) {
     return false;
   }
 
   const slabThickness = getCompatibilitySlabThickness(viewport);
 
-  if (slabThickness > MINIMUM_SLAB_THICKNESS + SLAB_THICKNESS_EPSILON) {
-    return false;
-  }
-
-  if (isLegacyVolumeViewport) {
-    try {
-      viewport.getSliceViewInfo();
-      return true;
-    } catch {
-      return false;
-    }
-  }
-
-  return true;
+  return slabThickness <= MINIMUM_SLAB_THICKNESS + SLAB_THICKNESS_EPSILON;
 }
 
 export function getVolumeViewportLabelmapImageMapperState(
@@ -434,10 +351,7 @@ export function getVolumeViewportLabelmapImageMapperState(
 ): VolumeViewportLabelmapImageMapperState {
   const compatibilityViewport =
     viewport as ViewportLabelmapImageMapperCompatibilityViewport;
-  const isLegacyVolumeViewport = viewportIsLegacyVolume(viewport);
-  const isNextPlanarViewport = isPlanarVolumeSliceViewport(viewport);
-
-  if (!isLegacyVolumeViewport && !isNextPlanarViewport) {
+  if (!isPlanarVolumeSliceViewport(viewport)) {
     return {
       key: 'unsupported:viewport',
       sliceIndex: NaN,
@@ -455,45 +369,18 @@ export function getVolumeViewportLabelmapImageMapperState(
     };
   }
 
-  const { viewPlaneNormal, viewUp } = camera;
   const normalizedNormal = vec3.normalize(
     vec3.create(),
-    viewPlaneNormal as unknown as vec3
+    camera.viewPlaneNormal as unknown as vec3
   ) as Types.Point3;
-  const normalizedViewUp = vec3.normalize(
-    vec3.create(),
-    viewUp as unknown as vec3
-  ) as Types.Point3;
-  let sliceIndex: number | undefined;
-
-  if (isLegacyVolumeViewport) {
-    try {
-      sliceIndex = viewport.getSliceViewInfo().sliceIndex;
-    } catch {
-      sliceIndex = undefined;
-    }
-  } else {
-    sliceIndex = compatibilityViewport.getCurrentImageIdIndex?.();
-  }
-  const blendMode = getCompatibilityBlendMode(viewport);
+  const sliceIndex = compatibilityViewport.getCurrentImageIdIndex?.();
   const slabThickness = getCompatibilitySlabThickness(viewport);
 
   // The planar slice image lies in world coordinates and does not depend on
   // viewUp, so a turn of the view in its own plane needs no new slice.
-  const orientationKey = [
-    normalizedNormal.map((value) => value.toFixed(3)).join(','),
-    ...(isLegacyVolumeViewport
-      ? [normalizedViewUp.map((value) => value.toFixed(3)).join(',')]
-      : []),
-  ].join('|');
-
-  if (isLegacyVolumeViewport && !isSupportedImageMapperBlendMode(blendMode)) {
-    return {
-      key: `unsupported:blend:${blendMode}:${orientationKey}`,
-      sliceIndex: sliceIndex ?? NaN,
-      supported: false,
-    };
-  }
+  const orientationKey = normalizedNormal
+    .map((value) => value.toFixed(3))
+    .join(',');
 
   if (slabThickness > MINIMUM_SLAB_THICKNESS + SLAB_THICKNESS_EPSILON) {
     return {
@@ -503,20 +390,7 @@ export function getVolumeViewportLabelmapImageMapperState(
     };
   }
 
-  if (isLegacyVolumeViewport) {
-    try {
-      viewport.getSliceViewInfo();
-    } catch {
-      return {
-        key: `unsupported:oblique:${orientationKey}`,
-        sliceIndex: sliceIndex ?? NaN,
-        supported: false,
-      };
-    }
-  }
-
   if (
-    isNextPlanarViewport &&
     !isVolumeSliceRenderMode(getPlanarPrimaryRenderMode(compatibilityViewport))
   ) {
     return {

@@ -7,13 +7,14 @@ import {
   clipWorldLineToViewportCanvas,
   areViewportsSpatiallyLinked,
   translateViewportAlongNormal,
-  rotateViewportAroundWorldPoint,
 } from './index';
 import type { Plane } from './index';
 
 /**
- * Minimal axial viewport stand-in: the canvas maps world x/y linearly with
- * the canvas center at the camera focal point.
+ * Minimal axial next viewport stand-in: the canvas maps world x/y linearly
+ * with the canvas center at the camera focal point. A view reference with a
+ * focal point moves the camera along its normal. `getCamera` only reads the
+ * camera for the checks.
  */
 function createFakeAxialViewport({
   id = 'fakeViewport',
@@ -30,31 +31,42 @@ function createFakeAxialViewport({
     parallelScale: 100,
   };
 
+  const readCamera = () => ({
+    viewPlaneNormal: [...camera.viewPlaneNormal],
+    viewUp: [...camera.viewUp],
+    focalPoint: [...camera.focalPoint],
+    position: [...camera.position],
+    parallelScale: camera.parallelScale,
+  });
+
   return {
     id,
-    type: 'orthographic',
+    type: 'planarNext',
     renderingEngineId: 'fakeRenderingEngine',
-    canvas: { clientWidth: canvasSize, clientHeight: canvasSize },
+    element: { clientWidth: canvasSize, clientHeight: canvasSize },
+    setDisplaySets: () => undefined,
+    setDisplaySetPresentation: () => undefined,
+    setViewState: () => undefined,
+    getCurrentMode: () => 'volume',
     getFrameOfReferenceUID: () => frameOfReferenceUID,
     getViewReference: () => undefined,
-    getCamera: () => ({
-      viewPlaneNormal: [...camera.viewPlaneNormal],
-      viewUp: [...camera.viewUp],
-      focalPoint: [...camera.focalPoint],
-      position: [...camera.position],
-      parallelScale: camera.parallelScale,
-    }),
-    setCamera: (newCamera) => {
-      if (newCamera.focalPoint) {
-        camera.focalPoint = [...newCamera.focalPoint];
+    getResolvedView: () => ({ toICamera: readCamera }),
+    setViewReference: (viewReference) => {
+      const { cameraFocalPoint } = viewReference;
+
+      if (!cameraFocalPoint) {
+        return;
       }
-      if (newCamera.position) {
-        camera.position = [...newCamera.position];
-      }
-      if (newCamera.viewUp) {
-        camera.viewUp = [...newCamera.viewUp];
-      }
+
+      const distance = vec3.distance(camera.position, camera.focalPoint);
+      camera.focalPoint = [...cameraFocalPoint];
+      camera.position = [
+        cameraFocalPoint[0] + camera.viewPlaneNormal[0] * distance,
+        cameraFocalPoint[1] + camera.viewPlaneNormal[1] * distance,
+        cameraFocalPoint[2] + camera.viewPlaneNormal[2] * distance,
+      ];
     },
+    getCamera: readCamera,
     render: () => undefined,
     worldToCanvas: (world) => [
       world[0] - camera.focalPoint[0] + half,
@@ -305,40 +317,6 @@ describe('spatial utilities', () => {
       const viewport = createFakeAxialViewport({ focalPoint: [1, 2, 3] });
       expect(translateViewportAlongNormal(viewport as never, 0)).toBe(false);
       expect(viewport.getCamera().focalPoint).toEqual([1, 2, 3]);
-    });
-  });
-
-  describe('rotateViewportAroundWorldPoint', () => {
-    it('rotates the camera rigidly around the pivot', () => {
-      const viewport = createFakeAxialViewport({ focalPoint: [0, 0, 0] });
-
-      const rotated = rotateViewportAroundWorldPoint(
-        viewport as never,
-        [0, 0, 0],
-        [0, 1, 0],
-        Math.PI / 2
-      );
-      expect(rotated).toBe(true);
-
-      const camera = viewport.getCamera();
-      expect(camera.focalPoint[0]).toBeCloseTo(0);
-      expect(camera.focalPoint[1]).toBeCloseTo(0);
-      expect(camera.focalPoint[2]).toBeCloseTo(0);
-
-      // position [0, 0, 100] rotated +90deg around y -> [100, 0, 0]
-      expect(camera.position[0]).toBeCloseTo(100);
-      expect(camera.position[1]).toBeCloseTo(0);
-      expect(camera.position[2]).toBeCloseTo(0);
-
-      // Camera distance is preserved.
-      expect(vec3.distance(camera.position, camera.focalPoint)).toBeCloseTo(
-        100
-      );
-
-      // viewUp is perpendicular to the rotation axis here and unchanged.
-      expect(camera.viewUp[0]).toBeCloseTo(0);
-      expect(camera.viewUp[1]).toBeCloseTo(-1);
-      expect(camera.viewUp[2]).toBeCloseTo(0);
     });
   });
 });

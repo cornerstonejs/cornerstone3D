@@ -26,6 +26,7 @@ jest.mock('@cornerstonejs/core', () => {
       viewportIsInStackMode: (viewport) =>
         getViewportContentMode(viewport) === 'stack',
       getTargetVolumeAndSpacingInNormalDir: jest.fn(),
+      transformWorldToIndex: (imageData, point) => point,
     },
   };
 });
@@ -359,30 +360,6 @@ describe('utilities/planar/filterAnnotationsForDisplay', () => {
     jest.clearAllMocks();
   });
 
-  it('legacy VolumeViewport: delegates to filterAnnotationsWithinSlice using getCamera()', () => {
-    const inSlice = makeAnnotation({
-      viewPlaneNormal: [0, 0, 1],
-      points: [[0, 0, 0.2]],
-    });
-    const outOfSlice = makeAnnotation({
-      viewPlaneNormal: [0, 0, 1],
-      points: [[0, 0, 5]],
-    });
-    const viewport = {
-      type: 'orthographic',
-      getCamera: jest.fn(() => camera),
-    };
-    csUtils.getViewportContentMode.mockReturnValue('volume');
-    csUtils.getTargetVolumeAndSpacingInNormalDir.mockReturnValue({
-      spacingInNormalDirection: 2,
-    });
-
-    const result = filterAnnotationsForDisplay(viewport, [inSlice, outOfSlice]);
-
-    expect(result).toEqual([inSlice]);
-    expect(viewport.getCamera).toHaveBeenCalled();
-  });
-
   it('native volume-mode viewport: uses getViewportICamera bridge + geometric filter', () => {
     csUtils.getViewportContentMode.mockReturnValue('volume');
     csUtils.getTargetVolumeAndSpacingInNormalDir.mockReturnValue({
@@ -401,38 +378,6 @@ describe('utilities/planar/filterAnnotationsForDisplay', () => {
 
     expect(result).toEqual([inSlice]);
     expect(getViewportICamera).toHaveBeenCalledWith(viewport);
-  });
-
-  it('StackViewport: returns [] when there is no current image id', () => {
-    const viewport = {
-      type: 'stack',
-      getCurrentImageId: jest.fn(() => undefined),
-    };
-    csUtils.getViewportContentMode.mockReturnValue('stack');
-
-    const result = filterAnnotationsForDisplay(viewport, [makeAnnotation()]);
-
-    expect(result).toEqual([]);
-  });
-
-  it('StackViewport: strips the data-loader scheme and delegates to isReferenceViewable', () => {
-    const isReferenceViewable = jest.fn(() => true);
-    const viewport = {
-      type: 'stack',
-      getCurrentImageId: jest.fn(() => 'volumeLoader://1.2.3'),
-      isReferenceViewable,
-    };
-    csUtils.getViewportContentMode.mockReturnValue('stack');
-    const annotation = makeAnnotation();
-
-    const result = filterAnnotationsForDisplay(viewport, [annotation]);
-
-    expect(result).toEqual([annotation]);
-    // colonIndex is the first ':' (after the "volumeLoader" scheme); the
-    // "://" separator is preserved because substring starts at colonIndex+1.
-    expect(isReferenceViewable).toHaveBeenCalledWith(annotation.metadata, {
-      imageURI: '//1.2.3',
-    });
   });
 
   it('StackViewport: excludes invisible annotations without calling isReferenceViewable', () => {
@@ -698,19 +643,22 @@ describe('utilities/planar/isPlaneIntersectingAABB', () => {
 describe('utilities/planar/getPointInLineOfSightWithCriteria', () => {
   function makeViewport({ intensityFn }) {
     return {
-      getCamera: jest.fn(() => ({
-        focalPoint: [0, 0, 0],
-        viewPlaneNormal: [0, 0, 1],
-      })),
+      ...nextViewportApi(),
       // Bounds padded by 10 inside _inBounds -> usable range is (-5,5) on
-      // every axis for these tight bounds.
-      getBounds: jest.fn(() => [-15, 15, -15, 15, -15, 15]),
-      getIntensityFromWorld: jest.fn(intensityFn),
+      // every axis for these tight bounds. The index of a point is the point.
+      getImageData: jest.fn(() => ({
+        imageData: { getBounds: () => [-15, 15, -15, 15, -15, 15] },
+        voxelManager: { getAtIJKPoint: jest.fn(intensityFn) },
+      })),
     };
   }
 
   beforeEach(() => {
     jest.clearAllMocks();
+    getViewportICamera.mockReturnValue({
+      focalPoint: [0, 0, 0],
+      viewPlaneNormal: [0, 0, 1],
+    });
   });
 
   it('getPointsInLineOfSight samples symmetric steps along the normal within bounds', () => {

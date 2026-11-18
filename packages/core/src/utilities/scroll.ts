@@ -60,64 +60,67 @@ export default function scroll(
 
   const { volumeId, delta, scrollSlabs } = options;
 
+  // An ECG scrolls in time, and has no slice bounds.
+  if (getViewportContentMode(viewport) === 'ecg') {
+    (viewport as unknown as IStackViewport).scroll(delta);
+    return;
+  }
+
   if (
-    getViewportContentMode(viewport) === 'volume' &&
-    !isGenericViewport(viewport)
+    typeof (viewport as IStackViewport).getCurrentImageIdIndex !== 'function' ||
+    typeof (viewport as IStackViewport).scroll !== 'function'
   ) {
-    scrollVolume(viewport as IVolumeViewport, volumeId, delta, scrollSlabs);
-  } else {
-    // An ECG scrolls in time, and has no slice bounds.
-    if (getViewportContentMode(viewport) === 'ecg') {
-      (viewport as unknown as IStackViewport).scroll(delta);
-      return;
-    }
+    // Viewports without index-based scrolling (e.g. Generic 3D volume
+    // rendering) ignore scroll requests instead of throwing.
+    return;
+  }
 
-    if (
-      typeof (viewport as IStackViewport).getCurrentImageIdIndex !==
-        'function' ||
-      typeof (viewport as IStackViewport).scroll !== 'function'
-    ) {
-      // Viewports without index-based scrolling (e.g. Generic 3D volume
-      // rendering) ignore scroll requests instead of throwing.
-      return;
-    }
+  if (isNextPlanarViewport(viewport)) {
+    scrollNextPlanar(viewport, options);
+    return;
+  }
 
-    if (isNextPlanarViewport(viewport)) {
-      scrollNextPlanar(viewport, options);
-      return;
-    }
+  const imageIdIndex = (viewport as IStackViewport).getCurrentImageIdIndex();
 
-    const imageIdIndex = (viewport as IStackViewport).getCurrentImageIdIndex();
+  if (
+    imageIdIndex + delta >
+      (viewport as IStackViewport).getImageIds().length - 1 ||
+    imageIdIndex + delta < 0
+  ) {
+    const eventData: EventTypes.StackScrollOutOfBoundsEventDetail = {
+      imageIdIndex,
+      direction: delta,
+    };
+    triggerEvent(eventTarget, Events.STACK_SCROLL_OUT_OF_BOUNDS, eventData);
+  }
 
-    if (
-      imageIdIndex + delta >
-        (viewport as IStackViewport).getImageIds().length - 1 ||
-      imageIdIndex + delta < 0
-    ) {
-      const eventData: EventTypes.StackScrollOutOfBoundsEventDetail = {
-        imageIdIndex,
-        direction: delta,
-      };
-      triggerEvent(eventTarget, Events.STACK_SCROLL_OUT_OF_BOUNDS, eventData);
-    }
-
-    if (getViewportContentMode(viewport) === 'volume') {
-      (viewport as ViewportWithScrollOptions).scroll(
-        delta,
-        options.debounceLoading,
-        options.loop,
-        { volumeId, scrollSlabs }
-      );
-      return;
-    }
-
-    (viewport as IStackViewport).scroll(
+  if (getViewportContentMode(viewport) === 'volume') {
+    (viewport as ViewportWithScrollOptions).scroll(
       delta,
       options.debounceLoading,
-      options.loop
+      options.loop,
+      { volumeId, scrollSlabs }
     );
+    return;
   }
+
+  (viewport as IStackViewport).scroll(
+    delta,
+    options.debounceLoading,
+    options.loop
+  );
 }
+
+/**
+ * The steps of a scroll of a planar viewport in volume mode that are not the
+ * slices of its source: the slice range of the target volume along the view,
+ * the step along the normal and the camera they were measured on.
+ */
+export type PlanarVolumeScrollSteps = {
+  camera: ICamera;
+  sliceRange: ActorSliceRange;
+  spacingInNormalDirection: number;
+};
 
 /**
  * A generic viewport in volume mode whose `scroll` also takes the volume
@@ -131,17 +134,6 @@ type ViewportWithScrollOptions = {
     loop?: boolean,
     options?: Pick<ScrollOptions, 'volumeId' | 'scrollSlabs'>
   ): unknown;
-};
-
-/**
- * The steps of a scroll of a planar viewport in volume mode that are not the
- * slices of its source: the slice range of the target volume along the view,
- * the step along the normal and the camera they were measured on.
- */
-export type PlanarVolumeScrollSteps = {
-  camera: ICamera;
-  sliceRange: ActorSliceRange;
-  spacingInNormalDirection: number;
 };
 
 /**

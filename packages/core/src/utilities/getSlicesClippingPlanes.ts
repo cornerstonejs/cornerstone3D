@@ -12,7 +12,6 @@ import { getViewportContentMode } from './viewportCapabilities';
 
 /** The members that give the slices of a viewport, where it has them. */
 type SliceViewport = {
-  getSlicesClippingPlanes?: () => SliceClippingPlanes[];
   getImageIds?: () => string[];
   getVolumeId?: () => string | undefined;
   getResolvedView?: () => { toICamera(): ICamera } | undefined;
@@ -57,8 +56,6 @@ function getStackSlicesClippingPlanes(
  * slice. It answers for a viewport that shows a volume and for one that
  * shows a stack.
  *
- * - A viewport with its own `getSlicesClippingPlanes` (a legacy volume
- *   viewport) answers itself.
  * - A viewport that shows a volume gives one entry for each slice along its
  *   view, from the volume and the camera of its resolved view. The index
  *   counts along the view direction, as `getCurrentImageIdIndex` does.
@@ -79,10 +76,6 @@ function getSlicesClippingPlanes(
   viewport: IViewport | IGenericViewport
 ): SliceClippingPlanes[] {
   const sliceViewport = viewport as SliceViewport;
-
-  if (typeof sliceViewport.getSlicesClippingPlanes === 'function') {
-    return sliceViewport.getSlicesClippingPlanes();
-  }
 
   const contentMode = getViewportContentMode(viewport);
 

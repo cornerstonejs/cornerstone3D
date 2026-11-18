@@ -1,18 +1,14 @@
 import { vec3 } from 'gl-matrix';
-import { utilities } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import getViewportICamera from '../../utilities/getViewportICamera';
 
 /**
- * The view plane normal of a viewport. A next viewport has no `getCamera`, so
- * its normal comes from its resolved view.
+ * The view plane normal of a viewport, from its resolved view.
  */
 function getViewPlaneNormal(
   viewport: Types.IStackViewport | Types.IVolumeViewport
 ): Types.Point3 {
-  return utilities.isGenericViewport(viewport)
-    ? getViewportICamera(viewport).viewPlaneNormal
-    : viewport.getCamera().viewPlaneNormal;
+  return getViewportICamera(viewport).viewPlaneNormal;
 }
 
 export default function areViewportsCoplanar(

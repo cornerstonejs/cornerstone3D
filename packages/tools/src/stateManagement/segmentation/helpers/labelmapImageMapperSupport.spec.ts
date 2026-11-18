@@ -43,36 +43,11 @@ const { getLabelmaps } = jest.requireMock(
 
 const { Enums } = jest.requireMock('@cornerstonejs/core');
 
-function makeLegacyVolumeViewport(opts: {
-  blendMode?: number;
-  slabThickness?: number;
-  sliceIndex?: number;
-  obliqueThrows?: boolean;
-  camera?: { viewPlaneNormal: number[]; viewUp: number[] };
-}) {
-  const viewport: Record<string, unknown> = { type: 'orthographic' };
-  viewport.getBlendMode = jest.fn(
-    () => opts.blendMode ?? Enums.BlendModes.COMPOSITE
-  );
-  viewport.getSlabThickness = jest.fn(() => opts.slabThickness ?? 0.1);
-  viewport.getSliceViewInfo = jest.fn(() => {
-    if (opts.obliqueThrows) {
-      throw new Error('oblique not supported');
-    }
-    return { sliceIndex: opts.sliceIndex ?? 0 };
-  });
-  (viewport as unknown as { getCamera: () => unknown }).getCamera = jest.fn(
-    () => opts.camera ?? { viewPlaneNormal: [0, 0, 1], viewUp: [0, 1, 0] }
-  );
-  return viewport as unknown as Record<string, unknown>;
-}
-
 function makePlanarNextViewport(opts: {
   renderMode?: string;
   blendMode?: number;
   slabThickness?: number;
   sliceIndex?: number;
-  camera?: { viewPlaneNormal: number[]; viewUp: number[] };
   resolvedCamera?: { viewPlaneNormal: number[]; viewUp: number[] };
 }) {
   const renderMode = opts.renderMode ?? 'VTK_VOLUME_SLICE';
@@ -106,8 +81,6 @@ function makePlanarNextViewport(opts: {
       opts.resolvedCamera
         ? { toICamera: () => opts.resolvedCamera }
         : undefined,
-    getCamera: () =>
-      opts.camera ?? { viewPlaneNormal: [0, 0, 1], viewUp: [0, 1, 0] },
   };
 }
 
@@ -252,42 +225,13 @@ describe('canRenderVolumeViewportLabelmapAsImage', () => {
     ).toBe(false);
   });
 
-  it('rejects legacy volume viewports with an unsupported blend mode', () => {
-    const viewport = makeLegacyVolumeViewport({
-      blendMode: Enums.BlendModes.LABELMAP_EDGE_PROJECTION_BLEND,
-    });
-    expect(canRenderVolumeViewportLabelmapAsImage(viewport as never)).toBe(
-      false
-    );
-  });
-
   it('rejects when slab thickness exceeds the supported minimum', () => {
-    const viewport = makeLegacyVolumeViewport({
+    const viewport = makePlanarNextViewport({
       blendMode: Enums.BlendModes.COMPOSITE,
       slabThickness: 5,
     });
     expect(canRenderVolumeViewportLabelmapAsImage(viewport as never)).toBe(
       false
-    );
-  });
-
-  it('rejects when getSliceViewInfo throws (oblique view)', () => {
-    const viewport = makeLegacyVolumeViewport({
-      blendMode: Enums.BlendModes.COMPOSITE,
-      obliqueThrows: true,
-    });
-    expect(canRenderVolumeViewportLabelmapAsImage(viewport as never)).toBe(
-      false
-    );
-  });
-
-  it('accepts supported legacy volume viewport with COMPOSITE blend and orthogonal slab', () => {
-    const viewport = makeLegacyVolumeViewport({
-      blendMode: Enums.BlendModes.COMPOSITE,
-      slabThickness: 0.1,
-    });
-    expect(canRenderVolumeViewportLabelmapAsImage(viewport as never)).toBe(
-      true
     );
   });
 
@@ -366,32 +310,10 @@ describe('getVolumeViewportLabelmapImageMapperState', () => {
   });
 
   it('returns unsupported:camera when no camera is available', () => {
-    const viewport: Record<string, unknown> = { type: 'orthographic' };
-    // Strip getCamera to force the camera-missing branch
-    (viewport as unknown as { getCamera?: () => unknown }).getCamera =
-      undefined;
+    const viewport = makePlanarNextViewport({ slabThickness: 0.1 });
     const state = getVolumeViewportLabelmapImageMapperState(viewport as never);
     expect(state.supported).toBe(false);
     expect(state.key).toBe('unsupported:camera');
-  });
-
-  it('encodes orientation and slice index in the key for supported state', () => {
-    const viewport = makeLegacyVolumeViewport({
-      blendMode: Enums.BlendModes.COMPOSITE,
-      slabThickness: 0.1,
-      sliceIndex: 42,
-      camera: { viewPlaneNormal: [0, 0, 1], viewUp: [0, 1, 0] },
-    });
-    const state = getVolumeViewportLabelmapImageMapperState(viewport as never);
-    expect(state.supported).toBe(true);
-    expect(state.sliceIndex).toBe(42);
-    // NOTE: source uses .toFixed(3) on a Float32Array from vec3.normalize, which
-    // coerces the strings back to integers — so the key contains "0,0,1" rather
-    // than the intended "0.000,0.000,1.000". The assertion below matches the
-    // current behavior; if the source is fixed to preserve precision, update
-    // this expectation.
-    expect(state.key).toMatch(/^supported:[^|]+\|[^|:]+:42$/);
-    expect(state.key).toContain(':42');
   });
 
   it('keeps the planar key when the view turns in its own plane', () => {
@@ -431,6 +353,7 @@ describe('getVolumeViewportLabelmapImageMapperState', () => {
       makePlanarNextViewport({
         renderMode: 'VTK_SAMPLED_SLICE',
         slabThickness: 10,
+        resolvedCamera: { viewPlaneNormal: [0, 0, 1], viewUp: [0, 1, 0] },
       }) as never
     );
 
@@ -438,48 +361,29 @@ describe('getVolumeViewportLabelmapImageMapperState', () => {
     expect(state.key.startsWith('unsupported:slab:10.000:')).toBe(true);
   });
 
-  it('marks unsupported blend mode with a distinct key', () => {
-    const viewport = makeLegacyVolumeViewport({
-      blendMode: Enums.BlendModes.LABELMAP_EDGE_PROJECTION_BLEND,
-    });
-    const state = getVolumeViewportLabelmapImageMapperState(viewport as never);
-    expect(state.supported).toBe(false);
-    expect(state.key.startsWith('unsupported:blend:')).toBe(true);
-  });
-
   it('marks unsupported slab thickness with a distinct key', () => {
-    const viewport = makeLegacyVolumeViewport({
+    const viewport = makePlanarNextViewport({
       blendMode: Enums.BlendModes.COMPOSITE,
       slabThickness: 10,
+      resolvedCamera: { viewPlaneNormal: [0, 0, 1], viewUp: [0, 1, 0] },
     });
     const state = getVolumeViewportLabelmapImageMapperState(viewport as never);
     expect(state.supported).toBe(false);
     expect(state.key.startsWith('unsupported:slab:')).toBe(true);
   });
 
-  it('marks oblique projection (getSliceViewInfo throws) as unsupported', () => {
-    const viewport = makeLegacyVolumeViewport({
-      blendMode: Enums.BlendModes.COMPOSITE,
-      slabThickness: 0.1,
-      obliqueThrows: true,
-    });
-    const state = getVolumeViewportLabelmapImageMapperState(viewport as never);
-    expect(state.supported).toBe(false);
-    expect(state.key.startsWith('unsupported:oblique:')).toBe(true);
-  });
-
   it('marks planar-next with non-VTK_VOLUME_SLICE render mode as unsupported via renderMode key', () => {
     // This case requires the viewport to pass the planar-next type guard
     // (which checks for VTK_VOLUME_SLICE primary mode) but then drift into
     // a different mode by the time the state function inspects it. The
-    // guard is conservative, so we exercise it via the legacy branch above.
-    // Here we just confirm legacy volume + supported branch encodes slice
-    // index from a different viewport configuration.
-    const viewport = makeLegacyVolumeViewport({
+    // guard is conservative, so here we just confirm that a planar-next
+    // viewport in the supported state encodes the slice index from a
+    // different viewport configuration.
+    const viewport = makePlanarNextViewport({
       blendMode: Enums.BlendModes.AVERAGE_INTENSITY_BLEND,
       slabThickness: 0.1,
       sliceIndex: 7,
-      camera: { viewPlaneNormal: [1, 0, 0], viewUp: [0, 1, 0] },
+      resolvedCamera: { viewPlaneNormal: [1, 0, 0], viewUp: [0, 1, 0] },
     });
     const state = getVolumeViewportLabelmapImageMapperState(viewport as never);
     expect(state.supported).toBe(true);

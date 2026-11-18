@@ -8,28 +8,21 @@ import { getViewportPresentation } from './viewportPresentation';
 const { RENDERING_DEFAULTS } = CONSTANTS;
 
 /**
- * Returns the viewport's slab thickness, defaulting to the minimum slab thickness
- * for native (Generic) viewports which have no slab API.
+ * Returns the minimum slab thickness: a next viewport has no slab API of the
+ * legacy volume viewport.
  */
-export function getSlabThicknessOrDefault(viewport: Types.IViewport): number {
-  if (csUtils.isGenericViewport(viewport)) {
-    return RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS;
-  }
-  return (viewport as Types.IVolumeViewport).getSlabThickness();
+export function getSlabThicknessOrDefault(_viewport: Types.IViewport): number {
+  return RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS;
 }
 
 /**
  * The full depth in mm that a viewport's slab shows, or undefined when the
  * viewport shows no slab of its own.
  *
- * The two kinds of viewport keep the slab differently:
- *
- * - A next planar viewport keeps it in the presentation of its source
- *   display set, as a full thickness. This function passes that value
- *   through. A stack has no slab.
- * - A legacy volume viewport stores a half thickness in `getSlabThickness`,
- *   because the clipping planes sit at `focalPoint ± slabThickness`. This
- *   function doubles that value.
+ * A next planar viewport keeps it in the presentation of its source display
+ * set, as a full thickness. This function passes that value through. A stack
+ * has no slab, and a viewport without display set presentations gives
+ * undefined.
  *
  * A caller that needs a depth, such as a brush fill, must use this function
  * and not the raw value. See
@@ -49,16 +42,7 @@ export function getViewSlabDepthOfViewport(
     return csUtils.getViewSlabDepth(presentation?.slabThickness);
   }
 
-  // Stack viewports have no slab API at all, so keep the call optional.
-  const slabThickness = (
-    viewport as Types.IVolumeViewport
-  ).getSlabThickness?.();
-
-  if (!Number.isFinite(slabThickness)) {
-    return undefined;
-  }
-
-  return csUtils.getViewSlabDepth(slabThickness * 2);
+  return undefined;
 }
 
 /**

@@ -87,11 +87,7 @@ export function getSegmentIndexAtWorldForLabelmap(
     ? getViewportLabelmapRenderMode(viewport)
     : 'unsupported';
 
-  if (
-    viewportRenderMode === 'volume' ||
-    (utilities.viewportIsInVolumeMode(viewport) &&
-      !utilities.isGenericViewport(viewport))
-  ) {
+  if (viewportRenderMode === 'volume') {
     for (const layer of getLabelmaps(segmentation)) {
       const segmentationVolume = getOrCreateLabelmapVolume(layer);
 

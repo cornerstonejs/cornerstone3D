@@ -242,22 +242,4 @@ describe('playClip on next viewports', () => {
     }).not.toThrow();
     expect(scrollMock).not.toHaveBeenCalled();
   });
-
-  it('keeps playing the time points of a legacy volume viewport', () => {
-    const volume = makeDynamicVolume('dynamic-volume');
-    const viewport = {
-      type: 'orthographic',
-      id: 'legacy-volume',
-      element: document.createElement('div'),
-      getAllVolumeIds: jest.fn(() => ['dynamic-volume']),
-    };
-    const element = mountViewport(viewport as Record<string, unknown>);
-
-    registerVolumes(volume);
-    playClip(element, { framesPerSecond: 10 });
-    jest.advanceTimersByTime(100);
-    stopClip(element);
-
-    expect(volume.scroll).toHaveBeenCalledWith(1);
-  });
 });

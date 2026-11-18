@@ -85,20 +85,6 @@ describe('legacy viewport utilities on legacy viewports and legacy adapters', ()
   });
 
   describe('getViewportImageIds', () => {
-    it('reads the volume image ids of a legacy volume viewport', () => {
-      const getVolume = jest
-        .spyOn(cache, 'getVolume')
-        .mockReturnValue({ imageIds: ['a', 'b'] });
-      const viewport = makeLegacy('orthographic', {
-        getVolumeId: () => 'ct',
-        getImageIds: () => ['unused'],
-      });
-
-      expect(getViewportImageIds(viewport)).toEqual(['a', 'b']);
-      expect(getVolume).toHaveBeenCalledWith('ct');
-      getVolume.mockRestore();
-    });
-
     it('keeps asking a volume-mode adapter for its image ids', () => {
       const getVolume = jest.spyOn(cache, 'getVolume');
       const viewport = makeAdapter('volume', 'orthographic', {
@@ -121,21 +107,6 @@ describe('legacy viewport utilities on legacy viewports and legacy adapters', ()
       expect(() => scroll(viewport, { delta: 1 })).toThrow(
         'Scroll::Stack Viewport has no images'
       );
-    });
-
-    it('scrolls a legacy volume viewport through its camera', () => {
-      const viewport = useViewport(
-        makeLegacy('orthographic', { scroll: jest.fn() })
-      );
-
-      scroll(viewport, { delta: 1, volumeId: 'ct' });
-
-      expect(getVolumeViewportScrollInfo).toHaveBeenCalledWith(
-        viewport,
-        'ct',
-        false
-      );
-      expect(viewport.scroll).not.toHaveBeenCalled();
     });
 
     it('scrolls a volume-mode adapter through its scroll, with the volume options', () => {

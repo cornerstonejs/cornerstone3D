@@ -5,20 +5,12 @@ import { getRenderingEngine, utilities } from '@cornerstonejs/core';
  * Whether a VOI_MODIFIED event gives the targets an invert to take. The
  * event of a next viewport carries the invert of its display set in
  * `invert`, in stack mode and in volume mode, and the targets take it when
- * it is set. A legacy viewport says with `invertStateChanged` that its
- * invert changed.
+ * it is set.
  */
 function givesInvert(
-  sourceViewport: Types.IViewportId,
   eventDetail: Types.EventTypes.VoiModifiedEventDetail
 ): boolean {
-  const viewport = getRenderingEngine(
-    sourceViewport.renderingEngineId
-  )?.getViewport(sourceViewport.viewportId);
-
-  return utilities.isGenericViewport(viewport)
-    ? eventDetail.invert !== undefined
-    : Boolean(eventDetail.invertStateChanged);
+  return eventDetail.invert !== undefined;
 }
 
 /**
@@ -74,7 +66,7 @@ export default function voiSyncCallback(
     voiRange: range,
   };
 
-  if (options?.syncInvertState && givesInvert(sourceViewport, eventDetail)) {
+  if (options?.syncInvertState && givesInvert(eventDetail)) {
     tProperties.invert = invert;
   }
   if (options?.syncColormap && colormap) {
@@ -85,21 +77,7 @@ export default function voiSyncCallback(
     tProperties.colormap = colormap;
   }
 
-  const legacyContentMode = utilities.isGenericViewport(tViewport)
-    ? undefined
-    : utilities.getViewportContentMode(tViewport);
-
-  if (legacyContentMode === 'volume' || legacyContentMode === 'volume3d') {
-    const volumeViewport = tViewport as Types.IBaseVolumeViewport;
-    const isFusion = volumeViewport._actors && volumeViewport._actors.size > 1;
-    if (isFusion) {
-      volumeViewport.setProperties(tProperties, volumeId);
-    } else {
-      volumeViewport.setProperties(tProperties);
-    }
-  } else if (legacyContentMode === 'stack') {
-    (tViewport as Types.IStackViewport).setProperties(tProperties);
-  } else if (utilities.isGenericViewport(tViewport)) {
+  if (utilities.isGenericViewport(tViewport)) {
     // Direct Generic ("next") viewports expose presentation per display set
     // rather than setProperties. Map the source change's volumeId to THIS
     // viewport's binding so a fusion overlay (e.g. PT) update lands on the PT

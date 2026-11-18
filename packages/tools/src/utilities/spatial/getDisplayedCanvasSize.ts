@@ -1,4 +1,3 @@
-import { utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 /**
@@ -17,14 +16,9 @@ export default function getDisplayedCanvasSize(
   clientWidth: number;
   clientHeight: number;
 } {
-  if (csUtils.isGenericViewport(viewport)) {
-    const { element } = viewport;
-    return {
-      clientWidth: element?.clientWidth ?? 0,
-      clientHeight: element?.clientHeight ?? 0,
-    };
-  }
-
-  const { clientWidth = 0, clientHeight = 0 } = viewport.canvas ?? {};
-  return { clientWidth, clientHeight };
+  const { element } = viewport;
+  return {
+    clientWidth: element?.clientWidth ?? 0,
+    clientHeight: element?.clientHeight ?? 0,
+  };
 }

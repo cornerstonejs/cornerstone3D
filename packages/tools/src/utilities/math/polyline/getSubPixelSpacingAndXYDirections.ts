@@ -27,13 +27,10 @@ const getSubPixelSpacingAndXYDirections = (
   let xDir;
   let yDir;
 
-  // Native ("next") generic viewports are not StackViewport/VolumeViewport
-  // instances. A stack-mode generic viewport exposes the slice plane directly
-  // through getImageData (like a legacy stack), so it uses the image-direction
-  // path; a volume-mode generic viewport keeps the camera-relative path but
-  // reads the camera through the getViewportICamera bridge (it has no native
-  // getCamera, which previously threw and aborted the draw loop).
-  const isGeneric = csUtils.isGenericViewport(viewport);
+  // A stack-mode viewport exposes the slice plane directly through
+  // getImageData, so it uses the image-direction path; a volume-mode viewport
+  // keeps the camera-relative path and reads the camera through the
+  // getViewportICamera bridge (it has no getCamera).
   const isImageSlice = csUtils.viewportIsInStackMode(viewport);
 
   if (isImageSlice) {
@@ -52,8 +49,8 @@ const getSubPixelSpacingAndXYDirections = (
     // Check volume directions
     const imageData = viewport.getImageData();
     const { direction, spacing: volumeSpacing } = imageData;
-    const { viewPlaneNormal, viewUp } = (
-      isGeneric ? getViewportICamera(viewport) : viewport.getCamera()
+    const { viewPlaneNormal, viewUp } = getViewportICamera(
+      viewport
     ) as Types.ICamera;
 
     // Calculate size of spacing vector in normal direction

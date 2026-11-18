@@ -1,9 +1,4 @@
-import {
-  CONSTANTS,
-  getEnabledElement,
-  utilities as csUtils,
-  metaData,
-} from '@cornerstonejs/core';
+import { getEnabledElement, utilities as csUtils } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
 
@@ -23,7 +18,6 @@ import registerRenderMethods from './planarFreehandROITool/renderMethods';
 import type {
   EventTypes,
   ToolHandle,
-  Annotation,
   Annotations,
   AnnotationStyle,
   PublicToolProps,
@@ -49,9 +43,6 @@ import sampleAreaAnnotationVoxels from '../../utilities/sampleAreaAnnotationVoxe
 const { createPolylineShape } = csUtils.voxelSlab;
 
 const { pointCanProjectOnLine } = polyline;
-const { EPSILON } = CONSTANTS;
-
-const PARALLEL_THRESHOLD = 1 - EPSILON;
 
 /**
  * PlanarFreehandROITool lets you draw annotations that define an arbitrarily drawn region.
@@ -448,142 +439,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
 
-    let annotationsToDisplay;
-
-    if (
-      csUtils.getViewportContentMode(viewport) === 'volume' &&
-      !csUtils.isGenericViewport(viewport)
-    ) {
-      const camera = viewport.getCamera();
-
-      const { spacingInNormalDirection } =
-        csUtils.getTargetVolumeAndSpacingInNormalDir(
-          viewport as Types.IVolumeViewport,
-          camera
-        );
-
-      // Get data with same normal and within the same slice
-      annotationsToDisplay = this.filterAnnotationsWithinSlice(
-        baseFilteredAnnotations,
-        camera,
-        spacingInNormalDirection
-      );
-    } else {
-      // Use the default `filterAnnotationsForDisplay` utility, as the stack
-      // path doesn't require handles.
-      annotationsToDisplay = filterAnnotationsForDisplay(viewport, annotations);
-    }
-
-    return annotationsToDisplay;
-  }
-
-  /**
-   * Altered version of the `utilities.planar.filterAnnotationsWithinSlice`,
-   * which uses the polyline position rather than the handle. As the polyline is
-   * always present.
-   */
-  private filterAnnotationsWithinSlice(
-    annotations: Annotations,
-    camera: Types.ICamera,
-    spacingInNormalDirection: number
-  ): Annotations {
-    const { viewPlaneNormal } = camera;
-
-    const annotationsWithParallelNormals = annotations.filter(
-      (td: Annotation) => {
-        let annotationViewPlaneNormal = td.metadata.viewPlaneNormal;
-
-        if (
-          !td.metadata.referencedImageId &&
-          !annotationViewPlaneNormal &&
-          td.metadata.FrameOfReferenceUID
-        ) {
-          for (const point of td.data.contour.polyline) {
-            const vector = vec3.sub(vec3.create(), point, camera.focalPoint);
-            const dotProduct = vec3.dot(vector, camera.viewPlaneNormal);
-            if (!csUtils.isEqual(dotProduct, 0)) {
-              return false;
-            }
-          }
-          td.metadata.viewPlaneNormal = camera.viewPlaneNormal;
-          td.metadata.cameraFocalPoint = camera.focalPoint;
-          return true;
-        }
-
-        if (!annotationViewPlaneNormal) {
-          // This code is run to set the annotation view plane normal
-          // for historical data which was saved without the normal.
-          const { referencedImageId } = td.metadata;
-          const { imageOrientationPatient } = metaData.get(
-            'imagePlaneModule',
-            referencedImageId
-          );
-          const rowCosineVec = vec3.fromValues(
-            imageOrientationPatient[0],
-            imageOrientationPatient[1],
-            imageOrientationPatient[2]
-          );
-
-          const colCosineVec = vec3.fromValues(
-            imageOrientationPatient[3],
-            imageOrientationPatient[4],
-            imageOrientationPatient[5]
-          );
-
-          annotationViewPlaneNormal = vec3.create() as Types.Point3;
-
-          vec3.cross(annotationViewPlaneNormal, rowCosineVec, colCosineVec);
-          td.metadata.viewPlaneNormal = annotationViewPlaneNormal;
-        }
-
-        const isParallel =
-          Math.abs(vec3.dot(viewPlaneNormal, annotationViewPlaneNormal)) >
-          PARALLEL_THRESHOLD;
-
-        return annotationViewPlaneNormal && isParallel;
-      }
-    ) as PlanarFreehandROIAnnotation[];
-
-    // No in plane annotations.
-    if (!annotationsWithParallelNormals.length) {
-      return [];
-    }
-
-    // Annotation should be within the slice, which means that it should be between
-    // camera's focalPoint +/- spacingInNormalDirection.
-
-    const halfSpacingInNormalDirection = spacingInNormalDirection / 2;
-    const { focalPoint } = camera;
-
-    const annotationsWithinSlice = [];
-
-    for (const annotation of annotationsWithParallelNormals) {
-      const data = annotation.data;
-      const point = data.contour.polyline[0];
-
-      if (!annotation.isVisible) {
-        continue;
-      }
-
-      // A = point
-      // B = focal point
-      // P = normal
-
-      // B-A dot P  => Distance in the view direction.
-      // this should be less than half the slice distance.
-
-      const dir = vec3.create();
-
-      vec3.sub(dir, focalPoint, point);
-
-      const dot = vec3.dot(dir, viewPlaneNormal);
-
-      if (Math.abs(dot) < halfSpacingInNormalDirection) {
-        annotationsWithinSlice.push(annotation);
-      }
-    }
-
-    return annotationsWithinSlice;
+    return filterAnnotationsForDisplay(viewport, annotations);
   }
 
   protected isContourSegmentationTool(): boolean {

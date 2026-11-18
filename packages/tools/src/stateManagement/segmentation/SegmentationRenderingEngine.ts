@@ -319,16 +319,6 @@ const deferredSegmentationRenderTimers = new Map<
 function isProjectionHeavySegmentationViewport(
   viewport: Types.IViewport
 ): boolean {
-  // Legacy volume viewports render labelmap-over-MIP by switching the whole
-  // viewport to the edge-projection blend mode.
-  const blendMode = (
-    viewport as Partial<{ getBlendMode: () => Enums.BlendModes }>
-  ).getBlendMode?.();
-
-  if (blendMode === Enums.BlendModes.LABELMAP_EDGE_PROJECTION_BLEND) {
-    return true;
-  }
-
   // Generic planar viewports are projection-heavy when any of their display
   // sets renders across a slab (e.g. a MIP source with a projected labelmap
   // overlay, which inherits the source's slab thickness).

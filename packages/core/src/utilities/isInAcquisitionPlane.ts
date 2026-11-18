@@ -12,8 +12,6 @@ type AcquisitionPlaneViewport = {
 /**
  * Whether a viewport shows its data in the plane it was acquired in.
  *
- * - A viewport with its own `isInAcquisitionPlane` (a legacy viewport, a
- *   legacy adapter) answers itself.
  * - A viewport that shows a stack, a video or a whole slide image shows one
  *   image plane: true.
  * - A viewport that shows a volume: true when its view plane normal shows
@@ -26,10 +24,6 @@ type AcquisitionPlaneViewport = {
  */
 function isInAcquisitionPlane(viewport: IViewport | IGenericViewport): boolean {
   const planeViewport = viewport as AcquisitionPlaneViewport;
-
-  if (typeof planeViewport.isInAcquisitionPlane === 'function') {
-    return planeViewport.isInAcquisitionPlane();
-  }
 
   const contentMode = getViewportContentMode(viewport);
 

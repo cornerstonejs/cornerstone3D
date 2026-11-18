@@ -23,16 +23,14 @@ const ZOOM_PAN_SELECTOR: Types.ViewPresentationSelector = {
  * @param sourceViewport - The list of IDs defining the source viewport.
  * @param targetViewport - The list of IDs defining the target viewport, never
  *   the same as sourceViewport.
- * @param cameraModifiedEvent - The CAMERA_MODIFIED event.
+ * @param _cameraModifiedEvent - The CAMERA_MODIFIED event.
  */
 export default function cameraSyncCallback(
   synchronizerInstance: Synchronizer,
   sourceViewport: Types.IViewportId,
   targetViewport: Types.IViewportId,
-  cameraModifiedEvent: CustomEvent
+  _cameraModifiedEvent: CustomEvent
 ): void {
-  const { camera } = cameraModifiedEvent.detail;
-
   const renderingEngine = getRenderingEngine(targetViewport.renderingEngineId);
   if (!renderingEngine) {
     throw new Error(
@@ -73,10 +71,6 @@ export default function cameraSyncCallback(
       ZOOM_PAN_SELECTOR
     );
     applyViewportPresentation(tViewport, zoomPanPresentation);
-  } else {
-    (tViewport as Types.IStackViewport | Types.IVolumeViewport).setCamera(
-      camera
-    );
   }
 
   tViewport.render();

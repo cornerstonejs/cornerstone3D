@@ -395,15 +395,13 @@ class WholeBodySegmentTool extends GrowCutBaseTool {
   }
 
   /**
-   * The volume that a viewport in volume mode shows: the first volume of
-   * `getAllVolumeIds` on a legacy volume viewport or an adapter, else the
-   * volume of `getVolumeId`, as on a direct next viewport.
+   * The volume that a viewport in volume mode shows: the volume of
+   * `getVolumeId`.
    */
   private _getViewportVolume(viewport: Types.IViewport) {
     const volumeViewport = viewport as Types.IBaseVolumeViewport;
     const volumeId = csUtils.viewportIsInVolumeMode(viewport)
-      ? (volumeViewport.getAllVolumeIds?.()[0] ??
-        volumeViewport.getVolumeId?.())
+      ? volumeViewport.getVolumeId?.()
       : undefined;
 
     if (!volumeId) {

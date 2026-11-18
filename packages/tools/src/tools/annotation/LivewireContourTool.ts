@@ -182,8 +182,6 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
 
     if (
       isVolumeViewport &&
-      typeof (viewport as Types.IVolumeViewport).getSliceViewInfo !==
-        'function' &&
       typeof (viewport as { getResolvedView?: unknown }).getResolvedView !==
         'function'
     ) {
@@ -274,8 +272,6 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
         : undefined) ??
         sourceViewport.getDefaultVOIRange(dataId) ??
         undefined) as Types.VOIRange;
-    } else {
-      ({ voiRange } = viewport.getProperties());
     }
     const startPos = worldToSlice(worldPos);
 

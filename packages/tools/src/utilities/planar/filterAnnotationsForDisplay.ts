@@ -31,10 +31,8 @@ export default function filterAnnotationsForDisplay(
   if (csUtils.getViewportContentMode(viewport) === 'volume') {
     // Native PLANAR_NEXT viewports do not implement getCamera(); the ICamera
     // bridge derives the equivalent { viewPlaneNormal, focalPoint, ... } from the
-    // resolved view / view reference. Legacy VolumeViewport returns its camera.
-    const camera = csUtils.isGenericViewport(viewport)
-      ? (getViewportICamera(viewport) as Types.ICamera)
-      : viewport.getCamera();
+    // resolved view / view reference.
+    const camera = getViewportICamera(viewport) as Types.ICamera;
 
     const { spacingInNormalDirection } =
       csUtils.getTargetVolumeAndSpacingInNormalDir(
@@ -48,24 +46,6 @@ export default function filterAnnotationsForDisplay(
       camera,
       spacingInNormalDirection
     );
-  }
-  if (
-    csUtils.viewportIsInStackMode(viewport) &&
-    !csUtils.isGenericViewport(viewport)
-  ) {
-    // 1. Get the currently displayed imageId from the StackViewport
-    const imageId = (viewport as Types.IStackViewport).getCurrentImageId();
-
-    if (!imageId) {
-      return [];
-    }
-
-    // 2. remove the dataLoader scheme since it might be an annotation that was
-    // created on the volumeViewport initially and has the volumeLoader scheme
-    // but shares the same imageId
-    const colonIndex = imageId.indexOf(':');
-
-    filterOptions.imageURI = imageId.substring(colonIndex + 1);
   }
   return annotations.filter((annotation) => {
     if (!annotation.isVisible) {

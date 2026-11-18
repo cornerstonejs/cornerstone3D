@@ -12,17 +12,10 @@ function extractWindowLevelRegionToolData(
   const contentMode = csUtils.getViewportContentMode(viewport);
 
   if (contentMode === 'volume') {
-    const volumeViewport = viewport as Types.IVolumeViewport;
-
-    return csUtils.isGenericViewport(viewport)
-      ? extractImageDataGenericVolume(volumeViewport)
-      : extractImageDataVolume(volumeViewport);
+    return extractImageDataGenericVolume(viewport as Types.IVolumeViewport);
   }
   if (csUtils.isGenericViewport(viewport)) {
     return extractImageDataGeneric(viewport);
-  }
-  if (contentMode === 'stack') {
-    return extractImageDataStack(viewport as Types.IStackViewport);
   }
 
   throw new Error('Viewport not supported');
@@ -60,27 +53,6 @@ function extractImageDataVolume(viewport: Types.IVolumeViewport) {
     rows: width,
     columns: height,
     // color,
-  };
-}
-
-function extractImageDataStack(viewport: Types.IStackViewport) {
-  const imageData = viewport.getImageData();
-  const { scalarData } = imageData;
-  const { min: minPixelValue, max: maxPixelValue } =
-    csUtils.getMinMax(scalarData);
-  const width = imageData.dimensions[0];
-  const height = imageData.dimensions[1];
-  const { rows, columns, color } = viewport.getCornerstoneImage();
-
-  return {
-    scalarData,
-    width,
-    height,
-    minPixelValue,
-    maxPixelValue,
-    rows,
-    columns,
-    color,
   };
 }
 

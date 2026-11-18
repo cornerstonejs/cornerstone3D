@@ -1,25 +1,11 @@
-import * as metaData from '../../metaData';
 import * as CONSTANTS from '../../constants';
 import * as Enums from '../../enums';
-import type * as Types from '../../types';
 import type OrientationVectors from '../../types/OrientationVectors';
-import { coreLog } from '../../utilities/logger';
 
 import { vec3 } from 'gl-matrix';
 
 const { MPR_CAMERA_VALUES } = CONSTANTS;
 const { OrientationAxis } = Enums;
-const log = coreLog.getLogger('RenderingEngine', 'getCameraVectors');
-
-export interface CameraPositionConfig {
-  orientation?: Enums.OrientationAxis;
-  useViewportNormal?: boolean;
-}
-
-export type CameraVectorViewport = Pick<
-  Types.IBaseVolumeViewport,
-  'getActors' | 'getCamera' | 'getCurrentImageId' | 'getImageIds' | 'type'
->;
 
 /**
  * Calculate camera position values based on DICOM image orientation vectors.
@@ -205,104 +191,6 @@ export function calculateCameraPosition(
       number,
     ],
   };
-}
-
-/**
- * Calculate camera position values from viewport metadata.
- *
- * This is a convenience function that extracts DICOM image orientation data
- * from a viewport and automatically calculates the appropriate camera position
- * values. It handles the complete workflow from DICOM metadata extraction
- * to camera coordinate system calculation.
- *
- * Workflow:
- * 1. Extract current image ID from viewport
- * 2. Get ImageOrientationPatient from DICOM metadata
- * 3. Parse row and column cosine vectors from ImageOrientationPatient
- * 4. Calculate scan axis normal via cross product
- * 5. Auto-detect orientation if not provided
- * 6. Calculate and return camera position values
- *
- * @param viewport - Cornerstone3D volume viewport instance containing the image data.
- *                   Must have a valid current image ID with associated DICOM metadata.
- * @param config - Configuration object with orientation and normal source options.
- *                 - orientation: Optional target orientation axis. If not provided, the function
- *                   will automatically determine the best orientation based on the scan axis normal vector.
- *                 - useViewportNormal: If true, uses viewport.getCamera().viewPlaneNormal instead of
- *                   calculating from DICOM image orientation data.
- *
- * @returns Object containing the mapped camera coordinate system:
- *          - viewPlaneNormal: Vector perpendicular to the viewing plane
- *          - viewUp: Vector pointing "up" in the camera coordinate system
- *          - viewRight: Vector pointing "right" in the camera coordinate system
- *
- * @throws Will throw an error if the viewport doesn't have a current image ID
- *         or if the DICOM metadata is missing ImageOrientationPatient information.
- *
- * @example
- * ```typescript
- * // Auto-detect orientation
- * const cameraValues = getCameraVectors(viewport);
- *
- * // Force specific orientation
- * const axialCameraValues = getCameraVectors(viewport, { orientation: OrientationAxis.AXIAL });
- *
- * // Use viewport camera normal instead of image normal
- * const viewportCameraValues = getCameraVectors(viewport, { useViewportNormal: true });
- * ```
- */
-export function getCameraVectors(
-  viewport: CameraVectorViewport,
-  config?: CameraPositionConfig
-) {
-  if (!viewport.getActors()?.length) {
-    return;
-  }
-
-  if (viewport.type !== Enums.ViewportType.ORTHOGRAPHIC) {
-    log.warn('Viewport should be a volume viewport');
-  }
-  let imageId = viewport.getCurrentImageId();
-  if (!imageId) {
-    imageId = viewport.getImageIds()?.[0];
-  }
-  if (!imageId) {
-    return;
-  }
-  const { imageOrientationPatient } = metaData.get(
-    Enums.MetadataModules.IMAGE_PLANE,
-    imageId
-  );
-  const rowCosineVec = vec3.fromValues(
-    imageOrientationPatient[0],
-    imageOrientationPatient[1],
-    imageOrientationPatient[2]
-  );
-  const colCosineVec = vec3.fromValues(
-    imageOrientationPatient[3],
-    imageOrientationPatient[4],
-    imageOrientationPatient[5]
-  );
-  const scanAxisNormal = vec3.cross(vec3.create(), rowCosineVec, colCosineVec);
-  let { orientation } = config || {};
-  const { useViewportNormal } = config || {};
-  let normalPlaneForOrientation = scanAxisNormal;
-  if (useViewportNormal) {
-    normalPlaneForOrientation = viewport.getCamera().viewPlaneNormal;
-  }
-
-  // Auto-detect orientation if not provided or if REFORMAT is specified
-  if (!orientation || orientation === OrientationAxis.REFORMAT) {
-    orientation = getOrientationFromScanAxisNormal(normalPlaneForOrientation);
-  }
-
-  // Use the new calculateCameraPosition function
-  return calculateCameraPosition(
-    rowCosineVec,
-    colCosineVec,
-    scanAxisNormal,
-    orientation
-  );
 }
 
 /**

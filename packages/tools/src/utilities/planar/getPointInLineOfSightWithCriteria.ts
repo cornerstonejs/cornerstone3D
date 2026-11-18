@@ -97,20 +97,15 @@ export function getPointsInLineOfSight(
 }
 
 /**
- * The intensity at a world point. A legacy viewport answers with its own
- * member. A next viewport answers from its image data: that of the target
- * volume, or of the image on display when it shows a stack. Undefined when
- * the viewport has no image data.
+ * The intensity at a world point, from the image data of the viewport: that
+ * of the target volume, or of the image on display when it shows a stack.
+ * Undefined when the viewport has no image data.
  */
 function getIntensityAtPoint(
   viewport: Types.IVolumeViewport | PlanarViewport,
   point: Types.Point3,
   targetVolumeId: string
 ): number {
-  if (!csUtils.isGenericViewport(viewport)) {
-    return viewport.getIntensityFromWorld(point);
-  }
-
   const viewportImageData = viewport.getImageData(targetVolumeId);
 
   if (!viewportImageData?.voxelManager) {
@@ -125,19 +120,14 @@ function getIntensityAtPoint(
 }
 
 /**
- * The bounds that a line of sight stays in. A legacy viewport answers with
- * its own member. A next viewport answers from its image data: the bounds of
- * the target volume, or of the image on display when it shows a stack.
- * Undefined when the viewport has no image data.
+ * The bounds that a line of sight stays in, from the image data of the
+ * viewport: the bounds of the target volume, or of the image on display when
+ * it shows a stack. Undefined when the viewport has no image data.
  */
 function getLineOfSightBounds(
   viewport: Types.IVolumeViewport | PlanarViewport,
   targetVolumeId: string
 ): number[] {
-  if (!csUtils.isGenericViewport(viewport)) {
-    return viewport.getBounds();
-  }
-
   return viewport.getImageData(targetVolumeId)?.imageData.getBounds();
 }
 

@@ -29,7 +29,6 @@ import type {
 } from '../types';
 import { getViewportClassForInput } from './helpers/viewportTypeToViewportClass';
 import copyWebGLCanvasToCanvas from './helpers/copyWebGLCanvasToCanvas';
-import { isGenericViewport } from '../utilities/viewportCapabilities';
 
 /**
  * ContextPoolRenderingEngine extends BaseRenderingEngine to provide parallel rendering
@@ -266,16 +265,14 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
    * is hidden in favor of the CPU canvas. Measuring from the viewport element
    * instead always reflects the real container size, so native viewports are
    * detected on container resize and their resize() (which refits the active
-   * CPU/VTK canvas) actually runs. Legacy viewports keep measuring their canvas.
+   * CPU/VTK canvas) actually runs.
    */
   private _getDisplayedSize(vp: IViewport): {
     displayedWidth: number;
     displayedHeight: number;
   } {
     const devicePixelRatio = window.devicePixelRatio || 1;
-    const sizeSource = isGenericViewport(vp)
-      ? vp.element
-      : getOrCreateCanvas(vp.element);
+    const sizeSource = vp.element;
     return {
       displayedWidth: Math.round(sizeSource.clientWidth * devicePixelRatio),
       displayedHeight: Math.round(sizeSource.clientHeight * devicePixelRatio),
@@ -339,43 +336,6 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
 
     vtkDrivenViewports.forEach((vp) => {
       vp.resize?.();
-
-      if (isGenericViewport(vp)) {
-        // Generic ("next") viewports (PlanarViewport / PLANAR_NEXT) refit
-        // inside their own resize() (recompute fitScale + reapply presentation
-        // with scaleMode 'fit') and do NOT expose the legacy getCamera/setCamera/
-        // setViewPresentation surface. Skip the legacy snapshot/restore dance.
-        return;
-      }
-
-      const prevCamera = vp.getCamera();
-      const rotation = vp.getRotation?.() ?? 0;
-      const { flipHorizontal } = prevCamera;
-      const resizeResetViewport = vp as IViewport & {
-        resetCameraForResize?: () => boolean;
-        resetViewStateForResize?: () => boolean;
-      };
-
-      if (resizeResetViewport.resetViewStateForResize) {
-        resizeResetViewport.resetViewStateForResize();
-      } else {
-        resizeResetViewport.resetCameraForResize?.();
-      }
-
-      const displayArea = vp.getDisplayArea();
-
-      if (keepCamera) {
-        if (displayArea) {
-          if (flipHorizontal) {
-            vp.setCamera({ flipHorizontal });
-          }
-          if (rotation) {
-            vp.setViewPresentation({ rotation });
-          }
-        } else {
-          vp.setCamera(prevCamera);
-        }
-      }
     });
 
     if (immediate) {

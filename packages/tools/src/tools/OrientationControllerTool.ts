@@ -118,13 +118,9 @@ const ANIMATE_RESET_CAMERA_OPTIONS = {
 
 /**
  * Whether the orientation of a viewport can change: a 3D viewport, and a
- * viewport that shows a volume. A legacy viewport answers itself.
+ * viewport that shows a volume.
  */
 function canChangeOrientation(viewport: Types.IViewport): boolean {
-  if (!cornerstoneUtilities.isGenericViewport(viewport)) {
-    return viewport.isOrientationChangeable();
-  }
-
   return (
     viewport.type === Enums.ViewportType.VOLUME_3D_NEXT ||
     cornerstoneUtilities.viewportIsInVolumeMode(viewport)

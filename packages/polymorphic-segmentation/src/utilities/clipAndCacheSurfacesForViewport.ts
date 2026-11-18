@@ -58,22 +58,10 @@ const triggerWorkerProgress = (eventTarget, progress) => {
 /**
  * The clipping planes of each slice of a viewport, by
  * `utilities.getSlicesClippingPlanes` of the core: for a viewport that shows
- * a volume, and for a next viewport or an adapter that shows a stack, where
- * each image is a slice. A legacy viewport without its own
- * `getSlicesClippingPlanes` (a legacy stack viewport) has none, as before.
+ * a volume, and for a next viewport that shows a stack, where each image is
+ * a slice.
  */
 function getSlicesClippingPlanes(viewport: Types.IVolumeViewport) {
-  const legacyViewport = viewport as {
-    getSlicesClippingPlanes?: Types.IVolumeViewport['getSlicesClippingPlanes'];
-  };
-
-  if (
-    !cornerstoneUtilities.isGenericViewport(viewport) &&
-    typeof legacyViewport.getSlicesClippingPlanes !== 'function'
-  ) {
-    return;
-  }
-
   return cornerstoneUtilities.getSlicesClippingPlanes(viewport);
 }
 

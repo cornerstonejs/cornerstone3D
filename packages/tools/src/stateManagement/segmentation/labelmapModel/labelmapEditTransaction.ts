@@ -1,4 +1,4 @@
-import { cache, utilities } from '@cornerstonejs/core';
+import { cache } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type { Segmentation } from '../../../types/SegmentationStateTypes';
@@ -96,18 +96,6 @@ type EraseLabelmapEditTransactionOptions = {
    *  caller can record them for undo/redo. */
   crossLayerEraseCallback?: (record: CrossLayerEraseRecord) => void;
 };
-
-/**
- * Returns true for a legacy volume viewport: it shows volume content and has
- * no next viewport API. A next viewport or a legacy adapter in volume mode
- * edits its labelmap layers through the stack path, as it did before.
- */
-function isLegacyVolumeViewport(viewport?: Types.IViewport): boolean {
-  return (
-    utilities.viewportIsInVolumeMode(viewport) &&
-    !utilities.isGenericViewport(viewport)
-  );
-}
 
 function getProtectedSegmentIndicesForLayer(
   segmentation: Segmentation,
@@ -324,9 +312,7 @@ function getLockedVoxelsOnOtherLayers(
     editedLayer?.referencedImageIds && editedImageIndex >= 0
       ? getReferencedImageIdForImageIndex(editedLayer, editedImageIndex)
       : undefined;
-  const isVolumeEdit =
-    targetOptions.preferVolume ||
-    isLegacyVolumeViewport(targetOptions.viewport);
+  const isVolumeEdit = targetOptions.preferVolume;
 
   const lockedVoxels: LockedLabelmapVoxels[] = [];
   labelValuesByLayer.forEach((labelValues, lockedLabelmapId) => {
@@ -425,11 +411,7 @@ function resolveLabelmapLayerEditTarget(
 ): LabelmapLayerEditTarget {
   const imageId = getLabelmapLayerImageId(layer, options);
 
-  if (
-    options.preferVolume ||
-    layer.volumeId ||
-    isLegacyVolumeViewport(options.viewport)
-  ) {
+  if (options.preferVolume || layer.volumeId) {
     const volume = getOrCreateLabelmapVolume(layer);
 
     return {
@@ -570,7 +552,7 @@ function eraseLabelmapEditTransactionOverwrites(
       return;
     }
 
-    if (isLegacyVolumeViewport(options.viewport) || layer.volumeId) {
+    if (layer.volumeId) {
       eraseVolumeLayer(layer, binding, options, modifiedSlices);
       return;
     }

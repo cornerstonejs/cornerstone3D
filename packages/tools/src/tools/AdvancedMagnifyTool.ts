@@ -227,7 +227,6 @@ class AdvancedMagnifyTool extends AnnotationTool {
     const { currentPoints, element } = eventDetail;
     const enabledElement = getEnabledElement(element);
     const { viewport, renderingEngine } = enabledElement;
-    const worldPos = currentPoints.world;
     const canvasPos = currentPoints.canvas;
     const { magnifyingGlass: config } = this.configuration;
     const { radius, zoomFactor, autoPan } = config;
@@ -240,10 +239,7 @@ class AdvancedMagnifyTool extends AnnotationTool {
 
     // Native PLANAR_NEXT ("next") source viewports have no getCamera; read the
     // orientation through the lane-agnostic getViewportICamera helper instead.
-    const isNativeSource = csUtils.isGenericViewport(viewport);
-    const { viewPlaneNormal, viewUp } = isNativeSource
-      ? getViewportICamera(viewport)
-      : viewport.getCamera();
+    const { viewPlaneNormal, viewUp } = getViewportICamera(viewport);
 
     // The base getReferencedImageId derives the image id by string-splitting the
     // targetId, which on a native viewport is a frameOfReference-prefixed id and
@@ -251,9 +247,8 @@ class AdvancedMagnifyTool extends AnnotationTool {
     // currentImageId may be undefined for a reconstructed/volume plane; it is only
     // stored as annotation metadata and tolerated (the loupe is built from
     // getImageIds()/getCurrentImageIdIndex()).
-    const referencedImageId = isNativeSource
-      ? getNativeSourceProperties(viewport).currentImageId
-      : this.getReferencedImageId(viewport, worldPos, viewPlaneNormal, viewUp);
+    const referencedImageId =
+      getNativeSourceProperties(viewport).currentImageId;
 
     const annotationUID = csUtils.uuidv4();
     const magnifyViewportId = csUtils.uuidv4();
@@ -1144,9 +1139,7 @@ class AdvancedMagnifyViewportManager {
 
   /**
    * Whether the image that a source viewport now shows needs its magnifying
-   * glasses to be made again. A legacy viewport and a legacy adapter say so
-   * themselves (`stackActorReInitialized`). For a next viewport it is true
-   * when the rows, the columns or the number of components differ from those
+   * glasses to be made again: when the rows, the columns or the number of components differ from those
    * of the image that it showed before. An event without an image, as a new
    * slice of a volume, changes nothing.
    */
@@ -1155,13 +1148,6 @@ class AdvancedMagnifyViewportManager {
     image: Types.IImage | undefined,
     magnifyViewportsMapEntries: MagnifyViewportsMapEntry[]
   ): boolean {
-    const { stackActorReInitialized } =
-      viewport as Partial<Types.IStackViewport>;
-
-    if (typeof stackActorReInitialized === 'boolean') {
-      return stackActorReInitialized;
-    }
-
     const size = getSourceImageSize(image);
 
     if (!size) {
@@ -1209,9 +1195,7 @@ class AdvancedMagnifyViewportManager {
     }
 
     const { viewPlaneNormal: currentViewPlaneNormal } =
-      csUtils.isGenericViewport(viewport)
-        ? getViewportICamera(viewport)
-        : viewport.getCamera();
+      getViewportICamera(viewport);
 
     magnifyViewportsMapEntries.forEach(({ annotation }) => {
       annotation.metadata.referencedImageId = imageId;
@@ -1538,44 +1522,24 @@ class AdvancedMagnifyViewport {
     magnifyViewport,
     zoomFactor
   ) {
-    if (csUtils.isGenericViewport(viewport)) {
-      // Native PLANAR_NEXT has no getCamera/parallelScale and its on-screen canvas is
-      // hidden (offsetWidth === 0). Reconstruct the source's parallelScale geometrically:
-      // worldPerPixel (vertical) comes from canvasToWorld of two element-space points one
-      // pixel apart, and parallelScale = worldPerPixel * elementHeight / 2. Then apply the
-      // same legacy formula: parallelScaleSource * (1/zoom) * (loupeWidth / sourceWidth).
-      const sourceElement = viewport.element as HTMLElement;
-      const sourceWidth = sourceElement.clientWidth;
-      const sourceHeight = sourceElement.clientHeight;
-      const worldTop = viewport.canvasToWorld([0, 0] as Types.Point2);
-      const worldBottom = viewport.canvasToWorld([0, 1] as Types.Point2);
-      const worldPerPixel = vec3.distance(
-        worldTop as Types.Point3,
-        worldBottom as Types.Point3
-      );
-      const parallelScaleSource = (worldPerPixel * sourceHeight) / 2;
-      const canvasRatio = magnifyViewport.canvas.offsetWidth / sourceWidth;
+    // Native PLANAR_NEXT has no getCamera/parallelScale and its on-screen canvas is
+    // hidden (offsetWidth === 0). Reconstruct the source's parallelScale geometrically:
+    // worldPerPixel (vertical) comes from canvasToWorld of two element-space points one
+    // pixel apart, and parallelScale = worldPerPixel * elementHeight / 2. Then apply the
+    // same legacy formula: parallelScaleSource * (1/zoom) * (loupeWidth / sourceWidth).
+    const sourceElement = viewport.element as HTMLElement;
+    const sourceWidth = sourceElement.clientWidth;
+    const sourceHeight = sourceElement.clientHeight;
+    const worldTop = viewport.canvasToWorld([0, 0] as Types.Point2);
+    const worldBottom = viewport.canvasToWorld([0, 1] as Types.Point2);
+    const worldPerPixel = vec3.distance(
+      worldTop as Types.Point3,
+      worldBottom as Types.Point3
+    );
+    const parallelScaleSource = (worldPerPixel * sourceHeight) / 2;
+    const canvasRatio = magnifyViewport.canvas.offsetWidth / sourceWidth;
 
-      return parallelScaleSource * (1 / zoomFactor) * canvasRatio;
-    }
-
-    const { parallelScale } = viewport.getCamera();
-    const canvasRatio =
-      magnifyViewport.canvas.offsetWidth / viewport.canvas.offsetWidth;
-
-    return parallelScale * (1 / zoomFactor) * canvasRatio;
-  }
-
-  private _isStackViewport(
-    viewport: Types.IViewport
-  ): viewport is Types.IStackViewport {
-    return 'setStack' in viewport;
-  }
-
-  private _isVolumeViewport(
-    viewport: Types.IViewport
-  ): viewport is Types.IVolumeViewport {
-    return 'addVolumes' in viewport;
+    return parallelScaleSource * (1 / zoomFactor) * canvasRatio;
   }
 
   private _cloneToolGroups(
@@ -1630,39 +1594,20 @@ class AdvancedMagnifyViewport {
     });
   }
 
-  private _cloneVolumes(
-    sourceViewport: Types.IVolumeViewport,
-    magnifyViewport: Types.IVolumeViewport
-  ): Types.IVolumeViewport {
-    const actors = sourceViewport.getActors();
-    const volumeInputArray: Types.IVolumeInput[] = actors
-      .filter((actor) => !isSegmentation(actor))
-      .map((actor) => ({ volumeId: actor.referencedId }));
-
-    magnifyViewport.setVolumes(volumeInputArray).then(() => {
-      this._isViewportReady = true;
-      this.update();
-    });
-
-    return magnifyViewport;
-  }
-
   private _cloneViewport(sourceViewport, magnifyElement) {
     const { viewportId: magnifyViewportId } = this;
     const renderingEngine =
       sourceViewport.getRenderingEngine() as Types.IRenderingEngine;
 
-    const { options: sourceViewportOptions } = sourceViewport;
     // Native PLANAR_NEXT sources have no setStack/setProperties/setCamera, so the loupe
     // can't be a native viewport. Mirror MagnifyTool: back the loupe with a legacy STACK
     // viewport so every clone/sync call below uses the legacy API surface. The native
     // source still feeds it via getImageIds()/getCurrentImageIdIndex().
-    const isNativeSource = csUtils.isGenericViewport(sourceViewport);
     const viewportInput = {
       element: magnifyElement,
       viewportId: magnifyViewportId,
-      type: isNativeSource ? Enums.ViewportType.STACK : sourceViewport.type,
-      defaultOptions: isNativeSource ? {} : { ...sourceViewportOptions },
+      type: Enums.ViewportType.STACK,
+      defaultOptions: {},
     };
 
     renderingEngine.enableElement(viewportInput);
@@ -1671,17 +1616,10 @@ class AdvancedMagnifyViewport {
       renderingEngine.getViewport(magnifyViewportId)
     );
 
-    if (isNativeSource || this._isStackViewport(sourceViewport)) {
-      this._cloneStack(
-        sourceViewport as Types.IStackViewport,
-        magnifyViewport as Types.IStackViewport
-      );
-    } else if (this._isVolumeViewport(sourceViewport)) {
-      this._cloneVolumes(
-        sourceViewport,
-        magnifyViewport as Types.IVolumeViewport
-      );
-    }
+    this._cloneStack(
+      sourceViewport as Types.IStackViewport,
+      magnifyViewport as Types.IStackViewport
+    );
 
     // Prevent handling events outside of the magnifying glass because it has rounded border
     this._inheritBorderRadius(magnifyElement);
@@ -2033,11 +1971,8 @@ class AdvancedMagnifyViewport {
 
     // Native PLANAR_NEXT has no getCamera; read flip state through the projection-aware
     // helper. The loupe (legacy STACK) still exposes getCamera.
-    const native = csUtils.isGenericViewport(sourceViewport)
-      ? getNativeSourceProperties(sourceViewport)
-      : undefined;
     const { flipHorizontal, flipVertical } =
-      native ?? sourceViewport.getCamera();
+      getNativeSourceProperties(sourceViewport);
 
     const { focalPoint, position, viewPlaneNormal } =
       magnifyViewport.getCamera();
@@ -2079,14 +2014,12 @@ class AdvancedMagnifyViewport {
   private _syncViewports() {
     const { viewport: sourceViewport } = this._sourceEnabledElement;
     const { viewport: magnifyViewport } = this._enabledElement;
-    const isNativeSource = csUtils.isGenericViewport(sourceViewport);
 
     // Native PLANAR_NEXT has no getProperties; read its VOI/LUT via the display-set
     // presentation keyed by the source data id (mirrors MagnifyTool). The loupe is a
     // legacy STACK viewport, so setProperties below still works.
-    const sourceProperties = isNativeSource
-      ? getNativeSourceProperties(sourceViewport).properties
-      : sourceViewport.getProperties();
+    const sourceProperties =
+      getNativeSourceProperties(sourceViewport).properties;
     const imageData = magnifyViewport.getImageData();
 
     if (!imageData) {
@@ -2098,12 +2031,10 @@ class AdvancedMagnifyViewport {
 
     // Native sources are driven as a stack (legacy STACK loupe); keep the loupe's image
     // index in sync via getCurrentImageIdIndex(), which native viewports support.
-    if (isNativeSource || this._isStackViewport(sourceViewport)) {
-      this._syncStackViewports(
-        sourceViewport as Types.IStackViewport,
-        magnifyViewport as Types.IStackViewport
-      );
-    }
+    this._syncStackViewports(
+      sourceViewport as Types.IStackViewport,
+      magnifyViewport as Types.IStackViewport
+    );
 
     this._syncViewportsCameras(sourceViewport, magnifyViewport);
     magnifyViewport.render();
