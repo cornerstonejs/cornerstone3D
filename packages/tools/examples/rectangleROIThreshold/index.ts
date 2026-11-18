@@ -1,9 +1,9 @@
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import {
   cache,
   RenderingEngine,
   Enums,
-  setVolumesForViewports,
+  utilities,
   volumeLoader,
 } from '@cornerstonejs/core';
 import {
@@ -13,9 +13,11 @@ import {
   addButtonToToolbar,
   addSliderToToolbar,
   addDropdownToToolbar,
-  setCtTransferFunctionForVolumeActor,
-  setPetColorMapTransferFunctionForVolumeActor,
 } from '../../../../utils/demo/helpers';
+import {
+  ctPresentation,
+  petColorMapPresentation,
+} from '../../../../utils/demo/helpers/volumePresentationRecipes';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import perfusionColorMap from './preset';
 
@@ -51,6 +53,8 @@ const volumeId = ptVolumeId;
 
 const segmentationId = 'MY_SEGMENTATION_ID';
 const toolGroupId = 'MY_TOOLGROUP_ID';
+const ctDisplaySetId = 'rectangleROIThreshold:ct';
+const ptDisplaySetId = 'rectangleROIThreshold:pt';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -341,7 +345,7 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: viewportId1,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element1,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
@@ -350,7 +354,7 @@ async function run() {
     },
     {
       viewportId: viewportId2,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element2,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -359,7 +363,7 @@ async function run() {
     },
     {
       viewportId: viewportId3,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element3,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
@@ -379,29 +383,31 @@ async function run() {
   ctVolume.load();
 
   // Set volumes on the viewports
-  await setVolumesForViewports(
-    renderingEngine,
-    [{ volumeId, callback: setCtTransferFunctionForVolumeActor }],
-    [viewportId1, viewportId2, viewportId3]
-  );
+  utilities.genericViewportDisplaySetMetadataProvider.add(ctDisplaySetId, {
+    kind: 'planar',
+    imageIds: ctImageIds,
+    volumeId: ctVolumeId,
+  });
+  utilities.genericViewportDisplaySetMetadataProvider.add(ptDisplaySetId, {
+    kind: 'planar',
+    imageIds: ptImageIds,
+    volumeId: ptVolumeId,
+  });
 
-  await setVolumesForViewports(
-    renderingEngine,
-    [
-      {
-        volumeId: ctVolumeId,
-        callback: setCtTransferFunctionForVolumeActor,
-      },
-      {
-        volumeId: ptVolumeId,
-        callback: ({ volumeActor }) =>
-          setPetColorMapTransferFunctionForVolumeActor({
-            volumeActor,
-            preset: perfusionColorMap,
-          }),
-      },
-    ],
-    [viewportId1, viewportId2, viewportId3]
+  await Promise.all(
+    [viewportId1, viewportId2, viewportId3].map(async (viewportId) => {
+      const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
+
+      await viewport.setDisplaySets(
+        { displaySetId: ctDisplaySetId },
+        { displaySetId: ptDisplaySetId }
+      );
+      viewport.setDisplaySetPresentation(ctDisplaySetId, ctPresentation());
+      viewport.setDisplaySetPresentation(
+        ptDisplaySetId,
+        petColorMapPresentation(perfusionColorMap)
+      );
+    })
   );
 
   // Add the segmentation representation to the viewports

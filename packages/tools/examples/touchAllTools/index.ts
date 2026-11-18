@@ -1,8 +1,8 @@
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
-  setVolumesForViewports,
+  utilities,
   volumeLoader,
   getConfiguration,
   getRenderingCapabilities,
@@ -15,13 +15,13 @@ import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
-  setCtTransferFunctionForVolumeActor,
   addDropdownToToolbar,
   addSliderToToolbar,
   addButtonToToolbar,
   ctVoiRange,
 } from '../../../../utils/demo/helpers';
 import addSegmentIndexDropdown from '../../../../utils/demo/helpers/addSegmentIndexDropdown';
+import { ctPresentation } from '../../../../utils/demo/helpers/volumePresentationRecipes';
 import { eventTarget } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -83,6 +83,8 @@ const stackToolGroupId = 'STACK_TOOLGROUP_ID';
 const renderingEngineId = 'myRenderingEngine';
 const viewportIdSagittal = 'CT_SAGITTAL';
 const viewportIdStack = 'CT_STACK';
+const volumeDisplaySetId = 'touchAllTools:volume';
+const stackDisplaySetId = 'touchAllTools:stack';
 
 setTitleAndDescription(
   'Touch: All Tools',
@@ -325,8 +327,8 @@ addButtonToToolbar({
   onClick: () => {
     const renderingEngine = window.renderingEngine as RenderingEngine;
     [viewportIdSagittal, viewportIdStack].forEach((viewportId) => {
-      const viewport = renderingEngine.getViewport(viewportId);
-      viewport.resetCamera();
+      const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
+      viewport.resetViewState();
       viewport.render();
     });
   },
@@ -814,7 +816,7 @@ async function run() {
   renderingEngine.setViewports([
     {
       viewportId: viewportIdSagittal,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: elementSagittal,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -823,7 +825,7 @@ async function run() {
     },
     {
       viewportId: viewportIdStack,
-      type: ViewportType.STACK,
+      type: ViewportType.PLANAR_NEXT,
       element: elementStack,
       defaultOptions: {
         background: [0, 0, 0] as Types.Point3,
@@ -836,17 +838,33 @@ async function run() {
 
   volume.load();
 
-  await setVolumesForViewports(
-    renderingEngine,
-    [{ volumeId, callback: setCtTransferFunctionForVolumeActor }],
-    [viewportIdSagittal]
+  utilities.genericViewportDisplaySetMetadataProvider.add(volumeDisplaySetId, {
+    kind: 'planar',
+    imageIds,
+    volumeId,
+  });
+
+  const sagittalViewport =
+    renderingEngine.getViewport<PlanarViewport>(viewportIdSagittal);
+
+  await sagittalViewport.setDisplaySets({ displaySetId: volumeDisplaySetId });
+  sagittalViewport.setDisplaySetPresentation(
+    volumeDisplaySetId,
+    ctPresentation()
   );
 
-  const stackViewport = renderingEngine.getViewport(
-    viewportIdStack
-  ) as Types.IStackViewport;
-  await stackViewport.setStack(imageIds, Math.floor(imageIds.length / 2));
-  stackViewport.setProperties({ voiRange: ctVoiRange });
+  utilities.genericViewportDisplaySetMetadataProvider.add(stackDisplaySetId, {
+    kind: 'planar',
+    imageIds,
+    initialImageIdIndex: Math.floor(imageIds.length / 2),
+  });
+
+  const stackViewport =
+    renderingEngine.getViewport<PlanarViewport>(viewportIdStack);
+  await stackViewport.setDisplaySets({ displaySetId: stackDisplaySetId });
+  stackViewport.setDisplaySetPresentation(stackDisplaySetId, {
+    voiRange: ctVoiRange,
+  });
 
   // The stack viewport decodes independently of the volume, so checking both
   // separates a decoder failure (neither has data) from a volume-pipeline one.

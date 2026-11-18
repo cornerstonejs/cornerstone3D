@@ -1,9 +1,9 @@
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import {
   cache,
   RenderingEngine,
   Enums,
-  setVolumesForViewports,
+  utilities,
   volumeLoader,
 } from '@cornerstonejs/core';
 import {
@@ -14,11 +14,13 @@ import {
   addCheckboxToToolbar,
   addDropdownToToolbar,
   addInputToToolbar,
-  setCtTransferFunctionForVolumeActor,
-  setPetColorMapTransferFunctionForVolumeActor,
-  setPetTransferFunctionForVolumeActor,
   getLocalUrl,
 } from '../../../../utils/demo/helpers';
+import {
+  ctPresentation,
+  petColorMapPresentation,
+  petPresentation,
+} from '../../../../utils/demo/helpers/volumePresentationRecipes';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import perfusionColorMap from './preset';
 
@@ -57,6 +59,14 @@ const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader 
 // fixed slice indices, and those values apply to the PT volume alone.
 const ctVolumeName = 'CT_VOLUME_ID';
 const ctVolumeId = `${volumeLoaderScheme}:${ctVolumeName}`;
+const ptDisplaySetId = 'rectangleROIStartEndThreshold:pt';
+const ctDisplaySetId = 'rectangleROIStartEndThreshold:ct';
+
+/**
+ * The exponent with which a legacy volume viewport drew the opacities of the
+ * PET over the water phantom: see `petColorMapPresentation`.
+ */
+const legacyFusionOpacityExponent = 0.0625;
 
 const PT_ONLY_VIEW = 'PT only';
 const FUSION_VIEW = 'CT + PT fusion';
@@ -67,7 +77,7 @@ const viewportId3 = 'PT_CORONAL';
 const viewportIds = [viewportId1, viewportId2, viewportId3];
 
 // `run` sets these, and the view dropdown reads them.
-let renderingEngine;
+let renderingEngine: RenderingEngine;
 let ctVolumeLoaded;
 
 const segmentationId = 'MY_SEGMENTATION_ID';
@@ -181,6 +191,12 @@ function loadCtVolume() {
       imageIds: ctImageIds,
     });
 
+    utilities.genericViewportDisplaySetMetadataProvider.add(ctDisplaySetId, {
+      kind: 'planar',
+      imageIds: ctImageIds,
+      volumeId: ctVolumeId,
+    });
+
     ctVolume.load();
   })();
 
@@ -203,33 +219,40 @@ async function setViewMode(mode: string) {
   if (mode === FUSION_VIEW) {
     await loadCtVolume();
 
-    await setVolumesForViewports(
-      renderingEngine,
-      [
-        {
-          volumeId: ctVolumeId,
-          callback: setCtTransferFunctionForVolumeActor,
-        },
-        {
-          volumeId,
-          callback: ({ volumeActor }) =>
-            setPetColorMapTransferFunctionForVolumeActor({
-              volumeActor,
-              preset: perfusionColorMap,
-            }),
-        },
-      ],
-      viewportIds
+    await Promise.all(
+      viewportIds.map(async (viewportId) => {
+        const viewport =
+          renderingEngine.getViewport<PlanarViewport>(viewportId);
+
+        await viewport.setDisplaySets(
+          { displaySetId: ctDisplaySetId },
+          { displaySetId: ptDisplaySetId }
+        );
+        viewport.setDisplaySetPresentation(ctDisplaySetId, ctPresentation());
+        viewport.resetDisplaySetPresentation(ptDisplaySetId);
+        viewport.setDisplaySetPresentation(
+          ptDisplaySetId,
+          petColorMapPresentation(
+            perfusionColorMap,
+            legacyFusionOpacityExponent
+          )
+        );
+      })
     );
   } else {
-    await setVolumesForViewports(
-      renderingEngine,
-      [{ volumeId, callback: setPetTransferFunctionForVolumeActor }],
-      viewportIds
+    await Promise.all(
+      viewportIds.map(async (viewportId) => {
+        const viewport =
+          renderingEngine.getViewport<PlanarViewport>(viewportId);
+
+        await viewport.setDisplaySets({ displaySetId: ptDisplaySetId });
+        viewport.resetDisplaySetPresentation(ptDisplaySetId);
+        viewport.setDisplaySetPresentation(ptDisplaySetId, petPresentation());
+      })
     );
   }
 
-  // `setVolumesForViewports` replaces the actors of the viewports, which
+  // `setDisplaySets` replaces the actors of the viewports, which
   // removes the labelmap actor, so the representation has to go back on.
   addSegmentationRepresentations();
 
@@ -317,10 +340,11 @@ addButtonToToolbar({
       return;
     }
 
-    const viewport = annotation.metadata.enabledElement.viewport;
+    const { viewportId } = annotation.metadata.enabledElement;
+    const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
     // get the current focalpoint
-    const focalPointToStart = viewport.getCamera().focalPoint;
+    const focalPointToStart = viewport.getResolvedView().toICamera().focalPoint;
     annotation.data.startCoordinate = focalPointToStart;
 
     // IMPORTANT: invalidate the toolData for the cached stat to get updated
@@ -350,10 +374,11 @@ addButtonToToolbar({
       return;
     }
 
-    const viewport = annotation.metadata.enabledElement.viewport;
+    const { viewportId } = annotation.metadata.enabledElement;
+    const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
     // get the current focalpoint
-    const focalPointToEnd = viewport.getCamera().focalPoint;
+    const focalPointToEnd = viewport.getResolvedView().toICamera().focalPoint;
     annotation.data.endCoordinate = focalPointToEnd;
 
     // IMPORTANT: invalidate the toolData for the cached stat to get updated
@@ -571,6 +596,12 @@ async function run() {
     imageIds,
   });
 
+  utilities.genericViewportDisplaySetMetadataProvider.add(ptDisplaySetId, {
+    kind: 'planar',
+    imageIds,
+    volumeId,
+  });
+
   // Add some segmentations based on the source data volume
   await addSegmentationsToState();
 
@@ -581,7 +612,7 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: viewportId1,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element1,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
@@ -590,7 +621,7 @@ async function run() {
     },
     {
       viewportId: viewportId2,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element2,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -599,7 +630,7 @@ async function run() {
     },
     {
       viewportId: viewportId3,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element3,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,

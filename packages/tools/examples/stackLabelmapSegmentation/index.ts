@@ -1,3 +1,4 @@
+import type { PlanarViewport } from '@cornerstonejs/core';
 import {
   Enums,
   RenderingEngine,
@@ -132,8 +133,10 @@ const optionsValues = [
   PaintFillTool.toolName,
 ];
 
-let viewport;
+let viewport: PlanarViewport;
 const viewportId2 = 'STACK_VIEWPORT_2';
+const ctDisplaySetId = 'stackLabelmapSegmentation:ct';
+const mgDisplaySetId = 'stackLabelmapSegmentation:mg';
 
 const segmentationIds = ['SEGMENTATION_CT', 'SEGMENTATION_MG'];
 const dropDownId = 'SEGMENTATION_DROPDOWN';
@@ -468,7 +471,7 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: viewportId,
-      type: ViewportType.STACK,
+      type: ViewportType.PLANAR_NEXT,
       element: element1,
       defaultOptions: {
         background: [0.2, 0, 0.2],
@@ -476,7 +479,7 @@ async function run() {
     },
     {
       viewportId: viewportId2,
-      type: ViewportType.STACK,
+      type: ViewportType.PLANAR_NEXT,
       element: element2,
       defaultOptions: {
         background: [0.2, 0, 0.2],
@@ -495,9 +498,21 @@ async function run() {
   const mgSegImages =
     await imageLoader.createAndCacheDerivedLabelmapImages(mgImageIds);
 
-  const viewport2 = renderingEngine.getViewport(viewportId2);
-  await viewport.setStack(ctImageIds, 0);
-  await viewport2.setStack([...mgImageIds, ctImageIds[2]], 0);
+  const viewport2: PlanarViewport = renderingEngine.getViewport(viewportId2);
+
+  utilities.genericViewportDisplaySetMetadataProvider.add(ctDisplaySetId, {
+    kind: 'planar',
+    imageIds: ctImageIds,
+    initialImageIdIndex: 0,
+  });
+  utilities.genericViewportDisplaySetMetadataProvider.add(mgDisplaySetId, {
+    kind: 'planar',
+    imageIds: [...mgImageIds, ctImageIds[2]],
+    initialImageIdIndex: 0,
+  });
+
+  await viewport.setDisplaySets({ displaySetId: ctDisplaySetId });
+  await viewport2.setDisplaySets({ displaySetId: mgDisplaySetId });
   cornerstoneTools.utilities.stackContextPrefetch.enable(element1);
   cornerstoneTools.utilities.stackContextPrefetch.enable(element2);
 

@@ -1,10 +1,9 @@
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import type { Types as csToolsTypes } from '@cornerstonejs/tools';
 import {
   RenderingEngine,
   Enums,
   getRenderingEngine,
-  setVolumesForViewports,
   volumeLoader,
   ProgressiveRetrieveImages,
   utilities,
@@ -20,8 +19,8 @@ import {
   addSliderToToolbar,
   addToggleButtonToToolbar,
   createObliqueAngleController,
-  setCtTransferFunctionForVolumeActor,
 } from '../../../../utils/demo/helpers';
+import { ctPresentation } from '../../../../utils/demo/helpers/volumePresentationRecipes';
 import type { ObliqueAngleController } from '../../../../utils/demo/helpers/camera/createObliqueAngleController';
 import { getStringUrlParam } from '../../../../utils/demo/helpers/exampleParameters';
 import * as cornerstoneTools from '@cornerstonejs/tools';
@@ -65,6 +64,7 @@ const segmentationId = 'MY_SEGMENTATION_ID';
 const toolGroupId = 'MY_TOOLGROUP_ID';
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
 const volumeId = `${volumeLoaderScheme}:${volumeName}`;
+const displaySetId = 'labelmapSegmentationTools:ct';
 const renderingEngineId = 'myRenderingEngine';
 const viewportId1 = 'CT_AXIAL';
 const viewportId2 = 'CT_SAGITTAL';
@@ -392,8 +392,8 @@ addToggleButtonToToolbar({
     // measure takes effect at once and the current position is kept.
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
-    renderingEngine?.getViewports().forEach((viewport) => {
-      (viewport as Types.IVolumeViewport).scroll?.(0);
+    viewportIds.forEach((viewportId) => {
+      renderingEngine?.getViewport<PlanarViewport>(viewportId)?.scroll(0);
     });
   },
 });
@@ -436,15 +436,11 @@ addButtonToToolbar({
     }
 
     viewportIds.forEach((viewportId) => {
-      const viewport = renderingEngine.getViewport(
-        viewportId
-      ) as Types.IVolumeViewport;
+      const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
-      viewport.resetCamera({
+      viewport.resetViewState({
         resetPan: true,
         resetZoom: true,
-        resetToCenter: true,
-        resetRotation: true,
       });
     });
 
@@ -651,7 +647,7 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: viewportId1,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element1,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
@@ -660,7 +656,7 @@ async function run() {
     },
     {
       viewportId: viewportId2,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element2,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -669,7 +665,7 @@ async function run() {
     },
     {
       viewportId: viewportId3,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element3,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
@@ -688,20 +684,29 @@ async function run() {
   // volume.load();
 
   // Set volumes on the viewports
-  await setVolumesForViewports(
-    renderingEngine,
-    [{ volumeId, callback: setCtTransferFunctionForVolumeActor }],
-    [viewportId1, viewportId2, viewportId3]
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    kind: 'planar',
+    imageIds,
+    volumeId,
+  });
+
+  await Promise.all(
+    [viewportId1, viewportId2, viewportId3].map(async (viewportId) => {
+      const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
+
+      await viewport.setDisplaySets({ displaySetId });
+      viewport.setDisplaySetPresentation(displaySetId, ctPresentation());
+    })
   );
 
   // The crosshairs tool needs the viewports of the tool group and a camera for
-  // each viewport, so this call must come after setVolumesForViewports.
+  // each viewport, so this call must come after the viewports show the volume.
   setCrosshairsEnabled(true);
 
   // Capture the camera of the axial viewport. The "Axial Oblique Angle" slider
   // rotates this camera, and the "Reset Cameras" button restores it.
   axialOblique = createObliqueAngleController(
-    renderingEngine.getViewport(viewportId1) as Types.IVolumeViewport
+    renderingEngine.getViewport<PlanarViewport>(viewportId1)
   );
 
   // Add the segmentation representation to the viewports

@@ -1,4 +1,10 @@
-import { Enums, RenderingEngine, imageLoader } from '@cornerstonejs/core';
+import type { PlanarViewport } from '@cornerstonejs/core';
+import {
+  Enums,
+  RenderingEngine,
+  imageLoader,
+  utilities,
+} from '@cornerstonejs/core';
 import * as cornerstone from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
@@ -34,6 +40,8 @@ const renderingEngineId = 'myRenderingEngine';
 const viewportId1 = 'LEFT_VIEWPORT';
 const viewportId2 = 'RIGHT_VIEWPORT';
 const toolGroupId = 'TOOL_GROUP_ID';
+const ctDisplaySetId = 'stackAndStackLabelmap:ct';
+const ptDisplaySetId = 'stackAndStackLabelmap:pt';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -167,12 +175,12 @@ async function run() {
     {
       viewportId: viewportId1,
       element: element1,
-      type: ViewportType.STACK,
+      type: ViewportType.PLANAR_NEXT,
     },
     {
       viewportId: viewportId2,
       element: element2,
-      type: ViewportType.STACK,
+      type: ViewportType.PLANAR_NEXT,
     },
   ];
   renderingEngine.setViewports(viewportInputArray);
@@ -181,10 +189,23 @@ async function run() {
   toolGroup.addViewport(viewportId2);
 
   viewport1 = renderingEngine.getViewport(viewportId1);
-  const viewport2 = renderingEngine.getViewport(viewportId2);
+  const viewport2: PlanarViewport = renderingEngine.getViewport(viewportId2);
 
-  viewport1.setStack(ctImageIds, 0);
-  viewport2.setStack(ptImageIds, 0);
+  utilities.genericViewportDisplaySetMetadataProvider.add(ctDisplaySetId, {
+    kind: 'planar',
+    imageIds: ctImageIds,
+    initialImageIdIndex: 0,
+  });
+  utilities.genericViewportDisplaySetMetadataProvider.add(ptDisplaySetId, {
+    kind: 'planar',
+    imageIds: ptImageIds,
+    initialImageIdIndex: 0,
+  });
+
+  await Promise.all([
+    viewport1.setDisplaySets({ displaySetId: ctDisplaySetId }),
+    viewport2.setDisplaySets({ displaySetId: ptDisplaySetId }),
+  ]);
 
   stackContextPrefetch.enable(element1);
   stackContextPrefetch.enable(element2);

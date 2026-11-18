@@ -1,13 +1,20 @@
-import { Enums, RenderingEngine, imageLoader } from '@cornerstonejs/core';
+import type { PlanarViewport } from '@cornerstonejs/core';
+import {
+  Enums,
+  RenderingEngine,
+  imageLoader,
+  utilities,
+  viewportProjection,
+} from '@cornerstonejs/core';
 import * as cornerstone from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
   addManipulationBindings,
   createImageIdsAndCacheMetaData,
   initDemo,
-  setCtTransferFunctionForVolumeActor,
   setTitleAndDescription,
 } from '../../../../utils/demo/helpers';
+import { ctPresentation } from '../../../../utils/demo/helpers/volumePresentationRecipes';
 import {
   fillStackSegmentationWithMockData,
   fillVolumeLabelmapWithMockData,
@@ -36,6 +43,8 @@ const { ViewportType } = Enums;
 let renderingEngine;
 const volumeId = 'myVolume';
 const renderingEngineId = 'myRenderingEngine';
+const stackDisplaySetId = 'segmentSelect:stack';
+const volumeDisplaySetId = 'segmentSelect:volume';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -169,12 +178,12 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: viewportId1,
-      type: ViewportType.STACK,
+      type: ViewportType.PLANAR_NEXT,
       element: element1,
     },
     {
       viewportId: viewportId2,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element2,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -182,12 +191,12 @@ async function run() {
     },
     {
       viewportId: viewportId3,
-      type: ViewportType.STACK,
+      type: ViewportType.PLANAR_NEXT,
       element: element3,
     },
     {
       viewportId: viewportId4,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element4,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -239,10 +248,19 @@ async function _handleVolumeViewports(volumeImageIds, renderingEngine) {
   await volume.load();
 
   // Set volumes on the viewports
-  await cornerstone.setVolumesForViewports(
-    renderingEngine,
-    [{ volumeId, callback: setCtTransferFunctionForVolumeActor }],
-    [viewportId2, viewportId4]
+  utilities.genericViewportDisplaySetMetadataProvider.add(volumeDisplaySetId, {
+    kind: 'planar',
+    imageIds: volumeImageIds,
+    volumeId,
+  });
+
+  await Promise.all(
+    [viewportId2, viewportId4].map(async (viewportId) => {
+      const viewport: PlanarViewport = renderingEngine.getViewport(viewportId);
+
+      await viewport.setDisplaySets({ displaySetId: volumeDisplaySetId });
+      viewport.setDisplaySetPresentation(volumeDisplaySetId, ctPresentation());
+    })
   );
 
   // Create a segmentation of the same resolution as the source data
@@ -314,8 +332,8 @@ async function _handleVolumeViewports(volumeImageIds, renderingEngine) {
 }
 
 async function _handleStackViewports(stackImageIds: string[]) {
-  const viewport1 = renderingEngine.getViewport(viewportId1);
-  const viewport3 = renderingEngine.getViewport(viewportId3);
+  const viewport1: PlanarViewport = renderingEngine.getViewport(viewportId1);
+  const viewport3: PlanarViewport = renderingEngine.getViewport(viewportId3);
 
   const imageIdsArray = [stackImageIds[0]];
 
@@ -324,8 +342,14 @@ async function _handleStackViewports(stackImageIds: string[]) {
 
   const segmentationImageIds = segImages.map((it) => it.imageId);
 
-  await viewport1.setStack(imageIdsArray, 0);
-  await viewport3.setStack(imageIdsArray, 0);
+  utilities.genericViewportDisplaySetMetadataProvider.add(stackDisplaySetId, {
+    kind: 'planar',
+    imageIds: imageIdsArray,
+    initialImageIdIndex: 0,
+  });
+
+  await viewport1.setDisplaySets({ displaySetId: stackDisplaySetId });
+  await viewport3.setDisplaySets({ displaySetId: stackDisplaySetId });
 
   fillStackSegmentationWithMockData({
     imageIds: imageIdsArray,
@@ -388,8 +412,15 @@ async function _handleStackViewports(stackImageIds: string[]) {
   });
 
   setTimeout(() => {
-    viewport1.setZoom(5);
-    viewport3.setZoom(5);
+    [viewport1, viewport3].forEach((viewport) => {
+      const viewState = viewportProjection.withPresentation(viewport, {
+        zoom: 5,
+      });
+
+      if (viewState) {
+        viewport.setViewState(viewState);
+      }
+    });
     renderingEngine.render();
   }, 100);
 }

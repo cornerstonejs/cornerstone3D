@@ -39,7 +39,7 @@ export function addMockContourSegmentation({
     });
 
     const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
-    const camera = viewport.getCamera();
+    const camera = viewport.getResolvedView()?.toICamera();
     const contourSegmentationAnnotation = {
       annotationUID: csUtils.uuidv4(),
       data: {

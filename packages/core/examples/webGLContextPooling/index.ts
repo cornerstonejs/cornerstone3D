@@ -1,4 +1,4 @@
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
@@ -34,6 +34,7 @@ const { createImageSliceSynchronizer } = synchronizers;
 const renderingEngineId = 'myRenderingEngine';
 const toolGroupId = 'STACK_TOOL_GROUP';
 const imageSliceSyncronizerId = 'IMAGE_SLICE_SYNCHRONIZER';
+const displaySetId = 'webGLContextPooling:ct';
 
 // Create viewport IDs for 8x8 grid
 const viewportIds: string[] = [];
@@ -241,7 +242,7 @@ async function run() {
   const viewportInputArray: Types.PublicViewportInput[] = viewportIds.map(
     (viewportId, index) => ({
       viewportId,
-      type: ViewportType.STACK,
+      type: ViewportType.PLANAR_NEXT,
       element: viewportElements[index],
       defaultOptions: {
         background: <Types.Point3>[0.1, 0.1, 0.1],
@@ -256,15 +257,19 @@ async function run() {
     toolGroup.addViewport(viewportId, renderingEngineId);
   });
 
-  // Get all viewports that support the stack compatibility API.
-  const stackViewports = renderingEngine
-    .getViewports()
-    .filter(utilities.viewportSupportsStackCompatibility);
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    kind: 'planar',
+    imageIds,
+  });
+
+  const stackViewports = viewportIds.map((viewportId) =>
+    renderingEngine.getViewport<PlanarViewport>(viewportId)
+  );
 
   // Set the stack on each viewport
   await Promise.all(
     stackViewports.map(async (viewport) => {
-      await viewport.setStack(imageIds);
+      await viewport.setDisplaySets({ displaySetId });
 
       // Update initial slice count
       updateSliceCount(
@@ -274,15 +279,13 @@ async function run() {
       );
 
       // Add event listener for stack scroll
-      viewport.element.addEventListener(Enums.Events.STACK_VIEWPORT_SCROLL, ((
-        evt: Types.EventTypes.StackViewportScrollEvent
-      ) => {
+      viewport.element.addEventListener(Enums.Events.CAMERA_MODIFIED, () => {
         updateSliceCount(
           viewport.id,
-          evt.detail.newImageIdIndex,
+          viewport.getCurrentImageIdIndex(),
           imageIds.length
         );
-      }) as EventListener);
+      });
     })
   );
 

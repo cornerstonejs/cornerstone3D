@@ -1,4 +1,5 @@
-import { Enums, RenderingEngine } from '@cornerstonejs/core';
+import type { PlanarViewport } from '@cornerstonejs/core';
+import { Enums, RenderingEngine, utilities } from '@cornerstonejs/core';
 import * as cornerstone from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
@@ -34,6 +35,8 @@ const renderingEngineId = 'myRenderingEngine';
 const viewportId1 = 'VOLUME_VIEWPORT';
 const viewportId2 = 'STACK_VIEWPORT';
 const toolGroupId = 'TOOL_GROUP_ID';
+const ctDisplaySetId = 'stackAndVolumeLabelmap:ct';
+const ptDisplaySetId = 'stackAndVolumeLabelmap:pt';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -160,14 +163,14 @@ async function run() {
     {
       viewportId: viewportId1,
       element: element1,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       defaultOptions: {
         orientation: 'sagittal',
       },
     },
     {
       viewportId: viewportId2,
-      type: ViewportType.STACK,
+      type: ViewportType.PLANAR_NEXT,
       element: element2,
     },
   ];
@@ -177,7 +180,7 @@ async function run() {
   toolGroup?.addViewport(viewportId2);
 
   viewport1 = renderingEngine.getViewport(viewportId1);
-  const viewport2 = renderingEngine.getViewport(viewportId2);
+  const viewport2: PlanarViewport = renderingEngine.getViewport(viewportId2);
 
   const volumeId = 'VOLUME_ID';
   const volume = await cornerstone.volumeLoader.createAndCacheVolume(volumeId, {
@@ -186,9 +189,20 @@ async function run() {
 
   await volume.load();
 
-  await viewport2.setStack(ptImageIds, 70);
+  utilities.genericViewportDisplaySetMetadataProvider.add(ptDisplaySetId, {
+    kind: 'planar',
+    imageIds: ptImageIds,
+    initialImageIdIndex: 70,
+  });
+  utilities.genericViewportDisplaySetMetadataProvider.add(ctDisplaySetId, {
+    kind: 'planar',
+    imageIds: ctImageIds,
+    volumeId,
+  });
 
-  viewport1.setVolumes([{ volumeId }]);
+  await viewport2.setDisplaySets({ displaySetId: ptDisplaySetId });
+
+  await viewport1.setDisplaySets({ displaySetId: ctDisplaySetId });
 
   renderingEngine.render();
 

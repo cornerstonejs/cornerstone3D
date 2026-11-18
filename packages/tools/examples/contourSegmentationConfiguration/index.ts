@@ -1,3 +1,4 @@
+import type { PlanarViewport } from '@cornerstonejs/core';
 import { Enums, RenderingEngine } from '@cornerstonejs/core';
 import * as cornerstone from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
@@ -5,9 +6,9 @@ import {
   addManipulationBindings,
   createImageIdsAndCacheMetaData,
   initDemo,
-  setCtTransferFunctionForVolumeActor,
   setTitleAndDescription,
 } from '../../../../utils/demo/helpers';
+import { ctPresentation } from '../../../../utils/demo/helpers/volumePresentationRecipes';
 import { addMockContourSegmentation } from '../../../../utils/test/testUtils';
 
 // This is for debugging purposes
@@ -30,6 +31,8 @@ const { ViewportType } = Enums;
 let renderingEngine;
 const volumeId = 'myVolume';
 const renderingEngineId = 'myRenderingEngine';
+const stackDisplaySetId = 'contourSegmentationConfiguration:stack';
+const volumeDisplaySetId = 'contourSegmentationConfiguration:volume';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -143,13 +146,16 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: viewportId1,
-      type: ViewportType.STACK,
+      type: ViewportType.PLANAR_NEXT,
       element: element1,
     },
     {
       viewportId: viewportId2,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element2,
+      defaultOptions: {
+        orientation: Enums.OrientationAxis.AXIAL,
+      },
     },
   ];
   renderingEngine.setViewports(viewportInputArray);
@@ -167,15 +173,24 @@ async function run() {
   volume.load();
 
   // Set volumes on the viewports
-  await cornerstone.setVolumesForViewports(
-    renderingEngine,
-    [{ volumeId, callback: setCtTransferFunctionForVolumeActor }],
-    [viewportId2]
+  cornerstone.utilities.genericViewportDisplaySetMetadataProvider.add(
+    volumeDisplaySetId,
+    { kind: 'planar', imageIds: volumeImageIds, volumeId }
   );
 
-  const viewport1 = renderingEngine.getViewport(viewportId1);
+  const viewport2: PlanarViewport = renderingEngine.getViewport(viewportId2);
 
-  await viewport1.setStack(volumeImageIds, 67);
+  await viewport2.setDisplaySets({ displaySetId: volumeDisplaySetId });
+  viewport2.setDisplaySetPresentation(volumeDisplaySetId, ctPresentation());
+
+  const viewport1: PlanarViewport = renderingEngine.getViewport(viewportId1);
+
+  cornerstone.utilities.genericViewportDisplaySetMetadataProvider.add(
+    stackDisplaySetId,
+    { kind: 'planar', imageIds: volumeImageIds, initialImageIdIndex: 67 }
+  );
+
+  await viewport1.setDisplaySets({ displaySetId: stackDisplaySetId });
   cornerstoneTools.utilities.stackContextPrefetch.enable(viewport1.element);
 
   const segmentationId = 'contour_segmentation';

@@ -1,20 +1,23 @@
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
-  setVolumesForViewports,
   volumeLoader,
   getRenderingEngine,
+  utilities,
+  viewportProjection,
 } from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
-  setPetColorMapTransferFunctionForVolumeActor,
-  setPetTransferFunctionForVolumeActor,
-  setCtTransferFunctionForVolumeActor,
   addDropdownToToolbar,
 } from '../../../../utils/demo/helpers';
+import {
+  ctPresentation,
+  petPresentation,
+  petColorMapPresentation,
+} from '../../../../utils/demo/helpers/volumePresentationRecipes';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
 const {
@@ -45,7 +48,7 @@ const SecondStudyID =
 const ThirdStudyID = `1.3.6.1.4.1.9328.50.17.15423521354819720574322014551955370036`;
 
 // Common configuration
-let renderingEngine;
+let renderingEngine: RenderingEngine;
 const wadoRsRoot = 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb';
 const renderingEngineId = 'myRenderingEngine';
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume';
@@ -63,6 +66,22 @@ const volumeIds = {
   study3: {
     ct: `${volumeLoaderScheme}:CT_VOLUME_STUDY3`,
     pt: `${volumeLoaderScheme}:PT_VOLUME_STUDY3`,
+  },
+};
+
+/** The display set ids of each study. */
+const displaySetIds = {
+  study1: {
+    ct: 'ptctmultimonitor:study1:ct',
+    pt: 'ptctmultimonitor:study1:pt',
+  },
+  study2: {
+    ct: 'ptctmultimonitor:study2:ct',
+    pt: 'ptctmultimonitor:study2:pt',
+  },
+  study3: {
+    ct: 'ptctmultimonitor:study3:ct',
+    pt: 'ptctmultimonitor:study3:pt',
   },
 };
 
@@ -575,43 +594,88 @@ function setUpSynchronizersForStudy(studyKey) {
   });
 }
 
-// Initialize camera synchronization
-function initCameraSynchronization(sViewport, tViewport) {
-  const camera = sViewport.getCamera();
-  tViewport.setCamera(camera);
+/**
+ * Shows in the target viewport what the source viewport shows: the same
+ * slice, the same world point at the centre of the canvas, and the same size.
+ * Zoom 1 is the fit of each viewport, and the PT volume has another fit than
+ * the CT volume, so the zoom of the target is its own zoom times the ratio of
+ * the two parallel scales. The pan then moves the focal point of the source
+ * to the centre of the target canvas.
+ */
+function initCameraSynchronization(
+  sViewport: PlanarViewport,
+  tViewport: PlanarViewport
+) {
+  tViewport.setViewReference(sViewport.getViewReference());
+
+  const sourceCamera = sViewport.getResolvedView()?.toICamera();
+  const targetCamera = tViewport.getResolvedView()?.toICamera();
+
+  if (!sourceCamera || !targetCamera) {
+    return;
+  }
+
+  const { zoom = 1 } =
+    viewportProjection.getPresentation(tViewport, {
+      selector: { zoom: true },
+    }) ?? {};
+  const zoomed = viewportProjection.withPresentation(tViewport, {
+    zoom: (zoom * targetCamera.parallelScale) / sourceCamera.parallelScale,
+  });
+
+  if (zoomed) {
+    tViewport.setViewState(zoomed);
+  }
+
+  const { pan = [0, 0], zoom: targetZoom = 1 } =
+    viewportProjection.getPresentation(tViewport, {
+      selector: { zoom: true, pan: true },
+    }) ?? {};
+  const [x, y] = tViewport.worldToCanvas(sourceCamera.focalPoint);
+  const { clientWidth, clientHeight } = tViewport.canvas;
+  const panned = viewportProjection.withPresentation(tViewport, {
+    pan: [
+      pan[0] + (clientWidth / 2 - x) / targetZoom,
+      pan[1] + (clientHeight / 2 - y) / targetZoom,
+    ],
+  });
+
+  if (panned) {
+    tViewport.setViewState(panned);
+  }
 }
 
 // Initialize camera sync for a study
 function initializeCameraSyncForStudy(studyKey) {
   const studyViewportIds = viewportIds[studyKey];
 
-  const axialCtViewport = renderingEngine.getViewport(
+  const axialCtViewport = renderingEngine.getViewport<PlanarViewport>(
     studyViewportIds.CT.AXIAL
   );
-  const sagittalCtViewport = renderingEngine.getViewport(
+  const sagittalCtViewport = renderingEngine.getViewport<PlanarViewport>(
     studyViewportIds.CT.SAGITTAL
   );
-  const coronalCtViewport = renderingEngine.getViewport(
+  const coronalCtViewport = renderingEngine.getViewport<PlanarViewport>(
     studyViewportIds.CT.CORONAL
   );
 
-  const axialPtViewport = renderingEngine.getViewport(
+  const axialPtViewport = renderingEngine.getViewport<PlanarViewport>(
     studyViewportIds.PT.AXIAL
   );
-  const sagittalPtViewport = renderingEngine.getViewport(
+  const sagittalPtViewport = renderingEngine.getViewport<PlanarViewport>(
     studyViewportIds.PT.SAGITTAL
   );
-  const coronalPtViewport = renderingEngine.getViewport(
+  const coronalPtViewport = renderingEngine.getViewport<PlanarViewport>(
     studyViewportIds.PT.CORONAL
   );
 
-  const axialFusionViewport = renderingEngine.getViewport(
+  const axialFusionViewport = renderingEngine.getViewport<PlanarViewport>(
     studyViewportIds.FUSION.AXIAL
   );
-  const sagittalFusionViewport = renderingEngine.getViewport(
+  const sagittalFusionViewport = renderingEngine.getViewport<PlanarViewport>(
     studyViewportIds.FUSION.SAGITTAL
   );
-  const coronalFusionViewport = renderingEngine.getViewport(
+  const coronalFusionViewport = renderingEngine.getViewport<PlanarViewport>(
     studyViewportIds.FUSION.CORONAL
   );
 
@@ -652,7 +716,7 @@ function createViewportInputArrayForStudy(config, studyIndex) {
   const viewportInputArray = [
     {
       viewportId: studyViewportIds.CT.AXIAL,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: studyElements.element_1_1,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
@@ -660,7 +724,7 @@ function createViewportInputArrayForStudy(config, studyIndex) {
     },
     {
       viewportId: studyViewportIds.CT.SAGITTAL,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: studyElements.element_1_2,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -668,7 +732,7 @@ function createViewportInputArrayForStudy(config, studyIndex) {
     },
     {
       viewportId: studyViewportIds.CT.CORONAL,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: studyElements.element_1_3,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
@@ -676,7 +740,7 @@ function createViewportInputArrayForStudy(config, studyIndex) {
     },
     {
       viewportId: studyViewportIds.PT.AXIAL,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: studyElements.element_2_1,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
@@ -685,7 +749,7 @@ function createViewportInputArrayForStudy(config, studyIndex) {
     },
     {
       viewportId: studyViewportIds.PT.SAGITTAL,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: studyElements.element_2_2,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -694,7 +758,7 @@ function createViewportInputArrayForStudy(config, studyIndex) {
     },
     {
       viewportId: studyViewportIds.PT.CORONAL,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: studyElements.element_2_3,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
@@ -703,7 +767,7 @@ function createViewportInputArrayForStudy(config, studyIndex) {
     },
     {
       viewportId: studyViewportIds.FUSION.AXIAL,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: studyElements.element_3_1,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
@@ -711,7 +775,7 @@ function createViewportInputArrayForStudy(config, studyIndex) {
     },
     {
       viewportId: studyViewportIds.FUSION.SAGITTAL,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: studyElements.element_3_2,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -719,7 +783,7 @@ function createViewportInputArrayForStudy(config, studyIndex) {
     },
     {
       viewportId: studyViewportIds.FUSION.CORONAL,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: studyElements.element_3_3,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
@@ -727,7 +791,7 @@ function createViewportInputArrayForStudy(config, studyIndex) {
     },
     {
       viewportId: studyViewportIds.PETMIP.CORONAL,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: studyElements.element_mip,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
@@ -739,19 +803,40 @@ function createViewportInputArrayForStudy(config, studyIndex) {
   return viewportInputArray;
 }
 
+/**
+ * Shows display sets in each of the viewports, the first as the source, and
+ * sets the presentation of each.
+ */
+async function showDisplaySets(
+  entries: Array<{ displaySetId: string; presentation: object }>,
+  targetViewportIds: string[]
+) {
+  await Promise.all(
+    targetViewportIds.map(async (viewportId) => {
+      const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
+
+      await viewport.setDisplaySets(
+        ...entries.map(({ displaySetId }) => ({ displaySetId }))
+      );
+      entries.forEach(({ displaySetId, presentation }) => {
+        viewport.setDisplaySetPresentation(displaySetId, presentation);
+      });
+    })
+  );
+}
+
 // Set up display for a study
 async function setUpDisplayForStudy(config, studyIndex) {
   const studyKey = config.studyKey;
   const studyViewportIds = viewportIds[studyKey];
-  const studyVolumeIds = volumeIds[studyKey];
+  const studyDisplaySetIds = displaySetIds[studyKey];
 
   // Set volumes on the viewports
-  await setVolumesForViewports(
-    renderingEngine,
+  await showDisplaySets(
     [
       {
-        volumeId: studyVolumeIds.ct,
-        callback: setCtTransferFunctionForVolumeActor,
+        displaySetId: studyDisplaySetIds.ct,
+        presentation: ctPresentation(),
       },
     ],
     [
@@ -761,12 +846,11 @@ async function setUpDisplayForStudy(config, studyIndex) {
     ]
   );
 
-  await setVolumesForViewports(
-    renderingEngine,
+  await showDisplaySets(
     [
       {
-        volumeId: studyVolumeIds.pt,
-        callback: setPetTransferFunctionForVolumeActor,
+        displaySetId: studyDisplaySetIds.pt,
+        presentation: petPresentation(),
       },
     ],
     [
@@ -776,16 +860,15 @@ async function setUpDisplayForStudy(config, studyIndex) {
     ]
   );
 
-  await setVolumesForViewports(
-    renderingEngine,
+  await showDisplaySets(
     [
       {
-        volumeId: studyVolumeIds.ct,
-        callback: setCtTransferFunctionForVolumeActor,
+        displaySetId: studyDisplaySetIds.ct,
+        presentation: ctPresentation(),
       },
       {
-        volumeId: studyVolumeIds.pt,
-        callback: setPetColorMapTransferFunctionForVolumeActor,
+        displaySetId: studyDisplaySetIds.pt,
+        presentation: petColorMapPresentation(),
       },
     ],
     [
@@ -805,14 +888,15 @@ async function setUpDisplayForStudy(config, studyIndex) {
       ptVolumeDimensions[2] * ptVolumeDimensions[2]
   );
 
-  await setVolumesForViewports(
-    renderingEngine,
+  await showDisplaySets(
     [
       {
-        volumeId: studyVolumeIds.pt,
-        callback: setPetTransferFunctionForVolumeActor,
-        blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
-        slabThickness,
+        displaySetId: studyDisplaySetIds.pt,
+        presentation: {
+          ...petPresentation(),
+          blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
+          slabThickness,
+        },
       },
     ],
     [studyViewportIds.PETMIP.CORONAL]
@@ -879,6 +963,15 @@ async function run() {
     volumes[studyKey].pt = await volumeLoader.createAndCacheVolume(
       volumeIds[studyKey].pt,
       { imageIds: ptImageIds }
+    );
+
+    utilities.genericViewportDisplaySetMetadataProvider.add(
+      displaySetIds[studyKey].ct,
+      { kind: 'planar', imageIds: ctImageIds, volumeId: volumeIds[studyKey].ct }
+    );
+    utilities.genericViewportDisplaySetMetadataProvider.add(
+      displaySetIds[studyKey].pt,
+      { kind: 'planar', imageIds: ptImageIds, volumeId: volumeIds[studyKey].pt }
     );
 
     // Load volumes

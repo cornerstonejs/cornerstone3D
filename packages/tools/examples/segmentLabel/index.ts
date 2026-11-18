@@ -1,19 +1,26 @@
-import { Enums, RenderingEngine, imageLoader } from '@cornerstonejs/core';
+import type { PlanarViewport } from '@cornerstonejs/core';
+import {
+  Enums,
+  RenderingEngine,
+  imageLoader,
+  utilities,
+  viewportProjection,
+} from '@cornerstonejs/core';
 import * as cornerstone from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
   addManipulationBindings,
   createImageIdsAndCacheMetaData,
   initDemo,
-  setCtTransferFunctionForVolumeActor,
   setTitleAndDescription,
 } from '../../../../utils/demo/helpers';
+import { ctPresentation } from '../../../../utils/demo/helpers/volumePresentationRecipes';
 import {
   fillStackSegmentationWithMockData,
   fillVolumeLabelmapWithMockData,
   addMockContourSegmentation,
 } from '../../../../utils/test/testUtils';
-import type { IStreamingImageVolume, Point3 } from '@cornerstonejs/core/types';
+import type { IStreamingImageVolume } from '@cornerstonejs/core/types';
 
 // This is for debugging purposes
 console.warn(
@@ -36,6 +43,8 @@ const { ViewportType } = Enums;
 let renderingEngine;
 const volumeId = 'myVolume';
 const renderingEngineId = 'myRenderingEngine';
+const stackDisplaySetId = 'segmentLabel:stack';
+const volumeDisplaySetId = 'segmentLabel:volume';
 
 // Number of slices between segment 1 and segment 2 in the volume contour
 // viewport. They must be NON-adjacent: a single-slice gap (~1 voxel) is within
@@ -177,12 +186,12 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: viewportId1,
-      type: ViewportType.STACK,
+      type: ViewportType.PLANAR_NEXT,
       element: element1,
     },
     {
       viewportId: viewportId2,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element2,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -190,12 +199,12 @@ async function run() {
     },
     {
       viewportId: viewportId3,
-      type: ViewportType.STACK,
+      type: ViewportType.PLANAR_NEXT,
       element: element3,
     },
     {
       viewportId: viewportId4,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element4,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -247,10 +256,19 @@ async function _handleVolumeViewports(volumeImageIds, renderingEngine) {
   await volume.load();
 
   // Set volumes on the viewports
-  await cornerstone.setVolumesForViewports(
-    renderingEngine,
-    [{ volumeId, callback: setCtTransferFunctionForVolumeActor }],
-    [viewportId2, viewportId4]
+  utilities.genericViewportDisplaySetMetadataProvider.add(volumeDisplaySetId, {
+    kind: 'planar',
+    imageIds: volumeImageIds,
+    volumeId,
+  });
+
+  await Promise.all(
+    [viewportId2, viewportId4].map(async (viewportId) => {
+      const viewport: PlanarViewport = renderingEngine.getViewport(viewportId);
+
+      await viewport.setDisplaySets({ displaySetId: volumeDisplaySetId });
+      viewport.setDisplaySetPresentation(volumeDisplaySetId, ctPresentation());
+    })
   );
 
   // Create a segmentation of the same resolution as the source data
@@ -315,7 +333,8 @@ async function _handleVolumeViewports(volumeImageIds, renderingEngine) {
   // current slice. addMockContourSegmentation projects the contour onto the
   // viewport's current focal plane, so we seed segment 1, scroll several slices
   // away, seed segment 2, then return to segment 1's slice.
-  const volumeContourViewport = renderingEngine.getViewport(viewportId4);
+  const volumeContourViewport: PlanarViewport =
+    renderingEngine.getViewport(viewportId4);
 
   addMockContourSegmentation({
     segmentationId: volumeSegContourId,
@@ -328,21 +347,16 @@ async function _handleVolumeViewports(volumeImageIds, renderingEngine) {
     ],
   });
 
-  // Remember segment 1's slice (camera) so we can return to it deterministically
-  // after seeding segment 2, instead of relying on a symmetric scroll back.
-  const segment1Camera = volumeContourViewport.getCamera();
-  const segment1FocalPoint = [...segment1Camera.focalPoint] as Point3;
-  const segment1Position = [...segment1Camera.position] as Point3;
+  // Remember segment 1's slice (view reference) so we can return to it
+  // deterministically after seeding segment 2, instead of relying on a
+  // symmetric scroll back.
+  const segment1ViewReference = volumeContourViewport.getViewReference();
 
   // Move several slices away before seeding segment 2.
   //
-  // viewport.scroll() reads the volume actor's slice range, which is only
-  // available once the actor's bounds have been computed. Immediately after
-  // setVolumesForViewports that is not guaranteed, so an early scroll() is a
-  // silent no-op (slice range collapses to zero steps). On slower/CI machines
-  // that race is lost, both contours get projected onto the SAME slice, and
-  // the slice-scoping demo/test breaks. Retry scroll() until it actually moves
-  // the focal point so segment 2 is guaranteed to land on a different slice.
+  // If both contours got projected onto the SAME slice, the slice-scoping
+  // demo/test breaks. Retry scroll() until it actually changes the slice so
+  // segment 2 is guaranteed to land on a different slice.
   await scrollUntilSliceChanges(
     volumeContourViewport,
     SEGMENT_SLICE_SEPARATION
@@ -361,30 +375,28 @@ async function _handleVolumeViewports(volumeImageIds, renderingEngine) {
   });
 
   // Return to segment 1's slice so the bug is reproducible on load. Restore the
-  // camera directly (rather than scroll(-SEGMENT_SLICE_SEPARATION)) so the
-  // displayed slice is exactly segment 1's, independent of scroll timing.
-  volumeContourViewport.setCamera({
-    focalPoint: segment1FocalPoint,
-    position: segment1Position,
-  });
+  // view reference directly (rather than scroll(-SEGMENT_SLICE_SEPARATION)) so
+  // the displayed slice is exactly segment 1's, independent of scroll timing.
+  volumeContourViewport.setViewReference(segment1ViewReference);
   renderingEngine.render();
 }
 
 /**
- * Scrolls the volume viewport by `delta` slices, retrying until the camera's
- * focal point actually moves. This guards against scrolling before the volume
- * actor's slice range is ready (which makes scroll() a no-op).
+ * Scrolls the volume viewport by `delta` slices, retrying until the slice
+ * index actually changes. This guards against scrolling before the volume
+ * is ready (which makes scroll() a no-op).
  */
-async function scrollUntilSliceChanges(viewport, delta, maxAttempts = 500) {
-  const focalPointMoved = (a, b) =>
-    Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]) > 1e-6;
-
+async function scrollUntilSliceChanges(
+  viewport: PlanarViewport,
+  delta,
+  maxAttempts = 500
+) {
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    const before = viewport.getCamera().focalPoint;
+    const before = viewport.getCurrentImageIdIndex();
     viewport.scroll(delta);
-    const after = viewport.getCamera().focalPoint;
+    const after = viewport.getCurrentImageIdIndex();
 
-    if (focalPointMoved(before, after)) {
+    if (after !== before) {
       return;
     }
 
@@ -398,8 +410,8 @@ async function scrollUntilSliceChanges(viewport, delta, maxAttempts = 500) {
 }
 
 async function _handleStackViewports(stackImageIds: string[]) {
-  const viewport1 = renderingEngine.getViewport(viewportId1);
-  const viewport3 = renderingEngine.getViewport(viewportId3);
+  const viewport1: PlanarViewport = renderingEngine.getViewport(viewportId1);
+  const viewport3: PlanarViewport = renderingEngine.getViewport(viewportId3);
 
   const imageIdsArray = [stackImageIds[0]];
 
@@ -408,8 +420,14 @@ async function _handleStackViewports(stackImageIds: string[]) {
 
   const segmentationImageIds = segImages.map((it) => it.imageId);
 
-  await viewport1.setStack(imageIdsArray, 0);
-  await viewport3.setStack(imageIdsArray, 0);
+  utilities.genericViewportDisplaySetMetadataProvider.add(stackDisplaySetId, {
+    kind: 'planar',
+    imageIds: imageIdsArray,
+    initialImageIdIndex: 0,
+  });
+
+  await viewport1.setDisplaySets({ displaySetId: stackDisplaySetId });
+  await viewport3.setDisplaySets({ displaySetId: stackDisplaySetId });
 
   fillStackSegmentationWithMockData({
     imageIds: imageIdsArray,
@@ -472,8 +490,15 @@ async function _handleStackViewports(stackImageIds: string[]) {
   });
 
   setTimeout(() => {
-    viewport1.setZoom(5);
-    viewport3.setZoom(5);
+    [viewport1, viewport3].forEach((viewport) => {
+      const viewState = viewportProjection.withPresentation(viewport, {
+        zoom: 5,
+      });
+
+      if (viewState) {
+        viewport.setViewState(viewState);
+      }
+    });
     renderingEngine.render();
   }, 100);
 }

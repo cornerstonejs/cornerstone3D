@@ -108,11 +108,26 @@ export function petPresentation() {
  * is hsv, as in the callback. A registration, as the `preset` that some
  * examples give the callback, is registered under its name first.
  *
+ * The exponent with which the legacy viewport drew an opacity was not the same
+ * for every fusion: the adapter works it out from the bounds of the volumes
+ * (`getLegacySliceOpacityExponent` in `PlanarLegacyCompatibilityController.ts`
+ * of the core), as the distance between two 32-bit floats near 1e6, so it is
+ * 0.125 or 0.0625. It is 0.125 for the PET and CT studies of the examples and
+ * 0.0625 for the water phantom of `rectangleROIStartEndThresholdWithSegmentation`.
+ * The points of `petColorMapOpacity` are for 0.125; for another exponent `f`
+ * each opacity `d` becomes `1 - (1 - d) ** (f / 0.125)`, which is the same
+ * curve `1 - (1 - a) ** f` of the opacity `a` of the callback.
+ *
  * @param [colormapRegistration] - The colormap of the callback's `preset`, if any.
+ * @param [legacySliceOpacityExponent] - The exponent of the legacy look, 0.125 by default.
  * @returns The presentation for `setDisplaySetPresentation`.
  */
-export function petColorMapPresentation(colormapRegistration) {
+export function petColorMapPresentation(
+  colormapRegistration,
+  legacySliceOpacityExponent = 0.125
+) {
   let name = 'hsv';
+  const power = legacySliceOpacityExponent / 0.125;
 
   if (colormapRegistration) {
     utilities.colormap.registerColormap(colormapRegistration);
@@ -126,7 +141,7 @@ export function petColorMapPresentation(colormapRegistration) {
       opacity: 1,
       opacityMapping: petColorMapOpacity.map(([value, opacity]) => ({
         value,
-        opacity,
+        opacity: power === 1 ? opacity : 1 - (1 - opacity) ** power,
       })),
     },
   };

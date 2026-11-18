@@ -1,14 +1,14 @@
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
-  setVolumesForViewports,
   volumeLoader,
   ProgressiveRetrieveImages,
   utilities,
   getRenderingEngine,
-  getShouldUseCPURendering,
-  setUseCPURendering,
+  getEffectiveRenderBackend,
+  setRenderBackend,
+  viewportProjection,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -18,12 +18,12 @@ import {
   addSliderToToolbar,
   addButtonToToolbar,
   addManipulationBindings,
-  setCtTransferFunctionForVolumeActor,
   annotationTools,
   contourTools,
   labelmapTools,
   addCheckboxToToolbar,
 } from '../../../../utils/demo/helpers';
+import { ctPresentation } from '../../../../utils/demo/helpers/volumePresentationRecipes';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
 // This is for debugging purposes
@@ -61,6 +61,8 @@ const stackToolGroupId = 'STACK_TOOLGROUP_ID';
 const volumeToolGroupId = 'VOLUME_TOOLGROUP_ID';
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
 const volumeId = `${volumeLoaderScheme}:${volumeName}`;
+const stackDisplaySetId = 'axisBasedImageStretching:stack';
+const volumeDisplaySetId = 'axisBasedImageStretching:volume';
 const renderingEngineId = 'myRenderingEngine';
 const stackViewportId = 'CT_STACK';
 const axialViewportId = 'CT_AXIAL';
@@ -73,9 +75,9 @@ const volumeViewportIds = [
 ];
 const allViewportIds = [stackViewportId, ...volumeViewportIds];
 const params = new URLSearchParams(window.location.search);
-const useCPURendering = params.get('useCpu') === 'true';
-const activeViewportIds = useCPURendering ? [stackViewportId] : allViewportIds;
-const activeToolGroupIds = useCPURendering
+const useCpu = params.get('useCpu') === 'true';
+const activeViewportIds = useCpu ? [stackViewportId] : allViewportIds;
+const activeToolGroupIds = useCpu
   ? [stackToolGroupId]
   : [stackToolGroupId, volumeToolGroupId];
 
@@ -107,7 +109,7 @@ element3.style.height = '500px';
 element4.style.width = size;
 element4.style.height = '500px';
 
-if (useCPURendering) {
+if (useCpu) {
   element1.style.width = '100%';
   element2.style.display = 'none';
   element3.style.display = 'none';
@@ -142,7 +144,7 @@ instructions.innerText = `
 
 content.append(instructions);
 
-if (useCPURendering) {
+if (useCpu) {
   for (const [key] of labelmapTools.toolMap) {
     toolMap.delete(key);
   }
@@ -151,10 +153,8 @@ if (useCPURendering) {
   }
 }
 
-const defaultTool = useCPURendering ? 'Length' : 'CircularBrush';
+const defaultTool = useCpu ? 'Length' : 'CircularBrush';
 const renderModes = ['GPU Rendering', 'CPU Rendering'];
-
-setUseCPURendering(useCPURendering);
 
 // ============================= //
 addDropdownToToolbar({
@@ -162,12 +162,12 @@ addDropdownToToolbar({
   labelText: 'Rendering',
   options: {
     values: renderModes,
-    defaultValue: useCPURendering ? renderModes[1] : renderModes[0],
+    defaultValue: useCpu ? renderModes[1] : renderModes[0],
   },
   onSelectedValueChange: (selectedValue) => {
     const shouldUseCPU = selectedValue === renderModes[1];
 
-    if (shouldUseCPU === getShouldUseCPURendering()) {
+    if (shouldUseCPU === (getEffectiveRenderBackend() === 'cpu')) {
       return;
     }
 
@@ -246,9 +246,32 @@ addCheckboxToToolbar({
   },
 });
 
-/** Stretches one viewport, and fits the stretched image if the user asks. */
-const applyAspectRatio = (vp, aspect: Types.Point2) => {
-  vp.setAspectRatio(aspect, { fit: isFitViewportAfterStretch });
+/**
+ * The aspect ratio `[widthRatio, heightRatio]` that the example set last. A
+ * next viewport holds the stretch as a pair of scales, not as this pair, so
+ * the example keeps it.
+ */
+let aspectRatio: Types.Point2 = [1, 1];
+
+/**
+ * Stretches one viewport, and fits the stretched image if the user asks.
+ * Without the fit the horizontal scale stays.
+ */
+const applyAspectRatio = (vp: PlanarViewport, aspect: Types.Point2) => {
+  const stretch = aspect[0] / aspect[1];
+
+  aspectRatio = aspect;
+
+  if (isFitViewportAfterStretch) {
+    vp.setViewState({ scale: [stretch, 1], scaleMode: 'fitAspect' });
+  } else {
+    const [scaleX] = viewportProjection.getPresentation(vp, {
+      selector: { scale: true },
+    })?.scale ?? [1, 1];
+
+    vp.setViewState({ scale: [scaleX, scaleX / stretch], scaleMode: 'fit' });
+  }
+
   vp.render();
 };
 
@@ -257,14 +280,11 @@ let selectedAxis = stretchAxis[0];
 
 const setStretch = (value) => {
   const renderingEngine = getRenderingEngine(renderingEngineId);
-  const viewportIdForStretch = useCPURendering
-    ? stackViewportId
-    : axialViewportId;
+  const viewportIdForStretch = useCpu ? stackViewportId : axialViewportId;
   const viewport = renderingEngine.getViewport(viewportIdForStretch);
   if (!viewport) {
     return;
   }
-  const { aspectRatio } = viewport.getCamera();
   let [sx, sy] = aspectRatio;
   if (selectedAxis === 'Stretch X') {
     [sx, sy] = [value, aspectRatio[1]];
@@ -272,7 +292,7 @@ const setStretch = (value) => {
     [sx, sy] = [aspectRatio[0], value];
   }
   activeViewportIds.forEach((id) => {
-    const vp = renderingEngine.getViewport(id);
+    const vp = renderingEngine.getViewport<PlanarViewport>(id);
     if (!vp) {
       return;
     }
@@ -294,7 +314,7 @@ addDropdownToToolbar({
       .map((it) => Number(it)) as Types.Point2;
 
     activeViewportIds.forEach((id) => {
-      const vp = renderingEngine.getViewport(id);
+      const vp = renderingEngine.getViewport<PlanarViewport>(id);
       if (!vp) {
         return;
       }
@@ -339,8 +359,13 @@ addDropdownToToolbar({
     const rotation = Number(valueAsStringOrNumber);
     const renderingEngine = getRenderingEngine(renderingEngineId);
     volumeViewportIds.forEach((id) => {
-      const vp = renderingEngine.getViewport(id) as Types.IVolumeViewport;
-      vp.setViewPresentation({ rotation });
+      const vp = renderingEngine.getViewport<PlanarViewport>(id);
+      const viewState = viewportProjection.withPresentation(vp, { rotation });
+
+      if (viewState) {
+        vp.setViewState(viewState);
+      }
+
       vp.render();
     });
   },
@@ -351,9 +376,10 @@ addButtonToToolbar({
   onClick: () => {
     const renderingEngine = getRenderingEngine(renderingEngineId);
     volumeViewportIds.forEach((id) => {
-      const vp = renderingEngine.getViewport(id) as Types.IVolumeViewport;
-      const { flipHorizontal, flipVertical } = vp.getCamera();
-      vp.setCamera({
+      const vp = renderingEngine.getViewport<PlanarViewport>(id);
+      const { flipHorizontal = false, flipVertical = false } =
+        vp.getViewState();
+      vp.setViewState({
         flipHorizontal: !flipHorizontal,
         flipVertical: !flipVertical,
       });
@@ -394,6 +420,8 @@ async function run() {
   // Init Cornerstone and related libraries
   await initDemo();
 
+  setRenderBackend(useCpu ? 'cpu' : 'auto');
+
   // This is not necessary, but makes the images appear faster
   utilities.imageRetrieveMetadataProvider.add(
     'volume',
@@ -402,7 +430,7 @@ async function run() {
 
   // Define tool groups: stack tools and MPR tools are configured separately.
   const stackToolGroup = ToolGroupManager.createToolGroup(stackToolGroupId);
-  const volumeToolGroup = useCPURendering
+  const volumeToolGroup = useCpu
     ? null
     : ToolGroupManager.createToolGroup(volumeToolGroupId);
   addManipulationBindings(stackToolGroup, {
@@ -457,11 +485,11 @@ async function run() {
   const renderingEngine = new RenderingEngine(renderingEngineId);
 
   // Create the viewports
-  const viewportInputArray = useCPURendering
+  const viewportInputArray = useCpu
     ? [
         {
           viewportId: stackViewportId,
-          type: ViewportType.STACK,
+          type: ViewportType.PLANAR_NEXT,
           element: element1,
           defaultOptions: {
             background: <Types.Point3>[0.2, 0.0, 0.0],
@@ -471,7 +499,7 @@ async function run() {
     : [
         {
           viewportId: stackViewportId,
-          type: ViewportType.STACK,
+          type: ViewportType.PLANAR_NEXT,
           element: element1,
           defaultOptions: {
             background: <Types.Point3>[0.2, 0.0, 0.0],
@@ -479,7 +507,7 @@ async function run() {
         },
         {
           viewportId: axialViewportId,
-          type: ViewportType.ORTHOGRAPHIC,
+          type: ViewportType.PLANAR_NEXT,
           element: element2,
           defaultOptions: {
             orientation: Enums.OrientationAxis.AXIAL,
@@ -488,7 +516,7 @@ async function run() {
         },
         {
           viewportId: sagittalViewportId,
-          type: ViewportType.ORTHOGRAPHIC,
+          type: ViewportType.PLANAR_NEXT,
           element: element3,
           defaultOptions: {
             orientation: Enums.OrientationAxis.SAGITTAL,
@@ -497,7 +525,7 @@ async function run() {
         },
         {
           viewportId: coronalViewportId,
-          type: ViewportType.ORTHOGRAPHIC,
+          type: ViewportType.PLANAR_NEXT,
           element: element4,
           defaultOptions: {
             orientation: Enums.OrientationAxis.CORONAL,
@@ -515,10 +543,15 @@ async function run() {
     });
   }
 
-  await (
-    renderingEngine.getViewport(stackViewportId) as Types.IStackViewport
-  ).setStack(imageIds);
-  if (!useCPURendering) {
+  utilities.genericViewportDisplaySetMetadataProvider.add(stackDisplaySetId, {
+    kind: 'planar',
+    imageIds,
+  });
+
+  await renderingEngine
+    .getViewport<PlanarViewport>(stackViewportId)
+    .setDisplaySets({ displaySetId: stackDisplaySetId });
+  if (!useCpu) {
     // Define a volume in memory and load segmentations only for GPU mode.
     const volume = await volumeLoader.createAndCacheVolume(volumeId, {
       imageIds,
@@ -526,10 +559,22 @@ async function run() {
     volume.load();
     await addSegmentationsToState();
 
-    await setVolumesForViewports(
-      renderingEngine,
-      [{ volumeId, callback: setCtTransferFunctionForVolumeActor }],
-      volumeViewportIds
+    utilities.genericViewportDisplaySetMetadataProvider.add(
+      volumeDisplaySetId,
+      { kind: 'planar', imageIds, volumeId }
+    );
+
+    await Promise.all(
+      volumeViewportIds.map(async (viewportId) => {
+        const viewport =
+          renderingEngine.getViewport<PlanarViewport>(viewportId);
+
+        await viewport.setDisplaySets({ displaySetId: volumeDisplaySetId });
+        viewport.setDisplaySetPresentation(
+          volumeDisplaySetId,
+          ctPresentation()
+        );
+      })
     );
 
     const segmentationRepresentation = {

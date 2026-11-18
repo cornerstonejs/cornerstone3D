@@ -1,10 +1,9 @@
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
   getRenderingEngine,
   volumeLoader,
-  setVolumesForViewports,
   utilities as csUtils,
 } from '@cornerstonejs/core';
 import {
@@ -38,6 +37,7 @@ const {
 const { ViewportType } = Enums;
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'CT_STACK';
+const displaySetId = 'toolHistoryGrouping:ct';
 const labelmapSegmentationId = 'labelmapSegmentationId';
 const contourSegmentationId = 'contourSegmentationId';
 const defaultTool = 'ThresholdCircle';
@@ -292,9 +292,10 @@ async function run() {
   // Create a stack viewport
   const viewportInput = {
     viewportId,
-    type: ViewportType.ORTHOGRAPHIC,
+    type: ViewportType.PLANAR_NEXT,
     element,
     defaultOptions: {
+      orientation: Enums.OrientationAxis.AXIAL,
       background: <Types.Point3>[0.2, 0, 0.2],
     },
   };
@@ -305,13 +306,17 @@ async function run() {
   toolGroup.addViewport(viewportId, renderingEngineId);
 
   // Get the stack viewport that was created
-  const viewport = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(viewportId)
-  );
+  const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
   volume.load();
 
   // Set volumes on the viewports
-  await setVolumesForViewports(renderingEngine, [{ volumeId }], [viewportId]);
+  csUtils.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    kind: 'planar',
+    imageIds,
+    volumeId,
+  });
+
+  await viewport.setDisplaySets({ displaySetId });
 
   // Render the image
   viewport.render();
