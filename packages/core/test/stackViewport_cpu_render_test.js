@@ -20,9 +20,8 @@ const {
   imageLoader,
   metaData,
   Enums,
-  setUseCPURendering,
-  resetUseCPURendering,
   CONSTANTS,
+  viewportProjection,
 } = cornerstone3D;
 
 const { Events, ViewportType } = Enums;
@@ -36,7 +35,6 @@ describe('StackViewport CPU -- ', () => {
   let renderingEngine;
 
   beforeEach(() => {
-    setUseCPURendering(true);
     const testEnv = testUtils.setupTestEnvironment({
       renderingEngineId,
       toolGroupIds: ['default'],
@@ -49,13 +47,13 @@ describe('StackViewport CPU -- ', () => {
       renderingEngineId,
       toolGroupIds: ['default'],
     });
-    resetUseCPURendering();
   });
 
   describe('Basic Rendering --- ', function () {
     it('Should render one cpu stack viewport of square size properly', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
+        viewportType: ViewportType.PLANAR_NEXT,
       });
 
       const imageInfo = {
@@ -72,7 +70,9 @@ describe('StackViewport CPU -- ', () => {
       const imageId = testUtils.encodeImageIdInfo(imageInfo);
 
       const vp = renderingEngine.getViewport(viewportId);
-      element.addEventListener(Events.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.VIEWPORT_NEW_IMAGE_SET, () => {
+        testUtils.expectNextViewportToDrawOnCPU(vp);
+
         const canvas = vp.getCanvas();
         const image = canvas.toDataURL('image/png');
         testUtils
@@ -85,7 +85,9 @@ describe('StackViewport CPU -- ', () => {
       });
 
       try {
-        vp.setStack([imageId], 0);
+        testUtils.setStackOnNextViewport(vp, [imageId], 0, {
+          renderBackend: 'cpu',
+        });
         vp.render();
       } catch (e) {
         done.fail(e);
@@ -95,6 +97,7 @@ describe('StackViewport CPU -- ', () => {
     it('Should render one cpu stack viewport of rectangle size properly: nearest', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
+        viewportType: ViewportType.PLANAR_NEXT,
       });
 
       const imageInfo = {
@@ -112,7 +115,7 @@ describe('StackViewport CPU -- ', () => {
 
       const vp = renderingEngine.getViewport(viewportId);
 
-      element.addEventListener(Events.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.VIEWPORT_NEW_IMAGE_SET, () => {
         const canvas = vp.getCanvas();
         const image = canvas.toDataURL('image/png');
         testUtils
@@ -125,7 +128,9 @@ describe('StackViewport CPU -- ', () => {
       });
 
       try {
-        vp.setStack([imageId], 0);
+        testUtils.setStackOnNextViewport(vp, [imageId], 0, {
+          renderBackend: 'cpu',
+        });
         vp.render();
       } catch (e) {
         done.fail(e);
@@ -153,7 +158,7 @@ describe('StackViewport CPU -- ', () => {
 
       renderingEngine.enableElement({
         viewportId: viewportId,
-        type: ViewportType.STACK,
+        type: ViewportType.PLANAR_NEXT,
         element: element,
         defaultOptions: {
           background: [1, 0, 1], // pinkish background
@@ -162,7 +167,7 @@ describe('StackViewport CPU -- ', () => {
 
       const vp = renderingEngine.getViewport(viewportId);
 
-      element.addEventListener(Events.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.VIEWPORT_NEW_IMAGE_SET, () => {
         const canvas = vp.getCanvas();
         const image = canvas.toDataURL('image/png');
 
@@ -176,7 +181,9 @@ describe('StackViewport CPU -- ', () => {
       });
 
       try {
-        vp.setStack([imageId], 0);
+        testUtils.setStackOnNextViewport(vp, [imageId], 0, {
+          renderBackend: 'cpu',
+        });
         vp.render();
       } catch (e) {
         done.fail(e);
@@ -186,6 +193,7 @@ describe('StackViewport CPU -- ', () => {
     it('Should render one cpu stack viewport, first slice correctly: nearest', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
+        viewportType: ViewportType.PLANAR_NEXT,
       });
 
       const imageInfo1 = {
@@ -229,7 +237,7 @@ describe('StackViewport CPU -- ', () => {
 
       const vp = renderingEngine.getViewport(viewportId);
 
-      element.addEventListener(Events.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.VIEWPORT_NEW_IMAGE_SET, () => {
         const canvas = vp.getCanvas();
         const image = canvas.toDataURL('image/png');
 
@@ -243,7 +251,14 @@ describe('StackViewport CPU -- ', () => {
       });
 
       try {
-        vp.setStack([imageId1, imageId2, imageId3], 0);
+        testUtils.setStackOnNextViewport(
+          vp,
+          [imageId1, imageId2, imageId3],
+          0,
+          {
+            renderBackend: 'cpu',
+          }
+        );
         vp.render();
       } catch (e) {
         done.fail(e);
@@ -253,6 +268,7 @@ describe('StackViewport CPU -- ', () => {
     it('Should render one cpu stack viewport, last slice correctly: nearest', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
+        viewportType: ViewportType.PLANAR_NEXT,
       });
 
       const imageInfo1 = {
@@ -296,7 +312,7 @@ describe('StackViewport CPU -- ', () => {
 
       const vp = renderingEngine.getViewport(viewportId);
 
-      element.addEventListener(Events.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.VIEWPORT_NEW_IMAGE_SET, () => {
         const canvas = vp.getCanvas();
         const image = canvas.toDataURL('image/png');
 
@@ -310,7 +326,14 @@ describe('StackViewport CPU -- ', () => {
       });
 
       try {
-        vp.setStack([imageId1, imageId2, imageId3], 2);
+        testUtils.setStackOnNextViewport(
+          vp,
+          [imageId1, imageId2, imageId3],
+          2,
+          {
+            renderBackend: 'cpu',
+          }
+        );
         vp.render();
       } catch (e) {
         done.fail(e);
@@ -322,6 +345,7 @@ describe('StackViewport CPU -- ', () => {
     it('Should render one cpu stack viewport with voi presets correctly: nearest', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
+        viewportType: ViewportType.PLANAR_NEXT,
       });
 
       const imageInfo = {
@@ -339,7 +363,7 @@ describe('StackViewport CPU -- ', () => {
 
       const vp = renderingEngine.getViewport(viewportId);
 
-      element.addEventListener(Events.IMAGE_RENDERED, () => {
+      const compareOnImageRendered = () => {
         const canvas = vp.getCanvas();
         const image = canvas.toDataURL('image/png');
 
@@ -350,15 +374,24 @@ describe('StackViewport CPU -- ', () => {
             'cpu_imageURI_256_256_100_100_1_1_0_voi'
           )
           .then(done, done.fail);
-      });
+      };
 
       try {
-        vp.setStack([imageId], 0).then(() => {
-          vp.setProperties({
-            voiRange: { lower: 0, upper: 440 },
+        testUtils
+          .setStackOnNextViewport(vp, [imageId], 0, {
+            renderBackend: 'cpu',
+          })
+          .then(() => {
+            vp.setDisplaySetPresentation({
+              voiRange: { lower: 0, upper: 440 },
+            });
+            element.addEventListener(
+              Events.IMAGE_RENDERED,
+              compareOnImageRendered,
+              { once: true }
+            );
+            vp.render();
           });
-          vp.render();
-        });
       } catch (e) {
         done.fail(e);
       }
@@ -367,6 +400,7 @@ describe('StackViewport CPU -- ', () => {
     it('Should render one cpu stack viewport with multiple imageIds of different size and different spacing: nearest', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
+        viewportType: ViewportType.PLANAR_NEXT,
       });
 
       const imageInfo1 = {
@@ -397,7 +431,7 @@ describe('StackViewport CPU -- ', () => {
 
       const vp = renderingEngine.getViewport(viewportId);
 
-      element.addEventListener(Events.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.VIEWPORT_NEW_IMAGE_SET, () => {
         const canvas = vp.getCanvas();
         const image = canvas.toDataURL('image/png');
 
@@ -411,7 +445,9 @@ describe('StackViewport CPU -- ', () => {
       });
 
       try {
-        vp.setStack([imageId1, imageId2], 0);
+        testUtils.setStackOnNextViewport(vp, [imageId1, imageId2], 0, {
+          renderBackend: 'cpu',
+        });
         vp.render();
       } catch (e) {
         done.fail(e);
@@ -421,6 +457,7 @@ describe('StackViewport CPU -- ', () => {
     it('Should render one cpu stack viewport with multiple images with linear interpolation correctly', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
+        viewportType: ViewportType.PLANAR_NEXT,
       });
 
       const imageInfo1 = {
@@ -450,7 +487,7 @@ describe('StackViewport CPU -- ', () => {
       const imageId2 = testUtils.encodeImageIdInfo(imageInfo2);
 
       const vp = renderingEngine.getViewport(viewportId);
-      element.addEventListener(Events.IMAGE_RENDERED, () => {
+      element.addEventListener(Events.VIEWPORT_NEW_IMAGE_SET, () => {
         const canvas = vp.getCanvas();
         const image = canvas.toDataURL('image/png');
         testUtils
@@ -462,7 +499,9 @@ describe('StackViewport CPU -- ', () => {
           .then(done, done.fail);
       });
       try {
-        vp.setStack([imageId1, imageId2], 1);
+        testUtils.setStackOnNextViewport(vp, [imageId1, imageId2], 1, {
+          renderBackend: 'cpu',
+        });
         vp.render();
       } catch (e) {
         done.fail(e);
@@ -472,6 +511,7 @@ describe('StackViewport CPU -- ', () => {
     it('Should render one cpu stack viewport with invert', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
+        viewportType: ViewportType.PLANAR_NEXT,
       });
 
       const imageInfo = {
@@ -488,7 +528,7 @@ describe('StackViewport CPU -- ', () => {
       const imageId = testUtils.encodeImageIdInfo(imageInfo);
 
       const vp = renderingEngine.getViewport(viewportId);
-      element.addEventListener(Events.IMAGE_RENDERED, () => {
+      const compareOnImageRendered = () => {
         const canvas = vp.getCanvas();
         const image = canvas.toDataURL('image/png');
         testUtils
@@ -498,12 +538,21 @@ describe('StackViewport CPU -- ', () => {
             'cpu_imageURI_256_256_50_10_1_1_0_invert'
           )
           .then(done, done.fail);
-      });
+      };
       try {
-        vp.setStack([imageId], 0).then(() => {
-          vp.setProperties({ invert: true });
-          vp.render();
-        });
+        testUtils
+          .setStackOnNextViewport(vp, [imageId], 0, {
+            renderBackend: 'cpu',
+          })
+          .then(() => {
+            vp.setDisplaySetPresentation({ invert: true });
+            element.addEventListener(
+              Events.IMAGE_RENDERED,
+              compareOnImageRendered,
+              { once: true }
+            );
+            vp.render();
+          });
       } catch (e) {
         done.fail(e);
       }
@@ -512,6 +561,7 @@ describe('StackViewport CPU -- ', () => {
     it('Should render one cpu stack viewport with rotation', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
+        viewportType: ViewportType.PLANAR_NEXT,
       });
 
       const imageInfo = {
@@ -528,7 +578,7 @@ describe('StackViewport CPU -- ', () => {
       const imageId = testUtils.encodeImageIdInfo(imageInfo);
 
       const vp = renderingEngine.getViewport(viewportId);
-      element.addEventListener(Events.IMAGE_RENDERED, () => {
+      const compareOnImageRendered = () => {
         const canvas = vp.getCanvas();
         const image = canvas.toDataURL('image/png');
         testUtils
@@ -538,12 +588,23 @@ describe('StackViewport CPU -- ', () => {
             'cpu_imageURI_256_256_50_10_1_1_0_rotate'
           )
           .then(done, done.fail);
-      });
+      };
       try {
-        vp.setStack([imageId], 0).then(() => {
-          vp.setViewPresentation({ rotation: 90 });
-          vp.render();
-        });
+        testUtils
+          .setStackOnNextViewport(vp, [imageId], 0, {
+            renderBackend: 'cpu',
+          })
+          .then(() => {
+            vp.setViewState(
+              viewportProjection.withPresentation(vp, { rotation: 90 })
+            );
+            element.addEventListener(
+              Events.IMAGE_RENDERED,
+              compareOnImageRendered,
+              { once: true }
+            );
+            vp.render();
+          });
       } catch (e) {
         done.fail(e);
       }

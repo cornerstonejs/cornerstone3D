@@ -22,8 +22,15 @@ import * as imageURI_256_256_50_10_1_1_0 from './groundTruth/imageURI_256_256_50
 import * as imageURI_100_100_0_10_1_1_1_linear_color from './groundTruth/imageURI_100_100_0_10_1_1_1_linear_color.png';
 import * as calibrated_1_5_imageURI_11_11_4_1_1_1_0_1 from './groundTruth/calibrated_1_5_imageURI_11_11_4_1_1_1_0_1.png';
 
-const { cache, RenderingEngine, utilities, imageLoader, metaData, Enums } =
-  cornerstone3D;
+const {
+  cache,
+  RenderingEngine,
+  utilities,
+  imageLoader,
+  metaData,
+  Enums,
+  viewportProjection,
+} = cornerstone3D;
 
 const { Events, ViewportType, InterpolationType } = Enums;
 const { calibratedPixelSpacingMetadataProvider, transferFunctionUtils } =
@@ -53,6 +60,24 @@ function renderAndCapture(vp, element) {
     element.addEventListener(Events.IMAGE_RENDERED, onRendered);
     vp.render();
   });
+}
+
+/**
+ * The properties that a stack on a direct next viewport draws with, in the
+ * form of the legacy `getProperties`: the presentation of the source display
+ * set, with linear interpolation and the default invert flag of the image
+ * where the presentation does not set them.
+ */
+function getStackProperties(vp) {
+  const displaySetId = vp.getSourceDataId();
+  const presentation = vp.getDisplaySetPresentation(displaySetId) || {};
+
+  return {
+    ...presentation,
+    interpolationType:
+      presentation.interpolationType ?? InterpolationType.LINEAR,
+    invert: presentation.invert ?? vp.getDefaultInvert(displaySetId) ?? false,
+  };
 }
 
 /**
@@ -108,6 +133,7 @@ describe('renderingCore -- Stack', () => {
     it('Should render one stack viewport of square size properly: nearest', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
+        viewportType: ViewportType.PLANAR_NEXT,
         orientation: Enums.OrientationAxis.AXIAL,
       });
 
@@ -135,8 +161,10 @@ describe('renderingCore -- Stack', () => {
       });
 
       try {
-        vp.setStack([imageId], 0).then(() => {
-          vp.setProperties({ interpolationType: InterpolationType.NEAREST });
+        testUtils.setStackOnNextViewport(vp, [imageId], 0).then(() => {
+          vp.setDisplaySetPresentation({
+            interpolationType: InterpolationType.NEAREST,
+          });
           vp.render();
         });
       } catch (e) {
@@ -147,6 +175,7 @@ describe('renderingCore -- Stack', () => {
     it('Should render one stack viewport of rectangle size properly: nearest', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
+        viewportType: ViewportType.PLANAR_NEXT,
         orientation: Enums.OrientationAxis.AXIAL,
       });
 
@@ -176,8 +205,10 @@ describe('renderingCore -- Stack', () => {
       });
 
       try {
-        vp.setStack([imageId], 0).then(() => {
-          vp.setProperties({ interpolationType: InterpolationType.NEAREST });
+        testUtils.setStackOnNextViewport(vp, [imageId], 0).then(() => {
+          vp.setDisplaySetPresentation({
+            interpolationType: InterpolationType.NEAREST,
+          });
           vp.render();
         });
       } catch (e) {
@@ -188,6 +219,7 @@ describe('renderingCore -- Stack', () => {
     it('Should render one stack viewport of square size and 5mm spacing properly: nearest', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
+        viewportType: ViewportType.PLANAR_NEXT,
         orientation: Enums.OrientationAxis.AXIAL,
       });
 
@@ -218,8 +250,10 @@ describe('renderingCore -- Stack', () => {
       });
 
       try {
-        vp.setStack([imageId], 0).then(() => {
-          vp.setProperties({ interpolationType: InterpolationType.NEAREST });
+        testUtils.setStackOnNextViewport(vp, [imageId], 0).then(() => {
+          vp.setDisplaySetPresentation({
+            interpolationType: InterpolationType.NEAREST,
+          });
           vp.render();
         });
       } catch (e) {
@@ -230,6 +264,7 @@ describe('renderingCore -- Stack', () => {
     it('Should use enableElement API to render one stack viewport of square size and 5mm spacing properly: nearest', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
+        viewportType: ViewportType.PLANAR_NEXT,
         orientation: Enums.OrientationAxis.AXIAL,
       });
 
@@ -248,7 +283,7 @@ describe('renderingCore -- Stack', () => {
 
       renderingEngine.enableElement({
         viewportId: viewportId,
-        type: ViewportType.STACK,
+        type: ViewportType.PLANAR_NEXT,
         element: element,
         defaultOptions: {
           background: [1, 0, 1], // pinkish background
@@ -269,8 +304,10 @@ describe('renderingCore -- Stack', () => {
       });
 
       try {
-        vp.setStack([imageId], 0).then(() => {
-          vp.setProperties({ interpolationType: InterpolationType.NEAREST });
+        testUtils.setStackOnNextViewport(vp, [imageId], 0).then(() => {
+          vp.setDisplaySetPresentation({
+            interpolationType: InterpolationType.NEAREST,
+          });
           vp.render();
         });
       } catch (e) {
@@ -281,6 +318,7 @@ describe('renderingCore -- Stack', () => {
     it('Should render one stack viewport, first slice correctly: nearest', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
+        viewportType: ViewportType.PLANAR_NEXT,
         orientation: Enums.OrientationAxis.AXIAL,
       });
 
@@ -337,10 +375,14 @@ describe('renderingCore -- Stack', () => {
       });
 
       try {
-        vp.setStack([imageId1, imageId2, imageId3], 0).then(() => {
-          vp.setProperties({ interpolationType: InterpolationType.NEAREST });
-          vp.render();
-        });
+        testUtils
+          .setStackOnNextViewport(vp, [imageId1, imageId2, imageId3], 0)
+          .then(() => {
+            vp.setDisplaySetPresentation({
+              interpolationType: InterpolationType.NEAREST,
+            });
+            vp.render();
+          });
       } catch (e) {
         done.fail(e);
       }
@@ -349,6 +391,7 @@ describe('renderingCore -- Stack', () => {
     it('Should render one stack viewport, last slice correctly: nearest', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
+        viewportType: ViewportType.PLANAR_NEXT,
         orientation: Enums.OrientationAxis.AXIAL,
       });
 
@@ -405,10 +448,14 @@ describe('renderingCore -- Stack', () => {
       });
 
       try {
-        vp.setStack([imageId1, imageId2, imageId3], 2).then(() => {
-          vp.setProperties({ interpolationType: InterpolationType.NEAREST });
-          vp.render();
-        });
+        testUtils
+          .setStackOnNextViewport(vp, [imageId1, imageId2, imageId3], 2)
+          .then(() => {
+            vp.setDisplaySetPresentation({
+              interpolationType: InterpolationType.NEAREST,
+            });
+            vp.render();
+          });
       } catch (e) {
         done.fail(e);
       }
@@ -417,6 +464,7 @@ describe('renderingCore -- Stack', () => {
     it('Should render one stack viewport with CT presets correctly: nearest', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
+        viewportType: ViewportType.PLANAR_NEXT,
         orientation: Enums.OrientationAxis.AXIAL,
       });
 
@@ -447,8 +495,8 @@ describe('renderingCore -- Stack', () => {
       });
 
       try {
-        vp.setStack([imageId], 0).then(() => {
-          vp.setProperties({
+        testUtils.setStackOnNextViewport(vp, [imageId], 0).then(() => {
+          vp.setDisplaySetPresentation({
             voiRange: { lower: -160, upper: 240 },
             interpolationType: InterpolationType.NEAREST,
           });
@@ -463,6 +511,7 @@ describe('renderingCore -- Stack', () => {
     it('Should render one stack viewport with multiple imageIds of different size and different spacing: nearest', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
+        viewportType: ViewportType.PLANAR_NEXT,
         orientation: Enums.OrientationAxis.AXIAL,
       });
 
@@ -506,10 +555,14 @@ describe('renderingCore -- Stack', () => {
       });
 
       try {
-        vp.setStack([imageId1, imageId2], 0).then(() => {
-          vp.setProperties({ interpolationType: InterpolationType.NEAREST });
-          vp.render();
-        });
+        testUtils
+          .setStackOnNextViewport(vp, [imageId1, imageId2], 0)
+          .then(() => {
+            vp.setDisplaySetPresentation({
+              interpolationType: InterpolationType.NEAREST,
+            });
+            vp.render();
+          });
       } catch (e) {
         done.fail(e);
       }
@@ -518,6 +571,7 @@ describe('renderingCore -- Stack', () => {
     it('Should render one stack viewport with multiple imageIds of different size and different spacing, second slice: nearest', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
+        viewportType: ViewportType.PLANAR_NEXT,
         orientation: Enums.OrientationAxis.AXIAL,
       });
 
@@ -561,10 +615,14 @@ describe('renderingCore -- Stack', () => {
       });
 
       try {
-        vp.setStack([imageId1, imageId2], 1).then(() => {
-          vp.setProperties({ interpolationType: InterpolationType.NEAREST });
-          vp.render();
-        });
+        testUtils
+          .setStackOnNextViewport(vp, [imageId1, imageId2], 1)
+          .then(() => {
+            vp.setDisplaySetPresentation({
+              interpolationType: InterpolationType.NEAREST,
+            });
+            vp.render();
+          });
       } catch (e) {
         done.fail(e);
       }
@@ -575,6 +633,7 @@ describe('renderingCore -- Stack', () => {
     it('Should render one stack viewport with linear interpolation correctly', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
+        viewportType: ViewportType.PLANAR_NEXT,
         orientation: Enums.OrientationAxis.AXIAL,
       });
 
@@ -602,8 +661,10 @@ describe('renderingCore -- Stack', () => {
         ).then(done, done.fail);
       });
       try {
-        vp.setStack([imageId], 0).then(() => {
-          vp.setProperties({ voiRange: { lower: -160, upper: 240 } });
+        testUtils.setStackOnNextViewport(vp, [imageId], 0).then(() => {
+          vp.setDisplaySetPresentation({
+            voiRange: { lower: -160, upper: 240 },
+          });
           vp.render();
         });
       } catch (e) {
@@ -614,6 +675,7 @@ describe('renderingCore -- Stack', () => {
     it('Should render one stack viewport with multiple images with linear interpolation correctly', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
+        viewportType: ViewportType.PLANAR_NEXT,
         orientation: Enums.OrientationAxis.AXIAL,
       });
 
@@ -654,9 +716,11 @@ describe('renderingCore -- Stack', () => {
         ).then(done, done.fail);
       });
       try {
-        vp.setStack([imageId1, imageId2], 1).then(() => {
-          vp.render();
-        });
+        testUtils
+          .setStackOnNextViewport(vp, [imageId1, imageId2], 1)
+          .then(() => {
+            vp.render();
+          });
       } catch (e) {
         done.fail(e);
       }
@@ -667,6 +731,7 @@ describe('renderingCore -- Stack', () => {
     it('Should render color images: linear', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
+        viewportType: ViewportType.PLANAR_NEXT,
         orientation: Enums.OrientationAxis.SAGITTAL,
         width: 512,
         height: 512,
@@ -700,7 +765,7 @@ describe('renderingCore -- Stack', () => {
       });
 
       try {
-        vp.setStack([imageId], 0).then(() => {
+        testUtils.setStackOnNextViewport(vp, [imageId], 0).then(() => {
           vp.render();
         });
       } catch (e) {
@@ -711,6 +776,7 @@ describe('renderingCore -- Stack', () => {
     it('Should render color images: nearest', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
+        viewportType: ViewportType.PLANAR_NEXT,
         orientation: Enums.OrientationAxis.AXIAL,
         width: 512,
         height: 512,
@@ -744,8 +810,10 @@ describe('renderingCore -- Stack', () => {
       });
 
       try {
-        vp.setStack([imageId], 0).then(() => {
-          vp.setProperties({ interpolationType: InterpolationType.NEAREST });
+        testUtils.setStackOnNextViewport(vp, [imageId], 0).then(() => {
+          vp.setDisplaySetPresentation({
+            interpolationType: InterpolationType.NEAREST,
+          });
           vp.render();
         });
       } catch (e) {
@@ -758,6 +826,7 @@ describe('renderingCore -- Stack', () => {
     it('Should be able to render a stack viewport with PET modality scaling', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
+        viewportType: ViewportType.PLANAR_NEXT,
         orientation: Enums.OrientationAxis.AXIAL,
       });
 
@@ -777,14 +846,14 @@ describe('renderingCore -- Stack', () => {
 
       const vp = renderingEngine.getViewport(viewportId);
       element.addEventListener(Events.IMAGE_RENDERED, () => {
-        expect(vp.scaling.PT).toEqual({
+        expect(vp.getImageData().scaling.PT).toEqual({
           suvbwToSuvlbm: 1,
           suvbwToSuvbsa: 1,
         });
         done();
       });
       try {
-        vp.setStack([imageId], 0);
+        testUtils.setStackOnNextViewport(vp, [imageId], 0);
         vp.render();
       } catch (e) {
         done.fail(e);
@@ -794,6 +863,7 @@ describe('renderingCore -- Stack', () => {
     it('Should be able to calibrate the pixel spacing', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
+        viewportType: ViewportType.PLANAR_NEXT,
         orientation: Enums.OrientationAxis.AXIAL,
       });
 
@@ -840,7 +910,7 @@ describe('renderingCore -- Stack', () => {
       });
 
       try {
-        vp.setStack([imageId], 0);
+        testUtils.setStackOnNextViewport(vp, [imageId], 0);
         vp.render();
       } catch (e) {
         done.fail(e);
@@ -852,6 +922,7 @@ describe('renderingCore -- Stack', () => {
     it('Should be able to use setProperties API', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
+        viewportType: ViewportType.PLANAR_NEXT,
         orientation: Enums.OrientationAxis.AXIAL,
       });
 
@@ -875,8 +946,8 @@ describe('renderingCore -- Stack', () => {
           const canvas = vp.getCanvas();
           const image = canvas.toDataURL('image/png');
 
-          let props = vp.getProperties();
-          const rotation = vp.getViewPresentation().rotation;
+          let props = getStackProperties(vp);
+          const rotation = viewportProjection.getPresentation(vp).rotation;
           expect(rotation).toBe(90);
           expect(props.interpolationType).toBe(InterpolationType.NEAREST);
           expect(props.invert).toBe(true);
@@ -892,14 +963,16 @@ describe('renderingCore -- Stack', () => {
       };
 
       try {
-        vp.setStack([imageId], 0).then(() => {
+        testUtils.setStackOnNextViewport(vp, [imageId], 0).then(() => {
           subscribeToImageRendered();
-          vp.setProperties({
+          vp.setDisplaySetPresentation({
             interpolationType: InterpolationType.NEAREST,
             voiRange: { lower: -260, upper: 140 },
             invert: true,
           });
-          vp.setViewPresentation({ rotation: 90 });
+          vp.setViewState(
+            viewportProjection.withPresentation(vp, { rotation: 90 })
+          );
 
           vp.render();
         });
@@ -967,6 +1040,7 @@ describe('renderingCore -- Stack', () => {
     it('Should preserve inversion when scrolling after resetProperties', function (done) {
       testUtils.createViewports(renderingEngine, {
         viewportId,
+        viewportType: ViewportType.PLANAR_NEXT,
         orientation: Enums.OrientationAxis.AXIAL,
       });
 
@@ -997,15 +1071,16 @@ describe('renderingCore -- Stack', () => {
           .map(([, red, green, blue]) => [red, green, blue]);
       };
 
-      vp.setStack([imageId1, imageId2], 0)
+      testUtils
+        .setStackOnNextViewport(vp, [imageId1, imageId2], 0)
         .then(() => {
-          vp.resetProperties();
-          vp.setProperties({ invert: true });
+          vp.resetDisplaySetPresentation();
+          vp.setDisplaySetPresentation({ invert: true });
 
           const invertedColors = getTransferFunctionColors();
 
           return vp.setImageIdIndex(1).then(() => {
-            expect(vp.getProperties().invert).toBe(true);
+            expect(getStackProperties(vp).invert).toBe(true);
             expect(getTransferFunctionColors()).toEqual(invertedColors);
           });
         })
@@ -1016,6 +1091,7 @@ describe('renderingCore -- Stack', () => {
     it('Should be able to resetProperties API', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
+        viewportType: ViewportType.PLANAR_NEXT,
         orientation: Enums.OrientationAxis.AXIAL,
       });
 
@@ -1040,15 +1116,15 @@ describe('renderingCore -- Stack', () => {
           firstImageRenderedCallback
         );
 
-        let props = vp.getProperties();
-        const rotation = vp.getViewPresentation().rotation;
+        let props = getStackProperties(vp);
+        const rotation = viewportProjection.getPresentation(vp).rotation;
         expect(rotation).toBe(90);
         expect(props.interpolationType).toBe(InterpolationType.NEAREST);
         expect(props.invert).toBe(true);
 
         setTimeout(() => {
           console.log('reseting properties');
-          vp.resetProperties();
+          vp.resetDisplaySetPresentation();
         });
 
         element.addEventListener(
@@ -1059,7 +1135,7 @@ describe('renderingCore -- Stack', () => {
 
       const secondImageRenderedCallback = () => {
         console.log('resetProperties callback');
-        const props = vp.getProperties();
+        const props = getStackProperties(vp);
         expect(props.interpolationType).toBe(InterpolationType.LINEAR);
         expect(props.invert).toBe(false);
 
@@ -1073,13 +1149,15 @@ describe('renderingCore -- Stack', () => {
       );
 
       try {
-        vp.setStack([imageId], 0).then(() => {
-          vp.setProperties({
+        testUtils.setStackOnNextViewport(vp, [imageId], 0).then(() => {
+          vp.setDisplaySetPresentation({
             interpolationType: InterpolationType.NEAREST,
             voiRange: { lower: -260, upper: 140 },
             invert: true,
           });
-          vp.setViewPresentation({ rotation: 90 });
+          vp.setViewState(
+            viewportProjection.withPresentation(vp, { rotation: 90 })
+          );
           vp.render();
         });
       } catch (e) {
@@ -1092,6 +1170,7 @@ describe('renderingCore -- Stack', () => {
     it('Should be able to flip a stack viewport horizontally', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
+        viewportType: ViewportType.PLANAR_NEXT,
         orientation: Enums.OrientationAxis.AXIAL,
       });
 
@@ -1121,12 +1200,12 @@ describe('renderingCore -- Stack', () => {
       });
 
       try {
-        vp.setStack([imageId], 0).then(() => {
-          vp.setProperties({
+        testUtils.setStackOnNextViewport(vp, [imageId], 0).then(() => {
+          vp.setDisplaySetPresentation({
             interpolationType: InterpolationType.NEAREST,
           });
 
-          vp.setCamera({ flipHorizontal: true });
+          vp.setViewState({ flipHorizontal: true });
 
           vp.render();
         });
@@ -1138,6 +1217,7 @@ describe('renderingCore -- Stack', () => {
     it('Should be able to flip a stack viewport vertically and rotate it', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
+        viewportType: ViewportType.PLANAR_NEXT,
         orientation: Enums.OrientationAxis.AXIAL,
       });
 
@@ -1167,13 +1247,15 @@ describe('renderingCore -- Stack', () => {
       });
 
       try {
-        vp.setStack([imageId], 0).then(() => {
-          vp.setProperties({
+        testUtils.setStackOnNextViewport(vp, [imageId], 0).then(() => {
+          vp.setDisplaySetPresentation({
             interpolationType: InterpolationType.NEAREST,
           });
 
-          vp.setViewPresentation({ rotation: 90 });
-          vp.setCamera({ flipVertical: true });
+          vp.setViewState(
+            viewportProjection.withPresentation(vp, { rotation: 90 })
+          );
+          vp.setViewState({ flipVertical: true });
           vp.render();
         });
       } catch (e) {
@@ -1186,45 +1268,51 @@ describe('renderingCore -- Stack', () => {
     it('Should render a MONOCHROME1 image inverted, as its MONOCHROME2 image with invert set', async function () {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
+        viewportType: ViewportType.PLANAR_NEXT,
         orientation: Enums.OrientationAxis.AXIAL,
       });
       const vp = renderingEngine.getViewport(viewportId);
       const { monochrome2, monochrome1 } = getMonochromeImageIds();
 
-      await vp.setStack([monochrome2], 0);
+      await testUtils.setStackOnNextViewport(vp, [monochrome2], 0);
       const notInverted = await renderAndCapture(vp, element);
 
-      expect(vp.getProperties().invert).toBe(false);
+      expect(getStackProperties(vp).invert).toBe(false);
 
-      vp.setProperties({ invert: true });
+      vp.setDisplaySetPresentation({ invert: true });
       const inverted = await renderAndCapture(vp, element);
 
       expect(inverted).not.toEqual(notInverted);
 
-      await vp.setStack([monochrome1], 0);
+      await testUtils.setStackOnNextViewport(vp, [monochrome1], 0);
       const image = await renderAndCapture(vp, element);
 
-      expect(vp.getProperties().invert).toBe(true);
+      expect(getStackProperties(vp).invert).toBe(true);
       await compareImages(image, { default: inverted }, 'monochrome1_default');
     });
 
     it('Should keep an invert flag set on a MONOCHROME1 image and reset it to the default of the image', async function () {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
+        viewportType: ViewportType.PLANAR_NEXT,
         orientation: Enums.OrientationAxis.AXIAL,
       });
       const vp = renderingEngine.getViewport(viewportId);
       const { monochrome2, monochrome1, monochrome1Next } =
         getMonochromeImageIds();
 
-      await vp.setStack([monochrome2], 0);
+      await testUtils.setStackOnNextViewport(vp, [monochrome2], 0);
       const notInverted = await renderAndCapture(vp, element);
 
-      await vp.setStack([monochrome1, monochrome1Next], 0);
-      vp.setProperties({ invert: false });
+      await testUtils.setStackOnNextViewport(
+        vp,
+        [monochrome1, monochrome1Next],
+        0
+      );
+      vp.setDisplaySetPresentation({ invert: false });
       const setByHand = await renderAndCapture(vp, element);
 
-      expect(vp.getProperties().invert).toBe(false);
+      expect(getStackProperties(vp).invert).toBe(false);
       await compareImages(
         setByHand,
         { default: notInverted },
@@ -1234,21 +1322,21 @@ describe('renderingCore -- Stack', () => {
       await vp.setImageIdIndex(1);
       const scrolled = await renderAndCapture(vp, element);
 
-      expect(vp.getProperties().invert).toBe(false);
+      expect(getStackProperties(vp).invert).toBe(false);
       await compareImages(
         scrolled,
         { default: notInverted },
         'monochrome1_invert_false_scrolled'
       );
 
-      vp.resetProperties();
+      vp.resetDisplaySetPresentation();
 
-      expect(vp.getProperties().invert).toBe(true);
+      expect(getStackProperties(vp).invert).toBe(true);
 
-      await vp.setStack([monochrome2], 0);
+      await testUtils.setStackOnNextViewport(vp, [monochrome2], 0);
       await renderAndCapture(vp, element);
 
-      expect(vp.getProperties().invert).toBe(false);
+      expect(getStackProperties(vp).invert).toBe(false);
     });
   });
 });

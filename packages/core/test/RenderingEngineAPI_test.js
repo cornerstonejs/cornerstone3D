@@ -33,16 +33,19 @@ describe('RenderingEngineAPI -- ', () => {
     it('should be able to access the viewports from renderingEngine', function () {
       createViewports(renderingEngine, {
         viewportId: axialViewportId,
+        viewportType: ViewportType.PLANAR_NEXT,
         orientation: Enums.OrientationAxis.AXIAL,
         useEnableElement: true,
       });
       createViewports(renderingEngine, {
         viewportId: sagittalViewportId,
+        viewportType: ViewportType.PLANAR_NEXT,
         orientation: Enums.OrientationAxis.SAGITTAL,
         useEnableElement: true,
       });
       createViewports(renderingEngine, {
         viewportId: customOrientationViewportId,
+        viewportType: ViewportType.PLANAR_NEXT,
         orientation: { viewPlaneNormal: [0, 0, 1], viewUp: [0, 1, 0] },
         useEnableElement: true,
       });
@@ -58,6 +61,7 @@ describe('RenderingEngineAPI -- ', () => {
     it('should be able to destroy the rendering engine', function () {
       createViewports(renderingEngine, {
         viewportId: axialViewportId,
+        viewportType: ViewportType.PLANAR_NEXT,
         orientation: Enums.OrientationAxis.AXIAL,
       });
 
@@ -71,6 +75,7 @@ describe('RenderingEngineAPI -- ', () => {
     it('should be able to handle destroy of an engine that has been destroyed', function () {
       createViewports(renderingEngine, {
         viewportId: axialViewportId,
+        viewportType: ViewportType.PLANAR_NEXT,
         orientation: Enums.OrientationAxis.AXIAL,
       });
 
@@ -99,6 +104,7 @@ describe('RenderingEngineAPI -- ', () => {
     it('should be able to successfully use enable api', function () {
       createViewports(renderingEngine, {
         viewportId: axialViewportId,
+        viewportType: ViewportType.PLANAR_NEXT,
         orientation: Enums.OrientationAxis.AXIAL,
         useEnableElement: true,
       });
@@ -114,7 +120,7 @@ describe('RenderingEngineAPI -- ', () => {
     it('should not enable element without an element', function () {
       const entry = {
         viewportId: axialViewportId,
-        type: ViewportType.ORTHOGRAPHIC,
+        type: ViewportType.PLANAR_NEXT,
         defaultOptions: {
           orientation: Enums.OrientationAxis.AXIAL,
         },
@@ -126,6 +132,7 @@ describe('RenderingEngineAPI -- ', () => {
     it('should successfully use disable element API', function () {
       createViewports(renderingEngine, {
         viewportId: axialViewportId,
+        viewportType: ViewportType.PLANAR_NEXT,
         orientation: Enums.OrientationAxis.AXIAL,
         useEnableElement: true,
       });
@@ -155,7 +162,7 @@ describe('RenderingEngineAPI -- ', () => {
     it('should resize legacy custom-pipeline viewports without changing the engine contract', function () {
       createViewports(renderingEngine, {
         viewportId: customOrientationViewportId,
-        viewportType: ViewportType.ECG,
+        viewportType: ViewportType.ECG_NEXT,
         useEnableElement: true,
       });
 
@@ -210,7 +217,7 @@ describe('RenderingEngineAPI -- ', () => {
     it('should resize remapped custom-pipeline Generic viewports without legacy camera APIs', function () {
       createViewports(renderingEngine, {
         viewportId: customOrientationViewportId,
-        viewportType: ViewportType.ECG,
+        viewportType: ViewportType.ECG_NEXT,
         useEnableElement: true,
       });
 

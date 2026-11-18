@@ -15,12 +15,12 @@ describe('ECGViewport', () => {
     const testEnv = testUtils.setupTestEnvironment({
       renderingEngineId,
       viewportId,
-      type: ViewportType.ECG,
+      type: ViewportType.ECG_NEXT,
     });
     renderingEngine = testEnv.renderingEngine;
     element = testUtils.createViewports(renderingEngine, {
       viewportId,
-      viewportType: ViewportType.ECG,
+      viewportType: ViewportType.ECG_NEXT,
     });
   });
 
@@ -87,7 +87,7 @@ describe('ECGViewport', () => {
       });
 
       try {
-        viewport.setEcg(fakeImageId);
+        viewport.setDisplaySets({ displaySetId: fakeImageId });
       } catch (e) {
         done.fail(e);
       }
@@ -148,7 +148,7 @@ describe('ECGViewport', () => {
       });
 
       try {
-        viewport.setEcg(fakeImageId);
+        viewport.setDisplaySets({ displaySetId: fakeImageId });
       } catch (e) {
         done.fail(e);
       }
@@ -191,7 +191,7 @@ describe('ECGViewport', () => {
       });
 
       try {
-        viewport.setEcg(fakeImageId);
+        viewport.setDisplaySets({ displaySetId: fakeImageId });
       } catch (e) {
         done.fail(e);
       }

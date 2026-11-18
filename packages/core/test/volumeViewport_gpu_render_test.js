@@ -20,10 +20,10 @@ import * as volumeURI_100_100_10_1_1_1_0_coronal_linear from './groundTruth/volu
 import * as volumeURI_100_100_10_1_1_1_1_color_coronal_linear from './groundTruth/volumeURI_100_100_10_1_1_1_1_color_coronal_linear.png';
 import * as volumeURI_100_100_10_1_1_1_1_color_axial_linear from './groundTruth/volumeURI_100_100_10_1_1_1_1_color_axial_linear.png';
 
-const { imageLoader, Enums, volumeLoader, utilities, setVolumesForViewports } =
+const { imageLoader, Enums, volumeLoader, utilities, CONSTANTS } =
   cornerstone3D;
 
-const { ViewportType, Events } = Enums;
+const { ViewportType, Events, InterpolationType } = Enums;
 
 const renderingEngineId = utilities.uuidv4();
 const viewportId = 'VIEWPORT';
@@ -51,7 +51,7 @@ describe('Volume Viewport GPU -- ', () => {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
         orientation: Enums.OrientationAxis.SAGITTAL,
-        viewportType: ViewportType.VOLUME_3D,
+        viewportType: ViewportType.VOLUME_3D_NEXT,
         width: 500,
         height: 500,
       });
@@ -88,10 +88,12 @@ describe('Volume Viewport GPU -- ', () => {
         mapper.setInputConnection(sphereSource.getOutputPort());
         actor.setMapper(mapper);
 
-        const nonVolumeActors = [];
-        nonVolumeActors.push({ uid: 'spherePolyData', actor });
+        const { viewPlaneNormal, viewUp } =
+          CONSTANTS.MPR_CAMERA_VALUES.sagittal;
 
-        vp.setActors(nonVolumeActors);
+        vp.getRenderer().addActor(actor);
+        vp.setViewState({ viewPlaneNormal, viewUp });
+        vp.resetViewState();
         vp.render();
       } catch (e) {
         done.fail(e);
@@ -104,7 +106,7 @@ describe('Volume Viewport GPU -- ', () => {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
         orientation: Enums.OrientationAxis.AXIAL,
-        viewportType: ViewportType.ORTHOGRAPHIC,
+        viewportType: ViewportType.PLANAR_NEXT,
         width: 500,
         height: 500,
       });
@@ -135,18 +137,15 @@ describe('Volume Viewport GPU -- ', () => {
         }, 1000);
       });
 
-      const callback = ({ volumeActor }) =>
-        volumeActor.getProperty().setInterpolationTypeToNearest();
-
       try {
         volumeLoader
           .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
-            setVolumesForViewports(
-              renderingEngine,
-              [{ volumeId: volumeId, callback }],
-              [viewportId]
-            );
+            testUtils.setVolumesOnNextViewport(vp, [volumeId]).then(() => {
+              vp.setDisplaySetPresentation({
+                interpolationType: InterpolationType.NEAREST,
+              });
+            });
             vp.render();
           })
           .catch((e) => {
@@ -161,7 +160,7 @@ describe('Volume Viewport GPU -- ', () => {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
         orientation: Enums.OrientationAxis.AXIAL,
-        viewportType: ViewportType.ORTHOGRAPHIC,
+        viewportType: ViewportType.PLANAR_NEXT,
       });
 
       const volumeId = testUtils.encodeVolumeIdInfo({
@@ -194,11 +193,7 @@ describe('Volume Viewport GPU -- ', () => {
         volumeLoader
           .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
-            setVolumesForViewports(
-              renderingEngine,
-              [{ volumeId: volumeId }],
-              [viewportId]
-            );
+            testUtils.setVolumesOnNextViewport(vp, [volumeId]);
             vp.render();
           });
       } catch (e) {
@@ -212,7 +207,7 @@ describe('Volume Viewport GPU -- ', () => {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
         orientation: Enums.OrientationAxis.SAGITTAL,
-        viewportType: ViewportType.ORTHOGRAPHIC,
+        viewportType: ViewportType.PLANAR_NEXT,
       });
 
       const volumeId = testUtils.encodeVolumeIdInfo({
@@ -241,18 +236,15 @@ describe('Volume Viewport GPU -- ', () => {
         }, 200);
       });
 
-      const callback = ({ volumeActor }) =>
-        volumeActor.getProperty().setInterpolationTypeToNearest();
-
       try {
         volumeLoader
           .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
-            setVolumesForViewports(
-              renderingEngine,
-              [{ volumeId: volumeId, callback }],
-              [viewportId]
-            );
+            testUtils.setVolumesOnNextViewport(vp, [volumeId]).then(() => {
+              vp.setDisplaySetPresentation({
+                interpolationType: InterpolationType.NEAREST,
+              });
+            });
             vp.render();
           })
           .catch((e) => {
@@ -267,7 +259,7 @@ describe('Volume Viewport GPU -- ', () => {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
         orientation: Enums.OrientationAxis.SAGITTAL,
-        viewportType: ViewportType.ORTHOGRAPHIC,
+        viewportType: ViewportType.PLANAR_NEXT,
       });
 
       const volumeId = testUtils.encodeVolumeIdInfo({
@@ -300,11 +292,7 @@ describe('Volume Viewport GPU -- ', () => {
         volumeLoader
           .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
-            setVolumesForViewports(
-              renderingEngine,
-              [{ volumeId: volumeId }],
-              [viewportId]
-            );
+            testUtils.setVolumesOnNextViewport(vp, [volumeId]);
             vp.render();
           })
           .catch((e) => {
@@ -321,7 +309,7 @@ describe('Volume Viewport GPU -- ', () => {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
         orientation: Enums.OrientationAxis.CORONAL,
-        viewportType: ViewportType.ORTHOGRAPHIC,
+        viewportType: ViewportType.PLANAR_NEXT,
       });
 
       const volumeId = testUtils.encodeVolumeIdInfo({
@@ -350,20 +338,17 @@ describe('Volume Viewport GPU -- ', () => {
         }, 200);
       });
 
-      const callback = ({ volumeActor }) =>
-        volumeActor.getProperty().setInterpolationTypeToNearest();
-
       try {
         // we don't set imageIds as we are mocking the imageVolume to
         // return the volume immediately
         volumeLoader
           .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
-            setVolumesForViewports(
-              renderingEngine,
-              [{ volumeId: volumeId, callback }],
-              [viewportId]
-            );
+            testUtils.setVolumesOnNextViewport(vp, [volumeId]).then(() => {
+              vp.setDisplaySetPresentation({
+                interpolationType: InterpolationType.NEAREST,
+              });
+            });
             vp.render();
           })
           .catch((e) => {
@@ -378,7 +363,7 @@ describe('Volume Viewport GPU -- ', () => {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
         orientation: Enums.OrientationAxis.CORONAL,
-        viewportType: ViewportType.ORTHOGRAPHIC,
+        viewportType: ViewportType.PLANAR_NEXT,
       });
 
       const volumeId = testUtils.encodeVolumeIdInfo({
@@ -411,11 +396,7 @@ describe('Volume Viewport GPU -- ', () => {
         volumeLoader
           .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
-            setVolumesForViewports(
-              renderingEngine,
-              [{ volumeId: volumeId }],
-              [viewportId]
-            );
+            testUtils.setVolumesOnNextViewport(vp, [volumeId]);
             vp.render();
           })
           .catch((e) => {
@@ -432,7 +413,7 @@ describe('Volume Viewport GPU -- ', () => {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
         orientation: Enums.OrientationAxis.CORONAL,
-        viewportType: ViewportType.ORTHOGRAPHIC,
+        viewportType: ViewportType.PLANAR_NEXT,
       });
 
       const volumeId = testUtils.encodeVolumeIdInfo({
@@ -461,18 +442,15 @@ describe('Volume Viewport GPU -- ', () => {
         }, 200);
       });
 
-      const callback = ({ volumeActor }) =>
-        volumeActor.getProperty().setInterpolationTypeToNearest();
-
       try {
         volumeLoader
           .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
-            setVolumesForViewports(
-              renderingEngine,
-              [{ volumeId: volumeId, callback }],
-              [viewportId]
-            );
+            testUtils.setVolumesOnNextViewport(vp, [volumeId]).then(() => {
+              vp.setDisplaySetPresentation({
+                interpolationType: InterpolationType.NEAREST,
+              });
+            });
             vp.render();
           })
           .catch((e) => {
@@ -487,7 +465,7 @@ describe('Volume Viewport GPU -- ', () => {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
         orientation: Enums.OrientationAxis.CORONAL,
-        viewportType: ViewportType.ORTHOGRAPHIC,
+        viewportType: ViewportType.PLANAR_NEXT,
       });
 
       const volumeId = testUtils.encodeVolumeIdInfo({
@@ -500,6 +478,8 @@ describe('Volume Viewport GPU -- ', () => {
         ySpacing: 1,
         zSpacing: 1,
       });
+
+      const vp = renderingEngine.getViewport(viewportId);
 
       element.addEventListener(Events.IMAGE_RENDERED, () => {
         const viewport = renderingEngine.getViewport(viewportId);
@@ -514,18 +494,15 @@ describe('Volume Viewport GPU -- ', () => {
         done();
       });
 
-      const callback = ({ volumeActor }) =>
-        volumeActor.getProperty().setInterpolationTypeToNearest();
-
       try {
         volumeLoader
           .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
-            setVolumesForViewports(
-              renderingEngine,
-              [{ volumeId: volumeId, callback }],
-              [viewportId]
-            );
+            testUtils.setVolumesOnNextViewport(vp, [volumeId]).then(() => {
+              vp.setDisplaySetPresentation({
+                interpolationType: InterpolationType.NEAREST,
+              });
+            });
             renderingEngine.render();
           })
           .catch((e) => {
@@ -540,7 +517,7 @@ describe('Volume Viewport GPU -- ', () => {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
         orientation: Enums.OrientationAxis.CORONAL,
-        viewportType: ViewportType.ORTHOGRAPHIC,
+        viewportType: ViewportType.PLANAR_NEXT,
       });
 
       const vp = renderingEngine.getViewport(viewportId);
@@ -570,18 +547,15 @@ describe('Volume Viewport GPU -- ', () => {
         }, 200);
       });
 
-      const callback = ({ volumeActor }) =>
-        volumeActor.getProperty().setInterpolationTypeToNearest();
-
       try {
         volumeLoader
           .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
-            setVolumesForViewports(
-              renderingEngine,
-              [{ volumeId: volumeId, callback }],
-              [viewportId]
-            );
+            testUtils.setVolumesOnNextViewport(vp, [volumeId]).then(() => {
+              vp.setDisplaySetPresentation({
+                interpolationType: InterpolationType.NEAREST,
+              });
+            });
             vp.render();
           })
           .catch((e) => {
@@ -596,7 +570,7 @@ describe('Volume Viewport GPU -- ', () => {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
         orientation: Enums.OrientationAxis.CORONAL,
-        viewportType: ViewportType.ORTHOGRAPHIC,
+        viewportType: ViewportType.PLANAR_NEXT,
       });
 
       const volumeId = testUtils.encodeVolumeIdInfo({
@@ -625,18 +599,15 @@ describe('Volume Viewport GPU -- ', () => {
         }, 200);
       });
 
-      const callback = ({ volumeActor }) =>
-        volumeActor.getProperty().setInterpolationTypeToNearest();
-
       try {
         volumeLoader
           .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
-            setVolumesForViewports(
-              renderingEngine,
-              [{ volumeId: volumeId, callback }],
-              [viewportId]
-            );
+            testUtils.setVolumesOnNextViewport(vp, [volumeId]).then(() => {
+              vp.setDisplaySetPresentation({
+                interpolationType: InterpolationType.NEAREST,
+              });
+            });
             vp.render();
           })
           .catch((e) => {
@@ -651,7 +622,7 @@ describe('Volume Viewport GPU -- ', () => {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
         orientation: Enums.OrientationAxis.CORONAL,
-        viewportType: ViewportType.ORTHOGRAPHIC,
+        viewportType: ViewportType.PLANAR_NEXT,
       });
 
       const volumeId = testUtils.encodeVolumeIdInfo({
@@ -674,18 +645,15 @@ describe('Volume Viewport GPU -- ', () => {
         done();
       });
 
-      const callback = ({ volumeActor }) =>
-        volumeActor.getProperty().setInterpolationTypeToNearest();
-
       try {
         volumeLoader
           .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
-            setVolumesForViewports(
-              renderingEngine,
-              [{ volumeId: volumeId, callback }],
-              [viewportId]
-            );
+            testUtils.setVolumesOnNextViewport(vp, [volumeId]).then(() => {
+              vp.setDisplaySetPresentation({
+                interpolationType: InterpolationType.NEAREST,
+              });
+            });
             vp.render();
           })
           .catch((e) => {
@@ -700,7 +668,7 @@ describe('Volume Viewport GPU -- ', () => {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
         orientation: Enums.OrientationAxis.CORONAL,
-        viewportType: ViewportType.ORTHOGRAPHIC,
+        viewportType: ViewportType.PLANAR_NEXT,
       });
 
       const volumeId = testUtils.encodeVolumeIdInfo({
@@ -729,18 +697,14 @@ describe('Volume Viewport GPU -- ', () => {
         }, 200);
       });
 
-      const callback = ({ volumeActor }) =>
-        volumeActor.getProperty().setInterpolationTypeToNearest();
-
       try {
         volumeLoader
           .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
-            setVolumesForViewports(
-              renderingEngine,
-              [{ volumeId: volumeId, callback }],
-              [viewportId]
-            ).then(() => {
+            testUtils.setVolumesOnNextViewport(vp, [volumeId]).then(() => {
+              vp.setDisplaySetPresentation({
+                interpolationType: InterpolationType.NEAREST,
+              });
               renderingEngine.renderFrameOfReference(
                 'Volume_Frame_Of_Reference'
               );
@@ -760,7 +724,7 @@ describe('Volume Viewport GPU -- ', () => {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
         orientation: Enums.OrientationAxis.CORONAL,
-        viewportType: ViewportType.ORTHOGRAPHIC,
+        viewportType: ViewportType.PLANAR_NEXT,
       });
 
       const volumeId = testUtils.encodeVolumeIdInfo({
@@ -790,19 +754,15 @@ describe('Volume Viewport GPU -- ', () => {
         }, 200);
       });
 
-      const callback = ({ volumeActor }) => {
-        volumeActor.getProperty().setInterpolationTypeToNearest();
-      };
-
       try {
         volumeLoader
           .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
-            setVolumesForViewports(
-              renderingEngine,
-              [{ volumeId: volumeId, callback }],
-              [viewportId]
-            );
+            testUtils.setVolumesOnNextViewport(vp, [volumeId]).then(() => {
+              vp.setDisplaySetPresentation({
+                interpolationType: InterpolationType.NEAREST,
+              });
+            });
             vp.render();
           })
           .catch((e) => {
@@ -817,7 +777,7 @@ describe('Volume Viewport GPU -- ', () => {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
         orientation: Enums.OrientationAxis.CORONAL,
-        viewportType: ViewportType.ORTHOGRAPHIC,
+        viewportType: ViewportType.PLANAR_NEXT,
       });
 
       const volumeId = testUtils.encodeVolumeIdInfo({
@@ -846,19 +806,15 @@ describe('Volume Viewport GPU -- ', () => {
         }, 200);
       });
 
-      const callback = ({ volumeActor }) => {
-        volumeActor.getProperty().setInterpolationTypeToLinear();
-      };
-
       try {
         volumeLoader
           .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
-            setVolumesForViewports(
-              renderingEngine,
-              [{ volumeId: volumeId, callback }],
-              [viewportId]
-            );
+            testUtils.setVolumesOnNextViewport(vp, [volumeId]).then(() => {
+              vp.setDisplaySetPresentation({
+                interpolationType: InterpolationType.LINEAR,
+              });
+            });
             vp.render();
           })
           .catch((e) => {
@@ -873,7 +829,7 @@ describe('Volume Viewport GPU -- ', () => {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
         orientation: Enums.OrientationAxis.AXIAL,
-        viewportType: ViewportType.ORTHOGRAPHIC,
+        viewportType: ViewportType.PLANAR_NEXT,
       });
 
       const volumeId = testUtils.encodeVolumeIdInfo({
@@ -902,19 +858,15 @@ describe('Volume Viewport GPU -- ', () => {
         }, 200);
       });
 
-      const callback = ({ volumeActor }) => {
-        volumeActor.getProperty().setInterpolationTypeToLinear();
-      };
-
       try {
         volumeLoader
           .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
-            setVolumesForViewports(
-              renderingEngine,
-              [{ volumeId: volumeId, callback }],
-              [viewportId]
-            );
+            testUtils.setVolumesOnNextViewport(vp, [volumeId]).then(() => {
+              vp.setDisplaySetPresentation({
+                interpolationType: InterpolationType.LINEAR,
+              });
+            });
             vp.render();
           })
           .catch((e) => {

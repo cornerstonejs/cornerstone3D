@@ -65,7 +65,7 @@ describe('renderToCanvas -- GPU', () => {
     const width = 256;
     const height = 256;
     const element = createViewports(renderingEngine, {
-      viewportType: ViewportType.STACK,
+      viewportType: ViewportType.PLANAR_NEXT,
       width,
       height,
       viewportId,
@@ -123,8 +123,10 @@ describe('renderToCanvas -- GPU', () => {
           viewportOptions: { displayArea: {} },
         })
         .then(() => {
-          vp.setStack([imageId], 0).then(() => {
-            vp.setProperties({ interpolationType: InterpolationType.NEAREST });
+          testUtils.setStackOnNextViewport(vp, [imageId], 0).then(() => {
+            vp.setDisplaySetPresentation({
+              interpolationType: InterpolationType.NEAREST,
+            });
             vp.render();
           });
         });
@@ -137,7 +139,7 @@ describe('renderToCanvas -- GPU', () => {
     const width = 256;
     const height = 256;
     const element = createViewports(renderingEngine, {
-      viewportType: ViewportType.STACK,
+      viewportType: ViewportType.PLANAR_NEXT,
       width,
       height,
       viewportId,
@@ -195,8 +197,10 @@ describe('renderToCanvas -- GPU', () => {
           viewportOptions: { displayArea: {} },
         })
         .then(() => {
-          vp.setStack([imageId], 0).then(() => {
-            vp.setProperties({ interpolationType: InterpolationType.NEAREST });
+          testUtils.setStackOnNextViewport(vp, [imageId], 0).then(() => {
+            vp.setDisplaySetPresentation({
+              interpolationType: InterpolationType.NEAREST,
+            });
             vp.render();
           });
         });

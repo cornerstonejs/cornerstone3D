@@ -4,8 +4,7 @@ import * as testUtils from '../../../utils/test/testUtils';
 // linear interpolation
 import * as volumeURI_32_32_10_1_1_1_0 from './groundTruth/volumeURI_32_32_10_1_1_1_0.png';
 
-const { cache, RenderingEngine, Enums, volumeLoader, setVolumesForViewports } =
-  cornerstone3D;
+const { cache, RenderingEngine, Enums, volumeLoader } = cornerstone3D;
 
 const { Events } = Enums;
 
@@ -33,7 +32,7 @@ xdescribe('Volume Viewport SetProperties -- ', () => {
     const element = testUtils.createViewports(renderingEngine, {
       viewportId,
       orientation: Enums.OrientationAxis.CORONAL,
-      viewportType: Enums.ViewportType.ORTHOGRAPHIC,
+      viewportType: Enums.ViewportType.PLANAR_NEXT,
     });
 
     const volumeId = testUtils.encodeVolumeIdInfo({
@@ -64,12 +63,8 @@ xdescribe('Volume Viewport SetProperties -- ', () => {
       volumeLoader
         .createAndCacheVolume(volumeId, { imageIds: [] })
         .then(() => {
-          setVolumesForViewports(
-            renderingEngine,
-            [{ volumeId: volumeId }],
-            [viewportId]
-          ).then(() => {
-            vp.setProperties({
+          testUtils.setVolumesOnNextViewport(vp, [volumeId]).then(() => {
+            vp.setDisplaySetPresentation({
               voiRange: {
                 lower: 50,
                 upper: 100,

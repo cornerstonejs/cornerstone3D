@@ -6,23 +6,23 @@ import getOrCreateCanvas, {
 import { ViewportType, Events } from '../enums';
 import type {
   IImage,
-  IStackViewport,
   IVolume,
   ViewportInputOptions,
-  IVolumeViewport,
   ViewReference,
   Point3,
 } from '../types';
 import { getRenderingEngine } from '../RenderingEngine/getRenderingEngine';
 import type RenderingEngine from '../RenderingEngine/RenderingEngine';
 import TiledRenderingEngine from '../RenderingEngine/TiledRenderingEngine';
+import type PlanarViewport from '../RenderingEngine/GenericViewport/Planar/PlanarViewport';
+import genericViewportDisplaySetMetadataProvider from './genericViewportDisplaySetMetadataProvider';
 import isPTPrescaledWithSUV from './isPTPrescaledWithSUV';
 import type { CanvasLoadPosition } from './loadImageToCanvas';
 
 /**
  * Renders an cornerstone image to a Canvas. This method will handle creation
  * of a temporary enabledElement, setting the imageId, and rendering the image via
- * a StackViewport, copying the canvas drawing to the given canvas Element, and
+ * a planar viewport, copying the canvas drawing to the given canvas Element, and
  * disabling the created temporary element. SuppressEvents argument is used to
  * prevent events from firing during the render process (e.g. during a series
  * of renders to a thumbnail image).
@@ -61,6 +61,7 @@ export default function renderToCanvasGPU(
   const volume = isVolume && (imageOrVolume as IVolume);
   const imageIdToPrint = image.imageId || volume.volumeId;
   const viewportId = `renderGPUViewport-${imageIdToPrint}`;
+  const volumeDisplaySetId = `${viewportId}:volume`;
   const element = document.createElement('div');
   const devicePixelRatio = window.devicePixelRatio || 1;
   if (!viewportOptions.displayArea) {
@@ -91,12 +92,12 @@ export default function renderToCanvasGPU(
     (getRenderingEngine(renderingEngineId) as RenderingEngine) ||
     new TiledRenderingEngine(renderingEngineId);
 
-  let viewport = renderingEngine.getViewport(viewportId);
+  let viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
   if (!viewport) {
     const viewportInput = {
       viewportId,
-      type: isVolume ? ViewportType.ORTHOGRAPHIC : ViewportType.STACK,
+      type: ViewportType.PLANAR_NEXT,
       element,
       defaultOptions: {
         ...viewportOptions,
@@ -104,7 +105,7 @@ export default function renderToCanvasGPU(
       },
     };
     renderingEngine.enableElement(viewportInput);
-    viewport = renderingEngine.getViewport(viewportId);
+    viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
   }
 
   return new Promise((resolve) => {
@@ -112,18 +113,11 @@ export default function renderToCanvasGPU(
     // enable it and later disable it without losing the canvas context
     let elementRendered = false;
 
-    let { viewReference } = viewportOptions;
+    const { viewReference } = viewportOptions;
 
     // Create a named function to handle the event
     const onImageRendered = (eventDetail) => {
       if (elementRendered) {
-        return;
-      }
-      if (viewReference) {
-        const useViewRef = viewReference;
-        viewReference = null;
-        viewport.setViewReference(useViewRef);
-        viewport.render();
         return;
       }
 
@@ -173,6 +167,7 @@ export default function renderToCanvasGPU(
       // copy to on screen from an incorrect location in the offscreen renderer.
       setTimeout(() => {
         renderingEngine.disableElement(viewportId);
+        genericViewportDisplaySetMetadataProvider.remove(volumeDisplaySetId);
 
         // remove all the elements that has the same id
         const elements = document.querySelectorAll(
@@ -192,26 +187,55 @@ export default function renderToCanvasGPU(
       });
     };
 
-    element.addEventListener(Events.IMAGE_RENDERED, onImageRendered);
-    if (isVolume) {
-      // @ts-expect-error
-      (viewport as IVolumeViewport).setVolumes([volume], false, true);
-    } else {
-      (viewport as IStackViewport).renderImageObject(imageOrVolume);
-    }
+    const shown = isVolume
+      ? showVolume(viewport, volume, volumeDisplaySetId)
+      : viewport.renderImageObject(image);
 
-    // force a reset camera to center the image and undo the small scaling
-    viewport.resetCamera();
+    shown.then(() => {
+      viewport.resetViewState();
+      viewport.setDisplayArea(viewportOptions.displayArea);
 
-    if (modality === 'PT' && !isPTPrescaledWithSUV(image)) {
-      (viewport as IStackViewport).setProperties({
-        voiRange: {
-          lower: image.minPixelValue,
-          upper: image.maxPixelValue,
-        },
-      });
-    }
+      if (viewReference) {
+        viewport.setViewReference(viewReference);
+      }
 
-    viewport.render();
+      if (modality === 'PT' && !isPTPrescaledWithSUV(image)) {
+        viewport.setDisplaySetPresentation({
+          voiRange: {
+            lower: image.minPixelValue,
+            upper: image.maxPixelValue,
+          },
+        });
+      }
+
+      element.addEventListener(Events.IMAGE_RENDERED, onImageRendered);
+      viewport.render();
+    });
   });
+}
+
+/**
+ * Shows a volume of the cache on a planar viewport, in the orientation of the
+ * viewport options, at the middle image of the volume when that orientation
+ * is the acquisition plane. The volume is registered as the display set
+ * `displaySetId`.
+ *
+ * @param viewport - The planar viewport
+ * @param volume - The volume to show
+ * @param displaySetId - The id to register the volume under
+ * @returns The promise of `setDisplaySets`
+ */
+function showVolume(
+  viewport: PlanarViewport,
+  volume: IVolume,
+  displaySetId: string
+): Promise<void> {
+  genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    kind: 'planar',
+    imageIds: volume.imageIds,
+    initialImageIdIndex: Math.floor(volume.imageIds.length / 2),
+    volumeId: volume.volumeId,
+  });
+
+  return viewport.setDisplaySets({ displaySetId });
 }
