@@ -219,20 +219,18 @@ enum Events {
   GEOMETRY_CACHE_GEOMETRY_REMOVED = 'CORNERSTONE_GEOMETRY_CACHE_GEOMETRY_REMOVED',
 
   /**
-   * Triggers when the scroll function is called with a delta that is out of bounds.
+   * Triggers on the eventTarget when `utilities.scroll` of a planar viewport
+   * in volume mode is asked to go past the first or the last slice while the
+   * view is in the acquisition plane, in place of VOLUME_VIEWPORT_SCROLL.
    * This is usually for signaling that the user may want a different volume for partially loaded volumes which is meant to optimize memory.
    */
   VOLUME_VIEWPORT_SCROLL_OUT_OF_BOUNDS = 'VOLUME_VIEWPORT_SCROLL_OUT_OF_BOUNDS',
 
   /**
-   * Triggers when the scroll function is called on a volume.
+   * Triggers on the eventTarget when `utilities.scroll` scrolls a planar
+   * viewport in volume mode.
    */
   VOLUME_VIEWPORT_SCROLL = 'VOLUME_VIEWPORT_SCROLL',
-
-  /**
-   * Triggers when the clipping planes has been updated
-   */
-  CLIPPING_PLANES_UPDATED = 'CORNERSTONE_CLIPPING_PLANES_UPDATED',
 
   /**
    * Triggers when the webworker has made progress
@@ -254,24 +252,10 @@ enum Events {
   DYNAMIC_VOLUME_DIMENSION_GROUP_CHANGED = 'DYNAMIC_VOLUME_DIMENSION_GROUP_CHANGED',
 
   /**
-   * Dynamic image volume time point index changed
-   * The first timepoint index is 0
-   * @deprecated use DYNAMIC_VOLUME_DIMENSION_GROUP_CHANGED instead
-   */
-  DYNAMIC_VOLUME_TIME_POINT_INDEX_CHANGED = 'DYNAMIC_VOLUME_TIME_POINT_INDEX_CHANGED',
-
-  /**
    * Dynamic image volume dimension group loaded
    * The first dimension group number is 1
    */
   DYNAMIC_VOLUME_DIMENSION_GROUP_LOADED = 'DYNAMIC_VOLUME_DIMENSION_GROUP_LOADED',
-
-  /**
-   * Dynamic image volume time point loaded
-   * The first timepoint starts at 0
-   * @deprecated use DYNAMIC_VOLUME_DIMENSION_GROUP_LOADED instead
-   */
-  DYNAMIC_VOLUME_TIME_POINT_LOADED = 'DYNAMIC_VOLUME_TIME_POINT_LOADED',
 
   /**
    * Triggers on the eventTarget when a geometry has successfully loaded by geometryLoaders
@@ -296,11 +280,6 @@ enum Events {
    * and see what event detail is included in {@link EventTypes.GeometryLoadedFailedEventDetail | GeometryLoadedFailed Event Detail }
    */
   GEOMETRY_LOADED_FAILED = 'GEOMETRY_LOADED_FAILED',
-
-  /**
-   * Triggers on the viewport's element when the actors are changed via set operator
-   */
-  ACTORS_CHANGED = 'CORNERSTONE_ACTORS_CHANGED',
 
   /**
    * Triggers on the eventTarget after the global render backend changes

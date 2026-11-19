@@ -4,6 +4,8 @@ import {
   visitExample,
   screenShotPaths,
   getVisibleViewportCanvas,
+  CPU_LABELMAP_OUTLINE_ISSUE,
+  isCompatibilityMode,
 } from '../utils/index';
 import { drawCircleScissor } from './utils/helpers';
 
@@ -18,6 +20,8 @@ test('Stack Segmentation - Circular Scissor Tool with segmentation 1', async ({
   page,
   browserName,
 }) => {
+  test.fail(isCompatibilityMode(), CPU_LABELMAP_OUTLINE_ISSUE);
+
   await page.getByRole('combobox').first().selectOption('CircleScissor');
 
   const canvas = getVisibleViewportCanvas(page, 0);

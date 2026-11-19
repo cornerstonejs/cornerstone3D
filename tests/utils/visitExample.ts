@@ -1,5 +1,9 @@
 import type { Page } from '@playwright/test';
-import { validateCompatibilityRuntime } from './compatibilityMode';
+import {
+  expectPlanarLayersDrawOnCpu,
+  failOnPageErrors,
+  validateCompatibilityRuntime,
+} from './compatibilityMode';
 import { getForcedSliceFirst, setForcedSliceFirst } from './createExampleUrl';
 import { waitForViewportsRendered } from './waitForViewportsRendered';
 
@@ -51,6 +55,8 @@ export const visitExample = async (
   if (isLikelyDesktop) {
     await page.setViewportSize({ width: 1280, height: 720 });
   }
+
+  failOnPageErrors(page, title);
 
   await page.goto('/');
   if (waitForNetwork) {
@@ -137,6 +143,8 @@ export const visitExample = async (
     // Non-cornerstone example or a viewport that never reports rendered —
     // proceed without blocking test setup.
   }
+
+  await expectPlanarLayersDrawOnCpu(page, title);
 
   await page.waitForTimeout(delay);
 };

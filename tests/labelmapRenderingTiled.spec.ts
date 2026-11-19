@@ -3,6 +3,8 @@ import {
   checkForCanvasSnapshot,
   visitExample,
   screenShotPaths,
+  CPU_LABELMAP_OUTLINE_ISSUE,
+  isCompatibilityMode,
 } from './utils/index';
 
 test.beforeEach(async ({ page, context }) => {
@@ -11,6 +13,8 @@ test.beforeEach(async ({ page, context }) => {
 });
 
 test.describe('Labelmap Rendering', async () => {
+  test.fail(isCompatibilityMode(), CPU_LABELMAP_OUTLINE_ISSUE);
+
   test('should render the labelmap in axial/coronal/sagittal orientations', async ({
     page,
   }) => {

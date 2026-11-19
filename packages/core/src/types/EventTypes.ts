@@ -12,7 +12,6 @@ import type ViewportStatus from '../enums/ViewportStatus';
 import type DisplayArea from './displayArea';
 import type IImageCalibration from './IImageCalibration';
 import type { ColormapPublic } from './Colormap';
-import type { ActorEntry } from './IActor';
 import type { IViewport } from './IViewport';
 import type { ViewportFidelityState } from './ViewportFidelity';
 
@@ -454,26 +453,9 @@ type StackScrollOutOfBoundsEvent =
 type VolumeScrollOutOfBoundsEvent =
   CustomEventType<VolumeScrollOutOfBoundsEventDetail>;
 
-/**
- * ACTORS_CHANGED Event's data
- */
-interface ActorsChangedEventDetail {
-  viewportId: string;
-  removedActors: ActorEntry[];
-  addedActors: ActorEntry[];
-  currentActors: ActorEntry[];
-}
-
-/**
- * ACTORS_CHANGED Event type
- */
-type ActorsChangedEvent = CustomEventType<ActorsChangedEventDetail>;
-
 export type {
   VolumeScrollOutOfBoundsEventDetail,
   VolumeScrollOutOfBoundsEvent,
-  ActorsChangedEventDetail,
-  ActorsChangedEvent,
   ViewportFidelityChangedEventDetail,
   ViewportFidelityChangedEvent,
   CameraModifiedEventDetail,

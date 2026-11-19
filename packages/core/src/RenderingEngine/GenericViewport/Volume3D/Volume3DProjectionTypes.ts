@@ -1,5 +1,6 @@
 import { ViewportType } from '../../../enums';
 import type { ICamera, Point2, Point3 } from '../../../types';
+import type ViewportInputOptions from '../../../types/ViewportInputOptions';
 import type {
   ProjectionPresentation,
   ProjectionRequest,
@@ -41,6 +42,8 @@ export type Volume3DProjectionViewport = {
   type: ViewportType | string;
   canvas?: HTMLCanvasElement;
   element?: HTMLDivElement;
+  /** The options of the viewport: their orientation gives rotation 0. */
+  defaultOptions?: Pick<ViewportInputOptions, 'orientation'>;
   getFrameOfReferenceUID?(): string | undefined;
   getResolvedView?(): Volume3DResolvedViewLike;
   getViewState?(): Volume3DCamera & ICamera;

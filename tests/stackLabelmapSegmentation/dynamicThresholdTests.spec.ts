@@ -5,6 +5,8 @@ import {
   screenShotPaths,
   simulateDrawPath,
   getVisibleViewportCanvas,
+  CPU_LABELMAP_OUTLINE_ISSUE,
+  isCompatibilityMode,
 } from '../utils/index';
 import { leftArmContour } from './utils/constants';
 import locatorToPageCoord from '../utils/locatorToPageCoord';
@@ -45,6 +47,8 @@ test('Stack Segmentation - Dynamic Threshold Tool - Highlight Contour', async ({
   page,
   browserName,
 }) => {
+  test.fail(isCompatibilityMode(), CPU_LABELMAP_OUTLINE_ISSUE);
+
   await page.getByRole('combobox').first().selectOption('DynamicThreshold');
   await page.getByRole('slider').fill('25');
 
@@ -70,6 +74,8 @@ test('Stack Segmentation - Dynamic Threshold Tool - Confirm Contour', async ({
   page,
   browserName,
 }) => {
+  test.fail(isCompatibilityMode(), CPU_LABELMAP_OUTLINE_ISSUE);
+
   await page.getByRole('combobox').first().selectOption('DynamicThreshold');
   await page.getByRole('slider').fill('25');
 

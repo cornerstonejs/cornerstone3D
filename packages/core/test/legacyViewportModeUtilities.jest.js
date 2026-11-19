@@ -85,6 +85,7 @@ describe('legacy viewport utilities on legacy viewports and legacy adapters', ()
             getImageIds: () => ['a', 'b', 'c', 'd'],
             getNumberOfSlices: () => 4,
             getCurrentImageIdIndex: () => 3,
+            getCurrentImageId: () => 'd',
             scroll: jest.fn(),
           })
         );

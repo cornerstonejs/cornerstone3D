@@ -205,12 +205,26 @@ describe('Jump and scroll on a direct next planar viewport -- ', () => {
   });
 
   describe('utilities.scroll', () => {
+    /**
+     * STACK_SCROLL_OUT_OF_BOUNDS is the event of the legacy stack viewport. A
+     * legacy volume viewport fired the volume scroll events in its place
+     * (measured on 58914567b), and so does volume mode:
+     * `planarScrollEvents_test.js`.
+     */
     const modes = [
-      { mode: 'stack', show: showStack, slices: 10 },
-      { mode: 'volume', show: showVolume, slices: 12 },
+      {
+        mode: 'stack',
+        show: showStack,
+        slices: 10,
+        stackOutOfBounds: [
+          { imageIdIndex: 4, direction: 40 },
+          { imageIdIndex: 9, direction: -40 },
+        ],
+      },
+      { mode: 'volume', show: showVolume, slices: 12, stackOutOfBounds: [] },
     ];
 
-    modes.forEach(({ mode, show, slices }) => {
+    modes.forEach(({ mode, show, slices, stackOutOfBounds }) => {
       it(`steps by delta slices in ${mode} mode and stops at both ends`, async function () {
         const viewport = createNextViewport(renderingEngine);
         const outOfBounds = [];
@@ -237,10 +251,7 @@ describe('Jump and scroll on a direct next planar viewport -- ', () => {
 
         expect(viewport.getCurrentMode()).toBe(mode);
         expect(indices).toEqual([5, 4, slices - 1, 0]);
-        expect(outOfBounds).toEqual([
-          { imageIdIndex: 4, direction: 40 },
-          { imageIdIndex: slices - 1, direction: -40 },
-        ]);
+        expect(outOfBounds).toEqual(stackOutOfBounds);
       });
 
       it(`wraps at both ends with loop in ${mode} mode`, async function () {

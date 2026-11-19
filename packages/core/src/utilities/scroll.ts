@@ -258,14 +258,19 @@ export function scrollPlanarVolumeSteps(
  *
  * - `delta` is a number of steps. A step is one image of a stack or one
  *   slice of the source volume. The scroll stops at the first and at the
- *   last slice, and fires STACK_SCROLL_OUT_OF_BOUNDS when it is asked to go
- *   past one.
+ *   last slice.
  * - `loop` wraps at both ends instead, in both modes.
  * - `scrollSlabs` makes a step the slab thickness of the source in volume
  *   mode. A stack has no slab: a step stays one image.
  * - `volumeId` names another volume of the viewport whose spacing along the
  *   view gives the step in volume mode. A stack has no other volume: a step
  *   stays one image.
+ *
+ * The events are those of the legacy viewport of the mode. In stack mode, a
+ * scroll asked to go past an end fires STACK_SCROLL_OUT_OF_BOUNDS before it
+ * moves, as the legacy stack viewport did. In volume mode, every scroll fires
+ * one volume scroll event after it moves, as the legacy volume viewport did
+ * (see `triggerVolumeScrollEvent`).
  */
 function scrollNextPlanar(viewport: PlanarViewport, options: ScrollOptions) {
   const { delta, loop } = options;
@@ -278,8 +283,12 @@ function scrollNextPlanar(viewport: PlanarViewport, options: ScrollOptions) {
     ? counted.currentStepIndex
     : viewport.getCurrentImageIdIndex();
   const desiredStepIndex = currentStepIndex + delta;
+  const isVolumeMode = viewport.getCurrentMode() === 'volume';
 
-  if (desiredStepIndex < 0 || desiredStepIndex > numberOfSteps - 1) {
+  if (
+    !isVolumeMode &&
+    (desiredStepIndex < 0 || desiredStepIndex > numberOfSteps - 1)
+  ) {
     const eventData: EventTypes.StackScrollOutOfBoundsEventDetail = {
       imageIdIndex: currentStepIndex,
       direction: delta,
@@ -296,8 +305,61 @@ function scrollNextPlanar(viewport: PlanarViewport, options: ScrollOptions) {
 
   if (steps) {
     scrollPlanarVolumeSteps(viewport, steps, stepDelta);
+  } else {
+    viewport.scroll(stepDelta);
+  }
+
+  if (isVolumeMode) {
+    triggerVolumeScrollEvent(viewport, options, {
+      currentStepIndex,
+      desiredStepIndex,
+      numScrollSteps: numberOfSteps - 1,
+    });
+  }
+}
+
+/**
+ * Fires the event of a scroll of a planar viewport in volume mode, with the
+ * detail of the legacy volume viewport: VOLUME_VIEWPORT_SCROLL_OUT_OF_BOUNDS
+ * when the scroll was asked to go past an end and the view shows an image of
+ * the volume (the acquisition plane), VOLUME_VIEWPORT_SCROLL otherwise.
+ * `volumeId` is the one of the options, and `currentImageId` is the image
+ * shown after the scroll. A volume of one slice has no step and fires
+ * nothing.
+ */
+function triggerVolumeScrollEvent(
+  viewport: PlanarViewport,
+  { volumeId, delta }: ScrollOptions,
+  {
+    currentStepIndex,
+    desiredStepIndex,
+    numScrollSteps,
+  }: Pick<
+    EventTypes.VolumeScrollOutOfBoundsEventDetail,
+    'currentStepIndex' | 'desiredStepIndex' | 'numScrollSteps'
+  >
+): void {
+  if (numScrollSteps <= 0) {
     return;
   }
 
-  viewport.scroll(stepDelta);
+  const currentImageId = viewport.getCurrentImageId();
+  const eventData: EventTypes.VolumeScrollOutOfBoundsEventDetail = {
+    volumeId,
+    viewport,
+    delta,
+    desiredStepIndex,
+    currentStepIndex,
+    numScrollSteps,
+    currentImageId,
+  };
+  const outOfBounds = desiredStepIndex > numScrollSteps || desiredStepIndex < 0;
+
+  triggerEvent(
+    eventTarget,
+    outOfBounds && currentImageId
+      ? Events.VOLUME_VIEWPORT_SCROLL_OUT_OF_BOUNDS
+      : Events.VOLUME_VIEWPORT_SCROLL,
+    eventData
+  );
 }

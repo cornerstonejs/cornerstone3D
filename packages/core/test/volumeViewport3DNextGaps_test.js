@@ -624,7 +624,7 @@ describe('Direct next 3D viewport, the scene -- ', () => {
       expect(next[member]).toBeUndefined();
     }
 
-    const details = recordEvents(next, Events.ACTORS_CHANGED);
+    const details = recordEvents(next, 'CORNERSTONE_ACTORS_CHANGED');
     const { actor } = createSphereActorEntry();
 
     next.getRenderer().addActor(actor);

@@ -381,10 +381,18 @@ are, so between viewports of other data it gives another size.
   scroll is a view state change like any other. `CAMERA_MODIFIED` fires at once when an
   index is asked for, before the image loads. `NEW_IMAGE` fires when the
   image or the slice shows.
-- **No `VOLUME_VIEWPORT_SCROLL` and no
-  `VOLUME_VIEWPORT_SCROLL_OUT_OF_BOUNDS`.** `utilities.scroll` fired them for
-  a legacy volume viewport only. On a next viewport it fires
-  `STACK_SCROLL_OUT_OF_BOUNDS` at the ends, in both modes.
+- **The scroll events are those of the legacy viewport of the mode.** In
+  volume mode `utilities.scroll` fires `VOLUME_VIEWPORT_SCROLL` on each
+  scroll, and `VOLUME_VIEWPORT_SCROLL_OUT_OF_BOUNDS` in its place when it is
+  asked to go past an end while the view is in the acquisition plane, with
+  the detail of the legacy volume viewport. In stack mode it fires
+  `STACK_SCROLL_OUT_OF_BOUNDS` when it is asked to go past an end, as the
+  legacy stack viewport did. `utilities.jumpToSlice` scrolls, so it fires
+  them too.
+- **No `ACTORS_CHANGED` and no `CLIPPING_PLANES_UPDATED`.** Both are gone
+  from `Enums.Events`. No next viewport has a list of actors to change or
+  sets slab clipping planes on a vtk mapper. The
+  [Events](./3-api-map.md#events) rows say what to listen to.
 - **A failed image load is reported, and the index can be asked for again.**
   The image loader fires `IMAGE_LOAD_FAILED` on the `eventTarget` with the
   image id and the error. In 5.x the failure was an unhandled rejection on a
@@ -518,8 +526,8 @@ are, so between viewports of other data it gives another size.
 
   It replaces `addActor`, `addActors`, `setActors` and `removeActors` of the
   legacy stack and volume viewports for a prop that is not data. The
-  application keeps the prop: `getActors()` does not list it, and there is
-  no `ACTORS_CHANGED` event. The prop is drawn with the slice, in world
+  application keeps the prop: `getActors()` does not list it, and the
+  `ACTORS_CHANGED` event is gone. The prop is drawn with the slice, in world
   coordinates, so it follows a zoom, a pan and a scroll. The clipping range
   of the camera holds every visible prop, so a prop is not cut by the depth
   of the slice. A prop behind the slice is hidden by the slice where the
@@ -779,7 +787,7 @@ legacy picture within two levels of 255.
   `geometryLoader.loadAndCacheGeometry`, not `geometry.id`: for a mesh loaded
   from a URL the two differ, and `addDisplaySet(geometry.id)` throws. A
   3D viewport has no `addActor`, `addActors`, `setActors`, `removeActors` and
-  `getActor`, and it does not fire `ACTORS_CHANGED`. `getActors()` stays and
+  `getActor`, and `ACTORS_CHANGED` is gone. `getActors()` stays and
   gives the actors of the display sets.
   [The 3D viewport](./3-api-map.md#the-3d-viewport) has the call for each
   member.

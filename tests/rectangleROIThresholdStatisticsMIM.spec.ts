@@ -135,11 +135,31 @@ testCases.forEach(
       // Goto end slice
       await jumpToSlice(endSlice);
 
+      const statisticsBeforeEndSlice = await page.evaluateHandle(
+        () =>
+          window.cornerstoneTools.annotation.state.getAllAnnotations()[0]?.data
+            .cachedStats.statistics
+      );
+
       // Set end slice
       await page.getByRole('button', { name: 'Set End Slice' }).click();
 
-      // Pause 150 ms to account for 100 ms debounce
-      await page.waitForTimeout(150);
+      await page.waitForFunction(
+        (statisticsBefore) => {
+          const [annotation] =
+            window.cornerstoneTools.annotation.state.getAllAnnotations();
+          const statistics = annotation?.data.cachedStats.statistics;
+
+          return (
+            annotation?.invalidated === false &&
+            !!statistics &&
+            !Array.isArray(statistics) &&
+            statistics !== statisticsBefore
+          );
+        },
+        statisticsBeforeEndSlice,
+        { timeout: 10000 }
+      );
 
       // Run threshold over ROI
       await page.getByRole('button', { name: 'Run Segmentation' }).click();

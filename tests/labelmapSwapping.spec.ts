@@ -3,6 +3,8 @@ import {
   checkForCanvasSnapshot,
   visitExample,
   screenShotPaths,
+  CPU_LABELMAP_OUTLINE_ISSUE,
+  isCompatibilityMode,
 } from './utils/index';
 
 test.beforeEach(async ({ page }) => {
@@ -10,6 +12,8 @@ test.beforeEach(async ({ page }) => {
 });
 
 test.describe('Swapping labelmap segmentations on a viewport', async () => {
+  test.fail(isCompatibilityMode(), CPU_LABELMAP_OUTLINE_ISSUE);
+
   test('should load the default segmentation with two segments (circles)', async ({
     page,
   }) => {

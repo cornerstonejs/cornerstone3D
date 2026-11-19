@@ -3,6 +3,45 @@ import type { Page } from 'playwright';
 import * as fs from 'fs';
 import * as path from 'path';
 import { PNG } from 'pngjs';
+import {
+  expectPlanarLayersDrawOnCpu,
+  isCompatibilityMode,
+} from './compatibilityMode';
+
+/**
+ * The pixelmatch threshold of a picture under `--cpu`. The planar viewports
+ * draw on the CPU there and the picture is compared with the GPU baseline.
+ */
+const CPU_PICTURE_THRESHOLD = 0.1;
+
+/**
+ * The share of pixels that may differ in a picture under `--cpu`. Measured at
+ * the threshold above: a CPU picture that is right by its data differs from
+ * the GPU baseline on at most 0.099% of its pixels (edges, interpolation), a
+ * picture without its labelmap outline on at least 0.314%.
+ */
+const CPU_PICTURE_MAX_DIFF_PIXEL_RATIO = 0.002;
+
+/**
+ * The tolerance of a picture: the one of the spec, and under `--cpu` at least
+ * the CPU tolerance. The default and `--next` runs keep the spec's.
+ */
+function pictureTolerance(
+  threshold: number,
+  maxDiffPixelRatio: number
+): { threshold: number; maxDiffPixelRatio: number } {
+  if (!isCompatibilityMode()) {
+    return { threshold, maxDiffPixelRatio };
+  }
+
+  return {
+    threshold: Math.max(threshold, CPU_PICTURE_THRESHOLD),
+    maxDiffPixelRatio: Math.max(
+      maxDiffPixelRatio,
+      CPU_PICTURE_MAX_DIFF_PIXEL_RATIO
+    ),
+  };
+}
 
 /** Inline per-pixel comparison matching the spirit of playwright's threshold:
  *  count a pixel as different when any channel diverges by more than
@@ -98,10 +137,14 @@ const checkForCanvasSnapshot = async (
   const {
     stableMs = 300,
     timeoutMs = 8000,
-    threshold = 0.005,
-    maxDiffPixelRatio = 0,
+    threshold: specThreshold = 0.005,
+    maxDiffPixelRatio: specMaxDiffPixelRatio = 0,
     hideAnnotationText = false,
   } = options;
+  const { threshold, maxDiffPixelRatio } = pictureTolerance(
+    specThreshold,
+    specMaxDiffPixelRatio
+  );
   const indices =
     typeof viewportIndex === 'number'
       ? [viewportIndex]
@@ -480,6 +523,8 @@ const checkForCanvasSnapshot = async (
   );
 
   const buffer = Buffer.from(base64, 'base64');
+
+  await expectPlanarLayersDrawOnCpu(page);
 
   // Paths containing `..` reference a shared baseline owned by a different
   // spec (e.g. a generic-viewport test that should match the legacy stack

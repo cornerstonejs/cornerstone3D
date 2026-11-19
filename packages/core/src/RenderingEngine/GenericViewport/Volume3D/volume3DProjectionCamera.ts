@@ -1,4 +1,4 @@
-import { vec3 } from 'gl-matrix';
+import { quat, vec3 } from 'gl-matrix';
 import type { ICamera, Point2, Point3 } from '../../../types';
 import type { ProjectionScale } from '../ViewportProjectionTypes';
 import type { Volume3DProjectionFit } from './Volume3DProjectionTypes';
@@ -25,6 +25,81 @@ export function cloneVolume3DCamera(camera: Volume3DCamera & ICamera) {
     viewPlaneNormal: clonePoint3(camera.viewPlaneNormal),
     viewUp: clonePoint3(camera.viewUp),
   } as Volume3DCamera & ICamera;
+}
+
+/**
+ * The rotation of a 3D view in degrees, from 0 up to 360: the angle about the
+ * view plane normal from the reference view up, taken into the view plane,
+ * to the view up of the camera, counterclockwise as seen from the camera, as
+ * the legacy 3D viewport turned it. 0 without a reference, or when the
+ * reference lies along the normal.
+ *
+ * @param camera - The camera now.
+ * @param referenceViewUp - The view up of rotation 0.
+ */
+export function getVolume3DProjectionRotation(
+  camera: Volume3DCamera & ICamera,
+  referenceViewUp?: Point3
+): number {
+  const { viewPlaneNormal, viewUp } = camera;
+
+  if (!referenceViewUp || !viewPlaneNormal || !viewUp) {
+    return 0;
+  }
+
+  const normal = vec3.normalize(vec3.create(), viewPlaneNormal);
+  const reference = vec3.scaleAndAdd(
+    vec3.create(),
+    referenceViewUp,
+    normal,
+    -vec3.dot(referenceViewUp, normal)
+  );
+
+  if (vec3.length(reference) < 1e-6) {
+    return 0;
+  }
+
+  const sine = vec3.dot(vec3.cross(vec3.create(), reference, viewUp), normal);
+  const degrees =
+    (Math.atan2(sine, vec3.dot(reference, viewUp)) * 180) / Math.PI;
+
+  if (Math.abs(degrees) < 1e-9) {
+    return 0;
+  }
+
+  return degrees < 0 ? degrees + 360 : degrees;
+}
+
+/**
+ * Turns the view up of a 3D camera about its view plane normal by an angle
+ * in degrees, counterclockwise as seen from the camera. The focal point, the
+ * position and the zoom stay.
+ *
+ * @param camera - The camera to turn.
+ * @param degrees - The angle of the turn.
+ * @returns A camera with the turned view up.
+ */
+export function rollVolume3DCamera(
+  camera: Volume3DCamera & ICamera,
+  degrees: number
+): Volume3DCamera & ICamera {
+  const { viewPlaneNormal, viewUp } = camera;
+
+  if (!viewPlaneNormal || !viewUp || !degrees) {
+    return camera;
+  }
+
+  const turn = quat.setAxisAngle(
+    quat.create(),
+    vec3.normalize(vec3.create(), viewPlaneNormal),
+    (degrees * Math.PI) / 180
+  );
+  const turnedViewUp = vec3.transformQuat(vec3.create(), viewUp, turn);
+
+  return {
+    ...camera,
+    viewUp: [turnedViewUp[0], turnedViewUp[1], turnedViewUp[2]],
+  };
 }
 
 /**

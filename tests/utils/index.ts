@@ -22,6 +22,7 @@ export {
   waitForRenderSettled,
 } from './waitForViewportsRendered';
 export {
+  CPU_LABELMAP_OUTLINE_ISSUE,
   isCompatibilityMode,
   validateCompatibilityRuntime,
 } from './compatibilityMode';

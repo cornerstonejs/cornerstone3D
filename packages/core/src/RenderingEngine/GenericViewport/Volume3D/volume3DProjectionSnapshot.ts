@@ -3,9 +3,11 @@ import {
   cloneVolume3DCamera,
   getVolume3DProjectionPan,
   getVolume3DProjectionPosition,
+  getVolume3DProjectionRotation,
   getVolume3DProjectionScale,
   getVolume3DProjectionZoom,
 } from './volume3DProjectionCamera';
+import { getOrientationVectors } from './vtkVolume3DInitialCamera';
 import {
   VOLUME3D_PROJECTION_ID,
   type Volume3DProjectionRequest,
@@ -50,6 +52,14 @@ export function getVolume3DProjectionSnapshot(
   const rawPan = fit
     ? getVolume3DProjectionPan(camera, fit, canvasHeight)
     : undefined;
+  const orientation = viewport.defaultOptions?.orientation;
+  const referenceViewUp = orientation
+    ? getOrientationVectors({
+        fallbackViewPlaneNormal: camera.viewPlaneNormal,
+        fallbackViewUp: camera.viewUp,
+        orientation,
+      }).viewUp
+    : undefined;
 
   return {
     kind: VOLUME3D_PROJECTION_ID,
@@ -64,7 +74,7 @@ export function getVolume3DProjectionSnapshot(
       pan: rawPan,
       position: getVolume3DProjectionPosition(camera),
       rawPan,
-      rotation: camera.rotation,
+      rotation: getVolume3DProjectionRotation(camera, referenceViewUp),
       scale: getVolume3DProjectionScale({ camera, canvasHeight }),
       zoom: fit ? getVolume3DProjectionZoom(camera, fit) : undefined,
     },

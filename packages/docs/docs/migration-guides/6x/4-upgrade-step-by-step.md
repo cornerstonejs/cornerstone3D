@@ -740,8 +740,8 @@ is its geometry id.
 **Search**
 
 ```sh
-rg -n "STACK_NEW_IMAGE|VOLUME_NEW_IMAGE|PRE_STACK_NEW_IMAGE|STACK_VIEWPORT_SCROLL|VOLUME_VIEWPORT_SCROLL|IMAGE_LOAD_ERROR|PRESET_MODIFIED|ACTORS_CHANGED|CLIPPING_PLANES_UPDATED" src
-rg -n "CAMERA_MODIFIED|CAMERA_RESET|VOI_MODIFIED|IMAGE_SPACING_CALIBRATED|STACK_SCROLL_OUT_OF_BOUNDS" src
+rg -n "STACK_NEW_IMAGE|VOLUME_NEW_IMAGE|PRE_STACK_NEW_IMAGE|STACK_VIEWPORT_SCROLL|IMAGE_LOAD_ERROR|PRESET_MODIFIED|ACTORS_CHANGED|CLIPPING_PLANES_UPDATED|DYNAMIC_VOLUME_TIME_POINT" src
+rg -n "CAMERA_MODIFIED|CAMERA_RESET|VOI_MODIFIED|IMAGE_SPACING_CALIBRATED|STACK_SCROLL_OUT_OF_BOUNDS|VOLUME_VIEWPORT_SCROLL" src
 rg -n "invertStateChanged|previousCamera" src
 ```
 
@@ -806,9 +806,16 @@ a volume: scroll, change the window, reset. Compare with the table.
 - `IMAGE_LOAD_FAILED` fires on the `eventTarget`, as `IMAGE_LOAD_ERROR` did.
   Its detail has no image index and no viewport id, and it also fires for a
   prefetch that fails.
-- `PRE_STACK_NEW_IMAGE`, `STACK_VIEWPORT_SCROLL` and `PRESET_MODIFIED` are
-  gone from `Enums.Events` too, with their detail types. `ACTORS_CHANGED`
-  still compiles, and a listener for it never runs.
+- `PRE_STACK_NEW_IMAGE`, `STACK_VIEWPORT_SCROLL`, `PRESET_MODIFIED`,
+  `ACTORS_CHANGED`, `CLIPPING_PLANES_UPDATED`,
+  `DYNAMIC_VOLUME_TIME_POINT_INDEX_CHANGED` and
+  `DYNAMIC_VOLUME_TIME_POINT_LOADED` are gone from `Enums.Events` too, with
+  their detail types (`Types.EventTypes.ActorsChangedEvent` and
+  `ActorsChangedEventDetail`), so a listener of one no longer compiles.
+- `STACK_SCROLL_OUT_OF_BOUNDS` fires in stack mode only, as on the legacy
+  stack viewport. In volume mode `utilities.scroll` fires
+  `VOLUME_VIEWPORT_SCROLL` and `VOLUME_VIEWPORT_SCROLL_OUT_OF_BOUNDS` with
+  the detail of the legacy volume viewport.
 - In volume mode `detail.imageIdIndex` of `NEW_IMAGE` is the slice index of
   the view. It can run against the order of the image ids, so it is not the
   place of `detail.imageId` in `viewport.getImageIds()`.
