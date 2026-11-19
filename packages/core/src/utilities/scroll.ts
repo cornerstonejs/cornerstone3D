@@ -15,7 +15,6 @@ import { getPlanarVolumeSliceRange } from '../RenderingEngine/GenericViewport/Pl
 import { resolveSlabThickness } from '../RenderingEngine/GenericViewport/Planar/planarVolumeSliceBlendMode';
 import getTargetVolumeAndSpacingInNormalDir from './getTargetVolumeAndSpacingInNormalDir';
 import { getVolumeId as getVolumeIdOfSpecifier } from './getVolumeId';
-import getVolumeViewportScrollInfo from './getVolumeViewportScrollInfo';
 import snapFocalPointToSlice from './snapFocalPointToSlice';
 import getEnabledElement from '../getEnabledElement';
 import triggerEvent from './triggerEvent';
@@ -324,73 +323,4 @@ function scrollNextPlanar(viewport: PlanarViewport, options: ScrollOptions) {
   }
 
   viewport.scroll(stepDelta);
-}
-
-export function scrollVolume(
-  viewport: IVolumeViewport,
-  volumeId: string,
-  delta: number,
-  scrollSlabs = false
-) {
-  const useSlabThickness = scrollSlabs;
-
-  const { numScrollSteps, currentStepIndex, sliceRangeInfo } =
-    getVolumeViewportScrollInfo(viewport, volumeId, useSlabThickness);
-
-  if (numScrollSteps === 0) return;
-
-  if (!sliceRangeInfo) {
-    return;
-  }
-
-  const { sliceRange, spacingInNormalDirection, camera } = sliceRangeInfo;
-  const { focalPoint, viewPlaneNormal, position } = camera;
-
-  const { newFocalPoint, newPosition } = snapFocalPointToSlice(
-    focalPoint,
-    position,
-    sliceRange,
-    viewPlaneNormal,
-    spacingInNormalDirection,
-    delta
-  );
-
-  viewport.setCamera({
-    focalPoint: newFocalPoint,
-    position: newPosition,
-  });
-  viewport.render();
-
-  const desiredStepIndex = currentStepIndex + delta;
-
-  const VolumeScrollEventDetail: EventTypes.VolumeScrollOutOfBoundsEventDetail =
-    {
-      volumeId,
-      viewport,
-      delta,
-      desiredStepIndex,
-      currentStepIndex,
-      numScrollSteps,
-      currentImageId: viewport.getCurrentImageId(),
-    };
-
-  if (
-    (desiredStepIndex > numScrollSteps || desiredStepIndex < 0) &&
-    viewport.getCurrentImageId() // Check that we are in the plane of acquisition
-  ) {
-    // One common use case of this trigger might be to load the next
-    // volume in a time series or the next segment of a partially loaded volume.
-
-    triggerEvent(
-      eventTarget,
-      Events.VOLUME_VIEWPORT_SCROLL_OUT_OF_BOUNDS,
-      VolumeScrollEventDetail
-    );
-  } else {
-    triggerEvent(
-      eventTarget,
-      Events.VOLUME_VIEWPORT_SCROLL,
-      VolumeScrollEventDetail
-    );
-  }
 }

@@ -841,7 +841,8 @@ Paint a labelmap and look at the fill.
 
 - A tool that the application wrote itself and that calls legacy members of
   a viewport is application code. Take it through steps 2 to 9.
-- `utilities.getImageLegacy(element)` of the core throws for a next viewport.
+- `utilities.getImageLegacy(element)` of the core is gone. Read
+  `cache.getImage(viewport.getCurrentImageId())`.
 
 ## Step 12. The version and the settings
 
@@ -949,12 +950,8 @@ Rules for doing this upgrade mechanically.
    the code. What is marked **Decided, not in the code yet** is the removal:
    the legacy classes and their types, the compatibility adapters, the
    settings `rendering.useGenericViewport`, `rendering.useCPURendering` and
-   `rendering.useLegacyCameraFOV`, the helpers `setVolumesForViewports`,
-   `addVolumesToViewports`, `utilities.convertStackToVolumeViewport`,
-   `utilities.convertVolumeToStackViewport`,
-   `utilities.viewportSupportsStackCompatibility`,
-   `utilities.viewportSupportsVolumeCompatibility` and
-   `utilities.ECGUtilities`, and the rename of the viewport types. These
+   `rendering.useLegacyCameraFOV`, the helper `utilities.ECGUtilities`, and
+   the rename of the viewport types. These
    names still exist and still compile. Do not keep them: move off each one
    as its row says, and use the `_NEXT` names of the viewport types until
    the rename lands.

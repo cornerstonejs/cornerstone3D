@@ -3,14 +3,7 @@ jest.mock('../src/getEnabledElement', () => ({
   default: jest.fn(() => ({})),
 }));
 
-jest.mock('../src/utilities/getVolumeViewportScrollInfo', () => ({
-  __esModule: true,
-  default: jest.fn(() => ({ numScrollSteps: 0 })),
-}));
-
 import cache from '../src/cache/cache';
-import getVolumeViewportScrollInfo from '../src/utilities/getVolumeViewportScrollInfo';
-import getImageLegacy from '../src/utilities/getImageLegacy';
 import getViewportImageIds from '../src/utilities/getViewportImageIds';
 import scroll from '../src/utilities/scroll';
 import { jumpToSlice } from '../src/utilities/jumpToSlice';
@@ -56,34 +49,6 @@ describe('legacy viewport utilities on legacy viewports and legacy adapters', ()
     getEnabledElement.mockReturnValue({});
   });
 
-  describe('getImageLegacy', () => {
-    const image = { imageId: 'image-1' };
-
-    it('returns the image of a legacy stack viewport and of a stack-mode adapter', () => {
-      for (const viewport of [
-        makeLegacy('stack', { getCornerstoneImage: () => image }),
-        makeAdapter('stack', 'stack', { getCornerstoneImage: () => image }),
-      ]) {
-        useViewport(viewport);
-        expect(getImageLegacy(viewport.element)).toBe(image);
-      }
-    });
-
-    it('throws for volume viewports, legacy or adapter', () => {
-      for (const viewport of [
-        makeLegacy('orthographic', { getCornerstoneImage: () => image }),
-        makeAdapter('volume', 'orthographic', {
-          getCornerstoneImage: () => image,
-        }),
-      ]) {
-        useViewport(viewport);
-        expect(() => getImageLegacy(viewport.element)).toThrow(
-          'An image can only be fetched for a stack viewport'
-        );
-      }
-    });
-  });
-
   describe('getViewportImageIds', () => {
     it('keeps asking a volume-mode adapter for its image ids', () => {
       const getVolume = jest.spyOn(cache, 'getVolume');
@@ -120,7 +85,6 @@ describe('legacy viewport utilities on legacy viewports and legacy adapters', ()
 
       scroll(viewport, { delta: 1, volumeId: 'ct' });
 
-      expect(getVolumeViewportScrollInfo).not.toHaveBeenCalled();
       expect(viewport.scroll).toHaveBeenCalledWith(1, undefined, undefined, {
         volumeId: 'ct',
         scrollSlabs: undefined,

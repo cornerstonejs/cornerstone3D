@@ -201,9 +201,6 @@ describe('The image slice checks of the tools', () => {
       expect(viewportSupportsImageSlices(viewport)).toBe(
         utilities.viewportSupportsImageSlices(viewport)
       );
-      expect(viewportSupportsStackCompatibility(viewport)).toBe(
-        utilities.viewportSupportsStackCompatibility(viewport)
-      );
       expect(viewportSupportsStackCalibration(viewport)).toBe(
         utilities.viewportSupportsStackCalibration(viewport)
       );

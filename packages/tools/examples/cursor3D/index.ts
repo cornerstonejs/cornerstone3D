@@ -1,24 +1,28 @@
-import type { Types } from '@cornerstonejs/core';
+import type {
+  GenericVolumeViewport3D,
+  PlanarViewport,
+  Types,
+} from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
-  setVolumesForViewports,
   volumeLoader,
   getRenderingEngine,
   eventTarget,
+  utilities,
 } from '@cornerstonejs/core';
 import { Enums as toolsEnums } from '@cornerstonejs/tools';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
-  setCtTransferFunctionForVolumeActor,
   addDropdownToToolbar,
   addManipulationBindings,
   getLocalUrl,
   addToggleButtonToToolbar,
   addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
+import { ctPresentation } from '../../../../utils/demo/helpers/volumePresentationRecipes';
 
 import vtkCellPicker from '@kitware/vtk.js/Rendering/Core/CellPicker';
 import * as cornerstoneTools from '@cornerstonejs/tools';
@@ -51,6 +55,7 @@ let sphereActor = undefined;
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
+const displaySetId = 'CT_DISPLAY_SET_ID';
 const toolGroupId = 'MY_TOOLGROUP_ID';
 const viewportId1 = 'CT_AXIAL';
 const viewportId2 = 'CT_SAGITTAL';
@@ -147,8 +152,10 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     viewportIds.forEach((viewportId) => {
-      const viewport = renderingEngine.getViewport(viewportId);
-      viewport.resetCamera();
+      const viewport = renderingEngine.getViewport<
+        PlanarViewport | GenericVolumeViewport3D
+      >(viewportId);
+      viewport.resetViewState();
       viewport.render();
     });
   },
@@ -191,10 +198,8 @@ function setCrossHairPosition(pickedPoint) {
   crosshairTool.setToolCenter(pickedPoint, true);
 }
 
-function addSphere(viewport, point) {
+function addSphere(viewport: GenericVolumeViewport3D, point) {
   if (!sphereActor) {
-    const randomUID = 'sphere_' + crypto.randomUUID();
-
     const sphereSource = vtkSphereSource.newInstance();
     sphereSource.setCenter(point);
     sphereSource.setRadius(5);
@@ -203,7 +208,7 @@ function addSphere(viewport, point) {
     sphereActor = vtkActor.newInstance();
     sphereActor.setMapper(sphereMapper);
     sphereActor.getProperty().setColor(0.0, 0.0, 1.0);
-    viewport.addActor({ actor: sphereActor, uid: randomUID });
+    viewport.getRenderer().addActor(sphereActor);
   } else {
     sphereActor.getMapper().getInputConnection().filter.setCenter(point);
   }
@@ -260,6 +265,13 @@ function getReferenceLineSlabThicknessControlsOn(viewportId) {
   return index !== -1;
 }
 
+/**
+ * The blend mode that a slab of the viewports is drawn with. The crosshairs
+ * set the slab thickness and not the blend mode, so the example sets it on
+ * the display set of each viewport.
+ */
+let slabBlendMode = Enums.BlendModes.MAXIMUM_INTENSITY_BLEND;
+
 const blendModeOptions = {
   MIP: 'Maximum Intensity Projection',
   MINIP: 'Minimum Intensity Projection',
@@ -291,36 +303,20 @@ addDropdownToToolbar({
         throw new Error('undefined orientation option');
     }
 
+    slabBlendMode = blendModeToUse;
+
     const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
 
-    const crosshairsInstance = toolGroup.getToolInstance(
-      CrosshairsTool.toolName
-    );
-    const oldConfiguration = crosshairsInstance.configuration;
-
-    crosshairsInstance.configuration = {
-      ...oldConfiguration,
-      slabThicknessBlendMode: blendModeToUse,
-    };
-
-    // Update the blendMode for actors to instantly reflect the change
+    // Update the blendMode of the display sets to instantly reflect the change
     toolGroup.viewportsInfo.forEach(({ viewportId, renderingEngineId }) => {
       const renderingEngine = getRenderingEngine(renderingEngineId);
-      const viewport = renderingEngine.getViewport(
-        viewportId
-      ) as Types.IVolumeViewport;
+      const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
-      viewport.setBlendMode(blendModeToUse);
+      viewport.setDisplaySetPresentation(displaySetId, {
+        blendMode: slabBlendMode,
+      });
       viewport.render();
     });
-
-    // Also update the 3D volume viewport
-    const renderingEngine = getRenderingEngine(renderingEngineId);
-    const viewport3D = renderingEngine.getViewport(
-      viewportId4
-    ) as Types.IVolumeViewport;
-    viewport3D.setBlendMode(blendModeToUse);
-    viewport3D.render();
   },
 });
 
@@ -391,6 +387,12 @@ async function run() {
   });
   volume.load();
 
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    kind: 'planar',
+    imageIds,
+    volumeId,
+  });
+
   // Instantiate a rendering engine
   const renderingEngine = new RenderingEngine(renderingEngineId);
 
@@ -398,7 +400,7 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: viewportId1,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element1,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
@@ -407,7 +409,7 @@ async function run() {
     },
     {
       viewportId: viewportId2,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element2,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -416,7 +418,7 @@ async function run() {
     },
     {
       viewportId: viewportId3,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: element3,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
@@ -425,7 +427,7 @@ async function run() {
     },
     {
       viewportId: viewportId4,
-      type: ViewportType.VOLUME_3D,
+      type: ViewportType.VOLUME_3D_NEXT,
       element: element4,
       defaultOptions: {
         background: <Types.Point3>[0, 0, 0],
@@ -439,17 +441,21 @@ async function run() {
   // Set the volume to load
   volume.load();
 
-  // Set volumes on the viewports
-  await setVolumesForViewports(
-    renderingEngine,
-    [
-      {
-        volumeId,
-        callback: setCtTransferFunctionForVolumeActor,
-      },
-    ],
-    viewportIds
-  );
+  // Set the display set on the viewports
+  await Promise.all([
+    ...[viewportId1, viewportId2, viewportId3].map(async (viewportId) => {
+      const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
+
+      await viewport.setDisplaySets({ displaySetId });
+      viewport.setDisplaySetPresentation(displaySetId, {
+        ...ctPresentation(),
+        blendMode: slabBlendMode,
+      });
+    }),
+    renderingEngine
+      .getViewport<GenericVolumeViewport3D>(viewportId4)
+      .setDisplaySets({ displaySetId }),
+  ]);
 
   // Define tool groups to add the segmentation display tool to
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
@@ -492,26 +498,18 @@ async function run() {
   picker.setTolerance(0);
   picker.initializePickList();
   // Render the image
-  const viewport = renderingEngine.getViewport(
-    viewportId4
-  ) as Types.IVolumeViewport;
+  const viewport =
+    renderingEngine.getViewport<GenericVolumeViewport3D>(viewportId4);
   renderingEngine.renderViewports(viewportIds);
-  await setVolumesForViewports(
-    renderingEngine,
-    [{ volumeId }],
-    [viewportId4]
-  ).then(() => {
-    viewport.setProperties({
-      preset: 'CT-Bone',
-    });
-    const defaultActor = viewport.getDefaultActor();
-    if (defaultActor?.actor) {
-      // Cast to any to avoid type errors with different actor types
-      picker.addPickList(defaultActor.actor as any);
-      prepareImageDataForPicking(viewport);
-    }
-    viewport.render();
+  viewport.setDisplaySetPresentation(displaySetId, {
+    preset: 'CT-Bone',
   });
+  const defaultActor = viewport.getDefaultActor();
+  if (defaultActor?.actor) {
+    picker.addPickList(defaultActor.actor as Types.VolumeActor);
+    prepareImageDataForPicking(viewport);
+  }
+  viewport.render();
 
   // Add right-click event handler to element4 for picking coordinates
   element4.addEventListener('mousedown', (evt) => {
@@ -522,19 +520,17 @@ async function run() {
 
       // Get the rendering engine and viewport
       const renderingEngine = getRenderingEngine(renderingEngineId);
-      const viewport = renderingEngine.getViewport(
-        viewportId4
-      ) as Types.IVolumeViewport;
+      const viewport =
+        renderingEngine.getViewport<GenericVolumeViewport3D>(viewportId4);
 
       // Get canvas coordinates relative to the element
       const rect = element4.getBoundingClientRect();
       const x = evt.clientX - rect.left;
       const y = evt.clientY - rect.top;
 
-      const displayCoords = viewport.getVtkDisplayCoords([x, y]);
       // Use the picker to get the 3D coordinates
       picker.pick(
-        [displayCoords[0], displayCoords[1], 0],
+        utilities.getVtkDisplayCoords(viewport, [x, y]),
         viewport.getRenderer()
       );
 
@@ -559,9 +555,8 @@ eventTarget.addEventListener(
   (evt) => {
     const { toolCenter } = evt.detail;
     const renderingEngine = getRenderingEngine(renderingEngineId);
-    const viewport = renderingEngine.getViewport(
-      viewportId4
-    ) as Types.IVolumeViewport;
+    const viewport =
+      renderingEngine.getViewport<GenericVolumeViewport3D>(viewportId4);
     if (sphereActor) {
       addSphere(viewport, toolCenter);
     }
@@ -576,8 +571,8 @@ eventTarget.addEventListener(
  * @param viewport
  * @returns
  */
-function prepareImageDataForPicking(viewport: Types.IVolumeViewport) {
-  const volumeActor = viewport.getDefaultActor()?.actor;
+function prepareImageDataForPicking(viewport: GenericVolumeViewport3D) {
+  const volumeActor = viewport.getDefaultActor()?.actor as Types.VolumeActor;
   if (!volumeActor) {
     return;
   }

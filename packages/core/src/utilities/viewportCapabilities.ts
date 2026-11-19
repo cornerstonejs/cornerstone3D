@@ -15,15 +15,9 @@ export type ImageSliceViewport = IViewport &
     'getCurrentImageId' | 'getCurrentImageIdIndex' | 'getImageIds'
   >;
 
-export type StackCompatibilityViewport = ImageSliceViewport &
-  Pick<IStackViewport, 'setStack'>;
-
 export type StackCalibrationViewport = ImageSliceViewport & {
   calibrateSpacing(imageId: string): void;
 };
-
-export type VolumeCompatibilityViewport = IViewport &
-  Pick<IVolumeViewport, 'addVolumes' | 'setVolumes'>;
 
 export type VolumeIdViewport = IViewport & Pick<IVolumeViewport, 'hasVolumeId'>;
 
@@ -74,30 +68,12 @@ export function viewportHasImageURI(
   );
 }
 
-export function viewportSupportsStackCompatibility(
-  viewport: unknown
-): viewport is StackCompatibilityViewport {
-  return (
-    viewportSupportsImageSlices(viewport) &&
-    viewportHasMethod(viewport, 'setStack')
-  );
-}
-
 export function viewportSupportsStackCalibration(
   viewport: unknown
 ): viewport is StackCalibrationViewport {
   return (
     viewportSupportsImageSlices(viewport) &&
     viewportHasMethod(viewport, 'calibrateSpacing')
-  );
-}
-
-export function viewportSupportsVolumeCompatibility(
-  viewport: unknown
-): viewport is VolumeCompatibilityViewport {
-  return (
-    viewportHasMethod(viewport, 'addVolumes') &&
-    viewportHasMethod(viewport, 'setVolumes')
   );
 }
 

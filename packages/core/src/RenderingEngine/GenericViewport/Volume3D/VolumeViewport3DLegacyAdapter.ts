@@ -16,6 +16,7 @@ import type {
   Point3,
   ResetCameraOptions,
   ViewReference,
+  VolumeActor,
   VolumeViewportProperties,
 } from '../../../types';
 import type { PlaneRestriction } from '../../../types/IViewport';
@@ -23,9 +24,14 @@ import type ViewportInputOptions from '../../../types/ViewportInputOptions';
 import { actorIsA, isImageActor } from '../../../utilities/actorCheck';
 import { deepClone } from '../../../utilities/deepClone';
 import getAcquisitionPlaneOrientation from '../../../utilities/getAcquisitionPlaneOrientation';
-import getVolumeViewportScrollInfo from '../../../utilities/getVolumeViewportScrollInfo';
+import getSliceRange from '../../../utilities/getSliceRange';
+import getTargetVolumeAndSpacingInNormalDir from '../../../utilities/getTargetVolumeAndSpacingInNormalDir';
 import isEqual, { isEqualNegative } from '../../../utilities/isEqual';
 import { coreLog } from '../../../utilities/logger';
+import {
+  countPlanarVolumeScrollSteps,
+  type PlanarVolumeScrollSteps,
+} from '../../../utilities/scroll';
 import snapFocalPointToSlice from '../../../utilities/snapFocalPointToSlice';
 import transformWorldToIndex from '../../../utilities/transformWorldToIndex';
 import triggerEvent from '../../../utilities/triggerEvent';
@@ -766,12 +772,14 @@ class VolumeViewport3DLegacyAdapter extends VolumeViewport3D {
       viewRef.volumeId === volumeId &&
       (isNegativeNormal || isSameNormal)
     ) {
-      const { currentStepIndex, sliceRangeInfo, numScrollSteps } =
-        getVolumeViewportScrollInfo(this as never, volumeId, true);
+      const steps = this.getVolumeScrollSteps(volumeId);
 
-      if (!sliceRangeInfo) {
+      if (!steps) {
         return;
       }
+
+      const { currentStepIndex, numScrollSteps } =
+        countPlanarVolumeScrollSteps(steps);
 
       if (isNegativeNormal) {
         sliceIndex = numScrollSteps - sliceIndex - 1;
@@ -780,9 +788,9 @@ class VolumeViewport3DLegacyAdapter extends VolumeViewport3D {
       const { newFocalPoint, newPosition } = snapFocalPointToSlice(
         focalPoint,
         position,
-        sliceRangeInfo.sliceRange,
+        steps.sliceRange,
         viewPlaneNormal,
-        sliceRangeInfo.spacingInNormalDirection,
+        steps.spacingInNormalDirection,
         sliceIndex - currentStepIndex
       );
 
@@ -982,17 +990,13 @@ class VolumeViewport3DLegacyAdapter extends VolumeViewport3D {
    * looks the same after it.
    */
   scroll(delta = 1): void {
-    const { sliceRangeInfo } = getVolumeViewportScrollInfo(
-      this as never,
-      this.getVolumeId(),
-      true
-    );
+    const steps = this.getVolumeScrollSteps(this.getVolumeId());
 
-    if (!sliceRangeInfo) {
+    if (!steps) {
       return;
     }
 
-    const { sliceRange, spacingInNormalDirection, camera } = sliceRangeInfo;
+    const { sliceRange, spacingInNormalDirection, camera } = steps;
     const { newFocalPoint, newPosition } = snapFocalPointToSlice(
       camera.focalPoint,
       camera.position,
@@ -1292,6 +1296,40 @@ class VolumeViewport3DLegacyAdapter extends VolumeViewport3D {
     const volumeId = this.getVolumeId();
 
     return volumeId ? cache.getVolume(volumeId) : undefined;
+  }
+
+  /**
+   * The slice range of a volume along the view, the step along the normal
+   * (the slab thickness when it is larger) and the camera they were measured
+   * on, as the legacy volume viewports measured them for a scroll. Undefined
+   * when no actor draws the volume.
+   */
+  private getVolumeScrollSteps(
+    volumeId: string
+  ): PlanarVolumeScrollSteps | undefined {
+    const camera = this.getCamera();
+    const { spacingInNormalDirection, actorUID } =
+      getTargetVolumeAndSpacingInNormalDir(
+        this as never,
+        camera,
+        volumeId,
+        true
+      );
+    const actorEntry = actorUID ? this.getActor(actorUID) : undefined;
+
+    if (!actorEntry) {
+      return undefined;
+    }
+
+    return {
+      camera,
+      sliceRange: getSliceRange(
+        actorEntry.actor as VolumeActor,
+        camera.viewPlaneNormal,
+        camera.focalPoint
+      ),
+      spacingInNormalDirection,
+    };
   }
 
   /** The renderings of the volumes that the viewport shows. */

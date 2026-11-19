@@ -1,12 +1,42 @@
 import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 import type { Point2, Point3 } from '../../types';
 
-export function canvasToWorldContextPool(args: {
+/**
+ * The normalized display coordinates of vtk.js for a point of the canvas of a
+ * viewport, with a depth of 0. They go from 0 to 1 across the render window,
+ * from its bottom left corner. The renderer of the viewport covers a part of
+ * the render window (`renderer.getViewport()`), and the canvas shows that
+ * part, so the point is placed inside it.
+ *
+ * @param args.canvas - The canvas of the viewport, in device pixels.
+ * @param args.renderer - The vtk.js renderer of the viewport.
+ * @param args.canvasPos - The point in CSS pixels, from the top left corner of the canvas.
+ * @returns The normalized display coordinates.
+ */
+export function canvasToNormalizedDisplay(args: {
   canvas: HTMLCanvasElement;
   renderer: vtkRenderer;
   canvasPos: Point2;
 }): Point3 {
   const { canvas, renderer, canvasPos } = args;
+  const devicePixelRatio = window.devicePixelRatio || 1;
+  const { width, height } = canvas;
+  const [xStart, yStart, xEnd, yEnd] =
+    renderer.getViewport() as unknown as number[];
+
+  return [
+    xStart + ((canvasPos[0] * devicePixelRatio) / width) * (xEnd - xStart),
+    yStart + (1 - (canvasPos[1] * devicePixelRatio) / height) * (yEnd - yStart),
+    0,
+  ];
+}
+
+export function canvasToWorldContextPool(args: {
+  canvas: HTMLCanvasElement;
+  renderer: vtkRenderer;
+  canvasPos: Point2;
+}): Point3 {
+  const { canvas, renderer } = args;
   const vtkCamera = renderer.getActiveCamera() as {
     getClippingRange(): [number, number];
     getDistance(): number;
@@ -14,22 +44,9 @@ export function canvasToWorldContextPool(args: {
     setIsPerformingCoordinateTransformation?(flag: boolean): void;
   };
   const restoreCamera = prepareCameraForCoordinateTransforms(vtkCamera);
-  const devicePixelRatio = window.devicePixelRatio || 1;
   const { width, height } = canvas;
   const aspectRatio = width / height;
-  const canvasPosWithDPR = [
-    canvasPos[0] * devicePixelRatio,
-    canvasPos[1] * devicePixelRatio,
-  ];
-  const [xStart, yStart, xEnd, yEnd] =
-    renderer.getViewport() as unknown as number[];
-  const viewportWidth = xEnd - xStart;
-  const viewportHeight = yEnd - yStart;
-  const normalizedDisplay = [
-    xStart + (canvasPosWithDPR[0] / width) * viewportWidth,
-    yStart + (1 - canvasPosWithDPR[1] / height) * viewportHeight,
-    0,
-  ];
+  const normalizedDisplay = canvasToNormalizedDisplay(args);
   const projCoords = renderer.normalizedDisplayToProjection(
     normalizedDisplay[0],
     normalizedDisplay[1],

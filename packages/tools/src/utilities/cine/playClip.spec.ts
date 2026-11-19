@@ -18,10 +18,6 @@ jest.mock('@cornerstonejs/core', () => {
       ...jest.requireActual(
         '../../../../core/src/utilities/viewportCapabilities'
       ),
-      getVolumeViewportScrollInfo: jest.fn(() => ({
-        numScrollSteps: 10,
-        currentStepIndex: 0,
-      })),
       logger: { toolsLog: { getLogger: jest.fn(() => logger) } },
       scroll: jest.fn(),
       triggerEvent: jest.fn(),

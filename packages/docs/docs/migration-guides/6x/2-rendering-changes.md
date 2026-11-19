@@ -787,8 +787,8 @@ layer of a fusion: the opacity is applied as given.
   viewport to every display set of each target.
 - **The camera position synchronizer copies a view reference.** On a next
   target it sets the view reference of the source, and its zoom and pan.
-- **`utilities.getImageLegacy(element)` of the core throws** for a next
-  viewport. Use `cache.getImage(viewport.getCurrentImageId())`.
+- **`utilities.getImageLegacy(element)` of the core is gone.** Use
+  `cache.getImage(viewport.getCurrentImageId())`.
 - **`AdvancedMagnifyTool` resets on a stack of images of several sizes.** It
   compares the rows, the columns and the number of components of the image
   of `NEW_IMAGE` with the image before.

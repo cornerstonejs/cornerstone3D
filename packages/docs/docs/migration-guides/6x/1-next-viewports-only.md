@@ -41,11 +41,25 @@ are temporary.
   `getViewPresentation`, `setViewPresentation`, and the actor methods of the
   legacy planar viewports. [The map](./3-api-map.md) gives the replacement of
   each member.
-- **Helpers that exist for the legacy API:** `setVolumesForViewports`,
-  `addVolumesToViewports`, `utilities.convertStackToVolumeViewport`,
-  `utilities.convertVolumeToStackViewport`, and the guards
+- **Helpers that exist for the legacy API.** They are gone from the core:
+  `setVolumesForViewports` and `addVolumesToViewports` (call
+  `viewport.setDisplaySets` or `viewport.addDisplaySet` on each viewport),
+  `utilities.convertStackToVolumeViewport` and
+  `utilities.convertVolumeToStackViewport` (show the display set again, with
+  or without a `volumeId`), the guards
   `utilities.viewportSupportsStackCompatibility` and
-  `utilities.viewportSupportsVolumeCompatibility`.
+  `utilities.viewportSupportsVolumeCompatibility` with their types
+  `StackCompatibilityViewport` and `VolumeCompatibilityViewport` (ask
+  `utilities.getViewportContentMode(viewport)`),
+  `utilities.getVolumeViewportScrollInfo`,
+  `utilities.getImageSliceDataForVolumeViewport` and
+  `utilities.getVolumeSliceRangeInfo` (ask `viewport.getNumberOfSlices()` and
+  `viewport.getCurrentImageIdIndex()`), `scrollVolume` of
+  `@cornerstonejs/core/utilities/scroll` (call `utilities.scroll`), and
+  `utilities.getImageLegacy` (read
+  `cache.getImage(viewport.getCurrentImageId())`). The legacy member
+  `getVtkDisplayCoords` of a volume viewport is the function
+  `utilities.getVtkDisplayCoords(viewport, canvasPoint)`.
 - **The legacy types:** `Types.IStackViewport`, `Types.IVolumeViewport` and
   `Types.IBaseVolumeViewport`. The interface of a next viewport is
   `Types.IGenericViewport`. `Types.IViewport` describes a legacy viewport

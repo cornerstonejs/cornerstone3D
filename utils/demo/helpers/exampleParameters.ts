@@ -3,7 +3,6 @@ import { utilities } from '@cornerstonejs/core';
 type DemoConfig = {
   core?: {
     rendering?: {
-      useCPURendering?: boolean;
       planar?: {
         renderBackend?: 'auto' | 'gpu' | 'cpu';
         sliceFirst?: boolean;
@@ -40,10 +39,6 @@ export function applyUrlParameterOverridesToDemoConfig(
   return utilities.deepMerge(config, {
     core: {
       rendering: {
-        // useCPURendering forces the legacy viewports; the planar
-        // renderBackend pin covers GenericViewport-based viewports (both
-        // image and volume paths), so no threshold overrides are needed.
-        useCPURendering: true,
         planar: {
           renderBackend: 'cpu',
         },

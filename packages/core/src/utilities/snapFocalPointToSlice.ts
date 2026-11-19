@@ -49,7 +49,7 @@ export default function snapFocalPointToSlice(
   // undefined spacing, which produce the same NaN by a different route. It is needed
   // in its own right, since `steps` is NaN when spacing is and `NaN <= 0` is false.
   //
-  // getVolumeViewportScrollInfo and getPlanarVolumeSliceNavigationState guard the
+  // countPlanarVolumeScrollSteps and getPlanarVolumeSliceNavigationState guard the
   // same degenerate range; all three agree on what "can't scroll" means.
   if (steps <= 0 || max - min === 0 || !(spacingInNormalDirection > 0)) {
     return {

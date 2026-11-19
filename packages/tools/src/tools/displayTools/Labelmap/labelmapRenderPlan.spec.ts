@@ -19,7 +19,6 @@ jest.mock('@cornerstonejs/core', () => ({
       ForegroundMajority: 'foregroundMajority',
     },
   },
-  addVolumesToViewports: jest.fn(),
   cache: {
     getVolume: jest.fn(),
   },
@@ -121,7 +120,6 @@ jest.mock('./volumeLabelmapImageMapper', () => ({
 
 import { getCurrentLabelmapImageIdsForViewport } from '../../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
 import {
-  addVolumesToViewports,
   cache,
   Enums,
   gpuSettingsForRender,
@@ -439,6 +437,7 @@ describe('labelmapRenderPlan', () => {
       type: 'orthographic',
       getRenderingEngine: jest.fn(),
       getVolumeId: jest.fn(() => 'source-volume-id'),
+      addVolumes: jest.fn(),
     };
     const segmentation = {
       segmentationId: 'segmentation-id',
@@ -472,7 +471,7 @@ describe('labelmapRenderPlan', () => {
     });
 
     expect(addVolumesAsIndependentComponents).not.toHaveBeenCalled();
-    expect(addVolumesToViewports).toHaveBeenCalled();
+    expect(viewport.addVolumes).toHaveBeenCalled();
     expect(utilities.logger.toolsLog.getLogger().warn).toHaveBeenCalledTimes(1);
   });
 

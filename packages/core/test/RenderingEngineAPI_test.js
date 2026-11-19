@@ -145,20 +145,6 @@ describe('RenderingEngineAPI -- ', () => {
       expect(viewport1).toBeUndefined();
     });
 
-    it('should successfully filter stack-compatible viewports', function () {
-      createViewports(renderingEngine, {
-        viewportId: axialViewportId,
-        viewportType: ViewportType.STACK,
-        orientation: Enums.OrientationAxis.AXIAL,
-        useEnableElement: true,
-      });
-
-      const stackViewports = renderingEngine
-        .getViewports()
-        .filter(cornerstone3D.utilities.viewportSupportsStackCompatibility);
-      expect(stackViewports.length).toBe(1);
-    });
-
     it('should resize legacy custom-pipeline viewports without changing the engine contract', function () {
       createViewports(renderingEngine, {
         viewportId: customOrientationViewportId,

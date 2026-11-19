@@ -258,8 +258,6 @@ import { cornerstoneStreamingDynamicImageVolumeLoader } from './loaders/cornerst
 import { cornerstoneMeshLoader } from './loaders/cornerstoneMeshLoader';
 
 import {
-  setVolumesForViewports,
-  addVolumesToViewports,
   addImageSlicesToViewports,
   getProjectionScaleMatrix,
 } from './RenderingEngine/helpers';
@@ -424,8 +422,6 @@ export {
   metaData,
   //
   utilities,
-  setVolumesForViewports,
-  addVolumesToViewports,
   addImageSlicesToViewports,
   DefaultRenderPathResolver,
   defaultRenderPathResolver,

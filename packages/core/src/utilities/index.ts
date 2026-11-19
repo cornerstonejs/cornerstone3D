@@ -40,11 +40,8 @@ import renderToCanvasCPU from './renderToCanvasCPU';
 import renderToCanvasGPU from './renderToCanvasGPU';
 import worldToImageCoords from './worldToImageCoords';
 import imageToWorldCoords from './imageToWorldCoords';
-import getVolumeSliceRangeInfo from './getVolumeSliceRangeInfo';
-import getVolumeViewportScrollInfo from './getVolumeViewportScrollInfo';
 import getSliceRange from './getSliceRange';
 import snapFocalPointToSlice from './snapFocalPointToSlice';
-import getImageSliceDataForVolumeViewport from './getImageSliceDataForVolumeViewport';
 import { isImageActor, actorIsA } from './actorCheck';
 import getViewportsWithImageURI from './getViewportsWithImageURI';
 import getClosestStackImageIndexForPoint from './getClosestStackImageIndexForPoint';
@@ -58,7 +55,6 @@ import PointsManager from './PointsManager';
 import deepMerge from './deepMerge';
 import getScalingParameters from './getScalingParameters';
 import isPTPrescaledWithSUV from './isPTPrescaledWithSUV';
-import getImageLegacy from './getImageLegacy';
 import sortImageIdsAndGetSpacing from './sortImageIdsAndGetSpacing';
 import makeVolumeMetadata from './makeVolumeMetadata';
 import genericMetadataProvider from './genericMetadataProvider';
@@ -71,8 +67,6 @@ import genericViewportDisplaySetMetadataProvider from './genericViewportDisplayS
 import isVideoTransferSyntax from './isVideoTransferSyntax';
 import { getBufferConfiguration } from './getBufferConfiguration';
 import { generateVolumePropsFromImageIds } from './generateVolumePropsFromImageIds';
-import { convertStackToVolumeViewport } from './convertStackToVolumeViewport';
-import { convertVolumeToStackViewport } from './convertVolumeToStackViewport';
 import VoxelManager from './VoxelManager';
 import CompositeVoxelManager from './CompositeVoxelManager';
 import RLEVoxelMap from './RLEVoxelMap';
@@ -156,9 +150,7 @@ import { asArray, asArrayFirst } from './asArray';
 import {
   viewportSupportsImageSlices,
   viewportSupportsStackCalibration,
-  viewportSupportsStackCompatibility,
   viewportSupportsVolumeActors,
-  viewportSupportsVolumeCompatibility,
   viewportSupportsVolumeId,
   viewportSupportsVolumeURI,
   isGenericViewport,
@@ -167,6 +159,7 @@ import {
   viewportIsInVolumeMode,
   viewportIsInStackMode,
 } from './viewportCapabilities';
+import getVtkDisplayCoords from './getVtkDisplayCoords';
 import { getNormalizedAspectRatio } from './getNormalizedAspectRatio';
 import {
   getWasmBasePath,
@@ -250,11 +243,8 @@ export {
   renderToCanvasGPU,
   worldToImageCoords,
   imageToWorldCoords,
-  getVolumeSliceRangeInfo,
-  getVolumeViewportScrollInfo,
   getSliceRange,
   snapFocalPointToSlice,
-  getImageSliceDataForVolumeViewport,
   isImageActor,
   isPTPrescaledWithSUV,
   actorIsA,
@@ -270,7 +260,6 @@ export {
   PointsManager,
   getScalingParameters,
   colormap,
-  getImageLegacy,
   ProgressiveIterator,
   decimate,
   imageRetrieveMetadataProvider,
@@ -288,8 +277,6 @@ export {
   VoxelManager,
   CompositeVoxelManager,
   RLEVoxelMap,
-  convertStackToVolumeViewport,
-  convertVolumeToStackViewport,
   roundNumber,
   roundToPrecision,
   getViewportImageIds,
@@ -329,9 +316,7 @@ export {
   asArrayFirst,
   viewportSupportsImageSlices,
   viewportSupportsStackCalibration,
-  viewportSupportsStackCompatibility,
   viewportSupportsVolumeActors,
-  viewportSupportsVolumeCompatibility,
   viewportSupportsVolumeId,
   viewportSupportsVolumeURI,
   isGenericViewport,
@@ -339,6 +324,7 @@ export {
   getViewportContentMode,
   viewportIsInVolumeMode,
   viewportIsInStackMode,
+  getVtkDisplayCoords,
   getNormalizedAspectRatio,
   getWasmBasePath,
   setWasmBasePath,

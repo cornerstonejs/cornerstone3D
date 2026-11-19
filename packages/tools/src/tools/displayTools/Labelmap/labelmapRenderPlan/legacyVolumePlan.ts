@@ -1,7 +1,6 @@
 import {
   type Types,
   ActorRenderMode,
-  addVolumesToViewports,
   Enums,
   cache,
   gpuSettingsForRender,
@@ -134,8 +133,6 @@ async function mountLegacyVolumeLabelmap({
   segmentationId: string;
   viewport: Types.IViewport;
 }): Promise<LabelmapRenderPlanMountResult> {
-  const { id: viewportId } = viewport;
-
   // Default to true since we are setting a new segmentation, however,
   // in the event listener, we will make other segmentations visible/invisible
   // based on the config
@@ -273,10 +270,8 @@ async function mountLegacyVolumeLabelmap({
    * to the default behavior.
    */
   if (!volumeInputs[0].useIndependentComponents) {
-    await addVolumesToViewports(
-      viewport.getRenderingEngine(),
+    await volumeCompatibleViewport.addVolumes?.(
       volumeInputs,
-      [viewportId],
       immediateRender,
       suppressEvents
     );
