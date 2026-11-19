@@ -300,6 +300,35 @@ function getSlabPresentation(
   };
 }
 
+/**
+ * What `loadPlanarData` gives for a display set: its loaded data, the render
+ * path decision and the inputs of that decision, and the orientation that
+ * the options ask for.
+ */
+type PlanarDataLoad = {
+  data: LoadedData<PlanarPayload>;
+  selectedPath: SelectedPlanarRenderPath;
+  resolvedOrientation: PlanarViewState['orientation'];
+  decisionOptions: PlanarRenderPathDecisionOptions;
+};
+
+/**
+ * Whether two render path decisions of one display set have the same inputs
+ * from the display sets that are mounted: the backend that an overlay takes
+ * from the source, and the slab of the stored presentation. The other inputs
+ * come from the options and the orientation of the display set.
+ */
+function hasSameMountInputs(
+  a: PlanarRenderPathDecisionOptions,
+  b: PlanarRenderPathDecisionOptions
+): boolean {
+  return (
+    a.renderBackend === b.renderBackend &&
+    a.slabThickness === b.slabThickness &&
+    a.blendMode === b.blendMode
+  );
+}
+
 /** The fields of an image path rendering that track its image loads. */
 type PlanarStackImageLoads = {
   loadRequestId?: number;
@@ -599,31 +628,60 @@ class PlanarViewport extends GenericViewport<
    * data that the legacy viewports fire: VOLUME_VIEWPORT_NEW_VOLUME when the
    * new source is a volume, as `setVolumes`, and VIEWPORT_NEW_IMAGE_SET when
    * it is a stack, as `setStack`.
+   *
+   * The data of every entry is loaded before the shown display sets go, so an
+   * entry without data rejects and leaves the shown scene as it was, as the
+   * legacy `setVolumes` did for a volume that was not in the cache. The mount
+   * then takes that data, and that render path decision when its inputs are
+   * the same, so a stack loads its first image once. The newest call holds
+   * the draws of a CPU path from its start to its end, also while the shown
+   * scene waits for the loads, and at its end, also when it rejects, draws
+   * once when a draw was asked for meanwhile.
    */
   private async mountDisplaySets(
     entries: Array<{ displaySetId: string; options?: PlanarSetDataOptions }>
   ): Promise<void> {
     const requestId = ++this.setDataRequestId;
     const isStale = () => requestId !== this.setDataRequestId;
+    const mounts: Array<{
+      displaySetId: string;
+      options: PlanarSetDataOptions;
+    }> = entries.map(({ displaySetId, options = {} }, index) => ({
+      displaySetId,
+      options: {
+        ...options,
+        role: options.role ?? (index === 0 ? 'source' : 'overlay'),
+      },
+    }));
 
-    this.clearResolvedViewCache();
-    this.removeReplaceableData(entries);
     this.mountCpuDrawHoldRequestId = requestId;
 
     try {
-      for (const [index, { displaySetId, options = {} }] of entries.entries()) {
+      const loaded: PlanarDataLoad[] = [];
+
+      for (const { displaySetId, options } of mounts) {
+        const load = await this.loadPlanarData(displaySetId, options);
+
         if (isStale()) {
           return;
         }
 
-        const role = options.role ?? (index === 0 ? 'source' : 'overlay');
+        loaded.push(load);
+      }
+
+      this.clearResolvedViewCache();
+      this.removeReplaceableData(entries);
+
+      for (const [index, { displaySetId, options }] of mounts.entries()) {
+        if (isStale()) {
+          return;
+        }
+
         await this.addDisplaySetInternal(
           displaySetId,
-          {
-            ...options,
-            role,
-          },
-          isStale
+          options,
+          isStale,
+          loaded[index]
         );
       }
     } finally {
@@ -716,7 +774,8 @@ class PlanarViewport extends GenericViewport<
   private async addDisplaySetInternal(
     dataId: string,
     options: PlanarSetDataOptions = {},
-    shouldIgnore?: () => boolean
+    shouldIgnore?: () => boolean,
+    loaded?: PlanarDataLoad
   ): Promise<void> {
     const role = this.mountedData.resolveBindingRole(options);
     const resolvedOptions: PlanarSetDataOptions = {
@@ -724,7 +783,7 @@ class PlanarViewport extends GenericViewport<
       role,
     };
     const { data, resolvedOrientation, selectedPath } =
-      await this.loadPlanarData(dataId, resolvedOptions);
+      await this.loadPlanarData(dataId, resolvedOptions, loaded);
 
     if (shouldIgnore?.()) {
       return;
@@ -3280,15 +3339,20 @@ class PlanarViewport extends GenericViewport<
    * and slice first needs the cached volume to accept a data set. Both volume
    * modes take the same payload, so only its render mode changes. With slice
    * first off that second choice ends at the configuration check.
+   *
+   * With `loaded`, what this gave for the display set before `setDisplaySets`
+   * removed the shown display sets, it gives that again when the inputs from
+   * the mounted display sets are the same (`hasSameMountInputs`), so the
+   * decision runs once. Else it decides again and takes the loaded data with
+   * the render mode of the new decision in place of a load: only the render
+   * mode can change, as whether the display set takes the volume path depends
+   * on the display set and the orientation alone.
    */
   private async loadPlanarData(
     dataId: string,
-    options: PlanarSetDataOptions
-  ): Promise<{
-    data: LoadedData<PlanarPayload>;
-    selectedPath: SelectedPlanarRenderPath;
-    resolvedOrientation: PlanarViewState['orientation'];
-  }> {
+    options: PlanarSetDataOptions,
+    loaded?: PlanarDataLoad
+  ): Promise<PlanarDataLoad> {
     const dataSet = this.getDataSet(dataId);
 
     if (!dataSet) {
@@ -3306,13 +3370,20 @@ class PlanarViewport extends GenericViewport<
       options,
       resolvedOrientation
     );
+
+    if (loaded && hasSameMountInputs(loaded.decisionOptions, decisionOptions)) {
+      return loaded;
+    }
+
     const selectedPath = selectPlanarRenderPath(dataSet, decisionOptions);
-    const data = await (this.dataProvider as PlanarDataProvider).load(dataId, {
-      acquisitionOrientation: selectedPath.acquisitionOrientation,
-      orientation: resolvedOrientation,
-      renderMode: selectedPath.renderMode,
-      volumeId: selectedPath.volumeId,
-    });
+    const data = loaded
+      ? { ...loaded.data, renderMode: selectedPath.renderMode }
+      : await (this.dataProvider as PlanarDataProvider).load(dataId, {
+          acquisitionOrientation: selectedPath.acquisitionOrientation,
+          orientation: resolvedOrientation,
+          renderMode: selectedPath.renderMode,
+          volumeId: selectedPath.volumeId,
+        });
     const { renderMode, reason } = isVolumeRenderMode(selectedPath.renderMode)
       ? defaultPlanarRenderPathDecisionService.selectVolumeRenderModeForDataSet(
           dataSet,
@@ -3325,6 +3396,7 @@ class PlanarViewport extends GenericViewport<
         data,
         selectedPath: { ...selectedPath, reason },
         resolvedOrientation,
+        decisionOptions,
       };
     }
 
@@ -3332,6 +3404,7 @@ class PlanarViewport extends GenericViewport<
       data: { ...data, renderMode },
       selectedPath: { ...selectedPath, renderMode, reason },
       resolvedOrientation,
+      decisionOptions,
     };
   }
 
