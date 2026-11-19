@@ -1212,15 +1212,6 @@ class PlanarViewport extends GenericViewport<
   // ====================================================================
 
   /**
-   * Returns the rendering engine that owns this viewport.
-   *
-   * @returns The parent rendering engine, if it is still registered.
-   */
-  getRenderingEngine() {
-    return renderingEngineCache.get(this.renderingEngineId);
-  }
-
-  /**
    * Builds a spatial reference object for cross-viewport synchronization.
    *
    * @param viewRefSpecifier - Optional fields that refine the produced
@@ -1270,44 +1261,6 @@ class PlanarViewport extends GenericViewport<
       return binding?.getImageData?.();
     }
     return this.getCurrentBinding()?.getImageData?.();
-  }
-
-  // ====================================================================
-  // Public API -- coordinate transforms
-  // ====================================================================
-
-  /**
-   * Converts canvas-space to world-space through the resolved semantic view.
-   */
-  canvasToWorld(canvasPos: Point2): Point3 {
-    const resolvedView = this.getResolvedView();
-
-    if (!resolvedView) {
-      return this.buildFallbackCanvasToWorld(canvasPos);
-    }
-
-    return resolvedView.canvasToWorld(canvasPos);
-  }
-
-  /**
-   * Converts world-space to canvas-space through the resolved semantic view.
-   */
-  worldToCanvas(worldPos: Point3): Point2 {
-    const resolvedView = this.getResolvedView();
-
-    if (!resolvedView) {
-      return this.buildFallbackWorldToCanvas(worldPos);
-    }
-
-    return resolvedView.worldToCanvas(worldPos);
-  }
-
-  /**
-   * Returns the frame of reference UID from the resolved view,
-   * resolving against the active binding's spatial metadata.
-   */
-  override getFrameOfReferenceUID(): string {
-    return this.viewReferences.getFrameOfReferenceUID();
   }
 
   /**
@@ -2683,18 +2636,6 @@ class PlanarViewport extends GenericViewport<
     ];
   }
 
-  private buildFallbackWorldToCanvas(worldPos: Point3): Point2 {
-    const anchorCanvas = this.viewState.anchorCanvas ?? [0.5, 0.5];
-    const anchorWorld = this.viewState.anchorWorld ?? [0, 0, 0];
-    const { height, width } = this.getCurrentCanvasDimensions();
-    const [scaleX, scaleY] = normalizePlanarScale(this.viewState.scale);
-
-    return [
-      (worldPos[0] - anchorWorld[0]) * scaleX + anchorCanvas[0] * width,
-      (worldPos[1] - anchorWorld[1]) * scaleY + anchorCanvas[1] * height,
-    ];
-  }
-
   private applyResolvedViewState(nextCamera: PlanarViewState): void {
     const previousCamera = this.getResolvedCameraForEvent();
 
@@ -2707,16 +2648,6 @@ class PlanarViewport extends GenericViewport<
     return this.getResolvedView()?.toICamera() as unknown as
       | ICamera
       | undefined;
-  }
-
-  protected getCameraForEvent(): ICamera {
-    const resolvedView = this.getResolvedView();
-
-    if (resolvedView) {
-      return resolvedView.toICamera() as unknown as ICamera;
-    }
-
-    return this.getViewState() as unknown as ICamera;
   }
 
   private getCurrentPresentation(): DerivedPlanarPresentation | undefined {
