@@ -77,15 +77,12 @@ async function createVolume() {
  * moves, a volume in the axial plane, and two stacks of two axial images. The
  * stacks show their first image.
  */
-async function createScene(
-  renderingEngine,
-  stackViewportType = ViewportType.PLANAR_NEXT
-) {
+async function createScene(renderingEngine) {
   testUtils.createViewports(renderingEngine, [
     { viewportType: ViewportType.PLANAR_NEXT, viewportId: tiltedVolumeId },
     { viewportType: ViewportType.PLANAR_NEXT, viewportId: axialVolumeId },
     ...stackIds.map((viewportId) => ({
-      viewportType: stackViewportType,
+      viewportType: ViewportType.PLANAR_NEXT,
       viewportId,
     })),
   ]);
@@ -109,9 +106,7 @@ async function createScene(
       const viewport = renderingEngine.getViewport(viewportId);
       const imageIds = createStackImageIds();
 
-      return stackViewportType === ViewportType.STACK
-        ? viewport.setStack(imageIds, 0)
-        : testUtils.setStackOnNextViewport(viewport, imageIds, 0);
+      return testUtils.setStackOnNextViewport(viewport, imageIds, 0);
     })
   );
 
@@ -279,21 +274,6 @@ describe('ReferenceCursors on direct next viewports -- ', () => {
         renderingEngine.getViewport(viewportId).getCurrentImageIdIndex()
       ).toBe(1);
       expect(depthOnDisplay(renderingEngine, viewportId)).toBeCloseTo(6, 3);
-    });
-  });
-
-  it('stops rendering legacy adapters of a stack after one move, as direct next viewports', async function () {
-    const tilted = await createScene(renderingEngine, ViewportType.STACK);
-    const renders = await countRendersAfterOneMove(
-      renderingEngine,
-      canvasPointAtDepth(tilted, 3.2)
-    );
-
-    expectRendersToSettle(renders);
-    stackIds.forEach((viewportId) => {
-      expect(
-        renderingEngine.getViewport(viewportId).getCurrentImageIdIndex()
-      ).toBe(0);
     });
   });
 });

@@ -5,7 +5,6 @@ import * as testUtils from '../../../utils/test/testUtils';
 import { getConfig, setConfig } from '../src/config';
 import {
   STRAIGHT_PLANE,
-  createLegacyViewport,
   createNextViewport,
   createSeries,
   renderAndWait,
@@ -16,7 +15,7 @@ import {
 } from '../../core/test/utils/planarSeriesBothModes';
 
 const { utilities, Enums, geometryLoader } = cornerstone3D;
-const { ViewportType, GeometryType } = Enums;
+const { GeometryType } = Enums;
 const {
   ToolGroupManager,
   PlanarFreehandContourSegmentationTool,
@@ -244,28 +243,6 @@ describe('A surface shown as contours on a direct next planar viewport -- ', () 
       worldOfVoxel(series, [0, 0, 3])[2],
       1
     );
-    expectTheContourOfTheSliceOnDisplay(viewport);
-  });
-
-  it('draws on a legacy adapter in volume mode the one contour of the slice on display, as on a direct next viewport', async function () {
-    const series = await createSeriesAtDepth(3000);
-    const viewport = createLegacyViewport(
-      renderingEngine,
-      'contourAdapter',
-      ViewportType.ORTHOGRAPHIC
-    );
-
-    await viewport.setVolumes([{ volumeId: series.volumeId }]);
-    viewport.setViewReference({
-      cameraFocalPoint: worldOfVoxel(series, [16, 12, 3]),
-    });
-    await renderAndWait(viewport);
-    addBoxSurfaceSegmentation(3000);
-    await showContours(viewport);
-
-    expectTheContourOfTheSliceOnDisplay(viewport);
-
-    await scrollOneSlice(viewport);
     expectTheContourOfTheSliceOnDisplay(viewport);
   });
 });

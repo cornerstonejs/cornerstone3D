@@ -167,29 +167,6 @@ export function createNextViewport(renderingEngine, viewportId) {
   return renderingEngine.getViewport(viewportId);
 }
 
-/**
- * Makes the viewport that a legacy type gives, its legacy adapter, of 400 by
- * 300 pixels. Some callers still pass `adapter`: it changes nothing, because
- * the legacy classes are gone.
- */
-export function createLegacyViewport(
-  renderingEngine,
-  viewportId,
-  viewportType,
-  { orientation = OrientationAxis.ACQUISITION } = {}
-) {
-  testUtils.createViewports(renderingEngine, {
-    viewportId,
-    viewportType,
-    orientation,
-    width: 400,
-    height: 300,
-    useEnableElement: true,
-  });
-
-  return renderingEngine.getViewport(viewportId);
-}
-
 /** Resolves when `check` gives true, checked once per animation frame. */
 export function waitFor(check, timeout = 4000) {
   const start = performance.now();

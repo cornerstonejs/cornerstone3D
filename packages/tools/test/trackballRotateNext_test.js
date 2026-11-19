@@ -221,24 +221,6 @@ describe('TrackballRotateTool on a direct next viewport -- ', () => {
     });
   });
 
-  it('turns the view of a legacy adapter that shows a volume as that of a direct next viewport', async function () {
-    testUtils.createViewports(renderingEngine, {
-      viewportType: ViewportType.ORTHOGRAPHIC,
-      orientation: OrientationAxis.AXIAL,
-      viewportId,
-    });
-
-    const viewport = renderingEngine.getViewport(viewportId);
-
-    await viewport.setVolumes([{ volumeId: await createVolume() }]);
-    viewport.render();
-
-    const before = readPlanarView(viewport);
-
-    await dragOnCanvas(viewport.element, DRAG_START, DRAG_END);
-    expectLegacyTurn(viewport, before);
-  });
-
   it('keeps the turned view when the element is resized', async function () {
     const viewport = createNextPlanarViewport(renderingEngine, viewportId);
 

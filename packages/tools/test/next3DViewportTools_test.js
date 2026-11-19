@@ -561,27 +561,4 @@ describe('Tools on a direct next 3D viewport -- ', () => {
 
     expect(labelmapActorsOf(next).length).toBe(0);
   });
-
-  it('shows a labelmap of a Labelmap representation on a legacy adapter as on the legacy 3D viewport', async function () {
-    testUtils.createViewports(renderingEngine, {
-      orientation: OrientationAxis.SAGITTAL,
-      width: 400,
-      height: 300,
-      useEnableElement: true,
-      viewportId: 'adapter3D',
-      viewportType: ViewportType.VOLUME_3D,
-    });
-
-    const adapter = renderingEngine.getViewport('adapter3D');
-    const volumeId = await createVolume();
-
-    await adapter.setVolumes([{ volumeId }]);
-    await showLabelmap(volumeId, adapter);
-
-    expect(labelmapActorsOf(adapter).length).toBe(1);
-
-    await waitFor(() => looksOf(adapter)[1][3] === LEGACY_LABELMAP_LOOKS[1][3]);
-
-    expect(looksOf(adapter)).toEqual(LEGACY_LABELMAP_LOOKS);
-  });
 });
