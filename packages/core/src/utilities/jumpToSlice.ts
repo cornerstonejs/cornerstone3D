@@ -10,7 +10,6 @@ import getEnabledElement from '../getEnabledElement';
 import {
   getViewportContentMode,
   isGenericViewport,
-  viewportIsInStackMode,
 } from './viewportCapabilities';
 /**
  * It uses the imageIndex in the Options to scroll to the slice that is intended.
@@ -35,10 +34,8 @@ async function jumpToSlice(
 
   const { viewport } = enabledElement;
 
-  const { imageIndex: currentImageIndex, numberOfSlices } = _getImageSliceData(
-    viewport,
-    debounceLoading
-  );
+  const { imageIndex: currentImageIndex, numberOfSlices } =
+    _getImageSliceData(viewport);
 
   const imageIndexToJump = _getImageIndexToJump(numberOfSlices, imageIndex);
   const delta = imageIndexToJump - currentImageIndex;
@@ -49,39 +46,18 @@ async function jumpToSlice(
 /**
  * The number of slices of a viewport and the index of the slice it shows.
  *
- * A next planar viewport gives its current image index, in stack mode and
- * in volume mode: the index of the last request, which on a stack can be
- * ahead of the image that is drawn while that image loads. A legacy stack
- * viewport and a stack-mode legacy adapter give their target index when
- * `debounceLoading` is set. A legacy volume viewport gives its slice index.
- * A viewport that has no `getNumberOfSlices`, as a next ECG viewport, has one
- * slice: a jump on it moves nothing.
+ * A planar viewport gives its current image index, in stack mode and in
+ * volume mode: the index of the last request, which on a stack can be ahead
+ * of the image that is drawn while that image loads. Another viewport gives
+ * its slice index. A viewport that has no `getNumberOfSlices`, as an ECG
+ * viewport, has one slice: a jump on it moves nothing.
  */
 function _getImageSliceData(
-  viewport: IStackViewport | IVolumeViewport,
-  debounceLoading?: boolean
+  viewport: IStackViewport | IVolumeViewport
 ): ImageSliceData {
-  const hasTargetImageIdIndex =
-    typeof (viewport as IStackViewport).getTargetImageIdIndex === 'function';
-
-  if (viewportIsInStackMode(viewport) && hasTargetImageIdIndex) {
-    const stackViewport = viewport as IStackViewport;
-
-    return {
-      numberOfSlices: stackViewport.getImageIds().length,
-      imageIndex: debounceLoading
-        ? stackViewport.getTargetImageIdIndex()
-        : stackViewport.getCurrentImageIdIndex(),
-    };
-  }
-
   const mode = getViewportContentMode(viewport);
 
-  if (
-    isGenericViewport(viewport) &&
-    !hasTargetImageIdIndex &&
-    (mode === 'stack' || mode === 'volume')
-  ) {
+  if (isGenericViewport(viewport) && (mode === 'stack' || mode === 'volume')) {
     return {
       numberOfSlices: viewport.getNumberOfSlices(),
       imageIndex: viewport.getCurrentImageIdIndex(),

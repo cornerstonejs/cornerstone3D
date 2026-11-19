@@ -1,62 +1,21 @@
-import cache from '../../../cache/cache';
 import ImageQualityStatus from '../../../enums/ImageQualityStatus';
-import ViewportType from '../../../enums/ViewportType';
 import type {
-  ActorEntry,
   IImage,
   Point3,
   ViewportFidelityCause,
   VoxelGrid,
   VoxelQualityRecord,
-  VoxelStatistic,
 } from '../../../types';
+import { compareVoxelQuality } from '../../../utilities/voxelGrid';
 import {
-  compareVoxelQuality,
-  voxelGridsEqual,
-} from '../../../utilities/voxelGrid';
-import { sampleDistanceRatiosOf } from '../createVolumeMapper';
-import { reductionCauseOf } from '../volumeRenderStrategy';
-import { isBindingPending } from '../../GenericViewport/renderingFidelity';
-import { gpuSettingsForRender } from '../../../utilities/gpuSettingsPresets';
-import {
-  type CameraViewportLike,
   type FidelityDisplay,
   displaySpacingForGrid,
-  fidelityDisplayOfCamera,
 } from './displaySpacingOfViewport';
-import { isLabelmapActorEntry } from './isLabelmapActorEntry';
 import {
   type FidelityLine,
   isReduced,
   reductionFactorsOf,
 } from './fidelityIndicatorState';
-
-type VolumeScalarTextureLike = {
-  getGrid?: () => VoxelGrid;
-  /** Statistic the texture was provisioned with (FIDELITY-RECORD-3). */
-  getStatistic?: () => VoxelStatistic | null | undefined;
-  isFillPending?: () => boolean;
-};
-
-type VolumeMapperLike = {
-  getScalarTexture?: () => VolumeScalarTextureLike;
-  getSampleDistance?: () => number;
-  getInputData?: () => {
-    getSpacing: () => number[];
-    getBounds: () => number[];
-  };
-};
-
-type VolumeViewportLike = CameraViewportLike & {
-  getActors: () => ActorEntry[];
-  type?: string;
-};
-
-/** The quality record of one volume, for the grid that it was read for. */
-export type CachedRecord = {
-  grid: VoxelGrid;
-  record: VoxelQualityRecord | undefined;
-};
 
 /** The typed fidelity fields of one binding (GENVIEW-FIDELITY-2). */
 export type BindingFidelitySource = {
@@ -131,96 +90,6 @@ export function fidelityLinesFromBindings(
   }
 
   return lines;
-}
-
-/**
- * Builds fidelity lines from volume actors on a legacy volume viewport.
- * The viewport owns this path; the indicator UI must not call it.
- */
-export function fidelityLinesFromVolumeActors(
-  viewport: VolumeViewportLike,
-  records: Map<string, CachedRecord> = new Map()
-): FidelityLine[] {
-  const actors = viewport.getActors();
-
-  if (!actors.length) {
-    return [];
-  }
-
-  const volume3D = isVolume3D(viewport);
-  const display = fidelityDisplayOfCamera(viewport, volume3D);
-  const lines: FidelityLine[] = [];
-  const seen = new Set<string>();
-
-  for (const entry of actors) {
-    const id = entry.referencedId ?? entry.uid;
-    const volume = id ? cache.getVolume(id) : undefined;
-
-    if (!volume || seen.has(id) || isLabelmapActorEntry(entry)) {
-      continue;
-    }
-
-    seen.add(id);
-
-    const mapper = (
-      entry.actor as { getMapper?: () => VolumeMapperLike }
-    ).getMapper?.() as VolumeMapperLike | undefined;
-    const texture = mapper?.getScalarTexture?.();
-    const grid = texture?.getGrid?.() ?? volume.voxelGrid;
-    const fullGrid = volume.voxelGrid;
-    let cached = records.get(id);
-
-    if (!cached || !voxelGridsEqual(cached.grid, grid)) {
-      // FIDELITY-RECORD-3: the bound texture states the statistic it holds.
-      // Fall back to volume.reductionStatistic when the texture has none
-      // (non-streaming or unset).
-      const statistic = texture?.getStatistic?.() ?? volume.reductionStatistic;
-      cached = {
-        grid,
-        record: volume.getGridQuality(grid, statistic) as
-          | VoxelQualityRecord
-          | undefined,
-      };
-      records.set(id, cached);
-    }
-
-    const reductionFactors = reductionFactorsOf(grid, fullGrid);
-    const fullResolution = !isReduced(reductionFactors);
-    const record = cached.record;
-    // A slice samples no ray, as on the generic slice path (FIDELITY-RECORD-6).
-    const sampleDistance = volume3D
-      ? sampleDistanceRatiosOf(mapper)
-      : { current: 1, idle: 1 };
-    const displaySpacing = display
-      ? displaySpacingForGrid(display, grid, fullGrid)
-      : undefined;
-    const verdict =
-      record && displaySpacing
-        ? compareVoxelQuality(record, { displaySpacing })
-        : undefined;
-
-    lines.push({
-      label: 'Image',
-      record: record ?? undefined,
-      verdict,
-      displaySpacing,
-      reductionFactors,
-      // Spacing only — dims/origin differences must not sticky-flag lossy.
-      fullResolution,
-      sampleDistanceLod: sampleDistance.current,
-      sampleDistanceIdle: sampleDistance.idle,
-      qualityPending: isBindingPending(volume, texture),
-      reductionCause: fullResolution
-        ? undefined
-        : reductionCauseOf(volume, gpuSettingsForRender()),
-    });
-  }
-
-  return lines;
-}
-
-function isVolume3D(viewport: VolumeViewportLike): boolean {
-  return viewport.type === ViewportType.VOLUME_3D;
 }
 
 /** One fidelity line for a stack image of the given quality. */

@@ -38,10 +38,7 @@ import {
   canvasToWorldContextPool,
   worldToCanvasContextPool,
 } from './planarAdapterCoordinateTransforms';
-import {
-  triggerPlanarVolumeNewImageAtAttach,
-  triggerPlanarVolumeNewImageOfPlacedSlice,
-} from './planarImageEvents';
+import { triggerPlanarVolumeNewImageOfPlacedSlice } from './planarImageEvents';
 import {
   applyPlanarICameraToActor,
   applyPlanarICameraToRenderer,
@@ -187,12 +184,6 @@ export class VtkVolumeSliceRenderPath
     imageVolume.load(() => {
       ctx.display.requestRender();
     });
-
-    triggerPlanarVolumeNewImageAtAttach(
-      ctx,
-      rendering,
-      ctx.viewport.getViewState()
-    );
 
     const attachment: RenderPathAttachment<PlanarDataPresentation> = {
       rendering,

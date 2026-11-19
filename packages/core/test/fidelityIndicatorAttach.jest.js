@@ -12,7 +12,6 @@ import eventTarget from '../src/eventTarget';
 import Events from '../src/enums/Events';
 import ImageQualityStatus from '../src/enums/ImageQualityStatus';
 import VoxelReductions from '../src/enums/VoxelReductions';
-import VoxelStatistics from '../src/enums/VoxelStatistics';
 import ViewportType from '../src/enums/ViewportType';
 import {
   attachFidelityIndicator,
@@ -23,7 +22,7 @@ import {
 } from '../src/RenderingEngine/helpers/fidelityIndicator';
 import VolumeViewport3DNext from '../src/RenderingEngine/GenericViewport/Volume3D/viewport3D';
 import GenericViewport from '../src/RenderingEngine/GenericViewport/GenericViewport';
-import { fidelityLinesFromVolumeActors } from '../src/RenderingEngine/helpers/fidelityIndicator/collectFidelityLines';
+import { fidelityLinesFromBindings } from '../src/RenderingEngine/helpers/fidelityIndicator/collectFidelityLines';
 
 function viewportStub({
   type,
@@ -136,108 +135,6 @@ describe('fidelityIndicator attach gates', () => {
           actor: {},
         })
       ).toBe(false);
-    });
-  });
-
-  describe('fidelityLinesFromVolumeActors statistic', () => {
-    const voxelGrid = {
-      dimensions: [4, 4, 4],
-      spacing: [1, 1, 1],
-      origin: [0, 0, 0],
-      direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
-    };
-
-    afterEach(() => {
-      jest.restoreAllMocks();
-    });
-
-    it('uses the bound texture statistic over volume.reductionStatistic', () => {
-      const getGridQuality = jest.fn(() => ({
-        grid: voxelGrid,
-        status: ImageQualityStatus.FULL_RESOLUTION,
-        lowest: ImageQualityStatus.FULL_RESOLUTION,
-        highest: ImageQualityStatus.FULL_RESOLUTION,
-        missing: 0,
-        voxels: 64,
-        exact: true,
-        source: 'directLoad',
-        reduction: VoxelReductions.None,
-        deliveries: 1,
-      }));
-
-      jest.spyOn(cache, 'getVolume').mockReturnValue({
-        voxelGrid,
-        reductionStatistic: VoxelStatistics.Average,
-        getGridQuality,
-      });
-
-      const viewport = {
-        getActors: () => [
-          {
-            uid: 'vol',
-            referencedId: 'vol',
-            actor: {
-              getMapper: () => ({
-                getScalarTexture: () => ({
-                  getGrid: () => voxelGrid,
-                  getStatistic: () => VoxelStatistics.ForegroundMajority,
-                }),
-              }),
-            },
-          },
-        ],
-      };
-
-      fidelityLinesFromVolumeActors(viewport);
-
-      expect(getGridQuality).toHaveBeenCalledWith(
-        voxelGrid,
-        VoxelStatistics.ForegroundMajority
-      );
-    });
-
-    it('falls back to volume.reductionStatistic when the texture has no statistic', () => {
-      const getGridQuality = jest.fn(() => ({
-        grid: voxelGrid,
-        status: ImageQualityStatus.FULL_RESOLUTION,
-        lowest: ImageQualityStatus.FULL_RESOLUTION,
-        highest: ImageQualityStatus.FULL_RESOLUTION,
-        missing: 0,
-        voxels: 64,
-        exact: true,
-        source: 'directLoad',
-        reduction: VoxelReductions.None,
-        deliveries: 1,
-      }));
-
-      jest.spyOn(cache, 'getVolume').mockReturnValue({
-        voxelGrid,
-        reductionStatistic: VoxelStatistics.Average,
-        getGridQuality,
-      });
-
-      const viewport = {
-        getActors: () => [
-          {
-            uid: 'vol',
-            referencedId: 'vol',
-            actor: {
-              getMapper: () => ({
-                getScalarTexture: () => ({
-                  getGrid: () => voxelGrid,
-                }),
-              }),
-            },
-          },
-        ],
-      };
-
-      fidelityLinesFromVolumeActors(viewport);
-
-      expect(getGridQuality).toHaveBeenCalledWith(
-        voxelGrid,
-        VoxelStatistics.Average
-      );
     });
   });
 
@@ -362,11 +259,15 @@ describe('fidelityIndicator attach gates', () => {
 
     function attach() {
       const viewport = viewportStub({ type: ViewportType.PLANAR_NEXT });
-      const records = new Map();
-      viewport.getActors = () => [{ uid: 'vol', actor: {} }];
       viewport.getFidelityLines = () =>
-        fidelityLinesFromVolumeActors(viewport, records);
-      viewport._fidelityRecords = records;
+        fidelityLinesFromBindings(undefined, [
+          {
+            record: getGridQuality(voxelGrid),
+            fullGrid: voxelGrid,
+            sampleDistanceIdle: 1,
+            qualityPending: loadStatus.loading,
+          },
+        ]);
       maybeAttachFidelityIndicator(viewport);
       jest.advanceTimersByTime(20);
       return viewport;
@@ -377,8 +278,7 @@ describe('fidelityIndicator attach gates', () => {
       jest.advanceTimersByTime(20);
     }
 
-    function invalidate(viewport) {
-      viewport._fidelityRecords.delete('vol');
+    function invalidate() {
       eventTarget.dispatchEvent(
         new CustomEvent(Events.IMAGE_VOLUME_MODIFIED, {
           detail: { volumeId: 'vol' },
@@ -390,7 +290,7 @@ describe('fidelityIndicator attach gates', () => {
       missing = missingVoxels;
       lowest = quality;
       loadStatus.loading = missingVoxels > 0;
-      invalidate(viewport);
+      invalidate();
       render(viewport);
     }
 
@@ -448,7 +348,7 @@ describe('fidelityIndicator attach gates', () => {
       });
 
       for (let i = 0; i < 2; i++) {
-        invalidate(viewport);
+        invalidate();
         viewport.element.dispatchEvent(
           new CustomEvent(Events.VIEWPORT_FIDELITY_CHANGED)
         );
@@ -457,19 +357,6 @@ describe('fidelityIndicator attach gates', () => {
 
       expect(writes).toEqual([]);
       expect(label.textContent).toBe('Transient Low Fidelity');
-      detachFidelityIndicator(viewport);
-    });
-
-    it('reads the quality record again only when the volume data changes', () => {
-      const viewport = attach();
-      render(viewport);
-      render(viewport);
-      expect(getGridQuality).toHaveBeenCalledTimes(1);
-
-      invalidate(viewport);
-      render(viewport);
-      expect(getGridQuality).toHaveBeenCalledTimes(2);
-
       detachFidelityIndicator(viewport);
     });
   });

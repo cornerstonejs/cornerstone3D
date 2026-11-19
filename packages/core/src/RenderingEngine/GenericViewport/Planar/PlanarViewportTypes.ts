@@ -216,8 +216,6 @@ export interface PlanarDataLoadOptions {
   orientation: PlanarOrientation;
   renderMode: PlanarEffectiveRenderMode;
   volumeId: string;
-  /** Called when the load of the first image of a stack fails for good. */
-  onStackImageLoadError?(failure: PlanarStackImageLoadFailure): void;
 }
 
 /** @internal */
@@ -353,20 +351,6 @@ export interface PlanarViewportRenderContext extends BaseViewportRenderContext {
      * acquisition plane.
      */
     canDrawAcquiredFrames?(dataId: string): boolean;
-    /**
-     * Whether the CPU image path samples a LINEAR image once more on the
-     * screen grid when the view rests, and draws it with one more render.
-     */
-    drawsFinerImageAtRest?(): boolean;
-    /** Called when the load of an image of a stack fails for good. */
-    onStackImageLoadError?(failure: PlanarStackImageLoadFailure): void;
-    /**
-     * Whether a volume also fires STACK_NEW_IMAGE and VOLUME_NEW_IMAGE, as
-     * the legacy adapter fires them: once as it is attached, before its first
-     * slice is placed, and then for each change of the slice index of any
-     * rendering. Without it a volume fires NEW_IMAGE only.
-     */
-    firesLegacyVolumeNewImageEvents?(): boolean;
     /**
      * Reads the render plan entry of `dataId` again after its render path
      * changed what the entry reads (`slabTooLarge`), and fires

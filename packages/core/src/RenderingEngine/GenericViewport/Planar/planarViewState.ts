@@ -1,7 +1,7 @@
 import { OrientationAxis } from '../../../enums';
 import type DisplayArea from '../../../types/displayArea';
 import { deepClone } from '../../../utilities/deepClone';
-import { clonePlanarOrientation } from './planarLegacyCompatibility';
+import { clonePlanarOrientation } from './planarOrientationAndScaling';
 import type {
   PlanarDisplayArea,
   PlanarSliceState,

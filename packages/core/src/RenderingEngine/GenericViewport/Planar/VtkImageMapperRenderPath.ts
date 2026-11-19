@@ -277,12 +277,10 @@ export class VtkImageMapperRenderPath
           dataPresentation: rendering.dataPresentation,
         });
       },
-      onError: (failure) => {
+      onError: () => {
         if (requestId === rendering.loadRequestId) {
           rendering.failedImageIdIndex = nextImageIdIndex;
         }
-
-        ctx.viewport.onStackImageLoadError?.(failure);
       },
     });
   }

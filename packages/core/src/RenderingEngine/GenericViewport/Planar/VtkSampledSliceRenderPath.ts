@@ -22,10 +22,7 @@ import type {
   PlanarVtkVolumeAdapterContext,
 } from './PlanarViewportTypes';
 import type { PlanarSampledSliceRendering } from './planarRuntimeTypes';
-import {
-  triggerPlanarVolumeNewImageAtAttach,
-  triggerPlanarVolumeNewImageOfPlacedSlice,
-} from './planarImageEvents';
+import { triggerPlanarVolumeNewImageOfPlacedSlice } from './planarImageEvents';
 import {
   applyPlanarICameraToRenderer,
   fitPlanarCameraClippingRange,
@@ -175,12 +172,6 @@ export class VtkSampledSliceRenderPath
     rendering.removeStreamingSubscriptions = this.subscribeToVolumeData(
       mount,
       payload.volumeId
-    );
-
-    triggerPlanarVolumeNewImageAtAttach(
-      ctx,
-      rendering,
-      ctx.viewport.getViewState()
     );
 
     return {

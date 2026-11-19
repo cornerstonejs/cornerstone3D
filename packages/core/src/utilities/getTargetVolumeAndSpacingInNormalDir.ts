@@ -147,21 +147,25 @@ export default function getTargetVolumeAndSpacingInNormalDir(
   return smallest;
 }
 
+/**
+ * The step of a volume along the view normal. With `useSlabThickness`, a slab
+ * in the presentation of the source display set of the viewport is the step,
+ * as `utilities.scroll` reads it; otherwise, and without a slab, the spacing
+ * of the volume along the normal.
+ */
 function getSpacingInNormal(
   imageVolume: IImageVolume,
   viewPlaneNormal: Point3,
   viewport: IVolumeViewport | PlanarViewport,
   useSlabThickness = false
 ): number {
-  // Native PLANAR_NEXT (generic) volume-mode viewports route through here too
-  // (see filterAnnotationsForDisplay) but do not implement getProperties(); the
-  // slabThickness is only consulted when useSlabThickness is set, so fall back
-  // safely to the geometric spacing when it is unavailable rather than throwing.
-  const slabThickness = (
-    viewport as IVolumeViewport & {
-      getProperties?: () => { slabThickness?: number };
-    }
-  ).getProperties?.()?.slabThickness;
+  const planarViewport = viewport as Partial<
+    Pick<PlanarViewport, 'getSourceDataId' | 'getDisplaySetPresentation'>
+  >;
+  const sourceDataId = planarViewport.getSourceDataId?.();
+  const slabThickness = sourceDataId
+    ? planarViewport.getDisplaySetPresentation?.(sourceDataId)?.slabThickness
+    : undefined;
 
   // See Cornerstone3DConfig.rendering.sliceStepMeasure.
   const measure = getConfiguration().rendering?.sliceStepMeasure;

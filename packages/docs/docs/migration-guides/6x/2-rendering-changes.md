@@ -149,6 +149,19 @@ leave the canvas. Against the legacy volume viewport:
   keys of the presentation of one display set. The legacy `setSlabThickness`
   set all actors. A change of `slabThickness` fires `CAMERA_MODIFIED`, as the
   legacy member did. Other presentation changes fire no camera event.
+- **A slab is the step of `getTargetVolumeAndSpacingInNormalDir`.** With a
+  `volumeId` and `useSlabThickness`, the step that
+  `utilities.getTargetVolumeAndSpacingInNormalDir` gives is the
+  `slabThickness` of the presentation of the source display set, as the
+  legacy `getProperties().slabThickness` was. In 5.x a next viewport gave the
+  spacing of the volume.
+- **An average slab shows in the fidelity.** An average slab in the
+  presentation of the source display set sets the display resolution of
+  `getFidelityState()` along the view normal to the slab thickness, as the
+  slab of the legacy volume viewport did: a reduction along the normal that
+  the slab averages away is not reported. A maximum or minimum intensity slab
+  picks one sample and changes nothing. In 5.x a next viewport left the slab
+  out.
 - **`loop` wraps a volume too.**
   `utilities.scroll(viewport, { delta, loop: true })` wraps at both ends in
   stack mode and in volume mode. The legacy volume viewport ignored `loop`.
@@ -220,6 +233,11 @@ leave the canvas. Against the legacy volume viewport:
   For the last one the opacities between 0 and 1 show as given. The legacy
   viewport drew them weaker, see
   [a labelmap fill is drawn with the configured alpha](#a-labelmap-fill-is-drawn-with-the-configured-alpha).
+  `petColorMapPresentation()` of `utils/demo/helpers/volumePresentationRecipes.js`
+  gives the weaker points: with it the PET layer of a fusion looks as the
+  legacy volume viewport drew it with the callback, within two levels of 255,
+  measured on a fusion like the TMTV example. Its second argument gives the
+  points for a fusion whose volumes have other bounds.
 
 ## Display area and stretch
 
@@ -513,6 +531,19 @@ stronger than on a legacy volume viewport. To get close to the old look, lower
 
 The same holds for a colour layer with a numeric opacity, such as the PET
 layer of a fusion: the opacity is applied as given.
+
+## An opaque slice of a volume is drawn at its window
+
+A legacy volume viewport drew a slice of an opaque volume, such as a CT,
+darker than its window: at 92.5% of its grey for the PET and CT studies of
+the examples, so white came out as 236 of 255, and at about 72% for volumes
+of other bounds (the same weaker opacity as above, applied to an opacity of
+1). This held with and without a `callback`. A next viewport draws the grey
+of the window, as the legacy stack viewport did, so a CT shown as a volume is
+a little brighter than in 5.x, alone and under the PET layer of a fusion. To
+get the old look, give the CT `colormap: { opacity: 0.925 }` in its
+presentation (`0.726` for the other bounds); with it a fusion matched the
+legacy picture within two levels of 255.
 
 ## Image defaults
 

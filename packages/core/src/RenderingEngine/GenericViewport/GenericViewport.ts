@@ -48,7 +48,7 @@ import type {
 import { buildViewportFidelityState } from '../helpers/fidelityIndicator/buildViewportFidelityState';
 import {
   type FidelityDisplay,
-  type SlabViewportLike,
+  type SlabPresentation,
   averageSlabThicknessOf,
   displaySpacingOfDisplay,
   pixelSpacingOfCanvasToWorld,
@@ -367,7 +367,9 @@ abstract class GenericViewport<
 
   /**
    * The display of this viewport from the resolved view (GENVIEW-FIDELITY-3):
-   * the world size of one device pixel and the view plane normal.
+   * the world size of one device pixel and the view plane normal. An average
+   * slab in the presentation of the source display set gives its thickness,
+   * as the slab of the legacy volume viewport did.
    */
   private getFidelityDisplay(): FidelityDisplay | undefined {
     const view = this.getResolvedView();
@@ -387,11 +389,17 @@ abstract class GenericViewport<
       return undefined;
     }
 
+    const sourceId = this.getSourceBinding()?.data.id;
+
     return {
       pixelSpacing,
       viewPlaneNormal: camera?.viewPlaneNormal,
       volume3D: this.isFidelityView3D(),
-      averageSlabThickness: averageSlabThicknessOf(this as SlabViewportLike),
+      averageSlabThickness: averageSlabThicknessOf(
+        sourceId
+          ? (this.getDataPresentationState(sourceId) as SlabPresentation)
+          : undefined
+      ),
     };
   }
 

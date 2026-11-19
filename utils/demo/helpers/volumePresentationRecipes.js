@@ -16,9 +16,8 @@ const petVoiRange = { lower: 0, upper: 5 };
  * `1 - (1 - a) ** 0.125`, so 0.9 looked like 0.25. A next viewport draws an
  * opacity as given. These points lie on that curve, close enough that the
  * straight lines between them stay within a quarter of one level of 255 of
- * it. They are the points that the legacy adapter made from the callback
- * for the PET and CT series of the examples (`toLegacySliceOpacityMapping`
- * in `PlanarLegacyCompatibilityController.ts` of the core).
+ * it. They draw the PET layer of a fusion as the legacy volume viewport drew
+ * it with the callback (`planarFusionRecipe_test.js` of the core).
  */
 const petColorMapOpacity = [
   [0, 0],
@@ -109,9 +108,8 @@ export function petPresentation() {
  * examples give the callback, is registered under its name first.
  *
  * The exponent with which the legacy viewport drew an opacity was not the same
- * for every fusion: the adapter works it out from the bounds of the volumes
- * (`getLegacySliceOpacityExponent` in `PlanarLegacyCompatibilityController.ts`
- * of the core), as the distance between two 32-bit floats near 1e6, so it is
+ * for every fusion. It was `Math.fround(d + 0.05) - Math.fround(d - 0.05)`,
+ * with `d` 1e6 plus half the diagonal of the bounds of the volumes, so it is
  * 0.125 or 0.0625. It is 0.125 for the PET and CT studies of the examples and
  * 0.0625 for the water phantom of `rectangleROIStartEndThresholdWithSegmentation`.
  * The points of `petColorMapOpacity` are for 0.125; for another exponent `f`

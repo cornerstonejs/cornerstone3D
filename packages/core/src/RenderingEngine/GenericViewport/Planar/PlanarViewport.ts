@@ -79,7 +79,7 @@ import {
   selectPlanarRenderPath,
 } from './planarRenderPathSelector';
 import type { SelectedPlanarRenderPath } from './planarRenderPathSelector';
-import { clonePlanarOrientation } from './planarLegacyCompatibility';
+import { clonePlanarOrientation } from './planarOrientationAndScaling';
 import { normalizePlanarRotation } from './planarViewPresentation';
 import {
   cloneDisplayArea,
@@ -141,7 +141,6 @@ import type {
   PlanarPayload,
   PlanarRegisteredDataSet,
   PlanarSetDataOptions,
-  PlanarStackImageLoadFailure,
   PlanarViewportRenderContext,
   PlanarViewportInput,
   PlanarViewportInputOptions,
@@ -493,10 +492,6 @@ class PlanarViewport extends GenericViewport<
         getOverlayActors: () =>
           this.mountedData.getProjectedActorEntries('overlay'),
         canDrawAcquiredFrames: (dataId) => this.canDrawAcquiredFrames(dataId),
-        drawsFinerImageAtRest: () => this.prefersFinerImageAtRest(),
-        onStackImageLoadError: (failure) => this.onStackImageLoadError(failure),
-        firesLegacyVolumeNewImageEvents: () =>
-          this.firesLegacyVolumeNewImageEvents(),
         refreshRenderPlan: (dataId) => this.updateRenderPlan(dataId),
       },
       renderPath: {
@@ -569,20 +564,17 @@ class PlanarViewport extends GenericViewport<
   async setDisplaySets(
     ...entries: Array<{ displaySetId: string; options?: PlanarSetDataOptions }>
   ): Promise<void> {
-    await this.mountDisplaySets(entries, true);
+    await this.mountDisplaySets(entries);
   }
 
   /**
-   * Mounts display sets as `setDisplaySets` does. With `firesNewDataEvent`
-   * it then fires the event of new data that the legacy viewports fire:
-   * VOLUME_VIEWPORT_NEW_VOLUME when the new source is a volume, as
-   * `setVolumes`, and VIEWPORT_NEW_IMAGE_SET when it is a stack, as
-   * `setStack`. The legacy adapter mounts without it and fires the event
-   * itself once its legacy call is done.
+   * Mounts display sets as `setDisplaySets` does, then fires the event of new
+   * data that the legacy viewports fire: VOLUME_VIEWPORT_NEW_VOLUME when the
+   * new source is a volume, as `setVolumes`, and VIEWPORT_NEW_IMAGE_SET when
+   * it is a stack, as `setStack`.
    */
   private async mountDisplaySets(
-    entries: Array<{ displaySetId: string; options?: PlanarSetDataOptions }>,
-    firesNewDataEvent: boolean
+    entries: Array<{ displaySetId: string; options?: PlanarSetDataOptions }>
   ): Promise<void> {
     const requestId = ++this.setDataRequestId;
     const isStale = () => requestId !== this.setDataRequestId;
@@ -611,7 +603,7 @@ class PlanarViewport extends GenericViewport<
       this.releaseMountCpuDrawHold();
     }
 
-    if (firesNewDataEvent && !isStale()) {
+    if (!isStale()) {
       this.triggerNewDataEvent(entries.map(({ displaySetId }) => displaySetId));
     }
   }
@@ -754,7 +746,6 @@ class PlanarViewport extends GenericViewport<
     }
 
     if (role === 'source') {
-      this.applyLegacyOptionsViewState();
       // Emit an initial CAMERA_MODIFIED for the source binding only, mirroring
       // legacy StackViewport's first-image triggerCameraEvent. Overlays and
       // orientation markers paint their first frame off this event. Trigger the
@@ -1704,38 +1695,6 @@ class PlanarViewport extends GenericViewport<
     }
   }
 
-  /**
-   * A hook of the legacy adapter, which fires IMAGE_LOAD_ERROR here. It runs
-   * when the load of an image of a stack fails for good. A next viewport does
-   * nothing here: the image loader fires IMAGE_LOAD_FAILED for the image.
-   */
-  protected onStackImageLoadError(
-    _failure: PlanarStackImageLoadFailure
-  ): void {}
-
-  /**
-   * A hook of the legacy adapter, which answers true: a volume also fires
-   * STACK_NEW_IMAGE and VOLUME_NEW_IMAGE as it did before, once as it is
-   * attached, before its first slice is placed, and then for each change of
-   * the slice index of any of its display sets. A next viewport fires
-   * NEW_IMAGE only, for its source: once when the first slice of a mount is
-   * placed, for that slice, and then for each change of its slice index.
-   */
-  protected firesLegacyVolumeNewImageEvents(): boolean {
-    return false;
-  }
-
-  /**
-   * A hook of the legacy adapter, which puts its `aspectRatio` and
-   * `displayArea` options into the view state here. It runs once the source
-   * display set is mounted, and in a reset with the flags of that reset, each
-   * time before the camera event. A next viewport does nothing here: its
-   * view state is what the application sets.
-   */
-  protected applyLegacyOptionsViewState(
-    _reset?: PlanarResetViewStateOptions
-  ): void {}
-
   /** @deprecated Legacy shim for `getZoom()`. */
   getZoom(): number {
     return getPlanarProjectionZoom(this.getProjectionSnapshot());
@@ -2249,7 +2208,6 @@ class PlanarViewport extends GenericViewport<
     }
 
     this.setViewState(nextCamera);
-    this.applyLegacyOptionsViewState({ resetPan, resetZoom });
     this.triggerCameraResetEvent();
 
     return true;
@@ -2292,7 +2250,7 @@ class PlanarViewport extends GenericViewport<
     }
 
     // Drop the stored override so the render path's `updateDataPresentation`
-    // reapplies its defaults (mirrors PlanarLegacyCompatibilityController).
+    // reapplies its defaults.
     this.setDataPresentationState(targetDataId, {} as PlanarDataPresentation);
 
     // `setDataPresentationState` does not emit (only the public merge path
@@ -2940,25 +2898,6 @@ class PlanarViewport extends GenericViewport<
   }
 
   /**
-   * Whether the source of this viewport may draw the acquired frames of a
-   * reduced volume in the acquisition plane. The legacy adapter turns this off,
-   * so the legacy viewports keep their 4.x display.
-   */
-  protected prefersAcquiredFrames(): boolean {
-    return true;
-  }
-
-  /**
-   * Whether the CPU image path samples a LINEAR image once more on the screen
-   * grid when the view rests, and draws it with one more render. The legacy
-   * adapter turns this off, so a legacy CPU stack viewport draws once for each
-   * change, as in 4.x.
-   */
-  protected prefersFinerImageAtRest(): boolean {
-    return true;
-  }
-
-  /**
    * Whether the volume slice path of `dataId` may draw the acquired frames
    * (`PlanarRenderPathDecisionService.canDrawAcquiredFrames`). The render path
    * reads this at each change of the view or the presentation.
@@ -3004,8 +2943,7 @@ class PlanarViewport extends GenericViewport<
       renderBackend:
         options.renderBackend ??
         this.getInheritedOverlayRenderBackend(options.role),
-      preferAcquiredFrames:
-        options.role === 'source' && this.prefersAcquiredFrames(),
+      preferAcquiredFrames: options.role === 'source',
       slabThickness: presentation?.slabThickness,
       blendMode: presentation?.blendMode,
       sliceFirst: options.sliceFirst,
@@ -3068,55 +3006,6 @@ class PlanarViewport extends GenericViewport<
     if (viewportElement) {
       viewportElement.style.pointerEvents = useCPUCanvas ? 'none' : '';
     }
-  }
-
-  protected createLegacyCompatibilityHost() {
-    return {
-      getElement: () => this.element,
-      getViewportId: () => this.id,
-      getRequestedOrientation: () => this.resolveRequestedOrientation(),
-      prepareVolumeCompatibilityCamera: () => {
-        this.viewState = this.normalizeViewState({
-          ...this.viewState,
-          orientation: this.resolveRequestedOrientation(),
-        });
-      },
-      setDisplaySets: (...entries) => this.mountDisplaySets(entries, false),
-      addDisplaySet: (displaySetId, options) =>
-        this.addDisplaySet(displaySetId, options),
-      setImageIdIndex: (imageIdIndex) => this.setImageIdIndex(imageIdIndex),
-      getCurrentImageId: () => this.getCurrentImageId(),
-      render: () => this.render(),
-      removeBindingsExcept: (keepDataIds) =>
-        this.removeBindingsExcept(keepDataIds),
-      setCameraOrientation: (orientation) => {
-        this.setOrientation(orientation);
-      },
-      setDataPresentationState: (dataId, presentation) => {
-        this.setDataPresentationState(dataId, presentation);
-      },
-      setDisplaySetPresentation: (displaySetId, presentation) => {
-        this.setDisplaySetPresentation(displaySetId, presentation);
-      },
-      getDisplaySetPresentation: (dataId) =>
-        this.getDisplaySetPresentation(dataId),
-      notifyDataPresentationModified: (dataId, presentation) =>
-        this.notifyDataPresentationModified(dataId, presentation),
-      getCameraOrientation: () => this.viewState.orientation,
-      triggerCameraReset: () => this.triggerCameraResetEvent(),
-      getCurrentPlanarRendering: () => this.getCurrentPlanarRendering(),
-      getActiveDataId: () => this.mountedData.getActiveDataId(),
-      getFirstBoundDataId: () => this.mountedData.getFirstBoundDataId(),
-      findDataIdByVolumeId: (volumeId) =>
-        this.mountedData.findDataIdByVolumeId(volumeId),
-      getBindingActor: (dataId) => this.mountedData.getBindingActor(dataId),
-      getBindingRenderMode: (dataId) =>
-        this.bindings.get(dataId)?.rendering.renderMode,
-      getDefaultVOIRange: (dataId) => this.getDefaultVOIRange(dataId),
-      getDefaultInvert: (dataId) => this.getDefaultInvert(dataId),
-      getImageCount: () => this.getImageIds().length,
-      getMaxImageIdIndex: () => this.getMaxImageIdIndex(),
-    };
   }
 
   protected updateBindingsCameraState(): void {
@@ -3325,7 +3214,6 @@ class PlanarViewport extends GenericViewport<
       orientation: resolvedOrientation,
       renderMode: selectedPath.renderMode,
       volumeId: selectedPath.volumeId,
-      onStackImageLoadError: (failure) => this.onStackImageLoadError(failure),
     });
     const { renderMode, reason } = isVolumeRenderMode(selectedPath.renderMode)
       ? defaultPlanarRenderPathDecisionService.selectVolumeRenderModeForDataSet(
@@ -3580,10 +3468,6 @@ class PlanarViewport extends GenericViewport<
     } catch {
       return false;
     }
-  }
-
-  protected removeBindingsExcept(keepDataIds: Set<string>): void {
-    this.mountedData.removeBindingsExcept(keepDataIds);
   }
 
   private resolveStackInputImage(stackInput: IStackInput): IImage | undefined {

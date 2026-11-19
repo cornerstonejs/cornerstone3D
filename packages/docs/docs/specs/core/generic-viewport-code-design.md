@@ -390,7 +390,7 @@ Each family holds four files:
 
 ### The legacy adapter (GENVIEW-LEGACY)
 
-For example `Planar/PlanarViewportLegacyAdapter.ts`.
+The legacy adapters are removed in 6.0. This group says what they were in 5.x.
 
 - **GENVIEW-LEGACY-1** The legacy adapter extends the family viewport class, and
   it adds the methods of the viewport class that the family replaces.

@@ -20,19 +20,6 @@ export function mapBlendModeToSlabType(
   }
 }
 
-export function mapSlabTypeToBlendMode(slabType?: SlabTypes): BlendModes {
-  switch (slabType) {
-    case SlabTypes.MAX:
-      return BlendModes.MAXIMUM_INTENSITY_BLEND;
-    case SlabTypes.MIN:
-      return BlendModes.MINIMUM_INTENSITY_BLEND;
-    case SlabTypes.MEAN:
-      return BlendModes.AVERAGE_INTENSITY_BLEND;
-    default:
-      return BlendModes.COMPOSITE;
-  }
-}
-
 export function resolveSlabThickness(slabThickness?: number): number {
   if (typeof slabThickness !== 'number' || slabThickness <= 0) {
     return 0;

@@ -20,10 +20,8 @@ export {
   formatFactor,
 } from './fidelityIndicatorState';
 export { ensureFidelityIndicatorStyles } from './fidelityIndicatorStyles';
-export { displaySpacingOfViewport } from './displaySpacingOfViewport';
 export {
   fidelityLinesFromBindings,
-  fidelityLinesFromVolumeActors,
   fidelityLineFromStackImage,
 } from './collectFidelityLines';
 export {

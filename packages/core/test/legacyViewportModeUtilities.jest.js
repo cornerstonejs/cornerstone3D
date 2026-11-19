@@ -78,24 +78,6 @@ describe('legacy viewport utilities on legacy viewports and legacy adapters', ()
   });
 
   describe('jumpToSlice', () => {
-    it('uses the target index of a legacy stack viewport when debouncing', async () => {
-      const viewport = useViewport(
-        makeLegacy('stack', {
-          getImageIds: () => ['a', 'b', 'c', 'd'],
-          getTargetImageIdIndex: () => 3,
-          getCurrentImageIdIndex: () => 0,
-          scroll: jest.fn(),
-        })
-      );
-
-      await jumpToSlice(viewport.element, {
-        imageIndex: 1,
-        debounceLoading: true,
-      });
-
-      expect(viewport.scroll).toHaveBeenCalledWith(-2, true, undefined);
-    });
-
     ['stack', 'volume'].forEach((mode) => {
       it(`reads the current image index of a direct next viewport in ${mode} mode`, async () => {
         const viewport = useViewport(

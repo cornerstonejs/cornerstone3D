@@ -4,7 +4,7 @@ import { mat4, vec3 } from 'gl-matrix';
 import * as metaData from '../../../metaData';
 import type { CPUIImageData, IImage, Point3 } from '../../../types';
 import { getImageDataMetadata } from '../../../utilities/getImageDataMetadata';
-import { getPlanarLegacyScaling } from './planarLegacyCompatibility';
+import { getPlanarImageScaling } from './planarOrientationAndScaling';
 
 /**
  * The image data of a stack image as the planar viewports give it from
@@ -87,7 +87,7 @@ export function buildPlanarImageData(
     scalarData,
     scaling:
       image.scaling ??
-      (modality === 'PT' ? getPlanarLegacyScaling(image.imageId) : undefined),
+      (modality === 'PT' ? getPlanarImageScaling(image.imageId) : undefined),
     hasPixelSpacing: Boolean(image.rowPixelSpacing || image.columnPixelSpacing),
     calibration,
     preScale: image.preScale,

@@ -1,6 +1,6 @@
 import { OrientationAxis } from '../../../enums';
 import type { PlanarViewState, PlanarOrientation } from './PlanarViewportTypes';
-import { clonePlanarOrientation } from './planarLegacyCompatibility';
+import { clonePlanarOrientation } from './planarOrientationAndScaling';
 
 export {
   PlanarRenderPathDecisionService,

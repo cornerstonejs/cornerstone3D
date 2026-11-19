@@ -1,4 +1,4 @@
-import { Events, OrientationAxis } from '../../../enums';
+import { Events } from '../../../enums';
 import type ImageQualityStatus from '../../../enums/ImageQualityStatus';
 import eventTarget from '../../../eventTarget';
 import triggerEvent from '../../../utilities/triggerEvent';
@@ -54,12 +54,6 @@ interface PlanarImageEventContext {
   renderingEngineId: string;
   viewport: {
     element: HTMLDivElement;
-    /**
-     * True on the legacy adapter, whose volumes also fire STACK_NEW_IMAGE and
-     * VOLUME_NEW_IMAGE as before: at the attach, and for each change of the
-     * slice index of any rendering.
-     */
-    firesLegacyVolumeNewImageEvents?(): boolean;
   };
 }
 
@@ -153,75 +147,12 @@ function triggerPlanarVolumeNewImage(
 }
 
 /**
- * Fires STACK_NEW_IMAGE and VOLUME_NEW_IMAGE for the slice index of a volume
- * rendering, with the details that the legacy adapter fired before. Only the
- * legacy adapter fires this pair.
- *
- * STACK_NEW_IMAGE has the slice index when the view is in the acquisition
- * orientation, with the image id `imageIds[imageIdIndex]`, and neither
- * otherwise. VOLUME_NEW_IMAGE has the slice index and the number of slices.
- */
-function triggerLegacyPlanarVolumeNewImage(
-  ctx: PlanarImageEventContext,
-  rendering: PlanarVolumeEventRendering,
-  viewState: PlanarViewState | undefined
-): void {
-  const { currentImageIdIndex, imageIds, maxImageIdIndex } = rendering;
-  const orientation = viewState?.orientation;
-  const isAcquisitionAligned =
-    !orientation ||
-    orientation === OrientationAxis.ACQUISITION ||
-    (rendering.acquisitionOrientation !== undefined &&
-      orientation === rendering.acquisitionOrientation);
-  const imageIdIndex =
-    isAcquisitionAligned && imageIds[currentImageIdIndex]
-      ? currentImageIdIndex
-      : undefined;
-
-  triggerEvent(ctx.viewport.element, Events.STACK_NEW_IMAGE, {
-    image: undefined,
-    imageId: imageIdIndex === undefined ? undefined : imageIds[imageIdIndex],
-    imageIdIndex,
-    viewportId: ctx.viewportId,
-    renderingEngineId: ctx.renderingEngineId,
-  });
-  triggerEvent(ctx.viewport.element, Events.VOLUME_NEW_IMAGE, {
-    imageIndex: currentImageIdIndex,
-    numberOfSlices: maxImageIdIndex + 1,
-    viewportId: ctx.viewportId,
-    renderingEngineId: ctx.renderingEngineId,
-  });
-}
-
-/**
- * Fires STACK_NEW_IMAGE and VOLUME_NEW_IMAGE of a volume as it is attached,
- * before a view state placed its first slice, with the slice index that the
- * rendering starts with. Only the legacy adapter fires them here, as it did
- * before. NEW_IMAGE does not fire here: it fires once the first slice is
- * placed (see `triggerPlanarVolumeNewImageOfPlacedSlice`), so there is no
- * event for a slice that the viewport never shows.
- */
-export function triggerPlanarVolumeNewImageAtAttach(
-  ctx: PlanarImageEventContext,
-  rendering: PlanarVolumeEventRendering,
-  viewState: PlanarViewState | undefined
-): void {
-  if (ctx.viewport.firesLegacyVolumeNewImageEvents?.()) {
-    triggerLegacyPlanarVolumeNewImage(ctx, rendering, viewState);
-  }
-}
-
-/**
  * Fires the new image events of a volume rendering now that a view state
  * placed its slice.
  *
  * NEW_IMAGE fires for the source only: once for the first slice that a mount
  * places, whatever its index, and then for each change of the slice index. A
  * rendering over the source shows the slice of the source and fires nothing.
- *
- * The legacy adapter then also fires STACK_NEW_IMAGE and VOLUME_NEW_IMAGE as
- * it did before: for each change of the slice index of any rendering. Its
- * first pair comes from the attach.
  */
 export function triggerPlanarVolumeNewImageOfPlacedSlice(
   ctx: PlanarImageEventContext,
@@ -239,9 +170,5 @@ export function triggerPlanarVolumeNewImageOfPlacedSlice(
 
   if (isSourceBinding && (isFirstSlice || imageIdIndexChanged)) {
     triggerPlanarVolumeNewImage(ctx, rendering, viewState);
-  }
-
-  if (imageIdIndexChanged && ctx.viewport.firesLegacyVolumeNewImageEvents?.()) {
-    triggerLegacyPlanarVolumeNewImage(ctx, rendering, viewState);
   }
 }

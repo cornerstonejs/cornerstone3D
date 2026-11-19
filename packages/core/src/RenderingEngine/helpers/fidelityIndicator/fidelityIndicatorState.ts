@@ -40,7 +40,7 @@ export type FidelityLine = {
   verdict?: VoxelQualityVerdict;
   /**
    * Display spacing on each index axis of `record.grid`, as given to
-   * `compareVoxelQuality` (see `displaySpacingOfViewport`).
+   * `compareVoxelQuality` (see `displaySpacingForGrid`).
    */
   displaySpacing?: Point3;
   /**

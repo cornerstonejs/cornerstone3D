@@ -14,67 +14,22 @@ export type FidelityDisplay = {
   averageSlabThickness?: number;
 };
 
-/** The slab accessors of a viewport, when it has them. */
-export type SlabViewportLike = {
-  getBlendMode?: () => unknown;
-  getSlabThickness?: () => number;
-};
-
-export type CameraViewportLike = SlabViewportLike & {
-  canvas?: { clientHeight?: number; height?: number };
-  sHeight?: number;
-  getCamera?: () =>
-    | {
-        parallelScale?: number;
-        parallelProjection?: boolean;
-        viewPlaneNormal?: Point3;
-      }
-    | undefined;
+/** The slab of a presentation: its blend mode and its thickness. */
+export type SlabPresentation = {
+  blendMode?: BlendModes;
+  slabThickness?: number;
 };
 
 /**
- * The slab thickness of a viewport that averages its slab. A MIP or a MinIP
- * slab picks one sample, so it gets undefined.
+ * The slab thickness of a presentation that averages its slab. A MIP or a
+ * MinIP slab picks one sample, so it gets undefined.
  */
 export function averageSlabThicknessOf(
-  viewport: SlabViewportLike
+  presentation: SlabPresentation | undefined
 ): number | undefined {
-  return viewport.getBlendMode?.() === BlendModes.AVERAGE_INTENSITY_BLEND
-    ? viewport.getSlabThickness?.()
+  return presentation?.blendMode === BlendModes.AVERAGE_INTENSITY_BLEND
+    ? presentation.slabThickness
     : undefined;
-}
-
-/**
- * The display of a legacy viewport, from its camera: one device pixel is
- * `2 * parallelScale / canvas.height`. The canvas holds device pixels. A
- * perspective camera has no single pixel size, so it gets no display and the
- * magnification rule does not apply.
- */
-export function fidelityDisplayOfCamera(
-  viewport: CameraViewportLike,
-  volume3D = false
-): FidelityDisplay | undefined {
-  const camera = viewport.getCamera?.();
-  const parallelScale = camera?.parallelScale;
-  const height =
-    viewport.canvas?.height ||
-    viewport.canvas?.clientHeight ||
-    viewport.sHeight;
-
-  if (
-    !(parallelScale > 0) ||
-    !(height > 0) ||
-    camera.parallelProjection === false
-  ) {
-    return undefined;
-  }
-
-  return {
-    pixelSpacing: (2 * parallelScale) / height,
-    viewPlaneNormal: camera.viewPlaneNormal,
-    volume3D,
-    averageSlabThickness: averageSlabThicknessOf(viewport),
-  };
 }
 
 /**
@@ -160,21 +115,4 @@ export function displaySpacingOfDisplay(
   return display
     ? [display.pixelSpacing, display.pixelSpacing, display.pixelSpacing]
     : undefined;
-}
-
-/**
- * Display spacing of a legacy viewport (see {@link displaySpacingForGrid}).
- * Without a grid, every axis gets the pixel size.
- */
-export function displaySpacingOfViewport(
-  viewport: CameraViewportLike,
-  options: { grid?: VoxelGrid; sourceGrid?: VoxelGrid; volume3D?: boolean } = {}
-): Point3 | undefined {
-  const display = fidelityDisplayOfCamera(viewport, options.volume3D);
-
-  if (!display || !options.grid) {
-    return displaySpacingOfDisplay(display);
-  }
-
-  return displaySpacingForGrid(display, options.grid, options.sourceGrid);
 }

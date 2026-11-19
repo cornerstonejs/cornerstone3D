@@ -25,10 +25,7 @@ import type {
   PlanarViewportRenderContext,
 } from './PlanarViewportTypes';
 import type { PlanarCpuVolumeRendering } from './planarRuntimeTypes';
-import {
-  triggerPlanarVolumeNewImageAtAttach,
-  triggerPlanarVolumeNewImageOfPlacedSlice,
-} from './planarImageEvents';
+import { triggerPlanarVolumeNewImageOfPlacedSlice } from './planarImageEvents';
 import {
   getPlanarRenderPathActiveSourceICamera,
   resolvePlanarRenderPathProjection,
@@ -185,12 +182,6 @@ export class CpuVolumeSliceRenderPath
     rendering.removeStreamingSubscriptions = this.subscribeToVolumeData(
       mount,
       payload.volumeId
-    );
-
-    triggerPlanarVolumeNewImageAtAttach(
-      ctx,
-      rendering,
-      ctx.viewport.getViewState()
     );
 
     return {
