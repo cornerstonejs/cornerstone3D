@@ -14,7 +14,6 @@ jest.mock('@cornerstonejs/core', () => {
         LABELMAP_EDGE_PROJECTION_BLEND: 3,
       },
       ViewportType: {
-        ORTHOGRAPHIC: 'orthographic',
         PLANAR_NEXT: 'planarNext',
       },
     },
@@ -219,9 +218,9 @@ describe('shouldUseSliceRendering', () => {
 });
 
 describe('canRenderVolumeViewportLabelmapAsImage', () => {
-  it('rejects viewports that are neither legacy volume nor planar-next', () => {
+  it('rejects viewports that are not planar-next', () => {
     expect(
-      canRenderVolumeViewportLabelmapAsImage({ type: 'stack' } as never)
+      canRenderVolumeViewportLabelmapAsImage({ type: 'volume3dNext' } as never)
     ).toBe(false);
   });
 
@@ -301,7 +300,7 @@ describe('canRenderVolumeViewportLabelmapAsImage', () => {
 describe('getVolumeViewportLabelmapImageMapperState', () => {
   it('returns unsupported:viewport for non-volume non-planar viewports', () => {
     const state = getVolumeViewportLabelmapImageMapperState({
-      type: 'stack',
+      type: 'videoNext',
     } as never);
     expect(state.supported).toBe(false);
     expect(state.key).toBe('unsupported:viewport');
@@ -405,7 +404,7 @@ describe('isPlanarSampledSliceViewport', () => {
     expect(
       isPlanarSampledSliceViewport({
         ...makePlanarNextViewport({ renderMode: 'VTK_SAMPLED_SLICE' }),
-        type: 'orthographic',
+        type: 'volume3dNext',
       } as never)
     ).toBe(false);
   });

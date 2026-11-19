@@ -6,13 +6,6 @@ export type ImageSliceViewport = Types.IViewport & {
   getImageIds(): string[];
 };
 
-export type StackCompatibilityViewport = ImageSliceViewport & {
-  setStack(
-    imageIds: string[],
-    currentImageIdIndex?: number
-  ): Promise<string> | string;
-};
-
 export type StackCalibrationViewport = ImageSliceViewport & {
   calibrateSpacing(imageId: string): void;
 };
@@ -34,15 +27,6 @@ export function viewportSupportsImageSlices(
     viewportHasMethod(viewport, 'getCurrentImageId') &&
     viewportHasMethod(viewport, 'getCurrentImageIdIndex') &&
     viewportHasMethod(viewport, 'getImageIds')
-  );
-}
-
-export function viewportSupportsStackCompatibility(
-  viewport: unknown
-): viewport is StackCompatibilityViewport {
-  return (
-    viewportSupportsImageSlices(viewport) &&
-    viewportHasMethod(viewport, 'setStack')
   );
 }
 

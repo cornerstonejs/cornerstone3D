@@ -15,7 +15,7 @@ import getViewportLabelmapRenderMode from '../helpers/getViewportLabelmapRenderM
 import { ensureLabelmapState } from './normalizeLabelmapSegmentationData';
 import { getLabelmaps } from './labelmapLayerStore';
 import { getLabelmapForSegment } from './labelmapSegmentBindings';
-import { getReferencedImageIdToCurrentImageIdMap } from './labelmapLegacyAdapter';
+import { getReferencedImageIdToCurrentImageIdMap } from './labelmapPrimaryLayerFields';
 import { getLabelmapImageIdsForReferencedImageId } from './labelmapImageIdMapping';
 
 type GetSegmentation = (segmentationId: string) => Segmentation | undefined;

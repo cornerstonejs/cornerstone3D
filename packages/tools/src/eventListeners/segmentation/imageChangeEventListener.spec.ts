@@ -178,7 +178,7 @@ describe('segmentation imageChangeEventListener on a planar viewport that shows 
     mockedRenderMode.mockReturnValue('volume');
   });
 
-  it('follows the camera and not the stack image event, which a legacy adapter also fires', () => {
+  it('follows the camera and not the stack image event', () => {
     const viewport = {
       id: viewportId,
       type: Enums.ViewportType.PLANAR_NEXT,
@@ -193,22 +193,5 @@ describe('segmentation imageChangeEventListener on a planar viewport that shows 
 
     expect(events).toContain(Enums.Events.CAMERA_MODIFIED);
     expect(events).not.toContain(Enums.Events.PRE_STACK_NEW_IMAGE);
-  });
-
-  it('follows the stack image event on a legacy stack viewport', () => {
-    const viewport = {
-      id: viewportId,
-      type: 'stack',
-      element,
-      getCurrentImageId: () => 'imageId:1',
-    };
-
-    (getEnabledElement as jest.Mock).mockReturnValue({ viewport });
-    imageChangeEventListener.enable(element);
-
-    const events = addEventListener.mock.calls.map(([type]) => type);
-
-    expect(events).toContain(Enums.Events.PRE_STACK_NEW_IMAGE);
-    expect(events).not.toContain(Enums.Events.CAMERA_MODIFIED);
   });
 });

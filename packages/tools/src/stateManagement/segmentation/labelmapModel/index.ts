@@ -21,7 +21,7 @@ export {
 export {
   getReferencedImageIdToCurrentImageIdMap,
   syncLegacyLabelmapData,
-} from './labelmapLegacyAdapter';
+} from './labelmapPrimaryLayerFields';
 export {
   getLabelmapForSegment,
   getLabelToSegmentIndex,

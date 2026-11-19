@@ -18,11 +18,11 @@ function getPresentationSlabThickness(
 /**
  * Synchronizer callback to synchronize the slab thickness.
  *
- * Between next viewports it gives the slab thickness of the presentation of
- * the source display set of the source viewport to each display set of the
- * target viewport whose slab differs, as the legacy synchronizer gave it to
- * every volume of the target. A next planar viewport fires CAMERA_MODIFIED
- * when a slab changes, as the legacy volume viewport did.
+ * It gives the slab thickness of the presentation of the source display set
+ * of the source viewport to each display set of the target viewport whose
+ * slab differs, as the legacy synchronizer gave it to every volume of the
+ * target. A planar viewport fires CAMERA_MODIFIED when a slab changes, as the
+ * legacy volume viewport did.
  */
 export default function slabThicknessSyncCallback(
   _synchronizerInstance,
@@ -40,49 +40,33 @@ export default function slabThicknessSyncCallback(
   const sViewport = renderingEngine.getViewport(sourceViewport.viewportId);
 
   if (
-    utilities.isGenericViewport(sViewport) &&
-    utilities.isGenericViewport(tViewport)
+    !utilities.viewportSupportsDisplaySetPresentation(sViewport) ||
+    !utilities.viewportSupportsDisplaySetPresentation(tViewport)
   ) {
-    if (
-      !utilities.viewportSupportsDisplaySetPresentation(sViewport) ||
-      !utilities.viewportSupportsDisplaySetPresentation(tViewport)
-    ) {
-      return;
-    }
-
-    const sourceDataId = sViewport.getSourceDataId();
-
-    if (!sourceDataId) {
-      return;
-    }
-
-    const slabThickness = getPresentationSlabThickness(sViewport, sourceDataId);
-    const targetDataIds = tViewport
-      .getDisplaySets()
-      .map(({ displaySetId }) => displaySetId)
-      .filter(
-        (displaySetId) =>
-          getPresentationSlabThickness(tViewport, displaySetId) !==
-          slabThickness
-      );
-
-    if (!targetDataIds.length) {
-      return;
-    }
-
-    targetDataIds.forEach((displaySetId) => {
-      tViewport.setDisplaySetPresentation(displaySetId, { slabThickness });
-    });
-    tViewport.render();
     return;
   }
 
-  const slabThickness = (
-    sViewport as Types.IVolumeViewport
-  ).getSlabThickness?.();
-  if (!slabThickness) {
+  const sourceDataId = sViewport.getSourceDataId();
+
+  if (!sourceDataId) {
     return;
   }
-  (tViewport as Types.IVolumeViewport).setSlabThickness?.(slabThickness);
+
+  const slabThickness = getPresentationSlabThickness(sViewport, sourceDataId);
+  const targetDataIds = tViewport
+    .getDisplaySets()
+    .map(({ displaySetId }) => displaySetId)
+    .filter(
+      (displaySetId) =>
+        getPresentationSlabThickness(tViewport, displaySetId) !== slabThickness
+    );
+
+  if (!targetDataIds.length) {
+    return;
+  }
+
+  targetDataIds.forEach((displaySetId) => {
+    tViewport.setDisplaySetPresentation(displaySetId, { slabThickness });
+  });
   tViewport.render();
 }

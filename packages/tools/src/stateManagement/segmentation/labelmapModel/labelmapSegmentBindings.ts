@@ -9,7 +9,7 @@ import {
   getLabelmaps,
   removeLabelmap,
 } from './labelmapLayerStore';
-import { syncLegacyLabelmapData } from './labelmapLegacyAdapter';
+import { syncLegacyLabelmapData } from './labelmapPrimaryLayerFields';
 
 function getSegmentBinding(
   segmentation: Segmentation,

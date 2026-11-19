@@ -11,7 +11,6 @@ jest.mock('@cornerstonejs/core', () => ({
       MAXIMUM_INTENSITY_BLEND: 1,
     },
     ViewportType: {
-      ORTHOGRAPHIC: 'orthographic',
       PLANAR_NEXT: 'planarNext',
     },
     VoxelStatistics: {
@@ -98,10 +97,6 @@ jest.mock(
   })
 );
 
-jest.mock('./addVolumesAsIndependentComponents', () => ({
-  addVolumesAsIndependentComponents: jest.fn(),
-}));
-
 jest.mock('./removeLabelmapRepresentationData', () => ({
   __esModule: true,
   default: jest.fn(),
@@ -114,7 +109,6 @@ jest.mock('./syncStackLabelmapActors', () => ({
 jest.mock('./volumeLabelmapImageMapper', () => ({
   addVolumeLabelmapImageMapperActors: jest.fn(),
   getVolumeLabelmapImageMapperRepresentationUIDs: jest.fn(() => []),
-  removeVolumeLabelmapImageMapperActors: jest.fn(),
   updateVolumeLabelmapImageMapperActors: jest.fn(),
 }));
 
@@ -125,7 +119,6 @@ import {
   gpuSettingsForRender,
   utilities,
 } from '@cornerstonejs/core';
-import { addVolumesAsIndependentComponents } from './addVolumesAsIndependentComponents';
 import { getLabelmapActorEntries } from '../../../stateManagement/segmentation/helpers/getSegmentationActor';
 import getViewportLabelmapRenderMode from '../../../stateManagement/segmentation/helpers/getViewportLabelmapRenderMode';
 import {
@@ -142,7 +135,6 @@ import { syncStackLabelmapActors } from './syncStackLabelmapActors';
 import {
   addVolumeLabelmapImageMapperActors,
   getVolumeLabelmapImageMapperRepresentationUIDs,
-  removeVolumeLabelmapImageMapperActors,
 } from './volumeLabelmapImageMapper';
 import { resolveLabelmapRenderPlan } from './labelmapRenderPlan';
 
@@ -159,11 +151,41 @@ const getOrCreateLabelmapVolumeMock = getOrCreateLabelmapVolume as jest.Mock;
 const shouldUseSliceRenderingMock = shouldUseSliceRendering as jest.Mock;
 const removeLabelmapRepresentationDataMock =
   removeLabelmapRepresentationData as jest.Mock;
-const removeVolumeLabelmapImageMapperActorsMock =
-  removeVolumeLabelmapImageMapperActors as jest.Mock;
 const syncStackLabelmapActorsMock = syncStackLabelmapActors as jest.Mock;
 const triggerSegmentationDataModifiedMock =
   triggerSegmentationDataModified as jest.Mock;
+
+/**
+ * A planar viewport in volume mode on the CPU volume path, with the members
+ * that the volume labelmap plan calls, and the overlay actor of one labelmap
+ * layer.
+ */
+function createPlanarVolumeViewport(labelmapId: string) {
+  return {
+    id: 'viewport-id',
+    type: 'planarNext',
+    addDisplaySet: jest.fn(),
+    getActors: jest.fn(() => [
+      {
+        representationUID: `segmentation-id-Labelmap-${labelmapId}`,
+        uid: 'overlay-actor',
+        actor: {},
+      },
+    ]),
+    getCurrentImageIdIndex: jest.fn(() => 0),
+    getDefaultActor: jest.fn(() => ({
+      actorMapper: {
+        renderMode: 'CPU_VOLUME',
+      },
+    })),
+    getViewReference: jest.fn(() => ({ volumeId: 'source-volume-id' })),
+    getViewState: jest.fn(() => ({ orientation: 'axial' })),
+    getVolumeId: jest.fn(() => 'source-volume-id'),
+    render: jest.fn(),
+    setDisplaySetPresentation: jest.fn(),
+    setViewReference: jest.fn(),
+  };
+}
 
 describe('labelmapRenderPlan', () => {
   beforeEach(() => {
@@ -184,7 +206,7 @@ describe('labelmapRenderPlan', () => {
   it('owns stack labelmap mount and expected actor UID behavior', async () => {
     const viewport = {
       id: 'viewport-id',
-      removeActors: jest.fn(),
+      type: 'planarNext',
     };
     const segmentation = {
       segmentationId: 'segmentation-id',
@@ -229,7 +251,8 @@ describe('labelmapRenderPlan', () => {
     };
     const viewport = {
       id: 'viewport-id',
-      removeActors: jest.fn(),
+      type: 'planarNext',
+      removeData: jest.fn(),
     };
     const segmentation = {
       segmentationId: 'segmentation-id',
@@ -256,16 +279,11 @@ describe('labelmapRenderPlan', () => {
       labelMapData: {} as never,
     });
 
-    expect(removeVolumeLabelmapImageMapperActorsMock).toHaveBeenCalledWith(
-      viewport,
-      'segmentation-id'
-    );
     expect(removeLabelmapRepresentationDataMock).toHaveBeenCalledWith(
       viewport,
       'segmentation-id',
       staleActorEntry
     );
-    expect(viewport.removeActors).toHaveBeenCalledWith(['old-actor-uid']);
     expect(syncStackLabelmapActorsMock).toHaveBeenCalledWith(
       viewport,
       'segmentation-id'
@@ -373,12 +391,7 @@ describe('labelmapRenderPlan', () => {
       imageIds: ['labelmap-image-1'],
       reductionStatistic: undefined,
     };
-    const viewport = {
-      id: 'viewport-id',
-      type: 'orthographic',
-      getRenderingEngine: jest.fn(),
-      getVolumeId: jest.fn(() => 'source-volume-id'),
-    };
+    const viewport = createPlanarVolumeViewport('volume-layer-id');
     const segmentation = {
       segmentationId: 'segmentation-id',
       representationData: {
@@ -412,16 +425,11 @@ describe('labelmapRenderPlan', () => {
 
     expect(getOrCreateLabelmapVolumeMock).not.toHaveBeenCalled();
     expect(segmentationVolume.reductionStatistic).toBe('foregroundMajority');
-    // Adding the view changed no voxel, so the labelmap is not re-reduced.
-    expect(triggerSegmentationDataModifiedMock).toHaveBeenCalledWith(
-      'segmentation-id',
-      undefined,
-      undefined,
-      { voxelsUnchanged: true }
-    );
+    expect(viewport.addDisplaySet).toHaveBeenCalledTimes(1);
+    expect(triggerSegmentationDataModifiedMock).not.toHaveBeenCalled();
   });
 
-  it('keeps a separate labelmap actor when the GPU settings cannot hold the edge projection texture', async () => {
+  it('keeps the maximum intensity blend mode of a planar labelmap overlay when the GPU settings cannot hold the edge projection texture', async () => {
     const volumeLayer = {
       labelmapId: 'volume-layer-id',
       storageKind: 'volume',
@@ -429,16 +437,11 @@ describe('labelmapRenderPlan', () => {
     };
     const volumeOf = (volumeId) => ({
       volumeId,
+      imageIds: [`${volumeId}-image`],
       dimensions: [2048, 2048, 2048],
       voxelGrid: { dimensions: [2048, 2048, 2048] },
     });
-    const viewport = {
-      id: 'viewport-id',
-      type: 'orthographic',
-      getRenderingEngine: jest.fn(),
-      getVolumeId: jest.fn(() => 'source-volume-id'),
-      addVolumes: jest.fn(),
-    };
+    const viewport = createPlanarVolumeViewport('volume-layer-id');
     const segmentation = {
       segmentationId: 'segmentation-id',
       representationData: {
@@ -470,8 +473,10 @@ describe('labelmapRenderPlan', () => {
       labelMapData: segmentation.representationData.Labelmap as never,
     });
 
-    expect(addVolumesAsIndependentComponents).not.toHaveBeenCalled();
-    expect(viewport.addVolumes).toHaveBeenCalled();
+    expect(viewport.setDisplaySetPresentation).toHaveBeenCalledWith(
+      'segmentation-id-Labelmap-volume-layer-id',
+      { blendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND, visible: true }
+    );
     expect(utilities.logger.toolsLog.getLogger().warn).toHaveBeenCalledTimes(1);
   });
 
@@ -485,7 +490,7 @@ describe('labelmapRenderPlan', () => {
     const viewport = {
       id: 'viewport-id',
       type: 'planarNext',
-      removeActors: jest.fn(),
+      removeData: jest.fn(),
     };
     const segmentation = {
       segmentationId: 'segmentation-id',
@@ -525,7 +530,11 @@ describe('labelmapRenderPlan', () => {
       labelMapData: {} as never,
     });
 
-    expect(viewport.removeActors).toHaveBeenCalledWith(['volume-overlay-uid']);
+    expect(removeLabelmapRepresentationDataMock).toHaveBeenCalledWith(
+      viewport,
+      'segmentation-id',
+      volumeOverlayEntry
+    );
     expect(addVolumeLabelmapImageMapperActors).toHaveBeenCalledWith({
       viewport,
       segmentation,
@@ -538,7 +547,6 @@ describe('labelmapRenderPlan', () => {
     const viewport = {
       id: 'viewport-id',
       type: 'planarNext',
-      removeActors: jest.fn(),
     };
     const segmentation = {
       segmentationId: 'segmentation-id',
@@ -585,7 +593,6 @@ describe('labelmapRenderPlan', () => {
     const viewport = {
       id: 'viewport-id',
       type: 'planarNext',
-      removeActors: jest.fn(),
     };
 
     shouldUseSliceRenderingMock.mockReturnValue(true);

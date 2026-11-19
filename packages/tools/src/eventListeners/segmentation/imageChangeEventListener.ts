@@ -52,15 +52,9 @@ const enable = function (element: HTMLDivElement): void {
     return;
   }
 
-  if (!isPlanarViewport) {
-    element.addEventListener(
-      Enums.Events.PRE_STACK_NEW_IMAGE,
-      _imageChangeEventListener as EventListener
-    );
-  }
   // this listener handles the segmentation modifications
   // we only listen to the image_rendered once and then remove it
-  // the main event to listen here is the stack_new_image
+  // the main event to listen here is the camera_modified of a planar viewport
   element.addEventListener(
     Enums.Events.IMAGE_RENDERED,
     _imageChangeEventListener as EventListener
@@ -70,10 +64,6 @@ const enable = function (element: HTMLDivElement): void {
 const disable = function (element: HTMLDivElement): void {
   const viewportId = getEnabledElement(element)?.viewport?.id;
 
-  element.removeEventListener(
-    Enums.Events.PRE_STACK_NEW_IMAGE,
-    _imageChangeEventListener as EventListener
-  );
   element.removeEventListener(
     Enums.Events.IMAGE_RENDERED,
     _imageChangeEventListener as EventListener
@@ -211,8 +201,8 @@ function _imageChangeEventListener(evt) {
       return;
     }
 
-    // GenericViewport (PLANAR_NEXT) does not fire PRE_STACK_NEW_IMAGE when
-    // scrolling, so handle stack labelmap sync on CAMERA_MODIFIED instead.
+    // A planar viewport fires CAMERA_MODIFIED when it scrolls, so the stack
+    // labelmap is synced here.
     const isPlanarNext = viewport.type === Enums.ViewportType.PLANAR_NEXT;
     if (!isPlanarNext) {
       perViewportManualTriggers.delete(viewportId);
@@ -248,7 +238,7 @@ function _imageChangeEventListener(evt) {
     // we need to trigger a segmentation render
     // This is put here to make sure that the segmentation is rendered
     // for the initial image as well after that we don't need it since
-    // stack new image is called when changing slices
+    // camera modified is called when changing slices
     if (evt.type === Enums.Events.IMAGE_RENDERED) {
       // unsubscribe after the initial render, and before the sync below:
       // the sync renders the viewport, and a CPU render path draws

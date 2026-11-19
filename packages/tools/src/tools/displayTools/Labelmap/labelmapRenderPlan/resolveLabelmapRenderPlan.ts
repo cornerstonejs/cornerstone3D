@@ -7,7 +7,7 @@ import {
   shouldUseSliceRendering,
 } from '../../../../stateManagement/segmentation/helpers/labelmapImageMapperSupport';
 import { createLabelmapRenderPlan } from './createLabelmapRenderPlan';
-import { createLegacyVolumeLabelmapPlan } from './legacyVolumePlan';
+import { createVolumeLabelmapPlan } from './volumeLabelmapPlan';
 import { createStackImageLabelmapPlan } from './stackImagePlan';
 import { createVolumeSliceImageMapperPlan } from './volumeSliceImageMapperPlan';
 import type {
@@ -63,7 +63,7 @@ function resolveLabelmapRenderPlan({
   }
 
   if (renderMode === 'volume') {
-    return createLegacyVolumeLabelmapPlan({
+    return createVolumeLabelmapPlan({
       config,
       isVolumeImageMapper,
       renderMode,

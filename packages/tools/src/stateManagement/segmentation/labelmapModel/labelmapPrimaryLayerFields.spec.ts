@@ -3,7 +3,7 @@ import { ensureLabelmapState } from './normalizeLabelmapSegmentationData';
 import {
   getReferencedImageIdToCurrentImageIdMap,
   syncLegacyLabelmapData,
-} from './labelmapLegacyAdapter';
+} from './labelmapPrimaryLayerFields';
 
 function createSegment(segmentIndex: number) {
   return {
@@ -31,7 +31,7 @@ function createSegmentation(
   };
 }
 
-describe('labelmap legacy adapter', () => {
+describe('labelmap primary layer fields', () => {
   it('does not expose undefined volume fields for stack labelmaps', () => {
     const segmentation = createSegmentation({
       imageIds: ['labelmap-image-1'],

@@ -10,10 +10,15 @@ import {
   waitFor,
 } from '../../core/test/utils/planarSeriesBothModes';
 import { getToolState } from '../src/utilities/stackPrefetch/state';
+import { getLabelmapActorEntries } from '../src/stateManagement/segmentation/helpers/getSegmentationActor';
+import {
+  createNextPlanarViewport,
+  showStackWithLabelmap,
+} from './nextLabelmapScenes';
 
 const { cache, utilities, Enums } = cornerstone3D;
 const { Events } = Enums;
-const { synchronizers, SynchronizerManager } = csTools3d;
+const { segmentation, synchronizers, SynchronizerManager } = csTools3d;
 const { stackPrefetch, stackContextPrefetch } = csTools3d.utilities;
 const { ViewportColorbar } = csTools3d.utilities.voi.colorbar;
 
@@ -230,6 +235,33 @@ describe('The listeners of NEW_IMAGE on a direct next planar viewport -- ', () =
         expect(shown).not.toContain(series.imageIds[2]);
       });
     }
+  });
+
+  describe('the labelmap of a stack', () => {
+    it('follows a new image of the stack, as the legacy stack viewport did through PRE_STACK_NEW_IMAGE', async function () {
+      const segmentationId = 'labelmapOfNewImage';
+      const viewport = createNextPlanarViewport(renderingEngine, 'labelmap');
+      const { imageIds } = await showStackWithLabelmap(
+        viewport,
+        segmentationId
+      );
+      const labelmapImageIds =
+        segmentation.state.getSegmentation(segmentationId).representationData
+          .Labelmap.imageIds;
+      const referencedIds = () =>
+        (getLabelmapActorEntries(viewport.id, segmentationId) ?? []).map(
+          ({ referencedId }) => referencedId
+        );
+
+      expect(viewport.getCurrentMode()).toBe('stack');
+      expect(referencedIds()).toEqual([labelmapImageIds[1]]);
+
+      await showImage(viewport, 2);
+      await waitFor(() => referencedIds().includes(labelmapImageIds[2]));
+
+      expect(viewport.getCurrentImageId()).toBe(imageIds[2]);
+      expect(referencedIds()).toEqual([labelmapImageIds[2]]);
+    });
   });
 
   describe('the colorbar of a viewport', () => {

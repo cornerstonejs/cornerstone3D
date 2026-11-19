@@ -1,8 +1,6 @@
 import { type Types, viewportProjection } from '@cornerstonejs/core';
 
-type ViewPresentationViewport = {
-  getViewPresentation?(selector?: Types.ViewPresentationSelector): unknown;
-  setViewPresentation?(presentation?: unknown): void;
+type ViewStateViewport = {
   setViewState?(viewState: unknown): void;
 };
 
@@ -36,22 +34,14 @@ const zoomPanSelector = {
 } as Types.ViewPresentationSelector;
 
 /**
- * Reads a viewport-family presentation through projection when available, with
- * a legacy viewport fallback for non-Next viewports.
+ * Reads the presentation of a viewport of any family through the projection
+ * service.
  */
 export function getViewportPresentation(
   viewport: unknown,
   selector?: Types.ViewPresentationSelector
 ): unknown {
-  const projectionPresentation = viewportProjection.getPresentation(viewport, {
-    selector,
-  });
-
-  if (projectionPresentation) {
-    return projectionPresentation;
-  }
-
-  return (viewport as ViewPresentationViewport).getViewPresentation?.(selector);
+  return viewportProjection.getPresentation(viewport, { selector });
 }
 
 /**
@@ -69,7 +59,7 @@ export function applyViewportPresentation(
     return false;
   }
 
-  const target = viewport as ViewPresentationViewport;
+  const target = viewport as ViewStateViewport;
   const nextViewState = viewportProjection.withPresentation(
     viewport,
     presentation,
@@ -82,19 +72,13 @@ export function applyViewportPresentation(
     return true;
   }
 
-  if (typeof target.setViewPresentation === 'function') {
-    target.setViewPresentation(presentation);
-    return true;
-  }
-
   return false;
 }
 
 /**
  * The zoom and the pan of a next viewport of any family, from the projection
  * service. Undefined for a viewport that the projection service does not
- * know, as a legacy viewport or a legacy adapter, and for one that has no
- * zoom, as a 3D viewport that shows nothing.
+ * know, and for one that has no zoom, as a 3D viewport that shows nothing.
  */
 export function getViewportZoomPan(
   viewport: unknown

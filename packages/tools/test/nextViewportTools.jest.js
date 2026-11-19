@@ -16,7 +16,6 @@ import AnnotationMultiSlice from '../src/utilities/AnnotationMultiSlice';
 import {
   viewportSupportsImageSlices,
   viewportSupportsStackCalibration,
-  viewportSupportsStackCompatibility,
 } from '../src/utilities/viewportCapabilities';
 import WholeBodySegmentTool from '../src/tools/annotation/WholeBodySegmentTool';
 
@@ -190,14 +189,12 @@ describe('The image slice checks of the tools', () => {
 
   it('take a viewport without hasImageURI, as the checks of core do', () => {
     const slices = makeImageSliceViewport();
-    const stack = makeImageSliceViewport({ setStack: jest.fn() });
     const calibrated = makeImageSliceViewport({ calibrateSpacing: jest.fn() });
 
     expect(viewportSupportsImageSlices(slices)).toBe(true);
-    expect(viewportSupportsStackCompatibility(stack)).toBe(true);
     expect(viewportSupportsStackCalibration(calibrated)).toBe(true);
 
-    for (const viewport of [slices, stack, calibrated, {}, null]) {
+    for (const viewport of [slices, calibrated, {}, null]) {
       expect(viewportSupportsImageSlices(viewport)).toBe(
         utilities.viewportSupportsImageSlices(viewport)
       );
@@ -208,14 +205,9 @@ describe('The image slice checks of the tools', () => {
   });
 
   it('still ask for the three image slice members', () => {
-    const { getImageIds: _getImageIds, ...noImageIds } = makeImageSliceViewport(
-      { setStack: jest.fn() }
-    );
+    const { getImageIds: _getImageIds, ...noImageIds } =
+      makeImageSliceViewport();
 
     expect(viewportSupportsImageSlices(noImageIds)).toBe(false);
-    expect(viewportSupportsStackCompatibility(noImageIds)).toBe(false);
-    expect(viewportSupportsStackCompatibility(makeImageSliceViewport())).toBe(
-      false
-    );
   });
 });

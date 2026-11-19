@@ -1,10 +1,4 @@
 jest.mock('@cornerstonejs/core', () => {
-  const legacyTypeModes = {
-    stack: 'stack',
-    orthographic: 'volume',
-    volume3d: 'volume3d',
-  };
-
   return {
     Enums: {
       Events: {
@@ -29,8 +23,13 @@ jest.mock('@cornerstonejs/core', () => {
       },
       isGenericViewport: jest.fn(() => false),
       clonePoint3: jest.fn((point) => (point ? [...point] : undefined)),
-      getViewportContentMode: jest.fn(
-        (viewport) => legacyTypeModes[viewport?.type]
+      getViewportContentMode: jest.fn((viewport) =>
+        viewport?.getCurrentMode?.()
+      ),
+      viewportSupportsDisplaySetPresentation: jest.fn(
+        (viewport) =>
+          typeof viewport?.getSourceDataId === 'function' &&
+          typeof viewport?.getDefaultVOIRange === 'function'
       ),
     },
     viewportProjection: {
@@ -506,15 +505,18 @@ describe('cameraSyncCallback', () => {
 
     const sourceViewReference = { FrameOfReferenceUID: 'FOR1' };
     const zoomPanPresentation = { zoom: 2, pan: [1, 1] };
+    const zoomPanViewState = { zoom: 2, pan: [1, 1], resolved: true };
     const sourceViewport = {
       getViewReference: jest.fn(() => sourceViewReference),
-      getViewPresentation: jest.fn(() => zoomPanPresentation),
     };
     const targetViewport = {
       setViewReference: jest.fn(),
-      setViewPresentation: jest.fn(),
+      setViewState: jest.fn(),
       render: jest.fn(),
     };
+
+    viewportProjection.getPresentation.mockReturnValueOnce(zoomPanPresentation);
+    viewportProjection.withPresentation.mockReturnValueOnce(zoomPanViewState);
 
     getRenderingEngine.mockImplementation((id) =>
       id === 're-source'
@@ -532,9 +534,17 @@ describe('cameraSyncCallback', () => {
     expect(targetViewport.setViewReference).toHaveBeenCalledWith(
       sourceViewReference
     );
-    expect(targetViewport.setViewPresentation).toHaveBeenCalledWith(
-      zoomPanPresentation
+    expect(viewportProjection.getPresentation).toHaveBeenCalledWith(
+      sourceViewport,
+      { selector: { pan: true, zoom: true } }
     );
+    expect(viewportProjection.withPresentation).toHaveBeenCalledWith(
+      targetViewport,
+      zoomPanPresentation,
+      undefined,
+      undefined
+    );
+    expect(targetViewport.setViewState).toHaveBeenCalledWith(zoomPanViewState);
     expect(targetViewport.render).toHaveBeenCalledTimes(1);
   });
 
@@ -757,83 +767,89 @@ describe('voiSyncCallback', () => {
 });
 
 describe('slabThicknessSyncCallback', () => {
+  /**
+   * A stand-in of a next viewport whose display sets have the slab
+   * thicknesses given, the first one as its source display set.
+   */
+  function makeSlabViewport(slabThicknesses) {
+    const presentations = new Map(
+      Object.entries(slabThicknesses).map(([displaySetId, slabThickness]) => [
+        displaySetId,
+        { slabThickness },
+      ])
+    );
+
+    return {
+      getSourceDataId: jest.fn(() => Object.keys(slabThicknesses)[0]),
+      getDefaultVOIRange: jest.fn(),
+      getDisplaySets: jest.fn(() =>
+        Object.keys(slabThicknesses).map((displaySetId) => ({ displaySetId }))
+      ),
+      getDisplaySetPresentation: jest.fn((displaySetId) =>
+        presentations.get(displaySetId)
+      ),
+      setDisplaySetPresentation: jest.fn(),
+      render: jest.fn(),
+    };
+  }
+
+  function syncSlab(sourceViewport, targetViewport) {
+    getRenderingEngine.mockReturnValue({
+      getViewport: jest.fn((id) =>
+        id === 'source' ? sourceViewport : targetViewport
+      ),
+    });
+
+    slabThicknessSyncCallback(
+      {},
+      { renderingEngineId: 're', viewportId: 'source' },
+      { renderingEngineId: 're', viewportId: 'target' }
+    );
+  }
+
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it('propagates slab thickness from source to target and renders', () => {
-    const sourceViewport = { getSlabThickness: jest.fn(() => 5) };
-    const targetViewport = { setSlabThickness: jest.fn(), render: jest.fn() };
-    getRenderingEngine.mockReturnValue({
-      getViewport: jest.fn((id) =>
-        id === 'source' ? sourceViewport : targetViewport
-      ),
-    });
+  it('gives the slab of the source display set to each display set of the target whose slab differs, and renders', () => {
+    const sourceViewport = makeSlabViewport({ ct: 5 });
+    const targetViewport = makeSlabViewport({ ct: 1, pt: 5, seg: undefined });
 
-    slabThicknessSyncCallback(
-      {},
-      { renderingEngineId: 're', viewportId: 'source' },
-      { renderingEngineId: 're', viewportId: 'target' }
-    );
+    syncSlab(sourceViewport, targetViewport);
 
-    expect(targetViewport.setSlabThickness).toHaveBeenCalledWith(5);
+    expect(targetViewport.setDisplaySetPresentation.mock.calls).toEqual([
+      ['ct', { slabThickness: 5 }],
+      ['seg', { slabThickness: 5 }],
+    ]);
     expect(targetViewport.render).toHaveBeenCalledTimes(1);
   });
 
-  it('does nothing when the source has no slab thickness', () => {
-    const sourceViewport = { getSlabThickness: jest.fn(() => undefined) };
-    const targetViewport = { setSlabThickness: jest.fn(), render: jest.fn() };
-    getRenderingEngine.mockReturnValue({
-      getViewport: jest.fn((id) =>
-        id === 'source' ? sourceViewport : targetViewport
-      ),
-    });
+  it('does nothing when every display set of the target has the slab of the source', () => {
+    const sourceViewport = makeSlabViewport({ ct: 5 });
+    const targetViewport = makeSlabViewport({ ct: 5, pt: 5 });
 
-    slabThicknessSyncCallback(
-      {},
-      { renderingEngineId: 're', viewportId: 'source' },
-      { renderingEngineId: 're', viewportId: 'target' }
-    );
+    syncSlab(sourceViewport, targetViewport);
 
-    expect(targetViewport.setSlabThickness).not.toHaveBeenCalled();
+    expect(targetViewport.setDisplaySetPresentation).not.toHaveBeenCalled();
     expect(targetViewport.render).not.toHaveBeenCalled();
   });
 
-  it('does nothing when the source viewport has no getSlabThickness (e.g. a stack viewport)', () => {
-    const sourceViewport = {};
-    const targetViewport = { setSlabThickness: jest.fn(), render: jest.fn() };
-    getRenderingEngine.mockReturnValue({
-      getViewport: jest.fn((id) =>
-        id === 'source' ? sourceViewport : targetViewport
-      ),
-    });
+  it('does nothing when the source viewport has no display set presentation', () => {
+    const targetViewport = makeSlabViewport({ ct: 1 });
 
-    slabThicknessSyncCallback(
-      {},
-      { renderingEngineId: 're', viewportId: 'source' },
-      { renderingEngineId: 're', viewportId: 'target' }
-    );
+    syncSlab({ render: jest.fn() }, targetViewport);
 
-    expect(targetViewport.setSlabThickness).not.toHaveBeenCalled();
+    expect(targetViewport.setDisplaySetPresentation).not.toHaveBeenCalled();
+    expect(targetViewport.render).not.toHaveBeenCalled();
   });
 
-  it('does not throw if the target lacks setSlabThickness (e.g. a stack viewport target)', () => {
-    const sourceViewport = { getSlabThickness: jest.fn(() => 3) };
+  it('does not throw for a target without display set presentation', () => {
     const targetViewport = { render: jest.fn() };
-    getRenderingEngine.mockReturnValue({
-      getViewport: jest.fn((id) =>
-        id === 'source' ? sourceViewport : targetViewport
-      ),
-    });
 
     expect(() =>
-      slabThicknessSyncCallback(
-        {},
-        { renderingEngineId: 're', viewportId: 'source' },
-        { renderingEngineId: 're', viewportId: 'target' }
-      )
+      syncSlab(makeSlabViewport({ ct: 5 }), targetViewport)
     ).not.toThrow();
-    expect(targetViewport.render).toHaveBeenCalledTimes(1);
+    expect(targetViewport.render).not.toHaveBeenCalled();
   });
 
   it('throws when there is no rendering engine for the target', () => {
@@ -858,9 +874,13 @@ describe('presentationViewSyncCallback', () => {
 
   it('applies the source presentation to the target and renders', () => {
     const presentation = { zoom: 1.5 };
-    const sourceViewport = { getViewPresentation: jest.fn(() => presentation) };
+    const nextViewState = { zoom: 1.5, resolved: true };
+    viewportProjection.getPresentation.mockReturnValue(presentation);
+    viewportProjection.withPresentation.mockReturnValue(nextViewState);
+
+    const sourceViewport = {};
     const targetViewport = {
-      setViewPresentation: jest.fn(),
+      setViewState: jest.fn(),
       render: jest.fn(),
     };
     getRenderingEngine.mockReturnValue({
@@ -877,19 +897,24 @@ describe('presentationViewSyncCallback', () => {
       { zoom: true }
     );
 
-    expect(sourceViewport.getViewPresentation).toHaveBeenCalledWith({
-      zoom: true,
-    });
-    expect(targetViewport.setViewPresentation).toHaveBeenCalledWith(
-      presentation
+    expect(viewportProjection.getPresentation).toHaveBeenCalledWith(
+      sourceViewport,
+      { selector: { zoom: true } }
     );
+    expect(viewportProjection.withPresentation).toHaveBeenCalledWith(
+      targetViewport,
+      presentation,
+      undefined,
+      undefined
+    );
+    expect(targetViewport.setViewState).toHaveBeenCalledWith(nextViewState);
     expect(targetViewport.render).toHaveBeenCalledTimes(1);
   });
 
   it('does not render when there is no presentation to apply', () => {
-    const sourceViewport = { getViewPresentation: jest.fn(() => undefined) };
+    const sourceViewport = {};
     const targetViewport = {
-      setViewPresentation: jest.fn(),
+      setViewState: jest.fn(),
       render: jest.fn(),
     };
     getRenderingEngine.mockReturnValue({
@@ -904,19 +929,19 @@ describe('presentationViewSyncCallback', () => {
       { renderingEngineId: 're', viewportId: 'target' }
     );
 
-    expect(targetViewport.setViewPresentation).not.toHaveBeenCalled();
+    expect(targetViewport.setViewState).not.toHaveBeenCalled();
     expect(targetViewport.render).not.toHaveBeenCalled();
   });
 
   it('uses setViewState when the projection registry resolves a Generic view state', () => {
     const presentation = { rotation: 90 };
     const nextViewState = { rotation: 90, resolved: true };
+    viewportProjection.getPresentation.mockReturnValue(presentation);
     viewportProjection.withPresentation.mockReturnValue(nextViewState);
 
-    const sourceViewport = { getViewPresentation: jest.fn(() => presentation) };
+    const sourceViewport = {};
     const targetViewport = {
       setViewState: jest.fn(),
-      setViewPresentation: jest.fn(),
       render: jest.fn(),
     };
     getRenderingEngine.mockReturnValue({
@@ -932,7 +957,6 @@ describe('presentationViewSyncCallback', () => {
     );
 
     expect(targetViewport.setViewState).toHaveBeenCalledWith(nextViewState);
-    expect(targetViewport.setViewPresentation).not.toHaveBeenCalled();
     expect(targetViewport.render).toHaveBeenCalledTimes(1);
   });
 

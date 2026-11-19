@@ -8,33 +8,8 @@ jest.mock('@cornerstonejs/core', () => ({
       COMPOSITE: 0,
     },
     ViewportType: {
-      ORTHOGRAPHIC: 'orthographic',
       PLANAR_NEXT: 'planarNext',
     },
-  },
-}));
-
-jest.mock('@kitware/vtk.js/Rendering/Core/ImageMapper', () => ({
-  __esModule: true,
-  default: {
-    newInstance: jest.fn(() => ({
-      setInputData: jest.fn(),
-      modified: jest.fn(),
-    })),
-  },
-}));
-
-jest.mock('@kitware/vtk.js/Rendering/Core/ImageSlice', () => ({
-  __esModule: true,
-  default: {
-    newInstance: jest.fn(() => ({
-      setMapper: jest.fn(),
-      getMapper: jest.fn(() => ({
-        setInputData: jest.fn(),
-        modified: jest.fn(),
-      })),
-      modified: jest.fn(),
-    })),
   },
 }));
 
@@ -73,7 +48,6 @@ import {
   getLabelmapForActorReference,
   getVolumeLabelmapImageMapperRepresentationUIDs,
   placeVolumeLabelmapImageMapperActors,
-  removeVolumeLabelmapImageMapperActors,
   updateVolumeLabelmapImageMapperActors,
 } from './volumeLabelmapImageMapper';
 
@@ -103,49 +77,6 @@ function makeSegmentation() {
     segmentationId: 'seg-1',
     representationData: { Labelmap: {} },
   } as never;
-}
-
-function makeOrthographicViewport() {
-  const overlayRenderer = {
-    setLayer: jest.fn(),
-    setPreserveDepthBuffer: jest.fn(),
-    setActiveCamera: jest.fn(),
-    setViewport: jest.fn(),
-    addActor: jest.fn(),
-    removeActor: jest.fn(),
-    getActors: jest.fn(() => []),
-  };
-  // Simulates addRenderer registering the overlay so the second getRenderer
-  // lookup returns it (matches the real offscreen render-window contract).
-  let overlayAdded = false;
-  const offscreen = {
-    getRenderer: jest.fn(() => (overlayAdded ? overlayRenderer : undefined)),
-    addRenderer: jest.fn(() => {
-      overlayAdded = true;
-    }),
-    removeRenderer: jest.fn(),
-    getRenderWindow: jest.fn(() => ({
-      getNumberOfLayers: jest.fn(() => 1),
-      setNumberOfLayers: jest.fn(),
-    })),
-  };
-  return {
-    id: 'vp-1',
-    type: 'orthographic',
-    getActors: jest.fn(() => []),
-    addActor: jest.fn(),
-    getRenderer: jest.fn(() => ({
-      removeActor: jest.fn(),
-      addActor: jest.fn(),
-      getActiveCamera: jest.fn(),
-      getViewport: jest.fn(() => [0, 0, 1, 1]),
-    })),
-    getRenderingEngine: jest.fn(() => ({
-      getOffscreenMultiRenderWindow: jest.fn(() => offscreen),
-    })),
-    _overlayRenderer: overlayRenderer,
-    _offscreen: offscreen,
-  };
 }
 
 function makePlanarNextViewport() {
@@ -211,7 +142,7 @@ describe('getVolumeLabelmapImageMapperRepresentationUIDs', () => {
     canRenderVolumeViewportLabelmapAsImage.mockReturnValue(false);
     expect(
       getVolumeLabelmapImageMapperRepresentationUIDs(
-        makeOrthographicViewport() as never,
+        makePlanarNextViewport() as never,
         'seg-1',
         makeSegmentation()
       )
@@ -229,7 +160,7 @@ describe('getVolumeLabelmapImageMapperRepresentationUIDs', () => {
     getSliceState.mockReturnValue({ key: 'slice-key' });
 
     const uids = getVolumeLabelmapImageMapperRepresentationUIDs(
-      makeOrthographicViewport() as never,
+      makePlanarNextViewport() as never,
       'seg-1',
       makeSegmentation()
     );
@@ -285,23 +216,6 @@ describe('getVolumeLabelmapImageMapperRepresentationUIDs', () => {
       )
     ).toEqual([]);
   });
-
-  it('does not resample an off-axis view on an orthographic viewport', () => {
-    canRenderVolumeViewportLabelmapAsImage.mockReturnValue(true);
-    getLabelmaps.mockReturnValue([{ labelmapId: 'layer-1' }]);
-    getOrCreateLabelmapVolume.mockReturnValue({ imageIds: ['v-0'] });
-    getSliceState.mockReturnValue(undefined);
-    canCreateResampledSliceImageData.mockReturnValue(true);
-
-    expect(
-      getVolumeLabelmapImageMapperRepresentationUIDs(
-        makeOrthographicViewport() as never,
-        'seg-1',
-        makeSegmentation()
-      )
-    ).toEqual([]);
-    expect(canCreateResampledSliceImageData).not.toHaveBeenCalled();
-  });
 });
 
 describe('addVolumeLabelmapImageMapperActors', () => {
@@ -311,7 +225,7 @@ describe('addVolumeLabelmapImageMapperActors', () => {
 
   it('is a no-op when the viewport cannot render as image mapper', async () => {
     canRenderVolumeViewportLabelmapAsImage.mockReturnValue(false);
-    const viewport = makeOrthographicViewport();
+    const viewport = makePlanarNextViewport();
 
     await addVolumeLabelmapImageMapperActors({
       viewport: viewport as never,
@@ -320,12 +234,12 @@ describe('addVolumeLabelmapImageMapperActors', () => {
     });
 
     expect(getLabelmaps).not.toHaveBeenCalled();
-    expect(viewport.addActor).not.toHaveBeenCalled();
+    expect(viewport.addImages).not.toHaveBeenCalled();
   });
 
   it('skips layers that fail to resolve a labelmap volume or slice data', async () => {
     canRenderVolumeViewportLabelmapAsImage.mockReturnValue(true);
-    const viewport = makeOrthographicViewport();
+    const viewport = makePlanarNextViewport();
     getLabelmaps.mockReturnValue([
       { labelmapId: 'a' },
       { labelmapId: 'b' },
@@ -335,11 +249,11 @@ describe('addVolumeLabelmapImageMapperActors', () => {
       .mockReturnValueOnce(undefined)
       .mockReturnValueOnce({ imageIds: ['v-0'] })
       .mockReturnValueOnce({ imageIds: ['v-0'] });
-    createSliceImageData
-      .mockReturnValueOnce(undefined) // layer b → skipped
+    createPlanarSliceImageData
+      .mockReturnValueOnce(undefined)
       .mockReturnValueOnce({
         imageData: {},
-        state: { key: 'slice-c' },
+        sliceIndex: 0,
       });
 
     await addVolumeLabelmapImageMapperActors({
@@ -348,7 +262,7 @@ describe('addVolumeLabelmapImageMapperActors', () => {
       segmentationId: 'seg-1',
     });
 
-    expect(viewport.addActor).toHaveBeenCalledTimes(1);
+    expect(viewport.addImages).toHaveBeenCalledTimes(1);
   });
 
   it('routes through addImages on planar-next viewports', async () => {
@@ -544,7 +458,7 @@ describe('updateVolumeLabelmapImageMapperActors', () => {
     canRenderVolumeViewportLabelmapAsImage.mockReturnValue(false);
     expect(() =>
       updateVolumeLabelmapImageMapperActors({
-        viewport: makeOrthographicViewport() as never,
+        viewport: makePlanarNextViewport() as never,
         segmentation: makeSegmentation(),
         segmentationId: 'seg-1',
       })
@@ -576,13 +490,13 @@ describe('updateVolumeLabelmapImageMapperActors', () => {
       { labelmapId: 'missing-actor' },
     ]);
     getOrCreateLabelmapVolume.mockReturnValue({ imageIds: ['v'] });
-    createSliceImageData.mockReturnValue({
+    createPlanarSliceImageData.mockReturnValue({
       imageData: {},
-      state: { key: 'slice', sliceIndex: 0 },
+      sliceIndex: 0,
     });
 
-    const viewport = makeOrthographicViewport();
-    viewport.getActors = jest.fn(() => [actorA, actorOther]);
+    const viewport = makePlanarNextViewport();
+    viewport.getActors = jest.fn(() => [actorA, actorOther]) as never;
 
     updateVolumeLabelmapImageMapperActors({
       viewport: viewport as never,
@@ -791,20 +705,6 @@ describe('placeVolumeLabelmapImageMapperActors', () => {
     expect(applyPlanarOverlayDepthOffset).not.toHaveBeenCalled();
   });
 
-  it('does nothing on an orthographic viewport, which draws labelmap slices in its own layer', () => {
-    canRenderVolumeViewportLabelmapAsImage.mockReturnValue(true);
-
-    const viewport = makeOrthographicViewport();
-
-    placeVolumeLabelmapImageMapperActors({
-      viewport: viewport as never,
-      segmentationId: 'seg-1',
-    });
-
-    expect(viewport.getActors).not.toHaveBeenCalled();
-    expect(applyPlanarOverlayDepthOffset).not.toHaveBeenCalled();
-  });
-
   it('does nothing when the viewport cannot draw the labelmap as a slice image', () => {
     canRenderVolumeViewportLabelmapAsImage.mockReturnValue(false);
 
@@ -830,83 +730,6 @@ describe('placeVolumeLabelmapImageMapperActors', () => {
     });
 
     expect(viewport.getActors).not.toHaveBeenCalled();
-  });
-});
-
-describe('removeVolumeLabelmapImageMapperActors', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
-
-  it('does nothing for non-ORTHOGRAPHIC viewports', () => {
-    const viewport = makePlanarNextViewport();
-    canRenderVolumeViewportLabelmapAsImage.mockReturnValue(true);
-    removeVolumeLabelmapImageMapperActors(viewport as never, 'seg-1');
-    // Should not touch the rendering engine path
-    expect(viewport.getActors).not.toHaveBeenCalled();
-  });
-
-  it('does nothing when canRender returns false', () => {
-    canRenderVolumeViewportLabelmapAsImage.mockReturnValue(false);
-    const viewport = makeOrthographicViewport();
-    removeVolumeLabelmapImageMapperActors(viewport as never, 'seg-1');
-    expect(viewport.getRenderingEngine).not.toHaveBeenCalled();
-  });
-
-  it('removes the overlay renderer when no labelmap actors remain', () => {
-    canRenderVolumeViewportLabelmapAsImage.mockReturnValue(true);
-
-    const overlayRenderer = {
-      removeActor: jest.fn(),
-      getActors: jest.fn(() => []),
-    };
-    const offscreen = {
-      getRenderer: jest.fn(() => overlayRenderer),
-      removeRenderer: jest.fn(),
-    };
-    const viewport = makeOrthographicViewport();
-    viewport.getRenderingEngine = jest.fn(() => ({
-      getOffscreenMultiRenderWindow: jest.fn(() => offscreen),
-    }));
-    viewport.getActors = jest.fn(() => [
-      {
-        representationUID: 'seg-1-Labelmap-layer-a',
-        referencedId: 'layer-a',
-        actor: {},
-      },
-    ]);
-
-    removeVolumeLabelmapImageMapperActors(viewport as never, 'seg-1');
-    expect(overlayRenderer.removeActor).toHaveBeenCalledTimes(1);
-    expect(offscreen.removeRenderer).toHaveBeenCalled();
-  });
-
-  it('preserves the overlay renderer when actors from other segmentations remain', () => {
-    canRenderVolumeViewportLabelmapAsImage.mockReturnValue(true);
-
-    const overlayRenderer = {
-      removeActor: jest.fn(),
-      getActors: jest.fn(() => [{ id: 'still-there' }]),
-    };
-    const offscreen = {
-      getRenderer: jest.fn(() => overlayRenderer),
-      removeRenderer: jest.fn(),
-    };
-    const viewport = makeOrthographicViewport();
-    viewport.getRenderingEngine = jest.fn(() => ({
-      getOffscreenMultiRenderWindow: jest.fn(() => offscreen),
-    }));
-    viewport.getActors = jest.fn(() => [
-      {
-        representationUID: 'seg-1-Labelmap-layer-a',
-        referencedId: 'layer-a',
-        actor: {},
-      },
-    ]);
-
-    removeVolumeLabelmapImageMapperActors(viewport as never, 'seg-1');
-    expect(overlayRenderer.removeActor).toHaveBeenCalled();
-    expect(offscreen.removeRenderer).not.toHaveBeenCalled();
   });
 });
 

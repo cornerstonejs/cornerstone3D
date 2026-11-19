@@ -79,21 +79,9 @@ export function syncStackLabelmapActors(
   let shouldRenderViewport = staleActorEntries.length > 0;
 
   if (staleActorEntries.length) {
-    const legacyActorEntryUIDs: string[] = [];
-
     staleActorEntries.forEach((actorEntry) => {
-      if (
-        removeLabelmapRepresentationData(viewport, segmentationId, actorEntry)
-      ) {
-        return;
-      }
-
-      legacyActorEntryUIDs.push(actorEntry.uid);
+      removeLabelmapRepresentationData(viewport, segmentationId, actorEntry);
     });
-
-    if (legacyActorEntryUIDs.length) {
-      viewport.removeActors(legacyActorEntryUIDs);
-    }
 
     shouldTriggerSegmentationRender = true;
   }

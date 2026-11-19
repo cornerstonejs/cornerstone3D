@@ -42,11 +42,7 @@ import {
   addLine3DBetweenPoints,
   calculateAdaptiveSphereRadius,
 } from '../utilities/draw3D';
-import {
-  addToolProp,
-  removeToolProp,
-  toolOwnsProps,
-} from '../utilities/draw3D/toolProps';
+import { addToolProp, removeToolProp } from '../utilities/draw3D/toolProps';
 import { isDragOwnedBy } from '../utilities/interactionDragCoordinator';
 import {
   applyViewportPresentation,
@@ -1132,19 +1128,17 @@ class VolumeCroppingTool extends BaseTool {
   }
 
   /**
-   * Puts the sphere handles and the edge lines into the scene of a direct
-   * next 3D viewport, or takes them out, and renders. They are props of the
-   * tool there: it takes them out when it is disabled or when the volume
-   * changes, and puts them back when it is active again. On a legacy 3D
-   * viewport and on a legacy adapter they are actors of the viewport, and
-   * nothing happens.
+   * Puts the sphere handles and the edge lines into the scene of a 3D
+   * viewport, or takes them out, and renders. They are props of the tool
+   * there: it takes them out when it is disabled or when the volume changes,
+   * and puts them back when it is active again.
    *
    * @param inScene - True to put them into the scene, false to take them out.
    */
   _setHandlesInScene(inScene: boolean): void {
     const viewport = this._getViewport();
 
-    if (!viewport || !toolOwnsProps(viewport)) {
+    if (!viewport) {
       return;
     }
 

@@ -1,10 +1,7 @@
-import { vec3 } from 'gl-matrix';
-import vtkMath from '@kitware/vtk.js/Common/Core/Math';
-import { getConfiguration, type Types } from '@cornerstonejs/core';
-import { getEnabledElement, utilities } from '@cornerstonejs/core';
+import { type Types } from '@cornerstonejs/core';
+import { getEnabledElement } from '@cornerstonejs/core';
 import { BaseTool } from './base';
 import type { EventTypes, PublicToolProps, ToolProps } from '../types';
-import { Events } from '../enums';
 import {
   getViewportZoomPan,
   panViewportByCanvasDelta,
@@ -20,8 +17,6 @@ class ZoomTool extends BaseTool {
   static toolName;
   touchDragCallback: (evt: EventTypes.InteractionEventType) => void;
   mouseDragCallback: (evt: EventTypes.InteractionEventType) => void;
-  initialMousePosWorld: Types.Point3;
-  dirVec: Types.Point3;
 
   constructor(
     toolProps: PublicToolProps = {},
@@ -42,8 +37,6 @@ class ZoomTool extends BaseTool {
     }
   ) {
     super(toolProps, defaultToolProps);
-    this.initialMousePosWorld = [0, 0, 0];
-    this.dirVec = [0, 0, 0];
     if (this.configuration.pinchToZoom) {
       this.touchDragCallback = this._pinchCallback.bind(this);
     } else {
@@ -56,90 +49,17 @@ class ZoomTool extends BaseTool {
     this._zoom(evt);
   }
 
-  preMouseDownCallback = (evt: EventTypes.InteractionEventType): boolean => {
-    const eventData = evt.detail;
-    const { element, currentPoints } = eventData;
-    const worldPos = currentPoints.world;
-    const enabledElement = getEnabledElement(element);
-    const viewport = enabledElement.viewport;
-
-    const camera = getLegacyCamera(viewport);
-
-    if (!hasLegacyCameraPosition(camera)) {
-      return false;
-    }
-
-    const { focalPoint } = camera;
-
-    this.initialMousePosWorld = worldPos;
-
-    // The direction vector from the clicked location to the focal point
-    // which would act as the vector to translate the image (if zoomToCenter is false)
-    let dirVec = vec3.fromValues(
-      focalPoint[0] - worldPos[0],
-      focalPoint[1] - worldPos[1],
-      focalPoint[2] - worldPos[2]
-    );
-
-    dirVec = vec3.normalize(vec3.create(), dirVec);
-
-    this.dirVec = dirVec as Types.Point3;
-
-    // we should not return true here, returning true in the preMouseDownCallback
-    // means that the event is handled by the tool and no other methods
-    // can claim the event, which will result in a bug where having Zoom on primary
-    // and clicking on an annotation will not manipulate the annotation, but will
-    // instead zoom the image (which is not what we want), so we return false here
-    return false;
-  };
-
-  preTouchStartCallback = (evt: EventTypes.InteractionEventType): boolean => {
-    if (!this.configuration.pinchToZoom) {
-      return this.preMouseDownCallback(evt);
-    }
-  };
-
   _pinchCallback(evt: EventTypes.InteractionEventType) {
     const pointsList = (evt as EventTypes.TouchStartEventType).detail
       .currentPointsList;
 
     if (pointsList.length > 1) {
-      const { element, currentPoints } = evt.detail;
-      const enabledElement = getEnabledElement(element);
-      const { viewport } = enabledElement;
-      const camera = getLegacyCamera(viewport);
-      const worldPos = currentPoints.world;
+      const { element } = evt.detail;
+      const { viewport } = getEnabledElement(element);
 
-      if (!hasLegacyCameraPosition(camera)) {
-        if (this._dragViewportZoom(evt, viewport, true)) {
-          viewport.render();
-        }
-
-        if (this.configuration.pan) {
-          this._panCallback(evt);
-        }
-
-        return;
+      if (this._dragViewportZoom(evt, viewport, true)) {
+        viewport.render();
       }
-
-      const { focalPoint } = camera;
-      this.initialMousePosWorld = worldPos;
-      // The direction vector from the clicked location to the focal point
-      // which would act as the vector to translate the image (if zoomToCenter is false)
-      let dirVec = vec3.fromValues(
-        focalPoint[0] - worldPos[0],
-        focalPoint[1] - worldPos[1],
-        focalPoint[2] - worldPos[2]
-      );
-      dirVec = vec3.normalize(vec3.create(), dirVec);
-
-      this.dirVec = dirVec as Types.Point3;
-      if (hasLegacyParallelCamera(camera) && camera.parallelProjection) {
-        this._dragParallelProjection(evt, viewport, camera, true);
-      } else if (hasLegacyPerspectiveCamera(camera)) {
-        this._dragPerspectiveProjection(evt, viewport, camera, true);
-      }
-      viewport.render();
     }
 
     if (this.configuration.pan) {
@@ -150,278 +70,46 @@ class ZoomTool extends BaseTool {
   // Takes ICornerstoneEvent, Mouse or Touch
   _dragCallback(evt: EventTypes.InteractionEventType) {
     const { element } = evt.detail;
-    const enabledElement = getEnabledElement(element);
-    const { viewport } = enabledElement;
+    const { viewport } = getEnabledElement(element);
 
-    const camera = getLegacyCamera(viewport);
-
-    if (!hasLegacyParallelCamera(camera)) {
-      if (!this._dragViewportZoom(evt, viewport)) {
-        return;
-      }
-    } else if (camera.parallelProjection) {
-      this._dragParallelProjection(evt, viewport, camera);
-    } else {
-      this._dragPerspectiveProjection(evt, viewport, camera);
+    if (this._dragViewportZoom(evt, viewport)) {
+      viewport.render();
     }
-
-    viewport.render();
   }
-
-  _dragParallelProjection = (
-    evt: EventTypes.InteractionEventType,
-    viewport: Types.IStackViewport | Types.IVolumeViewport,
-    camera: Types.ICamera,
-    pinch = false
-  ): void => {
-    const { element, deltaPoints } = evt.detail;
-    const deltaY = pinch
-      ? (evt as EventTypes.TouchDragEventType).detail.deltaDistance.canvas
-      : deltaPoints.canvas[1];
-
-    const size = [element.clientWidth, element.clientHeight];
-    const { parallelScale, focalPoint, position } = camera;
-
-    const zoomScale = 5 / size[1];
-    const k = deltaY * zoomScale * (this.configuration.invert ? -1 : 1);
-
-    const parallelScaleToSet = (1.0 - k) * parallelScale;
-
-    let focalPointToSet = focalPoint;
-    let positionToSet = position;
-
-    // if we're not zooming to the center, we need to adjust the focal point
-    // and position to set the focal point and position to the value that
-    // would simulate the zoom to the mouse position
-    if (!this.configuration.zoomToCenter) {
-      // Distance of the initial mouse position (world) to the focal point
-      // which is always the center of the canvas.
-      const distanceToCanvasCenter = vec3.distance(
-        focalPoint,
-        this.initialMousePosWorld
-      );
-
-      positionToSet = vec3.scaleAndAdd(
-        vec3.create(),
-        position,
-        this.dirVec,
-        -distanceToCanvasCenter * k
-      ) as Types.Point3;
-
-      focalPointToSet = vec3.scaleAndAdd(
-        vec3.create(),
-        focalPoint,
-        this.dirVec,
-        -distanceToCanvasCenter * k
-      ) as Types.Point3;
-    }
-
-    // If it is a regular GPU accelerated viewport, then parallel scale
-    // has a physical meaning and we can use that to determine the threshold
-    // Added spacing preset in case there is no imageData on viewport
-    const imageData = viewport.getImageData();
-    let spacing = [1, 1, 1];
-    let cappedParallelScale = parallelScaleToSet;
-    let thresholdExceeded = false;
-
-    if (imageData) {
-      spacing = imageData.spacing;
-
-      const { dimensions } = imageData;
-      const imageWidth = dimensions[0] * spacing[0];
-      const imageHeight = dimensions[1] * spacing[1];
-
-      const canvasAspect = size[0] / size[1];
-
-      const insetImageMultiplier = getConfiguration().rendering
-        ?.useLegacyCameraFOV
-        ? 1.1
-        : 1;
-
-      // Get display area, if available
-      const displayArea = viewport.options?.displayArea;
-      const imageAreaScaleX =
-        displayArea?.imageArea?.[0] ?? insetImageMultiplier;
-      const imageAreaScaleY =
-        displayArea?.imageArea?.[1] ?? insetImageMultiplier;
-
-      // Adjust image dimensions by display area scale
-      const scaledImageWidth = imageWidth * imageAreaScaleX;
-      const scaledImageHeight = imageHeight * imageAreaScaleY;
-      const scaledImageAspect = scaledImageWidth / scaledImageHeight;
-
-      // Determine the minimum parallel scale required to fully fit the image
-      let minParallelScaleRequired;
-      if (scaledImageAspect > canvasAspect) {
-        // Wider image, limit by width
-        minParallelScaleRequired = (scaledImageWidth / canvasAspect) * 0.5;
-      } else {
-        // Taller image, limit by height
-        minParallelScaleRequired = scaledImageHeight * 0.5;
-      }
-
-      const { minZoomScale, maxZoomScale } = this.configuration;
-
-      // Translate zoom scale limits to world-space scale
-      const minScaleInWorld = minParallelScaleRequired / maxZoomScale;
-      const maxScaleInWorld = minParallelScaleRequired / minZoomScale;
-
-      // Clamp zoom within allowed limits
-      if (parallelScaleToSet < minScaleInWorld) {
-        cappedParallelScale = minScaleInWorld;
-        thresholdExceeded = true;
-      } else if (parallelScaleToSet > maxScaleInWorld) {
-        cappedParallelScale = maxScaleInWorld;
-        thresholdExceeded = true;
-      }
-    }
-
-    viewport.setCamera({
-      parallelScale: cappedParallelScale,
-      focalPoint: thresholdExceeded ? focalPoint : focalPointToSet,
-      position: thresholdExceeded ? position : positionToSet,
-    });
-  };
-
-  _dragPerspectiveProjection = (
-    evt: EventTypes.InteractionEventType,
-    viewport: Types.IStackViewport | Types.IVolumeViewport,
-    camera: Types.ICamera,
-    pinch = false
-  ): void => {
-    const { element, deltaPoints } = evt.detail;
-    const deltaY = pinch
-      ? (evt as EventTypes.TouchDragEventType).detail.deltaDistance.canvas
-      : deltaPoints.canvas[1];
-
-    const size = [element.clientWidth, element.clientHeight];
-    const { position, focalPoint, viewPlaneNormal } = camera;
-
-    const distance = vtkMath.distance2BetweenPoints(position, focalPoint);
-    const zoomScale = Math.sqrt(distance) / size[1];
-
-    const directionOfProjection = [
-      -viewPlaneNormal[0],
-      -viewPlaneNormal[1],
-      -viewPlaneNormal[2],
-    ];
-
-    const k = this.configuration.invert
-      ? deltaY / zoomScale
-      : deltaY * zoomScale;
-
-    let tmp = k * directionOfProjection[0];
-    position[0] += tmp;
-    focalPoint[0] += tmp;
-
-    tmp = k * directionOfProjection[1];
-    position[1] += tmp;
-    focalPoint[1] += tmp;
-
-    tmp = k * directionOfProjection[2];
-    position[2] += tmp;
-    focalPoint[2] += tmp;
-
-    viewport.setCamera({ position, focalPoint });
-  };
 
   _zoom(evt: EventTypes.MouseWheelEventType): void {
     const { element, points } = evt.detail;
-    const enabledElement = getEnabledElement(element);
-    const { viewport } = enabledElement;
+    const { viewport } = getEnabledElement(element);
+    const direction = evt.detail.wheel.direction;
+    const canvasPoint = this.configuration.zoomToCenter
+      ? undefined
+      : (points.canvas as Types.Point2);
 
-    const camera = getLegacyCamera(viewport);
-    const wheelData = evt.detail.wheel;
-    const direction = wheelData.direction;
-
-    if (!hasLegacyParallelCamera(camera)) {
-      const canvasPoint = this.configuration.zoomToCenter
-        ? undefined
-        : (points.canvas as Types.Point2);
-
-      if (
-        this._applyViewportZoomDelta(
-          viewport,
-          element,
-          -direction * 5,
-          canvasPoint
-        )
-      ) {
-        viewport.render();
-      }
-
-      return;
-    }
-
-    // Fake event to simulate a drag event
-    const eventDetails = {
-      detail: {
+    if (
+      this._applyViewportZoomDelta(
+        viewport,
         element,
-        eventName: Events.MOUSE_WHEEL,
-        renderingEngineId: enabledElement.renderingEngineId,
-        viewportId: viewport.id,
-        camera: {},
-        deltaPoints: {
-          page: points.page as Types.Point2,
-          client: points.client as Types.Point2,
-          world: points.world as Types.Point3,
-          canvas: [0, -direction * 5] as Types.Point2, // Simulate a drag of 5 pixels up or down
-        },
-        startPoints: points,
-        lastPoints: points,
-        currentPoints: points,
-      },
-    } as EventTypes.InteractionEventType;
-
-    if (utilities.viewportIsInStackMode(viewport)) {
-      this.preMouseDownCallback(eventDetails);
+        -direction * 5,
+        canvasPoint
+      )
+    ) {
+      viewport.render();
     }
-
-    this._dragCallback(eventDetails);
   }
 
   _panCallback(evt: EventTypes.InteractionEventType) {
     const { element, deltaPoints } = evt.detail;
-    const enabledElement = getEnabledElement(element);
+    const { viewport } = getEnabledElement(element);
 
-    const deltaPointsWorld = deltaPoints.world;
-    const viewport = enabledElement.viewport;
-    const camera = getLegacyCamera(viewport);
-
-    if (!hasLegacyCameraPosition(camera)) {
-      if (panViewportByCanvasDelta(viewport, deltaPoints.canvas)) {
-        viewport.render();
-      }
-
-      return;
+    if (panViewportByCanvasDelta(viewport, deltaPoints.canvas)) {
+      viewport.render();
     }
-
-    const { focalPoint, position } = camera;
-
-    const updatedPosition = <Types.Point3>[
-      position[0] - deltaPointsWorld[0],
-      position[1] - deltaPointsWorld[1],
-      position[2] - deltaPointsWorld[2],
-    ];
-
-    const updatedFocalPoint = <Types.Point3>[
-      focalPoint[0] - deltaPointsWorld[0],
-      focalPoint[1] - deltaPointsWorld[1],
-      focalPoint[2] - deltaPointsWorld[2],
-    ];
-
-    viewport.setCamera({
-      focalPoint: updatedFocalPoint,
-      position: updatedPosition,
-    });
-    viewport.render();
   }
 
   /**
-   * Zooms a next viewport of any family, which has no legacy camera, through
-   * the projection service. A drag zooms by its vertical movement. A pinch
-   * zooms by the change of the distance between the two fingers, as the
-   * legacy camera path does.
+   * Zooms a viewport of any family through the projection service. A drag
+   * zooms by its vertical movement. A pinch zooms by the change of the
+   * distance between the two fingers.
    *
    * @returns False when the viewport has no zoom in the projection service.
    */
@@ -442,7 +130,7 @@ class ZoomTool extends BaseTool {
   }
 
   /**
-   * Changes the zoom of a next viewport by a vertical movement in canvas
+   * Changes the zoom of a viewport by a vertical movement in canvas
    * pixels, inside `minZoomScale` and `maxZoomScale` of the configuration.
    * The zoom is the one of the projection service: 1 is the fit of the
    * viewport. With a canvas point the picture stays under it.
@@ -472,40 +160,6 @@ class ZoomTool extends BaseTool {
 
     return zoomViewportAtCanvasPoint(viewport, zoom, canvasPoint);
   }
-}
-
-function getLegacyCamera(viewport: unknown): unknown {
-  const maybeViewport = viewport as { getCamera?: () => unknown };
-
-  return typeof maybeViewport.getCamera === 'function'
-    ? maybeViewport.getCamera()
-    : undefined;
-}
-
-function hasLegacyCameraPosition(
-  camera: unknown
-): camera is Pick<Types.ICamera, 'focalPoint' | 'position'> {
-  return Boolean(
-    camera &&
-      Array.isArray((camera as Types.ICamera).focalPoint) &&
-      Array.isArray((camera as Types.ICamera).position)
-  );
-}
-
-function hasLegacyParallelCamera(camera: unknown): camera is Types.ICamera {
-  return Boolean(
-    hasLegacyCameraPosition(camera) &&
-      typeof (camera as Types.ICamera).parallelProjection === 'boolean' &&
-      typeof (camera as Types.ICamera).parallelScale === 'number' &&
-      Array.isArray((camera as Types.ICamera).viewPlaneNormal)
-  );
-}
-
-function hasLegacyPerspectiveCamera(camera: unknown): camera is Types.ICamera {
-  return Boolean(
-    hasLegacyCameraPosition(camera) &&
-      Array.isArray((camera as Types.ICamera).viewPlaneNormal)
-  );
 }
 
 ZoomTool.toolName = 'Zoom';

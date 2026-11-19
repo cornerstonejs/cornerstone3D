@@ -5,7 +5,6 @@ import distancePointToPlane from './distancePointToPlane';
 import clipWorldLineToViewportCanvas from './clipWorldLineToViewportCanvas';
 import areViewportsSpatiallyLinked from './areViewportsSpatiallyLinked';
 import translateViewportAlongNormal from './translateViewportAlongNormal';
-import rotateViewportAroundWorldPoint from './rotateViewportAroundWorldPoint';
 import getDisplayedCanvasSize from './getDisplayedCanvasSize';
 
 export type {
@@ -24,6 +23,5 @@ export {
   clipWorldLineToViewportCanvas,
   areViewportsSpatiallyLinked,
   translateViewportAlongNormal,
-  rotateViewportAroundWorldPoint,
   getDisplayedCanvasSize,
 };

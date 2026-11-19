@@ -43,19 +43,24 @@ const IMAGE_FRAME_OF_REFERENCE = {
   [OTHER_IMAGE_IDS[0]]: FOR_2,
 };
 
+/** A planar viewport in stack mode that shows the images given. */
 function makeStackViewport(imageIds: string[]) {
-  return { getImageIds: jest.fn(() => imageIds) };
+  return {
+    type: 'planarNext',
+    getCurrentMode: jest.fn(() => 'stack'),
+    getImageIds: jest.fn(() => imageIds),
+  };
 }
 
 /**
- * Volume viewports expose getAllVolumeIds and a getFrameOfReferenceUID that is
- * undefined before `setVolumes`. The real BaseVolumeViewport.getImageIds throws
- * before any volume actor exists, so the gate must never rely on it. The type
- * is left undefined, which is every viewport class except `PlanarViewport`.
+ * A planar viewport in volume mode with the frame of reference given. The
+ * gate decides by the frame of reference alone, so `getImageIds` throws here
+ * to prove that the gate does not read it.
  */
 function makeVolumeViewport(frameOfReferenceUID: string | undefined) {
   return {
-    getAllVolumeIds: jest.fn(() => []),
+    type: 'planarNext',
+    getCurrentMode: jest.fn(() => 'volume'),
     getFrameOfReferenceUID: jest.fn(() => frameOfReferenceUID),
     getImageIds: jest.fn(() => {
       throw new Error('getImageIds must not be called on volume viewports');
@@ -64,21 +69,20 @@ function makeVolumeViewport(frameOfReferenceUID: string | undefined) {
 }
 
 /**
- * A `PlanarViewport` serves both a stack and a volume, and it exposes
- * `getAllVolumeIds` for either. It reports an empty list while it shows a
- * stack, and it reports a synthetic frame of reference that no labelmap can
+ * A `PlanarViewport` serves both a stack and a volume, and its mode says
+ * which. It reports a synthetic frame of reference that no labelmap can
  * match.
  */
 function makePlanarViewport({
   imageIds,
-  volumeIds = [],
+  mode = 'stack',
 }: {
   imageIds: string[];
-  volumeIds?: string[];
+  mode?: 'stack' | 'volume';
 }) {
   return {
     type: 'planarNext',
-    getAllVolumeIds: jest.fn(() => volumeIds),
+    getCurrentMode: jest.fn(() => mode),
     getImageIds: jest.fn(() => imageIds),
     getFrameOfReferenceUID: jest.fn(() => 'planarNext-viewport-VP_1'),
   };
@@ -214,7 +218,7 @@ describe('isSegmentationOverlayCompatible', () => {
   });
 
   describe('volume viewports (frame of reference match)', () => {
-    it('stays permissive (and does not throw) before any volume is set', () => {
+    it('stays permissive (and does not throw) while the viewport has no frame of reference', () => {
       setLabelmapReferencedImageIds(CT_IMAGE_IDS);
       const viewport = makeVolumeViewport(undefined);
 
@@ -328,7 +332,7 @@ describe('isSegmentationOverlayCompatible', () => {
       setLabelmapReferencedImageIds(CT_IMAGE_IDS);
       const viewport = makePlanarViewport({
         imageIds: CT_IMAGE_IDS,
-        volumeIds: ['volume-1'],
+        mode: 'volume',
       });
 
       expect(
@@ -363,7 +367,8 @@ describe('isSegmentationOverlayCompatible', () => {
     it('treats a throwing getFrameOfReferenceUID as "unknown" and stays permissive', () => {
       setLabelmapReferencedImageIds(OTHER_IMAGE_IDS);
       const viewport = {
-        getAllVolumeIds: jest.fn(() => []),
+        type: 'planarNext',
+        getCurrentMode: jest.fn(() => 'volume'),
         getFrameOfReferenceUID: jest.fn(() => {
           throw new Error('viewport destroyed');
         }),

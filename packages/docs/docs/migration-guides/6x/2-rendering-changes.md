@@ -887,6 +887,20 @@ layer of a fusion: the opacity is applied as given.
 - **A zoom keeps a stretch.** On a planar viewport with a scale pair, the
   zoom tool, the zoom and pan synchronizer and the undo of a zoom multiply
   both axes.
+- **The tools no longer fall back to the legacy members of a viewport.**
+  `ZoomTool` zooms and pans only through `viewportProjection` (no
+  `getCamera` or `setCamera`). The presentation view, camera position and
+  zoom and pan synchronizers read and write only through
+  `viewportProjection` (no `getViewPresentation` or `setViewPresentation`).
+  The slab thickness synchronizer reads and writes only the presentation of
+  display sets (no `getSlabThickness` or `setSlabThickness`). A labelmap on
+  a viewport that shows a volume is mounted only as an overlay display set
+  (no `addVolumes`, and edge projection no longer puts the labelmap into the
+  volume actor as a second component), and an old labelmap actor goes with
+  `removeData` (no `removeActors`). Every 6.0 viewport already took these
+  paths. A viewport class of the application, registered with
+  `registerViewportType`, that has only the legacy members gets nothing
+  from these tools.
 
 ## Smaller changes
 

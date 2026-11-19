@@ -75,12 +75,6 @@ export function functionsWithANextPath() {
       { point, direction: [0, 0, 1] },
       planar
     ),
-    utilities.spatial.rotateViewportAroundWorldPoint(
-      planar,
-      point,
-      [0, 0, 1],
-      1
-    ),
     utilities.spatial.translateViewportAlongNormal(planar, 1),
     utilities.viewport.isViewportPreScaled(planar, targetId),
     utilities.viewport.isViewportPreScaled(generic, targetId),

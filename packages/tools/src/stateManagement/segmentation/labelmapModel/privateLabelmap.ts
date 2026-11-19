@@ -17,7 +17,7 @@ import {
   getSegmentsOnLabelmap,
   setSegmentBinding,
 } from './labelmapSegmentBindings';
-import { syncLegacyLabelmapData } from './labelmapLegacyAdapter';
+import { syncLegacyLabelmapData } from './labelmapPrimaryLayerFields';
 import type { LabelmapRestoreStep } from '../../../utilities/segmentation/createLabelmapMemo';
 
 /** One source->target voxel-manager pair touched by a segment move,

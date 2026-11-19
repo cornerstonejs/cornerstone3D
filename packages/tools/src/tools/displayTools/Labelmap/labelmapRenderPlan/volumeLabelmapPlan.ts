@@ -19,16 +19,12 @@ import type {
   LabelmapRenderingConfig,
   Segmentation,
 } from '../../../../types/SegmentationStateTypes';
-import {
-  triggerSegmentationDataModified,
-  triggerSegmentationModified,
-} from '../../../../stateManagement/segmentation/triggerSegmentationEvents';
+import { triggerSegmentationModified } from '../../../../stateManagement/segmentation/triggerSegmentationEvents';
 import {
   getLabelmaps,
   getOrCreateLabelmapVolume,
 } from '../../../../stateManagement/segmentation/helpers/labelmapSegmentationState';
 import { tagLabelmapVolume } from '../../../../stateManagement/segmentation/labelmapModel/labelmapLayerStore';
-import { addVolumesAsIndependentComponents } from '../addVolumesAsIndependentComponents';
 import { createLabelmapRepresentationUID } from '../labelmapRepresentationUID';
 import {
   createLabelmapRenderPlan,
@@ -49,12 +45,17 @@ import {
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
 
 const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
-  'tools.displayTools.Labelmap.labelmapRenderPlan.legacyVolumePlan'
+  'tools.displayTools.Labelmap.labelmapRenderPlan.volumeLabelmapPlan'
 );
 
 const { uuidv4 } = utilities;
 
-function createLegacyVolumeLabelmapPlan({
+/**
+ * The render plan of a labelmap on a viewport that shows a volume: a planar
+ * viewport in volume mode, or a 3D viewport. The labelmap volumes are mounted
+ * as overlay display sets of the viewport.
+ */
+function createVolumeLabelmapPlan({
   config,
   isVolumeImageMapper,
   renderMode,
@@ -87,7 +88,7 @@ function createLegacyVolumeLabelmapPlan({
     isActorEntryCompatible: (actorEntry) =>
       !isImageMountedActorEntry(actorEntry),
     mount: ({ labelMapData }) =>
-      mountLegacyVolumeLabelmap({
+      mountVolumeLabelmap({
         config,
         labelMapData,
         segmentation,
@@ -120,7 +121,7 @@ function getExpectedVolumeLabelmapRepresentationUIDs(
     );
 }
 
-async function mountLegacyVolumeLabelmap({
+async function mountVolumeLabelmap({
   config,
   labelMapData,
   segmentation,
@@ -137,9 +138,7 @@ async function mountLegacyVolumeLabelmap({
   // in the event listener, we will make other segmentations visible/invisible
   // based on the config
   const visibility = true;
-  const immediateRender = false;
-  const suppressEvents = true;
-  const volumeCompatibleViewport = viewport as Types.IVolumeViewport & {
+  const volumeCompatibleViewport = viewport as Types.IViewport & {
     getVolumeId?: () => string;
   };
   const labelmapLayers = getVolumeBackedLabelmapLayers(segmentation);
@@ -220,19 +219,6 @@ async function mountLegacyVolumeLabelmap({
     }
   }
 
-  const volumeInputs: Types.IVolumeInput[] = labelmapLayers.map((layer) => ({
-    volumeId: layer.volumeId,
-    visibility,
-    representationUID: createLabelmapRepresentationUID({
-      segmentationId,
-      referencedId: layer.labelmapId,
-    }),
-    // FIDELITY-STATE-9: legacy fidelity skips overlays via this flag, not the UID name.
-    excludeFromFidelity: true,
-    useIndependentComponents,
-    blendMode,
-  }));
-
   if (isPlanarNextVolumeViewport(viewport)) {
     return addLabelmapToPlanarGenericViewport({
       blendMode,
@@ -254,48 +240,13 @@ async function mountLegacyVolumeLabelmap({
       visibility,
     });
   }
-
-  /*
-   * Having independent components for the segmentation data means that we are
-   * adding the segmentation as a separate component (e.g., component 2) to the
-   * volume data (component 1, index 0). If the base data is color data, which
-   * is an independent component itself, this approach will not work. I'm unsure what
-   * a Maximum Intensity Projection (MIP) of color data would be, but it's not
-   * the same as the MIP of grayscale data.
-   * Another limitation is that if we have multiple segmentation volumes, we
-   * cannot add them as independent components to the volume data since the current
-   * logic is limited to one. The shader code needs to be updated to handle
-   * multiple independent components.
-   * Todo: add a check here to identify if the base data is color data and fallback
-   * to the default behavior.
-   */
-  if (!volumeInputs[0].useIndependentComponents) {
-    await volumeCompatibleViewport.addVolumes?.(
-      volumeInputs,
-      immediateRender,
-      suppressEvents
-    );
-    // Adding the labelmap to this viewport changed no voxel, so the labelmap
-    // is not re-reduced once per viewport. An edit made while no volume
-    // viewport showed it still forces one full refresh here.
-    triggerSegmentationDataModified(segmentationId, undefined, undefined, {
-      voxelsUnchanged: true,
-    });
-    return;
-  }
-
-  return addVolumesAsIndependentComponents({
-    viewport: volumeCompatibleViewport,
-    volumeInputs,
-    segmentationId,
-  });
 }
 
 /**
- * Whether the GPU settings of a render can hold the texture that
- * `addVolumesAsIndependentComponents` builds: the full grid of the base
- * volume, with two Float32 components. The strategy does not reduce that
- * texture, so a grid above the limits would draw nothing.
+ * Whether the GPU settings of a render can hold the full grid of the base
+ * volume with two Float32 components, the texture that edge projection was
+ * built on. When they cannot, the labelmap takes the maximum intensity blend
+ * mode.
  */
 function combinedTextureFitsGpuSettings(baseVolume: Types.IImageVolume) {
   const gpuSettings = gpuSettingsForRender();
@@ -387,4 +338,4 @@ async function handleMissingVolume(labelMapData: LabelmapSegmentationData) {
   return volume;
 }
 
-export { createLegacyVolumeLabelmapPlan };
+export { createVolumeLabelmapPlan };

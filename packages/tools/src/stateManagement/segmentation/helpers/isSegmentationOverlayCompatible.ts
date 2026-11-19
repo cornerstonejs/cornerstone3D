@@ -142,22 +142,10 @@ function stackViewportReferencesImages(
 
 /**
  * Whether a `PlanarViewport` currently shows a volume. That class serves both a
- * stack and a volume, and its mode says which. A viewport without a mode is
- * asked for its volume ids, which are empty while it shows a stack.
+ * stack and a volume, and its mode says which.
  */
-function mountsAVolume(viewport: {
-  getCurrentMode?: () => string;
-  getAllVolumeIds?: () => string[];
-}): boolean {
-  if (typeof viewport.getCurrentMode === 'function') {
-    return viewport.getCurrentMode() === 'volume';
-  }
-
-  try {
-    return (viewport.getAllVolumeIds?.() ?? []).length > 0;
-  } catch (error) {
-    return false;
-  }
+function mountsAVolume(viewport: { getCurrentMode?: () => string }): boolean {
+  return viewport.getCurrentMode?.() === 'volume';
 }
 
 /**
@@ -180,8 +168,8 @@ function mountsAVolume(viewport: {
  *   FrameOfReferenceUID is compatible - even one derived from a series the
  *   viewport does not display (data-overlay and cross-series painting
  *   workflows rely on this). Only a differing frame of reference suppresses.
- *   A viewport counts as a volume viewport when it has a volume mounted, and
- *   not when it only exposes `getAllVolumeIds`.
+ *   A viewport counts as a volume viewport when it is a planar viewport that
+ *   shows a volume.
  *
  * Returns `true` whenever compatibility cannot be determined (unknown
  * segmentation, no source images or frame of reference derivable yet, viewport
@@ -213,14 +201,10 @@ export function isSegmentationOverlayCompatible(
   // two it currently shows: a stack-backed one that took the volume rule
   // reports a synthetic frame of reference (`planarNext-viewport-<id>`) that
   // no labelmap can match, and every representation was dropped. Every other
-  // class keeps the old test, because a `BaseVolumeViewport` is a volume
-  // viewport even before `setVolumes`, and `getImageIds` throws on one until an
-  // actor exists.
+  // viewport takes the stack rule.
   const isVolumeViewport =
-    viewport.type === Enums.ViewportType.PLANAR_NEXT
-      ? mountsAVolume(viewport as Parameters<typeof mountsAVolume>[0])
-      : typeof (viewport as { getAllVolumeIds?: () => string[] })
-          .getAllVolumeIds === 'function';
+    viewport.type === Enums.ViewportType.PLANAR_NEXT &&
+    mountsAVolume(viewport as Parameters<typeof mountsAVolume>[0]);
 
   return isVolumeViewport
     ? volumeViewportSharesFrameOfReference(viewport, layers)

@@ -64,7 +64,6 @@ import WholeBodySegmentTool from '../src/tools/annotation/WholeBodySegmentTool';
 import AnnotationDisplayTool from '../src/tools/base/AnnotationDisplayTool';
 import LivewireContourTool from '../src/tools/annotation/LivewireContourTool';
 import MIPJumpToClickTool from '../src/tools/MIPJumpToClickTool';
-import ZoomTool from '../src/tools/ZoomTool';
 import RectangleROIThresholdTool from '../src/tools/segmentation/RectangleROIThresholdTool';
 import UltrasoundDirectionalTool from '../src/tools/annotation/UltrasoundDirectionalTool';
 import VolumeCroppingControlTool from '../src/tools/VolumeCroppingControlTool';
@@ -73,6 +72,7 @@ import { vtkOrientationControllerWidget } from '../src/utilities/vtkjs/Orientati
 const VOLUME_TARGET_ID =
   'volumeId:cornerstoneStreamingImageVolume:ct?sliceIndex=3&viewPlaneNormal=1.000,0.000,0.000';
 
+/** The members of the next API that every stand-in viewport here has. */
 function nextApi() {
   return {
     setDisplaySets: jest.fn(),
@@ -81,37 +81,23 @@ function nextApi() {
   };
 }
 
-function makeAdapter(mode, requestedType, extra = {}) {
+/**
+ * A stand-in of a next viewport of a type, which shows content of a mode
+ * (`stack` or `volume` for a planar viewport).
+ */
+function makeViewport(type, mode, extra = {}) {
   return {
     ...nextApi(),
-    type: 'planarNext',
-    requestedType,
+    type,
     element: document.createElement('div'),
     getCurrentMode: () => mode,
     ...extra,
   };
 }
 
-/**
- * The content mode of each legacy viewport type, which a legacy stand-in
- * gives through `getCurrentMode`, as the legacy class showed one kind of
- * content from the start.
- */
-const legacyContentModes = {
-  stack: 'stack',
-  orthographic: 'volume',
-  volume3d: 'volume3d',
-  video: 'video',
-  ecg: 'ecg',
-};
-
-function makeLegacy(type, extra = {}) {
-  return {
-    type,
-    element: document.createElement('div'),
-    getCurrentMode: () => legacyContentModes[type],
-    ...extra,
-  };
+/** A stand-in of a planar viewport in stack or volume mode. */
+function makePlanar(mode, extra = {}) {
+  return makeViewport('planarNext', mode, extra);
 }
 
 const sagittalCamera = {
@@ -132,23 +118,14 @@ describe('normalizeViewportPlane', () => {
     [0, 3],
   ];
 
-  it('keeps the acquisition mapping for a legacy stack viewport', () => {
-    expect(normalizeViewportPlane(makeLegacy('stack'), bounds).type).toBe(
+  it('keeps the acquisition mapping for a planar viewport in stack mode', () => {
+    expect(normalizeViewportPlane(makePlanar('stack'), bounds).type).toBe(
       'acquistion'
     );
   });
 
-  it('maps a sagittal legacy volume viewport through its camera', () => {
-    const viewport = makeLegacy('orthographic', {
-      getCamera: () => sagittalCamera,
-      getViewReference: () => ({ viewPlaneNormal: [1, 0, 0] }),
-    });
-
-    expect(normalizeViewportPlane(viewport, bounds).type).toBe('jk');
-  });
-
-  it('maps a sagittal legacy adapter in volume mode like the legacy viewport', () => {
-    const viewport = makeAdapter('volume', 'orthographic', {
+  it('maps a sagittal planar viewport in volume mode like the legacy viewport', () => {
+    const viewport = makePlanar('volume', {
       getResolvedView: () => ({ toICamera: () => sagittalCamera }),
       getViewReference: () => ({ viewPlaneNormal: [1, 0, 0] }),
     });
@@ -158,9 +135,9 @@ describe('normalizeViewportPlane', () => {
 });
 
 describe('annotationHydration', () => {
-  it('uses the closest volume image on a legacy adapter in volume mode', () => {
+  it('uses the closest volume image on a planar viewport in volume mode', () => {
     cache.getVolume.mockReturnValue({ volumeId: 'ct' });
-    const viewport = makeAdapter('volume', 'orthographic', {
+    const viewport = makePlanar('volume', {
       getViewReference: () => ({
         viewPlaneNormal: [1, 0, 0],
         FrameOfReferenceUID: 'for',
@@ -179,13 +156,13 @@ describe('annotationHydration', () => {
     expect(annotation.metadata.referencedImageId).toBe('closest-image');
   });
 
-  it('uses the closest stack image on a legacy adapter in stack mode', () => {
+  it('uses the closest stack image on a planar viewport in stack mode', () => {
     const getMetaData = jest
       .spyOn(metaData, 'get')
       .mockImplementation((_type, imageId) => ({
         imagePositionPatient: imageId === 'image-1' ? [0, 0, 5] : [0, 0, 0],
       }));
-    const viewport = makeAdapter('stack', 'stack', {
+    const viewport = makePlanar('stack', {
       getViewReference: () => ({
         viewPlaneNormal: [0, 0, 1],
         FrameOfReferenceUID: 'for',
@@ -200,7 +177,7 @@ describe('annotationHydration', () => {
   });
 
   it('still throws for a viewport that is neither stack nor volume', () => {
-    const viewport = makeLegacy('video', {
+    const viewport = makeViewport('videoNext', 'video', {
       getViewReference: () => ({ viewPlaneNormal: [0, 0, 1] }),
     });
 
@@ -211,8 +188,8 @@ describe('annotationHydration', () => {
 });
 
 describe('moveAnnotationToViewPlane', () => {
-  it('updates the referenced image of a legacy adapter in stack mode', () => {
-    const viewport = makeAdapter('stack', 'stack', {
+  it('updates the referenced image of a planar viewport in stack mode', () => {
+    const viewport = makePlanar('stack', {
       getViewReference: () => ({}),
       getResolvedView: () => ({
         toICamera: () => ({
@@ -234,7 +211,7 @@ describe('moveAnnotationToViewPlane', () => {
   });
 
   it('leaves the referenced image of a volume viewport alone', () => {
-    const viewport = makeAdapter('volume', 'planarNext', {
+    const viewport = makePlanar('volume', {
       getViewReference: () => ({}),
       getResolvedView: () => ({
         toICamera: () => ({
@@ -256,8 +233,8 @@ describe('moveAnnotationToViewPlane', () => {
 });
 
 describe('createLabelmapVolumeForViewport', () => {
-  it('creates a labelmap volume for a legacy adapter in volume mode', async () => {
-    const viewport = makeAdapter('volume', 'orthographic', {
+  it('creates a labelmap volume for a planar viewport in volume mode', async () => {
+    const viewport = makePlanar('volume', {
       getDefaultActor: () => ({ uid: 'actor' }),
       getVolumeId: () => 'ct',
     });
@@ -275,30 +252,24 @@ describe('createLabelmapVolumeForViewport', () => {
     ).toHaveBeenCalledWith('ct', { volumeId: 'seg' });
   });
 
-  it('still rejects a stack viewport, legacy or adapter', async () => {
-    for (const viewport of [
-      makeLegacy('stack'),
-      makeAdapter('stack', 'stack'),
-    ]) {
-      getEnabledElementByIds.mockReturnValue({ viewport });
+  it('still rejects a planar viewport in stack mode', async () => {
+    getEnabledElementByIds.mockReturnValue({ viewport: makePlanar('stack') });
 
-      await expect(
-        createLabelmapVolumeForViewport({
-          viewportId: 'vp',
-          renderingEngineId: 're',
-        })
-      ).rejects.toThrow('Segmentation only supports VolumeViewport');
-    }
+    await expect(
+      createLabelmapVolumeForViewport({
+        viewportId: 'vp',
+        renderingEngineId: 're',
+      })
+    ).rejects.toThrow('Segmentation only supports VolumeViewport');
   });
 });
 
 describe('WholeBodySegmentTool volume of the viewport', () => {
-  it('reads the volume of a legacy adapter in volume mode', () => {
+  it('reads the volume of a planar viewport in volume mode', () => {
     const tool = new WholeBodySegmentTool();
     const volume = { volumeId: 'ct' };
     cache.getVolume.mockReturnValue(volume);
-    const viewport = makeAdapter('volume', 'orthographic', {
-      getAllVolumeIds: () => ['ct'],
+    const viewport = makePlanar('volume', {
       getVolumeId: () => 'ct',
     });
 
@@ -309,11 +280,9 @@ describe('WholeBodySegmentTool volume of the viewport', () => {
   it('still throws for a stack viewport', () => {
     const tool = new WholeBodySegmentTool();
 
-    expect(() =>
-      tool._getViewportVolume(
-        makeAdapter('stack', 'stack', { getAllVolumeIds: () => [] })
-      )
-    ).toThrow('Viewport is not a BaseVolumeViewport');
+    expect(() => tool._getViewportVolume(makePlanar('stack'))).toThrow(
+      'Viewport is not a BaseVolumeViewport'
+    );
   });
 });
 
@@ -325,51 +294,33 @@ describe('AnnotationDisplayTool.getReferencedImageId', () => {
     }
   }
 
-  it('gives the closest image, not the volume id text, on a legacy adapter in volume mode', () => {
+  it('gives the closest image, not the volume id text, on a planar viewport in volume mode', () => {
     const tool = new TestDisplayTool();
     tool.getTargetId = () => VOLUME_TARGET_ID;
     cache.getVolume.mockReturnValue({ volumeId: 'ct' });
-    const viewport = makeAdapter('volume', 'orthographic');
+    const viewport = makePlanar('volume');
 
     expect(tool.getReferencedImageId(viewport, [0, 0, 0], [1, 0, 0])).toBe(
       'closest-image'
     );
   });
 
-  it('gives the closest image on a legacy volume viewport', () => {
-    const tool = new TestDisplayTool();
-    tool.getTargetId = () => VOLUME_TARGET_ID;
-    cache.getVolume.mockReturnValue({ volumeId: 'ct' });
-
-    expect(
-      tool.getReferencedImageId(
-        makeLegacy('orthographic'),
-        [0, 0, 0],
-        [1, 0, 0]
-      )
-    ).toBe('closest-image');
-  });
-
-  it('gives the image of the target id on a legacy adapter in stack mode', () => {
+  it('gives the image of the target id on a planar viewport in stack mode', () => {
     const tool = new TestDisplayTool();
     tool.getTargetId = () => 'imageId:wadors:image-4';
 
     expect(
-      tool.getReferencedImageId(
-        makeAdapter('stack', 'stack'),
-        [0, 0, 0],
-        [0, 0, 1]
-      )
+      tool.getReferencedImageId(makePlanar('stack'), [0, 0, 0], [0, 0, 1])
     ).toBe('wadors:image-4');
     expect(utilities.getClosestImageId).not.toHaveBeenCalled();
   });
 });
 
 describe('LivewireContourTool edit data', () => {
-  it('stops with a warning on a legacy adapter in volume mode, which has no getSliceViewInfo', () => {
+  it('stops with a warning on a viewport in volume mode that cannot give the pixels of its slice', () => {
     const tool = new LivewireContourTool();
     const getImageData = jest.fn();
-    const viewport = makeAdapter('volume', 'orthographic', { getImageData });
+    const viewport = makePlanar('volume', { getImageData });
     getEnabledElement.mockReturnValue({ viewport });
 
     expect(tool.setupBaseEditData([0, 0, 0], viewport.element, {})).toBe(false);
@@ -380,7 +331,7 @@ describe('LivewireContourTool edit data', () => {
 
   it('does not add an annotation when the edit data cannot be set up', () => {
     const tool = new LivewireContourTool();
-    const viewport = makeAdapter('volume', 'orthographic', {
+    const viewport = makePlanar('volume', {
       getImageData: jest.fn(),
     });
     getEnabledElement.mockReturnValue({ viewport });
@@ -417,73 +368,20 @@ describe('MIPJumpToClickTool', () => {
     });
   }
 
-  it('stops without an error on a legacy adapter, which has no jumpToWorld', () => {
-    const target = makeAdapter('volume', 'orthographic', { id: 'target' });
+  it('stops without an error on a target viewport that cannot move to the point', () => {
+    const target = makePlanar('volume', { id: 'target' });
 
     expect(() =>
-      clickOn(
-        makeAdapter('volume', 'orthographic', { getVolumeId: () => 'ct' }),
-        target
-      )
+      clickOn(makePlanar('volume', { getVolumeId: () => 'ct' }), target)
     ).not.toThrow();
   });
 });
 
-describe('ZoomTool wheel', () => {
-  function wheelOn(viewport) {
-    const tool = new ZoomTool();
-    tool.preMouseDownCallback = jest.fn(() => false);
-    tool._dragCallback = jest.fn();
-    getEnabledElement.mockReturnValue({ viewport, renderingEngineId: 're' });
-
-    tool._zoom({
-      detail: {
-        element: viewport.element,
-        points: { page: [0, 0], client: [0, 0], world: [0, 0, 0] },
-        wheel: { direction: 1 },
-      },
-    });
-
-    return tool;
-  }
-
-  const camera = {
-    focalPoint: [0, 0, 0],
-    position: [0, 0, -10],
-    parallelProjection: true,
-    parallelScale: 100,
-    viewPlaneNormal: [0, 0, 1],
-  };
-
-  it('sets the zoom anchor on a legacy stack viewport', () => {
-    const tool = wheelOn(makeLegacy('stack', { getCamera: () => camera }));
-
-    expect(tool.preMouseDownCallback).toHaveBeenCalled();
-  });
-
-  it('sets the zoom anchor on a legacy adapter in stack mode', () => {
-    const tool = wheelOn(
-      makeAdapter('stack', 'stack', { getCamera: () => camera })
-    );
-
-    expect(tool.preMouseDownCallback).toHaveBeenCalled();
-  });
-
-  it('does not set it on a volume viewport, legacy or adapter', () => {
-    for (const viewport of [
-      makeLegacy('orthographic', { getCamera: () => camera }),
-      makeAdapter('volume', 'orthographic', { getCamera: () => camera }),
-    ]) {
-      expect(wheelOn(viewport).preMouseDownCallback).not.toHaveBeenCalled();
-    }
-  });
-});
-
 describe('RectangleROIThresholdTool new annotation', () => {
-  it('uses the image of the target id on a legacy adapter in stack mode', () => {
+  it('uses the image of the target id on a planar viewport in stack mode', () => {
     const tool = new RectangleROIThresholdTool();
     tool.getTargetId = () => 'imageId:wadors:image-7';
-    const viewport = makeAdapter('stack', 'stack', {
+    const viewport = makePlanar('stack', {
       getViewReference: () => ({}),
       getResolvedView: () => ({
         toICamera: () => ({ viewPlaneNormal: [0, 0, 1], viewUp: [0, -1, 0] }),
@@ -521,11 +419,11 @@ describe('UltrasoundDirectionalTool new annotation', () => {
       });
   }
 
-  it('accepts a legacy adapter in stack mode and an ECG adapter', () => {
-    expect(addOn(makeAdapter('stack', 'stack'))).not.toThrow();
+  it('accepts a planar viewport in stack mode and an ECG viewport', () => {
+    expect(addOn(makePlanar('stack'))).not.toThrow();
     expect(
       addOn(
-        makeAdapter('ecg', 'ecg', {
+        makeViewport('ecgNext', 'ecg', {
           getWaveformData: jest.fn(),
           getImageData: jest.fn(),
         })
@@ -533,42 +431,37 @@ describe('UltrasoundDirectionalTool new annotation', () => {
     ).not.toThrow();
   });
 
-  it('accepts the legacy stack and ECG viewports and rejects a volume one', () => {
-    expect(addOn(makeLegacy('stack'))).not.toThrow();
+  it('accepts a planar viewport in stack mode and an ECG viewport without data, and rejects a planar viewport in volume mode', () => {
+    expect(addOn(makePlanar('stack'))).not.toThrow();
     expect(
       addOn(
-        makeLegacy('ecg', {
-          getCurrentMode: () => 'empty',
+        makeViewport('ecgNext', 'empty', {
           getWaveformData: jest.fn(),
           getImageData: jest.fn(),
         })
       )
     ).not.toThrow();
-    expect(addOn(makeLegacy('orthographic'))).toThrow(
+    expect(addOn(makePlanar('volume'))).toThrow(
       'UltrasoundDirectionalTool can only be used on a StackViewport or ECGViewport'
     );
   });
 });
 
 describe('VolumeCroppingControlTool drag', () => {
-  it('ignores a drag on a 3D legacy adapter as on a legacy 3D viewport', () => {
-    for (const viewport of [
-      makeLegacy('volume3d'),
-      makeAdapter('volume3d', 'volume3d'),
-    ]) {
-      const tool = new VolumeCroppingControlTool();
-      tool._getAnnotations = jest.fn(() => []);
-      getEnabledElement.mockReturnValue({ viewport });
+  it('ignores a drag on a 3D viewport', () => {
+    const viewport = makeViewport('volume3dNext', 'volume3d');
+    const tool = new VolumeCroppingControlTool();
+    tool._getAnnotations = jest.fn(() => []);
+    getEnabledElement.mockReturnValue({ viewport });
 
-      tool._dragCallback({
-        detail: {
-          element: viewport.element,
-          deltaPoints: { world: [5, 0, 0] },
-        },
-      });
+    tool._dragCallback({
+      detail: {
+        element: viewport.element,
+        deltaPoints: { world: [5, 0, 0] },
+      },
+    });
 
-      expect(tool._getAnnotations).not.toHaveBeenCalled();
-    }
+    expect(tool._getAnnotations).not.toHaveBeenCalled();
   });
 });
 
@@ -582,11 +475,11 @@ describe('vtkOrientationControllerWidget margin', () => {
   }
 
   it('uses the 3D margin on a next 3D viewport, from its type', () => {
-    const legacy3D = markerX(makeLegacy('volume3d'));
-    const next3D = markerX({ ...makeAdapter('empty'), type: 'volume3dNext' });
-    const legacyPlanar = markerX(makeLegacy('orthographic'));
+    const plain3D = markerX(makeViewport('volume3d', 'volume3d'));
+    const next3D = markerX(makeViewport('volume3dNext', 'empty'));
+    const planar = markerX(makePlanar('volume'));
 
-    expect(next3D).toBe(legacy3D);
-    expect(next3D).not.toBe(legacyPlanar);
+    expect(next3D).toBe(plain3D);
+    expect(next3D).not.toBe(planar);
   });
 });

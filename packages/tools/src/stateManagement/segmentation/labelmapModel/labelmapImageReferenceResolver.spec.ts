@@ -25,7 +25,7 @@ jest.mock('./labelmapSegmentBindings', () => ({
   getLabelmapForSegment: jest.fn(),
 }));
 
-jest.mock('./labelmapLegacyAdapter', () => ({
+jest.mock('./labelmapPrimaryLayerFields', () => ({
   getReferencedImageIdToCurrentImageIdMap: jest.fn(),
 }));
 
@@ -43,7 +43,7 @@ const { ensureLabelmapState } = jest.requireMock(
 const { getLabelmaps } = jest.requireMock('./labelmapLayerStore');
 const { getLabelmapForSegment } = jest.requireMock('./labelmapSegmentBindings');
 const { getReferencedImageIdToCurrentImageIdMap } = jest.requireMock(
-  './labelmapLegacyAdapter'
+  './labelmapPrimaryLayerFields'
 );
 
 function makeSegmentation(overrides: Partial<Segmentation> = {}): Segmentation {

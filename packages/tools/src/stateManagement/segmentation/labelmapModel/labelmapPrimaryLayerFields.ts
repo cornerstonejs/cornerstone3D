@@ -19,6 +19,12 @@ function syncOptionalLegacyProperty<T extends object, K extends keyof T>(
   target[key] = value;
 }
 
+/**
+ * Keeps the top-level `volumeId`, `referencedVolumeId`, `imageIds` and
+ * `referencedImageIds` of the Labelmap data of a segmentation equal to those
+ * of its primary labelmap layer. Applications read these public fields of
+ * `LabelmapSegmentationData`. A field that the layer does not have is deleted.
+ */
 function syncLegacyLabelmapData(segmentation: Segmentation): void {
   const labelmapState = ensureLabelmapState(segmentation);
   if (!labelmapState) {

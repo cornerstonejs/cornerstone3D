@@ -4,7 +4,6 @@ jest.mock('@cornerstonejs/core', () => {
       Events: {
         CAMERA_MODIFIED: 'CORNERSTONE_CAMERA_MODIFIED',
         IMAGE_RENDERED: 'CORNERSTONE_IMAGE_RENDERED',
-        PRE_STACK_NEW_IMAGE: 'CORNERSTONE_PRE_STACK_NEW_IMAGE',
       },
       ViewportType: {
         PLANAR_NEXT: 'planarNext',
@@ -104,7 +103,7 @@ describe('segmentation imageChangeEventListener', () => {
     const enabledElement = {
       viewport: {
         id: viewportId,
-        type: 'stack',
+        type: 'planarNext',
         element,
         getCurrentImageId: () => 'image:0',
       },

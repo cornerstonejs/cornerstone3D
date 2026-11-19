@@ -1,19 +1,5 @@
-import {
-  CONSTANTS,
-  utilities as csUtils,
-  type Types,
-} from '@cornerstonejs/core';
+import { utilities as csUtils, type Types } from '@cornerstonejs/core';
 import { getViewportPresentation } from './viewportPresentation';
-
-const { RENDERING_DEFAULTS } = CONSTANTS;
-
-/**
- * Returns the minimum slab thickness: a next viewport has no slab API of the
- * legacy volume viewport.
- */
-export function getSlabThicknessOrDefault(_viewport: Types.IViewport): number {
-  return RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS;
-}
 
 /**
  * The full depth in mm that a viewport's slab shows, or undefined when the
