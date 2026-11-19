@@ -41,18 +41,6 @@ export type SurfaceClipResult = {
 export type PolyDataClipCacheType = Map<number, Map<string, SurfaceClipResult>>;
 
 /**
- * The contours cut from surfaces, by the id of the viewport, then by the id of
- * the surface (one segment of one segmentation), then by the slice
- * (`generateCacheId`): an entry is unique for its viewport, its surface and
- * its slice. A cut of a surface for a viewport replaces the entries of that
- * surface for that viewport.
- */
-const polyDataCache = new Map<
-  string,
-  Map<string, Map<string, SurfaceClipResult>>
->();
-
-/**
  * The bounding box of a surface by the array of its points, the one input of
  * the box. A surface whose points are another array, as after an update of
  * the surface, gets a new box. The key is weak: the cache keeps no array of a
@@ -81,12 +69,14 @@ function getSlicesClippingPlanes(viewport: Types.IViewport) {
  * Clips and caches surfaces for a specific viewport.
  *
  * @param surfacesInfo - An array of surfaces information. The id of each
- * surface must name that surface (its geometry id): the bounding box and the
- * contours are kept by it.
+ * surface must name that surface (its geometry id).
  * @param viewport - The volume viewport.
  * @returns The contours of these surfaces on this viewport, by segment index
  * and then by slice. Contours that other viewports or other surfaces got
- * before are not in it.
+ * before are not in it. Only the bounding box of a surface is kept between
+ * calls, by the array of its points: the module keeps no contour. Undefined
+ * for a viewport without slices, as a 3D viewport: there is nothing to cut,
+ * and the contour conversion gives no contour, as on the legacy 3D viewport.
  */
 export async function clipAndCacheSurfacesForViewport(
   surfacesInfo: SurfacesInfo[],
@@ -98,7 +88,7 @@ export async function clipAndCacheSurfacesForViewport(
 
   const planesInfo = getSlicesClippingPlanes(viewport);
 
-  if (!planesInfo) {
+  if (!planesInfo?.length) {
     // this means it is probably the stack viewport not being ready
     // in terms of planes which we should wait for the first render to
     // get the planes
@@ -127,17 +117,13 @@ export async function clipAndCacheSurfacesForViewport(
   });
 
   const { viewPlaneNormal } = viewport.getViewReference();
-  const viewportCache =
-    polyDataCache.get(viewport.id) ??
-    new Map<string, Map<string, SurfaceClipResult>>();
   const contoursBySegmentIndex = new Map() as PolyDataClipCacheType;
 
-  polyDataCache.set(viewport.id, viewportCache);
-  surfacesInfo.forEach(({ id, segmentIndex }) => {
-    const surfaceCache = new Map<string, SurfaceClipResult>();
-
-    viewportCache.set(id, surfaceCache);
-    contoursBySegmentIndex.set(Number(segmentIndex), surfaceCache);
+  surfacesInfo.forEach(({ segmentIndex }) => {
+    contoursBySegmentIndex.set(
+      Number(segmentIndex),
+      new Map<string, SurfaceClipResult>()
+    );
   });
 
   await workerManager

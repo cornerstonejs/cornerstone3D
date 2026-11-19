@@ -214,4 +214,51 @@ describe('imageSliceSyncCallback', () => {
 
     expect(utilities.jumpToSlice).not.toHaveBeenCalled();
   });
+
+  it('reads the source from its own rendering engine when the target is in another one', async () => {
+    const sourceViewport = createSourceViewport('image:2');
+    const targetViewport = createTargetViewport();
+    const engines = {
+      engineA: {
+        getViewport: (id) => (id === 'source' ? sourceViewport : undefined),
+      },
+      engineB: {
+        getViewport: (id) => (id === 'target' ? targetViewport : undefined),
+      },
+    };
+
+    getRenderingEngine.mockImplementation((id) => engines[id]);
+
+    await imageSliceSyncCallback(
+      createSynchronizerInstance(),
+      { renderingEngineId: 'engineA', viewportId: 'source' },
+      { renderingEngineId: 'engineB', viewportId: 'target' }
+    );
+
+    expect(utilities.jumpToSlice).toHaveBeenCalledWith(targetViewport.element, {
+      imageIndex: 2,
+    });
+  });
+
+  it('does nothing, and does not throw, when the source or the target viewport is disabled', async () => {
+    const sourceViewport = createSourceViewport('image:2');
+    const targetViewport = createTargetViewport();
+
+    for (const [source, target] of [
+      [undefined, targetViewport],
+      [sourceViewport, undefined],
+    ]) {
+      mockRenderingEngine(source, target);
+
+      await expect(
+        imageSliceSyncCallback(
+          createSynchronizerInstance(),
+          { renderingEngineId: 'rendering-engine', viewportId: 'source' },
+          { renderingEngineId: 'rendering-engine', viewportId: 'target' }
+        )
+      ).resolves.toBeUndefined();
+    }
+
+    expect(utilities.jumpToSlice).not.toHaveBeenCalled();
+  });
 });

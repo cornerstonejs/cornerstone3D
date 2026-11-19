@@ -7,6 +7,9 @@ jest.mock('@cornerstonejs/core', () => ({
   metaData: {
     get: jest.fn(),
   },
+  utilities: jest.requireActual(
+    '../../../../../core/src/utilities/viewportCapabilities'
+  ),
 }));
 
 jest.mock('../getSegmentation', () => ({

@@ -59,6 +59,8 @@ class PanTool extends BaseTool {
    * those axes at zero, as the legacy camera moved by that world delta. With
    * `limitToViewport` a drag that would take the picture out of the canvas,
    * or uncover the canvas when the picture is zoomed in, does not move it.
+   * The limit reads the move that the picture makes, with the ignored axes at
+   * zero, so a blocked axis does not stop the move on the other axis.
    */
   _dragCallback(evt: EventTypes.InteractionEventType) {
     const { element, deltaPoints } = evt.detail;
@@ -90,20 +92,19 @@ class PanTool extends BaseTool {
     }
     const viewport = enabledElement.viewport;
     const pannedViewport = viewport as unknown as PannedViewport;
-
-    if (
-      this.configuration.limitToViewport &&
-      !this.isPictureKeptInCanvas(pannedViewport, deltaPointsCanvas)
-    ) {
-      return;
-    }
-
     const canvasDelta =
       this.configuration.ignoreX ||
       this.configuration.ignoreY ||
       this.configuration.ignoreZ
         ? this.getCanvasDeltaOfWorldDelta(pannedViewport, deltaPointsWorld)
         : deltaPointsCanvas;
+
+    if (
+      this.configuration.limitToViewport &&
+      !this.isPictureKeptInCanvas(pannedViewport, canvasDelta)
+    ) {
+      return;
+    }
 
     if (panViewportByCanvasDelta(viewport, canvasDelta)) {
       viewport.render();

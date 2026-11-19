@@ -3,6 +3,7 @@ import * as csTools3d from '../src/index';
 import * as testUtils from '../../../utils/test/testUtils';
 import addOrUpdateSurfaceToElement from '../src/tools/displayTools/Surface/addOrUpdateSurfaceToElement';
 import removeSurfaceFromElement from '../src/tools/displayTools/Surface/removeSurfaceFromElement';
+import { createSeries } from '../../core/test/utils/planarSeriesBothModes';
 
 const { utilities, Enums, volumeLoader, geometryLoader, cache } = cornerstone3D;
 const { ViewportType, OrientationAxis, GeometryType } = Enums;
@@ -560,5 +561,46 @@ describe('Tools on a direct next 3D viewport -- ', () => {
     });
 
     expect(labelmapActorsOf(next).length).toBe(0);
+  });
+
+  it('adds and mounts the labelmap of a PT series, with its PT image ids as referenced image ids, on a 3D viewport of a CT series in the same frame of reference', async function () {
+    const next = createNextViewport(renderingEngine);
+    const ct = await createSeries({ id: 'next3DCT' });
+    const pt = await createSeries({ id: 'next3DPT', info: { PT: true } });
+    const { Labelmap } = csToolsEnums.SegmentationRepresentations;
+
+    utilities.genericViewportDisplaySetMetadataProvider.add('next3DCT', {
+      imageIds: ct.imageIds,
+      volumeId: ct.volumeId,
+    });
+    await next.setDisplaySets({
+      displaySetId: 'next3DCT',
+      options: { renderMode: 'vtkVolume3d' },
+    });
+    await volumeLoader.createAndCacheDerivedLabelmapVolume(pt.volumeId, {
+      volumeId: 'labelmap3D',
+    });
+    segmentation.addSegmentations([
+      {
+        segmentationId: 'labelmap3D',
+        representation: {
+          type: Labelmap,
+          data: { volumeId: 'labelmap3D', referencedImageIds: pt.imageIds },
+        },
+      },
+    ]);
+    segmentation.addSegmentationRepresentations(next.id, [
+      { segmentationId: 'labelmap3D', type: Labelmap },
+    ]);
+    await waitFor(() => labelmapActorsOf(next).length > 0);
+
+    expect(next.getCurrentMode()).toBe('volume3d');
+    expect(next.getImageIds()).toEqual(ct.imageIds);
+    expect(
+      segmentation.state.getSegmentationRepresentations(next.id, {
+        segmentationId: 'labelmap3D',
+      }).length
+    ).toBe(1);
+    expect(labelmapActorsOf(next).length).toBe(1);
   });
 });

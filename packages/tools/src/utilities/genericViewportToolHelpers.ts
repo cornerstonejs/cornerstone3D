@@ -11,7 +11,9 @@ import { getViewportPresentation } from './viewportPresentation';
  * the plane on each side, as the legacy `setSlabThickness(T)` did, so the
  * depth is twice the value, as the legacy helper gave twice
  * `getSlabThickness()`. A stack has no slab, and a viewport without display
- * set presentations gives undefined.
+ * set presentations gives undefined. A stack gives undefined also with a
+ * `slabThickness` in its presentation, which it does not draw, as the core
+ * reference controller does: the slab is read only for volume content.
  *
  * A caller that needs a depth, such as a brush fill, must use this function
  * and not the raw value. See
@@ -20,7 +22,10 @@ import { getViewportPresentation } from './viewportPresentation';
 export function getViewSlabDepthOfViewport(
   viewport: Types.IViewport
 ): number | undefined {
-  if (csUtils.viewportSupportsDisplaySetPresentation(viewport)) {
+  if (
+    csUtils.viewportIsInVolumeMode(viewport) &&
+    csUtils.viewportSupportsDisplaySetPresentation(viewport)
+  ) {
     const sourceDataId = viewport.getSourceDataId();
     const presentation = sourceDataId
       ? (viewport.getDisplaySetPresentation(sourceDataId) as

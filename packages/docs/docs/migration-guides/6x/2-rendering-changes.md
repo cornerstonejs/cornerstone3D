@@ -488,9 +488,10 @@ are, so between viewports of other data it gives another size.
   slices were missing. `utilities.getSlicesClippingPlanes(viewport)` gives
   them, for a volume and for a stack, and the cut of a surface into the
   contours of each slice uses it in both modes.
-- **The contours cut from surfaces are kept for each viewport and each
+- **The contours cut from surfaces are given for each viewport and each
   surface.** `clipAndCacheSurfacesForViewport(surfacesInfo, viewport)` of
-  polySeg gives the contours of those surfaces on that viewport only, so
+  polySeg gives the contours of those surfaces on that viewport only, and
+  keeps none of them after the call, so
   `extractContourData` of its result no longer holds the contours that
   other viewports or other segmentations with the same segment index got
   before, which a viewport then showed twice. The id of each surface names
@@ -513,6 +514,11 @@ are, so between viewports of other data it gives another size.
   `@cornerstonejs/tools/segmentation/helpers/getSegmentationActor` finds it,
   as on the legacy viewports: the entry has the prop as `actor` and the
   representation UID of the surface as `representationUID` and as `uid`.
+  Differs: the prop draws new points and polys of a surface when they are
+  other arrays, also of the same lengths, and the prop of a segment that the
+  labelmap no longer has goes at the next update of the surfaces. The legacy
+  viewports kept the old mesh when the lengths were the same, and kept the
+  surface of a removed segment.
 
 ## vtk.js actors and widgets of the application in a planar viewport
 
@@ -830,7 +836,11 @@ legacy picture within two levels of 255.
   in the corner of every viewport, so a view could show the marker of
   another view. Each tool now makes the markers of its own tool group only.
 - **A labelmap shows in 3D.** In 5.x a Labelmap representation drew nothing
-  on a next 3D viewport.
+  on a next 3D viewport. A 3D viewport with a mounted volume takes a labelmap
+  of its frame of reference, as a planar viewport in volume mode, also one
+  derived from another series (a PT labelmap on a CT). Differs: polySeg makes
+  a volume labelmap from contours or surfaces on a 3D viewport with a mounted
+  volume. In 5.x it made a stack labelmap of the images of the volume there.
 - **Zoom and pan.** Zoom 1 and pan `[0, 0]` are the fit of a reset. They are
   read and written through `viewportProjection`, as on every next viewport,
   and a 3D viewport has no `getZoom`, `setZoom`, `getPan` and `setPan`. The
@@ -993,7 +1003,9 @@ legacy picture within two levels of 255.
   `slabThickness` in the presentation of a next planar viewport fires
   `CAMERA_MODIFIED`, as a slab change of the legacy volume viewport did. The
   synchronizer then gives the slab of the source display set of the source
-  viewport to every display set of each target.
+  viewport to every display set of each target. A source that shows a stack
+  gives no slab, as the legacy synchronizer took none from a stack viewport,
+  and each viewport is read from its own rendering engine.
 - **The camera position synchronizer copies a view reference.** On a next
   target it sets the view reference of the source, and its zoom and pan.
 - **`utilities.getImageLegacy(element)` of the core is gone.** Use
@@ -1054,7 +1066,10 @@ legacy picture within two levels of 255.
   delta of the drag with that axis at zero. With `limitToViewport` a drag
   that would take the picture out of the canvas, or uncover the canvas when
   the picture is zoomed in, does not move it. In 5.x the four options did
-  nothing on a next viewport.
+  nothing on a next viewport. Differs: the limit reads the move with the
+  ignored axes at zero, so with `ignoreX` a drag right and down moves a
+  picture that touches the right edge down. The legacy viewports read the
+  whole drag and did not move it.
 - **A zoom keeps a stretch.** On a planar viewport with a scale pair, the
   zoom tool, the zoom and pan synchronizer and the undo of a zoom multiply
   both axes.

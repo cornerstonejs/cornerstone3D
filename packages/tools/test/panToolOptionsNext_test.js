@@ -259,4 +259,19 @@ describe('PanTool options on direct next planar viewports -- ', () => {
       }
     });
   }
+
+  it('moves the picture of a stack down on a drag right and down with limitToViewport and ignoreX, when the picture touches the right edge of the canvas', async function () {
+    const viewport = await createStack(renderingEngine);
+    const tool = createPanTool(viewport.id, {
+      limitToViewport: true,
+      ignoreX: true,
+    });
+
+    viewport.setZoom(0.5);
+    viewport.setPan([125, 0]);
+
+    drag(tool, viewport, [20, 20]);
+
+    expectPanClose(viewport, [125, 20]);
+  });
 });

@@ -1,6 +1,7 @@
 import * as cornerstone3D from '@cornerstonejs/core';
 import vtkSphereSource from '@kitware/vtk.js/Filters/Sources/SphereSource';
 import * as csTools3d from '../src/index';
+import * as polySeg from '../../polymorphic-segmentation/src/index';
 import * as testUtils from '../../../utils/test/testUtils';
 import { getConfig, setConfig } from '../src/config';
 import { getSurfaceActorEntry } from '../src/stateManagement/segmentation/helpers';
@@ -15,10 +16,11 @@ import {
   worldOfVoxel,
 } from '../../core/test/utils/planarSeriesBothModes';
 
-const { utilities, Enums, geometryLoader, cache } = cornerstone3D;
+const { utilities, Enums, geometryLoader, cache, eventTarget, volumeLoader } =
+  cornerstone3D;
 const { GeometryType } = Enums;
 const { segmentation, Enums: csToolsEnums } = csTools3d;
-const { Surface } = csToolsEnums.SegmentationRepresentations;
+const { Surface, Labelmap } = csToolsEnums.SegmentationRepresentations;
 
 const renderingEngineId = utilities.uuidv4();
 const segmentationId = 'surfacePlanarNextSegmentation';
@@ -37,6 +39,9 @@ const SIZE = {
 /** The centre and the radius of the sphere of the segmentation, in mm. */
 const CENTER = [10, 25, 30];
 const RADIUS = 8;
+
+/** The shift along x, in mm, of the points of the sphere in an edit. */
+const MOVE_X = 10;
 
 /** A channel that differs by more than this marks a pixel of the surface. */
 const CHANNEL_THRESHOLD = 40;
@@ -343,6 +348,53 @@ describe('A Surface representation on a direct next planar viewport -- ', () => 
     expect(hidden).toBeGreaterThanOrEqual(1);
   });
 
+  it('draws the cut of new surface data whose arrays have the same lengths as before, in volume mode', async function () {
+    const series = await createSeries({
+      id: 'surfacePlanarMoved',
+      size: SIZE,
+    });
+    const viewport = createNextViewport(renderingEngine, 'surfaceMoved');
+
+    await showVolume(viewport, series, 10);
+
+    const [before] = Object.values(await picturesBefore(viewport, [10]));
+
+    await showSurface(viewport);
+
+    const surface = cache.getGeometry(geometryId).data;
+    const movedCenter = [CENTER[0] + MOVE_X, CENTER[1], CENTER[2]];
+    const rendered = new Promise((resolve) => {
+      eventTarget.addEventListenerOnce(
+        csToolsEnums.Events.SEGMENTATION_RENDERED,
+        resolve
+      );
+    });
+
+    surface.points = surface.points.map((value, index) =>
+      index % 3 === 0 ? value + MOVE_X : value
+    );
+    surface.polys = surface.polys.slice();
+    segmentation.triggerSegmentationEvents.triggerSegmentationModified(
+      segmentationId
+    );
+    await rendered;
+    await renderAndWait(viewport);
+
+    const height = heightOfCenter(viewport);
+    const cutRadius = Math.sqrt(RADIUS * RADIUS - height * height);
+    const millimetre = pixelsPerMillimetre(viewport, series);
+    const [cx, cy] = viewport.worldToCanvas(movedCenter);
+    const { points } = changedPixels(viewport, before);
+    const radii = points.map(
+      ([x, y]) => Math.hypot(x - cx, y - cy) / millimetre
+    );
+
+    expect(Math.abs(height)).toBeLessThan(RADIUS - 0.5);
+    expect(points.length).toBeGreaterThan(MIN_CUT_PIXELS);
+    expect(Math.min(...radii)).toBeGreaterThan(cutRadius - 1.5);
+    expect(Math.max(...radii)).toBeLessThan(cutRadius + 1);
+  });
+
   it('takes the surface out of the renderer when the representation is removed', async function () {
     const series = await createSeries({
       id: 'surfacePlanarRemove',
@@ -467,4 +519,110 @@ describe('A Surface representation on a direct next planar viewport -- ', () => 
       getSurfaceSlicePropEntry(viewport, representationUID)
     ).toBeUndefined();
   });
+});
+
+/**
+ * The voxel blocks of segment 1 and of segment 2 of the labelmap of the
+ * polymorphic segmentation tests, as [first, last] index on each axis.
+ */
+const SEGMENT_BLOCKS = {
+  1: [
+    [4, 12],
+    [10, 18],
+    [6, 14],
+  ],
+  2: [
+    [24, 32],
+    [10, 18],
+    [6, 14],
+  ],
+};
+
+/** Gives each voxel of the block of a segment the value `value`. */
+function fillSegmentBlock(voxelManager, segmentIndex, value) {
+  const [[i0, i1], [j0, j1], [k0, k1]] = SEGMENT_BLOCKS[segmentIndex];
+
+  for (let k = k0; k <= k1; k++) {
+    for (let j = j0; j <= j1; j++) {
+      for (let i = i0; i <= i1; i++) {
+        voxelManager.setAtIJK(i, j, k, value);
+      }
+    }
+  }
+}
+
+describe('A Surface representation that the polySeg add-on computes from a labelmap, on a direct next planar viewport -- ', () => {
+  const labelmapSegmentationId = 'surfacePlanarNextLabelmap';
+  let renderingEngine;
+  let config;
+
+  beforeEach(function () {
+    renderingEngine = testUtils.setupTestEnvironment({
+      renderingEngineId,
+    }).renderingEngine;
+    config = getConfig();
+    polySeg.init();
+    setConfig({ ...config, addons: { ...config.addons, polySeg } });
+  });
+
+  afterEach(function () {
+    setConfig(config);
+    testUtils.cleanupTestEnvironment({ renderingEngineId });
+    utilities.genericViewportDisplaySetMetadataProvider.clear?.();
+  });
+
+  it('takes the surface of an erased segment off the viewport, and its entry out of the geometry map, at the update', async function () {
+    const series = await createSeries({
+      id: 'surfacePlanarErase',
+      size: SIZE,
+    });
+    const viewport = createNextViewport(renderingEngine, 'surfaceErase');
+
+    await showVolume(viewport, series, 10);
+    volumeLoader.createAndCacheDerivedLabelmapVolume(series.volumeId, {
+      volumeId: labelmapSegmentationId,
+    });
+
+    const { voxelManager } = cache.getVolume(labelmapSegmentationId);
+
+    fillSegmentBlock(voxelManager, 1, 1);
+    fillSegmentBlock(voxelManager, 2, 2);
+    segmentation.addSegmentations([
+      {
+        segmentationId: labelmapSegmentationId,
+        representation: {
+          type: Labelmap,
+          data: { volumeId: labelmapSegmentationId },
+        },
+        config: { segments: { 1: {}, 2: {} } },
+      },
+    ]);
+    segmentation.addSegmentationRepresentations(viewport.id, [
+      { segmentationId: labelmapSegmentationId, type: Surface },
+    ]);
+    await waitFor(() => surfaceProps(viewport).length === 2, 5000);
+
+    const segmentIndicesOfSurface = () => [
+      ...segmentation.state
+        .getSegmentation(labelmapSegmentationId)
+        .representationData.Surface.geometryIds.keys(),
+    ];
+    const propOf = (segmentIndex) =>
+      getSurfaceActorEntry(viewport.id, labelmapSegmentationId, segmentIndex);
+    const propOfSegment1 = propOf(1).actor;
+
+    expect(propOf(2)).toBeDefined();
+    expect(segmentIndicesOfSurface().sort()).toEqual([1, 2]);
+
+    segmentation.removeSegment(labelmapSegmentationId, 2);
+    await waitFor(() => surfaceProps(viewport).length === 1, 3000).catch(
+      () => undefined
+    );
+
+    expect(propOf(2)?.uid).toBeUndefined();
+    expect(surfaceProps(viewport).length).toBe(1);
+    expect(surfaceProps(viewport)[0]).toBe(propOfSegment1);
+    expect(propOf(1).actor).toBe(propOfSegment1);
+    expect(segmentIndicesOfSurface()).toEqual([1]);
+  }, 30000);
 });

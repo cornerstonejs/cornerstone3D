@@ -1,4 +1,4 @@
-import { Enums, cache, metaData, type Types } from '@cornerstonejs/core';
+import { cache, metaData, utilities, type Types } from '@cornerstonejs/core';
 import { SegmentationRepresentations } from '../../../enums';
 import { getSegmentation } from '../getSegmentation';
 import { getLabelmaps } from '../labelmapModel';
@@ -141,14 +141,6 @@ function stackViewportReferencesImages(
 }
 
 /**
- * Whether a `PlanarViewport` currently shows a volume. That class serves both a
- * stack and a volume, and its mode says which.
- */
-function mountsAVolume(viewport: { getCurrentMode?: () => string }): boolean {
-  return viewport.getCurrentMode?.() === 'volume';
-}
-
-/**
  * The single place that decides whether a segmentation overlay
  * (representation) is compatible with a viewport, i.e. whether the viewport is
  * a suitable destination for it. Any future compatibility rule - new
@@ -168,8 +160,11 @@ function mountsAVolume(viewport: { getCurrentMode?: () => string }): boolean {
  *   FrameOfReferenceUID is compatible - even one derived from a series the
  *   viewport does not display (data-overlay and cross-series painting
  *   workflows rely on this). Only a differing frame of reference suppresses.
- *   A viewport counts as a volume viewport when it is a planar viewport that
- *   shows a volume.
+ *   A viewport counts as a volume viewport when it shows a volume
+ *   (`utilities.viewportIsInVolumeMode`): a planar viewport in volume mode, or
+ *   a 3D viewport with a mounted volume. A planar viewport that shows a stack
+ *   takes the stack rule, as its frame of reference is a synthetic one that no
+ *   labelmap can match.
  *
  * Returns `true` whenever compatibility cannot be determined (unknown
  * segmentation, no source images or frame of reference derivable yet, viewport
@@ -197,16 +192,7 @@ export function isSegmentationOverlayCompatible(
 
   const layers = getLabelmaps(segmentation);
 
-  // A `PlanarViewport` shows a stack or a volume, so it is asked which of the
-  // two it currently shows: a stack-backed one that took the volume rule
-  // reports a synthetic frame of reference (`planarNext-viewport-<id>`) that
-  // no labelmap can match, and every representation was dropped. Every other
-  // viewport takes the stack rule.
-  const isVolumeViewport =
-    viewport.type === Enums.ViewportType.PLANAR &&
-    mountsAVolume(viewport as Parameters<typeof mountsAVolume>[0]);
-
-  return isVolumeViewport
+  return utilities.viewportIsInVolumeMode(viewport)
     ? volumeViewportSharesFrameOfReference(viewport, layers)
     : stackViewportReferencesImages(viewport, layers);
 }

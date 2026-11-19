@@ -115,6 +115,33 @@ describe('The slab depth of a direct next planar viewport, as a brush reads it -
     expect(viewport.getCurrentMode()).toBe('stack');
     expect(getViewSlabDepthOfViewport(viewport)).toBeUndefined();
   });
+
+  it('is undefined in stack mode with a slab thickness in the presentation of the stack, which draws one image', async function () {
+    const viewport = createNextViewport(renderingEngine);
+    const imageId = testUtils.encodeImageIdInfo({
+      loader: 'fakeImageLoader',
+      name: 'imageURI',
+      rows: 64,
+      columns: 64,
+      barStart: 10,
+      barWidth: 5,
+      xSpacing: 1,
+      ySpacing: 1,
+      sliceIndex: 0,
+    });
+
+    await testUtils.setStackOnNextViewport(viewport, [imageId], 0);
+    viewport.setDisplaySetPresentation(viewport.getSourceDataId(), {
+      slabThickness: 5,
+    });
+
+    expect(viewport.getCurrentMode()).toBe('stack');
+    expect(
+      viewport.getDisplaySetPresentation(viewport.getSourceDataId())
+        .slabThickness
+    ).toBe(5);
+    expect(getViewSlabDepthOfViewport(viewport)).toBeUndefined();
+  });
 });
 
 /** Resolves after the given number of milliseconds. */

@@ -5,6 +5,11 @@ import Representations from '../../../enums/SegmentationRepresentations';
 import type { SegmentationRepresentation } from '../../../types/SegmentationStateTypes';
 import removeSurfaceFromElement from './removeSurfaceFromElement';
 import addOrUpdateSurfaceToElement from './addOrUpdateSurfaceToElement';
+import {
+  removeSurfaceSliceProps,
+  showsSurfacesAsSliceProps,
+} from './surfaceSliceProps';
+import { getSurfaceRepresentationUID } from '../../../stateManagement/segmentation/helpers/getSegmentationActor';
 import { getSegmentation } from '../../../stateManagement/segmentation/getSegmentation';
 import { getColorLUT } from '../../../stateManagement/segmentation/getColorLUT';
 import { getPolySeg } from '../../../config';
@@ -56,7 +61,8 @@ function removeRepresentation(
 }
 
 /**
- * It renders the Surface  for the given segmentation
+ * It renders the Surface  for the given segmentation. On a planar viewport,
+ * the props of the segments that the geometry map no longer has go.
  * @param viewport - The viewport object
  * @param representation - SegmentationRepresentation
  * @param toolGroupConfig - This is the configuration object for the tool group
@@ -130,6 +136,7 @@ async function render(
 
   const surfaces = [];
   const surfacesShown: Promise<void>[] = [];
+  const shownRepresentationUIDs = new Set<string>();
   geometryIds.forEach((geometryId) => {
     const geometry = cache.getGeometry(geometryId) as Types.IGeometry;
 
@@ -154,6 +161,9 @@ async function render(
     surface.visible = !isHidden;
 
     surfaces.push(surface);
+    shownRepresentationUIDs.add(
+      getSurfaceRepresentationUID(segmentationId, segmentIndex)
+    );
     surfacesShown.push(
       addOrUpdateSurfaceToElement(
         viewport as Types.IViewport,
@@ -163,6 +173,14 @@ async function render(
       )
     );
   });
+
+  if (showsSurfacesAsSliceProps(viewport)) {
+    removeSurfaceSliceProps(
+      viewport,
+      getSurfaceRepresentationUID(segmentationId, ''),
+      shownRepresentationUIDs
+    );
+  }
 
   await Promise.all(surfacesShown);
   viewport.render();

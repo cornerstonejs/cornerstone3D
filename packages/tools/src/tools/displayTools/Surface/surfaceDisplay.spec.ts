@@ -19,6 +19,7 @@ const mockAddOrUpdateSurfaceToElement = jest.fn();
 // surfaceDisplay.ts builds its logger at module scope, and the hoisted import
 // runs before the consts above, so the logger is inlined here.
 jest.mock('@cornerstonejs/core', () => ({
+  Enums: { ViewportType: { VOLUME_3D: 'volume3d' } },
   cache: { getGeometry: (...a: unknown[]) => mockGetGeometry(...a) },
   getEnabledElementByViewportId: jest.fn(),
   utilities: {

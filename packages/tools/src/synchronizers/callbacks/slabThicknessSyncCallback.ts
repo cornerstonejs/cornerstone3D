@@ -22,7 +22,12 @@ function getPresentationSlabThickness(
  * of the source viewport to each display set of the target viewport whose
  * slab differs, as the legacy synchronizer gave it to every volume of the
  * target. A planar viewport fires CAMERA_MODIFIED when a slab changes, as the
- * legacy volume viewport did.
+ * legacy volume viewport did. Each viewport is read from its own rendering
+ * engine, and a disabled source or target does nothing. Only a source that
+ * shows a volume gives its slab, as the legacy synchronizer read the slab of
+ * a volume viewport only: a stack, which draws no slab, leaves the slab of
+ * the targets as it is. A volume source without a slab clears the slab of
+ * the targets.
  */
 export default function slabThicknessSyncCallback(
   _synchronizerInstance,
@@ -37,9 +42,12 @@ export default function slabThicknessSyncCallback(
   }
 
   const tViewport = renderingEngine.getViewport(targetViewport.viewportId);
-  const sViewport = renderingEngine.getViewport(sourceViewport.viewportId);
+  const sViewport = getRenderingEngine(
+    sourceViewport.renderingEngineId
+  )?.getViewport(sourceViewport.viewportId);
 
   if (
+    !utilities.viewportIsInVolumeMode(sViewport) ||
     !utilities.viewportSupportsDisplaySetPresentation(sViewport) ||
     !utilities.viewportSupportsDisplaySetPresentation(tViewport)
   ) {

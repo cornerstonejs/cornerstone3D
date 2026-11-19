@@ -5,6 +5,15 @@ import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
 import vtkCellArray from '@kitware/vtk.js/Common/Core/CellArray';
 
 /**
+ * The points and the polys arrays of the surface that each actor draws, so
+ * that an actor takes new data when a surface gets other arrays.
+ */
+const shownSurfaceByActor = new WeakMap<
+  vtkActor,
+  Pick<Types.ISurface, 'points' | 'polys'>
+>();
+
+/**
  * The vtk.js poly data of the points and the polys of a surface.
  *
  * @param surface - The surface.
@@ -37,14 +46,19 @@ function createSurfaceActor(surface: Types.ISurface): vtkActor {
   actor.setMapper(mapper);
   actor.getProperty().setColor(r / 255, g / 255, b / 255);
   actor.getProperty().setLineWidth(2);
+  shownSurfaceByActor.set(actor, {
+    points: surface.points,
+    polys: surface.polys,
+  });
 
   return actor;
 }
 
 /**
  * Gives the actor of a surface the points and the polys of the surface when
- * their number of values changed. The same numbers are taken as the same
- * data.
+ * the surface has other points or polys arrays than the ones that the actor
+ * draws, as the 3D viewport does at each render. New arrays of the same
+ * lengths are new data too.
  *
  * @param actor - The actor of the surface.
  * @param surface - The surface.
@@ -55,17 +69,21 @@ function updateSurfaceActorData(
   surface: Types.ISurface
 ): boolean {
   const mapper = actor.getMapper() as vtkMapper;
-  const polyData = mapper.getInputData() as vtkPolyData;
+  const shownSurface = shownSurfaceByActor.get(actor as vtkActor);
 
   if (
-    surface.points.length === polyData.getPoints().getData().length &&
-    surface.polys.length === polyData.getPolys().getData().length
+    shownSurface?.points === surface.points &&
+    shownSurface?.polys === surface.polys
   ) {
     return false;
   }
 
   mapper.setInputData(createSurfacePolyData(surface));
   mapper.modified();
+  shownSurfaceByActor.set(actor as vtkActor, {
+    points: surface.points,
+    polys: surface.polys,
+  });
 
   return true;
 }

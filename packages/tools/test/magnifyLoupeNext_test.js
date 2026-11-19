@@ -820,6 +820,44 @@ describe('The loupe of MagnifyTool on a next planar viewport -- ', () => {
     await pressAndDrag(source, [230, 120], LEGACY_MAGNIFY.stack);
   }, 20000);
 
+  it('centres the loupe on the point under the pointer when the pointer moved before the loupe was mounted', async function () {
+    const source = createSource(renderingEngine);
+    const getLoupe = () => renderingEngine.getViewport(MAGNIFY_VIEWPORT_ID);
+    const pressed = [230, 120];
+    const dragged = [260, 140];
+
+    await showStack(source);
+
+    const worldPressed = source.canvasToWorld(pressed);
+    const worldDragged = source.canvasToWorld(dragged);
+
+    tool.preMouseDownCallback({
+      type: csTools3d.Enums.Events.MOUSE_DOWN,
+      detail: pointer(source, pressed),
+      preventDefault() {},
+    });
+    tool._dragCallback({
+      detail: {
+        ...pointer(source, dragged),
+        deltaPoints: {
+          canvas: [30, 20],
+          world: worldDragged.map((value, axis) => value - worldPressed[axis]),
+        },
+      },
+    });
+
+    expect(getLoupe().getViewState().anchorWorld).toBeUndefined();
+
+    const loupe = await waitForLoupe(getLoupe);
+    const centreWorld = loupe.canvasToWorld(getCentre(loupe));
+
+    worldDragged.forEach((value, axis) => {
+      expect(centreWorld[axis]).toBeCloseTo(value, 3);
+    });
+
+    tool._dragEndCallback({ detail: { element: source.element } });
+  }, 20000);
+
   it('shows the slice under the pointer magnified, turned and flipped as its source in volume mode', async function () {
     const source = createSource(renderingEngine);
 

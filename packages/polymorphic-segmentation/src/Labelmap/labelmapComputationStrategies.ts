@@ -75,7 +75,7 @@ async function computeLabelmapFromContourSegmentation(
   | ToolsTypes.LabelmapSegmentationDataStack
 > {
   const isVolume = options.viewport
-    ? cornerstoneUtilities.getViewportContentMode(options.viewport) === 'volume'
+    ? cornerstoneUtilities.viewportIsInVolumeMode(options.viewport)
     : true;
 
   if (isVolume && !options.viewport) {
@@ -117,7 +117,7 @@ async function computeLabelmapFromSurfaceSegmentation(
 > {
   const { viewport } = options;
   const isVolume = viewport
-    ? cornerstoneUtilities.getViewportContentMode(viewport) === 'volume'
+    ? cornerstoneUtilities.viewportIsInVolumeMode(viewport)
     : true;
 
   const segmentIndices = options.segmentIndices?.length

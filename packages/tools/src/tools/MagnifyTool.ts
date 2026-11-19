@@ -138,7 +138,10 @@ class MagnifyTool extends BaseTool {
    * viewport. It shows the source display set with the presentation, the
    * slice, the orientation, the rotation and the flips of the source, with
    * the world point under the pointer at its centre. Its canvas spans
-   * `1 / magnifySize` of the world height that the source canvas spans.
+   * `1 / magnifySize` of the world height that the source canvas spans. The
+   * mount is asynchronous: when it finishes, the loupe centres on the point
+   * of the last drag of the interaction (`editData.currentPoints`), so a
+   * pointer that moved during the mount is followed.
    */
   _createMagnificationViewport = () => {
     const {
@@ -197,7 +200,7 @@ class MagnifyTool extends BaseTool {
       syncLoupeWithSource(
         sourceViewport,
         magnifyViewport,
-        worldPos,
+        this.editData?.currentPoints.world ?? worldPos,
         worldPerPixel
       );
       magnifyViewport.render();
@@ -235,6 +238,10 @@ class MagnifyTool extends BaseTool {
 
     if (!magnifyElement) {
       return;
+    }
+
+    if (this.editData) {
+      this.editData.currentPoints = currentPoints;
     }
 
     this._positionMagnifyElement(magnifyElement, canvasPos, element);

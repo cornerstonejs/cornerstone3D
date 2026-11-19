@@ -185,10 +185,13 @@ function addOrUpdateSurfaceSliceProp(
  * @param viewport - The planar viewport.
  * @param representationUIDPrefix - The start of the representation UIDs of
  * the surfaces of the segmentation.
+ * @param keptRepresentationUIDs - The representation UIDs of the surfaces
+ * that stay. None when not given.
  */
 function removeSurfaceSliceProps(
   viewport: PlanarViewport,
-  representationUIDPrefix: string
+  representationUIDPrefix: string,
+  keptRepresentationUIDs?: Set<string>
 ): void {
   const sliceSurfaces = sliceSurfacesByViewport.get(viewport);
 
@@ -199,7 +202,10 @@ function removeSurfaceSliceProps(
   const renderer = viewport.getRenderer();
 
   for (const [representationUID, actor] of sliceSurfaces.actors) {
-    if (representationUID.startsWith(representationUIDPrefix)) {
+    if (
+      representationUID.startsWith(representationUIDPrefix) &&
+      !keptRepresentationUIDs?.has(representationUID)
+    ) {
       renderer.removeActor(actor);
       sliceSurfaces.actors.delete(representationUID);
     }

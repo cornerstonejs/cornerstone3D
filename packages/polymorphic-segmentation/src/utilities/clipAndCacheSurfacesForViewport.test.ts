@@ -197,4 +197,20 @@ describe('clipAndCacheSurfacesForViewport', () => {
     expect(points.deref()).toBeUndefined();
     expect(polys.deref()).toBeUndefined();
   });
+
+  it('keeps no contour of a conversion once the caller drops its result', async () => {
+    const viewport = viewportOf('droppedResult') as never;
+    let result = await clipAndCacheSurfacesForViewport(
+      [surfaceOf('droppedResult-1', 1, 50)],
+      viewport
+    );
+    const contour = new WeakRef([...result.get(1).values()][0]);
+
+    result = undefined;
+    mockWorker.executeTask.mockClear();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    collectGarbage();
+
+    expect(contour.deref()).toBeUndefined();
+  });
 });

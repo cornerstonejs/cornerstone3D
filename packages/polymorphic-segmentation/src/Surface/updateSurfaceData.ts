@@ -85,6 +85,31 @@ function removeSurfaceActors(
   });
 }
 
+/**
+ * Takes the segments that the labelmap no longer has out of the geometry map
+ * of the Surface representation, and their geometries out of the cache. A
+ * planar viewport then drops their props at its next render of the
+ * representation, which draws only the segments of the map.
+ *
+ * @param geometryIds - The geometry map of the Surface representation.
+ * @param segmentIndices - The segment indices of the labelmap.
+ */
+function removeGeometriesOfRemovedSegments(
+  geometryIds: Map<number, string> | undefined,
+  segmentIndices: number[]
+): void {
+  geometryIds?.forEach((geometryId, segmentIndex) => {
+    if (segmentIndices.includes(segmentIndex)) {
+      return;
+    }
+
+    geometryIds.delete(segmentIndex);
+    if (cache.getGeometry(geometryId)) {
+      cache.removeGeometryLoadObject(geometryId);
+    }
+  });
+}
+
 async function updateSurfaceDataOnce(segmentationId: string) {
   const surfacesObj =
     await computeSurfaceFromLabelmapSegmentation(segmentationId);
@@ -150,6 +175,11 @@ async function updateSurfaceDataOnce(segmentationId: string) {
       }
     });
   });
+
+  removeGeometriesOfRemovedSegments(
+    segmentation?.representationData.Surface?.geometryIds,
+    indices
+  );
 
   const promises = surfacesObj.map(({ data, segmentIndex }) => {
     const geometryId = `segmentation_${segmentationId}_surface_${segmentIndex}`;

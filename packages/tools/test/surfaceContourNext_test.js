@@ -245,4 +245,38 @@ describe('A surface shown as contours on a direct next planar viewport -- ', () 
     );
     expectTheContourOfTheSliceOnDisplay(viewport);
   });
+
+  it('gives no contour on a 3D viewport, which has no slice to cut, as on the legacy 3D viewport', async function () {
+    const series = await createSeriesAtDepth(3000);
+
+    testUtils.createViewports(renderingEngine, {
+      viewportType: Enums.ViewportType.VOLUME_3D,
+      viewportId: 'contour3D',
+      orientation: Enums.OrientationAxis.CORONAL,
+      width: 400,
+      height: 300,
+      useEnableElement: true,
+    });
+
+    const viewport = renderingEngine.getViewport('contour3D');
+
+    utilities.genericViewportDisplaySetMetadataProvider.add('contour3DVolume', {
+      imageIds: series.imageIds,
+      volumeId: series.volumeId,
+    });
+    await viewport.setDisplaySets({
+      displaySetId: 'contour3DVolume',
+      options: { renderMode: 'vtkVolume3d' },
+    });
+    addBoxSurfaceSegmentation(3000);
+
+    const { annotationUIDsMap } = await polySeg.computeContourData(
+      segmentationId,
+      { viewport }
+    );
+
+    expect(viewport.getCurrentMode()).toBe('volume3d');
+    expect(annotationUIDsMap.size).toBe(0);
+    expect(contourAnnotations(viewport).length).toBe(0);
+  });
 });

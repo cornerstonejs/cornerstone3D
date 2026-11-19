@@ -54,6 +54,9 @@ function isVolumeSliceViewport(viewport: PlanarViewport): boolean {
  * the user has actually manually scrolled the target viewport to the correct
  * slice before initiating the synchronization 3) using some other method
  *
+ * Each viewport is read from its own rendering engine, and a disabled source
+ * or target does nothing.
+ *
  * @param synchronizerInstance - The Instance of the Synchronizer
  * @param sourceViewport - The list of IDs defining the source viewport.
  * @param targetViewport - The list of IDs defining the target viewport, never
@@ -72,9 +75,9 @@ export default async function imageSliceSyncCallback(
     );
   }
 
-  const sViewport = renderingEngine.getViewport(
-    sourceViewport.viewportId
-  ) as PlanarViewport;
+  const sViewport = getRenderingEngine(
+    sourceViewport.renderingEngineId
+  )?.getViewport(sourceViewport.viewportId) as PlanarViewport;
 
   const options = synchronizerInstance.getOptions(targetViewport.viewportId);
 
@@ -85,6 +88,10 @@ export default async function imageSliceSyncCallback(
   const tViewport = renderingEngine.getViewport(
     targetViewport.viewportId
   ) as PlanarViewport;
+
+  if (!sViewport || !tViewport) {
+    return;
+  }
 
   const imageId1 = sViewport.getCurrentImageId();
   const imagePlaneModule1 = metaData.get('imagePlaneModule', imageId1);

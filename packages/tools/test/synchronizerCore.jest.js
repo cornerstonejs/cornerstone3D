@@ -25,6 +25,9 @@ jest.mock('@cornerstonejs/core', () => {
       getViewportContentMode: jest.fn((viewport) =>
         viewport?.getCurrentMode?.()
       ),
+      viewportIsInVolumeMode: jest.fn((viewport) =>
+        ['volume', 'volume3d'].includes(viewport?.getCurrentMode?.())
+      ),
       viewportSupportsDisplaySetPresentation: jest.fn(
         (viewport) =>
           typeof viewport?.getSourceDataId === 'function' &&
@@ -738,10 +741,11 @@ describe('voiSyncCallback', () => {
 
 describe('slabThicknessSyncCallback', () => {
   /**
-   * A stand-in of a next viewport whose display sets have the slab
-   * thicknesses given, the first one as its source display set.
+   * A stand-in of a next viewport in the content mode given, volume by
+   * default, whose display sets have the slab thicknesses given, the first
+   * one as its source display set.
    */
-  function makeSlabViewport(slabThicknesses) {
+  function makeSlabViewport(slabThicknesses, mode = 'volume') {
     const presentations = new Map(
       Object.entries(slabThicknesses).map(([displaySetId, slabThickness]) => [
         displaySetId,
@@ -750,6 +754,7 @@ describe('slabThicknessSyncCallback', () => {
     );
 
     return {
+      getCurrentMode: jest.fn(() => mode),
       getSourceDataId: jest.fn(() => Object.keys(slabThicknesses)[0]),
       getDefaultVOIRange: jest.fn(),
       getDisplaySets: jest.fn(() =>
@@ -804,6 +809,27 @@ describe('slabThicknessSyncCallback', () => {
     expect(targetViewport.render).not.toHaveBeenCalled();
   });
 
+  it('does nothing for a source that shows a stack, which draws no slab', () => {
+    const sourceViewport = makeSlabViewport({ stack: undefined }, 'stack');
+    const targetViewport = makeSlabViewport({ ct: 5 });
+
+    syncSlab(sourceViewport, targetViewport);
+
+    expect(targetViewport.setDisplaySetPresentation).not.toHaveBeenCalled();
+    expect(targetViewport.render).not.toHaveBeenCalled();
+  });
+
+  it('clears the slab of the target for a volume source without a slab', () => {
+    const sourceViewport = makeSlabViewport({ ct: undefined });
+    const targetViewport = makeSlabViewport({ ct: 5 });
+
+    syncSlab(sourceViewport, targetViewport);
+
+    expect(targetViewport.setDisplaySetPresentation.mock.calls).toEqual([
+      ['ct', { slabThickness: undefined }],
+    ]);
+  });
+
   it('does nothing when the source viewport has no display set presentation', () => {
     const targetViewport = makeSlabViewport({ ct: 1 });
 
@@ -819,6 +845,41 @@ describe('slabThicknessSyncCallback', () => {
     expect(() =>
       syncSlab(makeSlabViewport({ ct: 5 }), targetViewport)
     ).not.toThrow();
+    expect(targetViewport.render).not.toHaveBeenCalled();
+  });
+
+  it('reads the source from its own rendering engine when the target is in another one', () => {
+    const sourceViewport = makeSlabViewport({ ct: 5 });
+    const targetViewport = makeSlabViewport({ ct: 1 });
+    const engines = {
+      engineA: {
+        getViewport: (id) => (id === 'source' ? sourceViewport : undefined),
+      },
+      engineB: {
+        getViewport: (id) => (id === 'target' ? targetViewport : undefined),
+      },
+    };
+
+    getRenderingEngine.mockImplementation((id) => engines[id]);
+    slabThicknessSyncCallback(
+      {},
+      { renderingEngineId: 'engineA', viewportId: 'source' },
+      { renderingEngineId: 'engineB', viewportId: 'target' }
+    );
+
+    expect(sourceViewport.getDisplaySetPresentation).toHaveBeenCalled();
+    expect(targetViewport.setDisplaySetPresentation.mock.calls).toEqual([
+      ['ct', { slabThickness: 5 }],
+    ]);
+  });
+
+  it('does nothing, and does not throw, when the source or the target viewport is disabled', () => {
+    const sourceViewport = makeSlabViewport({ ct: 5 });
+    const targetViewport = makeSlabViewport({ ct: 1 });
+
+    expect(() => syncSlab(undefined, targetViewport)).not.toThrow();
+    expect(() => syncSlab(sourceViewport, undefined)).not.toThrow();
+    expect(targetViewport.setDisplaySetPresentation).not.toHaveBeenCalled();
     expect(targetViewport.render).not.toHaveBeenCalled();
   });
 
