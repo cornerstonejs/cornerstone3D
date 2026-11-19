@@ -24,8 +24,10 @@ In order to render a video we need:
 
 ```js
 import { init as coreInit } from '@cornerstonejs/core';
+import { init as dicomImageLoaderInit } from '@cornerstonejs/dicom-image-loader';
 
 await coreInit();
+await dicomImageLoaderInit();
 ```
 
 **Create an HTML element**
@@ -65,17 +67,32 @@ const viewportInput = {
 renderingEngine.enableElement(viewportInput);
 ```
 
-RenderingEngine will handle creation of the viewports, and we can get the viewport object and set the video URL on it, and choose the index of the image to be displayed.
+RenderingEngine will handle creation of the viewports. A video viewport shows a
+video display set. The image id of a DICOM video instance can be passed as the
+`displaySetId`, so no registration is needed. The demo helper
+`createDisplaySets` splits a series into display sets, and the one that it marks
+as `'video'` holds the video.
 
 ```js
+const displaySets = await createDisplaySets({
+  StudyInstanceUID: '2.25.96975534054447904995905761963464388233',
+  SeriesInstanceUID: '2.25.15054212212536476297201250326674987992',
+  wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
+});
+const videoDisplaySet = displaySets.find((ds) => ds.handler === 'video');
+
 const viewport = renderingEngine.getViewport(viewportId);
 
-await viewport.setVideoURL(
-  'https://ohif-assets-new.s3.us-east-1.amazonaws.com/video/rendered.mp4'
-);
+await viewport.setDisplaySets({
+  displaySetId: videoDisplaySet.instances[0].imageId,
+});
 
 await viewport.play();
 ```
+
+The video opens on its first frame. Pass `options: { frameNumber }` in the
+entry of `setDisplaySets` to open it on another frame (frame numbers start at
+1).
 
 :::note Tip
 For a compliant DICOMweb server, the video will be available on the rendered endpoint.
@@ -96,6 +113,8 @@ For instance you can look at this example in OHIF which uses the rendered endpoi
 
 ```js
 import { init as coreInit, RenderingEngine, Enums } from '@cornerstonejs/core';
+import { init as dicomImageLoaderInit } from '@cornerstonejs/dicom-image-loader';
+import { createDisplaySets } from '../../../../utils/demo/helpers';
 
 const { ViewportType } = Enums;
 
@@ -113,6 +132,14 @@ content.appendChild(element);
  */
 async function run() {
   await coreInit();
+  await dicomImageLoaderInit();
+
+  const displaySets = await createDisplaySets({
+    StudyInstanceUID: '2.25.96975534054447904995905761963464388233',
+    SeriesInstanceUID: '2.25.15054212212536476297201250326674987992',
+    wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
+  });
+  const videoDisplaySet = displaySets.find((ds) => ds.handler === 'video');
 
   // Instantiate a rendering engine
   const renderingEngineId = 'myRenderingEngine';
@@ -130,9 +157,9 @@ async function run() {
 
   const viewport = renderingEngine.getViewport(viewportId);
 
-  await viewport.setVideoURL(
-    'https://ohif-assets-new.s3.us-east-1.amazonaws.com/video/rendered.mp4'
-  );
+  await viewport.setDisplaySets({
+    displaySetId: videoDisplaySet.instances[0].imageId,
+  });
 
   await viewport.play();
 }
@@ -151,15 +178,16 @@ run();
 
 # Video Annotations
 
-If the video viewport is instantiated with a setVideo call on an imageId
-with associated metadata, then it is possible to use annotations with the video viewport.
+If the video viewport shows a display set whose image id has associated
+metadata, as above, then it is possible to use annotations with the video viewport.
 These annotations will be shown on either a range of frames or a single frame,
 with some amount of time range allowed so that the annotation will actually be seen.
 
-The `AnnotationMultiSelect` class supports setting and retrieving time ranges on
-annotations. This is done by modifying the imageID in the `/frames/<number>`
-section or the `frameNumber=<number>` attribute. These become a range when the
-annotation applies to a range of values.
+The `utilities.AnnotationMultiSlice` class of the tools supports setting and
+retrieving frame ranges on annotations. This is done by modifying the imageID in
+the `/frames/<number>` section or the `frameNumber=<number>` attribute. These
+become a range when the annotation applies to a range of values. On a video
+viewport it sets the view state key `frameRange`.
 
 The frame range is automatically set when created to the current range being
 played on the video when the video is playing, or the frame number currently

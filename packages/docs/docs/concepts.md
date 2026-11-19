@@ -9,78 +9,70 @@ summary: Introduction to the key concepts in Cornerstone3D, covering the renderi
 _index.html_
 
 ```html
-<canvas class="target-canvas"></canvas>
+<div class="target-element" style="width: 512px; height: 512px"></div>
 ```
 
 _app.js_
 
 ```js
 import {
-  RenderingEngine, // class
-  ORIENTATION, // constant
-  ViewportType, // enum
-} from 'vtkjs-viewport';
+  RenderingEngine,
+  Enums,
+  volumeLoader,
+  utilities,
+} from '@cornerstonejs/core';
 
 // RENDER
 const renderingEngine = new RenderingEngine('ExampleRenderingEngineID');
-const volumeId = 'VOLUME_ID ';
-const viewports = [];
-const viewport = {
-  sceneUID,
-  viewportId: 'viewportUID_0',
-  type: ViewportType.ORTHOGRAPHIC,
-  canvas: document.querySelector('.target-canvas'),
-  defaultOptions: {
-    orientation: Enums.OrientationAxis.AXIAL,
-    background: [Math.random(), Math.random(), Math.random()],
+const volumeId = 'cornerstoneStreamingImageVolume:VOLUME_ID';
+const viewportId = 'CT_AXIAL';
+
+renderingEngine.setViewports([
+  {
+    viewportId,
+    type: Enums.ViewportType.PLANAR,
+    element: document.querySelector('.target-element'),
+    defaultOptions: {
+      orientation: Enums.OrientationAxis.AXIAL,
+      background: [0, 0, 0],
+    },
   },
-};
-
-// Kick-off rendering
-viewports.push(viewport);
-renderingEngine.setViewports(viewports);
-
-// Render backgrounds
-renderingEngine.render();
+]);
 
 // Create and load our image volume
-// See: `./examples/helpers/getImageIdsAndCacheMetadata.js` for inspiration
+// See: `utils/demo/helpers/createImageIdsAndCacheMetaData` for inspiration
 const imageIds = [
   'wadors:https://wadoRsRoot.com/studies/studyInstanceUID/series/SeriesInstanceUID/instances/SOPInstanceUID/frames/1',
   'wadors:https://wadoRsRoot.com/studies/studyInstanceUID/series/SeriesInstanceUID/instances/SOPInstanceUID/frames/2',
   'wadors:https://wadoRsRoot.com/studies/studyInstanceUID/series/SeriesInstanceUID/instances/SOPInstanceUID/frames/3',
 ];
 
-imageCache.makeAndCacheImageVolume(imageIds, volumeId);
-imageCache.loadVolume(volumeId, (event) => {
-  if (event.framesProcessed === event.numFrames) {
-    console.log('done loading!');
-  }
+const volume = await volumeLoader.createAndCacheVolume(volumeId, { imageIds });
+volume.load();
+
+// Register the images once as a display set, then show it
+utilities.genericViewportDisplaySetMetadataProvider.add('ctVolume', {
+  kind: 'planar',
+  imageIds,
+  volumeId,
 });
 
-// Tie scene to one or more image volumes
-const scene = renderingEngine.getScene(sceneUID);
+const viewport = renderingEngine.getViewport(viewportId);
 
-scene.setVolumes([
-  {
-    volumeId,
-    callback: ({ volumeActor, volumeId }) => {
-      // Where you might setup a transfer function or PET colormap
-      console.log('volume loaded!');
-    },
-  },
-]);
+await viewport.setDisplaySets({ displaySetId: 'ctVolume' });
 
-const viewport = scene.getViewport(viewports[0].viewportId);
+// The look of the data is the presentation of its display set
+viewport.setDisplaySetPresentation('ctVolume', {
+  voiRange: { lower: -160, upper: 240 },
+});
 
-// This will initialise volumes in GPU memory
-renderingEngine.render();
+viewport.render();
 ```
 
 For the most part, updating is as simple as using:
 
-- `RenderingEngine.setViewports` and
-- `Scene.setVolumes`
+- `renderingEngine.setViewports` and
+- `viewport.setDisplaySets`
 
 If you're using clientside routing and/or need to clean up resources more
 aggressively, most constructs have a `.destroy` method. For example:

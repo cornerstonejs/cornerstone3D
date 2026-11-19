@@ -1,7 +1,7 @@
 ---
 id: camera
 title: Camera Model
-summary: Comprehensive ownership model for view state, presentation, references, resolved views, and legacy camera compatibility
+summary: Comprehensive ownership model for view state, presentation, references, resolved views, and what replaces the legacy camera
 ---
 
 # Camera Model
@@ -23,7 +23,7 @@ computed snapshot for the current canvas, data, and state. Renderer projections
 are commands sent to VTK, CPU canvas, DOM, OpenLayers, or another runtime.
 Runtime engine state is private to that renderer.
 
-Clean Next viewport instances do not expose `getViewPresentation()` or
+Viewports do not expose `getViewPresentation()` or
 `setViewPresentation()`. Presentation is a projection-service concern:
 
 ```ts
@@ -50,7 +50,7 @@ if (nextViewState) {
 `viewportProjection.withPresentation()` is pure. It translates the presentation
 patch into the viewport family's native `ViewState`, but it does not mutate the
 viewport and it does not render. `setViewState()` and `updateViewState()` remain
-the clean Next paths for arbitrary view-state changes; `resetViewState()` is the
+the paths for arbitrary view-state changes; `resetViewState()` is the
 clean reset helper.
 
 For cross-viewport tooling and synchronizers, use the Viewport Projection
@@ -158,17 +158,9 @@ output through `viewportProjection`.
 
 ## Camera Patch Migration
 
-Legacy code often wrote durable camera fields:
-
-```ts
-viewport.setCamera({
-  focalPoint,
-  position,
-  parallelScale,
-});
-```
-
-For direct Next viewports, prefer native state or projection writes:
+Code written for the legacy viewports of 5.x often wrote durable camera
+fields with `setCamera({ focalPoint, position, parallelScale })`. A 6.0
+viewport has no `setCamera`. Write native state or projection patches:
 
 ```ts
 viewport.updateViewState((viewState) => ({
@@ -196,34 +188,19 @@ targetViewport.setViewReference(reference);
 targetViewport.render();
 ```
 
-Use `setCamera()` only on legacy compatibility adapters. Position-only camera
-patches are not a stable Next-state operation because Next view state stores
-semantic anchors, slice locators, and scale, not durable renderer position.
+A position-only camera patch has no twin: view state stores semantic
+anchors, slice locators, and scale, not durable renderer position.
 
-## Legacy Compatibility
+## The Legacy Camera
 
-Legacy adapters are the temporary migration boundary for `ICamera`. They exist
-to keep older applications running while code moves to direct Next viewports,
-and they should not be treated as the long-term Next API surface. Plan for these
-compatibility camera methods to be removed in a later breaking release.
+5.x ran the legacy camera API (`getCamera`, `setCamera`, `resetCamera`,
+`getViewPresentation`, `setViewPresentation`) on these viewports through
+compatibility adapters. 6.0 removed the adapters and that API. Viewports expose
+`getViewState()`, `setViewState()`, `updateViewState()`, `resetViewState()`, and
+`getResolvedView()`.
 
-Clean Generic viewports expose `getViewState()`, `setViewState()`,
-`updateViewState()`, `resetViewState()`, and `getResolvedView()`. Legacy
-adapters expose `getCamera()`, `setCamera()`, `resetCamera()`,
-`getViewPresentation()`, and
-`setViewPresentation()` for old APIs and legacy camera events.
-
-For planar adapters:
-
-- `getCamera()` derives an `ICamera` from `getResolvedView()`.
-- `parallelScale` maps to semantic scale using the current resolved fit scale.
-- In-plane focal-point deltas map to pan and anchor state.
-- Normal-direction focal-point deltas map to volume `sliceWorldPoint`
-  navigation.
-- `position` may disambiguate legacy movement but is not stored.
-- Position-only planar patches are unsupported and should not mutate clean
-  state.
-
-Tools that still need an `ICamera`-compatible shape should use the bridge
-utility that derives that shape from `getResolvedView()` first and falls back to
-legacy `getCamera()` only when needed.
+Code that needs an `ICamera`-compatible shape reads
+`viewport.getResolvedView()?.toICamera()`. It is for reading only: a write goes
+through the view state or `viewportProjection`. The
+[6.0 migration guide](../../../migration-guides/6x/3-api-map.md) gives the call
+that replaces each legacy camera member.

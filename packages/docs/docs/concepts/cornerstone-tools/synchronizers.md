@@ -63,7 +63,7 @@ It synchronize the camera properties including the zoom, pan and scrolling betwe
 ```js
 const ctAxial = {
   viewportId: VIEWPORT_IDS.CT.AXIAL,
-  type: ViewportType.ORTHOGRAPHIC,
+  type: ViewportType.PLANAR,
   element,
   defaultOptions: {
     orientation: Enums.OrientationAxis.AXIAL,
@@ -72,7 +72,7 @@ const ctAxial = {
 
 const ptAxial = {
   viewportId: VIEWPORT_IDS.PT.AXIAL,
-  type: ViewportType.ORTHOGRAPHIC,
+  type: ViewportType.PLANAR,
   element,
   defaultOptions: {
     orientation: Enums.OrientationAxis.AXIAL,
@@ -88,10 +88,10 @@ const axialSync = createCameraPositionSynchronizer('axialSync')[
 });
 ```
 
-Internally, upon camera modified event on the source viewport, `cameraSyncCallback` runs to synchronize all the target viewports.
+Internally, upon camera modified event on the source viewport, `cameraSyncCallback` runs to synchronize all the target viewports. It copies the view reference of the source, and its zoom and pan.
 
-For direct Generic/Next viewports, synchronizers should avoid treating
-`ICamera` as a universal state object. Read portable presentation through
+Synchronizers should avoid treating `ICamera` as a universal state object: a
+6.0 viewport has no `getCamera` and `setCamera`. Read portable presentation through
 `viewportProjection.getPresentation(sourceViewport, { selector })`, translate it
 for the target with `viewportProjection.withPresentation(targetViewport,
 presentation)`, and then apply the returned native state with

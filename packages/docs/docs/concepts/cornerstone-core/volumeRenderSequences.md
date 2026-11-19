@@ -70,15 +70,15 @@ sequenceDiagram
 
 ## 2. A viewport adds its actor, and the provider chooses the texture
 
-Both architectures meet in `resolveVolumeTexture`. A legacy viewport (`BaseVolumeViewport`,
-`VolumeViewport3D`) calls it through `createVolumeActor`. A render path of the generic architecture
-calls it through `createVolumeSliceActor` or `createVolumeActor`, with its own provider and
-selection.
+Every path meets in `resolveVolumeTexture`. The volume slice path of a planar viewport calls it
+through `createVolumeSliceActor`, and the path of a 3D viewport through `createVolumeActor`, each
+with its own provider and selection. An application that calls the public `createVolumeActor`
+without a provider and a selection gets the default provider once.
 
 ```mermaid
 sequenceDiagram
     autonumber
-    participant VP as BaseVolumeViewport.addVolumes<br/>or VtkVolumeSliceRenderPath.addData
+    participant VP as VtkVolumeSliceRenderPath.addData<br/>or VtkVolume3DRenderPath.addData
     participant CA as createVolumeActor<br/>or createVolumeSliceActor
     participant RVT as resolveVolumeTexture
     participant Prov as defaultVolumeStrategyProvider
@@ -118,7 +118,7 @@ sequenceDiagram
     CA->>Map: createVolumeMapper(imageData, texture)
     Map->>Map: setSampleDistance(sampleDistanceOf(imageData, texture))
     Map->>Map: setScalarTexture(texture)
-    opt a legacy viewport (no provider and no selection given)
+    opt a caller of createVolumeActor (no provider and no selection given)
         CA->>Vol: claimTextureSet(name), tied to the actor
         Note over CA: The viewport releases the claim when it removes the actor<br/>or ends, and claims again when it adds the actor back.
     end
@@ -230,7 +230,8 @@ sequenceDiagram
 
 ## 5. A render path of the generic architecture selects a strategy on each render
 
-A legacy viewport stops after sequence 2: it keeps the texture that `resolveVolumeTexture` gave.
+A caller of `createVolumeActor` without a provider stops after sequence 2: it keeps the texture
+that `resolveVolumeTexture` gave.
 A render path of the generic architecture holds its strategies, and it selects again on each render.
 
 ```mermaid
@@ -281,29 +282,18 @@ sequenceDiagram
     autonumber
     participant App as Application
     participant Seg as segmentation display<br/>(labelmapDisplay)
-    participant Plan as createLegacyVolumeLabelmapPlan
+    participant Plan as createVolumeLabelmapPlan
     participant Store as labelmapLayerStore
     participant LV as labelmap ImageVolume
-    participant VP as BaseVolumeViewport
-    participant RVT as resolveVolumeTexture
     participant Upd as performVolumeLabelmapUpdate
     participant Tex as labelmap texture
 
     App->>Seg: addSegmentationRepresentations(viewportId, [labelmap])
-    Seg->>Plan: mountLegacyVolumeLabelmap()
+    Seg->>Plan: mountVolumeLabelmap()
     Plan->>Store: getOrCreateLabelmapVolume(layer), tagLabelmapVolume(volume)
     Store->>LV: reductionStatistic = foregroundMajority
-    alt blendMode is LABELMAP_EDGE_PROJECTION_BLEND, the dimensions match and the GPU settings hold the 2-component grid
-        Plan->>Plan: addVolumesAsIndependentComponents()
-        Note over Plan: Builds a full-resolution 2-component CPU array<br/>on an unshared mapper. No strategy and no reduction.
-    else a PlanarViewport of the generic architecture
-        Plan->>Plan: addLabelmapToPlanarGenericViewport()
-        Note over Plan: The overlay reaches VtkVolumeSliceRenderPath.addData,<br/>then sequences 2 and 5.
-    else a legacy volume viewport
-        Plan->>VP: addVolumesToViewports([labelmap volumeId])
-        VP->>RVT: createVolumeActor() then resolveVolumeTexture(labelmap volume)
-        Note over RVT: Sequence 2, with the grid and the voxel width of the labelmap.<br/>The same dimensions give the same factors as the CT,<br/>for example the set reduced-1x1x2/full-extent/foregroundMajority.
-    end
+    Plan->>Plan: addLabelmapToPlanarGenericViewport()
+    Note over Plan: The overlay reaches VtkVolumeSliceRenderPath.addData,<br/>then sequences 2 and 5, with the grid and the voxel width of the labelmap.<br/>The same dimensions give the same factors as the CT,<br/>for example the set reduced-1x1x2/full-extent/foregroundMajority.
     App->>LV: a brush tool writes voxels through volume.voxelManager
     App-->>Upd: SEGMENTATION_DATA_MODIFIED, onLabelmapSegmentationDataModified
     Upd->>LV: markFrameModified(slice) for each modified slice

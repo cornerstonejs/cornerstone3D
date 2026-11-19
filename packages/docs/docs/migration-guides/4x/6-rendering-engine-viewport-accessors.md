@@ -5,6 +5,8 @@ title: Rendering Engine Viewport Accessors
 
 # Rendering Engine Viewport Accessors
 
+> This page is about an older release. For the upgrade to Cornerstone3D 6.0, see the [6.0 migration guide](../6x/index.md).
+
 ## Overview
 
 `RenderingEngine.getStackViewport()`, `RenderingEngine.getStackViewports()`, and `RenderingEngine.getVolumeViewports()` have been removed.

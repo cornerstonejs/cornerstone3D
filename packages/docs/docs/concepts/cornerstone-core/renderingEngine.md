@@ -109,7 +109,7 @@ init({
 
 ## General usage
 
-After creating a renderingEngine, we can assign viewports to it for rendering. There are two main approach for creating `Stack` or `Volume` viewports which we will discuss now.
+After creating a renderingEngine, we can assign viewports to it for rendering. There are two main approaches for creating viewports, which we will discuss now. A planar viewport (`ViewportType.PLANAR`) shows a stack of images or a slice of a volume: what it shows decides which, not its type.
 
 ### Instantiating a `RenderingEngine`
 
@@ -133,7 +133,7 @@ PublicViewportInput = {
   element: HTMLDivElement
   /** unique id for the viewport in the renderingEngine */
   viewportId: string
-  /** type of the viewport VolumeViewport or StackViewport*/
+  /** type of the viewport, for example ViewportType.PLANAR or ViewportType.VOLUME_3D */
   type: ViewportType
   /** options for the viewport */
   defaultOptions: ViewportInputOptions
@@ -149,32 +149,29 @@ events.
 
 ```js
 const viewportInput = [
-  // CT Volume Viewport - Axial
+  // CT volume - Axial
   {
     viewportId: 'ctAxial',
-    type: ViewportType.ORTHOGRAPHIC,
+    type: ViewportType.PLANAR,
     element: htmlElement1,
     defaultOptions: {
       orientation: Enums.OrientationAxis.AXIAL,
     },
   },
-  // CT Volume Viewport - Sagittal
+  // CT volume - Sagittal
   {
     viewportId: 'ctSagittal',
-    type: ViewportType.ORTHOGRAPHIC,
+    type: ViewportType.PLANAR,
     element: htmlElement2,
     defaultOptions: {
       orientation: Enums.OrientationAxis.SAGITTAL,
     },
   },
-  // CT Axial Stack Viewport
+  // CT stack: no orientation, a stack shows in its acquisition plane
   {
     viewportId: 'ctStack',
-    type: ViewportType.STACK,
+    type: ViewportType.PLANAR,
     element: htmlElement3,
-    defaultOptions: {
-      orientation: Enums.OrientationAxis.AXIAL,
-    },
   },
 ];
 
@@ -190,7 +187,7 @@ can use the `enableElement` and `disableElement` API. After enabling the element
 ```js
 const viewport = {
   viewportId: 'ctAxial',
-  type: ViewportType.ORTHOGRAPHIC,
+  type: ViewportType.PLANAR,
   element: element1,
   defaultOptions: {
     orientation: Enums.OrientationAxis.AXIAL,

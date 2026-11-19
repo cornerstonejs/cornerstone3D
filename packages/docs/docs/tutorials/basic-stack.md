@@ -1,7 +1,7 @@
 ---
 id: basic-stack
 title: Render Stack of Images
-summary: Tutorial demonstrating how to render a stack of medical images using Cornerstone3D's stack viewport functionality
+summary: Tutorial demonstrating how to render a stack of medical images using a Cornerstone3D planar viewport
 ---
 
 # Render Stack of Images
@@ -50,8 +50,7 @@ const renderingEngineId = 'myRenderingEngine';
 const renderingEngine = new RenderingEngine(renderingEngineId);
 ```
 
-We can then create a `viewport` inside the renderingEngine by using the `enableElement` API. Note that since we don't want to render a volume for the
-purpose of this tutorial, we specify the type of the viewport to be `Stack`.
+We can then create a `viewport` inside the renderingEngine by using the `enableElement` API. A planar viewport shows a stack of images or a slice of a volume, so we specify the type of the viewport to be `PLANAR`.
 
 ```js
 const viewportId = 'CT_AXIAL_STACK';
@@ -59,12 +58,13 @@ const viewportId = 'CT_AXIAL_STACK';
 const viewportInput = {
   viewportId,
   element,
+  type: Enums.ViewportType.PLANAR,
 };
 
 renderingEngine.enableElement(viewportInput);
 ```
 
-RenderingEngine will handle creation of the viewports, and we can get the viewport object and set the images on it, and choose the index of the image to be displayed.
+RenderingEngine will handle creation of the viewports. We register the images once as a display set, under an id that we choose, and then show the display set in the viewport, with the index of the image to be displayed.
 
 :::info
 The imageIds that we use here are generated using the `createImageIdsAndCacheMetaData` function.
@@ -83,15 +83,23 @@ const imageIds = await createImageIdsAndCacheMetaData({
 
 ```js
 const viewport = renderingEngine.getViewport(viewportId);
+const displaySetId = 'ctStack';
 
-viewport.setStack(imageIds, 60);
+utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+  kind: 'planar',
+  imageIds,
+  initialImageIdIndex: 60,
+});
+
+await viewport.setDisplaySets({ displaySetId });
 
 viewport.render();
 ```
 
 :::note Tip
 Since imageIds is an arrays of imageId, we can set which one to be displayed using
-the second argument of `setStack`.
+`initialImageIdIndex` of the display set. A display set without a `volumeId` shows
+as a stack.
 :::
 
 ## Final code
@@ -100,7 +108,12 @@ the second argument of `setStack`.
 <summary>Final code</summary>
 
 ```js
-import { RenderingEngine, Enums, init as coreInit } from '@cornerstonejs/core';
+import {
+  RenderingEngine,
+  Enums,
+  utilities,
+  init as coreInit,
+} from '@cornerstonejs/core';
 import { init as dicomImageLoaderInit } from '@cornerstonejs/dicom-image-loader';
 import { createImageIdsAndCacheMetaData } from '../../../../utils/demo/helpers';
 
@@ -137,14 +150,21 @@ async function run() {
   const viewportInput = {
     viewportId,
     element,
-    type: Enums.ViewportType.STACK,
+    type: Enums.ViewportType.PLANAR,
   };
 
   renderingEngine.enableElement(viewportInput);
 
   const viewport = renderingEngine.getViewport(viewportId);
+  const displaySetId = 'ctStack';
 
-  viewport.setStack(imageIds, 60);
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    kind: 'planar',
+    imageIds,
+    initialImageIdIndex: 60,
+  });
+
+  await viewport.setDisplaySets({ displaySetId });
 
   viewport.render();
 }
@@ -166,7 +186,7 @@ Learn more about:
 - [rendering engine](../concepts/cornerstone-core/renderingEngine.md)
 - [viewport](../concepts/cornerstone-core/viewports.md)
 
-For advanced usage of Stack Viewport, please visit <a href="https://www.cornerstonejs.org/live-examples/stackapi" target="_blank">StackViewport API</a> example page.
+For advanced usage of a planar viewport that shows a stack, please visit the <a href="https://www.cornerstonejs.org/live-examples/stackapi" target="_blank">Stack API</a> example page.
 
 :::note Tip
 

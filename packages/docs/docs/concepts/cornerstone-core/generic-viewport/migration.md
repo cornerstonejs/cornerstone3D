@@ -6,6 +6,12 @@ summary: Before and after examples for moving stack, volume, overlay, segmentati
 
 # Migration
 
+:::note
+
+This page shows the move from the legacy viewport API of 5.x, which 6.0 removed. For the upgrade to 6.0 see the [6.0 migration guide](../../../migration-guides/6x/index.md), which has the call that replaces each legacy name.
+
+:::
+
 This migration guide is local to the Generic Viewport architecture. It is not a
 general Cornerstone migration guide.
 
@@ -16,7 +22,7 @@ presentation.
 If you need to add custom viewport types from extensions, use `Enums.ViewportTypes`
 (register with `registerViewportType`, then `Enums.ViewportTypes.<NAME>`) as
 documented in the
-[5.x Generic Viewport migration guide](../../../../migration-guides/5x/2-generic-viewport.md#extending-viewport-types-new-pattern).
+[5.x Generic Viewport migration guide](../../../migration-guides/5x/2-generic-viewport.md#extending-viewport-types-new-pattern).
 
 ## Stack Or Volume Viewport Selection
 
@@ -42,13 +48,13 @@ renderingEngine.enableElement({
 await viewport.setVolumes([{ volumeId }]);
 ```
 
-Now, planar 2D viewing uses `PLANAR_NEXT`, and the data/render path decides
+Now, planar 2D viewing uses `PLANAR`, and the data/render path decides
 whether the source is stack-like or volume-slice-like:
 
 ```ts
 renderingEngine.enableElement({
   viewportId,
-  type: Enums.ViewportType.PLANAR_NEXT,
+  type: Enums.ViewportType.PLANAR,
   element,
 });
 
@@ -268,13 +274,10 @@ viewport.setViewState({ flipHorizontal: true });
 viewport.render();
 ```
 
-Legacy adapters still support camera-style calls for older code. They are a
-temporary migration layer and should be expected to be removed in a later
-breaking release, not treated as a durable Next control surface. Clean Next
-code should use view state and viewport projection APIs. Direct Next viewports do
-not expose
-`getViewPresentation()`, `setViewPresentation()`, `getCamera()`, or
-`setCamera()` as durable control APIs.
+The legacy adapters of 5.x ran camera-style calls on these viewports. 6.0
+removed them: code uses view state and viewport projection APIs, and a viewport
+has no `getViewPresentation()`, `setViewPresentation()`, `getCamera()` or
+`setCamera()`.
 
 Before:
 
@@ -329,9 +332,9 @@ if (nextViewState) {
 
 If you are changing a native field such as planar orientation, a video media
 anchor, or ECG signal range, update the native view state directly with
-`setViewState()` or `updateViewState()`. Use `resetViewState()` for the clean
-Next reset operation; `resetCamera()` belongs to temporary legacy adapters and
-should be expected to be removed in a later breaking release.
+`setViewState()` or `updateViewState()`. Use `resetViewState()` for the reset
+operation; `resetCamera()` was a member of the legacy viewports, which 6.0
+removed.
 
 ## Slice Navigation
 
@@ -404,7 +407,7 @@ binding, instead of requiring a separate volume-rendering overlay path.
 
 ## Recommended Migration Order
 
-1. Move viewport creation to `ViewportType.PLANAR_NEXT` for planar 2D stack and
+1. Move viewport creation to `ViewportType.PLANAR` for planar 2D stack and
    volume-slice workflows.
 2. Register each source or overlay as a logical display set id.
 3. Replace `setStack()` and `setVolumes()` with `setDisplaySets()` or

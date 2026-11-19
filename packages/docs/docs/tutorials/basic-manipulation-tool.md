@@ -54,7 +54,7 @@ const renderingEngineId = 'myRenderingEngine';
 const renderingEngine = new RenderingEngine(renderingEngineId);
 ```
 
-We can use a StackViewport for this example.
+We can use a planar viewport that shows a stack for this example.
 
 ```js
 const viewportId = 'CT_AXIAL_STACK';
@@ -62,18 +62,24 @@ const viewportId = 'CT_AXIAL_STACK';
 const viewportInput = {
   viewportId,
   element,
-  type: ViewportType.STACK,
+  type: ViewportType.PLANAR,
 };
 
 renderingEngine.enableElement(viewportInput);
 ```
 
-RenderingEngine will handle creation of the viewports, and we can get the viewport object and set the images on it.
+RenderingEngine will handle creation of the viewports. We register the images once as a display set, and show it in the viewport.
 
 ```js
 const viewport = renderingEngine.getViewport(viewportId);
+const displaySetId = 'ctStack';
 
-viewport.setStack(imageIds);
+utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+  kind: 'planar',
+  imageIds,
+});
+
+await viewport.setDisplaySets({ displaySetId });
 
 viewport.render();
 ```
@@ -131,7 +137,12 @@ toolGroup.setToolActive(ZoomTool.toolName, {
 <summary>Final Code</summary>
 
 ```js
-import { init as coreInit, RenderingEngine, Enums } from '@cornerstonejs/core';
+import {
+  init as coreInit,
+  RenderingEngine,
+  Enums,
+  utilities,
+} from '@cornerstonejs/core';
 import { init as dicomImageLoaderInit } from '@cornerstonejs/dicom-image-loader';
 import {
   init as cornerstoneToolsInit,
@@ -182,14 +193,20 @@ async function run() {
   const viewportInput = {
     viewportId,
     element,
-    type: ViewportType.STACK,
+    type: ViewportType.PLANAR,
   };
 
   renderingEngine.enableElement(viewportInput);
 
   const viewport = renderingEngine.getViewport(viewportId);
+  const displaySetId = 'ctStack';
 
-  viewport.setStack(imageIds);
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    kind: 'planar',
+    imageIds,
+  });
+
+  await viewport.setDisplaySets({ displaySetId });
 
   viewport.render();
 

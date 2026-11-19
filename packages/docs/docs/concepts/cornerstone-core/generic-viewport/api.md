@@ -12,7 +12,7 @@ presentation independently.
 
 ## Create A Planar Generic Viewport
 
-Use `ViewportType.PLANAR_NEXT` for stack-like and volume-slice 2D workflows.
+Use `ViewportType.PLANAR` for stack-like and volume-slice 2D workflows.
 The viewport infers the render path from the registered dataset shape,
 requested orientation, rendering configuration, WebGL support, and segmentation
 slice-rendering configuration.
@@ -30,7 +30,7 @@ const renderingEngine = new RenderingEngine('renderingEngineId');
 
 renderingEngine.enableElement({
   viewportId: 'CT_AXIAL',
-  type: Enums.ViewportType.PLANAR_NEXT,
+  type: Enums.ViewportType.PLANAR,
   element,
   defaultOptions: {
     background: [0, 0, 0],
@@ -177,7 +177,7 @@ utilities.genericViewportDisplaySetMetadataProvider.add(labelmapDataId, {
 ## Update View State
 
 Navigation and view appearance are separate from per-dataset appearance.
-For direct Next viewports, `ViewState` is the only mutable viewport source of
+For every viewport, `ViewState` is the only mutable viewport source of
 truth. Use `setViewState()` for patches and `updateViewState()` for
 read-modify-write changes. Use `resetViewState()` when you want the viewport
 family's default navigation reset.
@@ -223,10 +223,9 @@ const presentation = viewportProjection.getPresentation(viewport, {
 });
 ```
 
-Do not call `viewport.getViewPresentation()` or
-`viewport.setViewPresentation()` on direct Next viewports. Those methods are
-kept only on temporary legacy compatibility adapters and should be expected to
-be removed from that compatibility layer in a later breaking release.
+A viewport has no `getViewPresentation()` and no `setViewPresentation()`
+member: the legacy viewports of 5.x had them, and 6.0 removed them with those
+viewports. Read and write a view presentation through `viewportProjection`.
 
 Use `setImageIdIndex()` for index-style navigation. For volume-backed data,
 the viewport resolves the requested index into a volume slice point internally.
@@ -264,7 +263,7 @@ interpolation, and visibility.
 
 ## Labelmap Segmentations
 
-Segmentations are still added through `@cornerstonejs/tools`. For Next planar
+Segmentations are still added through `@cornerstonejs/tools`. For planar
 volume-slice viewports, labelmaps can use slice rendering by setting
 `config.useSliceRendering`.
 
@@ -339,8 +338,7 @@ otherViewport.render();
 
 Use projection presentation when only pan, zoom, rotation, flips, and display
 area should be copied between compatible viewport families. The presentation
-shape is adapter-specific, so this is appropriate for Planar Next to Planar
-Next. Do not treat it as a universal cross-family camera copy; use view
+shape is adapter-specific, so this is appropriate for planar to planar. Do not treat it as a universal cross-family camera copy; use view
 references or a synchronizer that explicitly maps scale and position semantics
 for that case.
 
@@ -368,7 +366,7 @@ const nextViewState = viewportProjection.withPresentation(
 );
 
 if (nextViewState) {
-  // `setViewState` remains the single mutation path for Next viewports.
+  // `setViewState` remains the single mutation path for viewports.
   otherViewport.setViewState(nextViewState);
   otherViewport.render();
 }

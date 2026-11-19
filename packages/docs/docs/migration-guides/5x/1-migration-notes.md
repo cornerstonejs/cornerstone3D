@@ -1,5 +1,7 @@
 # 5.x Migration Reference Notes
 
+> This page is about an older release. For the upgrade to Cornerstone3D 6.0, see the [6.0 migration guide](../6x/index.md).
+
 This page tracks smaller migration-impacting behavior changes that are useful
 as reference during 4.x -> 5.x upgrades.
 

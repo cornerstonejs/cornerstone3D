@@ -6,6 +6,8 @@ summary: Migration notes for adopting Generic Viewport and updating code that de
 
 # Generic Viewport Migration Guide
 
+> This page is about an older release. For the upgrade to Cornerstone3D 6.0, see the [6.0 migration guide](../6x/index.md).
+
 Generic Viewport adds new viewport implementations and an optional compatibility
 mode for routing legacy viewport types through those implementations.
 

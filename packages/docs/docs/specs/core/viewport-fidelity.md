@@ -202,9 +202,9 @@ states map to the states of this specification: transiently lossy is
   adds nothing. Over a reduced source image, the source already reports the
   reduction, and the labelmap adds nothing.
 - **FIDELITY-STATE-10** A drawn grid that is coarser than the full volume, and
-  that has no record, gives `lossy`. The indicator does not hide it. Only a
-  legacy volume viewport makes such a line. A generic render path always sets
-  a record with its grid.
+  that has no record, gives `lossy`. The indicator does not hide it. No
+  render path of 6.0 makes such a line: each one sets a record with its grid.
+  The rule holds for a custom render path that sets none.
 - **FIDELITY-STATE-11** A volume line states `qualityPending` while the load of
   its volume continues (`loadStatus.loading`), and `reductionCause` from the
   strategy that chose the bound grid. Lossy deliveries with `qualityPending`
@@ -238,7 +238,7 @@ states map to the states of this specification: transiently lossy is
   `utilities.voxelGrid.compareVoxelQuality(record, requirement)`. The
   requirement of a viewport holds `displaySpacing` on each index axis of the
   record grid. FIDELITY-STATE-5 and FIDELITY-STATE-6 depend on that function.
-  `displaySpacingForGrid()` supplies the display spacing. A legacy viewport
+  `displaySpacingForGrid()` supplies the display spacing. A viewport
   calls it through `displaySpacingOfViewport()`:
   - An axis in the view plane gets the world size of one display pixel.
   - In a slice view, the axis normal to the view plane gets the slice spacing
@@ -254,17 +254,14 @@ states map to the states of this specification: transiently lossy is
     normal.
   - No axis gets a value finer than the source spacing on that axis, because a
     view is lossy only against the full stored data.
-  - The pixel size is the world size of one device pixel. A legacy viewport
-    reads it from `parallelScale` and the canvas height in device pixels. A
-    generic viewport reads it from the resolved view with `canvasToWorld()`,
-    and divides by `devicePixelRatio`.
+  - The pixel size is the world size of one device pixel. A viewport reads
+    it from the resolved view with `canvasToWorld()`, and divides by
+    `devicePixelRatio`.
 - **FIDELITY-RECORD-3** The render that drew the frame composes the record,
   because only the render knows which texture it bound. A reader gets the
   record of the bound grid with `imageVolume.getGridQuality(grid, statistic)`,
   and the record of the full volume with `imageVolume.getVoxelQuality()`. A
-  generic path takes `statistic` from the binding it drew. A legacy path takes
-  it from the bound streaming texture when present, otherwise from
-  `volume.reductionStatistic`.
+  render path takes `statistic` from the binding it drew.
 - **FIDELITY-RECORD-4** `utilities.voxelGrid.isAliasingReduction(reduction)`
   decides whether a reduction is a decimation for FIDELITY-STATE-6.
 - **FIDELITY-RECORD-5** A stack image keeps its per-image summary,
@@ -284,8 +281,7 @@ states map to the states of this specification: transiently lossy is
   counts its whole ratio as standing, so it promises no recovery: a ratio
   above 1 gives `lossy`, also during an interaction. A custom render path
   reports the idle ratio in `RenderingFidelity.sampleDistanceIdle`. A slice view
-  samples no ray, so a slice line has ratios of 1 on the legacy and the
-  generic paths.
+  samples no ray, so a slice line has ratios of 1.
 - **FIDELITY-RECORD-7** `record.lowest` decides whether delivered data is lossy.
   A value below `ImageQualityStatus.FULL_RESOLUTION` is replicated,
   sub-resolution or lossy data. While the load continues (FIDELITY-STATE-11),
@@ -305,7 +301,7 @@ states map to the states of this specification: transiently lossy is
 | `Events.IMAGE_VOLUME_LOADING_COMPLETED`       | `eventTarget` | The load of a volume completed. A `loading` state becomes `done` or `lossy`, which FIDELITY-STATE-3 needs.            |
 | `Events.IMAGE_LOADED`                         | `eventTarget` | One image arrived. The event can fire more than once for one image during a progressive load.                         |
 | `Events.IMAGE_RETRIEVAL_STAGE`                | `eventTarget` | A progressive retrieval stage completed. The detail holds no fidelity field.                                          |
-| `Events.STACK_NEW_IMAGE`                      | element       | A stack viewport shows a different image. Read the per-image summary for FIDELITY-STATE-8.                            |
+| `Events.NEW_IMAGE`                            | element       | A planar viewport shows a different image. Read the per-image summary for FIDELITY-STATE-8.                           |
 | `Events.ELEMENT_DISABLED`                     | `eventTarget` | The viewport is gone. Remove the listeners of the consumer.                                                           |
 | `imageVolume.getGridQuality(grid, statistic)` | query         | The record of the grid that the render bound.                                                                         |
 | `utilities.voxelGrid.compareVoxelQuality()`   | query         | The verdict of one viewport for one record.                                                                           |

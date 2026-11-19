@@ -79,7 +79,7 @@ The viewport/registry `displaySetId` is the same value as the display set's
 the metadata object and the viewport API.
 
 `setDisplaySets` finds the display set by its `displaySetId`. Every viewport
-family, legacy or generic, reads it from one of two places:
+family reads it from one of two places:
 
 1. The **generic-viewport display-set provider**, when you registered the
    renderable data there. This entry wins.
@@ -106,20 +106,22 @@ const HANDLER_TO_VIEWPORT_TYPE: Record<string, Enums.ViewportType> = {
 };
 
 const displaySetId = displaySet.displaySetId;
+const volumeId = `cornerstoneStreamingImageVolume:${displaySetId}`;
 
 // 1. Register the renderable data so the viewport can resolve `displaySetId`.
-//    stack/volume use { imageIds }; video/ecg use { kind, sourceDataId };
+//    a stack uses { imageIds }, a volume adds a volumeId;
+//    video/ecg use { kind, sourceDataId };
 //    wsi uses { kind: 'wsi', imageIds, options: { webClient } }.
 utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
   imageIds: [...displaySet.imageIds],
+  ...(displaySet.isReconstructable ? { volumeId } : {}),
 });
 
-// 2. Choose the viewport: from the handler, else from isReconstructable.
+// 2. Choose the viewport: from the handler, else a planar viewport, which
+//    shows the display set as a volume when it was registered with a
+//    volumeId and as a stack otherwise.
 const viewportType =
-  HANDLER_TO_VIEWPORT_TYPE[displaySet.handler ?? ''] ??
-  (displaySet.isReconstructable
-    ? ViewportType.ORTHOGRAPHIC
-    : ViewportType.STACK);
+  HANDLER_TO_VIEWPORT_TYPE[displaySet.handler ?? ''] ?? ViewportType.PLANAR;
 renderingEngine.enableElement({ viewportId, type: viewportType, element });
 
 const viewport = renderingEngine.getViewport(viewportId);
@@ -128,8 +130,8 @@ await viewport.setDisplaySets({ displaySetId });
 viewport.getDisplaySets(); // [{ displaySetId }] — reflects what was mounted
 ```
 
-`getDisplaySets()` is available on both the legacy `Viewport` and the generic
-viewport, so mounted display sets can be read uniformly across either hierarchy.
+`getDisplaySets()` is available on every viewport family, so mounted display
+sets can be read in one way for any viewport.
 
 The runnable end-to-end version (all five viewport families, plus a dropdown to
 switch a display set among the viewports that the example allows) is the **Display Sets**

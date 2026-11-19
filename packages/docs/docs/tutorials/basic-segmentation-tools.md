@@ -153,7 +153,7 @@ const viewportId3 = 'CT_CORONAL';
 const viewportInputArray = [
   {
     viewportId: viewportId1,
-    type: ViewportType.ORTHOGRAPHIC,
+    type: ViewportType.PLANAR,
     element: element1,
     defaultOptions: {
       orientation: Enums.OrientationAxis.AXIAL,
@@ -161,7 +161,7 @@ const viewportInputArray = [
   },
   {
     viewportId: viewportId2,
-    type: ViewportType.ORTHOGRAPHIC,
+    type: ViewportType.PLANAR,
     element: element2,
     defaultOptions: {
       orientation: Enums.OrientationAxis.SAGITTAL,
@@ -169,7 +169,7 @@ const viewportInputArray = [
   },
   {
     viewportId: viewportId3,
-    type: ViewportType.ORTHOGRAPHIC,
+    type: ViewportType.PLANAR,
     element: element3,
     defaultOptions: {
       orientation: Enums.OrientationAxis.CORONAL,
@@ -190,22 +190,24 @@ Let's set the volume to load and set it on the viewports
 // Set the volume to load
 await volume.load();
 
-// Set volumes on the viewports
-await setVolumesForViewports(
-  renderingEngine,
-  [
-    {
-      volumeId,
-      callback: ({ volumeActor }) => {
-        // set the windowLevel after the volumeActor is created
-        volumeActor
-          .getProperty()
-          .getRGBTransferFunction(0)
-          .setMappingRange(-180, 220);
-      },
-    },
-  ],
-  [viewportId1, viewportId2, viewportId3]
+// Register the volume once and show it on the viewports
+const displaySetId = 'ctVolume';
+
+utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+  kind: 'planar',
+  imageIds,
+  volumeId,
+});
+
+await Promise.all(
+  [viewportId1, viewportId2, viewportId3].map(async (viewportId) => {
+    const viewport = renderingEngine.getViewport(viewportId);
+
+    await viewport.setDisplaySets({ displaySetId });
+    viewport.setDisplaySetPresentation(displaySetId, {
+      voiRange: { lower: -180, upper: 220 },
+    });
+  })
 );
 ```
 
@@ -249,7 +251,7 @@ import {
   RenderingEngine,
   Enums,
   volumeLoader,
-  setVolumesForViewports,
+  utilities,
 } from '@cornerstonejs/core';
 import { init as dicomImageLoaderInit } from '@cornerstonejs/dicom-image-loader';
 import {
@@ -363,7 +365,7 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: viewportId1,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR,
       element: element1,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
@@ -371,7 +373,7 @@ async function run() {
     },
     {
       viewportId: viewportId2,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR,
       element: element2,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -379,7 +381,7 @@ async function run() {
     },
     {
       viewportId: viewportId3,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR,
       element: element3,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
@@ -397,22 +399,24 @@ async function run() {
   // Set the volume to load
   await volume.load();
 
-  // Set volumes on the viewports
-  await setVolumesForViewports(
-    renderingEngine,
-    [
-      {
-        volumeId,
-        callback: ({ volumeActor }) => {
-          // set the windowLevel after the volumeActor is created
-          volumeActor
-            .getProperty()
-            .getRGBTransferFunction(0)
-            .setMappingRange(-180, 220);
-        },
-      },
-    ],
-    [viewportId1, viewportId2, viewportId3]
+  // Register the volume once and show it on the viewports
+  const displaySetId = 'ctVolume';
+
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    kind: 'planar',
+    imageIds,
+    volumeId,
+  });
+
+  await Promise.all(
+    [viewportId1, viewportId2, viewportId3].map(async (viewportId) => {
+      const viewport = renderingEngine.getViewport(viewportId);
+
+      await viewport.setDisplaySets({ displaySetId });
+      viewport.setDisplaySetPresentation(displaySetId, {
+        voiRange: { lower: -180, upper: 220 },
+      });
+    })
   );
 
   await segmentation.addLabelmapRepresentationToViewportMap({

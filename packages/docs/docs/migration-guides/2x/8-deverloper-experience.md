@@ -9,6 +9,8 @@ import TabItem from '@theme/TabItem';
 
 # Developer Experience
 
+> This page is about an older release. For the upgrade to Cornerstone3D 6.0, see the [6.0 migration guide](../6x/index.md).
+
 ### Dependency Cycles
 
 We have removed all dependency cycles in the library, ensuring it is now free of any such issues. To maintain this, we have added rules in our linters that will catch any dependency cycles in pull requests during continuous integration. Additionally, you can run `yarn run format-check` to ensure that the formatting is correct and to check for dependencies as well.

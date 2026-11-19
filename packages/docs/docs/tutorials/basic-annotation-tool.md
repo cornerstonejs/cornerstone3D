@@ -75,7 +75,7 @@ const viewportInput = [
   {
     viewportId: viewportId1,
     element: element1,
-    type: ViewportType.ORTHOGRAPHIC,
+    type: ViewportType.PLANAR,
     defaultOptions: {
       orientation: Enums.OrientationAxis.AXIAL,
     },
@@ -83,7 +83,7 @@ const viewportInput = [
   {
     viewportId: viewportId2,
     element: element2,
-    type: ViewportType.ORTHOGRAPHIC,
+    type: ViewportType.PLANAR,
     defaultOptions: {
       orientation: Enums.OrientationAxis.SAGITTAL,
     },
@@ -134,24 +134,27 @@ toolGroup.setToolActive(BidirectionalTool.toolName, {
 });
 ```
 
-Let's load the volume and set the viewports to render the volume.
+Let's register the volume as a display set, show it in the viewports and set its
+window. The window is a key of the presentation of the display set.
 
 ```js
-setVolumesForViewports(
-  renderingEngine,
-  [
-    {
-      volumeId,
-      callback: ({ volumeActor }) => {
-        // set the windowLevel after the volumeActor is created
-        volumeActor
-          .getProperty()
-          .getRGBTransferFunction(0)
-          .setMappingRange(-180, 220);
-      },
-    },
-  ],
-  [viewportId1, viewportId2]
+const displaySetId = 'ctVolume';
+
+utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+  kind: 'planar',
+  imageIds,
+  volumeId,
+});
+
+await Promise.all(
+  [viewportId1, viewportId2].map(async (viewportId) => {
+    const viewport = renderingEngine.getViewport(viewportId);
+
+    await viewport.setDisplaySets({ displaySetId });
+    viewport.setDisplaySetPresentation(displaySetId, {
+      voiRange: { lower: -180, upper: 220 },
+    });
+  })
 );
 
 // Render the image
@@ -169,7 +172,7 @@ import {
   RenderingEngine,
   Enums,
   volumeLoader,
-  setVolumesForViewports,
+  utilities,
 } from '@cornerstonejs/core';
 import { init as dicomImageLoaderInit } from '@cornerstonejs/dicom-image-loader';
 import {
@@ -231,7 +234,7 @@ async function run() {
     {
       viewportId: viewportId1,
       element: element1,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
       },
@@ -239,7 +242,7 @@ async function run() {
     {
       viewportId: viewportId2,
       element: element2,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
       },
@@ -269,21 +272,23 @@ async function run() {
     ],
   });
 
-  setVolumesForViewports(
-    renderingEngine,
-    [
-      {
-        volumeId,
-        callback: ({ volumeActor }) => {
-          // set the windowLevel after the volumeActor is created
-          volumeActor
-            .getProperty()
-            .getRGBTransferFunction(0)
-            .setMappingRange(-180, 220);
-        },
-      },
-    ],
-    [viewportId1, viewportId2]
+  const displaySetId = 'ctVolume';
+
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    kind: 'planar',
+    imageIds,
+    volumeId,
+  });
+
+  await Promise.all(
+    [viewportId1, viewportId2].map(async (viewportId) => {
+      const viewport = renderingEngine.getViewport(viewportId);
+
+      await viewport.setDisplaySets({ displaySetId });
+      viewport.setDisplaySetPresentation(displaySetId, {
+        voiRange: { lower: -180, upper: 220 },
+      });
+    })
   );
 
   // Render the image

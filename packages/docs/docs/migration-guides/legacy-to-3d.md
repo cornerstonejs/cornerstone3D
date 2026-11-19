@@ -9,6 +9,8 @@ import TabItem from '@theme/TabItem';
 
 # Legacy to 1.0
 
+> This page is about an older release. For the upgrade to Cornerstone3D 6.0, see the [6.0 migration guide](./6x/index.md).
+
 As we are moving to the `Cornerstone3D` library, we are introducing a new set of APIs that are not backwards compatible with the old `Cornerstone` library. In this page, we will provide a migration guide for users who are already using the old `Cornerstone` library.
 
 :::note Important

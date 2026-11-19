@@ -296,9 +296,9 @@ anything mutable that it holds.
 strategy share one set, and they do not allocate two.
 
 **VRS-C-8.** The set is the unit of eviction. A budget never evicts a set that a viewport draws: a
-render path claims the set that it draws. A legacy viewport claims the set of each volume actor
-while it holds that actor, and releases the claim when it removes the actor or ends, so a budget
-can evict the set of a volume that no viewport draws. A backstop set is evicted last, so a fill
+render path claims the set that it draws. A volume actor that `createVolumeActor` makes without a
+provider claims its set while the actor lives, and releases the claim when the actor is removed or
+ends, so a budget can evict the set of a volume that no viewport draws. A backstop set is evicted last, so a fill
 always finds a source.
 
 **VRS-C-9.** The identity of a texture is stable and is not its grid. The grid is state of that
@@ -341,8 +341,8 @@ statistic of the volume from the frames of the volume, and its record comes from
 
 **VRS-I-10.** Removed: the derivation in batches moved to the branch `brick-loader`.
 
-**VRS-I-11.** A legacy viewport pins its set instead of claiming it. A claim needs a release at every
-removal of an actor, and a legacy viewport has many such paths.
+**VRS-I-11.** Removed: it was about the legacy viewports, which 6.0 deleted. A volume actor made
+without a provider claims its set, see VRS-C-8.
 
 **VRS-I-12.** A reduced texture spans the full-resolution extent. The mappers allocate the
 dimensions of the reduced grid, and vtk.js maps the texture over the extent of the full-resolution
@@ -396,7 +396,6 @@ acquisition plane, the viewport draws the reduced slice.
 - The reduced slice shows until the frame loads.
 - `viewport.getActors()` has one more entry for the frame. That entry has no `referencedId`, so a
   measurement tool does not see a second target.
-- The legacy viewports (`StackViewport`, `VolumeViewport`) keep the reduced slice, as in 4.x.
 - The viewport does not draw the frame for a slab thicker than one acquired slice, for a blend mode
   other than composite, for a dynamic volume, or for a CPU volume path.
 

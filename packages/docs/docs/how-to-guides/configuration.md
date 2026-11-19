@@ -51,7 +51,7 @@ cs3d.<PACKAGE>.<PATH>.<FILEORAREA>
 
 Examples of names:
 
-- `cs3d.core.RenderingEngine.StackViewport`
+- `cs3d.core.RenderingEngine.PlanarViewport`
 - `cs3d.core.utilities.VoxelManager`
 - `cs3d.dicomImageLoader.wadouri`
 - `cs3d.adapters.Cornerstone3D.MeasurementReport`

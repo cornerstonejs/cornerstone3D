@@ -19,8 +19,7 @@ viewed via 4 viewports in a “4-up” view: Axial MPR, Sagittal MPR, Coronal MP
 See [Viewport Reference and Presentation](./viewportReferencePresentation.md) for more details on the reference
 and presentation details that select which image and how that image is presented.
 
-Generic/Next viewport implementations use semantic `ViewState` as their
-mutation source of truth. Code that needs cross-viewport pan, zoom, rotation,
+Every viewport uses a semantic `ViewState` as its mutation source of truth. Code that needs cross-viewport pan, zoom, rotation,
 scale, or renderer-camera output should use
 [`Viewport Projection`](./generic-viewport/viewport-projection.md) instead of
 copying camera objects between viewport families.
@@ -31,29 +30,41 @@ copying camera objects between viewport families.
 
 </div>
 
-## StackViewport
+## Planar viewport
 
-- Suitable for rendering a stack of images, that might or might not belong to the same image.
-- Stack can include 2D images of various shapes, size and direction
+`PlanarViewport`, made with `ViewportType.PLANAR`. One class shows a stack of
+images or a slice of a volume. What it shows decides how it behaves, and
+`viewport.getCurrentMode()` says `'stack'`, `'volume'` or `'empty'`.
 
-## VolumeViewport
-
-- Suitable for rendering a volumetric data which is considered as one 3D image.
-- Having a VolumeViewport enables Multi-planar reformation or reconstruction (MPR) by design, in which you can visualize the volume from various different orientations without addition of performance costs.
-- For having image fusion between two series
+- **Stack mode**: a display set registered without a `volumeId`. Suitable for
+  rendering a stack of images, that might or might not belong to the same
+  series. A stack can include 2D images of various shapes, sizes and
+  directions, and shows in its acquisition plane.
+- **Volume mode**: a display set registered with a `volumeId`. Suitable for
+  rendering a volumetric data which is considered as one 3D image. It enables
+  Multi-planar reformation or reconstruction (MPR) by design, in which you can
+  visualize the volume from various different orientations without addition
+  of performance costs. It is also the mode for image fusion between two
+  series: the first display set is the source, the others are overlays.
 
 ## 3D Viewport
 
-- Sutiable for actual 3D rendering of a volumetric data.
-- For having different types of presets such as Bone, Soft Tissue, Lung, etc.
+`VolumeViewport3D`, made with `ViewportType.VOLUME_3D`.
+
+- Suitable for actual 3D rendering of a volumetric data.
+- For having different types of presets such as Bone, Soft Tissue, Lung, etc.,
+  as the `preset` key of the presentation.
+- A surface is a geometry display set of a 3D viewport.
 
 :::note
 
-Both `StackViewport` and `VolumeViewport`, `VolumeViewport3D` are created via the `RenderingEngine` API.
+Every viewport is created via the `RenderingEngine` API.
 
 :::
 
-## VideoViewport
+## Video Viewport
+
+`VideoViewport`, made with `ViewportType.VIDEO`.
 
 - Suitable for rendering video data
 - Video can include MPEG 4 encoded vide streams. In theory, MPEG2 is also supported,
@@ -61,14 +72,24 @@ Both `StackViewport` and `VolumeViewport`, `VolumeViewport3D` are created via th
 
 ## Whole Slide Image Viewport
 
+`WSIViewport`, made with `ViewportType.WHOLE_SLIDE`.
+
 - Suitable for rendering whole slide images
+
+## ECG Viewport
+
+`ECGViewport`, made with `ViewportType.ECG`.
+
+- Suitable for rendering the waveform of an ECG, in a trace layout
 
 ## Initial Display Area
 
-All viewports inherit from the Viewport class which has a `displayArea` field which can be provided.
-This field can be used to programmatically set the initial zoom/pan on an image. By default, the viewport
-will fit the dicom image to the screen. The `displayArea` takes a `DisplayArea` type which has the following
-fields.
+A planar viewport takes a display area: `viewport.setDisplayArea(displayArea)`,
+or the key `displayArea` of its view state. It can be used to programmatically set
+the zoom and pan on an image. By default, the viewport will fit the dicom image to
+the screen. A display area in the options of a viewport is not applied by itself:
+set it after the data is shown. The `displayArea` takes a `DisplayArea` type which
+has the following fields.
 
 ```js
 type DisplayArea = {
@@ -77,7 +98,6 @@ type DisplayArea = {
     imagePoint: [number, number], // imageX, imageY
     canvasPoint: [number, number], // canvasX, canvasY
   },
-  storeAsInitialCamera: boolean,
 };
 ```
 

@@ -78,8 +78,8 @@ bindings render with their own appearance settings.
 Labelmap segmentations use the same binding model. The segmentation display
 tool creates or resolves labelmap data, registers it as planar data, and mounts
 it as an overlay binding. When `useSliceRendering` is enabled, compatible
-volume labelmaps render through the slice/image overlay path instead of the
-legacy volume-labelmap actor path.
+volume labelmaps render through the slice/image overlay path. Otherwise a
+volume labelmap is an overlay display set that the volume path draws.
 
 ```ts
 await segmentation.addLabelmapRepresentationToViewportMap({

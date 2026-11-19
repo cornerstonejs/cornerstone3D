@@ -6,9 +6,9 @@ summary: 6.0 removes the legacy viewport classes, the compatibility adapters and
 
 # Next viewports only
 
-**State: decided, not in the code yet.** The next viewports and their API are
-in the code. The legacy classes, the adapters and the legacy names are still
-there too, and they are deleted in a later step.
+**State: in the code.** The legacy classes, the adapters, the legacy types
+and the legacy settings are deleted. The next viewports and their API are
+what 6.0 has.
 
 5.x has two families of viewports. The legacy ones (`StackViewport`,
 `VolumeViewport`, `VolumeViewport3D`, and the legacy video, whole slide and ECG
@@ -27,15 +27,19 @@ are temporary.
 ## What is removed
 
 - **The legacy viewport classes:** `Viewport`, `StackViewport`,
-  `BaseVolumeViewport`, `VolumeViewport`, `VolumeViewport3D`, and the legacy
-  `VideoViewport`, `WSIViewport` and `ECGViewport`.
+  `BaseVolumeViewport`, `VolumeViewport`, the legacy `VolumeViewport3D` (also
+  exported as `LegacyVolumeViewport3D` in 5.x), and the legacy
+  `VideoViewport`, `WSIViewport` and `ECGViewport`. The names
+  `VolumeViewport3D`, `VideoViewport`, `WSIViewport` and `ECGViewport` stay,
+  for the next classes: see [The viewport types](#the-viewport-types).
 - **The compatibility adapters** that 5.x creates for a legacy viewport type
   when `rendering.useGenericViewport` is on.
-- **`rendering.useGenericViewport`.** There is nothing to switch.
+- **`rendering.useGenericViewport` and `getUseGenericViewport()`.** There is
+  nothing to switch. A configuration that still sets the key is ignored.
 - **The legacy viewport types:** `ViewportType.STACK`,
   `ViewportType.ORTHOGRAPHIC` and `ViewportType.PERSPECTIVE`, with their
-  strings `'stack'`, `'orthographic'` and `'perspective'`. This part is in the
-  code. `enableElement` and `setViewports` throw an `Error` for each of the
+  strings `'stack'`, `'orthographic'` and `'perspective'`.
+  `enableElement` and `setViewports` throw an `Error` for each of the
   three strings, before the engine changes anything, and the message names
   the type to use, for example
   `ViewportType 'stack' was removed in Cornerstone3D 6.0: use ViewportType.PLANAR (a planar viewport shows a stack or a volume)`.
@@ -43,10 +47,12 @@ are temporary.
   at load with that message: store the planar type instead (with an
   orientation in `defaultOptions` for `'orthographic'`), or the 3D type with
   `parallelProjection: false` for `'perspective'`. `viewport.requestedType`
-  is gone with them: `viewport.type` is the type of the viewport.
+  is gone with them: `viewport.type` is the type of the viewport. A
+  `resolveClass` given to `registerViewportType` gets `{ type }`, without
+  `requestedType`.
 - **The word "next" in the type names.** The five types that remain get plain
-  names. This part is in the code, and the `_NEXT` names stay as deprecated
-  aliases. See [The viewport types](#the-viewport-types).
+  names, and the `_NEXT` names stay as deprecated aliases. See
+  [The viewport types](#the-viewport-types).
 - **The legacy viewport API:** `setStack`, `setVolumes`, `addVolumes`,
   `setProperties`, `getProperties`, `getCamera`, `setCamera`, `resetCamera`,
   `getViewPresentation`, `setViewPresentation`, and the actor methods of the
@@ -73,12 +79,17 @@ are temporary.
   `utilities.getVtkDisplayCoords(viewport, canvasPoint)`.
 - **The legacy types:** `Types.IStackViewport`, `Types.IVolumeViewport`,
   `Types.IBaseVolumeViewport`, `Types.IVideoViewport`, `Types.IWSIViewport`,
-  `Types.IECGViewport` and the `*ViewportProperties` types. This part is in
-  the code. `Types.IViewport` is the interface of a viewport of any family,
-  and `Types.IGenericViewport` is its deprecated 5.x name.
+  `Types.IECGViewport` and the `*ViewportProperties` types.
+  `Types.IViewport` is the interface of a viewport of any family, and
+  `Types.IGenericViewport` is its deprecated 5.x name.
+- **Events that no viewport fires:** `STACK_NEW_IMAGE` and `VOLUME_NEW_IMAGE`
+  (listen to `NEW_IMAGE`), `PRE_STACK_NEW_IMAGE` and `STACK_VIEWPORT_SCROLL`
+  (listen to `CAMERA_MODIFIED`), and `PRESET_MODIFIED` (read the `preset` key
+  of the presentation), with their detail types.
+  [Events](./3-api-map.md#events) has the row of each.
 - **The CPU rendering setting:** `rendering.useCPURendering` with
   `setUseCPURendering`, `resetUseCPURendering` and
-  `getShouldUseCPURendering`. This part is in the code. The render plan picks
+  `getShouldUseCPURendering`. The render plan picks
   the CPU path by itself. The detection of a device without WebGL at `init()`
   is internal now: on such a device the rendering engines make no WebGL
   context and `'auto'` draws on the CPU. To force the CPU on the planar
@@ -192,6 +203,19 @@ What is registered for each family:
 | Video         | `{ kind: 'video', sourceDataId: imageId }`, or pass the image id as `displaySetId`                         |
 | ECG           | `{ kind: 'ecg', sourceDataId: imageId }`, or pass the image id as `displaySetId`                           |
 | Whole slide   | `{ kind: 'wsi', imageIds, options: { webClient } }`                                                        |
+
+- **One registration serves a planar and a 3D viewport.** `kind: 'planar'` is
+  optional, and a 3D viewport takes a display set that has it, so a volume
+  that both show is registered once, with `kind: 'planar'`, `imageIds` and
+  `volumeId`.
+- **The id of a surface** is the key that was given to
+  `geometryLoader.loadAndCacheGeometry`, not `geometry.id`. For a mesh loaded
+  from a URL `geometry.id` is the URL without its scheme, and
+  `addDisplaySet(geometry.id, ...)` throws.
+- **Data that is not known at the start**, such as a file that the user
+  drops or a series picked from a list, is registered when it is loaded,
+  under a new id for each load. `add` under an id that is registered
+  replaces the entry.
 
 The first entry of `setDisplaySets` is the source. The others are overlays:
 

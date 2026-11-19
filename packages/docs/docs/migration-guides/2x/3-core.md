@@ -9,6 +9,8 @@ import TabItem from '@theme/TabItem';
 
 # @cornerstonejs/core
 
+> This page is about an older release. For the upgrade to Cornerstone3D 6.0, see the [6.0 migration guide](../6x/index.md).
+
 ## Initialization
 
 ### Removal of `detect-gpu` and `detectGPUConfig`

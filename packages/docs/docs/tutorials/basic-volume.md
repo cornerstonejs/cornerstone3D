@@ -81,7 +81,7 @@ const viewportInput = [
   {
     viewportId: viewportId1,
     element: element1,
-    type: ViewportType.ORTHOGRAPHIC,
+    type: ViewportType.PLANAR,
     defaultOptions: {
       orientation: Enums.OrientationAxis.AXIAL,
     },
@@ -89,7 +89,7 @@ const viewportInput = [
   {
     viewportId: viewportId2,
     element: element2,
-    type: ViewportType.ORTHOGRAPHIC,
+    type: ViewportType.PLANAR,
     defaultOptions: {
       orientation: Enums.OrientationAxis.SAGITTAL,
     },
@@ -98,6 +98,9 @@ const viewportInput = [
 
 renderingEngine.setViewports(viewportInput);
 ```
+
+A planar viewport shows a stack of images or a slice of a volume. The
+orientation in its options gives the plane in which it shows a volume.
 
 RenderingEngine will handle creation of the viewports. Next, we need to perform the `load` on the volume.
 
@@ -110,13 +113,23 @@ Defining a volume is not the same as loading it.
 volume.load();
 ```
 
-Finally, let the viewports know about the volume.
+Finally, register the volume once as a display set, under an id that we
+choose, and show it in both viewports. A display set with a `volumeId` shows
+as a volume.
 
 ```js
-setVolumesForViewports(
-  renderingEngine,
-  [{ volumeId }],
-  [viewportId1, viewportId2]
+const displaySetId = 'ctVolume';
+
+utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+  kind: 'planar',
+  imageIds,
+  volumeId,
+});
+
+await Promise.all(
+  [viewportId1, viewportId2].map((viewportId) =>
+    renderingEngine.getViewport(viewportId).setDisplaySets({ displaySetId })
+  )
 );
 
 // Render the image
@@ -134,7 +147,7 @@ import {
   RenderingEngine,
   Enums,
   volumeLoader,
-  setVolumesForViewports,
+  utilities,
 } from '@cornerstonejs/core';
 import { init as dicomImageLoaderInit } from '@cornerstonejs/dicom-image-loader';
 import { createImageIdsAndCacheMetaData } from '../../../../utils/demo/helpers';
@@ -194,7 +207,7 @@ async function run() {
     {
       viewportId: viewportId1,
       element: element1,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
       },
@@ -202,7 +215,7 @@ async function run() {
     {
       viewportId: viewportId2,
       element: element2,
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
       },
@@ -213,10 +226,18 @@ async function run() {
 
   volume.load();
 
-  setVolumesForViewports(
-    renderingEngine,
-    [{ volumeId }],
-    [viewportId1, viewportId2]
+  const displaySetId = 'ctVolume';
+
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    kind: 'planar',
+    imageIds,
+    volumeId,
+  });
+
+  await Promise.all(
+    [viewportId1, viewportId2].map((viewportId) =>
+      renderingEngine.getViewport(viewportId).setDisplaySets({ displaySetId })
+    )
   );
 }
 
@@ -241,7 +262,7 @@ Learn more about:
 - [rendering engine](../concepts/cornerstone-core/renderingEngine.md)
 - [viewport](../concepts/cornerstone-core/viewports.md)
 
-For advanced usage of Volume Viewport, please visit <a href="/live-examples/volumeAPI.html" target="_blank">VolumeViewport API</a> example page.
+For advanced usage of a planar viewport that shows a volume, please visit the <a href="/live-examples/volumeAPI.html" target="_blank">Volume API</a> example page.
 
 :::note Tip
 

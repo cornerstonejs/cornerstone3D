@@ -9,9 +9,13 @@ import {useCurrentSidebarCategory} from '@docusaurus/theme-common';
 
 # Generic Viewport
 
-The Generic Viewport architecture is a cleanup of the old split between
-`StackViewport`, `VolumeViewport`, CPU rendering, VTK image rendering, VTK
-volume rendering, and segmentation overlays.
+The Generic Viewport architecture is the viewport architecture of
+Cornerstone3D 6.0: every viewport is a Generic viewport. It replaced the split
+of 5.x between the legacy stack and volume viewport classes, CPU rendering, VTK
+image rendering, VTK volume rendering, and segmentation overlays. The legacy
+classes are gone in 6.0; the
+[6.0 migration guide](../../../migration-guides/6x/index.md) says what replaces
+each of their calls.
 
 The old model worked, but the ownership boundaries were not clear enough.
 Stack and volume viewports each had their own loading path, camera path,
@@ -89,7 +93,7 @@ receive state from the viewport and project it into renderer-specific commands.
 Generic Viewport separates two kinds of presentation:
 
 - View presentation: pan, zoom or scale, rotation, flips, and display area.
-  Direct Next viewports read and write this through `viewportProjection`.
+  Every viewport reads and writes this through `viewportProjection`.
 - Data presentation: VOI, opacity, colormap, blend mode, interpolation, and
   visibility for one mounted dataset.
 
@@ -98,14 +102,12 @@ having independent VOI, color, and opacity.
 
 ## Camera In Brief
 
-Clean Generic viewports prefer semantic state over durable VTK-style camera
+Generic viewports prefer semantic state over durable VTK-style camera
 fields. For planar, video, ECG, and WSI, the viewport state is the source of
 truth and the runtime camera, canvas transform, media transform, signal
-transform, or OpenLayers view is derived from it. 3D Next is runtime-camera
-backed, but still participates in the projection service. Legacy camera APIs
-remain available through temporary compatibility adapters; those adapters are
-not the long-term Next API surface and their legacy helpers are expected to be
-removed in a later breaking release. The full camera contract is covered in the
-camera page.
+transform, or OpenLayers view is derived from it. The 3D viewport is
+runtime-camera backed, but still participates in the projection service. The
+legacy camera API (`getCamera`, `setCamera`) and the compatibility adapters of
+5.x are gone in 6.0. The full camera contract is covered in the camera page.
 
 <DocCardList items={useCurrentSidebarCategory().items}/>

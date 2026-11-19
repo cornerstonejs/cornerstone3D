@@ -366,7 +366,7 @@ Also since we are using wasm, you will need to add the following to your webpack
 
 ### 5. Svelte + Vite
 
-Similar to the configuration above, use the CommonJS plugin converting commonjs to esm. Otherwise, it will be pending at `await viewport.setStack(stack);`, the image will not be rendered.
+Similar to the configuration above, use the CommonJS plugin converting commonjs to esm. Otherwise, it will be pending at `await viewport.setDisplaySets({ displaySetId });`, the image will not be rendered.
 
 ```javascript
 import { defineConfig } from 'vite';

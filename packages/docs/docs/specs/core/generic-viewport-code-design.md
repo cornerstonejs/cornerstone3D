@@ -1,7 +1,7 @@
 ---
 id: generic-viewport-code-design
 title: Generic Viewport code design
-summary: Which part of a generic viewport family owns which responsibility - the base class, the family viewport class, the resolved view, the render path, the data provider, the projection adapter, and the legacy adapter
+summary: Which part of a generic viewport family owns which responsibility - the base class, the family viewport class, the resolved view, the render path, the data provider, and the projection adapter
 ---
 
 # Generic Viewport code design
@@ -11,27 +11,17 @@ summary: Which part of a generic viewport family owns which responsibility - the
 This specification describes the code design of the Generic Viewport
 architecture. It says where each part of a viewport family must live. It covers
 the base class `GenericViewport`, the family viewport class, the resolved view,
-the render path, the render path resolver, the data provider, the projection
-adapter, and the legacy adapter.
+the render path, the render path resolver, the data provider, and the
+projection adapter.
 
-Today the Generic Viewport architecture is behind a flag. The flag is
-`rendering.useGenericViewport` in the configuration of `init()`, and it is off
-by default:
-
-- With the flag on, the rendering engine remaps each legacy viewport type to the
-  Generic Viewport family through a legacy adapter. `STACK` and `ORTHOGRAPHIC`
-  go to `PLANAR_NEXT`. `VIDEO`, `WHOLE_SLIDE`, `ECG` and `VOLUME_3D` go to the
-  `_NEXT` type of the same name. See `NEXT_TYPE_REMAP` in
-  `BaseRenderingEngine.ts`.
-- With the flag off, a legacy viewport type uses the old viewport class, for
-  example `StackViewport` or `VolumeViewport`.
-- A `_NEXT` viewport type, for example `ViewportType.PLANAR_NEXT`, always uses
-  the Generic Viewport family, with or without the flag.
-
-The plan is to move all applications from the old viewport classes to the
-Generic Viewport families, and then to remove the old viewport classes. The
-rules on this page apply to the Generic Viewport code only. The old viewport
-classes do not follow these rules.
+In 6.0 the Generic Viewport architecture is the only viewport architecture.
+5.x had it behind a flag, beside the old viewport classes, and remapped the
+legacy viewport types to it through legacy adapters. 6.0 removed the flag, the
+legacy viewport types, the old viewport classes and the legacy adapters. Every
+viewport is of a Generic Viewport family, and the types have plain names:
+`ViewportType.PLANAR`, `VOLUME_3D`, `VIDEO`, `WHOLE_SLIDE` and `ECG`. The
+[6.0 migration guide](../../migration-guides/6x/index.md) says what replaces
+each legacy name.
 
 This specification does not describe what a clinician sees. It does not replace
 the concept pages in
@@ -152,13 +142,10 @@ states the contract, and this specification repeats it:
   `getCurrentMode()`. The answer names the content, for example `stack`,
   `volume`, `ecg` or `empty`. The developer does not need an `instanceof` test,
   and the developer does not need a test of the method list.
-- **GENVIEW-API-7** An application that used a legacy viewport type keeps its
-  API. `ViewportType.ECG`, `STACK`, `ORTHOGRAPHIC`, `VIDEO`, `WHOLE_SLIDE` and
-  `VOLUME_3D` each resolve to a legacy adapter that carries the old methods.
-- **GENVIEW-API-8** A direct generic viewport type, for example
-  `ViewportType.ECG_NEXT`, carries the clean API only. The developer reads the
-  list of clean methods, and the developer knows which methods survive the
-  removal of the legacy adapters.
+- **GENVIEW-API-7** Removed in 6.0: it said that a legacy viewport type
+  resolved to a legacy adapter, and 6.0 has neither.
+- **GENVIEW-API-8** A viewport type, for example `ViewportType.ECG`, carries the
+  clean API only. The developer reads the list of clean methods.
 
 ### The extension points of the architecture (GENVIEW-EXT)
 
@@ -264,7 +251,7 @@ For example `Planar/PlanarViewport.ts`.
 - **GENVIEW-FAMILY-6** The family class exposes the semantic API of the family:
   `getZoom()`, `setZoom()`, `getPan()`, `setPan()`, `getRotation()`,
   `getViewState()` and `resetViewState()`. The family class does not expose
-  `getCamera()` or `setCamera()`. See GENVIEW-LEGACY-2.
+  `getCamera()` or `setCamera()`. See GENVIEW-LEGACY.
 - **GENVIEW-FAMILY-7** The family class creates the canvas or the DOM element of
   the family in the constructor, and it puts the element on the render context.
   A render path receives the element, and it does not create one.
@@ -390,22 +377,14 @@ Each family holds four files:
 
 ### The legacy adapter (GENVIEW-LEGACY)
 
-The legacy adapters are removed in 6.0. This group says what they were in 5.x.
-
-- **GENVIEW-LEGACY-1** The legacy adapter extends the family viewport class, and
-  it adds the methods of the viewport class that the family replaces.
-- **GENVIEW-LEGACY-2** `getCamera()`, `setCamera()`, `resetCamera()`,
-  `getViewPresentation()`, `setViewPresentation()`, `setProperties()`,
-  `getProperties()` and `resetProperties()` live on the legacy adapter, and not
-  on the family class.
-- **GENVIEW-LEGACY-3** A legacy method is a translation to the clean API. It
-  holds no geometry of its own. A conversion between world space and canvas
-  space goes through the resolved view of the family.
-- **GENVIEW-LEGACY-4** `viewportTypeToViewportClass.ts` maps the legacy viewport
-  type to the adapter through `resolveClass`, and it maps the `_NEXT` type to
-  the family class.
-- **GENVIEW-LEGACY-5** The legacy adapter is temporary. A new feature goes on the
-  family class, and the adapter translates to it.
+The legacy adapters are removed in 6.0, and with them this group of
+requirements (GENVIEW-LEGACY-1 to GENVIEW-LEGACY-5). In 5.x a legacy adapter
+extended the family viewport class and carried `getCamera()`, `setCamera()`,
+`resetCamera()`, `getViewPresentation()`, `setViewPresentation()`,
+`setProperties()`, `getProperties()` and `resetProperties()` as translations to
+the clean API. In 6.0 no class carries them: the family class does not take a
+legacy method back, and `viewportTypeToViewportClass.ts` maps each type to its
+family class.
 
 ### The fidelity of the view (GENVIEW-FIDELITY)
 
@@ -450,8 +429,8 @@ group says which part of a generic viewport owns each piece of the fidelity.
 - **GENVIEW-FIDELITY-4** The base class derives the verdict from the record of
   each binding and the display spacing, with `compareVoxelQuality()`. The base
   class fires the fidelity event and answers the fidelity query, because every
-  family needs both. The event goes through the helper that the legacy
-  `Viewport` also uses (FIDELITY-EVENT-7). See GENVIEW-BASE-1 and
+  family needs both. The event goes through the shared helper of
+  FIDELITY-EVENT-7. See GENVIEW-BASE-1 and
   GENVIEW-BASE-4.
 - **GENVIEW-FIDELITY-5** A binding that cannot show degraded data supplies no
   record, and the viewport then reports no degradation. A video, an ECG and a
@@ -479,8 +458,8 @@ group says which part of a generic viewport owns each piece of the fidelity.
   re-exports those names, and nothing else reaches outside.
 - **GENVIEW-FILE-3** The file names follow the pattern of the family:
   `<Family>Viewport.ts`, `<Family>ViewportTypes.ts`, `<Family>ResolvedView.ts`,
-  `<Family>RenderPathResolver.ts`, `Default<Family>DataProvider.ts`,
-  `<Family>ViewportLegacyAdapter.ts`, and one file for each render path.
+  `<Family>RenderPathResolver.ts`, `Default<Family>DataProvider.ts`, and one
+  file for each render path.
 - **GENVIEW-FILE-4** Code that two or more families share lives in
   `GenericViewport/`, and not in `packages/core/src/utilities/`. Today
   `viewportProjection.ts`, `genericViewportReferenceCompatibility.ts` and
@@ -505,7 +484,6 @@ group says which part of a generic viewport owns each piece of the fidelity.
 | Does the code change how a mounted data set looks?                                   | The data presentation, on the binding                    |
 | Does the code persist or restore the look of the view?                               | The projection adapter                                   |
 | Does the code record or report the fidelity of the frame?                            | See GENVIEW-FIDELITY                                     |
-| Does the code exist for an application that has not migrated?                        | The legacy adapter                                       |
 | Do two or more families need the same code?                                          | The base class, or a shared module in `GenericViewport/` |
 
 ## Known deviations
@@ -521,25 +499,6 @@ list when a review finds it.
 A review uses this section in two ways. A deviation that this section already
 holds is not a new finding. A change that makes one of these deviations worse is
 a finding, and the report names the deviation.
-
-### Only the Planar, ECG and Volume3D families answer `getCurrentMode()`
-
-`PlanarViewport`, `ECGViewport` and the Volume3D family override
-`getCurrentMode()`. The Volume3D family answers `'volume3d'` for a volume and
-`'unknown'` for a geometry-only source. The Video family and the WSI family do
-not, so each one answers `'unknown'` whenever data is mounted.
-
-`UltrasoundDirectionalTool` shows the cost. Its guard reads:
-
-```ts
-if (!(viewport instanceof StackViewport) && !(viewport instanceof ECGViewport)) {
-```
-
-An `instanceof` test names one class. It does not extend to a viewport type that
-an application registers, and it cannot tell a planar viewport that shows a
-stack from one that shows a volume.
-
-Breaks GENVIEW-FAMILY-5 and GENVIEW-API-6.
 
 ### The fidelity display spacing reads `devicePixelRatio`
 
@@ -566,5 +525,6 @@ The § Known deviations section holds what is open.
 | `sweepSpeed` was declared on the ECG data presentation and never read. It is now in `ECGViewState`, with `sensitivityMmMv`, `visibleChannels` and `traceLayout`.                                                                                                                      | [#2899](https://github.com/cornerstonejs/cornerstone3D/pull/2899) | GENVIEW-STATE-1, GENVIEW-STATE-3                              |
 | `RenderWindowMetrics` and `ECGRenderMetrics` were two declarations of one shape, joined by a cast, and the deprecated class declared its own `ChannelLayout`. `ECGRenderMetrics` and `ECGChannelLayout` are now the only declarations.                                                | [#2899](https://github.com/cornerstonejs/cornerstone3D/pull/2899) | GENVIEW-STATE-5                                               |
 | The ECG family answered `getCurrentMode()` with `'unknown'`.                                                                                                                                                                                                                          | [#2899](https://github.com/cornerstonejs/cornerstone3D/pull/2899) | GENVIEW-FAMILY-5, GENVIEW-API-6                               |
+| The video and whole slide families answered `getCurrentMode()` with `'unknown'`, and `UltrasoundDirectionalTool` told the families apart with `instanceof` tests. Every family answers the mode now, and the tool tests no class.                                                     | the 6.0 branch                                                    | GENVIEW-FAMILY-5, GENVIEW-API-6                               |
 | `utilities/ECGUtilities.ts` held the ECG layout, metric and drawing code, outside the family directory, and served the ECG family and the deprecated class. The code is now in `GenericViewport/ECG/`, and `utilities.ECGUtilities` is deprecated. The next major release removes it. | [#2899](https://github.com/cornerstonejs/cornerstone3D/pull/2899) | GENVIEW-FILE-1, GENVIEW-FILE-5                                |
 | The ECG layout had two attributes: `layoutType`, a closed list of names, and `traceRegions`, which no code read. `traceLayout` now takes a registered name or a full definition.                                                                                                      | [#2899](https://github.com/cornerstonejs/cornerstone3D/pull/2899) | GENVIEW-ECG-1, GENVIEW-ECG-2                                  |

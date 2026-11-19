@@ -93,8 +93,8 @@ The included candidates drive both:
   has computed them.
 
 The predicate's decision should be based on the **modality of the display
-set** where available. When the display set is unknown — for example a stack
-viewport using the legacy set image ids — the candidate has no
+set** where available. When the display set is unknown, for example a video
+shown by its image id with no registration, the candidate has no
 `displaySet`/`instance`/`imageIds`/`modality`, and the predicate can choose
 whether to include it based on those being undefined.
 
@@ -115,7 +115,7 @@ import { measurementTargetFilters } from '@cornerstonejs/tools';
 All display sets with pixel values — this is the default configuration for
 the ROI tools, made explicit. Candidates with a non-pixel modality
 (non-pixel modalities: SEG, RTSTRUCT, RTPLAN, SR, PR, KO)
-are excluded, while candidates with an unknown display set (legacy stacks)
+are excluded, while candidates with an unknown display set (no registration)
 are included:
 
 ```ts
@@ -196,7 +196,7 @@ toolGroup.addTool(CircleROITool.toolName, {
 
 toolGroup.addTool(CircleROITool.toolName, {
   // PT statistics where the display set is known, plus anything whose
-  // display set is unknown (no imageIds array, eg legacy stacks)
+  // display set is unknown (no imageIds array, eg no registration)
   targetsFilter: measurementTargetFilters.allPixelData,
   targetPredicate: (candidate) =>
     !candidate.imageIds || candidate.modality === 'PT',
@@ -230,13 +230,13 @@ The candidates passed to the filter are built by
   opt to include them;
 - when no actor produces a candidate (for example on a stack viewport), a
   single candidate for the viewport's default view reference is used. If the
-  viewport displays a registered display set (`setDisplaySets` on the generic
-  viewports), the candidate's display set fields are resolved from the
+  viewport displays a registered display set (`setDisplaySets`), the candidate's display set fields are resolved from the
   `displaySetModule` metadata (an `IDisplaySet` from
   `@cornerstonejs/metadata`) or the generic viewport display set
-  registration; a legacy stack (`setStack` with plain image ids) has no
-  display set, so the candidate carries none of the display set fields —
-  filters can detect this via the missing `imageIds`/`instance`.
+  registration; a display set id with no registration (a video or an ECG
+  shown by its image id) has no display set, so the candidate carries none of
+  the display set fields. Filters can detect this via the missing
+  `imageIds`/`instance`.
 
 ### targetId computation and reuse
 

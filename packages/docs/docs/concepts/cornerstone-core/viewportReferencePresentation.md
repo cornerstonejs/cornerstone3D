@@ -26,9 +26,7 @@ Some specific use cases for this are:
   - Uses `getViewReference` with a specific image position to get references to
     images in between or related to nearby annotations to interpolate
 - Resizing and sync display presentation
-  - Legacy viewports use `getViewPresentation` to get old presentation
-    information and then restore with `setViewPresentation(viewPres)`
-  - Direct Generic/Next viewports read presentation with
+  - Viewports read presentation with
     `viewportProjection.getPresentation(viewport)` and apply the returned
     native view state from `viewportProjection.withPresentation(...)` with
     `viewport.setViewState(...)`
@@ -160,12 +158,9 @@ Some typical uses cases for view presentation are:
 
 ## `setViewReference` and View Presentation
 
-The `viewport.setViewReference` API navigates to the specified reference. Legacy
-viewport classes and temporary compatibility adapters also expose
-`viewport.setViewPresentation` to apply presentation directly, but that legacy
-presentation mutation helper should be expected to be removed from the
-compatibility layer in a later breaking release. Direct Generic/Next viewports
-do not expose that mutation API; use
+The `viewport.setViewReference` API navigates to the specified reference. A
+viewport has no member that applies a presentation directly (the
+`setViewPresentation` of the 5.x legacy viewports is gone in 6.0); use
 `viewportProjection.withPresentation(...)` to translate a presentation patch to
 the viewport family's native `ViewState`, then call `viewport.setViewState(...)`.
 If both reference and presentation are being applied, then the view reference
@@ -247,9 +242,9 @@ function resize() {
   const renderingEngine = getRenderingEngine(renderingEngineId);
 
   if (renderingEngine) {
-    // Legacy viewport path: store the presentation from before for after.
+    // Store the presentation from before for after.
     const presentations = viewports.map((viewport) =>
-      viewport.getViewPresentation()
+      viewportProjection.getPresentation(viewport)
     );
 
     // Apply the resize
@@ -257,8 +252,15 @@ function resize() {
 
     // Restore the presentations as this will reset the relative positions
     // rather than resetting to null.
-    viewports.forEach((viewport, idx) => {
-      viewport.setViewPresentation(presentations[idx]);
+    viewports.forEach((viewport, index) => {
+      const nextViewState = viewportProjection.withPresentation(
+        viewport,
+        presentations[index]
+      );
+
+      if (nextViewState) {
+        viewport.setViewState(nextViewState);
+      }
     });
   }
 }
@@ -266,24 +268,5 @@ function resize() {
 resizeObserver.observe(viewportGrid);
 ```
 
-For direct Generic/Next viewports, keep presentation reads and writes on the
-projection service:
-
-```javascript
-const presentations = viewports.map((viewport) =>
-  viewportProjection.getPresentation(viewport)
-);
-
-renderingEngine.resize(true, false);
-
-viewports.forEach((viewport, index) => {
-  const nextViewState = viewportProjection.withPresentation(
-    viewport,
-    presentations[index]
-  );
-
-  if (nextViewState) {
-    viewport.setViewState(nextViewState);
-  }
-});
-```
+The presentation reads and writes stay on the projection service, which works
+for every viewport family.

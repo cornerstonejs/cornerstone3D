@@ -8,8 +8,8 @@ summary: What a 6.0 viewport draws and answers differently from 5.x - slice firs
 
 **State: in the code.** Everything on this page is about the Generic
 ("next") viewports, which are the only viewports of 6.0. The legacy viewports
-that the page compares with are still in the code too: they are deleted in a
-later step, see [Next viewports only](./1-next-viewports-only.md).
+that the page compares with are those of 5.x, which 6.0 no longer has, see
+[Next viewports only](./1-next-viewports-only.md).
 
 This page says what differs. For the call that replaces a legacy call, see
 [Every legacy call and what replaces it](./3-api-map.md).
@@ -54,6 +54,11 @@ a mix of two.
 
 Code that compares the camera focal point with the point it asked for should
 allow half a slice spacing, or keep the point itself.
+
+On an oblique view a jump with `setViewReference({ cameraFocalPoint })` stays
+on the point, between two slices: the focal point read back is the point.
+`viewport.scroll(0)` after the jump moves the view onto the closest slice, as
+the legacy helpers did with `scroll(0)` after `setCamera`.
 
 `WorldCrosshairTool` does the second. It keeps one world point for a tool
 group, which no camera owns. Each linked viewport shows its closest slice, and
@@ -117,7 +122,15 @@ leave the canvas. Against the legacy volume viewport:
 - **`setOrientation` keeps the point in view, the pan and the zoom.** The
   legacy volume viewport resets its camera on `setOrientation` and shows the
   middle of the volume. `resetViewState()` goes back to the orientation of the
-  viewport options.
+  viewport options. The zoom that stays is a factor of the fit, and the fit
+  is worked out for the new orientation, so the picture can change its size
+  on the screen: an oblique view can show smaller than on the legacy
+  viewport, with the background at its sides. Set the zoom again after the
+  turn for another size.
+- **A legacy `setCamera({ viewPlaneNormal, viewUp })` kept the camera
+  position** and moved the focal point, so the cut moved too.
+  `setViewState({ orientation })` keeps the point in view, so on a thin
+  volume the two show cuts that are slices apart.
 - **A stack has one orientation.** A display set without a `volumeId` shows
   as a stack in its acquisition plane. Mounted with another orientation, the
   viewport shows the images as a volume when they form one, and the mount
@@ -206,7 +219,10 @@ leave the canvas. Against the legacy volume viewport:
   threshold, and `{ colormap: { name } }` keeps the stored opacity, as the
   legacy `setProperties`. In 5.x a next planar viewport replaced the whole
   colormap, so the name was lost. `COLORMAP_MODIFIED` carries the whole
-  colormap.
+  colormap. A number in `opacity` after opacity points multiplies the points.
+  On a legacy volume viewport `setProperties({ colormap: { opacity } })` threw
+  the points of a callback away and kept one opacity, so the same two steps
+  give another picture.
 - **A list of opacities is read over the window.** A list in
   `colormap.opacity` runs from 0 at the lower end of the window to 1 at its
   upper end on a next planar viewport. The legacy volume viewport read the
@@ -273,6 +289,12 @@ leave the canvas. Against the legacy volume viewport:
 - **`setViewState({ displayArea })` merges.** A scale that the view state
   already has stays and multiplies the display area.
   `setDisplayArea(displayArea)` resets the scale first.
+- **A turn after a pan turns the picture about its own centre.** A pan set
+  through `viewportProjection.withPresentation(viewport, { zoom, pan })` stays
+  through a later rotation, so the picture turns about its own centre. The
+  legacy `setCamera({ focalPoint, position, parallelScale })` kept a world
+  point at the centre of the canvas, so a later rotation turned the picture
+  about the centre of the canvas.
 - **No `storeAsInitialCamera`.** Zoom 1 and pan `[0, 0]` are always the fit.
   A display area does not change the interpolation either.
 - **A stretch is the scale pair of the view state.**
@@ -280,11 +302,37 @@ leave the canvas. Against the legacy volume viewport:
   mode and in volume mode, on the GPU and on the CPU.
   `viewportProjection.getPresentation(viewport, { selector: { scale: true } })`
   returns the pair in its `scale`. A planar viewport has no `setAspectRatio()`,
-  and the `aspectRatio` option is not applied. A fit of the stretched picture
-  into the canvas is not built.
+  and the `aspectRatio` option is not applied.
+- **A stretched picture can fit the canvas.** With `scaleMode: 'fitAspect'`
+  the pair is measured against the fit of the stretched picture:
+  `viewport.setViewState({ scale: [w / h, 1], scaleMode: 'fitAspect' })` is
+  the legacy `setAspectRatio([w, h], { fit: true })`, and the fit follows a
+  resize. Without the fit, `setAspectRatio([w, h])` kept the horizontal
+  scale: `setViewState({ scale: [x, (x * h) / w], scaleMode: 'fit' })`, with
+  `x` the first number of the `scale` that `viewportProjection` gives.
 - **`getAspectRatio()` always returns `[1, 1]`.** Every next viewport still
   has the member from 5.x. It does not follow the scale pair, so do not read
   the stretch from it.
+
+## A copy of the view between viewports
+
+`tViewport.setCamera(sViewport.getCamera())` copied the focal point and the
+parallel scale, so two viewports of other data showed the same place at the
+same size. A next viewport has no camera to copy, and zoom 1 is the fit of
+each viewport: a zoom and a pan copied between a CT and a PT viewport give
+another size and another place. These calls give the legacy picture:
+
+1. `tViewport.setViewReference(sViewport.getViewReference())`.
+2. The zoom of the target is
+   `sourceZoom * targetParallelScale / sourceParallelScale`, with each
+   parallel scale from `viewport.getResolvedView()?.toICamera()` at zoom 1.
+3. The pan brings the focal point of the source to the centre of the
+   canvas: with `point = tViewport.worldToCanvas(sourceFocalPoint)`, the pan
+   is `pan + (centre - point) / zoom`.
+
+Steps 2 and 3 go through `viewportProjection.withPresentation`. The camera
+position synchronizer copies the view reference, the zoom and the pan as they
+are, so between viewports of other data it gives another size.
 
 ## Events and image loading of a planar viewport
 
@@ -493,7 +541,7 @@ leave the canvas. Against the legacy volume viewport:
 - **A view that shows only a prop is a 3D viewport.** A planar viewport takes
   its camera from its display set and draws nothing without one. A view of
   vtk.js props alone, such as the output of `vtkImageCPRMapper`, is a
-  `VOLUME_3D_NEXT` viewport: `getRenderer().addActor(actor)`,
+  `VOLUME_3D` viewport: `getRenderer().addActor(actor)`,
   `setViewState({ viewPlaneNormal, viewUp })`, `resetViewState()`.
 
 ## The render plan
@@ -538,6 +586,13 @@ through one CPU draw step that follows the GPU:
 - **Same colours and opacity.** It uses the colour tables of the GPU path.
 - **The area around the image has the background colour of the viewport.** It
   was black.
+- **The canvas that shows has the class `cornerstone-canvas`.** On the CPU a
+  planar viewport draws into a second canvas and moves the class to it, as
+  the legacy CPU stack viewport drew into the canvas of that class. So code
+  that finds the canvas of a viewport by the class reads the picture.
+  `viewport.canvas` stays the GPU canvas, and `viewport.getCanvas()` gives
+  the canvas that shows. In 5.x a next viewport kept the class on the hidden
+  GPU canvas.
 - **The VOI lookup table and the modality lookup table of an image are not
   applied.** The GPU path never applied them, and the CPU path of 5.x did. The
   window of the image is applied as before.
@@ -671,6 +726,11 @@ legacy picture within two levels of 255.
   of four leads and a rhythm strip for a record of eight leads or more and
   five seconds or more. Set `traceLayout` in the options of the viewport or in
   its view state for another one.
+- **`getContentDimensions()` follows the trace.** The size of the content is
+  worked out from the sweep speed and the trace layout, so it changes with
+  them. The legacy viewport worked it out from the number of samples and the
+  sampling frequency alone. Code that sizes its element from it reads it
+  again after a change of `sweepSpeed` or `traceLayout`.
 
 ## 3D viewports
 
@@ -714,7 +774,10 @@ legacy picture within two levels of 255.
 - **A surface is a display set.**
   `viewport.addDisplaySet(geometryId, { renderMode: 'vtkGeometry3d' })` mounts
   the surface of a geometry of the cache, `viewport.removeData(geometryId)`
-  removes it, and its colour, opacity and visibility are its presentation. A
+  removes it, and its colour, opacity and visibility are its presentation.
+  `geometryId` is the key that was given to
+  `geometryLoader.loadAndCacheGeometry`, not `geometry.id`: for a mesh loaded
+  from a URL the two differ, and `addDisplaySet(geometry.id)` throws. A
   3D viewport has no `addActor`, `addActors`, `setActors`, `removeActors` and
   `getActor`, and it does not fire `ACTORS_CHANGED`. `getActors()` stays and
   gives the actors of the display sets.
@@ -726,7 +789,8 @@ legacy picture within two levels of 255.
   legacy `setActors` and `resetCamera` did, so a later reset does not change
   the picture. In 5.x the mount used the fit of vtk.js, with a view angle of
   30 degrees and the bounding radius as the parallel scale, and the first
-  `resetViewState()` changed the picture.
+  `resetViewState()` changed the picture. A parallel scale that was set
+  before that mount is lost: set it after the surface is mounted.
 - **A reset fits a surface that reaches outside the volume.**
   `resetViewState()`, and the zoom and the pan against the fit, count a
   visible surface. The legacy viewport fitted the volume only, so such a
@@ -832,8 +896,11 @@ legacy picture within two levels of 255.
   the number of frames and `imageId` the image id of the frame. `image` is
   undefined. The detail has no `time` and no `duration`, which the legacy
   video viewport put into `STACK_NEW_IMAGE`: read
-  `viewport.getCurrentTime()`, and divide `viewport.getNumberOfFrames()` by
-  `viewport.getFrameRate()` for the duration. The legacy video viewport fired
+  `viewport.getCurrentTime()`. The length of the media is `detail.duration`
+  of `IMAGE_RENDERED` of a video viewport, beside `detail.time`;
+  `Types.EventTypes.ImageRenderedEventDetail` does not type the two keys.
+  `viewport.getNumberOfFrames() / viewport.getFrameRate()` is the length of
+  the frames of the metadata, which can be shorter. The legacy video viewport fired
   `STACK_NEW_IMAGE` with each draw: on each animation frame while the video
   played, and on each render, pan, zoom, reset, resize and seek, also when
   the frame stayed the same. `NEW_IMAGE` does not fire for a pan, a zoom, a
@@ -961,7 +1028,9 @@ legacy picture within two levels of 255.
   zoom goes to the mouse, the zoom and pan synchronizer moves a 3D target,
   and the VOI synchronizer reaches a 3D target when the event names a
   volume. On a whole slide viewport the limits are factors against the fit
-  too.
+  too. On an ECG and on a whole slide viewport a wheel step or a drag of the
+  zoom tool zooms by another amount than on the legacy viewports, which the
+  tool zoomed through their camera.
 - **The `PanTool` options `ignoreX`, `ignoreY`, `ignoreZ` and
   `limitToViewport` work on a next viewport,** as on the legacy viewports.
   With an ignored axis the picture moves by the canvas delta of the world

@@ -9,6 +9,8 @@ import TabItem from '@theme/TabItem';
 
 # `@cornerstonejs/nifti-image-volume-loader`
 
+> This page is about an older release. For the upgrade to Cornerstone3D 6.0, see the [6.0 migration guide](../6x/index.md).
+
 After migrating to the new pixel data model for volumes, we have also updated the Nifti image volume loader to align with this model.
 
 This change brings the loader more in line with the Cornerstone3D API and the rest of the library. We now have a dedicated Nifti image loader (not a volume loader) for loading Nifti files, creating a more consistent API across all image loaders in the library.

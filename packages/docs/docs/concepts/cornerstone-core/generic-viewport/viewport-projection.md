@@ -71,7 +71,7 @@ They are a tier below the core viewport methods and may change while the
 Generic Viewport API is still settling. Application code should prefer
 `viewportProjection.getPresentation()` and
 `viewportProjection.withPresentation()` for presentation reads and writes.
-Direct Next viewport instances intentionally do not expose
+Viewport instances intentionally do not expose
 `getViewPresentation()` or `setViewPresentation()`.
 
 ## Core Types
@@ -192,7 +192,7 @@ type PlanarPresentation = ProjectionPresentationForKind<'planar'>;
 type PlanarViewState = ProjectionViewStateForKind<'planar'>;
 ```
 
-When the viewport instance has a literal Next viewport type, the service can
+When the viewport instance has a literal viewport type, the service can
 infer those same types from the viewport argument. Explicit `kind` requests are
 available for custom synchronizers that only know a viewport as `unknown`.
 
@@ -207,10 +207,9 @@ Built-in adapters are registered for:
 The advanced namespaces expose lower-level helpers for code that intentionally
 works below the core viewport API.
 
-`createZoomPanSynchronizer` in `@cornerstonejs/tools` already uses the service
-when both source and target viewports expose projection adapters, then falls
-back to the older `getZoom`/`setZoom` and `getPan`/`setPan` capability checks
-for legacy viewport families.
+`createZoomPanSynchronizer` in `@cornerstonejs/tools` uses the service for
+every viewport, and so do `ZoomTool`, `PanTool` and the presentation view and
+camera position synchronizers.
 
 ## When To Care
 
@@ -269,29 +268,14 @@ if (nextState) {
 }
 ```
 
-Next viewports intentionally do not expose `setViewPresentation`. The
+Viewports intentionally do not expose `setViewPresentation`. The
 projection service is the portable write layer, and `setViewState` remains the
-only Next viewport mutation primitive. They also do not expose
+only viewport mutation primitive. They also do not expose
 `getViewPresentation`; use `viewportProjection.getPresentation(viewport,
-{ selector })` instead. Legacy compatibility adapters may still expose
-`getViewPresentation` and `setViewPresentation` for older code, but those
-adapters are a temporary migration layer and their legacy camera/presentation
-methods should be expected to disappear in a later breaking release.
+{ selector })` instead. The legacy viewports of 5.x and their compatibility
+adapters had both members; 6.0 removed them.
 
-Before, legacy or compatibility code might do this:
-
-```ts
-const presentation = viewport.getViewPresentation({
-  pan: true,
-  zoom: true,
-});
-
-viewport.setViewPresentation({
-  zoom: presentation.zoom * 2,
-});
-```
-
-Direct Next code should do this:
+A zoom by a factor of two:
 
 ```ts
 const presentation = viewportProjection.getPresentation(viewport, {
@@ -334,7 +318,8 @@ Planar projection uses:
 - `PlanarViewState` as semantic state
 - `PlanarSliceBasis` and resolved view geometry for data/world/canvas mapping
 - `PlanarResolvedICamera` only as renderer output
-- compatibility helpers for legacy `getZoom`, `getPan`, and `getScale`
+- helpers for the `getZoom`, `getPan`, and `getScale` members that a planar
+  viewport keeps from 5.x
 
 Volume3D projection uses:
 

@@ -16,10 +16,10 @@ kind of legacy code, changes it and ends with a check.
   [Rendering changes](./2-rendering-changes.md).
 - A coding agent reads [For a coding agent](#for-a-coding-agent) first.
 
-**State.** The steps use calls that are in the code. What is marked
-**Decided, not in the code yet** is the removal: the legacy classes, types,
-settings and helpers are still in the code. The viewport types have their
-plain names, see [Viewport types](./3-api-map.md#viewport-types).
+**State.** The steps use calls that are in the code, and the removal is in
+the code too: on 6.0 the legacy classes, types, settings and helpers are
+gone. The viewport types have their plain names, see
+[Viewport types](./3-api-map.md#viewport-types).
 
 ## Before you start
 
@@ -121,13 +121,17 @@ After:
 renderingEngine.enableElement({
   viewportId,
   element,
-  type: Enums.ViewportType.PLANAR_NEXT,
+  type: Enums.ViewportType.PLANAR,
   defaultOptions: { orientation: Enums.OrientationAxis.AXIAL },
 });
 ```
 
-**Check.** `viewport.type` is `'planar'`, and `viewport.getCurrentMode()`
-is `'empty'` until step 3 shows data.
+On 5.x the planar type is `ViewportType.PLANAR_NEXT`. On 6.0 it is
+`ViewportType.PLANAR`, and `PLANAR_NEXT` is its deprecated alias, so code
+written on 5.x with `PLANAR_NEXT` runs on 6.0 too.
+
+**Check.** `viewport.type` is `'planar'` on 6.0 (`'planarNext'` on 5.x), and
+`viewport.getCurrentMode()` is `'empty'` until step 3 shows data.
 
 **What can go wrong**
 
@@ -135,7 +139,7 @@ is `'empty'` until step 3 shows data.
   viewport without an orientation opens a volume in its acquisition plane. So
   pass the orientation, as above.
 - A viewport for a stack gets no orientation.
-- `PERSPECTIVE` becomes `VOLUME_3D_NEXT` with
+- `PERSPECTIVE` becomes `VOLUME_3D` with
   `defaultOptions: { parallelProjection: false }`. The legacy type drew a
   slice, and the new one draws the volume in 3D. This needs
   [a decision](#changes-that-need-a-decision-by-a-person).
@@ -153,6 +157,7 @@ rg -n "\b(ViewportProperties|StackViewportProperties|VolumeViewportProperties|Vi
 rg -n "enabledElement\.viewport|\.getViewport\(|\.getViewports\(" src
 rg -n "\.type *[!=]==? *(Enums\.)?ViewportType\." src
 rg -n "viewportSupports(Stack|Volume)Compatibility|requestedType" src
+rg -n "'(setStack|setVolumes|setVideo|setWSI|setEcg)' in |\.type *[!=]==? *['\"](stack|orthographic|perspective)['\"]" src
 ```
 
 **Change.** Ask what the viewport shows, not which class it is.
@@ -184,7 +189,8 @@ family: the members that every family has. `getEnabledElement(element).viewport`
 `renderingEngine.getViewport(viewportId)` and each viewport of
 `renderingEngine.getViewports()` are typed with it. The members of a family
 are on its class: type a planar viewport as `PlanarViewport`, a 3D viewport
-as `GenericVolumeViewport3D`, and so on.
+as `VolumeViewport3D`, and so on (on 5.x the next 3D class is exported as
+`GenericVolumeViewport3D`, which 6.0 keeps as a deprecated alias).
 `Types.IStackViewport`, `Types.IVolumeViewport`, `Types.IBaseVolumeViewport`,
 `Types.IVideoViewport`, `Types.IWSIViewport` and `Types.IECGViewport` are
 gone, and so are the `*ViewportProperties` types. `Types.IGenericViewport` and
@@ -229,6 +235,14 @@ are the work list of steps 3 to 8.
   set turns a stack into a volume. Ask for the mode when you need it, and do
   not store it.
 - `utilities.viewportIsInVolumeMode(viewport)` is true for a 3D viewport too.
+- A check for a member, such as `'setStack' in viewport` or
+  `'setVolumes' in viewport`, is false for every 6.0 viewport, and a check
+  `viewport.type === 'stack'` with a string is false too. Neither fails: the
+  code takes its other branch for every viewport. The last search of the
+  step finds both kinds. Ask for the mode in their place.
+- `utilities.getViewportContentMode(viewport)` says `'empty'` before the
+  mount. A guard that ran before `setStack` and asked whether the viewport
+  can take a stack has no twin: drop it.
 - The guards `utilities.viewportSupportsImageSlices`,
   `utilities.viewportSupportsVolumeId` and the like test which members a
   viewport has. A planar viewport has them all in both modes, so they do not
@@ -328,9 +342,31 @@ shows. On 6.0 `VIEWPORT_NEW_IMAGE_SET` fires for a stack and
 - A stack that is asked for an orientation other than its acquisition plane
   shows as a volume when its images form one. The mount throws when they do
   not. Ask `viewport.canRenderOrientation(orientation)` first.
-- `setDisplaySets` replaces everything that the viewport shows.
+- `setDisplaySets` replaces everything that the viewport shows, also a
+  surface that a segmentation mounted before it.
   `viewport.addDisplaySet(displaySetId, { role: 'overlay' })` adds one display
   set, and `viewport.removeData(displaySetId)` removes one.
+- Wait for `setDisplaySets` before code that reads the view, that sets a tool
+  active which reads it, that adds a Surface representation, or that should
+  not see the first `NEW_IMAGE`. Legacy code often did not wait for
+  `setVolumes` or `setVolumesForViewports`: a legacy volume viewport had a
+  camera before its data, and a next viewport has no view before its mount.
+- Two viewports that show one stack at two first images, as
+  `setStack(imageIds)` and `setStack(imageIds, 50)` did, share one
+  registration: call `await viewport.setImageIdIndex(50)` after
+  `setDisplaySets` on the second viewport.
+- `addVolumes` of a volume that the viewport showed already made a new actor
+  with the look of its callback. `addDisplaySet` of a display set that is
+  mounted keeps its presentation. For the look of the callback again call
+  `resetDisplaySetPresentation(displaySetId)`, then
+  `setDisplaySetPresentation`.
+- `convertStackToVolumeViewport` kept the view (the view presentation and
+  the view reference), and `convertVolumeToStackViewport` kept the view
+  reference. Read them before `setDisplaySets` and set them after it. Both
+  took a `background`, which a next viewport takes only at `enableElement`:
+  a new background needs the element enabled again, which takes the
+  viewport out of its tool group. Code that asked `viewport.type` after them
+  asks `viewport.getCurrentMode()`.
 - An input of the legacy calls could carry a `callback`, an `actorUID`, a
   `blendMode`, a `slabThickness` and a `visibility`. A display set has none of
   them. They are keys of the presentation, which is step 4.
@@ -346,7 +382,7 @@ shows. On 6.0 `VIEWPORT_NEW_IMAGE_SET` fires for a stack and
 ```sh
 rg -n "\.(setProperties|getProperties|resetProperties|setDefaultProperties|getDefaultProperties|clearDefaultProperties|resetToDefaultProperties)\(" src
 rg -n "\.(setBlendMode|getBlendMode|setSlabThickness|getSlabThickness|resetSlabThickness|setSampleDistanceMultiplier|setVOI|setWindowLevel|setAverageWhite|unsetColormap)\(" src
-rg -n "VOILUTFunction|isComputedVOI|callback:|actorUID" src
+rg -n "\bVOILUTFunction\b|isComputedVOI|callback:|actorUID" src
 ```
 
 **Change.** The look of one display set is its presentation.
@@ -479,7 +515,15 @@ the presentation gives zoom 1 and pan `[0, 0]`.
 - A display area in the options of a viewport is not applied by itself. Call
   `viewport.setViewState({ displayArea })` after the mount.
 - A stretch is `viewport.setViewState({ scale: [x, y] })`. Do not read it from
-  `getAspectRatio()`, which always returns `[1, 1]`.
+  `getAspectRatio()`, which always returns `[1, 1]`. The legacy
+  `setAspectRatio([w, h], { fit: true })` is
+  `viewport.setViewState({ scale: [w / h, 1], scaleMode: 'fitAspect' })`.
+- `setCamera({ viewPlaneNormal, viewUp })` becomes
+  `viewport.setViewState({ orientation: { viewPlaneNormal, viewUp } })`, and
+  `setCamera({ focalPoint, viewPlaneNormal, viewUp })` in one call becomes
+  that, then `viewport.setViewReference({ cameraFocalPoint: focalPoint })`,
+  then `viewport.scroll(0)`. A copy of the camera of another viewport is in
+  [A copy of the view between viewports](./2-rendering-changes.md#a-copy-of-the-view-between-viewports).
 
 ## Step 6. Slices, orientation and references
 
@@ -680,7 +724,7 @@ is its geometry id.
   does not draw the renderer: the prop does not show, and the viewport warns
   once.
 - A view that shows only props, as the stack viewport of the CPR example did,
-  is a `VOLUME_3D_NEXT` viewport: a planar viewport draws nothing without a
+  is a `VOLUME_3D` viewport: a planar viewport draws nothing without a
   display set.
 - A 3D viewport has no `addActor`, `addActors`, `setActors`, `removeActors`
   and `getActor`. [The 3D viewport](./3-api-map.md#the-3d-viewport) has the
@@ -878,12 +922,17 @@ has the rows. Four need work:
 
 **Check.** Draw each annotation tool that the application offers on a stack
 and on a volume, scroll away and back, and compare the measurement with 5.x.
-Paint a labelmap and look at the fill.
+Paint a labelmap and look at the fill. Use each tool of each tool group once:
+a tool that is only added to a tool group proves nothing.
 
 **What can go wrong**
 
 - A tool that the application wrote itself and that calls legacy members of
   a viewport is application code. Take it through steps 2 to 9.
+- `ScaleOverlayTool` reads the corners of the images when it is enabled:
+  enable it after every viewport of its tool group shows its data.
+  `CrosshairsTool` can be set active before: it starts when a viewport of its
+  group shows a volume.
 - `utilities.getImageLegacy(element)` of the core is gone. Read
   `cache.getImage(viewport.getCurrentImageId())`.
 
@@ -938,6 +987,15 @@ once more, with the list of
   for what it changes, and `setSliceFirst(false)` turns it off.
 - A next viewport of 5.x and one of 6.0 differ. A screen that was checked on
   5.x is checked again.
+- `setUseCPURendering()` marked the library as initialized, and
+  `setRenderBackend()` does not. Code that ran without `init()` because of
+  the old call throws at `new RenderingEngine()`:
+  `@cornerstonejs/core is not initialized, run init() first`. Call
+  `await init()` first, as the sample does.
+- Call `setRenderBackend('cpu')` after `init()`, or pass
+  `rendering.planar.renderBackend` to `init`. `init(configuration)` starts
+  from the default configuration and its argument, so a backend that was set
+  before it is lost.
 
 ## Changes that need a decision by a person
 
@@ -990,23 +1048,28 @@ Rules for doing this upgrade mechanically.
    and on a volume. Where the code can meet both, use the call that answers
    in both modes, and do not add a branch on the mode that the row does not
    ask for.
-4. **Know what is not built.** Every call in the column "Use instead" is in
-   the code. What is marked **Decided, not in the code yet** is the removal:
-   the legacy classes and their types, the compatibility adapters, the
-   setting `rendering.useGenericViewport`, the helper
-   `utilities.ECGUtilities`. These names still exist and still compile. Do
-   not keep them: move off each one as its row says. The viewport types
-   have their plain names; the `_NEXT` names are deprecated aliases.
+4. **Know what is gone and what is deprecated.** Every call in the column
+   "Use instead" is in the code. On 6.0 the legacy classes and their types,
+   the compatibility adapters and the setting `rendering.useGenericViewport`
+   are gone, so the type checker lists each use. A row marked
+   **Deprecated** names a name that still compiles in 6.x, such as the
+   `_NEXT` types, the `Generic` class names, `Types.IGenericViewport`,
+   `utilities.isGenericViewport` and `utilities.ECGUtilities`: move off
+   each one as its row says.
 5. **Do not import a private name.** A cell with `-` means that no call takes
    the place of the legacy name. Do not import from a path inside a package,
-   such as `@cornerstonejs/core/dist`, and do not use a `LegacyAdapter` class
-   or `rendering.useGenericViewport` as the end state.
+   such as `@cornerstonejs/core/dist`. The `LegacyAdapter` classes and
+   `rendering.useGenericViewport` of 5.x are not an end state: 6.0 has
+   neither.
 6. **Do not keep a legacy call behind a cast.** No `as any` and no check for
    the presence of a legacy member to keep an old path alive.
 7. **Do not edit actors to set a look.** Use the presentation.
 8. **Verify after each step.** The type checker passes. The tests of the
    application pass. The search of the step prints nothing, or only lines
-   that you list with the reason. Then do the check of the step.
+   that you list with the reason. Then do the check of the step. A search
+   also finds names that stay, such as `setOrientation`, `setImageIdIndex`,
+   `scroll`, `getActors`, `setZoom` and `setDisplayArea` (the map says
+   "Same name"), and calls in comments: list those as such.
 9. **Stop and ask** at each row of
    [Changes that need a decision by a person](#changes-that-need-a-decision-by-a-person)
    that the code touches. Say what you found, where, and what the choices
