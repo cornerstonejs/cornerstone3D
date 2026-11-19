@@ -64,6 +64,16 @@ import type {
 
 const log = coreLog.getLogger('RenderingEngine', 'VolumeViewport3D');
 
+/**
+ * What `setDisplaySets` loaded for one display set before it removed the
+ * shown scene: the data and the render mode it was loaded for. The mount
+ * takes it, so the data loads once.
+ */
+interface Volume3DStagedLoad {
+  data: LoadedData;
+  renderMode: 'vtkVolume3d' | 'vtkGeometry3d';
+}
+
 class VolumeViewport3D extends GenericViewport<
   Volume3DCamera,
   Volume3DDataPresentation,
@@ -79,8 +89,12 @@ class VolumeViewport3D extends GenericViewport<
   protected renderContext: Volume3DViewportRenderContext;
 
   private primaryDataId?: string;
-  /** True while `setDisplaySets` mounts, which fires one event for all. */
-  private mountsDisplaySets = false;
+  /**
+   * The number of the newest `setDisplaySets` call. An older call that is
+   * still loading or mounting stops at its next step and leaves the viewport
+   * to the newer one.
+   */
+  private setDataRequestId = 0;
   /**
    * The presentation of each display set after its mount, which
    * `resetDisplaySetPresentation` goes back to.
@@ -200,9 +214,15 @@ class VolumeViewport3D extends GenericViewport<
    * entry is mounted as the source binding; subsequent entries default to the
    * overlay role unless they specify one explicitly.
    *
-   * The data of every entry is loaded before the shown display sets go, so
-   * an entry without data rejects and leaves the shown scene as it was, as
-   * the legacy `setVolumes` did for a volume that was not in the cache.
+   * The data of every entry is loaded, and its render path found, before the
+   * shown display sets go, so an entry without data, or with data that no
+   * render path draws (a contour), rejects and leaves the shown scene as it
+   * was, as the legacy `setVolumes` did for a volume that was not in the
+   * cache. The mount then takes that data and the render mode it was loaded
+   * for, so each display set loads once.
+   *
+   * A newer call replaces an older one that has not ended: the older call
+   * then removes, mounts and fires nothing more, as the planar viewport.
    *
    * @param entries - Display sets to mount, each with its own render-mode options.
    */
@@ -212,24 +232,46 @@ class VolumeViewport3D extends GenericViewport<
       options?: Volume3DSetDataOptions;
     }>
   ): Promise<void> {
+    const requestId = ++this.setDataRequestId;
+    const isStale = () => requestId !== this.setDataRequestId;
+    const staged: Volume3DStagedLoad[] = [];
+
     for (const { displaySetId, options = {} } of entries) {
-      await this.dataProvider.load(displaySetId, {
-        renderMode: this.resolveRenderMode(displaySetId, options.renderMode),
-      });
+      const renderMode = this.resolveRenderMode(
+        displaySetId,
+        options.renderMode
+      );
+      const data = await this.dataProvider.load(displaySetId, { renderMode });
+
+      if (isStale()) {
+        return;
+      }
+
+      this.renderPathResolver.resolve(this.type, data, { renderMode });
+      staged.push({ data, renderMode });
     }
 
     this.removeAllData();
-    this.mountsDisplaySets = true;
 
-    try {
-      for (const [index, { displaySetId, options = {} }] of entries.entries()) {
-        await this.addDisplaySet(displaySetId, {
+    for (const [index, { displaySetId, options = {} }] of entries.entries()) {
+      if (isStale()) {
+        return;
+      }
+
+      await this.mountDisplaySet(
+        displaySetId,
+        {
           ...options,
           role: options.role ?? (index === 0 ? 'source' : 'overlay'),
-        });
-      }
-    } finally {
-      this.mountsDisplaySets = false;
+        },
+        false,
+        isStale,
+        staged[index]
+      );
+    }
+
+    if (isStale()) {
+      return;
     }
 
     this.triggerNewVolume(entries.map(({ displaySetId }) => displaySetId));
@@ -253,11 +295,35 @@ class VolumeViewport3D extends GenericViewport<
     displaySetId: string,
     options: Volume3DSetDataOptions | DataAddOptions = {}
   ): Promise<void> {
-    const volumeOptions = options as Volume3DSetDataOptions;
-    const renderMode = this.resolveRenderMode(
+    await this.mountDisplaySet(
       displaySetId,
-      volumeOptions.renderMode
+      options as Volume3DSetDataOptions,
+      true
     );
+  }
+
+  /**
+   * Mounts one 3D display set, as `addDisplaySet` describes. It takes the
+   * data and the render mode that `setDisplaySets` loaded (`staged`), and
+   * loads them without it. A mount of a `setDisplaySets` call that a newer
+   * call replaced (`shouldIgnore`) stops without a change. A source fires
+   * VOLUME_VIEWPORT_NEW_VOLUME here only when `notifiesNewVolume` is set:
+   * `setDisplaySets` fires it once for all its display sets.
+   */
+  private async mountDisplaySet(
+    displaySetId: string,
+    volumeOptions: Volume3DSetDataOptions,
+    notifiesNewVolume: boolean,
+    shouldIgnore?: () => boolean,
+    staged?: Volume3DStagedLoad
+  ): Promise<void> {
+    if (this.isDestroyed) {
+      throw new Error('Viewport has been destroyed');
+    }
+
+    const renderMode =
+      staged?.renderMode ??
+      this.resolveRenderMode(displaySetId, volumeOptions.renderMode);
 
     const showedNothing = !this.bindings.size;
 
@@ -267,10 +333,22 @@ class VolumeViewport3D extends GenericViewport<
       } as Volume3DCamera;
     }
 
-    await super.addDisplaySet(displaySetId, {
+    const dataOptions: DataAddOptions = {
       renderMode,
       role: volumeOptions.role,
-    });
+    };
+    const data =
+      staged?.data ?? (await this.dataProvider.load(displaySetId, dataOptions));
+    const added = await this.addLoadedData(
+      displaySetId,
+      data,
+      dataOptions,
+      shouldIgnore
+    );
+
+    if (!added) {
+      return;
+    }
 
     if (renderMode === 'vtkVolume3d' && volumeOptions.role === 'source') {
       this.primaryDataId = displaySetId;
@@ -286,12 +364,16 @@ class VolumeViewport3D extends GenericViewport<
     this.viewState = this.getViewState();
 
     if (showedNothing && this.viewState.viewUp) {
-      setVolume3DZeroRotationViewUp(this, this.viewState.viewUp);
+      setVolume3DZeroRotationViewUp(
+        this,
+        this.viewState.viewUp,
+        this.viewState.viewPlaneNormal
+      );
     }
 
     this.triggerMountedVOIModified(displaySetId);
 
-    if (!this.mountsDisplaySets && volumeOptions.role === 'source') {
+    if (notifiesNewVolume && volumeOptions.role === 'source') {
       this.triggerNewVolume([displaySetId]);
     }
   }

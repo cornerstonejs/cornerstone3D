@@ -1,6 +1,6 @@
 import { vec3 } from 'gl-matrix';
 import vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
-import { isWebGLUnavailable } from '../../../init';
+import { getEffectiveRenderBackend, isWebGLUnavailable } from '../../../init';
 import {
   Events,
   MetadataModules,
@@ -116,7 +116,10 @@ import type {
   PlanarVolumeSliceRendering,
 } from './planarRuntimeTypes';
 import type { FidelityDisplay } from '../../helpers/fidelityIndicator/displaySpacingOfViewport';
-import { fidelityLinesFromBindings } from '../../helpers/fidelityIndicator/collectFidelityLines';
+import {
+  fidelityLinesFromBindings,
+  imageQualityStatusOf,
+} from '../../helpers/fidelityIndicator/collectFidelityLines';
 import {
   type FidelityLine,
   isReduced,
@@ -302,15 +305,36 @@ function getSlabPresentation(
 
 /**
  * What `loadPlanarData` gives for a display set: its loaded data, the render
- * path decision and the inputs of that decision, and the orientation that
- * the options ask for.
+ * path decision, the inputs of that decision and the backend that the
+ * configuration gave for it, and the orientation that the options ask for.
  */
 type PlanarDataLoad = {
   data: LoadedData<PlanarPayload>;
   selectedPath: SelectedPlanarRenderPath;
   resolvedOrientation: PlanarViewState['orientation'];
   decisionOptions: PlanarRenderPathDecisionOptions;
+  renderBackend: EffectiveRenderBackend;
 };
+
+/**
+ * What `setDisplaySets` loaded for a display set, with the best image of the
+ * stack that the cache has now. A progressive load can bring a better stage
+ * of the first image after the load and before the mount, and the render
+ * paths only take the stages that come after their mount.
+ */
+function withBestCachedImage(loaded: PlanarDataLoad): PlanarDataLoad {
+  const { image } = loaded.data;
+  const cachedImage = image ? cache.getImage(image.imageId) : undefined;
+
+  if (
+    !cachedImage ||
+    imageQualityStatusOf(cachedImage) <= imageQualityStatusOf(image)
+  ) {
+    return loaded;
+  }
+
+  return { ...loaded, data: { ...loaded.data, image: cachedImage } };
+}
 
 /**
  * Whether two render path decisions of one display set have the same inputs
@@ -394,6 +418,12 @@ class PlanarViewport extends GenericViewport<
     canvasWidth: number;
   };
   private setDataRequestId = 0;
+  /**
+   * The commit of a `mountDisplaySets` call while it runs: the removal of
+   * the shown display sets and the mount of the new ones. A newer call does
+   * not stop it; it waits for its end before it removes anything.
+   */
+  private mountCommit?: Promise<void>;
   private renderPipelineSwapId = 0;
   private pendingRenderPipelineUpdate?: Promise<void>;
   // Last reported render-path error message per display set; a successful
@@ -637,6 +667,13 @@ class PlanarViewport extends GenericViewport<
    * the draws of a CPU path from its start to its end, also while the shown
    * scene waits for the loads, and at its end, also when it rejects, draws
    * once when a draw was asked for meanwhile.
+   *
+   * A newer call stops an older one while the older one loads. Once a call
+   * has loaded, its commit (the removal of the shown display sets and the
+   * mounts) runs to its end, and a newer call waits for it before it removes
+   * anything. So a listener of an event of the commit, as NEW_IMAGE, that
+   * starts a call that rejects leaves the complete new scene, and the commit
+   * fires its event of new data.
    */
   private async mountDisplaySets(
     entries: Array<{ displaySetId: string; options?: PlanarSetDataOptions }>
@@ -669,27 +706,52 @@ class PlanarViewport extends GenericViewport<
         loaded.push(load);
       }
 
-      this.clearResolvedViewCache();
-      this.removeReplaceableData(entries);
+      if (this.mountCommit) {
+        await this.mountCommit.catch(() => undefined);
 
-      for (const [index, { displaySetId, options }] of mounts.entries()) {
         if (isStale()) {
           return;
         }
+      }
 
-        await this.addDisplaySetInternal(
-          displaySetId,
-          options,
-          isStale,
-          loaded[index]
-        );
+      const commit = this.commitDisplaySets(entries, mounts, loaded);
+
+      this.mountCommit = commit;
+
+      try {
+        await commit;
+      } finally {
+        if (this.mountCommit === commit) {
+          this.mountCommit = undefined;
+        }
       }
     } finally {
       this.releaseMountCpuDrawHold(requestId);
     }
 
-    if (!isStale()) {
-      this.triggerNewDataEvent(entries.map(({ displaySetId }) => displaySetId));
+    this.triggerNewDataEvent(entries.map(({ displaySetId }) => displaySetId));
+  }
+
+  /**
+   * The commit of `mountDisplaySets`: removes the shown display sets and
+   * mounts the new ones with the data that the call loaded, a stack with the
+   * best stage of its image that came meanwhile. A newer call does not stop
+   * it.
+   */
+  private async commitDisplaySets(
+    entries: Array<{ displaySetId: string; options?: PlanarSetDataOptions }>,
+    mounts: Array<{ displaySetId: string; options: PlanarSetDataOptions }>,
+    loaded: PlanarDataLoad[]
+  ): Promise<void> {
+    this.clearResolvedViewCache();
+    this.removeReplaceableData(entries);
+
+    for (const [index, { displaySetId, options }] of mounts.entries()) {
+      await this.addDisplaySetInternal(
+        displaySetId,
+        options,
+        withBestCachedImage(loaded[index])
+      );
     }
   }
 
@@ -774,7 +836,6 @@ class PlanarViewport extends GenericViewport<
   private async addDisplaySetInternal(
     dataId: string,
     options: PlanarSetDataOptions = {},
-    shouldIgnore?: () => boolean,
     loaded?: PlanarDataLoad
   ): Promise<void> {
     const role = this.mountedData.resolveBindingRole(options);
@@ -785,24 +846,15 @@ class PlanarViewport extends GenericViewport<
     const { data, resolvedOrientation, selectedPath } =
       await this.loadPlanarData(dataId, resolvedOptions, loaded);
 
-    if (shouldIgnore?.()) {
-      return;
-    }
-
     if (role === 'source') {
       this.mountedData.promoteSourceDataId(dataId);
       this.applyLoadedPlanarViewState(resolvedOrientation, data, selectedPath);
     }
 
-    const added = await this.addLoadedData(
-      dataId,
-      data,
-      {
-        renderMode: selectedPath.renderMode,
-        role,
-      },
-      shouldIgnore
-    );
+    const added = await this.addLoadedData(dataId, data, {
+      renderMode: selectedPath.renderMode,
+      role,
+    });
 
     if (!added) {
       return;
@@ -3337,11 +3389,13 @@ class PlanarViewport extends GenericViewport<
    *
    * With `loaded`, what this gave for the display set before `setDisplaySets`
    * removed the shown display sets, it gives that again when the inputs from
-   * the mounted display sets are the same (`hasSameMountInputs`), so the
-   * decision runs once. Else it decides again and takes the loaded data with
-   * the render mode of the new decision in place of a load: only the render
-   * mode can change, as whether the display set takes the volume path depends
-   * on the display set and the orientation alone.
+   * the mounted display sets are the same (`hasSameMountInputs`) and the
+   * configuration gives the same backend as at that decision (a
+   * `setRenderBackend` meanwhile changes it), so the decision runs once.
+   * Else it decides again and takes the loaded data with the render mode of
+   * the new decision in place of a load: only the render mode can change, as
+   * whether the display set takes the volume path depends on the display set
+   * and the orientation alone.
    */
   private async loadPlanarData(
     dataId: string,
@@ -3366,7 +3420,15 @@ class PlanarViewport extends GenericViewport<
       resolvedOrientation
     );
 
-    if (loaded && hasSameMountInputs(loaded.decisionOptions, decisionOptions)) {
+    const renderBackend = getEffectiveRenderBackend(
+      decisionOptions.renderBackend
+    );
+
+    if (
+      loaded &&
+      loaded.renderBackend === renderBackend &&
+      hasSameMountInputs(loaded.decisionOptions, decisionOptions)
+    ) {
       return loaded;
     }
 
@@ -3392,6 +3454,7 @@ class PlanarViewport extends GenericViewport<
         selectedPath: { ...selectedPath, reason },
         resolvedOrientation,
         decisionOptions,
+        renderBackend,
       };
     }
 
@@ -3400,6 +3463,7 @@ class PlanarViewport extends GenericViewport<
       selectedPath: { ...selectedPath, renderMode, reason },
       resolvedOrientation,
       decisionOptions,
+      renderBackend,
     };
   }
 

@@ -3,7 +3,9 @@ import Events from '../enums/Events';
 import eventTarget from '../eventTarget';
 import triggerEvent from '../utilities/triggerEvent';
 import { coreLog } from '../utilities/logger';
-import viewportTypeUsesCustomRenderingPipeline from './helpers/viewportTypeUsesCustomRenderingPipeline';
+import viewportTypeUsesCustomRenderingPipeline, {
+  renderCustomPipelineViewport,
+} from './helpers/viewportTypeUsesCustomRenderingPipeline';
 import getOrCreateCanvas from './helpers/getOrCreateCanvas';
 import type EngineViewport from './EngineViewport';
 import { vtkOffscreenMultiRenderWindow } from './vtkClasses';
@@ -488,8 +490,7 @@ class TiledRenderingEngine extends BaseRenderingEngine {
       return;
     }
     if (viewportTypeUsesCustomRenderingPipeline(viewport.type) === true) {
-      eventDetail =
-        viewport.customRenderViewportToCanvas?.() as EventTypes.ImageRenderedEventDetail;
+      eventDetail = renderCustomPipelineViewport(viewport);
     } else {
       if (!this.offscreenMultiRenderWindow) {
         throw new Error(

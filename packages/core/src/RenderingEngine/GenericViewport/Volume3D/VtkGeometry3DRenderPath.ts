@@ -199,8 +199,19 @@ export class VtkGeometry3DPath
   readonly id = 'volume3d:vtk-geometry';
   readonly type = ViewportType.VOLUME_3D;
 
+  /**
+   * Whether this path draws the data: a geometry for `vtkGeometry3d` that is
+   * a surface or a mesh. It does not match another geometry, as a contour,
+   * so a mount of one finds no render path before it changes the viewport.
+   */
   matches(data: LoadedData, options: DataAddOptions): boolean {
-    return data.type === 'geometry' && options.renderMode === 'vtkGeometry3d';
+    return (
+      data.type === 'geometry' &&
+      options.renderMode === 'vtkGeometry3d' &&
+      isDrawnGeometry(
+        (data as unknown as LoadedData<Volume3DGeometryPayload>).geometry
+      )
+    );
   }
 
   createRenderPath() {
@@ -212,6 +223,14 @@ export class VtkGeometry3DPath
   ): Volume3DVtkGeometryAdapterContext {
     return rootContext;
   }
+}
+
+/** Whether the 3D geometry path draws a geometry: a surface or a mesh. */
+function isDrawnGeometry(geometry: IGeometry | undefined): boolean {
+  return (
+    geometry?.type === GeometryType.SURFACE ||
+    geometry?.type === GeometryType.MESH
+  );
 }
 
 /** The surface of a geometry, when the geometry is a surface. */

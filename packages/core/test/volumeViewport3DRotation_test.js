@@ -200,4 +200,57 @@ describe('Rotation of a 3D viewport through the projection -- ', () => {
       LEGACY_VIEW_UP_AFTER_ROTATION[90]
     );
   });
+
+  [
+    { name: 'the coronal orientation', orientation: OrientationAxis.CORONAL },
+    { name: 'no orientation', orientation: null },
+  ].forEach(({ name, orientation }) => {
+    it(`gives the same camera for the same rotation twice, and reads it back, when the camera looks along the view up of rotation 0, with ${name}`, async function () {
+      const viewport = createViewport(renderingEngine, orientation);
+
+      await showVolume(viewport);
+
+      const mounted = viewport.getViewState();
+      const distance = Math.hypot(
+        ...mounted.position.map(
+          (value, index) => value - mounted.focalPoint[index]
+        )
+      );
+
+      viewport.setViewState({
+        viewUp: mounted.viewPlaneNormal.map((value) => -value),
+        viewPlaneNormal: mounted.viewUp,
+        position: mounted.focalPoint.map(
+          (value, index) => value + distance * mounted.viewUp[index]
+        ),
+        focalPoint: mounted.focalPoint,
+      });
+      await renderAndWait(viewport);
+
+      const atThePole = viewport.getViewState();
+      const rotationAtThePole =
+        viewportProjection.getPresentation(viewport).rotation;
+
+      expectVector(atThePole.viewPlaneNormal, mounted.viewUp);
+      expect(Math.min(rotationAtThePole, 360 - rotationAtThePole)).toBeCloseTo(
+        0,
+        4
+      );
+
+      await applyRotation(viewport, 30);
+
+      const once = viewport.getViewState();
+
+      await applyRotation(viewport, 30);
+
+      const twice = viewport.getViewState();
+
+      expectVector(twice.viewUp, once.viewUp);
+      expectVector(twice.viewPlaneNormal, mounted.viewUp);
+      expect(viewportProjection.getPresentation(viewport).rotation).toBeCloseTo(
+        30,
+        4
+      );
+    });
+  });
 });

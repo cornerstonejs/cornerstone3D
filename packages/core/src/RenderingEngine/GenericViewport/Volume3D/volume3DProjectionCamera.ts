@@ -28,18 +28,34 @@ export function cloneVolume3DCamera(camera: Volume3DCamera & ICamera) {
 }
 
 /**
+ * The length of the reference view up taken into the view plane below which
+ * the camera looks along that view up (within about 0.06 degrees), so the
+ * view up gives no direction in the view plane.
+ */
+const ROTATION_POLE_TOLERANCE = 1e-3;
+
+/**
  * The rotation of a 3D view in degrees, from 0 up to 360: the angle about the
  * view plane normal from the reference view up, taken into the view plane,
  * to the view up of the camera, counterclockwise as seen from the camera, as
- * the legacy 3D viewport turned it. 0 without a reference, or when the
- * reference lies along the normal.
+ * the legacy 3D viewport turned it. 0 without a reference.
+ *
+ * When the camera looks along the reference view up, that view up gives no
+ * direction in the view plane, and the reference view plane normal does:
+ * looking along the view up, its opposite is the reference, and looking
+ * against the view up, the normal itself. That is where the reference view
+ * up taken into the view plane goes when the camera orbits from the view of
+ * rotation 0 to there, so the rotation keeps its value on that orbit. Without
+ * a reference view plane normal the rotation there is 0.
  *
  * @param camera - The camera now.
  * @param referenceViewUp - The view up of rotation 0.
+ * @param referenceViewPlaneNormal - The view plane normal of rotation 0.
  */
 export function getVolume3DProjectionRotation(
   camera: Volume3DCamera & ICamera,
-  referenceViewUp?: Point3
+  referenceViewUp?: Point3,
+  referenceViewPlaneNormal?: Point3
 ): number {
   const { viewPlaneNormal, viewUp } = camera;
 
@@ -48,12 +64,31 @@ export function getVolume3DProjectionRotation(
   }
 
   const normal = vec3.normalize(vec3.create(), viewPlaneNormal);
-  const reference = vec3.scaleAndAdd(
+  const alongNormal = vec3.dot(referenceViewUp, normal);
+  let reference = vec3.scaleAndAdd(
     vec3.create(),
     referenceViewUp,
     normal,
-    -vec3.dot(referenceViewUp, normal)
+    -alongNormal
   );
+
+  if (
+    vec3.length(reference) < ROTATION_POLE_TOLERANCE &&
+    referenceViewPlaneNormal
+  ) {
+    const secondAxis = vec3.scale(
+      vec3.create(),
+      referenceViewPlaneNormal,
+      alongNormal > 0 ? -1 : 1
+    );
+
+    reference = vec3.scaleAndAdd(
+      vec3.create(),
+      secondAxis,
+      normal,
+      -vec3.dot(secondAxis, normal)
+    );
+  }
 
   if (vec3.length(reference) < 1e-6) {
     return 0;

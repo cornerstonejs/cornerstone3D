@@ -848,6 +848,14 @@ legacy picture within two levels of 255.
   it changes when the camera turns to a side where the content has another
   extent. The legacy members measured against the camera of the last reset.
   `resetViewState()` takes no `storeAsInitialCamera`.
+- **The rotation is absolute also when the camera looks along the view up of
+  rotation 0.** There that view up gives no direction, so the rotation of
+  `viewportProjection` is measured from the view plane normal of the view of
+  rotation 0: its opposite when the camera looks along the view up, the
+  normal itself when it looks against it. That is where the view up turns to
+  when the camera orbits there from the view of rotation 0, so the rotation
+  keeps its value on that orbit, and the same rotation twice gives the same
+  view.
 - **`suppressEvents`** in the options of a 3D viewport silences its camera
   and presentation events, as on the legacy viewport.
 - **No display area and no aspect ratio on a 3D viewport.** `setDisplayArea`,

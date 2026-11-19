@@ -9,6 +9,7 @@ import { resetRenderingCapabilities } from '../src/utilities/renderingCapabiliti
 import ContextPoolRenderingEngine from '../src/RenderingEngine/ContextPoolRenderingEngine';
 import TiledRenderingEngine from '../src/RenderingEngine/TiledRenderingEngine';
 import vtkStreamingOpenGLRenderWindow from '../src/RenderingEngine/vtkClasses/vtkStreamingOpenGLRenderWindow';
+import { SAMPLED_SLICE_REST_DELAY_MS } from '../src/RenderingEngine/GenericViewport/Planar/planarSampledSliceRest';
 
 const { Enums, cache, imageLoader, metaData, utilities } = cornerstone3D;
 const { Events, ViewportType } = Enums;
@@ -104,6 +105,66 @@ function brightestShownValue(element) {
   return brightest;
 }
 
+/** Fills every canvas of the viewport that is shown with black. */
+function blankShownCanvases(element) {
+  Array.from(element.querySelectorAll('canvas'))
+    .filter((canvas) => canvas.style.display !== 'none' && canvas.width > 0)
+    .forEach((canvas) => {
+      const context = canvas.getContext('2d');
+
+      context.fillStyle = '#000';
+      context.fillRect(0, 0, canvas.width, canvas.height);
+    });
+}
+
+/** Waits for the given number of animation frames. */
+async function waitForFrames(count) {
+  for (let frame = 0; frame < count; frame++) {
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+  }
+}
+
+/**
+ * Waits until the draws that a draw asks for have come: the frames of the
+ * rendering engine and the draw of the CPU path at rest.
+ */
+async function waitForDraws() {
+  await new Promise((resolve) =>
+    setTimeout(resolve, 3 * SAMPLED_SLICE_REST_DELAY_MS)
+  );
+  await waitForFrames(3);
+}
+
+/**
+ * Enables a planar viewport `withoutWebGL` in the engine, mounts the stack
+ * of `createImageIds`, and waits for its draws. Gives the element.
+ */
+async function showStackWithoutWebGL(engine) {
+  const element = createElement();
+
+  engine.enableElement({
+    viewportId: 'withoutWebGL',
+    type: ViewportType.PLANAR,
+    element,
+    defaultOptions: { background: [0, 0, 0] },
+  });
+
+  const viewport = engine.getViewport('withoutWebGL');
+  const mounted = new Promise((resolve) => {
+    element.addEventListener(Events.IMAGE_RENDERED, resolve, { once: true });
+  });
+
+  utilities.genericViewportDisplaySetMetadataProvider.add(
+    'withoutWebGL:stack',
+    { kind: 'planar', imageIds: createImageIds(), initialImageIdIndex: 0 }
+  );
+  await viewport.setDisplaySets({ displaySetId: 'withoutWebGL:stack' });
+  await mounted;
+  await waitForDraws();
+
+  return element;
+}
+
 describe('A planar viewport on a device without WebGL -- ', () => {
   let webGL;
   let engine;
@@ -176,6 +237,65 @@ describe('A planar viewport on a device without WebGL -- ', () => {
       expect(brightestShownValue(element)).toBeGreaterThan(0);
       expect(webGL.counter.webGLContexts).toBe(0);
       expect(renderWindowSpy).not.toHaveBeenCalled();
+    });
+
+    it(`draws on the CPU and fires one IMAGE_RENDERED for each render that ${name} is asked for`, async () => {
+      engine = new Engine(`withoutWebGLRender:${Engine.name}`);
+
+      const element = await showStackWithoutWebGL(engine);
+      let renderedEvents = 0;
+
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
+        renderedEvents++;
+      });
+
+      const renders = [
+        ['renderViewport', () => engine.renderViewport('withoutWebGL')],
+        ['render', () => engine.render()],
+        ['renderViewports', () => engine.renderViewports(['withoutWebGL'])],
+      ];
+      const results = [];
+
+      for (const [label, renderWithEngine] of renders) {
+        blankShownCanvases(element);
+        renderedEvents = 0;
+        renderWithEngine();
+        await waitForDraws();
+        results.push({
+          label,
+          renderedEvents,
+          drawn: brightestShownValue(element) > 0,
+        });
+      }
+
+      expect(results).toEqual(
+        renders.map(([label]) => ({ label, renderedEvents: 1, drawn: true }))
+      );
+      expect(webGL.counter.webGLContexts).toBe(0);
+    });
+
+    it(`draws the picture again in the frame of ${name} after it resizes the viewport`, async () => {
+      engine = new Engine(`withoutWebGLResize:${Engine.name}`);
+
+      const element = await showStackWithoutWebGL(engine);
+      let renderedEvents = 0;
+
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
+        renderedEvents++;
+      });
+      element.style.width = '96px';
+      element.style.height = '96px';
+      engine.resize();
+      await waitForFrames(2);
+
+      expect({
+        renderedEvents,
+        drawn: brightestShownValue(element) > 0,
+        canvasSizes: Array.from(element.querySelectorAll('canvas'))
+          .filter((canvas) => canvas.style.display !== 'none')
+          .map(({ width, height }) => [width, height]),
+      }).toEqual({ renderedEvents: 1, drawn: true, canvasSizes: [[96, 96]] });
+      expect(webGL.counter.webGLContexts).toBe(0);
     });
   });
 });

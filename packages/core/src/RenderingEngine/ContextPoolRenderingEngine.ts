@@ -6,6 +6,7 @@ import eventTarget from '../eventTarget';
 import triggerEvent from '../utilities/triggerEvent';
 import { coreLog } from '../utilities/logger';
 import viewportTypeUsesCustomRenderingPipeline, {
+  renderCustomPipelineViewport,
   viewportUsesCustomRenderingPipeline,
 } from './helpers/viewportTypeUsesCustomRenderingPipeline';
 import getOrCreateCanvas, {
@@ -387,9 +388,7 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
   ): EventTypes.ImageRenderedEventDetail {
     // Handle custom rendering pipeline viewports
     if (viewportUsesCustomRenderingPipeline(viewport)) {
-      const eventDetail =
-        viewport.customRenderViewportToCanvas?.() as EventTypes.ImageRenderedEventDetail;
-      return eventDetail;
+      return renderCustomPipelineViewport(viewport);
     }
 
     // If using CPU rendering, throw error

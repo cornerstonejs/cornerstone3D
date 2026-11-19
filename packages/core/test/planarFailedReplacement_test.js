@@ -288,4 +288,74 @@ describe('A replacement of the display sets of a direct next planar viewport who
     expect(pictureOf(viewport)).toBe(shownPicture);
     expect(newData).toEqual({ newImageSet: 0, newVolume: 0 });
   });
+
+  for (const renderBackend of ['gpu', 'cpu']) {
+    it(`shows the replacement on the ${renderBackend.toUpperCase()} when a NEW_IMAGE listener of its mount starts a replacement that rejects`, async function () {
+      const shown = await createSeries({ id: `shownListener${renderBackend}` });
+      const next = await createSeries({ id: `nextListener${renderBackend}` });
+      const failing = unloadedImageIds(
+        shown,
+        `failingListener${renderBackend}`
+      );
+      const viewport = createNextViewport(renderingEngine, 'replacement');
+      const options = {
+        orientation: OrientationAxis.ACQUISITION,
+        renderBackend,
+      };
+
+      failing.forEach((imageId) => failingImageIds.add(imageId));
+      await showStack(viewport, shown, SHOWN_SLICE, options);
+      registerReplacement('stack', next, failing);
+
+      const newData = countNewDataEvents(viewport);
+      let failingMount;
+
+      viewport.element.addEventListener(Events.NEW_IMAGE, (event) => {
+        if (!failingMount && next.imageIds.includes(event.detail.imageId)) {
+          failingMount = viewport.setDisplaySets({
+            displaySetId: 'replacement:failing',
+            options,
+          });
+        }
+      });
+      await viewport.setDisplaySets({
+        displaySetId: 'replacement:next',
+        options,
+      });
+
+      expect(failingMount).toBeDefined();
+
+      let error;
+
+      try {
+        await failingMount;
+      } catch (caught) {
+        error = caught;
+      }
+
+      expect(error).toBeDefined();
+      expect(viewport.getDisplaySets()).toEqual([
+        { displaySetId: 'replacement:next', options: { role: 'source' } },
+      ]);
+      expect(viewport.getImageIds()).toEqual(next.imageIds);
+      expect(viewport.getCurrentImageId()).toBe(next.imageIds[0]);
+      expect(newData).toEqual({ newImageSet: 1, newVolume: 0 });
+
+      if (!viewport.getDisplaySets().length) {
+        return;
+      }
+
+      await renderAndWait(viewport);
+
+      const replacementPicture = pictureOf(viewport);
+
+      await viewport.setDisplaySets({
+        displaySetId: 'replacement:next',
+        options,
+      });
+      await renderAndWait(viewport);
+
+      expect(pictureOf(viewport)).toBe(replacementPicture);
+    });
+  }
 });
