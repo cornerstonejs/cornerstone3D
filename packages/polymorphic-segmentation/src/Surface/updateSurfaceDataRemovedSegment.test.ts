@@ -31,7 +31,7 @@ jest.mock('@cornerstonejs/tools', () => ({
   },
   segmentation: {
     state: {
-      getViewportIdsWithSegmentation: () => ['legacy3D', 'next3D'],
+      getViewportIdsWithSegmentation: () => ['next3D', 'other3D'],
       getSegmentation: () => ({
         representationData: { Surface: { geometryIds: new Map() } },
       }),
@@ -52,11 +52,11 @@ function createSurfaceActorEntries(viewportId: string) {
 }
 
 describe('updateSurfaceData with a deleted segment', () => {
-  it('takes the surface of the deleted segment off a legacy and off a next 3D viewport, and its geometry out of the cache once', async () => {
-    const legacy = {
-      type: 'volume3d',
-      getActors: () => createSurfaceActorEntries('legacy3D'),
-      removeActors: jest.fn(),
+  it('takes the surface of the deleted segment off two next 3D viewports, and its geometry out of the cache once', async () => {
+    const other = {
+      type: 'volume3dNext',
+      getActors: () => createSurfaceActorEntries('other3D'),
+      removeData: jest.fn(),
       render: jest.fn(),
     };
     const next = {
@@ -78,7 +78,7 @@ describe('updateSurfaceData with a deleted segment', () => {
     ]);
     (getEnabledElementByViewportId as jest.Mock).mockImplementation(
       (viewportId: string) => ({
-        viewport: viewportId === 'legacy3D' ? legacy : next,
+        viewport: viewportId === 'other3D' ? other : next,
       })
     );
     (cache.getGeometry as jest.Mock).mockImplementation((geometryId: string) =>
@@ -94,8 +94,8 @@ describe('updateSurfaceData with a deleted segment', () => {
 
     await updateSurfaceData('seg');
 
-    expect(legacy.removeActors).toHaveBeenCalledTimes(1);
-    expect(legacy.removeActors).toHaveBeenCalledWith(['legacy3D-actor-2']);
+    expect(other.removeData).toHaveBeenCalledTimes(1);
+    expect(other.removeData).toHaveBeenCalledWith('segmentation_seg_surface_2');
     expect(next.removeData).toHaveBeenCalledTimes(1);
     expect(next.removeData).toHaveBeenCalledWith('segmentation_seg_surface_2');
     expect(

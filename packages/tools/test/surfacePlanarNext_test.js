@@ -3,6 +3,7 @@ import vtkSphereSource from '@kitware/vtk.js/Filters/Sources/SphereSource';
 import * as csTools3d from '../src/index';
 import * as testUtils from '../../../utils/test/testUtils';
 import { getConfig, setConfig } from '../src/config';
+import { getSurfaceActorEntry } from '../src/stateManagement/segmentation/helpers';
 import {
   createNextViewport,
   createSeries,
@@ -49,6 +50,19 @@ const MIN_CUT_PIXELS = 20;
 
 /** The share by which the area of a disk of the stack may differ. */
 const AREA_TOLERANCE = 0.2;
+
+/**
+ * The colour of the actor of the surface of segment 1 that
+ * `getSurfaceActorEntry` gave on the legacy volume viewport and on the legacy
+ * stack viewport, read on commit 58914567b: the colour of the segment, 221,
+ * 84, 84, over 255. The entry there had a string uid, the representation UID
+ * of the segment and the actor that the renderer drew. It stayed, with a
+ * hidden actor, while the segment was hidden, and it was undefined for a
+ * segment without a surface and after the representation was removed.
+ */
+const LEGACY_SEGMENT_1_COLOR = [
+  0.8666666666666667, 0.32941176470588235, 0.32941176470588235,
+];
 
 /** The image indexes that the tests visit, by mode. */
 const VISITS = {
@@ -353,4 +367,57 @@ describe('A Surface representation on a direct next planar viewport -- ', () => 
 
     expect(changedPixels(viewport, before).points.length).toBe(0);
   });
+
+  for (const [mode, show] of [
+    ['volume', showVolume],
+    ['stack', showStack],
+  ]) {
+    it(`finds the surface of a segment with getSurfaceActorEntry in ${mode} mode, as on the legacy ${mode} viewport`, async function () {
+      const series = await createSeries({
+        id: `surfacePlanarEntry-${mode}`,
+        size: SIZE,
+      });
+      const viewport = createNextViewport(renderingEngine, `entry-${mode}`);
+
+      await show(viewport, series, 10);
+      await showSurface(viewport);
+
+      const entry = getSurfaceActorEntry(viewport.id, segmentationId, 1);
+
+      expect(viewport.getCurrentMode()).toBe(mode);
+      expect(typeof entry.uid).toBe('string');
+      expect(entry.representationUID).toBe(`${segmentationId}-Surface-1`);
+      expect(entry.actor).toBe(surfaceProps(viewport)[0]);
+      expect(viewport.getRenderer().getActors()).toContain(entry.actor);
+      expect(entry.actor.getVisibility()).toBe(true);
+      expect(entry.actor.getProperty().getColor()).toEqual(
+        LEGACY_SEGMENT_1_COLOR
+      );
+      expect(
+        getSurfaceActorEntry(viewport.id, segmentationId, 2)
+      ).toBeUndefined();
+
+      segmentation.config.visibility.setSegmentIndexVisibility(
+        viewport.id,
+        { segmentationId, type: Surface },
+        1,
+        false
+      );
+      await waitFor(() => !entry.actor.getVisibility());
+
+      const hiddenEntry = getSurfaceActorEntry(viewport.id, segmentationId, 1);
+
+      expect(hiddenEntry.actor).toBe(entry.actor);
+      expect(hiddenEntry.actor.getVisibility()).toBe(false);
+
+      segmentation.removeSegmentationRepresentations(viewport.id, {
+        segmentationId,
+      });
+      await waitFor(() => surfaceProps(viewport).length === 0);
+
+      expect(
+        getSurfaceActorEntry(viewport.id, segmentationId, 1)
+      ).toBeUndefined();
+    });
+  }
 });

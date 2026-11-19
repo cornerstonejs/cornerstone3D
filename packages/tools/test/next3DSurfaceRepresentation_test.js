@@ -2,6 +2,7 @@ import * as cornerstone3D from '@cornerstonejs/core';
 import * as csTools3d from '../src/index';
 import * as testUtils from '../../../utils/test/testUtils';
 import { getConfig, setConfig } from '../src/config';
+import { getSurfaceActorEntry } from '../src/stateManagement/segmentation/helpers';
 
 const { utilities, Enums, volumeLoader, geometryLoader, cache } = cornerstone3D;
 const { ViewportType, OrientationAxis, GeometryType } = Enums;
@@ -43,6 +44,16 @@ function legacySurfaceBounds(segmentIndex) {
  * after the surface got a fifth point at 15, 10, 20.
  */
 const LEGACY_SURFACE_BOUNDS_WITH_NEW_DATA = [0, 30, 0, 20, 6, 20];
+
+/**
+ * What `getSurfaceActorEntry` gave on the legacy 3D viewport, read on commit
+ * 58914567b: for each segment an entry with a string uid, the representation
+ * UID of the segment and the actor that the renderer drew, in the colours of
+ * `LEGACY_SURFACE_COLORS`. The entry stayed, with a hidden actor, while the
+ * segment was hidden, and it was undefined for a segment without a surface
+ * and after the representation was removed.
+ */
+const LEGACY_SURFACE_ENTRY_SEGMENTS = [1, 2];
 
 const viewportOptions = {
   orientation: OrientationAxis.SAGITTAL,
@@ -402,5 +413,54 @@ describe('A Surface representation on a direct next 3D viewport -- ', () => {
     expect(displaySetIdsOf(next)).toEqual(['next3DVolume']);
     expect(registeredDisplaySetOf(geometryIdOf(1))).toBeUndefined();
     expect(registeredDisplaySetOf(geometryIdOf(2))).toBeUndefined();
+  });
+
+  it('finds the surface of each segment with getSurfaceActorEntry, as on the legacy 3D viewport', async function () {
+    const next = createNextViewport(renderingEngine);
+
+    await showVolume(next);
+    addSurfaceSegmentation();
+    await showSurfaces([next]);
+
+    LEGACY_SURFACE_ENTRY_SEGMENTS.forEach((segmentIndex) => {
+      const entry = getSurfaceActorEntry(next.id, segmentationId, segmentIndex);
+
+      expect(typeof entry.uid).toBe('string');
+      expect(entry.representationUID).toBe(
+        `${segmentationId}-Surface-${segmentIndex}`
+      );
+      expect(entry.referencedId).toBe(geometryIdOf(segmentIndex));
+      expect(entry.actor).toBe(surfaceActorOf(next, segmentIndex));
+      expect(isInScene(next, entry.actor)).toBe(true);
+      expect(entry.actor.getVisibility()).toBe(true);
+      expect(entry.actor.getProperty().getColor()).toEqual(
+        LEGACY_SURFACE_COLORS[segmentIndex]
+      );
+    });
+    expect(getSurfaceActorEntry(next.id, segmentationId, 3)).toBeUndefined();
+
+    segmentation.config.visibility.setSegmentIndexVisibility(
+      next.id,
+      { segmentationId, type: Surface },
+      2,
+      false
+    );
+    await waitFor(() => !surfaceActorOf(next, 2).getVisibility());
+
+    const hiddenEntry = getSurfaceActorEntry(next.id, segmentationId, 2);
+
+    expect(hiddenEntry.actor).toBe(surfaceActorOf(next, 2));
+    expect(hiddenEntry.actor.getVisibility()).toBe(false);
+
+    segmentation.removeSegmentationRepresentations(next.id, {
+      segmentationId,
+      type: Surface,
+    });
+
+    LEGACY_SURFACE_ENTRY_SEGMENTS.forEach((segmentIndex) =>
+      expect(
+        getSurfaceActorEntry(next.id, segmentationId, segmentIndex)
+      ).toBeUndefined()
+    );
   });
 });

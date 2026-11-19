@@ -419,8 +419,10 @@ leave the canvas. Against the legacy volume viewport:
   image where it stands behind it. Adding a surface does not move the view.
   The legacy viewport reset its camera, which moved a volume to its centre
   slice. The colour of a segment follows a change, as in 3D.
-  `segmentation.helpers.getSurfaceActorEntry` does not find the prop, as
-  `getActors()` does not list it.
+  `getActors()` does not list the prop. `getSurfaceActorEntry` of
+  `@cornerstonejs/tools/segmentation/helpers/getSegmentationActor` finds it,
+  as on the legacy viewports: the entry has the prop as `actor` and the
+  representation UID of the surface as `representationUID` and as `uid`.
 
 ## vtk.js actors and widgets of the application in a planar viewport
 

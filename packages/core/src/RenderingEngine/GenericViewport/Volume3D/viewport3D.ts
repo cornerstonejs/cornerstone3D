@@ -613,16 +613,47 @@ class VolumeViewport3D extends GenericViewport<
   /**
    * Fits the camera to what the viewport shows, as at the first mount and as
    * the legacy 3D viewport fits it in `resetCamera`, renders, and fires
-   * CAMERA_MODIFIED and CAMERA_RESET. See `fitViewState` for the fit and the
-   * options.
+   * CAMERA_MODIFIED and CAMERA_RESET. The content is the volume of the
+   * default actor (its image cube, with the focal point on its centre voxel),
+   * else every visible prop (the extent of their bounds). The extent along
+   * the view up and the view right fills the canvas, the camera keeps its
+   * direction and stands ten bounding radii away. `resetZoom: false` keeps
+   * the parallel scale. `resetPan: false` keeps the focal point;
+   * `resetToCenter: false` with `resetPan` moves the centre of the content
+   * along the view plane normal onto the plane of the focal point.
    *
    * @param options - Reset options matching the legacy `resetCamera` contract.
    * @returns Always `true` for compatibility with legacy viewport contracts.
    */
   resetViewState(options: ResetCameraOptions = {}): boolean {
     const previousCamera = this.getCameraForEvent();
+    const { resetPan = true, resetZoom = true, resetToCenter = true } = options;
+    const camera = this.getViewState();
+    const fit = getVolume3DFitCamera(
+      this.renderContext,
+      this.getFitContent(),
+      camera.viewPlaneNormal,
+      camera.viewUp
+    );
+    const focalPoint = getResetFocalPoint(fit.focalPoint, camera, {
+      resetPan,
+      resetToCenter,
+    });
+    const position = vec3.add(
+      vec3.create(),
+      focalPoint,
+      vec3.subtract(vec3.create(), fit.position, fit.focalPoint)
+    ) as Point3;
 
-    this.fitViewState(options);
+    applyVolume3DCamera(this.renderContext, {
+      parallelScale: resetZoom ? fit.parallelScale : camera.parallelScale,
+      focalPoint,
+      position,
+      viewAngle: VOLUME_3D_FIT_VIEW_ANGLE,
+      viewUp: fit.viewUpToUse,
+    });
+    setVolume3DPhysicalCamera(this.renderContext, fit.radius, focalPoint);
+    this.viewState = this.getViewState();
     this.render();
     this.triggerCameraModifiedEvent(previousCamera);
     this.triggerCameraResetEvent();
@@ -656,47 +687,6 @@ class VolumeViewport3D extends GenericViewport<
     if (viewStatePatch) {
       this.setViewState(viewStatePatch);
     }
-  }
-
-  /**
-   * Fits the camera as `resetViewState` does, without rendering and without
-   * events. The content is the volume of the default actor (its image cube,
-   * with the focal point on its centre voxel), else every visible prop (the
-   * extent of their bounds). The extent along the view up and the view right
-   * fills the canvas, the camera keeps its direction and stands ten bounding
-   * radii away. `resetZoom: false` keeps the parallel scale. `resetPan: false`
-   * keeps the focal point; `resetToCenter: false` with `resetPan` moves the
-   * centre of the content along the view plane normal onto the plane of the
-   * focal point.
-   */
-  protected fitViewState(options: ResetCameraOptions = {}): void {
-    const { resetPan = true, resetZoom = true, resetToCenter = true } = options;
-    const camera = this.getViewState();
-    const fit = getVolume3DFitCamera(
-      this.renderContext,
-      this.getFitContent(),
-      camera.viewPlaneNormal,
-      camera.viewUp
-    );
-    const focalPoint = getResetFocalPoint(fit.focalPoint, camera, {
-      resetPan,
-      resetToCenter,
-    });
-    const position = vec3.add(
-      vec3.create(),
-      focalPoint,
-      vec3.subtract(vec3.create(), fit.position, fit.focalPoint)
-    ) as Point3;
-
-    applyVolume3DCamera(this.renderContext, {
-      parallelScale: resetZoom ? fit.parallelScale : camera.parallelScale,
-      focalPoint,
-      position,
-      viewAngle: VOLUME_3D_FIT_VIEW_ANGLE,
-      viewUp: fit.viewUpToUse,
-    });
-    setVolume3DPhysicalCamera(this.renderContext, fit.radius, focalPoint);
-    this.viewState = this.getViewState();
   }
 
   /**
@@ -890,11 +880,12 @@ class VolumeViewport3D extends GenericViewport<
   }
 
   /**
-   * The actor entries of the volumes of these display sets, for the detail
-   * of VOLUME_VIEWPORT_NEW_VOLUME.
+   * Fires VOLUME_VIEWPORT_NEW_VOLUME with the actor entries of the volumes of
+   * these display sets, as the legacy `setVolumes`, unless none is a volume
+   * or `suppressEvents` is set.
    */
-  protected getNewVolumeActorEntries(displaySetIds: string[]): ActorEntry[] {
-    return displaySetIds.flatMap((displaySetId) => {
+  private triggerNewVolume(displaySetIds: string[]): void {
+    const volumeActors = displaySetIds.flatMap((displaySetId) => {
       const binding = this.getBinding(displaySetId);
       const data = binding ? this.getVolume3DPayload(binding) : undefined;
 
@@ -907,15 +898,6 @@ class VolumeViewport3D extends GenericViewport<
         data
       );
     });
-  }
-
-  /**
-   * Fires VOLUME_VIEWPORT_NEW_VOLUME with the actors of the volumes of these
-   * display sets, as the legacy `setVolumes`, unless none is a volume or
-   * `suppressEvents` is set.
-   */
-  private triggerNewVolume(displaySetIds: string[]): void {
-    const volumeActors = this.getNewVolumeActorEntries(displaySetIds);
 
     if (this.suppressEvents || !volumeActors.length) {
       return;

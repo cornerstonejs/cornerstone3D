@@ -8,17 +8,15 @@ import {
 import { resetViewportCamera } from '../../../utilities/setViewportCamera';
 
 /**
- * Whether a surface goes on the viewport as a geometry display set: a direct
- * next 3D viewport. A legacy 3D viewport and a legacy adapter have `addActor`,
- * and keep a surface as an actor of the application.
+ * Whether a surface goes on the viewport as a geometry display set: a next
+ * 3D viewport.
  */
 function showsSurfacesAsDisplaySets(
   viewport: Types.IViewport | Types.IGenericViewport
 ): viewport is GenericVolumeViewport3D {
   return (
     viewport.type === Enums.ViewportType.VOLUME_3D_NEXT &&
-    utilities.isGenericViewport(viewport) &&
-    typeof (viewport as Partial<Types.IVolumeViewport>).addActor !== 'function'
+    utilities.isGenericViewport(viewport)
   );
 }
 

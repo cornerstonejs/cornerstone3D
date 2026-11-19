@@ -70,22 +70,15 @@ export function updateSurfaceData(segmentationId: string): Promise<void> {
 }
 
 /**
- * Takes the surfaces of these actor entries off a 3D viewport. A legacy
- * viewport and a legacy adapter remove the actors. A direct next 3D viewport
- * shows each surface as a geometry display set under the id of its geometry,
- * which the actor entry names as its `referencedId`, and removes that with
- * its registration.
+ * Takes the surfaces of these actor entries off a 3D viewport. A next 3D
+ * viewport shows each surface as a geometry display set under the id of its
+ * geometry, which the actor entry names as its `referencedId`, and removes
+ * that with its registration.
  */
 function removeSurfaceActors(
   viewport: Types.IViewport,
   actorEntries: Types.ActorEntry[]
 ): void {
-  if (typeof viewport.removeActors === 'function') {
-    viewport.removeActors(actorEntries.map((actor) => actor.uid));
-
-    return;
-  }
-
   actorEntries.forEach(({ referencedId }) => {
     utilities.genericViewportDisplaySetMetadataProvider.remove(referencedId);
     (viewport as unknown as Types.IGenericViewport).removeData(referencedId);

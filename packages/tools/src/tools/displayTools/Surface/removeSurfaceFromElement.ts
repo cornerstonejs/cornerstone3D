@@ -1,5 +1,4 @@
 import { getEnabledElement } from '@cornerstonejs/core';
-import type { Types } from '@cornerstonejs/core';
 import {
   removeSurfaceDisplaySets,
   showsSurfacesAsDisplaySets,
@@ -38,23 +37,7 @@ function removeSurfaceFromElement(
       viewport,
       getSurfaceRepresentationUID(segmentationId, '')
     );
-
-    return;
   }
-
-  const actorEntries = (viewport as Types.IVolumeViewport).getActors();
-
-  const filteredSurfaceActors = actorEntries.filter(
-    (actor) =>
-      (actor as Types.ActorEntry).representationUID &&
-      typeof (actor as Types.ActorEntry).representationUID === 'string' &&
-      ((actor as Types.ActorEntry).representationUID as string).startsWith(
-        segmentationId
-      )
-  );
-
-  // remove actors whose id has the same prefix as the segmentationId
-  viewport.removeActors(filteredSurfaceActors.map((actor) => actor.uid));
 }
 
 export default removeSurfaceFromElement;

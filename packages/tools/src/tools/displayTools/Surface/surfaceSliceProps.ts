@@ -18,8 +18,8 @@ const sliceSurfacesByViewport = new WeakMap<PlanarViewport, SliceSurfaces>();
 
 /**
  * Whether a surface goes on the viewport as a prop of its vtk.js renderer: a
- * next planar viewport, and its legacy adapter, which have a renderer and no
- * `addActor`.
+ * next planar viewport, the only viewport other than a 3D one that has a
+ * renderer.
  *
  * @param viewport - The viewport.
  * @returns Whether the viewport shows a surface as a prop of its renderer.
@@ -30,8 +30,6 @@ function showsSurfacesAsSliceProps(
   return (
     utilities.isGenericViewport(viewport) &&
     viewport.type !== Enums.ViewportType.VOLUME_3D_NEXT &&
-    typeof (viewport as Partial<Types.IVolumeViewport>).addActor !==
-      'function' &&
     typeof (viewport as Partial<PlanarViewport>).getRenderer === 'function'
   );
 }
@@ -219,8 +217,33 @@ function removeSurfaceSliceProps(
   viewport.render();
 }
 
+/**
+ * The actor entry of a surface that a planar viewport shows: the prop that
+ * its renderer draws, with the representation UID of the surface as its uid.
+ *
+ * @param viewport - The planar viewport.
+ * @param representationUID - The representation UID of the surface.
+ * @returns The actor entry, or undefined when the viewport does not show the
+ * surface.
+ */
+function getSurfaceSlicePropEntry(
+  viewport: PlanarViewport,
+  representationUID: string
+): Types.ActorEntry | undefined {
+  const actor = sliceSurfacesByViewport
+    .get(viewport)
+    ?.actors.get(representationUID);
+
+  if (!actor) {
+    return;
+  }
+
+  return { uid: representationUID, actor, representationUID };
+}
+
 export {
   addOrUpdateSurfaceSliceProp,
+  getSurfaceSlicePropEntry,
   removeSurfaceSliceProps,
   showsSurfacesAsSliceProps,
 };

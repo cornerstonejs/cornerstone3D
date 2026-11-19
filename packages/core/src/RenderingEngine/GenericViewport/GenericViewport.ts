@@ -976,19 +976,11 @@ abstract class GenericViewport<
   }
 
   /**
-   * Whether the viewport was made with the `suppressEvents` option. It then
-   * fires no CAMERA_MODIFIED and no CAMERA_RESET.
-   */
-  protected areEventsSuppressed(): boolean {
-    return Boolean(this.defaultOptions.suppressEvents);
-  }
-
-  /**
    * Fires a {@link Events.CAMERA_MODIFIED} event on the viewport element,
-   * unless `suppressEvents` is set.
+   * unless the viewport was made with the `suppressEvents` option.
    */
   protected triggerCameraModifiedEvent(previousCamera: ICamera): void {
-    if (this.areEventsSuppressed()) {
+    if (this.defaultOptions.suppressEvents) {
       return;
     }
 
@@ -1005,10 +997,10 @@ abstract class GenericViewport<
 
   /**
    * Fires a {@link Events.CAMERA_RESET} event on the viewport element,
-   * unless `suppressEvents` is set.
+   * unless the viewport was made with the `suppressEvents` option.
    */
   protected triggerCameraResetEvent(): void {
-    if (this.areEventsSuppressed()) {
+    if (this.defaultOptions.suppressEvents) {
       return;
     }
 

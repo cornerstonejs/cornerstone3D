@@ -1,6 +1,10 @@
 import type { Types } from '@cornerstonejs/core';
 import { getEnabledElementByViewportId } from '@cornerstonejs/core';
 import { SegmentationRepresentations } from '../../../enums';
+import {
+  getSurfaceSlicePropEntry,
+  showsSurfacesAsSliceProps,
+} from '../../../tools/displayTools/Surface/surfaceSliceProps';
 
 /**
  * Retrieves the actor entry based on the given criteria.
@@ -116,6 +120,9 @@ export function getLabelmapActorEntry(
 
 /**
  * Retrieves the surface actor entry for the given viewport, segmentation, and segment index.
+ * On a planar viewport it is the entry of the prop that the renderer of the
+ * viewport draws for the surface. On a 3D viewport it is the actor entry of
+ * the geometry display set of the surface, which `getActors()` lists.
  * @param viewportId - The ID of the viewport.
  * @param segmentationId - The ID of the segmentation.
  * @param segmentIndex - The index of the segment.
@@ -125,13 +132,21 @@ export function getSurfaceActorEntry(
   viewportId: string,
   segmentationId: string,
   segmentIndex?: number | string
-) {
+): Types.ActorEntry | undefined {
+  const representationUID = getSurfaceRepresentationUID(
+    segmentationId,
+    segmentIndex
+  );
+  const viewport = getEnabledElementByViewportId(viewportId)?.viewport;
+
+  if (viewport && showsSurfacesAsSliceProps(viewport)) {
+    return getSurfaceSlicePropEntry(viewport, representationUID);
+  }
+
   return getActorEntry(
     viewportId,
     segmentationId,
-    (actor) =>
-      actor.representationUID ===
-      getSurfaceRepresentationUID(segmentationId, segmentIndex)
+    (actor) => actor.representationUID === representationUID
   );
 }
 
