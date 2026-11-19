@@ -75,12 +75,20 @@ function getUncompressedImageFrame(
       )
     );
   } else if (bitsAllocated === 1) {
-    frameOffset = pixelDataOffset + frameIndex * pixelsPerFrame * 0.125;
+    // Frames are bit packed back to back (PS3.5 8.1.1), so a frame can start
+    // part way through a byte when rows * columns is not a multiple of 8.
+    const frameBitOffset = frameIndex * pixelsPerFrame;
+    frameOffset = pixelDataOffset + Math.floor(frameBitOffset / 8);
     if (frameOffset >= dataSet.byteArray.length) {
       throw new Error('frame exceeds size of pixelData');
     }
 
-    return unpackBinaryFrame(dataSet.byteArray, frameOffset, pixelsPerFrame);
+    return unpackBinaryFrame(
+      dataSet.byteArray,
+      frameOffset,
+      pixelsPerFrame,
+      frameBitOffset % 8
+    );
   } else if (bitsAllocated === 32) {
     frameOffset = pixelDataOffset + frameIndex * pixelsPerFrame * 4;
     if (frameOffset >= dataSet.byteArray.length) {
