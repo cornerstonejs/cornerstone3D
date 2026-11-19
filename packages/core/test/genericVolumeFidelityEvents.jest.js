@@ -109,6 +109,7 @@ function context() {
         addVolume: jest.fn(),
         removeVolume: jest.fn(),
         getActiveCamera: () => ({}),
+        resetCameraClippingRange: jest.fn(),
         getActors: () => [],
         // A volume is already there, so the path keeps the camera.
         getVolumes: () => [{}],

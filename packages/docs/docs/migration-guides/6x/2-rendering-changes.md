@@ -353,6 +353,20 @@ leave the canvas. Against the legacy volume viewport:
   not show, is not viewable. Without the option the answer is true when the
   viewport shows that image; the legacy volume viewport compared the slice
   index of the stack with its own there, and answered false.
+- **A stack stays where it is for a reference of other images.** In stack
+  mode, `setViewReference` with a reference that names an image the stack
+  does not hold moves nothing, whatever slice index or focal point comes
+  with it, as on the legacy stack viewport. In 5.x the next stack went to the
+  slice index of such a reference, which counts in the other series. In
+  volume mode a reference of another series in the same frame of reference
+  still moves the view to its plane, as on the legacy volume viewport.
+- **A reference of a sagittal or a coronal slice is viewable with navigation
+  on every slice of that view.** Its slice index counts in the slices along
+  the view, as on the legacy volume viewport. In 5.x the next planar
+  viewport counted it against the number of images, so
+  `isReferenceViewable(viewRef, { withNavigation: true })` answered false for
+  most sagittal and coronal slices of a CT, and a viewport that copied
+  another only after that check stayed on its slice.
 - **`IMAGE_SPACING_CALIBRATED` fires from `calibrateSpacing(imageId)`,** and
   its detail has `worldToIndex` and `scale`. It does not fire by itself when
   a newly shown image has another calibration, as it did on the legacy stack
@@ -477,6 +491,13 @@ through one CPU draw step that follows the GPU:
   applied.** The GPU path never applied them, and the CPU path of 5.x did. The
   window of the image is applied as before.
 - **A linear image is drawn once more, exactly, when the view rests.**
+- **A mount draws once on the CPU.** The renders that `setDisplaySets` asks
+  for while it mounts wait, and the viewport draws once when the mount ends,
+  before `VIEWPORT_NEW_IMAGE_SET`, so a mount fires one `IMAGE_RENDERED`, as
+  the legacy CPU stack viewport drew once in the frame of the rendering
+  engine. The draw of a linear image at rest fires one more. In 5.x a next
+  viewport drew at each render call, so a mount of a stack fired
+  `IMAGE_RENDERED` three times.
 
 Not equal yet: the outline of a labelmap is not drawn on the CPU, and a slab
 through the whole volume is not drawn on the CPU.
@@ -589,6 +610,13 @@ layer of a fusion: the opacity is applied as given.
   that camera back after the fit, so it kept the default camera of vtk.js
   until `resetViewState()`, and that reset kept the wrong orientation. The
   legacy 3D viewport reset the camera at `setVolumes` in the same way.
+- **A 3D viewport turns to the orientation of its options when it is made,**
+  as the legacy 3D viewport did, so a surface or a prop of a tool that shows
+  before any volume is seen from that side, and `resetViewState()` fits it
+  there. In 5.x a next 3D viewport kept the camera of vtk.js until a volume
+  was mounted; only the adapter turned it. The acquisition orientation, which
+  needs a volume, and no orientation keep the camera of vtk.js, as on the
+  legacy viewport.
 - **`setViewReference()` moves the camera.** It did nothing, so a camera
   synchronizer between two 3D viewports did nothing.
 - **A preset is a key of the presentation, and it stays.**
@@ -674,6 +702,15 @@ layer of a fusion: the opacity is applied as given.
   viewport: it drew a thin slab from a camera that stood one bounding radius
   away with a view angle of 90 degrees, and `setZoom` did nothing on it.
   Nothing in the library used it.
+- **The clipping range is fitted at every camera write,** to the bounds of
+  every visible prop of the renderer, as the legacy 3D viewport fitted it at
+  `setVolumes`, `setCamera` and `resetCamera`. In 5.x the next 3D viewport
+  kept `[-1e6, 1e6]` after a mount and put back the range that came with the
+  camera, so a volume or a surface in perspective could disappear after a
+  zoom of `viewportProjection`, and a turn to perspective through the view
+  state drew nothing until `resetViewState()`. `getViewState().clippingRange`
+  gives the fitted range; a `clippingRange` given to `setViewState` is not
+  applied.
 - **The actor of one display set.** A volume input of the legacy API could
   carry an `actorUID` for `getActor(actorUID)`. A display set has no such
   option. `getActors()` gives the actor entries, and each one names its volume
@@ -706,10 +743,12 @@ layer of a fusion: the opacity is applied as given.
 
 - **View references carry the view plane normal and the camera,** so
   annotations on a video get their statistics.
-- **`NEW_IMAGE` fires for each frame while the video plays,** and for the
-  frame of a seek. A mount fires it only when it seeks, as with
-  `options.frameNumber`: a video that opens on its first frame fires none
-  until it plays or seeks. Its detail has the keys that a planar viewport
+- **`NEW_IMAGE` fires for each frame while the video plays,** for the frame
+  of a seek, and once at every mount for the frame that the mount shows (the
+  first frame, or the frame of `options.frameNumber`), as a planar viewport
+  fires it at every mount. The legacy video viewport fired its
+  `STACK_NEW_IMAGE` at a mount too, twice, once for each of the two draws of
+  the frame that its mount made. Its detail has the keys that a planar viewport
   gives: `imageIdIndex` is the 0-based index of the frame, `numberOfSlices`
   the number of frames and `imageId` the image id of the frame. `image` is
   undefined. The detail has no `time` and no `duration`, which the legacy
@@ -753,6 +792,13 @@ layer of a fusion: the opacity is applied as given.
   divided the length of the media times the frame rate, which can be a few
   frames more, so a long drag of the stack scroll tool can end one step
   apart.
+- **A write of the view state keeps the time of a playing video.**
+  `getViewState()`, `getResolvedView()`, `setViewState()` and
+  `resetViewState()` read the time of the media first, so a pan, a zoom, a
+  new scroll step or a reset while the video plays does not move it back to
+  the last time read, as on the legacy viewport. In 5.x such a write could
+  set the video back by up to the time since that read, about one animation
+  frame while it played.
 - **`setPlaybackRate()` sets the rate only.** On the legacy viewport it also
   started playback, and paused below a rate of 0.0625.
 - **An annotation over a range of frames shows on every frame of the range.**

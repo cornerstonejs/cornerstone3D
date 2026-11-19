@@ -227,6 +227,7 @@ describe('the 3D render path follows a change of the GPU settings', () => {
             getParallelProjection: () => false,
             setClippingRange: () => undefined,
           }),
+          resetCameraClippingRange: () => undefined,
         },
       },
     };

@@ -65,8 +65,6 @@ export const volume3DProjectionAdapter: ViewportProjectionAdapter<
       return;
     }
 
-    applyVolume3DCamera(target, snapshot.rendererCamera as Volume3DCamera, {
-      resetClippingRange: true,
-    });
+    applyVolume3DCamera(target, snapshot.rendererCamera as Volume3DCamera);
   },
 };

@@ -282,6 +282,9 @@ class PlanarViewReferenceController {
       renderContext: this.host.getRenderContext(),
     })?.toICamera();
     const volumeId = referenceContext.data.volumeId;
+    const { maxImageIdIndex } = referenceContext.rendering as {
+      maxImageIdIndex?: number;
+    };
 
     return {
       dataId: referenceContext.dataId,
@@ -289,6 +292,8 @@ class PlanarViewReferenceController {
       frameOfReferenceUID: referenceContext.frameOfReferenceUID,
       imageIds: this.getImageIdsBySliceIndex(referenceContext),
       currentImageIdIndex: this.getReferenceImageIdIndex(referenceContext),
+      numberOfSlices:
+        typeof maxImageIdIndex === 'number' ? maxImageIdIndex + 1 : undefined,
       volumeId,
       volumeIds: volumeId ? [volumeId] : undefined,
       cameraFocalPoint: resolvedView?.focalPoint,
@@ -491,6 +496,13 @@ class PlanarViewReferenceController {
     return this.applyVolumeViewReference(referenceContext, viewRef);
   }
 
+  /**
+   * Moves a stack to the image of a reference: the image that it names, else
+   * its slice index, else the image nearest to its focal point. A reference
+   * that names an image that the stack does not hold moves nothing, as on the
+   * legacy stack viewport: it is not viewable on the stack, and its slice
+   * index and its focal point belong to the images of another series.
+   */
   private applyImageViewReference(
     referenceContext: PlanarReferenceContext,
     viewRef: ViewReference
@@ -505,6 +517,10 @@ class PlanarViewReferenceController {
     if (typeof referencedImageIndex === 'number') {
       this.host.setImageIdIndex(referencedImageIndex);
       return true;
+    }
+
+    if (viewRef.referencedImageId || viewRef.referencedImageURI) {
+      return false;
     }
 
     if (typeof viewRef.sliceIndex === 'number') {

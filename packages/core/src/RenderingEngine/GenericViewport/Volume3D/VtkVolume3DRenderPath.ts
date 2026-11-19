@@ -39,11 +39,12 @@ import type {
   Volume3DVolumeRendering,
   Volume3DVtkVolumeAdapterContext,
 } from './viewport3DTypes';
-import applyVolume3DCamera from './applyVolume3DCamera';
+import applyVolume3DCamera, {
+  fitVolume3DClippingRange,
+} from './applyVolume3DCamera';
 import { applyVolume3DPresentation } from './applyVolume3DPresentation';
 import { getInitialVolume3DCamera } from './vtkVolume3DInitialCamera';
 import { isSegmentationOverlayData } from '../renderingFidelity';
-import setVtkCameraClippingRange from '../setVtkCameraClippingRange';
 
 /** @internal */
 export class VtkVolume3DRenderPath
@@ -93,10 +94,10 @@ export class VtkVolume3DRenderPath
       const initialCamera = getInitialVolume3DCamera(ctx, payload.imageVolume);
 
       if (initialCamera) {
-        applyCamera(ctx, initialCamera);
+        applyVolume3DCamera(ctx, initialCamera);
       }
     }
-    setCameraClippingRange(ctx);
+    fitVolume3DClippingRange(ctx);
 
     const defaultRange = actor
       .getProperty()
@@ -171,7 +172,7 @@ export class VtkVolume3DRenderPath
     ctx: Volume3DVtkVolumeAdapterContext,
     camera: unknown
   ): void {
-    applyCamera(ctx, camera as Partial<Volume3DCamera> | undefined);
+    applyVolume3DCamera(ctx, camera as Partial<Volume3DCamera> | undefined);
   }
 
   private canvasToWorld(
@@ -298,21 +299,6 @@ export class VtkVolume3DPath
   ): Volume3DVtkVolumeAdapterContext {
     return rootContext;
   }
-}
-
-function applyCamera(
-  ctx: Volume3DVtkVolumeAdapterContext,
-  camera?: Partial<Volume3DCamera>
-): void {
-  applyVolume3DCamera(ctx, camera);
-
-  if (camera && camera.clippingRange === undefined) {
-    setCameraClippingRange(ctx);
-  }
-}
-
-function setCameraClippingRange(ctx: Volume3DVtkVolumeAdapterContext): void {
-  setVtkCameraClippingRange(ctx.vtk.renderer.getActiveCamera());
 }
 
 function buildVolumeImageData(

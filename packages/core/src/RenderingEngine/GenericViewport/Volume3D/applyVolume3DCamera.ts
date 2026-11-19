@@ -2,11 +2,17 @@ import type {
   Volume3DCamera,
   Volume3DViewportRenderContext,
 } from './viewport3DTypes';
+import setVtkCameraClippingRange from '../setVtkCameraClippingRange';
 
+/**
+ * Writes the fields of a camera patch into the vtk.js camera of a 3D
+ * viewport, then fits the clipping range with `fitVolume3DClippingRange`. A
+ * `clippingRange` of the patch is not applied: the legacy 3D viewport fitted
+ * the range after each `setCamera` too.
+ */
 export default function applyVolume3DCamera(
   ctx: Pick<Volume3DViewportRenderContext, 'vtk'>,
-  camera?: Partial<Volume3DCamera>,
-  options: { resetClippingRange?: boolean } = {}
+  camera?: Partial<Volume3DCamera>
 ): void {
   if (!camera) {
     return;
@@ -46,9 +52,19 @@ export default function applyVolume3DCamera(
     vtkCamera.setViewAngle(camera.viewAngle);
   }
 
-  if (camera.clippingRange !== undefined) {
-    vtkCamera.setClippingRange(...camera.clippingRange);
-  } else if (options.resetClippingRange) {
-    ctx.vtk.renderer.resetCameraClippingRange();
-  }
+  fitVolume3DClippingRange(ctx);
+}
+
+/**
+ * Fits the clipping range of the camera of a 3D viewport to the bounds of
+ * every visible prop of its renderer (the display sets and the props that a
+ * tool or the application added), as the legacy 3D viewport did at
+ * `setVolumes`, `setCamera` and `resetCamera`. With nothing visible the range
+ * is the default of the projection.
+ */
+export function fitVolume3DClippingRange(
+  ctx: Pick<Volume3DViewportRenderContext, 'vtk'>
+): void {
+  setVtkCameraClippingRange(ctx.vtk.renderer.getActiveCamera());
+  ctx.vtk.renderer.resetCameraClippingRange();
 }

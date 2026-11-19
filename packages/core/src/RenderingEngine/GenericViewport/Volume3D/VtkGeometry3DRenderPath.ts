@@ -106,9 +106,7 @@ export class VtkGeometry3DRenderPath
     ctx: Volume3DVtkGeometryAdapterContext,
     camera: unknown
   ): void {
-    applyVolume3DCamera(ctx, camera as Partial<Volume3DCamera> | undefined, {
-      resetClippingRange: true,
-    });
+    applyVolume3DCamera(ctx, camera as Partial<Volume3DCamera> | undefined);
   }
 
   private canvasToWorld(

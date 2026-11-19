@@ -125,6 +125,9 @@ class VideoViewport extends GenericViewport<
    * Replaces all mounted video display sets with the provided ones using the
    * HTML video render path. The first entry is mounted as the source binding,
    * and the video then shows the 1-based `frameNumber` of its options.
+   * NEW_IMAGE fires once for the frame that the mount shows: after the seek
+   * when the mount seeks, else when the frame shows. The legacy video viewport
+   * fired its new image event at every mount too.
    *
    * @param entries - Video display sets to mount.
    */
@@ -136,6 +139,7 @@ class VideoViewport extends GenericViewport<
   ): Promise<void> {
     this.removeAllData();
     this.frameScalarData = undefined;
+    this.lastFrameEventNumber = undefined;
 
     for (const [index, { displaySetId }] of entries.entries()) {
       await this.addDisplaySet(displaySetId, {
@@ -186,6 +190,16 @@ class VideoViewport extends GenericViewport<
 
     if (typeof frameNumber === 'number') {
       this.setFrameNumber(frameNumber);
+    }
+
+    const element = this.getVideoElement();
+
+    if (
+      element &&
+      !element.seeking &&
+      this.lastFrameEventNumber === undefined
+    ) {
+      this.triggerFrameEvents();
     }
   }
 
@@ -440,6 +454,8 @@ class VideoViewport extends GenericViewport<
     if (!videoElement || !videoData) {
       return;
     }
+
+    this.syncCameraCurrentTimeFromElement();
 
     return new VideoResolvedView({
       viewState: this.viewState,
@@ -772,6 +788,29 @@ class VideoViewport extends GenericViewport<
   }
 
   /**
+   * The view state, with the time that the media shows now: a view state
+   * that is read, changed and written back, as a pan or a zoom writes it,
+   * then keeps the time of a playing video.
+   */
+  override getViewState(): VideoViewState {
+    this.syncCameraCurrentTimeFromElement();
+
+    return super.getViewState();
+  }
+
+  /**
+   * Writes a patch of the view state. The time of the media is read first, so
+   * a patch without `currentTimeSeconds` keeps the time that the video shows
+   * now, also while it plays, as the legacy video viewport kept it.
+   *
+   * @param viewStatePatch - The view state keys to change.
+   */
+  override setViewState(viewStatePatch: Partial<VideoViewState>): void {
+    this.syncCameraCurrentTimeFromElement();
+    super.setViewState(viewStatePatch);
+  }
+
+  /**
    * Resets layout navigation while preserving the current video time and
    * the scroll step.
    */
@@ -779,6 +818,8 @@ class VideoViewport extends GenericViewport<
     if (this.isDestroyed) {
       return false;
     }
+
+    this.syncCameraCurrentTimeFromElement();
 
     const previousCamera = this.getCameraForEvent();
     const { currentTimeSeconds, scrollStep } = this.viewState;

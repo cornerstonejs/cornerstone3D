@@ -2,7 +2,7 @@ import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 import { vec3 } from 'gl-matrix';
-import { Events, ViewportType } from '../../../enums';
+import { Events, OrientationAxis, ViewportType } from '../../../enums';
 import type {
   ActorEntry,
   ICamera,
@@ -43,6 +43,7 @@ import { getVolume3DColormap } from './applyVolume3DPresentation';
 import type { Volume3DProjectionFit } from './Volume3DProjectionTypes';
 import {
   VOLUME_3D_FIT_VIEW_ANGLE,
+  getOrientationVectors,
   getResetFocalPoint,
   getVolume3DFitCamera,
   setVolume3DPhysicalCamera,
@@ -158,6 +159,7 @@ class VolumeViewport3D extends GenericViewport<
     this.viewState = {
       parallelProjection: this.defaultOptions.parallelProjection ?? true,
     } as Volume3DCamera;
+    this.turnToOrientationOption();
 
     this.element.setAttribute('data-viewport-uid', this.id);
     this.element.setAttribute(
@@ -409,10 +411,11 @@ class VolumeViewport3D extends GenericViewport<
   /**
    * Writes a patch of the camera, renders, and fires CAMERA_MODIFIED.
    *
-   * A viewport that shows no display set has no clipping range of its own:
-   * every write fits the clipping range to the props of its renderer, so a
-   * prop that the application added stays in view when the camera moves, and
-   * a `clippingRange` of the patch, as the camera read before a zoom or a pan
+   * Every write fits the clipping range to the bounds of every visible prop
+   * of the renderer, as the legacy 3D viewport did at each `setCamera`: what
+   * the viewport shows, and a prop that a tool or the application added, stay
+   * in view when the camera moves or changes its projection. A
+   * `clippingRange` of the patch, as the camera read before a zoom or a pan
    * gives it, is not applied.
    *
    * @param viewStatePatch - The camera fields to change.
@@ -423,14 +426,8 @@ class VolumeViewport3D extends GenericViewport<
     }
 
     const previousCamera = this.getCameraForEvent();
-    const { clippingRange: _clippingRange, ...patchWithoutClippingRange } =
-      viewStatePatch;
 
-    applyVolume3DCamera(
-      this.renderContext,
-      this.bindings.size ? viewStatePatch : patchWithoutClippingRange,
-      { resetClippingRange: true }
-    );
+    applyVolume3DCamera(this.renderContext, viewStatePatch);
     this.viewState = this.getRuntimeCamera();
     this.modified(previousCamera);
   }
@@ -691,19 +688,55 @@ class VolumeViewport3D extends GenericViewport<
       vec3.subtract(vec3.create(), fit.position, fit.focalPoint)
     ) as Point3;
 
-    applyVolume3DCamera(
-      this.renderContext,
-      {
-        parallelScale: resetZoom ? fit.parallelScale : camera.parallelScale,
-        focalPoint,
-        position,
-        viewAngle: VOLUME_3D_FIT_VIEW_ANGLE,
-        viewUp: fit.viewUpToUse,
-      },
-      { resetClippingRange: true }
-    );
+    applyVolume3DCamera(this.renderContext, {
+      parallelScale: resetZoom ? fit.parallelScale : camera.parallelScale,
+      focalPoint,
+      position,
+      viewAngle: VOLUME_3D_FIT_VIEW_ANGLE,
+      viewUp: fit.viewUpToUse,
+    });
     setVolume3DPhysicalCamera(this.renderContext, fit.radius, focalPoint);
     this.viewState = this.getViewState();
+  }
+
+  /**
+   * Turns the camera to the orientation of the options and fits what the
+   * renderer shows, as the legacy 3D viewport did when it was made. A
+   * viewport that shows a surface or a prop of a tool before any volume then
+   * looks from that side. With nothing visible the fit is the one of an
+   * empty scene: ten bounding radii of the box from -1 to 1 away. No
+   * orientation, or the acquisition plane, which needs a volume, keeps the
+   * camera of vtk.js, as on the legacy viewport.
+   */
+  private turnToOrientationOption(): void {
+    const { orientation } = this.defaultOptions;
+
+    if (!orientation || orientation === OrientationAxis.ACQUISITION) {
+      return;
+    }
+
+    const vtkCamera = this.getVtkActiveCamera();
+    const { viewPlaneNormal, viewUp } = getOrientationVectors({
+      fallbackViewPlaneNormal: vtkCamera.getViewPlaneNormal() as Point3,
+      fallbackViewUp: vtkCamera.getViewUp() as Point3,
+      orientation,
+    });
+    const fit = getVolume3DFitCamera(
+      this.renderContext,
+      { bounds: this.getRenderer().computeVisiblePropBounds() },
+      viewPlaneNormal,
+      viewUp
+    );
+
+    applyVolume3DCamera(this.renderContext, {
+      viewPlaneNormal,
+      viewUp: fit.viewUpToUse,
+      focalPoint: fit.focalPoint,
+      position: fit.position,
+      parallelScale: fit.parallelScale,
+      viewAngle: VOLUME_3D_FIT_VIEW_ANGLE,
+    });
+    setVolume3DPhysicalCamera(this.renderContext, fit.radius, fit.focalPoint);
   }
 
   /**

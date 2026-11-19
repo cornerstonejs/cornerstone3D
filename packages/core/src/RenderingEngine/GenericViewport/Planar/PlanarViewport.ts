@@ -315,6 +315,10 @@ class PlanarViewport extends GenericViewport<
   suppressEvents = false;
   /** Set when a render path draws in `render()` instead of the engine. */
   private drewOutsideEngine = false;
+  /** The mounts of `mountDisplaySets` that run now, which hold a CPU draw. */
+  private mountCpuDrawHolds = 0;
+  /** Set when a CPU draw was asked for while a mount held it. */
+  private cpuDrawHeldByMount = false;
   /**
    * Set once the viewport warned that the CPU path does not draw the props
    * that the application added to its vtk.js renderer. A draw on the GPU
@@ -585,21 +589,26 @@ class PlanarViewport extends GenericViewport<
 
     this.clearResolvedViewCache();
     this.removeReplaceableData(entries);
+    this.mountCpuDrawHolds += 1;
 
-    for (const [index, { displaySetId, options = {} }] of entries.entries()) {
-      if (isStale()) {
-        return;
+    try {
+      for (const [index, { displaySetId, options = {} }] of entries.entries()) {
+        if (isStale()) {
+          return;
+        }
+
+        const role = options.role ?? (index === 0 ? 'source' : 'overlay');
+        await this.addDisplaySetInternal(
+          displaySetId,
+          {
+            ...options,
+            role,
+          },
+          isStale
+        );
       }
-
-      const role = options.role ?? (index === 0 ? 'source' : 'overlay');
-      await this.addDisplaySetInternal(
-        displaySetId,
-        {
-          ...options,
-          role,
-        },
-        isStale
-      );
+    } finally {
+      this.releaseMountCpuDrawHold();
     }
 
     if (firesNewDataEvent && !isStale()) {
@@ -2343,7 +2352,13 @@ class PlanarViewport extends GenericViewport<
   }
 
   /**
-   * Renders the active planar bindings or queues an engine-driven render.
+   * Renders the active planar bindings or queues an engine-driven render. A
+   * path that draws on the CPU canvas draws here, except while `setDisplaySets`
+   * mounts: the draws asked for meanwhile wait, and the viewport draws once
+   * when the mount ends, so a mount gives one draw and one IMAGE_RENDERED, as
+   * the legacy CPU stack viewport drew once in the frame of the rendering
+   * engine. A GPU path renders through the rendering engine, which draws once
+   * in a frame.
    */
   render(): void {
     if (this.isDestroyed) {
@@ -2355,7 +2370,7 @@ class PlanarViewport extends GenericViewport<
       return;
     }
 
-    if (this.holdsRenderForRemount()) {
+    if (this.holdsRenderForRemount() || this.holdsCpuDrawForMount()) {
       return;
     }
 
@@ -2887,6 +2902,41 @@ class PlanarViewport extends GenericViewport<
     this.setNeedsRender();
 
     return true;
+  }
+
+  /**
+   * Whether a mount holds the draw of a CPU path. A draw asked for meanwhile
+   * is marked and done once when the last mount ends.
+   */
+  private holdsCpuDrawForMount(): boolean {
+    if (
+      !this.mountCpuDrawHolds ||
+      getRenderSurfaceForRenderMode(
+        this.renderContext.renderPath.renderMode
+      ) !== 'cpu'
+    ) {
+      return false;
+    }
+
+    this.cpuDrawHeldByMount = true;
+    this.setNeedsRender();
+
+    return true;
+  }
+
+  /**
+   * Ends the CPU draw hold of one mount. The last mount to end draws once
+   * when a draw was asked for meanwhile.
+   */
+  private releaseMountCpuDrawHold(): void {
+    this.mountCpuDrawHolds = Math.max(0, this.mountCpuDrawHolds - 1);
+
+    if (this.mountCpuDrawHolds || !this.cpuDrawHeldByMount) {
+      return;
+    }
+
+    this.cpuDrawHeldByMount = false;
+    this.render();
   }
 
   /**

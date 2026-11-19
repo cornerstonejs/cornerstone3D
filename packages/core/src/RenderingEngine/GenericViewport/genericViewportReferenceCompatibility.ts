@@ -31,6 +31,13 @@ export type GenericViewportReferenceContext = {
    */
   imageURIs?: string[];
   numDimensionGroups?: number;
+  /**
+   * The number of slices of the view along its view plane normal, in which
+   * the slice index of a reference counts. A view of a volume across its
+   * images has more or fewer slices than images. Without it the slices are
+   * the image ids.
+   */
+  numberOfSlices?: number;
   viewPlaneNormal?: Point3;
   volumeId?: string;
   volumeIds?: string[];
@@ -490,6 +497,10 @@ function isSliceIndexCompatible(
 
   if (!options.withNavigation) {
     return false;
+  }
+
+  if (typeof context.numberOfSlices === 'number') {
+    return sliceIndex >= 0 && sliceIndex < context.numberOfSlices;
   }
 
   return isIndexInImageRange(sliceIndex, context.imageIds);
