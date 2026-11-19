@@ -264,19 +264,18 @@ describe('wadors metaDataProvider', () => {
       expect(result.usingDefaultValues).toBe(true);
     });
 
-    it('[suspected product bug] throws instead of falling back when orientation AND modality (00080060) are both missing', () => {
-      // extractOrientationFromMetadata() falls back to isNMModality(metaData),
-      // which does `getValue(metaData['00080060']).includes('NM')` with no
-      // guard for a missing/undefined Modality tag - this throws a
-      // TypeError instead of gracefully falling back to default cosines.
+    it('falls back to default cosines when orientation AND modality (00080060) are both missing', () => {
       const metadata = buildCTMetadata();
       delete metadata['00200037'];
       delete metadata['00080060'];
       metaDataManager.add(CT_IMAGE_ID, metadata as any);
 
-      expect(() =>
-        metaDataProvider(MetadataModules.IMAGE_PLANE, CT_IMAGE_ID)
-      ).toThrow(/Cannot read propert/);
+      const result = metaDataProvider(MetadataModules.IMAGE_PLANE, CT_IMAGE_ID);
+
+      expect(result.rowCosines).toEqual([1, 0, 0]);
+      expect(result.columnCosines).toEqual([0, 1, 0]);
+      expect(result.imageOrientationPatient).toEqual([1, 0, 0, 0, 1, 0]);
+      expect(result.usingDefaultValues).toBe(true);
     });
   });
 
@@ -734,6 +733,41 @@ describe('wadors metaDataProvider', () => {
         NM_IMAGE_ID
       );
       expect(result.imageOrientationPatient).toEqual([0, 1, 0, -1, 0, 0]);
+      expect(result.imagePositionPatient).toEqual([1, 2, 3]);
+    });
+
+    it('is not reconstructable and does not throw when Modality is missing', () => {
+      const metadata = buildNMMetadata();
+      delete metadata['00080060'];
+      metaDataManager.add(NM_IMAGE_ID, metadata as any);
+
+      const result = metaDataProvider(
+        MetadataModules.NM_MULTIFRAME_GEOMETRY,
+        NM_IMAGE_ID
+      );
+      expect(result.modality).toBeUndefined();
+      expect(result.isNMReconstructable).toBe(false);
+      // Without Modality the Detector Information Sequence is not used.
+      expect(result.imageOrientationPatient).toBeUndefined();
+      expect(result.imagePositionPatient).toBeUndefined();
+    });
+
+    it('is not reconstructable and does not throw when Modality is missing but top-level orientation/position are present', () => {
+      const metadata = buildNMMetadata();
+      delete metadata['00080060'];
+      metadata['00200037'] = {
+        vr: 'DS',
+        Value: ['1', '0', '0', '0', '1', '0'],
+      };
+      metadata['00200032'] = { vr: 'DS', Value: ['1', '2', '3'] };
+      metaDataManager.add(NM_IMAGE_ID, metadata as any);
+
+      const result = metaDataProvider(
+        MetadataModules.NM_MULTIFRAME_GEOMETRY,
+        NM_IMAGE_ID
+      );
+      expect(result.isNMReconstructable).toBe(false);
+      expect(result.imageOrientationPatient).toEqual([1, 0, 0, 0, 1, 0]);
       expect(result.imagePositionPatient).toEqual([1, 2, 3]);
     });
   });

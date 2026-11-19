@@ -368,13 +368,9 @@ describe('wadors metadata primitives', () => {
         expect(isNMModality({ '00080060': { Value: ['CT'] } })).toBe(false);
       });
 
-      it('throws when the Modality tag is absent (suspected product bug)', () => {
-        // getValue() returns undefined (no default supplied), and the
-        // source calls `.includes('NM')` on it unconditionally, so a
-        // missing 00080060 tag throws a TypeError instead of returning
-        // false. Pinning this actual (buggy) behavior rather than the
-        // caller's assumption.
-        expect(() => isNMModality({})).toThrow(TypeError);
+      it('returns false when the Modality tag is absent', () => {
+        expect(isNMModality({})).toBe(false);
+        expect(isNMModality({ '00080060': { vr: 'CS' } })).toBe(false);
       });
     });
 
@@ -524,13 +520,9 @@ describe('wadors metadata primitives', () => {
       expect(extractPositionFromMetadata(metaData)).toEqual([10, 20, 30]);
     });
 
-    it('throws when neither the direct tag nor Modality is present (suspected product bug)', () => {
-      // With no 00200037/00200032 and no 00080060, the fallback branch
-      // calls isNMModality(), which throws on `.includes` (see NMHelpers
-      // suite above). This propagates all the way up through
-      // extractOrientationFromMetadata/extractPositionFromMetadata.
-      expect(() => extractOrientationFromMetadata({})).toThrow(TypeError);
-      expect(() => extractPositionFromMetadata({})).toThrow(TypeError);
+    it('returns undefined without throwing when neither the direct tag nor Modality is present', () => {
+      expect(extractOrientationFromMetadata({})).toBeUndefined();
+      expect(extractPositionFromMetadata({})).toBeUndefined();
     });
 
     it('does not throw when Modality is present but not NM, returning undefined', () => {
