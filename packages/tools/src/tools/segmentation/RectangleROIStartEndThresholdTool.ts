@@ -391,13 +391,19 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     // coordinates can come from float32 vectors (see _getEndCoordinate), whose
     // rounding error grows with the coordinate magnitude, so the tolerance
     // covers a few float32 ulps at that magnitude plus a small fraction of the
-    // slice spacing. Both stay far below one spacing step.
+    // slice spacing. It is capped at a quarter of the spacing so that it can
+    // never add a slice beyond the end.
     const coordinateMagnitude = Math.max(
       Math.abs(startCoordinate),
       Math.abs(endCoordinate)
     );
-    const tolerance = spacingInNormal * 1e-3 + coordinateMagnitude * 2 ** -21;
-    for (let dist = 0; dist <= distance + tolerance; dist += spacingInNormal) {
+    const tolerance = Math.min(
+      spacingInNormal * 1e-3 + coordinateMagnitude * 2 ** -21,
+      spacingInNormal / 4
+    );
+    const numberOfSteps = Math.floor((distance + tolerance) / spacingInNormal);
+    for (let step = 0; step <= numberOfSteps; step++) {
+      const dist = step * spacingInNormal;
       newProjectionPoints.push(
         points.map((point) => {
           const newPoint = vec3.create();
@@ -410,7 +416,8 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     data.cachedStats.projectionPoints = newProjectionPoints;
     // Contour export reads one image id per projection, so keep both arrays
     // the same length. A projection that is not aligned with the acquisition
-    // planes has no matching image and gets undefined.
+    // planes, or that lies outside the volume, has no matching image and gets
+    // undefined.
     data.cachedStats.projectionPointsImageIds = newProjectionPoints.map(
       (projection) =>
         csUtils.getClosestImageId(

@@ -1,5 +1,6 @@
 import { metaData } from '@cornerstonejs/core';
 import RectangleROIStartEndThresholdTool from '../src/tools/segmentation/RectangleROIStartEndThresholdTool';
+import RectangleROIStartEndThreshold from '../src/utilities/contours/RectangleROIStartEndThreshold';
 
 describe('RectangleROIStartEndThresholdTool projection points', () => {
   // Axial volume with 1 mm in-plane spacing and 2 mm slice spacing, no
@@ -130,5 +131,51 @@ describe('RectangleROIStartEndThresholdTool projection points', () => {
       'image:6',
       'image:7',
     ]);
+  });
+
+  it('keeps one projection when start equals end at a large coordinate with a tiny spacing', () => {
+    expect(getSliceCoordinates(createAnnotation(10000, 10000, 0.001))).toEqual([
+      10000,
+    ]);
+  });
+
+  it('does not add extra projections at a large coordinate with a tiny spacing', () => {
+    // 10000.003 is stored in float32 as 10000.0029296875, so three 0.001 mm
+    // steps give four slices.
+    const slices = getSliceCoordinates(
+      createAnnotation(10000, Math.fround(10000.003), 0.001)
+    );
+    expect(slices).toHaveLength(4);
+  });
+
+  it('exports contours when a projection lies outside the volume', () => {
+    // The volume ends at z = 40, so the projection at z = 42 has no image.
+    const annotation = createAnnotation(40, 42);
+    const tool = new RectangleROIStartEndThresholdTool();
+    tool._computeProjectionPoints(annotation, imageVolume);
+
+    expect(annotation.data.cachedStats.projectionPointsImageIds).toEqual([
+      'image:20',
+      undefined,
+    ]);
+
+    const metadataProvider = {
+      get: (type, imageId) =>
+        type === 'sopCommonModule' && imageId
+          ? { sopClassUID: '1.2.3', sopInstanceUID: imageId }
+          : undefined,
+    };
+    const contours = RectangleROIStartEndThreshold.getContourSequence(
+      annotation,
+      metadataProvider
+    );
+
+    expect(contours).toHaveLength(2);
+    expect(contours[0].ContourImageSequence).toEqual({
+      ReferencedSOPClassUID: '1.2.3',
+      ReferencedSOPInstanceUID: 'image:20',
+    });
+    // Contour Image Sequence is optional (Type 3), so it is left out.
+    expect(contours[1]).not.toHaveProperty('ContourImageSequence');
   });
 });
