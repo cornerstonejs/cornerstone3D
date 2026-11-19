@@ -1,6 +1,6 @@
 import { vtkSharedVolumeMapper } from '../vtkClasses';
 import { getConfiguration, getLossyDownsampling } from '../../init';
-import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
+import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture';
 import vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
@@ -147,6 +147,17 @@ export default function createVolumeMapper(
  * a shared mapper and apply some changes to it, since otherwise, the changes
  * will be applied to all the mappers that share the same data.
  *
+ * The new mapper reads its own copy of the image data: the same geometry and
+ * fields, with point data of its own. The image data of the shared mapper is
+ * the volume's, which every other viewport of the volume renders from, so the
+ * scalars set here, and what callers do to them (such as two components for a
+ * labelmap edge projection), must stay off it.
+ *
+ * The copy is shallow and made once: it has the geometry and the fields (the
+ * voxel manager among them) that the volume's image data has now, and does
+ * not follow a later change of them. Read its geometry, don't set it: a
+ * shallow copy in vtk.js shares the index-to-world matrices of its source.
+ *
  * @param sharedMapper - The shared mapper to convert.
  * @returns The converted volume mapper.
  */
@@ -163,9 +174,13 @@ export function convertMapperToNotSharedMapper(sharedMapper: vtkVolumeMapper) {
     values,
   });
 
-  imageData.getPointData().setScalars(scalarArray);
+  // A shallow copy gets new point data, so the scalars set on it don't reach
+  // the volume's image data.
+  const ownImageData = vtkImageData.newInstance();
+  ownImageData.shallowCopy(imageData);
+  ownImageData.getPointData().setScalars(scalarArray);
 
-  volumeMapper.setInputData(imageData);
+  volumeMapper.setInputData(ownImageData);
   volumeMapper.setMaximumSamplesPerRay(sharedMapper.getMaximumSamplesPerRay());
   volumeMapper.setSampleDistance(sharedMapper.getSampleDistance());
   return volumeMapper;
