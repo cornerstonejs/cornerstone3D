@@ -218,6 +218,7 @@ export default class CanvasActor {
       getScalarData: () => this.derivedImage?.getPixelData(),
       getDirection: () => imageData.direction,
       getSpacing: () => imageData.spacing,
+      getOrigin: () => imageData.origin,
       setOrigin: () => null,
       /**
        * Stores the new image cache data to update the image object, and sets

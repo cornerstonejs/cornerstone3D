@@ -174,6 +174,14 @@ export type PlanarResetViewStateOptions = {
 
 const log = coreLog.getLogger('RenderingEngine', 'PlanarViewport');
 
+/**
+ * The class of the canvas that shows the picture of a viewport. The rendering
+ * engine gives it to the canvas it makes (`getOrCreateCanvas`); a planar
+ * viewport moves it to its CPU canvas while it draws there, as the legacy CPU
+ * stack viewport drew into the canvas of that class.
+ */
+const CANVAS_CSS_CLASS = 'cornerstone-canvas';
+
 type PlanarSlabPresentation = Pick<
   PlanarDataPresentation,
   'slabThickness' | 'blendMode'
@@ -2489,6 +2497,7 @@ class PlanarViewport extends GenericViewport<
 
     this.cpuCanvas?.remove();
     this.cpuCanvas = undefined;
+    this.renderContext.vtk.canvas.classList.add(CANVAS_CSS_CLASS);
     this.mountedData.clearActiveDataId();
     this.renderContext.view.activeSourceICamera = undefined;
   }
@@ -3072,6 +3081,8 @@ class PlanarViewport extends GenericViewport<
     cpuCanvas.style.display = useCPUCanvas ? '' : 'none';
     cpuCanvas.style.pointerEvents = useCPUCanvas ? 'auto' : 'none';
     vtkCanvas.style.display = useCPUCanvas ? 'none' : '';
+    cpuCanvas.classList.toggle(CANVAS_CSS_CLASS, useCPUCanvas);
+    vtkCanvas.classList.toggle(CANVAS_CSS_CLASS, !useCPUCanvas);
 
     if (viewportElement) {
       viewportElement.style.pointerEvents = useCPUCanvas ? 'none' : '';

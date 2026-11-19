@@ -3,6 +3,13 @@ const CANVAS_CSS_CLASS = 'cornerstone-canvas';
 export const EPSILON = 1e-4;
 
 /**
+ * The canvas that `getOrCreateCanvas` gave for each internal viewport div. A
+ * planar viewport that draws on the CPU moves the class `cornerstone-canvas`
+ * to the canvas it draws on, so the class alone no longer finds this canvas.
+ */
+const canvasOfViewportElement = new WeakMap<Element, HTMLCanvasElement>();
+
+/**
  * The canvas creator is used for applications where the element isn't
  * defined/setup such as nodejs environments.
  */
@@ -148,13 +155,20 @@ export function getOrCreateCanvas(element: HTMLDivElement): HTMLCanvasElement {
   const internalDiv =
     element.querySelector(viewportElement) || createViewportElement(element);
 
+  const knownCanvas = canvasOfViewportElement.get(internalDiv);
+  if (knownCanvas && internalDiv.contains(knownCanvas)) {
+    return knownCanvas;
+  }
+
   const existingCanvas: HTMLCanvasElement | null =
     internalDiv.querySelector(canvasSelector);
   if (existingCanvas) {
+    canvasOfViewportElement.set(internalDiv, existingCanvas);
     return existingCanvas;
   }
 
   const canvas = createCanvas(internalDiv);
+  canvasOfViewportElement.set(internalDiv, canvas);
   // Fit the canvas into the div
   const rect = internalDiv.getBoundingClientRect();
   const devicePixelRatio = window.devicePixelRatio || 1;
