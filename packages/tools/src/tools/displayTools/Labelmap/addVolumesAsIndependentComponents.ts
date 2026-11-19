@@ -110,14 +110,10 @@ export async function addVolumesAsIndependentComponents({
 
   viewport.removeActors([uid]);
   const oldMapper = actor.getMapper();
-  // convertMapperToNotSharedMapper reuses the old mapper's vtkImageData and
-  // replaces its point-data scalars with a CPU array, which this function then
-  // rewrites as a 2-component (base + seg) array. The shared streaming mapper
-  // renders from the GPU texture and misconfigures its shader if that injected
-  // array is still active, so capture the original scalars (usually none) to
-  // undo the mutation on restore.
-  const sharedImageData = (oldMapper as vtkVolumeMapper).getInputData();
-  const originalScalars = sharedImageData.getPointData().getScalars() ?? null;
+  // convertMapperToNotSharedMapper gives the new mapper its own copy of the
+  // image data, so the 2-component (base + seg) array written below stays off
+  // the volume's image data, which the other viewports of the volume render
+  // from. Restoring the old mapper then leaves nothing to undo.
   const mapper = convertMapperToNotSharedMapper(oldMapper as vtkVolumeMapper);
   actor.setMapper(mapper);
 
@@ -269,15 +265,6 @@ export async function addVolumesAsIndependentComponents({
 
     // Restore the original actor and add it back to the viewport.
     actor.setMapper(oldMapper);
-
-    const pointData = sharedImageData.getPointData();
-
-    if (originalScalars) {
-      pointData.setScalars(originalScalars);
-    } else {
-      pointData.removeArray('Pixels');
-    }
-    sharedImageData.modified();
 
     actor.getProperty().setColorMixPreset(oldColorMixPreset);
     actor
