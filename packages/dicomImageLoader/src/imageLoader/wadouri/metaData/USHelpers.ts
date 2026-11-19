@@ -23,8 +23,8 @@ function getUSEnhancedRegions(metadata) {
     const referencePixelX0 = item.dataSet.int32('x00186020') || null;
     const referencePixelY0 = item.dataSet.int32('x00186022') || null;
 
-    const referencePhysicalPixelValueY = item.dataSet.uint16('x0018602a');
-    const referencePhysicalPixelValueX = item.dataSet.uint16('x00186028');
+    const referencePhysicalPixelValueY = item.dataSet.double('x0018602a');
+    const referencePhysicalPixelValueX = item.dataSet.double('x00186028');
     const regionSpatialFormat = item.dataSet.uint16('x00186012');
 
     const regionDataType = item.dataSet.uint16('x00186014');
