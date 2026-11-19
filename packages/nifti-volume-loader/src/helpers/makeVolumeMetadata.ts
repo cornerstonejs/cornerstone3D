@@ -58,7 +58,9 @@ export default function makeVolumeMetadata(
         columnCosines[1],
         columnCosines[2],
       ],
-      PixelSpacing: [pixDims[1], pixDims[2]],
+      // DICOM PixelSpacing is [row spacing, column spacing], while
+      // pixDims is [column spacing, row spacing, slice spacing].
+      PixelSpacing: [pixDims[2], pixDims[1]],
       Columns: dims[1],
       Rows: dims[2],
       // This is a reshaped object and not a dicom tag:

@@ -5,6 +5,7 @@ import { rasToLps } from './helpers/convert';
 import Events from './enums/Events';
 import { NIFTI_LOADER_SCHEME } from './constants';
 import makeVolumeMetadata from './helpers/makeVolumeMetadata';
+import makeImagePlaneMetadata from './helpers/makeImagePlaneMetadata';
 import { getArrayConstructor } from './helpers/dataTypeCodeHelper';
 import { getOptions } from './internal';
 
@@ -286,48 +287,14 @@ async function fetchAndAllocateNiftiVolume(url) {
     const imageIdIndex = i;
     imageIds.push(imageId);
 
-    const imageOrientationPatient = [
-      direction[0],
-      direction[1],
-      direction[2],
-      direction[3],
-      direction[4],
-      direction[5],
-    ];
-
-    const precision = 6;
-    const imagePositionPatient = [
-      parseFloat(
-        (origin[0] + imageIdIndex * direction[6] * spacing[0]).toFixed(
-          precision
-        )
-      ),
-      parseFloat(
-        (origin[1] + imageIdIndex * direction[7] * spacing[1]).toFixed(
-          precision
-        )
-      ),
-      parseFloat(
-        (origin[2] + imageIdIndex * direction[8] * spacing[2]).toFixed(
-          precision
-        )
-      ),
-    ];
     // Create metadata for the image
-    const imagePlaneMetadata = {
-      frameOfReferenceUID: '1.2.840.10008.1.4',
-      rows: dimensions[1],
-      columns: dimensions[0],
-      imageOrientationPatient,
-      rowCosines: direction.slice(0, 3),
-      columnCosines: direction.slice(3, 6),
-      imagePositionPatient,
-      sliceThickness: spacing[2],
-      sliceLocation: origin[2] + i * spacing[2],
-      pixelSpacing: [spacing[0], spacing[1]],
-      rowPixelSpacing: spacing[1],
-      columnPixelSpacing: spacing[0],
-    };
+    const imagePlaneMetadata = makeImagePlaneMetadata({
+      dimensions,
+      direction,
+      spacing,
+      origin,
+      imageIdIndex,
+    });
 
     const imagePixelMetadata = {
       samplesPerPixel: 1,
