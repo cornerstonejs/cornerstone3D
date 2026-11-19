@@ -4,9 +4,9 @@ title: Volume Progressive Loading
 summary: Techniques for optimizing volume loading through image interleaving, allowing fast initial rendering with progressive quality improvement
 ---
 
-## Volume Viewport Interleaved Decode
+## Volume Interleaved Decode
 
-Since, for volume viewports, we mostly deal with rendering the reconstructed views (MPR) of the actual volume, the ideal scenario would be to have the initial images of the volume (even if lossy) as quickly as possible to avoid rendering a gray volume. We can achieve this by interleaving the requests.
+Since, for volumes, we mostly deal with rendering the reconstructed views (MPR) of the actual volume, the ideal scenario would be to have the initial images of the volume (even if lossy) as quickly as possible to avoid rendering a gray volume. We can achieve this by interleaving the requests.
 
 Interleaving the images applies to any encoding for a volume.
 That is, fetching every Nth image first allows a 1/Nth frequency image to be
@@ -20,7 +20,7 @@ that returns an entire request at once.
 
 # Performance
 
-The performance gains on using progressive loading on volume viewports vary quite a bit depending on size of data
+The performance gains on using progressive loading on volumes vary quite a bit depending on size of data
 and capabilities of the DICOMweb server components.
 
 Note that none of the times include time to load the decoder, but is only seen on first render. These times are similar for
@@ -142,7 +142,7 @@ The stock stages fill only the frames at -1, +1 and +2 of every 4th image. A
 frame stays empty until a neighbour arrives, and an empty CT frame displays as a
 gray line in a reformat.
 
-**A volume takes in the images that the cache already holds.** A stack viewport
+**A volume takes in the images that the cache already holds.** A viewport in stack mode
 can load images of the series before a switch to MPR. When the load starts, the
 volume delivers those images to itself in batches of at most 8 ms, so a volume
 whose images are all cached does not stall. A delivery only marks the texture
@@ -163,7 +163,7 @@ series loads the images from the top down, and it can use more request slots
 than the stages of the volume. Two rules keep the two loads apart:
 
 - When a volume starts a progressive load, it removes the queued `prefetch`
-  requests of other loaders for its images. A stack viewport that showed the
+  requests of other loaders for its images. A viewport in stack mode that showed the
   series before a switch to MPR queued such requests.
 - `stackPrefetch` and `stackContextPrefetch` queue nothing for a stack whose
   images a volume loads progressively.

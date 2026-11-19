@@ -85,8 +85,8 @@ import * as voxelGrid from './voxelGrid';
 
 /**
  * @deprecated Kept for 5.x compatibility. Use the ECG functions of
- * `GenericViewport/ECG`, for example `getECGTraceLayout`. The next major
- * release removes it.
+ * `GenericViewport/ECG`, for example `getECGTraceLayout`. 6.x still
+ * exports it.
  */
 const ECGUtilities = ECGUtilitiesModule;
 // name spaces

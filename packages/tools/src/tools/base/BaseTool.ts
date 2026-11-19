@@ -385,8 +385,8 @@ abstract class BaseTool {
   /**
    * Get the target Id for the viewport which will be used to store the cached
    * statistics scoped to that target in the annotations.
-   * For StackViewport, targetId is usually derived from the imageId.
-   * For VolumeViewport, it's derived from the volumeId.
+   * In stack mode, targetId is usually derived from the imageId.
+   * In volume mode, it's derived from the volumeId.
    *
    * This is the primary (first) entry of {@link getMeasurementTargets}, so it
    * honours the `targetsFilter` tool configuration - configuring, for
@@ -569,9 +569,10 @@ abstract class BaseTool {
    * Viewports displaying registered display sets (see `setDisplaySets` on
    * the generic viewports) resolve through the `displaySetModule` metadata
    * (an `IDisplaySet` from `@cornerstonejs/metadata`) falling back to the
-   * generic viewport display set registration; legacy viewports (`setStack`
-   * with plain image ids) have no display set, so an empty list is returned
-   * and their candidates carry no display set fields.
+   * generic viewport display set registration; a display set id with no
+   * registration (a video or an ECG shown by its image id) has no display
+   * set, so an empty list is returned and its candidates carry no display
+   * set fields.
    */
   protected static getViewportDisplaySets(viewport: Types.IViewport): Array<{
     displaySetUID: string;
@@ -725,8 +726,8 @@ abstract class BaseTool {
 
   /**
    * Creates a zoom/pan memo that remembers the original zoom/pan position for
-   * the given viewport. A next viewport of any family is read and restored
-   * through the projection service, a legacy viewport through its members.
+   * the given viewport. A viewport of any family is read and restored
+   * through the projection service.
    */
   public static createZoomPanMemo(viewport) {
     const zoomPan = getViewportZoomPan(viewport);

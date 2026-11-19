@@ -239,8 +239,7 @@ function parseCssColorToRGB(color: string): [number, number, number] {
  *
  * The tool targets the Generic ("next") viewport architecture exclusively: it
  * only operates on direct PLANAR viewports through the native view-state
- * API (getResolvedView / setViewReference / setViewState). Legacy stack and
- * volume viewports (and their compatibility adapters) are ignored.
+ * API (getResolvedView / setViewReference / setViewState).
  *
  * The tool works with a single viewport and renders the point (or its
  * off-slice projection) in linked planar viewports. It does not render slice

@@ -1,10 +1,10 @@
 ---
 id: stackProgressive
 title: Stack Progressive Loading
-summary: Implementation of progressive loading for stack viewports, with benchmarks comparing streaming and byte range methods for improved initial rendering times
+summary: Implementation of progressive loading for stacks, with benchmarks comparing streaming and byte range methods for improved initial rendering times
 ---
 
-Here, we will explore the progressive loading of stackViewports as an example use case for progressive loading and benchmark it compared to regular loading. We will discuss this in more detail, including scenarios that involve multiple stages of progressive loading and different retrieval types.
+Here, we will explore the progressive loading of stacks as an example use case for progressive loading and benchmark it compared to regular loading. We will discuss this in more detail, including scenarios that involve multiple stages of progressive loading and different retrieval types.
 
 :::tip
 For stacked viewports, larger images can be decoded using a streaming method, where the HTJ2K RPCL image is received as a stream, and parts of it are decoded as they become available. This can significantly improve the viewing of stacked images, without requiring any special server requirements other than support for the HTJ2K RPCL transfer syntax.

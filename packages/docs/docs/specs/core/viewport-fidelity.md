@@ -12,7 +12,7 @@ The indicator exists so that the user does not read a lossy image as a
 lossless image. Only a viewport that shows a lossy image shows the indicator.
 
 The user requirements apply to every viewport type. Today the code implements
-them for the stack viewports and the volume viewports only. A different
+them for a viewport that shows a stack or a volume only. A different
 viewport type obeys the user requirements when it can show a lossy image. The
 stack implementation reads the per-image summary `ImageQualityStatus`. It does
 not use `compareVoxelQuality()`.
@@ -185,7 +185,7 @@ states map to the states of this specification: transiently lossy is
   `fidelityDetailsTextOf()` adds "Other data is still loading." for a state
   that is not transient when a line with data is `loading`. VF owns the user
   rule of the mixed view.
-- **FIDELITY-STATE-8** A stack viewport reports the fidelity of the image that
+- **FIDELITY-STATE-8** A viewport in stack mode reports the fidelity of the image that
   it shows now, and not the worst image of the stack.
   `ProgressiveRetrieveImages` sets `IImage.imageQualityPending` while the same
   request or a later stage still replaces the image, and clears it when no
@@ -338,7 +338,7 @@ states map to the states of this specification: transiently lossy is
   - The rendering engines call it after a draw in the engine loop.
   - `PlanarViewport.render()` calls it when a render path drew the frame
     itself and marked it with `markRendered()`. The CPU paths do that.
-  - A volume viewport also calls it on `IMAGE_VOLUME_MODIFIED` and
+  - A viewport in volume mode also calls it on `IMAGE_VOLUME_MODIFIED` and
     `IMAGE_VOLUME_LOADING_COMPLETED`, because no render can follow such an
     event. The call for `IMAGE_VOLUME_MODIFIED` runs at most once for each
     animation frame, after the last event of that frame, because a streaming

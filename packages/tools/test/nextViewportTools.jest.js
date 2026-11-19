@@ -104,7 +104,7 @@ describe('WholeBodySegmentTool volume of a direct next planar viewport', () => {
       tool._getViewportVolume(
         makeNextPlanar('stack', { getVolumeId: () => undefined })
       )
-    ).toThrow('Viewport is not a BaseVolumeViewport');
+    ).toThrow('Viewport does not show a volume');
   });
 });
 

@@ -19,7 +19,7 @@ interface ViewportInputOptions {
   suppressEvents?: boolean;
   /**
    * parallel projection settings. This is used by 3D volume viewports (`VOLUME_3D`).
-   * You can't modify the parallel projection of a stack viewport or orthographic volume viewport using viewport input options.
+   * You can't modify the parallel projection of a planar viewport using viewport input options.
    */
   parallelProjection?: boolean;
   /** aspect ratio as [width, height] */

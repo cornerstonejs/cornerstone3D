@@ -215,7 +215,7 @@ export function getPlanarViewReference(args: {
   // is not volume specific - it must NOT carry a volumeId so it stays
   // compatible with any view of the same FrameOfReferenceUID - whereas the
   // default (undefined) and forFrameOfReference === false both bind to this
-  // volume.  This must match BaseVolumeViewport.getViewReference.
+  // volume, as the 5.x volume viewport's getViewReference did.
   if (
     rendering &&
     isVolumeRenderMode(rendering.renderMode) &&

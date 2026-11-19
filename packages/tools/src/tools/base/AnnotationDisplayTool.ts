@@ -48,9 +48,9 @@ abstract class AnnotationDisplayTool extends BaseTool {
   /**
    * @virtual Given the element and annotations which is an array of annotation, it
    * filters the annotations array to only include the annotation based on the viewportType.
-   * If the viewport is StackViewport, it filters based on the current imageId of the viewport,
-   * if the viewport is volumeViewport, it only returns those that are within the
-   * same slice as the current rendered slice in the volume viewport.
+   * In stack mode, it filters based on the current imageId of the viewport,
+   * in volume mode, it only returns those that are within the
+   * same slice as the current rendered slice.
    * imageId as the enabledElement.
    * @param element - The HTML element
    * @param annotations - The annotations to filter (array of annotation)

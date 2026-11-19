@@ -53,12 +53,12 @@ interface ViewportDisplayCoords {
  *
  *
  * RenderingEngine checks for WebGL context availability to determine if GPU rendering is possible.
- * If a WebGL context is not available, RenderingEngine will fall back to CPU rendering for StackViewports.
+ * If a WebGL context is not available, RenderingEngine will fall back to CPU rendering for planar viewports.
  * However, for volume rendering, GPU availability is required, and an error will be thrown if attempted without GPU support.
  *
  * By default, RenderingEngine will use the vtk.js-enabled pipeline for rendering viewports.
  * However, if a custom rendering pipeline is specified by a custom viewport, it will be used instead.
- * We use this custom pipeline to render a StackViewport on CPU using the Cornerstone legacy CPU rendering pipeline.
+ * A planar viewport that draws on the CPU uses this custom pipeline.
  *
  * @public
  */

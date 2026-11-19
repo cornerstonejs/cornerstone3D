@@ -75,7 +75,8 @@ export type ActorMapperProxy =
 /**
  * Cornerstone Actor Entry including actor uid, actual Actor, and
  * slabThickness for the actor. ActorEntry is the object that
- * is retrieved from viewport when calling viewport.getActor(s)
+ * is retrieved from viewport when calling viewport.getActors() or
+ * viewport.getDefaultActor()
  */
 export interface ActorEntry {
   /** actor UID */

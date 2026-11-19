@@ -73,7 +73,7 @@ video display set. The image id of a DICOM video instance can be passed as the
 `createDisplaySets` splits a series into display sets, and the one that it marks
 as `'video'` holds the video.
 
-```js
+```ts
 const displaySets = await createDisplaySets({
   StudyInstanceUID: '2.25.96975534054447904995905761963464388233',
   SeriesInstanceUID: '2.25.15054212212536476297201250326674987992',
@@ -81,7 +81,7 @@ const displaySets = await createDisplaySets({
 });
 const videoDisplaySet = displaySets.find((ds) => ds.handler === 'video');
 
-const viewport = renderingEngine.getViewport(viewportId);
+const viewport = renderingEngine.getViewport<VideoViewport>(viewportId);
 
 await viewport.setDisplaySets({
   displaySetId: videoDisplaySet.instances[0].imageId,
@@ -111,8 +111,13 @@ For instance you can look at this example in OHIF which uses the rendered endpoi
 <details>
 <summary>Final code</summary>
 
-```js
-import { init as coreInit, RenderingEngine, Enums } from '@cornerstonejs/core';
+```ts
+import {
+  init as coreInit,
+  RenderingEngine,
+  Enums,
+  VideoViewport,
+} from '@cornerstonejs/core';
 import { init as dicomImageLoaderInit } from '@cornerstonejs/dicom-image-loader';
 import { createDisplaySets } from '../../../../utils/demo/helpers';
 
@@ -155,7 +160,7 @@ async function run() {
 
   renderingEngine.enableElement(viewportInput);
 
-  const viewport = renderingEngine.getViewport(viewportId);
+  const viewport = renderingEngine.getViewport<VideoViewport>(viewportId);
 
   await viewport.setDisplaySets({
     displaySetId: videoDisplaySet.instances[0].imageId,

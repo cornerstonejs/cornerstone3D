@@ -1,7 +1,7 @@
 import { createSharpeningRenderPass } from './sharpeningRenderPass';
 import { createSmoothingRenderPass } from './smoothingRenderPass';
 
-/** The sharpening and the smoothing of a picture, as `setProperties` takes them. */
+/** The sharpening and the smoothing of a picture, as a presentation takes them. */
 export interface SharpeningSmoothing {
   sharpening?: number;
   smoothing?: number;

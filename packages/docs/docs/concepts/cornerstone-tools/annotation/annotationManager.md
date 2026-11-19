@@ -12,9 +12,9 @@ We use the Annotation Manager to store annotations, retrieve annotations, and sa
 The default Annotation Manager, `FrameOfReferenceSpecificAnnotationManager`, stores annotations based on the FrameOfReferenceUID.
 This means that annotations are stored separately for each FrameOfReferenceUID.
 
-Currently in our rendering pipeline, if two VolumeViewports share the same
-FrameOfReferenceUID, they will share the same annotations. However, StackViewports
-works on the per imageId basis, so annotations are not shared between StackViewports.
+Currently in our rendering pipeline, if two planar viewports that show a volume share the same
+FrameOfReferenceUID, they will share the same annotations. However, a planar viewport that shows a stack
+works on the per imageId basis, so annotations are not shared between viewports that show stacks.
 
 ### GroupKey
 

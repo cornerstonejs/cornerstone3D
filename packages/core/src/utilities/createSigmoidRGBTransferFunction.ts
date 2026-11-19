@@ -14,8 +14,8 @@ import { logit } from './logit';
  * ```
  * const sigmoidRGBTransferFunction = createSigmoidRGBTransferFunction(0, 255, { lower: 0, upper: 255} );
  * viewport
- *   .getActor()
- *   .getProperty()
+ *   .getDefaultActor()
+ *   .actor.getProperty()
  *   .setRGBTransferFunction(0, sigmoidRGBTransferFunction);
  * ```
  *

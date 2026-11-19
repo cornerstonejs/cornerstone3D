@@ -182,7 +182,7 @@ describe('annotationHydration', () => {
     });
 
     expect(() => annotationHydration(viewport, 'Length', [[0, 0, 0]])).toThrow(
-      'viewport must be a StackViewport or BaseVolumeViewport'
+      'viewport must show a stack or a volume'
     );
   });
 });
@@ -281,7 +281,7 @@ describe('WholeBodySegmentTool volume of the viewport', () => {
     const tool = new WholeBodySegmentTool();
 
     expect(() => tool._getViewportVolume(makePlanar('stack'))).toThrow(
-      'Viewport is not a BaseVolumeViewport'
+      'Viewport does not show a volume'
     );
   });
 });

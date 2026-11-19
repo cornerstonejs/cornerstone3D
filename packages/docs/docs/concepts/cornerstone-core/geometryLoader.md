@@ -29,6 +29,7 @@ import {
   cornerstoneMeshLoader,
   Enums,
   Types,
+  VolumeViewport3D,
 } from '@cornerstonejs/core';
 
 geometryLoader.registerGeometryLoader('mesh', cornerstoneMeshLoader);
@@ -38,34 +39,37 @@ geometryLoader.registerGeometryLoader('mesh', cornerstoneMeshLoader);
 
 You can take a look at our sample code example for `cornerstoneMeshLoader` [here](https://github.com/cornerstonejs/cornerstone3D/tree/main/packages/core/examples/meshLoader)
 
+A loaded mesh is a display set of a 3D viewport (`ViewportType.VOLUME_3D`). Its
+display set id is the key given to `loadAndCacheGeometry`, and
+`renderMode: 'vtkGeometry3d'` shows it as a surface:
+
 ```js
-const mesh1 = await geometryLoader.loadAndCacheGeometry(
-  'mesh:https://example.com/mesh.ply',
-  {
-    type: Enums.GeometryType.MESH,
-    geometryData: {
-      id: 'mesh1',
-      format: Enums.MeshType.PLY,
-    } as Types.MeshData,
-  }
-);
+const meshId1 = 'mesh:https://example.com/mesh.ply';
+const meshId2 = 'mesh:https://example.com/mesh.obj';
 
-const mesh2 = await geometryLoader.loadAndCacheGeometry(
-  'mesh:https://example.com/mesh.obj',
-  {
-    type: Enums.GeometryType.MESH,
-    geometryData: {
-      id: 'mesh2',
-      format: Enums.MeshType.OBJ,
-      materialUrl: 'https://example.com/material.mtl',
-    } as Types.MeshData,
-  }
-);
+await geometryLoader.loadAndCacheGeometry(meshId1, {
+  type: Enums.GeometryType.MESH,
+  geometryData: {
+    id: 'mesh1',
+    format: Enums.MeshType.PLY,
+  } as Types.MeshData,
+});
 
-viewport.setActors([
-  { uid: mesh1.id, actor: (mesh1.data as Types.IMesh).actor },
-  { uid: mesh2.id, actor: (mesh2.data as Types.IMesh).actor },
-]);
+await geometryLoader.loadAndCacheGeometry(meshId2, {
+  type: Enums.GeometryType.MESH,
+  geometryData: {
+    id: 'mesh2',
+    format: Enums.MeshType.OBJ,
+    materialUrl: 'https://example.com/material.mtl',
+  } as Types.MeshData,
+});
+
+const viewport = renderingEngine.getViewport<VolumeViewport3D>(viewportId);
+
+await viewport.addDisplaySet(meshId1, { renderMode: 'vtkGeometry3d' });
+await viewport.addDisplaySet(meshId2, { renderMode: 'vtkGeometry3d' });
+viewport.resetViewState();
+viewport.render();
 ```
 
 #### Supported mesh formats

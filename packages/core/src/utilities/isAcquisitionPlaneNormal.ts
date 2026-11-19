@@ -10,7 +10,8 @@ import type { IImageVolume, Point3 } from '../types';
  * asks "is this view in the acquisition plane" gets the same answer as the
  * render. Either direction of the scan axis counts.
  *
- * The 0.99 tolerance of `VolumeViewport.isInAcquisitionPlane` is wider, and it
+ * The 0.99 tolerance of the legacy `VolumeViewport.isInAcquisitionPlane` of
+ * 5.x is wider, and it
  * still decides whether a reference to an image counts as the view.
  */
 export function isAcquisitionPlaneNormal(

@@ -489,8 +489,8 @@ abstract class GenericViewport<
 
   /**
    * Returns the rendering engine that owns this viewport. Tools and utilities
-   * rely on this method existing on every viewport (legacy Viewport provides
-   * it); without it, calls like `viewport.getRenderingEngine()` threw on native
+   * rely on this method existing on every viewport (the 5.x `Viewport` class
+   * provided it); without it, calls like `viewport.getRenderingEngine()` threw on native
    * generic viewports.
    */
   getRenderingEngine(): IRenderingEngine {

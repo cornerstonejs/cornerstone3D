@@ -1,6 +1,6 @@
 /**
  * @deprecated Kept for 5.x compatibility. Use the ECG functions of
- * `GenericViewport/ECG` (for example `getECGTraceLayout`). Removed in the next major.
+ * `GenericViewport/ECG` (for example `getECGTraceLayout`). 6.x still exports it.
  */
 import { MetadataModules } from '../enums';
 import * as metaData from '../metaData';

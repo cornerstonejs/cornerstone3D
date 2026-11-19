@@ -7,8 +7,8 @@ import type { vtkColorTransferFunction } from '@kitware/vtk.js/Rendering/Core/Co
  * Grabbing a reference to the RGB Transfer function from the viewport:
  * ```
  * const rgbTransferFunction = viewport
- *   .getActor()
- *   .getProperty()
+ *   .getDefaultActor()
+ *   .actor.getProperty()
  *   .getRGBTransferFunction(0);
  *
  * rgbTransferFunction.setRange(0, 5);

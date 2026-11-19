@@ -399,8 +399,8 @@ function _createDynamicVolumeViewportCinePlayContext(
 }
 
 /**
- * Cine play context for direct GenericViewport ("next") viewports, which are not
- * instances of StackViewport/VolumeViewport/VideoViewport. Both stack-mode and
+ * Cine play context for every viewport, unless the clip plays the dimension
+ * groups of a dynamic volume. Both stack-mode and
  * volume-mode generic viewports advance through frames/slices via the semantic
  * getNumberOfSlices/getSliceIndex API and csUtils.scroll. Frame-time-vector
  * playback applies only in stack mode (acquired multi-frame); volume reformat

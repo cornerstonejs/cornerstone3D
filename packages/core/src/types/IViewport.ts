@@ -58,7 +58,7 @@ export type ViewReferenceSpecifier = {
    *
    * In other words the `volumeId` is included whenever
    * `forFrameOfReference !== true`.  All viewport implementations
-   * (`BaseVolumeViewport.getViewReference`, `planarViewReference`) must follow
+   * (`planarViewReference` and the other families) must follow
    * this same rule so the flag has one meaning everywhere.
    */
   forFrameOfReference?: boolean;
@@ -103,14 +103,14 @@ export interface ReferenceCompatibleOptions {
   withNavigation?: boolean;
 
   /**
-   * For a stack viewport, return true if this viewport could show the given
-   * view if it were converted into a volume viewport.  Has no affect on volume
-   * viewports.
+   * In stack mode, return true if this viewport could show the given
+   * view if it showed its display set as a volume.  Has no effect in volume
+   * mode.
    */
   asVolume?: boolean;
 
   /**
-   * For volume viewports, return true if this viewport could show the given view
+   * In volume mode, return true if this viewport could show the given view
    * if the camera was changed to a different viewNormal orientation.
    */
   withOrientation?: boolean;
@@ -428,7 +428,7 @@ export interface ViewPresentation {
 
 /**
  * A view presentation selector allows choosing what view attributes should be
- * returned by a call to getViewPresentation.  This allows a shared selection
+ * returned by `viewportProjection.getPresentation(viewport, { selector })`.  This allows a shared selection
  * object to be used to specify which presentation attributes are to be used.
  *
  * For example, a synchronizer might choose to use a presentation selector

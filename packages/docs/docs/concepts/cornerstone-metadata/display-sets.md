@@ -70,9 +70,10 @@ The default rules give no viewport type. The host chooses the viewport from
 see [Reconstructable display sets](#reconstructable-display-sets)). A custom rule's
 `viewportTypes`, if any, is on `displaySet.viewportTypes`. A viewport's
 `setDisplaySets({ displaySetId })` is the single entry point that loads a display
-set: it resolves `displaySetId` to renderable data, calls the viewport's native
-setter (`setStack` / `setVolumes` / `setVideo` / `setWSI` / `setEcg`), and
-records the mounted entry so `getDisplaySets()` reflects it.
+set: it resolves `displaySetId` to renderable data, mounts that data in the
+viewport (a stack or a volume in a planar viewport, a video, a slide or a
+waveform in the other families), and records the mounted entry so
+`getDisplaySets()` reflects it.
 
 The viewport/registry `displaySetId` is the same value as the display set's
 `displaySetId` field — there is one identifier for a display set, used on both

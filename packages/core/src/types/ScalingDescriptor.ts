@@ -5,8 +5,8 @@
  * It answers the two questions prescaling-aware tooling repeatedly needs - "what
  * modality is this?" and "are the voxels already pre-scaled into modality units
  * (e.g. SUV)?" - without each caller having to branch on the viewport family or
- * reach for the StackViewport-only `.modality` / `.preScale` surface that the
- * native (PLANAR) viewport does not expose.
+ * reach for the `.modality` / `.preScale` members that only the 5.x stack
+ * viewport had and that the planar viewport does not expose.
  */
 interface ScalingDescriptor {
   /**

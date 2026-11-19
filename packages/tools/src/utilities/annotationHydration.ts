@@ -68,7 +68,7 @@ function getReferencedImageId(
     );
   } else {
     throw new Error(
-      'getReferencedImageId: viewport must be a StackViewport or BaseVolumeViewport'
+      'getReferencedImageId: viewport must show a stack or a volume'
     );
   }
 

@@ -9,8 +9,8 @@ summary: Configurable filtering of which targets (display sets/volumes) annotati
 Annotation tools that calculate statistics (such as `CircleROITool` and
 `RectangleROITool`) store their results in the annotation's `cachedStats`,
 keyed by a **targetId** identifying the image data the statistics were
-computed on. On a stack viewport the targetId is derived from the imageId; on
-a volume viewport it is derived from the volumeId.
+computed on. In stack mode the targetId is derived from the imageId; in
+volume mode it is derived from the volumeId.
 
 A viewport can display more than one set of image data at once — a PT/CT
 fusion viewport has both a CT and a PT volume. Each displayed volume is a
@@ -228,7 +228,7 @@ The candidates passed to the filter are built by
   `allPixelData` choosers) excludes any candidate with a `representationUID`,
   so segmentations are never measured by default, but a custom predicate can
   opt to include them;
-- when no actor produces a candidate (for example on a stack viewport), a
+- when no actor produces a candidate (for example in stack mode), a
   single candidate for the viewport's default view reference is used. If the
   viewport displays a registered display set (`setDisplaySets`), the candidate's display set fields are resolved from the
   `displaySetModule` metadata (an `IDisplaySet` from

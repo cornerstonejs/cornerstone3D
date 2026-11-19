@@ -46,9 +46,8 @@ class WindowLevelTool extends BaseTool {
     const { lower, upper } = properties.voiRange;
 
     // Resolve modality + pre-scaled state through the single family-aware
-    // descriptor instead of re-deriving them inline. The native ("next")
-    // viewport exposes neither the StackViewport `.modality`/`.preScale` surface
-    // nor the VolumeViewport `.setVolumes` API; the descriptor reads each family
+    // descriptor instead of re-deriving them inline. A viewport has no
+    // `.modality` or `.preScale` of its own; the descriptor reads each family
     // from its own source of truth so a prescaled PT viewport still takes the
     // gentle fixed-width PT path (5/clientHeight) instead of the aggressive
     // dynamic-range multiplier. No volume id is given, so the descriptor

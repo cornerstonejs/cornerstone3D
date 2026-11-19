@@ -1295,11 +1295,7 @@ class PlanarViewport extends GenericViewport<
    * The native presentation write path previously emitted no event, so OHIF's
    * VOI sliders, colorbar, window-level readout, and VOI/colormap
    * synchronizers went stale after any programmatic or tool-driven
-   * `setDisplaySetPresentation` change on a direct `PLANAR` viewport. The
-   * legacy compatibility adapter keeps emitting `COLORMAP_MODIFIED` through its
-   * own path (which applies presentation via `setDataPresentationState`
-   * directly, not through `mergeDataPresentation`), so this hook does not
-   * double-fire for compatibility viewports.
+   * `setDisplaySetPresentation` change on a direct `PLANAR` viewport.
    *
    * A change of the slab thickness fires `CAMERA_MODIFIED`, with the camera
    * as the previous camera, as the legacy volume viewport did when its slab
@@ -1434,8 +1430,7 @@ class PlanarViewport extends GenericViewport<
    * content it is the slice count along the current view direction. This is the
    * native equivalent of the legacy stack/volume `getNumberOfSlices()` and is
    * what `csUtils.jumpToSlice`, scroll, and image-slice synchronizers rely on
-   * for a `PLANAR` viewport (which is not a `StackViewport`, so it takes
-   * the slice-count navigation branch).
+   * for a `PLANAR` viewport.
    *
    * @returns The total slice count for the active source data.
    */
@@ -1460,8 +1455,8 @@ class PlanarViewport extends GenericViewport<
   }
 
   /**
-   * Re-applies the calibrated pixel spacing for an image (CS-12). The native
-   * counterpart of `StackViewport.calibrateSpacing`.
+   * Re-applies the calibrated pixel spacing for an image (CS-12). The
+   * counterpart of `calibrateSpacing` of the 5.x stack viewport.
    *
    * The caller (the tools `calibrateImageSpacing` utility) first adds the calibration
    * to the `calibratedPixelSpacingMetadataProvider`; this method then re-renders and
@@ -1948,8 +1943,8 @@ class PlanarViewport extends GenericViewport<
    * @param volumeId - Optional: when the viewport displays several volumes
    * (eg a fusion viewport), return the image data of the binding showing
    * this volume rather than of the active/default binding.  Mirrors the
-   * legacy `BaseVolumeViewport.getImageData(volumeId?)` signature so
-   * per-target consumers (eg annotation statistics) work on both.
+   * `getImageData(volumeId?)` signature of the 5.x volume viewport, which
+   * per-target consumers (eg annotation statistics) call.
    * @returns The image-data object, if exposed by the render path.
    */
   getImageData(volumeId?: string): IImageData | CPUIImageData | undefined {

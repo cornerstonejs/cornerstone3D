@@ -6,7 +6,7 @@ import getEnabledElement from '../getEnabledElement';
 import { getViewportContentMode } from './viewportCapabilities';
 /**
  * It uses the imageIndex in the Options to scroll to the slice that is intended.
- * It works for both Stack and Volume viewports. In VolumeViewports, the imageIndex
+ * It works in stack mode and in volume mode. In volume mode, the imageIndex
  * should be given with respect to the index in the 3D image in the view direction
  * (i.e. the index of the slice in Axial, Sagittal, Coronal, or Oblique).
  *

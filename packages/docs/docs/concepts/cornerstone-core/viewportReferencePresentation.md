@@ -17,10 +17,10 @@ Some specific use cases for this are:
 
 - Referencing a specific image for a tool
   - Uses `ViewReference` to specify an image to apply to
-  - Uses `isReferenceCompatible` to determine if the tool should be displayed or not
-  - Uses `isReferenceCompatible` to determine which of a set of viewports is best suited to navigating to an image
+  - Uses `isReferenceViewable` to determine if the tool should be displayed or not
+  - Uses `isReferenceViewable` to determine which of a set of viewports is best suited to navigating to an image
   - Uses `setViewReference(viewRef)` to navigate to the specified image
-- Restoring an earlier view or converting from stack to volume or vice-versa
+- Restoring an earlier view or showing a stack as a volume or vice-versa
   - Uses `ViewReference` and `ViewPresentation` to store the image information
 - Applying interpolation to image sets
   - Uses `getViewReference` with a specific image position to get references to
@@ -43,25 +43,26 @@ where the annotation metadata specifies which image it applies to. The view refe
 case is used both to determine if an image is applicable to a given view, as well as to
 determine if a viewport could navigate to display the given annotation, either with or without
 navigation and/or orientation changes. Then, to navigate to the given reference,
-the `viewport.setViewReference` is called to apply the given navigation. This can apply to
-both orthographic and stack viewports.
+the `viewport.setViewReference` is called to apply the given navigation. This applies
+to a planar viewport that shows a stack (stack mode) and to one that shows a volume
+(volume mode).
 
 The `ViewReference` contains a number of fields that determine the view, the
 important ones being `referencedImageId` for stack views, and `volumeId` combined
 with `cameraFocalPoint, viewPlaneNormal, FrameOfReferenceUID` for volumes.
-Where possible, both the stack and volume viewports populate both sets of information
-in order to allow the view to apply to either image type.
+Where possible, a planar viewport populates both sets of information, in stack
+mode and in volume mode, in order to allow the view to apply to either image type.
 
 ### referencedImageId
 
 The referenced image id allows specifying non-frame of reference based stack type images. This is
-a single image typically, and can be used by stack viewports to navigate to a specific image.
-The value is provided by orthographic viewports when getting a reference to an acquisition
-orientation single image, so that those view references are compatible to stack viewports.
+a single image typically, and can be used in stack mode to navigate to a specific image.
+The value is provided in volume mode when getting a reference to an acquisition
+orientation single image, so that those view references are compatible with stack mode.
 
 #### `referencedImageId` and `sliceIndex`
 
-The stack viewport uses the sliceIndex and referencedImageId combined to try to quickly
+Stack mode uses the sliceIndex and referencedImageId combined to try to quickly
 guess the `imageIdIndex` value for a given referencedImageId. If the referencedImageId is
 identical to the one at the given sliceIndex then it can directly use the sliceIndex, otherwise it
 needs to find the `imageIdIndex`. `sliceIndex` is never required.
@@ -71,32 +72,28 @@ index can be either a single frame or it can be an array range
 
 ### Frame of reference, focal point and normal
 
-The frame of reference and focal point/normal values can be used by orthographic viewports to
-specify other views than the acquisition plane views. The values are provided when available from
-the stack viewports and can be consumed by the volume viewport.
-
-Currently all three are required for applying to a volume viewport,
-although in the future it may become possible to specify views in other ways
-than providing a normal.
+The frame of reference and focal point/normal values can be used in volume mode to
+specify other views than the acquisition plane views. The values are provided when available
+in stack mode and can be consumed in volume mode.
 
 ### `volumeId`, `sliceIndex` and `viewPlaneNormal`
 
-When a orthographic viewport creates a view reference, it includes the volume
+When a planar viewport in volume mode creates a view reference, it includes the volume
 id, slice index and view plane normal. This allows for quick identification of
 whether a viewport is showing a given reference, as well as navigating quickly to
-the given view. This is primarily used in `isReferenceCompatible` which can
-be called many times on orthographic views in order to determine annotation tool
+the given view. This is primarily used in `isReferenceViewable` which can
+be called many times on volume views in order to determine annotation tool
 views.
 
-Note that a stack viewport will not provide the `volumeId`, so this optimization
+Note that stack mode does not provide the `volumeId`, so this optimization
 cannot be used for those references.
 
 These values are not required for navigation, but for annotation display detection
 they are required to detect the view applicability.
 
-### Stack Viewport References
+### References in stack mode
 
-The stack viewport creates references containing:
+A planar viewport in stack mode creates references containing:
 
 - referencedImageId and sliceIndex
 - Frame of reference, focal point and normal when available
@@ -108,28 +105,27 @@ _warning_ do not assume that the slice index for volumes in any way correlates t
 slice indices for stacks, or that two stacks displaying the SAME image use corresponding
 slice indices, or that the frame number has ANY correlation to slice index or vice-versa.
 
-The stack viewport can only navigate to a view reference containing a referencedImageId,
-it will (cannot in fact because of missing information) navigate or discover the appropriate
-images based on volume/camera etc.
+In stack mode `setViewReference` moves to the image that the reference names,
+else to its slice index, else to the image nearest to its focal point (at most
+one slice spacing away, in a plane parallel to the reference). A reference that
+names an image that the stack does not hold moves nothing.
 
-The isReferenceCompatible for stack viewports will additionally use the slice
+`isReferenceViewable` in stack mode will additionally use the slice
 index for a quick check of whether the image is found at the given location,
 but does not rely on the slice index for that, it is just faster that way.
 
-### Volume Viewport References
+### References in volume mode
 
-Volume viewports create references with:
+A planar viewport in volume mode creates references with:
 
 - referencedImageId appropriate for an acquisition view
 - Frame of reference, focal point and normal
-
-Additionally, orthographic viewports add:
-
 - volumeId and slice index for the view in focus.
 
-The orthographic viewport will first use any volume id, slice index and normal to
-determine whether the reference applies or to navigate to it.
-Both volume viewports will then apply the frame of reference/focal/normal.
+It will first use any volume id, slice index and normal to determine whether
+the reference applies or to navigate to it, and then apply the frame of
+reference/focal/normal. A reference with another normal turns the view to that
+normal.
 
 Specific additional behaviour for detecting 1d and 2d points maybe added in the
 future (to allow lines and points to appear on view other than original).
@@ -176,7 +172,7 @@ in `viewRef` and `viewPres` respectively.
 
 ```javascript
 const { metadata } = annotation;
-if (viewport.isReferenceCompatible({ withNavigation: true })) {
+if (viewport.isReferenceViewable(metadata, { withNavigation: true })) {
   viewport.setViewReference(metadata);
 } else {
   // throw error indicating view isn't compatible or other behaviour
@@ -192,32 +188,32 @@ function findViewportForAnnotation(annotation, viewports) {
 
   // If there is a viewport already displaying this, then just return it.
   const alreadyDisplayingViewport = viewports.find((viewport) =>
-    viewport.isReferenceCompatible(metadata)
+    viewport.isReferenceViewable(metadata)
   );
   if (alreadyDisplayingViewport) return alreadyDisplayingViewport;
 
   // If there is a viewport that just needs navigation, then return it
   const navigateViewport = viewports.find((viewport) =>
-    viewport.isReferenceCompatible(metadata, { withNavigation: true })
+    viewport.isReferenceViewable(metadata, { withNavigation: true })
   );
   if (navigateViewport) return navigateViewport;
 
   // If there is a viewport showing the volume that could have orientation changed, use it
   const orientationViewport = viewports.find((viewport) =>
-    viewport.isReferenceCompatible(metadata, { withOrientation: true })
+    viewport.isReferenceViewable(metadata, { withOrientation: true })
   );
   if (orientationViewport) return orientationViewport;
 
-  // If there is a stack viewport that could be converted to volume to show this, then do so
-  const stackToVolumeViewport = viewports.find((viewport) =>
-    viewport.isReferenceCompatible(metadata, {
+  // If there is a viewport showing a stack that could show it as a volume, then do so
+  const stackAsVolumeViewport = viewports.find((viewport) =>
+    viewport.isReferenceViewable(metadata, {
       withOrientation: true,
       asVolume: true,
     })
   );
-  if (stackToVolumeViewport) {
-    // convert stack to volume viewport here
-    return stackToVolumeViewport;
+  if (stackAsVolumeViewport) {
+    // show the display set again with a volumeId here (setDisplaySets)
+    return stackAsVolumeViewport;
   }
 
   // Might also look for viewport showing same frame of reference, but different volume

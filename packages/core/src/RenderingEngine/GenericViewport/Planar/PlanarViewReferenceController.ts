@@ -43,7 +43,7 @@ import type {
   PlanarViewState,
 } from './PlanarViewportTypes';
 
-/** The tolerance of `VolumeViewport.isInAcquisitionPlane`. */
+/** The tolerance of the legacy `VolumeViewport.isInAcquisitionPlane` of 5.x. */
 const PARALLEL_COSINE = 0.99;
 
 /** The image ids of a volume in the reverse order, one list for each. */

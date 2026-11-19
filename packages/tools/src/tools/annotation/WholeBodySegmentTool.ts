@@ -405,7 +405,7 @@ class WholeBodySegmentTool extends GrowCutBaseTool {
       : undefined;
 
     if (!volumeId) {
-      throw new Error('Viewport is not a BaseVolumeViewport');
+      throw new Error('Viewport does not show a volume');
     }
 
     return cache.getVolume(volumeId);

@@ -12,7 +12,7 @@ const EPSILON = 1e-3;
  * `PlanarFreehandROITool` in the x and y canvas directions, as well as
  * returning these canvas directions in world space.
  *
- * @param viewport - The Cornerstone3D `StackViewport` or `VolumeViewport`.
+ * @param viewport - The Cornerstone3D planar viewport, in stack mode or in volume mode.
  * @param subPixelResolution - The number to divide the image pixel spacing by
  * to get the sub pixel spacing. E.g. `10` will return spacings 10x smaller than
  * the native image spacing.

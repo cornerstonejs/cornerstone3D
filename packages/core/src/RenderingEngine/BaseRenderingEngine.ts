@@ -97,7 +97,7 @@ abstract class BaseRenderingEngine {
 
   /**
    * Enables the requested viewport and add it to the viewports. It will
-   * properly create the Stack viewport or Volume viewport:
+   * create the viewport of the requested type:
    *
    * 1) Checks if the viewport is defined already, if yes, remove it first
    * 2) Checks if the viewport is using a custom rendering pipeline, if no,

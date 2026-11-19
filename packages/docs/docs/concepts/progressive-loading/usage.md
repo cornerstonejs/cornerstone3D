@@ -1,7 +1,7 @@
 ---
 id: usage
 title: Usage
-summary: Guide to implementing progressive loading in Cornerstone3D applications through the imageRetrieveMetadataProvider for both stack and volume viewports
+summary: Guide to implementing progressive loading in Cornerstone3D applications through the imageRetrieveMetadataProvider for both stacks and volumes
 ---
 
 Now that we have learned about the retrieve configuration, let's see how we can use it in Cornerstone3D.
@@ -10,13 +10,13 @@ Now that we have learned about the retrieve configuration, let's see how we can 
 
 This is a new metadata provider that we have added to the Cornerstone3D library. It is responsible for retrieving the metadata for the image (or volume, as we will explore later). So, in order to perform progressive loading on a set of imageIds, you need to add your retrieve configuration to this provider.
 
-### Stack Viewport
+### Stacks
 
 You can specify an imageId-specific retrieve configuration by including the imageIds as the key for your metadata. Considering our
 one stage retrieve configuration from the previous section we have the following:
 
 ```js
-import { utilities } from '@cornerstone3d/core';
+import { utilities } from '@cornerstonejs/core';
 
 const retrieveConfiguration = {
   stages: [
@@ -41,12 +41,12 @@ If you don't need to define an imageId-specific retrieve configuration, you can 
 utilities.imageRetrieveMetadataProvider.add('stack', retrieveConfiguration);
 ```
 
-### Volume Viewport
+### Volumes
 
 For loading a volume as progressive loading, you can use the `volumeId` as the key for your metadata.
 
 ```js
-import { utilities } from '@cornerstone3d/core';
+import { utilities } from '@cornerstonejs/core';
 
 const volumeId = ....get volume id....
 utilities.imageRetrieveMetadataProvider.add(volumeId, retrieveConfiguration);

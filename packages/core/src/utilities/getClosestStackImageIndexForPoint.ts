@@ -8,7 +8,7 @@ import type PlanarViewport from '../RenderingEngine/GenericViewport/Planar/Plana
 /**
  * Given a point in 3D space and a viewport it returns the index of the closest imageId, it assumes that stack images are sorted according to their sliceLocation
  * @param point - [A, B, C] coordinates of the point in 3D space
- * @param viewport - The StackViewport to search for the closest imageId
+ * @param viewport - The planar viewport in stack mode to search for the closest imageId
  *
  * @returns The imageId index of the closest imageId or null if no imageId is found
  */

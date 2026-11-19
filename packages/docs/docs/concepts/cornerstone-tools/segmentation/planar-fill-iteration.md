@@ -113,7 +113,7 @@ keeps Rule M, because the shape's own runs already bound the fill.
 
 :::caution
 A fill and the viewport must step by the same distance. The digital planes of
-Rule F are `T_v` apart, and `T_v` is the L1 measure. A volume viewport steps by
+Rule F are `T_v` apart, and `T_v` is the L1 measure. A viewport in volume mode steps by
 `getSpacingInNormalDirection`, which is the L2 measure, and L2 is shorter than
 L1 for an oblique normal. Two consecutive oblique slices therefore fall inside
 one digital plane, and both slices show the same fill. The fill is correct in

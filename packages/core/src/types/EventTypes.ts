@@ -323,7 +323,7 @@ interface ImageSpacingCalibratedEventDetail {
 }
 
 /**
- * The VIEWPORT_NEW_IMAGE_SET event's data, when a new stack is set on a StackViewport
+ * The VIEWPORT_NEW_IMAGE_SET event's data, when a planar viewport shows a new stack
  */
 interface StackViewportNewStackEventDetail {
   imageIds: string[];

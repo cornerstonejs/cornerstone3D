@@ -32,7 +32,7 @@ Using `@cornerstonejs/core` and its accompanying libraries such as `@cornerstone
 
 ### Rendering
 
-Using the new `Cornerstone3D` rendering engine and its Stack and Volume viewports, you can:
+Using the new `Cornerstone3D` rendering engine and its planar viewport (for a stack of images or a volume) and 3D viewport, you can:
 
 - Render all transfer syntaxes including various compressed formats such as JPEG2000, JPEG Lossless
 - Stream the slices of a volume and view them in real-time as they are being loaded

@@ -21,11 +21,10 @@ export default function filterAnnotationsForDisplay(
   // Volume-backed viewports project annotations GEOMETRICALLY: an annotation
   // drawn on any viewport sharing the volume / frame of reference renders onto
   // this slice when it lies within it (parallel plane + world-space proximity).
-  // This covers both the legacy VolumeViewport and native volume-mode
-  // PLANAR viewports (MPR). Native volume-mode MUST use this geometric path
-  // rather than the index-based isReferenceViewable below: a measurement drawn
-  // in vtkImage/stack mode carries a STACK sliceIndex that never matches the MPR
-  // volume's currentImageIdIndex, so the index check rejects it -- but the
+  // This covers PLANAR viewports in volume mode (MPR), which MUST use this
+  // geometric path rather than the index-based isReferenceViewable below: a
+  // measurement drawn in vtkImage/stack mode carries a STACK sliceIndex that
+  // never matches the MPR volume's currentImageIdIndex, so the index check rejects it -- but the
   // world-space slice proximity still holds, so the geometric path renders it
   // across to MPR exactly as legacy did. (ohifohifnextapi-23b)
   if (csUtils.getViewportContentMode(viewport) === 'volume') {
