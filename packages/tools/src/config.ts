@@ -26,7 +26,7 @@ export type PolySegConversionOptions = {
   /** ID of the segmentation to convert */
   segmentationId?: string;
   /** Viewport to use for conversion */
-  viewport?: Types.IStackViewport | Types.IVolumeViewport;
+  viewport?: Types.IViewport;
 };
 
 /**
@@ -67,7 +67,7 @@ type PolySegAddOn = {
   /** Clips and caches surfaces for a viewport */
   clipAndCacheSurfacesForViewport: (
     surfacesInfo: SurfacesInfo[],
-    viewport: Types.IVolumeViewport
+    viewport: Types.IViewport
   ) => Promise<Map<number, Map<string, SurfaceClipResult>>>;
 
   /** Extracts contour data from the given polyDataCache */
@@ -78,7 +78,7 @@ type PolySegAddOn = {
   /** Creates and adds contour segmentations from clipped surfaces */
   createAndAddContourSegmentationsFromClippedSurfaces: (
     rawContourData: Map<number, SurfaceClipResult[]>,
-    viewport: Types.IStackViewport | Types.IVolumeViewport,
+    viewport: Types.IViewport,
     segmentationId: string
   ) => Map<number, Set<string>>;
 };

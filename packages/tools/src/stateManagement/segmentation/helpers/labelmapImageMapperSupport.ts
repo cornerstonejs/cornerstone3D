@@ -14,7 +14,10 @@ export type VolumeViewportLabelmapImageMapperState = {
   supported: boolean;
 };
 
-type ViewportLabelmapImageMapperCompatibilityViewport = Types.IViewport & {
+type ViewportLabelmapImageMapperCompatibilityViewport = Types.IViewport<
+  object,
+  { blendMode?: Enums.BlendModes; slabThickness?: number }
+> & {
   getCurrentImageIdIndex?: () => number;
   getDisplaySetRenderMode?: (
     displaySetId: string

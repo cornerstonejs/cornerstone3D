@@ -2,7 +2,6 @@ import { vec3 } from 'gl-matrix';
 import { ActorRenderMode } from '../../../types';
 import type {
   ICamera,
-  IStackViewport,
   Point3,
   ReferenceCompatibleOptions,
   ViewReference,
@@ -564,7 +563,7 @@ class PlanarViewReferenceController {
       getImageIds: () => imageIds,
       getCurrentImageIdIndex: () =>
         referenceContext.rendering.currentImageIdIndex ?? 0,
-    } as unknown as IStackViewport;
+    };
     const closest = calculateMinimalDistanceForStackViewport(point, stackLike);
 
     if (!closest) {

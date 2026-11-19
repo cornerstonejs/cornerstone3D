@@ -1,4 +1,4 @@
-import type { IViewport } from '../../types';
+import type EngineViewport from '../EngineViewport';
 import {
   getViewportClassForInput,
   isRegisteredViewportType,
@@ -18,7 +18,7 @@ export default function viewportTypeUsesCustomRenderingPipeline(
 }
 
 export function viewportUsesCustomRenderingPipeline(
-  viewport: IViewport
+  viewport: EngineViewport
 ): boolean {
   return viewport.getUseCustomRenderingPipeline();
 }

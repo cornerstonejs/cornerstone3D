@@ -1,5 +1,6 @@
 import type { Annotation } from '../types';
 import { utilities, type Types } from '@cornerstonejs/core';
+import type { PlanarViewport } from '@cornerstonejs/core';
 import * as vec3 from 'gl-matrix/vec3';
 import getViewportICamera from './getViewportICamera';
 
@@ -48,7 +49,7 @@ export function moveAnnotationToViewPlane(
   // for volume viewport it will get taken care of by the viewport
   if (utilities.viewportIsInStackMode(viewport)) {
     annotation.metadata.referencedImageId = (
-      viewport as Types.IStackViewport
+      viewport as PlanarViewport
     ).getCurrentImageId();
   }
 

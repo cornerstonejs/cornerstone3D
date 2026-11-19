@@ -1,5 +1,5 @@
 import { vec3 } from 'gl-matrix';
-import type { Types } from '@cornerstonejs/core';
+import type { Types, PlanarViewport } from '@cornerstonejs/core';
 import type { InitializedOperationData } from '../BrushStrategy';
 import type BoundsIJK from '../../../../types/BoundsIJK';
 import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
@@ -117,7 +117,7 @@ export default {
       return;
     }
 
-    const imageData = viewport.getImageData();
+    const imageData = (viewport as PlanarViewport).getImageData();
 
     if (!imageData) {
       return;

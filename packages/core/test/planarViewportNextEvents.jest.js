@@ -19,11 +19,11 @@ const {
 const { Events } = Enums;
 
 const recordedEvents = [
-  Events.PRE_STACK_NEW_IMAGE,
-  Events.STACK_NEW_IMAGE,
+  'CORNERSTONE_PRE_STACK_NEW_IMAGE',
+  'CORNERSTONE_STACK_NEW_IMAGE',
   Events.NEW_IMAGE,
   Events.VIEWPORT_NEW_IMAGE_SET,
-  Events.STACK_VIEWPORT_SCROLL,
+  'CORNERSTONE_STACK_VIEWPORT_SCROLL',
 ];
 
 /**

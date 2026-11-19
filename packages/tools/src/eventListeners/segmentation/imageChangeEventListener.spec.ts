@@ -4,7 +4,6 @@ jest.mock('@cornerstonejs/core', () => {
       Events: {
         CAMERA_MODIFIED: 'CORNERSTONE_CAMERA_MODIFIED',
         IMAGE_RENDERED: 'CORNERSTONE_IMAGE_RENDERED',
-        PRE_STACK_NEW_IMAGE: 'CORNERSTONE_PRE_STACK_NEW_IMAGE',
       },
       ViewportType: {
         PLANAR_NEXT: 'planarNext',
@@ -192,6 +191,6 @@ describe('segmentation imageChangeEventListener on a planar viewport that shows 
     const events = addEventListener.mock.calls.map(([type]) => type);
 
     expect(events).toContain(Enums.Events.CAMERA_MODIFIED);
-    expect(events).not.toContain(Enums.Events.PRE_STACK_NEW_IMAGE);
+    expect(events).not.toContain('CORNERSTONE_PRE_STACK_NEW_IMAGE');
   });
 });

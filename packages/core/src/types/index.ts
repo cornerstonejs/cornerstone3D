@@ -19,7 +19,6 @@ import type {
   IViewport,
   PublicViewportInput,
   ViewReferenceSpecifier,
-  DataSetOptions,
   ReferenceCompatibleOptions,
   ViewReference,
   ViewPresentation,
@@ -28,7 +27,7 @@ import type {
   RenderingEngineResizeOptions,
 } from './IViewport';
 import type IGenericViewport from './IGenericViewport';
-import type { ViewportContentMode } from './IGenericViewport';
+import type { ViewportContentMode } from './IViewport';
 import type {
   VolumeActor,
   Actor,
@@ -66,15 +65,10 @@ import type {
   ScalingParameters,
 } from './ScalingParameters';
 import type { ScalingDescriptor } from './ScalingDescriptor';
-import type StackViewportProperties from './StackViewportProperties';
-import type VolumeViewportProperties from './VolumeViewportProperties';
 import type IViewportId from './IViewportId';
 import type FlipDirection from './FlipDirection';
 import type ICachedImage from './ICachedImage';
 import type ICachedVolume from './ICachedVolume';
-import type IStackViewport from './IStackViewport';
-import type IWSIViewport from './IWSIViewport';
-import type IVolumeViewport from './IVolumeViewport';
 import type ViewportPreset from './ViewportPreset';
 
 // CPU types
@@ -89,7 +83,6 @@ import type TransformMatrix2D from './TransformMatrix2D';
 import type CPUFallbackLookupTable from './CPUFallbackLookupTable';
 import type CPUFallbackLUT from './CPUFallbackLUT';
 import type CPUFallbackRenderingTools from './CPUFallbackRenderingTools';
-import type { IVolumeInput, VolumeInputCallback } from './IVolumeInput';
 import type { IStackInput, StackInputCallback } from './IStackInput';
 import type * as EventTypes from './EventTypes';
 import type IRenderingEngine from './IRenderingEngine';
@@ -112,7 +105,6 @@ import type { Memo, HistoryMemo } from '../utilities/historyMemo';
 import type { VoxelManager } from '../utilities/VoxelManager';
 import type RLEVoxelMap from '../utilities/RLEVoxelMap';
 import type { ColormapPublic, ColormapRegistration } from './Colormap';
-import type { ViewportProperties } from './ViewportProperties';
 import type {
   PixelDataTypedArray,
   PixelDataTypedArrayString,
@@ -123,10 +115,6 @@ import type { AffineMatrix } from './AffineMatrix';
 export type * from './IRetrieveConfiguration';
 import type { ImageLoadListener } from './ImageLoadListener';
 import type { Color, ColorLUT } from './Color';
-import type VideoViewportProperties from './VideoViewportProperties';
-import type WSIViewportProperties from './WSIViewportProperties';
-import type { IVideoViewport } from './IVideoViewport';
-import type { IECGViewport } from './IECGViewport';
 import type {
   InternalVideoCamera,
   VideoViewportInput,
@@ -137,7 +125,6 @@ import type {
   ECGChannel,
   ECGWaveformData,
 } from './ECGViewportTypes';
-import type ECGViewportProperties from './ECGViewportProperties';
 import type { ISurface } from './ISurface';
 import type BoundsIJK from './BoundsIJK';
 import type { ImageVolumeProps } from './ImageVolumeProps';
@@ -170,7 +157,6 @@ import type {
 } from './VoxelStatistic';
 import type { IRLEVoxelMap, RLERun } from './IRLEVoxelMap';
 import type ImageLoadRequests from './ImageLoadRequests';
-import type { IBaseVolumeViewport } from './IBaseVolumeViewport';
 import type ScrollOptions from './ScrollOptions';
 import type JumpToSliceOptions from './JumpToSliceOptions';
 
@@ -179,7 +165,7 @@ import type GeometryLoaderFn from './GeometryLoaderFn';
 import type { RenderingEngineModeType } from './RenderingEngineMode';
 import type { VtkOffscreenMultiRenderWindow } from './VtkOffscreenMultiRenderWindow';
 import type { ViewportDataReference } from '../RenderingEngine/GenericViewport';
-import type { ResetCameraOptions, SetAspectRatioOptions } from './ICamera';
+import type { ResetCameraOptions } from './ICamera';
 import type {
   ViewportType,
   ViewportTypeConstants,
@@ -229,12 +215,6 @@ export type {
   IBaseStreamingImageVolume,
   ICamera,
   ResetCameraOptions,
-  SetAspectRatioOptions,
-  IStackViewport,
-  IVideoViewport,
-  IECGViewport,
-  IWSIViewport,
-  IVolumeViewport,
   IEnabledElement,
   ICache,
   IVolume,
@@ -264,15 +244,11 @@ export type {
   IGenericViewport,
   ViewportContentMode,
   ViewReference,
-  DataSetOptions as ImageSetOptions,
   ViewPresentation,
   ViewPresentationSelector,
   ReferenceCompatibleOptions,
   ViewReferenceSpecifier,
   RenderingEngineResizeOptions,
-  StackViewportProperties,
-  VolumeViewportProperties,
-  ViewportProperties,
   PublicViewportInput,
   VolumeActor,
   Actor,
@@ -282,8 +258,6 @@ export type {
   ICanvasActor,
   IImageLoadObject,
   IVolumeLoadObject,
-  IVolumeInput,
-  VolumeInputCallback,
   IStackInput,
   StackInputCallback,
   ViewportPreset,
@@ -299,8 +273,6 @@ export type {
   Mat3,
   Plane,
   ViewportInputOptions,
-  VideoViewportProperties,
-  WSIViewportProperties,
   VOIRange,
   VOI,
   DisplayArea,
@@ -360,7 +332,6 @@ export type {
   ECGViewportInput,
   ECGChannel,
   ECGWaveformData,
-  ECGViewportProperties,
   BoundsIJK,
   BoundsLPS,
   Color,
@@ -385,7 +356,6 @@ export type {
   RLERun,
   ViewportInput,
   ImageLoadRequests,
-  IBaseVolumeViewport,
   GeometryLoaderFn,
   ScrollOptions,
   JumpToSliceOptions,

@@ -184,7 +184,7 @@ function createFakePlanarViewport({
   return viewport;
 }
 
-/** Legacy viewport stand-in: the tool must ignore it entirely. */
+/** Stand-in for a viewport that is not planar, a video viewport: the tool must ignore it entirely. */
 function createFakeLegacyViewport({
   id,
   orientation = 'axial' as Orientation,
@@ -199,7 +199,7 @@ function createFakeLegacyViewport({
 
   return {
     id,
-    type: 'orthographic',
+    type: 'videoNext',
     renderingEngineId: 'fakeRenderingEngine',
     canvas: { clientWidth: CANVAS_SIZE, clientHeight: CANVAS_SIZE },
     getFrameOfReferenceUID: () => 'FOR1',

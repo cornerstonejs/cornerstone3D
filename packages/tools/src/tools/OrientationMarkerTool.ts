@@ -296,7 +296,7 @@ class OrientationMarkerTool extends BaseTool {
       // This is the single choke point - addAxisActorInViewport is never
       // reached for them, and resize()/cleanUpData() already self-guard.
       if (
-        typeof viewport.addWidget !== 'function' ||
+        typeof (viewport as { addWidget?: unknown }).addWidget !== 'function' ||
         typeof (viewport as { getRenderer?: unknown }).getRenderer !==
           'function'
       ) {

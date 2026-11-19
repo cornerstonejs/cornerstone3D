@@ -34,7 +34,7 @@ const ikMapping = {
  * plane representation of an MPR view.
  */
 export default function normalizeViewportPlane(
-  viewport: Types.IViewport | Types.IGenericViewport,
+  viewport: Types.IViewport,
   boundsIJK: Types.BoundsIJK
 ) {
   if (!utilities.viewportIsInVolumeMode(viewport)) {

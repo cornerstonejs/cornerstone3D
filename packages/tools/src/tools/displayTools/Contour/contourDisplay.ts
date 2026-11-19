@@ -60,7 +60,7 @@ function removeRepresentation(
  * @param toolGroupConfig - This is the configuration object for the tool group
  */
 async function render(
-  viewport: Types.IStackViewport | Types.IVolumeViewport,
+  viewport: Types.IViewport,
   contourRepresentation: ContourRepresentation
 ): Promise<void> {
   const { segmentationId } = contourRepresentation;
@@ -167,7 +167,7 @@ async function render(
 
     const polyDataCache = await polySeg.clipAndCacheSurfacesForViewport(
       pointsAndPolys,
-      viewport as Types.IVolumeViewport
+      viewport as Types.IViewport
     );
 
     const rawResults = polySeg.extractContourData(polyDataCache);
@@ -291,7 +291,7 @@ function _checkContourNormalsMatchViewport(
  * @returns
  */
 function getUpdateFunction(
-  viewport: Types.IVolumeViewport | Types.IStackViewport
+  viewport: Types.IViewport
 ): (segmentationId: string) => Promise<void> {
   return null;
 }

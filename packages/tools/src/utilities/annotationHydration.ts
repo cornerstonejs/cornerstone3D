@@ -5,7 +5,7 @@ import { addAnnotation } from '../stateManagement/annotation/annotationState';
 import { vec3 } from 'gl-matrix';
 
 function annotationHydration(
-  viewport: Types.IViewport | Types.IGenericViewport,
+  viewport: Types.IViewport,
   toolName: string,
   worldPoints: Types.Point3[],
   options?: {
@@ -44,7 +44,7 @@ function annotationHydration(
 }
 
 function getReferencedImageId(
-  viewport: Types.IViewport | Types.IGenericViewport,
+  viewport: Types.IViewport,
   worldPos: Types.Point3,
   viewPlaneNormal: Types.Point3
 ): string {
@@ -52,7 +52,7 @@ function getReferencedImageId(
 
   if (utilities.viewportIsInStackMode(viewport)) {
     referencedImageId = getClosestImageIdForStackViewport(
-      viewport as Types.IStackViewport,
+      viewport as PlanarViewport,
       worldPos,
       viewPlaneNormal
     );
@@ -75,9 +75,7 @@ function getReferencedImageId(
   return referencedImageId;
 }
 
-function getTargetId(
-  viewport: Types.IViewport | Types.IGenericViewport
-): string | undefined {
+function getTargetId(viewport: Types.IViewport): string | undefined {
   const targetId = viewport.getViewReferenceId?.();
   if (targetId) {
     return targetId;
@@ -89,7 +87,7 @@ function getTargetId(
 }
 
 function getTargetVolumeId(viewport: Types.IViewport): string | undefined {
-  const actorEntries = viewport.getActors();
+  const actorEntries = (viewport as PlanarViewport).getActors();
 
   if (!actorEntries) {
     return;
@@ -100,7 +98,7 @@ function getTargetVolumeId(viewport: Types.IViewport): string | undefined {
 }
 
 function getClosestImageIdForStackViewport(
-  viewport: Types.IStackViewport | PlanarViewport,
+  viewport: PlanarViewport,
   worldPos: Types.Point3,
   viewPlaneNormal: Types.Point3
 ): string {

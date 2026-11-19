@@ -14,7 +14,7 @@ import { navigatePlanarViewportToPoint } from '../genericViewportToolHelpers';
  * Returns true when the camera was moved.
  */
 export default function translateViewportAlongNormal(
-  viewport: Types.IViewport | Types.IGenericViewport,
+  viewport: Types.IViewport,
   distance: number
 ): boolean {
   if (!viewport || !Number.isFinite(distance) || distance === 0) {

@@ -5,7 +5,7 @@ import { getRenderingEngine, utilities } from '@cornerstonejs/core';
  * The slab thickness of the presentation of a display set of a next viewport.
  */
 function getPresentationSlabThickness(
-  viewport: Types.IGenericViewport,
+  viewport: Types.IViewport,
   displaySetId: string
 ): number | undefined {
   return (

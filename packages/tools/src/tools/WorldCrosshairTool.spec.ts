@@ -136,7 +136,7 @@ function createFakePlanarViewport({
   return viewport;
 }
 
-/** Legacy viewport stand-in: the tools must ignore it entirely. */
+/** Stand-in for a viewport that is not planar, a video viewport: the tools must ignore it entirely. */
 function createFakeLegacyViewport({ id, focalPoint = [0, 0, 0] }) {
   const camera = {
     viewPlaneNormal: [0, 0, 1],
@@ -147,7 +147,7 @@ function createFakeLegacyViewport({ id, focalPoint = [0, 0, 0] }) {
 
   return {
     id,
-    type: 'orthographic',
+    type: 'videoNext',
     renderingEngineId: 'fakeRenderingEngine',
     canvas: { clientWidth: 500, clientHeight: 500 },
     getFrameOfReferenceUID: () => 'FOR1',

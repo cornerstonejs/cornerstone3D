@@ -17,14 +17,7 @@ import type {
 } from '../../types/IViewport';
 
 interface ViewportConstructor {
-  new (
-    viewportInput: ViewportInput
-  ):
-    | IViewport
-    | PlanarViewport
-    | NextVideoViewport
-    | VolumeViewport3D
-    | ECGViewport;
+  new (viewportInput: ViewportInput): IViewport;
   useCustomRenderingPipeline?: boolean;
 }
 

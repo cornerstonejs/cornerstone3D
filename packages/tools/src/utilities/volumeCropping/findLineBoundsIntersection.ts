@@ -1,5 +1,5 @@
 import { vec2, vec3 } from 'gl-matrix';
-import type { Types } from '@cornerstonejs/core';
+import type { Types, PlanarViewport } from '@cornerstonejs/core';
 import liangBarksyClip from '../math/vec2/liangBarksyClip';
 import { LINE_EXTENSION_DISTANCE, MIN_LINE_LENGTH_PIXELS } from './constants';
 
@@ -15,7 +15,7 @@ import { LINE_EXTENSION_DISTANCE, MIN_LINE_LENGTH_PIXELS } from './constants';
 export function findLineBoundsIntersection(
   linePoint: Types.Point3,
   lineDirection: Types.Point3,
-  viewport: Types.IViewport
+  viewport: PlanarViewport
 ): { start: Types.Point2; end: Types.Point2 } | null {
   const lineLength = LINE_EXTENSION_DISTANCE;
   const lineStart = vec3.scaleAndAdd(

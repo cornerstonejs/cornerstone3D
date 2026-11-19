@@ -131,7 +131,7 @@ async function computeContourFromLabelmapSegmentation(
 
   const polyDataCache = await clipAndCacheSurfacesForViewport(
     pointsAndPolys,
-    viewport as Types.IVolumeViewport
+    viewport as Types.IViewport
   );
 
   const rawResults = extractContourData(polyDataCache);
@@ -186,7 +186,7 @@ async function computeContourFromSurfaceSegmentation(
 
   const polyDataCache = await clipAndCacheSurfacesForViewport(
     surfacesInfo,
-    viewport as Types.IVolumeViewport
+    viewport as Types.IViewport
   );
   const rawResults = extractContourData(polyDataCache);
 

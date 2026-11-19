@@ -1,11 +1,23 @@
 import { mat4, vec3 } from 'gl-matrix';
 import { EPSILON } from '../constants';
-import type { IStackViewport, IVolumeViewport, Point2, Point3 } from '../types';
+import type { Point2, Point3 } from '../types';
+import type PlanarViewport from '../RenderingEngine/GenericViewport/Planar/PlanarViewport';
 import { transformCanvasToIJK } from './transformCanvasToIJK';
 import { transformIJKToCanvas } from './transformIJKToCanvas';
 
-/** The slice view info that `getSliceViewInfo` of a viewport gives. */
-export type SliceViewInfo = ReturnType<IVolumeViewport['getSliceViewInfo']>;
+/**
+ * The slice view info of a planar viewport: the size of the slice, its index
+ * along the slice plane, the axis of the slice plane in index space, and the
+ * matrices between slice pixels and index space.
+ */
+export type SliceViewInfo = {
+  width: number;
+  height: number;
+  sliceIndex: number;
+  slicePlane: number;
+  sliceToIndexMatrix: mat4;
+  indexToSliceMatrix: mat4;
+};
 
 /**
  * The size and the matrices of the slice that a viewport shows, from its
@@ -15,7 +27,7 @@ export type SliceViewInfo = ReturnType<IVolumeViewport['getSliceViewInfo']>;
  * corners of the image data on the canvas.
  */
 export function getSliceViewGeometry(
-  viewport: IVolumeViewport | IStackViewport
+  viewport: PlanarViewport
 ): Pick<
   SliceViewInfo,
   'width' | 'height' | 'sliceToIndexMatrix' | 'indexToSliceMatrix'
@@ -85,7 +97,7 @@ export function getSliceViewGeometry(
  * viewport does.
  */
 export function getVolumeSliceViewInfo(
-  viewport: IVolumeViewport,
+  viewport: PlanarViewport,
   viewPlaneNormal: Point3,
   sliceIndex: number
 ): SliceViewInfo {

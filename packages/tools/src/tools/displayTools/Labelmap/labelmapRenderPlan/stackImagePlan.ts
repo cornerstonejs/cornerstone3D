@@ -1,4 +1,4 @@
-import type { Types } from '@cornerstonejs/core';
+import type { Types, PlanarViewport } from '@cornerstonejs/core';
 import type { ViewportLabelmapRenderMode } from '../../../../stateManagement/segmentation/helpers/getViewportLabelmapRenderMode';
 import { getCurrentLabelmapImageIdsForViewport } from '../../../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
 import { triggerSegmentationDataModified } from '../../../../stateManagement/segmentation/triggerSegmentationEvents';
@@ -34,7 +34,7 @@ function createStackImageLabelmapPlan({
       getExpectedStackLabelmapRepresentationUIDs(viewport, segmentationId),
     mount: () => mountStackLabelmapActors(viewport, segmentationId),
     update: () =>
-      syncStackLabelmapActors(viewport as Types.IStackViewport, segmentationId),
+      syncStackLabelmapActors(viewport as PlanarViewport, segmentationId),
   });
 }
 
@@ -65,7 +65,7 @@ async function mountStackLabelmapActors(
   viewport: Types.IViewport,
   segmentationId: string
 ): Promise<void> {
-  syncStackLabelmapActors(viewport as Types.IStackViewport, segmentationId);
+  syncStackLabelmapActors(viewport as PlanarViewport, segmentationId);
   triggerSegmentationDataModified(segmentationId);
 }
 

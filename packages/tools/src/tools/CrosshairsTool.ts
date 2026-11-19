@@ -408,23 +408,21 @@ class CrosshairsTool extends AnnotationTool {
       }
       const { viewport } = enabledElement;
 
-      if (csUtils.isGenericViewport(viewport)) {
-        const previousIgnoreFiredEvents = this._ignoreFiredEvents;
+      const previousIgnoreFiredEvents = this._ignoreFiredEvents;
 
-        this._ignoreFiredEvents = true;
-        try {
-          if (viewport.element !== resetElement) {
-            viewport.resetViewState({
-              resetPan: true,
-              resetZoom: true,
-              resetOrientation: true,
-              resetFlip: true,
-            });
-          }
-          this._resetSlabThickness(viewport);
-        } finally {
-          this._ignoreFiredEvents = previousIgnoreFiredEvents;
+      this._ignoreFiredEvents = true;
+      try {
+        if (viewport.element !== resetElement) {
+          viewport.resetViewState({
+            resetPan: true,
+            resetZoom: true,
+            resetOrientation: true,
+            resetFlip: true,
+          });
         }
+        this._resetSlabThickness(viewport);
+      } finally {
+        this._ignoreFiredEvents = previousIgnoreFiredEvents;
       }
       const { element } = viewport;
       let annotations = this._getAnnotations(enabledElement);
@@ -719,7 +717,7 @@ class CrosshairsTool extends AnnotationTool {
     }
 
     const { renderingEngine } = enabledElement;
-    const viewport = enabledElement.viewport as Types.IVolumeViewport;
+    const viewport = enabledElement.viewport as Types.IViewport;
     this._syncVolumeListenersWithToolGroup();
 
     if (this._ignoreFiredEvents) {
@@ -938,7 +936,7 @@ class CrosshairsTool extends AnnotationTool {
 
       const otherViewport = renderingEngine.getViewport(
         data.viewportId
-      ) as Types.IVolumeViewport;
+      ) as Types.IViewport;
 
       const otherCamera = getViewportICamera(otherViewport);
 
@@ -2392,7 +2390,7 @@ class CrosshairsTool extends AnnotationTool {
 
           const otherViewport = renderingEngine.getViewport(
             data.viewportId
-          ) as Types.IVolumeViewport;
+          ) as Types.IViewport;
           const camera = getViewportICamera(otherViewport);
           const normal = camera.viewPlaneNormal;
 
@@ -2548,10 +2546,7 @@ class CrosshairsTool extends AnnotationTool {
    * @param viewport - The viewport of the line.
    * @param slabThickness - The slab thickness, in mm.
    */
-  setSlabThickness(
-    viewport: Types.IViewport | Types.IGenericViewport,
-    slabThickness: number
-  ): void {
+  setSlabThickness(viewport: Types.IViewport, slabThickness: number): void {
     if (!csUtils.viewportSupportsDisplaySetPresentation(viewport)) {
       return;
     }
@@ -2571,9 +2566,7 @@ class CrosshairsTool extends AnnotationTool {
    *
    * @param viewport - The viewport of the line.
    */
-  private _getSlabThickness(
-    viewport: Types.IViewport | Types.IGenericViewport
-  ): number {
+  private _getSlabThickness(viewport: Types.IViewport): number {
     if (!csUtils.viewportSupportsDisplaySetPresentation(viewport)) {
       return RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS;
     }
@@ -2600,9 +2593,7 @@ class CrosshairsTool extends AnnotationTool {
    *
    * @param viewport - The viewport.
    */
-  private _resetSlabThickness(
-    viewport: Types.IViewport | Types.IGenericViewport
-  ): void {
+  private _resetSlabThickness(viewport: Types.IViewport): void {
     if (!csUtils.viewportSupportsDisplaySetPresentation(viewport)) {
       return;
     }
@@ -2628,7 +2619,7 @@ class CrosshairsTool extends AnnotationTool {
    *
    * @param viewport - A viewport with display set presentations.
    */
-  private _getSlabDisplaySetIds(viewport: Types.IGenericViewport): string[] {
+  private _getSlabDisplaySetIds(viewport: Types.IViewport): string[] {
     const filter: string[] =
       this.configuration.filterActorUIDsToSetSlabThickness ?? [];
 
@@ -2662,13 +2653,10 @@ class CrosshairsTool extends AnnotationTool {
    * @returns True when the view was turned.
    */
   private _rotateViewportAboutCenter(
-    viewport: Types.IViewport | Types.IGenericViewport,
+    viewport: Types.IViewport,
     matrix: mat4
   ): boolean {
-    if (
-      !csUtils.isGenericViewport(viewport) ||
-      viewport.getCurrentMode() !== 'volume'
-    ) {
+    if (viewport.getCurrentMode() !== 'volume') {
       return false;
     }
 

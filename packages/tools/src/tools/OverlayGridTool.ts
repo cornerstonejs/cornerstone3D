@@ -5,7 +5,7 @@ import {
   getRenderingEngine,
   utilities as csUtils,
 } from '@cornerstonejs/core';
-import type { Types } from '@cornerstonejs/core';
+import type { Types, PlanarViewport } from '@cornerstonejs/core';
 
 import {
   addAnnotation,
@@ -199,7 +199,8 @@ class OverlayGridTool extends AnnotationDisplayTool {
       return renderStatus;
     }
 
-    const { viewport: targetViewport, FrameOfReferenceUID } = enabledElement;
+    const { FrameOfReferenceUID } = enabledElement;
+    const targetViewport = enabledElement.viewport as PlanarViewport;
     const targetImageIds = targetViewport.getImageIds();
     if (targetImageIds.length < 2) {
       return renderStatus;

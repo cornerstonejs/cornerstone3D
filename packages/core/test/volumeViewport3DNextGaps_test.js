@@ -358,7 +358,10 @@ describe('Direct next 3D viewport, colour and presets -- ', () => {
 
     await showVolume(next, volumeId);
 
-    const nextDetails = recordEvents(next, Events.PRESET_MODIFIED);
+    const nextDetails = recordEvents(
+      next,
+      'CORNERSTONE_VIEWPORT_RENDERING_PRESET_MODIFIED'
+    );
 
     next.setDisplaySetPresentation({ preset: 'CT-Bone' });
 

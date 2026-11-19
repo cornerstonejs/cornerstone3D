@@ -10,7 +10,7 @@ import getContourHolesDataWorld from './getContourHolesDataWorld';
  */
 export default function getContourHolesDataCanvas(
   annotation: Annotation,
-  viewport: Types.IViewport | Types.IGenericViewport
+  viewport: Types.IViewport
 ): Types.Point2[][] {
   const worldHoleContours = getContourHolesDataWorld(annotation);
   const canvasHoleContours = [];

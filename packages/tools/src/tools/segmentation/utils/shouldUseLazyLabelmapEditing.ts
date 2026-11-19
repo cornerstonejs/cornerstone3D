@@ -2,14 +2,10 @@ import {
   ActorRenderMode,
   Enums,
   getEffectiveRenderBackend,
+  type PlanarViewport,
   type Types,
 } from '@cornerstonejs/core';
 import { getConfig } from '../../../config';
-
-type ViewportWithCPUFallback = Types.IViewport & {
-  _cpuFallbackEnabledElement?: unknown;
-  useCPURendering?: boolean;
-};
 
 const CPU_RENDER_MODES = new Set<Types.ActorRenderMode>([
   ActorRenderMode.CPU_IMAGE,
@@ -26,10 +22,24 @@ function drawsOnCpuByDefault(): boolean {
 
 function getDefaultActor(viewport: Types.IViewport) {
   try {
-    return viewport.getDefaultActor?.();
+    return (
+      viewport as Partial<Pick<PlanarViewport, 'getDefaultActor'>>
+    ).getDefaultActor?.();
   } catch {
     return;
   }
+}
+
+/**
+ * Whether the render plan of a planar viewport draws its source layer on the
+ * CPU. A viewport without a render plan gives false.
+ */
+function drawsSourceOnCpu(viewport: Types.IViewport): boolean {
+  const plan = (
+    viewport as Partial<Pick<PlanarViewport, 'getRenderPlan'>>
+  ).getRenderPlan?.();
+
+  return plan?.[0]?.draw === 'cpu';
 }
 
 export function isCPUViewport(viewport?: Types.IViewport): boolean {
@@ -37,13 +47,7 @@ export function isCPUViewport(viewport?: Types.IViewport): boolean {
     return drawsOnCpuByDefault();
   }
 
-  const cpuViewport = viewport as ViewportWithCPUFallback;
-
-  if (cpuViewport.useCPURendering === true) {
-    return true;
-  }
-
-  if (cpuViewport._cpuFallbackEnabledElement) {
+  if (drawsSourceOnCpu(viewport)) {
     return true;
   }
 

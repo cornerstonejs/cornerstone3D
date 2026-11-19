@@ -1,5 +1,5 @@
 import type { Annotation } from '../types';
-import type { Types } from '@cornerstonejs/core';
+import type { Types, PlanarViewport } from '@cornerstonejs/core';
 import getViewportsForAnnotation from './getViewportsForAnnotation';
 
 /**
@@ -13,7 +13,7 @@ import getViewportsForAnnotation from './getViewportsForAnnotation';
  */
 export default function getViewportForAnnotation(
   annotation: Annotation
-): Types.IStackViewport | Types.IVolumeViewport | undefined {
+): Types.IViewport | undefined {
   const viewports = getViewportsForAnnotation(annotation);
 
   if (!viewports?.length) {
@@ -21,7 +21,7 @@ export default function getViewportForAnnotation(
   }
 
   const viewport = viewports.find((viewport) =>
-    viewport
+    (viewport as PlanarViewport)
       .getImageIds()
       .some((imageId) => imageId === annotation.metadata.referencedImageId)
   );

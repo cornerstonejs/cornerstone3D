@@ -3541,7 +3541,7 @@ class PlanarViewport extends GenericViewport<
    * tools VOI synchronizer needs it across the tools<->core boundary; it was
    * previously reached through a structural cast against this protected member,
    * which leaked the type contract. Planar-family specific (volume-backed), so
-   * it lives here rather than on IGenericViewport.
+   * it lives here rather than on IViewport.
    */
   public findDataIdByVolumeId(volumeId: string): string | undefined {
     return this.mountedData.findDataIdByVolumeId(volumeId);

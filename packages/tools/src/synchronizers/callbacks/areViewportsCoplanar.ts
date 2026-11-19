@@ -5,15 +5,13 @@ import getViewportICamera from '../../utilities/getViewportICamera';
 /**
  * The view plane normal of a viewport, from its resolved view.
  */
-function getViewPlaneNormal(
-  viewport: Types.IStackViewport | Types.IVolumeViewport
-): Types.Point3 {
+function getViewPlaneNormal(viewport: Types.IViewport): Types.Point3 {
   return getViewportICamera(viewport).viewPlaneNormal;
 }
 
 export default function areViewportsCoplanar(
-  viewport1: Types.IStackViewport | Types.IVolumeViewport,
-  viewport2: Types.IStackViewport | Types.IVolumeViewport
+  viewport1: Types.IViewport,
+  viewport2: Types.IViewport
 ): boolean {
   const viewPlaneNormal1 = getViewPlaneNormal(viewport1);
   const viewPlaneNormal2 = getViewPlaneNormal(viewport2);

@@ -736,22 +736,6 @@ describe('voiSyncCallback', () => {
     expect(tViewport.render).toHaveBeenCalledTimes(1);
   });
 
-  it('throws for unsupported viewport types', () => {
-    const tViewport = { render: jest.fn() };
-    getRenderingEngine.mockReturnValue({
-      getViewport: jest.fn(() => tViewport),
-    });
-
-    expect(() =>
-      voiSyncCallback(
-        {},
-        { renderingEngineId: 're', viewportId: 'source' },
-        { renderingEngineId: 're', viewportId: 'target' },
-        { detail: { range: {} } }
-      )
-    ).toThrow('Viewport type not supported.');
-  });
-
   it('throws when there is no rendering engine for the target', () => {
     getRenderingEngine.mockReturnValue(undefined);
 

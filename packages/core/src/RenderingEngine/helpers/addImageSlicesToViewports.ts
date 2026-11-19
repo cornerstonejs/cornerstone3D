@@ -1,9 +1,5 @@
-import type {
-  IStackViewport,
-  IStackInput,
-  IRenderingEngine,
-  IVideoViewport,
-} from '../../types';
+import type { IStackInput, IRenderingEngine } from '../../types';
+import type PlanarViewport from '../GenericViewport/Planar/PlanarViewport';
 import { coreLog } from '../../utilities/logger';
 
 const log = coreLog.getLogger('RenderingEngine', 'addImageSlicesToViewports');
@@ -26,7 +22,7 @@ function addImageSlicesToViewports(
   viewportIds: string[]
 ): Promise<void> {
   for (const viewportId of viewportIds) {
-    const viewport = renderingEngine.getViewport(viewportId) as IStackViewport;
+    const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
     if (!viewport) {
       throw new Error(`Viewport with Id ${viewportId} does not exist`);
@@ -43,9 +39,7 @@ function addImageSlicesToViewports(
   }
 
   viewportIds.forEach((viewportId) => {
-    const viewport = renderingEngine.getViewport(viewportId) as
-      | IStackViewport
-      | IVideoViewport;
+    const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
     viewport.addImages(stackInputs);
   });
 }

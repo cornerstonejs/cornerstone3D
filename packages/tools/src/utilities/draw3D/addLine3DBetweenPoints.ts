@@ -3,7 +3,11 @@ import vtkPoints from '@kitware/vtk.js/Common/Core/Points';
 import vtkCellArray from '@kitware/vtk.js/Common/Core/CellArray';
 import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
-import type { Types } from '@cornerstonejs/core';
+import type {
+  Types,
+  PlanarViewport,
+  GenericVolumeViewport3D,
+} from '@cornerstonejs/core';
 import { addToolProp } from './toolProps';
 
 /**
@@ -19,7 +23,7 @@ import { addToolProp } from './toolProps';
  * @returns Object with actor and source
  */
 export function addLine3DBetweenPoints(
-  viewport: Types.IVolumeViewport,
+  viewport: PlanarViewport | GenericVolumeViewport3D,
   point1: Types.Point3,
   point2: Types.Point3,
   color: [number, number, number] = [0.7, 0.7, 0.7],

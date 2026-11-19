@@ -132,8 +132,8 @@ const ALL_TRACKED_EVENTS = [
   Events.COLORMAP_MODIFIED,
   Events.DISPLAY_AREA_MODIFIED,
   Events.NEW_IMAGE,
-  Events.STACK_NEW_IMAGE,
-  Events.VOLUME_NEW_IMAGE,
+  'CORNERSTONE_STACK_NEW_IMAGE',
+  'CORNERSTONE_VOLUME_NEW_IMAGE',
 ];
 
 interface ElementLifecycleDetail {
@@ -415,8 +415,8 @@ test('scroll fires exactly one new-image event whose imageId matches the resolve
   await waitForQuiescence(recorder);
 
   expect(recorder.count(Events.NEW_IMAGE)).toBe(1);
-  expect(recorder.count(Events.STACK_NEW_IMAGE)).toBe(0);
-  expect(recorder.count(Events.VOLUME_NEW_IMAGE)).toBe(0);
+  expect(recorder.count('CORNERSTONE_STACK_NEW_IMAGE')).toBe(0);
+  expect(recorder.count('CORNERSTONE_VOLUME_NEW_IMAGE')).toBe(0);
 
   const newImageEvent = recorder.events.find(
     (event) => event.type === Events.NEW_IMAGE

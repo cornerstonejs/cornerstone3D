@@ -1,5 +1,5 @@
 import { getEnabledElement } from '@cornerstonejs/core';
-import type { Types } from '@cornerstonejs/core';
+import type { Types, PlanarViewport } from '@cornerstonejs/core';
 
 import { config as segmentationConfig } from '../../stateManagement/segmentation';
 
@@ -112,7 +112,7 @@ class SegmentLabelTool extends BaseTool {
       return;
     }
 
-    const { viewport } = enabledElement;
+    const viewport = enabledElement.viewport as PlanarViewport;
 
     const activeSegmentation = getActiveSegmentation(viewport.id);
 
@@ -126,7 +126,7 @@ class SegmentLabelTool extends BaseTool {
   _setHoveredSegmentForType(
     activeSegmentation: Segmentation,
     worldPoint: Types.Point3,
-    viewport: Types.IStackViewport | Types.IVolumeViewport
+    viewport: PlanarViewport
   ): void {
     const imageDataInfo = viewport.getImageData();
 

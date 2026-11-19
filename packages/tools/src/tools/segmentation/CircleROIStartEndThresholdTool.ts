@@ -1,4 +1,4 @@
-import type { Types } from '@cornerstonejs/core';
+import type { Types, PlanarViewport } from '@cornerstonejs/core';
 import {
   getEnabledElement,
   utilities as csUtils,
@@ -444,7 +444,7 @@ class CircleROIStartEndThresholdTool extends CircleROITool {
 
       // WE HAVE TO CACHE STATS BEFORE FETCHING TEXT
       const annotationViewport =
-        annotationEnabledElement?.viewport as Types.IVolumeViewport;
+        annotationEnabledElement?.viewport as PlanarViewport;
 
       if (
         annotation.invalidated &&

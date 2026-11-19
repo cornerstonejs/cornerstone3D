@@ -4,6 +4,7 @@ import {
   CONSTANTS,
   utilities as csUtils,
 } from '@cornerstonejs/core';
+import type { PlanarViewport } from '@cornerstonejs/core';
 import { type Types, getEnabledElementByViewportId } from '@cornerstonejs/core';
 
 import { addAnnotation } from '../stateManagement/annotation/annotationState';
@@ -73,7 +74,7 @@ class ReferenceLines extends AnnotationDisplayTool {
 
     const sourceViewport = renderingEngine.getViewport(
       this.configuration.sourceViewportId
-    ) as Types.IVolumeViewport;
+    ) as PlanarViewport;
 
     // Optional-chain the call: native ("next") viewports without image geometry
     // (e.g. video) do not implement getImageData, and reference lines do not
@@ -158,7 +159,7 @@ class ReferenceLines extends AnnotationDisplayTool {
     enabledElement: Types.IEnabledElement,
     svgDrawingHelper: SVGDrawingHelper
   ): boolean => {
-    const { viewport: targetViewport } = enabledElement;
+    const targetViewport = enabledElement.viewport as PlanarViewport;
 
     if (!this.editData) {
       return false;
@@ -316,7 +317,7 @@ class ReferenceLines extends AnnotationDisplayTool {
   };
 
   private handleFullDimension(
-    targetViewport: Types.IStackViewport | Types.IVolumeViewport,
+    targetViewport: PlanarViewport,
     lineStartWorld: Types.Point3,
     viewPlaneNormal: Types.Point3,
     viewUp: Types.Point3,

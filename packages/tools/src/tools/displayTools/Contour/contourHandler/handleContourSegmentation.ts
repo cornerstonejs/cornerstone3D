@@ -1,5 +1,5 @@
 import { addAnnotation } from '../../../../stateManagement/annotation/annotationState';
-import type { Types } from '@cornerstonejs/core';
+import type { Types, PlanarViewport } from '@cornerstonejs/core';
 import { cache, utilities } from '@cornerstonejs/core';
 import { getClosestImageIdForStackViewport } from '../../../../utilities/annotationHydration';
 
@@ -17,7 +17,7 @@ const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
 );
 
 function handleContourSegmentation(
-  viewport: Types.IStackViewport | Types.IVolumeViewport,
+  viewport: Types.IViewport,
   geometryIds: string[],
   annotationUIDsMap: Map<number, Set<string>>,
   contourRepresentation: ContourRepresentation
@@ -30,7 +30,7 @@ function handleContourSegmentation(
 }
 
 function addContourSetsToElement(
-  viewport: Types.IStackViewport | Types.IVolumeViewport,
+  viewport: Types.IViewport,
   geometryIds: string[],
   contourRepresentation: ContourRepresentation
 ) {
@@ -66,7 +66,7 @@ function addContourSetsToElement(
       const { points, color, id } = contour;
 
       const referencedImageId = getClosestImageIdForStackViewport(
-        viewport as Types.IStackViewport,
+        viewport as PlanarViewport,
         points[0],
         viewPlaneNormal
       );

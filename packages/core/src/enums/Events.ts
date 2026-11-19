@@ -40,12 +40,6 @@ enum Events {
    */
   VOI_MODIFIED = 'CORNERSTONE_VOI_MODIFIED',
   /**
-   * Triggers on the HTML element when viewport modifies its preset (used in volume viewport 3D)
-   *
-   * Make use of {@link EventTypes.PresetModifiedEvent | PresetModified Event Type } for typing your event listeners for PRESET_MODIFIED event,
-   */
-  PRESET_MODIFIED = 'CORNERSTONE_VIEWPORT_RENDERING_PRESET_MODIFIED',
-  /**
    * Triggers on the HTML element when viewport modifies its display area
    *
    * Make use of {@link EventTypes.DisplayAreaModifiedEvent | DisplayAreaModified Event Type } for typing your event listeners for DISPLAY_AREA_MODIFIED event,
@@ -197,34 +191,6 @@ enum Events {
   NEW_IMAGE = 'CORNERSTONE_NEW_IMAGE',
 
   /**
-   * Triggers on the element when a new image is set on the stackViewport
-   *
-   * Fired by the legacy adapters only, and removed in 6.0. Use `NEW_IMAGE`.
-   *
-   * Make use of {@link EventTypes.StackNewImageEvent | StackNewImage Event Type } for typing your event listeners for STACK_NEW_IMAGE event,
-   * and see what event detail is included in {@link EventTypes.StackNewImageEventDetail | StackNewImage Event Detail }
-   */
-  STACK_NEW_IMAGE = 'CORNERSTONE_STACK_NEW_IMAGE',
-
-  /**
-   * Triggers on the element when a new image is set on the volumeViewport, this can be due to scrolling or other
-   * tools that change the camera position or focal point.
-   *
-   * Fired by the legacy adapters only, and removed in 6.0. Use `NEW_IMAGE`.
-   *
-   * Make use of {@link EventTypes.VolumeNewImageEvent | VolumeNewImage Event Type } for typing your event listeners for VOLUME_NEW_IMAGE event,
-   * and see what event detail is included in {@link EventTypes.VolumeNewImageEventDetail | VolumeNewImage Event Detail }
-   */
-  VOLUME_NEW_IMAGE = 'CORNERSTONE_VOLUME_NEW_IMAGE',
-
-  /**
-   * Triggers on the element when a new image is about to be set on the stackViewport, pre display
-   *
-   * Make use of {@link EventTypes.PreStackNewImageEvent | PreStackNewImage Event Type } for typing your event listeners for PRE_STACK_NEW_IMAGE event,
-   * and see what event detail is included in {@link EventTypes.PreStackNewImageEventDetail | PreStackNewImage Event Detail }
-   */
-  PRE_STACK_NEW_IMAGE = 'CORNERSTONE_PRE_STACK_NEW_IMAGE',
-  /**
    * Triggers on the element when the viewport's image has calibrated its pixel spacings
    *
    * Make use of {@link EventTypes.ImageSpacingCalibratedEvent | ImageSpacingCalibrated Event Type } for typing your event listeners for IMAGE_SPACING_CALIBRATED event,
@@ -238,13 +204,6 @@ enum Events {
    * and see what event detail is included in {@link EventTypes.StackViewportNewStackEventDetail | StackViewportNewStack Event Detail }
    */
   VIEWPORT_NEW_IMAGE_SET = 'CORNERSTONE_VIEWPORT_NEW_IMAGE_SET',
-
-  /**
-   * Triggers on the element when the underlying StackViewport is scrolled.
-   * Make use of {@link EventTypes.StackViewportScroll | StackViewportScroll Event Type } for typing your event listeners for STACK_VIEWPORT_SCROLL event,
-   * and see what event detail is included in {@link EventTypes.StackViewportScrollEventDetail | StackViewportScroll Event Detail }
-   */
-  STACK_VIEWPORT_SCROLL = 'CORNERSTONE_STACK_VIEWPORT_SCROLL',
 
   /**
    * Triggers when the scroll function is called with a delta that is out of bounds in the stack viewport.

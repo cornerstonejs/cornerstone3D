@@ -1,5 +1,5 @@
 import { cache } from '@cornerstonejs/core';
-import type { Types } from '@cornerstonejs/core';
+import type { Types, PlanarViewport } from '@cornerstonejs/core';
 import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type { Segmentation } from '../../../types/SegmentationStateTypes';
 import type {
@@ -356,7 +356,7 @@ function getLockedVoxelsOnOtherLayers(
 }
 
 function getViewportImageIds(viewport?: Types.IViewport): string[] {
-  const stackViewport = viewport as Types.IStackViewport;
+  const stackViewport = viewport as PlanarViewport;
 
   return typeof stackViewport?.getImageIds === 'function'
     ? stackViewport.getImageIds()
@@ -364,7 +364,7 @@ function getViewportImageIds(viewport?: Types.IViewport): string[] {
 }
 
 function getCurrentViewportImageId(viewport?: Types.IViewport): string {
-  const stackViewport = viewport as Types.IStackViewport;
+  const stackViewport = viewport as PlanarViewport;
 
   return typeof stackViewport?.getCurrentImageId === 'function'
     ? stackViewport.getCurrentImageId()
@@ -485,7 +485,7 @@ function eraseStackLayer(
   options: EraseLabelmapEditTransactionOptions,
   modifiedSlices: Set<number>
 ): void {
-  const stackViewport = options.viewport as Types.IStackViewport;
+  const stackViewport = options.viewport as PlanarViewport;
   const currentImageId =
     getCurrentViewportImageId(options.viewport) ?? options.imageId;
   const { image, voxelManager } = resolveLabelmapLayerEditTarget(layer, {

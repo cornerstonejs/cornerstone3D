@@ -6,7 +6,7 @@ import {
   triggerEvent,
   eventTarget,
 } from '@cornerstonejs/core';
-import type { Types } from '@cornerstonejs/core';
+import type { Types, PlanarViewport } from '@cornerstonejs/core';
 
 import { removeAnnotation } from '../../stateManagement/annotation/annotationState';
 import { drawHandles as drawHandlesSvg } from '../../drawingSvg';
@@ -176,7 +176,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     contourHoleProcessingEnabled?
   ): boolean {
     const enabledElement = getEnabledElement(element);
-    const { viewport } = enabledElement;
+    const viewport = enabledElement.viewport as PlanarViewport;
     const isVolumeViewport =
       csUtils.getViewportContentMode(viewport) === 'volume';
 
@@ -223,7 +223,7 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       scalarData = viewportImageData.scalarData;
     } else if (isVolumeViewport) {
       const sliceImageData = csUtils.getCurrentVolumeViewportSlice(
-        viewport as Types.IVolumeViewport
+        viewport as PlanarViewport
       );
       const { sliceToIndexMatrix, indexToSliceMatrix } = sliceImageData;
 
@@ -258,8 +258,6 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     // Native ("next") viewports expose no getProperties; read the effective VOI
     // from the per-binding presentation, falling back to the computed default VOI.
     let voiRange: Types.VOIRange;
-    // Widen so the capability guard can narrow; the enabled element types
-    // viewport as IStackViewport | IVolumeViewport.
     const sourceViewport: Types.IViewport = viewport;
     if (csUtils.viewportSupportsDisplaySetPresentation(sourceViewport)) {
       const dataId = sourceViewport.getSourceDataId();

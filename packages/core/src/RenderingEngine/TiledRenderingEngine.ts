@@ -5,8 +5,7 @@ import triggerEvent from '../utilities/triggerEvent';
 import { coreLog } from '../utilities/logger';
 import viewportTypeUsesCustomRenderingPipeline from './helpers/viewportTypeUsesCustomRenderingPipeline';
 import getOrCreateCanvas from './helpers/getOrCreateCanvas';
-import type IStackViewport from '../types/IStackViewport';
-import type IVolumeViewport from '../types/IVolumeViewport';
+import type EngineViewport from './EngineViewport';
 import { vtkOffscreenMultiRenderWindow } from './vtkClasses';
 import {
   attachWebGLContextEvents,
@@ -19,7 +18,6 @@ import type {
   ViewportInput,
   InternalViewportInput,
   NormalizedViewportInput,
-  IViewport,
 } from '../types/IViewport';
 import { getViewportClassForInput } from './helpers/viewportTypeToViewportClass';
 import copyWebGLCanvasToCanvas from './helpers/copyWebGLCanvasToCanvas';
@@ -152,7 +150,7 @@ class TiledRenderingEngine extends BaseRenderingEngine {
     // 2.d Re-position previous viewports on the offScreen Canvas based on the new
     // offScreen canvas size
     const xOffset = this._resize(
-      viewportsDrivenByVtkJs as (IStackViewport | IVolumeViewport)[],
+      viewportsDrivenByVtkJs as EngineViewport[],
       offScreenCanvasWidth,
       offScreenCanvasHeight
     );
@@ -249,7 +247,7 @@ class TiledRenderingEngine extends BaseRenderingEngine {
       throw new Error(`Viewport Type ${type} is not supported`);
     }
 
-    const viewport = new ViewportClass(viewportInput) as unknown as IViewport;
+    const viewport = new ViewportClass(viewportInput) as EngineViewport;
 
     // 5. Storing the viewports
     this._viewports.set(viewportId, viewport);
@@ -329,13 +327,13 @@ class TiledRenderingEngine extends BaseRenderingEngine {
    * Resizes viewports that use VTK.js for rendering.
    */
   protected _resizeVTKViewports(
-    vtkDrivenViewports: (IStackViewport | IVolumeViewport)[],
+    vtkDrivenViewports: EngineViewport[],
     keepCamera = true,
     immediate = true
   ) {
     // Ensure all the canvases are ready for rendering
     const canvasesDrivenByVtkJs = vtkDrivenViewports.map(
-      (vp: IStackViewport | IVolumeViewport) => {
+      (vp: EngineViewport) => {
         return getOrCreateCanvas(vp.element);
       }
     );
@@ -386,7 +384,7 @@ class TiledRenderingEngine extends BaseRenderingEngine {
 
     const viewports = this._getViewportsAsArray();
     const eventDetailArray = [];
-    const renderedViewports: IViewport[] = [];
+    const renderedViewports: EngineViewport[] = [];
 
     for (let i = 0; i < viewports.length; i++) {
       const viewport = viewports[i];
@@ -476,7 +474,7 @@ class TiledRenderingEngine extends BaseRenderingEngine {
    * @param viewport - The viewport to render
    */
   protected renderViewportUsingCustomOrVtkPipeline(
-    viewport: IViewport
+    viewport: EngineViewport
   ): EventTypes.ImageRenderedEventDetail {
     let eventDetail: EventTypes.ImageRenderedEventDetail;
 
@@ -520,7 +518,7 @@ class TiledRenderingEngine extends BaseRenderingEngine {
    * @param offScreenCanvas - The offscreen canvas to render from.
    */
   protected _renderViewportFromVtkCanvasToOnscreenCanvas(
-    viewport: IViewport,
+    viewport: EngineViewport,
     offScreenCanvas: HTMLCanvasElement
   ): EventTypes.ImageRenderedEventDetail {
     const {
@@ -606,7 +604,7 @@ class TiledRenderingEngine extends BaseRenderingEngine {
    * @returns _xOffset the final offset which will be used for the next viewport
    */
   private _resize(
-    viewportsDrivenByVtkJs: (IStackViewport | IVolumeViewport)[],
+    viewportsDrivenByVtkJs: EngineViewport[],
     offScreenCanvasWidth: number,
     offScreenCanvasHeight: number
   ): number {
@@ -625,7 +623,7 @@ class TiledRenderingEngine extends BaseRenderingEngine {
         sWidth,
         sHeight,
       } = this._getViewportCoordsOnOffScreenCanvas(
-        viewport as IViewport,
+        viewport as EngineViewport,
         offScreenCanvasWidth,
         offScreenCanvasHeight,
         _xOffset
@@ -661,7 +659,7 @@ class TiledRenderingEngine extends BaseRenderingEngine {
    * @param _xOffset - xOffSet to draw
    */
   private _getViewportCoordsOnOffScreenCanvas(
-    viewport: InternalViewportInput | IViewport,
+    viewport: InternalViewportInput | EngineViewport,
     offScreenCanvasWidth: number,
     offScreenCanvasHeight: number,
     _xOffset: number

@@ -61,7 +61,7 @@ const triggerWorkerProgress = (eventTarget, progress) => {
  * a volume, and for a next viewport that shows a stack, where each image is
  * a slice.
  */
-function getSlicesClippingPlanes(viewport: Types.IVolumeViewport) {
+function getSlicesClippingPlanes(viewport: Types.IViewport) {
   return cornerstoneUtilities.getSlicesClippingPlanes(viewport);
 }
 
@@ -75,7 +75,7 @@ function getSlicesClippingPlanes(viewport: Types.IVolumeViewport) {
  */
 export async function clipAndCacheSurfacesForViewport(
   surfacesInfo: SurfacesInfo[],
-  viewport: Types.IVolumeViewport
+  viewport: Types.IViewport
 ) {
   registerPolySegWorker();
   // All planes is an array of planes pairs for each slice, so we should loop over them and

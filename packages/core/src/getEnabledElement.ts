@@ -1,7 +1,7 @@
 import getRenderingEngine, {
   getRenderingEngines,
 } from './RenderingEngine/getRenderingEngine';
-import type { IEnabledElement, IStackViewport, IVolumeViewport } from './types';
+import type { IEnabledElement } from './types';
 import { viewportHasFrameOfReferenceUID } from './RenderingEngine/GenericViewport/ViewportArchitectureTypes';
 
 /**
@@ -68,9 +68,7 @@ export function getEnabledElementByIds(
     return;
   }
 
-  const viewport = renderingEngine.getViewport(viewportId) as
-    | IStackViewport
-    | IVolumeViewport;
+  const viewport = renderingEngine.getViewport(viewportId);
 
   if (!viewport) {
     return;

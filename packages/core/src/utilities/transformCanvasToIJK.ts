@@ -1,4 +1,4 @@
-import type { IViewport, Point2 } from '../types';
+import type { Point2 } from '../types';
 import type PlanarViewport from '../RenderingEngine/GenericViewport/Planar/PlanarViewport';
 import transformWorldToIndex from './transformWorldToIndex';
 
@@ -9,7 +9,7 @@ import transformWorldToIndex from './transformWorldToIndex';
  * @returns 3D point in index (volume) space
  */
 export function transformCanvasToIJK(
-  viewport: IViewport | PlanarViewport,
+  viewport: PlanarViewport,
   canvasPoint: Point2
 ) {
   const { imageData: vtkImageData } = viewport.getImageData();

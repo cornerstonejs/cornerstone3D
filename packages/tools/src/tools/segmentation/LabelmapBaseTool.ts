@@ -5,7 +5,7 @@ import {
   Enums,
   eventTarget,
 } from '@cornerstonejs/core';
-import type { Types } from '@cornerstonejs/core';
+import type { Types, PlanarViewport } from '@cornerstonejs/core';
 
 import { BaseTool } from '../base';
 import SegmentationRepresentations from '../../enums/SegmentationRepresentations';
@@ -894,7 +894,10 @@ function getContourFillImageData(viewport: Types.IViewport) {
     ).getDefaultImageData();
   }
 
-  return viewport.getDefaultActor().actor.getMapper().getInputData();
+  return (viewport as PlanarViewport)
+    .getDefaultActor()
+    .actor.getMapper()
+    .getInputData();
 }
 
 /** Removes a consumed contour from the annotation state and from annotationUIDsMap. */

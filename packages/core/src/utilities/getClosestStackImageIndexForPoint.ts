@@ -2,7 +2,7 @@ import { vec3 } from 'gl-matrix';
 import * as planar from './planar';
 import * as metaData from '../metaData';
 import { MetadataModules } from '../enums';
-import type { IStackViewport, Point3 } from '../types';
+import type { Point3 } from '../types';
 import type PlanarViewport from '../RenderingEngine/GenericViewport/Planar/PlanarViewport';
 
 /**
@@ -14,7 +14,7 @@ import type PlanarViewport from '../RenderingEngine/GenericViewport/Planar/Plana
  */
 export default function getClosestStackImageIndexForPoint(
   point: Point3,
-  viewport: IStackViewport | PlanarViewport
+  viewport: PlanarViewport
 ): number | null {
   const minimalDistance = calculateMinimalDistanceForStackViewport(
     point,
@@ -26,7 +26,7 @@ export default function getClosestStackImageIndexForPoint(
 //assumes that imageIds are sorted by slice location
 export function calculateMinimalDistanceForStackViewport(
   point: Point3,
-  viewport: IStackViewport | PlanarViewport
+  viewport: Pick<PlanarViewport, 'getImageIds' | 'getCurrentImageIdIndex'>
 ): { distance: number; index: number } | null {
   const imageIds = viewport.getImageIds();
   const currentImageIdIndex = viewport.getCurrentImageIdIndex();

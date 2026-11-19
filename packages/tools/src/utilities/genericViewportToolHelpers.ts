@@ -1,4 +1,5 @@
 import { utilities as csUtils, type Types } from '@cornerstonejs/core';
+import type { PlanarViewport } from '@cornerstonejs/core';
 import { getViewportPresentation } from './viewportPresentation';
 
 /**
@@ -15,7 +16,7 @@ import { getViewportPresentation } from './viewportPresentation';
  * `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
  */
 export function getViewSlabDepthOfViewport(
-  viewport: Types.IViewport | Types.IGenericViewport
+  viewport: Types.IViewport
 ): number | undefined {
   if (csUtils.viewportSupportsDisplaySetPresentation(viewport)) {
     const sourceDataId = viewport.getSourceDataId();
@@ -37,12 +38,10 @@ export function getViewSlabDepthOfViewport(
  * nearest slice along the view-plane normal.
  */
 export function jumpToFocalPoint(
-  viewport: Types.IViewport | Types.IGenericViewport,
+  viewport: Types.IViewport,
   cameraFocalPoint: Types.Point3
 ): void {
-  if (csUtils.isGenericViewport(viewport)) {
-    viewport.setViewReference({ cameraFocalPoint } as Types.ViewReference);
-  }
+  viewport.setViewReference({ cameraFocalPoint } as Types.ViewReference);
 }
 
 /**
@@ -60,17 +59,14 @@ export function jumpToFocalPoint(
  * data goes to the slice of its plane. A point before the first or past the
  * last slice goes to the first or the last slice, in both modes.
  *
- * Returns true when a navigation was issued. A legacy viewport and a viewport
- * with nothing mounted give false.
+ * Returns true when a navigation was issued. A viewport with nothing mounted
+ * gives false.
  */
 export function navigatePlanarViewportToPoint(
-  viewport: Types.IViewport | Types.IGenericViewport,
+  viewport: Types.IViewport,
   worldPoint: Types.Point3
 ): boolean {
-  if (
-    !csUtils.isGenericViewport(viewport) ||
-    typeof viewport.setViewReference !== 'function'
-  ) {
+  if (typeof viewport.setViewReference !== 'function') {
     return false;
   }
 
@@ -81,7 +77,7 @@ export function navigatePlanarViewportToPoint(
   }
 
   if (contentMode === 'stack') {
-    const stackViewport = viewport as unknown as Types.IStackViewport;
+    const stackViewport = viewport as unknown as PlanarViewport;
     if (
       typeof stackViewport.getImageIds !== 'function' ||
       typeof stackViewport.getCurrentImageIdIndex !== 'function'
@@ -130,7 +126,7 @@ export interface NativeSourceProperties {
  * getProperties/getViewPresentation/getCamera APIs.
  */
 export function getNativeSourceProperties(
-  viewport: Types.IViewport | Types.IGenericViewport
+  viewport: Types.IViewport
 ): NativeSourceProperties {
   if (!csUtils.viewportSupportsDisplaySetPresentation(viewport)) {
     return { properties: {} };

@@ -1,5 +1,5 @@
 import { getEnabledElement } from '@cornerstonejs/core';
-import type { Types } from '@cornerstonejs/core';
+import type { Types, PlanarViewport } from '@cornerstonejs/core';
 
 import type { AnnotationTool, BaseTool } from '../tools';
 import type { Annotation } from '../types';
@@ -104,7 +104,7 @@ function findAnnotationNearPointByTool(
     (tool.constructor as typeof BaseTool).toolName,
     viewport?.element
   );
-  const currentId = viewport?.getCurrentImageId?.();
+  const currentId = (viewport as PlanarViewport)?.getCurrentImageId?.();
   if (annotations?.length) {
     const { element } = enabledElement.viewport;
     for (const annotation of annotations) {

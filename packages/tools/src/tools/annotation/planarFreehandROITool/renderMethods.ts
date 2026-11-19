@@ -1,4 +1,4 @@
-import type { Types } from '@cornerstonejs/core';
+import type { Types, PlanarViewport } from '@cornerstonejs/core';
 import {
   drawHandles as drawHandlesSvg,
   drawPolyline as drawPolylineSvg,
@@ -62,7 +62,7 @@ function renderContour(
   annotation: PlanarFreehandROIAnnotation
 ): void {
   // prevent drawing or further calculation in case viewport data is not ready yet
-  if (!enabledElement?.viewport?.getImageData()) {
+  if (!(enabledElement?.viewport as PlanarViewport)?.getImageData()) {
     return;
   }
   // Check if the contour is an open contour

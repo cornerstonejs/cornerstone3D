@@ -28,7 +28,7 @@ const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
 export async function contourSegmentationOperation(
   sourceAnnotationOrUID: ContourSegmentationAnnotation | string,
   targetAnnotationOrUID: ContourSegmentationAnnotation | string,
-  viewport?: Types.IViewport | Types.IGenericViewport,
+  viewport?: Types.IViewport,
   contourHoleProcessingEnabled: boolean = true
 ): Promise<void> {
   // Resolve annotations from UIDs if needed

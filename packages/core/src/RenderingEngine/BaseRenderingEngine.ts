@@ -18,8 +18,7 @@ import {
   isCornerstoneInitialized,
   getConfiguration,
 } from '../init';
-import type IStackViewport from '../types/IStackViewport';
-import type IVolumeViewport from '../types/IVolumeViewport';
+import type EngineViewport from './EngineViewport';
 import {
   getViewportClassForInput,
   throwIfRemovedViewportType,
@@ -61,7 +60,7 @@ abstract class BaseRenderingEngine {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public offscreenMultiRenderWindow: VtkOffscreenMultiRenderWindow;
   public offScreenCanvasContainer: HTMLDivElement;
-  protected _viewports: Map<string, IViewport>;
+  protected _viewports: Map<string, EngineViewport>;
   protected _needsRender = new Set<string>();
   protected _animationFrameSet = false;
   protected _animationFrameHandle: number | null = null;
@@ -188,7 +187,7 @@ abstract class BaseRenderingEngine {
   public disableElement(viewportId: string): void {
     this._throwIfDestroyed();
     // 1. Getting the viewport to remove it
-    const viewport = this.getViewport(viewportId);
+    const viewport = this.getViewport<EngineViewport>(viewportId);
 
     // 2 To throw if there is no viewport stored in rendering engine
     if (!viewport) {
@@ -210,10 +209,6 @@ abstract class BaseRenderingEngine {
 
     // 5. Remove the requested viewport from the rendering engine
     this._removeViewport(viewportId);
-
-    if ('isDisabled' in viewport) {
-      viewport.isDisabled = true;
-    }
 
     // 6. Avoid rendering for the disabled viewport
     this._needsRender.delete(viewportId);
@@ -516,7 +511,7 @@ abstract class BaseRenderingEngine {
   }
 
   private _resizeUsingCustomResizeHandler(
-    customRenderingViewports: IViewport[],
+    customRenderingViewports: EngineViewport[],
     keepCamera = true,
     immediate = true
   ) {
@@ -600,7 +595,7 @@ abstract class BaseRenderingEngine {
     const viewport = new ViewportClass(viewportInput);
 
     // 5. Storing the viewports
-    this._viewports.set(viewportId, viewport as unknown as IViewport);
+    this._viewports.set(viewportId, viewport as EngineViewport);
 
     const eventDetail: EventTypes.ElementEnabledEventDetail = {
       element,
@@ -650,7 +645,7 @@ abstract class BaseRenderingEngine {
    *
    * @returns Array of viewports.
    */
-  protected _getViewportsAsArray(): IViewport[] {
+  protected _getViewportsAsArray(): EngineViewport[] {
     return Array.from(this._viewports.values());
   }
 
@@ -682,7 +677,7 @@ abstract class BaseRenderingEngine {
    * events, so the annotations follow the camera of the frame that shows.
    */
   protected _waitsForStorage(
-    viewport: IViewport,
+    viewport: EngineViewport,
     renderStart: number
   ): boolean {
     const actors = viewport.getActors?.();
@@ -751,7 +746,7 @@ abstract class BaseRenderingEngine {
    *
    * @param viewport - The `Viewport` to render.
    */
-  private _resetViewport(viewport: IViewport) {
+  private _resetViewport(viewport: EngineViewport) {
     const renderingEngineId = this.id;
 
     const { element, canvas, id: viewportId } = viewport;
@@ -825,7 +820,7 @@ abstract class BaseRenderingEngine {
    * resizing strategy.
    */
   protected abstract _resizeVTKViewports(
-    vtkDrivenViewports: (IStackViewport | IVolumeViewport)[],
+    vtkDrivenViewports: EngineViewport[],
     keepCamera: boolean,
     immediate: boolean
   ): void;
@@ -884,7 +879,7 @@ abstract class BaseRenderingEngine {
    * @param offScreenCanvas - The offscreen canvas to render from.
    */
   protected abstract _renderViewportFromVtkCanvasToOnscreenCanvas(
-    viewport: IViewport,
+    viewport: EngineViewport,
     offScreenCanvas: HTMLCanvasElement
   ): EventTypes.ImageRenderedEventDetail;
 }

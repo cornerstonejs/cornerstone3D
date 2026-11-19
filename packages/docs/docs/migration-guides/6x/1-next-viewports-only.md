@@ -70,10 +70,11 @@ are temporary.
   `cache.getImage(viewport.getCurrentImageId())`). The legacy member
   `getVtkDisplayCoords` of a volume viewport is the function
   `utilities.getVtkDisplayCoords(viewport, canvasPoint)`.
-- **The legacy types:** `Types.IStackViewport`, `Types.IVolumeViewport` and
-  `Types.IBaseVolumeViewport`. The interface of a next viewport is
-  `Types.IGenericViewport`. `Types.IViewport` describes a legacy viewport
-  today, and it is not decided whether the name stays.
+- **The legacy types:** `Types.IStackViewport`, `Types.IVolumeViewport`,
+  `Types.IBaseVolumeViewport`, `Types.IVideoViewport`, `Types.IWSIViewport`,
+  `Types.IECGViewport` and the `*ViewportProperties` types. This part is in
+  the code. `Types.IViewport` is the interface of a viewport of any family,
+  and `Types.IGenericViewport` is its deprecated 5.x name.
 - **The CPU rendering setting:** `rendering.useCPURendering` with
   `setUseCPURendering`, `resetUseCPURendering` and
   `getShouldUseCPURendering`. This part is in the code. The render plan picks

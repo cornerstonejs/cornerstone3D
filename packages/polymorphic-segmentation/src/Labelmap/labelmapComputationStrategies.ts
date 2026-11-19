@@ -1,4 +1,4 @@
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport } from '@cornerstonejs/core';
 import { volumeLoader, imageLoader } from '@cornerstonejs/core';
 import { utilities } from '@cornerstonejs/tools';
 import * as cornerstoneTools from '@cornerstonejs/tools';
@@ -147,11 +147,11 @@ async function computeLabelmapFromSurfaceSegmentation(
 
   let segmentationVolume;
   if (isVolume) {
-    const volumeId = (viewport as Types.IVolumeViewport).getVolumeId();
+    const volumeId = (viewport as PlanarViewport).getVolumeId();
     segmentationVolume =
       volumeLoader.createAndCacheDerivedLabelmapVolume(volumeId);
   } else {
-    const imageIds = (options.viewport as Types.IStackViewport).getImageIds();
+    const imageIds = (options.viewport as PlanarViewport).getImageIds();
     const segImages = imageLoader.createAndCacheDerivedLabelmapImages(imageIds);
 
     const segImageIds = segImages.map((image) => image.imageId);

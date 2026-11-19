@@ -7,6 +7,7 @@ import {
   utilities,
   type Types,
 } from '@cornerstonejs/core';
+import type { PlanarViewport } from '@cornerstonejs/core';
 import { triggerSegmentationRender } from '../../../stateManagement/segmentation/SegmentationRenderingEngine';
 import { isSegmentationOverlayCompatible } from '../../../stateManagement/segmentation/helpers/isSegmentationOverlayCompatible';
 import { SegmentationRepresentations } from '../../../enums';
@@ -23,7 +24,7 @@ const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
 );
 
 export function syncStackLabelmapActors(
-  viewport: Types.IStackViewport,
+  viewport: PlanarViewport,
   segmentationId: string
 ): void {
   if (

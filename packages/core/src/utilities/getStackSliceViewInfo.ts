@@ -1,4 +1,4 @@
-import type { IStackViewport } from '../types';
+import type PlanarViewport from '../RenderingEngine/GenericViewport/Planar/PlanarViewport';
 import {
   getSliceViewGeometry,
   type SliceViewInfo,
@@ -12,7 +12,7 @@ import {
  * slice plane is 2, the plane of the image, and the image data of a stack
  * holds that one image, at index 0 along its third axis.
  */
-export function getStackSliceViewInfo(viewport: IStackViewport): SliceViewInfo {
+export function getStackSliceViewInfo(viewport: PlanarViewport): SliceViewInfo {
   return {
     sliceIndex: viewport.getCurrentImageIdIndex(),
     slicePlane: 2,

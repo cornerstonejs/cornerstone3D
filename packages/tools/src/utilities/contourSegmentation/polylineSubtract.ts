@@ -43,7 +43,7 @@ export function subtractMultiplePolylineSets(
 export function subtractAnnotationPolylines(
   baseAnnotations: ContourSegmentationAnnotation[],
   subtractorAnnotations: ContourSegmentationAnnotation[],
-  viewport: Types.IViewport | Types.IGenericViewport
+  viewport: Types.IViewport
 ): PolylineInfoCanvas[] {
   const toInfo = (
     annotation: ContourSegmentationAnnotation

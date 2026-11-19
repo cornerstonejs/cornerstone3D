@@ -3,7 +3,7 @@ import {
   getEnabledElement,
   utilities as csUtils,
 } from '@cornerstonejs/core';
-import type { Types } from '@cornerstonejs/core';
+import type { Types, PlanarViewport } from '@cornerstonejs/core';
 
 import { BaseTool } from '../base';
 import type {
@@ -80,7 +80,7 @@ class PaintFillTool extends BaseTool {
     const worldPos = currentPoints.world;
 
     const enabledElement = getEnabledElement(element);
-    const { viewport } = enabledElement;
+    const viewport = enabledElement.viewport as PlanarViewport;
 
     const { viewPlaneNormal } = getViewportICamera(viewport);
 

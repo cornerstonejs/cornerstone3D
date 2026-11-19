@@ -14,7 +14,7 @@ const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
  */
 export default function findOpenUShapedContourVectorToPeak(
   canvasPoints: Types.Point2[],
-  viewport: Types.IStackViewport | Types.IVolumeViewport
+  viewport: Types.IViewport
 ): Types.Point3[] {
   // Find chord from first to last point.
   const first = canvasPoints[0];
@@ -75,7 +75,7 @@ export default function findOpenUShapedContourVectorToPeak(
  */
 export function resolveVectorToPeak(
   canvasPoints: Types.Point2[],
-  viewport: Types.IStackViewport | Types.IVolumeViewport,
+  viewport: Types.IViewport,
   variant: PlanarFreehandROIAnnotation['data']['isOpenUShapeContour']
 ): Types.Point3[] | null {
   if (variant === 'orthogonalT') {
@@ -121,7 +121,7 @@ export function resolveVectorToPeakOnRender(
  */
 function findOpenUShapedContourVectorToPeakOrthogonal(
   canvasPoints: Types.Point2[],
-  viewport: Types.IStackViewport | Types.IVolumeViewport
+  viewport: Types.IViewport
 ): Types.Point3[] | null {
   // Find chord from first to last point.
   const first = canvasPoints[0];

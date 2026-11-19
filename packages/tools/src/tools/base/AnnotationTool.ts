@@ -594,7 +594,7 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
    * @returns
    */
   public static isSuvScaled(
-    viewport: Types.IStackViewport | Types.IVolumeViewport,
+    viewport: Types.IViewport,
     targetId: string,
     imageId?: string
   ): boolean {
@@ -919,22 +919,10 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
       referencedImageId = options.referencedImageId;
       finalViewPlaneNormal = undefined;
       finalViewUp = undefined;
-    } else if (csUtils.isGenericViewport(viewport)) {
-      // Native ("next") viewports are neither StackViewport nor
-      // BaseVolumeViewport; resolve the referenced image from the viewport's
-      // own view reference, which handles both stack and volume planar modes.
-      // Cast structurally: the param type excludes generic viewports, so the
-      // type guard narrows it to `never` here.
-      const genericViewport = viewport as unknown as {
-        getViewReference?: (specifier?: {
-          points?: Types.Point3[];
-        }) => { referencedImageId?: string } | undefined;
-      };
-      referencedImageId = genericViewport.getViewReference?.({
+    } else {
+      referencedImageId = viewport.getViewReference({
         points: [points[0]],
       })?.referencedImageId;
-    } else {
-      throw new Error('Unsupported viewport type');
     }
 
     return {

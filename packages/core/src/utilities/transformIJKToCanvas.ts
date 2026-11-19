@@ -1,4 +1,5 @@
-import type { IStackViewport, IVolumeViewport, Point3 } from '../types';
+import type { Point3 } from '../types';
+import type PlanarViewport from '../RenderingEngine/GenericViewport/Planar/PlanarViewport';
 import transformIndexToWorld from './transformIndexToWorld';
 
 /**
@@ -8,7 +9,7 @@ import transformIndexToWorld from './transformIndexToWorld';
  * @returns 2D point in canvas space
  */
 export function transformIJKToCanvas(
-  viewport: IVolumeViewport | IStackViewport,
+  viewport: PlanarViewport,
   ijkPoint: Point3
 ) {
   const { imageData: vtkImageData } = viewport.getImageData();

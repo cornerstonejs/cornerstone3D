@@ -85,7 +85,7 @@ function _getSphereBoundsInfo(
 function _createSubVolumeFromSphere(
   referencedVolume: Types.IImageVolume,
   sphereInfo: SphereInfo,
-  viewport: Types.IViewport | Types.IGenericViewport
+  viewport: Types.IViewport
 ) {
   const refVolImageData = referencedVolume.imageData;
 
@@ -236,7 +236,7 @@ function _setNegativeSeedValues(
   subVolume: Types.IImageVolume,
   labelmap: Types.IImageVolume,
   sphereInfo: SphereInfo,
-  viewport: Types.IViewport | Types.IGenericViewport,
+  viewport: Types.IViewport,
   options: GrowCutOptions
 ) {
   const subVolPixelData = subVolume.voxelManager.getCompleteScalarDataArray();
@@ -325,7 +325,7 @@ function _setNegativeSeedValues(
 async function _createAndCacheSegmentationSubVolumeForSphere(
   subVolume: Types.IImageVolume,
   sphereInfo: SphereInfo,
-  viewport: Types.IViewport | Types.IGenericViewport,
+  viewport: Types.IViewport,
   options?: GrowCutOptions
 ): Promise<Types.IImageVolume> {
   const labelmap = await volumeLoader.createAndCacheDerivedLabelmapVolume(
@@ -355,7 +355,7 @@ async function _createAndCacheSegmentationSubVolumeForSphere(
 async function runGrowCutForSphere(
   referencedVolumeId: string,
   sphereInfo: SphereInfo,
-  viewport: Types.IViewport | Types.IGenericViewport,
+  viewport: Types.IViewport,
   options?: GrowCutOptions
 ): Promise<Types.IImageVolume> {
   const referencedVolume = cache.getVolume(referencedVolumeId);

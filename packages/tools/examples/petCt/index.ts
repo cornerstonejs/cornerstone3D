@@ -962,8 +962,7 @@ async function showDisplaySets(
 ) {
   await Promise.all(
     targetViewportIds.map(async (viewportId) => {
-      const viewport =
-        renderingEngine.getViewport<Types.IGenericViewport>(viewportId);
+      const viewport = renderingEngine.getViewport<Types.IViewport>(viewportId);
 
       await viewport.setDisplaySets(
         ...entries.map(({ displaySetId }) => ({ displaySetId }))

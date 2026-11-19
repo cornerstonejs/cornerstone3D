@@ -8,6 +8,7 @@ import {
   imageLoader,
   ImageVolume,
 } from '@cornerstonejs/core';
+import type { PlanarViewport } from '@cornerstonejs/core';
 import { BaseTool } from '../base';
 import getViewportICamera from '../../utilities/getViewportICamera';
 import { SegmentationRepresentations } from '../../enums';
@@ -323,14 +324,10 @@ class GrowCutBaseTool extends BaseTool {
       labelmapData as LabelmapSegmentationDataVolume;
 
     if (!labelmapVolumeId) {
-      const referencedImageIds = (
-        viewport as Types.IStackViewport
-      ).getImageIds();
+      const referencedImageIds = (viewport as PlanarViewport).getImageIds();
 
       if (!csUtils.isValidVolume(referencedImageIds)) {
-        const currentImageId = (
-          viewport as Types.IStackViewport
-        ).getCurrentImageId();
+        const currentImageId = (viewport as PlanarViewport).getCurrentImageId();
         const currentImage = cache.getImage(currentImageId);
 
         const fakeImage =

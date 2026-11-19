@@ -4,7 +4,7 @@ import { utilities as csUtils } from '@cornerstonejs/core';
 const DEFAULT_MULTIPLIER = 4;
 
 function getVOIMultipliers(
-  viewport: Types.IStackViewport | Types.IVolumeViewport,
+  viewport: Types.IViewport,
   volumeId?: string,
   options?: {
     fixedPTWindowWidth?: boolean;

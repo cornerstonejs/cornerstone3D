@@ -288,7 +288,7 @@ class OrientationControllerTool extends BaseTool {
       if (canChangeOrientation(viewport as Types.IViewport)) {
         this.widget.removeActorsFromViewport(
           viewportId,
-          viewport as Types.IVolumeViewport
+          viewport as Types.IViewport
         );
       }
       const cameraHandler = this.cameraHandlers.get(viewportId);
@@ -324,7 +324,7 @@ class OrientationControllerTool extends BaseTool {
         if (canChangeOrientation(viewport as Types.IViewport)) {
           this.widget.removeActorsFromViewport(
             viewportId,
-            viewport as Types.IVolumeViewport
+            viewport as Types.IViewport
           );
         }
         const cameraHandler = this.cameraHandlers.get(viewportId);
@@ -431,7 +431,7 @@ class OrientationControllerTool extends BaseTool {
     }
 
     const element = viewport.element;
-    const volumeViewport = viewport as Types.IVolumeViewport;
+    const volumeViewport = viewport as Types.IViewport;
 
     const actors = this.createAnnotatedRhombActor();
 
@@ -553,7 +553,7 @@ class OrientationControllerTool extends BaseTool {
       return;
     }
 
-    const volumeViewport = viewport as Types.IVolumeViewport;
+    const volumeViewport = viewport as Types.IViewport;
     this.widget.positionActors(
       volumeViewport,
       actors,
@@ -588,19 +588,16 @@ class OrientationControllerTool extends BaseTool {
     }
 
     this.widget.positionActors(
-      viewport as Types.IVolumeViewport,
+      viewport as Types.IViewport,
       actors,
       this.getPositionConfig()
     );
-    this.widget.syncOverlayViewport(
-      viewportId,
-      viewport as Types.IVolumeViewport
-    );
+    this.widget.syncOverlayViewport(viewportId, viewport as Types.IViewport);
     viewport.render();
   }
 
   private animateCameraToOrientation(
-    viewport: Types.IVolumeViewport,
+    viewport: Types.IViewport,
     targetViewPlaneNormal: number[],
     targetViewUp: number[]
   ): void {

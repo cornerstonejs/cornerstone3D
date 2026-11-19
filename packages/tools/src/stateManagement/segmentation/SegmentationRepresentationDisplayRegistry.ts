@@ -8,10 +8,10 @@ type SegmentationRepresentationUpdateFunction = (
 
 export type SegmentationRepresentationDisplay = {
   getUpdateFunction: (
-    viewport: Types.IVolumeViewport | Types.IStackViewport
+    viewport: Types.IViewport
   ) => SegmentationRepresentationUpdateFunction | void | null;
   render: (
-    viewport: Types.IVolumeViewport | Types.IStackViewport,
+    viewport: Types.IViewport,
     representation: SegmentationRepresentation
   ) => Promise<void>;
   removeRepresentation: (

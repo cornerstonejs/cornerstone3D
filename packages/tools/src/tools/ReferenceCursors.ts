@@ -271,9 +271,7 @@ class ReferenceCursors extends AnnotationDisplayTool {
     }
 
     const enabledElement = getEnabledElement(element);
-    const viewport = enabledElement.viewport as
-      | Types.IVolumeViewport
-      | Types.IStackViewport;
+    const viewport = enabledElement.viewport as Types.IViewport;
 
     //only react to changes for element with cursor, otherwise would cause infinite loop
     if (element !== this._elementWithCursor) {

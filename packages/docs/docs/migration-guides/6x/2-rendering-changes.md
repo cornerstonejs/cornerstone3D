@@ -320,8 +320,9 @@ leave the canvas. Against the legacy volume viewport:
   included, and once after the source mounts. `CAMERA_RESET` fires from
   `resetViewState()` only, also in stack mode, where the legacy viewport
   never fired it.
-- **No `PRE_STACK_NEW_IMAGE` and no `STACK_VIEWPORT_SCROLL`.** A scroll is a
-  view state change like any other. `CAMERA_MODIFIED` fires at once when an
+- **No `PRE_STACK_NEW_IMAGE` and no `STACK_VIEWPORT_SCROLL`.** Both are gone
+  from `Enums.Events`, as are `STACK_NEW_IMAGE` and `VOLUME_NEW_IMAGE`. A
+  scroll is a view state change like any other. `CAMERA_MODIFIED` fires at once when an
   index is asked for, before the image loads. `NEW_IMAGE` fires when the
   image or the slice shows.
 - **No `VOLUME_VIEWPORT_SCROLL` and no
@@ -940,6 +941,40 @@ legacy picture within two levels of 255.
   paths. A viewport class of the application, registered with
   `registerViewportType`, that has only the legacy members gets nothing
   from these tools.
+
+## The viewport type that a tool gets
+
+This is for authors of tools outside the repository.
+`enabledElement.viewport`, `renderingEngine.getViewport(viewportId)` and
+`renderingEngine.getViewports()` give a `Types.IViewport`: the interface of a
+viewport of any family, with the members that every family has. In 5.x the
+enabled element typed its viewport as `Types.IStackViewport |
+Types.IVolumeViewport`, also when it was a 3D, video, whole slide or ECG
+viewport. A TypeScript tool that calls a member of one family on it, such as
+`getCurrentImageId`, `getImageData`, `getActors` or `canvas`, gets a compile
+error. Narrow first:
+
+```ts
+const { viewport } = enabledElement;
+
+if (utilities.viewportSupportsDisplaySetPresentation(viewport)) {
+  const dataId = viewport.getSourceDataId();
+}
+
+if (utilities.viewportSupportsImageSlices(viewport)) {
+  const imageId = viewport.getCurrentImageId();
+}
+
+if (utilities.getViewportContentMode(viewport) === 'stack') {
+  const planar = viewport as PlanarViewport;
+}
+```
+
+Or ask the rendering engine for the class:
+`renderingEngine.getViewport<PlanarViewport>(viewportId)`. A JavaScript tool
+behaves as before: a planar member called on a 3D viewport fails at run time,
+as it did in 5.x. `utilities.isGenericViewport` is true for every viewport
+and is deprecated.
 
 ## Smaller changes
 

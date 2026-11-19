@@ -1,4 +1,8 @@
-import type { Types } from '@cornerstonejs/core';
+import type {
+  Types,
+  PlanarViewport,
+  GenericVolumeViewport3D,
+} from '@cornerstonejs/core';
 import { getEnabledElementByViewportId } from '@cornerstonejs/core';
 import { SegmentationRepresentations } from '../../../enums';
 import {
@@ -30,7 +34,9 @@ function getActorEntry(
     return;
   }
 
-  const actors = viewport.getActors();
+  const actors = (
+    viewport as PlanarViewport | GenericVolumeViewport3D
+  ).getActors();
   const filteredActors = actors.filter(filterFn);
 
   return filteredActors.length > 0 ? filteredActors[0] : undefined;
@@ -59,7 +65,9 @@ function getActorEntries(
     return;
   }
 
-  const actors = viewport.getActors();
+  const actors = (
+    viewport as PlanarViewport | GenericVolumeViewport3D
+  ).getActors();
   const filteredActors = actors.filter(filterFn);
 
   return filteredActors.length > 0 ? filteredActors : undefined;

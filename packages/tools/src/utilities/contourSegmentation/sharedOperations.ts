@@ -40,7 +40,7 @@ const DEFAULT_CONTOUR_SEG_TOOL_NAME = 'PlanarFreehandContourSegmentationTool';
  */
 export function convertContourPolylineToCanvasSpace(
   polyline: Types.Point3[],
-  viewport: Types.IViewport | Types.IGenericViewport
+  viewport: Types.IViewport
 ): Types.Point2[] {
   const numPoints = polyline.length;
   const projectedPolyline = new Array(numPoints);
@@ -58,7 +58,7 @@ export function convertContourPolylineToCanvasSpace(
  */
 export function convertContourPolylineToWorld(
   polyline: Types.Point2[],
-  viewport: Types.IViewport | Types.IGenericViewport
+  viewport: Types.IViewport
 ): Types.Point3[] {
   const numPoints = polyline.length;
   const projectedPolyline = new Array(numPoints);
@@ -119,7 +119,7 @@ export function checkIntersection(
  * Retrieves data for all holes (child annotations) of a given contour segmentation.
  */
 export function getContourHolesData(
-  viewport: Types.IViewport | Types.IGenericViewport,
+  viewport: Types.IViewport,
   annotation: ContourSegmentationAnnotation
 ): Array<{
   annotation: ContourSegmentationAnnotation;
@@ -140,7 +140,7 @@ export function getContourHolesData(
  * Configures `holeAnnotation` to act as a hole within `targetAnnotation`.
  */
 export function createPolylineHole(
-  viewport: Types.IViewport | Types.IGenericViewport,
+  viewport: Types.IViewport,
   targetAnnotation: ContourSegmentationAnnotation,
   holeAnnotation: ContourSegmentationAnnotation
 ): void {
@@ -181,7 +181,7 @@ export function createPolylineHole(
  * adjusts the hole geometry correctly instead of being silently preserved.
  */
 export function combinePolylines(
-  viewport: Types.IViewport | Types.IGenericViewport,
+  viewport: Types.IViewport,
   targetAnnotation: ContourSegmentationAnnotation,
   targetPolyline: Types.Point2[],
   sourceAnnotation: ContourSegmentationAnnotation,
@@ -268,7 +268,7 @@ export function combinePolylines(
  * Creates a new annotation from a polyline, copying metadata from a template annotation.
  */
 export function createNewAnnotationFromPolyline(
-  viewport: Types.IViewport | Types.IGenericViewport,
+  viewport: Types.IViewport,
   templateAnnotation: ContourSegmentationAnnotation,
   polyline: Types.Point2[],
   windingDirection: ContourWindingDirection = ContourWindingDirection.Clockwise
@@ -327,7 +327,7 @@ export function createNewAnnotationFromPolyline(
  * Updates viewports for multiple annotations.
  */
 export function updateViewportsForAnnotations(
-  viewport: Types.IViewport | Types.IGenericViewport,
+  viewport: Types.IViewport,
   annotations: ContourSegmentationAnnotation[]
 ): void {
   const { element } = viewport;

@@ -43,10 +43,10 @@ function recordNewImageEvents(element) {
   element.addEventListener(Events.NEW_IMAGE, (evt) => {
     events.newImage.push(evt.detail);
   });
-  element.addEventListener(Events.STACK_NEW_IMAGE, (evt) => {
+  element.addEventListener('CORNERSTONE_STACK_NEW_IMAGE', (evt) => {
     events.stack.push(evt.detail);
   });
-  element.addEventListener(Events.VOLUME_NEW_IMAGE, (evt) => {
+  element.addEventListener('CORNERSTONE_VOLUME_NEW_IMAGE', (evt) => {
     events.volume.push(evt.detail);
   });
 

@@ -1,4 +1,5 @@
 import { getEnabledElementByViewportId, utilities } from '@cornerstonejs/core';
+import type { PlanarViewport } from '@cornerstonejs/core';
 import type { Point2 } from '@cornerstonejs/core/types';
 import { ArrowAnnotateTool } from '@cornerstonejs/tools';
 import { typeToIdMap, typeToStartIdMap, typeToEndIdMap } from './constants';
@@ -77,7 +78,7 @@ function addButtonListeners(form: HTMLFormElement): void {
       const enabledElement = getEnabledElementByViewportId(
         typeToIdMap[viewportType]
       );
-      const viewport = enabledElement.viewport;
+      const viewport = enabledElement.viewport as PlanarViewport;
       const imageId = useImageId && viewport.getImageIds()[0];
       const coords = getCoordinates(form, type);
       const textInput = form.querySelector(`#${type}-text`) as HTMLInputElement;

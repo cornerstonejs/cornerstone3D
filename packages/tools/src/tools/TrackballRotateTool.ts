@@ -8,7 +8,11 @@ import {
   utilities as csUtils,
   getLossyDownsampling,
 } from '@cornerstonejs/core';
-import type { PlanarViewport, Types } from '@cornerstonejs/core';
+import type {
+  PlanarViewport,
+  Types,
+  GenericVolumeViewport3D,
+} from '@cornerstonejs/core';
 import { mat4, vec3 } from 'gl-matrix';
 import type { EventTypes, PublicToolProps, ToolProps } from '../types';
 import { BaseTool } from './base';
@@ -59,7 +63,7 @@ class TrackballRotateTool extends BaseTool {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
     const enabledElement = getEnabledElement(element);
-    const { viewport } = enabledElement;
+    const viewport = enabledElement.viewport as GenericVolumeViewport3D;
     const actor = viewport.getDefaultActor()?.actor as
       | Types.VolumeActor
       | undefined;

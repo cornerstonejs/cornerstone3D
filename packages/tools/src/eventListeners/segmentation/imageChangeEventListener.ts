@@ -1,4 +1,4 @@
-import type { Types } from '@cornerstonejs/core';
+import type { Types, PlanarViewport } from '@cornerstonejs/core';
 import {
   getEnabledElement,
   Enums,
@@ -145,7 +145,7 @@ function _imageChangeEventListener(evt) {
   const enabledElement = getEnabledElementByIds(
     viewportId,
     renderingEngineId
-  ) as { viewport: Types.IStackViewport } | undefined;
+  ) as { viewport: Types.IViewport } | undefined;
 
   if (!enabledElement) {
     return;
@@ -227,7 +227,7 @@ function _imageChangeEventListener(evt) {
     return;
   }
 
-  const stackViewport = viewport as Types.IStackViewport & {
+  const stackViewport = viewport as Types.IViewport & {
     element: HTMLDivElement;
   };
 
@@ -250,7 +250,7 @@ function _imageChangeEventListener(evt) {
       );
     }
 
-    syncStackLabelmapActors(stackViewport, segmentationId);
+    syncStackLabelmapActors(stackViewport as PlanarViewport, segmentationId);
   });
 }
 

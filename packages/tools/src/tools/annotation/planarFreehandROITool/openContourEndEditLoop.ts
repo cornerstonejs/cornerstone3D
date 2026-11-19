@@ -1,4 +1,5 @@
 import { getEnabledElement } from '@cornerstonejs/core';
+import type { PlanarViewport } from '@cornerstonejs/core';
 import { state } from '../../../store/state';
 import { Events } from '../../../enums';
 import { hideElementCursor } from '../../../cursors/elementCursor';
@@ -31,7 +32,7 @@ function activateOpenContourEndEdit(
   const { viewport } = enabledElement;
 
   const { spacing, xDir, yDir } = getSubPixelSpacingAndXYDirections(
-    viewport,
+    viewport as PlanarViewport,
     this.configuration.subPixelResolution
   );
 

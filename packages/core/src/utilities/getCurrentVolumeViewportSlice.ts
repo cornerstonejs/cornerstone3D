@@ -1,11 +1,5 @@
 import { glMatrix, vec3 } from 'gl-matrix';
-import type {
-  IStackViewport,
-  IViewport,
-  IVolumeViewport,
-  PixelDataTypedArray,
-  Point3,
-} from '../types';
+import type { PixelDataTypedArray } from '../types';
 import type PlanarViewport from '../RenderingEngine/GenericViewport/Planar/PlanarViewport';
 import { getStackSliceViewInfo } from './getStackSliceViewInfo';
 import {
@@ -16,26 +10,19 @@ import { transformCanvasToIJK } from './transformCanvasToIJK';
 import { getViewportContentMode } from './viewportCapabilities';
 
 /**
- * The slice view info of a viewport. A viewport that shows a stack gets the
- * info of its image on display, whether it is a next viewport, a legacy
- * adapter or a legacy stack viewport, whose own member throws. For a
- * viewport that shows a volume the info comes from the resolved view of the
- * next viewport.
+ * The slice view info of a planar viewport. A viewport that shows a stack
+ * gets the info of its image on display. For a viewport that shows a volume
+ * the info comes from its resolved view.
  */
-function getSliceViewInfo(viewport: IViewport): SliceViewInfo {
+function getSliceViewInfo(viewport: PlanarViewport): SliceViewInfo {
   if (getViewportContentMode(viewport) === 'stack') {
-    return getStackSliceViewInfo(viewport as IStackViewport);
+    return getStackSliceViewInfo(viewport);
   }
 
-  const nextViewport = viewport as unknown as {
-    getResolvedView(): { toICamera(): { viewPlaneNormal: Point3 } };
-    getSliceIndex(): number;
-  };
-
   return getVolumeSliceViewInfo(
-    viewport as IVolumeViewport,
-    nextViewport.getResolvedView().toICamera().viewPlaneNormal,
-    nextViewport.getSliceIndex()
+    viewport,
+    viewport.getResolvedView().toICamera().viewPlaneNormal,
+    viewport.getSliceIndex()
   );
 }
 
@@ -48,7 +35,7 @@ function getSliceViewInfo(viewport: IViewport): SliceViewInfo {
  * the view looks against the axis of the volume.
  */
 function getSliceScalarData(
-  viewport: IViewport | PlanarViewport,
+  viewport: PlanarViewport,
   { slicePlane, sliceToIndexMatrix }: SliceViewInfo
 ): PixelDataTypedArray {
   const viewportImageData = viewport.getImageData();
@@ -84,10 +71,10 @@ function getSliceScalarData(
  * @returns Slice image data and  matrices to convert from volume
  *   to slice and vice-versa
  */
-function getCurrentVolumeViewportSlice(viewport: IViewport | PlanarViewport) {
+function getCurrentVolumeViewportSlice(viewport: PlanarViewport) {
   const { width: canvasWidth, height: canvasHeight } = viewport.getCanvas();
 
-  const sliceViewInfo = getSliceViewInfo(viewport as IViewport);
+  const sliceViewInfo = getSliceViewInfo(viewport);
   const { sliceToIndexMatrix, indexToSliceMatrix } = sliceViewInfo;
   // Get three points from the canvas to help us identify the orientation of
   // the slice. Using canvas width/height to get point far away for each other

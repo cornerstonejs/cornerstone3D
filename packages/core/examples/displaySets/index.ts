@@ -188,11 +188,7 @@ function registerDisplaySetData(row: Row) {
   }
 }
 
-function renderDetails(
-  row: Row,
-  viewport: Types.IGenericViewport,
-  status: string
-) {
+function renderDetails(row: Row, viewport: Types.IViewport, status: string) {
   const ds = row.displaySet;
   const recorded = viewport
     .getDisplaySets()
@@ -248,7 +244,7 @@ async function mountRow(row: Row) {
       },
     });
 
-    const viewport = renderingEngine.getViewport<Types.IGenericViewport>(
+    const viewport = renderingEngine.getViewport<Types.IViewport>(
       row.viewportId
     );
 
@@ -277,7 +273,7 @@ async function mountRow(row: Row) {
     viewport.render();
     renderDetails(row, viewport, '');
   } catch (err) {
-    const viewport = renderingEngine.getViewport<Types.IGenericViewport>(
+    const viewport = renderingEngine.getViewport<Types.IViewport>(
       row.viewportId
     );
     const message = err instanceof Error ? err.message : String(err);

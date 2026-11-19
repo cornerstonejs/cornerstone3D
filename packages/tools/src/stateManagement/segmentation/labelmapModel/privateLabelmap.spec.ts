@@ -327,7 +327,7 @@ describe('overlap undo/redo bookkeeping', () => {
         getCurrentImageId: () => 'ref-image',
         getCurrentImageIdIndex: () => 0,
         getImageIds: () => ['ref-image'],
-      } as unknown as Types.IStackViewport;
+      } as unknown as Types.IViewport;
 
       const records = [];
       const modifiedSlices = eraseLabelmapEditTransactionOverwrites(
@@ -376,7 +376,7 @@ describe('overlap undo/redo bookkeeping', () => {
         getCurrentImageId: () => 'ref-image',
         getCurrentImageIdIndex: () => 0,
         getImageIds: () => ['ref-image'],
-      } as unknown as Types.IStackViewport;
+      } as unknown as Types.IViewport;
 
       // --- stroke 1: segment 2 paints alone on the shared layer ---
       const memoA = createLabelmapMemo(

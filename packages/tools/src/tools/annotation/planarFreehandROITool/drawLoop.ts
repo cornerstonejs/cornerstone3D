@@ -1,4 +1,5 @@
 import { getEnabledElement, utilities, type Types } from '@cornerstonejs/core';
+import type { PlanarViewport } from '@cornerstonejs/core';
 import {
   resetElementCursor,
   hideElementCursor,
@@ -50,7 +51,7 @@ function activateDraw(
 
   const { spacing, xDir, yDir } =
     getSubPixelSpacingAndXYDirections(
-      viewport,
+      viewport as PlanarViewport,
       this.configuration.subPixelResolution
     ) || {};
 

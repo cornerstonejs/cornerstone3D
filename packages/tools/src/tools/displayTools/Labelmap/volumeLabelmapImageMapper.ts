@@ -34,6 +34,7 @@ type SegmentationReference = {
 };
 
 type PlanarSliceRenderingViewport = SliceRenderingViewport & {
+  getActors: () => Types.ActorEntry[];
   addImages: (
     stackInputs: Array<{
       dataId?: string;

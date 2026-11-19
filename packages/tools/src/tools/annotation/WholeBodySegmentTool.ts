@@ -5,7 +5,7 @@ import {
   cache,
   getRenderingEngine,
 } from '@cornerstonejs/core';
-import type { Types } from '@cornerstonejs/core';
+import type { Types, PlanarViewport } from '@cornerstonejs/core';
 
 import { drawPolyline as drawPolylineSvg } from '../../drawingSvg';
 import {
@@ -399,7 +399,7 @@ class WholeBodySegmentTool extends GrowCutBaseTool {
    * `getVolumeId`.
    */
   private _getViewportVolume(viewport: Types.IViewport) {
-    const volumeViewport = viewport as Types.IBaseVolumeViewport;
+    const volumeViewport = viewport as PlanarViewport;
     const volumeId = csUtils.viewportIsInVolumeMode(viewport)
       ? volumeViewport.getVolumeId?.()
       : undefined;

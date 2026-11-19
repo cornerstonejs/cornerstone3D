@@ -60,13 +60,40 @@ describe('shouldUseLazyLabelmapEditing', () => {
     ).toBe(true);
   });
 
-  it('detects legacy CPU fallback stack viewports', () => {
+  it('detects a viewport whose render plan draws the source on the CPU', () => {
     setConfig({} as never);
 
     expect(
       isCPUViewport({
-        _cpuFallbackEnabledElement: {},
+        getRenderPlan: () => [{ dataId: 'ct', role: 'source', draw: 'cpu' }],
       } as never)
     ).toBe(true);
+  });
+
+  it('reads the source layer of the render plan, not an overlay layer', () => {
+    setConfig({} as never);
+
+    expect(
+      isCPUViewport({
+        ...createViewport(ActorRenderMode.VTK_IMAGE),
+        getRenderPlan: () => [
+          { dataId: 'ct', role: 'source', draw: 'gpu' },
+          { dataId: 'pt', role: 'overlay', draw: 'cpu' },
+        ],
+      } as never)
+    ).toBe(false);
+  });
+
+  it('does not count the members of the legacy CPU fallback stack viewport', () => {
+    setConfig({} as never);
+
+    expect(
+      isCPUViewport({
+        ...createViewport(ActorRenderMode.VTK_IMAGE),
+        _cpuFallbackEnabledElement: {},
+        useCPURendering: true,
+        getRenderPlan: () => [{ dataId: 'ct', role: 'source', draw: 'gpu' }],
+      } as never)
+    ).toBe(false);
   });
 });

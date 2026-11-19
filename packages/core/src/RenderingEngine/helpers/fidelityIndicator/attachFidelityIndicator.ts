@@ -1,7 +1,7 @@
 import { Events, ImageQualityStatus } from '../../../enums';
 import eventTarget from '../../../eventTarget';
 import { getConfiguration } from '../../../init';
-import type { IGenericViewport, IViewport, Point3 } from '../../../types';
+import type { IViewport, Point3 } from '../../../types';
 import { buildViewportFidelityState } from './buildViewportFidelityState';
 import { fidelityDetailsTextOf } from './fidelityDetailsText';
 import { fidelityLabelOf } from './fidelityLabel';
@@ -37,7 +37,7 @@ type FidelityView = {
   remove: () => void;
 };
 
-type FidelityViewport = (IViewport | IGenericViewport) & {
+type FidelityViewport = IViewport & {
   getFidelityLines?: () => FidelityLine[];
 };
 
@@ -65,9 +65,7 @@ const cleanups = new WeakMap<object, () => void>();
  *
  * @returns a function that removes the indicator and its listeners
  */
-export function attachFidelityIndicator(
-  viewport: IViewport | IGenericViewport
-): () => void {
+export function attachFidelityIndicator(viewport: IViewport): () => void {
   detachFidelityIndicator(viewport);
 
   if (getConfiguration().dangerouslyDisableFidelityIndicator) {
@@ -109,9 +107,7 @@ export function attachFidelityIndicator(
  * A generic family that can show degradable data reports fidelity before it
  * mounts data; the indicator stays `hidden` until it draws such data.
  */
-export function maybeAttachFidelityIndicator(
-  viewport: IViewport | IGenericViewport
-): void {
+export function maybeAttachFidelityIndicator(viewport: IViewport): void {
   if (getConfiguration().dangerouslyDisableFidelityIndicator) {
     return;
   }
@@ -124,9 +120,7 @@ export function maybeAttachFidelityIndicator(
 }
 
 /** Removes a previously attached fidelity indicator, if any. */
-export function detachFidelityIndicator(
-  viewport: IViewport | IGenericViewport
-): void {
+export function detachFidelityIndicator(viewport: IViewport): void {
   const cleanup = cleanups.get(viewport);
 
   if (!cleanup) {
@@ -141,15 +135,11 @@ export function detachFidelityIndicator(
  * Whether a viewport can report fidelity (GENVIEW-FIDELITY-8). Declared on
  * `IViewportFidelity`; `Viewport` and `GenericViewport` both implement it.
  */
-export function canReportFidelity(
-  viewport: IViewport | IGenericViewport
-): boolean {
+export function canReportFidelity(viewport: IViewport): boolean {
   return viewport.canReportFidelity() === true;
 }
 
-function hasFidelityApi(
-  viewport: IViewport | IGenericViewport
-): viewport is FidelityViewport {
+function hasFidelityApi(viewport: IViewport): viewport is FidelityViewport {
   return typeof (viewport as FidelityViewport).getFidelityLines === 'function';
 }
 

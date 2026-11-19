@@ -1,5 +1,5 @@
 import { getEnabledElement, utilities as csUtils } from '@cornerstonejs/core';
-import type { Types } from '@cornerstonejs/core';
+import type { Types, PlanarViewport } from '@cornerstonejs/core';
 import { getCalibratedLengthUnitsAndScale } from '../../utilities/getCalibratedUnits';
 import getViewportICamera from '../../utilities/getViewportICamera';
 import { vec3 } from 'gl-matrix';
@@ -662,7 +662,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
 
       // WE HAVE TO CACHE STATS BEFORE FETCHING TEXT
       const annotationViewport =
-        annotationEnabledElement?.viewport as Types.IVolumeViewport;
+        annotationEnabledElement?.viewport as PlanarViewport;
 
       if (
         annotation.invalidated &&

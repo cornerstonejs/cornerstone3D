@@ -3,6 +3,7 @@ import {
   getEnabledElementByViewportId,
   type Types,
 } from '@cornerstonejs/core';
+import type { PlanarViewport } from '@cornerstonejs/core';
 import type {
   RepresentationsData,
   Segmentation,
@@ -155,7 +156,7 @@ class LabelmapImageReferenceResolver {
       return;
     }
 
-    const viewport = enabledElement.viewport as Types.IStackViewport;
+    const viewport = enabledElement.viewport as PlanarViewport;
     const scanKey = this.generateScanKey('current', viewport, labelmapImageIds);
     if (scanKey && this.hasCompletedScan(segmentationId, scanKey)) {
       return this.getCompletedScanResult(segmentationId, scanKey);
@@ -179,7 +180,7 @@ class LabelmapImageReferenceResolver {
    *  so layer additions/removals invalidate naturally. */
   private generateScanKey(
     kind: 'current' | 'all',
-    viewport: Types.IStackViewport,
+    viewport: PlanarViewport,
     labelmapImageIds: string[]
   ): string | undefined {
     const referenceImageId =
@@ -237,14 +238,12 @@ class LabelmapImageReferenceResolver {
 
     if (
       viewportRenderMode !== 'image' ||
-      typeof (viewport as Types.IStackViewport).getCurrentImageId !== 'function'
+      typeof (viewport as PlanarViewport).getCurrentImageId !== 'function'
     ) {
       return;
     }
 
-    const referenceImageId = (
-      viewport as Types.IStackViewport
-    ).getCurrentImageId();
+    const referenceImageId = (viewport as PlanarViewport).getCurrentImageId();
     const segmentation = this.getSegmentation(segmentationId);
     if (!segmentation) {
       return;
@@ -252,7 +251,7 @@ class LabelmapImageReferenceResolver {
 
     ensureLabelmapState(segmentation);
 
-    const viewportImageIds = (viewport as Types.IStackViewport).getImageIds();
+    const viewportImageIds = (viewport as PlanarViewport).getImageIds();
     const currentIndex = viewportImageIds.indexOf(referenceImageId);
     const labelmapImageIds: string[] = [];
 
@@ -272,7 +271,7 @@ class LabelmapImageReferenceResolver {
 
       layer.imageIds?.some((candidateImageId) => {
         const viewableImageId = (
-          viewport as Types.IStackViewport
+          viewport as PlanarViewport
         ).isReferenceViewable(
           { referencedImageId: candidateImageId },
           { asOverlay: true }
@@ -327,14 +326,12 @@ class LabelmapImageReferenceResolver {
 
     if (
       viewportRenderMode !== 'image' ||
-      typeof (viewport as Types.IStackViewport).getCurrentImageId !== 'function'
+      typeof (viewport as PlanarViewport).getCurrentImageId !== 'function'
     ) {
       return;
     }
 
-    const currentImageId = (
-      viewport as Types.IStackViewport
-    ).getCurrentImageId();
+    const currentImageId = (viewport as PlanarViewport).getCurrentImageId();
     const currentImageIds = this.getCurrentLabelmapImageIdsForViewport(
       viewportId,
       segmentationId
@@ -344,7 +341,7 @@ class LabelmapImageReferenceResolver {
     }
 
     const segmentation = this.getSegmentation(segmentationId);
-    const currentIndex = (viewport as Types.IStackViewport)
+    const currentIndex = (viewport as PlanarViewport)
       .getImageIds()
       .indexOf(currentImageId);
     const activeSegmentIndex = segmentation
@@ -376,7 +373,10 @@ class LabelmapImageReferenceResolver {
       segmentationId
     );
     const enabledElement = getEnabledElementByViewportId(viewportId);
-    const imageIds = enabledElement?.viewport.getImageIds?.() ?? [];
+    const imageIds =
+      (
+        enabledElement?.viewport as PlanarViewport | undefined
+      )?.getImageIds?.() ?? [];
     const imageIdMap = getReferencedImageIdToCurrentImageIdMap(segmentation);
 
     return imageIds.flatMap((imageId) => imageIdMap.get(imageId) ?? []);
@@ -384,10 +384,10 @@ class LabelmapImageReferenceResolver {
 
   private updateLabelmapSegmentationReferences(
     segmentationId: string,
-    viewport: Types.IStackViewport,
+    viewport: PlanarViewport,
     labelmapImageIds: string[],
     updateCallback?: (
-      viewport: Types.IStackViewport,
+      viewport: PlanarViewport,
       segmentationId: string,
       labelmapImageIds: string[]
     ) => void
@@ -453,7 +453,7 @@ class LabelmapImageReferenceResolver {
       return;
     }
 
-    const stackViewport = enabledElement.viewport as Types.IStackViewport;
+    const stackViewport = enabledElement.viewport as PlanarViewport;
 
     const scanKey = this.generateScanKey(
       'all',

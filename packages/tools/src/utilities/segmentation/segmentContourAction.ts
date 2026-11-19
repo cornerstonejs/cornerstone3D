@@ -11,6 +11,7 @@ import BidirectionalTool from '../../tools/annotation/BidirectionalTool';
 import { getSegmentations } from '../../stateManagement/segmentation/getSegmentations';
 import { getActiveSegmentIndex } from '../../stateManagement/segmentation/getActiveSegmentIndex';
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+import type { PlanarViewport } from '@cornerstonejs/core';
 
 const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
   'utilities.segmentation.segmentContourAction'
@@ -138,7 +139,7 @@ export default async function segmentContourAction(
 
   if (newBidirectional) {
     const { sliceIndex } = newBidirectional;
-    const imageIds = enabledElement.viewport.getImageIds();
+    const imageIds = (enabledElement.viewport as PlanarViewport).getImageIds();
 
     // TODO - figure out why this is reversed
     utilities.jumpToSlice(element, {

@@ -1,4 +1,5 @@
-import { getEnabledElementByViewportId, type Types } from '@cornerstonejs/core';
+import { getEnabledElementByViewportId } from '@cornerstonejs/core';
+import type { PlanarViewport } from '@cornerstonejs/core';
 
 import { SegmentationRepresentations } from '../../../enums';
 import { getSegmentationRepresentations } from '../../../stateManagement/segmentation/getSegmentationRepresentation';
@@ -49,7 +50,7 @@ export function performStackLabelmapUpdate({
         return;
       }
 
-      syncStackLabelmapActors(viewport as Types.IStackViewport, segmentationId);
+      syncStackLabelmapActors(viewport as PlanarViewport, segmentationId);
     });
   });
 }

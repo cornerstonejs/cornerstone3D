@@ -22,31 +22,30 @@ declare const volume3D: GenericVolumeViewport3D;
 declare const video: VideoGenericViewport;
 declare const wholeSlide: WSIGenericViewport;
 declare const ecg: ECGGenericViewport;
-declare const generic: Types.IGenericViewport;
-declare const legacy: Types.IViewport;
+declare const generic: Types.IViewport;
+declare const enabledElement: Types.IEnabledElement;
 declare const point: Types.Point3;
 
 /** The functions of the tools that the guide calls with a next viewport. */
 export function functionsOfTheGuide() {
   utilities.jumpToFocalPoint(planar, point);
   utilities.jumpToFocalPoint(generic, point);
-  utilities.jumpToFocalPoint(legacy, point);
+  utilities.jumpToFocalPoint(enabledElement.viewport, point);
 
   return [
     utilities.navigatePlanarViewportToPoint(planar, point),
     utilities.navigatePlanarViewportToPoint(generic, point),
-    utilities.navigatePlanarViewportToPoint(legacy, point),
+    utilities.navigatePlanarViewportToPoint(enabledElement.viewport, point),
     utilities.spatial.getDisplayedCanvasSize(planar),
     utilities.spatial.getDisplayedCanvasSize(volume3D),
     utilities.spatial.getDisplayedCanvasSize(video),
     utilities.spatial.getDisplayedCanvasSize(wholeSlide),
     utilities.spatial.getDisplayedCanvasSize(ecg),
     utilities.spatial.getDisplayedCanvasSize(generic),
-    utilities.spatial.getDisplayedCanvasSize(legacy),
+    utilities.spatial.getDisplayedCanvasSize(enabledElement.viewport),
   ];
 }
 
-declare const legacyVolume: Types.IVolumeViewport;
 declare const annotation: ToolTypes.Annotation;
 declare const annotations: ToolTypes.Annotations;
 declare const boundsIJK: Types.BoundsIJK;
@@ -95,25 +94,18 @@ export function functionsWithANextPath() {
 
 /**
  * The functions that read members of the planar family. They take the class
- * of the planar viewport, and a legacy viewport as before.
+ * of the planar viewport.
  */
 export function functionsOfThePlanarFamily() {
   return [
     utilities.getClosestImageIdForStackViewport(planar, point, [0, 0, 1]),
     utilities.math.polyline.getSubPixelSpacingAndXYDirections(planar, 1),
-    utilities.math.polyline.getSubPixelSpacingAndXYDirections(legacyVolume, 1),
     utilities.planar.getPointsInLineOfSight(planar, point, {
       targetVolumeId: volumeId,
       stepSize: 0.25,
     }),
     utilities.planar.getPointInLineOfSightWithCriteria(
       planar,
-      point,
-      volumeId,
-      (_intensity, linePoint) => linePoint
-    ),
-    utilities.planar.getPointInLineOfSightWithCriteria(
-      legacyVolume,
       point,
       volumeId,
       (_intensity, linePoint) => linePoint

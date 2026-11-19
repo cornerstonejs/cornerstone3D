@@ -1,5 +1,5 @@
 import cache from '../cache/cache';
-import type { IGenericViewport, IViewport } from '../types';
+import type { IViewport } from '../types';
 import { isAcquisitionPlaneNormal } from './isAcquisitionPlaneNormal';
 import { getViewportContentMode } from './viewportCapabilities';
 
@@ -22,7 +22,7 @@ type AcquisitionPlaneViewport = {
  * @param viewport - The viewport
  * @returns Whether the view is in the acquisition plane
  */
-function isInAcquisitionPlane(viewport: IViewport | IGenericViewport): boolean {
+function isInAcquisitionPlane(viewport: IViewport): boolean {
   const planeViewport = viewport as AcquisitionPlaneViewport;
 
   const contentMode = getViewportContentMode(viewport);

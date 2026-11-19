@@ -382,7 +382,7 @@ describe('labelmap edit transactions', () => {
       getCurrentImageId: () => 'ref-image',
       getCurrentImageIdIndex: () => 0,
       getImageIds: () => ['ref-image'],
-    } as Types.IStackViewport;
+    } as Types.IViewport;
 
     mockCache.getImage.mockImplementation((imageId: string) =>
       imageId === 'layerB-image'

@@ -3,7 +3,7 @@ import vtkMath from '@kitware/vtk.js/Common/Core/Math';
 
 import { AnnotationTool } from './base';
 
-import type { Types } from '@cornerstonejs/core';
+import type { Types, PlanarViewport } from '@cornerstonejs/core';
 import {
   getRenderingEngine,
   getEnabledElementByIds,
@@ -241,7 +241,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
       if (!renderingEngine) {
         return;
       }
-      const viewport = renderingEngine.getViewport(viewportId);
+      const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
       if (!viewport) {
         return;
       }
@@ -284,7 +284,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
       return;
     }
 
-    const { viewport } = enabledElement;
+    const viewport = enabledElement.viewport as PlanarViewport;
 
     // Update seriesInstanceUID from viewport
     const volumeActors = viewport.getActors();
@@ -465,7 +465,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
           continue;
         }
 
-        const viewport = enabledElement.viewport as Types.IVolumeViewport;
+        const viewport = enabledElement.viewport as PlanarViewport;
         const resetPan = true;
         const resetZoom = true;
         const resetToCenter = true;
@@ -778,7 +778,8 @@ class VolumeCroppingControlTool extends AnnotationTool {
       return false;
     }
     let renderStatus = false;
-    const { viewport, renderingEngine } = enabledElement;
+    const { renderingEngine } = enabledElement;
+    const viewport = enabledElement.viewport as PlanarViewport;
     const { element } = viewport;
     const annotations = this._getAnnotations(enabledElement);
     const camera = getViewportICamera(viewport);
@@ -1059,7 +1060,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
       if (!renderingEngine) {
         return;
       }
-      const viewport = renderingEngine.getViewport(viewportId);
+      const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
       if (!viewport) {
         return;
       }

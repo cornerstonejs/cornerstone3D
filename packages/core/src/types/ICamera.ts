@@ -45,11 +45,4 @@ interface ResetCameraOptions {
   storeAsInitialCamera?: boolean;
 }
 
-interface SetAspectRatioOptions {
-  /** fit the stretched image into the canvas */
-  fit?: boolean;
-  /** keep the aspect ratio as the default, and the camera as the initial one */
-  storeAsInitialCamera?: boolean;
-}
-
-export type { ICamera as default, ResetCameraOptions, SetAspectRatioOptions };
+export type { ICamera as default, ResetCameraOptions };

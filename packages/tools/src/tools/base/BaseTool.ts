@@ -5,7 +5,11 @@ import {
   viewportHasPan,
   viewportHasZoom,
 } from '@cornerstonejs/core';
-import type { Types } from '@cornerstonejs/core';
+import type {
+  Types,
+  PlanarViewport,
+  VideoGenericViewport,
+} from '@cornerstonejs/core';
 import ToolModes from '../../enums/ToolModes';
 import Events from '../../enums/Events';
 import {
@@ -351,7 +355,7 @@ abstract class BaseTool {
         return;
       }
 
-      return viewports[0].getImageData();
+      return (viewports[0] as PlanarViewport).getImageData();
     } else if (targetId.startsWith('volumeId:')) {
       const volumeId = csUtils.getVolumeId(targetId);
       const viewports = csUtils.getViewportsWithVolumeId(volumeId);
@@ -364,7 +368,7 @@ abstract class BaseTool {
       // a fusion viewport) returns the image data of this target's volume
       // rather than of its first/default one - otherwise the statistics of
       // every target would be computed over the same (first) volume.
-      return (viewports[0] as Types.IVolumeViewport).getImageData(volumeId);
+      return (viewports[0] as PlanarViewport).getImageData(volumeId);
     } else if (targetId.startsWith('videoId:')) {
       // Video id can be multi-valued for the frame information
       const imageURI = csUtils.imageIdToURI(targetId.split('videoId:')[1]);
@@ -374,7 +378,7 @@ abstract class BaseTool {
         return;
       }
 
-      return viewports[0].getImageData();
+      return (viewports[0] as VideoGenericViewport).getImageData();
     } else {
       throw new Error(
         'getTargetIdImage: targetId must start with "imageId:" or "volumeId:"'
@@ -505,7 +509,7 @@ abstract class BaseTool {
   ): MeasurementTargetCandidate[] {
     const candidates: MeasurementTargetCandidate[] = [];
     const displaySets = BaseTool.getViewportDisplaySets(viewport);
-    const actors = viewport.getActors?.() || [];
+    const actors = (viewport as PlanarViewport).getActors?.() || [];
     for (let index = 0; index < actors.length; index++) {
       const { referencedId, representationUID } = actors[index];
       // Skip actors not derived from a cached volume (tool/canvas actors).

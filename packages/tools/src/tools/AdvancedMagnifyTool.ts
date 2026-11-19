@@ -1945,7 +1945,7 @@ class AdvancedMagnifyViewport {
 
   private _initialize() {
     const { _sourceEnabledElement: sourceEnabledElement } = this;
-    const { viewport: sourceViewport } = sourceEnabledElement;
+    const sourceViewport = sourceEnabledElement.viewport as PlanarViewport;
     const { canvas: sourceCanvas } = sourceViewport;
     const magnifyElement = this._createViewportNode();
 

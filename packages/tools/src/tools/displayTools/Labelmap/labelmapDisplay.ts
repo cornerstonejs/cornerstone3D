@@ -118,7 +118,7 @@ async function render(
       SegmentationRepresentations.Labelmap,
       () =>
         polySeg.computeLabelmapData(segmentationId, {
-          viewport: viewport as Types.IVolumeViewport | Types.IStackViewport,
+          viewport: viewport as Types.IViewport,
         }),
       () => {
         defaultSegmentationStateManager.processLabelmapRepresentationAddition(

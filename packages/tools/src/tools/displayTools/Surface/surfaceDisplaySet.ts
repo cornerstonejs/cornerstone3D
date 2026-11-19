@@ -12,12 +12,9 @@ import { resetViewportCamera } from '../../../utilities/setViewportCamera';
  * 3D viewport.
  */
 function showsSurfacesAsDisplaySets(
-  viewport: Types.IViewport | Types.IGenericViewport
+  viewport: Types.IViewport
 ): viewport is GenericVolumeViewport3D {
-  return (
-    viewport.type === Enums.ViewportType.VOLUME_3D_NEXT &&
-    utilities.isGenericViewport(viewport)
-  );
+  return viewport.type === Enums.ViewportType.VOLUME_3D_NEXT;
 }
 
 /**

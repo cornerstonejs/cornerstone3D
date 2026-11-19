@@ -70,6 +70,7 @@ describe('scroll utility — ECG viewport handling and bounds checks', () => {
       getCurrentMode: () => 'stack',
       getCurrentImageIdIndex: () => 0,
       getImageIds: () => ['slice-1'],
+      getNumberOfSlices: () => 1,
       scroll: stackScrollMock,
     };
 
@@ -77,6 +78,6 @@ describe('scroll utility — ECG viewport handling and bounds checks', () => {
     scroll(stackViewport, { delta: 1 });
 
     expect(triggerSpy).toHaveBeenCalledTimes(1);
-    expect(stackScrollMock).toHaveBeenCalledWith(1, undefined, undefined);
+    expect(stackScrollMock).toHaveBeenCalledWith(1);
   });
 });

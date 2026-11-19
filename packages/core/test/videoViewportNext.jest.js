@@ -156,7 +156,7 @@ describe('Next video viewport', () => {
     const stackNewImage = jest.fn();
 
     element.addEventListener(Enums.Events.NEW_IMAGE, newImage);
-    element.addEventListener(Enums.Events.STACK_NEW_IMAGE, stackNewImage);
+    element.addEventListener('CORNERSTONE_STACK_NEW_IMAGE', stackNewImage);
 
     await viewport.play();
     video.currentTime = 1.5;
@@ -184,7 +184,7 @@ describe('Next video viewport', () => {
     const stackNewImage = jest.fn();
 
     element.addEventListener(Enums.Events.NEW_IMAGE, newImage);
-    element.addEventListener(Enums.Events.STACK_NEW_IMAGE, stackNewImage);
+    element.addEventListener('CORNERSTONE_STACK_NEW_IMAGE', stackNewImage);
     video.currentTime = 2;
     video.dispatchEvent(new Event('seeked'));
 

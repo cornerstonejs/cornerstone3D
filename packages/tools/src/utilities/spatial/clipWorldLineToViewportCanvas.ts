@@ -21,7 +21,7 @@ const MIN_SEGMENT_LENGTH = 1e-3;
  */
 export default function clipWorldLineToViewportCanvas(
   line: WorldLine,
-  viewport: Types.IVolumeViewport | Types.IViewport | Types.IGenericViewport
+  viewport: Types.IViewport
 ): [Types.Point2, Types.Point2] | null {
   if (!line || !viewport) {
     return null;

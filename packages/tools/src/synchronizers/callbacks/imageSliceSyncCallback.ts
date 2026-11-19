@@ -1,5 +1,5 @@
 import { vec3, mat4 } from 'gl-matrix';
-import type { Types } from '@cornerstonejs/core';
+import type { Types, PlanarViewport } from '@cornerstonejs/core';
 import {
   ActorRenderMode,
   getRenderingEngine,
@@ -16,9 +16,7 @@ const getSpatialRegistration = (targetId, sourceId) =>
     sourceId
   );
 
-function isVolumeSliceViewport(
-  viewport: Types.IStackViewport | Types.IVolumeViewport
-): boolean {
+function isVolumeSliceViewport(viewport: PlanarViewport): boolean {
   if (utilities.viewportIsInVolumeMode(viewport)) {
     return true;
   }
@@ -74,9 +72,9 @@ export default async function imageSliceSyncCallback(
     );
   }
 
-  const sViewport = renderingEngine.getViewport(sourceViewport.viewportId) as
-    | Types.IVolumeViewport
-    | Types.IStackViewport;
+  const sViewport = renderingEngine.getViewport(
+    sourceViewport.viewportId
+  ) as PlanarViewport;
 
   const options = synchronizerInstance.getOptions(targetViewport.viewportId);
 
@@ -84,9 +82,9 @@ export default async function imageSliceSyncCallback(
     return;
   }
 
-  const tViewport = renderingEngine.getViewport(targetViewport.viewportId) as
-    | Types.IVolumeViewport
-    | Types.IStackViewport;
+  const tViewport = renderingEngine.getViewport(
+    targetViewport.viewportId
+  ) as PlanarViewport;
 
   const imageId1 = sViewport.getCurrentImageId();
   const imagePlaneModule1 = metaData.get('imagePlaneModule', imageId1);

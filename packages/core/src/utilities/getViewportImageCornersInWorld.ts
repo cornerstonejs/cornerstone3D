@@ -1,10 +1,4 @@
-import type {
-  IImageData,
-  IStackViewport,
-  IVolumeViewport,
-  Point2,
-  Point3,
-} from '../types';
+import type { IImageData, Point2, Point3 } from '../types';
 import type PlanarViewport from '../RenderingEngine/GenericViewport/Planar/PlanarViewport';
 
 /**
@@ -17,7 +11,7 @@ import type PlanarViewport from '../RenderingEngine/GenericViewport/Planar/Plana
  * @returns The corners of the image in the viewport in world coordinates.
  */
 export default function getViewportImageCornersInWorld(
-  viewport: IStackViewport | IVolumeViewport | PlanarViewport
+  viewport: PlanarViewport
 ): Point3[] {
   const { imageData, dimensions } =
     (viewport.getImageData() as IImageData) || {};

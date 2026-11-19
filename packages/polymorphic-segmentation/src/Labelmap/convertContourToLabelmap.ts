@@ -1,5 +1,5 @@
 import { vec3 } from 'gl-matrix';
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport } from '@cornerstonejs/core';
 import {
   cache,
   utilities,
@@ -31,7 +31,7 @@ export async function convertContourToVolumeLabelmap(
   contourRepresentationData: ToolsTypes.ContourSegmentationData,
   options: PolySegConversionOptions = {}
 ) {
-  const viewport = options.viewport as Types.IVolumeViewport;
+  const viewport = options.viewport as PlanarViewport;
   const volumeId = viewport.getVolumeId();
 
   const imageIds = utilities.getViewportImageIds(viewport);
@@ -104,7 +104,7 @@ export async function convertContourToStackLabelmap(
     );
   }
 
-  const viewport = options.viewport as Types.IStackViewport;
+  const viewport = options.viewport as PlanarViewport;
 
   const imageIds = viewport.getImageIds();
 

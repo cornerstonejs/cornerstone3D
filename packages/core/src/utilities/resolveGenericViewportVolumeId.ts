@@ -1,4 +1,3 @@
-import type IGenericViewport from '../types/IGenericViewport';
 import type { IViewport } from '../types/IViewport';
 import { getVolumeId } from './getVolumeId';
 
@@ -24,7 +23,7 @@ type GenericViewportActorSurface = IViewport & {
  * feeds the shared {@link getScalingDescriptor}.
  */
 export function resolveGenericViewportVolumeId(
-  viewport: IViewport | IGenericViewport,
+  viewport: IViewport,
   targetId?: string
 ): string | undefined {
   const genericViewport = viewport as GenericViewportActorSurface;

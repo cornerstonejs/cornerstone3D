@@ -44,7 +44,7 @@ export function unifyMultiplePolylineSets(
 export function unifyAnnotationPolylines(
   annotationsSetA: ContourSegmentationAnnotation[],
   annotationsSetB: ContourSegmentationAnnotation[],
-  viewport: Types.IViewport | Types.IGenericViewport
+  viewport: Types.IViewport
 ): PolylineInfoCanvas[] {
   const toInfo = (
     annotation: ContourSegmentationAnnotation

@@ -1,7 +1,5 @@
-import type IGenericViewport from '../types/IGenericViewport';
 import type { IViewport } from '../types/IViewport';
 import type { ScalingDescriptor } from '../types/ScalingDescriptor';
-import { isGenericViewport } from './viewportCapabilities';
 import { resolveGenericViewportVolumeId } from './resolveGenericViewportVolumeId';
 
 type VolumeLike =
@@ -14,16 +12,16 @@ type VolumeLike =
  * actor (modality from its metadata, falling back to the image-data metadata;
  * pre-scaled from its SUV `scaling`).
  *
- * Returns `undefined` for an object that is not a next viewport, so callers
- * that require one (e.g. `getViewportModality`) can throw while tolerant
- * callers (e.g. `isViewportPreScaled`) treat it as not pre-scaled.
+ * Returns `undefined` for no viewport, so callers that require one (e.g.
+ * `getViewportModality`) can throw while tolerant callers (e.g.
+ * `isViewportPreScaled`) treat it as not pre-scaled.
  *
  * `getVolume` is injected (rather than imported) to keep this utility free of
  * the cache import cycle; use the `getScalingDescriptor` export from the
  * utilities index, which supplies it.
  */
 function _getScalingDescriptor(
-  viewport: IViewport | IGenericViewport,
+  viewport: IViewport,
   targetId?: string,
   getVolume?: (volumeId: string) => VolumeLike
 ): ScalingDescriptor | undefined {
@@ -31,7 +29,7 @@ function _getScalingDescriptor(
     throw new Error('getVolume is required, use the utilities export instead');
   }
 
-  if (isGenericViewport(viewport)) {
+  if (viewport) {
     const resolvedVolumeId = resolveGenericViewportVolumeId(viewport, targetId);
     const volume = resolvedVolumeId ? getVolume(resolvedVolumeId) : undefined;
     const imageData = (

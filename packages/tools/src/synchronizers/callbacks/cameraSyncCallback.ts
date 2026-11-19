@@ -1,5 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
-import { getRenderingEngine, utilities } from '@cornerstonejs/core';
+import { getRenderingEngine } from '@cornerstonejs/core';
 import type { Synchronizer } from '../../store';
 import {
   applyViewportPresentation,
@@ -40,38 +40,36 @@ export default function cameraSyncCallback(
 
   const tViewport = renderingEngine.getViewport(targetViewport.viewportId);
 
-  if (utilities.isGenericViewport(tViewport)) {
-    // Direct Generic ("next") viewports do not expose setCamera. Camera-position
-    // synchronization across viewports is expressed natively by copying the
-    // source viewport's spatial view reference onto the target. The CAMERA_MODIFIED
-    // event detail only carries an ICamera (no ViewReference), so we read the
-    // reference live from the source viewport rather than from the event snapshot;
-    // any sync lag from the live read is inherent to the event not carrying one.
-    // Resolve the source viewport through its own rendering engine: when source
-    // and target live in different engines, the target's engine returns undefined
-    // for the source id and the reads below would throw. Bail out if it cannot be
-    // resolved.
-    const sourceRenderingEngine = getRenderingEngine(
-      sourceViewport.renderingEngineId
-    );
-    const sViewport = sourceRenderingEngine?.getViewport(
-      sourceViewport.viewportId
-    );
-    if (!sViewport) {
-      return;
-    }
-    tViewport.setViewReference(sViewport.getViewReference());
-
-    // Slice/orientation come from the view reference above; copy zoom + pan
-    // explicitly so they stay in lockstep like the legacy full-camera copy did.
-    // applyViewportPresentation is a no-op for targets without a projection
-    // adapter, so this is safe for any next-viewport family.
-    const zoomPanPresentation = getViewportPresentation(
-      sViewport,
-      ZOOM_PAN_SELECTOR
-    );
-    applyViewportPresentation(tViewport, zoomPanPresentation);
+  // Direct Generic ("next") viewports do not expose setCamera. Camera-position
+  // synchronization across viewports is expressed natively by copying the
+  // source viewport's spatial view reference onto the target. The CAMERA_MODIFIED
+  // event detail only carries an ICamera (no ViewReference), so we read the
+  // reference live from the source viewport rather than from the event snapshot;
+  // any sync lag from the live read is inherent to the event not carrying one.
+  // Resolve the source viewport through its own rendering engine: when source
+  // and target live in different engines, the target's engine returns undefined
+  // for the source id and the reads below would throw. Bail out if it cannot be
+  // resolved.
+  const sourceRenderingEngine = getRenderingEngine(
+    sourceViewport.renderingEngineId
+  );
+  const sViewport = sourceRenderingEngine?.getViewport(
+    sourceViewport.viewportId
+  );
+  if (!sViewport) {
+    return;
   }
+  tViewport.setViewReference(sViewport.getViewReference());
+
+  // Slice/orientation come from the view reference above; copy zoom + pan
+  // explicitly so they stay in lockstep like the legacy full-camera copy did.
+  // applyViewportPresentation is a no-op for targets without a projection
+  // adapter, so this is safe for any next-viewport family.
+  const zoomPanPresentation = getViewportPresentation(
+    sViewport,
+    ZOOM_PAN_SELECTOR
+  );
+  applyViewportPresentation(tViewport, zoomPanPresentation);
 
   tViewport.render();
 }

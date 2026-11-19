@@ -1,6 +1,6 @@
 import cache from '../cache/cache';
 import { EPSILON } from '../constants';
-import type { ICamera, IImageVolume, IVolumeViewport, Point3 } from '../types';
+import type { ICamera, IImageVolume, Point3 } from '../types';
 import type PlanarViewport from '../RenderingEngine/GenericViewport/Planar/PlanarViewport';
 import getSpacingInNormalDirection from './getSpacingInNormalDirection';
 import getVoxelThicknessAlongNormal from './voxelSlab/getVoxelThicknessAlongNormal';
@@ -51,7 +51,7 @@ const isPrimaryVolume = (volume): boolean =>
  *
  */
 export default function getTargetVolumeAndSpacingInNormalDir(
-  viewport: IVolumeViewport | PlanarViewport,
+  viewport: PlanarViewport,
   camera: ICamera<unknown>,
   targetId?: string,
   useSlabThickness = false
@@ -156,7 +156,7 @@ export default function getTargetVolumeAndSpacingInNormalDir(
 function getSpacingInNormal(
   imageVolume: IImageVolume,
   viewPlaneNormal: Point3,
-  viewport: IVolumeViewport | PlanarViewport,
+  viewport: PlanarViewport,
   useSlabThickness = false
 ): number {
   const planarViewport = viewport as Partial<

@@ -8,7 +8,7 @@ import {
   utilities as csUtils,
   Enums,
 } from '@cornerstonejs/core';
-import type { Types } from '@cornerstonejs/core';
+import type { Types, PlanarViewport } from '@cornerstonejs/core';
 
 import { AnnotationTool } from './base';
 import { getToolGroup } from '../store/ToolGroupManager';
@@ -1151,10 +1151,7 @@ class WorldCrosshairTool extends AnnotationTool {
             | undefined
       )
       .filter(
-        (viewport) =>
-          viewport &&
-          viewport.type === ViewportType.VOLUME_3D_NEXT &&
-          csUtils.isGenericViewport(viewport)
+        (viewport) => viewport && viewport.type === ViewportType.VOLUME_3D_NEXT
       );
   }
 
@@ -1195,12 +1192,9 @@ class WorldCrosshairTool extends AnnotationTool {
    * native-next only.
    */
   private _isPlanarViewport(
-    viewport: Types.IViewport | Types.IGenericViewport
-  ): viewport is Types.IGenericViewport {
-    return (
-      viewport?.type === ViewportType.PLANAR_NEXT &&
-      csUtils.isGenericViewport(viewport)
-    );
+    viewport: Types.IViewport
+  ): viewport is Types.IViewport {
+    return viewport?.type === ViewportType.PLANAR_NEXT;
   }
 
   protected _getViewportsInfo(): Types.IViewportId[] {
@@ -1376,7 +1370,7 @@ class WorldCrosshairTool extends AnnotationTool {
     }
 
     const presentation = (
-      viewport as unknown as Types.IGenericViewport
+      viewport as unknown as Types.IViewport
     ).getDisplaySetPresentation(dataId) as
       | { slabThickness?: number }
       | undefined;
@@ -1408,8 +1402,9 @@ class WorldCrosshairTool extends AnnotationTool {
 
     let spacing: number[] | undefined;
     try {
-      spacing = (viewport as Types.IVolumeViewport).getImageData?.()
-        ?.spacing as number[] | undefined;
+      spacing = (viewport as PlanarViewport).getImageData?.()?.spacing as
+        | number[]
+        | undefined;
     } catch {
       spacing = undefined;
     }

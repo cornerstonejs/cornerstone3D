@@ -7,7 +7,7 @@ import {
   utilities as csUtils,
 } from '@cornerstonejs/core';
 import type { ScaleOverlayAnnotation } from '../types/ToolSpecificAnnotationTypes';
-import type { Types } from '@cornerstonejs/core';
+import type { Types, PlanarViewport } from '@cornerstonejs/core';
 import {
   addAnnotation,
   getAnnotations,
@@ -74,7 +74,7 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
       getEnabledElementByIds(e.viewportId, e.renderingEngineId)
     );
 
-    let { viewport } = enabledElements[0];
+    let viewport = enabledElements[0].viewport as PlanarViewport;
     const { FrameOfReferenceUID } = enabledElements[0];
 
     // onCameraModified, configuration.viewportId is set to the active
@@ -83,7 +83,7 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
     if (this.configuration.viewportId) {
       enabledElements.forEach((element) => {
         if (element.viewport.id == this.configuration.viewportId) {
-          viewport = element.viewport;
+          viewport = element.viewport as PlanarViewport;
         }
       });
     }
@@ -112,7 +112,7 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
     // viewportsWithAnnotations stores which viewports have an annotation,
     // if the viewport does not have an annotation, create a new one
     enabledElements.forEach((element) => {
-      const { viewport } = element;
+      const viewport = element.viewport as PlanarViewport;
       if (!viewportsWithAnnotations.includes(viewport.id)) {
         const newAnnotation: ScaleOverlayAnnotation = {
           metadata: {
@@ -188,7 +188,7 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
     const annotation = annotations.filter(
       (thisAnnotation) => thisAnnotation.data?.viewportId == viewport.id
     )[0];
-    const canvas = enabledElement.viewport.canvas;
+    const canvas = (enabledElement.viewport as PlanarViewport).canvas;
 
     const renderStatus = false;
 

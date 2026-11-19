@@ -3,7 +3,7 @@ import {
   volumeLoader,
   utilities as csUtils,
 } from '@cornerstonejs/core';
-import type { Types } from '@cornerstonejs/core';
+import type { Types, PlanarViewport } from '@cornerstonejs/core';
 
 /**
  * Create a new 3D segmentation volume from the default imageData presented in
@@ -30,7 +30,7 @@ export default async function createLabelmapVolumeForViewport(input: {
     throw new Error('element disabled');
   }
 
-  const viewport = enabledElement.viewport as Types.IVolumeViewport;
+  const viewport = enabledElement.viewport as PlanarViewport;
   if (csUtils.getViewportContentMode(viewport) !== 'volume') {
     throw new Error('Segmentation only supports VolumeViewport');
   }

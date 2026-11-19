@@ -1,4 +1,3 @@
-import type IGenericViewport from '../types/IGenericViewport';
 import type { IViewport } from '../types/IViewport';
 import { _getScalingDescriptor } from './getScalingDescriptor';
 
@@ -15,7 +14,7 @@ import { _getScalingDescriptor } from './getScalingDescriptor';
  * `getViewportModality` export from the utilities index, which supplies it.
  */
 function _getViewportModality(
-  viewport: IViewport | IGenericViewport,
+  viewport: IViewport,
   volumeId?: string,
   getVolume?: (
     volumeId: string

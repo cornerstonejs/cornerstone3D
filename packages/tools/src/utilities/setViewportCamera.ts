@@ -1,6 +1,6 @@
 import { Enums, type Types } from '@cornerstonejs/core';
 
-type CameraWritableViewport = (Types.IViewport | Types.IGenericViewport) & {
+type CameraWritableViewport = Types.IViewport & {
   setViewState?: (state: Partial<Types.ICamera>) => void;
   setViewReference?: (viewRef: Types.ViewReference) => void;
   resetViewState?: (options?: unknown) => boolean | void;
@@ -115,7 +115,7 @@ export default function setViewportCamera(
  * design.
  */
 export function resetViewportCamera(
-  viewport: Types.IViewport | Types.IGenericViewport,
+  viewport: Types.IViewport,
   options?: unknown
 ): void {
   const vp = viewport as CameraWritableViewport;

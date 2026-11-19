@@ -373,8 +373,6 @@ const checkForCanvasSnapshot = async (
       const elementEvents = [
         'CORNERSTONE_IMAGE_RENDERED',
         'CORNERSTONE_NEW_IMAGE',
-        'CORNERSTONE_VOLUME_NEW_IMAGE',
-        'CORNERSTONE_STACK_NEW_IMAGE',
       ];
       const targetEvents = [
         'CORNERSTONE_IMAGE_LOADED',

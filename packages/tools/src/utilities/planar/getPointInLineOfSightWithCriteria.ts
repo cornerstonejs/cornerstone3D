@@ -22,7 +22,7 @@ import getViewportICamera from '../getViewportICamera';
  * @returns the World pos of the point that passes the criteriaFunction
  */
 export function getPointInLineOfSightWithCriteria(
-  viewport: Types.IVolumeViewport | PlanarViewport,
+  viewport: PlanarViewport,
   worldPos: Types.Point3,
   targetVolumeId: string,
   criteriaFunction: (intensity: number, point: Types.Point3) => Types.Point3,
@@ -57,7 +57,7 @@ export function getPointInLineOfSightWithCriteria(
  * @returns An array of points in the line of sight.
  */
 export function getPointsInLineOfSight(
-  viewport: Types.IVolumeViewport | PlanarViewport,
+  viewport: PlanarViewport,
   worldPos: Types.Point3,
   { targetVolumeId, stepSize }: { targetVolumeId: string; stepSize: number }
 ): Types.Point3[] {
@@ -102,7 +102,7 @@ export function getPointsInLineOfSight(
  * Undefined when the viewport has no image data.
  */
 function getIntensityAtPoint(
-  viewport: Types.IVolumeViewport | PlanarViewport,
+  viewport: PlanarViewport,
   point: Types.Point3,
   targetVolumeId: string
 ): number {
@@ -125,7 +125,7 @@ function getIntensityAtPoint(
  * it shows a stack. Undefined when the viewport has no image data.
  */
 function getLineOfSightBounds(
-  viewport: Types.IVolumeViewport | PlanarViewport,
+  viewport: PlanarViewport,
   targetVolumeId: string
 ): number[] {
   return viewport.getImageData(targetVolumeId)?.imageData.getBounds();

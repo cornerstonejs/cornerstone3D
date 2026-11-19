@@ -4,11 +4,7 @@ import type {
   ScrollOptions,
   EventTypes,
   ICamera,
-  IGenericViewport,
   IViewport,
-  IVideoViewport,
-  IStackViewport,
-  IVolumeViewport,
 } from '../types';
 import type PlanarViewport from '../RenderingEngine/GenericViewport/Planar/PlanarViewport';
 import { getPlanarVolumeSliceRange } from '../RenderingEngine/GenericViewport/Planar/planarSliceBasis';
@@ -21,9 +17,18 @@ import triggerEvent from './triggerEvent';
 import eventTarget from '../eventTarget';
 import {
   getViewportContentMode,
-  isGenericViewport,
   viewportIsInStackMode,
 } from './viewportCapabilities';
+
+/**
+ * A viewport that scrolls through the images of a list of image ids: a
+ * planar, video or ECG viewport.
+ */
+type ImageScrollViewport = IViewport & {
+  getImageIds(): string[];
+  getCurrentImageIdIndex(): number;
+  scroll(delta: number, debounceLoading?: boolean, loop?: boolean): unknown;
+};
 
 /**
  * It scrolls one slice in the Stack or Volume Viewport, it uses the options provided
@@ -40,7 +45,7 @@ import {
  * @returns
  */
 export default function scroll(
-  viewport: IViewport | IVideoViewport | IGenericViewport,
+  viewport: IViewport,
   options: ScrollOptions
 ): void {
   // check if viewport is disabled then throw error
@@ -52,7 +57,7 @@ export default function scroll(
 
   if (
     viewportIsInStackMode(viewport) &&
-    (viewport as IStackViewport).getImageIds().length === 0
+    (viewport as ImageScrollViewport).getImageIds().length === 0
   ) {
     throw new Error('Scroll::Stack Viewport has no images');
   }
@@ -61,13 +66,14 @@ export default function scroll(
 
   // An ECG scrolls in time, and has no slice bounds.
   if (getViewportContentMode(viewport) === 'ecg') {
-    (viewport as unknown as IStackViewport).scroll(delta);
+    (viewport as ImageScrollViewport).scroll(delta);
     return;
   }
 
   if (
-    typeof (viewport as IStackViewport).getCurrentImageIdIndex !== 'function' ||
-    typeof (viewport as IStackViewport).scroll !== 'function'
+    typeof (viewport as ImageScrollViewport).getCurrentImageIdIndex !==
+      'function' ||
+    typeof (viewport as ImageScrollViewport).scroll !== 'function'
   ) {
     // Viewports without index-based scrolling (e.g. Generic 3D volume
     // rendering) ignore scroll requests instead of throwing.
@@ -79,11 +85,13 @@ export default function scroll(
     return;
   }
 
-  const imageIdIndex = (viewport as IStackViewport).getCurrentImageIdIndex();
+  const imageIdIndex = (
+    viewport as ImageScrollViewport
+  ).getCurrentImageIdIndex();
 
   if (
     imageIdIndex + delta >
-      (viewport as IStackViewport).getImageIds().length - 1 ||
+      (viewport as ImageScrollViewport).getImageIds().length - 1 ||
     imageIdIndex + delta < 0
   ) {
     const eventData: EventTypes.StackScrollOutOfBoundsEventDetail = {
@@ -93,7 +101,7 @@ export default function scroll(
     triggerEvent(eventTarget, Events.STACK_SCROLL_OUT_OF_BOUNDS, eventData);
   }
 
-  (viewport as IStackViewport).scroll(
+  (viewport as ImageScrollViewport).scroll(
     delta,
     options.debounceLoading,
     options.loop
@@ -118,7 +126,7 @@ export type PlanarVolumeScrollSteps = {
 function isNextPlanarViewport(viewport: unknown): viewport is PlanarViewport {
   const mode = getViewportContentMode(viewport);
 
-  return isGenericViewport(viewport) && (mode === 'stack' || mode === 'volume');
+  return mode === 'stack' || mode === 'volume';
 }
 
 /**
@@ -166,7 +174,7 @@ export function getPlanarVolumeScrollSteps(
 
   const { imageVolume, spacingInNormalDirection } =
     getTargetVolumeAndSpacingInNormalDir(
-      viewport as unknown as IVolumeViewport,
+      viewport,
       camera,
       otherVolume ? volumeId : undefined
     );

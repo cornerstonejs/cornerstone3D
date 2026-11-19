@@ -6,12 +6,11 @@ type ViewportICamera = Pick<
 >;
 
 export default function getViewportICamera(
-  viewport: Types.IViewport | Types.IGenericViewport,
+  viewport: Types.IViewport,
   viewReference: Types.ViewReference = viewport.getViewReference()
 ): Partial<ViewportICamera> {
-  const camera = ((utilities.isGenericViewport(viewport)
-    ? viewport.getResolvedView()?.toICamera()
-    : undefined) || {}) as Partial<Types.ICamera>;
+  const camera = (viewport.getResolvedView?.()?.toICamera() ||
+    {}) as Partial<Types.ICamera>;
   const focalPoint = utilities.clonePoint3(
     viewReference?.cameraFocalPoint || camera.focalPoint
   );

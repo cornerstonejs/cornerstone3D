@@ -16,7 +16,7 @@ const { isEqual } = csUtils;
  */
 export default function getViewportsForAnnotation(
   annotation: Annotation
-): (Types.IStackViewport | Types.IVolumeViewport)[] {
+): Types.IViewport[] {
   const { metadata } = annotation;
 
   return getEnabledElements()

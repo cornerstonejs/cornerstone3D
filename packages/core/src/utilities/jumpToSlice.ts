@@ -1,16 +1,9 @@
 import clip from './clip';
-import type {
-  ImageSliceData,
-  IStackViewport,
-  IVolumeViewport,
-  JumpToSliceOptions,
-} from '../types';
+import type { ImageSliceData, IViewport, JumpToSliceOptions } from '../types';
+import type PlanarViewport from '../RenderingEngine/GenericViewport/Planar/PlanarViewport';
 import scroll from './scroll';
 import getEnabledElement from '../getEnabledElement';
-import {
-  getViewportContentMode,
-  isGenericViewport,
-} from './viewportCapabilities';
+import { getViewportContentMode } from './viewportCapabilities';
 /**
  * It uses the imageIndex in the Options to scroll to the slice that is intended.
  * It works for both Stack and Volume viewports. In VolumeViewports, the imageIndex
@@ -52,21 +45,26 @@ async function jumpToSlice(
  * its slice index. A viewport that has no `getNumberOfSlices`, as an ECG
  * viewport, has one slice: a jump on it moves nothing.
  */
-function _getImageSliceData(
-  viewport: IStackViewport | IVolumeViewport
-): ImageSliceData {
+function _getImageSliceData(viewport: IViewport): ImageSliceData {
   const mode = getViewportContentMode(viewport);
 
-  if (isGenericViewport(viewport) && (mode === 'stack' || mode === 'volume')) {
+  if (mode === 'stack' || mode === 'volume') {
+    const planarViewport = viewport as PlanarViewport;
+
     return {
-      numberOfSlices: viewport.getNumberOfSlices(),
-      imageIndex: viewport.getCurrentImageIdIndex(),
+      numberOfSlices: planarViewport.getNumberOfSlices(),
+      imageIndex: planarViewport.getCurrentImageIdIndex(),
     };
   }
 
+  const sliceViewport = viewport as IViewport & {
+    getNumberOfSlices?(): number;
+    getSliceIndex(): number;
+  };
+
   return {
-    numberOfSlices: viewport.getNumberOfSlices?.() ?? 1,
-    imageIndex: viewport.getSliceIndex(),
+    numberOfSlices: sliceViewport.getNumberOfSlices?.() ?? 1,
+    imageIndex: sliceViewport.getSliceIndex(),
   };
 }
 

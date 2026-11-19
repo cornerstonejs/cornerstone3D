@@ -21,7 +21,7 @@ function isFinitePoint3(point: Types.Point3 | undefined): boolean {
  * viewports, or viewports that have not been rendered yet).
  */
 export default function getViewportPlane(
-  viewport: Types.IViewport | Types.IGenericViewport
+  viewport: Types.IViewport
 ): Plane | null {
   if (!viewport) {
     return null;

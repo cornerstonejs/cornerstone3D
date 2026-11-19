@@ -12,8 +12,8 @@ import type ViewportStatus from '../enums/ViewportStatus';
 import type DisplayArea from './displayArea';
 import type IImageCalibration from './IImageCalibration';
 import type { ColormapPublic } from './Colormap';
-import type IVolumeViewport from './IVolumeViewport';
 import type { ActorEntry } from './IActor';
+import type { IViewport } from './IViewport';
 import type { ViewportFidelityState } from './ViewportFidelity';
 
 /**
@@ -251,25 +251,11 @@ interface VolumeCacheVolumeAddedEventDetail {
 }
 
 /**
- * PRE_STACK_NEW_IMAGE Event's data
- */
-interface PreStackNewImageEventDetail {
-  /** the image imageId */
-  imageId: string;
-  /** the index of imageId in the stack */
-  imageIdIndex: number;
-  /** unique id for the viewport */
-  viewportId: string;
-  /** unique id for the renderingEngine */
-  renderingEngineId: string;
-}
-
-/**
  * Volume Scroll Out of Bounds event detail
  */
 type VolumeScrollOutOfBoundsEventDetail = {
   volumeId: string;
-  viewport: IVolumeViewport;
+  viewport: IViewport;
   desiredStepIndex: number;
   currentStepIndex: number;
   delta: number; // difference between the desired and current frame
@@ -320,42 +306,6 @@ interface NewImageEventDetail {
 }
 
 /**
- * STACK_NEW_IMAGE Event's data
- *
- * Fired by the legacy adapters only, and removed in 6.0. Use
- * `NewImageEventDetail` of NEW_IMAGE.
- */
-interface StackNewImageEventDetail {
-  /** the new image set on the stack viewport */
-  image: IImage;
-  /** the image imageId */
-  imageId: string;
-  /** the index of imageId in the stack */
-  imageIdIndex: number;
-  /** unique id for the viewport */
-  viewportId: string;
-  /** unique id for the renderingEngine */
-  renderingEngineId: string;
-}
-
-/**
- * VOLUME_NEW_IMAGE Event's data
- *
- * Fired by the legacy adapters only, and removed in 6.0. Use
- * `NewImageEventDetail` of NEW_IMAGE.
- */
-interface VolumeNewImageEventDetail {
-  /** image index */
-  imageIndex: number;
-  /** number of slices */
-  numberOfSlices: number;
-  /** unique id for the viewport */
-  viewportId: string;
-  /** unique id for the renderingEngine */
-  renderingEngineId: string;
-}
-
-/**
  * IMAGE_SPACING_CALIBRATED Event's data
  */
 interface ImageSpacingCalibratedEventDetail {
@@ -377,18 +327,6 @@ interface StackViewportNewStackEventDetail {
   viewportId: string;
   element: HTMLDivElement;
   currentImageIdIndex: number;
-}
-
-/**
- * Stack Scroll event detail
- */
-interface StackViewportScrollEventDetail {
-  /** the new imageId index in the stack that we just scroll to */
-  newImageIdIndex: number;
-  /** the new imageId in the stack that we just scroll to */
-  imageId: string;
-  /** direction of the scroll */
-  direction: number;
 }
 
 /**
@@ -499,25 +437,6 @@ type VolumeCacheVolumeRemovedEvent =
 type NewImageEvent = CustomEventType<NewImageEventDetail>;
 
 /**
- * START_NEW_IMAGE
- *
- * Fired by the legacy adapters only, and removed in 6.0. Use `NewImageEvent`.
- */
-type StackNewImageEvent = CustomEventType<StackNewImageEventDetail>;
-
-/**
- * VOLUME_NEW_IMAGE
- *
- * Fired by the legacy adapters only, and removed in 6.0. Use `NewImageEvent`.
- */
-type VolumeNewImageEvent = CustomEventType<VolumeNewImageEventDetail>;
-
-/**
- * START_NEW_IMAGE
- */
-type PreStackNewImageEvent = CustomEventType<PreStackNewImageEventDetail>;
-
-/**
  * IMAGE_SPACING_CALIBRATED
  */
 type ImageSpacingCalibratedEvent =
@@ -528,8 +447,6 @@ type ImageSpacingCalibratedEvent =
  */
 type StackViewportNewStackEvent =
   CustomEventType<StackViewportNewStackEventDetail>;
-
-type StackViewportScrollEvent = CustomEventType<StackViewportScrollEventDetail>;
 
 type StackScrollOutOfBoundsEvent =
   CustomEventType<StackScrollOutOfBoundsEventDetail>;
@@ -595,18 +512,10 @@ export type {
   VolumeCacheVolumeRemovedEventDetail,
   NewImageEvent,
   NewImageEventDetail,
-  StackNewImageEvent,
-  StackNewImageEventDetail,
-  PreStackNewImageEvent,
-  PreStackNewImageEventDetail,
   ImageSpacingCalibratedEvent,
   ImageSpacingCalibratedEventDetail,
-  VolumeNewImageEvent,
-  VolumeNewImageEventDetail,
   StackViewportNewStackEvent,
   StackViewportNewStackEventDetail,
-  StackViewportScrollEvent,
-  StackViewportScrollEventDetail,
   StackScrollOutOfBoundsEvent,
   StackScrollOutOfBoundsEventDetail,
   CameraResetEvent,

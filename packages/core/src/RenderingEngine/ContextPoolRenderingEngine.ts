@@ -18,14 +18,10 @@ import type {
   ViewportInput,
   InternalViewportInput,
   NormalizedViewportInput,
-  IViewport,
 } from '../types/IViewport';
+import type EngineViewport from './EngineViewport';
 import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
-import type {
-  IStackViewport,
-  IVolumeViewport,
-  VtkOffscreenMultiRenderWindow,
-} from '../types';
+import type { VtkOffscreenMultiRenderWindow } from '../types';
 import { getViewportClassForInput } from './helpers/viewportTypeToViewportClass';
 import copyWebGLCanvasToCanvas from './helpers/copyWebGLCanvasToCanvas';
 
@@ -91,7 +87,7 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
    * engine then leaves the viewport flagged and its canvas as it is, and the
    * restore of the context renders it again.
    */
-  private _isViewportContextLost(viewport: IViewport): boolean {
+  private _isViewportContextLost(viewport: EngineViewport): boolean {
     if (!this.contextPool || viewportUsesCustomRenderingPipeline(viewport)) {
       return false;
     }
@@ -205,7 +201,7 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
 
     const viewport = new ViewportClass(viewportInput);
 
-    this._viewports.set(viewportId, viewport as unknown as IViewport);
+    this._viewports.set(viewportId, viewport as EngineViewport);
 
     const eventDetail: EventTypes.ElementEnabledEventDetail = {
       element,
@@ -261,7 +257,7 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
    * detected on container resize and their resize() (which refits the active
    * CPU/VTK canvas) actually runs.
    */
-  private _getDisplayedSize(vp: IViewport): {
+  private _getDisplayedSize(vp: EngineViewport): {
     displayedWidth: number;
     displayedHeight: number;
   } {
@@ -282,12 +278,12 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
    * resize() call.
    */
   protected _resizeVTKViewports(
-    vtkDrivenViewports: IViewport[],
+    vtkDrivenViewports: EngineViewport[],
     keepCamera = true,
     immediate = true
   ) {
     // Compute target display size (pixels the canvas is actually displayed at) for each viewport
-    const viewportsNeedingResize: (IStackViewport | IVolumeViewport)[] = [];
+    const viewportsNeedingResize: EngineViewport[] = [];
     for (const vp of vtkDrivenViewports) {
       const canvas = getOrCreateCanvas(vp.element);
       const { displayedWidth, displayedHeight } = this._getDisplayedSize(vp);
@@ -304,7 +300,7 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
       ) {
         continue;
       }
-      viewportsNeedingResize.push(vp as IStackViewport | IVolumeViewport);
+      viewportsNeedingResize.push(vp as EngineViewport);
     }
 
     if (viewportsNeedingResize.length === 0) {
@@ -325,7 +321,7 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
     }
 
     if (vtkDrivenViewports.length) {
-      this._resize(vtkDrivenViewports as (IStackViewport | IVolumeViewport)[]);
+      this._resize(vtkDrivenViewports as EngineViewport[]);
     }
 
     vtkDrivenViewports.forEach((vp) => {
@@ -387,7 +383,7 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
   };
 
   private renderViewportUsingCustomOrVtkPipeline(
-    viewport: IViewport
+    viewport: EngineViewport
   ): EventTypes.ImageRenderedEventDetail {
     // Handle custom rendering pipeline viewports
     if (viewportUsesCustomRenderingPipeline(viewport)) {
@@ -422,7 +418,7 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
   }
 
   private _renderViewportWithContext(
-    viewport: IViewport,
+    viewport: EngineViewport,
     offscreenMultiRenderWindow: VtkOffscreenMultiRenderWindow,
     offScreenCanvasContainer: HTMLDivElement
   ): EventTypes.ImageRenderedEventDetail {
@@ -537,14 +533,14 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
    * @param offScreenCanvas - The offscreen canvas to render from.
    */
   protected _renderViewportFromVtkCanvasToOnscreenCanvas(
-    viewport: IViewport,
+    viewport: EngineViewport,
     offScreenCanvas: HTMLCanvasElement
   ): EventTypes.ImageRenderedEventDetail {
     return this._copyToOnscreenCanvas(viewport, offScreenCanvas);
   }
 
   private _resizeOffScreenCanvasForViewport(
-    viewport: IViewport,
+    viewport: EngineViewport,
     offScreenCanvasContainer: HTMLDivElement,
     offscreenMultiRenderWindow: VtkOffscreenMultiRenderWindow
   ): void {
@@ -585,7 +581,7 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
   }
 
   private _copyToOnscreenCanvas(
-    viewport: IViewport,
+    viewport: EngineViewport,
     offScreenCanvas: HTMLCanvasElement
   ): EventTypes.ImageRenderedEventDetail {
     const {
@@ -633,9 +629,7 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
     };
   }
 
-  private _resize(
-    viewportsDrivenByVtkJs: (IStackViewport | IVolumeViewport)[]
-  ): void {
+  private _resize(viewportsDrivenByVtkJs: EngineViewport[]): void {
     // Track which contexts need resizing
     const contextsToResize = new Set<number>();
 
@@ -713,7 +707,7 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
    * @returns The render passes for the viewport or null
    */
   private getViewportRenderPasses(viewportId: string) {
-    const viewport = this.getViewport(viewportId);
+    const viewport = this.getViewport<EngineViewport>(viewportId);
     return viewport?.getRenderPasses ? viewport.getRenderPasses() : null;
   }
 

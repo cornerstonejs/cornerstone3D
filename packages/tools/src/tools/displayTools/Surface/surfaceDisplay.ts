@@ -62,7 +62,7 @@ function removeRepresentation(
  * @param toolGroupConfig - This is the configuration object for the tool group
  */
 async function render(
-  viewport: Types.IVolumeViewport | Types.IStackViewport,
+  viewport: Types.IViewport,
   representation: SegmentationRepresentation
 ): Promise<void> {
   const { segmentationId, type } = representation;
@@ -156,7 +156,7 @@ async function render(
     surfaces.push(surface);
     surfacesShown.push(
       addOrUpdateSurfaceToElement(
-        viewport as Types.IVolumeViewport,
+        viewport as Types.IViewport,
         surface as Types.ISurface,
         segmentationId,
         geometryId
@@ -169,7 +169,7 @@ async function render(
 }
 
 function getUpdateFunction(
-  viewport: Types.IVolumeViewport | Types.IStackViewport
+  viewport: Types.IViewport
 ): (segmentationId: string) => Promise<void> {
   const polySeg = getPolySeg();
   return (segmentationId: string) =>

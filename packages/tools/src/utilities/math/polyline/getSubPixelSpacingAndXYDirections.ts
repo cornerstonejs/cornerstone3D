@@ -20,7 +20,7 @@ const EPSILON = 1e-3;
  * x and y directions.
  */
 const getSubPixelSpacingAndXYDirections = (
-  viewport: Types.IStackViewport | Types.IVolumeViewport | PlanarViewport,
+  viewport: PlanarViewport,
   subPixelResolution: number
 ): { spacing: Types.Point2; xDir: Types.Point3; yDir: Types.Point3 } => {
   let spacing;

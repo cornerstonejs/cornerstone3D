@@ -1857,8 +1857,8 @@ describe('PlanarViewport with slice first (render path)', () => {
 
     for (const type of [
       Events.NEW_IMAGE,
-      Events.STACK_NEW_IMAGE,
-      Events.VOLUME_NEW_IMAGE,
+      'CORNERSTONE_STACK_NEW_IMAGE',
+      'CORNERSTONE_VOLUME_NEW_IMAGE',
     ]) {
       viewport.element.addEventListener(type, () => events.push(type));
     }

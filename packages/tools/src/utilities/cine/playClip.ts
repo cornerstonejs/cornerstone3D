@@ -255,7 +255,7 @@ function _stopClip(
     _stopClipWithData(toolState);
   }
 
-  if (stopDynamicCine && csUtils.isGenericViewport(viewport)) {
+  if (stopDynamicCine && viewport) {
     _stopDynamicVolumeCine(element);
   }
 }
@@ -361,10 +361,7 @@ function _stopClipWithData(playClipData) {
 function _getGenericViewportDynamicVolume(
   viewport: unknown
 ): Types.IDynamicImageVolume | undefined {
-  if (
-    !csUtils.isGenericViewport(viewport) ||
-    !csUtils.viewportIsInVolumeMode(viewport)
-  ) {
+  if (!csUtils.viewportIsInVolumeMode(viewport)) {
     return;
   }
 
@@ -449,24 +446,18 @@ function _createCinePlayContext(
   viewport,
   playClipOptions: CINETypes.PlayClipOptions
 ): CINETypes.CinePlayContext {
-  // Direct GenericViewport ("next") viewports report none of the legacy instanceof
-  // types; route them by capability (stack/volume both scroll via getNumberOfSlices).
-  if (csUtils.isGenericViewport(viewport)) {
-    const dynamicVolume = playClipOptions.dynamicCineEnabled
-      ? _getGenericViewportDynamicVolume(viewport)
-      : undefined;
+  const dynamicVolume = playClipOptions.dynamicCineEnabled
+    ? _getGenericViewportDynamicVolume(viewport)
+    : undefined;
 
-    if (dynamicVolume) {
-      return _createDynamicVolumeViewportCinePlayContext(dynamicVolume);
-    }
-
-    return _createGenericViewportCinePlayContext(
-      viewport,
-      playClipOptions.waitForRendered ?? 30
-    );
+  if (dynamicVolume) {
+    return _createDynamicVolumeViewportCinePlayContext(dynamicVolume);
   }
 
-  throw new Error('Unknown viewport type');
+  return _createGenericViewportCinePlayContext(
+    viewport,
+    playClipOptions.waitForRendered ?? 30
+  );
 }
 
 export { playClip, stopClip };

@@ -854,10 +854,10 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
     const sliceEvents = [
       Events.CAMERA_MODIFIED,
       Events.NEW_IMAGE,
-      Events.STACK_NEW_IMAGE,
-      Events.VOLUME_NEW_IMAGE,
-      Events.PRE_STACK_NEW_IMAGE,
-      Events.STACK_VIEWPORT_SCROLL,
+      'CORNERSTONE_STACK_NEW_IMAGE',
+      'CORNERSTONE_VOLUME_NEW_IMAGE',
+      'CORNERSTONE_PRE_STACK_NEW_IMAGE',
+      'CORNERSTONE_STACK_VIEWPORT_SCROLL',
     ];
 
     /** Records the slice events of an element, each with its detail. */
@@ -924,10 +924,12 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
           renderingEngineId,
         })
       );
-      expect(detailsOf(events, Events.STACK_NEW_IMAGE)).toEqual([]);
-      expect(detailsOf(events, Events.VOLUME_NEW_IMAGE)).toEqual([]);
-      expect(detailsOf(events, Events.PRE_STACK_NEW_IMAGE)).toEqual([]);
-      expect(detailsOf(events, Events.STACK_VIEWPORT_SCROLL)).toEqual([]);
+      expect(detailsOf(events, 'CORNERSTONE_STACK_NEW_IMAGE')).toEqual([]);
+      expect(detailsOf(events, 'CORNERSTONE_VOLUME_NEW_IMAGE')).toEqual([]);
+      expect(detailsOf(events, 'CORNERSTONE_PRE_STACK_NEW_IMAGE')).toEqual([]);
+      expect(detailsOf(events, 'CORNERSTONE_STACK_VIEWPORT_SCROLL')).toEqual(
+        []
+      );
     });
 
     it('fires CAMERA_MODIFIED and NEW_IMAGE in volume mode, and none of the legacy events', async function () {
@@ -958,8 +960,8 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
         },
       ]);
       expect(series.imageIds).toContain(viewport.getCurrentImageId());
-      expect(detailsOf(events, Events.STACK_NEW_IMAGE)).toEqual([]);
-      expect(detailsOf(events, Events.VOLUME_NEW_IMAGE)).toEqual([]);
+      expect(detailsOf(events, 'CORNERSTONE_STACK_NEW_IMAGE')).toEqual([]);
+      expect(detailsOf(events, 'CORNERSTONE_VOLUME_NEW_IMAGE')).toEqual([]);
       expect(cameraDetail).toEqual(
         jasmine.objectContaining({
           element: viewport.element,
@@ -970,8 +972,10 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
       expect(
         Math.abs(cameraStepAlong(cameraDetail, sliceNormal(series)))
       ).toBeCloseTo(series.size.sliceSpacing, 4);
-      expect(detailsOf(events, Events.PRE_STACK_NEW_IMAGE)).toEqual([]);
-      expect(detailsOf(events, Events.STACK_VIEWPORT_SCROLL)).toEqual([]);
+      expect(detailsOf(events, 'CORNERSTONE_PRE_STACK_NEW_IMAGE')).toEqual([]);
+      expect(detailsOf(events, 'CORNERSTONE_STACK_VIEWPORT_SCROLL')).toEqual(
+        []
+      );
     });
 
     /**
@@ -1008,7 +1012,7 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
         expect(detail.image.imageId).toBe(series.imageIds[3]);
         expect(detail.imageIdIndex).toBe(viewport.getCurrentImageIdIndex());
         expect(detail.numberOfSlices).toBe(viewport.getNumberOfSlices());
-        expect(detailsOf(events, Events.STACK_NEW_IMAGE)).toEqual([]);
+        expect(detailsOf(events, 'CORNERSTONE_STACK_NEW_IMAGE')).toEqual([]);
       });
     }
 
@@ -1055,8 +1059,8 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
         );
         expect(detail.numberOfSlices).toBe(viewport.getNumberOfSlices());
         expect(detail.image).toBeUndefined();
-        expect(detailsOf(events, Events.STACK_NEW_IMAGE)).toEqual([]);
-        expect(detailsOf(events, Events.VOLUME_NEW_IMAGE)).toEqual([]);
+        expect(detailsOf(events, 'CORNERSTONE_STACK_NEW_IMAGE')).toEqual([]);
+        expect(detailsOf(events, 'CORNERSTONE_VOLUME_NEW_IMAGE')).toEqual([]);
       });
     }
 

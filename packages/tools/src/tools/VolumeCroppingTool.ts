@@ -9,7 +9,7 @@ import type vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
 
 import { BaseTool } from './base';
 
-import type { Types } from '@cornerstonejs/core';
+import type { Types, GenericVolumeViewport3D } from '@cornerstonejs/core';
 import {
   getRenderingEngine,
   getEnabledElementByIds,
@@ -408,7 +408,7 @@ class VolumeCroppingTool extends BaseTool {
       viewport.id,
       'orientation-controller'
     );
-    const actor = this._getVolumeActor(viewport as Types.IVolumeViewport);
+    const actor = this._getVolumeActor(viewport as GenericVolumeViewport3D);
     if (!actor) {
       return false;
     }
@@ -1072,7 +1072,7 @@ class VolumeCroppingTool extends BaseTool {
   };
 
   _addSphere(
-    viewport: Types.IVolumeViewport,
+    viewport: GenericVolumeViewport3D,
     point: Types.Point3,
     axis: string,
     position: string,
@@ -1433,7 +1433,7 @@ class VolumeCroppingTool extends BaseTool {
     return { viewport, world };
   };
 
-  _getViewport = (): Types.IVolumeViewport | null => {
+  _getViewport = (): GenericVolumeViewport3D | null => {
     const viewportsInfo = this._getViewportsInfo();
     if (!viewportsInfo || viewportsInfo.length === 0) {
       return null;
@@ -1441,11 +1441,11 @@ class VolumeCroppingTool extends BaseTool {
     const [viewport3D] = viewportsInfo;
     const renderingEngine = getRenderingEngine(viewport3D.renderingEngineId);
     const viewport = renderingEngine?.getViewport(viewport3D.viewportId);
-    return (viewport as Types.IVolumeViewport) || null;
+    return (viewport as GenericVolumeViewport3D) || null;
   };
 
   _getVolumeActor(
-    viewport?: Types.IVolumeViewport
+    viewport?: GenericVolumeViewport3D
   ): Types.VolumeActor | undefined {
     const vp = viewport || this._getViewport();
     return vp
@@ -1455,7 +1455,7 @@ class VolumeCroppingTool extends BaseTool {
   }
 
   _getVolumeMapper(
-    viewport?: Types.IVolumeViewport
+    viewport?: GenericVolumeViewport3D
   ): vtkVolumeMapper | undefined {
     const actor = this._getVolumeActor(viewport);
     return actor?.getMapper() as vtkVolumeMapper | undefined;

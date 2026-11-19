@@ -31,31 +31,42 @@ declare const video: VideoGenericViewport;
 declare const wholeSlide: WSIGenericViewport;
 declare const ecg: ECGGenericViewport;
 declare const generic: Types.IGenericViewport;
-declare const legacy: Types.IViewport;
-declare const legacyStack: Types.IStackViewport;
-declare const legacyVolume: Types.IVolumeViewport;
-declare const legacyOrNext: Types.IViewport | Types.IGenericViewport;
+declare const viewport: Types.IViewport;
+declare const enabledElement: Types.IEnabledElement;
 declare const renderingEngine: RenderingEngine;
 declare const viewportId: string;
 declare const displaySetId: string;
 declare const point: Types.Point3;
 declare const orientation: Enums.OrientationAxis;
 
-/** The class of every next family is a `Types.IGenericViewport`. */
-export const nextViewports: Types.IGenericViewport[] = [
+/**
+ * The class of every family is a `Types.IViewport`, and so is what the
+ * rendering engine and the enabled element give.
+ */
+export const nextViewports: Types.IViewport[] = [
   planar,
   volume3D,
   video,
   wholeSlide,
   ecg,
   generic,
-  renderingEngine.getViewport<Types.IGenericViewport>(viewportId),
+  viewport,
+  enabledElement.viewport,
+  renderingEngine.getViewport(viewportId),
+  renderingEngine.getViewport<Types.IViewport>(viewportId),
+  ...renderingEngine.getViewports(),
 ];
 
-/** A next viewport and a legacy viewport both go where the library takes one. */
-export const viewportsOfTheLibrary: Array<
-  Types.IViewport | Types.IGenericViewport
-> = [planar, volume3D, video, wholeSlide, ecg, generic, legacy];
+/** The deprecated name takes every viewport too. */
+export const viewportsOfTheLibrary: Types.IGenericViewport[] = [
+  planar,
+  volume3D,
+  video,
+  wholeSlide,
+  ecg,
+  viewport,
+  enabledElement.viewport,
+];
 
 /** The members of the base class, read from the interface. */
 export function membersOfTheInterface() {
@@ -152,32 +163,31 @@ export function functionsOfTheGuide() {
   utilities.scroll(video, { delta: 1 });
   utilities.scroll(ecg, { delta: 1 });
   utilities.scroll(generic, { delta: 1 });
-  utilities.scroll(legacy, { delta: 1 });
+  utilities.scroll(viewport, { delta: 1 });
+  utilities.scroll(enabledElement.viewport, { delta: 1 });
 
   return [
     utilities.isInAcquisitionPlane(planar),
     utilities.isInAcquisitionPlane(video),
     utilities.isInAcquisitionPlane(wholeSlide),
     utilities.isInAcquisitionPlane(generic),
-    utilities.isInAcquisitionPlane(legacy),
+    utilities.isInAcquisitionPlane(viewport),
     utilities.getSlicesClippingPlanes(planar),
     utilities.getSlicesClippingPlanes(generic),
-    utilities.getSlicesClippingPlanes(legacy),
+    utilities.getSlicesClippingPlanes(viewport),
     utilities.getCurrentVolumeViewportSlice(planar),
-    utilities.getCurrentVolumeViewportSlice(legacyVolume),
     utilities.getViewportModality(planar),
     utilities.getViewportModality(generic),
-    utilities.getViewportModality(legacy),
+    utilities.getViewportModality(viewport),
     utilities.getViewportImageIds(planar),
     utilities.getViewportImageIds(generic),
-    utilities.getViewportImageIds(legacy),
+    utilities.getViewportImageIds(viewport),
     utilities.getClosestStackImageIndexForPoint(point, planar),
-    utilities.getClosestStackImageIndexForPoint(point, legacyStack),
     utilities.getScalingDescriptor(planar),
     utilities.getScalingDescriptor(generic),
     utilities.resolveGenericViewportVolumeId(generic),
     utilities.getViewportImageCornersInWorld(planar),
-    utilities.calculateViewportsSpatialRegistration(planar, legacyStack),
+    utilities.calculateViewportsSpatialRegistration(planar, planar),
     utilities.getTargetVolumeAndSpacingInNormalDir(
       planar,
       planar.getResolvedView()?.toICamera()
@@ -195,7 +205,7 @@ export function fidelityIndicator() {
 
   return [
     attachFidelityIndicator(volume3D),
-    attachFidelityIndicator(legacy),
+    attachFidelityIndicator(viewport),
     canReportFidelity(video),
     canReportFidelity(generic),
   ];
@@ -232,85 +242,32 @@ export function selectorsOfTheProjection() {
   ];
 }
 
-/** The guard narrows a value of the union and a value typed `IViewport`. */
+/**
+ * A viewport of any family narrows to the members of a family with a guard,
+ * or comes from the rendering engine typed with its class.
+ */
 export function guards() {
-  if (utilities.isGenericViewport(legacyOrNext)) {
-    const next: Types.IGenericViewport = legacyOrNext;
-
-    next.setViewState({});
-  } else {
-    const old: Types.IViewport = legacyOrNext;
-
-    old.getCamera();
+  if (utilities.viewportSupportsDisplaySetPresentation(viewport)) {
+    viewport.getDefaultVOIRange(viewport.getSourceDataId());
   }
 
-  if (utilities.isGenericViewport(legacy)) {
-    legacy.setViewState({});
-    legacy.setDisplaySetPresentation(displaySetId, {});
-    legacy.getCamera();
-  } else {
-    legacy.getCamera();
-  }
-
-  if (utilities.viewportSupportsDisplaySetPresentation(legacyOrNext)) {
-    legacyOrNext.getDefaultVOIRange(legacyOrNext.getSourceDataId());
+  if (utilities.viewportSupportsImageSlices(enabledElement.viewport)) {
+    enabledElement.viewport.getCurrentImageIdIndex();
   }
 
   if (utilities.viewportSupportsImageSlices(planar)) {
     planar.getCurrentImageIdIndex();
   }
-}
 
-/**
- * The guard splits a union of a legacy type and the class of a next family:
- * the members of the class on one side, the legacy members on the other.
- */
-export function guardsOnClassUnions(
-  legacyOrPlanar: Types.IViewport | PlanarViewport,
-  legacyOr3D: Types.IVolumeViewport | GenericVolumeViewport3D,
-  legacyOrVideo: Types.IVideoViewport | VideoGenericViewport,
-  legacyOrWholeSlide: Types.IWSIViewport | WSIGenericViewport,
-  legacyOrECG: Types.IECGViewport | ECGGenericViewport
-) {
-  if (utilities.isGenericViewport(legacyOrPlanar)) {
-    const next: PlanarViewport = legacyOrPlanar;
-
-    next.setViewState({ rotation: 90 });
-  } else {
-    const old: Types.IViewport = legacyOrPlanar;
-
-    old.getCamera();
+  if (utilities.isGenericViewport(viewport)) {
+    viewport.setViewState({});
   }
 
-  if (utilities.isGenericViewport(legacyOr3D)) {
-    const next: GenericVolumeViewport3D = legacyOr3D;
+  const planarOfTheEngine: PlanarViewport =
+    renderingEngine.getViewport<PlanarViewport>(viewportId);
 
-    next.getRenderer();
-  } else {
-    legacyOr3D.getSlabThickness();
-  }
+  planarOfTheEngine.setViewState({ rotation: 90 });
+  enabledElement.viewport.setDisplaySetPresentation(displaySetId, {});
 
-  if (utilities.isGenericViewport(legacyOrVideo)) {
-    const next: VideoGenericViewport = legacyOrVideo;
-
-    next.play();
-  } else {
-    legacyOrVideo.getCamera();
-  }
-
-  if (utilities.isGenericViewport(legacyOrWholeSlide)) {
-    const next: WSIGenericViewport = legacyOrWholeSlide;
-
-    next.getView();
-  } else {
-    legacyOrWholeSlide.getCamera();
-  }
-
-  if (utilities.isGenericViewport(legacyOrECG)) {
-    const next: ECGGenericViewport = legacyOrECG;
-
-    next.getWaveformData();
-  } else {
-    legacyOrECG.getCamera();
-  }
+  return utilities.getViewportContentMode(enabledElement.viewport) === 'stack';
 }

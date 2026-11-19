@@ -43,7 +43,7 @@ const DEFAULT_CONTOUR_SEG_TOOL_NAME = 'PlanarFreehandContourSegmentationTool';
  * @param intersectingContours - Array of intersecting contour information.
  */
 function processMultipleIntersections(
-  viewport: Types.IViewport | Types.IGenericViewport,
+  viewport: Types.IViewport,
   sourceAnnotation: ContourSegmentationAnnotation,
   sourcePolyline: Types.Point2[],
   intersectingContours: Array<{
@@ -102,7 +102,7 @@ function processMultipleIntersections(
  * Processes intersections sequentially, combining or subtracting one at a time.
  */
 function processSequentialIntersections(
-  viewport: Types.IViewport | Types.IGenericViewport,
+  viewport: Types.IViewport,
   sourceAnnotation: ContourSegmentationAnnotation,
   sourcePolyline: Types.Point2[],
   mergeOperations: Array<{
@@ -196,7 +196,7 @@ function processSequentialIntersections(
  * Creates a new annotation from a polyline, copying metadata from a base annotation.
  */
 function createNewAnnotationFromPolyline(
-  viewport: Types.IViewport | Types.IGenericViewport,
+  viewport: Types.IViewport,
   baseAnnotation: ContourSegmentationAnnotation,
   polyline: Types.Point2[],
   windingDirection: ContourWindingDirection = ContourWindingDirection.Clockwise
@@ -255,7 +255,7 @@ function createNewAnnotationFromPolyline(
  * Helper function to get hole data from an annotation.
  */
 function getContourHolesData(
-  viewport: Types.IViewport | Types.IGenericViewport,
+  viewport: Types.IViewport,
   annotation: ContourSegmentationAnnotation
 ): Array<{
   annotation: ContourSegmentationAnnotation;
@@ -276,7 +276,7 @@ function getContourHolesData(
  * Helper function to create a hole in a target annotation.
  */
 function createPolylineHole(
-  viewport: Types.IViewport | Types.IGenericViewport,
+  viewport: Types.IViewport,
   targetAnnotation: ContourSegmentationAnnotation,
   holeAnnotation: ContourSegmentationAnnotation
 ): void {
@@ -309,7 +309,7 @@ function createPolylineHole(
  */
 function convertContourPolylineToCanvasSpace(
   polyline: Types.Point3[],
-  viewport: Types.IViewport | Types.IGenericViewport
+  viewport: Types.IViewport
 ): Types.Point2[] {
   const numPoints = polyline.length;
   const projectedPolyline = new Array(numPoints);
@@ -325,7 +325,7 @@ function convertContourPolylineToCanvasSpace(
  * Updates viewports for multiple annotations.
  */
 function updateViewportsForAnnotations(
-  viewport: Types.IViewport | Types.IGenericViewport,
+  viewport: Types.IViewport,
   annotations: ContourSegmentationAnnotation[]
 ): void {
   const { element } = viewport;

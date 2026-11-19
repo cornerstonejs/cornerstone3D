@@ -1,9 +1,8 @@
-import type { Types } from '@cornerstonejs/core';
+import type { Types, PlanarViewport } from '@cornerstonejs/core';
 import {
   ActorRenderMode,
   eventTarget,
   Enums,
-  utilities,
   getEnabledElement,
   cache,
 } from '@cornerstonejs/core';
@@ -69,30 +68,25 @@ class ViewportColorbar extends Colorbar {
   protected onVoiChange(voiRange: ColorbarVOIRange) {
     super.onVoiChange(voiRange);
 
-    // Widen to IViewport so isGenericViewport can narrow below: the enabled
-    // element types viewport as IStackViewport | IVolumeViewport, which the
-    // instanceof branches exhaust to `never` before the generic check.
     const viewport: Types.IViewport = this.enabledElement.viewport;
 
-    if (utilities.isGenericViewport(viewport)) {
-      // Direct Generic ("next") viewports have no setProperties; VOI is applied
-      // through the display-set presentation. _volumeId is the bound dataId when
-      // known (multi-volume/fusion); otherwise the single-argument overload
-      // targets the viewport's default binding.
-      const { _volumeId: dataId } = this;
+    // Direct Generic ("next") viewports have no setProperties; VOI is applied
+    // through the display-set presentation. _volumeId is the bound dataId when
+    // known (multi-volume/fusion); otherwise the single-argument overload
+    // targets the viewport's default binding.
+    const { _volumeId: dataId } = this;
 
-      if (dataId) {
-        viewport.setDisplaySetPresentation(dataId, { voiRange });
-      } else {
-        viewport.setDisplaySetPresentation({ voiRange });
-      }
-      viewport.render();
+    if (dataId) {
+      viewport.setDisplaySetPresentation(dataId, { voiRange });
+    } else {
+      viewport.setDisplaySetPresentation({ voiRange });
     }
+    viewport.render();
   }
 
   private static _getImageRange(element, volumeId?) {
     const enabledElement = getEnabledElement(element);
-    const { viewport } = enabledElement;
+    const viewport = enabledElement.viewport as PlanarViewport;
 
     const actor = viewport.getImageActor(volumeId);
 
@@ -136,7 +130,7 @@ class ViewportColorbar extends Colorbar {
 
   private static _getVOIRange(element, volumeId) {
     const enabledElement = getEnabledElement(element);
-    const { viewport } = enabledElement;
+    const viewport = enabledElement.viewport as PlanarViewport;
 
     const actor = viewport.getImageActor(volumeId);
     if (!actor) {

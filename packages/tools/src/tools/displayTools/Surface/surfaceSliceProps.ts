@@ -25,10 +25,9 @@ const sliceSurfacesByViewport = new WeakMap<PlanarViewport, SliceSurfaces>();
  * @returns Whether the viewport shows a surface as a prop of its renderer.
  */
 function showsSurfacesAsSliceProps(
-  viewport: Types.IViewport | Types.IGenericViewport
+  viewport: Types.IViewport
 ): viewport is PlanarViewport {
   return (
-    utilities.isGenericViewport(viewport) &&
     viewport.type !== Enums.ViewportType.VOLUME_3D_NEXT &&
     typeof (viewport as Partial<PlanarViewport>).getRenderer === 'function'
   );

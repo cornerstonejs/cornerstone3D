@@ -8,7 +8,7 @@ import {
   CONSTANTS,
   Enums,
 } from '@cornerstonejs/core';
-import type { Types } from '@cornerstonejs/core';
+import type { Types, PlanarViewport } from '@cornerstonejs/core';
 
 import { AnnotationTool } from './base';
 import { getToolGroup } from '../store/ToolGroupManager';
@@ -986,7 +986,7 @@ class SliceIntersectionTool extends AnnotationTool {
   ): { minOffset: number; maxOffset: number; spacing: number } | null {
     let imageData;
     try {
-      imageData = (sourceViewport as Types.IVolumeViewport).getImageData?.();
+      imageData = (sourceViewport as PlanarViewport).getImageData?.();
     } catch {
       return null;
     }
@@ -1747,7 +1747,7 @@ class SliceIntersectionTool extends AnnotationTool {
    * display-set presentation. Returns true when a change was applied.
    */
   private _setViewportSlabThickness(
-    viewport: Types.IViewport | Types.IGenericViewport,
+    viewport: Types.IViewport,
     slabThickness: number
   ): boolean {
     if (!this._isVolumeModeViewport(viewport)) {
@@ -1769,7 +1769,7 @@ class SliceIntersectionTool extends AnnotationTool {
       blendMode = Enums.BlendModes.COMPOSITE;
     }
 
-    (viewport as Types.IGenericViewport).setDisplaySetPresentation(dataId, {
+    (viewport as Types.IViewport).setDisplaySetPresentation(dataId, {
       slabThickness,
       blendMode,
     });
@@ -1784,12 +1784,9 @@ class SliceIntersectionTool extends AnnotationTool {
    * native-next only.
    */
   private _isPlanarViewport(
-    viewport: Types.IViewport | Types.IGenericViewport
-  ): viewport is Types.IGenericViewport {
-    return (
-      viewport?.type === ViewportType.PLANAR_NEXT &&
-      csUtils.isGenericViewport(viewport)
-    );
+    viewport: Types.IViewport
+  ): viewport is Types.IViewport {
+    return viewport?.type === ViewportType.PLANAR_NEXT;
   }
 
   /**
@@ -1797,9 +1794,7 @@ class SliceIntersectionTool extends AnnotationTool {
    * content (as opposed to an image stack), which is required for slab
    * thickness and plane rotation.
    */
-  private _isVolumeModeViewport(
-    viewport: Types.IViewport | Types.IGenericViewport
-  ): boolean {
+  private _isVolumeModeViewport(viewport: Types.IViewport): boolean {
     if (!viewport || !this._isPlanarViewport(viewport)) {
       return false;
     }
@@ -1811,9 +1806,7 @@ class SliceIntersectionTool extends AnnotationTool {
     }
   }
 
-  private _getSourceDataId(
-    viewport: Types.IViewport | Types.IGenericViewport
-  ): string | undefined {
+  private _getSourceDataId(viewport: Types.IViewport): string | undefined {
     if (!csUtils.viewportSupportsDisplaySetPresentation(viewport)) {
       return undefined;
     }
@@ -1824,16 +1817,14 @@ class SliceIntersectionTool extends AnnotationTool {
    * Reads the viewport slab thickness from its display-set presentation;
    * defaults to the minimum slab thickness.
    */
-  private _getSourceSlabThickness(
-    viewport: Types.IViewport | Types.IGenericViewport
-  ): number {
+  private _getSourceSlabThickness(viewport: Types.IViewport): number {
     const dataId = this._getSourceDataId(viewport);
     if (!dataId) {
       return RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS;
     }
 
     const presentation = (
-      viewport as Types.IGenericViewport
+      viewport as Types.IViewport
     ).getDisplaySetPresentation(dataId) as
       | { slabThickness?: number }
       | undefined;

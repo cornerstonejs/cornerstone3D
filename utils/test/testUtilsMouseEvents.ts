@@ -21,7 +21,7 @@ function canvasPointsToPagePoints(DomCanvasElement, canvasPoint) {
  * @param {vtkImageData} imageData
  * @param {[number, number,number]} index - IJK index of the point to click
  * @param {HTMLDivElement} element - the canvas to be clicked on
- * @param {IStackViewport|IVolumeViewport} viewport
+ * @param {Types.IViewport} viewport
  * @returns pageX, pageY, clientX, clientY, worldCoordinate
  */
 function createNormalizedMouseEvent(

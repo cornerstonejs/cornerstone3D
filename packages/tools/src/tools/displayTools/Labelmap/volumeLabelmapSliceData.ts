@@ -23,10 +23,6 @@ type ImageMapperSliceState = {
 };
 
 type SliceRenderingViewport = Types.IViewport & {
-  getCamera?: () => Pick<
-    Types.ICamera,
-    'focalPoint' | 'viewPlaneNormal' | 'viewUp'
-  >;
   getResolvedView?: () =>
     | {
         toICamera?: () => Pick<

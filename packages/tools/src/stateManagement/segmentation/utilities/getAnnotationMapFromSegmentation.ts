@@ -5,7 +5,7 @@ import type * as ToolsTypes from '../../../types';
 export type MapOptions = {
   segmentIndices?: number[];
   segmentationId?: string;
-  viewport?: Types.IStackViewport | Types.IVolumeViewport;
+  viewport?: Types.IViewport;
 };
 
 export type AnnotationInfo = {

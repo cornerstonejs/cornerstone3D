@@ -149,7 +149,9 @@ is `'empty'` until step 3 shows data.
 
 ```sh
 rg -n "instanceof (StackViewport|VolumeViewport|BaseVolumeViewport|VolumeViewport3D|VideoViewport|WSIViewport|ECGViewport)\b" src
-rg -n "\b(IStackViewport|IVolumeViewport|IBaseVolumeViewport|IVideoViewport|IWSIViewport|IECGViewport)\b" src
+rg -n "\b(IStackViewport|IVolumeViewport|IBaseVolumeViewport|IVideoViewport|IWSIViewport|IECGViewport|IGenericViewport|isGenericViewport)\b" src
+rg -n "\b(ViewportProperties|StackViewportProperties|VolumeViewportProperties|VideoViewportProperties|WSIViewportProperties|ECGViewportProperties|IVolumeInput|VolumeInputCallback|SetAspectRatioOptions|ImageSetOptions)\b" src
+rg -n "enabledElement\.viewport|\.getViewport\(|\.getViewports\(" src
 rg -n "\.type *[!=]==? *(Enums\.)?ViewportType\." src
 rg -n "viewportSupports(Stack|Volume)Compatibility|requestedType" src
 ```
@@ -176,12 +178,47 @@ if (viewport.getCurrentMode() === 'stack') {
 
 For a viewport of any family, `utilities.getViewportContentMode(viewport)`
 returns `'stack'`, `'volume'`, `'volume3d'`, `'video'`, `'wholeSlide'`, `'ecg'`
-or `'empty'`. `utilities.isGenericViewport(viewport)` narrows a viewport to
-`Types.IGenericViewport`.
+or `'empty'`.
 
-Type a planar viewport as `PlanarViewport`.
+**The types.** `Types.IViewport` is the interface of a viewport of any
+family: the members that every family has. `getEnabledElement(element).viewport`,
+`renderingEngine.getViewport(viewportId)` and each viewport of
+`renderingEngine.getViewports()` are typed with it. The members of a family
+are on its class: type a planar viewport as `PlanarViewport`, a 3D viewport
+as `GenericVolumeViewport3D`, and so on.
+`Types.IStackViewport`, `Types.IVolumeViewport`, `Types.IBaseVolumeViewport`,
+`Types.IVideoViewport`, `Types.IWSIViewport` and `Types.IECGViewport` are
+gone, and so are the `*ViewportProperties` types. `Types.IGenericViewport` and
+`utilities.isGenericViewport` are deprecated: replace the first with
+`Types.IViewport`, and drop the second, keeping its true branch.
 [Classes and TypeScript types](./3-api-map.md#classes-and-typescript-types)
-has the other families.
+has every type.
+
+Before:
+
+```ts
+const { viewport } = getEnabledElement(element) as {
+  viewport: Types.IStackViewport;
+};
+const imageId = viewport.getCurrentImageId();
+```
+
+After:
+
+```ts
+const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
+const imageId = viewport.getCurrentImageId();
+```
+
+Or, where the code gets the viewport from the element:
+
+```ts
+const { viewport } = getEnabledElement(element);
+
+if (utilities.viewportSupportsImageSlices(viewport)) {
+  const imageId = viewport.getCurrentImageId();
+}
+```
 
 **Check.** Run the type checker. With the viewport typed as `PlanarViewport`,
 each legacy member that the code still calls on it is an error. These errors
@@ -197,13 +234,16 @@ are the work list of steps 3 to 8.
   `utilities.viewportSupportsVolumeId` and the like test which members a
   viewport has. A planar viewport has them all in both modes, so they do not
   tell a stack from a volume.
-- A function of the library that works on a next viewport, such as
-  `utilities.scroll`, takes a variable typed as `PlanarViewport`, as the
-  class of another next family or as `Types.IGenericViewport`. No cast is
-  needed. `getEnabledElement(element).viewport` is still typed as a legacy
-  viewport:
-  [Types that still describe a legacy viewport](./3-api-map.md#types-that-still-describe-a-legacy-viewport)
-  says what to write.
+- A function of the library that works on any viewport, such as
+  `utilities.scroll`, takes a `Types.IViewport`, so a variable typed as
+  `PlanarViewport` or as the class of another family goes in with no cast.
+  A function that reads planar members takes `PlanarViewport`:
+  [The type of a viewport in 6.0](./3-api-map.md#the-type-of-a-viewport-in-60)
+  lists them and says what to write.
+- A tool of the application that reads a member of a family from
+  `enabledElement.viewport` gets a compile error now. Narrow it or ask for
+  the class, as above. In JavaScript nothing changes: a call of a planar
+  member on a 3D viewport fails at run time, as in 5.x.
 
 ## Step 3. The data
 
@@ -706,8 +746,9 @@ a volume: scroll, change the window, reset. Compare with the table.
 
 **What can go wrong**
 
-- A listener of `STACK_NEW_IMAGE` or `VOLUME_NEW_IMAGE` never runs on a next
-  viewport: both names still compile. Listen to `NEW_IMAGE`.
+- `STACK_NEW_IMAGE` and `VOLUME_NEW_IMAGE` are gone from `Enums.Events`, so
+  a listener of them is a compile error. Listen to `NEW_IMAGE`. A listener
+  that names the event by its string compiles and never runs.
 - `NEW_IMAGE` fires in both modes. A listener that came from
   `STACK_NEW_IMAGE` now also runs for each slice of a volume, where
   `detail.image` is undefined.
@@ -722,8 +763,9 @@ a volume: scroll, change the window, reset. Compare with the table.
 - `IMAGE_LOAD_FAILED` fires on the `eventTarget`, as `IMAGE_LOAD_ERROR` did.
   Its detail has no image index and no viewport id, and it also fires for a
   prefetch that fails.
-- The names `PRE_STACK_NEW_IMAGE`, `STACK_VIEWPORT_SCROLL`, `PRESET_MODIFIED`
-  and `ACTORS_CHANGED` still compile, and a listener for them never runs.
+- `PRE_STACK_NEW_IMAGE`, `STACK_VIEWPORT_SCROLL` and `PRESET_MODIFIED` are
+  gone from `Enums.Events` too, with their detail types. `ACTORS_CHANGED`
+  still compiles, and a listener for it never runs.
 - In volume mode `detail.imageIdIndex` of `NEW_IMAGE` is the slice index of
   the view. It can run against the order of the image ids, so it is not the
   place of `detail.imageId` in `viewport.getImageIds()`.

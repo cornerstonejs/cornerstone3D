@@ -8,7 +8,10 @@ import {
 import { createLabelmapRepresentationUID } from '../labelmapRepresentationUID';
 import type { LabelmapRenderPlanMountResult } from './types';
 
-type PlanarNextVolumeViewport = Types.IViewport & {
+type PlanarNextVolumeViewport = Types.IViewport<
+  { orientation?: unknown },
+  { blendMode?: Enums.BlendModes; slabThickness?: number }
+> & {
   getCurrentImageIdIndex?: () => number;
   getDefaultActor?: () =>
     | (Types.ActorEntry & {

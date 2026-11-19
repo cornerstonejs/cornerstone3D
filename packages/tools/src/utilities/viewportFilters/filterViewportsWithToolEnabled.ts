@@ -16,7 +16,7 @@ const { Active, Passive, Enabled } = ToolModes;
 export default function filterViewportsWithToolEnabled(
   viewports: Array<Types.IViewport>,
   toolName: string
-): Array<Types.IStackViewport | Types.IVolumeViewport> {
+): Array<Types.IViewport> {
   const numViewports = viewports.length;
 
   const viewportsWithToolEnabled = [];

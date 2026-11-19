@@ -10,9 +10,7 @@ import type { Types } from '@cornerstonejs/core';
  * returns coordinates in the element's displayed space for those viewports,
  * so the element size is used instead.
  */
-export default function getDisplayedCanvasSize(
-  viewport: Types.IViewport | Types.IGenericViewport
-): {
+export default function getDisplayedCanvasSize(viewport: Types.IViewport): {
   clientWidth: number;
   clientHeight: number;
 } {

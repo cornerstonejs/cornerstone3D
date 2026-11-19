@@ -191,7 +191,7 @@ function getStrategyData({
   operationData:
     | LabelmapToolOperationDataStack
     | LabelmapToolOperationDataVolume;
-  viewport?: Types.IStackViewport | Types.IVolumeViewport;
+  viewport?: Types.IViewport;
   strategy: unknown;
 }): StrategyData | null {
   if (!operationData) {

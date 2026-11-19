@@ -23,7 +23,7 @@ import {
  * next 3D viewport mounts. The id of the surface when not given.
  */
 async function addOrUpdateSurfaceToElement(
-  viewport: Types.IVolumeViewport,
+  viewport: Types.IViewport,
   surface: Types.ISurface,
   segmentationId: string,
   geometryId: string = surface.id

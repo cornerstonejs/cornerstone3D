@@ -3,7 +3,7 @@ import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
 import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
 import vtkPoints from '@kitware/vtk.js/Common/Core/Points';
 import vtkCellArray from '@kitware/vtk.js/Common/Core/CellArray';
-import type { Types } from '@cornerstonejs/core';
+import type { Types, GenericVolumeViewport3D } from '@cornerstonejs/core';
 
 /**
  * Isolated 3D rendering extension for the WorldCrosshairTool ("Reference
@@ -66,8 +66,10 @@ function setCrosshairLinePoints(
 }
 
 function getViewportRenderer(viewport: Types.IViewport) {
-  return typeof viewport?.getRenderer === 'function'
-    ? viewport.getRenderer()
+  const vtkViewport = viewport as Partial<GenericVolumeViewport3D>;
+
+  return typeof vtkViewport?.getRenderer === 'function'
+    ? vtkViewport.getRenderer()
     : undefined;
 }
 

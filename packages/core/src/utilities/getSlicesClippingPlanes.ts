@@ -2,7 +2,7 @@ import { vec3 } from 'gl-matrix';
 import cache from '../cache/cache';
 import { MetadataModules } from '../enums';
 import * as metaData from '../metaData';
-import type { ICamera, IGenericViewport, IViewport, Point3 } from '../types';
+import type { ICamera, IViewport, Point3 } from '../types';
 import {
   getSliceClippingPlanePair,
   getVolumeSlicesClippingPlanes,
@@ -72,9 +72,7 @@ function getStackSlicesClippingPlanes(
  * @param viewport - The viewport
  * @returns The planes of each slice, with the index of the slice
  */
-function getSlicesClippingPlanes(
-  viewport: IViewport | IGenericViewport
-): SliceClippingPlanes[] {
+function getSlicesClippingPlanes(viewport: IViewport): SliceClippingPlanes[] {
   const sliceViewport = viewport as SliceViewport;
 
   const contentMode = getViewportContentMode(viewport);

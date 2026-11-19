@@ -5,7 +5,7 @@ import {
   metaData,
   getEnabledElementByViewportId,
 } from '@cornerstonejs/core';
-import type { Types } from '@cornerstonejs/core';
+import type { Types, PlanarViewport } from '@cornerstonejs/core';
 
 import { AnnotationTool } from '../../base';
 import {
@@ -249,7 +249,7 @@ class UltrasoundPleuraBLineTool extends AnnotationTool {
       UltrasoundPleuraBLineTool.toolName,
       element
     );
-    const { viewport } = getEnabledElement(element);
+    const viewport = getEnabledElement(element).viewport as PlanarViewport;
     const imageIds = viewport.getImageIds();
 
     const getImageIdIndex = (imageId: string) => {
@@ -1243,7 +1243,7 @@ class UltrasoundPleuraBLineTool extends AnnotationTool {
     svgDrawingHelper: SVGDrawingHelper
   ): boolean => {
     let renderStatus = false;
-    const { viewport } = enabledElement;
+    const viewport = enabledElement.viewport as PlanarViewport;
     const { element } = viewport;
 
     if (!this.getFanShapeGeometryParameters(viewport)) {

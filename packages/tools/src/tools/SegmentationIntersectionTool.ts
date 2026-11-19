@@ -1,5 +1,5 @@
 import { getRenderingEngine } from '@cornerstonejs/core';
-import type { Types } from '@cornerstonejs/core';
+import type { Types, PlanarViewport } from '@cornerstonejs/core';
 
 import {
   addAnnotation,
@@ -116,7 +116,8 @@ class SegmentationIntersectionTool extends AnnotationDisplayTool {
     enabledElement: Types.IEnabledElement,
     svgDrawingHelper: SVGDrawingHelper
   ): boolean => {
-    const { viewport, FrameOfReferenceUID } = enabledElement;
+    const { FrameOfReferenceUID } = enabledElement;
+    const viewport = enabledElement.viewport as PlanarViewport;
 
     let renderStatus = false;
 

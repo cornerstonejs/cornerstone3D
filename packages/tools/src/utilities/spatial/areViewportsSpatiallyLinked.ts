@@ -2,9 +2,7 @@ import type { Types } from '@cornerstonejs/core';
 import { getToolGroupForViewport } from '../../store/ToolGroupManager';
 import type { SpatialLinkOptions } from './types';
 
-function getFrameOfReferenceUID(
-  viewport: Types.IViewport | Types.IGenericViewport
-): string | undefined {
+function getFrameOfReferenceUID(viewport: Types.IViewport): string | undefined {
   return viewport.getFrameOfReferenceUID?.();
 }
 
@@ -46,8 +44,8 @@ function hasRegistrationTransform(
  * are spatially comparable.
  */
 export default function areViewportsSpatiallyLinked(
-  source: Types.IViewport | Types.IGenericViewport,
-  target: Types.IViewport | Types.IGenericViewport,
+  source: Types.IViewport,
+  target: Types.IViewport,
   options: SpatialLinkOptions
 ): boolean {
   if (!source || !target || !options?.policy) {

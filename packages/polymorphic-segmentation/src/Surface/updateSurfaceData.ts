@@ -1,4 +1,4 @@
-import type { Types } from '@cornerstonejs/core';
+import type { Types, GenericVolumeViewport3D } from '@cornerstonejs/core';
 import {
   cache,
   getEnabledElementByViewportId,
@@ -81,7 +81,7 @@ function removeSurfaceActors(
 ): void {
   actorEntries.forEach(({ referencedId }) => {
     utilities.genericViewportDisplaySetMetadataProvider.remove(referencedId);
-    (viewport as unknown as Types.IGenericViewport).removeData(referencedId);
+    (viewport as unknown as Types.IViewport).removeData(referencedId);
   });
 }
 
@@ -123,7 +123,7 @@ async function updateSurfaceDataOnce(segmentationId: string) {
       return;
     }
 
-    const actorEntries = (viewport as Types.IVolumeViewport).getActors();
+    const actorEntries = (viewport as GenericVolumeViewport3D).getActors();
 
     const segmentIndicesAsSurface = actorEntries
       .map((actor) => (actor.representationUID as string)?.split('-').pop())

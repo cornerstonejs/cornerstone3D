@@ -1,4 +1,4 @@
-import type { Types } from '@cornerstonejs/core';
+import type { Types, PlanarViewport } from '@cornerstonejs/core';
 import { utilities as csUtils } from '@cornerstonejs/core';
 
 import filterAnnotationsWithinSlice from './filterAnnotationsWithinSlice';
@@ -14,7 +14,7 @@ import type { Annotations } from '../../types';
  * @returns A filtered version of the annotations.
  */
 export default function filterAnnotationsForDisplay(
-  viewport: Types.IViewport | Types.IGenericViewport,
+  viewport: Types.IViewport,
   annotations: Annotations,
   filterOptions: Types.ReferenceCompatibleOptions = {}
 ): Annotations {
@@ -36,7 +36,7 @@ export default function filterAnnotationsForDisplay(
 
     const { spacingInNormalDirection } =
       csUtils.getTargetVolumeAndSpacingInNormalDir(
-        viewport as Types.IVolumeViewport,
+        viewport as PlanarViewport,
         camera
       );
 

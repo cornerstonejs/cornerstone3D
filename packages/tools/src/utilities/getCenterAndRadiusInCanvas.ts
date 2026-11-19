@@ -20,7 +20,7 @@ const EPSILON = 1e-4;
 
 export function getCenterAndRadiusInCanvas(
   points: Types.Point3[],
-  viewport: Types.IStackViewport | Types.IVolumeViewport
+  viewport: Types.IViewport
 ): { center: Types.Point2; radius: number } {
   const canvasPoints = points.map((p) => viewport.worldToCanvas(p));
   const [cBottom, cTop, cLeft, cRight] = canvasPoints;

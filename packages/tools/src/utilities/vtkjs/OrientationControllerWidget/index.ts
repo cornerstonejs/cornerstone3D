@@ -6,7 +6,11 @@ import vtkPoints from '@kitware/vtk.js/Common/Core/Points';
 import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
 import vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 import { Enums } from '@cornerstonejs/core';
-import type { Types } from '@cornerstonejs/core';
+import type {
+  Types,
+  PlanarViewport,
+  GenericVolumeViewport3D,
+} from '@cornerstonejs/core';
 import vtkAnnotatedRhombicuboctahedronActor from '../AnnotatedRhombicuboctahedronActor';
 import { beginOwnedDrag, endOwnedDrag } from '../../interactionDragCoordinator';
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
@@ -75,7 +79,7 @@ export class vtkOrientationControllerWidget {
     actor: vtkActor;
     cellId: number;
     originalColor: number[];
-    viewport: Types.IVolumeViewport;
+    viewport: Types.IViewport;
     isMainFace: boolean;
     mainFaceTextureData?: Uint8Array;
     mainFaceTile?: {
@@ -199,7 +203,7 @@ export class vtkOrientationControllerWidget {
    */
   addActorsToViewport(
     viewportId: string,
-    viewport: Types.IVolumeViewport,
+    viewport: Types.IViewport,
     actors: vtkActor[]
   ): void {
     const existingActors = this.actors.get(viewportId);
@@ -215,7 +219,8 @@ export class vtkOrientationControllerWidget {
     const mainRenderer =
       (viewport as Types.IViewport)
         .getRenderingEngine()
-        ?.getRenderer(viewportId) ?? viewport.getRenderer();
+        ?.getRenderer(viewportId) ??
+      (viewport as PlanarViewport | GenericVolumeViewport3D).getRenderer();
 
     const vtkMainRenderer = mainRenderer as vtkRenderer;
     const overlayRenderer = vtkRenderer.newInstance();
@@ -251,7 +256,7 @@ export class vtkOrientationControllerWidget {
 
   removeActorsFromViewport(
     viewportId: string,
-    _viewport: Types.IVolumeViewport
+    _viewport: Types.IViewport
   ): void {
     const actors = this.actors.get(viewportId);
     const overlayRenderer = this.overlayRenderers.get(viewportId);
@@ -288,7 +293,7 @@ export class vtkOrientationControllerWidget {
   pickAtPosition(
     evt: MouseEvent,
     viewportId: string,
-    viewport: Types.IVolumeViewport,
+    viewport: Types.IViewport,
     element: HTMLDivElement,
     actors: vtkActor[]
   ): PickResult | null {
@@ -302,7 +307,7 @@ export class vtkOrientationControllerWidget {
       (viewport as Types.IViewport)
         .getRenderingEngine()
         ?.getRenderer(viewportId) ??
-      viewport.getRenderer();
+      (viewport as PlanarViewport | GenericVolumeViewport3D).getRenderer();
     if (!renderer) {
       return null;
     }
@@ -314,7 +319,8 @@ export class vtkOrientationControllerWidget {
     const devicePixelRatio = window.devicePixelRatio || 1;
     const canvasPosWithDPR = [x * devicePixelRatio, y * devicePixelRatio];
 
-    const canvas = viewport.canvas;
+    const canvas = (viewport as PlanarViewport | GenericVolumeViewport3D)
+      .canvas;
     const { width, height } = canvas;
 
     const [xMin, yMin, xMax, yMax] =
@@ -351,11 +357,12 @@ export class vtkOrientationControllerWidget {
   }
 
   calculateMarkerPosition(
-    viewport: Types.IVolumeViewport,
+    viewport: Types.IViewport,
     position: PositionConfig['position'],
     screenSizePixels: number
   ): [number, number, number] | null {
-    const canvas = viewport.canvas;
+    const canvas = (viewport as PlanarViewport | GenericVolumeViewport3D)
+      .canvas;
     if (!canvas) {
       return null;
     }
@@ -411,13 +418,14 @@ export class vtkOrientationControllerWidget {
   }
 
   positionActors(
-    viewport: Types.IVolumeViewport,
+    viewport: Types.IViewport,
     actors: vtkActor[],
     config: PositionConfig
   ): boolean {
     // Calculate marker size in world units to maintain fixed screen size
     // This keeps the marker at a constant screen size regardless of zoom
-    const canvas = viewport.canvas;
+    const canvas = (viewport as PlanarViewport | GenericVolumeViewport3D)
+      .canvas;
     if (!canvas) {
       cs3dLogger.warn('OrientationControllerWidget: No canvas available');
       return false;
@@ -427,7 +435,8 @@ export class vtkOrientationControllerWidget {
     const mainRenderer =
       (viewport as Types.IViewport)
         .getRenderingEngine()
-        ?.getRenderer(viewport.id) ?? viewport.getRenderer();
+        ?.getRenderer(viewport.id) ??
+      (viewport as PlanarViewport | GenericVolumeViewport3D).getRenderer();
     const camera = (mainRenderer as vtkRenderer)?.getActiveCamera();
     if (!camera) {
       return false;
@@ -478,7 +487,7 @@ export class vtkOrientationControllerWidget {
   highlightFace(
     actor: vtkActor,
     cellId: number,
-    viewport: Types.IVolumeViewport,
+    viewport: Types.IViewport,
     isMainFace: boolean = false
   ): void {
     // Check if we're already highlighting this exact face
@@ -847,7 +856,7 @@ export class vtkOrientationControllerWidget {
   setupMouseHandlers(
     viewportId: string,
     element: HTMLDivElement,
-    viewport: Types.IVolumeViewport,
+    viewport: Types.IViewport,
     actors: vtkActor[],
     callbacks: MouseHandlersCallbacks
   ): { cleanup: () => void } {
@@ -1001,10 +1010,7 @@ export class vtkOrientationControllerWidget {
     return this.actors.get(viewportId);
   }
 
-  syncOverlayViewport(
-    viewportId: string,
-    viewport: Types.IVolumeViewport
-  ): void {
+  syncOverlayViewport(viewportId: string, viewport: Types.IViewport): void {
     const overlayRenderer = this.overlayRenderers.get(viewportId);
     if (!overlayRenderer) {
       return;
@@ -1013,7 +1019,8 @@ export class vtkOrientationControllerWidget {
     const mainRenderer =
       (viewport as Types.IViewport)
         .getRenderingEngine()
-        ?.getRenderer(viewportId) ?? viewport.getRenderer();
+        ?.getRenderer(viewportId) ??
+      (viewport as PlanarViewport | GenericVolumeViewport3D).getRenderer();
     if (!mainRenderer) {
       return;
     }

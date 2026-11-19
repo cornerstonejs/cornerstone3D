@@ -6,19 +6,14 @@ const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
   'utilities.voi.windowlevel.extractWindowLevelRegionToolData'
 );
 
-function extractWindowLevelRegionToolData(
-  viewport: Types.IViewport | Types.IGenericViewport
-) {
+function extractWindowLevelRegionToolData(viewport: Types.IViewport) {
   const contentMode = csUtils.getViewportContentMode(viewport);
 
   if (contentMode === 'volume') {
-    return extractImageDataGenericVolume(viewport as Types.IVolumeViewport);
-  }
-  if (csUtils.isGenericViewport(viewport)) {
-    return extractImageDataGeneric(viewport);
+    return extractImageDataGenericVolume(viewport as PlanarViewport);
   }
 
-  throw new Error('Viewport not supported');
+  return extractImageDataGeneric(viewport);
 }
 
 /**
@@ -27,7 +22,7 @@ function extractWindowLevelRegionToolData(
  * level is skipped with a warning instead of a throw that would end the tool
  * interaction.
  */
-function extractImageDataGenericVolume(viewport: Types.IVolumeViewport) {
+function extractImageDataGenericVolume(viewport: PlanarViewport) {
   try {
     return extractImageDataVolume(viewport);
   } catch (error) {
@@ -39,7 +34,7 @@ function extractImageDataGenericVolume(viewport: Types.IVolumeViewport) {
   }
 }
 
-function extractImageDataVolume(viewport: Types.IVolumeViewport) {
+function extractImageDataVolume(viewport: PlanarViewport) {
   const { scalarData, width, height } =
     csUtils.getCurrentVolumeViewportSlice(viewport);
   const { min: minPixelValue, max: maxPixelValue } =
@@ -56,7 +51,7 @@ function extractImageDataVolume(viewport: Types.IVolumeViewport) {
   };
 }
 
-function extractImageDataGeneric(viewport: Types.IGenericViewport) {
+function extractImageDataGeneric(viewport: Types.IViewport) {
   const imageId = (viewport as PlanarViewport).getCurrentImageId();
 
   if (!imageId) {

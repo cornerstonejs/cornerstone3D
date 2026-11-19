@@ -1,6 +1,6 @@
 import { vec3, vec2 } from 'gl-matrix';
 import { getEnabledElement } from '@cornerstonejs/core';
-import type { Types } from '@cornerstonejs/core';
+import type { Types, PlanarViewport } from '@cornerstonejs/core';
 import { state } from '../../../store/state';
 import { Events } from '../../../enums';
 import {
@@ -47,7 +47,7 @@ function activateClosedContourEdit(
   );
 
   const { spacing, xDir, yDir } = getSubPixelSpacingAndXYDirections(
-    viewport,
+    viewport as PlanarViewport,
     this.configuration.subPixelResolution
   );
 

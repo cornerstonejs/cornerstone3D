@@ -4,17 +4,13 @@ import type ViewportInputOptions from './ViewportInputOptions';
 import type ViewportType from '../enums/ViewportType';
 import type DisplayArea from './displayArea';
 import type { BoundsLPS } from './BoundsLPS';
-import type vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
-import type { mat4 } from 'gl-matrix';
 import type ViewportStatus from '../enums/ViewportStatus';
 import type ICamera from './ICamera';
-import type { SetAspectRatioOptions } from './ICamera';
-import type { ActorEntry, ImageActor } from './IActor';
 import type IRenderingEngine from './IRenderingEngine';
-import type { ViewportProperties } from './ViewportProperties';
-import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 import type { FidelityLine } from '../RenderingEngine/helpers/fidelityIndicator/fidelityIndicatorState';
 import type { ViewportFidelityState } from './ViewportFidelity';
+import type { GenericViewportOptions } from '../RenderingEngine/GenericViewport/GenericViewport';
+import type ResolvedViewportView from '../RenderingEngine/GenericViewport/ResolvedViewportView';
 /**
  * Specifies what view to get a reference for.
  * This set of options allows a Viewport to return a reference for an image
@@ -465,482 +461,184 @@ export interface ViewPresentationSelector {
   paletteLut?: boolean;
 }
 
-export type DataSetOptions = {
-  /**
-   * The group id is a volume, display set or other identification for the
-   * overall set of data.  If set, then two sets of images can be compared for
-   * equality by comparing the group id.
-   * For volumes, if set, the groupId must be the primary volumeId.
-   */
-  groupId?: string;
-  viewSelector?: ViewPresentationSelector;
-  viewReference?: ViewReferenceSpecifier;
-};
+/**
+ * The content a viewport is currently rendering.
+ *
+ * A planar viewport's content shape (stack vs volume) is decided by the data
+ * it is bound to, not by its viewport type. The duck-typing capability guards
+ * (`viewportSupportsImageSlices`, `viewportSupportsVolumeId`, ...) only report
+ * which methods a viewport exposes, so a single `PlanarViewport` reports
+ * support for both stack and volume operations regardless of what it is
+ * actually showing.
+ *
+ * `getCurrentMode()` answers the content question that the capability guards
+ * cannot: it reflects the currently bound source data.
+ *
+ * - `stack`      — image-id stack content (image render path)
+ * - `volume`     — volume-backed slice content (volume slice render path)
+ * - `volume3d`   — 3D volume rendering
+ * - `video`      — video frames
+ * - `wholeSlide` — whole-slide tiles
+ * - `ecg`        — ECG waveform
+ * - `empty`      — no source data is bound yet
+ * - `unknown`    — a viewport family that does not classify its content
+ */
+type ViewportContentMode =
+  | 'stack'
+  | 'volume'
+  | 'volume3d'
+  | 'video'
+  | 'wholeSlide'
+  | 'ecg'
+  | 'empty'
+  | 'unknown';
 
 /**
- * Enabled viewport handle used by the rendering engine.
+ * The interface of a viewport: the public members that every viewport family
+ * has (planar, 3D, video, whole slide and ECG), which are those of the base
+ * class `GenericViewport`.
  *
- * It lists the public members of the legacy `Viewport` class, which
- * implements it. Fidelity reporting (`canReportFidelity`, `getFidelityState`,
- * `notifyFidelityStateChanged`) is also declared on `IViewportFidelity`.
- * Generic ("next") viewports implement the same surface and are stored in the
- * engine map through a cast to this type.
+ * The class of a family has more members (`PlanarViewport`,
+ * `GenericVolumeViewport3D`, `VideoGenericViewport`, `WSIGenericViewport`,
+ * `ECGGenericViewport`): type the variable with the class when the family is
+ * known, for instance with
+ * `renderingEngine.getViewport<PlanarViewport>(viewportId)`, or narrow with
+ * `utilities.viewportSupportsDisplaySetPresentation` and
+ * `utilities.getViewportContentMode(viewport) === 'stack'`.
+ *
+ * @typeParam TViewState - The view state of the family. The bare name takes
+ * any object.
+ * @typeParam TDataPresentation - The presentation of a display set of the
+ * family.
  */
-interface IViewport {
-  /** unique identifier for the viewport */
+interface IViewport<
+  TViewState extends object = object,
+  TDataPresentation = unknown,
+> {
+  /** The id of the viewport in its rendering engine. */
   readonly id: string;
-  /** HTML element in DOM that is used for rendering the viewport */
+  /** The element that the viewport draws in. */
   readonly element: HTMLDivElement;
-  /** an internal canvas that is created on the provided HTML element */
-  readonly canvas: HTMLCanvasElement;
-  /** RenderingEngine id that the viewport belongs to */
-  readonly renderingEngineId: string;
-  /** Type of viewport */
+  /** The type that the viewport was enabled with. */
   readonly type: ViewportType;
-  isDisabled: boolean;
-  /** Record the rendering status, mostly for testing purposes, but can also
-   * be useful for knowing things like whether the viewport is initialized
-   */
+  /** The id of the rendering engine that owns the viewport. */
+  readonly renderingEngineId: string;
+  /** Whether the viewport has data, waits for a draw or is drawn. */
   viewportStatus: ViewportStatus;
-  /** sx of viewport on the offscreen canvas */
-  sx: number;
-  /** sy of viewport on the offscreen canvas */
-  sy: number;
-  /** sWidth of viewport on the offscreen canvas */
-  sWidth: number;
-  /** sHeight of viewport on the offscreen canvas */
-  sHeight: number;
-  /** a Map containing the actor uid and actors */
-  _actors: Map<string, ActorEntry>;
-  /** Default options for the viewport which includes orientation, viewPlaneNormal and backgroundColor */
-  readonly defaultOptions: ViewportInputOptions;
-  /** options for the viewport which includes orientation axis, backgroundColor and displayArea */
-  options: ViewportInputOptions;
-  /** A flag representing if viewport methods should fire events or not */
-  readonly suppressEvents: boolean;
-  getRotation: () => number;
-  getFrameOfReferenceUID: () => string;
-  canvasToWorld: (canvasPos: Point2) => Point3;
-  worldToCanvas: (worldPos: Point3) => Point2;
-  customRenderViewportToCanvas: () => unknown;
-  resize: () => void;
-  getProperties: () => ViewportProperties;
-  updateRenderingPipeline: () => void;
-  getNumberOfSlices: () => number;
-  getUseCustomRenderingPipeline(): boolean;
+  /** The options that the viewport was made with. They do not change. */
+  readonly defaultOptions: GenericViewportOptions;
   /**
-   * RenderingEngine-owned resize hook for custom-pipeline viewports. Legacy
-   * viewports keep the previous camera-preserving behavior by default.
+   * True once the viewport is destroyed, which the rendering engine does when
+   * it disables the element. Read only.
    */
-  resizeForRenderingEngine(options?: RenderingEngineResizeOptions): void;
+  readonly isDestroyed: boolean;
+
   /**
-   * Returns whether the viewport supports changing orientation (e.g. via setCamera
-   * with viewPlaneNormal/viewUp). Used by tools like OrientationControllerTool to
-   * decide where to show interactive orientation markers.
+   * Replaces the mounted display sets. The first entry is the source, the
+   * others are overlays unless their options say otherwise.
    */
-  isOrientationChangeable(): boolean;
-  addWidget: (widgetId: unknown, widget: unknown) => void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  getWidget: (id: any) => any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  getWidgets: () => any[];
+  setDisplaySets(
+    ...entries: Array<{ displaySetId: string; options?: unknown }>
+  ): Promise<void>;
   /**
-   * Get render passes for this viewport.
-   * Viewports can override this to provide custom render passes (e.g., for sharpening).
-   * @returns Array of VTK render passes or null if no custom passes are needed
+   * Mounts one more display set. The options are those of the family, as in
+   * `setDisplaySets`: `PlanarSetDataOptions` on a planar viewport, a render
+   * mode and a role on the base class.
    */
-  getRenderPasses: () => unknown[] | null;
-  removeWidgets: () => void;
-  dispose(): void;
-  destroy(): void;
+  addDisplaySet(displaySetId: string, options: unknown): Promise<void>;
+  /** The mounted display sets, the source first. */
+  getDisplaySets(): Array<{ displaySetId: string; options?: unknown }>;
+  /** Removes a display set and its presentation, and draws again. */
+  removeData(displaySetId: string): void;
+  /** Changes the presentation of the source display set. */
+  setDisplaySetPresentation(props: Partial<TDataPresentation>): void;
+  /** Changes the presentation of one display set, for overlays and fusion. */
+  setDisplaySetPresentation(
+    displaySetId: string,
+    props: Partial<TDataPresentation>
+  ): void;
+  /** The presentation of one display set, or undefined when it is not mounted. */
+  getDisplaySetPresentation(
+    displaySetId: string
+  ): TDataPresentation | undefined;
+  /** What the viewport shows now. See {@link ViewportContentMode}. */
+  getCurrentMode(): ViewportContentMode;
+
+  /** Merges a patch into the view state and draws again. */
+  setViewState(viewStatePatch: Partial<TViewState>): void;
+  /** The view state. */
+  getViewState(): TViewState;
+  /** Changes the view state with a patch, or with a function that returns one. */
+  updateViewState(
+    updater:
+      | Partial<TViewState>
+      | ((viewState: TViewState) => Partial<TViewState> | void)
+  ): void;
+  /** Resets the navigation. False when the family has nothing to reset. */
+  resetViewState(options?: unknown): boolean;
+
+  /** A reference to what the viewport shows now. */
+  getViewReference(specifier?: ViewReferenceSpecifier): ViewReference;
+  /** A string that names the view reference. */
+  getViewReferenceId(specifier?: ViewReferenceSpecifier): string;
+  /** Shows what a reference points to. */
+  setViewReference(viewReference: ViewReference): void;
+  /** Whether the viewport can show what a reference points to. */
+  isReferenceViewable(
+    viewReference: ViewReference,
+    options?: ReferenceCompatibleOptions
+  ): boolean;
+  /** The frame of reference of the view, or an id of the viewport itself. */
+  getFrameOfReferenceUID(): string;
+
   /**
-   * Indicate that the image has been rendered.
-   * This will set the viewportStatus to RENDERED if there is image data
-   * available to actually be rendered - otherwise, the rendering simply showed
-   * the background image.
+   * The resolved view that the viewport derives from its data and its view
+   * state: the coordinate transforms and, through `toICamera()`, a camera for
+   * reading. Undefined while no data is mounted.
    */
-  setRendered(): void;
-  /**
-   * Mark the viewport as needing a render pass (e.g. after external display-set / segmentation updates).
-   * Does not queue a render; the rendering engine’s normal RAF cycle will pick this up.
-   */
-  setNeedsRender(): void;
-  /**
-   * Returns the rendering engine driving the `Viewport`.
-   *
-   * @returns The RenderingEngine instance.
-   */
+  getResolvedView():
+    | ResolvedViewportView<unknown, ICamera<unknown>>
+    | undefined;
+  /** A canvas point in world coordinates. It throws while no data is mounted. */
+  canvasToWorld(canvasPos: Point2): Point3;
+  /** A world point in canvas coordinates. It throws while no data is mounted. */
+  worldToCanvas(worldPos: Point3): Point2;
+  /** The stretch of the axes of the base class: `[1, 1]`. */
+  getAspectRatio(): Point2;
+
+  /** The rendering engine that owns the viewport. */
   getRenderingEngine(): IRenderingEngine;
-  /**
-   * Returns the `vtkRenderer` responsible for rendering the `Viewport`.
-   *
-   * @returns The `vtkRenderer` for the `Viewport`.
-   */
-  getRenderer(): vtkRenderer;
-  /**
-   * Renders the `Viewport` using the `RenderingEngine`.
-   */
+  /** Draws the viewport. */
   render(): void;
-  /**
-   * Whether this viewport can report fidelity (GENVIEW-FIDELITY-8). Subclasses
-   * that show degraded data override this. The built-in indicator attaches
-   * only when this returns true.
-   */
+  /** Called by the rendering engine after it drew a frame. */
+  setRendered(): void;
+  /** Marks the viewport as waiting for a draw, without asking for one. */
+  setNeedsRender(): void;
+  /** Chooses the render paths again after the render backend changed. */
+  updateRenderingPipeline(): void;
+  /** Takes the new size of the element. */
+  resize(): void;
+  /** The resize that the rendering engine calls. */
+  resizeForRenderingEngine(options?: RenderingEngineResizeOptions): void;
+  /** Does nothing on a family without vtk.js widgets. */
+  removeWidgets(): void;
+  /** Releases the display sets and the resources of the viewport. */
+  destroy(): void;
+  /** The same as `destroy`. */
+  dispose(): void;
+
+  /** Whether the viewport can report fidelity. */
   canReportFidelity(): boolean;
-  /**
-   * Absolute per-viewport fidelity record (FIDELITY-EVENT-5).
-   * Does not fire `VIEWPORT_FIDELITY_CHANGED`. Does not include a reader
-   * verdict — use {@link compareVoxelQuality} for that.
-   */
+  /** The fidelity record of the viewport. */
   getFidelityState(): ViewportFidelityState;
-  /**
-   * Fidelity lines for the built-in indicator UI. Applications should use
-   * {@link getFidelityState} instead.
-   */
+  /** The fidelity lines for the built-in indicator. */
   getFidelityLines(): FidelityLine[];
   /**
-   * Fires `VIEWPORT_FIDELITY_CHANGED` when the derived fidelity state changes
-   * (FIDELITY-EVENT-2..4). The rendering engines call this after each render.
-   * A viewport that cannot report fidelity does nothing.
+   * Fires `VIEWPORT_FIDELITY_CHANGED` when the fidelity state changed.
    *
    * @internal
    */
   notifyFidelityStateChanged(): void;
-  /**
-   * Sets new options and (TODO) applies them.
-   *
-   * @param options - The viewport options to set.
-   * @param immediate - If `true`, renders the viewport after the options are set.
-   */
-  setOptions(options: ViewportInputOptions, immediate?: boolean): void;
-  /**
-   * Resets the options the `Viewport`'s `defaultOptions`
-   *
-   * @param immediate - If `true`, renders the viewport after the options are reset.
-   */
-  reset(immediate?: boolean): void;
-  getSliceViewInfo(): {
-    width: number;
-    height: number;
-    sliceIndex: number;
-    slicePlane: number;
-    sliceToIndexMatrix: mat4;
-    indexToSliceMatrix: mat4;
-  };
-  /**
-   * Get the default actor
-   * @returns An actor entry.
-   */
-  getDefaultActor(): ActorEntry;
-  /**
-   * Get all the actors in the viewport
-   * @returns An array of ActorEntry objects.
-   */
-  getActors(): ActorEntry[];
-  /**
-   * Returns an array of unique identifiers for all the actors in the viewport.
-   * @returns An array of strings
-   */
-  getActorUIDs(): string[];
-  /**
-   * Get an actor by its UID
-   * @param actorUID - The unique ID of the actor.
-   * @returns An ActorEntry object.
-   */
-  getActor(actorUID: string): ActorEntry;
-  /**
-   * Retrieves an image actor from the viewport actors.
-   *
-   * @param volumeId - Optional. The ID of the volume to find the corresponding image actor.
-   * @returns The image actor if found, otherwise null.
-   */
-  getImageActor(volumeId?: string): ImageActor | null;
-  /**
-   * Get an actor UID by its index
-   * @param index - array index.
-   * @returns actorUID
-   */
-  getActorUIDByIndex(index: number): string;
-  /**
-   * Get an actor by its index
-   * @param index - array index.
-   * @returns actorUID
-   */
-  getActorByIndex(index: number): ActorEntry;
-  /**
-   * It removes all actors from the viewport and then adds the actors from the array.
-   * @param actors - An array of ActorEntry objects.
-   */
-  setActors(actors: ActorEntry[]): void;
-  /**
-   * Remove the actors with the given UIDs from the viewport
-   * @param actorUIDs - An array of actor UIDs to remove.
-   */
-  removeActors(actorUIDs: string[]): void;
-  /**
-   * Add a list of actors (actor entries) to the viewport
-   * @param resetCamera - force reset pan and zoom of the camera,
-   *        default value is false.
-   * @param actors - An array of ActorEntry objects.
-   */
-  addActors(actors: ActorEntry[], options?: { resetCamera?: boolean }): void;
-  /**
-   * Add an actor to the viewport including its id, its actor and slabThickness
-   * if defined
-   * @param actorEntry - ActorEntry
-   *    * actorEntry.uid - The unique identifier for the actor.
-   *    * actorEntry.actor - The volume actor.
-   *    * actorEntry.slabThickness - The slab thickness.
-   */
-  addActor(actorEntry: ActorEntry): void;
-  /**
-   * Remove all actors from the renderer
-   */
-  removeAllActors(): void;
-  /**
-   * Sets the camera to an initial bounds. If
-   * resetPan and resetZoom are true it places the focal point at the center of
-   * the volume (or slice); otherwise, only the camera zoom and camera Pan or Zoom
-   * is reset for the current view.
-   * @param displayArea - The display area of interest.
-   * @param suppressEvents - If true, don't fire displayArea event.
-   */
-  setDisplayArea(displayArea: DisplayArea, suppressEvents?: boolean): void;
-  getDisplayArea(): DisplayArea | undefined;
-  /**
-   * Resets the camera based on the rendering volume(s) bounds. If
-   * resetPan and resetZoom are true it places the focal point at the center of
-   * the volume (or slice); otherwise, only the camera zoom and camera Pan or Zoom
-   * is reset for the current view.
-   * @param options - The reset options
-   * @param options.resetPan - If true, the camera focal point is reset to the center of the volume (slice)
-   * @param options.resetZoom - If true, the camera zoom is reset to the default zoom
-   * @param options.resetToCenter - If true, the camera is reset to the center of the volume (slice)
-   * @param options.storeAsInitialCamera - If true, reset camera is stored as the initial camera (to allow differences to
-   *   be detected for pan/zoom values)
-   * @param options.resetAspectRatio - If true, the aspect ratio of the viewport options is applied, otherwise the
-   *   current aspect ratio of the camera is kept. The zoom calculation uses that aspect ratio, so `resetZoom: true`
-   *   fits a stretched image into the viewport.
-   * @returns boolean
-   */
-  resetCamera(options?: {
-    resetPan?: boolean;
-    resetZoom?: boolean;
-    resetToCenter?: boolean;
-    storeAsInitialCamera?: boolean;
-    resetAspectRatio?: boolean;
-  }): boolean;
-  /**
-   * Helper function to return the current canvas pan value.
-   *
-   * @returns a Point2 containing the current pan values
-   * on the canvas,
-   * computed from the current camera, where the initial pan
-   * value is [0,0].
-   */
-  getPan(initialCamera?: ICamera<number>): Point2;
-  getCurrentImageIdIndex(): number;
-  getSliceIndex(): number;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  getImageData(): any;
-  /**
-   * Gets a referenced image url of some sort - could be a real image id, or
-   * could be a URL with parameters. Regardless it refers to the currently displaying
-   * image as a string value.
-   */
-  getViewReferenceId(specifier?: ViewReferenceSpecifier): string;
-  /**
-   * Sets the canvas pan value relative to the initial view position of 0,0
-   * Modifies the camera to perform the pan.
-   */
-  setPan(pan: Point2, storeAsInitialCamera?: boolean): void;
-  /**
-   * Returns a current zoom level relative to the initial parallel scale
-   * originally applied to the image.  That is, on initial display,
-   * the zoom level is 1.  Computed as a function of the camera.
-   *
-   * The zoom is relative to the fit of the aspect ratio that the camera holds,
-   * so a zoom of 1 fits the image at every aspect ratio.
-   */
-  getZoom(compareCamera?: ICamera<number>): number;
-  /** Zooms the image using parallel scale by updating the camera value.
-   * @param value - The relative parallel scale to apply.  It is relative
-   * to the initial offsets value, at the aspect ratio that the camera holds.
-   * @param storeAsInitialCamera - can be set to true to reset the camera
-   *   after applying this zoom as the initial camera.  A subsequent getZoom
-   *   call will return "1", but the zoom will have been applied.
-   * @param compareCamera - the camera the zoom is relative to, as for
-   *   `getZoom`; defaults to the initial camera.
-   */
-  setZoom(
-    value: number,
-    storeAsInitialCamera?: boolean,
-    compareCamera?: ICamera<number>
-  ): void;
-  /**
-   * Returns the current aspect ratio of the viewport as a 2D point `[widthRatio, heightRatio]`.
-   *
-   * @returns The current aspect ratio `[widthRatio, heightRatio]`
-   *          based on the active camera settings.
-   */
-  getAspectRatio(): Point2;
-  /**
-   * Sets the aspect ratio of the viewport (canvas) using the provided 2D point
-   * `[widthRatio, heightRatio]`.
-   *
-   * This updates the VTK camera's **projection matrix** to apply axis-based
-   * stretching during rendering.
-   *
-   * As a result:
-   * - World-to-canvas mapping is updated via the camera projection.
-   * - Canvas-to-world mapping is also updated and remains consistent, as
-   * VTK utilizes the inverse of the same projection matrix for picking and
-   * coordinate transformations.
-   *
-   * Note:
-   * - The camera pose and orientation (position, focal point, and viewPlaneNormal)
-   * remain unchanged.
-   * - Image data, spacing, and world coordinates are not modified.
-   * - The parallel scale remains unchanged, unless the caller gives the `fit`
-   * option. Each aspect ratio has a different fit, and `getZoom` reports the
-   * zoom against the fit of the aspect ratio that the camera holds.
-   *
-   * @param value - The aspect ratio to set as `[widthRatio, heightRatio]`.
-   * @param options - fit the stretched image, and keep the aspect ratio as the
-   *   default. Both default to `false`.
-   */
-  setAspectRatio(value: Point2, options?: SetAspectRatioOptions): void;
-  /**
-   * Gets the target output canvas for the `Viewport`.
-   *
-   * @returns an HTMLCanvasElement.
-   */
-  getCanvas(): HTMLCanvasElement;
-  /**
-   * Get the camera's current state
-   * @returns The camera object.
-   */
-  getCamera(): ICamera;
-  /**
-   * Set the camera parameters
-   * @param cameraInterface - ICamera
-   * @param storeAsInitialCamera - to set the provided camera as the initial one,
-   *    used to compute differences for things like pan and zoom.
-   */
-  setCamera(cameraInterface: ICamera, storeAsInitialCamera?: boolean): void;
-  /**
-   * Updates the camera's clipping planes and range.
-   */
-  updateCameraClippingPlanesAndRange(): void;
-  setOrientationOfClippingPlanes(
-    vtkPlanes: vtkPlane[],
-    slabThickness: number,
-    viewPlaneNormal: Point3,
-    focalPoint: Point3
-  ): void;
-  /**
-   * Method to get the clipping planes of a given actor
-   * @param actorEntry - The actor entry (a specific type you'll define dependent on your code)
-   * @returns vtkPlanes - An array of vtkPlane objects associated with the given actor
-   */
-  getClippingPlanesForActor(actorEntry?: ActorEntry): vtkPlane[];
-  /**
-   * Gets a view target specifying WHAT a view is displaying,
-   * allowing for checking if a given image is displayed or could be displayed
-   * in a given viewport.
-   * See getViewPresentation for HOW a view is displayed.
-   *
-   *
-   * @param viewRefSpecifier - choose an alternate view to be specified, typically
-   *      a different slice index in the same set of images.
-   */
-  getViewReference(viewRefSpecifier?: ViewReferenceSpecifier): ViewReference;
-  isPlaneViewable(
-    planeRestriction: PlaneRestriction,
-    options?: ReferenceCompatibleOptions
-  ): boolean;
-  /**
-   * Find out if this viewport does or could show this view reference.
-   *
-   * The plane restriction and the top level orientation are two separate
-   * limits, and the viewport applies both. A restriction that pins no
-   * orientation, which is what one point gives, therefore does not make every
-   * view compatible: the `viewPlaneNormal` of the reference still has to match
-   * the camera, unless the caller passes `withOrientation`.
-   *
-   * @param options - allows specifying whether the view COULD display this with
-   *                  some modification - either navigation or displaying as volume.
-   * @returns true if the viewport could show this view reference
-   */
-  isReferenceViewable(
-    viewRef: ViewReference,
-    options?: ReferenceCompatibleOptions
-  ): boolean;
-  /**
-   * Gets a view presentation information specifying HOW a viewport displays
-   * something, but not what is being displayed.
-   * See getViewReference to get information on WHAT is being displayed.
-   *
-   * This is intended to have information on how an image is presented to the user, without
-   * specifying what image s displayed.  All of this information is available
-   * externally, but this method combines the parts of this that are appropriate
-   * for remember or applying to other views, without necessarily needing to know
-   * what all the attributes are.  That differs from methods like getCamera which
-   * fetch exact view details that are not likely to be identical between viewports
-   * as they change sizes or apply to different images.
-   *
-   * Note that the results of this can be used on different viewports, for example,
-   * the pan values can be applied to a volume viewport showing a CT, and a
-   * stack viewport showing an ultrasound.
-   *
-   * The selector allows choosing which view presentation attributes to return.
-   * Some default values are available from `Viewport.CameraViewPresentation` and
-   * `Viewport.TransferViewPresentation`
-   *
-   * @param viewPresSel - select which attributes to display.
-   */
-  getViewPresentation(viewPresSel?: ViewPresentationSelector): ViewPresentation;
-  /**
-   * Navigates to the image specified by the viewRef.
-   */
-  setViewReference(viewRef: ViewReference): void;
-  /**
-   * Applies the display area, zoom, pan and rotation from the view presentation.
-   * No-op is viewPres isn't defined.
-   */
-  setViewPresentation(viewPres: ViewPresentation): void;
-  /**
-   * Sets one or more datasets on the viewport. Legacy viewports should
-   * override this to delegate to their specific data setter.
-   */
-  setDataList(
-    entries: Array<{ dataId: string; options?: DataSetOptions }>
-  ): void;
-  /**
-   * Records the display sets currently shown on the viewport. The base
-   * implementation only stores the entries so that {@link getDisplaySets} can
-   * report them; type-specific viewports override this to actually load the data
-   * (via their native setter such as `setStack`/`setVolumes`/`setVideo`),
-   * delegating to {@link mountDisplaySets} so the clear-then-record ordering is
-   * applied consistently.
-   *
-   * Because the native data setters clear the recorded list (see
-   * {@link clearDisplaySets}), driving a viewport with a raw data setter -
-   * without going through `setDisplaySets` - leaves `getDisplaySets()` empty,
-   * correctly reflecting that the viewport is not display-set driven.
-   *
-   * @param entries - the display set entries that were mounted; the first entry
-   *   is the source and any subsequent entries are overlays.
-   */
-  setDisplaySets(
-    ...entries: Array<{ displaySetId: string; options?: unknown }>
-  ): void | Promise<void>;
-  /**
-   * Returns the display sets currently recorded as mounted on the viewport.
-   * Empty when the viewport was driven by a raw data setter instead of
-   * {@link setDisplaySets}.
-   */
-  getDisplaySets(): Array<{ displaySetId: string; options?: unknown }>;
 }
 
 interface RenderingEngineResizeOptions {
@@ -995,6 +693,7 @@ interface ViewportInput {
 
 export type {
   IViewport,
+  ViewportContentMode,
   RenderingEngineResizeOptions,
   ViewportInput,
   PublicViewportInput,

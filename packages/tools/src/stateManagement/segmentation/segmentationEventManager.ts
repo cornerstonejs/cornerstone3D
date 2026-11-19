@@ -20,7 +20,7 @@ const segmentationListeners = new Map<string, Map<string, EventListener>>();
  * @param representationType - representation type
  */
 export function addDefaultSegmentationListener(
-  viewport: Types.IVolumeViewport | Types.IStackViewport,
+  viewport: Types.IViewport,
   segmentationId: string,
   representationType: SegmentationRepresentations
 ) {
