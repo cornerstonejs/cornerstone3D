@@ -76,7 +76,8 @@ function internalAddSegmentationRepresentation(
     if (segmentation) {
       const segmentKeys = Object.keys(segmentation.segments);
       if (segmentKeys.length > 0) {
-        firstSegmentIndex = segmentKeys.map((k) => Number(k)).sort()[0];
+        // Compare as numbers: a plain sort() orders 10 before 2
+        firstSegmentIndex = Math.min(...segmentKeys.map((k) => Number(k)));
       }
       setActiveSegmentIndex(segmentationId, firstSegmentIndex);
     }
