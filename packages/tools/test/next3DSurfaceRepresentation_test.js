@@ -70,32 +70,9 @@ function createNextViewport(renderingEngine) {
 }
 
 /**
- * Makes a viewport of the legacy 3D type, which is the 3D legacy adapter,
- * and a direct next 3D viewport of the same size and orientation in one
- * rendering engine, and adds both to the tool group.
+ * Makes a volume and shows it on the next viewport.
  */
-function createViewports(renderingEngine) {
-  testUtils.createViewports(renderingEngine, {
-    ...viewportOptions,
-    viewportId: 'legacy3D',
-    viewportType: ViewportType.VOLUME_3D,
-  });
-  ToolGroupManager.getToolGroup(toolGroupId).addViewport(
-    'legacy3D',
-    renderingEngineId
-  );
-
-  return [
-    renderingEngine.getViewport('legacy3D'),
-    createNextViewport(renderingEngine),
-  ];
-}
-
-/**
- * Makes a volume and shows it on the next viewport, and on the viewport of
- * the legacy type when one is given.
- */
-async function showVolume(next, legacy) {
+async function showVolume(next) {
   const volumeId = testUtils.encodeVolumeIdInfo({
     loader: 'fakeVolumeLoader',
     name: 'volumeURI',
@@ -109,9 +86,6 @@ async function showVolume(next, legacy) {
   });
 
   await volumeLoader.createAndCacheVolume(volumeId, { imageIds: [] });
-  if (legacy) {
-    await legacy.setVolumes([{ volumeId }]);
-  }
   utilities.genericViewportDisplaySetMetadataProvider.add('next3DVolume', {
     imageIds: cache.getVolume(volumeId).imageIds,
     volumeId,
@@ -325,47 +299,6 @@ describe('A Surface representation on a direct next 3D viewport -- ', () => {
         actor.getProperty().getColor()
       );
     });
-  });
-
-  it('keeps the surfaces as actors of the application on a legacy adapter', async function () {
-    const [legacy, next] = createViewports(renderingEngine);
-
-    testUtils.createViewports(renderingEngine, {
-      orientation: OrientationAxis.SAGITTAL,
-      width: 400,
-      height: 300,
-      useEnableElement: true,
-      viewportId: 'adapter3D',
-      viewportType: ViewportType.VOLUME_3D,
-    });
-    ToolGroupManager.getToolGroup(toolGroupId).addViewport(
-      'adapter3D',
-      renderingEngineId
-    );
-
-    const adapter = renderingEngine.getViewport('adapter3D');
-
-    await showVolume(next, legacy);
-    await adapter.setVolumes([{ volumeId: legacy.getVolumeId() }]);
-    addSurfaceSegmentation();
-    await showSurfaces([legacy, adapter]);
-
-    expect(adapter.type).toBe(ViewportType.VOLUME_3D_NEXT);
-    expect(displaySetIdsOf(adapter).length).toBe(1);
-    expect(adapter.getActors().length).toBe(legacy.getActors().length);
-    expect(surfaceEntriesOf(adapter).length).toBe(2);
-    expect(surfaceEntriesOf(adapter)[0].referencedId).toBeUndefined();
-    expect(registeredDisplaySetOf(geometryIdOf(1))).toBeUndefined();
-
-    [legacy, adapter].forEach((viewport) =>
-      segmentation.removeSegmentationRepresentations(viewport.id, {
-        segmentationId,
-        type: Surface,
-      })
-    );
-
-    expect(surfaceEntriesOf(adapter).length).toBe(0);
-    expect(adapter.getActors().length).toBe(legacy.getActors().length);
   });
 
   it('shows a new colour of a segment', async function () {

@@ -335,7 +335,7 @@ export function removeVolumeLabelmapImageMapperActors(
   viewport: Types.IViewport,
   segmentationId: string
 ): void {
-  if (!(viewport.type === Enums.ViewportType.ORTHOGRAPHIC)) {
+  if (isPlanarSliceRenderingViewport(viewport)) {
     return;
   }
 

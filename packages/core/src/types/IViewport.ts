@@ -497,14 +497,6 @@ interface IViewport {
   readonly renderingEngineId: string;
   /** Type of viewport */
   readonly type: ViewportType;
-  /**
-   * The viewport type originally requested by the caller, before the internal
-   * compatibility remap (a STACK or ORTHOGRAPHIC request gives PLANAR_NEXT).
-   * Equals `type` when not remapped.
-   * Set by the rendering engine at creation. Use this when branching on the
-   * legacy viewport type so the branch is transparent across compat adapters.
-   */
-  requestedType?: ViewportType;
   isDisabled: boolean;
   /** Record the rendering status, mostly for testing purposes, but can also
    * be useful for knowing things like whether the viewport is initialized
@@ -976,8 +968,6 @@ interface NormalizedViewportInput {
   viewportId: string;
   /** type of the viewport */
   type: ViewportType;
-  /** original requested type before any internal remapping */
-  requestedType?: ViewportType;
   /** options for the viewport */
   defaultOptions: ViewportInputOptions;
 }
@@ -987,7 +977,6 @@ interface InternalViewportInput {
   canvas: HTMLCanvasElement;
   viewportId: string;
   type: ViewportType;
-  requestedType?: ViewportType;
   defaultOptions: ViewportInputOptions;
 }
 
@@ -995,7 +984,6 @@ interface ViewportInput {
   id: string;
   renderingEngineId: string;
   type: ViewportType;
-  requestedType?: ViewportType;
   element: HTMLDivElement;
   sx: number;
   sy: number;

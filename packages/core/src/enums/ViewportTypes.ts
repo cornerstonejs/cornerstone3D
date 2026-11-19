@@ -11,9 +11,6 @@ import type {
 export type ViewportTypesMap = ViewportTypeConstants;
 
 const builtInViewportTypes: CoreViewportTypeConstants = {
-  STACK: ViewportType.STACK,
-  ORTHOGRAPHIC: ViewportType.ORTHOGRAPHIC,
-  PERSPECTIVE: ViewportType.PERSPECTIVE,
   VOLUME_3D: ViewportType.VOLUME_3D,
   VOLUME_3D_NEXT: ViewportType.VOLUME_3D_NEXT,
   PLANAR_NEXT: ViewportType.PLANAR_NEXT,

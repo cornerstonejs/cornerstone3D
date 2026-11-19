@@ -271,13 +271,12 @@ describe('canRenderVolumeViewportLabelmapAsImage', () => {
     }
   });
 
-  it('treats a legacy adapter in volume mode as a planar viewport, not a legacy one', () => {
+  it('treats a planar viewport in volume mode as a planar viewport, also with a legacy getBlendMode', () => {
     const getBlendMode = jest.fn(
       () => Enums.BlendModes.MAXIMUM_INTENSITY_BLEND
     );
     const viewport = {
       ...makePlanarNextViewport({ renderMode: 'VTK_VOLUME_SLICE' }),
-      requestedType: 'orthographic',
       setDisplaySets: jest.fn(),
       setDisplaySetPresentation: jest.fn(),
       setViewState: jest.fn(),

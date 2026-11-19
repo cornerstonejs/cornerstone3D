@@ -1,39 +1,34 @@
 /**
  * ViewportType enum for cornerstone-render which defines the type of viewport.
- * It can be either STACK, PERSPECTIVE, ORTHOGRAPHIC.
+ * Every type gives a next viewport: planar, 3D, video, whole slide or ECG.
+ * `STACK`, `ORTHOGRAPHIC` and `PERSPECTIVE` were removed in 6.0: use
+ * `PLANAR_NEXT` for a stack or a volume, and `VOLUME_3D_NEXT` with
+ * `parallelProjection: false` for a perspective view.
  *
  * @deprecated Use `ViewportTypes` from `@cornerstonejs/core` enums instead:
- * - Built-ins: `Enums.ViewportTypes.STACK`, `Enums.ViewportTypes.PLANAR_NEXT`, etc.
+ * - Built-ins: `Enums.ViewportTypes.PLANAR_NEXT`, `Enums.ViewportTypes.VOLUME_3D_NEXT`, etc.
  * - Extensions: `registerViewportType({ name: 'PET', ... })` then `Enums.ViewportTypes.PET`
  * - Types: augment `ViewportTypeRegistry` / `ViewportTypeConstants`
  *
  * This enum remains for backward compatibility but is not extended at runtime.
  */
 enum ViewportType {
-  /**
-   * - Suitable for rendering a stack of images, that might or might not belong to the same image.
-   * - Stack can include 2D images of different shapes, size and direction
-   */
-  STACK = 'stack',
-  /**
-   * - Suitable for rendering a volumetric data which is considered as one 3D image.
-   * - Having a VolumeViewport enables Multi-planar reformation or reconstruction (MPR) by design, in which you can visualize the volume from various different orientations without addition of performance costs.
-   */
-  ORTHOGRAPHIC = 'orthographic',
-  /** Perspective Viewport: Not Implemented yet */
-  PERSPECTIVE = 'perspective',
+  /** The next 3D viewport, the same viewport as `VOLUME_3D_NEXT`. */
   VOLUME_3D = 'volume3d',
   VOLUME_3D_NEXT = 'volume3dNext',
   PLANAR_NEXT = 'planarNext',
+  /** The next video viewport, the same viewport as `VIDEO_NEXT`. */
   VIDEO = 'video',
   VIDEO_NEXT = 'videoNext',
   /**
-   * Whole slide imaging viewport
+   * Whole slide imaging viewport: the next whole slide viewport, the same
+   * viewport as `WHOLE_SLIDE_NEXT`.
    */
   WHOLE_SLIDE = 'wholeSlide',
   WHOLE_SLIDE_NEXT = 'wholeSlideNext',
   /**
-   * ECG waveform viewport for displaying DICOM ECG traces
+   * ECG waveform viewport for displaying DICOM ECG traces: the next ECG
+   * viewport, the same viewport as `ECG_NEXT`.
    */
   ECG = 'ecg',
   ECG_NEXT = 'ecgNext',

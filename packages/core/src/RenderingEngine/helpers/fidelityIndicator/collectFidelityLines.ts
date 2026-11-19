@@ -220,10 +220,7 @@ export function fidelityLinesFromVolumeActors(
 }
 
 function isVolume3D(viewport: VolumeViewportLike): boolean {
-  return (
-    viewport.type === ViewportType.VOLUME_3D ||
-    viewport.type === ViewportType.PERSPECTIVE
-  );
+  return viewport.type === ViewportType.VOLUME_3D;
 }
 
 /** One fidelity line for a stack image of the given quality. */

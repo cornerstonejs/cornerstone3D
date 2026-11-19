@@ -174,28 +174,7 @@ describe('imageSliceSyncCallback', () => {
     });
   });
 
-  it('reverses target indices for a legacy volume viewport, from its type', async () => {
-    const sourceViewport = createSourceViewport('image:2');
-    const targetViewport = createTargetViewport({
-      currentImageIdIndex: 0,
-      type: 'orthographic',
-      volumeId: 'volume-id',
-    });
-
-    mockRenderingEngine(sourceViewport, targetViewport);
-
-    await imageSliceSyncCallback(
-      createSynchronizerInstance(),
-      { renderingEngineId: 'rendering-engine', viewportId: 'source' },
-      { renderingEngineId: 'rendering-engine', viewportId: 'target' }
-    );
-
-    expect(utilities.jumpToSlice).toHaveBeenCalledWith(targetViewport.element, {
-      imageIndex: 1,
-    });
-  });
-
-  it('reverses target indices for a legacy adapter in volume mode', async () => {
+  it('reverses target indices for a planar viewport in volume mode', async () => {
     const sourceViewport = createSourceViewport('image:2');
     const targetViewport = createTargetViewport({
       currentImageIdIndex: 0,
@@ -214,23 +193,6 @@ describe('imageSliceSyncCallback', () => {
 
     expect(utilities.jumpToSlice).toHaveBeenCalledWith(targetViewport.element, {
       imageIndex: 1,
-    });
-  });
-
-  it('keeps a legacy stack viewport in imageId index order, from its type', async () => {
-    const sourceViewport = createSourceViewport('image:2');
-    const targetViewport = createTargetViewport({ type: 'stack' });
-
-    mockRenderingEngine(sourceViewport, targetViewport);
-
-    await imageSliceSyncCallback(
-      createSynchronizerInstance(),
-      { renderingEngineId: 'rendering-engine', viewportId: 'source' },
-      { renderingEngineId: 'rendering-engine', viewportId: 'target' }
-    );
-
-    expect(utilities.jumpToSlice).toHaveBeenCalledWith(targetViewport.element, {
-      imageIndex: 2,
     });
   });
 

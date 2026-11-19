@@ -1,7 +1,4 @@
 export interface CoreViewportTypeRegistry {
-  stack: 'stack';
-  orthographic: 'orthographic';
-  perspective: 'perspective';
   volume3d: 'volume3d';
   volume3dNext: 'volume3dNext';
   planarNext: 'planarNext';
@@ -14,9 +11,6 @@ export interface CoreViewportTypeRegistry {
 }
 
 export interface CoreViewportTypeConstants {
-  readonly STACK: 'stack';
-  readonly ORTHOGRAPHIC: 'orthographic';
-  readonly PERSPECTIVE: 'perspective';
   readonly VOLUME_3D: 'volume3d';
   readonly VOLUME_3D_NEXT: 'volume3dNext';
   readonly PLANAR_NEXT: 'planarNext';

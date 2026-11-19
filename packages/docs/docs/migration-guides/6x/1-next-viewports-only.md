@@ -33,7 +33,17 @@ are temporary.
   when `rendering.useGenericViewport` is on.
 - **`rendering.useGenericViewport`.** There is nothing to switch.
 - **The legacy viewport types:** `ViewportType.STACK`,
-  `ViewportType.ORTHOGRAPHIC` and `ViewportType.PERSPECTIVE`.
+  `ViewportType.ORTHOGRAPHIC` and `ViewportType.PERSPECTIVE`, with their
+  strings `'stack'`, `'orthographic'` and `'perspective'`. This part is in the
+  code. `enableElement` and `setViewports` throw an `Error` for each of the
+  three strings, before the engine changes anything, and the message names
+  the type to use, for example
+  `ViewportType 'stack' was removed in Cornerstone3D 6.0: use ViewportType.PLANAR_NEXT (a planar viewport shows a stack or a volume)`.
+  A saved layout or hanging protocol that stores one of these strings fails
+  at load with that message: store the planar type instead (with an
+  orientation in `defaultOptions` for `'orthographic'`), or the 3D type with
+  `parallelProjection: false` for `'perspective'`. `viewport.requestedType`
+  is gone with them: `viewport.type` is the type of the viewport.
 - **The word "next" in the type names.** The five types that remain get plain
   names. See [The viewport types](#the-viewport-types).
 - **The legacy viewport API:** `setStack`, `setVolumes`, `addVolumes`,
@@ -78,8 +88,17 @@ other families keep one type each.
 type to its 6.0 type.
 
 `VOLUME_3D`, `VIDEO`, `WHOLE_SLIDE` and `ECG` keep their names and now mean the
-next viewport of that family. The rename is the last step of the removal.
-Until it lands, the code of these pages uses the `_NEXT` names.
+next viewport of that family. This is in the code: each gives the same
+viewport as its `_NEXT` name, and the `viewport.type` of that viewport is the
+`_NEXT` type. The rename is the last step of the removal. Until it lands, the
+code of these pages uses the `_NEXT` names.
+
+The context pool rendering engine of 5.x spread the stack viewports over its
+WebGL contexts (`rendering.webGlContextCount`). In 6.0 every planar and 3D
+viewport draws through the first context of the pool: a planar viewport can
+show a volume at any time after it is enabled, and the texture of a volume
+is shared by every viewport that shows it: drawn from two contexts, it is
+uploaded again at every switch between them.
 
 A `PERSPECTIVE` viewport becomes a 3D viewport with
 `parallelProjection: false` in its options. See

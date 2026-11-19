@@ -4,7 +4,6 @@ import eventTarget from '../eventTarget';
 import uuidv4 from '../utilities/uuidv4';
 import triggerEvent from '../utilities/triggerEvent';
 import { coreLog } from '../utilities/logger';
-import ViewportType from '../enums/ViewportType';
 import viewportTypeUsesCustomRenderingPipeline, {
   viewportUsesCustomRenderingPipeline,
 } from './helpers/viewportTypeUsesCustomRenderingPipeline';
@@ -21,7 +20,10 @@ import {
 } from '../init';
 import type IStackViewport from '../types/IStackViewport';
 import type IVolumeViewport from '../types/IVolumeViewport';
-import { getViewportClassForInput } from './helpers/viewportTypeToViewportClass';
+import {
+  getViewportClassForInput,
+  throwIfRemovedViewportType,
+} from './helpers/viewportTypeToViewportClass';
 import ViewportStatus from '../enums/ViewportStatus';
 
 import type * as EventTypes from '../types/EventTypes';
@@ -31,7 +33,6 @@ import type {
   NormalizedViewportInput,
   IViewport,
 } from '../types/IViewport';
-import { OrientationAxis } from '../enums';
 import type { VtkOffscreenMultiRenderWindow } from '../types';
 import { StatsOverlay } from './helpers/stats';
 import {
@@ -104,7 +105,7 @@ abstract class BaseRenderingEngine {
    * ```
    * renderingEngine.enableElement({
    *  viewportId: viewportId,
-   *  type: ViewportType.ORTHOGRAPHIC,
+   *  type: ViewportType.PLANAR_NEXT,
    *  element,
    *  defaultOptions: {
    *    orientation: Enums.OrientationAxis.AXIAL,
@@ -239,7 +240,7 @@ abstract class BaseRenderingEngine {
    *renderingEngine.setViewports([
    *   {
    *     viewportId: axialViewportId,
-   *     type: ViewportType.ORTHOGRAPHIC,
+   *     type: ViewportType.PLANAR_NEXT,
    *     element: document.getElementById('axialDiv'),
    *     defaultOptions: {
    *       orientation: Enums.OrientationAxis.AXIAL,
@@ -247,7 +248,7 @@ abstract class BaseRenderingEngine {
    *   },
    *   {
    *     viewportId: sagittalViewportId,
-   *     type: ViewportType.ORTHOGRAPHIC,
+   *     type: ViewportType.PLANAR_NEXT,
    *     element: document.getElementById('sagittalDiv'),
    *     defaultOptions: {
    *       orientation: Enums.OrientationAxis.SAGITTAL,
@@ -255,7 +256,7 @@ abstract class BaseRenderingEngine {
    *   },
    *   {
    *     viewportId: customOrientationViewportId,
-   *     type: ViewportType.ORTHOGRAPHIC,
+   *     type: ViewportType.PLANAR_NEXT,
    *     element: document.getElementById('customOrientationDiv'),
    *     defaultOptions: {
    *       orientation: { viewPlaneNormal: [0, 0, 1], viewUp: [0, 1, 0] },
@@ -469,30 +470,17 @@ abstract class BaseRenderingEngine {
   }
 
   /**
-   * Map from legacy viewport types to their Next equivalents.
-   * The remapped type is used internally for the render path and pipeline
-   * selection, while the original requested type is retained so viewport
-   * creation can choose a legacy adapter instead of a raw Next class.
+   * Gives the input of a viewport with its default options. A viewport type
+   * that Cornerstone3D 6.0 removed (`'stack'`, `'orthographic'`,
+   * `'perspective'`) throws here, with the type to use instead, before the
+   * engine changes anything.
    */
-  private static readonly NEXT_TYPE_REMAP: Partial<
-    Record<ViewportType, ViewportType>
-  > = {
-    [ViewportType.STACK]: ViewportType.PLANAR_NEXT,
-    [ViewportType.ORTHOGRAPHIC]: ViewportType.PLANAR_NEXT,
-    [ViewportType.VIDEO]: ViewportType.VIDEO_NEXT,
-    [ViewportType.WHOLE_SLIDE]: ViewportType.WHOLE_SLIDE_NEXT,
-    [ViewportType.ECG]: ViewportType.ECG_NEXT,
-    [ViewportType.VOLUME_3D]: ViewportType.VOLUME_3D_NEXT,
-  };
-
   private _normalizeViewportInputEntry(
     viewportInputEntry: PublicViewportInput
-  ) {
-    const requestedType = viewportInputEntry.type;
-    const { defaultOptions } = viewportInputEntry;
-    const type =
-      BaseRenderingEngine.NEXT_TYPE_REMAP[requestedType] ?? requestedType;
+  ): NormalizedViewportInput {
+    throwIfRemovedViewportType(viewportInputEntry.type);
 
+    const { defaultOptions } = viewportInputEntry;
     let options = defaultOptions;
 
     if (!options || Object.keys(options).length === 0) {
@@ -501,19 +489,10 @@ abstract class BaseRenderingEngine {
         orientation: null,
         displayArea: null,
       };
-
-      if (requestedType === ViewportType.ORTHOGRAPHIC) {
-        options = {
-          ...options,
-          orientation: OrientationAxis.AXIAL,
-        };
-      }
     }
 
     return {
       ...viewportInputEntry,
-      requestedType,
-      type,
       defaultOptions: options,
     };
   }
@@ -615,10 +594,6 @@ abstract class BaseRenderingEngine {
     // 4. Create a proper viewport based on the type of the viewport
     const ViewportClass = getViewportClassForInput(viewportInputEntry);
     const viewport = new ViewportClass(viewportInput);
-
-    // Custom-pipeline viewports are not remapped, so the requested type equals `type`.
-    // Recorded for parity with the remapped paths so callers can always read it.
-    (viewport as unknown as IViewport).requestedType = type;
 
     // 5. Storing the viewports
     this._viewports.set(viewportId, viewport as unknown as IViewport);

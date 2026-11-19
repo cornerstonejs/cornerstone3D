@@ -5,14 +5,9 @@ import ViewportTypes, {
 import type { ViewportType as ViewportTypeWire } from '../../types/ViewportTypeRegistry';
 import ECGViewport from '../GenericViewport/ECG/ECGViewport';
 import PlanarViewport from '../GenericViewport/Planar/PlanarViewport';
-import PlanarViewportLegacyAdapter from '../GenericViewport/Planar/PlanarViewportLegacyAdapter';
 import NextVideoViewport from '../GenericViewport/Video/VideoViewport';
-import VideoViewportLegacyAdapter from '../GenericViewport/Video/VideoViewportLegacyAdapter';
 import VolumeViewport3D from '../GenericViewport/Volume3D/viewport3D';
-import VolumeViewport3DLegacyAdapter from '../GenericViewport/Volume3D/VolumeViewport3DLegacyAdapter';
 import NextWSIViewport from '../GenericViewport/WSI/WSIViewport';
-import WSIViewportLegacyAdapter from '../GenericViewport/WSI/WSIViewportLegacyAdapter';
-import ECGViewportLegacyAdapter from '../GenericViewport/ECG/ECGViewportLegacyAdapter';
 import type { ViewportTypeConstants } from '../../types/ViewportTypeRegistry';
 import type {
   ViewportInput,
@@ -35,7 +30,7 @@ interface ViewportConstructor {
 
 type ViewportClassInput = Pick<
   ViewportInput | InternalViewportInput | NormalizedViewportInput,
-  'type' | 'requestedType'
+  'type'
 >;
 
 type ViewportClassResolver = (
@@ -70,12 +65,25 @@ const registeredViewportTypes = new Set<string>();
 let hasRegisteredCoreViewportTypes = false;
 
 /**
- * Registers the viewport types of the library. A legacy type has the legacy
- * adapter of its next viewport as its class. The rendering engine remaps a
- * legacy type to its next type before it makes the viewport, and the
- * `resolveClass` of that next type then gives the same adapter.
- * `ViewportType.PERSPECTIVE` has no class: its only class was the legacy
- * volume viewport.
+ * The viewport type strings that Cornerstone3D 6.0 removed, each with the
+ * message that names what an application uses instead. The library
+ * registers no class under them, and the rendering engine throws this
+ * message when it is asked for one of them.
+ */
+const removedViewportTypeMessages: Record<string, string> = {
+  stack:
+    "ViewportType 'stack' was removed in Cornerstone3D 6.0: use ViewportType.PLANAR_NEXT (a planar viewport shows a stack or a volume)",
+  orthographic:
+    "ViewportType 'orthographic' was removed in Cornerstone3D 6.0: use ViewportType.PLANAR_NEXT with an orientation in defaultOptions, for example OrientationAxis.AXIAL (a planar viewport shows a stack or a volume)",
+  perspective:
+    "ViewportType 'perspective' was removed in Cornerstone3D 6.0: use ViewportType.VOLUME_3D_NEXT with parallelProjection: false in defaultOptions",
+};
+
+/**
+ * Registers the viewport types of the library: the five next viewports
+ * under their `*Next` strings, and the strings `'volume3d'`, `'video'`,
+ * `'wholeSlide'` and `'ecg'` as aliases of the next 3D, video, whole slide
+ * and ECG viewports.
  */
 function registerCoreViewportTypes() {
   if (hasRegisteredCoreViewportTypes) {
@@ -84,78 +92,64 @@ function registerCoreViewportTypes() {
   hasRegisteredCoreViewportTypes = true;
 
   registerViewportType({
-    type: ViewportType.ORTHOGRAPHIC,
-    ViewportClass:
-      PlanarViewportLegacyAdapter as unknown as ViewportConstructor,
+    type: ViewportType.PLANAR_NEXT,
+    ViewportClass: PlanarViewport,
   });
-  registerViewportType({
-    type: ViewportType.STACK,
-    ViewportClass:
-      PlanarViewportLegacyAdapter as unknown as ViewportConstructor,
-  });
-  registerViewportType({
-    type: ViewportType.VOLUME_3D,
-    ViewportClass:
-      VolumeViewport3DLegacyAdapter as unknown as ViewportConstructor,
-  });
-  registerViewportType({
-    type: ViewportType.WHOLE_SLIDE,
-    ViewportClass: WSIViewportLegacyAdapter as unknown as ViewportConstructor,
-  });
-  registerViewportType({
-    type: ViewportType.ECG,
-    ViewportClass: ECGViewportLegacyAdapter as unknown as ViewportConstructor,
-  });
-  registerViewportType({
-    type: ViewportType.VIDEO,
-    ViewportClass: VideoViewportLegacyAdapter as unknown as ViewportConstructor,
-  });
-
-  // next viewports below
   registerViewportType({
     type: ViewportType.VOLUME_3D_NEXT,
     ViewportClass: VolumeViewport3D,
-    resolveClass: ({ type, requestedType }) =>
-      type === ViewportType.VOLUME_3D_NEXT &&
-      requestedType === ViewportType.VOLUME_3D
-        ? (VolumeViewport3DLegacyAdapter as unknown as ViewportConstructor)
-        : undefined,
-  });
-  registerViewportType({
-    type: ViewportType.PLANAR_NEXT,
-    ViewportClass: PlanarViewport,
-    resolveClass: ({ type, requestedType }) =>
-      type === ViewportType.PLANAR_NEXT &&
-      (requestedType === ViewportType.STACK ||
-        requestedType === ViewportType.ORTHOGRAPHIC)
-        ? (PlanarViewportLegacyAdapter as unknown as ViewportConstructor)
-        : undefined,
   });
   registerViewportType({
     type: ViewportType.VIDEO_NEXT,
     ViewportClass: NextVideoViewport,
-    resolveClass: ({ type, requestedType }) =>
-      type === ViewportType.VIDEO_NEXT && requestedType === ViewportType.VIDEO
-        ? (VideoViewportLegacyAdapter as unknown as ViewportConstructor)
-        : undefined,
-  });
-  registerViewportType({
-    type: ViewportType.ECG_NEXT,
-    ViewportClass: ECGViewport,
-    resolveClass: ({ type, requestedType }) =>
-      type === ViewportType.ECG_NEXT && requestedType === ViewportType.ECG
-        ? (ECGViewportLegacyAdapter as unknown as ViewportConstructor)
-        : undefined,
   });
   registerViewportType({
     type: ViewportType.WHOLE_SLIDE_NEXT,
     ViewportClass: NextWSIViewport as unknown as ViewportConstructor,
-    resolveClass: ({ type, requestedType }) =>
-      type === ViewportType.WHOLE_SLIDE_NEXT &&
-      requestedType === ViewportType.WHOLE_SLIDE
-        ? (WSIViewportLegacyAdapter as unknown as ViewportConstructor)
-        : undefined,
   });
+  registerViewportType({
+    type: ViewportType.ECG_NEXT,
+    ViewportClass: ECGViewport,
+  });
+
+  registerViewportTypeAlias(
+    ViewportType.VOLUME_3D,
+    ViewportType.VOLUME_3D_NEXT
+  );
+  registerViewportTypeAlias(ViewportType.VIDEO, ViewportType.VIDEO_NEXT);
+  registerViewportTypeAlias(
+    ViewportType.WHOLE_SLIDE,
+    ViewportType.WHOLE_SLIDE_NEXT
+  );
+  registerViewportTypeAlias(ViewportType.ECG, ViewportType.ECG_NEXT);
+}
+
+/**
+ * Registers `alias` as one more type string of the class that `type` has.
+ * The viewport that the alias makes is the viewport of `type`, with the
+ * `type` of its class. A second registration of the same alias for the same
+ * class does nothing; an alias that already gives another class throws.
+ */
+function registerViewportTypeAlias(alias: string, type: string): void {
+  const ViewportClass = viewportConstructors.get(type);
+
+  if (!ViewportClass) {
+    throw new Error(`Viewport type "${type}" is not registered`);
+  }
+
+  const registeredClass = viewportConstructors.get(alias);
+
+  if (registeredClass === ViewportClass) {
+    return;
+  }
+
+  if (registeredClass) {
+    throw new Error(`Viewport type "${alias}" is already registered`);
+  }
+
+  viewportConstructors.set(alias, ViewportClass);
+  viewportTypeToViewportClass[alias] = ViewportClass;
+  registeredViewportTypes.add(alias);
 }
 
 export function registerViewportType<Name extends keyof ViewportTypeConstants>(
@@ -199,6 +193,23 @@ export function isRegisteredViewportType(type: string): boolean {
   return registeredViewportTypes.has(type);
 }
 
+/**
+ * Throws the message of a viewport type string that Cornerstone3D 6.0
+ * removed (`'stack'`, `'orthographic'`, `'perspective'`), which names the
+ * type to use instead. A string that an application registered itself is
+ * not removed. Any other string passes.
+ */
+export function throwIfRemovedViewportType(type: string): void {
+  registerCoreViewportTypes();
+
+  if (
+    !registeredViewportTypes.has(type) &&
+    Object.prototype.hasOwnProperty.call(removedViewportTypeMessages, type)
+  ) {
+    throw new Error(removedViewportTypeMessages[type]);
+  }
+}
+
 export default viewportTypeToViewportClass;
 
 export function getViewportClassForInput(
@@ -215,6 +226,7 @@ export function getViewportClassForInput(
 
   const viewportClass = viewportConstructors.get(input.type);
   if (!viewportClass) {
+    throwIfRemovedViewportType(input.type);
     throw new Error(`Unknown viewport type: ${input.type}`);
   }
 

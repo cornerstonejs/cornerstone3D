@@ -644,13 +644,13 @@ describe('projectTo2D', () => {
 
 describe('getSubPixelSpacingAndXYDirections', () => {
   // `isGenericViewport`/`getViewportContentMode` are duck-typed: they check
-  // for method presence, and a legacy viewport without `getCurrentMode` gets
-  // the mode of its `type`. So plain stub objects work without needing to
-  // mock `@cornerstonejs/core` for this function specifically.
+  // for method presence, and the mode comes from `getCurrentMode`. So plain
+  // stub objects work without needing to mock `@cornerstonejs/core` for this
+  // function specifically.
 
   it('reads spacing/direction straight off the image data for a stack (image-slice) viewport', () => {
     const viewport = {
-      type: 'stack',
+      getCurrentMode: () => 'stack',
       getImageData: () => ({
         // direction is a 9-element row-major 3x3 matrix: rows are iVector,
         // jVector, kVector.

@@ -373,7 +373,7 @@ export class vtkOrientationControllerWidget {
     const marginRatio = [
       Enums.ViewportType.VOLUME_3D,
       Enums.ViewportType.VOLUME_3D_NEXT,
-    ].includes(viewport.requestedType ?? viewport.type)
+    ].includes(viewport.type)
       ? 1.3
       : 1.1;
     const marginPxRaw = marginRatio * screenSizePixels;

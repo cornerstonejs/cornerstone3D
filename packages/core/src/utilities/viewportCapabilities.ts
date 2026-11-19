@@ -1,4 +1,3 @@
-import ViewportType from '../enums/ViewportType';
 import type {
   ActorEntry,
   IGenericViewport,
@@ -171,28 +170,10 @@ export function viewportSupportsWaveform(
 }
 
 /**
- * The content mode that each legacy viewport type means. A legacy viewport
- * class has no `getCurrentMode`, and it shows one kind of content from the
- * start, so its type gives its mode.
- */
-const legacyViewportTypeContentModes: Record<string, ViewportContentMode> = {
-  [ViewportType.STACK]: 'stack',
-  [ViewportType.ORTHOGRAPHIC]: 'volume',
-  [ViewportType.PERSPECTIVE]: 'volume',
-  [ViewportType.VOLUME_3D]: 'volume3d',
-  [ViewportType.VIDEO]: 'video',
-  [ViewportType.WHOLE_SLIDE]: 'wholeSlide',
-  [ViewportType.ECG]: 'ecg',
-};
-
-/**
  * Returns the content-true mode of the viewport's bound source data.
  *
- * A viewport with `getCurrentMode` answers for itself. A legacy viewport
- * without it gets the mode its legacy `type` means: `stack` for STACK,
- * `volume` for ORTHOGRAPHIC and PERSPECTIVE, `volume3d` for VOLUME_3D,
- * `video`, `wholeSlide` and `ecg` for VIDEO, WHOLE_SLIDE and ECG. Any other
- * viewport gives `undefined`.
+ * Every viewport answers for itself through `getCurrentMode`. A viewport
+ * without it gives `undefined`; its `type` gives no mode.
  *
  * Unlike the capability guards above (which test method presence), this reports
  * what the viewport is actually showing. A `PLANAR_NEXT` viewport cannot
@@ -206,12 +187,8 @@ export function getViewportContentMode(
   if (viewportHasMethod(viewport, 'getCurrentMode')) {
     return (viewport as IGenericViewport).getCurrentMode();
   }
-  const type = (viewport as { type?: unknown } | null | undefined)?.type;
 
-  return typeof type === 'string' &&
-    Object.prototype.hasOwnProperty.call(legacyViewportTypeContentModes, type)
-    ? legacyViewportTypeContentModes[type]
-    : undefined;
+  return undefined;
 }
 
 /**

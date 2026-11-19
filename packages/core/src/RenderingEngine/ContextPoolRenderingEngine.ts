@@ -5,7 +5,6 @@ import Events from '../enums/Events';
 import eventTarget from '../eventTarget';
 import triggerEvent from '../utilities/triggerEvent';
 import { coreLog } from '../utilities/logger';
-import ViewportType from '../enums/ViewportType';
 import viewportTypeUsesCustomRenderingPipeline, {
   viewportUsesCustomRenderingPipeline,
 } from './helpers/viewportTypeUsesCustomRenderingPipeline';
@@ -134,6 +133,14 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
   /**
    *  Adds a viewport driven by vtk.js to the `RenderingEngine`.
    *
+   * Every such viewport draws through the first WebGL context of the pool.
+   * The legacy stack viewport was spread over the contexts, because it never
+   * showed a volume. A planar viewport can show a volume at any time after
+   * its mount, also when it shows a stack at first, and the texture of a
+   * volume is shared by every viewport that shows it. A texture that two
+   * contexts draw is deleted and uploaded again at every switch between
+   * them.
+   *
    * @param viewportInputEntry - Information object used to construct and enable the viewport.
    */
   protected addVtkjsDrivenViewport(
@@ -149,15 +156,7 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
     // (scroll, pinch-zoom, double-tap zoom). Restored in _resetViewport.
     setElementTouchActionNone(element);
 
-    // Assign viewport to a context
-    // Stack viewports can be distributed across contexts. Planar Next may mount
-    // volume-backed GPU renderings, which cannot safely share volume textures
-    // across WebGL contexts.
-    let contextIndex = 0;
-    if (type === ViewportType.STACK) {
-      const contexts = contextPool.getAllContexts();
-      contextIndex = this._viewports.size % contexts.length;
-    }
+    const contextIndex = 0;
     contextPool.assignViewportToContext(viewportId, contextIndex);
 
     // Track viewport size
@@ -205,11 +204,6 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
     }
 
     const viewport = new ViewportClass(viewportInput);
-
-    // Preserve the originally-requested (legacy) type so callers can branch on it
-    // even when compat remapping changed the runtime `type` (e.g. STACK -> PLANAR_NEXT).
-    (viewport as unknown as IViewport).requestedType =
-      viewportInputEntry.requestedType ?? type;
 
     this._viewports.set(viewportId, viewport as unknown as IViewport);
 

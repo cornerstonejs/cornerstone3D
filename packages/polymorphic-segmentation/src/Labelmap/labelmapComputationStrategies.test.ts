@@ -45,22 +45,10 @@ describe('computeLabelmapFromContourSegmentation', () => {
     jest.clearAllMocks();
   });
 
-  it('makes a volume labelmap for a legacy volume viewport', async () => {
-    const viewport = { type: 'orthographic' };
-
-    await computeLabelmapFromContourSegmentation('seg', {
-      viewport: viewport as never,
-    });
-
-    expect(toVolume).toHaveBeenCalled();
-    expect(toStack).not.toHaveBeenCalled();
-  });
-
-  it('makes a volume labelmap for a legacy adapter in volume mode', async () => {
+  it('makes a volume labelmap for a planar viewport in volume mode', async () => {
     const viewport = {
       ...nextApi(),
       type: 'planarNext',
-      requestedType: 'orthographic',
       getCurrentMode: () => 'volume',
     };
 
@@ -72,13 +60,12 @@ describe('computeLabelmapFromContourSegmentation', () => {
     expect(toStack).not.toHaveBeenCalled();
   });
 
-  it('makes a stack labelmap for stack viewports, legacy or adapter', async () => {
+  it('makes a stack labelmap for viewports in stack mode', async () => {
     const viewports = [
-      { type: 'stack' },
+      { getCurrentMode: () => 'stack' },
       {
         ...nextApi(),
         type: 'planarNext',
-        requestedType: 'stack',
         getCurrentMode: () => 'stack',
       },
     ];

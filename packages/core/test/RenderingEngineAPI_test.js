@@ -172,22 +172,69 @@ describe('RenderingEngineAPI -- ', () => {
       });
     });
 
-    it('should remap legacy viewport types when using setViewports', function () {
-      createViewports(renderingEngine, [
-        {
-          viewportId: axialViewportId,
-          viewportType: ViewportType.STACK,
-          orientation: Enums.OrientationAxis.AXIAL,
-        },
-      ]);
-
-      const viewport = renderingEngine.getViewport(axialViewportId);
-
-      expect(viewport).toBeTruthy();
-      expect(viewport.type).toBe(ViewportType.PLANAR_NEXT);
+    it('throws for the removed type stack when using setViewports, and names the planar viewport', function () {
+      expect(() =>
+        createViewports(renderingEngine, [
+          {
+            viewportId: sagittalViewportId,
+            viewportType: ViewportType.PLANAR_NEXT,
+            orientation: Enums.OrientationAxis.SAGITTAL,
+          },
+          {
+            viewportId: axialViewportId,
+            viewportType: 'stack',
+            orientation: Enums.OrientationAxis.AXIAL,
+          },
+        ])
+      ).toThrowError(
+        "ViewportType 'stack' was removed in Cornerstone3D 6.0: use ViewportType.PLANAR_NEXT (a planar viewport shows a stack or a volume)"
+      );
+      expect(renderingEngine.getViewports().length).toBe(0);
     });
 
-    it('should remap legacy viewport types when using enableElement', function () {
+    it('throws for the removed types orthographic and perspective when using enableElement, and names their replacements', function () {
+      expect(() =>
+        createViewports(renderingEngine, {
+          viewportId: axialViewportId,
+          viewportType: 'orthographic',
+          orientation: Enums.OrientationAxis.AXIAL,
+          useEnableElement: true,
+        })
+      ).toThrowError(
+        "ViewportType 'orthographic' was removed in Cornerstone3D 6.0: use ViewportType.PLANAR_NEXT with an orientation in defaultOptions, for example OrientationAxis.AXIAL (a planar viewport shows a stack or a volume)"
+      );
+      expect(() =>
+        createViewports(renderingEngine, {
+          viewportId: customOrientationViewportId,
+          viewportType: 'perspective',
+          useEnableElement: true,
+        })
+      ).toThrowError(
+        "ViewportType 'perspective' was removed in Cornerstone3D 6.0: use ViewportType.VOLUME_3D_NEXT with parallelProjection: false in defaultOptions"
+      );
+      expect(renderingEngine.getViewports().length).toBe(0);
+    });
+
+    it('draws every planar viewport through the first WebGL context of the pool', function () {
+      createViewports(renderingEngine, [
+        { viewportId: 'planar1' },
+        { viewportId: 'planar2' },
+        { viewportId: 'planar3' },
+      ]);
+      createViewports(renderingEngine, {
+        viewportId: 'planar4',
+        useEnableElement: true,
+      });
+
+      const pool = renderingEngine._implementation.contextPool;
+
+      expect(pool.getContextCount()).toBeGreaterThan(1);
+      ['planar1', 'planar2', 'planar3', 'planar4'].forEach((viewportId) => {
+        expect(pool.getContextIndexForViewport(viewportId)).toBe(0);
+      });
+    });
+
+    it('gives the next ECG viewport for ViewportType.ECG when using enableElement', function () {
       createViewports(renderingEngine, {
         viewportId: customOrientationViewportId,
         viewportType: ViewportType.ECG,

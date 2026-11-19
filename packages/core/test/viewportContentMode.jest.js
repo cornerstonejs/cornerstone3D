@@ -56,7 +56,6 @@ describe('viewportCapabilities — Generic ("next") viewport guards (CS-5/CS-17)
           ...genericViewport,
           ...legacyStackViewport,
           type: 'planarNext',
-          requestedType: 'stack',
         })
       ).toBe(true);
     });
@@ -87,21 +86,19 @@ describe('viewportCapabilities — Generic ("next") viewport guards (CS-5/CS-17)
       expect(getViewportContentMode(genericViewport)).toBeUndefined();
     });
 
-    it('gives a legacy viewport without getCurrentMode the mode of its type', () => {
-      const cases = [
-        ['stack', 'stack'],
-        ['orthographic', 'volume'],
-        ['perspective', 'volume'],
-        ['volume3d', 'volume3d'],
-        ['video', 'video'],
-        ['wholeSlide', 'wholeSlide'],
-        ['ecg', 'ecg'],
-      ];
-
-      cases.forEach(([type, mode]) => {
-        expect(getViewportContentMode({ ...legacyStackViewport, type })).toBe(
-          mode
-        );
+    it('gives no mode for a legacy type string without getCurrentMode', () => {
+      [
+        'stack',
+        'orthographic',
+        'perspective',
+        'volume3d',
+        'video',
+        'wholeSlide',
+        'ecg',
+      ].forEach((type) => {
+        expect(
+          getViewportContentMode({ ...legacyStackViewport, type })
+        ).toBeUndefined();
       });
     });
 
@@ -122,13 +119,11 @@ describe('viewportCapabilities — Generic ("next") viewport guards (CS-5/CS-17)
       const adapter = {
         ...genericViewport,
         type: 'planarNext',
-        requestedType: 'orthographic',
         getCurrentMode: () => 'stack',
       };
       const emptyAdapter = {
         ...genericViewport,
         type: 'planarNext',
-        requestedType: 'stack',
         getCurrentMode: () => 'empty',
       };
       const nextViewport = {
@@ -161,21 +156,6 @@ describe('viewportCapabilities — Generic ("next") viewport guards (CS-5/CS-17)
     it('is false when content mode is unknown', () => {
       expect(viewportIsInVolumeMode(legacyStackViewport)).toBe(false);
       expect(viewportIsInStackMode(legacyStackViewport)).toBe(false);
-    });
-
-    it('matches the legacy class kinds from the legacy type', () => {
-      const ofType = (type) => ({ ...legacyStackViewport, type });
-
-      expect(viewportIsInStackMode(ofType('stack'))).toBe(true);
-      expect(viewportIsInVolumeMode(ofType('stack'))).toBe(false);
-      expect(viewportIsInVolumeMode(ofType('orthographic'))).toBe(true);
-      expect(viewportIsInVolumeMode(ofType('perspective'))).toBe(true);
-      expect(viewportIsInVolumeMode(ofType('volume3d'))).toBe(true);
-      expect(viewportIsInStackMode(ofType('orthographic'))).toBe(false);
-      ['video', 'wholeSlide', 'ecg'].forEach((type) => {
-        expect(viewportIsInStackMode(ofType(type))).toBe(false);
-        expect(viewportIsInVolumeMode(ofType(type))).toBe(false);
-      });
     });
   });
 

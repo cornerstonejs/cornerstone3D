@@ -17,22 +17,24 @@ function nextApi() {
   };
 }
 
-function makeAdapter(mode, requestedType, extra = {}) {
+function makeAdapter(mode, extra = {}) {
   return {
     ...nextApi(),
     type: 'planarNext',
-    requestedType,
     element: document.createElement('div'),
     getCurrentMode: () => mode,
     ...extra,
   };
 }
 
-function makeLegacy(type, extra = {}) {
+/**
+ * A stand-in for a legacy viewport: it has no next API, and it says the mode
+ * of its content through `getCurrentMode`.
+ */
+function makeLegacy(mode, extra = {}) {
   return {
-    type,
-    requestedType: type,
     element: document.createElement('div'),
+    getCurrentMode: () => mode,
     ...extra,
   };
 }
@@ -52,7 +54,7 @@ describe('legacy viewport utilities on legacy viewports and legacy adapters', ()
   describe('getViewportImageIds', () => {
     it('keeps asking a volume-mode adapter for its image ids', () => {
       const getVolume = jest.spyOn(cache, 'getVolume');
-      const viewport = makeAdapter('volume', 'orthographic', {
+      const viewport = makeAdapter('volume', {
         getVolumeId: () => 'ct',
         getImageIds: () => ['c', 'd'],
       });
@@ -72,23 +74,6 @@ describe('legacy viewport utilities on legacy viewports and legacy adapters', ()
       expect(() => scroll(viewport, { delta: 1 })).toThrow(
         'Scroll::Stack Viewport has no images'
       );
-    });
-
-    it('scrolls a volume-mode adapter through its scroll, with the volume options', () => {
-      const viewport = useViewport(
-        makeAdapter('volume', 'orthographic', {
-          getCurrentImageIdIndex: () => 2,
-          getImageIds: () => ['a', 'b', 'c', 'd'],
-          scroll: jest.fn(),
-        })
-      );
-
-      scroll(viewport, { delta: 1, volumeId: 'ct' });
-
-      expect(viewport.scroll).toHaveBeenCalledWith(1, undefined, undefined, {
-        volumeId: 'ct',
-        scrollSlabs: undefined,
-      });
     });
   });
 
@@ -111,29 +96,10 @@ describe('legacy viewport utilities on legacy viewports and legacy adapters', ()
       expect(viewport.scroll).toHaveBeenCalledWith(-2, true, undefined);
     });
 
-    it('uses the slice index of a stack-mode adapter, as before', async () => {
-      const viewport = useViewport(
-        makeAdapter('stack', 'stack', {
-          getImageIds: () => ['a', 'b', 'c', 'd'],
-          getNumberOfSlices: () => 4,
-          getSliceIndex: () => 0,
-          getCurrentImageIdIndex: () => 0,
-          scroll: jest.fn(),
-        })
-      );
-
-      await jumpToSlice(viewport.element, {
-        imageIndex: 1,
-        debounceLoading: true,
-      });
-
-      expect(viewport.scroll).toHaveBeenCalledWith(1, true, undefined);
-    });
-
     ['stack', 'volume'].forEach((mode) => {
       it(`reads the current image index of a direct next viewport in ${mode} mode`, async () => {
         const viewport = useViewport(
-          makeAdapter(mode, 'planarNext', {
+          makeAdapter(mode, {
             getImageIds: () => ['a', 'b', 'c', 'd'],
             getNumberOfSlices: () => 4,
             getCurrentImageIdIndex: () => 3,

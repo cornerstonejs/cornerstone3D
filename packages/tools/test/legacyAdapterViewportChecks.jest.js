@@ -92,11 +92,24 @@ function makeAdapter(mode, requestedType, extra = {}) {
   };
 }
 
+/**
+ * The content mode of each legacy viewport type, which a legacy stand-in
+ * gives through `getCurrentMode`, as the legacy class showed one kind of
+ * content from the start.
+ */
+const legacyContentModes = {
+  stack: 'stack',
+  orthographic: 'volume',
+  volume3d: 'volume3d',
+  video: 'video',
+  ecg: 'ecg',
+};
+
 function makeLegacy(type, extra = {}) {
   return {
     type,
-    requestedType: type,
     element: document.createElement('div'),
+    getCurrentMode: () => legacyContentModes[type],
     ...extra,
   };
 }
@@ -568,12 +581,12 @@ describe('vtkOrientationControllerWidget margin', () => {
     return widget.calculateMarkerPosition(viewport, 'top-left', 100)?.[0];
   }
 
-  it('uses the 3D margin on a 3D legacy adapter, from its requested type', () => {
+  it('uses the 3D margin on a next 3D viewport, from its type', () => {
     const legacy3D = markerX(makeLegacy('volume3d'));
-    const adapter3D = markerX(makeAdapter('empty', 'volume3d'));
+    const next3D = markerX({ ...makeAdapter('empty'), type: 'volume3dNext' });
     const legacyPlanar = markerX(makeLegacy('orthographic'));
 
-    expect(adapter3D).toBe(legacy3D);
-    expect(adapter3D).not.toBe(legacyPlanar);
+    expect(next3D).toBe(legacy3D);
+    expect(next3D).not.toBe(legacyPlanar);
   });
 });

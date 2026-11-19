@@ -172,7 +172,6 @@ describe('fidelityIndicator attach gates', () => {
       });
 
       const viewport = {
-        type: ViewportType.ORTHOGRAPHIC,
         getActors: () => [
           {
             uid: 'vol',
@@ -218,7 +217,6 @@ describe('fidelityIndicator attach gates', () => {
       });
 
       const viewport = {
-        type: ViewportType.ORTHOGRAPHIC,
         getActors: () => [
           {
             uid: 'vol',

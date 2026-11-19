@@ -57,7 +57,7 @@ export default function scroll(
     throw new Error('Scroll::Stack Viewport has no images');
   }
 
-  const { volumeId, delta, scrollSlabs } = options;
+  const { delta } = options;
 
   // An ECG scrolls in time, and has no slice bounds.
   if (getViewportContentMode(viewport) === 'ecg') {
@@ -93,16 +93,6 @@ export default function scroll(
     triggerEvent(eventTarget, Events.STACK_SCROLL_OUT_OF_BOUNDS, eventData);
   }
 
-  if (getViewportContentMode(viewport) === 'volume') {
-    (viewport as ViewportWithScrollOptions).scroll(
-      delta,
-      options.debounceLoading,
-      options.loop,
-      { volumeId, scrollSlabs }
-    );
-    return;
-  }
-
   (viewport as IStackViewport).scroll(
     delta,
     options.debounceLoading,
@@ -122,34 +112,13 @@ export type PlanarVolumeScrollSteps = {
 };
 
 /**
- * A generic viewport in volume mode whose `scroll` also takes the volume
- * options of a scroll. The planar legacy adapter reads them; other viewports
- * ignore the fourth argument.
- */
-type ViewportWithScrollOptions = {
-  scroll(
-    delta: number,
-    debounce?: boolean,
-    loop?: boolean,
-    options?: Pick<ScrollOptions, 'volumeId' | 'scrollSlabs'>
-  ): unknown;
-};
-
-/**
- * Whether the viewport is a next planar viewport, whose scroll options this
- * utility works out. A legacy adapter is not one: the rendering engine was
- * asked for a legacy type (`requestedType`), and the adapter takes the
- * options in its own `scroll`.
+ * Whether the viewport is a next planar viewport in stack or volume mode,
+ * whose scroll options this utility works out.
  */
 function isNextPlanarViewport(viewport: unknown): viewport is PlanarViewport {
   const mode = getViewportContentMode(viewport);
-  const { requestedType, type } = viewport as IViewport;
 
-  return (
-    isGenericViewport(viewport) &&
-    (mode === 'stack' || mode === 'volume') &&
-    (requestedType === undefined || requestedType === type)
-  );
+  return isGenericViewport(viewport) && (mode === 'stack' || mode === 'volume');
 }
 
 /**

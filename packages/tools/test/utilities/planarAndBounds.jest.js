@@ -380,10 +380,10 @@ describe('utilities/planar/filterAnnotationsForDisplay', () => {
     expect(getViewportICamera).toHaveBeenCalledWith(viewport);
   });
 
-  it('StackViewport: excludes invisible annotations without calling isReferenceViewable', () => {
+  it('a viewport in stack mode: excludes invisible annotations without calling isReferenceViewable', () => {
     const isReferenceViewable = jest.fn(() => true);
     const viewport = {
-      type: 'stack',
+      type: 'planarNext',
       getCurrentImageId: jest.fn(() => 'stack://image1'),
       isReferenceViewable,
     };
@@ -396,13 +396,12 @@ describe('utilities/planar/filterAnnotationsForDisplay', () => {
     expect(isReferenceViewable).not.toHaveBeenCalled();
   });
 
-  it('legacy adapter in stack mode: keeps the next path, without an imageURI filter', () => {
+  it('a next viewport in stack mode: keeps the next path, without an imageURI filter', () => {
     const isReferenceViewable = jest.fn(() => true);
     const getCurrentImageId = jest.fn(() => 'stack://image1');
     const viewport = {
       ...nextViewportApi(),
       type: 'planarNext',
-      requestedType: 'stack',
       getCurrentImageId,
       isReferenceViewable,
     };
